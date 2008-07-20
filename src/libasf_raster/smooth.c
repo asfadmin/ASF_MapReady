@@ -5,6 +5,9 @@
 static float prev_col_result = -1;
 static int prev_col_total = -1;
 
+static float prev_row_result = -1;
+static int prev_row_total = -1;
+
 static float filter(      /****************************************/
     float *inbuf,         /* input image buffer                   */
     int    nl,            /* number of lines for inbuf            */
@@ -18,6 +21,9 @@ static float filter(      /****************************************/
   // off the window, add the row that moved into the window
   if (x>0) {
 
+    // skip over 1st row that we ignore
+    inbuf += ns;
+
     assert(prev_col_result != -1);
     assert(prev_col_total != -1);
 
@@ -26,23 +32,27 @@ static float filter(      /****************************************/
     int left = x-half-1;
     int include_left = left>=0;
     int right = x+half;
-    int include_right = x+half<ns;
+    int include_right = right<ns;
     int total = prev_col_total;
     int i;
 
     if (include_left) {
       for (i = 0; i < nl; i++) {
-        kersum -= inbuf[left];
+        if (inbuf[left]!=0) {
+          kersum -= inbuf[left];
+          --total;
+        }
         left += ns;
-        --total;
       }
     }
 
     if (include_right) {
       for (i = 0; i < nl; i++) {
-        kersum += inbuf[right];
+        if (inbuf[right]!=0) {
+          kersum += inbuf[right];
+          ++total;
+        }
         right += ns;
-        ++total;
       }
     }
 
@@ -55,29 +65,73 @@ static float filter(      /****************************************/
     return kersum;
   }
 
+  else if (y>0) {
+
+    assert(prev_col_result != -1);
+    assert(prev_col_total != -1);
+
+    int half = (nsk-1)/2;
+    float kersum = prev_row_result*prev_row_total;
+    int top = y-half-1;
+    int include_top = top>=0;
+    int bot = y+half;
+    int include_bottom = bot<ns;
+    int total = prev_row_total;
+    int j;
+
+    if (include_top) {
+      for (j=0; j<=half; ++j) {
+        if (inbuf[top]!=0) {
+          kersum -= inbuf[top];
+          --total;
+        }
+        --top;
+      }    
+    }
+    
+    if (include_bottom) {
+      for (j=0; j<=half; ++j) {
+        if (inbuf[bot]!=0) {
+          kersum += inbuf[bot];
+          ++total;
+        }
+        ++bot;
+      }
+    }  
+
+    if (total != 0)
+      kersum /= (float)total;
+
+    prev_row_result = kersum;
+    prev_row_total = total;
+
+    return kersum;
+  }
   // Otherwise, do the full calculation (this should occur only for the
   // first pixel in each row)
   else {
     float  kersum =0.0;                    /* sum of kernel       */
     int    half   =(nsk-1)/2,              /* half size kernel    */
-           base   =(x-half),               /* index into inbuf    */
            total  =0,                      /* valid kernel values */
            i, j;                           /* loop counters       */
 
-    for (i = 0; i < nl; i++)
+    int base = (half+1)*ns;
+    int size = nl*ns;
+
+    for (i = 0; i <= half; i++)
     {
-      for (j = x-half; j <= x+half; j++)
+      for (j = 0; j <= half; j++)
       {
-        if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns)
+        if (base<size && inbuf[base]!=0 && j<ns)
         {
           kersum += inbuf[base];
           total++;
+          base++;
         }
-        base++;
+        
+        base += ns;
+        base -= half+1;
       }
-
-      base += ns;
-      base -= nsk;
     }
 
     if (total != 0)
@@ -85,6 +139,9 @@ static float filter(      /****************************************/
 
     prev_col_result = kersum;
     prev_col_total = total;
+
+    prev_row_result = kersum;
+    prev_row_total = total;
 
     return (kersum);
   }
@@ -109,13 +166,25 @@ int smooth(const char *infile, const char *outfile, int kernel_size,
   char *in_base = get_basename(infile);
   char *out_base = get_basename(outfile);
 
+  meta_parameters *metaIn = meta_read(infile);
+  meta_parameters *metaOut = meta_read(infile);
+  int nl = metaIn->general->line_count;
+  int ns = metaIn->general->sample_count;
+
   asfPrintStatus("\n\nSmoothing image: %s -> %s.\n", in_base, out_base);
 
   // must have an odd kernel size
-  if (kernel_size%2 == 0) ++kernel_size;
-  int half = (kernel_size-1)/2;
+  if (kernel_size <= 2) {
+    asfPrintError("Illegal kernel size, must be odd, and >= 3.\n");
+  }
+
+  if (kernel_size%2 == 0) {
+    --kernel_size;
+    asfPrintWarning("Kernel size needs to be odd, using %d.\n", kernel_size);
+  }
 
   asfPrintStatus("  Kernel size is %d pixels.\n", kernel_size);
+  int half = (kernel_size-1)/2;
 
   if (edge_strategy != EDGE_TRUNCATE)
     asfPrintError("Smooth: Unsupported edge strategy: %s (%d)\n",
@@ -123,12 +192,7 @@ int smooth(const char *infile, const char *outfile, int kernel_size,
 
   asfPrintStatus("  Edge strategy: %s\n", edge_strat_to_string(edge_strategy));
 
-  meta_parameters *metaIn = meta_read(infile);
-  meta_parameters *metaOut = meta_read(infile);
-  int nl = metaIn->general->line_count;
-  int ns = metaIn->general->sample_count;
-
-  float *inbuf= (float *) MALLOC (kernel_size*ns*sizeof(float));
+  float *inbuf= (float *) CALLOC ((kernel_size+1)*ns, sizeof(float));
   float *outbuf = (float *) MALLOC (ns*sizeof(float));
 
   char **band_name = extract_band_names(metaIn->general->bands,
@@ -157,15 +221,16 @@ int smooth(const char *infile, const char *outfile, int kernel_size,
       start_line += kk*nl; 
 
       if (ii==0) {
-        // read the window
-        get_float_lines(fpin, metaIn, start_line, n_lines, inbuf);
+        // read the window -- halfway full, starts midway up
+        // the rest of the window is full of zeros to start with
+        get_float_lines(fpin, metaIn, start_line, n_lines, inbuf + half*ns);
       }
       else {
-        // already read in most of these lines -- shift items in the buffer
-        for (jj = 0; jj < n_lines-1; ++jj)
+        // shift items in the buffer
+        for (jj = 0; jj < n_lines; ++jj)
           memcpy(inbuf + jj*ns, inbuf + (jj+1)*ns, ns*sizeof(float));
-        get_float_line(fpin, metaIn, start_line + n_lines - 1,
-                       inbuf + (n_lines-1)*ns);
+        // read the one new line
+        get_float_line(fpin, metaIn, start_line + n_lines, inbuf + n_lines*ns);
       }
 
       // apply the smoothing
