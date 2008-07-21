@@ -45,6 +45,8 @@ MAPREADY_MODULES = \
 	src/mosaic \
 	src/create_thumbs \
 	src/llh2ls \
+	src/smooth \
+	src/farcorr \
 	src/convert2vector \
 	src/diffmeta \
 	src/diffimage \

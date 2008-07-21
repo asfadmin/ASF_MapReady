@@ -157,8 +157,16 @@ main (int argc, char *argv[])
     asfPrintError("No kernel size specified!\n"
                   "Use the option '-kernel-size'.\n");
 
+  char *in_base = get_basename(inFile);
+  char *out_base = get_basename(outFile);
+
+  asfPrintStatus("Smoothing image: %s -> %s\n", in_base, out_base);
+
   smooth(inFile, outFile, kernel_size, EDGE_TRUNCATE);
   asfPrintStatus("Done.\n");
+
+  free(in_base);
+  free(out_base);
 
   return EXIT_SUCCESS;
 }

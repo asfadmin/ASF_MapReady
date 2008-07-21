@@ -106,10 +106,6 @@ int smooth(const char *infile, const char *outfile, int kernel_size,
   char *in_img = appendExt(infile, ".img");
   char *out_img = appendExt(outfile, ".img");
   char *out_meta_name = appendExt(outfile, ".meta");
-  char *in_base = get_basename(infile);
-  char *out_base = get_basename(outfile);
-
-  asfPrintStatus("\n\nSmoothing image: %s -> %s.\n", in_base, out_base);
 
   if (kernel_size<=2)
     asfPrintError("Kernel size must be odd and >= 3.\n");
@@ -203,8 +199,6 @@ int smooth(const char *infile, const char *outfile, int kernel_size,
   FREE(inbuf);
   FREE(outbuf);
 
-  free(in_base);
-  free(out_base);
   free(in_img);
   free(out_img);
   free(out_meta_name);

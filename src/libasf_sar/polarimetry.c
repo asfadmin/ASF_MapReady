@@ -1361,6 +1361,8 @@ void faraday_correct(const char *inFile, const char *outFile,
   rotMeta->general->band_count = 1;
   meta_write(rotMeta, rot_meta_name);
 
+  asfPrintStatus("Calculating per-pixel rotation angles...\n");
+
   // now loop through the lines/samples of the image, calculating
   // the faraday rotation angle
   int i,j;
@@ -1399,37 +1401,37 @@ void faraday_correct(const char *inFile, const char *outFile,
     }
     FCLOSE(fp);
     avg_omega /= (double)(nl*ns);
+    avg_omega *= D2R;
   }
   else {
     asfPrintStatus("Smoothing rotation angle image...\n");
-    smooth(rot_img_name, smoothed_img_name, 600, EDGE_TRUNCATE);
+    //smooth(rot_img_name, smoothed_img_name, 599, EDGE_TRUNCATE);
+    smooth(rot_img_name, smoothed_img_name, 29, EDGE_TRUNCATE);
   }
 
   // STEP 3: Calculate corrected values
-  asfPrintStatus("Calculating corrected values...\n");
+  if (save_intermediates)
+    asfPrintStatus("Calculating corrected values and residuals...\n");
+  else
+    asfPrintStatus("Calculating corrected values...\n");
 
   // final output metadata
   char *out_meta_name = appendExt(outFile, ".meta");
   meta_parameters *outMeta = meta_read(meta_name);
 
-  // anything to update?
+  // anything to update???
+
   // write out output metadata
   meta_write(outMeta, out_meta_name);
 
-  // metadata for the residuals file
-  char *res_meta_name = appendExt(residuals_img_name, ".meta");
-  meta_parameters *resMeta = meta_read(meta_name);
-
-  strcpy(resMeta->general->bands, "RESIDUALS");
-  resMeta->general->image_data_type = AMPLITUDE_IMAGE;
-  resMeta->general->band_count = 1;
-  meta_write(resMeta, res_meta_name);
-
-  // now the data files...
+  // Now the data files...
   fin = fopenImage(in_img_name, "rb");
   fout = fopenImage(out_img_name, "wb");
   qpd = qpd_new(fin, inMeta);
-
+  
+  // We'll either (1) pull the rotation angle from the smoothed image file,
+  // or (2) use the calculated average rotation angle.  If we're in case (1),
+  // open the smoothed rotation angle file.
   FILE *fprot = NULL;
   float *rotation_vals = NULL;
   if (!use_single_rotation_value) {
@@ -1449,9 +1451,19 @@ void faraday_correct(const char *inFile, const char *outFile,
   // residuals, if user has asked for them
   float *res = NULL;
   FILE *fpres = NULL;
+  meta_parameters *resMeta = NULL;
   if (save_intermediates) {
     res = MALLOC(sizeof(float)*ns);
     fpres = fopenImage(residuals_img_name, "wb");
+
+    // metadata for the residuals file
+    char *res_meta_name = appendExt(residuals_img_name, ".meta");
+    resMeta = meta_read(meta_name);
+
+    strcpy(resMeta->general->bands, "RESIDUALS");
+    resMeta->general->image_data_type = AMPLITUDE_IMAGE;
+    resMeta->general->band_count = 1;
+    meta_write(resMeta, res_meta_name);
   }
   
   // now iterate through the input image's pixels...
@@ -1467,12 +1479,13 @@ void faraday_correct(const char *inFile, const char *outFile,
       if (use_single_rotation_value)
         omega = avg_omega;
       else
-        omega = rotation_vals[j];
+        omega = D2R*rotation_vals[j];
       
       quadPolFloat *qpf = qpd->buf + j;
 
       // This is the "M" matrix
-      complexMatrix *m = complex_matrix_new22(qpf->hh, qpf->hv, qpf->vh, qpf->vv);
+      complexMatrix *m =
+          complex_matrix_new22(qpf->hh, qpf->hv, qpf->vh, qpf->vv);
 
       // rotate by the calculated faraday rotation angle
       // note that make_cpx_rotation_matrix actually makes a fully real matrix
@@ -1528,12 +1541,10 @@ void faraday_correct(const char *inFile, const char *outFile,
   if (save_intermediates)
     FCLOSE(fpres);
 
-  // STEP 4: Clean up!
+  // STEP 4: Clean up
   free(out_meta_name);
   free(rot_meta_name);
   FREE(buf);
-
-  if (fprot) fclose(fprot);
   FREE(rotation_vals);
 
   FREE(hh_amp);
@@ -1557,6 +1568,8 @@ void faraday_correct(const char *inFile, const char *outFile,
   meta_free(rotMeta);
   meta_free(inMeta);
   meta_free(outMeta);
+  if (resMeta)
+    meta_free(resMeta);
 
   free(in_img_name);
   free(rot_img_name);

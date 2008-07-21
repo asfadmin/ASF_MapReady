@@ -110,8 +110,8 @@ LDLIBS = \
 	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_ardop.a \
-	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/asf_meta.a \
