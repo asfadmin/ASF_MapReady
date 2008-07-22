@@ -72,7 +72,7 @@ static float filter(      /****************************************/
 
     int lower = x-half;
     if (lower < 0) lower = 0;
-    int wid = (upper-lower)+1;
+    int wid = upper-lower+1;
 
     int base = lower;
     for (i = 0; i < nl; i++)
@@ -178,10 +178,12 @@ int smooth(const char *infile, const char *outfile, int kernel_size,
       }
       else {
         // already read in most of these lines -- shift items in the buffer
-        for (jj = 0; jj < n_lines-1; ++jj)
-          memcpy(inbuf + jj*ns, inbuf + (jj+1)*ns, ns*sizeof(float));
-        get_float_line(fpin, metaIn, start_line + n_lines - 1,
-                       inbuf + (n_lines-1)*ns);
+        if (start_line > 0)
+          for (jj = 0; jj < n_lines; ++jj)
+            memcpy(inbuf + jj*ns, inbuf + (jj+1)*ns, ns*sizeof(float));
+        int new_line = start_line + n_lines - 1;
+        if (new_line < nl)
+          get_float_line(fpin, metaIn, new_line, inbuf + (n_lines-1)*ns);
       }
 
       // apply the smoothing
