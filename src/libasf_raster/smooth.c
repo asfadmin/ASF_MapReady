@@ -32,17 +32,21 @@ static float filter(      /****************************************/
 
     if (include_left) {
       for (i = 0; i < nl; i++) {
-        kersum -= inbuf[left];
+        if (inbuf[left]!=0) {
+          kersum -= inbuf[left];
+          --total;
+        }
         left += ns;
-        --total;
       }
     }
 
     if (include_right) {
       for (i = 0; i < nl; i++) {
-        kersum += inbuf[right];
+        if (inbuf[right]!=0) {
+          kersum += inbuf[right];
+          ++total;
+        }
         right += ns;
-        ++total;
       }
     }
 
@@ -60,15 +64,22 @@ static float filter(      /****************************************/
   else {
     float  kersum =0.0;                    /* sum of kernel       */
     int    half   =(nsk-1)/2,              /* half size kernel    */
-           base   =(x-half),               /* index into inbuf    */
            total  =0,                      /* valid kernel values */
            i, j;                           /* loop counters       */
 
+    int upper = x+half;
+    if (upper >= ns) upper = ns-1;
+
+    int lower = x-half;
+    if (lower < 0) lower = 0;
+    int wid = (upper-lower)+1;
+
+    int base = lower;
     for (i = 0; i < nl; i++)
     {
-      for (j = x-half; j <= x+half; j++)
+      for (j = lower; j <= upper; j++)
       {
-        if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns)
+        if (inbuf[base] != 0)
         {
           kersum += inbuf[base];
           total++;
@@ -77,7 +88,7 @@ static float filter(      /****************************************/
       }
 
       base += ns;
-      base -= nsk;
+      base -= wid;
     }
 
     if (total != 0)
@@ -133,7 +144,7 @@ int smooth(const char *infile, const char *outfile, int kernel_size,
   int nl = metaIn->general->line_count;
   int ns = metaIn->general->sample_count;
 
-  float *inbuf= (float *) MALLOC (kernel_size*ns*sizeof(float));
+  float *inbuf = (float *) MALLOC (kernel_size*ns*sizeof(float));
   float *outbuf = (float *) MALLOC (ns*sizeof(float));
 
   char **band_name = extract_band_names(metaIn->general->bands,

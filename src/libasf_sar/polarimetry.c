@@ -1328,6 +1328,43 @@ void removeImgAndMeta(const char *f)
     free(img_file);
 }
 
+static void do_append(const char *file, const char *append_file,
+                      const char *band_kludge)
+{
+  char *meta_name = appendExt(file, ".meta");
+  meta_parameters *meta = meta_read(meta_name);
+
+  // quick & dirty file append -- skip use of get_float_line(), etc
+  // since we just want this to be fast
+  FILE *rfp = fopenImage(append_file, "rb");
+  FILE *afp = fopenImage(file, "ab");
+
+  const int bufsiz = 262144; // 250k buffer
+  char buffer[bufsiz]; 
+  unsigned int amt;
+
+  do {
+    amt = fread(buffer, sizeof(char), bufsiz, rfp);
+    if (amt)
+      fwrite(buffer, sizeof(char), amt, afp);
+  }
+  while (amt == bufsiz);
+
+  FCLOSE(rfp);
+  FCLOSE(afp);
+
+  // now fix up the metadata of the input
+  meta_parameters *apmeta = meta_read(append_file);
+  strcat(meta->general->bands, ",");
+  strcat(meta->general->bands, apmeta->general->bands);
+  strcat(meta->general->bands, band_kludge);
+  meta->general->band_count += apmeta->general->band_count;
+  meta_free(apmeta);
+
+  meta_write(meta, meta_name);
+  meta_free(meta);
+}
+
 void faraday_correct(const char *inFile, const char *outFile,
                      int save_intermediates, int use_single_rotation_value)
 {
@@ -1346,22 +1383,36 @@ void faraday_correct(const char *inFile, const char *outFile,
   // STEP 1: Calculate the Faraday Rotation angle at each pixel
   //         and generate an output .img
   FILE *fin = fopenImage(in_img_name, "rb");
-  FILE *fout = fopenImage(rot_img_name, "wb");
-
   QuadPolData *qpd = qpd_new(fin, inMeta);
 
   float *buf = MALLOC(sizeof(float)*ns);
+  meta_parameters *rotMeta = NULL;
+  FILE *fout = NULL;
 
-  // faraday rotation metadata -- only has one band
-  char *rot_meta_name = appendExt(rot_img_name, ".meta");
-  meta_parameters *rotMeta = meta_read(meta_name);
+  // "save_rot_img" -- we can skip the faraday rotation debug image in the
+  // case where we don't want to save intermediates, and intend to use a
+  // single average value
+  int save_rot_img = save_intermediates || !use_single_rotation_value;
+  if (save_rot_img) {
+    // faraday rotation metadata -- only has one band
+    char *rot_meta_name = appendExt(rot_img_name, ".meta");
+    rotMeta = meta_read(meta_name);
 
-  strcpy(rotMeta->general->bands, "OMEGA");
-  rotMeta->general->image_data_type = AMPLITUDE_IMAGE;
-  rotMeta->general->band_count = 1;
-  meta_write(rotMeta, rot_meta_name);
+    strcpy(rotMeta->general->bands, "OMEGA");
+    rotMeta->general->image_data_type = AMPLITUDE_IMAGE;
+    rotMeta->general->band_count = 1;
+    meta_write(rotMeta, rot_meta_name);
+    free(rot_meta_name);
+
+    // open the rotation image
+    fout = fopenImage(rot_img_name, "wb");
+  }
 
   asfPrintStatus("Calculating per-pixel rotation angles...\n");
+
+  // calculate the average rotation angle, even if we are using the
+  // smoothed-image method, for informational purposes
+  double avg_omega = 0;
 
   // now loop through the lines/samples of the image, calculating
   // the faraday rotation angle
@@ -1370,43 +1421,37 @@ void faraday_correct(const char *inFile, const char *outFile,
     asfLineMeter(i,nl);
     qpd_get_line(qpd,i);
 
-    for (j=0; j<ns; ++j)
+    for (j=0; j<ns; ++j) {
       buf[j] = R2D * get_omega(qpd, i, j);
+      avg_omega += buf[j];
+    }
 
-    put_float_line(fout, rotMeta, i, buf);
+    if (save_rot_img)
+      put_float_line(fout, rotMeta, i, buf);
   }
 
   FCLOSE(fin);
   fin = NULL;
   
-  FCLOSE(fout);
-  fout = NULL;
+  if (fout) {
+    FCLOSE(fout);
+    fout = NULL;
+  }
+  assert(fout == NULL);
 
   qpd_free(qpd);
   qpd = NULL;
 
-  double avg_omega = -999;
+  avg_omega /= (float)(nl*ns);
+  asfPrintStatus("Average Faraday Rotation angle: %.2f degrees.\n", avg_omega);
+  avg_omega *= D2R;
 
-  // STEP 2: Smooth the Faraday rotation angle image, or calculate the 
-  //         average rotation angle for the entire image
-  if (use_single_rotation_value) {
-    avg_omega = 0;
-    asfPrintStatus("Calculating average rotation angle...\n");
-    FILE *fp = fopen(rot_img_name, "rb");
-    for (i=0; i<nl; ++i) {
-      asfLineMeter(i,nl);
-      get_float_line(fp, rotMeta, i, buf);
-      for (j=0; j<ns; ++j)
-        avg_omega += buf[j];
-    }
-    FCLOSE(fp);
-    avg_omega /= (double)(nl*ns);
-    avg_omega *= D2R;
-  }
-  else {
+  // STEP 2: Smooth the Faraday rotation angle image, if necessary
+  if (!use_single_rotation_value) {
     asfPrintStatus("Smoothing rotation angle image...\n");
-    //smooth(rot_img_name, smoothed_img_name, 599, EDGE_TRUNCATE);
-    smooth(rot_img_name, smoothed_img_name, 29, EDGE_TRUNCATE);
+    smooth(rot_img_name, smoothed_img_name, 599, EDGE_TRUNCATE);
+    //smooth(rot_img_name, smoothed_img_name, 29, EDGE_TRUNCATE);
+    //smooth(rot_img_name, smoothed_img_name, 5, EDGE_TRUNCATE);
   }
 
   // STEP 3: Calculate corrected values
@@ -1543,7 +1588,6 @@ void faraday_correct(const char *inFile, const char *outFile,
 
   // STEP 4: Clean up
   free(out_meta_name);
-  free(rot_meta_name);
   FREE(buf);
   FREE(rotation_vals);
 
@@ -1557,7 +1601,33 @@ void faraday_correct(const char *inFile, const char *outFile,
   FREE(vv_phase);
   FREE(res);
 
-  if (!save_intermediates) {
+  if (save_intermediates) {
+    // create a single image will all that the user might be interested in
+    // faraday rotation temp file metadata -- can have 1, 2 or 3 bands
+    // depending on what options have been selected:
+
+    // use_single_rotation_value     bands in frrot file
+    // -------------------------     -------------------
+    // 1. No                          OMEGA,OMEGA_SMOOTH,RESIDUALS
+    // 2. Yes                         OMEGA,RESIDUALS
+    asfPrintStatus("Consolidating intermediates in a single %d-band file...\n",
+                   use_single_rotation_value ? 2 : 3);
+
+    if (use_single_rotation_value) {
+      // concat the residuals file onto the omega file
+      do_append(rot_img_name, residuals_img_name, "");
+      removeImgAndMeta(residuals_img_name);
+    }
+    else {
+      // concat the smoothed image & the residuals file onto the omega file
+      do_append(rot_img_name, smoothed_img_name, "_SMOOTH");
+      removeImgAndMeta(smoothed_img_name);
+
+      do_append(rot_img_name, residuals_img_name, "");
+      removeImgAndMeta(residuals_img_name);
+    }
+  }
+  else { //if (!save_intermediates) {
     removeImgAndMeta(rot_img_name);
     if (!use_single_rotation_value)
       removeImgAndMeta(smoothed_img_name);
