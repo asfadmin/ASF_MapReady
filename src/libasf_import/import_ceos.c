@@ -1057,7 +1057,7 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
 		       char *bandExt, int band, int nBands, int nBandsOut, 
 		       radiometry_t radiometry, int complex_flag)
 {
-  char bandStr[512];
+  char bandStr[512], radiometryStr[20];
 
   if (nBands > 1)
     asfPrintStatus("   Input band: %s\n", bandExt);
@@ -1069,71 +1069,44 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
   }
   if (strcmp(meta->general->bands, "") != 0)
     strcat(meta->general->bands, ",");
+
+  if (radiometry == r_POWER)
+    sprintf(radiometryStr, "POWER-");
+  else if (radiometry == r_SIGMA)
+    sprintf(radiometryStr, "SIGMA-");
+  else if (radiometry == r_SIGMA_DB)
+    sprintf(radiometryStr, "SIGMA_DB-");
+  else if (radiometry == r_GAMMA)
+    sprintf(radiometryStr, "GAMMA-");
+  else if (radiometry == r_GAMMA_DB)
+    sprintf(radiometryStr, "GAMMA_DB-");
+  else if (radiometry == r_BETA)
+    sprintf(radiometryStr, "BETA-");
+  else if (radiometry == r_BETA_DB)
+    sprintf(radiometryStr, "BETA_DB-");
+  else if (complex_flag)
+    sprintf(radiometryStr, "COMPLEX-");
+  else
+    strcpy(radiometryStr, "");
+
   if (band==1 && (nBandsOut == nBands+1) && radiometry==r_AMP) {
     // This is the "-amp0" case
     sprintf(bandStr, "AMP");
   }
-  else if (radiometry == r_POWER) {
-    if (strlen(bandExt) == 0)
-      sprintf(bandStr, "POWER-%s", meta->sar->polarization);
-    else
-      sprintf(bandStr, "POWER-%s", bandExt);
-  }
-  else if (radiometry == r_SIGMA) {
-    if (strlen(bandExt) == 0)
-      sprintf(bandStr, "SIGMA-%s", meta->sar->polarization);
-    else
-      sprintf(bandStr, "SIGMA-%s", bandExt);
-  }
-  else if (radiometry == r_SIGMA_DB) {
-    if (strlen(bandExt) == 0)
-      sprintf(bandStr, "SIGMA_DB-%s", meta->sar->polarization);
-    else
-      sprintf(bandStr, "SIGMA_DB-%s", bandExt);
-  }
-  else if (radiometry == r_GAMMA) {
-    if (strlen(bandExt) == 0)
-      sprintf(bandStr, "GAMMA-%s", meta->sar->polarization);
-    else
-      sprintf(bandStr, "GAMMA-%s", bandExt);
-  }
-  else if (radiometry == r_GAMMA_DB) {
-    if (strlen(bandExt) == 0)
-      sprintf(bandStr, "GAMMA_DB-%s", meta->sar->polarization);
-    else
-      sprintf(bandStr, "GAMMA_DB-%s", bandExt);
-  }
-  else if (radiometry == r_BETA) {
-    if (strlen(bandExt) == 0)
-      sprintf(bandStr, "BETA-%s", meta->sar->polarization);
-    else
-      sprintf(bandStr, "BETA-%s", bandExt);
-  }
-  else if (radiometry == r_BETA_DB) {
-    if (strlen(bandExt) == 0)
-      sprintf(bandStr, "BETA_DB-%s", meta->sar->polarization);
-    else
-      sprintf(bandStr, "BETA_DB-%s", bandExt);
-  }
-  else if (complex_flag) {
-    if (strlen(bandExt) == 0)
-      sprintf(bandStr, "COMPLEX-%s", meta->sar->polarization);
-    else
-      sprintf(bandStr, "COMPLEX-%s", bandExt);
-  }
   else if (meta->general->image_data_type == COMPLEX_IMAGE)
   {
     if (strlen(bandExt) == 0)
-      sprintf(bandStr, "AMP-%s,PHASE-%s",
-        meta->sar->polarization, meta->sar->polarization);
+      sprintf(bandStr, "%sAMP-%s,%sPHASE-%s", radiometryStr, 
+	      meta->sar->polarization, radiometryStr, meta->sar->polarization);
     else
-      sprintf(bandStr, "AMP-%s,PHASE-%s", bandExt, bandExt);
+      sprintf(bandStr, "%sAMP-%s,%sPHASE-%s", radiometryStr, bandExt, 
+	      radiometryStr, bandExt);
   }
   else {
     if (strlen(bandExt) == 0)
-      sprintf(bandStr, "%s", meta->sar->polarization);
+      sprintf(bandStr, "%s%s", radiometryStr, meta->sar->polarization);
     else
-      sprintf(bandStr, "%s", bandExt);
+      sprintf(bandStr, "%s%s", radiometryStr, bandExt);
   }
   strcat(meta->general->bands, bandStr);
 }
@@ -1367,11 +1340,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   if (meta->sar) {
     assign_band_names(meta, outMetaName, bandExt, band, nBands, nBandsOut,
               radiometry, complex_flag);
-    if (radiometry >= r_SIGMA && radiometry <= r_BETA_DB) {
-      meta->general->data_type = REAL32;
-      meta->general->band_count = import_single_band ? 1 : band;
-    }
-    else if (complex_flag) {
+    if (complex_flag) {
       meta->general->data_type = COMPLEX_REAL32;
       meta->general->band_count = import_single_band ? 1 : band;
     }
@@ -1719,24 +1688,21 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
             fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
             if (multilook_flag) {
-              // put calibrated value in the real part, leave imaginary
-              // part 0, so the multilooking will work -- kludge
-              cpx_float_ml_buf[ll*ns + kk].real =
-                get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
-              cpx_float_ml_buf[ll*ns + kk].imag = 0;
+              cpx_float_ml_buf[ll*ns + kk].real = cpx.real;
+              cpx_float_ml_buf[ll*ns + kk].imag = cpx.imag;
             }
-            else
+            else {
               amp_float_buf[ll*ns + kk] =
                 get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
+              phase_float_buf[ll*ns + kk] =  atan2(cpx.imag, cpx.real);
+	    }
           }
           else if (complex_flag)
             cpxFloat_buf[ll*ns + kk] = cpx;
           else if (cpx.real != 0.0 || cpx.imag != 0.0) {
             if (multilook_flag) {
-              cpx_float_ml_buf[ll*ns + kk].real =
-                sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-              cpx_float_ml_buf[ll*ns + kk].imag =
-                atan2(cpx.imag, cpx.real);
+              cpx_float_ml_buf[ll*ns + kk].real = cpx.real;
+              cpx_float_ml_buf[ll*ns + kk].imag = cpx.imag;
             }
             else {
               amp_float_buf[ll*ns + kk] =
@@ -1752,37 +1718,23 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       
       // Multilook if requested
       if (multilook_flag) {
-        if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-          for (kk=0; kk<ns; kk++) {
-            cpx.real = cpx.imag = 0.0;
-            for (mm=0; mm<lc; mm++) {
-              cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
-              cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
-            }
-            cpx.real /= (float)lc;
-            cpx.imag /= (float)lc;
-            // for sigma-gamma, we no longer have actual complex values,
-            // we put the calibrated value in the real array
-            amp_float_buf[kk] = cpx.real; //sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-          }
-        }
-        else {
-          for (kk=0; kk<ns; kk++) {
-            cpx.real = cpx.imag = 0.0;
-            for (mm=0; mm<lc; mm++) {
-              cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
-              cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
-            }
-            cpx.real /= (float)lc;
-            cpx.imag /= (float)lc;
-            amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-            phase_float_buf[kk] = atan2(cpx.imag, cpx.real);
-          }
-        }
-      }
-      else if (radiometry < r_SIGMA) {
-        for (kk=0; kk<lc*ns; kk++)
-          amp_float_buf[kk] = sqrt(amp_float_buf[kk]);
+	for (kk=0; kk<ns; kk++) {
+	  cpx.real = cpx.imag = 0.0;
+	  for (mm=0; mm<lc; mm++) {
+	    cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
+	    cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
+	  }
+	  cpx.real /= (float)lc;
+	  cpx.imag /= (float)lc;
+          if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+            fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	    amp_float_buf[kk] =
+	      get_cal_dn(cal_param, ii+mm, kk, fValue, db_flag);
+	  }
+	  else
+	    amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	  phase_float_buf[kk] = atan2(cpx.imag, cpx.real);
+	}
       }
       
       // unless we are outputting as complex, we are actually outputting
@@ -1793,35 +1745,20 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       // exception2: for sigma, etc, output, don't have 2 bands per input
       int out_band;
 
-      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-        out_band = import_single_band ? 0 : band-1;
-      }
-      else {
-        out_band = import_single_band ? 0 : (band-1)*2;
-        if (amp0_flag && out_band > 0)
-          --out_band;
-      }
+      out_band = import_single_band ? 0 : (band-1)*2;
+      if (amp0_flag && out_band > 0)
+	--out_band;
 
       if (multilook_flag) {
-        if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-          put_band_float_line(fpOut, meta, out_band, out, amp_float_buf);
-          out++;
-        }
-        else {
-          put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
-          if (!(amp0_flag && out_band==0))
-            put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
-          out++;
-        }
+	put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
+	if (!(amp0_flag && out_band==0))
+	  put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
+	out++;
       }
       else {
         for (mm=0; mm<lc; mm++) {
           if (complex_flag)
             put_complexFloat_line(fpOut, meta, ii+mm, cpxFloat_buf+mm*ns);
-          else if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-            put_band_float_line(fpOut, meta, out_band, ii+mm,
-                                amp_float_buf+mm*ns);
-          }
           else {
             put_band_float_line(fpOut, meta, out_band+0, ii+mm,
                                 amp_float_buf+mm*ns);

@@ -173,7 +173,7 @@ typedef struct {
   char orbit_direction;      /* Ascending 'A', or descending 'D'.          */
   int frame;                 /* Frame for this image or -1 if inapplicable.*/
   int band_count;            /* Number of bands in image                   */
-  char bands[100];            // Band combination
+  char bands[512];            // Band combination
   int line_count;            /* Number of lines in image.                  */
   int sample_count;          /* Number of samples in image.                */
   int start_line;            /* First line relative to original image.     */
@@ -702,6 +702,9 @@ int get_band_float_line(FILE *file, meta_parameters *meta, int band_number,
                         int line_number_in_band, float *dest);
 int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
     int num_lines_to_get, float *dest);
+int get_band_float_lines(FILE *file, meta_parameters *meta, int band_number,
+			 int line_number_in_band, int num_lines_to_get, 
+			 float *dest);
 int get_double_line(FILE *file, meta_parameters *meta, int line_number,
     double *dest);
 int get_double_lines(FILE *file, meta_parameters *meta, int line_number,
