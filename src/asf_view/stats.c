@@ -120,10 +120,17 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
         //printf("Avg, StdDev: %f, %f\n", ii->stats.avg, ii->stats.stddev);
 
-        // Set the limits of the scaling - 2-sigma on either side of the mean
-        // These are globals, we will use them in the big image, too.
-        ii->stats.map_min = ii->stats.avg - 2*ii->stats.stddev;
-        ii->stats.map_max = ii->stats.avg + 2*ii->stats.stddev;
+        if (ii->stats.stddev > 0) {
+          // Set the limits of the scaling - 2-sigma on either side of the mean
+          // These are globals, we will use them in the big image, too.
+          ii->stats.map_min = ii->stats.avg - 2*ii->stats.stddev;
+          ii->stats.map_max = ii->stats.avg + 2*ii->stats.stddev;
+        }
+        else {
+          // degenerate case -- pixels all have the same value
+          ii->stats.map_min = ii->stats.avg - 1;
+          ii->stats.map_min = ii->stats.avg + 1;
+        }
 
         // Now actually scale the data, and convert to bytes.
         // Note that we need 3 values, one for each of the RGB channels.
@@ -337,16 +344,34 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         }
 
         ii->stats_r.stddev = sqrt(ii->stats_r.stddev / (double)n);
-        ii->stats_r.map_min = ii->stats_r.avg - 2*ii->stats_r.stddev;
-        ii->stats_r.map_max = ii->stats_r.avg + 2*ii->stats_r.stddev;
+        if (ii->stats_r.stddev > 0) {
+          ii->stats_r.map_min = ii->stats_r.avg - 2*ii->stats_r.stddev;
+          ii->stats_r.map_max = ii->stats_r.avg + 2*ii->stats_r.stddev;
+        }
+        else {
+          ii->stats_r.map_min = ii->stats_r.avg - 1;
+          ii->stats_r.map_max = ii->stats_r.avg + 1;
+        }
 
         ii->stats_g.stddev = sqrt(ii->stats_g.stddev / (double)n);
-        ii->stats_g.map_min = ii->stats_g.avg - 2*ii->stats_g.stddev;
-        ii->stats_g.map_max = ii->stats_g.avg + 2*ii->stats_g.stddev;
+        if (ii->stats_g.stddev > 0) {
+          ii->stats_g.map_min = ii->stats_g.avg - 2*ii->stats_g.stddev;
+          ii->stats_g.map_max = ii->stats_g.avg + 2*ii->stats_g.stddev;
+        }
+        else {
+          ii->stats_g.map_min = ii->stats_g.avg - 1;
+          ii->stats_g.map_max = ii->stats_g.avg + 1;
+        }
 
         ii->stats_b.stddev = sqrt(ii->stats_b.stddev / (double)n);
-        ii->stats_b.map_min = ii->stats_b.avg - 2*ii->stats_b.stddev;
-        ii->stats_b.map_max = ii->stats_b.avg + 2*ii->stats_b.stddev;
+        if (ii->stats_b.stddev > 0) {
+          ii->stats_b.map_min = ii->stats_b.avg - 2*ii->stats_b.stddev;
+          ii->stats_b.map_max = ii->stats_b.avg + 2*ii->stats_b.stddev;
+        }
+        else {
+          ii->stats_b.map_min = ii->stats_b.avg - 1;
+          ii->stats_b.map_max = ii->stats_b.avg + 1;
+        }
 
         // clear out the stats for the greyscale image - we'll just use
         // the histogram
