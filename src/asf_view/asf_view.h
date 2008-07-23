@@ -255,8 +255,6 @@ void clear_nb_callback(void);
 
 /* shape.c */
 void free_shapes();
-void add_delta_shapes(meta_parameters *meta);
-void add_global_coast(meta_parameters *meta);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

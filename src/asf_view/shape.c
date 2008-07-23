@@ -1,3 +1,12 @@
+#ifdef win32
+#define BYTE __byte
+#include "asf.h"
+#include "asf_meta.h"
+#undef BYTE
+#include <windows.h>
+#undef DIR_SEPARATOR
+#endif
+
 #include "asf_view.h"
 #include "shapefil.h"
 #include "asf_vector.h"
@@ -13,7 +22,7 @@ void free_shapes()
     for (i=0; i<num_shapes; ++i) {
       if (g_shapes[i]) {
         if (g_shapes[i]->num_meta_cols>0) {
-          if (i==0)
+          if (i==0) // meta_cols info is shared among the shapes
             FREE(g_shapes[i]->meta_cols);
           for (j=0;j<g_shapes[i]->num_meta_cols;++j)
             FREE(g_shapes[i]->meta_info[j]);
@@ -26,6 +35,28 @@ void free_shapes()
     }
     FREE(g_shapes);
   }
+}
+
+// This is a REALLY BASIC kml parser...
+static void add_kml(meta_parameters *meta, const char *kml_file)
+{
+  if (!meta_supports_meta_get_latLon(meta)) {
+    asfPrintStatus("No geolocation info - can't add kml file: %s\n", kml_file);
+    return;
+  }
+
+  asfPrintStatus("Adding: %s\n", kml_file);
+
+  if (!fileExists(kml_file)) {
+    asfPrintWarning("File not found: %s\n", kml_file);
+    return;
+  }
+
+  // free pre-existing loaded shapes
+  if (g_shapes)
+    free_shapes();
+
+  asfPrintError("Not implemented yet.\n");
 }
 
 static void add_generic_csv(meta_parameters *meta, const char *csv_file,
@@ -164,14 +195,6 @@ static void add_generic_csv(meta_parameters *meta, const char *csv_file,
   FCLOSE(ifp);
   FREE(data_column_info);
   // do not free meta_column_info -- pointed to by g_shape now
-}
-
-void add_delta_shapes(meta_parameters *meta)
-{
-  const char *file = "corner_reflectors.csv";
-  char *crf = find_in_share(file);
-  add_generic_csv(meta,crf,TRUE);
-  free(crf);
 }
 
 static void add_shapefile(meta_parameters *meta, char *inFile)
@@ -354,10 +377,184 @@ static void add_shapefile(meta_parameters *meta, char *inFile)
   close_shape(dbase, shape);
 }
 
-void add_global_coast(meta_parameters *meta)
+static void add_overlay_file(char *overlay_file)
 {
-  const char *file = "gshhs.shp";
-  char *gc = find_in_share(file);
-  add_shapefile(meta,gc);
-  free(gc);
+  char *ext = findExt(overlay_file);
+
+  if (ext) {
+    if (strcmp_case(ext, ".SHP") == 0) {
+      add_shapefile(curr->meta, overlay_file);
+      fill_big(curr);
+      return;
+    }
+    else if (strcmp_case(ext, ".CSV") == 0) {
+      add_generic_csv(curr->meta, overlay_file, FALSE);
+      fill_big(curr);
+      return;
+    }
+  }
+
+  // if we got here, must have failed to find a handler
+  message_box("Do not know how to handle the overlay file: %s", overlay_file);
+}
+
+//----------------------------------------------------------------------------
+// The rest of this file is the "open file" dialog crud
+//----------------------------------------------------------------------------
+
+#ifndef win32
+
+static GtkWidget *add_overlay_widget = NULL;
+
+// called when "cancel" clicked on the GtkFileChooser
+SIGNAL_CALLBACK void add_overlay_cancel_clicked()
+{
+    gtk_widget_hide(add_overlay_widget);
+}
+
+// called when "ok" clicked on the GtkFileChooser
+SIGNAL_CALLBACK void add_overlay_ok_clicked()
+{
+    GSList *files = gtk_file_chooser_get_filenames(
+        GTK_FILE_CHOOSER(add_overlay_widget));
+
+    gtk_widget_hide(add_overlay_widget);
+    if (files)
+    {
+        GSList *iter = files;
+
+        do {
+          gchar *s = (gchar *) iter->data;
+          add_overlay_file(s);
+          g_free(s);
+          iter =  iter->next;
+        }
+        while(iter);
+
+        g_slist_free(files);
+    }
+}
+
+SIGNAL_CALLBACK void add_overlay_widget_destroy()
+{
+    gtk_widget_destroy(add_overlay_widget);
+    add_overlay_widget = NULL;
+}
+
+// sets up the file chooser dialog
+static void create_file_chooser_dialog()
+{
+    GtkWidget *parent = get_widget_checked("ssv_main_window");
+
+    add_overlay_widget = gtk_file_chooser_dialog_new(
+        "Open Overlay File", GTK_WINDOW(parent),
+        GTK_FILE_CHOOSER_ACTION_OPEN,
+        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
+        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
+        NULL);
+
+    // we need to extract the buttons, so we can connect them to our
+    // button handlers, above
+    GtkHButtonBox *box =
+        (GtkHButtonBox*)(((GtkDialog*)add_overlay_widget)->action_area);
+    GList *buttons = box->button_box.box.children;
+
+    GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+    GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+    g_signal_connect((gpointer)cancel_btn, "clicked",
+        G_CALLBACK(add_overlay_cancel_clicked), NULL);
+    g_signal_connect((gpointer)ok_btn, "clicked",
+        G_CALLBACK(add_overlay_ok_clicked), NULL);
+    g_signal_connect(add_overlay_widget, "destroy",
+        G_CALLBACK(add_overlay_widget_destroy), NULL);
+    g_signal_connect(add_overlay_widget, "destroy_event",
+        G_CALLBACK(add_overlay_widget_destroy), NULL);
+    g_signal_connect(add_overlay_widget, "delete_event",
+        G_CALLBACK(add_overlay_widget_destroy), NULL);
+
+    // add the filters
+    GtkFileFilter *shp_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(shp_filt, "Shape Files (*.shp)");
+    gtk_file_filter_add_pattern(shp_filt, "*.shp");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(add_overlay_widget),shp_filt);
+
+    GtkFileFilter *csv_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(csv_filt, "Generic CSV Files (*.csv)");
+    gtk_file_filter_add_pattern(csv_filt, "*.csv");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(add_overlay_widget),csv_filt);
+
+    GtkFileFilter *all_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+    gtk_file_filter_add_pattern(all_filt, "*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(add_overlay_widget),all_filt);
+
+    // don't allow multi-select
+    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(add_overlay_widget),
+                                         FALSE);
+
+    // we need to make these modal -- if the user opens multiple "open"
+    // dialogs, we'll get confused on the callbacks
+    gtk_window_set_modal(GTK_WINDOW(add_overlay_widget), TRUE);
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(add_overlay_widget), TRUE);
+    gtk_dialog_set_default_response(GTK_DIALOG(add_overlay_widget),
+                                    GTK_RESPONSE_OK);
+}
+#endif
+
+SIGNAL_CALLBACK void on_add_overlay_button_clicked(GtkWidget *w)
+{
+    if (!meta_supports_meta_get_latLon(curr->meta)) {
+      message_box("Cannot add overlays to an image without "
+                  "geolocation information.");
+      return;
+    }
+
+#ifdef win32
+    OPENFILENAME of;
+    int retval;
+    char fname[1024];
+
+    fname[0] = '\0';
+
+    memset(&of, 0, sizeof(of));
+
+#ifdef OPENFILENAME_SIZE_VERSION_400
+    of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+#else
+    of.lStructSize = sizeof(of);
+#endif
+
+    of.hwndOwner = NULL;
+    of.lpstrFilter =
+        "Shape Files (*.shp)\0*.shp\0"
+        "Generic CSV Files (*.csv)\0*.csv\0"
+        "All Files\0*\0";
+    of.lpstrCustomFilter = NULL;
+    of.nFilterIndex = 1;
+    of.lpstrFile = fname;
+    of.nMaxFile = sizeof(fname);
+    of.lpstrFileTitle = NULL;
+    of.lpstrInitialDir = ".";
+    of.lpstrTitle = "Select File";
+    of.lpstrDefExt = NULL;
+    of.Flags = OFN_HIDEREADONLY | OFN_EXPLORER;
+
+    retval = GetOpenFileName(&of);
+
+    if (!retval) {
+        if (CommDlgExtendedError())
+            message_box("File dialog box error");
+        return;
+    }
+
+    add_overlay_file(fname);
+
+#else // #ifdef win32
+
+    if (!add_overlay_widget)
+        create_file_chooser_dialog();
+
+    gtk_widget_show(add_overlay_widget);
+#endif // #ifdef win32
 }
