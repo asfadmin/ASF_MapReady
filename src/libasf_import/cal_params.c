@@ -534,7 +534,7 @@ float get_cal_dn(cal_params *cal, int line, int sample, float inDn, int dbFlag)
 
     alos_cal_params *p = cal->alos;
 
-    scaledPower = pow(10, p->cf/10.0)*inDn*inDn*invIncAngle;
+    scaledPower = sqrt(pow(10, p->cf/10.0))*inDn*invIncAngle;
   }
   else
     // should never get here
