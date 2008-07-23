@@ -598,8 +598,9 @@ static double calc_alpha(gsl_complex z)
 {
   // alpha: acos(e[0]*conj(e[0])), e=eigenvector of coherence matrix
   double re = GSL_REAL(z);
-  double im = GSL_IMAG(z);
-  double alpha = acos(re*re + im*im);
+  //double im = GSL_IMAG(z);
+  //double alpha = acos(re*re + im*im);
+  double alpha = acos(re);
 
   // alpha should be 0-90
   if (alpha < 0 || alpha > 1.571) {
