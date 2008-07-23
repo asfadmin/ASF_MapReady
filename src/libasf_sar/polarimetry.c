@@ -402,7 +402,8 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
         complex_matrix_set(m,2,1,complex_mul(vc.C, v.B));
         complex_matrix_set(m,2,2,complex_mul(vc.C, v.C));
 
-        complex_matrix_scale(m,1./sqrt(2.0));
+        //complex_matrix_scale(m,1./sqrt(2.0));
+        complex_matrix_scale(m,0.5);
     }
 }
 

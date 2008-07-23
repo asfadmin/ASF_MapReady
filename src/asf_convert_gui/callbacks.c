@@ -610,7 +610,7 @@ void rgb_settings_changed()
 
             enable_widget("rb_all", FALSE);
             enable_widget("rb_rgb", FALSE);
-            enable_widget("rb_rgb_polar", FALSE);
+            enable_widget("rb_rgb_polar", TRUE);
         }
         else {
             int rgb_polar_checked = get_checked("rb_rgb_polar");
@@ -779,6 +779,17 @@ void polarimetry_settings_changed()
     gtk_widget_set_sensitive(polarimetry_tab_label, is_checked);
     gtk_widget_set_sensitive(vbox_polarimetry, is_checked);
 
+    if (is_checked) {
+      // when polarimetry is turned on, automatically select "SIGMA" and no db
+      GtkWidget *input_data_type_combobox =
+        get_widget_checked("input_data_type_combobox");
+      set_combo_box_item(input_data_type_combobox, INPUT_TYPE_SIGMA);
+      if (get_checked("checkbutton_db"))
+        set_checked("checkbutton_db", FALSE);
+
+      input_data_type_combobox_changed();
+    }
+
     rgb_settings_changed();
 }
 
@@ -930,6 +941,26 @@ void input_data_type_combobox_changed()
     GtkWidget *input_data_type_combobox =
         get_widget_checked("input_data_type_combobox");
     int data_type = get_combo_box_item(input_data_type_combobox);
+
+    // when doing polarimetry, force sigma/non-db, and disable widgets
+    GtkWidget *checkbutton_db =
+      get_widget_checked("checkbutton_db");
+    
+    if (get_checked("polarimetry_checkbutton")) {
+      // actually probably don't need to do these... handler for the
+      // polarimetry checkbutton will do this
+      if (data_type != INPUT_TYPE_SIGMA)
+        set_combo_box_item(input_data_type_combobox, INPUT_TYPE_SIGMA);
+      if (get_checked("checkbutton_db"))
+        set_checked("checkbutton_db", FALSE);
+
+      gtk_widget_set_sensitive(input_data_type_combobox, FALSE);
+      gtk_widget_set_sensitive(checkbutton_db, FALSE);
+    }
+    else {
+      gtk_widget_set_sensitive(input_data_type_combobox, TRUE);
+      gtk_widget_set_sensitive(checkbutton_db, TRUE);
+    }
 
     GtkWidget *ers2_gain_fix_checkbutton =
         get_widget_checked("ers2_gain_fix_checkbutton");

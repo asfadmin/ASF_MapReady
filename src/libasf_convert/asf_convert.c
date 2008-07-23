@@ -129,21 +129,17 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
       // Assign band names
       assign_band_names(meta, outMetaName, bandExt, band, nBands, nBandsOut,
             radiometry, complex_flag);
-      if (radiometry >= r_SIGMA && radiometry <= r_BETA_DB) {
-    meta->general->data_type = REAL32;
-    meta->general->band_count = import_single_band ? 1 : band;
-      }
-      else if (complex_flag) {
-    meta->general->data_type = COMPLEX_REAL32;
-    meta->general->band_count = import_single_band ? 1 : band;
+      if (complex_flag) {
+        meta->general->data_type = COMPLEX_REAL32;
+        meta->general->band_count = import_single_band ? 1 : band;
       }
       else if (data_type >= COMPLEX_BYTE) {
-    meta->general->data_type = REAL32;
-    meta->general->band_count = import_single_band ? 2 : band*2;
+        meta->general->data_type = REAL32;
+        meta->general->band_count = import_single_band ? 2 : band*2;
       }
       else {
-    meta->general->data_type = REAL32;
-    meta->general->band_count = import_single_band ? 1 : band;
+        meta->general->data_type = REAL32;
+        meta->general->band_count = import_single_band ? 1 : band;
       }
       meta_write(meta, outMetaName);
     }
@@ -266,13 +262,13 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
        strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
        meta->general->band_count < 8))
-    asfPrintError("Pauli decomposition requires complex quad-pol data\n");
+        asfPrintError("Pauli decomposition requires complex quad-pol data\n");
       // Sinclair decomposition ought to work on complex and detected
       // quad-pol data
       if (cfg->polarimetry->sinclair &&
       (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
        strcmp_case(meta->sar->polarization, "QUAD-POL") != 0))
-    asfPrintError("Sinclair decomposition requires quad-pol data\n");
+        asfPrintError("Sinclair decomposition requires quad-pol data\n");
     }
     else {
       asfPrintError("Polarimetry requires SAR data.\n");
@@ -1183,20 +1179,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     cfg->polarimetry->k_means_wishart_ext == 0 ? 0 : 1;
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
       cloude_pottier_nc + k_means_wishart + k_means_wishart_ext > 1)
-    asfPrintError("More than one polarimetric processing scheme selected."
-              "\nOnly one of these options may be selected at a time."
-              "\n");
+        asfPrintError("More than one polarimetric processing scheme selected."
+                      "\nOnly one of these options may be selected at a time."
+                      "\n");
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
       cloude_pottier_nc + k_means_wishart + k_means_wishart_ext < 1)
-    asfPrintError("No polarimetric processing scheme selected.\n");
-
-      if (strncmp_case(cfg->import->radiometry, "AMPLITUDE",9)!=0) {
-        asfPrintError("Polarimetric processing requires the import "
-                      "radiometry AMPLITUDE.\n");
-        // this isn't reached
-        asfPrintWarning("Changing radiometry to AMPLITUDE.\n");
-        strcpy(cfg->import->radiometry, "AMPLITUDE_IMAGE");
-      }
+        asfPrintError("No polarimetric processing scheme selected.\n");
     }
 
     // Check whether everything in the [Terrain correction] block is
