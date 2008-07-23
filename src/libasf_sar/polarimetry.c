@@ -596,11 +596,10 @@ static void dump_ea_hist(const char *base_filename,
 
 static double calc_alpha(gsl_complex z)
 {
-  // alpha: acos(e[0]*conj(e[0])), e=eigenvector of coherence matrix
+  // alpha: acos(e[0]), e=eigenvector of coherence matrix
   double re = GSL_REAL(z);
-  //double im = GSL_IMAG(z);
-  //double alpha = acos(re*re + im*im);
-  double alpha = acos(re);
+  // still not entirely clear why we have to put fabs() here
+  double alpha = acos(fabs(re));
 
   // alpha should be 0-90
   if (alpha < 0 || alpha > 1.571) {
@@ -988,27 +987,29 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                   }
               }
 
-              complexFloat c;
-              c = complex_new_gsl(gsl_matrix_complex_get(T,0,0)); 
-              coh11[j] = c.real;
-
-              c = complex_new_gsl(gsl_matrix_complex_get(T,1,1)); 
-              coh22[j] = c.real;
-
-              c = complex_new_gsl(gsl_matrix_complex_get(T,2,2)); 
-              coh33[j] = c.real;
-
-              c = complex_new_gsl(gsl_matrix_complex_get(T,0,1)); 
-              coh12_r[j] = c.real;
-              coh12_i[j] = c.imag;
-
-              c = complex_new_gsl(gsl_matrix_complex_get(T,0,2));
-              coh13_r[j] = c.real;
-              coh13_i[j] = c.imag;
-
-              c = complex_new_gsl(gsl_matrix_complex_get(T,1,2));
-              coh23_r[j] = c.real;
-              coh23_i[j] = c.imag;
+              if (debug_band >= 0) {
+                complexFloat c;
+                c = complex_new_gsl(gsl_matrix_complex_get(T,0,0)); 
+                coh11[j] = c.real;
+                
+                c = complex_new_gsl(gsl_matrix_complex_get(T,1,1)); 
+                coh22[j] = c.real;
+                
+                c = complex_new_gsl(gsl_matrix_complex_get(T,2,2)); 
+                coh33[j] = c.real;
+                
+                c = complex_new_gsl(gsl_matrix_complex_get(T,0,1)); 
+                coh12_r[j] = c.real;
+                coh12_i[j] = c.imag;
+                
+                c = complex_new_gsl(gsl_matrix_complex_get(T,0,2));
+                coh13_r[j] = c.real;
+                coh13_i[j] = c.imag;
+                
+                c = complex_new_gsl(gsl_matrix_complex_get(T,1,2));
+                coh23_r[j] = c.real;
+                coh23_i[j] = c.imag;
+              }
 
               gsl_eigen_hermv(T, eval, evec, ws);
               gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
