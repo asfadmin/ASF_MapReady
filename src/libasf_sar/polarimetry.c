@@ -9,8 +9,44 @@
 
 static int find_band(meta_parameters *meta, char *name, int *ok)
 {
+    char *rad_name = MALLOC(sizeof(char)*(strlen(name)+32));
+    const char *rad;
+    switch (meta->general->radiometry) {
+      case r_AMP:
+        rad = "";
+        break;
+      case r_SIGMA:
+        rad = "SIGMA-";
+        break;
+      case r_BETA:
+        rad = "BETA-";
+        break;
+      case r_GAMMA:
+        rad = "GAMMA-";
+        break;
+      case r_SIGMA_DB:
+        rad = "SIGMA_DB-";
+        break;
+      case r_BETA_DB:
+        rad = "BETA_DB-";
+        break;
+      case r_GAMMA_DB:
+        rad = "GAMMA_DB-";
+        break;
+      case r_POWER:
+        rad = "POWER-";
+        break;
+      default:
+        asfPrintWarning("Unexpected radiometry: %d\n",
+                        meta->general->radiometry);
+        rad = "";
+        break;
+    }
+
+    sprintf(rad_name, "%s%s", rad, name);
+
     int band_num = get_band_number(meta->general->bands,
-                                   meta->general->band_count, name);
+                                   meta->general->band_count, rad_name);
 
     if (band_num < 0) {
         asfPrintStatus("Band '%s' not found.\n", name);
@@ -1290,13 +1326,14 @@ static double get_omega(QuadPolData *qpd, int line, int samp)
   complexMatrix *z = complex_matrix_mul3(qpd->r,m,qpd->r);
 
   // omega = 1/4 arg(z12 * conj(z21))
-  // keep adding the omega values up, average at the end
-  //float omega = 0.25 * (float)complex_arg(
-  //                    complex_mul(complex_matrix_get(z,0,1),
-  //                               complex_conj(complex_matrix_get(z,1,0))));
   float omega = 0.25 * (float)complex_arg(
-                         complex_mul(complex_matrix_get(z,1,0),
-                                     complex_conj(complex_matrix_get(z,0,1))));
+                      complex_mul(complex_matrix_get(z,0,1),
+                                 complex_conj(complex_matrix_get(z,1,0))));
+
+  // omega = 1/4 arg(z21 * conj(z12))
+  //float omega = 0.25 * (float)complex_arg(
+  //                     complex_mul(complex_matrix_get(z,1,0),
+  //                                complex_conj(complex_matrix_get(z,0,1))));
 
   complex_matrix_free(z);
   complex_matrix_free(m);
@@ -1372,7 +1409,7 @@ void faraday_correct(const char *inFile, const char *outFile,
   meta_parameters *inMeta = meta_read(meta_name);
 
   char *in_img_name = appendExt(inFile, ".img");
-  char *rot_img_name = appendToBasename(in_img_name, "_rot");
+  char *rot_img_name = appendToBasename(in_img_name, "_farrot");
   char *smoothed_img_name = appendToBasename(in_img_name, "_smooth");
   char *residuals_img_name = appendToBasename(in_img_name, "_residuals");
   char *out_img_name = appendExt(outFile, ".img");
