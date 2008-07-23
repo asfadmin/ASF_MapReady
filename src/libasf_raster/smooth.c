@@ -179,7 +179,7 @@ int smooth(const char *infile, const char *outfile, int kernel_size,
       else {
         // already read in most of these lines -- shift items in the buffer
         if (start_line > 0)
-          for (jj = 0; jj < n_lines; ++jj)
+          for (jj = 0; jj < n_lines-1; ++jj)
             memcpy(inbuf + jj*ns, inbuf + (jj+1)*ns, ns*sizeof(float));
         int new_line = start_line + n_lines - 1;
         if (new_line < nl)
