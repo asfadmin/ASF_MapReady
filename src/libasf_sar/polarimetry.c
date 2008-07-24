@@ -409,6 +409,40 @@ static void dump_ea_hist(const char *base_filename,
   free(filename);
 }
 
+static void dump_class_map(const char *base_filename,
+                           int class_map[hist_size][hist_size])
+{
+  char *filename = appendToBasename(base_filename, "_class_map");
+  int size=hist_size;
+
+  meta_parameters *m = raw_init();
+  m->general->line_count = size;
+  m->general->sample_count = size;
+  m->general->data_type = INTEGER16;
+  strcpy(m->general->basename, filename);
+
+  char *meta_file = appendExt(filename, ".meta");
+  char *img_file = appendExt(filename, ".img");
+  meta_write(m, meta_file);
+
+  FILE *fp = fopenImage(img_file, "wb");
+
+  int i,j;
+  float *buf = MALLOC(sizeof(float)*size);
+
+  for (i=0; i<size; ++i) {
+    for (j=0; j<size; ++j)
+      buf[j] = class_map[i][j];
+    put_float_line(fp,m,i,buf);
+  }
+  fclose(fp);
+  meta_free(m);
+
+  free(meta_file);
+  free(img_file);
+  free(filename);
+}
+
 static double calc_alpha(gsl_complex z)
 {
   // alpha: acos(e[0]), e=eigenvector of coherence matrix
@@ -851,14 +885,24 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                   (meta_is_valid_double(P2l3) ? -P2*P2l3 : 0) +
                   (meta_is_valid_double(P3l3) ? -P3*P3l3 : 0);
 
+              // mathematically, entropy is limited to be between 0 and 1.
+              // however it sometimes is just a bit out of that range due
+              // to numerical anomalies
+              if (!meta_is_valid_double(entropy[j]))
+                entropy[j] = 0.0;
+              else if (entropy[j] < 0)
+                entropy[j] = 0.0;
+              else if (entropy[j] > 1)
+                entropy[j] = 1.0;
+
               if (e2+e3 != 0)
                 anisotropy[j] = (e2-e3)/(e2+e3);
               else
                 anisotropy[j] = 0;
 
-              // mathematically, anisotropy is limited to be between 0 and 1.
-              // however, it sometimes sneaks out of that range because of
-              // numerical anomalies (usually, one really big eigenvalue)
+              // as for entropy, anisotropy is limited to be between 0 and 1.
+              // guard against numerical anomalies (usually this is due to
+              // one really big eigenvalue)
               if (!meta_is_valid_double(anisotropy[j]))
                 anisotropy[j] = 0.0;
               else if (anisotropy[j] < 0)
@@ -941,8 +985,55 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0 || 
       class_band >= 0)
   {
+    if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0)
+      asfPrintStatus("Dumping population histogram...\n");
+    else
+      asfPrintStatus("Dumping population histogram and "
+                     "classification map...\n");
+
     // dump population graph
     dump_ea_hist(outFile, ea_hist);
+
+    // dump classified pop graph
+    if (class_band >= 0) {
+      for (i=0; i<hist_size; ++i) {
+        for (j=0; j<hist_size; ++j) {
+          int count = ea_hist[i][j];
+          if (count > 0) {
+            double entropy = (double)j/(double)hist_size;
+            double alpha = (double)(hist_size-1-i)/(double)hist_size * 90;
+            ea_hist[i][j] = classify(classifier, entropy, 0, alpha);
+          }
+        }
+      }
+      int prev = -1;
+      for (i=0; i<hist_size; ++i) {
+        for (j=0; j<hist_size; ++j) {
+          double entropy = (double)j/(double)hist_size;
+          double alpha = (double)(hist_size-1-i)/(double)hist_size * 90;
+          int curr = classify(classifier, entropy, 0, alpha);
+          if (i>0 && j>0) {
+            if (prev != curr)
+              ea_hist[i][j] = 255;
+          }
+          prev = curr;
+        }
+      }
+      prev = -1;
+      for (j=0; j<hist_size; ++j) {
+        for (i=0; i<hist_size; ++i) {
+          double entropy = (double)j/(double)hist_size;
+          double alpha = (double)(hist_size-1-i)/(double)hist_size * 90;
+          int curr = classify(classifier, entropy, 0, alpha);
+          if (i>0 && j>0) {
+            if (prev != curr)
+              ea_hist[i][j] = 255;
+          }
+          prev = curr;
+        }
+      }
+    }
+    dump_class_map(outFile, ea_hist);
   }
 
   gsl_vector_free(eval);
