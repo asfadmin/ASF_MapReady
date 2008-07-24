@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
   int sizeFlag=0;
   int scaleFlag=0;
   int saveMetadataFlag=0;
+  int out_dir_Specified=0;
   int nPatches, nPatchesFlag=0; // Secret command line parameter for limiting num patches processed for Level 0
   float scale_factor=-1.0;
   int browseFlag=0;
@@ -108,6 +109,7 @@ int main(int argc, char *argv[])
     }
     else if (strmatches(key,"-out-dir","--out-dir","--output-dir",
                             "-output-dir","-o",NULL)) {
+        out_dir_Specified = 1;
         CHECK_ARG(1);
         char tmp[1024];
         strcpy(tmp,GET_ARG(1));
@@ -211,17 +213,18 @@ int main(int argc, char *argv[])
       exit(1);
   }
 
-  // FIXME: Remove this if-statement after CEOS format is supported
-//  if (L0Flag == ceos) {
-//      fprintf(stderr,"** Level 0 files in CEOS format are not currently supported (only STF).\n");
-//      exit(1);
-//  }
-
   if (!quietflag) {
       asfSplashScreen(argc, argv);
   }
 
-  if (out_dir && !quietflag) asfPrintStatus("Output directory is: %s\n", out_dir);
+  if (!out_dir || !out_dir_Specified) {
+      out_dir = (char *)MALLOC(2 * sizeof(char));
+      strcpy(out_dir, ".");
+  }
+  if (out_dir && !quietflag) {
+      asfPrintStatus("Output directory is: %s\n",
+                     (out_dir_Specified) ? out_dir : "(Current directory)");
+  }
 
   int i;
   if (currArg >= argc) {
