@@ -38,19 +38,23 @@ char *spaces(int n);
 int strmatches(const char *key, ...);
 void process(const char *what, int top, int recursive, int size, int verbose,
              level_0_flag L0Flag, float scale_factor, int browseFlag,
+             int saveMetadataFlag, int nPatchesFlag, int nPatches,
              output_format_t output_format, char *out_dir);
 void process_dir(const char *dir, int top, int recursive, int size, int verbose,
                  level_0_flag L0Flag, float scale_factor, int browseFlag,
+                 int saveMetadataFlag, int nPatchesFlag, int nPatches,
                  output_format_t output_format, char *out_dir);
 void process_file(const char *file, int level, int size, int verbose,
                   level_0_flag L0Flag, float scale_factor, int browseFlag,
+                  int saveMetadataFlag, int nPatchesFlag, int nPatches,
                   output_format_t output_format, char *out_dir);
 meta_parameters * silent_meta_create(const char *filename);
 int generate_ceos_thumbnail(const char *input_data, int size,
                             output_format_t output_format, char *out_dir,
-                            double scale_factor, int browse_flag);
+                            int saveMetadataFlag, double scale_factor, int browse_flag);
 void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_flag L0Flag,
-                               double scale_factor, int browseFlag,
+                               double scale_factor, int browseFlag, int saveMetadataFlag,
+                               int nPatchesFlag, int nPatches,
                                output_format_t output_format, char *out_dir);
 int is_stf_level0(const char *file);
 int is_ceos_level0(const char *file);
@@ -65,6 +69,8 @@ int main(int argc, char *argv[])
   char *out_dir = NULL;
   int sizeFlag=0;
   int scaleFlag=0;
+  int saveMetadataFlag=0;
+  int nPatches, nPatchesFlag=0; // Secret command line parameter for limiting num patches processed for Level 0
   float scale_factor=-1.0;
   int browseFlag=0;
 
@@ -160,6 +166,20 @@ int main(int argc, char *argv[])
     else if (strmatches(key,"--browse","-browse","-b",NULL)) {
         browseFlag=TRUE;
     }
+    else if (strmatches(key,"--save-metadata","-save-metadata","-sm",NULL)) {
+        saveMetadataFlag=TRUE;
+    }
+    else if (strmatches(key,"--patches","-patches","-p",NULL)) {
+        CHECK_ARG(1);
+        nPatchesFlag=TRUE;
+        nPatches = atoi(GET_ARG(1));
+        if (nPatches < 1.0) {
+            fprintf(stderr,"\n**Invalid number of patches for -patches option."
+                    "  Number of patches must be 1.0 or greater.\n");
+            if (!quietflag) usage();
+            exit(1);
+        }
+    }
     else if (strmatches(key,"--",NULL)) {
         break;
     }
@@ -184,6 +204,12 @@ int main(int argc, char *argv[])
   }
   if (scaleFlag) size = 0;
   if (sizeFlag)  scale_factor = -1.0;
+  if (L0Flag == not_L0 && nPatchesFlag) {
+      fprintf(stderr, "**Invalid option.  You cannot use the -patches flag without also using\n"
+              "the -L0 flag\n");
+      if (!quietflag) usage();
+      exit(1);
+  }
 
   // FIXME: Remove this if-statement after CEOS format is supported
 //  if (L0Flag == ceos) {
@@ -205,7 +231,8 @@ int main(int argc, char *argv[])
   }
   for (i=currArg; i<argc; ++i) {
       process(argv[i], 0, recursive, size, verbose,
-              L0Flag, scale_factor, browseFlag,
+              L0Flag, scale_factor, browseFlag, saveMetadataFlag,
+              nPatchesFlag, nPatches,
               output_format, out_dir);
   }
 
@@ -246,6 +273,7 @@ int strmatches(const char *key, ...)
 
 void process_dir(const char *dir, int top, int recursive, int size, int verbose,
                  level_0_flag L0Flag, float scale_factor, int browseFlag,
+                 int saveMetadataFlag, int nPatchesFlag, int nPatches,
                  output_format_t output_format, char *out_dir)
 {
     char name[1024];
@@ -269,6 +297,7 @@ void process_dir(const char *dir, int top, int recursive, int size, int verbose,
             sprintf(name, "%s%c%s", dir, DIR_SEPARATOR, dp->d_name);
             process(name, top, recursive, size, verbose,
                     L0Flag, scale_factor, browseFlag,
+                    saveMetadataFlag, nPatchesFlag, nPatches,
                     output_format, out_dir);
         }
     }
@@ -288,7 +317,7 @@ meta_parameters * silent_meta_create(const char *filename)
 
 int generate_ceos_thumbnail(const char *input_data, int size,
                             output_format_t output_format, char *out_dir,
-                            double scale_factor, int browseFlag)
+                            int saveMetadataFlag, double scale_factor, int browseFlag)
 {
     FloatImage *img;
     char **inBandName = NULL, **inMetaName = NULL;
@@ -484,6 +513,35 @@ int generate_ceos_thumbnail(const char *input_data, int size,
             float_image_export_as_jpeg(img, out_file, size, NAN);
             break;
     }
+    if (saveMetadataFlag) {
+        // Copy metadata file to output directory
+        char tmp[1024], *outMetaBase, *outMeta, tmp_folder[1024];
+        time_t t;
+        char t_stamp[32];
+        char cmd[1024];
+
+        t = time(NULL);
+        strftime(t_stamp, 22, "%d%b%Y-%Hh_%Mm_%Ss", localtime(&t));
+        outMetaBase = get_basename(inMetaName[0]);
+        outMeta = appendExt(outMetaBase, ".meta");
+        sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s_%s", outMetaBase, t_stamp);
+        if (!is_dir(tmp_folder)) {
+            mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
+        }
+        else {
+        // Should never reach here
+            asfPrintError("Temporary folder already exists:\n    %s\n",
+                          tmp_folder);
+        }
+        sprintf(tmp,"%s%c%s", tmp_folder, DIR_SEPARATOR, outMeta);
+        FREE(outMeta);
+        FREE(outMetaBase);
+        meta_write(imd, tmp);
+        sprintf(cmd, "cp -f %s %s", tmp, out_dir);
+        asfSystem(cmd);
+        sprintf(cmd, "rm -rf %s", tmp_folder);
+        asfSystem(cmd);
+    }
 
     meta_free(imd);
     FREE(thumb_file);
@@ -495,6 +553,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 
 void process_file(const char *file, int level, int size, int verbose,
                   level_0_flag L0Flag, float scale_factor, int browseFlag,
+                  int saveMetadataFlag, int nPatchesFlag, int nPatches,
                   output_format_t output_format, char *out_dir)
 {
     char *base = get_filename(file);
@@ -507,6 +566,7 @@ void process_file(const char *file, int level, int size, int verbose,
             if (strcmp(file, inDataName) == 0) {
                 asfPrintStatus("%s%s\n", spaces(level), base);
                 generate_level0_thumbnail(inDataName, size, verbose, L0Flag, scale_factor, browseFlag,
+                                          saveMetadataFlag, nPatchesFlag, nPatches,
                                           output_format, out_dir);
             }
         }
@@ -524,17 +584,19 @@ void process_file(const char *file, int level, int size, int verbose,
         if (data_ext == CEOS_RAW || data_ext == CEOS_raw) {
             asfPrintStatus("%s%s\n", spaces(level), base);
             generate_level0_thumbnail(*dataName, size, verbose, L0Flag, scale_factor, browseFlag,
+                                      saveMetadataFlag, nPatchesFlag, nPatches,
                                       output_format, out_dir);
         }
     }
     else
       generate_ceos_thumbnail(file, size, output_format, out_dir,
-                                scale_factor, browseFlag);
+                              saveMetadataFlag, scale_factor, browseFlag);
     FREE(base);
 }
 
 void process(const char *what, int level, int recursive, int size, int verbose,
              level_0_flag L0Flag, float scale_factor, int browseFlag,
+             int saveMetadataFlag, int nPatchesFlag, int nPatches,
              output_format_t output_format, char *out_dir)
 {
     struct stat stbuf;
@@ -544,8 +606,8 @@ void process(const char *what, int level, int recursive, int size, int verbose,
       char **inBandName = NULL, **inMetaName = NULL;
       int nBands, trailer;
       if (!require_ceos_pair(what, &inBandName, &inMetaName, &nBands, &trailer)) {
-    asfPrintStatus("Cannot access: %s\n", what);
-    return;
+          asfPrintStatus("Cannot access: %s\n", what);
+          return;
       }
     }
 
@@ -556,6 +618,7 @@ void process(const char *what, int level, int recursive, int size, int verbose,
             asfPrintStatus("%s%s/\n", spaces(level), base);
             process_dir(what, level+1, recursive, size, verbose,
                         L0Flag, scale_factor, browseFlag,
+                        saveMetadataFlag, nPatchesFlag, nPatches,
                         output_format, out_dir);
         }
         else {
@@ -567,6 +630,7 @@ void process(const char *what, int level, int recursive, int size, int verbose,
     else {
         process_file(what, level, size, verbose,
                      L0Flag, scale_factor, browseFlag,
+                     saveMetadataFlag, nPatchesFlag, nPatches,
                      output_format, out_dir);
     }
 
@@ -574,7 +638,8 @@ void process(const char *what, int level, int recursive, int size, int verbose,
 }
 
 void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_flag L0Flag,
-                               double scale_factor, int browseFlag,
+                               double scale_factor, int browseFlag, int saveMetadataFlag,
+                               int nPatchesFlag, int nPatches,
                                output_format_t output_format, char *out_dir)
 {
     char in_file[1024], out_file[1024], del_files[1024];
@@ -589,21 +654,24 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s_%s", get_basename(file), t_stamp);
     if (!is_dir(tmp_folder)) {
         mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
+        if (!is_dir(tmp_folder)) {
+            asfPrintError("Cannot make temporary directory:\n    %s\n", tmp_folder);
+        }
     }
     else {
         // Should never reach here
         asfPrintError("Temporary folder already exists:\n    %s\n",
                       tmp_folder);
     }
-    //strcpy(tmp, "create_thumbs_tmp_file_XXXXXX");
-    //int fd = mkstemp(tmp);
-    //if (fd < 0) {
-        //close(fd);
-        //asfPrintError("Cannot create filename for temporary file(s)\n");
-    //}
-    //else {
-      //close(fd);
-    //}
+
+    // Set up the output directory
+    if (out_dir && strlen(out_dir) && !is_dir(out_dir)) {
+        mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+        if (!is_dir(out_dir)) {
+            asfPrintError("Cannot make output directory:\n    %s\n", out_dir);
+        }
+    }
+
     // Remove temporary file if it exists and grab basename to be processed
     sprintf(del_files, "rm -f %s", tmp);
     asfSystem(del_files);
@@ -645,6 +713,14 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)inDataName,  /* input basename         */
                        out_file);           /* output basename        */
+            if (saveMetadataFlag) {
+                char *out_base = get_basename(out_file);
+                char cmd[1024];
+
+                sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+                asfSystem(cmd);
+                FREE(out_base);
+            }
         }
         else {
             remove_dir(tmp_folder);
@@ -695,6 +771,14 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)*dataName,   /* input basename         */
                        out_file);           /* output basename        */
+            if (saveMetadataFlag) {
+                char *out_base = get_basename(out_file);
+                char cmd[1024];
+
+                sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+                asfSystem(cmd);
+                FREE(out_base);
+            }
         }
         else {
             remove_dir(tmp_folder);
@@ -715,18 +799,23 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     // populates in/out filenames, sets status and CALPRMS to blank and "NO" respectively, and all
     // else to NULL.  See ardop() for code that reads the .in file.
     params_in = get_input_ardop_params_struct(in_file, out_file);
-// Un-comment out the following line to limit ardop() to the processing of only 1 patch (for speed
-// while debugging level 0 products)
-//#define DEBUG_L0
-#ifdef DEBUG_L0
-    params_in->npatches = (int*)MALLOC(sizeof(int));
-    *params_in->npatches = 1;
-#endif
+    if (nPatchesFlag) {
+        params_in->npatches = (int*)MALLOC(sizeof(int));
+        *params_in->npatches = nPatches;
+    }
     ardop(params_in); // ARDOP
-#ifdef DEBUG_L0
-    FREE(params_in->npatches);
-#endif
+    if (nPatchesFlag) {
+        FREE(params_in->npatches);
+    }
     FREE(params_in);
+    if (saveMetadataFlag) {
+        char *out_base = get_basename(out_file);
+        char cmd[1024];
+
+        sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+        asfSystem(cmd);
+        FREE(out_base);
+    }
 
     // Get rid of temporary files that were input to the last step
     sprintf(del_files, "rm -f %s*", in_file);
@@ -740,6 +829,14 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             tmp_basename, get_basename(file));
     asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
     sr2gr(in_file, out_file);
+    if (saveMetadataFlag) {
+        char *out_base = get_basename(out_file);
+        char cmd[1024];
+
+        sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+        asfSystem(cmd);
+        FREE(out_base);
+    }
 
     // Get rid of temporary files that were input to the last step
     sprintf(del_files, "rm -f %s* %s* %s%c*.in", in_file, del_files2, tmp_folder, DIR_SEPARATOR);
@@ -767,6 +864,14 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     char *band_name[1] = {MAGIC_UNSET_STRING};
     asfPrintStatus("Resampling from\n    %s\n      to\n    %s\n", in_file, out_file);
     resample(in_file, out_file, xsf, ysf);
+    if (saveMetadataFlag) {
+        char *out_base = get_basename(out_file);
+        char cmd[1024];
+
+        sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+        asfSystem(cmd);
+        FREE(out_base);
+    }
 
     // Get rid of temporary files that wer input to the last step
     sprintf(del_files, "rm -f %s*", in_file);
@@ -778,6 +883,14 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             tmp_basename, get_basename(file));
     asfPrintStatus("Flipping to north-up orientation from\n    %s\n      to\n    %s\n", in_file, out_file);
     flip_to_north_up(in_file, out_file);
+    if (saveMetadataFlag) {
+        char *out_base = get_basename(out_file);
+        char cmd[1024];
+
+        sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+        asfSystem(cmd);
+        FREE(out_base);
+    }
 
     // Get rid of temporary file that was input to the last step
     sprintf(del_files, "rm -f %s.*", in_file);
@@ -794,8 +907,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     if (out_dir && strlen(out_dir)) {
         sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR,
                 out_file);
+        mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
         if (!is_dir(out_dir)) {
-            mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+            asfPrintError("Cannot make output directory:\n    %s\n", out_dir);
         }
     }
     else {

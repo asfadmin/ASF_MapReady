@@ -28,7 +28,7 @@
         TOOL_NAME" [-log <logfile>] [-quiet] [-verbose] [-size <size>]\n"\
 "                 [-recursive] [-out-dir <dir>]\n"\
 "                 [-L0 <stf|ceos>] [-output-format <tiff|jpeg>]\n"\
-"                 [-scale <scale_factor>] [-browse] [-help]\n"\
+"                 [-scale <scale_factor>] [-browse] [-save-metadata] [-help]\n"\
 "                 <files>"
 
 // TOOL_DESCRIPTION is required
@@ -117,6 +117,10 @@
 "          For browse images that should be named <basename>.ext rather\n"\
 "          than <basename>_thumb.ext.  This option prevends '_thumb' from\n"\
 "          being appended to the output basename.\n"\
+"\n"\
+"     -save-metadata\n"\
+"          Results in all metadata files (intermediate and final) to be saved\n"\
+"          in the output directory.\n"\
 "\n"\
 "     -help\n"\
 "          Print a help page and exit."
