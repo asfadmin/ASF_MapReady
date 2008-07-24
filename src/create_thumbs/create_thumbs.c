@@ -645,6 +645,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     char in_file[1024], out_file[1024], del_files[1024];
     char export_path[2048], tmp_basename[1024], tmp_folder[256];
     struct INPUT_ARDOP_PARAMS *params_in;
+    char *band_name[1];
 
     char tmp[1024];
     time_t t;
@@ -713,14 +714,26 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)inDataName,  /* input basename         */
                        out_file);           /* output basename        */
-            if (saveMetadataFlag) {
-                char *out_base = get_basename(out_file);
-                char cmd[1024];
-
-                sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
-                asfSystem(cmd);
-                FREE(out_base);
+            char *out_meta = appendExt(out_file, ".meta");
+            meta_parameters *md = meta_read(out_meta);
+            if (md->general->band_count != 1) {
+                asfPrintError("Bad band count (%d).  Should be one band.\n",
+                              md->general->band_count);
             }
+            if (strncmp(md->general->bands, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0) {
+                asfPrintError("Bad Level 0 STF import ...band name list is unpopulated\n");
+            }
+            band_name[0] = (char *)MALLOC(strlen(md->general->bands) * sizeof(char));
+            strcpy(band_name[0], md->general->bands);
+            meta_free(md);
+            if (saveMetadataFlag) {
+                char cmd[1024];
+                char *out_base = appendExt(out_meta, "");
+
+                sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
+                asfSystem(cmd);
+            }
+            FREE(out_meta);
         }
         else {
             remove_dir(tmp_folder);
@@ -771,14 +784,26 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)*dataName,   /* input basename         */
                        out_file);           /* output basename        */
-            if (saveMetadataFlag) {
-                char *out_base = get_basename(out_file);
-                char cmd[1024];
-
-                sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
-                asfSystem(cmd);
-                FREE(out_base);
+            char *out_meta = appendExt(out_file, ".meta");
+            meta_parameters *md = meta_read(out_meta);
+            if (md->general->band_count != 1) {
+                asfPrintError("Bad band count (%d).  Should be one band.\n",
+                              md->general->band_count);
             }
+            if (strncmp(md->general->bands, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0) {
+                asfPrintError("Bad Level 0 STF import ...band name list is unpopulated\n");
+            }
+            band_name[0] = (char *)MALLOC(strlen(md->general->bands) * sizeof(char));
+            strcpy(band_name[0], md->general->bands);
+            meta_free(md);
+            if (saveMetadataFlag) {
+                char cmd[1024];
+                char *out_base = appendExt(out_meta, "");
+
+                sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
+                asfSystem(cmd);
+            }
+            FREE(out_meta);
         }
         else {
             remove_dir(tmp_folder);
@@ -809,10 +834,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     }
     FREE(params_in);
     if (saveMetadataFlag) {
-        char *out_base = get_basename(out_file);
+        char *out_base = appendExt(out_file, "");
         char cmd[1024];
-
-        sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+        sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
         asfSystem(cmd);
         FREE(out_base);
     }
@@ -830,10 +854,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
     sr2gr(in_file, out_file);
     if (saveMetadataFlag) {
-        char *out_base = get_basename(out_file);
+        char *out_base = appendExt(out_file, "");
         char cmd[1024];
-
-        sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+        sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
         asfSystem(cmd);
         FREE(out_base);
     }
@@ -861,14 +884,12 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 "Only one of -scale and -size may be specified together,\n"
                 "and values must be positive.\n", scale_factor, size);
     }
-    char *band_name[1] = {MAGIC_UNSET_STRING};
     asfPrintStatus("Resampling from\n    %s\n      to\n    %s\n", in_file, out_file);
     resample(in_file, out_file, xsf, ysf);
     if (saveMetadataFlag) {
-        char *out_base = get_basename(out_file);
+        char *out_base = appendExt(out_file, "");
         char cmd[1024];
-
-        sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+        sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
         asfSystem(cmd);
         FREE(out_base);
     }
@@ -884,10 +905,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     asfPrintStatus("Flipping to north-up orientation from\n    %s\n      to\n    %s\n", in_file, out_file);
     flip_to_north_up(in_file, out_file);
     if (saveMetadataFlag) {
-        char *out_base = get_basename(out_file);
+        char *out_base = appendExt(out_file, "");
         char cmd[1024];
-
-        sprintf(cmd, "cp -f %s*.meta %s", out_base, out_dir);
+        sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
         asfSystem(cmd);
         FREE(out_base);
     }
@@ -945,6 +965,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         sprintf(del_files, "rm -f %s*_thumb*meta", basename);
     }
     asfSystem(del_files);
+    FREE(band_name[0]);
 }
 
 // Checks to see if a DATA file is an STF Level 0 file
