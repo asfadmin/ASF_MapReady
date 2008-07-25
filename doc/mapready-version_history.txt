@@ -1,5 +1,7 @@
 MapReady Version History
-MapReady 2.0.x (released 2008 July xx)
+
+
+MapReady 2.0.8 (released 2008 July 30)
 New Functionality (GUI and command-line tools)
 - Support for single-look complex (SLC) data, including Palsar
   Level 1.1.
