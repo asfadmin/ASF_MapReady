@@ -616,9 +616,9 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     unsigned char gbuf[JL0_AVNIR_TFRAME_LEN], ghdr_buf[512];
     unsigned char bbuf[JL0_AVNIR_TFRAME_LEN], bhdr_buf[512];
     unsigned char nbuf[JL0_AVNIR_TFRAME_LEN], nhdr_buf[512];
-    int ridx = -1, gidx = -1, bidx = -1, nidx = -1; // Negative initial value triggers reading a VCDU
+    int ridx = -1, gidx = -1, bidx = -1, nidx = -1; // Negative initial value triggers reading the first VCDU
     int rlast_vcdu_ctr = 0, glast_vcdu_ctr = 0, blast_vcdu_ctr = 0, nlast_vcdu_ctr = 0;
-    int valid_rSOI, valid_gSOI, valid_bSOI, valid_nSOI;
+    int valid_rSOI, valid_gSOI, valid_bSOI, valid_nSOI, first_SOI;
     int first_vcdu; // A flag that says we are looking for the very first telemetry frame in a file
 
     //// Find first SOI in the telemetry files
@@ -632,18 +632,20 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     first_vcdu = 1; // Turn on when finding first SOI (only)
     soi_tries = 0; // Zero means 'search until first valid SOI or end of file is found'
     target_time = 0.0;
+    first_SOI = 1;
     r_eof = find_next_avnir_SOI(rin, target_time, soi_tries, &rvalid, &rtime,
-                          &last_rtime, rbuf, &ridx, first_vcdu, &rlast_vcdu_ctr, rhdr_buf,
-                          &valid_rSOI); // Find first SOI
+                          &last_rtime, rbuf, &ridx, first_vcdu, first_SOI, &rlast_vcdu_ctr,
+                          rhdr_buf, &valid_rSOI); // Find first SOI
     g_eof = find_next_avnir_SOI(gin, target_time, soi_tries, &gvalid, &gtime,
-                          &last_gtime, gbuf, &gidx, first_vcdu, &glast_vcdu_ctr, ghdr_buf,
-                          &valid_gSOI); // Find first SOI
+                          &last_gtime, gbuf, &gidx, first_vcdu, first_SOI, &glast_vcdu_ctr,
+                          ghdr_buf, &valid_gSOI); // Find first SOI
     b_eof = find_next_avnir_SOI(bin, target_time, soi_tries, &bvalid, &btime,
-                          &last_btime, bbuf, &bidx, first_vcdu, &blast_vcdu_ctr, bhdr_buf,
-                          &valid_bSOI); // Find first SOI
+                          &last_btime, bbuf, &bidx, first_vcdu, first_SOI, &blast_vcdu_ctr,
+                          bhdr_buf, &valid_bSOI); // Find first SOI
     n_eof = find_next_avnir_SOI(nin, target_time, soi_tries, &nvalid, &ntime,
-                          &last_ntime, nbuf, &nidx, first_vcdu, &nlast_vcdu_ctr, nhdr_buf,
-                          &valid_nSOI); // Find first SOI
+                          &last_ntime, nbuf, &nidx, first_vcdu, first_SOI, &nlast_vcdu_ctr,
+                          nhdr_buf, &valid_nSOI); // Find first SOI
+    first_SOI = 0; // Turn off for remainder of processing
     FCLOSE(rin);
     FCLOSE(gin);
     FCLOSE(bin);
@@ -661,16 +663,16 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     first_vcdu = 1; // Turn on when finding first SOI (only)
     soi_tries = 2; // The ALOS spec says to check only the first 2 valid SOIs at or after the target synch time
     r_eof = find_next_avnir_SOI(rin, scene_extraction_time, soi_tries, &rvalid, &rtime,
-                                &last_rtime, rbuf, &ridx, first_vcdu, &rlast_vcdu_ctr, rhdr_buf,
+                                &last_rtime, rbuf, &ridx, first_vcdu, first_SOI, &rlast_vcdu_ctr, rhdr_buf,
                                 &valid_rSOI); // Find target starting SOI
     g_eof = find_next_avnir_SOI(gin, scene_extraction_time, soi_tries, &gvalid, &gtime,
-                                &last_gtime, gbuf, &gidx, first_vcdu, &glast_vcdu_ctr, bhdr_buf,
+                                &last_gtime, gbuf, &gidx, first_vcdu, first_SOI, &glast_vcdu_ctr, bhdr_buf,
                                 &valid_gSOI); // Find target starting SOI
     b_eof = find_next_avnir_SOI(bin, scene_extraction_time, soi_tries, &bvalid, &btime,
-                                &last_btime, bbuf, &bidx, first_vcdu, &blast_vcdu_ctr, ghdr_buf,
+                                &last_btime, bbuf, &bidx, first_vcdu, first_SOI, &blast_vcdu_ctr, ghdr_buf,
                                 &valid_bSOI); // Find target starting SOI
     n_eof = find_next_avnir_SOI(nin, scene_extraction_time, soi_tries, &nvalid, &ntime,
-                                &last_ntime, nbuf, &nidx, first_vcdu, &nlast_vcdu_ctr, nhdr_buf,
+                                &last_ntime, nbuf, &nidx, first_vcdu, first_SOI, &nlast_vcdu_ctr, nhdr_buf,
                                 &valid_nSOI); // Find target starting SOI
     first_vcdu = 0; // Turn flag off for remainder of processing
     int rband_valid = (valid_rSOI && !r_eof) ? 1 : 0; // Valid if found a jpeg frame in 2 tries or less and it
@@ -733,16 +735,16 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
         // if it is waiting to re-synch.
         //
         r_eof = find_next_avnir_SOI(rin, target_time, soi_tries, &rvalid, &rtime,
-                                    &last_rtime, rbuf, &ridx, first_vcdu, &rlast_vcdu_ctr, rhdr_buf,
+                                    &last_rtime, rbuf, &ridx, first_vcdu, first_SOI, &rlast_vcdu_ctr, rhdr_buf,
                                     &valid_rSOI);
         g_eof = find_next_avnir_SOI(gin, target_time, soi_tries, &gvalid, &gtime,
-                                    &last_gtime, gbuf, &gidx, first_vcdu, &glast_vcdu_ctr, bhdr_buf,
+                                    &last_gtime, gbuf, &gidx, first_vcdu, first_SOI, &glast_vcdu_ctr, bhdr_buf,
                                     &valid_gSOI);
         b_eof = find_next_avnir_SOI(bin, target_time, soi_tries, &bvalid, &btime,
-                                    &last_btime, bbuf, &bidx, first_vcdu, &blast_vcdu_ctr, ghdr_buf,
+                                    &last_btime, bbuf, &bidx, first_vcdu, first_SOI, &blast_vcdu_ctr, ghdr_buf,
                                     &valid_bSOI);
         n_eof = find_next_avnir_SOI(nin, target_time, soi_tries, &nvalid, &ntime,
-                                    &last_ntime, nbuf, &nidx, first_vcdu, &nlast_vcdu_ctr, nhdr_buf,
+                                    &last_ntime, nbuf, &nidx, first_vcdu, first_SOI, &nlast_vcdu_ctr, nhdr_buf,
                                     &valid_nSOI);
 
         write_avnir_frame(bband_valid, valid_bSOI, bvalid, bin, bhdr_buf, bbuf, &bidx, &bvalid,
@@ -901,10 +903,10 @@ void concat_avnir_band_chunks(int num_chunks, const char **chunks, const char *a
             lines_read++;
             FWRITE(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, out);
             bytes_read = FREAD_CHECKED(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, in, 1);
-            asfLineMeter(lines_read, 40000);
+            asfLineMeter(lines_read, JL0_AVNIR_CHUNK_SIZE);
         }
         FCLOSE(in);
-        asfLineMeter(40000, 40000);
+        asfLineMeter(JL0_AVNIR_CHUNK_SIZE, JL0_AVNIR_CHUNK_SIZE);
         lines_read = 0;
     }
     FREE(data);
@@ -918,8 +920,8 @@ void concat_avnir_band_chunks(int num_chunks, const char **chunks, const char *a
 // target time plus a tolerance
 int find_next_avnir_SOI(FILE *in, float time_target, int max_tries, int *valid_vcdu,
                         float *time, float *last_time, unsigned char *buf, int *idx,
-                        int first_vcdu, int *last_vcdu_ctr, unsigned char *hdr_buf,
-                        int *valid_SOI)
+                        int first_vcdu, int first_SOI, int *last_vcdu_ctr,
+                        unsigned char *hdr_buf, int *valid_SOI)
 {
     unsigned char c, mID;
     int num_read, try;
@@ -938,7 +940,7 @@ int find_next_avnir_SOI(FILE *in, float time_target, int max_tries, int *valid_v
                 hdr_buf[1] = SOI;
                 // Check validity of SOI (checks validity of jpeg header structure) and
                 // get time from aux. data (if jpeg frame is valid)
-                validate_avnir_SOI_and_get_frame_time (in, buf, idx, first_vcdu, last_vcdu_ctr,
+                validate_avnir_SOI_and_get_frame_time (in, buf, idx, first_vcdu, first_SOI, last_vcdu_ctr,
                                                        hdr_buf, valid_SOI, last_time, time);
 
                 if (*valid_SOI) {
@@ -986,12 +988,14 @@ int find_next_avnir_SOI(FILE *in, float time_target, int max_tries, int *valid_v
 //
 // Note: Upon return, *idx is left pointing at the last character read
 //
+static int _valid_vcdu = 0;
 int fread_avnir_tstream(unsigned char *c, FILE *in, unsigned char *buf, int first_vcdu,
                         int *idx, int *last_vcdu_ctr, int *valid_vcdu)
 {
     int num_read = 0;
 
     // Check to see if we need to refresh the buffer, and refresh if necessary
+    *valid_vcdu = _valid_vcdu;
     if (*idx < 0 || *idx > JL0_AVNIR_TFRAME_LEN - 1) {
         // NOTE: idx needs to be initialized to a negative number
         // to trigger the first read (see calling function)
@@ -999,7 +1003,7 @@ int fread_avnir_tstream(unsigned char *c, FILE *in, unsigned char *buf, int firs
         if (feof(in) || num_read != JL0_AVNIR_TFRAME_LEN) {
             // Incomplete read of new telemetry frame
             num_read = 0;
-            *valid_vcdu = 0; // Only update when reading a telemetry frame
+            *valid_vcdu = _valid_vcdu = 0; // Only update when reading a telemetry frame
             *c = PAD;
         }
         else {
@@ -1010,8 +1014,8 @@ int fread_avnir_tstream(unsigned char *c, FILE *in, unsigned char *buf, int firs
             // data.  This invalidates the entire frame).  (Skip checking for continuity if the t-frame
             // is the first one read)
             int vcdu_ctr = ((unsigned int)buf[2]<<16) + ((unsigned int)buf[3]<<8) + (unsigned int)buf[4];
-            *valid_vcdu  = (first_vcdu) ? 1 :
-                           (vcdu_ctr - *last_vcdu_ctr == 1) ? 1 : 0;
+            *valid_vcdu  = _valid_vcdu = (first_vcdu) ? 1 :
+                                         (vcdu_ctr - *last_vcdu_ctr == 1) ? 1 : 0;
             *last_vcdu_ctr = vcdu_ctr;
 
             // Return a byte from the newly-read t-frame
@@ -1045,8 +1049,8 @@ int fread_avnir_tstream(unsigned char *c, FILE *in, unsigned char *buf, int firs
 // NOTE: The header buffer contains 0xFFD8 (jpeg marker plus start of image id) and this function needs
 // to populate the header buffer with the whole 256-byte (according to ALOS spec) jpeg header
 void validate_avnir_SOI_and_get_frame_time (FILE *in, unsigned char *buf, int *idx, int first_vcdu,
-                                            int *last_vcdu_ctr, unsigned char *hdr_buf, int *valid_SOI,
-                                            float *last_time, float *time)
+                                            int first_SOI, int *last_vcdu_ctr, unsigned char *hdr_buf,
+                                            int *valid_SOI, float *last_time, float *time)
 {
     int num_read;
     int valid_vcdu;
@@ -1124,15 +1128,20 @@ void validate_avnir_SOI_and_get_frame_time (FILE *in, unsigned char *buf, int *i
                         // Calculate the time (ignoring effect of electrical noise and imaging cycle
                         // timing errors).  Note: Time comparisons are always with a tolerance (elsewhere).
                         *time = gps_seconds + line_ctr * AVNIR_IMAGING_CYCLE;
-                        float delta_time = *time - *last_time;
-                        if (delta_time < JL0_AVNIR_FRAME_TIME - JL0_AVNIR_FRAME_TIME_TOLERANCE ||
-                            delta_time > JL0_AVNIR_FRAME_TIME + JL0_AVNIR_FRAME_TIME_TOLERANCE)
-                        {
-                            // Missing frames exist ...mark this one as bad
-                            // (Note: A short frame time should never occur, therefore this code
-                            //  should only be reached if whole _missing_ frames exist.)
-                            *valid_SOI = 0;
-                            *time = 0;
+                        if (first_SOI) {
+                            *valid_SOI = 1;
+                        }
+                        else {
+                            float delta_time = *time - *last_time;
+                            if (delta_time < JL0_AVNIR_FRAME_TIME - JL0_AVNIR_FRAME_TIME_TOLERANCE ||
+                                delta_time > JL0_AVNIR_FRAME_TIME + JL0_AVNIR_FRAME_TIME_TOLERANCE)
+                            {
+                                // Missing frames exist ...mark this one as bad
+                                // (Note: A short frame time should never occur, therefore this code
+                                //  should only be reached if whole _missing_ frames exist.)
+                                *valid_SOI = 0;
+                                *time = 0;
+                            }
                         }
                     }
                     else {
