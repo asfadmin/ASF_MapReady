@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -21,13 +22,12 @@
 #  undef MIN
 #endif
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#ifdef MAX
+#  undef MAX
+#endif
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 // Prototypes
-int compare_file_key(const void* file1, const void *file2); // For stdlib qsort() function
-int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
-                              int save_intermediates, const char *outBaseName,
-                              int max_frames);
-int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, FILE *out);
 
 // import_jaxa_L0()
 // 1. inBaseName is the name of the folder that the data is in, i.e. W0306544001-01
@@ -43,12 +43,15 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, FILE *out);
 //    in individual full scanlines of image data.
 //
 // FIXME: Add save_intermediates flag to import_jaxa_L0() and carry through to
-// import_jaxa_L0_avnir_band();
+// import_jaxa_L0_avnir_band(); ...OR... Remove the whole save-intermediates thing since
+// nobody can read those pesky little 16-line jpegs anyway ...and fixing asf_view
+// to do it would let you see a tiny slice of an image and that's not useful...
+// FIXME: Need to support asf_import -band option...
 void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
     int save_intermediates = 0;
-    ceos_sensor_t sensor_type=AVNIR;
+    ceos_sensor_t sensor_type = AVNIR;
 
-    asfPrintError("Ingest of JAXA Level 0 (PRISM and AVNIR-2 Level 0) data not yet supported.\n");
+    //asfPrintError("Ingest of JAXA Level 0 (PRISM and AVNIR-2 Level 0) data not yet supported.\n");
 
     asfRequire(inBaseName && strlen(inBaseName) > 0, "Invalid inBaseName\n");
     asfRequire(outBaseName && strlen(outBaseName) > 0, "Invalid outBaseName\n");
@@ -76,28 +79,32 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         char green_dir[JL0_DIR_LEN];
         char blue_dir[JL0_DIR_LEN];
         char nir_dir[JL0_DIR_LEN];
-        sprintf(red_dir, "%s%c%d", inBaseName, DIR_SEPARATOR, JL0_RED_VCID);
+        sprintf(red_dir, "%s%c%d",   inBaseName, DIR_SEPARATOR, JL0_RED_VCID);
         sprintf(green_dir, "%s%c%d", inBaseName, DIR_SEPARATOR, JL0_GREEN_VCID);
-        sprintf(blue_dir, "%s%c%d", inBaseName, DIR_SEPARATOR, JL0_BLUE_VCID);
-        sprintf(nir_dir, "%s%c%d", inBaseName, DIR_SEPARATOR, JL0_NIR_VCID);
+        sprintf(blue_dir, "%s%c%d",  inBaseName, DIR_SEPARATOR, JL0_BLUE_VCID);
+        sprintf(nir_dir, "%s%c%d",   inBaseName, DIR_SEPARATOR, JL0_NIR_VCID);
 
         // Retrieve (sorted) file names of each band's chunks (sub-files)
-        int num_chunks = 0;
-        char **red_chunks=NULL;
-        char **green_chunks=NULL;
-        char **blue_chunks=NULL;
-        char **nir_chunks=NULL;
-        get_avnir_chunk_names(red_dir, green_dir, blue_dir, nir_dir, &num_chunks,
+        int num_red_chunks   = 0;
+        int num_green_chunks = 0;
+        int num_blue_chunks  = 0;
+        int num_nir_chunks   = 0;
+        char **red_chunks   = NULL;
+        char **green_chunks = NULL;
+        char **blue_chunks  = NULL;
+        char **nir_chunks   = NULL;
+        get_avnir_chunk_names(red_dir, green_dir, blue_dir, nir_dir,
+                              &num_red_chunks, &num_green_chunks,
+                              &num_blue_chunks, &num_nir_chunks,
                               &red_chunks, &green_chunks,
                               &blue_chunks, &nir_chunks);
 
-        // Import the 4 color bands into 4 band files in ASF Internal format (.img, .meta)
-        // (appending "_L0_nn" to each file)
-        int red_lines;
-        int green_lines;
-        int blue_lines;
-        int nir_lines;
-        int line_count = 0;
+        // Import the 4 color bands into a single ASF Internal format file and metadata file (.img, .meta)
+        int red_lines;      // Number of band 03 (red) data lines read
+        int green_lines;    // Number of band 02 (green) data lines read
+        int blue_lines;     // Number of band 01 (blue) data lines read
+        int nir_lines;      // Number of band 04 (near-infrared) data lines read
+        int line_count = 0; // Number of lines (each band) in finished .img file (sample_count is always 7100)
         char *tmp_filename1;
         char tmp_filename2[JL0_DIR_LEN + JL0_FILE_LEN + 1];
         char *out_file;
@@ -105,30 +112,29 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         tmp_filename1 = appendExt(outBaseName, ""); // Strips extension but keeps path info
         sprintf(tmp_filename2, "%s_L0", tmp_filename1); // Append Level 0 indication
         out_file = appendExt(tmp_filename2, ".img"); // Append a .img extension
-        FILE *tmp = FOPEN(out_file, "wb"); // Create an empty .img file.  The imports will append...
-        FCLOSE(tmp);
         FREE(tmp_filename1);
 
-        // NOTE: The following MUST be in the correct order since each appends the proper
-        // lines to the same .img file.  Correct order is: 01 (blue), 02 (green), 03 (red),
-        // 04 (near infrared)
-        blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, num_chunks, JL0_BLUE_BAND,
-                                                save_intermediates, out_file, (unsigned int)NULL);
-        green_lines = import_jaxa_L0_avnir_band(green_chunks, num_chunks, JL0_GREEN_BAND,
-                                                save_intermediates, out_file, (unsigned int)NULL);
-        red_lines   = import_jaxa_L0_avnir_band(red_chunks, num_chunks, JL0_RED_BAND,
-                                                save_intermediates, out_file, (unsigned int)NULL);
-        nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, num_chunks, JL0_NIR_BAND,
-                                                save_intermediates, out_file, (unsigned int)NULL);
+        FILE *tmp = FOPEN(out_file, "wb"); // Create an empty .img file.  The imports will append...
+        FCLOSE(tmp);
+
+        // Import the bands, frame-synchronized, missing or errored-out data padded with zeros, bad bands discarded
+        char bands[1024]; // List of bands for the metadata
+        int num_bands; // Number of valid bands imported
+        import_jaxa_L0_avnir_bands(&red_lines, &green_lines, &blue_lines, &nir_lines,
+                                   red_chunks, green_chunks, blue_chunks, nir_chunks,
+                                   num_red_chunks, num_green_chunks, num_blue_chunks, num_nir_chunks,
+                                   bands, &num_bands, save_intermediates, out_file);
         line_count = MIN(nir_lines, MIN(red_lines, MIN(blue_lines, green_lines)));
         if (red_lines != green_lines ||
             red_lines != blue_lines  ||
             red_lines != nir_lines)
         {
-            // FIXME: The importing of bands above should create 4 separate .img files, then
-            // they should be combined into one that only has the minimum number of
-            // lines available in it ...and the metadata to match.  Then this error could be just
-            // a warning instead
+            // This code should never be reached.  Scanning is done across all 4 bands at once,
+            // starts with the starting frame, missing or damaged frames padded (zero filled) in place,
+            // and terminated when either a) the data runs out (end of file) or b) the desired number of
+            // frames has been read.  In other words, when doing a frame-synchronized import, the 4 bands
+            // start and end together and therefore the number of lines read for each should be the same
+            // unless there was a programming error.
             asfPrintWarning("AVNIR-2 Level 0 files do not all have the same number of lines:\n"
                     "  Number of red lines:            %d\n"
                     "  Number of green lines:          %d\n"
@@ -137,18 +143,6 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
                     "If these files are merged into a single color image, then this\n"
                     "have to be taken into consideration (missing data?)\n",
                     red_lines, green_lines, blue_lines, nir_lines);
-            asfPrintStatus("Re-importing but limiting import to %d lines (%d frames)\n",
-                           line_count, line_count / 16);
-            FILE *tmp = FOPEN(out_file, "wb"); // Create an empty .img file.  The imports will append...
-            FCLOSE(tmp);
-            blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, num_chunks, JL0_BLUE_BAND,
-                    save_intermediates, out_file, line_count / 16);
-            green_lines = import_jaxa_L0_avnir_band(green_chunks, num_chunks, JL0_GREEN_BAND,
-                    save_intermediates, out_file, line_count / 16);
-            red_lines   = import_jaxa_L0_avnir_band(red_chunks, num_chunks, JL0_RED_BAND,
-                    save_intermediates, out_file, line_count / 16);
-            nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, num_chunks, JL0_NIR_BAND,
-                    save_intermediates, out_file, line_count / 16);
         }
         FREE(out_file);
 
@@ -176,14 +170,14 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         mg->orbit = MAGIC_UNSET_INT; // FIXME: Fill out the orbit number
         mg->orbit_direction = MAGIC_UNSET_CHAR; // FIXME: Fill out orbit direction, 'A' or 'D'
         mg->frame = -1; // FIXME: Is there an AVNIR frame number for this?
-        mg->band_count = 4;
-        strcpy(mg->bands, "01,02,03,04");
+        mg->band_count = num_bands;
+        strcpy(mg->bands, bands);
         mg->line_count = line_count;
-        mg->sample_count = 7100;
+        mg->sample_count = JL0_AVNIR_SAMPLE_COUNT;
         mg->start_line = 0;
         mg->start_sample = 0;
-        mg->line_scaling = 1.0;
-        mg->sample_scaling = 1.0;
+//        mg->line_scaling = 1.0;
+//        mg->sample_scaling = 1.0;
         mg->x_pixel_size = MAGIC_UNSET_DOUBLE;  // FIXME
         mg->y_pixel_size = MAGIC_UNSET_DOUBLE; // FIXME
         mg->center_latitude = MAGIC_UNSET_DOUBLE; // FIXME
@@ -207,7 +201,8 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         meta_write(meta, meta_outfile);
 
         // Clean up
-        free_avnir_chunk_names(num_chunks,
+        free_avnir_chunk_names(num_red_chunks, num_green_chunks,
+                               num_blue_chunks, num_nir_chunks,
                                &red_chunks, &green_chunks,
                                &blue_chunks, &nir_chunks);
         meta_free(meta);
@@ -227,10 +222,11 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
 // order according to the Signal Data File Number.Sequence Number, ready for
 // ordered extraction of signal data.
 void get_avnir_chunk_names(const char *red_dir, const char *green_dir,
-                     const char *blue_dir, const char *nir_dir,
-                     int *num_chunks, char ***red_chunks,
-                     char ***green_chunks, char ***blue_chunks,
-                     char ***nir_chunks)
+                           const char *blue_dir, const char *nir_dir,
+                           int *num_red_chunks, int *num_green_chunks,
+                           int *num_blue_chunks, int *num_nir_chunks,
+                           char ***red_chunks, char ***green_chunks,
+                           char ***blue_chunks, char ***nir_chunks)
 {
     ///////////////////////////////////////////////////////////////////////
     // Systematically build and look for names of file chunks, populating
@@ -240,74 +236,62 @@ void get_avnir_chunk_names(const char *red_dir, const char *green_dir,
     file_key_t *green_files;
     file_key_t *blue_files;
     file_key_t *nir_files;
-    int num_red_files=0;
-    int num_green_files=0;
-    int num_blue_files=0;
-    int num_nir_files=0;
 
     // Count the files and allocate the file name arrays
-    num_red_files   = numFiles(red_dir);
-    num_green_files = numFiles(green_dir);
-    num_blue_files  = numFiles(blue_dir);
-    num_nir_files   = numFiles(nir_dir);
-    if (num_red_files == num_green_files &&
-        num_red_files == num_blue_files  &&
-        num_red_files == num_nir_files)
-    {
-        *num_chunks = num_red_files; // Since all 4 bands have the same number, just pick one...
-    }
-    else {
-        *num_chunks = (num_red_files < num_green_files) ? num_red_files  : num_green_files;
-        *num_chunks = (*num_chunks > num_blue_files)    ? num_blue_files :
-                      (*num_chunks > num_nir_files)     ? num_nir_files  : 0;
-        asfPrintWarning("Not all bands have the same number of file chunks in their VCID folders.\n"
-                "  VCID %d (blue): %d\n  VCID %d (green): %d\nVCID %d (red): %d\n  VCID %d (near-IR): %d\n"
-                "Assuming that the first %d chunks in each VCID subdirectory go together\n"
-                "and continuing...\n",
-                       JL0_BLUE_VCID,  num_blue_files,
-                       JL0_GREEN_VCID, num_green_files,
-                       JL0_RED_VCID,   num_red_files,
-                       JL0_NIR_VCID,   num_nir_files,
-                       *num_chunks);
-    }
+    *num_red_chunks   = numFiles(red_dir);
+    *num_green_chunks = numFiles(green_dir);
+    *num_blue_chunks  = numFiles(blue_dir);
+    *num_nir_chunks   = numFiles(nir_dir);
 
     // Allocate arrays of names
     // (CALLING ROUTINE MUST FREE THIS MEMORY ...BEST TO USE free_avnir_chunk_names() FOR THAT
     int chunk;
-    *red_chunks   = (char **)MALLOC(*num_chunks * sizeof(char*));
-    *green_chunks = (char **)MALLOC(*num_chunks * sizeof(char*));
-    *blue_chunks  = (char **)MALLOC(*num_chunks * sizeof(char*));
-    *nir_chunks   = (char **)MALLOC(*num_chunks * sizeof(char*));
-    red_files     = (file_key_t *)MALLOC(num_red_files * sizeof(file_key_t));
-    green_files   = (file_key_t *)MALLOC(num_red_files * sizeof(file_key_t));
-    blue_files    = (file_key_t *)MALLOC(num_red_files * sizeof(file_key_t));
-    nir_files     = (file_key_t *)MALLOC(num_red_files * sizeof(file_key_t));
-    for (chunk = 0; chunk < *num_chunks; chunk++) {
+    *red_chunks   = (char **)MALLOC(*num_red_chunks   * sizeof(char*));
+    *green_chunks = (char **)MALLOC(*num_green_chunks * sizeof(char*));
+    *blue_chunks  = (char **)MALLOC(*num_blue_chunks  * sizeof(char*));
+    *nir_chunks   = (char **)MALLOC(*num_nir_chunks   * sizeof(char*));
+    red_files     = (file_key_t *)MALLOC(*num_red_chunks   * sizeof(file_key_t));
+    green_files   = (file_key_t *)MALLOC(*num_green_chunks * sizeof(file_key_t));
+    blue_files    = (file_key_t *)MALLOC(*num_blue_chunks  * sizeof(file_key_t));
+    nir_files     = (file_key_t *)MALLOC(*num_nir_chunks   * sizeof(file_key_t));
+    for (chunk = 0; chunk < *num_red_chunks; chunk++) {
         (*red_chunks)[chunk]   = (char *)MALLOC((JL0_DIR_LEN + JL0_FILE_LEN + 1) * sizeof(char));
-        (*green_chunks)[chunk] = (char *)MALLOC((JL0_DIR_LEN + JL0_FILE_LEN + 1) * sizeof(char));
-        (*blue_chunks)[chunk]  = (char *)MALLOC((JL0_DIR_LEN + JL0_FILE_LEN + 1) * sizeof(char));
+    }
+    for (chunk = 0; chunk < *num_green_chunks; chunk++) {
+        (*green_chunks)[chunk]   = (char *)MALLOC((JL0_DIR_LEN + JL0_FILE_LEN + 1) * sizeof(char));
+    }
+    for (chunk = 0; chunk < *num_blue_chunks; chunk++) {
+        (*blue_chunks)[chunk]   = (char *)MALLOC((JL0_DIR_LEN + JL0_FILE_LEN + 1) * sizeof(char));
+    }
+    for (chunk = 0; chunk < *num_nir_chunks; chunk++) {
         (*nir_chunks)[chunk]   = (char *)MALLOC((JL0_DIR_LEN + JL0_FILE_LEN + 1) * sizeof(char));
     }
 
     // Populate the temporary arrays of (keyed) names with the actual file names found in each VCID folder
-    get_jaxa_L0_files(red_files  , num_red_files  , red_dir);
-    get_jaxa_L0_files(green_files, num_green_files, green_dir);
-    get_jaxa_L0_files(blue_files , num_blue_files , blue_dir);
-    get_jaxa_L0_files(nir_files  , num_nir_files  , nir_dir);
+    get_jaxa_L0_files(red_files  , *num_red_chunks  , red_dir);
+    get_jaxa_L0_files(green_files, *num_green_chunks, green_dir);
+    get_jaxa_L0_files(blue_files , *num_blue_chunks , blue_dir);
+    get_jaxa_L0_files(nir_files  , *num_nir_chunks  , nir_dir);
 
     // Numerically sort the filenames for each VCID according to the Signal Data File Number
     // and the Sequential Number for each Signal Data File Number
-    qsort(red_files  , num_red_files  , sizeof(file_key_t), compare_file_key);
-    qsort(green_files, num_green_files, sizeof(file_key_t), compare_file_key);
-    qsort(blue_files , num_blue_files , sizeof(file_key_t), compare_file_key);
-    qsort(nir_files  , num_nir_files  , sizeof(file_key_t), compare_file_key);
+    qsort(red_files  , *num_red_chunks  , sizeof(file_key_t), compare_file_key);
+    qsort(green_files, *num_green_chunks, sizeof(file_key_t), compare_file_key);
+    qsort(blue_files , *num_blue_chunks , sizeof(file_key_t), compare_file_key);
+    qsort(nir_files  , *num_nir_chunks  , sizeof(file_key_t), compare_file_key);
 
     // Copy the sorted names to the returned arrays
-    for (chunk=0; chunk < *num_chunks; chunk++) {
-        strcpy((*red_chunks)[chunk]  , red_files[chunk].file);
-        strcpy((*green_chunks)[chunk], green_files[chunk].file);
-        strcpy((*blue_chunks)[chunk] , blue_files[chunk].file);
-        strcpy((*nir_chunks)[chunk]  , nir_files[chunk].file);
+    for (chunk=0; chunk < *num_red_chunks; chunk++) {
+        strcpy((*red_chunks)[chunk]    , red_files[chunk].file);
+    }
+    for (chunk=0; chunk < *num_green_chunks; chunk++) {
+        strcpy((*green_chunks)[chunk]  , green_files[chunk].file);
+    }
+    for (chunk=0; chunk < *num_blue_chunks; chunk++) {
+        strcpy((*blue_chunks)[chunk]   , blue_files[chunk].file);
+    }
+    for (chunk=0; chunk < *num_nir_chunks; chunk++) {
+        strcpy((*nir_chunks)[chunk]    , nir_files[chunk].file);
     }
 
     // Clean up
@@ -317,35 +301,36 @@ void get_avnir_chunk_names(const char *red_dir, const char *green_dir,
     FREE(nir_files);
 }
 
-void free_avnir_chunk_names(int num_chunks,
-                      char ***red_chunks, char ***green_chunks,
-                      char ***blue_chunks, char ***nir_chunks)
+void free_avnir_chunk_names(int num_red_chunks, int num_green_chunks,
+                            int num_blue_chunks, int num_nir_chunks,
+                            char ***red_chunks, char ***green_chunks,
+                            char ***blue_chunks, char ***nir_chunks)
 {
     int chunk;
 
-    if (*red_chunks != NULL && num_chunks > 0) {
-        for (chunk = 0; chunk < num_chunks; chunk++) {
+    if (*red_chunks != NULL && num_red_chunks > 0) {
+        for (chunk = 0; chunk < num_red_chunks; chunk++) {
             FREE((*red_chunks)[chunk]);
         }
         FREE(*red_chunks);
         *red_chunks = NULL;
     }
-    if (*green_chunks != NULL && num_chunks > 0) {
-        for (chunk = 0; chunk < num_chunks; chunk++) {
+    if (*green_chunks != NULL && num_green_chunks > 0) {
+        for (chunk = 0; chunk < num_green_chunks; chunk++) {
             FREE((*green_chunks)[chunk]);
         }
         FREE(*green_chunks);
         *green_chunks = NULL;
     }
-    if (*blue_chunks != NULL && num_chunks > 0) {
-        for (chunk = 0; chunk < num_chunks; chunk++) {
+    if (*blue_chunks != NULL && num_blue_chunks > 0) {
+        for (chunk = 0; chunk < num_blue_chunks; chunk++) {
             FREE((*blue_chunks)[chunk]);
         }
         FREE(*blue_chunks);
         *blue_chunks = NULL;
     }
-    if (*nir_chunks != NULL && num_chunks > 0) {
-        for (chunk = 0; chunk < num_chunks; chunk++) {
+    if (*nir_chunks != NULL && num_nir_chunks > 0) {
+        for (chunk = 0; chunk < num_nir_chunks; chunk++) {
             FREE((*nir_chunks)[chunk]);
         }
         FREE(*nir_chunks);
@@ -427,26 +412,48 @@ int compare_file_key(const void* file1, const void *file2)
     return (f1->key - f2->key);
 }
 
-// Reads one telemetry frame from the input file, skips past header, returns the
-// remaining line as data (there is no trailing info to remove... just a short header)
-// CALLER MUST FREE THIS DATA LINE
-size_t get_avnir_data_line(FILE *in, unsigned char **data) {
+// Reads one telemetry frame (a VCDU - virtual channel data unit) from the input file,
+//   skips past header, returns the remaining line as data (there is no trailing info to
+//   remove... the Reed-Solomon error correction code for correcting bit errors has already
+//   been utilized by the downlink and then stripped from the telemetry frame as the frame
+//   is written to storage ...a stored t-frame contains 6 bytes of CCSDS header followed by
+//   1094 bytes of actual data, a total length of 1100 bytes.)
+//
+// CCSDS Header Contents:
+//   - First 2 bytes,
+//     - Version (2 bits), always 01b
+//     - Spacecraft ID (6 bits), always 63h for ALOS
+//     - VCID (virtual channel identification number), 45d for Avnir-2 Band 01 etc...
+//   - Next 3 bytes,
+//     - The VCDU counter value for this frame (should always be positive and never rolls over)
+//   - Last byte,
+//     - Replay Flag (1 bit) (Can be ignored)
+//     - Spare bits (7 bits)
+//
+// IMPORTANT: THE CALLING FUNCTION MUST FREE THIS DATA LINE
+size_t get_avnir_data_line(FILE *in, unsigned char **data, int first_vcdu, int *last_vcdu_ctr,
+                           int *continuous, int *missing_bytes, int *vcdu_ctr) {
     size_t bytes_read = 0;
-    unsigned char *line = (unsigned char *)MALLOC((JL0_AVNIR_TFRAME_LEN + 1) * sizeof(unsigned char));
-    *data = (unsigned char *)MALLOC
-                       ((JL0_AVNIR_TFRAME_LEN - JL0_AVNIR_CCSDS_HDR_LEN + 1) * sizeof(unsigned char));
+    unsigned char *line;
     int i;
     unsigned char *d=NULL;
+
+    line  = (unsigned char *)MALLOC((JL0_AVNIR_TFRAME_LEN + 1) * sizeof(unsigned char));
+    *data = (unsigned char *)MALLOC(JL0_AVNIR_TFRAME_DATA_LEN * sizeof(unsigned char));
     if (!feof(in)) {
         bytes_read = FREAD_CHECKED(line, 1, JL0_AVNIR_TFRAME_LEN, in, 1);
     }
-    for (i=0, d = line + JL0_AVNIR_CCSDS_HDR_LEN;
+    *vcdu_ctr = ((unsigned int)line[2]<<16) + ((unsigned int)line[3]<<8) + (unsigned int)line[4];
+    *continuous = (!first_vcdu && *vcdu_ctr - *last_vcdu_ctr == 1) ? 1 : 0;
+    *missing_bytes = (!(*continuous)) ? (*vcdu_ctr - *last_vcdu_ctr - 1) * JL0_AVNIR_TFRAME_DATA_LEN : 0;
+    for (i = 0, d = line + JL0_AVNIR_CCSDS_HDR_LEN;
          bytes_read > (JL0_AVNIR_CCSDS_HDR_LEN + 1) && i < (bytes_read - JL0_AVNIR_CCSDS_HDR_LEN);
          i++, d++)
     {
         (*data)[i] = *d;
     }
     free(line);
+    *last_vcdu_ctr = *vcdu_ctr;
 
     return bytes_read - JL0_AVNIR_CCSDS_HDR_LEN;
 }
@@ -457,7 +464,7 @@ size_t get_avnir_data_line(FILE *in, unsigned char **data) {
 // IMPORTANT NOTES:
 // 1. The Jaxa Level 0 AVNIR data exists across several sub-files (chunks),
 //    each in their own subdirectory (by VCID number, i.e. ./<basename>/<vcid>)
-// 2. Each subfile is made up from 1100-byte long lines of binary information,
+// 2. Each subfile is made up from 1100-byte int lines of binary information,
 //    the first 6-bytes of which are CCSDS header information.  These bytes can
 //    be skipped over (ignored.)  The remaining 1094 bytes are to be parsed as
 //    described below.  These 1100-byte lines are telemetry frames, not to be
@@ -471,7 +478,7 @@ size_t get_avnir_data_line(FILE *in, unsigned char **data) {
 //    on a 32-bit boundary (these bytes should be ignored.)
 // 6. The frames can and do span sub-file boundaries.
 // 7. Each line of data contains 7100 actual data pixels (bytes), but including other
-//    information are actually 7152 bytes long.
+//    information are actually 7152 bytes int.
 // 8. Each line is divided into odd and even pixels, and there is other information before
 //    and after the actual data.  The format of each line is as follows (number of bytes in
 //    parenthesis):
@@ -492,39 +499,44 @@ size_t get_avnir_data_line(FILE *in, unsigned char **data) {
 //     n. Electrical calibration (8)
 //
 //    The odd and even pixels need to be interlaced to restore the data line.  Note that
-//    this is NOT consistent with the JPEG standard.
+//    this is NOT consistent with the JPEG standard.  Note also that the data lines are
+//    compressed in the jpeg frames and therefore the data must be re-interlaced after
+//    those data lines are decompressed (seems obvious, eh?).  See import_avnir_frame_jpeg_to_img()
+//    for the pixel interlacing code.
 // 9. The JAXA format also includes a non-standard JPEG marker and payload (the information
 //    bytes which follow the 0xFF marker byte).  This marker is 0xFFF0 and is RESERVED in
 //    the JPEG standard and is not supposed to be used.  In order for the JPEG library to
 //    work this marker and payload must be ignored and not stored in any JPEG file.
 //
-
-//
-// NOTE: out_file should already have the .img extension on it, but maybe not.
-//       Use appendExt() to add or replace the ext with a new one, i.e. with .meta
-//       The outfile will already have the level 0 identifier in it etc... don't
-//       modify the name here.
-//
-int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
-                              int save_intermediates, const char *out_file,
-                              int max_frames)
+int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines, int *nir_lines,
+                               char **red_chunks, char **green_chunks, char **blue_chunks, char **nir_chunks,
+                               int num_red_chunks, int num_green_chunks, int num_blue_chunks, int num_nir_chunks,
+                               char *bands, int *num_bands, int save_intermediates, const char *out_file)
 {
-    int frame_count;
-    char tmpJpegName[JL0_DIR_LEN + JL0_FILE_LEN + 1];
-    char all_chunks[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    int rframe_number, gframe_number, bframe_number, nframe_number;
+    char jpegRed[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char red_all_chunks[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char jpegGreen[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char green_all_chunks[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char jpegBlue[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char blue_all_chunks[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char jpegNir[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char nir_all_chunks[JL0_DIR_LEN + JL0_FILE_LEN + 1];
     char tmp_folder[256];
-    FILE *in = NULL;
-    FILE *out = NULL;
-    FILE *jpeg = NULL;
+    FILE *rin = NULL;
+    FILE *gin = NULL;
+    FILE *bin = NULL;
+    FILE *nin = NULL;
     time_t t;
     char t_stamp[32];
 
-    asfPrintStatus("\nImporting band %s from %d sub-files...\n\n", band, num_chunks);
+    asfPrintStatus("\nImporting all available color bands...\n\n");
 
     // Make temporary folder for temporary files
+    char *out_base = get_basename(out_file);
     t = time(NULL);
     strftime(t_stamp, 22, "%d%b%Y-%Hh_%Mm_%Ss", localtime(&t));
-    sprintf(tmp_folder, "./asf_import_tmp_dir_%s_%s", get_basename(out_file), t_stamp);
+    sprintf(tmp_folder, "./asf_import_tmp_dir_%s_%s", out_base, t_stamp);
     if (!is_dir(tmp_folder)) {
         mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
     }
@@ -535,181 +547,237 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
     }
 
     // Build input and output filenames
-    char *out_base = get_basename(out_file);
-    sprintf(tmpJpegName, "%s%c%s_%s.jpg", tmp_folder, DIR_SEPARATOR, out_base, band);
-    sprintf(all_chunks, "%s%call_chunks_band_%s", tmp_folder, DIR_SEPARATOR, band);
-    FREE(out_base);
+    sprintf(jpegRed, "%s%c%s_%s.jpg", tmp_folder, DIR_SEPARATOR, out_base, JL0_RED_BAND);
+    sprintf(red_all_chunks, "%s%call_chunks_band_%s", tmp_folder, DIR_SEPARATOR, JL0_RED_BAND);
+    sprintf(jpegGreen, "%s%c%s_%s.jpg", tmp_folder, DIR_SEPARATOR, out_base, JL0_GREEN_BAND);
+    sprintf(green_all_chunks, "%s%call_chunks_band_%s", tmp_folder, DIR_SEPARATOR, JL0_GREEN_BAND);
+    sprintf(jpegBlue, "%s%c%s_%s.jpg", tmp_folder, DIR_SEPARATOR, out_base, JL0_BLUE_BAND);
+    sprintf(blue_all_chunks, "%s%call_chunks_band_%s", tmp_folder, DIR_SEPARATOR, JL0_BLUE_BAND);
+    sprintf(jpegNir, "%s%c%s_%s.jpg", tmp_folder, DIR_SEPARATOR, out_base, JL0_NIR_BAND);
+    sprintf(nir_all_chunks, "%s%call_chunks_band_%s", tmp_folder, DIR_SEPARATOR, JL0_NIR_BAND);
 
-    // Concatenate all chunks for this band into a single file while at the same
-    // time, stripping telemetry frame CCSDS headers out of the data.
-    int chunk;
-    int bytes_read;
-    int lines_read = 0;
-    unsigned char *data;
-    out = (FILE *)FOPEN(all_chunks, "wb");
-    asfPrintStatus("Combining sub-files and stripping CCSDS headers from telemetry frames...\n\n");
-    for (chunk = 0; chunk < num_chunks; chunk++) {
-        in = (FILE *)FOPEN(chunks[chunk], "rb");
-        bytes_read = get_avnir_data_line(in, &data);
-        lines_read++;
-        while (!feof(in)) {
-            if (bytes_read > 0) {
-                int i;
-                unsigned char *c;
-                for (i = 0, c = data; i < bytes_read; i++, c++) {
-                    FWRITE(c, 1, 1, out);
-                }
-            }
-            FREE(data);
-            bytes_read = get_avnir_data_line(in, &data);
-            lines_read++;
-            asfLineMeter(lines_read, 40000);
-        }
-        FCLOSE(in);
-        asfLineMeter(40000, 40000);
-        lines_read = 0;
+    // Open the output files
+    // Note: out_file contains a complete path including the basename and .img extension
+    char *rout_file = (char *)MALLOC((strlen(out_file) + 64) * sizeof(char));
+    char *gout_file = (char *)MALLOC((strlen(out_file) + 64) * sizeof(char));
+    char *bout_file = (char *)MALLOC((strlen(out_file) + 64) * sizeof(char));
+    char *nout_file = (char *)MALLOC((strlen(out_file) + 64) * sizeof(char));
+    sprintf(rout_file, "red_%s"  , out_file);
+    sprintf(gout_file, "green_%s", out_file);
+    sprintf(bout_file, "blue_%s" , out_file);
+    sprintf(nout_file, "nir_%s"  , out_file);
+    FILE *rout = (FILE *)FOPEN(rout_file, "wb");
+    FILE *gout = (FILE *)FOPEN(gout_file, "wb");
+    FILE *bout = (FILE *)FOPEN(bout_file, "wb");
+    FILE *nout = (FILE *)FOPEN(nout_file, "wb");
+
+    // Concatenate all chunks for each band into a single files while at the same
+    // time preserving telemetry frame CCSDS headers.  These files will be processed
+    // as a telemetry byte stream.  Putting all the chunks into a single temporary file
+    // simplifies the stream processing code ...if disk space is at a premium, then the
+    // function that reads bytes from the stream not only needs to handle telemetry frame
+    // boundaries but also file boundaries.
+    // FIXME: If we make fread_tframe() able to read not only from one telemetry frame to
+    // the next (the current level of functionality), but also from one file to the
+    // next, then there would be _no need_ to create these large all-chunks files
+    // that contain all available telemetry frames for each band ...and we'd save disk
+    // space (Operations would like that)
+    concat_avnir_band_chunks(num_red_chunks,   (const char **)red_chunks,   red_all_chunks,   JL0_RED_BAND);
+    concat_avnir_band_chunks(num_green_chunks, (const char **)green_chunks, green_all_chunks, JL0_GREEN_BAND);
+    concat_avnir_band_chunks(num_blue_chunks,  (const char **)blue_chunks,  blue_all_chunks,  JL0_BLUE_BAND);
+    concat_avnir_band_chunks(num_nir_chunks,   (const char **)nir_chunks,   nir_all_chunks,   JL0_NIR_BAND);
+
+    asfPrintStatus("\nPerforming time-synchronized ingest of embedded AVNIR-2 jpeg-format\n"
+            "frames and converting into ASF Internal format...\n\n");
+
+    int soi_tries = 0;  // Zero means 'try to find an SOI as many times as you want'
+    int r_eof = 0;      // True if red band reached end of file
+    int g_eof = 0;      // True if green band reached end of file
+    int b_eof = 0;      // True if blue band reached end of file
+    int n_eof = 0;      // True if near-infrared band reached end of file
+
+    // Determine scene extraction time
+    // => Find first SOI in each band and take the latest one as the scene extraction
+    // time.  FIXME: This is not the way the ALOS doc says to do it ...when fixing asf_import,
+    // this should be fixed.  Here's the right way:
+    //
+    // t = t_0 - (F / 2) * s_r * 16, where
+    //
+    // t   == scene extraction start time
+    // t_0 == center time of scene extraction
+    // F   == total number of frames to extract
+    // s_r == the imaging cycle (1.48 m sec/line for AVNIR, 0.37 m sec/line for PRISM)
+    // 16  == number of data lines per jpeg frame (sixteen)
+    //
+    int rvalid, gvalid, bvalid, nvalid;
+    float rtime = 0.0, gtime = 0.0, btime = 0.0, ntime = 0.0, target_time = 0.0, scene_extraction_time = 0.0;
+    float last_rtime = 0.0, last_gtime = 0.0, last_btime = 0.0, last_ntime = 0.0;
+    unsigned char rbuf[JL0_AVNIR_TFRAME_LEN], rhdr_buf[512];
+    unsigned char gbuf[JL0_AVNIR_TFRAME_LEN], ghdr_buf[512];
+    unsigned char bbuf[JL0_AVNIR_TFRAME_LEN], bhdr_buf[512];
+    unsigned char nbuf[JL0_AVNIR_TFRAME_LEN], nhdr_buf[512];
+    int ridx = -1, gidx = -1, bidx = -1, nidx = -1; // Negative initial value triggers reading a VCDU
+    int rlast_vcdu_ctr = 0, glast_vcdu_ctr = 0, blast_vcdu_ctr = 0, nlast_vcdu_ctr = 0;
+    int valid_rSOI, valid_gSOI, valid_bSOI, valid_nSOI;
+    int first_vcdu; // A flag that says we are looking for the very first telemetry frame in a file
+
+    //// Find first SOI in the telemetry files
+    // Time target of NULL (2nd parameter in find_next_avnir_SOI() function) below means "any valid frame
+    // scene extraction time" rather than searching for a specific target time
+    // Open the input files (the all-chunks files)
+    rin = (FILE *)FOPEN(red_all_chunks  , "rb");
+    gin = (FILE *)FOPEN(green_all_chunks, "rb");
+    bin = (FILE *)FOPEN(blue_all_chunks , "rb");
+    nin = (FILE *)FOPEN(nir_all_chunks  , "rb");
+    first_vcdu = 1; // Turn on when finding first SOI (only)
+    soi_tries = 0; // Zero means 'search until first valid SOI or end of file is found'
+    target_time = 0.0;
+    r_eof = find_next_avnir_SOI(rin, target_time, soi_tries, &rvalid, &rtime,
+                          &last_rtime, rbuf, &ridx, first_vcdu, &rlast_vcdu_ctr, rhdr_buf,
+                          &valid_rSOI); // Find first SOI
+    g_eof = find_next_avnir_SOI(gin, target_time, soi_tries, &gvalid, &gtime,
+                          &last_gtime, gbuf, &gidx, first_vcdu, &glast_vcdu_ctr, ghdr_buf,
+                          &valid_gSOI); // Find first SOI
+    b_eof = find_next_avnir_SOI(bin, target_time, soi_tries, &bvalid, &btime,
+                          &last_btime, bbuf, &bidx, first_vcdu, &blast_vcdu_ctr, bhdr_buf,
+                          &valid_bSOI); // Find first SOI
+    n_eof = find_next_avnir_SOI(nin, target_time, soi_tries, &nvalid, &ntime,
+                          &last_ntime, nbuf, &nidx, first_vcdu, &nlast_vcdu_ctr, nhdr_buf,
+                          &valid_nSOI); // Find first SOI
+    FCLOSE(rin);
+    FCLOSE(gin);
+    FCLOSE(bin);
+    FCLOSE(nin);
+    // Pick the scene extraction time as the latest of what occurred in the first valid jpeg frame.
+    // Note: find_next_avnir_SOI() returns a time of 0.0 for invalid results
+    scene_extraction_time = MAX(ntime, MAX(btime, MAX(rtime, gtime)));
+
+    // Synchronize the start, i.e. leave file pointers pointing at first valid SOI for each band (or
+    // invalidate the whole band if the start criteria was not met ...see note below)
+    rin = (FILE *)FOPEN(red_all_chunks  , "rb"); // Now that we have a target start time, re-open the files
+    gin = (FILE *)FOPEN(green_all_chunks, "rb"); // and begin anew...
+    bin = (FILE *)FOPEN(blue_all_chunks , "rb");
+    nin = (FILE *)FOPEN(nir_all_chunks  , "rb");
+    first_vcdu = 1; // Turn on when finding first SOI (only)
+    soi_tries = 2; // The ALOS spec says to check only the first 2 valid SOIs at or after the target synch time
+    r_eof = find_next_avnir_SOI(rin, scene_extraction_time, soi_tries, &rvalid, &rtime,
+                                &last_rtime, rbuf, &ridx, first_vcdu, &rlast_vcdu_ctr, rhdr_buf,
+                                &valid_rSOI); // Find target starting SOI
+    g_eof = find_next_avnir_SOI(gin, scene_extraction_time, soi_tries, &gvalid, &gtime,
+                                &last_gtime, gbuf, &gidx, first_vcdu, &glast_vcdu_ctr, bhdr_buf,
+                                &valid_gSOI); // Find target starting SOI
+    b_eof = find_next_avnir_SOI(bin, scene_extraction_time, soi_tries, &bvalid, &btime,
+                                &last_btime, bbuf, &bidx, first_vcdu, &blast_vcdu_ctr, ghdr_buf,
+                                &valid_bSOI); // Find target starting SOI
+    n_eof = find_next_avnir_SOI(nin, scene_extraction_time, soi_tries, &nvalid, &ntime,
+                                &last_ntime, nbuf, &nidx, first_vcdu, &nlast_vcdu_ctr, nhdr_buf,
+                                &valid_nSOI); // Find target starting SOI
+    first_vcdu = 0; // Turn flag off for remainder of processing
+    int rband_valid = (valid_rSOI && !r_eof) ? 1 : 0; // Valid if found a jpeg frame in 2 tries or less and it
+    int gband_valid = (valid_gSOI && !g_eof) ? 1 : 0; // was in the correct target (time) window and the end
+    int bband_valid = (valid_bSOI && !b_eof) ? 1 : 0; // of file was not hit (per ALOS spec)
+    int nband_valid = (valid_nSOI && !n_eof) ? 1 : 0;
+    rframe_number = 1;
+    gframe_number = 1;
+    bframe_number = 1;
+    nframe_number = 1;
+
+    // Update number of bands and the band string
+    // Note: In ASF Internal Format, bands are typically written in blue->green->red->near-infrared order
+    // (in order from shortest wavelengths to longest, just like the satellite), and the band are to be
+    // labeled "01" for blue, "02" for green, "03" for red, and "04" for near-infrared ...invalidated or
+    // missing bands are skipped
+    *num_bands = ((rband_valid) ? 1 : 0) +
+                 ((gband_valid) ? 1 : 0) +
+                 ((bband_valid) ? 1 : 0) +
+                 ((nband_valid) ? 1 : 0);
+    sprintf(bands, "%s%s", (bband_valid)          ? JL0_BLUE_BAND  : "",
+            (bband_valid && (gband_valid || rband_valid || nband_valid)) ? "," : "");
+    sprintf(bands, "%s%s%s", bands, (gband_valid) ? JL0_GREEN_BAND : "",
+            (gband_valid && (rband_valid || nband_valid))                ? "," : "");
+    sprintf(bands, "%s%s%s", bands, (rband_valid) ? JL0_RED_BAND   : "",
+            rband_valid && nband_valid                                   ? "," : "");
+    sprintf(bands, "%s%s", bands, nband_valid     ? JL0_NIR_BAND   : "");
+
+    // Write and convert first frame
+    // Note: The find_next_avnir_SOI() function leaves the data index pointing at the
+    // first byte after the SOS and the header buffer filled with all the original jpeg
+    // header markers.
+    // Note: If the band has been discarded, nothing is written to that band.  For valid
+    // bands, if any errors exist or occur for the frame, then a frame's worth of padding
+    // (0x00) bytes are written out instead.
+    write_avnir_frame(bband_valid, valid_bSOI, bvalid, bin, bhdr_buf, bbuf, &bidx, &bvalid,
+                      first_vcdu, &blast_vcdu_ctr, jpegBlue,  bout);
+    write_avnir_frame(gband_valid, valid_gSOI, gvalid, gin, ghdr_buf, gbuf, &gidx, &gvalid,
+                      first_vcdu, &glast_vcdu_ctr, jpegGreen, bout);
+    write_avnir_frame(rband_valid, valid_rSOI, rvalid, rin, rhdr_buf, rbuf, &ridx, &rvalid,
+                      first_vcdu, &rlast_vcdu_ctr, jpegRed,   rout);
+    write_avnir_frame(nband_valid, valid_nSOI, nvalid, nin, nhdr_buf, nbuf, &nidx, &nvalid,
+                      first_vcdu, &nlast_vcdu_ctr, jpegNir, nout);
+
+    // Read and convert the rest of the frames, padding missing frames exist and then
+    // terminating when any single input file reaches it's end.  If frames are missing, the
+    // only pad if the time calculation from current frame to last valid frame is a integer
+    // scaler of the frame time else terminate ingest, i.e. only pad frames if the EXACT number
+    // of lines of missing data can be calculated from the difference in frame times ...this
+    // is risky and maybe we shouldn't be doing it?
+    int done;
+    target_time = 0.0;
+    while (!feof(rin) && !feof(gin) && !feof(bin) && !feof(nin) && !done) {
+        // Write frames that are within tolerance of each other, padding those that are later
+        // and out of tolerance.  If the difference between the earliest frame time and the last
+        // is greater than one frame time (w/tolerance) then frames are missing ...write padding on
+        // all valid bands IFF the difference in time is an exact multiple of frame time (within one
+        // imaging cycle's time, i.e. azimuth time per pixel for AVNIR-2).  ONLY read new frames on each
+        // cycle IF that band's frame WAS written, i.e. don't read new frames for a particular band
+        // if it is waiting to re-synch.
+        //
+        r_eof = find_next_avnir_SOI(rin, target_time, soi_tries, &rvalid, &rtime,
+                                    &last_rtime, rbuf, &ridx, first_vcdu, &rlast_vcdu_ctr, rhdr_buf,
+                                    &valid_rSOI);
+        g_eof = find_next_avnir_SOI(gin, target_time, soi_tries, &gvalid, &gtime,
+                                    &last_gtime, gbuf, &gidx, first_vcdu, &glast_vcdu_ctr, bhdr_buf,
+                                    &valid_gSOI);
+        b_eof = find_next_avnir_SOI(bin, target_time, soi_tries, &bvalid, &btime,
+                                    &last_btime, bbuf, &bidx, first_vcdu, &blast_vcdu_ctr, ghdr_buf,
+                                    &valid_bSOI);
+        n_eof = find_next_avnir_SOI(nin, target_time, soi_tries, &nvalid, &ntime,
+                                    &last_ntime, nbuf, &nidx, first_vcdu, &nlast_vcdu_ctr, nhdr_buf,
+                                    &valid_nSOI);
+
+        write_avnir_frame(bband_valid, valid_bSOI, bvalid, bin, bhdr_buf, bbuf, &bidx, &bvalid,
+                          first_vcdu, &blast_vcdu_ctr, jpegBlue,  bout);
+        write_avnir_frame(gband_valid, valid_gSOI, gvalid, gin, ghdr_buf, gbuf, &gidx, &gvalid,
+                          first_vcdu, &glast_vcdu_ctr, jpegGreen, bout);
+        write_avnir_frame(rband_valid, valid_rSOI, rvalid, rin, rhdr_buf, rbuf, &ridx, &rvalid,
+                          first_vcdu, &rlast_vcdu_ctr, jpegRed,   rout);
+        write_avnir_frame(nband_valid, valid_nSOI, nvalid, nin, nhdr_buf, nbuf, &nidx, &nvalid,
+                          first_vcdu, &nlast_vcdu_ctr, jpegNir, nout);
     }
-    FCLOSE(out);
 
-    // Open output .img, temporary jpeg, and input files
-    char *outFileName = appendExt(out_file, ".img"); // Just in case out_file had no .img extension
-    out = (FILE *)FOPEN(outFileName, "wb");
-    FCLOSE(out); // This zero's out the output file just in case it already existed
-    out = (FILE *)FOPEN(outFileName, "ab"); // Open the .img file for append
-    in = (FILE *)FOPEN(all_chunks, "rb"); // Open the all-chunks-in-one file
-
-    asfPrintStatus("\nExtracting embedded AVNIR-2 jpeg-format frames\n"
-            "for band %s and converting to ASF Internal format...\n\n", band);
-
-    // Scan all chunks into frame (jpeg format) and convert to .img format
-    unsigned char c; // last character read
-    const unsigned char marker = MARKER; // for writing markers
-    unsigned char mID; // last marker id read
-    unsigned int payload_length;
-    int tot_lines = 0;
-    int num_read;
-    frame_count = 0;
-    while (!feof(in)) {
-        // 1) Find the start of the image (the SOI marker).  This gets rid of extraneous bytes at
-        //    the beginning of the file and also the 32-bit boundary 0-fill that occurs after the
-        //    end of image (EOI) and prior to the next SOI in the data file.
-        num_read = 0;
-        while (!feof(in)) {
-            FREAD_CHECKED(&c, 1, 1, in, 0);
-            if (c == marker) {
-                FREAD_CHECKED(&mID, 1, 1, in, 0);
-                if (mID == SOI) {
-                    jpeg = (FILE *)FOPEN(tmpJpegName, "wb"); // Open the temporary output jpeg
-                    FWRITE(&marker, 1, 1, jpeg);
-                    FWRITE(&mID, 1, 1, jpeg);
-                    break;
-                }
-            }
-            num_read++;
-            //asfRunWatchDog(0.1);
-        }
-
-        // 2) Find the start of scan (SOS) ...We found the SOI, so read/write header markers and
-        //    payloads ...but skip the non-standard and meaningless ones.  Continue until start of
-        //    scan (SOS) is found.
-        num_read = 0;
-        while (!feof(in)) {
-            FREAD_CHECKED(&c, 1, 1, in, 0);
-            if (c == marker) {
-                FREAD_CHECKED(&mID, 1, 1, in, 0);
-                if (mID == JPG0)
-                {
-                    // Found a discardable marker and payload ...fseek() past it.
-                    FREAD_CHECKED(&c, 1, 1, in, 0); // Read the upper byte of the length
-                    payload_length = (unsigned int) c; // Shift left to give bits proper values
-                    payload_length = payload_length << 8;
-                    FREAD_CHECKED(&c, 1, 1, in, 0); // Read lower byte of the length
-                    payload_length += (unsigned int) c;
-                    payload_length -= 2; // Length includes marker and id (already read ..don't need to skip these)
-                    FSEEK(in, payload_length, SEEK_CUR);  // Seek to first byte past marker payload
-                }
-                else {
-                    // We are still in the block of header info that precedes the scan, so this must
-                    // be another marker ...one that we are not ignoring, so read/write the payload
-                    FWRITE(&marker, 1, 1, jpeg);
-                    FWRITE(&mID, 1, 1, jpeg);
-                    FREAD_CHECKED(&c, 1, 1, in, 0); // Read the upper byte of the length
-                    FWRITE(&c, 1, 1, jpeg);
-                    payload_length = (unsigned int) c; // Shift left to give bits proper values
-                    payload_length = payload_length << 8;
-                    FREAD_CHECKED(&c, 1, 1, in, 0); // Read lower byte of the length
-                    FWRITE(&c, 1, 1, jpeg);
-                    payload_length += (unsigned int) c;
-                    payload_length -= 2; // Length includes marker and id (already read ..don't need to skip these)
-                    int byte;
-                    for (byte = 0; byte < payload_length; byte++) {
-                        // Write the rest of the marker's payload
-                        FREAD_CHECKED(&c, 1, 1, in, 0); // Read lower byte of the length
-                        FWRITE(&c, 1, 1, jpeg);
-                    }
-                    if (mID == SOS) {
-                        break;
-                    }
-                }
-            }
-            else {
-                // There should be NO bytes in between markers and their payloads, in between
-                // the end of a payload and the next marker, and after the SOI (0xFFD8) and
-                // the first marker to follow.  In other words, writing bytes out right here,
-                // if not within a marker's payload, is PROBABLY wrong ...this is an experiment
-                // until more ALOS data is processed and I can prove that exceptions do or do not
-                // exist and how they should be handled.
-                FWRITE(&c, 1, 1, jpeg);
-            }
-            num_read++;
-            //asfRunWatchDog(0.1);
-        }
-
-        // 3) Find the end of image (EOI).  We found the SOS, so read/write scan data now.  Continue until
-        //    the end of image (EOI) is found.
-        int nitems = 1;
-        int EOI_found = 0;
-        num_read = 0;
-        while (!feof(in) && nitems > 0) {
-            nitems = FREAD_CHECKED(&c, 1, 1, in, 1);
-            if (nitems == 1) {
-                FWRITE(&c, 1, 1, jpeg);
-                if (c == marker) {
-                    // Found a possible marker (might be a true 0xFF valued byte in the data, in
-                    // which case the JPEG standard says it is followed by a 0-padding (0x00) byte
-                    // and not actually a marker)
-                    nitems = FREAD_CHECKED(&mID, 1, 1, in, 1);
-                    if (nitems == 1) {
-                        FWRITE(&mID, 1, 1, jpeg);
-                        if (mID == EOI) {
-                            EOI_found = 1;
-                            break;
-                        }
-                    }
-                }
-            }
-            num_read++;
-            //asfRunWatchDog(0.1);
-        }
-
-        // Close the temporary jpeg file and convert it to a .img file (appending)
-        FCLOSE(jpeg);
-        if (EOI_found) {
-            // Only convert completed temporary jpegs ...ALOS data may not end on a full
-            // frame boundary ...in other words, the chunk data from the satellite may
-            // end prematurely ...so discard incomplete frames.
-            frame_count++;
-            if (max_frames && frame_count > frame_count) {
-                break;
-            }
-            tot_lines += import_avnir_frame_jpeg_to_img(tmpJpegName, out);
-        }
-    }
-    //asfStopWatchDog();
-    FCLOSE(in);
+    // Close and concat the .img files
+    FCLOSE(rout);
+    FCLOSE(gout);
+    FCLOSE(bout);
+    FCLOSE(nout);
+    char *img_files[*num_bands];
+    int num_files = 0;
+    if (bband_valid) img_files[num_files++] = bout_file;
+    if (gband_valid) img_files[num_files++] = gout_file;
+    if (rband_valid) img_files[num_files++] = rout_file;
+    if (nband_valid) img_files[num_files]   = nout_file;
+    num_files = *num_bands;
+    int tot_lines = concat_img_files(img_files, num_files, JL0_AVNIR_SAMPLE_COUNT, out_file);
 
     // Clean up
+    FREE(out_base);
     char del_files[1024];
+    int i;
+    for (i = 0; i < num_files; i++) {
+        sprintf(del_files, "rm -f %s", img_files[i]);
+        printf("\nWould have run this command: %s\n\n", del_files);
+        //asfSystem(del_files);
+    }
     sprintf(del_files, "rm -rf %s", tmp_folder);
     printf("\nWould have run this command: %s\n\n", del_files);
     //asfSystem(del_files);
@@ -745,48 +813,563 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
 //
 // The odd and even pixels need to be interlaced to restore the data line.
 //
-int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, FILE *out)
+int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE *out)
 {
-    struct jpeg_decompress_struct *cinfo =
-            (struct jpeg_decompress_struct *)MALLOC(sizeof(struct jpeg_decompress_struct));
+    FILE *jpeg = NULL; // Input jpeg file
+    JSAMPLE *ibuf = NULL;
+    unsigned char *dest = NULL;
+    int num_lines = 0;
+    struct jpeg_decompress_struct *cinfo = NULL;
     struct jpeg_error_mgr mgr;
-    unsigned char *dest;
 
-    cinfo->err = jpeg_std_error(&mgr);
-    cinfo->buffered_image = TRUE;
-    jpeg_create_decompress(cinfo);
+    if (good_frame) {
+        // Open and intialize jpeg for decompression
+        cinfo = (struct jpeg_decompress_struct *)MALLOC(sizeof(struct jpeg_decompress_struct));
+        cinfo->err = jpeg_std_error(&mgr);
+        cinfo->buffered_image = TRUE;
+        jpeg_create_decompress(cinfo);
 
-    FILE *fp = (FILE *)FOPEN(tmpJpegName, "rb");
+        jpeg = (FILE *)FOPEN(tmpJpegName, "rb");
 
-    jpeg_stdio_src(cinfo, fp);
-    jpeg_read_header(cinfo, TRUE);
-    jpeg_start_decompress(cinfo);
+        jpeg_stdio_src(cinfo, jpeg);
+        jpeg_read_header(cinfo, TRUE);
+        jpeg_start_decompress(cinfo);
 
-    dest = (unsigned char *)MALLOC((2 * 3550) * sizeof(unsigned char)); // greyscale, 1 component
-    JSAMPLE *buf = (JSAMPLE *)MALLOC(cinfo->image_width * sizeof(unsigned char));
+        // Allocate input and output buffers
+        dest = (unsigned char *)MALLOC((2 * 3550) * sizeof(unsigned char)); // greyscale, 1 component
+        ibuf = (JSAMPLE *)MALLOC(cinfo->image_width * sizeof(unsigned char));
 
-    int i;
-    for (i = 0; i < cinfo->image_height; i++) {
-        jpeg_read_scanlines(cinfo, &buf, 1); // Read and uncompress one data line
+        int i;
+        num_lines = cinfo->image_height;
+        for (i = 0; i < num_lines; i++) {
+            jpeg_read_scanlines(cinfo, &ibuf, 1); // Read and uncompress one data line
 
-        int j = 12;             // Point at odds
-        int k = 12 + 3550 + 26; // Point at evens
-        int m, n;
-        for (m = n = 0; m < 3550; m++, j++, k++) {
-            dest[n] = (unsigned char)buf[j]; // Odd pixel
-            dest[n + 1] = (unsigned char)buf[k]; // Even pixel
-            n += 2;
+            int j = 12;             // Point at odds
+            int k = 12 + 3550 + 26; // Point at evens
+            int m, n;
+            for (m = n = 0; m < 3550; m++, j++, k++) {
+                dest[n]     = (unsigned char)ibuf[j]; // Odd pixel
+                dest[n + 1] = (unsigned char)ibuf[k]; // Even pixel
+                n += 2;
+            }
+            FWRITE(dest, sizeof(unsigned char), 2 * 3550, out); // Write raw interlaced data to .img file
         }
-        FWRITE(dest, sizeof(unsigned char), 2 * 3550, out); // Write raw interlaced data to .img file
+
+        FCLOSE(jpeg);
+
+        // Clean up
+        jpeg_finish_decompress(cinfo);
+        jpeg_destroy_decompress(cinfo);
+        FREE(cinfo);
+        FREE(ibuf);
+    }
+    else {
+        // Invalid jpeg frame, so just pad the output file with blank data (0x00)
+        int i;
+        dest = (unsigned char *)MALLOC((2 * 3550) * sizeof(unsigned char)); // greyscale, 1 component
+        for (i = 0; i < JL0_AVNIR_SAMPLE_COUNT   ; i++) {
+            dest[i] = PAD;
+        }
+        num_lines = JL0_AVNIR_LINES_PER_FRAME;
+        for (i = 0; i < num_lines; i++) {
+            FWRITE(dest, sizeof(unsigned char), 2 * 3550, out);
+        }
     }
 
-    FCLOSE(fp);
+    return num_lines;
+}
+
+// Concatenates all VCID chunks into a single file ..and preserves 1100-byte telemetry frame structure
+// (including 6-byte CCSDS header at the beginning of each t-frame)
+void concat_avnir_band_chunks(int num_chunks, const char **chunks, const char *all_chunks, const char *band)
+{
+    int chunk;
+    int bytes_read;
+    int lines_read = 0;
+    unsigned char *data = NULL;
+    FILE *in = NULL;
+    FILE *out = NULL;
+
+    asfPrintStatus("\n\nCombining sub-files for band %s...\n\n", band);
+
+    out =(FILE *)FOPEN(all_chunks, "wb");
+    data = (unsigned char *)MALLOC(JL0_AVNIR_TFRAME_LEN * sizeof(unsigned char));
+    for (chunk = 0; chunk < num_chunks; chunk++) {
+        in = (FILE *)FOPEN(chunks[chunk], "rb");
+        bytes_read = FREAD_CHECKED(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, in, 1);
+        while (bytes_read == JL0_AVNIR_TFRAME_LEN && !feof(in)) {
+            lines_read++;
+            FWRITE(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, out);
+            bytes_read = FREAD_CHECKED(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, in, 1);
+            asfLineMeter(lines_read, 40000);
+        }
+        FCLOSE(in);
+        asfLineMeter(40000, 40000);
+        lines_read = 0;
+    }
+    FREE(data);
+    FCLOSE(out);
+}
+
+// Returns non-zero if end of file is reached while searching for the next SOI
+// A jpeg frame (starting with an SOI) is invalid if a) the time delay from the last
+// valid frame to the current frame is longer than it should've been (missing frames), or
+// b) the scene extraction time of the current frame is outside the window allowed by the
+// target time plus a tolerance
+int find_next_avnir_SOI(FILE *in, float time_target, int max_tries, int *valid_vcdu,
+                        float *time, float *last_time, unsigned char *buf, int *idx,
+                        int first_vcdu, int *last_vcdu_ctr, unsigned char *hdr_buf,
+                        int *valid_SOI)
+{
+    unsigned char c, mID;
+    int num_read, try;
+
+    *time = 0.0;
+    *valid_SOI = 0;
+    *valid_vcdu = 0;
+    try = 0;
+    max_tries = (max_tries <= 0) ? MAXIMUM_SOI_SEARCH_TRIES : max_tries;
+    while (!feof(in) && max_tries > 0 && try < max_tries) {
+        num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, last_vcdu_ctr, valid_vcdu);
+        if (valid_vcdu && num_read > 0 && c == MARKER) {
+            num_read = fread_avnir_tstream(&mID, in, buf, first_vcdu, idx, last_vcdu_ctr, valid_vcdu);
+            if (valid_vcdu && num_read > 0 && mID == SOI) {
+                hdr_buf[0] = MARKER;
+                hdr_buf[1] = SOI;
+                // Check validity of SOI (checks validity of jpeg header structure) and
+                // get time from aux. data (if jpeg frame is valid)
+                validate_avnir_SOI_and_get_frame_time (in, buf, idx, first_vcdu, last_vcdu_ctr,
+                                                       hdr_buf, valid_SOI, last_time, time);
+
+                if (*valid_SOI) {
+                    // If the jpeg frame structure was valid (valid_SOI), then check to see
+                    // if the timing meets requirements ...returning the first jpeg frame that
+                    // meets the timing requirements
+                    try++;
+                    if (time_target == 0.0                                      ||
+                        (time_target > 0.0                                      &&
+                         *time >  time_target - JL0_AVNIR_FRAME_TIME_TOLERANCE  &&
+                         *time <= time_target + JL0_AVNIR_FRAME_TIME_TOLERANCE)
+                       )
+                    {
+                        // Scene extraction time for this jpeg frame was inside the target window
+                        // so keep it...
+                        *last_time = *time;
+                        break;
+                    }
+                    else {
+                        // Scene extraction time for this jpeg frame was outside the target window
+                        *valid_SOI = 0;
+                        *time = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    return (feof(in));
+}
+
+// fread_avnir_tstream() returns a byte (one byte only for now) from a pseudo-telemetry stream.
+// It assumes that bytes come from a single file, the file being made up of a series of 1100-byte
+// telemetry frames (6-byte CCSDS header followed by 1094 bytes of data).  fread_avnir_tstream()
+// returns the number of characters read (should always be 1) along with a 'valid' flag that
+// sets to untrue (zero) when either the end of file is reached without being able to read
+// a byte or if a freshly-read telemetry frame has a non-sequential VCDU counter value (indicates
+// missing telemetry frames)
+//
+// FIXME: It would be nice if...
+//  a) the new t-frame could be read from the next file in a sequence, i.e. when the buffer
+//     runs out being able to read t-frames from a set of files rather than requiring a single
+//     concatenated temporary file, and
+//  b) you could read any number of bytes from the the stream at once like the real fread() allows
+//
+// Note: Upon return, *idx is left pointing at the last character read
+//
+int fread_avnir_tstream(unsigned char *c, FILE *in, unsigned char *buf, int first_vcdu,
+                        int *idx, int *last_vcdu_ctr, int *valid_vcdu)
+{
+    int num_read = 0;
+
+    // Check to see if we need to refresh the buffer, and refresh if necessary
+    if (*idx < 0 || *idx > JL0_AVNIR_TFRAME_LEN - 1) {
+        // NOTE: idx needs to be initialized to a negative number
+        // to trigger the first read (see calling function)
+        num_read = fread(buf, 1, JL0_AVNIR_TFRAME_LEN, in);
+        if (feof(in) || num_read != JL0_AVNIR_TFRAME_LEN) {
+            // Incomplete read of new telemetry frame
+            num_read = 0;
+            *valid_vcdu = 0; // Only update when reading a telemetry frame
+            *c = PAD;
+        }
+        else {
+            // Successful read of new telemetry frame ...but was it sequential?
+
+            // Check for validity of the new t-frame, i.e. make sure the VCDU counter is sequential
+            // after the last t-frame read (non-sequential indicates missing t-frames ...missing
+            // data.  This invalidates the entire frame).  (Skip checking for continuity if the t-frame
+            // is the first one read)
+            int vcdu_ctr = ((unsigned int)buf[2]<<16) + ((unsigned int)buf[3]<<8) + (unsigned int)buf[4];
+            *valid_vcdu  = (first_vcdu) ? 1 :
+                           (vcdu_ctr - *last_vcdu_ctr == 1) ? 1 : 0;
+            *last_vcdu_ctr = vcdu_ctr;
+
+            // Return a byte from the newly-read t-frame
+            if (*valid_vcdu) {
+                *idx = 6; // Step past CCSDS header, i.e. fread_avnir_tstream() only returns real data, not hdr
+                *c = buf[*idx];
+                num_read = 1;
+            }
+            else {
+                num_read = 0;
+                *c = PAD;
+            }
+        }
+    }
+    else {
+        // Current telemetry frame hasn't been read completely ...so use it.  Leave *valid_vcdu flag
+        // at previous value (only change when reading a new t-frame ...so the validity value stays
+        // the same for the entire t-frame as it should since that's what it represents)
+        *c = buf[(*idx)++];
+        num_read = 1;
+    }
+
+    return num_read;
+}
+
+// If the SOI is a valid SOI (not just data that contained a marker followed by the SOI value and is not corrup
+// in some way) returns the scene extraction time for a single frame of data.  The valid_vcdu flag is set to
+// zero (untrue, 'invalid') if the SOI is not a true one or is corrupt in some way ...in which case, the time
+// value will also be set to zero (which by default makes it an invalid time since it is earlier than the
+// required scene extraction start time for the entire image ...some code may depend on this!)
+// NOTE: The header buffer contains 0xFFD8 (jpeg marker plus start of image id) and this function needs
+// to populate the header buffer with the whole 256-byte (according to ALOS spec) jpeg header
+void validate_avnir_SOI_and_get_frame_time (FILE *in, unsigned char *buf, int *idx, int first_vcdu,
+                                            int *last_vcdu_ctr, unsigned char *hdr_buf, int *valid_SOI,
+                                            float *last_time, float *time)
+{
+    int num_read;
+    int valid_vcdu;
+    int hdr_idx = 2;
+    unsigned char c, mID;
+
+    num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, last_vcdu_ctr, valid_SOI);
+    hdr_buf[hdr_idx++] = c;
+    if (num_read == 1 && *valid_SOI) {
+        num_read = fread_avnir_tstream(&mID, in, buf, first_vcdu, idx, last_vcdu_ctr, valid_SOI);
+        hdr_buf[hdr_idx++] = mID;
+        *valid_SOI = (num_read == 1 && *valid_SOI && (mID == SOF0 || mID == SOF3)) ? 1 : 0;
+    }
+    if (*valid_SOI) {
+        // SOI marker and SOFx markers are valid and in the right spot ...call it good
+        // Now move to APP0 (note: The ALOS docs often mistakenly call it APP1) and read the
+        // scene extraction time for this frame
+        //
+        // fseek() 18 bytes forward...
+        int i;
+        for (i=0; i<18; i++) { // 11 byte SOFx payload + marker & ID + 5 JPG0 payload
+            num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+            if (num_read == 1 && valid_vcdu) {
+                hdr_buf[hdr_idx++] = c;
+            }
+        }
+
+        num_read = 0;
+        if (valid_vcdu) {
+            num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+            if (num_read == 1 && valid_vcdu) {
+                hdr_buf[hdr_idx++] = c;
+            }
+        }
+        if (num_read == 1 && valid_vcdu && c == MARKER) {
+            num_read = fread_avnir_tstream(&mID, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+            hdr_buf[hdr_idx++] = mID;
+            if (num_read == 1 && valid_vcdu && mID == APP0) {
+                // Read APP0 payload length (2 bytes) and error byte (1 byte)
+                unsigned char c1, c2, c3, error_byte;
+                num_read  = fread_avnir_tstream(&c1, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                num_read += fread_avnir_tstream(&c2, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                num_read += fread_avnir_tstream(&error_byte, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                hdr_buf[hdr_idx++] = c1;
+                hdr_buf[hdr_idx++] = c2;
+                hdr_buf[hdr_idx++] = error_byte;
+                if (num_read == 3 && valid_vcdu &&
+                    !(error_byte & APP0_AUX_MEMORY_BUFFER_OVERFLOW))
+                {
+                    // Ok ...looks like a valid APP0 was found, so let's derive the scene extraction time
+                    // for this frame.  Read and discard 2 bytes (GPS Week), then read and keep the
+                    // next 3 bytes to get the GPS seconds, then read 2 more bytes to get the line
+                    // counter.  Time is equal to GPS seconds plus lines * 1.48 msec
+                    //
+                    num_read  = fread_avnir_tstream(&c1, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                    num_read += fread_avnir_tstream(&c2, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                    hdr_buf[hdr_idx++] = c1;
+                    hdr_buf[hdr_idx++] = c2;
+
+                    num_read += fread_avnir_tstream(&c1, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                    num_read += fread_avnir_tstream(&c2, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                    num_read += fread_avnir_tstream(&c3, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                    hdr_buf[hdr_idx++] = c1;
+                    hdr_buf[hdr_idx++] = c2;
+                    hdr_buf[hdr_idx++] = c3;
+                    float gps_seconds = (float)(((unsigned long)c1<<16) + ((unsigned long)c2<<8) + (unsigned long)c3);
+
+                    num_read += fread_avnir_tstream(&c1, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                    num_read += fread_avnir_tstream(&c2, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+                    hdr_buf[hdr_idx++] = c1;
+                    hdr_buf[hdr_idx++] = c2;
+                    float line_ctr = (float)(((unsigned long)c1<<8) + (unsigned long)c2);
+
+                    if (num_read == 7 && valid_vcdu) {
+                        // Calculate the time (ignoring effect of electrical noise and imaging cycle
+                        // timing errors).  Note: Time comparisons are always with a tolerance (elsewhere).
+                        *time = gps_seconds + line_ctr * AVNIR_IMAGING_CYCLE;
+                        float delta_time = *time - *last_time;
+                        if (delta_time < JL0_AVNIR_FRAME_TIME - JL0_AVNIR_FRAME_TIME_TOLERANCE ||
+                            delta_time > JL0_AVNIR_FRAME_TIME + JL0_AVNIR_FRAME_TIME_TOLERANCE)
+                        {
+                            // Missing frames exist ...mark this one as bad
+                            // (Note: A short frame time should never occur, therefore this code
+                            //  should only be reached if whole _missing_ frames exist.)
+                            *valid_SOI = 0;
+                            *time = 0;
+                        }
+                    }
+                    else {
+                        // Either file was short or vcdu ctr was out of sequence
+                        *valid_SOI = 0;
+                        *time = 0;
+                    }
+                }
+                else {
+                    // Either file was short, vcdu ctr was out of sequence, or a memory buffer overflow occurred
+                    *valid_SOI = 0;
+                    *time = 0;
+                }
+            }
+            else {
+                // Either file was short, vcdu ctr was out of sequence, or the marker was not a true marker
+                *valid_SOI = 0;
+                *time = 0;
+            }
+        }
+        else {
+            // Either file was short, vcdu ctr was out of sequence, or no marker found yet
+            *valid_SOI = 0;
+            *time = 0;
+        }
+    }
+    else {
+        // Either file was short, vcdu ctr was out of sequence, or the SOI marker was not followed by
+        // a SOFx marker, i.e. the jpeg header is invalid
+        *time = 0;
+    }
+
+    // If all is valid so far, then populate the rest of the header buffer
+    // This leaves the data idx pointing at the first byte after the start of scan, i.e. right after
+    // the SOS marker ID byte
+    if (*valid_SOI && *time > 0) {
+        int i;
+        for (i = hdr_idx; hdr_idx < JL0_AVNIR_JPEG_HDR_LEN; hdr_idx++) {
+            num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, last_vcdu_ctr, &valid_vcdu);
+            if (num_read == 1 && valid_vcdu) {
+                hdr_buf[hdr_idx] = c;
+            }
+        }
+    }
+}
+
+int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char *buf, int *idx,
+                                 int *valid, int first_vcdu, int *last_vcdu_ctr, FILE *jpeg)
+{
+    int i, num_read, payload_length, success = 1;
+    unsigned char c;
+
+    // Write the jpeg header.  The header buffer contains the entire original jpeg header as
+    // found in the ALOS JL0 files, which implies that the extra markers and payloads (one of
+    // which is actually invalid since it uses a marker reserved for jpeg library usage only)
+    // still exist and should not be written out.  The good news is that you can depend on the
+    // header starting with the 0xFFD8 SOI marker combination and ending with the 0xFFDA SOS
+    // (start of scan) marker combination... after the header, the data itself (up to the end
+    // of image, EOI) needs to be read/written to the jpeg file (only)
+    //
+    // 1) Write the SOI to the file
+    i = 0;
+    FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xFF
+    FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xD8
+    // 2) Write the remainder of the header bytes, skipping the non-standard or meaningless
+    //    marker/payload combinations
+    while (i < JL0_AVNIR_JPEG_HDR_LEN) {
+        if (hdr_buf[i] == MARKER) {
+            if (i + 1 > JL0_AVNIR_JPEG_HDR_LEN) {
+                success = 0;
+                break;
+            }
+            unsigned char mID = hdr_buf[i + 1];
+            if (mID == JPG0)
+            {
+                // Found a discardable marker and payload ...fseek() past it.
+                if (i + 3 > JL0_AVNIR_JPEG_HDR_LEN) {
+                    success = 0;
+                    break;
+                }
+                unsigned int payload_length = hdr_buf[i + 2];
+                payload_length = payload_length << 8;
+                payload_length += hdr_buf[i + 3];
+                i += 2 + payload_length; // Move past this marker and payload without writing anything out
+            }
+            else {
+                // We are still in the block of header info that precedes the scan, so this must
+                // be another marker ...one that we are not ignoring, so read/write the payload
+                if (i + 4 > JL0_AVNIR_JPEG_HDR_LEN) {
+                    success = 0;
+                    break;
+                }
+                FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xFF
+                FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be the marker ID
+                payload_length = hdr_buf[i]; // Shift left to give bits proper values
+                payload_length = payload_length << 8;
+                FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Write upper byte of payload size
+                payload_length += hdr_buf[i];
+                FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Write lower byte of payload size
+                payload_length -= 2; // Length includes marker and id (already written ..need to skip these)
+                int byte;
+                for (byte = 0; byte < payload_length && i < JL0_AVNIR_JPEG_HDR_LEN; byte++) {
+                    // Write the rest of the marker's payload
+                    FWRITE(&hdr_buf[i++], 1, 1, jpeg);
+                }
+                if (i >= JL0_AVNIR_JPEG_HDR_LEN && hdr_buf[i - 1] != SOS) {
+                    success = 0;
+                    break;
+                }
+            }
+        }
+        else {
+            FWRITE(&hdr_buf[i++], 1, 1, jpeg);
+        }
+    }
+
+    // Read/write the rest of the jpeg from the input t-stream
+    if (success) {
+        num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, last_vcdu_ctr, valid);
+        if (num_read == 1 && *valid) {
+            fwrite(&c, 1, 1, jpeg);
+        }
+        else {
+            success = 0;
+        }
+    }
+    int done = 0;
+    while (num_read == 1 && !feof(in) && success && !done) {
+        if (c == MARKER) {
+            // Check for EOI
+            unsigned char mID;
+            num_read = fread_avnir_tstream(&mID, in, buf, first_vcdu, idx, last_vcdu_ctr, valid);
+            if (num_read == 1 && *valid) {
+                fwrite(&mID, 1, 1, jpeg);
+            }
+            else {
+                success = 0;
+            }
+            if (num_read == 1 && success && mID == EOI) {
+                done = 1;
+            }
+        }
+        if (num_read == 1 && !feof(in) && success && !done) {
+            num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, last_vcdu_ctr, valid);
+            if (num_read == 1 && *valid) {
+                fwrite(&c, 1, 1, jpeg);
+            }
+            else {
+                success = 0;
+            }
+        }
+    }
+
+    // If the read/write loop terminated without finding the EOI then something is
+    // wrong (end of file reached, invalid VCDU counter sequence, etc)... mark this
+    // frame as a failure
+    if (feof(in) && !done) {
+        success = 0;
+    }
+
+    return success;
+}
+
+void write_avnir_frame(int band_valid, int valid_SOI, int valid_vcdu, FILE *in,
+                       unsigned char *hdr_buf, unsigned char *buf, int *idx, int *valid,
+                       int first_vcdu, int *last_vcdu_ctr, char *jpegFile, FILE *out)
+{
+    int good_frame;
+    if (valid_SOI && valid_vcdu) {
+        // Read/Write jpeg
+        FILE *jpeg = (FILE *)FOPEN(jpegFile, "wb");
+        good_frame = read_write_avnir_jpeg_frame(in, hdr_buf,
+                                                 buf, idx,
+                                                 valid, first_vcdu, last_vcdu_ctr,
+                                                 jpeg);
+        FCLOSE(jpeg);
+    }
+    else {
+        good_frame = 0;
+    }
+
+    // Convert temporary jpeg to .img format
+    // Note: If the SOI is not valid or an invalid vcdu ctr was encountered (etc)
+    // then import_avnir_frame_to_img() will skip using the jpeg and will just
+    // write out the appropriate amount of pad bytes (0x00), i.e. blank data
+    import_avnir_frame_jpeg_to_img(jpegFile, good_frame, out);
+}
+
+// Limitation:  Handles only BYTE images at this time
+int concat_img_files(char **img_files, int num_files, int sample_count, const char *out_file) {
+    FILE **file;
+    FILE *out = NULL;
+    int i, tot_lines, done;
+    int *lines;
+    unsigned char *buf;
+
+    file = (FILE **)MALLOC(num_files * sizeof(FILE *));
+    lines = (int *)MALLOC(num_files * sizeof(int));
+    buf = (unsigned char *)MALLOC(sample_count * sizeof(unsigned char));
+
+    // Determine max number of lines that can be read from all files
+    for (i = 0, tot_lines = INT_MAX; i < num_files; i++) {
+        lines[i] = 0;
+        file[i] = (FILE *)FOPEN(img_files[i], "rb");
+        lines[i] += fread(buf, sizeof(buf), 1, file[i]);
+        while (!feof(file[i])) {
+            lines[i] += fread(buf, sizeof(buf), 1, file[i]);
+        }
+        FCLOSE(file[i]);
+        tot_lines = MIN(tot_lines, lines[i]);
+    }
+
+    // Concatenate the files in sequential order
+    done = 0;
+    out = (FILE *)FOPEN(out_file, "wb");
+    for (i = 0; i < num_files && !done; i++) {
+        file[i] = (FILE *)FOPEN(img_files[i], "rb");
+        int line, num_read;
+        for (line = 0; line < tot_lines; line++) {
+            num_read = fread(buf, sizeof(buf), 1, file[i]);
+            if (num_read == 1) {
+                fwrite(buf, sizeof(buf), 1, file[i]);
+            }
+            if (num_read != 1 || feof(file[i])) {
+                // Should not reach this code since the max valid lines has already been
+                // determined above and we aren't supposed to be reading past that limit
+                asfPrintError("Programming error: File too short:\n  %s\n", img_files[i]);
+            }
+        }
+        FCLOSE(file[i]);
+    }
+    FCLOSE(out);
 
     // Clean up
-    jpeg_finish_decompress(cinfo);
-    jpeg_destroy_decompress(cinfo);
-    FREE(cinfo);
+    FREE(lines);
+    FREE(file);
     FREE(buf);
 
-    return cinfo->image_height;
+    return tot_lines;
 }
