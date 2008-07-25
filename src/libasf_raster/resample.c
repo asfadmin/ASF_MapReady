@@ -173,6 +173,15 @@ resample_impl(const char *infile, const char *outfile,
         metaOut->projection->perX = xpixsiz;
         metaOut->projection->perY = -ypixsiz;
       }
+      // This is kind of a kludge to work around differences in how
+      // the slant/ground range code in meta_get_latLon() differs from
+      // the transform/airsar/projected code handles the start/line
+      // sample values.  (They are applied before/after the perX/Y
+      // is applied.)
+      else if (!metaOut->transform && !metaOut->airsar) {        
+        metaOut->general->start_sample *= xscalfact;
+        metaOut->general->start_line *= yscalfact;
+      }
     }
 
     char **band_name = extract_band_names(metaIn->general->bands,
