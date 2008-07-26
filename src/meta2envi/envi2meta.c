@@ -56,7 +56,7 @@ int main(int argc, char **argv)
   char line[255]="", key[25]="", value[25]="", *map_info_ptr=NULL;
   char *proj_info_ptr, proj_info[255]="", bla[25], map_info[255]="";
   double fTmp1, fTmp2;
-  int projection_key;
+  int projection_key=-1;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
   logflag = 0;
 
@@ -211,6 +211,9 @@ int main(int argc, char **argv)
       sscanf(proj_info, ", %lf, %lf, %lf, %lf, %s}",
          &envi->semimajor_axis, &envi->semiminor_axis, &envi->center_lat,
          &envi->center_lon, bla);
+      break;
+    case -1: // projection not set
+      sprintf(envi->projection, "not map projected");
       break;
     default:
       sprintf(errbuf, "\n   ERROR: unsupported map projection\n\n");

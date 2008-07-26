@@ -208,61 +208,63 @@ meta_parameters* envi2meta(envi_header *envi)
   if (envi->byte_order == 0) sprintf(meta->general->system, "lil_ieee");
   else if (envi->byte_order == 1) sprintf(meta->general->system, "big_ieee");
 
-  if (!meta->projection) meta->projection = meta_projection_init();
-
-  if (strncmp(envi->projection, "UTM", 3)==0) {
-    meta->projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-    meta->projection->param.utm.zone = envi->projection_zone;
-    meta->projection->param.utm.lat0 =envi->center_lat;
-    meta->projection->param.utm.lon0 = envi->center_lon;
-    meta->projection->param.utm.false_easting = envi->ref_pixel_x;
-    meta->projection->param.utm.false_northing = envi->ref_pixel_y;
+  if (strcmp(envi->projection, "not map projected") != 0) {
+    if (!meta->projection) meta->projection = meta_projection_init();
+    
+    if (strncmp(envi->projection, "UTM", 3)==0) {
+      meta->projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+      meta->projection->param.utm.zone = envi->projection_zone;
+      meta->projection->param.utm.lat0 =envi->center_lat;
+      meta->projection->param.utm.lon0 = envi->center_lon;
+      meta->projection->param.utm.false_easting = envi->ref_pixel_x;
+      meta->projection->param.utm.false_northing = envi->ref_pixel_y;
+    }
+    else if (strncmp(envi->projection, "Polar Stereographic", 18)==0) {
+      meta->projection->type = POLAR_STEREOGRAPHIC;
+      meta->projection->param.ps.slat = envi->center_lat;
+      meta->projection->param.ps.slon = envi->center_lon;
+      meta->projection->param.ps.false_easting = envi->ref_pixel_x;
+      meta->projection->param.ps.false_northing = envi->ref_pixel_y;
+    }
+    else if (strncmp(envi->projection, "Albers Conical Equal Area", 25)==0) {
+      meta->projection->param.albers.std_parallel1 = envi->standard_parallel1;
+      meta->projection->param.albers.std_parallel2 = envi->standard_parallel2;
+      meta->projection->param.albers.center_meridian = envi->center_lat;
+      meta->projection->param.albers.orig_latitude = envi->center_lon;
+      meta->projection->param.albers.false_easting = envi->ref_pixel_x;
+      meta->projection->param.albers.false_northing = envi->ref_pixel_y;
+    }
+    else if (strncmp(envi->projection, "Lambert Conformal Conic", 23)==0) {
+      meta->projection->param.lamcc.plat1 = envi->standard_parallel1;
+      meta->projection->param.lamcc.plat2 = envi->standard_parallel2;
+      meta->projection->param.lamcc.lat0 = envi->center_lat;
+      meta->projection->param.lamcc.lon0 = envi->center_lon;
+      meta->projection->param.lamcc.false_easting = envi->ref_pixel_x;
+      meta->projection->param.lamcc.false_northing = envi->ref_pixel_y;
+    } 
+    else if (strncmp(envi->projection, "Lambert Azimuthal Equal Area", 28)==0) {
+      meta->projection->param.lamaz.center_lat = envi->center_lat;
+      meta->projection->param.lamaz.center_lon = envi->center_lon;
+      meta->projection->param.lamaz.false_easting = envi->ref_pixel_x;
+      meta->projection->param.lamaz.false_northing = envi->ref_pixel_y;
+    }
+    else {
+      sprintf(errbuf,"\n   ERROR: Unsupported projection type\n\n");
+      printErr(errbuf);
+    }
+    
+    meta->projection->startX = envi->pixel_easting;
+    meta->projection->startY = envi->pixel_northing;
+    meta->projection->perX = envi->proj_dist_x;
+    meta->projection->perY = envi->proj_dist_y;
+    if (strncmp(envi->hemisphere, "North", 5)==0)
+      meta->projection->hem = 'N';
+    else if (strncmp(envi->hemisphere, "South", 5)==0)
+      meta->projection->hem = 'S';
+    meta->projection->re_major = envi->semimajor_axis;
+    meta->projection->re_minor = envi->semiminor_axis;
+    sprintf(meta->projection->units, "meters");
   }
-  else if (strncmp(envi->projection, "Polar Stereographic", 18)==0) {
-    meta->projection->type = POLAR_STEREOGRAPHIC;
-    meta->projection->param.ps.slat = envi->center_lat;
-    meta->projection->param.ps.slon = envi->center_lon;
-    meta->projection->param.ps.false_easting = envi->ref_pixel_x;
-    meta->projection->param.ps.false_northing = envi->ref_pixel_y;
-  }
-  else if (strncmp(envi->projection, "Albers Conical Equal Area", 25)==0) {
-    meta->projection->param.albers.std_parallel1 = envi->standard_parallel1;
-    meta->projection->param.albers.std_parallel2 = envi->standard_parallel2;
-    meta->projection->param.albers.center_meridian = envi->center_lat;
-    meta->projection->param.albers.orig_latitude = envi->center_lon;
-    meta->projection->param.albers.false_easting = envi->ref_pixel_x;
-    meta->projection->param.albers.false_northing = envi->ref_pixel_y;
-  }
-  else if (strncmp(envi->projection, "Lambert Conformal Conic", 23)==0) {
-    meta->projection->param.lamcc.plat1 = envi->standard_parallel1;
-    meta->projection->param.lamcc.plat2 = envi->standard_parallel2;
-    meta->projection->param.lamcc.lat0 = envi->center_lat;
-    meta->projection->param.lamcc.lon0 = envi->center_lon;
-    meta->projection->param.lamcc.false_easting = envi->ref_pixel_x;
-    meta->projection->param.lamcc.false_northing = envi->ref_pixel_y;
-  } 
-  else if (strncmp(envi->projection, "Lambert Azimuthal Equal Area", 28)==0) {
-    meta->projection->param.lamaz.center_lat = envi->center_lat;
-    meta->projection->param.lamaz.center_lon = envi->center_lon;
-    meta->projection->param.lamaz.false_easting = envi->ref_pixel_x;
-    meta->projection->param.lamaz.false_northing = envi->ref_pixel_y;
-  }
-  else {
-    sprintf(errbuf,"\n   ERROR: Unsupported projection type\n\n");
-    printErr(errbuf);
-  }
-
-  meta->projection->startX = envi->pixel_easting;
-  meta->projection->startY = envi->pixel_northing;
-  meta->projection->perX = envi->proj_dist_x;
-  meta->projection->perY = envi->proj_dist_y;
-  if (strncmp(envi->hemisphere, "North", 5)==0)
-    meta->projection->hem = 'N';
-  else if (strncmp(envi->hemisphere, "South", 5)==0)
-    meta->projection->hem = 'S';
-  meta->projection->re_major = envi->semimajor_axis;
-  meta->projection->re_minor = envi->semiminor_axis;
-  sprintf(meta->projection->units, "meters");
   if (meta->sar)
     meta->sar->wavelength = envi->wavelength;
   meta->general->x_pixel_size = envi->pixel_size_x;
