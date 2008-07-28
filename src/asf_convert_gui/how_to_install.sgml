@@ -126,13 +126,13 @@
       </simplelist>
       <para>For example, say you would like to install the tools in
       a folder called "asf_tools" in your home directory
-      (/home/jdoe/asf_tools), and you use the bourne (sh) UNIX shell</para>
+      (/home/jdoe/asf_tools), and you use the bash UNIX shell</para>
       <simplelist>
         <member>./configure --prefix=/home/jdoe/asf_tools</member>
         <member>make</member>
         <member>make install</member>
-        <member>echo >> "PATH=/home/jdoe/asf_tools/bin:$PATH</member>
-        <member>echo >> "export PATH"</member>
+        <member>echo "PATH=/home/jdoe/asf_tools/bin:$PATH" >> ~/.bashrc</member>
+        <member>echo "export PATH" >> ~/.bashrc</member>
       </simplelist>
     </sect1>
   </chapter>
