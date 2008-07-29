@@ -1846,9 +1846,11 @@ export_band_image (const char *metadata_file_name,
         }
 
         // Determine which channel to read
-        int channel = get_band_number(bands,
-                                      band_count,
-                                      band_name[kk]);
+        int channel;
+        if (md->general->band_count == 1)
+          channel = 0;
+        else
+          channel = get_band_number(bands, band_count, band_name[kk]);
         asfRequire(channel >= 0 && channel <= MAX_BANDS,
                    "Band number out of range\n");
 

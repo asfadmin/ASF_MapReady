@@ -2157,9 +2157,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             // that will screw up the behavior of TRUNCATE.  The burden
             // will be on the GUI to do the downsampling, but after we have
             // generated an RGB image.
+            char *bands[2];
+            bands[0] = meta->general->bands;
+            bands[1] = NULL;
+
             check_return(
               asf_export_bands(format, TRUNCATE, TRUE, 0, 0, 0, 0,
-                               cfg->export->lut, inFile, outFile, NULL),
+                               cfg->export->lut, inFile, outFile, bands),
               "exporting thumbnail (asf_export), using rgb look up table.\n");
           }
           else {
@@ -2338,10 +2342,19 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
         if (cfg->general->export) {
             update_status("Exporting layover mask...");
+
+            meta_parameters *meta = meta_read(inFile);
+
+            char *bands[2];
+            bands[0] = meta->general->bands;
+            bands[1] = NULL;
+
             check_return(
                 asf_export_bands(get_format(cfg), TRUNCATE, 1, 0, 0, 0, 0,
-                                 "layover_mask.lut", inFile, outFile, NULL),
+                                 "layover_mask.lut", inFile, outFile, bands),
                 "exporting layover mask (asf_export)\n");
+
+            meta_free(meta);
         }
         else {
             // no export... just move the geocoded file out of the
@@ -2465,9 +2478,14 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
                         cfg->export->byte);
       }
       asfPrintStatus("Exporting using look-up-table: %s\n", cfg->export->lut);
+
+      char *bands[2];
+      bands[0] = meta->general->bands;
+      bands[1] = NULL;
+
       check_return(
         asf_export_bands(format, TRUNCATE, TRUE, 0, 0, 0, 0, cfg->export->lut,
-                         inFile, outFile, NULL),
+                         inFile, outFile, bands),
         "exporting data file (asf_export), using rgb look up table.\n");
     }
   }
