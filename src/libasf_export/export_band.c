@@ -819,7 +819,8 @@ export_band_image (const char *metadata_file_name,
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
 
-  asfRequire( !(sample_mapping == TRUNCATE &&
+  asfRequire( !(look_up_table_name == NULL &&
+		sample_mapping == TRUNCATE &&
                 (md->general->radiometry == r_SIGMA ||
                  md->general->radiometry == r_BETA  ||
                  md->general->radiometry == r_GAMMA)
