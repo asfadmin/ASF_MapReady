@@ -21,7 +21,11 @@
 #include "float_image.h"
 #include "asf_raster.h"
 #include "cache.h"
+
+// kludge to work around multiple defns of POINT
+#define POINT __tmp_point
 #include "asf_vector.h"
+#undef POINT
 
 typedef struct {
     unsigned char *data;

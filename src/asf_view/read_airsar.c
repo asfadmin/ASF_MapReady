@@ -119,7 +119,7 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
     {
         // we were given a data file -- this is easier, just need to figure
         // out the metadata file name, which is just "<basename>_meta.airsar"
-        int ret;
+        int ret=FALSE;
 
         char *m = STRDUP(filename);
         char *p = findExt(m);
@@ -132,7 +132,6 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
                      "Error opening AirSAR file, filename does not appear\n"
                      "to have the form <basename>_<band>.<type>i2:\n"
                      "      %s\n", filename);
-            ret = FALSE;
         }
         else {
             *p = '\0';
@@ -151,10 +150,9 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
                      "      Metadata file: %s - %s\n",
                      filename, fileExists(filename) ? "Found" : "NOT FOUND",
                      m, fileExists(m) ? "Found" : "NOT FOUND");
-
-                ret = FALSE;
             }
             else {
+                // it can be done!
                 ret = TRUE;
             }   
         }
