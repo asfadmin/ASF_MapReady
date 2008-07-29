@@ -1581,6 +1581,10 @@ settings_to_config_file(const Settings *s,
           fprintf(cf, "byte conversion = %s\n",
                   scaling_method_string(s->scaling_method));
       }
+      else if (s->polarimetry_setting == POLARIMETRY_CLOUDE8 ||
+               s->polarimetry_setting == POLARIMETRY_CLOUDE16) {
+          fprintf(cf, "byte conversion = truncate\n");
+      }
       else {
           fprintf(cf, "byte conversion = none\n");
       }
