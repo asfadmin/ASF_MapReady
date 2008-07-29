@@ -263,22 +263,26 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
     get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
-      self->lines[last][k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
+      self->lines[last][k].hh = complex_new_polar(sqrt(amp_buf[k]),
+                                                  phase_buf[k]);
     
     get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
-      self->lines[last][k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
+      self->lines[last][k].hv = complex_new_polar(sqrt(amp_buf[k]),
+                                                  phase_buf[k]);
     
     get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
-      self->lines[last][k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
+      self->lines[last][k].vh = complex_new_polar(sqrt(amp_buf[k]),
+                                                  phase_buf[k]);
     
     get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
-      self->lines[last][k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
+      self->lines[last][k].vv = complex_new_polar(sqrt(amp_buf[k]),
+                                                  phase_buf[k]);
     
     calculate_pauli_for_row(self, last);
     calculate_coherence_for_row(self, last);
@@ -316,22 +320,26 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
     get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
-      self->lines[i][k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
+      self->lines[i][k].hh = complex_new_polar(sqrt(amp_buf[k]),
+                                               phase_buf[k]);
     
     get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
-      self->lines[i][k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
+      self->lines[i][k].hv = complex_new_polar(sqrt(amp_buf[k]),
+                                               phase_buf[k]);
     
     get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
-      self->lines[i][k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
+      self->lines[i][k].vh = complex_new_polar(sqrt(amp_buf[k]),
+                                               phase_buf[k]);
     
     get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
-      self->lines[i][k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
+      self->lines[i][k].vv = complex_new_polar(sqrt(amp_buf[k]),
+                                               phase_buf[k]);
     
     calculate_pauli_for_row(self, i);
     calculate_coherence_for_row(self, i);
@@ -373,17 +381,31 @@ static double log3(double v)
     return log(v)/log(3.);
 }
 
-// dump a 2D histogram image in entropy-alpha space
-static const int hist_size = 512;
+// Dump a 2D histogram image in entropy-alpha space
+// the array is twice as wide as it is tall -- we use a square histogram,
+// but generate two of them -- the "left" one is the 0<anisotropy<.5
+// histogram, and the "right" is the .5<anisotropy<1 one.
+
+// For Cloude-Pottier-8, anisotropy is ignored so when the histogram is
+// dumped the two sides are added together, and we only dump the left
+// half of the arrays when generating the histogram and classification map
+
+// For Cloude-Potter-16, we dump the double-wide histograms and
+// classification maps.
+
+static const int hist_height = 512;   // height
+static const int hist_width = 1024; // width
+
 static void dump_ea_hist(const char *base_filename,
-                         int ea_hist[hist_size][hist_size])
+                         int ea_hist[hist_height][hist_width],
+                         int wide)
 {
   char *filename = appendToBasename(base_filename, "_ea_hist");
-  int size=hist_size;
+  int size=hist_height;
 
   meta_parameters *m = raw_init();
   m->general->line_count = size;
-  m->general->sample_count = size;
+  m->general->sample_count = wide ? size*2 : size;
   m->general->data_type = INTEGER16;
   strcpy(m->general->basename, filename);
 
@@ -394,13 +416,26 @@ static void dump_ea_hist(const char *base_filename,
   FILE *fp = fopenImage(img_file, "wb");
 
   int i,j;
-  float *buf = MALLOC(sizeof(float)*size);
+  float *buf;
 
-  for (i=0; i<size; ++i) {
-    for (j=0; j<size; ++j)
-      buf[j] = ea_hist[i][j];
-    put_float_line(fp,m,i,buf);
+  if (wide) {
+    buf = MALLOC(sizeof(float)*size*2);
+    for (i=0; i<size; ++i) {
+      for (j=0; j<size*2; ++j)
+        buf[j] = ea_hist[i][j];
+      put_float_line(fp,m,i,buf);
+    }
   }
+  else {
+    buf = MALLOC(sizeof(float)*size);
+    for (i=0; i<size; ++i) {
+      for (j=0; j<size; ++j)
+        buf[j] = ea_hist[i][j] + ea_hist[i][j+hist_height];
+      put_float_line(fp,m,i,buf);
+    }
+  }
+
+  free(buf);
   fclose(fp);
   meta_free(m);
 
@@ -410,15 +445,18 @@ static void dump_ea_hist(const char *base_filename,
 }
 
 static void dump_class_map(const char *base_filename,
-                           int class_map[hist_size][hist_size])
+                           int class_map[hist_height][hist_width],
+                           int wide)
 {
   char *filename = appendToBasename(base_filename, "_class_map");
-  int size=hist_size;
+
+  int height = hist_height;
+  int width = wide ? hist_height*2 : hist_height;
 
   meta_parameters *m = raw_init();
-  m->general->line_count = size;
-  m->general->sample_count = size;
-  m->general->data_type = INTEGER16;
+  m->general->line_count = height;
+  m->general->sample_count = width;
+  m->general->data_type = BYTE;
   strcpy(m->general->basename, filename);
 
   char *meta_file = appendExt(filename, ".meta");
@@ -428,13 +466,15 @@ static void dump_class_map(const char *base_filename,
   FILE *fp = fopenImage(img_file, "wb");
 
   int i,j;
-  float *buf = MALLOC(sizeof(float)*size);
+  float *buf = MALLOC(sizeof(float)*width);
 
-  for (i=0; i<size; ++i) {
-    for (j=0; j<size; ++j)
+  for (i=0; i<height; ++i) {
+    for (j=0; j<width; ++j)
       buf[j] = class_map[i][j];
     put_float_line(fp,m,i,buf);
   }
+
+  free(buf);
   fclose(fp);
   meta_free(m);
 
@@ -675,9 +715,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
     classifier = read_classifier(classFile);
 
   // population histogram image, in entropy-alpha space
-  int ea_hist[hist_size][hist_size];
-  for (i=0; i<hist_size; ++i)
-    for (j=0; j<hist_size; ++j)
+  int ea_hist[hist_height][hist_width];
+  for (i=0; i<hist_height; ++i)
+    for (j=0; j<hist_width; ++j)
       ea_hist[i][j] = 0;
 
   // done setting up metadata, now write the data
@@ -952,18 +992,20 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
           }
 
           for (j=0; j<ns; ++j) {
-            int entropy_index = entropy[j]*(float)hist_size;
+            int entropy_index = entropy[j]*(float)hist_height;
             if (entropy_index<0) entropy_index=0;
-            if (entropy_index>hist_size-1) entropy_index=hist_size-1;
+            if (entropy_index>hist_height-1) entropy_index=hist_height-1;
             
-            int alpha_index = hist_size-1-alpha[j]/90.0*(float)hist_size;
+            int alpha_index = hist_height-1-alpha[j]/90.0*(float)hist_height;
             if (alpha_index<0) alpha_index=0;
-            if (alpha_index>hist_size-1) alpha_index=hist_size-1;
+            if (alpha_index>hist_height-1) alpha_index=hist_height-1;
             
             //printf("%10.1f %10.1f %5d %5d --> %4d\n",
             //       entropy[j], alpha[j],
             //       entropy_index, alpha_index,
             //      ea_hist[entropy_index][alpha_index]+1);
+            if (anisotropy[j] > .5)
+              entropy_index += hist_height;
             ea_hist[alpha_index][entropy_index] += 1;
           }
       }
@@ -986,54 +1028,120 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       class_band >= 0)
   {
     if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0)
-      asfPrintStatus("Dumping population histogram...\n");
+      asfPrintStatus("Generating population histogram...\n");
     else
-      asfPrintStatus("Dumping population histogram and "
+      asfPrintStatus("Generating population histogram and "
                      "classification map...\n");
 
     // dump population graph
-    dump_ea_hist(outFile, ea_hist);
+    int wide = strncmp_case(classFile,"cloude16",8) == 0;
+    dump_ea_hist(outFile, ea_hist, wide);
 
-    // dump classified pop graph
+    // dump classified pop graph -- reuse the same ea_hist array,
+    // since we are done with the population graph
     if (class_band >= 0) {
-      for (i=0; i<hist_size; ++i) {
-        for (j=0; j<hist_size; ++j) {
-          int count = ea_hist[i][j];
-          if (count > 0) {
-            double entropy = (double)j/(double)hist_size;
-            double alpha = (double)(hist_size-1-i)/(double)hist_size * 90;
-            ea_hist[i][j] = classify(classifier, entropy, 0, alpha);
+      if (!wide) {
+        // non-wide: this is the Cloude-Pottier 8 classes case, where
+        // we use only half of the ea_hist array
+        for (i=0; i<hist_height; ++i) {
+          for (j=0; j<hist_height; ++j) {
+            int count = ea_hist[i][j] + ea_hist[i][j+hist_height];
+            if (j==0) {
+              ea_hist[i][j] = 0;
+            }
+            else if (count > 0) {
+              double entropy = (double)j/(double)hist_height;
+              double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+              ea_hist[i][j] = classify(classifier, entropy, 0, alpha);
+            }
           }
         }
-      }
-      int prev = -1;
-      for (i=0; i<hist_size; ++i) {
-        for (j=0; j<hist_size; ++j) {
-          double entropy = (double)j/(double)hist_size;
-          double alpha = (double)(hist_size-1-i)/(double)hist_size * 90;
-          int curr = classify(classifier, entropy, 0, alpha);
-          if (i>0 && j>0) {
-            if (prev != curr)
+        // drawing the white border lines -- assumes look-up-tables use
+        // "255" as white.  (cloude8.lut)
+        int prev = -1;
+        for (i=0; i<hist_height; ++i) {
+          for (j=0; j<hist_height; ++j) {
+            double entropy = (double)j/(double)hist_height;
+            double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+            int curr = classify(classifier, entropy, 0, alpha);
+            if (j>0 && prev != curr)
               ea_hist[i][j] = 255;
+            prev = curr;
           }
-          prev = curr;
         }
-      }
-      prev = -1;
-      for (j=0; j<hist_size; ++j) {
-        for (i=0; i<hist_size; ++i) {
-          double entropy = (double)j/(double)hist_size;
-          double alpha = (double)(hist_size-1-i)/(double)hist_size * 90;
-          int curr = classify(classifier, entropy, 0, alpha);
-          if (i>0 && j>0) {
-            if (prev != curr)
+        prev = -1;
+        for (j=0; j<hist_height; ++j) {
+          for (i=0; i<hist_height; ++i) {
+            double entropy = (double)j/(double)hist_height;
+            double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+            int curr = classify(classifier, entropy, 0, alpha);
+            if (i>0 && prev != curr)
               ea_hist[i][j] = 255;
+            prev = curr;
           }
-          prev = curr;
         }
+        dump_class_map(outFile, ea_hist, FALSE);
+      }
+      else {
+        // wide: this is the Cloude-Pottier 16 classes case, where
+        // we use the full (double-width) ea_hist array, the left half
+        // being the anisotropy=0 plane, the right half being the
+        // anisotropy=.5 plane (though we actually use .55 below to ensure
+        // we're definitely in the >.5 blocks -- .5 could possibly be
+        // classified in the (0,.5) range depending on use of <= vs < above,
+        // roundoff, etc)
+        for (i=0; i<hist_height; ++i) {
+          for (j=0; j<hist_height*2; ++j) {
+            int count = ea_hist[i][j];
+            if (j==0) {
+              ea_hist[i][j] = 0;
+            }
+            else if (j == hist_height) {
+              ea_hist[i][j] = 255;
+            }
+            else if (count > 0) {
+              double entropy = j > hist_height ?
+                (double)(j-hist_height)/(double)hist_height :
+                (double)j/(double)hist_height;
+              double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+              double aniso = j > hist_height ? 0.55 : 0.0;
+              ea_hist[i][j] = classify(classifier, entropy, aniso, alpha);
+            }
+          }
+        }
+        // drawing the white border lines -- assumes look-up-tables use
+        // "255" as white.  (cloude16.lut)
+        int prev = -1;
+        for (i=0; i<hist_height; ++i) {
+          for (j=0; j<hist_height*2; ++j) {
+            double entropy = j > hist_height ?
+              (double)(j-hist_height)/(double)hist_height :
+              (double)j/(double)hist_height;
+            double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+            double aniso = j > hist_height ? 0.55 : 0.0;
+            int curr = classify(classifier, entropy, aniso, alpha);
+            if (j>0 && prev != curr)
+              ea_hist[i][j] = 255;
+            prev = curr;
+          }
+        }
+        prev = -1;
+        for (j=0; j<hist_height*2; ++j) {
+          for (i=0; i<hist_height; ++i) {
+            double entropy = j > hist_height ?
+              (double)(j-hist_height)/(double)hist_height :
+              (double)j/(double)hist_height;
+            double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+            double aniso = j > hist_height ? 0.8 : 0.0;
+            int curr = classify(classifier, entropy, aniso, alpha);
+            if (i>0 && prev != curr)
+              ea_hist[i][j] = 255;
+            prev = curr;
+          }
+        }
+        dump_class_map(outFile, ea_hist, TRUE);
       }
     }
-    dump_class_map(outFile, ea_hist);
   }
 
   gsl_vector_free(eval);
@@ -1092,7 +1200,7 @@ void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag)
 
 void cpx2pauli(const char *inFile, const char *outFile, int tc_flag)
 {
-  asfPrintStatus("\n\nGenerating Paul decomposition channels\n");
+  asfPrintStatus("\n\nGenerating Pauli decomposition channels\n");
   if (tc_flag)
     polarimetric_decomp(inFile,outFile,0,1,2,3,-1,-1,-1,-1,-1,-1,NULL,-1);
   else

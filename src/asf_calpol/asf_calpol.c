@@ -2,12 +2,13 @@
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-c <classification file>]\n"\
-"          [-debug] <in_base_name> <out_base_name>\n"
+"          [-debug] [-pauli] [-sinclair] <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program decomposes SLC quad-pole data into data required\n"\
 "     to build some common polarimetric decompositions.\n\n"\
-"     Without the -c option, the output is a nine-band image:\n"\
+"     Without the -c, -pauli, or -sinclair options, the output is a\n"\
+"     nine-band image:\n"\
 "       band 0: Amplitude (HH)\n"\
 "       band 1: HH - VV (even bounce) [Pauli red]\n"\
 "       band 2: 2*HV (rotated dihedral) [Pauli green]\n"\
@@ -20,7 +21,16 @@
 "       band 9: VV [Sinclair blue]\n\n"\
 "     When used with the -c option, the output is a 2-band image:\n"\
 "       band 0: Amplitude (HH)\n"\
-"       band 1: Classification band\n"\
+"       band 1: Classification band\n\n"\
+"     When used with the -pauli option, the output is a 4-band image:\n"\
+"       band 0: Amplitude (HH)\n"\
+"       band 1: HH - VV (even bounce) [Pauli red]\n"\
+"       band 2: 2*HV (rotated dihedral) [Pauli green]\n"\
+"       band 3: HH + VV (odd bounce) [Pauli blue]\n\n"\
+"     When used with the -sinclair option, the output is a 3-band image:\n"\
+"       band 1: HH [Sinclair red]\n"\
+"       band 2: (HV+VH)/2 [Sinclair green]\n"\
+"       band 3: VV [Sinclair blue]\n\n"\
 "     With the -debug option, debug bands are added.\n\n"
 
 #define ASF_INPUT_STRING \
@@ -37,6 +47,15 @@
 "          or in the ASF share directory.\n\n"\
 "          cloude8.cla and cloude16.cla are available for producing\n"\
 "          Cloude-Pottier 8 and 16 class classifications.\n"\
+"          Cannot be used with -sinclair or -pauli.\n"\
+"\n"\
+"     -pauli, -p\n"\
+"          Outputs bands required to generate the Pauli decomposition.\n"\
+"          Cannot be used with -c or -sinclair.\n"\
+"\n"\
+"     -sinclair, -s\n"\
+"          Outputs bands required to generate the Sinclair decomposition.\n"\
+"          Cannot be used with -c or -pauli.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
@@ -54,7 +73,7 @@
 "          Print a help page and exit.\n"
 
 #define ASF_EXAMPLES_STRING \
-"     > "ASF_NAME_STRING" in_file out_file\n\n"
+"     > "ASF_NAME_STRING" -pauli in_file out_file\n\n"
 
 #define ASF_SEE_ALSO_STRING \
 "     asf_export\n"
@@ -129,6 +148,12 @@ main (int argc, char *argv[])
   char classFile[255];
   int classify = extract_string_options(&argc,&argv,classFile,"-c",NULL);
   int debug = extract_flag_options(&argc,&argv,"-debug","-d",NULL);
+  int pauli = extract_flag_options(&argc,&argv,"-pauli","-p",NULL);
+  int sinclair = extract_flag_options(&argc,&argv,"-sinclair","-s",NULL);
+
+  if (classify + pauli + sinclair > 1) {
+    asfPrintError("Use only one of the -pauli, -sinclair, or -c options.\n");
+  }
 
   if (argc<=1)
       usage(ASF_NAME_STRING);
@@ -165,6 +190,12 @@ main (int argc, char *argv[])
     polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                         classFile,1);    
   }
+  else if (pauli) {
+    cpx2pauli(inFile,outFile,TRUE);
+  }
+  else if (sinclair) {
+    cpx2sinclair(inFile,outFile,FALSE);
+  }  
   else {
     polarimetric_decomp(inFile,outFile,0,1,2,3,4,5,6,7,8,9,NULL,-1);
   }
