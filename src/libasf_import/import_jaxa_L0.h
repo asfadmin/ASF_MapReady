@@ -24,7 +24,8 @@
 #define AVNIR_IMAGING_CYCLE             0.00148 /* 1.48 msec for AVNIR-2 */
 #define PRISM_IMAGING_CYCLE             0.00037 /* 0.37 msec for PRISM   */
 #define JL0_AVNIR_FRAME_TIME            JL0_AVNIR_LINES_PER_FRAME * AVNIR_IMAGING_CYCLE
-#define JL0_AVNIR_FRAME_TIME_TOLERANCE  (JL0_AVNIR_FRAME_TIME / 2.0)
+#define JL0_AVNIR_FRAME_TIME_TOLERANCE  (JL0_AVNIR_FRAME_TIME * 0.50)
+#define JL0_AVNIR_FRAME_TIME_REPEATS    2.64358 /* Ave. number of frames with same sequential time stamp */
 #define MAXIMUM_SOI_SEARCH_TRIES        1000000
 #define JL0_AVNIR_SAMPLE_COUNT          7100
 #define JL0_AVNIR_JPEG_HDR_LEN          256
@@ -76,17 +77,17 @@ size_t get_avnir_data_line(FILE *in, unsigned char **data, int first_vcdu, int *
                            int *continuous, int *missing_bytes, int *vcdu_ctr);
 void concat_avnir_band_chunks(int num_chunks, const char **chunks, const char *all_chunks, const char *band);
 int find_next_avnir_SOI(FILE *in, float time_target, int max_tries, int *valid_vcdu,
-                        float *time, float *last_time, unsigned char *buf, int *idx,
+                        float *time, float *last_time, unsigned char *buf, int *idx, int band_no,
                         int first_vcdu, int first_SOI, int *last_vcdu_ctr, unsigned char *hdr_buf, int *valid_SOI);
 int fread_avnir_tstream(unsigned char *c, FILE *in, unsigned char *buf, int first_vcdu,
-                        int *idx, int *last_vcdu_ctr, int *valid_vcdu);
+                        int *idx, int band_no, int *last_vcdu_ctr, int *valid_vcdu);
 void validate_avnir_SOI_and_get_frame_time (FILE *in, unsigned char *buf, int *idx, int first_vcdu,
                                             int first_SOI, int *last_vcdu_ctr, unsigned char *hdr_buf,
-                                            int *valid_SOI, float *last_time, float *time);
+                                            int band_no, int *valid_SOI, float *time);
 int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char *buf, int *idx,
-                                int *valid, int first_vcdu, int *last_vcdu_ctr, FILE *jpeg);
+                                int band_no, int *valid, int first_vcdu, int *last_vcdu_ctr, FILE *jpeg);
 void write_avnir_frame(int band_valid, int valid_SOI, int valid_vcdu, FILE *in,
-                       unsigned char *hdr_buf, unsigned char *buf, int *idx, int *valid,
+                       unsigned char *hdr_buf, unsigned char *buf, int *idx, int band_no, int *valid,
                        int first_vcdu, int *blast_vcdu_ctr, char *jpegFile, FILE *out);
 int concat_img_files(char **img_files, int num_files, int sample_count, const char *out_file);
 
