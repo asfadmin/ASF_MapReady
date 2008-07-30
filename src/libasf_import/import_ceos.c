@@ -1347,6 +1347,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     else if (data_type >= COMPLEX_BYTE) {
       meta->general->data_type = REAL32;
       meta->general->band_count = import_single_band ? 2 : band*2;
+      // The amp0 flag adds an amplitude band, which uses only 1 slot, so the
+      // *2 above will have incorrectly added one more band than we will have
+      if (!import_single_band && amp0_flag)
+        meta->general->band_count -= 1;
     }
     else {
       meta->general->data_type = REAL32;

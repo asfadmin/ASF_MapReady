@@ -268,7 +268,7 @@ const char *get_summary_text()
         case PROJ_PS:
             sprintf(text, "%sPolar Stereo\n"
                 "   Center: (%.2f, %.2f)\n",
-                text, s->lat0, s->lon0);
+                text, s->plat1, s->lon0);
             break;
 
         case PROJ_LAMCC:
