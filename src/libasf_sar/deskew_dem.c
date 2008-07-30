@@ -807,7 +807,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
             // the mask has just 1 band, regardless of how many input has
             outMeta->general->band_count = 1;
-            strcpy(outMeta->general->bands, "");
+            strcpy(outMeta->general->bands, "LAYOVER_MASK");
 
             // mask doesn't really have a radiometry, just set amp
             outMeta->general->radiometry = r_AMP;
