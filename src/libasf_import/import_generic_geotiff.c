@@ -195,7 +195,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     meta = read_generic_geotiff_metadata(inFileName, ignore, image_data_type);
   }
   else {
-    meta = read_generic_geotiff_metadata(inFileName, ignore);
+    meta = read_generic_geotiff_metadata(inFileName, ignore, NULL);
   }
 
   // Write the Metadata file
@@ -1355,7 +1355,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   if (tmp_citation) is_asf_geotiff = strstr(tmp_citation, "Alaska Satellite Fac") ? 1 : 0;
   get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation, num_bands);
   meta_statistics *stats = NULL;
-  double mask_value;
+  double mask_value = MAGIC_UNSET_DOUBLE;
   if (!is_asf_geotiff) {
     asfPrintStatus("\nNo ASF-exported band names found in GeoTIFF citation tag.\n"
         "Band names will be assigned in numerical order.\n");
