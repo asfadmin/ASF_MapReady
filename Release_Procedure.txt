@@ -117,6 +117,11 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 
      Update the "all" target to only build "mapready".
 
+     *** NEW in 2.0.10 --->
+
+     Fix the "clean" target near the end of the file, to only include MAPREADY_MODULES
+     I.e., delete the STP_MODULES and AP_MODULES, etc.
+
  14. Create the source.mapready_package file in ~/asf/svn-r7665/releast/autotar
      (automatically by makemake if you followed the directory structure
      instructions listed here):
