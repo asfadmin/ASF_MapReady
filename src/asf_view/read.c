@@ -125,7 +125,7 @@ int read_file(const char *filename, const char *band, int multilook,
     else if (try_airsar(filename)) {
         if (handle_airsar_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
-            meta = read_airsar_meta(meta_name);
+            meta = read_airsar_meta(meta_name, data_name);
             open_airsar_data(data_name, meta, client);
         } else {
             err_func(err);

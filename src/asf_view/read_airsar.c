@@ -12,7 +12,7 @@ static int is_valid_data_airsar_ext(const char *ext)
          || strcmp_case(ext, ".demi2") == 0
          //|| strcmp_case(ext, ".datgr") == 0
          //|| strcmp_case(ext, ".incgr") == 0
-         //|| strcmp_case(ext, ".corgr") == 0
+         || strcmp_case(ext, ".corgr") == 0
           );
 }
 
@@ -140,7 +140,6 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
             strcpy(meta_name, m);
             strcpy(data_name, filename);
 
-            int ret;
             if (!fileExists(meta_name) || !fileExists(data_name)) {
                 *err = MALLOC(l);
                 snprintf(*err, l,
@@ -201,12 +200,17 @@ static char *get_airsar_basename(const char *meta_name)
     return airsar_basename;
 }
 
-meta_parameters *read_airsar_meta(const char *meta_name)
+meta_parameters *read_airsar_meta(const char *meta_name, char *data_name)
 {
     char *airsar_basename = get_airsar_basename(meta_name);
 
     meta_parameters *meta = import_airsar_meta(airsar_basename);
-    meta->general->data_type = INTEGER16;
+
+    char *ext = findExt(data_name);
+    if (strcmp_case(ext, ".corgr")==0)
+      meta->general->data_type = BYTE;
+    else
+      meta->general->data_type = INTEGER16;
 
     free(airsar_basename);
     return meta;
