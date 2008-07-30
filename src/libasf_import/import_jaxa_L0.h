@@ -55,6 +55,12 @@ typedef struct {
     int  key;
 } file_key_t;
 
+typedef struct{
+    struct jpeg_error_mgr errmgr;
+    jmp_buf escape;
+} my_error_mgr_t;
+
+
 // Prototypes
 void get_avnir_chunk_names(const char *red_dir, const char *green_dir,
                            const char *blue_dir, const char *nir_dir,

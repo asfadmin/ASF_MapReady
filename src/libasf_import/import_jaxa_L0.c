@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <time.h>
+#include <setjmp.h>
 #include <jpeglib.h>
 #include "asf.h"
 #include "asf_meta.h"
@@ -28,6 +29,8 @@
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 // Prototypes
+static void jpeg_error_handler(j_common_ptr cinfo);
+static void jpeg_error_message_handler(j_common_ptr cinfo);
 
 // import_jaxa_L0()
 // 1. inBaseName is the name of the folder that the data is in, i.e. W0306544001-01
@@ -149,6 +152,7 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         // At this point, all 4 bands have been written into a single .img file consecutively
         // and it's time to produce the matching .meta file, then the import process will be
         // complete
+        asfPrintStatus("Creating metadata...\n");
         meta_parameters *meta = raw_init();
         meta->optical = meta_optical_init();
         meta->location = meta_location_init();
@@ -206,7 +210,6 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
                                &red_chunks, &green_chunks,
                                &blue_chunks, &nir_chunks);
         meta_free(meta);
-        FREE(out_file);
         FREE(meta_outfile);
     }
     else if (sensor_type == PRISM) {
@@ -633,15 +636,20 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     soi_tries = 0; // Zero means 'search until first valid SOI or end of file is found'
     target_time = 0.0;
     first_SOI = 1;
+
+    asfPrintStatus("\nFinding start of image... Red ...");
     r_eof = find_next_avnir_SOI(rin, target_time, soi_tries, &rvalid, &rtime,
                           &last_rtime, rbuf, &ridx, JL0_RED_BAND_NO, first_vcdu, first_SOI, &rlast_vcdu_ctr,
                           rhdr_buf, &valid_rSOI); // Find first SOI
+    asfPrintStatus("Green ...");
     g_eof = find_next_avnir_SOI(gin, target_time, soi_tries, &gvalid, &gtime,
                           &last_gtime, gbuf, &gidx, JL0_GREEN_BAND_NO, first_vcdu, first_SOI, &glast_vcdu_ctr,
                           ghdr_buf, &valid_gSOI); // Find first SOI
+    asfPrintStatus("Blue ...");
     b_eof = find_next_avnir_SOI(bin, target_time, soi_tries, &bvalid, &btime,
                           &last_btime, bbuf, &bidx, JL0_BLUE_BAND_NO, first_vcdu, first_SOI, &blast_vcdu_ctr,
                           bhdr_buf, &valid_bSOI); // Find first SOI
+    asfPrintStatus("Near-Infrared\n\n");
     n_eof = find_next_avnir_SOI(nin, target_time, soi_tries, &nvalid, &ntime,
                           &last_ntime, nbuf, &nidx, JL0_NIR_BAND_NO, first_vcdu, first_SOI, &nlast_vcdu_ctr,
                           nhdr_buf, &valid_nSOI); // Find first SOI
@@ -708,17 +716,12 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     // Note: If the band has been discarded, nothing is written to that band.  For valid
     // bands, if any errors exist or occur for the frame, then a frame's worth of padding
     // (0x00) bytes are written out instead.
-    int wheremi;
-    wheremi = ftell(bin);
     write_avnir_frame(bband_valid, valid_bSOI, bvalid, bin, bhdr_buf, bbuf, &bidx, JL0_BLUE_BAND_NO,
                       &bvalid, first_vcdu, &blast_vcdu_ctr, jpegBlue,  bout);
-    wheremi = ftell(gin);
     write_avnir_frame(gband_valid, valid_gSOI, gvalid, gin, ghdr_buf, gbuf, &gidx, JL0_GREEN_BAND_NO,
-                      &gvalid, first_vcdu, &glast_vcdu_ctr, jpegGreen, bout);
-    wheremi = ftell(rin);
+                      &gvalid, first_vcdu, &glast_vcdu_ctr, jpegGreen, gout);
     write_avnir_frame(rband_valid, valid_rSOI, rvalid, rin, rhdr_buf, rbuf, &ridx, JL0_RED_BAND_NO,
                       &rvalid, first_vcdu, &rlast_vcdu_ctr, jpegRed,   rout);
-    wheremi = ftell(nin);
     write_avnir_frame(nband_valid, valid_nSOI, nvalid, nin, nhdr_buf, nbuf, &nidx, JL0_NIR_BAND_NO,
                       &nvalid, first_vcdu, &nlast_vcdu_ctr, jpegNir, nout);
 
@@ -730,6 +733,7 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     // is risky and maybe we shouldn't be doing it?
     int done;
     target_time = 0.0;
+    asfPrintStatus("Converting band data jpeg frames (16x7100) into ASF Internal Format...\n");
     while (!feof(rin) && !feof(gin) && !feof(bin) && !feof(nin) && !done) {
         // Write frames that are within tolerance of each other, padding those that are later
         // and out of tolerance.  If the difference between the earliest frame time and the last
@@ -755,7 +759,7 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
         write_avnir_frame(bband_valid, valid_bSOI, bvalid, bin, bhdr_buf, bbuf, &bidx, JL0_BLUE_BAND_NO,
                           &bvalid, first_vcdu, &blast_vcdu_ctr, jpegBlue,  bout);
         write_avnir_frame(gband_valid, valid_gSOI, gvalid, gin, ghdr_buf, gbuf, &gidx, JL0_GREEN_BAND_NO,
-                          &gvalid, first_vcdu, &glast_vcdu_ctr, jpegGreen, bout);
+                          &gvalid, first_vcdu, &glast_vcdu_ctr, jpegGreen, gout);
         write_avnir_frame(rband_valid, valid_rSOI, rvalid, rin, rhdr_buf, rbuf, &ridx, JL0_RED_BAND_NO,
                           &rvalid, first_vcdu, &rlast_vcdu_ctr, jpegRed,   rout);
         write_avnir_frame(nband_valid, valid_nSOI, nvalid, nin, nhdr_buf, nbuf, &nidx, JL0_NIR_BAND_NO,
@@ -774,7 +778,10 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     if (rband_valid) img_files[num_files++] = rout_file;
     if (nband_valid) img_files[num_files]   = nout_file;
     num_files = *num_bands;
+    asfPrintStatus("\nCombining band data into single ASF format file...");
     int tot_lines = concat_img_files(img_files, num_files, JL0_AVNIR_SAMPLE_COUNT, out_file);
+    *red_lines = *green_lines = *blue_lines = *nir_lines = tot_lines;
+    asfPrintStatus("\n\n");
 
     // Clean up
     FREE(out_base);
@@ -820,6 +827,8 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
 //
 // The odd and even pixels need to be interlaced to restore the data line.
 //
+static int jpeg_error_occurred = 0;
+static int frame_lines_written = 0;
 int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE *out)
 {
     FILE *jpeg = NULL; // Input jpeg file
@@ -827,12 +836,21 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE
     unsigned char *dest = NULL;
     int num_lines = 0;
     struct jpeg_decompress_struct *cinfo = NULL;
-    struct jpeg_error_mgr mgr;
+    my_error_mgr_t jerr;
 
     if (good_frame) {
         // Open and intialize jpeg for decompression
         cinfo = (struct jpeg_decompress_struct *)MALLOC(sizeof(struct jpeg_decompress_struct));
-        cinfo->err = jpeg_std_error(&mgr);
+        cinfo->err = jpeg_std_error(&jerr.errmgr);
+        jerr.errmgr.error_exit = jpeg_error_handler;
+        jerr.errmgr.output_message = jpeg_error_message_handler;
+        if (setjmp(jerr.escape)) {
+            // If we get here, a jpeg library found an error
+            jpeg_error_occurred++;
+            jpeg_finish_decompress(cinfo);
+            jpeg_destroy_decompress (cinfo);
+            return frame_lines_written;
+        }
         cinfo->buffered_image = TRUE;
         jpeg_create_decompress(cinfo);
 
@@ -848,6 +866,7 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE
 
         int i;
         num_lines = cinfo->image_height;
+        frame_lines_written = 0;
         for (i = 0; i < num_lines; i++) {
             jpeg_read_scanlines(cinfo, &ibuf, 1); // Read and decompress one data line
 
@@ -860,6 +879,7 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE
                 n += 2;
             }
             FWRITE(dest, sizeof(unsigned char), 2 * 3550, out); // Write raw interlaced data to .img file
+            frame_lines_written++;
         }
 
         FCLOSE(jpeg);
@@ -1041,7 +1061,7 @@ int fread_avnir_tstream(unsigned char *c, FILE *in, unsigned char *buf, int firs
             // Return a byte from the newly-read t-frame
             if (*valid_vcdu) {
                 *idx = 6; // Step past CCSDS header, i.e. fread_avnir_tstream() only returns real data, not hdr
-                *c = buf[*idx];
+                *c = buf[(*idx)++];
                 num_read = 1;
             }
             else {
@@ -1388,18 +1408,21 @@ int concat_img_files(char **img_files, int num_files, int sample_count, const ch
     int i, tot_lines, done;
     int *lines;
     unsigned char *buf;
+    int sizeof_buf;
 
     file = (FILE **)MALLOC(num_files * sizeof(FILE *));
     lines = (int *)MALLOC(num_files * sizeof(int));
-    buf = (unsigned char *)MALLOC(sample_count * sizeof(unsigned char));
+    sizeof_buf = sample_count * sizeof(unsigned char);
+    buf = (unsigned char *)MALLOC(sizeof_buf);
 
     // Determine max number of lines that can be read from all files
     for (i = 0, tot_lines = INT_MAX; i < num_files; i++) {
+        asfPrintStatus("Determining line count in %s\n", img_files[i]);
         lines[i] = 0;
         file[i] = (FILE *)FOPEN(img_files[i], "rb");
-        lines[i] += fread(buf, sizeof(buf), 1, file[i]);
+        lines[i] += fread(buf, sizeof_buf, 1, file[i]);
         while (!feof(file[i])) {
-            lines[i] += fread(buf, sizeof(buf), 1, file[i]);
+            lines[i] += fread(buf, sizeof_buf, 1, file[i]);
         }
         FCLOSE(file[i]);
         tot_lines = MIN(tot_lines, lines[i]);
@@ -1409,19 +1432,22 @@ int concat_img_files(char **img_files, int num_files, int sample_count, const ch
     done = 0;
     out = (FILE *)FOPEN(out_file, "wb");
     for (i = 0; i < num_files && !done; i++) {
+        asfPrintStatus("\nProcessing file %s...\n", img_files[i]);
         file[i] = (FILE *)FOPEN(img_files[i], "rb");
         int line, num_read;
         for (line = 0; line < tot_lines; line++) {
-            num_read = fread(buf, sizeof(buf), 1, file[i]);
+            num_read = fread(buf, sizeof_buf, 1, file[i]);
             if (num_read == 1) {
-                fwrite(buf, sizeof(buf), 1, file[i]);
+                fwrite(buf, sizeof_buf, 1, file[i]);
             }
             if (num_read != 1 || feof(file[i])) {
                 // Should not reach this code since the max valid lines has already been
                 // determined above and we aren't supposed to be reading past that limit
                 asfPrintError("Programming error: File too short:\n  %s\n", img_files[i]);
             }
+            asfLineMeter(line, tot_lines);
         }
+        asfLineMeter(tot_lines, tot_lines);
         FCLOSE(file[i]);
     }
     FCLOSE(out);
@@ -1433,3 +1459,15 @@ int concat_img_files(char **img_files, int num_files, int sample_count, const ch
 
     return tot_lines;
 }
+
+static void jpeg_error_handler(j_common_ptr cinfo)
+{
+    my_error_mgr_t *err = (my_error_mgr_t *)cinfo->err;
+    longjmp(err->escape, 1);
+}
+
+static void jpeg_error_message_handler(j_common_ptr cinfo)
+{
+    asfPrintStatus("\nBad JPEG frame detected ...and ignored\n");
+}
+
