@@ -21,6 +21,7 @@ OBJS = \
 	interp_dem_holes.o \
 	classify.o \
 	polarimetry.o \
+	farcorr.o \
 	c2p.o
 
 LIBS = \

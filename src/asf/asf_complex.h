@@ -37,6 +37,13 @@ typedef struct {
     complexFloat **coeff;
 } complexMatrix;
 
+typedef struct {
+   complexFloat hh;
+   complexFloat hv;
+   complexFloat vh;
+   complexFloat vv;
+} quadPolFloat;
+
 complexFloat complex_new(float re, float im);
 complexFloat complex_new_polar(float amp, float phase);
 complexFloat complex_zero();
