@@ -849,7 +849,7 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE
         int i;
         num_lines = cinfo->image_height;
         for (i = 0; i < num_lines; i++) {
-            jpeg_read_scanlines(cinfo, &ibuf, 1); // Read and uncompress one data line
+            jpeg_read_scanlines(cinfo, &ibuf, 1); // Read and decompress one data line
 
             int j = 12;             // Point at odds
             int k = 12 + 3550 + 26; // Point at evens
@@ -869,6 +869,7 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE
         jpeg_destroy_decompress(cinfo);
         FREE(cinfo);
         FREE(ibuf);
+        FREE(dest);
     }
     else {
         // Invalid jpeg frame, so just pad the output file with blank data (0x00)
@@ -881,6 +882,7 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE
         for (i = 0; i < num_lines; i++) {
             FWRITE(dest, sizeof(unsigned char), 2 * 3550, out);
         }
+        FREE(dest);
     }
 
     return num_lines;
@@ -1210,8 +1212,8 @@ void validate_avnir_SOI_and_get_frame_time (FILE *in, unsigned char *buf, int *i
     // If all is valid so far, then populate the rest of the header buffer
     // This leaves the data idx pointing at the first byte after the start of scan, i.e. right after
     // the SOS marker ID byte
+    int i;
     if (*valid_SOI && *time > 0) {
-        int i;
         for (i = hdr_idx; i < JL0_AVNIR_JPEG_HDR_LEN; i++) {
             num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, band_no, last_vcdu_ctr, &valid_vcdu);
             if (num_read == 1 && valid_vcdu) {
@@ -1219,6 +1221,7 @@ void validate_avnir_SOI_and_get_frame_time (FILE *in, unsigned char *buf, int *i
             }
             if (c == MARKER) {
                 num_read = fread_avnir_tstream(&mID, in, buf, first_vcdu, idx, band_no, last_vcdu_ctr, &valid_vcdu);
+                i++;
                 if (num_read == 1 && valid_vcdu) {
                     hdr_buf[hdr_idx++] = mID;
                 }
@@ -1233,8 +1236,9 @@ void validate_avnir_SOI_and_get_frame_time (FILE *in, unsigned char *buf, int *i
 int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char *buf, int *idx,
                                  int band_no, int *valid, int first_vcdu, int *last_vcdu_ctr, FILE *jpeg)
 {
-    int i, num_read, payload_length, success = 1;
+    int i, num_read, success = 1;
     unsigned char c, mID;
+    unsigned int payload_length;
 
     // Write the jpeg header.  The header buffer contains the entire original jpeg header as
     // found in the ALOS JL0 files, which implies that the extra markers and payloads (one of
@@ -1265,10 +1269,16 @@ int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char 
                     success = 0;
                     break;
                 }
-                unsigned int payload_length = hdr_buf[i + 2];
+                payload_length = hdr_buf[i + 2];
                 payload_length = payload_length << 8;
                 payload_length += hdr_buf[i + 3];
                 i += 2 + payload_length; // Move past this marker and payload without writing anything out
+            }
+            else if (mID == SOS) {
+                // Found start of scan ...just write the marker out and let the loop (below) write all other
+                // bytes (up to end of image, EOI)
+                FWRITE(&hdr_buf[i++], 1, 1, jpeg);
+                FWRITE(&hdr_buf[i++], 1, 1, jpeg);
             }
             else {
                 // We are still in the block of header info that precedes the scan, so this must
@@ -1304,49 +1314,42 @@ int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char 
             FWRITE(&hdr_buf[i++], 1, 1, jpeg);
         }
     }
-    fflush(jpeg);fclose(jpeg);
 
     // Read/write the rest of the jpeg from the input t-stream
     if (success) {
         num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, band_no, last_vcdu_ctr, valid);
-        if (num_read == 1 && *valid) {
-            fwrite(&c, 1, 1, jpeg);
-        }
-        else {
+        if (num_read != 1 || !*valid) {
             success = 0;
         }
     }
-    int done = 0;
-    while (num_read == 1 && !feof(in) && success && !done) {
+    int EOI_found = 0;
+    while (num_read == 1 && !feof(in) && success) {
+        FWRITE(&c, 1, 1, jpeg);
         if (c == MARKER) {
-            // Check for EOI
-            unsigned char mID;
             num_read = fread_avnir_tstream(&mID, in, buf, first_vcdu, idx, band_no, last_vcdu_ctr, valid);
-            if (num_read == 1 && *valid) {
-                fwrite(&mID, 1, 1, jpeg);
+            if (num_read == 1 && !feof(in) && success && *valid) {
+                FWRITE(&mID, 1, 1, jpeg);
+                if (mID == EOI) {
+                    EOI_found = 1;
+                    break;
+                }
             }
             else {
                 success = 0;
-            }
-            if (num_read == 1 && success && mID == EOI) {
-                done = 1;
+                break;
             }
         }
-        if (num_read == 1 && !feof(in) && success && !done) {
-            num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, band_no, last_vcdu_ctr, valid);
-            if (num_read == 1 && *valid) {
-                fwrite(&c, 1, 1, jpeg);
-            }
-            else {
-                success = 0;
-            }
+        num_read = fread_avnir_tstream(&c, in, buf, first_vcdu, idx, band_no, last_vcdu_ctr, valid);
+        if (num_read != 1 || feof(in) || !*valid) {
+            success = 0;
+            break;
         }
     }
 
     // If the read/write loop terminated without finding the EOI then something is
     // wrong (end of file reached, invalid VCDU counter sequence, etc)... mark this
     // frame as a failure
-    if (feof(in) && !done) {
+    if (!EOI_found) {
         success = 0;
     }
 
