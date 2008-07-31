@@ -1,8 +1,24 @@
 #include "asf_view.h"
+#include "airsar.h"
 #include "asf_import.h"
 
+typedef enum {
+  AIRSAR_UNKNOWN=0,
+  AIRSAR_AMPLITUDE,
+  AIRSAR_DEM,
+  AIRSAR_COHERENCE,
+  AIRSAR_POLARIMETRIC
+} airsar_data_type_t;
+
 typedef struct {
-    FILE *fp;    // data file pointer
+    FILE *fp;
+    airsar_data_type_t airsar_data_type;
+    int is_rgb;
+    int band_gs;
+    int band_r;
+    int band_g;
+    int band_b;
+    airsar_parameters *params;
 } ReadAirsarClientInfo;
 
 static int is_valid_data_airsar_ext(const char *ext)
@@ -10,7 +26,7 @@ static int is_valid_data_airsar_ext(const char *ext)
     return ext &&
         (strcmp_case(ext, ".vvi2") == 0
          || strcmp_case(ext, ".demi2") == 0
-         //|| strcmp_case(ext, ".datgr") == 0
+         || strcmp_case(ext, ".datgr") == 0
          //|| strcmp_case(ext, ".incgr") == 0
          || strcmp_case(ext, ".corgr") == 0
           );
@@ -59,7 +75,9 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
         // then gives up
         int ret;
 
-        char *d = STRDUP(filename);
+        char *d = MALLOC(sizeof(char)*(strlen(filename)+25));
+        strcpy(d, filename);
+
         char *p = findExt(d);
         assert(p);
 
@@ -121,7 +139,9 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
         // out the metadata file name, which is just "<basename>_meta.airsar"
         int ret=FALSE;
 
-        char *m = STRDUP(filename);
+        char *m = MALLOC(sizeof(char)*(strlen(filename)+25));
+        strcpy(m, filename);
+
         char *p = findExt(m);
         assert(p);
 
@@ -200,20 +220,61 @@ static char *get_airsar_basename(const char *meta_name)
     return airsar_basename;
 }
 
-meta_parameters *read_airsar_meta(const char *meta_name, char *data_name)
+static float get_airsar_polarimetric(char *byteBuf, float scale, int band)
 {
-    char *airsar_basename = get_airsar_basename(meta_name);
+  float ret = 0.0;
+  float cal = (float)byteBuf[1]/254. + 1.5;
+  float total_power = scale * cal * pow(2, byteBuf[0]);
+  float ysca = 2. * sqrt(total_power);
+  complexFloat cpx;
 
-    meta_parameters *meta = import_airsar_meta(airsar_basename);
+  switch (band) {
+    case 0: // POWER
+      ret = total_power;
+      break;
+    case 1: // SHH_AMP
+      cpx.real = (float)byteBuf[2] * ysca / 127.0;
+      cpx.imag = (float)byteBuf[3] * ysca / 127.0;
+      ret = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+      break;
+    case 2: // SHH_PHASE
+      cpx.real = (float)byteBuf[2] * ysca / 127.0;
+      cpx.imag = (float)byteBuf[3] * ysca / 127.0;
+      ret = atan2(cpx.imag, cpx.real);
+      break;
+    case 3: // SHV_AMP
+      cpx.real = (float)byteBuf[4] * ysca / 127.0;
+      cpx.imag = (float)byteBuf[5] * ysca / 127.0;
+      ret = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+      break;
+    case 4: // SHV_PHASE
+      cpx.real = (float)byteBuf[4] * ysca / 127.0;
+      cpx.imag = (float)byteBuf[5] * ysca / 127.0;
+      ret = atan2(cpx.imag, cpx.real);
+      break;
+    case 5: // SVH_AMP
+      cpx.real = (float)byteBuf[6] * ysca / 127.0;
+      cpx.imag = (float)byteBuf[7] * ysca / 127.0;
+      ret = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+      break;
+    case 6: // SVH_PHASE
+      cpx.real = (float)byteBuf[6] * ysca / 127.0;
+      cpx.imag = (float)byteBuf[7] * ysca / 127.0;
+      ret = atan2(cpx.imag, cpx.real);
+      break;
+    case 7: // SVV_AMP
+      cpx.real = (float)byteBuf[8] * ysca / 127.0;
+      cpx.imag = (float)byteBuf[9] * ysca / 127.0;
+      ret = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+      break;
+    case 8: // SVV_PHASE
+      cpx.real = (float)byteBuf[8] * ysca / 127.0;
+      cpx.imag = (float)byteBuf[9] * ysca / 127.0;
+      ret = atan2(cpx.imag, cpx.real);
+      break;
+  }
 
-    char *ext = findExt(data_name);
-    if (strcmp_case(ext, ".corgr")==0)
-      meta->general->data_type = BYTE;
-    else
-      meta->general->data_type = INTEGER16;
-
-    free(airsar_basename);
-    return meta;
+  return ret;
 }
 
 int read_airsar_client(int row_start, int n_rows_to_get,
@@ -221,12 +282,47 @@ int read_airsar_client(int row_start, int n_rows_to_get,
                        meta_parameters *meta, int data_type)
 {
     ReadAirsarClientInfo *info = (ReadAirsarClientInfo*) read_client_info;
-
-    //assert(meta->general->data_type == INTEGER16);
-    assert(data_type == GREYSCALE_FLOAT);
-
+    assert(data_type == GREYSCALE_FLOAT || data_type == RGB_FLOAT);
     float *dest = (float*)dest_void;
-    get_float_lines(info->fp, meta, row_start, n_rows_to_get, dest);
+
+    int band_gs = info->band_gs;
+    int band_r = info->band_r;
+    int band_g = info->band_g;
+    int band_b = info->band_b;
+
+    if (info->airsar_data_type == AIRSAR_POLARIMETRIC) {
+      float scale = (float) meta->airsar->scale_factor;
+      char *byte_buf = MALLOC(sizeof(char)*10);
+      FILE *fpIn = info->fp;
+      int ns = meta->general->sample_count;
+      int cal_off = info->params->calibration_header_offset;
+      long offset = cal_off*10 + row_start*ns*10;
+      FSEEK(fpIn,offset,SEEK_SET);
+      int ii,kk,nn=0;
+
+      if (!info->is_rgb) {
+        for (ii=0; ii<n_rows_to_get; ++ii) {
+          for (kk=0; kk<ns; ++kk) {
+            FREAD(byte_buf, sizeof(char), 10, fpIn);
+            dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_gs);
+          }
+        }
+      }
+      else {
+        for (ii=0; ii<n_rows_to_get; ++ii) {
+          for (kk=0; kk<ns; ++kk) {
+            FREAD(byte_buf, sizeof(char), 10, fpIn);
+            dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_r);
+            dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_g);
+            dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_b);
+          }
+        }        
+      }
+    }
+    else {
+      assert(data_type == GREYSCALE_FLOAT);
+      get_float_lines(info->fp, meta, row_start, n_rows_to_get, dest);
+    }
 
     return TRUE;
 }
@@ -237,26 +333,65 @@ int get_airsar_thumbnail_data(int thumb_size_x, int thumb_size_y,
 {
     ReadAirsarClientInfo *info = (ReadAirsarClientInfo*) read_client_info;
 
-    int i,j;
     int ns = meta->general->sample_count;
     int sf = meta->general->line_count / thumb_size_y;
 
-    //assert(sf==meta->general->sample_count / thumb_size_x);
+    int band_gs = info->band_gs;
+    int band_r = info->band_r;
+    int band_g = info->band_g;
+    int band_b = info->band_b;
 
     // temporary storage
     float *buf = MALLOC(sizeof(float)*ns);
 
     float *dest = (float*)dest_void;
-    if (data_type == GREYSCALE_FLOAT) {
+    if (info->airsar_data_type == AIRSAR_POLARIMETRIC) {
+      float scale = (float) meta->airsar->scale_factor;
+      unsigned char *byte_buf = MALLOC(sizeof(char)*10);
+      FILE *fpIn = info->fp;
+      int cal_off = info->params->calibration_header_offset;
+      int ii,kk,nn=0;
+
+      if (!info->is_rgb) {
+        for (ii=0; ii<thumb_size_y; ++ii) {
+          for (kk=0; kk<thumb_size_x; ++kk) {
+            long offset = cal_off*10 + (ii*ns + kk)*10;
+            FSEEK(fpIn,offset,1);
+            FREAD(byte_buf, sizeof(unsigned char), 10, fpIn);
+
+            dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_gs);
+          }
+          asfPercentMeter((float)ii/(thumb_size_y-1));
+        }
+      }
+      else {
+        for (ii=0; ii<thumb_size_y; ++ii) {
+          for (kk=0; kk<thumb_size_x; ++kk) {
+            long offset = cal_off*10 + (ii*ns + kk)*10;
+            FSEEK(fpIn,offset,1);
+            FREAD(byte_buf, sizeof(unsigned char), 10, fpIn);
+
+            dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_r);
+            dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_g);
+            dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_b);
+          }
+        }        
+        asfPercentMeter((float)ii/(thumb_size_y-1));
+      }
+    }
+    else {
+      if (data_type == GREYSCALE_FLOAT) {
+        int i,j;
         for (i=0; i<thumb_size_y; ++i) {
             get_float_line(info->fp, meta, i*sf, buf);
             for (j=0; j<thumb_size_x; ++j)
                 dest[i*thumb_size_x+j] = buf[j*sf];
             asfPercentMeter((float)i/(thumb_size_y-1));
         }
-    } else if (data_type == RGB_FLOAT) {
-        // airsar is only greyscale as of yet...
+      } else if (data_type == RGB_FLOAT) {
+        // not possible
         assert(FALSE);
+      }
     }
 
     free(buf);
@@ -267,26 +402,132 @@ void free_airsar_client_info(void *read_client_info)
 {
     ReadAirsarClientInfo *info = (ReadAirsarClientInfo*) read_client_info;
     if (info->fp) fclose(info->fp);
+    if (info->params) free(info->params);
     free(info);
 }
 
-int open_airsar_data(const char *filename, meta_parameters *meta,
-                     ClientInterface *client)
+meta_parameters *open_airsar(const char *data_name, const char *meta_name,
+                             const char *band, ClientInterface *client)
 {
     ReadAirsarClientInfo *info = MALLOC(sizeof(ReadAirsarClientInfo));
 
-    info->fp = fopen(filename, "rb");
-    if (!info->fp) {
-        asfPrintWarning("Failed to open AirSAR file %s: %s\n",
-            filename, strerror(errno));
-        return FALSE;
+    char *airsar_basename = get_airsar_basename(meta_name);
+    meta_parameters *meta = import_airsar_meta(airsar_basename);
+    info->params = read_airsar_params(airsar_basename);
+
+    char *ext = findExt(data_name);
+    if (strcmp_case(ext, ".corgr")==0) {
+      asfPrintStatus("AirSAR: Coherence Image\n");
+      info->airsar_data_type = AIRSAR_COHERENCE;
+    }
+    else if (strcmp_case(ext, ".datgr")==0) {
+      asfPrintStatus("AirSAR: Polarimetric Image (9 bands)\n");
+      info->airsar_data_type = AIRSAR_POLARIMETRIC;
+    }
+    else if (strcmp_case(ext, ".demi2")==0) {
+      asfPrintStatus("AirSAR: DEM Image\n");
+      info->airsar_data_type = AIRSAR_DEM;
+    }
+    else if (strcmp_case(ext, ".vvi2")==0) {
+      asfPrintStatus("AirSAR: Amplitude Image\n");
+      info->airsar_data_type = AIRSAR_AMPLITUDE;
+    }
+    else {
+      asfPrintStatus("AirSAR: (unknown image type)\n");
+      info->airsar_data_type = AIRSAR_UNKNOWN;
+    }
+
+    if (info->airsar_data_type == AIRSAR_COHERENCE)
+      meta->general->data_type = BYTE;
+    else if (info->airsar_data_type == AIRSAR_POLARIMETRIC) {
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = POLARIMETRIC_IMAGE;
+      meta->general->band_count = 9;
+      strcpy(meta->general->bands,
+          "POWER,SHH_AMP,SHH_PHASE,SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE,"
+          "SVV_AMP,SVV_PHASE");
+    }
+    else if (info->airsar_data_type == AIRSAR_DEM)
+      meta->general->data_type = INTEGER16;
+    else if (info->airsar_data_type == AIRSAR_AMPLITUDE)
+      meta->general->data_type = INTEGER16;
+    else
+      meta->general->data_type = INTEGER16;
+
+    info->is_rgb = FALSE;
+    info->band_gs = info->band_r = info->band_g = info->band_b = 0;
+
+    if (band) {
+        char *r, *b, *g;
+        if (split3(band, &r, &g, &b, ',')) {
+            // Looks like we were given 3 bands -- so, we are doing rgb
+            if (info->airsar_data_type != AIRSAR_POLARIMETRIC) {
+              asfPrintWarning("Cannot use RGB with non-Polarimetric data.\n");
+              return FALSE;
+            }
+
+            info->band_r = get_band_number(meta->general->bands,
+                    meta->general->band_count, r);
+            if (info->band_r < 0)
+                asfPrintWarning("Red band '%s' not found.\n", r);
+            else
+                asfPrintStatus("Red band is band #%d: %s\n",
+                    info->band_r+1, r);
+
+            info->band_g = get_band_number(meta->general->bands,
+                    meta->general->band_count, g);
+            if (info->band_g < 0)
+                asfPrintWarning("Green band '%s' not found.\n", g);
+            else
+                asfPrintStatus("Green band is band #%d: %s\n",
+                    info->band_g+1, g);
+
+            info->band_b = get_band_number(meta->general->bands,
+                    meta->general->band_count, b);
+            if (info->band_b < 0)
+                asfPrintWarning("Blue band '%s' not found.\n", b);
+            else
+                asfPrintStatus("Blue band is band #%d: %s\n",
+                    info->band_b+1, b);
+
+            if (info->band_r < 0 && info->band_g < 0 && info->band_b < 0) {
+                // none of the bands were found
+                return FALSE;
+            }
+
+            info->is_rgb = TRUE;
+            FREE(r); FREE(g); FREE(b);
+
+            set_bands_rgb(info->band_r, info->band_g, info->band_b);
+        } else {
+            // Single band name given
+            info->band_gs = get_band_number(meta->general->bands,
+                    meta->general->band_count, (char*)band);
+            if (info->band_gs < 0) {
+                asfPrintWarning("Band '%s' not found.\n", band);
+                return FALSE;
+            } else {
+                asfPrintStatus("Reading band #%d: %s\n",
+                    info->band_gs+1, band);
+            }
+
+            set_bands_greyscale(info->band_gs);
+        }
     }
 
     client->read_client_info = info;
     client->read_fn = read_airsar_client;
     client->thumb_fn = get_airsar_thumbnail_data;
     client->free_fn = free_airsar_client_info;
-    client->data_type = GREYSCALE_FLOAT;
+    client->data_type = info->is_rgb ? RGB_FLOAT : GREYSCALE_FLOAT;
 
-    return TRUE;
+    info->fp = fopen(data_name, "rb");
+    if (!info->fp) {
+        asfPrintWarning("Failed to open AirSAR file %s: %s\n",
+            data_name, strerror(errno));
+        return FALSE;
+    }
+
+    free(airsar_basename);
+    return meta;
 }
