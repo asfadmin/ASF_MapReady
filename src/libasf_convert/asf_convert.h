@@ -40,10 +40,10 @@ typedef struct
 {
   char *format;           // input format: CEOS, STF, ASF
   char *radiometry;       // data type: AMPLITUDE_IMAGE,
-                          // POWER_IMAGE,
-                          // SIGMA_IMAGE,
-                          // GAMMA_IMAGE,
-                          // BETA_IMAGE
+                          //            POWER_IMAGE,
+                          //            SIGMA_IMAGE,
+                          //            GAMMA_IMAGE,
+                          //            BETA_IMAGE
   char *lut;              // look up table file name (CIS only)
   double lat_begin;       // latitude constraint begin
   double lat_end;         // latitude constraint end
@@ -73,10 +73,10 @@ typedef struct
 typedef struct
 {
   char *radiometry;       // data type: AMPLITUDE_IMAGE,
-                          // POWER_IMAGE,
-                          // SIGMA_IMAGE,
-                          // GAMMA_IMAGE,
-                          // BETA_IMAGE
+                          //            POWER_IMAGE,
+                          //            SIGMA_IMAGE,
+                          //            GAMMA_IMAGE,
+                          //            BETA_IMAGE
 } s_sar_processing;
 
 typedef struct
@@ -98,6 +98,12 @@ typedef struct
   int text;               // flag to save image analysis chips as text file
 } s_detect_cr;
 
+typedef enum {
+  FARCORR_OFF=0,
+  FARCORR_MEAN,
+  FARCORR_SMOOTH
+} farcorr_t;
+
 typedef struct
 {
   int pauli;              // Pauli decomposition for quad-pole data
@@ -108,6 +114,7 @@ typedef struct
   int k_means_wishart;    // K-means Wishart clustering
   int k_means_wishart_ext;// K-means Wishart Entropy/Alpha/Anisotropy clustering
   int lee_preserving;     // Lee category preserving
+  farcorr_t farcorr;      // Do we want to faraday correct, if so, how?
 } s_polarimetry;
 
 typedef struct

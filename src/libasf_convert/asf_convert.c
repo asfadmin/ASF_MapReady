@@ -278,8 +278,22 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
 
 // If a temporary directory has not been specified, create one using the time
 // stamp as the name of the temporary directory
-static void create_and_set_tmp_dir(char *basename, char *out_dir, char *tmp_dir)
+// extract the file basename from the in_name, extract the directory to put
+// the tmp_dir in from the out_name
+static void create_and_set_tmp_dir(char *in_name, char *out_name, char *tmp_dir)
 {
+  int length = strlen(in_name)+1;
+  if ((strlen(out_name)+1) > length) {
+    length = strlen(out_name)+1;
+  }
+  char *junk     = MALLOC(sizeof(char)*length);
+  char *basename = MALLOC(sizeof(char)*length);
+  char *out_dir  = MALLOC(sizeof(char)*length);
+
+  split_dir_and_file(in_name, junk, basename);
+  split_dir_and_file(out_name, out_dir, junk);
+  FREE(junk);
+
   int tmp_len = strlen(tmp_dir);
   int out_len = strlen(out_dir);
 
@@ -305,6 +319,9 @@ static void create_and_set_tmp_dir(char *basename, char *out_dir, char *tmp_dir)
   }
 
   set_asf_tmp_dir(tmp_dir);
+
+  FREE(basename);
+  FREE(out_dir);
 }
 
 /* Make a copy of the metdata file. */
@@ -714,11 +731,15 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (batch) {
       // Create a temporary directory to collect intermediate processing
       // results
-      char fileName[255], batchPreDir[255];
+      char baseName[255], baseDir[255];
       char *p = findExt(configFileName);
-      if (p) *p = '\0';
-      split_dir_and_file(configFileName, batchPreDir, fileName);
-      create_and_set_tmp_dir(fileName, batchPreDir, mosaic_dir);
+      if (p)
+        *p = '\0';
+      split_dir_and_file(configFileName, baseDir, baseName);
+      strcpy(mosaic_dir,"");
+      create_and_set_tmp_dir(configFileName, configFileName, mosaic_dir);
+
+      split_dir_and_file(configFileName, baseDir, baseName);
 
       // Generate temporary configuration files
       char tmp_dir[255];;
@@ -731,98 +752,100 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       strcpy(tmp_dir, cfg->general->tmp_dir);
       while (fgets(line, 255, fBatch) != NULL) {
-    char batchItem[255], fileName[255], batchPreDir[255];
-    sscanf(line, "%s", batchItem);
-
-    // Create temporary directory for processing
-    char *p = findExt(batchItem);
-    if (p) *p = '\0';
-    split_dir_and_file(batchItem, batchPreDir, fileName);
-    create_and_set_tmp_dir(fileName, batchPreDir, tmp_dir);
-
-    // Generate temporary defaults values file
-    char tmpDefaults[255];
-    sprintf(tmpDefaults, "%s/tmp.defaults", tmp_dir);
-    FILE *fDef = FOPEN(tmpDefaults, "w");
-    fprintf(fDef, "import = %d\n", cfg->general->import);
-    fprintf(fDef, "polarimetry = %d\n", cfg->general->polarimetry);
-    fprintf(fDef, "terrain correction = %d\n",
-        cfg->general->terrain_correct);
-    fprintf(fDef, "geocoding = 0\n");
-    fprintf(fDef, "export = 0\n");
-    fprintf(fDef, "intermediates = %d\n", cfg->general->intermediates);
-    fprintf(fDef, "quiet = 1\n");
-    fprintf(fDef, "short configuration file = 1\n");
-    if (cfg->general->import) {
-      fprintf(fDef, "input format = %s\n", cfg->import->format);
-      fprintf(fDef, "radiometry = %s\n", cfg->import->radiometry);
-      fprintf(fDef, "output db = %d\n", cfg->import->output_db);
-      fprintf(fDef, "multilook SLC = %d\n", cfg->import->multilook_slc);
-    }
-    if (cfg->general->polarimetry) {
-      fprintf(fDef, "pauli = %d\n", cfg->polarimetry->pauli);
-      fprintf(fDef, "sinclair = %d\n", cfg->polarimetry->sinclair);
-      fprintf(fDef, "cloude pottier = %d\n",
-          cfg->polarimetry->cloude_pottier);
-    }
-    if (cfg->general->terrain_correct) {
-      fprintf(fDef, "pixel spacing = %lf\n", cfg->terrain_correct->pixel);
-      fprintf(fDef, "digital elevation model = %s\n",
-          cfg->terrain_correct->dem);
-      fprintf(fDef, "mask = %s\n", cfg->terrain_correct->mask);
-      fprintf(fDef, "smooth dem holes =1\n");
-      fprintf(fDef, "do radiometric = %d\n",
-          cfg->terrain_correct->do_radiometric);
-      fprintf(fDef, "interpolate = 1\n");
-    }
-    FCLOSE(fDef);
-
-    // Create temporary configuration file
-    sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
-    FILE *fConfig = FOPEN(tmpCfgName, "w");
-    fprintf(fConfig, "asf_convert temporary configuration file\n\n");
-    fprintf(fConfig, "[General]\n");
-    fprintf(fConfig, "default values = %s\n", tmpDefaults);
-    fprintf(fConfig, "input file = %s\n", batchItem);
-    fprintf(fConfig, "output file = %s%s/%s\n", batchPreDir,
-        mosaic_dir, fileName);
-    fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
-    FCLOSE(fConfig);
-
-    // Extend the temporary configuration file
-    tmp_cfg = read_convert_config(tmpCfgName);
-    check_return(write_convert_config(tmpCfgName, tmp_cfg),
-             "Could not update configuration file");
-    free_convert_config(tmp_cfg);
-
-    // This is really quite a kludge-- we used to call the library
-    // function here, now we shell out and run the tool directly, sort
-    // of a step backwards, it seems.  Unfortunately, in order to keep
-    // processing the batch even if an error occurs, we're stuck with
-    // this method.  (Otherwise, we'd have to teach asfPrintError to
-    // get us back here, to continue the loop.)
-    asfPrintStatus("\nProcessing %s ...\n", batchItem);
-    char cmd[1024];
-    if (logflag) {
-      sprintf(cmd, "%sasf_convert%s -log %s %s",
-          get_argv0(), bin_postfix(), logFile, tmpCfgName);
-    }
-    else {
-      sprintf(cmd, "%sasf_convert%s %s",
-          get_argv0(), bin_postfix(), tmpCfgName);
-    }
-    int ret = asfSystem(cmd);
-
-    if (ret != 0) {
+        char batchItem[255], batchItemFile[255], batchItemDir[255];
+        sscanf(line, "%s", batchItem);
+        
+        // Create temporary directory for processing
+        char *p = findExt(batchItem);
+        if (p) *p = '\0';
+        split_dir_and_file(batchItem, batchItemDir, batchItemFile);
+        create_and_set_tmp_dir(batchItem, batchItem, tmp_dir);
+        
+        // Generate temporary defaults values file
+        char tmpDefaults[255];
+        sprintf(tmpDefaults, "%s/tmp.defaults", tmp_dir);
+        FILE *fDef = FOPEN(tmpDefaults, "w");
+        fprintf(fDef, "import = %d\n", cfg->general->import);
+        fprintf(fDef, "polarimetry = %d\n", cfg->general->polarimetry);
+        fprintf(fDef, "terrain correction = %d\n",
+                cfg->general->terrain_correct);
+        fprintf(fDef, "geocoding = 0\n");
+        fprintf(fDef, "export = 0\n");
+        fprintf(fDef, "intermediates = %d\n", cfg->general->intermediates);
+        fprintf(fDef, "quiet = 1\n");
+        fprintf(fDef, "short configuration file = 1\n");
+        if (cfg->general->import) {
+          fprintf(fDef, "input format = %s\n", cfg->import->format);
+          fprintf(fDef, "radiometry = %s\n", cfg->import->radiometry);
+          fprintf(fDef, "output db = %d\n", cfg->import->output_db);
+          fprintf(fDef, "multilook SLC = %d\n", cfg->import->multilook_slc);
+        }
+        if (cfg->general->polarimetry) {
+          fprintf(fDef, "pauli = %d\n", cfg->polarimetry->pauli);
+          fprintf(fDef, "sinclair = %d\n", cfg->polarimetry->sinclair);
+          fprintf(fDef, "cloude pottier = %d\n",
+                  cfg->polarimetry->cloude_pottier);
+          fprintf(fDef, "faraday correction = %d\n", cfg->polarimetry->farcorr);
+        }
+        if (cfg->general->terrain_correct) {
+          fprintf(fDef, "pixel spacing = %lf\n", cfg->terrain_correct->pixel);
+          fprintf(fDef, "digital elevation model = %s\n",
+                  cfg->terrain_correct->dem);
+          fprintf(fDef, "mask = %s\n", cfg->terrain_correct->mask);
+          fprintf(fDef, "smooth dem holes =1\n");
+          fprintf(fDef, "do radiometric = %d\n",
+                  cfg->terrain_correct->do_radiometric);
+          fprintf(fDef, "interpolate = 1\n");
+        }
+        FCLOSE(fDef);
+        
+        // Create temporary configuration file
+        sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, batchItemFile);
+        FILE *fConfig = FOPEN(tmpCfgName, "w");
+        fprintf(fConfig, "asf_convert temporary configuration file\n\n");
+        fprintf(fConfig, "[General]\n");
+        fprintf(fConfig, "default values = %s\n", tmpDefaults);
+        fprintf(fConfig, "input file = %s\n", batchItem);
+        fprintf(fConfig, "output file = %s%s/%s\n", batchItemDir, mosaic_dir,
+                batchItemFile);
+        fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
+        FCLOSE(fConfig);
+        
+        // Extend the temporary configuration file
+        tmp_cfg = read_convert_config(tmpCfgName);
+        check_return(write_convert_config(tmpCfgName, tmp_cfg),
+                     "Could not update configuration file");
+        free_convert_config(tmp_cfg);
+        
+        // This is really quite a kludge-- we used to call the library
+        // function here, now we shell out and run the tool directly, sort
+        // of a step backwards, it seems.  Unfortunately, in order to keep
+        // processing the batch even if an error occurs, we're stuck with
+        // this method.  (Otherwise, we'd have to teach asfPrintError to
+        // get us back here, to continue the loop.)
+        asfPrintStatus("\nProcessing %s ...\n", batchItem);
+        char cmd[1024];
+        if (logflag) {
+          sprintf(cmd, "%sasf_convert%s -log %s %s",
+              get_argv0(), bin_postfix(), logFile, tmpCfgName);
+        }
+        else {
+          sprintf(cmd, "%sasf_convert%s %s", get_argv0(), bin_postfix(),
+                  tmpCfgName);
+        }
+        int ret = asfSystem(cmd);
+        
+        if (ret != 0) {
           asfPrintStatus("%s: failed\n", batchItem);
           ++n_bad;
-    } else {
+        }
+        else {
           asfPrintStatus("%s: ok\n", batchItem);
-      fprintf(fList, "%s/%s.img\n", mosaic_dir, batchItem);
+          fprintf(fList, "%s/%s.img\n", mosaic_dir, batchItem);
           ++n_ok;
-    }
-
-    strcpy(tmp_dir, cfg->general->tmp_dir);
+        }
+        
+        strcpy(tmp_dir, cfg->general->tmp_dir);
       }
       FCLOSE(fBatch);
       FCLOSE(fList);
@@ -905,14 +928,14 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     strcpy(tmp_dir, cfg->general->tmp_dir);
     while (fgets(line, 255, fBatch) != NULL) {
-      char batchItem[255], fileName[255], batchPreDir[255];
+      char batchItem[255], batchItemFile[255], batchItemDir[255];
       sscanf(line, "%s", batchItem);
 
       // strip off known extensions
       char *p = findExt(batchItem);
       if (p) *p = '\0';
 
-      split_dir_and_file(batchItem, batchPreDir, fileName);
+      split_dir_and_file(batchItem, batchItemDir, batchItemFile);
 
       char *tmpDir = MALLOC(sizeof(char)*(strlen(cfg->general->defaults)+1));
       char *tmpFile = MALLOC(sizeof(char)*(strlen(cfg->general->defaults)+1));
@@ -935,8 +958,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       FREE(tmpFile);
 
       // Create temporary configuration file
-      create_and_set_tmp_dir(fileName, cfg->general->default_out_dir, tmp_dir);
-      sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
+      create_and_set_tmp_dir(batchItem, cfg->general->default_out_dir, tmp_dir);
+      sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, batchItemFile);
 
 
       FILE *fConfig = FOPEN(tmpCfgName, "w");
@@ -945,12 +968,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       fprintf(fConfig, "default values = %s\n", defaults);
       fprintf(fConfig, "input file = %s\n", batchItem);
       if (strlen(cfg->general->default_out_dir) == 0)
-      fprintf(fConfig, "output file = %s%s%s\n",
-        cfg->general->prefix, fileName, cfg->general->suffix);
+        fprintf(fConfig, "output file = %s%s%s\n",
+                cfg->general->prefix, batchItemFile, cfg->general->suffix);
       else
-  fprintf(fConfig, "output file = %s%c%s%s%s\n",
-    cfg->general->default_out_dir, DIR_SEPARATOR,
-    cfg->general->prefix, fileName, cfg->general->suffix);
+        fprintf(fConfig, "output file = %s%c%s%s%s\n",
+                cfg->general->default_out_dir, DIR_SEPARATOR,
+                cfg->general->prefix, batchItemFile, cfg->general->suffix);
       fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
       FCLOSE(fConfig);
       FREE(defaults);
@@ -1004,8 +1027,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   // Regular processing
   else {
 
-    char out_dir[255], junk[255];
-
     if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
       set_status_file(cfg->general->status_file);
 
@@ -1020,8 +1041,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     date_printTime(&start_time,0,':',tmp);
     asfPrintStatus("Starting at: %s\n", tmp);
 
-    split_dir_and_file(cfg->general->out_name, out_dir, junk);
-    create_and_set_tmp_dir(cfg->general->in_name, out_dir,
+    create_and_set_tmp_dir(cfg->general->in_name, cfg->general->out_name,
                            cfg->general->tmp_dir);
 
     // Check that input name isn't the same as the output name
@@ -1172,18 +1192,19 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       int sinclair = cfg->polarimetry->sinclair == 0 ? 0 : 1;
       int cloude_pottier = cfg->polarimetry->cloude_pottier == 0 ? 0 : 1;
       int cloude_pottier_ext =
-    cfg->polarimetry->cloude_pottier_ext == 0 ? 0 : 1;
+          cfg->polarimetry->cloude_pottier_ext == 0 ? 0 : 1;
       int cloude_pottier_nc = cfg->polarimetry->cloude_pottier_nc == 0 ? 0 : 1;
       int k_means_wishart = cfg->polarimetry->k_means_wishart == 0 ? 0 : 1;
       int k_means_wishart_ext =
-    cfg->polarimetry->k_means_wishart_ext == 0 ? 0 : 1;
+          cfg->polarimetry->k_means_wishart_ext == 0 ? 0 : 1;
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
-      cloude_pottier_nc + k_means_wishart + k_means_wishart_ext > 1)
+          cloude_pottier_nc + k_means_wishart + k_means_wishart_ext > 1)
         asfPrintError("More than one polarimetric processing scheme selected."
                       "\nOnly one of these options may be selected at a time."
                       "\n");
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
-      cloude_pottier_nc + k_means_wishart + k_means_wishart_ext < 1)
+          cloude_pottier_nc + k_means_wishart + k_means_wishart_ext +
+          cfg->polarimetry->farcorr < 1)
         asfPrintError("No polarimetric processing scheme selected.\n");
     }
 
@@ -1410,8 +1431,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Generate a temporary output filename
       if (cfg->general->image_stats || cfg->general->detect_cr ||
           cfg->general->sar_processing || cfg->general->polarimetry ||
-      cfg->general->terrain_correct || cfg->general->geocoding ||
-      cfg->general->export) {
+          cfg->general->terrain_correct || cfg->general->geocoding ||
+          cfg->general->export) {
         sprintf(outFile, "%s/import", cfg->general->tmp_dir);
       }
       else {
@@ -1671,54 +1692,90 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                    "detecting corner reflectors (detect_cr)\n");
     }
 
+
     if (cfg->general->polarimetry) {
 
-      update_status("Polarimetric processing ...");
+      int doing_pol = cfg->polarimetry->pauli
+                      + cfg->polarimetry->sinclair
+                      + cfg->polarimetry->cloude_pottier
+                      + cfg->polarimetry->cloude_pottier_ext 
+                      + cfg->polarimetry->cloude_pottier_nc
+                      + cfg->polarimetry->k_means_wishart
+                      + cfg->polarimetry->k_means_wishart_ext;
+      int doing_far = cfg->polarimetry->farcorr;
+
       amp0_flag = cfg->general->terrain_correct;
 
-      // Pass in command line
-      sprintf(inFile, "%s", outFile);
-      if (cfg->general->terrain_correct || cfg->general->geocoding ||
-            cfg->general->export)
-        sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
-      else
-        sprintf(outFile, "%s", cfg->general->out_name);
+      if (doing_far) {
+        update_status("Applying Faraday rotation correction ...");
+      }
 
-      // Calculate polarimetric parameters
-      if (cfg->polarimetry->pauli)
-        cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
-      else if (cfg->polarimetry->sinclair) {
-        // for sinclair, there are two possibilities: SLC & non-SLC
-        meta_parameters *meta = meta_read(inFile);
-        if (meta->general->band_count >= 8) {
-          cpx2sinclair(inFile, outFile, cfg->general->terrain_correct);
+      // Pass in command line for faraday correction
+      sprintf(inFile, "%s", outFile);
+      if (doing_far && (cfg->general->terrain_correct
+                        || cfg->general->geocoding || cfg->general->export)) {
+        sprintf(outFile, "%s/faraday_correction", cfg->general->tmp_dir);
+      }
+      else {
+        sprintf(outFile, "%s", cfg->general->out_name);
+      }
+      
+      if (doing_far) {
+        int keep_flag = cfg->general->intermediates;
+        int single_angle_flag = (FARCORR_MEAN == cfg->polarimetry->farcorr);
+        faraday_correct(inFile, outFile, keep_flag, single_angle_flag);
+      }
+
+      if (doing_pol) {
+        update_status("Polarimetric processing ...");
+
+        // Pass in command line for polarimetry
+        sprintf(inFile, "%s", outFile);
+        if (doing_pol && (cfg->general->terrain_correct
+                          || cfg->general->geocoding
+                          || cfg->general->export)) {
+          sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
         }
         else {
-          // here, we don't need to do any processing -- we just need to
-          // update the RGB Bands to Red=HH, Green=HV, Blue=VV
-          strcpy(cfg->export->rgb, "HH,HV,VV");
-          strcpy(outFile, inFile);
-
-          // turn off the amp0_flag -- we don't need it in this case
-          amp0_flag = FALSE;
+          sprintf(outFile, "%s", cfg->general->out_name);
         }
-        meta_free(meta);
+  
+        // Calculate polarimetric parameters
+        if (cfg->polarimetry->pauli)
+          cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
+        else if (cfg->polarimetry->sinclair) {
+          // for sinclair, there are two possibilities: SLC & non-SLC
+          meta_parameters *meta = meta_read(inFile);
+          if (meta->general->band_count >= 8) {
+            cpx2sinclair(inFile, outFile, cfg->general->terrain_correct);
+          }
+          else {
+            // here, we don't need to do any processing -- we just need to
+            // update the RGB Bands to Red=HH, Green=HV, Blue=VV
+            strcpy(cfg->export->rgb, "HH,HV,VV");
+            strcpy(outFile, inFile);
+  
+            // turn off the amp0_flag -- we don't need it in this case
+            amp0_flag = FALSE;
+          }
+          meta_free(meta);
+        }
+        else if (cfg->polarimetry->cloude_pottier)
+          cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
+        else if (cfg->polarimetry->cloude_pottier_ext)
+          cpx2cloude_pottier16(inFile, outFile, cfg->general->terrain_correct);
+        else if (cfg->polarimetry->cloude_pottier_nc)
+          cpx2entropy_anisotropy_alpha(inFile, outFile,
+                                       cfg->general->terrain_correct);
+        else if (cfg->polarimetry->k_means_wishart)
+          asfPrintError("K-means Wishart clustering not supported yet.\n");
+        else if (cfg->polarimetry->k_means_wishart_ext)
+          asfPrintError("Extended K-means Wishart clustering not supported yet.\n");
+        else if (cfg->polarimetry->lee_preserving)
+          asfPrintError("Lee category preserving not supported yet.\n");
+        else
+          asfPrintError("Unsupported polarimetric processing technique.\n");
       }
-      else if (cfg->polarimetry->cloude_pottier)
-        cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
-      else if (cfg->polarimetry->cloude_pottier_ext)
-        cpx2cloude_pottier16(inFile, outFile, cfg->general->terrain_correct);
-      else if (cfg->polarimetry->cloude_pottier_nc)
-        cpx2entropy_anisotropy_alpha(inFile, outFile,
-                                     cfg->general->terrain_correct);
-      else if (cfg->polarimetry->k_means_wishart)
-        asfPrintError("K-means Wishart clustering not supported yet.\n");
-      else if (cfg->polarimetry->k_means_wishart_ext)
-        asfPrintError("Extended K-means Wishart clustering not supported yet.\n");
-      else if (cfg->polarimetry->lee_preserving)
-        asfPrintError("Lee category preserving not supported yet.\n");
-      else
-        asfPrintError("Unsupported polarimetric processing technique.\n");
     }
 
     if (cfg->general->terrain_correct) {

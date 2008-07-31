@@ -34,6 +34,10 @@ static void apply_default_dirs(convert_config *cfg)
     strcpy(cfg->general->in_name, tmpstr);
     FREE(tmpstr);
   }
+  // Sneak a directory separator on to the end of the default in dir
+  if (DIR_SEPARATOR != cfg->general->default_in_dir[def_dir_len-1]) {
+    strcat(cfg->general->default_in_dir, DIR_SEPARATOR_STR);
+  }
 
   // apply default dir to output name if there isn't a dir there already
   split_dir_and_file(cfg->general->out_name, file_dir, file);
@@ -49,6 +53,10 @@ static void apply_default_dirs(convert_config *cfg)
                                             sizeof(char)*(strlen(tmpstr)+2));
     strcpy(cfg->general->out_name, tmpstr);
     FREE(tmpstr);
+  }
+  // Sneak a directory separator on to the end of the default out dir
+  if (DIR_SEPARATOR != cfg->general->default_out_dir[def_dir_len-1]) {
+    strcat(cfg->general->default_out_dir, DIR_SEPARATOR_STR);
   }
 }
 
@@ -161,9 +169,11 @@ int init_convert_config(char *configFile)
   //fprintf(fConfig, "c2p = 0\n\n");
 
   // polarimetry flag
-  fprintf(fConfig, "\n# The polarimetry flag indicates whether the polarimetric parameters,\n"
-	  "# decompositions or classifications are applied (1 for applying, 0 for leave out\n"
-	  "# the polarimetry).\n\n");
+  fprintf(fConfig, "\n"
+    "# The polarimetry flag indicates whether tasks relating to polarimetry will be\n"
+	  "# performed (1 to enable, 0 to disable). Polarimetric parameters,\n"
+	  "# decompositions, or classifications can be applied. Faraday rotation correction\n"
+	  "# can also be applied to the imagery.\n\n");
   fprintf(fConfig, "polarimetry = 0\n\n");
 
   // terrain correction flag
@@ -189,13 +199,10 @@ int init_convert_config(char *configFile)
           "# parameters.\n\n");
   fprintf(fConfig, "export = 1\n\n");
   // mosaic flag
-  fprintf(fConfig, "# The mosaic flag indicates whether the data needs to be ru\
-n through\n"
-          "# 'asf_mosaic' (1 for running it, 0 for leaving out the export step)\
-.\n");
+  fprintf(fConfig, "# The mosaic flag indicates whether the data needs to be run through\n"
+          "# 'asf_mosaic' (1 for running it, 0 for leaving out the export step).\n");
   fprintf(fConfig, "# Running asf_convert with the -create option and the mosaic flag\n"
-          "# switched on will generate a [Mosaic] section where you can define\
- further\n"
+          "# switched on will generate a [Mosaic] section where you can define further\n"
           "# parameters.\n\n");
   fprintf(fConfig, "mosaic = 0\n\n");  
   // default values file
@@ -431,6 +438,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->polarimetry->k_means_wishart = 0;
   cfg->polarimetry->k_means_wishart_ext = 0;
   cfg->polarimetry->lee_preserving = 0;
+  cfg->polarimetry->farcorr = FARCORR_OFF;
 
   cfg->terrain_correct->pixel = -99;
   cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*255);
@@ -521,7 +529,7 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "detect corner reflectors", 24)==0)
         cfg->general->detect_cr = read_int(line, "detect corner reflectors");
       if (strncmp(test, "polarimetry", 11)==0)
-	cfg->general->polarimetry = read_int(line, "polarimetry");
+        cfg->general->polarimetry = read_int(line, "polarimetry");
       if (strncmp(test, "terrain correction", 18)==0)
         cfg->general->terrain_correct = read_int(line, "terrain correction");
       if (strncmp(test, "geocoding", 9)==0)
@@ -604,16 +612,18 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "cloude pottier", 14)==0)
         cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
       if (strncmp(test, "extended cloude pottier", 23)==0)
-	cfg->polarimetry->cloude_pottier_ext = 
-	  read_int(line, "extended cloude pottier");
+        cfg->polarimetry->cloude_pottier_ext = 
+          read_int(line, "extended cloude pottier");
       if (strncmp(test, "entropy anisotropy alpha", 24)==0)
         cfg->polarimetry->cloude_pottier_nc = 
           read_int(line, "entropy anisotropy alpha");
       if (strncmp(test, "k-means wishart", 15)==0)
         cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
       if (strncmp(test, "k-means wishart ext", 19)==0)
-	cfg->polarimetry->k_means_wishart_ext =
-	  read_int(line, "k-means wishart ext");
+        cfg->polarimetry->k_means_wishart_ext =
+          read_int(line, "k-means wishart ext");
+      if (strncmp(test, "faraday correction", 18)==0)
+        cfg->polarimetry->farcorr = read_int(line, "faraday correction");
 
       // Terrain correction
       if (strncmp(test, "pixel spacing", 13)==0)
@@ -721,16 +731,16 @@ convert_config *init_fill_convert_config(char *configFile)
             cfg->general->image_stats = read_int(line, "image stats");
         if (strncmp(test, "detect corner reflectors", 24)==0)
             cfg->general->detect_cr = read_int(line, "detect corner reflectors");
-	if (strncmp(test, "polarimetry", 11)==0)
-	    cfg->general->polarimetry = read_int(line, "polarimetry");
+        if (strncmp(test, "polarimetry", 11)==0)
+          cfg->general->polarimetry = read_int(line, "polarimetry");
         if (strncmp(test, "terrain correction", 18)==0)
             cfg->general->terrain_correct = read_int(line, "terrain correction");
         if (strncmp(test, "geocoding", 9)==0)
             cfg->general->geocoding = read_int(line, "geocoding");
         if (strncmp(test, "export", 6)==0)
             cfg->general->export = read_int(line, "export");
-	if (strncmp(test, "mosaic", 6)==0)
-	    cfg->general->mosaic = read_int(line, "mosaic");
+        if (strncmp(test, "mosaic", 6)==0)
+            cfg->general->mosaic = read_int(line, "mosaic");
         if (strncmp(test, "default values", 14)==0)
             strcpy(cfg->general->defaults, read_str(line, "default values"));
         if (strncmp(test, "intermediates", 13)==0)
@@ -924,18 +934,20 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "cloude pottier", 14)==0)
         cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
       if (strncmp(test, "extended cloude pottier", 23)==0)
-	cfg->polarimetry->cloude_pottier_ext = 
-	  read_int(line, "extended cloude pottier");
+        cfg->polarimetry->cloude_pottier_ext = 
+          read_int(line, "extended cloude pottier");
       if (strncmp(test, "entropy anisotropy alpha", 24)==0)
         cfg->polarimetry->cloude_pottier_nc =
           read_int(line, "entropy anisotropy alpha");
       if (strncmp(test, "k-means wishart", 15)==0)
         cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
       if (strncmp(test, "k-means wishart ext", 19)==0)
-	cfg->polarimetry->k_means_wishart_ext =
-	  read_int(line, "k-means wishart ext");
+        cfg->polarimetry->k_means_wishart_ext =
+          read_int(line, "k-means wishart ext");
       if (strncmp(test, "lee preserving", 14)==0)
-	cfg->polarimetry->lee_preserving = read_int(line, "lee preserving");
+        cfg->polarimetry->lee_preserving = read_int(line, "lee preserving");
+      if (strncmp(test, "faraday correction", 18)==0)
+        cfg->polarimetry->farcorr = read_int(line, "faraday correction");
       FREE(test);
     }
 
@@ -978,7 +990,8 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "range offset", 12)==0)
         cfg->terrain_correct->range_offset = read_int(line, "range offset");
       if (strncmp(test, "azimuth offset", 14)==0)
-        cfg->terrain_correct->azimuth_offset = read_int(line, "azimuth offset");      FREE(test);
+        cfg->terrain_correct->azimuth_offset = read_int(line, "azimuth offset");
+        FREE(test);
     }
 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
@@ -1025,7 +1038,7 @@ convert_config *read_convert_config(char *configFile)
     if (strncmp(params, "Mosaic", 6)==0) {
       test = read_param(line);
       if (strncmp(test, "overlap", 7)==0)
-	strcpy(cfg->mosaic->overlap, read_str(line, "overlap"));
+        strcpy(cfg->mosaic->overlap, read_str(line, "overlap"));
       FREE(test);
     }
   }
@@ -1122,9 +1135,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
     }
     // General - Polarimetry
     if (!shortFlag)
-      fprintf(fConfig, "\n# The polarimetry flag indicates whether the polarimetric parameters,\n"
-	      "# decompositions or classifications are applied (1 for applying, 0 for leave out\n"
-	      "# the polarimetry).\n\n");
+      fprintf(fConfig,"\n"
+              "# The polarimetry flag indicates whether tasks relating to polarimetry will be\n"
+          	  "# performed (1 to enable, 0 to disable). Polarimetric parameters,\n"
+          	  "# decompositions, or classifications can be applied. Faraday rotation correction\n"
+          	  "# can also be applied to the imagery.\n\n");
     fprintf(fConfig, "polarimetry = %i\n", cfg->general->polarimetry);
     // General - Terrain correction
     if (!shortFlag) {
@@ -1331,8 +1346,8 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (cfg->general->polarimetry) {
       fprintf(fConfig, "\n[Polarimetry]\n");
       if (!shortFlag)
-        fprintf(fConfig, "\n# If you have quad-pol data available (HH, HV, VH and VV),\n"
-		"# you can use the standard Pauli decomposition to map the 4 bands to\n"
+        fprintf(fConfig, "\n# If you have quad-pol SLC data available,\n"
+                "# you can use the standard Pauli decomposition to map the 4 bands to\n"
                 "# the R, G, and B channels in the output image.  In this decomposition,\n"
                 "# red is HH-VV, green is HV, and blue is HH+VV.  In addition, each channel\n"
                 "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
@@ -1347,34 +1362,45 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# visualization.\n\n");
       fprintf(fConfig, "sinclair = %i\n", cfg->polarimetry->sinclair);
       if (!shortFlag)
-	fprintf(fConfig, "\n# If you have quad_pol data available (HH, HV, VH and VV),\n"
-		"# you can use the Cloude-Pottier classification using entropy and alpha\n"
-		"# to map the 4 bands to the eight classes in one band in the output image.\n\n");
+        fprintf(fConfig, "\n# If you have quad_pol SLC data available),\n"
+                "# you can use the Cloude-Pottier classification using entropy and alpha\n"
+                "# to map the 4 bands to the eight classes in one band in the output image.\n\n");
       fprintf(fConfig, "cloude pottier = %i\n\n", cfg->polarimetry->cloude_pottier);
       if (!shortFlag)
-	fprintf(fConfig, "\n# If you have quad_pol data available (HH, HV, VH and VV),\n"
-		"# you can use the extended Cloude-Pottier classification using entropy, alpha\n"
-		"# and anisotropy to map the 4 bands to the 16 classes in one band in the output image.\n\n");
+        fprintf(fConfig, "\n# If you have quad_pol SLC data available),\n"
+                "# you can use the extended Cloude-Pottier classification using entropy, alpha\n"
+                "# and anisotropy to map the 4 bands to the 16 classes in one band in the output image.\n\n");
       fprintf(fConfig, "extended cloude pottier = %i\n", cfg->polarimetry->cloude_pottier_ext);
       if (!shortFlag)
-	fprintf(fConfig, "\n# If you have quad_pol data available (HH, HV, VH and VV),\n"
-		"# you can have the entropy, anisotropy, and alpha values (the values used\n"
-		"# in the Cloude Pottier classification) output in three separate\n"
+        fprintf(fConfig, "\n# If you have quad_pol SLC data available,\n"
+                "# you can have the entropy, anisotropy, and alpha values (the values used\n"
+                "# in the Cloude Pottier classification) output in three separate\n"
                 "# bands.  This can be useful if you plan on doing your own classification,\n"
                 "# or simply wish to inspect the raw entropy, anisotropy, and/or alpha data.\n\n");
       fprintf(fConfig, "entropy anisotropy alpha = %i\n\n", cfg->polarimetry->cloude_pottier_nc);
-      /*
+/*
+ *    if (!shortFlag)
+ *      fprintf(fConfig, "\n# Some description about k-means Wishart \n\n");
+ *    fprintf(fConfig, "k-means wishart = %i\n", cfg->polarimetry->k_means_wishart);
+ *    if (!shortFlag)
+ *      fprintf(fConfig, "\n# Some description about extended k-means Wishart \n\n");
+ *    fprintf(fConfig, "k-means wishart ext = %i\n", cfg->polarimetry->k_means_wishart_ext);
+ *    if (!shortFlag)
+ *      fprintf(fConfig, "\n# Some description about Lee category preserving \n\n");
+ *    fprintf(fConfig, "lee preserving = %i\n\n", cfg->polarimetry->lee_preserving);
+ */
       if (!shortFlag)
-	fprintf(fConfig, "\n# Some description about k-means Wishart \n\n");
-      fprintf(fConfig, "k-means wishart = %i\n", cfg->polarimetry->k_means_wishart);
-      if (!shortFlag)
-	fprintf(fConfig, "\n# Some description about extended k-means Wishart \n\n");
-      fprintf(fConfig, "k-means wishart ext = %i\n", cfg->polarimetry->k_means_wishart_ext);
-      if (!shortFlag)
-	fprintf(fConfig, "\n# Some description about Lee category preserving \n\n");
-      fprintf(fConfig, "lee preserving = %i\n\n", cfg->polarimetry->lee_preserving);
-      */
-    }
+        fprintf(fConfig, "\n"
+                "# Quad-pol SLC data (HH, HV, VH and VV bands in both phase & amplitude)\n"
+                "# must be available in order to use Faraday rotation correction. This\n"
+                "# functionality corrects for atmospheric conditions that rotate the\n"
+                "# polarity of the SAR beam. A 0 value indicates that the correction is\n"
+                "# turned off. A value of 1 uses a single rotation angle for the entire\n"
+                "# image; the single angle is the average of all the per-pixel angles.\n"
+                "# A value of 2 uses a local average of the per pixel angles.\n"
+                "\n");
+      fprintf(fConfig, "faraday correction = %i\n\n", cfg->polarimetry->farcorr);
+      }
 
     // Terrain correction
     if (cfg->general->terrain_correct) {
