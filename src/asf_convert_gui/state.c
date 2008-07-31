@@ -553,8 +553,9 @@ void save_config(char *config_file, char* projfile)
   fprintf(cf, "sar processing = %d\n", s->process_to_level1);
 // fprintf(cf, "image stats=0\n");
 // fprintf(cf, "detect corner reflectors = 0\n");
-  fprintf(cf, "polarimetry = %d\n",
-          s->polarimetry_setting==POLARIMETRY_NONE ? 0 : 1);
+  int polarimetry_on =
+    s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr;
+  fprintf(cf, "polarimetry = %d\n", polarimetry_on ? 1 : 0);
   fprintf(cf, "terrain correction = %d\n",
           s->terrcorr_is_checked || s->refine_geolocation_is_checked);
   fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
@@ -606,18 +607,25 @@ void save_config(char *config_file, char* projfile)
     fprintf(cf, "\n");
   }
 
-  if (s->polarimetry_setting != POLARIMETRY_NONE) {
+  if (polarimetry_on) {
     fprintf(cf, "[Polarimetry]\n");
     fprintf(cf, "pauli = %d\n",
-            s->polarimetry_setting==POLARIMETRY_PAULI?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_PAULI?1:0);
     fprintf(cf, "sinclair = %d\n",
-            s->polarimetry_setting==POLARIMETRY_SINCLAIR?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_SINCLAIR?1:0);
     fprintf(cf, "cloude pottier = %d\n",
-            s->polarimetry_setting==POLARIMETRY_CLOUDE8?1:0);
-    fprintf(cf, "cloude pottier ext = %d\n",
-            s->polarimetry_setting==POLARIMETRY_CLOUDE16?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE8?1:0);
+    fprintf(cf, "extended cloude pottier = %d\n",
+            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE16?1:0);
     fprintf(cf, "entropy anisotropy alpha = %d\n",
-            s->polarimetry_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
+    
+    // faraday rotation codes:
+    //   0= no farcorr, 1=farcorr w/local, 2=farcorr w/global
+    int farcorr_code = 0;
+    if (s->do_farcorr)
+      farcorr_code = s->farcorr_global_avg ? 2 : 1;
+    fprintf(cf, "faraday rotation correction = %d\n", farcorr_code);
     fprintf(cf, "\n");
   }
 

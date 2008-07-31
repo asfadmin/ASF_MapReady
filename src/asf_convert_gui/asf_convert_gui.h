@@ -132,7 +132,9 @@ typedef struct
   double latitude_hi;
 
   /* polarimetry */
-  int polarimetry_setting;
+  int polarimetric_decomp_setting;
+  int do_farcorr;
+  int farcorr_global_avg;
 
   /* export */
   int export_is_checked;

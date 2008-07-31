@@ -172,19 +172,53 @@ settings_apply_to_gui(const Settings * s)
     set_combo_box_item(output_format_combobox, s->output_format);
     output_format_combobox_changed();
 
-    if (s->polarimetry_setting != POLARIMETRY_NONE)
+    int polarimetry_on =
+      s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr;
+
+    if (polarimetry_on)
     {
         GtkWidget *polarimetry_checkbutton =
             get_widget_checked("polarimetry_checkbutton");
         gtk_toggle_button_set_active(
           GTK_TOGGLE_BUTTON(polarimetry_checkbutton), TRUE);
 
-        rb_select("rb_pauli", s->polarimetry_setting==POLARIMETRY_PAULI);
-        rb_select("rb_sinclair", s->polarimetry_setting==POLARIMETRY_SINCLAIR);
-        rb_select("rb_cloude8", s->polarimetry_setting==POLARIMETRY_CLOUDE8);
-        rb_select("rb_cloude16", s->polarimetry_setting==POLARIMETRY_CLOUDE16);
-        rb_select("rb_cloude_noclassify",
-                  s->polarimetry_setting==POLARIMETRY_CLOUDE_NOCLASSIFY);
+        GtkWidget *polarimetric_decomp_checkbutton =
+            get_widget_checked("polarimetric_decomp_checkbutton");
+
+        if (s->polarimetric_decomp_setting == POLARIMETRY_NONE) {
+          gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(polarimetric_decomp_checkbutton), FALSE);
+        }
+        else {
+          gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(polarimetric_decomp_checkbutton), TRUE);
+
+          rb_select("rb_pauli",
+                s->polarimetric_decomp_setting==POLARIMETRY_PAULI);
+          rb_select("rb_sinclair",
+                s->polarimetric_decomp_setting==POLARIMETRY_SINCLAIR);
+          rb_select("rb_cloude8",
+                s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE8);
+          rb_select("rb_cloude16",
+                s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE16);
+          rb_select("rb_cloude_noclassify",
+                s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE_NOCLASSIFY);
+        }
+
+        GtkWidget *farcorr_checkbutton =
+          get_widget_checked("farcorr_checkbutton");
+
+        if (s->do_farcorr) {
+          gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(farcorr_checkbutton), TRUE);
+
+          rb_select("rb_fr_local", !s->farcorr_global_avg);
+          rb_select("rb_fr_global", s->farcorr_global_avg);
+        }
+        else {
+          gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(farcorr_checkbutton), FALSE);
+        }
 
         polarimetry_settings_changed();
     }
@@ -556,20 +590,35 @@ settings_get_from_gui()
     ret->apply_metadata_fix = get_checked("apply_metadata_fix_checkbutton");
     ret->apply_ers2_gain_fix = get_checked("ers2_gain_fix_checkbutton");
 
-    ret->polarimetry_setting = POLARIMETRY_NONE;
+    ret->polarimetric_decomp_setting = POLARIMETRY_NONE;
+    ret->do_farcorr = FALSE;
     if (get_checked("polarimetry_checkbutton")) {
-      if (get_checked("rb_pauli"))
-        ret->polarimetry_setting = POLARIMETRY_PAULI;
-      else if (get_checked("rb_sinclair"))
-        ret->polarimetry_setting = POLARIMETRY_SINCLAIR;
-      else if (get_checked("rb_cloude8"))
-        ret->polarimetry_setting = POLARIMETRY_CLOUDE8;
-      else if (get_checked("rb_cloude16"))
-        ret->polarimetry_setting = POLARIMETRY_CLOUDE16;
-      else if (get_checked("rb_cloude_noclassify"))
-        ret->polarimetry_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
-      else
-        ret->polarimetry_setting = POLARIMETRY_NONE;
+      if (get_checked("polarimetric_decomp_checkbutton")) {
+        if (get_checked("rb_pauli"))
+          ret->polarimetric_decomp_setting = POLARIMETRY_PAULI;
+        else if (get_checked("rb_sinclair"))
+          ret->polarimetric_decomp_setting = POLARIMETRY_SINCLAIR;
+        else if (get_checked("rb_cloude8"))
+          ret->polarimetric_decomp_setting = POLARIMETRY_CLOUDE8;
+        else if (get_checked("rb_cloude16"))
+          ret->polarimetric_decomp_setting = POLARIMETRY_CLOUDE16;
+        else if (get_checked("rb_cloude_noclassify"))
+          ret->polarimetric_decomp_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
+        else
+          ret->polarimetric_decomp_setting = POLARIMETRY_NONE;
+      }
+      if (get_checked("farcorr_checkbutton")) {
+        ret->do_farcorr = TRUE;
+        if (get_checked("rb_fr_local"))
+          ret->farcorr_global_avg = FALSE;
+        else if (get_checked("rb_fr_global"))
+          ret->farcorr_global_avg = TRUE;
+        else {
+          // not possible
+          assert(FALSE);
+          ret->do_farcorr = FALSE;
+        }
+      }
     }
 
     ret->export_is_checked = get_checked("export_checkbutton");
@@ -1435,8 +1484,9 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "sar processing = %d\n", s->process_to_level1);
     // fprintf(cf, "image stats=0\n");
     // fprintf(cf, "detect corner reflectors = 0\n");
-    fprintf(cf, "polarimetry = %d\n",
-            s->polarimetry_setting==POLARIMETRY_NONE ? 0 : 1);
+    int polarimetry_on =
+      s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr;
+    fprintf(cf, "polarimetry = %d\n", polarimetry_on ? 1 : 0);
     fprintf(cf, "terrain correction = %d\n",
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
@@ -1484,8 +1534,11 @@ settings_to_config_file(const Settings *s,
     // we multilook on import if we are going to be geocoding,
     // though we don't multilook if we going to be doing a polarimetric
     // decomposition, since in that case we'll multilook as we do Pauli, etc
+    // Also, if we are going to be doing Faraday Rotation correction, then
+    // we never multilook on import -- user will get non-multilooked data
+    // if they JUST do FR correction.  (which is ok)
     int multilook_on_import = s->geocode_is_checked;
-    if (s->polarimetry_setting != POLARIMETRY_NONE)
+    if (s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr)
       multilook_on_import = FALSE;
 
     fprintf(cf, "multilook SLC = %d\n", multilook_on_import ? 1 : 0);
@@ -1509,18 +1562,25 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "\n");
     }
 
-    if (s->polarimetry_setting != POLARIMETRY_NONE) {
+    if (polarimetry_on) {
         fprintf(cf, "[Polarimetry]\n");
         fprintf(cf, "pauli = %d\n",
-                s->polarimetry_setting==POLARIMETRY_PAULI?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_PAULI?1:0);
         fprintf(cf, "sinclair = %d\n",
-                s->polarimetry_setting==POLARIMETRY_SINCLAIR?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_SINCLAIR?1:0);
         fprintf(cf, "cloude pottier = %d\n",
-                s->polarimetry_setting==POLARIMETRY_CLOUDE8?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE8?1:0);
         fprintf(cf, "extended cloude pottier = %d\n",
-                s->polarimetry_setting==POLARIMETRY_CLOUDE16?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE16?1:0);
         fprintf(cf, "entropy anisotropy alpha = %d\n",
-                s->polarimetry_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
+            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
+
+        // faraday rotation codes:
+        //   0= no farcorr, 1=farcorr w/local, 2=farcorr w/global
+        int farcorr_code = 0;
+        if (s->do_farcorr)
+          farcorr_code = s->farcorr_global_avg ? 2 : 1;
+        fprintf(cf, "faraday rotation correction = %d\n", farcorr_code);
         fprintf(cf, "\n");
     }
 
@@ -1581,25 +1641,35 @@ settings_to_config_file(const Settings *s,
           fprintf(cf, "byte conversion = %s\n",
                   scaling_method_string(s->scaling_method));
       }
-      else if (s->polarimetry_setting == POLARIMETRY_CLOUDE8 ||
-               s->polarimetry_setting == POLARIMETRY_CLOUDE16) {
+      else if (s->polarimetric_decomp_setting == POLARIMETRY_CLOUDE8 ||
+               s->polarimetric_decomp_setting == POLARIMETRY_CLOUDE16) {
           fprintf(cf, "byte conversion = truncate\n");
       }
       else {
           fprintf(cf, "byte conversion = none\n");
       }
-      if (s->polarimetry_setting == POLARIMETRY_CLOUDE8)
-        fprintf(cf,"rgb look up table = cloude8\n");
-      else if (s->polarimetry_setting == POLARIMETRY_CLOUDE16)
-        fprintf(cf,"rgb look up table = cloude16\n");
-      else if (s->export_bands ||
-               s->polarimetry_setting == POLARIMETRY_PAULI ||
-               s->polarimetry_setting == POLARIMETRY_SINCLAIR)
+      if (polarimetry_on &&
+          s->polarimetric_decomp_setting == POLARIMETRY_CLOUDE8)
       {
-        if (s->polarimetry_setting == POLARIMETRY_PAULI) {
+        fprintf(cf,"rgb look up table = cloude8\n");
+      }
+      else if (polarimetry_on &&
+               s->polarimetric_decomp_setting == POLARIMETRY_CLOUDE16)
+      {
+        fprintf(cf,"rgb look up table = cloude16\n");
+      }
+      else if (s->export_bands || (polarimetry_on &&
+               (s->polarimetric_decomp_setting == POLARIMETRY_PAULI ||
+                s->polarimetric_decomp_setting == POLARIMETRY_SINCLAIR)))
+      {
+        if (polarimetry_on &&
+            s->polarimetric_decomp_setting == POLARIMETRY_PAULI)
+        {
           fprintf(cf, "rgb banding = HH-VV,HV+VH,HH+VV\n");
         }
-        else if (s->polarimetry_setting == POLARIMETRY_SINCLAIR) {
+        else if (polarimetry_on &&
+                 s->polarimetric_decomp_setting == POLARIMETRY_SINCLAIR)
+        {
           fprintf(cf, "rgb banding = HH,HV+VH_2,VV\n");
         }
         else if (!s->truecolor_is_checked && !s->falsecolor_is_checked)
@@ -1691,18 +1761,28 @@ int apply_settings_from_config_file(char *configFile)
     s.apply_ers2_gain_fix = cfg->import->ers2_gain_fix;
 
     /* polarimetry */
-    s.polarimetry_setting = POLARIMETRY_NONE;
+    s.polarimetric_decomp_setting = POLARIMETRY_NONE;
+    s.do_farcorr = FALSE;
     if (cfg->general->polarimetry) {
       if (cfg->polarimetry->pauli)
-        s.polarimetry_setting = POLARIMETRY_PAULI;
+        s.polarimetric_decomp_setting = POLARIMETRY_PAULI;
       else if (cfg->polarimetry->sinclair)
-        s.polarimetry_setting = POLARIMETRY_SINCLAIR;
+        s.polarimetric_decomp_setting = POLARIMETRY_SINCLAIR;
       else if (cfg->polarimetry->cloude_pottier)
-        s.polarimetry_setting = POLARIMETRY_CLOUDE8;
+        s.polarimetric_decomp_setting = POLARIMETRY_CLOUDE8;
       else if (cfg->polarimetry->cloude_pottier_ext)
-        s.polarimetry_setting = POLARIMETRY_CLOUDE16;
+        s.polarimetric_decomp_setting = POLARIMETRY_CLOUDE16;
       else if (cfg->polarimetry->cloude_pottier_nc)
-        s.polarimetry_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
+        s.polarimetric_decomp_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
+/*
+      if (cfg->polarimetry->farcorr > 0) {
+        s.do_farcorr = TRUE;
+        if (cfg->polarimetry->farcorr == 1)
+          s.farcorr_global_avg = TRUE;
+        else
+          s.farcorr_global_avg = FALSE;
+      }
+*/
     }
 
     /* export */

@@ -599,9 +599,10 @@ void rgb_settings_changed()
     GtkWidget *rb_rgb_polar = get_widget_checked("rb_rgb_polar");
     GtkWidget *rgb_vbox = get_widget_checked("rgb_vbox");
 
-    int is_polarimetric = get_checked("polarimetry_checkbutton");
+    int is_polarimetric= get_checked("polarimetry_checkbutton");
+    int is_polarimetric_decomp= get_checked("polarimetric_decomp_checkbutton");
     int is_cloude_noclassify;
-    if (is_polarimetric) {
+    if (is_polarimetric && is_polarimetric_decomp) {
         is_cloude_noclassify = get_checked("rb_cloude_noclassify");
         if (!is_cloude_noclassify) {
             rb_select("rb_all", FALSE);
@@ -767,6 +768,18 @@ on_rb_cloude_noclassify_toggled(GtkWidget *widget)
     update_summary();
 }
 
+SIGNAL_CALLBACK void
+on_rb_fr_local_toggled(GtkWidget *widget)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_fr_global_toggled(GtkWidget *widget)
+{
+    update_summary();
+}
+
 void polarimetry_settings_changed()
 {
     int is_checked = get_checked("polarimetry_checkbutton");
@@ -780,12 +793,27 @@ void polarimetry_settings_changed()
     gtk_widget_set_sensitive(vbox_polarimetry, is_checked);
 
     if (is_checked) {
-      // when polarimetry is turned on, automatically select "SIGMA" and no db
-      GtkWidget *input_data_type_combobox =
-        get_widget_checked("input_data_type_combobox");
-      set_combo_box_item(input_data_type_combobox, INPUT_TYPE_SIGMA);
-      if (get_checked("checkbutton_db"))
-        set_checked("checkbutton_db", FALSE);
+
+      int decomp_checked = get_checked("polarimetric_decomp_checkbutton");
+
+      GtkWidget *polarimetric_decomp_vbox =
+        get_widget_checked("polarimetric_decomp_vbox");
+      gtk_widget_set_sensitive(polarimetric_decomp_vbox, decomp_checked);
+
+      if (decomp_checked) {
+        // when a polarimetric decomposition is turned on,
+        // automatically select "SIGMA" and no db
+        GtkWidget *input_data_type_combobox =
+          get_widget_checked("input_data_type_combobox");
+        set_combo_box_item(input_data_type_combobox, INPUT_TYPE_SIGMA);
+        if (get_checked("checkbutton_db"))
+          set_checked("checkbutton_db", FALSE);
+      }
+
+      int farcorr_checked = get_checked("farcorr_checkbutton");
+
+      GtkWidget *farcorr_vbox = get_widget_checked("farcorr_vbox");
+      gtk_widget_set_sensitive(farcorr_vbox, farcorr_checked);
 
       input_data_type_combobox_changed();
     }
@@ -795,6 +823,20 @@ void polarimetry_settings_changed()
 
 SIGNAL_CALLBACK void
 on_polarimetry_checkbutton_toggled(GtkWidget * widget)
+{
+    polarimetry_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_polarimetric_decomp_checkbutton_toggled(GtkWidget *widget)
+{
+    polarimetry_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_farcorr_checkbutton_toggled(GtkWidget *widget)
 {
     polarimetry_settings_changed();
     update_summary();

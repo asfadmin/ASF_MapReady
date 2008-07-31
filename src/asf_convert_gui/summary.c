@@ -133,10 +133,16 @@ const char *get_summary_text()
         sprintf(text, "%s\n  (no ERS2 gain correction)", text);
     }
 
-    if (s->polarimetry_setting != POLARIMETRY_NONE)
+    int polarimetry_on =
+      s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr;
+
+    if (polarimetry_on)
     {
         strcat(text, "\nPolarimetry: Yes ");
-        switch (s->polarimetry_setting) {
+        switch (s->polarimetric_decomp_setting) {
+          case POLARIMETRY_NONE:
+            strcat(text, "(no decomposition)");
+            break;
           case POLARIMETRY_PAULI:
             strcat(text, "(Pauli)");
             break;
@@ -152,6 +158,13 @@ const char *get_summary_text()
           case POLARIMETRY_CLOUDE_NOCLASSIFY: 
             strcat(text, "(Entropy,Anisotropy,Alpha)");
             break;
+        }
+
+        if (s->do_farcorr) {
+          if (s->farcorr_global_avg)
+            strcat(text, "\n   FR Corr. w/ Global Avg");
+          else
+            strcat(text, "\n   FR Corr. w/ Local Avg");
         }
     }
 
@@ -373,20 +386,20 @@ const char *get_summary_text()
                 strcat(text, "\n   RGB Banding: True Color\n");
             else if (s->falsecolor_is_checked)
                 strcat(text, "\n   RGB Banding: False Color\n");
-            else if (s->polarimetry_setting == POLARIMETRY_PAULI)
-                strcat(text, "\n   RGB Banding: Pauli Decomposition\n");
-            else if (s->polarimetry_setting == POLARIMETRY_SINCLAIR)
-                strcat(text, "\n   RGB Banding: Sinclair Decomposition\n");
-            else if (s->polarimetry_setting == POLARIMETRY_CLOUDE8)
-                strcat(text, "\n   RGB Banding: Cloude-Pottier (8)\n");
-            else if (s->polarimetry_setting == POLARIMETRY_CLOUDE16)
-                strcat(text, "\n   RGB Banding: Cloude-Pottier (16)\n");
             else
                 sprintf(text, "%s\n   RGB Banding: %s,%s,%s\n", text,
                         strlen(s->red) > 0 ? s->red : "-",
                         strlen(s->green) > 0 ? s->green : "-",
                         strlen(s->blue) > 0 ? s->blue : "-");
         }
+        else if (s->polarimetric_decomp_setting == POLARIMETRY_PAULI)
+            strcat(text, "\n   RGB Banding: Pauli\n");
+        else if (s->polarimetric_decomp_setting == POLARIMETRY_SINCLAIR)
+            strcat(text, "\n   RGB Banding: Sinclair\n");
+        else if (s->polarimetric_decomp_setting == POLARIMETRY_CLOUDE8)
+            strcat(text, "\n   RGB Banding: Cloude-Pottier (8)\n");
+        else if (s->polarimetric_decomp_setting == POLARIMETRY_CLOUDE16)
+            strcat(text, "\n   RGB Banding: Cloude-Pottier (16)\n");
 
     }
     else
