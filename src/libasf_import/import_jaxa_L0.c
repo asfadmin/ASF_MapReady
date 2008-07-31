@@ -795,12 +795,12 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     int i;
     for (i = 0; i < num_files; i++) {
         sprintf(del_files, "rm -f %s", img_files[i]);
-        printf("\nWould have run this command: %s\n\n", del_files);
-        //asfSystem(del_files);
+//        printf("\nWould have run this command: %s\n\n", del_files);
+        asfSystem(del_files);
     }
     sprintf(del_files, "rm -rf %s", tmp_folder);
-    printf("\nWould have run this command: %s\n\n", del_files);
-    //asfSystem(del_files);
+//    printf("\nWould have run this command: %s\n\n", del_files);
+    asfSystem(del_files);
 
     return tot_lines;
 }
