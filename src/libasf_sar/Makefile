@@ -19,6 +19,7 @@ OBJS = \
 	to_sr.o \
 	refine_offset.o \
 	interp_dem_holes.o \
+	find_band.o \
 	classify.o \
 	polarimetry.o \
 	farcorr.o \

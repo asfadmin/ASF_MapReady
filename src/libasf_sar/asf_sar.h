@@ -127,6 +127,9 @@ void free_classifier(classifier_t *classifier);
 int classify(classifier_t *classifier, float entropy, float anisotropy,
              float alpha);
 
+/* find_band.c */
+int find_band(meta_parameters *meta, char *name, int *ok);
+
 /* Prototypes from polarimetry.c */
 void polarimetric_decomp(const char *inFile, const char *outFile,
                          int amplitude_band,

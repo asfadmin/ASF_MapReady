@@ -138,8 +138,8 @@ char *findExt(const char *name)
         strcmp_case(ext, ".AIRSAR") == 0    ||
         strcmp_case(ext, ".VVI2") == 0      || // an airsar extension
         strcmp_case(ext, ".DEMI2") == 0     || // an airsar extension
-        //strcmp_case(ext, ".DATGR") == 0     || // an airsar extension
-        //strcmp_case(ext, ".CORGR") == 0     || // an airsar extension
+        strcmp_case(ext, ".DATGR") == 0     || // an airsar extension
+        strcmp_case(ext, ".CORGR") == 0     || // an airsar extension
         //strcmp_case(ext, ".INCGR") == 0     || // an airsar extension
         strcmp_case(ext, ".D") == 0         ||
         strcmp_case(ext, ".L") == 0         ||

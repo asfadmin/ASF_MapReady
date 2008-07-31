@@ -4,6 +4,8 @@
 #include "asf_complex.h"
 #include <assert.h>
 
+#define MAX_OTHER 10
+
 typedef struct {
    int line;
    quadPolFloat *buf;
@@ -16,56 +18,9 @@ typedef struct {
    int hv_amp_band, hv_phase_band;
    int vh_amp_band, vh_phase_band;
    int vv_amp_band, vv_phase_band;
+
+   int other_bands[MAX_OTHER];
 } QuadPolData;
-
-static int find_band(meta_parameters *meta, char *name, int *ok)
-{
-    char *rad_name = MALLOC(sizeof(char)*(strlen(name)+32));
-    const char *rad;
-    switch (meta->general->radiometry) {
-      case r_AMP:
-        rad = "";
-        break;
-      case r_SIGMA:
-        rad = "SIGMA-";
-        break;
-      case r_BETA:
-        rad = "BETA-";
-        break;
-      case r_GAMMA:
-        rad = "GAMMA-";
-        break;
-      case r_SIGMA_DB:
-        rad = "SIGMA_DB-";
-        break;
-      case r_BETA_DB:
-        rad = "BETA_DB-";
-        break;
-      case r_GAMMA_DB:
-        rad = "GAMMA_DB-";
-        break;
-      case r_POWER:
-        rad = "POWER-";
-        break;
-      default:
-        asfPrintWarning("Unexpected radiometry: %d\n",
-                        meta->general->radiometry);
-        rad = "";
-        break;
-    }
-
-    sprintf(rad_name, "%s%s", rad, name);
-
-    int band_num = get_band_number(meta->general->bands,
-                                   meta->general->band_count, rad_name);
-
-    if (band_num < 0) {
-        asfPrintStatus("Band '%s' not found.\n", name);
-        *ok = FALSE;
-    }
-
-    return band_num;
-}
 
 QuadPolData *qpd_new(FILE *fp, meta_parameters *meta)
 {
@@ -92,6 +47,39 @@ QuadPolData *qpd_new(FILE *fp, meta_parameters *meta)
   qpd->r = complex_matrix_new22(re1,im1,im1,re1);
 
   qpd->buf = CALLOC(meta->general->sample_count, sizeof(quadPolFloat));
+
+  // find all the bands that we must "pass through" without changing
+  int i;
+  for (i=0; i<MAX_OTHER; ++i)
+    qpd->other_bands[i] = -1;
+
+  int j=0;
+  for (i=0; i<meta->general->band_count; ++i) {
+
+    if (i==qpd->hh_amp_band) continue;
+    if (i==qpd->hh_phase_band) continue;
+    if (i==qpd->hv_amp_band) continue;
+    if (i==qpd->hv_phase_band) continue;
+    if (i==qpd->vh_amp_band) continue;
+    if (i==qpd->vh_phase_band) continue;
+    if (i==qpd->vv_amp_band) continue;
+    if (i==qpd->vv_phase_band) continue;
+
+    // this band not one of the quad-pol bands: mark it for passing
+    // through unchanged
+    qpd->other_bands[j] = i;
+    ++j;
+
+    char *band_name = get_band_name(meta->general->bands,
+                                    meta->general->band_count, i);
+    if (!band_name)
+      band_name = STRDUP(MAGIC_UNSET_STRING);
+
+    //asfPrintStatus("Band %d (%s) not a quad-pol band, "
+    //               "it will be left unchanged.\n", i, band_name);
+
+    FREE(band_name);
+  }
 
   return qpd;
 }
@@ -440,6 +428,23 @@ void faraday_correct(const char *inFile, const char *outFile,
     // write out residuals
     if (save_intermediates)
       put_float_line(fpres, resMeta, i, res);
+  }
+
+  // now the "pass through" bands (not part of the quad-pol data)
+  // (for example, we sometimes add an amplitude band at the beginning)
+  for (j=0; j<MAX_OTHER; ++j) {
+    if (qpd->other_bands[j] >= 0) {
+      char *name = get_band_name(outMeta->general->bands,
+                                 outMeta->general->band_count, j);
+      asfPrintStatus("Writing pass-through band: %s (%d)\n", name, j);
+      FREE(name);
+
+      for (i=0; i<nl; ++i) {
+        asfLineMeter(i,nl);
+        get_band_float_line(fin, inMeta, j, i, buf);
+        put_band_float_line(fout, outMeta, j, i, buf);
+      }
+    }
   }
 
   FCLOSE(fin);

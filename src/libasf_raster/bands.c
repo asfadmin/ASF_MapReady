@@ -354,3 +354,18 @@ char *channel_trim (const char *channel)
   return t_channel;
 }
 
+char *get_band_name(char *band_str, int band_count, int band_num)
+{
+  char **bands = extract_band_names(band_str, band_count);
+  char *ret = NULL;
+
+  if (band_num < band_count)
+    ret = STRDUP(bands[band_num]);
+
+  int i;
+  for (i=0; i<band_count; ++i)
+    FREE(bands[i]);
+  FREE(bands);
+
+  return ret;
+}
