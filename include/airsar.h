@@ -98,5 +98,6 @@ typedef struct {
 // Function prototypes
 meta_parameters* airsar2meta(airsar_general *general, 
 			     airsar_parameters *params);
+airsar_parameters *read_airsar_params(const char *inBaseName);
 
 #endif
