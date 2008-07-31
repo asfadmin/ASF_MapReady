@@ -30,7 +30,8 @@
 typedef enum {
     not_L0=0,
     stf,
-    ceos
+    ceos,
+    jaxa_l0
 } level_0_flag;
 
 int checkForOption(char* key, int argc, char* argv[]); // in help.c
@@ -130,6 +131,9 @@ int main(int argc, char *argv[])
         }
         else if (strncmp(uc(tmp),"CEOS",4) == 0) {
             L0Flag=ceos;
+        }
+        else if (strncmp(uc(tmp),"JAXA_L0",7) == 0) {
+            L0Flag=jaxa_l0;
         }
         else {
             L0Flag=not_L0;

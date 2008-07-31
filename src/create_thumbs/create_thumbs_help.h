@@ -80,16 +80,25 @@
 "          this option, all thumbnails are placed in the same directory as\n"\
 "          the CEOS file.\n"\
 "\n"\
-"     -L0 <stf|ceos>\n"\
+"     -L0 <stf|ceos|jaxa_L0>\n"\
 "          Force Level 0 (zero) processing.  'stf' or 'ceos' indicates input file\n"\
-"          format.  Level 0 processing results in the following additional processing steps:\n\n"\
+"          format.  Level 0 stf or ceos processing results in the following additional\n"\
+"          processing steps:\n\n"\
 "            - import into ASF Internal Format\n"\
 "            - range-doppler (ardop) processing\n"\
 "            - conversion of amplitude output from slant range to ground range\n"\
 "            - scale ground range amplitude image to size indicated by -size or -scale\n"\
 "              command line parameters\n"\
 "            - image is flipped/rotated to north-up, west-left orientation\n"\
-"            - export of scaled image into selected graphics file format\n"\
+"            - image is exported to the selected output graphics file format\n"\
+"          jaxa_L0 Level 0 processing refers to JAXA AVNIR-2 Level 0 (optical)\n"\
+"          processing, and the processing steps are therefore:\n"\
+"            - import into ASF Internal Format\n"\
+"            - scale image to size indicated by -size or -scale\n"\
+"              command line parameters\n"\
+"            - (image is NOT flipped/rotated to north-up, west-left orientation)\n"\
+"              (... this capability is coming soon however.)\n"\
+"            - image is exported to the selected output graphics file format\n"\
 "\n"\
 "     -output-format <tiff|jpeg>\n"\
 "          Choose graphics file format for output file.  Default is JPEG.\n"\
