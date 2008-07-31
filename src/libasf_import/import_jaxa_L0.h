@@ -2,6 +2,7 @@
 #define _IMPORT_JAXA_L0_H_
 
 // Defns
+#define MAX_ALLOWED_JPEG_ERRORS         2000
 #define JL0_DIR_LEN                     1024
 #define JL0_FILE_LEN                    256
 #define JL0_BLUE_VCID                   45

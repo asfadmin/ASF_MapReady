@@ -585,9 +585,13 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     // next, then there would be _no need_ to create these large all-chunks files
     // that contain all available telemetry frames for each band ...and we'd save disk
     // space (Operations would like that)
+    asfPrintStatus("Building telemetry files... Red... ");
     concat_avnir_band_chunks(num_red_chunks,   (const char **)red_chunks,   red_all_chunks,   JL0_RED_BAND);
+    asfPrintStatus("Green... ");
     concat_avnir_band_chunks(num_green_chunks, (const char **)green_chunks, green_all_chunks, JL0_GREEN_BAND);
+    asfPrintStatus("Blue... ");
     concat_avnir_band_chunks(num_blue_chunks,  (const char **)blue_chunks,  blue_all_chunks,  JL0_BLUE_BAND);
+    asfPrintStatus("Near-Infrared");
     concat_avnir_band_chunks(num_nir_chunks,   (const char **)nir_chunks,   nir_all_chunks,   JL0_NIR_BAND);
 
     asfPrintStatus("\nPerforming time-synchronized ingest of embedded AVNIR-2 jpeg-format\n"
@@ -637,19 +641,19 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     target_time = 0.0;
     first_SOI = 1;
 
-    asfPrintStatus("\nFinding start of image... Red ...");
+    asfPrintStatus("\nFinding start of image... \n    Red ...\n");
     r_eof = find_next_avnir_SOI(rin, target_time, soi_tries, &rvalid, &rtime,
                           &last_rtime, rbuf, &ridx, JL0_RED_BAND_NO, first_vcdu, first_SOI, &rlast_vcdu_ctr,
                           rhdr_buf, &valid_rSOI); // Find first SOI
-    asfPrintStatus("Green ...");
+    asfPrintStatus("        Green ...\n");
     g_eof = find_next_avnir_SOI(gin, target_time, soi_tries, &gvalid, &gtime,
                           &last_gtime, gbuf, &gidx, JL0_GREEN_BAND_NO, first_vcdu, first_SOI, &glast_vcdu_ctr,
                           ghdr_buf, &valid_gSOI); // Find first SOI
-    asfPrintStatus("Blue ...");
+    asfPrintStatus("            Blue ...\n");
     b_eof = find_next_avnir_SOI(bin, target_time, soi_tries, &bvalid, &btime,
                           &last_btime, bbuf, &bidx, JL0_BLUE_BAND_NO, first_vcdu, first_SOI, &blast_vcdu_ctr,
                           bhdr_buf, &valid_bSOI); // Find first SOI
-    asfPrintStatus("Near-Infrared\n\n");
+    asfPrintStatus("                Near-Infrared\n\n");
     n_eof = find_next_avnir_SOI(nin, target_time, soi_tries, &nvalid, &ntime,
                           &last_ntime, nbuf, &nidx, JL0_NIR_BAND_NO, first_vcdu, first_SOI, &nlast_vcdu_ctr,
                           nhdr_buf, &valid_nSOI); // Find first SOI
@@ -670,6 +674,7 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     nin = (FILE *)FOPEN(nir_all_chunks  , "rb");
     first_vcdu = 1; // Turn on when finding first SOI (only)
     soi_tries = 2; // The ALOS spec says to check only the first 2 valid SOIs at or after the target synch time
+    asfPrintStatus("Synchronizing bands to scene extraction start time...\n");
     r_eof = find_next_avnir_SOI(rin, scene_extraction_time, soi_tries, &rvalid, &rtime,
                         &last_rtime, rbuf, &ridx, JL0_RED_BAND_NO, first_vcdu, first_SOI, &rlast_vcdu_ctr, rhdr_buf,
                         &valid_rSOI); // Find target starting SOI
@@ -764,6 +769,7 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
                           &rvalid, first_vcdu, &rlast_vcdu_ctr, jpegRed,   rout);
         write_avnir_frame(nband_valid, valid_nSOI, nvalid, nin, nhdr_buf, nbuf, &nidx, JL0_NIR_BAND_NO,
                           &nvalid, first_vcdu, &nlast_vcdu_ctr, jpegNir, nout);
+        asfPrintStatus(".");
     }
 
     // Close and concat the .img files
@@ -778,7 +784,7 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     if (rband_valid) img_files[num_files++] = rout_file;
     if (nband_valid) img_files[num_files]   = nout_file;
     num_files = *num_bands;
-    asfPrintStatus("\nCombining band data into single ASF format file...");
+    asfPrintStatus("\nCombining band data into single ASF format file...\n\n");
     int tot_lines = concat_img_files(img_files, num_files, JL0_AVNIR_SAMPLE_COUNT, out_file);
     *red_lines = *green_lines = *blue_lines = *nir_lines = tot_lines;
     asfPrintStatus("\n\n");
@@ -832,63 +838,68 @@ static int frame_lines_written = 0;
 int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE *out)
 {
     FILE *jpeg = NULL; // Input jpeg file
-    JSAMPLE *ibuf = NULL;
+    JSAMPARRAY ibuf;
     unsigned char *dest = NULL;
     int num_lines = 0;
-    struct jpeg_decompress_struct *cinfo = NULL;
+    struct jpeg_decompress_struct cinfo;
     my_error_mgr_t jerr;
 
     if (good_frame) {
-        // Open and intialize jpeg for decompression
-        cinfo = (struct jpeg_decompress_struct *)MALLOC(sizeof(struct jpeg_decompress_struct));
-        cinfo->err = jpeg_std_error(&jerr.errmgr);
+        // Open and initialize jpeg
+        jpeg = (FILE *)FOPEN(tmpJpegName, "rb");
         jerr.errmgr.error_exit = jpeg_error_handler;
-        jerr.errmgr.output_message = jpeg_error_message_handler;
+//        jerr.errmgr.output_message = jpeg_error_message_handler;
+
+        // Intialize jpeg decompression
+        cinfo.err = jpeg_std_error(&jerr.errmgr);
         if (setjmp(jerr.escape)) {
             // If we get here, a jpeg library found an error
             jpeg_error_occurred++;
-            jpeg_finish_decompress(cinfo);
-            jpeg_destroy_decompress (cinfo);
+            if (jpeg_error_occurred > MAX_ALLOWED_JPEG_ERRORS) {
+                // This will trap runaway errors, i.e. if they occur during jpeg_finish_decompress() or
+                // in jpeg_destroy_decompress() ...or if there really are tons of bad jpeg frames!
+                asfPrintError("Too many jpeg frame errors occurred (%d) ...aborting\n", jpeg_error_occurred);
+            }
+            jpeg_destroy_decompress (&cinfo);
+            FCLOSE(jpeg);
             return frame_lines_written;
         }
-        cinfo->buffered_image = TRUE;
-        jpeg_create_decompress(cinfo);
-
-        jpeg = (FILE *)FOPEN(tmpJpegName, "rb");
-
-        jpeg_stdio_src(cinfo, jpeg);
-        jpeg_read_header(cinfo, TRUE);
-        jpeg_start_decompress(cinfo);
+        jpeg_create_decompress(&cinfo);
+        jpeg_stdio_src(&cinfo, jpeg);
+        jpeg_read_header(&cinfo, TRUE);
+        jpeg_start_decompress(&cinfo);
 
         // Allocate input and output buffers
+        if (cinfo.num_components != 1) {
+            asfPrintError("Multi-component jpegs not supported for JAXA Level 0 AVNIR-2 products...\n");
+        }
+//        ibuf[0] = (unsigned char *)MALLOC(cinfo.output_width);
+        ibuf = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, cinfo.output_width, 1);
         dest = (unsigned char *)MALLOC((2 * 3550) * sizeof(unsigned char)); // greyscale, 1 component
-        ibuf = (JSAMPLE *)MALLOC(cinfo->image_width * sizeof(unsigned char));
 
-        int i;
-        num_lines = cinfo->image_height;
+        // Read/decompress/interlace/write jpeg data
+        num_lines = cinfo.image_height;
         frame_lines_written = 0;
-        for (i = 0; i < num_lines; i++) {
-            jpeg_read_scanlines(cinfo, &ibuf, 1); // Read and decompress one data line
+        while (cinfo.output_scanline < cinfo.image_height) {
+            jpeg_read_scanlines(&cinfo, ibuf, 1); // Read and decompress one data line
 
             int j = 12;             // Point at odds
             int k = 12 + 3550 + 26; // Point at evens
             int m, n;
             for (m = n = 0; m < 3550; m++, j++, k++) {
-                dest[n]     = (unsigned char)ibuf[j]; // Odd pixel
-                dest[n + 1] = (unsigned char)ibuf[k]; // Even pixel
+                dest[n]     = (unsigned char)ibuf[0][j]; // Odd pixel
+                dest[n + 1] = (unsigned char)ibuf[0][k]; // Even pixel
                 n += 2;
             }
             FWRITE(dest, sizeof(unsigned char), 2 * 3550, out); // Write raw interlaced data to .img file
             frame_lines_written++;
         }
 
-        FCLOSE(jpeg);
-
         // Clean up
-        jpeg_finish_decompress(cinfo);
-        jpeg_destroy_decompress(cinfo);
-        FREE(cinfo);
-        FREE(ibuf);
+        jpeg_finish_decompress(&cinfo);
+        jpeg_destroy_decompress(&cinfo);
+        FCLOSE(jpeg);
+//        FREE(ibuf[0]);
         FREE(dest);
     }
     else {
@@ -1426,6 +1437,7 @@ int concat_img_files(char **img_files, int num_files, int sample_count, const ch
         }
         FCLOSE(file[i]);
         tot_lines = MIN(tot_lines, lines[i]);
+        asfPrintStatus(".");
     }
 
     // Concatenate the files in sequential order
@@ -1438,7 +1450,7 @@ int concat_img_files(char **img_files, int num_files, int sample_count, const ch
         for (line = 0; line < tot_lines; line++) {
             num_read = fread(buf, sizeof_buf, 1, file[i]);
             if (num_read == 1) {
-                fwrite(buf, sizeof_buf, 1, file[i]);
+                fwrite(buf, sizeof_buf, 1, out);
             }
             if (num_read != 1 || feof(file[i])) {
                 // Should not reach this code since the max valid lines has already been
@@ -1463,11 +1475,14 @@ int concat_img_files(char **img_files, int num_files, int sample_count, const ch
 static void jpeg_error_handler(j_common_ptr cinfo)
 {
     my_error_mgr_t *err = (my_error_mgr_t *)cinfo->err;
+    fprintf(stderr,"\n");
+    (*cinfo->err->output_message)(cinfo);
+    fprintf(stderr,"\n");
     longjmp(err->escape, 1);
 }
 
 static void jpeg_error_message_handler(j_common_ptr cinfo)
 {
-    asfPrintStatus("\nBad JPEG frame detected ...and ignored\n");
+    asfPrintStatus("\nBad JPEG frame detected ...and ignored\n\n");
 }
 
