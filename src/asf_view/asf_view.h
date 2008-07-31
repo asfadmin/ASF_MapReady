@@ -259,6 +259,10 @@ void clear_nb_callback(void);
 /* shape.c */
 void free_shapes();
 
+#ifdef HAVE_DELTA_CR
+void add_delta_shapes(meta_parameters *meta);
+#endif
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR

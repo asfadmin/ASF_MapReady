@@ -1040,6 +1040,7 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         }
         update_pixel_info(ii);
     }
+/*
     else if (event->keyval == GDK_n || event->keyval == GDK_N) {
         // n: next polygon
         if (which_poly < MAX_POLYS-1) {
@@ -1106,6 +1107,12 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         }
         update_pixel_info(ii);
     }
+*/
+#ifdef HAVE_DELTA_CR
+    else if (event->keyval == GDK_p || event->keyval == GDK_P) {
+        add_delta_shapes(ii->meta);
+    }
+#endif
     else {
         // arrow key event (or a key we don't handle)
         // moves the crosshair (or ctrl-click crosshair) the specified

@@ -38,6 +38,7 @@ void free_shapes()
 }
 
 // This is a REALLY BASIC kml parser...
+/*
 static void add_kml(meta_parameters *meta, const char *kml_file)
 {
   if (!meta_supports_meta_get_latLon(meta)) {
@@ -58,6 +59,7 @@ static void add_kml(meta_parameters *meta, const char *kml_file)
 
   asfPrintError("Not implemented yet.\n");
 }
+*/
 
 static void add_generic_csv(meta_parameters *meta, const char *csv_file,
                             int auto_close_polys)
@@ -397,6 +399,16 @@ static void add_overlay_file(char *overlay_file)
   // if we got here, must have failed to find a handler
   message_box("Do not know how to handle the overlay file: %s", overlay_file);
 }
+
+#ifdef HAVE_DELTA_CR
+void add_delta_shapes(meta_parameters *meta)
+{
+  const char *file = "corner_reflectors.csv";
+  char *crf = find_in_share(file);
+  add_generic_csv(meta,crf,TRUE);
+  free(crf);
+}
+#endif
 
 //----------------------------------------------------------------------------
 // The rest of this file is the "open file" dialog crud
