@@ -118,6 +118,7 @@ void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   sprintf(outFile, "%s_%c.img", outBaseName, band);
   fpIn = FOPEN(inFile, "rb");
   fpOut = FOPEN(outFile, "wb");
+  printf("offset=%ld %d\n",offset,SEEK_SET);
   FSEEK(fpIn, offset, 1);
   for (ii=0; ii<meta->general->line_count; ii++) {
     for (kk=0; kk<meta->general->sample_count; kk++) {
@@ -173,7 +174,7 @@ void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   FREE(byteBuf);
 }
 
-static airsar_parameters *read_airsar_params(const char *inBaseName)
+airsar_parameters *read_airsar_params(const char *inBaseName)
 {
   airsar_parameters *params=NULL;
   char line[256]="", *value, str[50]="";
