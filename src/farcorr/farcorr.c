@@ -21,10 +21,25 @@
 "     -keep (-k)\n"\
 "          Intermediate files will be saved.\n"\
 "\n"\
+"          The intermediates file will have two or three bands:\n"\
+"             OMEGA: Contains the calculated faraday rotation angles at\n"\
+"                    every pixel.\n"\
+"             OMEGA_SMOOTHED: Contains the local average of the rotation\n"\
+"                    angles at each pixel.  Not present if the -s option\n"\
+"                    was used.\n"\
+"             RESIDUALS: The difference in the omega values calculated\n"\
+"                    in the input & output images.\n"\
+"\n"\
 "     -single-angle (-s)\n"\
-"          Use a single rotation angle for the entire image, instead of\n"\
-"          estimating an angle for each pixel.  The single angle is the\n"\
-"          average of all the per-pixel angles.\n"\
+"          Normally, the Faraday Rotation code will use a local average of\n"\
+"          the per-pixel rotation angles (this is the smoothed version of\n"\
+"          the angle map in the image of itermediates).  A 600x600\n"\
+"          averaging kernel is applied to the rotation map to generate the\n"\
+"          local average angles.\n"\
+"\n"\
+"          With this option turned on, a global average rotation angle\n"\
+"          is used instead of a local average -- in other words, a single\n"\
+"          correction angle is used for all pixels in the image.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\

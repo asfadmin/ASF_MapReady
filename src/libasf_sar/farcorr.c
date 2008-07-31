@@ -436,7 +436,7 @@ void faraday_correct(const char *inFile, const char *outFile,
     if (qpd->other_bands[j] >= 0) {
       char *name = get_band_name(outMeta->general->bands,
                                  outMeta->general->band_count, j);
-      asfPrintStatus("Writing pass-through band: %s (%d)\n", name, j);
+      asfPrintStatus("Writing pass-through band: %s (band %d)\n", name, j);
       FREE(name);
 
       for (i=0; i<nl; ++i) {
