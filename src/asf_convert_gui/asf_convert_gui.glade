@@ -1331,6 +1331,7 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="polarimetric_decomp_checkbutton">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Perform one of a number of Polarimetric decompositions to help visualize SLC data.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Perform a Polarimetric Decomposition</property>
 			      <property name="use_underline">True</property>
@@ -1592,6 +1593,7 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="farcorr_checkbutton">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">This option will correct quad-pol SLC data for atmospheric conditions that rotate the polarity of the radar pulses.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Perform Faraday Rotation Correction</property>
 			      <property name="use_underline">True</property>
@@ -1645,6 +1647,7 @@
 				  <child>
 				    <widget class="GtkRadioButton" id="rb_fr_local">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Use a smoothed rotation angle map when calculating the corrected values.</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Use local average rotation angles</property>
 				      <property name="use_underline">True</property>
@@ -1665,6 +1668,7 @@
 				  <child>
 				    <widget class="GtkRadioButton" id="rb_fr_global">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Use a global average of rotation angles when calculating the corrected values.</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Use global average rotation angle</property>
 				      <property name="use_underline">True</property>

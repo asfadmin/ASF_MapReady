@@ -1576,11 +1576,11 @@ settings_to_config_file(const Settings *s,
             s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
 
         // faraday rotation codes:
-        //   0= no farcorr, 1=farcorr w/local, 2=farcorr w/global
+        //   0= no farcorr, 1=farcorr w/gloal, 2=farcorr w/local
         int farcorr_code = 0;
         if (s->do_farcorr)
-          farcorr_code = s->farcorr_global_avg ? 2 : 1;
-        fprintf(cf, "faraday rotation correction = %d\n", farcorr_code);
+          farcorr_code = s->farcorr_global_avg ? 1 : 2;
+        fprintf(cf, "faraday correction = %d\n", farcorr_code);
         fprintf(cf, "\n");
     }
 
@@ -1774,15 +1774,14 @@ int apply_settings_from_config_file(char *configFile)
         s.polarimetric_decomp_setting = POLARIMETRY_CLOUDE16;
       else if (cfg->polarimetry->cloude_pottier_nc)
         s.polarimetric_decomp_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
-/*
-      if (cfg->polarimetry->farcorr > 0) {
+
+      if (cfg->polarimetry->farcorr != FARCORR_OFF) {
         s.do_farcorr = TRUE;
-        if (cfg->polarimetry->farcorr == 1)
+        if (cfg->polarimetry->farcorr == FARCORR_MEAN)
           s.farcorr_global_avg = TRUE;
         else
           s.farcorr_global_avg = FALSE;
       }
-*/
     }
 
     /* export */

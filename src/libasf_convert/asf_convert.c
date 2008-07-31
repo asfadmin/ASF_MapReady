@@ -1723,7 +1723,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (doing_far) {
         int keep_flag = cfg->general->intermediates;
         int single_angle_flag = (FARCORR_MEAN == cfg->polarimetry->farcorr);
+        asfPrintStatus("\nApplying Faraday Rotation correction.\n");
         faraday_correct(inFile, outFile, keep_flag, single_angle_flag);
+        asfPrintStatus("Done.\n\n");
       }
 
       if (doing_pol) {
@@ -1731,9 +1733,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
         // Pass in command line for polarimetry
         sprintf(inFile, "%s", outFile);
-        if (doing_pol && (cfg->general->terrain_correct
-                          || cfg->general->geocoding
-                          || cfg->general->export)) {
+        if (cfg->general->terrain_correct ||
+            cfg->general->geocoding ||
+            cfg->general->export)
+        {
           sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
         }
         else {

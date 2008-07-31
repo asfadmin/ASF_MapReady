@@ -812,29 +812,12 @@ handle_view_output()
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_AMP-HV", &tmp_out))
             show_image_with_asf_view(tmp_out);
+
           else if (try_suffix(out_name, "_SIGMA-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_BETA-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_GAMMA-HH", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_SIGMA-VV", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_BETA-VV", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_GAMMA-VV", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_SIGMA-HV", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_BETA-HV", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_GAMMA-HV", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_SIGMA-VH", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_BETA-VH", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_GAMMA-VH", &tmp_out))
             show_image_with_asf_view(tmp_out);
           
           else if (try_suffix(out_name, "_Entropy", &tmp_out))
@@ -842,6 +825,19 @@ handle_view_output()
           else if (try_suffix(out_name, "_Anisotropy", &tmp_out))
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_Alpha", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+
+          else if (try_suffix(out_name, "_SIGMA-AMP-HH", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_BETA-AMP-HH", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_GAMMA-AMP-HH", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_SIGMA_DB-AMP-HH", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_BETA_DB-AMP-HH", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_GAMMA_DB-AMP-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
           
           // some airsar possibilities
