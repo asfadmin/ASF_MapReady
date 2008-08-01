@@ -1755,7 +1755,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           else {
             // here, we don't need to do any processing -- we just need to
             // update the RGB Bands to Red=HH, Green=HV, Blue=VV
-            strcpy(cfg->export->rgb, "HH,HV,VV");
+            strcpy(cfg->export->rgb, "SIGMA-HH,SIGMA-HV,SIGMA-VV");
             strcpy(outFile, inFile);
   
             // turn off the amp0_flag -- we don't need it in this case
