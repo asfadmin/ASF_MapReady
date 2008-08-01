@@ -65,8 +65,9 @@
 "          This curve is independent of any particular data set, and can \n"\
 "          be used without any input or output files.  The generated file\n"\
 "          is called ea_boundary.txt.  If this file is present in the\n"\
-"          ASF share directory during processing, it will be added to\n"\
-"          the _ea_hist and _class_map temporary files.\n"\
+"          classifications subdirectory of the ASF share directory during\n"\
+"          processing, it will be added to the _ea_hist and _class_map\n"\
+"          temporary files.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
