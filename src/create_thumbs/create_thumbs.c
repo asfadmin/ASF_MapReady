@@ -60,6 +60,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 int is_stf_level0(const char *file);
 int is_ceos_level0(const char *file);
 void flip_to_north_up(const char *in_file, const char *out_file);
+int is_JL0_basename(const char *what);
 
 int main(int argc, char *argv[])
 {
@@ -595,6 +596,18 @@ void process_file(const char *file, int level, int size, int verbose,
                                       output_format, out_dir);
         }
     }
+    else if (L0Flag == jaxa_l0) {
+        if (is_JL0_basename(file)) {
+            generate_level0_thumbnail(file, size, verbose, L0Flag, scale_factor, browseFlag,
+                                      saveMetadataFlag, nPatchesFlag, nPatches,
+                                      output_format, out_dir);
+        }
+        else {
+            if (verbose) {
+                asfPrintStatus("%s%s (ignored)\n", spaces(level), file);
+            }
+        }
+    }
     else
       generate_ceos_thumbnail(file, size, output_format, out_dir,
                               saveMetadataFlag, scale_factor, browseFlag);
@@ -608,7 +621,14 @@ void process(const char *what, int level, int recursive, int size, int verbose,
 {
     struct stat stbuf;
 
-    if (stat(what, &stbuf) == -1) {
+    int is_JL0 = 0;
+    if (L0Flag == jaxa_l0) {
+        // Check to see if "what" is a JL0 basename (a folder as well) or just
+        // a folder
+        is_JL0 = is_JL0_basename(what);
+    }
+
+    if (stat(what, &stbuf) == -1 && !is_JL0 && L0Flag != jaxa_l0) {
       // Is not a directory - try CEOS data
       char **inBandName = NULL, **inMetaName = NULL;
       int nBands, trailer;
@@ -619,9 +639,13 @@ void process(const char *what, int level, int recursive, int size, int verbose,
     }
 
     char *base = get_filename(what);
-
-    if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+    if ((stbuf.st_mode & S_IFMT) == S_IFDIR && !is_JL0) {
         if (level==0 || recursive) {
+            if (L0Flag == jaxa_l0 && is_JL0) {
+                // Trim "what" to just include the basename ...it's a JL0 basename (which
+                // is a folder BTW)
+                printf("Hi");
+            }
             asfPrintStatus("%s%s/\n", spaces(level), base);
             process_dir(what, level+1, recursive, size, verbose,
                         L0Flag, scale_factor, browseFlag,
@@ -654,7 +678,6 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     struct INPUT_ARDOP_PARAMS *params_in;
     char *band_name[1];
 
-    char tmp[1024];
     time_t t;
     char t_stamp[32];
     t = time(NULL);
@@ -680,17 +703,11 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         }
     }
 
-    // Remove temporary file if it exists and grab basename to be processed
-    sprintf(del_files, "rm -f %s", tmp);
-    asfSystem(del_files);
-    strcpy(tmp_basename, get_basename(tmp));
-
     // Import the level 0 file...
     if (L0Flag == stf) {
         char *inDataName = NULL, *inMetaName = NULL;
         // Import to a temporary file
-        sprintf(out_file, "%s%c%s_%s_import", tmp_folder, DIR_SEPARATOR,
-                tmp_basename, get_basename(file));
+        sprintf(out_file, "%s%c%s_import", tmp_folder, DIR_SEPARATOR, get_basename(file));
         stf_file_pairs_t pair = get_stf_names(file, &inDataName, &inMetaName);
         if (pair != NO_STF_FILE_PAIR &&
             strncmp(file, inDataName, strlen(inDataName)) == 0)
@@ -758,8 +775,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         ceos_file_pairs_t pair = NO_CEOS_FILE_PAIR;
 
         // Import to a temporary file
-        sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR,
-                tmp_basename, get_basename(file));
+        sprintf(out_file, "%s%c%s_import", tmp_folder, DIR_SEPARATOR, get_basename(file));
         pair = get_ceos_names(file, basename,
                               &dataName, &metaName, &nBands, &trailer);
         FREE(basename);
@@ -773,8 +789,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* amp0_flag              */
                        CEOS,                /* format                 */
                        NULL,                /* band_id                */
-                       NULL,                // data type
-                       MAGIC_UNSET_STRING,  /*  image_data_type       */
+                       NULL,                /* data type              */
+                       MAGIC_UNSET_STRING,  /* image_data_type        */
                        NULL,                /* lut                    */
                        NULL,                /* prcPath                */
                        -99,                 /* lowerLat               */
@@ -817,60 +833,105 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             return;
         }
     }
+    else if (L0Flag == jaxa_l0) {
+        // Import to a temporary file
+        sprintf(out_file, "%s%c%s_import", tmp_folder, DIR_SEPARATOR, get_basename(file));
+        if (is_JL0_basename(file))
+        {
+            asfPrintStatus("Importing from\n    %s\n      to\n    %s\n", file, out_file);
+            asf_import(r_AMP,               /* power                  */
+                       0,                   /* db_flag                */
+                       0,                   /* complex_flag           */
+                       0,                   /* multilook_flag         */
+                       0,                   /* amp0_flag              */
+                       JAXA_L0,             /* format                 */
+                       NULL,                /* band_id                */
+                       NULL,                // data type
+                       MAGIC_UNSET_STRING,  /*  image_data_type       */
+                       NULL,                /* lut                    */
+                       NULL,                /* prcPath                */
+                       -99,                 /* lowerLat               */
+                       -99,                 /* upperLat               */
+                       0,                   /* start line subset      */
+                       0,                   /* start sample subset    */
+                       -99,                 /* width of subset        */
+                       -99,                 /* height of subset       */
+                       0,                   /* save_intermediates     */
+                       NULL,                /* p_range_scale          */
+                       NULL,                /* p_azimuth_scale        */
+                       NULL,                /* p_correct_y_pixel_size */
+                       TRUE,                /* apply_ers_gain_fix     */
+                       NULL,                /* inMetaNameOption       */
+                       (char *)file,        /* input basename         */
+                       out_file);           /* output basename        */
+            if (saveMetadataFlag) {
+                char cmd[1024];
+
+                sprintf(cmd, "cp -f %s%c*meta %s", tmp_folder, DIR_SEPARATOR, out_dir);
+                asfSystem(cmd);
+            }
+        }
+        else {
+            remove_dir(tmp_folder);
+            return;
+        }
+    }
     else {
         // Should never reach here
         asfPrintError("Invalid -L0 flag detected.  Valid values are \"-L0 stf\" or \"-L0 ceos\"\n");
     }
 
-    // Run range-doppler algorithm on the raw data
-    strcpy(in_file, out_file);
-    sprintf(out_file, "%s%c%s_%s_ardop", tmp_folder, DIR_SEPARATOR,
-            tmp_basename, get_basename(file));
-    asfPrintStatus("Ardop from\n    %s\n      to\n    %s\n", in_file, out_file);
-    // get_input_ardop_params_struct() does not read the .in file.  It creates a new struct,
-    // populates in/out filenames, sets status and CALPRMS to blank and "NO" respectively, and all
-    // else to NULL.  See ardop() for code that reads the .in file.
-    params_in = get_input_ardop_params_struct(in_file, out_file);
-    if (nPatchesFlag) {
-        params_in->npatches = (int*)MALLOC(sizeof(int));
-        *params_in->npatches = nPatches;
-    }
-    ardop(params_in); // ARDOP
-    if (nPatchesFlag) {
-        FREE(params_in->npatches);
-    }
-    FREE(params_in);
-    if (saveMetadataFlag) {
-        char *out_base = appendExt(out_file, "");
-        char cmd[1024];
-        sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-        asfSystem(cmd);
-        FREE(out_base);
-    }
+    if (L0Flag == ceos || L0Flag == stf) {
+        // Run range-doppler algorithm on the raw data
+        strcpy(in_file, out_file);
+        sprintf(out_file, "%s%c%s_%s_ardop", tmp_folder, DIR_SEPARATOR,
+                tmp_basename, get_basename(file));
+        asfPrintStatus("Ardop from\n    %s\n      to\n    %s\n", in_file, out_file);
+        // get_input_ardop_params_struct() does not read the .in file.  It creates a new struct,
+        // populates in/out filenames, sets status and CALPRMS to blank and "NO" respectively, and all
+        // else to NULL.  See ardop() for code that reads the .in file.
+        params_in = get_input_ardop_params_struct(in_file, out_file);
+        if (nPatchesFlag) {
+            params_in->npatches = (int*)MALLOC(sizeof(int));
+            *params_in->npatches = nPatches;
+        }
+        ardop(params_in); // ARDOP
+        if (nPatchesFlag) {
+            FREE(params_in->npatches);
+        }
+        FREE(params_in);
+        if (saveMetadataFlag) {
+            char *out_base = appendExt(out_file, "");
+            char cmd[1024];
+            sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
+            asfSystem(cmd);
+            FREE(out_base);
+        }
 
-    // Get rid of temporary files that were input to the last step
-    sprintf(del_files, "rm -f %s*", in_file);
-    asfSystem(del_files);
+        // Get rid of temporary files that were input to the last step
+        sprintf(del_files, "rm -f %s*", in_file);
+        asfSystem(del_files);
 
-    // Convert to ground range
-    char del_files2[1024];
-    sprintf(del_files2, "%s_cpx", out_file); // Save these filenames for later deletion
-    sprintf(in_file, "%s_amp", out_file);
-    sprintf(out_file, "%s%c%s_%s_gr", tmp_folder, DIR_SEPARATOR,
-            tmp_basename, get_basename(file));
-    asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
-    sr2gr(in_file, out_file);
-    if (saveMetadataFlag) {
-        char *out_base = appendExt(out_file, "");
-        char cmd[1024];
-        sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-        asfSystem(cmd);
-        FREE(out_base);
+        // Convert to ground range
+        char del_files2[1024];
+        sprintf(del_files2, "%s_cpx", out_file); // Save these filenames for later deletion
+        sprintf(in_file, "%s_amp", out_file);
+        sprintf(out_file, "%s%c%s_%s_gr", tmp_folder, DIR_SEPARATOR,
+                tmp_basename, get_basename(file));
+        asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
+        sr2gr(in_file, out_file);
+        if (saveMetadataFlag) {
+            char *out_base = appendExt(out_file, "");
+            char cmd[1024];
+            sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
+            asfSystem(cmd);
+            FREE(out_base);
+        }
+
+        // Get rid of temporary files that were input to the last step
+        sprintf(del_files, "rm -f %s* %s* %s%c*.in", in_file, del_files2, tmp_folder, DIR_SEPARATOR);
+        asfSystem(del_files);
     }
-
-    // Get rid of temporary files that were input to the last step
-    sprintf(del_files, "rm -f %s* %s* %s%c*.in", in_file, del_files2, tmp_folder, DIR_SEPARATOR);
-    asfSystem(del_files);
 
     // Resample image
     strcpy(in_file, out_file);
@@ -906,22 +967,25 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     asfSystem(del_files);
 
     // Flip so the image is north-up, west-left
-    strcpy(in_file, out_file);
-    sprintf(out_file, "%s%c%s_%s_resample_flip", tmp_folder, DIR_SEPARATOR,
-            tmp_basename, get_basename(file));
-    asfPrintStatus("Flipping to north-up orientation from\n    %s\n      to\n    %s\n", in_file, out_file);
-    flip_to_north_up(in_file, out_file);
-    if (saveMetadataFlag) {
-        char *out_base = appendExt(out_file, "");
-        char cmd[1024];
-        sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-        asfSystem(cmd);
-        FREE(out_base);
-    }
+    // FIXME: Support flipping of JAXA L0 (AVNIR-2 Level 0) files as well ...
+    if (L0Flag == ceos || L0Flag == stf) {
+        strcpy(in_file, out_file);
+        sprintf(out_file, "%s%c%s_%s_resample_flip", tmp_folder, DIR_SEPARATOR,
+                tmp_basename, get_basename(file));
+        asfPrintStatus("Flipping to north-up orientation from\n    %s\n      to\n    %s\n", in_file, out_file);
+        flip_to_north_up(in_file, out_file);
+        if (saveMetadataFlag) {
+            char *out_base = appendExt(out_file, "");
+            char cmd[1024];
+            sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
+            asfSystem(cmd);
+            FREE(out_base);
+        }
 
-    // Get rid of temporary file that was input to the last step
-    sprintf(del_files, "rm -f %s.*", in_file);
-    asfSystem(del_files);
+        // Get rid of temporary file that was input to the last step
+        sprintf(del_files, "rm -f %s.*", in_file);
+        asfSystem(del_files);
+    }
 
     // Export to selected graphics file format
     strcpy(in_file, out_file);
@@ -943,17 +1007,32 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         strcpy(export_path, out_file);
     }
     asfPrintStatus("Exporting from\n    %s\n      to\n    %s\n", in_file, export_path);
-    asf_export_bands(output_format,
-                     SIGMA,
-                     0 /*rgb*/,
-                     0 /*true_color*/,
-                     0 /*false_color*/,
-                     0 /*pauli*/,
-                     0 /*sinclair*/,
-                     "" /*look_up_table_name*/,
-                     in_file,
-                     export_path,
-                     (char**)band_name);
+    if (L0Flag == jaxa_l0) {
+        asf_export_bands(output_format,
+                         SIGMA,
+                         0 /*rgb*/,
+                         0 /*true_color*/,
+                         1 /*false_color*/,
+                         0 /*pauli*/,
+                         0 /*sinclair*/,
+                         "" /*look_up_table_name*/,
+                         in_file,
+                         export_path,
+                         (char**)band_name);
+    }
+    else {
+        asf_export_bands(output_format,
+                        SIGMA,
+                        0 /*rgb*/,
+                        0 /*true_color*/,
+                        0 /*false_color*/,
+                        0 /*pauli*/,
+                        0 /*sinclair*/,
+                        "" /*look_up_table_name*/,
+                        in_file,
+                        export_path,
+                        (char**)band_name);
+    }
 
     // Clean up...
     remove_dir(tmp_folder);
@@ -1165,4 +1244,56 @@ void flip_to_north_up(const char *in_file, const char *out_file)
                       FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
     meta_free(imd);
+}
+
+int is_JL0_basename(const char *_what) {
+    struct stat stbuf;
+    char *what = STRDUP(_what);
+
+    if (stat(what, &stbuf) == -1) {
+        // Failed call to stat() ...return false to halt processing
+        char msg[1024];
+        sprintf(msg, "%s", what);
+        perror(msg);
+        FREE(what);
+        return 0;
+    }
+
+    if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+        // "what" is a directory.  Check to see if it contains VCID (band data) and metadata
+        // subfolders ...if so, return true since this is a valid JL0 basename.  If not, return
+        // false so process_dir() can handled the folder contents...
+        struct stat stbuf2;
+        char vcid_dir[5][1024];
+
+        if (what[strlen(what)-1] == '\\' || what[strlen(what)-1] == '/') {
+            // Snip off any directory separator character if it is found on the very end of the
+            // file/directory name
+            what[strlen(what)-1] = '\0';
+        }
+        sprintf(vcid_dir[0], "%s%c%d", what, DIR_SEPARATOR, 32);
+        sprintf(vcid_dir[1], "%s%c%d", what, DIR_SEPARATOR, 45);
+        sprintf(vcid_dir[2], "%s%c%d", what, DIR_SEPARATOR, 46);
+        sprintf(vcid_dir[3], "%s%c%d", what, DIR_SEPARATOR, 47);
+        sprintf(vcid_dir[4], "%s%c%d", what, DIR_SEPARATOR, 48);
+
+        int i;
+        for (i = 0; i < 5; i++) {
+            if (stat(vcid_dir[i], &stbuf2) == -1) {
+                // File doesn't exist or something's wrong with it
+                FREE(what);
+                return 0;
+            }
+            if (!(fileExists(vcid_dir[i]) && (stbuf2.st_mode & S_IFMT) == S_IFDIR)) {
+                FREE(what);
+                return 0;
+            }
+        }
+        FREE(what);
+        return 1;
+    }
+    else {
+        FREE(what);
+        return 0;
+    }
 }

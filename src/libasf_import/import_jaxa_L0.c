@@ -561,14 +561,20 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
 
     // Open the output files
     // Note: out_file contains a complete path including the basename and .img extension
+    char dirName[1024], fileName[1024], outFile[1024];
+    split_dir_and_file(out_file, dirName, fileName);
     char *rout_file = (char *)MALLOC((strlen(out_file) + 64) * sizeof(char));
     char *gout_file = (char *)MALLOC((strlen(out_file) + 64) * sizeof(char));
     char *bout_file = (char *)MALLOC((strlen(out_file) + 64) * sizeof(char));
     char *nout_file = (char *)MALLOC((strlen(out_file) + 64) * sizeof(char));
-    sprintf(rout_file, "red_%s"  , out_file);
-    sprintf(gout_file, "green_%s", out_file);
-    sprintf(bout_file, "blue_%s" , out_file);
-    sprintf(nout_file, "nir_%s"  , out_file);
+    sprintf(outFile, "red_%s"  , fileName);
+    sprintf(rout_file, "%s%s"  , dirName, outFile);
+    sprintf(outFile, "green_%s"  , fileName);
+    sprintf(gout_file, "%s%s"  , dirName, outFile);
+    sprintf(outFile, "blue_%s"  , fileName);
+    sprintf(bout_file, "%s%s"  , dirName, outFile);
+    sprintf(outFile, "nir_%s"  , fileName);
+    sprintf(nout_file, "%s%s"  , dirName, outFile);
     FILE *rout = (FILE *)FOPEN(rout_file, "wb");
     FILE *gout = (FILE *)FOPEN(gout_file, "wb");
     FILE *bout = (FILE *)FOPEN(bout_file, "wb");
@@ -585,13 +591,13 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     // next, then there would be _no need_ to create these large all-chunks files
     // that contain all available telemetry frames for each band ...and we'd save disk
     // space (Operations would like that)
-    asfPrintStatus("Building telemetry files... Red... ");
+    asfPrintStatus("Building telemetry files...\n\nRed... ");
     concat_avnir_band_chunks(num_red_chunks,   (const char **)red_chunks,   red_all_chunks,   JL0_RED_BAND);
-    asfPrintStatus("Green... ");
+    asfPrintStatus("\nGreen... ");
     concat_avnir_band_chunks(num_green_chunks, (const char **)green_chunks, green_all_chunks, JL0_GREEN_BAND);
-    asfPrintStatus("Blue... ");
+    asfPrintStatus("\nBlue... ");
     concat_avnir_band_chunks(num_blue_chunks,  (const char **)blue_chunks,  blue_all_chunks,  JL0_BLUE_BAND);
-    asfPrintStatus("Near-Infrared");
+    asfPrintStatus("\nNear-Infrared");
     concat_avnir_band_chunks(num_nir_chunks,   (const char **)nir_chunks,   nir_all_chunks,   JL0_NIR_BAND);
 
     asfPrintStatus("\nPerforming time-synchronized ingest of embedded AVNIR-2 jpeg-format\n"

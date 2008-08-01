@@ -27,7 +27,7 @@
 #define TOOL_USAGE \
         TOOL_NAME" [-log <logfile>] [-quiet] [-verbose] [-size <size>]\n"\
 "                 [-recursive] [-out-dir <dir>]\n"\
-"                 [-L0 <stf|ceos>] [-output-format <tiff|jpeg>]\n"\
+"                 [-L0 <stf|ceos|jaxa_L0>] [-output-format <tiff|jpeg>]\n"\
 "                 [-scale <scale_factor>] [-browse] [-save-metadata] [-help]\n"\
 "                 <files>"
 
