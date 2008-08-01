@@ -127,6 +127,47 @@ C2V_MODULES = \
 	src/convert2vector \
 	src/convert2vector_gui
 
+IGNORED_INCLUDES = \
+	include/ardop_defs.h \
+	include/asf_baseline.h \
+	include/asf_complex.h \
+	include/asf_convert.h \
+	include/asf_export.h \
+	inlcude/asf_geocode.h \
+	include/asf_glib.h \
+	include/asf.h \
+	include/asf_import.h \
+	include/asf_insar.h \
+	include/asf_meta.h \
+	include/asf_raster.h \
+	include/asf_sar.h \
+	include/asf_terrcorr.h \
+	include/asf_vector.h \
+	include/banded_float_image.h \
+	include/calibrate.h \
+	include/caplib.h \
+	include/date.h \
+	include/dateUtil.h \
+	include/float_image.h \
+	include/frame_calc.h \
+	include/get_ceos_names.h \
+	include/get_stf_names.h \
+	include/ips.h \
+	include/libasf_proj.h \
+	include/matrix.h \
+	include/metadisplay.h \
+	include/meta_init_stVec.h \
+	include/meta_project.h \
+	include/plan.h \
+	include/plan_internal.h \
+	include/polygon.h \
+	include/poly.h \
+	include/read_signal.h \
+	include/sgpsdp.h \
+	include/spheroids.h \
+	include/uint8_image.h \
+	include/vector.h
+
 S_LIBDIR   = lib
 S_BINDIR   = bin
 S_SHAREDIR = share/asf_tools
@@ -255,6 +296,7 @@ clean:
 	rm -rf $(S_SHAREDIR)
 	rm -rf share
 	rm -rf man
+	-rm -rf $(IGNORED_INCLUDES)
 	$(foreach MODULE, $(MAPREADY_MODULES) $(STP_MODULES) $(AP_MODULES), \
 		$(MAKE) clean -C $(MODULE) &&) true
 
