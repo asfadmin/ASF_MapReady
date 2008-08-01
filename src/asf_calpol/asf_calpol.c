@@ -2,7 +2,8 @@
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-c <classification file>]\n"\
-"          [-debug] [-pauli] [-sinclair] <in_base_name> <out_base_name>\n"
+"          [-pauli] [-sinclair] [-make-feasible-boundary <size>] [-debug]\n"\
+"          <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program decomposes SLC quad-pole data into data required\n"\
@@ -56,6 +57,16 @@
 "     -sinclair, -s\n"\
 "          Outputs bands required to generate the Sinclair decomposition.\n"\
 "          Cannot be used with -c or -pauli.\n"\
+"\n"\
+"     -make-feasible-boundary <size>\n"\
+"          This is an option generally used internally only.\n\n"\
+"          It generates a csv file with <size> points, containing the \n"\
+"          bounary of the feasible region in entropy-alpha space.\n"\
+"          This curve is independent of any particular data set, and can \n"\
+"          be used without any input or output files.  The generated file\n"\
+"          is called ea_boundary.txt.  If this file is present in the\n"\
+"          ASF share directory during processing, it will be added to\n"\
+"          the _ea_hist and _class_map temporary files.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
@@ -150,6 +161,25 @@ main (int argc, char *argv[])
   int debug = extract_flag_options(&argc,&argv,"-debug","-d",NULL);
   int pauli = extract_flag_options(&argc,&argv,"-pauli","-p",NULL);
   int sinclair = extract_flag_options(&argc,&argv,"-sinclair","-s",NULL);
+
+  int sz;
+  int make_boundary_file =
+    extract_int_options(&argc,&argv,&sz,"-make-feasible-boundary",NULL);
+
+  if (make_boundary_file) {
+    const char *fname = "ea_boundary.txt";
+    asfPrintStatus("Generating entropy/alpha boundary curve file: %s\n",
+                   fname);
+    asfPrintStatus("Number of points: %d\n", sz);
+    make_entropy_alpha_boundary(fname, sz);
+
+    // if no other arguments were supplied, we are done - can exit
+    // without making a fuss.
+    if (argc==1) {
+      asfPrintStatus("Done.\n");
+      exit(1);
+    }
+  }
 
   if (classify + pauli + sinclair > 1) {
     asfPrintError("Use only one of the -pauli, -sinclair, or -c options.\n");

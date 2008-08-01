@@ -152,8 +152,14 @@ void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
 void cpx2cloude_pottier8(const char *inFile, const char *outFile, int tc_flag);
 void cpx2cloude_pottier16(const char *inFile, const char *outFile,
                           int tc_flag);
+void cpx2debug(const char *inFile, const char *outFile);
 
+void make_entropy_alpha_boundary(const char *fname, int size);
+
+
+/* farcorr.c */
 void faraday_correct(const char *inFile, const char *outFile,
                      int save_intermediates, int use_single_rotation_value);
+
 
 #endif
