@@ -242,6 +242,7 @@ const char * get_asf_bin_dir(void);
 const char * get_asf_bin_dir_win(void);
 FILE * fopen_share_file(const char * filename, const char * mode);
 const char *get_argv0(void);
+int share_file_exists(const char *filename);
 
 /***************************************************************************
  * Wrapper for system() that is more portable, plus uses varargs */

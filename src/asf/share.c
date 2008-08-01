@@ -478,7 +478,7 @@ fopen_share_file(const char * filename, const char * mode)
   FILE * fp;
 
   share_dir = get_asf_share_dir();
-  full_name = (char *) malloc (sizeof(char) *
+  full_name = (char *) MALLOC (sizeof(char) *
                                 (strlen(filename) + strlen(share_dir) + 10));
 
   sprintf(full_name, "%s%c%s", share_dir, DIR_SEPARATOR, filename);
@@ -487,6 +487,23 @@ fopen_share_file(const char * filename, const char * mode)
 
   free(full_name);
   return fp;
+}
+
+int share_file_exists(const char *filename)
+{
+  char * full_name;
+  const char * share_dir;
+
+  share_dir = get_asf_share_dir();
+  full_name = (char *) MALLOC (sizeof(char) *
+                                (strlen(filename) + strlen(share_dir) + 10));
+
+  sprintf(full_name, "%s%c%s", share_dir, DIR_SEPARATOR, filename);
+
+  int exists = fileExists(full_name);
+  free(full_name);
+
+  return exists;
 }
 
 const char *get_asf_share_dir_with_argv0(const char *argv0)
