@@ -52,7 +52,6 @@ settings_apply_to_gui(const Settings * s)
         *output_format_combobox,
         *output_bytes_checkbutton,
         *scaling_method_combobox,
-        *keep_files_checkbutton,
         *apply_metadata_fix_checkbutton;
 
     input_data_type_combobox =
@@ -66,9 +65,6 @@ settings_apply_to_gui(const Settings * s)
 
     output_format_combobox =
         get_widget_checked("output_format_combobox");
-
-    keep_files_checkbutton =
-        get_widget_checked("keep_files_checkbutton");
 
     apply_metadata_fix_checkbutton =
         get_widget_checked("apply_metadata_fix_checkbutton");
@@ -491,8 +487,24 @@ settings_apply_to_gui(const Settings * s)
             GTK_TOGGLE_BUTTON(dem_checkbutton), FALSE);
     }
 
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton),
-        s->keep_files);
+    switch (s->keep_files) {
+      case 0:
+        rb_select("rb_keep_none", TRUE);
+        rb_select("rb_keep_temp", FALSE);
+        rb_select("rb_keep_all", FALSE);
+        break;
+      default:
+      case 1:
+        rb_select("rb_keep_none", FALSE);
+        rb_select("rb_keep_temp", TRUE);
+        rb_select("rb_keep_all", FALSE);
+        break;
+      case 2:
+        rb_select("rb_keep_none", FALSE);
+        rb_select("rb_keep_temp", FALSE);
+        rb_select("rb_keep_all", TRUE);
+        break;
+    }
 }
 
 Settings *
@@ -586,7 +598,12 @@ settings_get_from_gui()
         }
     }
 
-    ret->keep_files = get_checked("keep_files_checkbutton");
+    ret->keep_files = 1;
+    if (get_checked("rb_keep_none"))
+      ret->keep_files = 0;
+    else if (get_checked("rb_keep_all"))
+      ret->keep_files = 2;
+
     ret->apply_metadata_fix = get_checked("apply_metadata_fix_checkbutton");
     ret->apply_ers2_gain_fix = get_checked("ers2_gain_fix_checkbutton");
 
@@ -1958,7 +1975,8 @@ int apply_settings_from_config_file(char *configFile)
     }
 
     /* misc */
-    s.keep_files = cfg->general->intermediates;
+    s.keep_files = cfg->general->intermediates - 1;
+    if (s.keep_files < 0) s.keep_files = 0;
     s.apply_metadata_fix = 1;
 
     settings_apply_to_gui(&s);
@@ -2041,3 +2059,9 @@ datum_type_t get_datum_from_proj_file(char *file, projection_type_t type)
   return datum;
 }
 
+void default_to_keep_temp()
+{
+  rb_select("rb_keep_none", FALSE);
+  rb_select("rb_keep_temp", TRUE);
+  rb_select("rb_keep_all", FALSE);
+}

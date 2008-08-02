@@ -574,10 +574,35 @@ on_input_data_type_power_activate(GtkWidget *widget)
     input_data_type_changed();
 }
 
+void clear_completed_tmp_dirs()
+{
+    if (get_checked("rb_keep_temp")) {
+        GtkTreeIter iter;
+        gboolean valid = gtk_tree_model_get_iter_first(
+          GTK_TREE_MODEL(completed_list_store), &iter);
+
+        while (valid)
+        {
+            gchar *tmp_dir;
+            gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
+                               COMP_COL_TMP_DIR, &tmp_dir, -1);
+            
+            if (tmp_dir && strlen(tmp_dir) > 0) {
+              printf("Removing: %s\n", tmp_dir);
+              remove_dir(tmp_dir);
+            }
+            
+            valid = gtk_tree_model_iter_next(
+              GTK_TREE_MODEL(completed_list_store), &iter);
+        }
+    }
+}
+
 SIGNAL_CALLBACK void
 on_clear_button_clicked(GtkWidget *widget)
 {
-    gtk_list_store_clear(completed_list_store);
+  clear_completed_tmp_dirs();
+  gtk_list_store_clear(completed_list_store);
 }
 
 void rgb_combo_box_setup()

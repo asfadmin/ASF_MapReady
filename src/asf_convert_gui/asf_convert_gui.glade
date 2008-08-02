@@ -185,7 +185,7 @@
 			<widget class="GtkTable" id="table10">
 			  <property name="visible">True</property>
 			  <property name="n_rows">5</property>
-			  <property name="n_columns">2</property>
+			  <property name="n_columns">1</property>
 			  <property name="homogeneous">False</property>
 			  <property name="row_spacing">0</property>
 			  <property name="column_spacing">0</property>
@@ -351,42 +351,18 @@
 			      <child>
 				<widget class="GtkTable" id="table11">
 				  <property name="visible">True</property>
-				  <property name="n_rows">2</property>
+				  <property name="n_rows">3</property>
 				  <property name="n_columns">1</property>
 				  <property name="homogeneous">False</property>
 				  <property name="row_spacing">0</property>
 				  <property name="column_spacing">0</property>
 
 				  <child>
-				    <widget class="GtkLabel" id="label122">
+				    <widget class="GtkRadioButton" id="rb_keep_none">
 				      <property name="visible">True</property>
-				      <property name="label" translatable="yes"></property>
-				      <property name="use_underline">False</property>
-				      <property name="use_markup">False</property>
-				      <property name="justify">GTK_JUSTIFY_LEFT</property>
-				      <property name="wrap">False</property>
-				      <property name="selectable">False</property>
-				      <property name="xalign">0</property>
-				      <property name="yalign">0.5</property>
-				      <property name="xpad">0</property>
-				      <property name="ypad">0</property>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">0</property>
-				      <property name="right_attach">1</property>
-				      <property name="top_attach">1</property>
-				      <property name="bottom_attach">2</property>
-				      <property name="x_options">fill</property>
-				      <property name="y_options"></property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkCheckButton" id="keep_files_checkbutton">
-				      <property name="visible">True</property>
-				      <property name="tooltip" translatable="yes">Select Keep Intermediate Files to save all intermediate processing products.  This includes a .hdr (ENVI header) file that enables ENVI to ingest ASF Internal Format files.</property>
+				      <property name="tooltip" translatable="yes">All intermediates are deleted as soon as processing is complete.  This means that you won't be able to view any of the intermediates.  Use this option if you're processing a lot of files, or are concerned about disk space.</property>
 				      <property name="can_focus">True</property>
-				      <property name="label" translatable="yes">Keep Intermediate Files</property>
+				      <property name="label" translatable="yes">Keep no intermediate files</property>
 				      <property name="use_underline">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -399,6 +375,54 @@
 				      <property name="right_attach">1</property>
 				      <property name="top_attach">0</property>
 				      <property name="bottom_attach">1</property>
+				      <property name="x_options">fill</property>
+				      <property name="y_options"></property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkRadioButton" id="rb_keep_temp">
+				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Intermediate files are kept until program exit, or the file is removed from the &quot;Completed Files&quot; section, to allow viewing the intermediates after the processing has completed.</property>
+				      <property name="can_focus">True</property>
+				      <property name="label" translatable="yes">Temporarily keep intermediate files</property>
+				      <property name="use_underline">True</property>
+				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
+				      <property name="active">True</property>
+				      <property name="inconsistent">False</property>
+				      <property name="draw_indicator">True</property>
+				      <property name="group">rb_keep_none</property>
+				    </widget>
+				    <packing>
+				      <property name="left_attach">0</property>
+				      <property name="right_attach">1</property>
+				      <property name="top_attach">1</property>
+				      <property name="bottom_attach">2</property>
+				      <property name="x_options">fill</property>
+				      <property name="y_options"></property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkRadioButton" id="rb_keep_all">
+				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Intermediate files are not deleted by MapReady.</property>
+				      <property name="can_focus">True</property>
+				      <property name="label" translatable="yes">Keep intermediates</property>
+				      <property name="use_underline">True</property>
+				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
+				      <property name="active">False</property>
+				      <property name="inconsistent">False</property>
+				      <property name="draw_indicator">True</property>
+				      <property name="group">rb_keep_none</property>
+				    </widget>
+				    <packing>
+				      <property name="left_attach">0</property>
+				      <property name="right_attach">1</property>
+				      <property name="top_attach">2</property>
+				      <property name="bottom_attach">3</property>
 				      <property name="x_options">fill</property>
 				      <property name="y_options"></property>
 				    </packing>

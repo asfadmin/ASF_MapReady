@@ -49,8 +49,8 @@ static quadPolFloat qual_pol_zero()
     return ret;
 }
 
-static PolarimetricImageRows *polarimetric_image_rows_new(meta_parameters *meta,
-                                                          int nrows, int multi)
+static PolarimetricImageRows *
+polarimetric_image_rows_new(meta_parameters *meta, int nrows, int multi)
 {
     PolarimetricImageRows *self = MALLOC(sizeof(PolarimetricImageRows));
 
@@ -337,7 +337,7 @@ static double log3(double v)
 // classification maps.
 
 static const int hist_height = 512;   // height
-static const int hist_width = 1024; // width
+static const int hist_width = 1024;   // width
 
 static void dump_ea_hist(const char *base_filename,
                          int ea_hist[hist_height][hist_width],

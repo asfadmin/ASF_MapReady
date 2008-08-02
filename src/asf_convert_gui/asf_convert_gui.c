@@ -177,6 +177,7 @@ main(int argc, char **argv)
     /* initially in there                                         */
     input_data_type_combobox_changed();
     default_to_terrcorr_on();
+    default_to_keep_temp();
     terrcorr_options_changed();
     polarimetry_settings_changed();
 

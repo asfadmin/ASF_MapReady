@@ -561,10 +561,9 @@ void save_config(char *config_file, char* projfile)
   fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
   fprintf(cf, "export = %d\n", s->export_is_checked);
 // fprintf(cf, "default values =\n");
-  // kludge on the intermediates -- asf_convert treats 2 and 1 identically,
-  // but to the gui, 2 means "keep intermediates" is UN-checked, but 1 means
-  // is IS checked.
-  fprintf(cf, "intermediates = %d\n", s->keep_files ? 1 : 2);
+  // kludge on the intermediates -- we store our value +1, so that the
+  // command-line tool always saves intermediates.
+  fprintf(cf, "intermediates = %d\n", s->keep_files+1);
   fprintf(cf, "status file = %s\n", tmp_statfile);
   fprintf(cf, "short configuration file = 0\n");
   FILE *fpDefs = fopen_share_file("asf_mapready/asf_mapready.defaults", "rt");

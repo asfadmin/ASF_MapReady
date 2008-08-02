@@ -19,7 +19,6 @@
 #include <sys/types.h> /* 'DIR' structure (for opendir) */
 #include <dirent.h>    /* for opendir itself            */
 
-
 int isCEOS(const char *input_file)
 {
   char **inBandName = NULL, **inMetaName = NULL;
@@ -324,6 +323,38 @@ static void create_and_set_tmp_dir(char *in_name, char *out_name, char *tmp_dir)
   FREE(out_dir);
 }
 
+/* Tracking useful intermediate files, for exposure in the GUI */
+static char *intermediates_file = NULL;
+extern char *g_status_file;
+static void save_intermediate(convert_config *cfg, char *tag, char *filename)
+{
+  // the "tag" that is passed in needs to match what is looked for
+  // in the GUI: asf_convert_gui/file_list.c:move_to_completed_files_list()
+
+  if (cfg->general->intermediates && g_status_file && strlen(g_status_file)>0)
+  {
+    if (!intermediates_file) {
+      // the name of the intermediates file needs to match what the GUI
+      // will look for in asf_convert_gui/execute.c:do_convert()
+      char *status_file = STRDUP(g_status_file);
+      char *ext = strstr(status_file, ".status");
+      if (ext) *ext = '\0';
+      intermediates_file = appendExt(status_file, ".files");
+      FILE *fp = fopen(intermediates_file, "w");
+      if (fp) {
+        fprintf(fp, "List of useful intermediate files.\n");
+        fclose(fp);
+      }
+      free(status_file);
+    }
+    FILE *fp = fopen(intermediates_file, "a");
+    if (fp) {
+      fprintf(fp, "%s: %s\n", tag, filename);
+      fclose(fp);
+    }
+  }
+}
+
 /* Make a copy of the metdata file. */
 static void copy_meta(char *src, char *dest)
 {
@@ -619,7 +650,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile);
 int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 {
   convert_config *cfg;
-  char inFile[255], outFile[255];
+  char inFile[255], outFile[255], tmpFile[255];
   int is_airsar=0;
 
   // If requested, create a config file and exit (if the file does not exist),
@@ -1838,6 +1869,16 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             "terrain correcting data file (asf_terrcorr)\n");
       }
 
+      // save the simulated sar image intermediate
+      char *dem_basename = get_basename(cfg->terrain_correct->dem);
+      sprintf(tmpFile, "%s/%s_sim_sar.img", cfg->general->tmp_dir,
+              dem_basename);
+      save_intermediate(cfg, "Simulated SAR", tmpFile);
+      sprintf(tmpFile, "%s/import_slant.img", cfg->general->tmp_dir);
+      save_intermediate(cfg, "Imported Slant Range", tmpFile);
+      free(dem_basename);
+
+
       // If we added a "secret" AMP band to the beginning of the
       // file, we can remove it now
       if (amp0_flag) {
@@ -2374,6 +2415,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             // to export.  So... just move the clipped DEM out of the tmp dir
             renameImgAndMeta(inFile, outFile);
         }
+
+        save_intermediate(cfg, "Clipped DEM", outFile);
     }
 
     // Process the layover/shadow mask if requested
@@ -2421,6 +2464,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             // temporary directory
             renameImgAndMeta(inFile, outFile);
         }
+
+        save_intermediate(cfg, "Layover/Shadow Mask", outFile);
     }
 
     if (!cfg->general->intermediates) {

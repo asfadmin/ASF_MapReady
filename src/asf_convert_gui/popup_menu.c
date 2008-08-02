@@ -107,6 +107,21 @@ show_please_select_message()
     message_box(msg);
 }
 
+void
+show_not_available_message()
+{
+    static const char *msg = "That intermediate product is not available.\n\n"
+      "  It either was not generated, or has been deleted.\n\n"
+      "  It may not have been generated because the particular option that  \n"
+      "  produced that intermediate file was not selected (for example,\n"
+      "  to view the simulated SAR image, you need to have selected\n"
+      "  terrain correction).\n\n"
+      "  It may have been deleted, if you selected the 'Keep no intermediate\n"
+      "  files' option on the General tab.\n";
+
+    message_box(msg);
+}
+
 static void
 enable_menu_items(GtkMenu * menu, gboolean enable_display_ceos_metadata)
 {
@@ -1127,17 +1142,6 @@ handle_reprocess()
         show_please_select_message();
         return FALSE;
     }
-//    else {
-      // When a file is moved back to the input files list, automatically expand
-      // the Settings part of the GUI
-//      GtkWidget *w;
-
-//      w = get_widget_checked("settings_hbox_collapsed");
-//      gtk_widget_hide(w);
-
-//      w = get_widget_checked("settings_hbox_expanded");
-//      gtk_widget_show(w);
-//    }
 
     while (i)
     {
@@ -1335,13 +1339,82 @@ popup_menu_completed_files_google_earth(GtkWidget *widget, GdkEvent *event)
   return handle_completed_files_google_earth();
 }
 
+static int handle_view_intermediate(int column)
+{
+    GtkWidget *completed_files_list;
+    GtkTreeIter iter;
+
+    completed_files_list = get_widget_checked("completed_files_list");
+
+    if (get_iter_to_first_selected_row(completed_files_list,
+                                       completed_list_store,
+                                       &iter))
+    {
+        gchar *name;
+        gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
+            column, &name, -1);
+
+        if (name && strlen(name) > 0) {
+          show_image_with_asf_view(name);
+        }
+        else {
+          show_not_available_message();
+        }
+        g_free(name);
+    }
+    else
+    {
+        show_please_select_message();
+    }
+
+    return TRUE;
+}
+
+SIGNAL_CALLBACK gint
+view_layover_mask(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_intermediate(COMP_COL_LAYOVER_SHADOW_MASK_FILE);
+}
+
+SIGNAL_CALLBACK gint
+view_clipped_dem(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_intermediate(COMP_COL_CLIPPED_DEM_FILE);
+}
+
+SIGNAL_CALLBACK gint
+view_simsar(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_intermediate(COMP_COL_SIMULATED_SAR_FILE);
+}
+
 static void
 setup_completed_files_popup_menu()
 {
-    GtkWidget *menu, *widget, *item;
+    GtkWidget *menu, *view_submenu, *widget, *item;
 
     /* if they right click in the files list, we'll pop up */
     widget = get_widget_checked("completed_files_list");
+
+    view_submenu = gtk_menu_new();
+
+    item = gtk_menu_item_new_with_label("View Layover/Shadow Mask");
+    gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(view_layover_mask), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Clipped DEM");
+    gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(view_clipped_dem), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Simulated SAR Image");
+    gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(view_simsar), NULL);
+    gtk_widget_show(item);
 
     menu = gtk_menu_new();
 
@@ -1361,6 +1434,11 @@ setup_completed_files_popup_menu()
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_view_log2), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Intermediates");
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), view_submenu);
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("Display ASF Metadata");

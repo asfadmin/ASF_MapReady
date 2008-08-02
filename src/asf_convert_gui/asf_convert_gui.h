@@ -186,7 +186,7 @@ typedef struct
   int interp_dem_holes;
 
   /* misc */
-  int keep_files;
+  int keep_files; // 0= keep none, 1=keep temp, 2= keep all
   int apply_metadata_fix;
 }
 Settings;
@@ -211,6 +211,10 @@ extern int COMP_COL_OUTPUT_THUMBNAIL;
 extern int COMP_COL_OUTPUT_THUMBNAIL_BIG;
 extern int COMP_COL_STATUS;
 extern int COMP_COL_LOG;
+extern int COMP_COL_TMP_DIR;
+extern int COMP_COL_LAYOVER_SHADOW_MASK_FILE;
+extern int COMP_COL_CLIPPED_DEM_FILE;
+extern int COMP_COL_SIMULATED_SAR_FILE;
 
 /********************************** Prototypes ******************************/
 
@@ -243,6 +247,7 @@ char * settings_to_config_file(const Settings *s,
            const gchar *input_file, const gchar *output_file,
            const gchar *output_path, const gchar *tmp_dir);
 int apply_settings_from_config_file(char *configFile);
+void default_to_keep_temp(void);
 
 /* find_in_path.c */
 gchar *find_in_path(gchar * file);
@@ -264,6 +269,7 @@ void import_settings_changed();
 void hide_sections_for_execute();
 void polarimetry_settings_changed();
 void input_data_type_combobox_changed();
+void clear_completed_tmp_dirs();
 
 /* utility.c */
 void setup_band_comboboxes();
@@ -305,7 +311,8 @@ void set_output_name(GtkTreeIter *, const gchar *);
 gboolean is_meta_file(const gchar *);
 void show_queued_thumbnails();
 int has_prepension(const gchar *);
-void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *);
+void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *,
+                                  const char *);
 void move_from_completed_files_list(GtkTreeIter *);
 void populate_files_list(int, char **);
 

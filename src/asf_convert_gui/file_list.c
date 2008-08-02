@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <strings.h>
+#include <ctype.h>
 
 #include "asf_convert_gui.h"
 #include "ceos_thumbnail.h"
@@ -19,6 +20,10 @@ int COMP_COL_OUTPUT_THUMBNAIL;
 int COMP_COL_OUTPUT_THUMBNAIL_BIG;
 int COMP_COL_STATUS;
 int COMP_COL_LOG;
+int COMP_COL_TMP_DIR;
+int COMP_COL_LAYOVER_SHADOW_MASK_FILE;
+int COMP_COL_CLIPPED_DEM_FILE;
+int COMP_COL_SIMULATED_SAR_FILE;
 
 /* Returns the length of the prepension if there is an allowed
    prepension, otherwise returns 0 (no prepension -> chceck extensions) */
@@ -257,9 +262,29 @@ add_to_files_list(const gchar * data_file)
     return ret;
 }
 
+static void get_intermediate(const char *str, const char *tag, char **dest)
+{
+  if (strncmp_case(str, tag, strlen(tag)) == 0) {
+    // matched the tag!  skip tag itself
+    const char *p = str + strlen(tag);
+    // now skip whitespace
+    while (isspace(*p)) ++p;
+    // now skip a ":" character
+    if (*p==':') ++p;
+    // now skip more whitespace
+    while (isspace(*p)) ++p;
+    // the rest is what we were looking for
+    *dest = STRDUP(p);
+    // strip trailing whitespace
+    while (isspace((*dest)[strlen(*dest)-1]))
+      (*dest)[strlen(*dest)-1] = '\0';
+  }
+}
+
 void
 move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
-                             const gchar *log_txt)
+                             const gchar *log_txt,
+                             const char *intermediates_file)
 {
     // iter: points into "files_list"
     // completed_iter: (returned) points into "completed_files_list"
@@ -269,15 +294,44 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     gtk_tree_model_get(model, iter, COL_INPUT_FILE, &file,
                        COL_OUTPUT_FILE, &output_file, -1);
 
+    // pull out the useful intermediates
+    char *layover_mask=NULL, *clipped_dem=NULL, *simulated_sar=NULL,
+      *tmp_dir=NULL;
+    char line[512];
+    FILE *fp = fopen(intermediates_file, "r");
+    if (fp) {
+      while (fgets(line, 511, fp)) {
+        get_intermediate(line, "Layover/Shadow Mask", &layover_mask);
+        get_intermediate(line, "Clipped DEM", &clipped_dem);
+        get_intermediate(line, "Simulated SAR", &simulated_sar);
+        get_intermediate(line, "Temp Dir", &simulated_sar);
+      }
+    }
+    fclose(fp);
+
+    if (!layover_mask) layover_mask = STRDUP("");
+    if (!clipped_dem) clipped_dem = STRDUP("");
+    if (!simulated_sar) simulated_sar = STRDUP("");
+    if (!tmp_dir) tmp_dir = STRDUP("");
+
     gtk_list_store_append(completed_list_store, completed_iter);
     gtk_list_store_set(completed_list_store, completed_iter,
                        COMP_COL_INPUT_FILE, file,
                        COMP_COL_OUTPUT_FILE, output_file,
                        COMP_COL_STATUS, "Done",
                        COMP_COL_LOG, log_txt,
+                       COMP_COL_TMP_DIR, tmp_dir,
+                       COMP_COL_LAYOVER_SHADOW_MASK_FILE, layover_mask,
+                       COMP_COL_CLIPPED_DEM_FILE, clipped_dem,
+                       COMP_COL_SIMULATED_SAR_FILE, simulated_sar,
                        -1);
 
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
+
+    free(layover_mask);
+    free(clipped_dem);
+    free(simulated_sar);
+    free(tmp_dir);
 
     g_free(file);
     g_free(output_file);
@@ -287,8 +341,17 @@ void
 move_from_completed_files_list(GtkTreeIter *iter)
 {
     gchar *input_file;
+    gchar *tmp_dir;
     GtkTreeModel *model = GTK_TREE_MODEL(completed_list_store);
-    gtk_tree_model_get(model, iter, COL_INPUT_FILE, &input_file, -1);
+    gtk_tree_model_get(model, iter,
+                       COMP_COL_INPUT_FILE, &input_file,
+                       COMP_COL_TMP_DIR, &tmp_dir,
+                       -1);
+
+    if (get_checked("rb_keep_temp") && tmp_dir && strlen(tmp_dir) > 0) {
+      printf("Removing: %s\n", tmp_dir);      
+      remove_dir(tmp_dir);
+    }
 
     add_to_files_list(input_file);
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
@@ -609,11 +672,15 @@ setup_files_list()
     COL_STATUS = 4;
     COL_LOG = 5;
 
-    completed_list_store = gtk_list_store_new(6,
+    completed_list_store = gtk_list_store_new(10,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING,
                                               GDK_TYPE_PIXBUF,
                                               GDK_TYPE_PIXBUF,
+                                              G_TYPE_STRING,
+                                              G_TYPE_STRING,
+                                              G_TYPE_STRING,
+                                              G_TYPE_STRING,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING);
 
@@ -623,6 +690,10 @@ setup_files_list()
     COMP_COL_OUTPUT_THUMBNAIL_BIG = 3;
     COMP_COL_STATUS = 4;
     COMP_COL_LOG = 5;
+    COMP_COL_TMP_DIR = 6;
+    COMP_COL_LAYOVER_SHADOW_MASK_FILE = 7;
+    COMP_COL_CLIPPED_DEM_FILE = 8;
+    COMP_COL_SIMULATED_SAR_FILE = 9;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
@@ -792,6 +863,46 @@ setup_files_list()
     renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COMP_COL_LOG);
+
+    /* Next Column: Temporary Directory (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Tmp Dir");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_TMP_DIR);
+
+    /* Next Column: Layover/Shadow Mask File (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Layover Mask");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_LAYOVER_SHADOW_MASK_FILE);
+
+    /* Next Column: Clipped DEM File (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Clipped DEM");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_CLIPPED_DEM_FILE);
+
+    /* Next Column: Simulated SAR Image (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Simulated SAR");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_SIMULATED_SAR_FILE);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list),
         GTK_TREE_MODEL(completed_list_store));

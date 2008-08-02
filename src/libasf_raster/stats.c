@@ -282,9 +282,16 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
     *mean = 0.0;
 
     meta_parameters *meta = meta_read(inFile);
-    int band_number =
-        (!band || strlen(band) == 0 || strcmp(band, "???") == 0) ? 0 :
-        get_band_number(meta->general->bands, meta->general->band_count, band);
+    int band_number;
+    if (!band || strlen(band) == 0 || strcmp(band, "???") == 0 ||
+        meta->general->band_count == 1) {
+      band_number = 0;
+    }
+    else {
+      band_number = get_band_number(meta->general->bands,
+                                    meta->general->band_count, band);
+    }
+
     long offset = meta->general->line_count * band_number;
     float *data = MALLOC(sizeof(float) * meta->general->sample_count);
 

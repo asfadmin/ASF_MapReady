@@ -323,7 +323,7 @@ static void log_summary_text(FILE *fp)
 
 static char *
 do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
-           int keep_files)
+           int keep_files, char **intermediates_file)
 {
     FILE *output;
     char *logFile = appendExt(cfg_file, ".log");
@@ -398,7 +398,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
 
     unlink(statFile);
     free(statFile);
-    // Don't do this, CreateProcess() take it
+    // Don't do this, CreateProcess() takes it
     //free(cmd);
 #else
     extern int logflag;
@@ -489,6 +489,13 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
     gchar *the_output = NULL;
     output = fopen(logFile, "r");
 
+    // see if we got a file containing a list of useful intermediate files
+    *intermediates_file = appendExt(cfg_file, ".files");
+    if (!fileExists(*intermediates_file)) {
+      free(*intermediates_file);
+      *intermediates_file = NULL;
+    }
+
     if (!output)
     {
         the_output = (gchar *)g_malloc(512);
@@ -557,7 +564,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         char *out_basename = stripExt(out_full);
         char *out_nameonly = get_basename(out_full);
         char *output_dir = getPath(out_full);
-        char *config_file, *cmd_output, *tmp_dir;
+        char *config_file, *cmd_output, *tmp_dir, *intermediates_file;
         gchar *err_string;
 
         /* Ensure we have access to the output directory */
@@ -604,7 +611,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         }
 
         cmd_output = do_convert(pid, iter, config_file, TRUE,
-            user_settings->keep_files);
+            user_settings->keep_files, &intermediates_file);
         err_string = check_for_error(cmd_output);
         if (err_string) {
             // unsuccessful
@@ -615,7 +622,8 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         else {
             // successful -- move to "completed" list
             GtkTreeIter completed_iter;
-            move_to_completed_files_list(iter, &completed_iter, cmd_output);
+            move_to_completed_files_list(iter, &completed_iter, cmd_output,
+                                         intermediates_file);
             set_thumbnail(&completed_iter, tmp_dir, out_full);
         }
 
@@ -623,6 +631,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         free(out_basename);
         free(output_dir);
         free(out_nameonly);
+        free(intermediates_file);
         g_free(cmd_output);
 
         if (!user_settings->keep_files)
