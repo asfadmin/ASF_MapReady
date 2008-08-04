@@ -1308,6 +1308,7 @@ try_gtk="yes"
 have_gtk="no"
 have_fftw="no"
 have_png="no"
+have_exif="no"
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -3997,6 +3998,19 @@ else
 fi
 
 
+#### libexif check ####
+##### --> always use our own shapelib because different versions
+#####     the user may have installed are not necessarily compatible
+#AC_CHECK_LIB(exif,main,have_exif="yes",have_exif="no")
+if test "$have_exif" = "no" ; then
+   ASF_LIB_EXIF="${ext_lib_src_dir}/libexif"
+   EXIF_LIBS="\$(LIBDIR)/libexif.a"
+else
+   EXIF_LIBS="-lexif"
+fi
+
+
+
 #### libfftw check ####
 echo "$as_me:$LINENO: checking for main in -lfftw" >&5
 echo $ECHO_N "checking for main in -lfftw... $ECHO_C" >&6
@@ -4415,6 +4429,9 @@ PNG_CFLAGS = $PNG_CFLAGS
 
 FFT_LIBS = $FFTW_LIBS
 FFT_CLFAGS = $FFTW_CFLAGS
+
+EXIF_LIBS = $EXIF_LIBS
+EXIF_CFLAGS = $EXIF_CFLAGS
 
 GEOTIFF_LIBS = $GEOTIFF_LIBS
 GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
@@ -5130,6 +5147,7 @@ s,@ASF_LIB_PNG@,$ASF_LIB_PNG,;t t
 s,@ASF_LIB_GEOTIFF@,$ASF_LIB_GEOTIFF,;t t
 s,@ASF_LIB_SHAPELIB@,$ASF_LIB_SHAPELIB,;t t
 s,@ASF_LIB_FFTW@,$ASF_LIB_FFTW,;t t
+s,@ASF_LIB_EXIF@,$ASF_LIB_EXIF,;t t
 s,@GTK_CFLAGS@,$GTK_CFLAGS,;t t
 s,@GTK_LIBS@,$GTK_LIBS,;t t
 s,@LIBGLADE_CFLAGS@,$LIBGLADE_CFLAGS,;t t
