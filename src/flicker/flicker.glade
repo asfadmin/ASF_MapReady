@@ -4,6 +4,8 @@
 <glade-interface>
 
 <widget class="GtkWindow" id="flicker_window">
+  <property name="width_request">600</property>
+  <property name="height_request">600</property>
   <property name="visible">True</property>
   <property name="title" translatable="yes">Flicker!!</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
@@ -33,12 +35,30 @@
 	  <property name="spacing">0</property>
 
 	  <child>
-	    <widget class="GtkImage" id="flicker_image">
+	    <widget class="GtkScrolledWindow" id="scrolledwindow1">
 	      <property name="visible">True</property>
-	      <property name="xalign">0</property>
-	      <property name="yalign">0</property>
-	      <property name="xpad">0</property>
-	      <property name="ypad">0</property>
+	      <property name="can_focus">True</property>
+	      <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
+	      <property name="vscrollbar_policy">GTK_POLICY_ALWAYS</property>
+	      <property name="shadow_type">GTK_SHADOW_NONE</property>
+	      <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
+
+	      <child>
+		<widget class="GtkViewport" id="viewport1">
+		  <property name="visible">True</property>
+		  <property name="shadow_type">GTK_SHADOW_IN</property>
+
+		  <child>
+		    <widget class="GtkImage" id="flicker_image">
+		      <property name="visible">True</property>
+		      <property name="xalign">0</property>
+		      <property name="yalign">0</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>

@@ -10,8 +10,9 @@
 #include <glib/gprintf.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <assert.h>
 
-#define VERSION_STRING "0.0.1"
+#define VERSION_STRING "0.1.0"
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -210,10 +211,6 @@ set_app_title(char *file)
 
 static void quit()
 {
-    if (fileExists("tmp1.jpg"))
-        unlink("tmp1.jpg");
-    if (fileExists("tmp2.jpg"))
-        unlink("tmp2.jpg");
     keep_going = FALSE;
     //gtk_main_quit();
 }
@@ -236,6 +233,117 @@ on_flicker_window_delete_event(GtkWidget *w, gpointer data)
     quit();
 }
 
+static void destroy_pb_data(guchar *pixels, gpointer data)
+{
+    g_free(pixels);
+}
+
+static GdkPixbuf *img2pb(meta_parameters *meta, const char *img_file)
+{
+    asfPrintStatus("Flicker: Gathering stats for %s\n", img_file);
+
+    FILE *fpIn = fopen(img_file, "rb");
+    if (!fpIn)
+        return NULL;
+
+    int nl = meta->general->line_count;
+    int ns = meta->general->sample_count;
+
+    // Form the thumbnail image by grabbing individual pixels.
+    int ii, jj;
+
+    // First compute stats by reading in a 1/50th scale image
+    int f = 50;
+    int l = nl / f;
+    int s = ns / f;
+    float *fdata = MALLOC(sizeof(float)*l*s);
+    float *line = MALLOC(sizeof(float)*ns);
+
+    // Keep track of the average pixel value, so later we can do a 2-sigma
+    // scaling - makes the thumbnail look a little nicer and more like what
+    // they'd get if they did the default jpeg export.
+    int nn = 0;
+    double avg = 0.0;
+    for ( ii = 0 ; ii < l ; ii++ ) {
+
+        get_float_line(fpIn, meta, ii*f, line);
+
+        for (jj = 0; jj < s; ++jj) {
+            fdata[nn] = line[jj*f];
+            avg += fdata[nn++];
+            if (nn>l*s)
+              asfPrintError("Bad: %d,%d -> %d : %d,%d\n", ii,jj,nn,l,s);
+            assert(nn<=l*s);
+        }
+
+        //asfPercentMeter((float)(ii+1)/l);
+    }
+    fclose(fpIn);
+
+    // Compute the std devation
+    avg /= l*s;
+    double stddev = 0.0;
+    for (ii = 0; ii < l*s; ++ii)
+        stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
+    stddev = sqrt(stddev / (l*s));
+    FREE(fdata);
+
+    // Set the limits of the scaling - 2-sigma on either side of the mean
+    double lmin = avg - 2*stddev;
+    double lmax = avg + 2*stddev;
+
+    guchar *data = g_new(guchar, 3*nl*ns);
+    fpIn = fopen(img_file, "rb");
+    assert(fpIn);
+
+    //asfPrintStatus("Loading image data...\n");
+
+    // Now actually scale the data, and convert to bytes.
+    // Note that we need 3 values, one for each of the RGB channels.
+    for (ii = 0; ii < nl; ++ii) {
+
+        get_float_line(fpIn, meta, ii, line);
+
+        for (jj = 0; jj < ns; ++jj) {
+
+          float val = line[jj];
+          guchar uval;
+          if (val < lmin)
+            uval = 0;
+          else if (val > lmax)
+            uval = 255;
+          else
+            uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
+          
+          nn = 3*(ii*ns + jj);
+          assert(nn+2 < nl*ns*3);
+
+          data[nn] = uval;
+          data[nn+1] = uval;
+          data[nn+2] = uval;
+        }
+
+        asfPercentMeter((float)(ii+1)/nl);
+    }
+
+    fclose(fpIn);
+    free (line);
+
+    // Create the pixbuf
+    GdkPixbuf *pb =
+        gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
+                                 8, ns, nl, ns*3, destroy_pb_data, NULL);
+
+    if (!pb) {
+        printf("Failed to create the thumbnail pixbuf: %s\n", img_file);
+        meta_free(meta);
+        g_free(data);
+        return NULL;
+    }
+
+    return pb;
+}
+
 static void load_images(const char *f1, const char *f2)
 {
     meta_parameters *m1 = meta_read(f1);
@@ -244,38 +352,19 @@ static void load_images(const char *f1, const char *f2)
     meta_parameters *m2 = meta_read(f2);
     assert(m2);
 
-    //int lines = imx(m1->general->line_count, m2->general->sample_count);
-    //int samps = imx(m1->general->sample_count, m2->general->sample_count);
-    //int max = lines > samps ? lines : samps;
-    int max = 1200;
-    int ret;
+    flicker_items.i1 = img2pb(m1, f1);
+    flicker_items.i2 = img2pb(m2, f2);
 
-    FloatImage *fi1 = 
-        float_image_new_from_file(m1->general->sample_count, 
-                                  m1->general->line_count, f1, 0,
-                                  FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-
-    FloatImage *fi2 =
-        float_image_new_from_file(m2->general->sample_count, 
-                                  m2->general->line_count, f2, 0,
-                                  FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-
-    ret = float_image_export_as_jpeg(fi1, "tmp1.jpg", max, 0);
-    assert(ret == 0);
-
-    ret = float_image_export_as_jpeg(fi2, "tmp2.jpg", max, 0);
-    assert(ret == 0);
-
-    GError *err = NULL;
-    flicker_items.i1 = gdk_pixbuf_new_from_file("tmp1.jpg", &err);
     if (!flicker_items.i1)
-        g_error("Failed to load tmp1.jpg: %s\n", err->message);
-    flicker_items.i2 = gdk_pixbuf_new_from_file("tmp2.jpg", &err);
-    if (!flicker_items.i1)
-        g_error("Failed to load tmp2.jpg: %s\n", err->message);
+        asfPrintError("Failed to load %s!\n", f1);
+    if (!flicker_items.i2)
+        asfPrintError("Failed to load %s!\n", f2);
 
     flicker_items.file1 = get_basename(f1);
     flicker_items.file2 = get_basename(f2);
+    
+    meta_free(m1);
+    meta_free(m2);
 }
 
 static void do_wait(double secs)
@@ -300,7 +389,7 @@ static void start_flicker()
 {
     GtkWidget *img = glade_xml_get_widget(glade_xml, "flicker_image");
 
-    while (1) {
+    while (keep_going) {
         gtk_image_set_from_pixbuf(GTK_IMAGE(img), flicker_items.i1);
         set_app_title(flicker_items.file1);
 
@@ -322,11 +411,12 @@ main(int argc, char **argv)
 {
 
     if (argc != 3) {
-        printf("Flicker!\n\n"
+        printf("Flicker\n\n"
                "Assumes the images have the same pixel size and are aligned\n"
-               "at the top left corner.\n\n");
+               "at the corners.  Each file must be in the ASF Internal "
+               "format.\n\n");
 
-        printf("Usage: flicker <file1.img> <file2.img>\n");
+        printf("Usage: flicker <file1> <file2>\n");
         exit(EXIT_FAILURE);
     }
 
@@ -341,13 +431,20 @@ main(int argc, char **argv)
 
     set_app_title(NULL);
     set_font();
-    load_images(argv[1], argv[2]);
+    
+    char *img1 = appendExt(argv[1], ".img");
+    char *img2 = appendExt(argv[2], ".img");
+
+    load_images(img1, img2);
 
     glade_xml_signal_autoconnect(glade_xml);
     start_flicker(&flicker_items);
 
     if (keep_going)
         gtk_main ();
+
+    free(img1);
+    free(img2);
 
     exit (EXIT_SUCCESS);
 }
