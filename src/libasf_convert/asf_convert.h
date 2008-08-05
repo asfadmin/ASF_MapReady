@@ -114,6 +114,7 @@ typedef struct
   int k_means_wishart;    // K-means Wishart clustering
   int k_means_wishart_ext;// K-means Wishart Entropy/Alpha/Anisotropy clustering
   int lee_preserving;     // Lee category preserving
+  int freeman_durden;     // Freeman/Durden decomposition
   farcorr_t farcorr;      // Do we want to faraday correct, if so, how?
 } s_polarimetry;
 

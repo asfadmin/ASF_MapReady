@@ -158,6 +158,9 @@ const char *get_summary_text()
           case POLARIMETRY_CLOUDE_NOCLASSIFY: 
             strcat(text, "(Entropy,Anisotropy,Alpha)");
             break;
+          case POLARIMETRY_FREEMAN_DURDEN:
+            strcat(text, "(Freeman Durden)");
+            break;
         }
 
         if (s->do_farcorr) {
@@ -400,6 +403,8 @@ const char *get_summary_text()
             strcat(text, "\n   RGB Banding: Cloude-Pottier (8)\n");
         else if (s->polarimetric_decomp_setting == POLARIMETRY_CLOUDE16)
             strcat(text, "\n   RGB Banding: Cloude-Pottier (16)\n");
+        else if (s->polarimetric_decomp_setting == POLARIMETRY_FREEMAN_DURDEN)
+            strcat(text, "\n   RGB Banding: Freeman/Durden\n");
 
     }
     else

@@ -814,6 +814,13 @@ on_rb_cloude8_toggled(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK void
+on_rb_freeman_durden_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
 on_rb_cloude16_toggled(GtkWidget *widget)
 {
     rgb_settings_changed();

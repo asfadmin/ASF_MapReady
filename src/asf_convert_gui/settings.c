@@ -169,7 +169,7 @@ settings_apply_to_gui(const Settings * s)
     output_format_combobox_changed();
 
     int polarimetry_on =
-      s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr;
+        s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr;
 
     if (polarimetry_on)
     {
@@ -187,7 +187,7 @@ settings_apply_to_gui(const Settings * s)
         }
         else {
           gtk_toggle_button_set_active(
-            GTK_TOGGLE_BUTTON(polarimetric_decomp_checkbutton), TRUE);
+                GTK_TOGGLE_BUTTON(polarimetric_decomp_checkbutton), TRUE);
 
           rb_select("rb_pauli",
                 s->polarimetric_decomp_setting==POLARIMETRY_PAULI);
@@ -199,6 +199,8 @@ settings_apply_to_gui(const Settings * s)
                 s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE16);
           rb_select("rb_cloude_noclassify",
                 s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE_NOCLASSIFY);
+          rb_select("rb_freeman_durden",
+                s->polarimetric_decomp_setting==POLARIMETRY_FREEMAN_DURDEN);
         }
 
         GtkWidget *farcorr_checkbutton =
@@ -621,6 +623,8 @@ settings_get_from_gui()
           ret->polarimetric_decomp_setting = POLARIMETRY_CLOUDE16;
         else if (get_checked("rb_cloude_noclassify"))
           ret->polarimetric_decomp_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
+        else if (get_checked("rb_freeman_durden"))
+          ret->polarimetric_decomp_setting = POLARIMETRY_FREEMAN_DURDEN;
         else
           ret->polarimetric_decomp_setting = POLARIMETRY_NONE;
       }
@@ -1591,6 +1595,8 @@ settings_to_config_file(const Settings *s,
             s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE16?1:0);
         fprintf(cf, "entropy anisotropy alpha = %d\n",
             s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
+        fprintf(cf, "freeman durden = %d\n",
+            s->polarimetric_decomp_setting==POLARIMETRY_FREEMAN_DURDEN?1:0);
 
         // faraday rotation codes:
         //   0= no farcorr, 1=farcorr w/gloal, 2=farcorr w/local
@@ -1677,7 +1683,8 @@ settings_to_config_file(const Settings *s,
       }
       else if (s->export_bands || (polarimetry_on &&
                (s->polarimetric_decomp_setting == POLARIMETRY_PAULI ||
-                s->polarimetric_decomp_setting == POLARIMETRY_SINCLAIR)))
+                s->polarimetric_decomp_setting == POLARIMETRY_SINCLAIR ||
+                s->polarimetric_decomp_setting == POLARIMETRY_FREEMAN_DURDEN)))
       {
         if (polarimetry_on &&
             s->polarimetric_decomp_setting == POLARIMETRY_PAULI)
@@ -1688,6 +1695,11 @@ settings_to_config_file(const Settings *s,
                  s->polarimetric_decomp_setting == POLARIMETRY_SINCLAIR)
         {
           fprintf(cf, "rgb banding = HH,HV+VH_2,VV\n");
+        }
+        else if (polarimetry_on &&
+                 s->polarimetric_decomp_setting == POLARIMETRY_FREEMAN_DURDEN)
+        {
+          fprintf(cf, "rgb banding = Pd,Ps,Pv\n");
         }
         else if (!s->truecolor_is_checked && !s->falsecolor_is_checked)
         {
@@ -1791,6 +1803,8 @@ int apply_settings_from_config_file(char *configFile)
         s.polarimetric_decomp_setting = POLARIMETRY_CLOUDE16;
       else if (cfg->polarimetry->cloude_pottier_nc)
         s.polarimetric_decomp_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
+      else if (cfg->polarimetry->freeman_durden)
+        s.polarimetric_decomp_setting = POLARIMETRY_FREEMAN_DURDEN;
 
       if (cfg->polarimetry->farcorr != FARCORR_OFF) {
         s.do_farcorr = TRUE;

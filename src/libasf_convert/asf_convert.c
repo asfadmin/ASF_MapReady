@@ -814,6 +814,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         if (cfg->general->polarimetry) {
           fprintf(fDef, "pauli = %d\n", cfg->polarimetry->pauli);
           fprintf(fDef, "sinclair = %d\n", cfg->polarimetry->sinclair);
+          fprintf(fDef, "freeman durden = %d\n",
+                  cfg->polarimetry->freeman_durden);
           fprintf(fDef, "cloude pottier = %d\n",
                   cfg->polarimetry->cloude_pottier);
           fprintf(fDef, "faraday correction = %d\n", cfg->polarimetry->farcorr);
@@ -1227,16 +1229,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           cfg->polarimetry->cloude_pottier_ext == 0 ? 0 : 1;
       int cloude_pottier_nc = cfg->polarimetry->cloude_pottier_nc == 0 ? 0 : 1;
       int k_means_wishart = cfg->polarimetry->k_means_wishart == 0 ? 0 : 1;
+      int freeman_durden = cfg->polarimetry->freeman_durden == 0 ? 0 : 1;
       int k_means_wishart_ext =
           cfg->polarimetry->k_means_wishart_ext == 0 ? 0 : 1;
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
-          cloude_pottier_nc + k_means_wishart + k_means_wishart_ext > 1)
+          cloude_pottier_nc + k_means_wishart + k_means_wishart_ext +
+          freeman_durden > 1)
         asfPrintError("More than one polarimetric processing scheme selected."
                       "\nOnly one of these options may be selected at a time."
                       "\n");
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
           cloude_pottier_nc + k_means_wishart + k_means_wishart_ext +
-          cfg->polarimetry->farcorr < 1)
+          freeman_durden + cfg->polarimetry->farcorr < 1)
         asfPrintError("No polarimetric processing scheme selected.\n");
     }
 
@@ -1732,6 +1736,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                       + cfg->polarimetry->cloude_pottier
                       + cfg->polarimetry->cloude_pottier_ext 
                       + cfg->polarimetry->cloude_pottier_nc
+                      + cfg->polarimetry->freeman_durden
                       + cfg->polarimetry->k_means_wishart
                       + cfg->polarimetry->k_means_wishart_ext;
       int doing_far = cfg->polarimetry->farcorr;
@@ -1740,19 +1745,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       if (doing_far) {
         update_status("Applying Faraday rotation correction ...");
-      }
 
-      // Pass in command line for faraday correction
-      sprintf(inFile, "%s", outFile);
-      if (doing_far && (cfg->general->terrain_correct
-                        || cfg->general->geocoding || cfg->general->export)) {
-        sprintf(outFile, "%s/faraday_correction", cfg->general->tmp_dir);
-      }
-      else {
-        sprintf(outFile, "%s", cfg->general->out_name);
-      }
+        // Pass in command line for faraday correction
+        sprintf(inFile, "%s", outFile);
+        if (cfg->general->terrain_correct || cfg->general->geocoding ||
+            cfg->general->export)
+        {
+          sprintf(outFile, "%s/faraday_correction", cfg->general->tmp_dir);
+        }
+        else {
+          sprintf(outFile, "%s", cfg->general->out_name);
+        }
       
-      if (doing_far) {
         int keep_flag = cfg->general->intermediates;
         int single_angle_flag = (FARCORR_MEAN == cfg->polarimetry->farcorr);
         asfPrintStatus("\nApplying Faraday Rotation correction.\n");
@@ -1802,6 +1806,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         else if (cfg->polarimetry->cloude_pottier_nc)
           cpx2entropy_anisotropy_alpha(inFile, outFile,
                                        cfg->general->terrain_correct);
+        else if (cfg->polarimetry->freeman_durden)
+          cpx2freeman_durden(inFile, outFile);
         else if (cfg->polarimetry->k_means_wishart)
           asfPrintError("K-means Wishart clustering not supported yet.\n");
         else if (cfg->polarimetry->k_means_wishart_ext)

@@ -1376,7 +1376,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                      "classification map...\n");
 
     // dump population graph & class map
-    int wide = strncmp_case(classFile,"cloude16",8) == 0;
+    int wide = FALSE;
+    if (class_band >= 0)
+      wide = strncmp_case(classFile,"cloude16",8) == 0;
     dump_ea_hist(outFile, ea_hist, wide);
     do_class_map(classifier, class_band, wide, outFile);
   }
@@ -1470,7 +1472,8 @@ void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
 
 void cpx2freeman_durden(const char *inFile, const char *outFile)
 {
-  polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,1,2,3,-1,-1,-1,0,1,2,
+  asfPrintStatus("\n\nGenerating Freeman/Durden decomposition channels\n");
+  polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,2,
                       NULL,-1);
 }
 

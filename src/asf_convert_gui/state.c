@@ -618,7 +618,9 @@ void save_config(char *config_file, char* projfile)
             s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE16?1:0);
     fprintf(cf, "entropy anisotropy alpha = %d\n",
             s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
-    
+    fprintf(cf, "freeman durden = %d\n",
+            s->polarimetric_decomp_setting==POLARIMETRY_FREEMAN_DURDEN?1:0);
+
     // faraday rotation codes:
     //   0= no farcorr, 1=farcorr w/local, 2=farcorr w/global
     int farcorr_code = 0;

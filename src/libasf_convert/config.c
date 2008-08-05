@@ -435,6 +435,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->polarimetry->cloude_pottier = 0;
   cfg->polarimetry->cloude_pottier_ext = 0;
   cfg->polarimetry->cloude_pottier_nc = 0;
+  cfg->polarimetry->freeman_durden = 0;
   cfg->polarimetry->k_means_wishart = 0;
   cfg->polarimetry->k_means_wishart_ext = 0;
   cfg->polarimetry->lee_preserving = 0;
@@ -617,6 +618,8 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "entropy anisotropy alpha", 24)==0)
         cfg->polarimetry->cloude_pottier_nc = 
           read_int(line, "entropy anisotropy alpha");
+      if (strncmp(test, "freeman durden", 14)==0)
+        cfg->polarimetry->freeman_durden = read_int(line, "freeman durden");
       if (strncmp(test, "k-means wishart", 15)==0)
         cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
       if (strncmp(test, "k-means wishart ext", 19)==0)
@@ -939,6 +942,8 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "entropy anisotropy alpha", 24)==0)
         cfg->polarimetry->cloude_pottier_nc =
           read_int(line, "entropy anisotropy alpha");
+      if (strncmp(test, "freeman durden", 14)==0)
+        cfg->polarimetry->freeman_durden = read_int(line, "freman durden");
       if (strncmp(test, "k-means wishart", 15)==0)
         cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
       if (strncmp(test, "k-means wishart ext", 19)==0)
@@ -1378,6 +1383,14 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# bands.  This can be useful if you plan on doing your own classification,\n"
                 "# or simply wish to inspect the raw entropy, anisotropy, and/or alpha data.\n\n");
       fprintf(fConfig, "entropy anisotropy alpha = %i\n\n", cfg->polarimetry->cloude_pottier_nc);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you have quad-pol SLC data available,\n"
+                "# you can use the Freeman/Durden decomposition to map the 4 bands to\n"
+                "# the R, G, and B channels in the output image.  In this decomposition,\n"
+                "# the red channel represents the amount of double-bounce contribution,\n"
+                "# the green channel represents the rough-surface contribution, and\n"
+                "# the blue channel represents the volume scatterer contribution.\n\n");
+      fprintf(fConfig, "freeman durden = %i\n", cfg->polarimetry->freeman_durden);
 /*
  *    if (!shortFlag)
  *      fprintf(fConfig, "\n# Some description about k-means Wishart \n\n");
