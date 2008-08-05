@@ -49,11 +49,13 @@ complexFloat complex_new_polar(float amp, float phase);
 complexFloat complex_zero();
 complexFloat complex_sub(complexFloat a, complexFloat b);
 complexFloat complex_add(complexFloat a, complexFloat b);
-double complex_amp(complexFloat c);
-double complex_arg(complexFloat c);
+float complex_amp(complexFloat c);
+float complex_amp_sqr(complexFloat c);
+float complex_arg(complexFloat c);
 complexFloat complex_scale(complexFloat c, float f);
 complexFloat complex_conj(complexFloat c);
 complexFloat complex_mul(complexFloat a, complexFloat b);
+complexFloat complex_div(complexFloat a, complexFloat b);
 complexVector complex_vector_new(complexFloat a, complexFloat b,
                                  complexFloat c);
 complexVector complex_vector_conj(complexVector v);

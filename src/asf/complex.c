@@ -32,15 +32,20 @@ complexFloat complex_add(complexFloat a, complexFloat b)
     return complex_new(a.real+b.real, a.imag+b.imag);
 }
 
-double complex_amp(complexFloat c)
+float complex_amp(complexFloat c)
 {
-  return hypot(c.real, c.imag);
+  return (float)hypot(c.real, c.imag);
   //return sqrt(c.real*c.real + c.imag*c.imag);
 }
 
-double complex_arg(complexFloat c)
+float complex_amp_sqr(complexFloat c)
 {
-  return atan2(c.imag, c.real);
+  return c.real*c.real + c.imag*c.imag;
+}
+
+float complex_arg(complexFloat c)
+{
+  return (float)atan2(c.imag, c.real);
 }
 
 complexFloat complex_scale(complexFloat c, float f)
@@ -57,6 +62,13 @@ complexFloat complex_mul(complexFloat a, complexFloat b)
 {
     return complex_new(a.real*b.real - a.imag*b.imag,
                        a.real*b.imag + a.imag*b.real);
+}
+
+complexFloat complex_div(complexFloat a, complexFloat b)
+{
+  return complex_new (
+    (a.real*b.real + a.imag*b.imag)/(b.real*b.real + b.imag*b.imag),
+    (a.imag*b.real - a.real*b.imag)/(b.real*b.real + b.imag*b.imag));
 }
 
 complexVector complex_vector_new(complexFloat a,

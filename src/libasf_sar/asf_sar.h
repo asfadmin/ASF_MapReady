@@ -142,6 +142,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int sinclair_1_band,
                          int sinclair_2_band,
                          int sinclair_3_band,
+                         int freeman_1_band,
+                         int freeman_2_band,
+                         int freeman_3_band,
                          const char *classFile,
                          int class_band);
 void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag);
@@ -153,6 +156,7 @@ void cpx2cloude_pottier8(const char *inFile, const char *outFile, int tc_flag);
 void cpx2cloude_pottier16(const char *inFile, const char *outFile,
                           int tc_flag);
 void cpx2debug(const char *inFile, const char *outFile);
+void cpx2freeman_durden(const char *inFile, const char *outFile);
 
 void make_entropy_alpha_boundary(const char *fname, int size);
 

@@ -31,13 +31,13 @@ typedef struct {
 } PolarimetricImageRows;
 
 
-static complexFloat complex_new_gsl(gsl_complex c)
-{
-    complexFloat ret;
-    ret.real = GSL_REAL(c);
-    ret.imag = GSL_IMAG(c);
-    return ret;
-}
+//static complexFloat complex_new_gsl(gsl_complex c)
+//{
+//    complexFloat ret;
+//    ret.real = GSL_REAL(c);
+//    ret.imag = GSL_IMAG(c);
+//    return ret;
+//}
 
 static quadPolFloat qual_pol_zero()
 {
@@ -336,8 +336,10 @@ static double log3(double v)
 // For Cloude-Potter-16, we dump the double-wide histograms and
 // classification maps.
 
-static const int hist_height = 512;   // height
-static const int hist_width = 1024;   // width
+#define HIST_HEIGHT 512
+static const int hist_height = HIST_HEIGHT;   // height
+static const int hist_width = HIST_HEIGHT*2;   // width
+int ea_hist[HIST_HEIGHT][HIST_HEIGHT*2];
 
 static void dump_ea_hist(const char *base_filename,
                          int ea_hist[hist_height][hist_width],
@@ -482,6 +484,575 @@ static void add_boundary(int ea_hist[hist_height][hist_width], int wide)
   }
 }
 
+static void do_sinclair_bands(int band1, int band2, int band3,
+                              PolarimetricImageRows *img_rows,
+                              int line, int l, int multi, int chunk_size,
+                              meta_parameters *outMeta, FILE *fout,
+                              float *buf)
+{
+  int j, m;
+  int ns = outMeta->general->sample_count;
+
+  if (multi) {
+    // multilook case -- average all buffered lines to produce a
+    // single output line
+    if (band1 >= 0) {
+      for (j=0; j<ns; ++j) {
+        buf[j] = 0.0;
+        for (m=0; m<chunk_size; ++m)
+          buf[j] += complex_amp(img_rows->lines[m][j].hh);
+        buf[j] /= (float)chunk_size;
+      }
+      put_band_float_line(fout, outMeta, band1, line, buf);
+    }
+    if (band2 >= 0) {
+      for (j=0; j<ns; ++j) {
+        buf[j] = 0.0;
+        for (m=0; m<chunk_size; ++m) {
+          complexFloat c = complex_add(img_rows->lines[m][j].hv,
+                                       img_rows->lines[m][j].vh);
+          buf[j] += complex_amp(complex_scale(c, 0.5));
+        }
+        buf[j] /= (float)chunk_size;
+      }
+      put_band_float_line(fout, outMeta, band2, line, buf);
+    }
+    if (band3 >= 0) {
+      for (j=0; j<ns; ++j) {
+        buf[j] = 0.0;
+        for (m=0; m<chunk_size; ++m)
+          buf[j] += complex_amp(img_rows->lines[m][j].vv);
+        buf[j] /= (float)chunk_size;
+      }
+      put_band_float_line(fout, outMeta, band3, line, buf);
+    }
+  }
+  else {
+    // not multilooking -- no averaging necessary
+    if (band1 >= 0) {
+      for (j=0; j<ns; ++j)
+        buf[j] = complex_amp(img_rows->lines[l][j].hh);
+      put_band_float_line(fout, outMeta, band1, line, buf);
+    }
+    if (band2 >= 0) {
+      for (j=0; j<ns; ++j) {
+        complexFloat c = complex_add(img_rows->lines[l][j].hv,
+                                     img_rows->lines[l][j].vh);
+        buf[j] = complex_amp(complex_scale(c, 0.5));
+      }
+      put_band_float_line(fout, outMeta, band2, line, buf);
+    }
+    if (band3 >= 0) {
+      for (j=0; j<ns; ++j)
+        buf[j] = complex_amp(img_rows->lines[l][j].vv);
+      put_band_float_line(fout, outMeta, band3, line, buf);
+    }
+  }
+}
+
+static void do_pauli_bands(int band1, int band2, int band3,
+                           PolarimetricImageRows *img_rows,
+                           int line, int l, int multi, int chunk_size,
+                           meta_parameters *outMeta, FILE *fout,
+                           float *buf)
+{
+  int j, m;
+  int ns = outMeta->general->sample_count;
+
+  if (multi) {
+    // multilook case -- average all buffered lines to produce a
+    // single output line
+    if (band1 >= 0) {
+      for (j=0; j<ns; ++j) {
+        buf[j] = 0.0;
+        for (m=0; m<chunk_size; ++m)
+          buf[j] += complex_amp(img_rows->pauli_lines[m][j].A);
+        buf[j] /= (float)chunk_size;
+      }
+      put_band_float_line(fout, outMeta, band1, line, buf);
+    }
+    if (band2 >= 0) {
+      for (j=0; j<ns; ++j) {
+        buf[j] = 0.0;
+        for (m=0; m<chunk_size; ++m)
+          buf[j] += complex_amp(img_rows->pauli_lines[m][j].B);
+        buf[j] /= (float)chunk_size;
+      }
+      put_band_float_line(fout, outMeta, band2, line, buf);
+    }
+    if (band3 >= 0) {
+      for (j=0; j<ns; ++j) {
+        buf[j] = 0.0;
+        for (m=0; m<chunk_size; ++m)
+          buf[j] += complex_amp(img_rows->pauli_lines[m][j].C);
+        buf[j] /= (float)chunk_size;
+      }
+      put_band_float_line(fout, outMeta, band3, line, buf);
+    }
+  }
+  else {
+    // not multilooking -- no averaging necessary
+    if (band1 >= 0) {
+      for (j=0; j<ns; ++j)
+        buf[j] = complex_amp(img_rows->pauli_lines[l][j].A);
+      put_band_float_line(fout, outMeta, band1, line, buf);
+    }
+    if (band2 >= 0) {
+      for (j=0; j<ns; ++j)
+        buf[j] = complex_amp(img_rows->pauli_lines[l][j].B);
+      put_band_float_line(fout, outMeta, band2, line, buf);
+    }
+    if (band3 >= 0) {
+      for (j=0; j<ns; ++j)
+        buf[j] = complex_amp(img_rows->pauli_lines[l][j].C);
+      put_band_float_line(fout, outMeta, band3, line, buf);
+    }
+  }
+}
+
+static void
+do_coherence_bands(int entropy_band, int anisotropy_band, int alpha_band,
+                   int class_band,
+                   PolarimetricImageRows *img_rows,
+                   int line, int l, int multi, int chunk_size,
+                   gsl_matrix_complex *T, gsl_vector *eval,
+                   gsl_matrix_complex *evec, gsl_eigen_hermv_workspace *ws,
+                   meta_parameters *outMeta, FILE *fout,
+                   float *buf, classifier_t *classifier)
+{
+  if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0 || 
+      class_band >= 0)
+  {
+    int ns = outMeta->general->sample_count;
+    int onl = outMeta->general->line_count;
+
+    float *entropy = MALLOC(sizeof(float)*ns);
+    float *anisotropy = MALLOC(sizeof(float)*ns);
+    float *alpha = MALLOC(sizeof(float)*ns);
+
+    // size of the horizontal window, used for ensemble averaging
+    // actual window size is hw*2+1
+    int hw;
+    if (multi)
+      hw = 0; // no horizontal averaging
+    else
+      hw = 2; // 5 pixels averaging horizontally
+
+    // coherence -- do ensemble averaging for each element
+    int j;
+    for (j=0; j<ns; ++j) {
+      int ii,jj,m;
+      for (ii=0; ii<3; ++ii) {
+        for (jj=0; jj<3; ++jj) {
+          gsl_complex c = gsl_complex_rect(0,0);
+          int k,n=0;
+          for (m=0; m<chunk_size; ++m) {
+            for (k=j-hw;k<=j+hw;++k) {
+              if (k>=0 && k<ns && m+line>l && m+line<onl-l) {
+                ++n;
+                complexFloat f =
+                  img_rows->coh_lines[m][k]->coeff[ii][jj];
+                c = gsl_complex_add_real(c, f.real);
+                c = gsl_complex_add_imag(c, f.imag);
+              }
+            }
+          }
+          if (n>1) {
+            gsl_complex_div_real(c, (float)n);
+          }
+          gsl_matrix_complex_set(T,ii,jj,c);
+        }
+      }
+      
+      gsl_eigen_hermv(T, eval, evec, ws);
+      gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
+      
+      double e1 = gsl_vector_get(eval, 0);
+      double e2 = gsl_vector_get(eval, 1);
+      double e3 = gsl_vector_get(eval, 2);
+      
+      double eT = e1+e2+e3;
+      
+      double P1 = e1/eT;
+      double P2 = e2/eT;
+      double P3 = e3/eT;
+      
+      double P1l3 = log3(P1);
+      double P2l3 = log3(P2);
+      double P3l3 = log3(P3);
+      
+      // If a Pn value is small enough, the log value will be NaN.
+      // In this case, the value of -Pn*log3(Pn) is supposed to be
+      // zero - we have to force it.
+      entropy[j] =
+        (meta_is_valid_double(P1l3) ? -P1*P1l3 : 0) +
+        (meta_is_valid_double(P2l3) ? -P2*P2l3 : 0) +
+        (meta_is_valid_double(P3l3) ? -P3*P3l3 : 0);
+      
+      // mathematically, entropy is limited to be between 0 and 1.
+      // however it sometimes is just a bit out of that range due
+      // to numerical anomalies
+      if (!meta_is_valid_double(entropy[j]))
+        entropy[j] = 0.0;
+      else if (entropy[j] < 0)
+        entropy[j] = 0.0;
+      else if (entropy[j] > 1)
+        entropy[j] = 1.0;
+      
+      if (e2+e3 != 0)
+        anisotropy[j] = (e2-e3)/(e2+e3);
+      else
+        anisotropy[j] = 0;
+      
+      // as for entropy, anisotropy is limited to be between 0 and 1.
+      // guard against numerical anomalies (usually this is due to
+      // one really big eigenvalue)
+      if (!meta_is_valid_double(anisotropy[j]))
+        anisotropy[j] = 0.0;
+      else if (anisotropy[j] < 0)
+        anisotropy[j] = 0.0;
+      else if (anisotropy[j] > 1)
+        anisotropy[j] = 1.0;
+      
+      // calculate the "mean alpha" (mean scattering angle)
+      // this is the polar angle when expressing each eigenvector
+      // in spherical coordinates.  the mean alpha is weighted by
+      // the eigenvector (so weight by P1-3)
+      double alpha1 = calc_alpha(gsl_matrix_complex_get(evec, 0, 0));
+      double alpha2 = calc_alpha(gsl_matrix_complex_get(evec, 0, 1));
+      double alpha3 = calc_alpha(gsl_matrix_complex_get(evec, 0, 2));
+      
+      alpha[j] = R2D*(P1*alpha1 + P2*alpha2 + P3*alpha3);
+      if (!meta_is_valid_double(alpha[j]))
+        alpha[j] = 0.0;
+    }
+    
+    if (entropy_band >= 0)
+      put_band_float_line(fout, outMeta, entropy_band, line, entropy);
+    if (anisotropy_band >= 0)
+      put_band_float_line(fout, outMeta, anisotropy_band, line, anisotropy);
+    if (alpha_band >= 0)
+      put_band_float_line(fout, outMeta, alpha_band, line, alpha);
+    
+    if (class_band >= 0) {
+      assert(classifier != NULL);
+      for (j=0; j<ns; ++j) {
+        buf[j] = (float)classify(classifier, entropy[j], anisotropy[j],
+                                 alpha[j]);
+      }
+      put_band_float_line(fout, outMeta, class_band, line, buf);
+    }
+    
+    for (j=0; j<ns; ++j) {
+      int entropy_index = entropy[j]*(float)hist_height;
+      if (entropy_index<0) entropy_index=0;
+      if (entropy_index>hist_height-1) entropy_index=hist_height-1;
+            
+      int alpha_index = hist_height-1-alpha[j]/90.0*(float)hist_height;
+      if (alpha_index<0) alpha_index=0;
+      if (alpha_index>hist_height-1) alpha_index=hist_height-1;
+      
+      //printf("%10.1f %10.1f %5d %5d --> %4d\n",
+      //       entropy[j], alpha[j],
+      //       entropy_index, alpha_index,
+      //      ea_hist[entropy_index][alpha_index]+1);
+      if (anisotropy[j] > .5)
+        entropy_index += hist_height;
+      ea_hist[alpha_index][entropy_index] += 1;
+    }
+
+    free(entropy);
+    free(anisotropy);
+    free(alpha);
+  }
+}
+
+static int verify_equal_re(const char *id, float lhs, float rhs)
+{
+  if (fabs(lhs - rhs) > .001) {
+    printf("Not equal (%s): %f != %f\n", id, lhs, rhs);
+    return FALSE;
+  }
+  return TRUE;
+}
+
+static int verify_equal_cpx(const char *id, complexFloat lhs, complexFloat rhs)
+{
+  if (fabs(lhs.real - rhs.real) > .001 ||
+      fabs(lhs.imag - rhs.imag) > .001)
+  {
+    printf("Not equal (%s): (%f,%f) != (%f,%f)\n", id,
+           lhs.real, lhs.imag, rhs.real, rhs.imag);
+    return FALSE;
+  }
+  return TRUE;
+}
+
+static int verify_fd(float hh2, float vv2, complexFloat hhvv, float fs,
+                     float fd, complexFloat alpha, complexFloat beta)
+{
+  int ok1,ok2,ok3;
+
+  // (1) hh2 = fs*beta*beta + fd*alpha*alpha
+  ok1 = verify_equal_re("Eq. 1", hh2, fs*complex_amp_sqr(beta) +
+                                      fd*complex_amp_sqr(alpha));
+  // (2) vv2 = fs + fd
+  ok2 = verify_equal_re("Eq. 2", vv2, fs+fd);
+
+  // (3) hhvv = fs*beta + fd*alpha
+  ok3 = verify_equal_cpx("Eq. 3", hhvv, complex_add(
+                           complex_scale(beta, fs), complex_scale(alpha, fd)));
+
+  return ok1 && ok2 && ok3;
+}
+
+static void solve_fd1(float hh2, float vv2, complexFloat hhvv,
+                      float *fs, float *fd, complexFloat *beta)
+{
+  // solve this for beta (b):
+  //  (1+b)*hh2 = (vv2 + hhvv)(|b*b|+b) - hhvv*(1+b)
+
+  // then substitude to get fs & fd:
+  //   fs = (vv2 + hhvv)/(1+b)
+  //   fd = fs*b - hhvv
+
+  *fs = 0;
+  *fd = 0;
+  *beta = complex_zero();
+}
+
+static void solve_fd2(float hh2, float vv2, complexFloat hhvv,
+                      float *fs, float *fd, complexFloat *alpha)
+{
+  *fs = 0;
+  *fd = 0;
+  *alpha = complex_zero();
+}
+
+static void do_freeman(int band1, int band2, int band3,
+                       PolarimetricImageRows *img_rows,
+                       int line, int l, int multi, int chunk_size,
+                       meta_parameters *outMeta, FILE *fout)
+{
+  if (band1 >= 0 || band2 >= 0 || band3 >= 0)
+  {
+    int j, m;
+    int ns = outMeta->general->sample_count;
+
+    float *hh2 = MALLOC(sizeof(float)*ns);
+    float *vv2 = MALLOC(sizeof(float)*ns);
+    float *hv2 = MALLOC(sizeof(float)*ns);
+    complexFloat *hhvv = MALLOC(sizeof(complexFloat)*ns);
+    float sf = 1.0 / (float)chunk_size;
+
+    float *Ps = MALLOC(sizeof(float)*ns);
+    float *Pd = MALLOC(sizeof(float)*ns);
+    float *Pv = MALLOC(sizeof(float)*ns);
+
+    if (multi) {
+      // multilook case -- average all buffered lines to produce a
+      // single output line
+      for (j=0; j<ns; ++j) {
+
+        hh2[j] = 0.0;
+        vv2[j] = 0.0;
+        hhvv[j] = complex_zero();
+        hv2[j] = 0.0;
+
+        for (m=0; m<chunk_size; ++m) {
+          complexFloat hh = img_rows->lines[m][j].hh;
+          hh2[j] = complex_amp_sqr(hh);
+
+          complexFloat vv = img_rows->lines[m][j].vv;
+          vv2[j] = complex_amp_sqr(vv);
+
+          hhvv[j] = complex_add(hhvv[j], complex_mul(hh, complex_conj(vv)));
+
+          hv2[j] += complex_amp_sqr(img_rows->lines[m][j].hv);
+        }
+
+        hh2[j] *= sf;
+        vv2[j] *= sf;
+        hv2[j] *= sf;
+
+        hhvv[j] = complex_scale(hhvv[j], sf);
+      }
+    }
+    else {
+      // not multilooking -- no averaging necessary
+      for (j=0; j<ns; ++j) {
+        complexFloat hh = img_rows->lines[l][j].hh;
+        hh2[j] = complex_amp_sqr(hh);
+        
+        complexFloat vv = img_rows->lines[l][j].vv;
+        vv2[j] = complex_amp_sqr(vv);
+        
+        hhvv[j] = complex_mul(hh, complex_conj(vv));
+        hv2[j] = complex_amp_sqr(img_rows->lines[l][j].hv);
+      }
+    }
+
+    // now calculate fs, fd and alpha or beta for each sample
+    for (j=0; j<ns; ++j) {
+      float fs, fd;
+      complexFloat alpha, beta;
+      if (hhvv[j].real > 0) {
+        // Re(Shh*conj(Svv))>0 ==> alpha=-1, solve for fs, fd and beta
+        solve_fd1(hh2[j], vv2[j], hhvv[j], &fs, &fd, &beta);
+        alpha = complex_new(-1, 0);
+
+        verify_fd(hh2[j], vv2[j], hhvv[j], fs, fd, alpha, beta);
+      }
+      else {
+        // Re(Shh*conj(Svv))<0 ==> beta=1, solve for fs, fd and alpha
+        solve_fd2(hh2[j], vv2[j], hhvv[j], &fs, &fd, &alpha);
+        beta = complex_new(1, 0);
+      }
+      //verify_fd(hh2[j], vv2[j], hhvv[j], fs, fd, alpha, beta);
+      
+      float b2 = complex_amp_sqr(beta);
+      float a2 = complex_amp_sqr(alpha);
+
+      Ps[j] = fs * (1 + b2);
+      Pd[j] = fd * (1 + a2);
+      Pv[j] = 8 * hv2[j];
+    }
+
+    if (band1 >= 0)
+      put_band_float_line(fout, outMeta, band1, line, Ps);
+    if (band2 >= 0)
+      put_band_float_line(fout, outMeta, band2, line, Pd);
+    if (band3 >= 0)
+      put_band_float_line(fout, outMeta, band3, line, Pv);
+
+    free(hh2);
+    free(vv2);
+    free(hv2);
+    free(hhvv);
+  }
+}
+
+static void do_class_map(classifier_t *classifier, int class_band, int wide,
+                         const char *outFile)
+{
+  // dump classified pop graph -- reuse the same ea_hist array,
+  // since we are done with the population graph
+  int i, j;
+  if (class_band >= 0) {
+    if (!wide) {
+      // non-wide: this is the Cloude-Pottier 8 classes case, where
+      // we use only half of the ea_hist array
+      for (i=0; i<hist_height; ++i) {
+        double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+        for (j=0; j<hist_height; ++j) {
+          int count = ea_hist[i][j] + ea_hist[i][j+hist_height];
+          if (j==0) {
+            ea_hist[i][j] = 0;
+          }
+          else if (count > 0) {
+            double entropy = (double)j/(double)hist_height;
+            ea_hist[i][j] = classify(classifier, entropy, 0, alpha);
+          }
+        }
+      }
+      // drawing the white border lines -- assumes look-up-tables use
+      // "255" as white.  (cloude8.lut)
+      int prev = -1;
+      for (i=0; i<hist_height; ++i) {
+        double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+        for (j=0; j<hist_height; ++j) {
+          double entropy = (double)j/(double)hist_height;
+          int curr = classify(classifier, entropy, 0, alpha);
+          if (j>0 && prev != curr)
+            ea_hist[i][j] = 255;
+          prev = curr;
+        }
+      }
+      prev = -1;
+      for (j=0; j<hist_height; ++j) {
+        double entropy = (double)j/(double)hist_height;
+        for (i=0; i<hist_height; ++i) {
+          double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+          int curr = classify(classifier, entropy, 0, alpha);
+          if (i>0 && prev != curr)
+            ea_hist[i][j] = 255;
+          prev = curr;
+        }
+      }
+      // if we have the file "ea_boundary.txt" in the share directory
+      // (this file can be generated by calling make_entropy_alpha_boundary()
+      // defined below, and exposed via asf_calpol)
+      add_boundary(ea_hist, FALSE);
+
+      dump_class_map(outFile, ea_hist, FALSE);
+    }
+    else {
+      // wide: this is the Cloude-Pottier 16 classes case, where
+      // we use the full (double-width) ea_hist array, the left half
+      // being the anisotropy=0 plane, the right half being the
+      // anisotropy=.5 plane (though we actually use .55 below to ensure
+      // we're definitely in the >.5 blocks -- .5 could possibly be
+      // classified in the (0,.5) range depending on use of <= vs < above,
+      // roundoff, etc)
+      for (i=0; i<hist_height; ++i) {
+        double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+        for (j=0; j<hist_height*2; ++j) {
+          int count = ea_hist[i][j];
+          if (j==0) {
+            ea_hist[i][j] = 0;
+          }
+          else if (j == hist_height) {
+            ea_hist[i][j] = 255;
+          }
+          else if (count > 0) {
+            double entropy = j > hist_height ?
+              (double)(j-hist_height)/(double)hist_height :
+              (double)j/(double)hist_height;
+            double aniso = j > hist_height ? 0.55 : 0.0;
+            ea_hist[i][j] = classify(classifier, entropy, aniso, alpha);
+          }
+        }
+      }
+      // drawing the white border lines -- assumes look-up-tables use
+      // "255" as white.  (cloude16.lut)
+      int prev = -1;
+      for (i=0; i<hist_height; ++i) {
+        double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+        for (j=0; j<hist_height*2; ++j) {
+          double entropy = j > hist_height ?
+            (double)(j-hist_height)/(double)hist_height :
+            (double)j/(double)hist_height;
+          double aniso = j > hist_height ? 0.55 : 0.0;
+          int curr = classify(classifier, entropy, aniso, alpha);
+          if (j>0 && prev != curr)
+            ea_hist[i][j] = 255;
+          prev = curr;
+        }
+      }
+      prev = -1;
+      for (j=0; j<hist_height*2; ++j) {
+        double entropy = j > hist_height ?
+          (double)(j-hist_height)/(double)hist_height :
+          (double)j/(double)hist_height;
+        double aniso = j > hist_height ? 0.55 : 0.0;
+        for (i=0; i<hist_height; ++i) {
+          double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+          int curr = classify(classifier, entropy, aniso, alpha);
+          if (i>0 && prev != curr)
+            ea_hist[i][j] = 255;
+          prev = curr;
+        }
+      }
+      // if we have the file "ea_boundary.txt" in the share directory
+      // (this file can be generated by calling make_entropy_alpha_boundary()
+      // defined below, and exposed via asf_calpol)
+      add_boundary(ea_hist, TRUE);
+      
+      dump_class_map(outFile, ea_hist, TRUE);
+    }
+  }
+}
+
 void polarimetric_decomp(const char *inFile, const char *outFile,
                          int amplitude_band,
                          int pauli_1_band,
@@ -493,6 +1064,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int sinclair_1_band,
                          int sinclair_2_band,
                          int sinclair_3_band,
+                         int freeman_1_band,
+                         int freeman_2_band,
+                         int freeman_3_band,
                          const char *classFile,
                          int class_band)
 {
@@ -510,7 +1084,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   char *in_img_name = appendExt(inFile, ".img");
   char *out_img_name = appendExt(outFile, ".img");
 
-  int i, j, m;
+  int i, j;
 
   // chunk_size represents the number of rows we keep in memory at one
   // time, centered on the row currently being processed.  This is to
@@ -548,30 +1122,6 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                     "is this SLC quad-pol data?\n");
 
   float *buf = MALLOC(sizeof(float)*ns);
-  float *entropy = MALLOC(sizeof(float)*ns);
-  float *anisotropy = MALLOC(sizeof(float)*ns);
-  float *alpha = MALLOC(sizeof(float)*ns);
-
-  float *coh11 = NULL;
-  float *coh22 = NULL;
-  float *coh33 = NULL;
-  float *coh12_r = NULL;
-  float *coh12_i = NULL;
-  float *coh13_r = NULL;
-  float *coh13_i = NULL;
-  float *coh23_r = NULL;
-  float *coh23_i = NULL;
-  if (debug_band >= 0) {
-    coh11 = MALLOC(sizeof(float)*ns);
-    coh22 = MALLOC(sizeof(float)*ns);
-    coh33 = MALLOC(sizeof(float)*ns);
-    coh12_r = MALLOC(sizeof(float)*ns);
-    coh12_i = MALLOC(sizeof(float)*ns);
-    coh13_r = MALLOC(sizeof(float)*ns);
-    coh13_i = MALLOC(sizeof(float)*ns);
-    coh23_r = MALLOC(sizeof(float)*ns);
-    coh23_i = MALLOC(sizeof(float)*ns);
-  }
 
   // at the start, we want to load the buffers as follows: (for chunk_size=5)
   //   *lines[0] = ALL ZEROS
@@ -606,14 +1156,6 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
     assert(img_rows->current_row == 0);
   }
 
-  // size of the horizontal window, used for ensemble averaging
-  // actual window size is hw*2+1
-  int hw;
-  if (multi)
-    hw = 0; // no horizontal averaging
-  else
-    hw = 2; // 5 pixels averaging horizontally
-
   // output metadata differs from input only in the number
   // of bands, and the band names
   char *out_meta_name = appendExt(outFile, ".meta");
@@ -622,7 +1164,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       (pauli_1_band>=0) + (pauli_2_band>=0) + (pauli_3_band>=0) +
       (entropy_band>=0) + (anisotropy_band>=0) + (alpha_band>=0) +
       (sinclair_1_band>=0) + (sinclair_2_band>=0) + (sinclair_3_band>=0) +
-      (class_band >= 0);
+      (class_band >= 0) +
+      (freeman_1_band>=0) + (freeman_2_band>=0) + (freeman_3_band>=0);
 
   char bands[255];
   strcpy(bands, "");
@@ -648,6 +1191,12 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
           strcat(bands, "Anisotro,"); // abbreviated version, agrees with GUI
       else if (alpha_band == i)
           strcat(bands, "Alpha,");
+      else if (freeman_1_band == i)
+          strcat(bands, "Ps,");
+      else if (freeman_2_band == i)
+          strcat(bands, "Pd,");
+      else if (freeman_3_band == i)
+          strcat(bands, "Pv,");
       else if (class_band == i) {
         if (!classFile)
           strcat(bands,"Classified,");
@@ -665,12 +1214,6 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       }
       else
           break;
-  }
-
-  if (debug_band >= 0) {
-    strcat(bands, "Coh11,Coh22,Coh33,Coh12_Re,Coh12_Im,Coh13_Re,Coh13_Im,"
-                  "Coh23_Re,Coh23_Im,");
-    nBands += 9;
   }
 
   if (strlen(bands) > 0) // chop last comma
@@ -698,12 +1241,15 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
     classifier = read_classifier(classFile);
 
   // population histogram image, in entropy-alpha space
-  int ea_hist[hist_height][hist_width];
   for (i=0; i<hist_height; ++i)
     for (j=0; j<hist_width; ++j)
       ea_hist[i][j] = 0;
 
+  //-----------------------------------------------------------------------
   // done setting up metadata, now write the data
+
+  // gsl infrastructure for calculating eigen- vals & vecs for the
+  // coherence matrix
   gsl_matrix_complex *T = gsl_matrix_complex_alloc(3,3);
   gsl_vector *eval = gsl_vector_alloc(3);
   gsl_matrix_complex *evec = gsl_matrix_complex_alloc(3,3);
@@ -722,276 +1268,25 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         put_band_float_line(fout, outMeta, amplitude_band, i, img_rows->amp);
 
       // if requested, generate sinlair output
-      if (multi) {
-        // multilook case -- average all buffered lines to produce a
-        // single output line
-        if (sinclair_1_band >= 0) {
-          for (j=0; j<ns; ++j) {
-            buf[j] = 0.0;
-            for (m=0; m<chunk_size; ++m)
-              buf[j] += complex_amp(img_rows->lines[m][j].hh);
-            buf[j] /= (float)chunk_size;
-          }
-          put_band_float_line(fout, outMeta, sinclair_1_band, i, buf);
-        }
-        if (sinclair_2_band >= 0) {
-          for (j=0; j<ns; ++j) {
-            buf[j] = 0.0;
-            for (m=0; m<chunk_size; ++m) {
-              complexFloat c = complex_add(img_rows->lines[m][j].hv,
-                                           img_rows->lines[m][j].vh);
-              buf[j] += complex_amp(complex_scale(c, 0.5));
-            }
-            buf[j] /= (float)chunk_size;
-          }
-          put_band_float_line(fout, outMeta, sinclair_2_band, i, buf);
-        }
-        if (sinclair_3_band >= 0) {
-          for (j=0; j<ns; ++j) {
-            buf[j] = 0.0;
-            for (m=0; m<chunk_size; ++m)
-              buf[j] += complex_amp(img_rows->lines[m][j].vv);
-            buf[j] /= (float)chunk_size;
-          }
-          put_band_float_line(fout, outMeta, sinclair_3_band, i, buf);
-        }
-      }
-      else {
-        // not multilooking -- no averaging necessary
-        if (sinclair_1_band >= 0) {
-          for (j=0; j<ns; ++j)
-            buf[j] = complex_amp(img_rows->lines[l][j].hh);
-          put_band_float_line(fout, outMeta, sinclair_1_band, i, buf);
-        }
-        if (sinclair_2_band >= 0) {
-          for (j=0; j<ns; ++j) {
-            complexFloat c = complex_add(img_rows->lines[l][j].hv,
-                                         img_rows->lines[l][j].vh);
-            buf[j] = complex_amp(complex_scale(c, 0.5));
-          }
-          put_band_float_line(fout, outMeta, sinclair_2_band, i, buf);
-        }
-        if (sinclair_3_band >= 0) {
-          for (j=0; j<ns; ++j)
-            buf[j] = complex_amp(img_rows->lines[l][j].vv);
-          put_band_float_line(fout, outMeta, sinclair_3_band, i, buf);
-        }
-      }
+      do_sinclair_bands(sinclair_1_band, sinclair_2_band, sinclair_3_band,
+                        img_rows, i, l, multi, chunk_size, outMeta, fout, buf);
 
       // calculate the pauli output (magnitude of already-calculated
       // complex pauli basis elements), and save the requested pauli
       // bands in the output
-      if (multi) {
-        // multilook case -- average all buffered lines to produce a
-        // single output line
-        if (pauli_1_band >= 0) {
-          for (j=0; j<ns; ++j) {
-            buf[j] = 0.0;
-            for (m=0; m<chunk_size; ++m)
-              buf[j] += complex_amp(img_rows->pauli_lines[m][j].A);
-            buf[j] /= (float)chunk_size;
-          }
-          put_band_float_line(fout, outMeta, pauli_1_band, i, buf);
-        }
-        if (pauli_2_band >= 0) {
-          for (j=0; j<ns; ++j) {
-            buf[j] = 0.0;
-            for (m=0; m<chunk_size; ++m)
-              buf[j] += complex_amp(img_rows->pauli_lines[m][j].B);
-            buf[j] /= (float)chunk_size;
-          }
-          put_band_float_line(fout, outMeta, pauli_2_band, i, buf);
-        }
-        if (pauli_3_band >= 0) {
-          for (j=0; j<ns; ++j) {
-            buf[j] = 0.0;
-            for (m=0; m<chunk_size; ++m)
-              buf[j] += complex_amp(img_rows->pauli_lines[m][j].C);
-            buf[j] /= (float)chunk_size;
-          }
-          put_band_float_line(fout, outMeta, pauli_3_band, i, buf);
-        }
-      }
-      else {
-        // not multilooking -- no averaging necessary
-        if (pauli_1_band >= 0) {
-          for (j=0; j<ns; ++j)
-            buf[j] = complex_amp(img_rows->pauli_lines[l][j].A);
-          put_band_float_line(fout, outMeta, pauli_1_band, i, buf);
-        }
-        if (pauli_2_band >= 0) {
-          for (j=0; j<ns; ++j)
-            buf[j] = complex_amp(img_rows->pauli_lines[l][j].B);
-          put_band_float_line(fout, outMeta, pauli_2_band, i, buf);
-        }
-        if (pauli_3_band >= 0) {
-          for (j=0; j<ns; ++j)
-            buf[j] = complex_amp(img_rows->pauli_lines[l][j].C);
-          put_band_float_line(fout, outMeta, pauli_3_band, i, buf);
-        }
-      }
+      do_pauli_bands(pauli_1_band, pauli_2_band, pauli_3_band,
+                     img_rows, i, l, multi, chunk_size, outMeta, fout, buf);
 
-      if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0 ||
-          class_band >= 0)
-      {
-          // coherence -- do ensemble averaging for each element
-          for (j=0; j<ns; ++j) {
-              int ii,jj,m;
-              for (ii=0; ii<3; ++ii) {
-                  for (jj=0; jj<3; ++jj) {
-                      gsl_complex c = gsl_complex_rect(0,0);
-                      int k,n=0;
-                      for (m=0; m<chunk_size; ++m) {
-                          for (k=j-hw;k<=j+hw;++k) {
-                              if (k>=0 && k<ns && m+i>l && m+i<onl-l) {
-                                  ++n;
-                                  complexFloat f =
-                                    img_rows->coh_lines[m][k]->coeff[ii][jj];
-                                  c = gsl_complex_add_real(c, f.real);
-                                  c = gsl_complex_add_imag(c, f.imag);
-                              }
-                          }
-                      }
-                      if (n>1) {
-                          gsl_complex_div_real(c, (float)n);
-                      }
-                      gsl_matrix_complex_set(T,ii,jj,c);
-                  }
-              }
 
-              if (debug_band >= 0) {
-                complexFloat c;
-                c = complex_new_gsl(gsl_matrix_complex_get(T,0,0)); 
-                coh11[j] = c.real;
-                
-                c = complex_new_gsl(gsl_matrix_complex_get(T,1,1)); 
-                coh22[j] = c.real;
-                
-                c = complex_new_gsl(gsl_matrix_complex_get(T,2,2)); 
-                coh33[j] = c.real;
-                
-                c = complex_new_gsl(gsl_matrix_complex_get(T,0,1)); 
-                coh12_r[j] = c.real;
-                coh12_i[j] = c.imag;
-                
-                c = complex_new_gsl(gsl_matrix_complex_get(T,0,2));
-                coh13_r[j] = c.real;
-                coh13_i[j] = c.imag;
-                
-                c = complex_new_gsl(gsl_matrix_complex_get(T,1,2));
-                coh23_r[j] = c.real;
-                coh23_i[j] = c.imag;
-              }
+      // Freeman-Durden
+      do_freeman(freeman_1_band, freeman_2_band, freeman_3_band,
+                 img_rows, i, l, multi, chunk_size, outMeta, fout);
 
-              gsl_eigen_hermv(T, eval, evec, ws);
-              gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
-
-              double e1 = gsl_vector_get(eval, 0);
-              double e2 = gsl_vector_get(eval, 1);
-              double e3 = gsl_vector_get(eval, 2);
-
-              double eT = e1+e2+e3;
-
-              double P1 = e1/eT;
-              double P2 = e2/eT;
-              double P3 = e3/eT;
-
-              double P1l3 = log3(P1);
-              double P2l3 = log3(P2);
-              double P3l3 = log3(P3);
-
-              // If a Pn value is small enough, the log value will be NaN.
-              // In this case, the value of -Pn*log3(Pn) is supposed to be
-              // zero - we have to force it.
-              entropy[j] =
-                  (meta_is_valid_double(P1l3) ? -P1*P1l3 : 0) +
-                  (meta_is_valid_double(P2l3) ? -P2*P2l3 : 0) +
-                  (meta_is_valid_double(P3l3) ? -P3*P3l3 : 0);
-
-              // mathematically, entropy is limited to be between 0 and 1.
-              // however it sometimes is just a bit out of that range due
-              // to numerical anomalies
-              if (!meta_is_valid_double(entropy[j]))
-                entropy[j] = 0.0;
-              else if (entropy[j] < 0)
-                entropy[j] = 0.0;
-              else if (entropy[j] > 1)
-                entropy[j] = 1.0;
-
-              if (e2+e3 != 0)
-                anisotropy[j] = (e2-e3)/(e2+e3);
-              else
-                anisotropy[j] = 0;
-
-              // as for entropy, anisotropy is limited to be between 0 and 1.
-              // guard against numerical anomalies (usually this is due to
-              // one really big eigenvalue)
-              if (!meta_is_valid_double(anisotropy[j]))
-                anisotropy[j] = 0.0;
-              else if (anisotropy[j] < 0)
-                anisotropy[j] = 0.0;
-              else if (anisotropy[j] > 1)
-                anisotropy[j] = 1.0;
-
-              // calculate the "mean alpha" (mean scattering angle)
-              // this is the polar angle when expressing each eigenvector
-              // in spherical coordinates.  the mean alpha is weighted by
-              // the eigenvector (so weight by P1-3)
-              double alpha1 = calc_alpha(gsl_matrix_complex_get(evec, 0, 0));
-              double alpha2 = calc_alpha(gsl_matrix_complex_get(evec, 0, 1));
-              double alpha3 = calc_alpha(gsl_matrix_complex_get(evec, 0, 2));
-
-              alpha[j] = R2D*(P1*alpha1 + P2*alpha2 + P3*alpha3);
-              if (!meta_is_valid_double(alpha[j]))
-                alpha[j] = 0.0;
-          }
-
-          if (entropy_band >= 0)
-            put_band_float_line(fout, outMeta, entropy_band, i, entropy);
-          if (anisotropy_band >= 0)
-            put_band_float_line(fout, outMeta, anisotropy_band, i, anisotropy);
-          if (alpha_band >= 0)
-            put_band_float_line(fout, outMeta, alpha_band, i, alpha);
-
-          if (class_band >= 0) {
-            assert(classifier != NULL);
-            for (j=0; j<ns; ++j) {
-              buf[j] = (float)classify(classifier, entropy[j], anisotropy[j],
-                                       alpha[j]);
-            }
-            put_band_float_line(fout, outMeta, class_band, i, buf);
-          }
-
-          if (debug_band >= 0) {
-            put_band_float_line(fout, outMeta, debug_band+0, i, coh11);
-            put_band_float_line(fout, outMeta, debug_band+1, i, coh22);
-            put_band_float_line(fout, outMeta, debug_band+2, i, coh33);
-            put_band_float_line(fout, outMeta, debug_band+3, i, coh12_r);
-            put_band_float_line(fout, outMeta, debug_band+4, i, coh12_i);
-            put_band_float_line(fout, outMeta, debug_band+5, i, coh13_r);
-            put_band_float_line(fout, outMeta, debug_band+6, i, coh13_i);
-            put_band_float_line(fout, outMeta, debug_band+7, i, coh23_r);
-            put_band_float_line(fout, outMeta, debug_band+8, i, coh23_i);
-          }
-
-          for (j=0; j<ns; ++j) {
-            int entropy_index = entropy[j]*(float)hist_height;
-            if (entropy_index<0) entropy_index=0;
-            if (entropy_index>hist_height-1) entropy_index=hist_height-1;
-            
-            int alpha_index = hist_height-1-alpha[j]/90.0*(float)hist_height;
-            if (alpha_index<0) alpha_index=0;
-            if (alpha_index>hist_height-1) alpha_index=hist_height-1;
-            
-            //printf("%10.1f %10.1f %5d %5d --> %4d\n",
-            //       entropy[j], alpha[j],
-            //       entropy_index, alpha_index,
-            //      ea_hist[entropy_index][alpha_index]+1);
-            if (anisotropy[j] > .5)
-              entropy_index += hist_height;
-            ea_hist[alpha_index][entropy_index] += 1;
-          }
-      }
+      // do any polarimetry that uses the coherence matrix
+      do_coherence_bands(entropy_band, anisotropy_band, alpha_band, class_band,
+                         img_rows, i, l, multi, chunk_size, T, eval, evec, ws,
+                         outMeta, fout, buf, classifier);
+                         
 
       // load the next row, if there are still more to go
       if (i<onl-1) {
@@ -1010,131 +1305,17 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0 || 
       class_band >= 0)
   {
+
     if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0)
       asfPrintStatus("Generating population histogram...\n");
     else
       asfPrintStatus("Generating population histogram and "
                      "classification map...\n");
 
-    // dump population graph
+    // dump population graph & class map
     int wide = strncmp_case(classFile,"cloude16",8) == 0;
     dump_ea_hist(outFile, ea_hist, wide);
-
-    // dump classified pop graph -- reuse the same ea_hist array,
-    // since we are done with the population graph
-    if (class_band >= 0) {
-      if (!wide) {
-        // non-wide: this is the Cloude-Pottier 8 classes case, where
-        // we use only half of the ea_hist array
-        for (i=0; i<hist_height; ++i) {
-          double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-          for (j=0; j<hist_height; ++j) {
-            int count = ea_hist[i][j] + ea_hist[i][j+hist_height];
-            if (j==0) {
-              ea_hist[i][j] = 0;
-            }
-            else if (count > 0) {
-              double entropy = (double)j/(double)hist_height;
-              ea_hist[i][j] = classify(classifier, entropy, 0, alpha);
-            }
-          }
-        }
-        // drawing the white border lines -- assumes look-up-tables use
-        // "255" as white.  (cloude8.lut)
-        int prev = -1;
-        for (i=0; i<hist_height; ++i) {
-          double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-          for (j=0; j<hist_height; ++j) {
-            double entropy = (double)j/(double)hist_height;
-            int curr = classify(classifier, entropy, 0, alpha);
-            if (j>0 && prev != curr)
-              ea_hist[i][j] = 255;
-            prev = curr;
-          }
-        }
-        prev = -1;
-        for (j=0; j<hist_height; ++j) {
-          double entropy = (double)j/(double)hist_height;
-          for (i=0; i<hist_height; ++i) {
-            double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-            int curr = classify(classifier, entropy, 0, alpha);
-            if (i>0 && prev != curr)
-              ea_hist[i][j] = 255;
-            prev = curr;
-          }
-        }
-        // if we have the file "ea_boundary.txt" in the share directory
-        // (this file can be generated by calling make_entropy_alpha_boundary()
-        // defined below, and exposed via asf_calpol)
-        add_boundary(ea_hist, FALSE);
-
-        dump_class_map(outFile, ea_hist, FALSE);
-      }
-      else {
-        // wide: this is the Cloude-Pottier 16 classes case, where
-        // we use the full (double-width) ea_hist array, the left half
-        // being the anisotropy=0 plane, the right half being the
-        // anisotropy=.5 plane (though we actually use .55 below to ensure
-        // we're definitely in the >.5 blocks -- .5 could possibly be
-        // classified in the (0,.5) range depending on use of <= vs < above,
-        // roundoff, etc)
-        for (i=0; i<hist_height; ++i) {
-          double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-          for (j=0; j<hist_height*2; ++j) {
-            int count = ea_hist[i][j];
-            if (j==0) {
-              ea_hist[i][j] = 0;
-            }
-            else if (j == hist_height) {
-              ea_hist[i][j] = 255;
-            }
-            else if (count > 0) {
-              double entropy = j > hist_height ?
-                (double)(j-hist_height)/(double)hist_height :
-                (double)j/(double)hist_height;
-              double aniso = j > hist_height ? 0.55 : 0.0;
-              ea_hist[i][j] = classify(classifier, entropy, aniso, alpha);
-            }
-          }
-        }
-        // drawing the white border lines -- assumes look-up-tables use
-        // "255" as white.  (cloude16.lut)
-        int prev = -1;
-        for (i=0; i<hist_height; ++i) {
-          double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-          for (j=0; j<hist_height*2; ++j) {
-            double entropy = j > hist_height ?
-              (double)(j-hist_height)/(double)hist_height :
-              (double)j/(double)hist_height;
-            double aniso = j > hist_height ? 0.55 : 0.0;
-            int curr = classify(classifier, entropy, aniso, alpha);
-            if (j>0 && prev != curr)
-              ea_hist[i][j] = 255;
-            prev = curr;
-          }
-        }
-        prev = -1;
-        for (j=0; j<hist_height*2; ++j) {
-          double entropy = j > hist_height ?
-            (double)(j-hist_height)/(double)hist_height :
-            (double)j/(double)hist_height;
-          double aniso = j > hist_height ? 0.55 : 0.0;
-          for (i=0; i<hist_height; ++i) {
-            double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-            int curr = classify(classifier, entropy, aniso, alpha);
-            if (i>0 && prev != curr)
-              ea_hist[i][j] = 255;
-            prev = curr;
-          }
-        }
-        // if we have the file "ea_boundary.txt" in the share directory
-        // (this file can be generated by calling make_entropy_alpha_boundary()
-        // defined below, and exposed via asf_calpol)
-        add_boundary(ea_hist, TRUE);
-
-        dump_class_map(outFile, ea_hist, TRUE);
-      }
-    }
+    do_class_map(classifier, class_band, wide, outFile);
   }
 
   gsl_vector_free(eval);
@@ -1148,19 +1329,6 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   fclose(fout);
 
   free(buf);
-  free(entropy);
-  free(anisotropy);
-  free(alpha);
-
-  FREE(coh11);
-  FREE(coh22);
-  FREE(coh33);
-  FREE(coh12_r);
-  FREE(coh12_i);
-  FREE(coh13_r);
-  FREE(coh13_i);
-  FREE(coh23_r);
-  FREE(coh23_i);
 
   free(out_img_name);
   free(in_img_name);
@@ -1176,28 +1344,32 @@ void cpx2classification(const char *inFile, const char *outFile,
 {
   if (tc_flag)
     polarimetric_decomp(inFile, outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-                        classFile, 1);
+                        -1,-1,-1,classFile, 1);
   else
     polarimetric_decomp(inFile, outFile,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-                        classFile, 0);
+                        -1,-1,-1,classFile, 0);
 }
 
 void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Sinclair decomposition channels\n");
   if (tc_flag)
-    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,1,2,3,NULL,-1);
+    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,1,2,3,-1,-1,-1,
+                        NULL,-1);
   else
-    polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,-1,-1,-1,0,1,2,NULL,-1);
+    polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,-1,-1,-1,0,1,2,-1,-1,-1,
+                        NULL,-1);
 }
 
 void cpx2pauli(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Pauli decomposition channels\n");
   if (tc_flag)
-    polarimetric_decomp(inFile,outFile,0,1,2,3,-1,-1,-1,-1,-1,-1,NULL,-1);
+    polarimetric_decomp(inFile,outFile,0,1,2,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+                        NULL,-1);
   else
-    polarimetric_decomp(inFile,outFile,-1,0,1,2,-1,-1,-1,-1,-1,-1,NULL,-1);
+    polarimetric_decomp(inFile,outFile,-1,0,1,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+                        NULL,-1);
 }
 
 void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag)
@@ -1226,15 +1398,17 @@ void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha.\n");
   if (tc_flag)
-    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,1,2,3,-1,-1,-1,NULL,-1);
+    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,1,2,3,-1,-1,-1,-1,-1,-1,
+                        NULL,-1);
   else 
-    polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,0,1,2,-1,-1,-1,NULL,-1);
+    polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,0,1,2,-1,-1,-1,-1,-1,-1,
+                        NULL,-1);
 }
 
-void cpx2debug(const char *inFile, const char *outFile)
+void cpx2freeman_durden(const char *inFile, const char *outFile)
 {
-  asfPrintStatus("\n\nCalculating EVERYTHING!\n");
-  polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,0,1,2,-1,-1,-1,"DEBUG",3);
+  polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,1,2,3,-1,-1,-1,0,1,2,
+                      NULL,-1);
 }
 
 static gsl_matrix *make_diag3(double e00, double e11, double e22)

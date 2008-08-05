@@ -2,7 +2,7 @@
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-c <classification file>]\n"\
-"          [-pauli] [-sinclair] [-make-feasible-boundary <size>] [-debug]\n"\
+"          [-pauli] [-sinclair] [-freeman] [-make-feasible-boundary <size>]\n"\
 "          <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -29,10 +29,14 @@
 "       band 2: 2*HV (rotated dihedral) [Pauli green]\n"\
 "       band 3: HH + VV (odd bounce) [Pauli blue]\n\n"\
 "     When used with the -sinclair option, the output is a 3-band image:\n"\
-"       band 1: HH [Sinclair red]\n"\
-"       band 2: (HV+VH)/2 [Sinclair green]\n"\
-"       band 3: VV [Sinclair blue]\n\n"\
-"     With the -debug option, debug bands are added.\n\n"
+"       band 0: HH [Sinclair red]\n"\
+"       band 1: (HV+VH)/2 [Sinclair green]\n"\
+"       band 2: VV [Sinclair blue]\n\n"\
+"     When used with the -freeman option, the output is a 3-band image with\n"\
+"     the three Freeman-Durden bands:\n"\
+"       band 0: Ps (single-bounce, Freeman-Durden Red)\n"\
+"       band 1: Ps (double-bounce, Freeman-Durden Green\n"\
+"       band 3: Pv (volume scatterer, Freeman-Durden Blue\n\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"
@@ -48,15 +52,19 @@
 "          or in the ASF share directory.\n\n"\
 "          cloude8.cla and cloude16.cla are available for producing\n"\
 "          Cloude-Pottier 8 and 16 class classifications.\n"\
-"          Cannot be used with -sinclair or -pauli.\n"\
+"          Cannot be used with -sinclair, -pauli, or -freeman\n"\
 "\n"\
 "     -pauli, -p\n"\
 "          Outputs bands required to generate the Pauli decomposition.\n"\
-"          Cannot be used with -c or -sinclair.\n"\
+"          Cannot be used with -c, -freeman, or -sinclair.\n"\
 "\n"\
 "     -sinclair, -s\n"\
 "          Outputs bands required to generate the Sinclair decomposition.\n"\
-"          Cannot be used with -c or -pauli.\n"\
+"          Cannot be used with -c, -freeman, or -pauli.\n"\
+"\n"\
+"     -freeman, -f\n"\
+"          Outputs bands required to generate the Freeman/Durden\n"\
+"          decomposition.  Cannot be used with -c, -sinclair, or -pauli.\n"\
 "\n"\
 "     -make-feasible-boundary <size>\n"\
 "          This is an option generally used internally only.\n\n"\
@@ -162,6 +170,7 @@ main (int argc, char *argv[])
   int debug = extract_flag_options(&argc,&argv,"-debug","-d",NULL);
   int pauli = extract_flag_options(&argc,&argv,"-pauli","-p",NULL);
   int sinclair = extract_flag_options(&argc,&argv,"-sinclair","-s",NULL);
+  int freeman = extract_flag_options(&argc,&argv,"-freeman","-f",NULL);
 
   int sz;
   int make_boundary_file =
@@ -182,8 +191,9 @@ main (int argc, char *argv[])
     }
   }
 
-  if (classify + pauli + sinclair > 1) {
-    asfPrintError("Use only one of the -pauli, -sinclair, or -c options.\n");
+  if (classify + pauli + sinclair + freeman > 1) {
+    asfPrintError("Use only one of the -pauli, -sinclair, -freeman "
+                  "or -c options.\n");
   }
 
   if (argc<=1)
@@ -215,10 +225,11 @@ main (int argc, char *argv[])
   outFile = argv[currArg+1];
 
   if (debug) {
-    cpx2debug(inFile,outFile);
+    asfPrintError("Debug mode no longer available.\n");
+    //cpx2debug(inFile,outFile);
   }
   else if (classify) {
-    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                         classFile,1);    
   }
   else if (pauli) {
@@ -227,8 +238,11 @@ main (int argc, char *argv[])
   else if (sinclair) {
     cpx2sinclair(inFile,outFile,FALSE);
   }  
+  else if (freeman) {
+    cpx2freeman_durden(inFile,outFile);
+  }  
   else {
-    polarimetric_decomp(inFile,outFile,0,1,2,3,4,5,6,7,8,9,NULL,-1);
+    polarimetric_decomp(inFile,outFile,0,1,2,3,4,5,6,7,8,9,-1,-1,-1,NULL,-1);
   }
 
 
