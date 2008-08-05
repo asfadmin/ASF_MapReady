@@ -674,9 +674,18 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                                output_format_t output_format, char *out_dir)
 {
     char in_file[1024], out_file[1024], del_files[1024];
-    char export_path[2048], tmp_basename[1024], tmp_folder[256];
+    char export_path[2048], tmp_folder[256];
     struct INPUT_ARDOP_PARAMS *params_in;
-    char *band_name[1];
+    char **band_name;
+    int band_count = 0;
+
+    // FIXME: The following should be command line parameters to create_thumbs and passed along...
+    int true_color = 0;
+    int false_color = 1;
+    int rgb = 1;
+    int red_channel = 3;    // Index 3 is the 4th band, i.e. indices 0-3 are channels 1-4, for false color
+    int green_channel = 2;  // Index 2 is the 3rd band
+    int blue_channel = 1;   // Index 1 is the 2nd band
 
     time_t t;
     char t_stamp[32];
@@ -747,7 +756,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             if (strncmp(md->general->bands, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0) {
                 asfPrintError("Bad Level 0 STF import ...band name list is unpopulated\n");
             }
+            band_name = (char **)MALLOC(sizeof(char*));
             band_name[0] = (char *)MALLOC(strlen(md->general->bands) * sizeof(char));
+            band_count = 1;
             strcpy(band_name[0], md->general->bands);
             meta_free(md);
             if (saveMetadataFlag) {
@@ -816,7 +827,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             if (strncmp(md->general->bands, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0) {
                 asfPrintError("Bad Level 0 STF import ...band name list is unpopulated\n");
             }
+            band_name = (char **)MALLOC(sizeof(char*));
             band_name[0] = (char *)MALLOC(strlen(md->general->bands) * sizeof(char));
+            band_count = 1;
             strcpy(band_name[0], md->general->bands);
             meta_free(md);
             if (saveMetadataFlag) {
@@ -864,6 +877,63 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)file,        /* input basename         */
                        out_file);           /* output basename        */
+            char *out_meta = appendExt(out_file, ".meta");
+            meta_parameters *md = meta_read(out_meta);
+            if (md->general->band_count < 1 || md->general->band_count > 4) {
+                asfPrintError("Bad band count (%d).\n",
+                              md->general->band_count);
+            }
+            if (strncmp(md->general->bands, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0) {
+                asfPrintError("Bad AVNIR-2 Level 0 import ...band name list is unpopulated\n");
+            }
+            band_count = md->general->band_count;
+            band_name = (char **)MALLOC(md->general->band_count * sizeof(char*));
+            char **tmp_band_name = extract_band_names(md->general->bands, md->general->band_count);
+            int band;
+            printf("\nFound bands: ");
+            for (band=0;band<band_count;band++) {
+                band_name[band] = (char *)MALLOC(256 * sizeof(char));
+            }
+            if (rgb && !(true_color || false_color)) {
+                if (band_count < 3) {
+                    asfPrintError("Not enough bands for a color image.\n");
+                }
+                strcpy(band_name[0], tmp_band_name[red_channel]);
+                strcpy(band_name[1], tmp_band_name[green_channel]);
+                strcpy(band_name[2], tmp_band_name[blue_channel]);
+            }
+            else if (true_color) {
+                if (band_count < 3) {
+                    asfPrintError("Not enough bands for a color image.\n");
+                }
+                strcpy(band_name[0], tmp_band_name[2]);
+                strcpy(band_name[1], tmp_band_name[1]);
+                strcpy(band_name[2], tmp_band_name[0]);
+            }
+            else if (false_color) {
+                if (band_count < 4) {
+                    asfPrintError("Not enough bands for a false-color image.\n");
+                }
+                strcpy(band_name[0], tmp_band_name[3]);
+                strcpy(band_name[1], tmp_band_name[2]);
+                strcpy(band_name[2], tmp_band_name[1]);
+            }
+            else {
+                int i;
+                for (i = 0; i < band_count; i++) {
+                    strcpy(band_name[i], tmp_band_name[i]);
+                }
+            }
+            for (band = 0; band < band_count; band++) {
+                if (band < band_count - 1) {
+                    printf("%s, ", tmp_band_name[band]);
+                }
+                else {
+                    printf("%s", tmp_band_name[band]);
+                }
+            }
+            printf("\n\n");
+            meta_free(md);
             if (saveMetadataFlag) {
                 char cmd[1024];
 
@@ -884,8 +954,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     if (L0Flag == ceos || L0Flag == stf) {
         // Run range-doppler algorithm on the raw data
         strcpy(in_file, out_file);
-        sprintf(out_file, "%s%c%s_%s_ardop", tmp_folder, DIR_SEPARATOR,
-                tmp_basename, get_basename(file));
+        sprintf(out_file, "%s%c%s_ardop", tmp_folder, DIR_SEPARATOR, get_basename(file));
         asfPrintStatus("Ardop from\n    %s\n      to\n    %s\n", in_file, out_file);
         // get_input_ardop_params_struct() does not read the .in file.  It creates a new struct,
         // populates in/out filenames, sets status and CALPRMS to blank and "NO" respectively, and all
@@ -916,8 +985,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         char del_files2[1024];
         sprintf(del_files2, "%s_cpx", out_file); // Save these filenames for later deletion
         sprintf(in_file, "%s_amp", out_file);
-        sprintf(out_file, "%s%c%s_%s_gr", tmp_folder, DIR_SEPARATOR,
-                tmp_basename, get_basename(file));
+        sprintf(out_file, "%s%c%s_gr", tmp_folder, DIR_SEPARATOR, get_basename(file));
         asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
         sr2gr(in_file, out_file);
         if (saveMetadataFlag) {
@@ -935,8 +1003,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
     // Resample image
     strcpy(in_file, out_file);
-    sprintf(out_file, "%s%c%s_%s_resample", tmp_folder, DIR_SEPARATOR,
-            tmp_basename, get_basename(file));
+    sprintf(out_file, "%s%c%s_resample", tmp_folder, DIR_SEPARATOR, get_basename(file));
     meta_parameters *meta = meta_read(in_file);
     double xsf, ysf;
     if (scale_factor > 0.0) {
@@ -957,7 +1024,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     if (saveMetadataFlag) {
         char *out_base = appendExt(out_file, "");
         char cmd[1024];
-        sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
+        //sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
+        sprintf(cmd, "cp -f %s* %s", out_base, out_dir);
         asfSystem(cmd);
         FREE(out_base);
     }
@@ -970,8 +1038,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     // FIXME: Support flipping of JAXA L0 (AVNIR-2 Level 0) files as well ...
     if (L0Flag == ceos || L0Flag == stf) {
         strcpy(in_file, out_file);
-        sprintf(out_file, "%s%c%s_%s_resample_flip", tmp_folder, DIR_SEPARATOR,
-                tmp_basename, get_basename(file));
+        sprintf(out_file, "%s%c%s_resample_flip", tmp_folder, DIR_SEPARATOR, get_basename(file));
         asfPrintStatus("Flipping to north-up orientation from\n    %s\n      to\n    %s\n", in_file, out_file);
         flip_to_north_up(in_file, out_file);
         if (saveMetadataFlag) {
@@ -1010,7 +1077,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     if (L0Flag == jaxa_l0) {
         asf_export_bands(output_format,
                          SIGMA,
-                         0 /*rgb*/,
+                         1 /*rgb - must be true if true-color or false-color is set*/,
                          0 /*true_color*/,
                          1 /*false_color*/,
                          0 /*pauli*/,
@@ -1051,7 +1118,11 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         sprintf(del_files, "rm -f %s*_thumb*meta", basename);
     }
     asfSystem(del_files);
-    FREE(band_name[0]);
+    int band;
+    for (band = 0; band < band_count; band++) {
+        FREE(band_name[band]);
+    }
+    FREE(band_name);
 }
 
 // Checks to see if a DATA file is an STF Level 0 file

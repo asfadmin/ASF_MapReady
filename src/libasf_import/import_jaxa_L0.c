@@ -113,7 +113,7 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         char *out_file;
 
         tmp_filename1 = appendExt(outBaseName, ""); // Strips extension but keeps path info
-        sprintf(tmp_filename2, "%s_L0", tmp_filename1); // Append Level 0 indication
+        sprintf(tmp_filename2, "%s", tmp_filename1); // Append Level 0 indication
         out_file = appendExt(tmp_filename2, ".img"); // Append a .img extension
         FREE(tmp_filename1);
 
@@ -182,8 +182,8 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         mg->start_sample = 0;
 //        mg->line_scaling = 1.0;
 //        mg->sample_scaling = 1.0;
-        mg->x_pixel_size = MAGIC_UNSET_DOUBLE;  // FIXME
-        mg->y_pixel_size = MAGIC_UNSET_DOUBLE; // FIXME
+        mg->x_pixel_size = 10.0;  // FIXME This needs to be derived from VCID 32 (I believe)
+        mg->y_pixel_size = 10.0; // FIXME  Ditto...
         mg->center_latitude = MAGIC_UNSET_DOUBLE; // FIXME
         mg->center_longitude = MAGIC_UNSET_DOUBLE; // FIXME
         mg->re_major = MAGIC_UNSET_DOUBLE; // FIXME
@@ -597,7 +597,7 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     concat_avnir_band_chunks(num_green_chunks, (const char **)green_chunks, green_all_chunks, JL0_GREEN_BAND);
     asfPrintStatus("\nBlue... ");
     concat_avnir_band_chunks(num_blue_chunks,  (const char **)blue_chunks,  blue_all_chunks,  JL0_BLUE_BAND);
-    asfPrintStatus("\nNear-Infrared");
+    asfPrintStatus("\nNear-Infrared...");
     concat_avnir_band_chunks(num_nir_chunks,   (const char **)nir_chunks,   nir_all_chunks,   JL0_NIR_BAND);
 
     asfPrintStatus("\nPerforming time-synchronized ingest of embedded AVNIR-2 jpeg-format\n"
@@ -1434,7 +1434,7 @@ int concat_img_files(char **img_files, int num_files, int sample_count, const ch
 
     // Determine max number of lines that can be read from all files
     for (i = 0, tot_lines = INT_MAX; i < num_files; i++) {
-        asfPrintStatus("Determining line count in %s\n", img_files[i]);
+        asfPrintStatus("Determining line count in:\n  %s\n", img_files[i]);
         lines[i] = 0;
         file[i] = (FILE *)FOPEN(img_files[i], "rb");
         lines[i] += fread(buf, sizeof_buf, 1, file[i]);

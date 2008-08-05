@@ -820,7 +820,7 @@ export_band_image (const char *metadata_file_name,
   map_projected = is_map_projected(md);
 
   asfRequire( !(look_up_table_name == NULL &&
-		sample_mapping == TRUNCATE &&
+        sample_mapping == TRUNCATE &&
                 (md->general->radiometry == r_SIGMA ||
                  md->general->radiometry == r_BETA  ||
                  md->general->radiometry == r_GAMMA)
@@ -860,10 +860,16 @@ export_band_image (const char *metadata_file_name,
       initialize_png_file(output_file_name, md, &opng, &png_ptr,
           &png_info_ptr, rgb);
     }
-    int ignored[3] = {0, 0, 0};
-    int red_channel=-1, green_channel=-1, blue_channel=-1;
-    for (ii=0; ii<3; ii++) {
-      ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
+    int ignored[4] = {0, 0, 0, 0};
+    int red_channel=-1, green_channel=-1, blue_channel=-1, nir_channel=-1;
+    for (ii = 0; ii < 4; ii++) {
+        if (ii < md->general->band_count - 1) {
+            ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
+        }
+        else {
+            // Ignore bands that exceed band count
+            ignored[ii] = 1;
+        }
     }
 
     // these are used only in the sinclair decompositions
@@ -1428,6 +1434,9 @@ export_band_image (const char *metadata_file_name,
       // stats functions.  If true_color or false_color are selected, then sample_mapping
       // should NOT be HISTOGRAM_EQUALIZE in particular and should always be set
       // to SIGMA
+      if (sample_mapping == NONE && (true_color || false_color)) {
+          sample_mapping = SIGMA;
+      }
       if (sample_mapping != SIGMA) {
         asfPrintWarning("Cannot combine true or false color options with sample mappings\n"
             "other than 2-sigma.  You selected %s.  Defaulting to 2-sigma...\n",
