@@ -1074,6 +1074,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     create_and_set_tmp_dir(cfg->general->in_name, cfg->general->out_name,
                            cfg->general->tmp_dir);
+    save_intermediate(cfg, "Temp Dir", cfg->general->tmp_dir);
 
     // Check that input name isn't the same as the output name
     // (This can happen with CEOS Level 0-- both use .raw)

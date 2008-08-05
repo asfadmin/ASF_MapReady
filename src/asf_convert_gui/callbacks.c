@@ -377,12 +377,45 @@ export_checkbutton_toggle()
 
     update_all_extensions();
 }
+/*
+static int confirm_quit()
+{
+    GtkWidget *dialog = gtk_dialog_new_with_buttons( "Confirm Exit",
+        NULL,
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_STOCK_YES,
+        GTK_RESPONSE_ACCEPT,
+        GTK_STOCK_NO,
+        GTK_RESPONSE_REJECT,
+        NULL);
+
+    GtkWidget *label = gtk_label_new("Do You Really Want To Quit?");
+
+    g_signal_connect_swapped(dialog,
+        "response",
+        G_CALLBACK(gtk_widget_destroy),
+        dialog);
+
+    gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dialog)->vbox), label);
+
+    // Seems that sometimes the message box ends up hidden behind other
+    // windows... this might bring it to the front
+    gtk_window_present(GTK_WINDOW(dialog));
+
+    int ret = gtk_dialog_run(GTK_DIALOG(dialog));
+
+    return ret == GTK_RESPONSE_ACCEPT;
+}
+*/
 
 SIGNAL_CALLBACK void
 on_asf_convert_destroy(GtkWidget *widget, gpointer data)
 {
+  //if (confirm_quit()) {
     set_stop();
+    clear_completed_tmp_dirs();
     gtk_main_quit();
+  //}
 }
 
 #ifndef USE_GTK_22
@@ -576,6 +609,7 @@ on_input_data_type_power_activate(GtkWidget *widget)
 
 void clear_completed_tmp_dirs()
 {
+    asfPrintStatus("Removing temporary directories...\n");
     if (get_checked("rb_keep_temp")) {
         GtkTreeIter iter;
         gboolean valid = gtk_tree_model_get_iter_first(
@@ -588,7 +622,7 @@ void clear_completed_tmp_dirs()
                                COMP_COL_TMP_DIR, &tmp_dir, -1);
             
             if (tmp_dir && strlen(tmp_dir) > 0) {
-              printf("Removing: %s\n", tmp_dir);
+              asfPrintStatus("Removing: %s\n", tmp_dir);
               remove_dir(tmp_dir);
             }
             

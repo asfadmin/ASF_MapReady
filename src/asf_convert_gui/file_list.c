@@ -244,7 +244,7 @@ static char *build_band_list(const char *file)
 
         free_ceos_names(dataName, NULL);
         FREE(s);
-  FREE(baseName);
+        FREE(baseName);
 
         return ret;
     }
@@ -304,10 +304,10 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
         get_intermediate(line, "Layover/Shadow Mask", &layover_mask);
         get_intermediate(line, "Clipped DEM", &clipped_dem);
         get_intermediate(line, "Simulated SAR", &simulated_sar);
-        get_intermediate(line, "Temp Dir", &simulated_sar);
+        get_intermediate(line, "Temp Dir", &tmp_dir);
       }
+      fclose(fp);
     }
-    fclose(fp);
 
     if (!layover_mask) layover_mask = STRDUP("");
     if (!clipped_dem) clipped_dem = STRDUP("");
