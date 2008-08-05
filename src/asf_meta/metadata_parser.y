@@ -478,6 +478,8 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normally go in the sar block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "sar") ) {
+    int ii;
+    char coeff[15];
     if ( !strcmp(field_name, "polarization") )
       { strcpy(MSAR->polarization, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "image_type") ) {
@@ -592,6 +594,11 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->pulse_duration = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "range_samp_rate") )
       { MSAR->range_sampling_rate = VALP_AS_DOUBLE; return; }
+    for (ii=0; ii<6; ii++) {
+      sprintf(coeff, "incid_a(%d)", ii);
+      if ( !strcmp(field_name, coeff) )
+      { MSAR->incid_a[ii] = VALP_AS_DOUBLE; return; }
+    }
 }
 
   /* Fields which normally go in the optical block of the metadata file.  */
@@ -919,10 +926,11 @@ void fill_structure_field(char *field_name, void *valp)
       if ( !strcmp(field_name, "origin lon") )
     { MTRANSFORM->origin_lon = VALP_AS_DOUBLE; return; }
     }
+    // Deprecated in the transform block - Read in for SAR block
     for (ii=0; ii<6; ii++) {
       sprintf(coeff, "incid_a(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-      { MTRANSFORM->incid_a[ii] = VALP_AS_DOUBLE; return; }
+      { MSAR->incid_a[ii] = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii<10; ii++) {
       sprintf(coeff, "map_a(%d)", ii);

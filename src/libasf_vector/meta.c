@@ -178,6 +178,8 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
         asfPrintError("Could not add no data to database file\n");
     }
     if (meta->sar) {
+      int kk;
+      char header[12];
       if (strcmp(dbf[ii].header, "meta.sar.image_type") == 0 && 
 	  dbf[ii].visible) {
 	if (DBFAddField(dbase, "Image_type", FTString, 25, 0) == -1)
@@ -344,6 +346,14 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
         if (DBFAddField(dbase, "Yaw", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add yaw to database file\n");
       }
+      else if (strcmp(dbf[ii].header, "meta.sar.incid_a") == 0 &&
+	       dbf[ii].visible) {
+        for (kk=0; kk<6; kk++) {
+          sprintf(header, "Incid_a[%d]", kk+1);
+          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
+            asfPrintError("Could not add incidence angle to database file\n");
+        }
+      }
     }
     if (meta->optical) {
       if (strcmp(dbf[ii].header, "meta.optical.pointing_direction") == 0 &&
@@ -433,14 +443,6 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
           sprintf(header, "S[%d]", kk+1);
           if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
             asfPrintError("Could not add parameter s to database file\n");
-        }
-      }
-      else if (strcmp(dbf[ii].header, "meta.transform.incid_a") == 0 &&
-	       dbf[ii].visible) {
-        for (kk=0; kk<6; kk++) {
-          sprintf(header, "Incid_a[%d]", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add incidence angle to database file\n");
         }
       }
     }
@@ -1019,6 +1021,8 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       strcat(header, "No_data,");
     // SAR block
     if (meta->sar) {
+      int kk;
+      char str[12];
       if (strcmp(dbf[ii].header, "meta.sar.image_type") == 0 &&
           dbf[ii].visible)
         strcat(header, "Image_type,");
@@ -1121,6 +1125,13 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       else if (strcmp(dbf[ii].header, "meta.sar.yaw") == 0 &&
                dbf[ii].visible)
         strcat(header, "Yaw,");
+      else if (strcmp(dbf[ii].header, "meta.sar.incid_a") == 0 &&
+               dbf[ii].visible) {
+        for (kk=0; kk<6; kk++) {
+          sprintf(str, "Incid_a[%d],", kk+1);
+          strcat(header, str);
+        }
+      }
     }
     // Optical block
     if (meta->optical) {
@@ -1188,13 +1199,6 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
                dbf[ii].visible) {
         for (kk=0; kk<n; kk++) {
           sprintf(str, "S[%d],", kk+1);
-          strcat(header, str);
-        }
-      }
-      else if (strcmp(dbf[ii].header, "meta.transform.incid_a") == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<6; kk++) {
-          sprintf(str, "Incid_a[%d],", kk+1);
           strcat(header, str);
         }
       }
@@ -1989,13 +1993,6 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
                dbf[ii].visible) {
         for (kk=0; kk<meta->transform->parameter_count; kk++) {
           sprintf(str, "%s,", lf(meta->transform->s[kk]));
-          strcat(line, str);
-        }
-      }
-      else if (strcmp(dbf[ii].header, "meta.transform.incid_a") == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<6; kk++) {
-          sprintf(str, "%s,", lf(meta->transform->incid_a[kk]));
           strcat(line, str);
         }
       }
@@ -2842,6 +2839,7 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
     
     // SAR block
     if (meta->sar) {
+      int kk;
       char str[12];
       if (strcmp(dbf[ii].header, "meta.sar.image_type") == 0 &&
 	  dbf[ii].visible) {
@@ -3026,6 +3024,14 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
         DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->yaw);
         field++;
       }
+      else if (strcmp(dbf[ii].header, "meta.sar.incid_a") == 0 &&
+               dbf[ii].visible) {
+        for (kk=0; kk<6; kk++) {
+          DBFWriteDoubleAttribute(dbase, 0, field,
+				  meta->sar->incid_a[kk]);
+	  field++;
+	}
+      }
     }
   }
   for (ii=0; ii<nCols; ii++) {
@@ -3125,14 +3131,6 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
                dbf[ii].visible) {
         for (kk=0; kk<meta->transform->parameter_count; kk++) {
           DBFWriteDoubleAttribute(dbase, 0, field, meta->transform->s[kk]);
-	  field++;
-	}
-      }
-      else if (strcmp(dbf[ii].header, "meta.transform.incid_a") == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<6; kk++) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
-				  meta->transform->incid_a[kk]);
 	  field++;
 	}
       }

@@ -189,16 +189,16 @@ double meta_incid(meta_parameters *meta,double y,double x)
 
   double sr = meta_get_slant(meta,y,x);
 
-  if (meta->transform) {
+  if (meta->sar->incid_a[0] != MAGIC_UNSET_DOUBLE) {
     double R = sr/1000.;
     double R2=R*R;
     return
-      meta->transform->incid_a[0] +
-      meta->transform->incid_a[1] * R +
-      meta->transform->incid_a[2] * R2 +
-      meta->transform->incid_a[3] * R2 * R +
-      meta->transform->incid_a[4] * R2 * R2 +
-      meta->transform->incid_a[5] * R2 * R2 * R;
+      meta->sar->incid_a[0] +
+      meta->sar->incid_a[1] * R +
+      meta->sar->incid_a[2] * R2 +
+      meta->sar->incid_a[3] * R2 * R +
+      meta->sar->incid_a[4] * R2 * R2 +
+      meta->sar->incid_a[5] * R2 * R2 * R;
 
   } else {
     double er = meta_get_earth_radius(meta,y,x);

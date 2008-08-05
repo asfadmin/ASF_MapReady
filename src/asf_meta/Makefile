@@ -138,7 +138,7 @@ all: asf_meta
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
 	cp asf_meta.h get_ceos_names.h get_stf_names.h gamma.h meta_init_stVec.h \
-		meta_project.h frame_calc.h dateUtil.h \
+		meta_project.h frame_calc.h dateUtil.h calibrate.h \
 		$(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)

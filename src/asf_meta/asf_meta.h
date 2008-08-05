@@ -26,6 +26,7 @@
 #include "ddr.h"
 #include "geolocate.h"    /* For stateVector.  */
 #include "ceos.h"
+#include "calibrate.h"
 #include "get_ceos_names.h"
 #include "asf_complex.h"
 #include "libasf_proj.h"
@@ -34,7 +35,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 2.7
+#define META_VERSION 2.8
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -90,17 +91,6 @@ typedef enum {
   SIMULATED_IMAGE,
   MASK
 } image_data_type_t;
-
-typedef enum {
-  r_AMP=1,
-  r_SIGMA,
-  r_BETA,
-  r_GAMMA,
-  r_SIGMA_DB,
-  r_BETA_DB,
-  r_GAMMA_DB,
-  r_POWER
-} radiometry_t;
 
 typedef enum {
   STF=1,
@@ -232,6 +222,7 @@ typedef struct {
   double pitch;                        // version 2.7
   double roll;                         // version 2.7
   double yaw;                          // version 2.7
+  double incid_a[6];      // Transform coeffs for incid angle (sr to incid ang)
 } meta_sar;
 
 
@@ -271,7 +262,6 @@ typedef struct {
   double s[25];           // Transform coeffs for samples (lat/lon to s)
   double origin_lat;      // Origin latitude [degrees]
   double origin_lon;      // Origin longitude [degrees]
-  double incid_a[6];      // Transform coeffs for incid angle (sr to incid ang)
   double map2ls_a[10];    // Transform coeffs for map -> L/S (lat/lon to s)
   double map2ls_b[10];    // Transform coeffs for map -> L/S (lat/lon to l)
 } meta_transform;
@@ -372,6 +362,16 @@ typedef struct {
   double lon_end_far_range;      /* Longitude at image end in far range */
 } meta_location;
 
+// Calibration stuff -- introducted in version 2.8
+typedef struct {
+  cal_type type;
+  asf_cal_params *asf;
+  asf_scansar_cal_params *asf_scansar;
+  esa_cal_params *esa;
+  rsat_cal_params *rsat;
+  alos_cal_params *alos;
+} meta_calibration;
+
 
 /* DEPRECATED */
 /*Geo_parameters: These are used in geolocating the image.*/
@@ -430,6 +430,7 @@ typedef struct {
   meta_statistics    *stats;           // Can be NULL
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
   meta_location      *location;        // Can be NULL
+  meta_calibration   *calibration;     // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
@@ -814,4 +815,13 @@ int refine_slc_geolocation_from_workreport(const char *metaName,
                                            meta_parameters *meta,
                                            double *time_shift_adjustment,
                                            double *slant_shift_adjustment);
+
+// Calibration functions from cal_params.c
+quadratic_2d get_incid(char *sarName, meta_parameters *meta);
+cal_params *create_cal_params(const char *inSAR, meta_parameters *meta);
+float get_cal_dn(cal_params *cal, int line, int sample, float inDn, 
+		 int dbFlag);
+quadratic_2d find_quadratic(const double *out, const double *x,
+                            const double *y, int numPts);
+
 #endif

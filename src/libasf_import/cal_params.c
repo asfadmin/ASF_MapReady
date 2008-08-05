@@ -5,8 +5,9 @@ calibrate.*/
 
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "ceos.h"
-#include "calibrate.h"
+#include "asf_import.h"
 #include <assert.h>
 
 /**Harcodings to fix calibration of ASF data***
@@ -253,44 +254,11 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
     } 
     else 
       noise = rdr.noise;
-/*
-    int tab = TABLE;
-    asf->tablePix = ((meta->general->sample_count + (tab-1))/tab);
-    numLines = asf->numLines = meta->general->line_count;
-  
-    float noise_index=0, frac;
-    int index, base;
-    for (ii=0; ii<numLines; ++ii) {
-      for (kk=0; kk<TABLE; kk++) {
-        noise_index = (meta_look(meta, (float)ii,
-                                 (float)kk*asf->tablePix)*180.0/PI-16.3)*10.0;
-        base = kk + (ii/(numLines/tab)*tab);
-	//if (ii == 100 && kk == 0)
-        printf("ii: %d, kk: %d, lines: %d, noise index: %f, "
-               "base: %d\n", ii, kk, numLines, noise_index, base);
-        assert(base>=0);
-        assert(base<512);
-	// Clamp noise_index to within the noise table
-	if (noise_index <= 0)
-	  asf->noise[base] = noise[0];
-	else if (noise_index >= 255)
-	  asf->noise[base] = noise[255];
-	else {
-	  // Use linear interpolation on noise array
-	  index = (int)noise_index;
-	  frac = noise_index - index;
-	  asf->noise[base] = 
-	    noise[index] + frac*(noise[index+1] - noise[index]);
-	}
-      }
-    }
-*/
 
     asf->tablePix = 256;
     for (kk=0; kk<asf->tablePix; ++kk)
       asf->noise[kk] = noise[kk];
 
-    asf->meta = meta;
   }
   else if (strncmp(facilityStr, "ASF", 3)== 0 &&
            strncmp(processorStr, "FOCUS", 5) != 0)
@@ -407,7 +375,7 @@ float get_cal_dn(cal_params *cal, int line, int sample, float inDn, int dbFlag)
   double scaledPower, calValue, incidence_angle, invIncAngle;
   int x=line, y=sample;
   quadratic_2d q;
-  
+
   // Calculate incidence angle
   q = cal->incid;
   incidence_angle = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y + 
@@ -439,12 +407,11 @@ float get_cal_dn(cal_params *cal, int line, int sample, float inDn, int dbFlag)
   else if (cal->asf_scansar) { // ASF style ScanSar data
 
     asf_scansar_cal_params *p = cal->asf_scansar;
-    meta_parameters *meta = p->meta;
 
-    double er = meta_get_earth_radius(meta,line,sample);
-    double ht = meta_get_sat_height(meta,line,sample);
+    //double er = meta_get_earth_radius(meta,line,sample);
+    //double ht = meta_get_sat_height(meta,line,sample);
     //double incid2 = R2D*meta_incid(meta,line,sample);
-    double look = R2D*look_from_incid(incidence_angle*D2R,er,ht);
+    //double look = R2D*look_from_incid(incidence_angle*D2R,er,ht);
     //double look2 = R2D*look_from_incid(incid2*D2R,er,ht);
     //double look3 = R2D*meta_look(meta,line,sample);
     //if (fabs(look-look2)>.001)
@@ -458,6 +425,7 @@ float get_cal_dn(cal_params *cal, int line, int sample, float inDn, int dbFlag)
     else if (cal->radiometry == r_BETA || cal->radiometry == r_BETA_DB)
       invIncAngle = 1/sin(incidence_angle*D2R);
 
+    double look = 25.0; // FIXME: hack to get things compiled
     double index = (look-16.3)*10.0;
     double noiseValue;
     double *noise = p->noise;

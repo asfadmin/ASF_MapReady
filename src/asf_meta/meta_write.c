@@ -324,6 +324,15 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"range_samp_rate:",meta->sar->range_sampling_rate,
           "Range sampling rate [Hz]");
     }
+    if (META_VERSION >=2.8) {
+      int ii;
+      char coeff[15];
+      for (ii=0; ii<6; ++ii) {
+	sprintf(coeff, "incid_a(%d):", ii);
+	meta_put_double(fp, coeff, meta->sar->incid_a[ii],
+			"Incidence angle transformation parameter");
+      }
+    }
     meta_put_string(fp,"}","","End sar");
   }
 
@@ -623,11 +632,6 @@ void meta_write(meta_parameters *meta, const char *file_name)
               "Origin latitude [degrees]");
       meta_put_double(fp, "origin lon:", meta->transform->origin_lon,
               "Origin longitude [degrees]");
-    }
-    for (ii=0; ii<6; ++ii) {
-      sprintf(coeff, "incid_a(%d):", ii);
-      meta_put_double(fp, coeff, meta->transform->incid_a[ii],
-                      "Incidence angle transformation parameter");
     }
     for (ii=0; ii<10; ++ii) {
       sprintf(coeff, "map_a(%d):", ii);

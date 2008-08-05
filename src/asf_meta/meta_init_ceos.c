@@ -977,7 +977,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   struct VMPDREC *mpdr=NULL;
   char buf[50], basename[512];
   char **dataName=NULL, **metaName=NULL;
-  int nBands, trailer;
+  int ii, nBands, trailer;
 
   dssr = &ceos->dssr;
   mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
@@ -1091,6 +1091,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->earth_radius = mpdr->distplat;
     meta->sar->chirp_rate = get_chirp_rate(dataName[0]);
   }
+  for (ii=0; ii<6; ++ii)
+    meta->sar->incid_a[ii] = dssr->incid_a[ii];
 
   if (ceos->product == SLC) {
 
@@ -1161,7 +1163,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   // Transformation block
   if (ceos->product != SLC) {
-    int ii;
     struct trl_file_des_rec tfdr;
     get_tfdr((char*)in_fName, &tfdr);
     struct JAXA_FACDR facdr;
@@ -1201,9 +1202,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       meta->transform->origin_pixel = facdr.origin_pixel;
       meta->transform->origin_line = facdr.origin_line;
     }
-
-    for (ii=0; ii<6; ++ii)
-      meta->transform->incid_a[ii] = dssr->incid_a[ii];
 
     for (ii=0; ii<10; ++ii) {
       meta->transform->map2ls_a[ii] = facdr.a_map[ii];

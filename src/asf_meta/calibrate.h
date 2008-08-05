@@ -3,8 +3,16 @@
 #ifndef _calibrate_h_
 #define _calibrate_h_
 
-#include "asf_meta.h"
-#include "asf_import.h"
+typedef enum {
+  r_AMP=1,
+  r_SIGMA,
+  r_BETA,
+  r_GAMMA,
+  r_SIGMA_DB,
+  r_BETA_DB,
+  r_GAMMA_DB,
+  r_POWER
+} radiometry_t;
 
 typedef struct {
   double A,B,C,D,E,F,G,H,I,J,K;
@@ -29,7 +37,6 @@ typedef struct {
   double noise[256];  // noise values
   int tablePix;
   int numLines;
-  meta_parameters *meta;
 } asf_scansar_cal_params;
 
 typedef struct {
@@ -59,13 +66,5 @@ typedef struct {
   quadratic_2d incid;
   radiometry_t radiometry;
 } cal_params;
-
-// cal_params.c
-quadratic_2d get_incid(char *sarName, meta_parameters *meta);
-cal_params *create_cal_params(const char *inSAR, meta_parameters *meta);
-float get_cal_dn(cal_params *cal, int line, int sample, float inDn, 
-		 int dbFlag);
-quadratic_2d find_quadratic(const double *out, const double *x,
-                            const double *y, int numPts);
 
 #endif

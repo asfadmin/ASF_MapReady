@@ -23,7 +23,31 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
 {
   char outDataName[256], outMetaName[256];
 
-  asfPrintStatus("Importing: %s\n", inBaseName);
+  asfPrintStatus("   Importing: %s\n", inBaseName);
+
+  /*
+  printf("\nradiometry: %d\n", radiometry);
+  printf("db_flag: %d\n", db_flag);
+  printf("complex_flag: %d\n", complex_flag);
+  printf("multilook_flag: %d\n", multilook_flag);
+  printf("amp0_flag: %d\n", amp0_flag);
+  printf("format_type: %d\n", format_type);
+  printf("band_id: %s\n", band_id);
+  printf("data_type: %s\n", data_type);
+  printf("image_data_type: %s\n", image_data_type);
+  printf("lutName: %s\n", lutName);
+  printf("line: %d\n", line);
+  printf("sample: %d\n", sample);
+  printf("width: %d\n", width);
+  printf("height: %d\n", height);
+  printf("p_range_scale: %lf\n", &p_range_scale);
+  printf("p_azimuth_scale: %lf\n", &p_azimuth_scale);
+  printf("p_correct_y_pixel_size: %lf\n", &p_correct_y_pixel_size);
+  printf("apply_ers2_gain_fix: %d\n", apply_ers2_gain_fix);
+  printf("inMetaNameOption: %s\n", inMetaNameOption);
+  printf("inBaseName: %s\n", inBaseName);
+  printf("outBaseName: %s\n\n", outBaseName);
+  */
 
   strcpy(outDataName, outBaseName);
   strcpy(outMetaName, outBaseName);
@@ -145,6 +169,6 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintError("Unrecognized data format: '%d'\n",format_type);
   }
 
-  asfPrintStatus("Import complete.\n");
+  asfPrintStatus("Import complete.\n\n");
   return 0;
 }

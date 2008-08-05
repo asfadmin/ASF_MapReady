@@ -75,6 +75,8 @@ meta_general *meta_general_init(void)
  * sar structure */
 meta_sar *meta_sar_init(void)
 {
+  int ii;
+
   meta_sar *sar = (meta_sar *)MALLOC(sizeof(meta_sar));
 
   /* Fill with ludicrous values.  */
@@ -114,6 +116,9 @@ meta_sar *meta_sar_init(void)
   sar->pitch = MAGIC_UNSET_DOUBLE;
   sar->roll = MAGIC_UNSET_DOUBLE;
   sar->yaw = MAGIC_UNSET_DOUBLE;
+  for (ii=0; ii<6; ii++) {
+    sar->incid_a[ii] = MAGIC_UNSET_DOUBLE;
+  }
 
   return sar;
 }
@@ -187,9 +192,6 @@ meta_transform *meta_transform_init(void)
     map->s[ii] = MAGIC_UNSET_DOUBLE;
     map->map2ls_a[ii] = MAGIC_UNSET_DOUBLE;
     map->map2ls_b[ii] = MAGIC_UNSET_DOUBLE;
-  }
-  for (ii=0; ii<6; ii++) {
-    map->incid_a[ii] = MAGIC_UNSET_DOUBLE;
   }
 
   return map;

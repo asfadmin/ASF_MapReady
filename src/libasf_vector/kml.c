@@ -339,6 +339,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     }
     // SAR block
     if (meta->sar) {
+      int kk;
       if (check_meta_block("sar", dbf, nCols) && !sar_block) {
         fprintf(kml_file, "<br><strong>SAR</strong><br>\n");
         sar_block = TRUE;
@@ -456,6 +457,11 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       else if (strcmp(dbf[ii].header, "meta.sar.yaw") == 0)
         fprintf(kml_file, "%s<strong>Yaw</strong>: %s <br>%s",
                 begin, lf(meta->sar->yaw), end);
+      else if (strcmp(dbf[ii].header, "meta.transform.incid_a") == 0) {
+        for (kk=0; kk<6; kk++)
+          fprintf(kml_file, "%s<strong>incid_a(%d)</strong>: %s <br>%s",
+                  begin, kk, lf(meta->sar->incid_a[kk]), end);
+      }
     }
   }
   for (ii=0; ii<nCols; ii++) {
@@ -556,11 +562,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         for (kk=0; kk<meta->transform->parameter_count; kk++)
           fprintf(kml_file, "%s<strong>j(%d)</strong>: %s <br>%s",
                   begin, kk, lf(meta->transform->s[kk]), end);
-      }
-      else if (strcmp(dbf[ii].header, "meta.transform.incid_a") == 0) {
-        for (kk=0; kk<6; kk++)
-          fprintf(kml_file, "%s<strong>incid_a(%d)</strong>: %s <br>%s",
-                  begin, kk, lf(meta->transform->incid_a[kk]), end);
       }
     }
   }
