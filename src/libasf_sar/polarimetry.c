@@ -809,24 +809,87 @@ static int verify_fd(float hh2, float vv2, complexFloat hhvv, float fs,
 static void solve_fd1(float hh2, float vv2, complexFloat hhvv,
                       float *fs, float *fd, complexFloat *beta)
 {
-  // solve this for beta (b):
-  //  (1+b)*hh2 = (vv2 + hhvv)(|b*b|+b) - hhvv*(1+b)
+  // 3 equations with 3 unknowns: (complex)
+  //   |hh|^2 = fd + |b|^2 * fs
+  //   |vv|^2 = fs + fd
+  //   hh*conj(vv) = b*fs - fd
+  
+  // fs, fd are real.  beta (b) is complex.
+  // splitting beta into br and bi (real and imaginary)
+  // 4 equations and 4 unknown: (real)
+  //   |hh|^2 = fd + |b|^2 * fs
+  //   |vv|^2 = fs + fd
+  //   Re(hh*conj(vv)) = br*fs - fd
+  //   Im(hh*conj(vv)) = bi*fs
 
-  // then substitude to get fs & fd:
-  //   fs = (vv2 + hhvv)/(1+b)
-  //   fd = fs*b - hhvv
+  // For brevity:
+  float x = hhvv.real;
+  float y = hhvv.imag;
+  float h = hh2;
+  float v = vv2;
 
-  *fs = 0;
-  *fd = 0;
-  *beta = complex_zero();
+  // Analytic solution of the 4 equations & 4 unknowns:
+  //   fd = (-x^2 - y^2 + hv) / D1
+  //   br = (hx + v^2 + hv + 3xv + 2x^2) / D2 - 1
+  //   bi = D1 * y / D2
+  //   fs = D2 / D1
+  // where
+  //   D1 = h + v + 2x
+  //   D2 = v^2 + 2xv + x^2 + y^2
+  
+  float D1 = h + v + 2.*x;
+  float D2 = v*v + 2.*x*v + x*x + y*y;
+  
+  *fd = (h*v - x*x - y*y) / D1;
+  *fs = D2 / D1;
+     
+  float br = (h*x + v*v + h*v + 3.*x*v + 2.*x*x) / D2 - 1.;
+  float bi = D1 * y / D2;
+     
+  *beta = complex_new(br,bi);
 }
 
 static void solve_fd2(float hh2, float vv2, complexFloat hhvv,
                       float *fs, float *fd, complexFloat *alpha)
 {
-  *fs = 0;
-  *fd = 0;
-  *alpha = complex_zero();
+  // 3 equations with 3 unknowns: (complex)
+  //   |hh|^2 = fs + |a|^2 * fd
+  //   |vv|^2 = fs + fd
+  //   hh*conj(vv) = a*fd + fs
+  
+  // fs, fd are real.  alpha (a) is complex.
+  // splitting alpha into ar and ai (real and imaginary)
+  // 4 equations and 4 unknown: (real)
+  //   |hh|^2 = fs + |a|^2 * fd
+  //   |vv|^2 = fs + fd
+  //   Re(hh*conj(vv)) = ar*fd + fs
+  //   Im(hh*conj(vv)) = ai*fd
+
+  // For brevity:
+  float x = hhvv.real;
+  float y = hhvv.imag;
+  float h = hh2;
+  float v = vv2;
+
+  // Analytic solution of the 4 equations & 4 unknowns:
+  //   fs = (-x^2 - y^2 + hv) / D1
+  //   ar = (hx - v^2 - hv + 3xv - 2x^2) / D2 + 1
+  //   ai = D1 * y / D2
+  //   fd = D2 / D1
+  // where
+  //   D1 = h + v - 2x
+  //   D2 = v^2 - 2xv + x^2 + y^2
+  
+  float D1 = h + v - 2.*x;
+  float D2 = v*v - 2.*x*v + x*x + y*y;
+  
+  *fs = (h*v - x*x - y*y) / D1;
+  *fd = D2 / D1;
+     
+  float ar = (h*x - v*v - h*v + 3.*x*v - 2.*x*x) / D2 + 1.;
+  float ai = D1 * y / D2;
+     
+  *alpha = complex_new(ar,ai);
 }
 
 static void do_freeman(int band1, int band2, int band3,
@@ -900,15 +963,15 @@ static void do_freeman(int band1, int band2, int band3,
         // Re(Shh*conj(Svv))>0 ==> alpha=-1, solve for fs, fd and beta
         solve_fd1(hh2[j], vv2[j], hhvv[j], &fs, &fd, &beta);
         alpha = complex_new(-1, 0);
-
-        verify_fd(hh2[j], vv2[j], hhvv[j], fs, fd, alpha, beta);
       }
       else {
         // Re(Shh*conj(Svv))<0 ==> beta=1, solve for fs, fd and alpha
         solve_fd2(hh2[j], vv2[j], hhvv[j], &fs, &fd, &alpha);
         beta = complex_new(1, 0);
       }
-      //verify_fd(hh2[j], vv2[j], hhvv[j], fs, fd, alpha, beta);
+      
+      // double-check the solution
+      verify_fd(hh2[j], vv2[j], hhvv[j], fs, fd, alpha, beta);
       
       float b2 = complex_amp_sqr(beta);
       float a2 = complex_amp_sqr(alpha);
