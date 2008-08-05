@@ -27,7 +27,8 @@ OBJS  = caplib.o \
 	diagnostics.o \
 	matrix.o \
 	vector.o \
-	complex.o
+	complex.o \
+	solve1d.o
 
 CFLAGS += $(shell \
 	if [ "$(SYS)x" != "solarisx" ]; \

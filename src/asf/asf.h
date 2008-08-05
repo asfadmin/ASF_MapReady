@@ -287,6 +287,11 @@ void asfStopWatchDog();
 /* Print the commandline captured, date, and PID to screen & logfile */
 void asfSplashScreen(int argc, char **argv);
 
+// solve1d.c
+typedef double solve1d_fn(void *params, double x);
+int solve1d(solve1d_fn *f, void *params, int min_x, int max_x, double acc,
+            double *root);
+
 /* Prototypes from diagnostics.c *********************************************/
 /* Given a condition, and an optional printf()-style message string (possibly
    with additional variadic arguments), this macro will print an assert style
