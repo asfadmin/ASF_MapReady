@@ -17,6 +17,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include <assert.h>
 #include "asf.h"
+#include "asf_nan.h"
 #include "asf_meta.h"
 
 #ifndef SQR
