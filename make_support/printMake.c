@@ -34,6 +34,7 @@ void printMake(FILE *f,char *platform)
 	{
 		p=progs[i];
 		if (p->isCat) continue;/*Categories don't have their own directories*/
+		if (p->isDoc) continue;/*Neither does documentation*/
 		if (progExists(p->path,p->name))
 			fprintf(f,"\t$(B)/%s%c\n",p->name,i==numProgs-1?' ':'\\');
 		else
