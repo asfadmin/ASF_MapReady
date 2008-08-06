@@ -1339,7 +1339,7 @@ popup_menu_completed_files_google_earth(GtkWidget *widget, GdkEvent *event)
   return handle_completed_files_google_earth();
 }
 
-static int handle_view_intermediate(int column)
+static int handle_view_intermediate(int column, char *arg)
 {
     GtkWidget *completed_files_list;
     GtkTreeIter iter;
@@ -1355,7 +1355,7 @@ static int handle_view_intermediate(int column)
             column, &name, -1);
 
         if (name && strlen(name) > 0) {
-          show_image_with_asf_view(name);
+          show_image_with_asf_view_arg(name, arg);
         }
         else {
           show_not_available_message();
@@ -1373,19 +1373,37 @@ static int handle_view_intermediate(int column)
 SIGNAL_CALLBACK gint
 view_layover_mask(GtkWidget *widget, GdkEvent *event)
 {
-  return handle_view_intermediate(COMP_COL_LAYOVER_SHADOW_MASK_FILE);
+  return handle_view_intermediate(COMP_COL_LAYOVER_SHADOW_MASK_FILE, "");
 }
 
 SIGNAL_CALLBACK gint
 view_clipped_dem(GtkWidget *widget, GdkEvent *event)
 {
-  return handle_view_intermediate(COMP_COL_CLIPPED_DEM_FILE);
+  return handle_view_intermediate(COMP_COL_CLIPPED_DEM_FILE, "");
 }
 
 SIGNAL_CALLBACK gint
 view_simsar(GtkWidget *widget, GdkEvent *event)
 {
-  return handle_view_intermediate(COMP_COL_SIMULATED_SAR_FILE);
+  return handle_view_intermediate(COMP_COL_SIMULATED_SAR_FILE, "");
+}
+
+SIGNAL_CALLBACK gint
+view_faraday(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_intermediate(COMP_COL_FARADAY_FILE, "");
+}
+
+SIGNAL_CALLBACK gint
+view_ea_hist(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_intermediate(COMP_COL_EA_HIST_FILE, "-lut polarimetry");
+}
+
+SIGNAL_CALLBACK gint
+view_class_map(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_intermediate(COMP_COL_CLASS_MAP_FILE, "-lut cloude16");
 }
 
 static void
@@ -1414,6 +1432,24 @@ setup_completed_files_popup_menu()
     gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
     g_signal_connect_swapped(G_OBJECT(item), "activate",
                              G_CALLBACK(view_simsar), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Faraday Rotations");
+    gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(view_faraday), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Entropy/Alpha Histogram");
+    gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(view_ea_hist), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Entropy/Alpha Class Map");
+    gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(view_class_map), NULL);
     gtk_widget_show(item);
 
     menu = gtk_menu_new();

@@ -237,6 +237,8 @@ void update_pixel_info(ImageInfo *);
 
 /* lut.c */
 void populate_lut_combo(void);
+void set_lut(const char *lut_basename);
+void select_lut(const char *lut_basename);
 void check_lut(void);
 int have_lut(void);
 void apply_lut(int val, unsigned char *r,

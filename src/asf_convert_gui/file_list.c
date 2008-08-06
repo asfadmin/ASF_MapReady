@@ -24,6 +24,9 @@ int COMP_COL_TMP_DIR;
 int COMP_COL_LAYOVER_SHADOW_MASK_FILE;
 int COMP_COL_CLIPPED_DEM_FILE;
 int COMP_COL_SIMULATED_SAR_FILE;
+int COMP_COL_FARADAY_FILE;
+int COMP_COL_EA_HIST_FILE;
+int COMP_COL_CLASS_MAP_FILE;
 
 /* Returns the length of the prepension if there is an allowed
    prepension, otherwise returns 0 (no prepension -> chceck extensions) */
@@ -296,7 +299,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 
     // pull out the useful intermediates
     char *layover_mask=NULL, *clipped_dem=NULL, *simulated_sar=NULL,
-      *tmp_dir=NULL;
+      *tmp_dir=NULL, *faraday=NULL, *ea_hist=NULL, *class_map=NULL;
     char line[512];
     FILE *fp = fopen(intermediates_file, "r");
     if (fp) {
@@ -305,14 +308,20 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
         get_intermediate(line, "Clipped DEM", &clipped_dem);
         get_intermediate(line, "Simulated SAR", &simulated_sar);
         get_intermediate(line, "Temp Dir", &tmp_dir);
+        get_intermediate(line, "Faraday", &faraday);
+        get_intermediate(line, "Entropy-Alpha Histogram", &ea_hist);
+        get_intermediate(line, "Entropy-Alpha Class Map", &class_map);
       }
       fclose(fp);
     }
 
+    if (!tmp_dir) tmp_dir = STRDUP("");
     if (!layover_mask) layover_mask = STRDUP("");
     if (!clipped_dem) clipped_dem = STRDUP("");
     if (!simulated_sar) simulated_sar = STRDUP("");
-    if (!tmp_dir) tmp_dir = STRDUP("");
+    if (!faraday) faraday = STRDUP("");
+    if (!ea_hist) ea_hist = STRDUP("");
+    if (!class_map) class_map = STRDUP("");
 
     gtk_list_store_append(completed_list_store, completed_iter);
     gtk_list_store_set(completed_list_store, completed_iter,
@@ -324,6 +333,9 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_LAYOVER_SHADOW_MASK_FILE, layover_mask,
                        COMP_COL_CLIPPED_DEM_FILE, clipped_dem,
                        COMP_COL_SIMULATED_SAR_FILE, simulated_sar,
+                       COMP_COL_FARADAY_FILE, faraday,
+                       COMP_COL_EA_HIST_FILE, ea_hist,
+                       COMP_COL_CLASS_MAP_FILE, class_map,
                        -1);
 
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
@@ -332,6 +344,9 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     free(clipped_dem);
     free(simulated_sar);
     free(tmp_dir);
+    free(faraday);
+    free(ea_hist);
+    free(class_map);
 
     g_free(file);
     g_free(output_file);
@@ -672,11 +687,14 @@ setup_files_list()
     COL_STATUS = 4;
     COL_LOG = 5;
 
-    completed_list_store = gtk_list_store_new(10,
+    completed_list_store = gtk_list_store_new(13,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING,
                                               GDK_TYPE_PIXBUF,
                                               GDK_TYPE_PIXBUF,
+                                              G_TYPE_STRING,
+                                              G_TYPE_STRING,
+                                              G_TYPE_STRING,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING,
@@ -694,6 +712,9 @@ setup_files_list()
     COMP_COL_LAYOVER_SHADOW_MASK_FILE = 7;
     COMP_COL_CLIPPED_DEM_FILE = 8;
     COMP_COL_SIMULATED_SAR_FILE = 9;
+    COMP_COL_FARADAY_FILE = 10;
+    COMP_COL_EA_HIST_FILE = 11;
+    COMP_COL_CLASS_MAP_FILE = 12;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
@@ -903,6 +924,36 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_SIMULATED_SAR_FILE);
+
+    /* Next Column: Faraday rotations image (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Faraday");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_FARADAY_FILE);
+
+    /* Next Column: Entropy/Alpha Histogram (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "E/A Hist");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_EA_HIST_FILE);
+
+    /* Next Column: Entropy/Alpha Classification Map (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Class Map");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_CLASS_MAP_FILE);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list),
         GTK_TREE_MODEL(completed_list_store));

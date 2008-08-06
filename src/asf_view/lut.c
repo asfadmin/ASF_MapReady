@@ -10,9 +10,11 @@ static unsigned char *g_lut_buffer = NULL;
 // menu widget, we can't iterate through the items
 static int g_dem_index = 0;
 
-static int my_strcmp(const void *s1, const void *s2)
+static int my_strcmp(const void *v1, const void *v2)
 {
-    return strcmp_case((const char*)s1, (const char*)s2);
+  char **s1 = (char **)v1;
+  char **s2 = (char **)v2;
+  return strcmp_case(*s1, *s2);
 }
 
 static char *get_lut_loc()
@@ -41,7 +43,7 @@ void populate_lut_combo()
     GDir *lut_dir = g_dir_open(lut_loc, 0, NULL);
     if (lut_dir) {
         int i, n=0;
-        char *names[20]; // keep the list 20 items max
+        char **names = MALLOC(sizeof(char*)*20); // keep the list 20 items max
 
         while (1) {
             const char *name = (char*)g_dir_read_name(lut_dir);
@@ -52,7 +54,7 @@ void populate_lut_combo()
                     *p = '\0'; // don't show ".lut" extension in menu
                     names[n++] = name_dup;
                     // quit when we get too many
-                    if (n > sizeof(names)/sizeof(names[0]))
+                    if (n > 20)
                         break;
                 }
             } else
@@ -85,6 +87,56 @@ void populate_lut_combo()
     gtk_widget_show(option_menu);
 
     free(lut_loc);
+}
+
+void set_lut(const char *lut_basename)
+{
+    if (g_lut_buffer) {
+        free(g_lut_buffer);
+        g_lut_buffer = NULL;
+    }
+
+    char filename[512];
+    sprintf(filename, "%s.lut", lut_basename);
+
+    char *lut_loc = get_lut_loc();
+    char *path_and_file =
+            MALLOC(sizeof(char)*(strlen(lut_loc)+strlen(filename)+20));
+    sprintf(path_and_file, "%s/%s", lut_loc, filename);
+    free(lut_loc);
+
+    g_lut_buffer = MALLOC(sizeof(unsigned char) * MAX_LUT_DN*3);
+
+    read_lut(path_and_file, g_lut_buffer);
+    g_have_lut = TRUE;
+
+    free(path_and_file);
+}
+
+void select_lut(const char *lut_basename)
+{
+    int which = 0;
+
+    // there must be a better way!
+    if (strcmp_case(lut_basename, "cloude16") == 0)
+      which = 2;
+    else if (strcmp_case(lut_basename, "cloude8") == 0)
+      which = 3;
+    else if (strcmp_case(lut_basename, "dem") == 0)
+      which = 4;
+    else if (strcmp_case(lut_basename, "interferogram") == 0)
+      which = 5;
+    else if (strcmp_case(lut_basename, "unwrapping_mask") == 0)
+      which = 6;
+    else if (strcmp_case(lut_basename, "layover_mask") == 0)
+      which = 7;
+    else if (strcmp_case(lut_basename, "polarimetry") == 0)
+      which = 8;
+
+    printf("Selecting: %d\n", which);
+
+    GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+    gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
 }
 
 void check_lut()

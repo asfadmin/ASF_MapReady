@@ -216,6 +216,9 @@ extern int COMP_COL_TMP_DIR;
 extern int COMP_COL_LAYOVER_SHADOW_MASK_FILE;
 extern int COMP_COL_CLIPPED_DEM_FILE;
 extern int COMP_COL_SIMULATED_SAR_FILE;
+extern int COMP_COL_FARADAY_FILE;
+extern int COMP_COL_EA_HIST_FILE;
+extern int COMP_COL_CLASS_MAP_FILE;
 
 /********************************** Prototypes ******************************/
 
@@ -367,6 +370,7 @@ void release_predefined_projections();
 
 /* view_output.c */
 void show_image_with_asf_view(gchar * in_name);
+void show_image_with_asf_view_arg(gchar * in_name, gchar *arg);
 
 /* share.c */
 char * find_in_bin(const char *);

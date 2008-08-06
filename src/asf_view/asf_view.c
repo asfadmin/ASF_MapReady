@@ -64,9 +64,11 @@ static void set_button_images()
 int
 main(int argc, char **argv)
 {
-    char band[512];
+    char band[512], lut[512];
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);
+    int lut_specified = extract_string_options(&argc, &argv, lut,
+        "-lut", "--lut", NULL);
     int planner_mode = extract_flag_options(&argc, &argv,
         "-plan", "--plan", NULL);
 
@@ -103,6 +105,8 @@ main(int argc, char **argv)
         curr->filename[strlen(curr->filename)-1] = '\0';
 
     read_file(curr->filename, band_specified ? band : NULL, FALSE, TRUE);
+    if (lut_specified)
+      set_lut(lut);
 
     assert(curr->data_name);
     assert(curr->meta_name);
@@ -150,6 +154,8 @@ main(int argc, char **argv)
     fill_stats(curr);
     setup_bands_tab(curr->meta);
     disable_meta_button_if_necessary();
+    if (lut_specified)
+      select_lut(lut);
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();

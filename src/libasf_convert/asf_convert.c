@@ -1762,6 +1762,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         asfPrintStatus("\nApplying Faraday Rotation correction.\n");
         faraday_correct(inFile, outFile, keep_flag, single_angle_flag);
         asfPrintStatus("Done.\n\n");
+
+        sprintf(tmpFile, "%s/polarimetry_farcorr.img", cfg->general->tmp_dir);
+        save_intermediate(cfg, "Faraday", tmpFile);
       }
 
       if (doing_pol) {
@@ -1799,8 +1802,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           }
           meta_free(meta);
         }
-        else if (cfg->polarimetry->cloude_pottier)
+        else if (cfg->polarimetry->cloude_pottier) {
           cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
+        }
         else if (cfg->polarimetry->cloude_pottier_ext)
           cpx2cloude_pottier16(inFile, outFile, cfg->general->terrain_correct);
         else if (cfg->polarimetry->cloude_pottier_nc)
@@ -1816,6 +1820,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           asfPrintError("Lee category preserving not supported yet.\n");
         else
           asfPrintError("Unsupported polarimetric processing technique.\n");
+
+        if (cfg->polarimetry->cloude_pottier ||
+            cfg->polarimetry->cloude_pottier_ext ||
+            cfg->polarimetry->cloude_pottier_nc)
+        {
+          sprintf(tmpFile, "%s/polarimetry_ea_hist.img",
+                  cfg->general->tmp_dir);
+          save_intermediate(cfg, "Entropy-Alpha Histogram", tmpFile);          
+          sprintf(tmpFile, "%s/polarimetry_class_map.img",
+                  cfg->general->tmp_dir);
+          save_intermediate(cfg, "Entropy-Alpha Class Map", tmpFile);          
+        }
       }
     }
 

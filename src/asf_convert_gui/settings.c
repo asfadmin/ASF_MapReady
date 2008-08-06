@@ -1699,7 +1699,7 @@ settings_to_config_file(const Settings *s,
         else if (polarimetry_on &&
                  s->polarimetric_decomp_setting == POLARIMETRY_FREEMAN_DURDEN)
         {
-          fprintf(cf, "rgb banding = Pd,Ps,Pv\n");
+          fprintf(cf, "rgb banding = Pd,Pv,Ps\n");
         }
         else if (!s->truecolor_is_checked && !s->falsecolor_is_checked)
         {

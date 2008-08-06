@@ -899,6 +899,11 @@ static void do_freeman(int band1, int band2, int band3,
 {
   if (band1 >= 0 || band2 >= 0 || band3 >= 0)
   {
+    if (outMeta->general->radiometry != r_SIGMA) {
+      asfPrintError("The Freeman/Durden decomposition requires "
+                    "PowerScale (Sigma, non-db) data.\n");
+    }
+
     int j, m;
     int ns = outMeta->general->sample_count;
 
@@ -979,6 +984,11 @@ static void do_freeman(int band1, int band2, int band3,
       Ps[j] = fs * (1 + b2);
       Pd[j] = fd * (1 + a2);
       Pv[j] = 8 * hv2[j];
+
+      // convert to dB
+      //Ps[j] = 10*log10(Ps[j]);
+      //Pd[j] = 10*log10(Pd[j]);
+      //Pv[j] = 10*log10(Pv[j]);
     }
 
     if (band1 >= 0)
