@@ -92,3 +92,17 @@ char *trim_spaces(const char *s)
   FREE(p1);
   return p2;
 }
+
+// returns TRUE if "str" ends with the characters in "tail"
+int endsWith(const char *str, const char *tail)
+{
+  if (strlen(tail) > strlen(str))
+    return FALSE;
+  else if (strlen(tail) == strlen(str))
+    return strcmp_case(str, tail)==0;
+  else
+  {
+    const char *p = str + strlen(str) - strlen(tail);
+    return strcmp_case(p, tail)==0;
+  }
+}
