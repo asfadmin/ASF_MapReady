@@ -233,6 +233,9 @@ char **find_single_band(char *in_base_name, char *band, int *num_found)
 // Valid channel alpha strings are "HH", "HV", "VH", and
 //   "VV", lower or upper case.
 //
+// Special consideration is allowed for "HH","HV","VH","VV", etc
+// When looking for the "HH" band, "SIGMA-AMP-HH" will succeed
+
 int get_band_number(char *bands, int band_count, char *channel)
 {
   char *t_bands;
@@ -247,8 +250,19 @@ int get_band_number(char *bands, int band_count, char *channel)
   if (band_count == 1) {
     if (strcmp_case(channel, bands) == 0)
       return 0;
-    else
-      return -1;
+    else {
+      if (strcmp_case(channel, "HH") == 0 || strcmp_case(channel, "HV") == 0 ||
+          strcmp_case(channel, "VH") == 0 || strcmp_case(channel, "VV") == 0)
+      {
+        char amp[16];
+        sprintf(amp, "AMP-%s", channel);
+        if (endsWith(bands, amp))
+          return 0;
+        else
+          return -1;
+      }
+    }
+    return -1;
   }
 
   /////////////////////////////////////////////////////////////////////
@@ -293,7 +307,48 @@ int get_band_number(char *bands, int band_count, char *channel)
   if (found)
     return band_no;
   else
-    return -1;
+  {
+      if (strcmp_case(channel, "HH") == 0 || strcmp_case(channel, "HV") == 0 ||
+          strcmp_case(channel, "VH") == 0 || strcmp_case(channel, "VV") == 0)
+      {
+        char amp[16];
+
+        // these won't infinite recurse, because the "if" statement above
+        // will not fire in the recursive call
+        sprintf(amp, "AMP-%s", channel);
+        int b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
+        sprintf(amp, "SIGMA-AMP-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
+        sprintf(amp, "SIGMA_DB-AMP-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
+        sprintf(amp, "BETA-AMP-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
+        sprintf(amp, "BETA_DB-AMP-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
+        sprintf(amp, "GAMMA-AMP-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
+        sprintf(amp, "GAMMA_DB-AMP-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
+        return -1;
+      }
+  }
+  
+  // failed
+  return -1;
 }
 
 //
