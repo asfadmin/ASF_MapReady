@@ -160,6 +160,8 @@ typedef struct fis
 FlickerItems flicker_items;
 int keep_going = TRUE;
 
+int snl, sns;
+
 static char * escapify(const char * s)
 {
     int i,j;
@@ -238,9 +240,54 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     g_free(pixels);
 }
 
-static GdkPixbuf *img2pb(meta_parameters *meta, const char *img_file)
+// polynomial that maps line/sample values from one image to another
+//   (l1,s1) -> (l2,s2)
+// similar to the ALOS transform block
+
+// l2 = a[0] + 
+//      a[1]*l1   + a[2]*s1 + 
+//      a[3]*l1^2 + a[4]*l1*s1   + a[5]*s1^2
+//      a[6]*l1^3 + a[7]*l1^2*s1 + a[8]*l1*s1^2 + a[9]*s1^3
+
+// s2 = b[0] + 
+//      b[1]*l1   + b[2]*s1 + 
+//      b[3]*l1^2 + b[4]*l1*s1   + b[5]*s1^2
+//      b[6]*l1^3 + b[7]*l1^2*s1 + b[8]*l1*s1^2 + b[9]*s1^3
+
+typedef struct Mapping
 {
-    asfPrintStatus("Flicker: Gathering stats for %s\n", img_file);
+    meta_parameters *src, *dest;
+} map_t;
+
+static map_t *make_map(meta_parameters *dest, meta_parameters *src)
+{
+  // starting point is the identity map
+  map_t *map = MALLOC(sizeof(map_t));
+  map->src=src;
+  map->dest=dest;
+  return map;
+}
+
+static void img2screen(map_t *map, 
+                       int line, int samp, int *screen_line, int *screen_samp)
+{
+  // line, samp are in the "dest" coordinates
+  double lat, lon;
+  meta_get_latLon(map->dest, line, samp, 0, &lat, &lon);
+
+  // map to "src" line/samp 
+  double l, s;
+  meta_get_lineSamp(map->src, lat, lon, 0, &l, &s);
+  
+  // screen coords match src line/samps for now
+  *screen_line = (int)(l+0.5);
+  *screen_samp = (int)(s+0.5);
+}
+
+static GdkPixbuf *img2pb(meta_parameters *meta, const char *img_file,
+                         map_t *map)
+{
+    asfPrintStatus("Flicker: Processing %s\n", img_file);
 
     FILE *fpIn = fopen(img_file, "rb");
     if (!fpIn)
@@ -271,12 +318,8 @@ static GdkPixbuf *img2pb(meta_parameters *meta, const char *img_file)
         for (jj = 0; jj < s; ++jj) {
             fdata[nn] = line[jj*f];
             avg += fdata[nn++];
-            if (nn>l*s)
-              asfPrintError("Bad: %d,%d -> %d : %d,%d\n", ii,jj,nn,l,s);
             assert(nn<=l*s);
         }
-
-        //asfPercentMeter((float)(ii+1)/l);
     }
     fclose(fpIn);
 
@@ -292,14 +335,15 @@ static GdkPixbuf *img2pb(meta_parameters *meta, const char *img_file)
     double lmin = avg - 2*stddev;
     double lmax = avg + 2*stddev;
 
-    guchar *data = g_new(guchar, 3*nl*ns);
+    guchar *data = g_new(guchar, 3*snl*sns);
+    memset(data, 0, sizeof(guchar));
+
     fpIn = fopen(img_file, "rb");
     assert(fpIn);
 
-    //asfPrintStatus("Loading image data...\n");
-
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
+    int n_overlap = 0;
     for (ii = 0; ii < nl; ++ii) {
 
         get_float_line(fpIn, meta, ii, line);
@@ -314,9 +358,28 @@ static GdkPixbuf *img2pb(meta_parameters *meta, const char *img_file)
             uval = 255;
           else
             uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
-          
-          nn = 3*(ii*ns + jj);
-          assert(nn+2 < nl*ns*3);
+
+          int iii, jjj; // screen coordinates (indexes into the pixbuf)
+          if (map) {
+            // map image2 coordinates into image1
+            img2screen(map, ii, jj, &iii, &jjj);
+
+            if (iii>=0 && iii<snl && jjj>=0 && jjj<sns) {
+              ++n_overlap;
+            }
+            else {
+              // not in the first image, skip
+              continue;
+            }
+          }
+          else {
+            // identity map shortcut for performance
+            iii = ii;
+            jjj = jj;
+          }
+
+          nn = 3*(iii*ns + jjj);
+          assert(nn>=0 && nn+2 < snl*sns*3);
 
           data[nn] = uval;
           data[nn+1] = uval;
@@ -326,13 +389,17 @@ static GdkPixbuf *img2pb(meta_parameters *meta, const char *img_file)
         asfPercentMeter((float)(ii+1)/nl);
     }
 
+    if (map)
+      asfPrintStatus("Percentage of the second image that overlaps the first: "
+                     "%.2f%%\n", (float)n_overlap / (float)(nl*ns));
+
     fclose(fpIn);
     free (line);
 
     // Create the pixbuf
     GdkPixbuf *pb =
         gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
-                                 8, ns, nl, ns*3, destroy_pb_data, NULL);
+                                 8, sns, snl, sns*3, destroy_pb_data, NULL);
 
     if (!pb) {
         printf("Failed to create the thumbnail pixbuf: %s\n", img_file);
@@ -352,8 +419,14 @@ static void load_images(const char *f1, const char *f2)
     meta_parameters *m2 = meta_read(f2);
     assert(m2);
 
-    flicker_items.i1 = img2pb(m1, f1);
-    flicker_items.i2 = img2pb(m2, f2);
+    snl = m1->general->line_count;
+    sns = m1->general->sample_count;
+
+    asfPrintStatus("Creating mapping from second image into first...\n");
+    map_t *map = make_map(m1, m2);
+
+    flicker_items.i1 = img2pb(m1, f1, NULL);
+    flicker_items.i2 = img2pb(m2, f2, map);
 
     if (!flicker_items.i1)
         asfPrintError("Failed to load %s!\n", f1);

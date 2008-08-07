@@ -122,6 +122,22 @@ show_not_available_message()
     message_box(msg);
 }
 
+static GtkMenu *find_submenu(GtkMenu *menu)
+{
+    GList *children = gtk_container_get_children(GTK_CONTAINER(menu));
+    GList *iter = children;
+
+    while (iter)
+    {
+        GtkWidget *sub = gtk_menu_item_get_submenu(GTK_MENU_ITEM(iter->data));
+        if (sub) return GTK_MENU(sub);
+        iter = g_list_next(iter);
+    }
+
+    g_list_free(children);
+    return NULL;
+}
+
 static void
 enable_menu_items(GtkMenu * menu, gboolean enable_display_ceos_metadata)
 {
@@ -147,6 +163,23 @@ enable_menu_items(GtkMenu * menu, gboolean enable_display_ceos_metadata)
 
         iter = g_list_next(iter);
         ++n;
+    }
+
+    g_list_free(children);
+}
+
+static void
+enable_submenu_items(GtkMenu *menu, int *e)
+{
+    int n = 0;
+
+    GList *children = gtk_container_get_children(GTK_CONTAINER(menu));
+    GList *iter = children;
+
+    while (iter)
+    {
+        gtk_widget_set_sensitive(GTK_WIDGET(iter->data), e[n++]);
+        iter = g_list_next(iter);
     }
 
     g_list_free(children);
@@ -388,13 +421,43 @@ completed_files_popup_handler(GtkWidget *widget, GdkEvent *event)
         if (num_selected <= 1)
         {
             GtkTreePath *path;
-
             if (gtk_tree_view_get_path_at_pos(
                     GTK_TREE_VIEW(completed_files_list),
                 event_button->x, event_button->y,
                 &path, NULL, NULL, NULL))
             {
-                // normal case -- don't need to do anything
+                // figure out which of the "View Intermediates" items
+                // should be enabled
+                GtkTreeIter iter;
+                gtk_tree_selection_unselect_all(selection);
+                gtk_tree_selection_select_path(selection, path);
+                gtk_tree_model_get_iter(GTK_TREE_MODEL(completed_list_store),
+                    &iter, path);
+
+                gchar *layover, *dem, *simsar, *faraday, *ea_hist, *class_map;
+                gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
+                    COMP_COL_LAYOVER_SHADOW_MASK_FILE, &layover,
+                    COMP_COL_CLIPPED_DEM_FILE, &dem,
+                    COMP_COL_SIMULATED_SAR_FILE, &simsar,
+                    COMP_COL_FARADAY_FILE, &faraday,
+                    COMP_COL_EA_HIST_FILE, &ea_hist,
+                    COMP_COL_CLASS_MAP_FILE, &class_map, -1);
+                gtk_tree_path_free(path);
+
+                int enable[6];
+                enable[0] = fileExists(layover);
+                enable[1] = fileExists(dem);
+                enable[2] = fileExists(simsar);
+                enable[3] = fileExists(faraday);
+                enable[4] = fileExists(ea_hist);
+                enable[5] = fileExists(class_map);
+
+                GtkMenu *submenu = find_submenu(menu);
+                if (submenu)
+                    enable_submenu_items(submenu, enable);
+
+                // enable all top-level menu items
+                enable_menu_items(menu, TRUE);
             }
             else
             {
