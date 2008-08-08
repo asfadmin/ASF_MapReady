@@ -1730,9 +1730,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                 float im = cpx_float_ml_buf[mm*ns + kk].imag;
                 cpx.real += re;
                 cpx.imag += im;
-                amp += sqrt(re*re + im*im);
+                amp += re*re + im*im; // Sum the squares
             }
-            amp /= (float)lc;
+            amp /= (float)lc; // Average of the squares
+            amp = sqrt(amp);  // Finally ...the average amplitude
             cpx.real /= (float)lc;
             cpx.imag /= (float)lc;
             if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
