@@ -1536,10 +1536,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   if (data_type >= COMPLEX_BYTE) {
     // Go through complex imagery in chunks
     for (ii=0; ii<nl; ii+=nLooks) {
-      lc = meta->sar->look_count;
+      lc = nLooks;
       if (ii + lc > nl)
         lc = nl - ii;
-      
+
       for (ll=0; ll<lc; ll++) {
         int line = ii+ll;
         asfLineMeter(line, nl);
@@ -1723,24 +1723,28 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       // Multilook if requested
       if (multilook_flag) {
 	for (kk=0; kk<ns; kk++) {
-	  cpx.real = cpx.imag = 0.0;
+          float amp = 0.0;
+          cpx.real = cpx.imag = 0;
 	  for (mm=0; mm<lc; mm++) {
-	    cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
-	    cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
+	    float re = cpx_float_ml_buf[mm*ns + kk].real;
+	    float im = cpx_float_ml_buf[mm*ns + kk].imag;
+            cpx.real += re;
+            cpx.imag += im;
+            amp += sqrt(re*re + im*im);
 	  }
-	  cpx.real /= (float)lc;
-	  cpx.imag /= (float)lc;
+	  amp /= (float)lc;
+          cpx.real /= (float)lc;
+          cpx.imag /= (float)lc;
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-            fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
 	    amp_float_buf[kk] =
-	      get_cal_dn(cal_param, ii+mm, kk, fValue, db_flag);
+	      get_cal_dn(cal_param, ii+mm, kk, amp, db_flag);
 	  }
 	  else
-	    amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	    amp_float_buf[kk] = amp;
 	  phase_float_buf[kk] = atan2(cpx.imag, cpx.real);
 	}
       }
-      
+     
       // unless we are outputting as complex, we are actually outputting
       // two bands -- "out_band" is the first of the two (the amplitude),
       // the phase is out_band+1.
