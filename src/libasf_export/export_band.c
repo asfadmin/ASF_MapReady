@@ -863,7 +863,7 @@ export_band_image (const char *metadata_file_name,
     int ignored[4] = {0, 0, 0, 0};
     int red_channel=-1, green_channel=-1, blue_channel=-1, nir_channel=-1;
     for (ii = 0; ii < 4; ii++) {
-        if (ii < md->general->band_count - 1) {
+        if (ii < md->general->band_count) {
             ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
         }
         else {
