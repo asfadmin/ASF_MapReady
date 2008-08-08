@@ -39,8 +39,8 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
 int is_alos_palsar_1_5_plus(char *inDataName, char *inMetaName);
 
 static void status_data_type(meta_parameters *meta, data_type_t data_type,
-			     radiometry_t radiometry,
-			     int complex_flag, int multilook_flag);
+                 radiometry_t radiometry,
+                 int complex_flag, int multilook_flag);
 
 /*
 These next few functions are used to fix scaling errors in the data that
@@ -246,9 +246,9 @@ void import_ceos(char *inBaseName, char *outBaseName,
     }
 
     if ((ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1) &&
-	ceos->sensor == PRISM)
+    ceos->sensor == PRISM)
       import_single_band = TRUE;
-     
+
     radiometry_t rad = radiometry;
     int index = ii;
 
@@ -1054,8 +1054,8 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
 
 // Assign band names
 void assign_band_names(meta_parameters *meta, char *outMetaName,
-		       char *bandExt, int band, int nBands, int nBandsOut, 
-		       radiometry_t radiometry, int complex_flag)
+               char *bandExt, int band, int nBands, int nBandsOut,
+               radiometry_t radiometry, int complex_flag)
 {
   char bandStr[512], radiometryStr[20];
 
@@ -1096,11 +1096,11 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
   else if (meta->general->image_data_type == COMPLEX_IMAGE)
   {
     if (strlen(bandExt) == 0)
-      sprintf(bandStr, "%sAMP-%s,%sPHASE-%s", radiometryStr, 
-	      meta->sar->polarization, radiometryStr, meta->sar->polarization);
+      sprintf(bandStr, "%sAMP-%s,%sPHASE-%s", radiometryStr,
+          meta->sar->polarization, radiometryStr, meta->sar->polarization);
     else
-      sprintf(bandStr, "%sAMP-%s,%sPHASE-%s", radiometryStr, bandExt, 
-	      radiometryStr, bandExt);
+      sprintf(bandStr, "%sAMP-%s,%sPHASE-%s", radiometryStr, bandExt,
+          radiometryStr, bandExt);
   }
   else {
     if (strlen(bandExt) == 0)
@@ -1357,18 +1357,18 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       meta->general->band_count = import_single_band ? 1 : band;
     }
   }
-  else if (meta->optical) { 
+  else if (meta->optical) {
     sprintf(bandExt, "0%d", band);
     if (nBands > 1)
       asfPrintStatus("   Input band: %s\n", bandExt);
     if (band > 1) {
       if (strcmp_case(meta->general->sensor_name, "PRISM") != 0 &&
-	  (strcmp_case(meta->general->mode, "1A") != 0 ||
-	   strcmp_case(meta->general->mode, "1B1") != 0)) {
-	meta_parameters *metaTmp=NULL;
-	metaTmp = meta_read(outMetaName);
-	strcat(meta->general->bands, metaTmp->general->bands);
-	meta_free(metaTmp);
+      (strcmp_case(meta->general->mode, "1A") != 0 ||
+       strcmp_case(meta->general->mode, "1B1") != 0)) {
+    meta_parameters *metaTmp=NULL;
+    metaTmp = meta_read(outMetaName);
+    strcat(meta->general->bands, metaTmp->general->bands);
+    meta_free(metaTmp);
       }
     }
     if (strcmp(meta->general->bands, "") != 0)
@@ -1479,7 +1479,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       if (complex_flag)
         cpxFloat_buf = (complexFloat *) CALLOC(ns*lc, sizeof(complexFloat));
       else {
-        cpx_float_ml_buf = (complexFloat *) CALLOC(2*ns*lc, sizeof(float));	
+        cpx_float_ml_buf = (complexFloat *) CALLOC(2*ns*lc, sizeof(float));
     amp_float_buf = (float *) CALLOC(ns*lc, sizeof(float));
     phase_float_buf = (float *) CALLOC(ns*lc, sizeof(float));
       }
@@ -1545,7 +1545,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         asfLineMeter(line, nl);
         offset = (long long)headerBytes+ (ii+ll)*(long long)image_fdr.reclen;
         FSEEK64(fpIn, offset, SEEK_SET);
-        
+
         // Read the data according to their data type
         switch (data_type)
         {
@@ -1571,7 +1571,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           case REAL64:
             break;
         }
-        
+
         // Put read in data in proper endian format
         for (kk=0; kk<ns; kk++) {
           switch (data_type)
@@ -1626,7 +1626,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
               break;
           }
         }
-        
+
         // Flip the line if necessary and assign output value
         for (kk=0; kk<ns; kk++) {
           switch (data_type)
@@ -1688,7 +1688,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
               }
               break;
           }
-          
+
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
             fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
             if (multilook_flag) {
@@ -1699,7 +1699,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
               amp_float_buf[ll*ns + kk] =
                 get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
               phase_float_buf[ll*ns + kk] =  atan2(cpx.imag, cpx.real);
-	    }
+        }
           }
           else if (complex_flag)
             cpxFloat_buf[ll*ns + kk] = cpx;
@@ -1719,32 +1719,32 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           }
         }
       }
-      
+
       // Multilook if requested
       if (multilook_flag) {
-	for (kk=0; kk<ns; kk++) {
-          float amp = 0.0;
-          cpx.real = cpx.imag = 0;
-	  for (mm=0; mm<lc; mm++) {
-	    float re = cpx_float_ml_buf[mm*ns + kk].real;
-	    float im = cpx_float_ml_buf[mm*ns + kk].imag;
-            cpx.real += re;
-            cpx.imag += im;
-            amp += sqrt(re*re + im*im);
-	  }
-	  amp /= (float)lc;
-          cpx.real /= (float)lc;
-          cpx.imag /= (float)lc;
-          if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-	    amp_float_buf[kk] =
-	      get_cal_dn(cal_param, ii+mm, kk, amp, db_flag);
-	  }
-	  else
-	    amp_float_buf[kk] = amp;
-	  phase_float_buf[kk] = atan2(cpx.imag, cpx.real);
-	}
+        for (kk=0; kk<ns; kk++) {
+            float amp = 0.0;
+            cpx.real = cpx.imag = 0;
+            for (mm=0; mm<lc; mm++) {
+                float re = cpx_float_ml_buf[mm*ns + kk].real;
+                float im = cpx_float_ml_buf[mm*ns + kk].imag;
+                cpx.real += re;
+                cpx.imag += im;
+                amp += sqrt(re*re + im*im);
+            }
+            amp /= (float)lc;
+            cpx.real /= (float)lc;
+            cpx.imag /= (float)lc;
+            if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+                amp_float_buf[kk] = get_cal_dn(cal_param, ii+mm, kk, amp, db_flag);
+            }
+            else {
+                amp_float_buf[kk] = amp;
+            }
+            phase_float_buf[kk] = atan2(cpx.imag, cpx.real);
+        }
       }
-     
+
       // unless we are outputting as complex, we are actually outputting
       // two bands -- "out_band" is the first of the two (the amplitude),
       // the phase is out_band+1.
@@ -1755,13 +1755,14 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
       out_band = import_single_band ? 0 : (band-1)*2;
       if (amp0_flag && out_band > 0)
-	--out_band;
+        --out_band;
 
       if (multilook_flag) {
-	put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
-	if (!(amp0_flag && out_band==0))
-	  put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
-	out++;
+        put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
+        if (!(amp0_flag && out_band==0)) {
+            put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
+        }
+        out++;
       }
       else {
         for (mm=0; mm<lc; mm++) {
@@ -1969,11 +1970,11 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             apply_ers2_gain_fix(radiometry, gain_adj, amp_float_buf[kk]);
       }
       if (import_single_band)
-	put_band_float_line(fpOut, meta, 0, ii, amp_float_buf);
+    put_band_float_line(fpOut, meta, 0, ii, amp_float_buf);
       else
-	// This only works if the bands start with number 1
-	// Not necessarily the case
-	put_band_float_line(fpOut, meta, band-1, ii, amp_float_buf);
+    // This only works if the bands start with number 1
+    // Not necessarily the case
+    put_band_float_line(fpOut, meta, band-1, ii, amp_float_buf);
     }
   }
 
