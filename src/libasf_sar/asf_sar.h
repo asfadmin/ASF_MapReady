@@ -156,7 +156,7 @@ void cpx2cloude_pottier8(const char *inFile, const char *outFile, int tc_flag);
 void cpx2cloude_pottier16(const char *inFile, const char *outFile,
                           int tc_flag);
 void cpx2debug(const char *inFile, const char *outFile);
-void cpx2freeman_durden(const char *inFile, const char *outFile);
+void cpx2freeman_durden(const char *inFile, const char *outFile, int tc_flag);
 
 void make_entropy_alpha_boundary(const char *fname, int size);
 

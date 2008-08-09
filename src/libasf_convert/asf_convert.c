@@ -1811,7 +1811,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           cpx2entropy_anisotropy_alpha(inFile, outFile,
                                        cfg->general->terrain_correct);
         else if (cfg->polarimetry->freeman_durden)
-          cpx2freeman_durden(inFile, outFile);
+          cpx2freeman_durden(inFile, outFile, cfg->general->terrain_correct);
         else if (cfg->polarimetry->k_means_wishart)
           asfPrintError("K-means Wishart clustering not supported yet.\n");
         else if (cfg->polarimetry->k_means_wishart_ext)

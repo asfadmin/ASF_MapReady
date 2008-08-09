@@ -24,6 +24,7 @@ typedef struct {
    complexMatrix **coh_buffer;
    complexMatrix ***coh_lines;
 
+   int amp_band;
    int hh_amp_band, hh_phase_band;
    int hv_amp_band, hv_phase_band;
    int vh_amp_band, vh_phase_band;
@@ -94,6 +95,7 @@ polarimetric_image_rows_new(meta_parameters *meta, int nrows, int multi)
         self->coh_lines[i] = &(self->coh_buffer[ns*i]);
 
     // band numbers in the input file
+    self->amp_band = -1;
     self->hh_amp_band = self->hh_phase_band = -1;
     self->hv_amp_band = self->hv_phase_band = -1;
     self->vh_amp_band = self->vh_phase_band = -1;
@@ -105,6 +107,10 @@ polarimetric_image_rows_new(meta_parameters *meta, int nrows, int multi)
 static int polarimetric_image_rows_get_bands(PolarimetricImageRows *self)
 {
     int ok=TRUE;
+    // "extra" amplitude band needs to be the first band
+    char *bands = self->meta->general->bands;
+    self->amp_band = strncmp_case(bands, "AMP", 3) == 0 ? 0 : -1;
+    // polarimetric bands
     self->hh_amp_band = find_band(self->meta, "AMP-HH", &ok);
     self->hh_phase_band = find_band(self->meta, "PHASE-HH", &ok);
     self->hv_amp_band = find_band(self->meta, "AMP-HV", &ok);
@@ -198,8 +204,8 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   int row = self->current_row + (self->nrows-1)/2;
   if (row < self->meta->general->line_count) {
     // amplutide, we only store the current row
-    if (self->current_row >= 0)
-      get_band_float_line(fin, self->meta, self->hh_amp_band,
+    if (self->current_row >= 0 && self->amp_band >= 0)
+      get_band_float_line(fin, self->meta, self->amp_band,
                           self->current_row, self->amp);
 
     // now the SLC rows
@@ -249,13 +255,17 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
   float *amp_buf = MALLOC(sizeof(float)*ns);
   float *phase_buf = MALLOC(sizeof(float)*ns);
 
+  int amp_band = self->amp_band;
+  if (amp_band < 0)
+    amp_band = self->hh_amp_band;
+
   // multilook the amplitude values as we go
   for (k=0; k<ns; ++k)
     self->amp[k] = 0.0;
 
   for (i=0; i<self->nrows; ++i) {
     int row = self->current_row + i;
-    get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, amp_band, row, amp_buf);
     for (k=0; k<ns; ++k)
       self->amp[k] += amp_buf[k];
 
@@ -283,7 +293,7 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
     for (k=0; k<ns; ++k)
       self->lines[i][k].vv = complex_new_polar(sqrt(amp_buf[k]),
                                                phase_buf[k]);
-    
+
     calculate_pauli_for_row(self, i);
     calculate_coherence_for_row(self, i);
   }
@@ -951,10 +961,10 @@ static void do_freeman(int band1, int band2, int band3,
       for (j=0; j<ns; ++j) {
         complexFloat hh = img_rows->lines[l][j].hh;
         hh2[j] = complex_amp_sqr(hh);
-        
+
         complexFloat vv = img_rows->lines[l][j].vv;
         vv2[j] = complex_amp_sqr(vv);
-        
+
         hhvv[j] = complex_mul(hh, complex_conj(vv));
         hv2[j] = complex_amp_sqr(img_rows->lines[l][j].hv);
       }
@@ -965,30 +975,27 @@ static void do_freeman(int band1, int band2, int band3,
       float fs, fd;
       complexFloat alpha, beta;
       if (hhvv[j].real > 0) {
-        // Re(Shh*conj(Svv))>0 ==> alpha=-1, solve for fs, fd and beta
+        // Re(Shh*conj(Svv))>0 ==> alpha=-1, solve for fs, fd, and beta
         solve_fd1(hh2[j], vv2[j], hhvv[j], &fs, &fd, &beta);
         alpha = complex_new(-1, 0);
       }
       else {
-        // Re(Shh*conj(Svv))<0 ==> beta=1, solve for fs, fd and alpha
+        // Re(Shh*conj(Svv))<0 ==> beta=1, solve for fs, fd, and alpha
         solve_fd2(hh2[j], vv2[j], hhvv[j], &fs, &fd, &alpha);
         beta = complex_new(1, 0);
       }
-      
+
       // double-check the solution
       verify_fd(hh2[j], vv2[j], hhvv[j], fs, fd, alpha, beta);
-      
-      float b2 = complex_amp_sqr(beta);
-      float a2 = complex_amp_sqr(alpha);
 
-      Ps[j] = fs * (1 + b2);
-      Pd[j] = fd * (1 + a2);
-      Pv[j] = 8 * hv2[j];
+      Ps[j] = fs * (1. + complex_amp_sqr(beta));
+      Pd[j] = fd * (1. + complex_amp_sqr(alpha));
+      Pv[j] = 8. * hv2[j];
 
       // convert to dB
-      //Ps[j] = 10*log10(Ps[j]);
-      //Pd[j] = 10*log10(Pd[j]);
-      //Pv[j] = 10*log10(Pv[j]);
+      Ps[j] = 10*log10(Ps[j]*Ps[j]);
+      Pd[j] = 10*log10(Pd[j]*Pd[j]);
+      Pv[j] = 10*log10(Pv[j]*Pv[j]);
     }
 
     if (band1 >= 0)
@@ -1414,10 +1421,24 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   meta_free(outMeta);
 }
 
+static int has_amp_band(const char *inFile)
+{
+    int ret = FALSE;
+    char *mfile = appendExt(inFile, ".meta");
+    if (fileExists(mfile)) {
+      meta_parameters *meta = meta_read(mfile);
+      if (strncmp_case(meta->general->bands, "AMP", 3) == 0)
+        ret = TRUE;
+      meta_free(meta);
+    }
+    free(mfile);
+    return ret;
+}
+
 void cpx2classification(const char *inFile, const char *outFile,
                         int tc_flag, const char *classFile)
 {
-  if (tc_flag)
+  if (tc_flag && has_amp_band(inFile))
     polarimetric_decomp(inFile, outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                         -1,-1,-1,classFile, 1);
   else
@@ -1428,7 +1449,7 @@ void cpx2classification(const char *inFile, const char *outFile,
 void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Sinclair decomposition channels\n");
-  if (tc_flag)
+  if (tc_flag && has_amp_band(inFile))
     polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,1,2,3,-1,-1,-1,
                         NULL,-1);
   else
@@ -1439,7 +1460,7 @@ void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag)
 void cpx2pauli(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Pauli decomposition channels\n");
-  if (tc_flag)
+  if (tc_flag && has_amp_band(inFile))
     polarimetric_decomp(inFile,outFile,0,1,2,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                         NULL,-1);
   else
@@ -1472,7 +1493,7 @@ void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
                                   int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha.\n");
-  if (tc_flag)
+  if (tc_flag && has_amp_band(inFile))
     polarimetric_decomp(inFile,outFile,0,-1,-1,-1,1,2,3,-1,-1,-1,-1,-1,-1,
                         NULL,-1);
   else 
@@ -1480,11 +1501,15 @@ void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
                         NULL,-1);
 }
 
-void cpx2freeman_durden(const char *inFile, const char *outFile)
+void cpx2freeman_durden(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Freeman/Durden decomposition channels\n");
-  polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,2,
-                      NULL,-1);
+  if (tc_flag && has_amp_band(inFile))
+    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,2,3,
+                        NULL,-1);
+  else
+    polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,2,
+                        NULL,-1);
 }
 
 static gsl_matrix *make_diag3(double e00, double e11, double e22)
