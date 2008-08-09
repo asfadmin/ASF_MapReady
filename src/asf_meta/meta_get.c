@@ -190,7 +190,7 @@ double meta_incid(meta_parameters *meta,double y,double x)
 
   double sr = meta_get_slant(meta,y,x);
 
-  if (meta->sar->incid_a[0] != MAGIC_UNSET_DOUBLE) {
+  if (meta_is_valid_double(meta->sar->incid_a[0])) {
     double R = sr/1000.;
     double R2=R*R;
     return
