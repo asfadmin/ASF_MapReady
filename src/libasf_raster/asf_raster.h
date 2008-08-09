@@ -79,7 +79,7 @@ char **extract_band_names(char *bands, int band_count);
 char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *green_channel, 
 		  char *blue_channel, int *num_found);
 char **find_single_band(char *in_base_name, char *band, int *num_found);
-int get_band_number(char *bands, int band_count, char *channel);
+int get_band_number(char *bands, int band_count, const char *channel);
 int split3(const char *rgb, char **pr, char **pg, char **pb, char sep);
 char *get_band_name(char *band_str, int band_count, int band_num);
 

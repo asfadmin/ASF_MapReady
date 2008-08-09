@@ -43,7 +43,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == TIF ) {
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
-      out_name = MALLOC(sizeof(char)*(strlen(output_name)+6));
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
       append_ext_if_needed(out_name, ".tif", ".tiff");
       export_band_image(in_meta_name, in_data_name, out_name,
@@ -54,7 +54,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == GEOTIFF ) {
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
-      out_name = MALLOC(sizeof(char)*(strlen(output_name)+6));
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
       append_ext_if_needed(out_name, ".tif", ".tiff");
       export_band_image(in_meta_name, in_data_name, out_name,
@@ -65,7 +65,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == JPEG ) {
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
-      out_name = MALLOC(sizeof(char)*(strlen(output_name)+6));
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
       append_ext_if_needed(out_name, ".jpg", ".jpeg");
       export_band_image(in_meta_name, in_data_name, out_name,
@@ -76,7 +76,9 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == PNG ) {
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
-      out_name = appendExt(output_name, ".png");
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+      strcpy(out_name, output_name);
+      append_ext_if_needed(out_name, ".png", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color, pauli, sinclair,
@@ -97,7 +99,9 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       }
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
-      appendExt(output_name, ".pgm");
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+      strcpy(out_name, output_name);
+      append_ext_if_needed(out_name, ".pgm", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color, pauli, sinclair,

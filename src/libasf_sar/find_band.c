@@ -3,7 +3,21 @@
 
 int find_band(meta_parameters *meta, char *name, int *ok)
 {
-    char *rad_name = MALLOC(sizeof(char)*(strlen(name)+32));
+    const char *rad_name = get_cal_band_name(meta, name);
+    int band_num = get_band_number(meta->general->bands,
+                                   meta->general->band_count, rad_name);
+
+    if (band_num < 0) {
+        asfPrintStatus("Band '%s' not found.\n", name);
+        *ok = FALSE;
+    }
+
+    return band_num;
+}
+
+const char *get_cal_band_name(meta_parameters *meta, char *base)
+{
+    static char rad_name[32];
     const char *rad;
     switch (meta->general->radiometry) {
       case r_AMP:
@@ -37,15 +51,6 @@ int find_band(meta_parameters *meta, char *name, int *ok)
         break;
     }
 
-    sprintf(rad_name, "%s%s", rad, name);
-
-    int band_num = get_band_number(meta->general->bands,
-                                   meta->general->band_count, rad_name);
-
-    if (band_num < 0) {
-        asfPrintStatus("Band '%s' not found.\n", name);
-        *ok = FALSE;
-    }
-
-    return band_num;
+    sprintf(rad_name, "%s%s", rad, base);
+    return rad_name;
 }

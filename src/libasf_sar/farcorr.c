@@ -217,10 +217,45 @@ static void do_append(const char *file, const char *append_file,
 }
 
 void faraday_correct(const char *inFile, const char *outFile,
-                     int save_intermediates, int use_single_rotation_value)
+                     int save_intermediates, int use_single_rotation_value,
+                     radiometry_t output_radiometry)
 {
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
+
+  if (inMeta->general->radiometry != r_AMP) {
+    asfPrintError("This image is already calibrated. Faraday Rotation can\n"
+                  "only be applied to uncalibrated (amplitude) images. After\n"
+                  "the Faraday Correction is applied, the image can be\n"
+                  "calibrated.\n");
+  }
+
+  switch (output_radiometry) {
+    case r_AMP:
+      asfPrintStatus("Selected output calibration: (none)\n");
+      break;
+    case r_SIGMA:
+      asfPrintStatus("Selected output calibration: Sigma\n");
+      break;
+    case r_SIGMA_DB:
+      asfPrintStatus("Selected output calibration: Sigma (dB)\n");
+      break;
+    case r_BETA:
+      asfPrintStatus("Selected output calibration: Beta\n");
+      break;
+    case r_BETA_DB:
+      asfPrintStatus("Selected output calibration: Beta (dB)\n");
+      break;
+    case r_GAMMA:
+      asfPrintStatus("Selected output calibration: Gamma\n");
+      break;
+    case r_GAMMA_DB:
+      asfPrintStatus("Selected output calibration: Gamma (dB)\n");
+      break;
+    default:
+      asfPrintError("Invalid radiometry: %d\n", output_radiometry);
+      break;
+  }
 
   char *in_img_name = appendExt(inFile, ".img");
   char *rot_img_name = appendToBasename(in_img_name, "_farrot");
@@ -311,20 +346,59 @@ void faraday_correct(const char *inFile, const char *outFile,
   else
     asfPrintStatus("Calculating corrected values...\n");
 
-  // final output metadata
+  // Opening the data files...
+  fin = fopenImage(in_img_name, "rb");
+  fout = fopenImage(out_img_name, "wb");
+  qpd = qpd_new(fin, inMeta);
+
+  // generate the output metadata
   char *out_meta_name = appendExt(outFile, ".meta");
   meta_parameters *outMeta = meta_read(meta_name);
 
-  // anything to update???
+  // update radiometry, and the corresponding band names
+  outMeta->general->radiometry = output_radiometry;
+
+  int db_flag = FALSE;
+  if (output_radiometry == r_SIGMA_DB ||
+      output_radiometry == r_BETA_DB ||
+      output_radiometry == r_GAMMA_DB)
+    db_flag = TRUE;
+
+  char bands[512];
+  strcpy(bands, "");
+
+  for (i=0; i<outMeta->general->band_count; ++i) {
+    if (i==qpd->hh_amp_band)
+      strcat(bands, get_cal_band_name(outMeta, "AMP-HH"));
+    else if (i==qpd->hh_phase_band)
+      strcat(bands, get_cal_band_name(outMeta, "PHASE-HH"));
+    else if (i==qpd->hv_amp_band)
+      strcat(bands, get_cal_band_name(outMeta, "AMP-HV"));
+    else if (i==qpd->hv_phase_band)
+      strcat(bands, get_cal_band_name(outMeta, "PHASE-HV"));
+    else if (i==qpd->vh_amp_band)
+      strcat(bands, get_cal_band_name(outMeta, "AMP-VH"));
+    else if (i==qpd->vh_phase_band)
+      strcat(bands, get_cal_band_name(outMeta, "PHASE-VH"));
+    else if (i==qpd->vv_amp_band)
+      strcat(bands, get_cal_band_name(outMeta, "AMP-VV"));
+    else if (i==qpd->vv_phase_band)
+      strcat(bands, get_cal_band_name(outMeta, "PHASE-VV"));
+    else {
+      // must be a pass-through band
+      char *band_name = get_band_name(outMeta->general->bands,
+                                      outMeta->general->band_count, i);
+      strcat(bands, band_name);
+    }
+    strcat(bands, ",");
+  }
+
+  bands[strlen(bands)-1] = '\0'; //strip trailing comma
+  strcpy(outMeta->general->bands, bands);
 
   // write out output metadata
   meta_write(outMeta, out_meta_name);
 
-  // Now the data files...
-  fin = fopenImage(in_img_name, "rb");
-  fout = fopenImage(out_img_name, "wb");
-  qpd = qpd_new(fin, inMeta);
-  
   // We'll either (1) pull the rotation angle from the smoothed image file,
   // or (2) use the calculated average rotation angle.  If we're in case (1),
   // open the smoothed rotation angle file.
@@ -415,6 +489,16 @@ void faraday_correct(const char *inFile, const char *outFile,
         res[j] = omega - get_omega(qpd, i, j);
     }
     
+    // apply calibration to amplitude bands, if necessary
+    if (output_radiometry != r_AMP) {
+      for (j=0; j<ns; ++j) {
+        hh_amp[j] =  get_cal_dn(outMeta, i, j, hh_amp[j], db_flag);
+        hv_amp[j] =  get_cal_dn(outMeta, i, j, hv_amp[j], db_flag);
+        vh_amp[j] =  get_cal_dn(outMeta, i, j, vh_amp[j], db_flag);
+        vv_amp[j] =  get_cal_dn(outMeta, i, j, vv_amp[j], db_flag);
+      }
+    }
+
     // write out all 8 bands of the output...
     put_band_float_line(fout, outMeta, qpd->hh_amp_band, i, hh_amp);
     put_band_float_line(fout, outMeta, qpd->hh_phase_band, i, hh_phase);

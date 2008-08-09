@@ -128,6 +128,7 @@ int classify(classifier_t *classifier, float entropy, float anisotropy,
              float alpha);
 
 /* find_band.c */
+const char *get_cal_band_name(meta_parameters *meta, char *base);
 int find_band(meta_parameters *meta, char *name, int *ok);
 
 /* Prototypes from polarimetry.c */
@@ -163,7 +164,8 @@ void make_entropy_alpha_boundary(const char *fname, int size);
 
 /* farcorr.c */
 void faraday_correct(const char *inFile, const char *outFile,
-                     int save_intermediates, int use_single_rotation_value);
+                     int save_intermediates, int use_single_rotation_value,
+                     radiometry_t output_radiometry);
 
 
 #endif

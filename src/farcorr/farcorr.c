@@ -2,7 +2,7 @@
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-keep] [-single-angle]\n"\
-"          <in_base_name> <out_base_name>\n"
+"          [-sigma | -beta | -gamma ] [-db] <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program performs Faraday rotation correction to a quad-pol\n"\
@@ -11,11 +11,16 @@
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"\
 "     It must have 8 bands, named HH_AMP, HH_PHASE, etc., for each of HH,\n"\
-"     HV, VH, and VV.  You should just specify the basename of the file.\n"
+"     HV, VH, and VV.  You should just specify the basename of the file.\n"\
+"     The data must not be calibrated, amplitude data is necessary for the\n"\
+"     Faraday Rotation calculations.  After correction, the data may be\n"\
+"     calibrated, using the saved calibration parameters in the metadata\n"\
+"     file.\n"
 
 #define ASF_OUTPUT_STRING \
 "     The output file will have 8 bands, like the input, and be corrected\n"\
-"     for Faraday rotation.\n"
+"     for Faraday rotation.  If calibration options were used, the output\n"\
+"     will be calibrated according to the specified options.\n"
 
 #define ASF_OPTIONS_STRING \
 "     -keep (-k)\n"\
@@ -40,6 +45,25 @@
 "          With this option turned on, a global average rotation angle\n"\
 "          is used instead of a local average -- in other words, a single\n"\
 "          correction angle is used for all pixels in the image.\n"\
+"\n"\
+"     -sigma\n"\
+"          After Faraday Rotation correction, calibrate the image using\n"\
+"          Sigma powerscale values. Use only one of: -sigma, -beta, -gamma.\n"\
+"\n"\
+"     -beta\n"\
+"          After Faraday Rotation correction, calibrate the image using\n"\
+"          Beta powerscale values. Use only one of: -sigma, -beta, -gamma.\n"\
+"\n"\
+"     -gamma\n"\
+"          After Faraday Rotation correction, calibrate the image using\n"\
+"          Gamma powerscale values. Use only one of: -sigma, -beta, -gamma.\n"\
+"\n"\
+"     -db\n"\
+"          Output calibrated image in decibels.  This can be used with\n"\
+"          -sigma, -beta, or -gamma; this option is ignored if none of\n"\
+"          those options have been specified.  When perorming statistics\n"\
+"          on the imagery you may wish to consider leaving the image in\n"\
+"          powerscale (i.e., do not use the -db option)\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
@@ -126,6 +150,7 @@ main (int argc, char *argv[])
   int keep_flag = FALSE;
   int single_angle_flag = FALSE;
   int NUM_ARGS = 2;
+  int sigma_flag, beta_flag, gamma_flag, db_flag;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -155,11 +180,42 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-single-angle","--single-angle","-s",NULL)) {
       single_angle_flag = TRUE;
     }
+    else if (strmatches(key,"-sigma","--sigma",NULL)) {
+      sigma_flag = TRUE;
+    }
+    else if (strmatches(key,"-beta","--beta",NULL)) {
+      beta_flag = TRUE;
+    }
+    else if (strmatches(key,"-gamma","--gamma",NULL)) {
+      gamma_flag = TRUE;
+    }
+    else if (strmatches(key,"-db","--db",NULL)) {
+      db_flag = TRUE;
+    }
     else {
         --currArg;
         break;
     }
   }
+
+  if (db_flag && !sigma_flag && !beta_flag && !gamma_flag) {
+    asfPrintWarning("-db option ignored.  No calibration radiometry "
+                    "(-sigma, -beta, or -gamma)was specified.\n");
+    db_flag = FALSE;
+  }
+
+  if (sigma_flag + beta_flag + gamma_flag > 1) {
+    asfPrintError("More than one calibration option (-sigma, -beta, or "
+                  "-gamma) was specified.\n");
+  }
+
+  radiometry_t radiometry = r_AMP;
+  if (sigma_flag)
+    radiometry = db_flag ? r_SIGMA_DB : r_SIGMA;
+  else if (beta_flag)
+    radiometry = db_flag ? r_BETA_DB : r_BETA;
+  else if (gamma_flag)
+    radiometry = db_flag ? r_GAMMA_DB : r_GAMMA;
 
   if ((argc-currArg) < NUM_ARGS) {
     printf("Insufficient arguments.\n");
@@ -172,7 +228,7 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
-  faraday_correct(inFile, outFile, keep_flag, single_angle_flag);
+  faraday_correct(inFile, outFile, keep_flag, single_angle_flag, radiometry);
 
   asfPrintStatus("Done.\n");
 

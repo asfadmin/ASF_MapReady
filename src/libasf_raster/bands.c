@@ -236,7 +236,7 @@ char **find_single_band(char *in_base_name, char *band, int *num_found)
 // Special consideration is allowed for "HH","HV","VH","VV", etc
 // When looking for the "HH" band, "SIGMA-AMP-HH" will succeed
 
-int get_band_number(char *bands, int band_count, char *channel)
+int get_band_number(char *bands, int band_count, const char *channel)
 {
   char *t_bands;
   char *t_channel;

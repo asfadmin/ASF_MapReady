@@ -1424,6 +1424,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // be terrain correcting
     int amp0_flag = FALSE;
 
+    // The "saved radiometry" is the requested radiometry in the case where
+    // import will not apply the calibration parameters, because the farcorr
+    // code will be doing it -- in that case, import must use amplitude,
+    // and "saved_radiometry" will be passed in to the FR correction func.
+    radiometry_t saved_radiometry = r_AMP;
+
     // Call asf_import, if needed (=> input is not ASF Internal)
     if (cfg->general->import) {
 
@@ -1463,6 +1469,24 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       if (cfg->import->output_db)
           db_flag = TRUE;
+
+      // When performing Faraday Rotation, we must import amplitude.
+      // After the correction, the correct radiometry will be applied.
+      // We include the db_flag in the saved_radiometry.
+      if (cfg->general->polarimetry && cfg->polarimetry &&
+          cfg->polarimetry->farcorr != FARCORR_OFF)
+      {
+        saved_radiometry = radiometry;
+        if (db_flag) {
+          if (saved_radiometry == r_SIGMA) saved_radiometry = r_SIGMA_DB;
+          if (saved_radiometry == r_BETA)  saved_radiometry = r_BETA_DB;
+          if (saved_radiometry == r_GAMMA) saved_radiometry = r_GAMMA_DB;
+        }
+
+        // now set radiometry to amplitude, and db off.
+        radiometry = r_AMP;
+        db_flag = FALSE;
+      }
 
       // Generate a temporary output filename
       if (cfg->general->image_stats || cfg->general->detect_cr ||
@@ -1759,8 +1783,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       
         int keep_flag = cfg->general->intermediates;
         int single_angle_flag = (FARCORR_MEAN == cfg->polarimetry->farcorr);
+        radiometry_t rad = saved_radiometry;
         asfPrintStatus("\nApplying Faraday Rotation correction.\n");
-        faraday_correct(inFile, outFile, keep_flag, single_angle_flag);
+        faraday_correct(inFile, outFile, keep_flag, single_angle_flag, rad);
         asfPrintStatus("Done.\n\n");
 
         sprintf(tmpFile, "%s/polarimetry_farcorr.img", cfg->general->tmp_dir);
@@ -2373,7 +2398,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     "exporting thumbnail data file (asf_export)\n");
                   // strip off the band name at the end!
                   char *banded_name =
-                    MALLOC(sizeof(char)*(strlen(outFile)+10));
+                    MALLOC(sizeof(char)*(strlen(outFile)+32));
                   if (cfg->general->intermediates) {
                     sprintf(banded_name, "%s/%s_thumb_%s.png",
                             cfg->general->tmp_dir, basename, bands[0]);

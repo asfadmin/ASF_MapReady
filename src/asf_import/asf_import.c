@@ -61,7 +61,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -multilook\n"\
 "        Create a multilooked image when ingesting single look complex data\n"\
 "        into a two-banded image with amplitude and phase\n"\
-"   -db  Output calibrated image in decibles. This can only be used with\n"\
+"   -db  Output calibrated image in decibels. This can only be used with\n"\
 "        -sigma, -beta, or -gamma. When performing statistics on the imagery\n"\
 "        it is highly recommended that the image is left in power scale\n"\
 "        (ie do not use the -db flag if you plan on statistical analysis)\n"\
