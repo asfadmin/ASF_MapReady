@@ -1,5 +1,4 @@
 #include "image_stats.h"
-#include "least_squares.h"
 #include "matrix.h"
 #include "asf_meta.h"
 

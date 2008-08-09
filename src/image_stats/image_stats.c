@@ -376,11 +376,11 @@ int main(int argc, char *argv[])
 	    asfPrintError("Unable to determine earth radius.\n");
 	}
 	else
-	  earth_radius = get_earth_radius(time, stVec, re, rp);
-	satellite_height = get_satellite_height(time, stVec);
-	range = get_slant_range(meta, earth_radius, satellite_height, line, sample);
-	look_angle = get_look_angle(earth_radius, satellite_height, range);
-	incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
+	  earth_radius = my_get_earth_radius(time, stVec, re, rp);
+	satellite_height = my_get_satellite_height(time, stVec);
+	range = my_get_slant_range(meta, earth_radius, satellite_height, line, sample);
+	look_angle = my_get_look_angle(earth_radius, satellite_height, range);
+	incidence_angle = my_get_incidence_angle(earth_radius, satellite_height, range);
 	
 	if (ll==0 && kk==0) {
 	  firstLook = look_angle * R2D;

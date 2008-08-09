@@ -56,12 +56,12 @@ void check_return(int ret, char *msg);
 void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName);
 
 /* Prototypes out of meta_util.c */
-double get_satellite_height(double time, stateVector stVec);
-double get_earth_radius(double time, stateVector stVec, double re, double rp);
-double get_slant_range(meta_parameters *meta, double er, double ht, 
+double my_get_satellite_height(double time, stateVector stVec);
+double my_get_earth_radius(double time, stateVector stVec, double re, double rp);
+double my_get_slant_range(meta_parameters *meta, double er, double ht, 
 		       int line, int sample);
-double get_look_angle(double er, double ht, double sr);
-double get_incidence_angle(double er, double ht, double sr);
+double my_get_look_angle(double er, double ht, double sr);
+double my_get_incidence_angle(double er, double ht, double sr);
 
 /* Prototypes out of plot.c */
 void calculate_plot(char *axis, char *gridFile, char *inFile, char *maskFile, 
