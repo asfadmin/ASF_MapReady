@@ -1226,7 +1226,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   double *incid_table, *scale_table;
   struct IOF_VFDR image_fdr;
   meta_parameters *meta;
-  cal_params *cal_param=NULL;
   quadratic_2d q;
   data_type_t data_type;
   // input buffers
@@ -1327,13 +1326,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   // Initialize calibration if you need to
   if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB && meta->sar) {
     create_cal_params(inMetaName, meta);
-    // FIXME: check things out
-    /*
-    if (cal_param == NULL) // Die if we can't get the calibration params
-      asfPrintError("Unable to extract calibration parameters from CEOS "
-            "file.");
-    cal_param->radiometry = radiometry;
-    */
   }
 
   // Give user status on input and output data type
@@ -1734,14 +1726,24 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                 float im = cpx_float_ml_buf[mm*ns + kk].imag;
                 cpx.real += re;
                 cpx.imag += im;
-                amp += re*re + im*im; // Sum the squares
+                if (meta->sar && radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+                    // Calibrated case
+                    amp += re*re + im*im; // Sum the squares (power)
+                }
+                else {
+                    // Amplitude case
+                    amp += sqrt(re*re + im*im); // Summ the amplitude
+                }
             }
             amp /= (float)lc; // Average of the squares
-            amp = sqrt(amp);  // Finally ...the average amplitude
+            if (meta->sar && radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+                // The calibrated case is squared and must be converted to amplitude
+                amp = sqrt(amp);
+            }
             cpx.real /= (float)lc;
             cpx.imag /= (float)lc;
             if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-                amp_float_buf[kk] = get_cal_dn(cal_param, ii+mm, kk, amp, db_flag);
+                amp_float_buf[kk] = get_cal_dn(meta, ii+mm, kk, amp, db_flag);
             }
             else {
                 amp_float_buf[kk] = amp;
