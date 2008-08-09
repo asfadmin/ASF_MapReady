@@ -213,14 +213,19 @@ void import_ceos(char *inBaseName, char *outBaseName,
   // Add amplitude band, if requested, and applicable
   int nBandsOut = nBands;
   if (amp0_flag) {
-    if (radiometry == r_AMP) {
-      asfPrintWarning("amp0 flag ignored -- amplitude data is "
-                      "already being imported.\n");
-      amp0_flag = FALSE;
-    }
-    else {
+    // Taking this code out -- we will still add the extra band (called "AMP")
+    // at the beginning even if the rest of the data is already being imported
+    // as amplitude -- this is so Faraday Rotation correction, or anything that
+    // applies calibration after import, doesn't have to mess around with
+    // adding the extra band, it will always be done here.
+    //if (radiometry == r_AMP) {
+    //  asfPrintWarning("amp0 flag ignored -- amplitude data is "
+    //                  "already being imported.\n");
+    //  amp0_flag = FALSE;
+    //}
+    //else {
       ++nBandsOut;
-    }
+    //}
   }
 
   // can't do db when radiometry is AMPLITUDE

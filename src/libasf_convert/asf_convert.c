@@ -1458,7 +1458,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
 
       // See above, this is the flag that adds a "secret" AMP band
-      // for terrain correction
+      // for terrain correction.
       amp0_flag = radiometry != r_AMP && cfg->general->terrain_correct;
       if (amp0_flag)
         asfPrintStatus("Adding Amplitude band, for terrain correction.\n");
@@ -1473,6 +1473,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // When performing Faraday Rotation, we must import amplitude.
       // After the correction, the correct radiometry will be applied.
       // We include the db_flag in the saved_radiometry.
+      // Note that the amp0 flag may then be adding an amplitude band,
+      // when we're asking for amplitude data (that will be calibrated later),
+      // this is ok.  Import should still add that extra band.
       if (cfg->general->polarimetry && cfg->polarimetry &&
           cfg->polarimetry->farcorr != FARCORR_OFF)
       {
