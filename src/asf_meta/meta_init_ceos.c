@@ -207,6 +207,9 @@ void ceos_init_sar(ceos_description *ceos, const char *in_fName,
       "at this time.\n");
   else
     asfPrintError("Should never get here!\n");
+
+  create_cal_params(in_fName, meta);
+
 }
 
 void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,

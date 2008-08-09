@@ -1326,11 +1326,14 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Initialize calibration if you need to
   if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB && meta->sar) {
-    cal_param = create_cal_params(inMetaName, meta);
+    create_cal_params(inMetaName, meta);
+    // FIXME: check things out
+    /*
     if (cal_param == NULL) // Die if we can't get the calibration params
       asfPrintError("Unable to extract calibration parameters from CEOS "
             "file.");
     cal_param->radiometry = radiometry;
+    */
   }
 
   // Give user status on input and output data type
@@ -1697,7 +1700,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             }
             else {
               amp_float_buf[ll*ns + kk] =
-                get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
+                get_cal_dn(meta, ii+ll, kk, fValue, db_flag);
               phase_float_buf[ll*ns + kk] =  atan2(cpx.imag, cpx.real);
         }
           }
@@ -1722,6 +1725,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
       // Multilook if requested
       if (multilook_flag) {
+
         for (kk=0; kk<ns; kk++) {
             float amp = 0.0;
             cpx.real = cpx.imag = 0;
@@ -1898,7 +1902,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         byte_buf[kk] = tmp_byte_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(cal_param, ii, kk, (float)byte_buf[kk], db_flag);
+          get_cal_dn(meta, ii, kk, (float)byte_buf[kk], db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[kk] = (float) byte_buf[kk]*byte_buf[kk];
           else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
@@ -1917,7 +1921,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         short_buf[kk] = tmp_short_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(cal_param, ii, kk, (float)short_buf[kk], db_flag);
+          get_cal_dn(meta, ii, kk, (float)short_buf[kk], db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[kk] = (float) short_buf[kk]*short_buf[kk];
           else
@@ -1928,7 +1932,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         int_buf[kk] = tmp_int_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(cal_param, ii, kk, (float)int_buf[kk], db_flag);
+          get_cal_dn(meta, ii, kk, (float)int_buf[kk], db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[ns+kk] = (float) int_buf[kk]*int_buf[kk];
           else
@@ -1939,7 +1943,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         float_buf[kk] = tmp_float_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(cal_param, ll, kk, float_buf[kk], db_flag);
+          get_cal_dn(meta, ll, kk, float_buf[kk], db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[kk] = float_buf[kk]*float_buf[kk];
           else
@@ -1950,7 +1954,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         double_buf[kk] = tmp_double_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(cal_param, ii, kk, (float)double_buf[kk],
+          get_cal_dn(meta, ii, kk, (float)double_buf[kk],
                  db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[kk] =

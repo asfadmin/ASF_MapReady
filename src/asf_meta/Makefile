@@ -72,6 +72,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	ardop_params.o \
 	c_degdms.o \
 	c_prostr.o \
+	cal_params.o \
 	ceos_io.o \
 	code_ceos.o \
 	coniFetch.o \

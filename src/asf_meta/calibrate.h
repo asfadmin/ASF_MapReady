@@ -19,11 +19,12 @@ typedef struct {
 } quadratic_2d;
 
 typedef enum {
-  asf_cal=0,          // ASF:  a0, a1 and a2 plus noise vector
-  asf_scansar_cal=1,  // SCANSAR:  a0, a1 and a2 plus noise vector
-  esa_cal=2,          // ESA:  calibration constant K
-  rsat_cal=3,         // RSAT: look up table approach
-  alos_cal=4          // ALOS: calibration coefficient CF
+  unknown_cal=0,
+  asf_cal,          // ASF:  a0, a1 and a2 plus noise vector
+  asf_scansar_cal,  // SCANSAR:  a0, a1 and a2 plus noise vector
+  esa_cal,          // ESA:  calibration constant K
+  rsat_cal,         // RSAT: look up table approach
+  alos_cal          // ALOS: calibration coefficient CF
 } cal_type;
 
 typedef struct {
@@ -35,8 +36,6 @@ typedef struct {
 typedef struct {
   double a0, a1, a2;  // calibration coefficient
   double noise[256];  // noise values
-  int tablePix;
-  int numLines;
 } asf_scansar_cal_params;
 
 typedef struct {

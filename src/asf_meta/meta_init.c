@@ -197,6 +197,20 @@ meta_transform *meta_transform_init(void)
   return map;
 }
 
+meta_calibration *meta_calibration_init(void)
+{
+  meta_calibration *cal = 
+    (meta_calibration *) MALLOC(sizeof(meta_calibration));
+  cal->type = unknown_cal;
+  cal->asf = NULL;
+  cal->asf_scansar = NULL;
+  cal->esa = NULL;
+  cal->rsat = NULL;
+  cal->alos = NULL;
+
+  return cal;
+}
+
 meta_airsar *meta_airsar_init(void)
 {
   meta_airsar *airsar = (meta_airsar *) MALLOC(sizeof(meta_airsar));
@@ -326,6 +340,7 @@ meta_parameters *raw_init(void)
   meta->airsar          = NULL;
   meta->stats           = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
+  meta->calibration     = NULL;
   meta->location        = NULL;
 
   meta->meta_version = META_VERSION;

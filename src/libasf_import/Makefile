@@ -49,7 +49,6 @@ OBJS  = ardop_write.o \
 	aux_JRS_PCM.o \
 	aux_RSAT.o \
 	bin_state.o \
-	cal_params.o \
 	createSubset.o \
 	decoder_ERS.o \
 	decoder_JRS.o \

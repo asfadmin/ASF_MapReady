@@ -483,6 +483,7 @@ meta_transform *meta_transform_init(void);
 meta_airsar *meta_airsar_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 meta_statistics *meta_statistics_init(int band_count);
+meta_calibration *meta_calibration_init(void);
 //meta_stats *meta_stats_init(void);
 meta_location *meta_location_init(void);
 meta_parameters *raw_init(void);
@@ -818,9 +819,9 @@ int refine_slc_geolocation_from_workreport(const char *metaName,
 
 // Calibration functions from cal_params.c
 quadratic_2d get_incid(char *sarName, meta_parameters *meta);
-cal_params *create_cal_params(const char *inSAR, meta_parameters *meta);
-float get_cal_dn(cal_params *cal, int line, int sample, float inDn,
-                 int dbFlag);
+void create_cal_params(const char *inSAR, meta_parameters *meta);
+float get_cal_dn(meta_parameters *meta, int line, int sample, float inDn, 
+		 int dbFlag);
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
 

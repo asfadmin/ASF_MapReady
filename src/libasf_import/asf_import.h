@@ -99,12 +99,5 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
                char *bandExt, int band, int nBands, int nBandsOut,
                radiometry_t radiometry, int complex_flag);
 
-// cal_params.c
-quadratic_2d get_incid(char *sarName, meta_parameters *meta);
-cal_params *create_cal_params(const char *inSAR, meta_parameters *meta);
-float get_cal_dn(cal_params *cal, int line, int sample, float inDn, 
-		 int dbFlag);
-quadratic_2d find_quadratic(const double *out, const double *x,
-                            const double *y, int numPts);
 
 #endif

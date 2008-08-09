@@ -120,7 +120,7 @@ void error_message(const char *err_mes, ...)
 #define MLOCATION ( (meta_location *) current_block)
 #define MTRANSFORM ( (meta_transform *) current_block)
 #define MAIRSAR ( (meta_airsar *) current_block)
-#define MCALIBRATE ( (meta_calibrate *) current_block)
+#define MCALIBRATION ( (meta_calibration *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -217,6 +217,13 @@ void select_current_block(char *block_name)
     if (MTL->location == NULL)
       { MTL->location = meta_location_init(); }
     current_block = MTL->location;
+    goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "calibration") ) {
+    if (MTL->calibration == NULL)
+      { MTL->calibration = meta_calibration_init(); }
+    current_block = MTL->calibration;
     goto MATCHED;
   }
 
@@ -1025,6 +1032,102 @@ void fill_structure_field(char *field_name, void *valp)
       { (MLOCATION)->lat_end_far_range = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "lon_end_far_range") )
       { (MLOCATION)->lon_end_far_range = VALP_AS_DOUBLE; return; }
+  }
+
+
+  /* Fields which go in the calibration block of the metadata file. */
+  if ( !strcmp(stack_top->block_name, "calibration") ) {
+    if ( !strcmp(field_name, "type") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "ASF") ) {
+	int ii;
+	char str[15];
+	asf_cal_params *asf = MALLOC(sizeof(asf_cal_params));
+	(MCALIBRATION)->asf = asf;
+	for (ii=0; ii<256; ii++)
+	  (MCALIBRATION)->asf->noise[ii] = 0.0;
+        (MCALIBRATION)->type = asf_cal;
+	if ( !strcmp(field_name, "a(0)") )
+	  { (MCALIBRATION)->asf->a0 = VALP_AS_DOUBLE; return; }
+	if ( !strcmp(field_name, "a(1)") )
+	  { (MCALIBRATION)->asf->a1 = VALP_AS_DOUBLE; return; }
+	if ( !strcmp(field_name, "a(2)") )
+	  { (MCALIBRATION)->asf->a2 = VALP_AS_DOUBLE; return; }
+	if ( !strcmp(field_name, "sample_count") )
+	  { (MCALIBRATION)->asf->sample_count = VALP_AS_INT; return; }
+	for (ii=0; ii<256; ii++) {
+	  sprintf(str, "noise(%d)", ii);
+	  if ( !strcmp(field_name, str) )
+	    { (MCALIBRATION)->asf->noise[ii] = VALP_AS_DOUBLE; return; }
+	}
+	return;
+      }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "ASF SCANSAR") ) {
+	int ii;
+	char str[15];
+	asf_scansar_cal_params *asf = MALLOC(sizeof(asf_scansar_cal_params));
+	(MCALIBRATION)->asf_scansar = asf;
+	for (ii=0; ii<256; ii++)
+	  (MCALIBRATION)->asf_scansar->noise[ii] = 0.0;
+        (MCALIBRATION)->type = asf_scansar_cal;
+	if ( !strcmp(field_name, "a(0)") )
+	  { (MCALIBRATION)->asf_scansar->a0 = VALP_AS_DOUBLE; return; }
+	if ( !strcmp(field_name, "a(1)") )
+	  { (MCALIBRATION)->asf_scansar->a1 = VALP_AS_DOUBLE; return; }
+	if ( !strcmp(field_name, "a(2)") )
+	  { (MCALIBRATION)->asf_scansar->a2 = VALP_AS_DOUBLE; return; }
+	for (ii=0; ii<256; ii++) {
+	  sprintf(str, "noise(%d)", ii);
+	  if ( !strcmp(field_name, str) )
+	    { (MCALIBRATION)->asf_scansar->noise[ii] = VALP_AS_DOUBLE; return; }
+	}
+	return;
+      }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "ESA") ) {
+	esa_cal_params *esa = 
+	  (esa_cal_params *) MALLOC(sizeof(esa_cal_params));
+	(MCALIBRATION)->esa = esa;
+        (MCALIBRATION)->type = esa_cal;
+	if ( !strcmp(field_name, "k") )
+	  { (MCALIBRATION)->esa->k = VALP_AS_DOUBLE; return; }
+	if ( !strcmp(field_name, "ref_incid") )
+	  { (MCALIBRATION)->esa->ref_incid = VALP_AS_DOUBLE; return; }
+        return;
+      }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "RSAT") ) {
+	int ii;
+	char str[15];
+	rsat_cal_params *rsat = 
+	  (rsat_cal_params *) MALLOC(sizeof(rsat_cal_params));
+	(MCALIBRATION)->rsat = rsat;
+        (MCALIBRATION)->type = rsat_cal;
+	if ( !strcmp(field_name, "table_entries") )
+	  { (MCALIBRATION)->rsat->n = VALP_AS_INT; return; }
+	for (ii=0; ii<(MCALIBRATION)->rsat->n; ii++) {
+	  sprintf(str, "lut(%d)", ii);
+	  if ( !strcmp(field_name, str) )
+	    { (MCALIBRATION)->rsat->lut[ii] = VALP_AS_DOUBLE; return; }
+	}
+	if ( !strcmp(field_name, "sample_inc") )
+	  { (MCALIBRATION)->rsat->samp_inc = VALP_AS_INT; return; }
+	if ( !strcmp(field_name, "a3") )
+	  { (MCALIBRATION)->rsat->a3 = VALP_AS_DOUBLE; return; }
+	if ( !strcmp(field_name, "slc") )
+	  { (MCALIBRATION)->rsat->slc = VALP_AS_INT; return; }
+	if ( !strcmp(field_name, "focus") )
+	  { (MCALIBRATION)->rsat->focus = VALP_AS_INT; return; }
+        return;
+      }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "ALOS") ) {
+	alos_cal_params *alos = 
+	  (alos_cal_params *) MALLOC(sizeof(alos_cal_params));
+	(MCALIBRATION)->alos = alos;
+        (MCALIBRATION)->type = alos_cal;
+	if ( !strcmp(field_name, "cf") )
+	  { (MCALIBRATION)->alos->cf = VALP_AS_DOUBLE; return; }
+        return;
+      }
+      
+    }
   }
 
   /* Got an unknown field name, so report & choke */
