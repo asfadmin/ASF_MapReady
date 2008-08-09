@@ -49,7 +49,6 @@
 #include "asf_meta.h"
 #include "lzFetch.h"
 #include "libasf_proj.h"
-#include "least_squares.h"
 #include "matrix.h"
 
 #define VERSION 1.0
@@ -63,12 +62,12 @@
 
 #define SQR(X) ((X)*(X))
 
-double get_satellite_height(double time, stateVector stVec)
+static double my_get_satellite_height(double time, stateVector stVec)
 {
   return sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
 }
 
-double get_earth_radius(double time, stateVector stVec, double re, double rp)
+static double my_get_earth_radius(double time, stateVector stVec, double re, double rp)
 {
   double er = 
     sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
@@ -76,7 +75,7 @@ double get_earth_radius(double time, stateVector stVec, double re, double rp)
   return (re*rp)/sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
 }
 
-double get_slant_range(meta_parameters *meta, double er, double ht, int sample)
+static double my_get_slant_range(meta_parameters *meta, double er, double ht, int sample)
 {
   double minPhi=acos((ht*ht + er*er -
 		      SQR(meta->sar->slant_range_first_pixel))/(2.0*ht*er));
@@ -85,17 +84,17 @@ double get_slant_range(meta_parameters *meta, double er, double ht, int sample)
   return slantRng+meta->sar->slant_shift;
 }
 
-double get_look_angle(double er, double ht, double sr)
+static double my_get_look_angle(double er, double ht, double sr)
 {
   return acos((sr*sr+ht*ht-er*er)/(2.0*sr*ht));
 }
 
-double get_incidence_angle(double er, double ht, double sr)
+static double my_get_incidence_angle(double er, double ht, double sr)
 {
   return PI-acos((sr*sr+er*er-ht*ht)/(2.0*sr*er));
 }
 
-void usage(char *name);
+static void usage(char *name);
 
 int main(int argc, char *argv[])
 {
@@ -206,10 +205,10 @@ int main(int argc, char *argv[])
 		     &latitude, &longitude, &height);
 	  latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
 	  stVec = meta_get_stVec(meta, time);
-	  earth_radius = get_earth_radius(time, stVec, re, rp);
-	  satellite_height = get_satellite_height(time, stVec);
-	  look_angle = get_look_angle(earth_radius, satellite_height, range);
-	  incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
+	  earth_radius = my_get_earth_radius(time, stVec, re, rp);
+	  satellite_height = my_get_satellite_height(time, stVec);
+	  look_angle = my_get_look_angle(earth_radius, satellite_height, range);
+	  incidence_angle = my_get_incidence_angle(earth_radius, satellite_height, range);
 	  incidence_angle = meta_incid(meta, ii+ll, kk);
 	  
 	  if (lookFlag) bufLook[kk+ll*ns] = (float) look_angle*R2D;
@@ -268,11 +267,11 @@ int main(int argc, char *argv[])
 	sample = kk * ns / RES_X;
 	time = meta_get_time(meta, line, sample);
 	stVec = meta_get_stVec(meta, time);
-	earth_radius = get_earth_radius(time, stVec, re, rp);
-	satellite_height = get_satellite_height(time, stVec);
-	range = get_slant_range(meta, earth_radius, satellite_height, sample);
-	look_angle = get_look_angle(earth_radius, satellite_height, range);
-	incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
+	earth_radius = my_get_earth_radius(time, stVec, re, rp);
+	satellite_height = my_get_satellite_height(time, stVec);
+	range = my_get_slant_range(meta, earth_radius, satellite_height, sample);
+	look_angle = my_get_look_angle(earth_radius, satellite_height, range);
+	incidence_angle = my_get_incidence_angle(earth_radius, satellite_height, range);
 	if (latFlag || lonFlag) {
 	  if (!meta->sar->deskewed)
 	    doppler = meta_get_dop(meta, line, sample);
