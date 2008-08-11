@@ -1231,7 +1231,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   double *incid_table, *scale_table;
   struct IOF_VFDR image_fdr;
   meta_parameters *meta;
-  quadratic_2d q;
   data_type_t data_type;
   // input buffers
   unsigned char *byte_buf=NULL, *cpx_byte_buf=NULL, *tmp_byte_buf=NULL;
@@ -1528,10 +1527,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       (strncmp(meta->general->processor, "CDPF", 4) == 0 ||
        strncmp(meta->general->processor, "CSTARS", 6) == 0))
     flip = TRUE;
-
-  // Determine the incidence angle polynom for look up table ingest
-  if (lutName)
-    q = get_incid(inDataName, meta);
 
   if (data_type >= COMPLEX_BYTE) {
     // Go through complex imagery in chunks
@@ -1872,8 +1867,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     if (lutName) {
       double incid;
       int x=ii, y=kk;
-      incid = q.A       + q.B*x     + q.C*y       + q.D*x*x   + q.E*x*y   + q.F*y*y +
-              q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y + q.J*x*x*x + q.K*y*y*y;
+      incid = meta_incid(meta, x, y);
+//      incid = q.A       + q.B*x     + q.C*y       + q.D*x*x   + q.E*x*y   + q.F*y*y +
+//              q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y + q.J*x*x*x + q.K*y*y*y;
       for (mm = min; mm <= max; mm++) {
         if (incid < incid_table[mm]) {
           break;
