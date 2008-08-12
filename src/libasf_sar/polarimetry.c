@@ -780,7 +780,7 @@ do_coherence_bands(int entropy_band, int anisotropy_band, int alpha_band,
 static int verify_equal_re(const char *id, float lhs, float rhs)
 {
   if (fabs(lhs - rhs) > .001) {
-    printf("Not equal (%s): %f != %f\n", id, lhs, rhs);
+    //printf("Not equal (%s): %f != %f\n", id, lhs, rhs);
     return FALSE;
   }
   return TRUE;
@@ -791,8 +791,8 @@ static int verify_equal_cpx(const char *id, complexFloat lhs, complexFloat rhs)
   if (fabs(lhs.real - rhs.real) > .001 ||
       fabs(lhs.imag - rhs.imag) > .001)
   {
-    printf("Not equal (%s): (%f,%f) != (%f,%f)\n", id,
-           lhs.real, lhs.imag, rhs.real, rhs.imag);
+    //printf("Not equal (%s): (%f,%f) != (%f,%f)\n", id,
+    //       lhs.real, lhs.imag, rhs.real, rhs.imag);
     return FALSE;
   }
   return TRUE;
