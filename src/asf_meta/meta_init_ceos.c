@@ -80,9 +80,7 @@ void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
          meta_parameters *meta);
 int  meta_sar_to_startXY (meta_parameters *meta,
                           double *startX, double *startY);
-spheroid_type_t axis_to_spheroid (double re_major, double re_minor);
 double spheroidDiffFromAxis (spheroid_type_t spheroid, double n_semi_major, double n_semi_minor);
-datum_type_t spheroid_datum (spheroid_type_t spheroid);
 
 // Importing CEOS optical data
 void ceos_init_optical(const char *in_fName,meta_parameters *meta);

@@ -753,6 +753,8 @@ double get_chirp_rate (const char *fName);
 int get_alos_band_number(const char *fName);
 ceos_description *get_ceos_description(const char *fName, report_level_t level);
 void set_alos_look_count(meta_parameters *meta, const char *inMetaName);
+datum_type_t spheroid_datum (spheroid_type_t spheroid);
+spheroid_type_t axis_to_spheroid (double re_major, double re_minor);
 
 /***************************************************************************
   General conversion functions between projection coordinates and geographic
