@@ -1128,6 +1128,13 @@ void fill_structure_field(char *field_name, void *valp)
       }
       
     }
+    // I am copying this out here... all this code needs to be redone
+    // Kludge to get palsar working...
+    if ( !strcmp(field_name, "cf") )
+    { 
+      (MCALIBRATION)->alos->cf = VALP_AS_DOUBLE;
+      return;
+    }
   }
 
   /* Got an unknown field name, so report & choke */
