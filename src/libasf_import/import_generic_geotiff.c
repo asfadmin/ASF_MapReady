@@ -32,6 +32,7 @@
 #include <libasf_proj.h>
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "asf_nan.h"
 #include "asf_import.h"
 #include "asf_raster.h"
@@ -90,9 +91,11 @@ int check_for_datum_in_string(const char *citation, datum_type_t *datum);
 int check_for_ellipse_definition_in_geotiff(GTIF *input_gtif, spheroid_type_t *spheroid);
 int vintage_utm_citation_to_pcs(const char *citation, int *zone, char *hem, datum_type_t *datum, short *pcs);
 static int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem);
-void classify_geotiff(GTIF *input_gtif, short *model_type, short *raster_type, short *linear_units,
+void classify_geotiff(GTIF *input_gtif, short *model_type, short *raster_type, short *linear_units, short *angular_units,
                       int *geographic_geotiff, int *geocentric_geotiff, int *map_projected_geotiff,
                       int *geotiff_data_exists);
+char *angular_units_to_string(short angular_units);
+char *linear_units_to_string(short linear_units);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -229,6 +232,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   short model_type=-1;
   short raster_type=-1;
   short linear_units=-1;
+  short angular_units=-1;
   double scale_factor;
   TIFF *input_tiff;
   GTIF *input_gtif;
@@ -420,7 +424,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   // supported, but arc-sec are not yet ...
 
   int geographic_geotiff, map_projected_geotiff, geocentric_geotiff;
-  classify_geotiff(input_gtif, &model_type, &raster_type, &linear_units,
+  classify_geotiff(input_gtif, &model_type, &raster_type, &linear_units, &angular_units,
                    &geographic_geotiff, &geocentric_geotiff, &map_projected_geotiff,
                    &geotiff_data_exists);
   asfPrintStatus ("Input GeoTIFF key GTModelTypeGeoKey is %s\n",
@@ -429,10 +433,20 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                   (model_type == ModelTypeProjected)  ? "ModelTypeProjected"  : "Unknown");
   asfPrintStatus ("Input GeoTIFF key GTRasterTypeGeoKey is %s\n",
                   (raster_type == RasterPixelIsArea)  ? "RasterPixelIsArea" : "(Unsupported type)");
-  asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
-                  (linear_units == Linear_Meter)        ? "Linear_Meters"       :
-                  (linear_units == Angular_Arc_Second)  ? "Angular_Arc_Seconds" :
-                  (linear_units == Angular_Degree)      ? "Angular_Degrees"     : "(Unsupported type)");
+  if (map_projected_geotiff) {
+      asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
+                      (linear_units == Linear_Meter)        ? "Linear_Meter"       :
+                                                              "(Unsupported type of linear units)");
+  }
+  else if (geographic_geotiff) {
+      asfPrintStatus ("Input GeoTIFF key GeogAngularUnitsGeoKey is %s\n",
+                      (angular_units == Angular_Arc_Second)  ? "Angular_Arc_Second" :
+                      (angular_units == Angular_Degree)      ? "Angular_Degree"     :
+                                                               "(Unsupported type of angular units)");
+  }
+  else {
+      asfPrintError ("Cannot determine type of linear or angular units in GeoTIFF\n");
+  }
   /***** READ PROJECTION PARAMETERS FROM TIFF IF GEO DATA EXISTS                 *****/
   /***** THEN READ THEM FROM THE METADATA (.AUX) FILE TO SUPERCEDE IF THEY EXIST *****/
   /*                                                                                 */
@@ -1072,7 +1086,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     } // End of if UTM else OTHER projection type
   } // End of reading projection parameters from geotiff ...if it existed
   else if (model_type == ModelTypeGeographic && geotiff_data_exists) {
-      // Set the projection block data that we know at this point
+    // Set the projection block data that we know at this point
     if (tie_point[0] != 0 || tie_point[1] != 0 || tie_point[2] != 0) {
       // NOTE: To support tie points at other locations, or a set of other locations,
       // then things rapidly get more complex ...and a transformation must either be
@@ -1085,7 +1099,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     read_count
         = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geographic_type, 0, 1);
     asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
-    datum_type_t datum = UNKNOWN_DATUM;
+    datum = UNKNOWN_DATUM;
     switch ( geographic_type ) {
       case GCS_WGS_84:
         datum = WGS84_DATUM;
@@ -1102,8 +1116,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     }
     spheroid_type_t spheroid = datum_spheroid (datum);
 
-    mp->type = LAT_LONG_PSEUDO_PROJECTION;
+    // NOTE: For geographic geotiffs, all angular units are converted to decimal
+    // degrees upon ingest, hence the setting of mp->units to "degrees" here.
+    // the angular_units variable contains, at this point, the type of unit that is
+    // used within the geotiff itself, i.e. Angular_Arc_Second, Angular_Degree, etc.
     strcpy (mp->units, "degrees");
+    mp->type = LAT_LONG_PSEUDO_PROJECTION;
     mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
     mp->spheroid = spheroid;
 
@@ -1123,7 +1141,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   /*****************************************************/
   /***** CHECK TO SEE IF THIS IS AN ARCGIS GEOTIFF *****/
   /*                                                   */
-  if (isArcgisGeotiff(inFileName)) {
+  if (model_type == ModelTypeProjected && isArcgisGeotiff(inFileName)) {
     // If the TIFF is an ArcGIS / IMAGINE GeoTIFF, then read the
     // projection parameters from the aux file (if it exists)
     asfPrintStatus("Checking ArcGIS GeoTIFF auxiliary file (.aux) for\n"
@@ -1163,7 +1181,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   char image_data_type[256];
   mg->data_type = data_type;
   int is_usgs_seamless_geotiff = 0;
-  if (linear_units == Angular_Degree &&
+  if (angular_units == Angular_Degree &&
       citation && strncmp(citation, "IMAGINE GeoTIFF Support", 23) == 0) {
     // This is a good guess since the only source of lat/long geotiffs that I know of
     // are the USGS Seamless Server geotiffs.  Note that the image_data_type setting
@@ -1173,19 +1191,25 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     // angular degree geotiffs except that the image_data_type and sensor string may
     // be misleading ...this won't affect processing by any of our tools.
     asfPrintStatus("\nGeoTIFF contains lat/long in decimal degrees.  Assuming this is a\n"
-        "USGS Seamless Server (SRTM, NED, etc) type of GeoTIFF\n");
-    strcpy(mg->sensor, "USGS Seamless data (e.g., NED, SRTM)");
+            "USGS Seamless Server (or compatible) type of DEM GeoTIFF with pixel\n"
+            "size of 30, 60, 90, or 190 meters, i.e. SRTM, NED, DTED, etcetera...\n");
+    strcpy(mg->sensor, "USGS Seamless data (i.e. NED, SRTM, DTED)");
     strcpy(image_data_type, "DEM");
     mg->image_data_type = DEM;
     strcpy(mg->system, mg->data_type == REAL32 ? "big_ieee" : MAGIC_UNSET_STRING);
     is_usgs_seamless_geotiff = 1;
   }
-  else if (linear_units == Angular_Degree) {
-    asfPrintStatus("\nGeoTIFF contains lat/long in decimal degrees.  Assuming this is a\n"
-        "DEM type of GeoTIFF\n");
-    strcpy(mg->sensor, MAGIC_UNSET_STRING);
-    strcpy(mg->system, mg->data_type == REAL32 ? "big_ieee" : MAGIC_UNSET_STRING);
-    is_usgs_seamless_geotiff = 1; // This will turn on conversion of pixel size from degrees to meters
+  else if (angular_units == Angular_Degree ||
+           angular_units == Angular_Arc_Second)
+  {
+    // All other angular units
+      asfPrintStatus("\nGeoTIFF contains lat/long in %s.  Assuming this is a\n"
+              "USGS Seamless Server (or compatible) type of DEM GeoTIFF with pixel\n"
+              "size of 30, 60, 90, 190 meters, i.e. SRTM, NED, DTED, etcetera...\n",
+              angular_units_to_string(angular_units));
+      strcpy(mg->sensor, MAGIC_UNSET_STRING);
+      strcpy(mg->system, mg->data_type == REAL32 ? "big_ieee" : MAGIC_UNSET_STRING);
+      is_usgs_seamless_geotiff = 1; // This will turn on conversion of pixel size from degrees to meters
   }
   strcpy(mg->basename, inFileName);
 
@@ -1234,29 +1258,93 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   mg->start_line = 0;
   mg->start_sample = 0;
 
+  float base_x_pixel_scale = pixel_scale[0];
+  float base_y_pixel_scale = pixel_scale[1];
+  int x_pixel_size_meters = MAGIC_UNSET_INT;
+  int y_pixel_size_meters = MAGIC_UNSET_INT;
   if (is_usgs_seamless_geotiff) {
-    // We are supposed to put {x,y}_pixel_size in meters, so we need to convert
-    // the pixel scale in degrees to meters ...and we don't have platform position
-    // or height information!
-    //
-    // So, we are cheating a bit here, forcing the result to be to the nearest
-    // 10m.  This is ok since USGS DEMs are in 30, 60, or 90 meters.  And if this
-    // cheat is wrong ...it should still be ok since the one where accuracy is
-    // important is the value in the projection block, this one is used by geocode
-    // when deciding how large the pixels should be in the output.
-    int pixel_size_meters = 10*(int)(11131.95 * pixel_scale[0] + .5);
+      // Convert angular units to decimal degrees if necessary
+      switch(angular_units) {
+          case Angular_Arc_Second:
+              base_x_pixel_scale *= ARCSECONDS2DEGREES;
+              base_y_pixel_scale *= ARCSECONDS2DEGREES;
+              break;
+          case Angular_Degree:
+          default:
+              break;
+      }
 
-    // Sanity check on the pixel size cheat...
-    if (pixel_size_meters != 30 && pixel_size_meters != 60 && pixel_size_meters != 90){
-      asfPrintWarning("Unexpected pixel size: %dm.\n"
-          "USGS Seamless data should be 30, 60 or 90m\n", pixel_size_meters);
-    }
-    mg->x_pixel_size = pixel_size_meters;
-    mg->y_pixel_size = pixel_size_meters;
+      // Convert decimal degrees to (approximate) pixel resolution in meters
+      // (per STRM & DTED standards)
+      //  30m = 1 arcsec = 0.0002777777 degrees,
+      //  60m = 2 arcsec = 0.0005555555 degrees,
+      //  90m = 3 arcsec = 0.0008333333 degrees,
+      // 180m = 6 arcsec = 0.0016666667 degrees,
+      if (FLOAT_COMPARE_TOLERANCE(base_x_pixel_scale, 0.0002777, 0.000001)) {
+          x_pixel_size_meters = 30.0;
+      }
+      else if (FLOAT_COMPARE_TOLERANCE(base_x_pixel_scale, 0.0005555, 0.000001)) {
+          x_pixel_size_meters = 60.0;
+      }
+      else if (FLOAT_COMPARE_TOLERANCE(base_x_pixel_scale, 0.0008333, 0.000001)) {
+          x_pixel_size_meters = 90.0;
+      }
+      else if (FLOAT_COMPARE_TOLERANCE(base_x_pixel_scale, 0.0016667, 0.000001)) {
+          x_pixel_size_meters = 180.0;
+      }
+      else {
+          // If not a standard size, then hack-calc it...
+          //
+          // We are supposed to put {x,y}_pixel_size in meters, so we need to convert
+          // the pixel scale in degrees to meters ...and we don't have platform position
+          // or height information!
+          //
+          // So, we are cheating a bit here, forcing the result to be to the nearest
+          // 10m.  This is ok since USGS DEMs are in 30, 60, or 90 meters.  And if this
+          // cheat is wrong ...it should still be ok since the one where accuracy is
+          // important is the value in the projection block, this one is used by geocode
+          // when deciding how large the pixels should be in the output.
+          x_pixel_size_meters = 10*(int)(11131.95 * pixel_scale[0] + .5);
+              // Sanity check on the pixel size cheat...
+          if (x_pixel_size_meters != 30 &&
+              x_pixel_size_meters != 60 &&
+              x_pixel_size_meters != 90 &&
+              x_pixel_size_meters != 180)
+          {
+              asfPrintWarning("Unexpected x pixel size: %dm.\n"
+                      "USGS Seamless/NED/DTED data should be 30, 60, 90, or 180m\n", x_pixel_size_meters);
+          }
+      }
+      if (FLOAT_COMPARE_TOLERANCE(base_y_pixel_scale, 0.0002777, 0.000001)) {
+          y_pixel_size_meters = 30.0;
+      }
+      else if (FLOAT_COMPARE_TOLERANCE(base_y_pixel_scale, 0.0005555, 0.000001)) {
+          y_pixel_size_meters = 60.0;
+      }
+      else if (FLOAT_COMPARE_TOLERANCE(base_y_pixel_scale, 0.0008333, 0.000001)) {
+          y_pixel_size_meters = 90.0;
+      }
+      else if (FLOAT_COMPARE_TOLERANCE(base_y_pixel_scale, 0.0016667, 0.000001)) {
+          y_pixel_size_meters = 180.0;
+      }
+      else {
+          y_pixel_size_meters = 10*(int)(11131.95 * pixel_scale[1] + .5);
+          if (y_pixel_size_meters != 30 &&
+              y_pixel_size_meters != 60 &&
+              y_pixel_size_meters != 90 &&
+              y_pixel_size_meters != 180)
+          {
+              asfPrintWarning("Unexpected y pixel size: %dm.\n"
+                      "USGS Seamless/NED/DTED data should be 30, 60, 90, or 180m\n", y_pixel_size_meters);
+          }
+      }
+
+      mg->x_pixel_size = x_pixel_size_meters;
+      mg->y_pixel_size = y_pixel_size_meters;
   }
   else {
-    mg->x_pixel_size = pixel_scale[0];
-    mg->y_pixel_size = pixel_scale[1];
+      mg->x_pixel_size = x_pixel_size_meters = pixel_scale[0];
+      mg->y_pixel_size = y_pixel_size_meters = pixel_scale[1];
   }
 
   // For now we are going to insist that the meters per pixel in the
@@ -1264,7 +1352,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   // least would work for non-square pixel dimensions, with the
   // caveats that output pixels would still be square, and would have
   // default size derived solely from the input pixel size
-  if (fabs (mg->x_pixel_size - mg->y_pixel_size) > 0.0001) {
+  if (fabs(mg->x_pixel_size - mg->y_pixel_size) > 0.0001) {
     char msg[256];
     sprintf(msg, "Pixel size is (x,y): (%lf, %lf)\n", mg->x_pixel_size, mg->y_pixel_size);
     asfPrintStatus(msg);
@@ -1284,33 +1372,41 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   double tp_lon = tie_point[3]; // x
   double tp_lat = tie_point[4]; // y, Note: [5] is zero for 2D space
 
-  // Center latitude and longitude of image data (the following works for
-  // linear or angular units since pixel sizes should be in the same units
-  // as the tie points
-  double center_x;
-  double center_y;
-  center_x = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
-  center_y = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-
-  // converts to center_latitude and center_longitude below...
+  // Calculate center of image data ...using linear meters or decimal degrees
+  double center_x = MAGIC_UNSET_DOUBLE;
+  double center_y = MAGIC_UNSET_DOUBLE;
+  if (linear_units == Linear_Meter) {
+      // NOTE: center_x and center_y are in meters (map projection coordinates)
+      // and are converted to lat/lon for center latitude/longitude below.  Therefore,
+      // since geographic geotiffs already contain angular measure, they don't need
+      // a center_x, center_y calculated.
+      // FIXME: Is tp_lon and tp_lat in degrees or meters for this case?
+      center_x = (width / 2.0 - raster_tp_x) * base_x_pixel_scale + tp_lon;
+      center_y = (height / 2.0 - raster_tp_y) * (-base_y_pixel_scale) + tp_lat;
+  }
 
   // If the datum and/or spheroid are unknown at this point, then fill
   // them out, and the major/minor axis, as best we can.
   if (datum != UNKNOWN_DATUM && mp->spheroid == UNKNOWN_SPHEROID) {
-    // Guess the spheroid from the type of datum (a fairly safe guess)
-    mp->spheroid = datum_spheroid(mp->datum);
-    spheroid_axes_lengths (mp->spheroid, &mg->re_major, &mg->re_minor);
+      // Guess the spheroid from the type of datum (a fairly safe guess)
+      mp->spheroid = datum_spheroid(mp->datum);
   }
-  else if (datum == UNKNOWN_DATUM && mp->spheroid != UNKNOWN_SPHEROID) {
-    // Can't guess a datum, so leave it be
-    spheroid_axes_lengths (mp->spheroid, &mg->re_major, &mg->re_minor);
+  if (datum == UNKNOWN_DATUM && mp->spheroid != UNKNOWN_SPHEROID) {
+      // Can't guess a datum, so leave it be
+      datum = spheroid_datum(mp->spheroid);
   }
-  else if (datum == UNKNOWN_DATUM && mp->spheroid == UNKNOWN_SPHEROID) {
-    // Bad news ...neither the datum nor the spheroid is known, so we must
-    // spread the disease to the major and minor as well...
-    mg->re_major = MAGIC_UNSET_DOUBLE;
-    mg->re_minor = MAGIC_UNSET_DOUBLE;
+  if (datum == UNKNOWN_DATUM && mp->spheroid == UNKNOWN_SPHEROID && mp &&
+      mp->re_major != MAGIC_UNSET_DOUBLE && mp->re_minor != MAGIC_UNSET_DOUBLE)
+  {
+      // If neither the datum nor spheroid are known, try to derive them from
+      // the axis lengths in the map projection record
+      mp->spheroid = axis_to_spheroid(mp->re_major, mp->re_minor);
+      datum = spheroid_datum(mp->spheroid);
   }
+  if (mp->spheroid != UNKNOWN_SPHEROID) {
+      spheroid_axes_lengths (mp->spheroid, &mg->re_major, &mg->re_minor);
+  }
+
   if (isArcgisGeotiff(inFileName)        &&
       mp->re_major != MAGIC_UNSET_DOUBLE &&
       mp->re_minor != MAGIC_UNSET_DOUBLE)
@@ -1333,10 +1429,21 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     mp->perY = -mg->y_pixel_size;
   }
   else if (is_usgs_seamless_geotiff) {
-    mp->startX = (0.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
-    mp->startY = (0.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-    mp->perX = pixel_scale[0];
-    mp->perY = -pixel_scale[1];
+      if (linear_units == Linear_Meter) {
+          // FIXME: Is tp_lon and tp_lat in degrees or meters for this case?
+          mp->startX = (0.0 - raster_tp_x) * base_x_pixel_scale + tp_lon;
+          mp->startY = (0.0 - raster_tp_y) * (-base_y_pixel_scale) + tp_lat;
+      }
+      else if (angular_units == Angular_Degree) {
+          mp->startX = (0.0 - raster_tp_x) * base_x_pixel_scale + tp_lon;
+          mp->startY = (0.0 - raster_tp_y) * (-base_y_pixel_scale) + tp_lat;
+      }
+      else if (angular_units == Angular_Arc_Second) {
+          mp->startX = (0.0 - raster_tp_x) * (base_x_pixel_scale * ARCSECONDS2DEGREES) + tp_lon;
+          mp->startY = (0.0 - raster_tp_y) * (-(base_y_pixel_scale * ARCSECONDS2DEGREES)) + tp_lat;
+      }
+      mp->perX = pixel_scale[0];
+      mp->perY = -pixel_scale[1];
   }
 
   // These fields should be the same as the ones in the general block.
@@ -1433,7 +1540,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     // in this case, so we can populate mp->mean properly.
     // NOTE: Even though USGS DEMs are one-banded, this code is written generically for
     // any number of bands in an arcsec or angular degrees lat/long geotiff
-    asfPrintStatus("\nCalculating average height for USGS Seamless (SRTM, NED, etc) DEM...\n\n");
+    asfPrintStatus("\nCalculating average height for USGS Seamless (SRTM, NED, etc) or DTED DEM...\n\n");
     stats = meta_statistics_init(num_bands);
     int is_dem = (mg->image_data_type == DEM) ? 1 : 0;
     if(!stats) asfPrintError("Out of memory.  Cannot allocate statistics struct.\n");
@@ -1458,7 +1565,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
 
       // Empty band?
     if (ret != 0) {
-      asfPrintWarning("USGS Seamless (NED, SRTM, etc) DEM appears to have no data.\n"
+      asfPrintWarning("USGS Seamless (NED, SRTM, etc) or DTED DEM appears to have no data.\n"
                       "Setting the average height to 0.0m and continuing...\n");
       mp->height = 0.0;
     }
@@ -3091,7 +3198,7 @@ int vintage_utm_citation_to_pcs(const char *citation, int *zone, char *hem, datu
 }
 
 void classify_geotiff(GTIF *input_gtif,
-                      short *model_type, short *raster_type, short *linear_units,
+                      short *model_type, short *raster_type, short *linear_units, short *angular_units,
                       int *geographic_geotiff, int *geocentric_geotiff, int *map_projected_geotiff,
                       int *geotiff_data_exists)
 {
@@ -3102,12 +3209,12 @@ void classify_geotiff(GTIF *input_gtif,
     tagtype_t citation_type;
 
     ////// Defaults //////
-    *model_type = *raster_type = *linear_units = -1; // Invalid value
+    *model_type = *raster_type = *linear_units = *angular_units = -1; // Invalid value
     *geographic_geotiff = *geocentric_geotiff = *map_projected_geotiff = *geotiff_data_exists = 0; // Fails
 
     ////////////////////////////////////////////////////////////////////////////////////////
-  // Check for a vintage ASF type of geotiff (all projection info is in the citation, and the
-  // normal projection geokeys are left unpopulated)
+    // Check for a vintage ASF type of geotiff (all projection info is in the citation, and the
+    // normal projection geokeys are left unpopulated)
     citation_length = GTIFKeyInfo(input_gtif, GTCitationGeoKey, &typeSize, &citation_type);
     if (citation_length > 0) {
         citation = MALLOC ((citation_length) * typeSize);
@@ -3124,7 +3231,7 @@ void classify_geotiff(GTIF *input_gtif,
         vintage_asf_utm = check_for_vintage_asf_utm_geotiff(citation, geotiff_data_exists,
                 model_type, raster_type, linear_units);
         if (vintage_asf_utm) {
-      // Found a vintage ASF UTM geotiff
+            // Found a vintage ASF UTM geotiff
             *geographic_geotiff    = *geocentric_geotiff  = 0;
             *map_projected_geotiff = *geotiff_data_exists = 1;
             return;
@@ -3133,11 +3240,11 @@ void classify_geotiff(GTIF *input_gtif,
     FREE(citation);
 
     ////////////////////////////////////////////////////////////////////////////////////////
-  // Check for other types of geotiffs...
+    // Check for other types of geotiffs...
     //
-  // Read the basic (normally required) classification parameters ...bail if we hit any
-  // unsupported types
-    int m, r, l;
+    // Read the basic (normally required) classification parameters ...bail if we hit any
+    // unsupported types
+    int m = 0, r = 0, l = 0, a = 0;
     m = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, model_type, 0, 1);
     if (m && *model_type == ModelTypeGeocentric) {
         asfPrintError("Geocentric (x, y, z) GeoTIFFs are unsupported (so far.)\n");
@@ -3150,51 +3257,65 @@ void classify_geotiff(GTIF *input_gtif,
     if (r && *raster_type != RasterPixelIsArea) {
         asfPrintError("GeoTIFFs with 'point' type raster pixels are unsupported (so far.)\n");
     }
-    l = GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, linear_units, 0, 1);
-    if (l && *linear_units == Angular_Arc_Second) {
-    // Temporarily choose not to support arcsec geotiffs ...needs more testing
-        asfPrintError("Arc-Second GeoTIFFs not currently supported (yet.)\n");
+    if (m && *model_type == ModelTypeProjected) {
+        l = GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, linear_units, 0, 1);
     }
-    if (l && *linear_units != Linear_Meter && *linear_units != Angular_Arc_Second) {
+    if (m && *model_type == ModelTypeGeographic) {
+        a = GTIFKeyGet (input_gtif, GeogAngularUnitsGeoKey, angular_units, 0, 1);
+    }
+    if (a &&
+        *angular_units != Angular_Arc_Second    &&
+        *angular_units != Angular_Degree)
+    {
+        // Temporarily choose not to support arcsec geotiffs ...needs more testing
+        asfPrintError("Found a Geographic (lat/lon) GeoTIFF with an unsupported type of angular\n"
+                "units (%s) in it.\n", angular_units_to_string(*angular_units));
+    }
+    if (l && *linear_units != Linear_Meter) {
         // Linear units was populated but wasn't a supported type...
         asfPrintError("Found a map-projected GeoTIFF with an unsupported type of linear\n"
-                "units (%s) in it.\n",
-        (*linear_units == Linear_Foot)                        ? "Linear_Foot"                         :
-        (*linear_units == Linear_Foot_US_Survey)              ? "Linear_Foot_US_Survey"               :
-        (*linear_units == Linear_Foot_Modified_American)      ? "Linear_Foot_Modified_American"       :
-        (*linear_units == Linear_Foot_Clarke)                 ? "Linear_Foot_Clarke"                  :
-        (*linear_units == Linear_Foot_Indian)                 ? "Linear_Foot_Indian"                  :
-        (*linear_units == Linear_Link)                        ? "Linear_Link"                         :
-        (*linear_units == Linear_Link_Benoit)                 ? "Linear_Link_Benoit"                  :
-        (*linear_units == Linear_Link_Sears)                  ? "Linear_Link_Sears"                   :
-        (*linear_units == Linear_Chain_Benoit)                ? "Linear_Chain_Benoit"                 :
-        (*linear_units == Linear_Chain_Sears)                 ? "Linear_Chain_Sears"                  :
-        (*linear_units == Linear_Yard_Sears)                  ? "Linear_Yard_Sears"                   :
-        (*linear_units == Linear_Yard_Indian)                 ? "Linear_Yard_Indian"                  :
-        (*linear_units == Linear_Fathom)                      ? "Linear_Fathom"                       :
-        (*linear_units == Linear_Mile_International_Nautical) ? "Linear_Mile_International_Nautical"  :
-        (*linear_units == Angular_Radian)                     ? "Angular_Radian"                      :
-        (*linear_units == Angular_Arc_Minute)                 ? "Angular_Arc_Minute"                  :
-        (*linear_units == Angular_Grad)                       ? "Angular_Grad"                        :
-        (*linear_units == Angular_Gon)                        ? "Angular_Gon"                         :
-        (*linear_units == Angular_DMS)                        ? "Angular_DMS"                         :
-        (*linear_units == Angular_DMS_Hemisphere)             ? "Angular_DMS_Hemisphere"              :
-                "Unrecognized unit");
+                "units (%s) in it.\n", linear_units_to_string(*linear_units));
     }
-    read_count = m + r + l;
+    read_count = m + r + l + a;
 
     //////////////////////////////////////////////////////////////////////////////////////////
-  // Attempt to classify the geotiff as a geographic, geocentric, or map-projected geotiff
-  // and try to fill in missing information if necessary
+    // Attempt to classify the geotiff as a geographic, geocentric, or map-projected geotiff
+    // and try to fill in missing information if necessary
 
-  // Case: 3 valid keys found
+    // Case: 3 valid keys found
     if (read_count == 3) {
-    // Check for map-projected geotiff
-        if (*model_type == ModelTypeProjected)
+        // Check for map-projected geotiff
+        if (m && *model_type == ModelTypeProjected)
         {
             ////////
-      // GeoTIFF is map-projected
-            if (*linear_units == Linear_Meter) {
+            // GeoTIFF is map-projected
+            if (!r ||
+                (r &&
+                 *raster_type != RasterPixelIsArea &&
+                 *raster_type != RasterPixelIsPoint))
+            {
+                asfPrintWarning("Invalid raster type found.\n"
+                                "Guessing RasterPixelIsArea and continuing...\n");
+                r = 1;
+                *raster_type = RasterPixelIsArea;
+            }
+            if (r &&
+                *raster_type != RasterPixelIsArea)
+            {
+                asfPrintError("Only map-projected GeoTIFFs with pixels that represent area are supported.");
+            }
+            if (a && !l) {
+                asfPrintWarning("Invalid map-projected GeoTIFF found ...angular units set to %s and\n"
+                        "linear units were not set.  Guessing Linear_Meter units and continuing...\n",
+                        angular_units_to_string(*angular_units));
+                l = 1;
+                *linear_units = Linear_Meter;
+                a = 0;
+                *angular_units = -1;
+            }
+            if (l &&
+                *linear_units == Linear_Meter)
+            {
                 *geographic_geotiff    = *geocentric_geotiff  = 0;
                 *map_projected_geotiff = *geotiff_data_exists = 1;
                 return;
@@ -3203,30 +3324,48 @@ void classify_geotiff(GTIF *input_gtif,
                 asfPrintError("Only map-projected GeoTIFFs with linear meters are supported.\n");
             }
         }
-        else if (*model_type == ModelTypeGeographic) {
+        else if (m && *model_type == ModelTypeGeographic) {
             ////////
-      // GeoTIFF is geographic (lat/long, degrees or arc-seconds (typ))
-      // Ignore *raster_type ...it might be set to 'area', but that would be meaningless
-      // *raster_type has no meaning in a lat/long GeoTIFF
-            if (*linear_units == Angular_Degree) {
+            // GeoTIFF is geographic (lat/long, degrees or arc-seconds (typ))
+            // Ignore *raster_type ...it might be set to 'area', but that would be meaningless
+            // *raster_type has no meaning in a lat/long GeoTIFF
+            if (l && !a) {
+                asfPrintWarning("Invalid Geographic (lat/lon) GeoTIFF found ...linear units set to %s and\n"
+                        "angular units were not set.  Guessing Angular_Degree units and continuing...\n",
+                        linear_units_to_string(*linear_units));
+                a = 1;
+                *angular_units = Angular_Degree;
+                l = 0;
+                *linear_units = -1;
+            }
+            if (a &&
+                (*angular_units == Angular_Degree ||
+                 *angular_units == Angular_Arc_Second))
+            {
                 *geographic_geotiff    = *geotiff_data_exists = 1;
                 *map_projected_geotiff = *geocentric_geotiff  = 0;
                 return;
             }
             else {
-                asfPrintError("Only geographic GeoTIFFs with angular degrees are supported.\n");
+                asfPrintError("Found Geographic GeoTIFF with invalid or unsupported angular units (%s)\n"
+                        "Only geographic GeoTIFFs with angular degrees are supported.\n",
+                        angular_units_to_string(*angular_units));
             }
         }
+        else {
+            // Should not get here
+            asfPrintError("Invalid or unsupported model type\n");
+        }
     }
-  // Case: 2 valid keys found, 1 key missing
+    // Case: 2 valid keys found, 1 key missing
     else if (read_count == 2) {
-    // Only found 2 of 3 necessary parameters ...let's try to guess the 3rd
+        // Only found 2 of 3 necessary parameters ...let's try to guess the 3rd
         if (*model_type != ModelTypeProjected  && *model_type != ModelTypeGeographic)
         {
-      // The model type is unknown, raster_type and linear_units are both known and
-      // valid for their types
+            // The model type is unknown, raster_type and linear_units are both known and
+            // valid for their types
             if (*raster_type == RasterPixelIsArea && *linear_units == Linear_Meter) {
-        // Guess map-projected
+                // Guess map-projected
                 asfPrintWarning("Missing model type definition in GeoTIFF.  GeoTIFF contains area-type\n"
                         "pixels and linear meters ...guessing the GeoTIFF is map-projected and\n"
                         "attempting to continue...\n");
@@ -3235,8 +3374,8 @@ void classify_geotiff(GTIF *input_gtif,
                 *map_projected_geotiff = *geotiff_data_exists = 1;
                 return;
             }
-            else if (*linear_units == Angular_Degree || *linear_units == Angular_Arc_Second) {
-        // Guess geographic
+            else if (*angular_units == Angular_Degree || *angular_units == Angular_Arc_Second) {
+                // Guess geographic
                 asfPrintWarning("Missing model type definition in GeoTIFF.  GeoTIFF contains angular\n"
                         "units ...guessing the GeoTIFF is geographic (lat/long) and\n"
                         "attempting to continue...\n");
@@ -3248,15 +3387,15 @@ void classify_geotiff(GTIF *input_gtif,
             else {
                 asfPrintError("Found unsupported type of GeoTIFF or a GeoTIFF with too many missing keys.\n");
             }
-        } // End of guessing because the ModelType was unknown
+        } // End of guessing because the ModelType was unknown - Check unknown raster_type case
         else if (*raster_type != RasterPixelIsArea && *raster_type != RasterPixelIsPoint) {
-      // Raster type is missing ...let's take a guess.  Model type and linear
-      // units are both known and valid for their types
+            // Raster type is missing ...let's take a guess.  Model type and linear
+            // units are both known and valid for their types
             if (*model_type == ModelTypeProjected) {
                 if (*linear_units != Linear_Meter) {
                     asfPrintError("Only meters are supported for map-projected GeoTIFFs\n");
                 }
-        // Guess pixel type is area
+                // Guess pixel type is area
                 asfPrintWarning("Missing raster type in GeoTIFF, but since the GeoTIFF is map-projected,\n"
                         "guessing RasterPixelIsArea and attempting to continue...\n");
                 *raster_type = RasterPixelIsArea;
@@ -3265,11 +3404,8 @@ void classify_geotiff(GTIF *input_gtif,
                 return;
             }
             else if (*model_type == ModelTypeGeographic) {
-        // Guess pixel type is area
-//        asfPrintWarning("Missing raster type in GeoTIFF, but since the GeoTIFF is geographic,\n"
-//            "guessing RasterPixelIsArea and attempting to continue...\n");
-//        *raster_type = RasterPixelIsArea;
-                if (*linear_units != Angular_Degree && *linear_units != Angular_Arc_Second) {
+                // Guess pixel type is area
+                if (*angular_units != Angular_Degree && *angular_units != Angular_Arc_Second) {
                     asfPrintError("Only angular degrees are supported for geographic GeoTIFFs\n");
                 }
                 *geographic_geotiff    = *geotiff_data_exists = 1;
@@ -3280,31 +3416,33 @@ void classify_geotiff(GTIF *input_gtif,
                 asfPrintError("Found geocentric (x, y, z) type of GeoTIFF ...currently unsupported.\n");
             }
         } // End of guessing because the RasterType was unknown
-        else if (*linear_units != Linear_Meter   &&
-                  *linear_units != Angular_Degree &&
-                  *linear_units != Angular_Arc_Second)
+        else if (*linear_units  != Linear_Meter   &&
+                 *angular_units != Angular_Degree &&
+                 *angular_units != Angular_Arc_Second)
         {
-      // Linear units is missing ...let's take a guess.  Model type and raster type are
-      // known and valid for their types
+            // Pixel unit type is missing ...let's take a guess.  Model type and raster type are
+            // known and valid for their types
             if (*model_type == ModelTypeProjected) {
                 if (*raster_type != RasterPixelIsArea) {
                     asfPrintError("Map projected GeoTIFFs with pixels that represent something\n"
                             "other than area (meters etc) are not supported.\n");
                 }
-        // Looks like a valid map projection.  Guess linear meters for the units
+                // Looks like a valid map projection.  Guess linear meters for the units
                 asfPrintWarning("Missing linear units in GeoTIFF.  The GeoTIFF is map-projected and\n"
                         "pixels represent area.  Guessing linear meters for the units and attempting\n"
                         "to continue...\n");
                 *linear_units = Linear_Meter;
+                *angular_units = -1;
                 *geographic_geotiff    = *geocentric_geotiff  = 0;
                 *map_projected_geotiff = *geotiff_data_exists = 1;
                 return;
             }
             else if (*model_type == ModelTypeGeographic) {
-        // Looks like a valid geographic (lat/long) geotiff
+                // Looks like a valid geographic (lat/long) geotiff
                 asfPrintWarning("Found geographic type GeoTIFF with missing linear units setting.\n"
                         "Guessing angular degrees and attempting to continue...\n");
-                *linear_units = Angular_Degree;
+                *angular_units = Angular_Degree;
+                *linear_units = -1;
                 *geographic_geotiff    = *geotiff_data_exists = 1;
                 *map_projected_geotiff = *geocentric_geotiff  = 0;
                 return;
@@ -3315,26 +3453,28 @@ void classify_geotiff(GTIF *input_gtif,
             }
         }
     }
-  // Case: 1 valid key found, 2 keys missing
+    // Case: 1 valid key found, 2 keys missing
     else if (read_count == 1) {
-    // Only found 1 of 3 necessary parameters ...let's try to guess the other 2 (dangerous ground!)
+        // Only found 1 of 3 necessary parameters ...let's try to guess the other 2 (dangerous ground!)
         if (*model_type == ModelTypeProjected) {
-      // Only the model type is known ...guess the rest
+            // Only the model type is known ...guess the rest
             asfPrintWarning("Both the raster type and linear units is missing in the GeoTIFF.  The model\n"
                     "type is map-projected, so guessing that the raster type is RasterPixelIsArea and\n"
                     "that the linear units are in meters ...attempting to continue\n");
             *raster_type = RasterPixelIsArea;
             *linear_units = Linear_Meter;
+            *angular_units = -1;
             *geographic_geotiff    = *geocentric_geotiff  = 0;
             *map_projected_geotiff = *geotiff_data_exists = 1;
             return;
         }
         else if (*model_type == ModelTypeGeographic) {
-      // Only the model type is known ...guess the rest
+            // Only the model type is known ...guess the rest
             asfPrintWarning("Both the raster type and linear units is missing in the GeoTIFF.  The model\n"
-                    "type is geographic (lat/long), so guessing that the linear units are in angular\n"
+                    "type is geographic (lat/long), so guessing that the angular units are in decimal\n"
                     "degrees ...attempting to continue\n");
-            *linear_units = Angular_Degree;
+            *angular_units = Angular_Degree;
+            *linear_units = -1;
             *geographic_geotiff    = *geotiff_data_exists = 1;
             *map_projected_geotiff = *geocentric_geotiff  = 0;
             return;
@@ -3343,26 +3483,27 @@ void classify_geotiff(GTIF *input_gtif,
             asfPrintError("Geocentric (x, y, z) GeoTIFFs are not supported (yet.)\n");
         }
         else if (*raster_type == RasterPixelIsArea) {
-      // Only the raster type is known ...guess the rest
+            // Only the raster type is known ...guess the rest
             asfPrintWarning("Both the model type and linear units is missing in the GeoTIFF.  The raster\n"
                     "type is RasterPixelIsArea, so guessing that the model type is map-projected and\n"
                     "that the linear units are in meters ...attempting to continue\n");
             *model_type = ModelTypeProjected;
             *linear_units = Linear_Meter;
+            *angular_units = -1;
             *geographic_geotiff    = *geocentric_geotiff  = 0;
             *map_projected_geotiff = *geotiff_data_exists = 1;
             return;
         }
         else if (*raster_type == RasterPixelIsPoint) {
-      // Only the raster type is known, but cannot guess the rest... bail.
+            // Only the raster type is known, but cannot guess the rest... bail.
             asfPrintError("Found invalid or unsupported GeoTIFF.  Raster type is 'point' rather than\n"
                     "area.  The model type (map projected, geographic, geocentric) is unknown.\n"
                     "And the linear units are unknown.  Cannot guess what type of GeoTIFF this\n"
                     "is.  Aborting.\n");
         }
         else if (*linear_units == Linear_Meter) {
-      // Only linear units is known and it's meters.  Guess map projected and pixels are
-      // area pixels.
+            // Only linear units is known and it's meters.  Guess map projected and pixels are
+            // area pixels.
             asfPrintWarning("Found GeoTIFF with undefined model and raster type.  Linear units\n"
                     "is defined to be meters.  Guessing that the GeoTIFF is map-projected and\n"
                     "that pixels represent area.  Attempting to continue...\n");
@@ -3372,13 +3513,25 @@ void classify_geotiff(GTIF *input_gtif,
             *map_projected_geotiff = *geotiff_data_exists = 1;
             return;
         }
-        else if (*linear_units == Angular_Degree) {
-      // Only linear units is known and it's angular degrees.  Guess geographic and pixels
-      // type is 'who cares'
+        else if (*angular_units == Angular_Degree) {
+            // Only linear units is known and it's angular degrees.  Guess geographic and pixels
+            // type is 'who cares'
             asfPrintWarning("Found GeoTIFF with undefined model and raster type.  Linear units\n"
                     "is defined to be angular degrees.  Guessing that the GeoTIFF is geographic.\n"
                     "Attempting to continue...\n");
             *model_type = ModelTypeGeographic;
+            *geographic_geotiff    = *geotiff_data_exists = 1;
+            *map_projected_geotiff = *geocentric_geotiff  = 0;
+            return;
+        }
+        else if (*angular_units == Angular_Arc_Second) {
+            // Only linear units is known and it's angular degrees.  Guess geographic and pixels
+            // type is 'who cares'
+            asfPrintWarning("Found GeoTIFF with undefined model and raster type.  Linear units\n"
+                    "is defined to be angular degrees.  Guessing that the GeoTIFF is geographic.\n"
+                    "Attempting to continue...\n");
+            *model_type = ModelTypeGeographic;
+            *linear_units = -1;
             *geographic_geotiff    = *geotiff_data_exists = 1;
             *map_projected_geotiff = *geocentric_geotiff  = 0;
             return;
@@ -3389,9 +3542,9 @@ void classify_geotiff(GTIF *input_gtif,
                     "type.  Aborting...\n");
         }
     }
-  // Case: No valid keys found
+    // Case: No valid keys found
     else {
-    // All classification parameters are missing!
+        // All classification parameters are missing!
         *geographic_geotiff    = *geocentric_geotiff  = 0;
         *map_projected_geotiff = *geotiff_data_exists = 0;
         return;
@@ -3411,5 +3564,37 @@ int check_for_ellipse_definition_in_geotiff(GTIF *input_gtif, spheroid_type_t *s
     return ret;
 }
 
+char *angular_units_to_string(short angular_units)
+{
+    return
+        (angular_units == Angular_Radian)            ? "Angular_Radian"          :
+        (angular_units == Angular_Degree)            ? "Angular_Degree"          :
+        (angular_units == Angular_Arc_Minute)        ? "Angular_Arc_Minute"      :
+        (angular_units == Angular_Arc_Second)        ? "Angular_Arc_Second"      :
+        (angular_units == Angular_Grad)              ? "Angular_Grad"            :
+        (angular_units == Angular_Gon)               ? "Angular_Gon"             :
+        (angular_units == Angular_DMS)               ? "Angular_DMS"             :
+        (angular_units == Angular_DMS_Hemisphere)    ? "Angular_DMS_Hemisphere"  :
+                                                        "Unrecognized unit";
+}
 
+char *linear_units_to_string(short linear_units)
+{
+    return
+        (linear_units == Linear_Foot)                        ? "Linear_Foot"                         :
+        (linear_units == Linear_Foot_US_Survey)              ? "Linear_Foot_US_Survey"               :
+        (linear_units == Linear_Foot_Modified_American)      ? "Linear_Foot_Modified_American"       :
+        (linear_units == Linear_Foot_Clarke)                 ? "Linear_Foot_Clarke"                  :
+        (linear_units == Linear_Foot_Indian)                 ? "Linear_Foot_Indian"                  :
+        (linear_units == Linear_Link)                        ? "Linear_Link"                         :
+        (linear_units == Linear_Link_Benoit)                 ? "Linear_Link_Benoit"                  :
+        (linear_units == Linear_Link_Sears)                  ? "Linear_Link_Sears"                   :
+        (linear_units == Linear_Chain_Benoit)                ? "Linear_Chain_Benoit"                 :
+        (linear_units == Linear_Chain_Sears)                 ? "Linear_Chain_Sears"                  :
+        (linear_units == Linear_Yard_Sears)                  ? "Linear_Yard_Sears"                   :
+        (linear_units == Linear_Yard_Indian)                 ? "Linear_Yard_Indian"                  :
+        (linear_units == Linear_Fathom)                      ? "Linear_Fathom"                       :
+        (linear_units == Linear_Mile_International_Nautical) ? "Linear_Mile_International_Nautical"  :
+                                                                "Unrecognized unit";
+}
 

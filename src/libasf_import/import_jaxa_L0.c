@@ -30,7 +30,7 @@
 
 // Prototypes
 static void jpeg_error_handler(j_common_ptr cinfo);
-static void jpeg_error_message_handler(j_common_ptr cinfo);
+//static void jpeg_error_message_handler(j_common_ptr cinfo);
 
 // import_jaxa_L0()
 // 1. inBaseName is the name of the folder that the data is in, i.e. W0306544001-01
@@ -1487,8 +1487,8 @@ static void jpeg_error_handler(j_common_ptr cinfo)
     longjmp(err->escape, 1);
 }
 
-static void jpeg_error_message_handler(j_common_ptr cinfo)
-{
-    asfPrintStatus("\nBad JPEG frame detected ...and ignored\n\n");
-}
+//static void jpeg_error_message_handler(j_common_ptr cinfo)
+//{
+//    asfPrintStatus("\nBad JPEG frame detected ...and ignored\n\n");
+//}
 
