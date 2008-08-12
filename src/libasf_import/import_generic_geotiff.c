@@ -1504,8 +1504,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                                       planar_config, 0, mask_value);
         if (ret != 0 ||
             (stats->band_stats[ii].mean == stats->band_stats[ii].min &&
-            stats->band_stats[ii].mean == stats->band_stats[ii].max &&
-            stats->band_stats[ii].mean == stats->band_stats[ii].std_deviation)) {
+             stats->band_stats[ii].mean == stats->band_stats[ii].max &&
+             stats->band_stats[ii].mean == stats->band_stats[ii].std_deviation)) {
           // Band data is blank, e.g. no variation ...all pixels the same
           asfPrintStatus("\nFound empty band (see statistics below):\n"
               "   min = %f\n"
@@ -1520,6 +1520,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
           nb--;
         }
         else {
+          ignore[ii] = 0;
           asfPrintStatus("\nBand Statistics:\n"
               "   min = %f\n"
               "   max = %f\n"
@@ -1561,16 +1562,17 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                      stats->band_stats[ii].max,
                      stats->band_stats[ii].mean,
                      stats->band_stats[ii].std_deviation);
-    }
-
       // Empty band?
-    if (ret != 0) {
-      asfPrintWarning("USGS Seamless (NED, SRTM, etc) or DTED DEM appears to have no data.\n"
-                      "Setting the average height to 0.0m and continuing...\n");
-      mp->height = 0.0;
-    }
-    else {
-      mp->height = stats->band_stats[0].mean;
+      if (ret != 0) {
+          asfPrintWarning("USGS Seamless (NED, SRTM, etc) or DTED DEM band %d appears to have no data.\n"
+                  "Setting the average height to 0.0m and continuing...\n", ii+1);
+          mp->height = 0.0;
+          ignore[ii] = 1;
+      }
+      else {
+          mp->height = stats->band_stats[0].mean;
+          ignore[ii] = 0;
+      }
     }
   }
 
