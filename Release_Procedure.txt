@@ -155,6 +155,9 @@ src/shift_geolocation
 src/trim
 src/proj2proj
 src/sgpsdp
+src/smooth
+src/farcorr
+src/asf_calpol
 
  16. Run the autotar script:
 
