@@ -20,8 +20,8 @@ void save_config(char *file, char* projfile);
 static int
 settings_get_input_data_format_allows_latitude(const Settings *s)
 {
-  return /*s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 ||*/
-      s->input_data_format == INPUT_FORMAT_STF;
+    return -1; /*s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 ||*/
+      //s->input_data_format == INPUT_FORMAT_STF;
 }
 
 static const gchar * scaling_method_string(int scaling_method)
@@ -581,8 +581,8 @@ void save_config(char *config_file, char* projfile)
   fprintf(cf, "[Import]\n");
   if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
     fprintf(cf, "format = CEOS (1)\n");
-  else if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0)
-    fprintf(cf, "format = CEOS (0)\n");
+  //else if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0)
+    //fprintf(cf, "format = CEOS (0)\n");
   else
     fprintf(cf, "format = %s\n", settings_get_input_data_format_string(s));
 
@@ -590,7 +590,7 @@ void save_config(char *config_file, char* projfile)
     fprintf(cf, "radiometry = %s_image\n",
             settings_get_data_type_string(s));
 // fprintf(cf, "look up table = \n");
-  if (settings_get_input_data_format_allows_latitude(s)) {
+  if (settings_get_input_data_format_allows_latitude(s) > 0) {
     fprintf(cf, "lat begin = %.2f\n", s->latitude_low);
     fprintf(cf, "lat end = %.2f\n", s->latitude_hi);
   }

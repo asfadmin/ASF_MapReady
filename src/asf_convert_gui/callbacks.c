@@ -72,7 +72,7 @@ input_data_format_combobox_changed()
     gboolean show_export_section;
     gboolean show_terrain_correction_section;
     gboolean show_geocode_section;
-    gboolean show_process_to_level1_checkbutton;
+    gboolean show_process_to_level1_checkbutton = FALSE; // Leave false until we support level 0 again
     gboolean show_airsar_checkbuttons;
 
     input_data_format_combobox =
@@ -82,24 +82,24 @@ input_data_format_combobox_changed()
         gtk_option_menu_get_history(GTK_OPTION_MENU(input_data_format_combobox));
     switch (input_data_format)
     {
-        case INPUT_FORMAT_STF:
-            show_data_type_combobox = FALSE;
-            show_latitude_spinbuttons = TRUE;
-            show_process_to_level1_checkbutton = FALSE;
-            show_airsar_checkbuttons = FALSE;
-            break;
+        //case INPUT_FORMAT_STF:
+            //show_data_type_combobox = FALSE;
+            //show_latitude_spinbuttons = TRUE;
+            //show_process_to_level1_checkbutton = FALSE;
+            //show_airsar_checkbuttons = FALSE;
+            //break;
         //case INPUT_FORMAT_COMPLEX:
             //show_data_type_combobox = FALSE;
             //show_latitude_spinbuttons = FALSE;
             //show_process_to_level1_checkbutton = FALSE;
             //show_airsar_checkbuttons = FALSE;
             //break;
-        case INPUT_FORMAT_CEOS_LEVEL0:
-            show_data_type_combobox = FALSE;
-            show_latitude_spinbuttons = FALSE;
-            show_process_to_level1_checkbutton = TRUE;
-            show_airsar_checkbuttons = FALSE;
-            break;
+        //case INPUT_FORMAT_CEOS_LEVEL0:
+            //show_data_type_combobox = FALSE;
+            //show_latitude_spinbuttons = FALSE;
+            //show_process_to_level1_checkbutton = TRUE;
+            //show_airsar_checkbuttons = FALSE;
+            //break;
         default:
         case INPUT_FORMAT_CEOS_LEVEL1:
         case INPUT_FORMAT_ESRI:
@@ -129,8 +129,7 @@ input_data_format_combobox_changed()
     latitude_low_entry = get_widget_checked("latitude_low_entry");
     latitude_hi_label = get_widget_checked("latitude_hi_label");
     latitude_hi_entry = get_widget_checked("latitude_hi_entry");
-    process_to_level1_checkbutton =
-        get_widget_checked("process_to_level1_checkbutton");
+    process_to_level1_checkbutton = get_widget_checked("process_to_level1_checkbutton");
 
     gtk_widget_set_sensitive(latitude_checkbutton, show_latitude_spinbuttons);
     gtk_widget_set_sensitive(latitude_low_label, show_latitude_spinbuttons);
@@ -620,12 +619,12 @@ void clear_completed_tmp_dirs()
             gchar *tmp_dir;
             gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
                                COMP_COL_TMP_DIR, &tmp_dir, -1);
-            
+
             if (tmp_dir && strlen(tmp_dir) > 0) {
               asfPrintStatus("Removing: %s\n", tmp_dir);
               remove_dir(tmp_dir);
             }
-            
+
             valid = gtk_tree_model_iter_next(
               GTK_TREE_MODEL(completed_list_store), &iter);
         }
@@ -723,7 +722,7 @@ void rgb_settings_changed()
       gtk_widget_set_sensitive(bands_hbox, is_user_defined);
 
       // offset to get to the start of the optical bands
-      const int OPT_BASE = 4; 
+      const int OPT_BASE = 4;
 
       if (is_truecolor) {
         set_combo_box_item_checked("red_combo", 3 + OPT_BASE);
@@ -739,7 +738,7 @@ void rgb_settings_changed()
     {
         // "Export Using Polarimetric Settings"
         // Here, we want to enable the band selection if the user
-        // has chosen the "rb_cloude_noclassify" option, which has entropy etc 
+        // has chosen the "rb_cloude_noclassify" option, which has entropy etc
         gtk_widget_set_sensitive(rgb_vbox, is_cloude_noclassify);
     }
     else
@@ -1044,35 +1043,64 @@ on_about_dialog_key_press_event(GtkWidget *widget)
   close_about_dialog();
 }
 
+static int db_was_checked = 0;
 void input_data_type_combobox_changed()
 {
     GtkWidget *input_data_type_combobox =
         get_widget_checked("input_data_type_combobox");
+    GtkWidget *checkbutton_db =
+        get_widget_checked("checkbutton_db");
     int data_type = get_combo_box_item(input_data_type_combobox);
 
-    // when doing polarimetry, force sigma/non-db, and disable widgets
-    GtkWidget *checkbutton_db =
-      get_widget_checked("checkbutton_db");
-    
+    // Manage the 'Scale output to decibels (dB)' check box
+    if (data_type == INPUT_TYPE_SIGMA ||
+        data_type == INPUT_TYPE_BETA  ||
+        data_type == INPUT_TYPE_GAMMA)
+    {
+        // Sigma, Beta, or Gamma
+        set_checked("checkbutton_db", db_was_checked);
+        gtk_widget_set_sensitive(checkbutton_db, TRUE);
+    }
+    else {
+        // Power & Amplitude
+        if (get_checked("checkbutton_db")) {
+            db_was_checked = 1;
+        }
+        else {
+            db_was_checked = 0;
+        }
+        set_checked("checkbutton_db", FALSE);
+        gtk_widget_set_sensitive(checkbutton_db, FALSE);
+    }
+    if (get_checked("polarimetry_checkbutton")) {
+        if (get_checked("checkbutton_db")) {
+            db_was_checked = 1;
+        }
+        else {
+            db_was_checked = 0;
+        }
+        set_checked("checkbutton_db", FALSE);
+        gtk_widget_set_sensitive(checkbutton_db, FALSE);
+    }
+
+    // Manage polarimetry...
+    // When doing polarimetry, force sigma/non-db, and disable widgets
     if (get_checked("polarimetry_checkbutton")) {
       // actually probably don't need to do these... handler for the
       // polarimetry checkbutton will do this
       if (data_type != INPUT_TYPE_SIGMA)
         set_combo_box_item(input_data_type_combobox, INPUT_TYPE_SIGMA);
-      if (get_checked("checkbutton_db"))
-        set_checked("checkbutton_db", FALSE);
 
       gtk_widget_set_sensitive(input_data_type_combobox, FALSE);
-      gtk_widget_set_sensitive(checkbutton_db, FALSE);
     }
     else {
-      gtk_widget_set_sensitive(input_data_type_combobox, TRUE);
-      gtk_widget_set_sensitive(checkbutton_db, TRUE);
+        gtk_widget_set_sensitive(input_data_type_combobox, TRUE);
     }
 
     GtkWidget *ers2_gain_fix_checkbutton =
         get_widget_checked("ers2_gain_fix_checkbutton");
 
+    // Manage the ERS2 gain fix checkbutton
     if (data_type == INPUT_TYPE_AMP) {
       gtk_toggle_button_set_active(
         GTK_TOGGLE_BUTTON(ers2_gain_fix_checkbutton), FALSE);

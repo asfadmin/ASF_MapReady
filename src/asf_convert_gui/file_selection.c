@@ -90,15 +90,15 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(D_filt, "*.D");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), D_filt);
 
-    GtkFileFilter *stf_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(stf_filt, "STF Files (*.000)");
-    gtk_file_filter_add_pattern(stf_filt, "*.000");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), stf_filt);
+    //GtkFileFilter *stf_filt = gtk_file_filter_new();
+    //gtk_file_filter_set_name(stf_filt, "STF Files (*.000)");
+    //gtk_file_filter_add_pattern(stf_filt, "*.000");
+    //gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), stf_filt);
 
-    GtkFileFilter *raw_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(raw_filt, "RAW Files (*.raw)");
-    gtk_file_filter_add_pattern(raw_filt, "*.raw");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), raw_filt);
+    //GtkFileFilter *raw_filt = gtk_file_filter_new();
+    //gtk_file_filter_set_name(raw_filt, "RAW Files (*.raw)");
+    //gtk_file_filter_add_pattern(raw_filt, "*.raw");
+    //gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), raw_filt);
 
     GtkFileFilter *geotiff_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(geotiff_filt, "GeoTIFF Files (*.tif)");
@@ -165,8 +165,8 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     of.lpstrFilter =
             "CEOS Level 1 Files\0*.D;LED-*\0"
             "RSAT/ERS CEOS L1 (*.D)\0*.D\0"
-            "CEOS Level 0 (*.raw)\0*.raw\0"
-            "STF Files (*.000)\0*.000\0"
+            //"CEOS Level 0 (*.raw)\0*.raw\0"
+            //"STF Files (*.000)\0*.000\0"
             "GeoTIFF Files (*.tif)\0*.tif\0"
              //"Complex Files (*.cpx)\0*.cpx\0"
             "ALOS Files (LED-*)\0LED-*\0"
@@ -210,7 +210,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     }
 
     free(dir);
-  show_queued_thumbnails();
+    show_queued_thumbnails();
 
 #else // #ifdef win32
 

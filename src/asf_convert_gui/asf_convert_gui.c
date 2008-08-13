@@ -104,6 +104,22 @@ main(int argc, char **argv)
     widget = get_widget_checked("about_dialog_copyright_label");
     gtk_label_set_text(GTK_LABEL(widget), ASF_COPYRIGHT_STRING);
 
+    // Hide latitude selection stuff until we start supporting
+    // swath products (level 0) again
+    widget = get_widget_checked("latitude_checkbutton");
+    gtk_widget_hide(widget);
+    widget = get_widget_checked("latitude_low_label");
+    gtk_widget_hide(widget);
+    widget = get_widget_checked("latitude_hi_label");
+    gtk_widget_hide(widget);
+    widget = get_widget_checked("latitude_low_entry");
+    gtk_widget_hide(widget);
+    widget = get_widget_checked("latitude_hi_entry");
+    gtk_widget_hide(widget);
+
+    widget = get_widget_checked("apply_metadata_fix_checkbutton");
+    gtk_widget_show(widget);
+
     // Muck with the fonts in the About dialog
     widget = get_widget_checked("about_dialog_mapready_label");
     gchar *str = gtitle;

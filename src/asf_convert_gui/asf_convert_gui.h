@@ -40,15 +40,15 @@ enum OutputFormat
 
 enum InputFormat
 {
-    INPUT_FORMAT_CEOS_LEVEL0 = 0,
-    INPUT_FORMAT_CEOS_LEVEL1 = 1,
-    INPUT_FORMAT_STF = 2,
-    INPUT_FORMAT_GEOTIFF = 3,
+    //INPUT_FORMAT_CEOS_LEVEL0 = 0, // Removed 8-12-2008
+    INPUT_FORMAT_CEOS_LEVEL1 = 0,
+    //INPUT_FORMAT_STF = 1,
+    INPUT_FORMAT_GEOTIFF = 1,
     //INPUT_FORMAT_COMPLEX
-    INPUT_FORMAT_ASF_INTERNAL = 4,
-    INPUT_FORMAT_AIRSAR = 5,
-    INPUT_FORMAT_ESRI = 6, // not implemented
-    INPUT_FORMAT_ENVI = 7  // not implemented
+    INPUT_FORMAT_ASF_INTERNAL = 2,
+    INPUT_FORMAT_AIRSAR = 3,
+    INPUT_FORMAT_ESRI = 4, // not implemented
+    INPUT_FORMAT_ENVI = 5  // not implemented
 };
 
 enum InputType

@@ -46,24 +46,24 @@ const char *get_summary_text()
       dbstr = " (dB)";
 
     switch (s->input_data_format) {
-      case INPUT_FORMAT_CEOS_LEVEL0:
-      {
-        GtkWidget *process_to_level1_checkbutton =
-            get_widget_checked("process_to_level1_checkbutton");
+      //case INPUT_FORMAT_CEOS_LEVEL0:
+      //{
+        //GtkWidget *process_to_level1_checkbutton =
+            //get_widget_checked("process_to_level1_checkbutton");
 
-        gboolean process_to_level1_is_checked =
-            gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
+        //gboolean process_to_level1_is_checked =
+            //gtk_toggle_button_get_active(
+                //GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
 
-        strcat(text, "CEOS Level Zero");
+        //strcat(text, "CEOS Level Zero");
 
-        if (process_to_level1_is_checked)
-        {
-            sprintf(text, "%s\n   Process to Level 1\nData Type: %s%s",
-                    text, type, dbstr);
-        }
-      }
-      break;
+        //if (process_to_level1_is_checked)
+        //{
+            //sprintf(text, "%s\n   Process to Level 1\nData Type: %s%s",
+                    //text, type, dbstr);
+        //}
+      //}
+      //break;
 
       case INPUT_FORMAT_CEOS_LEVEL1:
         strcat(text, "CEOS Level One");
@@ -71,14 +71,14 @@ const char *get_summary_text()
 
         break;
 
-      case INPUT_FORMAT_STF:
-        strcat(text, "STF");
-        if (s->latitude_checked)
-        {
-            sprintf(text, "%s (Lat: %.2f - %.2f)", text, s->latitude_low,
-                s->latitude_hi);
-        }
-        break;
+      //case INPUT_FORMAT_STF:
+        //strcat(text, "STF");
+        //if (s->latitude_checked)
+       //{
+            //sprintf(text, "%s (Lat: %.2f - %.2f)", text, s->latitude_low,
+                //s->latitude_hi);
+        //}
+        //break;
 
       //case INPUT_FORMAT_COMPLEX:
         //strcat(text, "Complex");
@@ -155,7 +155,7 @@ const char *get_summary_text()
           case POLARIMETRY_CLOUDE16:
             strcat(text, "(Cloude Pottier 16)");
             break;
-          case POLARIMETRY_CLOUDE_NOCLASSIFY: 
+          case POLARIMETRY_CLOUDE_NOCLASSIFY:
             strcat(text, "(Entropy,Anisotropy,Alpha)");
             break;
           case POLARIMETRY_FREEMAN_DURDEN:

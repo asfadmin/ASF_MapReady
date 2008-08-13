@@ -59,10 +59,16 @@ gboolean is_meta_file(const gchar * data_file)
   ceos_file_pairs_t s = get_ceos_names(data_file, basename,
                             &dataName, &metaName, &nBands, &trailer);
 
-  if (s != NO_CEOS_FILE_PAIR)
-    for (i=0; i<nBands; ++i)
-      if (strcmp(data_file, metaName[i])==0)
-        ret = TRUE;
+  if (s != NO_CEOS_FILE_PAIR &&
+      s != CEOS_RAW_LDR_PAIR &&
+      s != CEOS_raw_ldr_PAIR)
+  {
+      for (i=0; i<nBands; ++i) {
+          if (strcmp(data_file, metaName[i])==0) {
+              ret = TRUE;
+          }
+      }
+  }
 
   FREE(basename);
   free_ceos_names(dataName, metaName);
@@ -104,7 +110,9 @@ static char *file_is_valid(const gchar * file)
 
     FREE(basename);
 
-    if (ret != NO_CEOS_FILE_PAIR) {
+    if (ret != NO_CEOS_FILE_PAIR &&
+        ret != CEOS_RAW_LDR_PAIR &&
+        ret != CEOS_raw_ldr_PAIR) {
         // found -- return metadata file
         char *meta_file=NULL;
         int i;
@@ -364,7 +372,7 @@ move_from_completed_files_list(GtkTreeIter *iter)
                        -1);
 
     if (get_checked("rb_keep_temp") && tmp_dir && strlen(tmp_dir) > 0) {
-      printf("Removing: %s\n", tmp_dir);      
+      printf("Removing: %s\n", tmp_dir);
       remove_dir(tmp_dir);
     }
 
