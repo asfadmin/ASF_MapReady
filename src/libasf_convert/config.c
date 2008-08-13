@@ -35,7 +35,9 @@ static void apply_default_dirs(convert_config *cfg)
     FREE(tmpstr);
   }
   // Sneak a directory separator on to the end of the default in dir
-  if (DIR_SEPARATOR != cfg->general->default_in_dir[def_dir_len-1]) {
+  if (strlen(cfg->general->default_in_dir) &&
+      strncmp(cfg->general->default_in_dir, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0 &&
+      DIR_SEPARATOR != cfg->general->default_in_dir[def_dir_len-1]) {
     strcat(cfg->general->default_in_dir, DIR_SEPARATOR_STR);
   }
 
@@ -55,7 +57,9 @@ static void apply_default_dirs(convert_config *cfg)
     FREE(tmpstr);
   }
   // Sneak a directory separator on to the end of the default out dir
-  if (DIR_SEPARATOR != cfg->general->default_out_dir[def_dir_len-1]) {
+  if (strlen(cfg->general->default_out_dir) &&
+      strncmp(cfg->general->default_out_dir, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0 &&
+      DIR_SEPARATOR != cfg->general->default_out_dir[def_dir_len-1]) {
     strcat(cfg->general->default_out_dir, DIR_SEPARATOR_STR);
   }
 }
