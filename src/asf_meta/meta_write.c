@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdio.h>
+#include <error.h>
 
 #include "asf_meta.h"
 #include "asf_nan.h"
@@ -1059,7 +1060,14 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
     depth++;
 
 /*Finally, write the line to the file.*/
-  fprintf(meta_file,"%s\n",line);
+  int n = fprintf(meta_file,"%s\n",line);
+  if (n < 0) {
+    if (errno == ENOMEM)
+      asfPrintError("meta_put_string: "
+                    "Insufficient storage space is available\n");
+    else
+      asfPrintError("fprint error: %d\n", strerror(errno));
+  }
 }
 
 void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
