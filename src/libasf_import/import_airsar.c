@@ -7,13 +7,13 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
 
-void ingest_insar_data(const char *inBaseName, meta_parameters *metaIn,
+int ingest_insar_data(const char *inBaseName, meta_parameters *metaIn,
                const char *outBaseName, meta_parameters *metaOut,
                char band)
 {
   FILE *fpIn, *fpOut;
   char *inFile, *outFile;
-  int ii;
+  int ii, ret=FALSE;
   float *floatBuf;
 
   // Generate metadata file
@@ -24,66 +24,84 @@ void ingest_insar_data(const char *inBaseName, meta_parameters *metaIn,
   floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
 
   // Ingest the DEM
-  asfPrintStatus("   Ingesting DEM ...\n");
   sprintf(inFile, "%s_%c.demi2", inBaseName, band);
-  sprintf(outFile, "%s_%c_dem.img", outBaseName, band);
-  fpIn = FOPEN(inFile, "rb");
-  fpOut = FOPEN(outFile, "wb");
-  for (ii=0; ii<metaIn->general->line_count; ii++) {
-    get_float_line(fpIn, metaIn, ii, floatBuf);
-    put_float_line(fpOut, metaOut, ii, floatBuf);
-    asfLineMeter(ii, metaIn->general->line_count);
+  if (!fileExists(inFile))
+    asfPrintStatus("   Could not find DEM file (%s) ...\n", inFile);
+  else {
+    asfPrintStatus("   Ingesting DEM ...\n");
+    sprintf(inFile, "%s_%c.demi2", inBaseName, band);
+    sprintf(outFile, "%s_%c_dem.img", outBaseName, band);
+    fpIn = FOPEN(inFile, "rb");
+    fpOut = FOPEN(outFile, "wb");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    metaOut->general->image_data_type = DEM;
+    meta_write(metaOut, outFile);
+    ret = TRUE;
   }
-  FCLOSE(fpIn);
-  FCLOSE(fpOut);
-  metaOut->general->image_data_type = DEM;
-  meta_write(metaOut, outFile);
 
   // Ingest amplitude image
-  asfPrintStatus("   Ingesting amplitude image ...\n");
   sprintf(inFile, "%s_%c.vvi2", inBaseName, band);
-  sprintf(outFile, "%s_%c_vv.img", outBaseName, band);
-  fpIn = FOPEN(inFile, "rb");
-  fpOut = FOPEN(outFile, "wb");
-  for (ii=0; ii<metaIn->general->line_count; ii++) {
-    get_float_line(fpIn, metaIn, ii, floatBuf);
-    put_float_line(fpOut, metaOut, ii, floatBuf);
-    asfLineMeter(ii, metaIn->general->line_count);
+  if (!fileExists(inFile))
+    asfPrintStatus("   Could not find amplitude file (%s) ...\n", inFile);
+  else {
+    asfPrintStatus("   Ingesting amplitude image ...\n");
+    sprintf(outFile, "%s_%c_vv.img", outBaseName, band);
+    fpIn = FOPEN(inFile, "rb");
+    fpOut = FOPEN(outFile, "wb");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    metaOut->general->image_data_type = AMPLITUDE_IMAGE;
+    meta_write(metaOut, outFile);
+    ret = TRUE;
   }
-  FCLOSE(fpIn);
-  FCLOSE(fpOut);
-  metaOut->general->image_data_type = AMPLITUDE_IMAGE;
-  meta_write(metaOut, outFile);
 
   // Ingest coherence image
-  asfPrintStatus("   Ingesting coherence image ...\n");
-  metaIn->general->data_type = BYTE;
   sprintf(inFile, "%s_%c.corgr", inBaseName, band);
-  sprintf(outFile, "%s_%c_coh.img", outBaseName, band);
-  fpIn = FOPEN(inFile, "rb");
-  fpOut = FOPEN(outFile, "wb");
-  for (ii=0; ii<metaIn->general->line_count; ii++) {
-    get_float_line(fpIn, metaIn, ii, floatBuf);
-    put_float_line(fpOut, metaOut, ii, floatBuf);
-    asfLineMeter(ii, metaIn->general->line_count);
+  if (!fileExists(inFile))
+    asfPrintStatus("   Could not find coherence image (%s) ...\n", inFile);
+  else {
+    asfPrintStatus("   Ingesting coherence image ...\n");
+    metaIn->general->data_type = BYTE;
+    sprintf(outFile, "%s_%c_coh.img", outBaseName, band);
+    fpIn = FOPEN(inFile, "rb");
+    fpOut = FOPEN(outFile, "wb");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    metaOut->general->image_data_type = COHERENCE_IMAGE;
+    meta_write(metaOut, outFile);
+    ret = TRUE;
   }
-  FCLOSE(fpIn);
-  FCLOSE(fpOut);
-  metaOut->general->image_data_type = COHERENCE_IMAGE;
-  meta_write(metaOut, outFile);
 
   // Clean up
   FREE(floatBuf);
   FREE(inFile);
   FREE(outFile);
+
+  return ret;
 }
 
-void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
+int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
             meta_parameters *meta, char band, long offset)
 {
   FILE *fpIn, *fpOut;
   char *inFile, *outFile;
-  int ii, kk;
+  int ii, kk, ret;
   char *byteBuf;
   float *power, *shh_amp, *shh_phase, *shv_amp, *shv_phase, *svh_amp;
   float *svh_phase, *svv_amp, *svv_phase;
@@ -115,49 +133,55 @@ void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   sprintf(inFile, "%s_%c.datgr", inBaseName, band);
   if (!fileExists(inFile))
     sprintf(inFile, "%s_%c.dat", inBaseName, band);
-  sprintf(outFile, "%s_%c.img", outBaseName, band);
-  fpIn = FOPEN(inFile, "rb");
-  fpOut = FOPEN(outFile, "wb");
-  printf("offset=%ld %d\n",offset,SEEK_SET);
-  FSEEK(fpIn, offset, 1);
-  for (ii=0; ii<meta->general->line_count; ii++) {
-    for (kk=0; kk<meta->general->sample_count; kk++) {
-      FREAD(byteBuf, sizeof(char), 10, fpIn);
-      total_power =
-    scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
-      ysca = 2.0 * sqrt(total_power);
-      power[kk] = total_power;
-      cpx.real = (float)byteBuf[2] * ysca / 127.0;
-      cpx.imag = (float)byteBuf[3] * ysca / 127.0;
-      shh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-      shh_phase[kk] = atan2(cpx.imag, cpx.real);
-      cpx.real = (float)byteBuf[4] * ysca / 127.0;
-      cpx.imag = (float)byteBuf[5] * ysca / 127.0;
-      shv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-      svh_phase[kk] = atan2(cpx.imag, cpx.real);
-      cpx.real = (float)byteBuf[6] * ysca / 127.0;
-      cpx.imag = (float)byteBuf[7] * ysca / 127.0;
-      svh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-      svh_phase[kk] = atan2(cpx.imag, cpx.real);
-      cpx.real = (float)byteBuf[8] * ysca / 127.0;
-      cpx.imag = (float)byteBuf[9] * ysca / 127.0;
-      svv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-      svv_phase[kk] = atan2(cpx.imag, cpx.real);
+  if (!fileExists(inFile))
+    asfPrintStatus("   Cound not find polarimetric data set (%s_%c) ...\n",
+		   inBaseName, band);
+  else {
+    sprintf(outFile, "%s_%c.img", outBaseName, band);
+    fpIn = FOPEN(inFile, "rb");
+    fpOut = FOPEN(outFile, "wb");
+    printf("offset=%ld %d\n",offset,SEEK_SET);
+    FSEEK(fpIn, offset, 1);
+    for (ii=0; ii<meta->general->line_count; ii++) {
+      for (kk=0; kk<meta->general->sample_count; kk++) {
+	FREAD(byteBuf, sizeof(char), 10, fpIn);
+	total_power =
+	  scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	ysca = 2.0 * sqrt(total_power);
+	power[kk] = total_power;
+	cpx.real = (float)byteBuf[2] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
+	shh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	shh_phase[kk] = atan2(cpx.imag, cpx.real);
+	cpx.real = (float)byteBuf[4] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[5] * ysca / 127.0;
+	shv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	svh_phase[kk] = atan2(cpx.imag, cpx.real);
+	cpx.real = (float)byteBuf[6] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[7] * ysca / 127.0;
+	svh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	svh_phase[kk] = atan2(cpx.imag, cpx.real);
+	cpx.real = (float)byteBuf[8] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[9] * ysca / 127.0;
+	svv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	svv_phase[kk] = atan2(cpx.imag, cpx.real);
+      }
+      put_band_float_line(fpOut, meta, 0, ii, power);
+      put_band_float_line(fpOut, meta, 1, ii, shh_amp);
+      put_band_float_line(fpOut, meta, 2, ii, shh_phase);
+      put_band_float_line(fpOut, meta, 3, ii, shv_amp);
+      put_band_float_line(fpOut, meta, 4, ii, shv_phase);
+      put_band_float_line(fpOut, meta, 5, ii, svh_amp);
+      put_band_float_line(fpOut, meta, 6, ii, svh_phase);
+      put_band_float_line(fpOut, meta, 7, ii, svv_amp);
+      put_band_float_line(fpOut, meta, 8, ii, svv_phase);
+      asfLineMeter(ii, meta->general->line_count);
     }
-    put_band_float_line(fpOut, meta, 0, ii, power);
-    put_band_float_line(fpOut, meta, 1, ii, shh_amp);
-    put_band_float_line(fpOut, meta, 2, ii, shh_phase);
-    put_band_float_line(fpOut, meta, 3, ii, shv_amp);
-    put_band_float_line(fpOut, meta, 4, ii, shv_phase);
-    put_band_float_line(fpOut, meta, 5, ii, svh_amp);
-    put_band_float_line(fpOut, meta, 6, ii, svh_phase);
-    put_band_float_line(fpOut, meta, 7, ii, svv_amp);
-    put_band_float_line(fpOut, meta, 8, ii, svv_phase);
-    asfLineMeter(ii, meta->general->line_count);
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    meta_write(meta, outFile);
+    ret = TRUE;
   }
-  FCLOSE(fpIn);
-  FCLOSE(fpOut);
-  meta_write(meta, outFile);
 
   // Clean up
   FREE(power);
@@ -172,6 +196,8 @@ void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   FREE(inFile);
   FREE(outFile);
   FREE(byteBuf);
+
+  return ret;
 }
 
 airsar_parameters *read_airsar_params(const char *inBaseName)
@@ -495,36 +521,48 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
   fudge_airsar_params(metaOut);
 
   // Check for interferometric data
+  int insar = FALSE;
   if (general->c_cross_data) {
     asfPrintStatus("\n   Ingesting C-band cross track interferometric data ..."
            "\n\n");
-    ingest_insar_data(inBaseName, metaIn, outBaseName, metaOut, 'c');
+    if (ingest_insar_data(inBaseName, metaIn, outBaseName, metaOut, 'c'))
+      insar = TRUE;
   }
   if (general->l_cross_data) {
     asfPrintStatus("\n   Ingesting L-band cross track interferometric data ..."
            "\n\n");
-    ingest_insar_data(inBaseName, metaIn, outBaseName, metaOut, 'l');
+    if (ingest_insar_data(inBaseName, metaIn, outBaseName, metaOut, 'l'))
+      insar = TRUE;
   }
+
   // Kept out the along-track interferometric data for the moment.
   // Only a few data sets were acquired that way and we have no real way
   // to verify the results.
 
   // Check for polarimetric data
-  if (general->c_pol_data) {
-    asfPrintStatus("\n   Ingesting C-band polarimetric data ...\n\n");
-    ingest_polsar_data(inBaseName, outBaseName, metaOut, 'c',
-               params->calibration_header_offset*10);
+  // Do this only if you don't have ingested interferometric data yet.
+  // Polarimetric data are apparently in a different geometry compared
+  // to the interferometric data.
+  if (!insar) {
+    if (general->c_pol_data) {
+      asfPrintStatus("\n   Ingesting C-band polarimetric data ...\n\n");
+      ingest_polsar_data(inBaseName, outBaseName, metaOut, 'c',
+			 params->calibration_header_offset*10);
+    }
+    if (general->l_pol_data) {
+      asfPrintStatus("\n   Ingesting L-band polarimetric data ...\n\n");
+      ingest_polsar_data(inBaseName, outBaseName, metaOut, 'l',
+			 params->calibration_header_offset*10);
+    }
+    if (general->p_pol_data) {
+      asfPrintStatus("\n   Ingesting P-band polarimetric data ...\n\n");
+      ingest_polsar_data(inBaseName, outBaseName, metaOut, 'p',
+			 params->calibration_header_offset*10);
+    }
   }
-  if (general->l_pol_data) {
-    asfPrintStatus("\n   Ingesting L-band polarimetric data ...\n\n");
-    ingest_polsar_data(inBaseName, outBaseName, metaOut, 'l',
-               params->calibration_header_offset*10);
-  }
-  if (general->p_pol_data) {
-    asfPrintStatus("\n   Ingesting P-band polarimetric data ...\n\n");
-    ingest_polsar_data(inBaseName, outBaseName, metaOut, 'p',
-               params->calibration_header_offset*10);
-  }
+  else
+    asfPrintStatus("\n   Skipping polarimetric data (different geometry) ..."
+		   "\n\n");
 
   free(general);
   free(params);
