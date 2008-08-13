@@ -1243,6 +1243,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   unsigned char *amp_byte_buf=NULL;
   float *amp_float_buf=NULL;
   float *phase_float_buf=NULL;
+  float *incid=NULL;
   complexFloat cpx, *cpxFloat_buf=NULL, *cpx_float_ml_buf=NULL;
 
   // Output file will stay open through multiple calls to this function.
@@ -1521,6 +1522,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     }
   }
 
+  // Populate incidence angle array for calibration
+  if (meta->sar)
+    incid = incid_init(meta);
+
   // Check whether image needs to be flipped
   if (meta->general->orbit_direction == 'D' &&
       (!meta->projection || meta->projection->type != SCANSAR_PROJECTION) &&
@@ -1692,7 +1697,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             }
             else {
               amp_float_buf[ll*ns + kk] =
-                get_cal_dn(meta, ii+ll, kk, fValue, db_flag);
+                get_cal_dn(meta, incid, kk, fValue, db_flag);
               phase_float_buf[ll*ns + kk] =  atan2(cpx.imag, cpx.real);
         }
           }
@@ -1743,7 +1748,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             cpx.real /= (float)lc;
             cpx.imag /= (float)lc;
             if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-                amp_float_buf[kk] = get_cal_dn(meta, ii+mm, kk, amp, db_flag);
+                amp_float_buf[kk] = get_cal_dn(meta, incid, kk, amp, db_flag);
             }
             else {
                 amp_float_buf[kk] = amp;
@@ -1905,7 +1910,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         byte_buf[kk] = tmp_byte_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(meta, ii, kk, (float)byte_buf[kk], db_flag);
+          get_cal_dn(meta, incid, kk, (float)byte_buf[kk], db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[kk] = (float) byte_buf[kk]*byte_buf[kk];
           else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
@@ -1924,7 +1929,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         short_buf[kk] = tmp_short_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(meta, ii, kk, (float)short_buf[kk], db_flag);
+          get_cal_dn(meta, incid, kk, (float)short_buf[kk], db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[kk] = (float) short_buf[kk]*short_buf[kk];
           else
@@ -1935,7 +1940,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         int_buf[kk] = tmp_int_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(meta, ii, kk, (float)int_buf[kk], db_flag);
+          get_cal_dn(meta, incid, kk, (float)int_buf[kk], db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[ns+kk] = (float) int_buf[kk]*int_buf[kk];
           else
@@ -1946,7 +1951,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         float_buf[kk] = tmp_float_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(meta, ll, kk, float_buf[kk], db_flag);
+          get_cal_dn(meta, incid, kk, float_buf[kk], db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[kk] = float_buf[kk]*float_buf[kk];
           else
@@ -1957,7 +1962,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         double_buf[kk] = tmp_double_buf[ns-kk-1];
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
         amp_float_buf[kk] =
-          get_cal_dn(meta, ii, kk, (float)double_buf[kk],
+          get_cal_dn(meta, incid, kk, (float)double_buf[kk],
                  db_flag);
           else if (radiometry == r_POWER)
         amp_float_buf[kk] =
@@ -2007,6 +2012,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   */
 
   // Clean up
+  if (incid)
+    FREE(incid);
   if (byte_buf) {
     FREE(byte_buf);
     FREE(tmp_byte_buf);

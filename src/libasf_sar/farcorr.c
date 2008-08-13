@@ -435,6 +435,11 @@ void faraday_correct(const char *inFile, const char *outFile,
     resMeta->general->band_count = 1;
     meta_write(resMeta, res_meta_name);
   }
+
+  // initialize the incidence angle array
+  float *incid=NULL;
+  if (output_radiometry != r_AMP)
+    incid = incid_init(inMeta);
   
   // now iterate through the input image's pixels...
   for (i=0; i<nl; ++i) {
@@ -492,10 +497,10 @@ void faraday_correct(const char *inFile, const char *outFile,
     // apply calibration to amplitude bands, if necessary
     if (output_radiometry != r_AMP) {
       for (j=0; j<ns; ++j) {
-        hh_amp[j] =  get_cal_dn(outMeta, i, j, hh_amp[j], db_flag);
-        hv_amp[j] =  get_cal_dn(outMeta, i, j, hv_amp[j], db_flag);
-        vh_amp[j] =  get_cal_dn(outMeta, i, j, vh_amp[j], db_flag);
-        vv_amp[j] =  get_cal_dn(outMeta, i, j, vv_amp[j], db_flag);
+        hh_amp[j] =  get_cal_dn(outMeta, incid, j, hh_amp[j], db_flag);
+        hv_amp[j] =  get_cal_dn(outMeta, incid, j, hv_amp[j], db_flag);
+        vh_amp[j] =  get_cal_dn(outMeta, incid, j, vh_amp[j], db_flag);
+        vv_amp[j] =  get_cal_dn(outMeta, incid, j, vv_amp[j], db_flag);
       }
     }
 
@@ -542,6 +547,8 @@ void faraday_correct(const char *inFile, const char *outFile,
   free(out_meta_name);
   FREE(buf);
   FREE(rotation_vals);
+  if (incid)
+    FREE(incid);
 
   FREE(hh_amp);
   FREE(hh_phase);

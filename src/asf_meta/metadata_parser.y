@@ -1037,49 +1037,24 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which go in the calibration block of the metadata file. */
   if ( !strcmp(stack_top->block_name, "calibration") ) {
+    int ii;
+    char str[15];
     if ( !strcmp(field_name, "type") ) {
+      // Initialize all the type pointers
       if ( !strcmp(VALP_AS_CHAR_POINTER, "ASF") ) {
-	int ii;
-	char str[15];
 	asf_cal_params *asf = MALLOC(sizeof(asf_cal_params));
 	(MCALIBRATION)->asf = asf;
 	for (ii=0; ii<256; ii++)
 	  (MCALIBRATION)->asf->noise[ii] = 0.0;
         (MCALIBRATION)->type = asf_cal;
-	if ( !strcmp(field_name, "a(0)") )
-	  { (MCALIBRATION)->asf->a0 = VALP_AS_DOUBLE; return; }
-	if ( !strcmp(field_name, "a(1)") )
-	  { (MCALIBRATION)->asf->a1 = VALP_AS_DOUBLE; return; }
-	if ( !strcmp(field_name, "a(2)") )
-	  { (MCALIBRATION)->asf->a2 = VALP_AS_DOUBLE; return; }
-	if ( !strcmp(field_name, "sample_count") )
-	  { (MCALIBRATION)->asf->sample_count = VALP_AS_INT; return; }
-	for (ii=0; ii<256; ii++) {
-	  sprintf(str, "noise(%d)", ii);
-	  if ( !strcmp(field_name, str) )
-	    { (MCALIBRATION)->asf->noise[ii] = VALP_AS_DOUBLE; return; }
-	}
 	return;
       }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "ASF SCANSAR") ) {
-	int ii;
-	char str[15];
 	asf_scansar_cal_params *asf = MALLOC(sizeof(asf_scansar_cal_params));
 	(MCALIBRATION)->asf_scansar = asf;
 	for (ii=0; ii<256; ii++)
-	  (MCALIBRATION)->asf_scansar->noise[ii] = 0.0;
+	  (MCALIBRATION)->asf->noise[ii] = 0.0;
         (MCALIBRATION)->type = asf_scansar_cal;
-	if ( !strcmp(field_name, "a(0)") )
-	  { (MCALIBRATION)->asf_scansar->a0 = VALP_AS_DOUBLE; return; }
-	if ( !strcmp(field_name, "a(1)") )
-	  { (MCALIBRATION)->asf_scansar->a1 = VALP_AS_DOUBLE; return; }
-	if ( !strcmp(field_name, "a(2)") )
-	  { (MCALIBRATION)->asf_scansar->a2 = VALP_AS_DOUBLE; return; }
-	for (ii=0; ii<256; ii++) {
-	  sprintf(str, "noise(%d)", ii);
-	  if ( !strcmp(field_name, str) )
-	    { (MCALIBRATION)->asf_scansar->noise[ii] = VALP_AS_DOUBLE; return; }
-	}
 	return;
       }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "ESA") ) {
@@ -1087,54 +1062,77 @@ void fill_structure_field(char *field_name, void *valp)
 	  (esa_cal_params *) MALLOC(sizeof(esa_cal_params));
 	(MCALIBRATION)->esa = esa;
         (MCALIBRATION)->type = esa_cal;
-	if ( !strcmp(field_name, "k") )
-	  { (MCALIBRATION)->esa->k = VALP_AS_DOUBLE; return; }
-	if ( !strcmp(field_name, "ref_incid") )
-	  { (MCALIBRATION)->esa->ref_incid = VALP_AS_DOUBLE; return; }
         return;
       }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "RSAT") ) {
-	int ii;
-	char str[15];
 	rsat_cal_params *rsat = 
 	  (rsat_cal_params *) MALLOC(sizeof(rsat_cal_params));
 	(MCALIBRATION)->rsat = rsat;
         (MCALIBRATION)->type = rsat_cal;
-	if ( !strcmp(field_name, "table_entries") )
-	  { (MCALIBRATION)->rsat->n = VALP_AS_INT; return; }
-	for (ii=0; ii<(MCALIBRATION)->rsat->n; ii++) {
-	  sprintf(str, "lut(%d)", ii);
-	  if ( !strcmp(field_name, str) )
-	    { (MCALIBRATION)->rsat->lut[ii] = VALP_AS_DOUBLE; return; }
-	}
-	if ( !strcmp(field_name, "sample_inc") )
-	  { (MCALIBRATION)->rsat->samp_inc = VALP_AS_INT; return; }
-	if ( !strcmp(field_name, "a3") )
-	  { (MCALIBRATION)->rsat->a3 = VALP_AS_DOUBLE; return; }
-	if ( !strcmp(field_name, "slc") )
-	  { (MCALIBRATION)->rsat->slc = VALP_AS_INT; return; }
-	if ( !strcmp(field_name, "focus") )
-	  { (MCALIBRATION)->rsat->focus = VALP_AS_INT; return; }
         return;
       }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "ALOS") ) {
 	alos_cal_params *alos = 
 	  (alos_cal_params *) MALLOC(sizeof(alos_cal_params));
 	(MCALIBRATION)->alos = alos;
-        (MCALIBRATION)->type = alos_cal;
-	if ( !strcmp(field_name, "cf") )
-	  { (MCALIBRATION)->alos->cf = VALP_AS_DOUBLE; return; }
-        return;
+	(MCALIBRATION)->type = alos_cal;
+	return;
       }
-      
     }
-    // I am copying this out here... all this code needs to be redone
-    // Kludge to get palsar working...
-    if ( !strcmp(field_name, "cf") )
-    { 
-      (MCALIBRATION)->alos->cf = VALP_AS_DOUBLE;
-      return;
+    // ASF calibration
+    if ( !strcmp(field_name, "a(0)") && (MCALIBRATION)->type == asf_cal)
+      { (MCALIBRATION)->asf->a0 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "a(1)") && (MCALIBRATION)->type == asf_cal)
+      { (MCALIBRATION)->asf->a1 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "a(2)") && (MCALIBRATION)->type == asf_cal)
+      { (MCALIBRATION)->asf->a2 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "sample_count") && 
+	 (MCALIBRATION)->type == asf_cal)
+      { (MCALIBRATION)->asf->sample_count = VALP_AS_INT; return; }
+    for (ii=0; ii<256; ii++) {
+      sprintf(str, "noise(%d)", ii);
+      if ( !strcmp(field_name, str) && (MCALIBRATION)->type == asf_cal)
+	{ (MCALIBRATION)->asf->noise[ii] = VALP_AS_DOUBLE; return; }
+      if ( !strcmp(field_name, str) && 
+	   (MCALIBRATION)->type == asf_scansar_cal)
+	{ (MCALIBRATION)->asf_scansar->noise[ii] = VALP_AS_DOUBLE; return; }
     }
+    // ASF ScanSAR calibration
+    if ( !strcmp(field_name, "a(0)") && 
+	 (MCALIBRATION)->type == asf_scansar_cal)
+      { (MCALIBRATION)->asf_scansar->a0 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "a(1)") && 
+	 (MCALIBRATION)->type == asf_scansar_cal)
+      { (MCALIBRATION)->asf_scansar->a1 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "a(2)") && 
+	 (MCALIBRATION)->type == asf_scansar_cal)
+      { (MCALIBRATION)->asf_scansar->a2 = VALP_AS_DOUBLE; return; }
+    // ESA calibration
+    if ( !strcmp(field_name, "k") && (MCALIBRATION)->type == esa_cal)
+      { (MCALIBRATION)->esa->k = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "ref_incid") && 
+	 (MCALIBRATION)->type == esa_cal)
+      { (MCALIBRATION)->esa->ref_incid = VALP_AS_DOUBLE; return; }
+    // RSAT calibration
+    if ( !strcmp(field_name, "table_entries") && 
+	 (MCALIBRATION)->type == rsat_cal)
+      { (MCALIBRATION)->rsat->n = VALP_AS_INT; return; }
+    for (ii=0; ii<(MCALIBRATION)->rsat->n; ii++) {
+      sprintf(str, "lut(%d)", ii);
+      if ( !strcmp(field_name, str) && (MCALIBRATION)->type == rsat_cal)
+	{ (MCALIBRATION)->rsat->lut[ii] = VALP_AS_DOUBLE; return; }
+    }
+    if ( !strcmp(field_name, "sample_inc") && (MCALIBRATION)->type == rsat_cal)
+      { (MCALIBRATION)->rsat->samp_inc = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "a3") && (MCALIBRATION)->type == rsat_cal)
+      { (MCALIBRATION)->rsat->a3 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "slc") && (MCALIBRATION)->type == rsat_cal)
+      { (MCALIBRATION)->rsat->slc = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "focus") && (MCALIBRATION)->type == rsat_cal)
+      { (MCALIBRATION)->rsat->focus = VALP_AS_INT; return; }
+    // ALOS calibration
+    if ( !strcmp(field_name, "cf") && (MCALIBRATION)->type == alos_cal)
+      { (MCALIBRATION)->alos->cf = VALP_AS_DOUBLE; return; }
   }
 
   /* Got an unknown field name, so report & choke */

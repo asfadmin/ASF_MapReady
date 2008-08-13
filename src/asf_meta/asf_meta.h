@@ -820,11 +820,12 @@ int refine_slc_geolocation_from_workreport(const char *metaName,
                                            double *slant_shift_adjustment);
 
 // Calibration functions from cal_params.c
-quadratic_2d get_incid(char *sarName, meta_parameters *meta);
 void create_cal_params(const char *inSAR, meta_parameters *meta);
-float get_cal_dn(meta_parameters *meta, int line, int sample, float inDn, 
+float *incid_init(meta_parameters *meta);
+float get_cal_dn(meta_parameters *meta, float *incid, int sample, float inDn, 
 		 int dbFlag);
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
+quadratic_2d get_incid(char *sarName, meta_parameters *meta);
 
 #endif
