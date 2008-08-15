@@ -1,5 +1,7 @@
 #include "asf_convert_gui.h"
 
+static int db_was_checked = 0;
+
 void
 show_execute_button(gboolean show)
 {
@@ -847,18 +849,19 @@ on_rb_fr_global_toggled(GtkWidget *widget)
 
 void polarimetry_settings_changed()
 {
-    int is_checked = get_checked("polarimetry_checkbutton");
+    int polarimetry_is_checked = get_checked("polarimetry_checkbutton");
 
+    GtkWidget *input_data_type_combobox =
+      get_widget_checked("input_data_type_combobox");
     GtkWidget *polarimetry_tab_label =
       get_widget_checked("polarimetry_tab_label");
     GtkWidget *vbox_polarimetry =
       get_widget_checked("vbox_polarimetry");
 
-    gtk_widget_set_sensitive(polarimetry_tab_label, is_checked);
-    gtk_widget_set_sensitive(vbox_polarimetry, is_checked);
+    gtk_widget_set_sensitive(polarimetry_tab_label, polarimetry_is_checked);
+    gtk_widget_set_sensitive(vbox_polarimetry, polarimetry_is_checked);
 
-    if (is_checked) {
-
+    if (polarimetry_is_checked) {
       int decomp_checked = get_checked("polarimetric_decomp_checkbutton");
 
       GtkWidget *polarimetric_decomp_vbox =
@@ -868,11 +871,16 @@ void polarimetry_settings_changed()
       if (decomp_checked) {
         // when a polarimetric decomposition is turned on,
         // automatically select "SIGMA" and no db
-        GtkWidget *input_data_type_combobox =
-          get_widget_checked("input_data_type_combobox");
         set_combo_box_item(input_data_type_combobox, INPUT_TYPE_SIGMA);
-        if (get_checked("checkbutton_db"))
+        gtk_widget_set_sensitive(input_data_type_combobox, FALSE);
+        if (get_checked("checkbutton_db")) {
+          db_was_checked = get_checked("checkbutton_db"); // see input_data_type_combobox_changed()
           set_checked("checkbutton_db", FALSE);
+        }
+      }
+      else {
+          // Make sure combobox is enabled
+          gtk_widget_set_sensitive(input_data_type_combobox, TRUE);
       }
 
       int farcorr_checked = get_checked("farcorr_checkbutton");
@@ -1043,9 +1051,10 @@ on_about_dialog_key_press_event(GtkWidget *widget)
   close_about_dialog();
 }
 
-static int db_was_checked = 0;
 void input_data_type_combobox_changed()
 {
+    int polarimetry_is_checked = get_checked("polarimetry_checkbutton");
+    int decomp_checked = get_checked("polarimetric_decomp_checkbutton");
     GtkWidget *input_data_type_combobox =
         get_widget_checked("input_data_type_combobox");
     GtkWidget *checkbutton_db =
@@ -1053,62 +1062,45 @@ void input_data_type_combobox_changed()
     int data_type = get_combo_box_item(input_data_type_combobox);
 
     // Manage the 'Scale output to decibels (dB)' check box
+    // Note: If polarimetry is checked, the radiometry is forced to sigma before
+    // input_data_type_combobox_changed() is called
     if (data_type == INPUT_TYPE_SIGMA ||
         data_type == INPUT_TYPE_BETA  ||
         data_type == INPUT_TYPE_GAMMA)
     {
         // Sigma, Beta, or Gamma
-        set_checked("checkbutton_db", db_was_checked);
-        gtk_widget_set_sensitive(checkbutton_db, TRUE);
+        if (polarimetry_is_checked && decomp_checked) {
+            db_was_checked = get_checked("checkbutton_db");
+            set_checked("checkbutton_db", FALSE);
+            gtk_widget_set_sensitive(checkbutton_db, FALSE);
+        }
+        else {
+            set_checked("checkbutton_db", db_was_checked);
+            gtk_widget_set_sensitive(checkbutton_db, TRUE);
+        }
     }
     else {
         // Power & Amplitude
-        if (get_checked("checkbutton_db")) {
-            db_was_checked = 1;
-        }
-        else {
-            db_was_checked = 0;
-        }
+        db_was_checked = get_checked("checkbutton_db");
         set_checked("checkbutton_db", FALSE);
         gtk_widget_set_sensitive(checkbutton_db, FALSE);
     }
-    if (get_checked("polarimetry_checkbutton")) {
-        if (get_checked("checkbutton_db")) {
-            db_was_checked = 1;
-        }
-        else {
-            db_was_checked = 0;
-        }
-        set_checked("checkbutton_db", FALSE);
-        gtk_widget_set_sensitive(checkbutton_db, FALSE);
-    }
-
-    // Manage polarimetry...
-    // When doing polarimetry, force sigma/non-db, and disable widgets
-    if (get_checked("polarimetry_checkbutton")) {
-      // actually probably don't need to do these... handler for the
-      // polarimetry checkbutton will do this
-      if (data_type != INPUT_TYPE_SIGMA)
-        set_combo_box_item(input_data_type_combobox, INPUT_TYPE_SIGMA);
-
-      gtk_widget_set_sensitive(input_data_type_combobox, FALSE);
-    }
-    else {
+    if (!(polarimetry_is_checked && decomp_checked)) {
+        // Make sure combobox is enabled
+        GtkWidget *input_data_type_combobox = get_widget_checked("input_data_type_combobox");
         gtk_widget_set_sensitive(input_data_type_combobox, TRUE);
     }
 
-    GtkWidget *ers2_gain_fix_checkbutton =
-        get_widget_checked("ers2_gain_fix_checkbutton");
-
     // Manage the ERS2 gain fix checkbutton
-    if (data_type == INPUT_TYPE_AMP) {
-      gtk_toggle_button_set_active(
-        GTK_TOGGLE_BUTTON(ers2_gain_fix_checkbutton), FALSE);
+    GtkWidget *ers2_gain_fix_checkbutton = get_widget_checked("ers2_gain_fix_checkbutton");
+    if (data_type == INPUT_TYPE_AMP ||
+        data_type == INPUT_TYPE_POWER)
+    {
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ers2_gain_fix_checkbutton), FALSE);
       gtk_widget_set_sensitive(ers2_gain_fix_checkbutton, FALSE);
     }
     else {
-      gtk_toggle_button_set_active(
-        GTK_TOGGLE_BUTTON(ers2_gain_fix_checkbutton), TRUE);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ers2_gain_fix_checkbutton), TRUE);
       gtk_widget_set_sensitive(ers2_gain_fix_checkbutton, TRUE);
     }
 
