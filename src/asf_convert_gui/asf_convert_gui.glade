@@ -1417,7 +1417,7 @@
 				      <child>
 					<widget class="GtkLabel" id="label142">
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">&lt;span foreground=&quot;red&quot;&gt;HH-VV&lt;/span&gt;, &lt;span foreground=&quot;green&quot;&gt;HV+VH&lt;/span&gt;, &lt;span foreground=&quot;blue&quot;&gt;HH+VV&lt;/span&gt;</property>
+					  <property name="label" translatable="yes">&lt;span foreground=&quot;red&quot;&gt;HH-VV&lt;/span&gt;, &lt;span foreground=&quot;#00AA00&quot;&gt;HV+VH&lt;/span&gt;, &lt;span foreground=&quot;blue&quot;&gt;HH+VV&lt;/span&gt;</property>
 					  <property name="use_underline">True</property>
 					  <property name="use_markup">True</property>
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -1472,7 +1472,7 @@
 				      <child>
 					<widget class="GtkLabel" id="label143">
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">&lt;span foreground=&quot;red&quot;&gt;HH&lt;/span&gt;, &lt;span foreground=&quot;green&quot;&gt;(HV+VH)/2&lt;/span&gt;, &lt;span foreground=&quot;blue&quot;&gt;VV&lt;/span&gt;</property>
+					  <property name="label" translatable="yes">&lt;span foreground=&quot;red&quot;&gt;HH&lt;/span&gt;, &lt;span foreground=&quot;#00AA00&quot;&gt;(HV+VH)/2&lt;/span&gt;, &lt;span foreground=&quot;blue&quot;&gt;VV&lt;/span&gt;</property>
 					  <property name="use_underline">True</property>
 					  <property name="use_markup">True</property>
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>
