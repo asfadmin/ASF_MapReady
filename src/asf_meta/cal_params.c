@@ -381,10 +381,10 @@ float *incid_init(meta_parameters *meta)
         Convert amplitude image data number into calibrated image data
         number (in power scale), given the current noise value.
 ----------------------------------------------------------------------*/
-float get_cal_dn(meta_parameters *meta, float *incid, int sample, float inDn, 
-		 int dbFlag)
+float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
+		 float inDn, int dbFlag)
 {
-  double scaledPower, calValue, incidence_angle, invIncAngle;
+  double scaledPower, calValue, invIncAngle;
   radiometry_t radiometry = meta->general->radiometry;
 
   // Calculate according to the calibration data type
@@ -392,14 +392,10 @@ float get_cal_dn(meta_parameters *meta, float *incid, int sample, float inDn,
 
     if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
       invIncAngle = 1.0;
-    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
-      incidence_angle = incid[sample];
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
       invIncAngle = 1/cos(incidence_angle);
-    }
-    else if (radiometry == r_BETA || radiometry == r_BETA_DB) {
-      incidence_angle = incid[sample];
+    else if (radiometry == r_BETA || radiometry == r_BETA_DB)
       invIncAngle = 1/sin(incidence_angle);
-    }
 
     asf_cal_params *p = meta->calibration->asf;
     double index = (double)sample*256./(double)(p->sample_count);
@@ -421,14 +417,10 @@ float get_cal_dn(meta_parameters *meta, float *incid, int sample, float inDn,
 
     if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
       invIncAngle = 1.0;
-    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
-      incidence_angle = incid[0];
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
       invIncAngle = 1/cos(incidence_angle);
-    }
-    else if (radiometry == r_BETA || radiometry == r_BETA_DB) {
-      incidence_angle = incid[0];
+    else if (radiometry == r_BETA || radiometry == r_BETA_DB)
       invIncAngle = 1/sin(incidence_angle);
-    }
 
     double look = 25.0; // FIXME: hack to get things compiled
     double index = (look-16.3)*10.0;
@@ -453,20 +445,15 @@ float get_cal_dn(meta_parameters *meta, float *incid, int sample, float inDn,
   }
   else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
 
-    if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
-      incidence_angle = incid[sample];
-      invIncAngle = 1/cos(incidence_angle*D2R);
-
     esa_cal_params *p = meta->calibration->esa;
 
     if (radiometry == r_BETA || radiometry == r_BETA_DB)
       scaledPower = inDn*inDn/p->k;
-    else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB) {
-      incidence_angle = incid[sample];
+    else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
       scaledPower = 
 	inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle);
-    }
     else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
+      invIncAngle = 1/cos(incidence_angle*D2R);
       scaledPower = 
 	inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle) /
 	invIncAngle;
@@ -477,14 +464,10 @@ float get_cal_dn(meta_parameters *meta, float *incid, int sample, float inDn,
     
     if (radiometry == r_BETA || radiometry == r_BETA_DB)
       invIncAngle = 1.0;
-    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB) {
-      incidence_angle = incid[sample];
+    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
       invIncAngle = 1/tan(incidence_angle);
-    }
-    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
-      incidence_angle = incid[sample];
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
       invIncAngle = tan(incidence_angle);
-    }
 
     rsat_cal_params *p = meta->calibration->rsat;
     double a2;
@@ -508,14 +491,10 @@ float get_cal_dn(meta_parameters *meta, float *incid, int sample, float inDn,
     
     if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
       invIncAngle = 1.0;
-    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
-      incidence_angle = incid[sample];
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
       invIncAngle = 1/cos(incidence_angle);
-    }
-    else if (radiometry == r_BETA || radiometry == r_BETA_DB) {
-      incidence_angle = incid[sample];
+    else if (radiometry == r_BETA || radiometry == r_BETA_DB)
       invIncAngle = 1/sin(incidence_angle);
-    }
 
     alos_cal_params *p = meta->calibration->alos;
 
