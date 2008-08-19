@@ -497,10 +497,10 @@ void faraday_correct(const char *inFile, const char *outFile,
     // apply calibration to amplitude bands, if necessary
     if (output_radiometry != r_AMP) {
       for (j=0; j<ns; ++j) {
-        hh_amp[j] =  get_cal_dn(outMeta, incid, j, hh_amp[j], db_flag);
-        hv_amp[j] =  get_cal_dn(outMeta, incid, j, hv_amp[j], db_flag);
-        vh_amp[j] =  get_cal_dn(outMeta, incid, j, vh_amp[j], db_flag);
-        vv_amp[j] =  get_cal_dn(outMeta, incid, j, vv_amp[j], db_flag);
+        hh_amp[j] =  get_cal_dn(outMeta, incid[j], j, hh_amp[j], db_flag);
+        hv_amp[j] =  get_cal_dn(outMeta, incid[j], j, hv_amp[j], db_flag);
+        vh_amp[j] =  get_cal_dn(outMeta, incid[j], j, vh_amp[j], db_flag);
+        vv_amp[j] =  get_cal_dn(outMeta, incid[j], j, vv_amp[j], db_flag);
       }
     }
 
