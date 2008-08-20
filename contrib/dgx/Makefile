@@ -1,8 +1,8 @@
 # Makefile for subsystem Graph program (dgx)
 
-include ../../../make_support/system_rules
+include ../../make_support/system_rules
 
-BINDIR = ../../../bin
+BINDIR = ../../bin
 LIBS   = -L/usr/X11R6/lib -lXm -lXt -lX11 -lm
 HP_SGI = -DM10 -DM4 -DIO64 
 
