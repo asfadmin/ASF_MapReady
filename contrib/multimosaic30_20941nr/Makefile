@@ -2,16 +2,16 @@
 #       multimosaic
 #	multiaffine3d
 
-include ../../../make_support/system_rules
+include ../../make_support/system_rules
 
-BINDIR = ../../../bin
+BINDIR = ../../bin
 
 FC     = g77
 FFLAGS = $(OPTFLAG) $(LARGEFILE_FLAGS) -ffixed-line-length-132
 
 MOSAIC_OBJS = multimosaic.o
 	
-NR = ../../NR
+NR = ../NR
 AFFINE_OBJS = \
 	$(NR)/dgaussh.o \
 	$(NR)/dpythag.o \
