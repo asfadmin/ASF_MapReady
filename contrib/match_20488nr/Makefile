@@ -3,9 +3,9 @@
 #	multicull	description
 #	multitps	description
 
-include ../../../make_support/system_rules
+include ../../make_support/system_rules
 
-BINDIR = ../../../bin
+BINDIR = ../../bin
 LIBS   = -L/usr/X11R6/lib -lXm -lXt -lX11 -lm
 HP_SGI = -DSGI
 
@@ -21,7 +21,7 @@ MATCH_F_SRC = multimatch.f
 MATCH_F_OBJ = $(MATCH_F_SRC:.f=.o)
 MATCH_OBJS = $(MATCH_F_OBJ) $(MATCH_C_OBJ)
 
-NR = ../../NR
+NR = ../NR
 CULL_OBJS = \
 	$(NR)/dgaussh.o \
 	$(NR)/dpythag.o \
