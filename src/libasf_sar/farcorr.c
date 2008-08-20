@@ -152,7 +152,7 @@ static double get_omega(QuadPolData *qpd, int line, int samp)
   complex_matrix_free(z);
   complex_matrix_free(m);
 
-  return omega;
+  return -omega;
 }
 
 static complexMatrix *make_cpx_rotation_matrix(double ang)
@@ -220,8 +220,14 @@ void faraday_correct(const char *inFile, const char *outFile,
                      int save_intermediates, int use_single_rotation_value,
                      radiometry_t output_radiometry)
 {
+  int debug = output_radiometry != r_AMP;
+
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
+
+  meta_parameters *dbgMeta = NULL;
+  if (debug)
+    dbgMeta = meta_read(meta_name);
 
   if (inMeta->general->radiometry != r_AMP) {
     asfPrintError("This image is already calibrated. Faraday Rotation can\n"
@@ -262,6 +268,7 @@ void faraday_correct(const char *inFile, const char *outFile,
   char *smoothed_img_name = appendToBasename(in_img_name, "_smooth");
   char *residuals_img_name = appendToBasename(in_img_name, "_residuals");
   char *out_img_name = appendExt(outFile, ".img");
+  char *dbg_img_name = appendToBasename(out_img_name, "_no_cal");
 
   int nl = inMeta->general->line_count;
   int ns = inMeta->general->sample_count;
@@ -399,6 +406,19 @@ void faraday_correct(const char *inFile, const char *outFile,
   // write out output metadata
   meta_write(outMeta, out_meta_name);
 
+  FILE *fpdbg = NULL;
+  if (debug) {
+    fpdbg = fopenImage(dbg_img_name, "wb");
+    strcpy(dbgMeta->general->bands, "HH-AMP,HH-PHASE,HV-AMP,HV-PHASE,"
+                                    "VH-AMP,VH-PHASE,VV-AMP,VV-PHASE");
+    dbgMeta->general->band_count = 8;
+    dbgMeta->general->radiometry = r_AMP;
+
+    char *dbg_meta_name = appendExt(dbg_img_name, ".meta");
+    meta_write(dbgMeta, dbg_meta_name);
+    free(dbg_meta_name);
+  }
+
   // We'll either (1) pull the rotation angle from the smoothed image file,
   // or (2) use the calculated average rotation angle.  If we're in case (1),
   // open the smoothed rotation angle file.
@@ -456,6 +476,7 @@ void faraday_correct(const char *inFile, const char *outFile,
       else
         omega = D2R*rotation_vals[j];
       
+      omega *= -1;
       quadPolFloat *qpf = qpd->buf + j;
 
       // This is the "M" matrix
@@ -491,9 +512,21 @@ void faraday_correct(const char *inFile, const char *outFile,
  
       // compute residual
       if (save_intermediates)
-        res[j] = omega - get_omega(qpd, i, j);
+        res[j] = fabs(omega - get_omega(qpd, i, j));
     }
     
+    // dump a corrected image before calibration, for debugging
+    if (fpdbg) {
+      put_band_float_line(fpdbg, dbgMeta, 0, i, hh_amp);
+      put_band_float_line(fpdbg, dbgMeta, 1, i, hh_phase);
+      put_band_float_line(fpdbg, dbgMeta, 2, i, hv_amp);
+      put_band_float_line(fpdbg, dbgMeta, 3, i, hv_phase);
+      put_band_float_line(fpdbg, dbgMeta, 4, i, vh_amp);
+      put_band_float_line(fpdbg, dbgMeta, 5, i, vh_phase);
+      put_band_float_line(fpdbg, dbgMeta, 6, i, vv_amp);
+      put_band_float_line(fpdbg, dbgMeta, 7, i, vv_phase);
+    }
+
     // apply calibration to amplitude bands, if necessary
     if (output_radiometry != r_AMP) {
       for (j=0; j<ns; ++j) {
@@ -513,7 +546,7 @@ void faraday_correct(const char *inFile, const char *outFile,
     put_band_float_line(fout, outMeta, qpd->vh_phase_band, i, vh_phase);
     put_band_float_line(fout, outMeta, qpd->vv_amp_band, i, vv_amp);
     put_band_float_line(fout, outMeta, qpd->vv_phase_band, i, vv_phase);
-    
+
     // write out residuals
     if (save_intermediates)
       put_float_line(fpres, resMeta, i, res);
@@ -542,6 +575,8 @@ void faraday_correct(const char *inFile, const char *outFile,
     FCLOSE(fprot);
   if (save_intermediates)
     FCLOSE(fpres);
+  if (fpdbg)
+    FCLOSE(fpdbg);
 
   // STEP 4: Clean up
   free(out_meta_name);
@@ -599,12 +634,15 @@ void faraday_correct(const char *inFile, const char *outFile,
   meta_free(outMeta);
   if (resMeta)
     meta_free(resMeta);
+  if (dbgMeta)
+    meta_free(dbgMeta);
 
   free(in_img_name);
   free(rot_img_name);
   free(smoothed_img_name);
   free(residuals_img_name);
   free(out_img_name);
+  free(dbg_img_name);
 
   qpd_free(qpd);
 }
