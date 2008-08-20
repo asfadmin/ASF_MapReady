@@ -1,7 +1,8 @@
 /* Cal_params:
-	Fetches noise and scaling factors from
-input CEOS image, and returns them to
-calibrate.*/
+   Fetches noise and scaling factors from
+   input CEOS image, and returns them to
+   calibrate.
+*/
 
 
 #include "asf.h"
@@ -55,47 +56,56 @@ double get_term(int termNo, double x, double y)
     }
 }
 
-// Fit a quadratic warping function to the given points 
+// Fit a quadratic warping function to the given points
 // in a least-squares fashion
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts)
 {
-  int nTerms=11;
-  matrix *m=matrix_alloc(nTerms,nTerms+1);
-  int row,col;
+  int nTerms = 11;
+  matrix *m = matrix_alloc(nTerms, nTerms + 1);
+  int row, col;
   int i;
   quadratic_2d c;
   // For each data point, add terms to matrix
-  for (i=0;i<numPts;i++) {
+  for (i = 0; i < numPts; i++) {
     for (row=0;row<nTerms;row++) {
-      double partial_Q=get_term(row,x[i],y[i]);
-      for (col=0;col<nTerms;col++)
-	m->coeff[row][col]+=partial_Q*get_term(col,x[i],y[i]);
-      m->coeff[row][nTerms]+=partial_Q*out[i];
+      double partial_Q = get_term(row, x[i], y[i]);
+      for (col = 0; col < nTerms; col++) {
+          m->coeff[row][col] += partial_Q * get_term(col, x[i], y[i]);
+      }
+      m->coeff[row][nTerms] += partial_Q * out[i];
     }
   }
   // Now solve matrix to find coefficients
   // matrix_print(m,"\nLeast-Squares Matrix:\n",stdout);
   matrix_solve(m);
-  c.A=m->coeff[0][nTerms];c.B=m->coeff[1][nTerms];c.C=m->coeff[2][nTerms];
-  c.D=m->coeff[3][nTerms];c.E=m->coeff[4][nTerms];c.F=m->coeff[5][nTerms];
-  c.G=m->coeff[6][nTerms];c.H=m->coeff[7][nTerms];c.I=m->coeff[8][nTerms];
-  c.J=m->coeff[9][nTerms];c.K=m->coeff[10][nTerms];
+  c.A = m->coeff[0][nTerms];
+  c.B = m->coeff[1][nTerms];
+  c.C = m->coeff[2][nTerms];
+  c.D = m->coeff[3][nTerms];
+  c.E = m->coeff[4][nTerms];
+  c.F = m->coeff[5][nTerms];
+  c.G = m->coeff[6][nTerms];
+  c.H = m->coeff[7][nTerms];
+  c.I = m->coeff[8][nTerms];
+  c.J = m->coeff[9][nTerms];
+  c.K = m->coeff[10][nTerms];
+
   return c;
 }
 
 double get_satellite_height(double time, stateVector stVec)
 {
   return sqrt(stVec.pos.x*stVec.pos.x +
-	      stVec.pos.y*stVec.pos.y +
-	      stVec.pos.z*stVec.pos.z);
+          stVec.pos.y*stVec.pos.y +
+          stVec.pos.z*stVec.pos.z);
 }
 
 double get_earth_radius(double time, stateVector stVec, double re, double rp)
 {
   double er = sqrt(stVec.pos.x*stVec.pos.x +
-		   stVec.pos.y*stVec.pos.y +
-		   stVec.pos.z*stVec.pos.z);
+           stVec.pos.y*stVec.pos.y +
+           stVec.pos.z*stVec.pos.z);
   double lat = asin(stVec.pos.z/er);
   return (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat) + re*re*sin(lat)*sin(lat));
 }
@@ -103,7 +113,7 @@ double get_earth_radius(double time, stateVector stVec, double re, double rp)
 double get_slant_range(meta_parameters *meta, double er, double ht, int sample)
 {
   double minPhi = acos((ht*ht + er*er -
-		       SQR(meta->sar->slant_range_first_pixel))/(2.0*ht*er));
+               SQR(meta->sar->slant_range_first_pixel))/(2.0*ht*er));
   double phi = minPhi + sample*(meta->general->x_pixel_size/er);
   double slantRng = sqrt(ht*ht + er*er - 2.0*ht*er*cos(phi));
   return slantRng + meta->sar->slant_shift;
@@ -129,6 +139,7 @@ quadratic_2d get_incid(char *sarName, meta_parameters *meta)
   double earth_radius, satellite_height, time, range;
   double firstIncid, re, rp;
 
+  // Init
   incidence_angle = (double *) MALLOC(sizeof(double)*GRID*GRID);
   line = (double *) MALLOC(sizeof(double)*GRID*GRID);
   sample = (double *) MALLOC(sizeof(double)*GRID*GRID);
@@ -136,34 +147,38 @@ quadratic_2d get_incid(char *sarName, meta_parameters *meta)
   int ns = meta->general->sample_count;
   re = meta->general->re_major;
   rp = meta->general->re_minor;
-  if (meta->projection) // other conditions needed ???
-    projected = TRUE;
-  for (ll=0; ll<GRID; ll++)
-    for (kk=0; kk<GRID; kk++) {
+  projected = (meta->projection) ? TRUE : FALSE;
+
+  // Populate array of incidence angles from er, sh, and r for each pixel
+  // in the grid
+  for (ll = 0; ll < GRID; ll++) {
+    for (kk = 0; kk < GRID; kk++) {
       line[ll*GRID+kk] = ll * nl / GRID;
       sample[ll*GRID+kk] = kk * ns / GRID;
       if (projected) {
-	earth_radius = meta_get_earth_radius(meta, ll, kk);
-	satellite_height = meta_get_sat_height(meta, ll, kk);
-	range = get_slant_range(meta, earth_radius, satellite_height,
-				sample[ll*GRID+kk]);
+        earth_radius = meta_get_earth_radius(meta, ll, kk);
+        satellite_height = meta_get_sat_height(meta, ll, kk);
+        range = get_slant_range(meta, earth_radius, satellite_height,
+                                sample[ll*GRID+kk]);
       }
       else {
-	time = meta_get_time(meta, line[ll*GRID+kk], sample[ll*GRID+kk]);
-	stVec = meta_get_stVec(meta, time);
-	earth_radius = get_earth_radius(time, stVec, re, rp);
-	satellite_height = get_satellite_height(time, stVec);
-	range = get_slant_range(meta, earth_radius, satellite_height,
-				sample[ll*GRID+kk]);
+        time = meta_get_time(meta, line[ll*GRID+kk], sample[ll*GRID+kk]);
+        stVec = meta_get_stVec(meta, time);
+        earth_radius = get_earth_radius(time, stVec, re, rp);
+        satellite_height = get_satellite_height(time, stVec);
+        range = get_slant_range(meta, earth_radius, satellite_height,
+                                sample[ll*GRID+kk]);
       }
-      incidence_angle[ll*GRID+kk] =
-        get_incidence_angle(earth_radius, satellite_height, range)*R2D;
+      incidence_angle[ll*GRID+kk] = get_incidence_angle(earth_radius, satellite_height, range) * R2D;
 
-      if (ll==0 && kk==0)
+      if (ll==0 && kk==0) {
         firstIncid = incidence_angle[0];
+      }
     }
+  }
 
-  q = find_quadratic(incidence_angle, line, sample, GRID*GRID);
+  // Fit a 2D quadratic to the grid of incidence angles
+  q   = find_quadratic(incidence_angle, line, sample, GRID*GRID);
   q.A = firstIncid;
 
   // Clean up
@@ -187,9 +202,9 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
   double *noise;
   char sarName[512], *facilityStr, *processorStr;
   meta->calibration = meta_calibration_init();
-  
+
   strcpy (sarName, inSAR);
-  
+
   // Check for the varioius processors
   get_dssr(sarName, &dssr);
   facilityStr = trim_spaces(dssr.fac_id);
@@ -207,13 +222,13 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     // Get values for calibration coefficients and LUT
     struct VRADDR rdr; // Radiometric data record
     get_raddr(sarName, &rdr);
-    
+
     // hardcodings for not-yet-calibrated fields
     if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
       asf->a0 = 1.1E4;
       asf->a1 = 2.2E-5;
       asf->a2 = 0.0;
-    } 
+    }
     else {
       asf->a0 = rdr.a[0];
       asf->a1 = rdr.a[1];
@@ -224,30 +239,30 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     if (strncmp(dssr.cal_params_file,"SSPSWB010.CALPARMS",18)==0) {
       asfPrintStatus("\n   Substituting hardcoded noise vector sspswb010\n");
       noise = sspswb010_noise_vec;
-    } 
+    }
     else if (strncmp(dssr.cal_params_file,"SSPSWB011.CALPARMS",18)==0) {
       asfPrintStatus("\n   Substituting hardcoded noise vector sspswb011\n");
       noise = sspswb011_noise_vec;
-    } 
+    }
     else if (strncmp(dssr.cal_params_file,"SSPSWB013.CALPARMS",18)==0) {
       asfPrintStatus("\n   Substituting hardcoded noise vector sspswb013\n");
       noise = sspswb013_noise_vec;
-    } 
+    }
     else if (strncmp(dssr.cal_params_file,"SSPSWB014.CALPARMS",18)==0) {
       asfPrintStatus("\n   Substituting hardcoded noise vector sspswb014\n");
       noise = sspswb014_noise_vec;
-    } 
+    }
     else if (strncmp(dssr.cal_params_file,"SSPSWB015.CALPARMS",18)==0) {
       asfPrintStatus("\n   Substituting hardcoded noise vector sspswb015\n");
       noise = sspswb015_noise_vec;
-    } 
+    }
     else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
       asfPrintStatus("\n   Substituting hardcoded noise vector sspswb016\n");
       noise = sspswb015_noise_vec;
-      // 16 and 15 were identical antenna patterns, only metadata fields were 
+      // 16 and 15 were identical antenna patterns, only metadata fields were
       // changed, so the noise vector for 16 is the same and that for 15. JBN
-    } 
-    else 
+    }
+    else
       noise = rdr.noise;
 
     for (kk=0; kk<256; ++kk)
@@ -265,13 +280,13 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     // Get values for calibration coefficients and LUT
     struct VRADDR rdr; // Radiometric data record
     get_raddr(sarName, &rdr);
-    
+
     // hardcodings for not-yet-calibrated fields
     if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
       asf->a0 = 1.1E4;
       asf->a1 = 2.2E-5;
       asf->a2 = 0.0;
-    } 
+    }
     else {
       asf->a0 = rdr.a[0];
       asf->a1 = rdr.a[1];
@@ -284,21 +299,21 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     asf->sample_count = meta->general->sample_count;
   }
   else if ((strncmp(facilityStr, "ASF", 3) == 0 &&
-	    strncmp(dssr.sys_id, "FOCUS", 5) == 0) ||
-	   (strncmp(facilityStr, "CDPF", 4) == 0 ||
-	    strncmp(facilityStr, "RSI", 3) == 0 ||
-	    (strncmp(facilityStr, "CSTARS", 6) == 0 && 
-	     strncmp(dssr.mission_id, "RSAT", 4) == 0))) {
+        strncmp(dssr.sys_id, "FOCUS", 5) == 0) ||
+       (strncmp(facilityStr, "CDPF", 4) == 0 ||
+        strncmp(facilityStr, "RSI", 3) == 0 ||
+        (strncmp(facilityStr, "CSTARS", 6) == 0 &&
+         strncmp(dssr.mission_id, "RSAT", 4) == 0))) {
     // Radarsat style calibration
-    rsat_cal_params *rsat = 
+    rsat_cal_params *rsat =
       (rsat_cal_params *) MALLOC(sizeof(rsat_cal_params));
     meta->calibration->type = rsat_cal;
     meta->calibration->rsat = rsat;
     rsat->slc = FALSE;
     rsat->focus = FALSE;
     if (strncmp(dssr.product_type, "SLANT RANGE COMPLEX", 19) == 0 ||
-	strncmp(dssr.product_type, 
-		"SPECIAL PRODUCT(SINGL-LOOK COMP)", 32) == 0) {
+    strncmp(dssr.product_type,
+        "SPECIAL PRODUCT(SINGL-LOOK COMP)", 32) == 0) {
       rsat->slc = TRUE;
     }
     if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
@@ -311,21 +326,22 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     rsat->lut = (double *) MALLOC(sizeof(double) * rsat->n);
     for (ii=0; ii<rsat->n; ii++) {
       if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
-	rsat->lut[ii] = radr.lookup_tab[0];
+    rsat->lut[ii] = radr.lookup_tab[0];
       else
-	rsat->lut[ii] = radr.lookup_tab[ii];
+    rsat->lut[ii] = radr.lookup_tab[ii];
     }
     rsat->samp_inc = radr.samp_inc;
     rsat->a3 = radr.offset;
-    
+
   }
-  else if (strncmp(facilityStr, "ES", 2) == 0 ||
-	   strncmp(facilityStr, "D-PAF", 5) == 0 ||
-	   strncmp(facilityStr, "I-PAF", 2) == 0 ||
-	   strncmp(facilityStr, "Beijing", 7) == 0 ||
-	   (strncmp(facilityStr, "CSTARS", 6) == 0 &&
-	    (strncmp(dssr.mission_id, "E", 1) == 0 ||
-	     strncmp(dssr.mission_id, "J", 1) == 0)))
+  else if (strncmp(facilityStr, "ES", 2)      == 0 ||
+           strncmp(facilityStr, "D-PAF", 5)   == 0 ||
+           strncmp(facilityStr, "I-PAF", 2)   == 0 ||
+           strncmp(facilityStr, "Beijing", 7) == 0 ||
+           (strncmp(facilityStr, "CSTARS", 6) == 0 &&
+            (strncmp(dssr.mission_id, "E", 1) == 0 ||
+             strncmp(dssr.mission_id, "J", 1) == 0))
+          )
     {
     // ESA style calibration
     esa_cal_params *esa = (esa_cal_params *) MALLOC(sizeof(esa_cal_params));
@@ -341,7 +357,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
   else if (strncmp(facilityStr, "EOC", 3) == 0) {
     // ALOS processor
     struct alos_rad_data_rec ardr; // ALOS Radiometric Data record
-    alos_cal_params *alos = 
+    alos_cal_params *alos =
       (alos_cal_params *) MALLOC(sizeof(alos_cal_params));
     meta->calibration->type = alos_cal;
     meta->calibration->alos = alos;
@@ -356,24 +372,59 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
   else
     // should never get here
     asfPrintError("Unknown calibration parameter scheme!\n");
-    
+
 }
 
-// incid_init
-// Allocates memory for incidence angle array that is returned
-// Only works for "regular" imagery, not ScanSAR
+// incid_init()
+// 1. If the image is not geocoded, incid_init() allocates memory for incidence
+//    angle array that is returned, array is sample_count long and contains one
+//    incidence angle for each pixel
+// 2. If the image is map-projected, then the returned array contains 11
+//    coefficients for a 2D quadratic fit.
 float *incid_init(meta_parameters *meta)
 {
-  int ii, samples;
-  float *incid;
+    // FIXME: Use 2D quadratic for map-projected images, i.e. geocoded,
+    // ScanSAR atct.
+    // Use this method for optical and non-map projected
+    // data
+    int ii, samples;
+    float *incid;
 
-  samples = meta->general->sample_count;
-  incid = (float *) MALLOC(sizeof(float) * samples);
+    if (meta->sar && meta->sar->image_type == 'P' && meta->projection) {
+        // Geocoded solution ...use 2D quadratic instead of incidence angle transform
+        incid = (float *) MALLOC(sizeof(float) * 11);
+        quadratic_2d q;
+        q = get_incid(NULL, meta);
+        incid[0]  = (float)q.A;
+        incid[1]  = (float)q.B;
+        incid[2]  = (float)q.C;
+        incid[3]  = (float)q.D;
+        incid[4]  = (float)q.E;
+        incid[5]  = (float)q.F;
+        incid[6]  = (float)q.G;
+        incid[7]  = (float)q.H;
+        incid[8]  = (float)q.I;
+        incid[9]  = (float)q.J;
+        incid[10] = (float)q.K;
+    }
+    else {
+        // Non-geocoded solution ...use incidence angle transform
+        //
+        // Allocate one line-width array that will be used to determine incidence
+        // angles for each pixel in all subsequent lines, i.e. calc incid angles for first line,
+        // re-use for all others ...but not for anything that is map-projected since
+        // geocoded images are rotated and distorted.
+        samples = meta->general->sample_count;
+        incid = (float *) MALLOC(sizeof(float) * samples);
 
-  for (ii=0; ii<samples; ii++)
-    incid[ii] = meta_incid(meta, 0, ii);
+        for (ii=0; ii<samples; ii++) {
+            // Use the incidence angle transform coefficients to calculate
+            // each incidence angle.
+            incid[ii] = meta_incid(meta, 0, ii);
+        }
+    }
 
-  return incid;
+    return incid;
 }
 
 /*----------------------------------------------------------------------
@@ -382,7 +433,7 @@ float *incid_init(meta_parameters *meta)
         number (in power scale), given the current noise value.
 ----------------------------------------------------------------------*/
 float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
-		 float inDn, int dbFlag)
+                 float inDn, int dbFlag)
 {
   double scaledPower, calValue, invIncAngle;
   radiometry_t radiometry = meta->general->radiometry;
@@ -408,7 +459,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
     // Convert (amplitude) data number to scaled, noise-removed power
-    scaledPower = 
+    scaledPower =
       (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
@@ -440,7 +491,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
     }
 
     // Convert (amplitude) data number to scaled, noise-removed power
-    scaledPower = 
+    scaledPower =
       (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
   }
   else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
@@ -450,18 +501,18 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
     if (radiometry == r_BETA || radiometry == r_BETA_DB)
       scaledPower = inDn*inDn/p->k;
     else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
-      scaledPower = 
-	inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle);
+      scaledPower =
+    inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle);
     else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
       invIncAngle = 1/cos(incidence_angle*D2R);
-      scaledPower = 
-	inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle) /
-	invIncAngle;
+      scaledPower =
+    inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle) /
+    invIncAngle;
     }
 
   }
   else if (meta->calibration->type == rsat_cal) { // CDPF style Radarsat data
-    
+
     if (radiometry == r_BETA || radiometry == r_BETA_DB)
       invIncAngle = 1.0;
     if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
@@ -477,18 +528,18 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       int i_low = sample/p->samp_inc;
       int i_up = i_low + 1;
       a2 = p->lut[i_low] +
-	((p->lut[i_up] - p->lut[i_low])*((sample/p->samp_inc) - i_low));
+    ((p->lut[i_up] - p->lut[i_low])*((sample/p->samp_inc) - i_low));
     }
-    else 
+    else
       a2 = p->lut[p->n-1] +
-	((p->lut[p->n-1] - p->lut[p->n-2])*((sample/p->samp_inc) - p->n-1));
+    ((p->lut[p->n-1] - p->lut[p->n-2])*((sample/p->samp_inc) - p->n-1));
     if (p->slc)
       scaledPower = (inDn*inDn)/(a2*a2)*invIncAngle;
     else
       scaledPower = (inDn*inDn + p->a3)/a2*invIncAngle;
   }
   else if (meta->calibration->type == alos_cal) { // ALOS data
-    
+
     if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
       invIncAngle = 1.0;
     else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
@@ -503,7 +554,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
   else
     // should never get here
     asfPrintError("Unknown calibration data type!\n");
-  
+
   // We don't want to convert the scaled power image into dB values
   // since it messes up the statistics
   // We set all values lower than the noise floor (0.001 is the equivalent
