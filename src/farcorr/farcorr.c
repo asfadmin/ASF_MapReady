@@ -150,7 +150,7 @@ main (int argc, char *argv[])
   int keep_flag = FALSE;
   int single_angle_flag = FALSE;
   int NUM_ARGS = 2;
-  int sigma_flag, beta_flag, gamma_flag, db_flag;
+  int sigma_flag=FALSE, beta_flag=FALSE, gamma_flag=FALSE, db_flag=FALSE;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
