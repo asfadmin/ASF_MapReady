@@ -1207,9 +1207,13 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               "USGS Seamless Server (or compatible) type of DEM GeoTIFF with pixel\n"
               "size of 30, 60, 90, 190 meters, i.e. SRTM, NED, DTED, etcetera...\n",
               angular_units_to_string(angular_units));
-      strcpy(mg->sensor, MAGIC_UNSET_STRING);
+      strcpy(mg->sensor, "USGS Seamless data (i.e. NED, SRTM, DTED)");
       strcpy(mg->system, mg->data_type == REAL32 ? "big_ieee" : MAGIC_UNSET_STRING);
       is_usgs_seamless_geotiff = 1; // This will turn on conversion of pixel size from degrees to meters
+  }
+  else {
+      strcpy(mg->sensor, "GEOTIFF");
+      strcpy(mg->sensor_name, "GEOTIFF");
   }
   strcpy(mg->basename, inFileName);
 

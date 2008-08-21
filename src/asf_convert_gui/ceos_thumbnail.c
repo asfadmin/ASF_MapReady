@@ -5,12 +5,20 @@
 #include <math.h>
 
 #include <asf_nan.h>
+#include <tiff.h>
+#include <tiffio.h>
+#include <xtiffio.h>
+#include <geotiff_support.h>
 #include "ceos_thumbnail.h"
 #include "asf_convert_gui.h"
 #include "get_ceos_names.h"
 #include "asf_import.h"
 #include "asf_endian.h"
 
+// Prototypes
+int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band, float *line);
+
+// Implementations
 static void destroy_pb_data(guchar *pixels, gpointer data)
 {
     g_free(pixels);
@@ -36,6 +44,214 @@ static meta_parameters * silent_meta_read(const char *filename)
 
     g_report_level = prev;
     return ret;
+}
+
+static GdkPixbuf *
+make_geotiff_thumb(const char *input_metadata, const char *input_data,
+                   size_t max_thumbnail_dimension)
+{
+    TIFF *fpIn;
+    int ignore[MAX_BANDS];
+
+    meta_parameters *meta = read_generic_geotiff_metadata(input_metadata, ignore, NULL);
+
+    fpIn = XTIFFOpen(input_data, "rb");
+    if (!fpIn) {
+        meta_free(meta);
+        return NULL;
+    }
+    short sample_format;
+    short bits_per_sample;
+    short planar_config;
+    int is_scanline_format;
+    data_type_t data_type;
+    short num_bands;
+    get_tiff_data_config(fpIn,
+                         &sample_format,
+                         &bits_per_sample,
+                         &planar_config,
+                         &data_type,
+                         &num_bands,
+                         &is_scanline_format,
+                         WARNING);
+    tiff_type_t tiffInfo;
+    get_tiff_type(fpIn, &tiffInfo);
+    if (tiffInfo.imageCount > 1) {
+        meta_free(meta);
+        return NULL;
+    }
+    if (tiffInfo.imageCount < 1) {
+        meta_free(meta);
+        return NULL;
+    }
+    if (tiffInfo.format != SCANLINE_TIFF &&
+        tiffInfo.format != STRIP_TIFF    &&
+        tiffInfo.format != TILED_TIFF)
+    {
+        meta_free(meta);
+        return NULL;
+    }
+    if (tiffInfo.volume_tiff) {
+        meta_free(meta);
+        return NULL;
+    }
+    if (num_bands > 1 &&
+        planar_config != PLANARCONFIG_CONTIG &&
+        planar_config != PLANARCONFIG_SEPARATE)
+    {
+        meta_free(meta);
+        return NULL;
+    }
+
+    // use a larger dimension at first, for our crude scaling.  We will
+    // use a better scaling method later, from GdbPixbuf
+    int larger_dim = 1024;
+
+    // Vertical and horizontal scale factors required to meet the
+    // max_thumbnail_dimension part of the interface contract.
+    int vsf = ceil (meta->general->line_count / larger_dim);
+    int hsf = ceil (meta->general->sample_count / larger_dim);
+    // Overall scale factor to use is the greater of vsf and hsf.
+    int sf = (hsf > vsf ? hsf : vsf);
+
+    // Thumbnail image sizes.
+    size_t tsx = meta->general->sample_count / sf;
+    size_t tsy = meta->general->line_count / sf;
+
+
+    // Form the thumbnail image by grabbing individual pixels.
+    //
+    // Keep track of the average pixel value, so later we can do a 2-sigma
+    // scaling - makes the thumbnail look a little nicer and more like what
+    // they'd get if they did the default jpeg export.
+//    double avg = 0.0;
+    size_t ii, jj;
+    int ret = 0;
+    int band;
+    double min[num_bands];
+    double max[num_bands];
+    guchar *data = g_new(guchar, 3*tsx*tsy);
+    float **line = g_new(float *, num_bands);
+    float **fdata = g_new(float *, num_bands);
+    for (band = 0; band < num_bands; band++) {
+        line[band] = g_new (float, meta->general->sample_count);
+        fdata[band] = g_new(float, 3*tsx*tsy);
+        min[band] = DBL_MAX;
+        max[band] = DBL_MIN;
+    }
+    for (band = 0; band < num_bands; band++) {
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            ret = get_geotiff_float_line(fpIn, meta, ii*sf, band, line[band]);
+            if (!ret) break;
+
+            for (jj = 0; jj < tsx; ++jj) {
+                fdata[band][jj + ii*tsx] = line[band][jj*sf];
+                min[band] = (line[band][jj*sf] < min[band]) ? line[band][jj*sf] : min[band];
+                max[band] = (line[band][jj*sf] > max[band]) ? line[band][jj*sf] : max[band];
+                //avg += line[jj*sf];
+            }
+        }
+        if (!ret) break;
+    }
+    for (band = 0; band < num_bands; band++) {
+        g_free(line[band]);
+        if (!ret) {
+            g_free(fdata[band]);
+        }
+    }
+    g_free(line);
+    meta_free(meta);
+    XTIFFClose(fpIn);
+    if (!ret) {
+        g_free(fdata);
+        return NULL;
+    }
+
+    // Compute the std devation
+//    avg /= tsx*tsy;
+//    double stddev = 0.0;
+//    for (ii = 0; ii < tsx*tsy; ++ii)
+//        stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
+//    stddev = sqrt(stddev / (tsx*tsy));
+
+    // Set the limits of the scaling - 2-sigma on either side of the mean
+    //double lmin = avg - 2*stddev;
+    //double lmax = avg + 2*stddev;
+
+    // Now actually scale the data, and convert to bytes.
+    // Note that we need 3 values, one for each of the RGB channels.
+    for (ii = 0; ii < tsx*tsy; ++ii) {
+        float rval = fdata[0][ii];
+        float gval = fdata[1][ii];
+        float bval = fdata[2][ii];
+        guchar ruval, guval, buval;
+        if (rval < min[0]) {
+            ruval = 0;
+        }
+        else if (rval > max[0]) {
+            ruval = 255;
+        }
+        else {
+            ruval = (guchar) round(((rval - min[0]) / (max[0] - min[0])) * 255);
+        }
+        if (gval < min[1]) {
+            guval = 0;
+        }
+        else if (gval > max[1]) {
+            guval = 255;
+        }
+        else {
+            guval = (guchar) round(((gval - min[1]) / (max[1] - min[1])) * 255);
+        }
+        if (bval < min[2]) {
+            buval = 0;
+        }
+        else if (bval > max[2]) {
+            buval = 255;
+        }
+        else {
+            buval = (guchar) round(((bval - min[2]) / (max[2] - min[2])) * 255);
+        }
+
+        int n = 3*ii;
+        data[n]   = ruval;
+        data[n+1] = guval;
+        data[n+2] = buval;
+    }
+
+    // Create the pixbuf
+    GdkPixbuf *pb =
+            gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
+                                     8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
+    for (band = 0; band < num_bands; band++) {
+        g_free(fdata[band]);
+    }
+    g_free(fdata);
+
+    if (!pb) {
+        asfPrintWarning("Failed to create the thumbnail pixbuf: %s\n", input_data);
+        return NULL;
+    }
+
+    // Scale down to the size we actually want, using the built-in Gdk
+    // scaling method, much nicer than what we did above
+
+    // Must ensure we scale the same in each direction
+    double scale_y = tsy / max_thumbnail_dimension;
+    double scale_x = tsx / max_thumbnail_dimension;
+    double scale = scale_y > scale_x ? scale_y : scale_x;
+    int x_dim = tsx / scale;
+    int y_dim = tsy / scale;
+
+    GdkPixbuf *pb_s =
+            gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_unref(pb);
+
+    if (!pb_s) {
+        asfPrintWarning("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
+    }
+
+    return pb_s;
 }
 
 static GdkPixbuf *
@@ -577,16 +793,17 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 
     // don't have support for thumbnails of geotiffs yet
     if (ext && (strcmp_case(ext, ".tif")==0 || strcmp_case(ext, ".tiff")==0))
-        return NULL;
+        return make_geotiff_thumb(input_metadata, input_data,
+                                  max_thumbnail_dimension);
 
     // no point in a thumbnail of Level 0 data
     if (ext && strcmp_case(ext, ".raw") == 0)
-        return NULL; 
+        return NULL;
 
     // split some cases into their own funcs
     if (ext && strcmp_case(ext, ".img") == 0)
         return make_asf_internal_thumb(input_metadata, input_data,
-            max_thumbnail_dimension);
+                                       max_thumbnail_dimension);
 
     // for airsar, need to check the metadata extension, that's more reliable
     char *meta_ext = findExt(input_metadata);
@@ -645,9 +862,9 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     int tsx=-1, tsy=-1;
     int kk;
     for (kk=0; kk<nBands; kk++) {
-      if (nBands > 1 &&
-	  strcmp_case(imd->general->sensor_name, "PRISM") != 0)
-	data_name = STRDUP(dataName[kk]);
+      if (nBands > 1 && strcmp_case(imd->general->sensor_name, "PRISM") != 0) {
+        data_name = STRDUP(dataName[kk]);
+      }
       FILE *fpIn = fopen(data_name, "rb");
       if (!fpIn)
       {
@@ -655,7 +872,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         meta_free(imd);
         return NULL;
       }
-      
+
       struct IOF_VFDR image_fdr;              /* CEOS File Descriptor Record */
       get_ifiledr(met, &image_fdr);
       int leftFill = image_fdr.lbrdrpxl;
@@ -663,22 +880,22 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
       int headerBytes = firstRecordLen(data_name) +
         (image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill)
          * image_fdr.bytgroup);
-      
+
       // use a larger dimension at first, for our crude scaling.  We will
       // use a better scaling method later, from GdbPixbuf
       int larger_dim = 512;
-      
+
       // Vertical and horizontal scale factors required to meet the
       // max_thumbnail_dimension part of the interface contract.
       int vsf = ceil (imd->general->line_count / larger_dim);
       int hsf = ceil (imd->general->sample_count / larger_dim);
       // Overall scale factor to use is the greater of vsf and hsf.
       int sf = (hsf > vsf ? hsf : vsf);
-      
+
       // Thumbnail image sizes.
       tsx = imd->general->sample_count / sf;
       tsy = imd->general->line_count / sf;
-      
+
       // Thumbnail image buffers - 'idata' is the temporary data prior
       // to scaling to 2-sigma, 'data' is the byte buffer used to create the
       // pixbuf, it will need 3 bytes per value, all equal, since the pixbuf
@@ -686,29 +903,29 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
       int *idata = g_new(int, tsx*tsy);
       if (kk == 0)
         data = g_new(guchar, 3*tsx*tsy);
-      
+
       // Form the thumbnail image by grabbing individual pixels.  FIXME:
       // Might be better to do some averaging or interpolating.
       size_t ii;
       unsigned short *line = g_new (unsigned short, imd->general->sample_count);
       unsigned char *bytes = g_new (unsigned char, imd->general->sample_count);
-      
+
       // Keep track of the average pixel value, so later we can do a 2-sigma
       // scaling - makes the thumbnail look a little nicer and more like what
       // they'd get if they did the default jpeg export.
       double avg = 0.0;
       for ( ii = 0 ; ii < tsy ; ii++ ) {
-        
+
         size_t jj;
         long long offset =
           (long long)headerBytes+ii*sf*(long long)image_fdr.reclen;
-        
+
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
         {
           FREAD(line, sizeof(unsigned short), imd->general->sample_count,
                 fpIn);
-          
+
           for (jj = 0; jj < imd->general->sample_count; ++jj)
             big16(line[jj]);
         }
@@ -716,15 +933,15 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         {
           FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
                 fpIn);
-          
+
           for (jj = 0; jj < imd->general->sample_count; ++jj)
             line[jj] = (unsigned short)bytes[jj];
         }
-        
+
         for ( jj = 0 ; jj < tsx ; jj++ ) {
           // Current sampled value.
           double csv;
-          
+
           // We will average a couple pixels together.
           if ( jj * sf < imd->general->line_count - 1 ) {
             csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
@@ -732,7 +949,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
           else {
             csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
           }
-          
+
           idata[ii*tsx + jj] = (int)csv;
           avg += csv;
         }
@@ -740,18 +957,18 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
       g_free (line);
       g_free (bytes);
       fclose(fpIn);
-      
+
       // Compute the std devation
       avg /= tsx*tsy;
       double stddev = 0.0;
       for (ii = 0; ii < tsx*tsy; ++ii)
         stddev += ((double)idata[ii] - avg) * ((double)idata[ii] - avg);
       stddev = sqrt(stddev / (tsx*tsy));
-      
+
       // Set the limits of the scaling - 2-sigma on either side of the mean
       double lmin = avg - 2*stddev;
       double lmax = avg + 2*stddev;
-      
+
       // Now actually scale the data, and convert to bytes.
       // Note that we need 3 values, one for each of the RGB channels.
       for (ii = 0; ii < tsx*tsy; ++ii) {
@@ -765,61 +982,61 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
             uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
 
         int n = 3*ii;
-	// Single-band image
-	if (nBands == 1) {
-	  data[n] = uval;
-	  data[n+1] = uval;
-	  data[n+2] = uval;
-	}
-	// Multi-band image: AVNIR
-	else {
-	  if (strcmp_case(imd->general->sensor_name, "PRISM") == 0) {
-	    data[n] = uval;
-	    data[n+1] = uval;
-	    data[n+2] = uval;
-	  }
-	  else if (strcmp_case(imd->general->sensor_name, "AVNIR") == 0) { 
-	    if (kk == 1)
-	      data[n+2] = uval;
-	    else if (kk == 2)
-	      data[n+1] = uval;
-	    else if (kk == 3)
-	      data[n] = uval;
-	  }
-	  else if (strcmp_case(imd->general->sensor_name, "SAR") == 0) {
-	    // Keep all SAR images grayscale, reading the first band
-	    if (kk == 0) {
-	      data[n] = uval;
-	      data[n+1] = uval;
-	      data[n+2] = uval;
-	    }
-	    /*
-	    // Dual-pol data
-	    if (nBands == 2) {
-	      if (kk == 0)
-		data[n] = uval;
-	      else if (kk == 1) {
-		data[n+1] = uval;
-		data[n+2] = 0;
-	      }
-	    }
-	    // Quad-pol data
-	    else if (nBands == 4) {
-	      if (kk == 0)
-		data[n] = uval;
-	      else if (kk == 1)
-		data[n+1] = uval;
-	      else if (kk == 3)
-		data[n+2] = uval;
-	    }
-	    */
-	  }
-	}
+    // Single-band image
+    if (nBands == 1) {
+      data[n] = uval;
+      data[n+1] = uval;
+      data[n+2] = uval;
+    }
+    // Multi-band image
+    else {
+      if (strcmp_case(imd->general->sensor_name, "PRISM") == 0) {
+        data[n] = uval;
+        data[n+1] = uval;
+        data[n+2] = uval;
       }
-      
+      else if (strcmp_case(imd->general->sensor_name, "AVNIR") == 0) {
+        if (kk == 1)
+          data[n+2] = uval;
+        else if (kk == 2)
+          data[n+1] = uval;
+        else if (kk == 3)
+          data[n] = uval;
+      }
+      else if (strcmp_case(imd->general->sensor_name, "SAR") == 0) {
+        // Keep all SAR images grayscale, reading the first band
+        if (kk == 0) {
+          data[n] = uval;
+          data[n+1] = uval;
+          data[n+2] = uval;
+        }
+        /*
+        // Dual-pol data
+        if (nBands == 2) {
+          if (kk == 0)
+        data[n] = uval;
+          else if (kk == 1) {
+        data[n+1] = uval;
+        data[n+2] = 0;
+          }
+        }
+        // Quad-pol data
+        else if (nBands == 4) {
+          if (kk == 0)
+        data[n] = uval;
+          else if (kk == 1)
+        data[n+1] = uval;
+          else if (kk == 3)
+        data[n+2] = uval;
+        }
+        */
+      }
+    }
+      }
+
       g_free(idata);
     }
-    
+
     // Create the pixbuf
     GdkPixbuf *pb =
       gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
@@ -857,3 +1074,113 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     FREE(met);
     return pb_s;
 }
+
+int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band, float *line)
+{
+    short sample_format;
+    short bits_per_sample;
+    short planar_config;
+    int is_scanline_format;
+    data_type_t data_type;
+    short num_bands;
+    int ret = get_tiff_data_config(fpIn,
+                                   &sample_format,
+                                   &bits_per_sample,
+                                   &planar_config,
+                                   &data_type,
+                                   &num_bands,
+                                   &is_scanline_format,
+                                   WARNING);
+    if (ret) {
+        // Unfortunately, get_tiff_data_config() returns 0 on success, -1 on failure
+        return 0;
+    }
+    tiff_type_t tiffInfo;
+    get_tiff_type(fpIn, &tiffInfo);
+
+    tsize_t scanlineSize = TIFFScanlineSize(fpIn);
+    if (scanlineSize <= 0) {
+        return 0;
+    }
+    tdata_t *tif_buf = _TIFFmalloc(scanlineSize);
+    if (!tif_buf) {
+        return 0;
+    }
+    switch (tiffInfo.format) {
+        case SCANLINE_TIFF:
+            if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+                TIFFReadScanline(fpIn, tif_buf, row, 0);
+            }
+            else {
+                // Planar configuration is band-sequential
+                TIFFReadScanline(fpIn, tif_buf, row, band);
+            }
+            break;
+        case STRIP_TIFF:
+            ReadScanline_from_TIFF_Strip(fpIn, tif_buf, row, band);
+            break;
+        case TILED_TIFF:
+            // Planar configuration is band-sequential
+            ReadScanline_from_TIFF_TileRow(fpIn, tif_buf, row, band);
+            break;
+        default:
+            return 0;
+            break;
+    }
+    int col;
+    for (col=0; col < meta->general->sample_count; col++) {
+        switch (bits_per_sample) {
+            case 8:
+                switch(sample_format) {
+                    case SAMPLEFORMAT_UINT:
+                        ((float*)line)[col] = (float)(((uint8*)tif_buf)[col]);
+                        break;
+                    case SAMPLEFORMAT_INT:
+                        ((float*)line)[col] = (float)(((int8*)tif_buf)[col]);
+                        break;
+                    default:
+                        // No such thing as an 8-bit IEEE float
+                        return 0;
+                        break;
+                }
+                break;
+            case 16:
+                switch(sample_format) {
+                    case SAMPLEFORMAT_UINT:
+                        ((float*)line)[col] = (float)(((uint16*)tif_buf)[col]);
+                        break;
+                    case SAMPLEFORMAT_INT:
+                        ((float*)line)[col] = (float)(((int16*)tif_buf)[col]);
+                        break;
+                    default:
+                        // No such thing as an 16-bit IEEE float
+                        meta_free(meta);
+                        return 0;
+                        break;
+                }
+                break;
+            case 32:
+                switch(sample_format) {
+                    case SAMPLEFORMAT_UINT:
+                        ((float*)line)[col] = (float)(((uint32*)tif_buf)[col]);
+                        break;
+                    case SAMPLEFORMAT_INT:
+                        ((float*)line)[col] = (float)(((long*)tif_buf)[col]);
+                        break;
+                    case SAMPLEFORMAT_IEEEFP:
+                        ((float*)line)[col] = (float)(((float*)tif_buf)[col]);
+                        break;
+                    default:
+                        return 0;
+                        break;
+                }
+                break;
+            default:
+                return 0;
+                break;
+        }
+    }
+
+    return 1;
+}
+

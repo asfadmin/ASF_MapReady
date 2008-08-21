@@ -172,6 +172,11 @@ meta_file_name(const gchar * file_name)
     return g_strdup(file_name);
   }
 
+  // geotiff
+  else if (ext && (strcmp_case(ext, ".tif") == 0 || strcmp_case(ext, ".tiff") == 0)) {
+      return g_strdup(file_name);
+  }
+
   // second, try CEOS
   char *basename = MALLOC(sizeof(char)*(strlen(file_name)+10));
   char **dataName = NULL, **metaName = NULL;
@@ -232,7 +237,7 @@ data_file_name(const gchar * file_name)
         FREE(data_name);
         return ret;
       }
-      
+
       // ?
       FREE(data_name);
       return g_strdup("");
@@ -242,6 +247,11 @@ data_file_name(const gchar * file_name)
       FREE(data_name);
       return g_strdup("");
     }
+  }
+
+  // geotiff
+  else if (ext && (strcmp_case(ext, ".tif") == 0 || strcmp_case(ext, ".tiff") == 0)) {
+      return g_strdup(file_name);
   }
 
   // second, try CEOS
