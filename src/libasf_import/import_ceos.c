@@ -166,7 +166,7 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
 void import_ceos(char *inBaseName, char *outBaseName,
-     char *band_id, char *lutName, double *p_range_scale,
+     char *band_id, char *lutName_in, double *p_range_scale,
      double *p_azimuth_scale, double *p_correct_y_pixel_size,
      int line, int sample, int width, int height,
      char *inMetaNameOption, radiometry_t radiometry, int db_flag,
@@ -377,19 +377,10 @@ void import_ceos(char *inBaseName, char *outBaseName,
     }
 
     // Set LUT to NULL if string is empty
-    if (lutName && strlen(lutName) == 0) {
-      FREE(lutName);
-      lutName = NULL;
+    char *lutName = NULL;
+    if (lutName_in && strlen(lutName_in) > 0) {
+      lutName = STRDUP(lutName_in);
     }
-
-    // -- Turning this feature off for now
-    // If we have no LUT, check if we should use one of the defualt
-    // LUTs, that apply gain fixes, etc.
-    //if (!lutName) {
-    //  meta = meta_create(inMetaName[0]);
-    //  lutName = check_luts(meta);
-    //}
-    // -- End of disabled auto-lut feature
 
     // Ingest the different data types
     if (ceos->ceos_data_type == CEOS_RAW_DATA) {
