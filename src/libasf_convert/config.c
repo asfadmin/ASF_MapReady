@@ -398,7 +398,7 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->import->format, "CEOS");
   cfg->import->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->import->radiometry, "AMPLITUDE_IMAGE");
-  cfg->import->lut = (char *)MALLOC(sizeof(char)*25);
+  cfg->import->lut = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->import->lut, "");
   cfg->import->lat_begin = -99.0;
   cfg->import->lat_end = -99.0;
