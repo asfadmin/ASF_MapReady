@@ -323,7 +323,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     struct RSI_VRADDR radr;
     get_rsi_raddr(sarName, &radr);
     rsat->n = radr.n_samp;
-    rsat->lut = (double *) MALLOC(sizeof(double) * rsat->n);
+    //rsat->lut = (double *) MALLOC(sizeof(double) * rsat->n);
     for (ii=0; ii<rsat->n; ii++) {
       if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
     rsat->lut[ii] = radr.lookup_tab[0];

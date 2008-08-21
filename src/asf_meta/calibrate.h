@@ -44,7 +44,7 @@ typedef struct {
 } esa_cal_params;
 
 typedef struct {
-  double *lut;        // output scaling look up table
+  double lut[1024];   // output scaling look up table
   int n;              // number of table entries
   int samp_inc;       // table entry sampling increment
   double a3;          // linear scaling offset
