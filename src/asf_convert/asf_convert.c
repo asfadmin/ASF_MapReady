@@ -149,6 +149,9 @@ int main(int argc, char *argv[])
   get_asf_share_dir_with_argv0(argv[0]);
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
 
+  // This is an undocumented option, for internal use (by the GUI)
+  int save_dem = extract_flag_options(&argc, &argv, "-save-dem", "--save-dem", NULL);
+
   // Check which options were provided
   create_f = checkForOption("-create", argc, argv);
   log_f    = checkForOption("-log", argc, argv);
@@ -214,7 +217,7 @@ int main(int argc, char *argv[])
 
   // End command line parsing *************************************************
 
-  asf_convert(createflag, configFileName);
+  asf_convert_ext(createflag, configFileName, save_dem);
 
   // remove log file if we created it (leave it if the user asked for it)
   if (log_f == FLAG_NOT_SET)

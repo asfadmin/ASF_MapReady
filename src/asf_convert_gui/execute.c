@@ -340,8 +340,10 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
     
     char *cmd = MALLOC(sizeof(char)*
         (strlen(cfg_file) + strlen(get_asf_bin_dir_win()) + 256));
-    sprintf(cmd, "\"%s/asf_mapready.exe\" -log \"%s\" \"%s\"",
-        get_asf_bin_dir_win(), logFile, cfg_file);
+    sprintf(cmd, "\"%s/asf_mapready.exe\" %s-log \"%s\" \"%s\"",
+        get_asf_bin_dir_win(),
+        save_dem ? "--save-dem " : "",
+        logFile, cfg_file);
 
     fLog = fopen(logFile, "a");
     log_summary_text(fLog);
