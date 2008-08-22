@@ -18,6 +18,7 @@ meta_parameters* airsar2meta(airsar_general *general,
   sprintf(meta->general->basename, "%s", params->site_name);
   sprintf(meta->general->sensor, "AIRSAR");
   strcpy(meta->general->sensor_name, "SAR");
+  chomp(general->mode);
   strcpy(meta->general->mode, general->mode);
   // no sensor mode
   if (strlen(header->processor)>0) {

@@ -149,6 +149,9 @@ char *strncpy_safe(char *dst, const char *src, size_t len);
 // Trim leading and trailing white spaces from a string
 char *trim_spaces(const char *s);
 
+// Removes carriage returns from strings
+void chomp(char *str);
+
 /* Return TRUE if "str" ends with (case-insensitive) "tail" */
 int endsWith(const char *str, const char *tail);
 

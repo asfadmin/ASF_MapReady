@@ -93,6 +93,12 @@ char *trim_spaces(const char *s)
   return p2;
 }
 
+void chomp(char *str)
+{
+  if (str[strlen(str)-1] == '\n')
+    str[strlen(str)-1] = '\0';
+}
+
 // returns TRUE if "str" ends with the characters in "tail"
 int endsWith(const char *str, const char *tail)
 {
