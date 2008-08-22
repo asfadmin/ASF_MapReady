@@ -412,7 +412,7 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
     ReadAirsarClientInfo *info = MALLOC(sizeof(ReadAirsarClientInfo));
 
     char *airsar_basename = get_airsar_basename(meta_name);
-    meta_parameters *meta = import_airsar_meta(airsar_basename);
+    meta_parameters *meta = import_airsar_meta(data_name, airsar_basename);
     info->params = read_airsar_params(airsar_basename);
 
     char *ext = findExt(data_name);

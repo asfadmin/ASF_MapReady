@@ -48,6 +48,8 @@ typedef struct {
 
 // Specific AirSAR parameter header structure
 typedef struct {
+  int record_length;              // Record length in bytes
+  int number_records;             // Number of header records
   int sample_count;               // Number of samples per record
   int line_count;                 // Number of lines in image
   char processor[10];             // JPL aircraft SAR processor version
@@ -56,8 +58,12 @@ typedef struct {
   double x_pixel_size;            // Range pixel spacing [m]
   double y_pixel_size;            // Azimuth pixel spacing [m]
   long first_data_offset;         // Byte offset of first data record
+  long parameter_header_offset;   // Byte offset of parameter header
   long calibration_header_offset; // Byte offset of calibration header
   long dem_header_offset;         // Byte offset of DEM header
+} airsar_header;
+
+typedef struct {
   char site_name[50];             // Site name
   char cct_type[10];              // CCT type
   int cct_id;                     // CCT ID - basename for naming scheme
@@ -93,11 +99,53 @@ typedef struct {
   double head_peg_point;          // Heading at peg point [degrees]
   double along_track_offset;      // Along-track offset S0 [m]
   double cross_track_offset;      // Cross-track offset C0 [m]
-} airsar_parameters;
+} airsar_param_header;
+
+typedef struct {
+  double scale_factor;            // General scale factor [dB]
+  double hh_amp_cal_factor;       // HH amplitude calibration factor [dB]
+  double hv_amp_cal_factor;       // HV amplitude calibration factor [dB]
+  double vh_amp_cal_factor;       // VH amplitude calibration factor [dB]
+  double vv_amp_cal_factor;       // VV amplitude calibration factor [dB]
+  double hh_phase_cal_factor;     // HH phase calibration factor [degrees]
+  double hv_phase_cal_factor;     // HV phase calibration factor [degrees]
+  double vh_phase_cal_factor;     // VH phase calibration factor [degrees]
+  double vv_phase_cal_factor;     // VV phase calibration factor [degrees]
+  double hh_noise_sigma0;         // HH noise equivalent sigma zero [dB]
+  double hv_noise_sigma0;         // HV noise equivalent sigma zero [dB]
+  double vv_noise_sigma0;         // VV noise equivalent sigma zero [dB]
+  int byte_offset_hh_corr;        // Byte offset to HH correction vector
+  int byte_offset_hv_corr;        // Byte offset to HV correction vector
+  int byte_offset_vv_corr;        // Byte offset to VV correction vector
+  int num_bytes_corr;             // Number of bytes in correction vectors
+} airsar_cal_header;
+
+typedef struct {
+  double elevation_increment;     // Elevation increment [m]
+  double elevation_offset;        // Elevation offset [m]
+  double corner1_lat;             // Corner 1 latitude [degrees]
+  double corner1_lon;             // Corner 1 longitude [degrees]
+  double corner2_lat;             // Corner 2 latitude [degrees]
+  double corner2_lon;             // Corner 2 longitude [degrees]
+  double corner3_lat;             // Corner 3 latitude [degrees]
+  double corner3_lon;             // Corner 3 longitude [degrees]
+  double corner4_lat;             // Corner 4 latitude [degrees]
+  double corner4_lon;             // Corner 4 longitude [degrees]
+  double lat_peg_point;           // Latitude of peg point [degrees]
+  double lon_peg_point;           // Longitude of peg point [degrees]
+  double head_peg_point;          // Heading at peg point [degrees]
+  double along_track_offset;      // Along-track offset S0 [m]
+  double cross_track_offset;      // Cross-track offset C0 [m]
+} airsar_dem_header;
 
 // Function prototypes
-meta_parameters* airsar2meta(airsar_general *general, 
-			     airsar_parameters *params);
-airsar_parameters *read_airsar_params(const char *inBaseName);
+meta_parameters* airsar2meta(airsar_general *general,
+			     airsar_header *header,
+			     airsar_param_header *params,
+			     airsar_dem_header *dem);
+airsar_header *read_airsar_header(const char *dataFile);
+airsar_param_header *read_airsar_params(const char *dataFile);
+airsar_dem_header *read_airsar_dem(const char *dataFile);
+airsar_cal_header *read_airsar_cal(const char *dataFile);
 
 #endif

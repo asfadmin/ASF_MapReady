@@ -35,7 +35,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 2.8
+#define META_VERSION 2.9
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -275,6 +275,8 @@ typedef struct {
   double head_peg_point;      // Heading at peg point [degrees]
   double along_track_offset;  // Along-track offset S0 [m]
   double cross_track_offset;  // Cross-track offset C0 [m]
+  double elevation_increment; // Elevation increment [m] - version 2.9
+  double elevation_offset;    // Elevation offset [m] - version 2.9
 } meta_airsar;
 
 /********************************************************************

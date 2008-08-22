@@ -7,366 +7,277 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
 
-int ingest_insar_data(const char *inBaseName, meta_parameters *metaIn,
-               const char *outBaseName, meta_parameters *metaOut,
-               char band)
+char *get_airsar(char *buf, char *str)
 {
-  FILE *fpIn, *fpOut;
-  char *inFile, *outFile;
-  int ii, ret=FALSE;
-  float *floatBuf;
+  char *p, *q, *value;
 
-  // Generate metadata file
-  metaIn->general->data_type = INTEGER16;
-  metaOut->general->data_type = REAL32;
-  inFile = (char *) MALLOC(sizeof(char)*255);
-  outFile = (char *) MALLOC(sizeof(char)*255);
-  floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
-
-  // Ingest the DEM
-  sprintf(inFile, "%s_%c.demi2", inBaseName, band);
-  if (!fileExists(inFile))
-    asfPrintStatus("   Could not find DEM file (%s) ...\n", inFile);
-  else {
-    asfPrintStatus("   Ingesting DEM ...\n");
-    sprintf(inFile, "%s_%c.demi2", inBaseName, band);
-    sprintf(outFile, "%s_%c_dem.img", outBaseName, band);
-    fpIn = FOPEN(inFile, "rb");
-    fpOut = FOPEN(outFile, "wb");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatBuf);
-      put_float_line(fpOut, metaOut, ii, floatBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    metaOut->general->image_data_type = DEM;
-    meta_write(metaOut, outFile);
-    ret = TRUE;
+  value = (char *) MALLOC(sizeof(char)*50);
+  q = (char *) MALLOC(sizeof(char)*50);
+  p = strstr(buf, str);
+  if (p) {
+    strncpy(q, p, 50);
+    strcpy(value, q+strlen(str));
   }
+  else
+    strcpy(value, "");
 
-  // Ingest amplitude image
-  sprintf(inFile, "%s_%c.vvi2", inBaseName, band);
-  if (!fileExists(inFile))
-    asfPrintStatus("   Could not find amplitude file (%s) ...\n", inFile);
-  else {
-    asfPrintStatus("   Ingesting amplitude image ...\n");
-    sprintf(outFile, "%s_%c_vv.img", outBaseName, band);
-    fpIn = FOPEN(inFile, "rb");
-    fpOut = FOPEN(outFile, "wb");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatBuf);
-      put_float_line(fpOut, metaOut, ii, floatBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    metaOut->general->image_data_type = AMPLITUDE_IMAGE;
-    meta_write(metaOut, outFile);
-    ret = TRUE;
-  }
+  FREE(q);
 
-  // Ingest coherence image
-  sprintf(inFile, "%s_%c.corgr", inBaseName, band);
-  if (!fileExists(inFile))
-    asfPrintStatus("   Could not find coherence image (%s) ...\n", inFile);
-  else {
-    asfPrintStatus("   Ingesting coherence image ...\n");
-    metaIn->general->data_type = BYTE;
-    sprintf(outFile, "%s_%c_coh.img", outBaseName, band);
-    fpIn = FOPEN(inFile, "rb");
-    fpOut = FOPEN(outFile, "wb");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatBuf);
-      put_float_line(fpOut, metaOut, ii, floatBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    metaOut->general->image_data_type = COHERENCE_IMAGE;
-    meta_write(metaOut, outFile);
-    ret = TRUE;
-  }
-
-  // Clean up
-  FREE(floatBuf);
-  FREE(inFile);
-  FREE(outFile);
-
-  return ret;
+  return value;
 }
 
-int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
-            meta_parameters *meta, char band, long offset)
+airsar_header *read_airsar_header(const char *dataFile)
 {
-  FILE *fpIn, *fpOut;
-  char *inFile, *outFile;
-  int ii, kk, ret;
-  char *byteBuf;
-  float *power, *shh_amp, *shh_phase, *shv_amp, *shv_phase, *svh_amp;
-  float *svh_phase, *svv_amp, *svv_phase;
-  float total_power, ysca, scale;
-  complexFloat cpx;
+  airsar_header *header = NULL;
+  FILE *fp;
+  char buf[4400], *value;
 
-  // Generate metadata file
-  meta->general->data_type = REAL32;
-  meta->general->image_data_type = POLARIMETRIC_IMAGE;
-  meta->general->band_count = 9;
-  sprintf(meta->general->bands,
-          "POWER,SHH_AMP,SHH_PHASE,SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE,"
-          "SVV_AMP,SVV_PHASE");
-  inFile = (char *) MALLOC(sizeof(char)*255);
-  outFile = (char *) MALLOC(sizeof(char)*255);
-  power = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  shh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  shh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  shv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  shv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  svh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  svh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  svv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  svv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  byteBuf = (char *) MALLOC(sizeof(char)*10);
-  scale = (float) meta->airsar->scale_factor;
+  // Allocate memory and file handling
+  value = (char *) MALLOC(sizeof(char)*25);
+  header = (airsar_header *) CALLOC(1, sizeof(airsar_header));
+  fp = FOPEN(dataFile, "r");
+  if (fgets(buf, 4400, fp) == NULL)
+    asfPrintError("Could not read general header\n");
+  FCLOSE(fp);
 
-  // Ingest polarimetric data
-  sprintf(inFile, "%s_%c.datgr", inBaseName, band);
-  if (!fileExists(inFile))
-    sprintf(inFile, "%s_%c.dat", inBaseName, band);
-  if (!fileExists(inFile))
-    asfPrintStatus("   Cound not find polarimetric data set (%s_%c) ...\n",
-		   inBaseName, band);
-  else {
-    sprintf(outFile, "%s_%c.img", outBaseName, band);
-    fpIn = FOPEN(inFile, "rb");
-    fpOut = FOPEN(outFile, "wb");
-    printf("offset=%ld %d\n",offset,SEEK_SET);
-    FSEEK(fpIn, offset, 1);
-    for (ii=0; ii<meta->general->line_count; ii++) {
-      for (kk=0; kk<meta->general->sample_count; kk++) {
-	FREAD(byteBuf, sizeof(char), 10, fpIn);
-	total_power =
-	  scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
-	ysca = 2.0 * sqrt(total_power);
-	power[kk] = total_power;
-	cpx.real = (float)byteBuf[2] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
-	shh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	shh_phase[kk] = atan2(cpx.imag, cpx.real);
-	cpx.real = (float)byteBuf[4] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[5] * ysca / 127.0;
-	shv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	svh_phase[kk] = atan2(cpx.imag, cpx.real);
-	cpx.real = (float)byteBuf[6] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[7] * ysca / 127.0;
-	svh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	svh_phase[kk] = atan2(cpx.imag, cpx.real);
-	cpx.real = (float)byteBuf[8] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[9] * ysca / 127.0;
-	svv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	svv_phase[kk] = atan2(cpx.imag, cpx.real);
-      }
-      put_band_float_line(fpOut, meta, 0, ii, power);
-      put_band_float_line(fpOut, meta, 1, ii, shh_amp);
-      put_band_float_line(fpOut, meta, 2, ii, shh_phase);
-      put_band_float_line(fpOut, meta, 3, ii, shv_amp);
-      put_band_float_line(fpOut, meta, 4, ii, shv_phase);
-      put_band_float_line(fpOut, meta, 5, ii, svh_amp);
-      put_band_float_line(fpOut, meta, 6, ii, svh_phase);
-      put_band_float_line(fpOut, meta, 7, ii, svv_amp);
-      put_band_float_line(fpOut, meta, 8, ii, svv_phase);
-      asfLineMeter(ii, meta->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    meta_write(meta, outFile);
-    ret = TRUE;
-  }
+  // Read general header
+  header->record_length = atoi(get_airsar(buf, "RECORD LENGTH IN BYTES ="));
+  header->number_records = atoi(get_airsar(buf, "NUMBER OF HEADER RECORDS ="));
+  header->sample_count = 
+    atoi(get_airsar(buf, "NUMBER OF SAMPLES PER RECORD ="));
+  header->line_count = 
+    atoi(get_airsar(buf, "NUMBER OF LINES IN IMAGE ="));
+  sprintf(header->processor, "%s", 
+    trim_spaces(get_airsar(buf, "JPL AIRCRAFT SAR PROCESSOR VERSION =")));
+  value = trim_spaces(get_airsar(buf, "DATA TYPE ="));
+  if (strcmp(value, "INTEGER*2") == 0)
+    header->data_type = INTEGER16;
+  sprintf(header->range_projection, "%s",
+	  trim_spaces(get_airsar(buf, "RANGE PROJECTION =")));
+  header->x_pixel_size = 
+    atof(get_airsar(buf, "RANGE PIXEL SPACING (METERS) ="));
+  header->y_pixel_size = 
+    atof(get_airsar(buf, "AZIMUTH PIXEL SPACING (METERS) ="));
+  header->first_data_offset = 
+    atoi(get_airsar(buf, "BYTE OFFSET OF FIRST DATA RECORD ="));
+  if (header->first_data_offset == 0)
+    header->first_data_offset = header->record_length * header->number_records;
+  header->parameter_header_offset =
+    atoi(get_airsar(buf, "BYTE OFFSET OF PARAMETER HEADER ="));
+  header->calibration_header_offset =
+    atoi(get_airsar(buf, "BYTE OFFSET OF CALIBRATION HEADER ="));
+  header->dem_header_offset = 
+    atoi(get_airsar(buf, "BYTE OFFSET OF DEM HEADER ="));
 
-  // Clean up
-  FREE(power);
-  FREE(shh_amp);
-  FREE(shh_phase);
-  FREE(shv_amp);
-  FREE(shv_phase);
-  FREE(svh_amp);
-  FREE(svh_phase);
-  FREE(svv_amp);
-  FREE(svv_phase);
-  FREE(inFile);
-  FREE(outFile);
-  FREE(byteBuf);
-
-  return ret;
+  return header;
 }
 
-airsar_parameters *read_airsar_params(const char *inBaseName)
+airsar_param_header *read_airsar_params(const char *dataFile)
 {
-  airsar_parameters *params=NULL;
-  char line[256]="", *value, str[50]="";
+  airsar_param_header *params=NULL;
+  airsar_header *header = read_airsar_header(dataFile);
+  FILE *fp;
+  char *buf;
+  int size;
+ 
+  // Allocate memory and file handling
+  params = (airsar_param_header *) CALLOC(1, sizeof(airsar_param_header));
+  if (header->calibration_header_offset > 0)
+    size = header->calibration_header_offset - header->parameter_header_offset;
+  else if (header->dem_header_offset > 0)
+    size = header->dem_header_offset - header->parameter_header_offset;
+  else
+    size = header->first_data_offset - header->parameter_header_offset;
+  buf = (char *) MALLOC(sizeof(char)*size);
+  fp = FOPEN(dataFile, "r");
+  FSEEK(fp, header->parameter_header_offset, 1);
+  if (fgets(buf, size, fp) == NULL)
+    asfPrintError("Could not read parameter header\n");
+  FCLOSE(fp);
 
-  char *basename = get_basename(inBaseName);
-  char *dir = get_dirname(inBaseName);
-  char *metaFile = MALLOC(sizeof(char)*(strlen(inBaseName)+20));
-
-  if (strncmp(basename, "ts", 2) == 0) {
-    // Read specific parameter file
-    params = (airsar_parameters *) CALLOC(1, sizeof(airsar_parameters));
-    if (strlen(dir) > 0)
-      sprintf(metaFile, "%s/hd%s.log", dir, basename+2);
-    else
-      sprintf(metaFile, "hd%s.log", basename+2);
-    FILE *fpIn = FOPEN(metaFile, "r");
-
-    while (NULL != fgets(line, 255, fpIn)) {
-
-      if (strncmp(line, "NUMBER OF SAMPLES PER RECORD =", 30) == 0)
-    sscanf(line, "NUMBER OF SAMPLES PER RECORD = %d",
-           &params->sample_count);
-      else if (strncmp(line, "NUMBER OF LINES IN IMAGE =", 26) == 0)
-    sscanf(line, "NUMBER OF LINES IN IMAGE = %d", &params->line_count);
-      else if (strncmp(line, "JPL AIRCRAFT SAR PROCESSOR VERSION", 34) == 0) {
-    sscanf(line, "JPL AIRCRAFT SAR PROCESSOR VERSION %s", str);
-    value = trim_spaces(str);
-    sprintf(params->processor, "%s", value);
-      }
-      else if (strncmp(line, "DATA TYPE =", 11) == 0) {
-    sscanf(line, "DATA TYPE = %s", str);
-    value = trim_spaces(str);
-    if (strcmp(value, "INTEGER*2") == 0)
-      params->data_type = INTEGER16;
-      }
-      else if (strncmp(line, "RANGE PROJECTION =", 18) == 0) {
-    sscanf(line, "RANGE PROJECTION = %s", str);
-    value = trim_spaces(str);
-    sprintf(params->range_projection, "%s", value);
-      }
-      else if (strncmp(line, "RANGE PIXEL SPACING (METERS) =", 30) == 0)
-    sscanf(line, "RANGE PIXEL SPACING (METERS) = %lf",
-           &params->x_pixel_size);
-      else if (strncmp(line, "AZIMUTH PIXEL SPACING (METERS) =", 32) == 0)
-    sscanf(line, "AZIMUTH PIXEL SPACING (METERS) = %lf",
-           &params->y_pixel_size);
-      else if (strncmp(line, "BYTE OFFSET OF FIRST DATA RECORD =", 34) == 0)
-    sscanf(line, "BYTE OFFSET OF FIRST DATA RECORD = %ld",
-           &params->first_data_offset);
-      else if (strncmp(line, "BYTE OFFSET OF CALIBRATION HEADER =", 35) == 0)
-    sscanf(line, "BYTE OFFSET OF CALIBRATION HEADER = %ld",
-           &params->calibration_header_offset);
-      else if (strncmp(line, "BYTE OFFSET OF DEM HEADER =", 27) == 0)
-    sscanf(line, "BYTE OFFSET OF DEM HEADER = %ld",
-           &params->dem_header_offset);
-      else if (strncmp(line, "SITE NAME", 9) == 0) {
-    sscanf(line, "SITE NAME %s", str);
-    value = trim_spaces(str);
-    sprintf(params->site_name, "%s", value);
-      }
-      else if (strncmp(line, "CCT TYPE", 8) == 0) {
-    sscanf(line, "CCT TYPE %s", str);
-    value = trim_spaces(str);
-    sprintf(params->cct_type, "%s", value);
-      }
-      else if (strncmp(line, "CCT ID", 6) == 0)
-    sscanf(line, "CCT ID %d", &params->cct_id);
-      else if (strncmp(line, "LATITUDE AT START OF SCENE (DEGREES)", 36) == 0)
-    sscanf(line, "LATITUDE AT START OF SCENE (DEGREES) %lf",
-           &params->start_lat);
-      else if (strncmp(line, "LONGITUDE AT START OF SCENE (DEGREES)", 37) == 0)
-    sscanf(line, "LONGITUDE AT START OF SCENE (DEGREES) %lf",
-           &params->start_lon);
-      else if (strncmp(line, "LATITUDE AT END OF SCENE (DEGREES)", 34) == 0)
-    sscanf(line, "LATITUDE AT END OF SCENE (DEGREES) %lf",
-           &params->end_lat);
-      else if (strncmp(line, "LONGITUDE AT END OF SCENE (DEGREES)", 35) == 0)
-    sscanf(line, "LONGITUDE AT END OF SCENE (DEGREES) %lf",
-           &params->end_lon);
-      else if (strncmp(line, "DATE OF ACQUISITION (GMT)", 25) == 0) {
-    sscanf(line, "DATE OF ACQUISITION (GMT) %s", str);
-    value = trim_spaces(str);
-    sprintf(params->acquisition_date, "%s", value);
-      }
-      else if (strncmp(line, "TIME OF ACQUISITION: SECONDS IN DAY", 35) == 0)
-    sscanf(line, "TIME OF ACQUISITION: SECONDS IN DAY %lf",
-           &params->acquisition_seconds);
-      else if (strncmp(line, "FREQUENCIES COLLECTED", 21) == 0) {
-    sscanf(line, "FREQUENCIES COLLECTED %s", str);
-    value = trim_spaces(str);
-    sprintf(params->frequencies, "%s", value);
-      }
-      else if (strncmp(line, "PRF AT START OF TRANSFER (HZ)", 29) == 0)
-    sscanf(line, "PRF AT START OF TRANSFER (HZ) %lf", &params->prf);
-      else if (strncmp(line, "SAMPLING RATE (MHZ)", 19) == 0)
-    sscanf(line, "SAMPLING RATE (MHZ) %lf", &params->range_sampling_rate);
-      else if (strncmp(line, "CHIRP BANDWIDTH (MHZ)", 21) == 0)
-    sscanf(line, "CHIRP BANDWIDTH (MHZ) %lf", &params->chirp_bandwidth);
-      else if (strncmp(line, "PULSE LENGTH (MICROSECONDS)", 27) == 0)
-    sscanf(line, "PULSE LENGTH (MICROSECONDS) %lf", &params->pulse_length);
-      else if (strncmp(line, "PROCESSOR WAVELENGTH (METERS)", 29) == 0)
-    sscanf(line, "PROCESSOR WAVELENGTH (METERS) %lf", &params->wavelength);
-      else if (strncmp(line, "NEAR SLANT RANGE (METERS)", 25) == 0)
-    sscanf(line, "NEAR SLANT RANGE (METERS) %lf",
-           &params->near_slant_range);
-      else if (strncmp(line, "FAR SLANT RANGE (METERS)", 24) == 0)
-    sscanf(line, "FAR SLANT RANGE (METERS) %lf", &params->far_slant_range);
-      else if (strncmp(line, "NEAR LOOK ANGLE (DEGREES)", 25) == 0)
-    sscanf(line, "NEAR LOOK ANGLE (DEGREES) %lf",
-           &params->near_look_angle);
-      else if (strncmp(line, "FAR LOOK ANGLE (DEGEES)", 23) == 0)
-    sscanf(line, "FAR LOOK ANGLE (DEGEES) %lf", &params->far_look_angle);
-      else if (strncmp(line, "NUMBER OF LOOKS PROCESSED IN AZIMUTH", 36) == 0)
-    sscanf(line, "NUMBER OF LOOKS PROCESSED IN AZIMUTH %d",
-           &params->azimuth_look_count);
-      else if (strncmp(line, "NUMBER OF LOOKS PROCESSED IN RANGE", 34) == 0)
-    sscanf(line, "NUMBER OF LOOKS PROCESSED IN RANGE %d",
-           &params->range_look_count);
-      else if (strncmp
-           (line, "DESKEW FLAG (1=DESKEWED, 2=NOT DESKEWED)", 40) == 0)
-    sscanf(line, "DESKEW FLAG (1=DESKEWED, 2=NOT DESKEWED) %d",
-           &params->deskewed);
-      else if (strncmp(line, "SLANT RANGE SAMPLE SPACING (METERS)", 35) == 0)
-    sscanf(line, "SLANT RANGE SAMPLE SPACING (METERS) %lf",
-           &params->sr_sample_spacing);
-      else if (strncmp
-           (line, "NOMINAL SLANT RANGE RESOLUTION (METERS)", 39) == 0)
-    sscanf(line, "NOMINAL SLANT RANGE RESOLUTION (METERS) %lf",
-           &params->slant_range_resolution);
-      else if (strncmp(line, "AZIMUTH SAMPLE SPACING (METERS)", 31) == 0)
-    sscanf(line, "AZIMUTH SAMPLE SPACING (METERS) %lf",
-           &params->azimuth_sample_spacing);
-      else if (strncmp(line, "NOMINAL AZIMUTH RESOLUTION (METERS)", 35) == 0)
-    sscanf(line, "NOMINAL AZIMUTH RESOLUTION (METERS) %lf",
-           &params->azimuth_resolution);
-      else if (strncmp(line, "IMAGE CENTER LATITUDE (DEGREES)", 31) == 0)
-    sscanf(line, "IMAGE CENTER LATITUDE (DEGREES) %lf",
-           &params->center_lat);
-      else if (strncmp(line, "IMAGE CENTER LONGITUDE (DEGREES)", 32) == 0)
-    sscanf(line, "IMAGE CENTER LONGITUDE (DEGREES) %lf",
-           &params->center_lon);
-      else if (strncmp(line, "GENERAL SCALE FACTOR", 20) == 0)
-    sscanf(line, "GENERAL SCALE FACTOR %lf", &params->scale_factor);
-      else if (strncmp(line, "GPS ALTITUDE, M", 15) == 0)
-    sscanf(line, "GPS ALTITUDE, M %lf", &params->gps_altitude);
-      else if (strncmp(line, "LATITUDE OF PEG POINT", 21) == 0)
-    sscanf(line, "LATITUDE OF PEG POINT %lf", &params->lat_peg_point);
-      else if (strncmp(line, "LONGITUDE OF PEG POINT", 22) == 0)
-    sscanf(line, "LONGITUDE OF PEG POINT %lf", &params->lon_peg_point);
-      else if (strncmp(line, "HEADING AT PEG POINT", 20) == 0)
-    sscanf(line, "HEADING AT PEG POINT %lf", &params->head_peg_point);
-      else if (strncmp(line, "ALONG-TRACK OFFSET S0  (M)", 26) == 0)
-    sscanf(line, "ALONG-TRACK OFFSET S0  (M) %lf",
-           &params->along_track_offset);
-      else if (strncmp(line, "CROSS-TRACK OFFSET C0  (M)", 26) == 0)
-    sscanf(line, "CROSS-TRACK OFFSET C0  (M) %lf",
-           &params->cross_track_offset);
-    }
-    FCLOSE(fpIn);
-  }
-
-  free(basename);
-  free(dir);
-  free(metaFile);
-
+  // Read parameter header
+  sprintf(params->site_name, "%s", 
+	  trim_spaces(get_airsar(buf, "SITE NAME")));
+  sprintf(params->cct_type, "%s", 
+	  trim_spaces(get_airsar(buf, "CCT TYPE")));
+  params->cct_id = atoi(get_airsar(buf, "CCT ID"));
+  params->start_lat =
+    atof(get_airsar(buf, 
+		    "LATITUDE AT START OF SCENE (DEGREES)"));
+  params->start_lon = 
+    atof(get_airsar(buf, 
+		    "LONGITUDE AT START OF SCENE (DEGREES)"));
+  params->end_lat = 
+    atof(get_airsar(buf, 
+		    "LATITUDE AT END OF SCENE (DEGREES)"));
+  params->end_lon =
+    atof(get_airsar(buf, 
+		    "LONGITUDE AT END OF SCENE (DEGREES)"));
+  sprintf(params->acquisition_date, "%s",
+	  trim_spaces(get_airsar(buf, 
+				 "DATE OF ACQUISITION (GMT)")));
+  params->acquisition_seconds =
+    atof(get_airsar(buf, 
+		    "TIME OF ACQUISITION: SECONDS IN DAY"));
+  sprintf(params->frequencies, "%s",
+	  trim_spaces(get_airsar(buf, 
+				 "FREQUENCIES COLLECTED")));
+  params->prf = 
+    atof(get_airsar(buf, "PRF AT START OF TRANSFER (HZ)"));
+  params->range_sampling_rate =
+    atof(get_airsar(buf, "SAMPLING RATE (MHZ)"));
+  params->chirp_bandwidth =
+    atof(get_airsar(buf, "CHIRP BANDWIDTH (MHZ)"));
+  params->pulse_length =
+    atof(get_airsar(buf, "PULSE LENGTH (MICROSECONDS)"));
+  params->wavelength =
+    atof(get_airsar(buf, "PROCESSOR WAVELENGTH (METERS)"));
+  params->near_slant_range =
+    atof(get_airsar(buf, "NEAR SLANT RANGE (METERS)"));
+  params->far_slant_range =
+    atof(get_airsar(buf, "FAR SLANT RANGE (METERS)"));
+  params->near_look_angle =
+    atof(get_airsar(buf, "NEAR LOOK ANGLE (DEGREES)"));
+  params->far_look_angle =
+    atof(get_airsar(buf, "FAR LOOK ANGLE (DEGEES)"));
+  params->azimuth_look_count =
+    atoi(get_airsar(buf, 
+		    "NUMBER OF LOOKS PROCESSED IN AZIMUTH"));
+  params->range_look_count =
+    atoi(get_airsar(buf, 
+		    "NUMBER OF LOOKS PROCESSED IN RANGE"));
+  params->deskewed =
+    atoi(get_airsar(buf, 
+		    "DESKEW FLAG (1=DESKEWED, 2=NOT DESKEWED)"));
+  params->sr_sample_spacing =
+    atof(get_airsar(buf, 
+		    "SLANT RANGE SAMPLE SPACING (METERS)"));
+  params->slant_range_resolution =
+    atof(get_airsar(buf, 
+		    "NOMINAL SLANT RANGE RESOLUTION (METERS)"));
+  params->azimuth_sample_spacing =
+    atof(get_airsar(buf, "AZIMUTH SAMPLE SPACING (METERS)"));
+  params->azimuth_resolution =
+    atof(get_airsar(buf, 
+		    "NOMINAL AZIMUTH RESOLUTION (METERS)"));
+  params->center_lat = 
+    atof(get_airsar(buf, "IMAGE CENTER LATITUDE (DEGREES)"));
+  params->center_lon =
+    atof(get_airsar(buf, 
+		    "IMAGE CENTER LONGITUDE (DEGREES)"));
+  params->scale_factor =
+    atof(get_airsar(buf, "GENERAL SCALE FACTOR"));
+  params->gps_altitude = 
+    atof(get_airsar(buf, "GPS ALTITUDE, M"));
+  params->lat_peg_point =
+    atof(get_airsar(buf, "LATITUDE OF PEG POINT"));
+  params->lon_peg_point =
+    atof(get_airsar(buf, "LONGITUDE OF PEG POINT"));
+  params->head_peg_point =
+    atof(get_airsar(buf, "HEADING AT PEG POINT"));
+  params->along_track_offset =
+    atof(get_airsar(buf, "ALONG-TRACK OFFSET S0  (M)"));
+  params->cross_track_offset =
+    atof(get_airsar(buf, "CROSS-TRACK OFFSET C0  (M)"));
+  
   return params;
+}
+
+airsar_dem_header *read_airsar_dem(const char *dataFile)
+{
+  airsar_dem_header *dem = NULL;
+  airsar_header *header = read_airsar_header(dataFile);
+  FILE *fp;
+  char *buf;
+  int size;
+
+  // Allocate memory and file handling
+  dem = (airsar_dem_header *) CALLOC(1, sizeof(airsar_dem_header));
+  size = header->first_data_offset - header->dem_header_offset;
+  buf = (char *) MALLOC(sizeof(char)*size);
+  fp = FOPEN(dataFile, "r");
+  FSEEK(fp, header->dem_header_offset, 1);
+  if (fgets(buf, size, fp) == NULL)
+    asfPrintError("Could not read parameter header\n");
+  FCLOSE(fp);
+
+  // Read DEM header
+  dem->elevation_offset = atof(get_airsar(buf, "ELEVATION OFFSET (M) ="));
+  dem->elevation_increment = 
+    atof(get_airsar(buf, "ELEVATION INCREMENT (M) ="));
+  dem->corner1_lat = atof(get_airsar(buf, "LATITUDE OF CORNER 1 ="));
+  dem->corner1_lon = atof(get_airsar(buf, "LONGITUDE OF CORNER 1 ="));
+  dem->corner2_lat = atof(get_airsar(buf, "LATITUDE OF CORNER 2 ="));
+  dem->corner2_lon = atof(get_airsar(buf, "LONGITUDE OF CORNER 2 ="));
+  dem->corner3_lat = atof(get_airsar(buf, "LATITUDE OF CORNER 3 ="));
+  dem->corner3_lon = atof(get_airsar(buf, "LONGITUDE OF CORNER 3 ="));
+  dem->corner4_lat = atof(get_airsar(buf, "LATITUDE OF CORNER 4 ="));
+  dem->corner4_lon = atof(get_airsar(buf, "LONGITUDE OF CORNER 4 ="));
+  dem->lat_peg_point = 
+    atof(get_airsar(buf, "LATITUDE OF PEG POINT (DEGREES) ="));
+  dem->lon_peg_point = 
+    atof(get_airsar(buf, "LONGITUDE OF PEG POINT (DEGREES) ="));
+  dem->head_peg_point = 
+    atof(get_airsar(buf, "HEADING AT PEG POINT (DEGREES) ="));
+  dem->along_track_offset = 
+    atof(get_airsar(buf, "ALONG-TRACK OFFSET S0 (M) ="));
+  dem->cross_track_offset =
+    atof(get_airsar(buf, "CROSS-TRACK OFFSET C0 (M) ="));
+
+  return dem;
+}
+
+airsar_cal_header *read_airsar_cal(const char *dataFile)
+{
+  airsar_cal_header *cal = NULL;
+  airsar_header *header = read_airsar_header(dataFile);
+  FILE *fp;
+  char *buf;
+  int size;
+
+  // Allocate memory and file handling
+  cal = (airsar_cal_header *) CALLOC(1, sizeof(airsar_cal_header));
+  size = header->first_data_offset - header->calibration_header_offset;
+  buf = (char *) MALLOC(sizeof(char)*size);
+  fp = FOPEN(dataFile, "r");
+  FSEEK(fp, header->calibration_header_offset, 1);
+  if (fgets(buf, size, fp) == NULL)
+    asfPrintError("Could not read parameter header\n");
+  FCLOSE(fp);
+
+  // Read DEM header
+  cal->hh_amp_cal_factor = 
+    atof(get_airsar(buf, "HH AMPLITUDE CALIBRATION FACTOR (dB)"));
+  cal->hv_amp_cal_factor = 
+    atof(get_airsar(buf, "HV AMPLITUDE CALIBRATION FACTOR (dB)"));
+  cal->vh_amp_cal_factor = 
+    atof(get_airsar(buf, "VH AMPLITUDE CALIBRATION FACTOR (dB)"));
+  cal->vv_amp_cal_factor = 
+    atof(get_airsar(buf, "VV AMPLITUDE CALIBRATION FACTOR (dB)"));
+  cal->hh_phase_cal_factor = 
+    atof(get_airsar(buf, "HH PHASE CALIBRATION FACTOR (DEGREES)"));
+  cal->hv_phase_cal_factor = 
+    atof(get_airsar(buf, "HV PHASE CALIBRATION FACTOR (DEGREES)"));
+  cal->vh_phase_cal_factor = 
+    atof(get_airsar(buf, "VH PHASE CALIBRATION FACTOR (DEGREES)"));
+  cal->vv_phase_cal_factor = 
+    atof(get_airsar(buf, "VV PHASE CALIBRATION FACTOR (DEGREES)"));
+  cal->hh_noise_sigma0 = 
+    atof(get_airsar(buf, "HH NOISE EQUIVALENT SIGMA ZERO (dB)"));
+  cal->hv_noise_sigma0 = 
+    atof(get_airsar(buf, "HV NOISE EQUIVALENT SIGMA ZERO (dB)"));
+  cal->vv_noise_sigma0 = 
+    atof(get_airsar(buf, "VV NOISE EQUIVALENT SIGMA ZERO (dB)"));
+  cal->byte_offset_hh_corr = 
+    atof(get_airsar(buf, "BYTE OFFSET TO HH CORRECTION VECTOR"));
+  cal->byte_offset_hv_corr = 
+    atof(get_airsar(buf, "BYTE OFFSET TO HV CORRECTION VECTOR"));
+  cal->byte_offset_vv_corr = 
+    atof(get_airsar(buf, "BYTE OFFSET TO VV CORRECTION VECTOR"));
+  cal->num_bytes_corr = 
+    atof(get_airsar(buf, "NUMBER OF BYTES IN CORRECTION VECTORS"));
+
+  return cal;
 }
 
 static airsar_general *read_airsar_general(const char *inBaseName)
@@ -493,45 +404,265 @@ static airsar_general *read_airsar_general(const char *inBaseName)
   return general;
 }
 
-meta_parameters *import_airsar_meta(const char *inBaseName)
+meta_parameters *import_airsar_meta(const char *dataName,
+				    const char *inBaseName)
 {
   airsar_general *general = read_airsar_general(inBaseName);
-  airsar_parameters *params = read_airsar_params(inBaseName);
+  airsar_header *header = read_airsar_header(dataName);
+  airsar_param_header *params = read_airsar_params(dataName);
+  airsar_dem_header *dem = NULL;
+  airsar_cal_header *cal = NULL;
+  if (header->dem_header_offset > 0)
+    dem = read_airsar_dem(dataName);
+  if (header->calibration_header_offset > 0)
+    cal = read_airsar_cal(dataName);
 
-  meta_parameters *ret = airsar2meta(general, params);
+  meta_parameters *ret = airsar2meta(general, header, params, dem);
 
   free(general);
+  free(header);
   free(params);
+  if (dem)
+    free(dem);
 
   return ret;
 }
 
 static void fudge_airsar_params(meta_parameters *meta);
 
+int ingest_insar_data(const char *inBaseName, const char *outBaseName, 
+		      char band)
+{
+  FILE *fpIn, *fpOut;
+  char *inFile, *outFile;
+  int ii, kk, ret=FALSE;
+  float *floatBuf;
+
+  // Generate metadata file
+  inFile = (char *) MALLOC(sizeof(char)*255);
+  outFile = (char *) MALLOC(sizeof(char)*255);
+
+  // Ingest the DEM
+  sprintf(inFile, "%s_%c.demi2", inBaseName, band);
+  if (!fileExists(inFile))
+    asfPrintStatus("   Could not find DEM file (%s) ...\n", inFile);
+  else {
+    asfPrintStatus("   Ingesting DEM ...\n");
+    sprintf(outFile, "%s_%c_dem.img", outBaseName, band);
+    airsar_header *header = read_airsar_header(inFile);
+    meta_parameters *metaIn = import_airsar_meta(inFile, inBaseName);
+    meta_parameters *metaOut = import_airsar_meta(inFile, inBaseName);
+    metaIn->general->data_type = INTEGER16;
+    metaOut->general->data_type = REAL32;
+    floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
+    fpIn = FOPEN(inFile, "rb");
+    FSEEK(fpIn, header->first_data_offset, 1);
+    fpOut = FOPEN(outFile, "wb");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      for (kk=0; kk<metaIn->general->sample_count; kk++)
+	floatBuf[kk] = floatBuf[kk]*metaIn->airsar->elevation_increment + 
+	  metaIn->airsar->elevation_offset;
+      put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    metaOut->general->image_data_type = DEM;
+    fudge_airsar_params(metaOut);
+    meta_write(metaOut, outFile);
+    ret = TRUE;
+  }
+
+  // Ingest amplitude image
+  sprintf(inFile, "%s_%c.vvi2", inBaseName, band);
+  if (!fileExists(inFile))
+    asfPrintStatus("   Could not find amplitude file (%s) ...\n", inFile);
+  else {
+    asfPrintStatus("   Ingesting amplitude image ...\n");
+    sprintf(outFile, "%s_%c_vv.img", outBaseName, band);
+    airsar_header *header = read_airsar_header(inFile);
+    meta_parameters *metaIn = import_airsar_meta(inFile, inBaseName);
+    meta_parameters *metaOut = import_airsar_meta(inFile, inBaseName);
+    metaIn->general->data_type = INTEGER16;
+    metaOut->general->data_type = REAL32;
+    floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
+    fpIn = FOPEN(inFile, "rb");
+    FSEEK(fpIn, header->first_data_offset, 1);
+    fpOut = FOPEN(outFile, "wb");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    metaOut->general->image_data_type = AMPLITUDE_IMAGE;
+    fudge_airsar_params(metaOut);
+    meta_write(metaOut, outFile);
+    ret = TRUE;
+  }
+
+  // Ingest coherence image
+  sprintf(inFile, "%s_%c.corgr", inBaseName, band);
+  if (!fileExists(inFile))
+    asfPrintStatus("   Could not find coherence image (%s) ...\n", inFile);
+  else {
+    asfPrintStatus("   Ingesting coherence image ...\n");
+    sprintf(outFile, "%s_%c_coh.img", outBaseName, band);
+    airsar_header *header = read_airsar_header(inFile);
+    meta_parameters *metaIn = import_airsar_meta(inFile, inBaseName);
+    meta_parameters *metaOut = import_airsar_meta(inFile, inBaseName);
+    metaIn->general->data_type = BYTE;
+    metaOut->general->data_type = REAL32;
+    floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
+    fpIn = FOPEN(inFile, "rb");
+    FSEEK(fpIn, header->first_data_offset, 1);
+    fpOut = FOPEN(outFile, "wb");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    metaOut->general->image_data_type = COHERENCE_IMAGE;
+    fudge_airsar_params(metaOut);
+    meta_write(metaOut, outFile);
+    ret = TRUE;
+  }
+
+  // Clean up
+  FREE(floatBuf);
+  FREE(inFile);
+  FREE(outFile);
+
+  return ret;
+}
+
+int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
+		       char band)
+{
+  FILE *fpIn, *fpOut;
+  char *inFile, *outFile;
+  int ii, kk, ret;
+  char *byteBuf;
+  float *power, *shh_amp, *shh_phase, *shv_amp, *shv_phase, *svh_amp;
+  float *svh_phase, *svv_amp, *svv_phase;
+  float total_power, ysca, scale;
+  complexFloat cpx;
+
+  // Generate metadata file
+  meta_parameters *meta = import_airsar_meta(inFile, inBaseName);
+  meta->general->data_type = REAL32;
+  meta->general->image_data_type = POLARIMETRIC_IMAGE;
+  meta->general->band_count = 9;
+  sprintf(meta->general->bands,
+          "POWER,SHH_AMP,SHH_PHASE,SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE,"
+          "SVV_AMP,SVV_PHASE");
+  inFile = (char *) MALLOC(sizeof(char)*255);
+  outFile = (char *) MALLOC(sizeof(char)*255);
+  power = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  shh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  shh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  shv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  shv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  svh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  svh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  svv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  svv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  byteBuf = (char *) MALLOC(sizeof(char)*10);
+  scale = (float) meta->airsar->scale_factor;
+  //  long offset = header->calibration_header_offset*10;
+  long offset = 0;
+
+  // Ingest polarimetric data
+  sprintf(inFile, "%s_%c.datgr", inBaseName, band);
+  if (!fileExists(inFile))
+    sprintf(inFile, "%s_%c.dat", inBaseName, band);
+  if (!fileExists(inFile))
+    asfPrintStatus("   Cound not find polarimetric data set (%s_%c) ...\n",
+		   inBaseName, band);
+  else {
+    sprintf(outFile, "%s_%c.img", outBaseName, band);
+    fpIn = FOPEN(inFile, "rb");
+    fpOut = FOPEN(outFile, "wb");
+    printf("offset=%ld %d\n",offset,SEEK_SET);
+    FSEEK(fpIn, offset, 1);
+    for (ii=0; ii<meta->general->line_count; ii++) {
+      for (kk=0; kk<meta->general->sample_count; kk++) {
+	FREAD(byteBuf, sizeof(char), 10, fpIn);
+	total_power =
+	  scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	ysca = 2.0 * sqrt(total_power);
+	power[kk] = total_power;
+	cpx.real = (float)byteBuf[2] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
+	shh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	shh_phase[kk] = atan2(cpx.imag, cpx.real);
+	cpx.real = (float)byteBuf[4] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[5] * ysca / 127.0;
+	shv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	svh_phase[kk] = atan2(cpx.imag, cpx.real);
+	cpx.real = (float)byteBuf[6] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[7] * ysca / 127.0;
+	svh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	svh_phase[kk] = atan2(cpx.imag, cpx.real);
+	cpx.real = (float)byteBuf[8] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[9] * ysca / 127.0;
+	svv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	svv_phase[kk] = atan2(cpx.imag, cpx.real);
+      }
+      put_band_float_line(fpOut, meta, 0, ii, power);
+      put_band_float_line(fpOut, meta, 1, ii, shh_amp);
+      put_band_float_line(fpOut, meta, 2, ii, shh_phase);
+      put_band_float_line(fpOut, meta, 3, ii, shv_amp);
+      put_band_float_line(fpOut, meta, 4, ii, shv_phase);
+      put_band_float_line(fpOut, meta, 5, ii, svh_amp);
+      put_band_float_line(fpOut, meta, 6, ii, svh_phase);
+      put_band_float_line(fpOut, meta, 7, ii, svv_amp);
+      put_band_float_line(fpOut, meta, 8, ii, svv_phase);
+      asfLineMeter(ii, meta->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    meta_write(meta, outFile);
+    ret = TRUE;
+  }
+
+  // Clean up
+  FREE(power);
+  FREE(shh_amp);
+  FREE(shh_phase);
+  FREE(shv_amp);
+  FREE(shv_phase);
+  FREE(svh_amp);
+  FREE(svh_phase);
+  FREE(svv_amp);
+  FREE(svv_phase);
+  FREE(inFile);
+  FREE(outFile);
+  FREE(byteBuf);
+
+  return ret;
+}
+
 void import_airsar(const char *inBaseName, const char *outBaseName)
 {
-  // Read AirSAR parameters files
   airsar_general *general = read_airsar_general(inBaseName);
-  airsar_parameters *params = read_airsar_params(inBaseName);
-
-  // Generate metadata
-  meta_parameters *metaIn = airsar2meta(general, params);
-  meta_parameters *metaOut = airsar2meta(general, params);
-
-  fudge_airsar_params(metaOut);
 
   // Check for interferometric data
   int insar = FALSE;
   if (general->c_cross_data) {
     asfPrintStatus("\n   Ingesting C-band cross track interferometric data ..."
            "\n\n");
-    if (ingest_insar_data(inBaseName, metaIn, outBaseName, metaOut, 'c'))
+    if (ingest_insar_data(inBaseName, outBaseName, 'c'))
       insar = TRUE;
   }
   if (general->l_cross_data) {
     asfPrintStatus("\n   Ingesting L-band cross track interferometric data ..."
            "\n\n");
-    if (ingest_insar_data(inBaseName, metaIn, outBaseName, metaOut, 'l'))
+    if (ingest_insar_data(inBaseName, outBaseName, 'l'))
       insar = TRUE;
   }
 
@@ -546,18 +677,15 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
   if (!insar) {
     if (general->c_pol_data) {
       asfPrintStatus("\n   Ingesting C-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, metaOut, 'c',
-			 params->calibration_header_offset*10);
+      ingest_polsar_data(inBaseName, outBaseName, 'c');
     }
     if (general->l_pol_data) {
       asfPrintStatus("\n   Ingesting L-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, metaOut, 'l',
-			 params->calibration_header_offset*10);
+      ingest_polsar_data(inBaseName, outBaseName, 'l');
     }
     if (general->p_pol_data) {
       asfPrintStatus("\n   Ingesting P-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, metaOut, 'p',
-			 params->calibration_header_offset*10);
+      ingest_polsar_data(inBaseName, outBaseName, 'p');
     }
   }
   else
@@ -565,10 +693,6 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
 		   "\n\n");
 
   free(general);
-  free(params);
-
-  meta_free(metaIn);
-  meta_free(metaOut);
 }
 
 // The purpose of this code is to refine the values of the along
