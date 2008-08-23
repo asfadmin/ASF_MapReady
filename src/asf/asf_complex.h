@@ -46,7 +46,7 @@ typedef struct {
 
 complexFloat complex_new(float re, float im);
 complexFloat complex_new_polar(float amp, float phase);
-complexFloat complex_zero();
+complexFloat complex_zero(void);
 complexFloat complex_sub(complexFloat a, complexFloat b);
 complexFloat complex_add(complexFloat a, complexFloat b);
 float complex_amp(complexFloat c);
@@ -60,7 +60,7 @@ complexVector complex_vector_new(complexFloat a, complexFloat b,
                                  complexFloat c);
 complexVector complex_vector_conj(complexVector v);
 complexVector complex_vector_normalize(complexVector v);
-complexVector complex_vector_zero();
+complexVector complex_vector_zero(void);
 complexMatrix *complex_matrix_new(int rows, int columns);
 complexMatrix *complex_matrix_mul(complexMatrix *m1, complexMatrix *m2);
 void complex_matrix_scale(complexMatrix *m, float s);
