@@ -667,6 +667,11 @@ on_polar_stereographic_activate(GtkWidget * widget)
 SIGNAL_CALLBACK void
 on_universal_transverse_mercator_activate(GtkWidget * widget)
 {
+    // auto-select WGS84 when switching to UTM
+    // user can change it if they like...
+    GtkWidget *datum_option_menu = get_widget_checked("datum_option_menu");
+    set_combo_box_item(datum_option_menu, DATUM_WGS84);
+
     geocode_options_changed();
 }
 
