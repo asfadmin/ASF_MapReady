@@ -18,7 +18,7 @@ typedef struct {
     int band_r;
     int band_g;
     int band_b;
-    airsar_parameters *params;
+    airsar_header *header;
 } ReadAirsarClientInfo;
 
 static int is_valid_data_airsar_ext(const char *ext)
@@ -295,7 +295,7 @@ int read_airsar_client(int row_start, int n_rows_to_get,
       char *byte_buf = MALLOC(sizeof(char)*10);
       FILE *fpIn = info->fp;
       int ns = meta->general->sample_count;
-      int cal_off = info->params->calibration_header_offset;
+      int cal_off = info->header->calibration_header_offset;
       long offset = cal_off*10 + row_start*ns*10;
       FSEEK(fpIn,offset,SEEK_SET);
       int ii,kk,nn=0;
@@ -349,7 +349,7 @@ int get_airsar_thumbnail_data(int thumb_size_x, int thumb_size_y,
       float scale = (float) meta->airsar->scale_factor;
       unsigned char *byte_buf = MALLOC(sizeof(char)*10);
       FILE *fpIn = info->fp;
-      int cal_off = info->params->calibration_header_offset;
+      int cal_off = info->header->calibration_header_offset;
       int ii,kk,nn=0;
 
       if (!info->is_rgb) {
@@ -402,7 +402,7 @@ void free_airsar_client_info(void *read_client_info)
 {
     ReadAirsarClientInfo *info = (ReadAirsarClientInfo*) read_client_info;
     if (info->fp) fclose(info->fp);
-    if (info->params) free(info->params);
+    if (info->header) free(info->header);
     free(info);
 }
 
@@ -413,7 +413,7 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
 
     char *airsar_basename = get_airsar_basename(meta_name);
     meta_parameters *meta = import_airsar_meta(data_name, airsar_basename);
-    info->params = read_airsar_params(airsar_basename);
+    info->header = read_airsar_header(data_name);
 
     char *ext = findExt(data_name);
     if (strcmp_case(ext, ".corgr")==0) {
