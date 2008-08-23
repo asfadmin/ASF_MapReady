@@ -823,7 +823,6 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             band_name[0] = (char *)MALLOC(strlen(md->general->bands) * sizeof(char));
             band_count = 1;
             strcpy(band_name[0], md->general->bands);
-            meta_free(md);
             if (saveMetadataFlag) {
                 char dir[1024], file[256], meta_out[1024];
                 split_dir_and_file(out_meta, dir, file);
@@ -831,6 +830,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 printf("Saving metadata to %s\n", meta_out);
                 meta_write(md, meta_out);
             }
+            meta_free(md);
             FREE(out_meta);
         }
         else {
