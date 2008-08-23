@@ -19,6 +19,7 @@ typedef struct {
     int band_g;
     int band_b;
     airsar_header *header;
+    airsar_dem_header *dem_header;
 } ReadAirsarClientInfo;
 
 static int is_valid_data_airsar_ext(const char *ext)
@@ -319,6 +320,15 @@ int read_airsar_client(int row_start, int n_rows_to_get,
         }        
       }
     }
+    else if (info->airsar_data_type == AIRSAR_DEM) {
+      float incr = info->dem_header->elevation_increment;
+      float off = info->dem_header->elevation_offset;
+      int i,ns = meta->general->sample_count;
+
+      get_float_lines(info->fp, meta, row_start, n_rows_to_get, dest);
+      for (i=0; i<n_rows_to_get*ns; ++i)
+        dest[i] = dest[i] * incr + off;
+    }
     else {
       assert(data_type == GREYSCALE_FLOAT);
       get_float_lines(info->fp, meta, row_start, n_rows_to_get, dest);
@@ -403,6 +413,7 @@ void free_airsar_client_info(void *read_client_info)
     ReadAirsarClientInfo *info = (ReadAirsarClientInfo*) read_client_info;
     if (info->fp) fclose(info->fp);
     if (info->header) free(info->header);
+    if (info->dem_header) free(info->dem_header);
     free(info);
 }
 
@@ -413,7 +424,8 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
 
     char *airsar_basename = get_airsar_basename(meta_name);
     meta_parameters *meta = import_airsar_meta(data_name, airsar_basename);
-    info->header = read_airsar_header(data_name);
+    info->header = NULL;
+    info->dem_header = NULL;
 
     char *ext = findExt(data_name);
     if (strcmp_case(ext, ".corgr")==0) {
@@ -427,6 +439,8 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
     else if (strcmp_case(ext, ".demi2")==0) {
       asfPrintStatus("AirSAR: DEM Image\n");
       info->airsar_data_type = AIRSAR_DEM;
+      asfPrintStatus("Reading AirSAR DEM header information...\n");
+      info->dem_header = read_airsar_dem(data_name);
     }
     else if (strcmp_case(ext, ".vvi2")==0) {
       asfPrintStatus("AirSAR: Amplitude Image\n");
@@ -453,6 +467,9 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
       meta->general->data_type = INTEGER16;
     else
       meta->general->data_type = INTEGER16;
+
+    asfPrintStatus("Reading AirSAR General header information...\n");
+    info->header = read_airsar_header(data_name);
 
     info->is_rgb = FALSE;
     info->band_gs = info->band_r = info->band_g = info->band_b = 0;
