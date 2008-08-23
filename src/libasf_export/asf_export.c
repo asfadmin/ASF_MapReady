@@ -28,7 +28,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 
   asfPrintStatus("Exporting ...\n\n");
 
-  int nouts;
+  int i, nouts;
   char **outs;
 
   // Do that exporting magic!
@@ -122,17 +122,16 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       write_kml_overlay (in_data_name);
   }
 
-  int i;
-  asfPrintStatus("\n\nExport complete.\nGenerated %d output file%s:\n",
+  if (noutputs && output_names) {
+    asfPrintStatus("\n\nExport complete.\nGenerated %d output file%s:\n",
                  nouts, nouts==1?"":"s");
-  for (i=0; i<nouts; ++i)
-    asfPrintStatus("  %s\n", outs[i]);
-  asfPrintStatus("\n");
+    for (i=0; i<nouts; ++i)
+      asfPrintStatus("  %s\n", outs[i]);
+    asfPrintStatus("\n");
 
-  if (noutputs)
     *noutputs = nouts;
-  if (output_names)
     *output_names = outs;
+  }
   else {
     for (i=0; i<nouts; ++i)
       FREE(outs[i]);

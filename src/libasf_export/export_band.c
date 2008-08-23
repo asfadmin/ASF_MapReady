@@ -863,7 +863,7 @@ export_band_image (const char *metadata_file_name,
           &png_info_ptr, rgb);
     }
     int ignored[4] = {0, 0, 0, 0};
-    int red_channel=-1, green_channel=-1, blue_channel=-1, nir_channel=-1;
+    int red_channel=-1, green_channel=-1, blue_channel=-1;
     for (ii = 0; ii < 4; ii++) {
         if (ii < md->general->band_count) {
             ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
@@ -1906,7 +1906,7 @@ export_band_image (const char *metadata_file_name,
                                 &stats.min, &stats.max, &stats.mean,
                                 &stats.standard_deviation, &stats.hist);
           }
-          if (sample_mapping == TRUNCATE) {
+          if (sample_mapping == TRUNCATE && !have_look_up_table) {
             if (stats.mean >= 255)
               asfPrintWarning("The image contains HIGH values and will turn out very\n"
                               "bright or all-white.\n  Min : %f\n  Max : %f\n  Mean: %f\n"
