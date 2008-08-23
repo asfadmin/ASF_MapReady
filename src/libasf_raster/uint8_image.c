@@ -1154,6 +1154,7 @@ void
 uint8_image_set_pixel (UInt8Image *self, ssize_t x, ssize_t y, uint8_t value)
 {
   // Are we at a valid image pixel?
+  g_assert (self != NULL);
   g_assert (x >= 0 && (size_t) x <= self->size_x);
   g_assert (y >= 0 && (size_t) y <= self->size_y);
 

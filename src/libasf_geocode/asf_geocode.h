@@ -15,12 +15,12 @@ typedef enum {
   RESAMPLE_BICUBIC = 2 // Must be two (2) ...asf_convert_gui depends on this
 } resample_method_t;
 
-typedef enum {
-  MIN_OVERLAP = 1,
-  MAX_OVERLAP,
-  OVERLAY_OVERLAP,
-  NEAR_RANGE_OVERLAP,
-  AVG_OVERLAP
+typedef enum {         // In areas that overlap:
+  MIN_OVERLAP = 1,     // 1 - Pixel values are the least between 1st and 2nd image
+  MAX_OVERLAP,         // 2 - Pixel values are the greater between 1st and 2nd image
+  OVERLAY_OVERLAP,     // 3 - Pixel values are from the 2nd specified image
+  NEAR_RANGE_OVERLAP,  // 4 - Pixel value is from image with shortest slant range to gp
+  AVG_OVERLAP          // 5 - Pixel values are the average of 1st and 2nd image values
 } overlap_method_t;
 
 datum_type_t get_datum(FILE *fp);

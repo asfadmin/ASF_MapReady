@@ -291,7 +291,7 @@ void asfReport(report_level_t level, const char *format, ...);
 void asfLineMeter(int currentLine, int totalLines);
 void asfPercentMeter(double inPercent);
 void asfRunWatchDog(double delay);
-void asfStopWatchDog();
+void asfStopWatchDog(void);
 
 /* Prototype from splash_screen.c ********************************************/
 /* Print the commandline captured, date, and PID to screen & logfile */

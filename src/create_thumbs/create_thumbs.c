@@ -352,7 +352,17 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 //        imd->general->data_type != REAL64)
     {
         /* don't know how to make a thumbnail for this type ... */
-        asfPrintStatus("Unknown or unsupported data type: %d\n", imd->general->data_type);
+        asfPrintStatus("Unknown or unsupported data type: %s\n",
+                       (imd->general->data_type == BYTE) ? "BYTE" :
+                       (imd->general->data_type == INTEGER16)         ? "INTEGER16"         :
+                       (imd->general->data_type == INTEGER32)         ? "INTEGER32"         :
+                       (imd->general->data_type == REAL32)            ? "REAL32"            :
+                       (imd->general->data_type == REAL64)            ? "REAL64"            :
+                       (imd->general->data_type == COMPLEX_BYTE)      ? "COMPLEX_BYTE"      :
+                       (imd->general->data_type == COMPLEX_INTEGER16) ? "COMPLEX_INTEGER16" :
+                       (imd->general->data_type == COMPLEX_INTEGER32) ? "COMPLEX_INTEGER32" :
+                       (imd->general->data_type == COMPLEX_REAL32)    ? "COMPLEX_REAL32"    :
+                       (imd->general->data_type == COMPLEX_REAL64)    ? "COMPLEX_REAL64"    : "UNKNOWN");
         return FALSE;
     }
 
@@ -523,32 +533,14 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     }
     if (saveMetadataFlag) {
         // Copy metadata file to output directory
-        char tmp[1024], *outMetaBase, *outMeta, tmp_folder[1024];
-        time_t t;
-        char t_stamp[32];
-        char cmd[1024];
+        char tmp[1024], *outMetaBase, *outMeta;
 
-        t = time(NULL);
-        strftime(t_stamp, 22, "%d%b%Y-%Hh_%Mm_%Ss", localtime(&t));
         outMetaBase = get_basename(inMetaName[0]);
         outMeta = appendExt(outMetaBase, ".meta");
-        sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s_%s", outMetaBase, t_stamp);
-        if (!is_dir(tmp_folder)) {
-            mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
-        }
-        else {
-        // Should never reach here
-            asfPrintError("Temporary folder already exists:\n    %s\n",
-                          tmp_folder);
-        }
-        sprintf(tmp,"%s%c%s", tmp_folder, DIR_SEPARATOR, outMeta);
+        sprintf(tmp, "%s%c%s", out_dir, DIR_SEPARATOR, outMeta);
         FREE(outMeta);
         FREE(outMetaBase);
         meta_write(imd, tmp);
-        sprintf(cmd, "cp -f %s %s", tmp, out_dir);
-        asfSystem(cmd);
-        sprintf(cmd, "rm -rf %s", tmp_folder);
-        asfSystem(cmd);
     }
 
     meta_free(imd);
@@ -760,14 +752,14 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             band_name[0] = (char *)MALLOC(strlen(md->general->bands) * sizeof(char));
             band_count = 1;
             strcpy(band_name[0], md->general->bands);
-            meta_free(md);
             if (saveMetadataFlag) {
-                char cmd[1024];
-                char *out_base = appendExt(out_meta, "");
-
-                sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-                asfSystem(cmd);
+                char dir[1024], file[256], meta_out[1024];
+                split_dir_and_file(out_meta, dir, file);
+                sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
+                printf("Saving metadata to %s\n", meta_out);
+                meta_write(md, meta_out);
             }
+            meta_free(md);
             FREE(out_meta);
         }
         else {
@@ -833,11 +825,11 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             strcpy(band_name[0], md->general->bands);
             meta_free(md);
             if (saveMetadataFlag) {
-                char cmd[1024];
-                char *out_base = appendExt(out_meta, "");
-
-                sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-                asfSystem(cmd);
+                char dir[1024], file[256], meta_out[1024];
+                split_dir_and_file(out_meta, dir, file);
+                sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
+                printf("Saving metadata to %s\n", meta_out);
+                meta_write(md, meta_out);
             }
             FREE(out_meta);
         }
@@ -933,13 +925,14 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 }
             }
             printf("\n\n");
-            meta_free(md);
             if (saveMetadataFlag) {
-                char cmd[1024];
-
-                sprintf(cmd, "cp -f %s%c*meta %s", tmp_folder, DIR_SEPARATOR, out_dir);
-                asfSystem(cmd);
+                char dir[1024], file[256], meta_out[1024];
+                split_dir_and_file(out_meta, dir, file);
+                sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
+                printf("Saving metadata to %s\n", meta_out);
+                meta_write(md, meta_out);
             }
+            meta_free(md);
         }
         else {
             remove_dir(tmp_folder);
@@ -970,16 +963,33 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         }
         FREE(params_in);
         if (saveMetadataFlag) {
-            char *out_base = appendExt(out_file, "");
-            char cmd[1024];
-            sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-            asfSystem(cmd);
-            FREE(out_base);
+            char dir[1024], file[256], in_path[1024], out_path[1024];
+            meta_parameters *md;
+
+            sprintf(in_path, "%s_amp.meta", out_file);
+            split_dir_and_file(in_path, dir, file);
+            sprintf(out_path, "%s%c%s", out_dir, DIR_SEPARATOR, file);
+            md = meta_read(in_path);
+            meta_write(md, out_path);
+            meta_free(md);
+
+            sprintf(in_path, "%s_cpx.meta", out_file);
+            split_dir_and_file(in_path, dir, file);
+            sprintf(out_path, "%s%c%s", out_dir, DIR_SEPARATOR, file);
+            md = meta_read(in_path);
+            meta_write(md, out_path);
+            meta_free(md);
         }
 
         // Get rid of temporary files that were input to the last step
-        sprintf(del_files, "rm -f %s*", in_file);
-        asfSystem(del_files);
+        sprintf(del_files, "%s.in", in_file);
+        remove(del_files);
+        sprintf(del_files, "%s.meta", in_file);
+        remove(del_files);
+        sprintf(del_files, "%s.img", in_file);
+        remove(del_files);
+        sprintf(del_files, "%s.fmt", in_file);
+        remove(del_files);
 
         // Convert to ground range
         char del_files2[1024];
@@ -989,16 +999,28 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
         sr2gr(in_file, out_file);
         if (saveMetadataFlag) {
-            char *out_base = appendExt(out_file, "");
-            char cmd[1024];
-            sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-            asfSystem(cmd);
-            FREE(out_base);
+            char dir[1024], file[256], in_path[1024], out_path[1024];
+            meta_parameters *md;
+
+            sprintf(in_path, "%s.meta", out_file);
+            split_dir_and_file(in_path, dir, file);
+            sprintf(out_path, "%s%c%s", out_dir, DIR_SEPARATOR, file);
+            md = meta_read(in_path);
+            meta_write(md, out_path);
+            meta_free(md);
         }
 
         // Get rid of temporary files that were input to the last step
-        sprintf(del_files, "rm -f %s* %s* %s%c*.in", in_file, del_files2, tmp_folder, DIR_SEPARATOR);
-        asfSystem(del_files);
+        sprintf(del_files, "%s.img", in_file);
+        remove(del_files);
+        sprintf(del_files, "%s.meta", in_file);
+        remove(del_files);
+        sprintf(del_files, "%s.img", del_files2);
+        remove(del_files);
+        sprintf(del_files, "%s.meta", del_files2);
+        remove(del_files);
+        sprintf(in_file, "%s%c%s_ardop.in", tmp_folder, DIR_SEPARATOR, get_basename(file));
+        remove(in_file);
     }
 
     // Resample image
@@ -1022,17 +1044,22 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     asfPrintStatus("Resampling from\n    %s\n      to\n    %s\n", in_file, out_file);
     resample(in_file, out_file, xsf, ysf);
     if (saveMetadataFlag) {
-        char *out_base = appendExt(out_file, "");
-        char cmd[1024];
-        //sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-        sprintf(cmd, "cp -f %s* %s", out_base, out_dir);
-        asfSystem(cmd);
-        FREE(out_base);
+        char dir[1024], file[256], in_path[1024], out_path[1024];
+        meta_parameters *md;
+
+        sprintf(in_path, "%s.meta", out_file);
+        split_dir_and_file(in_path, dir, file);
+        sprintf(out_path, "%s%c%s", out_dir, DIR_SEPARATOR, file);
+        md = meta_read(in_path);
+        meta_write(md, out_path);
+        meta_free(md);
     }
 
     // Get rid of temporary files that wer input to the last step
-    sprintf(del_files, "rm -f %s*", in_file);
-    asfSystem(del_files);
+    sprintf(del_files, "%s.img", in_file);
+    remove(del_files);
+    sprintf(del_files, "%s.meta", in_file);
+    remove(del_files);
 
     // Flip so the image is north-up, west-left
     // FIXME: Support flipping of JAXA L0 (AVNIR-2 Level 0) files as well ...
@@ -1042,16 +1069,22 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         asfPrintStatus("Flipping to north-up orientation from\n    %s\n      to\n    %s\n", in_file, out_file);
         flip_to_north_up(in_file, out_file);
         if (saveMetadataFlag) {
-            char *out_base = appendExt(out_file, "");
-            char cmd[1024];
-            sprintf(cmd, "cp -f %s*meta %s", out_base, out_dir);
-            asfSystem(cmd);
-            FREE(out_base);
+            char dir[1024], file[256], in_path[1024], out_path[1024];
+            meta_parameters *md;
+
+            sprintf(in_path, "%s.meta", out_file);
+            split_dir_and_file(in_path, dir, file);
+            sprintf(out_path, "%s%c%s", out_dir, DIR_SEPARATOR, file);
+            md = meta_read(in_path);
+            meta_write(md, out_path);
+            meta_free(md);
         }
 
         // Get rid of temporary file that was input to the last step
-        sprintf(del_files, "rm -f %s.*", in_file);
-        asfSystem(del_files);
+        sprintf(del_files, "%s.img", in_file);
+        remove(del_files);
+        sprintf(del_files, "%s.meta", in_file);
+        remove(del_files);
     }
 
     // Export to selected graphics file format
@@ -1108,20 +1141,20 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     // Clean up...
     remove_dir(tmp_folder);
     char *basename = get_basename(file);
-    if (browseFlag) {
-        sprintf(del_files, "rm -f %s*img", basename);
-    }
-    else {
-        sprintf(del_files, "rm -f %s*_thumb*img", basename);
-    }
-    asfSystem(del_files);
-    if (browseFlag) {
-        sprintf(del_files, "rm -f %s*meta", basename);
-    }
-    else {
-        sprintf(del_files, "rm -f %s*_thumb*meta", basename);
-    }
-    asfSystem(del_files);
+//    if (browseFlag) {
+//        sprintf(del_files, "rm -f %s*img", basename);
+//    }
+//    else {
+//        sprintf(del_files, "rm -f %s*_thumb*img", basename);
+//    }
+//    asfSystem(del_files);
+//    if (browseFlag) {
+//        sprintf(del_files, "rm -f %s*meta", basename);
+//    }
+//    else {
+//        sprintf(del_files, "rm -f %s*_thumb*meta", basename);
+//    }
+//    asfSystem(del_files);
     int band;
     for (band = 0; band < band_count; band++) {
         FREE(band_name[band]);
@@ -1234,7 +1267,7 @@ int is_stf_level0(const char *file)
 }
 
 int is_ceos_level0(const char *file) {
-    char *basename = (char *)MALLOC(sizeof(char)*strlen(file)+10);
+    char *basename = (char *)CALLOC(strlen(file)+10, sizeof(char));
     char **dataName = NULL, **metaName = NULL;
     int i, nBands, trailer, ret = 0;
     ceos_file_pairs_t pair = NO_CEOS_FILE_PAIR;
@@ -1249,7 +1282,7 @@ int is_ceos_level0(const char *file) {
         split_dir_and_file(file, dir, filename);
         split_dir_and_file(*dataName, dir, data_filename);
         if (filename && data_filename &&
-            strcmp(filename, data_filename) == 0)
+            strcmp(filename, get_basename(data_filename)) == 0)
         {
             ceos_description *ceos = get_ceos_description(file, NOREPORT);
             if (ceos->product == RAW && ceos->ceos_data_type == CEOS_RAW_DATA) {

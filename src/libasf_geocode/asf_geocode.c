@@ -681,7 +681,7 @@ static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
   double strx, stry;       // Symmetry test result values.
   ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height,
                             &stry, &strx);
-  
+
   // We will insist that the results are symmetric to within this
   // fraction after transforming out and back.
   const double sym_th = 0.15;   // Symmetry threshold.
@@ -695,7 +695,7 @@ static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
     asfPrintWarning("Failed symmetry test: x- |%.5f-%.5f| = %.5f\n"
                   "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
                   strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
-    
+
     // Abort if the error is "horrible" (more than a pixel)
     if (fabs (strx-stpx) > 10*sym_th || fabs (stry-stpy) > 10*sym_th) {
       asfPrintWarning("Symmetry testing error too large!\n");
@@ -716,7 +716,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                int multiband, int band_num, char **in_base_names,
                char *out_base_name, float background_val, double lat_min,
                double lat_max, double lon_min, double lon_max,
-	       char *overlap_method)
+           char *overlap_method)
 {
   int i,ret;
   int process_as_byte=TRUE;
@@ -726,20 +726,30 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   // FIXME: function needs to be extended to handle resampling of already
   // geocoded data.
-  if (strcmp(uc(overlap_method), "MINIMUM") == 0)
-    overlap = MIN_OVERLAP;
-  else if (strcmp(uc(overlap_method), "MAXIMUM") == 0)
-    overlap = MAX_OVERLAP;
-  else if (strcmp(uc(overlap_method), "AVERAGE") == 0)
-    overlap = AVG_OVERLAP;
-  //asfPrintError("Overlap method 'AVERAGE' not yet implemented\n");
-  else if (strcmp(uc(overlap_method), "NEAR RANGE") == 0)
-    //overlap = NEAR_RANGE_OVERLAP;
-    asfPrintError("Overlap method 'NEAR RANGE' not yet implemented\n");
-  else if (strcmp(uc(overlap_method), "OVERLAY") == 0)
-    overlap = OVERLAY_OVERLAP;
-  else
-    asfPrintError("Overlap method '%s' not supported!\n", overlap_method);
+  if (strcmp(uc(overlap_method), "MINIMUM") == 0) {
+      overlap = MIN_OVERLAP;
+  }
+  else if (strcmp(uc(overlap_method), "MAXIMUM") == 0) {
+      overlap = MAX_OVERLAP;
+  }
+  else if (strcmp(uc(overlap_method), "AVERAGE") == 0) {
+      //overlap = AVG_OVERLAP;
+      overlap = OVERLAY_OVERLAP;
+      asfPrintWarning("Overlap method 'AVERAGE' not yet implemented.  Defaulting\n"
+                      "to OVERLAY and continuing...\n");
+  }
+  else if (strcmp(uc(overlap_method), "NEAR RANGE") == 0) {
+      //overlap = NEAR_RANGE_OVERLAP;
+      overlap = OVERLAY_OVERLAP;
+      asfPrintWarning("Overlap method 'NEAR RANGE' not yet implemented.  Defaulting\n"
+                      "to OVERLAY and continuing...\n");
+  }
+  else if (strcmp(uc(overlap_method), "OVERLAY") == 0) {
+      overlap = OVERLAY_OVERLAP;
+  }
+  else {
+      asfPrintError("Overlap method '%s' not supported!\n", overlap_method);
+  }
 
   // ref_input is which of the input images is the "reference" -- i.e.,
   // which will be used as the template for the output metadata.  This
@@ -765,11 +775,11 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
   if (n_input_images == 0) {
       asfPrintError("Geocode: no input images specified!\n");
-  } 
+  }
   else if (n_input_images == 1) {
-    if (!meta->projection || 
-	(meta->projection->type != SCANSAR_PROJECTION &&
-	 meta->projection->type != LAT_LONG_PSEUDO_PROJECTION))
+    if (!meta->projection ||
+    (meta->projection->type != SCANSAR_PROJECTION &&
+     meta->projection->type != LAT_LONG_PSEUDO_PROJECTION))
       asfPrintStatus("Geocoding %s\n", in_base_names[0]);
     else
       asfPrintStatus("Resampling %s\n", in_base_names[0]);
@@ -778,6 +788,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       for (i=0; i<n_input_images; ++i)
           asfPrintStatus("  #%d: %s\n", i+1, in_base_names[i]);
       asfPrintStatus("\nOverlapping method: %s\n\n", overlap_method);
+      if (meta->projection && meta->projection->type == SCANSAR_PROJECTION) {
+          asfPrintWarning("Mosaicking of ScanSAR along track / cross-track images is\n"
+                  "untested.  Results may vary.\n");
+      }
   }
   meta_free(meta);
 
@@ -796,7 +810,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   unproject_arr_t *unproject_arr;
 
   determine_projection_fns(projection_type, &project, &project_arr,
-    &unproject, &unproject_arr);
+                           &unproject, &unproject_arr);
 
   // these will hold the extents of the output image in projection
   // coordinates
@@ -888,7 +902,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // Old Scansar data needs a 400m height adjustment.
     if (imd->sar && imd->sar->image_type == 'P' &&
         imd->projection && imd->projection->type == SCANSAR_PROJECTION &&
-	strncmp(imd->general->processor, "ASF", 3) == 0) {
+    strncmp(imd->general->processor, "ASF", 3) == 0) {
         asfPrintStatus("Will apply 400m height correction for SCANSAR data.\n");
         average_height -= 400;
         height_correction = 400;
@@ -1070,9 +1084,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             edge_point_count, datum);
         if (!ret) {
             asfPrintError("Non-forceable projection library error occurred.  Using\n"
-                         "the -force or \"Ignore projection errors\" checkbox or \n"
-                         "\"force = 1\" in a MapReady configuration file will\n"
-                         "not work with the current settings and geographical area.\n");
+                          "the -force or \"Ignore projection errors\" checkbox or \n"
+                          "\"force = 1\" in a MapReady configuration file will\n"
+                          "not work with the current settings and geographical area.\n");
         }
         // Find the extents of the image in projection coordinates.
         for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
@@ -1424,11 +1438,33 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   if (n_input_images > 1) {
     output_bfi = banded_float_image_new(n_bands, oix_max+1, oiy_max+1);
-    if (overlap == AVG_OVERLAP)
-      tbi = uint8_image_new(oix_max+1, oiy_max+1);
-    else if(overlap == NEAR_RANGE_OVERLAP)
-      tfi = float_image_new(oix_max+1, oiy_max+1);
-  } else {
+    if (!output_bfi) {
+        asfPrintError("Cannot create new %d-banded float image of size %d samples by %d lines\n"
+                      "Image size too large?\n",
+                      oix_max+1, oiy_max+1);
+    }
+    if (overlap == AVG_OVERLAP) {
+        // Unsupported as of yet ...this code should never be reached
+        asfPrintError("Overlap method 'AVERAGE' not yet supported...\n");
+        tbi = uint8_image_new(oix_max+1, oiy_max+1);
+        if (!tbi) {
+            asfPrintError("Cannot create new unit8 image of size %d samples by %d lines\n",
+                          "Image size too large?\n",
+                          oix_max+1, oiy_max+1);
+        }
+    }
+    else if (overlap == NEAR_RANGE_OVERLAP) {
+        // Unsupported as of yet ...this code should never be reached
+        asfPrintError("Overlap method 'NEAR RANGE' not yet supported...\n");
+        tfi = float_image_new(oix_max+1, oiy_max+1);
+        if (!tfi) {
+            asfPrintError("Cannot create new float image of size %d samples by %d lines\n",
+                          "Image size too large?\n",
+                          oix_max+1, oiy_max+1);
+        }
+    }
+  }
+  else {
     output_line = MALLOC(sizeof(float)*(oix_max+1));
   }
 
@@ -1467,7 +1503,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     {
         asfPrintWarning
         ("Requested pixel size %lf is smaller than the input image resolution "
-        "(%le meters).\n", pixel_size,
+        "(%0.1f meters).\n", pixel_size,
         GSL_MIN (imd->general->x_pixel_size, imd->general->y_pixel_size));
     }
 
@@ -1483,7 +1519,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         pixel_size/2. > imd->general->y_pixel_size)
     {
       // this flag is so that we can clean up the intermediate resample file
-      do_resample = TRUE; 
+      do_resample = TRUE;
 
       // downsample to 2x the target resolution
       double resample_ps = pixel_size / 2.;
@@ -1791,7 +1827,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         if (imd->sar && imd->sar->image_type != 'P' && !imd->transform)
         {
             asfPrintStatus ("Symmetry testing latLong vs. lineSamp...\n");
-            
+
             int ok1,ok2,ok3,ok4;
             int nl = imd->general->line_count;
             int ns = imd->general->sample_count;
@@ -1958,19 +1994,16 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             else
             {
               if (process_as_byte) {
-                value =
-                  uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
-                    uint8_image_sample_method);
+                value = uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
+                                           uint8_image_sample_method);
               }
               else if ( imd->general->image_data_type == DEM ) {
-                value =
-                  dem_sample(iim, input_x_pixel, input_y_pixel,
-                    float_image_sample_method);
+                value = dem_sample(iim, input_x_pixel, input_y_pixel,
+                                   float_image_sample_method);
               }
               else {
-                value =
-                  float_image_sample(iim, input_x_pixel, input_y_pixel,
-                    float_image_sample_method);
+                value = float_image_sample(iim, input_x_pixel, input_y_pixel,
+                                           float_image_sample_method);
                 if (omd->general->data_type == BYTE && value < 0.0) {
                   value = 0.0;
                   out_of_range_negative++;
@@ -1992,7 +2025,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                 ;
               }
               else if (meta_is_valid_double(imd->general->no_data) &&
-                value == imd->general->no_data)
+                       value == imd->general->no_data)
               {
                 // pixel is the "no data" value -- only the first image
                 // will set this in the output image, otherwise we risk
@@ -2002,48 +2035,47 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                     output_line[oix] = value;
                   else {
                     banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
-		    uint8_image_set_pixel(tbi, oix, oiy, 1);
-		  }
-		}
+                    //uint8_image_set_pixel(tbi, oix, oiy, 1);
+                  }
+                }
               }
               else {
                 // Normal case, set the output pixel value
                 oix_last_valid = oix;
                 if (oix_first_valid == -1) oix_first_valid = oix;
 
-		// FIXME: AVERAGE and NEAR RANGE overlap need some work
-		// Have to track some values in a second image
+                // FIXME: AVERAGE and NEAR RANGE overlap need some work
+                // Have to track some values in a second image
 
-		// Overlap option: OVERLAY
-		// No action needed, just overwrite previous value
+                // Overlap option: OVERLAY
+                // No action needed, just overwrite previous value
 
-		// New images are intialized with zeros (at least float_image
-		// does that). So we need to check for that when looking for
-		// values.
-                if (output_by_line) 
+                // New images are intialized with zeros (at least float_image
+                // does that). So we need to check for that when looking for
+                // values.
+                if (output_by_line) {
                   output_line[oix] = value;
+                }
                 else {
-		  ref_value = 
-		    banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
-                  if (overlap == MIN_OVERLAP && ref_value != 0 && 
-		      ref_value < value)
-                    value = ref_value;
-                  else if (overlap == MAX_OVERLAP && ref_value != 0 &&
-			   ref_value > value)
-                    value = ref_value;
-		  else if (overlap == AVG_OVERLAP) {
-		    value += ref_value;
-                    uint8_t byte_value = uint8_image_get_pixel(tbi, oix, oiy);
-		    if (value != 0.0) {
-		      byte_value++;
-		    }
-                    uint8_image_set_pixel(tbi, oix, oiy, byte_value);
-		  }
-                  banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
-		}
+                    ref_value = banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
+                    if (overlap == MIN_OVERLAP && ref_value != 0 && ref_value < value) {
+                        value = ref_value;
+                    }
+                    else if (overlap == MAX_OVERLAP && ref_value != 0 && ref_value > value) {
+                        value = ref_value;
+                    }
+                    else if (overlap == AVG_OVERLAP) {
+                        value += ref_value;
+                        uint8_t byte_value = uint8_image_get_pixel(tbi, oix, oiy);
+                        if (value != 0.0) {
+                            byte_value++;
+                        }
+                        uint8_image_set_pixel(tbi, oix, oiy, byte_value);
+                    }
+                    banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
+                }
               }
             }
-
           } // end of for-each-sample-in-line set output values
 
           // If we are reprojecting a DEM, need to account for the height
@@ -2069,7 +2101,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             // use the array version of libproj, which is *much* faster.
 
             unproject_arr(pp, projX, projY, NULL, &lat, &lon, NULL,
-              oix_max + 1, datum);
+                          oix_max + 1, datum);
 
             // the outer if guards against the case where no valid pixels
             // were on this line (i.e., both are -1)
@@ -2079,12 +2111,12 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                   output_line[oix] +=
                     get_geoid_height(lat[oix]*R2D, lon[oix]*R2D);
                 }
-              } else {
+              }
+              else {
                 for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
-                  float value = banded_float_image_get_pixel(output_bfi,
-                    kk, oix, oiy);
+                  float value = banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
                   banded_float_image_set_pixel(output_bfi, kk, oix, oiy,
-                    value + get_geoid_height(lat[oix]*R2D, lon[oix]*R2D));
+                                               value + get_geoid_height(lat[oix]*R2D, lon[oix]*R2D));
                 }
               }
             }
@@ -2094,8 +2126,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
           }
 
           // write the line, if we're doing line-by-line output
-          if (output_by_line)
+          if (output_by_line) {
             put_float_line(outFp, omd, oiy, output_line);
+          }
 
         } // End of for-each-line set output values
 
@@ -2194,22 +2227,23 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     asfPrintStatus("\nGenerating final output.\n");
     for (kk=0; kk<omd->general->band_count; ++kk) {
       if (overlap == AVG_OVERLAP) {
-	size_t oix, oiy;
-	for (oiy = 0 ; oiy <= oiy_max ; oiy++)
-	  for ( oix = 0 ; oix <= oix_max ; oix++ ) {
-	    float value = banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
-	    uint8_t num = uint8_image_get_pixel(tbi, oix, oiy);
-	    if (num > 0)
-	      value /= num;
-	    banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
-	  }
+    size_t oix, oiy;
+    for (oiy = 0 ; oiy <= oiy_max ; oiy++)
+      for ( oix = 0 ; oix <= oix_max ; oix++ ) {
+        float value = banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
+        //uint8_t num = uint8_image_get_pixel(tbi, oix, oiy);
+        //if (num > 0)
+          //value /= num;
+        banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
+      }
       }
       FloatImage *fi = banded_float_image_get_band(output_bfi, kk);
       float_image_band_store(fi, output_image, omd, kk>0);
     }
     banded_float_image_free(output_bfi);
-    if (tbi)
+    if (tbi) {
       uint8_image_free(tbi);
+    }
   }
 
   if (resample_method == BICUBIC &&

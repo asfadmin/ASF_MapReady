@@ -159,8 +159,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
         meta_put_string(fp,"image_data_type:","MASK",comment);
         break;
       case SIMULATED_IMAGE:
-	meta_put_string(fp,"image_data_type:","SIMULATED_IMAGE",comment);
-	break;
+    meta_put_string(fp,"image_data_type:","SIMULATED_IMAGE",comment);
+    break;
       default:
         meta_put_string(fp,"image_data_type:",MAGIC_UNSET_STRING,comment);
         break;
@@ -329,9 +329,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
       int ii;
       char coeff[15];
       for (ii=0; ii<6; ++ii) {
-	sprintf(coeff, "incid_a(%d):", ii);
-	meta_put_double(fp, coeff, meta->sar->incid_a[ii],
-			"Incidence angle transformation parameter");
+    sprintf(coeff, "incid_a(%d):", ii);
+    meta_put_double(fp, coeff, meta->sar->incid_a[ii],
+            "Incidence angle transformation parameter");
       }
     }
     meta_put_string(fp,"}","","End sar");
@@ -727,83 +727,83 @@ void meta_write(meta_parameters *meta, const char *file_name)
     int ii;
     char str[15];
     meta_put_string(fp,"calibration {","",
-		    "Block containing calibration information");
+            "Block containing calibration information");
     strcpy(comment,"Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS)");
     switch (meta->calibration->type)
       {
       case unknown_cal:
-	break;
+    break;
       case asf_cal:
-	meta_put_string(fp,"type:","ASF",comment);
-	// scaledPower = 
-	//      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-	meta_put_double(fp,"a(0):",meta->calibration->asf->a0,
-			"Calibration coefficient");
-	meta_put_double(fp,"a(1):",meta->calibration->asf->a1,
-			"Calibration coefficient)");
-	meta_put_double(fp,"a(2):",meta->calibration->asf->a2,
-			"Calibration coefficient");
-	meta_put_int(fp,"sample_count:",meta->calibration->asf->sample_count,
-		     "Number of samples in the image");
-	for (ii=0; ii<256; ii++) {
-	  sprintf(str, "noise(%d):", ii);
-	  meta_put_double(fp,str,meta->calibration->asf->noise[ii],
-			  "Noise vector element");
-	}
-	break;
+    meta_put_string(fp,"type:","ASF",comment);
+    // scaledPower =
+    //      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    meta_put_double(fp,"a(0):",meta->calibration->asf->a0,
+            "Calibration coefficient");
+    meta_put_double(fp,"a(1):",meta->calibration->asf->a1,
+            "Calibration coefficient)");
+    meta_put_double(fp,"a(2):",meta->calibration->asf->a2,
+            "Calibration coefficient");
+    meta_put_int(fp,"sample_count:",meta->calibration->asf->sample_count,
+             "Number of samples in the image");
+    for (ii=0; ii<256; ii++) {
+      sprintf(str, "noise(%d):", ii);
+      meta_put_double(fp,str,meta->calibration->asf->noise[ii],
+              "Noise vector element");
+    }
+    break;
       case asf_scansar_cal:
-	meta_put_string(fp,"type:","ASF SCANSAR",comment);
-	// scaledPower = 
-	//      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-	meta_put_double(fp,"a(0):",meta->calibration->asf_scansar->a0,
-			"Calibration coefficient");
-	meta_put_double(fp,"a(1):",meta->calibration->asf_scansar->a1,
-			"Calibration coefficient)");
-	meta_put_double(fp,"a(2):",meta->calibration->asf_scansar->a2,
-			"Calibration coefficient");
-	for (ii=0; ii<256; ii++) {
-	  sprintf(str, "noise(%d):", ii);
-	  meta_put_double(fp,str,meta->calibration->asf_scansar->noise[ii],
-			  "Noise vector element");
-	}
-	break;
+    meta_put_string(fp,"type:","ASF SCANSAR",comment);
+    // scaledPower =
+    //      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    meta_put_double(fp,"a(0):",meta->calibration->asf_scansar->a0,
+            "Calibration coefficient");
+    meta_put_double(fp,"a(1):",meta->calibration->asf_scansar->a1,
+            "Calibration coefficient)");
+    meta_put_double(fp,"a(2):",meta->calibration->asf_scansar->a2,
+            "Calibration coefficient");
+    for (ii=0; ii<256; ii++) {
+      sprintf(str, "noise(%d):", ii);
+      meta_put_double(fp,str,meta->calibration->asf_scansar->noise[ii],
+              "Noise vector element");
+    }
+    break;
       case esa_cal:
-	meta_put_string(fp,"type:","ESA",comment);
-	// scaledPower = 
-	//	inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle*D2R);
-	meta_put_double(fp,"k:",meta->calibration->esa->k,
-			"Absolute calibration coefficient");
-	meta_put_double(fp,"ref_incid:",meta->calibration->esa->ref_incid,
-			"Reference incidence angle");
-	break;
+    meta_put_string(fp,"type:","ESA",comment);
+    // scaledPower =
+    //  inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle*D2R);
+    meta_put_double(fp,"k:",meta->calibration->esa->k,
+            "Absolute calibration coefficient");
+    meta_put_double(fp,"ref_incid:",meta->calibration->esa->ref_incid,
+            "Reference incidence angle");
+    break;
       case rsat_cal:
-	meta_put_string(fp,"type:","RSAT",comment);
-	// if (p->slc)
-	//   scaledPower = (inDn*inDn)/(a2*a2)*invIncAngle;
-	// else
-	//   scaledPower = (inDn*inDn + p->a3)/a2*invIncAngle;
-	meta_put_int(fp,"table_entries:",meta->calibration->rsat->n,
-		     "Number of table entries");
-	for (ii=0; ii<meta->calibration->rsat->n; ii++) {
-	  sprintf(str, "lut(%d):", ii);
-	  meta_put_double(fp,str,meta->calibration->rsat->lut[ii],
-			  "Output scaling LUT entry");
-	}
-	meta_put_int(fp,"sample_inc:",meta->calibration->rsat->samp_inc,
-		     "Table entry sampling increment");
-	meta_put_double(fp,"a3:",meta->calibration->rsat->a3,
-			"Linear scaling offset");
-	meta_put_int(fp,"slc:",meta->calibration->rsat->slc,
-		     "Flag: Data is SLC");
-	meta_put_int(fp,"focus:",meta->calibration->rsat->focus,
-		     "Flag: Data processed by FOCUS");
-	break;
+    meta_put_string(fp,"type:","RSAT",comment);
+    // if (p->slc)
+    //   scaledPower = (inDn*inDn)/(a2*a2)*invIncAngle;
+    // else
+    //   scaledPower = (inDn*inDn + p->a3)/a2*invIncAngle;
+    meta_put_int(fp,"table_entries:",meta->calibration->rsat->n,
+             "Number of table entries");
+    for (ii=0; ii<meta->calibration->rsat->n; ii++) {
+      sprintf(str, "lut(%d):", ii);
+      meta_put_double(fp,str,meta->calibration->rsat->lut[ii],
+              "Output scaling LUT entry");
+    }
+    meta_put_int(fp,"sample_inc:",meta->calibration->rsat->samp_inc,
+             "Table entry sampling increment");
+    meta_put_double(fp,"a3:",meta->calibration->rsat->a3,
+            "Linear scaling offset");
+    meta_put_int(fp,"slc:",meta->calibration->rsat->slc,
+             "Flag: Data is SLC");
+    meta_put_int(fp,"focus:",meta->calibration->rsat->focus,
+             "Flag: Data processed by FOCUS");
+    break;
       case alos_cal:
-	meta_put_string(fp,"type:","ALOS",comment);
-	// scaledPower = pow(10, p->cf/10.0)*inDn*inDn*invIncAngle;
-	meta_put_double(fp,"cf:",meta->calibration->alos->cf,
-			"Calibration factor");
-	break;
+    meta_put_string(fp,"type:","ALOS",comment);
+    // scaledPower = pow(10, p->cf/10.0)*inDn*inDn*invIncAngle;
+    meta_put_double(fp,"cf:",meta->calibration->alos->cf,
+            "Calibration factor");
+    break;
       }
     meta_put_string(fp,"}","","End calibration");
   }
@@ -1004,6 +1004,7 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
 int is_empty(char *string)
 {
   int ii;
+  if (!string) return 1;
   for (ii=0; ii<strlen(string); ii++) {
     if (!isspace(string[ii])) return 0;
   }
