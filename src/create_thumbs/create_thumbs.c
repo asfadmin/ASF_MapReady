@@ -337,7 +337,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     ceos_pair = get_ceos_names(input_data, baseName,
                                &inBandName, &inMetaName,
                                &nBands, &trailer);
-    if (ceos_pair == NO_CEOS_FILE_PAIR) {
+    if (ceos_pair == NO_CEOS_FILE_PAIR || is_ceos_level0(input_data)) {
         return FALSE;
     }
 
@@ -600,9 +600,14 @@ void process_file(const char *file, int level, int size, int verbose,
             }
         }
     }
-    else
+    else if (!is_ceos_level0(file)) {
       generate_ceos_thumbnail(file, size, output_format, out_dir,
                               saveMetadataFlag, scale_factor, browseFlag);
+    }
+    else {
+        // Should never reach here
+        asfPrintError("Unrecognized level 0 file format flag\n");
+    }
     FREE(base);
 }
 
@@ -1140,7 +1145,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
     // Clean up...
     remove_dir(tmp_folder);
-    char *basename = get_basename(file);
+//    char *basename = get_basename(file);
 //    if (browseFlag) {
 //        sprintf(del_files, "rm -f %s*img", basename);
 //    }
@@ -1281,8 +1286,9 @@ int is_ceos_level0(const char *file) {
         char data_filename[256];
         split_dir_and_file(file, dir, filename);
         split_dir_and_file(*dataName, dir, data_filename);
+        printf("%s\n%s\n", get_basename(filename), get_basename(data_filename));
         if (filename && data_filename &&
-            strcmp(filename, get_basename(data_filename)) == 0)
+            strcmp(get_basename(filename), get_basename(data_filename)) == 0)
         {
             ceos_description *ceos = get_ceos_description(file, NOREPORT);
             if (ceos->product == RAW && ceos->ceos_data_type == CEOS_RAW_DATA) {

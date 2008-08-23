@@ -152,6 +152,7 @@ char *findExt(const char *name)
         strcmp_case(ext, ".DBF") == 0       ||
         strcmp_case(ext, ".PRJ") == 0       ||
         strcmp_case(ext, ".KML") == 0       ||
+        strcmp_case(ext, ".PI") == 0       ||
         strcmp_case(ext, ".CSV") == 0)
         return (char *) &name[ii];
     else
