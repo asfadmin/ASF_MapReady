@@ -221,6 +221,8 @@ meta_airsar *meta_airsar_init(void)
   airsar->head_peg_point = MAGIC_UNSET_DOUBLE;
   airsar->along_track_offset = MAGIC_UNSET_DOUBLE;
   airsar->cross_track_offset = MAGIC_UNSET_DOUBLE;
+  airsar->elevation_increment = MAGIC_UNSET_DOUBLE;
+  airsar->elevation_offset = MAGIC_UNSET_DOUBLE;
   return airsar;
 }
 

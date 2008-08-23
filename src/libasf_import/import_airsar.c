@@ -552,29 +552,9 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   float total_power, ysca, scale;
   complexFloat cpx;
 
-  // Generate metadata file
-  meta_parameters *meta = import_airsar_meta(inFile, inBaseName);
-  meta->general->data_type = REAL32;
-  meta->general->image_data_type = POLARIMETRIC_IMAGE;
-  meta->general->band_count = 9;
-  sprintf(meta->general->bands,
-          "POWER,SHH_AMP,SHH_PHASE,SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE,"
-          "SVV_AMP,SVV_PHASE");
+  // Allocate memory
   inFile = (char *) MALLOC(sizeof(char)*255);
   outFile = (char *) MALLOC(sizeof(char)*255);
-  power = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  shh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  shh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  shv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  shv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  svh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  svh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  svv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  svv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  byteBuf = (char *) MALLOC(sizeof(char)*10);
-  scale = (float) meta->airsar->scale_factor;
-  //  long offset = header->calibration_header_offset*10;
-  long offset = 0;
 
   // Ingest polarimetric data
   sprintf(inFile, "%s_%c.datgr", inBaseName, band);
@@ -584,10 +564,30 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     asfPrintStatus("   Cound not find polarimetric data set (%s_%c) ...\n",
 		   inBaseName, band);
   else {
+    meta_parameters *meta = import_airsar_meta(inFile, inBaseName);
+    meta->general->data_type = REAL32;
+    meta->general->image_data_type = POLARIMETRIC_IMAGE;
+    meta->general->band_count = 9;
+    sprintf(meta->general->bands,
+	    "POWER,SHH_AMP,SHH_PHASE,SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE,"
+	    "SVV_AMP,SVV_PHASE");
+    power = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    shh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    shh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    shv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    shv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    svh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    svh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    svv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    svv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+    byteBuf = (char *) MALLOC(sizeof(char)*10);
+    scale = (float) meta->airsar->scale_factor;
+    airsar_header *header = read_airsar_header(inFile);
+    long offset = header->first_data_offset;
     sprintf(outFile, "%s_%c.img", outBaseName, band);
     fpIn = FOPEN(inFile, "rb");
     fpOut = FOPEN(outFile, "wb");
-    printf("offset=%ld %d\n",offset,SEEK_SET);
+    //printf("offset=%ld %d\n",offset,SEEK_SET);
     FSEEK(fpIn, offset, 1);
     for (ii=0; ii<meta->general->line_count; ii++) {
       for (kk=0; kk<meta->general->sample_count; kk++) {

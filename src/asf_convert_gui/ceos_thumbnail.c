@@ -273,7 +273,7 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
     }
     *p = '\0';
 
-    meta_parameters *meta = import_airsar_meta(airsar_basename);
+    meta_parameters *meta = import_airsar_meta(input_data, airsar_basename);
     meta->general->data_type = INTEGER16;
 
     char *filename = MALLOC(sizeof(char)*(20+strlen(airsar_basename)));
