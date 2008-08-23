@@ -7,25 +7,29 @@ int asf_export(output_format_t format, scale_t sample_mapping,
                char *in_base_name, char *output_name)
 {
   return asf_export_bands(format, sample_mapping, 0, 0, 0, 0, 0, NULL,
-              in_base_name, output_name, NULL);
+              in_base_name, output_name, NULL, NULL, NULL);
 }
 
 int asf_export_with_lut(output_format_t format, scale_t sample_mapping,
             char *lutFile, char *inFile, char *outFile)
 {
   return asf_export_bands(format, sample_mapping, 1, 0, 0, 0, 0,
-              lutFile, inFile, outFile, NULL);
+              lutFile, inFile, outFile, NULL, NULL, NULL);
 }
 
 
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                      int true_color, int false_color, int pauli, int sinclair,
                      char *look_up_table_name, char *in_base_name,
-                     char *output_name, char **band_name)
+                     char *output_name, char **band_name,
+                     int *noutputs, char ***output_names)
 {
   char *in_meta_name=NULL, *in_data_name=NULL, *out_name=NULL;
 
   asfPrintStatus("Exporting ...\n\n");
+
+  int nouts;
+  char **outs;
 
   // Do that exporting magic!
   if ( format == ENVI ) {
@@ -49,7 +53,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color, pauli, sinclair,
-                        look_up_table_name, TIF);
+                        look_up_table_name, TIF,
+                        &nouts, &outs);
   }
   else if ( format == GEOTIFF ) {
       in_data_name = appendExt(in_base_name, ".img");
@@ -60,7 +65,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color, pauli, sinclair,
-                        look_up_table_name, GEOTIFF);
+                        look_up_table_name, GEOTIFF,
+                        &nouts, &outs);
   }
   else if ( format == JPEG ) {
       in_data_name = appendExt(in_base_name, ".img");
@@ -71,7 +77,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color, pauli, sinclair,
-                        look_up_table_name, JPEG);
+                        look_up_table_name, JPEG,
+                        &nouts, &outs);
   }
   else if ( format == PNG ) {
       in_data_name = appendExt(in_base_name, ".img");
@@ -82,7 +89,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color, pauli, sinclair,
-                        look_up_table_name, PNG);
+                        look_up_table_name, PNG,
+                        &nouts, &outs);
   }
   else if ( format == PGM ) {
       if (rgb || true_color || false_color || pauli || sinclair) {
@@ -105,12 +113,30 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color, pauli, sinclair,
-                        look_up_table_name, PGM);
+                        look_up_table_name, PGM,
+                        &nouts, &outs);
   }
   else if ( format == KML ) {
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
       write_kml_overlay (in_data_name);
+  }
+
+  int i;
+  asfPrintStatus("\n\nExport complete.\nGenerated %d output file%s:\n",
+                 nouts, nouts==1?"":"s");
+  for (i=0; i<nouts; ++i)
+    asfPrintStatus("  %s\n", outs[i]);
+  asfPrintStatus("\n");
+
+  if (noutputs)
+    *noutputs = nouts;
+  if (output_names)
+    *output_names = outs;
+  else {
+    for (i=0; i<nouts; ++i)
+      FREE(outs[i]);
+    FREE(outs);
   }
 
   FREE(in_data_name);

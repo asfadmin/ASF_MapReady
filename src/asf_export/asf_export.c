@@ -797,7 +797,8 @@ main (int argc, char *argv[])
   asf_export_bands(format, command_line.sample_mapping, rgb,
                    true_color, false_color, pauli, sinclair,
                    command_line.look_up_table_name,
-                   in_base_name, command_line.output_name, band_names);
+                   in_base_name, command_line.output_name, band_names,
+                   NULL, NULL);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully

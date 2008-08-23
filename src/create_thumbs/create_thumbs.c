@@ -1085,7 +1085,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                          "" /*look_up_table_name*/,
                          in_file,
                          export_path,
-                         (char**)band_name);
+                         (char**)band_name,
+                         NULL/* num output files */,
+                         NULL/* output file names */);
     }
     else {
         asf_export_bands(output_format,
@@ -1098,7 +1100,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                         "" /*look_up_table_name*/,
                         in_file,
                         export_path,
-                        (char**)band_name);
+                        (char**)band_name,
+                        NULL/* num output files */,
+                        NULL/* output file names */);
     }
 
     // Clean up...

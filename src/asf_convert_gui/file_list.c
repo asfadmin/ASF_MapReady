@@ -273,7 +273,7 @@ add_to_files_list(const gchar * data_file)
     return ret;
 }
 
-static void get_intermediate(const char *str, const char *tag, char **dest)
+static int get_intermediate(const char *str, const char *tag, char **dest)
 {
   if (strncmp_case(str, tag, strlen(tag)) == 0) {
     // matched the tag!  skip tag itself
@@ -289,7 +289,9 @@ static void get_intermediate(const char *str, const char *tag, char **dest)
     // strip trailing whitespace
     while (isspace((*dest)[strlen(*dest)-1]))
       (*dest)[strlen(*dest)-1] = '\0';
+    return TRUE;
   }
+  return FALSE;
 }
 
 void
@@ -308,6 +310,12 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     // pull out the useful intermediates
     char *layover_mask=NULL, *clipped_dem=NULL, *simulated_sar=NULL,
       *tmp_dir=NULL, *faraday=NULL, *ea_hist=NULL, *class_map=NULL;
+
+    int i, num_outputs=0, max_outputs=64;
+    char **outs = MALLOC(sizeof(char*)*max_outputs);
+    for (i=0; i<max_outputs; ++i)
+      outs[i] = NULL;
+
     char line[512];
     FILE *fp = fopen(intermediates_file, "r");
     if (fp) {
@@ -319,6 +327,9 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
         get_intermediate(line, "Faraday", &faraday);
         get_intermediate(line, "Entropy-Alpha Histogram", &ea_hist);
         get_intermediate(line, "Entropy-Alpha Class Map", &class_map);
+        if (get_intermediate(line, "Output", &outs[num_outputs]))
+          if (num_outputs < max_outputs-1)
+            ++num_outputs;
       }
       fclose(fp);
     }
@@ -331,10 +342,12 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     if (!ea_hist) ea_hist = STRDUP("");
     if (!class_map) class_map = STRDUP("");
 
+    // now add to the completed files list!  Use the first listed file
+    // as the output filename, since that is the one that was thumbnailed
     gtk_list_store_append(completed_list_store, completed_iter);
     gtk_list_store_set(completed_list_store, completed_iter,
                        COMP_COL_INPUT_FILE, file,
-                       COMP_COL_OUTPUT_FILE, output_file,
+                       COMP_COL_OUTPUT_FILE, outs[0],
                        COMP_COL_STATUS, "Done",
                        COMP_COL_LOG, log_txt,
                        COMP_COL_TMP_DIR, tmp_dir,
@@ -355,6 +368,10 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     free(faraday);
     free(ea_hist);
     free(class_map);
+
+    for (i=0; i<num_outputs; ++i)
+      FREE(outs[i]);
+    FREE(outs);
 
     g_free(file);
     g_free(output_file);

@@ -41,15 +41,16 @@ void show_image_with_asf_view_arg(gchar * in_name, gchar *arg)
             g_assert(!err);
         }
 
-        if (strlen(arg) > 0) {
-          char *cl = MALLOC(sizeof(char)*(strlen(in_name)+strlen(arg)+10));
+        char *cl = MALLOC(sizeof(char)*(strlen(in_name)+strlen(arg)+10));
+
+        if (strlen(arg) > 0)
           sprintf(cl, "%s \"%s\"", arg, in_name);
-          g_thread_pool_push (ttp, g_string_new (cl), &err);
-          free(cl);
-        }
-        else {
-          g_thread_pool_push (ttp, g_string_new (in_name), &err);
-        }
+        else
+          sprintf(cl, "\"%s\"", in_name);
+
+        g_thread_pool_push (ttp, g_string_new (cl), &err);
+
+        free(cl);
         g_assert(!err);
     }
     else

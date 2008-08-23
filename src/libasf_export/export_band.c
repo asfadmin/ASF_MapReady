@@ -803,7 +803,9 @@ export_band_image (const char *metadata_file_name,
                    int true_color, int false_color,
                    int pauli, int sinclair,
                    char *look_up_table_name,
-                   output_format_t format)
+                   output_format_t format,
+                   int *noutputs,
+                   char ***output_names)
 {
   int map_projected;
   int is_geotiff = 1;
@@ -1767,6 +1769,12 @@ export_band_image (const char *metadata_file_name,
     if (blue_stats.hist_pdf) gsl_histogram_pdf_free(blue_stats.hist_pdf);
 
     FCLOSE(fp);
+
+    // set the output filename
+    *noutputs = 1;
+    char **outs = MALLOC(sizeof(char*));
+    outs[0] = STRDUP(image_data_file_name);
+    *output_names = outs;
   }
   else {
     // Single-band image output (one grayscale file for each available band)
@@ -1809,6 +1817,10 @@ export_band_image (const char *metadata_file_name,
       // (normally not freed, it the caller's)
       free_band_names = TRUE;
     }
+
+    // store the names of the generated files here
+    *noutputs = 0;
+    *output_names = MALLOC(sizeof(char*) * band_count);
 
     int kk;
     for (kk=0; kk<band_count; kk++) {
@@ -1853,6 +1865,9 @@ export_band_image (const char *metadata_file_name,
         else {
           asfPrintError("Impossible: unexpected format %d\n", format);
         }
+
+        (*output_names)[*noutputs] = STRDUP(output_file_name);
+        *noutputs += 1;
 
         // Determine which channel to read
         int channel;

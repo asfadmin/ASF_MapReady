@@ -2351,7 +2351,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
             check_return(
               asf_export_bands(format, TRUNCATE, TRUE, 0, 0, 0, 0,
-                               cfg->export->lut, inFile, outFile, bands),
+                               cfg->export->lut, inFile, outFile, bands,
+                               NULL, NULL),
               "exporting thumbnail (asf_export), using rgb look up table.\n");
           }
           else {
@@ -2376,7 +2377,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 if (n > 0) {
                   check_return(
                     asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
-                                     tmpFile, outFile, bands),
+                                     tmpFile, outFile, bands, NULL, NULL),
                     "exporting thumbnail data file (asf_export), banded\n");
                   for (i=0; i<n; ++i)
                     FREE(bands[i]);
@@ -2412,7 +2413,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     check_return(
                       asf_export_bands(format, NONE, TRUE,
                                        true_color, false_color, 0, 0, NULL,
-                                       tmpFile, outFile, bands),
+                                       tmpFile, outFile, bands, NULL, NULL),
                       "exporting thumbnail (asf_export), color banded.\n");
                     for (i=0; i<meta->general->band_count; ++i)
                       FREE (bands[i]);
@@ -2432,8 +2433,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     FREE(bands[i]); bands[i] = NULL;
                   }
                   check_return(
-                    asf_export_bands(format, scale, FALSE, 0, 0,
-                                     0, 0, NULL, tmpFile, outFile, bands),
+                    asf_export_bands(format, scale, FALSE, 0, 0, 0, 0, NULL,
+                                     tmpFile, outFile, bands, NULL, NULL),
                     "exporting thumbnail data file (asf_export)\n");
                   // strip off the band name at the end!
                   char *banded_name =
@@ -2541,7 +2542,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
             check_return(
                 asf_export_bands(get_format(cfg), TRUNCATE, 1, 0, 0, 0, 0,
-                                 "layover_mask.lut", inFile, outFile, bands),
+                                 "layover_mask.lut", inFile, outFile, bands,
+                                 NULL, NULL),
                 "exporting layover mask (asf_export)\n");
 
             meta_free(meta);
@@ -2645,10 +2647,12 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
   output_format_t format = get_format(cfg);
   scale_t scale = get_scale(cfg);
+  int i,num_outputs;
+  char **output_names;
 
   // Move the .meta file out of temporary status
   // Don't need to do this if we skipped import, we'd already have .meta
-  int i,is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6)==0;
+  int is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6)==0;
   if (cfg->general->import && !is_airsar)
     copy_meta(inFile, outFile);
 
@@ -2677,7 +2681,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 
       check_return(
         asf_export_bands(format, TRUNCATE, TRUE, 0, 0, 0, 0, cfg->export->lut,
-                         inFile, outFile, bands),
+                         inFile, outFile, bands, &num_outputs, &output_names),
         "exporting data file (asf_export), using rgb look up table.\n");
     }
   }
@@ -2698,7 +2702,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
                          "Blue band : %s\n\n",
                          red, green, blue);
           check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
-                                        inFile, outFile, bands),
+                                        inFile, outFile, bands, &num_outputs,
+                                        &output_names),
                        "export data file (asf_export), banded.\n");
           for (i=0; i<num_found; i++)
             FREE(bands[i]);
@@ -2764,7 +2769,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
           }
           check_return(asf_export_bands(format, SIGMA, TRUE,
                                         true_color, false_color, 0, 0, NULL,
-                                        inFile, outFile, bands),
+                                        inFile, outFile, bands,
+                                        &num_outputs, &output_names),
                        "exporting data file (asf_export), color banded.\n");
           for (i=0; i<meta->general->band_count; ++i)
             FREE (bands[i]);
@@ -2782,7 +2788,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
                          meta->general->band_count);
           check_return(asf_export_bands(format, scale, FALSE,
                                         0, 0, 0, 0, NULL,
-                                        inFile, outFile, NULL),
+                                        inFile, outFile, NULL,
+                                        &num_outputs, &output_names),
                        "exporting data file (asf_export), greyscale bands.\n");
         }
         else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
@@ -2797,19 +2804,28 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
           }
           check_return(asf_export_bands(format, scale, FALSE,
                                         0, 0, 0, 0, NULL,
-                                        inFile, outFile, band_names),
+                                        inFile, outFile, band_names,
+                                        &num_outputs, &output_names),
                        "exporting data file (asf_export), single selected greyscale band.\n");
           if (*band_names) FREE(*band_names);
           if (band_names) FREE(band_names);
         }
         else {
           // single band
-          check_return(asf_export(format, scale, inFile, outFile),
+          check_return(asf_export_bands(format, scale, 0, 0, 0, 0, 0, NULL,
+                                        inFile, outFile, NULL,
+                                        &num_outputs, &output_names),
                        "exporting data file (asf_export), single band.\n");
         }
       }
     }
   }
   meta_free(meta);
+
+  for (i=0; i<num_outputs; ++i) {
+    save_intermediate(cfg, "Output", output_names[i]);
+    FREE(output_names[i]);
+  }
+  FREE(output_names);
 }
 

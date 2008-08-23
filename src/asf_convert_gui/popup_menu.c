@@ -861,7 +861,10 @@ handle_view_output()
         }
         else
         {
-          // could be that band names were appended
+          // Could be that band names were appended...
+          // This should not be necessary any longer with the code that
+          // puts the output filename in the "intermediates" list.
+          // Doesn't hurt to leave it, though it shouldn't ever run.
           char *tmp_out=NULL;
           
           if (try_suffix(out_name, "_HH", &tmp_out))
