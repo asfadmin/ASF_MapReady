@@ -152,7 +152,9 @@ char *findExt(const char *name)
         strcmp_case(ext, ".DBF") == 0       ||
         strcmp_case(ext, ".PRJ") == 0       ||
         strcmp_case(ext, ".KML") == 0       ||
-        strcmp_case(ext, ".PI") == 0       ||
+        strcmp_case(ext, ".PI") == 0        ||
+        strcmp_case(ext, ".NUL") == 0       ||
+        strcmp_case(ext, ".VOL") == 0       ||
         strcmp_case(ext, ".CSV") == 0)
         return (char *) &name[ii];
     else
@@ -327,7 +329,7 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
 /****************************************************************************
  * split_dir_and_file:
  * Takes a string and fills one pre-allocated array with any path prior to
- * the file name, and fills another pre-allocated array with the file name 
+ * the file name, and fills another pre-allocated array with the file name
  * The path name will include a trailing directory separator
  * The path name will be the empty string if there was no path in the input
  */
