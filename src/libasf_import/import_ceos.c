@@ -1648,6 +1648,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
         // Flip the line if necessary and assign output value
         for (kk=0; kk<ns; kk++) {
+          cpx.real = cpx.imag = 0.0;
           switch (data_type)
           {
             case BYTE:
@@ -1655,6 +1656,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             case INTEGER32:
             case REAL32:
             case REAL64:
+              // should not happen
               break;
             case COMPLEX_BYTE:
               if (flip) {
@@ -1740,7 +1742,14 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             }
           }
           else {
-            amp_float_buf[ll*ns + kk] = phase_float_buf[ll*ns + kk] = 0.0;
+            if (multilook_flag) {
+              cpx_float_ml_buf[ll*ns + kk].real = 0.0;
+              cpx_float_ml_buf[ll*ns + kk].imag = 0.0;
+            }
+            else {
+              amp_float_buf[ll*ns + kk] = 0.0;
+              phase_float_buf[ll*ns + kk] = 0.0;
+            }
           }
         }
       }
