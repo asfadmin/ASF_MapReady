@@ -117,8 +117,13 @@ main(int argc, char **argv)
     widget = get_widget_checked("latitude_hi_entry");
     gtk_widget_hide(widget);
 
+    // This option is deprecated -- we always apply the fix now
+    // and don't give the user the option of turning it off.  Probably
+    // we can just delete all code associated with it, but for now we
+    // just turn it on, and hide it.
+    set_checked("apply_metadata_fix_checkbutton", TRUE);
     widget = get_widget_checked("apply_metadata_fix_checkbutton");
-    gtk_widget_show(widget);
+    gtk_widget_hide(widget);
 
     // Muck with the fonts in the About dialog
     widget = get_widget_checked("about_dialog_mapready_label");
@@ -138,7 +143,8 @@ main(int argc, char **argv)
     pango_parse_markup(str, -1, 0, &attrs, &text, NULL, NULL);
     gtk_label_set_attributes(GTK_LABEL(widget), attrs);
     gtk_label_set_text(GTK_LABEL(widget), text);
-    PangoFontDescription *font_desc = pango_font_description_from_string("sans-serif 12");
+    PangoFontDescription *font_desc =
+      pango_font_description_from_string("sans-serif 12");
     gtk_widget_modify_font(widget, font_desc);
 
     // Muck with the "Select Processing Steps" label
