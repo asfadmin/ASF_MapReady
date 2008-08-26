@@ -2937,7 +2937,8 @@ int meta_sar_to_startXY (meta_parameters *meta, double *startX, double *startY)
   }
   ret = meta_timeSlantDop2latLon(meta, time, slant, doppler, hgt, &lat, &lon);
   if (!ret) {
-    latlon_to_proj(meta->projection, meta->sar->look_direction, lat, lon, hgt, &x, &y, &z);
+    latlon_to_proj(meta->projection, meta->sar->look_direction,
+                   lat*D2R, lon*D2R, hgt, &x, &y, &z);
     *startX = x;
     *startY = y;
   }
