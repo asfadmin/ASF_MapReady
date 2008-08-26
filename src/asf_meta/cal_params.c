@@ -169,7 +169,7 @@ quadratic_2d get_incid(char *sarName, meta_parameters *meta)
         range = get_slant_range(meta, earth_radius, satellite_height,
                                 sample[ll*GRID+kk]);
       }
-      incidence_angle[ll*GRID+kk] = get_incidence_angle(earth_radius, satellite_height, range) * R2D;
+      incidence_angle[ll*GRID+kk] = get_incidence_angle(earth_radius, satellite_height, range);
 
       if (ll==0 && kk==0) {
         firstIncid = incidence_angle[0];
