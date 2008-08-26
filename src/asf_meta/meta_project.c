@@ -306,14 +306,14 @@ void scan_to_latlon(meta_parameters *meta,
 }
 
 
-void ll_ac(meta_projection *proj, char look_dir, double lat_d, double lon, double *c1, double *c2)
+static void ll_ac(meta_projection *proj, char look_dir, double lat_r, double lon, double *c1, double *c2)
 {
   double qlat, qlon;
   double lat,radius;
   vector pos;
 
-  lat= atand(tand(lat_d)*(1 - ecc2(proj->re_minor,proj->re_major)));
-  sph2cart(proj->param.atct.rlocal,lat*D2R,lon*D2R,&pos);
+  lat = atan(tan(lat_r)*(1 - ecc2(proj->re_minor,proj->re_major)));
+  sph2cart(proj->param.atct.rlocal,lat,lon,&pos);
 
   rotate_z(&pos,proj->param.atct.alpha1);
   rotate_y(&pos,proj->param.atct.alpha2);
