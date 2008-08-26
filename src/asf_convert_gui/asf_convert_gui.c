@@ -30,13 +30,28 @@ main(int argc, char **argv)
     set_font();
     get_asf_share_dir_with_argv0(argv[0]);
 
+    asfPrintStatus("\nASF MapReady:\n");
+    const char *share_dir = get_asf_share_dir();
+
+    if (!share_dir)
+      // this actually should never happen with the current implementation
+      // of get_asf_share_dir() -- always sets the share dir to something
+      // even if it is a bad guess... in which case the next check will fail
+      asfPrintError("Could not find the ASF share directory!\n");
+
     glade_xml_file = (gchar *)find_in_share("mapready.glade");
-
-    asfPrintStatus("\n\nASF MapReady:\n");
-    asfPrintStatus("Using share files directory: %s\n\n", get_asf_share_dir());
+    if (!glade_xml_file)
+      asfPrintError("Could not find the mapready.glade file!\n"
+                    "It should be in the share files directory, here:\n"
+                    "  %s\n", share_dir);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
-
+    if (!glade_xml)
+      asfPrintError("Could not load the mapready.glade file!\n"
+                    "This file may be corrupt. mapready.glade was found in:\n"
+                    "  %s\n", share_dir);
     g_free(glade_xml_file);
+
+    asfPrintStatus("Using share files directory: %s\n\n", share_dir);
 
     /* thumbnails supported in GTK 2.4 or greater */
 #ifdef G_THREADS_ENABLED
