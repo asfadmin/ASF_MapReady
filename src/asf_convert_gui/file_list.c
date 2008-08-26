@@ -59,9 +59,16 @@ gboolean is_meta_file(const gchar * data_file)
   ceos_file_pairs_t s = get_ceos_names(data_file, basename,
                             &dataName, &metaName, &nBands, &trailer);
 
+    // Check for raw Palsar
+  ceos_description *ceos = NULL;
+  if (s != NO_CEOS_FILE_PAIR) {
+      ceos = get_ceos_description(data_file, NOREPORT);
+  }
+
   if (s != NO_CEOS_FILE_PAIR &&
       s != CEOS_RAW_LDR_PAIR &&
-      s != CEOS_raw_ldr_PAIR)
+      s != CEOS_raw_ldr_PAIR &&
+      (ceos && ceos->product != RAW))
   {
       for (i=0; i<nBands; ++i) {
           if (strcmp(data_file, metaName[i])==0) {
@@ -110,9 +117,17 @@ static char *file_is_valid(const gchar * file)
 
     FREE(basename);
 
+    // Check for raw Palsar
+    ceos_description *ceos = NULL;
+    if (ret != NO_CEOS_FILE_PAIR) {
+        ceos = get_ceos_description(file, NOREPORT);
+    }
+
     if (ret != NO_CEOS_FILE_PAIR &&
         ret != CEOS_RAW_LDR_PAIR &&
-        ret != CEOS_raw_ldr_PAIR) {
+        ret != CEOS_raw_ldr_PAIR &&
+        (ceos && ceos->product != RAW))
+    {
         // found -- return metadata file
         char *meta_file=NULL;
         int i;
@@ -130,10 +145,12 @@ static char *file_is_valid(const gchar * file)
         }
 
         free_ceos_names(dataName, metaName);
+        FREE(ceos);
 
         return meta_file;
     } else {
         // not found
+        FREE(ceos);
         return NULL;
     }
 }
