@@ -4,9 +4,9 @@
 MODULES = \
 	ampscheby \
 	detilt_hgt \
-	dgx/src \
-	match_20488nr/src \
-	multimosaic30_20941nr/src
+	dgx \
+	match_20488nr \
+	multimosaic30_20941nr
 
 all:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
