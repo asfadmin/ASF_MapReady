@@ -1844,7 +1844,7 @@ c 160                 format(2(i7,f11.3),4f10.5,2f10.2)
 
        if ((r_ibufb(i_sdx+i_rws/2,i_sdy+i_rws/2) .ne. 0. .or. (a_dtefile(0) .eq. ' ' .and. a_rmgfile(0) .eq. ' ')) .and. 
      &     (                          v_oloc1(3) .ne. 0. .or. (a_dtefile(1) .eq. ' ' .and. a_rmgfile(1) .eq. ' '))) then
-                       write(15,'(x,2(2f10.2,f10.3),2f8.2,4f8.4)') 
+                       write(15,'(x,2(2f10.2,f10.3),2f8.2,4f12.4)') 
      &                    i_oloff+i_sdy+i_rws/2.,i_osoff+i_sdx+i_rws/2.,r_ibufb(i_sdx+i_rws/2,i_sdy+i_rws/2),
      &                    v_iloc(1),v_iloc(2),v_iloc(3),r_shftxx,r_shftyy,r_snr,r_cov(1),r_cov(2),r_cov(3)
                      end if
