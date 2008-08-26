@@ -1050,11 +1050,11 @@ void fill_structure_field(char *field_name, void *valp)
         (MCALIBRATION)->type = asf_cal;
         return;
       }
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "ASF SCANSAR") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "ASF_SCANSAR") ) {
         asf_scansar_cal_params *asf = (asf_scansar_cal_params *)MALLOC(sizeof(asf_scansar_cal_params));
         (MCALIBRATION)->asf_scansar = asf;
         for (ii=0; ii<256; ii++) {
-            (MCALIBRATION)->asf->noise[ii] = 0.0;
+            (MCALIBRATION)->asf_scansar->noise[ii] = 0.0;
         }
         (MCALIBRATION)->type = asf_scansar_cal;
         return;

@@ -212,7 +212,10 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
 
   if (strncmp(facilityStr, "ASF", 3)== 0 &&
       strncmp(processorStr, "FOCUS", 5) != 0 &&
-      meta->projection && meta->projection->type == SCANSAR_PROJECTION)
+      (meta->projection && meta->projection->type == SCANSAR_PROJECTION) ||
+      (meta->projection && 
+       (strcmp_case(meta->general->mode, "SWA") == 0 ||
+	strcmp_case(meta->general->mode, "SWB") == 0)))
   {
     // ASF internal processor (PP or SSP), ScanSar data
     asf_scansar_cal_params *asf = MALLOC(sizeof(asf_scansar_cal_params));

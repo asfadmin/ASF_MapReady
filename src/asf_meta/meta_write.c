@@ -752,7 +752,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     }
     break;
       case asf_scansar_cal:
-    meta_put_string(fp,"type:","ASF SCANSAR",comment);
+    meta_put_string(fp,"type:","ASF_SCANSAR",comment);
     // scaledPower =
     //      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
     meta_put_double(fp,"a(0):",meta->calibration->asf_scansar->a0,
