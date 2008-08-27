@@ -1097,6 +1097,24 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   if (ceos->product == SLC) {
 
+    // Fix the azimuth time per pixel, if we have the workreport file
+    // We seem to get better estimates of that value from workreport.
+    asfPrintStatus("\nAzimuth Time Per Pixel Calculation:\n");
+    double delta,workreport_atpp=-1;
+    if (get_alos_delta_time(in_fName, &delta)) {
+        workreport_atpp = delta / meta->sar->original_line_count;
+        asfPrintStatus("From workreport: %.10f\n", workreport_atpp);
+        asfPrintStatus("     Calculated: %.10f\n",
+                       meta->sar->azimuth_time_per_pixel);
+        asfPrintStatus("Using workreport value.\n\n");
+        meta->sar->azimuth_time_per_pixel = workreport_atpp;
+    }
+    else {
+      asfPrintStatus("From Workreport: (not available)\n");
+      asfPrintStatus("Calculated: %.10f\n\n",
+                     meta->sar->azimuth_time_per_pixel);
+    }
+
     // fix x_pixel_size & y_pixel_size values if needed
     if (meta->general->x_pixel_size == 0) {
         meta->general->x_pixel_size =
@@ -1149,7 +1167,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     // for comparison, calculate using the workreport file (old method)
     // -- taking out this for now, it seems the swath velocity calculation
     //    is working out ok...
-    // double delta; 
+    //double delta; 
     double workreport_atpp=-1;
     //if (get_alos_delta_time (in_fName, &delta))
     //    workreport_atpp = delta / meta->sar->original_line_count;

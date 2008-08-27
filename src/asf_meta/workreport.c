@@ -12,14 +12,28 @@
 
 FILE *fopen_workreport(const char *fileName)
 {
-  char *workreport_filename = appendExt(fileName, ".txt");
+  char *path = getPath(fileName);
+  char *basename = get_basename(fileName);
+  char *txtFile = MALLOC(sizeof(char) * (strlen(path)+strlen(fileName)+20));
+  
+  char *p;
+  if (strncmp_case(basename, "LED-", 4)==0)
+    p = basename + 4;
+  else
+    p = basename;
+
+  if (strlen(path) > 0)
+    sprintf(txtFile, "%s/%s", path, p);
+  else
+    strcpy(txtFile, p);
+
+  char *workreport_filename = appendExt(txtFile, ".txt");
 
   // first attempt: basename.txt
   FILE *fp;
   if (!fileExists(workreport_filename)) {
     // second attempt: path/'workreport'
     FREE(workreport_filename);
-    char *path = getPath(fileName);
     workreport_filename = MALLOC(sizeof(char) * (strlen(path) + 20));
 
     if (strlen(path) > 0)
@@ -50,8 +64,6 @@ FILE *fopen_workreport(const char *fileName)
       asfPrintStatus("workreport file found as: workreport\n");
       fp = FOPEN(workreport_filename, "r");
     }
-
-    FREE(path);
   }
   else {
     // success with 'basename.txt'
@@ -62,6 +74,10 @@ FILE *fopen_workreport(const char *fileName)
   }
 
   FREE(workreport_filename);
+  FREE(txtFile);
+  FREE(path);
+  FREE(basename);
+
   return fp;
 }
 
@@ -80,7 +96,7 @@ int get_alos_delta_time (const char *fileName, double *delta)
   if (!fp) {
     // no workreport file...
     *delta = 0;
-    return 0;
+    return FALSE;
   }
 
   while (fgets(line, 512, fp)) {
@@ -97,7 +113,7 @@ int get_alos_delta_time (const char *fileName, double *delta)
                         dssr.inp_sctim, dateStr);
         *delta = 0;
         FCLOSE(fp);
-        return 0;
+        return FALSE;
       }
     }
     else if (strstr(line, "Img_SceneStartDateTime")) {
@@ -116,7 +132,7 @@ int get_alos_delta_time (const char *fileName, double *delta)
 
   *delta = date_difference(&start_date, &start_time, &end_date, &end_time);
   FCLOSE(fp);
-  return 1;
+  return TRUE;
 }
 
 // ------------------------------------------------------------------------
