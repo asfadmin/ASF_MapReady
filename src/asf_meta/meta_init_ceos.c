@@ -1101,7 +1101,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     // We seem to get better estimates of that value from workreport.
     asfPrintStatus("\nAzimuth Time Per Pixel Calculation:\n");
     double delta,workreport_atpp=-1;
-    if (get_alos_delta_time(in_fName, &delta)) {
+    if (get_alos_delta_time(basename, &delta)) {
         workreport_atpp = delta / meta->sar->original_line_count;
         asfPrintStatus("From workreport: %.10f\n", workreport_atpp);
         asfPrintStatus("     Calculated: %.10f\n",
