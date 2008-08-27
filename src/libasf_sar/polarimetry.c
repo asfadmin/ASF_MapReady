@@ -923,10 +923,6 @@ static void do_freeman(int band1, int band2, int band3,
     complexFloat *hhvv = MALLOC(sizeof(complexFloat)*ns);
     float sf = 1.0 / (float)chunk_size;
 
-    float *Ps = MALLOC(sizeof(float)*ns);
-    float *Pd = MALLOC(sizeof(float)*ns);
-    float *Pv = MALLOC(sizeof(float)*ns);
-
     if (multi) {
       // multilook case -- average all buffered lines to produce a
       // single output line
@@ -939,10 +935,10 @@ static void do_freeman(int band1, int band2, int band3,
 
         for (m=0; m<chunk_size; ++m) {
           complexFloat hh = img_rows->lines[m][j].hh;
-          hh2[j] = complex_amp_sqr(hh);
+          hh2[j] += complex_amp_sqr(hh);
 
           complexFloat vv = img_rows->lines[m][j].vv;
-          vv2[j] = complex_amp_sqr(vv);
+          vv2[j] += complex_amp_sqr(vv);
 
           hhvv[j] = complex_add(hhvv[j], complex_mul(hh, complex_conj(vv)));
 
@@ -970,7 +966,12 @@ static void do_freeman(int band1, int band2, int band3,
       }
     }
 
-    // now calculate fs, fd and alpha or beta for each sample
+    float *Ps = MALLOC(sizeof(float)*ns);
+    float *Pd = MALLOC(sizeof(float)*ns);
+    float *Pv = MALLOC(sizeof(float)*ns);
+
+    // now calculate fs, fd and alpha or beta for each sample, and
+    // from those we can get the Ps, Pd, and Pv values
     for (j=0; j<ns; ++j) {
       float fs, fd;
       complexFloat alpha, beta;
@@ -988,6 +989,7 @@ static void do_freeman(int band1, int band2, int band3,
       // double-check the solution
       verify_fd(hh2[j], vv2[j], hhvv[j], fs, fd, alpha, beta);
 
+      // now calculate the final contributions from each scattering mechanism
       Ps[j] = fs * (1. + complex_amp_sqr(beta));
       Pd[j] = fd * (1. + complex_amp_sqr(alpha));
       Pv[j] = 8. * hv2[j];
@@ -998,6 +1000,11 @@ static void do_freeman(int band1, int band2, int band3,
       Pv[j] = 10*log10(Pv[j]*Pv[j]);
     }
 
+    free(hh2);
+    free(vv2);
+    free(hv2);
+    free(hhvv);
+
     if (band1 >= 0)
       put_band_float_line(fout, outMeta, band1, line, Ps);
     if (band2 >= 0)
@@ -1005,10 +1012,9 @@ static void do_freeman(int band1, int band2, int band3,
     if (band3 >= 0)
       put_band_float_line(fout, outMeta, band3, line, Pv);
 
-    free(hh2);
-    free(vv2);
-    free(hv2);
-    free(hhvv);
+    free(Pd);
+    free(Ps);
+    free(Pv);
   }
 }
 
