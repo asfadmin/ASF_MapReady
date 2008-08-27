@@ -289,7 +289,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
       else if (ceos->sensor == AVNIR || ceos->sensor == PRISM) {
         int band_number;
         band_number = get_alos_band_number(inBandName[index]);
-        if (band_number<9)
+        if (band_number <= 9)
           sprintf(bandExt, "0%d", band_number);
         else
           sprintf(bandExt, "%d", band_number);
