@@ -775,21 +775,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (s != NO_CEOS_FILE_PAIR &&
         (ceos && ceos->sensor == PALSAR && ceos->product == RAW))
     {
-        for (i=0; i<nBands; i++) {
-            FREE(dataName[i]);
-            FREE(metaName[i]);
-        }
-        FREE(dataName);
-        FREE(metaName);
+        free_ceos_names(dataName, metaName);
         FREE(basename);
         asfPrintError("Palsar Level 0 unsupported.\n");
     }
-    for (i=0; i<nBands; i++) {
-        FREE(dataName[i]);
-        FREE(metaName[i]);
-    }
-    FREE(dataName);
-    FREE(metaName);
+    free_ceos_names(dataName, metaName);
     FREE(basename);
   }
 
