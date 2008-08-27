@@ -1133,7 +1133,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
         meta->general->y_pixel_size = hypot(x1-x2, y1-y2)/(double)nl;
         printf("Calculated y pixel size: %f\n", meta->general->y_pixel_size);
-        
+
         double swath_vel = calc_swath_velocity(dssr,dataName[0],meta);
         printf("     Other method gives: %f\n",
             meta->sar->azimuth_time_per_pixel * swath_vel);
@@ -1142,7 +1142,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
             // use value from other method...
             meta->general->y_pixel_size =
                 meta->sar->azimuth_time_per_pixel * swath_vel;
-            
+
             if (meta->general->y_pixel_size == 0) {
                 // can't figure out the azimuth pixel size...
                 asfPrintWarning("Failed to determine azimuth pixel size.\n");
@@ -1167,7 +1167,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     // for comparison, calculate using the workreport file (old method)
     // -- taking out this for now, it seems the swath velocity calculation
     //    is working out ok...
-    //double delta; 
+    // double delta;
     double workreport_atpp=-1;
     //if (get_alos_delta_time (in_fName, &delta))
     //    workreport_atpp = delta / meta->sar->original_line_count;
@@ -1844,18 +1844,18 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   meta->general->orbit = ceos->shr.orbit;
   meta->general->orbit_direction = ceos->shr.orbit_dir[0];
   substr = ceos->shr.work_scene_id;
-  for (ii=0; ii<11; ii++)
-    substr++;
+  substr += 11;
   meta->general->frame = atoi(substr);
-  meta->general->band_count = ceos->shr.no_bands;;
-  strcpy(meta->general->bands, "");
+  meta->general->band_count = ceos->shr.no_bands; // Initial setting
+  strcpy(meta->general->bands, ""); // Initial setting
   meta->general->line_count = ceos->shr.lines;
   meta->general->sample_count = ceos->shr.samples;
   meta->general->start_line = 0;
   meta->general->start_sample = 0;
   if (ampr) {
-    if (strcmp(meta->general->mode, "1A")==0 ||
-  strcmp(meta->general->mode, "1B1")==0) {
+    if (strcmp(meta->general->mode, "1A")  == 0 ||
+        strcmp(meta->general->mode, "1B1") == 0)
+    {
       meta->general->x_pixel_size = ampr->x_pixel_size;
       meta->general->y_pixel_size = ampr->y_pixel_size;
     }
