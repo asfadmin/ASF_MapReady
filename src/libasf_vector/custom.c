@@ -5,8 +5,8 @@
 #include <ctype.h>
 
 // Initialize shape file
-static void shape_custom_init(char *inFile, const char *format, char *header, 
-			      int vertices)
+static void shape_custom_init(char *inFile, const char *format, char *header,
+                  int vertices)
 {
   char *dbaseFile;
   dbf_header_t *dbf;
@@ -31,22 +31,22 @@ static void shape_custom_init(char *inFile, const char *format, char *header,
     column = get_column(header, kk);
     for (ii=0; ii<nCols; ii++) {
       if (strncmp_case(column, dbf[ii].header, strlen(dbf[ii].header)-1) == 0
-	  && dbf[ii].visible) {
-	if (dbf[ii].format == DBF_STRING) {
-	  if (DBFAddField(dbase, dbf[ii].header, FTString, 255, 0) == -1)
-	    asfPrintError("Could not add %s field to database file\n",
-			  dbf[ii].header);
-	}
-	else if (dbf[ii].format == DBF_INTEGER) {
-	  if (DBFAddField(dbase, dbf[ii].header, FTInteger, 10, 0) == -1)
-	    asfPrintError("Could not add %s field to database file\n",
-			  dbf[ii].header);
-	}
-	else if (dbf[ii].format == DBF_DOUBLE) {
-	  if (DBFAddField(dbase, dbf[ii].header, FTDouble, 20, 10) == -1)
-	    asfPrintError("Could not add %s field to database file\n",
-			  dbf[ii].header);
-	}
+      && dbf[ii].visible) {
+    if (dbf[ii].format == DBF_STRING) {
+      if (DBFAddField(dbase, dbf[ii].header, FTString, 255, 0) == -1)
+        asfPrintError("Could not add %s field to database file\n",
+              dbf[ii].header);
+    }
+    else if (dbf[ii].format == DBF_INTEGER) {
+      if (DBFAddField(dbase, dbf[ii].header, FTInteger, 10, 0) == -1)
+        asfPrintError("Could not add %s field to database file\n",
+              dbf[ii].header);
+    }
+    else if (dbf[ii].format == DBF_DOUBLE) {
+      if (DBFAddField(dbase, dbf[ii].header, FTDouble, 20, 10) == -1)
+        asfPrintError("Could not add %s field to database file\n",
+              dbf[ii].header);
+    }
       }
     }
   }
@@ -84,9 +84,9 @@ int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
   // Read configuration file
   if (!read_header_config(format, &dbf, &nCols))
     asfPrintError("Don't currently know anything about the requested format "
-		  "(%s).\nHowever it can be added to 'header.lst' file in "
-		  "the share directory\n(%s)\n", uc(format), 
-		  get_asf_share_dir());
+          "(%s).\nHowever it can be added to 'header.lst' file in "
+          "the share directory\n(%s)\n", uc(format),
+          get_asf_share_dir());
 
   // Read input file and check the format
   // The first line needs to contain a format. Otherwise we suggest the use
@@ -99,17 +99,17 @@ int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
     if (p) {
       p++;
       while (isspace(*p))
-	p++;
+    p++;
       sscanf(p, "%s", test_format);
       if (strcmp_case(test_format, format) != 0)
-	asfPrintError("Format in the file (%s) does not match reqested "
-		      "format (%s),\n", test_format, format);
+    asfPrintError("Format in the file (%s) does not match reqested "
+              "format (%s),\n", test_format, format);
     }
   }
   else
     asfPrintError("The file (%s) does not contain any format information.\n"
-		  "In its current form it can only be ingested as generic "
-		  "csv file.\n", inFile);
+          "In its current form it can only be ingested as generic "
+          "csv file.\n", inFile);
 
   // Read the header information and determine how many vertices we have
   fgets(header, 4096, fp);
@@ -125,7 +125,7 @@ int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
   }
   if (nLat != nLon)
     asfPrintError("Number of lat (%d) and lon (%d) columns not matching.\n",
-		  nLat, nLon);
+          nLat, nLon);
   nVertices = nLat;
   double *lat = (double *) MALLOC(sizeof(double)*nVertices+1);
   double *lon = (double *) MALLOC(sizeof(double)*nVertices+1);
@@ -137,7 +137,7 @@ int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
 
   // Open shape file for some action
   open_shape(outFile, &dbase, &shape);
-  
+
   // Read values and write them to shape file
   char *sValue = (char *) MALLOC(sizeof(char)*255);
   int nValue, n=0;
@@ -150,32 +150,32 @@ int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
       sValue = get_column(line, kk);
       param = get_column(header, kk);
       for (ii=0; ii<nCols; ii++) {
-	if (strncmp_case(dbf[ii].header, param, strlen(dbf[ii].header)-1) == 0 
-			 && dbf[ii].visible) {
-	  
-	  // Check for geolocation columns
-	  if (strncmp_case(dbf[ii].header, "LAT", 3) == 0) {
-	    sscanf(sValue, "%lf", &lat[nLat]);
-	    nLat++;
-	  }
-	  else if (strncmp_case(dbf[ii].header, "LON", 3) == 0) {
-	    sscanf(sValue, "%lf", &lon[nLon]);
-	    nLon++;
-	  }
+    if (strncmp_case(dbf[ii].header, param, strlen(dbf[ii].header)-1) == 0
+             && dbf[ii].visible) {
 
-	  // Write values into the database
-	  if (dbf[ii].format == DBF_STRING)
-	    DBFWriteStringAttribute(dbase, n, field, sValue);
-	  else if (dbf[ii].format == DBF_INTEGER) {
-	    sscanf(sValue, "%i", &nValue);
-	    DBFWriteIntegerAttribute(dbase, n, field, nValue);
-	  }
-	  else if (dbf[ii].format == DBF_DOUBLE) {
-	    sscanf(sValue, "%lf", &fValue);
-	    DBFWriteDoubleAttribute(dbase, n, field, fValue);
-	  }
-	  field++;
-	}
+      // Check for geolocation columns
+      if (strncmp_case(dbf[ii].header, "LAT", 3) == 0) {
+        sscanf(sValue, "%lf", &lat[nLat]);
+        nLat++;
+      }
+      else if (strncmp_case(dbf[ii].header, "LON", 3) == 0) {
+        sscanf(sValue, "%lf", &lon[nLon]);
+        nLon++;
+      }
+
+      // Write values into the database
+      if (dbf[ii].format == DBF_STRING)
+        DBFWriteStringAttribute(dbase, n, field, sValue);
+      else if (dbf[ii].format == DBF_INTEGER) {
+        sscanf(sValue, "%i", &nValue);
+        DBFWriteIntegerAttribute(dbase, n, field, nValue);
+      }
+      else if (dbf[ii].format == DBF_DOUBLE) {
+        sscanf(sValue, "%lf", &fValue);
+        DBFWriteDoubleAttribute(dbase, n, field, fValue);
+      }
+      field++;
+    }
       }
     }
     lat[nVertices] = lat[0];
@@ -184,11 +184,11 @@ int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
     // Write shape object
     SHPObject *shapeObject=NULL;
     if (nVertices == 1)
-      shapeObject = 
-	SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0], NULL);
+      shapeObject =
+    SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0], NULL);
     else
       shapeObject =
-	SHPCreateSimpleObject(SHPT_POLYGON, nVertices+1, lon, lat, NULL);
+    SHPCreateSimpleObject(SHPT_POLYGON, nVertices+1, lon, lat, NULL);
     SHPWriteObject(shape, -1, shapeObject);
     SHPDestroyObject(shapeObject);
     n++;
@@ -220,9 +220,9 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
   // Read configuration file
   if (!read_header_config(format, &dbf, &nCols))
     asfPrintError("Don't currently know anything about the requested format "
-		  "(%s).\nHowever it can be added to 'header.lst' file in "
-		  "the share directory\n(%s)\n", uc(format), 
-		  get_asf_share_dir());
+          "(%s).\nHowever it can be added to 'header.lst' file in "
+          "the share directory\n(%s)\n", uc(format),
+          get_asf_share_dir());
 
   // Read input file and check the format
   // The first line needs to contain a format. Otherwise we suggest the use
@@ -235,17 +235,17 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
     if (p) {
       p++;
       while (isspace(*p))
-	p++;
+    p++;
       sscanf(p, "%s", test_format);
       if (strcmp_case(test_format, format) != 0)
-	asfPrintError("Format in the file (%s) does not match reqested "
-		      "format (%s),\n", test_format, format);
+    asfPrintError("Format in the file (%s) does not match reqested "
+              "format (%s),\n", test_format, format);
     }
   }
   else
     asfPrintError("The file (%s) does not contain any format information.\n"
-		  "In its current form it can only be ingested as generic "
-		  "csv file.\n", inFile);
+          "In its current form it can only be ingested as generic "
+          "csv file.\n", inFile);
 
   // Read the header information and determine how many vertices we have
   fgets(header, 4096, fp);
@@ -261,7 +261,7 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
   }
   if (nLat != nLon)
     asfPrintError("Number of lat (%d) and lon (%d) columns not matching.\n",
-		  nLat, nLon);
+          nLat, nLon);
   nVertices = nLat;
   double *lat = (double *) MALLOC(sizeof(double)*nVertices+1);
   double *lon = (double *) MALLOC(sizeof(double)*nVertices+1);
@@ -270,11 +270,12 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
   // and we have the column header information.
   // Initialize the KML file
   //kml_custom_init(outFile, format, header, nVertices);
-  
+
   // Read values and write them to shape file
   char *sValue = (char *) MALLOC(sizeof(char)*255);
-  int nValue, n=0;
-  double fValue;
+  //int nValue;
+  int n=0;
+  //double fValue;
 
   while (fgets(line, 4096, fp)) {
     nLat = nLon = 0;
@@ -283,21 +284,21 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
       sValue = get_column(line, kk);
       param = get_column(header, kk);
       for (ii=0; ii<nCols; ii++) {
-	if (strncmp_case(dbf[ii].header, param, strlen(dbf[ii].header)-1) == 0 
-			 && dbf[ii].visible) {
-	  
-	  // Check for geolocation columns
-	  if (strncmp_case(dbf[ii].header, "LAT", 3) == 0) {
-	    sscanf(sValue, "%lf", &lat[nLat]);
-	    nLat++;
-	  }
-	  else if (strncmp_case(dbf[ii].header, "LON", 3) == 0) {
-	    sscanf(sValue, "%lf", &lon[nLon]);
-	    nLon++;
-	  }
+    if (strncmp_case(dbf[ii].header, param, strlen(dbf[ii].header)-1) == 0
+             && dbf[ii].visible) {
 
-	  field++;
-	}
+      // Check for geolocation columns
+      if (strncmp_case(dbf[ii].header, "LAT", 3) == 0) {
+        sscanf(sValue, "%lf", &lat[nLat]);
+        nLat++;
+      }
+      else if (strncmp_case(dbf[ii].header, "LON", 3) == 0) {
+        sscanf(sValue, "%lf", &lon[nLon]);
+        nLon++;
+      }
+
+      field++;
+    }
       }
     }
     lat[nVertices] = lat[0];

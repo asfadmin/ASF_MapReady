@@ -4,32 +4,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <ctype.h>
-
-typedef struct {
-  char granule_name[64];
-  char granule_type[64];
-  char platform[64];
-  char sensor[64];
-  int orbit;
-  char beam_mode[64];
-  double off_nadir_angle;
-  char start_time[64];
-  char end_time[64];
-  double near_start_lat;
-  double near_start_lon;
-  double far_start_lat;
-  double far_start_lon;
-  double near_end_lat;
-  double near_end_lon;
-  double far_end_lat;
-  double far_end_lon;
-  double center_lat;
-  double center_lon;
-  int path_number;
-  int frame_number;
-  int cloud_cover;
-  double faraday_rotation;
-} ursa_type_t;
+#include "ursa.h"
 
 void ursa_init(ursa_type_t *ursa)
 {
@@ -187,7 +162,7 @@ static int find_col(char *line, char *column_header)
 }
 
 static void add_to_kml(FILE *fp, ursa_type_t *ursa, dbf_header_t *dbf,
-		       int nCols)
+               int nCols)
 {
   int ii;
   char begin[10], end[10];
@@ -209,73 +184,73 @@ static void add_to_kml(FILE *fp, ursa_type_t *ursa, dbf_header_t *dbf,
     }
     if (strcmp(dbf[ii].header, "Granule_Name") == 0)
       fprintf(fp, "%s<strong>Granule Name</strong>: %s <br>%s",
-	      begin, ursa->granule_name, end);
+          begin, ursa->granule_name, end);
     else if (strcmp(dbf[ii].header, "Granule_Type") == 0)
       fprintf(fp, "%s<strong>Granule Type</strong>: %s <br>%s",
-	      begin, ursa->granule_type, end);
+          begin, ursa->granule_type, end);
     else if (strcmp(dbf[ii].header, "Platform") == 0)
       fprintf(fp, "%s<strong>Platform</strong>: %s <br>%s",
-	      begin, ursa->platform, end);
+          begin, ursa->platform, end);
     else if (strcmp(dbf[ii].header, "Sensor") == 0)
       fprintf(fp, "%s<strong>Sensor</strong>: %s <br>%s",
-	      begin, ursa->sensor, end);
+          begin, ursa->sensor, end);
     else if (strcmp(dbf[ii].header, "Orbit") == 0)
       fprintf(fp, "%s<strong>Orbit</strong>: %d <br>%s",
-	      begin, ursa->orbit, end);
+          begin, ursa->orbit, end);
     else if (strcmp(dbf[ii].header, "Beam_mode") == 0)
       fprintf(fp, "%s<strong>Beam mode</strong>: %s <br>%s",
-	      begin, ursa->beam_mode, end);
+          begin, ursa->beam_mode, end);
     else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0)
       fprintf(fp, "%s<strong>Off Nadir Angle</strong>: %s <br>%s",
-	      begin, lf(ursa->off_nadir_angle), end);
+          begin, lf(ursa->off_nadir_angle), end);
     else if (strcmp(dbf[ii].header, "Start_Time") == 0)
       fprintf(fp, "%s<strong>Start Time</strong>: %s <br>%s",
-	      begin, ursa->start_time, end);
+          begin, ursa->start_time, end);
     else if (strcmp(dbf[ii].header, "End_Time") == 0)
       fprintf(fp, "%s<strong>End Time</strong>: %s <br>%s",
-	      begin, ursa->end_time, end);
+          begin, ursa->end_time, end);
     else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0)
       fprintf(fp, "%s<strong>Near Start Lat</strong>: %s <br>%s",
-	      begin, lf(ursa->near_start_lat), end);
+          begin, lf(ursa->near_start_lat), end);
     else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0)
       fprintf(fp, "%s<strong>Near Start Lon</strong>: %s <br>%s",
-	      begin, lf(ursa->near_start_lon), end);
+          begin, lf(ursa->near_start_lon), end);
     else if (strcmp(dbf[ii].header, "Far_Start_Lat") == 0)
       fprintf(fp, "%s<strong>Far Start Lat</strong>: %s <br>%s",
-	      begin, lf(ursa->far_start_lat), end);
+          begin, lf(ursa->far_start_lat), end);
     else if (strcmp(dbf[ii].header, "Far_Start_Lon") == 0)
       fprintf(fp, "%s<strong>Far Start Lon</strong>: %s <br>%s",
-	      begin, lf(ursa->far_start_lon), end);
+          begin, lf(ursa->far_start_lon), end);
     else if (strcmp(dbf[ii].header, "Near_End_Lat") == 0)
       fprintf(fp, "%s<strong>Near End Lat</strong>: %s <br>%s",
-	      begin, lf(ursa->near_end_lat), end);
+          begin, lf(ursa->near_end_lat), end);
     else if (strcmp(dbf[ii].header, "Near_End_Lon") == 0)
       fprintf(fp, "%s<strong>Near End Lon</strong>: %s <br>%s",
-	      begin, lf(ursa->near_end_lon), end);
+          begin, lf(ursa->near_end_lon), end);
     else if (strcmp(dbf[ii].header, "Far_End_Lat") == 0)
       fprintf(fp, "%s<strong>Far End Lat</strong>: %s <br>%s",
-	      begin, lf(ursa->far_end_lat), end);
+          begin, lf(ursa->far_end_lat), end);
     else if (strcmp(dbf[ii].header, "Far_End_Lon") == 0)
       fprintf(fp, "%s<strong>Far End Lon</strong>: %s <br>%s",
-	      begin, lf(ursa->far_end_lon), end);
+          begin, lf(ursa->far_end_lon), end);
     else if (strcmp(dbf[ii].header, "Center_Lat") == 0)
       fprintf(fp, "%s<strong>Center Lat</strong>: %s <br>%s",
-	      begin, lf(ursa->center_lat), end);
+          begin, lf(ursa->center_lat), end);
     else if (strcmp(dbf[ii].header, "Center_Lon") == 0)
       fprintf(fp, "%s<strong>Center Lon</strong>: %s <br>%s",
-	      begin, lf(ursa->center_lon), end);
+          begin, lf(ursa->center_lon), end);
     else if (strcmp(dbf[ii].header, "Path_Number") == 0)
       fprintf(fp, "%s<strong>Path Number</strong>: %d <br>%s",
-	      begin, ursa->path_number, end);
+          begin, ursa->path_number, end);
     else if (strcmp(dbf[ii].header, "Frame_Number") == 0)
       fprintf(fp, "%s<strong>Frame Number</strong>: %d <br>%s",
-	      begin, ursa->frame_number, end);
+          begin, ursa->frame_number, end);
     else if (strcmp(dbf[ii].header, "Cloud_Cover") == 0)
       fprintf(fp, "%s<strong>Cloud Cover</strong>: %d <br>%s",
-	      begin, ursa->cloud_cover, end);
+          begin, ursa->cloud_cover, end);
     else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0)
       fprintf(fp, "%s<strong>Faraday Rotation</strong>: %s <br>%s",
-	      begin, lf(ursa->faraday_rotation), end);
+          begin, lf(ursa->faraday_rotation), end);
   }
   fprintf(fp, "</td></tr></table>\n");
   fprintf(fp, "  ]]></description>\n");
@@ -297,16 +272,16 @@ static void add_to_kml(FILE *fp, ursa_type_t *ursa, dbf_header_t *dbf,
   fprintf(fp, "    <outerBoundaryIs>\n");
   fprintf(fp, "     <LinearRing>\n");
   fprintf(fp, "      <coordinates>\n");
-  fprintf(fp, "       %.12f,%.12f,7000\n", 
-	  ursa->near_start_lon, ursa->near_start_lat);
-  fprintf(fp, "       %.12f,%.12f,7000\n", 
-	  ursa->far_start_lon, ursa->far_start_lat);
-  fprintf(fp, "       %.12f,%.12f,7000\n", 
-	  ursa->far_end_lon, ursa->far_end_lat);
-  fprintf(fp, "       %.12f,%.12f,7000\n", 
-	  ursa->near_end_lon, ursa->near_end_lat);
-  fprintf(fp, "       %.12f,%.12f,7000\n", 
-	  ursa->near_start_lon, ursa->near_start_lat);
+  fprintf(fp, "       %.12f,%.12f,7000\n",
+      ursa->near_start_lon, ursa->near_start_lat);
+  fprintf(fp, "       %.12f,%.12f,7000\n",
+      ursa->far_start_lon, ursa->far_start_lat);
+  fprintf(fp, "       %.12f,%.12f,7000\n",
+      ursa->far_end_lon, ursa->far_end_lat);
+  fprintf(fp, "       %.12f,%.12f,7000\n",
+      ursa->near_end_lon, ursa->near_end_lat);
+  fprintf(fp, "       %.12f,%.12f,7000\n",
+      ursa->near_start_lon, ursa->near_start_lat);
   fprintf(fp, "      </coordinates>\n");
   fprintf(fp, "     </LinearRing>\n");
   fprintf(fp, "    </outerBoundaryIs>\n");
@@ -382,10 +357,10 @@ static int check_ursa_location(FILE *ifp, char **header_line, int *n)
   fgets(header, 1024, ifp);
   strip_end_whitesp(header);
   int nColumns = get_number_columns(header);
-  
+
   // Read configuration file
   read_header_config("URSA", &dbf, &nCols);
-  
+
   // ensure we have the columns we need
   int granule_col = find_col(header, "Granule Name");
   int near_start_lat_col = find_col(header, "Near Start Lat");
@@ -396,13 +371,13 @@ static int check_ursa_location(FILE *ifp, char **header_line, int *n)
   int near_end_lon_col = find_col(header, "Near End Lon");
   int far_end_lat_col = find_col(header, "Far End Lat");
   int far_end_lon_col = find_col(header, "Far End Lon");
-  
+
   // Check whether all visible columns are actually available in the file
   for (ii=0; ii<nCols; ii++) {
     if (find_col(header, dbf[ii].header) < 0)
       dbf[ii].visible = FALSE;
   }
-  
+
   int all_ok=TRUE;
   if (granule_col < 0) {
     printf("Missing: Granule Name\n");
@@ -458,7 +433,7 @@ int ursa2kml(char *in_file, char *out_file, int listFlag)
   char *header;
   int nCols, nColumns;
   char line[1024];
-  
+
   // Read configuration file
   read_header_config("URSA", &dbf, &nCols);
 
@@ -471,28 +446,28 @@ int ursa2kml(char *in_file, char *out_file, int listFlag)
     printf("Failed to open output file %s: %s\n", out_file, strerror(errno));
     return 0;
   }
-  
+
   kml_header(ofp);
-  
+
   while (fgets(line, 1022, ifp) != NULL) {
     strip_end_whitesp(line);
-    
+
     // ensure all lines end with a comma, that way the final column
     // does not need special treatment
     line[strlen(line)+1] = '\0';
     line[strlen(line)] = ',';
-    
+
     // now get the individual column values
     ursa_init(&ursa);
     if (read_ursa_line(header, nColumns, line, &ursa))
       add_to_kml(ofp, &ursa, dbf, nCols);
   }
-  
+
   kml_footer(ofp);
-  
+
   fclose(ifp);
   fclose(ofp);
-  
+
   return 1;
 }
 
@@ -540,8 +515,8 @@ void shape_ursa_init(char *inFile, char *header)
       if (DBFAddField(dbase, "BEAM_MODE", FTString, length, 0) == -1)
         asfPrintError("Could not add BEAM_MODE field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0 && 
-	     dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0 &&
+         dbf[ii].visible) {
       if (DBFAddField(dbase, "OFF_NADIR", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add OFF_NADIR field to database file\n");
     }
@@ -553,13 +528,13 @@ void shape_ursa_init(char *inFile, char *header)
       if (DBFAddField(dbase, "END_TIME", FTString, length, 0) == -1)
         asfPrintError("Could not add END_TIME field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 && 
-	     dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 &&
+         dbf[ii].visible) {
       if (DBFAddField(dbase, "NSTART_LAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add NSTART_LAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 && 
-	     dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 &&
+         dbf[ii].visible) {
       if (DBFAddField(dbase, "NSTART_LON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add NSTART_LON field to database file\n");
     }
@@ -607,8 +582,8 @@ void shape_ursa_init(char *inFile, char *header)
       if (DBFAddField(dbase, "CLOUDCOVER", FTInteger, 5, 0) == -1)
         asfPrintError("Could not add CLOUDCOVER field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0 && 
-	     dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0 &&
+         dbf[ii].visible) {
       if (DBFAddField(dbase, "FARADAYROT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add FARADAYROT field to database file\n");
     }
@@ -616,22 +591,22 @@ void shape_ursa_init(char *inFile, char *header)
 
   // Close the database for initialization
   DBFClose(dbase);
-  
+
   // Open shapefile for initialization
   shape = SHPCreate(inFile, SHPT_POLYGON);
   if (!shape)
     asfPrintError("Could not create shapefile '%s'\n", inFile);
-  
+
   // Close shapefile for initialization
   SHPClose(shape);
-  
+
   FREE(dbaseFile);
 
   return;
 }
 
 static void add_to_shape(DBFHandle dbase, SHPHandle shape, ursa_type_t *ursa,
-			 dbf_header_t *dbf, int nCols, int n)
+             dbf_header_t *dbf, int nCols, int n)
 {
   int ii, field = 0;
 
@@ -661,8 +636,8 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, ursa_type_t *ursa,
       DBFWriteStringAttribute(dbase, n, field, ursa->beam_mode);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0 && 
-	     dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0 &&
+         dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, ursa->off_nadir_angle);
       field++;
     }
@@ -674,13 +649,13 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, ursa_type_t *ursa,
       DBFWriteStringAttribute(dbase, n, field, ursa->end_time);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 && 
-	     dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 &&
+         dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, ursa->near_start_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 && 
-	     dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 &&
+         dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, ursa->near_start_lon);
       field++;
     }
@@ -728,8 +703,8 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, ursa_type_t *ursa,
       DBFWriteIntegerAttribute(dbase, n, field, ursa->cloud_cover);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0 && 
-	     dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0 &&
+         dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, ursa->faraday_rotation);
       field++;
     }
@@ -743,7 +718,7 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, ursa_type_t *ursa,
   lat[2] = ursa->far_end_lat;
   lon[2] = ursa->far_end_lon;
   lat[3] = ursa->near_end_lat;
-  lon[3] = ursa->near_end_lon;  
+  lon[3] = ursa->near_end_lon;
 
   // Write shape object
   SHPObject *shapeObject=NULL;

@@ -900,7 +900,18 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
   DBFClose(dbase);
 
   // Open shapefile for initialization
-  shape = SHPCreate(inFile, SHPT_POLYGON);
+  char tmpInFile[1024];
+  strcpy(tmpInFile, inFile);
+  if (strcmp_case(meta->general->sensor, "ALOS") == 0) {
+      // KLUDGE ALERT!  SHPCreate() below replaces the file extension in inFile
+      // by searching from the end of the filename in reverse for a '.' character,
+      // then appends .shx and .shp to the two filenames that it produces ...Unfortunately,
+      // this results in truncated ALOS basenames in the output files AND we don't own
+      // the shape library.  So, for ALOS only, append a dummy extension for the shape
+      // library to snip off and consequently keep the original ALOS basename intact:
+      sprintf(tmpInFile, "%s.dummy", inFile);
+  }
+  shape = SHPCreate(tmpInFile, SHPT_POLYGON);
   if (!shape)
     asfPrintError("Could not create shapefile '%s'\n", inFile);
 
