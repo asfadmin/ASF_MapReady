@@ -167,6 +167,7 @@ void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
       // library to snip off and consequently keep the original ALOS basename intact:
       sprintf(tmpInFile, "%s.dummy", inFile);
   }
+  meta_free(meta);
   *shape = SHPOpen(tmpInFile, "r+b");
   if (*shape == NULL)
     asfPrintError("Could not open shapefile '%s\n", inFile);
