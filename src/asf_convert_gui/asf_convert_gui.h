@@ -219,6 +219,7 @@ extern int COMP_COL_SIMULATED_SAR_FILE;
 extern int COMP_COL_FARADAY_FILE;
 extern int COMP_COL_EA_HIST_FILE;
 extern int COMP_COL_CLASS_MAP_FILE;
+extern int COMP_COL_METADATA_FILE;
 
 /********************************** Prototypes ******************************/
 

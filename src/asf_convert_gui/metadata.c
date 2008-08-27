@@ -25,14 +25,13 @@ gchar * build_asf_metadata_filename(gchar * name)
     }
 }
 
-void show_asf_meta_data(gchar * out_name)
+void show_asf_meta_data(gchar * metadata_filename)
 {
     GtkWidget *metadata_dialog;
     GtkWidget *metadata_text;
     GtkWidget *metadata_label;
     GtkTextBuffer * text_buffer;
     FILE * metadata_file;
-    gchar * metadata_filename;
     gchar * label_text;
     const int use_fixed_width = TRUE;
 
@@ -41,8 +40,6 @@ void show_asf_meta_data(gchar * out_name)
 
     text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(metadata_text));
     gtk_text_buffer_set_text(text_buffer, "", -1);
-
-    metadata_filename = build_asf_metadata_filename(out_name);
 
     label_text = (gchar *) g_malloc(sizeof(gchar) * 
         (strlen(metadata_filename) + 1024));
@@ -114,7 +111,6 @@ void show_asf_meta_data(gchar * out_name)
     }
 
     g_free(label_text);
-    g_free(metadata_filename);
 }
 
 #ifdef THUMBNAILS

@@ -27,6 +27,7 @@ int COMP_COL_SIMULATED_SAR_FILE;
 int COMP_COL_FARADAY_FILE;
 int COMP_COL_EA_HIST_FILE;
 int COMP_COL_CLASS_MAP_FILE;
+int COMP_COL_METADATA_FILE;
 
 /* Returns the length of the prepension if there is an allowed
    prepension, otherwise returns 0 (no prepension -> chceck extensions) */
@@ -326,7 +327,8 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 
     // pull out the useful intermediates
     char *layover_mask=NULL, *clipped_dem=NULL, *simulated_sar=NULL,
-      *tmp_dir=NULL, *faraday=NULL, *ea_hist=NULL, *class_map=NULL;
+      *tmp_dir=NULL, *faraday=NULL, *ea_hist=NULL, *class_map=NULL,
+      *meta_file=NULL;
 
     int i, num_outputs=0, max_outputs=64;
     char **outs = MALLOC(sizeof(char*)*max_outputs);
@@ -344,6 +346,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
         get_intermediate(line, "Faraday", &faraday);
         get_intermediate(line, "Entropy-Alpha Histogram", &ea_hist);
         get_intermediate(line, "Entropy-Alpha Class Map", &class_map);
+        get_intermediate(line, "Meta", &meta_file);
         if (get_intermediate(line, "Output", &outs[num_outputs]))
           if (num_outputs < max_outputs-1)
             ++num_outputs;
@@ -358,6 +361,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     if (!faraday) faraday = STRDUP("");
     if (!ea_hist) ea_hist = STRDUP("");
     if (!class_map) class_map = STRDUP("");
+    if (!meta_file) meta_file = STRDUP("");
 
     // now add to the completed files list!  Use the first listed file
     // as the output filename, since that is the one that was thumbnailed
@@ -374,6 +378,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_FARADAY_FILE, faraday,
                        COMP_COL_EA_HIST_FILE, ea_hist,
                        COMP_COL_CLASS_MAP_FILE, class_map,
+                       COMP_COL_METADATA_FILE, meta_file,
                        -1);
 
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
@@ -385,6 +390,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     free(faraday);
     free(ea_hist);
     free(class_map);
+    free(meta_file);
 
     for (i=0; i<num_outputs; ++i)
       FREE(outs[i]);
@@ -996,6 +1002,16 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_CLASS_MAP_FILE);
+
+    /* Next Column: Metadata File (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Metadata");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_METADATA_FILE);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list),
         GTK_TREE_MODEL(completed_list_store));

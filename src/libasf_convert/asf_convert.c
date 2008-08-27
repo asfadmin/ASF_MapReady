@@ -356,12 +356,13 @@ static void save_intermediate(convert_config *cfg, char *tag, char *filename)
 }
 
 /* Make a copy of the metdata file. */
-static void copy_meta(char *src, char *dest)
+static void copy_meta(convert_config *cfg, char *src, char *dest)
 {
   char *tmp1 = appendExt(src, ".meta");
   char *tmp2 = appendExt(dest, ".meta");
   fileCopy(tmp1, tmp2);
   free(tmp1);
+  save_intermediate(cfg, "Meta", tmp2);
   free(tmp2);
 }
 
@@ -2265,7 +2266,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             }
           }
           if (in_tmp) {
-            copy_meta(in_tmp, outFile);
+            copy_meta(cfg, in_tmp, outFile);
             free(in_tmp);
           }
         }
@@ -2686,7 +2687,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   // Don't need to do this if we skipped import, we'd already have .meta
   int is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6)==0;
   if (cfg->general->import && !is_airsar)
-    copy_meta(inFile, outFile);
+    copy_meta(cfg, inFile, outFile);
 
   meta_parameters *meta = meta_read(inFile);
   if (strlen(cfg->export->lut) > 0) {

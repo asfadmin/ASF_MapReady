@@ -676,13 +676,13 @@ handle_display_asf_metadata()
                                        completed_list_store,
                                        &iter))
     {
-        gchar * out_name;
+        gchar *meta_name;
 
         gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
-            COMP_COL_OUTPUT_FILE, &out_name, -1);
+            COMP_COL_METADATA_FILE, &meta_name, -1);
 
-        show_asf_meta_data(out_name);
-        g_free(out_name);
+        show_asf_meta_data(meta_name);
+        g_free(meta_name);
     }
     else
     {
