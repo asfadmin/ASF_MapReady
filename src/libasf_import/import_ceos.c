@@ -2078,7 +2078,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                     break;
             }
         }
-            if (strcmp(meta->general->sensor,"ERS2") == 0)
+            if (strcmp(meta->general->sensor,"ERS2") == 0 && apply_ers2_gain_fix_flag)
             amp_float_buf[kk] =
                 apply_ers2_gain_fix(radiometry, gain_adj, amp_float_buf[kk]);
       }
