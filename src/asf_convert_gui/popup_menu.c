@@ -9,6 +9,10 @@
 #include <shellapi.h>
 #endif
 
+#include <tiff.h>
+#include <tiffio.h>
+#include <xtiffio.h>
+#include <geotiff_support.h>
 #include "asf_convert_gui.h"
 #include <asf.h>
 
@@ -509,15 +513,15 @@ static GList *get_selected_rows(GtkWidget *files_list, GtkListStore *store)
   selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
 
   GtkTreeModel *model = GTK_TREE_MODEL(store);
-  
+
   GList *selected_rows;
   selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
-  
+
   if (!selected_rows) {
     // if we have just 1 item in the whole list, select it, and return it
     int n = gtk_tree_model_iter_n_children(model, NULL);
     if (n==1) {
-      gtk_tree_selection_select_all(selection);      
+      gtk_tree_selection_select_all(selection);
       selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
     }
   }
@@ -866,7 +870,7 @@ handle_view_output()
           // puts the output filename in the "intermediates" list.
           // Doesn't hurt to leave it, though it shouldn't ever run.
           char *tmp_out=NULL;
-          
+
           if (try_suffix(out_name, "_HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_VV", &tmp_out))
@@ -883,7 +887,7 @@ handle_view_output()
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_04", &tmp_out))
             show_image_with_asf_view(tmp_out);
-          
+
           // some SLC possibilities
           else if (try_suffix(out_name, "_AMP-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
@@ -900,7 +904,7 @@ handle_view_output()
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_GAMMA-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
-          
+
           else if (try_suffix(out_name, "_Entropy", &tmp_out))
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_Anisotropy", &tmp_out))
@@ -920,7 +924,7 @@ handle_view_output()
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_GAMMA_DB-AMP-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
-          
+
           // some airsar possibilities
           else if (try_suffix(out_name, "_c_vv", &tmp_out))
             show_image_with_asf_view(tmp_out);
@@ -941,16 +945,16 @@ handle_view_output()
                     "   %s\n", out_name);
             message_box(msg);
           }
-          
+
           FREE(tmp_out);
         }
-        
+
         g_free(out_name);
     }
     else {
       show_please_select_message();
     }
-    
+
     return TRUE;
 }
 
@@ -1086,10 +1090,18 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 
         char *base_output_name = get_basename(out_name);
 
-        if (fileExists(metadata_name))
-            meta = meta_read(metadata_name);
-        else
+        if (fileExists(metadata_name)) {
+            if (isGeotiff(metadata_name)) {
+                int ignore[MAX_BANDS];
+                meta = read_generic_geotiff_metadata(metadata_name, ignore, NULL);
+            }
+            else {
+                meta = meta_read(metadata_name);
+            }
+        }
+        else {
             meta = meta_create(metadata_name);
+        }
 
         if (meta && meta->general &&
             meta_is_valid_double(meta->general->center_latitude) &&
