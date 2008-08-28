@@ -1773,7 +1773,7 @@ export_band_image (const char *metadata_file_name,
     // set the output filename
     *noutputs = 1;
     char **outs = MALLOC(sizeof(char*));
-    outs[0] = STRDUP(image_data_file_name);
+    outs[0] = STRDUP(output_file_name);
     *output_names = outs;
   }
   else {

@@ -735,11 +735,12 @@ setup_files_list()
     COL_STATUS = 4;
     COL_LOG = 5;
 
-    completed_list_store = gtk_list_store_new(13,
+    completed_list_store = gtk_list_store_new(14,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING,
                                               GDK_TYPE_PIXBUF,
                                               GDK_TYPE_PIXBUF,
+                                              G_TYPE_STRING,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING,
@@ -763,6 +764,7 @@ setup_files_list()
     COMP_COL_FARADAY_FILE = 10;
     COMP_COL_EA_HIST_FILE = 11;
     COMP_COL_CLASS_MAP_FILE = 12;
+    COMP_COL_METADATA_FILE = 13;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
