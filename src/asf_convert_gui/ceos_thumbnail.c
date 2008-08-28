@@ -102,6 +102,10 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
         meta_free(meta);
         return NULL;
     }
+    if (num_bands < 1) {
+        meta_free(meta);
+        return NULL;
+    }
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
@@ -181,36 +185,62 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     for (ii = 0; ii < tsx*tsy; ++ii) {
-        float rval = fdata[0][ii];
-        float gval = fdata[1][ii];
-        float bval = fdata[2][ii];
+        float max_red,   min_red;
+        float max_green, min_green;
+        float max_blue,  min_blue;
+        float rval;
+        float gval;
+        float bval;
+        if (num_bands <= 2) {
+            // If we don't have enough bands to do a 3-color image, just make
+            // a grayscale thumbnail
+            rval = fdata[0][ii];
+            gval = fdata[0][ii];
+            bval = fdata[0][ii];
+            min_red = min_green = min_blue = min[0];
+            max_red = max_green = max_blue = max[0];
+        }
+        else if (num_bands >= 3) {
+            // If we have 3 or more bands, use the first 3 to make a color
+            // thumbnail (without further information about which band represents
+            // what color or wavelengths, this is the best we can do)
+            rval = fdata[0][ii];
+            gval = fdata[1][ii];
+            bval = fdata[2][ii];
+            min_red   = min[0];
+            max_red   = max[0];
+            min_green = min[1];
+            max_green = max[1];
+            min_blue  = min[2];
+            max_blue  = max[2];
+        }
         guchar ruval, guval, buval;
-        if (rval < min[0]) {
+        if (rval < min_red) {
             ruval = 0;
         }
-        else if (rval > max[0]) {
+        else if (rval > max_red) {
             ruval = 255;
         }
         else {
-            ruval = (guchar) round(((rval - min[0]) / (max[0] - min[0])) * 255);
+            ruval = (guchar) round(((rval - min_red) / (max_red - min_red)) * 255);
         }
-        if (gval < min[1]) {
+        if (gval < min_green) {
             guval = 0;
         }
-        else if (gval > max[1]) {
+        else if (gval > max_green) {
             guval = 255;
         }
         else {
-            guval = (guchar) round(((gval - min[1]) / (max[1] - min[1])) * 255);
+            guval = (guchar) round(((gval - min_green) / (max_green - min_green)) * 255);
         }
-        if (bval < min[2]) {
+        if (bval < min_blue) {
             buval = 0;
         }
-        else if (bval > max[2]) {
+        else if (bval > max_blue) {
             buval = 255;
         }
         else {
-            buval = (guchar) round(((bval - min[2]) / (max[2] - min[2])) * 255);
+            buval = (guchar) round(((bval - min_blue) / (max_blue - min_blue)) * 255);
         }
 
         int n = 3*ii;
