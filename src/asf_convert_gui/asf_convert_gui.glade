@@ -1397,6 +1397,7 @@
 				      <child>
 					<widget class="GtkRadioButton" id="rb_pauli">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">The Pauli decomposition is a popular decomposition, where each color represents a different scattering mechanism (Red: even, Green: volume, Blue: odd)</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes">Pauli Decomposition  </property>
 					  <property name="use_underline">True</property>
@@ -1451,6 +1452,7 @@
 				      <child>
 					<widget class="GtkRadioButton" id="rb_sinclair">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">The Sinclair decomposition is the only one that doesn't require SLC data (though it still must be quad-pol)</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes">Sinclair Decomposition  </property>
 					  <property name="use_underline">True</property>
@@ -1500,6 +1502,7 @@
 				  <child>
 				    <widget class="GtkRadioButton" id="rb_cloude8">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">The Cloude-Pottier decompositions classify each pixel based on its entropy, anisotropy and alpha values.</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Cloude-Pottier (classification with 8 categories)</property>
 				      <property name="use_underline">True</property>
@@ -1521,6 +1524,7 @@
 				  <child>
 				    <widget class="GtkRadioButton" id="rb_cloude16">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">The Cloude-Pottier decompositions classify each pixel based on its entropy, anisotropy and alpha values.</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Cloude-Pottier (classification with 16 categories)</property>
 				      <property name="use_underline">True</property>
@@ -1530,7 +1534,7 @@
 				      <property name="inconsistent">False</property>
 				      <property name="draw_indicator">True</property>
 				      <property name="group">rb_pauli</property>
-				      <signal name="toggled" handler="on_rb_cloude16_toggled" last_modification_time="Fri, 09 May 2008 18:44:43 GMT"/>
+				      <signal name="toggled" handler="on_rb_cloude16_toggled" last_modification_time="Wed, 27 Aug 2008 22:21:43 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -1570,6 +1574,7 @@
 				      <child>
 					<widget class="GtkRadioButton" id="rb_freeman_durden">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">The Freeman-Durden decomposition is similar to the Pauli - it attempts to represent different scattering mechanisms with different colors.</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes">Freeman-Durden  </property>
 					  <property name="use_underline">True</property>
