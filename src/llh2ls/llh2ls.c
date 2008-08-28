@@ -34,12 +34,22 @@ int main(int argc,char *argv[])
   lon = atof(argv[3]);
   if (argc == 5) height = atof(argv[4]);
 
-  meta_parameters *meta;
-  char *meta_file = appendExt(argv[1], ".meta");
-  if (fileExists(meta_file))
-    meta = meta_read(meta_file);
-  else
+  meta_parameters *meta=NULL;
+  char *ext = findExt(argv[1]);
+  if (ext && strcmp_case(ext, ".L")==0)
     meta = meta_create(argv[1]);
+  else if (ext && strcmp_case(ext, ".meta")==0)
+    meta = meta_read(argv[1]);
+  else {
+    char *meta_file = appendExt(argv[1], ".meta");
+    if (fileExists(meta_file))
+      meta = meta_read(meta_file);
+    else
+      meta = meta_create(argv[1]);
+  }
+
+  if (!meta)
+    asfPrintError("Could not find metadata file: %s\n", argv[1]);
 
   if (!meta_get_lineSamp(meta, lat, lon, height, &line, &samp)) {
     printf("Line:   %f\n", line);
