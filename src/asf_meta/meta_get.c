@@ -190,7 +190,9 @@ double meta_incid(meta_parameters *meta,double y,double x)
 
   double sr = meta_get_slant(meta,y,x);
 
-  if (meta_is_valid_double(meta->sar->incid_a[0])) {
+  //if (meta_is_valid_double(meta->sar->incid_a[0])) {
+  if (strcmp_case(meta->general->sensor, "ALOS") == 0 &&
+      strcmp_case(meta->general->sensor_name, "SAR") == 0) {
     double R = sr/1000.;
     double R2=R*R;
     return
