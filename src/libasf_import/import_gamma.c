@@ -14,6 +14,7 @@ meta_parameters *meta_read_gamma_isp(const char *inName,
 {
   gamma_isp *gamma;
   meta_parameters *meta=NULL;
+  stateVector stVec;
   FILE *fp;
   ymd_date ymd;
   julian_date jd;
@@ -40,10 +41,9 @@ meta_parameters *meta_read_gamma_isp(const char *inName,
         sprintf(gamma->sensor, "%s", str);
       }
       else if (strncmp(key, "date:", 5) == 0)
-        sscanf(value, "%d %d %d %d %d %lf",
-               &gamma->acquisition.year,   &gamma->acquisition.month,
-               &gamma->acquisition.day,    &gamma->acquisition.hour,
-               &gamma->acquisition.minute, &gamma->acquisition.seconds);
+        sscanf(value, "%d %d %d",
+               &gamma->acquisition.year, &gamma->acquisition.month,
+               &gamma->acquisition.day);
       else if (strncmp(key, "start_time:", 11) == 0)
         gamma->start_time = atof(value);
       else if (strncmp(key, "center_time:", 12) == 0)
@@ -191,6 +191,16 @@ meta_parameters *meta_read_gamma_isp(const char *inName,
                  &gamma->stVec->vecs[ii].vec.vel.y,
                  &gamma->stVec->vecs[ii].vec.vel.z);
         }
+
+	// Apply offset between image starting time and state vectors
+	double offset = gamma->start_time - gamma->stVec->second;
+	for (ii=0; ii<gamma->stVec->vector_count; ii++) {
+	  stVec = propagate(gamma->stVec->vecs[ii].vec,
+			    gamma->stVec->vecs[ii].time,
+			    gamma->stVec->vecs[ii].time + offset);
+	  gamma->stVec->vecs[ii].vec = stVec;
+	}
+	gamma->stVec->second = gamma->start_time;
       }
     }
   }
@@ -274,11 +284,10 @@ meta_parameters *meta_read_gamma_msp(const char *inName,
         sprintf(gamma->title, "%s", str);
       }
       else if (strncmp(key, "date:", 5) == 0)
-        sscanf(value, "%d %d %d %d %d %lf",
-               &gamma->acquisition.year,   &gamma->acquisition.month,
-               &gamma->acquisition.day,    &gamma->acquisition.hour,
-               &gamma->acquisition.minute, &gamma->acquisition.seconds);
-      else if (strncmp(key, "raw_data_start_time:", 11) == 0)
+        sscanf(value, "%d %d %d",
+               &gamma->acquisition.year, &gamma->acquisition.month,
+               &gamma->acquisition.day);
+      else if (strncmp(key, "raw_data_start_time:", 20) == 0)
         sscanf(value, "%d %d %lf",
                &gamma->raw_data_start_time.hour,
                &gamma->raw_data_start_time.minute,
@@ -460,6 +469,12 @@ meta_parameters *meta_read_gamma_msp(const char *inName,
                  &gamma->stVec->vecs[ii].vec.vel.y,
                  &gamma->stVec->vecs[ii].vec.vel.z);
         }
+	double offset = gamma->stVec->second - gamma->acquisition.seconds;
+	for (ii=0; ii<gamma->stVec->vector_count; ii++)
+	  propagate(gamma->stVec->vecs[ii].vec,
+		    gamma->stVec->vecs[ii].time,
+		    gamma->stVec->vecs[ii].time + offset);
+	gamma->stVec->second = gamma->acquisition.seconds;
       }
     }
   }

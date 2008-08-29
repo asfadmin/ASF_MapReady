@@ -115,12 +115,15 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
   meta->sar->azimuth_time_per_pixel = gamma->azimuth_line_time;
   meta->sar->slant_range_first_pixel = gamma->near_range_slc;
   meta->sar->slant_shift = 0.0;
+  meta->sar->time_shift = 0.0;
+  /* Under testing - does not seem to apply to the test data set.
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = fabs(meta->sar->original_line_count * meta->sar->azimuth_time_per_pixel);
   else
     meta->sar->time_shift = MAGIC_UNSET_DOUBLE;
+  */
   meta->sar->wavelength = SPD_LIGHT / gamma->radar_frequency;
   meta->sar->prf = gamma->prf;
   meta->sar->earth_radius = gamma->earth_radius_below_sensor;
@@ -151,6 +154,18 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
   // Fill state vector structure
   meta->state_vectors = meta_state_vectors_init(3);
   meta->state_vectors = gamma->stVec;
+
+  // Propagate the state vectors to start, center, end
+  int vector_count = 3;
+  double data_int = gamma->center_time - gamma->start_time;
+  while (fabs(data_int) > 15.0) {
+    data_int /= 2;
+    vector_count = vector_count*2-1;
+  }
+  propagate_state(meta, vector_count, data_int);
+  
+  // Generate location block
+  meta_get_corner_coords(meta);
 
   return meta;
 }
