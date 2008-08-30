@@ -461,17 +461,20 @@ int isGeotiff(const char *file)
         (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_TIEPOINTS, &num_tie_points, &tie_point);
         (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_PIXELSCALE, &num_pixel_scales, &pixel_scale);
     }
-    GTIFFree(gtif);
-    XTIFFClose(tiff);
 
-    if (num_tie_points == 6 && num_pixel_scales == 3 &&
+    if (gtif &&
+        num_tie_points == 6 && num_pixel_scales == 3 &&
         pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0)
     {
+        GTIFFree(gtif);
+        XTIFFClose(tiff);
         FREE(tie_point);
         FREE(pixel_scale);
         return 1;
     }
 
+    if (gtif) GTIFFree(gtif);
+    if (tiff) XTIFFClose(tiff);
     FREE(tie_point);
     FREE(pixel_scale);
     return 0;
