@@ -844,7 +844,7 @@
 					  <child>
 					    <widget class="GtkMenuItem" id="ceos_level_1">
 					      <property name="visible">True</property>
-					      <property name="label" translatable="yes">CEOS (1)</property>
+					      <property name="label" translatable="yes">CEOS (Level 1)</property>
 					      <property name="use_underline">True</property>
 					      <signal name="activate" handler="on_ceos_level_1_activate" last_modification_time="Wed, 08 Sep 2004 19:45:09 GMT"/>
 					    </widget>
