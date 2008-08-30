@@ -43,12 +43,16 @@ lib: ${OBJLIB}
 	mv libasf_metadata.a $(LIBDIR)
 	cp metadisplay.h $(ASF_INCLUDE_DIR)
 
-exe: metadata
+exe: metadata dumpCeosRecords
 
 metadata: metadata_main.c lib
 	$(CC) $(CFLAGS) -o metadata metadata_main.c $(LIBDIR)/libasf_metadata.a $(LIBS)
 	mv  metadata$(BIN_POSTFIX) $(BINDIR)
 	cp metadata.man ../../man/cat1/metadata.1 
+
+dumpCeosRecords: dumpCeosRecords.c lib
+	$(CC) $(CFLAGS) -o dumpCeosRecords dumpCeosRecords.c $(LIBDIR)/libasf_metadata.a $(LIBS)
+	mv dumpCeosRecords$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f *.o core

@@ -36,6 +36,115 @@ typedef enum {
   CEOS_TFDR=193         // Trailer File Descriptor Record - ALOS
 } CEOS_RECORD_TYPE;
 
+void dumpCeosRecord(const char *inName)
+{
+  FILE *fp;
+  struct HEADER bufhdr;
+  char **metaName=NULL;
+  struct trl_file_des_rec *tfdr=NULL;
+  int ii, trailer, total;
+  unsigned char *buff;
+
+  require_ceos_metadata(inName, &metaName, &trailer);
+
+  for (ii=0; ii<trailer+1; ii++) {
+    fp = FOPEN(metaName[ii], "r");
+    total = 0;
+
+    printf("\nFile: %s\n", metaName[ii]);
+    while (1==fread(&bufhdr, 12, 1, fp)) {
+      int itype, subtype[3], rec_seq, length, mallocBytes;
+      subtype[0] = bufhdr.rectyp[0];
+      itype = bufhdr.rectyp[1];
+      subtype[1] = bufhdr.rectyp[2];
+      subtype[2] = bufhdr.rectyp[3];
+      rec_seq = bigInt32(bufhdr.recnum);
+      length = bigInt32(bufhdr.recsiz);
+      total += length;
+      if ((itype==CEOS_FACDR && rec_seq==17 && length<=5000) ||
+          (itype==CEOS_FACDR && rec_seq==18)) {
+	tfdr = (struct trl_file_des_rec *) 
+	  MALLOC(sizeof(struct trl_file_des_rec));
+	if (trailer)
+	  get_tfdr(metaName[1], tfdr);
+	else
+	  get_tfdr(metaName[0], tfdr);
+	mallocBytes = length = tfdr->facdr_len[10];
+      }
+      else
+	mallocBytes = (length>16920) ? length : 16920;
+      buff=(unsigned char *)MALLOC(mallocBytes);
+      *(struct HEADER *)buff=bufhdr;
+      
+      printf("\nrecord type: %d ", itype);
+      switch (itype)
+	{
+	case (40):
+	  printf("(Attitude data record)\n");
+	  break;
+	case (70):
+          printf("(Data histograms record)\n");
+	  break;
+	case (60):
+	  printf("(Data quality summary record)\n");
+	  break;
+	case (10):
+	  printf("(Data set summary record)\n");
+	  break;
+	case (200):
+	case (210):
+	  printf("(Facility-related data record)\n");
+	  break;
+	case (20):
+	case (36):
+	  printf("(Map-projection data record)\n");
+	  break;
+	case (30):
+	  printf("(Platform position data record)\n");
+	  break;
+	case (50):
+	  printf("(Radiometric data record)\n");
+	  break;
+	case (80):
+	  printf("(Range Spectra Record)\n");
+	  break;
+	case (192):
+	  printf("(Imagery options file)\n");
+	  break;
+	case (300):
+	  printf("(File Descriptor Record)\n");
+	  break;
+	case (120):
+	  printf("(Processing Parameter Record)\n");
+	  break;
+	case (18):
+	  printf("(Scene Header Record)\n");
+	  break;
+	case (51):
+	  printf("(Radiometric Compensation Data Record)\n");
+	  break;
+	case (193):
+	  printf("(Trailer File Descriptor Record)\n");
+	  break;
+	}
+
+      printf("sub-record[1]: %d, sub-record[2]: %d sub_record[3]: %d\n",
+	     subtype[0], subtype[1], subtype[2]);
+      printf("sequence: %d, length: %d\n", rec_seq, length);
+
+      FREAD((buff)+12, length-12, 1, fp);
+    }
+    FCLOSE(fp);
+    
+    printf("\nTotal length of records: %i\n", total);
+  }
+  if (tfdr)
+    FREE(tfdr);
+
+
+  free_ceos_names(NULL, metaName);
+}
+
 int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
                   unsigned char **buff)
 {

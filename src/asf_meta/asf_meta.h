@@ -830,4 +830,7 @@ quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
 quadratic_2d get_incid(char *sarName, meta_parameters *meta);
 
+// Prototypes from get_ceos.c
+void dumpCeosRecord(const char *inName);
+
 #endif
