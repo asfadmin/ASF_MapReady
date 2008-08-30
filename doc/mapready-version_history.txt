@@ -1,7 +1,28 @@
 MapReady Version History
 
+MapReady 2.1.x (released 2008, tbd)
+New Functionality
+- New tool! create_thumbs is a command-line tool for generating
+  thumbnails.
+- New Polarimetric Decompositions:
+  * The Cloude-Pottier decomposition, with 8 or 16 classifications,
+    as well as the raw entropy/anisotropy/alpha values.
+  * Freeman-Durden
+- Faraday Rotation correction
+- In ASF View, the ability to overlay a shapefile, or a generic
+  CSV file, on top of the image.
+- Support for ingesting GeoTIFFs which use angular pixel sizes.
+- Support for viewing certain useful intermediate files generated
+  during processing.
+- MapReady now thumbnails GeoTIFFs loaded into the input file list.
 
-MapReady 2.0.8 (released 2008 July 30)
+Bug Fixes
+- Eliminated streaking at the edge of an image with some Radarsat
+  SLC data
+- Changing the output directory during processing no longer breaks
+  use of the "View Output" or "View Metadata" options.
+
+MapReady 2.0.13 (released 2008 August 27)
 New Functionality (GUI and command-line tools)
 - Support for single-look complex (SLC) data, including Palsar
   Level 1.1.
