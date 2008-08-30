@@ -397,7 +397,8 @@ void import_ceos(char *inBaseName, char *outBaseName,
                                           outDataName, outMetaName, meta, band,
                                           import_single_band, nBands, rad, db_flag);
         }
-        else if (ceos->product == SSG || ceos->product == GEC) {
+        else if (ceos->product == SSG || ceos->product == GEC ||
+		 ceos->product == SCN) {
           import_ceos_data(inBandName[index], inMetaName[0], outDataName,
                            outMetaName, bandExt, band, nBands, nBandsOut, rad,
                            line, sample, width, height,
@@ -1017,8 +1018,17 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
       asfPrintStatus("   Input data type: level two data\n");
       sprintf(geoStr, "geocoded ");
     }
-    else if (strncmp(meta->general->processor, "CSTARS", 6) == 0 ||
-         strncmp(meta->general->processor, "CDPF", 4) == 0) {
+    else if ((strncmp(meta->general->processor, "CSTARS", 6) == 0 ||
+	      strncmp(meta->general->processor, "CDPF", 4) == 0) &&
+	     meta->projection->type == SCANSAR_PROJECTION)
+    {
+      asfPrintStatus("   Input data type: level one data\n");
+      sprintf(geoStr, "");
+    }
+    else if ((strncmp(meta->general->processor, "CSTARS", 6) == 0 ||
+	      strncmp(meta->general->processor, "CDPF", 4) == 0) &&
+	     meta->projection->type != SCANSAR_PROJECTION)
+    {
       asfPrintStatus("   Input data type: level two data\n");
       sprintf(geoStr, "geocoded ");
     }

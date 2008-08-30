@@ -78,6 +78,10 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
       meta_parameters *meta);
 void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
          meta_parameters *meta);
+void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
+         meta_parameters *meta);
+void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
+         meta_parameters *meta);
 int  meta_sar_to_startXY (meta_parameters *meta,
                           double *startX, double *startY);
 double spheroidDiffFromAxis (spheroid_type_t spheroid, double n_semi_major, double n_semi_minor);
@@ -101,7 +105,7 @@ double get_sensor_orientation (const char *fName);
 
 void get_azimuth_time(ceos_description *ceos, const char *in_fName,
           meta_parameters *meta);
-
+char *get_scansar_beam_mode(struct proc_parm_rec *ppr);
 
 /* Prototypes from meta_init_stVec.c */
 void ceos_init_stVec(const char *fName,ceos_description *ceos,meta_parameters *sar);
@@ -147,6 +151,12 @@ static void beam_type_to_asf_beamname(
       strcpy(beamname, "ST2");
     else if (strncmp(beam_type, "S1", 2) == 0)
       strcpy(beamname, "ST1");
+    else if (strncmp(beam_type, "W3", 2) == 0)
+      strcpy(beamname, "WD3");
+    else if (strncmp(beam_type, "W2", 2) == 0)
+      strcpy(beamname, "WD2");
+    else if (strncmp(beam_type, "W1", 2) == 0)
+      strcpy(beamname, "WD1");
     else {
       strncpy(beamname, beam_type, btlen);
       beamname[btlen]=0; /* NUL terminate, because CEOS fields aren't */
@@ -200,6 +210,12 @@ void ceos_init_sar(ceos_description *ceos, const char *in_fName,
     ceos_init_sar_ipaf(ceos, in_fName, meta);
   else if (ceos->facility == BEIJING)
     ceos_init_sar_beijing(ceos, in_fName, meta);
+  else if (ceos->facility == TROMSO)
+    ceos_init_sar_tromso(ceos, in_fName, meta);
+  else if (ceos->facility == WESTFREUGH)
+    ceos_init_sar_westfreugh(ceos, in_fName, meta);
+  else if (ceos->facility == DERA)
+    ceos_init_sar_westfreugh(ceos, in_fName, meta);
   else if (ceos->facility == unknownFacility)
     asfPrintError("Unknown CEOS facility! Data cannot be imported "
       "at this time.\n");
@@ -271,14 +287,20 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->general->orbit_direction  = dssr->asc_des[0];
   meta->general->band_count = nBands;
   strcpy(meta->general->bands, "");
-  meta->general->line_count = iof->numofrec;
-  meta->general->sample_count  =
-    (iof->reclen       // record length
-     -iof->predata     // prefix data
-     -iof->sufdata)    // suffix data
-    /iof->bytgroup
-    -iof->lbrdrpxl    // left border pixels
-    -iof->rbrdrpxl;   // right border pixels
+  if (iof->numofrec == 0) {
+    meta->general->line_count = dssr->sc_lin * 2;
+    meta->general->sample_count = dssr->sc_pix * 2;
+  }
+  else {
+    meta->general->line_count = iof->numofrec;
+    meta->general->sample_count  =
+      (iof->reclen       // record length
+       -iof->predata     // prefix data
+       -iof->sufdata)    // suffix data
+      /iof->bytgroup
+      -iof->lbrdrpxl    // left border pixels
+      -iof->rbrdrpxl;   // right border pixels
+  }
   meta->general->start_line       = 0;
   meta->general->start_sample     = 0;
   meta->general->x_pixel_size     = dssr->pixel_spacing;
@@ -319,9 +341,9 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   // Azimuth time per pixel needs to be known for state vector propagation
   char **dataName;
   double firstTime, centerTime;
-  if ((ceos->facility == CSTARS || ceos->facility == ESA ||
-       ceos->facility == DPAF || ceos->facility == IPAF) &&
-      ceos->satellite == ERS) {
+  if (ceos->facility == CSTARS || ceos->facility == ESA ||
+      ceos->facility == DPAF || ceos->facility == IPAF || 
+      ceos->facility == DERA) {
     date_dssr2time(dssr->az_time_first, &date, &time);
     firstTime = date_hms2sec(&time);
   }
@@ -372,6 +394,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar->range_sampling_rate = dssr->rng_samp_rate *
     get_units(dssr->rng_samp_rate,EXPECTED_SAMP_RATE);
   meta->sar->multilook = 1;
+  meta->sar->incid_a[0] = dssr->incident_ang;
 
   /* FREE(dssr); Don't free dssr; it points to the ceos struct (ceos->dssr) */
   FREE(iof);
@@ -750,7 +773,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   else {
     meta->sar->deskewed = 1;
   }
-  meta->sar->original_sample_count = iof->datgroup;
+  //meta->sar->original_sample_count = iof->datgroup;
   meta->sar->slant_range_first_pixel = dssr->rng_gate
     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
   meta->sar->slant_shift = 0;
@@ -1768,6 +1791,165 @@ void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
   FREE(esa_facdr);
 }
 
+void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
+         meta_parameters *meta)
+{
+  struct dataset_sum_rec *dssr=NULL;
+  struct VMPDREC *mpdr=NULL;
+  struct ESA_FACDR *esa_facdr=NULL;
+  struct proc_parm_rec *ppr=NULL;
+  ymd_date date;
+  hms_time time;
+  double firstTime, centerTime;
+  char buf[50];
+
+  dssr = &ceos->dssr;
+  esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
+  get_esa_facdr(in_fName, esa_facdr);
+  mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
+  if (get_mpdr(in_fName, mpdr) == -1) {
+    FREE(mpdr);
+    mpdr = NULL;
+  }
+  ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
+  if (get_ppr(in_fName, ppr) == -1) {
+    FREE(ppr);
+    ppr = NULL;
+  }
+
+  // General block
+  ceos_init_sar_general(ceos, in_fName, meta);
+  
+  // Azimuth time per pixel need to be known for state vector propagation
+  firstTime = get_alos_firstTime(in_fName);
+  date_dssr2date(dssr->inp_sctim, &date, &time);
+  centerTime = date_hms2sec(&time);
+  meta->sar->azimuth_time_per_pixel =
+    (centerTime - firstTime) / (meta->sar->original_line_count/2);
+
+  // SAR block
+  if (ceos->product == SCN) {
+    meta->sar->image_type = 'P';
+    meta->sar->look_count = 4;
+    ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
+    sprintf(meta->general->mode, "%s", get_scansar_beam_mode(ppr));
+  }
+  meta->sar->deskewed = 1;
+  meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
+  meta->sar->slant_shift = 0;
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
+  meta->sar->yaw = get_sensor_orientation(in_fName);
+
+  // State vector block
+  ceos_init_stVec(in_fName, ceos, meta);
+
+  /*
+  // Check to see if we need special startX / startY initialization
+  if (!mpdr && !meta->transform && meta->projection) {
+    if (!meta_is_valid_double(meta->projection->startX) ||
+        !meta_is_valid_double(meta->projection->startY))
+    {
+      meta_sar_to_startXY(meta, &meta->projection->startX, 
+			  &meta->projection->startY);
+    }
+  }
+  */
+  meta->sar->earth_radius =
+    meta_get_earth_radius(meta,
+                          meta->general->line_count/2,
+                          meta->general->sample_count/2);
+  meta->sar->satellite_height =
+    meta_get_sat_height(meta,
+                        meta->general->line_count/2,
+                        meta->general->sample_count/2);
+
+  // Location block
+  if (ceos->product != RAW)
+    ceos_init_location_block(meta);
+
+}
+
+void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
+         meta_parameters *meta)
+{
+  struct dataset_sum_rec *dssr=NULL;
+  struct VMPDREC *mpdr=NULL;
+  struct ESA_FACDR *esa_facdr=NULL;
+  struct proc_parm_rec *ppr=NULL;
+  ymd_date date;
+  hms_time time;
+  double firstTime, centerTime;
+  char buf[50];
+
+  dssr = &ceos->dssr;
+  esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
+  get_esa_facdr(in_fName, esa_facdr);
+  mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
+  if (get_mpdr(in_fName, mpdr) == -1) {
+    FREE(mpdr);
+    mpdr = NULL;
+  }
+  ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
+  if (get_ppr(in_fName, ppr) == -1) {
+    FREE(ppr);
+    ppr = NULL;
+  }
+
+  // General block
+  ceos_init_sar_general(ceos, in_fName, meta);
+
+  // SAR block
+  if (ceos->product == PRI) {
+    meta->sar->image_type = 'G';
+    meta->sar->look_count = 4;
+  }
+  else if (ceos->product == SCN || ceos->product == SCANSAR) {
+    meta->sar->image_type = 'P';
+    meta->sar->look_count = 4;
+    ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
+    sprintf(meta->general->mode, "%s", get_scansar_beam_mode(ppr));
+  }
+  meta->sar->deskewed = 1;
+  meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
+  meta->sar->slant_shift = 0;
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
+
+  // State vector block
+  ceos_init_stVec(in_fName, ceos, meta);
+
+  // Check to see if we need special startX / startY initialization
+  if (!mpdr && !meta->transform && meta->projection) {
+    if (!meta_is_valid_double(meta->projection->startX) ||
+        !meta_is_valid_double(meta->projection->startY))
+    {
+      meta_sar_to_startXY(meta, &meta->projection->startX, 
+			  &meta->projection->startY);
+    }
+  }
+  meta->sar->earth_radius =
+    meta_get_earth_radius(meta,
+                          meta->general->line_count/2,
+                          meta->general->sample_count/2);
+  meta->sar->satellite_height =
+    meta_get_sat_height(meta,
+                        meta->general->line_count/2,
+                        meta->general->sample_count/2);
+
+  // Location block
+  if (ceos->product != RAW)
+    ceos_init_location_block(meta);
+
+}
+
+
 /*******************************************************************************
  * ceos_init_optical:
  * Reads structure parameters from CEOS into existing meta_parameters
@@ -2490,6 +2672,8 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = SLC;
       else if (0==strncmp(prodStr,"SCANSAR WIDE",12))
         ceos->product = SCANSAR;
+      else if (0==strncmp(prodStr, "SCANSAR NARROW",14))
+        ceos->product = SCN;
       else if (0==strncmp(prodStr, "SAR GEOREF FINE",15))
         ceos->product = SGF;
       else if (0==strncmp(prodStr, "SAR GEOREF EXTRA FINE",21))
@@ -2617,6 +2801,41 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = unknownProduct;
       }
     }
+    else if (0==strncmp(facStr, "TRNS", 4)) {
+      asfReport(level, "   Data set processed by Tromso\n");
+      ceos->facility = TROMSO;
+      if (0==strncmp(prodStr, "SCANSAR NARROW", 14))
+        ceos->product = SCN;
+      else {
+        asfReport(level, "Get_ceos_description Warning! "
+                    "Unknown Tromso product type '%s'!\n", prodStr);
+        ceos->product = unknownProduct;
+      }
+    }
+    else if (0==strncmp(facStr, "UK-WFS", 6)) {
+      asfReport(level, "   Data set processed by Westfreugh\n");
+      ceos->facility = WESTFREUGH;
+      if (0==strncmp(prodStr,"PRI",3))
+        ceos->product = PRI;
+      else if (0==strncmp(prodStr, "SCANSAR WIDE", 12))
+	ceos->product = SCANSAR;
+      else {
+        asfReport(level, "Get_ceos_description Warning! "
+                    "Unknown Westfreugh product type '%s'!\n", prodStr);
+        ceos->product = unknownProduct;
+      }
+    }    
+    else if (0==strncmp(facStr, "DERA", 4)) {
+      asfReport(level, "   Data set processed by Dera\n");
+      ceos->facility = DERA;
+      if (0==strncmp(trim_spaces(prodStr),"PRI",3))
+        ceos->product = PRI;
+      else {
+        asfReport(level, "Get_ceos_description Warning! "
+                    "Unknown Dera product type '%s'!\n", prodStr);
+        ceos->product = unknownProduct;
+      }
+    }    
   }
   else {
     // Determine satellite
@@ -3271,4 +3490,34 @@ void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
       if (meta->sar->look_count > 1)
           meta->sar->multilook = 0;
   }
+}
+
+char *get_scansar_beam_mode(struct proc_parm_rec *ppr)
+{
+  char *mode = (char *) MALLOC(sizeof(char)*5);
+  strcpy(mode, "");
+  
+  if (ppr->n_beams == 2 && 
+      strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
+      strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0)
+    strcpy(mode, "SNA");
+  if (ppr->n_beams == 3 && 
+      strncmp(ppr->beam_info[0].beam_type, "W2", 2) == 0 &&
+      strncmp(ppr->beam_info[1].beam_type, "S5", 2) == 0 &&
+      strncmp(ppr->beam_info[2].beam_type, "S6", 2) == 0)
+    strcpy(mode, "SNB");
+  if (ppr->n_beams == 4 && 
+      strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
+      strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0 &&
+      strncmp(ppr->beam_info[2].beam_type, "W3", 2) == 0 &&
+      strncmp(ppr->beam_info[3].beam_type, "S7", 2) == 0)
+    strcpy(mode, "SWA");
+  if (ppr->n_beams == 4 && 
+      strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
+      strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0 &&
+      strncmp(ppr->beam_info[2].beam_type, "S5", 2) == 0 &&
+      strncmp(ppr->beam_info[3].beam_type, "S6", 2) == 0)
+    strcpy(mode, "SWB");
+  
+  return mode;
 }

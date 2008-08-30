@@ -204,11 +204,17 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
         st.pos.x = ppdr.pos_vec[i][0];
         st.pos.y = ppdr.pos_vec[i][1];
         st.pos.z = ppdr.pos_vec[i][2];
-        vecScale(&st.pos,get_units(vecMagnitude(st.pos),EXPECTED_POS));
+	if (ceos->facility == DERA)
+	  vecScale(&st.pos,10000000);
+	else
+	  vecScale(&st.pos,get_units(vecMagnitude(st.pos),EXPECTED_POS));
         st.vel.x = ppdr.pos_vec[i][3];
         st.vel.y = ppdr.pos_vec[i][4];
         st.vel.z = ppdr.pos_vec[i][5];
-        vecScale(&st.vel,get_units(vecMagnitude(st.vel),EXPECTED_VEL));
+	if (ceos->facility == DERA)
+	  vecScale(&st.vel,10000);
+	else
+	  vecScale(&st.vel,get_units(vecMagnitude(st.vel),EXPECTED_VEL));
 
         /*Correct for non-rotating frame.*/
         if (areInertial)

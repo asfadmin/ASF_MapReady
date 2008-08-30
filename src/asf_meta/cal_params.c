@@ -306,7 +306,8 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
         strncmp(dssr.sys_id, "FOCUS", 5) == 0) ||
        (strncmp(facilityStr, "CDPF", 4) == 0 ||
         strncmp(facilityStr, "RSI", 3) == 0 ||
-        (strncmp(facilityStr, "CSTARS", 6) == 0 &&
+        ((strncmp(facilityStr, "CSTARS", 6) == 0 ||
+	  strncmp(facilityStr, "TRNS", 4) == 0) &&
          strncmp(dssr.mission_id, "RSAT", 4) == 0))) {
     // Radarsat style calibration
     rsat_cal_params *rsat =
@@ -375,7 +376,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
   }
   else
     // should never get here
-    asfPrintError("Unknown calibration parameter scheme!\n");
+    asfPrintWarning("Unknown calibration parameter scheme!\n");
 
 }
 
