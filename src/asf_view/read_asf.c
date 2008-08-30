@@ -92,7 +92,7 @@ static void get_asf_line(ReadAsfClientInfo *info, meta_parameters *meta,
         int k,j,nlooks = meta->sar->look_count;
         row *= nlooks;
 
-        // we fudged the line count in the metadata for the 
+        // we fudged the line count in the metadata for the
         // viewer (which is displaying a multilooked image), we must
         // put the correct value back for the reader
         int lc = meta->general->line_count;
@@ -129,7 +129,7 @@ static void get_asf_lines(ReadAsfClientInfo *info, meta_parameters *meta,
         int ns = meta->general->sample_count;
         row *= nlooks;
 
-        // we fudged the line count in the metadata for the 
+        // we fudged the line count in the metadata for the
         // viewer (which is displaying a multilooked image), we must
         // put the correct value back for the reader
         int lc = meta->general->line_count;
@@ -189,7 +189,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
             // can be interleaved (i.e., we can't read directly into the
             // cache's memory)
             unsigned char *buf = MALLOC(sizeof(unsigned char)*ns);
-            
+
             // first set the cache's memory to all zeros, this way any
             // rgb channels we don't populate will end up black
             memset(dest, 0, n_rows_to_get*ns*3);
@@ -240,7 +240,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
             get_asf_lines(info, meta, row_start + nl*info->band_gs,
                           n_rows_to_get, dest);
         } else {
-            // grabbing 3 channels floating point data 
+            // grabbing 3 channels floating point data
             assert(data_type==RGB_FLOAT);
 
             // first set the cache's memory to all zeros, this way any
@@ -467,7 +467,10 @@ int open_asf_data(const char *filename, const char *band, int multilook,
     info->ml = multilook;
 
     // special hack for Avnir data!
-    if (!band && strcmp_case(meta->general->sensor_name, "AVNIR")==0) {
+    if (!band                                                   &&
+        strcmp_case(meta->general->sensor_name, "AVNIR") == 0   &&
+        meta->general->band_count >= 3)
+    {
         // no band was specifed -- show true color (3,2,1)
         asfPrintStatus("Avnir data: defaulting to TRUE color -- 3,2,1\n");
         band = "03,02,01";
