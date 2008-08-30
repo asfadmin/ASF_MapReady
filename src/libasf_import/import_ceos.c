@@ -1304,7 +1304,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           asfPrintError("POWER is a currently unsupported radiometry for ALOS!\n");
       }
   }
-  if (nBands < 4 && strcmp_case(meta->general->sensor_name, "AVNIR") == 0) {
+  if (!import_single_band &&
+      nBands < 4          &&
+      strcmp_case(meta->general->sensor_name, "AVNIR") == 0)
+  {
       asfPrintWarning("Only %d bands were found, but 4 bands are expected for ALOS AVNIR data.\n"
               "Band numbering in metadata file may not properly identify the list of\n"
               "available bands, i.e. if bands 01, 03, and 04 were found, the metadata\n"
