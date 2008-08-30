@@ -237,6 +237,12 @@ void import_ceos(char *inBaseName, char *outBaseName,
   }
 
   ceos = get_ceos_description(inBaseName, NOREPORT);
+  if ((ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1) &&
+       ceos->sensor == PRISM)
+  {
+      import_single_band = TRUE;
+      nBandsOut = 1;
+  }
 
   for (ii=0; ii<nBandsOut; ii++) {
 
@@ -250,10 +256,6 @@ void import_ceos(char *inBaseName, char *outBaseName,
       strcpy(outMetaName, outBaseName);
       strcat(outMetaName, TOOLS_META_EXT);
     }
-
-    if ((ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1) &&
-    ceos->sensor == PRISM)
-      import_single_band = TRUE;
 
     radiometry_t rad = radiometry;
     int index = ii;
@@ -349,6 +351,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
         if (found) {
           ii--;
           import_single_band = 1;
+          nBandsOut = 1;
           strcpy(bandExt, band_id);
         }
       }
@@ -2122,6 +2125,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   // Set radiometry
   meta->general->radiometry = radiometry;
 
+  // If fewer than all bands available was written out, update the band count
+  meta->general->band_count = nBandsOut;
+
+  // Save the metadata
   meta_write(meta, outMetaName);
 
   /* for debugging
