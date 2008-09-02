@@ -2,6 +2,8 @@
 
 static int db_was_checked = 0;
 
+void export_checkbutton_toggle();
+
 void
 show_execute_button(gboolean show)
 {
@@ -74,7 +76,8 @@ input_data_format_combobox_changed()
     gboolean show_export_section;
     gboolean show_terrain_correction_section;
     gboolean show_geocode_section;
-    gboolean show_process_to_level1_checkbutton = FALSE; // Leave false until we support level 0 again
+    // Leave this next one false until we support level 0 again
+    gboolean show_process_to_level1_checkbutton = FALSE; 
     gboolean show_airsar_checkbuttons;
 
     input_data_format_combobox =
@@ -230,7 +233,7 @@ input_data_format_combobox_changed()
                                      FALSE);
     }
 
-    output_format_combobox_changed();
+    export_checkbutton_toggle();
 
     vbox_geocode = get_widget_checked("vbox_geocode");
     gtk_widget_set_sensitive(vbox_geocode, show_geocode_section);
@@ -273,11 +276,39 @@ output_bytes_checkbutton_toggle()
     gtk_widget_set_sensitive(scaling_method_label, is_checked);
 }
 
-void export_checkbutton_toggle();
-
 void
 output_format_combobox_changed()
 {
+    GtkWidget *output_format_combobox =
+      get_widget_checked("output_format_combobox");
+
+    gint output_format = get_combo_box_item(output_format_combobox);
+
+    GtkWidget *output_bytes_checkbutton =
+      get_widget_checked("output_bytes_checkbutton");
+    GtkWidget *scaling_method_combobox =
+      get_widget_checked("scaling_method_combobox");
+
+    switch (output_format)
+    {
+      default:
+      case OUTPUT_FORMAT_JPEG:
+      case OUTPUT_FORMAT_PNG:
+      case OUTPUT_FORMAT_PGM:
+      case OUTPUT_FORMAT_TIFF:
+      case OUTPUT_FORMAT_ASF_INTERNAL:
+      case OUTPUT_FORMAT_CEOS:
+        gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(output_bytes_checkbutton), TRUE);
+        set_combo_box_item(scaling_method_combobox, SCALING_METHOD_SIGMA);
+        break;
+      case OUTPUT_FORMAT_GEOTIFF:
+        gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);        
+        output_bytes_checkbutton_toggle();
+        break;
+    }
+    
     export_checkbutton_toggle();
 }
 
@@ -315,39 +346,31 @@ export_checkbutton_toggle()
 
     if (export_checked)
     {
-        gtk_widget_set_sensitive(vbox_export, TRUE);
-        gtk_widget_set_sensitive(export_tab_label, TRUE);
-        gtk_widget_set_sensitive(output_format_combobox, TRUE);
-
         output_format = get_combo_box_item(output_format_combobox);
-
+      
         switch (output_format)
         {
-        default:
-        case OUTPUT_FORMAT_JPEG:
-        case OUTPUT_FORMAT_PNG:
-        case OUTPUT_FORMAT_PGM:
-        case OUTPUT_FORMAT_TIFF:
-        case OUTPUT_FORMAT_ASF_INTERNAL:
-        case OUTPUT_FORMAT_CEOS:
-            gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(output_bytes_checkbutton), TRUE);
-
-            set_combo_box_item(scaling_method_combobox, SCALING_METHOD_SIGMA);
-
+          default:
+          case OUTPUT_FORMAT_JPEG:
+          case OUTPUT_FORMAT_PNG:
+          case OUTPUT_FORMAT_PGM:
+          case OUTPUT_FORMAT_TIFF:
+          case OUTPUT_FORMAT_ASF_INTERNAL:
+          case OUTPUT_FORMAT_CEOS:
             gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
             gtk_widget_set_sensitive(scaling_method_combobox, TRUE);
             gtk_widget_set_sensitive(scaling_method_label, TRUE);
-
+            
             break;
-        case OUTPUT_FORMAT_GEOTIFF:
+          case OUTPUT_FORMAT_GEOTIFF:
             gtk_widget_set_sensitive(output_bytes_checkbutton, TRUE);
-            gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);
-
             output_bytes_checkbutton_toggle();
             break;
         }
+
+        gtk_widget_set_sensitive(vbox_export, TRUE);
+        gtk_widget_set_sensitive(export_tab_label, TRUE);
+        gtk_widget_set_sensitive(output_format_combobox, TRUE);
 
         gtk_widget_set_sensitive(rb_all, export_checked);
         gtk_widget_set_sensitive(rb_rgb, export_checked);
