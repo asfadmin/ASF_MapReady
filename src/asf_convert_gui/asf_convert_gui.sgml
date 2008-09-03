@@ -3,7 +3,7 @@
    "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
 <book>
     <bookinfo>
-        <date>June 8, 2008</date>
+        <date>September 2, 2008</date>
         <title>ASF MapReady</title>
     </bookinfo>
     <toc></toc>
@@ -12,7 +12,8 @@
         <para>
             ASF MapReady is a program for converting SAR data into
             a GIS-ready image format (i.e., GeoTIFF).  Also, the SAR
-            data can be geocoded, and/or terrain corrected.  Version 2.0
+            data can be geocoded, and/or terrain corrected.  Version
+            2.0 (and later) versions
             of MapReady now supports SLC (single-look complex) SAR data,
             and for quad-pol SLC (i.e., ALOS/PALSAR Level 1.1) data, some
             polarimetric analysis is supported.
@@ -55,7 +56,7 @@
                         process quad-pol SLC (single-look complex)
                         data.  Currently, this means ALOS/Palsar
                         Level 1.1 data, though the Sinclair
-                        decomposition can be done with Palsar 1.5
+                        decomposition can be done with quad-pol Palsar 1.5
                         data.  Using a polarimetric decomposition
                         is a technique used to visualize the great
                         deal of information contained in quad-pol
@@ -96,8 +97,8 @@
                         in ASF Internal Format (see Data Import above.)  Note
                         that after exporting, a metadata (.meta) file will
                         remain.  The information in the metadata file
-                        represents the data prior to export, i.e. before
-                        remapping values to bytes etcetera ...which means
+                        represents the data prior to export, i.e., before
+                        remapping values to bytes etc ... which means
                         information such as data statistics may not be
                         valid for the exported file (but is valid for the
                         data prior to export).
@@ -192,15 +193,47 @@
         </para>
 
         <para>
-            If you check the "Keep Intermediate Files" checkbox, all intermediate
+            The general tab also contains the "Keep Intermediate
+            Files" options.  The processing flow creates a number
+            of intermediate results for the various processing steps.
+            For troubleshooting purposes or further analysis those
+            intermediate results can be kept.  Examples include
+            the imported data, layover and shadow masks
+            automatically generated, imported versions of your DEM, clipped
+            DEMs etcetera.  By saving the intermediate products, you can often
+            troubleshoot your processing if you did not achieve your desired
+            results.  Some intermediate products are viewable through
+            MapReady with the "View Intermediates" right-click context
+            menu in the Completed Files section, however not all of
+            them are.  Those that aren't can be viewed with ASF View
+            by selecting the file within ASF View.
+        </para>
+        <para>
+            The "Temporarily keep intermediate files" option, the
+            default, means that these intermediates are kept until
+            you exit MapReady, or remove the processed product from
+            the "Completed Files" section.  Keeping these
+            intermediates around after processing is done allows you
+            to look at these files, with the "View Intermediates"
+            option in the right-click context menu for files in the
+            Completed Files section.
+        </para>
+        <para>
+            If you select the "Keep no intermediate files" option,
+            the intermediate files are deleted as soon as processing
+            completes.  (This was the default behavior in MapReady
+            2.0.)  This means the "View Intermediates" menu in the
+            Completed Files will not be available.  This option should
+            be used if you are going to process a number of files, and
+            are concerned about disk space, since the intermediate
+            files can take up quite a bit of space.
+        </para>
+        <para>
+            If you check the "Keep Intermediates" checkbox, all intermediate
             products developed during the processing of your data will be kept.
             Some will be in the same folder as your data, and some will be in a
             sub-folder (includes a time-stamp in the name of the folder for easier
-            identification.)  Examples include the imported data, layover and shadow
-            masks automatically generated, imported versions of your DEM, clipped
-            DEMs etcetera.  By saving the intermediate products, you can often
-            troubleshoot your processing if you did not achieve your desired
-            results.
+            identification.)  
         </para>
 
         <para>Adding Files to the Input Files list:</para>
@@ -286,20 +319,17 @@
                 <para>
                     This is where you select the type of data that you have.
                     The default, "CEOS (Level 1)" is the most common format, i.e.
-                    files ending in .D/.L or ALOS LED-/IMG- files etcetera.
-                    For the Sky Telemetry Format (STF) files, you have the
-                    additional option of restricting the import to a subset of
-                    the latitude range in the source data.  When you select
-                    STF as the file type to import, the Latitude check box
-                    and entry boxes become activated for you to use if you wish.
+                    files ending in .D/.L or ALOS LED-/IMG- files
+                    etc.
                 </para>
-            </listitem>
-            <listitem>
-                <para>Latitude:</para>
                 <para>
-                    Here you may specify a range of latitudes that is smaller
-                    than that of the original data.  Please make sure that both
-                    the Low and Hi values are actually contained in the image.
+                    When you select the AirSAR input
+                    format, some additional options appear, where you
+                    may select which AirSAR products you wish to
+                    process.  Note that all products will be imported,
+                    regardless of selection.  If you select products
+                    not available in your dataset, those selections
+                    are ignored.
                 </para>
             </listitem>
             <listitem>
@@ -398,6 +428,78 @@
                terms, which theoretically are equal but may not
                be due to noise, etc.</para>
         </listitem>
+        <listitem>
+            <para>Cloude-Pottier Classification</para>
+            <para>
+               The Cloude-Pottier classification scheme produces
+               output with the data categorized into either 8 or
+               16 classes.  The classification is based on three
+               parameters which can be calculated from the 4-band
+               complex data at each pixel.
+            </para>
+            <para>
+               These parameters are calculated from the coherence
+               matrix, which is calculated for each pixel.   These
+               parameters are entropy, anisotropy, and alpha.
+            </para>
+            <para>
+               Entropy is an indication of the degree of randomness in
+               the scattering process.  Low entropy means there is a
+               single dominant scattering mechanism in that pixel;
+               high entropy means multiple scattering mechanisms are
+               present in the pixel.
+            </para>
+            <para>
+               Anisotropy represents the relative importance of the
+               non-dominant scatterers.  When entropy is low, the
+               anisotropy parameter means very little, but for high
+               entropy it is a useful indication of the strength of
+               the secondary scatters.
+            </para>
+            <para>
+               Alpha can be used to identify what type of scatterer is
+               the dominant one.  When alpha is close to 0,
+               single-bounce scattering (e.g., a rough surface) is
+               dominant.  For alpha near 90°, the dominant scatterer
+               is double-bounce.  Alphas in between these extremes
+               represent a combination of both; at 45° we have equal
+               amounts of both which usually corresponds to volume
+               scattering.
+            </para>
+            <para>
+               The Cloude-Pottier parameters can be obtained directly
+               (skipping the classification) by selecting the
+               "Entropy, Anisotropy, Alpha" option.  This is the only
+               option where you may assign RGB channels yourself, or
+               choose to export three separate greyscale images (one
+               for each of entropy, anisotropy, and alpha); with the
+               other polarimetric decompositions the RGB channel
+               assignment is determined by the decomposition
+            </para>
+        </listitem>
+        <listitem>
+            <para>Freeman-Durden</para>
+            <para>
+               The Freeman-Durden decomposition is a model-based
+               approach  it attempts to fit the combination of three
+               simple scattering mechanisms to the polarimetric data.
+               These mechanisms are (i) even- or double-bounce scatter
+               from a pair of orthogonal surfaces with different
+               dielectric constants, (ii) canopy scatter from a cloud
+               of randomly oriented dipoles,  and (iii) Bragg scatter
+               from a moderately rough surface.
+            </para>
+            <para>
+               These three components are assigned to the three color
+               channels during export: the double-bounce component (i)
+               is assigned to the Red channel, the canopy component
+               (ii) is assigned to the Green channel, and the rough
+               surface component (iii) is assigned to the Blue channel.
+            </para>
+            <para>
+               The results look similar to the Pauli decomposition.
+            </para>
+        </listitem>
         </orderedlist>
         <para>
             When the Polarimetry tab is active, the Export tab's
@@ -407,10 +509,28 @@
             polarimetric decomposition.  The channels and how
             they are calculated from the input qual-pol data are
             listed next to the radio button on the Polarimetry
-            tab.  For example, for Pauli the red channel is
+            tab for some of the decompositions.  For example, for
+            Pauli the red channel is
             calculated by subtracting the complex VV-band value 
             from the complex HH-band value, and then determining
             the magnitude of the resulting complex value.
+        </para>
+        <para>Faraday Rotation</para>
+        <para>
+            Atmospheric conditions are another condition which can
+            affect the backscatter values, in addition to the
+            scatterers on the ground.  This effect is called Faraday
+            Rotation, and  usually this is an undesirable effect, the
+            ground scatterers are the only contributions of interest.
+            Turning this option on will attempt to correct the data
+            for Faraday Rotation.  The method used to apply the
+            correction requires quad-pol SLC data.
+        </para>
+        <para>
+           The correction is done by estimating the rotation angle at
+           each pixel, and then applying the correction using a
+           smoothed rotation angle, or the average of all the rotation
+           angles.
         </para>
     </chapter>
     <chapter id="dem">
@@ -1297,6 +1417,17 @@
                 </para>
             </listitem>
         </orderedlist>
+        <para>
+           In addition to the menu options which duplicate the
+           functionality of the toolbar buttons, there is also a "View
+           Intermediates" menu.  If you have chosen to "Temporarily
+           keep intermediate files" or "Keep intermediate files"
+           (selected in the General Tab of the settings), then a few
+           selected intermediates files can be loaded in to ASF View
+           using this menu.
+           Intermediate files which are not available, or do not apply
+           to the selected dataset, are greyed out.  
+        </para>
     </chapter>
 
     <chapter id="caveats">
