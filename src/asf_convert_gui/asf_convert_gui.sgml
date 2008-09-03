@@ -460,9 +460,9 @@
                Alpha can be used to identify what type of scatterer is
                the dominant one.  When alpha is close to 0,
                single-bounce scattering (e.g., a rough surface) is
-               dominant.  For alpha near 90°, the dominant scatterer
+               dominant.  For alpha near 90 degrees, the dominant scatterer
                is double-bounce.  Alphas in between these extremes
-               represent a combination of both; at 45° we have equal
+               represent a combination of both; at 45 degrees we have equal
                amounts of both which usually corresponds to volume
                scattering.
             </para>
@@ -1146,7 +1146,7 @@
         </orderedlist>
     </chapter>
     <chapter id="files">
-        <title>The File List Sections:</title>
+        <title>The File List Sections</title>
         <para>
             The Input Files section lists all of the files that you've selected for
             processing.  Note that the settings selected on the various
