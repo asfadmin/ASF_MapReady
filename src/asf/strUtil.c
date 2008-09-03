@@ -115,8 +115,12 @@ int endsWith(const char *str, const char *tail)
 // return the number of occurences of char 'c' in string 's'
 int count_char(const char *s, char c)
 {
+  // allow passing in NULL for the string
+  if (!s) return 0; 
+
   int i,n=0;
   for (i=0; i<strlen(s); ++i)
     if (s[i]==c) ++n;
+
   return n;
 }
