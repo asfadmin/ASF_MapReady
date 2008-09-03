@@ -633,14 +633,20 @@ on_input_data_type_power_activate(GtkWidget *widget)
 
 void clear_completed_tmp_dirs()
 {
-    asfPrintStatus("Removing temporary directories...\n");
     if (get_checked("rb_keep_temp")) {
+
         GtkTreeIter iter;
         gboolean valid = gtk_tree_model_get_iter_first(
           GTK_TREE_MODEL(completed_list_store), &iter);
 
+        int first = TRUE;
         while (valid)
         {
+            if (first) {
+                asfPrintStatus("Removing temporary directories...\n");
+                first = FALSE;
+            }
+
             gchar *tmp_dir;
             gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
                                COMP_COL_TMP_DIR, &tmp_dir, -1);
