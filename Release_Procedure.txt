@@ -28,6 +28,15 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 
     b) svn ci
 
+ 2.5: When doing a release close to final release, you may wish to
+      update "mapready-version_history.txt" with the release date and
+      version number, and check that in.
+
+      For example, for 2.0.13 the first line is:
+        MapReady 2.0.13 (released 2008 August 27)
+
+      When building 2.0.14, this line needs to be updated accordingly.
+
  3. Tag the repository:
 
       svn copy svn+ssh://svn/svn/asf_tools/trunk
