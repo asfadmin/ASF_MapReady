@@ -2125,8 +2125,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   // Set radiometry
   meta->general->radiometry = radiometry;
 
-  // If fewer than all bands available was written out, update the band count
-  meta->general->band_count = nBandsOut;
+  // Ensure that the band count always matches the number of bands in
+  // the bands string -- to do that, we just count the commas
+  meta->general->band_count = 1 + count_char(meta->general->bands, ',');
 
   // Save the metadata
   meta_write(meta, outMetaName);

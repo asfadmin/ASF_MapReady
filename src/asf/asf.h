@@ -155,6 +155,9 @@ void chomp(char *str);
 /* Return TRUE if "str" ends with (case-insensitive) "tail" */
 int endsWith(const char *str, const char *tail);
 
+// return the number of occurences of char 'c' in string 's'
+int count_char(const char *s, char c);
+
 /******************************************************************************
  * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in

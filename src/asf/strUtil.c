@@ -1,5 +1,4 @@
 #include <ctype.h>
-
 #include <asf.h>
 
 char *uc (const char *string)
@@ -111,4 +110,13 @@ int endsWith(const char *str, const char *tail)
     const char *p = str + strlen(str) - strlen(tail);
     return strcmp_case(p, tail)==0;
   }
+}
+
+// return the number of occurences of char 'c' in string 's'
+int count_char(const char *s, char c)
+{
+  int i,n=0;
+  for (i=0; i<strlen(s); ++i)
+    if (s[i]==c) ++n;
+  return n;
 }
