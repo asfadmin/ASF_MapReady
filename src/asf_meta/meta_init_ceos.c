@@ -2038,8 +2038,6 @@ void ceos_init_sar_dera(ceos_description *ceos, const char *in_fName,
   else if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
-  //get_attitude_data(att, &meta->sar->yaw, &meta->sar->pitch, &meta->sar->roll);
-  get_sensor_orientation(in_fName);
 
   // State vector block
   ceos_init_stVec(in_fName, ceos, meta);

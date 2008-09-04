@@ -193,8 +193,6 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
         s->year   = (int) ppdr.year;
         s->julDay = (int) ppdr.gmt_day;
         s->second = ppdr.gmt_sec;
-      //if (ceos->facility==RSI)
-        //areInertialVelocity = 1;
     }
 
     /*Fill ouput record with state vectors.*/
@@ -204,17 +202,11 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
         st.pos.x = ppdr.pos_vec[i][0];
         st.pos.y = ppdr.pos_vec[i][1];
         st.pos.z = ppdr.pos_vec[i][2];
-	if (ceos->facility == DERA)
-	  vecScale(&st.pos,10000000);
-	else
-	  vecScale(&st.pos,get_units(vecMagnitude(st.pos),EXPECTED_POS));
+	vecScale(&st.pos,get_units(vecMagnitude(st.pos),EXPECTED_POS));
         st.vel.x = ppdr.pos_vec[i][3];
         st.vel.y = ppdr.pos_vec[i][4];
         st.vel.z = ppdr.pos_vec[i][5];
-	if (ceos->facility == DERA)
-	  vecScale(&st.vel,10000);
-	else
-	  vecScale(&st.vel,get_units(vecMagnitude(st.vel),EXPECTED_VEL));
+	vecScale(&st.vel,get_units(vecMagnitude(st.vel),EXPECTED_VEL));
 
         /*Correct for non-rotating frame.*/
         if (areInertial)

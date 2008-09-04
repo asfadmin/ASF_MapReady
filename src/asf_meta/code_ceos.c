@@ -91,6 +91,9 @@ void flt2asc(double *in,unsigned char *outBuf,int len,codingDir dir)
   } else { /*dir==fromASCII*/
       strncpy(tmp,(char *)outBuf,len);
       tmp[len]=0;/* add terminating null.*/
+      for (i=0; i<strlen(tmp); ++i)
+        if (tmp[i]=='D')
+          tmp[i]='E';
       if (0==strncmp(tmp,cmp,len))
   *in=0.0;
       else
