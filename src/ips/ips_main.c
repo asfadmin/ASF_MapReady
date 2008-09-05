@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     sprintf(cfg->coreg->slave_power, "%s_b_pwr.img", cfg->general->base);
     sprintf(cfg->refine->seeds, "%s.seeds", cfg->general->base);
     sprintf(cfg->dinsar->igram, "%s_digram.img", cfg->general->base);
-    sprintf(cfg->unwrap->qc, "%s_qc.phase", cfg->general->base);
+    sprintf(cfg->unwrap->qc, "%s_qc_phase.img", cfg->general->base);
     sprintf(cfg->elevation->dem, "%s_ht.img", cfg->general->base);
     sprintf(cfg->elevation->error, "%s_err_ht.img", cfg->general->base);
     sprintf(cfg->geocode->dem, "%s_dem", cfg->general->base);
@@ -215,6 +215,8 @@ int main(int argc, char *argv[])
     asfPrintStatus("   Initialized complete configuration file\n\n");
     exit(EXIT_SUCCESS);
   }
+  else if (!fileExists(configFile))
+    asfPrintError("Configuration file does not exist!\n");
   else {
     cfg = read_config(configFile, createFlag);
   }

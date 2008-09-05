@@ -22,6 +22,7 @@ LIBS = 	\
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/libasf_proj.a \
