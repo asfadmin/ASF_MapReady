@@ -118,7 +118,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   // Tell the user what data type and processing mode we found
   fLog = FOPEN(logFile, "a");
   logflag=TRUE;
-  asfPrintStatus("   Data type: %s\n   Processing mode: %s\n",
+  asfPrintStatus("   Data type: %s\n   Processing mode: %s\n\n",
          cfg->general->data_type, cfg->general->mode);
 
   // Ingest the various data types: STF, RAW, or SLC
@@ -181,26 +181,26 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   // user interaction) we fall back to coregistering the entire FRAME.
   if (check_status(cfg->coreg->status)) {
 
-    check_return(asf_coregister(datatype, cfg->general->coreg,
-                cfg->general->base, cfg->general->deskew,
-                &cfg->coreg->p1_master_start,
-                &cfg->coreg->p1_slave_start,
-                cfg->coreg->p1_patches,
-                &cfg->coreg->pL_master_start,
-                &cfg->coreg->pL_slave_start,
-                cfg->coreg->pL_patches,
-                cfg->coreg->master_offset,
-                cfg->coreg->slave_offset,
-                cfg->general->max_off,
-                &cfg->coreg->master_patches,
-                &cfg->coreg->slave_patches,
-                &cfg->coreg->p1_range_offset,
-                &cfg->coreg->p1_azimuth_offset,
-                &cfg->coreg->pL_range_offset,
-                &cfg->coreg->pL_azimuth_offset,
-                &cfg->coreg->grid, &cfg->coreg->fft,
-                cfg->coreg->power, "a", "b"),
-         "coregistering master and slave image (asf_coregister)");
+    check_return(asf_coregister(datatype, cfg->general->coreg, 
+				cfg->general->base, cfg->general->deskew,
+				&cfg->coreg->p1_master_start,
+				&cfg->coreg->p1_slave_start,
+				cfg->coreg->p1_patches,
+				&cfg->coreg->pL_master_start,
+				&cfg->coreg->pL_slave_start,
+				cfg->coreg->pL_patches,
+				cfg->coreg->master_offset, 
+				cfg->coreg->slave_offset,
+				cfg->general->max_off,
+				&cfg->coreg->master_patches,
+				&cfg->coreg->slave_patches,
+				&cfg->coreg->p1_range_offset,
+				&cfg->coreg->p1_azimuth_offset,
+				&cfg->coreg->pL_range_offset,
+				&cfg->coreg->pL_azimuth_offset,
+				&cfg->coreg->grid, cfg->coreg->power, 
+				"a", "b"),
+		 "coregistering master and slave image (asf_coregister)");
 
     sprintf(cfg->coreg->status, "success");
     check_return(write_config(configFile, cfg),
