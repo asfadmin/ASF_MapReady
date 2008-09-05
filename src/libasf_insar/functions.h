@@ -14,13 +14,8 @@
 int exit_code;
 
 /* Function definitions*/
-int ardop(char *option, int startLineNum, int numPatches, char *inFile, 
-	  char *outFile);
 int c2p(char *inFile, char *outFile);
 int c2p_exec(char *inFile, char *outFile);
-int coregister_coarse(char *inFile1, char *inFile2, char *outFile, char *maskFile);
-int coregister_fine(char *inFile1, char *inFile2, char *inCtrlFile, char *outFile, 
-		    char *maskFile, int gridSize, int useFFT);
 int fit_line(char *inFile, char *outFile);
 int calc_deltas(char *inFile1, char *inFile2, int lineDiff, char *outFile);
 int convert2byte(char *inFile, char *outFile, int nLooks, int nSmooth);

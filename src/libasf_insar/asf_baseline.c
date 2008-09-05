@@ -193,11 +193,13 @@ int asf_baseline(char *baseName, char *interferogram, char *seeds,
 {
   char *veryoldBase=NULL, *oldBase=NULL, *newBase=NULL, tmp[255];
   int i;
+  //quietflag = 1;
 
-  sprintf(tmp, "%s_ml.img", interferogram);
+  sprintf(tmp, "%s_ml_amp.img", interferogram);
+  asfPrintStatus("    Generating seed point file ...\n");
   check_return(dem2seeds("dem_slant.img", tmp, seeds, 0),
 	       "creating seed points (dem2seeds)");
-
+  asfPrintStatus("    Reramping unwrapped initial baseline ...\n");
   check_return(deramp("unwrap", base2str(0, baseName),
 		      "unwrap_nod", 1),
 	       "reramping unwrapped phase (deramp)");
@@ -209,6 +211,7 @@ int asf_baseline(char *baseName, char *interferogram, char *seeds,
     oldBase = newBase;
     newBase = base2str(i+1, baseName);
     
+    asfPrintStatus("   Refining the baseline ...\n");
     check_return(refine_baseline("unwrap_nod_phase.img",
 				 seeds, oldBase, newBase),
 		 "baseline refinement (refine_baseline)");
@@ -219,11 +222,13 @@ int asf_baseline(char *baseName, char *interferogram, char *seeds,
     check_return(1, "Baseline iterations failed to converge");
   *iterations = i+1;
   
+  asfPrintStatus("   Deramping interferogram with refined baseline ...\n");
   check_return(deramp(interferogram,
 		      base2str(*iterations, baseName),
 		      "igramd", 0),
 	       "deramping interferogram with refined baseline (deramp)");
   sprintf(tmp, "%s_ml", interferogram);
+  asfPrintStatus("   Multilooking refined interferogram ...\n");
   check_return(multilook("igramd", tmp, "a_cpx.meta", NULL),
 	       "multilooking refined interferogram (multilook)");
 

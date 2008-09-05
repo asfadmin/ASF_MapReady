@@ -18,7 +18,6 @@ OBJS = \
 	asf_baseline.o \
 	deramp.o \
 	refine_baseline.o \
-	multilook.o \
 	phase_filter.o
 
 all: build_only

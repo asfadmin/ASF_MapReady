@@ -4,27 +4,6 @@
 #include "asf.h"
 #include "functions.h"
 
-int ardop(char *option, int startLineNum, int numPatches, char *inFile, 
-	  char *outFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s -quiet -p %i -v %i -l %i %s", 
-	  logFile, numPatches, ARDOP_VALID_PATCH_LENGTH, startLineNum, option);
-  sprintf(command, "ardop %s %s %s", options, inFile, outFile);
-  
-  printf("\nCommand line: %s\n", command);
-  //fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  fLog = FOPEN(logFile, "a");
-  
-  return ret;
-}
-
 int c2p_exec(char *inFile, char *outFile)
 {
   char command[255];
@@ -43,61 +22,6 @@ int c2p_exec(char *inFile, char *outFile)
   return ret;
 }
 
-int coregister_coarse(char *inFile1, char *inFile2, char *outFile, char *maskFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s -quiet", logFile);
-  if (maskFile != NULL) sprintf(options, "%s -mask %s", options, maskFile);
-  sprintf(command, "coregister_coarse %s %s %s base.00 %s", 
-	  options, inFile1, inFile2, outFile);
-  
-  printf("\nCommand line: %s\n", command);
-  //fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  fLog = FOPEN(logFile, "a");
-  
-  return ret;
-}
-
-int coregister_fine(char *inFile1, char *inFile2, char *inCtrlFile, char *outFile, 
-		    char *maskFile, int gridSize, int useFFT)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s -quiet -g %d", logFile, gridSize);
-  if (useFFT == 1) strcat(options, " -f");
-  if (maskFile != NULL) sprintf(options, "%s -mask %s", options, maskFile);
-  sprintf(command, "coregister_fine %s %s %s %s %s", 
-	  options, inFile1, inFile2, inCtrlFile, outFile);
-  
-  printf("\nCommand line: %s\n", command);	
-  //fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-
-  if( (ret = system(command) >> 8) == 101)
-    {
-      printf("Error: Register_fine could not find many offsets with\n");
-      printf("interferometric phase while processing this patch.\n");
-      printf("This means the interferogram\n");
-      printf("is either mis-registered or just bad.\n");
-      printf("This can indicate any number of problems, please \n");
-      printf("check your data set to ensure that these can be \n");
-      printf("co-registered.\n");
-      printf("Now exiting.\n");
-      return 1;
-    }
-  fLog = FOPEN(logFile, "a");
-  return ret;
-}
-
 int fit_line(char *inFile, char *outFile)
 {
   char options[255], command[255];
@@ -105,26 +29,6 @@ int fit_line(char *inFile, char *outFile)
   
   sprintf(options, "-log %s -quiet", logFile);
   sprintf(command, "fit_line %s %s %s", options, inFile, outFile);
-  
-  printf("\nCommand line: %s\n", command);
-  //fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  fLog = FOPEN(logFile, "a");
-  
-  return ret;
-}
-
-int calc_deltas(char *inFile1, char *inFile2, int lineDiff, char *outFile)
-{
-  char options[255]="", command[255];
-  int ret;
-
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "calc_deltas %s %s %i %s", 
-	  inFile1, inFile2, lineDiff, outFile);
   
   printf("\nCommand line: %s\n", command);
   //fLog = FOPEN(logFile, "a");

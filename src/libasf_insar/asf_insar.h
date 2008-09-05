@@ -45,7 +45,7 @@ int asf_coregister(int datatype, char *coregType, char *baseName, int deskew,
 		   long master_offset, long slave_offset, int maximum_offset,
 		   int *master_patches, int *slave_patches, int *p1_range_offset, 
 		   int *p1_azimuth_offset, int *pL_range_offset, 
-		   int *pL_azimuth_offset, int *grid, int *fft, int power,
+		   int *pL_azimuth_offset, int *grid, int power,
 		   char *masterFile, char *slaveFile);
 
 // Prototypes from asf_igram_coh.c
@@ -71,9 +71,6 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
 char *base2str(int baseNo, char *base);
 int asf_baseline(char *baseName, char *interferogram, char *seeds, 
 		 int max_iterations, int *iterations);
-
-// Prototypes from multilook.c
-int multilook(char *inFile, char *outFile, char *metaFile, char *overlay);
 
 // Prototypes from deramp.c
 int deramp(char *inFile, char *baseFile, char *outFile, int back);
