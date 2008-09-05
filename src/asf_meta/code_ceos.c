@@ -95,9 +95,9 @@ void flt2asc(double *in,unsigned char *outBuf,int len,codingDir dir)
         if (tmp[i]=='D')
           tmp[i]='E';
       if (0==strncmp(tmp,cmp,len))
-  *in=0.0;
+        *in=0.0;
       else
-  sscanf(tmp,"%lG",in);
+        sscanf(tmp,"%lG",in);
   }
 }
 
@@ -440,19 +440,19 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
   fltV(ellip_maj,180,16); fltV(ellip_min,196,16); fltV(earth_mass,212,16);
   fltV(grav_const,228,16); fltV(ellip_j[0],244,16);
   fltV(ellip_j[1],260,16); fltV(ellip_j[2],276,16);
-        if (!era)
-          {
-      fltV(terrain_h ,292,16);
-      fltV(sc_lin    ,308,16);
-      fltV(sc_pix    ,324,16);
-    }
+  if (!era)
+  {
+    fltV(terrain_h ,292,16);
+    fltV(sc_lin    ,308,16);
+    fltV(sc_pix    ,324,16);
+  }
   else
-      {
-            strV(spare1,292,16);
-      fltV(terrain_h,308,16);
-            fltV(sc_lin,324,8);
-            fltV(sc_pix,332,8);
-          }
+  {
+    strV(spare1,292,16);
+    fltV(terrain_h,308,16);
+    fltV(sc_lin,324,8);
+    fltV(sc_pix,332,8);
+  }
   fltV(scene_len ,340,16); fltV(scene_wid ,356,16);
   shrtV(nchn,388,4); strV(mission_id,396,16); strV(sensor_id,412,32);
   strV(revolution,444,8); fltV(plat_lat,452,8); fltV(plat_long,460,8);
@@ -532,7 +532,9 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
     // && strncmp(q->mission_id, "ERS", 3) ==0))
   {
     int i;
-    for (i=0; i<3; i++) fltV(rng_time[i],1766+i*16,16);
+    for (i=0; i<3; i++) {
+      fltV(rng_time[i],1766+i*16,16);
+    }
     strV(az_time_first,1814,24);
     strV(az_time_center,1838,24);
     strV(az_time_last,1862,24);
@@ -551,8 +553,9 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
     shrtV(param_table,1834,4);
     fltV(off_nadir_angle,1838,16);
     shrtV(ant_beam_num,1854,4);
-    for (i=0; i<6; i++)
+    for (i=0; i<6; i++) {
       fltV(incid_a[i],1886+i*20,20);
+    }
   }
   /* Coded up the ALOS spec as I had it - does not seem to match
      the data though. Left things here just in case.
@@ -623,12 +626,12 @@ void Code_PPDR (unsigned char *bf, struct pos_data_rec* q, codingDir dir)
     fltV(crt_velerr,off,16);
     fltV(rad_velerr,off,16);
     for (i = 0; i< q->ndata; i++)
-     {
+    {
       for (j = 0; j<6; j++)
-       {
+      {
         fltV(pos_vec[i][j],off,22);
-       }
-     }
+      }
+    }
 /*  strV(spare_ppr_1,off,242); - caused CDPF data some grief & is not required */
 }
 
@@ -641,20 +644,20 @@ void Code_ATDR(unsigned char *bf, struct att_data_rec *q, codingDir dir)
     shrtV(npoint,off,4);
     v = q->data;
     for (i=0; i< q->npoint; i++)
+    {
+      if (dir == fromASCII)
       {
-  if (dir == fromASCII)
-         {
-     v = (struct att_vect_rec *) MALLOC (sizeof(struct att_vect_rec));
-     if (oldv==NULL)
-    q->data=v;
-     else
-    oldv->next=v;
-   }
-  off += Code_ATVR(&bf[off],v,dir);
-        oldv=v;
-    v = v->next;
-    pointNo++;
+        v = (struct att_vect_rec *) MALLOC (sizeof(struct att_vect_rec));
+        if (oldv==NULL)
+          q->data=v;
+        else
+          oldv->next=v;
       }
+      off += Code_ATVR(&bf[off],v,dir);
+      oldv=v;
+      v = v->next;
+      pointNo++;
+    }
     strV(spare_adr_1,off,640);
 }
 
@@ -746,11 +749,10 @@ void Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir)
     fltV(abs_rad_unc_db,off, 16);
     fltV(abs_rad_unc_deg,off, 16);
     off=222;
-    for (i=0; (i<q->nchn && i<16); i++)
-   {
-     fltV(rel_rad_unc[0][i],off,16);
-     fltV(rel_rad_unc[1][i],off,16);
-         }
+    for (i=0; (i<q->nchn && i<16); i++) {
+      fltV(rel_rad_unc[0][i],off,16);
+      fltV(rel_rad_unc[1][i],off,16);
+    }
     off=734;
     fltV(alt_locerr,off,16);
     fltV(crt_locerr,off,16);
@@ -759,11 +761,10 @@ void Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir)
     fltV(dis_skew,off,16);
     fltV(ori_err,off,16);
     off=830;
-    for (i=0; i<16; i++)
-       {
-        fltV(misreg[0][i],off, 16);
+    for (i=0; i<16; i++) {
+      fltV(misreg[0][i],off, 16);
       fltV(misreg[1][i],off, 16);
-   }
+    }
     if (era==1) {
       fltV(nesz,off,16);
       fltV(enl,off,16);
@@ -772,7 +773,9 @@ void Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir)
       strV(spare3,off,22);
       strV(cal_comment,off,200);
     }
-   else { strV(spare2,off,279); }
+    else {
+      strV(spare2,off,279);
+    }
 }
 
 
@@ -786,24 +789,25 @@ void Code_DHR(unsigned char* bf, struct data_hist_rec* q, codingDir dir)
   longV(ltab,off, 8);
 
   if (dir==fromASCII)
-  oldD=NULL;
+    oldD=NULL;
   else
-  d=q->data;
+    d=q->data;
   for (j=0; j< (q->ntab); j++)
   {
-  if (dir==fromASCII)
-    d=(struct hist_dset *)MALLOC(sizeof(struct hist_dset));
-  Code_DH(&bf[off],d,dir);
-  off += 248+8*d->nhist;
-  if (dir==fromASCII) {
-    d->next = NULL;
-    if (!oldD)
-      oldD = q->data = d;
-    else
-      oldD = ( oldD->next = d);
-  }
-  else /*(dir==toASCII)*/
-    { d=d->next; }
+    if (dir==fromASCII)
+      d=(struct hist_dset *)MALLOC(sizeof(struct hist_dset));
+    Code_DH(&bf[off],d,dir);
+    off += 248+8*d->nhist;
+    if (dir==fromASCII) {
+      d->next = NULL;
+      if (!oldD)
+        oldD = q->data = d;
+      else
+        oldD = ( oldD->next = d);
+    }
+    else { /*(dir==toASCII)*/
+      d=d->next;
+    }
   }
 }
 
@@ -822,9 +826,9 @@ void Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir)
   fltV(std_hist,off, 16); longV(nhist,off,8);
   if (dir==fromASCII)
     q->data_values_hist = (int *) MALLOC (sizeof(int)*q->nhist);
-
-  for (i=0; i<q->nhist; i++)
-           { longV(data_values_hist[i],off, 8); }
+  for (i=0; i<q->nhist; i++) {
+    longV(data_values_hist[i],off, 8);
+  }
 }
 
 void Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir)
@@ -905,7 +909,9 @@ void Code_ASF_FACDR(unsigned char *bf,struct VFDRECV *q,int era,codingDir dir)
       fltV(repl_pow,off,17); fltV(ssar_roll_ang,off,17);
       strV(comment,off,100);
     }
-    else strV(comment,off,100);
+    else {
+      strV(comment,off,100);
+    }
 }
 
 void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
@@ -960,7 +966,7 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
     fltV(x_in_vel,off,22); fltV(y_in_vel,off,22); fltV(z_in_vel,off,22);
     shrtV(in_stvec_flag,off,4);
     fltV(range_filt,off,16); fltV(az_filt,off,16); shrtV(update_filt,off,4);
-    for (i=0; i<8; i++) fltV(look_gains[i],off,16);
+    for (i=0; i<8; i++) { fltV(look_gains[i],off,16); }
     shrtV(samp_win_bias,off,4);
     fltV(dop_cube_coef,off,22);
     shrtV(prf_first_line,off,4); shrtV(prf_last_line,off,4);
@@ -970,10 +976,10 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
     shrtV(fft_ratio,off,4);
     shrtV(n_az_blocks,off,4); intV(n_in_lines,off,8);
     shrtV(ini_dop_amb,off,4);
-    for (i=0; i<3; i++) fltV(chirp_quality[i],off,16);
-    for (i=0; i<4; i++) fltV(in_data_stats[i],off,16);
-    for (i=0; i<2; i++) fltV(dop_amb_thres[i],off,16);
-    for (i=0; i<2; i++) fltV(out_data_stats[i],off,16);
+    for (i=0; i<3; i++) { fltV(chirp_quality[i],off,16); }
+    for (i=0; i<4; i++) { fltV(in_data_stats[i],off,16); }
+    for (i=0; i<2; i++) { fltV(dop_amb_thres[i],off,16); }
+    for (i=0; i<2; i++) { fltV(out_data_stats[i],off,16); }
     strV(t_sat_first_line,off,16);
     shrtV(n_val_pix,off,4); shrtV(n_range_samp,off,4);
     fltV(gain_low,off,16); fltV(gain_up,off,16);
@@ -986,8 +992,8 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
     shrtV(look_gain_flag,off,1);
     shrtV(max_look,off,14);
     shrtV(rep_norm_flag,off,4);
-    for (i=0; i<4; i++) fltV(gr2sr_poly[i],off,20);
-    for (i=0; i<5; i++) fltV(ant_elev_poly[i],off,20);
+    for (i=0; i<4; i++) { fltV(gr2sr_poly[i],off,20); }
+    for (i=0; i<5; i++) { fltV(ant_elev_poly[i],off,20); }
     fltV(range_time_poly,off,16);
     strV(spare6,off,10238);
 }
@@ -996,10 +1002,12 @@ void Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir)
 {
     int off=12, i;
     shrtV(seqence_number,off,4);
-    for (i=0; i<10; i++)
-      fltV(a_map[i],16+i*20,20);      
-    for (i=0; i<10; i++)
+    for (i=0; i<10; i++) {
+      fltV(a_map[i],16+i*20,20);
+    }
+    for (i=0; i<10; i++) {
       fltV(b_map[i],216+i*20,20);
+    }
     off=416;
     shrtV(cal_data_indicator,off,4);
     intV(start_line_up,off,8);
@@ -1011,16 +1019,20 @@ void Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir)
     intV(sigma_start_line,off,8);
     intV(number_loss_lines_L0,off,8);
     intV(number_loss_lines_L1,off,8);
-    for (i=0; i<25; i++)
+    for (i=0; i<25; i++) {
       fltV(a[i],1024+i*20,20);
-    for (i=0; i<25; i++)
+    }
+    for (i=0; i<25; i++) {
       fltV(b[i],1524+i*20,20);
+    }
     fltV(origin_pixel,2024,20);
     fltV(origin_line,2044,20);
-    for (i=0; i<25; i++)
+    for (i=0; i<25; i++) {
       fltV(c[i],2064+i*20,20);
-    for (i=0; i<25; i++)
+    }
+    for (i=0; i<25; i++) {
       fltV(d[i],2564+i*20,20);
+    }
     fltV(origin_lat,3064,20);
     fltV(origin_lon,3084,20);
 }
@@ -1032,16 +1044,18 @@ void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
     shrtV(seq_num,12,4);
     strV(inp_media,20,3);
     shrtV(n_tape_id,23,4);
-    for (i=0; i<10; i++)
+    for (i=0; i<10; i++) {
       strV(tape_id[i],27+i*8,8);
+    }
     strV(exp_ing_start,107,21);
     strV(exp_ing_stop,128,21);
     strV(act_ing_start,149,21);
     strV(act_ing_stop,170,21);
     strV(proc_start,191,21);
     strV(proc_stop,212,21);
-    for (i=0; i<10; i++)
+    for (i=0; i<10; i++) {
       fltV(mn_sig_lev[i],233+i*16,16);
+    }
     shrtV(src_data_ind,393,4);
     intV(miss_ln,397,8);
     intV(rej_ln,405,8);
@@ -1089,23 +1103,27 @@ void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
     intV(n_pix_updates,1107,4);
     for (i=0; i<q->n_pix_updates; i++) {
       strV(pix_count[i].pix_update,1111+i*29,21);
-      for (j=0; j<4; j++)
-    intV(pix_count[i].n_pix[j],1132+i*29+j*8,8);
+      for (j=0; j<4; j++) {
+        intV(pix_count[i].n_pix[j],1132+i*29+j*8,8);
+      }
     }
     fltV(pwin_start,2171,16);
     fltV(pwin_end,2187,16);
     strV(recd_type,2203,9);
     fltV(temp_set_inc,2212,16);
     intV(n_temp_set,2228,4);
-    for (i=0; i<q->n_temp_set; i++)
-      for (j=0; j<4; j++)
-    shrtV(temp[i].temp_set[j],2232+i*16+j*4,4);
+    for (i=0; i<q->n_temp_set; i++) {
+      for (j=0; j<4; j++) {
+        shrtV(temp[i].temp_set[j],2232+i*16+j*4,4);
+      }
+    }
     intV(n_image_pix,2552,8);
     fltV(prc_zero_pix,2560,16);
     fltV(prc_satur_pix,2576,16);
     fltV(img_hist_mean,2592,16);
-    for (i=0; i<3; i++)
+    for (i=0; i<3; i++) {
       fltV(img_cumu_dist[i],2608+i*16,16);
+    }
     fltV(pre_img_gn,2656,16);
     fltV(post_img_gn,2672,16);
     fltV(dopcen_inc,2688,16);
@@ -1113,21 +1131,25 @@ void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
     for (i=0; i<q->n_dopcen; i++) {
       fltV(dopcen_est[i].dopcen_conf,2708+i*48,16);
       fltV(dopcen_est[i].dopcen_ref_tim,2724+i*48,16);
-      for (j=0; j<4; j++)
-    fltV(dopcen_est[i].dopcen_coef[j],2740+i*48+j*16,16);
+      for (j=0; j<4; j++) {
+        fltV(dopcen_est[i].dopcen_coef[j],2740+i*48+j*16,16);
+      }
     }
     intV(dopamb_err,4628,4);
     fltV(dopamb_conf,4632,16);
-    for (i=0; i<7; i++)
+    for (i=0; i<7; i++) {
       fltV(eph_orb_data[i],4648+i*16,16);
+    }
     strV(appl_type,4760,12);
-    for (i=0; i<5; i++)
+    for (i=0; i<5; i++) {
       fltV(slow_time_coef[i],4772+i*22,22);
+    }
     intV(n_srgr,4882,4);
     for (i=0; i<q->n_srgr; i++) {
       strV(srgr_coefset[i].srgr_update,4886+i*37,21);
-      for (j=0; j<6; j++)
-    fltV(srgr_coefset[i].srgr_coef[j],4907+i*37+j*16,16);
+      for (j=0; j<6; j++) {
+        fltV(srgr_coefset[i].srgr_coef[j],4907+i*37+j*16,16);
+      }
     }
     fltV(pixel_spacing,7226,16);
     strV(pics_reqd,7242,3);
@@ -1209,7 +1231,6 @@ void Code_VDR(unsigned char *bf, struct VDREC *q, codingDir dir)
     shrtV(rec_nr,off,4);
     strV(spare,off,93);
     strV(local,off,101);
-
 }
 
 void Code_LFPR(unsigned char *bf, struct FPREC *q, codingDir dir)
@@ -1387,14 +1408,18 @@ void Code_AMPR(unsigned char *bf, struct alos_map_proj_rec *q, codingDir dir)
   fltV(ref_minor_axis,off,16);
   strV(geod_coord_name,off,16);
   strV(blank8,off,128);
-  for (ii=0,off=956; ii<10; ii++)
-    fltV(phi[ii],off+ii*24,24);
-  for (ii=0,off=1196; ii<10; ii++)
-    fltV(lambda[ii],off+ii*24,24);
-  for (ii=0,off=1436; ii<10; ii++)
-    fltV(i[ii],off+ii*24,24);
-  for (ii=0,off=1676; ii<10; ii++)
-    fltV(j[ii],off+ii*24,24);
+  for (ii=0; ii<10; ii++) {
+    fltV(phi[ii],956+ii*24,24);
+  }
+  for (ii=0; ii<10; ii++) {
+    fltV(lambda[ii],1196+ii*24,24);
+  }
+  for (ii=0; ii<10; ii++) {
+    fltV(i[ii],1436+ii*24,24);
+  }
+  for (ii=0; ii<10; ii++) {
+    fltV(j[ii],1676+ii*24,24);
+  }
   /*
   int a,b,c,d,e,f;
   int phi_ccd[10][8];
