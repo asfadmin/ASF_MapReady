@@ -215,7 +215,7 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   FREE(in1);/*Note: in2 shouldn't be freed, because we return it.*/
 }
 
-void fftMatch(char *inFile1, char *inFile2, char *corrFile,
+int fftMatch(char *inFile1, char *inFile2, char *corrFile,
           float *bestLocX, float *bestLocY, float *certainty)
 {
   int nl,ns;
@@ -247,7 +247,6 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
 
   /* Test chip size to see if we have enough memory for it */
   /* Reduce it if necessary, but not below 1024x1024 (which needs 4 Mb of memory) */
-  if (!quietflag) asfPrintStatus("\n   FFT Size: %d samples by %d lines\n",1<<mX,1<<mY);
   float *test_mem = (float *)malloc(sizeof(float)*ns*nl*2);
   if (!test_mem && !quietflag) asfPrintStatus("\n");
   while (!test_mem) {
@@ -278,10 +277,6 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
     asfPrintStatus(
             "   These images will take %d megabytes of memory to match.\n\n",
             ns*nl*2*sizeof(float)/(1024*1024));
-  }
-
-  if (!quietflag) {
-    asfPrintStatus("\tChip at %dx%d, size=%dx%d\n", chipX,chipY,chipDX,chipDY);
   }
 
   /*Optionally open the correlation image file.*/
@@ -330,6 +325,8 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
   meta_free(metaMaster);
   FCLOSE(in1F);
   FCLOSE(in2F);
+
+  return (0);
 }
 
 /* This method is here to match the old interface of fftMatch.  Old code

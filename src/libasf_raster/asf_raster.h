@@ -125,8 +125,8 @@ void trim_zeros_ext(char *infile, char *outfile, int update_meta,
                     int do_top, int do_left);
 
 /* Prototypes from fftMatch.c ************************************************/
-void fftMatch(char *inFile1, char *inFile2, char *corrFile,
-	      float *dx, float *dy, float *certainty);
+int fftMatch(char *inFile1, char *inFile2, char *corrFile,
+	     float *dx, float *dy, float *certainty);
 void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
 			     char *offsetFileName);
 
