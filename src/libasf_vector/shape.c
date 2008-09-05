@@ -144,37 +144,35 @@ void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
 {
   char *dbaseFile;
 
-  meta_parameters *meta = meta_create(inFile);
-
   // Open database for adding values
-  //basename = get_basename(inFile);
-  //dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(basename)+5));
-  //sprintf(dbaseFile, "%s.dbf", basename);
   dbaseFile = appendExt(inFile, ".dbf");
   *dbase = DBFOpen(dbaseFile, "r+b");
   if (*dbase == NULL)
     asfPrintError("Could not open database file '%s'\n", dbaseFile);
 
-  // Open shapefile for adding values
+  // Create a copy of the name to use for opening
   char tmpInFile[1024];
   strcpy(tmpInFile, inFile);
-  if (strcmp_case(meta->general->sensor, "ALOS") == 0) {
+  char *ext = findExt(inFile);
+  if (!ext) {
       // KLUDGE ALERT!  SHPOpen() below replaces the file extension in inFile
-      // by searching from the end of the filename in reverse for a '.' character,
-      // then appends .shx and .shp to the two filenames that it produces ...Unfortunately,
-      // this results in truncated ALOS basenames in the output files AND we don't own
-      // the shape library.  So, for ALOS only, append a dummy extension for the shape
-      // library to snip off and consequently keep the original ALOS basename intact:
+      // by searching from the end of the filename in reverse for a '.'
+      // character, then appends .shx and .shp to the two filenames that it
+      // produces ...Unfortunately, this results in truncated ALOS basenames
+      // in the output files AND we don't own the shape library.
+
+      // So, since SHPOpen() always wants to strip off an extension, we
+      // add an extension for it to strip in cases where one isn't already
+      // there.  This will solve the ALOS naming problem.
       sprintf(tmpInFile, "%s.dummy", inFile);
   }
-  meta_free(meta);
+
+  // Open shapefile for adding values
   *shape = SHPOpen(tmpInFile, "r+b");
   if (*shape == NULL)
-    asfPrintError("Could not open shapefile '%s\n", inFile);
+    asfPrintError("Could not open shapefile '%s'\n", inFile);
 
-  //FREE(basename);
   FREE(dbaseFile);
-
   return;
 }
 
