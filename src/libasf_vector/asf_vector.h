@@ -255,4 +255,9 @@ int custom2shape(char *inFile, const char *format,
 int custom2kml(char *inFile, const char *format,
 	       char *outFile, int listFlag);
 
+// Prototypes from convert2vector.t.c
+int test_c2v(char *inFile, const char *inFormat_str,
+	     char *outFile, const char *outFormat_str);
+
+
 #endif

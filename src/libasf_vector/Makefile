@@ -12,6 +12,7 @@ CFLAGS += \
 
 OBJS = \
 	convert2vector.o \
+	convert2vector.t.o \
 	utils.o \
 	header.o \
 	geotiff.o \

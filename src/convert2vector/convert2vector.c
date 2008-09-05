@@ -24,6 +24,7 @@ int main(int argc, char **argv)
 {
   char informat_str[25], outformat_str[25], *inFile, *outFile;
   int listFlag=0;
+  int testFlag=0;
   int inputFormatFlag=0;
   int outputFormatFlag=0;
   int needed_args=3;
@@ -50,6 +51,13 @@ int main(int argc, char **argv)
              checkForOption("-l", argc, argv)       ?
                checkForOption("-l", argc, argv)     :
              0;
+  testFlag = checkForOption("-test", argc, argv)    ?
+               checkForOption("-test", argc, argv)  :
+             checkForOption("--test", argc, argv)   ?
+               checkForOption("--test", argc, argv) :
+             checkForOption("-t", argc, argv)       ?
+               checkForOption("-t", argc, argv)     :
+             0;
   inputFormatFlag =  
     checkForOption("-input-format", argc, argv) ?
     getStringOption("-input-format", argc, argv, informat_str, NULL) :
@@ -62,9 +70,10 @@ int main(int argc, char **argv)
     getStringOption("-output-format", argc, argv, outformat_str, NULL) :
     checkForOption("--output-format", argc, argv) ?
     getStringOption("--output-format", argc, argv, outformat_str, NULL) :
-    checkForOption("-i", argc, argv) ?
-    getStringOption("-i", argc, argv, outformat_str, NULL) : 0;
+    checkForOption("-o", argc, argv) ?
+    getStringOption("-o", argc, argv, outformat_str, NULL) : 0;
   needed_args += listFlag         ? 1 : 0; // No argument
+  needed_args += testFlag         ? 1 : 0; // No argument
   needed_args += inputFormatFlag  ? 2 : 0; // w/Argument
   needed_args += outputFormatFlag ? 2 : 0; // w/Argument
   if (argc < needed_args) {
@@ -257,7 +266,7 @@ int main(int argc, char **argv)
   else if (outFormat == AUIG) 
     asfPrintStatus("into an AUIG CSV file ...\n");
   else if (outFormat == URSA)
-    asfPrintStatus("into an URSA bulk order file ...\n");
+    asfPrintStatus("into an URSA file ...\n");
   else {
     dbf_header_t *dbf;
     int nCols;
@@ -270,7 +279,10 @@ int main(int argc, char **argv)
       asfPrintError("   Unsupported output format (%s)\n", uc(outformat_str));
   }
 
-  convert2vector(inFile, informat_str, outFile, outformat_str, listFlag);
+  if (testFlag)
+    test_c2v(inFile, informat_str, outFile, outformat_str);
+  else
+    convert2vector(inFile, informat_str, outFile, outformat_str, listFlag);
 
   asfPrintStatus("Done.\n\n");
 
