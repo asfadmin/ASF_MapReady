@@ -22,12 +22,7 @@ LIBC = $(LIBS) -lm
 
 OBJS = ardop.o parse_cla.o
 
-all: ardop calc_deltas
-
-calc_deltas: calc_deltas.o
-	$(CC) $(CFLAGS) -o calc_deltas calc_deltas.o $(LIBC) $(LDFLAGS)
-	mv calc_deltas$(BIN_POSTFIX) $(BINDIR)
-	cp calc_deltas.1 ../../man/cat1/ardop.1
+all: ardop
 
 ardop:	$(OBJS)
 	$(CC) $(CFLAGS) -o ardop $(OBJS) $(LIBC) $(LDFLAGS)
