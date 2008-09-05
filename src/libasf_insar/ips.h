@@ -57,7 +57,6 @@ typedef struct {
   int pL_azimuth_offset;// azimuth offset (last patch in master and slave)
   int pL_range_offset;  // range offset (last patch in master and slave)
   int grid;             // grid size for fine coregistration
-  int fft;              // flag for complex FFT matching
   int power;            // flag for generating power images
   char *master_power;   // name of master power image
   char *slave_power;    // name of slave power image
