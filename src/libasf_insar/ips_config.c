@@ -218,7 +218,7 @@ dem_config *create_config_with_defaults()
   cfg->export = newStruct(s_export);
   
   /* initialize structure */
-  strcpy(cfg->comment, "create_dem: configuration file");
+  strcpy(cfg->comment, "ips: configuration file");
   
   cfg->general->mode = new_blank_str();
   cfg->general->dem = new_blank_str();
@@ -257,7 +257,6 @@ dem_config *create_config_with_defaults()
   cfg->coreg->pL_slave_start = 0;
   cfg->coreg->pL_patches = 1;
   cfg->coreg->grid = 20;
-  cfg->coreg->fft = 1;
   cfg->coreg->power = 0;
   cfg->coreg->master_power = new_blank_str();
   cfg->coreg->slave_power = new_blank_str();
@@ -572,8 +571,6 @@ dem_config *read_config(char *configFile, int createFlag)
 	cfg->coreg->pL_range_offset = read_int(line, "range offset last patch"); 
       if (strncmp(test, "grid", 4)==0) 
 	cfg->coreg->grid = read_int(line, "grid"); 
-      if (strncmp(test, "fft", 3)==0) 
-	cfg->coreg->fft = read_int(line, "fft"); 
       if (strncmp(test, "power flag", 10)==0) 
 	cfg->coreg->power = read_int(line, "power flag"); 
       if (strncmp(test, "master power image", 18)==0) 
@@ -940,12 +937,6 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
 	    "# grid that is used for the FFT match\n\n");	  
   fprintf(fConfig, "grid = %d\n", cfg->coreg->grid);
-  if (!shortFlag)
-    fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
-	    "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
-	    "# 0 for FFT match using coherence). Complex FFT matches usually lead to\n"
-	    "# better matching results.\n\n");
-  fprintf(fConfig, "fft = %d\n", cfg->coreg->fft);
   if (!shortFlag)
     fprintf(fConfig, "\n# This flag defines whether a power image is created while\n"
 	    "# processing the images (1 for generating a power image, 0 for not\n"
