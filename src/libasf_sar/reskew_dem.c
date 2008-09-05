@@ -451,6 +451,7 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
         strcpy(metaIn->general->bands, "");
 
 	meta_write(metaIn, outDEMfile);
+	metaIn->general->image_data_type = SIMULATED_IMAGE;
 	meta_write(metaIn, outAmpFile);
 
 /* Free memory, close files, & exit */
