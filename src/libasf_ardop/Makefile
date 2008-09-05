@@ -1,12 +1,13 @@
 include ../../make_support/system_rules
 
 OBJLIB = ardop_libs.o \
-	 cfft1d_risc.o \
-	 estdop.o \
-	 fft_dop.o \
-	 read_signal.o \
-	 ardop.o \
-	 get_params.o
+	cfft1d_risc.o \
+	estdop.o \
+	fft_dop.o \
+	read_signal.o \
+	ardop.o \
+	calc_deltas.o \
+	get_params.o
 
 SPECLIB = \
 	specan.o \
@@ -16,8 +17,11 @@ SPECLIB = \
 	quicklook.o
 
 ASPLIB = patch.o \
-	 ardop_setup.o \
-	 rciq.o rmpatch.o acpatch.o calibration.o
+	ardop_setup.o \
+	rciq.o \
+	rmpatch.o \
+	acpatch.o \
+	calibration.o
 
 # Filter out the ISOC99 FLAGS which causes some problems.
 CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
