@@ -167,6 +167,7 @@ src/sgpsdp
 src/smooth
 src/farcorr
 src/asf_calpol
+src/fftMatch
 
  16. Run the autotar script:
 
