@@ -1477,21 +1477,21 @@ void cpx2pauli(const char *inFile, const char *outFile, int tc_flag)
 void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
-		 "for Cloude-Pottier classification\n");
+		 "for Cloude-Pottier\nclassification\n");
   cpx2classification(inFile, outFile, tc_flag, "cloude8.cla");
 }
 
 void cpx2cloude_pottier8(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
-		 "for Cloude-Pottier classification (8 classes)\n");
+		 "for Cloude-Pottier\nclassification (8 classes)\n");
   cpx2classification(inFile, outFile, tc_flag, "cloude8.cla");
 }
 
 void cpx2cloude_pottier16(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
-		 "for Cloude-Pottier classification (16 classes)\n");
+		 "for Cloude-Pottier\nclassification (16 classes)\n");
   cpx2classification(inFile, outFile, tc_flag, "cloude16.cla");
 }
 

@@ -1346,6 +1346,22 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         asfPrintError("Chosen resampling method not supported\n");
       }
 
+      // Force resampling with Nearest Neighbor if we are doing
+      // a Cloude-Pottier decomposition
+      if (cfg->general->polarimetry &&
+          (cfg->polarimetry->cloude_pottier || 
+           cfg->polarimetry->cloude_pottier_ext) &&
+          strncmp(uc(cfg->geocoding->resampling), "NEAREST_NEIGHBOR", 16)!=0)
+      {
+        asfPrintWarning("When performing a Cloude-Pottier decomposition with "
+                        "geocoding, the\nresampling method must be Nearest "
+                        "Neighbor (since interpolating\nclassification numbers"
+                        " does not make sense).\n\nChanging resampling method "
+                        "from %s to NEAREST_NEIGHBOR.\n",
+                        cfg->geocoding->resampling);
+        strcpy(cfg->geocoding->resampling, "NEAREST_NEIGHBOR");
+      }
+
       // Check that the user didn't specify an average height, and
       // also is doing terrain correction
       if (cfg->general->terrain_correct &&

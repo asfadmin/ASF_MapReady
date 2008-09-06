@@ -1111,12 +1111,12 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     {
         g_assert(i==0);
         if (n_input_images > 1)
-            asfPrintStatus("No pixel size specified.\nUsing azimuth pixel size "
-                "from the first image's metadata: %f\n", imd->general->y_pixel_size);
+            asfPrintStatus("No pixel size specified.\nUsing range pixel size "
+                "from the first image's metadata: %f\n", imd->general->x_pixel_size);
         else
-            asfPrintStatus("No pixel size specified, using azimuth pixel size from "
-                "metadata: %f\n", imd->general->y_pixel_size);
-        pixel_size = imd->general->y_pixel_size;
+            asfPrintStatus("No pixel size specified, using range pixel size from "
+                "metadata: %f\n", imd->general->x_pixel_size);
+        pixel_size = imd->general->x_pixel_size;
     }
 
     // If all input metadata is byte, we will store everything as bytes,
@@ -1915,6 +1915,21 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       if (multiband || kk == band_num) {
         if (n_bands > 1)
           asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
+
+        // Complain if we're not using Nearest Neighbor when we shouldn't
+        if (kk==0 && resample_method != RESAMPLE_NEAREST_NEIGHBOR) {
+          if (strncmp_case(band_name[kk],"Cloude-Pottier",14)==0) {
+            asfPrintWarning("When geocoding Cloude-Pottier, you should be "
+                            "using\nthe resampling method NEAREST_NEIGHBOR.\n"
+                            "Results may not be as expected!\n");
+          }
+          else if (strncmp_case(band_name[kk],"LAYOVER_MASK",12)==0) {
+            asfPrintWarning("When geocoding a Layover/Shadow mask, you should "
+                            "be using\nthe resampling method "
+                            "NEAREST_NEIGHBOR.\n"
+                            "Results may not be as expected!\n");
+          }
+        }
 
         // For optical data -- we'll do processing as BYTE, to save memory
         // So, only one of the {Float/UInt8}Image will be non-null

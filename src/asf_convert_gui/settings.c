@@ -1648,8 +1648,17 @@ settings_to_config_file(const Settings *s,
       // but we also write it here, to avoid an annoying warning in
       // asf_mapready.
       fprintf(cf, "datum = %s\n", datum_string(s->datum));
-      fprintf(cf, "resampling = %s\n",
-        resample_method_string(s->resample_method));
+      // Always write nearest neighbor for Cloude-Pottier...
+      // Actually... let's not do this, instead we do it in command-line...
+      //if (s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE8 ||
+      //    s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE16) {
+      //  fprintf(cf, "resampling = %s\n",
+      //          resample_method_string(RESAMPLE_NEAREST_NEIGHBOR));
+      //}
+      //else {
+        fprintf(cf, "resampling = %s\n",
+                resample_method_string(s->resample_method));
+      //}
       fprintf(cf, "force = %d\n", s->geocode_force);
       fprintf(cf, "\n");
     }
