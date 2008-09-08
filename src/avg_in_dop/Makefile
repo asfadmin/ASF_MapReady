@@ -23,7 +23,7 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(GLIB_LIBS) \
-	-lm
+	-lz
 
 OBJS  = avg_in_dop.o
 
