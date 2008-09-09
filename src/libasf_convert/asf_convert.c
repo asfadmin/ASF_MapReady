@@ -1911,9 +1911,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             cfg->polarimetry->cloude_pottier_ext ||
             cfg->polarimetry->cloude_pottier_nc)
         {
-          sprintf(tmpFile, "%s/polarimetry_ea_hist.img",
+          sprintf(tmpFile, "%s/polarimetry_combined_hist.img",
                   cfg->general->tmp_dir);
-          save_intermediate(cfg, "Entropy-Alpha Histogram", tmpFile);
+          save_intermediate(cfg, "Cloude-Pottier Histogram", tmpFile);
           sprintf(tmpFile, "%s/polarimetry_class_map.img",
                   cfg->general->tmp_dir);
           save_intermediate(cfg, "Entropy-Alpha Class Map", tmpFile);

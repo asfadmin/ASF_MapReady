@@ -346,23 +346,67 @@ static double log3(double v)
 // For Cloude-Potter-16, we dump the double-wide histograms and
 // classification maps.
 
-#define HIST_HEIGHT 512
-static const int hist_height = HIST_HEIGHT;   // height
-static const int hist_width = HIST_HEIGHT*2;   // width
-int ea_hist[HIST_HEIGHT][HIST_HEIGHT*2];
+#define HIST_SIZE 512
+int hist_vals[HIST_SIZE][HIST_SIZE][HIST_SIZE];
+int class_map[HIST_SIZE][HIST_SIZE*2];
 
-static void dump_ea_hist(const char *base_filename,
-                         int ea_hist[hist_height][hist_width],
-                         int wide)
+#define ENTROPY_ALPHA 0
+#define ALPHA_ANISOTROPY 1
+#define ANISOTROPY_ENTROPY 2
+
+static int get_hist_val(int which, int ii, int jj, int kk)
 {
-  char *filename = appendToBasename(base_filename, "_ea_hist");
-  int size=hist_height;
+  switch (which) {
+    default:
+    case ENTROPY_ALPHA:
+      return hist_vals[jj][ii][kk];
+    case ALPHA_ANISOTROPY:
+      return hist_vals[kk][ii][jj];
+    case ANISOTROPY_ENTROPY:
+      return hist_vals[jj][kk][ii];
+  }
+}
 
+static void dump_hist(const char *base_filename, int which)
+{
+  char *filename = NULL;
+  switch (which) {
+    default:
+    case ENTROPY_ALPHA:
+      filename = appendToBasename(base_filename, "_entropy_alpha_hist");
+      break;
+    case ALPHA_ANISOTROPY:
+      filename = appendToBasename(base_filename, "_alpha_anisotropy_hist");
+      break;
+    case ANISOTROPY_ENTROPY:
+      filename = appendToBasename(base_filename, "_anisotropy_entropy_hist");
+      break;
+  }
+
+  int size = HIST_SIZE;
   meta_parameters *m = raw_init();
   m->general->line_count = size;
-  m->general->sample_count = wide ? size*2 : size;
+  m->general->sample_count = size;
   m->general->data_type = INTEGER16;
+  m->general->no_data = 0;
+  m->general->image_data_type = IMAGE;
   strcpy(m->general->basename, filename);
+  m->general->band_count = 1;
+
+  switch (which) {
+    default:
+      strcpy(m->general->bands, "???");
+      break;
+    case ENTROPY_ALPHA:
+      strcpy(m->general->bands, "Entropy-Alpha");
+      break;
+    case ALPHA_ANISOTROPY:
+      strcpy(m->general->bands, "Anisotropy-Alpha");
+      break;
+    case ANISOTROPY_ENTROPY:
+      strcpy(m->general->bands, "Entropy-Anisotropy");
+      break;
+  }
 
   char *meta_file = appendExt(filename, ".meta");
   char *img_file = appendExt(filename, ".img");
@@ -370,24 +414,28 @@ static void dump_ea_hist(const char *base_filename,
 
   FILE *fp = fopenImage(img_file, "wb");
 
-  int i,j;
-  float *buf;
+  int i,j,k;
 
-  if (wide) {
-    buf = MALLOC(sizeof(float)*size*2);
-    for (i=0; i<size; ++i) {
-      for (j=0; j<size*2; ++j)
-        buf[j] = ea_hist[i][j];
-      put_float_line(fp,m,i,buf);
+    // which= ENTROPY_ALPHA:
+    //   i= alpha index  [VERTICAL]
+    //   j= entropy index [HORIZONTAL]
+    // which= ALPHA_ANISOTROPY:
+    //   i= alpha index  [VERTICAL]
+    //   j= anisotropy index [HORIZONTAL]
+    // which= ANISOTROPY_ENTROPY:
+    //   i= anisotropy index [VERTICAL]
+    //   j= entropy index [HORIZONTAL]
+
+  float *buf = MALLOC(sizeof(float)*size);
+  for (i=0; i<size; ++i) {
+    for (j=0; j<size; ++j) {
+      buf[j] = 0;
+      for (k=0; k<size; ++k)
+        buf[j] += get_hist_val(which,i,j,k);
+      if (buf[j] > 32767) // avoid overflow
+        buf[j] = 32767;
     }
-  }
-  else {
-    buf = MALLOC(sizeof(float)*size);
-    for (i=0; i<size; ++i) {
-      for (j=0; j<size; ++j)
-        buf[j] = ea_hist[i][j] + ea_hist[i][j+hist_height];
-      put_float_line(fp,m,i,buf);
-    }
+    put_float_line(fp,m,i,buf);
   }
 
   free(buf);
@@ -399,19 +447,91 @@ static void dump_ea_hist(const char *base_filename,
   free(filename);
 }
 
-static void dump_class_map(const char *base_filename,
-                           int class_map[hist_height][hist_width],
-                           int wide)
+static void dump_combined_hist(const char *base_filename)
+{
+  char *filename = appendToBasename(base_filename, "_combined_hist");
+  int i,j,k,size=HIST_SIZE;
+
+  meta_parameters *m = raw_init();
+  m->general->line_count = size*2;
+  m->general->sample_count = size*2;
+  m->general->data_type = INTEGER16;
+  m->general->image_data_type = IMAGE;
+  m->general->no_data = 0;
+  m->general->band_count = 1;
+  strcpy(m->general->bands, "Histogram");
+  strcpy(m->general->basename, filename);
+
+  char *meta_file = appendExt(filename, ".meta");
+  char *img_file = appendExt(filename, ".img");
+  meta_write(m, meta_file);
+
+  FILE *fp = fopenImage(img_file, "wb");
+  float *buf = MALLOC(sizeof(float)*size*2);
+
+  // for the top size lines:
+  //  left half = anisotropy/alpha
+  //  right half = entropy/alpha
+
+  for (i=0; i<size; ++i) {
+    for (j=0; j<size; ++j) {
+      buf[j] = 0;
+      for (k=0; k<size; ++k)
+        buf[j] += get_hist_val(ALPHA_ANISOTROPY,i,j,k);
+    }
+    for (j=0; j<size; ++j) {
+      int jj = j+size;
+      buf[jj] = 0;
+      for (k=0; k<size; ++k)
+        buf[jj] += get_hist_val(ENTROPY_ALPHA,i,j,k);
+    }
+    // avoid overflow
+    for (j=0; j<size*2; ++j) {
+      if (buf[j] > 32767) 
+        buf[j] = 32767;
+    }
+    put_float_line(fp,m,i,buf);
+  }
+
+  // for the bottom size lines:
+  //  left half = zeros
+  //  right half = anisotropy/entropy
+
+  for (j=0; j<size; ++j)
+    buf[j] = 0;
+  for (i=0; i<size; ++i) {
+    for (j=0; j<size; ++j) {
+      int jj = j+size;
+      buf[jj] = 0;
+      for (k=0; k<size; ++k)
+        buf[jj] += get_hist_val(ANISOTROPY_ENTROPY,i,j,k);
+      if (buf[jj] > 32767) 
+        buf[jj] = 32767;
+    }
+    put_float_line(fp,m,i+size,buf);
+  }
+
+  free(buf);
+  fclose(fp);
+  meta_free(m);
+
+  free(meta_file);
+  free(img_file);
+  free(filename);
+}
+
+static void dump_class_map(const char *base_filename, int wide)
 {
   char *filename = appendToBasename(base_filename, "_class_map");
 
-  int height = hist_height;
-  int width = wide ? hist_height*2 : hist_height;
+  int height = HIST_SIZE;
+  int width = wide ? HIST_SIZE*2 : HIST_SIZE;
 
   meta_parameters *m = raw_init();
   m->general->line_count = height;
   m->general->sample_count = width;
   m->general->data_type = BYTE;
+  m->general->image_data_type = IMAGE;
   strcpy(m->general->basename, filename);
 
   char *meta_file = appendExt(filename, ".meta");
@@ -458,7 +578,7 @@ static double calc_alpha(gsl_complex z)
   return calc_alpha_real(GSL_REAL(z));
 }
 
-static void add_boundary(int ea_hist[hist_height][hist_width], int wide)
+static void add_boundary(int wide)
 {
   const char *boundary_file = "classifications/ea_boundary.txt";
 
@@ -479,11 +599,11 @@ static void add_boundary(int ea_hist[hist_height][hist_width], int wide)
     while (fgets(line,256,fp)) {
       double entropy, alpha;
       sscanf(line,"%lf,%lf", &entropy, &alpha);
-      int i = (hist_height-1)*(1-alpha/90.);
-      int j = entropy*hist_height;
-      ea_hist[i][j] = 255;
+      int i = (HIST_SIZE-1)*(1-alpha/90.);
+      int j = entropy*HIST_SIZE;
+      class_map[i][j] = 255;
       if (wide)
-        ea_hist[i][j+hist_height] = 255;
+        class_map[i][j+HIST_SIZE] = 255;
     }
     FCLOSE(fp);
   }
@@ -752,23 +872,22 @@ do_coherence_bands(int entropy_band, int anisotropy_band, int alpha_band,
       }
       put_band_float_line(fout, outMeta, class_band, line, buf);
     }
-    
+
     for (j=0; j<ns; ++j) {
-      int entropy_index = entropy[j]*(float)hist_height;
+      int entropy_index = entropy[j]*(float)HIST_SIZE;
       if (entropy_index<0) entropy_index=0;
-      if (entropy_index>hist_height-1) entropy_index=hist_height-1;
+      if (entropy_index>HIST_SIZE-1) entropy_index=HIST_SIZE-1;
             
-      int alpha_index = hist_height-1-alpha[j]/90.0*(float)hist_height;
+      int alpha_index = HIST_SIZE-1-alpha[j]/90.0*(float)HIST_SIZE;
       if (alpha_index<0) alpha_index=0;
-      if (alpha_index>hist_height-1) alpha_index=hist_height-1;
+      if (alpha_index>HIST_SIZE-1) alpha_index=HIST_SIZE-1;
       
       //printf("%10.1f %10.1f %5d %5d --> %4d\n",
       //       entropy[j], alpha[j],
       //       entropy_index, alpha_index,
       //      ea_hist[entropy_index][alpha_index]+1);
-      if (anisotropy[j] > .5)
-        entropy_index += hist_height;
-      ea_hist[alpha_index][entropy_index] += 1;
+      int anisotropy_index = anisotropy[j]*(float)HIST_SIZE;
+      hist_vals[entropy_index][alpha_index][anisotropy_index] += 1;
     }
 
     free(entropy);
@@ -1021,56 +1140,57 @@ static void do_freeman(int band1, int band2, int band3,
 static void do_class_map(classifier_t *classifier, int class_band, int wide,
                          const char *outFile)
 {
-  // dump classified pop graph -- reuse the same ea_hist array,
-  // since we are done with the population graph
-  int i, j;
+  // build the class_map array from the hist_vals array.
+  int i, j, k, size = HIST_SIZE;
   if (class_band >= 0) {
     if (!wide) {
       // non-wide: this is the Cloude-Pottier 8 classes case, where
-      // we use only half of the ea_hist array
-      for (i=0; i<hist_height; ++i) {
-        double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-        for (j=0; j<hist_height; ++j) {
-          int count = ea_hist[i][j] + ea_hist[i][j+hist_height];
-          if (j==0) {
-            ea_hist[i][j] = 0;
+      // we use only half of the class_map array
+      for (i=0; i<size; ++i) {
+        double alpha = (double)(size-1-i)/(double)size*90.;
+        class_map[i][0] = 0;
+        for (j=1; j<size; ++j) {
+          int count = 0;
+          for (k=0; k<size; ++k)
+            count += hist_vals[j][i][k];
+          if (count > 0) {
+            double entropy = (double)j/(double)size;
+            class_map[i][j] = classify(classifier, entropy, 0, alpha);
           }
-          else if (count > 0) {
-            double entropy = (double)j/(double)hist_height;
-            ea_hist[i][j] = classify(classifier, entropy, 0, alpha);
-          }
+          else
+            class_map[i][j] = 0;
         }
       }
       // drawing the white border lines -- assumes look-up-tables use
       // "255" as white.  (cloude8.lut)
       int prev = -1;
-      for (i=0; i<hist_height; ++i) {
-        double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-        for (j=0; j<hist_height; ++j) {
-          double entropy = (double)j/(double)hist_height;
+      for (i=0; i<size; ++i) {
+        double alpha = (double)(size-1-i)/(double)size*90.;
+        for (j=0; j<size; ++j) {
+          double entropy = (double)j/(double)size;
           int curr = classify(classifier, entropy, 0, alpha);
           if (j>0 && prev != curr)
-            ea_hist[i][j] = 255;
+            class_map[i][j] = 255;
           prev = curr;
         }
       }
       prev = -1;
-      for (j=0; j<hist_height; ++j) {
-        double entropy = (double)j/(double)hist_height;
-        for (i=0; i<hist_height; ++i) {
-          double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+      for (j=0; j<size; ++j) {
+        double entropy = (double)j/(double)size;
+        for (i=0; i<size; ++i) {
+          double alpha = (double)(size-1-i)/(double)size*90.;
           int curr = classify(classifier, entropy, 0, alpha);
           if (i>0 && prev != curr)
-            ea_hist[i][j] = 255;
+            class_map[i][j] = 255;
           prev = curr;
         }
       }
       // if we have the file "ea_boundary.txt" in the share directory
       // (this file can be generated by calling make_entropy_alpha_boundary()
       // defined below, and exposed via asf_calpol)
-      add_boundary(ea_hist, FALSE);
+      add_boundary(FALSE);
 
-      dump_class_map(outFile, ea_hist, FALSE);
+      dump_class_map(outFile, FALSE);
     }
     else {
       // wide: this is the Cloude-Pottier 16 classes case, where
@@ -1080,61 +1200,67 @@ static void do_class_map(classifier_t *classifier, int class_band, int wide,
       // we're definitely in the >.5 blocks -- .5 could possibly be
       // classified in the (0,.5) range depending on use of <= vs < above,
       // roundoff, etc)
-      for (i=0; i<hist_height; ++i) {
-        double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-        for (j=0; j<hist_height*2; ++j) {
-          int count = ea_hist[i][j];
+      for (i=0; i<size; ++i) {
+        double alpha = (double)(size-1-i)/(double)size*90.;
+        for (j=0; j<size*2; ++j) {
           if (j==0) {
-            ea_hist[i][j] = 0;
+            class_map[i][j] = 0;
           }
-          else if (j == hist_height) {
-            ea_hist[i][j] = 255;
+          else if (j == size) {
+            class_map[i][j] = 255;
           }
-          else if (count > 0) {
-            double entropy = j > hist_height ?
-              (double)(j-hist_height)/(double)hist_height :
-              (double)j/(double)hist_height;
-            double aniso = j > hist_height ? 0.55 : 0.0;
-            ea_hist[i][j] = classify(classifier, entropy, aniso, alpha);
+          else {
+            int jj = j;
+            if (j>size) jj -= size;
+            int count = 0;
+            for (k=0; k<size; ++k)
+              count += hist_vals[jj][i][k];
+            if (count > 0) {
+              double entropy = (double)jj/(double)size;
+              double aniso = j > size ? 0.55 : 0.0;
+              class_map[i][j] = classify(classifier, entropy, aniso, alpha);
+            }
+            else
+              class_map[i][j] = 0;
           }
         }
       }
       // drawing the white border lines -- assumes look-up-tables use
       // "255" as white.  (cloude16.lut)
       int prev = -1;
-      for (i=0; i<hist_height; ++i) {
-        double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
-        for (j=0; j<hist_height*2; ++j) {
-          double entropy = j > hist_height ?
-            (double)(j-hist_height)/(double)hist_height :
-            (double)j/(double)hist_height;
-          double aniso = j > hist_height ? 0.55 : 0.0;
+      for (i=0; i<size; ++i) {
+        double alpha = (double)(size-1-i)/(double)size*90.;
+        for (j=0; j<size*2; ++j) {
+          double entropy = j > size ?
+            (double)(j-size)/(double)size :
+            (double)j/(double)size;
+          double aniso = j > size ? 0.55 : 0.0;
           int curr = classify(classifier, entropy, aniso, alpha);
           if (j>0 && prev != curr)
-            ea_hist[i][j] = 255;
+            class_map[i][j] = 255;
           prev = curr;
         }
       }
       prev = -1;
-      for (j=0; j<hist_height*2; ++j) {
-        double entropy = j > hist_height ?
-          (double)(j-hist_height)/(double)hist_height :
-          (double)j/(double)hist_height;
-        double aniso = j > hist_height ? 0.55 : 0.0;
-        for (i=0; i<hist_height; ++i) {
-          double alpha = (double)(hist_height-1-i)/(double)hist_height*90.;
+      for (j=0; j<size*2; ++j) {
+        double entropy = j > size ?
+          (double)(j-size)/(double)size :
+          (double)j/(double)size;
+        double aniso = j > size ? 0.55 : 0.0;
+        for (i=0; i<size; ++i) {
+          double alpha = (double)(size-1-i)/(double)size*90.;
           int curr = classify(classifier, entropy, aniso, alpha);
           if (i>0 && prev != curr)
-            ea_hist[i][j] = 255;
+            class_map[i][j] = 255;
           prev = curr;
         }
       }
       // if we have the file "ea_boundary.txt" in the share directory
       // (this file can be generated by calling make_entropy_alpha_boundary()
       // defined below, and exposed via asf_calpol)
-      add_boundary(ea_hist, TRUE);
+      add_boundary(TRUE);
       
-      dump_class_map(outFile, ea_hist, TRUE);
+      dump_class_map(outFile, TRUE);
     }
   }
 }
@@ -1170,7 +1296,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   char *in_img_name = appendExt(inFile, ".img");
   char *out_img_name = appendExt(outFile, ".img");
 
-  int i, j;
+  int i, j, k;
 
   // chunk_size represents the number of rows we keep in memory at one
   // time, centered on the row currently being processed.  This is to
@@ -1327,9 +1453,10 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
     classifier = read_classifier(classFile);
 
   // population histogram image, in entropy-alpha space
-  for (i=0; i<hist_height; ++i)
-    for (j=0; j<hist_width; ++j)
-      ea_hist[i][j] = 0;
+  for (i=0; i<HIST_SIZE; ++i)
+    for (j=0; j<HIST_SIZE; ++j)
+      for (k=0; k<HIST_SIZE; ++k)
+        hist_vals[i][j][k] = 0;
 
   //-----------------------------------------------------------------------
   // done setting up metadata, now write the data
@@ -1395,14 +1522,21 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
     if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0)
       asfPrintStatus("Generating population histogram...\n");
     else
-      asfPrintStatus("Generating population histogram and "
+      asfPrintStatus("Generating population histograms and "
                      "classification map...\n");
 
     // dump population graph & class map
     int wide = FALSE;
     if (class_band >= 0)
       wide = strncmp_case(classFile,"cloude16",8) == 0;
-    dump_ea_hist(outFile, ea_hist, wide);
+
+    // dump projections of the 3-d histogram
+    dump_hist(outFile, ENTROPY_ALPHA);
+    dump_hist(outFile, ALPHA_ANISOTROPY);
+    dump_hist(outFile, ANISOTROPY_ENTROPY);
+    dump_combined_hist(outFile);
+
+    // dump classification map (entropy/alpha)
     do_class_map(classifier, class_band, wide, outFile);
   }
 
@@ -1477,21 +1611,21 @@ void cpx2pauli(const char *inFile, const char *outFile, int tc_flag)
 void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
-		 "for Cloude-Pottier\nclassification\n");
+		 "for Cloude-Pottier classification\n");
   cpx2classification(inFile, outFile, tc_flag, "cloude8.cla");
 }
 
 void cpx2cloude_pottier8(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
-		 "for Cloude-Pottier\nclassification (8 classes)\n");
+		 "for Cloude-Pottier classification (8 classes)\n");
   cpx2classification(inFile, outFile, tc_flag, "cloude8.cla");
 }
 
 void cpx2cloude_pottier16(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
-		 "for Cloude-Pottier\nclassification (16 classes)\n");
+		 "for Cloude-Pottier classification (16 classes)\n");
   cpx2classification(inFile, outFile, tc_flag, "cloude16.cla");
 }
 

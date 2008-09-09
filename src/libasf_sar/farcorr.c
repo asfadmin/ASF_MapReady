@@ -224,8 +224,8 @@ void faraday_correct(const char *inFile, const char *outFile, double threshold,
   // faraday rotation correction, but before calibration, so that the
   // raw rotation results can be assessed) -- uncomment the second
   // of these, comment out the first
-  //int debug = FALSE;
-  int debug = output_radiometry != r_AMP;
+  int debug = FALSE;
+  //int debug = output_radiometry != r_AMP;
 
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);

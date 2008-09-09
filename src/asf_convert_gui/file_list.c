@@ -25,7 +25,7 @@ int COMP_COL_LAYOVER_SHADOW_MASK_FILE;
 int COMP_COL_CLIPPED_DEM_FILE;
 int COMP_COL_SIMULATED_SAR_FILE;
 int COMP_COL_FARADAY_FILE;
-int COMP_COL_EA_HIST_FILE;
+int COMP_COL_HIST_FILE;
 int COMP_COL_CLASS_MAP_FILE;
 int COMP_COL_METADATA_FILE;
 
@@ -327,7 +327,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 
     // pull out the useful intermediates
     char *layover_mask=NULL, *clipped_dem=NULL, *simulated_sar=NULL,
-      *tmp_dir=NULL, *faraday=NULL, *ea_hist=NULL, *class_map=NULL,
+      *tmp_dir=NULL, *faraday=NULL, *hist=NULL, *class_map=NULL,
       *meta_file=NULL;
 
     int i, num_outputs=0, max_outputs=64;
@@ -344,7 +344,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
         get_intermediate(line, "Simulated SAR", &simulated_sar);
         get_intermediate(line, "Temp Dir", &tmp_dir);
         get_intermediate(line, "Faraday", &faraday);
-        get_intermediate(line, "Entropy-Alpha Histogram", &ea_hist);
+        get_intermediate(line, "Cloude-Pottier Histogram", &hist);
         get_intermediate(line, "Entropy-Alpha Class Map", &class_map);
         get_intermediate(line, "Meta", &meta_file);
         if (get_intermediate(line, "Output", &outs[num_outputs]))
@@ -359,7 +359,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     if (!clipped_dem) clipped_dem = STRDUP("");
     if (!simulated_sar) simulated_sar = STRDUP("");
     if (!faraday) faraday = STRDUP("");
-    if (!ea_hist) ea_hist = STRDUP("");
+    if (!hist) hist = STRDUP("");
     if (!class_map) class_map = STRDUP("");
     if (!meta_file) meta_file = STRDUP("");
 
@@ -376,7 +376,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_CLIPPED_DEM_FILE, clipped_dem,
                        COMP_COL_SIMULATED_SAR_FILE, simulated_sar,
                        COMP_COL_FARADAY_FILE, faraday,
-                       COMP_COL_EA_HIST_FILE, ea_hist,
+                       COMP_COL_HIST_FILE, hist,
                        COMP_COL_CLASS_MAP_FILE, class_map,
                        COMP_COL_METADATA_FILE, meta_file,
                        -1);
@@ -388,7 +388,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     free(simulated_sar);
     free(tmp_dir);
     free(faraday);
-    free(ea_hist);
+    free(hist);
     free(class_map);
     free(meta_file);
 
@@ -762,7 +762,7 @@ setup_files_list()
     COMP_COL_CLIPPED_DEM_FILE = 8;
     COMP_COL_SIMULATED_SAR_FILE = 9;
     COMP_COL_FARADAY_FILE = 10;
-    COMP_COL_EA_HIST_FILE = 11;
+    COMP_COL_HIST_FILE = 11;
     COMP_COL_CLASS_MAP_FILE = 12;
     COMP_COL_METADATA_FILE = 13;
 
@@ -993,7 +993,7 @@ setup_files_list()
     renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
-                                       COMP_COL_EA_HIST_FILE);
+                                       COMP_COL_HIST_FILE);
 
     /* Next Column: Entropy/Alpha Classification Map (hidden) */
     col = gtk_tree_view_column_new();
