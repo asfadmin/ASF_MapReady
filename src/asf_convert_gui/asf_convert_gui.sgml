@@ -532,6 +532,14 @@
            smoothed rotation angle, or the average of all the rotation
            angles.
         </para>
+        <para>
+           If the rotation angle is small, you may wish to skip the
+           correction.  If you specify a threshold angle, then the
+           average Faraday Rotation angle is smaller (in absolute
+           value) than the threshold, then the Faraday Rotation
+           correction is skipped.  If you always want to apply the
+           correction, then leave the box blank.
+        </para>
     </chapter>
     <chapter id="dem">
         <title>Terrain Correction Tab Options</title>

@@ -1611,11 +1611,9 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "freeman durden = %d\n",
             s->polarimetric_decomp_setting==POLARIMETRY_FREEMAN_DURDEN?1:0);
 
-        // faraday rotation codes:
-        //   0= no farcorr, 1=farcorr w/gloal, 2=farcorr w/local
-        int farcorr_code = 0;
+        int farcorr_code = FARCORR_OFF;
         if (s->do_farcorr)
-          farcorr_code = s->farcorr_global_avg ? 1 : 2;
+          farcorr_code = s->farcorr_global_avg ? FARCORR_MEAN : FARCORR_SMOOTH;
         fprintf(cf, "faraday correction = %d\n", farcorr_code);
         fprintf(cf, "farcorr threshold = %f\n", s->farcorr_threshold);
         fprintf(cf, "\n");

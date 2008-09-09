@@ -1784,7 +1784,7 @@
 					<widget class="GtkEntry" id="farcorr_threshold_entry">
 					  <property name="width_request">60</property>
 					  <property name="visible">True</property>
-					  <property name="tooltip" translatable="yes">If the calculated Faraday Rotation angle is smaller than this value, Faraday Rotation Correction is not applied.  (Leave blank for no threshold - correction is always applied.)</property>
+					  <property name="tooltip" translatable="yes">If the calculated Faraday Rotation angle is smaller (in absolute value) than this value, the Faraday Rotation Correction is not applied.  Leave blank to always apply the correction.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
