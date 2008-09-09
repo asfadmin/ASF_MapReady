@@ -93,6 +93,11 @@ void put_int_to_entry(const char *widget_name, int val)
     gtk_entry_set_text(GTK_ENTRY(e), tmp);
 }
 
+void put_string_to_entry(const char *widget_name, const char *txt)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    gtk_entry_set_text(GTK_ENTRY(e), txt);
+}
 
 int get_checked(const char *widget_name)
 {

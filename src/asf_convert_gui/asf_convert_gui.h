@@ -293,6 +293,7 @@ double get_double_from_entry(const char *widget_name);
 void put_double_to_entry(const char *widget_name, double val);
 int get_int_from_entry(const char *widget_name);
 void put_int_to_entry(const char *widget_name, int val);
+void put_string_to_entry(const char *widget_name, const char *txt);
 int get_checked(const char *widget_name);
 void set_checked(const char *widget_name, int checked);
 void enable_widget(const char *widget_name, int enable);

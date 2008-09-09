@@ -626,7 +626,8 @@ void save_config(char *config_file, char* projfile)
     int farcorr_code = 0;
     if (s->do_farcorr)
       farcorr_code = s->farcorr_global_avg ? 2 : 1;
-    fprintf(cf, "faraday rotation correction = %d\n", farcorr_code);
+    fprintf(cf, "faraday correction = %d\n", farcorr_code);
+    fprintf(cf, "farcorr threshold = %f\n", s->farcorr_threshold);
     fprintf(cf, "\n");
   }
 

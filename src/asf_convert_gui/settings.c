@@ -138,8 +138,8 @@ settings_apply_to_gui(const Settings * s)
         {
             gchar tmp[32];
 
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(latitude_checkbutton),
-                TRUE);
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(latitude_checkbutton), TRUE);
 
             latitude_low_entry =
                 get_widget_checked("latitude_low_entry");
@@ -155,8 +155,8 @@ settings_apply_to_gui(const Settings * s)
         }
         else
         {
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(latitude_checkbutton),
-                FALSE);
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(latitude_checkbutton), FALSE);
         }
     }
 
@@ -212,6 +212,14 @@ settings_apply_to_gui(const Settings * s)
 
           rb_select("rb_fr_local", !s->farcorr_global_avg);
           rb_select("rb_fr_global", s->farcorr_global_avg);
+
+          if (s->farcorr_threshold > 0) {
+            put_double_to_entry("farcorr_threshold_entry",
+                                s->farcorr_threshold);
+          }
+          else {
+            put_string_to_entry("farcorr_threshold_entry", "");
+          }
         }
         else {
           gtk_toggle_button_set_active(
@@ -225,7 +233,7 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *polarimetry_checkbutton =
             get_widget_checked("polarimetry_checkbutton");
         gtk_toggle_button_set_active(
-          GTK_TOGGLE_BUTTON(polarimetry_checkbutton), FALSE);
+            GTK_TOGGLE_BUTTON(polarimetry_checkbutton), FALSE);
     }
 
     set_checked("ers2_gain_fix_checkbutton", s->apply_ers2_gain_fix);
@@ -1807,6 +1815,8 @@ int apply_settings_from_config_file(char *configFile)
     /* polarimetry */
     s.polarimetric_decomp_setting = POLARIMETRY_NONE;
     s.do_farcorr = FALSE;
+    s.farcorr_threshold = -1;
+  
     if (cfg->general->polarimetry) {
       if (cfg->polarimetry->pauli)
         s.polarimetric_decomp_setting = POLARIMETRY_PAULI;
@@ -1827,6 +1837,7 @@ int apply_settings_from_config_file(char *configFile)
           s.farcorr_global_avg = TRUE;
         else
           s.farcorr_global_avg = FALSE;
+        s.farcorr_threshold = cfg->polarimetry->farcorr_threshold;
       }
     }
 
