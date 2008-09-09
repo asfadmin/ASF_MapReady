@@ -639,6 +639,11 @@ settings_get_from_gui()
           assert(FALSE);
           ret->do_farcorr = FALSE;
         }
+        double thresh = get_double_from_entry("farcorr_threshold_entry");
+        if (thresh <= 0.0)
+          ret->farcorr_threshold = -1;
+        else
+          ret->farcorr_threshold = thresh;
       }
     }
 
@@ -1604,6 +1609,7 @@ settings_to_config_file(const Settings *s,
         if (s->do_farcorr)
           farcorr_code = s->farcorr_global_avg ? 1 : 2;
         fprintf(cf, "faraday correction = %d\n", farcorr_code);
+        fprintf(cf, "farcorr threshold = %f\n", s->farcorr_threshold);
         fprintf(cf, "\n");
     }
 

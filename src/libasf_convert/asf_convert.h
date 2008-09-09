@@ -116,6 +116,7 @@ typedef struct
   int lee_preserving;     // Lee category preserving
   int freeman_durden;     // Freeman/Durden decomposition
   farcorr_t farcorr;      // Do we want to faraday correct, if so, how?
+  double farcorr_threshold; // Angle below which we do not apply the correction
 } s_polarimetry;
 
 typedef struct

@@ -444,6 +444,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->polarimetry->k_means_wishart_ext = 0;
   cfg->polarimetry->lee_preserving = 0;
   cfg->polarimetry->farcorr = FARCORR_OFF;
+  cfg->polarimetry->farcorr_threshold = -1;
 
   cfg->terrain_correct->pixel = -99;
   cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*255);
@@ -631,6 +632,9 @@ convert_config *init_fill_convert_config(char *configFile)
           read_int(line, "k-means wishart ext");
       if (strncmp(test, "faraday correction", 18)==0)
         cfg->polarimetry->farcorr = read_int(line, "faraday correction");
+      if (strncmp(test, "farcorr threshold", 17)==0)
+        cfg->polarimetry->farcorr_threshold =
+          read_double(line, "farcorr threshold");
 
       // Terrain correction
       if (strncmp(test, "pixel spacing", 13)==0)
@@ -957,6 +961,9 @@ convert_config *read_convert_config(char *configFile)
         cfg->polarimetry->lee_preserving = read_int(line, "lee preserving");
       if (strncmp(test, "faraday correction", 18)==0)
         cfg->polarimetry->farcorr = read_int(line, "faraday correction");
+      if (strncmp(test, "farcorr threshold", 17)==0)
+        cfg->polarimetry->farcorr_threshold =
+          read_double(line, "farcorr threshold");
       FREE(test);
     }
 
@@ -1417,8 +1424,15 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# A value of 2 uses a local average of the per pixel angles.\n"
                 "\n");
       fprintf(fConfig, "faraday correction = %i\n\n", cfg->polarimetry->farcorr);
-      }
-
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If the Faraday Rotation angle is small, you can elect to\n"
+                "# not apply the correction, even if you have selected to above.\n"
+                "# If the correction angle is smaller than the threshold angle, then\n"
+                "# the correction is not applied.  Use -1 for no threshold (which means\n"
+                "# the correction is always applied).\n\n");
+      fprintf(fConfig, "farcorr threshold = %.2lf\n\n", cfg->polarimetry->farcorr_threshold);
+    }
+    
     // Terrain correction
     if (cfg->general->terrain_correct) {
       fprintf(fConfig, "\n[Terrain correction]\n");

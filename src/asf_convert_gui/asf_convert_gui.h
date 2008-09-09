@@ -136,6 +136,7 @@ typedef struct
   int polarimetric_decomp_setting;
   int do_farcorr;
   int farcorr_global_avg;
+  double farcorr_threshold;
 
   /* export */
   int export_is_checked;

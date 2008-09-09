@@ -168,6 +168,12 @@ const char *get_summary_text()
             strcat(text, "\n   FR Corr. w/ Global Avg");
           else
             strcat(text, "\n   FR Corr. w/ Local Avg");
+
+          if (s->farcorr_threshold > 0)
+            sprintf(text, "%s\n     Threshold: %.1f degree%s", text,
+                    s->farcorr_threshold, s->farcorr_threshold==1?"":"s");
+          else
+            strcat(text, "\n     No threshold");
         }
     }
 

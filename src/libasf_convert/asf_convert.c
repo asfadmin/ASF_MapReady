@@ -1282,7 +1282,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
           cloude_pottier_nc + k_means_wishart + k_means_wishart_ext +
           freeman_durden + cfg->polarimetry->farcorr < 1)
-        asfPrintError("No polarimetric processing scheme selected.\n");
+        asfPrintError("No polarimetric processing selected.\n");
     }
 
     // Check whether everything in the [Terrain correction] block is
@@ -1845,7 +1845,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         int single_angle_flag = (FARCORR_MEAN == cfg->polarimetry->farcorr);
         radiometry_t rad = saved_radiometry;
         asfPrintStatus("\nApplying Faraday Rotation correction.\n");
-        faraday_correct(inFile, outFile, keep_flag, single_angle_flag, rad);
+        faraday_correct(inFile, outFile, cfg->polarimetry->farcorr_threshold,
+                        keep_flag, single_angle_flag, rad);
         asfPrintStatus("Done.\n\n");
 
         sprintf(tmpFile, "%s/polarimetry_farcorr.img", cfg->general->tmp_dir);

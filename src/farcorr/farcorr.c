@@ -2,7 +2,8 @@
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-keep] [-single-angle]\n"\
-"          [-sigma | -beta | -gamma ] [-db] <in_base_name> <out_base_name>\n"
+"          [-threshold <threshold angle>  [-sigma | -beta | -gamma ] [-db]\n"\
+"          <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program performs Faraday rotation correction to a quad-pol\n"\
@@ -45,6 +46,13 @@
 "          With this option turned on, a global average rotation angle\n"\
 "          is used instead of a local average -- in other words, a single\n"\
 "          correction angle is used for all pixels in the image.\n"\
+"\n"\
+"     -threshold <threshold angle>\n"\
+"          The correction is skipped if the calculated average Faraday\n"\
+"          Rotation angle is below the given threshold (specified in\n"\
+"          degrees).  The output file will be calibrated, if calibration\n"\
+"          options are selected, otherwise the output will be the same\n"\
+"          as the input.\n"\
 "\n"\
 "     -sigma\n"\
 "          After Faraday Rotation correction, calibrate the image using\n"\
@@ -151,6 +159,7 @@ main (int argc, char *argv[])
   int single_angle_flag = FALSE;
   int NUM_ARGS = 2;
   int sigma_flag=FALSE, beta_flag=FALSE, gamma_flag=FALSE, db_flag=FALSE;
+  double threshold = -1;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -192,6 +201,10 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-db","--db",NULL)) {
       db_flag = TRUE;
     }
+    else if (strmatches(key,"-threshold","--threshold",NULL)) {
+      CHECK_ARG(1);
+      threshold = atof(GET_ARG(1));
+    }
     else {
         --currArg;
         break;
@@ -228,7 +241,8 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
-  faraday_correct(inFile, outFile, keep_flag, single_angle_flag, radiometry);
+  faraday_correct(inFile, outFile, threshold, keep_flag, single_angle_flag,
+                  radiometry);
 
   asfPrintStatus("Done.\n");
 

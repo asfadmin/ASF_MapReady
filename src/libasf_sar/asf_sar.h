@@ -163,7 +163,7 @@ void make_entropy_alpha_boundary(const char *fname, int size);
 
 
 /* farcorr.c */
-void faraday_correct(const char *inFile, const char *outFile,
+void faraday_correct(const char *inFile, const char *outFile, double threshold,
                      int save_intermediates, int use_single_rotation_value,
                      radiometry_t output_radiometry);
 
