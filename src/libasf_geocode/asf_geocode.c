@@ -777,9 +777,11 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       asfPrintError("Geocode: no input images specified!\n");
   }
   else if (n_input_images == 1) {
-    if (!meta->projection ||
-    (meta->projection->type != SCANSAR_PROJECTION &&
-     meta->projection->type != LAT_LONG_PSEUDO_PROJECTION))
+    if (!meta->projection)
+      asfPrintStatus("Geocoding %s\n", in_base_names[0]);
+    else if (meta->projection &&
+	     (meta->projection->type == SCANSAR_PROJECTION ||
+	      meta->projection->type == LAT_LONG_PSEUDO_PROJECTION))
       asfPrintStatus("Geocoding %s\n", in_base_names[0]);
     else
       asfPrintStatus("Resampling %s\n", in_base_names[0]);
@@ -1490,7 +1492,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // reset the average height)
     double height_correction = 0;
     if (imd->sar && imd->sar->image_type == 'P' &&
-        imd->projection && imd->projection->type == SCANSAR_PROJECTION)
+        imd->projection && imd->projection->type == SCANSAR_PROJECTION &&
+	strncmp(imd->general->processor, "ASF", 3) == 0)
     {
         average_height -= 400;
         height_correction = 400;

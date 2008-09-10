@@ -107,7 +107,7 @@ double get_sensor_orientation (const char *fName);
 
 void get_azimuth_time(ceos_description *ceos, const char *in_fName,
           meta_parameters *meta);
-char *get_scansar_beam_mode(struct proc_parm_rec *ppr);
+void get_scansar_beam_mode(ceos_description *ceos, const char *in_fName);
 void get_attitude_data(struct att_data_rec *att, double *yaw, double *pitch, 
 		       double *roll);
 
@@ -1838,12 +1838,18 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
     (lastTime - firstTime) / meta->sar->original_line_count;
 
   // SAR block
-  if (ceos->product == SCN) {
+  if (ceos->product == SNA) {
     meta->sar->image_type = 'P';
     meta->sar->look_count = 4;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
-    sprintf(meta->general->mode, "%s", get_scansar_beam_mode(ppr));
+    strcpy(meta->general->mode, "SNA");
   }
+  else if (ceos->product == SNB) {
+    meta->sar->image_type = 'P';
+    meta->sar->look_count = 4;
+    ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
+    strcpy(meta->general->mode, "SNB");
+  }  
   meta->sar->range_doppler_coefficients[0] = ppr->dopcen_est[0].dopcen_coef[0];
   meta->sar->range_doppler_coefficients[1] = 0.0;
   meta->sar->range_doppler_coefficients[2] = 0.0;
@@ -1930,20 +1936,21 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
     (lastTime - firstTime) / meta->sar->original_line_count;
 
   // SAR block
-  if (ceos->product == SCN || ceos->product == SCANSAR) {
+  if (ceos->product == SNB) {
     meta->sar->image_type = 'P';
     meta->sar->look_count = 4;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
-    sprintf(meta->general->mode, "%s", get_scansar_beam_mode(ppr));
+    strcpy(meta->general->mode, "SNB");
   }
   meta->sar->range_doppler_coefficients[0] = ppr->dopcen_est[0].dopcen_coef[0];
   meta->sar->range_doppler_coefficients[1] = 0.0;
   meta->sar->range_doppler_coefficients[2] = 0.0;
   meta->sar->deskewed = 1;
   meta->sar->slant_shift = 0;
-  if (meta->general->orbit_direction == 'D')
+  if (meta->general->orbit_direction == 'D' && 
+      strncmp_case(dssr->time_dir_lin, "DEC", 3) == 0)
     meta->sar->time_shift = 0.0;
-  else if (meta->general->orbit_direction == 'A')
+  else
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
   get_attitude_data(att, &meta->sar->yaw, &meta->sar->pitch, &meta->sar->roll);
@@ -1959,7 +1966,9 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
   meta->sar->satellite_height = 
     vecMagnitude(meta->state_vectors->vecs[count].vec.pos);
   meta->sar->slant_range_first_pixel = ppr->srgr_coefset[0].srgr_coef[0];
-  if (meta->sar->slant_range_first_pixel == 0.0)
+  // FIXME: Threshold for slant range calculation really just a hack.
+  // Need a different indicator.
+  if (meta->sar->slant_range_first_pixel < 1000.0)
     meta->sar->slant_range_first_pixel = 
       slant_from_incid(ppr->beam_info[0].beam_look_ang *D2R,
 		       meta->sar->earth_radius,
@@ -2027,6 +2036,7 @@ void ceos_init_sar_dera(ceos_description *ceos, const char *in_fName,
   if (ceos->product == PRI) {
     meta->sar->image_type = 'G';
     meta->sar->look_count = 4;
+    strcpy(meta->general->mode, "PRI");
   }
   meta->sar->range_doppler_coefficients[0] = ppr->dopcen_est[0].dopcen_coef[0];
   meta->sar->range_doppler_coefficients[1] = 0.0;
@@ -2323,16 +2333,21 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
   projection->re_minor = dssr->ellip_min*1000;
   projection->height = 0.0;
 
-  if (strncmp(uc(meta->general->sensor), "ALOS", 4) == 0) {
+  if (strncmp_case(meta->general->sensor, "ALOS", 4) == 0) {
     projection->spheroid = GRS1980_SPHEROID; // This is an assumption
     projection->datum = ITRF97_DATUM; // This is in the spec
   }
-  else if (strncmp(uc(dssr->ellip_des), "GRS80", 5) == 0) {
+  else if (strncmp_case(dssr->ellip_des, "GRS80", 5) == 0) {
     projection->spheroid = GRS1980_SPHEROID;
     projection->datum = NAD83_DATUM; // This is an assumption
   }
-  else if (strncmp(uc(dssr->ellip_des), "GEM06", 5) == 0) {
+  else if (strncmp_case(dssr->ellip_des, "GEM06", 5) == 0) {
     projection->spheroid = GEM6_SPHEROID;
+    projection->datum = WGS84_DATUM;
+  }
+  // FIXME: The information about semimajor axis etc. does not work out
+  else if (strncmp_case(dssr->ellip_des, "INTERNATIONAL", 13) == 0) {
+    projection->spheroid = INTERNATIONAL1967_SPHEROID;
     projection->datum = WGS84_DATUM;
   }
   else {
@@ -2916,7 +2931,8 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     else if (0==strncmp(facStr, "Beijing", 7)) {
       asfReport(level, "   Data set processed by Beijing\n");
       ceos->facility = BEIJING;
-      if (0==strncmp(prodStr,"SAR RAW DATA",12))
+      // Currently known: RAW
+      if (0==strncmp(prodStr, "SAR RAW DATA", 12))
         ceos->product = RAW;
       else {
         asfReport(level, "Get_ceos_description Warning! "
@@ -2927,8 +2943,9 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     else if (0==strncmp(facStr, "TRNS", 4)) {
       asfReport(level, "   Data set processed by Tromso\n");
       ceos->facility = TROMSO;
+      // Currently known: SNA, SNB
       if (0==strncmp(prodStr, "SCANSAR NARROW", 14))
-        ceos->product = SCN;
+        get_scansar_beam_mode(ceos, fName);
       else {
         asfReport(level, "Get_ceos_description Warning! "
                     "Unknown Tromso product type '%s'!\n", prodStr);
@@ -2938,10 +2955,10 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     else if (0==strncmp(facStr, "UK-WFS", 6)) {
       asfReport(level, "   Data set processed by Westfreugh\n");
       ceos->facility = WESTFREUGH;
-      if (0==strncmp(prodStr,"PRI",3))
-        ceos->product = PRI;
-      else if (0==strncmp(prodStr, "SCANSAR WIDE", 12))
-	ceos->product = SCANSAR;
+      // Currently known: SNB
+      if (0==strncmp(prodStr, "SCANSAR WIDE", 12))
+	//ceos->product = SCANSAR;
+	get_scansar_beam_mode(ceos, fName);
       else {
         asfReport(level, "Get_ceos_description Warning! "
                     "Unknown Westfreugh product type '%s'!\n", prodStr);
@@ -2951,6 +2968,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     else if (0==strncmp(facStr, "DERA", 4)) {
       asfReport(level, "   Data set processed by Dera\n");
       ceos->facility = DERA;
+      // Currently known: PRI
       if (0==strncmp(trim_spaces(prodStr),"PRI",3))
         ceos->product = PRI;
       else {
@@ -3015,8 +3033,6 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     asfReport(level, "   Product: HI_REZ\n");
   else if (ceos->product == RAMP)
     asfReport(level, "   Product: RAMP\n");
-  else if (ceos->product == SCANSAR)
-    asfReport(level, "   Product: SCANSAR\n");
   else if (ceos->product == SLC)
     asfReport(level, "   Product: SLC\n");
   else if (ceos->product == PRI)
@@ -3031,8 +3047,14 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     asfReport(level, "   Product: SSG\n");
   else if (ceos->product == SPG)
     asfReport(level, "   Product: SPG\n");
-  else if (ceos->product == SCN)
-    asfReport(level, "   Product: SCN\n");
+  else if (ceos->product == SNA)
+    asfReport(level, "   Product: SNA\n");
+  else if (ceos->product == SNB)
+    asfReport(level, "   Product: SNB\n");
+  else if (ceos->product == SWA)
+    asfReport(level, "   Product: SWA\n");
+  else if (ceos->product == SWB)
+    asfReport(level, "   Product: SWB\n");  
   else if (ceos->product == LEVEL_1A)
     asfReport(level, "   Product: LEVEL_1A\n");
   else if (ceos->product == LEVEL_1B1)
@@ -3615,34 +3637,39 @@ void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
   }
 }
 
-char *get_scansar_beam_mode(struct proc_parm_rec *ppr)
+void get_scansar_beam_mode(ceos_description *ceos, const char *in_fName)
 {
-  char *mode = (char *) MALLOC(sizeof(char)*5);
-  strcpy(mode, "");
-  
+  struct proc_parm_rec *ppr=NULL;
+
+  ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
+  if (get_ppr(in_fName, ppr) == -1) {
+    FREE(ppr);
+    ppr = NULL;
+  }
   if (ppr->n_beams == 2 && 
       strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0)
-    strcpy(mode, "SNA");
+    ceos->product = SNA;
   if (ppr->n_beams == 3 && 
       strncmp(ppr->beam_info[0].beam_type, "W2", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "S5", 2) == 0 &&
       strncmp(ppr->beam_info[2].beam_type, "S6", 2) == 0)
-    strcpy(mode, "SNB");
+    ceos->product = SNB;
   if (ppr->n_beams == 4 && 
       strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0 &&
       strncmp(ppr->beam_info[2].beam_type, "W3", 2) == 0 &&
       strncmp(ppr->beam_info[3].beam_type, "S7", 2) == 0)
-    strcpy(mode, "SWA");
+    ceos->product = SWA;
   if (ppr->n_beams == 4 && 
       strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0 &&
       strncmp(ppr->beam_info[2].beam_type, "S5", 2) == 0 &&
       strncmp(ppr->beam_info[3].beam_type, "S6", 2) == 0)
-    strcpy(mode, "SWB");
+    ceos->product = SWB;
+  if (ppr)
+    FREE(ppr);
   
-  return mode;
 }
 
 void get_attitude_data(struct att_data_rec *att, double *yaw, double *pitch, 
