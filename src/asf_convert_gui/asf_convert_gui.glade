@@ -2870,7 +2870,6 @@
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">User Defined</property>
 				      <property name="use_underline">True</property>
-				      <signal name="activate" handler="on_user_defined_activate" last_modification_time="Wed, 17 Nov 2004 23:01:57 GMT"/>
 				    </widget>
 				  </child>
 

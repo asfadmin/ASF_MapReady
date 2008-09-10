@@ -804,8 +804,3 @@ on_predefined_projection_option_menu_changed(GtkWidget * widget)
 {
     geocode_options_changed();
 }
-
-SIGNAL_CALLBACK void
-on_user_defined_activate(GtkWidget * widget)
-{
-}
