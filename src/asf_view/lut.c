@@ -133,8 +133,6 @@ void select_lut(const char *lut_basename)
     else if (strcmp_case(lut_basename, "polarimetry") == 0)
       which = 8;
 
-    printf("Selecting: %d\n", which);
-
     GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
     gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
 }
