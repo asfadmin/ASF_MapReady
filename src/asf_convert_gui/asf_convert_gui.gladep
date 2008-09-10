@@ -4,4 +4,5 @@
 <glade-project>
   <name>Asf_convert_gui</name>
   <program_name>asf_convert_gui</program_name>
+  <gnome_support>FALSE</gnome_support>
 </glade-project>
