@@ -15,7 +15,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
-	-lz
+	$(ZLIB_LIBS) 
 
 CFLAGS += \
 	$(GEOTIFF_CFLAGS) \

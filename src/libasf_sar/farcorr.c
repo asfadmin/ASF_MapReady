@@ -172,8 +172,8 @@ void removeImgAndMeta(const char *f)
     char *meta_file = appendExt(f, ".meta");
     char *img_file = appendExt(f, ".img");
 
-    unlink(meta_file);
-    unlink(img_file);
+    remove_file(meta_file);
+    remove_file(img_file);
 
     free(meta_file);
     free(img_file);

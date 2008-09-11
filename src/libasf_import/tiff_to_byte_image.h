@@ -4,9 +4,7 @@
 #ifndef TIFF_TO_BYTE_IMAGE_H
 #define TIFF_TO_BYTE_IMAGE_H
 
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
+#include "asf_tiff.h"
 
 #include <uint8_image.h>
 

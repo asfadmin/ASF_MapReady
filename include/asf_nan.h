@@ -23,6 +23,8 @@
 /* Specify necessary headers for the isnan() function/macro */
 #if defined (linux)
 # include <math.h>
+#elif defined (win32)
+# include <math.h>
 #else
 # include <ieeefp.h>
 # include <math.h>

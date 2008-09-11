@@ -8,9 +8,13 @@
 #include <glade/glade.h>
 #include <glib.h>
 #include <glib/gprintf.h>
-#include <sys/wait.h>
 #include <errno.h>
 #include "ceos.h"
+
+#ifndef win32
+#include <sys/wait.h>
+#endif
+
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)

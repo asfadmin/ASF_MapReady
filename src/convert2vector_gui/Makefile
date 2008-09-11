@@ -34,7 +34,6 @@ LIB = \
 	-L$(GTK_LIB)/pango \
 	-L$(GTK_LIB)/libglade \
 	-llibgthread-2.0 \
-	-lpthread \
 	-lintl \
 	-liconv \
 	-lm \

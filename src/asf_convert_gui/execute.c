@@ -20,7 +20,9 @@
 */
 
 #include <errno.h>
+#ifndef win32
 #include <sys/wait.h>
+#endif
 #include <time.h>
 #include <sys/stat.h>
 
@@ -296,7 +298,7 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
             return FALSE;
         }
         fclose(tmp);
-        unlink(fname);
+        remove_file(fname);
     }
 
     return TRUE;
@@ -398,7 +400,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
     }
     while (dwWaitResult == WAIT_TIMEOUT);
 
-    unlink(statFile);
+    remove_file(statFile);
     free(statFile);
     // Don't do this, CreateProcess() takes it
     //free(cmd);
@@ -483,7 +485,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
             }
         }
 
-        unlink(statFile);
+        remove_file(statFile);
         free(statFile);
     }
 #endif
@@ -530,7 +532,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
         fclose(output);
 
         if (!keep_files)
-            unlink(logFile);
+            remove_file(logFile);
     }
 
     if (!the_output)

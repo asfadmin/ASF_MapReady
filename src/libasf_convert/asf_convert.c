@@ -769,7 +769,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // Check for raw Palsar
     ceos_description *ceos = NULL;
     if (s != NO_CEOS_FILE_PAIR) {
-        ceos = get_ceos_description(cfg->general->in_name, NOREPORT);
+        ceos = get_ceos_description(cfg->general->in_name, REPORT_LEVEL_NONE);
     }
 
     if (s != NO_CEOS_FILE_PAIR &&

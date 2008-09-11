@@ -605,10 +605,12 @@ create_dir(const char *dir)
   char *ptr1, *ptr2;
   char *dir_tmp = (char*)MALLOC((strlen(dir)+1)*sizeof(char));
 
+#ifndef win32
   // big list of S_*'s equivalent to mode = 0777
   int mode =   S_IRUSR | S_IWUSR | S_IXUSR
              | S_IRGRP | S_IWGRP | S_IXGRP
              | S_IROTH | S_IWOTH | S_IXOTH;
+#endif
 
   ptr1 = strcpy(dir_tmp, dir);
 
@@ -620,7 +622,11 @@ create_dir(const char *dir)
     else {
       keep_going = FALSE;
     }
+#ifdef win32
+    ret = mkdir(dir_tmp);
+#else
     ret = mkdir(dir_tmp, mode);
+#endif
     if (keep_going) {
       *ptr2 = DIR_SEPARATOR;
     }
@@ -707,3 +713,17 @@ const char *bin_postfix()
     return "";
 #endif
 }
+
+int remove_file(const char *file)
+{
+  if (fileExists(file)) {
+    int ret = unlink(file);
+    if (ret < 0) {
+      asfPrintWarning("Could not remove file '%s': %s\n",
+                      file, strerror(errno));
+    }
+    return ret;
+  }
+  return 0; // success, I guess
+}
+

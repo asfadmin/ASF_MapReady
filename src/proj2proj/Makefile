@@ -52,7 +52,6 @@ LIB = \
 	-L$(GTK_LIB)/pango \
 	-L$(GTK_LIB)/libglade \
 	-llibgthread-2.0 \
-	-lpthread \
 	-lintl \
 	-liconv \
 	-lm \
@@ -85,8 +84,8 @@ LIB = \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
+	$(ZLIB_LIBS) \
 	-lglib-2.0 \
-	-lz \
 	-lcomdlg32
 
 CFLAGS += -DLARGE64_FILES -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall

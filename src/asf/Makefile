@@ -39,7 +39,7 @@ CFLAGS += $(shell \
 all: build_only
 	mv asf.a $(LIBDIR)
 	cp asf.h asf_glib.h asf_complex.h caplib.h vector.h matrix.h \
-		$(ASF_INCLUDE_DIR)
+		asf_tiff.h asf_jpeg.h $(ASF_INCLUDE_DIR)
 	cp pixmaps/* $(SHAREDIR)
 	rm *.o
 

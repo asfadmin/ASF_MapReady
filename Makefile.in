@@ -187,7 +187,6 @@ default: mapready
 # MapReady Package
 mapready: mkdirs_for_build external_libs
 	echo BUILD_PKG = -D_PKG_MAPREADY > make_support/build_pkg.mk
-	ln -sf asf_mapready $(S_BINDIR)/asf_convert
 	cp doc/mapready_manual.pdf $(S_DOCDIR)
 	cp doc/mapready-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(S_SHAREDIR)

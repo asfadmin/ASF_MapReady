@@ -1,5 +1,6 @@
 #include "asf_view.h"
-#include <jpeglib.h>
+#include "asf.h"
+#include "asf_jpeg.h"
 
 typedef struct {
     struct jpeg_decompress_struct *cinfo;

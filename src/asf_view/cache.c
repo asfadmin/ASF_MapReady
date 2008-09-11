@@ -19,10 +19,10 @@
 #include <gsl/gsl_histogram.h>
 #include <gsl/gsl_math.h>
 
-#include <jpeglib.h>
-#include "float_image.h"
 #include "asf.h"
+#include "float_image.h"
 #include "asf_endian.h"
+#include "asf_jpeg.h"
 
 #include "asf_view.h"
 

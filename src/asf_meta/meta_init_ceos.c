@@ -2096,7 +2096,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   char *substr;
   int ii;
 
-  ceos = get_ceos_description(in_fName, NOREPORT);
+  ceos = get_ceos_description(in_fName, REPORT_LEVEL_NONE);
   meta->optical = meta_optical_init();
 
   // General block

@@ -20,6 +20,10 @@ possible.
 #include "caplib.h"
 #include "log.h"
 
+#ifdef win32
+#include <windef.h>
+#endif
+
 behavior_on_error_t caplib_behavior_on_error = BEHAVIOR_ON_ERROR_ABORT;
 
 void programmer_error(char *mess)
@@ -102,7 +106,9 @@ void *MALLOC(size_t size)
 #ifdef EAGAIN
         if (errno==EAGAIN) /*There's not enough memory now.*/
         {
+#ifndef win32 // should be using "#ifndef mingw"
             sleep(2); /*Wait 2 seconds...*/
+#endif
             ret=malloc(size);/*... try again.*/
             if (ret==NULL)
             { /*If the call failed again, we just bail.*/
@@ -176,7 +182,9 @@ void *CALLOC(size_t nmemb, size_t size)
 #ifdef EAGAIN
     if (errno==EAGAIN) /*There's not enough memory now.*/
     {
+#ifndef win32 // should be using "#ifndef mingw"
       sleep(2); /*Wait 2 seconds...*/
+#endif
       ret=calloc(nmemb, size); /*... try again.*/
       if (ret==NULL)
       { /*If the call failed again, we just bail.*/
@@ -458,7 +466,9 @@ int FSEEK64(FILE *stream,long long offset,int ptrname)
     ret=fseek64(stream,offset,ptrname);
 #elif defined(win32)
     // On cygwin, the fseeko function is 64-bit ready
-    ret=fseeko(stream,offset,ptrname);
+    //ret=fseeko(stream,offset,ptrname);
+    // On MinGW, use fseeko64 (Windows native)
+    ret=fseeko64(stream,offset,ptrname);
 #else
     ret=fseeko64(stream,offset,ptrname);
 #endif
@@ -489,7 +499,9 @@ long long FTELL64(FILE *stream)
 #elif defined(win32)
      /* Although there is a man page for ftello64 on Windows cygwin,
       * it appears that 64 bit ops are nont yet supported there */
-    ret=(long long)ftell(stream);
+    //ret=(long long)ftello(stream);
+    /* MinGW points to the Microsoft ftello64 */
+    ret = ftello64(stream);
 #else
     ret=ftello64(stream);
 #endif

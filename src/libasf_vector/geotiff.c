@@ -1,12 +1,4 @@
-#include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
-
+#include "asf_tiff.h"
 #include "asf.h"
 #include "asf_nan.h"
 #include "dateUtil.h"
@@ -57,7 +49,7 @@ static void read_geotiff(char *inFile, geotiff_type_t **g)
   input_tiff = XTIFFOpen(inFile, "r");
   get_tiff_data_config(input_tiff, &sample_format, &bits_per_sample,
                        &planar_config, &data_type, &num_bands,
-                       &is_scanline_format, NOREPORT);
+                       &is_scanline_format, REPORT_LEVEL_NONE);
   XTIFFClose(input_tiff);
   strcpy(geo->id, inFile);
   if (sample_format == SAMPLEFORMAT_UINT)

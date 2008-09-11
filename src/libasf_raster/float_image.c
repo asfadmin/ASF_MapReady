@@ -21,12 +21,10 @@
 #include <gsl/gsl_histogram.h>
 #include <gsl/gsl_math.h>
 
-#include <jpeglib.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
-#include "float_image.h"
 #include "asf.h"
+#include "asf_tiff.h"
+#include "asf_jpeg.h"
+#include "float_image.h"
 
 #ifndef linux
 #ifndef win32
@@ -62,6 +60,8 @@ G_LOCK_DEFINE_STATIC (signal_block_activity);
 static FILE *
 initialize_tile_cache_file (void)
 {
+  int return_code;
+
   // Create the temporary tile oriented storage file.  This gets
   // filled in in different ways depending on which creation routine
   // we are using.
@@ -90,6 +90,8 @@ initialize_tile_cache_file (void)
   g_assert (current_tile_file_number < ULONG_MAX);
   current_tile_file_number++;
   G_UNLOCK (current_tile_file_number);
+
+#ifndef win32
   // We block signals while we create and unlink this file, so we
   // don't end up leaving a huge temporary file somewhere.
   // Theoretically, two parallel instantiations of image could end up
@@ -98,9 +100,11 @@ initialize_tile_cache_file (void)
   // this section critical and protect it with a lock.
   G_LOCK (signal_block_activity);
   sigset_t all_signals, old_set;
-  int return_code = sigfillset (&all_signals);
+  return_code = sigfillset (&all_signals);
   g_assert (return_code == 0);
   return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
+#endif
+
   // FIXME?: It might be faster to use file descriptor based I/O
   // everywhere, or at least for the big transfers.  I'm not sure its
   // worth the trouble though.
@@ -124,8 +128,12 @@ initialize_tile_cache_file (void)
     g_assert (return_code == 0);
   }
   g_assert (tile_file != NULL);
+  
+#ifndef win32
   return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
   G_UNLOCK (signal_block_activity);
+#endif
+
   g_string_free (tile_file_name, TRUE);
 
   return tile_file;
@@ -728,7 +736,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
   FILE *fp = file_pointer;      // Convenience alias.
 
   // Seek to the indicated offset in the file.
-  int return_code = fseeko (fp, offset, SEEK_CUR);
+  int return_code = FSEEK64 (fp, offset, SEEK_CUR);
   g_assert (return_code == 0);
 
   // If we need a tile file for an image of this size, we will load
@@ -863,7 +871,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
     }
 
     // Did we write the correct total amount of data?
-    g_assert (ftello (self->tile_file)
+    g_assert (FTELL64 (self->tile_file)
         == (off_t) (self->tile_area * self->tile_count * sizeof (float)));
 
     // Free temporary buffers.
@@ -958,7 +966,7 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
   ssize_t ii, jj;
   for ( ii = 0 ; ii < size_y ; ii++ ) {
     size_t read_count;          // For fread calls.
-    int return_code;            // For fseeko calls.
+    int return_code;            // For FSEEK64 calls.
     // Input image y index of row above row of interest.
     ssize_t in_ray = floor (ii * stride_y);
     // Due to the vagaries of floating point arithmetic, we might run
@@ -996,7 +1004,7 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       off_t sample_offset
   = offset + sizeof (float) * ((off_t) in_ul_y * original_size_x
              + in_ul_x);
-      return_code = fseeko (fp, sample_offset, SEEK_SET);
+      return_code = FSEEK64 (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
       read_count = fread (&(uls[jj]), sizeof (float), 1, fp);
       g_assert (read_count == 1);
@@ -1026,7 +1034,7 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       off_t sample_offset
   = offset + sizeof (float) * ((off_t) in_ll_y * original_size_x
              + in_ll_x);
-      return_code = fseeko (fp, sample_offset, SEEK_SET);
+      return_code = FSEEK64 (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
       read_count = fread (&(lls[jj]), sizeof (float), 1, fp);
       g_assert (read_count == 1);
@@ -1073,7 +1081,7 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 
   // Reposition to the beginning of the temporary file to fit with
   // operation of new_from_file_pointer method.
-  int return_code = fseeko (reduced_image, (off_t) 0, SEEK_SET);
+  int return_code = FSEEK64 (reduced_image, (off_t) 0, SEEK_SET);
   g_assert (return_code == 0);
 
   // The file we have written should be in host byte order, so we need
@@ -1151,7 +1159,7 @@ cached_tile_to_disk (FloatImage *self, size_t tile_offset)
   g_assert (self->tile_addresses[tile_offset] != NULL);
 
   int return_code
-    = fseeko (self->tile_file,
+    = FSEEK64 (self->tile_file,
         (off_t) tile_offset * self->tile_area * sizeof (float),
         SEEK_SET);
   g_assert (return_code == 0);
@@ -1216,7 +1224,7 @@ load_tile (FloatImage *self, ssize_t x, ssize_t y)
 
   // Load the tile data.
   int return_code
-    = fseeko (self->tile_file,
+    = FSEEK64 (self->tile_file,
               (off_t) tile_offset * self->tile_area * sizeof (float),
               SEEK_SET);
   g_assert (return_code == 0);
@@ -1231,7 +1239,7 @@ load_tile (FloatImage *self, ssize_t x, ssize_t y)
     if ( feof (self->tile_file) ) {
       fprintf (stderr,
                "nothing left to read in tile cache file at offset %lld\n",
-               ftello (self->tile_file));
+               FTELL64 (self->tile_file));
       g_assert_not_reached ();
     }
   }
@@ -1943,8 +1951,8 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
     synchronize_tile_file_with_memory_cache (self);
     float *buffer = g_new (float, self->tile_area);
     size_t ii;
-    off_t tmp = ftello (self->tile_file);
-    int return_code = fseeko (self->tile_file, 0, SEEK_SET);
+    off_t tmp = FTELL64 (self->tile_file);
+    int return_code = FSEEK64 (self->tile_file, 0, SEEK_SET);
     g_assert (return_code == 0);
     for ( ii = 0 ; ii < self->tile_count ; ii++ ) {
       size_t read_count = fread (buffer, sizeof (float), self->tile_area,
@@ -1953,7 +1961,7 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
       write_count = fwrite (buffer, sizeof (float), self->tile_area, fp);
       g_assert (write_count == self->tile_area);
     }
-    return_code = fseeko (self->tile_file, tmp, SEEK_SET);
+    return_code = FSEEK64 (self->tile_file, tmp, SEEK_SET);
     g_assert (return_code == 0);
     g_free (buffer);
   }

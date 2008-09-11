@@ -41,6 +41,9 @@ case "${osType}:${versMajor}:${versMinor}" in
 	CYGWIN*:*:*)
 		sys="win32"
 		makeExtra="BIN_POSTFIX = .exe" ;;
+	MINGW*:*:*)
+		sys="win32"
+		makeExtra="BIN_POSTFIX = .exe" ;;
 	IRIX*:*:*)
 		sys="irix"
 		if [ "$CC" == "cc" ]; then
@@ -366,6 +369,8 @@ GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
 
 SHAPELIB_LIBS = $SHAPELIB_LIBS
 SHAPELIB_CFLAGS = $SHAPELIB_CFLAGS
+
+ZLIB_LIBS = -lz
 
 EOF
 

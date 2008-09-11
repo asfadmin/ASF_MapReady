@@ -3,19 +3,15 @@
 #include <ctype.h>
 #include <string.h>
 
-#include <geokeys.h>
-#include <geotiff.h>
-#include <geotiffio.h>
+#include <asf.h>
+#include "asf_tiff.h"
+
 #include <gsl/gsl_math.h>
 #include <proj_api.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
 
-#include <jpeglib.h>
+#include "asf_jpeg.h"
 #include <png.h>
 
-#include <asf.h>
 #include <asf_nan.h>
 #include <asf_endian.h>
 #include <asf_meta.h>

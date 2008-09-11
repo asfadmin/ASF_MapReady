@@ -4,11 +4,8 @@
 #ifndef TIFF_TO_FLOAT_IMAGE_H
 #define TIFF_TO_FLOAT_IMAGE_H
 
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
-
-#include <float_image.h>
+#include "float_image.h"
+#include "asf_tiff.h"
 
 // Produce a new FloatImage insance from tif.  It is assumed that tif
 // consists of floating point data (probably it is a GeoTIFF).

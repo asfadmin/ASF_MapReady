@@ -52,8 +52,8 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
+	$(ZLIB_LIBS) \
 	-lm \
-	-lz
 
 LDLIBS := $(LIBS)
 

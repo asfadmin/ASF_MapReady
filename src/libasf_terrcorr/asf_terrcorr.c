@@ -43,12 +43,6 @@ static void ensure_ext(char **filename, const char *ext)
   *filename = ret;
 }
 
-static void remove_file(const char * file)
-{
-  if (fileExists(file))
-    unlink(file);
-}
-
 static char *getOutName(const char *dir, const char *base, const char *suffix)
 {
     int dirlen = strlen(dir);

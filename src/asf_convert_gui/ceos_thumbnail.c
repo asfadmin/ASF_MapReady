@@ -1,14 +1,14 @@
+#include "asf.h"
+#include "asf_nan.h"
+#include "asf_tiff.h"
+#include <geotiff_support.h>
+
 #include <unistd.h>
 #include <asf_meta.h>
 #include <ceos_io.h>
 #include <float_image.h>
 #include <math.h>
 
-#include <asf_nan.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
-#include <geotiff_support.h>
 #include "ceos_thumbnail.h"
 #include "asf_convert_gui.h"
 #include "get_ceos_names.h"
@@ -27,7 +27,7 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
 static meta_parameters * silent_meta_create(const char *filename)
 {
     report_level_t prev = g_report_level;
-    g_report_level = NOREPORT;
+    g_report_level = REPORT_LEVEL_NONE;
 
     meta_parameters *ret = meta_create(filename);
 
@@ -38,7 +38,7 @@ static meta_parameters * silent_meta_create(const char *filename)
 static meta_parameters * silent_meta_read(const char *filename)
 {
     report_level_t prev = g_report_level;
-    g_report_level = NOREPORT;
+    g_report_level = REPORT_LEVEL_NONE;
 
     meta_parameters *ret = meta_read(filename);
 
@@ -73,7 +73,7 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
                          &data_type,
                          &num_bands,
                          &is_scanline_format,
-                         WARNING);
+                         REPORT_LEVEL_WARNING);
     tiff_type_t tiffInfo;
     get_tiff_type(fpIn, &tiffInfo);
     if (tiffInfo.imageCount > 1) {
@@ -1120,7 +1120,7 @@ int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band
                                    &data_type,
                                    &num_bands,
                                    &is_scanline_format,
-                                   WARNING);
+                                   REPORT_LEVEL_WARNING);
     if (ret) {
         // Unfortunately, get_tiff_data_config() returns 0 on success, -1 on failure
         return 0;

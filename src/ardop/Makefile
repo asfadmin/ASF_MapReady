@@ -16,7 +16,7 @@ LIBS  = \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
-	-lz
+	$(ZLIB_LIBS)
 
 LIBC = $(LIBS) -lm 
 

@@ -19,23 +19,15 @@
 #include <string.h>
 #include <strings.h>
 
-#include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
-
-#include <float_image.h>
-#include <spheroids.h>
-#include <proj.h>
-#include <libasf_proj.h>
-
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_import.h"
+#include "float_image.h"
+#include "asf_tiff.h"
+
+#include <spheroids.h>
+#include <proj.h>
+#include <libasf_proj.h>
 
 #include "projected_image_import.h"
 #include "tiff_to_float_image.h"
@@ -1137,7 +1129,7 @@ BOOL getObjectToken(char **tdd, ddObject *tmpObj)
     (*tdd)++;
 
     /*** Find the copy the object token's name (data type) ***/
-    pcTmp = strtok_r(pcTmp2, ",", &pcTmp3);
+    pcTmp = STRTOK_R(pcTmp2, ",", &pcTmp3);
     asfRequire(pcTmp != NULL,
                "getObjectToken() ERROR: Invalid data dictionary record in file\n");
     strcpy(tmpObj->objName, pcTmp);
@@ -1242,14 +1234,14 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
           asfRequire(item->enumNames[i] != NULL,
                      "Parse_ObjectString_to_Items() ERROR: Memory allocation error\n");
         }
-        strcpy(tmpStr, pcTmp); /* copy remainder of object string for strtok_r() */
-        pcTmp2 = strtok_r(tmpStr, ",", &pcTmp3);
+        strcpy(tmpStr, pcTmp); /* copy remainder of object string for STRTOK_R() */
+        pcTmp2 = STRTOK_R(tmpStr, ",", &pcTmp3);
         asfRequire(pcTmp2 != NULL && pcTmp2 > 0,
                    "ERROR: Found empty enum element name in data dictionary\n");
         strcpy(item->enumNames[0], pcTmp2);
         numChars = strlen(item->enumNames[0]);
         for (i=1; i < item->numEnums; i++) {
-          pcTmp2 = strtok_r(NULL, ",", &pcTmp3);
+          pcTmp2 = STRTOK_R(NULL, ",", &pcTmp3);
           asfRequire(pcTmp2 != NULL && pcTmp2 > 0,
                      "ERROR: Found empty enum element name in data dictionary\n");
           strcpy(item->enumNames[i], pcTmp2);
@@ -1258,8 +1250,8 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
         pcTmp += numChars + i; /* Now points at data type name following last enum str */
         break;
       case _EMIF_T_PREDEFINED:
-        strcpy(tmpStr, pcTmp); /* copy remainder of object string for strtok_r() */
-        pcTmp2 = strtok_r(tmpStr, ",", &pcTmp3); /* get name of predefined type */
+        strcpy(tmpStr, pcTmp); /* copy remainder of object string for STRTOK_R() */
+        pcTmp2 = STRTOK_R(tmpStr, ",", &pcTmp3); /* get name of predefined type */
         asfRequire(pcTmp2 != NULL && pcTmp2 > 0,
                    "ERROR: Found empty predefined type name in data dictionary\n");
         strcpy(item->prevTypeName, pcTmp2);
@@ -1290,7 +1282,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
     /* Parse out & save the datatype name */
     numChars = strlen(pcTmp);
     if (*pcTmp != '\0' && strlen(pcTmp) > 0) {
-      strcpy(item->name, strtok_r(pcTmp, DELIM_TYPENAME, &pcTmp2));
+      strcpy(item->name, STRTOK_R(pcTmp, DELIM_TYPENAME, &pcTmp2));
       pcTmp += strlen(item->name) + 1; /* Move to next item or '\0' */
       missingName = 0;
     }

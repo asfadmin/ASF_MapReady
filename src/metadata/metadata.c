@@ -174,7 +174,7 @@ char *get_record_as_string(char *fileName, int reqrec)
   }
   // Make sure the map projection record for ALOS is found, regardless of
   // which switch is called
-  ceos_description *ceos = get_ceos_description(fileName, NOREPORT);
+  ceos_description *ceos = get_ceos_description(fileName, REPORT_LEVEL_NONE);
   if ((ceos->sensor == AVNIR || ceos->sensor == PRISM) && reqrec == 20)
     reqrec = 44;
 

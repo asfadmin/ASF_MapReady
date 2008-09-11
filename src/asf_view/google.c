@@ -237,6 +237,8 @@ int open_google_earth()
     FindExecutable((LPCTSTR)kml_filename, (LPCTSTR)dirname, (LPTSTR)path);
     ge = escapify(path);
     printf("Path to google earth: %s\n", ge);
+    
+    asfSystem("\"%s\" \"%s\"", ge, arg);
 #else
     ge = find_in_path("googleearth");
     if (!ge)
@@ -244,7 +246,6 @@ int open_google_earth()
        message_box("Couldn't find googleearth! Is it installed?");
        return FALSE;
     }
-#endif
 
     int pid = fork();
     if (pid == 0) {
@@ -252,6 +253,7 @@ int open_google_earth()
         //unlink(kml_filename);
         exit(EXIT_SUCCESS);
     }
+#endif
 
     free(kml_filename);
     free(basename);

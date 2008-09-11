@@ -30,14 +30,7 @@ ISSUES:
 #include <uint8_image.h>
 #include <proj.h>
 #include <libasf_proj.h>
-#include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
+#include "asf_tiff.h"
 #include <png.h>
 #include <jpeglib.h>
 #include <gsl/gsl_math.h>
@@ -2228,7 +2221,7 @@ void get_tiff_info(TIFF *tif, tiff_data_t *t)
                        &t->data_type,
                        &t->num_bands,
                        &t->is_scanline_format,
-               WARNING);
+               REPORT_LEVEL_WARNING);
   TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &t->height);
   TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &t->width);
   if (t->planar_config != PLANARCONFIG_CONTIG &&

@@ -27,7 +27,7 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
 {
   meta_parameters *meta=raw_init();
 
-  ceos_init(inN, meta, NOREPORT);
+  ceos_init(inN, meta, REPORT_LEVEL_NONE);
   s->lookDir = meta->sar->look_direction;
 
   /* Check for VEXCEL LZP Data-- has odd state vectors */

@@ -1,15 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
-
+#include "asf_tiff.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "dateUtil.h"

@@ -112,6 +112,36 @@ int endsWith(const char *str, const char *tail)
   }
 }
 
+// Reimplementation of strtok_r for Windows, mingw does not have it
+char *STRTOK_R(char *str1, const char *str2, char **str3)
+{
+#ifdef win32
+  char *ret;
+
+  if (!str1)
+    str1 = *str3;
+
+  while (*str1 && strchr(str2, *str1))
+    ++str1;
+  if (*str1 == '\0')
+    return NULL;
+
+  ret = str1;
+
+  while (*str1 && !strchr(str2, *str1))
+    ++str1;
+
+  if (*str1)
+    *str1++ = '\0';
+
+  *str3 = str1;
+
+  return ret;
+#else
+  return strtok_r(str1, str2, str3);
+#endif
+}
+
 // return the number of occurences of char 'c' in string 's'
 int count_char(const char *s, char c)
 {

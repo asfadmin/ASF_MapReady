@@ -2,10 +2,10 @@
 #define ASF_EXPORT_INCLUDED
 
 #include <unistd.h>
-#include <tiffio.h>
+#include "asf_tiff.h"
 #include <png.h>
-#include <geotiffio.h>
-#include <jpeglib.h>
+#include "asf.h"
+#include "asf_jpeg.h"
 #include <stdlib.h>
 #include "asf_raster.h"
 #include "libasf_proj.h"

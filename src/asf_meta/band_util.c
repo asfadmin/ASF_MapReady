@@ -1,12 +1,6 @@
 #include "asf.h"
 #include "asf_meta.h"
 
-static void remove_file(const char * file)
-{
-  if (fileExists(file))
-    unlink(file);
-}
-
 // attempt to remove "<file>.img" and "<file>.meta", etc files
 static void cleanImgAndMeta(const char *file)
 {

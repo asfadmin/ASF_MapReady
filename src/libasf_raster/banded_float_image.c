@@ -1,7 +1,8 @@
-#include "banded_float_image.h"
 #include "asf.h"
+#include "banded_float_image.h"
+#include "asf_tiff.h"
+#include "asf_jpeg.h"
 #include <assert.h>
-#include <jpeglib.h>
 
 static const int do_self_tests = 1;
 

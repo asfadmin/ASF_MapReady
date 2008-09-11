@@ -1,14 +1,7 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_import.h"
-#include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
+#include "asf_tiff.h"
 #include "geotiff_support.h"
 
 int guess_planar_configuration(TIFF *tif, short *planar_config);

@@ -1,14 +1,7 @@
 #include "asf.h"
 #include "asf_view.h"
 #include "asf_nan.h"
-#include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
+#include "asf_tiff.h"
 #include <geotiff_support.h>
 
 int read_tiff_rgb_scanline (TIFF *tiff, tiff_format_t format, tiff_data_config_t *data_config,
@@ -212,7 +205,7 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
                                  &data_type, // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
                                  &num_bands, // Initial number of bands
                                  &is_scanline_format,
-                                 NOREPORT);
+                                 REPORT_LEVEL_NONE);
 
             uint32 width;
             uint32 height;
@@ -277,7 +270,7 @@ int read_tiff_client(int row_start, int n_rows_to_get,
       &data_type,
       &data_config.samples_per_pixel,
       &is_scanline_format,
-      NOREPORT))
+      REPORT_LEVEL_NONE))
   {
     return FALSE;
   }
@@ -550,7 +543,7 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
       &data_type,
       &data_config.samples_per_pixel,
       &is_scanline_format,
-      NOREPORT))
+      REPORT_LEVEL_NONE))
   {
     return FALSE;
   }
@@ -1029,7 +1022,7 @@ int ReadScanline_from_ContiguousRGB_TIFF(TIFF *tiff, uint32 row, uint32 sample_c
       &data_type,
       &data_config.samples_per_pixel,
       &is_scanline_format,
-      NOREPORT))
+      REPORT_LEVEL_NONE))
   {
     return FALSE;
   }

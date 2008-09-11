@@ -169,7 +169,7 @@ print_all_reg_vals()
     } while (1);
 
     free(app_key);
-    sleep(10);
+    //sleep(10);
     RegCloseKey(Hkey);
 }
 

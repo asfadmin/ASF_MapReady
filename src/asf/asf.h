@@ -2,6 +2,11 @@
 #ifndef __ASF_H
 #define __ASF_H
 
+#ifdef win32
+// guard against conflicts in jpeg & system includes on mingw
+#define HAVE_BOOLEAN
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,11 +76,11 @@
 #define MAGIC_UNSET_DOUBLE (NAN)
 
 typedef enum {
-  NOREPORT=1,
-  LOG,
-  STATUS,
-  WARNING,
-  ERROR
+  REPORT_LEVEL_NONE=1,
+  REPORT_LEVEL_LOG,
+  REPORT_LEVEL_STATUS,
+  REPORT_LEVEL_WARNING,
+  REPORT_LEVEL_ERROR
 } report_level_t;
 
 extern report_level_t g_report_level;
@@ -154,6 +159,9 @@ void chomp(char *str);
 
 /* Return TRUE if "str" ends with (case-insensitive) "tail" */
 int endsWith(const char *str, const char *tail);
+
+/* Wrapper for strtok_r() -- some systems do not have it */
+char *STRTOK_R(char *str1, const char *str2, char **lasts);
 
 // return the number of occurences of char 'c' in string 's'
 int count_char(const char *s, char c);
@@ -246,6 +254,10 @@ char * getPath(const char *in);
 
 /* returns ".exe" on Windows, "" everywhere else */
 const char *bin_postfix(void);
+
+/* wrapper for unlink */
+int remove_file(const char *file);
+
 
 /***************************************************************************
  * Get the location of the ASF Share Directory, (and some other stuff) */

@@ -63,7 +63,7 @@ gboolean is_meta_file(const gchar * data_file)
     // Check for raw Palsar
   ceos_description *ceos = NULL;
   if (s != NO_CEOS_FILE_PAIR) {
-      ceos = get_ceos_description(data_file, NOREPORT);
+      ceos = get_ceos_description(data_file, REPORT_LEVEL_NONE);
   }
 
   if (s != NO_CEOS_FILE_PAIR &&
@@ -121,7 +121,7 @@ static char *file_is_valid(const gchar * file)
     // Check for raw Palsar
     ceos_description *ceos = NULL;
     if (ret != NO_CEOS_FILE_PAIR) {
-        ceos = get_ceos_description(file, NOREPORT);
+        ceos = get_ceos_description(file, REPORT_LEVEL_NONE);
     }
 
     if (ret != NO_CEOS_FILE_PAIR &&

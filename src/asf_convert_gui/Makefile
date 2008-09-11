@@ -16,6 +16,8 @@ GTK_LIB = $(GTKWIN32_DIR)/lib
 ASF_LIB = ../../lib
 
 INCLUDE = \
+	$(JPEG_CFLAGS) \
+	-I$(ASF_INCLUDE_DIR) \
 	-I$(GTK_INC) \
 	-I$(GTK_INC)/glib-2.0 \
 	-I$(GTK_INC)/pango-1.0 \
@@ -24,8 +26,7 @@ INCLUDE = \
 	-I$(GTK_LIB)/glib-2.0/include \
 	-I$(GTK_LIB)/gtk-2.0/include \
 	-I$(GTK_INC)/atk-1.0 \
-	-I$(GTK_INC)/libglade-2.0 \
-	-I$(ASF_INCLUDE_DIR)
+	-I$(GTK_INC)/libglade-2.0
 
 LIB = \
 	$(LDFLAGS) \
@@ -35,7 +36,6 @@ LIB = \
 	-L$(GTK_LIB)/pango \
 	-L$(GTK_LIB)/libglade \
 	-llibgthread-2.0 \
-	-lpthread \
 	-lintl \
 	-liconv \
 	-lm \
@@ -44,7 +44,7 @@ LIB = \
 	-llibglade-2.0 \
 	-llibgdk_pixbuf-2.0 \
 	-lpango-1.0 \
-	-L/usr/lib/w32api \
+	-L/mingw/lib \
 	-lgdi32 \
 	-llibgdk-win32-2.0 \
 	$(ASF_LIB)/libasf_convert.a \
@@ -53,26 +53,25 @@ LIB = \
 	$(ASF_LIB)/libasf_terrcorr.a \
 	$(ASF_LIB)/libasf_geocode.a \
 	$(ASF_LIB)/libasf_ardop.a \
-	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/libasf_sar.a \
 	$(ASF_LIB)/libasf_vector.a \
 	$(ASF_LIB)/libshp.a \
 	$(ASF_LIB)/asf_meta.a \
-	$(ASF_LIB)/asf.a \
-	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/libasf_raster.a \
 	$(ASF_LIB)/asf_fft.a \
-	$(GSL_LIBS) \
+	$(ASF_LIB)/libasf_proj.a \
+	$(ASF_LIB)/asf.a \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
+	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(ZLIB_LIBS) \
 	-lglib-2.0 \
-	-lz \
 	-lcomdlg32
 
-CFLAGS += -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
+CFLAGS += -DLARGE64_FILES -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)

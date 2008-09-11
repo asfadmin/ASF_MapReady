@@ -236,7 +236,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
     db_flag=FALSE;
   }
 
-  ceos = get_ceos_description(inBaseName, NOREPORT);
+  ceos = get_ceos_description(inBaseName, REPORT_LEVEL_NONE);
   if ((ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1) &&
        ceos->sensor == PRISM)
   {
@@ -955,7 +955,7 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
 int is_alos_palsar_1_5_plus(char *inDataName, char *inMetaName)
 {
   int ret=0;
-  ceos_description *ceos = get_ceos_description(inDataName, STATUS);
+  ceos_description *ceos = get_ceos_description(inDataName, REPORT_LEVEL_STATUS);
   if (ceos->sensor == PALSAR && ceos->product == SGI)
     ret=1;
 

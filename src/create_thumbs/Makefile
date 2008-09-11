@@ -29,7 +29,7 @@ LIBS = \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
-	-lz
+	$(ZLIB_LIBS)
 
 CFLAGS += \
 	$(GSL_CFLAGS) \

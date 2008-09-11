@@ -10,7 +10,7 @@
 #include <dirent.h>
 #include <time.h>
 #include <setjmp.h>
-#include <jpeglib.h>
+#include "asf_jpeg.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_nan.h"
@@ -541,7 +541,11 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     strftime(t_stamp, 22, "%d%b%Y-%Hh_%Mm_%Ss", localtime(&t));
     sprintf(tmp_folder, "./asf_import_tmp_dir_%s_%s", out_base, t_stamp);
     if (!is_dir(tmp_folder)) {
+#ifdef win32
+        mkdir(tmp_folder);
+#else
         mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
+#endif
     }
     else {
         // Should never reach here

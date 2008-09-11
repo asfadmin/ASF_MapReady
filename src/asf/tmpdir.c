@@ -1,4 +1,5 @@
 #include "asf.h"
+#include <errno.h>
 
 char * strdup(const char *);
 
@@ -74,6 +75,8 @@ unlink_tmp_file(const char *filename)
 
   full_name = full_tmp_name (filename);
   ret = unlink (full_name);
+  if (ret < 0) 
+    asfPrintWarning("unlink_tmp_file '%s': %s\n", full_name, strerror(errno));
   free(full_name);
 
   return ret;

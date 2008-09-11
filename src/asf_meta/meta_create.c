@@ -35,7 +35,7 @@ meta_parameters *meta_create(const char *fName)
 	  junk[ii] = (char *) MALLOC(512*sizeof(char));
 
 	if (require_ceos_metadata(fName,&junk,&junk2) != NO_CEOS_METADATA) {
-		ceos_init(fName, meta, STATUS);
+		ceos_init(fName, meta, REPORT_LEVEL_STATUS);
 		success=TRUE;
 	}
 	if (extExists(fName,".in")) {

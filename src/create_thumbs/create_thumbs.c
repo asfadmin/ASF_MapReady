@@ -61,6 +61,7 @@ int is_stf_level0(const char *file);
 int is_ceos_level0(const char *file);
 void flip_to_north_up(const char *in_file, const char *out_file);
 int is_JL0_basename(const char *what);
+void make_dir(const char *dir);
 
 int main(int argc, char *argv[])
 {
@@ -316,7 +317,7 @@ meta_parameters * silent_meta_create(const char *filename)
 {
     report_level_t prev = g_report_level;
 
-    g_report_level = NOREPORT;
+    g_report_level = REPORT_LEVEL_NONE;
     meta_parameters *ret = meta_create(filename);
 
     g_report_level = prev;
@@ -520,7 +521,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         default:
             if (out_dir && strlen(out_dir) > 0) {
                 if (!is_dir(out_dir)) {
-                    mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+                    make_dir(out_dir);
                 }
                 char *basename = get_basename(thumb_file);
                 out_file = MALLOC((strlen(out_dir)+strlen(basename)+10)*sizeof(char));
@@ -690,7 +691,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     strftime(t_stamp, 22, "%d%b%Y-%Hh_%Mm_%Ss", localtime(&t));
     sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s_%s", get_basename(file), t_stamp);
     if (!is_dir(tmp_folder)) {
-        mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
+        make_dir(tmp_folder);
         if (!is_dir(tmp_folder)) {
             asfPrintError("Cannot make temporary directory:\n    %s\n", tmp_folder);
         }
@@ -703,7 +704,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
     // Set up the output directory
     if (out_dir && strlen(out_dir) && !is_dir(out_dir)) {
-        mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+        make_dir(out_dir);
         if (!is_dir(out_dir)) {
             asfPrintError("Cannot make output directory:\n    %s\n", out_dir);
         }
@@ -1103,7 +1104,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     if (out_dir && strlen(out_dir)) {
         sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR,
                 out_file);
-        mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+        make_dir(out_dir);
         if (!is_dir(out_dir)) {
             asfPrintError("Cannot make output directory:\n    %s\n", out_dir);
         }
@@ -1290,7 +1291,7 @@ int is_ceos_level0(const char *file) {
         if (filename && data_filename &&
             strcmp(get_basename(filename), get_basename(data_filename)) == 0)
         {
-            ceos_description *ceos = get_ceos_description(file, NOREPORT);
+            ceos_description *ceos = get_ceos_description(file, REPORT_LEVEL_NONE);
             if (ceos->product == RAW && ceos->ceos_data_type == CEOS_RAW_DATA) {
                 ret = 1;
             }
@@ -1410,4 +1411,13 @@ int is_JL0_basename(const char *_what) {
         FREE(what);
         return 0;
     }
+}
+
+void make_dir(const char *dir)
+{
+#ifdef win32
+  mkdir(dir);
+#else
+  mkdir(dir, S_IRWXU | S_IRWXG | S_IRWXO);
+#endif
 }

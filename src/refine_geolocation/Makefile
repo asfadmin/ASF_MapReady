@@ -27,7 +27,7 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
-	-lz
+	$(ZLIB_LIBS)
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 

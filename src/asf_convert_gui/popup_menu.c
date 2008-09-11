@@ -1163,12 +1163,16 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 
     if (n_ok > 0)
     {
+#ifdef win32
+        asfSystem("\"%s\" \"%s\"", ge, kml_filename);
+#else
         int pid = fork();
         if (pid == 0) {
             asfSystem("\"%s\" \"%s\"", ge, kml_filename);
             //unlink(kml_filename);
             exit(EXIT_SUCCESS);
         }
+#endif 
     }
 
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);

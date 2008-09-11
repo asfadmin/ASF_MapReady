@@ -1,14 +1,7 @@
 // Implementation of interface described in projected_image_import.h.
 
-#include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
-
+#include "float_image.h"
+#include "asf_tiff.h"
 #include "asf.h"
 #include "projected_image_import.h"
 

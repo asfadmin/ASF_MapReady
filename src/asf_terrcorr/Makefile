@@ -23,7 +23,7 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
-	-lz
+	$(ZLIB_LIBS)
 
 CFLAGS += \
 	$(TIFF_CFLAGS) \

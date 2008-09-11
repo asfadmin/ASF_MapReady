@@ -15,17 +15,11 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
+#include "float_image.h"
+#include "asf_tiff.h"
+
 #include <gsl/gsl_math.h>
 
-#include <float_image.h>
 #include <uint8_image.h>
 #include <spheroids.h>
 #include <proj.h>
@@ -129,7 +123,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                            &data_type,        // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex)
                            &num_bands,        // Initial number of bands
                            &is_scanline_format,
-               WARNING))
+               REPORT_LEVEL_WARNING))
   {
     // Failed to determine tiff info or tiff info was bad
     char msg[1024];
@@ -309,7 +303,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                              &data_type, // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
                              &num_bands, // Initial number of bands
                              &is_scanline_format,
-                 WARNING);
+                 REPORT_LEVEL_WARNING);
 
   if (ret != 0) {
     char msg[1024];
@@ -2051,7 +2045,7 @@ int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *c
       if (s > citation + strlen(citation)) {
         return 0;
       }
-      pcTmp = strtok_r(s, ",", &pcTmp2);
+      pcTmp = STRTOK_R(s, ",", &pcTmp2);
       if (pcTmp != NULL) {
         if (strncmp(uc(pcTmp), "EMPTY", 5) != 0) {
           *num_bands += 1;
@@ -2064,7 +2058,7 @@ int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *c
       }
 
       // Get subsequent bands (tokens)
-      pcTmp = strtok_r(NULL, ",", &pcTmp2);
+      pcTmp = STRTOK_R(NULL, ",", &pcTmp2);
       while (pcTmp != NULL) {
         band_no++;
         if (strncmp(uc(pcTmp), "EMPTY", 5) != 0) {
@@ -2075,7 +2069,7 @@ int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *c
         else {
           empty[band_no] = 1;
         }
-        pcTmp = strtok_r(NULL, ",", &pcTmp2);
+        pcTmp = STRTOK_R(NULL, ",", &pcTmp2);
       }
       int num_empty, i;
       for (i=0, num_empty = 0; i<expected_count; i++) num_empty += empty[i] ? 1 : 0;

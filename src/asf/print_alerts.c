@@ -8,7 +8,7 @@ DESCRIPTION:
 #include "asf.h"
 #include <sys/time.h>
 
-report_level_t g_report_level=WARNING;
+report_level_t g_report_level=REPORT_LEVEL_WARNING;
 
 static void check_stop()
 {
@@ -168,7 +168,7 @@ void asfPrintError(const char *format, ...)
 void asfPrintErrorMaybe(const char *format, ...)
 {
     // ignoring errors?
-    if (g_report_level == NOREPORT) return;
+    if (g_report_level == REPORT_LEVEL_NONE) return;
 
     // normal asfPrintError
     char buffer[4096];
@@ -188,13 +188,13 @@ void asfReport(report_level_t level, const char *format, ...)
   vsprintf(logbuf, format, ap);
   va_end(ap);
 
-  if (level == LOG)
+  if (level == REPORT_LEVEL_LOG)
     asf_print_to_log_only("%s", logbuf);
-  else if (level == STATUS)
+  else if (level == REPORT_LEVEL_STATUS)
     asfPrintStatus("%s", logbuf);
-  else if (level == WARNING)
+  else if (level == REPORT_LEVEL_WARNING)
     asfPrintWarning("%s", logbuf);
-  else if (level == ERROR)
+  else if (level == REPORT_LEVEL_ERROR)
     asfPrintError("%s", logbuf);
 }
 
