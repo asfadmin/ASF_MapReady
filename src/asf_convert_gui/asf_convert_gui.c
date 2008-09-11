@@ -83,14 +83,16 @@ main(int argc, char **argv)
     /* allow FOPEN, FREAD, FWRITE to fail without aborting */
     caplib_behavior_on_error = BEHAVIOR_ON_ERROR_CONTINUE;
 
-    /* add version number to window title */
+
+    /* add version number to window title, request a default size */
     char gtitle [256];
-    sprintf (gtitle,
-             "ASF MapReady: Version %s",
+    sprintf (gtitle, "ASF MapReady: Version %s",
              MAPREADY_VERSION_STRING);
 
     widget = get_widget_checked("asf_convert");
     gtk_window_set_title(GTK_WINDOW(widget), gtitle);
+    // commenting this out - now supported within glade
+    //gtk_window_resize(GTK_WINDOW(widget), 1000, 700);
 
     /* select defaults for dropdowns & buttons & labeling */
     widget = get_widget_checked("scaling_method_combobox");
