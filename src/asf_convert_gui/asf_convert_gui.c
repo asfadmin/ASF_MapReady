@@ -161,7 +161,7 @@ main(int argc, char **argv)
     gtk_label_set_attributes(GTK_LABEL(widget), attrs);
     gtk_label_set_text(GTK_LABEL(widget), text);
     PangoFontDescription *font_desc =
-      pango_font_description_from_string("sans-serif 12");
+      pango_font_description_from_string("Sans 12");
     gtk_widget_modify_font(widget, font_desc);
 
     // Muck with the "Select Processing Steps" label
@@ -171,7 +171,7 @@ main(int argc, char **argv)
     pango_parse_markup(str, -1, 0, &attrs, &text, NULL, NULL);
     gtk_label_set_attributes(GTK_LABEL(widget), attrs);
     gtk_label_set_text(GTK_LABEL(widget), text);
-    font_desc = pango_font_description_from_string("sans-serif 12");
+    font_desc = pango_font_description_from_string("Sans 12");
     gtk_widget_modify_font(widget, font_desc);
 
     /* fire handlers for hiding/showing stuff */
