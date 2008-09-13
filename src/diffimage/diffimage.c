@@ -98,6 +98,7 @@ typedef struct {
   data_type_t data_type; // ASF data type
   short num_bands;
   int is_scanline_format;
+  int is_palette_color_tiff;
 } tiff_data_t;
 
 #define MISSING_PNG_DATA -1
@@ -2221,7 +2222,8 @@ void get_tiff_info(TIFF *tif, tiff_data_t *t)
                        &t->data_type,
                        &t->num_bands,
                        &t->is_scanline_format,
-               REPORT_LEVEL_WARNING);
+                       &t->is_palette_color_tiff,
+                       REPORT_LEVEL_WARNING);
   TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &t->height);
   TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &t->width);
   if (t->planar_config != PLANARCONFIG_CONTIG &&
@@ -2373,7 +2375,7 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
   int num_tie_points, num_pixel_scales;
   char dummy_hem;
   datum_type_t dummy_datum;
-  long dummy_zone;
+  unsigned long dummy_zone;
   projection_type_t projection_type1, projection_type2;
   FILE *outputFP = NULL;
 
@@ -4249,7 +4251,8 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
     FILE *outFP=NULL;
     if (outfile && strlen(outfile) > 0) outFP=(FILE*)FOPEN(outfile,"a");
     char msg[1024];
-    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): Found invalid or unsupported (ASCII data?) PPM/PGM file header.\n");
+    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): Found invalid or unsupported (ASCII data?)\n"
+            "PPM/PGM file header.\n");
     if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
@@ -4268,7 +4271,8 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
     FILE *outFP=NULL;
     if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a");
     char msg[1024];
-    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): Found invalid or unsupported (ASCII data?) PPM/PGM file header...\n");
+    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): Found invalid or unsupported\n"
+                 "(ASCII data?) PPM/PGM file header...\n");
     if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
@@ -4301,7 +4305,7 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
   }
-  pgm->width = atoi(tmp);
+  pgm->width = atoi((char *)tmp);
 
   //// Read image height (in rows)
   while (isspace(ch) && ch != EOF) {
@@ -4326,7 +4330,7 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
   }
-  pgm->height = atoi(tmp);
+  pgm->height = atoi((char *)tmp);
 
   //// Read max-allowed pixel value
   while (isspace(ch) && ch != EOF) {
@@ -4351,7 +4355,7 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
   }
-  pgm->max_val = atoi(tmp);
+  pgm->max_val = atoi((char *)tmp);
 
   //// Move past white space to beginning of image data to set pgm->img_offset for an fseek()
   while (isspace(ch) && ch != EOF) {

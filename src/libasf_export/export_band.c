@@ -16,11 +16,21 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
+#include <asf_raster.h>
 #include <float_image.h>
 #include <spheroids.h>
 #include <typlim.h>
 
-#define PGM_MAGIC_NUMBER "P5"
+#define PGM_MAGIC_NUMBER    "P5"
+#ifdef  MAX_RGB
+#undef  MAX_RGB
+#endif
+#define MAX_RGB             255
+#define USHORT_MAX          65535
+#ifdef  OPT_STRIP_BYTES
+#undef  OPT_STRIP_BYTES
+#endif
+#define OPT_STRIP_BYTES     8192
 
 // If you change the BAND_ID_STRING here, make sure you make an identical
 // change in the import library ...the defs must match
@@ -37,20 +47,28 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
-                           int rgb, char **band_names, int have_look_up_table);
+                           int rgb, int *palette_color_tiff, char **band_names,
+                           char *look_up_table_name);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                              int rgb, char **band_names, int have_look_up_table);
+                              int rgb, char **band_names, int palette_color_tiff);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
 void append_band_names(char **band_names, int rgb, char *citation, int have_look_up_table);
+int lut_to_tiff_palette(unsigned short **colors, int size, char *look_up_table_name);
+void dump_palette_tiff_color_map(unsigned short *colors, int map_size);
+int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta_colormap *colormap);
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
-                           int rgb, char **band_names, int have_look_up_table)
+                           int rgb, int *palette_color_tiff, char **band_names,
+                           char *look_up_table_name)
 {
   unsigned short sample_size;
-  unsigned short sample_format;
+  int max_dn, map_size = 0, palette_color = 0;
+  unsigned short rows_per_strip;
+  unsigned short *colors = NULL;
+  int have_look_up_table = look_up_table_name && strlen(look_up_table_name) > 0;
 
   // Open output tiff file
   *otif = XTIFFOpen (output_file_name, "w");
@@ -59,22 +77,57 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
 
-  if (sample_mapping == NONE && !md->optical) {
-    // Float image
-    asfRequire(sizeof (float) == 4,
-               "Size of the unsigned char data type on this machine is "
-                   "different than expected.\n");
-    sample_size = 4;
-    sample_format = SAMPLEFORMAT_IEEEFP;
-
+  int byte_image = (md->general->data_type == BYTE) ||
+                   !(sample_mapping == NONE && !md->optical && !have_look_up_table);
+  if (!byte_image) {
+      // Float image
+      asfRequire(sizeof (float) == 4,
+                 "Size of the unsigned char data type on this machine is "
+                 "different than expected.\n");
+      sample_size = 4;
+      TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
   }
   else {
-    // Byte image
-    asfRequire(sizeof(unsigned char) == 1,
-               "Size of the unsigned char data type on this machine is "
-                   "different than expected.\n");
-    sample_size = 1;
-    sample_format = SAMPLEFORMAT_UINT;
+      // Byte image
+      asfRequire(sizeof(unsigned char) == 1,
+                 "Size of the unsigned char data type on this machine is "
+                 "different than expected.\n");
+      if (have_look_up_table) {
+          // Get max DN from lut file and if it's greater than 255, then
+          // the TIFF standard will not allow indexed color.
+          if (sizeof(unsigned short) != 2) {
+              // The TIFF standard requires an unsigned short to be 16 bits long
+              asfPrintError("Size of the unsigned short integer data type on this machine (%d bytes) is "
+                      "different than expected (2 bytes).\n", sizeof(unsigned short));
+          }
+          // Try #1 ...Try 2 bytes just to get past lut_to_tiff_palette() with no errors
+          sample_size = 2; // Unsigned short ...2 bytes allows a color map 65535 elements long or smaller
+          map_size = 1 << (sample_size * 8); // 2^bits_per_sample;
+          max_dn = lut_to_tiff_palette(&colors, map_size, look_up_table_name);
+          sample_size = 1;
+          palette_color = 0;
+          if (max_dn <= MAX_RGB) {
+              sample_size = 1;
+              map_size = 1 << (sample_size * 8); // 2^bits_per_sample;
+              max_dn = lut_to_tiff_palette(&colors, map_size, look_up_table_name);
+              palette_color = 1;
+          }
+      }
+      else {
+          // No look-up table, so the data is already 0-255 or will be resampled down to
+          // the 0-255 range.  Only need a 1-byte pixel...
+          sample_size = 1;
+      }
+      // The sample format is 'unsigned integer', but the number of bytes per
+      // sample, i.e. short, int, or long, is set by TIFFTAG_BITSPERSAMPLE below
+      // which in turn is determined by the sample_size (in bytes) set above ;-)
+      TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
+  }
+  if (!have_look_up_table && md->colormap) {
+      asfPrintStatus("\nFound single-band image with RGB color map ...storing as a Palette Color TIFF\n\n");
+      asfRequire(md->general->data_type == BYTE, "Non-byte data found.\n");
+      palette_color = 1;
+      max_dn = map_size = meta_colormap_to_tiff_palette(&colors, &byte_image, md->colormap);
   }
 
   /* Set the normal TIFF image tags.  */
@@ -83,26 +136,53 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   TIFFSetField(*otif, TIFFTAG_IMAGELENGTH, md->general->line_count);
   TIFFSetField(*otif, TIFFTAG_BITSPERSAMPLE, sample_size * 8);
   TIFFSetField(*otif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-  if (rgb) {
-    // Color RGB (no palette) image
-    TIFFSetField(*otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-    TIFFSetField(*otif, TIFFTAG_SAMPLESPERPIXEL, 3);
+  if  (
+       (!have_look_up_table && rgb           )  ||
+       ( have_look_up_table && !palette_color)
+      )
+  {
+      // Color RGB (no palette) image
+      TIFFSetField(*otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+      TIFFSetField(*otif, TIFFTAG_SAMPLESPERPIXEL, 3);
+  }
+  else if (byte_image && palette_color) {
+      // Color Palette image
+      TIFFSetField(*otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_PALETTE);
+      TIFFSetField(*otif, TIFFTAG_SAMPLESPERPIXEL, 1);
+
+      unsigned short *red, *green, *blue;
+      asfRequire(colors != NULL, "Color map not allocated.\n");
+      asfRequire(map_size > 0,   "Color map not initialized.\n");
+      red   = colors;
+      green = colors +   map_size;
+      blue  = colors + 2*map_size;
+      TIFFSetField(*otif, TIFFTAG_COLORMAP, red, green, blue);
   }
   else {
     // Else assume grayscale with minimum value (usually zero) means 'black'
     TIFFSetField(*otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
     TIFFSetField(*otif, TIFFTAG_SAMPLESPERPIXEL, 1);
   }
-  TIFFSetField(*otif, TIFFTAG_ROWSPERSTRIP, 1);
+
+  // Set rows per strip to 1, 4, 8, or 16 ...trying to set a near optimal 8k strip size
+  // FIXME: Implement the creation of TIFFS with optimized number of rows per strip ...someday
+  rows_per_strip = 1;//((OPT_STRIP_BYTES / (sample_size * md->general->sample_count)) < 4)  ? 1  :
+                   //((OPT_STRIP_BYTES / (sample_size * md->general->sample_count)) < 8)  ? 4  :
+                   //((OPT_STRIP_BYTES / (sample_size * md->general->sample_count)) < 16) ? 8  :
+                   //((OPT_STRIP_BYTES / (sample_size * md->general->sample_count)) < 32) ? 16 :
+                     //                                             (unsigned short) USHORT_MAX;
+  TIFFSetField(*otif, TIFFTAG_ROWSPERSTRIP, rows_per_strip);
+
   TIFFSetField(*otif, TIFFTAG_XRESOLUTION, 1.0);
   TIFFSetField(*otif, TIFFTAG_YRESOLUTION, 1.0);
   TIFFSetField(*otif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
   TIFFSetField(*otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-  TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, sample_format);
 
   if (is_geotiff) {
-    *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, rgb, band_names, have_look_up_table);
+      *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, rgb, band_names, palette_color);
   }
+
+  *palette_color_tiff = palette_color;
 }
 
 void initialize_png_file(const char *output_file_name,
@@ -204,7 +284,7 @@ void initialize_pgm_file(const char *output_file_name,
 }
 
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                             int rgb, char **band_names, int have_look_up_table)
+                             int rgb, char **band_names, int palette_color_tiff)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -351,7 +431,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     md->projection->param.utm.zone, md->projection->hem,
                     datum_str,
                     md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
-          append_band_names(band_names, rgb, citation, have_look_up_table);
+          append_band_names(band_names, rgb, citation, palette_color_tiff);
           citation_length = strlen(citation);
           asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
                      "GeoTIFF citation too long" );
@@ -421,7 +501,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "%s written by Alaska Satellite Facility "
                   "tools.", datum_str,
                       md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
-        append_band_names(band_names, rgb, citation, have_look_up_table);
+        append_band_names(band_names, rgb, citation, palette_color_tiff);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
@@ -483,7 +563,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "%s written by Alaska Satellite Facility "
                   "tools.", datum_str,
                   md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
-        append_band_names(band_names, rgb, citation, have_look_up_table);
+        append_band_names(band_names, rgb, citation, palette_color_tiff);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
@@ -537,7 +617,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     "Polar stereographic projected GeoTIFF using %s "
                     "datum written by Alaska Satellite Facility "
                     "tools", datum_str);
-          append_band_names(band_names, rgb, citation, have_look_up_table);
+          append_band_names(band_names, rgb, citation, palette_color_tiff);
           citation_length = strlen(citation);
           asfRequire (citation_length >= 0 &&
                       citation_length <= max_citation_length,
@@ -555,7 +635,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     "tools, Natural Origin Latitude %lf, Straight Vertical "
                     "Pole %lf.", md->projection->param.ps.slat,
                     md->projection->param.ps.slon);
-          append_band_names(band_names, rgb, citation, have_look_up_table);
+          append_band_names(band_names, rgb, citation, palette_color_tiff);
           citation_length = strlen(citation);
           asfRequire (citation_length >= 0 &&
               citation_length <= max_citation_length,
@@ -608,7 +688,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "%s %s written by Alaska Satellite "
                       "Facility tools.", datum_str,
                   md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
-        append_band_names(band_names, rgb, citation, have_look_up_table);
+        append_band_names(band_names, rgb, citation, palette_color_tiff);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
             citation_length <= max_citation_length,
@@ -812,13 +892,14 @@ export_band_image (const char *metadata_file_name,
   png_structp png_ptr;
   png_infop png_info_ptr;
   int ii,jj;
+  int palette_color_tiff = 0;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
 
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
 
   asfRequire( !(look_up_table_name == NULL &&
-        sample_mapping == TRUNCATE &&
+                sample_mapping == TRUNCATE &&
                 (md->general->radiometry == r_SIGMA ||
                  md->general->radiometry == r_BETA  ||
                  md->general->radiometry == r_GAMMA)
@@ -844,12 +925,12 @@ export_band_image (const char *metadata_file_name,
       is_geotiff = 0;
       initialize_tiff_file(&otif, &ogtif, output_file_name,
          metadata_file_name, is_geotiff,
-         sample_mapping, rgb, band_name, have_look_up_table);
+         sample_mapping, rgb, &palette_color_tiff, band_name, look_up_table_name);
     }
     else if (format == GEOTIFF) {
       initialize_tiff_file(&otif, &ogtif, output_file_name,
          metadata_file_name, is_geotiff,
-         sample_mapping, rgb, band_name, have_look_up_table);
+         sample_mapping, rgb, &palette_color_tiff, band_name, look_up_table_name);
     }
     else if (format == JPEG) {
       initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
@@ -1836,13 +1917,13 @@ export_band_image (const char *metadata_file_name,
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
           initialize_tiff_file(&otif, &ogtif, output_file_name,
                   metadata_file_name, is_geotiff,
-                  sample_mapping, rgb, band_name, have_look_up_table);
+                  sample_mapping, rgb, &palette_color_tiff, band_name, look_up_table_name);
         }
         else if (format == GEOTIFF) {
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
           initialize_tiff_file(&otif, &ogtif, output_file_name,
                   metadata_file_name, is_geotiff,
-                  sample_mapping, rgb, band_name, have_look_up_table);
+                  sample_mapping, rgb, &palette_color_tiff, band_name, look_up_table_name);
         }
         else if (format == JPEG) {
           append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
@@ -1881,7 +1962,9 @@ export_band_image (const char *metadata_file_name,
         channel_stats_t stats;
               stats.hist = NULL; stats.hist_pdf = NULL;
 
-        if (!md->optical || sample_mapping != NONE) {
+        if ((!md->optical || sample_mapping != NONE) &&
+            md->general->data_type != BYTE)
+        {
           asfRequire (sizeof(unsigned char) == 1,
                 "Size of the unsigned char data type on this machine is "
                 "different than expected.\n");
@@ -1933,7 +2016,7 @@ export_band_image (const char *metadata_file_name,
         unsigned char *byte_line = MALLOC(sizeof(unsigned char) * sample_count);
 
         asfPrintStatus("\nWriting output file...\n");
-        if (have_look_up_table) { // Apply look up table
+        if (have_look_up_table && !palette_color_tiff) { // Apply look up table
           for (ii=0; ii<md->general->line_count; ii++ ) {
             if (md->optical) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
@@ -1969,9 +2052,9 @@ export_band_image (const char *metadata_file_name,
             asfLineMeter(ii, md->general->line_count);
           }
         }
-        else { // Regular old single band image
+        else { // Regular old single band image (no look up table applied)
           for (ii=0; ii<md->general->line_count; ii++ ) {
-            if (md->optical) {
+            if (md->optical || md->general->data_type == BYTE) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
               if (strncmp(md->general->sensor_name, "PRISM", 5) == 0) {
                 if (format == TIF || format == GEOTIFF)
@@ -2075,13 +2158,23 @@ export_band_image (const char *metadata_file_name,
   meta_free (md);
 }
 
-void append_band_names(char **band_names, int rgb, char *citation, int have_look_up_table)
+void append_band_names(char **band_names, int rgb, char *citation, int palette_color_tiff)
 {
   char band_name[256];
   int i=0;
   sprintf(citation, "%s, %s: ", citation, BAND_ID_STRING);
   if (band_names) {
-    if (rgb || have_look_up_table) {
+    if (rgb && !palette_color_tiff) {
+      // RGB tiffs that do not use a color index (palette) have 3 bands, but
+      // palette color tiffs have a single band and an RGB look-up table (TIFFTAG_COLORMAP)
+      //
+      // When the image uses a look-up table, then meta->general->bands lists the look-up table
+      // name rather than a list of individual band names.  band_names[] will therefore only have
+      // a single entry.
+      //
+      // When a color image does not use a look-up table, then meta->general->bands contains
+      // the list of band names, one for each band, separated by commas.  It's safe to expect
+      // the band_names[] array to contain 3 bands in this case.
       for (i=0; i<2; i++) {
         // First 2 bands have a comma after the band name
         if (band_names[i] != NULL && strlen(band_names[i]) > 0 &&
@@ -2106,66 +2199,121 @@ void append_band_names(char **band_names, int rgb, char *citation, int have_look
       }
     }
     else {
-      if (band_names[0] != NULL && strlen(band_names[0]) > 0 &&
-          strncmp(band_names[i], MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0)
-      {
-        strcat(citation, strncmp("IGNORE", uc(band_names[0]), 6) == 0 ? "Empty" : band_names[0]);
-      }
-      else {
-        strcat(citation, "01");
-      }
+        // Single band image or a palette color image
+        if (palette_color_tiff) {
+            strcat(citation, band_names[0]);
+        }
+        else {
+            if (band_names[0] != NULL && strlen(band_names[0]) > 0 &&
+                strncmp(band_names[i], MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0)
+            {
+                strcat(citation, strncmp("IGNORE", uc(band_names[0]), 6) == 0 ? "Empty" : band_names[0]);
+            }
+            else {
+                strcat(citation, "01");
+            }
+        }
     }
   }
   else {
-    if (rgb || have_look_up_table)
+    if (rgb && !palette_color_tiff)
       strcat(citation, "01,02,03");
     else
       strcat(citation, "01");
   }
 }
 
+// lut_to_tiff_palette() converts an ASF-style look-up table (text file) into
+// a TIFF standard RGB palette (indexed color map for TIFFTAG_COLORMAP)
+int lut_to_tiff_palette(unsigned short **colors, int map_size, char *look_up_table_name)
+{
+    int i, max_lut_dn;
+    unsigned char *lut = NULL;
+    float r, g, b;
 
+    asfRequire(map_size >= 1, "TIFF palette color map size less than 1 element\n");
+    asfRequire(look_up_table_name != NULL && strlen(look_up_table_name) > 0,
+               "Invalid look up table name\n");
 
+    // Use CALLOC so the entire look up table is initialized to zero
+    lut = (unsigned char *)CALLOC(MAX_LUT_DN * 3, sizeof(unsigned char));
 
+    // Read the look up table from the file.  It will be 3-color and have MAX_LUT_DN*3 elements
+    // in the array, in packed format <rgbrgbrgb...rgb>, and values range from 0 to 255
+    max_lut_dn = read_lut(look_up_table_name, lut);
+    if (max_lut_dn > map_size) {
+        FREE(lut);
+        asfPrintError("Look-up table too large (%d) for TIFF.  Maximum TIFF\n"
+                "look-up table size for the data type is %d elements long.\n", max_lut_dn, map_size);
+    }
+    *colors = (unsigned short *)_TIFFmalloc(sizeof(unsigned short) * 3 * map_size);
+    asfRequire(*colors != NULL, "Could not allocate TIFF palette.\n");
+    for (i = 0; i < 3 * map_size; i++) (*colors)[i] = (unsigned short)0; // Init to all zeros
 
+    // Normalize the look-up table values into the range specified by the TIFF standard
+    // (0 through 65535 ...the maximum unsigned short value)
+    for (i=0; i<max_lut_dn; i++) {
+        // TIFF color map structure is a one-row array, all the reds, then all the
+        // greens, then all the blues, i.e. <all reds><all greens><all blues>, each
+        // section 'map_size' elements long
+        //
+        // Grab rgb values from the lut
+        r = (float)lut[i*3  ];
+        g = (float)lut[i*3+1];
+        b = (float)lut[i*3+2];
 
+        // Normalize the lut values to the 0-65535 range as specified by the TIFF standard for
+        // color maps / palettes
+        (*colors)[i             ] = (unsigned short) ((r/(float)MAX_RGB)*(float)USHORT_MAX + 0.5);
+        (*colors)[i +   map_size] = (unsigned short) ((g/(float)MAX_RGB)*(float)USHORT_MAX + 0.5);
+        (*colors)[i + 2*map_size] = (unsigned short) ((b/(float)MAX_RGB)*(float)USHORT_MAX + 0.5);
+    }
 
+    return max_lut_dn;
+}
 
+// Assumes the color map is made from unsigned shorts (uint16 or equiv).  a) This is mandated
+// by v6 of the TIFF standard regardless of data type in the tiff, b) The only valid
+// data types for a colormap TIFF is i) 4-bit unsigned integer, or ii) 8-bit unsigned integer,
+// and c) the values in a TIFF colormap range from 0 to 65535 (max uint16) and must be normalized
+// to 0-255 as for display (the range 0-255 is normalize to 0-65535 when creating the colormap
+// in the first place.)
+void dump_palette_tiff_color_map(unsigned short *colors, int map_size)
+{
+    int i;
+    asfRequire(map_size <= 256, "Map size too large.\n");
 
+    fprintf(stderr, "\n\nColor Map (DN: red  green  blue):\n");
+    for (i=0; i<map_size; i++){
+        fprintf(stderr, "%d:\t%d\t%d\t%d\n", i,
+                (int)((float)colors[i +          0]*((float)MAX_RGB/(float)USHORT_MAX) + 0.5),
+                (int)((float)colors[i +   map_size]*((float)MAX_RGB/(float)USHORT_MAX) + 0.5),
+                (int)((float)colors[i + 2*map_size]*((float)MAX_RGB/(float)USHORT_MAX) + 0.5));
+    }
+}
 
+int meta_colormap_to_tiff_palette(unsigned short **tiff_palette, int *byte_image, meta_colormap *colormap)
+{
+    int i, size;
+    unsigned short r, g, b;
+    meta_colormap *cm = colormap; // Convenience ptr
 
+    asfRequire(colormap != NULL, "Unallocated colormap.\n");
+    size = cm->num_elements;
+    *tiff_palette = (unsigned short *)CALLOC(3*size, sizeof(unsigned short));
 
+    // A TIFF palette is a one dimensional array ...all the reds, then all the greens, then all the blues
+    // Create TIFF palette by normalizing 0-255 range into 0-65535 and storing in the band sequential
+    // array.
+    for (i=0; i<size; i++) {
+        r = cm->rgb[i].red;
+        g = cm->rgb[i].green;
+        b = cm->rgb[i].blue;
+        (*tiff_palette)[i +      0] = (unsigned short) (((float)r/(float)MAX_RGB)*(float)USHORT_MAX + 0.5);
+        (*tiff_palette)[i +   size] = (unsigned short) (((float)g/(float)MAX_RGB)*(float)USHORT_MAX + 0.5);
+        (*tiff_palette)[i + 2*size] = (unsigned short) (((float)b/(float)MAX_RGB)*(float)USHORT_MAX + 0.5);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return size;
+}
 

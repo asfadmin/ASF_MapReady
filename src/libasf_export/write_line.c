@@ -22,8 +22,8 @@ void write_tiff_float2float(TIFF *otif, float *float_line, int line)
 }
 
 void write_tiff_float2byte(TIFF *otif, float *float_line,
-			   channel_stats_t stats, scale_t sample_mapping,
-			   float no_data, int line, int sample_count)
+               channel_stats_t stats, scale_t sample_mapping,
+               float no_data, int line, int sample_count)
 {
   int jj;
   unsigned char *byte_line;
@@ -33,17 +33,17 @@ void write_tiff_float2byte(TIFF *otif, float *float_line,
   for (jj=0; jj<sample_count; jj++) {
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
-		       stats.hist, stats.hist_pdf, no_data);
+               stats.hist, stats.hist_pdf, no_data);
   }
   TIFFWriteScanline (otif, byte_line, line, 0);
   FREE(byte_line);
 }
 
 void write_rgb_tiff_byte2byte(TIFF *otif,
-			      unsigned char *red_byte_line,
-			      unsigned char *green_byte_line,
-			      unsigned char *blue_byte_line,
-			      int line, int sample_count)
+                  unsigned char *red_byte_line,
+                  unsigned char *green_byte_line,
+                  unsigned char *blue_byte_line,
+                  int line, int sample_count)
 {
   int jj;
   unsigned char *rgb_byte_line;
@@ -61,25 +61,24 @@ void write_rgb_tiff_byte2byte(TIFF *otif,
 }
 
 void write_tiff_byte2lut(TIFF *otif, unsigned char *byte_line,
-			 int line, int sample_count, char *look_up_table_name)
+             int line, int sample_count, char *look_up_table_name)
 {
   unsigned char *rgb_line;
 
-  rgb_line = (unsigned char *)
-    MALLOC(sizeof(unsigned char) * sample_count * 3);
+  rgb_line = (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
-		      rgb_line);
+                           rgb_line);
 
   TIFFWriteScanline (otif, rgb_line, line, 0);
   FREE(rgb_line);
 }
 
 void write_rgb_tiff_float2float(TIFF *otif,
-				float *red_float_line,
-				float *green_float_line,
-				float *blue_float_line,
-				int line, int sample_count)
+                float *red_float_line,
+                float *green_float_line,
+                float *blue_float_line,
+                int line, int sample_count)
 {
   int jj;
   float *rgb_float_line;
@@ -96,14 +95,14 @@ void write_rgb_tiff_float2float(TIFF *otif,
 }
 
 void write_rgb_tiff_float2byte(TIFF *otif,
-			       float *red_float_line,
-			       float *green_float_line,
-			       float *blue_float_line,
-			       channel_stats_t red_stats,
-			       channel_stats_t green_stats,
-			       channel_stats_t blue_stats,
-			       scale_t sample_mapping,
-			       float no_data, int line, int sample_count)
+                   float *red_float_line,
+                   float *green_float_line,
+                   float *blue_float_line,
+                   channel_stats_t red_stats,
+                   channel_stats_t green_stats,
+                   channel_stats_t blue_stats,
+                   scale_t sample_mapping,
+                   float no_data, int line, int sample_count)
 {
   int jj;
   unsigned char *rgb_byte_line;
@@ -114,25 +113,25 @@ void write_rgb_tiff_float2byte(TIFF *otif,
   for (jj=0; jj<sample_count; jj++) {
     rgb_byte_line[jj*3] =
       pixel_float2byte(red_float_line[jj], sample_mapping,
-		       red_stats.min, red_stats.max, red_stats.hist,
-		       red_stats.hist_pdf, no_data);
+               red_stats.min, red_stats.max, red_stats.hist,
+               red_stats.hist_pdf, no_data);
     rgb_byte_line[(jj*3)+1] =
       pixel_float2byte(green_float_line[jj], sample_mapping,
-		       green_stats.min, green_stats.max, green_stats.hist,
-		       green_stats.hist_pdf, no_data);
+               green_stats.min, green_stats.max, green_stats.hist,
+               green_stats.hist_pdf, no_data);
     rgb_byte_line[(jj*3)+2] =
       pixel_float2byte(blue_float_line[jj], sample_mapping,
-		       blue_stats.min, blue_stats.max, blue_stats.hist,
-		       blue_stats.hist_pdf, no_data);
+               blue_stats.min, blue_stats.max, blue_stats.hist,
+               blue_stats.hist_pdf, no_data);
   }
   TIFFWriteScanline (otif, rgb_byte_line, line, 0);
   FREE(rgb_byte_line);
 }
 
 void write_tiff_float2lut(TIFF *otif, float *float_line,
-			  channel_stats_t stats, scale_t sample_mapping,
-			  float no_data, int line, int sample_count,
-			  char *look_up_table_name)
+              channel_stats_t stats, scale_t sample_mapping,
+              float no_data, int line, int sample_count,
+              char *look_up_table_name)
 {
   int jj;
   unsigned char *byte_line, *rgb_line;
@@ -145,12 +144,12 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
   for (jj=0; jj<sample_count; jj++) {
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping,
-		       stats.min, stats.max, stats.hist,
-		       stats.hist_pdf, NAN);
+               stats.min, stats.max, stats.hist,
+               stats.hist_pdf, NAN);
   }
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
-		      rgb_line);
+              rgb_line);
 
   TIFFWriteScanline (otif, rgb_line, line, 0);
   FREE(byte_line);
@@ -159,8 +158,8 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
 
 void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line,
                           channel_stats_t stats, scale_t sample_mapping,
-			  struct jpeg_compress_struct *cinfo,
-			  int sample_count)
+              struct jpeg_compress_struct *cinfo,
+              int sample_count)
 {
   int jj;
 
@@ -185,10 +184,10 @@ void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line,
 }
 
 void write_jpeg_float2byte(FILE *ojpeg, float *float_line,
-			   struct jpeg_compress_struct *cinfo,
-			   channel_stats_t stats,
-			   scale_t sample_mapping,
-			   float no_data, int sample_count)
+               struct jpeg_compress_struct *cinfo,
+               channel_stats_t stats,
+               scale_t sample_mapping,
+               float no_data, int sample_count)
 {
   int jj;
 
@@ -198,7 +197,7 @@ void write_jpeg_float2byte(FILE *ojpeg, float *float_line,
   for (jj=0; jj<sample_count; jj++) {
     jsample_row[jj] = (JSAMPLE)
       pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
-		       stats.hist, stats.hist_pdf, no_data);
+               stats.hist, stats.hist_pdf, no_data);
   }
   row_pointer[0] = jsample_row;
   jpeg_write_scanlines (cinfo, row_pointer, 1);
@@ -207,11 +206,11 @@ void write_jpeg_float2byte(FILE *ojpeg, float *float_line,
 }
 
 void write_rgb_jpeg_byte2byte(FILE *ojpeg,
-			      unsigned char *red_byte_line,
-			      unsigned char *green_byte_line,
-			      unsigned char *blue_byte_line,
-			      struct jpeg_compress_struct *cinfo,
-			      int sample_count)
+                  unsigned char *red_byte_line,
+                  unsigned char *green_byte_line,
+                  unsigned char *blue_byte_line,
+                  struct jpeg_compress_struct *cinfo,
+                  int sample_count)
 {
   int jj;
 
@@ -230,8 +229,8 @@ void write_rgb_jpeg_byte2byte(FILE *ojpeg,
 }
 
 void write_jpeg_byte2lut(FILE *ojpeg, unsigned char *byte_line,
-			 struct jpeg_compress_struct *cinfo,
-			 int sample_count, char *look_up_table_name)
+             struct jpeg_compress_struct *cinfo,
+             int sample_count, char *look_up_table_name)
 {
   int jj;
   unsigned char *rgb_line;
@@ -242,7 +241,7 @@ void write_jpeg_byte2lut(FILE *ojpeg, unsigned char *byte_line,
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
-		      rgb_line);
+              rgb_line);
 
   for (jj=0; jj<sample_count*3; jj++)
     jsample_row[jj] = (JSAMPLE) rgb_line[jj];
@@ -254,15 +253,15 @@ void write_jpeg_byte2lut(FILE *ojpeg, unsigned char *byte_line,
 }
 
 void write_rgb_jpeg_float2byte(FILE *ojpeg,
-			       float *red_float_line,
-			       float *green_float_line,
-			       float *blue_float_line,
-			       struct jpeg_compress_struct *cinfo,
-			       channel_stats_t red_stats,
-			       channel_stats_t green_stats,
-			       channel_stats_t blue_stats,
-			       scale_t sample_mapping,
-			       float no_data, int sample_count)
+                   float *red_float_line,
+                   float *green_float_line,
+                   float *blue_float_line,
+                   struct jpeg_compress_struct *cinfo,
+                   channel_stats_t red_stats,
+                   channel_stats_t green_stats,
+                   channel_stats_t blue_stats,
+                   scale_t sample_mapping,
+                   float no_data, int sample_count)
 {
   int jj;
 
@@ -272,16 +271,16 @@ void write_rgb_jpeg_float2byte(FILE *ojpeg,
   for (jj=0; jj<sample_count; jj++) {
     jsample_row[jj*3] = (JSAMPLE)
       pixel_float2byte(red_float_line[jj], sample_mapping,
-		       red_stats.min, red_stats.max, red_stats.hist,
-		       red_stats.hist_pdf, no_data);
+               red_stats.min, red_stats.max, red_stats.hist,
+               red_stats.hist_pdf, no_data);
     jsample_row[(jj*3)+1] = (JSAMPLE)
       pixel_float2byte(green_float_line[jj], sample_mapping,
-		       green_stats.min, green_stats.max, green_stats.hist,
-		       green_stats.hist_pdf, no_data);
+               green_stats.min, green_stats.max, green_stats.hist,
+               green_stats.hist_pdf, no_data);
     jsample_row[(jj*3)+2] = (JSAMPLE)
       pixel_float2byte(blue_float_line[jj], sample_mapping,
-		       blue_stats.min, blue_stats.max, blue_stats.hist,
-		       blue_stats.hist_pdf, no_data);
+               blue_stats.min, blue_stats.max, blue_stats.hist,
+               blue_stats.hist_pdf, no_data);
   }
   row_pointer[0] = jsample_row;
   jpeg_write_scanlines (cinfo, row_pointer, 1);
@@ -290,10 +289,10 @@ void write_rgb_jpeg_float2byte(FILE *ojpeg,
 }
 
 void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
-			  struct jpeg_compress_struct *cinfo,
-			  channel_stats_t stats, scale_t sample_mapping,
-			  float no_data, int sample_count,
-			  char *look_up_table_name)
+              struct jpeg_compress_struct *cinfo,
+              channel_stats_t stats, scale_t sample_mapping,
+              float no_data, int sample_count,
+              char *look_up_table_name)
 {
   int jj;
   unsigned char *byte_line, *rgb_line;
@@ -308,12 +307,12 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
   for (jj=0; jj<sample_count; jj++) {
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping,
-		       stats.min, stats.max, stats.hist,
-		       stats.hist_pdf, NAN);
+               stats.min, stats.max, stats.hist,
+               stats.hist_pdf, NAN);
   }
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
-		      rgb_line);
+              rgb_line);
 
   for (jj=0; jj<sample_count*3; jj++)
     jsample_row[jj] = (JSAMPLE) rgb_line[jj];
@@ -327,11 +326,11 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
 void write_png_byte2byte(FILE *opng, unsigned char *byte_line,
                          channel_stats_t stats, scale_t sample_mapping,
                          png_structp png_ptr, png_infop png_info_ptr,
-			             int sample_count)
+                         int sample_count)
 {
   png_byte *row_pointer = g_new(png_byte, sample_count);
 
-  if (sample_mapping != NONE) {    
+  if (sample_mapping != NONE) {
     int jj;
     for (jj=0; jj<sample_count; jj++) {
       row_pointer[jj] =
@@ -351,9 +350,9 @@ void write_png_byte2byte(FILE *opng, unsigned char *byte_line,
 
 void write_png_float2byte(FILE *opng, float *float_line,
                png_structp png_ptr, png_infop png_info_ptr,
-			   channel_stats_t stats,
-			   scale_t sample_mapping,
-			   float no_data, int sample_count)
+               channel_stats_t stats,
+               scale_t sample_mapping,
+               float no_data, int sample_count)
 {
   int jj;
 
@@ -362,7 +361,7 @@ void write_png_float2byte(FILE *opng, float *float_line,
   for (jj=0; jj<sample_count; jj++) {
     row_pointer[jj] = (png_byte)
       pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
-		       stats.hist, stats.hist_pdf, no_data);
+               stats.hist, stats.hist_pdf, no_data);
   }
 
   png_write_row(png_ptr, row_pointer);
@@ -370,11 +369,11 @@ void write_png_float2byte(FILE *opng, float *float_line,
 }
 
 void write_rgb_png_byte2byte(FILE *opng,
-			      unsigned char *red_byte_line,
-			      unsigned char *green_byte_line,
-			      unsigned char *blue_byte_line,
-	              png_structp png_ptr, png_infop png_info_ptr,
-			      int sample_count)
+                  unsigned char *red_byte_line,
+                  unsigned char *green_byte_line,
+                  unsigned char *blue_byte_line,
+                  png_structp png_ptr, png_infop png_info_ptr,
+                  int sample_count)
 {
   png_byte *row_pointer = g_new(png_byte, sample_count*3);
 
@@ -391,7 +390,7 @@ void write_rgb_png_byte2byte(FILE *opng,
 
 void write_png_byte2lut(FILE *opng, unsigned char *byte_line,
              png_structp png_ptr, png_infop png_info_ptr,
-			 int sample_count, char *look_up_table_name)
+             int sample_count, char *look_up_table_name)
 {
   int jj;
   unsigned char *rgb_line;
@@ -401,7 +400,7 @@ void write_png_byte2lut(FILE *opng, unsigned char *byte_line,
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
-		      rgb_line);
+              rgb_line);
 
   for (jj=0; jj<sample_count*3; jj++)
     row_pointer[jj] = (png_byte) rgb_line[jj];
@@ -411,15 +410,15 @@ void write_png_byte2lut(FILE *opng, unsigned char *byte_line,
 }
 
 void write_rgb_png_float2byte(FILE *opng,
-			       float *red_float_line,
-			       float *green_float_line,
-			       float *blue_float_line,
+                   float *red_float_line,
+                   float *green_float_line,
+                   float *blue_float_line,
                    png_structp png_ptr, png_infop png_info_ptr,
-			       channel_stats_t red_stats,
-			       channel_stats_t green_stats,
-			       channel_stats_t blue_stats,
-			       scale_t sample_mapping,
-			       float no_data, int sample_count)
+                   channel_stats_t red_stats,
+                   channel_stats_t green_stats,
+                   channel_stats_t blue_stats,
+                   scale_t sample_mapping,
+                   float no_data, int sample_count)
 {
   int jj;
 
@@ -428,16 +427,16 @@ void write_rgb_png_float2byte(FILE *opng,
   for (jj=0; jj<sample_count; jj++) {
     row_pointer[jj*3] = (png_byte)
       pixel_float2byte(red_float_line[jj], sample_mapping,
-		       red_stats.min, red_stats.max, red_stats.hist,
-		       red_stats.hist_pdf, no_data);
+               red_stats.min, red_stats.max, red_stats.hist,
+               red_stats.hist_pdf, no_data);
     row_pointer[(jj*3)+1] = (png_byte)
       pixel_float2byte(green_float_line[jj], sample_mapping,
-		       green_stats.min, green_stats.max, green_stats.hist,
-		       green_stats.hist_pdf, no_data);
+               green_stats.min, green_stats.max, green_stats.hist,
+               green_stats.hist_pdf, no_data);
     row_pointer[(jj*3)+2] = (png_byte)
       pixel_float2byte(blue_float_line[jj], sample_mapping,
-		       blue_stats.min, blue_stats.max, blue_stats.hist,
-		       blue_stats.hist_pdf, no_data);
+               blue_stats.min, blue_stats.max, blue_stats.hist,
+               blue_stats.hist_pdf, no_data);
   }
 
   png_write_row(png_ptr, row_pointer);
@@ -446,9 +445,9 @@ void write_rgb_png_float2byte(FILE *opng,
 
 void write_png_float2lut(FILE *opng, float *float_line,
               png_structp png_ptr, png_infop png_info_ptr,
-			  channel_stats_t stats, scale_t sample_mapping,
-			  float no_data, int sample_count,
-			  char *look_up_table_name)
+              channel_stats_t stats, scale_t sample_mapping,
+              float no_data, int sample_count,
+              char *look_up_table_name)
 {
   int jj;
   unsigned char *byte_line, *rgb_line;
@@ -462,12 +461,12 @@ void write_png_float2lut(FILE *opng, float *float_line,
   for (jj=0; jj<sample_count; jj++) {
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping,
-		       stats.min, stats.max, stats.hist,
-		       stats.hist_pdf, NAN);
+               stats.min, stats.max, stats.hist,
+               stats.hist_pdf, NAN);
   }
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
-		      rgb_line);
+              rgb_line);
 
   for (jj=0; jj<sample_count*3; jj++)
     row_pointer[jj] = (png_byte) rgb_line[jj];
@@ -478,7 +477,7 @@ void write_png_float2lut(FILE *opng, float *float_line,
 
 void write_pgm_byte2byte(FILE *opgm, unsigned char *byte_line,
                          channel_stats_t stats, scale_t sample_mapping,
-			             int sample_count)
+                         int sample_count)
 {
   int jj;
   if (sample_mapping != NONE) {
@@ -493,8 +492,8 @@ void write_pgm_byte2byte(FILE *opgm, unsigned char *byte_line,
 }
 
 void write_pgm_float2byte(FILE *opgm, float *float_line,
-			  channel_stats_t stats, scale_t sample_mapping,
-			  float no_data, int sample_count)
+              channel_stats_t stats, scale_t sample_mapping,
+              float no_data, int sample_count)
 {
   int jj;
   unsigned char *byte_line;
@@ -504,7 +503,7 @@ void write_pgm_float2byte(FILE *opgm, float *float_line,
   for (jj=0; jj<sample_count; jj++)
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
-		       stats.hist, stats.hist_pdf, no_data);
+               stats.hist, stats.hist_pdf, no_data);
 
   FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
   FREE(byte_line);

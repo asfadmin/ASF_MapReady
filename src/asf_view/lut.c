@@ -1,5 +1,9 @@
+#include <tiff.h>
+#include <tiffio.h>
+#include <xtiffio.h>
 #include "asf_view.h"
 #include "asf_raster.h"
+#include <geotiff_support.h>
 
 static int g_have_lut = FALSE;
 static unsigned char *g_lut_buffer = NULL;
@@ -9,6 +13,8 @@ static unsigned char *g_lut_buffer = NULL;
 // memorized here.  This will work around a deficiency in the GTK
 // menu widget, we can't iterate through the items
 static int g_dem_index = 0;
+static int g_tiff_lut_index = 0;
+static int g_asf_lut_index = 0;
 
 static int my_strcmp(const void *v1, const void *v2)
 {
@@ -73,8 +79,17 @@ void populate_lut_combo()
             gtk_widget_show(item);
 
             // memorize the indexes we will need later
-            if (strncmp_case(names[i], "dem", 3) == 0)
+            if (strncmp_case(names[i], "dem", 3) == 0) {
                 g_dem_index = i+2;
+            }
+            if (strncmp(names[i], EMBEDDED_TIFF_COLORMAP_LUT,
+                        strlen(EMBEDDED_TIFF_COLORMAP_LUT)) == 0) {
+                g_tiff_lut_index = i+2;
+            }
+            if (strncmp(names[i], EMBEDDED_ASF_COLORMAP_LUT,
+                        strlen(EMBEDDED_ASF_COLORMAP_LUT)) == 0) {
+                g_asf_lut_index = i+2;
+            }
         }
     }
 
@@ -228,8 +243,67 @@ void apply_lut_to_data(ThumbnailData *td)
             int index = jj+ii*td->size_x;
             int n = 3*index;
             unsigned char uval = data[n];
-            double val = (((double)uval - .5) * (curr->stats.map_max-curr->stats.map_min)) / 255. + curr->stats.map_min; 
+            double val = (((double)uval - .5) * (curr->stats.map_max-curr->stats.map_min)) / 255. + curr->stats.map_min;
             apply_lut((int)(val+.5), &data[n], &data[n+1], &data[n+2]);
         }
     }
+}
+
+int check_for_embedded_tiff_lut (char *curr_file, int *lut_specified, char *lut)
+{
+    TIFF *tiff = NULL;
+    short sample_format;
+    short bits_per_sample;
+    short planar_config;
+    short num_bands = 0;
+    int is_scanline_format;
+    int is_palette_color_tiff;
+    data_type_t data_type;
+    char *ext;
+    int ret = 0;
+
+    ext = findExt(curr_file);
+    if (ext && strlen(ext) && strncmp(uc(ext), ".TIF", 4) == 0) {
+      tiff = XTIFFOpen(curr_file, "r");
+      if (tiff) {
+          get_tiff_data_config(tiff, &sample_format, &bits_per_sample, &planar_config,
+                              &data_type, &num_bands, &is_scanline_format,
+                              &is_palette_color_tiff, REPORT_LEVEL_NONE);
+          *lut_specified = is_palette_color_tiff;
+          if (is_palette_color_tiff) {
+              strcpy(lut, EMBEDDED_TIFF_COLORMAP_LUT);
+              ret = 1;
+          }
+      }
+    }
+
+    return ret;
+}
+
+int get_tiff_lut_index(void)
+{
+  return g_tiff_lut_index;
+}
+
+int get_asf_lut_index(void)
+{
+  return g_asf_lut_index;
+}
+
+int is_colormap_ASF_file(char *file)
+{
+  int ret=0;
+  char *img_file;
+  char *meta_file;
+
+  img_file = appendExt(file, ".img");
+  meta_file = appendExt(file, ".meta");
+  if (fileExists(img_file) && fileExists(meta_file)) {
+    meta_parameters *meta = meta_read(meta_file);
+    ret = meta->colormap ? 1 : 0;
+  }
+  FREE(img_file);
+  FREE(meta_file);
+
+  return ret;
 }

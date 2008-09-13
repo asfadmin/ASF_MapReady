@@ -64,6 +64,7 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
     short bits_per_sample;
     short planar_config;
     int is_scanline_format;
+    int is_palette_color_tiff;
     data_type_t data_type;
     short num_bands;
     get_tiff_data_config(fpIn,
@@ -73,6 +74,7 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
                          &data_type,
                          &num_bands,
                          &is_scanline_format,
+                         &is_palette_color_tiff,
                          REPORT_LEVEL_WARNING);
     tiff_type_t tiffInfo;
     get_tiff_type(fpIn, &tiffInfo);
@@ -1111,6 +1113,7 @@ int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band
     short bits_per_sample;
     short planar_config;
     int is_scanline_format;
+    int is_palette_color_tiff;
     data_type_t data_type;
     short num_bands;
     int ret = get_tiff_data_config(fpIn,
@@ -1120,6 +1123,7 @@ int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band
                                    &data_type,
                                    &num_bands,
                                    &is_scanline_format,
+                                   &is_palette_color_tiff,
                                    REPORT_LEVEL_WARNING);
     if (ret) {
         // Unfortunately, get_tiff_data_config() returns 0 on success, -1 on failure

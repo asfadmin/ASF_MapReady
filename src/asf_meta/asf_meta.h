@@ -35,7 +35,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 2.9
+#define META_VERSION 2.10
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -417,6 +417,22 @@ typedef struct {
 } extra_info;
 
 /********************************************************************
+ * meta_colormap: RGB index for converting 1-band image pixel values
+ *  into an RGB triplet.  To date, this only applies to ingest of
+ *  Palette Color TIFF files.
+ */
+typedef struct {
+    unsigned char red;
+    unsigned char green;
+    unsigned char blue;
+} meta_rgb;
+typedef struct {
+    char look_up_table[256];        // Name of look up table file
+    int num_elements;               // Number of elements in the color table
+    meta_rgb *rgb;                  // Array allocated at run time
+} meta_colormap;                    // meta_colormap RGB look-up table
+
+/********************************************************************
  * General ASF metadta structure.  Collection of all above.
  */
 typedef struct {
@@ -433,13 +449,13 @@ typedef struct {
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
   meta_location      *location;        // Can be NULL
   meta_calibration   *calibration;     // Can be NULL
+  meta_colormap      *colormap;        // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
   ifm_parameters  *ifm;
   extra_info      *info;               /* Can be NULL (check!).  */
 } meta_parameters;
-
 
 /****************** Creation/IO *********************
  * meta_init: in meta_init.c
@@ -488,6 +504,7 @@ meta_statistics *meta_statistics_init(int band_count);
 meta_calibration *meta_calibration_init(void);
 //meta_stats *meta_stats_init(void);
 meta_location *meta_location_init(void);
+meta_colormap *meta_colormap_init(void);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */
@@ -594,7 +611,7 @@ int getLatLongMeta(const stateVector stVec,meta_parameters *meta,
 
 /* quick code to get a bounding box for the metadata */
 void meta_get_bounding_box(meta_parameters *meta,
-                           double *plat_min, double *plat_max,  
+                           double *plat_min, double *plat_max,
                            double *plon_min, double *plon_max);
 
 /* This low-level routine is used internally by asf_meta.  */
@@ -701,8 +718,8 @@ int get_band_float_line(FILE *file, meta_parameters *meta, int band_number,
 int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
     int num_lines_to_get, float *dest);
 int get_band_float_lines(FILE *file, meta_parameters *meta, int band_number,
-			 int line_number_in_band, int num_lines_to_get, 
-			 float *dest);
+             int line_number_in_band, int num_lines_to_get,
+             float *dest);
 int get_double_line(FILE *file, meta_parameters *meta, int line_number,
     double *dest);
 int get_double_lines(FILE *file, meta_parameters *meta, int line_number,
@@ -819,7 +836,7 @@ int refine_slc_geolocation_from_workreport(const char *metaName,
 void create_cal_params(const char *inSAR, meta_parameters *meta);
 float *incid_init(meta_parameters *meta);
 float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
-		 float inDn, int dbFlag);
+         float inDn, int dbFlag);
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
 quadratic_2d get_incid(char *sarName, meta_parameters *meta);

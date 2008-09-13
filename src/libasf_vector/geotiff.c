@@ -39,7 +39,7 @@ static void read_geotiff(char *inFile, geotiff_type_t **g)
   data_type_t data_type;
   short num_bands;
   short int sample_format, bits_per_sample, planar_config;
-  int ignore[MAX_BANDS], is_scanline_format;
+  int ignore[MAX_BANDS], is_scanline_format, is_palette_color_tiff;
 
   // Initialize structure
   geotiff_init(geo);
@@ -49,7 +49,7 @@ static void read_geotiff(char *inFile, geotiff_type_t **g)
   input_tiff = XTIFFOpen(inFile, "r");
   get_tiff_data_config(input_tiff, &sample_format, &bits_per_sample,
                        &planar_config, &data_type, &num_bands,
-                       &is_scanline_format, REPORT_LEVEL_NONE);
+                       &is_scanline_format, &is_palette_color_tiff, REPORT_LEVEL_NONE);
   XTIFFClose(input_tiff);
   strcpy(geo->id, inFile);
   if (sample_format == SAMPLEFORMAT_UINT)
@@ -94,7 +94,7 @@ int geotiff2csv(char *inFile, char *outFile, int listFlag)
   geotiff_type_t *geo;
   int ii, kk, nCols;
   char str[50];
-  char *line = (char *) MALLOC(sizeof(char)*4096);  
+  char *line = (char *) MALLOC(sizeof(char)*4096);
   char *header = (char *) MALLOC(sizeof(char)*4096);
 
   // Read configuration file
@@ -104,7 +104,7 @@ int geotiff2csv(char *inFile, char *outFile, int listFlag)
     if (dbf[ii].visible) {
       if (strcmp(dbf[ii].header, "LAT") == 0 ||
 	  strcmp(dbf[ii].header, "LON") == 0) {
-	for (kk=0; kk<4; kk++) {	
+	for (kk=0; kk<4; kk++) {
 	  sprintf(str, "%s%d,", dbf[ii].header, kk+1);
 	  strcat(header, str);
 	}
@@ -193,7 +193,7 @@ static void add_placemark(FILE *fp, geotiff_type_t *geo, dbf_header_t *dbf,
     if (strcmp(dbf[ii].header, "ID") == 0)
       fprintf(fp, "%s<strong>ID</strong>: %s <br>%s", begin, geo->id, end);
     else if (strcmp(dbf[ii].header, "FORMAT") == 0)
-      fprintf(fp, "%s<strong>Format</strong>: %s <br>%s", 
+      fprintf(fp, "%s<strong>Format</strong>: %s <br>%s",
 	      begin, geo->format, end);
     else if (strcmp(dbf[ii].header, "BITS_SAMPLES") == 0)
       fprintf(fp, "%s<strong>Bits per sample</strong>: %d <br>%s",
@@ -359,7 +359,7 @@ static void geotiff2shape_line(char *inFile, char *outFile, int n)
 
   // Write shape object
   SHPObject *shapeObject=NULL;
-  shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, 
+  shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5,
 				      geo->lon, geo->lat, NULL);
   SHPWriteObject(shape, -1, shapeObject);
   SHPDestroyObject(shapeObject);

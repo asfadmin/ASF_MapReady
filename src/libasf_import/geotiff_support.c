@@ -171,7 +171,7 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
 int get_tiff_data_config(TIFF *tif,
                          short *sample_format, short *bits_per_sample, short *planar_config,
                          data_type_t *data_type, short *num_bands,
-                         int *is_scanline_format, report_level_t report_level)
+                         int *is_scanline_format, int *is_palette_color_tiff, report_level_t report_level)
 {
   int     ret = 0, read_count;
   uint16  planarConfiguration = 0;
@@ -306,6 +306,17 @@ int get_tiff_data_config(TIFF *tif,
   read_count = TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
   if (read_count != 1) {
       samplesPerPixel = 0;
+  }
+
+  unsigned short *maps[3];
+  read_count = TIFFGetField(tif, TIFFTAG_COLORMAP, maps+0, maps+1, maps+2);
+  *is_palette_color_tiff = 0;
+  if (read_count) {
+    if (samplesPerPixel == 1) {
+      *is_palette_color_tiff = 1;
+    }
+    // NOTE: Do not free the colormaps ...this results in a glib double-free error
+    // when closing the tiff file.
   }
 
   read_count = TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);

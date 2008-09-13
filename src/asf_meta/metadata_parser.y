@@ -58,7 +58,6 @@ static int vector_count;
    track of how many of them we have seen so far.  */
 static int stats_block_count;
 
-
 char current_file[MAX_FILE_NAME];
 extern int line_number;         /* Line number of file being parsed.  */
 
@@ -121,6 +120,8 @@ void error_message(const char *err_mes, ...)
 #define MTRANSFORM ( (meta_transform *) current_block)
 #define MAIRSAR ( (meta_airsar *) current_block)
 #define MCALIBRATION ( (meta_calibration *) current_block)
+#define MCOLORMAP ( (meta_colormap *) current_block)
+#define MRGB ( (meta_rgb *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -225,6 +226,13 @@ void select_current_block(char *block_name)
       { MTL->calibration = meta_calibration_init(); }
     current_block = MTL->calibration;
     goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "colormap") ) {
+      if (MTL->colormap == NULL)
+      { MTL->colormap = meta_colormap_init(); }
+      current_block = MTL->colormap;
+      goto MATCHED;
   }
 
   /* Got an unknown block name, so report.  */
@@ -1137,6 +1145,33 @@ void fill_structure_field(char *field_name, void *valp)
     // ALOS calibration
     if ( !strcmp(field_name, "cf") && (MCALIBRATION)->type == alos_cal)
       { (MCALIBRATION)->alos->cf = VALP_AS_DOUBLE; return; }
+  }
+
+  /* Fields which normally go in a colormap block.  */
+  if ( !strcmp(stack_top->block_name, "colormap") ) {
+      int ii;
+      char val[256], val2[256];
+      if ( !strcmp(field_name, "look_up_table") )
+      { strcpy((MCOLORMAP)->look_up_table, VALP_AS_CHAR_POINTER); return; }
+      if ( !strcmp(field_name, "num_elements") )
+      {
+          (MCOLORMAP)->num_elements = VALP_AS_INT;
+          (MCOLORMAP)->rgb = (meta_rgb *)CALLOC((MCOLORMAP)->num_elements, sizeof(meta_rgb));
+          return;
+      }
+      for (ii=0; ii < (MCOLORMAP)->num_elements; ii++) {
+          sprintf(val, "idx(%03d)", ii);
+          sprintf(val2, "idx(%d)", ii);
+          if ( !strcmp(field_name, val) || !strcmp(field_name, val2) ) {
+              int red, green, blue;
+              char vals[256];
+              strcpy(vals, VALP_AS_CHAR_POINTER);
+              sscanf(vals, "%d %d %d", &red, &green, &blue);
+              (MCOLORMAP)->rgb[ii].red = red;
+              (MCOLORMAP)->rgb[ii].green = green;
+              (MCOLORMAP)->rgb[ii].blue = blue;
+          }
+      }
   }
 
   /* Got an unknown field name, so report & choke */

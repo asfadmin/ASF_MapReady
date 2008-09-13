@@ -53,6 +53,7 @@ typedef struct {
   data_type_t data_type; // ASF data type
   short num_bands;
   int is_scanline_format;
+  int is_palette_color_tiff;
 } tiff_data_t;
 
 #define MISSING_GTIF_DATA -1
@@ -363,6 +364,7 @@ void get_tiff_info(TIFF *tif, tiff_data_t *t)
                        &t->data_type,
                        &t->num_bands,
                        &t->is_scanline_format,
+                       &t->is_palette_color_tiff,
 		       NOREPORT);
   TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &t->height);
   TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &t->width);
@@ -697,28 +699,47 @@ void dump_tiff_rgb_palette(char *inFile)
     rmin=gmin=bmin=min=65535; // Max uint16
     rmax=gmax=bmax=max=0; // Min uint16
     for (color=0; color<num_colors; color++) {
-        rmin = (red[color] < rmin) ? red[color]   : rmin;
-        gmin = (red[color] < gmin) ? green[color] : gmin;
-        bmin = (red[color] < bmin) ? blue[color]  : bmin;
-        min = (red[color]   < min) ? red[color]   : min;
-        min = (green[color] < min) ? green[color] : min;
-        min = (blue[color]  < min) ? blue[color]  : min;
+        unsigned short r, g, b;
 
-        rmax = (red[color] > rmax) ? red[color]   : rmax;
-        gmax = (red[color] > gmax) ? green[color] : gmax;
-        bmax = (red[color] > bmax) ? blue[color]  : bmax;
-        max = (red[color]   > max) ? red[color]   : max;
-        max = (green[color] > max) ? green[color] : max;
-        max = (blue[color]  > max) ? blue[color]  : max;
+        r=red[color];
+        g=green[color];
+        b=blue[color];
+
+        r = (unsigned short)(((float)r/65535)*255 + .5);
+        g = (unsigned short)(((float)g/65535)*255 + .5);
+        b = (unsigned short)(((float)b/65535)*255 + .5);
+
+        rmin = (r < rmin) ? r : rmin;
+        gmin = (g < gmin) ? g : gmin;
+        bmin = (b < bmin) ? b : bmin;
+        min = (r < min) ? r : min;
+        min = (g < min) ? g : min;
+        min = (b < min) ? b : min;
+
+        rmax = (r > rmax) ? r : rmax;
+        gmax = (g > gmax) ? g : gmax;
+        bmax = (b > bmax) ? b : bmax;
+        max = (r > max) ? r : max;
+        max = (g > max) ? g : max;
+        max = (b > max) ? b : max;
     }
-    fprintf(stdout, "# red min = %d, green min = %d, blue min = %d, overall min = %d\n",
+    fprintf(stdout, "# red min = %03d, green min = %03d, blue min = %03d, overall min = %03d\n",
             rmin, gmin, bmin, min);
-    fprintf(stdout, "# red max = %d, green max = %d, blue max = %d, overall max = %d\n",
+    fprintf(stdout, "# red max = %03d, green max = %03d, blue max = %03d, overall max = %03d\n",
             rmax, gmax, bmax, max);
     fprintf(stdout, "# \n# color\tred\tgreen\tblue\n");
     for (color=0; color<num_colors; color++) {
-        fprintf(stdout, "%d\t%d\t%d\t%d\n",
-                color, red[color], green[color], blue[color]);
+        unsigned short r, g, b;
+
+        r=red[color];
+        g=green[color];
+        b=blue[color];
+
+        r = (unsigned short)(((float)r/65535)*255 + .5);
+        g = (unsigned short)(((float)g/65535)*255 + .5);
+        b = (unsigned short)(((float)b/65535)*255 + .5);
+        fprintf(stdout, "%03d\t%03d\t%03d\t%03d\n",
+                color, r, g, b);
     }
 
     XTIFFClose(tiff);

@@ -611,7 +611,6 @@ main (int argc, char *argv[])
       asfPrintError("-truecolor or -falsecolor option selected with non-optical data\n");
     }
   }
-  meta_free(md);
 
   if (rgbFlag != FLAG_NOT_SET ||
      truecolorFlag != FLAG_NOT_SET ||
@@ -701,9 +700,20 @@ main (int argc, char *argv[])
                     sample_mapping_string);
   }
   if ( lutFlag != FLAG_NOT_SET &&
-       command_line.sample_mapping == NONE)
+       md->general->band_count > 1)
+  {
+    asfPrintError("Look up tables can only be applied to single band"
+          " images\n");
+  }
+  if ( lutFlag != FLAG_NOT_SET &&
+       command_line.sample_mapping == NONE &&
+       md->general->data_type != BYTE &&
+       md->general->band_count == 1)
+  {
     asfPrintError("Look up tables can only be applied to byte output"
           " images\n");
+  }
+  meta_free(md);
 
   // Report what is going to happen
   if (rgbFlag != FLAG_NOT_SET ||

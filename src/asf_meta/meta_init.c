@@ -199,7 +199,7 @@ meta_transform *meta_transform_init(void)
 
 meta_calibration *meta_calibration_init(void)
 {
-  meta_calibration *cal = 
+  meta_calibration *cal =
     (meta_calibration *) MALLOC(sizeof(meta_calibration));
   cal->type = unknown_cal;
   cal->asf = NULL;
@@ -290,6 +290,18 @@ meta_statistics *meta_statistics_init(int band_count)
   return statistics;
 }
 
+meta_colormap *meta_colormap_init(void)
+{
+  meta_colormap *colormap = NULL;
+
+  colormap = (meta_colormap *)CALLOC(1, sizeof(meta_colormap));
+  strcpy(colormap->look_up_table, MAGIC_UNSET_STRING);
+  colormap->num_elements = MAGIC_UNSET_INT;
+  colormap->rgb=NULL;
+
+  return colormap;
+}
+
 /********************************************************
  * meta_stats_init():
  * Allocate memory for and initialize elements of a meta
@@ -344,6 +356,7 @@ meta_parameters *raw_init(void)
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
   meta->calibration     = NULL;
   meta->location        = NULL;
+  meta->colormap        = NULL;  /* Allocated upon discovery of Palette Color TIFF embedded color map */
 
   meta->meta_version = META_VERSION;
 

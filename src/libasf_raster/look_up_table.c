@@ -22,8 +22,9 @@ static void lut_interp(unsigned char *buf, int left, int right)
   }
 }
 
-void read_lut(char *lutFile, unsigned char *lut_buffer)
+int read_lut(char *lutFile, unsigned char *lut_buffer)
 {
+  int max_dn = 0;
   FILE *fp;
   char heading[1024];
   int n,ii;
@@ -109,11 +110,12 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
         } else
             asfPrintError("read_lut> Confused: lut style==%d\n", style);
     }
+    max_dn = (dn > max_dn)? dn : max_dn;
 
     ++vl; // increment valid data line count
 
     if (dn<0 || dn>MAX_DN-1 || red<0 || red>255 || green<0 || green>255 ||
-        blue<0 || blue>255) 
+        blue<0 || blue>255)
     {
         asfPrintError("read_lut> Illegal values on line %d in %s: "
                       "%d %d,%d,%d\n",
@@ -138,10 +140,12 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
     dn_prev=dn;
   }
   FCLOSE(fp);
+
+  return max_dn;
 }
 
 void apply_look_up_table_byte(char *lutFile, unsigned char *in_buffer,
-			 int pixel_count, unsigned char *rgb_buffer)
+             int pixel_count, unsigned char *rgb_buffer)
 {
   int ii;
 
@@ -173,7 +177,7 @@ void apply_look_up_table_byte(char *lutFile, unsigned char *in_buffer,
 }
 
 void apply_look_up_table_int(char *lutFile, int *in_buffer,
-			 int pixel_count, unsigned char *rgb_buffer)
+             int pixel_count, unsigned char *rgb_buffer)
 {
   int ii;
 

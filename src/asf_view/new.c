@@ -279,11 +279,92 @@ static void load_file_banded_imp(const char *file, const char *band,
     if (curr->filename[strlen(curr->filename)-1] == '.')
         curr->filename[strlen(curr->filename)-1] = '\0';
 
+    // Determine if the current file is a new file
+    static char *last_file = NULL;
+    int new_file = 0;
+    if (!last_file) last_file = STRDUP(curr->filename);
+    if (last_file && strcmp(last_file, curr->filename) != 0) {
+      new_file = 1;
+      FREE(last_file);
+      last_file = STRDUP(curr->filename);
+    }
+
     if (read_file(curr->filename, band, multilook, FALSE)) {
-      if (reset_location && curr->meta && curr->meta->general)
+      int dummy;
+      char lut[256];
+      static int tiff_lut_exists = 0;
+      static int asf_colormap_exists = 0;
+      char embedded_tiff_lut_file[1024];
+      char embedded_asf_colormap_file[1024];
+      char *lut_loc = (char *)MALLOC(sizeof(char)*(strlen(get_asf_share_dir())+128));
+      sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
+      sprintf(embedded_tiff_lut_file,"%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_TIFF_COLORMAP_LUT_FILE);
+      sprintf(embedded_asf_colormap_file, "%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_ASF_COLORMAP_LUT_FILE);
+      FREE(lut_loc);
+      tiff_lut_exists      = new_file ? 0 : tiff_lut_exists;
+      asf_colormap_exists  = new_file ? 0 : asf_colormap_exists;
+      tiff_lut_exists     += fileExists(embedded_tiff_lut_file)     ? 1 : 0;
+      asf_colormap_exists += fileExists(embedded_asf_colormap_file) ? 1 : 0;
+      if (tiff_lut_exists <= 1 &&
+          check_for_embedded_tiff_lut(curr->filename, &dummy, lut))
+      {
+        // On first read of a TIFF file, check for embedded colormap and turn it into a
+        // look up table if it exists ...then select it
+        // (Run this stuff ONCE ...else the embedded lut will keep getting selected, even if changed)
+        if (fileExists(embedded_asf_colormap_file)) {
+          remove(embedded_asf_colormap_file);
+          asf_colormap_exists = 0;
+        }
+        populate_lut_combo();
+        set_lut(lut);
+
+        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
+      }
+      else if (tiff_lut_exists &&
+               !check_for_embedded_tiff_lut(curr->filename, &dummy, lut))
+      {
+        // If a tiff colormap look up table exists, but the current file being
+        // read is not a color map tiff, then delete the existing tiff color map
+        // look up table
+        remove(embedded_tiff_lut_file);
+        tiff_lut_exists = 0;
+        populate_lut_combo(); // Re-populate since tiff colormap lut was removed
+        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), 0); // Default to None
+      }
+      if (asf_colormap_exists <= 1 && is_colormap_ASF_file(curr->filename)) {
+        // On first read of an ASF file, check for a colormap and turn it into a
+        // look up table if it exists ...then select it
+        // (Run this stuff ONCE ...else the embedded lut will keep getting selected, even if changed)
+        if (fileExists(embedded_tiff_lut_file)) {
+          remove(embedded_tiff_lut_file);
+          tiff_lut_exists = 0;
+        }
+        populate_lut_combo();
+        set_lut(EMBEDDED_ASF_COLORMAP_LUT);
+
+        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_asf_lut_index());
+      }
+      else if (asf_colormap_exists && !is_colormap_ASF_file(curr->filename)) {
+        // If an ASF colormap look up table exists, but the current file being
+        // read does not contain a color map in the metadata, then delete the existing ASF color map
+        // look up table
+        remove(embedded_asf_colormap_file);
+        asf_colormap_exists = 0;
+        populate_lut_combo(); // Re-populate since tiff colormap lut was removed
+        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), 0); // Default to None
+      }
+      if (!tiff_lut_exists && !asf_colormap_exists &&
+           reset_location && curr->meta && curr->meta->general)
+      {
+        // Change LUT selection if necessary
         set_lut_based_on_image_type(curr->meta->general->image_data_type);
-      set_title(band != NULL, band);
+      }
       check_lut();
+      set_title(band != NULL, band);
 
       // load the metadata & image data, other setup
       fill_small_force_reload(curr);
@@ -328,3 +409,4 @@ SIGNAL_CALLBACK void on_new_button_clicked(GtkWidget *w)
 {
     new_file();
 }
+

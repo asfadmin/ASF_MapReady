@@ -175,6 +175,7 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client)
     meta->general->sample_count = cinfo->image_width;
     meta->general->band_count = 1;
     strcpy(meta->general->bands, "");
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
 
     if (strstr(data_name, "land_shallow_topo") != NULL) {
       // kludge up some lat/lon pseudoprojection action here!!

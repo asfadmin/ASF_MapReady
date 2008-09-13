@@ -157,6 +157,6 @@ void apply_look_up_table_byte(char *lutFile, unsigned char *in_buffer,
 			 int pixel_count, unsigned char *rgb_buffer);
 void apply_look_up_table_int(char *lutFile, int *in_buffer,
 			 int pixel_count, unsigned char *rgb_buffer);
-void read_lut(char *lutFile, unsigned char *lut_buffer);
+int read_lut(char *lutFile, unsigned char *lut_buffer);
 
 #endif

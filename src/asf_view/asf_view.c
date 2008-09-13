@@ -100,11 +100,26 @@ main(int argc, char **argv)
     // initialize globals
     reset_globals(TRUE);
 
+    // Get rid of leftover (temporary) colormap luts if they exist, say if asf_view errored out
+    // rather than being exited normally
+    char embedded_tiff_lut_file[1024];
+    char embedded_asf_colormap_file[1024];
+    char *lut_loc = (char *)MALLOC(sizeof(char)*(strlen(get_asf_share_dir())+64));
+    sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
+    sprintf(embedded_tiff_lut_file,"%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_TIFF_COLORMAP_LUT_FILE);
+    sprintf(embedded_asf_colormap_file,"%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_ASF_COLORMAP_LUT_FILE);
+    FREE(lut_loc);
+    if (fileExists(embedded_tiff_lut_file)) remove(embedded_tiff_lut_file);
+    if (fileExists(embedded_asf_colormap_file)) remove(embedded_asf_colormap_file);
+
     // strip off any trailing "."
     if (curr->filename[strlen(curr->filename)-1] == '.')
         curr->filename[strlen(curr->filename)-1] = '\0';
 
     read_file(curr->filename, band_specified ? band : NULL, FALSE, TRUE);
+    if (check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut)) {
+      populate_lut_combo();
+    }
     if (lut_specified)
       set_lut(lut);
 
@@ -159,6 +174,14 @@ main(int argc, char **argv)
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
+
+    // If the last viewed file left behind a (temporary) color map lut, then get rid of it
+    if (fileExists(embedded_tiff_lut_file)) {
+        remove(embedded_tiff_lut_file);
+    }
+    if (fileExists(embedded_asf_colormap_file)) {
+      remove(embedded_asf_colormap_file);
+    }
 
     image_info_free(curr);
     free_shapes();

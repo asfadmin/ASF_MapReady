@@ -76,10 +76,16 @@ void fill_meta_info()
           }
           sprintf(&s[strlen(s)],
             "Direction: %s\n"
-            "Bands: %s\n\n",
+            "Bands: %s\n",
                 meta->general->orbit_direction == 'A' ? "Ascending" : "Descending",
                 strlen(meta->general->bands) > 0 ? br(meta->general->bands) : "-");
       }
+      if (meta->colormap) {
+        sprintf(&s[strlen(s)], "Colormap: %s (%d elements)\n",
+                (!strncmp(meta->colormap->look_up_table, "UNKNOWN", 7)) ? "(Unnamed)" :
+                    meta->colormap->look_up_table, meta->colormap->num_elements);
+      }
+      sprintf(&s[strlen(s)],"\n");
       if (meta->sar) {
         // don't show the polarization for ALOS data, it is usually wrong...
         if (strcmp_case(meta->general->sensor, "ALOS") != 0) {
@@ -241,7 +247,7 @@ void open_mdv()
         FREE(file);
     }
 
-    if (!f) {  
+    if (!f) {
         char *msg = MALLOC(sizeof(char)*(strlen(curr->filename)*3+100));
         if (palsar_filename) {
           sprintf(msg,
@@ -294,5 +300,5 @@ void disable_meta_button_if_necessary()
     gchar * mdv = find_in_bin("mdv");
 #endif
 
-    enable_widget("mdv_button", fileExists(mdv));      
+    enable_widget("mdv_button", fileExists(mdv));
 }

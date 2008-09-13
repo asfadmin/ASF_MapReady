@@ -464,8 +464,11 @@ on_motion_notify_event(
     }
     else {
       // Hmph.
-      printf("Unknown drag event: %s %d %d %f %f\n",
-             gtk_widget_get_name(widget), x, y, event->x_root, event->y_root);
+      // 
+      // Commented this out ...it creates annoying error messages when you click and
+      // drag silly things like tab labels in the GUI
+      //printf("Unknown drag event: %s %d %d %f %f\n",
+             //gtk_widget_get_name(widget), x, y, event->x_root, event->y_root);
     }
   }
 

@@ -65,6 +65,16 @@
 #define USER_DEFINED_KEY             32767
 #define BAND_NAME_LENGTH  12
 
+#ifdef USHORT_MAX
+#undef USHORT_MAX
+#endif
+#define USHORT_MAX  65535
+
+#ifdef MAX_RGB
+#undef MAX_RGB
+#endif
+#define MAX_RGB  255
+
 // Do not change the BAND_ID_STRING.  It will break ingest of legacy TIFFs exported with this
 // string in their citation strings.  If you are changing the citation string to have some _other_
 // identifying string, then use a _new_ definition rather than replace what is in this one.
@@ -90,6 +100,7 @@ void classify_geotiff(GTIF *input_gtif, short *model_type, short *raster_type, s
                       int *geotiff_data_exists);
 char *angular_units_to_string(short angular_units);
 char *linear_units_to_string(short linear_units);
+void get_look_up_table_name(char *citation, char **look_up_table);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -101,6 +112,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   meta_parameters *meta;
   data_type_t data_type;
   int is_scanline_format;
+  int is_palette_color_tiff;
   short num_bands;
   short int bits_per_sample, sample_format, planar_config;
   va_list ap;
@@ -123,7 +135,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                            &data_type,        // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex)
                            &num_bands,        // Initial number of bands
                            &is_scanline_format,
-               REPORT_LEVEL_WARNING))
+                           &is_palette_color_tiff,
+                           REPORT_LEVEL_WARNING))
   {
     // Failed to determine tiff info or tiff info was bad
     char msg[1024];
@@ -134,7 +147,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
         "       Bits per Sample: %d\n"
         "  Planar Configuration: %s\n"
         "       Number of Bands: %d\n"
-        "                Format: %s\n",
+        "                Format: %s\n"
+        "              Colormap: %s\n",
         (sample_format == SAMPLEFORMAT_UINT) ? "Unsigned Integer" :
         (sample_format == SAMPLEFORMAT_INT) ? "Signed Integer" :
         (sample_format == SAMPLEFORMAT_IEEEFP) ? "Floating Point" : "Unknown or Unsupported",
@@ -144,8 +158,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
             "Unknown or unrecognized",
         num_bands,
         t.format == SCANLINE_TIFF ? "SCANLINE TIFF" :
-        t.format == STRIP_TIFF ? "STRIP TIFF" :
-        t.format == TILED_TIFF ? "TILED TIFF" : "UNKNOWN");
+        t.format == STRIP_TIFF    ? "STRIP TIFF"    :
+        t.format == TILED_TIFF    ? "TILED TIFF"    : "UNKNOWN",
+        is_palette_color_tiff ? "PRESENT" : "NOT PRESENT");
     switch (t.format) {
       case STRIP_TIFF:
         sprintf(msg, "%s"
@@ -173,7 +188,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
         "        Planar config: Contiguous (Greyscale, RGB, or RGBA) or separate planes (band-sequential.)\n"
         "      Bits per sample: 8, 16, or 32\n"
         "      Number of bands: 1 through %d bands allowed.\n"
-        "               Format: Scanline, strip, or tiled\n",
+        "               Format: Scanline, strip, or tiled\n"
+        "             Colormap: Present or not present (only valid for 1-band images)\n",
         inFileName, MAX_BANDS);
   }
   XTIFFClose(input_tiff);
@@ -245,6 +261,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   meta_out->stats = NULL; //meta_stats_init ();
   meta_out->state_vectors = NULL;
   meta_out->location = meta_location_init ();
+  meta_out->colormap = NULL; // Updated below if palette color TIFF
   // Don't set any of the deprecated structure elements.
   meta_out->stVec = NULL;
   meta_out->geo = NULL;
@@ -296,6 +313,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   short bits_per_sample;  // TIFFTAG_BITSPERSAMPLE
   short planar_config;    // TIFFTAG_PLANARCONFIG
   int is_scanline_format; // False if tiled or strips > 1 TIFF file format
+  int is_palette_color_tiff;
   ret = get_tiff_data_config(input_tiff,
                              &sample_format, // TIFF type (uint, int, float)
                              &bits_per_sample, // 8, 16, or 32
@@ -303,7 +321,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                              &data_type, // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
                              &num_bands, // Initial number of bands
                              &is_scanline_format,
-                 REPORT_LEVEL_WARNING);
+                             &is_palette_color_tiff,
+                             REPORT_LEVEL_WARNING);
 
   if (ret != 0) {
     char msg[1024];
@@ -382,6 +401,63 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     else {
       asfPrintStatus("\nCitation: The GeoTIFF citation string is MISSING (Not req'd)\n\n");
     }
+  }
+
+  // If this is a single-band TIFF with an embedded RGB colormap, then
+  // grab it for the metadata and write it out as an ASF LUT file
+  if (is_palette_color_tiff) {
+      // Produce metadata
+      char *look_up_table = NULL;
+      unsigned short *red = NULL;
+      unsigned short *green = NULL;
+      unsigned short *blue = NULL;
+      int i;
+      int map_size = 1<<bits_per_sample;
+
+      asfRequire(map_size > 0 && map_size <= 256, "Invalid colormap size\n");
+
+      asfPrintStatus("\nFound single-band TIFF with embedded RGB colormap\n\n");
+      meta_colormap *mc = meta_out->colormap = meta_colormap_init();
+
+      get_look_up_table_name(citation, &look_up_table);
+      strcpy(mc->look_up_table, look_up_table ? look_up_table : MAGIC_UNSET_STRING);
+      FREE(look_up_table);
+
+      read_count = TIFFGetField(input_tiff, TIFFTAG_COLORMAP, &red, &green, &blue);
+      if (!read_count) {
+          asfPrintWarning("TIFF appears to be a palette-color TIFF, but the embedded\n"
+                  "color map (TIFFTAG_COLORMAP) appears to be missing.  Ingest\n"
+                  "will continue, but as a non-RGB single-band greyscale image.\n");
+          FREE(mc->look_up_table);
+          FREE(mc);
+      }
+      else {
+          // Populate the RGB colormap
+          mc->num_elements = map_size;
+          mc->rgb = (meta_rgb *)CALLOC(map_size, sizeof(meta_rgb));
+          for (i=0; i<map_size; i++) {
+              mc->rgb[i].red   = (unsigned char)((red[i]/(float)USHORT_MAX)*(float)MAX_RGB);
+              mc->rgb[i].green = (unsigned char)((green[i]/(float)USHORT_MAX)*(float)MAX_RGB);
+              mc->rgb[i].blue  = (unsigned char)((blue[i]/(float)USHORT_MAX)*(float)MAX_RGB);
+          }
+      }
+      // NOTE: Do NOT free the red/green/blue arrays ...this will result in a
+      // glib double-free error when the TIFF file is closed.
+
+      // Now that we have good metadata, produce the LUT
+      char *lut_file = appendExt(inFileName, ".lut");
+      asfPrintStatus("\nSTORING TIFF file embedded color map in look up table file:\n    %s\n", lut_file);
+      FILE *lutFP = (FILE *)FOPEN(lut_file, "wt");
+      fprintf(lutFP, "# Look up table type: %s\n", mc->look_up_table);
+      fprintf(lutFP, "# Originating source: %s\n", inFileName);
+      fprintf(lutFP, "# Index   Red   Green   Blue\n");
+      for (i=0; i<map_size; i++) {
+          fprintf(lutFP, "%03d    %03d    %03d    %03d\n",
+                  i, mc->rgb[i].red, mc->rgb[i].green, mc->rgb[i].blue);
+      }
+      fprintf(lutFP, "\n");
+      FCLOSE(lutFP);
+      FREE(lut_file);
   }
 
   // Get the tie point which defines the mapping between raster
@@ -3596,5 +3672,11 @@ char *linear_units_to_string(short linear_units)
         (linear_units == Linear_Fathom)                      ? "Linear_Fathom"                       :
         (linear_units == Linear_Mile_International_Nautical) ? "Linear_Mile_International_Nautical"  :
                                                                 "Unrecognized unit";
+}
+
+void get_look_up_table_name(char *citation, char **look_up_table)
+{
+    *look_up_table = (char *)MALLOC(256 * sizeof(char));
+    strcpy(*look_up_table, "UNKNOWN");
 }
 

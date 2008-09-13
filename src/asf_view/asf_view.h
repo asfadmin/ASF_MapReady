@@ -27,6 +27,11 @@
 #include "asf_vector.h"
 #undef POINT
 
+#define EMBEDDED_TIFF_COLORMAP_LUT        "Embedded_TIFF_Colormap"
+#define EMBEDDED_TIFF_COLORMAP_LUT_FILE   "Embedded_TIFF_Colormap.lut"
+#define EMBEDDED_ASF_COLORMAP_LUT         "Embedded_Metadata_Colormap"
+#define EMBEDDED_ASF_COLORMAP_LUT_FILE    "Embedded_Metadata_Colormap.lut"
+
 typedef struct {
     unsigned char *data;
     int size_x;
@@ -245,6 +250,10 @@ void apply_lut(int val, unsigned char *r,
                unsigned char *g, unsigned char *b);
 int set_lut_based_on_image_type(image_data_type_t image_data_type);
 void apply_lut_to_data(ThumbnailData *thumbnail_data);
+int check_for_embedded_tiff_lut (char *curr_file, int *lut_specified, char *lut);
+int get_tiff_lut_index(void);
+int get_asf_lut_index(void);
+int is_colormap_ASF_file(char *file);
 
 /* plan.c */
 int planner_is_active(void);

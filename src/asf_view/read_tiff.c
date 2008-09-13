@@ -1,7 +1,14 @@
 #include "asf.h"
 #include "asf_view.h"
 #include "asf_nan.h"
-#include "asf_tiff.h"
+#include <geokeys.h>
+#include <geo_tiffp.h>
+#include <geo_keyp.h>
+#include <geotiff.h>
+#include <geotiffio.h>
+#include <tiff.h>
+#include <tiffio.h>
+#include <xtiffio.h>
 #include <geotiff_support.h>
 
 int read_tiff_rgb_scanline (TIFF *tiff, tiff_format_t format, tiff_data_config_t *data_config,
@@ -17,7 +24,8 @@ int read_tiff_greyscale_scanline (TIFF *tiff, tiff_format_t format, tiff_data_co
 int interleave_byte_rgbScanlines_to_byte_buff(unsigned char *dest,
                                               tdata_t *rtif_buf, tdata_t *gtif_buf, tdata_t *btif_buf,
                                               int band_r, int band_g, int band_b,
-                                              uint32 row, uint32 sample_count, tiff_data_config_t *data_config);
+                                              uint32 row, uint32 sample_count,
+                                              tiff_data_config_t *data_config);
 int interleave_rgbScanlines_to_float_buff(float *dest,
                                           tdata_t *rtif_buf, tdata_t *gtif_buf, tdata_t *btif_buf,
                                           int band_r, int band_g, int band_b,
@@ -28,7 +36,7 @@ int copy_byte_scanline_to_byte_buff(unsigned char *dest, tdata_t *tif_buf,
 int copy_scanline_to_float_buff(float *dest, tdata_t *tif_buf,
                                 uint32 row, uint32 sample_count,
                                 tiff_data_config_t *data_config, int empty);
-void add_empties(const char *tiff_file, char *band_str, int *num_bands,
+void add_empties(const char *tiff_file, char *band_str, short *num_bands,
                  char *meta_bands, int meta_band_count, int *empty);
 
 typedef struct {
@@ -145,9 +153,34 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
 {
     ReadTiffClientInfo *info = (ReadTiffClientInfo *)client->read_client_info;
     int i;
-    int num_bands=0;
     char band_str[256];
     meta_parameters *meta = NULL;
+    TIFF *tiff = NULL;
+    short sample_format;    // TIFFTAG_SAMPLEFORMAT
+    short bits_per_sample;  // TIFFTAG_BITSPERSAMPLE
+    short planar_config;    // TIFFTAG_PLANARCONFIG
+    short num_bands=0;
+    int is_scanline_format; // False if tiled or strips > 1 TIFF file format
+    int is_palette_color_tiff;
+    data_type_t data_type;
+
+    tiff = XTIFFOpen(meta_name, "r");
+    if (tiff) {
+      get_tiff_data_config(tiff,
+                           &sample_format, // TIFF type (uint, int, float)
+                           &bits_per_sample, // 8, 16, or 32
+                           &planar_config, // Contiguous (RGB or RGBA) or separate (band sequential)
+                           &data_type, // BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
+                           &num_bands, // Initial number of bands
+                           &is_scanline_format,
+                           &is_palette_color_tiff,
+                           REPORT_LEVEL_NONE);
+
+      XTIFFClose(tiff);
+    }
+    else {
+      return NULL;
+    }
 
     // Read the metadata from the tiff tags and geokeys
     for (i=0; i<MAX_BANDS; i++) info->ignore[i]=0;
@@ -177,7 +210,6 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
     else {
         // The TIFF is not a GeoTIFF, so populate the metadata with generic
         // information
-        TIFF *tiff = NULL;
         meta = raw_init ();
         meta->optical = NULL;
         meta->thermal = NULL;
@@ -189,24 +221,10 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
         meta->geo = NULL;
         meta->ifm = NULL;
         meta->info = NULL;
+        meta->colormap = NULL;
 
         tiff = XTIFFOpen(meta_name, "r");
         if (tiff) {
-            short sample_format;    // TIFFTAG_SAMPLEFORMAT
-            short bits_per_sample;  // TIFFTAG_BITSPERSAMPLE
-            short planar_config;    // TIFFTAG_PLANARCONFIG
-            short num_bands;
-            int is_scanline_format; // False if tiled or strips > 1 TIFF file format
-            data_type_t data_type;
-            get_tiff_data_config(tiff,
-                                 &sample_format, // TIFF type (uint, int, float)
-                                 &bits_per_sample, // 8, 16, or 32
-                                 &planar_config, // Contiguous (RGB or RGBA) or separate (band sequential)
-                                 &data_type, // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
-                                 &num_bands, // Initial number of bands
-                                 &is_scanline_format,
-                                 REPORT_LEVEL_NONE);
-
             uint32 width;
             uint32 height;
             TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);
@@ -227,7 +245,29 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
             meta->general->x_pixel_size = 1.0;
             meta->general->y_pixel_size = 1.0;
             meta->general->band_count = num_bands;
+
+            XTIFFClose(tiff);
         }
+    }
+
+    // If the tiff file is a single-band image with RGB color map, then store
+    // the color map as an ASF style look-up table
+    if (is_palette_color_tiff) {
+      meta_colormap *mc = meta->colormap;
+      char lut_file[256];
+      char *lut_loc = (char *)MALLOC(sizeof(char)*(strlen(get_asf_share_dir())+64));
+      sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
+      sprintf(lut_file,"%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_TIFF_COLORMAP_LUT_FILE);
+      FILE *lutFP = (FILE *)FOPEN(lut_file, "wt");
+      fprintf(lutFP, "# Look up table type: %s\n", mc->look_up_table);
+      fprintf(lutFP, "# Originating source: %s\n", meta_name);
+      fprintf(lutFP, "# Index   Red   Green   Blue\n");
+      for (i=0; i<mc->num_elements; i++) {
+        fprintf(lutFP, "%03d    %03d    %03d    %03d\n",
+                i, mc->rgb[i].red, mc->rgb[i].green, mc->rgb[i].blue);
+      }
+      fprintf(lutFP, "\n");
+      FCLOSE(lutFP);
     }
 
     return meta;
@@ -256,7 +296,7 @@ int read_tiff_client(int row_start, int n_rows_to_get,
 {
   data_type_t data_type;
   tiff_data_config_t data_config;
-  int num_bands, is_scanline_format;
+  int num_bands, is_scanline_format, is_palette_color_tiff;
   uint32 row;
   ReadTiffClientInfo *info = (ReadTiffClientInfo*)read_client_info;
   TIFF *tiff = info->tiff;
@@ -264,13 +304,14 @@ int read_tiff_client(int row_start, int n_rows_to_get,
 
   // Determine what type of TIFF this is (scanline/strip/tiled)
   if (get_tiff_data_config(tiff,
-      &data_config.sample_format,
-      &data_config.bits_per_sample,
-      &data_config.planar_config,
-      &data_type,
-      &data_config.samples_per_pixel,
-      &is_scanline_format,
-      REPORT_LEVEL_NONE))
+                           &data_config.sample_format,
+                           &data_config.bits_per_sample,
+                           &data_config.planar_config,
+                           &data_type,
+                           &data_config.samples_per_pixel,
+                           &is_scanline_format,
+                           &is_palette_color_tiff,
+                           REPORT_LEVEL_NONE))
   {
     return FALSE;
   }
@@ -535,7 +576,7 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
   // Get the tiff data so we can figure out what we're looking at
   data_type_t data_type;
   tiff_data_config_t data_config;
-  int is_scanline_format;
+  int is_scanline_format, is_palette_color_tiff;
   if (get_tiff_data_config(info->tiff,
       &data_config.sample_format,
       &data_config.bits_per_sample,
@@ -543,6 +584,7 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
       &data_type,
       &data_config.samples_per_pixel,
       &is_scanline_format,
+      &is_palette_color_tiff,
       REPORT_LEVEL_NONE))
   {
     return FALSE;
@@ -573,10 +615,11 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
   int *empty = (int*)CALLOC(data_config.samples_per_pixel, sizeof(int));
   if (citation_length > 0) {
     int i, num_empty;
-    int tmp_num_bands;
+    short tmp_num_bands;
     char tmp_band_str[256];
     char *tmp_citation = (citation != NULL) ? STRDUP(citation) : NULL;
-    get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation, data_config.samples_per_pixel);
+    get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation,
+                             data_config.samples_per_pixel);
     if (num_found_bands < 1) {
       // No bands in citation string ...make some up instead
       if (data_config.samples_per_pixel == 1) {
@@ -1012,7 +1055,7 @@ int ReadScanline_from_ContiguousRGB_TIFF(TIFF *tiff, uint32 row, uint32 sample_c
 {
   data_type_t data_type;
   tiff_data_config_t data_config;
-  int num_bands, is_scanline_format;
+  int num_bands, is_scanline_format, is_palette_color_tiff;
 
   // Determine what type of TIFF this is (scanline/strip/tiled)
   if (get_tiff_data_config(tiff,
@@ -1022,6 +1065,7 @@ int ReadScanline_from_ContiguousRGB_TIFF(TIFF *tiff, uint32 row, uint32 sample_c
       &data_type,
       &data_config.samples_per_pixel,
       &is_scanline_format,
+      &is_palette_color_tiff,
       REPORT_LEVEL_NONE))
   {
     return FALSE;
@@ -1127,7 +1171,7 @@ int ReadScanline_from_ContiguousRGB_TIFF(TIFF *tiff, uint32 row, uint32 sample_c
 // internal format file.  add_empties() produces a new (complete with 'Empty'
 // bands) list of band names and a corrected band count ...if conditions a)
 // and b) above are met.
-void add_empties(const char *tiff_file, char *band_str, int *num_bands,
+void add_empties(const char *tiff_file, char *band_str, short *num_bands,
                  char *meta_bands, int meta_band_count, int *empty)
 {
   int i, num_empty;

@@ -8,7 +8,7 @@
    image. A mask value can be defined that is excluded from this calculation.
    If no mask value is supposed to be used, pass the mask value as NAN. */
 void calc_stats(float *data, long long pixel_count, double mask, double *min,
-		double *max, double *mean, double *stdDev)
+        double *max, double *mean, double *stdDev)
 {
     long long ii, pix;
 
@@ -63,8 +63,8 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
    defined that is excluded from this calculation. If no mask value is
    supposed to be used, pass the mask value as NAN. */
 void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
-		    double mask, double *min, double *max, double *mean,
-		    double *stdDev)
+            double mask, double *min, double *max, double *mean,
+            double *stdDev)
 {
   float *imgLine = (float *) MALLOC(sizeof(float) * samples);
   double *stats, sum=0.0, variance=0.0;
