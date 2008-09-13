@@ -82,11 +82,14 @@ void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int le
 
 meta_parameters *raw_init(void);
 
-static void remove_file(const char * file)
-{
-  if (fileExists(file))
-    unlink(file);
-}
+// Commented out since asf has the same function in it... bit it
+// is more verbose if the unlink() fails whereas this version fails
+// silently
+//static void remove_file(const char * file)
+//{
+//  if (fileExists(file))
+    //unlink(file);
+//}
 
 static void clean(const char *file)
 {
