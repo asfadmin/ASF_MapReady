@@ -43,7 +43,7 @@ lib: ${OBJLIB}
 	mv libasf_metadata.a $(LIBDIR)
 	cp metadisplay.h $(ASF_INCLUDE_DIR)
 
-exe: metadata dumpCeosRecords
+exe: metadata dumpCeosRecords dumpLineHeader
 
 metadata: metadata_main.c lib
 	$(CC) $(CFLAGS) -o metadata metadata_main.c $(LIBDIR)/libasf_metadata.a $(LIBS)
@@ -53,6 +53,10 @@ metadata: metadata_main.c lib
 dumpCeosRecords: dumpCeosRecords.c lib
 	$(CC) $(CFLAGS) -o dumpCeosRecords dumpCeosRecords.c $(LIBDIR)/libasf_metadata.a $(LIBS)
 	mv dumpCeosRecords$(BIN_POSTFIX) $(BINDIR)
+
+dumpLineHeader: dumpLineHeader.c lib
+	$(CC) $(CFLAGS) -o dumpLineHeader dumpLineHeader.c $(LIBDIR)/libasf_metadata.a $(LIBS)
+	mv dumpLineHeader$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f *.o core

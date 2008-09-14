@@ -7,8 +7,8 @@
 "     This program dumps all records in a CEOS leader file.\n\n"
 
 #define ASF_INPUT_STRING \
-"     The input file is required, and should be in ASF Internal format.\n"\
-"     The kernel size is also required.\n"
+"     The input file is required, and should be in a CEOS leader/trailer \n"\
+"     file.\n"
 
 #define ASF_OPTIONS_STRING \
 "     -log <log file>\n"\
@@ -25,9 +25,6 @@
 "\n"\
 "     -help\n"\
 "          Print a help page and exit.\n"
-
-#define ASF_SEE_ALSO_STRING \
-"     resample\n"
 
 #include <stdio.h>
 #include <asf.h>
