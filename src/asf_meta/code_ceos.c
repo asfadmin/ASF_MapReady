@@ -1509,4 +1509,9 @@ void Code_TFDR(unsigned char *bf, struct trl_file_des_rec *q, codingDir dir)
     intV(num_facdr[i],420+i*14,6);
     intV(facdr_len[i],426+i*14,8);
   }
+  intV(low_res_img_num,574,6);
+  intV(low_res_img_len,580,6);
+  intV(low_res_pixels,586,6);
+  intV(low_res_lines,592,6);
+  intV(low_res_bytes,598,6);
 }

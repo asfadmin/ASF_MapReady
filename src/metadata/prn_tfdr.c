@@ -46,6 +46,15 @@ char *sprn_tfdr(struct trl_file_des_rec *fd)
     add(&ret, "\n Facility data (%d) record length: %d", 
 	ii+1, fd->facdr_len[ii]);
   }
+  add(&ret, "\n Number of low image data records: %d", fd->low_res_img_num);
+  add(&ret, "\n Low resolution image data record length: %d", 
+      fd->low_res_img_len);
+  add(&ret, "\n Number of pixels of low res image data: %d", 
+      fd->low_res_pixels);
+  add(&ret, "\n Number of lines of low res image data: %d",
+      fd->low_res_lines);
+  add(&ret, "\n Number of bytes per one sample of low res image data: %d",
+      fd->low_res_bytes);
   add(&ret, "\n\n******** end of Trailer File Descriptor (JAXA) record ***********\n");
   return ret;
 }

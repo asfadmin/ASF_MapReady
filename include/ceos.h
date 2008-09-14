@@ -1670,6 +1670,11 @@ struct trl_file_des_rec {
   int gcpr_len;            // GCP record length
   int num_facdr[11];       // Number of facility data records
   int facdr_len[11];       // Facility data record lengths
+  int low_res_img_num;     // Number of low resolution image data records
+  int low_res_img_len;     // Record length of the low image data
+  int low_res_pixels;      // Number of pixels of low resolution image
+  int low_res_lines;       // Number of lines of low resolution image
+  int low_res_bytes;       // Number of bytes per one sample of low res image
 };
 
 /*Prototypes for converting character buffers to records, and back again.*/
