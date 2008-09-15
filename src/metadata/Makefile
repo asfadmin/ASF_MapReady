@@ -57,6 +57,10 @@ dumpCeosRecords: dumpCeosRecords.c lib
 dumpLineHeader: dumpLineHeader.c lib
 	$(CC) $(CFLAGS) -o dumpLineHeader dumpLineHeader.c $(LIBDIR)/libasf_metadata.a $(LIBS)
 	mv dumpLineHeader$(BIN_POSTFIX) $(BINDIR)
+	mkdir -p $(SHAREDIR)/metadata
+	cp alos_processed_data.rec alos_signal_data.rec \
+	asf_processed_data.rec asf_signal_data.rec \
+	rsat_processed_data.rec rsat_signal_data.rec $(SHAREDIR)/metadata
 
 clean:
 	rm -f *.o core
