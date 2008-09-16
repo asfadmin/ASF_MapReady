@@ -1,14 +1,3 @@
-// all this windows garbage is up here for the SetCursor() stuff - we want
-// a "hand" cursor on windows when the user is panning
-#ifdef win32
-#define BYTE __byte
-#include "asf.h"
-#include "asf_meta.h"
-#undef BYTE
-#include <windows.h>
-#undef DIR_SEPARATOR
-#endif
-
 #include "asf_view.h"
 
 // have to use static vars... actually, we probably should be using

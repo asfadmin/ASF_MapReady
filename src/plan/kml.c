@@ -1,7 +1,7 @@
 #include "plan.h"
 #include "plan_internal.h"
 
-void kml_aoi(FILE *kml_file, double clat, double clon, Polygon *aoi)
+void kml_aoi(FILE *kml_file, double clat, double clon, Poly *aoi)
 {
   double lat_UL, lon_UL;
   double lat_UR, lon_UR;

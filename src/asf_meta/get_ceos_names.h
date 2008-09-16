@@ -81,7 +81,7 @@ typedef struct {
     SPG,
     SCN,
     SNA,
-    SNB,
+    SCANSAR_SNB,
     SCW,
     SWA,
     SWB,

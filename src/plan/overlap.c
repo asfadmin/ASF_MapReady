@@ -1,7 +1,7 @@
 #include "plan.h"
 #include "plan_internal.h"
 
-OverlapInfo *overlap_new(int pct, int n, Polygon *viewable_region,
+OverlapInfo *overlap_new(int pct, int n, Poly *viewable_region,
                          int zone, double clat, double clon, stateVector *st,
                          double t)
 {

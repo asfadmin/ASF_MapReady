@@ -8,7 +8,7 @@
 // images the target region
 typedef struct {
     double pct;
-    Polygon *viewable_region;
+    Poly *viewable_region;
     int utm_zone;
     stateVector state_vector;
     double t, clat, clon;
@@ -34,7 +34,7 @@ typedef struct {
     int num;
     PassInfo **passes;
     double clat, clon;
-    Polygon *aoi;
+    Poly *aoi;
 } PassCollection;
 
 /*  This is the external interface to the planner  */
@@ -62,7 +62,7 @@ typedef struct {
 int plan(const char *satellite, const char *beam_mode, double look_angle,
          long startdate, long enddate, double min_lat, double max_lat,
          double clat, double clon, int pass_type,
-         int zone, Polygon *aoi, const char *tle_filename,
+         int zone, Poly *aoi, const char *tle_filename,
          PassCollection **pc, char **errorstring);
 
 int is_valid_date(long date);

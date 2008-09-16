@@ -77,7 +77,7 @@ void pass_info_free(PassInfo *pass_info)
 
 //-----------------------------------------------------------------------------
 
-PassCollection *pass_collection_new(double clat, double clon, Polygon *aoi)
+PassCollection *pass_collection_new(double clat, double clon, Poly *aoi)
 {
   PassCollection *ret = MALLOC(sizeof(PassCollection));
 

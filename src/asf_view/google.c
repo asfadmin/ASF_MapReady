@@ -1,22 +1,8 @@
 #include <unistd.h>
 
-#ifdef win32
-#define BYTE __byte
-#include "asf.h"
-#include "asf_meta.h"
-#undef BYTE
-#include <windows.h>
-#include <shellapi.h>
-#endif
-
 #include "asf_view.h"
 #include <asf.h>
 #include <asf_meta.h>
-
-#define POINT __tmp_point
-#include <asf_vector.h>
-#undef POINT
-
 #include <png.h>
 #include <gdk/gdk.h>
 

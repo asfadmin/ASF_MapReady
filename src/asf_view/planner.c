@@ -785,7 +785,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     int i,j,pass_type,zone;
     char errstr[1024];
     double max_lat, min_lat, clat, clon;
-    Polygon *aoi;
+    Poly *aoi;
 
     // use the projection appropriate for the map that is selected
     i = get_combo_box_item("planner_map_combobox");
@@ -1114,7 +1114,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           int k,m=0;
           for (k=0; k<pi->num; ++k) {
             OverlapInfo *oi = pi->overlaps[k];
-            Polygon *poly = oi->viewable_region;
+            Poly *poly = oi->viewable_region;
 
             int j;
             for (j=0; j<poly->n; ++j) {

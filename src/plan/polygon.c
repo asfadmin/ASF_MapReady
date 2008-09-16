@@ -2,9 +2,9 @@
 #include "asf.h"
 #include <assert.h>
 
-Polygon *polygon_new(int n, double *x, double *y)
+Poly *polygon_new(int n, double *x, double *y)
 {
-  Polygon *self = MALLOC(sizeof(Polygon));
+  Poly *self = MALLOC(sizeof(Poly));
   self->n = n;
   self->x = MALLOC(sizeof(double)*n);
   self->y = MALLOC(sizeof(double)*n);
@@ -18,9 +18,9 @@ Polygon *polygon_new(int n, double *x, double *y)
   return self;
 }
 
-Polygon *polygon_new_closed(int n, double *x, double *y)
+Poly *polygon_new_closed(int n, double *x, double *y)
 {
-  Polygon *self = MALLOC(sizeof(Polygon));
+  Poly *self = MALLOC(sizeof(Poly));
   self->n = n+1;
   self->x = MALLOC(sizeof(double)*(n+1));
   self->y = MALLOC(sizeof(double)*(n+1));
@@ -40,7 +40,7 @@ Polygon *polygon_new_closed(int n, double *x, double *y)
 
 // this is from the comp.graphics.algorithms FAQ
 // see http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-int point_in_polygon(Polygon *self, double x, double y)
+int point_in_polygon(Poly *self, double x, double y)
 {
   int i, j, c = 0;
   for (i = 0, j = self->n-1; i < self->n; j = i++) {
@@ -104,7 +104,7 @@ static int lineSegmentsIntersect(
   return TRUE;
 }
 
-int polygon_overlap(Polygon *p1, Polygon *p2)
+int polygon_overlap(Poly *p1, Poly *p2)
 {
   // loop over each pair of line segments, testing for intersection
   int i, j;
@@ -147,7 +147,7 @@ int polygon_overlap(Polygon *p1, Polygon *p2)
   return FALSE;  
 }
 
-void polygon_get_bbox(Polygon *p, double *xmin, double *xmax,
+void polygon_get_bbox(Poly *p, double *xmin, double *xmax,
                       double *ymin, double *ymax)
 {
   if (p->n == 0) {
@@ -171,7 +171,7 @@ void polygon_get_bbox(Polygon *p, double *xmin, double *xmax,
   }
 }
 
-double polygon_area(Polygon *p)
+double polygon_area(Poly *p)
 {
   if (p->n <= 1)
     return 0.0;
@@ -189,7 +189,7 @@ double polygon_area(Polygon *p)
   return fabs(A/2.);
 }
 
-double polygon_perimeter(Polygon *p)
+double polygon_perimeter(Poly *p)
 {
   if (p->n <= 1)
     return 0.0;
@@ -204,7 +204,7 @@ double polygon_perimeter(Polygon *p)
   return d;
 }
 
-void polygon_free(Polygon *self)
+void polygon_free(Poly *self)
 {
   if (self) {
     if (self->x)

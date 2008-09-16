@@ -89,7 +89,7 @@ static int is_utm(int zone)
   return ret;
 }
 
-static Polygon *
+static Poly *
 get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
                     int target_zone, double target_lat, double target_lon)
 {
@@ -165,9 +165,9 @@ static double random_in_interval(double lo, double hi)
 
 static OverlapInfo *
 overlap(double t, stateVector *st, BeamModeInfo *bmi, double look_angle,
-        int zone, double clat, double clon, Polygon *aoi)
+        int zone, double clat, double clon, Poly *aoi)
 {
-  Polygon *viewable_region =
+  Poly *viewable_region =
     get_viewable_region(st, bmi, look_angle, zone, clat, clon);
 
   if (!viewable_region)
@@ -206,7 +206,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi, double look_angle,
 int plan(const char *satellite, const char *beam_mode, double look_angle,
          long startdate, long enddate, double min_lat, double max_lat,
          double clat, double clon, int pass_type,
-         int zone, Polygon *aoi, const char *tle_filename,
+         int zone, Poly *aoi, const char *tle_filename,
          PassCollection **pc_out, char **errorstring)
 {
   BeamModeInfo *bmi = get_beam_mode_info(satellite, beam_mode);
@@ -352,7 +352,7 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
         for (i=bmi->num_buffer_frames; i>0; --i) {
           double t = curr - i*incr;
           stateVector st1 = tle_propagate(&sat, t);
-          Polygon *region = get_viewable_region(&st1, bmi, look_angle,
+          Poly *region = get_viewable_region(&st1, bmi, look_angle,
                                                 zone, clat, clon);
           if (region) {
             OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
@@ -384,7 +384,7 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
         for (i=0; i<bmi->num_buffer_frames; ++i) {
           double t = curr + i*incr;
           stateVector st1 = tle_propagate(&sat, t);
-          Polygon *region = get_viewable_region(&st1, bmi, look_angle,
+          Poly *region = get_viewable_region(&st1, bmi, look_angle,
                                                 zone, clat, clon);
           if (region) {
             OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,

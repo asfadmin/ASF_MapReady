@@ -1844,7 +1844,7 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
     strcpy(meta->general->mode, "SNA");
   }
-  else if (ceos->product == SNB) {
+  else if (ceos->product == SCANSAR_SNB) {
     meta->sar->image_type = 'P';
     meta->sar->look_count = 4;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
@@ -1936,7 +1936,7 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
     (lastTime - firstTime) / meta->sar->original_line_count;
 
   // SAR block
-  if (ceos->product == SNB) {
+  if (ceos->product == SCANSAR_SNB) {
     meta->sar->image_type = 'P';
     meta->sar->look_count = 4;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
@@ -3049,7 +3049,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     asfReport(level, "   Product: SPG\n");
   else if (ceos->product == SNA)
     asfReport(level, "   Product: SNA\n");
-  else if (ceos->product == SNB)
+  else if (ceos->product == SCANSAR_SNB)
     asfReport(level, "   Product: SNB\n");
   else if (ceos->product == SWA)
     asfReport(level, "   Product: SWA\n");
@@ -3654,7 +3654,7 @@ void get_scansar_beam_mode(ceos_description *ceos, const char *in_fName)
       strncmp(ppr->beam_info[0].beam_type, "W2", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "S5", 2) == 0 &&
       strncmp(ppr->beam_info[2].beam_type, "S6", 2) == 0)
-    ceos->product = SNB;
+    ceos->product = SCANSAR_SNB;
   if (ppr->n_beams == 4 && 
       strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0 &&

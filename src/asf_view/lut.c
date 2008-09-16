@@ -1,6 +1,3 @@
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
 #include "asf_view.h"
 #include "asf_raster.h"
 #include <geotiff_support.h>

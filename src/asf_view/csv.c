@@ -1,11 +1,11 @@
 #ifdef win32
 #define BYTE __byte
-#include "asf.h"
-#include "asf_meta.h"
-#undef BYTE
+#define POINT __point
 #include <windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#undef BYTE
+#undef POINT
 #endif
 
 #include "asf_view.h"

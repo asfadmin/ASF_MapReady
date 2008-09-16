@@ -173,7 +173,7 @@ main (int argc, char *argv[])
   ll2pr(lat_min, lon_min, zone, &x[1], &y[1]);
   ll2pr(lat_min, lon_min, zone, &x[2], &y[2]);
   ll2pr(lat_min, lon_min, zone, &x[3], &y[3]);
-  Polygon *box = polygon_new_closed(4, x, y);
+  Poly *box = polygon_new_closed(4, x, y);
 
   char *err;
   PassCollection *pc;
