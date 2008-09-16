@@ -895,7 +895,7 @@ static void highlight_step(int step, int highlight_lvl)
     gtk_label_set_markup(GTK_LABEL(label), markup_str);
 }
 
-static void remove_file(const char *f)
+static void remove_file_silent(const char *f)
 {
     if (fileExists(f))
       unlink(f);
@@ -1015,33 +1015,33 @@ static void delete_all_generated_images()
     int i;
     for (i=1; i<=12; ++i) {
         sprintf(f, "%s%s.jpg", filename, suffix_for_step(i));
-        remove_file(f);
+        remove_file_silent(f);
         sprintf(f, "%s%s.img", filename, suffix_for_step(i));
-        remove_file(f);
+        remove_file_silent(f);
         sprintf(f, "%s%s.meta", filename, suffix_for_step(i));
-        remove_file(f);
+        remove_file_silent(f);
         sprintf(f, "%s%s_polar.img", filename, suffix_for_step(i));
-        remove_file(f);
+        remove_file_silent(f);
         sprintf(f, "%s%s_polar.meta", filename, suffix_for_step(i));
-        remove_file(f);
+        remove_file_silent(f);
         sprintf(f, "%s%s", filename, suffix_for_step(i));
-        remove_file(f);
+        remove_file_silent(f);
     }
 
     sprintf(f, "%s_amp.img", filename);
-    remove_file(f);
+    remove_file_silent(f);
     sprintf(f, "%s_amp.meta", filename);
-    remove_file(f);
+    remove_file_silent(f);
 
     sprintf(f, "%s_cpx.img", filename);
-    remove_file(f);
+    remove_file_silent(f);
     sprintf(f, "%s_cpx.meta", filename);
-    remove_file(f);
+    remove_file_silent(f);
 
     sprintf(f, "%s.in", filename);
-    remove_file(f);
+    remove_file_silent(f);
     sprintf(f, "%s.status", filename);
-    remove_file(f);
+    remove_file_silent(f);
 
     FREE(filename);
     filename = NULL;
@@ -1054,7 +1054,7 @@ static void delete_all_generated_images()
 
     for (i=1; i<=12; ++i) {
         sprintf(f, "%s%s.txt", filename, suffix_for_step(i));
-        remove_file(f);
+        remove_file_silent(f);
     }
 
     FREE(f);
