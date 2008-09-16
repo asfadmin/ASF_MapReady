@@ -130,34 +130,56 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
     // Keep track of the average pixel value, so later we can do a 2-sigma
     // scaling - makes the thumbnail look a little nicer and more like what
     // they'd get if they did the default jpeg export.
-//    double avg = 0.0;
+//  double avg = 0.0;
     size_t ii, jj;
     int ret = 0;
     int band;
+    if (is_palette_color_tiff) num_bands = 3;
     double min[num_bands];
     double max[num_bands];
-    guchar *data = g_new(guchar, 3*tsx*tsy);
-    float **line = g_new(float *, num_bands);
-    float **fdata = g_new(float *, num_bands);
+    guchar *data = g_new(guchar, 3*tsx*tsy); // Allocate RGB buf for new pixbuf
+    float **line = g_new(float *, num_bands); // Buf for reading image data into
+    float **fdata = g_new(float *, num_bands); // Buf to resample into
     for (band = 0; band < num_bands; band++) {
         line[band] = g_new (float, meta->general->sample_count);
         fdata[band] = g_new(float, 3*tsx*tsy);
         min[band] = DBL_MAX;
         max[band] = DBL_MIN;
     }
-    for (band = 0; band < num_bands; band++) {
-        for ( ii = 0 ; ii < tsy ; ii++ ) {
-            ret = get_geotiff_float_line(fpIn, meta, ii*sf, band, line[band]);
-            if (!ret) break;
+    if (!is_palette_color_tiff) {
+      // Handle single-band and RGB tiffs
+      for (band = 0; band < num_bands; band++) {
+          for ( ii = 0 ; ii < tsy ; ii++ ) {
+              ret = get_geotiff_float_line(fpIn, meta, (int)(ii*sf), band, line[band]);
+              if (!ret) break;
 
-            for (jj = 0; jj < tsx; ++jj) {
-                fdata[band][jj + ii*tsx] = line[band][jj*sf];
-                min[band] = (line[band][jj*sf] < min[band]) ? line[band][jj*sf] : min[band];
-                max[band] = (line[band][jj*sf] > max[band]) ? line[band][jj*sf] : max[band];
-                //avg += line[jj*sf];
-            }
-        }
+              for (jj = 0; jj < tsx; ++jj) {
+                  fdata[band][jj + ii*tsx] = line[band][jj*sf];
+                  min[band] = (line[band][jj*sf] < min[band]) ? line[band][jj*sf] : min[band];
+                  max[band] = (line[band][jj*sf] > max[band]) ? line[band][jj*sf] : max[band];
+                  //avg += line[jj*sf];
+              }
+          }
+          if (!ret) break;
+      }
+    }
+    else {
+      // Handle palette color tiff (1 band plus a colormap)
+      for (ii = 0; ii < tsy; ii++) {
+        ret = get_geotiff_float_line(fpIn, meta, (int)(ii*sf), 0, line[0]);
         if (!ret) break;
+
+        for (jj = 0; jj < tsx; jj++) {
+          int idx=(int)(line[0][jj*sf]); // Get pixel value and use as an index into rgb map
+          fdata[0][jj + ii*tsx] = meta->colormap->rgb[idx].red;
+          fdata[1][jj + ii*tsx] = meta->colormap->rgb[idx].green;
+          fdata[2][jj + ii*tsx] = meta->colormap->rgb[idx].blue;
+
+          min[0] = (fdata[0][jj + ii*tsx] < min[0]) ? fdata[0][jj + ii*tsx] : min[0];
+          min[1] = (fdata[1][jj + ii*tsx] < min[1]) ? fdata[1][jj + ii*tsx] : min[1];
+          min[2] = (fdata[2][jj + ii*tsx] < min[2]) ? fdata[2][jj + ii*tsx] : min[2];
+        }
+      }
     }
     for (band = 0; band < num_bands; band++) {
         g_free(line[band]);
@@ -1135,6 +1157,9 @@ int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band
     tsize_t scanlineSize = TIFFScanlineSize(fpIn);
     if (scanlineSize <= 0) {
         return 0;
+    }
+    if (is_palette_color_tiff && num_bands > 1) {
+      asfPrintError("Palette color tiffs cannot have more than one band.\n");
     }
     tdata_t *tif_buf = _TIFFmalloc(scanlineSize);
     if (!tif_buf) {
