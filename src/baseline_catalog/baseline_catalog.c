@@ -9,7 +9,7 @@ void baseline_catalog(char *sensor, char *beam_mode, int orbit,
   DIR *dir;
   FILE *fpTxt, *fpKml, *fpShape;
   int i, k, l, n, track, nOrbits, nPairs, years, *months, *orbits, found, index;
-  report_level_t report=STATUS;
+  report_level_t report=REPORT_LEVEL_STATUS;
   struct base_pair *base_pairs=NULL;
   struct srf_orbit *srf_orbit=NULL;
   char cmd[255], today[15], year[5];
@@ -17,7 +17,7 @@ void baseline_catalog(char *sensor, char *beam_mode, int orbit,
   ymd_date date;
   hms_time time;
 
-  asfReport(report, "Calculating baseline catalog for beam mode %s\n\n", 
+  asfReport(report, "Calculating baseline catalog for beam mode %s\n\n",
 	    beam_mode);
 
   // Prepare the timeline matrix for the mode index page
@@ -41,12 +41,12 @@ void baseline_catalog(char *sensor, char *beam_mode, int orbit,
 
     // Get a list of recent SRFs
     read_srf(input_dir, beam_mode, track, &srf_orbit, &nOrbits);
-    
+
     // Determine baselines
     if (nOrbits)
-      determine_baseline(sensor, beam_mode, track, orbit, srf_orbit, nOrbits, 
+      determine_baseline(sensor, beam_mode, track, orbit, srf_orbit, nOrbits,
 			 &base_pairs, &nPairs);
-    
+
     // Generate products
     if (nPairs) {
       generate_products(output_dir, base_pairs, nPairs);
