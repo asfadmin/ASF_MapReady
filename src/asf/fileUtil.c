@@ -43,19 +43,24 @@ int fileSize(const char *name)
   char file_name[255];
   long file_size = 0;
 
-  dir = opendir(".");
+  char *path = get_dirname(name);
+  char *file = get_filename(name);
+  dir = opendir(path);
   while ((dp = readdir(dir)) != NULL) {
 
     if (stat(dp->d_name, &statbuf) == -1) {
       continue;
     }
     sprintf(file_name, "%s", dp->d_name);
-    if (strcmp(file_name, name) == 0) {
+    if (strcmp(file_name, file) == 0) {
       file_size = (int)statbuf.st_size;
       break;
     }
   }
   closedir(dir);
+
+  FREE(path);
+  FREE(file);
 
   return file_size;
 }
