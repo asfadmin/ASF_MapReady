@@ -225,9 +225,9 @@ if test "$sys" = "win32" ; then
 fi
 if test "$have_exif" = "no" ; then
    ASF_LIB_EXIF="${ext_lib_src_dir}/libexif"
-   GEOTIFF_LIBS="\$(LIBDIR)/libexif.a"
+   EXIF_LIBS="\$(LIBDIR)/libexif.a"
 else
-   GEOTIFF_LIBS="-lexif"
+   EXIF_LIBS="-lexif"
 fi
 AC_SUBST(ASF_LIB_EXIF)
 
