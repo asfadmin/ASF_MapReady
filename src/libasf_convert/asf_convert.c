@@ -189,7 +189,9 @@ int findDemFile(char *fileName)
   int found = 0;
 
   // First check for the filename as-is
-  if (fileExists(fileName)) {
+  if (is_dir(fileName))
+    found = 1;
+  else if (fileExists(fileName)) {
     found = 1;
   }
   else {
