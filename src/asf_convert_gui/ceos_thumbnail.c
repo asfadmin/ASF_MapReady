@@ -238,39 +238,27 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
             min_blue  = min[2];
             max_blue  = max[2];
         }
+/*
         guchar ruval, guval, buval;
-        if (rval < min_red) {
-            ruval = 0;
-        }
-        else if (rval > max_red) {
-            ruval = 255;
-        }
-        else {
-            ruval = (guchar) round(((rval - min_red) / (max_red - min_red)) * 255);
-        }
-        if (gval < min_green) {
-            guval = 0;
-        }
-        else if (gval > max_green) {
-            guval = 255;
-        }
-        else {
-            guval = (guchar) round(((gval - min_green) / (max_green - min_green)) * 255);
-        }
-        if (bval < min_blue) {
-            buval = 0;
-        }
-        else if (bval > max_blue) {
-            buval = 255;
-        }
-        else {
-            buval = (guchar) round(((bval - min_blue) / (max_blue - min_blue)) * 255);
-        }
+        ruval = (rval < min_red)   ? 0   :
+                (rval > max_red)   ? 255 :
+                (guchar) round(((rval - min_red) / (max_red - min_red)) * 255);
+        guval = (gval < min_green) ? 0   :
+                (gval > max_green) ? 255 :
+                (guchar) round(((gval - min_green) / (max_green - min_green)) * 255);
+        buval = (bval < min_blue)  ? 0   :
+                (bval > max_blue)  ? 255 :
+                (guchar) round(((bval - min_blue) / (max_blue - min_blue)) * 255);
 
         int n = 3*ii;
         data[n]   = ruval;
         data[n+1] = guval;
         data[n+2] = buval;
+*/
+        int n = 3*ii;
+        data[n]   = rval;
+        data[n+1] = gval;
+        data[n+2] = bval;
     }
 
     // Create the pixbuf
@@ -464,6 +452,11 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
         return NULL;
 
     meta_parameters *meta = silent_meta_read(input_metadata);
+    int is_palette_color_asf = meta->colormap != NULL ? 1 : 0;
+    int num_bands = is_palette_color_asf ? 3 : 1;
+    int band;
+    int *min = g_new(int, num_bands);
+    int *max = g_new(int, num_bands);
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
@@ -481,57 +474,143 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     size_t tsy = meta->general->line_count / sf;
 
     guchar *data = g_new(guchar, 3*tsx*tsy);
-    float *fdata = g_new(float, 3*tsx*tsy);
+    float **fdata = g_new(float *, num_bands);
+    double *avg = g_new(double, num_bands);
+    for (band = 0; band < num_bands; band++) {
+      fdata[band] = g_new(float, tsx*tsy);
+      avg[band] = 0.0;
+      min[band] = INT_MAX;
+      max[band] = 0;
+    }
 
     // Form the thumbnail image by grabbing individual pixels.
     size_t ii, jj;
     float *line = g_new (float, meta->general->sample_count);
 
-    // Keep track of the average pixel value, so later we can do a 2-sigma
+    // Keep track of the average pixel values, so later we can do a 2-sigma
     // scaling - makes the thumbnail look a little nicer and more like what
     // they'd get if they did the default jpeg export.
-    double avg = 0.0;
+    // For non-colormap ASF files, always display as a single-band greyscale image
+    // (rather than make assumptions about which band should be assigned to r, g, and b
     for ( ii = 0 ; ii < tsy ; ii++ ) {
-
-        get_float_line(fpIn, meta, ii*sf, line);
-
-        for (jj = 0; jj < tsx; ++jj) {
-            fdata[jj + ii*tsx] = line[jj*sf];
-            avg += line[jj*sf];
+      get_float_line(fpIn, meta, ii*sf, line);
+      for (jj = 0; jj < tsx; ++jj) {
+        if (!is_palette_color_asf) {
+          // Display as greyscale
+          fdata[0][jj + ii*tsx] = line[jj*sf];
+          avg[0] += line[jj*sf];
         }
+        else {
+          // Colormap case
+          int idx=(int)(line[jj*sf]);
+          fdata[0][jj + ii*tsx] = meta->colormap->rgb[idx].red;
+          fdata[1][jj + ii*tsx] = meta->colormap->rgb[idx].green;
+          fdata[2][jj + ii*tsx] = meta->colormap->rgb[idx].blue;
+
+          min[0] = (min[0] < meta->colormap->rgb[idx].red)   ? min[0] :
+                                                               meta->colormap->rgb[idx].red;
+          min[1] = (min[1] < meta->colormap->rgb[idx].green) ? min[1] :
+                                                               meta->colormap->rgb[idx].green;
+          min[2] = (min[2] < meta->colormap->rgb[idx].blue)  ? min[2] :
+                                                               meta->colormap->rgb[idx].blue;
+
+          avg[0] += meta->colormap->rgb[idx].red;
+          avg[1] += meta->colormap->rgb[idx].green;
+          avg[2] += meta->colormap->rgb[idx].blue;
+        }
+      }
     }
+
     g_free (line);
     fclose(fpIn);
 
     // Compute the std devation
-    avg /= tsx*tsy;
-    double stddev = 0.0;
-    for (ii = 0; ii < tsx*tsy; ++ii)
-        stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
-    stddev = sqrt(stddev / (tsx*tsy));
+    double *stddev = g_new(double, num_bands);
+    for (band = 0; band < num_bands; band++) {
+      avg[band] /= tsx*tsy;
+      stddev[band] = 0.0;
+      for (ii = 0; ii < tsx*tsy; ++ii) {
+          stddev[band] += ((double)fdata[band][ii] - avg[band]) *
+                          ((double)fdata[band][ii] - avg[band]);
+      }
+      stddev[band] = sqrt(stddev[band] / (tsx*tsy));
+    }
 
     // Set the limits of the scaling - 2-sigma on either side of the mean
-    double lmin = avg - 2*stddev;
-    double lmax = avg + 2*stddev;
+    double *lmin = g_new(double, num_bands);
+    double *lmax = g_new(double, num_bands);
+    for (band = 0; band < num_bands; band++) {
+      lmin[band] = avg[band] - 2*stddev[band];
+      lmax[band] = avg[band] + 2*stddev[band];
+    }
 
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
-    for (ii = 0; ii < tsx*tsy; ++ii) {
-        float val = fdata[ii];
+    if (!is_palette_color_asf) {
+      for (ii = 0; ii < tsx*tsy; ++ii) {
+        float val = fdata[0][ii];
         guchar uval;
-        if (val < lmin)
-            uval = 0;
-        else if (val > lmax)
-            uval = 255;
+        if (val < lmin[0])
+          uval = 0;
+        else if (val > lmax[0])
+          uval = 255;
         else
-            uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
+          uval = (guchar) round(((val - lmin[0]) / (lmax[0] - lmin[0])) * 255);
 
         int n = 3*ii;
-        data[n] = uval;
+        data[n]   = uval;
         data[n+1] = uval;
         data[n+2] = uval;
+      }
+    }
+    else {
+      float max_red,   min_red;
+      float max_green, min_green;
+      float max_blue,  min_blue;
+      float rval;
+      float gval;
+      float bval;
+
+      min_red   = min[0];
+      max_red   = max[0];
+      min_green = min[1];
+      max_green = max[1];
+      min_blue  = min[2];
+      max_blue  = max[2];
+
+      for (ii = 0; ii < tsx*tsy; ii++) {
+        rval = fdata[0][ii];
+        gval = fdata[1][ii];
+        bval = fdata[2][ii];
+/*
+        // UNCOMMENT OUT THIS SECTION, AND COMMENT OUT THE NEXT 4 LINES IF YOU
+        // THINK CONTRAST EXPANSION WOULD LOOK NICER ...I VOTE NO ;*0
+        guchar ruval, guval, buval;
+        ruval = (rval < min_red)   ? 0   :
+                (rval > max_red)   ? 255 :
+                (guchar) round(((rval - min_red) / (max_red - min_red)) * 255);
+        guval = (gval < min_green) ? 0   :
+                (gval > max_green) ? 255 :
+                (guchar) round(((gval - min_green) / (max_green - min_green)) * 255);
+        buval = (bval < min_blue)  ? 0   :
+                (bval > max_blue)  ? 255 :
+                (guchar) round(((bval - min_blue) / (max_blue - min_blue)) * 255);
+
+        int n = 3*ii;
+        data[n]   = ruval;
+        data[n+1] = guval;
+        data[n+2] = buval;
+*/
+        int n = 3*ii;
+        data[n]   = rval;
+        data[n+1] = gval;
+        data[n+2] = bval;
+      }
     }
 
+    for (band = 0; band < num_bands; band++) {
+      g_free(fdata[band]);
+    }
     g_free(fdata);
 
     // Create the pixbuf
@@ -543,6 +622,12 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
         printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
         meta_free(meta);
         g_free(data);
+        g_free(min);
+        g_free(max);
+        g_free(avg);
+        g_free(stddev);
+        g_free(lmin);
+        g_free(lmax);
         return NULL;
     }
 
@@ -561,9 +646,15 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     gdk_pixbuf_unref(pb);
 
     if (!pb_s)
-        printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
+        asfPrintStatus("\nFailed to allocate scaled thumbnail pixbuf: %s\n\n", input_data);
 
     meta_free(meta);
+    g_free(min);
+    g_free(max);
+    g_free(avg);
+    g_free(stddev);
+    g_free(lmin);
+    g_free(lmax);
     return pb_s;
 }
 
