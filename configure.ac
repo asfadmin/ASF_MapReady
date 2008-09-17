@@ -20,6 +20,7 @@ try_gtk="yes"
 have_gtk="no"
 have_fftw="no"
 have_png="no"
+have_exif="no"
 
 AC_PROG_CC
 AC_PROG_LEX
@@ -132,7 +133,7 @@ fi
 AC_SUBST(ASF_GLIB)
 
 #### libjpeg check ####
-AC_CHECK_LIB(jpeg,jpeg_read_header,have_jpeg="yes",have_jpeg="no")
+#AC_CHECK_LIB(jpeg,jpeg_read_header,have_jpeg="yes",have_jpeg="no")
 if test "$sys" = "win32" ; then
   have_jpeg="no"
 fi
@@ -216,6 +217,19 @@ if test "$try_gtk" = "yes" ; then
       have_gtk="no"
     )
 fi
+
+#### libexif check ####
+AC_CHECK_LIB(exif,main,have_exif="yes",have_exif="no")
+if test "$sys" = "win32" ; then
+  have_exif="no"
+fi
+if test "$have_exif" = "no" ; then
+   ASF_LIB_EXIF="${ext_lib_src_dir}/libexif"
+   GEOTIFF_LIBS="\$(LIBDIR)/libexif.a"
+else
+   GEOTIFF_LIBS="-lexif"
+fi
+AC_SUBST(ASF_LIB_EXIF)
 
 #### libglade check ####
 if test "$have_gtk" = "yes" ; then
@@ -369,6 +383,9 @@ GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
 
 SHAPELIB_LIBS = $SHAPELIB_LIBS
 SHAPELIB_CFLAGS = $SHAPELIB_CFLAGS
+
+EXIF_LIBS = $EXIF_LIBS
+EXIF_CFLAGS = $EXIF_CFLAGS
 
 ZLIB_LIBS = -lz
 

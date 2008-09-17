@@ -140,10 +140,13 @@ IGNORED_INCLUDES = \
 	include/asf.h \
 	include/asf_import.h \
 	include/asf_insar.h \
+	include/asf_jpeg.h \
 	include/asf_meta.h \
 	include/asf_raster.h \
 	include/asf_sar.h \
+	include/asf_simulation.h \
 	include/asf_terrcorr.h \
+	include/asf_tiff.h \
 	include/asf_vector.h \
 	include/banded_float_image.h \
 	include/calibrate.h \
