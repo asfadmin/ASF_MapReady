@@ -42,7 +42,11 @@ int fileSize(const char *name)
   char *path = get_dirname(name);
   char *file = get_filename(name);
 
-  DIR *dir = opendir(path);
+  DIR *dir;
+  if (strlen(path)>0)
+      dir = opendir(path);
+  else
+      dir = opendir(".");
 
   struct dirent *dp;
   while ((dp = readdir(dir)) != NULL) {
