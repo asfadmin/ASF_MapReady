@@ -1,6 +1,9 @@
 #ifndef _CREATE_THUMBS_HELP_H_
 #define _CREATE_THUMBS_HELP_H_
 
+// Uncomment to enable JAXA Level 0 support
+//#define JL0_GO
+
 // NOTES:
 //   1. Don't put a '\n' at the end of the string definitions.  Formatting
 //      is handled by usage() and print_help()
@@ -24,12 +27,21 @@
 #ifdef  TOOL_USAGE
 #undef  TOOL_USAGE
 #endif
+#ifdef JL0_GO
 #define TOOL_USAGE \
         TOOL_NAME" [-log <logfile>] [-quiet] [-verbose] [-size <size>]\n"\
 "                 [-recursive] [-out-dir <dir>]\n"\
 "                 [-L0 <stf|ceos|jaxa_L0>] [-output-format <tiff|jpeg>]\n"\
 "                 [-scale <scale_factor>] [-browse] [-save-metadata] [-help]\n"\
 "                 <files>"
+#else
+#define TOOL_USAGE \
+        TOOL_NAME" [-log <logfile>] [-quiet] [-verbose] [-size <size>]\n"\
+"                 [-recursive] [-out-dir <dir>]\n"\
+"                 [-L0 <stf|ceos>] [-output-format <tiff|jpeg>]\n"\
+"                 [-scale <scale_factor>] [-browse] [-save-metadata] [-help]\n"\
+"                 <files>"
+#endif
 
 // TOOL_DESCRIPTION is required
 #ifdef  TOOL_DESCRIPTION
@@ -63,6 +75,7 @@
 #ifdef  TOOL_OPTIONS
 #undef  TOOL_OPTIONS
 #endif
+#ifdef JL0_GO
 #define TOOL_OPTIONS \
 "     -size <size>\n"\
 "          Generate thumbnails (or browse images) of the given size in pixels.\n"\
@@ -133,6 +146,70 @@
 "\n"\
 "     -help\n"\
 "          Print a help page and exit."
+#else
+#define TOOL_OPTIONS \
+"     -size <size>\n"\
+"          Generate thumbnails (or browse images) of the given size in pixels.\n"\
+"          The default is %d pixels.  If the input image isn't square, the longer\n"\
+"          side will be scaled to the given size, the other dimension will be\n"\
+"          determined so as to keep the same aspect ratio.\n"\
+"          NOTE: Cannot be used together with the -scale option.\n"\
+"\n"\
+"     -recursive (-R, -r)\n"\
+"          Recurse into subdirectories, looking for additional CEOS files\n"\
+"          to generate thumbnails for.\n"\
+"\n"\
+"     -out-dir (-output-dir, -o)\n"\
+"          Specify a directory where all thumbnails are placed.  Without\n"\
+"          this option, all thumbnails are placed in the same directory as\n"\
+"          the CEOS file.\n"\
+"\n"\
+"     -L0 <stf|ceos>\n"\
+"          Force Level 0 (zero) processing.  'stf' or 'ceos' indicates input file\n"\
+"          format.  Level 0 stf or ceos processing results in the following additional\n"\
+"          processing steps:\n\n"\
+"            - import into ASF Internal Format\n"\
+"            - range-doppler (ardop) processing\n"\
+"            - conversion of amplitude output from slant range to ground range\n"\
+"            - scale ground range amplitude image to size indicated by -size or -scale\n"\
+"              command line parameters\n"\
+"            - image is flipped/rotated to north-up, west-left orientation\n"\
+"            - image is exported to the selected output graphics file format\n"\
+"\n"\
+"     -output-format <tiff|jpeg>\n"\
+"          Choose graphics file format for output file.  Default is JPEG.\n"\
+"\n"\
+"     -log <log file>\n"\
+"          Output will be written to a specified log file.\n"\
+"\n"\
+"     -quiet (-q)\n"\
+"          Supresses all non-error output.\n"\
+"\n"\
+"     -verbose (-v)\n"\
+"          Prints out files that were ignored (i.e., not CEOS files).\n"\
+"\n"\
+"     -license\n"\
+"          Print copyright and license for this software then exit.\n"\
+"\n"\
+"     -version (-v)\n"\
+"          Print version and copyright then exit.\n"\
+"\n"\
+"     -scale (-s)\n"\
+"          Downscale factor, i.e. -scale 8 will result in an output image\n"\
+"          scaled to 1/8th the original size.\n"\
+"\n"\
+"     -browse (-b)\n"\
+"          For browse images that should be named <basename>.ext rather\n"\
+"          than <basename>_thumb.ext.  This option prevends '_thumb' from\n"\
+"          being appended to the output basename.\n"\
+"\n"\
+"     -save-metadata\n"\
+"          Results in all metadata files (intermediate and final) to be saved\n"\
+"          in the output directory.\n"\
+"\n"\
+"     -help\n"\
+"          Print a help page and exit."
+#endif
 
 // TOOL_EXAMPLES is required but is allowed to be an empty string
 #ifdef  TOOL_EXAMPLES
@@ -143,7 +220,7 @@
 "     > "TOOL_NAME" .\n\n"\
 "     Generate thumbnails for files in the directory n60s:\n"\
 "     > "TOOL_NAME" n60s\n\n"\
-"     Generate thumbnails for all files in the current direcotry,\n"\
+"     Generate thumbnails for all files in the current directory,\n"\
 "     and all subdirectories.\n"\
 "     > "TOOL_NAME" -r .\n\n"\
 "     Generate a large thumbnail for the single file file1.D:\n"\

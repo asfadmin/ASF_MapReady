@@ -74,9 +74,11 @@ int main(int argc, char *argv[])
   int scaleFlag=0;
   int saveMetadataFlag=0;
   int out_dir_Specified=0;
-  int nPatches, nPatchesFlag=0; // Secret command line parameter for limiting num patches processed for Level 0
   float scale_factor=-1.0;
   int browseFlag=0;
+
+  // Secret command line parameter for limiting num patches processed for Level 0
+  int nPatches, nPatchesFlag=0;
 
   quietflag = (checkForOption("-quiet", argc, argv)  ||
                checkForOption("--quiet", argc, argv) ||
@@ -134,9 +136,11 @@ int main(int argc, char *argv[])
         else if (strncmp(uc(tmp),"CEOS",4) == 0) {
             L0Flag=ceos;
         }
+#ifdef JL0_GO
         else if (strncmp(uc(tmp),"JAXA_L0",7) == 0) {
             L0Flag=jaxa_l0;
         }
+#endif
         else {
             L0Flag=not_L0;
         }
@@ -589,6 +593,7 @@ void process_file(const char *file, int level, int size, int verbose,
                                       output_format, out_dir);
         }
     }
+#ifdef JL0_GO
     else if (L0Flag == jaxa_l0) {
         if (is_JL0_basename(file)) {
             generate_level0_thumbnail(file, size, verbose, L0Flag, scale_factor, browseFlag,
@@ -601,6 +606,7 @@ void process_file(const char *file, int level, int size, int verbose,
             }
         }
     }
+#endif
     else if (!is_ceos_level0(file)) {
       generate_ceos_thumbnail(file, size, output_format, out_dir,
                               saveMetadataFlag, scale_factor, browseFlag);
@@ -623,6 +629,9 @@ void process(const char *what, int level, int recursive, int size, int verbose,
     if (L0Flag == jaxa_l0) {
         // Check to see if "what" is a JL0 basename (a folder as well) or just
         // a folder
+#ifndef JL0_GO
+      asfPrintError("JAXA Level 0 (AVNIR-2 only) not yet supported...\n");
+#endif
         is_JL0 = is_JL0_basename(what);
     }
 
@@ -1288,7 +1297,7 @@ int is_ceos_level0(const char *file) {
         split_dir_and_file(file, dir, filename);
         split_dir_and_file(*dataName, dir, data_filename);
         printf("%s\n%s\n", get_basename(filename), get_basename(data_filename));
-        if (filename && data_filename &&
+        if (filename != NULL && data_filename != NULL &&
             strcmp(get_basename(filename), get_basename(data_filename)) == 0)
         {
             ceos_description *ceos = get_ceos_description(file, REPORT_LEVEL_NONE);
