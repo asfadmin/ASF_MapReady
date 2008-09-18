@@ -94,13 +94,13 @@ PROGRAMS
 	ardop { BINS calc_deltas spectra }
 	asf_check_geolocation { }
 	asf_convert { }
-#	asf_convert_gui { }
+#	asf_convert_gui { } -- see bottom of this list
 	asf_elevation { }
 	asf_export { }
 	asf_geocode { }
 	asf_import { }
 	asf_terrcorr { }
-	asf_view { }
+#	asf_view { BINS plan }  -- see bottom of this list
 	atdp { }
 	auto_refine_base { }
 #	auto_sar_mosaic { } -- see bottom of this list
@@ -167,7 +167,7 @@ PROGRAMS
 	meta2esri { }
 	meta_check { }
 	metadata { }
-#	metadata_gui { }
+#	metadata_gui { } -- see bottom of this list
 	mosaic { }
 	multilook { }
 	offset_test { }
@@ -186,6 +186,7 @@ PROGRAMS
 	remap { }
 	resample { }
 	reskew_dem { }
+	sgpsdp { }
 	shaded_relief { }
 	sr2gr { }
 	srf2shape { }
@@ -196,7 +197,7 @@ PROGRAMS
 	xpix_ypix { }
 	zeroify { }
 	
-#	put programs that depend on other programs at the bottom
+# put programs that depend on other programs at the bottom
 
 	auto_sar_mosaic { PROGRAMS concat idtable }
 	auto_swath_mosaic { PROGRAMS accum_offset concatm resample }
@@ -204,6 +205,10 @@ PROGRAMS
 	coregister_coarse { PROGRAMS c2p convert2byte fftMatch }
 	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
 
+# graphic interfaces at the end cause they can sometimes kill the build
+	asf_convert_gui { }
+	asf_view { BINS plan }
+	metadata_gui { }
 
 @contrib/
 	ampscheby { }
