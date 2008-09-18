@@ -1026,7 +1026,7 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
 	     meta->projection->type == SCANSAR_PROJECTION)
     {
       asfPrintStatus("   Input data type: level one data\n");
-      sprintf(geoStr, "");
+      strcpy(geoStr, "");
     }
     else if ((strncmp(meta->general->processor, "CSTARS", 6) == 0 ||
 	      strncmp(meta->general->processor, "CDPF", 4) == 0) &&
@@ -1452,8 +1452,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       asfPrintStatus("   Data type: BYTE\n");
       break;
     case INTEGER16:
-      short_buf = (short *) CALLOC(ns, sizeof(short));
-      tmp_short_buf = (short *) CALLOC(ns, sizeof(short));
+      short_buf = (unsigned short *) CALLOC(ns, sizeof(unsigned short));
+      tmp_short_buf = (unsigned short *) CALLOC(ns, sizeof(unsigned short));
       asfPrintStatus("   Data type: INTEGER16\n");
       break;
     case INTEGER32:

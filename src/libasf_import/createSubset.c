@@ -119,12 +119,13 @@ void time_range2Doppler(char *inN, double time, double slantFirst, float *fd, fl
 
 void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd)
 {
-  hms_time hmsTime;
-  ymd_date ymdDate;
-  julian_date jDate;
+  hms_time hmsFirstTime, hmsLastTime, hmsCenterTime, hmsTime;
+  ymd_date ymdFirstDate, ymdLastDate, ymdCenterDate, ymdDate;
+  julian_date jd;
+  double seconds_diff = 0.0;
   char *parN, buf[255],*timeStr=NULL;
   int i=0,done=0;
-  double firstDate,lastDate,time,centerTime,oldTime,newTime,range;
+  double time,centerTime,oldTime,newTime,range;
 
   parN = (char *) MALLOC(sizeof(char)*512);
 
@@ -132,14 +133,20 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd)
 
   /* Determine center time for swath */
   timeStr = lzStr(parN, "prep_block.first_date:", NULL);
-  date_dssr2date(timeStr,&ymdDate,&hmsTime);
-  firstDate = date_hms2sec(&hmsTime);
+  date_dssr2date(timeStr,&ymdFirstDate,&hmsFirstTime);
   timeStr = lzStr(parN, "prep_block.last_date:", NULL);
-  date_dssr2date(timeStr,&ymdDate,&hmsTime);
-  lastDate = date_hms2sec(&hmsTime);
-  time = (lastDate - firstDate)/2 + firstDate;
-  date_ymd2jd(&ymdDate, &jDate);
-  centerTime = time + (double)(date_getMJD(&jDate) * 3600 *24);
+  date_dssr2date(timeStr,&ymdLastDate,&hmsLastTime);
+  seconds_diff = date_difference(&ymdLastDate, &hmsLastTime,
+                                 &ymdFirstDate, &hmsFirstTime);
+  ymdCenterDate = ymdFirstDate;
+  hmsCenterTime = hmsFirstTime;
+  seconds_diff /= 2.0;
+  add_time(seconds_diff, &ymdCenterDate, &hmsCenterTime);
+  time = timeSince(&ymdCenterDate, &hmsCenterTime, 1900);
+//  date_ymd2jd(&ymdFirstDate, &jd);
+//  centerTime = seconds_diff + date_getMJD(&jd) * 3600 * 24;
+  date_ymd2jd(&ymdCenterDate, &jd);
+  centerTime = date_hms2sec(&hmsCenterTime) + date_getMJD(&jd) * 3600 * 24;
 
   /* Find closest location block for center time to get a range */
   get_stf_metadata_name(inN, &parN);
@@ -147,11 +154,20 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd)
   while (!done) {
     sprintf(buf, "prep_block.location[%d].line_date:", i);
     timeStr = lzStr(parN, buf, NULL);
+    if (timeStr == NULL || strlen(timeStr) < 1) {
+      done = 1;
+      asfPrintWarning("Unable to bracket center time with location block timing info...\n"
+          "Using last found location block to determine range and continuing.\n"
+          "Doppler estimation may be off...\n");
+      break;
+    }
     date_dssr2date(timeStr,&ymdDate,&hmsTime);
-    newTime = date_hms2sec(&hmsTime);
+    newTime = timeSince(&ymdDate, &hmsTime, 1900);
     if (newTime>time && oldTime<time) done=1;
     else oldTime = newTime;
     i++;
+    // Exit if looping through some ludicrous number of times
+    if (i > 1000) asfPrintError("Can't resolve center time from metadata...\n");
   }
   sprintf(buf, "prep_block.location[%d].near_range:", i-2);
   range = lzDouble(parN, buf, NULL);
@@ -407,7 +423,7 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
     lowerTime = upperTime;
     upperTime = line;
   }
-  asfPrintStatus("   Starting line of subset: %ld (%lf)\n", 
+  asfPrintStatus("   Starting line of subset: %ld (%lf)\n",
 		 *imgStart, upperTime);
   asfPrintStatus("   End line of subset: %ld (%lf)\n", *imgEnd, lowerTime);
 
