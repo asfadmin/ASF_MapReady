@@ -41,7 +41,7 @@
 #define ASF_NAME_STRING "data_qc"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" -verbose <in_name>\n"
+"   "ASF_NAME_STRING" [-ignore_spec] [-essential] <in_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program verifies the validity of a CEOS data set.\n\n"
@@ -51,6 +51,9 @@
 "     data set.\n"
 
 #define ASF_OPTIONS_STRING \
+"     -ignore_spec\n"\
+"          Does not test whether the actual file size meets the "\
+"specification.\n"\
 "     -essential\n"\
 "          Only checks image data file and leader file.\n"\
 "     -log <log file>\n"\
@@ -213,7 +216,7 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
   struct trl_file_des_rec *tfdr=NULL;
   unsigned char *buff;
   char **dataName=NULL, **metaName=NULL, *trailerName=NULL, *volumeName=NULL;
-  char *workreport;
+  char *workreport, reason[1024]="", tmp[255];
   int ii, nBands, trailer, total, estimated_size, actual_size, alos=FALSE;
   int level, beam, spec=TRUE, status=TRUE;
 
@@ -227,7 +230,7 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
     // of a dataset summary record (not available for optical data).
     dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
     if (get_dssr((const char *)metaName[0], dssr) == -1) {
-      asfForcePrintStatus("Leader file corrupted\n");
+      strcat(reason, "Leader file corrupted\n");
       status = FALSE;
     }
     if (strncmp_case(dssr->mission_id, "ALOS", 4) == 0) {
@@ -257,7 +260,7 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	sprintf(trailerName, "%s", test_name);
       }
       else {
-	asfForcePrintStatus("Missing trailer file!\n");
+	strcat(reason, "Missing trailer file!\n");
 	status = FALSE;
       }
       
@@ -270,7 +273,7 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	sprintf(volumeName, "%s", test_name);
       }
       else {
-	asfForcePrintStatus("Missing volume file!\n");
+	strcat(reason, "Missing volume file!\n");
 	status = FALSE;
       }
       
@@ -282,7 +285,7 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	strcpy(workreport, "workreport");
       }
       else {
-	asfForcePrintStatus("Missing workreport file!\n");
+	strcat(reason, "Missing workreport file!\n");
 	status = FALSE;
       }
       
@@ -298,7 +301,7 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
   for (ii=0; ii<nBands; ii++) {
     iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
     if (get_ifiledr((const char *)dataName[ii], iof) == -1) {
-      asfForcePrintStatus("Image data file corrupted\n");
+      strcat(reason, "Image data file corrupted\n");
       status = FALSE;
     }
     estimated_size =
@@ -362,13 +365,15 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	spec = FALSE;
       }
       if (spec && actual_size < spec_min) {
-	asfPrintStatus("file smaller than JAXA specified range (%.1f MB).\n",
-		       spec_min / 1024 / 1024);
+	sprintf(tmp, "Image file smaller than JAXA specified range "
+		"(%.1f MB).\n", spec_min / 1024 / 1024);
+	strcat(reason, tmp);
 	spec = FALSE;
       }
       else if (spec && actual_size > spec_max) {
-	asfPrintStatus("file larger than JAXA specfied range (%.1f MB).\n",
-		       spec_max / 1024 / 1024);
+	sprintf(tmp, "Image file larger than JAXA specfied range "
+		"(%.1f MB).\n", spec_max / 1024 / 1024);
+	strcat(reason, tmp);
 	spec = FALSE;
       }
     }
@@ -397,13 +402,13 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	  MALLOC(sizeof(struct trl_file_des_rec));
 	if (trailer) {
 	  if (get_tfdr(metaName[1], tfdr) == - 1) {
-	    asfForcePrintStatus("Trailer file corrupted\n");
+	    strcat(reason, "Trailer file corrupted\n");
 	    status = FALSE;
 	  }
 	}
 	else {
 	  if (get_tfdr(metaName[0], tfdr) == -1) {
-	    asfForcePrintStatus("Leader file corrupted\n");
+	    strcat(reason, "Leader file corrupted\n");
 	    status = FALSE;
 	  }
 	}
@@ -423,8 +428,12 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
       asfPrintStatus("actual size: %d bytes\n", actual_size);
     }
     // Some ALOS 1.5 test data had some unaccounted bytes.
-    if (actual_size < total)
+    if (actual_size < total) {
+      sprintf(tmp, "Actual size of the leader file smaller than estimated "
+	      "(%d).\n", (int) fabs(actual_size - total));
+      strcat(reason, tmp);
       status = FALSE;
+    }
   }
 
   if (!essential) {
@@ -452,8 +461,12 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 		       total);
 	asfPrintStatus("actual size: %d bytes\n", actual_size);
       }
-      if (actual_size != total)
+      if (actual_size != total) {
+	sprintf(tmp, "Actual and estimated size of trailer file differ "
+		"(%d).\n", (int) fabs(actual_size - total));
+	strcat(reason, tmp);
 	status = FALSE;
+      }
     }
     
     // Check ALOS volume file
@@ -501,8 +514,12 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 		       total);
 	asfPrintStatus("actual size: %d bytes\n", actual_size);
       }
-      if (actual_size != total)
+      if (actual_size != total) {
+	sprintf(tmp, "Actual and estimated size of the volume file differ "
+		"(%d).\n", (int) fabs(actual_size - total));
+	strcat(reason, tmp);
 	status = FALSE;
+      }
     }
     
     // Check workreport file
@@ -511,8 +528,10 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
       if (!quietflag)
 	asfPrintStatus("\nFile: %s\nactual size: %d bytes\n", 
 		       workreport, actual_size);
-      if (actual_size == 0)
+      if (actual_size == 0) {
+	strcat(reason, "Zero file length workreport file.\n");
 	status = FALSE;
+      }
     }
   }
 
@@ -520,7 +539,7 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
   if (status)
     asfForcePrintStatus("\nData QC status: SUCCESS\n");
   else
-    asfPrintError("Data QC status: FAILED\n");
+    asfPrintError("Data QC status: FAILED\n%s", reason);
 
   // Clean up
   if (tfdr)

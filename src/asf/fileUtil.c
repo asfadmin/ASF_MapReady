@@ -37,7 +37,7 @@ int extExists(const char *name, const char *newExt)
 
 int fileSize(const char *name)
 {
-  long file_size = 0;
+  long file_size = -1;
 
   char *path = get_dirname(name);
   char *file = get_filename(name);
