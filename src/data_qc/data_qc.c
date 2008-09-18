@@ -51,8 +51,8 @@
 "     data set.\n"
 
 #define ASF_OPTIONS_STRING \
-"     -verbose\n"\
-"          Prints out the results of all the tests carried out.\n"\
+"     -essential\n"\
+"          Only checks image data file and leader file.\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
@@ -204,7 +204,7 @@ char *strip_alos_prep(const char *name)
   return basename;
 }
 
-void data_qc(char *ceosName, int verbose)
+void data_qc(char *ceosName, int ignore_spec, int essential)
 {
   FILE *fp;
   struct HEADER bufhdr;
@@ -214,79 +214,166 @@ void data_qc(char *ceosName, int verbose)
   unsigned char *buff;
   char **dataName=NULL, **metaName=NULL, *trailerName=NULL, *volumeName=NULL;
   char *workreport;
-  int ii, nBands, trailer, total, estimated_size, actual_size;
+  int ii, nBands, trailer, total, estimated_size, actual_size, alos=FALSE;
+  int level, beam, spec=TRUE, status=TRUE;
 
   // Verify that the essential files exist. Require_ceos_pair takes care 
   // of the essentials: data file, leader/trailer file
   require_ceos_pair(ceosName, &dataName, &metaName, &nBands, &trailer);
 
-  // Check for ALOS files
-  dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
-  if (get_dssr((const char *)metaName[0], dssr) == -1)
-    asfPrintError("Leader file corrupted\n"
-		  "Data QC status: FAILED\n");
-  if (strncmp_case(dssr->mission_id, "ALOS", 4) == 0) {
-    char *tmp = (char *) MALLOC(sizeof(char)*512);
-    tmp = get_basename(ceosName);
-    char *test_name = (char *) MALLOC(sizeof(char)*512);
-    char *basename = strip_alos_prep(tmp);
-
-    // Check for trailer file
-    sprintf(test_name, "TRL-%s", basename);
-    fp = fopen(test_name, "r"); 
-    if (fp) {
-      fclose(fp);
-      trailerName = (char *) MALLOC(sizeof(char)*1024);
-      sprintf(trailerName, "%s", test_name);
+  if (!essential) {
+    // Check for ALOS files
+    // This check currently fails for optical data as it assumes the existence
+    // of a dataset summary record (not available for optical data).
+    dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+    if (get_dssr((const char *)metaName[0], dssr) == -1) {
+      asfForcePrintStatus("Leader file corrupted\n");
+      status = FALSE;
     }
-    else
-      asfPrintError("Missing trailer file!\nData QC status: FAILED\n");
-
-    // Check for volume file
-    sprintf(test_name, "VOL-%s", basename);
-    fp = fopen(test_name, "r");
-    if (fp) {
-      fclose(fp);
-      volumeName = (char *) MALLOC(sizeof(char)*1024);
-      sprintf(volumeName, "%s", test_name);
+    if (strncmp_case(dssr->mission_id, "ALOS", 4) == 0) {
+      char *tmp = (char *) MALLOC(sizeof(char)*512);
+      tmp = get_basename(ceosName);
+      char *test_name = (char *) MALLOC(sizeof(char)*512);
+      char *basename = strip_alos_prep(tmp);
+      alos = TRUE;
+      
+      // Check what level we are dealing with
+      if (strncmp(dssr->lev_code, "1.0", 3) == 0)
+	level = 10;
+      else if (strncmp(dssr->lev_code, "1.1", 3) == 0)
+	level = 11;
+      else if (strncmp(dssr->lev_code, "1.5", 3) == 0)
+	level = 15;
+      
+      // Determine the specified image file range
+      beam = dssr->ant_beam_num;
+      
+      // Check for trailer file
+      sprintf(test_name, "TRL-%s", basename);
+      fp = fopen(test_name, "r"); 
+      if (fp) {
+	fclose(fp);
+	trailerName = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(trailerName, "%s", test_name);
+      }
+      else {
+	asfForcePrintStatus("Missing trailer file!\n");
+	status = FALSE;
+      }
+      
+      // Check for volume file
+      sprintf(test_name, "VOL-%s", basename);
+      fp = fopen(test_name, "r");
+      if (fp) {
+	fclose(fp);
+	volumeName = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(volumeName, "%s", test_name);
+      }
+      else {
+	asfForcePrintStatus("Missing volume file!\n");
+	status = FALSE;
+      }
+      
+      // Check for workreport file
+      fp = fopen("workreport", "r");
+      if (fp){
+	fclose(fp);
+	workreport = (char *) MALLOC(sizeof(char)*15);
+	strcpy(workreport, "workreport");
+      }
+      else {
+	asfForcePrintStatus("Missing workreport file!\n");
+	status = FALSE;
+      }
+      
+      // Clean up
+      FREE(tmp);
+      FREE(basename);
+      FREE(test_name);
     }
-    else
-      asfPrintError("Missing volume file!\nData QC status: FAILED\n");
-    
-    // Check for workreport file
-    fp = fopen("workreport", "r");
-    if (fp){
-      fclose(fp);
-      workreport = (char *) MALLOC(sizeof(char)*15);
-      strcpy(workreport, "workreport");
-    }
-    else
-      asfPrintError("Missing workreport file!\nData QC status: FAILED\n");
-    
-    // Clean up
-    FREE(tmp);
-    FREE(basename);
-    FREE(test_name);
+    FREE(dssr);
   }
-  FREE(dssr);
 
   // Check the image data file size
   for (ii=0; ii<nBands; ii++) {
     iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
-    if (get_ifiledr((const char *)dataName[ii], iof) == -1)
-      asfPrintError("Image data file corrupted\n"
-		    "Data QC status: FAILED\n");
-    estimated_size = 
+    if (get_ifiledr((const char *)dataName[ii], iof) == -1) {
+      asfForcePrintStatus("Image data file corrupted\n");
+      status = FALSE;
+    }
+    estimated_size =
       iof->numofrec * iof->reclen + firstRecordLen(dataName[ii]);
     actual_size = fileSize(dataName[ii]);
-    if (verbose) {
+    if (!quietflag) {
       asfPrintStatus("File: %s\n", dataName[ii]);
-      asfPrintStatus("estimated file size: %d\n", estimated_size);
-      asfPrintStatus("actual file size: %d\n", actual_size);
+      asfPrintStatus("estimated file size: %d bytes (%.1f MB)\n", 
+		     estimated_size, (float)estimated_size/1024/1024);
+      asfPrintStatus("actual file size: %d bytes (%.1f MB)\n", 
+		     actual_size, (float)actual_size/1024/1024);
     }
     FREE(iof);
-    if (estimated_size != actual_size)
-      asfPrintError("Data QC status: FAILED\n");
+    if (alos && level == 10) {
+      float spec_min, spec_max;
+      if (beam == 3 || beam == 21) { // FSB at 21.5 deg
+	spec_min = 414292378; // 395.1 MB
+	spec_max = 450373878; // 429.51 MB
+      }
+      else if (beam == 7 || beam == 25) { // FSB at 34.3 deg
+	spec_min = 704779387; // 672.13 MB
+	spec_max = 750633615; // 715.86 MB
+      }
+      else if (beam == 10 || beam == 28) { // FSB at 41.5 deg
+	spec_min = 704779387; // 678.26 MB
+	spec_max = 916140852; // 873.70 MB
+      }
+      else if (beam == 39 || beam == 57) { // FSD at 21.5 deg
+	spec_min = 428584469; // 408.73 MB
+	spec_max = 465903288; // 444.32 MB
+      }
+      else if (beam == 43 || beam == 61) { // FSD at 34.3 deg
+	spec_min = 721483203; // 688.06 MB
+	spec_max = 768417464; // 732.82 MB
+      }
+      else if (beam == 46 || beam == 64) { // FSD at 41.5 deg
+	spec_min = 367735603; // 350.70 MB
+	spec_max = 392586854; // 374.40 MB
+      }
+      else if (beam == 80 || beam == 82) { // ScanSAR (5 scan)
+	spec_min = 1204572652; // 1148.77 MB
+	spec_max = 1296637624; // 1236.57 MB
+      }
+      else if (beam == 87 || beam == 105) { // Direct downlink at 21.5 deg
+	spec_min = 214286991; // 204.36 MB
+	spec_max = 232951644; // 222.16 MB
+      }
+      else if (beam == 91 || beam == 109) { // Direct downlink at 34.3 deg
+	spec_min = 360741601; // 344.03 MB
+	spec_max = 384208732; // 366.41 MB
+      }
+      else if (beam == 94 || beam == 112) { // Direct downlink at 41.5 deg
+	spec_min = 367735603; // 350.70 MB
+	spec_max = 392586854; // 374.40 MB
+      }
+      else if (beam == 127) { // Polarimetric data at 21.5 deg
+	spec_min = 430943764; // 410.98 MB
+	spec_max = 459465032; // 438.18 MB
+      }
+      else {
+	spec = FALSE;
+      }
+      if (spec && actual_size < spec_min) {
+	asfPrintStatus("file smaller than JAXA specified range (%.1f MB).\n",
+		       spec_min / 1024 / 1024);
+	spec = FALSE;
+      }
+      else if (spec && actual_size > spec_max) {
+	asfPrintStatus("file larger than JAXA specfied range (%.1f MB).\n",
+		       spec_max / 1024 / 1024);
+	spec = FALSE;
+      }
+    }
+    if (estimated_size != actual_size || (!spec && !ignore_spec))
+      status = FALSE;
   }
 
   // Check the leader/trailer file for CEOS records size
@@ -309,14 +396,16 @@ void data_qc(char *ceosName, int verbose)
 	tfdr = (struct trl_file_des_rec *) 
 	  MALLOC(sizeof(struct trl_file_des_rec));
 	if (trailer) {
-	  if (get_tfdr(metaName[1], tfdr) == - 1)
-	    asfPrintError("Trailer file corrupted\n"
-			  "Data QC status: FAILED\n");
+	  if (get_tfdr(metaName[1], tfdr) == - 1) {
+	    asfForcePrintStatus("Trailer file corrupted\n");
+	    status = FALSE;
+	  }
 	}
 	else {
-	  if (get_tfdr(metaName[0], tfdr) == -1)
-	    asfPrintError("Leader file corrupted\n"
-			  "Data QC status: FAILED\n");
+	  if (get_tfdr(metaName[0], tfdr) == -1) {
+	    asfForcePrintStatus("Leader file corrupted\n");
+	    status = FALSE;
+	  }
 	}
 	mallocBytes = length = tfdr->facdr_len[10];
       }
@@ -327,99 +416,111 @@ void data_qc(char *ceosName, int verbose)
       fread((buff)+12, length-12, 1, fp);
     }
     FCLOSE(fp);
-    if (verbose) {
+    if (!quietflag) {
       asfPrintStatus("\nFile: %s\n", metaName[ii]);
-      asfPrintStatus("reported size of CEOS records in file: %d\n", total);
-      asfPrintStatus("actual size: %d\n", actual_size);
+      asfPrintStatus("reported size of CEOS records in file: %d bytes\n", 
+		     total);
+      asfPrintStatus("actual size: %d bytes\n", actual_size);
     }
     // Some ALOS 1.5 test data had some unaccounted bytes.
     if (actual_size < total)
-      asfPrintError("Data QC status: FAILED\n");      
+      status = FALSE;
   }
 
-  // Check ALOS trailer file
-  if (trailerName) {
-    actual_size = fileSize(trailerName);
-    fp = FOPEN(trailerName, "r");
-    total = 0;
-    fread(&bufhdr, 12, 1, fp);
-    int length = bigInt32(bufhdr.recsiz);
-    total = length;
-    buff = (unsigned char *) MALLOC(length);
-    tfdr = (struct trl_file_des_rec *)
-      MALLOC(sizeof(struct trl_file_des_rec));
-    fread((buff)+12, length-12, 1, fp);
-    Code_TFDR(buff, tfdr, fromASCII);
-    // Add the length for the low resolution image
-    total += tfdr->low_res_pixels * tfdr->low_res_lines * tfdr->low_res_bytes;
-    FCLOSE(fp);
-    FREE(buff);
-    if (verbose) {
-      asfPrintStatus("\nFile_: %s\n", trailerName);
-      asfPrintStatus("reported size of CEOS records in file: %d\n", total);
-      asfPrintStatus("actual size: %d\n", actual_size);
-    }
-    if (actual_size != total)
-      asfPrintError("Data QC status: FAILED\n");
-  }
-
-  // Check ALOS volume file
-  if (volumeName) {
-    actual_size = fileSize(volumeName);
-    fp = FOPEN(volumeName, "r");
-    total = 0;
-    while (1==fread(&bufhdr, 12, 1, fp)) {
-      int itype, subtype[3], rec_seq, length, mallocBytes;
-      subtype[0] = bufhdr.rectyp[0];
-      itype = bufhdr.rectyp[1];
-      subtype[1] = bufhdr.rectyp[2];
-      subtype[2] = bufhdr.rectyp[3];
-      rec_seq = bigInt32(bufhdr.recnum);
-      length = bigInt32(bufhdr.recsiz);
-      total += length;
-      if ((itype==CEOS_FACDR && rec_seq==17 && length<=5000) ||
-          (itype==CEOS_FACDR && rec_seq==18)) {
-        tfdr = (struct trl_file_des_rec *)
-          MALLOC(sizeof(struct trl_file_des_rec));
-        if (trailer) {
-          if (get_tfdr(metaName[1], tfdr) == - 1)
-            asfPrintError("Trailer file corrupted\n"
-                          "Data QC status: FAILED\n");
-        }
-        else {
-          if (get_tfdr(metaName[0], tfdr) == -1)
-            asfPrintError("Leader file corrupted\n"
-                          "Data QC status: FAILED\n");
-        }
-        mallocBytes = length = tfdr->facdr_len[10];
-      }
-      else
-        mallocBytes = (length>16920) ? length : 16920;
-      buff=(unsigned char *)MALLOC(mallocBytes);
-      *(struct HEADER *)buff=bufhdr;
+  if (!essential) {
+    // Check ALOS trailer file
+    if (trailerName) {
+      actual_size = fileSize(trailerName);
+      fp = FOPEN(trailerName, "r");
+      total = 0;
+      fread(&bufhdr, 12, 1, fp);
+      int length = bigInt32(bufhdr.recsiz);
+      total = length;
+      buff = (unsigned char *) MALLOC(length);
+      tfdr = (struct trl_file_des_rec *)
+	MALLOC(sizeof(struct trl_file_des_rec));
       fread((buff)+12, length-12, 1, fp);
+      Code_TFDR(buff, tfdr, fromASCII);
+      // Add the length for the low resolution image
+      total += 
+	tfdr->low_res_pixels * tfdr->low_res_lines * tfdr->low_res_bytes;
+      FCLOSE(fp);
+      FREE(buff);
+      if (!quietflag) {
+	asfPrintStatus("\nFile_: %s\n", trailerName);
+	asfPrintStatus("reported size of CEOS records in file: %d bytes\n", 
+		       total);
+	asfPrintStatus("actual size: %d bytes\n", actual_size);
+      }
+      if (actual_size != total)
+	status = FALSE;
     }
-    FCLOSE(fp);
-    if (verbose) {
-      asfPrintStatus("\nFile: %s\n", volumeName);
-      asfPrintStatus("reported size of CEOS records in file: %d\n", total);
-      asfPrintStatus("actual size: %d\n", actual_size);
+    
+    // Check ALOS volume file
+    if (volumeName) {
+      actual_size = fileSize(volumeName);
+      fp = FOPEN(volumeName, "r");
+      total = 0;
+      while (1==fread(&bufhdr, 12, 1, fp)) {
+	int itype, subtype[3], rec_seq, length, mallocBytes;
+	subtype[0] = bufhdr.rectyp[0];
+	itype = bufhdr.rectyp[1];
+	subtype[1] = bufhdr.rectyp[2];
+	subtype[2] = bufhdr.rectyp[3];
+	rec_seq = bigInt32(bufhdr.recnum);
+	length = bigInt32(bufhdr.recsiz);
+	total += length;
+	if ((itype==CEOS_FACDR && rec_seq==17 && length<=5000) ||
+	    (itype==CEOS_FACDR && rec_seq==18)) {
+	  tfdr = (struct trl_file_des_rec *)
+	    MALLOC(sizeof(struct trl_file_des_rec));
+	  if (trailer) {
+	    if (get_tfdr(metaName[1], tfdr) == - 1) {
+	      asfForcePrintStatus("Trailer file corrupted\n");
+	      status = FALSE;
+	    }
+	  }
+	  else {
+	    if (get_tfdr(metaName[0], tfdr) == -1) {
+	      asfForcePrintStatus("Leader file corrupted\n");
+	      status = FALSE;
+	    }
+	  }
+	  mallocBytes = length = tfdr->facdr_len[10];
+	}
+	else
+	  mallocBytes = (length>16920) ? length : 16920;
+	buff=(unsigned char *)MALLOC(mallocBytes);
+	*(struct HEADER *)buff=bufhdr;
+	fread((buff)+12, length-12, 1, fp);
+      }
+      FCLOSE(fp);
+      if (!quietflag) {
+	asfPrintStatus("\nFile: %s\n", volumeName);
+	asfPrintStatus("reported size of CEOS records in file: %d bytes\n", 
+		       total);
+	asfPrintStatus("actual size: %d bytes\n", actual_size);
+      }
+      if (actual_size != total)
+	status = FALSE;
     }
-    if (actual_size != total)
-      asfPrintError("Data QC status: FAILED\n");
+    
+    // Check workreport file
+    if (workreport) {
+      actual_size = fileSize(workreport);
+      if (!quietflag)
+	asfPrintStatus("\nFile: %s\nactual size: %d bytes\n", 
+		       workreport, actual_size);
+      if (actual_size == 0)
+	status = FALSE;
+    }
   }
 
-  // Check workreport file
-  if (workreport) {
-    actual_size = fileSize(workreport);
-    if (verbose)
-      asfPrintStatus("\nFile: %s\nactual size: %d\n", workreport, actual_size);
-    if (actual_size == 0)
-      asfPrintError("Data QC status: FAILED\n");
-  }
-
-  // If you made it here, then all the test passed
-  asfPrintStatus("\nData QC status: SUCCESS\n");
+  // Report status
+  if (status)
+    asfForcePrintStatus("\nData QC status: SUCCESS\n");
+  else
+    asfPrintError("Data QC status: FAILED\n");
 
   // Clean up
   if (tfdr)
@@ -434,7 +535,8 @@ main (int argc, char *argv[])
   char *inFile;
   int currArg = 1;
   int NUM_ARGS = 1;
-  int verbose = FALSE;
+  int essential = FALSE;
+  int ignore_spec = FALSE;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -458,8 +560,11 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
       quietflag = TRUE;
     }
-    else if (strmatches(key,"-verbose","--verbose","-v",NULL)) {
-      verbose = TRUE;
+    else if (strmatches(key,"-essential","--essential","-e",NULL)) {
+      essential = TRUE;
+    }
+    else if (strmatches(key,"-ignore_spec","--ignore_spec","-i",NULL)) {
+      ignore_spec = TRUE;
     }
     else {
         --currArg;
@@ -477,8 +582,8 @@ main (int argc, char *argv[])
 
   inFile = argv[currArg];
 
-  data_qc(inFile, verbose);
-  asfPrintStatus("\nDone.\n");
+  data_qc(inFile, ignore_spec, essential);
+  asfForcePrintStatus("\nDone.\n");
 
   return EXIT_SUCCESS;
 }
