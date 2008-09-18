@@ -1953,7 +1953,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         FILE *outFp = NULL; // only used in the line-by-line output case
         if (output_by_line) {
           // open for append, if multiband && this isn't the first band
-          outFp = FOPEN(output_image, multiband && kk>0 ? "a" : "w");
+          outFp = FOPEN(output_image, multiband && kk>0 ? "ab" : "wb");
         }
 
         if (output_by_line)
@@ -2022,6 +2022,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
               else {
                 value = float_image_sample(iim, input_x_pixel, input_y_pixel,
                                            float_image_sample_method);
+
                 if (omd->general->data_type == BYTE && value < 0.0) {
                   value = 0.0;
                   out_of_range_negative++;
@@ -2145,7 +2146,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
           // write the line, if we're doing line-by-line output
           if (output_by_line) {
-            put_float_line(outFp, omd, oiy, output_line);
+              put_float_line(outFp, omd, oiy, output_line);
           }
 
         } // End of for-each-line set output values

@@ -71,12 +71,14 @@ int
 unlink_tmp_file(const char *filename)
 {
   char * full_name;
-  int ret;
+  int ret=0;
 
   full_name = full_tmp_name (filename);
-  ret = unlink (full_name);
-  if (ret < 0) 
-    asfPrintWarning("unlink_tmp_file '%s': %s\n", full_name, strerror(errno));
+  if (fileExists(full_name)) {
+    ret = unlink (full_name);
+    if (ret < 0) 
+      asfPrintWarning("unlink_tmp_file '%s': %s\n", full_name, strerror(errno));
+  }
   free(full_name);
 
   return ret;

@@ -46,13 +46,13 @@ static const size_t default_cache_size = 16 * 1048576;
 static unsigned long current_tile_file_number = 0;
 // We need to ensure that multiple threads trying to create their own
 // images concurently don't end up with the same temporary file names.
-G_LOCK_DEFINE_STATIC (current_tile_file_number);
+//G_LOCK_DEFINE_STATIC (current_tile_file_number);
 
 // We don't want to let multiple threads twiddle the signal block mask
 // concurrently, or we might end up with the wrong set of signals
 // blocked.  This lock is used to gaurantee this can't happen (see the
 // usage for a better explanation).
-G_LOCK_DEFINE_STATIC (signal_block_activity);
+//G_LOCK_DEFINE_STATIC (signal_block_activity);
 
 // Return a FILE pointer refering to a new, already unlinked file in a
 // location which hopefully has enough free space to serve as a block
@@ -60,7 +60,7 @@ G_LOCK_DEFINE_STATIC (signal_block_activity);
 static FILE *
 initialize_tile_cache_file (void)
 {
-  int return_code;
+  //int return_code;
 
   // Create the temporary tile oriented storage file.  This gets
   // filled in in different ways depending on which creation routine
@@ -77,10 +77,10 @@ initialize_tile_cache_file (void)
   // been carefully calculating their space requirements, they may be
   // disappointed.  We use a weird name that no sane user would ever
   // use for one of their files, we hope.
-  G_LOCK (current_tile_file_number);
-  g_assert (sizeof (long) >= sizeof (pid_t));
+  //G_LOCK (current_tile_file_number);
+  //g_assert (sizeof (long) >= sizeof (pid_t));
   g_string_append_printf (tile_file_name,
-                          ".float_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
+                          ".float_image_tile_file_%ld_%lu",
                           (long) getpid (),
                           current_tile_file_number);
   //g_free (current_dir);
@@ -89,7 +89,7 @@ initialize_tile_cache_file (void)
   // during a process.
   g_assert (current_tile_file_number < ULONG_MAX);
   current_tile_file_number++;
-  G_UNLOCK (current_tile_file_number);
+  //G_UNLOCK (current_tile_file_number);
 
 #ifndef win32
   // We block signals while we create and unlink this file, so we
@@ -105,10 +105,8 @@ initialize_tile_cache_file (void)
   return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
 #endif
 
-  // FIXME?: It might be faster to use file descriptor based I/O
-  // everywhere, or at least for the big transfers.  I'm not sure its
-  // worth the trouble though.
-  FILE *tile_file = fopen_tmp_file (tile_file_name->str, "w+");
+  // now open new tile file in the tmp dir
+  FILE *tile_file = fopen_tmp_file (tile_file_name->str, "w+b");
   if ( tile_file == NULL ) {
     if ( errno != EACCES ) {
       g_warning ("couldn't create file in tmp directory (%s), and it wasn't"
@@ -124,8 +122,11 @@ initialize_tile_cache_file (void)
     }
   }
   else {
+    // the open-then-delete trick does not seem to work on MinGW
+#ifndef win32
     return_code = unlink_tmp_file (tile_file_name->str);
     g_assert (return_code == 0);
+#endif
   }
   g_assert (tile_file != NULL);
   
@@ -391,7 +392,6 @@ float_image_new (ssize_t size_x, ssize_t size_y)
 
   // If we need a tile file for an image of this size, prepare it.
   if ( self->tile_file != NULL ) {
-
     // The total width or height of all the tiles is probably greater
     // than the width or height of the image itself.
     size_t total_width = self->tile_count_x * self->tile_size;
@@ -473,7 +473,7 @@ float_image_new_with_value (ssize_t size_x, ssize_t size_y, float value)
         // so print an error message,
         fprintf (stderr,
                  "Error writing tile cache file for FloatImage instance: %s\n",
-     strerror (errno));
+                 strerror (errno));
         // and exit.
         exit (EXIT_FAILURE);
       }
@@ -683,7 +683,7 @@ float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
   //               * sizeof (float))));
 
   // Open the file to read data from.
-  FILE *fp = fopen (file, "r");
+  FILE *fp = fopen (file, "rb");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
@@ -708,28 +708,12 @@ non_native_byte_order (float_image_byte_order_t byte_order)
               && byte_order == FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN));
 }
 
-// Return true iff file referred to by file_pointer is larger than size.
-//static gboolean
-//file_pointed_to_larger_than (FILE *file_pointer, off_t size)
-//{
-//  struct stat stat_buffer;
-//  int return_code = fstat (fileno (file_pointer), &stat_buffer);
-//  g_assert (return_code == 0);
-//  return stat_buffer.st_size >= size;
-//}
-
 FloatImage *
 float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
                                    FILE *file_pointer, off_t offset,
                                    float_image_byte_order_t byte_order)
 {
   g_assert (size_x > 0 && size_y > 0);
-
-  // Check in advance if the source file looks big enough (we will
-  // still C:\temp\envi_reader_for_arcgisneed to check return codes as we read() data, of course).
-  //g_assert (file_pointed_to_larger_than (file_pointer,
-  //           offset + ((off_t) size_x * size_y
-  //               * sizeof (float))));
 
   FloatImage *self = initialize_float_image_structure (size_x, size_y);
 
@@ -942,7 +926,7 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
          : (double) (original_size_y - 1) / (size_y - 1));
 
   // Open the file to read data from.
-  FILE *fp = fopen (file, "r");
+  FILE *fp = fopen (file, "rb");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
@@ -1111,6 +1095,9 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 FloatImage *
 float_image_new_from_metadata(meta_parameters *meta, const char *file)
 {
+  //return float_image_new_from_file(meta->general->sample_count,
+  //    meta->general->line_count, file, 0,
+  //    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   return float_image_band_new_from_metadata(meta, 0, file);
 }
 
@@ -1987,7 +1974,7 @@ float_image_band_store(FloatImage *self, const char *file,
     byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
 
   // Open the file to write to.
-  FILE *fp = fopen (file, append_flag ? "a" : "w");
+  FILE *fp = fopen (file, append_flag ? "ab" : "wb");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
@@ -2132,7 +2119,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   jpeg_create_compress (&cinfo);
 
   // Open output file.
-  FILE *fp = fopen (file, "w");
+  FILE *fp = fopen (file, "wb");
   if ( fp == NULL ) {
     printf("Error opening file %s: %s\n", file, strerror(errno));
     return FALSE;
@@ -2322,7 +2309,7 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
   jpeg_create_compress (&cinfo);
 
   // Open output file.
-  FILE *fp = fopen (file, "w");
+  FILE *fp = fopen (file, "wb");
   if ( fp == NULL ) { perror ("error opening file"); }
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
@@ -2481,7 +2468,7 @@ float_image_export_as_tiff (FloatImage *self, const char *file,
     TIFF *otif = NULL;
 
     // Open output file.
-    otif = TIFFOpen(file, "w");
+    otif = TIFFOpen(file, "wb");
     if (otif == NULL ) {
         asfPrintError("Error opening TIFF file %s: %s\n", file, strerror(errno));
         return FALSE;
