@@ -44,15 +44,18 @@ static const size_t default_cache_size = 16 * 1048576;
 // tile files opened by the current process, in order to give them
 // unique names.
 static unsigned long current_tile_file_number = 0;
+
+#ifndef win32
 // We need to ensure that multiple threads trying to create their own
 // images concurently don't end up with the same temporary file names.
-//G_LOCK_DEFINE_STATIC (current_tile_file_number);
+G_LOCK_DEFINE_STATIC (current_tile_file_number);
 
 // We don't want to let multiple threads twiddle the signal block mask
 // concurrently, or we might end up with the wrong set of signals
 // blocked.  This lock is used to gaurantee this can't happen (see the
 // usage for a better explanation).
-//G_LOCK_DEFINE_STATIC (signal_block_activity);
+G_LOCK_DEFINE_STATIC (signal_block_activity);
+#endif
 
 // Return a FILE pointer refering to a new, already unlinked file in a
 // location which hopefully has enough free space to serve as a block
@@ -60,8 +63,6 @@ static unsigned long current_tile_file_number = 0;
 static FILE *
 initialize_tile_cache_file (void)
 {
-  //int return_code;
-
   // Create the temporary tile oriented storage file.  This gets
   // filled in in different ways depending on which creation routine
   // we are using.
@@ -77,8 +78,11 @@ initialize_tile_cache_file (void)
   // been carefully calculating their space requirements, they may be
   // disappointed.  We use a weird name that no sane user would ever
   // use for one of their files, we hope.
-  //G_LOCK (current_tile_file_number);
-  //g_assert (sizeof (long) >= sizeof (pid_t));
+#ifndef win32
+  G_LOCK (current_tile_file_number);
+  g_assert (sizeof (long) >= sizeof (pid_t));
+#endif
+
   g_string_append_printf (tile_file_name,
                           ".float_image_tile_file_%ld_%lu",
                           (long) getpid (),
@@ -89,9 +93,10 @@ initialize_tile_cache_file (void)
   // during a process.
   g_assert (current_tile_file_number < ULONG_MAX);
   current_tile_file_number++;
-  //G_UNLOCK (current_tile_file_number);
 
 #ifndef win32
+  G_UNLOCK (current_tile_file_number);
+
   // We block signals while we create and unlink this file, so we
   // don't end up leaving a huge temporary file somewhere.
   // Theoretically, two parallel instantiations of image could end up
@@ -100,7 +105,7 @@ initialize_tile_cache_file (void)
   // this section critical and protect it with a lock.
   G_LOCK (signal_block_activity);
   sigset_t all_signals, old_set;
-  return_code = sigfillset (&all_signals);
+  int return_code = sigfillset (&all_signals);
   g_assert (return_code == 0);
   return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
 #endif
