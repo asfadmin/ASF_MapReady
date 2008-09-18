@@ -11,7 +11,7 @@
 #define AP_VERSION 1.0
 
 // Request Generator
-#define REQ_VERSION_STRING "2.0.5"
+#define REQ_VERSION_STRING "2.0.6-dev"
 #define REQ_VERSION 2.0
 
 // MapReady
@@ -21,6 +21,10 @@
 // Convert To Vector
 #define C2V_VERSION_STRING "2.0.3-dev"
 #define C2V_VERSION 2.0
+
+// JPL Mosaic Suite
+#define JPL_VERSION_STRING "1.0.0"
+#define JPL_VERSION 1.0
 
 // Set Tool suite stuff based on given build define
 #if defined (_PKG_STP)
@@ -42,6 +46,11 @@
 # define TOOL_SUITE_NAME		"ConvertToVector"
 # define TOOL_SUITE_VERSION_STRING	C2V_VERSION_STRING
 # define TOOL_SUITE_VERSION		C2V_VERSION
+
+#elif defined (_PKG_JPL)
+# define TOOL_SUITE_NAME		"JPLMosaicSuite"
+# define TOOL_SUITE_VERSION_STRING	JPL_VERSION_STRING
+# define TOOL_SUITE_VERSION		JPL_VERSION
 
 // Default to MapReady
 #else //defined (_PKG_MAPREADY)

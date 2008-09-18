@@ -67,9 +67,7 @@ LIBS
 	asf_meta
 	asf_odl
 	libasf_sar
-	libasf_elevation
 	libasf_raster
-	libasf_igram_coh
 	libasf_vector
 	libifm
 	libasf_import
@@ -91,7 +89,6 @@ PROGRAMS
 @src/
 	accum_offset { }
 	addapole { }
-	airsargeo { BINS projectGeo geocode_airsar }
 	airsarin { }
 #	ait { }
 	ardop { BINS calc_deltas spectra }
@@ -110,10 +107,8 @@ PROGRAMS
 #	auto_swath_mosaic { } -- see bottom of this list
 #	automg { }
 	avg_in_dop { }
-	baseline { }
-	baseline2html { }
 	baseline_catalog { }
-	baseline_parser { }
+	byteswap { }
 	c2p { }
 	ceos2meta { }
 	coh { }
@@ -209,7 +204,15 @@ PROGRAMS
 	coregister_coarse { PROGRAMS c2p convert2byte fftMatch }
 	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
 
+
+@contrib/
+	ampscheby { }
+	detilt_hgt { }
+	dgx { }
+	match_20488nr { BINS multimatch multicull multitps }
+	multimosaic30_20941nr { BINS multimosaic multiaffine3d }
 }
+
 ############################### END OF PROGRAMS ###############################
 
 
@@ -273,6 +276,20 @@ CATEGORIES
 		meta_check
 		offset_test
 		pta
+	}
+
+# JPL tools (for mosaicking)
+	jpltools
+	{
+		ampscheby
+		byteswap
+		detilt_hgt
+		dgx
+		multimatch
+		multicull
+		multitps
+		multimosaic
+		multiaffine3d
 	}
 
 }

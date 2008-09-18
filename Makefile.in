@@ -129,6 +129,10 @@ C2V_MODULES = \
 	src/convert2vector \
 	src/convert2vector_gui
 
+JPL_MODULES = \
+	contrib \
+	src/byteswap
+
 IGNORED_INCLUDES = \
 	include/ardop_defs.h \
 	include/asf_baseline.h \
@@ -183,6 +187,7 @@ VERSION_STP = $(shell awk -F '"' '$$1 ~ /define STP_VERSION_STRING/ {print $$2}'
 VERSION_AP = $(shell awk -F '"' '$$1 ~ /define AP_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_REQ = $(shell awk -F '"' '$$1 ~ /define REQ_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_C2V = $(shell awk -F '"' '$$1 ~ /define C2V_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_JPL = $(shell awk -F '"' '$$1 ~ /define JPL_VERSION_STRING/ {print $$2}' include/asf_version.h)
 
 # Build the MapReady package by default
 default: mapready
@@ -246,6 +251,16 @@ c2v: mkdirs_for_build external_libs
 	@ echo "  XXXXXXXXXXXX Convert To Vector Compiled! XXXXXXXXXXX"
 	@ echo ""
 
+# JPL Mosaic Suite
+jpl: mkdirs_for_build
+	echo BUILD_PKG = -D_PKG_JPL> make_support/build_pkg.mk
+	cp LICENSE.txt $(S_SHAREDIR)
+	echo $(VERSION_C2V) > $(S_SHAREDIR)/jpl_version.txt
+	$(foreach MODULE, $(C2V_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX Convert To Vector Compiled! XXXXXXXXXXX"
+	@ echo ""
+
 # Build using our old system
 oldtools: mkdirs_for_build
 	cd make_support; $(MAKE); ./makemake @sys@; cd ..
@@ -301,7 +316,7 @@ clean:
 	rm -rf share
 	rm -rf man
 	-rm -rf $(IGNORED_INCLUDES)
-	$(foreach MODULE, $(MAPREADY_MODULES) $(STP_MODULES) $(AP_MODULES), \
+	$(foreach MODULE, $(MAPREADY_MODULES) $(STP_MODULES) $(AP_MODULES) $(C2V_MODULES) $(JPL_MODULES), \
 		$(MAKE) clean -C $(MODULE) &&) true
 
 # Internal prep for release builds
