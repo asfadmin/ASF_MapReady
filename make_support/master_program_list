@@ -206,7 +206,7 @@ PROGRAMS
 
 
 @contrib/
-	jplmosaicsuite
+	jplmosaicsuite { }
 #		the jplmosaicsuite directory contains the following:
 #			ampscheby { }
 #			detilt_hgt { }
