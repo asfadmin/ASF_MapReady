@@ -133,29 +133,6 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintStatus("   Data format: AIRSAR\n");
     import_airsar(inBaseName, outBaseName);
   }
-  else if (format_type == GAMMA_MSP) {
-    if (inMetaNameOption && fileExists(inMetaNameOption) &&
-    fileExists(inBaseName)) {
-      asfPrintStatus("   Data format: GAMMA_MSP\n");
-      import_gamma_msp(inBaseName, inMetaNameOption, data_type,
-               image_data_type, outBaseName);
-    }
-    else
-      asfPrintError("The GAMMA_MSP format requires the data file and metadata"
-            "with their respective extensions.\n");
-  }
-  else if (format_type == GAMMA_ISP) {
-    if (inMetaNameOption && fileExists(inMetaNameOption) &&
-    fileExists(inBaseName)) {
-      asfPrintStatus("   Data format: GAMMA_ISP\n");
-      import_gamma_isp(inBaseName, inMetaNameOption, data_type,
-               image_data_type, complex_flag, multilook_flag,
-               outBaseName);
-    }
-    else
-      asfPrintError("The GAMMA_ISP format requires the data file and metadata"
-                    "with their respective extensions.\n");
-  }
   else if (format_type == VP) {
     asfPrintStatus("   Data format: VP\n");
     import_vexcel_plain(inBaseName, outBaseName);

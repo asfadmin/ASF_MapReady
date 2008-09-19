@@ -765,7 +765,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   if (cfg->general->import) {
     char *basename = MALLOC(sizeof(char)*(strlen(cfg->general->in_name)+10));
     char **dataName = NULL, **metaName = NULL;
-    int i, nBands, trailer;
+    int nBands, trailer;
     ceos_file_pairs_t s = get_ceos_names(cfg->general->in_name, basename,
                                          &dataName, &metaName, &nBands, &trailer);
     // Check for raw Palsar
@@ -1574,10 +1574,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format_type = GRIDFLOAT;
       else if (strncmp_case(cfg->import->format, "AIRSAR", 6) == 0)
         format_type = AIRSAR;
-      else if (strncmp_case(cfg->import->format, "GAMMA_MSP", 9) == 0)
-        format_type = GAMMA_MSP;
-      else if (strncmp_case(cfg->import->format, "GAMMA_ISP", 9) == 0)
-        format_type = GAMMA_ISP;
       else if (strncmp_case(cfg->import->format, "VP", 2) == 0)
         format_type = VP;
       else {

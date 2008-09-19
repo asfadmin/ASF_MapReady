@@ -67,10 +67,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        (ie do not use the -db flag if you plan on statistical analysis)\n"\
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
-"        are 'ceos', 'stf', 'gamma_isp', 'gamma_msp', 'geotiff', 'airsar',\n"\
-"        'bil', 'gridfloat', 'vp', and 'jaxa_L0'.  The 'jaxa_L0' format refers\n"\
-"        to the ALOS AVNIR-2 Level 0 dataset format.\n"\
-"        'CEOS' is the default behavior.\n"\
+"        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp',\n"\
+"        and 'jaxa_L0'.  The 'jaxa_L0' format refers to the ALOS AVNIR-2\n"\
+"        Level 0 dataset format. 'CEOS' is the default behavior.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that do not have the same basename as the\n"\
 "        image data. An example for this is 'gamma_isp' and 'gamma_msp' naming\n"\
@@ -692,10 +691,6 @@ int main(int argc, char *argv[])
       format_type = GRIDFLOAT;
     else if (strncmp(uc(format_type_str), "AIRSAR", 6) == 0)
       format_type = AIRSAR;
-    else if (strncmp(uc(format_type_str), "GAMMA_MSP", 9) == 0)
-      format_type = GAMMA_MSP;
-    else if (strncmp(uc(format_type_str), "GAMMA_ISP", 9) == 0)
-      format_type = GAMMA_ISP;
     else if (strncmp(uc(format_type_str), "VP", 2) == 0)
       format_type = VP;
         else if (strncmp(uc(format_type_str), "JAXA_L0", 7) == 0)
@@ -724,8 +719,7 @@ int main(int argc, char *argv[])
 
     /* Deal with input image data type */
     if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
-       (format_type == GAMMA_ISP || format_type == GAMMA_MSP ||
-    format_type == GENERIC_GEOTIFF))
+       format_type == GENERIC_GEOTIFF)
     {
       strcpy(image_data_type, argv[flags[f_IMAGE_DATA_TYPE] + 1]);
       for (ii=0; ii<strlen(image_data_type); ii++) {

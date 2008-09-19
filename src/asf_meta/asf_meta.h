@@ -100,8 +100,6 @@ typedef enum {
   BIL,
   GRIDFLOAT,
   AIRSAR,
-  GAMMA_MSP,
-  GAMMA_ISP,
   VP,
   JAXA_L0 // JAXA PRISM and AVNIR-2 (optical) Level 0 Format
 } input_format_t;
