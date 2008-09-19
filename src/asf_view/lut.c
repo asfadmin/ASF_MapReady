@@ -9,9 +9,24 @@ static unsigned char *g_lut_buffer = NULL;
 // all items we will want to pre-select should have their indexes
 // memorized here.  This will work around a deficiency in the GTK
 // menu widget, we can't iterate through the items
+// ...yes, there has to be a better way (iterate through drop-down
+// menu items)
+static int g_cloude16_index = 0;
+static int g_cloude8_index = 0;
 static int g_dem_index = 0;
+static int g_interferogram_index = 0;
+static int g_unwrapping_mask_index = 0;
+static int g_layover_mask_index = 0;
+static int g_polarimetry_index = 0;
 static int g_tiff_lut_index = 0;
 static int g_asf_lut_index = 0;
+static int g_current_index = 0;
+
+SIGNAL_CALLBACK void on_viewer_notebook_switch_page(GtkWidget *w)
+{
+    GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+    gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_current_index());
+}
 
 static int my_strcmp(const void *v1, const void *v2)
 {
@@ -29,7 +44,15 @@ static char *get_lut_loc()
 
 void populate_lut_combo()
 {
-    GtkWidget *menu = gtk_menu_new();
+    GtkWidget *menu = NULL;
+    GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+    if (option_menu) {
+        menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(option_menu));
+        if (menu) {
+            gtk_option_menu_remove_menu(GTK_OPTION_MENU(option_menu));
+        }
+    }
+    menu = gtk_menu_new();
 
     GtkWidget *item = gtk_menu_item_new_with_label("None");
     gtk_menu_append(GTK_MENU(menu), item);
@@ -76,8 +99,26 @@ void populate_lut_combo()
             gtk_widget_show(item);
 
             // memorize the indexes we will need later
+            if (strncmp_case(names[i], "cloude16", 8) == 0) {
+                g_cloude16_index = i+2;
+            }
+            if (strncmp_case(names[i], "cloude8", 7) == 0) {
+                g_cloude8_index = i+2;
+            }
             if (strncmp_case(names[i], "dem", 3) == 0) {
                 g_dem_index = i+2;
+            }
+            if (strncmp_case(names[i], "interferogram", 13) == 0) {
+                g_interferogram_index = i+2;
+            }
+            if (strncmp_case(names[i], "unwrapping_mask", 15) == 0) {
+                g_unwrapping_mask_index = i+2;
+            }
+            if (strncmp_case(names[i], "layover_mask", 12) == 0) {
+                g_layover_mask_index = i+2;
+            }
+            if (strncmp_case(names[i], "polarimetry", 11) == 0) {
+                g_polarimetry_index = i+2;
             }
             if (strncmp(names[i], EMBEDDED_TIFF_COLORMAP_LUT,
                         strlen(EMBEDDED_TIFF_COLORMAP_LUT)) == 0) {
@@ -90,10 +131,11 @@ void populate_lut_combo()
         }
     }
 
-    GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+    option_menu = get_widget_checked("lut_optionmenu");
 
     gtk_option_menu_set_menu(GTK_OPTION_MENU(option_menu), menu);
     gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), 0);
+    set_current_index(0);
 
     gtk_widget_show(menu);
     gtk_widget_show(option_menu);
@@ -131,22 +173,30 @@ void select_lut(const char *lut_basename)
 
     // there must be a better way!
     if (strcmp_case(lut_basename, "cloude16") == 0)
-      which = 2;
+      which = get_cloude16_lut_index();
     else if (strcmp_case(lut_basename, "cloude8") == 0)
-      which = 3;
+      which = get_cloude8_lut_index();
     else if (strcmp_case(lut_basename, "dem") == 0)
-      which = 4;
+      which = get_dem_lut_index();
     else if (strcmp_case(lut_basename, "interferogram") == 0)
-      which = 5;
+      which = get_interferogram_lut_index();
     else if (strcmp_case(lut_basename, "unwrapping_mask") == 0)
-      which = 6;
+      which = get_unwrapping_mask_lut_index();
     else if (strcmp_case(lut_basename, "layover_mask") == 0)
-      which = 7;
+      which = get_layover_mask_lut_index();
     else if (strcmp_case(lut_basename, "polarimetry") == 0)
-      which = 8;
+      which = get_polarimetry_lut_index();
+    else if (strcmp_case(lut_basename, EMBEDDED_TIFF_COLORMAP_LUT) == 0)
+        which = get_tiff_lut_index();
+    else if (strcmp_case(lut_basename, EMBEDDED_ASF_COLORMAP_LUT) == 0)
+        which = get_asf_lut_index();
+    else if (!lut_basename || strlen(lut_basename) < 1 ||
+             strcmp_case(lut_basename, "none") == 0)
+        which = 0; // Default to none
 
     GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
     gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
+    set_current_index(which);
 }
 
 void check_lut()
@@ -181,6 +231,7 @@ void check_lut()
 
         read_lut(path_and_file, g_lut_buffer);
         g_have_lut = TRUE;
+        select_lut(lut_basename);
 
         free(path_and_file);
     }
@@ -277,6 +328,34 @@ int check_for_embedded_tiff_lut (char *curr_file, int *lut_specified, char *lut)
     return ret;
 }
 
+int get_cloude16_lut_index(void) {
+    return g_cloude16_index;
+}
+
+int get_cloude8_lut_index(void) {
+    return g_cloude8_index;
+}
+
+int get_dem_lut_index(void) {
+    return g_dem_index;
+}
+
+int get_interferogram_lut_index(void) {
+    return g_interferogram_index;
+}
+
+int get_unwrapping_mask_lut_index(void) {
+    return g_unwrapping_mask_index;
+}
+
+int get_layover_mask_lut_index(void) {
+    return g_layover_mask_index;
+}
+
+int get_polarimetry_lut_index(void) {
+    return g_polarimetry_index;
+}
+
 int get_tiff_lut_index(void)
 {
   return g_tiff_lut_index;
@@ -285,6 +364,14 @@ int get_tiff_lut_index(void)
 int get_asf_lut_index(void)
 {
   return g_asf_lut_index;
+}
+
+int get_current_index(void) {
+    return g_current_index;
+}
+
+void set_current_index(int index) {
+    g_current_index = index;
 }
 
 int is_colormap_ASF_file(char *file)

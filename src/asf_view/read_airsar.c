@@ -174,7 +174,7 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
             else {
                 // it can be done!
                 ret = TRUE;
-            }   
+            }
         }
 
         free(m);
@@ -221,7 +221,7 @@ static char *get_airsar_basename(const char *meta_name)
     return airsar_basename;
 }
 
-static float get_airsar_polarimetric(char *byteBuf, float scale, int band)
+static float get_airsar_polarimetric(unsigned char *byteBuf, float scale, int band)
 {
   float ret = 0.0;
   float cal = (float)byteBuf[1]/254. + 1.5;
@@ -293,7 +293,7 @@ int read_airsar_client(int row_start, int n_rows_to_get,
 
     if (info->airsar_data_type == AIRSAR_POLARIMETRIC) {
       float scale = (float) meta->airsar->scale_factor;
-      char *byte_buf = MALLOC(sizeof(char)*10);
+      unsigned char *byte_buf = MALLOC(sizeof(char)*10);
       FILE *fpIn = info->fp;
       int ns = meta->general->sample_count;
       int cal_off = info->header->calibration_header_offset;
@@ -317,7 +317,7 @@ int read_airsar_client(int row_start, int n_rows_to_get,
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_g);
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_b);
           }
-        }        
+        }
       }
     }
     else if (info->airsar_data_type == AIRSAR_DEM) {
@@ -385,7 +385,7 @@ int get_airsar_thumbnail_data(int thumb_size_x, int thumb_size_y,
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_g);
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_b);
           }
-        }        
+        }
         asfPercentMeter((float)ii/(thumb_size_y-1));
       }
     }

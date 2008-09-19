@@ -248,8 +248,17 @@ void apply_lut(int val, unsigned char *r,
 int set_lut_based_on_image_type(image_data_type_t image_data_type);
 void apply_lut_to_data(ThumbnailData *thumbnail_data);
 int check_for_embedded_tiff_lut (char *curr_file, int *lut_specified, char *lut);
+int get_cloude16_lut_index(void);
+int get_cloude8_lut_index(void);
+int get_dem_lut_index(void);
+int get_interferogram_lut_index(void);
+int get_unwrapping_mask_lut_index(void);
+int get_layover_mask_lut_index(void);
+int get_polarimetry_lut_index(void);
 int get_tiff_lut_index(void);
 int get_asf_lut_index(void);
+void set_current_index(int index);
+int get_current_index(void);
 int is_colormap_ASF_file(char *file);
 
 /* plan.c */

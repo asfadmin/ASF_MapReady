@@ -283,13 +283,17 @@ static void load_file_banded_imp(const char *file, const char *band,
       char embedded_asf_colormap_file[1024];
       char *lut_loc = (char *)MALLOC(sizeof(char)*(strlen(get_asf_share_dir())+128));
       sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
-      sprintf(embedded_tiff_lut_file,"%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_TIFF_COLORMAP_LUT_FILE);
-      sprintf(embedded_asf_colormap_file, "%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_ASF_COLORMAP_LUT_FILE);
+      sprintf(embedded_tiff_lut_file,"%s%c%s", lut_loc, DIR_SEPARATOR,
+              EMBEDDED_TIFF_COLORMAP_LUT_FILE);
+      sprintf(embedded_asf_colormap_file, "%s%c%s", lut_loc, DIR_SEPARATOR,
+              EMBEDDED_ASF_COLORMAP_LUT_FILE);
       FREE(lut_loc);
       tiff_lut_exists      = new_file ? 0 : tiff_lut_exists;
       asf_colormap_exists  = new_file ? 0 : asf_colormap_exists;
       tiff_lut_exists     += fileExists(embedded_tiff_lut_file)     ? 1 : 0;
       asf_colormap_exists += fileExists(embedded_asf_colormap_file) ? 1 : 0;
+      GtkWidget *om = get_widget_checked("lut_optionmenu");
+      int idx = gtk_option_menu_get_history(GTK_OPTION_MENU(om));
       if (tiff_lut_exists <= 1 &&
           check_for_embedded_tiff_lut(curr->filename, &dummy, lut))
       {
@@ -300,11 +304,18 @@ static void load_file_banded_imp(const char *file, const char *band,
           remove(embedded_asf_colormap_file);
           asf_colormap_exists = 0;
         }
-        populate_lut_combo();
-        set_lut(lut);
 
-        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
-        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
+        if (get_tiff_lut_index() == 0) {
+            populate_lut_combo();
+            select_lut(lut);
+
+            GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+            gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
+            set_current_index(get_tiff_lut_index());
+        }
+        else {
+            set_current_index(idx);
+        }
       }
       else if (tiff_lut_exists &&
                !check_for_embedded_tiff_lut(curr->filename, &dummy, lut))
@@ -317,6 +328,7 @@ static void load_file_banded_imp(const char *file, const char *band,
         populate_lut_combo(); // Re-populate since tiff colormap lut was removed
         GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
         gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), 0); // Default to None
+        set_current_index(0);
       }
       if (asf_colormap_exists <= 1 && is_colormap_ASF_file(curr->filename)) {
         // On first read of an ASF file, check for a colormap and turn it into a
@@ -326,11 +338,17 @@ static void load_file_banded_imp(const char *file, const char *band,
           remove(embedded_tiff_lut_file);
           tiff_lut_exists = 0;
         }
-        populate_lut_combo();
-        set_lut(EMBEDDED_ASF_COLORMAP_LUT);
+        if (get_asf_lut_index() == 0) {
+            populate_lut_combo();
+            select_lut(EMBEDDED_ASF_COLORMAP_LUT);
 
-        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
-        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_asf_lut_index());
+            GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+            gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_asf_lut_index());
+            set_current_index(get_asf_lut_index());
+        }
+        else {
+            set_current_index(idx);
+        }
       }
       else if (asf_colormap_exists && !is_colormap_ASF_file(curr->filename)) {
         // If an ASF colormap look up table exists, but the current file being
@@ -341,12 +359,18 @@ static void load_file_banded_imp(const char *file, const char *band,
         populate_lut_combo(); // Re-populate since tiff colormap lut was removed
         GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
         gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), 0); // Default to None
+        set_current_index(0);
       }
-      if (!tiff_lut_exists && !asf_colormap_exists &&
+      if (new_file && !tiff_lut_exists && !asf_colormap_exists &&
            reset_location && curr->meta && curr->meta->general)
       {
         // Change LUT selection if necessary
         set_lut_based_on_image_type(curr->meta->general->image_data_type);
+      }
+      else if (!new_file) {
+          // Respect any changes made by the user to the look-up table selection after
+          // the file has loaded the first time ...
+          set_current_index(idx);
       }
       check_lut();
       set_title(band != NULL, band);

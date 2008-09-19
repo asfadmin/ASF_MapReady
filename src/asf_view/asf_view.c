@@ -107,7 +107,8 @@ main(int argc, char **argv)
     char *lut_loc = (char *)MALLOC(sizeof(char)*(strlen(get_asf_share_dir())+64));
     sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
     sprintf(embedded_tiff_lut_file,"%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_TIFF_COLORMAP_LUT_FILE);
-    sprintf(embedded_asf_colormap_file,"%s%c%s", lut_loc, DIR_SEPARATOR, EMBEDDED_ASF_COLORMAP_LUT_FILE);
+    sprintf(embedded_asf_colormap_file,"%s%c%s", lut_loc, DIR_SEPARATOR,
+            EMBEDDED_ASF_COLORMAP_LUT_FILE);
     FREE(lut_loc);
     if (fileExists(embedded_tiff_lut_file)) remove(embedded_tiff_lut_file);
     if (fileExists(embedded_asf_colormap_file)) remove(embedded_asf_colormap_file);
@@ -117,9 +118,7 @@ main(int argc, char **argv)
         curr->filename[strlen(curr->filename)-1] = '\0';
 
     read_file(curr->filename, band_specified ? band : NULL, FALSE, TRUE);
-    if (check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut)) {
-      populate_lut_combo();
-    }
+    check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut);
     if (lut_specified)
       set_lut(lut);
 
@@ -150,6 +149,20 @@ main(int argc, char **argv)
     // (In new.c, this kludge isn't required - we load/apply in the
     // same pass -- here it is required because we pre-load the thumbnail)
     populate_lut_combo();
+    if (check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut)) {
+        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
+        set_current_index(get_tiff_lut_index());
+    }
+    else if (is_colormap_ASF_file(curr->filename)) {
+        lut_specified = 1;
+        strcpy(lut, EMBEDDED_ASF_COLORMAP_LUT);
+        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_asf_lut_index());
+        set_current_index(get_asf_lut_index());
+        check_lut();
+        apply_lut_to_data(thumbnail_data);
+    }
     if (curr->meta && curr->meta->general)  {
         if (set_lut_based_on_image_type(curr->meta->general->image_data_type))
         {
@@ -176,12 +189,8 @@ main(int argc, char **argv)
     gtk_main ();
 
     // If the last viewed file left behind a (temporary) color map lut, then get rid of it
-    if (fileExists(embedded_tiff_lut_file)) {
-        remove(embedded_tiff_lut_file);
-    }
-    if (fileExists(embedded_asf_colormap_file)) {
-      remove(embedded_asf_colormap_file);
-    }
+    if (fileExists(embedded_tiff_lut_file)) remove(embedded_tiff_lut_file);
+    if (fileExists(embedded_asf_colormap_file)) remove(embedded_asf_colormap_file);
 
     image_info_free(curr);
     free_shapes();
