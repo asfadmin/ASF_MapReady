@@ -2,12 +2,7 @@
 #       multimosaic
 #	multiaffine3d
 
-include ../../make_support/system_rules
-
-BINDIR = ../../bin
-
-FC     = g77
-FFLAGS = $(OPTFLAG) $(LARGEFILE_FLAGS) -ffixed-line-length-132
+include ../Makerules.mk
 
 MOSAIC_OBJS = multimosaic.o
 	

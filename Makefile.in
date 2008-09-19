@@ -130,7 +130,8 @@ C2V_MODULES = \
 	src/convert2vector_gui
 
 JPL_MODULES = \
-	contrib \
+	contrib/jplmosaicsuite \
+	src/asf \
 	src/byteswap
 
 IGNORED_INCLUDES = \
@@ -255,10 +256,11 @@ c2v: mkdirs_for_build external_libs
 jpl: mkdirs_for_build
 	echo BUILD_PKG = -D_PKG_JPL> make_support/build_pkg.mk
 	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_C2V) > $(S_SHAREDIR)/jpl_version.txt
-	$(foreach MODULE, $(C2V_MODULES), $(MAKE) -C $(MODULE) &&) true
+	echo $(VERSION_JPL) > $(S_SHAREDIR)/jpl_version.txt
+	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+	$(foreach MODULE, $(JPL_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
-	@ echo "  XXXXXXXXXXXX Convert To Vector Compiled! XXXXXXXXXXX"
+	@ echo "  XXXXXXXXXXXX JPL Mosaic Suite Compiled! XXXXXXXXXXX"
 	@ echo ""
 
 # Build using our old system

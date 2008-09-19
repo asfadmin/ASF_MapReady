@@ -1,17 +1,9 @@
 # Makefile for subsystem Graph program (dgx)
 
-include ../../make_support/system_rules
+include ../Makerules.mk
 
-BINDIR = ../../bin
-LIBS   = -L/usr/X11R6/lib -lXm -lXt -lX11 -lm
-HP_SGI = -DM10 -DM4 -DIO64 
-
-FC     = g77
-FFLAGS = $(OPTFLAG) $(HP_SGI) $(LARGEFILE_FLAGS) \
-         -fno-globals -Wno-globals -ffixed-line-length-132
-
-CC     = gcc
-CFLAGS = $(OPTFLAG) $(HP_SGI) $(LARGEFILE_FLAGS)
+CFLAGS += -DM10 -DM4 -DIO64
+FFLAGS += -DM10 -DM4 -DIO64 -fno-globals -Wno-globals
 
 DGX_C_SRC = graphx.c
 DGX_C_OBJ = $(DGX_C_SRC:.c=.o)
@@ -27,7 +19,7 @@ $(DGX_C_OBJ): $(DGX_C_SRC)
 $(DGX_F_OBJ): $(DGX_F_SRC)
 	$(FC) $(FFLAGS) -c $(DGX_F_SRC)
 dgx: $(DGX_OBJS) Makefile 
-	$(FC) $(CFLAGS) -o dgx $(DGX_OBJS) $(LIBS)
+	$(FC) $(CFLAGS) -o dgx $(DGX_OBJS) $(X_LIBS)
 	mv dgx $(BINDIR)
 
 clean:

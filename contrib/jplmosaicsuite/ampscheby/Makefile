@@ -1,9 +1,6 @@
 # Makefile for ampescheby
 
-include ../../make_support/system_rules
-
-FC     = g77
-FFLAGS = $(OPTFLAG) $(LARGEFILE_FLAGS) -ffixed-line-length-132
+include ../Makerules.mk
 
 FOBJECTS = ampscheby.o
 

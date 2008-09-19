@@ -1,5 +1,4 @@
-# This makefile builds all the tools in the asf_tools/contrib directory
-# (except xid) that were formerly on cedar
+# This makefile builds all the tools in the JPL Mosaic Suite
 
 MODULES = \
 	ampscheby \
