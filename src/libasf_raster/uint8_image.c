@@ -46,26 +46,27 @@ static unsigned long current_tile_file_number = 0;
 // We need to ensure that multiple threads trying to create their own
 // images concurently don't end up with the same temporary file
 // names.
-G_LOCK_DEFINE_STATIC (current_tile_file_number);
+//G_LOCK_DEFINE_STATIC (current_tile_file_number);
 
+#ifndef win32
 // We don't want to let multiple threads twiddle the signal block mask
 // concurrently, or we might end up with the wrong set of signals
 // blocked.  This lock is used to guarantee this can't happen (see the
 // usage for a better explanation).
 G_LOCK_DEFINE_STATIC (signal_block_activity);
+#endif
 
 // Return a FILE pointer refering to a new, already unlinked file in a
 // location which hopefully has enough free space to serve as a block
 // cache.
 static FILE *
-initialize_tile_cache_file (void)
+initialize_tile_cache_file (GString **tile_file_name)
 {
   // Create the temporary tile oriented storage file.  This gets
   // filled in in different ways depending on which creation routine
   // we are using.
-  GString *tile_file_name = g_string_new ("");
-  gchar *current_dir = g_get_current_dir ();
-  int return_code;
+  g_assert(*tile_file_name = NULL);
+  *tile_file_name = g_string_new ("");
 
   // Here we do a slightly weird thing: if the current directory is
   // writable, we create a temporary file in the current directory.
@@ -76,19 +77,19 @@ initialize_tile_cache_file (void)
   // been carefully calculating their space requirements, they may be
   // disappointed.  We use a weird name that no sane user would ever
   // use for one of their files, we hope.
-  G_LOCK (current_tile_file_number);
+  //G_LOCK (current_tile_file_number);
   g_assert (sizeof (long) >= sizeof (pid_t));
-  g_string_append_printf (tile_file_name,
-                          "%s/.uint8_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
-                          current_dir, (long) getpid (),
+  g_string_append_printf (*tile_file_name,
+                          ".uint8_image_tile_file_%ld_%lu",
+                          (long) getpid (),
                           current_tile_file_number);
-  g_free (current_dir);
+
   // This hard coded limit on the current number used to uniqueify
   // file names limits us to creating no more than ULONG_MAX instances
   // during a process.
   g_assert (current_tile_file_number < ULONG_MAX);
   current_tile_file_number++;
-  G_UNLOCK (current_tile_file_number);
+  //G_UNLOCK (current_tile_file_number);
   
 #ifndef win32
   // We block signals while we create and unlink this file, so we
@@ -99,7 +100,7 @@ initialize_tile_cache_file (void)
   // this section critical and protect it with a lock.
   G_LOCK (signal_block_activity);
   sigset_t all_signals, old_set;
-  return_code = sigfillset (&all_signals);
+  int return_code = sigfillset (&all_signals);
   g_assert (return_code == 0);
   return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
 #endif
@@ -107,7 +108,7 @@ initialize_tile_cache_file (void)
   // FIXME?: It might be faster to use file descriptor based I/O
   // everywhere, or at least for the big transfers.  I'm not sure its
   // worth the trouble though.
-  FILE *tile_file = fopen (tile_file_name->str, "w+");
+  FILE *tile_file = fopen_tmp_file ((*tile_file_name)->str, "w+b");
   if ( tile_file == NULL ) {
     if ( errno != EACCES ) {
       g_warning ("couldn't create file in current directory, and it wasn't"
@@ -123,8 +124,10 @@ initialize_tile_cache_file (void)
     }
   }
   else {
+#ifndef win32
     return_code = unlink (tile_file_name->str);
     g_assert (return_code == 0);
+#endif
   }
   g_assert (tile_file != NULL);
   
@@ -132,8 +135,6 @@ initialize_tile_cache_file (void)
   return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
   G_UNLOCK (signal_block_activity);
 #endif
-
-  g_string_free (tile_file_name, TRUE);
 
   return tile_file;
 }
@@ -258,7 +259,8 @@ initialize_uint8_image_structure (ssize_t size_x, ssize_t size_y)
   self->tile_queue = g_queue_new ();
 
   // Get a new empty tile cache file pointer.
-  self->tile_file = initialize_tile_cache_file ();
+  self->tile_file_name = NULL;
+  self->tile_file = initialize_tile_cache_file ( &(self->tile_file_name) );
 
   return self;
 }
@@ -330,7 +332,8 @@ uint8_image_thaw (FILE *file_pointer)
   // remainder of the serialized version is the tile block cache.
   else {
     self->tile_queue = g_queue_new ();
-    self->tile_file = initialize_tile_cache_file ();
+    self->tile_file_name = NULL;
+    self->tile_file = initialize_tile_cache_file ( &(self->tile_file_name) );
     uint8_t *buffer = g_new (uint8_t, self->tile_area);
     size_t ii;
     for ( ii = 0 ; ii < self->tile_count ; ii++ ) {
@@ -618,7 +621,7 @@ uint8_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
                * sizeof (uint8_t))));
 
   // Open the file to read data from.
-  FILE *fp = fopen (file, "r");
+  FILE *fp = fopen (file, "rb");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
@@ -844,7 +847,7 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
          : (double) (original_size_y - 1) / (size_y - 1));
 
   // Open the file to read data from.
-  FILE *fp = fopen (file, "r");
+  FILE *fp = fopen (file, "rb");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
@@ -1900,7 +1903,7 @@ uint8_image_band_store(UInt8Image *self, const char *file,
     asfPrintStatus("Storing band ...\n");
 
   // Open the file to write to.
-  FILE *fp = fopen (file, append_flag ? "a" : "w");
+  FILE *fp = fopen (file, append_flag ? "ab" : "wb");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
@@ -2010,7 +2013,7 @@ uint8_image_export_as_jpeg (UInt8Image *self, const char *file,
   jpeg_create_compress (&cinfo);
 
   // Open output file.
-  FILE *fp = fopen (file, "w");
+  FILE *fp = fopen (file, "wb");
   if ( fp == NULL ) { perror ("error opening file"); }
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
@@ -2121,6 +2124,13 @@ uint8_image_free (UInt8Image *self)
   }
 
   g_free (self->cache);
+
+  if (self->tile_file_name) {
+#ifdef win32
+     unlink_tmp_file(self->tile_file_name->str);
+     g_string_free(self->tile_file_name, TRUE);
+#endif
+  }
 
   g_free (self);
 }

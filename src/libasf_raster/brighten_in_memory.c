@@ -58,7 +58,7 @@ main (int argc, char **argv)
   }
 
   // Store the output image data.
-  FILE *od_stream = fopen (output_data_file->str, "w");
+  FILE *od_stream = fopen (output_data_file->str, "wb");
   g_assert (od_stream != NULL);
   int return_code = gsl_matrix_float_fwrite (od_stream, od);
   g_assert (return_code == GSL_SUCCESS);

@@ -61,13 +61,13 @@ G_LOCK_DEFINE_STATIC (signal_block_activity);
 // location which hopefully has enough free space to serve as a block
 // cache.
 static FILE *
-initialize_tile_cache_file (GString *tile_file_name)
+initialize_tile_cache_file (GString **tile_file_name)
 {
   // Create the temporary tile oriented storage file.  This gets
   // filled in in different ways depending on which creation routine
   // we are using.
-  g_assert(tile_file_name == NULL);
-  tile_file_name = g_string_new ("");
+  g_assert(*tile_file_name == NULL);
+  *tile_file_name = g_string_new ("");
 
   // Here we do a slightly weird thing: if the current directory is
   // writable, we create a temporary file in the current directory.
@@ -83,7 +83,7 @@ initialize_tile_cache_file (GString *tile_file_name)
   g_assert (sizeof (long) >= sizeof (pid_t));
 #endif
 
-  g_string_append_printf (tile_file_name,
+  g_string_append_printf (*tile_file_name,
                           ".float_image_tile_file_%ld_%lu",
                           (long) getpid (),
                           current_tile_file_number);
@@ -111,7 +111,7 @@ initialize_tile_cache_file (GString *tile_file_name)
 #endif
 
   // now open new tile file in the tmp dir
-  FILE *tile_file = fopen_tmp_file (tile_file_name->str, "w+b");
+  FILE *tile_file = fopen_tmp_file ((*tile_file_name)->str, "w+b");
   if ( tile_file == NULL ) {
     if ( errno != EACCES ) {
       g_warning ("couldn't create file in tmp directory (%s), and it wasn't"
@@ -129,7 +129,7 @@ initialize_tile_cache_file (GString *tile_file_name)
   else {
     // the open-then-delete trick does not seem to work on MinGW
 #ifndef win32
-    return_code = unlink_tmp_file (tile_file_name->str);
+    return_code = unlink_tmp_file ((*tile_file_name)->str);
     g_assert (return_code == 0);
 #endif
   }
@@ -275,7 +275,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
 
   // Get a new empty tile cache file pointer.
   self->tile_file_name = NULL;
-  self->tile_file = initialize_tile_cache_file (self->tile_file_name);
+  self->tile_file = initialize_tile_cache_file (&(self->tile_file_name));
 
   // Objects are born with one reference.
   self->reference_count = 1;
@@ -351,7 +351,7 @@ float_image_thaw (FILE *file_pointer)
   else {
     self->tile_queue = g_queue_new ();
     self->tile_file_name = NULL;
-    self->tile_file = initialize_tile_cache_file (self->tile_file_name);
+    self->tile_file = initialize_tile_cache_file (&(self->tile_file_name));
     float *buffer = g_new (float, self->tile_area);
     size_t ii;
     for ( ii = 0 ; ii < self->tile_count ; ii++ ) {

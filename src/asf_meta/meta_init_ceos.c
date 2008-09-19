@@ -3077,7 +3077,7 @@ double get_firstTime (const char *fName)
    int length;
    char *buff;
 
-   fp = FOPEN(fName, "r");
+   fp = FOPEN(fName, "rb");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
    length = bigInt32(hdr.recsiz) - (sizeof(struct RHEADER)
@@ -3122,7 +3122,7 @@ char *get_polarization (const char *fName)
 
    polarization = (char *) MALLOC(sizeof(char)*3);
 
-   fp = FOPEN(fName, "r");
+   fp = FOPEN(fName, "rb");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
    buff = (char *) MALLOC(sizeof(char)*(length+5));
@@ -3154,7 +3154,7 @@ int get_alos_band_number(const char *fName)
   int length;
   char *buff;
 
-  fp = FOPEN(fName, "r");
+  fp = FOPEN(fName, "rb");
   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
   length = bigInt32(hdr.recsiz)-12;
   buff = (char *) MALLOC(sizeof(char)*(length+5));
@@ -3176,7 +3176,7 @@ double get_chirp_rate (const char *fName)
    int length;
    char *buff;
 
-   fp = FOPEN(fName, "r");
+   fp = FOPEN(fName, "rb");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
    buff = (char *) MALLOC(sizeof(char)*(length+5));
@@ -3198,7 +3198,7 @@ double get_sensor_orientation (const char *fName)
    int length;
    char *buff;
 
-   fp = FOPEN(fName, "r");
+   fp = FOPEN(fName, "rb");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
    buff = (char *) MALLOC(sizeof(char)*(length+5));

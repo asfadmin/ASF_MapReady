@@ -149,7 +149,7 @@ banded_float_image_export_as_jpeg(BandedFloatImage *self, const char *output_nam
   cinfo.err = jpeg_std_error (&jerr);
   jpeg_create_compress (&cinfo);
 
-  FILE *ofp = fopen (output_name, "w");
+  FILE *ofp = fopen (output_name, "wb");
   if ( ofp == NULL ) {
     asfPrintError("Open of %s for writing failed: %s",
                   output_name, strerror(errno));

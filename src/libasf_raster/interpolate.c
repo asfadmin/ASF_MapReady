@@ -54,31 +54,32 @@ INPUT: interpolation  - interpolation method (nearest neighbor, bilinear, sinc)
 //
 // If the reflected indicies are still outside the image, an exception
 // is triggered.
-static float
-get_pixel_with_reflection (float *inbuf, int nSamples, int nLines, int sample,
-			   int line)
-{
-  int ii = sample;		// Convenience alias.
-  int jj = line;		// Convenience alias.
-  // Handle reflection at image edges.
-  if ( G_UNLIKELY (ii < 0) ) { 
-    ii = -ii; 
-  }
-  else if ( G_UNLIKELY (ii >= nSamples) ) { 
-    ii = ii - (ii - nSamples + 1) - 1; 
-  }
-  if ( G_UNLIKELY (jj < 0) ) { 
-    jj = -jj; 
-  }
-  else if ( G_UNLIKELY (jj >= nLines) ) { 
-    jj = jj - (jj - nLines + 1) - 1; 
-  }
-  // Now we better be in the image.
-  assert (ii >= 0 && ii < nSamples);
-  assert (jj >= 0 && jj < nLines);
 
-  return inbuf[nSamples * jj + ii];
-}
+//static float
+//get_pixel_with_reflection (float *inbuf, int nSamples, int nLines, int sample,
+//			   int line)
+//{
+//  int ii = sample;		// Convenience alias.
+//  int jj = line;		// Convenience alias.
+//  // Handle reflection at image edges.
+//  if ( G_UNLIKELY (ii < 0) ) { 
+//    ii = -ii; 
+//  }
+//  else if ( G_UNLIKELY (ii >= nSamples) ) { 
+//    ii = ii - (ii - nSamples + 1) - 1; 
+//  }
+//  if ( G_UNLIKELY (jj < 0) ) { 
+//    jj = -jj; 
+//  }
+//  else if ( G_UNLIKELY (jj >= nLines) ) { 
+//    jj = jj - (jj - nLines + 1) - 1; 
+//  }
+//  // Now we better be in the image.
+//  assert (ii >= 0 && ii < nSamples);
+//  assert (jj >= 0 && jj < nLines);
+//
+//  return inbuf[nSamples * jj + ii];
+//}
 
 void samples2coefficients(FloatImage *inbuf, char dimension)
 {

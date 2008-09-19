@@ -55,6 +55,7 @@ typedef struct {
   uint8_t **tile_addresses;	// Addresss of individual tiles in the cache.
   GQueue *tile_queue;		// Queue of tile offsets kept in load order.
   FILE *tile_file;              // File with tiles stored contiguously.
+  GString *tile_file_name;  // Filename of the tile file
 } UInt8Image;
 
 ///////////////////////////////////////////////////////////////////////////////
