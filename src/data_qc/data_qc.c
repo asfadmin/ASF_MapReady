@@ -262,6 +262,113 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	// Determine the specified image file range
 	beam = dssr->ant_beam_num;
 	
+	/*
+	// Check for image data files based on beam information
+	if ((beam >= 0 && beam <= 17) ||
+	    (beam >= 84 && beam <= 101)) { // HH polarization
+	  sprintf(test_name, "IMG-HH-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else
+	    fclose(fp);
+	}
+	else if ((beam >= 18 && beam <= 35) ||
+		 (beam >= 102 && beam <= 119)) { // VV polarization
+	  sprintf(test_name, "IMG-VV-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else
+	    fclose(fp);
+	}
+	else if (beam >= 36 && beam <= 53) { // HH+HV polarization
+	  sprintf(test_name, "IMG-HH-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else
+	    fclose(fp);
+	  sprintf(test_name, "IMG-HV-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else 
+	    fclose(fp);
+	}
+	else if (beam >= 54 && beam <= 71) { // VV+VH polarization
+	  sprintf(test_name, "IMG-VV-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else
+	    fclose(fp);
+	  sprintf(test_name, "IMG-VH-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else 
+	    fclose(fp);
+	}
+	// FIXME: Don't know the naming convention for ScanSAR
+	else if (beam >= 120 && beam <= 131) { // HH+HV+HV+HH polarization
+	  sprintf(test_name, "IMG-HH-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else
+	    fclose(fp);
+	  sprintf(test_name, "IMG-HV-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else 
+	    fclose(fp);
+	  sprintf(test_name, "IMG-VH-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else
+	    fclose(fp);
+	  sprintf(test_name, "IMG-VV-%s", basename);
+	  fp = fopen(test_name, "r"); 
+	  if (!fp) {
+	    sprintf(tmp, "Missing image data file (%s)!\n", test_name);
+	    strcat(reason, tmp);
+	    status = FALSE;
+	  }
+	  else 
+	    fclose(fp);
+	}
+	*/
+
 	// Check for trailer file
 	sprintf(test_name, "TRL-%s", basename);
 	fp = fopen(test_name, "r"); 
@@ -301,7 +408,6 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	}
 	
 	// Clean up
-	FREE(tmp);
 	FREE(basename);
 	FREE(test_name);
       }
