@@ -143,8 +143,6 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd)
   seconds_diff /= 2.0;
   add_time(seconds_diff, &ymdCenterDate, &hmsCenterTime);
   time = timeSince(&ymdCenterDate, &hmsCenterTime, 1900);
-//  date_ymd2jd(&ymdFirstDate, &jd);
-//  centerTime = seconds_diff + date_getMJD(&jd) * 3600 * 24;
   date_ymd2jd(&ymdCenterDate, &jd);
   centerTime = date_hms2sec(&hmsCenterTime) + date_getMJD(&jd) * 3600 * 24;
 
