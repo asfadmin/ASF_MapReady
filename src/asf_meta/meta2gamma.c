@@ -21,15 +21,15 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
   strcpy(meta->general->sensor_name, MAGIC_UNSET_STRING); // Sensor name not available in ISP metadata
   strcpy(meta->general->mode, MAGIC_UNSET_STRING); // Mode not available in ISP metadata
   strcpy(meta->general->processor, MAGIC_UNSET_STRING); // Processor not available in ISP metadata
-  if (strncmp(uc(gamma->image_format), "FCOMPLEX", 8) == 0)
+  if (strncmp_case(gamma->image_format, "FCOMPLEX", 8) == 0)
     meta->general->data_type = COMPLEX_REAL32;
-  else if (strncmp(uc(gamma->image_format), "SCOMPLEX", 8) == 0)
+  else if (strncmp_case(gamma->image_format, "SCOMPLEX", 8) == 0)
     meta->general->data_type = COMPLEX_INTEGER16;
-  else if (strncmp(uc(gamma->image_format), "FLOAT", 8) == 0)
+  else if (strncmp_case(gamma->image_format, "FLOAT", 8) == 0)
     meta->general->data_type = REAL32;
-  else if (strncmp(uc(gamma->image_format), "SHORT", 8) == 0)
+  else if (strncmp_case(gamma->image_format, "SHORT", 8) == 0)
     meta->general->data_type = INTEGER16;
-  else if (strncmp(uc(gamma->image_format), "BYTE", 8) == 0)
+  else if (strncmp_case(gamma->image_format, "BYTE", 8) == 0)
     meta->general->data_type = BYTE;
   if (strcmp(gamma->image_data_type, "UNKNOWN") == 0) {
     switch(meta->general->data_type) 
@@ -44,28 +44,30 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
       }
   }
   else {
-    if (strncmp(uc(gamma->image_data_type), "RAW_IMAGE", 9) == 0)
+    if (strncmp_case(gamma->image_data_type, "RAW_IMAGE", 9) == 0)
       meta->general->image_data_type = RAW_IMAGE;
-    if (strncmp(uc(gamma->image_data_type), "COMPLEX_IMAGE", 13) == 0)
+    if (strncmp_case(gamma->image_data_type, "COMPLEX_IMAGE", 13) == 0)
       meta->general->image_data_type = COMPLEX_IMAGE;
-    if (strncmp(uc(gamma->image_data_type), "AMPLITUDE_IMAGE", 15) == 0)
+    if (strncmp_case(gamma->image_data_type, "AMPLITUDE_IMAGE", 15) == 0)
       meta->general->image_data_type = AMPLITUDE_IMAGE;
-    if (strncmp(uc(gamma->image_data_type), "PHASE_IMAGE", 11) == 0)
+    if (strncmp_case(gamma->image_data_type, "PHASE_IMAGE", 11) == 0)
       meta->general->image_data_type = PHASE_IMAGE;
-    if (strncmp(uc(gamma->image_data_type), "COHERENCE_IMAGE", 15) == 0)
+    if (strncmp_case(gamma->image_data_type, "COHERENCE_IMAGE", 15) == 0)
       meta->general->image_data_type = COHERENCE_IMAGE;
-    if (strncmp(uc(gamma->image_data_type), "POLARIMETRIC_IMAGE", 18) == 0)
+    if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_IMAGE", 18) == 0)
       meta->general->image_data_type = POLARIMETRIC_IMAGE;
-    if (strncmp(uc(gamma->image_data_type), "LUT_IMAGE", 9) == 0)
+    if (strncmp_case(gamma->image_data_type, "LUT_IMAGE", 9) == 0)
       meta->general->image_data_type = LUT_IMAGE;
-    if (strncmp(uc(gamma->image_data_type), "ELEVATION", 9) == 0)
+    if (strncmp_case(gamma->image_data_type, "ELEVATION", 9) == 0)
       meta->general->image_data_type = ELEVATION;
-    if (strncmp(uc(gamma->image_data_type), "DEM", 3) == 0)
+    if (strncmp_case(gamma->image_data_type, "DEM", 3) == 0)
       meta->general->image_data_type = DEM;
-    if (strncmp(uc(gamma->image_data_type), "IMAGE", 5) == 0)
+    if (strncmp_case(gamma->image_data_type, "IMAGE", 5) == 0)
       meta->general->image_data_type = IMAGE;
-    if (strncmp(uc(gamma->image_data_type), "MASK", 4) == 0)
+    if (strncmp_case(gamma->image_data_type, "MASK", 4) == 0)
       meta->general->image_data_type = MASK;
+    if (strncmp_case(gamma->image_data_type, "IMAGE_LAYER_STACK", 17) == 0)
+      meta->general->image_data_type = IMAGE_LAYER_STACK;
   }
   strcpy(meta->general->system, meta_get_system());
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d",
@@ -105,7 +107,7 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
     meta->sar->look_direction = 'R';
   else
     meta->sar->look_direction = 'L';
-  meta->sar->look_count = gamma->azimuth_looks;
+  meta->sar->look_count = gamma->azimuth_looks / gamma->range_looks;
   meta->sar->deskewed = gamma->azimuth_deskew;
   meta->sar->original_line_count = meta->general->line_count;
   meta->sar->original_sample_count = meta->general->sample_count;

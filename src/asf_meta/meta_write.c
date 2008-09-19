@@ -159,8 +159,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
         meta_put_string(fp,"image_data_type:","MASK",comment);
         break;
       case SIMULATED_IMAGE:
-    meta_put_string(fp,"image_data_type:","SIMULATED_IMAGE",comment);
-    break;
+	meta_put_string(fp,"image_data_type:","SIMULATED_IMAGE",comment);
+	break;
+      case IMAGE_LAYER_STACK:
+        meta_put_string(fp, "image_data_type:","IMAGE_LAYER_STACK",comment);
+	break;
       default:
         meta_put_string(fp,"image_data_type:",MAGIC_UNSET_STRING,comment);
         break;

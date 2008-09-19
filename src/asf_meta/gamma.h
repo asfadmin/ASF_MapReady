@@ -181,6 +181,9 @@ typedef struct {
 } gamma_msp;
 
 // Function prototypes
+meta_parameters *meta_read_gamma_isp(const char *inName,
+                                     const char *data_type,
+                                     const char *image_data_type);
 meta_parameters* gamma_isp2meta(gamma_isp *gamma);
 meta_parameters* gamma_msp2meta(gamma_msp *gamma);
 //gamma_isp* meta2gamma_isp(meta_parameters *meta);

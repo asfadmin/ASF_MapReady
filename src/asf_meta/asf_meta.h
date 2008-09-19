@@ -89,7 +89,8 @@ typedef enum {
   DEM,
   IMAGE,
   SIMULATED_IMAGE,
-  MASK
+  MASK,
+  IMAGE_LAYER_STACK
 } image_data_type_t;
 
 typedef enum {
