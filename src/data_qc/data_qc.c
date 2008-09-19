@@ -216,85 +216,97 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
   struct trl_file_des_rec *tfdr=NULL;
   unsigned char *buff;
   char **dataName=NULL, **metaName=NULL, *trailerName=NULL, *volumeName=NULL;
-  char *workreport, reason[1024]="", tmp[255];
-  int ii, nBands, trailer, total, estimated_size, actual_size, alos=FALSE;
-  int level, beam, spec=TRUE, status=TRUE;
+  char *workreport=NULL, reason[1024]="", tmp[255];
+  int ii, nBands=0, trailer, total, estimated_size, actual_size, alos=FALSE;
+  int level, beam, spec=TRUE, status=TRUE, no_leader=FALSE;
 
   // Verify that the essential files exist. Require_ceos_pair takes care 
   // of the essentials: data file, leader/trailer file
-  require_ceos_pair(ceosName, &dataName, &metaName, &nBands, &trailer);
+  // But first we need to check whether the leader file exists.
+  ceos_metadata_ext_t ret =
+    get_ceos_metadata_name(ceosName, &metaName, &trailer);
+  if (!ret) {
+    strcat(reason, "Missing leader file!\nAborted all other tests.\n");
+    status = FALSE;
+    no_leader = TRUE;
+    trailer = -1;
+  }
+  else
+    require_ceos_pair(ceosName, &dataName, &metaName, &nBands, &trailer);
 
   if (!essential) {
     // Check for ALOS files
     // This check currently fails for optical data as it assumes the existence
     // of a dataset summary record (not available for optical data).
-    dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
-    if (get_dssr((const char *)metaName[0], dssr) == -1) {
-      strcat(reason, "Leader file corrupted\n");
-      status = FALSE;
+    if (!no_leader) {
+      dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+      if (get_dssr((const char *)metaName[0], dssr) == -1) {
+	strcat(reason, "Leader file corrupted\n");
+	status = FALSE;
+      }
+      if (strncmp_case(dssr->mission_id, "ALOS", 4) == 0) {
+	char *tmp = (char *) MALLOC(sizeof(char)*512);
+	tmp = get_basename(ceosName);
+	char *test_name = (char *) MALLOC(sizeof(char)*512);
+	char *basename = strip_alos_prep(tmp);
+	alos = TRUE;
+	
+	// Check what level we are dealing with
+	if (strncmp(dssr->lev_code, "1.0", 3) == 0)
+	  level = 10;
+	else if (strncmp(dssr->lev_code, "1.1", 3) == 0)
+	  level = 11;
+	else if (strncmp(dssr->lev_code, "1.5", 3) == 0)
+	  level = 15;
+	
+	// Determine the specified image file range
+	beam = dssr->ant_beam_num;
+	
+	// Check for trailer file
+	sprintf(test_name, "TRL-%s", basename);
+	fp = fopen(test_name, "r"); 
+	if (fp) {
+	  fclose(fp);
+	  trailerName = (char *) MALLOC(sizeof(char)*1024);
+	  sprintf(trailerName, "%s", test_name);
+	}
+	else {
+	  strcat(reason, "Missing trailer file!\n");
+	  status = FALSE;
+	}
+	
+	// Check for volume file
+	sprintf(test_name, "VOL-%s", basename);
+	fp = fopen(test_name, "r");
+	if (fp) {
+	  fclose(fp);
+	  volumeName = (char *) MALLOC(sizeof(char)*1024);
+	  sprintf(volumeName, "%s", test_name);
+	}
+	else {
+	  strcat(reason, "Missing volume file!\n");
+	  status = FALSE;
+	}
+	
+	// Check for workreport file
+	fp = fopen("workreport", "r");
+	if (fp){
+	  fclose(fp);
+	  workreport = (char *) MALLOC(sizeof(char)*15);
+	  strcpy(workreport, "workreport");
+	}
+	else {
+	  strcat(reason, "Missing workreport file!\n");
+	  status = FALSE;
+	}
+	
+	// Clean up
+	FREE(tmp);
+	FREE(basename);
+	FREE(test_name);
+      }
+      FREE(dssr);
     }
-    if (strncmp_case(dssr->mission_id, "ALOS", 4) == 0) {
-      char *tmp = (char *) MALLOC(sizeof(char)*512);
-      tmp = get_basename(ceosName);
-      char *test_name = (char *) MALLOC(sizeof(char)*512);
-      char *basename = strip_alos_prep(tmp);
-      alos = TRUE;
-      
-      // Check what level we are dealing with
-      if (strncmp(dssr->lev_code, "1.0", 3) == 0)
-	level = 10;
-      else if (strncmp(dssr->lev_code, "1.1", 3) == 0)
-	level = 11;
-      else if (strncmp(dssr->lev_code, "1.5", 3) == 0)
-	level = 15;
-      
-      // Determine the specified image file range
-      beam = dssr->ant_beam_num;
-      
-      // Check for trailer file
-      sprintf(test_name, "TRL-%s", basename);
-      fp = fopen(test_name, "r"); 
-      if (fp) {
-	fclose(fp);
-	trailerName = (char *) MALLOC(sizeof(char)*1024);
-	sprintf(trailerName, "%s", test_name);
-      }
-      else {
-	strcat(reason, "Missing trailer file!\n");
-	status = FALSE;
-      }
-      
-      // Check for volume file
-      sprintf(test_name, "VOL-%s", basename);
-      fp = fopen(test_name, "r");
-      if (fp) {
-	fclose(fp);
-	volumeName = (char *) MALLOC(sizeof(char)*1024);
-	sprintf(volumeName, "%s", test_name);
-      }
-      else {
-	strcat(reason, "Missing volume file!\n");
-	status = FALSE;
-      }
-      
-      // Check for workreport file
-      fp = fopen("workreport", "r");
-      if (fp){
-	fclose(fp);
-	workreport = (char *) MALLOC(sizeof(char)*15);
-	strcpy(workreport, "workreport");
-      }
-      else {
-	strcat(reason, "Missing workreport file!\n");
-	status = FALSE;
-      }
-      
-      // Clean up
-      FREE(tmp);
-      FREE(basename);
-      FREE(test_name);
-    }
-    FREE(dssr);
   }
 
   // Check the image data file size
@@ -362,6 +374,8 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	spec_max = 459465032; // 438.18 MB
       }
       else {
+	sprintf(tmp, "No specs for beam index %d available\n", beam);
+	strcat(reason, tmp);
 	spec = FALSE;
       }
       if (spec && actual_size < spec_min) {
