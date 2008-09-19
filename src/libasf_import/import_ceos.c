@@ -1576,8 +1576,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   // Check whether image needs to be flipped
   if (meta->general->orbit_direction == 'D' &&
       (!meta->projection || meta->projection->type != SCANSAR_PROJECTION) &&
-      (strncmp(meta->general->processor, "CDPF", 4) == 0 ||
-       strncmp(meta->general->processor, "CSTARS", 6) == 0))
+      (strncmp_case(meta->general->processor, "CDPF", 4) == 0 ||
+       strncmp_case(meta->general->processor, "CSTARS", 6) == 0 ||
+       strncmp_case(meta->general->processor, "RSI", 3) == 0))
   {
     flip = TRUE;
   }
