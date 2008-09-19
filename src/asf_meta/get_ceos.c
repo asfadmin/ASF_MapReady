@@ -48,7 +48,7 @@ void dumpCeosRecord(const char *inName)
   require_ceos_metadata(inName, &metaName, &trailer);
 
   for (ii=0; ii<trailer+1; ii++) {
-    fp = FOPEN(metaName[ii], "r");
+    fp = FOPEN(metaName[ii], "rb");
     total = 0;
 
     printf("\nFile: %s\n", metaName[ii]);
@@ -167,7 +167,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 
   for (ii=0; ii<trailer+1; ii++) {
     size = fileSize(metaName[ii]);
-    fp=FOPEN(metaName[ii], "r");
+    fp=FOPEN(metaName[ii], "rb");
     total = 0;
     while (1==fread(&bufhdr, 12, 1, fp)) {
       int itype,subtype[3],rec_seq,length,mallocBytes;
