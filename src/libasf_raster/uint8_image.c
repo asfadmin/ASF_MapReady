@@ -65,7 +65,7 @@ initialize_tile_cache_file (GString **tile_file_name)
   // Create the temporary tile oriented storage file.  This gets
   // filled in in different ways depending on which creation routine
   // we are using.
-  g_assert(*tile_file_name = NULL);
+  g_assert(*tile_file_name == NULL);
   *tile_file_name = g_string_new ("");
 
   // Here we do a slightly weird thing: if the current directory is
@@ -125,7 +125,7 @@ initialize_tile_cache_file (GString **tile_file_name)
   }
   else {
 #ifndef win32
-    return_code = unlink (tile_file_name->str);
+    return_code = unlink_tmp_file ((*tile_file_name)->str);
     g_assert (return_code == 0);
 #endif
   }
