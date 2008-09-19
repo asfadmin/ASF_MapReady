@@ -40,16 +40,17 @@ typedef struct {
   size_t size_x, size_y;    // Image dimensions.
   size_t cache_space;       // Memory cache space in bytes.
   size_t cache_area;        // Memory cache area in pixels.
-  size_t tile_size;     // Tile size in pixels on a side.
+  size_t tile_size;         // Tile size in pixels on a side.
   size_t cache_size_in_tiles;   // Number of tiles in cache.
   size_t tile_count_x;      // Number of tiles in image in x direction.
   size_t tile_count_y;      // Number of tiles in image in y direction.
   size_t tile_count;        // Total number of tiles in image.
-  size_t tile_area;             // Area of a tile, in pixels.
-  float *cache;                 // Memory cache.
+  size_t tile_area;         // Area of a tile, in pixels.
+  float *cache;             // Memory cache.
   float **tile_addresses;   // Addresss of individual tiles in the cache.
   GQueue *tile_queue;       // Queue of tile offsets kept in load order.
-  FILE *tile_file;              // File with tiles stored contiguously.
+  FILE *tile_file;          // File with tiles stored contiguously.
+  GString *tile_file_name;  // Name of the tile file
   int reference_count;      // For optional reference counting.
 } FloatImage;
 

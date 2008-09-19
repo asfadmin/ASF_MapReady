@@ -61,13 +61,13 @@ G_LOCK_DEFINE_STATIC (signal_block_activity);
 // location which hopefully has enough free space to serve as a block
 // cache.
 static FILE *
-initialize_tile_cache_file (void)
+initialize_tile_cache_file (GString *tile_file_name)
 {
   // Create the temporary tile oriented storage file.  This gets
   // filled in in different ways depending on which creation routine
   // we are using.
-  GString *tile_file_name = g_string_new ("");
-  //gchar *current_dir = g_get_current_dir ();
+  g_assert(tile_file_name == NULL);
+  tile_file_name = g_string_new ("");
 
   // Here we do a slightly weird thing: if the current directory is
   // writable, we create a temporary file in the current directory.
@@ -139,8 +139,6 @@ initialize_tile_cache_file (void)
   return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
   G_UNLOCK (signal_block_activity);
 #endif
-
-  g_string_free (tile_file_name, TRUE);
 
   return tile_file;
 }
@@ -276,7 +274,8 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   self->tile_queue = g_queue_new ();
 
   // Get a new empty tile cache file pointer.
-  self->tile_file = initialize_tile_cache_file ();
+  self->tile_file_name = NULL;
+  self->tile_file = initialize_tile_cache_file (self->tile_file_name);
 
   // Objects are born with one reference.
   self->reference_count = 1;
@@ -351,7 +350,8 @@ float_image_thaw (FILE *file_pointer)
   // remainder of the serialized version is the tile block cache.
   else {
     self->tile_queue = g_queue_new ();
-    self->tile_file = initialize_tile_cache_file ();
+    self->tile_file_name = NULL;
+    self->tile_file = initialize_tile_cache_file (self->tile_file_name);
     float *buffer = g_new (float, self->tile_area);
     size_t ii;
     for ( ii = 0 ; ii < self->tile_count ; ii++ ) {
@@ -2683,6 +2683,18 @@ float_image_free (FloatImage *self)
   }
 
   g_free (self->cache);
+
+  if (self->tile_file_name) {
+
+      // On Windows (mingw), we delete the file now, since it isn't
+      // automatically deleted on close.
+#ifdef win32
+      int return_code = unlink_tmp_file (self->tile_file_name->str);
+      g_assert (return_code == 0);
+#endif
+
+      g_string_free(self->tile_file_name, TRUE);
+  }
 
   g_free (self);
 }
