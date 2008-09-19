@@ -432,9 +432,18 @@ AC_SUBST(DOCDIR)
 AC_OUTPUT([
 Makefile
 include/config.h
-external/Makefile
-external/work_dir/libgeotiff/Makefile
 ])
+
+if test -d external ; then
+	AC_OUTPUT([
+		external/Makefile
+		external/work_dir/libgeotiff/Makefile
+	])
+else
+	echo "WARNING: asf_tools/external directory was not found!"
+	echo "         Be aware that the build may not complete without"
+	echo "         this resource."
+fi
 
 echo "########### Automatic configuration complete ###########"
 directory=${asfDir}/bin/
