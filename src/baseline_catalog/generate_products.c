@@ -19,7 +19,7 @@ void generate_products(char *output_dir, struct base_pair *pairs, int nPairs)
   DBFHandle dbase=NULL;
   SHPHandle shape=NULL;
   FILE *fpDB=NULL, *fpText=NULL, *fpKml=NULL;
-  char dbFile[255], textFile[255], kmlFile[255], shapeFile[255]; 
+  char dbFile[255], textFile[255], kmlFile[255], shapeFile[255];
   int i, old_orbit=-99;
 
   if (opendir(output_dir) == NULL)

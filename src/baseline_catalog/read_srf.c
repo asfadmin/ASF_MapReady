@@ -45,6 +45,7 @@ void read_srf(char *input_dir, char *mode, int track,
     if (file_size > 2000 && strlen(file_name) == 19 && strstr(file_name, mode)
 	&& track == orbit-((orbit-84)/343)*343-84) {
       sprintf(files[m], "%s", file_name);
+      printf("File: %s, orbit: %d, size: %d\n", file_name, orbit, file_size);
       m++; 
     }
   }

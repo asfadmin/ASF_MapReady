@@ -7,7 +7,7 @@ void baseline_catalog(char *sensor, char *beam_mode, int orbit,
 {
   struct dirent *dp;
   DIR *dir;
-  FILE *fpTxt, *fpKml, *fpShape;
+  FILE *fpTxt, *fpKml, *fpShape, *fpDB;
   int i, k, l, n, track, nOrbits, nPairs, years, *months, *orbits, found, index;
   report_level_t report=REPORT_LEVEL_STATUS;
   struct base_pair *base_pairs=NULL;
@@ -35,22 +35,25 @@ void baseline_catalog(char *sensor, char *beam_mode, int orbit,
   // Step through the archive track by track - save plenty of memory
   for (track=1; track<=343; track++) {
 
-    printf("\rTrack: %d", track);
+    asfPrintStatus("Track: %d\n", track);
     nOrbits = 0;
     nPairs = 0;
 
     // Get a list of recent SRFs
+    asfPrintStatus("Reading SRFs ...\n");
     read_srf(input_dir, beam_mode, track, &srf_orbit, &nOrbits);
 
     // Determine baselines
-    if (nOrbits)
+    if (nOrbits) {
+      asfPrintStatus("Determining baselines ...\n");
       determine_baseline(sensor, beam_mode, track, orbit, srf_orbit, nOrbits,
 			 &base_pairs, &nPairs);
+    }
 
     // Generate products
     if (nPairs) {
+      asfPrintStatus("Generate products ...\n\n");
       generate_products(output_dir, base_pairs, nPairs);
-      /*
       for (i=0; i<years; i++)
 	for (k=0; k<12; k++) {
 	  nOrbits = 0;
@@ -74,9 +77,8 @@ void baseline_catalog(char *sensor, char *beam_mode, int orbit,
 	    }
 	  }
 	}
-      */
     }
-
+    
     // Clean up before last track
     if (srf_orbit)
       FREE(srf_orbit);
@@ -86,12 +88,12 @@ void baseline_catalog(char *sensor, char *beam_mode, int orbit,
     base_pairs = NULL;
   }
 
-  /*
   // Pack text, KML and shape files for entire mode
   chdir(output_dir);
   fpTxt = FOPEN("txt.lst", "w");
   fpKml = FOPEN("kml.lst", "w");
   fpShape = FOPEN("shape.lst", "w");
+  fpDB = FOPEN("db.lst", "w");
   dir = opendir(output_dir);
   while ((dp = readdir(dir)) != NULL) {
     if (strstr(dp->d_name, ".txt"))
@@ -100,24 +102,35 @@ void baseline_catalog(char *sensor, char *beam_mode, int orbit,
       fprintf(fpKml, "%s\n", dp->d_name);
     if (strstr(dp->d_name, ".tgz"))
       fprintf(fpShape, "%s\n", dp->d_name);
+    if (strstr(dp->d_name, ".db"))
+      fprintf(fpDB, "%s\n", dp->d_name);
   }
   closedir(dir);
   FCLOSE(fpTxt);
   FCLOSE(fpKml);
   FCLOSE(fpShape);
+  FCLOSE(fpDB);
+  printf("\nZipping text files ...\n");
   sprintf(cmd, "tar czf %s_%s_txt.tgz -T txt.lst", sensor, beam_mode);
   asfSystem(cmd);
+  printf("\nZipping KML files ...\n");
   sprintf(cmd, "tar czf %s_%s_kml.tgz -T kml.lst", sensor, beam_mode);
   asfSystem(cmd);
+  printf("\nZipping shape files ...\n");
   sprintf(cmd, "tar czf %s_%s_shape.tgz -T shape.lst", sensor, beam_mode);
   asfSystem(cmd);
-  sprintf(cmd, "rm txt.lst kml.lst shape.lst");
+  printf("\nZipping database files ...\n");
+  sprintf(cmd, "tar czf %s_%s_db.tgz -T db.lst", sensor, beam_mode);
+  asfSystem(cmd);
+  sprintf(cmd, "rm txt.lst kml.lst shape.lst db.lst");
   asfSystem(cmd);
 
   // Generate HTML index page
+  /*
   month2html(output_dir, sensor, beam_mode, orbits);
   mode2html(output_dir, sensor, beam_mode, months);
   update_index(output_dir);
   */
+
   printf("\n\n");
 }
