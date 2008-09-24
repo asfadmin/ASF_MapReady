@@ -1,3 +1,4 @@
+#include "winshl.h"
 #include "asf_view.h"
 #include "shapefil.h"
 #include "asf_vector.h"

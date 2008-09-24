@@ -30,9 +30,9 @@ ISSUES:
 #include <uint8_image.h>
 #include <proj.h>
 #include <libasf_proj.h>
+#include "asf_jpeg.h"
 #include "asf_tiff.h"
 #include <png.h>
-#include <jpeglib.h>
 #include <gsl/gsl_math.h>
 #include "diffimage_tolerances.h"
 #include "geotiff_support.h"

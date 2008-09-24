@@ -1,13 +1,4 @@
-#ifdef win32
-#define BYTE __byte
-#define POINT __point
-#include <windows.h>
-#include <shellapi.h>
-#include <shlobj.h>
-#undef BYTE
-#undef POINT
-#endif
-
+#include "winshl.h"
 #include "asf_view.h"
 
 #ifdef win32

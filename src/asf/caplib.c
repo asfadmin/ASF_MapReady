@@ -458,15 +458,16 @@ int FSEEK(FILE *stream,int offset,int ptrname)
 
 int FSEEK64(FILE *stream,long long offset,int ptrname)
 {
-    int ret;
+    int ret=-1;
     if (stream==NULL)
         programmer_error("NULL file pointer passed to FSEEK64.\n");
 
 #if defined(irix)
     ret=fseek64(stream,offset,ptrname);
-#elif defined(win32)
+#elif defined(cygwin)
     // On cygwin, the fseeko function is 64-bit ready
-    //ret=fseeko(stream,offset,ptrname);
+    ret=fseeko(stream,offset,ptrname);
+#elif defined(mingw)
     // On MinGW, use fseeko64 (Windows native)
     ret=fseeko64(stream,offset,ptrname);
 #else
@@ -491,15 +492,16 @@ int FSEEK64(FILE *stream,long long offset,int ptrname)
 
 long long FTELL64(FILE *stream)
 {
-    long long ret;
+    long long ret=-1;
     if (stream==NULL)
         programmer_error("NULL file pointer passed to FTELL64.\n");
 #if defined(irix)
     ret=(long long)ftell64(stream);
-#elif defined(win32)
+#elif defined(cygwin)
      /* Although there is a man page for ftello64 on Windows cygwin,
       * it appears that 64 bit ops are nont yet supported there */
-    //ret=(long long)ftello(stream);
+    ret=(long long)ftello(stream);
+#elif defined(mingw)
     /* MinGW points to the Microsoft ftello64 */
     ret = ftello64(stream);
 #else

@@ -1,3 +1,4 @@
+#include "winshl.h"
 #include "asf_view.h"
 
 // have to use static vars... actually, we probably should be using

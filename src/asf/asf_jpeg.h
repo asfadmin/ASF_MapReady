@@ -12,6 +12,12 @@
 #undef HAVE_STDLIB_H
 #endif
 
+#ifdef cygwin
+#ifdef HAVE_BOOLEAN
+#undef HAVE_BOOLEAN
+#endif
+#endif
+
 #include <jpeglib.h>
 
 #ifdef win32

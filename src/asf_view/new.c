@@ -1,3 +1,4 @@
+#include "winshl.h"
 #include "asf_view.h"
 
 extern int stats_calced;
