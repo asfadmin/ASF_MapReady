@@ -271,6 +271,8 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	  beam = 127;
 	if (meta->projection && meta->projection->type == SCANSAR_PROJECTION)
 	  beam = 80;
+	if (dssr->product_id[5] == 'S')
+	  beam = 80;
 	
 	// Check for image data files based on beam information
 	if ((beam >= 0 && beam <= 17) ||

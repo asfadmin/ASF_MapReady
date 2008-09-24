@@ -32,6 +32,7 @@ PROGRAM HISTORY:
 #include "spheroids.h"
 #include "meta_project.h"
 #include "frame_calc.h"
+#include "line_header.h"
 
 #ifndef MIN
 #  define MIN(a,b)  (((a) < (b)) ? (a) : (b))
@@ -1006,6 +1007,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   char buf[50], basename[512];
   char **dataName=NULL, **metaName=NULL;
   int ii, nBands, trailer;
+  double headerTime;
 
   dssr = &ceos->dssr;
   mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
@@ -1041,6 +1043,32 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
         meta->sar->azimuth_time_per_pixel =
             meta->general->y_pixel_size / swath_vel;
     }
+    /*
+    alos_processed_line_t *line_header;
+    julian_date jd1, jd2;
+    ymd_date ymd1, ymd2;
+    hms_time hms1, hms2;
+    line_header = read_alos_proc_line_header(dataName[0], 1);
+    double firstTime = (double) line_header->acq_msec / 1000;
+    jd1.year = line_header->acq_year;
+    jd1.jd = line_header->acq_day;
+    date_jd2ymd(&jd1, &ymd1);
+    date_sec2hms(firstTime, &hms1);
+    printf("firstTime: %lf\n", firstTime);
+    FREE(line_header);
+    line_header = 
+      read_alos_proc_line_header(dataName[0], meta->general->line_count-1);
+    double lastTime = (double) line_header->acq_msec / 1000;
+    jd2.year = line_header->acq_year;
+    jd2.jd = line_header->acq_day;
+    date_jd2ymd(&jd2, &ymd2);
+    date_sec2hms(lastTime, &hms2);
+    printf("lastTime: %lf\n", lastTime);
+    FREE(line_header);
+    double diff = date_difference(&ymd1, &hms1, &ymd2, &hms2);
+    headerTime = (lastTime - firstTime) / meta->general->line_count;
+    printf("test: %.10lf\n", diff / meta->general->line_count);
+    */
     ceos_init_stVec(in_fName,ceos,meta);
   }
   if (meta->general->orbit_direction == 'A')
@@ -1052,7 +1080,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   // For geocoded ALOS data, the doppler centroid fields are all zero.
   int is_geocoded = dssr->crt_dopcen[0] == 0.0 &&
       dssr->crt_dopcen[1] == 0.0 &&
-      dssr->crt_dopcen[2] == 0.0;
+      dssr->crt_dopcen[2] == 0.0 && ceos->product != RAW;
 
   // sanity check on the geocode test -- check the filename
   if (!is_geocoded && strncmp(metaName[0], "LED-", 4) == 0 &&
@@ -1079,14 +1107,14 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   }
 
   // SAR block
-  if (ceos->product == SLC)
+  if (ceos->product == SLC || ceos->product == RAW)
     meta->sar->image_type = 'S';
   else if (is_geocoded)
     meta->sar->image_type = 'P';
   else
     meta->sar->image_type = 'R';
   meta->sar->look_count = dssr->n_azilok;
-  if (ceos->product == SLC)
+  if (ceos->product == SLC || ceos->product == RAW)
     meta->sar->deskewed = 0;
   else
     meta->sar->deskewed = 1;
@@ -1105,7 +1133,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
                             meta->general->line_count/2,
                             meta->general->sample_count/2);
   }
-  if (ceos->product == SLC) {
+  if (ceos->product == SLC || ceos->product == RAW) {
     meta->sar->earth_radius =
       meta_get_earth_radius(meta,
           meta->general->line_count/2,
@@ -1133,6 +1161,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
         asfPrintStatus("From workreport: %.10f\n", workreport_atpp);
         asfPrintStatus("     Calculated: %.10f\n",
                        meta->sar->azimuth_time_per_pixel);
+	asfPrintStatus("    Line header: %.10f\n", headerTime);
         asfPrintStatus("Using workreport value.\n\n");
         meta->sar->azimuth_time_per_pixel = workreport_atpp;
     }
@@ -1140,6 +1169,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       asfPrintStatus("From Workreport: (not available)\n");
       asfPrintStatus("Calculated: %.10f\n\n",
                      meta->sar->azimuth_time_per_pixel);
+      asfPrintStatus("Line header: %.10f\n", headerTime);
     }
 
     // fix x_pixel_size & y_pixel_size values if needed
@@ -1208,7 +1238,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   }
 
   // Transformation block
-  if (ceos->product != SLC) {
+  if (ceos->product != SLC && ceos->product != RAW) {
     struct trl_file_des_rec tfdr;
     get_tfdr((char*)in_fName, &tfdr);
     struct JAXA_FACDR facdr;
@@ -1254,7 +1284,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       meta->transform->map2ls_b[ii] = facdr.b_map[ii];
     }
   }
-  else {
+  else if (ceos->product == SLC) {
     // SLC images -- no transform block
     // See if we can get better geolocations using the workreport
     double time_shift, slant_shift;
@@ -1304,7 +1334,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   // Location block
   if (!meta->location)
     meta->location = meta_location_init();
-  if (ceos->product != SLC) {
+  if (ceos->product != SLC && ceos->product != RAW) {
     if (meta->general->orbit_direction == 'A') {
       meta->location->lat_start_near_range = mpdr->blclat;
       meta->location->lon_start_near_range = mpdr->blclong;
@@ -1904,7 +1934,6 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
   hms_time time;
   double firstTime, lastTime;
   
-
   dssr = &ceos->dssr;
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
   get_esa_facdr(in_fName, esa_facdr);
