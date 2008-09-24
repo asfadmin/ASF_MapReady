@@ -520,16 +520,16 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	spec_max = 916140852; // 873.70 MB
       }
       else if (beam == 39 || beam == 57) { // FSD at 21.5 deg
-	spec_min = 428584469; // 408.73 MB
-	spec_max = 465903288; // 444.32 MB
+	spec_min = 428584469 / 2; // 408.73 MB
+	spec_max = 465903288 / 2; // 444.32 MB
       }
       else if (beam == 43 || beam == 61) { // FSD at 34.3 deg
-	spec_min = 721483203; // 688.06 MB
-	spec_max = 768417464; // 732.82 MB
+	spec_min = 721483203 / 2; // 688.06 MB
+	spec_max = 768417464 / 2; // 732.82 MB
       }
       else if (beam == 46 || beam == 64) { // FSD at 41.5 deg
-	spec_min = 367735603; // 350.70 MB
-	spec_max = 392586854; // 374.40 MB
+	spec_min = 367735603 / 2; // 350.70 MB
+	spec_max = 392586854 / 2; // 374.40 MB
       }
       else if (beam == 80 || beam == 82) { // ScanSAR (5 scan)
 	spec_min = 1204572652; // 1148.77 MB
@@ -548,8 +548,8 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	spec_max = 392586854; // 374.40 MB
       }
       else if (beam == 127) { // Polarimetric data at 21.5 deg
-	spec_min = 430943764; // 410.98 MB
-	spec_max = 459465032; // 438.18 MB
+	spec_min = 430943764 / 4; // 410.98 MB
+	spec_max = 459465032 / 4; // 438.18 MB
       }
       else {
 	sprintf(tmp, "No specs for beam index %d available\n", beam);
