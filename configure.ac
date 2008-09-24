@@ -41,9 +41,11 @@ case "${osType}:${versMajor}:${versMinor}" in
 		sys="linux" ;;
 	CYGWIN*:*:*)
 		sys="win32"
+		winsys="cygwin"
 		makeExtra="BIN_POSTFIX = .exe" ;;
 	MINGW*:*:*)
 		sys="win32"
+		winsys="mingw"
 		makeExtra="BIN_POSTFIX = .exe" ;;
 	IRIX*:*:*)
 		sys="irix"
@@ -300,6 +302,7 @@ rm -f ./endian
 # EOF (without quotes) makes cat print out strings with expanded variables
 cat <<EOF >>system_rules
 SYS     =   $sys
+WINSYS  =   $winsys
 CC      =   $CC
 RANLIB  =   $ranlib
 OPTFLAG =   $optFlag
@@ -321,6 +324,11 @@ ASF_INCLUDE_DIR = ../../include
 LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 INCLUDE_FLAGS   = -I. -I$(ASF_INCLUDE_DIR)
 SYS_FLAGS       = -D$(SYS)
+
+WIN32_FLAGS =
+ifeq ($(SYS),win32)
+  WIN32_FLAGS = -D$(WINSYS)
+endif
 
 # If compiler is gcc we're going to add some debugging flags/libraries
 #  if DEBUG_BUILD=1 apply debugging tags & show all compiler warnings
@@ -400,6 +408,7 @@ CFLAGS := \
 	$(LARGEFILE_FLAGS) \
 	$(C99_FLAGS) \
 	$(SYS_FLAGS) \
+	$(WIN32_FLAGS) \
 	$(BUILD_PKG) \
 	$(ENDIAN_FLAGS) \
 	$(INCLUDE_FLAGS) \
