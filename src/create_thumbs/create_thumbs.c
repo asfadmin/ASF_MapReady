@@ -61,7 +61,6 @@ int is_stf_level0(const char *file);
 int is_ceos_level0(const char *file);
 void flip_to_north_up(const char *in_file, const char *out_file);
 int is_JL0_basename(const char *what);
-void make_dir(const char *dir);
 
 int main(int argc, char *argv[])
 {
@@ -525,7 +524,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         default:
             if (out_dir && strlen(out_dir) > 0) {
                 if (!is_dir(out_dir)) {
-                    make_dir(out_dir);
+                    create_dir(out_dir);
                 }
                 char *basename = get_basename(thumb_file);
                 out_file = MALLOC((strlen(out_dir)+strlen(basename)+10)*sizeof(char));
@@ -700,7 +699,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     strftime(t_stamp, 22, "%d%b%Y-%Hh_%Mm_%Ss", localtime(&t));
     sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s_%s", get_basename(file), t_stamp);
     if (!is_dir(tmp_folder)) {
-        make_dir(tmp_folder);
+        create_dir(tmp_folder);
         if (!is_dir(tmp_folder)) {
             asfPrintError("Cannot make temporary directory:\n    %s\n", tmp_folder);
         }
@@ -713,7 +712,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
     // Set up the output directory
     if (out_dir && strlen(out_dir) && !is_dir(out_dir)) {
-        make_dir(out_dir);
+        create_dir(out_dir);
         if (!is_dir(out_dir)) {
             asfPrintError("Cannot make output directory:\n    %s\n", out_dir);
         }
@@ -1113,7 +1112,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     if (out_dir && strlen(out_dir)) {
         sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR,
                 out_file);
-        make_dir(out_dir);
+        create_dir(out_dir);
         if (!is_dir(out_dir)) {
             asfPrintError("Cannot make output directory:\n    %s\n", out_dir);
         }
@@ -1420,13 +1419,4 @@ int is_JL0_basename(const char *_what) {
         FREE(what);
         return 0;
     }
-}
-
-void make_dir(const char *dir)
-{
-#ifdef win32
-  mkdir(dir);
-#else
-  mkdir(dir, S_IRWXU | S_IRWXG | S_IRWXO);
-#endif
 }

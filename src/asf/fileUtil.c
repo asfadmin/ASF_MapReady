@@ -629,7 +629,7 @@ create_dir(const char *dir)
   char *ptr1, *ptr2;
   char *dir_tmp = (char*)MALLOC((strlen(dir)+1)*sizeof(char));
 
-#ifndef win32
+#ifndef mingw
   // big list of S_*'s equivalent to mode = 0777
   int mode =   S_IRUSR | S_IWUSR | S_IXUSR
              | S_IRGRP | S_IWGRP | S_IXGRP
@@ -646,7 +646,7 @@ create_dir(const char *dir)
     else {
       keep_going = FALSE;
     }
-#ifdef win32
+#ifdef mingw
     ret = mkdir(dir_tmp);
 #else
     ret = mkdir(dir_tmp, mode);
