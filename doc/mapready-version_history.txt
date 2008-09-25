@@ -1,6 +1,6 @@
 MapReady Version History
 
-MapReady 2.1.3 (released 2008 September 4)
+MapReady 2.1.4 (released 2008 September 24)
 New Functionality
 - New tool! create_thumbs is a command-line tool for generating
   thumbnails.
