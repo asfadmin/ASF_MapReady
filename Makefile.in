@@ -54,8 +54,6 @@ MAPREADY_MODULES = \
 	src/diffimage \
 	src/sgpsdp \
 	src/plan \
-	src/metadata_gui \
-	src/asf_view \
 	src/convert2vector_gui \
 	@ASF_GUI@
 
