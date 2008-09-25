@@ -109,7 +109,7 @@ double get_sensor_orientation (const char *fName);
 void get_azimuth_time(ceos_description *ceos, const char *in_fName,
           meta_parameters *meta);
 void get_scansar_beam_mode(ceos_description *ceos, const char *in_fName);
-void get_attitude_data(struct att_data_rec *att, double *yaw, double *pitch, 
+void get_attitude_data(struct att_data_rec *att, double *yaw, double *pitch,
 		       double *roll);
 
 /* Prototypes from meta_init_stVec.c */
@@ -347,7 +347,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   char **dataName;
   double firstTime, centerTime;
   if (ceos->facility == CSTARS || ceos->facility == ESA ||
-      ceos->facility == DPAF || ceos->facility == IPAF || 
+      ceos->facility == DPAF || ceos->facility == IPAF ||
       ceos->facility == DERA) {
     date_dssr2time(dssr->az_time_first, &date, &time);
     firstTime = date_hms2sec(&time);
@@ -1056,7 +1056,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     date_sec2hms(firstTime, &hms1);
     printf("firstTime: %lf\n", firstTime);
     FREE(line_header);
-    line_header = 
+    line_header =
       read_alos_proc_line_header(dataName[0], meta->general->line_count-1);
     double lastTime = (double) line_header->acq_msec / 1000;
     jd2.year = line_header->acq_year;
@@ -1858,7 +1858,7 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
 
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
-  
+
   // Azimuth time per pixel need to be known for state vector propagation
   date_ppr2date(ppr->act_ing_start, &date, &time);
   firstTime = date2sec(&date, &time);
@@ -1879,7 +1879,7 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
     meta->sar->look_count = 4;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
     strcpy(meta->general->mode, "SNB");
-  }  
+  }
   meta->sar->range_doppler_coefficients[0] = ppr->dopcen_est[0].dopcen_coef[0];
   meta->sar->range_doppler_coefficients[1] = 0.0;
   meta->sar->range_doppler_coefficients[2] = 0.0;
@@ -1891,7 +1891,7 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
   meta->sar->satellite_height = ppr->eph_orb_data[0];
   meta->sar->slant_range_first_pixel = ppr->srgr_coefset[0].srgr_coef[0];
   if (meta->sar->slant_range_first_pixel == 0.0)
-    meta->sar->slant_range_first_pixel = 
+    meta->sar->slant_range_first_pixel =
       slant_from_incid(ppr->beam_info[0].beam_look_ang *D2R,
 		       meta->sar->earth_radius,
 		       meta->sar->satellite_height);
@@ -1911,7 +1911,7 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
     if (!meta_is_valid_double(meta->projection->startX) ||
         !meta_is_valid_double(meta->projection->startY))
     {
-      meta_sar_to_startXY(meta, &meta->projection->startX, 
+      meta_sar_to_startXY(meta, &meta->projection->startX,
 			  &meta->projection->startY);
     }
   }
@@ -1932,8 +1932,9 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
   struct att_data_rec *att=NULL;
   ymd_date date;
   hms_time time;
+  julian_date jd;
   double firstTime, lastTime;
-  
+
   dssr = &ceos->dssr;
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
   get_esa_facdr(in_fName, esa_facdr);
@@ -1957,10 +1958,12 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
   ceos_init_sar_general(ceos, in_fName, meta);
 
   // Azimuth time per pixel need to be known for state vector propagation
-  date_ppr2date(ppr->act_ing_start, &date, &time);
-  firstTime = date2sec(&date, &time);
-  date_ppr2date(ppr->act_ing_stop, &date, &time);
-  lastTime = date2sec(&date, &time);
+  date_ymd2jd(&date, &jd);
+  date_ppr2date(ppr->act_ing_start, &jd, &time);
+  firstTime = date2sec(&jd, &time);
+  date_ymd2jd(&date, &jd);
+  date_ppr2date(ppr->act_ing_stop, &jd, &time);
+  lastTime = date2sec(&jd, &time);
   meta->sar->azimuth_time_per_pixel =
     (lastTime - firstTime) / meta->sar->original_line_count;
 
@@ -1976,7 +1979,7 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
   meta->sar->range_doppler_coefficients[2] = 0.0;
   meta->sar->deskewed = 1;
   meta->sar->slant_shift = 0;
-  if (meta->general->orbit_direction == 'D' && 
+  if (meta->general->orbit_direction == 'D' &&
       strncmp_case(dssr->time_dir_lin, "DEC", 3) == 0)
     meta->sar->time_shift = 0.0;
   else
@@ -1992,13 +1995,13 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
                           meta->general->line_count/2,
                           meta->general->sample_count/2);
   int count = meta->state_vectors->vector_count / 2 - 1;
-  meta->sar->satellite_height = 
+  meta->sar->satellite_height =
     vecMagnitude(meta->state_vectors->vecs[count].vec.pos);
   meta->sar->slant_range_first_pixel = ppr->srgr_coefset[0].srgr_coef[0];
   // FIXME: Threshold for slant range calculation really just a hack.
   // Need a different indicator.
   if (meta->sar->slant_range_first_pixel < 1000.0)
-    meta->sar->slant_range_first_pixel = 
+    meta->sar->slant_range_first_pixel =
       slant_from_incid(ppr->beam_info[0].beam_look_ang *D2R,
 		       meta->sar->earth_radius,
 		       meta->sar->satellite_height);
@@ -2008,7 +2011,7 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
     if (!meta_is_valid_double(meta->projection->startX) ||
         !meta_is_valid_double(meta->projection->startY))
     {
-      meta_sar_to_startXY(meta, &meta->projection->startX, 
+      meta_sar_to_startXY(meta, &meta->projection->startX,
 			  &meta->projection->startY);
     }
   }
@@ -2086,11 +2089,11 @@ void ceos_init_sar_dera(ceos_description *ceos, const char *in_fName,
                           meta->general->line_count/2,
                           meta->general->sample_count/2);
   int count = meta->state_vectors->vector_count / 2 - 1;
-  meta->sar->satellite_height = 
+  meta->sar->satellite_height =
     vecMagnitude(meta->state_vectors->vecs[count].vec.pos);
   meta->sar->slant_range_first_pixel = ppr->srgr_coefset[0].srgr_coef[0];
   if (meta->sar->slant_range_first_pixel == 0.0)
-    meta->sar->slant_range_first_pixel = 
+    meta->sar->slant_range_first_pixel =
       slant_from_incid(ppr->beam_info[0].beam_look_ang *D2R,
 		       meta->sar->earth_radius,
 		       meta->sar->satellite_height);
@@ -2100,7 +2103,7 @@ void ceos_init_sar_dera(ceos_description *ceos, const char *in_fName,
     if (!meta_is_valid_double(meta->projection->startX) ||
         !meta_is_valid_double(meta->projection->startY))
     {
-      meta_sar_to_startXY(meta, &meta->projection->startX, 
+      meta_sar_to_startXY(meta, &meta->projection->startX,
 			  &meta->projection->startY);
     }
   }
@@ -2993,7 +2996,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
                     "Unknown Westfreugh product type '%s'!\n", prodStr);
         ceos->product = unknownProduct;
       }
-    }    
+    }
     else if (0==strncmp(facStr, "DERA", 4)) {
       asfReport(level, "   Data set processed by Dera\n");
       ceos->facility = DERA;
@@ -3005,7 +3008,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
                     "Unknown Dera product type '%s'!\n", prodStr);
         ceos->product = unknownProduct;
       }
-    }    
+    }
   }
   else {
     // Determine satellite
@@ -3083,7 +3086,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
   else if (ceos->product == SWA)
     asfReport(level, "   Product: SWA\n");
   else if (ceos->product == SWB)
-    asfReport(level, "   Product: SWB\n");  
+    asfReport(level, "   Product: SWB\n");
   else if (ceos->product == LEVEL_1A)
     asfReport(level, "   Product: LEVEL_1A\n");
   else if (ceos->product == LEVEL_1B1)
@@ -3675,22 +3678,22 @@ void get_scansar_beam_mode(ceos_description *ceos, const char *in_fName)
     FREE(ppr);
     ppr = NULL;
   }
-  if (ppr->n_beams == 2 && 
+  if (ppr->n_beams == 2 &&
       strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0)
     ceos->product = SNA;
-  if (ppr->n_beams == 3 && 
+  if (ppr->n_beams == 3 &&
       strncmp(ppr->beam_info[0].beam_type, "W2", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "S5", 2) == 0 &&
       strncmp(ppr->beam_info[2].beam_type, "S6", 2) == 0)
     ceos->product = SCANSAR_SNB;
-  if (ppr->n_beams == 4 && 
+  if (ppr->n_beams == 4 &&
       strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0 &&
       strncmp(ppr->beam_info[2].beam_type, "W3", 2) == 0 &&
       strncmp(ppr->beam_info[3].beam_type, "S7", 2) == 0)
     ceos->product = SWA;
-  if (ppr->n_beams == 4 && 
+  if (ppr->n_beams == 4 &&
       strncmp(ppr->beam_info[0].beam_type, "W1", 2) == 0 &&
       strncmp(ppr->beam_info[1].beam_type, "W2", 2) == 0 &&
       strncmp(ppr->beam_info[2].beam_type, "S5", 2) == 0 &&
@@ -3698,10 +3701,10 @@ void get_scansar_beam_mode(ceos_description *ceos, const char *in_fName)
     ceos->product = SWB;
   if (ppr)
     FREE(ppr);
-  
+
 }
 
-void get_attitude_data(struct att_data_rec *att, double *yaw, double *pitch, 
+void get_attitude_data(struct att_data_rec *att, double *yaw, double *pitch,
 		       double *roll)
 {
   *yaw = att->data[0].yaw;
