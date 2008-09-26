@@ -316,11 +316,11 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
             sprintf(error_message,
                 "*****  ERROR!  Read past end of file! *******\n"
                 "* \n"
-                "*    This program tried to read %i bytes past\n"
-                "* the end of file stream 0x%x.  You might want to\n"
+                "*    This program tried to read %d bytes past\n"
+                "* the end of file stream %p.  You might want to\n"
                 "* check any image-size related parameters you passed\n"
                 "* to the program.\n",
-                (int)size*nitems,(int)stream);
+                (int)(size*nitems),stream);
 
             if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
                 strcat(error_message, "**    Program terminating... Attempted read past end of file.\n");
@@ -340,9 +340,8 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
         sprintf(error_message,
             "*****  ERROR!  Error reading file! *******\n"
             "* \n"
-            "*    When reading the file stream 0x%x, this program\n"
-            "*  encountered the following error:\n",
-            (int)stream);
+            "*    When reading the file stream %p, this program\n"
+            "*  encountered the following error:\n", stream);
         fprintf(stderr,error_message);
         if (fLog!=NULL)
             fprintf(fLog,error_message);
@@ -407,9 +406,9 @@ size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
         sprintf(error_message,
             "*******  ERROR writing file! *******\n"
             "*\n"
-            "*   This program tried to write %i bytes to\n"
-            "* the stream 0x%x.  This writing failed, because:\n",
-            (int) size*nitems,(int)stream);
+            "*   This program tried to write %d bytes to\n"
+            "* the stream %p.  This writing failed, because:\n",
+            (int)(size*nitems),stream);
         fprintf(stderr,error_message);
         if (fLog!=NULL) fprintf(fLog,error_message);
 
