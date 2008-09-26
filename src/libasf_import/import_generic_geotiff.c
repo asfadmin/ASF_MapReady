@@ -1263,7 +1263,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     asfPrintStatus("\nGeoTIFF contains lat/long in decimal degrees.  Assuming this is a\n"
             "USGS Seamless Server (or compatible) type of DEM GeoTIFF with pixel\n"
             "size of 30, 60, 90, or 190 meters, i.e. SRTM, NED, DTED, etcetera...\n");
-    strcpy(mg->sensor, "USGS Seamless data (i.e. NED, SRTM, DTED)");
+    strcpy(mg->sensor, "USGS Seamless data (e.g., NED, SRTM)");
     strcpy(image_data_type, "DEM");
     mg->image_data_type = DEM;
     strcpy(mg->system, mg->data_type == REAL32 ? "big_ieee" : MAGIC_UNSET_STRING);
@@ -1277,7 +1277,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               "USGS Seamless Server (or compatible) type of DEM GeoTIFF with pixel\n"
               "size of 30, 60, 90, 190 meters, i.e. SRTM, NED, DTED, etcetera...\n",
               angular_units_to_string(angular_units));
-      strcpy(mg->sensor, "USGS Seamless data (i.e. NED, SRTM, DTED)");
+      strcpy(mg->sensor, "USGS Seamless data (e.g., NED, SRTM)");
       strcpy(mg->system, mg->data_type == REAL32 ? "big_ieee" : MAGIC_UNSET_STRING);
       is_usgs_seamless_geotiff = 1; // This will turn on conversion of pixel size from degrees to meters
   }
