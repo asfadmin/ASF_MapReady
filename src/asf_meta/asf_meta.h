@@ -263,6 +263,10 @@ typedef struct {
   double origin_lon;      // Origin longitude [degrees]
   double map2ls_a[10];    // Transform coeffs for map -> L/S (lat/lon to s)
   double map2ls_b[10];    // Transform coeffs for map -> L/S (lat/lon to l)
+  // incid_a in the transform block is DEPRECATED ...but must be here so that
+  // utilities such as diffmeta which compare or use various versions of
+  // metadata need to have a copy here to please the compiler...
+  double incid_a[6];      // Deprecated as of metadata version 2.8 => See meta_sar
 } meta_transform;
 
 // meta_airsar: parameters for AirSAR geocoding

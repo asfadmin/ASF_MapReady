@@ -360,6 +360,9 @@ char *image_data_type2str(int image_data_type)
     case IMAGE:
       strcpy(retstr, "IMAGE");
       break;
+    case SIMULATED_IMAGE:
+      strcpy(retstr, "SIMULATED_IMAGE");
+      break;
     case MASK:
       strcpy(retstr, "MASK");
       break;
@@ -833,6 +836,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   meta_state_vectors *mstatev1, *mstatev2;
   meta_location *mloc1, *mloc2;
   meta_airsar *mair1, *mair2;
+  meta_colormap *mc1, *mc2;
 
   // Element level convenience pointers
   proj_albers *albers1, *albers2; // Albers conical equal area
@@ -846,6 +850,8 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   // Read metadata and set up convenience pointers
   meta_parameters *meta1 = meta_read(metafile1);
   meta_parameters *meta2 = meta_read(metafile2);
+  float mver1 = meta1->meta_version;
+  float mver2 = meta2->meta_version;
   mg1 = meta1->general;
   mg2 = meta2->general;
   msar1 = meta1->sar;                 // Can be NULL
@@ -866,21 +872,45 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   mloc2 = meta1->location;
   mair1 = meta1->airsar;              // Can be NULL
   mair2 = meta2->airsar;
+  mc1 = meta1->colormap;              // Can be NULL
+  mc2 = meta2->colormap;
 
-  albers1 = &mp1->param.albers;
-  albers2 = &mp2->param.albers;
-  atct1 = &mp1->param.atct;
-  atct2 = &mp2->param.atct;
-  lamaz1 = &mp1->param.lamaz;
-  lamaz2 = &mp2->param.lamaz;
-  lamcc1 = &mp1->param.lamcc;
-  lamcc2 = &mp2->param.lamcc;
-  ps1 = &mp1->param.ps;
-  ps2 = &mp2->param.ps;
-  utm1 = &mp1->param.utm;
-  utm2 = &mp2->param.utm;
-  state1 = &mp1->param.state;
-  state2 = &mp2->param.state;
+  if (mp1) {
+      albers1 = &mp1->param.albers;
+      atct1   = &mp1->param.atct;
+      lamaz1  = &mp1->param.lamaz;
+      lamcc1  = &mp1->param.lamcc;
+      ps1     = &mp1->param.ps;
+      utm1    = &mp1->param.utm;
+      state1  = &mp1->param.state;
+  }
+  else {
+      albers1 = NULL;
+      atct1   = NULL;
+      lamaz1  = NULL;
+      lamcc1  = NULL;
+      ps1     = NULL;
+      utm1    = NULL;
+      state1  = NULL;
+  }
+  if (mp2) {
+      albers2 = &mp2->param.albers;
+      atct2   = &mp2->param.atct;
+      lamaz2  = &mp2->param.lamaz;
+      lamcc2  = &mp2->param.lamcc;
+      ps2     = &mp2->param.ps;
+      utm2    = &mp2->param.utm;
+      state2  = &mp2->param.state;
+  }
+  else {
+      albers2 = NULL;
+      atct2   = NULL;
+      lamaz2  = NULL;
+      lamcc2  = NULL;
+      ps2     = NULL;
+      utm2    = NULL;
+      state2  = NULL;
+  }
 
   ////////////////////////////////////////////////////////////
   // PRECHECK                                               //
@@ -996,11 +1026,20 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
       mg2->image_data_type != COMPLEX_IMAGE         &&
       mg2->image_data_type != AMPLITUDE_IMAGE       &&
       mg2->image_data_type != PHASE_IMAGE           &&
+      mg2->image_data_type != POWER_IMAGE           &&
+      mg2->image_data_type != SIGMA_IMAGE           &&
+      mg2->image_data_type != GAMMA_IMAGE           &&
+      mg2->image_data_type != BETA_IMAGE            &&
+      mg2->image_data_type != INTERFEROGRAM         &&
       mg2->image_data_type != COHERENCE_IMAGE       &&
+      mg2->image_data_type != GEOREFERENCED_IMAGE   &&
+      mg2->image_data_type != GEOCODED_IMAGE        &&
+      mg2->image_data_type != POLARIMETRIC_IMAGE    &&
       mg2->image_data_type != LUT_IMAGE             &&
       mg2->image_data_type != ELEVATION             &&
       mg2->image_data_type != DEM                   &&
       mg2->image_data_type != IMAGE                 &&
+      mg2->image_data_type != SIMULATED_IMAGE       &&
       mg2->image_data_type != MASK)
   {
     char *d = image_data_type2str(mg2->image_data_type);
@@ -1389,11 +1428,41 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
       if (failed) {
         sprintf(precheck_err_msgs, "%s  %s\n",
                 precheck_err_msgs,
-                "[Transform] One or more of the transform parameters\n"
-                "    in the metadata transform block is not a valid double\n"
+                "[Transform] One or more of the phi(), lambda(), i(), or j() transform\n"
+                "    parameters in the metadata transform block is not a valid double\n"
                 "    or is NaN.");
       }
     }
+    // NOTE: The incid_a() and map_ transform parameters can be NaN and that's OK, so don't
+    // check them.  If this changes, then uncomment-out the code below.
+    // FIXME: incid_a[] is in the meta_transform block in metadata versions 2.7 and lower, but
+    // in the meta_sar block in versions 2.8 and higher ...the commented out code below needs
+    // to reflect this change
+    //for (i=0; i<6; i++) {
+        //if (!meta_is_valid_double(mtrans2->incid_a[i]))
+        //{
+            //failed = 1;
+        //}
+        //if (failed) {
+            //sprintf(precheck_err_msgs, "%s  %s\n",
+                    //precheck_err_msgs,
+                    //"[Transform] One or more of the incid_a() transform parameters in the\n"
+                    //"    metadata transform block is not a valid double or is NaN.");
+        //}
+    //}
+    //for (i=0; i<10; i++) {
+        //if (!meta_is_valid_double(mtrans2->map2ls_a[i]) ||
+            //!meta_is_valid_double(mtrans2->map2ls_b[i]))
+        //{
+            //failed = 1;
+        //}
+        //if (failed) {
+            //sprintf(precheck_err_msgs, "%s  %s\n",
+                    //precheck_err_msgs,
+                    //"[Transform] One or more of the map_a() or map_b() transform parameters\n"
+                    //"    in the metadata transform block is not a valid double or is NaN.");
+        //}
+    //}
     // TRANSFORM BLOCK REPORTING
     // If any failures occurred, produce a report in the output file
     if (failed) {
@@ -1559,9 +1628,12 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
         mp2->spheroid != GRS1980_SPHEROID           &&
         mp2->spheroid != INTERNATIONAL1924_SPHEROID &&
         mp2->spheroid != INTERNATIONAL1967_SPHEROID &&
+        mp2->spheroid != INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_SPHEROID &&
+        mp2->spheroid != WGS66_SPHEROID             &&
         mp2->spheroid != WGS72_SPHEROID             &&
         mp2->spheroid != WGS84_SPHEROID             &&
         mp2->spheroid != HUGHES_SPHEROID            &&
+        mp2->spheroid != JGD2000_SPHEROID           &&
         mp2->spheroid != UNKNOWN_SPHEROID)
     {
       sprintf(precheck_err_msgs, "%s%s\n",
@@ -1575,9 +1647,12 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                   "    GRS1980, or \n"
                   "    INTERNATIONAL1924, or \n"
                   "    INTERNATIONAL1967, or \n"
+                  "    INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997, or \n"
+                  "    WGS66, or \n"
                   "    WGS72, or \n"
                   "    WGS84, or \n"
                   "    HUGHES, or \n"
+                  "    JGD2000, or \n"
                   "    UNKNOWN (enum spheroid_type_t UNKNOWN_SPHEROID)\n");
       failed = 1;
     }
@@ -1616,6 +1691,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                   "    NAD83\n"
                   "    WGS72\n"
                   "    WGS84\n"
+                  "    JGD2000\n"
                   "    HUGHES\n"
                   "    UNKNOWN (enum datum_type_t UNKNOWN_DATUM)\n");
       failed = 1;
@@ -2259,18 +2335,23 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
 
   ////////////////////////////////////////////////////////////
   // Compare Transform Blocks
+  //
+  // NOTE: The incid_a[] polynomial coefficients are located in
+  //       the transform block if the metadata version is v2.7
+  //       or lower, but in the sar block if the version is v2.8
+  //       or higher (see svn rev 7798)
   failed = 0;
   strcpy(compare_err_msgs, "");
   if (mtrans1 && mtrans2) {
+    char block_id[256] = "";
+    char var_name[256] = "";
+    int i;
     compare_meta_int(compare_err_msgs, "Transform", "parameter_count",
                      mtrans1->parameter_count, mtrans2->parameter_count, &failed);
     if (meta_is_valid_int(mtrans1->parameter_count) &&
         meta_is_valid_int(mtrans2->parameter_count) &&
         mtrans1->parameter_count == mtrans2->parameter_count)
     {
-      char block_id[256] = "";
-      char var_name[256] = "";
-      int i;
       for (i=0; i<mtrans2->parameter_count; i++) {
         sprintf(block_id, "Transform - Phi(%d)", i);
         sprintf(var_name, "y[%d]", i);
@@ -2333,20 +2414,115 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
         sprintf(var_name, "l[%d]", i);
         compare_meta_double_with_tolerance(compare_err_msgs, block_id, var_name,
                                            mtrans1->l[i], mtrans2->l[i],
-                                           (i == 0)  ? DM_J0_TOL :
-                                           (i == 1)  ? DM_J1_TOL :
-                                           (i == 2)  ? DM_J2_TOL :
-                                           (i == 3)  ? DM_J3_TOL :
-                                           (i == 4)  ? DM_J4_TOL :
-                                           (i == 5)  ? DM_J5_TOL :
-                                           (i == 6)  ? DM_J6_TOL :
-                                           (i == 7)  ? DM_J7_TOL :
-                                           (i == 8)  ? DM_J8_TOL :
-                                           (i == 9)  ? DM_J9_TOL :
+                                           (i == 0)  ? DM_J0_TOL  :
+                                           (i == 1)  ? DM_J1_TOL  :
+                                           (i == 2)  ? DM_J2_TOL  :
+                                           (i == 3)  ? DM_J3_TOL  :
+                                           (i == 4)  ? DM_J4_TOL  :
+                                           (i == 5)  ? DM_J5_TOL  :
+                                           (i == 6)  ? DM_J6_TOL  :
+                                           (i == 7)  ? DM_J7_TOL  :
+                                           (i == 8)  ? DM_J8_TOL  :
+                                           (i == 9)  ? DM_J9_TOL  :
                                            (i == 10) ? DM_J10_TOL :
                                            0.0001,
                                            &failed);
       }
+    }
+    // Ignore comparing origin_lat (appears to not be used)
+    // Ignore comparing origin_lon (appears to not be used)
+    float incid_a1 = MAGIC_UNSET_DOUBLE;
+    float incid_a2 = MAGIC_UNSET_DOUBLE;
+    for (i=0; i<6; i++) {
+        incid_a1 = mver1 >= 2.8 ? msar1->incid_a[i] : mtrans1->incid_a[i];
+        incid_a2 = mver2 >= 2.8 ? msar2->incid_a[i] : mtrans2->incid_a[i];;
+        sprintf(block_id, "File 1 %s block, File 2 %s block - incid_a(%d)",
+                mver1 >= 2.8 ? "Sar" : "Transform",
+                mver2 >= 2.8 ? "Sar" : "Transform",
+                i);
+        sprintf(var_name, "incid_a[%d]", i);
+        if (meta_is_valid_double(incid_a1) &&
+            meta_is_valid_double(incid_a2))
+        {
+            compare_meta_double_with_tolerance(compare_err_msgs, block_id, var_name,
+                                               incid_a1, incid_a2,
+                                               (i == 0) ? DM_INCID_A0_TOL :
+                                               (i == 1) ? DM_INCID_A1_TOL :
+                                               (i == 2) ? DM_INCID_A2_TOL :
+                                               (i == 3) ? DM_INCID_A3_TOL :
+                                               (i == 4) ? DM_INCID_A4_TOL :
+                                               (i == 5) ? DM_INCID_A5_TOL :
+                                               0.0001,
+                                               &failed);
+        }
+        else if (( meta_is_valid_double(incid_a1) && !meta_is_valid_double(incid_a2)) ||
+                 (!meta_is_valid_double(incid_a1) &&  meta_is_valid_double(incid_a2)))
+        {
+            sprintf(&compare_err_msgs[strlen(compare_err_msgs)],
+                    "  [%s] Baseline and new version %s are different:\n    %f\n    %f\n\n",
+                    block_id, var_name, incid_a1, incid_a2);
+            failed = 1;
+        }
+    }
+    for (i=0; i<10; i++) {
+        sprintf(block_id, "Transform - map_a(%d)", i);
+        sprintf(var_name, "map2ls_a[%d]", i);
+        if (meta_is_valid_double(mtrans1->map2ls_a[i]) &&
+            meta_is_valid_double(mtrans2->map2ls_a[i]))
+        {
+            compare_meta_double_with_tolerance(compare_err_msgs, block_id, var_name,
+                                               mtrans1->map2ls_a[i], mtrans2->map2ls_a[i],
+                                               (i == 0) ? DM_MAP2LS_A0_TOL :
+                                               (i == 1) ? DM_MAP2LS_A1_TOL :
+                                               (i == 2) ? DM_MAP2LS_A2_TOL :
+                                               (i == 3) ? DM_MAP2LS_A3_TOL :
+                                               (i == 4) ? DM_MAP2LS_A4_TOL :
+                                               (i == 5) ? DM_MAP2LS_A5_TOL :
+                                               (i == 6) ? DM_MAP2LS_A6_TOL :
+                                               (i == 7) ? DM_MAP2LS_A7_TOL :
+                                               (i == 8) ? DM_MAP2LS_A8_TOL :
+                                               (i == 9) ? DM_MAP2LS_A9_TOL :
+                                               0.0001,
+                                               &failed);
+        }
+        else if (( meta_is_valid_double(mtrans1->map2ls_a[i]) && !meta_is_valid_double(mtrans2->map2ls_a[i])) ||
+                 (!meta_is_valid_double(mtrans1->map2ls_a[i]) &&  meta_is_valid_double(mtrans2->map2ls_a[i])))
+        {
+            sprintf(&compare_err_msgs[strlen(compare_err_msgs)],
+                     "  [%s] Baseline and new version %s are different:\n    %f\n    %f\n\n",
+                     block_id, var_name, mtrans1->map2ls_a[i], mtrans2->map2ls_a[i]);
+            failed = 1;
+        }
+    }
+    for (i=0; i<10; i++) {
+        sprintf(block_id, "Transform - map_a(%d)", i);
+        sprintf(var_name, "map2ls_b[%d]", i);
+        if (meta_is_valid_double(mtrans1->map2ls_b[i]) &&
+            meta_is_valid_double(mtrans2->map2ls_b[i]))
+        {
+            compare_meta_double_with_tolerance(compare_err_msgs, block_id, var_name,
+                                               mtrans1->map2ls_b[i], mtrans2->map2ls_b[i],
+                                               (i == 0) ? DM_MAP2LS_B0_TOL :
+                                               (i == 1) ? DM_MAP2LS_B1_TOL :
+                                               (i == 2) ? DM_MAP2LS_B2_TOL :
+                                               (i == 3) ? DM_MAP2LS_B3_TOL :
+                                               (i == 4) ? DM_MAP2LS_B4_TOL :
+                                               (i == 5) ? DM_MAP2LS_B5_TOL :
+                                               (i == 6) ? DM_MAP2LS_B6_TOL :
+                                               (i == 7) ? DM_MAP2LS_B7_TOL :
+                                               (i == 8) ? DM_MAP2LS_B8_TOL :
+                                               (i == 9) ? DM_MAP2LS_B9_TOL :
+                                               0.0001,
+                                               &failed);
+        }
+        else if (( meta_is_valid_double(mtrans1->map2ls_b[i]) && !meta_is_valid_double(mtrans2->map2ls_b[i])) ||
+                 (!meta_is_valid_double(mtrans1->map2ls_b[i]) &&  meta_is_valid_double(mtrans2->map2ls_b[i])))
+        {
+            sprintf(&compare_err_msgs[strlen(compare_err_msgs)],
+                     "  [%s] Baseline and new version %s are different:\n    %f\n    %f\n\n",
+                     block_id, var_name, mtrans1->map2ls_b[i], mtrans2->map2ls_b[i]);
+            failed = 1;
+        }
     }
   }
   ////////////////////////////////////////////////////////////
