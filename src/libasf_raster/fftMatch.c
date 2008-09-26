@@ -3,6 +3,7 @@
 #include <math.h>
 #include "fft.h"
 #include "fft2d.h"
+#include <values.h>
 
 #define MINI(a,b) ( ((a)<(b)) ? (a) : (b) )
 
@@ -22,19 +23,32 @@ static void readImage(FILE *in,meta_parameters *meta,
   register int x,y,l;
   double tempSum=0;
 
+  // We've had some problems matching images with some extremely large
+  // or NaN values.  If only some pixels in the image have these values,
+  // we should still be able to match.
+  // Hard to say what a "crazy big" value would be...
+  // We'll make the maximum allowed value MAXFLOAT (the maximum single
+  // precision floating point number), divided by the number of pixels.
+  const double maxval = ((double)MAXFLOAT) / ((double)ns*nl);
+
   /*Read portion of input image into topleft of dest array.*/
   for (y=0;y<delY;y++) {
       l=ns*y;
       get_float_line(in,meta,startY+y,inBuf);
       if (sum==NULL) {
           for (x=0;x<delX;x++) {
-              dest[l+x]=inBuf[startX+x]+add;
+              if (fabs(inBuf[startX+x]) < maxval && meta_is_valid_double(inBuf[startX+x])) {
+                  dest[l+x]=inBuf[startX+x]+add;
+              }
           }
       }
       else {
           for (x=0;x<delX;x++) {
-              tempSum+=inBuf[startX+x];
-              dest[l+x]=inBuf[startX+x]+add;
+              if (fabs(inBuf[startX+x]) < maxval && meta_is_valid_double(inBuf[startX+x]))
+              {
+                  tempSum+=inBuf[startX+x];
+                  dest[l+x]=inBuf[startX+x]+add;
+              }
           }
       }
       for (x=delX;x<ns;x++) {
