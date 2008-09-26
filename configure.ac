@@ -137,7 +137,11 @@ AC_SUBST(ASF_GLIB)
 #### libjpeg check ####
 #AC_CHECK_LIB(jpeg,jpeg_read_header,have_jpeg="yes",have_jpeg="no")
 if test "$sys" = "win32" ; then
-  have_jpeg="no"
+  if test "$winsys" = "mingw" ; then
+    have_jpeg="yes"
+  else
+    have_jpeg="no"
+  fi
 fi
 if test "$have_jpeg" = "no" ; then
   ASF_LIB_JPEG="${ext_lib_src_dir}/libjpeg"
@@ -278,6 +282,13 @@ if test "$sys" = "win32" ; then
 fi
 AC_SUBST(ASF_GUI)
 
+if test "$winsys" = "mingw" ; then
+  JPEG_LIBS="-L../../external/gtkwin32/lib -ljpeg"
+  ZLIB_LIBS="../../lib/libz.a"
+else
+  ZLIB_LIBS=-lz
+fi
+
 echo "########## Determining machine characteristics #############"
 cd make_support
 $CC -o endian endian.c
@@ -359,6 +370,7 @@ GTKWIN32_DIR = ../../external/gtkwin32
 GTKWIN32_ZIP = ../../external/gtkwin32zip
 EOF
 
+
 # EOF (without quotes) makes cat print out strings with expanded variables
 cat <<EOF >>system_rules
 
@@ -395,7 +407,7 @@ SHAPELIB_CFLAGS = $SHAPELIB_CFLAGS
 EXIF_LIBS = $EXIF_LIBS
 EXIF_CFLAGS = $EXIF_CFLAGS
 
-ZLIB_LIBS = -lz
+ZLIB_LIBS = $ZLIB_LIBS
 
 EOF
 
