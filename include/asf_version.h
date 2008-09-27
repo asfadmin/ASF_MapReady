@@ -23,7 +23,7 @@
 #define C2V_VERSION 2.0
 
 // JPL Mosaic Suite
-#define JPL_VERSION_STRING "1.0.0-dev"
+#define JPL_VERSION_STRING "1.0.1-dev"
 #define JPL_VERSION 1.0
 
 // Set Tool suite stuff based on given build define
