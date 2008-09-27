@@ -255,6 +255,7 @@ int get_interferogram_lut_index(void);
 int get_unwrapping_mask_lut_index(void);
 int get_layover_mask_lut_index(void);
 int get_polarimetry_lut_index(void);
+int get_water_mask_lut_index(void);
 int get_tiff_lut_index(void);
 int get_asf_lut_index(void);
 void set_current_index(int index);

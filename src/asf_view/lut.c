@@ -18,6 +18,7 @@ static int g_interferogram_index = 0;
 static int g_unwrapping_mask_index = 0;
 static int g_layover_mask_index = 0;
 static int g_polarimetry_index = 0;
+static int g_water_mask_index = 0;
 static int g_tiff_lut_index = 0;
 static int g_asf_lut_index = 0;
 static int g_current_index = 0;
@@ -120,6 +121,9 @@ void populate_lut_combo()
             if (strncmp_case(names[i], "polarimetry", 11) == 0) {
                 g_polarimetry_index = i+2;
             }
+            if (strncmp_case(names[i], "water_mask", 11) == 0) {
+                g_water_mask_index = i+2;
+            }
             if (strncmp(names[i], EMBEDDED_TIFF_COLORMAP_LUT,
                         strlen(EMBEDDED_TIFF_COLORMAP_LUT)) == 0) {
                 g_tiff_lut_index = i+2;
@@ -186,6 +190,8 @@ void select_lut(const char *lut_basename)
       which = get_layover_mask_lut_index();
     else if (strcmp_case(lut_basename, "polarimetry") == 0)
       which = get_polarimetry_lut_index();
+    else if (strcmp_case(lut_basename, "water_mask") == 0)
+        which = get_water_mask_lut_index();
     else if (strcmp_case(lut_basename, EMBEDDED_TIFF_COLORMAP_LUT) == 0)
         which = get_tiff_lut_index();
     else if (strcmp_case(lut_basename, EMBEDDED_ASF_COLORMAP_LUT) == 0)
@@ -354,6 +360,10 @@ int get_layover_mask_lut_index(void) {
 
 int get_polarimetry_lut_index(void) {
     return g_polarimetry_index;
+}
+
+int get_water_mask_lut_index(void) {
+    return g_water_mask_index;
 }
 
 int get_tiff_lut_index(void)
