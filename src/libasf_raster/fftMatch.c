@@ -3,7 +3,12 @@
 #include <math.h>
 #include "fft.h"
 #include "fft2d.h"
-#include <values.h>
+
+#if defined(mingw) // MAXFLOAT not available on mingw
+#define MAXFLOAT 3.4028234663852886e+38
+#elif !defined(cygwin) // cygwin has MAXFLOAT in math.h
+#include <values.h> // unix systems have it in values.h
+#endif
 
 #define MINI(a,b) ( ((a)<(b)) ? (a) : (b) )
 
