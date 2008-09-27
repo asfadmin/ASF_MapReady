@@ -53,10 +53,10 @@ void print_version(const char *program_name)
 {
     if (strlen(SVN_REV)>0) {
       printf("%s, version %s (part of %s %s)\n",
-             program_name, SVN_REV, TOOL_SUITE_NAME, MAPREADY_VERSION_STRING);
+             program_name, SVN_REV, TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
     } else {
       printf("%s, part of %s %s (unknown build)\n", program_name,
-             TOOL_SUITE_NAME, MAPREADY_VERSION_STRING);
+             TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
     }
 
     print_copyright();
