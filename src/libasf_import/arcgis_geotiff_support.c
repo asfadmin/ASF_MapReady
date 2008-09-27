@@ -457,11 +457,15 @@ short getArcgisProjType(const char *auxFile) {
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
-  asfRequire(strncmp((char*)hdr.label, "EHFA_HEADER_TAG", 15) == 0,
-             "ArcGIS metadata (.aux) file invalid\n");
+  if (strncmp((char*)hdr.label, "EHFA_HEADER_TAG", 15) != 0) {
+      asfPrintWarning("AUX file not in EHFA format\n");
+      return DHFA_UNKNOWN_PROJECTION;
+  }
   GetDataHeader(fp, &dhdr, &hdr);
-  asfRequire(dhdr.version == 1,
-             "ArcGIS metadata (.aux) file invalid\n");
+  if (dhdr.version != 1) {
+      asfPrintWarning("AUX file version number incorrect.  Not a valid AUX file.\n");
+      return DHFA_UNKNOWN_PROJECTION;
+  }
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
