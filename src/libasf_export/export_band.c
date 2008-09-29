@@ -1962,8 +1962,7 @@ export_band_image (const char *metadata_file_name,
         channel_stats_t stats;
               stats.hist = NULL; stats.hist_pdf = NULL;
 
-        if ((!md->optical || sample_mapping != NONE) &&
-            md->general->data_type != BYTE)
+        if (sample_mapping != NONE && sample_mapping != TRUNCATE)
         {
           asfRequire (sizeof(unsigned char) == 1,
                 "Size of the unsigned char data type on this machine is "
@@ -2056,47 +2055,20 @@ export_band_image (const char *metadata_file_name,
           for (ii=0; ii<md->general->line_count; ii++ ) {
             if (md->optical || md->general->data_type == BYTE) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
-              if (strncmp(md->general->sensor_name, "PRISM", 5) == 0) {
-                if (format == TIF || format == GEOTIFF)
-                  write_tiff_byte2byte(otif, byte_line, stats, sample_mapping,
-                                       sample_count, ii);
-                else if (format == JPEG)
-                  write_jpeg_byte2byte(ojpeg, byte_line, stats, sample_mapping,
-                                       &cinfo, sample_count);
-                else if (format == PNG)
-                  write_png_byte2byte(opng, byte_line, stats, sample_mapping,
-                                      png_ptr, png_info_ptr, sample_count);
-                else if (format == PGM)
-                  write_pgm_byte2byte(opgm, byte_line, stats, sample_mapping,
-                                      sample_count);
-                else
-                  asfPrintError("Impossible: unexpected format %d\n", format);
-              }
-              else { // Not Prism
-                if (sample_mapping != NONE) {
-                  static int warned_just_once = FALSE;
-                  if (!warned_just_once)
-                    asfPrintWarning("Byte to byte sample remapping not supported for\n"
-                                    "exporting multi-band optical images into individual\n"
-                                    "output files.\n"
-                                    " ...defaulting to no remapping.\n");
-                    warned_just_once = TRUE;
-                  }
-                  if (format == TIF || format == GEOTIFF)
-                    write_tiff_byte2byte(otif, byte_line, stats, NONE,
-                                         sample_count, ii);
-                  else if (format == JPEG)
-                    write_jpeg_byte2byte(ojpeg, byte_line, stats, NONE,
-                                         &cinfo, sample_count);
-                  else if (format == PNG)
-                    write_png_byte2byte(opng, byte_line, stats, NONE,
-                                        png_ptr, png_info_ptr, sample_count);
-                  else if (format == PGM)
-                    write_pgm_byte2byte(opgm, byte_line, stats, NONE,
-                                        sample_count);
-                  else
-                    asfPrintError("Impossible: unexpected format %d\n", format);
-              }
+              if (format == TIF || format == GEOTIFF)
+                write_tiff_byte2byte(otif, byte_line, stats, sample_mapping,
+                                     sample_count, ii);
+              else if (format == JPEG)
+                write_jpeg_byte2byte(ojpeg, byte_line, stats, sample_mapping,
+                                     &cinfo, sample_count);
+              else if (format == PNG)
+                write_png_byte2byte(opng, byte_line, stats, sample_mapping,
+                                    png_ptr, png_info_ptr, sample_count);
+              else if (format == PGM)
+                write_pgm_byte2byte(opgm, byte_line, stats, sample_mapping,
+                                    sample_count);
+              else
+                asfPrintError("Impossible: unexpected format %d\n", format);
             }
             else if (sample_mapping == NONE) {
               get_float_line(fp, md, ii+channel*offset, float_line);

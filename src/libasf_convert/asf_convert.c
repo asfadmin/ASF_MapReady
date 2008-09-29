@@ -2820,6 +2820,11 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         }
       }
       else {
+        if (meta->optical && scale != TRUNCATE && scale != NONE) {
+          asfPrintWarning("Optical data should not use the specified sample "
+            "mapping %s.\nChanging to TRUNCATE.\n", uc(cfg->export->byte));
+          scale = TRUNCATE;
+        }
         if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
           // multi-band, exporting as separate greyscale files
           asfPrintStatus("\nExporting %d bands as separate greyscale files...\n",
