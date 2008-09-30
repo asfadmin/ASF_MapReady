@@ -142,9 +142,9 @@ int main (int argc, char **argv)
 		              "%d... Exiting.\n", wordsize);
 	}
 	wordsize /= 8;  // change wordsize from bits to bytes
-	in_fname = (char*)CALLOC(strlen(argv[2]+1),sizeof(char));
+	in_fname = (char*)CALLOC(strlen(argv[2])+3,sizeof(char));
 	strcpy(in_fname,argv[2]);
-	out_fname = (char*)CALLOC(strlen(argv[3]+1),sizeof(char));
+	out_fname = (char*)CALLOC(strlen(argv[3])+3,sizeof(char));
 	strcpy(out_fname,argv[3]);
 
 	// Set the byteswap function for the proper number of bytes
@@ -196,7 +196,7 @@ int main (int argc, char **argv)
 	
 	asfPrintStatus("\n"
 	               "  Successfully wrote file '%s'\n"
-	               "  with reverse endian order than '%s'.\n",
+	               "  in reverse endian order than '%s'.\n",
 	               out_fname, in_fname);
 
 	// Yay, success!
