@@ -51,6 +51,34 @@ char *br(const char *s)
 #undef N
 }
 
+static const char *get_data_type_str(data_type_t data_type)
+{
+  switch (data_type) {
+    case BYTE:
+      return "BYTE";
+    case INTEGER16:
+      return "INTEGER16";
+    case INTEGER32:
+      return "INTEGER32";
+    case REAL32:
+      return "REAL32";
+    case REAL64:
+      return "REAL64";
+    case COMPLEX_BYTE:
+      return "COMPLEX BYTE";
+    case COMPLEX_INTEGER16:
+      return "COMPLEX INTEGER16";
+    case COMPLEX_INTEGER32:
+      return "COMPLEX INTEGER32";
+    case COMPLEX_REAL32:
+      return "COMPLEX REAL32";
+    case COMPLEX_REAL64:
+      return "COMPLEX REAL64";
+    default:
+      return "???";
+  }
+}
+
 void fill_meta_info()
 {
     char s[1024];
@@ -61,10 +89,12 @@ void fill_meta_info()
       if (meta->general) {
           sprintf(&s[strlen(s)],
             "Size: %d x %d (LxS)\n"
+            "Data Type: %s\n"
             "Sensor: %s\n"
             "Mode: %s\n"
             "Acquisition Date: %s\n",
                 meta->general->line_count, meta->general->sample_count,
+                get_data_type_str(meta->general->data_type),
                 meta->general->sensor, meta->general->mode,
                 meta->general->acquisition_date);
 

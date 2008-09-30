@@ -40,7 +40,8 @@ static void line_samp_to_proj(ImageInfo *ii, double line, double samp,
           meta->general->center_longitude < 180)
       {
         zone = utm_zone(meta->general->center_longitude);
-      } else {
+      }
+      else {
         zone = utm_zone(lon);
       }
       latLon2UTM_zone(lat, lon, 0, zone, x, y);
@@ -81,10 +82,20 @@ void update_pixel_info(ImageInfo *ii)
         if (data_ci->data_type == GREYSCALE_FLOAT) {
             float fval = cached_image_get_pixel(data_ci,
                 crosshair_line, crosshair_samp);
-            int uval = calc_scaled_pixel_value(&(ii->stats), fval);
+            if (have_lut()) {
+                unsigned char r, g, b;
+                cached_image_get_rgb(data_ci, crosshair_line, crosshair_samp,
+                                     &r, &g, &b);
+                sprintf(&buf[strlen(buf)],
+                        "Pixel Value: %f -> R:%d G:%d B:%d\n",
+                        fval, (int)r, (int)g, (int)b);
+            }
+            else {
+                int uval = calc_scaled_pixel_value(&(ii->stats), fval);
 
-            sprintf(&buf[strlen(buf)], "Pixel Value: %f --> %d\n",
-                fval, uval);
+                sprintf(&buf[strlen(buf)], "Pixel Value: %f -> %d\n",
+                        fval, uval);
+            }
         }
         else if (data_ci->data_type == RGB_BYTE) {
             unsigned char r, g, b;
@@ -96,8 +107,17 @@ void update_pixel_info(ImageInfo *ii)
         else if (data_ci->data_type == GREYSCALE_BYTE) {
             unsigned char r, g, b;
             cached_image_get_rgb(data_ci, crosshair_line, crosshair_samp,
-                &r, &g, &b);
-            sprintf(&buf[strlen(buf)], "Pixel Value: %d\n", (int)r);
+                                 &r, &g, &b);
+            if (have_lut()) {
+                int gs = (int)cached_image_get_pixel(data_ci,
+                             crosshair_line, crosshair_samp);
+                sprintf(&buf[strlen(buf)],
+                        "Pixel Value: %d -> R:%d G:%d B:%d\n",
+                        gs, (int)r, (int)g, (int)b);
+            }
+            else {
+                sprintf(&buf[strlen(buf)], "Pixel Value: %d\n", (int)r);
+            }
         }
         else if (data_ci->data_type == RGB_FLOAT) {
             unsigned char r, g, b;
