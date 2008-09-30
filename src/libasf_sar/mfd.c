@@ -30,6 +30,10 @@ int
 dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
 {
     meta_parameters *inDemMeta = meta_read(inDemFile);
+    meta_parameters *outDemMeta = meta_read(inDemFile);
+
+    // out metadata will differ from in only in the data type
+    outDemMeta->general->data_type = BYTE;
 
     int x_size = inDemMeta->general->sample_count;
     int y_size = inDemMeta->general->line_count;
@@ -40,19 +44,18 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
     FILE *in = fopenImage(inDemFile, "rb");
     FILE *out = fopenImage(outMaskFile, "wb");
 
-    int y;
+    float mv = masked_value();
+    float umv = unmasked_value();
+
+    int y,x;
     for (y=0; y<y_size; y++) 
     {
         get_float_line(in, inDemMeta, y, floatbuffer);
 
-        int x;
-        float mv = masked_value();
-        float umv = unmasked_value();
-
         for (x=0; x < x_size; x++)            
             maskbuffer[x] = floatbuffer[x] <= cutoff ? mv : umv;
 
-        put_float_line(out, inDemMeta, y, maskbuffer);
+        put_float_line(out, outDemMeta, y, maskbuffer);
         asfLineMeter(y, y_size);
     }
 
@@ -62,8 +65,10 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
     FREE(floatbuffer);
     FREE(maskbuffer);
 
-    meta_write(inDemMeta, outMaskFile);
+    meta_write(outDemMeta, outMaskFile);
+
     meta_free(inDemMeta);
+    meta_free(outDemMeta);
 
     asfPrintStatus("Created Mask file '%s' from DEM '%s'.\n",
                    outMaskFile, inDemFile);
