@@ -351,12 +351,6 @@ static void print_help(void)
   exit(EXIT_FAILURE);
 }
 
-/******************************************************************************
-* Lets do some front porch pickin' with a few hillbilly classics!  (See hillbillyclassics.com
-* or maybe even hillbillyhousewife.com fer some genuine hillbilly cookin'!)
-* Or if you're REALLY in the mood to get things going around here, check out yodelcourse.com
-* and learn to yodel!
-*****************************************************************************/
 int main(int argc, char *argv[])
 {
     char inBaseName[256]="";

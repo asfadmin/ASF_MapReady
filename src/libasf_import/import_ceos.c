@@ -1584,6 +1584,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   }
 
   if (data_type >= COMPLEX_BYTE) {
+    float gain_adj = 0.0;
+    if (apply_ers2_gain_fix_flag)
+        gain_adj = get_ers2_gain_adj(meta,radiometry);
+
     // Go through complex imagery in chunks
     for (ii = 0; ii < nl; ii += nLooks) {
       lc = nLooks;
@@ -1834,6 +1838,30 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         --out_band;
       }
 
+      if (apply_ers2_gain_fix_flag && strcmp(meta->general->sensor,"ERS2") == 0)
+      {
+        if (radiometry != r_AMP) {
+          if (complex_flag) {
+            // in the complex case, we need to convert back to polar, apply
+            // the correction to the amplitude, then convert back to cartesian
+            for (kk=0; kk<ns*lc; ++kk) {
+              complexFloat cpx = cpxFloat_buf[kk];
+              double amp = hypot(cpx.real, cpx.imag);
+              double phase = atan2(cpx.imag, cpx.real);
+              amp = apply_ers2_gain_fix(radiometry, gain_adj, amp);
+              cpxFloat_buf[kk].real = amp*cos(phase);
+              cpxFloat_buf[kk].imag = amp*sin(phase);
+            }
+          }
+          else {
+            int array_len = multilook_flag ? ns : ns*lc;
+            for (kk=0; kk<array_len; ++kk)
+              amp_float_buf[kk] =
+                apply_ers2_gain_fix(radiometry, gain_adj, amp_float_buf[kk]);
+          }
+        }
+      }
+
       if (multilook_flag) {
         put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
         if (!(amp0_flag && out_band==0)) {
@@ -1861,9 +1889,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   else {
     // Go through detected imagery line by line
     float gain_adj = 0.0;
-    if (apply_ers2_gain_fix_flag) {
+    if (apply_ers2_gain_fix_flag)
         gain_adj = get_ers2_gain_adj(meta,radiometry);
-    }
+
     for (ii=0; ii<nl; ii++) {
       asfLineMeter(ii, nl);
 

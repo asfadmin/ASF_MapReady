@@ -55,25 +55,25 @@ static const char *get_data_type_str(data_type_t data_type)
 {
   switch (data_type) {
     case BYTE:
-      return "BYTE";
+      return "Byte";
     case INTEGER16:
-      return "INTEGER16";
+      return "Integer16";
     case INTEGER32:
-      return "INTEGER32";
+      return "Integer32";
     case REAL32:
-      return "REAL32";
+      return "32-bit Float";
     case REAL64:
-      return "REAL64";
+      return "64-bit Float";
     case COMPLEX_BYTE:
-      return "COMPLEX BYTE";
+      return "Complex Byte";
     case COMPLEX_INTEGER16:
-      return "COMPLEX INTEGER16";
+      return "Complex Integer16";
     case COMPLEX_INTEGER32:
-      return "COMPLEX INTEGER32";
+      return "Complex Integer32";
     case COMPLEX_REAL32:
-      return "COMPLEX REAL32";
+      return "Complex 32-bit Float";
     case COMPLEX_REAL64:
-      return "COMPLEX REAL64";
+      return "Complex 64-bit Float";
     default:
       return "???";
   }
