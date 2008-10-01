@@ -23,13 +23,17 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS  = $(TARGET).o
 
-all: $(TARGET)
+all: $(TARGET) combine
 	-rm *.o
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) $(LDFLAGS)
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
+combine: combine.o
+	$(CC) $(CFLAGS) -o combine combine.o $(LIBS) $(LDFLAGS)
+	mv combine$(BIN_POSTFIX) $(BINDIR)
+
 clean:
-	rm -f core $(OBJS) *.o
+	rm -f core *.o
 
