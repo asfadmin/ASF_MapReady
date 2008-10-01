@@ -590,7 +590,7 @@ int match_dem(meta_parameters *metaSAR,
   int demHeight;
   float dx, dy, cert=0;
   int idx, idy;
-  const float cert_cutoff = 0.33; // is this a good cutoff !?
+  const float cert_cutoff = 0.4; // is this a good cutoff !?
 
   // do-while that will repeat the dem grid generation and the fftMatch
   // of the sar & simulated sar, until the fftMatch doesn't turn up a
@@ -655,18 +655,17 @@ int match_dem(meta_parameters *metaSAR,
       float good_pct_list[MASK_SEED_POINTS];  // pct of non-masked pixels
       int ii,err;
 
+      asfPrintStatus("User Mask File: %s\n", userMaskClipped);
       FILE *inseedmask = fopenImage(userMaskClipped,"rb");
       meta_parameters *maskmeta = meta_read(userMaskClipped);
       asfRequire(maskmeta->general->line_count==demHeight, "Bad heights.\n");
-      float *mask = MALLOC(sizeof(float) * maskmeta->general->sample_count
-                           * demHeight);
+      int maskWidth = metaSAR->general->sample_count;
+      float *mask = MALLOC(sizeof(float) * maskWidth * (demHeight+2)); //...
       for (ii=0;ii<demHeight;ii++) // read in the whole mask image
-        get_float_line(inseedmask, maskmeta, ii,
-                       mask + ii * maskmeta->general->sample_count);
+          get_float_line(inseedmask, maskmeta, ii, mask + ii * maskWidth);
       FCLOSE(inseedmask);
-      err = lay_seeds(MASK_SEED_POINTS, mask, maskmeta->general->sample_count,
-                      demHeight, x_tl_list, y_tl_list, x_br_list,
-                      y_br_list, good_pct_list);
+      err = lay_seeds(MASK_SEED_POINTS, mask, maskWidth, demHeight,
+                x_tl_list, y_tl_list, x_br_list, y_br_list, good_pct_list);
       FREE(mask);
 
       if (err==0) {
@@ -722,8 +721,9 @@ int match_dem(meta_parameters *metaSAR,
               char *srTrimSimSar = getOutName(output_dir, srFile,
                                               "_src_trim_for_fft");
 
-              //asfPrintStatus(" creating trimmed regions \n %s \n %s \n ",
-              //               demTrimSimSar_ffft, srTrimSimSar);
+              //asfPrintStatus("Creating trimmed regions:\n %s->%s\n %s->%s\n",
+              //               demTrimSimSar, demTrimSimSar_ffft,
+              //               srFile, srTrimSimSar);
               trim(demTrimSimSar, demTrimSimSar_ffft,xtl,ytl,xbr-xtl,ybr-ytl);
               trim(srFile, srTrimSimSar, xtl, ytl, xbr-xtl, ybr-ytl);
               fftMatchQ(srTrimSimSar, demTrimSimSar_ffft, &dx, &dy, &cert);

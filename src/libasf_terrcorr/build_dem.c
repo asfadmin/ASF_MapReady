@@ -723,9 +723,9 @@ char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
         char *built_dem;
         if (strlen(dir_for_tmp_dem) > 0) {
             built_dem = MALLOC(sizeof(char)*(strlen(dir_for_tmp_dem)+10));
-            sprintf(built_dem, "%s/dem", dir_for_tmp_dem);
+            sprintf(built_dem, "%s/built_dem", dir_for_tmp_dem);
         } else
-            built_dem = STRDUP("dem");
+            built_dem = STRDUP("built_dem");
 
         // always geocode to utm -- we may wish change this to use the
         // user's preferred projection...
