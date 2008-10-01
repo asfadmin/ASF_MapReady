@@ -174,7 +174,9 @@ IGNORED_INCLUDES = \
 	include/sgpsdp.h \
 	include/spheroids.h \
 	include/uint8_image.h \
-	include/vector.h
+	include/vector.h \
+	include/asf_jpeg.h \
+	include/gamma.h
 
 S_LIBDIR   = lib
 S_BINDIR   = bin
