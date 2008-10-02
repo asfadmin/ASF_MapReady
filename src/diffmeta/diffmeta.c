@@ -2434,12 +2434,15 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     float incid_a1 = MAGIC_UNSET_DOUBLE;
     float incid_a2 = MAGIC_UNSET_DOUBLE;
     for (i=0; i<6; i++) {
-        incid_a1 = mver1 >= 2.8 ? msar1->incid_a[i] : mtrans1->incid_a[i];
-        incid_a2 = mver2 >= 2.8 ? msar2->incid_a[i] : mtrans2->incid_a[i];;
-        sprintf(block_id, "File 1 %s block, File 2 %s block - incid_a(%d)",
-                mver1 >= 2.8 ? "Sar" : "Transform",
-                mver2 >= 2.8 ? "Sar" : "Transform",
-                i);
+//        incid_a1 = mver1 >= 2.8 ? msar1->incid_a[i] : mtrans1->incid_a[i];
+//        incid_a2 = mver2 >= 2.8 ? msar2->incid_a[i] : mtrans2->incid_a[i];;
+//        sprintf(block_id, "File 1 %s block, File 2 %s block - incid_a(%d)",
+//                mver1 >= 2.8 ? "Sar" : "Transform",
+//                mver2 >= 2.8 ? "Sar" : "Transform",
+//                i);
+        incid_a1 = msar1->incid_a[i];
+        incid_a2 = msar2->incid_a[i];
+        strcpy(block_id, "Sar");
         sprintf(var_name, "incid_a[%d]", i);
         if (meta_is_valid_double(incid_a1) &&
             meta_is_valid_double(incid_a2))
