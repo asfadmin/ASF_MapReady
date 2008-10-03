@@ -209,14 +209,14 @@ initialize_uint8_image_structure (ssize_t size_x, ssize_t size_y)
   //
   // and then decrement t iteratively until things work.
   self->tile_size = self->cache_area / (2 * largest_dimension);
-  while ( (2 * pow (self->tile_size, 2.0)
+  while ( (2 * self->tile_size * self->tile_size
            * ceil ((double) largest_dimension / self->tile_size))
           > self->cache_area ) {
     self->tile_size--;
   }
 
   // Area of tiles, in pixels.
-  self->tile_area = (size_t) pow (self->tile_size, 2.0);
+  self->tile_area = (size_t) (self->tile_size * self->tile_size);
 
   // Number of tiles which will fit in image cache.
   self->cache_size_in_tiles = self->cache_area / self->tile_area;
@@ -2035,7 +2035,7 @@ uint8_image_export_as_jpeg (UInt8Image *self, const char *file,
   size_t kernel_size = scale_factor;
   gsl_matrix *averaging_kernel
     = gsl_matrix_alloc (kernel_size, kernel_size);
-  double kernel_value = 1.0 / pow (kernel_size, 2.0);
+  double kernel_value = 1.0 / ((double)kernel_size * kernel_size);
   size_t ii, jj;                // Index values.
   for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
     for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
