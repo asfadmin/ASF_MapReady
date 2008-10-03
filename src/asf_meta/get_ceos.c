@@ -197,7 +197,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	     " sub_record[3]: %d\nsequence: %d, length: %d\n", itype, 
 	     subtype[0], subtype[1], subtype[2], rec_seq, length);
       */
-      if (total > size)
+      if (total-length > size)
 	break;
       else
 	FREAD((*buff)+12, length-12, 1, fp);
