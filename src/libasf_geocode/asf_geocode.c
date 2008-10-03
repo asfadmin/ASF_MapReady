@@ -1611,7 +1611,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             grid_size++;
     }
     g_assert (grid_size % 2 == 1);
-    size_t mapping_count = pow ((double) grid_size, 2.0);
+    size_t mapping_count = grid_size * grid_size;
     struct data_to_fit dtf;
     dtf.grid_size = grid_size;
     dtf.n = mapping_count;
@@ -1622,7 +1622,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // Determine the density and stride for the sparse grid.
     const size_t sparse_grid_sample_stride = 2;
     const size_t sparse_grid_size = grid_size / 2 + 1;
-    size_t sparse_mapping_count = pow ((double) sparse_grid_size, 2.0);
+    size_t sparse_mapping_count = sparse_grid_size * sparse_grid_size;
     dtf.sparse_grid_size = sparse_grid_size;
     dtf.sparse_n = sparse_mapping_count;
     dtf.sparse_x_proj = g_new0 (double, sparse_mapping_count);
@@ -1689,6 +1689,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                                   "Lat: %f, Lon: %f\n", lat, lon);
                 }
             }
+
+            g_assert(current_mapping < mapping_count);
             dtf.x_proj[current_mapping] = cxproj;
             dtf.y_proj[current_mapping] = cyproj;
             dtf.x_pix[current_mapping] = x_pix;
@@ -1697,6 +1699,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             if ( ii % sparse_grid_sample_stride == 0 &&
                  jj % sparse_grid_sample_stride == 0 )
             {
+                g_assert(current_sparse_mapping < sparse_mapping_count);
                 dtf.sparse_x_proj[current_sparse_mapping] = cxproj;
                 dtf.sparse_y_proj[current_sparse_mapping] = cyproj;
                 dtf.sparse_x_pix[current_sparse_mapping] = x_pix;
@@ -1734,7 +1737,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             double ypfm = Y_PIXEL (dtf.x_proj[ii], dtf.y_proj[ii]);
             double x_error = xpfm - dtf.x_pix[ii];
             double y_error = ypfm - dtf.y_pix[ii];
-            double error_distance = sqrt (pow (x_error, 2) + pow (y_error, 2));
+            double error_distance = sqrt (x_error*x_error + y_error*y_error);
             float_image_set_pixel (error_map, ii % grid_size, ii / grid_size,
                   error_distance);
             gsl_vector_set (model_x_errors, ii, x_error);

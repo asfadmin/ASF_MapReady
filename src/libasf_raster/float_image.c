@@ -215,7 +215,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   //
   // and then decrement t iteratively until things work.
   self->tile_size = self->cache_area / (2 * largest_dimension);
-  while ( (2 * pow (self->tile_size, 2.0)
+  while ( (2 * self->tile_size * self->tile_size
            * ceil ((double) largest_dimension / self->tile_size))
           > self->cache_area ) {
     self->tile_size--;
@@ -231,7 +231,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   g_assert (self->tile_size >= minimum_tile_size);
 
   // Area of tiles, in pixels.
-  self->tile_area = (size_t) pow (self->tile_size, 2.0);
+  self->tile_area = (size_t) self->tile_size * self->tile_size;
 
   // Number of tiles which will fit in image cache.
   self->cache_size_in_tiles = self->cache_area / self->tile_area;
@@ -601,7 +601,7 @@ float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor)
   size_t kernel_size = scale_factor;
   gsl_matrix_float *averaging_kernel
     = gsl_matrix_float_alloc (kernel_size, kernel_size);
-  float kernel_value = 1.0 / pow (kernel_size, 2.0);
+  float kernel_value = 1.0 / (kernel_size * kernel_size);
   size_t ii, jj;                // Index values.
   for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
     for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
@@ -2204,7 +2204,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   size_t kernel_size = scale_factor;
   gsl_matrix_float *averaging_kernel
     = gsl_matrix_float_alloc (kernel_size, kernel_size);
-  float kernel_value = 1.0 / pow (kernel_size, 2.0);
+  float kernel_value = 1.0 / (kernel_size * kernel_size);
   size_t ii, jj;                // Index values.
   for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
     for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
@@ -2383,7 +2383,7 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
   size_t kernel_size = scale_factor;
   gsl_matrix_float *averaging_kernel
     = gsl_matrix_float_alloc (kernel_size, kernel_size);
-  float kernel_value = 1.0 / pow (kernel_size, 2.0);
+  float kernel_value = 1.0 / (kernel_size * kernel_size);
   size_t ii, jj;                // Index values.
   for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
     for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
@@ -2543,7 +2543,7 @@ float_image_export_as_tiff (FloatImage *self, const char *file,
   size_t kernel_size = scale_factor;
   gsl_matrix_float *averaging_kernel
           = gsl_matrix_float_alloc (kernel_size, kernel_size);
-  float kernel_value = 1.0 / pow (kernel_size, 2.0);
+  float kernel_value = 1.0 / (kernel_size * kernel_size);
   size_t ii, jj;                // Index values.
   for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
       for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
