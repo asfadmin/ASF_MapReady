@@ -850,8 +850,8 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   // Read metadata and set up convenience pointers
   meta_parameters *meta1 = meta_read(metafile1);
   meta_parameters *meta2 = meta_read(metafile2);
-  float mver1 = meta1->meta_version;
-  float mver2 = meta2->meta_version;
+  //float mver1 = meta1->meta_version;
+  //float mver2 = meta2->meta_version;
   mg1 = meta1->general;
   mg2 = meta2->general;
   msar1 = meta1->sar;                 // Can be NULL
