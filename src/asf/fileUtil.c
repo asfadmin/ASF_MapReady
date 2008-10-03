@@ -493,8 +493,8 @@ FILE *fopenImage(const char *fName,const char *access)
     }
 /*An error occured-- tell the user and quit.*/
         if (errno) {
-            asfPrintStatus("Error %d: %s\n", strerror(errno),
-                 (openName != NULL && strlen(openName)) ? openName : "invalid filename");
+            asfPrintStatus("Errno %d: %s\n",
+                           errno, strerror(errno));
         }
         asfPrintStatus("Tried to open: %s\n",
              (openName != NULL && strlen(openName)) ? openName : "invalid filename");
