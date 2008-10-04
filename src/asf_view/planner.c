@@ -1542,3 +1542,7 @@ SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
     }
 }
 
+SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
+{
+
+}
