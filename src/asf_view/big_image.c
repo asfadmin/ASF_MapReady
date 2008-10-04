@@ -559,7 +559,7 @@ static void add_north_arrow(GdkPixbuf *pb, ImageInfo *ii)
   put_line(pb, y0, x0, y1, x1, GREEN, ii);
 }
 
-static GdkPixbuf * make_big_image(ImageInfo *ii)
+GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
 {
     assert(ii->data_ci);
     assert(ii->meta);
@@ -671,7 +671,7 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
         asfPrintError("Failed to create the larger pixbuf.\n");
 
     // put the red crosshair at the "active" point along the polygon
-    if (g_poly->c < g_poly->n)
+    if (show_crosshair && g_poly->c < g_poly->n)
         put_crosshair(pb, g_poly->line[g_poly->c], g_poly->samp[g_poly->c],
             FALSE, ii);
 
@@ -701,7 +701,8 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
 
     // green crosshair goes second, so if the two overlap, we will see
     // the green one (the main one)
-    put_crosshair(pb, crosshair_line, crosshair_samp, TRUE, ii);
+    if (show_crosshair)
+      put_crosshair(pb, crosshair_line, crosshair_samp, TRUE, ii);
 
     // draw bounding box if requested
     if (g_poly->show_extent) {
@@ -739,7 +740,7 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
 
 void fill_big(ImageInfo *ii)
 {
-    GdkPixbuf *pb = make_big_image(ii);
+  GdkPixbuf *pb = make_big_image(ii, TRUE);
     GtkWidget *img = get_widget_checked("big_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
     //g_object_unref(pb);

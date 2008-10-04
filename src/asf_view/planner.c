@@ -1544,5 +1544,45 @@ SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
 
 SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
 {
+    char *output_dir = STRDUP(get_string_from_entry("output_dir_entry"));
+    char *output_file = STRDUP("test");
+    char *out_name = MALLOC(sizeof(char) *
+                            (strlen(output_dir) + strlen(output_file) + 25));
 
+    if (strlen(output_dir) > 0)
+      sprintf(out_name, "%s/%s", output_dir, output_file);
+    else
+      strcpy(out_name, output_file);
+
+    //GtkWidget *img = get_widget_checked("big_image");
+    //GdkPixbuf *pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
+
+    GdkPixbuf *pb = make_big_image(curr, FALSE);
+    GError *err = NULL;
+    char *format;
+
+    // problems on Linux exporting a jpeg -- so there we export as png
+    // target platform is windows, so it is not worth fixing it on linux...
+
+#ifdef win32
+    const int save_as_jpeg = TRUE;
+#else
+    const int save_as_jpeg = FALSE;
+#endif
+
+    if (save_as_jpeg) {
+      append_ext_if_needed(out_name, ".jpg", ".jpeg");
+      format = "jpeg";
+      gdk_pixbuf_save(pb, out_name, "jpeg", &err, "quality", "100", NULL);
+    }
+    else { // save a png
+      append_ext_if_needed(out_name, ".png", ".png");
+      format = "png";
+      gdk_pixbuf_save(pb, out_name, format, &err, NULL);
+    }
+
+    g_object_unref(pb);
+
+    message_box("Saved as %s: %s\n", format, out_name);
 }
+
