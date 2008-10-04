@@ -2045,8 +2045,6 @@
 			  <property name="label" translatable="yes"> Left-Click: Place crosshair
  Left-Click &amp;amp; Drag:  Pan image
  Ctrl-Left-Click: Place secondary crosshair(s)
- Define Polygon: Place several secondary
-   crosshairs
  Right-click: Re-center view
  Scroll wheel: Zoom in/out
 
@@ -2062,6 +2060,7 @@
  c: Center image on crosshair
  l: Move crosshair to local maxima
    (30x30 search area, ctrl-l: 300x300)
+ n: Toggle north arrow
 
  PageUp/Down: Zoom in/out
  Home: Zoom to 1:1

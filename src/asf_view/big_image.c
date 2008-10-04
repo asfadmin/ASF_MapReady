@@ -8,6 +8,8 @@ UserPolygon g_polys[MAX_POLYS];
 UserPolygon *g_poly;
 int which_poly=0;
 
+int g_show_north_arrow = FALSE;
+
 // current sizes of the large image.
 // keep half the size around, we need that during the redraw, which
 // is supposed to be quick
@@ -168,6 +170,7 @@ static int iabs(int i)
 #define RED 1
 #define PURPLE 2
 #define BLUE 3
+#define GREEN 4
 
 void get_color(int color, unsigned char *r, unsigned char *g,
                unsigned char *b)
@@ -176,6 +179,11 @@ void get_color(int color, unsigned char *r, unsigned char *g,
       case RED:
         *r = 255;
         *g = *b = 0;
+        break;
+
+      case GREEN: // crosshair color
+        *g = 255;
+        *r = *b = 0;
         break;
 
       case PURPLE: 
@@ -501,6 +509,56 @@ static void put_marker(GdkPixbuf *pixbuf, double line, double samp,
     }
 }
 
+static void add_north_arrow(GdkPixbuf *pb, ImageInfo *ii)
+{
+  if (!g_show_north_arrow)
+    return;
+
+  // arrow location: bottom right corner
+  int ax = 20;
+  int ay = get_big_image_height() - 20;
+  double arrow_line, arrow_samp, lat, lon;
+  img2ls(ax,ay,&arrow_line,&arrow_samp);
+  meta_get_latLon(ii->meta,arrow_line,arrow_samp,0,&lat,&lon);
+
+  // to get the direction the arrow will point, figure the line/samp of
+  // a point slightly north (same longitude, but a slightly greater lat)
+  double line_up, samp_up, lat_up = lat + .2;
+  meta_get_lineSamp(ii->meta,lat_up,lon,0,&line_up,&samp_up);
+  double angle = atan2(line_up - arrow_line, samp_up - arrow_samp);
+
+  // the arrow will be 25 pixels long
+  const double len = 25.0 / 2.0;
+  // now calculate the line/samp of the head & tail of the arrow
+  int hx = ax + (int)floor(0.5 + len*cos(angle));
+  int hy = ay + (int)floor(0.5 + len*sin(angle));
+  int tx = ax - (int)floor(0.5 + len*cos(angle));
+  int ty = ay - (int)floor(0.5 + len*sin(angle));
+
+  // draw the line -- put_line() requires image coordinates, so we do have
+  // a double conversion for no good reason
+  double x0,y0,x1,y1;
+  img2ls(tx,ty,&y0,&x0);
+  img2ls(hx,hy,&y1,&x1);
+  put_line(pb, y0, x0, y1, x1, GREEN, ii);
+
+  // now... put on the arrowhead
+  const double head_len = 10.0;
+
+  // first head goes from the head, at angle+135, the other at angle-135
+  double ang = 135 * D2R;
+  int h1x = hx + (int)floor(0.5 + head_len*cos(angle + ang));
+  int h1y = hy + (int)floor(0.5 + head_len*sin(angle + ang));
+  int h2x = hx + (int)floor(0.5 + head_len*cos(angle - ang));
+  int h2y = hy + (int)floor(0.5 + head_len*sin(angle - ang));
+
+  img2ls(h1x,h1y,&y0,&x0);
+  put_line(pb, y0, x0, y1, x1, GREEN, ii);
+
+  img2ls(h2x,h2y,&y0,&x0);
+  put_line(pb, y0, x0, y1, x1, GREEN, ii);
+}
+
 static GdkPixbuf * make_big_image(ImageInfo *ii)
 {
     assert(ii->data_ci);
@@ -671,6 +729,10 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
             }
         }
     }
+
+    // Add a "north" arrow if possible
+    if (meta_supports_meta_get_latLon(ii->meta))
+      add_north_arrow(pb, ii);
 
     return pb;
 }
@@ -1039,6 +1101,9 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
             crosshair_samp=samp_max;
         }
         update_pixel_info(ii);
+    }
+    else if (event->keyval == GDK_n || event->keyval == GDK_N) {
+        g_show_north_arrow = !g_show_north_arrow;
     }
 /*
     else if (event->keyval == GDK_n || event->keyval == GDK_N) {
