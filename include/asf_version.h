@@ -26,6 +26,14 @@
 #define JPL_VERSION_STRING "1.0.1-dev"
 #define JPL_VERSION 1.0
 
+// Create_thumbs
+#define CREATE_THUMBS_VERSION_STRING "1.0.1-dev"
+#define CREATE_THUMBS_VERSION 1.0
+
+// Data_qc
+#define DATA_QC_VERSION_STRING "1.0.0"
+#define DATA_QC_VERSION 1.0
+
 // Set Tool suite stuff based on given build define
 #if defined (_PKG_STP)
 #define TOOL_SUITE_NAME			"STP"
@@ -51,6 +59,16 @@
 #define TOOL_SUITE_NAME			"JPLMosaicSuite"
 #define TOOL_SUITE_VERSION_STRING	JPL_VERSION_STRING
 #define TOOL_SUITE_VERSION		JPL_VERSION
+
+#elif defined (_PKG_CREATE_THUMBS)
+#define TOOL_SUITE_NAME                 "CreateThumbs"
+#define TOOL_SUITE_VERSION_STRING       CREATE_THUMBS_VERSION_STRING
+#define TOOL_SUITE_VERSION              CREATE_THUMBS_VERSION
+
+#elif defined (_PKG_DATA_QC)
+#define TOOL_SUITE_NAME                 "DataQC"
+#define TOOL_SUITE_VERSION_STRING       DATA_QC_VERSION_STRING
+#define TOOL_SUITE_VERSION              DATA_QC_VERSION
 
 // Default to MapReady
 #else //defined (_PKG_MAPREADY)
