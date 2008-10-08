@@ -2,7 +2,8 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf_meta.a \
+LIBS  = \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
@@ -42,7 +43,8 @@ ifdef DIAUG
 endif
 CFLAGS += $(DEBUG_FEATURES)
 
-OBJS  = ardop_write.o \
+OBJS  = \
+	ardop_write.o \
 	asf_import.o \
 	aux_ERS.o \
 	aux_JRS.o \
