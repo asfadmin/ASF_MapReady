@@ -132,6 +132,25 @@ JPL_MODULES = \
 	src/asf \
 	src/byteswap
 
+CREATE_THUMBS_MODULES = \
+	src/libasf_import \
+	src/libasf_export \
+	src/libasf_vector \
+	src/libasf_raster \
+	src/libasf_ardop \
+	src/libasf_sar \
+	src/asf_fft \
+	src/asf_meta \
+	src/libasf_proj \
+	src/asf \
+	src/create_thumbs
+
+DATA_QC_MODULES = \
+	src/asf_meta \
+	src/libasf_proj \
+	src/asf \
+	src/data_qc
+
 IGNORED_INCLUDES = \
 	include/ardop_defs.h \
 	include/asf_baseline.h \
@@ -189,6 +208,8 @@ VERSION_AP = $(shell awk -F '"' '$$1 ~ /define AP_VERSION_STRING/ {print $$2}' i
 VERSION_REQ = $(shell awk -F '"' '$$1 ~ /define REQ_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_C2V = $(shell awk -F '"' '$$1 ~ /define C2V_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_JPL = $(shell awk -F '"' '$$1 ~ /define JPL_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_CREATE_THUMBS = $(shell awk -F '"' '$$1 ~ /define CREATE_THUMBS_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_DATA_QC = $(shell awk -F '"' '$$1 ~ /define DATA_QC_VERSION_STRING/ {print $$2}' include/asf_version.h)
 
 # Build the MapReady package by default
 default: mapready
@@ -259,6 +280,28 @@ jpl: mkdirs_for_build
 	echo $(VERSION_JPL) > $(S_SHAREDIR)/jplmosaicsuite_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(JPL_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX JPL Mosaic Suite Compiled! XXXXXXXXXXX"
+	@ echo ""
+
+# Create thumbs
+create_thumbs: mkdirs_for_build
+	echo BUILD_PKG = -D_PKG_CREATE_THUMBS > make_support/build_pkg.mk
+	cp LICENSE.txt $(S_SHAREDIR)
+	echo $(VERSION_JPL) > $(S_SHAREDIR)/create_thumbs_version.txt
+	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+	$(foreach MODULE, $(CREATE_THUMBS_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX Create Thumbs package Compiled! XXXXXXXXXXX"
+	@ echo ""
+
+# Data QC
+data_qc: mkdirs_for_build
+	echo BUILD_PKG = -D_PKG_DATA_QC > make_support/build_pkg.mk
+	cp LICENSE.txt $(S_SHAREDIR)
+	echo $(VERSION_JPL) > $(S_SHAREDIR)/data_qc_version.txt
+	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+	$(foreach MODULE, $(DATA_QC_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX JPL Mosaic Suite Compiled! XXXXXXXXXXX"
 	@ echo ""
