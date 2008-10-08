@@ -108,12 +108,18 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
   else
     meta->sar->look_direction = 'L';
   meta->sar->look_count = gamma->azimuth_looks / gamma->range_looks;
+  if (gamma->azimuth_looks == gamma->range_looks)
+    meta->sar->multilook = 0;
+  else
+    meta->sar->multilook = 1;
   meta->sar->deskewed = gamma->azimuth_deskew;
   meta->sar->original_line_count = meta->general->line_count;
   meta->sar->original_sample_count = meta->general->sample_count;
   meta->sar->line_increment = 1;
   meta->sar->sample_increment = 1;
-  meta->sar->range_time_per_pixel = fabs((2.0 * gamma->range_pixel_spacing) / SPD_LIGHT);
+  meta->sar->range_time_per_pixel = fabs((2.0 * gamma->range_pixel_spacing) / 
+					 gamma->range_looks /
+					 SPD_LIGHT);
   meta->sar->azimuth_time_per_pixel = gamma->azimuth_line_time;
   meta->sar->slant_range_first_pixel = gamma->near_range_slc;
   meta->sar->slant_shift = 0.0;
@@ -145,13 +151,13 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
   for (i=0; i<3; i++) {
     meta->sar->range_doppler_coefficients[i] = gamma->doppler_polynomial[i];
     meta->sar->azimuth_doppler_coefficients[i] = 0.0; // FIXME: We have gamma->radar_frequency and state vectors ...we should estimate the azimuth doppler stuff
+    meta->sar->azimuth_doppler_coefficients[0] = gamma->doppler_polynomial[0];
   }
   meta->sar->azimuth_processing_bandwidth = gamma->azimuth_proc_bandwidth;
   meta->sar->chirp_rate = gamma->chirp_bandwidth;
   meta->sar->pulse_duration = MAGIC_UNSET_DOUBLE;
   meta->sar->range_sampling_rate = gamma->adc_sampling_rate;
   strcpy(meta->sar->polarization, MAGIC_UNSET_STRING);
-  meta->sar->multilook = 0;
 
   // Fill state vector structure
   meta->state_vectors = meta_state_vectors_init(3);
