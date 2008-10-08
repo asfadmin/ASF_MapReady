@@ -1546,12 +1546,12 @@ SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
 static GtkFileChooser *export_jpeg_widget = NULL;
 
 // We call these export_jpeg, but we're really exporting PNGs on Linux
-static SIGNAL_CALLBACK void export_jpeg_cancel_clicked()
+void export_jpeg_cancel_clicked()
 {
   gtk_widget_hide(GTK_WIDGET(export_jpeg_widget));
 }
 
-static SIGNAL_CALLBACK void export_jpeg_ok_clicked()
+void export_jpeg_ok_clicked()
 {
   GSList *files = NULL;
 
@@ -1565,20 +1565,23 @@ static SIGNAL_CALLBACK void export_jpeg_ok_clicked()
     static const int len = 2048; // max message length
     char msg[len];
 
-    if (strlen((char*)files->data) > 0) {
-      append_ext_if_needed((char*)files->data, ".png", ".png");
+    char *file = MALLOC(sizeof(char)*(strlen((char*)files->data)+25));
+    strcpy(file, (char*)files->data);
+
+    if (strlen(file) > 0) {
+      append_ext_if_needed(file, ".png", ".png");
 
       GdkPixbuf *pb = make_big_image(curr, FALSE);
       GError *err = NULL;
 
-      gdk_pixbuf_save(pb, (char*)files->data, "png", &err, NULL);
+      gdk_pixbuf_save(pb, file, "png", &err, NULL);
 
       if (err) {
         snprintf(msg, len, "Error exporting PNG: %s\n", err->message);
         printf("%s", msg);
       }
       else {
-        snprintf(msg, len, "Exported PNG: %s\n", (char*)files->data);
+        snprintf(msg, len, "Exported PNG: %s\n", file);
       }
 
       g_object_unref(pb);
@@ -1587,6 +1590,7 @@ static SIGNAL_CALLBACK void export_jpeg_ok_clicked()
       sprintf(msg, "Error exporting PNG: Zero length filename found.");
     }
 
+    free(file);
     message_box(msg);
 
     g_slist_free(files);
