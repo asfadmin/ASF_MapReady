@@ -61,6 +61,7 @@ int is_stf_level0(const char *file);
 int is_ceos_level0(const char *file);
 void flip_to_north_up(const char *in_file, const char *out_file);
 int is_JL0_basename(const char *what);
+long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in);
 
 int main(int argc, char *argv[])
 {
@@ -971,6 +972,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             params_in->npatches = (int*)MALLOC(sizeof(int));
             *params_in->npatches = nPatches;
         }
+        params_in->na_valid = (int *)MALLOC(sizeof(int));
+        *params_in->na_valid = optimize_na_valid(params_in);
         ardop(params_in); // ARDOP
         if (nPatchesFlag) {
             FREE(params_in->npatches);
@@ -1419,4 +1422,171 @@ int is_JL0_basename(const char *_what) {
         FREE(what);
         return 0;
     }
+}
+
+/*
+struct INPUT_ARDOP_PARAMS {
+  char  in1[1024];
+  char  out[1024];
+  char  status[1024];
+  char  CALPRMS[1024];
+  int *pwrFlag;
+  int *sigmaFlag;
+  int *gammaFlag;
+  int *betaFlag;
+  int *hamFlag;
+  int *kaiFlag;
+  int *ifirstline;
+  int *npatches;
+  int *isave;
+  int *ifirst;
+  int *nla;
+  float *azres;
+  int *deskew;
+  int *na_valid;
+  float *sloper;
+  float *interr;
+  float *slopea;
+  float *intera;
+  float *dsloper;
+  float *dinterr;
+  float *dslopea;
+  float *dintera;
+  float *fd;
+  float *fdd;
+  float *fddd;
+  int *iflag;
+};
+*/
+long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in) {
+    // NOTE: Everything from here to the call to ardop_setup() was cut and
+    // pasted directly from ardop() in libasf_ardop ...probably much is
+    // unnecessary ...but was expedient.
+    meta_parameters *meta;
+    struct ARDOP_PARAMS params;
+
+    fill_default_ardop_params(&params);
+
+    /*Structures: these are passed to the sub-routines which need them.*/
+    //patch *p;
+    satellite *s;
+    rangeRef *r;
+    getRec *signalGetRec;
+    file *f;
+
+    /*Variables.*/
+    int n_az,n_range;//, az_reflen;/*Region to be processed.*/
+    //int patchNo;/*Loop counter.*/
+
+    /*Setup metadata*/
+    /*Create ARDOP_PARAMS struct as well as meta_parameters.*/
+    if (extExists(params_in->in1,".in"))
+    {/*Read parameters from ARDOP parameter file*/
+        read_params(params_in->in1,&params);
+        if (extExists(params_in->in1,".meta")) {
+            /*Input file has .meta attached: read it*/
+            meta=meta_read(params_in->in1);
+        } else {
+            /*No .meta exists--fabricate one*/
+            meta=raw_init();
+        }
+    }
+    else
+    {
+        /*Read parameters & .meta from CEOS.*/
+        /* Caution: This puts hard-coded ERS parameters into params... correct
+        them upon return from get_params() based on which platform/beam */
+        get_params(params_in->in1,&params,&meta);
+    }
+    //params_in->npatches = (int *)MALLOC(sizeof(int));
+    //*params_in->npatches = 1;
+
+    /*Apply user-overridden parameters*/
+    apply_in_ardop_params_to_ardop_params(params_in, &params);
+    if (strlen(params.status)>0) set_status_file(params.status);
+
+    /*Doppler*/
+    if (params.fdd==-99.0)
+    {
+        double old_dop=params.fd;
+        /*Estimate Doppler in scene center.*/
+        estdop(params.in1, 1000,
+               &params.fd, &params.fdd, &params.fddd);
+
+        /*De-ambiguify doppler based on old value*/
+        while (params.fd-old_dop<-0.5) params.fd+=1.0;
+        while (params.fd-old_dop> 0.5) params.fd-=1.0;
+    }
+
+    /*Copy fields from ARDOP_PARAMS struct to meta_parameters struct.*/
+    meta->sar->image_type              = 'S';        /*Slant range image*/
+    meta->sar->look_count              = params.nlooks;
+    meta->sar->deskewed                = params.deskew;
+    meta->sar->range_time_per_pixel    = 1.0/params.fs;
+    meta->sar->azimuth_time_per_pixel  = 1.0/params.prf;
+    meta->sar->slant_shift             = params.slantOff;
+    meta->sar->time_shift              = params.timeOff;
+    meta->sar->slant_range_first_pixel = params.r00;
+    meta->sar->wavelength              = params.wavl;
+    meta->sar->prf                     = params.prf;
+    meta->sar->earth_radius            = params.re;
+    meta->sar->satellite_height        = params.re+params.ht;
+    meta->sar->range_doppler_coefficients[0] = params.fd*params.prf;
+    meta->sar->range_doppler_coefficients[1] = params.fdd*params.prf;
+    meta->sar->range_doppler_coefficients[2] = params.fddd*params.prf;
+    meta->sar->azimuth_doppler_coefficients[0] = params.fd*params.prf;
+    meta->sar->azimuth_doppler_coefficients[1] = 0.0;
+    meta->sar->azimuth_doppler_coefficients[2] = 0.0;
+
+    strcpy (meta->general->system, meta_get_system());
+    meta->general->data_type = REAL32;
+    meta->general->band_count = 1;
+    meta->general->x_pixel_size = meta->sar->range_time_per_pixel
+            * (speedOfLight/2.0);
+//    meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
+//                                       * params.vel * (params.re/params.ht);
+    meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel * params.vel *
+            (params.re/(params.ht+params.re));
+
+    n_az = default_n_az;
+    ardop_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
+
+    // Optimize number of valid lines
+    // NOTE: Normally, the number of valid lines is the n_az (always 4096) minus
+    // the length of the azimuth reference function.  In reality, this should be
+    // called a maximum number of valid lines.  It can sometimes (like always) result
+    // in a less than optimal number of lines processed from the input data ...when
+    // patch processing gets to the end of the file, it quits processing if there isn't
+    // enough data left for a full 4096-line patch to be pulled from the file and
+    // processed.  Ideally, the number of valid lines should be selected so that exactly
+    // one last 4096-line patch can be pulled from the file.  The following code selects
+    // a value for valid lines that attempts to do this ...or ends up as closely as
+    // possible.
+    long n_ref = s->az_reflen;
+    long line_count = (long)meta->general->line_count;
+    long n_az_valid = n_az - n_ref;
+    long min_valid = n_az_valid / 2;
+    long best_valid;
+    long patches;
+    long min_diff = line_count;
+    int i;
+    for (i=n_az_valid; i>min_valid; i--) {
+        patches = (line_count-n_az) / i + 1;
+        long diff = line_count - i * patches;
+        if (diff == 0) {
+            best_valid = i;
+            break;
+        }
+        else if (diff < min_diff) {
+            best_valid = i;
+            min_diff = diff;
+        }
+    }
+    if (best_valid != n_az_valid) {
+        asfPrintStatus("\nAdjusted ardop patch number of valid lines"
+                       "from %d to %d to optimize data usage...\n\n",
+                       n_az_valid, best_valid);
+    }
+
+    return best_valid;
 }
