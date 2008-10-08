@@ -2,7 +2,7 @@
 #define _CREATE_THUMBS_HELP_H_
 
 // Uncomment to enable JAXA Level 0 support
-//#define JL0_GO
+#define JL0_GO
 
 // NOTES:
 //   1. Don't put a '\n' at the end of the string definitions.  Formatting
