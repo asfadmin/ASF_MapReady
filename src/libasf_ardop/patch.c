@@ -448,101 +448,105 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
   }
 
   /* This gets messy */
-  for (outLine=0; outLine<f->n_az_valid; outLine++)
-    {
+  for (outLine = 0; outLine < f->n_az_valid; outLine++)
+  {
       int j; /* loop counter */
       int base = f->firstOutputLine+outLine; /* loop counter for transposed data */
 
-      if(writeNoiseTable==1)
+      if(writeNoiseTable==1) {
           if (!quietflag) printf("   Writing .noise and .ant files\n");
+      }
 
       /* Print statement for the antenna pattern correction option */
-      if(s->vecLen==0)
-    if(!quietflag && (outLine % 1024 == 0))
-      printf("   ...Writing Line %i\n",outLine);
-      if(s->vecLen!=0)
-    if(!quietflag && (outLine % 1024 == 0))
-      printf("   ...Writing Line %i and applying Antenna Pattern Correction\n",
-         outLine);
+      if(s->vecLen==0) {
+          if(!quietflag && (outLine % 1024 == 0)) {
+              printf("   ...Writing Line %i\n",outLine);
+          }
+      }
+      if(s->vecLen!=0) {
+          if(!quietflag && (outLine % 1024 == 0)) {
+              printf("   ...Writing Line %i and applying Antenna Pattern Correction\n",
+                     outLine);
+          }
+      }
 
       /* Fill up the buffers */
       for (j=0; j<p->n_range; j++,base+=p->n_az)
-    {
-      outputBuf[j] = p->trans[base];
+      {
+          outputBuf[j] = p->trans[base];
 
-      /* For speed, if we aren't correcting the antenna pattern,
-         write the multi-look buffer now */
-      if(s->vecLen==0)
-        {
-          mlBuf[j+mlCount*p->n_range].real = outputBuf[j].real;
-          mlBuf[j+mlCount*p->n_range].imag = outputBuf[j].imag;
-        }
-    }
+          /* For speed, if we aren't correcting the antenna pattern,
+             write the multi-look buffer now */
+          if(s->vecLen==0)
+          {
+              mlBuf[j+mlCount*p->n_range].real = outputBuf[j].real;
+              mlBuf[j+mlCount*p->n_range].imag = outputBuf[j].imag;
+          }
+      }
 
       /* Apply the Antenna Pattern Correction if desired */
       if(s->vecLen!=0)
-    {
+      {
 
-      /* On the first time through, write out the noise table */
-      if(writeNoiseTable==1)
-        {
-          writeTable(meta,s,p->n_range);
-          writeNoiseTable=0;
-        }
+          /* On the first time through, write out the noise table */
+          if(writeNoiseTable==1)
+          {
+              writeTable(meta,s,p->n_range);
+              writeNoiseTable=0;
+          }
 
-      antptn_correct(meta,outputBuf,base,p->n_range,s);
-      if(!quietflag && (j==0)) printf("   Correcting Line %d\n",outLine);
+          antptn_correct(meta,outputBuf,base,p->n_range,s);
+          if(!quietflag && (j==0)) printf("   Correcting Line %d\n",outLine);
 
-      /* Otherwise, write the multi-look buffer now */
-      for(j=0;j<p->n_range;j++)
-        {
-
-          mlBuf[j+mlCount*p->n_range].real = outputBuf[j].real;
-          mlBuf[j+mlCount*p->n_range].imag = outputBuf[j].imag;
-        }
-    }
+          /* Otherwise, write the multi-look buffer now */
+          for(j=0;j<p->n_range;j++)
+          {
+              mlBuf[j+mlCount*p->n_range].real = outputBuf[j].real;
+              mlBuf[j+mlCount*p->n_range].imag = outputBuf[j].imag;
+          }
+      }
 
       put_complexFloat_line(fp_cpx, metaCpx, outLine+off_slc, outputBuf);
       mlCount+=1;
       /* Multilook takes f->nlooks lines of data and averages them together,
-     and writes one line on return */
+         and writes one line on return */
       if(mlCount==f->nlooks)
-    {
-      /* multilook on the power image, then use the power image to generate
-         an amplitude, and all other detected images from the command line.
-         Be careful because I recycle amps after writing out the line of
-         amplitude data, and it gets used as the sigma_0, beta_0, and gamma_0
-         line. It my be confusing, but it uses less memory.*/
-      multilook(mlBuf,p->n_range,f->nlooks,pwrs);
-      intensity(p->n_range,pwrs,amps);
+      {
+          /* multilook on the power image, then use the power image to generate
+             an amplitude, and all other detected images from the command line.
+             Be careful because I recycle amps after writing out the line of
+             amplitude data, and it gets used as the sigma_0, beta_0, and gamma_0
+             line. It my be confusing, but it uses less memory.*/
+          multilook(mlBuf,p->n_range,f->nlooks,pwrs);
+          intensity(p->n_range,pwrs,amps);
 
-      put_float_line(fp_amp, metaAmp, outLine/f->nlooks+off_ml, amps);
+          put_float_line(fp_amp, metaAmp, outLine/f->nlooks+off_ml, amps);
 
-      if (s->imageType.power) {
-        put_float_line(fp_pwr, metaPower, outLine/f->nlooks+off_ml, pwrs);
-      }
-      if (s->imageType.sigma)
-        {
-          calculateRCS(SIGMA_0, meta, pwrs, amps,
-               base-mlCount/2, p->n_range,s);
-          put_float_line(fp_sig, metaSigma, outLine/f->nlooks+off_ml, amps);
-        }
+          if (s->imageType.power) {
+              put_float_line(fp_pwr, metaPower, outLine/f->nlooks+off_ml, pwrs);
+          }
+          if (s->imageType.sigma)
+          {
+              calculateRCS(SIGMA_0, meta, pwrs, amps,
+                           base-mlCount/2, p->n_range,s);
+              put_float_line(fp_sig, metaSigma, outLine/f->nlooks+off_ml, amps);
+          }
           if (s->imageType.gamma)
-        {
-          calculateRCS(GAMMA_0, meta, pwrs, amps,
-               base-mlCount/2, p->n_range,s);
-          put_float_line(fp_gam, metaGamma, outLine/f->nlooks+off_ml, amps);
-        }
-      if (s->imageType.beta)
-        {
-          calculateRCS(BETA_0, meta, pwrs, amps,
-               base-mlCount/2, p->n_range,s);
-          put_float_line(fp_bet, metaBeta, outLine/f->nlooks+off_ml, amps);
-        }
+          {
+              calculateRCS(GAMMA_0, meta, pwrs, amps,
+                           base-mlCount/2, p->n_range,s);
+              put_float_line(fp_gam, metaGamma, outLine/f->nlooks+off_ml, amps);
+          }
+          if (s->imageType.beta)
+          {
+              calculateRCS(BETA_0, meta, pwrs, amps,
+                           base-mlCount/2, p->n_range,s);
+              put_float_line(fp_bet, metaBeta, outLine/f->nlooks+off_ml, amps);
+          }
 
-      mlCount=0;
-    }
-    }
+          mlCount=0;
+      }
+  }
   FCLOSE(fp_cpx);
   FCLOSE(fp_amp);
   if (s->imageType.power)
@@ -558,9 +562,9 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
   if (logflag) printLog("\n");
   if (!quietflag) {
     printf("   AMPLITUDE IMAGE FINISHED: Wrote %i lines and %i samples\n",
-       f->n_az_valid/f->nlooks,p->n_range);
+           f->n_az_valid/f->nlooks,p->n_range);
     printf("   PATCH FINISHED: Wrote %i lines of %i samples (float)\n\n",
-       f->n_az_valid,p->n_range);
+           f->n_az_valid,p->n_range);
   }
   FREE((void *)amps);
   FREE((void *)pwrs);
