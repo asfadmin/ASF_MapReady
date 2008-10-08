@@ -1083,3 +1083,206 @@ rm -rf $RPM_BUILD_ROOT
 - Initial build.
 
 
+
+Data QC tool RPM Build Procedure:
+-------------------------------------
+Note: The following example assumes subversion revision 8155, data_qc
+version
+      of 1.0.0, and a work folder at ~/asf.
+
+* Check out the code to be released (if not already), i.e. branched
+  version
+  or the trunk, i.e. to ~/asf/asf_tools.  NOTE: You will perform an
+  'svn export' to obtain a copy of the tools for building the release
+  later in this procedure.
+
+* Update the version number(s) in
+  ~/asf/asf_tools/include/asf_version.h
+  and commit the change to the subversion repository.  Example:
+
+  a) DATA_QC_VERSION_STRING "1.0.0-dev"
+      changes to
+     DATA_QC_VERSION_STRING "1.0.0"
+
+  b) svn ci
+
+* Tag the repository. Example of tagging the trunk:
+
+     svn copy svn+ssh://svn/svn/asf_tools/trunk \
+              svn+ssh://svn/svn/asf_tools/tags/data_qc_v1-0-0
+
+* Create a clean directory where you will produce the build (etc),
+  for example (change the revision number to the one that you have
+  checked out):
+
+     mkdir ~/asf/data_qc_r8155
+
+* Check out autotar and rpmbuild into this work directory.  Example:
+
+     cd ~/asf/data_qc_r8155
+     svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
+     svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
+
+* Export a copy of the release:
+
+     cd ~/asf/data_qc_r8155
+     svn export svn+ssh://svn/svn/asf_tools/tags/data_qc_v1-0-0
+     asf_tools
+
+* KLUDGE #1
+  Create svn_rev.h:
+
+     cd ~/asf/data_qc_r8155/asf_tools/include
+     echo '#define SVN_REV "8155"' > svn_rev.h
+
+* Use your favorite editor to edit
+  ~/asf/data_qc_r8155/asf_tools/Makefile.in
+
+  a) Change the default target to build the data_qc target (about line
+     215).
+
+        default: data_qc
+
+  b) Eliminate the following line the data_qc target (around line 300).
+
+        echo "#define SVN_REV \"0`svn info|grep Revision|cut
+        -c11-`\"">include/s
+vn_rev.h
+
+* Create the source.* files in ~/asf/jpl-r8072/release/autotar
+  (automatically by makemake if you followed the directory structure
+  instructions listed here):
+
+     cd ~/asf/data_qc_r8155/asf_tools/make_support
+     make
+     ./makemake
+     rm makemake
+
+* Run the autotar script:
+
+     cd ~/asf/data_qc_r8155/release/autotar
+     ./tarfile src ~/asf/data_qc_r8155 data_qc
+
+* Run the rpmprep script (from autotar folder):
+
+     ./rpmprep jpl jplmosaicsuite
+
+* Copy an older .spec file to the new one, then edit the new .spec
+  file in to use the correct version:
+
+     cd ~/asf/data_qc_r8155/release/rpmbuild
+     cp <old .spec file> data_qc-1.0.0-1.i386.spec
+     vi data_qc-1.0.0-1.i386.spec
+
+* Create RPM keys (if not already done)
+
+  a) If you have not already added the secret and public gpg keys
+     to your ~/.gnupg folder, then do so now or the rpm build will
+     not sign the rpms.  Note that you CAN sign the rpms after they
+     have been created with "rpm --addsign <rpm file name>".  Note
+     that
+     the first step below is unnessary if you already have a .gnupg
+     folder in your home directory:
+
+     cd ~/asf/data_qc_r8155/release/rpmbuild
+     mkdir ~/.gnupg
+     cp dot.gnupg* ~/.gnupg
+     cd ~/.gnupg
+     gunzip *
+     tar xvf *
+
+  b) If the machine that you are using has not had the public key
+     imported to the rpm public keys database yet, you will not be
+     able to check your rpms to see if they were signed properly.
+     Import the public key into the rpm public keys database as
+     shown below (you must have root access).  Still in the rpmbuild
+     folder ...do the following:
+
+     cd ~/asf/data_qc_r8155/release/rpmbuild/public_key
+     sudo rpm -import asf_tools-pubkey.asc
+
+* If you have never copied the .rpmmacros and .rpmrc files to your
+  home directory, then do so now, otherwise skip to step 7:
+
+     cd ~/asf/data_qc_r8155/release/rpmbuild
+     cp dot.rpmmacros ~/.rpmmacros
+     cp dot.rpmrc ~/.rpmrc
+
+* Edit ~/.rpmmacros to update the top directory for your build's
+  rpmbuild
+  parent directory, i.e. the 'release' folder.  Find the %_topdir line
+  and
+  edit as follows:
+
+     %_topdir      %(echo $HOME)/asf/data_qc_r8155/release
+
+* Clean up any old rpm builds if necessary:
+
+     cd ~/asf/data_qc_r8155/release/rpmbuild
+     rm -rf BUILD/* RPMS/* SRPMS/*
+
+* Make sure DEBUG_BUILD is not set to any particular debug level:
+
+     unset DEBUG_BUILD
+
+* Build and check the rpm:
+
+     cd ~/asf/data_qc_r8155/release/rpmbuild
+     rpmbuild -ba data_qc-1.0.0-1.i386.spec
+     <password is 'bob'>
+
+  OPTIONAL: Check the results of the rpm build:
+
+     rpm -K RPMS/data_qc-1.0.0-1.i386.rpm
+
+  After the "rpm -K" command, you should see an 'OK' statement similar
+  to the one below that indicates the rpm was properly signed:
+
+     RPMS/data_qc-1.0.0-1.i386.rpm: (sha1) dsa sha1 md5 OK
+
+  If you get a response that includes the words "NOT OK", then it
+  usually
+  means the ASCII public key has not been imported with "rpm -import"
+  yet.
+
+     rpm -qlp RPMS/data_qc-1.0.0-1.i386.rpm
+
+  After the -qlp query, you'll get a long list of all that is
+  contained in
+  rpm ...useful for checking to make sure that no components were left
+  out.
+
+* Sign the rpm:
+
+     rpm --addsign data_qc-1.0.0-1.i386.spec
+     <password is 'bob'>
+
+  You can run the same on the rpm again. This time you should get
+  this:
+
+     RPMS/data_qc-1.0.0-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
+
+* Create tarballs of the rpms (the binary rpm will also contain the
+  README_rpm.txt file from asf_tools folder):
+
+     cd ~/asf/data_qc_r8155/release/rpmbuild
+     ./tarrpms data_qc data_qc
+
+* Put the built files on dq:
+
+     mkdir /stor/dq/release_builds/data_qc/1.0.0
+     cp dist/* /stor/dq/release_builds/data_qc/1.0.0
+     chmod 777 /stor/dq/release_builds/data_qc/1.0.0
+     chmod 666 /stor/dq/release_builds/data_qc/1.0.0/*
+
+* Not necessary, but you may want to delete ~/.rpmmacros and ~/.rpmrc
+
+* Update the version number(s) in
+  ~/asf/asf_tools/include/asf_version.h
+  and commit the change to the subversion repository.  Example:
+
+  a) DATA_DQ_VERSION_STRING "1.0.0"
+      changes to
+     DATA_DQ_VERSION_STRING "1.0.1-dev"
+
+  b) svn ci
