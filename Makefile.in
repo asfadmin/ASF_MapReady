@@ -296,7 +296,7 @@ create_thumbs: mkdirs_for_build external_libs
 	@ echo ""
 
 # Data QC
-data_qc: mkdirs_for_build
+data_qc: mkdirs_for_build external_libs
 	echo BUILD_PKG = -D_PKG_DATA_QC > make_support/build_pkg.mk
 	cp LICENSE.txt $(S_SHAREDIR)
 	echo $(VERSION_JPL) > $(S_SHAREDIR)/data_qc_version.txt
