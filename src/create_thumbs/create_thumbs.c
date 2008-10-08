@@ -1548,7 +1548,8 @@ long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in) {
     meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel * params.vel *
             (params.re/(params.ht+params.re));
 
-    n_az = default_n_az;
+    n_az = default_n_az;  // Default patch size
+    params.na_valid = -1; // Force ardop_setup() to determine number of valid lines
     ardop_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
 
     // Optimize number of valid lines
