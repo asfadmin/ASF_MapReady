@@ -1542,47 +1542,186 @@ SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
     }
 }
 
-SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
+#ifndef win32
+static GtkFileChooser *export_jpeg_widget = NULL;
+
+// We call these export_jpeg, but we're really exporting PNGs on Linux
+static SIGNAL_CALLBACK void export_jpeg_cancel_clicked()
 {
-    char *output_dir = STRDUP(get_string_from_entry("output_dir_entry"));
-    char *output_file = STRDUP("test");
-    char *out_name = MALLOC(sizeof(char) *
-                            (strlen(output_dir) + strlen(output_file) + 25));
+  gtk_widget_hide(GTK_WIDGET(export_jpeg_widget));
+}
 
-    if (strlen(output_dir) > 0)
-      sprintf(out_name, "%s/%s", output_dir, output_file);
-    else
-      strcpy(out_name, output_file);
+static SIGNAL_CALLBACK void export_jpeg_ok_clicked()
+{
+  GSList *files = NULL;
 
-    //GtkWidget *img = get_widget_checked("big_image");
-    //GdkPixbuf *pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
+  if (export_jpeg_widget) {
+      files = gtk_file_chooser_get_filenames(export_jpeg_widget);
+  }
 
-    GdkPixbuf *pb = make_big_image(curr, FALSE);
-    GError *err = NULL;
-    char *format;
+  gtk_widget_hide(GTK_WIDGET(export_jpeg_widget));
 
-    // problems on Linux exporting a jpeg -- so there we export as png
-    // target platform is windows, so it is not worth fixing it on linux...
+  if (files) {
+    char msg[2304];
 
-#ifdef win32
-    const int save_as_jpeg = TRUE;
-#else
-    const int save_as_jpeg = FALSE;
+    if (strlen((char*)files->data) > 0) {
+      append_ext_if_needed((char*)files->data, ".png", ".png");
+
+      GdkPixbuf *pb = make_big_image(curr, FALSE);
+      GError *err = NULL;
+
+      gdk_pixbuf_save(pb, (char*)files->data, "png", &err, NULL);
+
+      if (err) {
+        sprintf(msg, "Error exporting PNG: %s\n", err->message);
+        printf("%s", msg);
+      }
+      else {
+        sprintf(msg, "Exported PNG: %s\n", (char*)files->data);
+      }
+
+      g_object_unref(pb);
+    }
+    else {
+      sprintf(msg, " Zero length filename found ");
+    }
+
+    message_box(msg);
+
+    g_slist_free(files);
+  }
+}
+
+// sets up the save file chooser dialog
+static void create_export_jpeg_file_chooser_dialog()
+{
+  GtkWidget *parent = get_widget_checked("ssv_main_window");
+
+  export_jpeg_widget = GTK_FILE_CHOOSER(gtk_file_chooser_dialog_new(
+      "Export PNG (*.png) File", GTK_WINDOW(parent),
+      GTK_FILE_CHOOSER_ACTION_SAVE,
+      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,  //Cancel button
+      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,    //Save button
+      NULL));
+
+  // we need to extract the buttons, so we can connect them to our
+  // button handlers, above
+  GtkHButtonBox *box =
+      (GtkHButtonBox*)(((GtkDialog*)export_jpeg_widget)->action_area);
+  GList *buttons = box->button_box.box.children;
+
+  GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+  GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+  g_signal_connect((gpointer)cancel_btn, "clicked",
+                    G_CALLBACK(export_jpeg_cancel_clicked), NULL);
+  g_signal_connect((gpointer)ok_btn, "clicked",
+                    G_CALLBACK(export_jpeg_ok_clicked), NULL);
+
+  // add the filters
+  GtkFileFilter *png_filt = gtk_file_filter_new();
+  gtk_file_filter_set_name(png_filt, "PNG Files (*.png)");
+  gtk_file_filter_add_pattern(png_filt, "*.png");
+  gtk_file_chooser_add_filter(export_jpeg_widget, png_filt);
+
+  GtkFileFilter *all_filt = gtk_file_filter_new();
+  gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+  gtk_file_filter_add_pattern(all_filt, "*");
+  gtk_file_chooser_add_filter(export_jpeg_widget, all_filt);
+
+  // we need to make these modal -- if the user opens multiple "open"
+  // dialogs, we'll get confused on the callbacks
+  gtk_window_set_modal(GTK_WINDOW(export_jpeg_widget), TRUE);
+  gtk_window_set_destroy_with_parent(GTK_WINDOW(export_jpeg_widget), TRUE);
+  gtk_dialog_set_default_response(GTK_DIALOG(export_jpeg_widget),
+                                  GTK_RESPONSE_OK);
+}
 #endif
 
-    if (save_as_jpeg) {
-      append_ext_if_needed(out_name, ".jpg", ".jpeg");
-      format = "jpeg";
-      gdk_pixbuf_save(pb, out_name, "jpeg", &err, "quality", "100", NULL);
+SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
+{
+  char *output_dir = STRDUP(get_string_from_entry("output_dir_entry"));
+  char *output_file = STRDUP("test");
+  char *out_name = MALLOC(sizeof(char) *
+                          (strlen(output_dir) + strlen(output_file) + 25));
+
+  if (strlen(output_dir) > 0)
+    sprintf(out_name, "%s/%s", output_dir, output_file);
+  else
+    strcpy(out_name, output_file);
+
+#ifdef win32
+  int retval;
+
+  char msg[2304];
+  char fname[1024];
+  //strcpy(fname, out_name);
+  fname[0]='\0';
+
+  OPENFILENAME of;
+  memset(&of, 0, sizeof(of));
+
+#ifdef OPENFILENAME_SIZE_VERSION_400
+  of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+#else
+  of.lStructSize = sizeof(of);
+#endif
+
+  of.hwndOwner = NULL;
+  of.lpstrFilter =
+    "JPEG Files (*.jpg)\0*.jpg\0"
+    "All Files\0*\0";
+  of.lpstrCustomFilter = NULL;
+  of.nFilterIndex = 1;
+  of.lpstrFile = fname;
+  of.nMaxFile = sizeof(fname);
+  of.lpstrFileTitle = NULL;
+  of.lpstrInitialDir = ".";
+  of.lpstrTitle = "Select Output JPEG File";
+  of.lpstrDefExt = NULL;
+  of.Flags = OFN_HIDEREADONLY | OFN_EXPLORER;
+
+  retval = GetSaveFileName(&of);
+
+  if (!retval) {
+    if (CommDlgExtendedError()) {
+      message_box("File dialog box error");
     }
-    else { // save a png
-      append_ext_if_needed(out_name, ".png", ".png");
-      format = "png";
-      gdk_pixbuf_save(pb, out_name, format, &err, NULL);
+  }
+  else {
+    if (strlen(fname) > 0) {
+      append_ext_if_needed(fname, ".jpg", ".jpeg");
+
+      GdkPixbuf *pb = make_big_image(curr, FALSE);
+      GError *err = NULL;
+
+      gdk_pixbuf_save(pb, fname, "jpeg", &err, "quality", "100", NULL);
+
+      if (err) {
+        sprintf(msg, "Error exporting JPEG: %s\n", err->message);
+        printf("%s", msg);
+      }
+      else {
+        sprintf(msg, "Exported JPEG: %s\n", fname);
+      }
+
+      g_object_unref(pb);
+    }
+    else {
+      sprintf(msg, " Zero length filename found ");
     }
 
-    g_object_unref(pb);
+    message_box(msg);
+  }
 
-    message_box("Saved as %s: %s\n", format, out_name);
+#else // #ifdef win32
+
+  if (!export_jpeg_widget)
+    create_export_jpeg_file_chooser_dialog();
+
+  gtk_file_chooser_set_filename(export_jpeg_widget, out_name);
+  gtk_widget_show(GTK_WIDGET(export_jpeg_widget));
+
+#endif // #ifdef win32
 }
 
