@@ -1566,7 +1566,7 @@ long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in) {
     long n_ref = s->az_reflen;
     long line_count = (long)meta->general->line_count;
     long n_az_valid = n_az - n_ref;
-    long min_valid = n_az_valid / 2;
+    long min_valid = 2049; // Guarantee minimum power of 2 is 12 (for a 4096 line patch)
     long best_valid;
     long patches;
     long min_diff = line_count;
