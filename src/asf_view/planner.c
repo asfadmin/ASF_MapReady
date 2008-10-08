@@ -1562,7 +1562,8 @@ static SIGNAL_CALLBACK void export_jpeg_ok_clicked()
   gtk_widget_hide(GTK_WIDGET(export_jpeg_widget));
 
   if (files) {
-    char msg[2304];
+    static const int len = 2048; // max message length
+    char msg[len];
 
     if (strlen((char*)files->data) > 0) {
       append_ext_if_needed((char*)files->data, ".png", ".png");
@@ -1573,17 +1574,17 @@ static SIGNAL_CALLBACK void export_jpeg_ok_clicked()
       gdk_pixbuf_save(pb, (char*)files->data, "png", &err, NULL);
 
       if (err) {
-        sprintf(msg, "Error exporting PNG: %s\n", err->message);
+        snprintf(msg, len, "Error exporting PNG: %s\n", err->message);
         printf("%s", msg);
       }
       else {
-        sprintf(msg, "Exported PNG: %s\n", (char*)files->data);
+        snprintf(msg, len, "Exported PNG: %s\n", (char*)files->data);
       }
 
       g_object_unref(pb);
     }
     else {
-      sprintf(msg, " Zero length filename found ");
+      sprintf(msg, "Error exporting PNG: Zero length filename found.");
     }
 
     message_box(msg);
@@ -1653,9 +1654,9 @@ SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
 #ifdef win32
   int retval;
 
-  char msg[2304];
-  char fname[1024];
-  //strcpy(fname, out_name);
+  static const int len = 2048;
+  char msg[len];
+  char fname[len/2];// fname needs to be shorter, will be sprintf'ed into msg
   fname[0]='\0';
 
   OPENFILENAME of;
@@ -1676,7 +1677,7 @@ SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
   of.lpstrFile = fname;
   of.nMaxFile = sizeof(fname);
   of.lpstrFileTitle = NULL;
-  of.lpstrInitialDir = ".";
+  of.lpstrInitialDir = strlen(output_dir)>0 ? output_dir : "";
   of.lpstrTitle = "Select Output JPEG File";
   of.lpstrDefExt = NULL;
   of.Flags = OFN_HIDEREADONLY | OFN_EXPLORER;
@@ -1698,17 +1699,17 @@ SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
       gdk_pixbuf_save(pb, fname, "jpeg", &err, "quality", "100", NULL);
 
       if (err) {
-        sprintf(msg, "Error exporting JPEG: %s\n", err->message);
+        snprintf(msg, len, "Error exporting JPEG: %s\n", err->message);
         printf("%s", msg);
       }
       else {
-        sprintf(msg, "Exported JPEG: %s\n", fname);
+        snprintf(msg, len, "Exported JPEG: %s\n", fname);
       }
 
       g_object_unref(pb);
     }
     else {
-      sprintf(msg, " Zero length filename found ");
+      sprintf(msg, "Error exporting JPEG: Zero length filename found.");
     }
 
     message_box(msg);
@@ -1723,5 +1724,8 @@ SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
   gtk_widget_show(GTK_WIDGET(export_jpeg_widget));
 
 #endif // #ifdef win32
-}
 
+  free(out_name);
+  free(output_dir);
+  free(output_file);
+}
