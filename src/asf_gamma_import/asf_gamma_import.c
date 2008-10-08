@@ -172,7 +172,7 @@ void asf_gamma_import(char *dataName, char *metaName, char *outBaseName,
     strcat(reason, tmp);
     status = FALSE;
   }
-  else
+  else if (interferogram)
     bands += 2;
   if (coherence && !fileExists(coherence)) {
     sprintf(tmp, "Missing coherence file (%s)\n", coherence);
