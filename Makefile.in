@@ -112,18 +112,14 @@ C2V_MODULES = \
 	src/asf \
 	src/libasf_proj \
 	src/asf_meta \
-	src/libasf_ardop \
 	src/asf_fft \
 	src/sgpsdp \
 	src/libasf_raster \
+	src/libasf_sar \
 	src/libasf_import \
 	src/libasf_vector \
-	src/libasf_sar \
 	src/libasf_geocode \
 	src/libasf_export \
-	src/libasf_terrcorr \
-	src/libasf_insar \
-	src/libasf_convert \
 	src/convert2vector \
 	src/convert2vector_gui
 
