@@ -1583,6 +1583,8 @@ long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in) {
             min_diff = diff;
         }
     }
+    best_valid /= params.nlooks;
+    best_valid *= params.nlooks;
     if (best_valid != n_az_valid) {
         asfPrintStatus("\nAdjusted ardop patch number of valid lines "
                        "from %d to %d to optimize data usage...\n\n",
