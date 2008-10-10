@@ -211,8 +211,8 @@ int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns)
 	else {
 	  asfPrintError("Duplicate header name - don't know how to "
                         "handle that.\n"
-			"Column 1: %d, header: %s\n"
-			"Column 2: %d, header: %s\n", 
+			"  Column %d header: %s\n"
+			"  Column %d header: %s\n", 
 			ii, header[ii].header, 
 			kk, header[kk].header);
 	}

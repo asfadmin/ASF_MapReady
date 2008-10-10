@@ -137,8 +137,6 @@ void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat,
 void kml_footer(FILE *kml_file);
 void write_kml_overlay(char *filename);
 void write_kml_style_keys(FILE *kml_file);
-void kml_open(char *filename, char **format, char ***lines, int *nLines, 
-	      int *nVertices);
 
 // Prototypes from shape_utils.c
 void shape_generic_init(char *inFile, dbf_header_t *dbf, int nColumns,

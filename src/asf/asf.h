@@ -166,6 +166,9 @@ char *STRTOK_R(char *str1, const char *str2, char **lasts);
 // return the number of occurences of char 'c' in string 's'
 int count_char(const char *s, char c);
 
+// a version of strstr that ignores case
+char *strstr_case(const char *str, const char *key);
+
 /******************************************************************************
  * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in

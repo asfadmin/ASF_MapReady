@@ -59,7 +59,7 @@ char *appendStr(const char *s1, const char *s2)
 // (including any terminating null characters), to 'dst'
 // If strlen(src)<len, null characters are appended to dst
 // to make the total len.
-// If strlen(src>=len, src is truncated to len-1 characters,
+// If strlen(src)>=len, src is truncated to len-1 characters,
 // and a null terminating character is appended to dst.
 // Differs from strncpy in that:
 //  - only copies len-1 characters, instead of len.
@@ -73,23 +73,26 @@ char *strncpy_safe(char *dst, const char *src, size_t len)
 
 char *trim_spaces(const char *s)
 {
-  char *p1, *p2;
+  char *dup = STRDUP(s);
 
-  p1 = (char *) MALLOC(sizeof(char)*(1+strlen(s)));
-  strcpy(p1, s);
-  strtok(p1, " ");
-  strtok(p1, "\r");
-  p2 = strchr(p1, ' ');
-  if (p2) {
-    while (strncmp(p2, " ", 1) == 0)
-      p2++;
-  }
-  else {
-    p2 = (char *) MALLOC(sizeof(char)*(1+strlen(s)));
-    strcpy(p2, p1);
-  }
-  FREE(p1);
-  return p2;
+  // strip end whitespace
+  int n = strlen(dup)-1;
+  while (isspace(dup[n]) && n>0)
+    dup[n--] = '\0';
+
+  // handle all-spaces case
+  if (n==0)
+    return STRDUP("");
+
+  // now strip beginning whitespace, may assume not all spaces
+  char *p = dup;
+  while (isspace(*p))
+    ++p;
+
+  char *ret = STRDUP(p);
+  FREE(dup);
+
+  return ret;
 }
 
 void chomp(char *str)
@@ -153,4 +156,24 @@ int count_char(const char *s, char c)
     if (s[i]==c) ++n;
 
   return n;
+}
+
+// a version of strstr() ignoring case.
+char *strstr_case(const char *str, const char *key)
+{
+  const char *p1, *p2;
+
+  while (*str != '\0') {
+    p1 = str;
+    p2 = key;
+    while (tolower(*p2) == tolower(*p1) && *p1 != '\0') {
+      p1++;
+      p2++;
+    }
+    if (*p2 == '\0') {
+      return (char *)str;
+    }
+    str++;
+  }
+  return NULL;
 }

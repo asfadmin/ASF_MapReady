@@ -1413,8 +1413,8 @@ void write_kml_style_keys(FILE *kml_file)
     fprintf(kml_file, "  </Style>\n");
 }
 
-void kml_open(char *filename, char **format, char ***sLines, int *nLines,
-              int *nVertices)
+static void kml_open(char *filename, char **format, int *nLines,
+                     int *nVertices)
 {
   // try to open the kml file
   char *kml_filename=NULL;
@@ -1432,7 +1432,7 @@ void kml_open(char *filename, char **format, char ***sLines, int *nLines,
 
   // read KML file to figure out the number of placemarks and maximum
   // number of vertices (and number of lines)
-  char *line = (char *) MALLOC(sizeof(char)*1024);
+  char line[4096];
   char *str;
   int n = 0;
   int nPlacemarks = 0;
@@ -1440,23 +1440,23 @@ void kml_open(char *filename, char **format, char ***sLines, int *nLines,
   int maxVertices = 0;
   int count_on = FALSE;
   while (fgets(line, 1024, fp)) {
-    str = STRDUP(line);
+    str = line;
     while (isspace(*str))
       ++str;
-    if (strncmp(uc(str), "<COORDINATES>", 13) == 0)
+    if (strncmp_case(str, "<COORDINATES>", 13) == 0)
       count_on = TRUE;
     if (count_on)
-      nCoordinates++;
-    if (strncmp(uc(str), "</COORDINATES>", 14) == 0)
+      ++nCoordinates;
+    if (strncmp_case(str, "</COORDINATES>", 14) == 0)
       count_on = FALSE;
-    if (strncmp(uc(str), "</PLACEMARK>", 12) == 0) {
-      nPlacemarks++;
+    if (strncmp_case(str, "</PLACEMARK>", 12) == 0) {
+      ++nPlacemarks;
       nCoordinates -= 2;
       if (nCoordinates > maxVertices)
         maxVertices = nCoordinates;
       nCoordinates = 0;
     }
-    n++;
+    ++n;
   }
   FCLOSE(fp);
 
@@ -1464,26 +1464,22 @@ void kml_open(char *filename, char **format, char ***sLines, int *nLines,
   char *type = (char *) MALLOC(sizeof(char)*25);
   strcpy(type, "UNKNOWN");
   int ii;
-  char **lines = (char **) MALLOC(sizeof(char *)*n);
-  for (ii=0; ii<n; ii++)
-    lines[ii] = (char *) MALLOC(sizeof(char)*1024);
   fp = FOPEN(kml_filename, "r");
   for (ii=0; ii<n; ii++) {
-    fgets(line, 1024, fp);
-    while (isspace(*line))
-      line++;
-    if (strncmp(line, "<!-- Format:", 12) == 0)
-      sscanf(line, "<!-- Format: %s", type);
-    else if (strncmp_case(line, "<NAME>URSA GRANULES</NAME>", 26) == 0)
+    fgets(line, sizeof(line), fp);
+    str = line;
+    while (isspace(*str))
+      str++;
+    if (strncmp(str, "<!-- Format:", 12) == 0)
+      sscanf(str, "<!-- Format: %s", type);
+    else if (strncmp_case(str, "<NAME>URSA GRANULES</NAME>", 26) == 0)
       strcpy(type, "URSA");
-    sprintf(lines[ii], "%s", line);
   }
   FCLOSE(fp);
 
   asfPrintStatus("Found %d placemarks in KML file\n", nPlacemarks);
 
   *format = type;
-  *sLines = lines;
   *nLines = n;
   *nVertices = maxVertices;
 }
@@ -1532,54 +1528,104 @@ static void shape_kml_init(char *inFile, char *format, char *header,
     asfPrintError("Could not find a supported format.\n");
 }
 
-static void read_kml_line(char *line, char **param, char **value)
+static int read_kml_line(char *line, char **param, char **value, int *coords)
 {
   char *para = (char *) MALLOC(sizeof(char)*255);
   char *val = (char *) MALLOC(sizeof(char)*255);
-  char *c = strstr(line, "<!--");
-  char *p = strstr(line, "<strong>");
-  char *q = strstr(line, "</strong>");
-  int ii;
-  if (p && !c) {
-    for (ii=0; ii<8; ii++)
-      p++;
-    strncpy(para, p, strlen(p)-strlen(q));
-    p = strchr(line, ':');
-    if (p) {
-      p++;
-      sscanf(p, "%s", val);
+
+  int end = strstr_case(line, "</Placemark>") != NULL;
+  if (end) {
+    *coords = FALSE;
+    strcpy(para, MAGIC_UNSET_STRING);
+    strcpy(val, MAGIC_UNSET_STRING);
+  }
+  else if (*coords) {
+    if (strstr_case(line, "</coordinates>")) {
+      strcpy(para, MAGIC_UNSET_STRING);
+      strcpy(val, MAGIC_UNSET_STRING);
+      *coords = FALSE;
+    }
+    else {
+      double lon, lat;
+      sscanf(line, "%lf,%lf", &lon, &lat);
+      sprintf(para, "%f", lat);
+      sprintf(val, "%f", lon);
+      *coords = TRUE;
+    }
+  }
+  else {
+    char *c = strstr(line, "<!--");
+    char *p = strstr_case(line, "<strong>");
+    char *q = strstr_case(line, "</strong>");
+    char *n = strstr_case(line, "<br>");
+    char *lat = strstr_case(line, "Lat</strong>"); // ignore Lat/Lon attributes
+    char *lon = strstr_case(line, "Lon</strong>");
+    int len;
+    if (p && q && n && !c && !lat && !lon) {
+      p += 8; // skip past "<strong>"
+      len = q-p;
+      //assert(len<255);
+      strncpy_safe(para, p, len+1);
+      p = strchr(line, ':');
+      if (p) {
+        p += 2; // skips ": "
+        len = n-p;
+        //assert(len<255);
+        strncpy_safe(val, p, len+1);
+      }
+      else {
+        strcpy(para, MAGIC_UNSET_STRING);
+        strcpy(val, MAGIC_UNSET_STRING);
+      }
+    }
+    else if (strstr_case(line, "<coordinates>")) {
+      strcpy(para, MAGIC_UNSET_STRING);
+      strcpy(val, MAGIC_UNSET_STRING);
+      *coords = TRUE;
     }
     else {
       strcpy(para, MAGIC_UNSET_STRING);
       strcpy(val, MAGIC_UNSET_STRING);
     }
   }
-  else {
-    strcpy(para, MAGIC_UNSET_STRING);
-    strcpy(val, MAGIC_UNSET_STRING);
-  }
-  *param = para;
-  *value = val;
+
+  *param = trim_spaces(para);
+  *value = trim_spaces(val);
+
+  FREE(para);
+  FREE(val);
+
+  return end;
 }
 
-static void kml2header(char **lines, int nLines, char **header)
+static void kml2header(char *inFile, char **header)
 {
-  int ii;
-  char *param = (char *) MALLOC(sizeof(char)*255);
-  char *value = (char *) MALLOC(sizeof(char)*255);
-  char *header_str = (char *) MALLOC(sizeof(char)*255);
-  char str[255];
+  int n=1, expect_coords=FALSE, isEnd;
+  char *param, *value, *header_str = (char *) MALLOC(sizeof(char)*4096);
+  char str[255], line[4096];
+  FILE *fp = FOPEN(inFile, "r");
   strcpy(header_str, "");
-  for (ii=0; ii<nLines; ii++) {
-    read_kml_line(lines[ii], &param, &value);
+  while (fgets(line, sizeof(line), fp)) {
+    isEnd = read_kml_line(line, &param, &value, &expect_coords);
     if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
-    strcmp(value, MAGIC_UNSET_STRING) != 0) {
-      sprintf(str, "\"%s\",", param);
+        strcmp(value, MAGIC_UNSET_STRING) != 0)
+    {
+      if (expect_coords) {
+        sprintf(str, "\"Lat%d\",\"Lon%d\",",n,n);
+        ++n;
+      }
+      else {
+        sprintf(str, "\"%s\",", param);
+      }
+      assert(strlen(header_str) + strlen(str) < sizeof(line));
       strcat(header_str, str);
     }
-    if (strstr(lines[ii], "</Placemark>"))
+    FREE(param);
+    FREE(value);
+    if (isEnd)
       break;
   }
+  FCLOSE(fp);
   header_str[strlen(header_str)-1] = '\0';
   *header = header_str;
 }
@@ -1604,7 +1650,7 @@ int kml2point(char *inFile, char *outFile, int listFlag)
       p = strchr(line, ':');
       p++;
       while (isspace(*p))
-    p++;
+        p++;
       sscanf(p, "%s", format);
       if (strcmp(uc(format), "POINT") == 0) {
     found_format = TRUE;
@@ -1634,7 +1680,7 @@ int kml2point(char *inFile, char *outFile, int listFlag)
       p = strchr(line, ':');
       p++;
       while (isspace(*p))
-    p++;;
+        p++;
       sscanf(p, "%s", id);
     }
     // Get latitude
@@ -1737,46 +1783,73 @@ int kml2polygon(char *inFile, char *outFile, int listFlag)
 // Convert kml to csv file
 int kml2csv(char *inFile, char *outFile, int listFlag)
 {
-  FILE *fp;
-  char line[4096], str[255], **lines, *format, *header;
-  int ii, n, nCols, nLines, nVertices;
-  char *param = (char *) MALLOC(sizeof(char)*4096);
-  char *value = (char *) MALLOC(sizeof(char)*4096);
+  char line[4096], in_line[4096], str[1024], *format, *header;
 
-  // Figure out the format and number of vertices
-  kml_open(inFile, &format, &lines, &nLines, &nVertices);
-
-  // Initialize shape file
-  // Only known formats generated by convert2vector are supported
-  kml2header(lines, nLines, &header);
-
-  fp = FOPEN(outFile, "w");
-  fprintf(fp, "%s\n", header);
-  nCols = get_number_columns(header);
-  n = 0;
-  for (ii=0; ii<nLines; ii++) {
-    read_kml_line(lines[ii], &param, &value);
-    if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
-    strcmp(value, MAGIC_UNSET_STRING) != 0) {
-      sprintf(str, "%s,", value);
-      strcat(line, str);
-      n++;
-      if (n == nCols) {
-    line[strlen(line)-1] = '\0';
-    fprintf(fp, "\"%s\"\n", line);
-    strcpy(line, "");
-    n = 0;
-      }
+  if (listFlag) {
+    FILE *fp = FOPEN(inFile, "r");
+    while (fgets(line, 4095, fp)) {
+      char *l = trim_spaces(line);
+      if (fileExists(l))
+        kml2csv(l, outFile, FALSE);
+      else
+        asfPrintWarning("File %s: not found.\n", l);
     }
+    FCLOSE(fp);
   }
-  FCLOSE(fp);
+  else {
+    int nLines, nVertices;
+    char *param, *value;
 
-  // Clean up
-  FREE(param);
-  FREE(value);
-  for (ii=0; ii<nLines; ii++)
-    FREE(lines[ii]);
-  FREE(lines);
+    // Figure out the format and number of vertices
+    kml_open(inFile, &format, &nLines, &nVertices);
+
+    // Initialize shape file
+    // Only known formats generated by convert2vector are supported
+    kml2header(inFile, &header);
+
+    FILE *ifp = FOPEN(inFile, "r");
+    FILE *ofp = FOPEN(outFile, "w");
+    fprintf(ofp, "%s\n", header);
+    int nCols = get_number_columns(header);
+    int expect_coords=FALSE, n=0, isEnd;
+
+    // start of with an empty csv line
+    strcpy(line, "");
+
+    // reading lines of the kml file
+    while (fgets(in_line, sizeof(in_line), ifp)) {
+      isEnd = read_kml_line(in_line, &param, &value, &expect_coords);
+      if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
+          strcmp(value, MAGIC_UNSET_STRING) != 0)
+      {
+        if (expect_coords) {
+          snprintf(str, 1000, "\"%s\",\"%s\",", param, value);
+          n += 2;
+        }
+        else {
+          snprintf(str, 1000, "\"%s", value);
+          strcat(str, "\","); // always want this, even if snprintf truncates
+          ++n;
+        }
+
+        // if the line gets too long, stop adding entries...
+        if (strlen(line) + strlen(str) < sizeof(line))
+          strcat(line, str);
+      }
+      else if (isEnd) {
+        // found all columns of this entry-- finish it, ready a new csv line
+        line[strlen(line)-1] = '\0';
+        fprintf(ofp, "%s\n", line);
+        strcpy(line, "");
+        n = 0;
+      }
+
+      FREE(param);
+      FREE(value);
+    }
+    FCLOSE(ifp);
+    FCLOSE(ofp);
+  }
 
   return 1;
 }
@@ -2135,24 +2208,25 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
 {
   DBFHandle dbase;
   SHPHandle shape;
-  char **lines, *format, *header;
+  char *format, *header;
+  char in_line[4096];
   dbf_header_t *dbf;
-  int ii, kk, ll, nCols, n, nLines, nVertices;
+  int ii, kk, ll, nCols, n, nLines, nVertices, expect_coords, isEnd;
   char *param = (char *) MALLOC(sizeof(char)*255);
   char *value = (char *) MALLOC(sizeof(char)*255);
 
   // Figure out the format and number of vertices
-  kml_open(inFile, &format, &lines, &nLines, &nVertices);
+  kml_open(inFile, &format, &nLines, &nVertices);
 
   // Read configuration file
   if (!read_header_config(format, &dbf, &nCols))
     asfPrintError("Don't currently know anything about the requested format "
-          "(%s).\nHowever it can be added to 'header.lst' file in "
-          "the share directory\n(%s)\n", format, get_asf_share_dir());
+                  "(%s).\nHowever it can be added to 'header.lst' file in "
+                  "the share directory\n(%s)\n", format, get_asf_share_dir());
 
   // Initialize shape file
   // Only known formats generated by convert2vector are supported
-  kml2header(lines, nLines, &header);
+  kml2header(inFile, &header);
   shape_kml_init(outFile, format, header, nVertices);
 
   // Open shape file for some action
@@ -2160,34 +2234,37 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
 
   kk = 0;
   n = 0;
-  for (ii=0; ii<nLines; ii++) {
-    read_kml_line(lines[ii], &param, &value);
+  expect_coords = FALSE;
+
+  FILE *ifp = FOPEN(inFile, "r");
+  while (fgets(in_line, 4095, ifp)) {
+    isEnd = read_kml_line(in_line, &param, &value, &expect_coords);
     if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
-        strcmp(value, MAGIC_UNSET_STRING) != 0) {
+        strcmp(value, MAGIC_UNSET_STRING) != 0)
+    {
       for (ll=0; ll<nCols; ll++) {
-    if (strcmp(dbf[ll].header, param) == 0 && dbf[ll].visible) {
-      if (dbf[ll].format == DBF_STRING)
-        DBFWriteStringAttribute(dbase, n, ll, value);
-      else if (dbf[ll].format == DBF_STRING)
-        DBFWriteIntegerAttribute(dbase, n, ll, atoi(value));
-      else if (dbf[ii].format == DBF_DOUBLE)
-        DBFWriteDoubleAttribute(dbase, n, ll, atof(value));
-    }
+        int len = strlen(dbf[ll].header);
+        if (strncmp_case(dbf[ll].header, param, len) == 0 && dbf[ll].visible) {
+          if (dbf[ll].format == DBF_STRING)
+            DBFWriteStringAttribute(dbase, n, ll, value);
+          else if (dbf[ll].format == DBF_STRING)
+            DBFWriteIntegerAttribute(dbase, n, ll, atoi(value));
+          else if (dbf[ii].format == DBF_DOUBLE)
+            DBFWriteDoubleAttribute(dbase, n, ll, atof(value));
+        }
       }
       n++;
-      if (n == nCols) {
-        kk++;
-        n = 0;
-      }
+    }
+    else if (isEnd) {
+      ++kk;
+      n=0;
     }
   }
 
   // Clean up
+  FCLOSE(ifp);
   FREE(param);
   FREE(value);
-  for (ii=0; ii<nLines; ii++)
-    FREE(lines[ii]);
-  FREE(lines);
 
   // Close shapefile
   close_shape(dbase, shape);
@@ -2198,36 +2275,39 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
 
 int kml2ursa(char *inFile, char *outFile, int listFlag)
 {
-  FILE *fp;
-  char **lines, *format, *p, *q, *data_set;
+  FILE *ifp, *ofp;
+  char *format, *p, *q, *data_set;
   int ii, nLines, nVertices, length;
+  char in_line[4096];
 
   // Figure out the format and number of vertices
-  kml_open(inFile, &format, &lines, &nLines, &nVertices);
+  kml_open(inFile, &format, &nLines, &nVertices);
 
   // Check the format
   if (strcmp_case(format, "URSA") != 0)
     asfPrintError("Found format (%s) that does not match requested format "
                   "(URSA).\nPlease verify that the KML file is in fact"
-          "generated the URSA system.\n", format);
+                  "generated the URSA system.\n", format);
 
   // Write the granules into the output file
   data_set = (char *) MALLOC(sizeof(char)*50);
-  fp = FOPEN(outFile, "w");
-  for (ii=0; ii<nLines; ii++) {
-    if (strstr(lines[ii], "<Placemark>")) {
+  ifp = FOPEN(inFile, "r");
+  ofp = FOPEN(outFile, "w");
+  while (fgets(in_line, 4095, ifp)) {
+    if (strstr(in_line, "<Placemark>")) {
       strcpy(data_set, "");
-      p = strstr(lines[ii+1], "<name>");
-      q = strstr(lines[ii+1], "</name>");
+      p = strstr(in_line, "<name>");
+      q = strstr(in_line, "</name>");
       if (p && q) {
-    length = strlen(p) - strlen(q) - 6;
-    strncpy(data_set, p+6, length);
-    fprintf(fp, "%s\n", data_set);
+        length = strlen(p) - strlen(q) - 6;
+        strncpy(data_set, p+6, length);
+        fprintf(ofp, "%s\n", data_set);
       }
       ii++;
     }
   }
-  FCLOSE(fp);
+  FCLOSE(ifp);
+  FCLOSE(ofp);
 
   // Clean up
   FREE(data_set);
