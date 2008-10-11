@@ -391,6 +391,7 @@ get_asf_share_dir()
     if (!check_for_known_file_in_share_dir(s_share_dir))
     {
         const char path_sep = ':';
+        const char *share_p;
 	char *path, *buf, *share, *p;
 	int found = 0;
 
@@ -403,17 +404,23 @@ get_asf_share_dir()
         /* known file.                                                 */
 
         /* first: it might not be share/asf_tools, get what it really is */
-        share = strstr(ASF_SHARE_DIR, "share");
-        if (!share) {
+        share_p = strstr(ASF_SHARE_DIR, "share");
+        if (!share_p) {
 	    /* this is bad... */
 	    printf("Bad configure? 'share' not found in default share dir.\n");
 	    printf("Using default share dir: %s\n", s_share_dir);
 	    return s_share_dir;
 	}
-        --share;
+        --share_p;
 	
-	path = getenv("PATH");	
-	buf = MALLOC(strlen(path) + strlen(share) + 10);
+        /* Add on the tool name, e.g. share/asf_tools/mapready */
+        share = MALLOC(sizeof(char)*(strlen(share_p) + 
+                                     strlen(TOOL_SUITE_SHARE_DIR) + 10));
+        sprintf(share, "%s/%s", share_p, TOOL_SUITE_SHARE_DIR);
+
+        /* now build the full buffer */
+	path = getenv("PATH");
+	buf = MALLOC(sizeof(char)*(strlen(path) + strlen(share) + 10));
 
 	p = path;
 	do {
@@ -425,23 +432,23 @@ get_asf_share_dir()
 	        buf[i] = p[i];
 	    buf[i] = '\0';
 
-        // If path item ends with a separator, pop that off
-        if (buf[strlen(buf) - 1] == '/')
-            buf[strlen(buf) - 1] = '\0';
+            // If path item ends with a separator, pop that off
+            if (buf[strlen(buf) - 1] == '/')
+                buf[strlen(buf) - 1] = '\0';
 
 	    //printf("Checking %s ...\n", buf);
 	    /* only try this one if it ends with 'bin' */
 	    if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
-	        *(buf + strlen(buf) - 4) = '\0';
-		strcat(buf, share);
+                *(buf + strlen(buf) - 4) = '\0';
+                strcat(buf, share);
 
 		if (check_for_known_file_in_share_dir(buf))
 		{
-		    free(s_share_dir);
-		    s_share_dir = strdup(buf);
-		    found = 1;
-		    //printf("  Found in %s!\n", buf);
-		    break;
+                    free(s_share_dir);
+                    s_share_dir = strdup(buf);
+                    found = 1;
+                    //printf("  Found in %s!\n", buf);
+                    break;
 		}
 
 		//printf("  Not found in %s.\n", buf);

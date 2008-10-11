@@ -363,8 +363,7 @@ endif
 
 LIBDIR  = ../../lib
 BINDIR  = ../../bin
-SHAREDIR = ../../share/asf_tools
-DOCDIR = $(SHAREDIR)/doc
+DOCDIR = ../../share/asf_tools/doc
 
 GTKWIN32_DIR = ../../external/gtkwin32
 GTKWIN32_ZIP = ../../external/gtkwin32zip

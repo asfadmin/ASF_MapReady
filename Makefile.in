@@ -103,8 +103,8 @@ AP_MODULES = \
 REQ_MODULES = \
 	src/asf \
 	src/libasf_proj \
-	src/libasf_raster \
 	src/asf_meta \
+	src/libasf_raster \
 	src/metadata \
 	src/req
 
@@ -198,6 +198,15 @@ S_BINDIR   = bin
 S_SHAREDIR = share/asf_tools
 S_DOCDIR   = $(S_SHAREDIR)/doc
 
+MAPREADY_SHAREDIR = $(S_SHAREDIR)/mapready
+C2V_SHAREDIR = $(S_SHAREDIR)/c2v
+STP_SHAREDIR = $(S_SHAREDIR)/stp
+DATA_QC_SHAREDIR = $(S_SHAREDIR)/data_qc
+AP_SHAREDIR = $(S_SHAREDIR)/ap
+REQ_SHAREDIR = $(S_SHAREDIR)/req
+JPL_SHAREDIR = $(S_SHAREDIR)/jpl
+CREATE_THUMBS_SHAREDIR = $(S_SHAREDIR)/create_thumbs
+
 VERSION_MAPREADY = $(shell awk -F '"' '$$1 ~ /define MAPREADY_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_STP = $(shell awk -F '"' '$$1 ~ /define STP_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_AP = $(shell awk -F '"' '$$1 ~ /define AP_VERSION_STRING/ {print $$2}' include/asf_version.h)
@@ -212,11 +221,15 @@ default: mapready
 
 # MapReady Package
 mapready: mkdirs_for_build external_libs
+	mkdir -p $(MAPREADY_SHAREDIR)
+	-cp -R external/share/* $(MAPREADY_SHAREDIR)
+	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_MAPREADY > make_support/build_pkg.mk
+	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/mapready_manual.pdf $(S_DOCDIR)
 	cp doc/mapready-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_MAPREADY) > $(S_SHAREDIR)/mapready_version.txt
+	cp LICENSE.txt $(MAPREADY_SHAREDIR)
+	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -225,11 +238,15 @@ mapready: mkdirs_for_build external_libs
 
 # SAR Training Processor Package
 stp: mkdirs_for_build external_libs
+	mkdir -p $(STP_SHAREDIR)
+	-cp -R external/share/* $(STP_SHAREDIR)
+	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_STP > make_support/build_pkg.mk
+	echo SHAREDIR = ../../$(STP_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/SAR_training_processor.pdf $(S_DOCDIR)
 	cp doc/stp-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_STP) > $(S_SHAREDIR)/stp_version.txt
+	cp LICENSE.txt $(STP_SHAREDIR)
+	echo $(VERSION_STP) > $(STP_SHAREDIR)/stp_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(STP_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -238,9 +255,13 @@ stp: mkdirs_for_build external_libs
 
 # Acquisition Request Planner Package
 ap: mkdirs_for_build external_libs
+	mkdir -p $(AP_SHAREDIR)
+	-cp -R external/share/* $(AP_SHAREDIR)
+	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_AP > make_support/build_pkg.mk
-	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_AP) > $(S_SHAREDIR)/acquisitionplanner_version.txt
+	echo SHAREDIR = ../../$(AP_SHAREDIR) >> make_support/build_pkg.mk
+	cp LICENSE.txt $(AP_SHAREDIR)
+	echo $(VERSION_AP) > $(AP_SHAREDIR)/acquisitionplanner_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(AP_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -249,9 +270,13 @@ ap: mkdirs_for_build external_libs
 
 # Request Generator Package
 req: mkdirs_for_build external_libs
+	mkdir -p $(REQ_SHAREDIR)
+	-cp -R external/share/* $(REQ_SHAREDIR)
+	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_REQ > make_support/build_pkg.mk
-	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_REQ) > $(S_SHAREDIR)/req_version.txt
+	echo SHAREDIR = ../../$(REQ_SHAREDIR) >> make_support/build_pkg.mk
+	cp LICENSE.txt $(REQ_SHAREDIR)
+	echo $(VERSION_REQ) > $(REQ_SHAREDIR)/req_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(REQ_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -260,9 +285,13 @@ req: mkdirs_for_build external_libs
 
 # Convert To Vector Package
 c2v: mkdirs_for_build external_libs
+	mkdir -p $(C2V_SHAREDIR)
+	-cp -R external/share/* $(C2V_SHAREDIR)
+	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_C2V > make_support/build_pkg.mk
-	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_C2V) > $(S_SHAREDIR)/converttovector_version.txt
+	echo SHAREDIR = ../../$(C2V_SHAREDIR) >> make_support/build_pkg.mk
+	cp LICENSE.txt $(C2V_SHAREDIR)
+	echo $(VERSION_C2V) > $(C2V_SHAREDIR)/converttovector_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(C2V_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -271,9 +300,13 @@ c2v: mkdirs_for_build external_libs
 
 # JPL Mosaic Suite
 jpl: mkdirs_for_build
+	mkdir -p $(JPL_SHAREDIR)
+	-cp -R external/share/* $(JPL_SHAREDIR)
+	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_JPL> make_support/build_pkg.mk
-	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_JPL) > $(S_SHAREDIR)/jplmosaicsuite_version.txt
+	echo SHAREDIR = ../../$(JPL_SHAREDIR) >> make_support/build_pkg.mk
+	cp LICENSE.txt $(JPL_SHAREDIR)
+	echo $(VERSION_JPL) > $(JPL_SHAREDIR)/jplmosaicsuite_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(JPL_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -282,9 +315,13 @@ jpl: mkdirs_for_build
 
 # Create thumbs
 create_thumbs: mkdirs_for_build external_libs
+	mkdir -p $(CREATE_THUMBS_SHAREDIR)
+	-cp -R external/share/* $(CREATE_THUMBS_SHAREDIR)
+	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_CREATE_THUMBS > make_support/build_pkg.mk
-	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_JPL) > $(S_SHAREDIR)/create_thumbs_version.txt
+	echo SHAREDIR = ../../$(CREATE_THUMBS_SHAREDIR) >> make_support/build_pkg.mk
+	cp LICENSE.txt $(CREATE_THUMBS_SHAREDIR)
+	echo $(VERSION_JPL) > $(CREATE_THUMBS_SHAREDIR)/create_thumbs_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(CREATE_THUMBS_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -293,13 +330,17 @@ create_thumbs: mkdirs_for_build external_libs
 
 # Data QC
 data_qc: mkdirs_for_build external_libs
+	mkdir -p $(DATA_QC_SHAREDIR)
+	-cp -R external/share/* $(DATA_QC_SHAREDIR)
+	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_DATA_QC > make_support/build_pkg.mk
-	cp LICENSE.txt $(S_SHAREDIR)
-	echo $(VERSION_JPL) > $(S_SHAREDIR)/data_qc_version.txt
+	echo SHAREDIR = ../../$(DATA_QC_SHAREDIR) >> make_support/build_pkg.mk
+	cp LICENSE.txt $(DATA_QC_SHAREDIR)
+	echo $(VERSION_JPL) > $(DATA_QC_SHAREDIR)/data_qc_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(DATA_QC_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
-	@ echo "  XXXXXXXXXXXX JPL Mosaic Suite Compiled! XXXXXXXXXXX"
+	@ echo "  XXXXXXXXXXXX Data QC Compiled! XXXXXXXXXXX"
 	@ echo ""
 
 # Build using our old system
@@ -337,15 +378,12 @@ external_libs: mkdirs_for_build
 	-chmod -R ug+w $(S_LIBDIR)
 	-cp -R external/include/* include
 	-chmod -R ug+w include
-	-cp -R external/share/* $(S_SHAREDIR)
-	-chmod -R ug+w share
 
 # Prep the directory tree for the build
 mkdirs_for_build:
 	mkdir -p $(S_LIBDIR)
 	mkdir -p $(S_BINDIR)
 	mkdir -p $(S_DOCDIR)
-	mkdir -p $(S_SHAREDIR)
 	mkdir -p man/cat1
 	mkdir -p man/man1
 

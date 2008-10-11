@@ -117,16 +117,10 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 
       echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 
-     *** NEW in 2.0.5 --->
-
      The "stp" "ap" "req" "c2v" and "oldtools" targets, and all associated build
      instructions, should all be deleted from Makefile.in
 
-     *** NEW in 2.0.8 --->
-
      Update the "all" target to only build "mapready".
-
-     *** NEW in 2.0.10 --->
 
      Fix the "clean" target near the end of the file, to only include MAPREADY_MODULES
      I.e., delete the STP_MODULES and AP_MODULES, etc.
