@@ -353,10 +353,10 @@ all: mapready oldtools req ap stp
 
 # This should install any & all package(s) that have been built
 install: 
-	mkdir -p "@BINDIR@" "@prefix@"/lib "@SHAREDIR@"
-	cp -R $(S_BINDIR)/* "@BINDIR@"
-	cp -R $(S_LIBDIR)/* "@prefix@"/lib
-	cp -R $(S_SHAREDIR)/* "@SHAREDIR@"
+	mkdir -p "@BINDIR@" "@prefix@/lib" "@SHAREDIR@"
+	-cp -R $(S_BINDIR)/* "@BINDIR@"
+	-cp -R $(S_LIBDIR)/* "@prefix@"/lib
+	-cp -R $(S_SHAREDIR)/* "@SHAREDIR@"
 	chmod 755 "@BINDIR@"/*
 	if [ -d @SHAREDIR@/projections ]; then \
 		chmod a+x "@SHAREDIR@"/projections ; \
@@ -368,6 +368,8 @@ install:
 	if [ -d @SHAREDIR@/asf_mapready ]; then \
 		chmod a+x "@SHAREDIR@"/proj ; \
 	fi
+	cp -R doc/*.pdf "@SHAREDIR@/doc"
+	cp -R doc/*.txt "@SHAREDIR@/doc"
 	chmod -R a+r "@SHAREDIR@"
 	chmod -R ug+w "@SHAREDIR@"
 
