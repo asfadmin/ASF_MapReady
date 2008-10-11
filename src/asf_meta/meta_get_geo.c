@@ -290,7 +290,7 @@ int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSamp)
 {
-  if (meta->projection) {
+  if (meta->projection && meta->projection->type != SCANSAR_PROJECTION) {
     meta_projection *mp = meta->projection;
     meta_general *mg = meta->general;
 
@@ -318,36 +318,36 @@ int meta_get_lineSamp(meta_parameters *meta,
         //printf("after - lat: %.4lf, lon: %.4lf\n", lat, lon);
       }
       // If a valid transform block was found, use it...
-      double lat2 = lat*lat;
-      double lon2 = lon*lon;
-      double lat3 = lat2*lat;
-      double lon3 = lon2*lon;
-      double lat4 = lat2*lat2;
-      double lon4 = lon2*lon2;
-      
+      double lat2 = lat  * lat;
+      double lon2 = lon  * lon;
+      double lat3 = lat2 * lat;
+      double lon3 = lon2 * lon;
+      double lat4 = lat2 * lat2;
+      double lon4 = lon2 * lon2;
+
       if (meta->transform->parameter_count == 25) {
-        *xSamp = a[0]*lat4*lon4 + a[1]*lat4*lon3 + a[2]*lat4*lon2 +
-               a[3]*lat4*lon + a[4]*lat4 + a[5]*lat3*lon4 + a[6]*lat3*lon3 +
-               a[7]*lat3*lon2 + a[8]*lat3*lon + a[9]*lat3 + a[10]*lat2*lon4 +
-	       a[11]*lat2*lon3 + a[12]*lat2*lon2 + a[13]*lat2*lon + 
-	       a[14]*lat2 + a[15]*lat*lon4 + a[16]*lat*lon3 + a[17]*lat*lon2 +
-	       a[18]*lat*lon + a[19]*lat + a[20]*lon4 + a[21]*lon3 + 
-	       a[22]*lon2 + a[23]*lon + a[24];
-        *yLine = b[0]*lat4*lon4 + b[1]*lat4*lon3 + b[2]*lat4*lon2 +
-               b[3]*lat4*lon + b[4]*lat4 + b[5]*lat3*lon4 + b[6]*lat3*lon3 +
-               b[7]*lat3*lon2 + b[8]*lat3*lon + b[9]*lat3 + b[10]*lat2*lon4 +
-	       b[11]*lat2*lon3 + b[12]*lat2*lon2 + b[13]*lat2*lon + 
-	       b[14]*lat2 + b[15]*lat*lon4 + b[16]*lat*lon3 + b[17]*lat*lon2 +
-	       b[18]*lat*lon + b[19]*lat + b[20]*lon4 + b[21]*lon3 + 
-	       b[22]*lon2 + b[23]*lon + b[24];
+        *xSamp = a[0] *lat4*lon4 + a[1] *lat4*lon3 + a[2] *lat4*lon2 +
+                 a[3] *lat4*lon  + a[4] *lat4      + a[5] *lat3*lon4 + a[6] *lat3*lon3 +
+                 a[7] *lat3*lon2 + a[8] *lat3*lon  + a[9] *lat3      + a[10]*lat2*lon4 +
+                 a[11]*lat2*lon3 + a[12]*lat2*lon2 + a[13]*lat2*lon  +
+                 a[14]*lat2      + a[15]*lat*lon4  + a[16]*lat*lon3  + a[17]*lat*lon2  +
+                 a[18]*lat*lon   + a[19]*lat       + a[20]*lon4      + a[21]*lon3      +
+                 a[22]*lon2      + a[23]*lon       + a[24];
+        *yLine = b[0] *lat4*lon4 + b[1] *lat4*lon3 + b[2] *lat4*lon2 +
+                 b[3] *lat4*lon  + b[4] *lat4      + b[5] *lat3*lon4 + b[6] *lat3*lon3 +
+                 b[7] *lat3*lon2 + b[8] *lat3*lon  + b[9] *lat3      + b[10]*lat2*lon4 +
+                 b[11]*lat2*lon3 + b[12]*lat2*lon2 + b[13]*lat2*lon  +
+                 b[14]*lat2      + b[15]*lat*lon4  + b[16]*lat*lon3  + b[17]*lat*lon2  +
+                 b[18]*lat*lon   + b[19]*lat       + b[20]*lon4      + b[21]*lon3      +
+                 b[22]*lon2      + b[23]*lon       + b[24];
       }
       else { // if (meta->transform->parameter_count == 10) {
-        *xSamp = a[0] + a[1]*lat + a[2]*lon + a[3]*lat*lon + a[4]*lat2 +
-	       a[5]*lon2 + a[6]*lat2*lon + a[7]*lat*lon2 +
-	       a[8]*lat2*lat + a[9]*lon2*lon;
-        *yLine = b[0] + b[1]*lat + b[2]*lon + b[3]*lat*lon + b[4]*lat2 +
-	       b[5]*lon2 + b[6]*lat2*lon + b[7]*lat*lon2 +
-	       b[8]*lat2*lat + b[9]*lon2*lon;
+        *xSamp = a[0]          + a[1]*lat      + a[2]*lon      + a[3]*lat*lon + a[4]*lat2 +
+                 a[5]*lon2     + a[6]*lat2*lon + a[7]*lat*lon2 +
+                 a[8]*lat2*lat + a[9]*lon2*lon;
+        *yLine = b[0]          + b[1]*lat      + b[2]*lon      + b[3]*lat*lon + b[4]*lat2 +
+                 b[5]*lon2     + b[6]*lat2*lon + b[7]*lat*lon2 +
+                 b[8]*lat2*lat + b[9]*lon2*lon;
       }
 
       if (elev != 0.0) {
@@ -375,9 +375,9 @@ int meta_get_lineSamp(meta_parameters *meta,
             (meta->sar->original_sample_count != meta->general->sample_count)))
       {
         *yLine *= (double)meta->general->line_count/
-          (double)meta->sar->original_line_count;
+                  (double)meta->sar->original_line_count;
         *xSamp *= (double)meta->general->sample_count/
-          (double)meta->sar->original_sample_count;
+                  (double)meta->sar->original_sample_count;
       }
 
       return 0;
@@ -480,7 +480,7 @@ double *get_a_coeffs(meta_parameters *meta)
     double *ret = NULL;
 
     if (meta && meta->transform) {
-        if (is_valid_ll2s_transform(meta) && 
+        if (is_valid_ll2s_transform(meta) &&
 	    meta->transform->parameter_count == 25)
 	    ret = meta->transform->l;
 	else if (is_valid_map2s_transform(meta)) {
@@ -592,7 +592,7 @@ int is_valid_ll2s_transform(meta_parameters *meta)
 }
 
 void meta_get_bounding_box(meta_parameters *meta,
-                           double *plat_min, double *plat_max,  
+                           double *plat_min, double *plat_max,
                            double *plon_min, double *plon_max)
 {
     int nl = meta->general->line_count;

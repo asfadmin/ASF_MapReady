@@ -1493,7 +1493,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     double height_correction = 0;
     if (imd->sar && imd->sar->image_type == 'P' &&
         imd->projection && imd->projection->type == SCANSAR_PROJECTION &&
-	strncmp(imd->general->processor, "ASF", 3) == 0)
+        strncmp(imd->general->processor, "ASF", 3) == 0)
     {
         average_height -= 400;
         height_correction = 400;
