@@ -573,7 +573,10 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
       meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
       meta->sar->multilook = 0;
   }
-  if (strncmp(s->satName, "ERS1", 4) != 0) {
+  if (strncmp(s->satName, "ERS1", 4) != 0 &&
+      !meta_is_valid_double(meta->general->center_latitude) &&
+      !meta_is_valid_double(meta->general->center_longitude))
+  {
       double lat, lon;
       meta_get_latLon(meta, meta->general->line_count/2, meta->general->sample_count,
                     0.0, &lat, &lon);
