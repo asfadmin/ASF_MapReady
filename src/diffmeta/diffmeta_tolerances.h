@@ -35,8 +35,8 @@
 #define DM_MAX_MISSING_LINES  10000
 #define DM_MIN_LATITUDE       -90.0
 #define DM_MAX_LATITUDE       90.0
-#define DM_MIN_LONGITUDE      -180.0
-#define DM_MAX_LONGITUDE      180.0
+#define DM_MIN_LONGITUDE      -359.999999
+#define DM_MAX_LONGITUDE      359.999999
 
 // SAR Block
 #define DM_MIN_LOOK_COUNT               1
