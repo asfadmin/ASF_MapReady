@@ -110,7 +110,7 @@ int meta_is_new_style(const char *file_name)
               "meta_is_new_style");
     }
     // If the given version is greater than or equal to our latest meta
-    // version then we've got a new style meta file... 
+    // version then we've got a new style meta file...
     if ( strtod(version_string, &end_ptr)
          >= NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare */ ) {
       return_value = TRUE;

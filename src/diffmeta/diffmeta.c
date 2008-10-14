@@ -1284,7 +1284,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     verify_double(precheck_err_msgs, msar2->range_doppler_coefficients[0],
                   DM_MIN_DOP_RANGE_CENTROID, DM_MAX_DOP_RANGE_CENTROID,
                   "SAR", "range_doppler_coefficients[0]",
-                  1, &failed);
+                  0, &failed);
 
     verify_double(precheck_err_msgs, msar2->range_doppler_coefficients[1],
                   DM_MIN_DOP_RANGE_PER_PIXEL, DM_MAX_DOP_RANGE_PER_PIXEL,
@@ -1299,7 +1299,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     verify_double(precheck_err_msgs, msar2->azimuth_doppler_coefficients[0],
                   DM_MIN_DOP_AZIMUTH_CENTROID, DM_MAX_DOP_AZIMUTH_CENTROID,
                   "SAR", "azimuth_doppler_coefficients[0]",
-                  1, &failed);
+                  0, &failed);
 
     verify_double(precheck_err_msgs, msar2->azimuth_doppler_coefficients[1],
                   DM_MIN_DOP_AZIMUTH_PER_PIXEL, DM_MAX_DOP_AZIMUTH_PER_PIXEL,

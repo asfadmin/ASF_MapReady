@@ -1646,7 +1646,7 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
   if (meta->general->orbit_direction==' ')
     meta->general->orbit_direction =
       (meta->general->frame>=1791 && meta->general->frame<=5391) ? 'D' : 'A';
-  meta->general->bit_error_rate = esa_facdr->ber < 0 ? MAGIC_UNSET_INT : esa_facdr->ber;
+  meta->general->bit_error_rate = esa_facdr->ber < 0 ? MAGIC_UNSET_DOUBLE : esa_facdr->ber;
 
   // State vector block
   ceos_init_stVec(in_fName,ceos,meta);
