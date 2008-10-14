@@ -45,7 +45,6 @@ MAPREADY_MODULES = \
 	src/fill_holes \
 	src/meta2envi \
 	src/mosaic \
-	src/create_thumbs \
 	src/llh2ls \
 	src/smooth \
 	src/farcorr \
