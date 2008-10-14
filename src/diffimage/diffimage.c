@@ -2144,7 +2144,12 @@ void diffErrOut(char *outputFile, char *err_msg)
     if (outputFP) FCLOSE(outputFP);
   }
   else {
-    asfPrintError("Invalid output file name (NULL or zero length)\n");
+      fprintf(stderr, "\n-----------------------------------------------\n");
+
+      sprintf(msg, "FAIL: %s\n", err_msg);
+      fprintf(stderr, msg);
+
+      fprintf(stderr, "-----------------------------------------------\n\n");
   }
 }
 
