@@ -30,6 +30,7 @@ MAPREADY_MODULES = \
 	src/asf_geocode \
 	src/asf_terrcorr \
 	src/asf_calpol \
+	src/asf_gamma_import \
 	src/libasf_convert \
 	src/asf_convert \
 	src/refine_geolocation \
