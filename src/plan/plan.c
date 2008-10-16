@@ -94,6 +94,8 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
                     int target_zone, double target_lat, double target_lon,
                     double *region_clat, double *region_clon)
 {
+  static const int verbose = FALSE;
+
   if (bmi->min_look_angle>0) {
     assert(look_angle >= D2R*(bmi->min_look_angle-.0001));
     assert(look_angle <= D2R*(bmi->max_look_angle+.0001));
@@ -112,16 +114,20 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
     return NULL;
 
   ll2pr(center_lat, center_lon, target_zone, &center_x, &center_y);
-  //printf("center: x,y: %f %f lat,lon: %f %f\n",
-  //       center_x, center_y, center_lat, center_lon);
+  if (verbose) {
+    printf("--------------------------------------------------------------\n");
+    printf("center: x,y: %f %f lat,lon: %f %f\n",
+           center_x, center_y, center_lat, center_lon);
+  }
 
   // location of a point just a bit ahead of us
   stateVector ahead_st = propagate(*st, 0, 1);
   double ahead_lat, ahead_lon, ahead_x, ahead_y;
   get_target_latlon(&ahead_st, look_angle, &ahead_lat, &ahead_lon);
   ll2pr(ahead_lat, ahead_lon, target_zone, &ahead_x, &ahead_y);
-  //printf("ahead: x,y: %f %f lat,lon: %f %f\n",
-  //       ahead_x, ahead_y, ahead_lat, ahead_lon);
+  if (verbose)
+    printf("ahead: x,y: %f %f lat,lon: %f %f\n",
+           ahead_x, ahead_y, ahead_lat, ahead_lon);
 
   // now we know the orientation of the rectangle on the ground
   // ==> can find the 4 corners
@@ -136,8 +142,10 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
 
   double x[4], y[4];
 
+  //x[0] = center_x + x_side1/2. - x_side2/2.;
+  //y[0] = center_y + y_side1/2. - y_side2/2.;
   x[0] = center_x + x_side1/2. - x_side2/2.;
-  y[0] = center_y + y_side1/2. - y_side2/2.;
+  y[0] = center_y + y_side1/2. + y_side2/2.;
 
   x[1] = x[0] - x_side1;
   y[1] = y[0] - y_side1;
@@ -148,13 +156,21 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
   x[3] = x[2] + x_side1;
   y[3] = y[2] + y_side1;
 
-  //int i;
-  //printf("corners:\n");
-  //for (i=0; i<4; ++i) {
-  //  double lat, lon;
-  //  pr2ll(x[i],y[i],target_zone,&lat,&lon);
-  //  printf("x,y: %f %f lat,lon: %f %f\n", x[i], y[i], lat, lon);
-  //}
+  if (verbose) {
+    int i;
+    printf("corners:\n");
+    double xa=0, ya=0;
+    for (i=0; i<4; ++i) {
+      double lat, lon;
+      pr2ll(x[i],y[i],target_zone,&lat,&lon);
+      printf("x,y: %f %f lat,lon: %f %f\n", x[i], y[i], lat, lon);
+      xa += x[i]; ya += y[i];
+    }
+    xa/=4.; ya/=4.;
+    double lata, lona;
+    pr2ll(xa,ya,target_zone, &lata, &lona);
+    printf("avg x,y: %f %f lat,lon: %f %f\n\n", xa, ya, lata, lona);
+  }
 
   if (region_clat) *region_clat = center_lat;
   if (region_clon) *region_clon = center_lon;
