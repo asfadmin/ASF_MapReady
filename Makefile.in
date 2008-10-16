@@ -126,7 +126,10 @@ C2V_MODULES = \
 JPL_MODULES = \
 	contrib/jplmosaicsuite \
 	src/asf \
-	src/byteswap
+	src/libasf_proj \
+	src/asf_meta \
+	src/byteswap \
+	src/chgndv
 
 CREATE_THUMBS_MODULES = \
 	src/asf \
@@ -299,7 +302,7 @@ c2v: mkdirs_for_build external_libs
 	@ echo ""
 
 # JPL Mosaic Suite
-jpl: mkdirs_for_build
+jpl: mkdirs_for_build external_libs
 	mkdir -p $(JPL_SHAREDIR)
 	-cp -R external/share/* $(JPL_SHAREDIR)
 	-chmod -R ug+w share
