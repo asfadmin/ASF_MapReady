@@ -91,7 +91,8 @@ static int is_utm(int zone)
 
 static Poly *
 get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
-                    int target_zone, double target_lat, double target_lon)
+                    int target_zone, double target_lat, double target_lon,
+                    double *region_clat, double *region_clon)
 {
   if (bmi->min_look_angle>0) {
     assert(look_angle >= D2R*(bmi->min_look_angle-.0001));
@@ -155,6 +156,9 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
   //  printf("x,y: %f %f lat,lon: %f %f\n", x[i], y[i], lat, lon);
   //}
 
+  if (region_clat) *region_clat = center_lat;
+  if (region_clon) *region_clon = center_lon;
+
   return polygon_new_closed(4, x, y);
 }
 
@@ -168,7 +172,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi, double look_angle,
         int zone, double clat, double clon, Poly *aoi)
 {
   Poly *viewable_region =
-    get_viewable_region(st, bmi, look_angle, zone, clat, clon);
+    get_viewable_region(st, bmi, look_angle, zone, clat, clon, NULL, NULL);
 
   if (!viewable_region)
     return NULL; // no overlap
@@ -339,11 +343,10 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
         //printf("%f %f %f\n", orbit_num + sat.orbit_part,
         //       orbit_num2, orbit_num+sat.orbit_part-orbit_num2);
 
-        // The propagator uses a different start location for the orbit
-        // numbers than JAXA does.  FIXME: If we extend the planner to
-        // Radarsat, etc, we may have to fudge this some more...
-        if (sat.orbit_part<.35)
-          --orbit_num;
+        // UPDATE!!  All this orbit number calculation business doesn't get
+        // used for ALOS planning -- orbit number is re-calculated using
+        // time since a refrence orbit.
+        // See planner.c -- get_alos_orbit_number_at_time()
 
         PassInfo *pass_info = pass_info_new(orbit_num, sat.orbit_part, dir);
         double start_time = curr - bmi->num_buffer_frames*incr;
@@ -352,17 +355,18 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
         for (i=bmi->num_buffer_frames; i>0; --i) {
           double t = curr - i*incr;
           stateVector st1 = tle_propagate(&sat, t);
+          double rclat, rclon; // viewable region center lat/lon
           Poly *region = get_viewable_region(&st1, bmi, look_angle,
-                                                zone, clat, clon);
+                                             zone, clat, clon, &rclat, &rclon);
           if (region) {
             OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                            &st1, t);
             pass_info_add(pass_info, t+time_adjustment, oi1);
-          }
 
-          if (i==bmi->num_buffer_frames) {
-            // at the start of the buffer frames -- compute starting latitude
-            pass_info_set_start_latitude(pass_info, sat.ssplat);
+            if (pass_info->start_lat == -999) {
+              // at the first valid buffer frame -- set starting latitude
+              pass_info_set_start_latitude(pass_info, rclat);
+            }
           }
         }
 
@@ -377,37 +381,32 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
           oi = overlap(curr, &st, bmi, look_angle, zone, clat, clon, aoi);
         }
 
-        double end_time = curr + bmi->num_buffer_frames*incr;
+        double end_time = curr + (bmi->num_buffer_frames-1)*incr;
         pass_info_set_duration(pass_info, end_time-start_time);
 
         // add on the buffer frames after the area of interest
         for (i=0; i<bmi->num_buffer_frames; ++i) {
           double t = curr + i*incr;
           stateVector st1 = tle_propagate(&sat, t);
+          double rclat, rclon; // viewable region center lat/lon
           Poly *region = get_viewable_region(&st1, bmi, look_angle,
-                                                zone, clat, clon);
+                                             zone, clat, clon, &rclat, &rclon);
           if (region) {
             OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                            &st1, t);
             pass_info_add(pass_info, t+time_adjustment, oi1);
-          }
 
-          if (i==bmi->num_buffer_frames-1) {
-            // at the end of the buffer frames -- compute end latitude
-            // go one more frame ahead, in order to compute the latitude
-            // at the END of the current frame (i.e., assume start lat for
-            // next frame corresponds to end lat for this frame)
-            t += incr;
-            st1 = tle_propagate(&sat, t);
-            pass_info_set_stop_latitude(pass_info, sat.ssplat);
+            // set stopping latitude -- each frame overwrites the previous,
+            // so the last valid frame will set the stopping latitude
+            pass_info_set_stop_latitude(pass_info, rclat);
           }
         }
 
         if (n>0) {
           // make sure we set all these guys
-          assert(pass_info->start_lat != -1);
-          assert(pass_info->stop_lat != -1);
-          assert(pass_info->duration != -1);
+          assert(pass_info->start_lat != -999);
+          assert(pass_info->stop_lat != -999);
+          assert(pass_info->duration != -999);
 
           // finally: add the pass!
           pass_collection_add(pc, pass_info);

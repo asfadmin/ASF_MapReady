@@ -302,6 +302,45 @@ static void clear_found()
     g_poly = &g_polys[which_poly];
 }
 
+static int get_alos_orbit_number_at_time(double time)
+{
+  // KLUDGE: This should all be moved to a config file!
+  double recurrent_period = 46;              // days
+  double orbits_per_recurrent_period = 671;
+
+  // reference: 26-Dec-2006, 6:15:34
+  // reference orbit: 4904
+  
+  // We use a time slightly ahead of the reference time, to account
+  // for the fact that this scene is not at the equator crossing.
+  // Figured out the correct reference time by trial & error...
+
+  ymd_date ref_ymd;
+  hms_time ref_hms;
+
+  ref_ymd.year = 2006;
+  ref_ymd.month = 12;
+  ref_ymd.day = 26;
+
+  ref_hms.hour = 6;
+  ref_hms.min = 0;
+  ref_hms.sec = 40;
+
+  int ref_orbit = 4904;
+
+  // here on out are the actual calculations, no need to change
+  // any of this if you just wanted to update the reference
+  julian_date ref_jd;
+  date_ymd2jd(&ref_ymd, &ref_jd);
+  double ref = date2sec(&ref_jd, &ref_hms);
+
+  double revolutions_per_day = orbits_per_recurrent_period/recurrent_period;
+  double orbital_period = 24.*60.*60. / revolutions_per_day; // sec
+
+  double revs_since_ref = (time - ref)/orbital_period;
+  return (int)floor(ref_orbit + revs_since_ref);
+}
+
 static void update_look()
 {
     int i = get_combo_box_item("mode_combobox");
@@ -599,7 +638,7 @@ void setup_planner()
 
     // Column: Stop Latitude (currently not shown)
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Lat");
+    gtk_tree_view_column_set_title(col, "Lat2");
     gtk_tree_view_column_set_visible(col, FALSE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
     rend = gtk_cell_renderer_text_new();
@@ -608,7 +647,7 @@ void setup_planner()
 
     // Column: Duration
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Duration");
+    gtk_tree_view_column_set_title(col, "Dur");
     gtk_tree_view_column_set_resizable(col, TRUE);
     gtk_tree_view_column_set_sort_column_id(col, SORTID_DURATION);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
@@ -755,7 +794,7 @@ int row_is_checked(int row)
 
         gtk_tree_model_get(liststore, &iter, COL_INDEX, &index_str,
                            COL_SELECTED, &selected, -1);
-      
+
         int index = atoi(index_str);
         g_free(index_str);
 
@@ -857,7 +896,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           if (diff<min_diff) {
             min_diff = diff;
             closest = a;
-          } 
+          }
           ++j;
         }
         assert(closest != -999);
@@ -1159,43 +1198,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             // ALOS specific calculation of the orbit number, where we just
             // take a known reference orbit number, and do a simple period-
             // based division to get the current orbit number.
-            // KLUDGE: This should all be moved to a config file!
-            double recurrent_period = 46;              // days
-            double orbits_per_recurrent_period = 671;
-            
-            // reference: 26-Dec-2006, 6:15:34
-            // reference orbit: 4904
-
-            // [subtract 8 minutes: estimate of equator crossing, since this
-            //  reference is for a scene 30 degrees above equator crossing
-            //  (where orbit number is incremented), and 98.7/12 ~ 8. ]
-
-            ymd_date ref_ymd;
-            hms_time ref_hms;
-            
-            ref_ymd.year = 2006;
-            ref_ymd.month = 12;
-            ref_ymd.day = 26;
-            
-            ref_hms.hour = 6;
-            ref_hms.min = 15-8; // see above for the -8 explanation
-            ref_hms.sec = 34;
-            
-            int ref_orbit = 4904;
-            
-            // here on out are the actual calculations, no need to change
-            // any of this if you just wanted to update the reference
-            julian_date ref_jd;
-            date_ymd2jd(&ref_ymd, &ref_jd);
-            double ref = date2sec(&ref_jd, &ref_hms);
-            
-            double revolutions_per_day =
-              orbits_per_recurrent_period/recurrent_period;
-            double orbital_period = 24.*60.*60. / revolutions_per_day; // sec
-
-            double revs_since_ref = (pi->start_time - ref)/orbital_period;
-            orbit = (int)floor(ref_orbit + revs_since_ref);
-            // end of the ALOS orbit number calculation kludge
+            orbit = get_alos_orbit_number_at_time(pi->start_time);
           }
           else {
             // use the orbit number from the TLE calc
@@ -1205,7 +1208,6 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             // worse!
             orbit = pi->orbit;
           }
-
 
           char orbit_info[256];
 
