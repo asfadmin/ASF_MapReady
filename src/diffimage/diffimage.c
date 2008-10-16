@@ -26,16 +26,17 @@ ISSUES:
 #include "ddr.h"
 #include "asf_raster.h"
 #include "typlim.h"
-#include <float_image.h>
-#include <uint8_image.h>
-#include <proj.h>
-#include <libasf_proj.h>
+#include "float_image.h"
+#include "uint8_image.h"
+#include "proj.h"
+#include "libasf_proj.h"
 #include "asf_jpeg.h"
 #include "asf_tiff.h"
 #include <png.h>
 #include <gsl/gsl_math.h>
 #include "diffimage_tolerances.h"
 #include "geotiff_support.h"
+#include "asf_complex.h"
 
 #ifndef png_jmpbuf
 #  define png_jmpbuf (png_ptr)    ((png_ptr)->jmpbuf)
@@ -78,9 +79,19 @@ typedef struct {
 } stats_t;
 
 typedef struct {
+    stats_t i;
+    stats_t q;
+} complex_stats_t;
+
+typedef struct {
   int psnr_good;
   double psnr;
 } psnr_t;
+
+typedef struct {
+    psnr_t i;
+    psnr_t q;
+} complex_psnr_t;
 
 typedef struct {
   float dx; // In whatever units the image is in
@@ -276,6 +287,20 @@ void export_png_to_asf_img(char *inFile, char *outfile,
                            uint32 height, uint32 width, data_type_t data_type,
                            int band);
 char *pcs2description(int pcs);
+void calc_asf_complex_image_stats_2files(char *inFile1, char *inFile2,
+                                         complex_stats_t *inFile1_complex_stats,
+                                         complex_stats_t *inFile2_complex_stats,
+                                         complex_psnr_t *psnr, int band);
+void calc_complex_stats_rmse_from_file(const char *inFile, const char *band, double mask,
+                                       double *i_min, double *i_max, double *i_mean,
+                                       double *i_sdev, double *i_rmse, gsl_histogram **i_histogram,
+                                       double *q_min, double *q_max, double *q_mean,
+                                       double *q_sdev, double *q_rmse, gsl_histogram **q_histogram);
+void diff_check_complex_stats(char *outputFile, char *inFile1, char *inFile2,
+                              complex_stats_t *cstats1, complex_stats_t *cstats2,
+                              complex_psnr_t *cpsnr, int strict,
+                              data_type_t data_type, int num_bands);
+
 
 int main(int argc, char **argv)
 {
@@ -298,7 +323,10 @@ int main(int argc, char **argv)
   char type_str[255];
   stats_t inFile1_stats[MAX_BANDS];
   stats_t inFile2_stats[MAX_BANDS];
+  complex_stats_t inFile1_complex_stats[MAX_BANDS];
+  complex_stats_t inFile2_complex_stats[MAX_BANDS];
   psnr_t psnr[MAX_BANDS]; // peak signal to noise ratio
+  complex_psnr_t cpsnr[MAX_BANDS];
   shift_data_t shifts[MAX_BANDS];
   //float bestLocX, bestLocY, certainty;
 
@@ -394,7 +422,8 @@ int main(int argc, char **argv)
       printf("** Warning: ********\n%s** End of warning **\n\n", msg);
   }
   if (outputflag && strcmp(logFile, outputFile) == 0) {
-    sprintf(msg, "Log file cannot be the same as the output file:\n     Log file: %s\n  Output file: %s\n",
+    sprintf(msg, "Log file cannot be the same as the output file:\n"
+            "     Log file: %s\n  Output file: %s\n",
             logFile, outputFile);
     if (outputFile) FREE(outputFile);
     asfPrintError(msg);
@@ -593,10 +622,15 @@ int main(int argc, char **argv)
           free_band_names(&band_names2, num_names_extracted2);
           asfPrintError(msg);
         }
-        char *data_type_str = data_type2str(md1->general->data_type);
-        if (strncmp(data_type_str, "COMPLEX", 7) == 0) {
-          sprintf(msg, "Complex data types not yet supported (%s)\n",
-              data_type_str);
+        int is_complex = md2->general->data_type == COMPLEX_BYTE      ||
+                         md2->general->data_type == COMPLEX_INTEGER16 ||
+                         md2->general->data_type == COMPLEX_INTEGER32 ||
+                         md2->general->data_type == COMPLEX_REAL32    ||
+                         md2->general->data_type == COMPLEX_REAL64;
+        if (is_complex && md2->general->data_type != COMPLEX_BYTE) {
+          char *data_type_str = data_type2str(md2->general->data_type);
+          sprintf(msg, "Complex data types other than COMPLEX_BYTE not yet supported (Found %s)\n",
+                  data_type_str);
           if (data_type_str) FREE(data_type_str);
           diffErrOut(outputFile, msg);
           meta_free(md1);
@@ -606,9 +640,9 @@ int main(int argc, char **argv)
           FREE(f2);
           free_band_names(&band_names1, num_names_extracted1);
           free_band_names(&band_names2, num_names_extracted2);
+          FREE(data_type_str);
           asfPrintError(msg);
         }
-        if (data_type_str) FREE(data_type_str);
 
         //////////////////////////////////////////////////////////////////////////////////////
         // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
@@ -626,45 +660,61 @@ int main(int argc, char **argv)
             }
             asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
                            band_str1, inFile1, band_str2, inFile2);
-            calc_asf_img_stats_2files(inFile1, inFile2,
-                                      &inFile1_stats[band_no], &inFile2_stats[band_no],
-                                      &psnr[band_no], band_no);
-            empty_band1 = (FLOAT_COMPARE_TOLERANCE(inFile1_stats[band_no].mean, 0.0, FLOAT_TOLERANCE) &&
-                FLOAT_COMPARE_TOLERANCE(inFile1_stats[band_no].sdev, 0.0, FLOAT_TOLERANCE)) ? 1 : 0;
-            empty_band2 = (FLOAT_COMPARE_TOLERANCE(inFile2_stats[band_no].mean, 0.0, FLOAT_TOLERANCE) ||
-                FLOAT_COMPARE_TOLERANCE(inFile2_stats[band_no].sdev, 0.0, FLOAT_TOLERANCE)) ? 1 : 0;
-            if (!empty_band1 && !empty_band2 &&
-                 inFile1_stats[band_no].stats_good &&
-                 inFile2_stats[band_no].stats_good) {
-              // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
-              // only check the first band for now.
-              if (band_no == 0) {
-                fftShiftCheck(inFile1, inFile2,
-                              CORR_FILE, &shifts[band_no]);
-              }
-              else {
-                  shifts[band_no].dx = 0.0;
-                  shifts[band_no].dy = 0.0;
-                  shifts[band_no].cert = 1.0;
-              }
+            if (is_complex) {
+                // For complex data, only check stats and psnr ...and don't check
+                // for shifts in geolocation (doesn't make sense)
+                calc_asf_complex_image_stats_2files(inFile1, inFile2,
+                                                    &inFile1_complex_stats[band_no],
+                                                    &inFile2_complex_stats[band_no],
+                                                    &cpsnr[band_no], band_no);
             }
             else {
-              shifts[band_no].dx = 0.0;
-              shifts[band_no].dy = 0.0;
-              shifts[band_no].cert = 1.0;
+                calc_asf_img_stats_2files(inFile1, inFile2,
+                                        &inFile1_stats[band_no], &inFile2_stats[band_no],
+                                        &psnr[band_no], band_no);
+                empty_band1 = (FLOAT_COMPARE_TOLERANCE(inFile1_stats[band_no].mean, 0.0, FLOAT_TOLERANCE) &&
+                    FLOAT_COMPARE_TOLERANCE(inFile1_stats[band_no].sdev, 0.0, FLOAT_TOLERANCE)) ? 1 : 0;
+                empty_band2 = (FLOAT_COMPARE_TOLERANCE(inFile2_stats[band_no].mean, 0.0, FLOAT_TOLERANCE) ||
+                    FLOAT_COMPARE_TOLERANCE(inFile2_stats[band_no].sdev, 0.0, FLOAT_TOLERANCE)) ? 1 : 0;
+                if (!empty_band1 && !empty_band2 &&
+                    inFile1_stats[band_no].stats_good &&
+                    inFile2_stats[band_no].stats_good) {
+                    if (band_no == 0) {
+                        fftShiftCheck(inFile1, inFile2,
+                                    CORR_FILE, &shifts[band_no]);
+                    }
+                    else {
+                        shifts[band_no].dx = 0.0;
+                        shifts[band_no].dy = 0.0;
+                        shifts[band_no].cert = 1.0;
+                    }
+                }
+                else {
+                    shifts[band_no].dx = 0.0;
+                    shifts[band_no].dy = 0.0;
+                    shifts[band_no].cert = 1.0;
+                }
             }
           }
 
           // Assumes both files have the same band count and data types or would not be here
-          diff_check_stats(outputFile,
-                           inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
-                           md1->general->data_type, band_count1);
-//          diff_check_geolocation(outputFile, inFile1, inFile2, band_count1, shifts,
-//                                inFile1_stats, inFile2_stats);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 inFile1_stats, inFile2_stats);
+          if (is_complex) {
+              // No diff check on geolocation (doesn't make sense for complex data)
+              diff_check_complex_stats(outputFile,
+                                       inFile1, inFile2,
+                                       inFile1_complex_stats, inFile2_complex_stats,
+                                       cpsnr, strictflag,
+                                       md2->general->data_type, band_count2);
+          }
+          else {
+            diff_check_stats(outputFile,
+                            inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
+                            md2->general->data_type, band_count2);
+            diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
+                                    inFile1_stats, inFile2_stats);
+          }
         }
-        else {
+        else {//@@@@@@@@@@@START HERE@@@@@@@@@@@@@@@@@
           // Process selected band
           int empty_band1, empty_band2;
           asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n", inFile1, inFile2);
@@ -817,8 +867,6 @@ int main(int argc, char **argv)
           diff_check_stats(outputFile,
                            inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                            jpg1.data_type, jpg1.num_bands);
-//          diff_check_geolocation(outputFile, inFile1, inFile2, jpg1.num_bands, shifts,
-//                                 inFile1_stats, inFile2_stats);
           diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
                                  inFile1_stats, inFile2_stats);
         }
@@ -844,8 +892,6 @@ int main(int argc, char **argv)
             export_jpeg_to_asf_img(inFile2, outputFile,
                                    FILE2_FFTFILE, FILE2_FFTFILE_META,
                                    jpg2.height, jpg2.width, REAL32, band);
-            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
-            // only check the first band for now.
             if (band == 0) {
               fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
                             CORR_FILE, &shifts[band]);
@@ -957,8 +1003,6 @@ int main(int argc, char **argv)
               export_png_to_asf_img(inFile2, outputFile,
                                     FILE2_FFTFILE, FILE2_FFTFILE_META,
                                     ihdr2.height, ihdr2.width, REAL32, band_no);
-              // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
-              // only check the first band for now.
               if (band_no == 0) {
                 fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
                               CORR_FILE, &shifts[band_no]);
@@ -978,8 +1022,6 @@ int main(int argc, char **argv)
           diff_check_stats(outputFile,
                           inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                           ihdr1.data_type, ihdr1.num_bands);
-//          diff_check_geolocation(outputFile, inFile1, inFile2, ihdr1.num_bands, shifts,
-//                                inFile1_stats, inFile2_stats);
           diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
                                  inFile1_stats, inFile2_stats);
         }
@@ -1005,8 +1047,6 @@ int main(int argc, char **argv)
             export_png_to_asf_img(inFile2, outputFile,
                                   FILE2_FFTFILE, FILE2_FFTFILE_META,
                                   ihdr2.height, ihdr2.width, REAL32, band);
-            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
-            // only check the first band for now.
             if (band == 0) {
               fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
                             CORR_FILE, &shifts[band]);
@@ -1118,8 +1158,6 @@ int main(int argc, char **argv)
               export_ppm_pgm_to_asf_img(inFile2, outputFile,
                                         FILE2_FFTFILE, FILE2_FFTFILE_META,
                                         pgm2.height, pgm2.width, REAL32, band_no);
-              // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
-              // only check the first band for now.
               if (band_no == 0) {
                 fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
                               CORR_FILE, &shifts[band_no]);
@@ -1139,8 +1177,6 @@ int main(int argc, char **argv)
           diff_check_stats(outputFile,
                           inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                           pgm1.data_type, pgm1.num_bands);
-//          diff_check_geolocation(outputFile, inFile1, inFile2, pgm1.num_bands, shifts,
-//                                inFile1_stats, inFile2_stats);
           diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
                                  inFile1_stats, inFile2_stats);
         }
@@ -1166,8 +1202,6 @@ int main(int argc, char **argv)
             export_ppm_pgm_to_asf_img(inFile2, outputFile,
                                       FILE2_FFTFILE, FILE2_FFTFILE_META,
                                       pgm2.height, pgm2.width, REAL32, band);
-            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
-            // only check the first band for now.
             if (band == 0) {
               fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
                             CORR_FILE, &shifts[band]);
@@ -1304,13 +1338,10 @@ int main(int argc, char **argv)
               get_geotiff_keys(inFile2, &g2);
               diff_check_geotiff(outputFile, &g1, &g2);
             }
-            // fftMatch(shifts_t *shift, band_no) goes here
           }
           diff_check_stats(outputFile,
                           inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                           t1.data_type, t1.num_bands);
-//          diff_check_geolocation(outputFile, inFile1, inFile2, t1.num_bands, shifts,
-//                                inFile1_stats, inFile2_stats);
           diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
                                  inFile1_stats, inFile2_stats);
         }
@@ -1327,17 +1358,15 @@ int main(int argc, char **argv)
           empty_band2 = (FLOAT_COMPARE_TOLERANCE(inFile2_stats[band].mean, 0.0, FLOAT_TOLERANCE) ||
               FLOAT_COMPARE_TOLERANCE(inFile2_stats[band].sdev, 0.0, FLOAT_TOLERANCE)) ? 1 : 0;
           if (!empty_band1 && !empty_band2 &&
-              inFile1_stats[band].stats_good && inFile2_stats[band].stats_good) {
-              // Find shift in geolocation (if it exists)
-              // (Export to an ASF internal format file for fftMatch() compatibility)
+            inFile1_stats[band].stats_good && inFile2_stats[band].stats_good) {
+            // Find shift in geolocation (if it exists)
+            // (Export to an ASF internal format file for fftMatch() compatibility)
             export_tiff_to_asf_img(inFile1, outputFile,
                                    FILE1_FFTFILE, FILE1_FFTFILE_META,
                                    t1.height, t1.width, REAL32, band);
             export_tiff_to_asf_img(inFile2, outputFile,
                                    FILE2_FFTFILE, FILE2_FFTFILE_META,
                                    t2.height, t2.width, REAL32, band);
-            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
-            // only check the first band for now.
             if (band == 0) {
               fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
                             CORR_FILE, &shifts[band]);
@@ -1358,7 +1387,6 @@ int main(int argc, char **argv)
             get_geotiff_keys(inFile2, &g2);
             diff_check_geotiff(outputFile, &g1, &g2);
           }
-          // fftMatch(shifts_t *shift, band_no) goes here
           diff_check_stats(outputFile,
                           inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
                           strictflag, t1.data_type, 1);
@@ -1567,6 +1595,231 @@ void graphicsFileType_toStr (graphics_file_t type, char *type_str)
       strcpy(type_str, "UNRECOGNIZED");
       break;
   }
+}
+
+void calc_asf_complex_image_stats_2files(char *inFile1, char *inFile2,
+                        complex_stats_t *inFile1_complex_stats,
+                        complex_stats_t *inFile2_complex_stats,
+                        complex_psnr_t *psnr, int band)
+{
+    char *f1;
+    char *f2;
+    char inFile1_meta[255], inFile2_meta[255];
+    char **band_names1 = NULL;
+    char **band_names2 = NULL;
+    char *c;
+    int band_count1, band_count2;
+    complex_stats_t *cs1 = inFile1_complex_stats;
+    complex_stats_t *cs2 = inFile2_complex_stats;
+    meta_parameters *md1 = NULL;
+    meta_parameters *md2 = NULL;
+
+  // Init stats
+    cs1->i.stats_good = cs2->i.stats_good = 1; // Presumed innocent until proven guilty
+    cs1->i.min = cs2->i.min = 0.0;
+    cs1->i.max = cs2->i.max = 0.0;
+    cs1->i.mean = cs2->i.mean = 0.0;
+    cs1->i.sdev = cs2->i.sdev = 0.0;
+    cs1->i.rmse = cs2->i.rmse = 0.0;
+    psnr->i.psnr = 0.0;
+    psnr->i.psnr_good = 0;
+    cs1->q.stats_good = cs2->q.stats_good = 1; // Presumed innocent until proven guilty
+    cs1->q.min = cs2->q.min = 0.0;
+    cs1->q.max = cs2->q.max = 0.0;
+    cs1->q.mean = cs2->q.mean = 0.0;
+    cs1->q.sdev = cs2->q.sdev = 0.0;
+    cs1->q.rmse = cs2->q.rmse = 0.0;
+    psnr->q.psnr = 0.0;
+    psnr->q.psnr_good = 0;
+
+  // Read metadata and check for multi-bandedness
+    if (inFile1 != NULL && strlen(inFile1) > 0) {
+        f1 = STRDUP(inFile1);
+        c = findExt(f1);
+        *c = '\0';
+        sprintf(inFile1_meta, "%s.meta", f1);
+        if (fileExists(inFile1_meta)) {
+            md1 = meta_read(inFile1_meta);
+            cs1->i.stats_good = (md1 != NULL) ? cs1->i.stats_good : 0;
+            cs1->q.stats_good = (md1 != NULL) ? cs1->q.stats_good : 0;
+        }
+    }
+    else {
+        cs1->i.stats_good = 0;
+        cs1->i.stats_good = 0;
+    }
+    if (inFile2 != NULL && strlen(inFile2) > 0) {
+        f2 = STRDUP(inFile2);
+        c = findExt(f2);
+        *c = '\0';
+        sprintf(inFile2_meta, "%s.meta", f2);
+        if (fileExists(inFile2_meta)) {
+            md2 = meta_read(inFile2_meta);
+            cs2->i.stats_good = (md2 != NULL) ? cs2->i.stats_good : 0;
+            cs2->q.stats_good = (md2 != NULL) ? cs2->q.stats_good : 0;
+        }
+    }
+    else {
+        cs2->i.stats_good = 0;
+        cs2->q.stats_good = 0;
+    }
+    band_count1 = (md1 != NULL) ? md1->general->band_count : 0;
+    band_count2 = (md2 != NULL) ? md2->general->band_count : 0;
+
+  // Calculate the stats from the data.
+    cs1->i.hist = NULL;
+    cs1->i.hist_pdf = NULL;
+    cs1->q.hist = NULL;
+    cs1->q.hist_pdf = NULL;
+    cs2->i.hist = NULL;
+    cs2->i.hist_pdf = NULL;
+    cs2->q.hist = NULL;
+    cs2->q.hist_pdf = NULL;
+    if (band_count1 > 0 && md1 != NULL) {
+        band_names1 = extract_band_names(md1->general->bands, md1->general->band_count);
+        if (band_names1 != NULL) {
+            asfPrintStatus("\nCalculating statistics for %s band in %s", band_names1[band], inFile1);
+            calc_complex_stats_rmse_from_file(inFile1, band_names1[band],
+                                              md1->general->no_data,
+                                              &cs1->i.min, &cs1->i.max, &cs1->i.mean,
+                                              &cs1->i.sdev, &cs1->i.rmse, &cs1->i.hist,
+                                              &cs1->q.min, &cs1->q.max, &cs1->q.mean,
+                                              &cs1->q.sdev, &cs1->q.rmse, &cs1->q.hist);
+        }
+    }
+    if (band_count2 > 0 && md2 != NULL) {
+        band_names2 = extract_band_names(md2->general->bands, md2->general->band_count);
+        if (band_names2 != NULL) {
+            asfPrintStatus("\nCalculating statistics for %s band in %s", band_names2[band], inFile2);
+            calc_complex_stats_rmse_from_file(inFile2, band_names2[band],
+                                              md2->general->no_data,
+                                              &cs2->i.min, &cs2->i.max, &cs2->i.mean,
+                                              &cs2->i.sdev, &cs2->i.rmse, &cs2->i.hist,
+                                              &cs2->q.min, &cs2->q.max, &cs2->q.mean,
+                                              &cs2->q.sdev, &cs2->q.rmse, &cs2->q.hist);
+        }
+    }
+
+  // Calculate the peak signal to noise ratio (PSNR) between the two images
+    double sse_i, sse_q;
+    double rmse_i, rmse_q;
+    int ii, jj;
+    int band1 = band;
+    int band2 = band;
+    long pixel_count = 0;
+    long lines, samples;
+    long offset1 = md1->general->line_count * band1;
+    long offset2 = md2->general->line_count * band2;
+    float max_val;
+    complexFloat *cdata1 = NULL; // components: real, imag
+    complexFloat *cdata2 = NULL;
+    if (md1 != NULL && md2 != NULL) {
+        cdata1 = (complexFloat *)CALLOC(md1->general->sample_count, sizeof(complexFloat));
+        cdata2 = (complexFloat *)CALLOC(md2->general->sample_count, sizeof(complexFloat));
+        if (cdata1 == NULL || cdata2 == NULL ||
+            (md1->general->data_type != md2->general->data_type)) {
+            psnr->i.psnr = MISSING_PSNR;
+            psnr->i.psnr_good = 0;
+            psnr->q.psnr = MISSING_PSNR;
+            psnr->q.psnr_good = 0;
+        }
+        else {
+            asfPrintStatus("\nCalculating PSNR between\n  Band %s in %s and\n  Band %s in %s\n",
+                           band_names1[band1], inFile1, band_names2[band2], inFile2);
+            FILE *fp1 = fopen(inFile1, "rb");
+            FILE *fp2 = fopen(inFile2, "rb");
+            if (fp1 != NULL && fp2 != NULL) {
+                sse_i = 0.0;
+                sse_q = 0.0;
+                max_val = get_maxval(md1->general->data_type);
+                lines = MIN(md1->general->line_count, md2->general->line_count);
+                if (lines < md1->general->line_count) {
+                    asfPrintWarning("File2 has fewer lines than File1 (%d v. %d).\n"
+                            "Only the first %d lines will be utilized for PSNR calculation\n",
+                            md2->general->line_count, md1->general->line_count, lines);
+                }
+                if (lines < md2->general->line_count) {
+                    asfPrintWarning("File1 has fewer lines than File2 (%d v. %d).\n"
+                            "Only the first %d lines will be utilized for PSNR calculation\n",
+                            md1->general->line_count, md2->general->line_count, lines);
+                }
+                samples = MIN(md1->general->sample_count, md2->general->sample_count);
+                if (samples < md1->general->sample_count) {
+                    asfPrintWarning("File2 has fewer samples per line than File1 (%d v. %d).\n"
+                            "Only the first %d samples within each line of data will be utilized for"
+                            "PSNR calculation\n",
+                            md2->general->sample_count, md1->general->sample_count, samples);
+                }
+                if (samples < md2->general->sample_count) {
+                    asfPrintWarning("File1 has fewer samples per line than File2 (%d v. %d).\n"
+                            "Only the first %d samples within each line of data will be utilized for"
+                            "PSNR calculation\n",
+                            md1->general->sample_count, md2->general->sample_count, samples);
+                }
+                for (ii=0; ii<lines; ++ii) {
+                    asfPercentMeter((double)ii/(double)lines);
+                    get_complexFloat_line(fp1, md1, ii + offset1, cdata1);
+                    get_complexFloat_line(fp2, md2, ii + offset2, cdata2);
+                    for (jj=0; jj<samples; ++jj) {
+                        sse_i += (cdata1[jj].imag - cdata2[jj].imag) *
+                                 (cdata1[jj].imag - cdata2[jj].imag);
+                        sse_q += (cdata1[jj].real - cdata2[jj].real) *
+                                 (cdata1[jj].real - cdata2[jj].real);
+                        pixel_count++;
+                    }
+                }
+                asfPercentMeter(1.0);
+                if (fp1) FCLOSE(fp1);
+                if (fp2) FCLOSE(fp2);
+                if (pixel_count > 0 && max_val > 0) {
+                    rmse_i = sqrt(sse_i/pixel_count);
+                    rmse_q = sqrt(sse_q/pixel_count);
+                    psnr->i.psnr = 10.0 * log10(max_val/(rmse_i+.00000000000001));
+                    psnr->i.psnr_good = 1;
+                    psnr->q.psnr = 10.0 * log10(max_val/(rmse_q+.00000000000001));
+                    psnr->q.psnr_good = 1;
+                }
+                else {
+                    psnr->i.psnr = MISSING_PSNR;
+                    psnr->i.psnr_good = 0;
+                    psnr->q.psnr = MISSING_PSNR;
+                    psnr->q.psnr_good = 0;
+                }
+            }
+            else {
+                psnr->i.psnr = MISSING_PSNR;
+                psnr->i.psnr_good = 0;
+                psnr->q.psnr = MISSING_PSNR;
+                psnr->q.psnr_good = 0;
+            }
+        }
+    }
+    else {
+        psnr->i.psnr = MISSING_PSNR;
+        psnr->i.psnr_good = 0;
+        psnr->q.psnr = MISSING_PSNR;
+        psnr->q.psnr_good = 0;
+    }
+
+  // Cleanup and begone
+    FREE(f1);
+    FREE(f2);
+    if (band_names1 != NULL && md1 != NULL) {
+        for (ii=0; ii<md1->general->band_count; ii++) {
+            if (band_names1[ii] != NULL) FREE(band_names1[ii]);
+        }
+        FREE(band_names1);
+    }
+    if (band_names2 != NULL && md2 != NULL) {
+        for (ii=0; ii<md2->general->band_count; ii++) {
+            if (band_names2[ii] != NULL) FREE(band_names2[ii]);
+        }
+        FREE(band_names2);
+    }
+    FREE(cdata1);
+    FREE(cdata2);
+    if (md1 != NULL) meta_free(md1);
+    if (md2 != NULL) meta_free(md2);
 }
 
 void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
@@ -1851,21 +2104,25 @@ float get_maxval(data_type_t data_type)
 
   // Only non-complex types with 32 bits or less are supported
   switch (data_type) {
-    case BYTE:
-      ret = pow(2, sizeof(unsigned char)) - 1;
-      break;
-    case INTEGER16:
-      ret = pow(2, sizeof(short int)) - 1;
-      break;
-    case INTEGER32:
-      ret = pow(2, sizeof(int)) - 1;
-      break;
-    case REAL32:
-      ret = MAXREAL;
-      break;
-    default:
-      ret = 0.0;
-      break;
+      case BYTE:
+      case COMPLEX_BYTE:
+          ret = pow(2, sizeof(unsigned char) * 8.0) - 1;
+          break;
+      case INTEGER16:
+      case COMPLEX_INTEGER16:
+          ret = pow(2, sizeof(short int) * 8.0) - 1;
+          break;
+      case INTEGER32:
+      case COMPLEX_INTEGER32:
+          ret = pow(2, sizeof(int) * 8.0) - 1;
+          break;
+      case REAL32:
+      case COMPLEX_REAL32:
+          ret = MAXREAL;
+          break;
+      default:
+          ret = 0.0;
+          break;
   }
 
   return ret;
@@ -5901,3 +6158,354 @@ char *pcs2description(int pcs)
     return pcs_description;
 }
 
+void calc_complex_stats_rmse_from_file(const char *inFile, const char *band, double mask,
+                                       double *i_min, double *i_max, double *i_mean,
+                                       double *i_stdDev, double *i_rmse, gsl_histogram **i_histogram,
+                                       double *q_min, double *q_max, double *q_mean,
+                                       double *q_stdDev, double *q_rmse, gsl_histogram **q_histogram)
+{
+    double i_se, q_se;
+    int ii,jj;
+
+    *i_min = 999999;
+    *i_max = -999999;
+    *i_mean = 0.0;
+    *q_min = 999999;
+    *q_max = -999999;
+    *q_mean = 0.0;
+
+    meta_parameters *meta = meta_read(inFile);
+    int band_number =
+        (!band || strlen(band) == 0 || strcmp(band, "???") == 0) ? 0 :
+            get_band_number(meta->general->bands, meta->general->band_count, band);
+    long offset = meta->general->line_count * band_number;
+    complexFloat *cdata = CALLOC(meta->general->sample_count, sizeof(complexFloat));
+
+    // pass 1 -- calculate mean, min & max
+    FILE *fp = FOPEN(inFile, "rb");
+    long long i_pixel_count=0;
+    long long q_pixel_count=0;
+    asfPrintStatus("\nCalculating min, max, and mean...\n");
+    for (ii=0; ii<meta->general->line_count; ++ii) {
+        asfPercentMeter(((double)ii/(double)meta->general->line_count));
+        get_complexFloat_line(fp, meta, ii + offset, cdata);
+
+        for (jj=0; jj<meta->general->sample_count; ++jj) {
+            if (ISNAN(mask) || !FLOAT_EQUIVALENT(cdata[jj].imag, mask)) {
+                if (cdata[jj].imag < *i_min) *i_min = cdata[jj].imag;
+                if (cdata[jj].imag > *i_max) *i_max = cdata[jj].imag;
+                *i_mean += cdata[jj].imag;
+                ++i_pixel_count;
+            }
+            if (ISNAN(mask) || !FLOAT_EQUIVALENT(cdata[jj].real, mask)) {
+                if (cdata[jj].real < *q_min) *q_min = cdata[jj].real;
+                if (cdata[jj].real > *q_max) *q_max = cdata[jj].real;
+                *q_mean += cdata[jj].real;
+                ++q_pixel_count;
+            }
+        }
+    }
+    asfPercentMeter(1.0);
+    FCLOSE(fp);
+
+    *i_mean /= i_pixel_count;
+    *q_mean /= q_pixel_count;
+
+    // Guard against weird data
+    if(!(*i_min<*i_max)) *i_max = *i_min + 1;
+    if(!(*q_min<*q_max)) *q_max = *q_min + 1;
+
+    // Initialize the histogram.
+    const int num_bins = 256;
+    gsl_histogram *i_hist = gsl_histogram_alloc (num_bins);
+    gsl_histogram_set_ranges_uniform (i_hist, *i_min, *i_max);
+    *i_stdDev = 0.0;
+    gsl_histogram *q_hist = gsl_histogram_alloc (num_bins);
+    gsl_histogram_set_ranges_uniform (q_hist, *q_min, *q_max);
+    *q_stdDev = 0.0;
+
+    // pass 2 -- update histogram, calculate standard deviation
+    fp = FOPEN(inFile, "rb");
+    asfPrintStatus("\nCalculating standard deviation, rmse, and histogram...\n");
+    i_se = q_se = 0.0;
+    for (ii=0; ii<meta->general->line_count; ++ii) {
+        asfPercentMeter(((double)ii/(double)meta->general->line_count));
+        get_complexFloat_line(fp, meta, ii + offset, cdata);
+
+        for (jj=0; jj<meta->general->sample_count; ++jj) {
+            if (ISNAN(mask) || !FLOAT_EQUIVALENT(cdata[jj].imag, mask)) {
+                *i_stdDev += (cdata[jj].imag - *i_mean) * (cdata[jj].imag - *i_mean);
+                gsl_histogram_increment (i_hist, cdata[jj].imag);
+                i_se += (cdata[jj].imag - *i_mean) * (cdata[jj].imag - *i_mean);
+            }
+            if (ISNAN(mask) || !FLOAT_EQUIVALENT(cdata[jj].real, mask)) {
+                *q_stdDev += (cdata[jj].real - *q_mean) * (cdata[jj].real - *q_mean);
+                gsl_histogram_increment (q_hist, cdata[jj].real);
+                q_se += (cdata[jj].real - *q_mean) * (cdata[jj].real - *q_mean);
+            }
+        }
+    }
+    asfPercentMeter(1.0);
+    FCLOSE(fp);
+    *i_stdDev = sqrt(*i_stdDev/(i_pixel_count - 1));
+    *i_rmse = sqrt(i_se/(i_pixel_count - 1));
+    *q_stdDev = sqrt(*q_stdDev/(q_pixel_count - 1));
+    *q_rmse = sqrt(q_se/(q_pixel_count - 1));
+
+    FREE(cdata);
+
+    *i_histogram = i_hist;
+    *q_histogram = q_hist;
+}
+
+void diff_check_complex_stats(char *outputFile, char *inFile1, char *inFile2,
+                              complex_stats_t *cstats1, complex_stats_t *cstats2,
+                              complex_psnr_t *cpsnr, int strict,
+                              data_type_t data_type, int num_bands)
+{
+    char msg[1024];
+    int band;
+    double baseline_range1;
+    double baseline_range2;
+    double min_tol;
+    double max_tol;
+    double mean_tol;
+    double sdev_tol;
+  //  double rmse_tol;
+    double psnr_tol;
+    double min_diff;
+    double max_diff;
+    double mean_diff;
+    double sdev_diff;
+  //  double rmse_diff;
+    stats_t *stats1 = NULL;
+    stats_t *stats2 = NULL;
+    psnr_t *psnr = NULL;
+
+    int num_extracted_bands1=0, num_extracted_bands2=0;
+    FILE *outputFP = NULL;
+    int output_file_exists = 0;
+    if (outputFile && strlen(outputFile) > 0) {
+        outputFP = (FILE*)FOPEN(outputFile, "a");
+        if (outputFP) {
+            output_file_exists = 1;
+        }
+        else {
+            outputFP = stderr;
+            output_file_exists = 0;
+        }
+    }
+    else {
+        outputFP = stderr;
+        output_file_exists = 0;
+    }
+
+  // Get or produce band names for intelligent output...
+    char **band_names1 = NULL;
+    char **band_names2 = NULL;
+    get_band_names(inFile1, outputFP, &band_names1, &num_extracted_bands1);
+    get_band_names(inFile2, outputFP, &band_names2, &num_extracted_bands2);
+
+  // Check each band for differences
+    char band_str1[64];
+    char band_str2[64];
+    for (band=0; band<num_bands; band++) {
+        int i;
+        for (i=0; i<2; i++) {
+            char val_name[16];
+            // Loops twice ...once to diff check the stats on the i values, once to diff
+            // check the stats on the q values
+            stats1 = i ? &cstats1[band].i : &cstats1[band].q;
+            stats2 = i ? &cstats2[band].i : &cstats2[band].q;
+            psnr   = i ? &cpsnr[band].i   : &cpsnr[band].q;
+            strcpy(val_name, i ? "i-values" : "q-values");
+
+            // If differences exist, then produce an output file with content, else
+            // produce an empty output file (handy for scripts that check for file existence
+            // AND file size greater than zero)
+            //
+            // Compare statistics
+            baseline_range1 = fabs(stats1->sdev) * 6.0; // Assume 6-sigma range (99.999999%) is full range of data
+            baseline_range2 = fabs(stats2->sdev) * 6.0; // Assume 6-sigma range (99.999999%) is full range of data
+            min_tol = (MIN_DIFF_TOL/100.0)*baseline_range1;
+            max_tol = (MAX_DIFF_TOL/100.0)*baseline_range1;
+            mean_tol = (MEAN_DIFF_TOL/100.0)*baseline_range1;
+            sdev_tol = (SDEV_DIFF_TOL/100.0)*baseline_range1;
+            // FIXME: Rather than use data_type, use the baseline range to develop a suitable PSNR tolerance
+            switch (data_type) {
+                case BYTE:
+                case COMPLEX_BYTE:
+                    psnr_tol = BYTE_PSNR_TOL;
+                    break;
+                case INTEGER16:
+                case COMPLEX_INTEGER16:
+                    psnr_tol = INTEGER16_PSNR_TOL;
+                    break;
+                case INTEGER32:
+                case COMPLEX_INTEGER32:
+                    psnr_tol = INTEGER32_PSNR_TOL;
+                    break;
+                case REAL32:
+                case COMPLEX_REAL32:
+                default:
+                    psnr_tol = REAL32_PSNR_TOL;
+                    break;
+            }
+
+            min_diff = fabs(stats2->min - stats1->min);
+            max_diff = fabs(stats2->max - stats1->max);
+            mean_diff = fabs(stats2->mean - stats1->mean);
+            sdev_diff = fabs(baseline_range2 - baseline_range1);
+            if (strict &&
+                (stats1->stats_good && stats2->stats_good) &&
+                (min_diff > min_tol ||
+                max_diff > max_tol ||
+                mean_diff > mean_tol ||
+                sdev_diff > sdev_tol ||
+                psnr->psnr < psnr_tol))
+            {
+                // Strict comparison utilizes all values
+                fprintf(outputFP, "\n-----------------------------------------------\n");
+                fprintf(outputFP, "Files contain COMPLEX values.\n");
+
+                if (num_bands > 1) {
+                    sprintf(band_str1, "Band %s in ", band_names1[band]);
+                    sprintf(band_str2, "Band %s in ", band_names2[band]);
+                }
+                else {
+                    strcpy(band_str1, "");
+                    strcpy(band_str2, "");
+                }
+                sprintf(msg, "Comparing %s...\nFAIL: Comparing\n  %s%s\nto\n  %s%s\n\n",
+                        val_name, band_str1, inFile1, band_str2, inFile2);
+                fprintf(outputFP, msg);
+
+                sprintf(msg, "[%s] [min]   File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+                        min_diff > min_tol ? "FAIL" : "PASS",
+                        stats1->min, stats2->min, min_tol, MIN_DIFF_TOL);
+                fprintf(outputFP, msg);
+
+                sprintf(msg, "[%s] [max]   File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+                        max_diff > max_tol ? "FAIL" : "PASS",
+                        stats1->max, stats2->max, max_tol, MAX_DIFF_TOL);
+                fprintf(outputFP, msg);
+
+                sprintf(msg, "[%s] [mean]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+                        mean_diff > mean_tol ? "FAIL" : "PASS",
+                        stats1->mean, stats2->mean, mean_tol, MEAN_DIFF_TOL);
+                fprintf(outputFP, msg);
+
+                sprintf(msg, "[%s] [sdev]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+                        sdev_diff > sdev_tol ? "FAIL" : "PASS",
+                        stats1->sdev, stats2->sdev, sdev_tol/6.0, SDEV_DIFF_TOL);
+                fprintf(outputFP, msg);
+
+                if (psnr[band].psnr_good) {
+                    sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
+                            psnr->psnr < psnr_tol ? "FAIL" : "PASS",
+                            psnr->psnr, psnr_tol);
+                }
+                else {
+                    sprintf(msg, "[FAIL] [PSNR]   PSNR:      MISSING,                    PSNR Minimum: %11f (higher == better)\n",
+                            psnr_tol);
+                }
+                fprintf(outputFP, msg);
+
+                fprintf(outputFP, "-----------------------------------------------\n\n");
+            }
+            else if (!strict &&
+                    (stats1->stats_good && stats2->stats_good) &&
+                    (mean_diff > mean_tol ||
+                    sdev_diff > sdev_tol ||
+                    psnr->psnr < psnr_tol))
+            {
+                // If not doing strict checking, skip comparing min and max values
+                fprintf(outputFP, "\n-----------------------------------------------\n");
+                fprintf(outputFP, "Files contain COMPLEX values.\n");
+
+                char msg[1024];
+                if (num_bands > 1) {
+                    sprintf(band_str1, "Band %s in ", band_names1[band]);
+                    sprintf(band_str2, "Band %s in ", band_names2[band]);
+                }
+                else {
+                    strcpy(band_str1, "");
+                    strcpy(band_str2, "");
+                }
+                sprintf(msg, "Comparing %s...\nFAIL: Comparing\n  %s%s\nto\n  %s%s\n\n",
+                        val_name, band_str1, inFile1, band_str2, inFile2);
+                fprintf(outputFP, msg);
+
+                sprintf(msg, "[%s] [mean]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+                        mean_diff > mean_tol ? "FAIL" : "PASS",
+                        stats1->mean, stats2->mean, mean_tol, MEAN_DIFF_TOL);
+                fprintf(outputFP, msg);
+
+                sprintf(msg, "[%s] [sdev]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+                        sdev_diff > sdev_tol ? "FAIL" : "PASS",
+                        stats1->sdev, stats2->sdev, sdev_tol/6.0, SDEV_DIFF_TOL);
+                fprintf(outputFP, msg);
+
+                if (psnr[band].psnr_good) {
+                    sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
+                            psnr->psnr < psnr_tol ? "FAIL" : "PASS",
+                            psnr->psnr, psnr_tol);
+                }
+                else {
+                    sprintf(msg, "[FAIL] [PSNR]   PSNR:      MISSING,                    PSNR Minimum: %11f (higher == better)\n",
+                            psnr_tol);
+                }
+                fprintf(outputFP, msg);
+
+                fprintf(outputFP, "-----------------------------------------------\n\n");
+            }
+            else if (stats1->stats_good && stats2->stats_good) {
+                if (num_bands > 1) {
+                    sprintf(band_str1, "Band %s in ", band_names1[band]);
+                    sprintf(band_str2, "Band %s in ", band_names2[band]);
+                }
+                else {
+                    strcpy(band_str1, "");
+                    strcpy(band_str2, "");
+                }
+                asfPrintStatus("\nThe files contain COMPLEX data... Comparing %s\n", val_name);
+                asfPrintStatus("PASS: No differences found in Image Statistics when comparing\n  %s%s to\n  %s%s\n\n",
+                               band_str1, inFile1, band_str2, inFile2);
+                print_stats_results(inFile1, inFile2,
+                                    band_str1, band_str2,
+                                    stats1, stats2,
+                                    i ? cpsnr[band].i : cpsnr[band].q);
+            }
+
+            if (!stats1->stats_good || !stats2->stats_good) {
+                char msg[1024];
+
+                fprintf(outputFP, "\n-----------------------------------------------\n");
+                fprintf(outputFP, "Files contain COMPLEX values... Comparing %s\n", val_name);
+
+                if (num_bands > 1) {
+                    sprintf(band_str1, "Band %s in ", band_names1[band]);
+                    sprintf(band_str2, "Band %s in ", band_names2[band]);
+                }
+                else {
+                    strcpy(band_str1, "");
+                    strcpy(band_str2, "");
+                }
+                if (!stats1->stats_good) {
+                    sprintf(msg, "FAIL: %s%s image statistics missing.\n", band_str1, inFile1);
+                    fprintf(outputFP, msg);
+                }
+                if (!stats2->stats_good) {
+                    sprintf(msg, "FAIL: %s%s image statistics missing.\n", band_str2, inFile2);
+                    fprintf(outputFP, msg);
+                }
+
+                fprintf(outputFP, "-----------------------------------------------\n\n");
+            }
+        } // For i value stats and q value stats
+    } // For each band
+
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
+    free_band_names(&band_names1, num_extracted_bands1);
+    free_band_names(&band_names2, num_extracted_bands2);
+}
