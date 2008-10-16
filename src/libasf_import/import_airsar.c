@@ -214,9 +214,9 @@ airsar_dem_header *read_airsar_dem(const char *dataFile)
   dem->corner4_lat = atof(get_airsar(buf, "LATITUDE OF CORNER 4 ="));
   dem->corner4_lon = atof(get_airsar(buf, "LONGITUDE OF CORNER 4 ="));
   dem->lat_peg_point = 
-    atof(get_airsar(buf, "LATITUDE OF PEG POINT (DEGREES) ="));
+    atof(get_airsar(buf, "LATITUDE OF PEG POINT ="));
   dem->lon_peg_point = 
-    atof(get_airsar(buf, "LONGITUDE OF PEG POINT (DEGREES) ="));
+    atof(get_airsar(buf, "LONGITUDE OF PEG POINT ="));
   dem->head_peg_point = 
     atof(get_airsar(buf, "HEADING AT PEG POINT (DEGREES) ="));
   dem->along_track_offset = 
@@ -405,15 +405,14 @@ static airsar_general *read_airsar_general(const char *inBaseName)
 }
 
 meta_parameters *import_airsar_meta(const char *dataName,
+				    const char *demFile,
 				    const char *inBaseName)
 {
   airsar_general *general = read_airsar_general(inBaseName);
   airsar_header *header = read_airsar_header(dataName);
   airsar_param_header *params = read_airsar_params(dataName);
-  airsar_dem_header *dem = NULL;
+  airsar_dem_header *dem = read_airsar_dem(demFile);
   airsar_cal_header *cal = NULL;
-  if (header->dem_header_offset > 0)
-    dem = read_airsar_dem(dataName);
   if (header->calibration_header_offset > 0)
     cal = read_airsar_cal(dataName);
 
@@ -433,14 +432,21 @@ static void fudge_airsar_params(meta_parameters *meta);
 int ingest_insar_data(const char *inBaseName, const char *outBaseName, 
 		      char band)
 {
+  airsar_header *header;
+  meta_parameters *metaIn, *metaOut;
   FILE *fpIn, *fpOut;
-  char *inFile, *outFile;
+  char *inFile, *outFile, *demFile;
   int ii, kk, ret=FALSE;
   float *floatBuf;
 
   // Generate metadata file
   inFile = (char *) MALLOC(sizeof(char)*255);
   outFile = (char *) MALLOC(sizeof(char)*255);
+  demFile = (char *) MALLOC(sizeof(char)*255);
+
+  sprintf(demFile, "%s_c.demi2", inBaseName);
+  if (!fileExists(demFile))
+    sprintf(demFile, "%s_l.demi2", inBaseName);
 
   // Ingest the DEM
   sprintf(inFile, "%s_%c.demi2", inBaseName, band);
@@ -449,9 +455,9 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   else {
     asfPrintStatus("   Ingesting DEM ...\n");
     sprintf(outFile, "%s_%c_dem.img", outBaseName, band);
-    airsar_header *header = read_airsar_header(inFile);
-    meta_parameters *metaIn = import_airsar_meta(inFile, inBaseName);
-    meta_parameters *metaOut = import_airsar_meta(inFile, inBaseName);
+    header = read_airsar_header(inFile);
+    metaIn = import_airsar_meta(inFile, demFile, inBaseName);
+    metaOut = import_airsar_meta(inFile, demFile, inBaseName);
     metaIn->general->data_type = INTEGER16;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
@@ -469,7 +475,8 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     FCLOSE(fpIn);
     FCLOSE(fpOut);
     metaOut->general->image_data_type = DEM;
-    fudge_airsar_params(metaOut);
+    strcpy(metaOut->general->bands, "DEM");
+    //fudge_airsar_params(metaOut);
     meta_write(metaOut, outFile);
     ret = TRUE;
   }
@@ -481,9 +488,6 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   else {
     asfPrintStatus("   Ingesting amplitude image ...\n");
     sprintf(outFile, "%s_%c_vv.img", outBaseName, band);
-    airsar_header *header = read_airsar_header(inFile);
-    meta_parameters *metaIn = import_airsar_meta(inFile, inBaseName);
-    meta_parameters *metaOut = import_airsar_meta(inFile, inBaseName);
     metaIn->general->data_type = INTEGER16;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
@@ -498,7 +502,8 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     FCLOSE(fpIn);
     FCLOSE(fpOut);
     metaOut->general->image_data_type = AMPLITUDE_IMAGE;
-    fudge_airsar_params(metaOut);
+    strcpy(metaOut->general->bands, "AMP");
+    //fudge_airsar_params(metaOut);
     meta_write(metaOut, outFile);
     ret = TRUE;
   }
@@ -510,9 +515,6 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   else {
     asfPrintStatus("   Ingesting coherence image ...\n");
     sprintf(outFile, "%s_%c_coh.img", outBaseName, band);
-    airsar_header *header = read_airsar_header(inFile);
-    meta_parameters *metaIn = import_airsar_meta(inFile, inBaseName);
-    meta_parameters *metaOut = import_airsar_meta(inFile, inBaseName);
     metaIn->general->data_type = BYTE;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
@@ -527,7 +529,8 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     FCLOSE(fpIn);
     FCLOSE(fpOut);
     metaOut->general->image_data_type = COHERENCE_IMAGE;
-    fudge_airsar_params(metaOut);
+    strcpy(metaOut->general->bands, "COH");
+    //fudge_airsar_params(metaOut);
     meta_write(metaOut, outFile);
     ret = TRUE;
   }
@@ -544,7 +547,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 		       char band)
 {
   FILE *fpIn, *fpOut;
-  char *inFile, *outFile;
+  char *inFile, *outFile, *demFile;
   int ii, kk, ret;
   char *byteBuf;
   float *power, *shh_amp, *shh_phase, *shv_amp, *shv_phase, *svh_amp;
@@ -555,6 +558,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   // Allocate memory
   inFile = (char *) MALLOC(sizeof(char)*255);
   outFile = (char *) MALLOC(sizeof(char)*255);
+  demFile = (char *) MALLOC(sizeof(char)*255);
 
   // Ingest polarimetric data
   sprintf(inFile, "%s_%c.datgr", inBaseName, band);
@@ -564,7 +568,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     asfPrintStatus("   Cound not find polarimetric data set (%s_%c) ...\n",
 		   inBaseName, band);
   else {
-    meta_parameters *meta = import_airsar_meta(inFile, inBaseName);
+    meta_parameters *meta = import_airsar_meta(inFile, demFile, inBaseName);
     meta->general->data_type = REAL32;
     meta->general->image_data_type = POLARIMETRIC_IMAGE;
     meta->general->band_count = 9;
@@ -649,7 +653,28 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 
 void import_airsar(const char *inBaseName, const char *outBaseName)
 {
+  char inFile[1024];
+  int found_c_dem = FALSE, found_l_dem = FALSE;
+
   airsar_general *general = read_airsar_general(inBaseName);
+
+  // Check for existence of DEMs.
+  // The C-Band DEM is the preferred file for extracting the metadata.
+  // Look for that first. If no DEM is around then error out.
+  if (general->c_cross_data || general->l_cross_data) {
+    sprintf(inFile, "%s_c.demi2", inBaseName);
+    if (fileExists(inFile))
+      found_c_dem = TRUE;
+    sprintf(inFile, "%s_l.demi2", inBaseName);
+    if (fileExists(inFile))
+      found_l_dem = TRUE;
+    if (!found_c_dem && found_l_dem)
+      asfPrintWarning("Could not find C-band DEM.\nRequired for most reliable "
+		      "metadata extraction\n");
+    if (!found_c_dem && !found_l_dem)
+      asfPrintError("Could not find any DEM.\nCan't reliably import this "
+		    "Airsar data.\n");
+  }
 
   // Check for interferometric data
   int insar = FALSE;

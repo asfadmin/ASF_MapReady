@@ -36,7 +36,6 @@ meta_parameters* airsar2meta(airsar_general *general,
   // no frame number
   // FIXME: decide how to separate interferometric/polarimetric data
   meta->general->band_count = 1;
-  strcpy(meta->general->bands, "tbd");
   meta->general->line_count =
     header->line_count - header->first_data_offset / header->sample_count;
   meta->general->sample_count = header->sample_count;
