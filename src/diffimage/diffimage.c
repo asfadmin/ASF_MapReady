@@ -2105,8 +2105,13 @@ float get_maxval(data_type_t data_type)
   // Only non-complex types with 32 bits or less are supported
   switch (data_type) {
       case BYTE:
-      case COMPLEX_BYTE:
           ret = pow(2, sizeof(unsigned char) * 8.0) - 1;
+          break;
+      case COMPLEX_BYTE:
+          // HACK ALERT!  This assumes that COMPLEX_BYTE is
+          // from raw data off a satellite and has only 5-bit
+          // resolution... Probably a safe assumption for diffimage
+          ret = pow(2, 5) - 1;
           break;
       case INTEGER16:
       case COMPLEX_INTEGER16:
