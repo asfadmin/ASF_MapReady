@@ -1718,7 +1718,7 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
   if (meta->general->orbit_direction==' ')
     meta->general->orbit_direction =
       (meta->general->frame>=1791 && meta->general->frame<=5391) ? 'D' : 'A';
-  meta->general->bit_error_rate = esa_facdr->ber;
+  meta->general->bit_error_rate = esa_facdr->ber < 0 ? MAGIC_UNSET_DOUBLE : esa_facdr->ber;
 
   // State vector block
   ceos_init_stVec(in_fName,ceos,meta);
@@ -1735,11 +1735,16 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
   else if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
-  meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
-  meta->sar->range_doppler_coefficients[1] = // two-way range time
-    dssr->crt_dopcen[1] / (speedOfLight * 2);
-  meta->sar->range_doppler_coefficients[2] = // two-way range time
-    dssr->crt_dopcen[2] / (speedOfLight * speedOfLight * 4);
+  if (!FLOAT_COMPARE_TOLERANCE(dssr->crt_dopcen[0], -9999999.999, 0.001) &&
+      !FLOAT_COMPARE_TOLERANCE(dssr->crt_dopcen[1], -9999999.999, 0.001) &&
+      !FLOAT_COMPARE_TOLERANCE(dssr->crt_dopcen[2], -9999999.999, 0.001))
+  {
+    meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
+    meta->sar->range_doppler_coefficients[1] = // two-way range time
+        dssr->crt_dopcen[1] / (speedOfLight * 2);
+    meta->sar->range_doppler_coefficients[2] = // two-way range time
+        dssr->crt_dopcen[2] / (speedOfLight * speedOfLight * 4);
+  }
   meta->sar->earth_radius =
     meta_get_earth_radius(meta,
         meta->general->line_count/2,
