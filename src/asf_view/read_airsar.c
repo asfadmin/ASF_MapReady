@@ -423,7 +423,36 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
     ReadAirsarClientInfo *info = MALLOC(sizeof(ReadAirsarClientInfo));
 
     char *airsar_basename = get_airsar_basename(meta_name);
-    meta_parameters *meta = import_airsar_meta(data_name, airsar_basename);
+
+    // Figure out the whether we have a DEM header
+    char *dem_file;
+    dem_file = (char *) MALLOC(sizeof(char)*1024);
+    int found_c_dem = FALSE, found_l_dem = FALSE, found_p_dem = FALSE;
+
+    // The C-Band DEM is the preferred file for extracting the metadata.
+    // Look for that first. If no DEM is around then error out.
+    sprintf(dem_file, "%s_c.demi2", airsar_basename);
+    if (fileExists(dem_file))
+      found_c_dem = TRUE;
+    sprintf(dem_file, "%s_l.demi2", airsar_basename);
+    if (fileExists(dem_file))
+      found_l_dem = TRUE;
+    sprintf(dem_file, "%s_p.demi2", airsar_basename);
+    if (fileExists(dem_file))
+      found_p_dem = TRUE;
+    if (!found_c_dem && !found_l_dem && !found_p_dem)
+      return NULL;
+
+    // Assign the correct DEM for generating the AirSAR metadata
+    if (found_c_dem)
+      sprintf(dem_file, "%s_c.demi2", airsar_basename);
+    else if (found_l_dem)
+      sprintf(dem_file, "%s_l.demi2", airsar_basename);
+    else if (found_p_dem)
+      sprintf(dem_file, "%s_p.demi2", airsar_basename);
+
+    meta_parameters *meta = import_airsar_meta(data_name, dem_file,
+                                               airsar_basename);
     info->header = NULL;
     info->dem_header = NULL;
 
