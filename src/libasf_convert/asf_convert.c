@@ -2277,6 +2277,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         }
       }
     }
+    else {
+      // result of geocoding is the final output file, since we are
+      // not exporting
+      char *imgFile = appendExt(outFile, ".img");
+      save_intermediate(cfg, "Output", imgFile);
+      free(imgFile);
+    }
 
     //---------------------------------------------------------------------
     // At this point the processing of the SAR image is done.
