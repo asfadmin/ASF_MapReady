@@ -81,9 +81,16 @@ meta_parameters* airsar2meta(airsar_general *general,
   meta->airsar = meta_airsar_init();
   meta->airsar->scale_factor = params->scale_factor;
   meta->airsar->gps_altitude = params->gps_altitude;
-  meta->airsar->lat_peg_point = params->lat_peg_point;
-  meta->airsar->lon_peg_point = params->lon_peg_point;
-  meta->airsar->head_peg_point = params->head_peg_point;
+  if (dem) {
+    meta->airsar->lat_peg_point = dem->lat_peg_point;
+    meta->airsar->lon_peg_point = dem->lon_peg_point;
+    meta->airsar->head_peg_point = dem->head_peg_point;
+  }
+  else {
+    meta->airsar->lat_peg_point = params->lat_peg_point;
+    meta->airsar->lon_peg_point = params->lon_peg_point;
+    meta->airsar->head_peg_point = params->head_peg_point;
+  }
   meta->airsar->along_track_offset = params->along_track_offset;
   meta->airsar->cross_track_offset = params->cross_track_offset;
   // The DEM header of Rick's prime test data did not have a valid peg point.

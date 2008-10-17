@@ -28,6 +28,7 @@ static int is_valid_data_airsar_ext(const char *ext)
         (strcmp_case(ext, ".vvi2") == 0
          || strcmp_case(ext, ".demi2") == 0
          || strcmp_case(ext, ".datgr") == 0
+	 || strcmp_case(ext, ".dat") == 0
          //|| strcmp_case(ext, ".incgr") == 0
          || strcmp_case(ext, ".corgr") == 0
           );
@@ -435,7 +436,8 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
       asfPrintStatus("AirSAR: Coherence Image\n");
       info->airsar_data_type = AIRSAR_COHERENCE;
     }
-    else if (strcmp_case(ext, ".datgr")==0) {
+    else if (strcmp_case(ext, ".datgr")==0 ||
+	     strcmp_case(ext, ".dat")==0) {
       asfPrintStatus("AirSAR: Polarimetric Image (9 bands)\n");
       info->airsar_data_type = AIRSAR_POLARIMETRIC;
     }
