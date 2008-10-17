@@ -405,12 +405,39 @@ static airsar_general *read_airsar_general(const char *inBaseName)
 }
 
 meta_parameters *import_airsar_meta(const char *dataName,
-				    const char *demFile,
 				    const char *inBaseName)
 {
   airsar_general *general = read_airsar_general(inBaseName);
   airsar_header *header = read_airsar_header(dataName);
   airsar_param_header *params = read_airsar_params(dataName);
+
+  // Figure out the whether we have a DEM header
+  char *demFile;
+  demFile = (char *) MALLOC(sizeof(char)*1024);
+  int found_c_dem = FALSE, found_l_dem = FALSE, found_p_dem = FALSE;
+  
+  // The C-Band DEM is the preferred file for extracting the metadata.
+  // Look for that first. If no DEM is around then error out.
+  sprintf(demFile, "%s_c.demi2", inBaseName);
+  if (fileExists(demFile))
+    found_c_dem = TRUE;
+  sprintf(demFile, "%s_l.demi2", inBaseName);
+  if (fileExists(demFile))
+    found_l_dem = TRUE;
+  sprintf(demFile, "%s_p.demi2", inBaseName);
+  if (fileExists(demFile))
+    found_p_dem = TRUE;
+  if (!found_c_dem && !found_l_dem && !found_p_dem)
+    return NULL;
+  
+  // Assign the correct DEM for generating the AirSAR metadata
+  if (found_c_dem)
+    sprintf(demFile, "%s_c.demi2", inBaseName);
+  else if (found_l_dem)
+    sprintf(demFile, "%s_l.demi2", inBaseName);
+  else if (found_p_dem)
+    sprintf(demFile, "%s_p.demi2", inBaseName);
+  
   airsar_dem_header *dem = read_airsar_dem(demFile);
   airsar_cal_header *cal = NULL;
   if (header->calibration_header_offset > 0)
@@ -456,8 +483,8 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     asfPrintStatus("   Ingesting DEM ...\n");
     sprintf(outFile, "%s_%c_dem.img", outBaseName, band);
     header = read_airsar_header(inFile);
-    metaIn = import_airsar_meta(inFile, demFile, inBaseName);
-    metaOut = import_airsar_meta(inFile, demFile, inBaseName);
+    metaIn = import_airsar_meta(inFile, inBaseName);
+    metaOut = import_airsar_meta(inFile, inBaseName);
     metaIn->general->data_type = INTEGER16;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
@@ -568,7 +595,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     asfPrintStatus("   Cound not find polarimetric data set (%s_%c) ...\n",
 		   inBaseName, band);
   else {
-    meta_parameters *meta = import_airsar_meta(inFile, demFile, inBaseName);
+    meta_parameters *meta = import_airsar_meta(inFile, inBaseName);
     meta->general->data_type = REAL32;
     meta->general->image_data_type = POLARIMETRIC_IMAGE;
     meta->general->band_count = 9;
