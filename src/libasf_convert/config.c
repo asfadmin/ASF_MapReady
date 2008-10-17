@@ -1187,14 +1187,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
     fprintf(fConfig, "export = %i\n", cfg->general->export);
     // Genral - Mosaic
     if (!shortFlag) { 
-      fprintf(fConfig, "\n# The mosaic flag indicates whether the data needs to \
-      be run through\n"
-      "# 'asf_mosaic' (1 for running it, 0 for leaving out the export step).\n");
-      fprintf(fConfig, "# Running asf_convert with the -create option and the \
-      mosaic flag\n"
-      "# switched on will generate a [Mosaic] section where you can define \
-      further\n"
-      "# parameters.\n\n");
+      fprintf(fConfig, "\n# The mosaic flag indicates whether the data needs to be run through\n"
+              "# 'asf_mosaic' (1 for running it, 0 for leaving out the export step).\n"
+              "# Running asf_convert with the -create option and the mosaic flag\n"
+              "# switched on will generate a [Mosaic] section where you can define further\n"
+              "# parameters.\n\n");
     }
     fprintf(fConfig, "mosaic = %i\n", cfg->general->mosaic);
     // General - Default values
@@ -1519,7 +1516,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "save terrcorr layover mask = %d\n", cfg->terrain_correct->save_terrcorr_layover_mask);
       if (!shortFlag)
         fprintf(fConfig, "\n# This option determines if the simulated image derived from the DEM is\n"
-        "# used for matching with the SAR image in slant range. If you want to trust the quality\n"
+        "# used for matching with the SAR image in slant range. If you don't trust the quality\n"
         "# of the orbital information or want to determine your own offset, you want to switch\n"
         "# this flag to 1.\n\n");
       fprintf(fConfig, "no matching = %d\n", cfg->terrain_correct->no_matching);
