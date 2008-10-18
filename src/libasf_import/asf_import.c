@@ -57,11 +57,11 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
        radiometry == r_BETA  ||
        radiometry == r_GAMMA ||
        radiometry == r_POWER)   &&
-       !(format_type == CEOS || format_type == STF))
+       !(format_type == CEOS || format_type == STF || format_type == AIRSAR))
   {
     // A power flag is on, but the input file is not CEOS or STF format
     // so it will be ignored
-    asfPrintWarning("Power flags %s%s for non-CEOS/non-STF datasets\n"
+    asfPrintWarning("Power flags %s%s for non-CEOS/non-STF datasets/non-AIRSAR\n"
                     "will be ignored since other data formats do not indicate what\n"
                     "type of data is in the file.  Assuming the input data is an AMPLITUDE\n"
                     "image...\n",
@@ -131,7 +131,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == AIRSAR) {
     asfPrintStatus("   Data format: AIRSAR\n");
-    import_airsar(inBaseName, outBaseName);
+    import_airsar(inBaseName, radiometry, db_flag, outBaseName);
   }
   else if (format_type == VP) {
     asfPrintStatus("   Data format: VP\n");

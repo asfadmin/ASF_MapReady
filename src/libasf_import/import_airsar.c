@@ -473,7 +473,7 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   meta_parameters *metaIn, *metaOut;
   FILE *fpIn, *fpOut;
   char *inFile, *outFile;
-  int ii, kk, ret=FALSE;
+  int ii, kk, line_offset, ret=FALSE;
   float *floatBuf;
 
   // Generate metadata file
@@ -489,20 +489,21 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     sprintf(outFile, "%s_%c_dem.img", outBaseName, band);
     header = read_airsar_header(inFile);
     metaIn = import_airsar_meta(inFile, inBaseName);
+    line_offset = header->first_data_offset/metaIn->general->sample_count/2;
+    metaIn->general->line_count += line_offset;
     metaOut = import_airsar_meta(inFile, inBaseName);
     metaIn->general->data_type = INTEGER16;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
     fpIn = FOPEN(inFile, "rb");
-    FSEEK(fpIn, header->first_data_offset, SEEK_SET);
     fpOut = FOPEN(outFile, "wb");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatBuf);
+    for (ii=0; ii<metaOut->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii+line_offset, floatBuf);
       for (kk=0; kk<metaIn->general->sample_count; kk++)
 	floatBuf[kk] = floatBuf[kk]*metaIn->airsar->elevation_increment + 
 	  metaIn->airsar->elevation_offset;
       put_float_line(fpOut, metaOut, ii, floatBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
+      asfLineMeter(ii, metaOut->general->line_count);
     }
     FCLOSE(fpIn);
     FCLOSE(fpOut);
@@ -521,16 +522,17 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     asfPrintStatus("   Ingesting amplitude image ...\n");
     sprintf(outFile, "%s_%c_vv.img", outBaseName, band);
     header = read_airsar_header(inFile);
+    line_offset = header->first_data_offset/metaIn->general->sample_count/2;
+    metaIn->general->line_count = metaOut->general->line_count + line_offset;
     metaIn->general->data_type = INTEGER16;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
     fpIn = FOPEN(inFile, "rb");
-    FSEEK(fpIn, header->first_data_offset, SEEK_SET);
     fpOut = FOPEN(outFile, "wb");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatBuf);
+    for (ii=0; ii<metaOut->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii+line_offset, floatBuf);
       put_float_line(fpOut, metaOut, ii, floatBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
+      asfLineMeter(ii, metaOut->general->line_count);
     }
     FCLOSE(fpIn);
     FCLOSE(fpOut);
@@ -549,16 +551,17 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     asfPrintStatus("   Ingesting coherence image ...\n");
     sprintf(outFile, "%s_%c_coh.img", outBaseName, band);
     header = read_airsar_header(inFile);
+    line_offset = header->first_data_offset / metaIn->general->sample_count;
+    metaIn->general->line_count = metaOut->general->line_count + line_offset;
     metaIn->general->data_type = BYTE;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
     fpIn = FOPEN(inFile, "rb");
-    FSEEK(fpIn, header->first_data_offset, SEEK_SET);
     fpOut = FOPEN(outFile, "wb");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatBuf);
+    for (ii=0; ii<metaOut->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii+line_offset, floatBuf);
       put_float_line(fpOut, metaOut, ii, floatBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
+      asfLineMeter(ii, metaOut->general->line_count);
     }
     FCLOSE(fpIn);
     FCLOSE(fpOut);
@@ -619,6 +622,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     svv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
     byteBuf = (char *) MALLOC(sizeof(char)*10);
     scale = (float) meta->airsar->scale_factor;
+    scale = 1.0;
     airsar_header *header = read_airsar_header(inFile);
     long offset = header->first_data_offset;
     sprintf(outFile, "%s_%c.img", outBaseName, band);
@@ -633,7 +637,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 	ysca = 2.0 * sqrt(total_power);
 	power[kk] = total_power;
 	cpx.real = 127 * (float)byteBuf[2] / x;
-	cpx.imag = 127 * (float)byteBuf[3] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
 	shh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
 	shh_phase[kk] = atan2(cpx.imag, cpx.real);
 	cpx.real = (float)byteBuf[4] * ysca / 127.0;
@@ -683,10 +687,20 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   return ret;
 }
 
-void import_airsar(const char *inBaseName, const char *outBaseName)
+void import_airsar(const char *inBaseName, radiometry_t radiometry,
+		   int db_flag, const char *outBaseName)
 {
   char inFile[1024];
   int found_c_dem = FALSE, found_l_dem = FALSE;
+
+  // Check radiometry
+  if (radiometry != r_AMP &&
+      radiometry != r_SIGMA && radiometry != r_SIGMA_DB) {
+    asfPrintWarning("Radiometry other than AMPLITUDE and SIGMA is not "
+		    "supported for AirSAR data.\nDefaulting back to "
+		    "AMPLITUDE.\n");
+    radiometry = r_AMP;
+  }
 
   airsar_general *general = read_airsar_general(inBaseName);
 

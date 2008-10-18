@@ -294,6 +294,9 @@ int read_airsar_client(int row_start, int n_rows_to_get,
 
     if (info->airsar_data_type == AIRSAR_POLARIMETRIC) {
       float scale = (float) meta->airsar->scale_factor;
+      // Scale is constant - according to Bruce Chapman from JPL
+      // Apparently it is set to zero in the header, so we need to fix that
+      scale = 1.0;
       unsigned char *byte_buf = MALLOC(sizeof(char)*10);
       FILE *fpIn = info->fp;
       int ns = meta->general->sample_count;
@@ -325,14 +328,21 @@ int read_airsar_client(int row_start, int n_rows_to_get,
       float incr = info->dem_header->elevation_increment;
       float off = info->dem_header->elevation_offset;
       int i,ns = meta->general->sample_count;
+      long line_offset = info->header->first_data_offset / ns / 2;
+      meta->general->line_count += line_offset;
 
-      get_float_lines(info->fp, meta, row_start, n_rows_to_get, dest);
+      get_float_lines(info->fp, meta, row_start+line_offset, n_rows_to_get, dest);
       for (i=0; i<n_rows_to_get*ns; ++i)
         dest[i] = dest[i] * incr + off;
     }
     else {
       assert(data_type == GREYSCALE_FLOAT);
-      get_float_lines(info->fp, meta, row_start, n_rows_to_get, dest);
+      int ns = meta->general->sample_count;
+      long line_offset = info->header->first_data_offset / ns;
+      if (info->airsar_data_type = AIRSAR_AMPLITUDE)
+	line_offset /= 2;
+      meta->general->line_count += line_offset;
+      get_float_lines(info->fp, meta, row_start+line_offset, n_rows_to_get, dest);
     }
 
     return TRUE;
