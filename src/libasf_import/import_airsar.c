@@ -573,7 +573,8 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   }
 
   // Clean up
-  FREE(floatBuf);
+  if (floatBuf)
+    FREE(floatBuf);
   FREE(inFile);
   FREE(outFile);
 
@@ -600,9 +601,11 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   sprintf(inFile, "%s_%c.datgr", inBaseName, band);
   if (!fileExists(inFile))
     sprintf(inFile, "%s_%c.dat", inBaseName, band);
-  if (!fileExists(inFile))
+  if (!fileExists(inFile)) {
     asfPrintStatus("   Cound not find polarimetric data set (%s_%c) ...\n",
 		   inBaseName, band);
+    return FALSE;
+  }
   else {
     meta_parameters *meta = import_airsar_meta(inFile, inBaseName);
     meta->general->data_type = REAL32;
