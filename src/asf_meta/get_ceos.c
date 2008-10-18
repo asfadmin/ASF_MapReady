@@ -166,7 +166,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
   }
 
   for (ii=0; ii<trailer+1; ii++) {
-    size = fileSize(metaName[ii]);
+    size = (int)fileSize(metaName[ii]);
     fp=FOPEN(metaName[ii], "rb");
     total = 0;
     while (1==fread(&bufhdr, 12, 1, fp)) {
@@ -198,9 +198,9 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	     subtype[0], subtype[1], subtype[2], rec_seq, length);
       */
       if (total-length > size)
-	break;
+        break;
       else
-	FREAD((*buff)+12, length-12, 1, fp);
+	    FREAD((*buff)+12, length-12, 1, fp);
 
       // The JAXA FACDR requires the sequence number to be able to pick
       // the correct one. For level 1.1 it is sequence 17, for level 1.5

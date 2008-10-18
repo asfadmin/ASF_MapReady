@@ -21,7 +21,7 @@ LIBS  = \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
-	-lz
+	$(ZLIB_LIBS)
 
 # different procedures for win/unix
 
@@ -55,7 +55,6 @@ LIB = \
 	-L$(GTK_LIB)/pango \
 	-L$(GTK_LIB)/libglade \
 	-llibgthread-2.0 \
-	-lpthread \
 	-lintl \
 	-liconv \
 	-lm \
@@ -64,17 +63,16 @@ LIB = \
 	-llibglade-2.0 \
 	-llibgdk_pixbuf-2.0 \
 	-lpango-1.0 \
-	-L/usr/lib/w32api \
+	-L/mingw/lib \
 	-lgdi32 \
 	-llibgdk-win32-2.0 \
 	$(LIBS) \
-	$(ASF_LIB)/libjpeg.a \
 	-lglib-2.0 \
 	-lcomdlg32
 
-CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
+CFLAGS += -D_REENTRANT -mms-bitfields -g -Wall
 
-$(TARGET).exe: $(OBJS)
+$(TARGET).exe: $(SRCS)
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)

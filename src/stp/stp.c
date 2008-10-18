@@ -9,7 +9,6 @@
 #include <glade/glade.h>
 #include <glib.h>
 #include <glib/gprintf.h>
-#include <sys/wait.h>
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -22,10 +21,6 @@
 
 #include "asf_version.h"
 
-#ifndef win32
-# include "asf_meta.h"
-# include <asf_import.h>
-#endif
 #if defined(win32)
 #  include <pango/pango.h>
 
@@ -124,9 +119,14 @@ void set_font ()
     try_to_get_windows_font();
 }
 
+#include "asf_import.h"
+
 #else /* defined(win32) */
 
 #include "asf.h"
+#include "asf_meta.h"
+#include "asf_import.h"
+#include <sys/wait.h>
 #if defined(DIR_SEPARATOR)
 #undef DIR_SEPARATOR
 #endif
@@ -136,7 +136,6 @@ void set_font () {}
 
 #endif /* defined(win32) */
 
-#include "asf_import.h"
 #include "ardop_defs.h"
 
 #ifdef win32
