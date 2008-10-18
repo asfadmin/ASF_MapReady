@@ -45,7 +45,7 @@
 "     [-coherence <coherence>] <amplitude> <metadata> <out>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"     This program verifies the validity of a CEOS data set.\n\n"
+"     This program ingests GAMMA data sets into ASF internal data format.\n\n"
 
 #define ASF_INPUT_STRING \
 "     The input files is required. The first input is the amplitude data\n"\
@@ -57,11 +57,10 @@
 "     data file.\n"
 
 #define ASF_OPTIONS_STRING \
-"     -ignore_spec\n"\
-"          Does not test whether the actual file size meets the "\
-"specification.\n"\
-"     -essential\n"\
-"          Only checks image data file and leader file.\n"\
+"     -interferogram\n"\
+"          Stacks an interferogram onto an amplitude image.\n"\
+"     -coherence\n"\
+"          Stacks an coherence onto an amplitude image.\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
