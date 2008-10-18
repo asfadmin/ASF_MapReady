@@ -1,12 +1,3 @@
-c      This program must link to real*8 versions of the following
-c      Numerical Recipies routines (v1992) to work properly.
-
-c      SUBROUTINE gaussj(a,n,np,b,m,mp)
-c      SUBROUTINE svdcmp(a,m,n,mp,np,w,v)
-c      SUBROUTINE svbksb(u,w,v,m,n,mp,np,b,x)
-c      SUBROUTINE svdvar(v,ma,np,w,cvm,ncvm)
-c      REAL*8 FUNCTION pythag(a,b)
-
 c***************************************************************
 
       program multitps
@@ -15,7 +6,7 @@ c****************************************************************
 c**
 c**   FILE NAME: multitps.f
 c**
-c**   DATE WRITTEN: 10/20/96
+c**   DATE STARTED: 10/20/96
 c**
 c**   PROGRAMMER: Scott Shaffer
 c**
@@ -43,7 +34,7 @@ c     PARAMETER STATEMENTS:
 c     INPUT VARIABLES:
       character*255 a_cmdfile
       character*255 a_outfile
-      character*255 a_tpsfile(I_MT)
+      character*255 a_tpsfile(0:I_MT)
       character*255 a_magfile(0:I_MT)  ! Data file names
       character*255 a_dtefile(0:I_MT)  ! Data file names
       character*255 a_afffile(0:I_MT)  ! Affine transformation files
@@ -148,11 +139,12 @@ c     INPUT VARIABLES:
 
       real*4 r_data(I_MS)
       real*4 r_datb(I_MS)
+      integer*2 i_datb(I_MS)
 
       real*4 r_dmul
       real*4 r_dadd
 
-      real*4 r1,r2,r3,r4,r5,r6,r7
+      real*4 r0,r1,r2,r3,r4,r5,r6,r7
 
 
 C     FUNCTION STATEMENTS:
@@ -209,6 +201,7 @@ c
           a_afffile(i_file) = ' '
           a_hdrfile(i_file) = ' '
           a_type(i_file) = 'sch'
+          a_proj(i_file) = ' '
           i_zone(i_file)=0
           i_ssize(i_file)=0
           i_lsize(i_file)=0
@@ -243,7 +236,7 @@ c
 
 
       write(6,*) ' '
-      write(6,*) '     << Multitps Program >>    '
+      write(6,*) '     << Multitps Program 6.0   9-October-2001 >>    '
       write(6,*) ' '
 
 c
@@ -264,6 +257,8 @@ c
               print *,'parse error'
             else if (a_vals(i)(1:4) .eq. 'typ=') then
               a_type(i_file)=a_vals(i)(5:)
+            else if (a_vals(i)(1:4) .eq. 'prj=') then
+              a_proj(i_file)=a_vals(i)(5:)
             else if (a_vals(i)(1:4) .eq. 'mss=') then
               read(a_vals(i)(5:),*) r_mdnc(1,i_file),r_mdnc(2,i_file)
             else if (a_vals(i)(1:4) .eq. 'dss=') then
@@ -301,6 +296,8 @@ c
               i_pos = index(a_magfile(i_file),'.')
               if (i_pos .eq. 0) i_pos = length(a_magfile(i_file))+1
               a_hdrfile(i_file)=a_magfile(i_file)(1:i_pos-1)//'.hdr'
+              a_type(i_file)='dem'
+              a_proj(i_file)='sch'
             else if (a_vals(i)(1:4) .eq. 'dte=' .or.
      &               a_vals(i)(1:4) .eq. 'dem=' .or.
      &               a_vals(i)(1:4) .eq. 'hgt=' ) then
@@ -309,6 +306,8 @@ c
               i_pos = index(a_dtefile(i_file),'.')
               if (i_pos .eq. 0) i_pos = length(a_dtefile(i_file))+1
               a_hdrfile(i_file)=a_dtefile(i_file)(1:i_pos-1)//'.hdr'
+              a_type(i_file)='dem'
+              a_proj(i_file)='sch'
             else if (a_vals(i)(1:4) .eq. 'dma=' .or.
      &               a_vals(i)(1:4) .eq. 'd*2=' ) then
               i_file=i_file+1
@@ -323,7 +322,8 @@ c
                 a_hdrfile(i_file)=a_dtefile(i_file)(:length(a_dtefile(i_file)))//'.hdr'
               endif
               i_dbytes(i_file)=2
-              a_type(i_file)='eqa'
+              a_type(i_file)='dem'
+              a_proj(i_file)='eqa'
             else if (a_vals(i)(1:4) .eq. 'mgh=') then
               i_file=i_file+1
               i_comma=index(a_vals(i),',')
@@ -332,18 +332,29 @@ c
               i_pos = index(a_dtefile(i_file),'.')
               if (i_pos .eq. 0) i_pos = length(a_dtefile(i_file))+1
               a_hdrfile(i_file)=a_dtefile(i_file)(1:i_pos-1)//'.hdr'
+              a_type(i_file)='dem'
+              a_proj(i_file)='sch'
             else if (a_vals(i)(1:4) .eq. 'rmg=') then
               i_file=i_file+1
               a_tpsfile(i_file)=a_vals(i)(5:)
               i_pos = index(a_tpsfile(i_file),'.')
               if (i_pos .eq. 0) i_pos = length(a_tpsfile(i_file))+1
               a_hdrfile(i_file)=a_tpsfile(i_file)(1:i_pos-1)//'.hdr'
+              a_type(i_file)='dem'
+              a_proj(i_file)='sch'
             else
               i_file=i_file+1
               a_tpsfile(i_file)=a_vals(i)
               i_pos = index(a_tpsfile(i_file),'.')
               if (i_pos .eq. 0) i_pos = length(a_tpsfile(i_file))+1
               a_hdrfile(i_file)=a_tpsfile(i_file)(1:i_pos-1)//'.hdr'
+              if (i_file .eq. 0) then
+                a_type(i_file)='dem'
+                a_proj(i_file)='sch'
+              else
+                a_type(i_file)='gcp'
+                a_proj(i_file)='llh'
+              endif
             endif
           enddo
         enddo
@@ -385,13 +396,23 @@ c
             endif
 
             if (i_file .eq. 0) then
+              if (a_type(i_file) .ne. ' ' .and. a_proj(i_file) .eq. ' ' .and.
+     &           (a_type(i_file) .ne. 'gcp' .or. a_type(i_file) .ne.  'GCP') .and.
+     &           (a_type(i_file) .ne. 'dem' .or. a_type(i_file) .ne.  'DEM') ) then
+                a_proj(i_file) = a_type(i_file)
+                a_type(i_file) = 'dem'
+              endif
               if (a_hdrfile(i_file) .ne. ' ') then  ! Read header file if exists
                 if (i_pegset(i_file) .eq. 0 .and. i_strset(i_file) .eq. 0 .and.
      &                i_sizset(i_file) .eq. 0 .and. i_spcset(i_file) .eq. 0 ) then
-                  call read_hdr(a_hdrfile(i_file),i_lsize(i_file),i_ssize(i_file),
+                  call read_hdr(a_hdrfile(i_file),a_type(i_file),i_lsize(i_file),i_ssize(i_file),
      &                r_peg(1,i_file),r_str(1,i_file),r_spc(1,i_file),
      &                i_mbytes(i_file),i_dbytes(i_file),
      &                r_mdnc(1,i_file),r_ddnc(1,i_file),i_hdrstat(i_file))
+                  if (r_spc(1,i_file) .ne. 0 .and. r_spc(2,i_file) .ne. 0) then
+                    a_proj(i_file) = a_type(i_file)
+                    a_type(i_file) = 'dem'
+                  endif
                 endif
               endif
 
@@ -399,6 +420,8 @@ c
                 call read_dhdr(a_dtefile(i_file),i_dlsize,i_dssize,i_dbytes(i_file),i_doff(i_file),r_dmul,r_dadd,
      &                 r_peg(1,i_file),r_str(1,i_file),r_spc(1,i_file))
                 if (i_dssize .gt. 0) then
+                  a_type(i_file) = 'dem'
+                  a_proj(i_file) = 'sch'
                   i_lsize(i_file)=i_dlsize
                   i_ssize(i_file)=i_dssize
                   r_ddnc(1,i_file) = r_dmul
@@ -412,14 +435,14 @@ c
               call read_gcphdr(a_tpsfile(i_file),a_type(i_file),a_proj(i_file),a_units(i_file),
      &            r_peg(1,i_file),r_str(1,i_file),r_spc(1,i_file),
      &            r_ddnc(1,i_file),i_hdrstat(i_file))
-              if (a_type(i_file) .ne. ' ' .and. a_type(i_file) .ne. 'gcp' .and. a_type(i_file) .ne. 'GCP' ) then
+              if (a_type(i_file) .ne. ' ' .and. a_type(i_file) .ne.  'gcp' .and. a_type(i_file) .ne. 'GCP' ) then
                 stop 'GCP Header Error'
               endif
-              a_type(i_file) = a_proj(i_file)
-              if (a_type(i_file) .eq. 'llh' .or. a_type(i_file) .eq. 'LLH') then
-                a_type(i_file) = 'eqa'
+              if (a_proj(i_file) .eq. 'llh' .or. a_proj(i_file) .eq. 'LLH') then
+                a_proj(i_file) = 'eqa'
                 if (a_units(i_file) .eq. 'dms' .or. a_units(i_file) .eq. 'DMS' .or.
-     &              a_units(i_file) .eq. 'deg' .or. a_units(i_file) .eq. 'DEG' ) then
+     &              a_units(i_file) .eq. 'deg' .or. a_units(i_file) .eq. 'DEG' .or.
+     &              a_units(i_file) .eq. 'xdeg'.or. a_units(i_file) .eq. 'XDEG' ) then
                   r_spc(1,i_file) = 1.0
                   r_spc(2,i_file) = 1.0
                   r_str(1,i_file) = 0.0
@@ -435,15 +458,15 @@ c
                 r_ddnc(1,i_file) = 1.0
                 r_ddnc(2,i_file) = 1.0
               endif
-              call write_hdr(20,'SRCH',a_type(i_file),i_lsize(i_file),i_ssize(i_file),
+              call write_hdr(20,'SRCH',a_proj(i_file),i_lsize(i_file),i_ssize(i_file),
      &              r_peg(1,i_file),r_str(1,i_file),r_spc(1,i_file),i_zone(i_file),i_err)
             endif
 
             r_rad(i_file) = rdir(r_axis,r_esqr,r_peg(3,i_file),r_peg(1,i_file))
 
-            if (a_type(i_file) .eq. ' ') then
+            if (a_proj(i_file) .eq. ' ') then
               stop 'Error - No file type'
-            else if (a_type(i_file).eq.'XYZ' .or. a_type(i_file).eq.'xyz') then
+            else if (a_proj(i_file).eq.'XYZ' .or. a_proj(i_file).eq.'xyz') then
               i_type(i_file) = 1
               r_iat(1,1) = 1.
               r_iat(1,2) = 0.
@@ -459,17 +482,17 @@ c
               r_iat(1,4) = 0.
               r_iat(2,4) = 0.
               r_iat(3,4) = 0.
-            else if (a_type(i_file).eq.'TCN' .or. a_type(i_file).eq.'tcn') then
+            else if (a_proj(i_file).eq.'TCN' .or.  a_proj(i_file).eq.'tcn') then
               i_type(i_file) = 1
               call tcnatm(r_axis,r_esqr,r_peg(1,i_file),r_iat(1,1))
-            else if (a_type(i_file).eq.'SCH' .or. a_type(i_file).eq.'sch' .or.
-     &               a_type(i_file).eq.'SLH' .or. a_type(i_file).eq.'slh') then
+            else if (a_proj(i_file).eq.'SCH' .or. a_proj(i_file).eq.'sch' .or.
+     &               a_proj(i_file).eq.'SLH' .or. a_proj(i_file).eq.'slh') then
               i_type(i_file) = 2
               call tcnatm(r_axis,r_esqr,r_peg(1,i_file),r_iat(1,1))
-            else if (a_type(i_file).eq.'SRH' .or. a_type(i_file).eq.'srh') then
+            else if (a_proj(i_file).eq.'SRH' .or. a_proj(i_file).eq.'srh') then
               i_type(i_file) = -2
               call tcnatm(r_axis,r_esqr,r_peg(1,i_file),r_iat(1,1))
-            else if (a_type(i_file).eq.'ENU' .or. a_type(i_file).eq.'enu' ) then
+            else if (a_proj(i_file).eq.'ENU' .or. a_proj(i_file).eq.'enu' ) then
               i_type(i_file) = 3
               r_iat(1,1) = 1.
               r_iat(1,2) = 0.
@@ -488,7 +511,7 @@ c
               if (i_zone(i_file) .le. 0) then
                 call enutoll(r_axis,r_esqr,i_zone(i_file),a_grid,v_oloc,r_peg(1,i_file),r_peg(2,i_file),2)
               endif
-            else if (a_type(i_file).eq.'UTM' .or. a_type(i_file).eq.'utm' ) then
+            else if (a_proj(i_file).eq.'NEU' .or. a_proj(i_file).eq.'neu' ) then
               i_type(i_file) = 4
               r_iat(1,1) = 1.
               r_iat(1,2) = 0.
@@ -507,7 +530,26 @@ c
               if (i_zone(i_file) .le. 0) then
                 call utmtoll(r_axis,r_esqr,i_zone(i_file),a_grid,v_oloc,r_peg(1,i_file),r_peg(2,i_file),2)
               endif
-            else if (a_type(i_file).eq.'EQA' .or. a_type(i_file).eq.'eqa' ) then
+            else if (a_proj(i_file).eq.'UTM' .or. a_proj(i_file).eq.'utm' ) then
+              i_type(i_file) = -4
+              r_iat(1,1) = 1.
+              r_iat(1,2) = 0.
+              r_iat(1,3) = 0.
+              r_iat(1,4) = 0.
+              r_iat(2,1) = 0.
+              r_iat(2,2) = 1.
+              r_iat(2,3) = 0.
+              r_iat(2,4) = 0.
+              r_iat(3,1) = 0.
+              r_iat(3,2) = 0.
+              r_iat(3,3) = 1.
+              r_iat(1,4) = 0.
+              r_iat(2,4) = 0.
+              r_iat(3,4) = 0.
+              if (i_zone(i_file) .le. 0) then
+                call utmtoll(r_axis,r_esqr,i_zone(i_file),a_grid,v_oloc,r_peg(1,i_file),r_peg(2,i_file),2)
+              endif
+            else if (a_proj(i_file).eq.'EQA' .or. a_proj(i_file).eq.'eqa' ) then
               i_type(i_file) = 5
               r_iat(1,1) = 1.
               r_iat(1,2) = 0.
@@ -531,14 +573,14 @@ c
               r_spc(2,i_file) = -r_spc(2,i_file)
               r_str(2,i_file) = -r_str(2,i_file)
             endif
-            if (i_type(i_file) .eq. 4 ) r_spc(1,i_file) = -r_spc(1,i_file)
+            if (i_type(i_file) .eq. -4 ) r_spc(1,i_file) = -r_spc(1,i_file)
 
-c            type *,' '
-c            type *,'r_iat(x,x)='
-c            type *,r_iat(1,1),r_iat(1,2),r_iat(1,3)
-c            type *,r_iat(2,1),r_iat(2,2),r_iat(2,3)
-c            type *,r_iat(3,1),r_iat(3,2),r_iat(3,3)
-c            type *,r_iat(1,4),r_iat(2,4),r_iat(3,4)
+c            print *,' '
+c            print *,'r_iat(x,x)='
+c            print *,r_iat(1,1),r_iat(1,2),r_iat(1,3)
+c            print *,r_iat(2,1),r_iat(2,2),r_iat(2,3)
+c            print *,r_iat(3,1),r_iat(3,2),r_iat(3,3)
+c            print *,r_iat(1,4),r_iat(2,4),r_iat(3,4)
 
             call multitrn(r_iat,r_aff,r_tmp)
 
@@ -546,13 +588,13 @@ c            type *,r_iat(1,4),r_iat(2,4),r_iat(3,4)
 
               call invrstrn(r_tmp,r_inv)
 
-c              type *,' '
-c              type *,'r_inv='
-c              type *,r_inv(1,1),r_inv(1,2),r_inv(1,3)
-c              type *,r_inv(2,1),r_inv(2,2),r_inv(2,3)
-c              type *,r_inv(3,1),r_inv(3,2),r_inv(3,3)
-c              type *,r_inv(1,4),r_inv(2,4),r_inv(3,4)
-c              type *,' '
+c              print *,' '
+c              print *,'r_inv='
+c              print *,r_inv(1,1),r_inv(1,2),r_inv(1,3)
+c              print *,r_inv(2,1),r_inv(2,2),r_inv(2,3)
+c              print *,r_inv(3,1),r_inv(3,2),r_inv(3,3)
+c              print *,r_inv(1,4),r_inv(2,4),r_inv(3,4)
+c              print *,' '
 
               if (a_tpsfile(0) .ne. ' ') then
                 write(6,'(x,a,a,2i6)') 'Opening RMG file: ',a_tpsfile(0)(1:40),i_ssize(0),i_lsize(0)
@@ -561,10 +603,10 @@ c              type *,' '
               else if (a_dtefile(0) .ne. ' ') then
                 write(6,'(x,a,a,2i6)') 'Opening DTE file: ',a_dtefile(0)(1:40),i_ssize(0),i_lsize(0)
                 open(unit=30,file=a_dtefile(0),form='unformatted',status='unknown',
-     &             access='direct',recl=4*i_ssize(0))
+     &             access='direct',recl=i_dbytes(0)*i_ssize(0))
               endif
 
-              call write_hdr(20,'REFF',a_type(0),i_lsize(0),i_ssize(0),
+              call write_hdr(20,'REFF',a_proj(0),i_lsize(0),i_ssize(0),
      &          r_peg(1,0),r_str(1,0),r_spc(1,0),i_zone(0),i_err)
 
             else
@@ -572,23 +614,23 @@ c              type *,' '
               call multitrn(r_inv,r_tmp,r_atm(1,1,i_file))
               call invrstrn(r_atm(1,1,i_file),r_mta(1,1,i_file))
 
-c              type *,' '
-c              type *,'r_atm='
-c              type *,r_atm(1,1,i_file),r_atm(1,2,i_file),r_atm(1,3,i_file)
-c              type *,r_atm(2,1,i_file),r_atm(2,2,i_file),r_atm(2,3,i_file)
-c              type *,r_atm(3,1,i_file),r_atm(3,2,i_file),r_atm(3,3,i_file)
-c              type *,r_atm(1,4,i_file),r_atm(2,4,i_file),r_atm(3,4,i_file)
-c              type *,'r_mta='
-c              type *,r_mta(1,1,i_file),r_mta(1,2,i_file),r_mta(1,3,i_file)
-c              type *,r_mta(2,1,i_file),r_mta(2,2,i_file),r_mta(2,3,i_file)
-c              type *,r_mta(3,1,i_file),r_mta(3,2,i_file),r_mta(3,3,i_file)
-c              type *,r_mta(1,4,i_file),r_mta(2,4,i_file),r_mta(3,4,i_file)
+c              print *,' '
+c              print *,'r_atm='
+c              print *,r_atm(1,1,i_file),r_atm(1,2,i_file),r_atm(1,3,i_file)
+c              print *,r_atm(2,1,i_file),r_atm(2,2,i_file),r_atm(2,3,i_file)
+c              print *,r_atm(3,1,i_file),r_atm(3,2,i_file),r_atm(3,3,i_file)
+c              print *,r_atm(1,4,i_file),r_atm(2,4,i_file),r_atm(3,4,i_file)
+c              print *,'r_mta='
+c              print *,r_mta(1,1,i_file),r_mta(1,2,i_file),r_mta(1,3,i_file)
+c              print *,r_mta(2,1,i_file),r_mta(2,2,i_file),r_mta(2,3,i_file)
+c              print *,r_mta(3,1,i_file),r_mta(3,2,i_file),r_mta(3,3,i_file)
+c              print *,r_mta(1,4,i_file),r_mta(2,4,i_file),r_mta(3,4,i_file)
               call multitrn(r_mta(1,1,i_file),r_atm(1,1,i_file),r_tmp)
-c              type *,'r_tmp='
-c              type *,r_tmp(1,1),r_tmp(1,2),r_tmp(1,3)
-c              type *,r_tmp(2,1),r_tmp(2,2),r_tmp(2,3)
-c              type *,r_tmp(3,1),r_tmp(3,2),r_tmp(3,3)
-c              type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
+c              print *,'r_tmp='
+c              print *,r_tmp(1,1),r_tmp(1,2),r_tmp(1,3)
+c              print *,r_tmp(2,1),r_tmp(2,2),r_tmp(2,3)
+c              print *,r_tmp(3,1),r_tmp(3,2),r_tmp(3,3)
+c              print *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
 
               open(30+i_file,file=a_tpsfile(i_file),status='old')
               write(6,'(x,a,a)') 'Opening TPS file: ',a_tpsfile(i_file)(1:max(length(a_tpsfile(i_file)),1))
@@ -601,7 +643,12 @@ c              type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
                   v_iloc1(1) = r1 + sign((r2+(r3/60.))/60.,r1)
                   v_iloc1(2) = r4 + sign((r5+(r6/60.))/60.,r4)
                   v_iloc1(3) = r7
-                else if (a_units(i_file) .eq. 'xdeg' .or. a_units(i_file) .eq. 'XDMS') then
+                else if (a_units(i_file) .eq. 'xdms' .or. a_units(i_file) .eq. 'XDMS') then
+                  read(a_input,*,err=910) r0,r1,r2,r3,r4,r5,r6,r7
+                  v_iloc1(1) = r1 + sign((r2+(r3/60.))/60.,r1)
+                  v_iloc1(2) = r4 + sign((r5+(r6/60.))/60.,r4)
+                  v_iloc1(3) = r7
+                else if (a_units(i_file) .eq. 'xdeg' .or. a_units(i_file) .eq. 'XDEG') then
                   read(a_input,*,err=910) r1,v_iloc1
                 else
                   read(a_input,*,err=910) v_iloc1
@@ -625,7 +672,7 @@ c              type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
                     r_hgt=v_iloc1(3)
                     call enutoll(r_axis,r_esqr,i_zone(i_file),a_grid,v_iloc1,r_lat,r_lon,1)
                     call latlon(r_axis,r_esqr,v_iloc2,r_lat,r_lon,r_hgt,1)
-                  else if (i_type(i_file) .eq. 4) then        ! Convert input from utm to xyz
+                  else if (i_type(i_file) .eq. 4 .or. i_type(i_file) .eq. -4) then        ! Convert input from utm to xyz
                     r_hgt=v_iloc1(3)
                     call utmtoll(r_axis,r_esqr,i_zone(i_file),a_grid,v_iloc1,r_lat,r_lon,1)
                     call latlon(r_axis,r_esqr,v_iloc2,r_lat,r_lon,r_hgt,1)
@@ -652,7 +699,7 @@ c              type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
                     call latlon(r_axis,r_esqr,v_iloc3,r_lat,r_lon,r_hgt,2)
                     call enutoll(r_axis,r_esqr,i_zone(0),a_grid,v_oloc,r_lat,r_lon,2)
                     v_oloc(3) = r_hgt
-                  else if (i_type(0) .eq. 4) then                ! Convert output from xyz to utm
+                  else if (i_type(0) .eq. 4 .or. i_type(0) .eq. -4) then                ! Convert output from xyz to utm
                     call latlon(r_axis,r_esqr,v_iloc3,r_lat,r_lon,r_hgt,2)
                     call utmtoll(r_axis,r_esqr,i_zone(0),a_grid,v_oloc,r_lat,r_lon,2)
                     v_oloc(3) = r_hgt
@@ -669,21 +716,40 @@ c              type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
                   i_ll = nint(v_oloc(1))
                   i_ss = nint(v_oloc(2))
 
-c                  write( 6,'(i5,6f12.5)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+c                  write( 6,'(i5,6f14.5)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
                   if (i_ll .ge. 1 .and. i_ll .le. i_lsize(0)) then
                     if (i_ss .ge. 1 .and. i_ss .le. i_ssize(0)) then
 
                       if (a_tpsfile(0) .ne. ' ') then
                         read(30,rec=i_ll) (r_data(is),is=1,i_ssize(0)),(r_datb(iss),iss=1,i_ssize(0))
                         if (r_data(i_ss) .ne. 0. .and. nint(abs(r_datb(i_ss))) .ne. 10000) then
-                          write( 6,'(i5,6f12.5)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
-                          write(20,'(6f12.5)') v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                          if (a_proj(i_file) .eq. 'xyz' .or. a_proj(i_file) .eq. 'XYZ') then
+                            write( 6,'(i5,3f12.5,3f15.4)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                            write(20,'(3f12.5,3f15.4)') v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                          else
+                            write( 6,'(i5,6f12.5)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                            write(20,'(6f12.5)') v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                          endif
                         endif
                       else if (a_dtefile(0) .ne. ' ') then
-                        read(30,rec=i_ll) (r_datb(iss),iss=1,i_ssize(0))
+                        if (i_dbytes(0) .eq. 4) then
+                          read(30,rec=i_ll) (r_datb(iss),iss=1,i_ssize(0))
+                        else if (i_dbytes(0) .eq. 2) then
+                          read(30,rec=i_ll) (i_datb(iss),iss=1,i_ssize(0))
+                          do iss=1,i_ssize(0)
+                            r_datb(iss) = r_ddnc(1,0)*i_datb(iss)+r_ddnc(2,0)
+                          enddo
+                        else
+                          stop 'Error in num bytes per pixel'
+                        endif
                         if (nint(abs(r_datb(i_ss))) .ne. 10000) then
-                          write( 6,'(i5,6f12.5)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
-                          write(20,'(6f12.5)') v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                          if (a_proj(i_file) .eq. 'xyz' .or. a_proj(i_file) .eq. 'XYZ') then
+                            write( 6,'(i5,3f12.5,3f15.4)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                            write(20,'(3f12.5,3f15.4)') v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                          else
+                            write( 6,'(i5,6f12.5)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                            write(20,'(6f12.5)') v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
+                          endif
                         endif
                       endif
 
@@ -990,8 +1056,376 @@ c ======================================================================
         end
 
 
+      SUBROUTINE gaussj(a,n,np,b,m,mp)
+      integer*4 m,mp,n,np,NMAX
+      REAL*8 a(np,np),b(np,mp)
+      PARAMETER (NMAX=100)
+      integer*4 i,icol,irow,j,k,l,ll,indxc(NMAX),indxr(NMAX),ipiv(NMAX)
+      REAL*8 big,dum,pivinv
+      do 11 j=1,n
+        ipiv(j)=0
+11    continue
+      do 22 i=1,n
+        big=0.
+        do 13 j=1,n
+          if(ipiv(j).ne.1)then
+            do 12 k=1,n
+              if (ipiv(k).eq.0) then
+                if (abs(a(j,k)).ge.big)then
+                  big=abs(a(j,k))
+                  irow=j
+                  icol=k
+                endif
+              else if (ipiv(k).gt.1) then
+                pause 'singular matrix in gaussj'
+              endif
+12          continue
+          endif
+13      continue
+        ipiv(icol)=ipiv(icol)+1
+        if (irow.ne.icol) then
+          do 14 l=1,n
+            dum=a(irow,l)
+            a(irow,l)=a(icol,l)
+            a(icol,l)=dum
+14        continue
+          do 15 l=1,m
+            dum=b(irow,l)
+            b(irow,l)=b(icol,l)
+            b(icol,l)=dum
+15        continue
+        endif
+        indxr(i)=irow
+        indxc(i)=icol
+        if (a(icol,icol).eq.0.) pause 'singular matrix in gaussj'
+        pivinv=1./a(icol,icol)
+        a(icol,icol)=1.
+        do 16 l=1,n
+          a(icol,l)=a(icol,l)*pivinv
+16      continue
+        do 17 l=1,m
+          b(icol,l)=b(icol,l)*pivinv
+17      continue
+        do 21 ll=1,n
+          if(ll.ne.icol)then
+            dum=a(ll,icol)
+            a(ll,icol)=0.
+            do 18 l=1,n
+              a(ll,l)=a(ll,l)-a(icol,l)*dum
+18          continue
+            do 19 l=1,m
+              b(ll,l)=b(ll,l)-b(icol,l)*dum
+19          continue
+          endif
+21      continue
+22    continue
+      do 24 l=n,1,-1
+        if(indxr(l).ne.indxc(l))then
+          do 23 k=1,n
+            dum=a(k,indxr(l))
+            a(k,indxr(l))=a(k,indxc(l))
+            a(k,indxc(l))=dum
+23        continue
+        endif
+24    continue
+      return
+      END
+
+      SUBROUTINE svdcmp(a,m,n,mp,np,w,v)
+      integer*4 m,mp,n,np,NMAX
+      REAL*8 a(mp,np),v(np,np),w(np)
+      PARAMETER (NMAX=500)
+      integer*4 i,its,j,jj,k,l,nm
+      REAL*8 anorm,c,f,g,h,s,scale,x,y,z,rv1(NMAX),pythag
+      REAL*8 r_one
+      r_one=1.d0
+      g=0.0
+      scale=0.0
+      anorm=0.0
+      do 25 i=1,n
+        l=i+1
+        rv1(i)=scale*g
+        g=0.0
+        s=0.0
+        scale=0.0
+        if(i.le.m)then
+          do 11 k=i,m
+            scale=scale+abs(a(k,i))
+11        continue
+          if(scale.ne.0.0)then
+            do 12 k=i,m
+              a(k,i)=a(k,i)/scale
+              s=s+a(k,i)*a(k,i)
+12          continue
+            f=a(i,i)
+            g=-sign(sqrt(s),f)
+            h=f*g-s
+            a(i,i)=f-g
+            do 15 j=l,n
+              s=0.0
+              do 13 k=i,m
+                s=s+a(k,i)*a(k,j)
+13            continue
+              f=s/h
+              do 14 k=i,m
+                a(k,j)=a(k,j)+f*a(k,i)
+14            continue
+15          continue
+            do 16 k=i,m
+              a(k,i)=scale*a(k,i)
+16          continue
+          endif
+        endif
+        w(i)=scale *g
+        g=0.0
+        s=0.0
+        scale=0.0
+        if((i.le.m).and.(i.ne.n))then
+          do 17 k=l,n
+            scale=scale+abs(a(i,k))
+17        continue
+          if(scale.ne.0.0)then
+            do 18 k=l,n
+              a(i,k)=a(i,k)/scale
+              s=s+a(i,k)*a(i,k)
+18          continue
+            f=a(i,l)
+            g=-sign(sqrt(s),f)
+            h=f*g-s
+            a(i,l)=f-g
+            do 19 k=l,n
+              rv1(k)=a(i,k)/h
+19          continue
+            do 23 j=l,m
+              s=0.0
+              do 21 k=l,n
+                s=s+a(j,k)*a(i,k)
+21            continue
+              do 22 k=l,n
+                a(j,k)=a(j,k)+s*rv1(k)
+22            continue
+23          continue
+            do 24 k=l,n
+              a(i,k)=scale*a(i,k)
+24          continue
+          endif
+        endif
+        anorm=max(anorm,(abs(w(i))+abs(rv1(i))))
+25    continue
+      do 32 i=n,1,-1
+        if(i.lt.n)then
+          if(g.ne.0.0)then
+            do 26 j=l,n
+              v(j,i)=(a(i,j)/a(i,l))/g
+26          continue
+            do 29 j=l,n
+              s=0.0
+              do 27 k=l,n
+                s=s+a(i,k)*v(k,j)
+27            continue
+              do 28 k=l,n
+                v(k,j)=v(k,j)+s*v(k,i)
+28            continue
+29          continue
+          endif
+          do 31 j=l,n
+            v(i,j)=0.0
+            v(j,i)=0.0
+31        continue
+        endif
+        v(i,i)=1.0
+        g=rv1(i)
+        l=i
+32    continue
+      do 39 i=min(m,n),1,-1
+        l=i+1
+        g=w(i)
+        do 33 j=l,n
+          a(i,j)=0.0
+33      continue
+        if(g.ne.0.0)then
+          g=1.0/g
+          do 36 j=l,n
+            s=0.0
+            do 34 k=l,m
+              s=s+a(k,i)*a(k,j)
+34          continue
+            f=(s/a(i,i))*g
+            do 35 k=i,m
+              a(k,j)=a(k,j)+f*a(k,i)
+35          continue
+36        continue
+          do 37 j=i,m
+            a(j,i)=a(j,i)*g
+37        continue
+        else
+          do 38 j= i,m
+            a(j,i)=0.0
+38        continue
+        endif
+        a(i,i)=a(i,i)+1.0
+39    continue
+      do 49 k=n,1,-1
+        do 48 its=1,30
+          do 41 l=k,1,-1
+            nm=l-1
+            if((abs(rv1(l))+anorm).eq.anorm)  goto 2
+            if((abs(w(nm))+anorm).eq.anorm)  goto 1
+41        continue
+1         c=0.0
+          s=1.0
+          do 43 i=l,k
+            f=s*rv1(i)
+            rv1(i)=c*rv1(i)
+            if((abs(f)+anorm).eq.anorm) goto 2
+            g=w(i)
+            h=pythag(f,g)
+            w(i)=h
+            h=1.0/h
+            c= (g*h)
+            s=-(f*h)
+            do 42 j=1,m
+              y=a(j,nm)
+              z=a(j,i)
+              a(j,nm)=(y*c)+(z*s)
+              a(j,i)=-(y*s)+(z*c)
+42          continue
+43        continue
+2         z=w(k)
+          if(l.eq.k)then
+            if(z.lt.0.0)then
+              w(k)=-z
+              do 44 j=1,n
+                v(j,k)=-v(j,k)
+44            continue
+            endif
+            goto 3
+          endif
+          if(its.eq.30) pause 'no convergence in svdcmp'
+          x=w(l)
+          nm=k-1
+          y=w(nm)
+          g=rv1(nm)
+          h=rv1(k)
+          f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y)
+          g=pythag(f,r_one)
+          f=((x-z)*(x+z)+h*((y/(f+sign(g,f)))-h))/x
+          c=1.0
+          s=1.0
+          do 47 j=l,nm
+            i=j+1
+            g=rv1(i)
+            y=w(i)
+            h=s*g
+            g=c*g
+            z=pythag(f,h)
+            rv1(j)=z
+            c=f/z
+            s=h/z
+            f= (x*c)+(g*s)
+            g=-(x*s)+(g*c)
+            h=y*s
+            y=y*c
+            do 45 jj=1,n
+              x=v(jj,j)
+              z=v(jj,i)
+              v(jj,j)= (x*c)+(z*s)
+              v(jj,i)=-(x*s)+(z*c)
+45          continue
+            z=pythag(f,h)
+            w(j)=z
+            if(z.ne.0.0)then
+              z=1.0/z
+              c=f*z
+              s=h*z
+            endif
+            f= (c*g)+(s*y)
+            x=-(s*g)+(c*y)
+            do 46 jj=1,m
+              y=a(jj,j)
+              z=a(jj,i)
+              a(jj,j)= (y*c)+(z*s)
+              a(jj,i)=-(y*s)+(z*c)
+46          continue
+47        continue
+          rv1(l)=0.0
+          rv1(k)=f
+          w(k)=x
+48      continue
+3       continue
+49    continue
+      return
+      END
+
+      REAL*8 FUNCTION pythag(a,b)
+      REAL*8 a,b
+      REAL*8 absa,absb
+      absa=abs(a)
+      absb=abs(b)
+      if(absa.gt.absb)then
+        pythag=absa*sqrt(1.d0+(absb/absa)**2)
+      else
+        if(absb.eq.0.)then
+          pythag=0.
+        else
+          pythag=absb*sqrt(1.d0+(absa/absb)**2)
+        endif
+      endif
+      return
+      END
+
+      SUBROUTINE svbksb(u,w,v,m,n,mp,np,b,x)
+      integer*4 m,mp,n,np,NMAX
+      REAL*8 b(mp),u(mp,np),v(np,np),w(np),x(np)
+      PARAMETER (NMAX=500)
+      integer*4 i,j,jj
+      REAL*8 s,tmp(NMAX)
+      do 12 j=1,n
+        s=0.
+        if(w(j).ne.0.)then
+          do 11 i=1,m
+            s=s+u(i,j)*b(i)
+11        continue
+          s=s/w(j)
+        endif
+        tmp(j)=s
+12    continue
+      do 14 j=1,n
+        s=0.
+        do 13 jj=1,n
+          s=s+v(j,jj)*tmp(jj)
+13      continue
+        x(j)=s
+14    continue
+      return
+      END
+
+      SUBROUTINE svdvar(v,ma,np,w,cvm,ncvm)
+      integer*4 ma,ncvm,np,MMAX
+      REAL*8 cvm(ncvm,ncvm),v(np,np),w(np)
+      PARAMETER (MMAX=20)
+      integer*4 i,j,k
+      REAL*8 sum,wti(MMAX)
+      do 11 i=1,ma
+        wti(i)=0.
+        if(w(i).ne.0.) wti(i)=1.d0/(w(i)*w(i))
+11    continue
+      do 14 i=1,ma
+        do 13 j=1,i
+          sum=0.
+          do 12 k=1,ma
+            sum=sum+v(i,k)*v(j,k)*wti(k)
+12        continue
+          cvm(i,j)=sum
+          cvm(j,i)=sum
+13      continue
+14    continue
+      return
+      END
+
+
 ****************************************************************
-        subroutine read_hdr(a_hdrfile,i_lsize,i_ssize,r_peg,
+        subroutine read_hdr(a_hdrfile,a_type,i_lsize,i_ssize,r_peg,
      &              r_str,r_spc,i_mbytes,i_dbytes,r_mdnc,r_ddnc,i_err)
 
 c****************************************************************
@@ -1019,6 +1453,8 @@ c       INPUT VARIABLES:
 
 c       OUTPUT VARIABLES:
 
+        character*(*) a_type
+
         integer*4 i_err
         integer*4 i_lsize
         integer*4 i_ssize
@@ -1036,6 +1472,7 @@ c       OUTPUT VARIABLES:
 c       LOCAL VARIABLES:
 
         integer*4 i
+        integer*4 j
         integer*4 i_cnt
         real*8 r_atm(3,4)
         real*8 r_pi
@@ -1046,7 +1483,10 @@ c       LOCAL VARIABLES:
 
 c       DATA STATEMENTS: none
 
-c       FUNCTION STATEMENTS: none
+c       FUNCTION STATEMENTS:
+
+        integer length
+        external length
 
 c       PROCESSING STEPS:
 
@@ -1064,10 +1504,17 @@ c
         write(6,*) 'Opening HDR file: ',a_hdrfile(1:52)
         i_err = 0
 
-        do i=1,10000000
-           read(12,'(a)',end=900) a_tmp
+        do i=1,100
+           read(12,'(a)',end=900,err=900) a_tmp
+           write(6,*) 'a_tmp=',a_tmp(1:70)
            if (a_tmp .eq. ' ') then
              ! do nothing
+           else if (index(a_tmp,'Data file type') .gt. 0) then
+             a_type = a_tmp(1:max(1,index(a_tmp,';')-1))
+             do j=1,length(a_type)
+               if (a_type(1:1) .eq. ' ') a_type = a_type(2:)
+             enddo
+             i_cnt = i_cnt + 1
            else if (index(a_tmp,'Data file dimensions') .gt. 0) then
              read(a_tmp,*) i_lsize,i_ssize
              i_cnt = i_cnt + 1
@@ -1106,7 +1553,7 @@ c             i_cnt = i_cnt + 128
            endif
         enddo
         close(12)
-        stop 'Error reading header file, too many lines'
+c        stop 'Error reading header file, too many lines'
 
 900     close(12,err=910)
 910     continue !  i_err = 0 if file even exists  if (i_cnt .eq. 15) i_err = 0
@@ -1156,6 +1603,7 @@ c       OUTPUT VARIABLES:
 c       LOCAL VARIABLES:
 
         integer*4 i
+        integer*4 j
         integer*4 i_cnt
 
         character*255 a_tmp
@@ -1165,7 +1613,10 @@ c       LOCAL VARIABLES:
 
 c       DATA STATEMENTS: none
 
-c       FUNCTION STATEMENTS: none
+c       FUNCTION STATEMENTS:
+
+        integer length
+        external length
 
 c       PROCESSING STEPS:
 
@@ -1183,7 +1634,7 @@ c
         write(6,*) 'Opening HDR file: ',a_hdrfile(1:52)
         i_err = 0
 
-        do i=1,10000000
+        do i=1,100
            read(12,'(a)',end=900) a_tmp
            if (a_tmp .eq. ' ') then
              ! do nothing
@@ -1201,16 +1652,25 @@ c
              i_cnt = i_cnt + 8
            else if (index(a_tmp,'Data file type') .gt. 0) then
              a_type = a_tmp(1:max(index(a_tmp,';')-1,1))
+             do j=1,length(a_type)
+               if (a_type(1:1) .eq. ' ') a_type = a_type(2:)
+             enddo
            else if (index(a_tmp,'Data file projection') .gt. 0) then
              a_proj = a_tmp(1:max(index(a_tmp,';')-1,1))
+             do j=1,length(a_proj)
+               if (a_proj(1:1) .eq. ' ') a_proj = a_proj(2:)
+             enddo
            else if (index(a_tmp,'Data file horizontal units') .gt. 0) then
              a_units = a_tmp(1:max(index(a_tmp,';')-1,1))
+             do j=1,length(a_units)
+               if (a_units(1:1) .eq. ' ') a_units = a_units(2:)
+             enddo
            else if (index(a_tmp,'Elevation Scale and Shift') .gt. 0) then
              read(a_tmp,*) r_ddnc
            endif
         enddo
         close(12)
-        stop 'Error reading header file, too many lines'
+c        stop 'Error reading header file, too many lines'
 
 900     close(12,err=910)
 910     continue !  i_err = 0 if file even exists  if (i_cnt .eq. 15) i_err = 0
@@ -1276,22 +1736,22 @@ c
               write(6,*) 'Reading airsar elevation header     ',i_dbsize
             else if (index(a_string(i),'NUMBER OF HEADER RECORDS =') .gt. 0) then
               read(a_string(i)(35:),*) i_doff
-c              type *,'i_doff=',i_doff
+c              print *,'i_doff=',i_doff
             else if (index(a_string(i),'NUMBER OF SAMPLES PER RECORD =') .gt. 0) then
               read(a_string(i)(35:),*) i_dssize
-c              type *,'i_dssize=',i_dssize
+c              print *,'i_dssize=',i_dssize
             else if (index(a_string(i),'NUMBER OF LINES IN IMAGE =') .gt. 0) then
               read(a_string(i)(35:),*) i_dlsize
-c              type *,'i_dlsize=',i_dlsize
+c              print *,'i_dlsize=',i_dlsize
             else if (index(a_string(i),'NUMBER OF BYTES PER SAMPLE =') .gt. 0) then
               read(a_string(i)(35:),*) i_dbytes
-c              type *,'i_dbytes=',i_dbytes
+c              print *,'i_dbytes=',i_dbytes
             else if (index(a_string(i),'BYTE OFFSET OF FIRST DATA RECORD =') .gt. 0) then
               read(a_string(i)(35:),*) i_boff
-c              type *,'i_boff=',i_boff
+c              print *,'i_boff=',i_boff
             else if (index(a_string(i),'BYTE OFFSET OF DEM HEADER =') .gt. 0) then
               read(a_string(i)(35:),*) i_demoff
-c              type *,'i_demoff=',i_demoff
+c              print *,'i_demoff=',i_demoff
             endif
           enddo
 901       close(18)
@@ -1311,38 +1771,38 @@ c              type *,'i_demoff=',i_demoff
                 ! do nothing
               else if (index(a_string(i),'X-DIRECTION POST SPACING (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_spc(1)
-c                type *,'x spacing=',r_spc(1)
+c                print *,'x spacing=',r_spc(1)
               else if (index(a_string(i),'Y-DIRECTION POST SPACING (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_spc(2)
-c                type *,'y spacing=',r_spc(2)
+c                print *,'y spacing=',r_spc(2)
               else if (index(a_string(i),'ELEVATION INCREMENT (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,iostat=i_err) r_dmul
               else if (index(a_string(i),'ELEVATION OFFSET (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,iostat=i_err) r_dadd
               else if (index(a_string(i),'LATITUDE OF PEG POINT =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(1)
-c                type *,'lat=',r_peg(1)
+c                print *,'lat=',r_peg(1)
                 r_peg(1) = r_peg(1) / r_rtod
               else if (index(a_string(i),'LONGITUDE OF PEG POINT =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(2)
-c                type *,'lon=',r_peg(2)
+c                print *,'lon=',r_peg(2)
                 r_peg(2) = r_peg(2) / r_rtod
               else if (index(a_string(i),'HEADING AT PEG POINT (DEGREES) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(3)
-c                type *,'hdg=',r_peg(3)
+c                print *,'hdg=',r_peg(3)
                 r_peg(3) = r_peg(3) / r_rtod
               else if (index(a_string(i),'ALONG-TRACK OFFSET S0 (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(1)
-c                type *,'s0 =',r_str(1)
+c                print *,'s0 =',r_str(1)
               else if (index(a_string(i),'ORIGIN OF AZIMUTH (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(1)
-c                type *,'s0 =',r_str(1)
+c                print *,'s0 =',r_str(1)
               else if (index(a_string(i),'CROSS-TRACK OFFSET C0 (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(2)
-c                type *,'c0 =',r_str(2)
+c                print *,'c0 =',r_str(2)
               else if (index(a_string(i),'ORIGIN OF RANGE (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(2)
-c                type *,'c0 =',r_str(2)
+c                print *,'c0 =',r_str(2)
               endif
               if (1.eq.2) then
 990             write(6,*) 'Error - ',i,' ',a_string(i)
@@ -1544,7 +2004,7 @@ c****************************************************************
         implicit none
 
 c     INPUT VARIABLES:
-        integer*4 i_type                   !1=lat,lon to vector,2= vector to lat,lon
+        integer*4 i_type                   !1=lat,lon to vector,2=vector to lat,lon
         real*8 r_a                       !ellispoid semi-major axis
         real*8 r_e2                      !ellipsoid eccentricity squared
         real*8 r_v(3)                    !geocentric vector (meters)
@@ -1786,15 +2246,15 @@ c**
 c**     UPDATE LOG:
 c**
 c*****************************************************************
-   
+
         implicit none
-   
+
 c       INPUT VARIABLES:
         real*8 r_u(3)                              !3x1 vector
         real*8 r_v(3)                              !3x1 vector
         real*8 r_k1                                !scalar
         real*8 r_k2                                !scalar
-   
+
 c       OUTPUT VARIABLES:
         real*8 r_w(3)                              !3x1 vector
 
