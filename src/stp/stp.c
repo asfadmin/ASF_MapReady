@@ -1062,6 +1062,164 @@ static void delete_all_generated_images()
     FREE(output_filename_full);
 }
 
+// The thread function needs to be declared properly on Windows.
+// On Linux, we are using fork() and then just call this function,
+// so it need not be anything fancy.  We use the stp_params_t struct
+// to hold everything that is needed, in either situation, so the
+// actual code can be the same in both OSs
+
+typedef struct {
+    char input_file[1024];
+    char output_file[1024];
+    int status;
+    float fd, fdd, fddd;
+    int fd_set, fdd_set, fddd_set;
+    int debug_flag;
+    int ifirstline;
+} stp_params_t;
+
+#ifdef win32
+DWORD WINAPI stp_exec(void *void_stp_params)
+{
+  stp_params_t *stp_params = (stp_params_t *)void_stp_params;
+
+#else
+static int stp_exec(stp_params_t *stp_params)
+{
+
+#endif
+
+  // running import, if necessary
+  char *img_file;
+  if (stp_params->status == STATUS_LDR_INSTEAD) {
+    // the imported file will go where the output file is
+    img_file = STRDUP(stp_params->output_file);
+    asfPrintStatus("Importing Level 0 data...\n");
+    import_ceos(stp_params->input_file, img_file, NULL, NULL, NULL,
+                NULL, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
+                FALSE, FALSE, FALSE, TRUE);
+    asfPrintStatus("Import complete.\n");
+  }
+  else if (stp_params->status == STATUS_STF_INSTEAD) {
+    // the imported file will go where the output file is
+    img_file = appendExt(stp_params->output_file, "");
+    asfPrintStatus("Importing STF data...\n");
+    import_stf(stp_params->input_file, img_file, r_AMP, NULL,
+               0, -99, -99, NULL);
+    asfPrintStatus("Import complete.\n");
+  }
+  else {
+    // no import necessary-- input to ardop is the original .img file
+    img_file = change_extension(stp_params->input_file, "img");
+  }
+
+  // running ardop
+  struct INPUT_ARDOP_PARAMS *params_in;
+  params_in = get_input_ardop_params_struct(img_file, stp_params->output_file);
+
+  float l_fd, l_fdd, l_fddd;
+  if (stp_params->fd_set) {
+    l_fd = stp_params->fd;
+    params_in->fd = &l_fd;
+  }
+  if (stp_params->fdd_set) {
+    l_fdd = stp_params->fdd;
+    params_in->fdd = &l_fdd;
+  }
+  if (stp_params->fddd_set) {
+    l_fddd = stp_params->fddd;
+    params_in->fddd = &l_fddd;
+  }
+  sprintf(params_in->status, "%s.status", stp_params->output_file);
+
+  char *tmp_dir = get_dirname(stp_params->output_file);
+  set_asf_tmp_dir(tmp_dir);
+  FREE(tmp_dir);
+
+  // this stuff shouldn't cause collisions, local stack variables      
+  int npatches = 1;
+  params_in->iflag = &(stp_params->debug_flag);
+  params_in->npatches = &npatches;
+  params_in->ifirstline = &(stp_params->ifirstline);
+
+  ardop(params_in);
+  free(params_in);
+  free(img_file);
+
+  // success
+  return 0;
+}
+
+static stp_params_t *
+create_stp_params(const char *input_file, const char *output_file,
+                  int status, int debug_flag, int ifirstline)
+{
+  stp_params_t *stp_params = MALLOC(sizeof(stp_params_t));
+  strcpy(stp_params->input_file, input_file);
+  strcpy(stp_params->output_file, output_file);
+  stp_params->status = status;
+  
+  stp_params->fd_set = g_fd != NULL;
+  stp_params->fdd_set = g_fdd != NULL;
+  stp_params->fddd_set = g_fddd != NULL;
+  
+  stp_params->fd = g_fd == NULL ? 0. : *g_fd;
+  stp_params->fdd = g_fdd == NULL ? 0. : *g_fdd;
+  stp_params->fddd = g_fddd == NULL ? 0. : *g_fddd;
+  
+  stp_params->debug_flag = debug_flag;
+  stp_params->ifirstline = ifirstline;
+  return stp_params;
+}
+
+static void check_status_file(const char *statFile)
+{
+  char buf[256];
+  FILE *fStat = fopen(statFile, "rt");
+  if (fStat)
+  {
+    fgets(buf, sizeof(buf), fStat);
+    fclose(fStat);
+
+    // strip trailing whitespace
+    while (isspace(buf[strlen(buf)-1]) && strlen(buf)>0)
+      buf[strlen(buf)-1]='\0';
+
+    // figure out which step we are on
+    int i, on_step = 0;
+    if (strcmp_case(buf, "Range compressing")==0)
+      on_step=1;
+    //else if (strcmp_case(buf, "Starting azimuth compression")==0)
+    //  on_step=7;
+    //else if (strcmp_case(buf, "Range cell migration")==0)
+    //  on_step=8;
+    //else if (strcmp_case(buf, "Finishing azimuth compression")==0)
+    //  on_step=11;
+    //else if (strcmp_case(buf, "Range-doppler done")==0)
+    //  on_step=12;
+    else {
+      for (i=1; i<=12; ++i) {
+        if (strstr(buf,suffix_for_step(i))!=NULL) {
+          on_step=i;
+          break;
+        }
+      }
+    }
+
+    // if we figured it out, highlight that step's text
+    if (on_step>0) {
+      for (i=1; i<=12; ++i) {
+        int highlight_level = 0;
+        if (i<on_step)
+          highlight_level = 1;
+        else if (i==on_step)
+          highlight_level = 2;
+        highlight_step(i, highlight_level);
+      }
+    }
+  }
+}
+
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
@@ -1100,8 +1258,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     const char * output_file_c =
 	gtk_entry_get_text(GTK_ENTRY(output_file_entry));
 
-	/* make a copy for ourselves - on Windows, after fork we can't */
-	/* access pointers to GTK-owned data (like input_file_c)       */
+    /* make a copy for ourselves - on Windows, after fork we can't */
+    /* access pointers to GTK-owned data (like input_file_c)       */
     char *input_file = MALLOC(sizeof(char)*(strlen(input_file_c)+2));
     strcpy(input_file, input_file_c);
 
@@ -1132,7 +1290,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
             strcat(output_file, "_cpx");
             //strcat(output_file, ext);
             FREE(ext);
-        } else {
+        }
+        else {
             sprintf(output_file, "%s%s", input_file, "_cpx");
         }
     }
@@ -1155,60 +1314,54 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
     highlight_step(1,2);
 
+#ifdef win32
+    /* Windows version of threading */
+    stp_params_t *stp_params = create_stp_params(input_file, output_file,
+                                   status, debug_flag, ifirstline);
+
+    DWORD id;
+    HANDLE h = CreateThread(
+      NULL,                        // default security attributes
+      0,                           // default stack size
+      stp_exec,                    // thread function name
+      stp_params,                  // argument to thread function
+      0,                           // default creation flags
+      &id);                        // returns the thread id
+
+    char *statFile = appendExt(output_file, ".status");
+    DWORD dwWaitResult;
+    int counter = 1;
+
+    // now wait for process to finish
+    do {
+        while (gtk_events_pending())
+            gtk_main_iteration();
+
+        if (++counter % 200 == 0) {
+          /* check status file */
+          check_status_file(statFile);
+        }
+
+        dwWaitResult = WaitForSingleObject(h, 50);
+    }
+    while (dwWaitResult == WAIT_TIMEOUT);
+
+    free(stp_params);
+    remove_file(statFile);
+    free(statFile);
+
+#else // #ifdef win32
+    /* Linux version of threading */
     int pid = fork();
     if (pid == 0)
     {
       /* child */
+      stp_params_t *stp_params = create_stp_params(input_file, output_file,
+                                     status, debug_flag, ifirstline);
+      int ret = stp_exec(stp_params);
+      free(stp_params);
 
-      // running import, if necessary
-      char *img_file;
-      if (status == STATUS_LDR_INSTEAD) {
-        // the imported file will go where the output file is
-        img_file = STRDUP(output_file);
-        asfPrintStatus("Importing Level 0 data...\n");
-        import_ceos(input_file, img_file, NULL, NULL, NULL,
-                    NULL, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
-                    FALSE, FALSE, FALSE, TRUE);
-        asfPrintStatus("Import complete.\n");
-      }
-      else if (status == STATUS_STF_INSTEAD) {
-        // the imported file will go where the output file is
-        img_file = appendExt(output_file, "");
-        asfPrintStatus("Importing STF data...\n");
-        import_stf(input_file, img_file, r_AMP, NULL, 0, -99, -99, NULL);
-        asfPrintStatus("Import complete.\n");
-      }
-      else {
-        // no import necessary-- input to ardop is the original .img file
-        img_file = change_extension(input_file, "img");
-      }
-
-      // running ardop
-      struct INPUT_ARDOP_PARAMS *params_in;
-      params_in = get_input_ardop_params_struct(img_file, output_file);
-
-      // make copies of the doppler data, so threads can't collide
-      float l_fd, l_fdd, l_fddd;
-      if (g_fd)   { l_fd = *g_fd;     params_in->fd = &l_fd;     }
-      if (g_fdd)  { l_fdd = *g_fdd;   params_in->fdd = &l_fdd;   }
-      if (g_fddd) { l_fddd = *g_fddd; params_in->fddd = &l_fddd; }
-      sprintf(params_in->status, "%s.status", output_file);
-
-      char *tmp_dir = get_dirname(output_file);
-      set_asf_tmp_dir(tmp_dir);
-      FREE(tmp_dir);
-
-      // this stuff shouldn't cause collisions, local stack variables      
-      int npatches = 1;
-      params_in->iflag = &debug_flag;
-      params_in->npatches = &npatches;
-      params_in->ifirstline = &ifirstline;
-
-      ardop(params_in);
-      free(params_in);
-      free(img_file);
-
-      exit(EXIT_SUCCESS);
+      exit(ret==0 ? EXIT_SUCCESS : EXIT_FAILURE);
     }
     else
     {
@@ -1225,57 +1378,15 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
         if (++counter % 200 == 0) {
           /* check status file */
-          char buf[256];
-          FILE *fStat = fopen(statFile, "rt");
-          if (fStat)
-          {
-            fgets(buf, sizeof(buf), fStat);
-            fclose(fStat);
-
-            // strip trailing whitespace
-            while (isspace(buf[strlen(buf)-1]) && strlen(buf)>0)
-              buf[strlen(buf)-1]='\0';
-
-            // figure out which step we are on
-            int on_step = 0;
-            if (strcmp_case(buf, "Range compressing")==0)
-              on_step=1;
-            //else if (strcmp_case(buf, "Starting azimuth compression")==0)
-            //  on_step=7;
-            //else if (strcmp_case(buf, "Range cell migration")==0)
-            //  on_step=8;
-            //else if (strcmp_case(buf, "Finishing azimuth compression")==0)
-            //  on_step=11;
-            //else if (strcmp_case(buf, "Range-doppler done")==0)
-            //  on_step=12;
-            else {
-              for (i=1; i<=12; ++i) {
-                if (strstr(buf,suffix_for_step(i))!=NULL) {
-                  on_step=i;
-                  break;
-                }
-              }
-            }
-
-            // if we figured it out, highlight that step's text
-            if (on_step>0) {
-              for (i=1; i<=12; ++i) {
-                int highlight_level = 0;
-                if (i<on_step)
-                  highlight_level = 1;
-                else if (i==on_step)
-                  highlight_level = 2;
-                highlight_step(i, highlight_level);
-              }
-            }
-          }
+          check_status_file(statFile);
         }
       }
 
-      unlink(statFile);
+      remove_file(statFile);
       free(statFile);
     }
-    
+#endif // #ifdef win32
+
     free(output_file);
 
     gtk_button_set_label(GTK_BUTTON(execute_button), "Execute");
