@@ -245,6 +245,8 @@ airsar_cal_header *read_airsar_cal(const char *dataFile)
   FCLOSE(fp);
 
   // Read DEM header
+  cal->scale_factor =
+    atof(get_airsar(buf, "GENERAL SCALE FACTOR (dB)"));
   cal->hh_amp_cal_factor = 
     atof(get_airsar(buf, "HH AMPLITUDE CALIBRATION FACTOR (dB)"));
   cal->hv_amp_cal_factor = 
@@ -492,7 +494,7 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
     fpIn = FOPEN(inFile, "rb");
-    FSEEK(fpIn, header->first_data_offset, 1);
+    FSEEK(fpIn, header->first_data_offset, SEEK_SET);
     fpOut = FOPEN(outFile, "wb");
     for (ii=0; ii<metaIn->general->line_count; ii++) {
       get_float_line(fpIn, metaIn, ii, floatBuf);
@@ -518,11 +520,12 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   else {
     asfPrintStatus("   Ingesting amplitude image ...\n");
     sprintf(outFile, "%s_%c_vv.img", outBaseName, band);
+    header = read_airsar_header(inFile);
     metaIn->general->data_type = INTEGER16;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
     fpIn = FOPEN(inFile, "rb");
-    FSEEK(fpIn, header->first_data_offset, 1);
+    FSEEK(fpIn, header->first_data_offset, SEEK_SET);
     fpOut = FOPEN(outFile, "wb");
     for (ii=0; ii<metaIn->general->line_count; ii++) {
       get_float_line(fpIn, metaIn, ii, floatBuf);
@@ -545,11 +548,12 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   else {
     asfPrintStatus("   Ingesting coherence image ...\n");
     sprintf(outFile, "%s_%c_coh.img", outBaseName, band);
+    header = read_airsar_header(inFile);
     metaIn->general->data_type = BYTE;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
     fpIn = FOPEN(inFile, "rb");
-    FSEEK(fpIn, header->first_data_offset, 1);
+    FSEEK(fpIn, header->first_data_offset, SEEK_SET);
     fpOut = FOPEN(outFile, "wb");
     for (ii=0; ii<metaIn->general->line_count; ii++) {
       get_float_line(fpIn, metaIn, ii, floatBuf);
@@ -582,7 +586,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   char *byteBuf;
   float *power, *shh_amp, *shh_phase, *shv_amp, *shv_phase, *svh_amp;
   float *svh_phase, *svv_amp, *svv_phase;
-  float total_power, ysca, scale;
+  float total_power, ysca, scale, x;
   complexFloat cpx;
 
   // Allocate memory
@@ -624,13 +628,12 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     FSEEK(fpIn, offset, 1);
     for (ii=0; ii<meta->general->line_count; ii++) {
       for (kk=0; kk<meta->general->sample_count; kk++) {
-	FREAD(byteBuf, sizeof(char), 10, fpIn);
 	total_power =
 	  scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
 	ysca = 2.0 * sqrt(total_power);
 	power[kk] = total_power;
-	cpx.real = (float)byteBuf[2] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
+	cpx.real = 127 * (float)byteBuf[2] / x;
+	cpx.imag = 127 * (float)byteBuf[3] * ysca / 127.0;
 	shh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
 	shh_phase[kk] = atan2(cpx.imag, cpx.real);
 	cpx.real = (float)byteBuf[4] * ysca / 127.0;
