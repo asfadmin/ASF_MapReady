@@ -1,4 +1,4 @@
-c      This program must link to real*8 versions of the following 
+c      This program must link to real*8 versions of the following
 c      Numerical Recipies routines (v1992) to work properly.
 
 c      SUBROUTINE gaussj(a,n,np,b,m,mp)
@@ -12,23 +12,23 @@ c***************************************************************
       program multitps
 
 c****************************************************************
-c**     
+c**
 c**   FILE NAME: multitps.f
-c**     
-c**   DATE WRITTEN: 10/20/96 
-c**     
+c**
+c**   DATE WRITTEN: 10/20/96
+c**
 c**   PROGRAMMER: Scott Shaffer
-c**     
-c**   FUNCTIONAL DESCRIPTION: Converts ground truth info from a 
+c**
+c**   FUNCTIONAL DESCRIPTION: Converts ground truth info from a
 c**                           variete of sources into the files
 c**                           needed by multiaffine3d.
 c**
-c**   ROUTINES CALLED: 
-c**    
+c**   ROUTINES CALLED:
+c**
 c**   NOTES: none
-c**     
+c**
 c**   UPDATE LOG:
-c**     
+c**
 c*****************************************************************
 
       IMPLICIT NONE
@@ -37,8 +37,8 @@ c*****************************************************************
       integer*4 I_MS
 
 c     PARAMETER STATEMENTS:
-      parameter (I_MT= 20)  				! Max number of ground truth files
-      parameter (I_MS= 20000)  				! Max number samples cross track
+      parameter (I_MT= 20)             ! Max number of ground truth files
+      parameter (I_MS= 20000)          ! Max number samples cross track
 
 c     INPUT VARIABLES:
       character*255 a_cmdfile
@@ -133,7 +133,7 @@ c     INPUT VARIABLES:
       real*8  r_pi,r_dtor,r_rtod
 
       real*8  r_rot(3,3)
-      
+
       real*8 v_oloc(3)
       real*8 v_oloc1(3)
       real*8 v_oloc2(3)
@@ -258,7 +258,7 @@ c
         i_file = -1
         do while(i_err .eq. 0)
           read(10,'(a)',end=110) a_input
-          call parse(a_input,i_vals,a_vals)     
+          call parse(a_input,i_vals,a_vals)
           do i = 1,i_vals
             if (a_vals(i) .eq. ' ') then
               print *,'parse error'
@@ -293,7 +293,7 @@ c
               a_hdrfile(i_file)=a_vals(i)(5:)
             else if (a_vals(i)(1:4) .eq. 'aff=') then
               a_afffile(i_file)=a_vals(i)(5:)
-            else if (a_vals(i)(1:4) .eq. 'amp=' .or. 
+            else if (a_vals(i)(1:4) .eq. 'amp=' .or.
      &               a_vals(i)(1:4) .eq. 'mag=' .or.
      &               a_vals(i)(1:4) .eq. 'pwr=' ) then
               i_file=i_file+1
@@ -301,7 +301,7 @@ c
               i_pos = index(a_magfile(i_file),'.')
               if (i_pos .eq. 0) i_pos = length(a_magfile(i_file))+1
               a_hdrfile(i_file)=a_magfile(i_file)(1:i_pos-1)//'.hdr'
-            else if (a_vals(i)(1:4) .eq. 'dte=' .or. 
+            else if (a_vals(i)(1:4) .eq. 'dte=' .or.
      &               a_vals(i)(1:4) .eq. 'dem=' .or.
      &               a_vals(i)(1:4) .eq. 'hgt=' ) then
               i_file=i_file+1
@@ -309,7 +309,7 @@ c
               i_pos = index(a_dtefile(i_file),'.')
               if (i_pos .eq. 0) i_pos = length(a_dtefile(i_file))+1
               a_hdrfile(i_file)=a_dtefile(i_file)(1:i_pos-1)//'.hdr'
-            else if (a_vals(i)(1:4) .eq. 'dma=' .or. 
+            else if (a_vals(i)(1:4) .eq. 'dma=' .or.
      &               a_vals(i)(1:4) .eq. 'd*2=' ) then
               i_file=i_file+1
               a_dtefile(i_file)=a_vals(i)(5:)
@@ -386,7 +386,7 @@ c
 
             if (i_file .eq. 0) then
               if (a_hdrfile(i_file) .ne. ' ') then  ! Read header file if exists
-                if (i_pegset(i_file) .eq. 0 .and. i_strset(i_file) .eq. 0 .and. 
+                if (i_pegset(i_file) .eq. 0 .and. i_strset(i_file) .eq. 0 .and.
      &                i_sizset(i_file) .eq. 0 .and. i_spcset(i_file) .eq. 0 ) then
                   call read_hdr(a_hdrfile(i_file),i_lsize(i_file),i_ssize(i_file),
      &                r_peg(1,i_file),r_str(1,i_file),r_spc(1,i_file),
@@ -612,7 +612,7 @@ c              type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
                   v_iloc1(2) = v_iloc1(2)*r_spc(2,i_file) + r_str(2,i_file)
                   v_iloc1(3) = v_iloc1(3)*r_ddnc(1,i_file) + r_ddnc(2,i_file)
 
-                  if (i_type(i_file) .eq. 1) then 
+                  if (i_type(i_file) .eq. 1) then
                     v_iloc2(1) = v_iloc1(1)
                     v_iloc2(2) = v_iloc1(2)
                     v_iloc2(3) = v_iloc1(3)
@@ -672,7 +672,7 @@ c              type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
 c                  write( 6,'(i5,6f12.5)') i_mm,v_oloc(1), v_oloc(2),r_datb(i_ss),v_iloc1(1),v_iloc1(2),v_iloc1(3)
                   if (i_ll .ge. 1 .and. i_ll .le. i_lsize(0)) then
                     if (i_ss .ge. 1 .and. i_ss .le. i_ssize(0)) then
-                      
+
                       if (a_tpsfile(0) .ne. ' ') then
                         read(30,rec=i_ll) (r_data(is),is=1,i_ssize(0)),(r_datb(iss),iss=1,i_ssize(0))
                         if (r_data(i_ss) .ne. 0. .and. nint(abs(r_datb(i_ss))) .ne. 10000) then
@@ -712,7 +712,7 @@ c
           real*8 r_vec2(3)
 
             call vecmulti(r_aff,r_vec1,r_vec2)
-            call vecaddit(r_aff(1,4),r_vec2,r_vec2)          
+            call vecaddit(r_aff(1,4),r_vec2,r_vec2)
 
           return
         end
@@ -730,14 +730,14 @@ c
 
             call matmulti(r_aff1,r_aff2,r_aff)
             call vecmulti(r_aff1,r_aff2(1,4),r_aff(1,4))
-            call vecaddit(r_aff1(1,4),r_aff(1,4),r_aff(1,4))          
+            call vecaddit(r_aff1(1,4),r_aff(1,4),r_aff(1,4))
 
           return
         end
 
         subroutine invrstrn(r_atm,r_mta)
 c
-c  This subroutine finds the inverse of an affine transformation   
+c  This subroutine finds the inverse of an affine transformation
 c                  including the translation vector
 c
           implicit none
@@ -996,28 +996,28 @@ c ======================================================================
 
 c****************************************************************
 c**
-c**	FILE NAME: read_hdr.f
+c**     FILE NAME: read_hdr.f
 c**
 c**     DATE WRITTEN: 2/15/96
 c**
 c**     PROGRAMMER:Scott Shaffer
 c**
-c** 	FUNCTIONAL DESCRIPTION: Reads some of an IFPROC header file.
+c**     FUNCTIONAL DESCRIPTION: Reads some of an IFPROC header file.
 c**
 c**     ROUTINES CALLED:none
-c**  
-c**     NOTES: 
+c**
+c**     NOTES:
 c**
 c**
 c*****************************************************************
 
-       	implicit none
+        implicit none
 
-c	INPUT VARIABLES:
-        
+c       INPUT VARIABLES:
+
         character*(*) a_hdrfile         !header file
 
-c	OUTPUT VARIABLES: 
+c       OUTPUT VARIABLES:
 
         integer*4 i_err
         integer*4 i_lsize
@@ -1033,7 +1033,7 @@ c	OUTPUT VARIABLES:
         real*8 r_ddnc(2)
 
 
-c	LOCAL VARIABLES: 
+c       LOCAL VARIABLES:
 
         integer*4 i
         integer*4 i_cnt
@@ -1044,12 +1044,12 @@ c	LOCAL VARIABLES:
 
         character*255 a_tmp
 
-c	DATA STATEMENTS: none
+c       DATA STATEMENTS: none
 
-c	FUNCTION STATEMENTS: none
+c       FUNCTION STATEMENTS: none
 
-c  	PROCESSING STEPS:
-        
+c       PROCESSING STEPS:
+
 c
 c  Initialize pi and conversions
 c
@@ -1109,7 +1109,7 @@ c             i_cnt = i_cnt + 128
         stop 'Error reading header file, too many lines'
 
 900     close(12,err=910)
-910     continue !  i_err = 0 if file even exists  if (i_cnt .eq. 15) i_err = 0 
+910     continue !  i_err = 0 if file even exists  if (i_cnt .eq. 15) i_err = 0
         return
       end
 
@@ -1119,28 +1119,28 @@ c             i_cnt = i_cnt + 128
 
 c****************************************************************
 c**
-c**	FILE NAME: read_hdr.f
+c**     FILE NAME: read_hdr.f
 c**
 c**     DATE WRITTEN: 2/15/96
 c**
 c**     PROGRAMMER:Scott Shaffer
 c**
-c** 	FUNCTIONAL DESCRIPTION: Reads an GCP header file.
+c**     FUNCTIONAL DESCRIPTION: Reads an GCP header file.
 c**
 c**     ROUTINES CALLED:none
-c**  
-c**     NOTES: 
+c**
+c**     NOTES:
 c**
 c**
 c*****************************************************************
 
-       	implicit none
+        implicit none
 
-c	INPUT VARIABLES:
-        
+c       INPUT VARIABLES:
+
         character*(*) a_hdrfile         !header file
 
-c	OUTPUT VARIABLES: 
+c       OUTPUT VARIABLES:
 
         integer*4 i_err
 
@@ -1153,7 +1153,7 @@ c	OUTPUT VARIABLES:
         character*255 a_proj
         character*255 a_units
 
-c	LOCAL VARIABLES: 
+c       LOCAL VARIABLES:
 
         integer*4 i
         integer*4 i_cnt
@@ -1163,12 +1163,12 @@ c	LOCAL VARIABLES:
         real*8 r_pi
         real*8 r_rtod
 
-c	DATA STATEMENTS: none
+c       DATA STATEMENTS: none
 
-c	FUNCTION STATEMENTS: none
+c       FUNCTION STATEMENTS: none
 
-c  	PROCESSING STEPS:
-        
+c       PROCESSING STEPS:
+
 c
 c  Initialize pi and conversions
 c
@@ -1213,7 +1213,7 @@ c
         stop 'Error reading header file, too many lines'
 
 900     close(12,err=910)
-910     continue !  i_err = 0 if file even exists  if (i_cnt .eq. 15) i_err = 0 
+910     continue !  i_err = 0 if file even exists  if (i_cnt .eq. 15) i_err = 0
         return
       end
 
@@ -1239,7 +1239,7 @@ c
         integer i_boff
 
         real r_dmul
-        real r_dadd 
+        real r_dadd
 
         real*8 r_peg(3)
         real*8 r_str(2)
@@ -1295,7 +1295,7 @@ c              type *,'i_demoff=',i_demoff
             endif
           enddo
 901       close(18)
-              
+
 
           if (i_dbsize .gt. 0) then
 
@@ -1349,10 +1349,10 @@ c                type *,'c0 =',r_str(2)
                 write(6,*) ' '
               endif
             enddo
-            
-              
+
+
           endif
-902       close(18) 
+902       close(18)
        return
 
       end
@@ -1363,30 +1363,30 @@ c                type *,'c0 =',r_str(2)
 
 c****************************************************************
 c**
-c**	FILE NAME: read_hdr.f
+c**     FILE NAME: read_hdr.f
 c**
 c**     DATE WRITTEN: 8/26/96
 c**
 c**     PROGRAMMER:Scott Shaffer
 c**
-c** 	FUNCTIONAL DESCRIPTION: Writes some of an IFPROC header file.
+c**     FUNCTIONAL DESCRIPTION: Writes some of an IFPROC header file.
 c**
 c**     ROUTINES CALLED:none
-c**  
-c**     NOTES: 
+c**
+c**     NOTES:
 c**
 c**
 c*****************************************************************
 
-       	implicit none
+        implicit none
 
-c	INPUT VARIABLES:
-        
+c       INPUT VARIABLES:
+
         integer*4 i_hdrfile
         character*(*) a_filter         !header file
         character*(*) a_type
 
-c	OUTPUT VARIABLES: 
+c       OUTPUT VARIABLES:
 
         integer*4 i_err
         integer*4 i_lsize
@@ -1399,21 +1399,21 @@ c	OUTPUT VARIABLES:
         real*8 r_spc(2)
 
 
-c	LOCAL VARIABLES: 
+c       LOCAL VARIABLES:
 
         real*8 r_pi
         real*8 r_rtod
 
 
-c	DATA STATEMENTS: none
+c       DATA STATEMENTS: none
 
-C	FUNCTION STATEMENTS: 
+C       FUNCTION STATEMENTS:
 
         integer*4 length
         external length
 
-c  	PROCESSING STEPS:
-        
+c       PROCESSING STEPS:
+
 c
 c  Initialize pi and conversions
 c
@@ -1435,7 +1435,7 @@ c           write(6,*) 'Writing HDR info for file ',a_filter
            r_p(3) = r_peg(3)*r_rtod
            write(i_hdrfile,'(3f15.7,3a)')  r_p, ' ; ',a_filter(:length(a_filter)),
      &               ' Peg position (WGS-84)'
-           if (a_type .eq. 'neu' .or. a_type .eq. 'enu' .or. a_type .eq. 'utm') then 
+           if (a_type .eq. 'neu' .or. a_type .eq. 'enu' .or. a_type .eq. 'utm') then
              write(i_hdrfile,'(i15,30x,3a)') i_zone,' ; ',a_filter(:length(a_filter)),' UTM Zone '
            else
              write(i_hdrfile,'(a)') ' '
@@ -1447,39 +1447,39 @@ c           write(6,*) 'Writing HDR info for file ',a_filter
 
 c****************************************************************
 
-	subroutine tcnatm(r_a,r_e2,r_peg,r_atm)
+        subroutine tcnatm(r_a,r_e2,r_peg,r_atm)
 
 c****************************************************************
 c**
-c**	FILE NAME: tcnatm.for
+c**     FILE NAME: tcnatm.for
 c**
-c**     DATE WRITTEN:10/25/95 
+c**     DATE WRITTEN:10/25/95
 c**
 c**     PROGRAMMER:Scott Shaffer
 c**
-c** 	FUNCTIONAL DESCRIPTION:This routine computes the transformation
+c**     FUNCTIONAL DESCRIPTION:This routine computes the transformation
 c**     matris and translation vector needed to get between radar (t,c,n)
 c**     coordinates and (x,y,z) WGS-84 coordinates.
 c**
 c**     ROUTINES CALLED:
-c**  
+c**
 c**     NOTES: none
 c**
 c**     UPDATE LOG:
 c**
 c*****************************************************************
 
-       	implicit none
+        implicit none
 
-c	INPUT VARIABLES:
+c       INPUT VARIABLES:
         real*8 r_a                    !semimajor axis
         real*8 r_e2                   !eccentricity squared
         real*8 r_peg(3)               !peg latitude,longitude,heading
-   
-c   	OUTPUT VARIABLES:
+
+c       OUTPUT VARIABLES:
         real*8 r_atm(3,4)             !rotation matris
- 
-c	LOCAL VARIABLES:
+
+c       LOCAL VARIABLES:
         integer*4 i_type
         real*8 r_hgt
         real*8 r_slt,r_clt,r_clo,r_slo,r_chg,r_shg
@@ -1487,9 +1487,9 @@ c	LOCAL VARIABLES:
         real*8 rdir
         external rdir
 
-c	DATA STATEMENTS:none
+c       DATA STATEMENTS:none
 
-c  	PROCESSING STEPS:
+c       PROCESSING STEPS:
 
 c       first determine the rotation matris
 
@@ -1516,42 +1516,42 @@ c       find the translation vector
         r_hgt = 0.
         call latlon(r_a,r_e2,r_atm(1,4),r_peg(1),r_peg(2),r_hgt,i_type)
         return
-        end  
+        end
 
 c****************************************************************
-        subroutine latlon(r_a,r_e2,r_v,r_lat,r_lon,r_hgt,i_type) 
+        subroutine latlon(r_a,r_e2,r_v,r_lat,r_lon,r_hgt,i_type)
 
 c****************************************************************
-c**   
+c**
 c**   FILE NAME: latlon.f
-c**   
-c**   DATE WRITTEN:7/22/93 
-c**   
+c**
+c**   DATE WRITTEN:7/22/93
+c**
 c**   PROGRAMMER:Scott Hensley
-c**   
-c**   FUNCTIONAL DESCRIPTION:This program converts a vector to 
+c**
+c**   FUNCTIONAL DESCRIPTION:This program converts a vector to
 c**   lat,lon and height above the reference ellipsoid or given a
-c**   lat,lon and height produces a geocentric vector. 
-c**   
+c**   lat,lon and height produces a geocentric vector.
+c**
 c**   ROUTINES CALLED:none
-c**   
+c**
 c**   NOTES: none
-c**   
+c**
 c**   UPDATE LOG:
-c**   
+c**
 c****************************************************************
-        
+
         implicit none
-        
+
 c     INPUT VARIABLES:
         integer*4 i_type                   !1=lat,lon to vector,2= vector to lat,lon
         real*8 r_a                       !ellispoid semi-major axis
-        real*8 r_e2                      !ellipsoid eccentricity squared  
+        real*8 r_e2                      !ellipsoid eccentricity squared
         real*8 r_v(3)                    !geocentric vector (meters)
         real*8 r_lat                     !latitude (deg -90 to 90)
         real*8 r_lon                     !longitude (deg -180 to 180)
         real*8 r_hgt                     !height above ellipsoid (meters)
-   
+
 c       OUTPUT VARIABLES:see input
 
 c       LOCAL VARIABLES:
@@ -1569,24 +1569,24 @@ C       FUNCTION STATEMENTS:
 c       PROCESSING STEPS:
 
         if(i_type .eq. 1)then  !convert lat,lon to vector
-           
+
            r_re = r_a/sqrt(1.d0 - r_e2*sin(r_lat)**2)
-           
+
            r_v(1) = (r_re + r_hgt)*cos(r_lat)*cos(r_lon)
            r_v(2) = (r_re + r_hgt)*cos(r_lat)*sin(r_lon)
-           r_v(3) = (r_re*(1.d0-r_e2) + r_hgt)*sin(r_lat)               
-           
-        elseif(i_type .eq. 2)then  !convert vector to lat,lon 
-           
+           r_v(3) = (r_re*(1.d0-r_e2) + r_hgt)*sin(r_lat)
+
+        elseif(i_type .eq. 2)then  !convert vector to lat,lon
+
            if(i_ft .eq. 0)then
               r_q2 = 1.d0/(1.d0 - r_e2)
               r_q = sqrt(r_q2)
               r_q3 = r_q2 - 1.d0
               r_b = r_a*sqrt(1.d0 - r_e2)
            endif
-           
+
            r_lon = atan2(r_v(2),r_v(1))
-           
+
            r_p = sqrt(r_v(1)**2 + r_v(2)**2)
            r_tant = (r_v(3)/r_p)*r_q
            r_theta = atan(r_tant)
@@ -1594,38 +1594,38 @@ c       PROCESSING STEPS:
      +          (r_p - r_e2*r_a*cos(r_theta)**3)
            r_lat =  atan(r_tant)
            r_re = r_a/sqrt(1.d0 - r_e2*sin(r_lat)**2)
-           r_hgt = r_p/cos(r_lat) - r_re          
-  
+           r_hgt = r_p/cos(r_lat) - r_re
+
         endif
-      
+
         return
-        end  
+        end
 
 c****************************************************************
-        subroutine sch_to_tcn(r_a,r_v,r_lat,r_lon,r_hgt,i_type) 
+        subroutine sch_to_tcn(r_a,r_v,r_lat,r_lon,r_hgt,i_type)
 
 c****************************************************************
-c**   
+c**
 c**   FILE NAME: sch_to_tcn.f
-c**   
-c**   DATE WRITTEN:7/22/93 
-c**   
+c**
+c**   DATE WRITTEN:7/22/93
+c**
 c**   PROGRAMMER:Scott Hensley
-c**   
-c**   FUNCTIONAL DESCRIPTION:This program converts a vector to 
+c**
+c**   FUNCTIONAL DESCRIPTION:This program converts a vector to
 c**   lat,lon and height above the reference ellipsoid or given a
-c**   lat,lon and height produces a geocentric vector. 
-c**   
+c**   lat,lon and height produces a geocentric vector.
+c**
 c**   ROUTINES CALLED:none
-c**   
+c**
 c**   NOTES: none
-c**   
+c**
 c**   UPDATE LOG:
-c**   
+c**
 c****************************************************************
-        
+
         implicit none
-        
+
 c     INPUT VARIABLES:
         integer*4 i_type                   !1=lat,lon to vector,2= vector to lat,lon
         real*8 r_a                       !ellispoid semi-major axis
@@ -1633,7 +1633,7 @@ c     INPUT VARIABLES:
         real*8 r_lat                     !latitude (deg -90 to 90)
         real*8 r_lon                     !longitude (deg -180 to 180)
         real*8 r_hgt                     !height above ellipsoid (meters)
-   
+
 c       OUTPUT VARIABLES:see input
 
 c       LOCAL VARIABLES:
@@ -1644,42 +1644,42 @@ C       FUNCTION STATEMENTS:
 c       PROCESSING STEPS:
 
         if(i_type .eq. 1)then  !convert lat,lon to vector
-                      
+
            r_v(3) = (r_a + r_hgt)*cos(r_lat)*cos(r_lon) - r_a
            r_v(1) = (r_a + r_hgt)*cos(r_lat)*sin(r_lon)
-           r_v(2) = (r_a + r_hgt)*sin(r_lat)               
-           
+           r_v(2) = (r_a + r_hgt)*sin(r_lat)
+
         elseif(i_type .eq. 2)then  !convert vector to lat,lon, hgt
-           
+
            r_p = sqrt(r_v(1)**2 + r_v(2)**2 + (r_v(3)+r_a)**2)
            r_lat = asin(r_v(2)/r_p)
            r_lon = atan2(r_v(1),(r_v(3)+r_a))
-           r_hgt = r_p - r_a          
-  
+           r_hgt = r_p - r_a
+
         endif
-      
+
         return
-        end  
+        end
 
 c****************************************************************
 c
 c       Various curvature functions
-c 
+c
 c
 c****************************************************************
 c**
-c**	FILE NAME: curvature.f
+c**     FILE NAME: curvature.f
 c**
 c**     DATE WRITTEN: 12/02/93
 c**
 c**     PROGRAMMER:Scott Hensley
 c**
-c** 	FUNCTIONAL DESCRIPTION: This routine computes the curvature for 
-c**     of various types required for ellipsoidal or spherical earth 
-c**     calculations.  
+c**     FUNCTIONAL DESCRIPTION: This routine computes the curvature for
+c**     of various types required for ellipsoidal or spherical earth
+c**     calculations.
 c**
 c**     ROUTINES CALLED:none
-c**  
+c**
 c**     NOTES: none
 c**
 c**     UPDATE LOG:
@@ -1688,166 +1688,166 @@ c*****************************************************************
 
         real*8 function  reast(r_a,r_e2,r_lat)
 
-       	implicit none
+        implicit none
         real*8 r_a,r_e2,r_lat
-        
-        reast = r_a/sqrt(1.d0 - r_e2*sin(r_lat)**2) 
-      
-        end  
+
+        reast = r_a/sqrt(1.d0 - r_e2*sin(r_lat)**2)
+
+        end
 
         real*8 function  rnorth(r_a,r_e2,r_lat)
 
-       	implicit none
+        implicit none
         real*8 r_a,r_e2,r_lat
-        
+
         rnorth = (r_a*(1.d0 - r_e2))/
-     1			(1.d0 - r_e2*sin(r_lat)**2)**(1.5d0) 
+     1           (1.d0 - r_e2*sin(r_lat)**2)**(1.5d0)
 
         end
 
         real*8 function  rdir(r_a,r_e2,r_hdg,r_lat)
 
-       	implicit none
+        implicit none
         real*8 r_a,r_e2,r_lat,r_hdg,r_re,r_rn,reast,rnorth
-        
+
         r_re = reast(r_a,r_e2,r_lat)
         r_rn = rnorth(r_a,r_e2,r_lat)
 
-        rdir = (r_re*r_rn)/(r_re*cos(r_hdg)**2 + r_rn*sin(r_hdg)**2) 
+        rdir = (r_re*r_rn)/(r_re*cos(r_hdg)**2 + r_rn*sin(r_hdg)**2)
 
-        end      
+        end
 
 
 c****************************************************************
 
-	subroutine matvec(r_t,r_v,r_w)
+        subroutine matvec(r_t,r_v,r_w)
 
 c****************************************************************
 c**
-c**	FILE NAME: matvec.for
+c**     FILE NAME: matvec.for
 c**
 c**     DATE WRITTEN: 7/20/90
 c**
 c**     PROGRAMMER:Scott Hensley
 c**
-c** 	FUNCTIONAL DESCRIPTION: The subroutine takes a 3x3 matris 
+c**     FUNCTIONAL DESCRIPTION: The subroutine takes a 3x3 matris
 c**     and a 3x1 vector a multiplies them to return another 3x1
-c**	vector.
+c**     vector.
 c**
 c**     ROUTINES CALLED:none
-c**  
+c**
 c**     NOTES: none
 c**
 c**     UPDATE LOG:
 c**
 c****************************************************************
 
-       	implicit none
+        implicit none
 
-c	INPUT VARIABLES:
- 	real*8 r_t(3,3)                            !3x3 matris
+c       INPUT VARIABLES:
+        real*8 r_t(3,3)                            !3x3 matris
         real*8 r_v(3)                              !3x1 vector
-   
-c   	OUTPUT VARIABLES:
+
+c       OUTPUT VARIABLES:
         real*8 r_w(3)                              !3x1 vector
 
-c	LOCAL VARIABLES:none
+c       LOCAL VARIABLES:none
 
-c  	PROCESSING STEPS:
+c       PROCESSING STEPS:
 
 c       compute matris product
 
-	r_w(1) = r_t(1,1)*r_v(1) + r_t(1,2)*r_v(2) + r_t(1,3)*r_v(3)
-	r_w(2) = r_t(2,1)*r_v(1) + r_t(2,2)*r_v(2) + r_t(2,3)*r_v(3)
-	r_w(3) = r_t(3,1)*r_v(1) + r_t(3,2)*r_v(2) + r_t(3,3)*r_v(3)
-          
+        r_w(1) = r_t(1,1)*r_v(1) + r_t(1,2)*r_v(2) + r_t(1,3)*r_v(3)
+        r_w(2) = r_t(2,1)*r_v(1) + r_t(2,2)*r_v(2) + r_t(2,3)*r_v(3)
+        r_w(3) = r_t(3,1)*r_v(1) + r_t(3,2)*r_v(2) + r_t(3,3)*r_v(3)
+
         return
-        end  
+        end
 
 c****************************************************************
 
-	subroutine lincomb(r_k1,r_u,r_k2,r_v,r_w)
+        subroutine lincomb(r_k1,r_u,r_k2,r_v,r_w)
 
 c****************************************************************
 c**
-c**	FILE NAME: lincomb.for
+c**     FILE NAME: lincomb.for
 c**
 c**     DATE WRITTEN: 8/3/90
 c**
 c**     PROGRAMMER:Scott Hensley
 c**
-c** 	FUNCTIONAL DESCRIPTION: The subroutine forms the linear combination
-c**	of two vectors.
+c**     FUNCTIONAL DESCRIPTION: The subroutine forms the linear combination
+c**     of two vectors.
 c**
 c**     ROUTINES CALLED:none
-c**  
+c**
 c**     NOTES: none
 c**
 c**     UPDATE LOG:
 c**
 c*****************************************************************
-
-       	implicit none
-
-c	INPUT VARIABLES:
+   
+        implicit none
+   
+c       INPUT VARIABLES:
         real*8 r_u(3)                              !3x1 vector
         real*8 r_v(3)                              !3x1 vector
-        real*8 r_k1				 !scalar
-        real*8 r_k2				 !scalar
+        real*8 r_k1                                !scalar
+        real*8 r_k2                                !scalar
    
-c   	OUTPUT VARIABLES:
+c       OUTPUT VARIABLES:
         real*8 r_w(3)                              !3x1 vector
 
-c	LOCAL VARIABLES:none
+c       LOCAL VARIABLES:none
 
-c  	PROCESSING STEPS:
+c       PROCESSING STEPS:
 
 c       compute linear combination
 
-	r_w(1) = r_k1*r_u(1) + r_k2*r_v(1)
-	r_w(2) = r_k1*r_u(2) + r_k2*r_v(2)
-	r_w(3) = r_k1*r_u(3) + r_k2*r_v(3)
-      
+        r_w(1) = r_k1*r_u(1) + r_k2*r_v(1)
+        r_w(2) = r_k1*r_u(2) + r_k2*r_v(2)
+        r_w(3) = r_k1*r_u(3) + r_k2*r_v(3)
+
         return
-        end  
+        end
 
 c****************************************************************
 
         subroutine enutoll(r_a,r_e2,i_zone,a_grid,r_vec,r_lat,
-     +     r_lon,i_type) 
+     +     r_lon,i_type)
 
 c****************************************************************
-c**   
+c**
 c**   FILE NAME: enutoll.f
-c**   
-c**   DATE WRITTEN:7/22/93 
-c**   
+c**
+c**   DATE WRITTEN:7/22/93
+c**
 c**   PROGRAMMER:Scott Hensley
-c**   
+c**
 c**   FUNCTIONAL DESCRIPTION: This routine converts between lat
-c**   lon and enu coordinates for a datum determined from the input 
+c**   lon and enu coordinates for a datum determined from the input
 c**   a and e2.
-c**   
+c**
 c**   ROUTINES CALLED:none
-c**   
+c**
 c**   NOTES: none
-c**   
+c**
 c**   UPDATE LOG:  added zone selection logic SJS 3/28/96
-c**   
+c**
 c****************************************************************
-        
+
         implicit none
-        
+
 c     INPUT VARIABLES:
         integer*4 i_type                   !2=lat,lon to utm,1= utm to lat,lon
         real*8 r_a                       !ellispoid semi-major axis
-        real*8 r_e2                      !ellipsoid eccentricity squared  
+        real*8 r_e2                      !ellipsoid eccentricity squared
         real*8 r_vec(2)                  !Northing,Easting(m)
         real*8 r_lat                     !latitude (deg -90 to 90)
         real*8 r_lon                     !longitude (deg -180 to 180)
         integer*4 i_zone                   !UTM zone
         character*1 a_grid               !UTM North-South grid
-   
+
 c       OUTPUT VARIABLES:see input
 
 c       LOCAL VARIABLES:
@@ -1857,7 +1857,7 @@ c       LOCAL VARIABLES:
         real*8 r_ep2,r_k0,r_k
         real*8 r_fe,r_fn(2)
         real*8 r_e4,r_e6,r_n,r_t,r_t2,r_c,r_c2,r_ba
-        real*8 r_a2,r_a3,r_a4,r_a5,r_a6 
+        real*8 r_a2,r_a3,r_a4,r_a5,r_a6
         real*8 r_d,r_d2,r_d3,r_d4,r_d5,r_d6
         real*8 r_lon0,r_lat1,r_m,r_m0,r_mu,r_lat0
         real*8 r_et,r_e1,r_e12,r_e13,r_e14,r_r
@@ -1870,7 +1870,7 @@ c       DATA STATEMENTS:
         data a_griddes /'C','D','E','F','G','H','J',
      +       'K','L','M','N','P','Q','R','S','T','U',
      +       'V','W','X'/
-        data r_k0 /.9996d0/    !scale at center 
+        data r_k0 /.9996d0/    !scale at center
         data r_lat0 /0.d0/
         data r_fe,r_fn /500000.d0,0.d0,10000000.d0/
 
@@ -1887,39 +1887,39 @@ c       PROCESSING STEPS:
         if(i_type .eq. 2)then  !convert lat,lon to UTM
 
            if (i_zone .le. 0) i_zone = int(mod(r_lon+3.d0*pi,2.d0*pi)/(r_dtor*6.d0))
-     +          + 1             
+     +          + 1
 
            i_zone = max(min(i_zone,60),1)
            r_lon0 = -pi + 6.d0*r_dtor*(i_zone-1) + 3.d0*r_dtor
-           
+
            r_n = r_a/sqrt(1.d0 - r_e2*sin(r_lat)**2)
            r_t = tan(r_lat)**2
            r_t2 = r_t**2
            r_c = r_ep2*cos(r_lat)**2
            r_ba = (r_lon - r_lon0)*cos(r_lat)
            r_a2 = r_ba**2
-           r_a3 = r_ba*r_a2 
+           r_a3 = r_ba*r_a2
            r_a4 = r_ba*r_a3
            r_a5 = r_ba*r_a4
            r_a6 = r_ba*r_a5
-           r_m = r_a*((1.d0-r_e2/4 - 3.d0*r_e4/64.d0 - 
-     +      5.d0*r_e6/256.d0)*r_lat - (3.d0*r_e2/8.d0 + 
-     +          3.d0*r_e4/32.d0 + 
-     +      45.d0*r_e6/1024.d0)*sin(2.d0*r_lat) +  
-     +          (15.d0*r_e4/256.d0 + 
+           r_m = r_a*((1.d0-r_e2/4 - 3.d0*r_e4/64.d0 -
+     +      5.d0*r_e6/256.d0)*r_lat - (3.d0*r_e2/8.d0 +
+     +          3.d0*r_e4/32.d0 +
+     +      45.d0*r_e6/1024.d0)*sin(2.d0*r_lat) +
+     +          (15.d0*r_e4/256.d0 +
      +      45.d0*r_e6/1024.d0)*sin(4.d0*r_lat) -
      +          (35.d0*r_e6/3072.d0)*
      +      sin(6.d0*r_lat))
-           r_m0 = r_a*((1.d0-r_e2/4 - 3.d0*r_e4/64.d0 - 
-     +      5.d0*r_e6/256.d0)*r_lat0 - (3.d0*r_e2/8.d0 + 
-     +          3.d0*r_e4/32.d0 + 
-     +      45.d0*r_e6/1024.d0)*sin(2.d0*r_lat0) + 
-     +          (15.d0*r_e4/256.d0 + 
+           r_m0 = r_a*((1.d0-r_e2/4 - 3.d0*r_e4/64.d0 -
+     +      5.d0*r_e6/256.d0)*r_lat0 - (3.d0*r_e2/8.d0 +
+     +          3.d0*r_e4/32.d0 +
+     +      45.d0*r_e6/1024.d0)*sin(2.d0*r_lat0) +
+     +          (15.d0*r_e4/256.d0 +
      +      45.d0*r_e6/1024.d0)*sin(4.d0*r_lat0) -
      +          (35.d0*r_e6/3072.d0)*
      +      sin(6.d0*r_lat0))
-           
-           r_vec(1) = r_k0*r_n*(r_ba+(1.d0-r_t+r_c)*r_a3/6.d0 + 
+
+           r_vec(1) = r_k0*r_n*(r_ba+(1.d0-r_t+r_c)*r_a3/6.d0 +
      +       (5.d0-18.d0*r_t+r_t2+72.d0*r_c-58.d0*r_ep2)*r_a5/120.d0)
            r_vec(1) = r_vec(1) + r_fe
 
@@ -1940,8 +1940,8 @@ c       PROCESSING STEPS:
            i_gi = int((r_lat/r_dtor+80.d0)/8.d0) + 1
            i_gi = max(min(i_gi,20),1)
            a_grid = a_griddes(i_gi)
-           
-        elseif(i_type .eq. 1)then  !convert UTM to lat,lon 
+
+        elseif(i_type .eq. 1)then  !convert UTM to lat,lon
 
            r_v(1) = r_vec(1)
            r_v(2) = r_vec(2)
@@ -1950,7 +1950,7 @@ c       PROCESSING STEPS:
               r_v(2) = r_v(2) - r_fn(2)
            endif
            r_lon0 = -pi + 6.d0*r_dtor*(i_zone-1) + 3.d0*r_dtor
-           
+
            r_et = sqrt(1.d0-r_e2)
            r_e1 = (1.d0-r_et)/(1.d0+r_et)
            r_e12 = r_e1**2
@@ -1961,9 +1961,9 @@ c       PROCESSING STEPS:
      +          5.d0*r_e6/256.d0))
            r_lat1 = r_mu + (3.d0*r_e1/2.d0-27.d0*r_e13/32.d0)*
      +          sin(2.d0*r_mu)+
-     +          (21.d0*r_e12/16.d0-55.d0*r_e14/32.d0)*sin(4.d0*r_mu)+  
-     +          (51.d0*r_e13/96.d0)*sin(6.d0*r_mu) +  
-     +          (1097.d0*r_e14/512.d0)*sin(8.d0*r_mu) 
+     +          (21.d0*r_e12/16.d0-55.d0*r_e14/32.d0)*sin(4.d0*r_mu)+
+     +          (51.d0*r_e13/96.d0)*sin(6.d0*r_mu) +
+     +          (1097.d0*r_e14/512.d0)*sin(8.d0*r_mu)
 
            r_n = r_a/sqrt(1.d0 - r_e2*sin(r_lat1)**2)
            r_r = (r_a*(1.d0-r_e2))/sqrt(1.d0 - r_e2*sin(r_lat1)**2)**3
@@ -1977,59 +1977,59 @@ c       PROCESSING STEPS:
            r_d4 = r_d3*r_d
            r_d5 = r_d4*r_d
            r_d6 = r_d5*r_d
- 
+
            r_lat = r_lat1 - (r_n*tan(r_lat1)/r_r)*(r_d2/2.d0+
      +       (5.d0+3.d0*r_t+10.d0*r_c-4.d0*r_c2-9.d0*r_ep2)*
      +          r_d4/24.d0 +
      +       (61.d0+90*r_t+298.d0*r_c+45.d0*r_t2-252.d0*r_ep2-3.d0*
      +          r_c2)*
      +       (r_d6/720.d0))
-           r_lon = r_lon0 + (r_d - (1.d0+2.d0*r_t+r_c)*r_d3/6.d0 + 
+           r_lon = r_lon0 + (r_d - (1.d0+2.d0*r_t+r_c)*r_d3/6.d0 +
      +       (5.d0-2.d0*r_c+28.d0*r_t-3.d0*r_c2+8.d0*r_ep2+
      +          24.d0*r_t2)*
      +       (r_d5/120.d0))/cos(r_lat1)
 
         endif
-      
-        end  
+
+        end
 
 c****************************************************************
 
         subroutine utmtoll(r_a,r_e2,i_zone,a_grid,r_vec,r_lat,
-     +     r_lon,i_type) 
+     +     r_lon,i_type)
 
 c****************************************************************
-c**   
+c**
 c**   FILE NAME: utmtoll.f
-c**   
-c**   DATE WRITTEN:7/22/93 
-c**   
+c**
+c**   DATE WRITTEN:7/22/93
+c**
 c**   PROGRAMMER:Scott Hensley
-c**   
+c**
 c**   FUNCTIONAL DESCRIPTION: This routine converts between lat
-c**   lon and utm coordinates for a datum determined from the input 
+c**   lon and utm coordinates for a datum determined from the input
 c**   a and e2.
-c**   
+c**
 c**   ROUTINES CALLED:none
-c**   
+c**
 c**   NOTES: none
-c**   
+c**
 c**   UPDATE LOG:
-c**   
+c**
 c****************************************************************
-        
+
         implicit none
-        
+
 c     INPUT VARIABLES:
         integer*4 i_type                   !1=lat,lon to utm,2= utm to lat,lon
         real*8 r_a                       !ellispoid semi-major axis
-        real*8 r_e2                      !ellipsoid eccentricity squared  
+        real*8 r_e2                      !ellipsoid eccentricity squared
         real*8 r_vec(2)                    !Northing,Easting(m)
         real*8 r_lat                     !latitude (deg -90 to 90)
         real*8 r_lon                     !longitude (deg -180 to 180)
         integer*4 i_zone                   !UTM zone
         character*1 a_grid               !UTM North-South grid
-   
+
 c       OUTPUT VARIABLES:see input
 
 c       LOCAL VARIABLES:
@@ -2039,7 +2039,7 @@ c       LOCAL VARIABLES:
         real*8 r_ep2,r_k0,r_k
         real*8 r_fe,r_fn(2)
         real*8 r_e4,r_e6,r_n,r_t,r_t2,r_c,r_c2,r_ba
-        real*8 r_a2,r_a3,r_a4,r_a5,r_a6 
+        real*8 r_a2,r_a3,r_a4,r_a5,r_a6
         real*8 r_d,r_d2,r_d3,r_d4,r_d5,r_d6
         real*8 r_lon0,r_lat1,r_m,r_m0,r_mu,r_lat0
         real*8 r_et,r_e1,r_e12,r_e13,r_e14,r_r
@@ -2052,7 +2052,7 @@ c       DATA STATEMENTS:
         data a_griddes /'C','D','E','F','G','H','J',
      +       'K','L','M','N','P','Q','R','S','T','U',
      +       'V','W','X'/
-        data r_k0 /.9996d0/    !scale at center 
+        data r_k0 /.9996d0/    !scale at center
         data r_lat0 /0.d0/
         data r_fe,r_fn /500000.d0,0.d0,10000000.d0/
 
@@ -2069,39 +2069,39 @@ c       PROCESSING STEPS:
         if(i_type .eq. 2)then  !convert lat,lon to UTM
 
            if (i_zone .le. 0) i_zone = int(mod(r_lon+3.d0*pi,2.d0*pi)/(r_dtor*6.d0))
-     +          + 1             
+     +          + 1
 
            i_zone = max(min(i_zone,60),1)
            r_lon0 = -pi + 6.d0*r_dtor*(i_zone-1) + 3.d0*r_dtor
-           
+
            r_n = r_a/sqrt(1.d0 - r_e2*sin(r_lat)**2)
            r_t = tan(r_lat)**2
            r_t2 = r_t**2
            r_c = r_ep2*cos(r_lat)**2
            r_ba = (r_lon - r_lon0)*cos(r_lat)
            r_a2 = r_ba**2
-           r_a3 = r_ba*r_a2 
+           r_a3 = r_ba*r_a2
            r_a4 = r_ba*r_a3
            r_a5 = r_ba*r_a4
            r_a6 = r_ba*r_a5
-           r_m = r_a*((1.d0-r_e2/4 - 3.d0*r_e4/64.d0 - 
-     +      5.d0*r_e6/256.d0)*r_lat - (3.d0*r_e2/8.d0 + 
-     +          3.d0*r_e4/32.d0 + 
-     +      45.d0*r_e6/1024.d0)*sin(2.d0*r_lat) +  
-     +          (15.d0*r_e4/256.d0 + 
+           r_m = r_a*((1.d0-r_e2/4 - 3.d0*r_e4/64.d0 -
+     +      5.d0*r_e6/256.d0)*r_lat - (3.d0*r_e2/8.d0 +
+     +          3.d0*r_e4/32.d0 +
+     +      45.d0*r_e6/1024.d0)*sin(2.d0*r_lat) +
+     +          (15.d0*r_e4/256.d0 +
      +      45.d0*r_e6/1024.d0)*sin(4.d0*r_lat) -
      +          (35.d0*r_e6/3072.d0)*
      +      sin(6.d0*r_lat))
-           r_m0 = r_a*((1.d0-r_e2/4 - 3.d0*r_e4/64.d0 - 
-     +      5.d0*r_e6/256.d0)*r_lat0 - (3.d0*r_e2/8.d0 + 
-     +          3.d0*r_e4/32.d0 + 
-     +      45.d0*r_e6/1024.d0)*sin(2.d0*r_lat0) + 
-     +          (15.d0*r_e4/256.d0 + 
+           r_m0 = r_a*((1.d0-r_e2/4 - 3.d0*r_e4/64.d0 -
+     +      5.d0*r_e6/256.d0)*r_lat0 - (3.d0*r_e2/8.d0 +
+     +          3.d0*r_e4/32.d0 +
+     +      45.d0*r_e6/1024.d0)*sin(2.d0*r_lat0) +
+     +          (15.d0*r_e4/256.d0 +
      +      45.d0*r_e6/1024.d0)*sin(4.d0*r_lat0) -
      +          (35.d0*r_e6/3072.d0)*
      +      sin(6.d0*r_lat0))
-           
-           r_vec(2) = r_k0*r_n*(r_ba+(1.d0-r_t+r_c)*r_a3/6.d0 + 
+
+           r_vec(2) = r_k0*r_n*(r_ba+(1.d0-r_t+r_c)*r_a3/6.d0 +
      +       (5.d0-18.d0*r_t+r_t2+72.d0*r_c-58.d0*r_ep2)*r_a5/120.d0)
            r_vec(2) = r_vec(2) + r_fe
 
@@ -2122,8 +2122,8 @@ c       PROCESSING STEPS:
            i_gi = int((r_lat/r_dtor+80.d0)/8.d0) + 1
            i_gi = max(min(i_gi,20),1)
            a_grid = a_griddes(i_gi)
-           
-        elseif(i_type .eq. 1)then  !convert UTM to lat,lon 
+
+        elseif(i_type .eq. 1)then  !convert UTM to lat,lon
 
            r_v(1) = r_vec(1)
            r_v(2) = r_vec(2)
@@ -2132,7 +2132,7 @@ c       PROCESSING STEPS:
               r_v(1) = r_v(1) - r_fn(2)
            endif
            r_lon0 = -pi + 6.d0*r_dtor*(i_zone-1) + 3.d0*r_dtor
-           
+
            r_et = sqrt(1.d0-r_e2)
            r_e1 = (1.d0-r_et)/(1.d0+r_et)
            r_e12 = r_e1**2
@@ -2143,9 +2143,9 @@ c       PROCESSING STEPS:
      +          5.d0*r_e6/256.d0))
            r_lat1 = r_mu + (3.d0*r_e1/2.d0-27.d0*r_e13/32.d0)*
      +          sin(2.d0*r_mu)+
-     +          (21.d0*r_e12/16.d0-55.d0*r_e14/32.d0)*sin(4.d0*r_mu)+  
-     +          (51.d0*r_e13/96.d0)*sin(6.d0*r_mu) +  
-     +          (1097.d0*r_e14/512.d0)*sin(8.d0*r_mu) 
+     +          (21.d0*r_e12/16.d0-55.d0*r_e14/32.d0)*sin(4.d0*r_mu)+
+     +          (51.d0*r_e13/96.d0)*sin(6.d0*r_mu) +
+     +          (1097.d0*r_e14/512.d0)*sin(8.d0*r_mu)
 
            r_n = r_a/sqrt(1.d0 - r_e2*sin(r_lat1)**2)
            r_r = (r_a*(1.d0-r_e2))/sqrt(1.d0 - r_e2*sin(r_lat1)**2)**3
@@ -2159,21 +2159,21 @@ c       PROCESSING STEPS:
            r_d4 = r_d3*r_d
            r_d5 = r_d4*r_d
            r_d6 = r_d5*r_d
- 
+
            r_lat = r_lat1 - (r_n*tan(r_lat1)/r_r)*(r_d2/2.d0+
      +       (5.d0+3.d0*r_t+10.d0*r_c-4.d0*r_c2-9.d0*r_ep2)*
      +          r_d4/24.d0 +
      +       (61.d0+90*r_t+298.d0*r_c+45.d0*r_t2-252.d0*r_ep2-3.d0*
      +          r_c2)*
      +       (r_d6/720.d0))
-           r_lon = r_lon0 + (r_d - (1.d0+2.d0*r_t+r_c)*r_d3/6.d0 + 
+           r_lon = r_lon0 + (r_d - (1.d0+2.d0*r_t+r_c)*r_d3/6.d0 +
      +       (5.d0-2.d0*r_c+28.d0*r_t-3.d0*r_c2+8.d0*r_ep2+
      +          24.d0*r_t2)*
      +       (r_d5/120.d0))/cos(r_lat1)
 
         endif
-      
-        end  
+
+        end
 
         subroutine parse(a_string,i_vals,a_vals)
 
@@ -2206,7 +2206,7 @@ c       PROCESSING STEPS:
               i_cnt = i_cnt+1
               a_vals(i_vals)(i_cnt:i_cnt) = a_string(i:i)
              endif
-            else 
+            else
               i_on = 0
               i_cnt = 0
             endif
