@@ -200,7 +200,7 @@ int fileExists(const char *name);
    newExt)) would produce. */
 int extExists(const char *name,const char *newExt);
 /* Return number of bytes in the named file */
-int fileSize(const char *name);
+long long fileSize(const char *name);
 /* Return the number of regular files found in the given path */
 int numFiles(const char *path);
 /* Add a string to the end of the filename's basename.  For example, if

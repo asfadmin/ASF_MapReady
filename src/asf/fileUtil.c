@@ -35,52 +35,12 @@ int extExists(const char *name, const char *newExt)
   return exists;
 }
 
-int fileSize(const char *name)
+long long fileSize(const char *name)
 {
-  long file_size = -1;
-
-  char *path = get_dirname(name);
-  char *file = get_filename(name);
-
-  DIR *dir;
-  if (strlen(path)>0)
-      dir = opendir(path);
-  else
-      dir = opendir(".");
-
-  struct dirent *dp;
-  while ((dp = readdir(dir)) != NULL) {
-    struct stat statbuf;
-    if (strcmp(dp->d_name, file) == 0) {
-      // attempt to get file's size from stat()
-      if (stat(dp->d_name, &statbuf) == -1) {
-        // on some systems, we seem to be able to read the file, but
-        // not use "stat()" on it... so we have this emergency backup method
-        static const int size = 131072; // 128k buffer
-        char buf[size];
-        FILE *fp = fopen(name,"rb");
-        if (fp) {
-          unsigned int amount;
-          do {
-            amount = fread(buf,1,size,fp);
-            file_size += amount;
-          } while (amount == size);
-          fclose(fp);
-        }
-      }
-      else {
-        // stat was sucessful -- this is the normal case
-        file_size = (long)statbuf.st_size;
-      }
-      break;
-    }
-  }
-
-  closedir(dir);
-
-  FREE(path);
-  FREE(file);
-
+  FILE *fp = FOPEN(name,"rb");
+  FSEEK64(fp,0,SEEK_END);
+  long long file_size = FTELL64(fp);
+  fclose(fp);
   return file_size;
 }
 
