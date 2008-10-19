@@ -84,7 +84,7 @@ void import_gridfloat(char *inBaseName, char *outBaseName);
 void import_airsar(const char *inFileName, radiometry_t radiometry,
 		   int db_flag, const char *outBaseName);
 meta_parameters *import_airsar_meta(const char *dataName,
-				    const char *inBaseName);
+				    const char *inBaseName, int force);
 
 void import_gamma_isp(const char *inDataName, const char *inMetaName,
               const char *data_type, const char *image_data_type,

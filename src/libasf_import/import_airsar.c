@@ -412,15 +412,18 @@ static airsar_general *read_airsar_general(const char *inBaseName)
 }
 
 meta_parameters *import_airsar_meta(const char *dataName,
-				    const char *inBaseName)
+				    const char *inBaseName, int force)
 {
-  airsar_general *general = read_airsar_general(inBaseName);
+  airsar_general *general = NULL;
   airsar_header *header = read_airsar_header(dataName);
   airsar_param_header *params = read_airsar_params(dataName);
   airsar_dem_header *dem = NULL;
   airsar_cal_header *cal = NULL;
 
-  if (general->c_cross_data || general->l_cross_data) {
+  if (!force)
+    general = read_airsar_general(inBaseName);
+
+  if (!force && (general->c_cross_data || general->l_cross_data)) {
     // Figure out the whether we have a DEM header
     char *demFile;
     demFile = (char *) MALLOC(sizeof(char)*1024);
@@ -450,6 +453,8 @@ meta_parameters *import_airsar_meta(const char *dataName,
     
     dem = read_airsar_dem(demFile);
   }
+  if (!dem && header->dem_header_offset > 0)
+    dem = read_airsar_dem(dataName);
   if (header->calibration_header_offset > 0)
     cal = read_airsar_cal(dataName);
 
@@ -488,10 +493,10 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     asfPrintStatus("   Ingesting DEM ...\n");
     sprintf(outFile, "%s_%c_dem.img", outBaseName, band);
     header = read_airsar_header(inFile);
-    metaIn = import_airsar_meta(inFile, inBaseName);
+    metaIn = import_airsar_meta(inFile, inBaseName, FALSE);
     line_offset = header->first_data_offset/metaIn->general->sample_count/2;
     metaIn->general->line_count += line_offset;
-    metaOut = import_airsar_meta(inFile, inBaseName);
+    metaOut = import_airsar_meta(inFile, inBaseName, FALSE);
     metaIn->general->data_type = INTEGER16;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
@@ -607,7 +612,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     return FALSE;
   }
   else {
-    meta_parameters *meta = import_airsar_meta(inFile, inBaseName);
+    meta_parameters *meta = import_airsar_meta(inFile, inBaseName, FALSE);
     meta->general->data_type = REAL32;
     meta->general->image_data_type = POLARIMETRIC_IMAGE;
     meta->general->band_count = 9;
@@ -628,13 +633,15 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     scale = 1.0;
     airsar_header *header = read_airsar_header(inFile);
     long offset = header->first_data_offset;
+    printf("offset: %d\n", offset);
     sprintf(outFile, "%s_%c.img", outBaseName, band);
     fpIn = FOPEN(inFile, "rb");
     fpOut = FOPEN(outFile, "wb");
     //printf("offset=%ld %d\n",offset,SEEK_SET);
-    FSEEK(fpIn, offset, 1);
+    FSEEK(fpIn, offset, SEEK_SET);
     for (ii=0; ii<meta->general->line_count; ii++) {
       for (kk=0; kk<meta->general->sample_count; kk++) {
+	FREAD(byteBuf, sizeof(char), 10, fpIn);
 	total_power =
 	  scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
 	ysca = 2.0 * sqrt(total_power);

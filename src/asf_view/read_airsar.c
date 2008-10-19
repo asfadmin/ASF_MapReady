@@ -435,7 +435,8 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
 
     char *airsar_basename = get_airsar_basename(meta_name);
 
-    meta_parameters *meta = import_airsar_meta(data_name, airsar_basename);
+    meta_parameters *meta = 
+      import_airsar_meta(data_name, airsar_basename, FALSE);
     if (!meta)
       return NULL;
     info->header = NULL;

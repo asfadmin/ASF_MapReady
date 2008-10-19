@@ -18,9 +18,10 @@ meta_parameters* airsar2meta(airsar_general *general,
   sprintf(meta->general->basename, "%s", params->site_name);
   sprintf(meta->general->sensor, "AIRSAR");
   strcpy(meta->general->sensor_name, "SAR");
-  chomp(general->mode);
-  strcpy(meta->general->mode, general->mode);
-  // no sensor mode
+  if (general) {
+    chomp(general->mode);
+    strcpy(meta->general->mode, general->mode);
+  }
   if (strlen(header->processor)>0) {
     strcpy(meta->general->processor, "airsar ");
     strcat(meta->general->processor, header->processor);
@@ -85,14 +86,16 @@ meta_parameters* airsar2meta(airsar_general *general,
     meta->airsar->lat_peg_point = dem->lat_peg_point;
     meta->airsar->lon_peg_point = dem->lon_peg_point;
     meta->airsar->head_peg_point = dem->head_peg_point;
-  }
+    meta->airsar->along_track_offset = dem->along_track_offset;
+    meta->airsar->cross_track_offset = dem->cross_track_offset;
+}
   else {
     meta->airsar->lat_peg_point = params->lat_peg_point;
     meta->airsar->lon_peg_point = params->lon_peg_point;
     meta->airsar->head_peg_point = params->head_peg_point;
+    meta->airsar->along_track_offset = params->along_track_offset;
+    meta->airsar->cross_track_offset = params->cross_track_offset;
   }
-  meta->airsar->along_track_offset = params->along_track_offset;
-  meta->airsar->cross_track_offset = params->cross_track_offset;
   // The DEM header of Rick's prime test data did not have a valid peg point.
   // Without that the other numbers (along-track and cross-track offsets
   // as well as corner coordinates) don't make sense.
@@ -106,14 +109,26 @@ meta_parameters* airsar2meta(airsar_general *general,
 
   // Location block
   meta->location = meta_location_init();
-  meta->location->lat_start_near_range = general->corner1_lat;
-  meta->location->lon_start_near_range = general->corner1_lon;
-  meta->location->lat_start_far_range = general->corner2_lat;
-  meta->location->lon_start_far_range = general->corner2_lon;
-  meta->location->lat_end_near_range = general->corner4_lat;
-  meta->location->lon_end_near_range = general->corner4_lon;
-  meta->location->lat_end_far_range = general->corner3_lat;
-  meta->location->lon_end_far_range = general->corner3_lon;
-
+  if (dem) {
+    meta->location->lat_start_near_range = dem->corner1_lat;
+    meta->location->lon_start_near_range = dem->corner1_lon;
+    meta->location->lat_start_far_range = dem->corner2_lat;
+    meta->location->lon_start_far_range = dem->corner2_lon;
+    meta->location->lat_end_near_range = dem->corner4_lat;
+    meta->location->lon_end_near_range = dem->corner4_lon;
+    meta->location->lat_end_far_range = dem->corner3_lat;
+    meta->location->lon_end_far_range = dem->corner3_lon;
+  }
+  else if (general) {
+    meta->location->lat_start_near_range = general->corner1_lat;
+    meta->location->lon_start_near_range = general->corner1_lon;
+    meta->location->lat_start_far_range = general->corner2_lat;
+    meta->location->lon_start_far_range = general->corner2_lon;
+    meta->location->lat_end_near_range = general->corner4_lat;
+    meta->location->lon_end_near_range = general->corner4_lon;
+    meta->location->lat_end_far_range = general->corner3_lat;
+    meta->location->lon_end_far_range = general->corner3_lon;
+  }
+    
   return meta;
 }

@@ -316,7 +316,7 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
     *p = '\0';
 
     meta_parameters *meta = 
-      import_airsar_meta(input_data, airsar_basename);
+      import_airsar_meta(input_data, airsar_basename, FALSE);
     if (!meta)
       return NULL;
     meta->general->data_type = INTEGER16;
