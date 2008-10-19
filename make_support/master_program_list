@@ -89,7 +89,7 @@ PROGRAMS
 @src/
 	accum_offset { }
 	addapole { }
-	airsarin { }
+#	airsarin { }
 #	ait { }
 	ardop { BINS calc_deltas spectra }
 	asf_check_geolocation { }
@@ -261,6 +261,8 @@ CATEGORIES
 		sr2gr
 		mapready_manual.pdf
 		mapready-version_history.txt
+		asf_gamma_import
+		asf_airsar_import
 	}
 
 # SAR Training Processor
