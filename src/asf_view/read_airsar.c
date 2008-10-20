@@ -339,7 +339,7 @@ int read_airsar_client(int row_start, int n_rows_to_get,
       assert(data_type == GREYSCALE_FLOAT);
       int ns = meta->general->sample_count;
       long line_offset = info->header->first_data_offset / ns;
-      if (info->airsar_data_type = AIRSAR_AMPLITUDE)
+      if (info->airsar_data_type == AIRSAR_AMPLITUDE)
 	line_offset /= 2;
       meta->general->line_count += line_offset;
       get_float_lines(info->fp, meta, row_start+line_offset, n_rows_to_get, dest);
