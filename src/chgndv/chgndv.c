@@ -17,7 +17,7 @@
 #define ASF_USAGE_STRING \
  "Usage:\n"\
  "    "ASF_NAME_STRING" [-log <file>] [-quiet] [-license] [-version] [-help]\n"\
- "           <infile> <outfile> <oldval> <newval>\n"
+ "           <infile> <outfile> <oldval>[+|-] <newval>\n"
 
 #define ASF_HELP_STRING \
  "\n"\
@@ -29,13 +29,17 @@
  "   (the requested new 'no data value').\n"\
  "\n"\
  "Arguments:\n"\
- "   <infile>     Name of the  file to be read. Please use the full file\n"\
- "                name and not just the base name. (e.g. infile.img)\n"\
- "   <outfile>    File created with the new 'no data value' in place.\n"\
- "                Please use the full file name and not just the base name.\n"\
- "                (e.g. outfile.img)\n"\
- "   <oldval>     The 'no data value' for the input file.\n"\
- "   <newval>     The 'no data value' to be in the output file.\n"\
+ "   <infile>        Name of the  file to be read. Please use the full file\n"\
+ "                   name and not just the base name. (e.g. infile.img)\n"\
+ "   <outfile>       File created with the new 'no data value' in place.\n"\
+ "                   Please use the full file name and not just the base\n"\
+ "                   name. (e.g. outfile.img)\n"\
+ "   <oldval>[+|-]   The 'no data value' for the input file. If it is\n"\
+ "                   followed by a '+', then that value and anything\n"\
+ "                   greater will be interpreted as a no data value.\n"\
+ "                   If there is a '-' following the value, then anything\n"\
+ "                   less than or equal will be counted as a no data value.\n"\
+ "   <newval>        The 'no data value' to be in the output file.\n"\
  "\n"\
  "Options:\n"\
  "   -log <logFile>\n"\
@@ -54,17 +58,6 @@
  "\n"
 
 
-// Expected number of bytes for data types
-#define SHORT_INT_SIZE	2
-#define INT_SIZE	4
-#define LL_INT_SIZE	8
-#define FLOAT_SIZE	4
-#define DOUBLE_SIZE	8
-#define MEGABYTE	1048576
-
-// True if difference is less than a really small fraction
-#define FLOAT_COMPARE(x,y) (fabs(x-y)<0.000001)
-
 // Functions to inform the user about the program
 void usage(void)
 {
@@ -81,6 +74,32 @@ void help(void)
 }
 
 
+typedef enum {
+	LESS_THAN_OR_EQUAL    = -1,
+	EQUAL                 =  0,
+	GREATER_THAN_OR_EQUAL =  1
+} compare_t;
+
+int ndv_compare(float ndv, float pixel, compare_t comp)
+{
+	switch (comp) {
+		case LESS_THAN_OR_EQUAL:
+			return pixel <= ndv;
+		case EQUAL:
+			return (fabs(ndv-pixel)) < 0.0001;
+		case GREATER_THAN_OR_EQUAL:
+			return pixel >= ndv;
+		default:
+			asfPrintError("%s: Invalid comparison.\n",__func__);
+	}
+}
+
+// True if difference is less than a really small fraction
+#define FLOATS_EQUAL(x,y) (fabs((x)-(y))<0.0001)
+
+
+
+
 // The program itself!
 int main (int argc, char **argv)
 {
@@ -94,6 +113,8 @@ int main (int argc, char **argv)
 	float		*out_buf	= NULL;
 	float		newval, oldval;
 	int		ii, jj;
+	int		itmp;
+	compare_t	comp;
 
 	// Search the command line for help & report if requested
 	if (extract_flag_options(&argc, &argv, "-h", "-help", "--help", NULL)) {
@@ -114,6 +135,19 @@ int main (int argc, char **argv)
 	strcpy(in_fname,argv[1]);
 	out_fname = (char*)CALLOC(strlen(argv[2])+2,sizeof(char));
 	strcpy(out_fname,argv[2]);
+	itmp = strlen(argv[3]) - 1;
+	switch (argv[3][itmp]) {
+		case '-':
+			comp = LESS_THAN_OR_EQUAL;
+			argv[3][itmp] = '\0';
+			break;
+		case '+':
+			comp = GREATER_THAN_OR_EQUAL;
+			argv[3][itmp] = '\0';
+			break;
+		default:
+			comp = EQUAL;
+	}
 	oldval = atof(argv[3]);
 	newval = atof(argv[4]);
 
@@ -124,27 +158,28 @@ int main (int argc, char **argv)
 	// get some info about the file
 	in_meta = meta_read(in_fname);
 	out_meta = meta_read(in_fname);
+	out_meta->general->no_data = newval;
 	
 	// Allocate the buffers
 	in_buf = (float*)CALLOC(in_meta->general->sample_count,sizeof(float));
 	out_buf = (float*)CALLOC(out_meta->general->sample_count,sizeof(float));
 
 	// do the work
+	asfLineMeter(0,in_meta->general->line_count);
 	for (ii=0; ii<in_meta->general->line_count; ++ii) {
 		get_float_line(in_fp, in_meta, ii, in_buf);
 		for (jj=0; jj<in_meta->general->sample_count; ++jj) {
-			if (FLOAT_COMPARE(oldval, in_buf[jj])) {
-				out_buf[jj] = newval;
+			if (ndv_compare(oldval,in_buf[jj], comp)) {
+				out_buf[jj] = out_meta->general->no_data;
 			} else {
 				out_buf[jj] = in_buf[jj];
 			}
 		}
+		out_meta->general->line_count = ii + 1;
 		put_float_line(out_fp, out_meta, ii, out_buf);
+		meta_write(out_meta, out_fname);
+		asfLineMeter(ii,in_meta->general->line_count);
 	}
-	
-	// write metadata for output file
-	out_meta->general->no_data = newval;
-	meta_write(out_meta, out_fname);
 
 	// cleanup and exit
 	FREE(in_fname);
