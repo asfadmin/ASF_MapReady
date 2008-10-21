@@ -302,10 +302,7 @@ CachedImage * cached_image_new_from_file(
 float cached_image_get_pixel (CachedImage *self, int line, int samp)
 {
     if (self->data_type == GREYSCALE_FLOAT) {
-        float val = *((float*)get_pixel(self, line, samp));
-        if (!(val!=self->meta->general->no_data)) // guarding against NaN
-            val=0;
-        return val;
+        return *((float*)get_pixel(self, line, samp));
     }
     else if (self->data_type == GREYSCALE_BYTE) {
         return (float) *(get_pixel(self, line, samp));
