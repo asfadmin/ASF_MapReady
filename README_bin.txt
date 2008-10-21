@@ -1,4 +1,4 @@
-ASF Software Read Me file for binary installations.
+ASF Software Read Me file for (Linux/Unix) binary installations.
 
 ####################################################################
 INTRODUCTION:
@@ -19,7 +19,17 @@ present):
 asf_tools+----LICENSE.txt      Description of the license that goes with the
          |                     software.
          |
-         +----README_bin.txt   This file.
+         +----README_bin.txt   How to install the binary executables and
+         |                     quick-start on documentation (if you downloaded
+         |                     executables for your platform)
+         |
+         |
+         +----README_rpm.txt   How to validate and install the rpm (if you
+         |                     downloaded it)
+         |
+         |
+         +----README_src.txt   How to build and install the software (if you
+         |                     downloaded source code)
          |
          |
          +----bin              This directory contains the executables.
@@ -52,6 +62,9 @@ file:
 For csh, tcsh, or the like, add this line to you ~/.cshrc file:
      setenv PATH /user1/yourName/asf_tools/bin:$PATH
 
+Once you have added the PATH information to a start up file as described,
+exit the shell and log back in (or open a new terminal window, etc)
+
 
 ##############################################################################
 DOCUMENTATION:
@@ -75,6 +88,9 @@ sh/ksh/bash-- add these lines to your ~/.profile or ~/.bashrc file
 (sh/tcsh-- add this line to your ~/.cshrc file
         setenv MANPATH /user1/yourName/asf_tools/man:$MANPATH
 
+As above (in INSTALLATION), you will need to restart your environment by
+logging out/in or closing the terminal window and opening a new one etc.
+
 If the above worked, you should be able to type:
         man <tool_name>
 and get a few pages of information about each tool you've downloaded.
@@ -83,5 +99,13 @@ and get a few pages of information about each tool you've downloaded.
 ##############################################################################
 OTHER HELP:
 
-Our web page at http://www.asf.alaska.edu has all the ASF software we offer, 
+1. Our web page at http://www.asf.alaska.edu has all the ASF software we offer, 
 tutorials, further contacts, and more.
+
+2. In the <your_directory>/asf_tools/doc directory, you will find manuals for
+the tools that you have installed, i.e. Convert2Vector, MapReady, the SAR
+Training Processor, etcetera.  In addition, depending on which software package
+you downloaded, you will also find help documents describing how to create
+a (water) mask with ArcGIS tools and a how-to on using digital elevation maps
+(DEMs) for terrain correction (removal of SAR geometry effects).
+
