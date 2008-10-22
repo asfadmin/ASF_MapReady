@@ -3,8 +3,7 @@
 #include "airsar.h"
 #include "asf_nan.h"
 
-meta_parameters* airsar2meta(airsar_general *general,
-			     airsar_header *header,
+meta_parameters* airsar2meta(airsar_header *header,
 			     airsar_param_header *params,
 			     airsar_dem_header *dem)
 {
@@ -18,12 +17,8 @@ meta_parameters* airsar2meta(airsar_general *general,
   sprintf(meta->general->basename, "%s", params->site_name);
   sprintf(meta->general->sensor, "AIRSAR");
   strcpy(meta->general->sensor_name, "SAR");
-  if (general) {
-    chomp(general->mode);
-    strcpy(meta->general->mode, general->mode);
-  }
   if (strlen(header->processor)>0) {
-    strcpy(meta->general->processor, "airsar ");
+    strcpy(meta->general->processor, "JPL version ");
     strcat(meta->general->processor, header->processor);
   } else {
     strcpy(meta->general->processor, MAGIC_UNSET_STRING);
@@ -52,6 +47,14 @@ meta_parameters* airsar2meta(airsar_general *general,
 
   // SAR block
   meta->sar = meta_sar_init();
+  // The CCT type 'CM' stands for 'Compressed Stokes Matrix' which implies
+  // that you have fully polarimetric data
+  if (strncmp_case(params->cct_type, "CM", 2) == 0) {
+    meta->general->image_data_type = POLARIMETRIC_IMAGE;
+    meta->general->radiometry = r_SIGMA;
+    strcpy(meta->sar->polarization, "QUAD-POL");
+    meta->general->band_count = 8;
+  }
   if (strncmp_case(header->range_projection, "GROUND", 6) == 0)
     meta->sar->image_type = 'G';
   // no information on look direction
@@ -80,7 +83,7 @@ meta_parameters* airsar2meta(airsar_general *general,
   
   // AirSAR block
   meta->airsar = meta_airsar_init();
-  meta->airsar->scale_factor = params->scale_factor;
+  meta->airsar->scale_factor = 1.0; // Bruce Chapman said so.
   meta->airsar->gps_altitude = params->gps_altitude;
   if (dem) {
     meta->airsar->lat_peg_point = dem->lat_peg_point;
@@ -88,7 +91,7 @@ meta_parameters* airsar2meta(airsar_general *general,
     meta->airsar->head_peg_point = dem->head_peg_point;
     meta->airsar->along_track_offset = dem->along_track_offset;
     meta->airsar->cross_track_offset = dem->cross_track_offset;
-}
+  }
   else {
     meta->airsar->lat_peg_point = params->lat_peg_point;
     meta->airsar->lon_peg_point = params->lon_peg_point;
@@ -118,16 +121,6 @@ meta_parameters* airsar2meta(airsar_general *general,
     meta->location->lon_end_near_range = dem->corner4_lon;
     meta->location->lat_end_far_range = dem->corner3_lat;
     meta->location->lon_end_far_range = dem->corner3_lon;
-  }
-  else if (general) {
-    meta->location->lat_start_near_range = general->corner1_lat;
-    meta->location->lon_start_near_range = general->corner1_lon;
-    meta->location->lat_start_far_range = general->corner2_lat;
-    meta->location->lon_start_far_range = general->corner2_lon;
-    meta->location->lat_end_near_range = general->corner4_lat;
-    meta->location->lon_end_near_range = general->corner4_lon;
-    meta->location->lat_end_far_range = general->corner3_lat;
-    meta->location->lon_end_far_range = general->corner3_lon;
   }
     
   return meta;

@@ -48,6 +48,7 @@ typedef struct {
 
 // Specific AirSAR parameter header structure
 typedef struct {
+  double version;                 // Processor version
   int record_length;              // Record length in bytes
   int number_records;             // Number of header records
   int sample_count;               // Number of samples per record
@@ -93,6 +94,10 @@ typedef struct {
   double center_lat;              // Latitude of image [degrees]
   double center_lon;              // Longitude of image [degrees]
   double scale_factor;            // General scale factor
+  double cal_factor_hh;           // Calibration factor HH applied [dB]
+  double cal_factor_hv;           // Calibration factor HV applied [dB]
+  double cal_factor_vh;           // Calibration factor VH applied [dB]
+  double cal_factor_vv;           // Calibration factor VV applied [dB]
   double gps_altitude;            // GPS altitude [m]
   double lat_peg_point;           // Latitude of peg point [degrees]
   double lon_peg_point;           // Longitude of peg point [degrees]
@@ -139,8 +144,7 @@ typedef struct {
 } airsar_dem_header;
 
 // Function prototypes
-meta_parameters* airsar2meta(airsar_general *general,
-			     airsar_header *header,
+meta_parameters* airsar2meta(airsar_header *header,
 			     airsar_param_header *params,
 			     airsar_dem_header *dem);
 airsar_header *read_airsar_header(const char *dataFile);
