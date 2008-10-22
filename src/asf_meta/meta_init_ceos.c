@@ -3025,6 +3025,8 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     }
   }
   else {
+    // else not a SAR image...
+
     // Determine satellite
     satStr = ceos->shr.mission_id;
     if (0==strncmp(satStr,"A",1))
@@ -3724,4 +3726,71 @@ void get_attitude_data(struct att_data_rec *att, double *yaw, double *pitch,
   *yaw = att->data[0].yaw;
   *pitch = att->data[0].pitch;
   *roll = att->data[0].roll;
+}
+
+int get_satellite_sensor (const char *fName, ceos_satellite_t *satellite,
+                           ceos_sensor_t *sensor, report_level_t level)
+{
+    int sar_image;
+    char *satStr, *sensorStr;
+    ceos_description *ceos = (ceos_description *)CALLOC(1, sizeof(ceos_description));
+
+    // Get dataset summary record for SAR image. Otherwise try scene header record.
+    *satellite = unknownSatellite;
+    *sensor = unknownSensor;
+    sar_image = get_dssr(fName, &ceos->dssr);
+    if (sar_image == -1) {
+        get_shr(fName,&ceos->shr);
+    }
+    if (sar_image == 1) {
+        // Determine the satellite
+        satStr=ceos->dssr.mission_id;
+
+        if      (0==strncmp(satStr,"E",1)) *satellite = ERS;
+        else if (0==strncmp(satStr,"J",1)) *satellite = JERS;
+        else if (0==strncmp(satStr,"R",1)) *satellite = RSAT;
+        else if (0==strncmp(satStr,"A",1)) *satellite = ALOS;
+        else if (0==strncmp(satStr,"S",1)) *satellite = SIR_C;
+        else                               *satellite = unknownSatellite;
+        if (*satellite == unknownSatellite) {
+            asfReport(level,"get_satellite_sensor(): Unknown satellite type found '%s'!\n",
+                      satStr);
+        }
+
+        // Determine the sensor
+        if (*satellite == ALOS) {
+            *sensor = PALSAR;
+        }
+        else {
+            *sensor = SAR;
+        }
+    }
+    else {
+        // Determine satellite
+        satStr = ceos->shr.mission_id;
+        if (0==strncmp(satStr,"A",1)) {
+            *satellite = ALOS;
+
+            // Determine the sensor
+            sensorStr = ceos->shr.sensor_id;
+            if      (0==strncmp(sensorStr,"AVNIR",5)) *sensor = AVNIR;
+            else if (0==strncmp(sensorStr,"PRISM",5)) *sensor = PRISM;
+            else                                      *sensor = unknownSensor;
+            if (*sensor == unknownSensor) {
+                asfReport(level, "get_satellite_sensor(): "
+                        "Unknown sensor type found '%s'!\n", sensorStr);
+            }
+        }
+        else {
+            *satellite = unknownSatellite;
+            *sensor = unknownSensor;
+            asfReport(level, "get_satellite_sensor(): "
+                      "Unknown satellite type found '%s'!\n", satStr);
+            asfReport(level, "get_satellite_sensor(): "
+                      "Cannot determine sensor type!\n");
+        }
+    }
+    FREE(ceos);
+
+    return sar_image == 1 ? 1 : 0;
 }

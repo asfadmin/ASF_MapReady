@@ -19,6 +19,15 @@ typedef enum {
     PRISM
 } ceos_sensor_t;
 
+typedef enum {
+    unknownSatellite,
+    ERS,
+    JERS,
+    RSAT,
+    ALOS,
+    SIR_C
+} ceos_satellite_t;
+
 /* Useful stuff for meta initialization from CEOS metadata */
 typedef struct {
   struct dataset_sum_rec dssr;
@@ -39,14 +48,7 @@ typedef struct {
     WESTFREUGH,
     DERA
   } facility;
-  enum {
-    unknownSatellite,
-    ERS,
-    JERS,
-    RSAT,
-    ALOS,
-    SIR_C
-  } satellite;
+  ceos_satellite_t satellite;
   ceos_sensor_t sensor;
   double version;/*Processor version number, or zero.*/
   enum {

@@ -159,26 +159,28 @@ char *get_record_as_string(char *fileName, int reqrec)
      strcpy(facility, MAGIC_UNSET_STRING);
   }
 
-  // Set specific facility data record to retrieve  
+  // Set specific facility data record to retrieve
   if ( reqrec == 200 ) {
     if (0 == strncmp(facility, "ASF", 3))
       reqrec = 210;
-    if (0 == strncmp(facility, "ES", 2) || 
+    if (0 == strncmp(facility, "ES", 2) ||
 	0 == strncmp(facility, "CSTARS", 6) ||
 	0 == strncmp(facility, "D-PAF", 5) ||
 	0 == strncmp(facility, "I-PAF", 5) ||
-	0 == strncmp(facility, "Beijing", 7)) 
+	0 == strncmp(facility, "Beijing", 7))
       reqrec = 220; // ESA style
     if (0 == strncmp(facility, "EOC", 3))
       reqrec = 230; // JAXA style
   }
   // Make sure the map projection record for ALOS is found, regardless of
   // which switch is called
-  ceos_description *ceos = get_ceos_description(fileName, REPORT_LEVEL_NONE);
-  if ((ceos->sensor == AVNIR || ceos->sensor == PRISM) && reqrec == 20)
+  ceos_satellite_t ceos_satellite;
+  ceos_sensor_t ceos_sensor;
+  get_satellite_sensor (fileName, &ceos_satellite, &ceos_sensor, REPORT_LEVEL_NONE);
+  if ((ceos_sensor == AVNIR || ceos_sensor == PRISM) && reqrec == 20)
     reqrec = 44;
 
-  switch (reqrec) 
+  switch (reqrec)
     {
     case (10):
       strcpy(rectype_str, "Data set summary");
@@ -198,20 +200,20 @@ char *get_record_as_string(char *fileName, int reqrec)
       }
       FREE(shr);
       break;
-    case (20):	
+    case (20):
       strcpy(rectype_str, "Map projection data");
       mpdrec = (struct VMPDREC *) MALLOC(sizeof(struct VMPDREC));
       if (leaderNameExists) {
-	if (get_mpdr(metaName[0],mpdrec) >= 0 ) 
-	  ret = sprn_mpdr(mpdrec); 
+	if (get_mpdr(metaName[0],mpdrec) >= 0 )
+	  ret = sprn_mpdr(mpdrec);
 	else if (trailer) {
-	  if (get_mpdr(metaName[1],mpdrec) >= 0 ) 
+	  if (get_mpdr(metaName[1],mpdrec) >= 0 )
 	    ret = sprn_mpdr(mpdrec);
 	}
       }
       FREE(mpdrec);
       break;
-    case (30):	
+    case (30):
       strcpy(rectype_str, "Platform position data");
       ppdr = (struct pos_data_rec *) MALLOC(sizeof(struct pos_data_rec));
       if (leaderNameExists) {
@@ -224,7 +226,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       }
       FREE(ppdr);
       break;
-    case (40):	
+    case (40):
       strcpy(rectype_str, "Attitude data");
       atdr = (struct att_data_rec *) MALLOC(sizeof(struct att_data_rec));
       if (leaderNameExists) {
@@ -264,7 +266,7 @@ char *get_record_as_string(char *fileName, int reqrec)
                 }
             }
             FREE(ardr);
-        } 
+        }
 	else if (strncmp(facility, "CDPF", 4) == 0 ||
 		 strncmp(facility, "RSI", 3) == 0 ||
 		 strncmp(facility, "CSTARS", 6) == 0) {
@@ -278,7 +280,7 @@ char *get_record_as_string(char *fileName, int reqrec)
 		ret = sprn_rsi_raddr(rsi_raddr);
 	    }
 	  }
-	  FREE(rsi_raddr);  
+	  FREE(rsi_raddr);
 	}
 	else {
             strcpy(rectype_str, "Radiometric data");
@@ -296,7 +298,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     case (51):
       strcpy(rectype_str, "Radiometric compensation data");
-      rcdr = (struct radio_comp_data_rec *) 
+      rcdr = (struct radio_comp_data_rec *)
 	MALLOC(sizeof(struct radio_comp_data_rec));
       if (leaderNameExists) {
 	if (get_rcdr(metaName[0],rcdr) >= 0)
@@ -308,53 +310,53 @@ char *get_record_as_string(char *fileName, int reqrec)
       }
       FREE(rcdr);
       break;
-    case (60):	
+    case (60):
       strcpy(rectype_str, "Data quality summary");
       dqsr = (struct qual_sum_rec *) MALLOC(sizeof(struct qual_sum_rec));
       if (leaderNameExists) {
-	if (get_dqsr(metaName[0],dqsr) >= 0) 
+	if (get_dqsr(metaName[0],dqsr) >= 0)
 	  ret = sprn_dqsr(dqsr,1);
 	else if (trailer) {
-	  if (get_dqsr(metaName[1],dqsr) >= 0) 
+	  if (get_dqsr(metaName[1],dqsr) >= 0)
 	    ret = sprn_dqsr(dqsr,1);
 	}
       }
       FREE(dqsr);
       break;
-    case (70):	
+    case (70):
       strcpy(rectype_str, "Processed data histograms");
       dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
       if (leaderNameExists) {
-	if (get_dhr(metaName[0],dhr) >= 0) 
+	if (get_dhr(metaName[0],dhr) >= 0)
 	  ret = sprn_dhr(dhr);
 	else if (trailer) {
-	  if (get_dhr(metaName[1],dhr) >= 0) 
+	  if (get_dhr(metaName[1],dhr) >= 0)
 	    ret = sprn_dhr(dhr);
 	}
       }
       FREE(dhr);
       break;
-    case (71): 
+    case (71):
       strcpy(rectype_str, "Signal data histograms");
       dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
       if (leaderNameExists) {
-	if (get_sdhr(metaName[0],dhr) >= 0) 
+	if (get_sdhr(metaName[0],dhr) >= 0)
 	  ret = sprn_dhr(dhr);
 	else if (trailer) {
-	  if (get_sdhr(metaName[1],dhr) >= 0) 
+	  if (get_sdhr(metaName[1],dhr) >= 0)
 	    ret = sprn_dhr(dhr);
 	}
       }
       FREE(dhr);
       break;
-    case (80):	
+    case (80):
       strcpy(rectype_str, "Range spectra");
       rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
       if (leaderNameExists) {
-	if (get_rsr(metaName[0],rsr) >= 0) 
+	if (get_rsr(metaName[0],rsr) >= 0)
 	  ret = sprn_rsr(rsr);
 	else if (trailer) {
-	  if (get_rsr(metaName[1],rsr) >= 0) 
+	  if (get_rsr(metaName[1],rsr) >= 0)
 	    ret = sprn_rsr(rsr);
 	}
       }
@@ -373,7 +375,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       }
       FREE(ppr);
       break;
-    case (192): 
+    case (192):
       strcpy(rectype_str, "Image file descriptor");
       vfdr = (struct IOF_VFDR *) MALLOC(sizeof(struct IOF_VFDR));
       if (dataNameExists) {
@@ -385,7 +387,7 @@ char *get_record_as_string(char *fileName, int reqrec)
     case (193):
       strcpy(rectype_str, "Trailer file descriptor");
       if (0 == strncmp(facility, "EOC", 3)) {
-	tfdr = (struct trl_file_des_rec *) 
+	tfdr = (struct trl_file_des_rec *)
 	  MALLOC(sizeof(struct trl_file_des_rec));
 	if (dataNameExists) {
 	  if (get_tfdr(baseName,tfdr) >= 0)
@@ -397,14 +399,14 @@ char *get_record_as_string(char *fileName, int reqrec)
     case (200):
       asfPrintWarning("Unrecogized facility data record...\n"
                       "Assuming ASF format.\n");
-    case (210): 
+    case (210):
       strcpy(rectype_str, "ASF facility related data");
       facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
       if (leaderNameExists) {
-	if (get_asf_facdr(metaName[0],facdr) >= 0) 
+	if (get_asf_facdr(metaName[0],facdr) >= 0)
 	  ret = sprn_facdr(facdr,1);
 	else if (trailer) {
-	  if (get_asf_facdr(metaName[1],facdr) >= 0) 
+	  if (get_asf_facdr(metaName[1],facdr) >= 0)
 	    ret = sprn_facdr(facdr,1);
 	}
       }
@@ -426,7 +428,7 @@ char *get_record_as_string(char *fileName, int reqrec)
     case (230):
       strcpy(rectype_str, "JAXA facility related data");
       jaxa_facdr = (struct JAXA_FACDR *) MALLOC(sizeof(struct JAXA_FACDR));
-      struct trl_file_des_rec *tfdr = 
+      struct trl_file_des_rec *tfdr =
 	(struct trl_file_des_rec *) MALLOC(sizeof(struct trl_file_des_rec));
       if (leaderNameExists) {
 	if (get_jaxa_facdr(metaName[0],jaxa_facdr) >= 0) {
@@ -442,25 +444,24 @@ char *get_record_as_string(char *fileName, int reqrec)
       }
       FREE(jaxa_facdr);
       break;
-    case (300): 
+    case (300):
       strcpy(rectype_str, "Leader file descriptor");
       fdr = (struct FDR *) MALLOC(sizeof(struct FDR));
       if (leaderNameExists) {
-	if (get_fdr(metaName[0],fdr) >= 0) 
+	if (get_fdr(metaName[0],fdr) >= 0)
 	  ret = sprn_fdr(fdr);
 	else if (trailer) {
-	  if (get_fdr(metaName[1],fdr) >= 0) 
+	  if (get_fdr(metaName[1],fdr) >= 0)
 	    ret = sprn_fdr(fdr);
 	}
       }
       FREE(fdr);
       break;
-    default:    
+    default:
       asfPrintStatus("Not a valid record type\n");
       break;
     }
   FREE(dssr);
-  FREE(ceos);
   free_ceos_names(dataNames, metaName);
   sprintf(ret_str,"%s record not found.\n\n", rectype_str);
   if (!ret)

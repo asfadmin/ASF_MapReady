@@ -771,6 +771,8 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level);
 void set_alos_look_count(meta_parameters *meta, const char *inMetaName);
 datum_type_t spheroid_datum (spheroid_type_t spheroid);
 spheroid_type_t axis_to_spheroid (double re_major, double re_minor);
+int get_satellite_sensor(const char *fName, ceos_satellite_t *satellite,
+                         ceos_sensor_t *sensor, report_level_t level);
 
 /***************************************************************************
   General conversion functions between projection coordinates and geographic
