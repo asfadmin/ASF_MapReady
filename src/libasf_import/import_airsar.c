@@ -31,6 +31,7 @@ airsar_header *read_airsar_header(const char *dataFile)
   airsar_header *header = NULL;
   FILE *fp;
   char buf[4400], *value;
+  double version;
 
   // Allocate memory and file handling
   value = (char *) MALLOC(sizeof(char)*25);
@@ -40,35 +41,41 @@ airsar_header *read_airsar_header(const char *dataFile)
     asfPrintError("Could not read general header\n");
   FCLOSE(fp);
 
-  // Read general header
-  header->record_length = atoi(get_airsar(buf, "RECORD LENGTH IN BYTES ="));
-  header->number_records = atoi(get_airsar(buf, "NUMBER OF HEADER RECORDS ="));
-  header->sample_count = 
-    atoi(get_airsar(buf, "NUMBER OF SAMPLES PER RECORD ="));
-  header->line_count = 
-    atoi(get_airsar(buf, "NUMBER OF LINES IN IMAGE ="));
-  sprintf(header->processor, "%s", 
-    trim_spaces(get_airsar(buf, "JPL AIRCRAFT SAR PROCESSOR VERSION =")));
-  value = trim_spaces(get_airsar(buf, "DATA TYPE ="));
-  if (strcmp(value, "INTEGER*2") == 0)
-    header->data_type = INTEGER16;
-  sprintf(header->range_projection, "%s",
-	  trim_spaces(get_airsar(buf, "RANGE PROJECTION =")));
-  header->x_pixel_size = 
-    atof(get_airsar(buf, "RANGE PIXEL SPACING (METERS) ="));
-  header->y_pixel_size = 
-    atof(get_airsar(buf, "AZIMUTH PIXEL SPACING (METERS) ="));
-  header->first_data_offset = 
-    atoi(get_airsar(buf, "BYTE OFFSET OF FIRST DATA RECORD ="));
-  if (header->first_data_offset == 0)
-    header->first_data_offset = header->record_length * header->number_records;
-  header->parameter_header_offset =
-    atoi(get_airsar(buf, "BYTE OFFSET OF PARAMETER HEADER ="));
-  header->calibration_header_offset =
-    atoi(get_airsar(buf, "BYTE OFFSET OF CALIBRATION HEADER ="));
-  header->dem_header_offset = 
-    atoi(get_airsar(buf, "BYTE OFFSET OF DEM HEADER ="));
+  // Check for the processor version
+  // We take this as an indicator that we actually deal with AirSAR data
+  version = atof(get_airsar(buf, "JPL AIRCRAFT SAR PROCESSOR VERSION"));
 
+  // Read general header
+  if (version > 0.0) {
+    header->record_length = atoi(get_airsar(buf, "RECORD LENGTH IN BYTES ="));
+    header->number_records = atoi(get_airsar(buf, "NUMBER OF HEADER RECORDS ="));
+    header->sample_count = 
+      atoi(get_airsar(buf, "NUMBER OF SAMPLES PER RECORD ="));
+    header->line_count = 
+      atoi(get_airsar(buf, "NUMBER OF LINES IN IMAGE ="));
+    sprintf(header->processor, "%s", 
+      trim_spaces(get_airsar(buf, "JPL AIRCRAFT SAR PROCESSOR VERSION")));
+    value = trim_spaces(get_airsar(buf, "DATA TYPE ="));
+    if (strcmp(value, "INTEGER*2") == 0)
+      header->data_type = INTEGER16;
+    sprintf(header->range_projection, "%s",
+	    trim_spaces(get_airsar(buf, "RANGE PROJECTION =")));
+    header->x_pixel_size = 
+      atof(get_airsar(buf, "RANGE PIXEL SPACING (METERS) ="));
+    header->y_pixel_size = 
+      atof(get_airsar(buf, "AZIMUTH PIXEL SPACING (METERS) ="));
+    header->first_data_offset = 
+      atoi(get_airsar(buf, "BYTE OFFSET OF FIRST DATA RECORD ="));
+    if (header->first_data_offset == 0)
+      header->first_data_offset = header->record_length*header->number_records;
+    header->parameter_header_offset =
+      atoi(get_airsar(buf, "BYTE OFFSET OF PARAMETER HEADER ="));
+    header->calibration_header_offset =
+      atoi(get_airsar(buf, "BYTE OFFSET OF CALIBRATION HEADER ="));
+    header->dem_header_offset = 
+      atoi(get_airsar(buf, "BYTE OFFSET OF DEM HEADER ="));
+  }
+  
   return header;
 }
 
@@ -166,6 +173,14 @@ airsar_param_header *read_airsar_params(const char *dataFile)
 		    "IMAGE CENTER LONGITUDE (DEGREES)"));
   params->scale_factor =
     atof(get_airsar(buf, "GENERAL SCALE FACTOR"));
+  params->cal_factor_hh =
+    atof(get_airsar(buf, "CALIBRATION FACTOR APPLIED, DB, HH"));
+  params->cal_factor_hv =
+    atof(get_airsar(buf, "CALIBRATION FACTOR APPLIED, DB, HV"));
+  params->cal_factor_vh =
+    atof(get_airsar(buf, "CALIBRATION FACTOR APPLIED, DB, VH"));
+  params->cal_factor_vv =
+    atof(get_airsar(buf, "CALIBRATION FACTOR APPLIED, DB, VV"));
   params->gps_altitude = 
     atof(get_airsar(buf, "GPS ALTITUDE, M"));
   params->lat_peg_point =
@@ -295,7 +310,8 @@ static airsar_general *read_airsar_general(const char *inBaseName)
   else {
     strcpy(metaFile, inBaseName);
     q = strstr(inBaseName, "_meta.airsar");
-    *q = '\0';
+    if (q)
+      *q = '\0';
   }
 
   FILE *fpIn = FOPEN(metaFile, "r");
@@ -458,7 +474,7 @@ meta_parameters *import_airsar_meta(const char *dataName,
   if (header->calibration_header_offset > 0)
     cal = read_airsar_cal(dataName);
 
-  meta_parameters *ret = airsar2meta(general, header, params, dem);
+  meta_parameters *ret = airsar2meta(header, params, dem);
 
   free(general);
   free(header);
@@ -633,7 +649,6 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     scale = 1.0;
     airsar_header *header = read_airsar_header(inFile);
     long offset = header->first_data_offset;
-    printf("offset: %ld\n", offset);
     sprintf(outFile, "%s_%c.img", outBaseName, band);
     fpIn = FOPEN(inFile, "rb");
     fpOut = FOPEN(outFile, "wb");
