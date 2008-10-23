@@ -20,11 +20,15 @@
 #include <sys/types.h> /* 'DIR' structure (for opendir) */
 #include <dirent.h>    /* for opendir itself            */
 
+#define UNIT_TESTS_MICRON 0.000000001
+#define FLOAT_COMPARE(a, b) (abs((a) - (b)) \
+			     < UNIT_TESTS_MICRON ? 1 : 0)
+
 meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
 {
   airsar_header *header;
   meta_parameters *meta = NULL;
-  char dataFile[1024], *q;
+  char dataFile[1024];
   int found_c_file = TRUE, found_l_file = TRUE, found_p_file = TRUE;
 
   printf("isAirSAR: %s\n", inFile);
@@ -593,6 +597,21 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     return STRDUP(geocoded);
 }
 
+static int check_peg_point(const char *inFile)
+{
+  meta_parameters *meta;
+
+  meta = meta_read(inFile);
+  if (FLOAT_COMPARE(meta->airsar->lat_peg_point, 0.0) &&
+      FLOAT_COMPARE(meta->airsar->lon_peg_point, 0.0) &&
+      FLOAT_COMPARE(meta->airsar->head_peg_point, 0.0))
+    asfPrintError("No valid peg point information available.\n"
+		  "Can't geocode this AirSAR data.\n");
+  meta_free(meta);
+
+  return TRUE;
+}
+
 static int geocode_airsar(convert_config *cfg, const char *projection_file,
                           int force_flag, resample_method_t resample_method,
                           double average_height, datum_type_t datum, double pixel_size,
@@ -605,12 +624,12 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         char *in_tmp = appendToBasename(inFile, "_c_dem.img");
         char *out_tmp = appendToBasename(outFile, "_c_dem");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding C-band DEM...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-          force_flag, resample_method, average_height, datum,
-          pixel_size, NULL, in_tmp, out_tmp, background_val),
+		   force_flag, resample_method, average_height, datum,
+		   pixel_size, NULL, in_tmp, out_tmp, background_val),
                "geocoding dem (asf_geocode)\n");
     }
         free(in_tmp); free(out_tmp);
@@ -618,12 +637,12 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         in_tmp = appendToBasename(inFile, "_c_coh.img");
         out_tmp = appendToBasename(outFile, "_c_coh");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding C-band coherence...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                  force_flag, resample_method, average_height, datum,
-                  pixel_size, NULL, in_tmp, out_tmp, background_val),
+                   force_flag, resample_method, average_height, datum,
+                   pixel_size, NULL, in_tmp, out_tmp, background_val),
                "geocoding coherence (asf_geocode)\n");
     }
     free(in_tmp); free(out_tmp);
@@ -631,12 +650,12 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         in_tmp = appendToBasename(inFile, "_c_vv.img");
         out_tmp = appendToBasename(outFile, "_c_vv");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding C-band data...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                  force_flag, resample_method, average_height, datum,
-                  pixel_size, NULL, in_tmp, out_tmp, background_val),
+		   force_flag, resample_method, average_height, datum,
+                   pixel_size, NULL, in_tmp, out_tmp, background_val),
                "geocoding C-band (asf_geocode)\n");
     }
     free(in_tmp); free(out_tmp);
@@ -651,12 +670,12 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         char *in_tmp = appendToBasename(inFile, "_l_dem.img");
         char *out_tmp = appendToBasename(outFile, "_l_dem");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding L-band DEM...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                  force_flag, resample_method, average_height, datum,
-                  pixel_size, NULL, in_tmp, out_tmp, background_val),
+                   force_flag, resample_method, average_height, datum,
+                   pixel_size, NULL, in_tmp, out_tmp, background_val),
                "geocoding dem (asf_geocode)\n");
     }
     free(in_tmp); free(out_tmp);
@@ -664,7 +683,7 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         in_tmp = appendToBasename(inFile, "_l_coh.img");
         out_tmp = appendToBasename(outFile, "_l_coh");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding L-band coherence...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
@@ -677,12 +696,12 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         in_tmp = appendToBasename(inFile, "_l_vv.img");
         out_tmp = appendToBasename(outFile, "_l_vv");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding L-band data...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                  force_flag, resample_method, average_height, datum,
-                  pixel_size, NULL, in_tmp, out_tmp, background_val),
+		   force_flag, resample_method, average_height, datum,
+                   pixel_size, NULL, in_tmp, out_tmp, background_val),
                "geocoding C-band (asf_geocode)\n");
     }
     free(in_tmp); free(out_tmp);
@@ -696,12 +715,12 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         char *in_tmp = appendToBasename(inFile, "_p.img");
         char *out_tmp = appendToBasename(outFile, "_p");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding Polarimetric P-band...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                  force_flag, resample_method, average_height, datum,
-                  pixel_size, NULL, in_tmp, out_tmp, background_val),
+		   force_flag, resample_method, average_height, datum,
+		   pixel_size, NULL, in_tmp, out_tmp, background_val),
                "geocoding P-band (asf_geocode)\n");
     }
     free(in_tmp); free(out_tmp);
@@ -715,12 +734,12 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         char *in_tmp = appendToBasename(inFile, "_l.img");
         char *out_tmp = appendToBasename(outFile, "_l");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding Polarimetric L-band...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                  force_flag, resample_method, average_height, datum,
-                  pixel_size, NULL, in_tmp, out_tmp, background_val),
+                   force_flag, resample_method, average_height, datum,
+                   pixel_size, NULL, in_tmp, out_tmp, background_val),
                "geocoding L-band (asf_geocode)\n");
     }
     free(in_tmp); free(out_tmp);
@@ -734,12 +753,12 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
         char *in_tmp = appendToBasename(inFile, "_c.img");
         char *out_tmp = appendToBasename(outFile, "_c");
 
-    if (fileExists(in_tmp)) {
+    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
       update_status("Geocoding Polarimetric C-band...");
       asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                  force_flag, resample_method, average_height, datum,
-                  pixel_size, NULL, in_tmp, out_tmp, background_val),
+                   force_flag, resample_method, average_height, datum,
+                   pixel_size, NULL, in_tmp, out_tmp, background_val),
                "geocoding C-band (asf_geocode)\n");
     }
     free(in_tmp); free(out_tmp);
