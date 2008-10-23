@@ -603,7 +603,7 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
 }
 
 int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
-		       char band)
+		       radiometry_t radiometry, char band)
 {
   FILE *fpIn, *fpOut;
   char *inFile, *outFile;
@@ -611,7 +611,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   char *byteBuf;
   float *power, *shh_amp, *shh_phase, *shv_amp, *shv_phase, *svh_amp;
   float *svh_phase, *svv_amp, *svv_phase;
-  float total_power, ysca, scale, x;
+  float total_power, ysca, amp, phase;
   complexFloat cpx;
 
   // Allocate memory
@@ -632,9 +632,19 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     meta->general->data_type = REAL32;
     meta->general->image_data_type = POLARIMETRIC_IMAGE;
     meta->general->band_count = 9;
-    sprintf(meta->general->bands,
-	    "POWER,SHH_AMP,SHH_PHASE,SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE,"
-	    "SVV_AMP,SVV_PHASE");
+    if (radiometry == r_AMP)
+      strcpy(meta->general->bands,
+	     "POWER,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"\
+	     "AMP_VV,PHASE_VV");
+    else if (radiometry == r_SIGMA)
+      strcpy(meta->general->bands,
+	     "POWER,SIGMA-AMP-HH,SIGMA-PHASE-HH,SIGMA-AMP-HV,SIGMA-PHASE-HV,"\
+	     "SIGMA-AMP-VH,SIGMA-PHASE-VH,SIGMA-AMP-VV,SIGMA-PHASE-VV");
+    else if (radiometry == r_SIGMA_DB)
+      strcpy(meta->general->bands,
+	     "POWER,SIGMA_DB-AMP-HH,SIGMA_DB-PHASE-HH,SIGMA_DB-AMP-HV,"\
+	     "SIGMA_DB-PHASE-HV,SIGMA_DB-AMP-VH,SIGMA_DB-PHASE-VH,"\
+	     "SIGMA_DB-AMP-VV,SIGMA_DB-PHASE-VV");
     power = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
     shh_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
     shh_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
@@ -645,38 +655,105 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     svv_amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
     svv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
     byteBuf = (char *) MALLOC(sizeof(char)*10);
-    scale = (float) meta->airsar->scale_factor;
-    scale = 1.0;
     airsar_header *header = read_airsar_header(inFile);
+    airsar_param_header *params = read_airsar_params(inFile);
     long offset = header->first_data_offset;
     sprintf(outFile, "%s_%c.img", outBaseName, band);
     fpIn = FOPEN(inFile, "rb");
     fpOut = FOPEN(outFile, "wb");
-    //printf("offset=%ld %d\n",offset,SEEK_SET);
     FSEEK(fpIn, offset, SEEK_SET);
     for (ii=0; ii<meta->general->line_count; ii++) {
       for (kk=0; kk<meta->general->sample_count; kk++) {
 	FREAD(byteBuf, sizeof(char), 10, fpIn);
+	// Scale is always 1.0 according to Bruce Chapman
 	total_power =
-	  scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	  ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
 	ysca = 2.0 * sqrt(total_power);
 	power[kk] = total_power;
-	cpx.real = 127 * (float)byteBuf[2] / x;
+	cpx.real = (float)byteBuf[2] * ysca / 127.0;
 	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
-	shh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	shh_phase[kk] = atan2(cpx.imag, cpx.real);
+	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase = atan2(cpx.imag, cpx.real);
+	if (radiometry == r_AMP) {
+	  shh_amp[kk] = amp;
+	  shh_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA) {
+	  if (params->cal_factor_hh < 0.0) {
+	    /*
+	    shh_amp[kk] = amp;//pow(10, amp*params->cal_factor_hh/10);
+	    shh_phase[kk] = phase;//pow(10, phase*params->cal_factor_hh/10);
+	    */
+	    shh_amp[kk] = amp;
+	    shh_phase[kk] = phase;
+	  }
+	}
+	else if (radiometry == r_SIGMA_DB) {
+	  if (params->cal_factor_hh < 0.0) {
+	    shh_amp[kk] = amp * params->cal_factor_hh;
+	    shh_phase[kk] = phase * params->cal_factor_hh;
+	  }
+	}
 	cpx.real = (float)byteBuf[4] * ysca / 127.0;
 	cpx.imag = (float)byteBuf[5] * ysca / 127.0;
-	shv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	svh_phase[kk] = atan2(cpx.imag, cpx.real);
+	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase = atan2(cpx.imag, cpx.real);
+	if (radiometry == r_AMP) {
+	  shv_amp[kk] = amp;
+	  shv_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA) {
+	  if (params->cal_factor_hv < 0.0) {
+	    shv_amp[kk] = amp;
+	    shv_phase[kk] = phase;
+	  }
+	}
+	else if (radiometry == r_SIGMA_DB) {
+	  if (params->cal_factor_hv < 0.0) {
+	    shv_amp[kk] = amp * params->cal_factor_hv;
+	    shv_phase[kk] = phase * params->cal_factor_hv;
+	  }
+	}
 	cpx.real = (float)byteBuf[6] * ysca / 127.0;
 	cpx.imag = (float)byteBuf[7] * ysca / 127.0;
-	svh_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	svh_phase[kk] = atan2(cpx.imag, cpx.real);
+	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase = atan2(cpx.imag, cpx.real);
+	if (radiometry == r_AMP) {
+	  svh_amp[kk] = amp;
+	  svh_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA) {
+	  if (params->cal_factor_vh < 0.0) {
+	    svh_amp[kk] = amp;
+	    svh_phase[kk] = phase;
+	  }
+	}
+	else if (radiometry == r_SIGMA_DB) {
+	  if (params->cal_factor_vh < 0.0) {
+	    svh_amp[kk] = amp * params->cal_factor_vh;
+	    svh_phase[kk] = phase * params->cal_factor_vh;
+	  }
+	}
 	cpx.real = (float)byteBuf[8] * ysca / 127.0;
 	cpx.imag = (float)byteBuf[9] * ysca / 127.0;
-	svv_amp[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	svv_phase[kk] = atan2(cpx.imag, cpx.real);
+	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase = atan2(cpx.imag, cpx.real);
+	if (radiometry == r_AMP) {
+	  svv_amp[kk] = amp;
+	  svv_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA) {
+	  if (params->cal_factor_vv < 0.0) {
+	    svv_amp[kk] = amp;
+	    svv_phase[kk] = phase;
+	  }
+	}
+	else if (radiometry == r_SIGMA_DB) {
+	  if (params->cal_factor_vv < 0.0) {
+	    svv_amp[kk] = amp * params->cal_factor_vv;
+	    svv_phase[kk] = phase * params->cal_factor_vv;
+	  }
+	}	
       }
       put_band_float_line(fpOut, meta, 0, ii, power);
       put_band_float_line(fpOut, meta, 1, ii, shh_amp);
@@ -713,7 +790,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 }
 
 void import_airsar(const char *inBaseName, radiometry_t radiometry,
-		   int db_flag, const char *outBaseName)
+		   const char *outBaseName)
 {
   char inFile[1024];
   int found_c_dem = FALSE, found_l_dem = FALSE;
@@ -773,15 +850,15 @@ void import_airsar(const char *inBaseName, radiometry_t radiometry,
   //if (!insar) {
     if (general->c_pol_data) {
       asfPrintStatus("\n   Ingesting C-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, 'c');
+      ingest_polsar_data(inBaseName, outBaseName, radiometry, 'c');
     }
     if (general->l_pol_data) {
       asfPrintStatus("\n   Ingesting L-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, 'l');
+      ingest_polsar_data(inBaseName, outBaseName, radiometry, 'l');
     }
     if (general->p_pol_data) {
       asfPrintStatus("\n   Ingesting P-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, 'p');
+      ingest_polsar_data(inBaseName, outBaseName, radiometry, 'p');
     }
     /*
   }

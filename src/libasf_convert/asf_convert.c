@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "ceos.h"
+#include "airsar.h"
 #include "asf_meta.h"
 #include "asf_convert.h"
 #include "proj.h"
@@ -18,6 +19,87 @@
 #include <string.h>
 #include <sys/types.h> /* 'DIR' structure (for opendir) */
 #include <dirent.h>    /* for opendir itself            */
+
+meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
+{
+  airsar_header *header;
+  meta_parameters *meta = NULL;
+  char dataFile[1024], *q;
+  int found_c_file = TRUE, found_l_file = TRUE, found_p_file = TRUE;
+
+  printf("isAirSAR: %s\n", inFile);
+
+  // Look for C-band data
+  sprintf(dataFile, "%s_c.datgr", inFile);
+  if (!fileExists(dataFile))
+    sprintf(dataFile, "%s_c.dat", inFile);
+  if (!fileExists(dataFile))
+    found_c_file = FALSE;
+  else {
+    header = read_airsar_header(dataFile);
+    if (header) {
+      meta = import_airsar_meta(dataFile, inFile, FALSE);
+      *c = TRUE;
+    }
+    else {
+      asfPrintWarning("Data file (%s) is not AirSAR data.\n", dataFile);
+      *c = FALSE;
+      return NULL;
+    }
+  }
+
+  // Look for L-band data
+  sprintf(dataFile, "%s_l.datgr", inFile);
+  if (!fileExists(dataFile))
+    sprintf(dataFile, "%s_l.dat", inFile);
+  if (!fileExists(dataFile))
+    found_l_file = FALSE;
+  else {
+    header = read_airsar_header(dataFile);
+    if (header) {
+      if (!meta)
+	meta = import_airsar_meta(dataFile, inFile, FALSE);
+      *l = TRUE;
+    }
+    else {
+      asfPrintWarning("Data file (%s) is not AirSAR data.\n", dataFile);
+      *l = FALSE;
+      return NULL;
+    }
+  }
+
+  // Look for P-band data
+  sprintf(dataFile, "%s_p.datgr", inFile);
+  if (!fileExists(dataFile))
+    sprintf(dataFile, "%s_p.dat", inFile);
+  if (!fileExists(dataFile))
+    found_p_file = FALSE;
+  else {
+    header = read_airsar_header(dataFile);
+    if (header) {
+      if (!meta)
+	meta = import_airsar_meta(dataFile, inFile, FALSE);
+      *p = TRUE;
+    }
+    else {
+      asfPrintWarning("Data file (%s) is not AirSAR data.\n", dataFile);
+      *p = FALSE;
+      return NULL;
+    }
+  }
+
+  // Found any of files and we are good
+  if (!found_c_file && !found_l_file && !found_p_file) {
+    asfPrintWarning("Could not find any polarimetric data related to (%s).\n",
+		    inFile);
+    *c = FALSE;
+    *l = FALSE;
+    *p = FALSE;
+    return NULL;
+  }
+  else
+    return meta;
+}
 
 int isCEOS(const char *input_file)
 {
@@ -244,20 +326,36 @@ void check_return(int ret, char *msg)
 
 void check_input(convert_config *cfg, char *processing_step, char *input)
 {
+  meta_parameters *meta;
   char **inBandName = NULL, **inMetaName = NULL;
-  int nBands, trailer;
+  int nBands, trailer, airsar_c, airsar_l, airsar_p;
 
   if (strcmp_case(processing_step, "polarimetry") == 0) {
-    if (isCEOS(input))
+    meta = isAirSAR(input, &airsar_c, &airsar_l, &airsar_p);
+    if (meta) {
+      // For any of the polarimetric calculation we need SIGMA power scale
+      // images. Just in case the user did not select those we inforce here
+      // for the AirSAR data.
+      strcpy(cfg->import->radiometry, "SIGMA_IMAGE");
+      cfg->airsar->c_pol = airsar_c;
+      cfg->airsar->l_pol = airsar_l;
+      cfg->airsar->p_pol = airsar_p;
+    }
+    else if (isCEOS(input)) {
       require_ceos_pair(input, &inBandName, &inMetaName,
             &nBands, &trailer);
-    else if (isSTF(input))
+      meta = meta_create(inMetaName[0]);
+    }
+    else if (isSTF(input)) {
       require_stf_pair(input, inBandName, inMetaName);
-    meta_parameters *meta = meta_create(inMetaName[0]);
+      meta = meta_create(inMetaName[0]);
+    }
     if (meta->sar) {
-      meta_free(meta);
-      // re-read meta with additional info
-      meta = meta_read_cfg(inMetaName[0], cfg);
+      if (strcmp_case(meta->general->sensor, "AIRSAR") != 0) {
+	meta_free(meta);
+	// re-read meta with additional info
+	meta = meta_read_cfg(inMetaName[0], cfg);
+      }
       // Pauli decomposition only works for complex quad-pol data
       if (cfg->polarimetry->pauli &&
       (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
@@ -668,6 +766,63 @@ static int check_airsar(char *outFile, char *suffix)
   free(base);
 
   return ret;
+}
+
+static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile,
+			     int *amp0_flag)
+{
+  char tmpFile[1024];
+  
+  // Calculate polarimetric parameters
+  if (cfg->polarimetry->pauli)
+    cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
+  else if (cfg->polarimetry->sinclair) {
+    // for sinclair, there are two possibilities: SLC & non-SLC
+    meta_parameters *meta = meta_read(inFile);
+    if (meta->general->band_count >= 8) {
+      cpx2sinclair(inFile, outFile, cfg->general->terrain_correct);
+    }
+    else {
+      // here, we don't need to do any processing -- we just need to
+      // update the RGB Bands to Red=HH, Green=HV, Blue=VV
+      strcpy(cfg->export->rgb, "SIGMA-HH,SIGMA-HV,SIGMA-VV");
+      strcpy(outFile, inFile);
+      
+      // turn off the amp0_flag -- we don't need it in this case
+      *amp0_flag = FALSE;
+    }
+    meta_free(meta);
+  }
+  else if (cfg->polarimetry->cloude_pottier) {
+    cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
+  }
+  else if (cfg->polarimetry->cloude_pottier_ext)
+    cpx2cloude_pottier16(inFile, outFile, cfg->general->terrain_correct);
+  else if (cfg->polarimetry->cloude_pottier_nc)
+    cpx2entropy_anisotropy_alpha(inFile, outFile,
+				 cfg->general->terrain_correct);
+  else if (cfg->polarimetry->freeman_durden)
+    cpx2freeman_durden(inFile, outFile, cfg->general->terrain_correct);
+  else if (cfg->polarimetry->k_means_wishart)
+    asfPrintError("K-means Wishart clustering not supported yet.\n");
+  else if (cfg->polarimetry->k_means_wishart_ext)
+    asfPrintError("Extended K-means Wishart clustering not supported yet.\n");
+  else if (cfg->polarimetry->lee_preserving)
+    asfPrintError("Lee category preserving not supported yet.\n");
+  else
+    asfPrintError("Unsupported polarimetric processing technique.\n");
+  
+  if (cfg->polarimetry->cloude_pottier ||
+      cfg->polarimetry->cloude_pottier_ext ||
+      cfg->polarimetry->cloude_pottier_nc)
+    {
+      sprintf(tmpFile, "%s/polarimetry_combined_hist.img",
+	      cfg->general->tmp_dir);
+      save_intermediate(cfg, "Cloude-Pottier Histogram", tmpFile);
+      sprintf(tmpFile, "%s/polarimetry_class_map.img",
+	      cfg->general->tmp_dir);
+      save_intermediate(cfg, "Entropy-Alpha Class Map", tmpFile);
+    }
 }
 
 static scale_t get_scale(convert_config *cfg);
@@ -1871,56 +2026,26 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           sprintf(outFile, "%s", cfg->general->out_name);
         }
 
-        // Calculate polarimetric parameters
-        if (cfg->polarimetry->pauli)
-          cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
-        else if (cfg->polarimetry->sinclair) {
-          // for sinclair, there are two possibilities: SLC & non-SLC
-          meta_parameters *meta = meta_read(inFile);
-          if (meta->general->band_count >= 8) {
-            cpx2sinclair(inFile, outFile, cfg->general->terrain_correct);
-          }
-          else {
-            // here, we don't need to do any processing -- we just need to
-            // update the RGB Bands to Red=HH, Green=HV, Blue=VV
-            strcpy(cfg->export->rgb, "SIGMA-HH,SIGMA-HV,SIGMA-VV");
-            strcpy(outFile, inFile);
-
-            // turn off the amp0_flag -- we don't need it in this case
-            amp0_flag = FALSE;
-          }
-          meta_free(meta);
-        }
-        else if (cfg->polarimetry->cloude_pottier) {
-          cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
-        }
-        else if (cfg->polarimetry->cloude_pottier_ext)
-          cpx2cloude_pottier16(inFile, outFile, cfg->general->terrain_correct);
-        else if (cfg->polarimetry->cloude_pottier_nc)
-          cpx2entropy_anisotropy_alpha(inFile, outFile,
-                                       cfg->general->terrain_correct);
-        else if (cfg->polarimetry->freeman_durden)
-          cpx2freeman_durden(inFile, outFile, cfg->general->terrain_correct);
-        else if (cfg->polarimetry->k_means_wishart)
-          asfPrintError("K-means Wishart clustering not supported yet.\n");
-        else if (cfg->polarimetry->k_means_wishart_ext)
-          asfPrintError("Extended K-means Wishart clustering not supported yet.\n");
-        else if (cfg->polarimetry->lee_preserving)
-          asfPrintError("Lee category preserving not supported yet.\n");
-        else
-          asfPrintError("Unsupported polarimetric processing technique.\n");
-
-        if (cfg->polarimetry->cloude_pottier ||
-            cfg->polarimetry->cloude_pottier_ext ||
-            cfg->polarimetry->cloude_pottier_nc)
-        {
-          sprintf(tmpFile, "%s/polarimetry_combined_hist.img",
-                  cfg->general->tmp_dir);
-          save_intermediate(cfg, "Cloude-Pottier Histogram", tmpFile);
-          sprintf(tmpFile, "%s/polarimetry_class_map.img",
-                  cfg->general->tmp_dir);
-          save_intermediate(cfg, "Entropy-Alpha Class Map", tmpFile);
-        }
+	if (is_airsar) {
+	  char tmpIn[1024], tmpOut[1024];
+	  if (cfg->airsar->c_pol) {
+	    sprintf(tmpIn, "%s_c", inFile);
+	    sprintf(tmpOut, "%s_c", outFile);
+	    calc_polarimetry(cfg, tmpIn, tmpOut, &amp0_flag);
+	  }
+	  if (cfg->airsar->l_pol) {
+	    sprintf(tmpIn, "%s_l", inFile);
+	    sprintf(tmpOut, "%s_l", outFile);
+	    calc_polarimetry(cfg, tmpIn, tmpOut, &amp0_flag);
+	  }
+	  if (cfg->airsar->p_pol) {
+	    sprintf(tmpIn, "%s_p", inFile);
+	    sprintf(tmpOut, "%s_p", outFile);
+	    calc_polarimetry(cfg, tmpIn, tmpOut, &amp0_flag);
+	  }
+	}
+	else
+	  calc_polarimetry(cfg, inFile, outFile, &amp0_flag);
       }
     }
 
@@ -2108,49 +2233,42 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
         // do multi-band stuff first
         asfPrintStatus("\n   Exporting AirSAR products...\n");
-        if (cfg->airsar->p_pol) {
-          char *in_tmp = appendToBasename(inFile, "_p.img");
-          char *out_tmp = appendToBasename(outFile, "_p");
-
-      if (fileExists(in_tmp)) {
-        update_status("Exporting polarimetric P-band...");
-        asfPrintStatus("Exporting P-band: %s -> %s\n", in_tmp, out_tmp);
-        do_export(cfg, in_tmp, out_tmp);
-      }
+        if (cfg->airsar->c_pol) {
+          char *in_tmp = appendToBasename(inFile, "_c");
+          char *out_tmp = appendToBasename(outFile, "_c");
+	  
+	  update_status("Exporting polarimetric C-band...");
+	  asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
         }
         else {
-          asfPrintStatus("Skipping export of AirSAR P-band data.\n");
+          asfPrintStatus("Skipping export of AirSAR C-band data.\n");
         }
-
         if (cfg->airsar->l_pol) {
-          char *in_tmp = appendToBasename(inFile, "_l.img");
+          char *in_tmp = appendToBasename(inFile, "_l");
           char *out_tmp = appendToBasename(outFile, "_l");
 
-      if (fileExists(in_tmp)) {
-        update_status("Exporting polarimetric L-band...");
-        asfPrintStatus("Exporting L-band: %s -> %s\n", in_tmp, out_tmp);
-        do_export(cfg, in_tmp, out_tmp);
-      }
+	  update_status("Exporting polarimetric L-band...");
+	  asfPrintStatus("Exporting L-band: %s -> %s\n", in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
         }
         else {
           asfPrintStatus("Skipping export of AirSAR L-band data.\n");
         }
 
-        if (cfg->airsar->c_pol) {
-          char *in_tmp = appendToBasename(inFile, "_c.img");
-          char *out_tmp = appendToBasename(outFile, "_c");
+        if (cfg->airsar->p_pol) {
+          char *in_tmp = appendToBasename(inFile, "_p");
+          char *out_tmp = appendToBasename(outFile, "_p");
 
-      if (fileExists(in_tmp)) {
-        update_status("Exporting polarimetric C-band...");
-        asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
-        do_export(cfg, in_tmp, out_tmp);
-      }
+	  update_status("Exporting polarimetric P-band...");
+	  asfPrintStatus("Exporting P-band: %s -> %s\n", in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
         }
         else {
-          asfPrintStatus("Skipping export of AirSAR C-band data.\n");
+          asfPrintStatus("Skipping export of AirSAR P-band data.\n");
         }
 
         // those were two multi-band images -- the rest are single.

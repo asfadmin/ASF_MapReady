@@ -18,6 +18,7 @@ meta_parameters* airsar2meta(airsar_header *header,
   sprintf(meta->general->sensor, "AIRSAR");
   strcpy(meta->general->sensor_name, "SAR");
   if (strlen(header->processor)>0) {
+    header->processor[4] = '\0';
     strcpy(meta->general->processor, "JPL version ");
     strcat(meta->general->processor, header->processor);
   } else {
