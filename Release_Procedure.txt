@@ -227,6 +227,21 @@ src/fftMatch
 
       asf_mapready-2.0.8-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
 
+     IMPORTANT: If you get a response that says "OK" but does NOT have "gpg"
+     in the list (see above), then the rpm is NOT signed!  Check your
+     ~/.rpmmacros file to make sure no-sign is not set and that lines similar
+     to the following do exist, otherwise no signing will take place:
+
+     # RPM Signing stuff
+     %_signature     gpg     
+     %_gpg_path      ~/.gnupg
+     %_gpgbin        /usr/bin/gpg
+     %_gpg_name      ASF User Tool Development
+
+     These lines should already be in the .rpmmacros file.  If they are not,
+     then use Subversion to check out fresh copies rather than enter them
+     by hand (just in case changes have taken place.)
+
      If you get a response that includes the words "NOT OK", then it usually
      means the ASCII public key has not been imported with "rpm -import"
      yet.
@@ -690,6 +705,21 @@ Note: The following example assumes subversion revision 8072, jpl version
 
      RPMS/jplmosaicsuite-1.0.0-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
 
+     IMPORTANT: If you get a response that says "OK" but does NOT have "gpg"
+     in the list (see above), then the rpm is NOT signed!  Check your
+     ~/.rpmmacros file to make sure no-sign is not set and that lines similar
+     to the following do exist, otherwise no signing will take place:
+
+     # RPM Signing stuff
+     %_signature     gpg     
+     %_gpg_path      ~/.gnupg
+     %_gpgbin        /usr/bin/gpg
+     %_gpg_name      ASF User Tool Development
+
+     These lines should already be in the .rpmmacros file.  If they are not,
+     then use Subversion to check out fresh copies rather than enter them
+     by hand (just in case changes have taken place.)
+
   If you get a response that includes the words "NOT OK", then it usually
   means the ASCII public key has not been imported with "rpm -import" yet.
 
@@ -984,6 +1014,21 @@ clean:
 
       asf_create_thumbs-1.3-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
 
+     IMPORTANT: If you get a response that says "OK" but does NOT have "gpg"
+     in the list (see above), then the rpm is NOT signed!  Check your
+     ~/.rpmmacros file to make sure no-sign is not set and that lines similar
+     to the following do exist, otherwise no signing will take place:
+
+     # RPM Signing stuff
+     %_signature     gpg     
+     %_gpg_path      ~/.gnupg
+     %_gpgbin        /usr/bin/gpg
+     %_gpg_name      ASF User Tool Development
+
+     These lines should already be in the .rpmmacros file.  If they are not,
+     then use Subversion to check out fresh copies rather than enter them
+     by hand (just in case changes have taken place.)
+
      If you get a response that includes the words "NOT OK", then it usually
      means the ASCII public key has not been imported with "rpm -import"
      yet.
@@ -1256,6 +1301,21 @@ vn_rev.h
   this:
 
      RPMS/data_qc-1.0.0-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
+
+     IMPORTANT: If you get a response that says "OK" but does NOT have "gpg"
+     in the list (see above), then the rpm is NOT signed!  Check your
+     ~/.rpmmacros file to make sure no-sign is not set and that lines similar
+     to the following do exist, otherwise no signing will take place:
+
+     # RPM Signing stuff
+     %_signature     gpg     
+     %_gpg_path      ~/.gnupg
+     %_gpgbin        /usr/bin/gpg
+     %_gpg_name      ASF User Tool Development
+
+     These lines should already be in the .rpmmacros file.  If they are not,
+     then use Subversion to check out fresh copies rather than enter them
+     by hand (just in case changes have taken place.)
 
 * Create tarballs of the rpms (the binary rpm will also contain the
   README_rpm.txt file from asf_tools folder):
