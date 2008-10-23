@@ -65,20 +65,16 @@ input_data_format_combobox_changed()
         *airsar_l_pol_checkbutton,
         *airsar_c_pol_checkbutton,
         *airsar_c_vv_checkbutton,
-        *airsar_l_vv_checkbutton,
-        *vbox_export,
-        *vbox_terrain_correction,
-        *vbox_geocode;
+        *airsar_l_vv_checkbutton;
 
     gint input_data_format;
     gboolean show_data_type_combobox;
     gboolean show_latitude_spinbuttons;
-    gboolean show_export_section;
-    gboolean show_terrain_correction_section;
-    gboolean show_geocode_section;
     // Leave this next one false until we support level 0 again
     gboolean show_process_to_level1_checkbutton = FALSE; 
     gboolean show_airsar_checkbuttons;
+    gboolean enable_terrain_correction;
+    gboolean enable_polarimetry;
 
     input_data_format_combobox =
         get_widget_checked("input_data_format_combobox");
@@ -109,23 +105,36 @@ input_data_format_combobox_changed()
         case INPUT_FORMAT_CEOS_LEVEL1:
         case INPUT_FORMAT_ESRI:
         case INPUT_FORMAT_ENVI:
+            show_data_type_combobox = TRUE;
+            show_latitude_spinbuttons = FALSE;
+            show_process_to_level1_checkbutton = FALSE;
+            show_airsar_checkbuttons = FALSE;
+            enable_terrain_correction = TRUE;
+            enable_polarimetry = TRUE;
+            break;
         case INPUT_FORMAT_GEOTIFF:
             show_data_type_combobox = TRUE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = FALSE;
             show_airsar_checkbuttons = FALSE;
+            enable_terrain_correction = FALSE;
+            enable_polarimetry = FALSE;
             break;
         case INPUT_FORMAT_ASF_INTERNAL:
             show_data_type_combobox = FALSE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = FALSE;
             show_airsar_checkbuttons = FALSE;
+            enable_terrain_correction = TRUE;
+            enable_polarimetry = TRUE;
             break;
       case INPUT_FORMAT_AIRSAR:
             show_data_type_combobox = FALSE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = FALSE;
             show_airsar_checkbuttons = TRUE;
+            enable_terrain_correction = FALSE;
+            enable_polarimetry = TRUE;
             break;
     }
 
@@ -167,10 +176,6 @@ input_data_format_combobox_changed()
       gtk_widget_hide(airsar_label);
     }
 
-    show_export_section = TRUE;
-    show_geocode_section = TRUE;
-    show_terrain_correction_section = TRUE;
-
     if (show_process_to_level1_checkbutton)
     {
         gboolean process_to_level1_checkbutton_is_checked =
@@ -179,9 +184,8 @@ input_data_format_combobox_changed()
 
         if (!process_to_level1_checkbutton_is_checked)
         {
-            show_export_section = FALSE;
-            show_geocode_section = FALSE;
-            show_terrain_correction_section = FALSE;
+            enable_terrain_correction = FALSE;
+            enable_polarimetry = FALSE;
         }
         else
         {
@@ -208,46 +212,20 @@ input_data_format_combobox_changed()
 
     latitude_checkbutton_toggle();
 
-    vbox_export = get_widget_checked("vbox_export");
-    gtk_widget_set_sensitive(vbox_export, show_export_section);
-
-    if (!show_export_section)
-    {
-        GtkWidget *export_checkbutton =
-            get_widget_checked("export_checkbutton");
-
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(export_checkbutton),
-            FALSE);
-    }
-
-    vbox_terrain_correction = get_widget_checked("vbox_terrain_correction");
-    gtk_widget_set_sensitive(vbox_terrain_correction,
-                             show_terrain_correction_section);
-
-    if (!show_terrain_correction_section)
-    {
-        GtkWidget *dem_checkbutton =
-            get_widget_checked("dem_checkbutton");
-
+    GtkWidget *dem_checkbutton = get_widget_checked("dem_checkbutton");
+    if (!enable_terrain_correction)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton),
                                      FALSE);
-    }
+    gtk_widget_set_sensitive(dem_checkbutton, enable_terrain_correction);
+    terrcorr_options_changed();
 
-    export_checkbutton_toggle();
-
-    vbox_geocode = get_widget_checked("vbox_geocode");
-    gtk_widget_set_sensitive(vbox_geocode, show_geocode_section);
-
-    if (!show_geocode_section)
-    {
-        GtkWidget *geocode_checkbutton =
-            get_widget_checked("geocode_checkbutton");
-
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(geocode_checkbutton),
-            FALSE);
-    }
-
-    geocode_options_changed();
+    GtkWidget *polarimetry_checkbutton =
+        get_widget_checked("polarimetry_checkbutton");
+    if (!enable_polarimetry)
+        gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(polarimetry_checkbutton), FALSE);
+    gtk_widget_set_sensitive(polarimetry_checkbutton, enable_polarimetry);
+    polarimetry_settings_changed();
 }
 
 void
