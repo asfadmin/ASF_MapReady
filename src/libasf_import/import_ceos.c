@@ -243,6 +243,19 @@ void import_ceos(char *inBaseName, char *outBaseName,
       import_single_band = TRUE;
       nBandsOut = 1;
   }
+  if (ceos->product == SLC &&
+      radiometry > r_AMP && radiometry < r_POWER)
+  {
+      asfPrintError("Single-look complex products contain a relative calibration.  Applying\n"
+                    "an absolute %s calibration is not (yet) supported.\n",
+                    radiometry == r_SIGMA    ? "SIGMA"    :
+                    radiometry == r_BETA     ? "BETA"     :
+                    radiometry == r_GAMMA    ? "GAMMA"    :
+                    radiometry == r_SIGMA_DB ? "SIGMA dB" :
+                    radiometry == r_BETA_DB  ? "BETA dB"  :
+                    radiometry == r_GAMMA_DB ? "GAMMA dB" : "UNKNOWN TYPE OF"
+                    );
+  }
 
   for (ii=0; ii<nBandsOut; ii++) {
 

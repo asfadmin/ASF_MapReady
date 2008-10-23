@@ -633,7 +633,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     scale = 1.0;
     airsar_header *header = read_airsar_header(inFile);
     long offset = header->first_data_offset;
-    printf("offset: %d\n", offset);
+    printf("offset: %ld\n", offset);
     sprintf(outFile, "%s_%c.img", outBaseName, band);
     fpIn = FOPEN(inFile, "rb");
     fpOut = FOPEN(outFile, "wb");
