@@ -87,6 +87,7 @@ int main(int argc, char **argv)
 	
 /* Read .ddr & .meta file info & put into meta structures */ 
 	meta = meta_read(las_name);
+	meta->general->image_data_type = IMAGE;
 
 /* write it out new style */
 	meta_write(meta, meta_name);
