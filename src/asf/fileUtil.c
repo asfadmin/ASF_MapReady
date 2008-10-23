@@ -665,16 +665,9 @@ static void dirwalk(const char *dir, int (*fcn)(const char*))
 int
 remove_dir(const char *name)
 {
-  struct stat stbuf;
-
-  if (stat(name, &stbuf) == -1) {
-//    asfPrintWarning("remove_dir: cannot access %s\n", name);
-    return -1; // error
-  }
-  if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+  if (is_dir(name))
     dirwalk(name, remove_dir);
-  }
-  return remove(name);
+  return remove_file(name);
 }
 
 char *
@@ -704,7 +697,15 @@ const char *bin_postfix()
 
 int remove_file(const char *file)
 {
-  if (fileExists(file)) {
+  if (is_dir(file)) {
+    int ret = rmdir(file);
+    if (ret < 0) {
+      asfPrintWarning("Could not remove directory '%s': %s\n",
+                      file, strerror(errno));
+    }
+    return ret;
+  }
+  else if (fileExists(file)) {
     int ret = unlink(file);
     if (ret < 0) {
       asfPrintWarning("Could not remove file '%s': %s\n",

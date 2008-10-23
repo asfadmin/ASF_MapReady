@@ -357,6 +357,11 @@ static void save_intermediate(convert_config *cfg, char *tag, char *filename)
   }
 }
 
+static void reset_intermediates()
+{
+    intermediates_file = NULL;
+}
+
 /* Make a copy of the metdata file. */
 static void copy_meta(convert_config *cfg, char *src, char *dest)
 {
@@ -2657,6 +2662,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   update_status("Done");
   free_convert_config(cfg);
   clear_status_file();
+  reset_intermediates();
 
   return(EXIT_SUCCESS);
 }
