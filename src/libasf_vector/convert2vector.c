@@ -4,27 +4,27 @@ format_type_t str2format(const char *str)
 {
   format_type_t format;
 
-  if (strcmp(uc(str), "META") == 0)
+  if (strcmp_case(str, "META") == 0)
     format = META;
-  else if (strcmp(uc(str), "LEADER") == 0)
+  else if (strcmp_case(str, "LEADER") == 0)
     format = LEADER;
-  else if (strcmp(uc(str), "POINT") == 0)
+  else if (strcmp_case(str, "POINT") == 0)
     format = POINT;
-  else if (strcmp(uc(str), "POLYGON") == 0)
+  else if (strcmp_case(str, "POLYGON") == 0)
     format = POLYGON;
-  else if (strcmp(uc(str), "CSV") == 0)
+  else if (strcmp_case(str, "CSV") == 0)
     format = CSV;
-  else if (strcmp(uc(str), "AUIG") == 0)
+  else if (strcmp_case(str, "AUIG") == 0)
     format = AUIG;
-  else if (strcmp(uc(str), "MULTIMATCH") == 0)
+  else if (strcmp_case(str, "MULTIMATCH") == 0)
     format = MULTIMATCH;
-  else if (strcmp(uc(str), "GEOTIFF") == 0)
+  else if (strcmp_case(str, "GEOTIFF") == 0)
     format = GEOTIFF_META;
-  else if (strcmp(uc(str), "KML") == 0)
+  else if (strcmp_case(str, "KML") == 0)
     format = KMLFILE;
-  else if (strcmp(uc(str), "SHAPE") == 0)
+  else if (strcmp_case(str, "SHAPE") == 0)
     format = SHAPEFILE;
-  else if (strcmp(uc(str), "URSA") == 0)
+  else if (strcmp_case(str, "URSA") == 0)
     format = URSA;
   else
     format = CUSTOM_FORMAT;
@@ -36,6 +36,8 @@ int convert2vector(char *inFile, const char *inFormat_str,
                    char *outFile, const char *outFormat_str, int listFlag)
 {
   int ret = 0;
+  asfPrintStatus("Converting from %s to %s:\n", inFormat_str, outFormat_str);
+  asfPrintStatus("  %s -> %s.\n", inFile, outFile); 
   format_type_t inFormat = str2format(inFormat_str);
   format_type_t outFormat = str2format(outFormat_str);
   if ((inFormat == META || inFormat == LEADER) && outFormat == CSV)

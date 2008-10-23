@@ -1810,7 +1810,6 @@ int kml2csv(char *inFile, char *outFile, int listFlag)
     FILE *ifp = FOPEN(inFile, "r");
     FILE *ofp = FOPEN(outFile, "w");
     fprintf(ofp, "%s\n", header);
-    int nCols = get_number_columns(header);
     int expect_coords=FALSE, n=0, isEnd;
 
     // start of with an empty csv line
@@ -1890,7 +1889,7 @@ int kml2auig(char *inFile, char *outFile, int listFlag)
   if (!found_format) {
     FCLOSE(fpIn);
     asfPrintError("Found format (%s) that does not match requested format "
-                  "(AUIG).\nPlease verify the format string at the begin "
+                  "(AUIG).\nPlease verify the format string at the beginning "
                   "of the <description> block.\n", format);
   }
 

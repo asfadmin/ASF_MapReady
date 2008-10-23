@@ -1965,8 +1965,9 @@ int auig2shape(char *inFile, char *outFile, int listFlag)
 
     // ensure all lines end with a comma, that way the final column
     // does not need special treatment
-    line[strlen(line)+1] = '\0';
-    line[strlen(line)] = ',';
+    int n = strlen(line);
+    line[n+1] = '\0';
+    line[n] = ',';
 
     // now get the individual column values
     auig_init(&auig);

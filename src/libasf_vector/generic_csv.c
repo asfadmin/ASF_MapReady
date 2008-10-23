@@ -601,7 +601,6 @@ void csv_dump(const char *filename)
   if (!fp)
     return;
 
-  // this is just for debugging, if you want to print out what was found
   csv_info(num_meta_cols, meta_column_info, num_data_cols, data_column_info);
 
   // start line counter at 1 (header line is not part of this loop)
@@ -764,7 +763,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
         case CSV_STRING:
           {
             // write out attribute "name" with string value "val"
-            fprintf(ofp,"<strong>%s</strong>: %s <br>\n", name, val);
+            fprintf(ofp,"<strong>%s</strong>: %s<br>\n", name, val);
             if (strcmp_case(name,"ID")==0 ||
                 strcmp_case(name,"NAME")==0 ||
                 strcmp_case(name,"SCNID")==0 ||
@@ -777,7 +776,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
           {
             double d = atof(val);
             // write out attribute "name" with double value "d"
-            fprintf(ofp,"<strong>%s</strong>: %f <br>\n", name, d);
+            fprintf(ofp,"<strong>%s</strong>: %f<br>\n", name, d);
           }
           break;
           
@@ -785,7 +784,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
           {
             int k = atoi(val);
             // write out attribute "name" with integer value "k"
-            fprintf(ofp,"<strong>%s</strong>: %d <br>\n", name, k);
+            fprintf(ofp,"<strong>%s</strong>: %d<br>\n", name, k);
           }
           break;
 
@@ -794,7 +793,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
             int b = atoi(val);
             // write out attribute "name" with boolean value "b" (0 or 1)
             // you could combine this with the integer case as well
-            fprintf(ofp,"<strong>%s</strong>: %s <br>\n", name, b?"YES":"NO");
+            fprintf(ofp,"<strong>%s</strong>: %s<br>\n", name, b?"YES":"NO");
           }
           break;
 
@@ -803,7 +802,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
         case CSV_DATE:
           {
             // should never happen
-            fprintf(ofp,"<strong>%s</strong>: %s <br>\n", name, val);
+            fprintf(ofp,"<strong>%s</strong>: %s<br>\n", name, val);
           }
           break;
       }
@@ -833,7 +832,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
     fprintf(ofp, "  <open>1</open>\n");
 
     write_kml_style_keys(ofp);
-    
+
     fprintf(ofp, "  <Polygon>\n");
     fprintf(ofp, "    <extrude>1</extrude>\n");
     fprintf(ofp, "    <altitudeMode>absolute</altitudeMode>\n");
@@ -844,8 +843,10 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
     // deal with the point (lat/lon) data
     for (i=0; i<num_data_cols; ++i)
       fprintf(ofp, "       %.12f,%.12f,7000\n", lons[i],lats[i]);
+
     // close polygon
     fprintf(ofp, "       %.12f,%.12f,7000\n", lons[0],lats[0]);
+
     fprintf(ofp, "      </coordinates>\n");
     fprintf(ofp, "     </LinearRing>\n");
     fprintf(ofp, "    </outerBoundaryIs>\n");

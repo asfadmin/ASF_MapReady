@@ -452,9 +452,11 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
 int calc_scaled_pixel_value(ImageStats *stats, float val)
 {
-    if (stats->have_no_data && val == stats->no_data_value)
+    if (!meta_is_valid_double(val))
         return 0;
-    if (val < stats->map_min)
+    else if (stats->have_no_data && val == stats->no_data_value)
+        return 0;
+    else if (val < stats->map_min)
         return 0;
     else if (val > stats->map_max)
         return 255;

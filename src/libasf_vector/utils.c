@@ -14,7 +14,8 @@
 #define LINE_MAX            (1024)
 
 // Convert metadata to text
-// NOTE: inFile will either be a leader data file, a geotiff, or an ASF metadata file
+// NOTE: inFile will either be a leader data file, a geotiff,
+// or an ASF metadata file
 void meta2text(char *inFile, FILE *outFP)
 {
     double ulLong=0.0, urLong=0.0, lrLong=0.0, llLong=0.0; // Clockwise polygon
@@ -46,14 +47,17 @@ void meta2text(char *inFile, FILE *outFP)
     }
     meta_free(meta);
 
-    if (no_location_info) asfPrintWarning("No location coordinates found in %s\n", inFile);
+    if (no_location_info)
+      asfPrintWarning("No location coordinates found in %s\n", inFile);
     fprintf(outFP, "# File type        , polygon\n");
-    fprintf(outFP, "# Polygon ID (name), %s\n", inFile); // Use inFile for name ...for lack of a better idea
+    // Use inFile for name ...for lack of a better idea
+    fprintf(outFP, "# Polygon ID (name), %s\n", inFile); 
     fprintf(outFP, "#\n");
     fprintf(outFP, "# Latitude, Longitude\n");
     if (no_location_info) {
-        fprintf(outFP, "# WARNING: No location information found in source file (%s)\n", inFile);
-        fprintf(outFP, "#          Values shown below are invalid\n");
+      fprintf(outFP, "# WARNING: No location information found in "
+              "source file (%s)\n", inFile);
+      fprintf(outFP, "#          Values shown below are invalid\n");
     }
     fprintf(outFP, "%f, %f\n", ulLat, ulLong);
     fprintf(outFP, "%f, %f\n", urLat, urLong);
@@ -102,7 +106,7 @@ int ismetadata(char *inFile)
             if (s && strlen(s) && strncmp(uc(s), "GENERAL {", 9) == 0) {
                 foundGeneral = 1;
             }
-            if (foundGeneral && s && strlen(s) && strncmp(uc(s), "NAME:", 5) == 0) {
+            if (foundGeneral && s && strlen(s) && strncmp_case(s, "NAME:", 5) == 0) {
                 isMetadata = 1;
                 break;
             }

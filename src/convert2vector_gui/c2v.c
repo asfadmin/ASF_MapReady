@@ -45,7 +45,7 @@ on_c2v_window_destroy(GtkWidget *w, gpointer data)
 static void set_title()
 {
     char title[256];
-    sprintf(title, "Convert To Vector: Version %s", C2V_VERSION_STRING);
+    sprintf(title, "Convert To Vector (version %s)", C2V_VERSION_STRING);
     GtkWidget *widget = glade_xml_get_widget (glade_xml, "c2v_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 }
@@ -86,7 +86,7 @@ main(int argc, char **argv)
         exit(EXIT_SUCCESS);
     }
     else {
-      set_combo_box_item("input_format_combobox", INPUT_ALOS_CSV);
+      set_combo_box_item("input_format_combobox", INPUT_AUTO);
       set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
 

@@ -4,9 +4,11 @@
 char *uc (const char *string)
 {
   static char out[1024];
-  int ii;
 
-  for (ii=0; ii<strlen(string); ii++)
+  int ii,n = strlen(string);
+  if (n>1023) n=1023;
+
+  for (ii=0; ii<n; ii++)
     out[ii]=toupper(string[ii]);
   out[ii]='\0';
 
@@ -16,9 +18,11 @@ char *uc (const char *string)
 char *lc (const char *string)
 {
   static char out[1024];
-  int ii;
 
-  for (ii=0; ii<strlen(string); ii++)
+  int ii,n = strlen(string);
+  if (n>1023) n=1023;
+
+  for (ii=0; ii<n; ii++)
     out[ii]=tolower(string[ii]);
   out[ii]='\0';
 
