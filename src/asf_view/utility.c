@@ -14,7 +14,7 @@ void clear_combobox(const char *widget_name)
 {
     GtkWidget *w = get_widget_checked(widget_name);
     int x=0;
-    while (gtk_combo_box_get_active(GTK_COMBO_BOX(w)) != -1) {
+    while (1 /* gtk_combo_box_get_active(GTK_COMBO_BOX(w)) != -1*/) {
         gtk_combo_box_remove_text(GTK_COMBO_BOX(w), 0);
         if (++x>MAX_BANDS) break;
     }
