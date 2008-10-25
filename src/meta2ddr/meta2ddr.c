@@ -43,6 +43,7 @@
 
 #define VERSION 1.0
 
+char *sysstr;
 void meta_write_old(meta_parameters *meta, const char *file_name);
 
 static
@@ -81,11 +82,17 @@ int main(int argc, char **argv)
 /* Parse command line */
 	if (argc-currArg < 2)
 		{printf("Insufficient arguments.\n"); usage(argv[0]);}
-	if (argc-currArg > 2)
+	if (argc-currArg > 3)
 		{printf("Excessive arguments.\n"); usage(argv[0]);}
 	create_name(meta_name, argv[currArg], ".meta");
 	create_name(las_nameMeta, argv[currArg+1], ".meta");
 	create_name(las_nameDDR, argv[currArg+1], ".ddr");
+
+        printf("--> %d %s\n", argc, argv[2]);
+        if (argc==4)
+          sysstr = argv[3];
+        else
+          sysstr = NULL;
 
 /* Read .meta and fill meta structures */ 
 	meta = meta_read(meta_name);

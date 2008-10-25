@@ -34,9 +34,11 @@ ALGORITHM REFERENCES	none
 #include "asf_meta.h"
 #include "las.h"
 #include "diskio.h"
+#include "asf_endian.h"
 
 /* PROTOTYPE from meta_init.c */
 int get_meta_ddr_struct_index(const char *name);
+extern char *sysstr;
 
 lasErr c_putddr(const char *hname,struct DDR *ddr)
 {
@@ -69,7 +71,10 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
       return(E_FAIL);
     }
 
-    strcpy(ddr->system,c_getsys());
+    if (sysstr)
+      strcpy(ddr->system,sysstr);
+    else
+      strcpy(ddr->system,"ieee-std");
 
     c_lsmknm(hname,".ddr",hostddr);
 
@@ -96,7 +101,22 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
        There is no character part to this record 
     --------------------------------------------*/
     clen = 0;				  
-    dlen = DDSIZE * 8;		  
+    dlen = DDSIZE * 8;
+
+    // convert all floating point values to proper endian-ness
+    for (ii=0; ii<15; ++ii)
+      big64(ddr->proj_coef[ii]);
+    for (ii=0; ii<2; ++ii) {
+      big64(ddr->upleft[ii]);
+      big64(ddr->loleft[ii]);
+      big64(ddr->upright[ii]);
+      big64(ddr->loright[ii]);
+    }
+    big64(ddr->pdist_y);
+    big64(ddr->pdist_x);
+    big64(ddr->line_inc);
+    big64(ddr->sample_inc);
+
     dbuf = (unsigned char *) &(ddr->proj_coef[0]);
     c_lswrit(&fd,"DDRDUB",&clen,&dlen,d_temp[0],dbuf,"R8");
 
