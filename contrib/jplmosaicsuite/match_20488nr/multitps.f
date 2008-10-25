@@ -1823,7 +1823,7 @@ c                print *,'c0 =',r_str(2)
 
 c****************************************************************
 c**
-c**     FILE NAME: read_hdr.f
+c**     FILE NAME: write_hdr.f
 c**
 c**     DATE WRITTEN: 8/26/96
 c**
@@ -1863,7 +1863,8 @@ c       LOCAL VARIABLES:
 
         real*8 r_pi
         real*8 r_rtod
-
+        real*8 r_spc_tmp1
+        real*8 r_spc_tmp2
 
 c       DATA STATEMENTS: none
 
@@ -1880,13 +1881,16 @@ c
         r_pi = 4.d0*atan(1.0d0)
         r_rtod = 180.0d0/r_pi
 
+c       Set postings to absolute values
+        r_spc_tmp1 = abs(r_spc(1))
+        r_spc_tmp2 = abs(r_spc(2))
            i_err=1
 c           write(6,*) 'Writing HDR info for file ',a_filter
            write(i_hdrfile,'(a45,3a)') a_type(:max(length(a_type),1)),' ; ',
      &               a_filter(:length(a_filter)),' Data file type '
            write(i_hdrfile,'(2i15,  15x,3a)') i_lsize,i_ssize,' ; ',a_filter(:length(a_filter)),
      &               ' Data file dimensions '
-           write(i_hdrfile,'(2f15.2,15x,3a)') r_spc,' ; ',a_filter(:length(a_filter)),
+           write(i_hdrfile,'(f15.2,f15.2,15x,3a)') r_spc_tmp1,r_spc_tmp2,' ; ',a_filter(:length(a_filter)),
      &               ' Post Spacing'
            write(i_hdrfile,'(2f15.2,15x,3a)') r_str,' ; ',a_filter(:length(a_filter)),
      &               ' Starting corner position (s,c)'
