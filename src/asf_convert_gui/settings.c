@@ -1351,12 +1351,11 @@ static int has_tiff_ext(const char *f)
 }
 
 void
-settings_update_dem(Settings *s, const char *output_path, int is_first)
+settings_update_dem(Settings *s, const char *output_path)
 {
     // If this is the second or later file in a list of files,
     // AND the user has specified a .TIFF dem ...
-    if (!is_first &&
-        (s->terrcorr_is_checked || s->refine_geolocation_is_checked) &&
+    if ((s->terrcorr_is_checked || s->refine_geolocation_is_checked) &&
         has_tiff_ext(s->dem_file))
     {
         // ... we point to the saved DEM instead of the TIFF
@@ -1365,16 +1364,32 @@ settings_update_dem(Settings *s, const char *output_path, int is_first)
         // set up in libasf_convert's convert_tiff() code.
         sprintf(s->dem_file, "%s/geocoded_dem_%s.img", output_path, file);
         free(file);
+
+        s->dem_was_generated = TRUE;
+    }
+}
+
+void settings_delete_dem_and_mask(Settings *s)
+{
+    printf("DEM> %d %d\n", s->dem_was_generated, s->keep_files);
+    if (s->dem_was_generated && !s->keep_files) {
+        printf("Removing generated DEM: %s\n", s->dem_file);
+        remove_file(s->dem_file);
+    }
+
+    printf("MASK> %d %d\n", s->mask_was_generated, s->keep_files);
+    if (s->mask_was_generated && !s->keep_files) {
+        printf("Removing generated MASK: %s\n", s->mask_file);
+        remove_file(s->mask_file);
     }
 }
 
 void
-settings_update_mask(Settings *s, const char *output_path, int is_first)
+settings_update_mask(Settings *s, const char *output_path)
 {
     // If this is the second or later file in a list of files,
     // AND the user has specified a .TIFF Mask ...
-    if (!is_first &&
-        (s->terrcorr_is_checked || s->refine_geolocation_is_checked) &&
+    if ((s->terrcorr_is_checked || s->refine_geolocation_is_checked) &&
         has_tiff_ext(s->mask_file))
     {
         // ... we point to the saved mask instead of the TIFF
@@ -1383,6 +1398,8 @@ settings_update_mask(Settings *s, const char *output_path, int is_first)
         // set up in libasf_convert's convert_tiff() code.
         sprintf(s->mask_file, "%s/geocoded_mask_%s.img", output_path, file);
         free(file);
+
+        s->mask_was_generated = TRUE;
     }
 }
 

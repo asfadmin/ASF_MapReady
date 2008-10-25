@@ -190,6 +190,8 @@ typedef struct
   /* misc */
   int keep_files; // 0= keep none, 1=keep temp, 2= keep all
   int apply_metadata_fix;
+  int dem_was_generated;
+  int mask_was_generated;
 }
 Settings;
 
@@ -225,31 +227,32 @@ extern int COMP_COL_METADATA_FILE;
 /********************************** Prototypes ******************************/
 
 /* settings.c */
-Settings * settings_get_from_gui();
+Settings *settings_get_from_gui();
 void settings_apply_to_gui();
-Settings * settings_copy(const Settings *);
+Settings *settings_copy(const Settings *);
 int settings_equal(const Settings *, const Settings *);
-const gchar * settings_get_size_argument(const Settings *);
-const gchar * settings_get_latitude_argument(const Settings *);
-const gchar * settings_get_apply_metadata_fix_argument(const Settings *);
-const gchar * settings_get_output_bytes_argument(const Settings *s);
-const gchar * settings_get_data_type_string(const Settings *);
-const gchar * settings_get_data_type_arg_string(const Settings *);
-const gchar * settings_get_input_data_format_string(const Settings *);
-const gchar * settings_get_output_format_extension(const Settings *);
-const gchar * settings_get_output_format_string(const Settings *);
-const gchar * settings_get_geocode_options(const Settings *);
-const gchar * settings_get_terrcorr_options(const Settings *);
-const gchar * settings_get_projection_abbrev(const Settings *);
+const gchar *settings_get_size_argument(const Settings *);
+const gchar *settings_get_latitude_argument(const Settings *);
+const gchar *settings_get_apply_metadata_fix_argument(const Settings *);
+const gchar *settings_get_output_bytes_argument(const Settings *s);
+const gchar *settings_get_data_type_string(const Settings *);
+const gchar *settings_get_data_type_arg_string(const Settings *);
+const gchar *settings_get_input_data_format_string(const Settings *);
+const gchar *settings_get_output_format_extension(const Settings *);
+const gchar *settings_get_output_format_string(const Settings *);
+const gchar *settings_get_geocode_options(const Settings *);
+const gchar *settings_get_terrcorr_options(const Settings *);
+const gchar *settings_get_projection_abbrev(const Settings *);
 int settings_get_run_import(const Settings *);
 int settings_get_run_export(const Settings *);
 int settings_get_run_geocode(const Settings *);
 int settings_get_run_terrcorr(const Settings *);
 int  settings_get_output_format_can_be_thumbnailed(const Settings *s);
 void settings_delete(Settings *);
-void settings_update_dem(Settings *s, const char *output_path, int is_first);
-void settings_update_mask(Settings *s, const char *output_path, int is_first);
-char * settings_to_config_file(const Settings *s,
+void settings_update_dem(Settings *s, const char *output_path);
+void settings_delete_dem_and_mask(Settings *s);
+void settings_update_mask(Settings *s, const char *output_path);
+char *settings_to_config_file(const Settings *s,
            const gchar *input_file, const gchar *output_file,
            const gchar *output_path, const gchar *tmp_dir);
 int apply_settings_from_config_file(char *configFile);
@@ -282,8 +285,8 @@ void setup_band_comboboxes();
 void set_combo_box_item(GtkWidget *, gint);
 gint get_combo_box_item(GtkWidget *);
 void message_box(const gchar *);
-gchar * meta_file_name(const gchar *);
-gchar * data_file_name(const gchar *);
+gchar *meta_file_name(const gchar *);
+gchar *data_file_name(const gchar *);
 char *getPath(const char *);
 GtkWidget *get_widget_checked(const char *widget_name);
 void set_combo_box_item_checked(const char *, gint);
@@ -336,17 +339,17 @@ void do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name);
 /* state.c */
 
 /* naming_scheme.c */
-NamingScheme * naming_scheme_new(const gchar *, const gchar *, const gchar *);
-NamingScheme * naming_scheme_default();
+NamingScheme *naming_scheme_new(const gchar *, const gchar *, const gchar *);
+NamingScheme *naming_scheme_default();
 void naming_scheme_delete(NamingScheme *);
-gchar * naming_scheme_apply(const NamingScheme *, const gchar *);
+gchar *naming_scheme_apply(const NamingScheme *, const gchar *);
 gboolean naming_schemes_equal(const NamingScheme *, const NamingScheme *);
-NamingScheme * naming_scheme_copy(const NamingScheme *);
+NamingScheme *naming_scheme_copy(const NamingScheme *);
 gchar * determine_default_output_file_name_schemed(const gchar *,
                                                    const NamingScheme *scheme);
 
 /* metadata.c */
-gchar * build_asf_metadata_filename(gchar * name);
+gchar *build_asf_metadata_filename(gchar * name);
 void show_asf_meta_data(gchar *);
 void show_ceos_meta_data(gchar *);
 
@@ -355,10 +358,10 @@ const char *get_summary_text();
 void update_summary();
 
 /* geocode.c */
-const char * geocode_options_string(const Settings * settings);
+const char *geocode_options_string(const Settings * settings);
 void geocode_options_changed();
-const char * datum_string(int datum);
-const char * resample_method_string(int resample_method);
+const char *datum_string(int datum);
+const char *resample_method_string(int resample_method);
 
 /* win_font.c */
 void set_font();
@@ -376,13 +379,13 @@ void show_image_with_asf_view(gchar * in_name);
 void show_image_with_asf_view_arg(gchar * in_name, gchar *arg);
 
 /* share.c */
-char * find_in_bin(const char *);
-char * find_in_share(const char *);
+char *find_in_bin(const char *);
+char *find_in_share(const char *);
 void print_share_dir();
 
 /* terrcorr.c */
 void terrcorr_options_changed();
-const char * terrcorr_options_string(const Settings *settings);
+const char *terrcorr_options_string(const Settings *settings);
 void default_to_terrcorr_on();
 
 /* log.c */

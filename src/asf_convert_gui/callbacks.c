@@ -1131,3 +1131,12 @@ on_checkbutton_db_toggled(GtkWidget *widget)
 {
   update_summary();
 }
+
+SIGNAL_CALLBACK void
+on_view_dem_button_clicked(GtkWidget *widget)
+{
+    GtkWidget *dem_entry = get_widget_checked("dem_entry");
+    char *dem = STRDUP(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
+    show_image_with_asf_view(dem);
+    free(dem);
+}

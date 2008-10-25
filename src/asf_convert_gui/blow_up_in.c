@@ -218,6 +218,9 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     char *metadata_file = meta_file_name (file);
     char *data_file = data_file_name (file);
 
+    if (strlen((char*)data_file) == 0 || strlen((char*)meta_file_name) == 0)
+        return NULL;
+
     GdkPixbuf *popup_image_pixbuf 
         = make_input_image_thumbnail_pixbuf (metadata_file, data_file,
                                              THUMB_SIZE_BIG);

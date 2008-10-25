@@ -590,9 +590,6 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         create_clean_dir(tmp_dir);
         set_asf_tmp_dir(tmp_dir);
 
-        settings_update_dem(user_settings, output_dir, is_first);
-        settings_update_mask(user_settings, output_dir, is_first);
-
         config_file =
             settings_to_config_file(user_settings, in_file, out_full,
                 output_dir, tmp_dir);
@@ -622,6 +619,10 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
                                          intermediates_file);
             set_thumbnail(&completed_iter, tmp_dir, out_full);
         }
+
+        // for subsequent runs, save the imported dem & mask
+        settings_update_dem(user_settings, output_dir);
+        settings_update_mask(user_settings, output_dir);
 
         free(config_file);
         free(out_basename);
@@ -676,6 +677,7 @@ process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
     }
 
     processing = FALSE;
+    settings_delete_dem_and_mask(user_settings);
     settings_delete(user_settings);
     show_execute_button(TRUE);
 
