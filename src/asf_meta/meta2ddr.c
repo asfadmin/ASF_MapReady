@@ -42,8 +42,8 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	if (0==strcmp(meta->general->system,"big_ieee"))
 		strcpy(ddr->system,"ieee-std");
 	else if (0==strcmp(meta->general->system,"lil_ieee"))
-		//strcpy(ddr->system,"ieee-lil");
-		strcpy(ddr->system,"linux");
+	        strcpy(ddr->system,"ieee-lil");
+		//strcpy(ddr->system,"linux");
 	else if (0==strcmp(meta->general->system,"cray_float"))
 		strcpy(ddr->system,"cray-unicos");
 	else /* "???" ... no meta equivalent of "ibm-mvs" */
@@ -55,8 +55,6 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	else
         	strcpy(ddr->proj_units, "meters"); /* Safe to assume meters */
 	ddr->valid[DDPUV] = VALID;
-
-        printf("meta2ddr> ddr->system: %s\n", ddr->system);
 
 /* Increment per sample in x & y directions; both double */
 	if (meta->sar) {

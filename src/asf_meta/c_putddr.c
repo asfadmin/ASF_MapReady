@@ -38,7 +38,6 @@ ALGORITHM REFERENCES	none
 
 /* PROTOTYPE from meta_init.c */
 int get_meta_ddr_struct_index(const char *name);
-extern char *sysstr;
 
 lasErr c_putddr(const char *hname,struct DDR *ddr)
 {
@@ -71,10 +70,7 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
       return(E_FAIL);
     }
 
-    if (sysstr)
-      strcpy(ddr->system,sysstr);
-    else
-      strcpy(ddr->system,"ieee-std");
+    strcpy(ddr->system,"ieee-std");
 
     c_lsmknm(hname,".ddr",hostddr);
 
@@ -102,7 +98,7 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
     --------------------------------------------*/
     clen = 0;				  
     dlen = DDSIZE * 8;
-
+/*
     // convert all floating point values to proper endian-ness
     for (ii=0; ii<15; ++ii)
       big64(ddr->proj_coef[ii]);
@@ -116,7 +112,7 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
     big64(ddr->pdist_x);
     big64(ddr->line_inc);
     big64(ddr->sample_inc);
-
+*/
     dbuf = (unsigned char *) &(ddr->proj_coef[0]);
     c_lswrit(&fd,"DDRDUB",&clen,&dlen,d_temp[0],dbuf,"R8");
 
