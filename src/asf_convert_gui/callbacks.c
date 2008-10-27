@@ -134,7 +134,10 @@ input_data_format_combobox_changed()
             show_process_to_level1_checkbutton = FALSE;
             show_airsar_checkbuttons = TRUE;
             enable_terrain_correction = FALSE;
-            enable_polarimetry = TRUE;
+            // "temporarily" turning of polarimetry for AirSAR -- this is
+            // not yet working for 2.1, hopefully can be turned back on later
+            //enable_polarimetry = TRUE;
+            enable_polarimetry = FALSE;
             break;
     }
 

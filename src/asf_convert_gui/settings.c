@@ -1371,13 +1371,11 @@ settings_update_dem(Settings *s, const char *output_path)
 
 void settings_delete_dem_and_mask(Settings *s)
 {
-    printf("DEM> %d %d\n", s->dem_was_generated, s->keep_files);
     if (s->dem_was_generated && !s->keep_files) {
         printf("Removing generated DEM: %s\n", s->dem_file);
         remove_file(s->dem_file);
     }
 
-    printf("MASK> %d %d\n", s->mask_was_generated, s->keep_files);
     if (s->mask_was_generated && !s->keep_files) {
         printf("Removing generated MASK: %s\n", s->mask_file);
         remove_file(s->mask_file);
