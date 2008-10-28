@@ -408,7 +408,7 @@ void asf_airsar_import(char *inFile, char *outFile, int insar, int polar)
   }
   // Regular ingest
   else 
-    import_airsar(inFile, r_AMP, outFile);
+    import_airsar(inFile, r_AMP, FALSE, outFile);
 
   // Clean up time
   if (metaIn)
