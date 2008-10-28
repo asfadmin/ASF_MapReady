@@ -7,6 +7,8 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
 
+#define SQR(x) (x*x)
+
 char *get_airsar(char *buf, char *str)
 {
   char *p, *q, *value;
@@ -493,9 +495,9 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   airsar_header *header;
   meta_parameters *metaIn, *metaOut;
   FILE *fpIn, *fpOut;
-  char *inFile, *outFile;
+  char *inFile=NULL, *outFile=NULL;
   int ii, kk, line_offset, ret=FALSE;
-  float *floatBuf;
+  float *floatBuf=NULL;
 
   // Generate metadata file
   inFile = (char *) MALLOC(sizeof(char)*255);
@@ -532,6 +534,7 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     strcpy(metaOut->general->bands, "DEM");
     //fudge_airsar_params(metaOut);
     meta_write(metaOut, outFile);
+    FREE(header);
     ret = TRUE;
   }
 
@@ -561,6 +564,7 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     strcpy(metaOut->general->bands, "AMP");
     //fudge_airsar_params(metaOut);
     meta_write(metaOut, outFile);
+    FREE(header);
     ret = TRUE;
   }
 
@@ -590,16 +594,27 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     strcpy(metaOut->general->bands, "COH");
     //fudge_airsar_params(metaOut);
     meta_write(metaOut, outFile);
+    FREE(header);
     ret = TRUE;
   }
 
   // Clean up
   if (floatBuf)
     FREE(floatBuf);
-  FREE(inFile);
-  FREE(outFile);
+  if (inFile)
+    FREE(inFile);
+  if (outFile)
+    FREE(outFile);
 
   return ret;
+}
+
+static int sign(char byteBuf)
+{
+  if (byteBuf < 0)
+    return -1;
+  else
+    return 1;
 }
 
 int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
@@ -612,6 +627,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   float *power, *shh_amp, *shh_phase, *shv_amp, *shv_phase, *svh_amp;
   float *svh_phase, *svv_amp, *svv_phase;
   float total_power, ysca, amp, phase;
+  float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
   complexFloat cpx;
 
   // Allocate memory
@@ -634,15 +650,15 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     meta->general->band_count = 9;
     if (radiometry == r_AMP)
       strcpy(meta->general->bands,
-	     "POWER,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"\
+	     "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"\
 	     "AMP_VV,PHASE_VV");
     else if (radiometry == r_SIGMA)
       strcpy(meta->general->bands,
-	     "POWER,SIGMA-AMP-HH,SIGMA-PHASE-HH,SIGMA-AMP-HV,SIGMA-PHASE-HV,"\
+	     "AMP,SIGMA-AMP-HH,SIGMA-PHASE-HH,SIGMA-AMP-HV,SIGMA-PHASE-HV,"\
 	     "SIGMA-AMP-VH,SIGMA-PHASE-VH,SIGMA-AMP-VV,SIGMA-PHASE-VV");
     else if (radiometry == r_SIGMA_DB)
       strcpy(meta->general->bands,
-	     "POWER,SIGMA_DB-AMP-HH,SIGMA_DB-PHASE-HH,SIGMA_DB-AMP-HV,"\
+	     "AMP,SIGMA_DB-AMP-HH,SIGMA_DB-PHASE-HH,SIGMA_DB-AMP-HV,"\
 	     "SIGMA_DB-PHASE-HV,SIGMA_DB-AMP-VH,SIGMA_DB-PHASE-VH,"\
 	     "SIGMA_DB-AMP-VV,SIGMA_DB-PHASE-VV");
     power = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
@@ -666,10 +682,20 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
       for (kk=0; kk<meta->general->sample_count; kk++) {
 	FREAD(byteBuf, sizeof(char), 10, fpIn);
 	// Scale is always 1.0 according to Bruce Chapman
+	m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	m12 = (float)byteBuf[2] * m11 / 127.0;
+	m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11; 
+	m14 = sign(byteBuf[4]) * SQR((float)byteBuf[4] / 127.0) * m11; 
+	m23 = sign(byteBuf[5]) * SQR((float)byteBuf[5] / 127.0) * m11; 
+	m24 = sign(byteBuf[6]) * SQR((float)byteBuf[6] / 127.0) * m11;
+	m33 = (float)byteBuf[7] * m11 / 127.0;
+	m34 = (float)byteBuf[8] * m11 / 127.0;
+	m44 = (float)byteBuf[9] * m11 / 127.0;
+	m22 = 1 - m33 -m44;
 	total_power =
 	  ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
 	ysca = 2.0 * sqrt(total_power);
-	power[kk] = total_power;
+	power[kk] = sqrt(total_power);
 	cpx.real = (float)byteBuf[2] * ysca / 127.0;
 	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
 	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
@@ -679,20 +705,12 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 	  shh_phase[kk] = phase;
 	}
 	else if (radiometry == r_SIGMA) {
-	  if (params->cal_factor_hh < 0.0) {
-	    /*
-	    shh_amp[kk] = amp;//pow(10, amp*params->cal_factor_hh/10);
-	    shh_phase[kk] = phase;//pow(10, phase*params->cal_factor_hh/10);
-	    */
-	    shh_amp[kk] = amp;
-	    shh_phase[kk] = phase;
-	  }
+	  shh_amp[kk] = amp*amp;
+	  shh_phase[kk] = phase;
 	}
 	else if (radiometry == r_SIGMA_DB) {
-	  if (params->cal_factor_hh < 0.0) {
-	    shh_amp[kk] = amp * params->cal_factor_hh;
-	    shh_phase[kk] = phase * params->cal_factor_hh;
-	  }
+	  shh_amp[kk] = amp;
+	  shh_phase[kk] = phase;
 	}
 	cpx.real = (float)byteBuf[4] * ysca / 127.0;
 	cpx.imag = (float)byteBuf[5] * ysca / 127.0;
@@ -703,16 +721,12 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 	  shv_phase[kk] = phase;
 	}
 	else if (radiometry == r_SIGMA) {
-	  if (params->cal_factor_hv < 0.0) {
-	    shv_amp[kk] = amp;
-	    shv_phase[kk] = phase;
-	  }
+	  shv_amp[kk] = amp*amp;
+	  shv_phase[kk] = phase;
 	}
 	else if (radiometry == r_SIGMA_DB) {
-	  if (params->cal_factor_hv < 0.0) {
-	    shv_amp[kk] = amp * params->cal_factor_hv;
-	    shv_phase[kk] = phase * params->cal_factor_hv;
-	  }
+	  shv_amp[kk] = amp;
+	  shv_phase[kk] = phase;
 	}
 	cpx.real = (float)byteBuf[6] * ysca / 127.0;
 	cpx.imag = (float)byteBuf[7] * ysca / 127.0;
@@ -723,16 +737,12 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 	  svh_phase[kk] = phase;
 	}
 	else if (radiometry == r_SIGMA) {
-	  if (params->cal_factor_vh < 0.0) {
-	    svh_amp[kk] = amp;
-	    svh_phase[kk] = phase;
-	  }
+	  svh_amp[kk] = amp*amp;
+	  svh_phase[kk] = phase;
 	}
 	else if (radiometry == r_SIGMA_DB) {
-	  if (params->cal_factor_vh < 0.0) {
-	    svh_amp[kk] = amp * params->cal_factor_vh;
-	    svh_phase[kk] = phase * params->cal_factor_vh;
-	  }
+	  svh_amp[kk] = amp;
+	  svh_phase[kk] = phase;
 	}
 	cpx.real = (float)byteBuf[8] * ysca / 127.0;
 	cpx.imag = (float)byteBuf[9] * ysca / 127.0;
@@ -743,16 +753,12 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 	  svv_phase[kk] = phase;
 	}
 	else if (radiometry == r_SIGMA) {
-	  if (params->cal_factor_vv < 0.0) {
-	    svv_amp[kk] = amp;
-	    svv_phase[kk] = phase;
-	  }
+	  svv_amp[kk] = amp*amp;
+	  svv_phase[kk] = phase;
 	}
 	else if (radiometry == r_SIGMA_DB) {
-	  if (params->cal_factor_vv < 0.0) {
-	    svv_amp[kk] = amp * params->cal_factor_vv;
-	    svv_phase[kk] = phase * params->cal_factor_vv;
-	  }
+	  svv_amp[kk] = amp;
+	  svv_phase[kk] = phase;
 	}	
       }
       put_band_float_line(fpOut, meta, 0, ii, power);
@@ -769,22 +775,24 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     FCLOSE(fpIn);
     FCLOSE(fpOut);
     meta_write(meta, outFile);
+
+    // Clean up
+    FREE(power);
+    FREE(shh_amp);
+    FREE(shh_phase);
+    FREE(shv_amp);
+    FREE(shv_phase);
+    FREE(svh_amp);
+    FREE(svh_phase);
+    FREE(svv_amp);
+    FREE(svv_phase);
+    FREE(inFile);
+    FREE(outFile);
+    FREE(byteBuf);
+    
     ret = TRUE;
   }
 
-  // Clean up
-  FREE(power);
-  FREE(shh_amp);
-  FREE(shh_phase);
-  FREE(shv_amp);
-  FREE(shv_phase);
-  FREE(svh_amp);
-  FREE(svh_phase);
-  FREE(svv_amp);
-  FREE(svv_phase);
-  FREE(inFile);
-  FREE(outFile);
-  FREE(byteBuf);
 
   return ret;
 }
@@ -825,18 +833,15 @@ void import_airsar(const char *inBaseName, radiometry_t radiometry,
   }
 
   // Check for interferometric data
-  int insar = FALSE;
   if (general->c_cross_data) {
     asfPrintStatus("\n   Ingesting C-band cross track interferometric data ..."
            "\n\n");
-    if (ingest_insar_data(inBaseName, outBaseName, 'c'))
-      insar = TRUE;
+    ingest_insar_data(inBaseName, outBaseName, 'c');
   }
   if (general->l_cross_data) {
     asfPrintStatus("\n   Ingesting L-band cross track interferometric data ..."
            "\n\n");
-    if (ingest_insar_data(inBaseName, outBaseName, 'l'))
-      insar = TRUE;
+    ingest_insar_data(inBaseName, outBaseName, 'l');
   }
 
   // Kept out the along-track interferometric data for the moment.
@@ -844,29 +849,20 @@ void import_airsar(const char *inBaseName, radiometry_t radiometry,
   // to verify the results.
 
   // Check for polarimetric data
-  // Do this only if you don't have ingested interferometric data yet.
-  // Polarimetric data are apparently in a different geometry compared
-  // to the interferometric data.
-  //if (!insar) {
-    if (general->c_pol_data) {
-      asfPrintStatus("\n   Ingesting C-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, radiometry, 'c');
-    }
-    if (general->l_pol_data) {
-      asfPrintStatus("\n   Ingesting L-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, radiometry, 'l');
-    }
-    if (general->p_pol_data) {
-      asfPrintStatus("\n   Ingesting P-band polarimetric data ...\n\n");
-      ingest_polsar_data(inBaseName, outBaseName, radiometry, 'p');
-    }
-    /*
+  if (general->c_pol_data) {
+    asfPrintStatus("\n   Ingesting C-band polarimetric data ...\n\n");
+    ingest_polsar_data(inBaseName, outBaseName, radiometry, 'c');
   }
-  else
-    asfPrintStatus("\n   Skipping polarimetric data (different geometry) ..."
-		   "\n\n");
-    */
-  free(general);
+  if (general->l_pol_data) {
+    asfPrintStatus("\n   Ingesting L-band polarimetric data ...\n\n");
+    ingest_polsar_data(inBaseName, outBaseName, radiometry, 'l');
+  }
+  if (general->p_pol_data) {
+    asfPrintStatus("\n   Ingesting P-band polarimetric data ...\n\n");
+    ingest_polsar_data(inBaseName, outBaseName, radiometry, 'p');
+  }
+  
+  FREE(general);
 }
 
 // The purpose of this code is to refine the values of the along
