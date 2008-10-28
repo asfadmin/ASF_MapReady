@@ -114,7 +114,6 @@ void process()
     return;
   }
 
-  int ret=1, nfiles=1;
   int input_format = get_combo_box_item("input_format_combobox");
   int output_format = get_combo_box_item("output_format_combobox");
 

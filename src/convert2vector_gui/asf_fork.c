@@ -8,6 +8,8 @@
 
 #include <windows.h>
 
+typedef DWORD WINAPI winForkFunc(void *);
+
 #else
 
 #include "asf_meta.h"
@@ -23,11 +25,13 @@ int asfFork(forkFunc child_fn, void *child_params,
 
 #ifdef win32
 
+  winForkFunc *f = (winForkFunc *)child_fn;
+
   DWORD id;
   HANDLE h = CreateThread(
       NULL,                        // default security attributes
       0,                           // default stack size
-      child_fn,                    // thread function name
+      f,                           // thread function name
       child_params,                // argument to thread function
       0,                           // default creation flags
       &id);                        // returns the thread id
