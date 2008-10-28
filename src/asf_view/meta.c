@@ -1,5 +1,6 @@
 #include "asf_view.h"
 #include "asf_geocode.h"
+#include <ctype.h>
 
 // returns a pointer to static memory -- don't free or keep
 // pointers to!
@@ -76,6 +77,16 @@ static const char *get_data_type_str(data_type_t data_type)
       return "Complex 64-bit Float";
     default:
       return "???";
+  }
+}
+
+static void fix_bad_chars(char *s)
+{
+  int i,n = strlen(s);
+  for (i=0; i<n; ++i) {
+    s[i] = s[i]&0x7F;
+    if (!isprint(s[i]) && s[i]!='\n')
+      s[i]=' ';
   }
 }
 
@@ -180,6 +191,7 @@ void fill_meta_info()
       }
     }
 
+    fix_bad_chars(s);
     put_string_to_label("meta_label", s);
 }
 
