@@ -243,6 +243,33 @@ data_file_name(const gchar * file_name)
         return ret;
       }
 
+      // c-band polarimetric next
+      *p = '\0';
+      strcat(data_name, "_c.dat");
+      if (fileExists(data_name)) {
+        gchar *ret = g_strdup(data_name);
+        FREE(data_name);
+        return ret;
+      }
+
+      // l-band polarimetric next
+      *p = '\0';
+      strcat(data_name, "_l.dat");
+      if (fileExists(data_name)) {
+        gchar *ret = g_strdup(data_name);
+        FREE(data_name);
+        return ret;
+      }
+
+      // p-band next
+      *p = '\0';
+      strcat(data_name, "_p.dat");
+      if (fileExists(data_name)) {
+        gchar *ret = g_strdup(data_name);
+        FREE(data_name);
+        return ret;
+      }
+
       // ?
       FREE(data_name);
       return g_strdup("");
