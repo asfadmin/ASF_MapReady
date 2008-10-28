@@ -92,9 +92,10 @@ static void create_file_chooser_dialog()
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), img_filt);
 
     GtkFileFilter *airsar_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(airsar_filt, "AirSAR Files (*.vvi2, *.demi2)");
+    gtk_file_filter_set_name(airsar_filt, "AirSAR Files");
     gtk_file_filter_add_pattern(airsar_filt, "*.vvi2");
     gtk_file_filter_add_pattern(airsar_filt, "*.demi2");
+    gtk_file_filter_add_pattern(airsar_filt, "*.corgr");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), airsar_filt);
 
     GtkFileFilter *tiff_filt = gtk_file_filter_new();
@@ -160,7 +161,7 @@ void new_file(void)
     of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
         "ALOS Image (IMG-*)\0IMG-*\0"
         "ASF Internal (*.img)\0*.img\0"
-        "AirSAR (*.vvi2,*.demi2)\0*.vvi2;*.demi2\0"
+        "AirSAR (*.vvi2,*.demi2,*.corgr)\0*.vvi2;*.demi2;*.corgr\0"
         "GeoTIFF Image (*.tif)\0*.tif\0"
         "JPG (*.jpg)\0*.jpg\0"
         "PNG (*.png)\0*.png\0"
