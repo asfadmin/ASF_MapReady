@@ -30,6 +30,7 @@ LIBS =  \
 OBJLIB = 	\
 	baseline2vector.o \
 	read_srf.o \
+	setup.o \
 	determine_baseline.o \
 	generate_products.o \
 	baseline_catalog.o
@@ -43,12 +44,16 @@ lib: $(OBJLIB)
 	mv libasf_baseline.a $(LIBDIR)
 	cp asf_baseline.h $(ASF_INCLUDE_DIR)
 
-exe: baseline_catalog
+exe: baseline_catalog filter_srfs
 
 baseline_catalog: baseline_catalog_main.c lib
 	$(CC) $(CFLAGS) -o baseline_catalog baseline_catalog_main.c $(LIBDIR)/libasf_baseline.a $(LIBS)
 	rm *.o
 	mv baseline_catalog$(BIN_POSTFIX) $(BINDIR)
+
+filter_srfs: filter_srfs.c
+	$(CC) $(CFLAGS) -o filter_srfs filter_srfs.c $(LIBS)
+	mv filter_srfs$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f *.o *~ core*

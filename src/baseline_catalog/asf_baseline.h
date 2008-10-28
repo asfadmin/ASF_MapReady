@@ -22,10 +22,72 @@
 #define SIZE 500000
 #define MAX_ORBITS 100 // in a month
 
-struct srf_orbit {
-  char sensor[10];  
+// Definition of orbit range and repeat cycles
+#define PSR_MIN_ORBIT 1633
+#define PSR_MAX_ORBIT 200000
+#define PSR_ORBITS_PER_CYCLE 671
+
+#define R1_MIN_ORBIT 84
+#define R1_MAX_ORBIT 65219
+#define R1_ORBITS_PER_CYCLE 343
+
+#define E1_A_MIN_ORBIT 126
+#define E1_A_MAX_ORBIT 2104
+#define E1_A_ORBITS_PER_CYCLE 43
+
+#define E1_B_MIN_ORBIT 2354
+#define E1_B_MAX_ORBIT 3713
+#define E1_B_ORBITS_PER_CYCLE 43
+
+#define E1_C_MIN_ORBIT 3901
+#define E1_C_MAX_ORBIT 12749
+#define E1_C_ORBITS_PER_CYCLE 501
+
+#define E1_D_MIN_ORBIT 12574
+#define E1_D_MAX_ORBIT 14300
+#define E1_D_ORBITS_PER_CYCLE 43
+
+#define E1_F_MIN_ORBIT 16747
+#define E1_F_MAX_ORBIT 19247
+#define E1_F_ORBITS_PER_CYCLE 1784
+
+#define E1_G_MIN_ORBIT 19248
+#define E1_G_MAX_ORBIT 100000 // Michelle's number: 25539 looks a little small
+#define E1_G_ORBITS_PER_CYCLE 501
+
+#define E2_MIN_ORBIT 202
+#define E2_MAX_ORBIT 200000 // still rock and rolling
+#define E2_ORBITS_PER_CYCLE 501
+
+#define E1_TANDEM_MIN_ORBIT 19248 // FIX ME: check exact orbit
+#define E1_TANDEM_MAX_ORBIT 200000 // FIX ME: check exact orbit
+#define E1_TANDEM_ORBITS_PER_CYCLE 501
+
+#define E2_TANDEM_MIN_ORBIT 202
+#define E2_TANDEM_MAX_ORBIT 200000 // FIX ME: check exact orbit
+#define E2_TANDEM_ORBITS_PER_CYCLE 501
+
+#define J1_MIN_ORBIT 300 // FIX ME: need exact number
+#define J1_MAX_ORBIT 50000 // FIX ME: need exact number
+#define J1_ORBITS_PER_CYCLE 659
+
+
+// Structures
+struct srf_file {
+  char file_name[30];
+  char sensor[5];
+  char beam_mode[10];
   int orbit;
-  int seq;
+  int sequence;
+  double scan;
+  int frames;
+};
+
+struct srf_orbit {
+  char sensor[10];// name of sensor
+  int orbit;      // orbit number
+  int seq;        // sequence number
+  float off_nadir;// off-nadir angle - only used for PALSAR
   char orbit_dir; // orbit direction
   int frame;      // frame number
   float c_lat;    // center latitude
@@ -50,8 +112,10 @@ struct srf_orbit {
 };
 
 struct base_pair {
-  char sensor[10];   // sensor
+  char m_sensor[10]; // sensor of master image
+  char s_sensor[10]; // sensor of slave image
   char mode[5];      // beam mode
+  float off_nadir;   // off-nadir angle - only used for PALSAR
   int track;         // track number
   int frame;         // frame number
   char orbit_dir[15];// orbit direction
@@ -80,17 +144,17 @@ struct base_pair {
 void baseline2kml(int ii, struct base_pair *pairs, FILE *fp);
 void baseline2shape(int ii, struct base_pair *pairs, 
 		    DBFHandle dbase, SHPHandle shape);
-void baseline_catalog(char *sensor, char *beam_mode, int orbit,
-		      char *input, char *output_dir);
-void read_srf(char *input_dir, char *mode, int track, 
+void baseline_catalog(char *sensor, char *beam_mode, char *input, 
+		      char *output_dir);
+void setup_files(char *sensor, char *beam_mode, char *input_dir, 
+		 char *output_dir, int *nTracks, int *nFrames);
+void read_srf(char *input_dir, char *inFile, 
 	      struct srf_orbit **srf_orbits, int *nOrbits);
-void determine_baseline(char *sensor, char *mode, int track, int orbit,
-			struct srf_orbit *srf, int nOrbits, 
+void read_palsar(char *inFile, struct srf_orbit **srf_orbits, int *nOrbits);
+void determine_baseline(char *m_sensor, char *s_sensor, char *mode, int track, 
+			int orbit, struct srf_orbit *srf, int nOrbits, 
 			struct base_pair **pairs, int *nPairs);
 void generate_products(char *output_dir, struct base_pair *pairs, int nPairs);
 
-void month2html(char *output_dir, char *sensor, char *mode, int *orbits);
-void mode2html(char *output_dir, char *sensor, char *mode, int *months);
-void update_index(char *output_dir);
 
 #endif

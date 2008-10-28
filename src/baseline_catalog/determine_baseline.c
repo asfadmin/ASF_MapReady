@@ -1,7 +1,7 @@
 #include "asf_baseline.h"
 
-void determine_baseline(char *sensor, char *mode, int track, int orbit,
-			struct srf_orbit *srf, int nOrbits, 
+void determine_baseline(char *m_sensor, char *s_sensor, char *mode, int track, 
+			int orbit, struct srf_orbit *srf, int nOrbits, 
 			struct base_pair **base_pairs, int *nPairs)
 {
   struct base_pair *pairs;
@@ -11,7 +11,7 @@ void determine_baseline(char *sensor, char *mode, int track, int orbit,
   hms_time hms1, hms2;
   vector target, up, relPos, upBeam, alongBeam, beamNormal;
   char time1[30], time2[30];
-  int  i, j, k=0, beginYear, endYear, sign;
+  int  i, j, k=0, beginYear, endYear, sign, match;
   double lat, phi, earthRadius, Bp, Bn, dt, re, rp;
 
   pairs = (struct base_pair *) MALLOC(sizeof(struct base_pair)*SIZE);
@@ -19,9 +19,13 @@ void determine_baseline(char *sensor, char *mode, int track, int orbit,
   for (i=0; i<nOrbits; i++) { // Master image
     for (j=0; j<nOrbits; j++) { // Slave image
       
-      if(srf[i].orbit != srf[j].orbit && srf[i].frame == srf[j].frame &&
-	 (srf[i].orbit >= orbit || srf[j].orbit >= orbit)) {
-	sprintf(pairs[k].sensor, "%s", sensor);
+      if (srf[i].orbit != srf[j].orbit && srf[i].frame == srf[j].frame)
+	match = TRUE;
+      else
+	match = FALSE;
+      if (match) {
+	sprintf(pairs[k].m_sensor, "%s", m_sensor);
+	sprintf(pairs[k].s_sensor, "%s", s_sensor);
 	sprintf(pairs[k].mode, "%s", mode);
 	pairs[k].track = track;
 	pairs[k].frame = srf[i].frame;
@@ -78,19 +82,25 @@ void determine_baseline(char *sensor, char *mode, int track, int orbit,
 	gei2fixed(&stVec2,
 		  utc2gha(jd2.year, jd2.jd, hms2.hour, hms2.min, hms2.sec));
 	
-	// Target is the patch of ground at beam center.
-	// Initialize the transformation.
-	g = init_geolocate(&stVec1);
-	g->lambda = 0.0565646;
-	lat = srf[i].c_lat*D2R;
-	rp = g->rp;
-	re = g->re;
-	g->earth_radius = 
-	  (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
-	getLoc(g, srf[i].range, srf[i].doppler, 
-	       &lat, &phi, &earthRadius);
-	free_geolocate(g);
-	sph2cart(earthRadius, lat, phi, &target);
+	// PALSAR metadata don't have Doppler and range information
+	if (strcmp(m_sensor, "PSR") == 0)
+	  target = stVec2.pos;
+	// Other baseline cases have Doppler information
+	else {
+	  // Target is the patch of ground at beam center.
+	  // Initialize the transformation.
+	  g = init_geolocate(&stVec1);
+	  g->lambda = 0.0565646;
+	  lat = srf[i].c_lat*D2R;
+	  rp = g->rp;
+	  re = g->re;
+	  g->earth_radius = 
+	    (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+	  getLoc(g, srf[i].range, srf[i].doppler, 
+		 &lat, &phi, &earthRadius);
+	  free_geolocate(g);
+	  sph2cart(earthRadius, lat, phi, &target);
+	}
 	
 	// Create beam plane unit vectors
 	vecSub(stVec1.pos, target, &alongBeam);

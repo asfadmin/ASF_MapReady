@@ -26,19 +26,22 @@ void baseline2kml(int ii, struct base_pair *pairs, FILE *fp)
   // Write information in kml file
   fprintf(fp, "<Placemark>\n");
   fprintf(fp, "<description><![CDATA[\n");
-  fprintf(fp, "<strong>Sensor</strong>: %s<br>\n", pairs->sensor);
+  if (strcmp(pairs->m_sensor, pairs->s_sensor) == 0)
+    fprintf(fp, "<strong>Sensor</strong>: %s<br>\n", pairs->m_sensor);
+  else {
+    fprintf(fp, "<strong>Master sensor</strong>: %s<br>\n", pairs->m_sensor);
+    fprintf(fp, "<strong>Slave sensor</strong>: %s<br>\n", pairs->s_sensor);
+  }
   fprintf(fp, "<strong>Mode</strong>: %s<br>\n", pairs->mode);
   fprintf(fp, "<strong>Frame</strong>: %d<br>\n", pairs->frame);
   fprintf(fp, "<strong>Orbit direction</strong>: %s<br>\n", 
 	  pairs->orbit_dir);
   fprintf(fp, "<strong>Master</strong>: %d<br>\n", pairs->master);
-  fprintf(fp, "<strong>Master sequence</strong>: %d<br>\n", pairs->m_seq);
   sscanf(pairs->m_time, "%4d-%3dT", &jd.year, &jd.jd);
   date_jd2ymd(&jd, &ymd);
   fprintf(fp, "<strong>Master acquisition</strong>: %d-%s-%d<br>\n",
 	  ymd.day, mon[ymd.month], ymd.year);
   fprintf(fp, "<strong>Slave</strong>: %d<br>\n", pairs->slave);
-  fprintf(fp, "<strong>Slave sequence</strong>: %d<br>\n", pairs->s_seq);
   sscanf(pairs->s_time, "%4d-%3dT", &jd.year, &jd.jd);
   date_jd2ymd(&jd, &ymd);
   fprintf(fp, "<strong>Slave acquisition</strong>: %d-%s-%d<br>\n", 
@@ -62,7 +65,6 @@ void baseline2kml(int ii, struct base_pair *pairs, FILE *fp)
   fprintf(fp, "<latitude>%.4f</latitude>\n", pairs->c_lat);
   fprintf(fp, "<altitude>0</altitude>\n");
   fprintf(fp, "<range>500000</range>\n");
-  fprintf(fp, "<tilt>30</tilt>\n");
   fprintf(fp, "<heading>0</heading>\n");
   fprintf(fp, "</LookAt>\n");
   fprintf(fp, "<Style>\n");
@@ -88,7 +90,7 @@ void baseline2kml(int ii, struct base_pair *pairs, FILE *fp)
   return;
 }
 
-void init_baseline_shape(char *inFile)
+void init_baseline_shape(char *inFile, int sensor_count)
 {
   char *dbaseFile;
   DBFHandle dbase;
@@ -102,8 +104,16 @@ void init_baseline_shape(char *inFile)
     asfPrintError("Could not create database file '%s'\n", dbaseFile);
 
   // Add fields to database
-  if (DBFAddField(dbase, "Sensor", FTString, 15, 0) == -1)
-    asfPrintError("Could not add sensor field to database file\n");
+  if (sensor_count == 1) {
+    if (DBFAddField(dbase, "Sensor", FTString, 15, 0) == -1)
+      asfPrintError("Could not add sensor field to database file\n");
+  }
+  else {
+    if (DBFAddField(dbase, "Master_sensor", FTString, 15, 0) == -1)
+      asfPrintError("Could not add sensor field to database file\n");
+    if (DBFAddField(dbase, "Slave_sensor", FTString, 15, 0) == -1)
+      asfPrintError("Could not add sensor field to database file\n");
+  }
   if (DBFAddField(dbase, "Beam_mode", FTString, 5, 0) == -1)
     asfPrintError("Could not add beam mode to database file\n");
   if (DBFAddField(dbase, "Frame", FTInteger, 4, 0) == -1)
@@ -112,15 +122,11 @@ void init_baseline_shape(char *inFile)
     asfPrintError("Could not add orbit direction field to database file\n");
   if (DBFAddField(dbase, "Master", FTInteger, 5, 0) == -1)
     asfPrintError("Could not add master field to database file\n");
-  if (DBFAddField(dbase, "Master_seq", FTInteger, 10, 0) == -1)
-    asfPrintError("Could not add master sequence field to database file\n");
   if (DBFAddField(dbase, "Master_date", FTString, 20, 0) == -1)
     asfPrintError("Could not add master acquisition date field"
 		  " to database file\n");
   if (DBFAddField(dbase, "Slave", FTInteger, 5, 0) == -1)
     asfPrintError("Could not add slave field to database file\n");
-  if (DBFAddField(dbase, "Slave_seq", FTInteger, 10, 0) == -1)
-    asfPrintError("Could not add slave sequence field to database file\n");
   if (DBFAddField(dbase, "Slave_date", FTString, 20, 0) == -1)
     asfPrintError("Could not add slave acquisition date field"
 		  " to database file\n");
@@ -204,7 +210,7 @@ void close_baseline_shape(DBFHandle dbase, SHPHandle shape)
 void baseline2shape(int ii, struct base_pair *pairs, 
 		    DBFHandle dbase, SHPHandle shape)
 {
-  int vertices=4;
+  int vertices=4, off;
   char date[15];
   double *lat, *lon;
   julian_date jd;
@@ -227,35 +233,41 @@ void baseline2shape(int ii, struct base_pair *pairs,
   lon[vertices] = lon[0];
   
   // Write information into database file
-  DBFWriteStringAttribute(dbase, ii, 0, pairs->sensor);
-  DBFWriteStringAttribute(dbase, ii, 1, pairs->mode);
-  DBFWriteIntegerAttribute(dbase, ii, 2, pairs->frame);
-  DBFWriteStringAttribute(dbase, ii, 3, pairs->orbit_dir);
-  DBFWriteIntegerAttribute(dbase, ii, 4, pairs->master);
-  DBFWriteIntegerAttribute(dbase, ii, 5, pairs->m_seq);
+  if (strcmp_case(pairs->m_sensor, pairs->s_sensor) == 0) {
+    DBFWriteStringAttribute(dbase, ii, 0, pairs->m_sensor);
+    off = 0;
+  }
+  else {
+    DBFWriteStringAttribute(dbase, ii, 0, pairs->m_sensor);
+    DBFWriteStringAttribute(dbase, ii, 1, pairs->s_sensor);
+    off = 1;
+  }
+  DBFWriteStringAttribute(dbase, ii, off+1, pairs->mode);
+  DBFWriteIntegerAttribute(dbase, ii, off+2, pairs->frame);
+  DBFWriteStringAttribute(dbase, ii, off+3, pairs->orbit_dir);
+  DBFWriteIntegerAttribute(dbase, ii, off+4, pairs->master);
   sscanf(pairs->m_time, "%4d-%3dT", &jd.year, &jd.jd);
   date_jd2ymd(&jd, &ymd);
   sprintf(date, "%d-%s-%d", ymd.day, mon[ymd.month], ymd.year);
-  DBFWriteStringAttribute(dbase, ii, 6, date);
-  DBFWriteIntegerAttribute(dbase, ii, 7, pairs->slave);
-  DBFWriteIntegerAttribute(dbase, ii, 8, pairs->s_seq);
+  DBFWriteStringAttribute(dbase, ii, off+5, date);
+  DBFWriteIntegerAttribute(dbase, ii, off+6, pairs->slave);
   sscanf(pairs->s_time, "%4d-%3dT", &jd.year, &jd.jd);
   date_jd2ymd(&jd, &ymd);
   sprintf(date, "%d-%s-%d", ymd.day, mon[ymd.month], ymd.year);
-  DBFWriteStringAttribute(dbase, ii, 9, date);
-  DBFWriteIntegerAttribute(dbase, ii, 10, pairs->b_par);
-  DBFWriteIntegerAttribute(dbase, ii, 11, pairs->b_perp);
-  DBFWriteIntegerAttribute(dbase, ii, 12, pairs->b_temp);
-  DBFWriteDoubleAttribute(dbase, ii, 13, pairs->c_lat);
-  DBFWriteDoubleAttribute(dbase, ii, 14, pairs->c_lon);
-  DBFWriteDoubleAttribute(dbase, ii, 15, pairs->ns_lat);
-  DBFWriteDoubleAttribute(dbase, ii, 16, pairs->ns_lon);
-  DBFWriteDoubleAttribute(dbase, ii, 17, pairs->fs_lat);
-  DBFWriteDoubleAttribute(dbase, ii, 18, pairs->fs_lon);
-  DBFWriteDoubleAttribute(dbase, ii, 19, pairs->ne_lat);
-  DBFWriteDoubleAttribute(dbase, ii, 20, pairs->ne_lon);
-  DBFWriteDoubleAttribute(dbase, ii, 21, pairs->fe_lat);
-  DBFWriteDoubleAttribute(dbase, ii, 22, pairs->fe_lon);
+  DBFWriteStringAttribute(dbase, ii, off+7, date);
+  DBFWriteIntegerAttribute(dbase, ii, off+8, pairs->b_par);
+  DBFWriteIntegerAttribute(dbase, ii, off+9, pairs->b_perp);
+  DBFWriteIntegerAttribute(dbase, ii, off+10, pairs->b_temp);
+  DBFWriteDoubleAttribute(dbase, ii, off+11, pairs->c_lat);
+  DBFWriteDoubleAttribute(dbase, ii, off+12, pairs->c_lon);
+  DBFWriteDoubleAttribute(dbase, ii, off+13, pairs->ns_lat);
+  DBFWriteDoubleAttribute(dbase, ii, off+14, pairs->ns_lon);
+  DBFWriteDoubleAttribute(dbase, ii, off+15, pairs->fs_lat);
+  DBFWriteDoubleAttribute(dbase, ii, off+16, pairs->fs_lon);
+  DBFWriteDoubleAttribute(dbase, ii, off+17, pairs->ne_lat);
+  DBFWriteDoubleAttribute(dbase, ii, off+18, pairs->ne_lon);
+  DBFWriteDoubleAttribute(dbase, ii, off+19, pairs->fe_lat);
+  DBFWriteDoubleAttribute(dbase, ii, off+20, pairs->fe_lon);
   
   // Write shape object
   SHPObject *shapeObject=NULL;
