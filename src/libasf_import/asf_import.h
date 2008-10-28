@@ -82,7 +82,7 @@ void import_bil(char *inBaseName, char *outBaseName);
 void import_gridfloat(char *inBaseName, char *outBaseName);
 
 void import_airsar(const char *inFileName, radiometry_t radiometry,
-		   int db_flag, const char *outBaseName);
+		   const char *outBaseName);
 meta_parameters *import_airsar_meta(const char *dataName,
 				    const char *inBaseName, int force);
 

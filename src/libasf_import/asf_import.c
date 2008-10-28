@@ -131,7 +131,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == AIRSAR) {
     asfPrintStatus("   Data format: AIRSAR\n");
-    import_airsar(inBaseName, radiometry, db_flag, outBaseName);
+    import_airsar(inBaseName, radiometry, outBaseName);
   }
   else if (format_type == VP) {
     asfPrintStatus("   Data format: VP\n");
