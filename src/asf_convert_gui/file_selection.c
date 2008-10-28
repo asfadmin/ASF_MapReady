@@ -33,21 +33,59 @@ static SIGNAL_CALLBACK void ok_clicked()
 {
     GSList *files = gtk_file_chooser_get_filenames(
         GTK_FILE_CHOOSER(browse_widget));
+    int n_ok = 0;
+    int n_not_ok = 0;
 
     gtk_widget_hide(browse_widget);
     if (files)
     {
         GSList *iter = files;
+        gchar *s=NULL;
 
         do {
-          gchar *s = (gchar *) iter->data;
-          add_to_files_list(s);
-          g_free(s);
+          s = (gchar *) iter->data;
+          int ok = add_to_files_list(s);
+          if (!ok)
+            ++n_not_ok;
+          else
+            ++n_ok;
           iter =  iter->next;
         }
         while(iter);
 
+        if (n_not_ok > 0) {
+          if (s && n_not_ok == 1 && n_ok == 0) {
+            // most common case -- adding a single file, and it did not work
+            char *msg = MALLOC(sizeof(char)*(strlen(s)+128));
+            sprintf(msg,"Unrecognized file:\n  %s\n\n"
+                        "The file may be of a type not supported "
+                        "by MapReady.\n", s);
+            message_box(msg);
+            free(msg);
+          }
+          else if (n_ok == 0) {
+            // no files successfully added
+            message_box("Couldn't add all of the selected files.\n"
+                        "The files may be of a type not supported "
+                        "by MapReady.\n");
+          }
+          else {
+            // some were added, some failed
+            message_box("Some of the files could not be added.\n"
+                        "They may be of a type not supported "
+                        "by MapReady.\n");
+          }
+        }
+
+        // now free up everything
+        iter = files;
+        do {
+          g_free((gchar *) iter->data);
+          iter =  iter->next;
+        }
+        while(iter);
         g_slist_free(files);
+
         show_queued_thumbnails();
     }
 }
