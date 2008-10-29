@@ -243,7 +243,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
       import_single_band = TRUE;
       nBandsOut = 1;
   }
-  if (ceos->product == SLC &&
+  if (ceos->product == SLC && ceos->sensor == ERS &&
       radiometry > r_AMP && radiometry < r_POWER)
   {
       asfPrintError("Single-look complex products contain a relative calibration.  Applying\n"
