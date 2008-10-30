@@ -45,7 +45,6 @@ ISSUES:
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 #define FLOAT_TOLERANCE 0.000001
 #define MISSING_PSNR -32000
-#define MIN_MATCH_CERTAINTY 0.25
 #define FILE1_FFTFILE "tmp_file1.img"
 #define FILE1_FFTFILE_META "tmp_file1.meta"
 #define FILE2_FFTFILE "tmp_file2.img"
@@ -5637,7 +5636,7 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
           strcpy(band_str1, "");
           strcpy(band_str2, "");
         }
-        sprintf(msg, "FAIL: Correlation match between images failed\n"
+        sprintf(msg, "FAIL: diff_check_geolocation() - Correlation match between images failed\n"
             "when trying to find shift in geolocation between non-blank\n"
             "images.  Comparing\n  %s%s  and\n  %s%s\nCertainty = %0.6f\n\n",
                 band_str1, inFile1, band_str2, inFile2, s[band].cert);
