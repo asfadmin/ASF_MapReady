@@ -1405,7 +1405,7 @@ void write_kml_style_keys(FILE *kml_file)
     fprintf(kml_file, "  <Style>\n");
     fprintf(kml_file, "    <LineStyle>\n");
     fprintf(kml_file, "      <color>ffff9900</color>\n");
-    fprintf(kml_file, "      <width>3</width>\n");
+    fprintf(kml_file, "      <width>2</width>\n");
     fprintf(kml_file, "    </LineStyle>\n");
     fprintf(kml_file, "    <PolyStyle>\n");
     fprintf(kml_file, "      <color>1fff5500</color>\n");
