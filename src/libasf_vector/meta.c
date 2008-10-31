@@ -34,144 +34,144 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
 
   // Add fields to database
   for (ii=0; ii<nCols; ii++) {
-    if (strcmp(dbf[ii].header, "meta.general.basename") == 0 &&
+    if (strncmp(dbf[ii].header, "meta.general.basename", 21) == 0 &&
         dbf[ii].visible) {
       length = strlen(meta->general->basename);
       if (DBFAddField(dbase, "Basename", FTString, length, 0) == -1)
         asfPrintError("Could not add basename field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.sensor") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.sensor", 19) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Sensor", FTString, 15, 0) == -1)
         asfPrintError("Could not add sensor field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.sensor_name") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.sensor_name", 24) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Name", FTString, 15, 0) == -1)
         asfPrintError("Could not add sensor name to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.mode") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.mode", 17) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Mode", FTString, 15, 0) == -1)
         asfPrintError("Could not add mode to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.processor") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.processor", 22) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Processor", FTString, 25, 0) == -1)
         asfPrintError("Could not add processor to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.data_type") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.data_type", 22) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Data_type", FTString, 25, 0) == -1)
         asfPrintError("Could not add data type to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.image_data_type") == 0 &&
-             dbf[ii].visible) {
+    else if (strncmp(dbf[ii].header, "meta.general.image_data_type", 27) == 0 
+	     && dbf[ii].visible) {
       if (DBFAddField(dbase, "Img_data_t", FTString, 25, 0) == -1)
         asfPrintError("Could not add image data type to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.radiometry") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.radiometry", 22) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Radiometry", FTString, 15, 0) == -1)
         asfPrintError("Could not add radiometry to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.system") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.system", 19) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "System", FTString, 15, 0) == -1)
         asfPrintError("Could not add system to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0 &&
-             dbf[ii].visible) {
+    else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0 
+	     && dbf[ii].visible) {
       if (DBFAddField(dbase, "Acq_date", FTString, 25, 0) == -1)
         asfPrintError("Could not add acquisition date to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.orbit") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.orbit", 17) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Orbit", FTInteger, 7, 0) == -1)
         asfPrintError("Could not add orbit to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.orbit_direction") == 0 &&
-             dbf[ii].visible) {
+    else if (strncmp(dbf[ii].header, "meta.general.orbit_direction", 27) == 0 
+	     && dbf[ii].visible) {
       if (DBFAddField(dbase, "Direction", FTString, 20, 0) == -1)
         asfPrintError("Could not add orbit direction to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.frame") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.frame", 18) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Frame", FTInteger, 5, 0) == -1)
         asfPrintError("Could not add processor to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.band_count") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.band_count", 22) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Band_count", FTInteger, 3, 0) == -1)
         asfPrintError("Could not add band count to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.bands") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.bands", 17) == 0 &&
              dbf[ii].visible) {
       length = strlen(meta->general->bands) + 1;
       if (DBFAddField(dbase, "Bands", FTString, length, 0) == -1)
         asfPrintError("Could not add bands to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.line_count") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.line_count", 22) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Lines", FTInteger, 7, 0) == -1)
         asfPrintError("Could not add line count to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.sample_count") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.sample_count", 24) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Samples", FTInteger, 7, 0) == -1)
         asfPrintError("Could not add sample count to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.start_line") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.start_line", 22) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Start_line", FTInteger, 7, 0) == -1)
         asfPrintError("Could not add start line to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.start_sample") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.start_sample", 24) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Start_sample", FTInteger, 7, 0) == -1)
         asfPrintError("Could not add start sample to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.x_pixel_size") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.x_pixel_size", 24) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "X_pix_size", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add x pixel size to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.y_pixel_size") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.y_pixel_size", 24) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Y_pix_size", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add y pixel size to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.center_latitude") == 0 &&
-             dbf[ii].visible) {
+    else if (strncmp(dbf[ii].header, "meta.general.center_latitude", 27) == 0 
+	     && dbf[ii].visible) {
       if (DBFAddField(dbase, "Center_lat", FTDouble, 9, 4) == -1)
         asfPrintError("Could not add center latitude to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.center_longitude") == 0 &&
-             dbf[ii].visible) {
+    else if (strncmp(dbf[ii].header, "meta.general.center_longitude", 28) == 0 
+	     && dbf[ii].visible) {
       if (DBFAddField(dbase, "Center_lon", FTDouble, 9, 4) == -1)
         asfPrintError("Could not add center longitude to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.re_major") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.re_major", 20) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "RE_major", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add RE major to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.re_minor") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.re_minor", 20) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "RE major", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add RE minor to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.bit_error_rate") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.bit_error_rate", 26) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "BER", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add bit error rate to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.missing_lines") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.missing_lines", 25) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "Miss_lines", FTInteger, 7, 0) == -1)
         asfPrintError("Could not add missing lines to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "meta.general.no_data") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.no_data", 19) == 0 &&
              dbf[ii].visible) {
       if (DBFAddField(dbase, "No_data", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add no data to database file\n");
@@ -179,108 +179,114 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
     if (meta->sar) {
       int kk;
       char header[12];
-      if (strcmp(dbf[ii].header, "meta.sar.image_type") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.sar.image_type", 19) == 0 &&
           dbf[ii].visible) {
         if (DBFAddField(dbase, "Image_type", FTString, 25, 0) == -1)
           asfPrintError("Could not add image type to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.look_direction") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.look_direction", 23) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Look_dir", FTString, 25, 0) == -1)
           asfPrintError("Could not add look direction to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.look_count") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.look_count", 19) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Looks", FTInteger, 3, 0) == -1)
           asfPrintError("Could not add look count field to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.deskewed") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.deskewed", 17) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Deskewed", FTInteger, 1, 0) == -1)
           asfPrintError("Could not add deskewed field to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.original_line_count") == 0 &&
-               dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, "meta.sar.original_line_count", 28) == 0
+	       && dbf[ii].visible) {
         if (DBFAddField(dbase, "Org_lines", FTInteger, 7, 0) == -1)
           asfPrintError("Could not add original lines to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.original_sample_count") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.original_sample_count", 30) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Org_samples", FTInteger, 7, 0) == -1)
           asfPrintError("Could not add original samples to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.line_increment") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.line_increment", 23) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Line_inc", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add line increment to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.sample_increment") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.sample_increment", 25) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Sample_inc", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add sample increment to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.range_time_per_pixel") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.range_time_per_pixel", 29) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Rng_t_pix", FTDouble, 16, 12) == -1)
           asfPrintError("Could not add range time per pix to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.azimuth_time_per_pixel") == 0
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.azimuth_time_per_pixel", 31) == 0
                && dbf[ii].visible) {
         if (DBFAddField(dbase, "Az_t_pix", FTDouble, 16, 12) == -1)
           asfPrintError("Could not add azimuth time pixel to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.slant_range_first_pixel") == 0
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.slant_range_first_pixel", 32) == 0
                && dbf[ii].visible) {
         if (DBFAddField(dbase, "Slnt_range", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add slant range 1. pix to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.slant_shift") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.slant_shift", 20) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Slnt_shift", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add slant shift to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.time_shift") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.time_shift", 19) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Time_shift", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add time shift to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.wavelength") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.wavelength", 19) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Wavelength", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add wavelength to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.prf") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.prf", 12) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "PRF", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add PRF to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.earth_radius") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.earth_radius", 21) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Earth_rad", FTDouble, 12, 4) == -1)
           asfPrintError("Could not add earth radius to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.earth_radius_pp") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.earth_radius_pp", 24) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "ER_pp", FTDouble, 12, 4) == -1)
           asfPrintError("Could not add earth radius pp to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_height") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.satellite_height", 25) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Sat_height", FTDouble, 12, 4) == -1)
           asfPrintError("Could not add satellite height to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_binary_time") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.satellite_binary_time", 30) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Sat_bin_t", FTString, 25, 0) == -1)
           asfPrintError("Could not add sat binary time to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_clock_time") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.satellite_clock_time", 29) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Sat_clock_t", FTString, 25, 0) == -1)
           asfPrintError("Could not add sat clock time to database file\n");
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.range_doppler_coefficients") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.range_doppler_coefficients", 35) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Rng_dop_1", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add range doppler 1 to database file\n");
@@ -289,8 +295,8 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
         if (DBFAddField(dbase, "Rng_dop_3", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add range doppler 3 to database file\n");
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.azimuth_doppler_coefficients") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.azimuth_doppler_coefficients", 37) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Az_dop_1", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add azimuth doppler 1 to database file\n");
@@ -299,53 +305,53 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
         if (DBFAddField(dbase, "Az_dop_3", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add azimuth doppler 3 to database file\n");
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.azimuth_processing_bandwidth") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.azimuth_processing_bandwidth", 37) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Az_proc_bw", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add az processing bw to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.chirp_rate") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.chirp_rate", 19) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Chirp_rate", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add chirp rate to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.pulse_duration") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.pulse_duration", 23) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Pulse_dur", FTDouble, 16, 12) == -1)
           asfPrintError("Could not add pulse duration to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.range_sampling_rate") == 0 &&
-               dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, "meta.sar.range_sampling_rate", 28) == 0
+	       && dbf[ii].visible) {
         if (DBFAddField(dbase, "Rng_samp_r", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add range samp rate to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.polarization") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.polarization", 21) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Polarize", FTString, 25, 0) == -1)
           asfPrintError("Could not add polarization to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.multilook") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.multilook", 18) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Multilook", FTInteger, 1, 0) == -1)
           asfPrintError("Could not add multiook to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.pitch") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.pitch", 14) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Pitch", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add pitch to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.roll") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.roll", 13) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Roll", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add roll to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.yaw") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.yaw", 12) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Yaw", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add yaw to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.incid_a") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.incid_a", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<6; kk++) {
           sprintf(header, "Incid_a[%d]", kk+1);
@@ -355,49 +361,54 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
       }
     }
     if (meta->optical) {
-      if (strcmp(dbf[ii].header, "meta.optical.pointing_direction") == 0 &&
-          dbf[ii].visible) {
+      if (strncmp(dbf[ii].header, "meta.optical.pointing_direction", 31) == 0 
+	  && dbf[ii].visible) {
         if (DBFAddField(dbase, "Point_dir", FTString, 15, 0) == -1)
           asfPrintError("Could not add pointing direction to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.off_nadir_angle") == 0 &&
-               dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, "meta.optical.off_nadir_angle", 28) == 0
+	       && dbf[ii].visible) {
         if (DBFAddField(dbase, "Off_nadir", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add off nadir angle to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.correction_level") == 0 &&
-               dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.correction_level", 29) == 0 && 
+	       dbf[ii].visible) {
         if (DBFAddField(dbase, "Corr_level", FTString, 5, 0) == -1)
           asfPrintError("Could not add correction level to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.cloud_percentage") == 0 &&
-               dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.cloud_percentage", 29) == 0 && 
+	       dbf[ii].visible) {
         if (DBFAddField(dbase, "Cloud_perc", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add cloud percentage to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.sun_azimuth_angle") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		      "meta.optical.sun_azimuth_angle", 30) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Sun_az_ang", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add sun azimuth angle to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.sun_elevation_angle") == 0
-               && dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, 
+		      "meta.optical.sun_elevation_angle", 32) == 0 && 
+	       dbf[ii].visible) {
         if (DBFAddField(dbase, "Sun_elev", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add sun elevation to database file\n");
       }
     }
     if (meta->thermal) {
-      if (strcmp(dbf[ii].header, "meta.thermal.band_gain") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.thermal.band_gain", 22) == 0 &&
           dbf[ii].visible) {
         if (DBFAddField(dbase, "Band_gain", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add band gain to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.thermal.band_gain_change") == 0 &&
-               dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, 
+		       "meta.thermal.band_gain_change", 29) == 0 && 
+	       dbf[ii].visible) {
         if (DBFAddField(dbase, "Gain_change", FTDouble, 16, 7) == -1)
           asfPrintError("Could not band gain change to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.thermal.day") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.thermal.day", 16) == 0 &&
                dbf[ii].visible) {
       }
       if (DBFAddField(dbase, "Day", FTInteger, 1, 0) == -1)
@@ -407,12 +418,12 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
       int kk;
       char header[12];
       int n = meta->transform->parameter_count;
-      if (strcmp(dbf[ii].header, "meta.transform.parameter_count") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.transform.parameter_count", 30) == 0 &&
           dbf[ii].visible) {
         if (DBFAddField(dbase, "Parameters", FTInteger, 2, 0) == -1)
           asfPrintError("Could not add parameter count to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.x") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.transform.x", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<n; kk++) {
           sprintf(header, "X[%d]", kk+1);
@@ -420,7 +431,7 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
             asfPrintError("Could not add parameter x to database file\n");
         }
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.y") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.transform.y", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<n; kk++) {
           sprintf(header, "Y[%d]", kk+1);
@@ -428,7 +439,7 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
             asfPrintError("Could not add parameter y to database file\n");
         }
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.l") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.transform.l", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<n; kk++) {
           sprintf(header, "L[%d]", kk+1);
@@ -436,7 +447,7 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
             asfPrintError("Could not add parameter l to database file\n");
         }
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.s") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.transform.s", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<n; kk++) {
           sprintf(header, "S[%d]", kk+1);
@@ -446,296 +457,304 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
       }
     }
     if (meta->airsar) {
-      if (strcmp(dbf[ii].header, "meta.airsar.scale_factor") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.airsar.scale_factor", 24) == 0 &&
           dbf[ii].visible) {
         if (DBFAddField(dbase, "Scale", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add scale factor to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.gps_altitude") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.airsar.gps_altitude", 24) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "GPS_height", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add GPS altitude to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.lat_peg_point") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.airsar.lat_peg_point", 25) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Lat_peg_pt", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add lat peg point to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.lon_peg_point") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.airsar.lon_peg_point", 25) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Lon_peg_pt", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add lon peg point to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.head_peg_point") == 0 &&
-               dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, "meta.airsar.head_peg_point", 26) == 0 
+	       && dbf[ii].visible) {
         if (DBFAddField(dbase, "Head_pegpt", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add heading peg point to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.along_track_offset") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.airsar.along_track_offset", 30) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "AT_offset", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add at offset  to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.cross_track_offset") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.airsar.cross_track_offset", 30) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "CT_offset", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add ct offset to database file\n");
       }
     }
     if (meta->projection) {
-      if (strcmp(dbf[ii].header, "meta.projection.type") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.projection.type", 20) == 0 &&
           dbf[ii].visible) {
         if (DBFAddField(dbase, "Proc_type", FTString, 16, 0) == -1)
           asfPrintError("Could not add projection type to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.startX") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.startX", 22) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Start_x", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add start x to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.startY") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.startY",22) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Start_y", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add start y to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.perX") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.perX", 20) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Per_x", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add per x to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.perY") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.perY", 20) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Per_y", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add per y to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.units") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.units", 21) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Units", FTString, 12, 0) == -1)
           asfPrintError("Could not add units to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.hem") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.hem", 19) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Hemisphere", FTString, 10, 0) == -1)
           asfPrintError("Could not add hemisphere to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.spheroid") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.spheroid", 24) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Spheroid", FTString, 16, 0) == -1)
           asfPrintError("Could not add speroid to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.re_major") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.re_major", 24) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Proc_major", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add re major to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.re_minor") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.re_minor", 24) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Proc_minor", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add re minor to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.datum") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.datum", 21) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Datum", FTDouble, 35, 0) == -1)
           asfPrintError("Could not add datum to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.height") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.height", 22) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Proc_ht", FTDouble, 16, 7) == -1)
           asfPrintError("Could not projection height to database file\n");
       }
       if (meta->projection->type == ALBERS_EQUAL_AREA) {
-        if (strcmp(dbf[ii].header,
-                   "meta.projection.param.albers.std_parallel1") == 0 &&
+        if (strncmp(dbf[ii].header,
+		    "meta.projection.param.albers.std_parallel1", 42) == 0 &&
             dbf[ii].visible) {
           if (DBFAddField(dbase, "Std_par_1", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add std parallel 1 to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.std_parallel2") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.std_parallel2", 42) == 0
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "Std_par_2", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add std parallel 2 to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.center_meridian") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.center_meridian", 
+			 44) == 0 && dbf[ii].visible) {
           if (DBFAddField(dbase, "Center_mer", FTDouble, 9, 4) == -1)
             asfPrintError("Could not central meridian to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.orig_latitude") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.orig_latitude", 42) == 0
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "Orig_lat", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add original lat to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.false_easting") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.false_easting", 42) == 0
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false easting to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.false_northing") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.false_northing", 
+			 43) == 0 && dbf[ii].visible) {
           if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add std parallel 1 to database file\n");
         }
       }
       else if (meta->projection->type == SCANSAR_PROJECTION) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.atct.rlocal") == 0 &&
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.atct.rlocal", 33) == 0 &&
             dbf[ii].visible) {
           if (DBFAddField(dbase, "R_local", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add rlocal to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha1") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha1", 33) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Alpha_1", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add alpha1 to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha2") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha2", 33) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Alpha_2", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add alpha 2 to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha3") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha3", 33) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Alphar_3", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add alpha 3 to database file\n");
         }
       }
       else if (meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
-        if (strcmp(dbf[ii].header,
-                   "meta.projection.param.lamaz.center_lat") == 0 &&
+        if (strncmp(dbf[ii].header,
+		    "meta.projection.param.lamaz.center_lat", 38) == 0 &&
             dbf[ii].visible) {
           if (DBFAddField(dbase, "Center_lat", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add center latitude to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.center_lon") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.center_lon", 38) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Center_lon", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add center longitude to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.false_easting") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.false_easting", 41) == 0 
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false easting to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.false_northing") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.false_northing", 42) == 0
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false northing to database file\n");
         }
       }
       else if (meta->projection->type == LAMBERT_CONFORMAL_CONIC) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.lamcc.plat1") == 0 &&
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.lamcc.plat1", 33) == 0 &&
             dbf[ii].visible) {
           if (DBFAddField(dbase, "Std_par_1", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add std parallel 1 to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.plat2") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.plat2", 33) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Std_par_2", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add std parallel 1 to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.lat0") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.lat0", 32) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Orig_lat", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add lat of origin to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.lon0") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.lon0", 32) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Center_mer", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add central meridian to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.false_easting") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.false_easting", 41) == 0 
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false easting to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.false_northing") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.false_northing", 42) == 0
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false northing to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.scale_factor") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.scale_factor", 40) == 0 
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "Proc_scale", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add scale factor to database file\n");
         }
       }
       else if (meta->projection->type == POLAR_STEREOGRAPHIC) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.ps.slat") == 0 &&
-            dbf[ii].visible) {
+        if (strncmp(dbf[ii].header, "meta.projection.param.ps.slat", 29) == 0 
+	    && dbf[ii].visible) {
           if (DBFAddField(dbase, "Std_par", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add std parallel to database file\n");
         }
-        else if (strcmp(dbf[ii].header, "meta.projection.param.ps.slon") == 0
-                 && dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header, 
+			 "meta.projection.param.ps.slon", 29) == 0 && 
+		 dbf[ii].visible) {
           if (DBFAddField(dbase, "Center_mer", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add central meridian to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.ps.false_easting") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.ps.false_easting", 38) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false easting to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.ps.false_northing") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.ps.false_northing", 39) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false northing to database file\n");
         }
       }
       else if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.utm.zone") == 0 &&
-            dbf[ii].visible) {
+        if (strncmp(dbf[ii].header, "meta.projection.param.utm.zone", 30) == 0 
+	    && dbf[ii].visible) {
           if (DBFAddField(dbase, "Zone", FTDouble, 2, 0) == -1)
             asfPrintError("Could not add zone to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.false_easting") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.false_easting", 39) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false easting to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.false_northing") == 0 &&
-                 dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.false_northing", 40) == 0 
+		 && dbf[ii].visible) {
           if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add false northing to database file\n");
         }
-        else if (strcmp(dbf[ii].header, "meta.projection.param.utm.lat0") == 0
-                 && dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header, 
+			 "meta.projection.param.utm.lat0", 30) == 0 && 
+		 dbf[ii].visible) {
           if (DBFAddField(dbase, "Proc_lat", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add latitude to database file\n");
         }
-        else if (strcmp(dbf[ii].header, "meta.projection.param.utm.lon0") == 0
-                 && dbf[ii].visible) {
+        else if (strncmp(dbf[ii].header, 
+			 "meta.projection.param.utm.lon0", 30) == 0 && 
+		 dbf[ii].visible) {
           if (DBFAddField(dbase, "Proc_lon", FTDouble, 9, 4) == -1)
             asfPrintError("Could not add std parallel 1 to database file\n");
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.scale_factor") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.scale_factor", 38) == 0 &&
                  dbf[ii].visible) {
           if (DBFAddField(dbase, "Proc_scale", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add scale factor to database file\n");
         }
       }
       else if (meta->projection->type == STATE_PLANE) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.state.zone") == 0 &&
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.state.zone", 32) == 0 &&
             dbf[ii].visible) {
           if (DBFAddField(dbase, "Zone", FTDouble, 16, 7) == -1)
             asfPrintError("Could not add std parallel 1 to database file\n");
@@ -802,26 +821,27 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
       int kk;
       int n = meta->state_vectors->vector_count;
       char header[12];
-      if (strcmp(dbf[ii].header, "meta.state.year") == 0 && dbf[ii].visible) {
+      if (strncmp(dbf[ii].header, "meta.state.year", 15) == 0 && 
+	  dbf[ii].visible) {
         if (DBFAddField(dbase, "Year", FTInteger, 4, 0) == -1)
           asfPrintError("Could not add vector count to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.state.julDay") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.state.julDay", 17) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Julian_day", FTInteger, 3, 0) == -1)
           asfPrintError("Could not add julian day to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.state.second") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.state.second", 17) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Second", FTDouble, 16, 7) == -1)
           asfPrintError("Could not add second to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.state.vector_count") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.state.vector_count", 23) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Num_stVec", FTInteger, 2, 0) == -1)
           asfPrintError("Could not add std parallel 1 to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.state.vectors") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.state.vectors", 18) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<n; kk++) {
           sprintf(header, "Time_%d", kk+1);
@@ -849,46 +869,51 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
       }
     }
     if (meta->location) {
-      if (strcmp(dbf[ii].header, "meta.location.lat_start_near_range") == 0 &&
+      if (strncmp(dbf[ii].header, 
+		  "meta.location.lat_start_near_range", 34) == 0 &&
           dbf[ii].visible) {
         if (DBFAddField(dbase, "Lat_1", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add lat start near rng to database file\n");
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_start_near_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_start_near_range", 34) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Lon_1", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add lon start near rng to database file\n");
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lat_start_far_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lat_start_far_range", 33) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Lat_2", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add lat start far rng to database file\n");
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_start_far_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_start_far_range", 33) == 0 &&
                dbf[ii].visible) {
         if (DBFAddField(dbase, "Lon_2", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add lon start far rng to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.location.lat_end_near_range") == 0
-               && dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, 
+		       "meta.location.lat_end_near_range", 32) == 0 && 
+	       dbf[ii].visible) {
         if (DBFAddField(dbase, "Lat_3", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add lat end near rng to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.location.lon_end_near_range") == 0
-               && dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, 
+		       "meta.location.lon_end_near_range", 32) == 0 && 
+		       dbf[ii].visible) {
         if (DBFAddField(dbase, "Lon_3", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add lon end near rng to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.location.lat_end_far_range") == 0
-               && dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, 
+		       "meta.location.lat_end_far_range", 31) == 0 && 
+	       dbf[ii].visible) {
         if (DBFAddField(dbase, "Lat_4", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add lat end far rng to database file\n");
       }
-      else if (strcmp(dbf[ii].header, "meta.location.lon_end_far_range") == 0
-               && dbf[ii].visible) {
+      else if (strncmp(dbf[ii].header, 
+		       "meta.location.lon_end_far_range", 31) == 0 && 
+	       dbf[ii].visible) {
         if (DBFAddField(dbase, "Lon_4", FTDouble, 9, 4) == -1)
           asfPrintError("Could not add lon end far rng to database file\n");
       }
@@ -2588,10 +2613,9 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
 
 
 // Convert metadata to shapefile
-int meta2shape(char *inFile, char *outFile, int listFlag)
+static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
+			      int n)
 {
-  DBFHandle dbase;
-  SHPHandle shape;
   dbf_header_t *dbf;
   meta_parameters *meta;
   double lat[5], lon[5];
@@ -2625,43 +2649,39 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   // Read configuration file
   read_header_config("META", &dbf, &nCols);
 
-  // Initalize the database file
-  shape_meta_init(outFile, meta);
-  open_shape(outFile, &dbase, &shape);
-
   // Write information into database file
   for (ii=0; ii<nCols; ii++) {
     // General block
-    if (strcmp(dbf[ii].header, "meta.general.basename") == 0 &&
+    if (strncmp(dbf[ii].header, "meta.general.basename", 21) == 0 &&
     dbf[ii].visible) {
       char *str = (char *)
         MALLOC(sizeof(char)*strlen(meta->general->basename));
       strcpy(str, meta->general->basename);
-      DBFWriteStringAttribute(dbase, 0, field, str);
+      DBFWriteStringAttribute(dbase, n, field, str);
       FREE(str);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.sensor") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.sensor", 19) == 0 &&
              dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, 0, field, meta->general->sensor);
+      DBFWriteStringAttribute(dbase, n, field, meta->general->sensor);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.sensor_name") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.sensor_name", 24) == 0 &&
              dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, 0, field, meta->general->sensor_name);
+      DBFWriteStringAttribute(dbase, n, field, meta->general->sensor_name);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.mode") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.mode", 17) == 0 &&
              dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, 0, field, meta->general->mode);
+      DBFWriteStringAttribute(dbase, n, field, meta->general->mode);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.processor") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.processor", 22) == 0 &&
              dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, 0, field, meta->general->processor);
+      DBFWriteStringAttribute(dbase, n, field, meta->general->processor);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.data_type") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.data_type", 22) == 0 &&
              dbf[ii].visible) {
       char data_type[25];
       if (meta->general->data_type == BYTE)
@@ -2684,11 +2704,11 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
         strcpy(data_type, "COMPLEX_REAL32");
       else if (meta->general->data_type == COMPLEX_REAL64)
         strcpy(data_type, "COMPLEX_REAL64");
-      DBFWriteStringAttribute(dbase, 0, field, data_type);
+      DBFWriteStringAttribute(dbase, n, field, data_type);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.image_data_type") == 0 &&
-             dbf[ii].visible) {
+    else if (strncmp(dbf[ii].header, "meta.general.image_data_type", 27) == 0 
+	     && dbf[ii].visible) {
       char image_data_type[25];
       if (meta->general->image_data_type == RAW_IMAGE)
         strcpy(image_data_type, "RAW_IMAGE");
@@ -2714,10 +2734,10 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
         strcpy(image_data_type, "IMAGE");
       else if (meta->general->image_data_type == MASK)
         strcpy(image_data_type, "MASK");
-      DBFWriteStringAttribute(dbase, 0, field, image_data_type);
+      DBFWriteStringAttribute(dbase, n, field, image_data_type);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.radiometry") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.radiometry", 22) == 0 &&
              dbf[ii].visible) {
       char radiometry[20];
       if (meta->general->radiometry == r_AMP)
@@ -2736,114 +2756,114 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
         strcpy(radiometry, "GAMMA_DB");
       else if (meta->general->radiometry == r_POWER)
         strcpy(radiometry, "POWER");
-      DBFWriteStringAttribute(dbase, 0, field, radiometry);
+      DBFWriteStringAttribute(dbase, n, field, radiometry);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.system") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.system", 19) == 0 &&
              dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, 0, field, meta->general->system);
+      DBFWriteStringAttribute(dbase, n, field, meta->general->system);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0 &&
-             dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, 0, field,
+    else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0 
+	     && dbf[ii].visible) {
+      DBFWriteStringAttribute(dbase, n, field,
                   meta->general->acquisition_date);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.orbit") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.orbit", 17) == 0 &&
              dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, 0, field, meta->general->orbit);
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->orbit);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.orbit_direction") == 0 &&
-             dbf[ii].visible) {
+    else if (strncmp(dbf[ii].header, "meta.general.orbit_direction", 27) == 0 
+	     && dbf[ii].visible) {
       char orbit_direction[15];
       if (meta->general->orbit_direction == 'A')
     strcpy(orbit_direction, "Ascending");
       else
        strcpy(orbit_direction, "Descending");
-      DBFWriteStringAttribute(dbase, 0, field, orbit_direction);
+      DBFWriteStringAttribute(dbase, n, field, orbit_direction);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.frame") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.frame", 18) == 0 &&
              dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, 0, field, meta->general->frame);
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->frame);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.band_count") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.band_count", 22) == 0 &&
              dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, 0, field, meta->general->band_count);
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->band_count);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.bands") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.bands", 17) == 0 &&
              dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, 0, field, meta->general->bands);
+      DBFWriteStringAttribute(dbase, n, field, meta->general->bands);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.line_count") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.line_count", 22) == 0 &&
              dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, 0, field, meta->general->line_count);
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->line_count);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.sample_count") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.sample_count", 24) == 0 &&
              dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, 0, field, meta->general->sample_count);
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->sample_count);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.start_line") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.start_line", 22) == 0 &&
              dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, 0, field, meta->general->start_line);
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->start_line);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.start_sample") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.start_sample", 24) == 0 &&
              dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, 0, field, meta->general->start_sample);
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->start_sample);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.x_pixel_size") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.x_pixel_size", 24) == 0 &&
              dbf[ii].visible) {
-      DBFWriteDoubleAttribute(dbase, 0, field, meta->general->x_pixel_size);
+      DBFWriteDoubleAttribute(dbase, n, field, meta->general->x_pixel_size);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.y_pixel_size") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.y_pixel_size", 24) == 0 &&
              dbf[ii].visible) {
-      DBFWriteDoubleAttribute(dbase, 0, field, meta->general->y_pixel_size);
+      DBFWriteDoubleAttribute(dbase, n, field, meta->general->y_pixel_size);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.center_latitude") == 0 &&
-             dbf[ii].visible) {
-      DBFWriteDoubleAttribute(dbase, 0, field, meta->general->center_latitude);
+    else if (strncmp(dbf[ii].header, "meta.general.center_latitude", 27) == 0 
+	     && dbf[ii].visible) {
+      DBFWriteDoubleAttribute(dbase, n, field, meta->general->center_latitude);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.center_longitude") == 0 &&
-             dbf[ii].visible) {
-      DBFWriteDoubleAttribute(dbase, 0, field,
+    else if (strncmp(dbf[ii].header, "meta.general.center_longitude", 28) == 0 
+	     && dbf[ii].visible) {
+      DBFWriteDoubleAttribute(dbase, n, field,
                   meta->general->center_longitude);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.re_major") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.re_major", 20) == 0 &&
              dbf[ii].visible) {
-      DBFWriteDoubleAttribute(dbase, 0, field, meta->general->re_major);
+      DBFWriteDoubleAttribute(dbase, n, field, meta->general->re_major);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.re_minor") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.re_minor", 20) == 0 &&
              dbf[ii].visible) {
-      DBFWriteDoubleAttribute(dbase, 0, field, meta->general->re_minor);
+      DBFWriteDoubleAttribute(dbase, n, field, meta->general->re_minor);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.bit_error_rate") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.bit_error_rate", 26) == 0 &&
              dbf[ii].visible) {
-      DBFWriteDoubleAttribute(dbase, 0, field, meta->general->bit_error_rate);
+      DBFWriteDoubleAttribute(dbase, n, field, meta->general->bit_error_rate);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.missing_lines") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.missing_lines", 25) == 0 &&
              dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, 0, field, meta->general->missing_lines);
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->missing_lines);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "meta.general.no_data") == 0 &&
+    else if (strncmp(dbf[ii].header, "meta.general.no_data", 19) == 0 &&
              dbf[ii].visible) {
-      DBFWriteDoubleAttribute(dbase, 0, field, meta->general->no_data);
+      DBFWriteDoubleAttribute(dbase, n, field, meta->general->no_data);
       field++;
     }
   }
@@ -2853,193 +2873,199 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
     if (meta->sar) {
       int kk;
       char str[12];
-      if (strcmp(dbf[ii].header, "meta.sar.image_type") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.sar.image_type", 19) == 0 &&
           dbf[ii].visible) {
         sprintf(str, "%c", meta->sar->image_type);
-        DBFWriteStringAttribute(dbase, 0, field, str);
+        DBFWriteStringAttribute(dbase, n, field, str);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.look_direction") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.look_direction", 23) == 0 &&
                dbf[ii].visible) {
         sprintf(str, "%c", meta->sar->look_direction);
-        DBFWriteStringAttribute(dbase, 0, field, str);
+        DBFWriteStringAttribute(dbase, n, field, str);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.look_count") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.look_count", 19) == 0 &&
                dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field, meta->sar->look_count);
+        DBFWriteIntegerAttribute(dbase, n, field, meta->sar->look_count);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.deskewed") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.deskewed", 17) == 0 &&
                dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field, meta->sar->deskewed);
+        DBFWriteIntegerAttribute(dbase, n, field, meta->sar->deskewed);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.original_line_count") == 0 &&
-               dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field,
+      else if (strncmp(dbf[ii].header, "meta.sar.original_line_count", 28) == 0
+	       && dbf[ii].visible) {
+        DBFWriteIntegerAttribute(dbase, n, field,
                                  meta->sar->original_line_count);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.original_sample_count") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.original_sample_count", 30) == 0 &&
                dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field,
+        DBFWriteIntegerAttribute(dbase, n, field,
                                  meta->sar->original_sample_count);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.line_increment") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.line_increment", 23) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->line_increment);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->line_increment);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.sample_increment") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.sample_increment", 25) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->sample_increment);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->sample_increment);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.range_time_per_pixel") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.range_time_per_pixel", 29) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->range_time_per_pixel);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.azimuth_time_per_pixel") == 0
-               && dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.azimuth_time_per_pixel", 31) == 0 && 
+	       dbf[ii].visible) {
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->azimuth_time_per_pixel);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.slant_shift") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.slant_shift", 20) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->slant_shift);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->slant_shift);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.time_shift") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.time_shift", 19) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->time_shift);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->time_shift);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.slant_range_first_pixel") == 0
-               && dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.slant_range_first_pixel", 32) == 0 && 
+	       dbf[ii].visible) {
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->slant_range_first_pixel);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.wavelength") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.wavelength", 19) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->wavelength);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->wavelength);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.prf") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.prf", 12) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->prf);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->prf);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.earth_radius") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.earth_radius", 21) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->earth_radius);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->earth_radius);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.earth_radius_pp") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.earth_radius_pp", 24) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->earth_radius_pp);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->earth_radius_pp);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_height") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.satellite_height", 25) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->satellite_height);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->satellite_height);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_binary_time") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.satellite_binary_time", 30) == 0 &&
                dbf[ii].visible) {
-        DBFWriteStringAttribute(dbase, 0, field,
+        DBFWriteStringAttribute(dbase, n, field,
                                 meta->sar->satellite_binary_time);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_clock_time") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.satellite_clock_time", 29) == 0 &&
                dbf[ii].visible) {
-        DBFWriteStringAttribute(dbase, 0, field,
+        DBFWriteStringAttribute(dbase, n, field,
                                 meta->sar->satellite_clock_time);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.range_doppler_coefficients") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.range_doppler_coefficients", 35) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->range_doppler_coefficients[0]);
         field++;
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->range_doppler_coefficients[1]);
         field++;
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->range_doppler_coefficients[2]);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.azimuth_doppler_coefficients") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.azimuth_doppler_coefficients", 37) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->azimuth_doppler_coefficients[0]);
         field++;
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->azimuth_doppler_coefficients[1]);
         field++;
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->azimuth_doppler_coefficients[2]);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.azimuth_processing_bandwidth") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.azimuth_processing_bandwidth", 37) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->azimuth_processing_bandwidth);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.chirp_rate") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.chirp_rate", 19) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->chirp_rate);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->chirp_rate);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.pulse_duration") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.pulse_duration", 23) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->pulse_duration);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->pulse_duration);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.range_sampling_rate") == 0 &&
-               dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+      else if (strncmp(dbf[ii].header, "meta.sar.range_sampling_rate", 28) == 0
+	       && dbf[ii].visible) {
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->sar->range_sampling_rate);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.polarization") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.polarization", 21) == 0 &&
                dbf[ii].visible) {
-        DBFWriteStringAttribute(dbase, 0, field, meta->sar->polarization);
+        DBFWriteStringAttribute(dbase, n, field, meta->sar->polarization);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.multilook") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.multilook", 18) == 0 &&
                dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field, meta->sar->multilook);
+        DBFWriteIntegerAttribute(dbase, n, field, meta->sar->multilook);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.pitch") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.pitch", 14) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->pitch);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->pitch);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.roll") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.roll", 13) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->roll);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->roll);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.yaw") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.yaw", 12) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->sar->yaw);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->sar->yaw);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.incid_a") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.sar.incid_a", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<6; kk++) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->sar->incid_a[kk]);
           field++;
         }
@@ -3049,39 +3075,43 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   for (ii=0; ii<nCols; ii++) {
     // Optical block
     if (meta->optical) {
-      if (strcmp(dbf[ii].header, "meta.optical.pointing_direction") == 0 &&
-          dbf[ii].visible) {
-        DBFWriteStringAttribute(dbase, 0, field,
+      if (strncmp(dbf[ii].header, "meta.optical.pointing_direction", 31) == 0 
+	  && dbf[ii].visible) {
+        DBFWriteStringAttribute(dbase, n, field,
                                 meta->optical->pointing_direction);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.off_nadir_angle") == 0 &&
-               dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+      else if (strncmp(dbf[ii].header, "meta.optical.off_nadir_angle", 28) == 0
+	       && dbf[ii].visible) {
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->optical->off_nadir_angle);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.correction_level") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.correction_level", 29) == 0 &&
                dbf[ii].visible) {
-        DBFWriteStringAttribute(dbase, 0, field,
+        DBFWriteStringAttribute(dbase, n, field,
                                 meta->optical->correction_level);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.cloud_percentage") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.cloud_percentage", 29) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->optical->cloud_percentage);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.sun_azimuth_angle") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.sun_azimuth_angle", 30) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->optical->sun_azimuth_angle);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.optical.sun_elevation_angle") == 0
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.sun_elevation_angle", 32) == 0
                && dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->optical->sun_elevation_angle);
         field++;
       }
@@ -3090,20 +3120,21 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   for (ii=0; ii<nCols; ii++) {
     // Thermal block
     if (meta->thermal) {
-      if (strcmp(dbf[ii].header, "meta.thermal.band_gain") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.thermal.band_gain", 22) == 0 &&
           dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->thermal->band_gain);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->thermal->band_gain);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.thermal.band_gain_change") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.thermal.band_gain_change", 29) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->thermal->band_gain_change);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.thermal.day") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.thermal.day", 16) == 0 &&
                dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field, meta->thermal->day);
+        DBFWriteIntegerAttribute(dbase, n, field, meta->thermal->day);
         field++;
       }
     }
@@ -3112,37 +3143,37 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
     // Transform block
     if (meta->transform) {
       int kk;
-      if (strcmp(dbf[ii].header, "meta.transform.parameter_count") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.transform.parameter_count", 30) == 0 &&
           dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field,
+        DBFWriteIntegerAttribute(dbase, n, field,
                  meta->transform->parameter_count);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.x") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.transform.x", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<meta->transform->parameter_count; kk++) {
-          DBFWriteDoubleAttribute(dbase, 0, field, meta->transform->x[kk]);
+          DBFWriteDoubleAttribute(dbase, n, field, meta->transform->x[kk]);
           field++;
         }
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.y") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.transform.y", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<meta->transform->parameter_count; kk++) {
-          DBFWriteDoubleAttribute(dbase, 0, field, meta->transform->y[kk]);
+          DBFWriteDoubleAttribute(dbase, n, field, meta->transform->y[kk]);
           field++;
         }
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.l") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.transform.l", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<meta->transform->parameter_count; kk++) {
-          DBFWriteDoubleAttribute(dbase, 0, field, meta->transform->l[kk]);
+          DBFWriteDoubleAttribute(dbase, n, field, meta->transform->l[kk]);
           field++;
         }
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.s") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.transform.s", 16) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<meta->transform->parameter_count; kk++) {
-          DBFWriteDoubleAttribute(dbase, 0, field, meta->transform->s[kk]);
+          DBFWriteDoubleAttribute(dbase, n, field, meta->transform->s[kk]);
           field++;
         }
       }
@@ -3151,40 +3182,42 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   for (ii=0; ii<nCols; ii++) {
     // AirSAR block
     if (meta->airsar) {
-      if (strcmp(dbf[ii].header, "meta.airsar.scale_factor") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.airsar.scale_factor", 24) == 0 &&
           dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->airsar->scale_factor);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->airsar->scale_factor);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.gps_altitude") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.airsar.gps_altitude", 24) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->airsar->gps_altitude);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->airsar->gps_altitude);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.lat_peg_point") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.airsar.lat_peg_point", 25) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->airsar->lat_peg_point);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->airsar->lat_peg_point);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.lon_peg_point") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.airsar.lon_peg_point", 25) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->airsar->lon_peg_point);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->airsar->lon_peg_point);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.head_peg_point") == 0 &&
-               dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->airsar->head_peg_point);
+      else if (strncmp(dbf[ii].header, "meta.airsar.head_peg_point", 26) == 0 
+	       && dbf[ii].visible) {
+        DBFWriteDoubleAttribute(dbase, n, field, meta->airsar->head_peg_point);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.along_track_offset") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.airsar.along_track_offset", 30) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->airsar->along_track_offset);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.airsar.cross_track_offset") == 0 &&
+      else if (strncmp(dbf[ii].header, 
+		       "meta.airsar.cross_track_offset", 30) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->airsar->cross_track_offset);
         field++;
       }
@@ -3193,7 +3226,7 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   for (ii=0; ii<nCols; ii++) {
     // Projection block
     if (meta->projection) {
-      if (strcmp(dbf[ii].header, "meta.projection.type") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.projection.type", 20) == 0 &&
       dbf[ii].visible) {
     char type[50];
         if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR)
@@ -3214,45 +3247,45 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
           strcpy(type, "LAT LONG PSEUDO PROJECTION");
         else if (meta->projection->type == UNKNOWN_PROJECTION)
           strcpy(type, "UNKNOWN PROJECTION");
-        DBFWriteStringAttribute(dbase, 0, field, type);
+        DBFWriteStringAttribute(dbase, n, field, type);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.startX") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.startX", 22) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->projection->startX);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->projection->startX);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.startY") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.startY", 22) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->projection->startY);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->projection->startY);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.perX") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.perX", 20) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->projection->perX);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->projection->perX);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.perY") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.perY", 20) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->projection->perY);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->projection->perY);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.units") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.units", 21) == 0 &&
                dbf[ii].visible) {
-        DBFWriteStringAttribute(dbase, 0, field, meta->projection->units);
+        DBFWriteStringAttribute(dbase, n, field, meta->projection->units);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.hem") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.hem", 19) == 0 &&
                dbf[ii].visible) {
         char hemisphere[15];
         if (meta->projection->hem == 'N')
           strcpy(hemisphere, "North");
         else if (meta->projection->hem == 'S')
           strcpy(hemisphere, "South");
-        DBFWriteStringAttribute(dbase, 0, field, hemisphere);
+        DBFWriteStringAttribute(dbase, n, field, hemisphere);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.spheroid") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.spheroid", 24) == 0 &&
                dbf[ii].visible) {
         char spheroid[25];
         if (meta->projection->spheroid == BESSEL_SPHEROID)
@@ -3279,20 +3312,20 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
           strcpy(spheroid, "HUGHES");
         else
           strcpy(spheroid, "UNKNOWN");
-        DBFWriteStringAttribute(dbase, 0, field, spheroid);
+        DBFWriteStringAttribute(dbase, n, field, spheroid);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.re_major") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.re_major", 24) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->projection->re_major);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->projection->re_major);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.re_minor") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.re_minor", 24) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->projection->re_minor);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->projection->re_minor);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.datum") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.datum", 21) == 0 &&
                dbf[ii].visible) {
         char datum[25];
         if (meta->projection->datum == EGM96_DATUM)
@@ -3317,243 +3350,246 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
           strcpy(datum, "HUGHES");
         else
           strcpy(datum, "UNKNOWN");
-        DBFWriteStringAttribute(dbase, 0, field, datum);
+        DBFWriteStringAttribute(dbase, n, field, datum);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.height") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.projection.height",22) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->projection->height);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->projection->height);
         field++;
       }
       if (meta->projection->type == ALBERS_EQUAL_AREA) {
-        if (strcmp(dbf[ii].header,
-                   "meta.projection.param.albers.std_parallel1") == 0 &&
+        if (strncmp(dbf[ii].header,
+		    "meta.projection.param.albers.std_parallel1", 42) == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.albers.std_parallel1);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.std_parallel2") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.std_parallel2", 42) == 0
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.albers.std_parallel2);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.center_meridian") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.center_meridian", 
+			 44) == 0 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.albers.center_meridian);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.orig_latitude") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.orig_latitude", 42) == 0
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.albers.orig_latitude);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.false_easting") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.false_easting", 42) == 0
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.albers.false_easting);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.false_northing") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.false_northing", 
+			 43) == 0 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.albers.false_northing);
           field++;
         }
       }
       else if (meta->projection->type == SCANSAR_PROJECTION) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.atct.rlocal") == 0 &&
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.atct.rlocal", 33) == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.atct.rlocal);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha1") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha1", 33) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.atct.alpha1);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha2") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha2", 33) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.atct.alpha2);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha3") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha3", 33) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.atct.alpha3);
           field++;
         }
       }
       else if (meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
-        if (strcmp(dbf[ii].header,
-                   "meta.projection.param.lamaz.center_lat") == 0 &&
+        if (strncmp(dbf[ii].header,
+		    "meta.projection.param.lamaz.center_lat", 38) == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamaz.center_lat);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.center_lon") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.center_lon", 38) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamaz.center_lon);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.false_easting") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.false_easting", 41) == 0
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamaz.false_easting);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.false_northing") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.false_northing", 42) == 0
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamaz.false_northing);
           field++;
         }
       }
       else if (meta->projection->type == LAMBERT_CONFORMAL_CONIC) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.lamcc.plat1") == 0 &&
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.lamcc.plat1", 33) == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamcc.plat1);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.plat2") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.plat2", 33) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamcc.plat2);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.lat0") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.lat0", 32) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamcc.lat0);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.lon0") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.lon0", 32) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamcc.lon0);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.false_easting") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.false_easting", 41) == 0
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamcc.false_easting);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.false_northing") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.false_northing", 42) == 0
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamcc.false_northing);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.scale_factor") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.scale_factor", 40) == 0 
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.lamcc.scale_factor);
           field++;
         }
       }
       else if (meta->projection->type == POLAR_STEREOGRAPHIC) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.ps.slat") == 0 &&
-            dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        if (strncmp(dbf[ii].header, "meta.projection.param.ps.slat", 29) == 0 
+	    && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.ps.slat);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.ps.slon") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.ps.slon", 29) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.ps.slon);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.ps.false_easting") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.ps.false_easting", 38) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.ps.false_easting);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.ps.false_northing") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.ps.false_northing", 39) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.ps.false_northing);
           field++;
         }
       }
       else if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.utm.zone") == 0 &&
-            dbf[ii].visible) {
-          DBFWriteIntegerAttribute(dbase, 0, field,
+        if (strncmp(dbf[ii].header, "meta.projection.param.utm.zone", 30) == 0 
+	    && dbf[ii].visible) {
+          DBFWriteIntegerAttribute(dbase, n, field,
                                    meta->projection->param.utm.zone);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.false_easting") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.false_easting", 39) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.utm.false_easting);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.false_northing") == 0 &&
-                 dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.false_northing", 40) == 0 
+		 && dbf[ii].visible) {
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.utm.false_northing);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.lat0") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.lat0", 30) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.utm.lat0);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.lon0") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.lon0", 30) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.utm.lon0);
           field++;
         }
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.scale_factor") == 0 &&
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.scale_factor", 38) == 0 &&
                  dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->projection->param.utm.scale_factor);
           field++;
         }
       }
       else if (meta->projection->type == STATE_PLANE) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.state.zone") == 0 &&
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.state.zone", 32) == 0 &&
             dbf[ii].visible) {
-          DBFWriteIntegerAttribute(dbase, 0, field,
+          DBFWriteIntegerAttribute(dbase, n, field,
                                    meta->projection->param.state.zone);
           field++;
         }
@@ -3566,50 +3602,50 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
       int kk;
       if (strcmp(dbf[ii].header, "meta.stats.band_count") == 0 &&
           dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field, meta->stats->band_count);
+        DBFWriteIntegerAttribute(dbase, n, field, meta->stats->band_count);
         field++;
       }
       for (kk=0; kk<meta->stats->band_count; kk++) {
         if (strcmp(dbf[ii].header, "meta.stats.band_stats.band_id") == 0 &&
             dbf[ii].visible) {
-          DBFWriteStringAttribute(dbase, 0, field,
+          DBFWriteStringAttribute(dbase, n, field,
                                   meta->stats->band_stats[kk].band_id);
           field++;
         }
         if (strcmp(dbf[ii].header, "meta.stats.band_stats.min") == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->stats->band_stats[kk].min);
           field++;
         }
         if (strcmp(dbf[ii].header, "meta.stats.band_stats.max") == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->stats->band_stats[kk].max);
           field++;
         }
         if (strcmp(dbf[ii].header, "meta.stats.band_stats.mean") == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->stats->band_stats[kk].mean);
           field++;
         }
         if (strcmp(dbf[ii].header, "meta.stats.band_stats.rmse") == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->stats->band_stats[kk].rmse);
           field++;
         }
         if (strcmp(dbf[ii].header,
                    "meta.stats.band_stats.std_deviation") == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->stats->band_stats[kk].std_deviation);
           field++;
         }
         if (strcmp(dbf[ii].header, "meta.stats.band_stats.mask") == 0 &&
             dbf[ii].visible) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->stats->band_stats[kk].mask);
           field++;
         }
@@ -3621,49 +3657,49 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
     if (meta->state_vectors) {
       int kk;
       int n = meta->state_vectors->vector_count;
-      if (strcmp(dbf[ii].header, "meta.state.year") == 0 &&
+      if (strncmp(dbf[ii].header, "meta.state.year", 15) == 0 &&
           dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field, meta->state_vectors->year);
+        DBFWriteIntegerAttribute(dbase, n, field, meta->state_vectors->year);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.state.julDay") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.state.julDay", 17) == 0 &&
                dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field, meta->state_vectors->julDay);
+        DBFWriteIntegerAttribute(dbase, n, field, meta->state_vectors->julDay);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.state.second") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.state.second", 17) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field, meta->state_vectors->second);
+        DBFWriteDoubleAttribute(dbase, n, field, meta->state_vectors->second);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.state.vector_count") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.state.vector_count", 23) == 0 &&
                dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, 0, field,
+        DBFWriteIntegerAttribute(dbase, n, field,
                                  meta->state_vectors->vector_count);
         field++;
       }
-      else if (strcmp(dbf[ii].header, "meta.state.vectors") == 0 &&
+      else if (strncmp(dbf[ii].header, "meta.state.vectors", 18) == 0 &&
                dbf[ii].visible) {
         for (kk=0; kk<n; kk++) {
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->state_vectors->vecs[kk].time);
           field++;
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->state_vectors->vecs[kk].vec.pos.x);
           field++;
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->state_vectors->vecs[kk].vec.pos.y);
           field++;
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->state_vectors->vecs[kk].vec.pos.z);
           field++;
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->state_vectors->vecs[kk].vec.vel.x);
           field++;
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->state_vectors->vecs[kk].vec.vel.y);
           field++;
-          DBFWriteDoubleAttribute(dbase, 0, field,
+          DBFWriteDoubleAttribute(dbase, n, field,
                                   meta->state_vectors->vecs[kk].vec.vel.z);
           field++;
         }
@@ -3673,58 +3709,59 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   for (ii=0; ii<nCols; ii++) {
     // Location block
     if (meta->location) {
-      if (strcmp(dbf[ii].header, "meta.location.lat_start_near_range") == 0 &&
+      if (strncmp(dbf[ii].header, 
+		  "meta.location.lat_start_near_range", 34) == 0 &&
           dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                                 meta->location->lat_start_near_range);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_start_near_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_start_near_range", 34) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->location->lon_start_near_range);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lat_start_far_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lat_start_far_range", 33) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->location->lat_start_far_range);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_start_far_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_start_far_range", 33) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->location->lon_start_far_range);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lat_end_near_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lat_end_near_range", 32) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->location->lat_end_near_range);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_end_near_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_end_near_range", 32) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->location->lon_end_near_range);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lat_end_far_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lat_end_far_range", 31) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->location->lat_end_far_range);
         field++;
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_end_far_range") == 0 &&
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_end_far_range", 31) == 0 &&
                dbf[ii].visible) {
-        DBFWriteDoubleAttribute(dbase, 0, field,
+        DBFWriteDoubleAttribute(dbase, n, field,
                 meta->location->lon_end_far_range);
         field++;
       }
@@ -3739,6 +3776,48 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
 
   // Clean up
   meta_free(meta);
+
+  return 1;
+}
+
+// Convert metadata to shapefile
+int meta2shape(char *inFile, char *outFile, int listFlag)
+{
+  FILE *fp;
+  DBFHandle dbase;
+  SHPHandle shape;
+  meta_parameters *meta;
+  char line[1024], metaFile[1024];
+  int n=0;
+
+  // Initialize the shape file.
+  if (listFlag) {
+    fp = FOPEN(inFile, "r");
+    fgets(line, 1024, fp);
+    line[strlen(line)-1] = '\0';
+    strcpy(metaFile, line);
+    FCLOSE(fp);
+  }
+  else
+    strcpy(metaFile, inFile);
+  meta = meta_read(metaFile);
+  shape_meta_init(outFile, meta);
+  open_shape(outFile, &dbase, &shape);
+  meta_free(meta);
+  
+  if (listFlag) {
+    fp = FOPEN(inFile, "r");
+    while (fgets(line, 1024, fp)) {
+      line[strlen(line)-1] = '\0';
+      convert_meta2shape(line, dbase, shape, n);
+      n++;
+    }
+    FCLOSE(fp);
+  }
+  else
+    convert_meta2shape(inFile, dbase, shape, 0);
+
+  // Clean up
   close_shape(dbase, shape);
   write_esri_proj_file(outFile);
 
