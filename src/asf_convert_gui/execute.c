@@ -685,7 +685,7 @@ process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
     }
 
     processing = FALSE;
-    settings_delete_dem_and_mark(user_settings);
+    settings_delete_dem_and_mask(user_settings);
     settings_delete(user_settings);
     show_execute_button(TRUE);
 
