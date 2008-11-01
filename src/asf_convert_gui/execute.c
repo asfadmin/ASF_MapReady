@@ -323,32 +323,6 @@ static void log_summary_text(FILE *fp)
 //#endif
 //}
 
-#ifdef win32
-typedef struct {
-    char cfg_file[1024];
-    int save_dem;
-} mapready_params_t;
-
-DWORD WINAPI mapready_exec(void *mapready_params)
-{
-    mapready_params_t *mp = (mapready_params_t*)mapready_params;
-
-    logflag = TRUE;
-    char *logFile = appendExt(mp->cfg_file, ".log");
-    fLog = fopen(logFile, "a");
-
-    asfPrintStatus("Running MapReady with configuration file: %s\n",
-                   mp->cfg_file);
-    log_summary_text(fLog);
-
-    asf_convert_ext(FALSE, mp->cfg_file, mp->save_dem);
-    FCLOSE(fLog);
-    FREE(logFile);
-
-    return 0;
-}
-#endif
-
 static char *
 do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
            int keep_files, char **intermediates_file)
@@ -359,19 +333,52 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
     gtk_list_store_set(list_store, iter, COL_STATUS, "Processing...", -1);
 
 #ifdef win32
-    mapready_params_t *mp = MALLOC(sizeof(mapready_params_t));
-    strncpy_safe(mp->cfg_file, cfg_file, 1023);
-    mp->save_dem = save_dem;
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
 
-    // starting a thread with the actual processing
-    DWORD id;
-    HANDLE h = CreateThread(NULL, 0, mapready_exec, (void*)mp, 0, &id);
+    memset(&si, 0, sizeof(si));
+    memset(&pi, 0, sizeof(pi));
+    si.cb = sizeof(si);
+    
+    char *cmd = MALLOC(sizeof(char)*
+        (strlen(cfg_file) + strlen(get_asf_bin_dir_win()) + 256));
+    sprintf(cmd, "\"%s/asf_mapready.exe\" %s-log \"%s\" \"%s\"",
+        get_asf_bin_dir_win(),
+        save_dem ? "--save-dem " : "",
+        logFile, cfg_file);
+
+    fLog = fopen(logFile, "a");
+    log_summary_text(fLog);
+    FCLOSE(fLog);
+
+    //printf("Running command> %s\n", cmd);
+    if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+    {
+        DWORD dw = GetLastError();
+        //printf( "CreateProcess failed (%ld)\n", dw );
+
+        LPVOID lpMsgBuf;
+        FormatMessage(
+          FORMAT_MESSAGE_ALLOCATE_BUFFER |
+          FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+          NULL,
+          dw,
+          MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
+              (LPTSTR)&lpMsgBuf,
+          0,
+          NULL);
+
+        printf("CreateProcess() failed with error %ld: %s\n",
+            dw, (char*)lpMsgBuf);
+        printf("Failed command: %s\n", cmd);
+    }
 
     char *statFile = appendExt(cfg_file, ".status");
     DWORD dwWaitResult;
     int counter = 1;
 
-    // now wait for it to finish
+    // now wait for process to finish
     do {
         while (gtk_events_pending())
             gtk_main_iteration();
@@ -389,13 +396,14 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
             }
         }
 
-        dwWaitResult = WaitForSingleObject(h, 50);
+        dwWaitResult = WaitForSingleObject(pi.hProcess, 50);
     }
     while (dwWaitResult == WAIT_TIMEOUT);
 
     remove_file(statFile);
     free(statFile);
-    free(mp);
+    // Don't do this, CreateProcess() takes it
+    //free(cmd);
 #else
     extern int logflag;
     extern FILE *fLog;
@@ -677,7 +685,7 @@ process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
     }
 
     processing = FALSE;
-    settings_delete_dem_and_mask(user_settings);
+    settings_delete_dem_and_mark(user_settings);
     settings_delete(user_settings);
     show_execute_button(TRUE);
 
