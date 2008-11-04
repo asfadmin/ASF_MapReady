@@ -1,6 +1,6 @@
 MapReady Version History
 
-MapReady 2.1.6 (released 2008 October 28)
+MapReady 2.1.7 (released 2008 November 3)
 New Functionality
 - New Polarimetric Decompositions:
   * The Cloude-Pottier decomposition, with 8 or 16 classifications,
