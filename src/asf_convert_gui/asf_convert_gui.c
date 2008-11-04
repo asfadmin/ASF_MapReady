@@ -218,6 +218,10 @@ main(int argc, char **argv)
     default_to_terrcorr_on();
     default_to_keep_temp();
     terrcorr_options_changed();
+
+    /* For some reason, it did not work to set this via glade        */
+    /* So, we have to select our default faraday rotation style here */
+    rb_select("rb_fr_global", TRUE);
     polarimetry_settings_changed();
 
     /* put files on the command-line into the files section */
