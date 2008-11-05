@@ -404,7 +404,7 @@ const char *geocode_projection_options_help()
 "            WGS84  Any region\n"
 "            HUGHES Polar regions\n"
 "\n"
-"     -pixel_size <pixel spacing> (-ps, -pix)\n"
+"     -pixel-size <pixel spacing> (-ps, -pix)\n"
 "          Specifies the pixel spacing of the geocoded image.  By default,\n"
 "          the pixel size of the first input image is used.\n"
 "\n"
