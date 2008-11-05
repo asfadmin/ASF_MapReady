@@ -24,9 +24,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
 "              [-format <inputFormat>] [-band <band_id | all>]\n"\
-"              [-data-type <type> ] [-image-data-type <type>]\n"\
-"              [-lut <file>] [-lat <lower> <upper>] [-prc] [-old] [-log <logFile>] [-quiet]\n"\
-"              [-license] [-version] [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
+"              [-image-data-type <type>] [-lut <file>] [-lat <lower> <upper>]\n"\
+"              [-prc] [-old] [-log <logFile>] [-quiet] [-license] [-version]\n"\
+"              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-multilook] [-complex] [-metadata <file>]\n"\
 "              [-line <start line subset>] [-sample <start sample subset>]\n"\
 "              [-width <subset width>] [-height <subset height>] [-help]\n"\
@@ -79,20 +79,11 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        then import the band identified by 'band_id' (only).  If 'all' is\n"\
 "        specified rather than a band_id, then import all available bands into\n"\
 "        a single ASF-format file.  Default is '-band all'.\n"\
-"   -data-type <type>\n"\
-"        Define the input data type (only required for GAMMA ingest)\n"\
-"        Supported formats:\n"\
-"        FCOMPLEX\n"\
-"        SCOMPLEX\n"\
-"        FLOAT\n"\
-"        SHORT\n"\
-"        BYTE\n"\
 "   -image-data-type <type>\n"\
 "        Force input data to be interpreted as the given image data type. Valid\n"\
 "        formats are 'amplitude_image', 'phase_image', 'coherence_image',\n"\
 "        'lut_image', 'elevation', 'dem', and 'image', 'mask'.  This parameter\n"\
-"        is ignored unless the -format parameter is \"geotiff\", \"gamma_isp\",\n"\
-"        or \"gamma_msp\".\n"\
+"        is ignored unless the -format parameter is \"geotiff\".\n"\
 "   -lut <file>\n"\
 "        Applies a user defined look up table to the data. Look up contains\n"\
 "        incidence angle dependent scaling factor.\n\n"\
@@ -673,22 +664,22 @@ int main(int argc, char *argv[])
     /* Deal with input format type */
     if(flags[f_FORMAT] != FLAG_NOT_SET) {
         strcpy(format_type_str, argv[flags[f_FORMAT] + 1]);
-    if (strncmp(uc(format_type_str), "STF", 3) == 0)
+    if (strncmp_case(format_type_str, "STF", 3) == 0)
       format_type = STF;
-    else if (strncmp(uc(format_type_str), "CEOS", 4) == 0)
+    else if (strncmp_case(format_type_str, "CEOS", 4) == 0)
       format_type = CEOS;
-    else if (strncmp(uc(format_type_str), "GEOTIFF", 7) == 0)
+    else if (strncmp_case(format_type_str, "GEOTIFF", 7) == 0)
       format_type = GENERIC_GEOTIFF;
-    else if (strncmp(uc(format_type_str), "BIL", 3) == 0)
+    else if (strncmp_case(format_type_str, "BIL", 3) == 0)
       format_type = BIL;
-    else if (strncmp(uc(format_type_str), "GRIDFLOAT", 9) == 0)
+    else if (strncmp_case(format_type_str, "GRIDFLOAT", 9) == 0)
       format_type = GRIDFLOAT;
-    else if (strncmp(uc(format_type_str), "AIRSAR", 6) == 0)
+    else if (strncmp_case(format_type_str, "AIRSAR", 6) == 0)
       format_type = AIRSAR;
-    else if (strncmp(uc(format_type_str), "VP", 2) == 0)
+    else if (strncmp_case(format_type_str, "VP", 2) == 0)
       format_type = VP;
-        else if (strncmp(uc(format_type_str), "JAXA_L0", 7) == 0)
-          format_type = JAXA_L0;
+    else if (strncmp_case(format_type_str, "JAXA_L0", 7) == 0)
+      format_type = JAXA_L0;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }
