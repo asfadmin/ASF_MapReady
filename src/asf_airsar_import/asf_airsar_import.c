@@ -45,12 +45,12 @@
 
 #define ASF_DESCRIPTION_STRING \
 "     This program ingest AirSAR data into ASF internal format with more\n"\
-"     with more options than the regular asf_import or MapReady.\n\n"
+"     with more options than the regular asf_import or MapReady.\n"
 
 #define ASF_INPUT_STRING \
-"     The input files is required. The first input is the amplitude data\n"\
-"     file and the second input is the GAMMA format parameter file,\n"\
-"     containing the accompanying metadata.\n"
+"     The input file is required and is the basename of the AirSAR data.\n"\
+"     For interferometric AirSAR data the ingest is limited to a particular\n"\
+"     frequency. For polarimetric data it should not include a frequency.\n"
 
 #define ASF_OUTPUT_STRING \
 "     The output file is required and is the basename of the ASF internal\n"\
