@@ -6,7 +6,7 @@
 "          <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"     This program decomposes SLC quad-pole data into data required\n"\
+"     This program decomposes SLC quad-pol data into data required\n"\
 "     to build some common polarimetric decompositions.\n\n"\
 "     Without the -c, -pauli, or -sinclair options, the output is a\n"\
 "     nine-band image:\n"\
@@ -32,11 +32,12 @@
 "       band 0: HH [Sinclair red]\n"\
 "       band 1: (HV+VH)/2 [Sinclair green]\n"\
 "       band 2: VV [Sinclair blue]\n\n"\
-"     When used with the -freeman option, the output is a 3-band image with\n"\
-"     the three Freeman-Durden bands:\n"\
-"       band 0: Ps (single-bounce, Freeman-Durden Red)\n"\
-"       band 1: Ps (double-bounce, Freeman-Durden Green\n"\
-"       band 3: Pv (volume scatterer, Freeman-Durden Blue\n\n"
+"     When used with the -freeman option, the output is a 4-band image with\n"\
+"     an amplitude band, and the three Freeman-Durden bands:\n"\
+"       band 0: Amplitude (HH)\n"\
+"       band 1: Ps (single-bounce, Freeman-Durden Blue)\n"\
+"       band 2: Pd (double-bounce, Freeman-Durden Red)\n"\
+"       band 3: Pv (volume scatterer, Freeman-Durden Green)\n\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"
