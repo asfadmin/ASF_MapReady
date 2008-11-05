@@ -56,6 +56,7 @@ void append_band_names(char **band_names, int rgb, char *citation, int have_look
 int lut_to_tiff_palette(unsigned short **colors, int size, char *look_up_table_name);
 void dump_palette_tiff_color_map(unsigned short *colors, int map_size);
 int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta_colormap *colormap);
+char *sample_mapping2string(scale_t sample_mapping);
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
@@ -907,6 +908,15 @@ export_band_image (const char *metadata_file_name,
               "Downsampling a Sigma, Beta, or Gamma type image (power or dB)\n"
               "from floating point to byte using truncation is not supported.\n"
               "All values would map to black.\n");
+  if (md->general->data_type == BYTE &&
+      sample_mapping != TRUNCATE && sample_mapping != NONE)
+  {
+      asfPrintWarning("Using %s sample remapping on BYTE data will result in\n"
+                      "contrast expansion.  If you do not want contrast expansion in\n"
+                      "your exported file, then you need to select either TRUNCATE or\n"
+                      "NONE for your sample remapping type.\n",
+                      sample_mapping2string(sample_mapping));
+  }
 
   if (md->general->band_count < 1 || md->general->band_count > MAX_BANDS) {
     asfPrintError ("Unsupported number of channels found (%d).  Only 1 through\n"
@@ -2289,3 +2299,26 @@ int meta_colormap_to_tiff_palette(unsigned short **tiff_palette, int *byte_image
     return size;
 }
 
+char *sample_mapping2string(scale_t sample_mapping)
+{
+    switch(sample_mapping) {
+        case TRUNCATE:
+            return "TRUNCATE";
+            break;
+        case MINMAX:
+            return "MIN-MAX";
+            break;
+        case SIGMA:
+            return "2-SIGMA";
+            break;
+        case HISTOGRAM_EQUALIZE:
+            return "HISTOGRAM EQUALIZE";
+            break;
+        case NONE:
+            return "NONE";
+            break;
+        default:
+            return "UNKNOWN or UNRECOGNIZED";
+            break;
+    }
+}

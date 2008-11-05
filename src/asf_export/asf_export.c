@@ -695,6 +695,11 @@ main (int argc, char *argv[])
       command_line.sample_mapping = SIGMA;
     else if ( strcmp(sample_mapping_string, "HISTOGRAM_EQUALIZE") == 0 )
       command_line.sample_mapping = HISTOGRAM_EQUALIZE;
+    else if ( strcmp(sample_mapping_string, "NONE") == 0 ) {
+        asfPrintWarning("Sample remapping method (-byte option) is set to NONE\n"
+                "which doesn't make sense.  Defaulting to TRUNCATE...\n");
+        command_line.sample_mapping = TRUNCATE;
+    }
     else
       asfPrintError("Unrecognized byte scaling method '%s'.\n",
                     sample_mapping_string);
