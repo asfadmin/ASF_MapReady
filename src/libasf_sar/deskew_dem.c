@@ -245,7 +245,7 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 }
 
 static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
-                            float *grDEM, struct deskew_dem_data *d)
+                            float *grDEM, struct deskew_dem_data *d, int interp)
 {
     int x;
     for (x=0; x<ns; x++)
@@ -262,6 +262,11 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
 
         // where we have no DEM data, set output to 0
         if (eq(grDEM[x],NO_DEM_DATA,.0001)) {
+          in[x] = 0.0;
+        }
+
+        // where we have layover, we output to 0, if -no-interp was specified
+        if (interp && (inMask[x]==MASK_LAYOVER || inMask[x]==MASK_SHADOW)) {
           in[x] = 0.0;
         }
     }
@@ -752,9 +757,10 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 get_float_line(inDemFp,inDemMeta,y,grDEMline);
             } else {
                 get_float_line(inDemFp,inDemMeta,y,srDEMline);
-                dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,fill_holes);
+                //dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,fill_holes);
+                dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,TRUE);
             }
-            
+
             if (inMaskFlag) {
                 /* Read in the next line of the mask, update the values */
                 get_float_line(inMaskFp,inMaskMeta,y,maskLine);
@@ -776,17 +782,17 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	    for (b=0; b<band_count; ++b) {
 	      if (inSarFlag) {
                 get_band_float_line(inSarFp,inSarMeta,b,y,inSarLine);
-		
+
                 geo_compensate(&d,grDEMline,inSarLine,outLine,
                                d.numSamples,1,maskLine,y);
 	      }		
 	      if (y>0&&doRadiometric)
-            radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                             d.numSamples,y,doRadiometric);
+                radio_compensate(&d,grDEMline,grDEMlast,outLine,
+                                 d.numSamples,y,doRadiometric);
 	      
 	      // subtract away the masked region
 	      mask_float_line(d.numSamples,fill_value,outLine,
-			      maskLine,grDEMline,&d);
+			      maskLine,grDEMline,&d,!fill_holes);
 	      
 	      put_band_float_line(outFp,outMeta,b,y,outLine);
 	    }
