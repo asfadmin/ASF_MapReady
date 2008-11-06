@@ -2026,7 +2026,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                         keep_flag, single_angle_flag, rad);
         asfPrintStatus("Done.\n\n");
 
-        sprintf(tmpFile, "%s/polarimetry_farcorr.img", cfg->general->tmp_dir);
+        sprintf(tmpFile, "%s/import_farrot.img", cfg->general->tmp_dir);
         save_intermediate(cfg, "Faraday", tmpFile);
       }
 

@@ -169,14 +169,17 @@ static complexMatrix *make_cpx_rotation_matrix(double ang)
 
 void removeImgAndMeta(const char *f)
 {
-    char *meta_file = appendExt(f, ".meta");
     char *img_file = appendExt(f, ".img");
+    char *meta_file = appendExt(f, ".meta");
+    char *hdr_file = appendExt(f, ".hdr");
 
     remove_file(meta_file);
     remove_file(img_file);
+    remove_file(hdr_file);
 
     free(meta_file);
     free(img_file);
+    free(hdr_file);
 }
 
 static void do_append(const char *file, const char *append_file,
