@@ -72,8 +72,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Level 0 dataset format. 'CEOS' is the default behavior.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that do not have the same basename as the\n"\
-"        image data. An example for this is 'gamma_isp' and 'gamma_msp' naming\n"\
-"        schemes that are completely up to the user.\n"\
+"        image data.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then import the band identified by 'band_id' (only).  If 'all' is\n"\
