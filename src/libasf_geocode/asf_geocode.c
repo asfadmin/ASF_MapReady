@@ -1112,13 +1112,13 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     if (pixel_size < 0)
     {
         g_assert(i==0);
-        if (n_input_images > 1)
-            asfPrintStatus("No pixel size specified.\nUsing range pixel size "
-                "from the first image's metadata: %f\n", imd->general->x_pixel_size);
-        else
-            asfPrintStatus("No pixel size specified, using range pixel size from "
-                "metadata: %f\n", imd->general->x_pixel_size);
-        pixel_size = imd->general->x_pixel_size;
+        pixel_size = MAX(imd->general->x_pixel_size, imd->general->y_pixel_size);
+        asfPrintStatus("No pixel size specified.\n"
+                       "Defaulting to larger of range or azimuth pixel size "
+                       "from %smetadata: %f (%s pixel size)\n",
+                       n_input_images > 1 ? "the first image's " : "",
+                       pixel_size,
+                       imd->general->x_pixel_size > imd->general->y_pixel_size ? "range" : "azimuth");
     }
 
     // If all input metadata is byte, we will store everything as bytes,
@@ -1423,7 +1423,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // Now working on generating the output images
 
   double *projX = MALLOC(sizeof(double)*(oix_max+1));
-  double *projY = MALLOC(sizeof(double)*(oix_max+1));
+  double *projY = MALLOC(sizeof(double)*(oix_max+1)); // Is this a mistake?  Use oiy_max instead?
 
   // When mosaicing -- use banded_float_image to store the output, write
   //                   it out after processing all inputs
@@ -1501,13 +1501,13 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // Issue a warning when the chosen pixel size is smaller than the
     // input pixel size.
-    if ( GSL_MIN(imd->general->x_pixel_size,
+    if ( MAX(imd->general->x_pixel_size,
           imd->general->y_pixel_size) > pixel_size )
     {
         asfPrintWarning
         ("Requested pixel size %lf is smaller than the input image resolution "
         "(%0.1f meters).\n", pixel_size,
-        GSL_MIN (imd->general->x_pixel_size, imd->general->y_pixel_size));
+        MAX (imd->general->x_pixel_size, imd->general->y_pixel_size));
     }
 
     // We will call "resample" on the input data if the geocoding
@@ -1547,14 +1547,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // The pixel size requested by the user better not oversample by
     // the factor of 2.  Specifying --force will skip this check
-    if (!force_flag && GSL_MIN(imd->general->x_pixel_size,
-          imd->general->y_pixel_size) > (2*pixel_size) )
+    if (!force_flag &&
+        MAX(imd->general->x_pixel_size, imd->general->y_pixel_size) > (2*pixel_size) )
     {
         report_func("Requested pixel size %lf is smaller than the minimum "
                     "implied by half \nthe input image resolution "
                     "(%le meters), this is not supported.\n",
-                    pixel_size, GSL_MIN (imd->general->x_pixel_size,
-                                         imd->general->y_pixel_size));
+                    pixel_size,
+                    MAX (imd->general->x_pixel_size, imd->general->y_pixel_size));
     }
 
     // Input image dimensions in pixels in x and y directions.
@@ -1606,7 +1606,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // we have pixels, so for small tiles, we set this to about 10
     // percent of larger image dimension in pixels.
     if ( ii_size_x / grid_size < 10 && ii_size_y / grid_size < 10 ) {
-        grid_size = GSL_MAX (ii_size_x, ii_size_y) / 10;
+        grid_size = MAX (ii_size_x, ii_size_y) / 10;
         if ( grid_size % 2 != 1 )
             grid_size++;
     }

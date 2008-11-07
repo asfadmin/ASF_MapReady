@@ -140,7 +140,7 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
     *average_height = 0.0;
 
   if ( ISNAN (*pixel_size) ) {
-    *pixel_size = meta->general->x_pixel_size;
+    *pixel_size = MAX(meta->general->x_pixel_size, meta->general->y_pixel_size);
   }
 
   switch (pt) {
