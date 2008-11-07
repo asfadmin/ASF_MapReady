@@ -1844,7 +1844,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             ok4 = symmetry_test(imd, nl-3, 2, average_height);
             ok5 = symmetry_test(imd, 2, ns-3, average_height);
             if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5) {
-              report_func("Symmetry testing failed.\n");
+              report_func("Symmetry testing failed.  Use the -force (command line) option or the\n"
+                          "the Ignore Projection Errors checkbox (MapReady Geocode Tab)\n");
             }
             else {
               asfPrintStatus("Good.\n");
