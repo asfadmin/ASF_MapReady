@@ -33,7 +33,7 @@
 "          calculated offsets.\n\n"\
 "          Without this option, a new metadata file is written with the\n"\
 "          provided name.  Since the image data is not affected by\n"\
-"          the geolocation shift, a new image file a not written.  However,\n"\
+"          the geolocation shift, a new image file is not written.  However,\n"\
 "          because most ASF tools require that the metadata basename match\n"\
 "          the image basename, you will need to either (1) make a copy\n"\
 "          of the image file with a new matching basename, or (2) make a\n"\
@@ -41,9 +41,9 @@
 "          match the image basename, overwriting the original metadata,\n"\
 "          presumably after you have verified that the new metadata file\n"\
 "          is reasonable.  For example, if your input file is 'sar.img'\n"\
-"          (with 'sar.meta') with shift values of 3 (in x), and 7 (in y),\n"\
-"          and you use an output name of 'adjusted_sar.meta', these options\n"\
-"          would be used as follows:\n\n"\
+"          (with 'sar.meta') and you wish to apply a shift of 3 pixels in x,\n"\
+"          and 7 pixels in y, and you use the output name 'adjusted_sar.meta',\n"\
+"          these options would be used as follows:\n\n"\
 "            (1) Make a copy of the image file: \n"\
 "                  > shift_geolocation 3 7 sar adjusted_sar\n"\
 "                  > cp sar.img adjusted_sar.img\n\n"\
@@ -73,10 +73,13 @@
 #define ASF_EXAMPLES_STRING \
 "     Geolocation shift of 2 pixels in x, 5 pixels in y, updating\n"\
 "     the original metadata:\n"\
-"     > "ASF_NAME_STRING" -update 2 5 input_image\n\n"\
+"       > "ASF_NAME_STRING" -update 2 5 input_image\n\n"\
+"     Geolocation shift of 2 meters in x, 5 meters in y, updating\n"\
+"     the original metadata:\n"\
+"       > "ASF_NAME_STRING" -update 2m 5m input_image\n\n"\
 "     Geolocation shift of 2 pixels in x, 5 pixels in y, creating\n"\
 "     a new metadata file:\n"\
-"     > "ASF_NAME_STRING" input_image updated\n"\
+"       > "ASF_NAME_STRING" input_image updated\n\n"\
 "     This produces an output file 'updated.meta', and no image file.\n"\
 "     Additional examples are given in the explanation for\n"\
 "     the -update option.\n"

@@ -2,8 +2,8 @@
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-keep] [-single-angle]\n"\
-"          [-threshold <threshold angle>  [-sigma | -beta | -gamma ] [-db]\n"\
-"          <in_base_name> <out_base_name>\n"
+"           [-threshold <threshold angle>  [-sigma | -beta | -gamma ] [-db]\n"\
+"           <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program performs Faraday rotation correction to a quad-pol\n"\
@@ -14,9 +14,7 @@
 "     It must have 8 bands, named HH_AMP, HH_PHASE, etc., for each of HH,\n"\
 "     HV, VH, and VV.  You should just specify the basename of the file.\n"\
 "     The data must not be calibrated, amplitude data is necessary for the\n"\
-"     Faraday Rotation calculations.  After correction, the data may be\n"\
-"     calibrated, using the saved calibration parameters in the metadata\n"\
-"     file.\n"
+"     Faraday Rotation calculations.\n"
 
 #define ASF_OUTPUT_STRING \
 "     The output file will have 8 bands, like the input, and be corrected\n"\
@@ -46,6 +44,10 @@
 "          With this option turned on, a global average rotation angle\n"\
 "          is used instead of a local average -- in other words, a single\n"\
 "          correction angle is used for all pixels in the image.\n"\
+"\n"\
+"          Using this option is highly recommended, as the local averaging\n"\
+"          process is quite slow, and it isn't clear if it really produces\n"\
+"          better results.\n"\
 "\n"\
 "     -threshold <threshold angle>\n"\
 "          The correction is skipped if the calculated average Faraday\n"\

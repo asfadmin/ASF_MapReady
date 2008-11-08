@@ -23,11 +23,11 @@ trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
-"               [-force] [-resample-method <method>] [-height <height>]\n"\
-"               [-datum <datum>] [-pixel-size <pixel size>] [-band <band_id | all>]\n"\
-"               [-log <file>] [-write-proj-file <file>] [-read-proj-file <file>]\n"\
-"               [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
-"               <in_base_name> <out_base_name>\n"\
+"             [-force] [-resample-method <method>] [-height <height>]\n"\
+"             [-datum <datum>] [-pixel-size <pixel size>] [-band <band_id | all>]\n"\
+"             [-log <file>] [-write-proj-file <file>] [-read-proj-file <file>]\n"\
+"             [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
+"             <in_base_name> <out_base_name>\n"\
 "\n"\
 "   Use the -help option for more projection parameter controls.\n"
 
@@ -79,8 +79,8 @@ trouble, and use edit_man_header. :)
 "     in the list of available bands as noted in the 'bands' item found in the\n"\
 "     'general' (first) block in the metadata file.  For example, if 'bands'\n"\
 "     contains \"01,02,03,04\", then you could specify a band_id, e.g. \"-band 02\"\n"\
-"     etc on the command line.  The same applies to band lists such as \"HH,HV,VH,VV\"\n"\
-"     or just \"03\" etcetera.\n"\
+"     etc on the command line.  The same applies to band lists, such\n"\
+"     as \"HH,HV,VH,VV\" or just \"03\" etc.\n"\
 "\n"\
 "     "ASF_NAME_STRING" -p utm -band HV file outfile_HV\n"
 

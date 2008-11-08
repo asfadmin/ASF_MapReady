@@ -6,7 +6,7 @@
 
 #define ASF_DESCRIPTION_STRING \
 "     This program smooths the given input image, by averaging pixels\n"\
-"     together.\n\n"
+"     together.\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"\

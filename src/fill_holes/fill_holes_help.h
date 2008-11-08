@@ -26,7 +26,6 @@
 #endif
 #define TOOL_USAGE \
         TOOL_NAME" [-log <logfile>] [-quiet] [-cutoff <height>] <infile> <outfile>\n" \
-        "              [-max-slope <slope in degrees>] [-max-hole-width <pixels>]\n"\
         "              [-license] [-version] [-help]"
 
 // TOOL_DESCRIPTION is required
@@ -62,18 +61,19 @@
 #endif
 #define TOOL_OPTIONS \
     "   -log <logfile>\n" \
-    "        Save all tool output in <logfile>\n" \
+    "        Save all tool output in <logfile>\n\n" \
     "   -quiet\n" \
-    "        Suppress all output\n" \
+    "        Suppress all output\n\n" \
     "   -cutoff <height>\n" \
     "        Use <height>, in meters, as the minimum valid data value in the image.\n" \
     "        Values below <height> will be considered to be no-data values (a hole)\n" \
     "        and will be patched as described.  The default cutoff value is -900\n" \
-    "        meters.\n" \
+    "        meters.\n\n" \
+    "        The default -900 is a good choice for SRTM dems.\n\n" \
     "   -license\n" \
-    "        Print copyright and license for this software then exit.\n" \
+    "        Print copyright and license for this software then exit.\n\n" \
     "   -version\n" \
-    "        Print version and copyright then exit.\n" \
+    "        Print version and copyright then exit.\n\n" \
     "   -help\n" \
     "        Print this help information and then exit."
 
@@ -82,23 +82,26 @@
 #undef  TOOL_EXAMPLES
 #endif
 #define TOOL_EXAMPLES \
-    ""
+    "    This example fills holes in the dem 'dem.img' (with metadata 'dem.meta'),\n"\
+    "    creating 'dem_fixed.img' and 'dem_fixed.meta'.  A hole will be any DEM\n"\
+    "    values lower than 0 meters:\n"\
+    "      > fill_holes -cutoff 0 dem dem_fixed"
 
 // TOOL_LIMITATIONS is required but is allowed to be an empty string
 #ifdef  TOOL_LIMITATIONS
 #undef  TOOL_LIMITATIONS
 #endif
 #define TOOL_LIMITATIONS \
-    "  At this time, fill_holes only works on ASF Internal format files (.img)"
+    "    At this time, fill_holes only works on ASF Internal format files (.img)"
 
 // TOOL_SEE_ALSO is required but is allowed to be an empty string
 #ifdef  TOOL_SEE_ALSO
 #undef  TOOL_SEE_ALSO
 #endif
 #define TOOL_SEE_ALSO \
-    "   asf_terrcorr\n" \
-    "   asf_mapready\n" \
-    "   mapready"
+    "    asf_terrcorr\n" \
+    "    asf_mapready\n" \
+    "    mapready"
 
 // Prototypes
 void check_for_help(int argc, char* argv[]);

@@ -156,8 +156,10 @@
 "\n"\
 "     -no_matching\n"\
 "          Don't use the DEM for matching\n"\
+"\n"\
 "     -offsets <range offset> <azimuth offset>\n"\
 "          Use these offsets instead of matching the DEM to the SAR image.\n"\
+"\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\

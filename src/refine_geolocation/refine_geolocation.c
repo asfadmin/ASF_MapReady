@@ -13,7 +13,9 @@
 "     ASF internal format.  The output is a pair of offsets in slant\n"\
 "     and time that improve the geolocation of the image.  These\n"\
 "     offsets can either be applied to the input SAR image's metadata\n"\
-"     (the -update option), or a new metadata file can be created.\n"
+"     (the -update option), or a new metadata file can be created.\n"\
+"     The new metadata file will be identical to the old, except for\n"\
+"     these offsets.\n"
 
 #define ASF_INPUT_STRING \
 "     Two input files are required.  Each input file, the SAR image and\n"\
@@ -23,7 +25,8 @@
 #define ASF_OUTPUT_STRING \
 "     When using the -update option, no output file should be given, as\n"\
 "     the metadata for the input SAR image is updated with the offsets.\n\n"\
-"     When not using the -update option, an output basename is required.\n"
+"     When not using the -update option, an output basename is required,\n"\
+"     and the program will create a metadata file only with that basename.\n"
 
 #define ASF_OPTIONS_STRING \
 "     -update (-u)\n"\
@@ -31,7 +34,7 @@
 "          calculated offsets.\n\n"\
 "          Without this option, a new metadata file is written with the\n"\
 "          provided name.  Since the image data is not affected by\n"\
-"          geolocation refinement a new image file a not written.  However,\n"\
+"          geolocation refinement a new image file is not written.  However,\n"\
 "          because most ASF tools require that the metadata basename match\n"\
 "          the image basename, you will need to either (1) make a copy\n"\
 "          of the image file with a new matching basename, or (2) make a\n"\

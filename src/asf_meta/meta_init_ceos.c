@@ -1171,9 +1171,9 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     }
     else {
       asfPrintStatus("From Workreport: (not available)\n");
-      asfPrintStatus("Calculated: %.10f\n\n",
+      asfPrintStatus("Calculated: %.10f\n",
                      meta->sar->azimuth_time_per_pixel);
-      asfPrintStatus("Line header: %.10f\n", headerTime);
+      asfPrintStatus("Line header: %.10f\n\n", headerTime);
     }
 
     // fix x_pixel_size & y_pixel_size values if needed
