@@ -11,6 +11,22 @@
 #include "asf_raster.h"
 #include <ctype.h>
 
+// FIXME: This is just a quick fix for AirSAR and ALOS mosaic ingest
+// The db_flag for the asf_import function is obsolete since the radiometry
+// in power scale as well as in dB is part of the radiometry type.
+// Should be properly cleaned as part of regular code maintenance.
+radiometry_t update(radiometry_t radiometry, int db_flag)
+{
+  if (radiometry == r_SIGMA && db_flag)
+    return r_SIGMA_DB;
+  else if (radiometry == r_BETA && db_flag)
+    return r_BETA_DB;
+  else if (radiometry == r_GAMMA && db_flag)
+    return r_GAMMA_DB;
+  else
+    return radiometry;
+}
+
 int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          int multilook_flag, int amp0_flag, input_format_t format_type,
          char *band_id, char *data_type, char *image_data_type, char *lutName,
@@ -57,14 +73,16 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
        radiometry == r_BETA  ||
        radiometry == r_GAMMA ||
        radiometry == r_POWER)   &&
-       !(format_type == CEOS || format_type == STF || format_type == AIRSAR))
+       !(format_type == CEOS || format_type == STF || format_type == AIRSAR ||
+	 format_type == ALOS_MOSAIC))
   {
     // A power flag is on, but the input file is not CEOS or STF format
     // so it will be ignored
-    asfPrintWarning("Power flags %s%s for non-CEOS/non-STF datasets/non-AIRSAR\n"
-                    "will be ignored since other data formats do not indicate what\n"
-                    "type of data is in the file.  Assuming the input data is an AMPLITUDE\n"
-                    "image...\n",
+    asfPrintWarning("Power flags %s%s will be only accepted for the following\n"
+		    "data formats since other formats do not indicate what "
+                    "type of data is in the file:\n"
+		    "CEOS, STF, AirSAR and ALOS mosaics.\n"
+		    "Assuming the input data is an AMPLITUDE image...\n",
                     radiometry == r_SIGMA ? "SIGMA" :
                     radiometry == r_BETA  ? "BETA"  :
                     radiometry == r_GAMMA ? "GAMMA" :
@@ -131,7 +149,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == AIRSAR) {
     asfPrintStatus("   Data format: AIRSAR\n");
-    import_airsar(inBaseName, radiometry, outBaseName);
+    import_airsar(inBaseName, update(radiometry, db_flag), outBaseName);
   }
   else if (format_type == VP) {
     asfPrintStatus("   Data format: VP\n");
@@ -140,6 +158,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   else if (format_type == JAXA_L0) {
       asfPrintStatus("   Data format: JAXA_L0 (ALOS AVNIR-2 Level 0)\n");
       import_jaxa_L0(inBaseName, outBaseName);
+  }
+  else if (format_type == ALOS_MOSAIC) {
+    asfPrintStatus("   Data format: ALOS MOSAIC\n");
+    import_alos_mosaic(inBaseName, update(radiometry, db_flag), outBaseName);
   }
   // Don't recognize this data format; report & quit
   else {

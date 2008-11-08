@@ -68,8 +68,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp',\n"\
-"        and 'jaxa_L0'.  The 'jaxa_L0' format refers to the ALOS AVNIR-2\n"\
-"        Level 0 dataset format. 'CEOS' is the default behavior.\n"\
+"        'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0' format refers to the\n"\
+"        ALOS AVNIR-2 Level 0 dataset format. 'CEOS' is the default behavior.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that do not have the same basename as the\n"\
 "        image data.\n"\
@@ -679,6 +679,8 @@ int main(int argc, char *argv[])
       format_type = VP;
     else if (strncmp_case(format_type_str, "JAXA_L0", 7) == 0)
       format_type = JAXA_L0;
+    else if (strncmp_case(format_type_str, "ALOS_MOSAIC", 11) == 0)
+      format_type = ALOS_MOSAIC;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }

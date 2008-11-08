@@ -92,6 +92,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	interp_stVec.o \
 	ioLine.o \
 	latLon2timeSlant.o \
+	line_header.o \
 	lzFetch.o \
 	meta_complex2polar.o \
 	meta_copy.o \
@@ -112,6 +113,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta2airsar.o \
 	meta2gamma.o \
 	meta2vexcel_plain.o \
+	meta2alos_mosaic.o \
 	meta_read.o \
 	meta_write.o \
 	orbital_state_vector.o \
@@ -139,7 +141,7 @@ all: asf_meta
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
 	cp asf_meta.h get_ceos_names.h get_stf_names.h gamma.h meta_init_stVec.h \
-		meta_project.h frame_calc.h dateUtil.h calibrate.h \
+		meta_project.h frame_calc.h dateUtil.h calibrate.h line_header.h\
 		$(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)

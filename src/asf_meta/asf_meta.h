@@ -90,7 +90,8 @@ typedef enum {
   IMAGE,
   SIMULATED_IMAGE,
   MASK,
-  IMAGE_LAYER_STACK
+  IMAGE_LAYER_STACK,
+  MOSAIC
 } image_data_type_t;
 
 typedef enum {
@@ -101,7 +102,8 @@ typedef enum {
   GRIDFLOAT,
   AIRSAR,
   VP,
-  JAXA_L0 // JAXA PRISM and AVNIR-2 (optical) Level 0 Format
+  JAXA_L0, // JAXA PRISM and AVNIR-2 (optical) Level 0 Format
+  ALOS_MOSAIC
 } input_format_t;
 
 /********************************************************************

@@ -79,6 +79,7 @@ void apply_in_ardop_params_to_ardop_params(struct INPUT_ARDOP_PARAMS *in,
     ApplyField(fdd);
     ApplyField(fddd);
     ApplyField(iflag);
+    ApplyField(quicklook);
 
 #undef ApplyField
 }

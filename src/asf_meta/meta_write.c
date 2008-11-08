@@ -164,6 +164,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case IMAGE_LAYER_STACK:
         meta_put_string(fp, "image_data_type:","IMAGE_LAYER_STACK",comment);
 	break;
+      case MOSAIC:
+        meta_put_string(fp, "image_data_type:","MOSAIC",comment);
+	break;
       default:
         meta_put_string(fp,"image_data_type:",MAGIC_UNSET_STRING,comment);
         break;
