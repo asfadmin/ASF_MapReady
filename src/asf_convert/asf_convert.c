@@ -24,52 +24,58 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_mapready"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-create] [-log <logFile>] [-quiet] [-license]\n"\
-"               [-version] [-help]\n"\
-"               <config_file>\n"
+"   "ASF_NAME_STRING" [-create]  [-log <logFile>] [-quiet] [-license]\n"\
+"                [-version] [-help]\n"\
+"                <config_file>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"   This program can ingest level one CEOS data, geocode it, and export it to\n"\
-"   a variety of imagery formats. The user is able to control how "ASF_NAME_STRING"\n"\
-"   dictates the processiong flow by creating and/or editting a configuration\n"\
-"   file which is fed into "ASF_NAME_STRING" when it is called.\n"
+"   This program can ingest level one CEOS and GeoTIFF format data, calibrate it to\n"\
+"   various radiometries, perform polarimetric decompositions, perform Faraday Rotation\n"\
+"   correction, perform terrain correction, geocode it, and then export it to a variety\n"\
+"   of graphics file formats. The user is able to control how "ASF_NAME_STRING"\n"\
+"   dictates the processiong flow by creating a configuration file, which must then be\n"\
+"   edited, which is fed into "ASF_NAME_STRING" when it is called.\n"
 
 #define ASF_REQUIRED_ARGUMENTS_STRING \
 "   config_file\n"\
 "        A configuration file that "ASF_NAME_STRING" uses to find which files to\n"\
 "        use for input and output, what options to use, and how the data should\n"\
 "        be processed. It is either read or created based on whether or not\n"\
-"        the -create option is specified.\n"
+"        the -create option is specified (see below.)\n"\
+"        NOTE: When a new configuration file is created, it is filled with comments\n"\
+"        that help the user with the available settings.\n"
 
 #define ASF_OPTIONS_STRING \
-"   -create\n"\
+"   -create <config_file>\n"\
 "        Create <config_file> instead of reading it.\n"\
 "   -log <logFile>\n"\
 "        Set the name and location of the log file. Default behavior is to\n"\
 "        log to tmp<processIDnumber>.log\n"\
 "   -quiet\n"\
-"        Suppresses all non-essential output.\n"\
+"        Suppresses most non-essential output.\n"\
 "   -license\n"\
 "        Print copyright and license for this software then exit.\n"\
 "   -version\n"\
 "        Print version and copyright then exit.\n"\
 "   -help\n"\
-"        Print a help page and exit.\n"
+"        Print this help page and exit.\n"
 
 #define ASF_EXAMPLES_STRING \
-"   To create an editable configuration file named 'convert.conf' with some\n"\
-"   example values, do this:\n"\
-"      example> "ASF_NAME_STRING" -create convert.conf\n"\
+"   To create an editable configuration file named 'example.cfg' with some\n"\
+"   example values, use a command similar to the following:\n\n"\
+"      example> "ASF_NAME_STRING" -create example.cfg\n"\
 "\n"\
 "   To process level 1 CEOS data using an "ASF_NAME_STRING" style configuration\n"\
-"   file named 'config', do this:\n"\
-"      example> "ASF_NAME_STRING" config\n"
+"   file named 'config.my_conf', use a command similar to the following:\n\n"\
+"      example> "ASF_NAME_STRING" config.my_conf\n"
 
 #define ASF_LIMITATIONS_STRING \
-"   None known.\n"
+"   Level 0 data is not yet supported.  GeoTIFF SAR files created by ASF tools do not\n"\
+"   contain SAR related data and this prevents certain processing: terrain correction etc.\n"\
+"   when importing and processing from the GeoTIFF format.\n"
 
 #define ASF_SEE_ALSO_STRING \
-"   asf_import, asf_geocode, asf_export\n"
+"   asf_import, asf_terrcorr, asf_geocode, asf_export\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
