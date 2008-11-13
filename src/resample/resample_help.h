@@ -42,7 +42,14 @@
     "   The resample tool resamples the input file to produce a new\n" \
     "   file with the given pixel size.  Resampling is accomplished with a\n" \
     "   square filter kernel centered on the pixel to best interpolate the\n" \
-    "   values around the pixel to produce the new value.\n\n"\
+    "   values around the pixel to produce the new value.  The resulting value\n" \
+    "   is the average value of the original pixels within the square kernel area.\n" \
+    "   The size of the square kernel is equal to the scaling factor, adjusted to be odd in size.\n" \
+    "   If the scaling factor is 2.0, i.e. downscaling with '-scale 2.0', then the kernel\n" \
+    "   would 2x2 in size if even-sized kernels were allowed.  If the kernel size is not an\n" \
+    "   odd number, then it is increased by one in order to make it so, i.e. the 2x2 kernel\n" \
+    "   above would become a 3x3 kernel and the output value for a particular pixel would then be\n" \
+    "   the average of the 9 pixels surrounding it in the original image.\n\n"\
     "   If the input file is multi-banded, resample will apply the resampling\n"\
     "   to each band separately."
 
