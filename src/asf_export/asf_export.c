@@ -1,19 +1,8 @@
-/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
+/*==================BEGIN ASF DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
 If you wish to edit the documentation for this program, you need to change the
-following defines. For the short ones (like ASF_NAME_STRING) this is no big
-deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it
-can be a daunting task to get all the newlines in correctly, etc. In order to
-help you with this task, there is a tool, edit_man_header. The tool *only*
-works with this portion of the code, so fear not. It will scan in defines of
-the format #define ASF_<something>_STRING between the two auto-generated
-documentation markers, format them for a text editor, run that editor, allow
-you to edit the text in a clean manner, and then automatically generate these
-defines, formatted appropriately. The only warning is that any text between
-those two markers and not part of one of those defines will not be preserved,
-and that all of this auto-generated code will be at the top of the source
-file. Save yourself the time and trouble, and use edit_man_header. :)
+following defines.
 */
 
 #define ASF_NAME_STRING \
@@ -23,13 +12,17 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   "ASF_NAME_STRING" [-format <output_format>] [-byte <sample mapping option>]\n"\
 "              [-rgb <red> <green> <blue>] [-band <band_id | all>]\n"\
 "              [-lut <look up table file>] [-truecolor] [-falsecolor]\n"\
+"              [-pauli] [-sinclair]\n"\
 "              [-log <log_file>] [-quiet] [-license] [-version] [-help]\n"\
 "              <in_base_name> <out_full_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "   This program ingests ASF internal format data and exports said data to a\n"\
-"   number of imagery formats. If the input data was geocoded and the ouput\n"\
-"   format supports geocoding, that information will be included.\n"
+"   number of graphics file formats (TIFF/GEOTIFF, JPEG, PGM, and PNG). If the\n"\
+"   input data was geocoded and the ouput format supports geocoding, that information\n"\
+"   will be included.  Optionally, you may apply look-up tables, assign color bands (-rgb,\n"\
+"   -truecolor, -falsecolor), or a Pauli or Sinclair decomposition (if data is polarimetric\n"\
+"   and the applicable polarizations (channels) are available.)\n"
 
 #define ASF_INPUT_STRING \
 "   A file set in the ASF internal data format.\n"
@@ -44,24 +37,54 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "            geotiff - GeoTIFF file, with floating point or byte valued pixels\n"\
 "            jpeg    - Lossy compressed image, with byte valued pixels\n"\
 "            pgm     - Portable graymap image, with byte valued pixels\n"\
-"            png     - Portable network graphic, with byte valued pixels\n"\
+"            png     - Portable network graphic, with byte valued pixels\n\n"\
+"   NOTE: When exporting to a GeoTIFF format file, all map-projection information\n"\
+"         is included in GeoKeys as specified in the GeoTIFF standard.  The other\n"\
+"         graphics file formats do not support the storing of map-projection parameters\n"\
+"         in the output file.  If you wish to maintain the map-projection and/or\n"\
+"         georeference (corner point) information in the output, you should choose the\n"\
+"         GeoTIFF output format.\n\n"\
+"   NOTE: When exporting to a GeoTIFF format file, the data format (floating point,\n"\
+"         byte, 16-bit integer, etc) will be maintained.  Many viewers cannot view\n"\
+"         non-integer data.  Leaving the data format the same as the original produces\n"\
+"         the most accurate export, but remapping it to byte range (0-255) with the -byte\n"\
+"         option will result in the greatest compatibility with viewers and GIS software\n"\
+"         packages.\n\n"\
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
 "            truncate\n"\
 "                values less than 0 are mapped to 0, values greater than 255\n"\
-"                are mapped to 255, and values in between rounded down to\n"\
-"                an integer value between 0 and 255.\n"\
+"                are mapped to 255, and values in between are converted to\n"\
+"                whole numbers (the fractional part of the values are truncated,\n"\
+"                not rounded.)\n"\
 "            minmax\n"\
 "                determines the minimum and maximum values of the input image\n"\
 "                and linearly maps those values to the byte range of 0 to 255.\n"\
+"                The remapping is accomplished using real (floating point) numbers\n"\
+"                then the result is converted to a whole number by truncating the\n"\
+"                fractional part.\n"\
 "            sigma\n"\
 "                determines the mean and standard deviation of an image and\n"\
-"                applies a buffer of 2 sigma around the mean value, and maps\n"\
-"                this buffer to the byte range 0 to 255.  This buffer is\n"\
-"                adjusted if the 2 sigma buffer is outside the value range.\n"\
+"                definess a range of 2 sigma around the mean value, and maps\n"\
+"                this buffer to the byte range 0 to 255 as described for minmax\n"\
+"                above.  The range limits are adjusted if the either of the 2 sigma\n"\
+"                range limits lie outside the range of the original values.  As with\n"\
+"                the other remapping methods, the calculation of values are made with\n"\
+"                real numbers and the result converted to a whole number by truncating\n"\
+"                any fractional part.\n"\
 "            histogram_equalize\n"\
-"                produces an image with equally distributed brightness levels\n"\
-"                over the entire brightness scale which increases contrast.\n"\
+"                develops a look-up table by integrating the (no-adaptation) whole-image\n"\
+"                histogram and then normalizing the result to the 0-255 range.  The result\n"\
+"                is that areas of low contrast, i.e. flat topography, have a stronger\n"\
+"                contrast expansion applied while areas of high contrast, i.e. non-flat\n"\
+"                topography, will receive less contrast expansion.  Histogram equalization\n"\
+"                is a useful transform for making hard-to-see detail more visible for the\n"\
+"                the viewer but is likewise a nonlinear transform that results in minor\n"\
+"                (apparent) topography shifts within the image.  Since shifts occur the most\n"\
+"                in areas where the contrast is expanded the most, i.e. flat topography, and\n"\
+"                less in areas of more interesting topography, the pragmatic conclusion is that\n"\
+"                the nonlinear shifts are quite insignificant for the majority of users ...only\n"\
+"                important if performing precision geography measurements or overlays.\n"\
 "   -rgb <red> <green> <blue>\n"\
 "        Converts output image into a color RGB image.\n"\
 "        <red>, <green>, and <blue> specify which band (channel)\n"\
@@ -69,34 +92,39 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        ex) '-rgb HH VH VV', or '-rgb 3 2 1'.  If the word 'ignore' is\n"\
 "        provided as one or more bands, then the associated color plane\n"\
 "        will not be exported, e.g. '-rgb ignore 2 1' will result in an\n"\
-"        RGB file that has a zero in each RGB pixel's red component.\n"\
+"        RGB file that has a zero in each RGB pixel's red component, band 2\n"\
+"        assigned to the green channel, and band 1 assigned to the blue.\n"\
 "        The result will be an image with only greens and blues in it.\n"\
 "        Currently implemented for GeoTIFF, TIFF, JPEG and PNG.\n"\
-"        Cannot be chosen together with the -band option.\n"\
+"        Cannot be used together with the -band option.\n"\
 "   -lut <look up table file>\n"\
-"        Applys a look up table to the image while exporting.\n"\
+"        Applies a color look up table to the image while exporting.\n"\
 "        Only allowed for single-band images.  Some look up\n"\
 "        table files are in the look_up_tables subdirectory in\n"\
 "        the asf_tools share directory.  The tool will look in\n"\
 "        this directory for the specified file if it isn't found\n"\
 "        in the current directory.\n"\
 "   -truecolor\n"\
-"        For 4 band ALOS optical imagery.  Exports the third band as.\n"\
-"        as the red element, the second band as the green element, and\n"\
-"        the first band as the blue element.  Performs a 2-sigma constrast\n"\
-"        expansion on the individual bands during the export.  To export a\n"\
-"        true-color image WITHOUT the contrast expansion, use the -rgb flag\n"\
-"        to directly assign the available bands to the RGB color channels, e.g.\n\n"\
+"        For 3 or 4 band optical satellite images where the first band is the\n"\
+"        the blue band, the second green, and the third red.  This option will\n"\
+"        export the third band as the red element, the second band as the green\n"\
+"        element, and the first band as the blue element.  Performs a 2-sigma constrast\n"\
+"        expansion on each individual band during the export (similar to most GIS\n"\
+"        software packages.)  To export a true-color image WITHOUT the contrast\n"\
+"        expansion associated with the truecolor option, use the -rgb option instead.\n"\
+"        The rgb option will directly assign the available bands, unaltered, to the\n"\
+"        RGB color channels in the output file, e.g.\n\n"\
 "          'asf_export -rgb 03 02 01 <infile> <outfile>'.\n\n"\
 "        Only allowed for multi-band images with 3 or more bands.\n"\
-"        Cannot be used together with any of the following: -rgb, -band,\n"\
-"        or -falsecolor.\n"\
+"        The truecolor option cannot be used together with any of the following options:\n"\
+"        -rgb, -band, or -falsecolor.\n"\
 "   -falsecolor\n"\
-"        For 4 band ALOS optical imagery.  Exports the fourth (IR) band as.\n"\
+"        For 4 band optical satellite images where the second band is green, the third\n"\
+"        red, and the fourth is the near-infrared band.  Exports the fourth (IR) band as.\n"\
 "        as the red element, the third band as the green element, and\n"\
 "        the second band as the blue element.  Performs a 2-sigma constrast\n"\
 "        expansion on the individual bands during the export.  To export a\n"\
-"        false-color image WITHOUT the contrast expansion, use the -rgb flag\n"\
+"        falsecolor image WITHOUT the contrast expansion, use the -rgb flag\n"\
 "        to directly assign the available bands to the RGB color channels, e.g.\n\n"\
 "          'asf_export -rgb 04 03 02 <infile> <outfile>'.\n\n"\
 "        Only allowed for multi-band images with 4 bands.\n"\
@@ -128,9 +156,17 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Print a help page and exit.\n"
 
 #define ASF_EXAMPLES_STRING \
-"   To export to the default geotiff format from file1.img and file1.meta\n"\
+"   To export to the default GeoTIFF format from file1.img and file1.meta\n"\
 "   to file1.tif:\n"\
-"        example> "ASF_NAME_STRING" file1 file1\n"\
+"        example> "ASF_NAME_STRING" file1 file1\n\n"\
+"   NOTE: When exporting to a GeoTIFF format file, all map-projection information\n"\
+"         is included in GeoKeys as specified in the GeoTIFF standard.\n\n"\
+"   NOTE: When exporting to a GeoTIFF format file, the data format (floating point,\n"\
+"         byte, 16-bit integer, etc) will be maintained.  Many viewers cannot view\n"\
+"         non-integer data.  Leaving the data format the same as the original produces\n"\
+"         the most accurate export, but remapping it to byte range (0-255) with the -byte\n"\
+"         option will result in the greatest compatibility with viewers and GIS software\n"\
+"         packages.\n"\
 "\n"\
 "   To export to file2.jpg in the jpeg format:\n"\
 "        example> "ASF_NAME_STRING" -format jpeg file1 file2\n"\
@@ -145,7 +181,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #define ASF_SEE_ALSO_STRING \
 "   asf_mapready, asf_import\n"
 
-/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
+/*===================END ASF DOCUMENTATION===================*/
 
 
 #include <ctype.h>
