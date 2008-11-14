@@ -55,6 +55,7 @@ typedef struct {
 } envi_header;
 
 /* Prototype for functions */
+envi_header* read_envi(char envi_name);
 int datatype2envi(int data_type);
 envi_header* meta2envi(meta_parameters *meta);
 meta_parameters* envi2meta(envi_header *envi);
