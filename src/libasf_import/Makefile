@@ -71,7 +71,6 @@ OBJS  = \
 	import_gamma.o \
 	import_vexcel_plain.o \
 	import_jaxa_L0.o \
-	import_flir.o \
 	import_alos_mosaic.o \
 	least_squares.o \
 	missing.o \
