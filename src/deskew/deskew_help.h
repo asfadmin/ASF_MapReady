@@ -38,7 +38,7 @@
     "   to determine the amount of parallelogram shift skew that has\n" \
     "   been introduced in an image due to the doppler centroid selection\n" \
     "   during image processing.  It then remaps the image, using a bi-\n" \
-    "   linear interpolation, to remove this skew."
+    "   linear interpolation to remove this skew."
 
 // TOOL_INPUT is required but is allowed to be an empty string
 #ifdef  TOOL_INPUT
