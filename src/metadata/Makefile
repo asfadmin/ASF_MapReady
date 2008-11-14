@@ -33,6 +33,7 @@ OBJLIB  = prn_facdr.o \
 	prn_ardr.o \
 	prn_rsi_raddr.o \
 	prn_tfdr.o \
+	help.o \
 	metadata.o
 
 all: lib exe clean

@@ -128,10 +128,9 @@ BUGS:
 #include "asf_license.h"
 #include <asf_version.h>
 #include "metadisplay.h"
+#include "metadata_help.h"
 
-#define TOOL_NAME "metadata"
-
-void usage(char *name)
+/*void usage(char *name)
 {
    fprintf(stderr,"\n");
    fprintf(stderr,"USAGE:\n");
@@ -168,14 +167,15 @@ void usage(char *name)
    fprintf(stderr,"  infile    The base name of the CEOS image\n\n");
    fprintf(stderr,"\n");
    fprintf(stderr,"DESCRIPTION:\n");
-   fprintf(stderr,"  The metadata program retrieves CEOS structures from CEOS"
-                  " metadata\n\n");
+   fprintf(stderr,"  The metadata program retrieves data record contents from CEOS format"
+                  "  metadata files (a.k.a. \"leader files\") ...if the requested record\n"
+                  "  exists.\n\n");
 //   fprintf(stderr,"Version %s,  ASF SAR Tools\n\n",
 //           CONVERT_PACKAGE_VERSION_STRING);
    fprintf(stderr,"\n");
    print_version(TOOL_NAME);
    exit (EXIT_FAILURE);
-}
+}*/
 
 int main(int argc, char **argv)
 {
@@ -183,8 +183,14 @@ int main(int argc, char **argv)
   int found = 0;
   meta_parameters *meta;
 
-  if (argc<2) usage(TOOL_NAME);
-  handle_license_and_version_args(argc, argv, TOOL_NAME);
+  if (argc > 1) {
+      check_for_help(argc, argv);
+      handle_license_and_version_args(argc, argv, TOOL_NAME);
+  }
+  if (argc<2) {
+      usage(TOOL_NAME);
+      return 1;
+  }
 
   int dssr_flag = extract_flag_options(&argc, &argv, "-dssr", "--dssr", NULL);
   int shr_flag = extract_flag_options(&argc, &argv, "-shr", "--shr", NULL);
@@ -201,11 +207,11 @@ int main(int argc, char **argv)
   int rasr_flag = extract_flag_options(&argc, &argv, "-rasr", "--rasr", NULL);
   int ppr_flag = extract_flag_options(&argc, &argv, "-ppr", "--ppr", NULL);
   int ifdr_flag = extract_flag_options(&argc, &argv, "-ifdr", "--ifdr", NULL);
-  int facdr_flag = 
+  int facdr_flag =
           extract_flag_options(&argc, &argv, "-facdr", "--facdr", NULL);
-  int asf_facdr_flag = 
+  int asf_facdr_flag =
           extract_flag_options(&argc, &argv, "-asf_facdr", "--asf_facdr", NULL);
-  int esa_facdr_flag = 
+  int esa_facdr_flag =
           extract_flag_options(&argc, &argv, "-esa_facdr", "--esa_facdr", NULL);
   int jaxa_facdr_flag =
     extract_flag_options(&argc, &argv, "-jaxa_facdr", "--jaxa_facdr", NULL);
@@ -218,7 +224,7 @@ int main(int argc, char **argv)
   if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag ||
       ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
       sdhr_flag || rasr_flag || ppr_flag || ifdr_flag || facdr_flag ||
-      asf_facdr_flag || esa_facdr_flag || jaxa_facdr_flag || lfdr_flag || 
+      asf_facdr_flag || esa_facdr_flag || jaxa_facdr_flag || lfdr_flag ||
       tfdr_flag || ardr_flag || all_flag || meta_flag)
     found = 1;
 
