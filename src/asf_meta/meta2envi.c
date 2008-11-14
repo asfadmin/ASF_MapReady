@@ -5,7 +5,7 @@
 #include "asf_nan.h"
 #include "time.h"
 
-envi_header* read_envi(char envi_name)
+envi_header* read_envi(char *envi_name)
 {
   envi_header *envi=NULL;
   FILE *fp;
