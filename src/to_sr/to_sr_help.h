@@ -33,7 +33,8 @@
 #endif
 #define TOOL_DESCRIPTION \
     "   Converts an image to slant range.  The input file could be a ground range \n"\
-    "   image, or a projected image with state vectors."
+    "   image, or a projected image with state vectors.  Optionally resample the\n"\
+    "   output image to a new pixel size.\n"
 
 // TOOL_INPUT is required but is allowed to be an empty string
 #ifdef  TOOL_INPUT
