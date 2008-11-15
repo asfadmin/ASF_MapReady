@@ -563,14 +563,18 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	spec = FALSE;
       }
       else if (spec && actual_size > spec_max) {
-	sprintf(tmp, "Image file larger than JAXA specfied range "
+	sprintf(tmp, "Image file larger than JAXA specified range "
 		"(%.1f MB).\n", spec_max / 1024 / 1024);
 	strcat(reason, tmp);
 	spec = FALSE;
       }
     }
-    if (estimated_size != actual_size || (!spec && !ignore_spec))
+    if (estimated_size != actual_size || (!spec && !ignore_spec)) {
+      sprintf(tmp, "Estimated file size differs from the actual file size "
+	      "(%.3f MB).\n", fabs(estimated_size - actual_size));
+      strcat(reason, tmp);
       status = FALSE;
+    }
   }
 
   // Check the leader/trailer file for CEOS records size
