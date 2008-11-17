@@ -127,6 +127,9 @@ int get_number_columns(char *line)
 
 int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns)
 {
+  if (!format)
+    return FALSE;
+
   FILE *fp;
   char line[255], params[255], format_str[255], type[25];
   int m=0, n=0, ii, found_format=FALSE;;

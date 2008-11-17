@@ -222,6 +222,7 @@ int kml2csv(char *in_file, char *out_file, int listFlag);
 int kml2auig(char *in_file, char *out_file, int listFlag);
 int kml2shape(char *in_file, char *out_file, int listFlag);
 int kml2ursa(char *in_file, char *out_file, int listFlag);
+void test_kml(const char *inFile);
 
 // Prototypes from shape.c
 int shape2meta(char *inFile, char *outfile, int listFlag);
@@ -257,5 +258,10 @@ int custom2kml(char *inFile, const char *format,
 int test_c2v(char *inFile, const char *inFormat_str,
 	     char *outFile, const char *outFormat_str);
 
+
+// Prototypes from str.c -- string utilities
+void split_into_array(char *str, char sep, int *nelem, char ***parr);
+char *quoted_string_parse(char *p, char *s, int max_len, int line_num);
+void strip_end_whitesp_inplace(char *s);
 
 #endif

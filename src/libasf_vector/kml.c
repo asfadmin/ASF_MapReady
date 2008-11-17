@@ -1413,6 +1413,644 @@ void write_kml_style_keys(FILE *kml_file)
     fprintf(kml_file, "  </Style>\n");
 }
 
+typedef struct
+{
+    double lon, lat, height;
+} kml_coord_t;
+
+typedef struct
+{
+    kml_coord_t *coords;
+    int num_coords;
+} kml_coordinates_block_t;
+
+typedef struct
+{
+    char *str;
+} kml_description_t;
+
+typedef struct
+{
+    char *name;
+    kml_description_t *description;
+    kml_coordinates_block_t **coords;
+    int num_coord_blocks;
+} kml_placemark_t;
+
+typedef struct
+{
+    kml_placemark_t **placemarks;
+    int num_placemarks;
+    int using_expanded_header;
+    int max_coords;
+    char *format;
+} kml_data_t;
+
+static int parse_kml_description_line(char *line, char **param, char **value)
+{
+  char *para = (char *) MALLOC(sizeof(char)*255);
+  char *val = (char *) MALLOC(sizeof(char)*255);
+
+  char *c = strstr(line, "<!--");
+  char *p = strstr_case(line, "<strong>");
+  char *q = strstr_case(line, "</strong>");
+  char *n = strstr_case(line, "<br>");
+  char *lat = strstr_case(line, "Lat</strong>"); // ignore Lat/Lon attributes
+  char *lon = strstr_case(line, "Lon</strong>");
+
+  int len, ok;
+  if (p && q && n && !c && !lat && !lon) {
+    p += 8; // skip past "<strong>"
+    len = q-p;
+    //assert(len<255);
+    strncpy_safe(para, p, len+1);
+    p = strchr(line, ':');
+    if (p) {
+      p += 2; // skips ": "
+      len = n-p;
+      //assert(len<255);
+      strncpy_safe(val, p, len+1);
+      ok=TRUE;
+    }
+    else {
+      strcpy(para, MAGIC_UNSET_STRING);
+      strcpy(val, MAGIC_UNSET_STRING);
+      ok=FALSE;
+    }
+  }
+  else {
+    strcpy(para, MAGIC_UNSET_STRING);
+    strcpy(val, MAGIC_UNSET_STRING);
+    ok=FALSE;
+  }
+
+  *param = trim_spaces(para);
+  *value = trim_spaces(val);
+
+  FREE(para);
+  FREE(val);
+
+  return ok;
+}
+
+static char *kml_description_to_header(const char *kml_description)
+{
+  char *desc = STRDUP(kml_description);
+  int max_header_len = strlen(kml_description)*2;
+  char *header_str = MALLOC(sizeof(char)*max_header_len);
+  strcpy(header_str, "");
+
+  // go line-by-line through the kml description
+  char *start = desc;
+  char *end = NULL;
+  do {
+    end = strchr(start+1, '\n');
+    if (end) {
+      *end = '\0';
+      char *param, *value;
+      if (parse_kml_description_line(start, &param, &value)) {
+        char *str = MALLOC((strlen(param)+10)*sizeof(char));
+        sprintf(str, "\"%s\",", param);
+        assert(strlen(header_str)+strlen(str) < max_header_len);
+        strcat(header_str, str);
+      }
+      start = end+1;
+    }
+  } while (end && *start!='\0');
+  free(desc);
+  if (strlen(header_str)>0)
+    header_str[strlen(header_str)-1]='\0';
+  return header_str;
+}
+
+static char *kml_description_to_values(const char *kml_description)
+{
+  if (!kml_description) return STRDUP("");
+  char *desc = STRDUP(kml_description);
+  int max_header_len = strlen(kml_description)*2;
+  char *value_str = MALLOC(sizeof(char)*max_header_len);
+  strcpy(value_str, "");
+
+  // go line-by-line through the kml description
+  char *start = desc;
+  char *end = NULL;
+  do {
+    end = strchr(start+1, '\n');
+    if (end) {
+      *end = '\0';
+      char *param, *value;
+      if (parse_kml_description_line(start, &param, &value)) {
+        char *str = MALLOC((strlen(value)+10)*sizeof(char));
+        sprintf(str, "\"%s\",", value);
+        assert(strlen(value_str)+strlen(str) < max_header_len);
+        strcat(value_str, str);
+      }
+      start = end+1;
+    }
+  } while (end && *start!='\0');
+  free(desc);
+  if (strlen(value_str)>0)
+    value_str[strlen(value_str)-1]='\0';
+  return value_str;
+}
+
+static int look_for(FILE *fp, const char *key)
+{
+  // scans ahead in the file until we find "key" -- case insensitive
+  int i = 0;
+  char ch;
+
+  while (1) {
+    ch = fgetc(fp);
+    if (ch == EOF) {
+      return FALSE;
+    }
+    else if (toupper(ch) == toupper(key[i])) {
+      ++i;
+      if (i==strlen(key))
+        return TRUE; // found
+    }
+    else {
+      // back to the beginning of the key
+      i=0;
+    }
+  }
+}
+
+static char *eat_until(FILE *fp, const char *key)
+{
+  // scans ahead in the file until we find "key" -- case insensitive
+  // store characters in a return buffer
+  int len = 1024, curr_len = 0;
+  char *ret = CALLOC(len, sizeof(char));
+
+  int i = 0;
+  char ch;
+
+  while (1) {
+    ch = fgetc(fp);
+    ret[curr_len++] = ch;
+
+    if (curr_len == len-1) {
+      // buffer full -- allocate more
+      len += 1024;
+      char *old_ret = ret;
+      ret = CALLOC(len, sizeof(char));
+      strcpy(ret, old_ret);
+      free(old_ret);
+    }
+
+    if (ch == EOF) {
+      // not found... end of file.
+      free(ret);
+      return NULL;
+    }
+    else if (toupper(ch) == toupper(key[i])) {
+      ++i;
+      if (i==strlen(key)) {
+        // found -- but cut out the actual key
+        int l = strlen(ret) - strlen(key);
+        assert(l>=0);
+        ret[l] = '\0';
+
+        return ret; 
+      }
+    }
+    else {
+      // back to the beginning of the key
+      i=0;
+    }
+  }
+}
+
+static char *extract_tag(int num, const char *str,
+                         const char *start_tag, const char *end_tag)
+{
+  int count = 0;
+  char *p1;
+  const char *s=str;
+
+  do {
+    p1 = strstr_case(s, start_tag);
+    if (!p1) return NULL;
+    s = p1+1;
+  } while (++count <= num);
+
+  char *p2 = strstr_case(p1+1, end_tag);
+
+  if (!p1 || !p2)
+    return NULL;
+
+  p1 += strlen(start_tag);
+
+  int len = p2 - p1 + 1;
+  assert(len >= 0);
+  char *ret = CALLOC(len+1, sizeof(char));
+  strncpy_safe(ret, p1, len);
+
+  return ret;
+}
+
+static kml_coordinates_block_t *parse_coordinates(const char *str)
+{
+  // in the first pass, figure out how many coordinates we have
+  int i=0, n=0;
+  int len = strlen(str);
+
+  while (i<len) {
+    // skip past whitespace
+    while (isspace(str[i]) && i<len)
+      ++i;
+
+    if (isdigit(str[i]) || str[i]=='-' || str[i]=='+' || str[i]=='.')
+      ++n;
+
+    // skip past the nonwhitespace (coordinates entry)
+    while (!isspace(str[i]) && i<len)
+      ++i;
+  }
+
+  kml_coordinates_block_t *ret = MALLOC(sizeof(kml_coordinates_block_t));
+  ret->num_coords = n;
+  ret->coords = MALLOC(sizeof(kml_coord_t)*n);
+
+  // now fill it up
+  i=0;
+  int c=0;
+  while (i<len) {
+    // skip past whitespace
+    while (isspace(str[i]) && i<len)
+      ++i;
+
+    if (i>=len-1)
+      break;
+
+    // see how many commas we have
+    int j=i, nc=0;
+    while (!isspace(str[j])) {
+      if (str[j]==',') ++nc;
+      ++j;
+    }
+    
+    int ok = TRUE;
+    double lon, lat, height=0;
+    if (nc==2)
+      sscanf(str+i, "%lf,%lf,%lf", &lon, &lat, &height);
+    else if (nc==1)
+      sscanf(str+i, "%lf,%lf", &lon, &lat);
+    else {
+      char *buf = MALLOC(sizeof(char)*(j+1));
+      strncpy_safe(buf, str+i, j);
+      printf("invalid coordinate> %s\n", buf);
+      free(buf);
+      ok = FALSE;
+    }
+
+    if (ok) {
+      assert(c < ret->num_coords);
+      ret->coords[c].lon = lon;
+      ret->coords[c].lat = lat;
+      ret->coords[c].height = height;
+      ++c;
+    }
+
+    // skip past the nonwhitespace (coordinates entry)
+    while (!isspace(str[i]) && i<len)
+      ++i;
+  }
+  
+  // set actual number of coordinates, since there may have been some
+  // invalid ones
+  if (c < ret->num_coords)
+    printf("Only found %d valid coordinate pairs, expected %d.\n",
+           c, ret->num_coords);
+  ret->num_coords = c;
+
+  return ret;
+}
+
+static kml_description_t *get_description(const char *placemark)
+{
+  char *desc = extract_tag(0, placemark, "<description>", "</description>");
+
+  kml_description_t *ret = MALLOC(sizeof(kml_description_t));
+  ret->str = desc;
+  return ret;
+}
+
+static kml_placemark_t *parse_next_placemark(FILE *fp)
+{
+  // first look for "<placemark>"
+  int found = look_for(fp, "<placemark>");
+  if (!found) // no more placemarks?
+    return NULL;
+
+  // found -- now eat characters until "</placemark>"
+  char *placemark = eat_until(fp, "</placemark>");
+
+  kml_placemark_t *ret = MALLOC(sizeof(kml_placemark_t));
+
+  // first get description
+  ret->description = get_description(placemark);
+  ret->name = extract_tag(0, placemark, "<name>", "</name>");
+  if (!ret->name)
+    ret->name = STRDUP("Polygon");
+
+  // count how many coordinate blocks there are
+  int ncoords = 0;
+  char *coords;
+  do {
+    coords = extract_tag(ncoords, placemark, "<coordinates>", "</coordinates>");
+    if (coords) {
+      ++ncoords;
+      free(coords);
+    }
+  }
+  while (coords);
+
+  ret->coords = MALLOC(sizeof(kml_coordinates_block_t*)*ncoords);
+  ret->num_coord_blocks = ncoords;
+
+  // now extract all the coordinate blocks
+  int i=0;
+  do {
+    coords = extract_tag(i, placemark, "<coordinates>", "</coordinates>");
+    if (coords) {
+      assert(i<ncoords);
+      ret->coords[i] = parse_coordinates(coords);
+      ++i;
+      free(coords);
+    }
+  }
+  while (coords);
+
+  free(placemark);
+  return ret;
+}
+
+static kml_data_t *parse_kml(const char *kml_file)
+{
+  FILE *fp = FOPEN(kml_file, "r");
+
+  // first, count the number of placemarks
+  int n=0, found;
+  do {
+    found = look_for(fp, "<placemark>");
+    if (found)
+      ++n;
+  } while (found);
+  fclose(fp);
+
+  kml_data_t *ret = MALLOC(sizeof(kml_data_t));
+  ret->num_placemarks = n;
+  ret->placemarks = MALLOC(sizeof(kml_placemark_t*)*n);
+  ret->using_expanded_header = -1;
+  ret->max_coords = -1;
+  ret->format = NULL;
+  int i=0;
+
+  fp = FOPEN(kml_file, "r");
+  kml_placemark_t *pmk;
+  do {
+    pmk = parse_next_placemark(fp);
+    if (pmk) {
+      assert(i<n);
+      ret->placemarks[i++] = pmk;
+    }
+  } while (pmk);
+
+  if (i < n) {
+    printf("Found only %d placemarks, expected %d.\n", i, n);
+    ret->num_placemarks = i;
+  }
+  else {
+    printf("Found %d placemarks.\n", n);
+  }
+
+  fclose(fp);
+
+  // one final pass through the file, to find the "format" (this is
+  // something that is added in if the file was generated by c2v)
+  fp = FOPEN(kml_file, "r");
+  char line[512];
+  while (fgets(line, sizeof(line), fp)) {
+    char *fmt = strstr(line, "<!-- Format:");
+    if (fmt) {
+      ret->format = MALLOC(sizeof(char)*strlen(fmt));
+      sscanf(fmt, "<!-- Format: %s", ret->format);
+      break;
+    }
+    if (strstr(line, "<NAME>URSA GRANULES</NAME>")) {
+      ret->format = STRDUP("URSA");
+      break;
+    }
+  }
+  fclose(fp);
+
+  return ret;
+}
+
+static void kml_data_free(kml_data_t *kml_data)
+{
+  if (kml_data) {
+    int i,j;
+    for (i=0; i<kml_data->num_placemarks; ++i) {
+      kml_placemark_t *pmk = kml_data->placemarks[i];
+      if (pmk) {
+        free(pmk->description->str);
+        if (pmk->name)
+          free(pmk->name);
+        for (j=0; j<pmk->num_coord_blocks; ++j) {
+          kml_coordinates_block_t *coord = pmk->coords[j];
+          if (coord) {
+            free(coord->coords);
+            free(coord);
+          }
+        }
+        free(pmk->coords);
+      }
+      free(pmk);
+    }
+    free(kml_data->placemarks);
+    if (kml_data->format)
+      free(kml_data->format);
+    free(kml_data);
+  }
+}
+
+static char *kml_get_csv_header(kml_data_t *kml_data)
+{
+  assert(kml_data);
+
+  int i,ok=TRUE;
+  char *first_hdr;
+  for (i=0; i<kml_data->num_placemarks; ++i) {
+    kml_placemark_t *pmk = kml_data->placemarks[i];
+    char *hdr;
+    if (pmk->description && pmk->description->str)
+      hdr = kml_description_to_header(pmk->description->str);
+    else {
+      hdr = STRDUP(pmk->name);
+      ok=FALSE;
+    }
+    if (i==0) {
+      first_hdr = STRDUP(hdr);
+    }
+    else {
+      if (strcmp(hdr, first_hdr)!=0)
+        ok=FALSE;
+    }
+    free(hdr);
+  }
+  if (ok) {
+    kml_data->using_expanded_header = TRUE;
+    return first_hdr;
+  }
+  else {
+    // the description fields did not work out -- use the "name"
+    kml_data->using_expanded_header = FALSE;
+    return STRDUP("Name");
+  }
+}
+
+static char *kml_get_csv_values(kml_data_t *kml_data, int placemark_num)
+{
+  assert(kml_data);
+  char *val=NULL;
+
+  if (kml_data->using_expanded_header == -1)
+    asfPrintError("Internal Error: Call kml_get_csv_header first!\n");
+
+  if (placemark_num >= kml_data->num_placemarks)
+    return NULL;
+  kml_placemark_t *pmk = kml_data->placemarks[placemark_num];
+
+  if (kml_data->using_expanded_header) {
+    val = kml_description_to_values(pmk->description->str);
+  }
+  else {
+    val = MALLOC(sizeof(char)*(strlen(pmk->name)+4));
+    sprintf(val, "\"%s\"", pmk->name);
+  }
+
+  return val;
+}
+
+static void kml_data_dump(kml_data_t *kml_data)
+{
+  if (kml_data) {
+    printf("Header: %s\n\n", kml_get_csv_header(kml_data));
+    int i,j,k;
+    for (i=0; i<kml_data->num_placemarks; ++i) {
+      kml_placemark_t *pmk = kml_data->placemarks[i];
+      if (pmk) {
+        if (pmk->name)
+          printf("Placemark: %s\n", pmk->name);
+        else if (pmk->description && pmk->description->str) {
+          if (strlen(pmk->description->str) > 30) {
+            char buf[32];
+            strncpy_safe(buf, pmk->description->str, 30);
+            printf("Placemark: %s [truncated]\n", buf);
+          }
+          else {
+            printf("Placemark: %s\n", pmk->description->str);
+          }
+        }
+
+        printf("  Description: %s\n", kml_get_csv_values(kml_data, i));
+
+        printf("  Coordinate blocks: %d\n", pmk->num_coord_blocks);
+        for (j=0; j<pmk->num_coord_blocks; ++j) {
+          kml_coordinates_block_t *coord = pmk->coords[j];
+          if (coord) {
+            printf("  Coordinate set #%d (%d points)\n", j, coord->num_coords);
+            for (k=0; k<coord->num_coords; ++k) {
+              kml_coord_t c = coord->coords[k];
+              printf("      %6.2f,%6.2f, %f\n", c.lon, c.lat, c.height);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+static char *kml_get_coords_header(kml_data_t *kml_data)
+{
+  int max_coords=0;
+  int i,j;
+  for (i=0; i<kml_data->num_placemarks; ++i) {
+    kml_placemark_t *pmk = kml_data->placemarks[i];
+    if (pmk) {
+      for (j=0; j<pmk->num_coord_blocks; ++j) {
+        kml_coordinates_block_t *coord = pmk->coords[j];
+        if (coord) {
+          if (coord->num_coords > max_coords)
+            max_coords = coord->num_coords;
+          }
+      }
+    }
+  }
+  kml_data->max_coords = max_coords;
+  char *ret = MALLOC(sizeof(char)*max_coords*21);
+  strcpy(ret, "");
+  for (i=0; i<max_coords; ++i) {
+    char str[20];
+    snprintf(str, 20, "Lat%d,Lon%d,", i+1, i+1);
+    strcat(ret,str);
+  }
+  if (strlen(ret)>0)
+    ret[strlen(ret)-1]='\0';
+  return ret;
+}
+
+static char *kml_get_coords_as_csv(kml_data_t *kml_data, int placemark_num,
+                                   int coord_block_num)
+{
+  assert(kml_data);
+
+  if (kml_data->max_coords == -1)
+    asfPrintError("Internal Error: Call kml_get_coords_header first!\n");
+
+  if (placemark_num >= kml_data->num_placemarks)
+    return NULL;
+  kml_placemark_t *pmk = kml_data->placemarks[placemark_num];
+  assert(pmk);
+
+  if (coord_block_num >= pmk->num_coord_blocks)
+    return NULL;
+
+  kml_coordinates_block_t *blk = pmk->coords[coord_block_num];
+  assert(blk);
+
+  char *coords=MALLOC(sizeof(char)*kml_data->max_coords*64);
+  strcpy(coords, "");
+
+  int i;
+  for (i=0; i<kml_data->max_coords; ++i) {
+    if (i<blk->num_coords) {
+      char str[64];
+      sprintf(str, "%f,%f,", blk->coords[i].lat, blk->coords[i].lon);
+      strcat(coords,str);
+    }
+    else {
+      // add empty columns -- out of data
+      strcat(coords,",,");
+    }
+  }
+  if (strlen(coords)>0)
+    coords[strlen(coords)-1]='\0';
+  return coords;
+}
+
+void test_kml(const char *inFile)
+{
+  kml_data_t *kml_data = parse_kml(inFile);
+  kml_data_dump(kml_data);
+  kml_data_free(kml_data);
+  exit(1);
+}
+
 static void kml_open(char *filename, char **format, int *nLines,
                      int *nVertices)
 {
@@ -1783,73 +2421,35 @@ int kml2polygon(char *inFile, char *outFile, int listFlag)
 // Convert kml to csv file
 int kml2csv(char *inFile, char *outFile, int listFlag)
 {
-  char line[4096], in_line[4096], str[1024], *format, *header;
-
   if (listFlag) {
-    FILE *fp = FOPEN(inFile, "r");
-    while (fgets(line, 4095, fp)) {
-      char *l = trim_spaces(line);
-      if (fileExists(l))
-        kml2csv(l, outFile, FALSE);
-      else
-        asfPrintWarning("File %s: not found.\n", l);
-    }
-    FCLOSE(fp);
-  }
-  else {
-    int nLines, nVertices;
-    char *param, *value;
-
-    // Figure out the format and number of vertices
-    kml_open(inFile, &format, &nLines, &nVertices);
-
-    // Initialize shape file
-    // Only known formats generated by convert2vector are supported
-    kml2header(inFile, &header);
-
-    FILE *ifp = FOPEN(inFile, "r");
-    FILE *ofp = FOPEN(outFile, "w");
-    fprintf(ofp, "%s\n", header);
-    int expect_coords=FALSE, n=0, isEnd;
-
-    // start of with an empty csv line
-    strcpy(line, "");
-
-    // reading lines of the kml file
-    while (fgets(in_line, sizeof(in_line), ifp)) {
-      isEnd = read_kml_line(in_line, &param, &value, &expect_coords);
-      if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
-          strcmp(value, MAGIC_UNSET_STRING) != 0)
-      {
-        if (expect_coords) {
-          snprintf(str, 1000, "\"%s\",\"%s\",", param, value);
-          n += 2;
-        }
-        else {
-          snprintf(str, 1000, "\"%s", value);
-          strcat(str, "\","); // always want this, even if snprintf truncates
-          ++n;
-        }
-
-        // if the line gets too long, stop adding entries...
-        if (strlen(line) + strlen(str) < sizeof(line))
-          strcat(line, str);
-      }
-      else if (isEnd) {
-        // found all columns of this entry-- finish it, ready a new csv line
-        line[strlen(line)-1] = '\0';
-        fprintf(ofp, "%s\n", line);
-        strcpy(line, "");
-        n = 0;
-      }
-
-      FREE(param);
-      FREE(value);
-    }
-    FCLOSE(ifp);
-    FCLOSE(ofp);
+    asfPrintError("Not implemented.\n");
   }
 
+  kml_data_t *kml_data = parse_kml(inFile);
+  //kml_data_dump(kml_data);
+  FILE *fp = FOPEN(outFile, "w");
+
+  char *hdr = kml_get_csv_header(kml_data);
+  char *coords_hdr = kml_get_coords_header(kml_data);
+  fprintf(fp, "%s,%s\n", hdr, coords_hdr);
+  free(coords_hdr);
+
+  int i,j;
+  for (i=0; i<kml_data->num_placemarks; ++i) {
+    char *vals = kml_get_csv_values(kml_data, i);
+    kml_placemark_t *pmk = kml_data->placemarks[i];
+    for (j=0; j<pmk->num_coord_blocks; ++j) {
+      char *coords = kml_get_coords_as_csv(kml_data, i, j);
+      fprintf(fp, "%s,%s\n", vals, coords);
+      free(coords);
+    }
+    free(vals);
+  }
+
+  free(hdr);
+  fclose(fp);
+
+  kml_data_free(kml_data);
   return 1;
 }
 
@@ -2202,8 +2802,9 @@ int kml2auig(char *inFile, char *outFile, int listFlag)
   return 1;
 }
 
-// Convert kml to shapefile
-int kml2shape(char *inFile, char *outFile, int listFlag)
+// Convert kml to shapefile, for kml files generated by this tool
+// (These kml files have a lot of metadata that we can extract)
+static int kml2shape_from_c2v(char *inFile, char *outFile, int listFlag)
 {
   DBFHandle dbase;
   SHPHandle shape;
@@ -2268,6 +2869,159 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
   // Close shapefile
   close_shape(dbase, shape);
   write_esri_proj_file(outFile);
+
+  return 1;
+}
+
+void kml_get_meta(kml_data_t *kml_data, int which_placemark,
+                  int *num_meta_cols, char ***meta_cols)
+{
+  char *vals = kml_get_csv_values(kml_data, which_placemark);
+  split_into_array(vals, ',', num_meta_cols, meta_cols);
+  free(vals);
+}
+
+void kml_get_data(kml_data_t *kml_data, int which_placemark,
+                  int which_coordinate_block,
+                  int *num_data_cols, char ***data_cols)
+{
+  char *vals = kml_get_coords_as_csv(kml_data, which_placemark,
+                                     which_coordinate_block);
+
+  split_into_array(vals, ',', num_data_cols, data_cols);
+  free(vals);
+}
+
+void free_char_array(char ***parr, int nelem)
+{
+  char **arr = *parr;
+  int i;
+  for (i=0; i<nelem; ++i)
+    if (arr[i]) free(arr[i]);
+  free(arr);
+  *parr = NULL;
+}
+
+void print_char_array(char **arr, int nelem, char *label)
+{
+  printf("Array: %s (%d element%s)\n", label, nelem, nelem==1 ? "" : "s");
+
+  int i;
+  for (i=0; i<nelem; ++i)
+    printf("  %d: %s\n", i, arr[i]);
+}
+
+int kml2shape(char *inFile, char *outFile, int listFlag)
+{
+  if (listFlag) {
+    asfPrintError("Not implemented.\n");
+  }
+
+  kml_data_t *kml_data = parse_kml(inFile);
+  //FILE *fp = FOPEN(outFile, "w");
+
+  if (kml_data->format) {
+    printf("kml_data->format : %s\n", kml_data->format);
+    // this is a kml file that we generated -- can use the old method
+    kml_data_free(kml_data);
+    return kml2shape_from_c2v(inFile, outFile, listFlag);
+  }
+
+  DBFHandle dbase;
+  SHPHandle shape;
+  char *dbaseFile = appendExt(outFile, ".dbf");
+  dbase = DBFCreate(dbaseFile);
+  if (!dbase)
+    asfPrintError("Could not create database file '%s'\n", dbaseFile);
+
+  if (DBFAddField(dbase, "ID", FTString, 255, 0) == -1)
+    asfPrintError("Could not add field to database file: ID\n");
+  else
+    asfPrintStatus("Added Column: ID\n");
+
+  char *hdr = kml_get_csv_header(kml_data);
+  char *coords_hdr = kml_get_coords_header(kml_data);
+
+  int i,j,k,nmeta,ndata,nhdr,ncoord,n=0;
+  char **meta_cols, **data_cols, **hdr_cols, **coords_hdr_cols;
+  split_into_array(hdr, ',', &nhdr, &hdr_cols);
+  if (nhdr != 1) {
+    asfPrintWarning("Hmm, did not expect so many header columns!\n");
+    print_char_array(hdr_cols, nhdr, "HDR_COLS");
+  }
+
+  split_into_array(coords_hdr, ',', &ncoord, &coords_hdr_cols);
+
+  for (i=0; i<ncoord; ++i) {
+    if (DBFAddField(dbase, coords_hdr_cols[i], FTDouble, 16, 7) == -1)
+      asfPrintError("Could not add field to database file: %s\n",
+                    coords_hdr_cols[i]);
+    else
+      asfPrintStatus("Added Column: %s\n", coords_hdr_cols[i]);
+  }
+
+  DBFClose(dbase);
+  dbase = DBFOpen(dbaseFile, "r+b");
+
+  if (ncoord>2)
+    shape = SHPCreate(inFile, SHPT_POLYGON);
+  else
+    shape = SHPCreate(inFile, SHPT_POINT);
+  //open_shape(outFile, NULL, &shape);
+
+  for (i=0; i<kml_data->num_placemarks; ++i) {
+
+    kml_get_meta(kml_data, i, &nmeta, &meta_cols);
+    //print_char_array(meta_cols, nmeta, "Metadata");
+    kml_placemark_t *pmk = kml_data->placemarks[i];
+
+    for (j=0; j<pmk->num_coord_blocks; ++j) {
+      kml_get_data(kml_data, i, j, &ndata, &data_cols);
+      //print_char_array(data_cols, ndata, "Data");
+
+      // first write metadata attributes
+      for (k=0; k<nmeta; ++k) {
+        DBFWriteStringAttribute(dbase, n, 0, meta_cols[k]);
+      }
+
+      // now create the shape object, and the data attributes
+      SHPObject *shapeObj=NULL;
+      if (ndata==2) {
+        double lon[1], lat[1];
+        lon[0] = atof(data_cols[0]);
+        lat[0]=  atof(data_cols[1]);
+        shapeObj = SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0], NULL);
+      }
+      else {
+        double *write_lon = MALLOC(sizeof(double)*ndata/2);
+        double *write_lat = MALLOC(sizeof(double)*ndata/2);
+        int m=0;
+        for (k=0; k<ndata; ++k) {
+          DBFWriteDoubleAttribute(dbase, n, k+1, atof(data_cols[k]));
+          if (k%2==0)
+            write_lon[m] = atof(data_cols[k]);
+          else
+            write_lat[m++] = atof(data_cols[k]);
+        }
+        shapeObj=SHPCreateSimpleObject(SHPT_POLYGON, ndata/2, write_lon,
+                                       write_lat, NULL);
+        free(write_lat);
+        free(write_lon);
+      }
+      SHPWriteObject(shape, -1, shapeObj);
+      SHPDestroyObject(shapeObj);
+      free_char_array(&data_cols, ndata);
+      ++n;
+    }
+    free_char_array(&meta_cols, nmeta);
+  }
+
+  SHPClose(shape);
+  DBFClose(dbase);
+  write_esri_proj_file(outFile);
+
+  free(hdr);
+  free(coords_hdr);
 
   return 1;
 }

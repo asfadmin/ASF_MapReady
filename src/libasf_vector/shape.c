@@ -144,36 +144,38 @@ void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
 {
   char *dbaseFile;
 
-  // Open database for adding values
-  dbaseFile = appendExt(inFile, ".dbf");
-  *dbase = DBFOpen(dbaseFile, "r+b");
-  if (*dbase == NULL)
-    asfPrintError("Could not open database file '%s'\n", dbaseFile);
+  if (dbase) {
+    // Open database for adding values
+    dbaseFile = appendExt(inFile, ".dbf");
+    *dbase = DBFOpen(dbaseFile, "r+b");
+    if (*dbase == NULL)
+      asfPrintError("Could not open database file '%s'\n", dbaseFile);
+    FREE(dbaseFile);
+  }
 
-  // Create a copy of the name to use for opening
-  char tmpInFile[1024];
-  strcpy(tmpInFile, inFile);
-  char *ext = findExt(inFile);
-  if (!ext) {
+  if (shape) {
+    // Create a copy of the name to use for opening
+    char tmpInFile[1024];
+    strcpy(tmpInFile, inFile);
+    char *ext = findExt(inFile);
+    if (!ext) {
       // KLUDGE ALERT!  SHPOpen() below replaces the file extension in inFile
       // by searching from the end of the filename in reverse for a '.'
       // character, then appends .shx and .shp to the two filenames that it
       // produces ...Unfortunately, this results in truncated ALOS basenames
       // in the output files AND we don't own the shape library.
-
+      
       // So, since SHPOpen() always wants to strip off an extension, we
       // add an extension for it to strip in cases where one isn't already
       // there.  This will solve the ALOS naming problem.
       sprintf(tmpInFile, "%s.dummy", inFile);
+    }
+
+    // Open shapefile for adding values
+    *shape = SHPOpen(tmpInFile, "r+b");
+    if (*shape == NULL)
+      asfPrintError("Could not open shapefile '%s'\n", inFile);
   }
-
-  // Open shapefile for adding values
-  *shape = SHPOpen(tmpInFile, "r+b");
-  if (*shape == NULL)
-    asfPrintError("Could not open shapefile '%s'\n", inFile);
-
-  FREE(dbaseFile);
-  return;
 }
 
 void close_shape(DBFHandle dbase, SHPHandle shape)

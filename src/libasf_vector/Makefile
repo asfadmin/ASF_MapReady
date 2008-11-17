@@ -23,6 +23,7 @@ OBJS = \
 	multimatch.o \
 	meta.o \
 	kml.o \
+	str.o \
 	shape.o \
 	generic_csv.o \
 	ursa.o \

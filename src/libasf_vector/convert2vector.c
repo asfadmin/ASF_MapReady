@@ -40,6 +40,7 @@ int convert2vector(char *inFile, const char *inFormat_str,
   asfPrintStatus("  %s -> %s.\n", inFile, outFile); 
   format_type_t inFormat = str2format(inFormat_str);
   format_type_t outFormat = str2format(outFormat_str);
+
   if ((inFormat == META || inFormat == LEADER) && outFormat == CSV)
     ret = meta2csv(inFile, outFile, listFlag);
   else if ((inFormat == META || inFormat == LEADER) && outFormat == KMLFILE)
