@@ -38,6 +38,7 @@ enum
   INPUT_GEOTIFF = 7,
   INPUT_ALOS_CSV = 8,
   INPUT_GENERIC_CSV = 9,
+  INPUT_URSA = 10
 };
 
 enum

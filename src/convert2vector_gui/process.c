@@ -20,6 +20,7 @@ const char *input_format_to_str(int input_format)
     case INPUT_GEOTIFF: return "GEOTIFF";
     case INPUT_ALOS_CSV: return "AUIG";
     case INPUT_GENERIC_CSV: return "CSV";
+    case INPUT_URSA: return "URSA";
     default: assert(0); return "";
   }
 }
