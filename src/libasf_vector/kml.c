@@ -1294,28 +1294,29 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   // Write everything into kml file
   fprintf(kml_file, "<Placemark>\n");
   fprintf(kml_file, "  <description><![CDATA[\n");
-  fprintf(kml_file, "<strong>Sensor</strong>: %s<br>\n", meta->general->sensor);
-  fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode)
-;
+  fprintf(kml_file, "<strong>Sensor</strong>: %s<br>\n",
+          meta->general->sensor);
+  fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n",
+          meta->general->mode);
   fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
   fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
   fprintf(kml_file, "<strong>Acquisition date</strong>: %d-%s-%d<br>\n",
-      ymd.day, mon[ymd.month], ymd.year);
+          ymd.day, mon[ymd.month], ymd.year);
   if (meta->general->orbit_direction == 'D')
     fprintf(kml_file, "<strong>Orbit direction</strong>: Descending<br>\n");
   else if (meta->general->orbit_direction == 'A')
     fprintf(kml_file, "<strong>Orbit direction</strong>: Ascending<br>\n");
   fprintf(kml_file, "<strong>Center latitude</strong>: %9.4lf<br>\n",
-      meta->general->center_latitude);
+          meta->general->center_latitude);
   fprintf(kml_file, "<strong>Center longitude</strong>: %9.4lf<br>\n",
-      meta->general->center_longitude);
+          meta->general->center_longitude);
   fprintf(kml_file, "  ]]></description>\n");
   fprintf(kml_file, "  <name>%s</name>\n", name);
   fprintf(kml_file, "  <LookAt>\n");
   fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
-      meta->general->center_longitude);
+          meta->general->center_longitude);
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
-      meta->general->center_latitude);
+          meta->general->center_latitude);
   fprintf(kml_file, "    <range>400000</range>\n");
   //fprintf(kml_file, "    <tilt>45</tilt>\n");
   fprintf(kml_file, "    <heading>50</heading>\n");
@@ -2930,14 +2931,22 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
 
   // for kml files that we generated, we can do better with the old method,
   // since we can extract a lot of metadata.  Don't do this with the CSV
-  // format, yet, since we can't have a header configuration for it.
-  if (kml_data->format && strcmp_case(kml_data->format, "CSV") != 0) {
+  // format, yet, since we can't have a header configuration for it, as
+  // well as the META format, since the old code did not support that.
+  if (kml_data->format &&
+      strcmp_case(kml_data->format, "CSV") != 0 &&
+      strcmp_case(kml_data->format, "META") != 0)
+  {
     // this is a kml file that we generated -- can use the old method
     kml_data_free(kml_data);
+
+    asfPrintStatus("Using kml-to-shape back-converter.\n");
 
     int ret = kml2shape_from_c2v(inFile, outFile, listFlag);
     return ret;
   }
+
+  asfPrintStatus("Using generic kml-to-shape converter.\n");
 
   DBFHandle dbase;
   SHPHandle shape;
@@ -2958,7 +2967,7 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
   char **meta_cols, **data_cols, **hdr_cols, **coords_hdr_cols;
   split_into_array(hdr, ',', &nhdr, &hdr_cols);
   if (nhdr != 1) {
-    asfPrintWarning("Hmm, did not expect so many header columns!\n");
+    asfPrintWarning("Multiple header columns found:\n");
     print_char_array(hdr_cols, nhdr, "HDR_COLS");
   }
 
@@ -2990,10 +2999,13 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
     for (j=0; j<pmk->num_coord_blocks; ++j) {
       kml_get_data(kml_data, i, j, &ndata, &data_cols);
 
-      // first write metadata attributes
-      for (k=0; k<nmeta; ++k) {
-        DBFWriteStringAttribute(dbase, n, 0, meta_cols[k]);
-      }
+      // metadata attributes
+      // first is the "name" field from the KML (which we assign to "ID")
+      DBFWriteStringAttribute(dbase, n, 0, pmk->name);
+      // ... currently don't support all the other metadata attributes ...
+      // for (k=0; k<nmeta; ++k) {
+      //   DBFWriteStringAttribute(dbase, n, 0, meta_cols[k]);
+      // }
 
       // now create the shape object, and the data attributes
       SHPObject *shapeObj=NULL;
@@ -3001,7 +3013,8 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
         double lon[1], lat[1];
         lon[0] = atof(data_cols[0]);
         lat[0]=  atof(data_cols[1]);
-        shapeObj = SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0], NULL);
+        shapeObj = SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0],
+                                         NULL);
       }
       else {
         double *write_lon = MALLOC(sizeof(double)*ndata/2);
@@ -3014,8 +3027,8 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
           else
             write_lat[m++] = atof(data_cols[k]);
         }
-        shapeObj=SHPCreateSimpleObject(SHPT_POLYGON, ndata/2, write_lon,
-                                       write_lat, NULL);
+        shapeObj = SHPCreateSimpleObject(SHPT_POLYGON, ndata/2, write_lon,
+                                         write_lat, NULL);
         free(write_lat);
         free(write_lon);
       }
