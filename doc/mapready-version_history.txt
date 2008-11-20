@@ -14,7 +14,7 @@ New Functionality
   during processing.
 - MapReady now thumbnails GeoTIFFs loaded into the input file list.
 - GUI support for AirSAR data (interferometric)
-- Added support for Ersdac ALOS mosaicks
+- Added support for ERSDAC ALOS mosaicks
 
 Bug Fixes
 - Eliminated streaking at the edge of an image with some Radarsat
