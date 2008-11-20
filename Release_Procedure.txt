@@ -21,14 +21,26 @@ Note: The MapReady binaries are mapready and asf_mapready, but
     and commit the change to the subversion repository.  Example:
 
     a) MAPREADY_VERSION_STRING "2.0.8-dev"
+       MAPREADY_VERSION 2.0
 
         changes to
 
        MAPREADY_VERSION_STRING "2.0.8"
+       MAPREADY_VERSION 2.0
 
     b) svn ci
 
- 3: When doing a release close to final release, you may wish to
+ 3. In your regular subversion checkout (not your exported version), bump
+    the version in include/asf_version.h and add "-dev" to the end, then
+    commit the change to the repository.
+
+    a)
+       MAPREADY_VERSION_STRING "2.0.9-dev"
+       MAPREADY_VERSION 2.0
+
+    b) svn ci
+
+ 4. When doing a release close to final release, you may wish to
       update "mapready-version_history.txt" with the release date and
       version number, and check that in.
 
@@ -37,7 +49,7 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 
       When building 2.0.14, this line needs to be updated accordingly.
 
- 4. Tag the repository:
+ 5. Tag the repository:
 
       svn copy svn+ssh://svn/svn/asf_tools/trunk
                svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-8
@@ -47,93 +59,95 @@ Note: The MapReady binaries are mapready and asf_mapready, but
                svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-8
     ]]
 
- 5. Create a clean directory where you will produce the build (etc),
+ 6. Create a clean directory where you will produce the build (etc),
     for example (change the revision number to the one that you have
     checked out):
 
       mkdir ~/asf/svn-r7665
 
- 6. Check out autotar and rpmbuild into this work directory.  Example:
+ 7. Check out autotar and rpmbuild into this work directory.  Example:
 
       cd ~/asf/svn-r7665
       svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
       svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
 
- 7. Make working directories:
+ 8. Make working directories:
 
       cd ~/asf/svn-r7665
       mkdir -p release/tar_filelist release/tar
 
- 8. If you have never copied the .rpmmacros and .rpmrc files to your
+ 9. If you have never copied the .rpmmacros and .rpmrc files to your
     home directory, then do so now, otherwise skip to step 7:
 
       cd ~/asf/svn-r7665/release/rpmbuild
       cp dot.rpmmacros ~/.rpmmacros
       cp dot.rpmrc ~/.rpmrc
 
- 9. Edit ~/.rpmmacros to update the top directory for your build's rpmbuild
+ 10. Edit ~/.rpmmacros to update the top directory for your build's rpmbuild
     parent directory, i.e. the 'release' folder.  Find the %_topdir line and
     edit as follows:
 
       %_topdir      %(echo $HOME)/asf/svn-r7665/release
 
- 10. Check out a copy of the release:
+ 11. Check out a copy of the release:
 
       cd ~/asf/svn-r7665
       svn export svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-8 asf_tools
 
- 11. Make sure DEBUG_BUILD is not set to any particular debug level:
+ 12. Make sure DEBUG_BUILD is not set to any particular debug level:
 
       unset DEBUG_BUILD
 
- 12. If you want to meddle with what the package will include you'll need to
+ 13. If you want to meddle with what the package will include you'll need to
      edit ~/asf/svn-r7665/asf_tools/make_support/master_program_list. That is
      where all the tools to be compiled are listed with other tools that they
      depend on.  There's also a CATEGORIES category in the master_program_list.
      You can make special groupings of tools in CATEGORIES section (eg 'mapready'
      which includes asf_mapready, mapready, asf_export, asf_import, etc.).
 
- 13. ** KLUDGE #1 **
+     NOTE: In general, you should not have to edit the master_program_list.
+
+ 14. ** KLUDGE #1 **
      Create svn_rev.h:
 
       cd ~/asf/svn-r7665/asf_tools/include
       echo "#define SVN_REV \"7665\"" > svn_rev.h
 
- 14. ** KLUDGE #2 **
-     Edit ~/asf/svn-r7665/asf_tools/Makefile.in, eliminate the following
-     lines from the MAPREADY_MODULES list:
+ 15. ** KLUDGE #2 **
+     a. Edit ~/asf/svn-r7665/asf_tools/Makefile.in, eliminate the following
+        lines from the MAPREADY_MODULES list:
 
-      src/ardop \
-      src/llh2ls \
-      src/diffimage \
-      src/diffmeta \
-      src/gr2sr \
-      src/convert2vector \
-      src/convert2vector_gui \
+          src/ardop \
+          src/llh2ls \
+          src/diffimage \
+          src/diffmeta \
+          src/gr2sr \
+          src/convert2vector \
+          src/convert2vector_gui \
 
-     Eliminate the following line from Makefile.in.  At the time of writing
-     these instructions, this line occurs near line 140.  (After deleting the
-     items above.)
+     b. Eliminate the following line from Makefile.in in the mapready: target.
+        At the time of writing these instructions, this line occurs near line 230.
+        (After deleting the items above.)
 
-      echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+          echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 
-     The "stp" "ap" "req" "c2v" and "oldtools" targets, and all associated build
-     instructions, should all be deleted from Makefile.in
+     c. The "stp" "ap" "req" "c2v", "jpl", "create_thumbs", "data_qc", and "oldtools" targets,
+        and all associated build instructions, should all be deleted from Makefile.in
 
-     Update the "all" target to only build "mapready".
+     d. Update the "all" target to only build "mapready".
 
-     Fix the "clean" target near the end of the file, to only include MAPREADY_MODULES
-     I.e., delete the STP_MODULES and AP_MODULES, etc.
+     e. Fix the "clean" target near the end of the file, to only include MAPREADY_MODULES,
+        i.e., delete the STP_MODULES and AP_MODULES, etc.
 
- 15. ** KLUDGE #3 **
+ 16. ** KLUDGE #3 **
 
      Edit ~/asf/svn-r7665/asf_tools/src/asf_convert_gui/Makefile, and change
      the default target to include "doc.  This should amount to uncommenting
-     line 139, and commenting out line 140.
+     line 138, and commenting out line 139 in the Unix section of the make file
 
        vi ~/asf/svn-r7665/asf_tools/src/asf_convert_gui/Makefile
 
- 16. Create the source.mapready_package file in ~/asf/svn-r7665/releast/autotar
+ 17. Create the source.mapready_package file in ~/asf/svn-r7665/releast/autotar
      (automatically by makemake if you followed the directory structure
      instructions listed here):
 
@@ -141,7 +155,7 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       make
       ./makemake
 
- 17. ** KLUDGE #4 **
+ 18. ** KLUDGE #4 **
     Add missing tools to the source.mapready_package file:
 
       cd ~/asf/svn-r7665/release/autotar
@@ -150,22 +164,14 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 
 src/libasf_insar
 external
-src/asf_convert_gui
-src/metadata_gui
-src/mosaic
-src/refine_geolocation
-src/asf_terrcorr
 src/meta2envi
 src/resample
 src/fill_holes
-src/asf_view
 src/to_sr
 src/deskew
-src/create_thumbs
 src/shift_geolocation
 src/trim
 src/proj2proj
-src/sgpsdp
 src/smooth
 src/farcorr
 src/asf_calpol
@@ -173,27 +179,29 @@ src/asf_gamma_import
 src/asf_airsar_import
 src/fftMatch
 
- 18. Run the autotar script:
+ 19. Run the autotar script:
 
       cd ~/asf/svn-r7665/release/autotar
       ./tarfile src ~/asf/svn-r7665 mapready_package
 
- 19. Run the rpmprep script (from autotar folder):
+ 20. Run the rpmprep script (from autotar folder):
 
       ./rpmprep mapready_package asf_mapready
 
- 20. Copy an older .spec file to the new one, then edit the new .spec
-     file in to use the correct version:
+ 21. Copy an older .spec file to the new one, then edit the new .spec
+     file in to use the correct version and to add a brief version
+     history comment (towards the end of the file):
 
       cd ~/asf/svn-r7665/release/rpmbuild
       cp <old .spec file> asf_mapready-2.0.8-1.spec
       vi asf_mapready-2.0.8-1.spec
 
- 21. Save the new .spec file in the repository:
+ 22. Save the new .spec file in the repository:
 
+      svn add asf_mapready-2.0.8-1.spec
       svn ci asf_mapready-2.0.8-1.spec
 
- 22. a) If you have not already added the secret and public gpg keys
+ 23. a) If you have not already added the secret and public gpg keys
      to your ~/.gnupg folder, then do so now or the rpm build will
      not sign the rpms.  Note that you CAN sign the rpms after they
      have been created with "rpm --addsign <rpm file name>".  Note that
@@ -216,7 +224,7 @@ src/fftMatch
      cd ~/asf/svn-r7665/release/rpmbuild/public_key
      sudo rpm -import asf_tools-pubkey.asc
 
- 23. Build and check the rpm:
+ 24. Build and check the rpm:
 
       cd ~/asf/svn-r7665/release/rpmbuild
       rpmbuild -ba --sign asf_mapready-2.0.8-1.spec
@@ -247,16 +255,11 @@ src/fftMatch
      means the ASCII public key has not been imported with "rpm -import"
      yet.
 
- 24. Create tarballs of the rpms (the binary rpm will also contain the
+ 25. Create tarballs of the rpms (the binary rpm will also contain the
      README_rpm.txt file from ~/asf/svn-r7665/asf_tools folder):
 
       cd ~/asf/svn-r7665/release/rpmbuild
       ./tarrpms asf_mapready mapready
-
- 25. **OPTIONAL**
-     I like to do this:
-
-      mv ~/asf/svn-r7665 ~/asf/mapready-v2.0.8
 
  26. Put the built files on dq (still in ~/asf/svn-r7665/release/rpmbuild):
 
@@ -266,9 +269,10 @@ src/fftMatch
       chmod 664 /stor/dq/release_builds/mapready/v2.0.8/*
       chgrp dq /stor/dq/release_builds/mapready/v2.0.8/*
 
- 27. In your regular subversion checkout (not your exported version), bump
-     the version in include/asf_version.h and add "-dev" to the end, then
-     commit the change to the repository.
+ 27. **OPTIONAL**
+     'Da Man' likes to finish up by doing this:
+
+      mv ~/asf/svn-r7665 ~/asf/mapready-v2.0.8
 
 
 MapReady v2.x Windows Release Build Procedure:
