@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
   if (argc > 1) {
       check_for_help(argc, argv);
-      handle_license_and_version_args(argc, argv, TOOL_NAME);
+      handle_common_asf_args(&argc, &argv, TOOL_NAME);
   }
 
   // allocate some memory

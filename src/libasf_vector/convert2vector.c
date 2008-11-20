@@ -103,5 +103,7 @@ int convert2vector(char *inFile, const char *inFormat_str,
   else
     asfPrintError("Conversion not supported.\n");
 
+  if (ret==1)
+    asfPrintStatus("Successful completion!\n");
   return ret;
 }

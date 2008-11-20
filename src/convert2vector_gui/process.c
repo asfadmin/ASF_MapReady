@@ -1,3 +1,25 @@
+#if defined(win32)
+
+#define BYTE __byte
+#define POINT __point
+#include "asf_meta.h"
+#undef BYTE
+
+#include <windows.h>
+#include <process.h>
+
+typedef DWORD WINAPI winForkFunc(void *);
+
+#undef POINT
+#else
+
+#include "asf_meta.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#endif
+
 #include "c2v.h"
 #include "asf_vector.h"
 #include "asf_fork.h"
@@ -131,10 +153,65 @@ void process()
 
   strcpy(cp->in_format, input_format_to_str(input_format));
   strcpy(cp->out_format, output_format_to_str(output_format));
-
-  asfFork(child_func, (void*)cp, parent_func, NULL);
-
   char *logFile = appendExt(cp->out_file, ".log");
+
+#ifdef win32
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    memset(&si, 0, sizeof(si));
+    memset(&pi, 0, sizeof(pi));
+    si.cb = sizeof(si);
+    
+    char *cmd = MALLOC(sizeof(char)*
+        (strlen(cp->in_file) + strlen(cp->out_file) + strlen(get_asf_bin_dir_win()) + 512));
+    sprintf(cmd,
+        "\"%s/convert2vector.exe\" "
+        "-log \"%s\" "
+        "-input-format %s -output-format %s \"%s\" \"%s\"",
+        get_asf_bin_dir_win(),
+        logFile,
+        cp->in_format, cp->out_format, cp->in_file, cp->out_file);
+
+    // clear out any previously existing log file
+    fLog = fopen(logFile, "a");
+    FCLOSE(fLog);
+
+    printf("Running command> %s\n", cmd);
+    if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+    {
+        DWORD dw = GetLastError();
+        //printf( "CreateProcess failed (%ld)\n", dw );
+
+        LPVOID lpMsgBuf;
+        FormatMessage(
+          FORMAT_MESSAGE_ALLOCATE_BUFFER |
+          FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+          NULL,
+          dw,
+          MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
+          (LPTSTR)&lpMsgBuf,
+          0,
+          NULL);
+
+        printf("CreateProcess() failed with error %ld: %s\n",
+            dw, (char*)lpMsgBuf);
+        printf("Failed command: %s\n", cmd);
+    }
+
+    DWORD dwWaitResult;
+
+    // now wait for process to finish
+    do {
+        while (gtk_events_pending())
+            gtk_main_iteration();
+        dwWaitResult = WaitForSingleObject(pi.hProcess, 50);
+    }
+    while (dwWaitResult == WAIT_TIMEOUT);
+#else
+  asfFork(child_func, (void*)cp, parent_func, NULL);
+#endif
 
   char message[1024];
   strcpy(message, "-");
@@ -159,7 +236,9 @@ void process()
       }
     }
     fclose(lfp);
-    unlink(logFile);
+    //unlink(logFile);
+
+    printf("Output:\n%s\nEND OF OUTPUT\n", output);
 
     char *p = output, *q;
     while (p) {
@@ -230,7 +309,7 @@ void process()
   if (!success) open_output = FALSE;
 
   put_string_to_label("result_label", message);
-  //asfPrintStatus(msg);
+  asfPrintStatus(message);
   asfPrintStatus("\n\nDone.\n\n");
 
   if (open_output) {

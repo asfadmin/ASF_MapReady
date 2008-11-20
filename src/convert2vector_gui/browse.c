@@ -507,7 +507,7 @@ static void input_file_browse(void)
         "Metadata Files (*.meta)\0*.meta\0"
         "Leader Files (*.L,LED-*)\0*.L;LED-*\0"
         "ALOS Leader Files (LED-*)\0LED-*\0"
-        "Point/Polygon Files (*.csv)\0*.csv\0"
+      //"Point/Polygon Files (*.csv)\0*.csv\0"
         "Shape Files (*.shp)\0*.shp\0"
         "KML Files (*.kml)\0*.kml\0"
         "Geotiff Files (*.tif)\0*.tif\0"
