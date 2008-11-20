@@ -15,12 +15,12 @@
 #define REQ_VERSION 2.0
 
 // MapReady
-#define MAPREADY_VERSION_STRING "2.1.8-dev"
-#define MAPREADY_VERSION 2.0
+#define MAPREADY_VERSION_STRING "2.1.8"
+#define MAPREADY_VERSION 2.1
 
 // Convert To Vector
 #define C2V_VERSION_STRING "2.1.0-dev"
-#define C2V_VERSION 2.0
+#define C2V_VERSION 2.1
 
 // JPL Mosaic Suite
 #define JPL_VERSION_STRING "1.0.1-dev"
