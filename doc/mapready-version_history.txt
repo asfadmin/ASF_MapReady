@@ -1,5 +1,22 @@
 MapReady Version History
 
+MapReady 2.1.8 (released 2008 November 19)
+New Functionality
+- N/A
+
+Bug Fixes
+- Unable to view Faraday rotation intermediate files
+- Layover/foreshortening areas in saved layover/shadow
+  mask do not line up with final image correctly (but
+  images line up correctly otherwise)
+- Default for Faraday rotation should be global average
+  rotation
+- Miscellaneous other bugs
+
+Features Enhanced
+- Improved and updated help output, manuals
+- Added support for Ersdac ALOS mosaicks
+
 MapReady 2.1.7 (released 2008 November 3)
 New Functionality
 - New Polarimetric Decompositions:
