@@ -267,6 +267,7 @@ src/fftMatch
       cp dist/* /stor/dq/release_builds/mapready/v2.0.8
       chmod 775 /stor/dq/release_builds/mapready/v2.0.8
       chmod 664 /stor/dq/release_builds/mapready/v2.0.8/*
+      chgrp dq /stor/dq/release_builds/mapready/v2.0.8
       chgrp dq /stor/dq/release_builds/mapready/v2.0.8/*
 
  27. **OPTIONAL**
