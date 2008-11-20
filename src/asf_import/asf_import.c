@@ -1,21 +1,10 @@
 #include <asf_contact.h>
 #include <asf_license.h>
-/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
+/*==================BEGIN ASF DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
 If you wish to edit the documentation for this program, you need to change the
-following defines. For the short ones (like ASF_NAME_STRING) this is no big
-deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it
-can be a daunting task to get all the newlines in correctly, etc. In order to
-help you with this task, there is a tool, edit_man_header. The tool *only*
-works with this portion of the code, so fear not. It will scan in defines of
-the format #define ASF_<something>_STRING between the two auto-generated
-documentation markers, format them for a text editor, run that editor, allow
-you to edit the text in a clean manner, and then automatically generate these
-defines, formatted appropriately. The only warning is that any text between
-those two markers and not part of one of those defines will not be preserved,
-and that all of this auto-generated code will be at the top of the source
-file. Save yourself the time and trouble, and use edit_man_header. :)
+following defines.
 */
 
 #define ASF_NAME_STRING \
@@ -23,9 +12,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
-"              [-format <inputFormat>] [-band <band_id | all>]\n"\
+"              [-format <inputFormat>] [-band <band_id | all>] [-no-ers2-gain-fix\n"\
 "              [-image-data-type <type>] [-lut <file>] [-lat <lower> <upper>]\n"\
-"              [-prc] [-old] [-log <logFile>] [-quiet] [-license] [-version]\n"\
+"              [-prc] [-log <logFile>] [-quiet] [-real-quiet] [-license] [-version]\n"\
 "              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-multilook] [-complex] [-metadata <file>]\n"\
 "              [-line <start line subset>] [-sample <start sample subset>]\n"\
@@ -33,17 +22,23 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "              <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"   Ingests all varieties of CEOS and STF data formats and outputs ASF\n"\
-"   internal format metadata and data files. When the calibration\n"\
-"   parameters are applied using the -sigma, -gamma, or the -beta\n"\
-"   option the resulting image will have power scale values.\n"
+"   Ingests all varieties of CEOS, STF, AIRSAR, BIL, GRIDFLOAT, VP (Vexcel-Plain),\n"\
+"   JAXA Level 0 (ALOS AVNIR-2) and GeoTIFF data formats and outputs ASF Internal format\n"\
+"   metadata and data files. When the calibration parameters are applied using the\n"\
+"   -sigma, -gamma, or the -beta option the resulting image will have power scale\n"\
+"   values (or decibels if the -db option is utilized). "ASF_NAME_STRING" can also perform\n"\
+"   several other tasks during look up such as multilooking when ingesting single-look\n"\
+"   complex (SLC) data, ingest individual bands at a time, apply a look-up table, apply\n"\
+"   latitude constraints, etcetera.\n"\
 
 #define ASF_INPUT_STRING \
-"   The format of the input file must be specified as CEOS or STF.\n"
+"   The format of the input file must be specified as STF, AIRSAR, BIL, GRIDFLOAT,\n"\
+"   VP, JAXA_L0, or GEOTIFF.  Otherwise "ASF_NAME_STRING" assumes the input file is in\n"\
+"   CEOS format by default.  See the -format option below.\n"
 
 #define ASF_OUTPUT_STRING \
 "   Outputs data and metadata files with the user-provided base name and\n"\
-"   appropriate extensions.\n"
+"   appropriate extensions (.img and .meta)\n"
 
 #define ASF_OPTIONS_STRING \
 "   -amplitude\n"\
@@ -71,7 +66,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0' format refers to the\n"\
 "        ALOS AVNIR-2 Level 0 dataset format. 'CEOS' is the default behavior.\n"\
 "   -metadata <metadata file>\n"\
-"        Allows the ingest of metadata that do not have the same basename as the\n"\
+"        Allows the ingest of metadata that does not have the same basename as the\n"\
 "        image data.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
@@ -81,8 +76,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -image-data-type <type>\n"\
 "        Force input data to be interpreted as the given image data type. Valid\n"\
 "        formats are 'amplitude_image', 'phase_image', 'coherence_image',\n"\
-"        'lut_image', 'elevation', 'dem', and 'image', 'mask'.  This parameter\n"\
-"        is ignored unless the -format parameter is \"geotiff\".\n"\
+"        'lut_image', 'elevation', 'dem', and 'image', 'mask'.  NOTE: This option\n"\
+"        only applies to GeoTIFFs (-format option is \"geotiff\").  If the input\n"\
+"        format is not \"geotiff\", then this option is ignored.\n"\
 "   -lut <file>\n"\
 "        Applies a user defined look up table to the data. Look up contains\n"\
 "        incidence angle dependent scaling factor.\n\n"\
@@ -100,7 +96,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        the chosen latitude constraint is within the image.\n"\
 "   -prc\n"\
 "        Replace the restituted state vectors from the original raw data\n"\
-"        acquired by the ERS satellites with preceision\n"\
+"        acquired by the ERS satellites with precision vectors\n"\
 "   -no-ers2-gain-fix\n"\
 "        Do not apply the ERS2 gain correction.  (See the 'Notes' section\n"\
 "        below.)\n"\
@@ -110,12 +106,12 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        'jaxa_L0' format since this type of dataset is first imported into\n"\
 "        a standard JPEG format then the JPEG is converted to ASF Internal\n"\
 "        format.\n"\
-"   -old\n"\
-"        Output in old style ASF internal format.\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
 "        Supresses all non-essential output.\n"\
+"   -real-quiet\n"\
+"        Supresses all output.\n"\
 "   -license\n"\
 "        Print copyright and license for this software then exit.\n"\
 "   -version\n"\
@@ -175,12 +171,19 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   CEOS base name issue:\n"\
 "        If you have two or more CEOS filesets ([*.D & *.L], [*.RAW & *.LDR],\n"\
 "        or [dat.* & lea.*]) with the same base name, then this program will\n"\
-"        automatically fetch the first set in the aforementioned list.\n"
+"        automatically fetch the first set in the aforementioned list and ignore\n"\
+"        the rest.  The workaround is to move files with similar basenames, but\n"\
+"        different extensions, to different work folders before processing.\n"
 
 #define ASF_SEE_ALSO_STRING \
 "   asf_mapready, asf_export\n"
 
-/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
+// Option -old removed from the help and description above ...but still supported.
+// Just not advertised
+//"   -old\n"\
+//"        Output in old style ASF internal format.\n"\
+
+/*===================END ASF DOCUMENTATION===================*/
 
 #include "asf_import.h"
 #include "asf_meta.h"
@@ -697,10 +700,13 @@ int main(int argc, char *argv[])
 
     // Deal with input data type
     if (flags[f_DATA_TYPE] != FLAG_NOT_SET) {
-      strcpy(data_type, argv[flags[f_DATA_TYPE] + 1]);
-      for (ii=0; ii<strlen(data_type); ii++) {
-        data_type[ii] = (char)toupper(data_type[ii]);
-      }
+        asfPrintWarning("Use of the -data-type option is currently disabled.\n"
+                       "The data type (pixel) will be interpreted as described in\n"
+                       "the data set metadata instead.\n");
+      //strcpy(data_type, argv[flags[f_DATA_TYPE] + 1]);
+      //for (ii=0; ii<strlen(data_type); ii++) {
+//        data_type[ii] = (char)toupper(data_type[ii]);
+      //}
     }
 
     /* Deal with input image data type */
@@ -714,9 +720,13 @@ int main(int argc, char *argv[])
     }
     else
     {
-      if (flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET) {
-        asfPrintWarning("-image-data-type parameter ignored (only valid for GeoTIFF\n"
-            "image format type)\n");
+      if (flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
+          format_type != GENERIC_GEOTIFF)
+      {
+        asfPrintWarning("The -image-data-type option is only valid for GeoTIFFs.\n"
+                "If the input format is not \"geotiff\", then the -image-data-type\n"
+                "option is ignored.  If your dataset is a geotiff, please use\n"
+                "the \"-format geotiff\" option on the command line.\n");
       }
       strcpy(image_data_type, "???");
     }
