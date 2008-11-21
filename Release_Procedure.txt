@@ -278,57 +278,83 @@ src/fftMatch
 
 MapReady v2.x Windows Release Build Procedure:
 ----------------------------------------------
-    Notes:
+ * Notes:
       - The installer package is now called "mapreadyPackageInstall<VV>.nsi"
-        where <VV> is the version number: e.g., "mapreadyPackageInstall20.nsi"
+        where <VV> is the version number: e.g., "mapreadyPackageInstall21.nsi"
 
-      - You must have Cygwin and the Nullsoft installer system installed on the
-        build machine for this build step.
+      - You must have MSys, MinGW, Cygwin and the Nullsoft installer system
+        installed on the build machine for this build step.
 
  * Make sure DEBUG_BUILD is not set to any particular debug level:
 
       unset DEBUG_BUILD
 
- * Build the ASF tools:
+ * Go to the UTD Tools Wiki and follow the instructions for preparing
+   the tools to be built with MinGW:
+
+   http://wiki/asf/MinGW
+
+ * Once you've completed the MinGW preparation steps, then build the ASF tools:
 
       cd <path>/asf_tools
       make clean
       make
 
- * Build akdem_grab manually.  From asf_tools directory:
+ * Optional:  We are currently not distributing akdem_grab, but if you want to
+   distribute it with the Windows build, then you will have to build akdem_grab
+   manually:
+   
+   1) From asf_tools directory:
 
             cd prototype/src/usgs_seamless
             make
 
-    The Makefile should copy akdem_grab to ../../../bin automatically.
+      The Makefile should copy akdem_grab to ../../../bin automatically.
 
-    If "make" fails because of an error in osl/socket.cpp (it did for me)
-    then you probably need to do this:
+      If "make" fails because of an error in osl/socket.cpp (it did for me)
+      then you probably need to do this:
 
             vi ../osl/socket.cpp
             --> comment out line 35: typedef int socklen_t;
 
- * Build the MapReady htmlhelp.chm manually and get it to the proper location.
-   From the asf_tools directory:
+   2) In the NSIS script, find the akdem_grab.exe line and un-comment it out
+      so the file will be included.  Change this:
 
- 	cd src/asf_convert_gui
- 	make htmlhelp.chm
- 	make
+      ;File "${ASF_BINS_LOC}\akdem_grab.exe
+
+      to this by removing the leading ';' character:
+      
+      File "${ASF_BINS_LOC}\akdem_grab.exe
+
+ * Make the help files:
+   1) From a CYGWIN window (important!), not a MSys/MinGW window, build the MapReady
+      htmlhelp.chm manually and get it to the proper location.
+
+      From the asf_tools directory:
+
+ 	   cd src/asf_convert_gui
+ 	   make htmlhelp.chm
+
+   2) From a MSYS/MINGW window (important!), not a CygWin window, build the mapready
+      GUI:
+
+ 	   make
 
  * Edit
 
-    <path>/release/trunk/windows_installer/convert_package/mapreadyPackageInstall20.nsi
+    <path>/release/trunk/windows_installer/convert_package/mapreadyPackageInstall21.nsi
 
     and update the locations of the tool binaries and the cygwin
     binaries directories.  Look for the ASF_BINS_LOC and CYGWIN_BINS_LOC
-    definitions respectively.
+    definitions respectively (although the CygWin stuff shouldn't matter now.)
 
  * Build the Windows self-installing executable:
 
     a) In a Windows file manager window, right click on the script
        that you edited in the previous step and select 'Compile NSIS script'
 
-    b) The installer is going to grab the cygwin1.dll file from
+    b) -deprecated- (The MinGW library is now statically linked to the tools)
+       The installer is going to grab the cygwin1.dll file from
        ../support/cygwin (along with a bunch of other dlls).  You
        must test the self-installer on a Windows machine that does
        NOT have Cygwin installed on to verify that the cygwin1.dll
@@ -343,15 +369,15 @@ MapReady v2.x Windows Release Build Procedure:
     Currently we are using the naming scheme:
        <package>-<V>.<V>.<V>-<OS>.<compression type>
        e.g.
-       mapready-2.0.8-win32.zip
-       mapready-2.0.8-win32.tar.gz
+       mapready-2.1.8-win32.zip
+       mapready-2.1.8-win32.tar.gz
 
  * Put these files with the already packaged Linux and Source distributions to
    our favorite 'point release' locations using WinSCP and your favorite web
    browser. Then DQ can test this stuff!
 
      On Data Quality's machine at
-       dq.asf.alaska.edu:/stor/dq/release_builds/mapready/v2.0.8
+       dq.asf.alaska.edu:/stor/dq/release_builds/mapready/v2.1.8
 
      And on our Wiki page
        http://wiki/asf/UTD_tools_page
