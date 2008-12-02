@@ -660,7 +660,7 @@ int match_dem(meta_parameters *metaSAR,
       meta_parameters *maskmeta = meta_read(userMaskClipped);
       asfRequire(maskmeta->general->line_count==demHeight, "Bad heights.\n");
       int maskWidth = metaSAR->general->sample_count;
-      float *mask = MALLOC(sizeof(float) * maskWidth * (demHeight+2)); //...
+      float *mask = MALLOC(sizeof(float) * maskmeta->general->sample_count * (demHeight+2)); //...
       for (ii=0;ii<demHeight;ii++) // read in the whole mask image
           get_float_line(inseedmask, maskmeta, ii, mask + ii * maskWidth);
       FCLOSE(inseedmask);
