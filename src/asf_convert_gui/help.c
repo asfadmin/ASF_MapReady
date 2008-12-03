@@ -119,12 +119,14 @@ on_help_button_clicked(GtkWidget *widget)
     help_file = fopen_share_file(help_filename, "rt");
     if (help_file)
     {
+        int line_count = 0;
         gchar * buffer = (gchar *) g_malloc(sizeof(gchar) * max_line_len);
         while (!feof(help_file))
         {
             gchar *p = fgets(buffer, max_line_len, help_file);
             if (p)
             {
+                if (strlen(p)) line_count++;
                 GtkTextIter end;
                 gchar * q = strstr(buffer, "$VERSION");
 
@@ -141,8 +143,23 @@ on_help_button_clicked(GtkWidget *widget)
                 gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
             }
         }
+        if (!line_count) {
+            strcpy(buffer, "\n\n  ERROR: Empty help file (mapready.txt) in share folder.\n");
+            GtkTextIter end;
+            gtk_text_buffer_get_end_iter(text_buffer, &end);
+            gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
+        }
 
         fclose(help_file);
+        g_free(buffer);
+    }
+    else {
+        // No help file found
+        gchar *buffer = (gchar *) g_malloc(sizeof(gchar) * max_line_len);
+        strcpy(buffer, "\n\n  ERROR: Cannot find help file (mapready.txt) in share folder.\n");
+        GtkTextIter end;
+        gtk_text_buffer_get_end_iter(text_buffer, &end);
+        gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
         g_free(buffer);
     }
 
