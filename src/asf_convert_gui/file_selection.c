@@ -119,14 +119,14 @@ static void create_file_chooser_dialog()
     // add the filters
     GtkFileFilter *ceos_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(ceos_filt, "All CEOS Level 1 Files");
-    gtk_file_filter_add_pattern(ceos_filt, "*.D");
+    gtk_file_filter_add_pattern(ceos_filt, "*.L");
     gtk_file_filter_add_pattern(ceos_filt, "LED-*");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), ceos_filt);
 
-    GtkFileFilter *D_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(D_filt, "RSAT/ERS CEOS L1 (*.D)");
-    gtk_file_filter_add_pattern(D_filt, "*.D");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), D_filt);
+    GtkFileFilter *L_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(L_filt, "RSAT/ERS CEOS L1 (*.L)");
+    gtk_file_filter_add_pattern(L_filt, "*.L");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), L_filt);
 
     //GtkFileFilter *stf_filt = gtk_file_filter_new();
     //gtk_file_filter_set_name(stf_filt, "STF Files (*.000)");
@@ -201,8 +201,8 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
     of.hwndOwner = NULL;
     of.lpstrFilter =
-            "CEOS Level 1 Files\0*.D;LED-*\0"
-            "RSAT/ERS CEOS L1 (*.D)\0*.D\0"
+            "CEOS Level 1 Files\0*.L;LED-*\0"
+            "RSAT/ERS CEOS L1 (*.L)\0*.D\0"
             //"CEOS Level 0 (*.raw)\0*.raw\0"
             //"STF Files (*.000)\0*.000\0"
             "GeoTIFF Files (*.tif)\0*.tif\0"
