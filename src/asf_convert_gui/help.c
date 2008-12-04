@@ -144,7 +144,8 @@ on_help_button_clicked(GtkWidget *widget)
             }
         }
         if (!line_count) {
-            strcpy(buffer, "\n\n  ERROR: Empty help file (mapready.txt) in share folder.\n");
+            sprintf(buffer, "\n\n  ERROR: Empty help file (mapready.txt) in share folder\n(%s)\n",
+                    get_asf_share_dir());
             GtkTextIter end;
             gtk_text_buffer_get_end_iter(text_buffer, &end);
             gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
