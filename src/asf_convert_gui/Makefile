@@ -135,13 +135,14 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 DB2H = $(shell which docbook2html 2>/dev/null)
 DB2T = $(shell which docbook2txt 2>/dev/null)
 
-#default: clean doc $(OBJS)
-default: clean $(OBJS)
+default: clean doc $(OBJS)
+#default: clean $(OBJS)
 	$(CC) $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)/$(DEST_TARGET)
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
 	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
-	-mv -f $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
+	-mv -f $(TARGET).txt $(DEST_TARGET).txt
+	-cp -f $(DEST_TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
 	-mv -f how_to_install.html $(SHAREDIR)/how_to_install_$(DEST_TARGET).html
 
 %.c: %.h
