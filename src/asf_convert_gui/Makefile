@@ -2,6 +2,7 @@ include ../../make_support/system_rules
 
 TARGET = asf_convert_gui
 DEST_TARGET = mapready
+DOC_BUILD_MACHINE = dq.asf.alaska.edu
 SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c state.c change_output_dir.c naming_scheme.c metadata.c geocode.c summary.c ceos_thumbnail.c win_font.c projfile.c view_output.c share.c terrcorr.c log.c blow_up_in.c blow_up_out.c png_util.c
 
 # Unfortunately compilation is completely different on windows
@@ -135,19 +136,23 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 DB2H = $(shell which docbook2html 2>/dev/null)
 DB2T = $(shell which docbook2txt 2>/dev/null)
 
-default: clean doc $(OBJS)
-#default: clean $(OBJS)
+#default: clean doc $(OBJS)
+default: clean $(OBJS)
 	$(CC) $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)/$(DEST_TARGET)
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
 	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
-	-mv -f $(TARGET).txt $(DEST_TARGET).txt
-	-cp -f $(DEST_TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
+	-cp -f $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
 	-mv -f how_to_install.html $(SHAREDIR)/how_to_install_$(DEST_TARGET).html
 
 %.c: %.h
 
 doc: asf_convert_gui.txt how_to_install.html
+
+ifeq "$(NODENAME)" "$(DOC_BUILD_MACHINE)"
+
+# Documents CAN be built ...we're on the right machine!!
+# (the one with the right version of doctools)
 
 asf_convert_gui.txt: asf_convert_gui.sgml
 	@if test "X$(DB2T)" = "X"; then \
@@ -157,6 +162,49 @@ asf_convert_gui.txt: asf_convert_gui.sgml
 	  docbook2txt asf_convert_gui.sgml; \
 	fi
 
+else
+
+# Documents CANNOT be built ...we're not on the right machine!!
+# If the .sgml files are newer than the text file versions (if
+# they exist), and the current build is intended to be a release
+# build ...GO BUILD ON THE RIGHT MACHINE (see DOC_BUILD_MACHINE
+# at the top of this make file)
+
+asf_convert_gui.txt: asf_convert_gui.sgml
+	@echo "Building the help documentation."
+	@if [ ! -f $(TARGET).txt ] ; then \
+	  echo "\n**********\nWARNING: Help file text documents ($(TARGET).txt) cannot"; \
+	  echo "be built on this machine.  If this build is a release build"; \
+	  echo "then you must build (and check in) the documents on"; \
+	  echo "$(DOC_BUILD_MACHINE) instead, then check out the built"; \
+	  echo "documents here.\n"; \
+	  echo "For now however, a blank $(TARGET).txt file will be"; \
+	  echo "created.  This will result in a \"Help file not found\" error"; \
+	  echo "message to show up in the help window in the MapReady GUI application.\n"; \
+	  echo "=> Do NOT check in the $(TARGET).txt file created here!  It's blank!!!"; \
+	  echo "   Do your required edits on $(DOC_BUILD_MACHINE), build the docs there, and THEN check them in"; \
+	  echo "   from there!\n**********\n"; \
+	  touch $(TARGET).txt; \
+	else \
+	  echo "\n**********\nWARNING: Help file text documents ($(TARGET).txt) cannot"; \
+	  echo "be built on this machine.  If this build is a release build"; \
+	  echo "then you must build (and check in) the documents on"; \
+	  echo "$(DOC_BUILD_MACHINE) instead, then check out the built"; \
+	  echo "documents here.\n"; \
+	  echo "=> $(TARGET).txt was FOUND here ...but you need to check to see if it"; \
+	  echo "   is non-empty and current if you are doing a release build, i.e. compare the .txt"; \
+	  echo "   file date/time to the date/time on the $(TARGET).sgml file etc.\n"; \
+	  echo "=> Do NOT check in the $(TARGET).txt file unless it is non-empty AND correct!"; \
+	  echo "   Do your required edits on $(DOC_BUILD_MACHINE), build the docs there, and THEN check them in"; \
+	  echo "   from there!\n**********\n"; \
+	fi
+
+# END of doc build section for asf_convert_gui.txt help file creation
+endif
+
+# Non-RedHat doctools work fine for HTML creation ...only the text
+# output from docbook2text doesn't seem to work (yet?)
+#
 how_to_install.html: how_to_install.sgml
 	@if test "X$(DB2H)" = "X"; then \
 	  echo "No documentation built - docbook2* tools not found."; \
