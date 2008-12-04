@@ -4062,7 +4062,7 @@
 								      <property name="visible">True</property>
 								      <property name="tooltip" translatable="yes">&quot;True Color&quot; output for optical data.  The &quot;True Color&quot; setting results in automatically assigning the RGB color bands (3, 2, 1 for R, G, B respectively) and applies a statistical 2-sigma contrast expansion on each band.  The contrast expansion is applied to each band individually.</property>
 								      <property name="can_focus">True</property>
-								      <property name="label" translatable="yes">True Color (3,2,1 - Optical)</property>
+								      <property name="label" translatable="yes">True Color</property>
 								      <property name="use_underline">True</property>
 								      <property name="relief">GTK_RELIEF_NORMAL</property>
 								      <property name="focus_on_click">True</property>
@@ -4085,7 +4085,7 @@
 								      <property name="visible">True</property>
 								      <property name="tooltip" translatable="yes">&quot;False Color&quot; output for optical data.  The &quot;False Color&quot; setting results in automatically assigning the RGB color bands (4, 3, 2 for R, G, B respectively) and applies a statistical 2-sigma contrast expansion on each band.  The contrast expansion is applied to each band individually.</property>
 								      <property name="can_focus">True</property>
-								      <property name="label" translatable="yes">False Color (4,3,2 - Optical)</property>
+								      <property name="label" translatable="yes">False Color</property>
 								      <property name="use_underline">True</property>
 								      <property name="relief">GTK_RELIEF_NORMAL</property>
 								      <property name="focus_on_click">True</property>
