@@ -28,6 +28,7 @@ AC_PROG_YACC
 
 CC="gcc"
 osType=`uname`
+nodeName=`uname -n`
 versMajor=`uname -r | awk -F. '{print $1}'`
 versMinor=`uname -r | awk -F. '{print $2}'`
 c99="-D_ISOC99_SOURCE"
@@ -312,11 +313,12 @@ rm -f ./endian
 
 # EOF (without quotes) makes cat print out strings with expanded variables
 cat <<EOF >>system_rules
-SYS     =   $sys
-WINSYS  =   $winsys
-CC      =   $CC
-RANLIB  =   $ranlib
-OPTFLAG =   $optFlag
+SYS       =   $sys
+NODENAME  =   $nodeName
+WINSYS    =   $winsys
+CC        =   $CC
+RANLIB    =   $ranlib
+OPTFLAG   =   $optFlag
 C99_FLAGS = $c99
 EOF
 
