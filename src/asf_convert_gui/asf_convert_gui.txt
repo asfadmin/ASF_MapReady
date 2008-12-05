@@ -50,15 +50,15 @@
     1. Data Import (required):
 
         Imports a wide variety of satellite data formats into ASF Internal
-       Format. Note: If the data is already is already in ASF Internal
-       Format, it is read directly for processing. Import processing includes
-       the option of processing to a particular radiometry selection
-       (Amplitude, Power, Sigma, Beta, or Gamma). Import options may be set
-       on the Import tab. ASF Internal format consists of 2 files, a) a
-       metadata file that contains information about the data itself, and b)
-       a binary file which contains the pixels of data themselves. All
-       processing by ASF tools other than import require the data to be in
-       ASF Internal Format file format.
+       Format. Note: If the data is already in ASF Internal Format, it is
+       read directly for processing. Import processing includes the option of
+       processing to a particular radiometry selection (Amplitude, Power,
+       Sigma, Beta, or Gamma). Import options may be set on the Import tab.
+       ASF Internal format consists of 2 files, a) a metadata file that
+       contains information about the data itself, and b) a binary file which
+       contains the pixels of data themselves. All processing by ASF tools
+       other than import require the data to be in ASF Internal Format file
+       format.
 
     2. Polarimetry:
 
@@ -1104,20 +1104,3 @@
                P.O. Box 757320
                Fairbanks, AK 99775-7320
           
-
-References
-
-   Visible links
-   1. file:///tmp/html-E24048#overview
-   2. file:///tmp/html-E24048#general-tab
-   3. file:///tmp/html-E24048#import-options
-   4. file:///tmp/html-E24048#polarimetry-options
-   5. file:///tmp/html-E24048#dem
-   6. file:///tmp/html-E24048#geocode
-   7. file:///tmp/html-E24048#export
-   8. file:///tmp/html-E24048#files
-   9. file:///tmp/html-E24048#execute
-  10. file:///tmp/html-E24048#AEN284
-  11. file:///tmp/html-E24048#caveats
-  12. file:///tmp/html-E24048#contacting-us
-  13. mailto:uso@asf.alaska.edu
