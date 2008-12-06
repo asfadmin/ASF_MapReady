@@ -134,7 +134,7 @@ initialize_tile_cache_file (GString **tile_file_name)
 #endif
   }
   g_assert (tile_file != NULL);
-  
+
 #ifndef win32
   return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
   G_UNLOCK (signal_block_activity);
@@ -2084,23 +2084,50 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
 
-  size_t scale_factor;          // Scale factor to use for output image.
+  //size_t scale_factor;          // Scale factor to use for output image.
+  float fscale_factor;
+  size_t scale_factor;
   if ( self->size_x > self->size_y ) {
-    scale_factor = ceil ((double) self->size_x / max_dimension);
+    //scale_factor = ceil ((double) self->size_x / max_dimension);
+    fscale_factor = (float)self->size_x / (float)max_dimension;
   }
   else {
-    scale_factor = ceil ((double) self->size_y / max_dimension);
+    //scale_factor = ceil ((double) self->size_y / max_dimension);
+    fscale_factor = (float)self->size_y / (float)max_dimension;
   }
 
   // We want the scale factor to be odd, so that we can easily use a
   // standard kernel to average things.
-  if ( scale_factor % 2 == 0 ) {
-    scale_factor++;
-  }
+  //if ( scale_factor % 2 == 0 ) {
+    //scale_factor++;
+  //}
 
   // Output JPEG x and y dimensions.
-  size_t osx = self->size_x / scale_factor;
-  size_t osy = self->size_y / scale_factor;
+  scale_factor = (size_t)(fscale_factor + 0.5);
+  if (scale_factor < 1) {
+    // Someone tried to _grow_ the image rather than shrink it ...unsupported at this time!
+    asfPrintWarning("Maximum dimension that was selected is larger than the maximum\n"
+        "dimension in the image.  Only scaling down is supported.  Defaulting to a\n"
+        "scale factor of 1.0 (maintain original size.)\n");
+  }
+  scale_factor = scale_factor < 1 ? 1 : scale_factor;
+  size_t osx = (size_t)((float)self->size_x / (float)scale_factor);
+  size_t osy = (size_t)((float)self->size_y / (float)scale_factor);
+  while ((osx >= MIN_DIMENSION || osy >= MIN_DIMENSION) &&
+         (osx % 2 == 0         || osy % 2 == 0)         &&
+         scale_factor != 1)
+  {
+    // Fine tune scale factor until output image dimensions are odd
+    // in both directions so an odd-sized filter kernel will fit (odd
+    // sized kernels have a center pixel)
+    fscale_factor += 0.25;
+    scale_factor = (size_t)(fscale_factor + 0.5);
+    osx = (size_t)((float)self->size_x / (float)scale_factor);
+    osy = (size_t)((float)self->size_y / (float)scale_factor);
+  }
+  asfRequire(osx >= MIN_DIMENSION || osy >= MIN_DIMENSION, "Output dimensions too small");
+  size_t kernel_size = scale_factor;
+  kernel_size = kernel_size % 2 ? kernel_size : kernel_size - 1;
 
   // Number of pixels in output image.
   size_t pixel_count = osx * osy;
@@ -2200,26 +2227,37 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   double lin_max = mean + 2 * standard_deviation;
 
   // As advertised, we will average pixels together.
-  g_assert (scale_factor % 2 != 0);
-  size_t kernel_size = scale_factor;
-  gsl_matrix_float *averaging_kernel
-    = gsl_matrix_float_alloc (kernel_size, kernel_size);
-  float kernel_value = 1.0 / ((float)kernel_size * kernel_size);
-  size_t ii, jj;                // Index values.
-  for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
-    for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
-      gsl_matrix_float_set (averaging_kernel, ii, jj, kernel_value);
+  //g_assert (scale_factor % 2 != 0);
+  //size_t kernel_size = scale_factor;
+  gsl_matrix_float *averaging_kernel = NULL;
+  size_t ii, jj;
+  if (scale_factor > 1) {
+    averaging_kernel = gsl_matrix_float_alloc (kernel_size, kernel_size);
+    float kernel_value = 1.0 / ((float)kernel_size * kernel_size);
+    for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
+      for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
+        gsl_matrix_float_set (averaging_kernel, ii, jj, kernel_value);
+      }
     }
   }
 
-  // Sample input image, putting scaled results into output image.
+    // Sample input image, putting scaled results into output image.
   size_t sample_stride = scale_factor;
   for ( ii = 0 ; ii < osy ; ii++ ) {
     for ( jj = 0 ; jj < osx ; jj++ ) {
       // Input image average pixel value.
-      float ival = float_image_apply_kernel (self, jj * sample_stride,
-                                             ii * sample_stride,
-                                             averaging_kernel);
+      float ival;
+      if (scale_factor > 1) {
+        ival = float_image_apply_kernel (self, jj * sample_stride,
+                                         ii * sample_stride,
+                                         averaging_kernel);
+      }
+      else if (scale_factor == 1) {
+        ival = float_image_get_pixel(self, jj, ii);
+      }
+      else {
+        asfPrintError("Invalid scale factor.  Scale factor must be 1 or greater.\n");
+      }
       unsigned char oval;       // Output value.
 
       if (!meta_is_valid_double(ival)) {
@@ -2242,7 +2280,8 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
     }
   }
 
-  gsl_matrix_float_free(averaging_kernel);
+  if (averaging_kernel != NULL) gsl_matrix_float_free(averaging_kernel);
+
   // Write the jpeg, one row at a time.
   const int rows_to_write = 1;
   JSAMPROW *row_pointer = g_new (JSAMPROW, rows_to_write);
