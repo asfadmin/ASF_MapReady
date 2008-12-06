@@ -79,7 +79,7 @@
 #define TOOL_OPTIONS \
 "     -size <size>\n"\
 "          Generate thumbnails (or browse images) of the given size in pixels.\n"\
-"          The default is %d pixels.  If the input image isn't square, the longer\n"\
+"          The default is 1024 pixels.  If the input image isn't square, the longer\n"\
 "          side will be scaled to the given size, the other dimension will be\n"\
 "          determined so as to keep the same aspect ratio.\n"\
 "          NOTE: Cannot be used together with the -scale option.\n"\
