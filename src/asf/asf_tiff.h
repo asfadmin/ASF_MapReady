@@ -20,4 +20,8 @@
 #undef POINT
 #endif
 
+#ifndef MIN_DIMENSION
+#define MIN_DIMENSION (16)
+#endif
+
 #endif
