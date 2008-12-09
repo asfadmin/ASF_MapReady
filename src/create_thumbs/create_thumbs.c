@@ -64,6 +64,7 @@ void flip_to_north_up(const char *in_file, const char *out_file);
 int is_JL0_basename(const char *what);
 long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in);
 int is_jpeg(const char *file);
+int is_tiff(const char *file);
 
 int main(int argc, char *argv[])
 {
@@ -359,7 +360,10 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     int band;
     int not_data = 1;
     for (band = 0; band < nBands; band++) {
-      if (strcmp(input_data, inBandName[band]) == 0) {
+      if (strcmp(input_data, inBandName[band]) == 0 &&
+          !is_jpeg(inBandName[band])                &&
+          !is_tiff(inBandName[band]))
+      {
         not_data = 0;
         break;
       }
@@ -1658,10 +1662,33 @@ long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in) {
 int is_jpeg(const char *file)
 {
   FILE *fp = FOPEN(file, "rb");
-  int magic1 = fgetc(fp);
-  int magic2 = fgetc(fp);
+  int magic1;
+  int magic2;
+
+  fread(&magic1, 1, 1, fp);
+  fread(&magic2, 1, 1, fp);
   FCLOSE(fp);
 
   return magic1 == 0xff && magic2 == 0xd8;
 }
+
+int is_tiff(const char *file)
+{
+  FILE *fp = FOPEN(file, "rb");
+  int magic1;
+  int magic2;
+
+  fread(&magic1, 1, 1, fp);
+  fread(&magic2, 1, 1, fp);
+  FCLOSE(fp);
+
+  TIFF *tiff = TIFFOpen(file, "rb");
+
+  int is_a_tiff = tiff &&
+                  ((magic1 == 'I' && magic2 == 'I') ||
+                   (magic1 == 'M' && magic2 == 'M')   );
+
+  return is_a_tiff;
+}
+
 
