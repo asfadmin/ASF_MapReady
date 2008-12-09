@@ -63,6 +63,7 @@ int is_ceos_level0(const char *file);
 void flip_to_north_up(const char *in_file, const char *out_file);
 int is_JL0_basename(const char *what);
 long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in);
+int is_jpeg(const char *file);
 
 int main(int argc, char *argv[])
 {
@@ -354,6 +355,17 @@ int generate_ceos_thumbnail(const char *input_data, int size,
                                &nBands, &trailer);
     if (ceos_pair == NO_CEOS_FILE_PAIR || is_ceos_level0(input_data)) {
         return FALSE;
+    }
+    int band;
+    int not_data = 1;
+    for (band = 0; band < nBands; band++) {
+      if (strcmp(input_data, inBandName[band]) == 0) {
+        not_data = 0;
+        break;
+      }
+    }
+    if (not_data) {
+      return FALSE;
     }
 
     // Input metadata
@@ -1642,3 +1654,14 @@ long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in) {
 
     return best_valid;
 }
+
+int is_jpeg(const char *file)
+{
+  FILE *fp = FOPEN(file, "rb");
+  int magic1 = fgetc(fp);
+  int magic2 = fgetc(fp);
+  FCLOSE(fp);
+
+  return magic1 == 0xff && magic2 == 0xd8;
+}
+
