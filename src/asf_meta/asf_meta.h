@@ -771,6 +771,9 @@ char *get_polarization (const char *fName);
 double get_chirp_rate (const char *fName);
 int get_alos_band_number(const char *fName);
 ceos_description *get_ceos_description(const char *fName, report_level_t level);
+ceos_description *get_ceos_description_ext(const char *fName, 
+					   report_level_t level,
+					   int dataFlag);
 void set_alos_look_count(meta_parameters *meta, const char *inMetaName);
 datum_type_t spheroid_datum (spheroid_type_t spheroid);
 spheroid_type_t axis_to_spheroid (double re_major, double re_minor);
@@ -807,7 +810,7 @@ void latLon2UTM_zone(double lat, double lon, double elev, int zone,
 void UTM2latLon(double projX, double projY, double elev, int zone,
                 double *lat, double *lon);
 void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
-                           meta_parameters *meta);
+                           meta_parameters *meta, int metaOnly);
 
 /***************************************************************************
   Functions for dealing with projection parameter files.
