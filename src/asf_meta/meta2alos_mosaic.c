@@ -6,6 +6,7 @@
 meta_parameters* alos_mosaic2meta(alos_mosaic_header *alos)
 {
   meta_parameters *meta;
+  double lat, lon, startX, startY, z;
 
   // Allocate memory for metadata structure
   meta = raw_init();
@@ -37,20 +38,27 @@ meta_parameters* alos_mosaic2meta(alos_mosaic_header *alos)
   meta->general->re_minor = alos->semiminor*1000;
 
   // Projection block
-  // FIXME: Work out MER - Mercator and EQR - Equal Rectangular
-  if (strcmp_case(alos->map_projection, "UTM") == 0 ||
+  if (strcmp_case(alos->map_projection, "MER") == 0 ||
+      strcmp_case(alos->map_projection, "EQR") == 0 ||
+      strcmp_case(alos->map_projection, "UTM") == 0 ||
       strcmp_case(alos->map_projection, "PS") == 0 ||
       strcmp_case(alos->map_projection, "LCC") == 0) {
     meta->projection = meta_projection_init();
     // Need to derive the startX and startY from lat/lon corners. That 
     // requires the rest of the parameters to be known first.
     meta->projection->perX = alos->range_spacing;
-    meta->projection->perY = alos->azimuth_spacing;
+    meta->projection->perY = -alos->azimuth_spacing;
     strcpy(meta->projection->units, "meters");
     if (strcmp_case(alos->hemisphere, "NORTH") == 0)
       meta->projection->hem = 'N';
     else if (strcmp_case(alos->hemisphere, "SOUTH") == 0)
       meta->projection->hem = 'S';
+    else {
+      if (alos->corner1_lat >= 0.0)
+	meta->projection->hem = 'N';
+      else
+	meta->projection->hem = 'S';
+    }
     meta->projection->re_major = alos->semimajor*1000;
     meta->projection->re_minor = alos->semiminor*1000;
     meta->projection->height = 0.0;
@@ -93,7 +101,27 @@ meta_parameters* alos_mosaic2meta(alos_mosaic_header *alos)
       meta->projection->param.lamcc.false_northing = 0.0;
       meta->projection->param.lamcc.scale_factor = 1.0;
     }
+    else if (strcmp_case(alos->map_projection, "MER") == 0) {
+      meta->projection->type = MERCATOR;
+      meta->projection->param.mer.standard_parallel = alos->lcc_ref_lat1;
+      meta->projection->param.mer.central_meridian = 0.0;
+      meta->projection->param.mer.orig_latitude = 0.0;
+      meta->projection->param.mer.false_easting = 0.0;
+      meta->projection->param.mer.false_northing = 0.0;
+    }
+    else if (strcmp_case(alos->map_projection, "EQR") == 0) {
+      meta->projection->type = EQUI_RECTANGULAR;
+      meta->projection->param.eqr.central_meridian = 0.0;
+      meta->projection->param.eqr.orig_latitude = 0.0;
+      meta->projection->param.eqr.false_easting = 0.0;
+      meta->projection->param.eqr.false_northing = 0.0;
+    }
     // Now we have everything to calculate startX and startY
+    lat = alos->corner1_lat * D2R;
+    lon = alos->corner1_lon * D2R;
+    latlon_to_proj(meta->projection, 'R', lat, lon, 0.0, &startX, &startY, &z);
+    meta->projection->startX = startX;
+    meta->projection->startY = startY;
   }
 
   // Location block

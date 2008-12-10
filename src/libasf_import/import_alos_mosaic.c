@@ -10,6 +10,8 @@ alos_mosaic_header *alos_mosaic_init(void)
   header = (alos_mosaic_header *) CALLOC(1, sizeof(alos_mosaic_header));
  
   strcpy(header->image_file_id, MAGIC_UNSET_STRING);
+  if (strstr(header->image_file_id, "ALPSR") == NULL)
+    strcpy(header->image_file_id, MAGIC_UNSET_STRING);
   strcpy(header->product_id, MAGIC_UNSET_STRING);
   strcpy(header->area, MAGIC_UNSET_STRING);
   strcpy(header->acquisition, MAGIC_UNSET_STRING);
