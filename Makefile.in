@@ -324,6 +324,7 @@ create_thumbs: mkdirs_for_build external_libs
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_CREATE_THUMBS > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(CREATE_THUMBS_SHAREDIR) >> make_support/build_pkg.mk
+	cp doc/create_thumbs-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(CREATE_THUMBS_SHAREDIR)
 	echo $(VERSION_JPL) > $(CREATE_THUMBS_SHAREDIR)/create_thumbs_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
