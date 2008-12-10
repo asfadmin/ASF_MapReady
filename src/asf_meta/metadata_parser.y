@@ -180,6 +180,10 @@ void select_current_block(char *block_name)
     { current_block = &((*( (param_t *) current_block)).utm); goto MATCHED; }
   if ( !strcmp(block_name, "state") )
     { current_block = &((*( (param_t *) current_block)).state); goto MATCHED; }
+  if ( !strcmp(block_name, "mer") )
+    { current_block = &((*( (param_t *) current_block)).mer); goto MATCHED; }
+  if ( !strcmp(block_name, "eqr") )
+    { current_block = &((*( (param_t *) current_block)).eqr); goto MATCHED; }
 
   if ( !strcmp(block_name, "transform") ) {
     if (MTL->transform == NULL)
@@ -710,6 +714,14 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->type = LAT_LONG_PSEUDO_PROJECTION;
         map_projection_type = 0;
       }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "MERCATOR") ) {
+        MPROJ->type = MERCATOR;
+        map_projection_type = 1;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "EQUI_RECTANGULAR") ) {
+        MPROJ->type = EQUI_RECTANGULAR;
+        map_projection_type = 1;
+      }
       else {
         MPROJ->type = UNKNOWN_PROJECTION;
         // Only complain if the image is truly map projected
@@ -900,6 +912,34 @@ void fill_structure_field(char *field_name, void *valp)
   if ( !strcmp(stack_top->block_name, "state") ) {
     if ( !strcmp(field_name, "zone") )
       { (*MPARAM).state.zone = VALP_AS_INT; return; }
+  }
+
+  /* Fields that go in the (proj->param).mer block.  */
+  /* Check for both lamcc and lambert for backwards compatibility */
+  if ( !strcmp(stack_top->block_name, "mer")) {
+    if ( !strcmp(field_name, "standard_parallel") )
+      { (*MPARAM).mer.standard_parallel = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "central_meridian") )
+      { (*MPARAM).mer.central_meridian = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "orig_latitude") )
+      { (*MPARAM).mer.orig_latitude = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).mer.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).mer.false_northing = VALP_AS_DOUBLE; return; }
+  }
+
+  /* Fields that go in the (proj->param).eqr block.  */
+  /* Check for both lamcc and lambert for backwards compatibility */
+  if ( !strcmp(stack_top->block_name, "eqr")) {
+    if ( !strcmp(field_name, "central_meridian") )
+      { (*MPARAM).eqr.central_meridian = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "orig_latitude") )
+      { (*MPARAM).eqr.orig_latitude = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).eqr.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).eqr.false_northing = VALP_AS_DOUBLE; return; }
   }
 
   /* Note that the projection-specific param data block associated

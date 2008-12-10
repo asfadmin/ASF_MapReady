@@ -262,6 +262,8 @@ envi_header* meta2envi(meta_parameters *meta)
       case SCANSAR_PROJECTION: 
 	break;
       case LAT_LONG_PSEUDO_PROJECTION:
+      case MERCATOR:
+      case EQUI_RECTANGULAR:
       case UNKNOWN_PROJECTION:
 	// I haven't tested this at all.
 	assert (0);
@@ -510,6 +512,8 @@ void write_envi_header(const char *inFile, meta_parameters *meta,
       case STATE_PLANE:
       case SCANSAR_PROJECTION: 
       case LAT_LONG_PSEUDO_PROJECTION:
+      case MERCATOR:
+      case EQUI_RECTANGULAR:
       case UNKNOWN_PROJECTION:
 	break;
       }

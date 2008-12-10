@@ -32,6 +32,12 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       project_utm_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
+    case MERCATOR:
+      project_mer_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
+      break;
+    case EQUI_RECTANGULAR:
+      project_eqr_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
+      break;
     case SCANSAR_PROJECTION:
       asfPrintError("'proj_to_latlon' not defined for SCANSAR_PROJECTION.\n"
         "Use 'scan_latlon' instead.\n");
@@ -357,6 +363,12 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       project_utm(&(proj->param), lat, lon, height, x, y, z, proj->datum);
       break;
+    case MERCATOR:
+      project_mer(&(proj->param), lat, lon, height, x, y, z, proj->datum);
+      break;
+    case EQUI_RECTANGULAR:
+      project_eqr(&(proj->param), lat, lon, height, x, y, z, proj->datum);
+      break;
     case LAT_LONG_PSEUDO_PROJECTION:
       *x = lon*R2D;
       *y = lat*R2D;
@@ -413,6 +425,12 @@ static void latLon2proj_imp(double lat, double lon, double elev,
           case UNIVERSAL_TRANSVERSE_MERCATOR:
               printf("Lat/Lon to UTM\n\n");
               break;
+          case MERCATOR:
+	    printf("Lat/Lon to Mercator\n\n");
+	    break;
+          case EQUI_RECTANGULAR:
+	    printf("Lat/Lon to Equirectangular\n\n");
+	    break;
           case STATE_PLANE:
               // Not implemented.
               assert (0);
@@ -562,6 +580,24 @@ void to_radians(projection_type_t pt, project_parameters_t * pps)
 
             break;
 
+    case MERCATOR:
+      if (!ISNAN(pps->mer.standard_parallel))
+	pps->mer.standard_parallel *= D2R;
+      if (!ISNAN(pps->mer.central_meridian))
+	pps->mer.central_meridian *= D2R;
+      if (!ISNAN(pps->mer.orig_latitude))
+	pps->mer.orig_latitude *= D2R;
+
+      break;
+
+    case EQUI_RECTANGULAR:
+      if (!ISNAN(pps->eqr.central_meridian))
+	pps->mer.central_meridian *= D2R;
+      if (!ISNAN(pps->eqr.orig_latitude))
+	pps->mer.orig_latitude *= D2R;
+
+      break;
+
   default:
             asfPrintError("Image file is not map-projected.  Use asf_geocode or\n"
                           "Geocode tab to geocode the image file before proceeding.\n");
@@ -619,6 +655,22 @@ void to_degrees(projection_type_t pt, project_parameters_t * pps)
                 pps->lamcc.lon0 *= R2D;
 
             break;
+
+    case MERCATOR:
+      if (!ISNAN(pps->mer.central_meridian))
+	pps->mer.central_meridian *= R2D;
+      if (!ISNAN(pps->mer.orig_latitude))
+	pps->mer.orig_latitude *= R2D;
+      if (!ISNAN(pps->mer.standard_parallel))
+	pps->mer.standard_parallel *= R2D;
+      break;
+
+    case EQUI_RECTANGULAR:
+      if (!ISNAN(pps->eqr.central_meridian))
+	pps->eqr.central_meridian *= R2D;
+      if (!ISNAN(pps->eqr.orig_latitude))
+	pps->eqr.orig_latitude *= R2D;
+      break;
 
   default:
             asfPrintError("Image file is not map-projected.  Use asf_geocode or\n"

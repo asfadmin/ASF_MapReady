@@ -57,6 +57,14 @@ static void determine_projection_fns(int projection_type,
       if (project) *project = project_lamaz;
       if (unproject) *unproject = project_lamaz_inv;
       break;
+    case MERCATOR:
+      if (project) *project = project_mer;
+      if (unproject) *unproject = project_mer_inv;
+      break;
+    case EQUI_RECTANGULAR:
+      if (project) *project = project_eqr;
+      if (unproject) *unproject = project_eqr_inv;
+      break;
     case LAT_LONG_PSEUDO_PROJECTION:
       if (project) *project = project_lat_long_pseudo;
       if (unproject) *unproject = project_lat_long_pseudo_inv;

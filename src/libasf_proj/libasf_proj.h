@@ -16,6 +16,8 @@ typedef enum {
      that latitude and longitude lines form an regular rectangular
      grid over the image.  */
   LAT_LONG_PSEUDO_PROJECTION,
+  MERCATOR,
+  EQUI_RECTANGULAR,
   UNKNOWN_PROJECTION
 } projection_type_t;
 
@@ -106,6 +108,22 @@ typedef enum {
   typedef struct {
     int zone;
   } proj_state;
+  // Mercator
+  typedef struct {
+    double orig_latitude;     // Latitude of origin
+    double central_meridian;  // Central meridian
+    double standard_parallel; // Standard parallel
+    double false_easting;     // False easting
+    double false_northing;    // False northing
+  } proj_mer;
+  // Equi Rectangular
+  typedef struct {
+    double orig_latitude;     // Latitude of origin
+    double central_meridian;  // Central meridian
+    double false_easting;     // False easting
+    double false_northing;    // False northing
+  } proj_eqr;
+ 
 /* For lat long pseudo projected images, no additional parameters are
    required, so they don't have their own structure type.  */
 
@@ -118,6 +136,8 @@ typedef enum {
     proj_ps       ps;       /* Polar Sterographic            */
     proj_utm      utm;      /* Universal Transverse Mercator */
     proj_state    state;    /* State Plane                   */
+    proj_mer      mer;      // Mercator
+    proj_eqr      eqr;      // Equi Rectangular
   } param_t;
 typedef param_t project_parameters_t;
 
@@ -454,6 +474,41 @@ int project_albers_inv(project_parameters_t *pps,
                        double x, double y, double z,
                        double *lat, double *lon, double *height, datum_type_t datum);
 int project_albers_arr_inv(project_parameters_t *pps,
+                           double *x, double *y, double *z,
+                           double **lat, double **lon, double **height,
+                           long length, datum_type_t datum);
+
+// Mercator
+// www.remotesensing.org/geotiff/proj_list/mercator_2sp.html
+int project_mer(project_parameters_t *pps,
+		double lat, double lon, double height,
+		double *x, double *y, double *z, datum_type_t datum);
+int project_mer_arr(project_parameters_t *pps,
+		    double *lat, double *lon, double *height,
+		    double **projected_x, double **projected_y,
+		    double **projected_z, long length, datum_type_t datum);
+int project_mer_inv(project_parameters_t *pps,
+		    double x, double y, double z,
+		    double *lat, double *lon, double *height, datum_type_t datum);
+int project_mer_arr_inv(project_parameters_t *pps,
+			double *x, double *y, double *z,
+			double **lat, double **lon, double **height,
+			long length, datum_type_t datum);
+
+
+// Equirectangular
+// www.remotesensing.org/geotiff/proj_list/equirectangular.html
+int project_eqr(project_parameters_t *pps,
+		double lat, double lon, double height,
+		double *x, double *y, double *z, datum_type_t datum);
+int project_eqr_arr(project_parameters_t *pps,
+		    double *lat, double *lon, double *height,
+		    double **projected_x, double **projected_y,
+		    double **projected_z, long length, datum_type_t datum);
+int project_eqr_inv(project_parameters_t *pps,
+		    double x, double y, double z,
+		    double *lat, double *lon, double *height, datum_type_t datum);
+int project_eqr_arr_inv(project_parameters_t *pps,
                            double *x, double *y, double *z,
                            double **lat, double **lon, double **height,
                            long length, datum_type_t datum);

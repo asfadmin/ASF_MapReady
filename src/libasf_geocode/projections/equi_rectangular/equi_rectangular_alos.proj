@@ -1,0 +1,8 @@
+[Equirectangular]
+Area = World (ALOS)
+Datum = ITRF97
+Spheroid = GRS1980
+Central meridian = 0
+Latitude of origin = 0
+False easting = 0
+False northing = 0

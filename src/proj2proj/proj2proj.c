@@ -40,7 +40,7 @@ main(int argc, char **argv)
 
     // default to lat/lon -> UTM
     GtkWidget *w = get_widget_checked("source_projection_option_menu");
-    set_combo_box_item(w, 5);
+    set_combo_box_item(w, 7);
 
     geocode_options_changed(TRUE);
     geocode_options_changed(FALSE);

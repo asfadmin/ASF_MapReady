@@ -9,6 +9,8 @@ static GtkWidget * ps_menu = NULL;
 static GtkWidget * albers_menu = NULL;
 static GtkWidget * lamcc_menu = NULL;
 static GtkWidget * lamaz_menu = NULL;
+static GtkWidget * mer_menu = NULL;
+static GtkWidget * eqr_menu = NULL;
 
 
 static char * projection_directory(int projection)
@@ -36,6 +38,14 @@ static char * projection_directory(int projection)
     case PROJ_ALBERS:
         location = "albers_equal_area_conic";
         break;
+
+    case PROJ_MER:
+      location = "mercator";
+      break;
+
+    case PROJ_EQR:
+      location = "equi_rectangular";
+      break;
     }
 
     ret = (char *) malloc(sizeof(char) *
@@ -92,6 +102,12 @@ static const char * projection_file_prefix(int projection)
 
     case PROJ_ALBERS:
         return "albers_equal_area_conic_";
+
+    case PROJ_MER:
+      return "mercator_";
+
+    case PROJ_EQR:
+      return "equi_rectangular_";
     }
 }
 
@@ -218,6 +234,8 @@ void release_predefined_projections()
         g_object_unref(lamcc_menu);
         g_object_unref(lamaz_menu);
         g_object_unref(albers_menu);
+	g_object_unref(mer_menu);
+	g_object_unref(eqr_menu);
     }
 }
 
@@ -248,11 +266,19 @@ void set_predefined_projections(int projection)
         albers_menu =
             populate_predefined_projections(PROJ_ALBERS);
 
+	mer_menu =
+	  populate_predefined_projections(PROJ_MER);
+
+	eqr_menu =
+	  populate_predefined_projections(PROJ_EQR);
+
         g_object_ref(utm_menu);
         g_object_ref(ps_menu);
         g_object_ref(lamcc_menu);
         g_object_ref(lamaz_menu);
         g_object_ref(albers_menu);
+	g_object_ref(mer_menu);
+	g_object_ref(eqr_menu);
     }
 
     predefined_projection_option_menu =
@@ -280,6 +306,14 @@ void set_predefined_projections(int projection)
     case PROJ_ALBERS:
         menu = albers_menu;
         break;
+
+    case PROJ_MER:
+      menu = mer_menu;
+      break;
+
+    case PROJ_EQR:
+      menu = eqr_menu;
+      break;
     }
 
     g_assert(menu);

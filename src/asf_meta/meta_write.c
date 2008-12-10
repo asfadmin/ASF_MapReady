@@ -429,9 +429,15 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string (fp, "type:", "LAT_LONG_PSEUDO_PROJECTION",
        "Projection Type");
   break;
+      case MERCATOR:
+	meta_put_string (fp, "type:", "MERCATOR", "Projection Type");
+	break;
+      case EQUI_RECTANGULAR:
+	meta_put_string (fp, "type:", "EQUI_RECTANGULAR", "Projection Type");
+	break;
       case UNKNOWN_PROJECTION:
         meta_put_string(fp,"type:","UNKNOWN_PROJECTION","Projection Type");
-  break;
+	break;
     }
     meta_put_double_lf(fp,"startX:",meta->projection->startX, 3,
         "Projection Coordinate at top-left, X direction");
@@ -583,6 +589,41 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"state {","","Begin State Plane Coordinates Projection");
       meta_put_int   (fp,"zone:",meta->projection->param.state.zone,"Zone Code");
       meta_put_string(fp,"}","","End state");
+      break;
+    case MERCATOR:
+      meta_put_string(fp,"mer {","","Begin Mercator projection");
+      meta_put_double_lf(fp,"standard_parallel:",
+			 meta->projection->param.mer.standard_parallel, 4,
+			 "First standard parallel [degrees]");
+      meta_put_double_lf(fp,"central_meridian:",
+			 meta->projection->param.mer.central_meridian, 4,
+			 "Longitude of center meridian [degrees]");
+      meta_put_double_lf(fp,"orig_latitude:",
+			 meta->projection->param.mer.orig_latitude, 4,
+			 "Latitude of the projection origin [degrees]");
+      meta_put_double_lf(fp,"false_easting:",
+			 meta->projection->param.mer.false_easting, 3,
+			 "False easting [m]");
+      meta_put_double_lf(fp,"false_northing:",
+			 meta->projection->param.mer.false_northing, 3,
+			 "False northing [m]");
+      meta_put_string(fp,"}","","End mer");
+      break;
+    case EQUI_RECTANGULAR:
+      meta_put_string(fp,"eqr {","","Begin Equirectangular projection");
+      meta_put_double_lf(fp,"central_meridian:",
+			 meta->projection->param.eqr.central_meridian, 4,
+			 "Longitude of center meridian [degrees]");
+      meta_put_double_lf(fp,"orig_latitude:",
+			 meta->projection->param.eqr.orig_latitude, 4,
+			 "Latitude of the projection origin [degrees]");
+      meta_put_double_lf(fp,"false_easting:",
+			 meta->projection->param.eqr.false_easting, 3,
+			 "False easting [m]");
+      meta_put_double_lf(fp,"false_northing:",
+			 meta->projection->param.eqr.false_northing, 3,
+			 "False northing [m]");
+      meta_put_string(fp,"}","","End eqr");
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
     case UNKNOWN_PROJECTION:

@@ -116,7 +116,32 @@ const char * geocode_options_string(const Settings * settings)
             enable_false_easting =
                 entry_has_text("false_easting_entry");
             break;
-        }
+        case PROJ_MER:
+	  strcpy(ret, "--projection mer");
+	  enable_first_standard_parallel = 
+	    entry_has_text("first_standard_parallel_entry");
+	  enable_central_meridian =
+	    entry_has_text("central_meridian_entry");
+	  enable_latitude_of_origin =
+	    entry_has_text("latitude_of_origin_entry");
+	  enable_false_northing =
+	    entry_has_text("false_northing_entry");
+	  enable_false_easting =
+	    entry_has_text("false_easting_entry");
+	  break;
+	case PROJ_EQR:
+	  strcpy(ret, "--projection eqr");
+	  enable_central_meridian =
+	    entry_has_text("central_meridian_entry");
+	  enable_latitude_of_origin =
+	    entry_has_text("latitude_of_origin_entry");
+	  enable_false_northing =
+	    entry_has_text("false_northing_entry");
+	  enable_false_easting =
+	    entry_has_text("false_easting_entry");
+	  break;
+	}
+
 
         if (enable_utm_zone)
             sprintf(ret, "%s --zone %d ", ret, settings->zone);
@@ -425,6 +450,27 @@ void geocode_options_changed()
                         GTK_ENTRY(latitude_of_origin_entry),
                             double_to_string(pps->albers.orig_latitude));
                     break;
+
+		case PROJ_MER:
+                    gtk_entry_set_text(
+                        GTK_ENTRY(first_standard_parallel_entry),
+                            double_to_string(pps->mer.standard_parallel));
+                    gtk_entry_set_text(
+                        GTK_ENTRY(central_meridian_entry),
+                            double_to_string(pps->mer.central_meridian));
+                    gtk_entry_set_text(
+                        GTK_ENTRY(latitude_of_origin_entry),
+                            double_to_string(pps->mer.orig_latitude));
+                    break;
+		  
+		case PROJ_EQR:
+                    gtk_entry_set_text(
+                        GTK_ENTRY(central_meridian_entry),
+                            double_to_string(pps->eqr.central_meridian));
+                    gtk_entry_set_text(
+                        GTK_ENTRY(latitude_of_origin_entry),
+                            double_to_string(pps->eqr.orig_latitude));
+                    break;
                 }
 
                 g_free(pps);
@@ -443,12 +489,6 @@ void geocode_options_changed()
                 enable_first_standard_parallel = TRUE;
                 enable_false_northing = TRUE;
                 enable_false_easting = TRUE;
-
-                gtk_entry_set_text(
-                    GTK_ENTRY(latitude_of_origin_entry), "");
-                gtk_entry_set_text(
-                    GTK_ENTRY(second_standard_parallel_entry), "");
-
                 break;
 
             case PROJ_LAMCC:
@@ -465,17 +505,26 @@ void geocode_options_changed()
                 enable_latitude_of_origin = TRUE;
                 enable_false_northing = TRUE;
                 enable_false_easting = TRUE;
-
-                gtk_entry_set_text(
-                    GTK_ENTRY(first_standard_parallel_entry), "");
-                gtk_entry_set_text(
-                    GTK_ENTRY(second_standard_parallel_entry), "");
-
                 break;
 
             case PROJ_ALBERS:
                 enable_first_standard_parallel = TRUE;
                 enable_second_standard_parallel = TRUE;
+                enable_central_meridian = TRUE;
+                enable_latitude_of_origin = TRUE;
+                enable_false_northing = TRUE;
+                enable_false_easting = TRUE;
+                break;
+
+            case PROJ_MER:
+                enable_first_standard_parallel = TRUE;
+                enable_central_meridian = TRUE;
+                enable_latitude_of_origin = TRUE;
+                enable_false_northing = TRUE;
+                enable_false_easting = TRUE;
+                break;
+
+            case PROJ_EQR:
                 enable_central_meridian = TRUE;
                 enable_latitude_of_origin = TRUE;
                 enable_false_northing = TRUE;
@@ -672,6 +721,18 @@ on_universal_transverse_mercator_activate(GtkWidget * widget)
     GtkWidget *datum_option_menu = get_widget_checked("datum_option_menu");
     set_combo_box_item(datum_option_menu, DATUM_WGS84);
 
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_mercator_activate(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_equirectangular_activate(GtkWidget * widget)
+{
     geocode_options_changed();
 }
 

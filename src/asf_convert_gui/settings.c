@@ -1492,6 +1492,21 @@ settings_to_config_file(const Settings *s,
           fprintf(pf, "Datum=%s\n", datum_string(s->datum));
           break;
 
+        case PROJ_MER:
+	  fprintf(pf, "[Mercator]\n");
+	  fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
+	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
+	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+	  fprintf(pf, "Datum=%s", datum_string(s->datum));
+	  break;
+
+        case PROJ_EQR:
+	  fprintf(pf, "[Equirectangular]\n");
+	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
+	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+	  fprintf(pf, "Datum=%s", datum_string(s->datum));
+	  break;
+
         default:
           break;
       }
@@ -1940,7 +1955,16 @@ int apply_settings_from_config_file(char *configFile)
             s.projection = PROJ_LAMAZ;
             s.lat0 = pps.lamaz.center_lat;
             s.lon0 = pps.lamaz.center_lon;
-        }
+        } else if (type == MERCATOR) {
+	  s.projection = PROJ_MER;
+	  s.lat0 = pps.mer.orig_latitude;
+	  s.lon0 = pps.mer.central_meridian;
+	  s.plat1 = pps.mer.standard_parallel;
+	} else if (type == EQUI_RECTANGULAR) {
+	  s.projection = PROJ_EQR;
+	  s.lat0 = pps.eqr.orig_latitude;
+	  s.lon0 = pps.eqr.central_meridian;
+	}
 
         s.specified_height = cfg->geocoding->height != -99 &&
             cfg->geocoding->height != 0;

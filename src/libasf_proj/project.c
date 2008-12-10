@@ -730,6 +730,142 @@ project_lamcc_arr_inv(project_parameters_t *pps,
                 x, y, z, lat, lon, height, length);
 }
 
+// Mercator
+static char * mer_projection_desc(project_parameters_t * pps,
+                                     datum_type_t datum)
+{
+  static char mer_projection_description[128];
+
+  /* Establish description of output projection. */
+  if (datum != HUGHES_DATUM) {
+    sprintf(mer_projection_description,
+	    "+proj=merc +lat_ts=%f +lon_0=%f +x_0=%f +y_0=%f +datum=%s",
+	    pps->mer.standard_parallel,
+	    pps->mer.central_meridian,
+	    pps->mer.false_easting,
+	    pps->mer.false_northing,
+	    datum_str(datum));
+  }
+  else {
+    sprintf(mer_projection_description,
+	    "+proj=merc +lat_ts=%f +lon_0=%f +x_0=%f +y_0=%f +a=%f +rf=%f",
+	    pps->mer.standard_parallel,
+	    pps->mer.central_meridian,
+	    pps->mer.false_easting,
+	    pps->mer.false_northing,
+            (float)HUGHES_SEMIMAJOR,
+            (float)HUGHES_INV_FLATTENING);
+  }
+
+  return mer_projection_description;
+}
+
+int
+project_mer(project_parameters_t *pps,
+	    double lat, double lon, double height,
+	    double *x, double *y, double *z, datum_type_t datum)
+{
+    return project_worker_arr(mer_projection_desc(pps, datum),
+            &lat, &lon, &height, &x, &y, &z, 1);
+}
+
+int
+project_mer_arr(project_parameters_t *pps,
+		double *lat, double *lon, double *height,
+		double **projected_x, double **projected_y,
+		double **projected_z, long length, datum_type_t datum)
+{
+  return project_worker_arr(mer_projection_desc(pps, datum),
+                lat, lon, height, projected_x, projected_y, projected_z,
+                length);
+}
+
+int
+project_mer_inv(project_parameters_t *pps, double x, double y, double z,
+		double *lat, double *lon, double *height, datum_type_t datum)
+{
+    return project_worker_arr_inv(mer_projection_desc(pps, datum),
+                  &x, &y, &z, &lat, &lon, &height, 1);
+}
+
+int
+project_mer_arr_inv(project_parameters_t *pps,
+           double *x, double *y, double *z,
+           double **lat, double **lon, double **height,
+           long length, datum_type_t datum)
+{
+    return project_worker_arr_inv(mer_projection_desc(pps, datum),
+                  x, y, z, lat, lon, height, length);
+}
+
+// Equirectangular
+static char * eqr_projection_desc(project_parameters_t * pps,
+				  datum_type_t datum)
+{
+  static char eqr_projection_description[128];
+
+  /* Establish description of output projection. */
+  if (datum != HUGHES_DATUM) {
+    sprintf(eqr_projection_description,
+	    "+proj=eqc +lat_ts=%f +lon_0=%f +x_0=%f +y_0=%f +datum=%s",
+	    pps->eqr.orig_latitude,
+	    pps->eqr.central_meridian,
+	    pps->eqr.false_easting,
+	    pps->eqr.false_northing,
+	    datum_str(datum));
+  }
+  else {
+    sprintf(eqr_projection_description,
+	    "+proj=eqc +lat_ts=%f +lon_0=%f +x_0=%f +y_0=%f +a=%f +rf=%f",
+	    pps->eqr.orig_latitude,
+	    pps->eqr.central_meridian,
+	    pps->eqr.false_easting,
+	    pps->eqr.false_northing,
+            (float)HUGHES_SEMIMAJOR,
+            (float)HUGHES_INV_FLATTENING);
+  }
+
+  return eqr_projection_description;
+}
+
+int
+project_eqr(project_parameters_t *pps,
+	    double lat, double lon, double height,
+	    double *x, double *y, double *z, datum_type_t datum)
+{
+    return project_worker_arr(eqr_projection_desc(pps, datum),
+            &lat, &lon, &height, &x, &y, &z, 1);
+}
+
+int
+project_eqr_arr(project_parameters_t *pps,
+		double *lat, double *lon, double *height,
+		double **projected_x, double **projected_y,
+		double **projected_z, long length, datum_type_t datum)
+{
+  return project_worker_arr(eqr_projection_desc(pps, datum),
+                lat, lon, height, projected_x, projected_y, projected_z,
+                length);
+}
+
+int
+project_eqr_inv(project_parameters_t *pps, double x, double y, double z,
+		double *lat, double *lon, double *height, datum_type_t datum)
+{
+    return project_worker_arr_inv(eqr_projection_desc(pps, datum),
+                  &x, &y, &z, &lat, &lon, &height, 1);
+}
+
+int
+project_eqr_arr_inv(project_parameters_t *pps,
+		    double *x, double *y, double *z,
+		    double **lat, double **lon, double **height,
+		    long length, datum_type_t datum)
+{
+    return project_worker_arr_inv(eqr_projection_desc(pps, datum),
+                  x, y, z, lat, lon, height, length);
+}
+
 /****************************************************************************
   Albers Equal-Area Conic
 ****************************************************************************/

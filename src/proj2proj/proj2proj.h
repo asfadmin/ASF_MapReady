@@ -36,7 +36,9 @@ enum ProjectionOptions
   PROJ_ALBERS = 2,
   PROJ_LAMAZ = 3,
   PROJ_LAMCC = 4,
-  PROJ_LATLON = 5
+  PROJ_MER = 5,
+  PROJ_EQR = 6,
+  PROJ_LATLON = 7
 };
 
 enum Datums
