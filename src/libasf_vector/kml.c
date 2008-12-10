@@ -152,22 +152,22 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "<strong>General</strong><br>\n");
       general_block = TRUE;
     }
-    if (strcmp(dbf[ii].header, "meta.general.basename") == 0)
+    if (strncmp(dbf[ii].header, "meta.general.basename", 21) == 0)
       fprintf(kml_file, "%s<strong>Name</strong>: %s <br>%s",
               begin, meta->general->basename, end);
-    else if (strcmp(dbf[ii].header, "meta.general.sensor") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.sensor", 19) == 0)
       fprintf(kml_file, "%s<strong>Sensor</strong>: %s <br>%s",
               begin, meta->general->sensor, end);
-    else if (strcmp(dbf[ii].header, "meta.general.sensor_name") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.sensor_name", 24) == 0)
       fprintf(kml_file, "%s<strong>Sensor name</strong>: %s <br>%s",
               begin, meta->general->sensor_name, end);
-    else if (strcmp(dbf[ii].header, "meta.general.mode") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.mode", 17) == 0)
       fprintf(kml_file, "%s<strong>Mode</strong>: %s <br>%s",
               begin, meta->general->mode, end);
-    else if (strcmp(dbf[ii].header, "meta.general.processor") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.processor", 22) == 0)
       fprintf(kml_file, "%s<strong>Processor</strong>: %s <br>%s",
               begin, meta->general->processor, end);
-    else if (strcmp(dbf[ii].header, "meta.general.data_type") == 0) {
+    else if (strncmp(dbf[ii].header, "meta.general.data_type", 22) == 0) {
       if (meta->general->data_type == BYTE)
         fprintf(kml_file, "%s<strong>Data type</strong>: BYTE <br>%s",
                 begin, end);
@@ -199,7 +199,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "%s<strong>Data type</strong>: COMPLEX_REAL64 "
                 "<br>%s", begin, end);
     }
-    else if (strcmp(dbf[ii].header, "meta.general.image_data_type") == 0) {
+    else if (strncmp(dbf[ii].header, "meta.general.image_data_type", 28) == 0) {
       if (meta->general->image_data_type == RAW_IMAGE)
         fprintf(kml_file, "%s<strong>Image data type</strong>: "
                 "RAW_IMAGE <br>%s", begin, end);
@@ -237,7 +237,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "%s<strong>Image data type</strong>: "
                   "MASK <br>%s", begin, end);
     }
-    else if (strcmp(dbf[ii].header, "meta.general.radiometry") == 0) {
+    else if (strncmp(dbf[ii].header, "meta.general.radiometry", 23) == 0) {
       if (meta->general->radiometry == r_AMP)
         fprintf(kml_file, "%s<strong>Radiometry</strong>: AMPLITUDE <br>%s",
                 begin, end);
@@ -263,16 +263,16 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "%s<strong>Radiometry</strong>: POWER <br>%s",
                 begin, end);
     }
-    else if (strcmp(dbf[ii].header, "meta.general.system") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.system", 19) == 0)
       fprintf(kml_file, "%s<strong>System</strong>: %s <br>%s",
               begin, meta->general->system, end);
-    else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0)
       fprintf(kml_file, "%s<strong>Acquisition date</strong>: %s <br>%s",
               begin, meta->general->acquisition_date, end);
-    else if (strcmp(dbf[ii].header, "meta.general.orbit") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.orbit", 18) == 0)
       fprintf(kml_file, "%s<strong>Orbit</strong>: %d <br>%s",
               begin, meta->general->orbit, end);
-    else if (strcmp(dbf[ii].header, "meta.general.orbit_direction") == 0) {
+    else if (strncmp(dbf[ii].header, "meta.general.orbit_direction", 28) == 0) {
       if (meta->general->orbit_direction == 'A')
         fprintf(kml_file, "%s<strong>Orbit direction</strong>: Ascending "
                 "<br>%s", begin, end);
@@ -280,52 +280,52 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "%s<strong>Orbit direction</strong>: Descending "
                 "<br>%s", begin, end);
     }
-    else if (strcmp(dbf[ii].header, "meta.general.frame") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.frame", 18) == 0)
       fprintf(kml_file, "%s<strong>Frame</strong>: %d <br>%s",
               begin, meta->general->frame, end);
-    else if (strcmp(dbf[ii].header, "meta.general.band_count") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.band_count", 23) == 0)
       fprintf(kml_file, "%s<strong>Band count</strong>: %d <br>%s",
               begin, meta->general->band_count, end);
-    else if (strcmp(dbf[ii].header, "meta.general.bands") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.bands", 18) == 0)
       fprintf(kml_file, "%s<strong>Bands</strong>: %s <br>%s",
               begin, meta->general->bands, end);
-    else if (strcmp(dbf[ii].header, "meta.general.line_count") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.line_count", 23) == 0)
       fprintf(kml_file, "%s<strong>Line count</strong>: %d <br>%s",
               begin, meta->general->line_count, end);
-    else if (strcmp(dbf[ii].header, "meta.general.sample_count") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.sample_count", 25) == 0)
       fprintf(kml_file, "%s<strong>Sample count</strong>: %d <br>%s",
               begin, meta->general->sample_count, end);
-    else if (strcmp(dbf[ii].header, "meta.general.start_line") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.start_line", 23) == 0)
       fprintf(kml_file, "%s<strong>Start line</strong>: %d <br>%s",
               begin, meta->general->start_line, end);
-    else if (strcmp(dbf[ii].header, "meta.general.start_sample") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.start_sample", 25) == 0)
       fprintf(kml_file, "%s<strong>Start sample</strong>: %d <br>%s",
               begin, meta->general->start_sample, end);
-    else if (strcmp(dbf[ii].header, "meta.general.x_pixel_size") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.x_pixel_size", 25) == 0)
       fprintf(kml_file, "%s<strong>X pixel size</strong>: %s <br>%s",
               begin, lf(meta->general->x_pixel_size), end);
-    else if (strcmp(dbf[ii].header, "meta.general.y_pixel_size") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.y_pixel_size", 25) == 0)
       fprintf(kml_file, "%s<strong>Y pixel size</strong>: %s <br>%s",
               begin, lf(meta->general->y_pixel_size), end);
-    else if (strcmp(dbf[ii].header, "meta.general.center_latitude") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.center_latitude", 28) == 0)
       fprintf(kml_file, "%s<strong>Center latitude</strong>: %s <br>%s",
               begin, lf(meta->general->center_latitude), end);
-    else if (strcmp(dbf[ii].header, "meta.general.center_longitude") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.center_longitude", 29) == 0)
       fprintf(kml_file, "%s<strong>Center longitude</strong>: %s <br>%s",
               begin, lf(meta->general->center_longitude), end);
-    else if (strcmp(dbf[ii].header, "meta.general.re_major") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.re_major", 21) == 0)
       fprintf(kml_file, "%s<strong>Re major</strong>: %s <br>%s",
               begin, lf(meta->general->re_major), end);
-    else if (strcmp(dbf[ii].header, "meta.general.re_minor") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.re_minor", 21) == 0)
       fprintf(kml_file, "%s<strong>Re minor</strong>: %s <br>%s",
               begin, lf(meta->general->re_minor), end);
-    else if (strcmp(dbf[ii].header, "meta.general.bit_error_rate") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.bit_error_rate", 27) == 0)
       fprintf(kml_file, "%s<strong>Bit error rate</strong>: %s <br>%s",
               begin, lf(meta->general->bit_error_rate), end);
-    else if (strcmp(dbf[ii].header, "meta.general.missing_lines") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.missing_lines", 26) == 0)
       fprintf(kml_file, "%s<strong>Missing lines</strong>: %d <br>%s",
               begin, meta->general->missing_lines, end);
-    else if (strcmp(dbf[ii].header, "meta.general.no_data") == 0)
+    else if (strncmp(dbf[ii].header, "meta.general.no_data", 20) == 0)
       fprintf(kml_file, "%s<strong>No data</strong>: %s <br>%s",
               begin, lf(meta->general->no_data), end);
   }
@@ -345,68 +345,75 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>SAR</strong><br>\n");
         sar_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.sar.image_type") == 0)
+      if (strncmp(dbf[ii].header, "meta.sar.image_type", 19) == 0)
         fprintf(kml_file, "%s<strong>Image type</strong>: %c <br>%s",
                 begin, meta->sar->image_type, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.look_direction") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.look_direction", 23) == 0)
         fprintf(kml_file, "%s<strong>Look direction</strong>: %c <br>%s",
                 begin, meta->sar->look_direction, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.look_count") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.look_count", 19) == 0)
         fprintf(kml_file, "%s<strong>Look count</strong>: %d <br>%s",
                 begin, meta->sar->look_count, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.deskewed") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.deskewed", 17) == 0)
         fprintf(kml_file, "%s<strong>Deskewed</strong>: %d <br>%s",
                 begin, meta->sar->deskewed, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.original_line_count") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.original_line_count", 28) == 0)
         fprintf(kml_file, "%s<strong>Original line count</strong>: %d <br>%s",
                 begin, meta->sar->original_line_count, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.original_sample_count") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.original_sample_count", 30) == 0)
         fprintf(kml_file, "%s<strong>Original sample count</strong>: %d "
                 "<br>%s", begin, meta->sar->original_sample_count, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.line_increment") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.line_increment", 23) == 0)
         fprintf(kml_file, "%s<strong>Line increment</strong>: %s <br>%s",
                 begin, lf(meta->sar->line_increment), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.sample_increment") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.sample_increment", 25) == 0)
         fprintf(kml_file, "%s<strong>Sample increment</strong>: %s <br>%s",
                 begin, lf(meta->sar->sample_increment), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.range_time_per_pixel") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.range_time_per_pixel", 29) == 0)
         fprintf(kml_file, "%s<strong>Range time per pixel</strong>: %s <br>%s",
                 begin, lf(meta->sar->range_time_per_pixel), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.azimuth_time_per_pixel") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.azimuth_time_per_pixel", 31) == 0)
         fprintf(kml_file, "%s<strong>Azimuth time per pixel</strong>: %s "
                 "<br>%s", begin, lf(meta->sar->azimuth_time_per_pixel), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.slant_shift") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.slant_shift", 20) == 0)
         fprintf(kml_file, "%s<strong>Slant shift</strong>: %s <br>%s",
                 begin, lf(meta->sar->slant_shift), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.time_shift") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.time_shift", 19) == 0)
         fprintf(kml_file, "%s<strong>Time shift</strong>: %s <br>%s",
                 begin, lf(meta->sar->time_shift), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.slant_range_first_pixel") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.slant_range_first_pixel", 32) == 0)
         fprintf(kml_file, "%s<strong>Slant range first pixel</strong>: %s "
                 "<br>%s", begin, lf(meta->sar->slant_range_first_pixel), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.wavelength") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.wavelength", 19) == 0)
         fprintf(kml_file, "%s<strong>Wavelength</strong>: %s <br>%s",
                 begin, lf(meta->sar->wavelength), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.prf") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.prf", 12) == 0)
         fprintf(kml_file, "%s<strong>PRF</strong>: %s <br>%s",
                 begin, lf(meta->sar->prf), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.earth_radius") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.earth_radius", 21) == 0)
         fprintf(kml_file, "%s<strong>Earth radius</strong>: %s <br>%s",
                 begin, lf(meta->sar->earth_radius), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.earth_radius_pp") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.earth_radius_pp", 24) == 0)
         fprintf(kml_file, "%s<strong>Earth radius PP</strong>: %s <br>%s",
                 begin, lf(meta->sar->earth_radius_pp), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_height") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.satellite_height", 25) == 0)
         fprintf(kml_file, "%s<strong>Satellite height</strong>: %s <br>%s",
                 begin, lf(meta->sar->satellite_height), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_binary_time") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.satellite_binary_time", 30) == 0)
         fprintf(kml_file, "%s<strong>Satellite binary time</strong>: %s "
                 "<br>%s", begin, meta->sar->satellite_binary_time, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.satellite_clock_time") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.satellite_clock_time", 29) == 0)
         fprintf(kml_file, "%s<strong>Satellite clock time</strong>: %s <br>%s",
                 begin, meta->sar->satellite_clock_time, end);
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.range_doppler_coefficients") == 0) {
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.range_doppler_coefficients", 35) == 0) {
         fprintf(kml_file, "%s<strong>Range doppler centroid</strong>: %s "
                 "<br>%s", begin, lf(meta->sar->range_doppler_coefficients[0]),
                 end);
@@ -417,8 +424,8 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
                 " %s <br>%s", begin,
                 lf(meta->sar->range_doppler_coefficients[2]), end);
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.azimuth_doppler_coefficients") == 0) {
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.azimuth_doppler_coefficients", 37) == 0) {
         fprintf(kml_file, "%s<strong>Azimuth doppler centroid</strong>: "
                 "%s <br>%s", begin,
                 lf(meta->sar->azimuth_doppler_coefficients[0]), end);
@@ -429,36 +436,37 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
                 "</strong>: %s <br>%s", begin,
                 lf(meta->sar->azimuth_doppler_coefficients[2]), end);
       }
-      else if (strcmp(dbf[ii].header,
-                      "meta.sar.azimuth_processing_bandwidth") == 0)
+      else if (strncmp(dbf[ii].header,
+		       "meta.sar.azimuth_processing_bandwidth", 37) == 0)
         fprintf(kml_file, "%s<strong>Azimuth processing bandwidth</strong>: "
                 "%s <br>%s", begin ,
                 lf(meta->sar->azimuth_processing_bandwidth), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.chirp_rate") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.chirp_rate", 19) == 0)
         fprintf(kml_file, "%s<strong>Chirp rate</strong>: %s <br>%s",
                 begin, lf(meta->sar->chirp_rate), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.pulse_duration") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.pulse_duration", 23) == 0)
         fprintf(kml_file, "%s<strong>Pulse duration</strong>: %s <br>%s",
                 begin, lf(meta->sar->pulse_duration), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.range_sampling_rate") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.sar.range_sampling_rate", 28) == 0)
         fprintf(kml_file, "%s<strong>Range sampling rate</strong>: %s "
                 "<br>%s", begin, lf(meta->sar->range_sampling_rate), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.polarization") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.polarization", 21) == 0)
         fprintf(kml_file, "%s<strong>Polarization</strong>: %s <br>%s",
                 begin, meta->sar->polarization, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.multilook") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.multilook", 18) == 0)
         fprintf(kml_file, "%s<strong>Multilook</strong>: %d <br>%s",
                 begin, meta->sar->multilook, end);
-      else if (strcmp(dbf[ii].header, "meta.sar.pitch") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.pitch", 14) == 0)
         fprintf(kml_file, "%s<strong>Pitch</strong>: %s <br>%s",
                 begin, lf(meta->sar->pitch), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.roll") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.roll", 13) == 0)
         fprintf(kml_file, "%s<strong>Roll</strong>: %s <br>%s",
                 begin, lf(meta->sar->roll), end);
-      else if (strcmp(dbf[ii].header, "meta.sar.yaw") == 0)
+      else if (strncmp(dbf[ii].header, "meta.sar.yaw", 12) == 0)
         fprintf(kml_file, "%s<strong>Yaw</strong>: %s <br>%s",
                 begin, lf(meta->sar->yaw), end);
-      else if (strcmp(dbf[ii].header, "meta.transform.incid_a") == 0) {
+      else if (strncmp(dbf[ii].header, "meta.transform.incid_a", 24) == 0) {
         for (kk=0; kk<6; kk++)
           fprintf(kml_file, "%s<strong>incid_a(%d)</strong>: %s <br>%s",
                   begin, kk, lf(meta->sar->incid_a[kk]), end);
@@ -480,22 +488,27 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>Optical</strong><br>\n");
         optical_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.optical.pointing_direction") == 0)
+      if (strncmp(dbf[ii].header, "meta.optical.pointing_direction", 31) == 0)
         fprintf(kml_file, "%s<strong>Pointing direction</strong>: %s <br>%s",
                 begin, meta->optical->pointing_direction, end);
-      else if (strcmp(dbf[ii].header, "meta.optical.off_nadir_angle") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.off_nadir_angle", 28) == 0)
         fprintf(kml_file, "%s<strong>Off nadir angle</strong>: %s <br>%s",
                 begin, lf(meta->optical->off_nadir_angle), end);
-      else if (strcmp(dbf[ii].header, "meta.optical.correction_level") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.correction_level", 29) == 0)
         fprintf(kml_file, "%s<strong>Correction level</strong>: %s <br>%s",
                 begin, meta->optical->correction_level, end);
-      else if (strcmp(dbf[ii].header, "meta.optical.cloud_percentage") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.cloud_percentage", 29) == 0)
         fprintf(kml_file, "%s<strong>Cloud percentage</strong>: %s <br>%s",
                 begin, lf(meta->optical->cloud_percentage), end);
-      else if (strcmp(dbf[ii].header, "meta.optical.sun_azimuth_angle") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.sun_azimuth_angle", 30) == 0)
         fprintf(kml_file, "%s<strong>Sun azimuth angle</strong>: %s <br>%s",
                 begin, lf(meta->optical->sun_azimuth_angle), end);
-      else if (strcmp(dbf[ii].header, "meta.optical.sun_elevation_angle") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.optical.sun_elevation_angle", 32) == 0)
         fprintf(kml_file, "%s<strong>Sun elevation angle</strong>: %s <br>%s",
                 begin, lf(meta->optical->sun_elevation_angle), end);
     }
@@ -515,13 +528,14 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>Thermal</strong><br>\n");
         thermal_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.thermal.band_gain") == 0)
+      if (strncmp(dbf[ii].header, "meta.thermal.band_gain", 22) == 0)
         fprintf(kml_file, "%s<strong>Band gain</strong>: %s <br>%s",
                 begin, lf(meta->thermal->band_gain), end);
-      else if (strcmp(dbf[ii].header, "meta.thermal.band_gain_change") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.thermal.band_gain_change", 29) == 0)
         fprintf(kml_file, "%s<strong>Band gain change</strong>: %s <br>%s",
                 begin, lf(meta->thermal->band_gain_change), end);
-      else if (strcmp(dbf[ii].header, "meta.thermal.day") == 0)
+      else if (strncmp(dbf[ii].header, "meta.thermal.day", 16) == 0)
         fprintf(kml_file, "%s<strong>Day</strong>: %d <br>%s",
                 begin, meta->thermal->day, end);
     }
@@ -541,25 +555,25 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>Transform</strong><br>\n");
         transform_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.transform.parameter_count") == 0)
+      if (strncmp(dbf[ii].header, "meta.transform.parameter_count", 30) == 0)
         fprintf(kml_file, "%s<strong>Parameter count</strong>: %d <br>%s",
                 begin, meta->transform->parameter_count, end);
-      else if (strcmp(dbf[ii].header, "meta.transform.x") == 0) {
+      else if (strncmp(dbf[ii].header, "meta.transform.x", 16) == 0) {
         for (kk=0; kk<meta->transform->parameter_count; kk++)
           fprintf(kml_file, "%s<strong>phi(%d)</strong>: %s <br>%s",
                   begin, kk, lf(meta->transform->x[kk]), end);
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.y") == 0) {
+      else if (strncmp(dbf[ii].header, "meta.transform.y", 16) == 0) {
         for (kk=0; kk<meta->transform->parameter_count; kk++)
           fprintf(kml_file, "%s<strong>lambda(%d)</strong>: %s <br>%s",
                   begin, kk, lf(meta->transform->y[kk]), end);
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.l") == 0) {
+      else if (strncmp(dbf[ii].header, "meta.transform.l", 16) == 0) {
         for (kk=0; kk<meta->transform->parameter_count; kk++)
           fprintf(kml_file, "%s<strong>i(%d)</strong>: %s <br>%s",
                   begin, kk, lf(meta->transform->l[kk]), end);
       }
-      else if (strcmp(dbf[ii].header, "meta.transform.s") == 0) {
+      else if (strncmp(dbf[ii].header, "meta.transform.s", 16) == 0) {
         for (kk=0; kk<meta->transform->parameter_count; kk++)
           fprintf(kml_file, "%s<strong>j(%d)</strong>: %s <br>%s",
                   begin, kk, lf(meta->transform->s[kk]), end);
@@ -581,25 +595,27 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>AirSAR</strong><br>\n");
         airsar_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.airsar.scale_factor") == 0)
+      if (strncmp(dbf[ii].header, "meta.airsar.scale_factor", 24) == 0)
         fprintf(kml_file, "%s<strong>Scale factor</strong>: %s <br>%s",
                 begin, lf(meta->airsar->scale_factor), end);
-      else if (strcmp(dbf[ii].header, "meta.airsar.gps_altitude") == 0)
+      else if (strncmp(dbf[ii].header, "meta.airsar.gps_altitude", 24) == 0)
         fprintf(kml_file, "%s<strong>GPS altitude</strong>: %s <br>%s",
                 begin, lf(meta->airsar->gps_altitude), end);
-      else if (strcmp(dbf[ii].header, "meta.airsar.lat_peg_point") == 0)
+      else if (strncmp(dbf[ii].header, "meta.airsar.lat_peg_point", 25) == 0)
         fprintf(kml_file, "%s<strong>Lat peg point</strong>: %s <br>%s",
                 begin, lf(meta->airsar->lat_peg_point), end);
-      else if (strcmp(dbf[ii].header, "meta.airsar.lon_peg_point") == 0)
+      else if (strncmp(dbf[ii].header, "meta.airsar.lon_peg_point", 25) == 0)
         fprintf(kml_file, "%s<strong>Lon peg point</strong>: %s <br>%s",
                 begin, lf(meta->airsar->lon_peg_point), end);
-      else if (strcmp(dbf[ii].header, "meta.airsar.head_peg_point") == 0)
+      else if (strncmp(dbf[ii].header, "meta.airsar.head_peg_point", 26) == 0)
         fprintf(kml_file, "%s<strong>Heading peg point</strong>: %s <br>%s",
                 begin, lf(meta->airsar->head_peg_point), end);
-      else if (strcmp(dbf[ii].header, "meta.airsar.along_track_offset") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.airsar.along_track_offset", 30) == 0)
         fprintf(kml_file, "%s<strong>Along track offset</strong>: %s <br>%s",
                 begin, lf(meta->airsar->along_track_offset), end);
-      else if (strcmp(dbf[ii].header, "meta.airsar.cross_track_offset") == 0)
+      else if (strncmp(dbf[ii].header, 
+		       "meta.airsar.cross_track_offset", 30) == 0)
         fprintf(kml_file, "%s<strong>Cross track offset</strong>: %s <br>%s",
                 begin, lf(meta->airsar->cross_track_offset), end);
     }
@@ -619,7 +635,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>Projection</strong><br>\n");
         projection_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.projection.type") == 0) {
+      if (strncmp(dbf[ii].header, "meta.projection.type", 20) == 0) {
         if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR)
           fprintf(kml_file, "%s<strong>Type</strong>: "
                   "UNIVERSAL_TRANSVERSE_MERCATOR <br>%s", begin, end);
@@ -648,22 +664,22 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
           fprintf(kml_file, "%s<strong>Type</strong>: "
                   "UNKNOWN_PROJECTION <br>%s", begin, end);
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.startX") == 0)
+      else if (strncmp(dbf[ii].header, "meta.projection.startX", 22) == 0)
         fprintf(kml_file, "%s<strong>StartX</strong>: %s <br>%s",
                 begin, lf(meta->projection->startX), end);
-      else if (strcmp(dbf[ii].header, "meta.projection.startY") == 0)
+      else if (strncmp(dbf[ii].header, "meta.projection.startY", 22) == 0)
         fprintf(kml_file, "%s<strong>StartY</strong>: %s <br>%s",
                 begin, lf(meta->projection->startY), end);
-      else if (strcmp(dbf[ii].header, "meta.projection.perX") == 0)
+      else if (strncmp(dbf[ii].header, "meta.projection.perX", 20) == 0)
         fprintf(kml_file, "%s<strong>PerX</strong>: %s <br>%s",
                 begin, lf(meta->projection->perX), end);
-      else if (strcmp(dbf[ii].header, "meta.projection.perY") == 0)
+      else if (strncmp(dbf[ii].header, "meta.projection.perY", 20) == 0)
         fprintf(kml_file, "%s<strong>PerY</strong>: %s <br>%s",
                 begin, lf(meta->projection->perY), end);
-      else if (strcmp(dbf[ii].header, "meta.projection.units") == 0)
+      else if (strncmp(dbf[ii].header, "meta.projection.units", 21) == 0)
         fprintf(kml_file, "%s<strong>Units</strong>: %s <br>%s",
                 begin, meta->projection->units, end);
-      else if (strcmp(dbf[ii].header, "meta.projection.hem") == 0) {
+      else if (strncmp(dbf[ii].header, "meta.projection.hem", 19) == 0) {
         if (meta->projection->hem == 'N')
           fprintf(kml_file, "%s<strong>Hemisphere</strong>: North <br>%s",
                   begin, end);
@@ -671,7 +687,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
           fprintf(kml_file, "%s<strong>Hemisphere</strong>: South <br>%s",
                   begin, end);
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.spheroid") == 0) {
+      else if (strncmp(dbf[ii].header, "meta.projection.spheroid", 24) == 0) {
         if (meta->projection->spheroid == BESSEL_SPHEROID)
           fprintf(kml_file, "%s<strong>Spheroid</strong>: BESSEL <br>%s",
                   begin, end);
@@ -709,13 +725,13 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
           fprintf(kml_file, "%s<strong>Spheroid</strong>: UNKNOWN <br>%s",
                   begin, end);
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.re_major") == 0)
+      else if (strncmp(dbf[ii].header, "meta.projection.re_major", 24) == 0)
         fprintf(kml_file, "%s<strong>re major</strong>: %s <br>%s",
                 begin, lf(meta->projection->re_major), end);
-      else if (strcmp(dbf[ii].header, "meta.projection.re_minor") == 0)
+      else if (strncmp(dbf[ii].header, "meta.projection.re_minor", 24) == 0)
         fprintf(kml_file, "%s<strong>re minor</strong>: %s <br>%s",
                 begin, lf(meta->projection->re_minor), end);
-      else if (strcmp(dbf[ii].header, "meta.projection.datum") == 0) {
+      else if (strncmp(dbf[ii].header, "meta.projection.datum", 21) == 0) {
         if (meta->projection->datum == EGM96_DATUM)
           fprintf(kml_file, "%s<strong>Datum</strong>: EGM96 <br>%s",
                   begin, end);
@@ -750,153 +766,163 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
           fprintf(kml_file, "%s<strong>Datum</strong>: UNKNOWN <br>%s",
                   begin, end);
       }
-      else if (strcmp(dbf[ii].header, "meta.projection.height") == 0)
+      else if (strncmp(dbf[ii].header, "meta.projection.height", 22) == 0)
         fprintf(kml_file, "%s<strong>Height</strong>: %s <br>%s",
                 begin, lf(meta->projection->height), end);
       if (meta->projection->type == ALBERS_EQUAL_AREA) {
-        if (strcmp(dbf[ii].header,
-                   "meta.projection.param.albers.std_parallel1") == 0)
+        if (strncmp(dbf[ii].header,
+		    "meta.projection.param.albers.std_parallel1", 42) == 0)
           fprintf(kml_file, "%s<strong>First standard parallel</strong>: "
                   "%s <br>%s", begin,
                   lf(meta->projection->param.albers.std_parallel1), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.std_parallel2") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.std_parallel2", 
+			 43) == 0)
           fprintf(kml_file, "%s<strong>Second standard parallel</strong>: "
                   "%s <br>%s", begin,
                   lf(meta->projection->param.albers.std_parallel2), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.center_meridian") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.center_meridian", 
+			 45) == 0)
           fprintf(kml_file, "%s<strong>Center meridian</strong>: "
                   "%s <br>%s", begin,
                   lf(meta->projection->param.albers.center_meridian), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.orig_latitude") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.orig_latitude", 
+			 43) == 0)
           fprintf(kml_file, "%s<strong>Latitude of origin</strong>: "
                   "%s <br>%s", begin,
                   lf(meta->projection->param.albers.orig_latitude), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.false_easting") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.false_easting", 
+			 43) == 0)
           fprintf(kml_file, "%s<strong>False easting</strong>: "
                   "%s <br>%s", begin,
                   lf(meta->projection->param.albers.false_easting), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.albers.false_northing") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.albers.false_northing", 
+			 44) == 0)
           fprintf(kml_file, "%s<strong>False northing</strong>: %s<br>%s",
                   begin, lf(meta->projection->param.albers.false_northing),
                   end);
       }
       else if (meta->projection->type == SCANSAR_PROJECTION) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.atct.rlocal") == 0)
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.atct.rlocal", 33) == 0)
           fprintf(kml_file, "%s<strong>rlocal</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.atct.rlocal), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha1") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha1", 33) == 0)
           fprintf(kml_file, "%s<strong>alpha 1</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.atct.alpha1), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha2") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha2", 33) == 0)
           fprintf(kml_file, "%s<strong>alpha 2</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.atct.alpha2), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.atct.alpha3") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.atct.alpha3", 33) == 0)
           fprintf(kml_file, "%s<strong>alpha 3</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.atct.alpha3), end);
       }
       else if (meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
-        if (strcmp(dbf[ii].header,
-                   "meta.projection.param.lamaz.center_lat") == 0)
+        if (strncmp(dbf[ii].header,
+		    "meta.projection.param.lamaz.center_lat", 38) == 0)
           fprintf(kml_file, "%s<strong>Center latitude</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamaz.center_lat), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.center_lon") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.center_lon", 38) == 0)
           fprintf(kml_file, "%s<strong>Center longitude</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamaz.center_lon), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.false_easting") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.false_easting", 41) == 0)
           fprintf(kml_file, "%s<strong>False easting</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamaz.false_easting), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamaz.false_northing") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamaz.false_northing", 
+			 42) == 0)
           fprintf(kml_file, "%s<strong>False northing</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamaz.false_northing),
                   end);
       }
       else if (meta->projection->type == LAMBERT_CONFORMAL_CONIC) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.lamcc.plat1") == 0)
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.lamcc.plat1", 33) == 0)
           fprintf(kml_file, "%s<strong>First standard parallel</strong>: %s "
                   "<br>%s", begin, lf(meta->projection->param.lamcc.plat1),
                   end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.plat2") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.plat2", 33) == 0)
           fprintf(kml_file, "%s<strong>Second standard parallel</strong>: %s "
                   "<br>%s", begin, lf(meta->projection->param.lamcc.plat2),
                   end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.lat0") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.lat0", 32) == 0)
           fprintf(kml_file, "%s<strong>Original latitude</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamcc.lat0), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.lon0") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.lon0", 32) == 0)
           fprintf(kml_file, "%s<strong>Original longitude</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamcc.lon0), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.false_easting") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.false_easting", 41) == 0)
           fprintf(kml_file, "%s<strong>False easting</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamcc.false_easting), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.false_northing") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.false_northing", 
+			 42) == 0)
           fprintf(kml_file, "%s<strong>False northing</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamcc.false_northing),
                   end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.lamcc.scale_factor") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.lamcc.scale_factor", 40) == 0)
           fprintf(kml_file, "%s<strong>Scale factor</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.lamcc.scale_factor), end);
       }
       else if (meta->projection->type == POLAR_STEREOGRAPHIC) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.ps.slat") == 0)
+        if (strncmp(dbf[ii].header, "meta.projection.param.ps.slat", 29) == 0)
           fprintf(kml_file, "%s<strong>Reference latitude</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.ps.slat), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.ps.slon") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.ps.slon", 29) == 0)
           fprintf(kml_file, "%s<strong>Reference longitude</strong>: %s "
                   "<br>%s", begin, lf(meta->projection->param.ps.slon), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.ps.false_easting") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.ps.false_easting", 38) == 0)
           fprintf(kml_file, "%s<strong>False easting</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.ps.false_easting), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.ps.false_northing") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.ps.false_northing", 39) == 0)
           fprintf(kml_file, "%s<strong>False northing</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.ps.false_northing), end);
       }
       else if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.utm.zone") == 0)
+        if (strncmp(dbf[ii].header, "meta.projection.param.utm.zone", 30) == 0)
           fprintf(kml_file, "%s<strong>Zone</strong>: %d <br>%s",
                   begin, meta->projection->param.utm.zone, end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.false_easting") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.false_easting", 39) == 0)
           fprintf(kml_file, "%s<strong>False easting</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.utm.false_easting), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.false_northing") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.false_northing", 40) == 0)
           fprintf(kml_file, "%s<strong>False northing</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.utm.false_northing), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.lat0") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.lat0", 30) == 0)
           fprintf(kml_file, "%s<strong>Latitude</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.utm.lat0), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.lon0") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.lon0", 30) == 0)
           fprintf(kml_file, "%s<strong>Longitude</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.utm.lon0), end);
-        else if (strcmp(dbf[ii].header,
-                        "meta.projection.param.utm.scale_factor") == 0)
+        else if (strncmp(dbf[ii].header,
+			 "meta.projection.param.utm.scale_factor", 38) == 0)
           fprintf(kml_file, "%s<strong>Scale factor</strong>: %s <br>%s",
                   begin, lf(meta->projection->param.utm.scale_factor), end);
       }
       else if (meta->projection->type == STATE_PLANE) {
-        if (strcmp(dbf[ii].header, "meta.projection.param.state.zone") == 0)
+        if (strncmp(dbf[ii].header, 
+		    "meta.projection.param.state.zone", 32) == 0)
           fprintf(kml_file, "%s<strong>Zone</strong>: %d <br>%s",
                   begin, meta->projection->param.state.zone, end);
       }
@@ -917,31 +943,31 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>Statistics</strong><br>\n");
         stats_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.stats.band_count") == 0)
+      if (strncmp(dbf[ii].header, "meta.stats.band_count", 21) == 0)
         fprintf(kml_file, "%s<strong>Band count</strong>: %d <br>%s", begin,
                 meta->stats->band_count, end);
       for (kk=0; kk<meta->stats->band_count; kk++) {
-        if (strcmp(dbf[ii].header, "meta.stats.band_stats.band_id") == 0)
+        if (strncmp(dbf[ii].header, "meta.stats.band_stats.band_id", 29) == 0)
           fprintf(kml_file, "%s<strong>Band ID</strong>: %s <br>%s", begin,
                   meta->stats->band_stats[kk].band_id, end);
-        if (strcmp(dbf[ii].header, "meta.stats.band_stats.min") == 0)
+        if (strncmp(dbf[ii].header, "meta.stats.band_stats.min", 25) == 0)
           fprintf(kml_file, "%s<strong>Minimum value</strong>: %s <br>%s",
                   begin, lf(meta->stats->band_stats[kk].min), end);
-        if (strcmp(dbf[ii].header, "meta.stats.band_stats.max") == 0)
+        if (strncmp(dbf[ii].header, "meta.stats.band_stats.max", 25) == 0)
           fprintf(kml_file, "%s<strong>Maximum value</strong>: %s <br>%s",
                   begin, lf(meta->stats->band_stats[kk].max), end);
-        if (strcmp(dbf[ii].header, "meta.stats.band_stats.mean") == 0)
+        if (strncmp(dbf[ii].header, "meta.stats.band_stats.mean", 26) == 0)
           fprintf(kml_file, "%s<strong>Mean value</strong>: %s <br>%s",
                   begin, lf(meta->stats->band_stats[kk].mean), end);
-        if (strcmp(dbf[ii].header, "meta.stats.band_stats.rmse") == 0)
+        if (strncmp(dbf[ii].header, "meta.stats.band_stats.rmse", 26) == 0)
           fprintf(kml_file, "%s<strong>Root mean square error</strong>: "
                   "%s<br>%s", begin, lf(meta->stats->band_stats[kk].rmse),
                   end);
-        if (strcmp(dbf[ii].header,
-                        "meta.stats.band_stats.std_deviation") == 0)
+        if (strncmp(dbf[ii].header,
+		    "meta.stats.band_stats.std_deviation", 35) == 0)
           fprintf(kml_file, "%s<strong>Standard deviation</strong>: %s <br>%s",
                   begin, lf(meta->stats->band_stats[kk].std_deviation), end);
-        if (strcmp(dbf[ii].header, "meta.stats.band_stats.mask") == 0)
+        if (strncmp(dbf[ii].header, "meta.stats.band_stats.mask", 26) == 0)
           fprintf(kml_file, "%s<strong>Mask value</strong>: %s <br>%s",
                   begin, lf(meta->stats->band_stats[kk].mask), end);
       }
@@ -962,20 +988,20 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>State vectors</strong><br>\n");
         state_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.state.year") == 0)
+      if (strncmp(dbf[ii].header, "meta.state.year", 15) == 0)
         fprintf(kml_file, "%s<strong>Year of image start</strong>: %d <br>%s",
                 begin, meta->state_vectors->year, end);
-      else if (strcmp(dbf[ii].header, "meta.state.julDay") == 0)
+      else if (strncmp(dbf[ii].header, "meta.state.julDay", 17) == 0)
         fprintf(kml_file, "%s<strong>Julian day</strong>: %d <br>%s",
                 begin, meta->state_vectors->julDay, end);
-      else if (strcmp(dbf[ii].header, "meta.state.second") == 0)
+      else if (strncmp(dbf[ii].header, "meta.state.second", 17) == 0)
         fprintf(kml_file, "%s<strong>Seconds of the day</strong>: %s <br>%s",
                 begin, lf(meta->state_vectors->second), end);
-      else if (strcmp(dbf[ii].header, "meta.state.vector_count") == 0)
+      else if (strncmp(dbf[ii].header, "meta.state.vector_count", 23) == 0)
         fprintf(kml_file, "%s<strong>Vector count</strong>: %d <br>%s",
                 begin, meta->state_vectors->vector_count, end);
       for (kk=0; kk<meta->state_vectors->vector_count; kk++) {
-        if (strcmp(dbf[ii].header, "meta.state.vectors") == 0) {
+        if (strncmp(dbf[ii].header, "meta.state.vectors", 18) == 0) {
           fprintf(kml_file, "%s<strong>Time [%d]</strong>: %s <br>%s",
                   begin, kk+1, lf(meta->state_vectors->vecs[kk].time), end);
           fprintf(kml_file, "%s<strong>Position [%d} x</strong>: %s <br>%s",
@@ -1015,42 +1041,43 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "<br><strong>Location</strong><br>\n");
         location_block = TRUE;
       }
-      if (strcmp(dbf[ii].header, "meta.location.lat_start_near_range") == 0)
+      if (strncmp(dbf[ii].header, 
+		  "meta.location.lat_start_near_range", 34) == 0)
         fprintf(kml_file, "%s<strong>Latitude start near range</strong>: "
                 "%s <br>%s", begin, lf(meta->location->lat_start_near_range),
                 end);
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_start_near_range") == 0)
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_start_near_range", 34) == 0)
         fprintf(kml_file, "%s<strong>Longitude start near range</strong>: "
                 "%s <br>%s", begin, lf(meta->location->lon_start_near_range),
                 end);
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lat_start_far_range") == 0)
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lat_start_far_range", 33) == 0)
         fprintf(kml_file, "%s<strong>Latitude start far range</strong>: "
                 "%s <br>%s", begin, lf(meta->location->lat_start_far_range),
                 end);
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_start_far_range") == 0)
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_start_far_range", 33) == 0)
         fprintf(kml_file, "%s<strong>Longitude start far range</strong>: "
                 "%s <br>%s", begin, lf(meta->location->lon_start_far_range),
                 end);
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lat_end_near_range") == 0)
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lat_end_near_range", 32) == 0)
         fprintf(kml_file, "%s<strong>Latitude end near range</strong>: "
                 "%s <br>%s", begin, lf(meta->location->lat_end_near_range),
                 end);
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_end_near_range") == 0)
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_end_near_range", 32) == 0)
         fprintf(kml_file, "%s<strong>Longitude end near range</strong>: "
                 "%s <br>%s", begin, lf(meta->location->lon_end_near_range),
                 end);
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lat_end_far_range") == 0)
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lat_end_far_range", 31) == 0)
         fprintf(kml_file, "%s<strong>Latitude end far range</strong>: "
                 "%s <br>%s", begin, lf(meta->location->lat_end_far_range),
                 end);
-      else if (strcmp(dbf[ii].header,
-                      "meta.location.lon_end_far_range") == 0)
+      else if (strncmp(dbf[ii].header,
+		       "meta.location.lon_end_far_range", 31) == 0)
         fprintf(kml_file, "%s<strong>Longitude end far range</strong>: "
                 "%s <br>%s", begin, lf(meta->location->lon_end_far_range),
                 end);
@@ -1087,8 +1114,12 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   double clat = meta->general->center_latitude;
   double clon = meta->general->center_longitude;
   asfPrintStatus("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
-  meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
-  asfPrintStatus("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
+  if (strcmp_case(meta->general->sensor_name, "AVNIR") == 0 &&
+      strcmp_case(meta->general->mode, "1A") != 0 &&
+      strcmp_case(meta->general->mode, "1B1") != 0) {
+    meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
+    asfPrintStatus("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
+  }
 
   double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
     ctr_x, ctr_y;

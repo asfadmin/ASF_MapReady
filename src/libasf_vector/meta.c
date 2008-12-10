@@ -2577,6 +2577,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
   return 1;
 }
 
+
 // Convert metadata to kml file
 int meta2kml(char *inFile, char *outFile, int listFlag)
 {
@@ -2589,7 +2590,8 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
     kml_header(fpOut);
     while (fgets(line, 1024, fpIn)) {
       line[strlen(line)-1] = '\0';
-      meta_parameters *meta = meta_read(line);
+      asfPrintStatus("File: %s\n\n", line);
+      meta_parameters *meta = meta_read_only(line);
       kml_entry(fpOut, meta, meta->general->basename);
       meta_free(meta);
     }
@@ -2598,7 +2600,7 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
     FCLOSE(fpOut);
   }
   else {
-    meta_parameters *meta = meta_read(inFile);
+    meta_parameters *meta = meta_read_only(inFile);
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
     kml_entry(fpOut, meta, meta->general->basename);
