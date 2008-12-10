@@ -27,7 +27,7 @@
 #define JPL_VERSION 1.0
 
 // Create_thumbs
-#define CREATE_THUMBS_VERSION_STRING "2.0.1"
+#define CREATE_THUMBS_VERSION_STRING "2.0.3-dev"
 #define CREATE_THUMBS_VERSION 2.0
 
 // Data_qc
