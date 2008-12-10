@@ -65,6 +65,8 @@ char *alos_beam_mode[132]={
 // Importing CEOS SAR data
 void ceos_init_sar(ceos_description *ceos, const char *in_fName,
        meta_parameters *meta);
+void ceos_init_sar_ext(ceos_description *ceos, const char *in_fName,
+		       meta_parameters *meta, int metaOnly);
 void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
            meta_parameters *meta);
 void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
@@ -188,14 +190,39 @@ void ceos_init(const char *in_fName, meta_parameters *meta, report_level_t level
    FREE(ceos);
 }
 
+meta_parameters *meta_read_only(const char *in_fName)
+{
+  meta_parameters *meta = raw_init();
+  report_level_t level = REPORT_LEVEL_NONE;
+  ceos_description *ceos = get_ceos_description_ext(in_fName, level, FALSE);
+  
+  if (ceos->sensor == SAR || ceos->sensor == PALSAR)
+    ceos_init_sar_ext(ceos, in_fName, meta, TRUE);
+  else if (ceos->sensor == AVNIR || ceos->sensor == PRISM)
+    ceos_init_optical(in_fName, meta);
+  
+  FREE(ceos);
+  return meta;
+}
+
+
 
 /*******************************************************************************
  * ceos_init_sar:
  * Reads SAR structure parameters from CEOS into existing meta_parameters
  * structure.  Calls the facility-specific decoders below. */
 void ceos_init_sar(ceos_description *ceos, const char *in_fName,
-       meta_parameters *meta)
+		   meta_parameters *meta)
 {
+  ceos_init_sar_ext(ceos, in_fName, meta, FALSE);
+}
+
+void ceos_init_sar_ext(ceos_description *ceos, const char *in_fName,
+		       meta_parameters *meta, int metaOnly)
+{
+  // General block
+  ceos_init_sar_general(ceos, in_fName, meta, metaOnly);
+
   if (ceos->facility == ASF && ceos->processor != FOCUS && ceos->processor != LZP)
     ceos_init_sar_asf(ceos, in_fName, meta);
   else if (ceos->facility == ASF &&
@@ -236,7 +263,7 @@ void ceos_init_sar(ceos_description *ceos, const char *in_fName,
 }
 
 void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
-         meta_parameters *meta)
+			   meta_parameters *meta, int metaOnly)
 {
   char fac[50],sys[50],ver[50];     /* Fields describing the SAR processor   */
   struct dataset_sum_rec *dssr=NULL;/* Data set summary record               */
@@ -250,8 +277,16 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar = meta_sar_init();
 
   dssr = &ceos->dssr;
-  iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
-  get_ifiledr(in_fName, iof);
+  // Take care of the case that somebody might just want the metadata for
+  // coverage purposes. In this case data type and exact line/sample counts
+  // are not so important.
+  if (!metaOnly) {
+    iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
+    if (get_ifiledr(in_fName, iof) == -1) {
+      FREE(iof);
+      iof = NULL;
+    }
+  }
   mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
   if (get_mpdr(in_fName, mpdr) == -1) {
     FREE(mpdr);
@@ -273,10 +308,14 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   strcpy(ver,dssr->ver_id); strtok(ver," "); // Remove spaces from field
   sprintf(meta->general->processor, "%s/%s/%s", trim_spaces(fac), sys, ver);
   // FOCUS data header is erroneous, hence the if statement
-  if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2;
-  dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
-  if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0))
-    dataSize += (10 - dataSize)/2;
+  if (iof) {
+    if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2;
+    dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
+    if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0))
+      dataSize += (10 - dataSize)/2;
+  }
+  else // just for metadata coverage
+    dataSize = 2;
   switch (dataSize)
     {
     case 2:  meta->general->data_type = INTEGER16;         break;
@@ -296,7 +335,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->general->orbit_direction  = dssr->asc_des[0];
   meta->general->band_count = nBands;
   strcpy(meta->general->bands, "");
-  if (iof->numofrec == 0) {
+  if (iof == NULL || iof->numofrec == 0) {
     meta->general->line_count = dssr->sc_lin * 2;
     meta->general->sample_count = dssr->sc_pix * 2;
   }
@@ -332,12 +371,14 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
 
   // Fill meta->sar structure
   meta->sar->look_direction = (dssr->clock_ang>=0.0) ? 'R' : 'L';
-  meta->sar->original_line_count   = iof->numofrec;
-  meta->sar->original_sample_count =
-    (iof->reclen-iof->predata-iof->sufdata-iof->lbrdrpxl-iof->rbrdrpxl)
-    / iof->bytgroup;
-  if ( meta->sar->original_line_count==0
-       || meta->sar->original_sample_count==0) {
+  if (iof) {
+    meta->sar->original_line_count   = iof->numofrec;
+    meta->sar->original_sample_count =
+      (iof->reclen-iof->predata-iof->sufdata-iof->lbrdrpxl-iof->rbrdrpxl)
+      / iof->bytgroup;
+  }
+  if (meta->sar->original_line_count<=0
+       || meta->sar->original_sample_count<=0) {
     meta->sar->original_line_count   = dssr->sc_lin*2;
     meta->sar->original_sample_count = dssr->sc_pix*2;
   }
@@ -356,7 +397,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
     date_dssr2time(dssr->az_time_first, &date, &time);
     firstTime = date_hms2sec(&time);
   }
-  else {
+  else if (iof) {
     require_ceos_data(in_fName, &dataName, &nBands);
     firstTime = get_firstTime(dataName[0]);
     free_ceos_names(dataName, NULL);
@@ -406,7 +447,8 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar->incid_a[0] = dssr->incident_ang;
 
   /* FREE(dssr); Don't free dssr; it points to the ceos struct (ceos->dssr) */
-  FREE(iof);
+  if (iof)
+    FREE(iof);
   if (mpdr)
     FREE(mpdr);
 }
@@ -429,9 +471,6 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
   get_asf_facdr(in_fName, asf_facdr);
   for (ii=0; ii<32; ii++)
     beamname[ii] = '\0';
-
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
 
   if (strncmp(dssr->mission_id, "ERS-1", 5) == 0) {
     strcpy(meta->general->sensor,"ERS1");
@@ -588,9 +627,6 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     if (esa_facdr) FREE(esa_facdr);
     esa_facdr=NULL;
   }
-
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
 
   // Azimuth time per pixel needs to be known for state vector propagation
   require_ceos_data(in_fName, &dataName, &nBands);
@@ -861,9 +897,6 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
       esa_facdr = NULL;
   }
 
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
-
   if (strncmp(dssr->mission_id, "ERS", 3) == 0) {
     strcpy(meta->general->mode, "STD");
     if (ceos->product == RAW)
@@ -1025,7 +1058,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   // General block
   strcpy(meta->general->processor, "JAXA");
-  ceos_init_sar_general(ceos, in_fName, meta);
   strcpy(meta->general->sensor,"ALOS");
   strcpy(meta->general->mode, alos_beam_mode[ceos->dssr.ant_beam_num]);
   strncpy(buf, &dssr->product_id[11], 4);
@@ -1149,7 +1181,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   }
   else {
     meta->sar->earth_radius = mpdr->distplat;
-    meta->sar->chirp_rate = get_chirp_rate(dataName[0]);
+    if (dataName && strlen(dataName))
+      meta->sar->chirp_rate = get_chirp_rate(dataName[0]);
   }
   for (ii=0; ii<6; ++ii)
     meta->sar->incid_a[ii] = dssr->incid_a[ii];
@@ -1238,7 +1271,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
         asfPrintStatus("  Using workreport: %.10f\n", workreport_atpp);
     asfPrintStatus("        Calculated: %.10f\n\n", meta->sar->azimuth_time_per_pixel);
 
-    ceos_init_stVec(in_fName,ceos,meta);
+    if (!meta->state_vectors)
+      ceos_init_stVec(in_fName,ceos,meta);
   }
 
   // Transformation block
@@ -1443,9 +1477,6 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   get_ppr(in_fName, ppr);
   require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
 
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
-
   // Azimuth time per pixel need to be known for state vector propagation
   firstTime = get_firstTime(dataName[0]);
   date_dssr2date(dssr->inp_sctim, &date, &time);
@@ -1576,9 +1607,6 @@ void ceos_init_sar_jpl(ceos_description *ceos, const char *in_fName,
 
   dssr = &ceos->dssr;
 
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
-
   if (strcmp(meta->general->sensor, "STS-68")==0)
     sprintf(meta->general->sensor, "SIR-C");
   if (strncmp(dssr->sensor_id,"SIR-C",6)==0) {
@@ -1629,9 +1657,6 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
   dssr = &ceos->dssr;
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
   get_esa_facdr(in_fName, esa_facdr);
-
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
 
   if (strncmp(dssr->mission_id, "ERS", 3) == 0) {
     strcpy(meta->general->mode, "STD");
@@ -1701,9 +1726,6 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
   dssr = &ceos->dssr;
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
   get_esa_facdr(in_fName, esa_facdr);
-
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
 
   if (strncmp(dssr->mission_id, "ERS", 3) == 0) {
     strcpy(meta->general->mode, "STD");
@@ -1775,9 +1797,6 @@ void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
   dssr = &ceos->dssr;
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
   get_esa_facdr(in_fName, esa_facdr);
-
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
 
   if (strncmp(dssr->mission_id, "ERS", 3) == 0) {
     strcpy(meta->general->mode, "STD");
@@ -1869,9 +1888,6 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
     FREE(att);
     att = NULL;
   }
-
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
 
   // Azimuth time per pixel need to be known for state vector propagation
   date_ppr2date(ppr->act_ing_start, &date, &time);
@@ -1967,9 +1983,6 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
     FREE(att);
     att = NULL;
   }
-
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
 
   // Azimuth time per pixel need to be known for state vector propagation
   date_ymd2jd(&date, &jd);
@@ -2067,9 +2080,6 @@ void ceos_init_sar_dera(ceos_description *ceos, const char *in_fName,
     att = NULL;
   }
 
-  // General block
-  ceos_init_sar_general(ceos, in_fName, meta);
-
   // Azimuth time per pixel need to be known for state vector propagation
   date_dssr2time(dssr->az_time_first, &date, &time);
   firstTime = date_hms2sec(&time);
@@ -2142,7 +2152,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   char *substr;
   int ii;
 
-  ceos = get_ceos_description(in_fName, REPORT_LEVEL_NONE);
+  ceos = get_ceos_description_ext(in_fName, REPORT_LEVEL_NONE, FALSE);
   meta->optical = meta_optical_init();
 
   // General block
@@ -2687,6 +2697,13 @@ void atct_init(meta_projection *proj,stateVector st)
  * decoded product type, etc.*/
 ceos_description *get_ceos_description(const char *fName, report_level_t level)
 {
+  return get_ceos_description_ext(fName, level, TRUE);
+}
+
+ceos_description *get_ceos_description_ext(const char *fName, 
+					   report_level_t level,
+					   int dataFlag)
+{
   struct IOF_VFDR *iof=NULL;
   int sar_image, dataSize;;
   char *versPtr,*satStr;
@@ -2695,12 +2712,21 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
   memset(ceos, 0, sizeof(ceos_description));
 
   // Determine data type
-  iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
-  get_ifiledr(fName, iof);
-  if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2;
-  dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
-  if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0))
-    dataSize += (10 - dataSize)/2;
+  if (dataFlag) {
+    iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
+    if (get_ifiledr(fName, iof) == -1) {
+      FREE(iof);
+      iof = NULL;
+    }
+  }
+  if (iof) {
+    if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2;
+    dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
+    if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0))
+      dataSize += (10 - dataSize)/2;
+  }
+  else
+    dataSize = 2;
   switch (dataSize)
     {
     case 2:  ceos->ceos_data_type = CEOS_AMP_DATA;       break;
@@ -2710,7 +2736,8 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     case 9:  ceos->ceos_data_type = CEOS_SLC_DATA_FLOAT; break;
     default: ceos->ceos_data_type = CEOS_AMP_DATA;       break;
     }
-  FREE(iof);
+  if (iof)
+    FREE(iof);
 
   // Get dataset summary record for SAR image. Otherwise try scene header record.
   sar_image = get_dssr(fName,&ceos->dssr);
