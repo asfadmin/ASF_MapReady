@@ -833,6 +833,19 @@ NOTE: This release procedure assumes that create_thumbs is just
   separate release, then this procedure will (somewhat obviously)
   change as well.
 
+ 1. Edit <path>/asf_tools/doc/create_thumbs-version_history.txt to
+    update the create_thumbs version history.
+
+ 2. Tag create_thumbs in the repository:
+
+       svn copy svn+ssh://svn/svn/asf_tools/trunk
+                svn+ssh://svn/svn/asf_tools/tags/create_thumbs_2-0-2
+
+       [[ Or if tagging a branched revision --
+         svn copy svn+ssh://svn/svn/asf_tools/branches/tool_suite_2008Q4
+                  svn+ssh://svn/svn/asf_tools/tags/create_thumbs_2-0-2
+       ]]
+
  1. Create a clean directory where you will produce the build (etc),
     for example (change the revision number to the one that you have
     checked out):
