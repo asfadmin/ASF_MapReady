@@ -103,7 +103,8 @@ typedef enum {
   AIRSAR,
   VP,
   JAXA_L0, // JAXA PRISM and AVNIR-2 (optical) Level 0 Format
-  ALOS_MOSAIC
+  ALOS_MOSAIC,
+  TERRASAR
 } input_format_t;
 
 /********************************************************************

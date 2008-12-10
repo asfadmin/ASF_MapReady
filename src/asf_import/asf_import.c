@@ -684,6 +684,8 @@ int main(int argc, char *argv[])
       format_type = JAXA_L0;
     else if (strncmp_case(format_type_str, "ALOS_MOSAIC", 11) == 0)
       format_type = ALOS_MOSAIC;
+    else if (strncmp_case(format_type_str, "TERRASAR", 8) == 0)
+      format_type = TERRASAR;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }

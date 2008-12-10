@@ -163,6 +163,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintStatus("   Data format: ALOS MOSAIC\n");
     import_alos_mosaic(inBaseName, update(radiometry, db_flag), outBaseName);
   }
+  else if (format_type == TERRASAR) {
+    asfPrintStatus("   Data format: TERRASAR\n");
+    import_terrasar(inBaseName, update(radiometry, db_flag), outBaseName);
+  }
   // Don't recognize this data format; report & quit
   else {
     asfPrintError("Unrecognized data format: '%d'\n",format_type);

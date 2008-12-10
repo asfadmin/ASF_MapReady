@@ -98,6 +98,8 @@ void import_vexcel_plain(const char *inBaseName, const char *outBaseName);
 void import_jaxa_L0(const char *inBaseName, const char *outBaseName);
 void import_alos_mosaic(const char *inFileName, radiometry_t radiometry,
 			const char *outBaseName);
+void import_terrasar(const char *inFileName, radiometry_t radiometry,
+		     const char *outBaseName);
 
 void assign_band_names(meta_parameters *meta, char *outMetaName,
                char *bandExt, int band, int nBands, int nBandsOut,

@@ -72,6 +72,7 @@ OBJS  = \
 	import_vexcel_plain.o \
 	import_jaxa_L0.o \
 	import_alos_mosaic.o \
+	import_terrasar.o \
 	least_squares.o \
 	missing.o \
 	projected_image_import.o \

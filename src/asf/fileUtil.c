@@ -140,7 +140,8 @@ char *findExt(const char *name)
         strcmp_case(ext, ".TAR") == 0        ||
         strcmp_case(ext, ".NUL") == 0       ||
         strcmp_case(ext, ".VOL") == 0       ||
-        strcmp_case(ext, ".CSV") == 0)
+        strcmp_case(ext, ".CSV") == 0       ||
+	strcmp_case(ext, ".XML") == 0)
         return (char *) &name[ii];
     else
         return NULL;
