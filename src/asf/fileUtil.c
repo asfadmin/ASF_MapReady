@@ -101,6 +101,7 @@ char *findExt(const char *name)
     ext = (char *) &name[ii];
     if (strcmp_case(ext, ".META") == 0      ||
         strcmp_case(ext, ".ENVI") == 0      ||
+	strcmp_case(ext, ".HDR") == 0       ||
         strcmp_case(ext, ".ESRI") == 0      ||
         strcmp_case(ext, ".DDR") == 0       ||
         strcmp_case(ext, ".IMG") == 0       ||
