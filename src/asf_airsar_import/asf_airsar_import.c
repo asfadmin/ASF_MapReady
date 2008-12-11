@@ -256,7 +256,7 @@ void asf_airsar_import(char *inFile, char *outFile, int insar, int polar)
   meta_parameters *metaIn = NULL, *metaOut = NULL;
   FILE *fpIn, *fpOut;
   float *floatBuf;
-  char dataName[1024], *airsar_basename;
+  char dataName[1024], *airsar_basename=NULL;
   int ii, kk, create=TRUE, line_count;
   int dem=FALSE, amp=FALSE, coh=FALSE;
   long line_offset;

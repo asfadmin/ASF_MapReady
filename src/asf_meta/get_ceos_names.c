@@ -544,6 +544,11 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *baseName,
     }
  }
   /* If we haven't returned yet there ain't no data file */
+  for (ii=0; ii<MAX_BANDS; ii++)
+    FREE(dataName[ii]);
+  FREE(dataName);
+  dataName = NULL;
+  *pDataName = NULL;
   return NO_CEOS_DATA;
 }
 
