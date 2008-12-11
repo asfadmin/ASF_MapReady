@@ -1,36 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <assert.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <gtk/gtk.h>
-#include <glade/glade.h>
-#include <glib.h>
-#include <glib/gprintf.h>
+#include "stp.h"
 
-/* for win32, need __declspec(dllexport) on all signal handlers */
-#if !defined(SIGNAL_CALLBACK)
-#  if defined(win32)
-#    define SIGNAL_CALLBACK __declspec(dllexport)
-#  else
-#    define SIGNAL_CALLBACK
-#  endif
-#endif
-
-#include "asf_version.h"
-
-#if defined(win32)
-#  include <pango/pango.h>
-
-#  define BYTE __byte
-#    include "asf_meta.h"
-#    include <asf_import.h>
-#  undef BYTE
-#  include <Windows.h>
-#  undef DIR_SEPARATOR
-
+#ifdef win32
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 
 static void set_app_font (const char *fontname)
@@ -687,29 +657,6 @@ set_widgets_sensitive(gboolean setting)
     set_widget_sensitive("input_file_browse_button", setting);
 }
 
-char *
-change_extension(const char * file, const char * ext)
-{
-    char * replaced = MALLOC(sizeof(char)*(strlen(file) + strlen(ext) + 10));
-
-    strcpy(replaced, file);
-    char * p = strrchr(replaced, '.');
-
-    if (p)
-        *p = '\0';
-
-    strcat(replaced, ".");
-    strcat(replaced, ext);
-
-    return replaced;
-}
-
-static const int STATUS_OK = 1;
-static const int STATUS_FILE_NOT_FOUND = 2;
-static const int STATUS_META_FILE_NOT_FOUND = 3;
-static const int STATUS_LDR_INSTEAD = 4;
-static const int STATUS_STF_INSTEAD = 5;
-
 static int file_exists(const char *filename)
 {
   return
@@ -1061,33 +1008,9 @@ static void delete_all_generated_images()
     FREE(output_filename_full);
 }
 
-// The thread function needs to be declared properly on Windows.
-// On Linux, we are using fork() and then just call this function,
-// so it need not be anything fancy.  We use the stp_params_t struct
-// to hold everything that is needed, in either situation, so the
-// actual code can be the same in both OSs
-
-typedef struct {
-    char input_file[1024];
-    char output_file[1024];
-    int status;
-    float fd, fdd, fddd;
-    int fd_set, fdd_set, fddd_set;
-    int debug_flag;
-    int ifirstline;
-} stp_params_t;
-
-#ifdef win32
-DWORD WINAPI stp_exec(void *void_stp_params)
-{
-  stp_params_t *stp_params = (stp_params_t *)void_stp_params;
-
-#else
+#ifndef win32
 static int stp_exec(stp_params_t *stp_params)
 {
-
-#endif
-
   // running import, if necessary
   char *img_file;
   if (stp_params->status == STATUS_LDR_INSTEAD) {
@@ -1148,6 +1071,7 @@ static int stp_exec(stp_params_t *stp_params)
   // success
   return 0;
 }
+#endif
 
 static stp_params_t *
 create_stp_params(const char *input_file, const char *output_file,
@@ -1218,6 +1142,19 @@ static void check_status_file(const char *statFile)
     }
   }
 }
+
+#ifdef win32
+static char *stp_params_to_string(stp_params_t *p)
+{
+    char *ret = malloc(sizeof(char)*4000);
+
+    snprintf(ret, 4000, "%d %f %f %f %d %d %d %d %d \"%s\" \"%s\"",
+        p->status, p->fd, p->fdd, p->fddd, p->fd_set, p->fdd_set, p->fddd_set,
+        p->debug_flag, p->ifirstline, p->input_file, p->output_file);
+
+    return ret;
+}
+#endif
 
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
@@ -1314,36 +1251,63 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     highlight_step(1,2);
 
 #ifdef win32
-    /* Windows version of threading */
+    /* Windows version of threading: use command-line ardop */
+    STARTUPINFO si;
+    PROCESS_INFORMATION pri;
+
+    memset(&si, 0, sizeof(si));
+    memset(&pri, 0, sizeof(pri));
+    si.cb = sizeof(si);
+
     stp_params_t *stp_params = create_stp_params(input_file, output_file,
                                    status, debug_flag, ifirstline);
-
-    DWORD id;
-    HANDLE h = CreateThread(
-      NULL,                        // default security attributes
-      0,                           // default stack size
-      stp_exec,                    // thread function name
-      stp_params,                  // argument to thread function
-      0,                           // default creation flags
-      &id);                        // returns the thread id
-
+    
+    char *args = stp_params_to_string(stp_params);
+    int l = 128 + strlen(get_asf_bin_dir_win()) + strlen(args);
+    char *cmd = MALLOC(sizeof(char)*l);
+    snprintf(cmd, l, "\"%s/stp_cli.exe\" %s", get_asf_bin_dir_win(), args);
     char *statFile = appendExt(output_file, ".status");
-    DWORD dwWaitResult;
-    int counter = 1;
+    FREE(args);
 
-    // now wait for process to finish
-    do {
-        while (gtk_events_pending())
-            gtk_main_iteration();
+    if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pri))
+    {
+        DWORD dw = GetLastError();
+        //printf( "CreateProcess failed (%ld)\n", dw );
 
-        if (++counter % 200 == 0) {
-          /* check status file */
-          check_status_file(statFile);
-        }
+        LPVOID lpMsgBuf;
+        FormatMessage(
+          FORMAT_MESSAGE_ALLOCATE_BUFFER |
+          FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+          NULL,
+          dw,
+          MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
+              (LPTSTR)&lpMsgBuf,
+          0,
+          NULL);
 
-        dwWaitResult = WaitForSingleObject(h, 50);
+        printf("CreateProcess() failed with error %ld: %s\n",
+            dw, (char*)lpMsgBuf);
+        printf("Failed command: %s\n", cmd);
     }
-    while (dwWaitResult == WAIT_TIMEOUT);
+    else {
+        // now wait for process to finish
+        int counter=0;
+        DWORD dwWaitResult;
+
+        do {
+            while (gtk_events_pending())
+                gtk_main_iteration();
+
+            if (++counter % 200 == 0) {
+                /* check status file */
+                check_status_file(statFile);
+            }
+
+            dwWaitResult = WaitForSingleObject(pri.hProcess, 50);
+        }
+        while (dwWaitResult == WAIT_TIMEOUT);
+    }
 
     free(stp_params);
     remove_file(statFile);

@@ -73,8 +73,9 @@ LIB = \
 CFLAGS += -D_REENTRANT -mms-bitfields -g -Wall
 
 $(TARGET).exe: $(SRCS)
-	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
-	mv $(TARGET).exe $(BINDIR)
+	$(GCC) -o stp.exe stp.c $(INCLUDE) $(LIB) $(CFLAGS)
+	$(GCC) -o stp_cli.exe stp_cli.c $(INCLUDE) $(LIB) $(CFLAGS)
+	mv stp.exe stp_cli.exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp *.gif $(SHAREDIR)
 	cp $(TARGET)_icon.ico $(SHAREDIR)
