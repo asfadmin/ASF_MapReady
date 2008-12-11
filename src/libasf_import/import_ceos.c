@@ -324,7 +324,8 @@ void import_ceos(char *inBaseName, char *outBaseName,
 
       // Check to see if the user forced a band extension
       // (band_id) upon us... override the above if so
-      if (band_id && strlen(band_id)) {
+      // Don't go through this if you are only ingesting an amplitude image
+      if (band_id && strlen(band_id) && strcmp_case(band_id, "NONE") != 0) {
         // Force ii index to point at correct filename,
         // dying if it can't be found.
         char file_prefix[256];
@@ -376,6 +377,29 @@ void import_ceos(char *inBaseName, char *outBaseName,
         nBands = 1;
       }
     }
+
+    // This is the little extra exit for importing only amplitude images
+    if (band_id && strcmp_case(band_id, "NONE") == 0 && ii>0) {
+      if (do_resample) {
+	if (range_scale < 0) {
+	  range_scale = DEFAULT_RANGE_SCALE;
+	}
+	
+	if (azimuth_scale < 0) {
+	  azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
+	}
+	
+	asfPrintStatus("Resampling with scale factors: "
+		       "%lf range, %lf azimuth.\n",
+		       range_scale, azimuth_scale);
+	
+	resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
+	
+	asfPrintStatus("\n\nDone.\n\n");
+      }
+      
+      return;
+    }      
 
     if (ceos->facility == CDPF                      &&
         ceos->ceos_data_type != CEOS_SLC_DATA_INT   &&
@@ -469,6 +493,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
   }
 
   free_ceos_names(inBandName, inMetaName);
+
 }
 
 void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
