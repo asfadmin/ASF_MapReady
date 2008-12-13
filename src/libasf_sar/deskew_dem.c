@@ -483,7 +483,7 @@ static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
                              float *grDEMprev,float *inout,int ns,
                              int line, int form)
 {
-
+  if (form==0) return;
 /*
 Here's what it looked like before optimization:
 		double dx,dy,dz,vecLen,ix,iy,iz,cosAng;
@@ -520,37 +520,51 @@ Here's what it looked like before optimization:
      For 3.1, we force the user to use correction formula #5
      That's the only one that's been tested... */
     if (form > 0) form = 5;
-    //if (strncmp(CONVERT_PACKAGE_VERSION_STRING, "3.1", 3) != 0)
-    //    asfPrintWarning("Radiometric terrain correction formula "
-    //                    "is forced to #5!\n");
 
     int x;
     for (x=1;x<ns;x++)
     {
         double dx,dy,grX,vecLen,cosAng;
-
         /*Find terrain normal.*/
+
         grX=grDEM[x];
         if ((grX==badDEMht)||
             (grDEMprev[x]==badDEMht)||
-            (grDEM[x-1]==badDEMht)) 
+            (grDEM[x-1]==badDEMht))
         {
             inout[x]=0;
             continue;
         }
-
         dx=(grX-grDEM[x-1])/d->grPixelSize;
         dy=(grDEMprev[x]-grX)/d->grPixelSize;
 
+        /*Attempting to smooth the horizontal deltas...*/
+        double dx2=0, dx3=0;
+        if (x>2 && grDEM[x-2] != badDEMht)
+          dx2 = (grDEM[x-1] - grDEM[x-2])/d->grPixelSize;
+        if (x<ns-2 && grDEM[x+1] != badDEMht)
+          dx3 = (grDEM[x+1] - grDEM[x])/d->grPixelSize;
+
+        if (dx2 != 0 && dx3 != 0) {
+          dx = (2*dx+dx2+dx3)/4.;
+        }
+        else if (dx2 != 0) {
+          dx = (2*dx+dx2)/3.;
+        }
+        else if (dx3 != 0) {
+          dx = (2*dx+dx3)/3.;
+        }        
+
         /*Make the normal a unit vector.*/
-        vecLen=sqrt(dx*dx+dy*dy+1);
+        //vecLen=sqrt(dx*dx+dy*dy+1);
+        vecLen = sqrt(dx*dx+1);
+        double dz = 1./vecLen;
 
         /*Take dot product of this vector and the incidence vector.*/
-        cosAng=(-dx*d->sinIncidAng[x]+d->cosIncidAng[x])/vecLen;
+        cosAng=(dx*d->sinIncidAng[x]+d->cosIncidAng[x])/vecLen;
 
-        double li = acos(cosAng);
+        double li = acos(dz);
         double gi = meta_incid(d->meta, line, x);
-
         double tanphie = tan(gi);
         double cosphi = cosAng;
         double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
@@ -583,7 +597,7 @@ Here's what it looked like before optimization:
                 case 5:
                     /* Ordinary diffuse radar reflection */
                     /* This is the formula that was previously in deskew_dem */
-                    inout[x] *= 1-.7*pow(cosAng,7);
+                    inout[x] *= 1-.33*pow(cosAng,7);
                     break;
                 case 22:
                     /* Secret test mode */
@@ -627,9 +641,9 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                             "experimental.\n");
 	*/
 
-        if (inDemMeta->sar->image_type == 'G')
+        if (inDemMeta->sar->image_type == 'G') {
 	   dem_is_ground_range=TRUE;
-
+        }
 	if (inDemMeta->sar->image_type=='P') {
 		asfPrintError("DEM cannot be map projected for this program to work!\n");
 		return FALSE;
@@ -785,7 +799,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
                 geo_compensate(&d,grDEMline,inSarLine,outLine,
                                d.numSamples,1,maskLine,y);
-	      }		
+	      }
 	      if (y>0&&doRadiometric)
                 radio_compensate(&d,grDEMline,grDEMlast,outLine,
                                  d.numSamples,y,doRadiometric);
@@ -854,6 +868,5 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	FREE(d.sinIncidAng);
 	FREE(d.cosIncidAng);
         if (d.cosineScale) FREE(d.cosineScale);
-
 	return TRUE;
 }
