@@ -2851,9 +2851,10 @@ static int kml2shape_from_c2v(char *inFile, char *outFile, int listFlag)
   char *format, *header;
   char in_line[4096];
   dbf_header_t *dbf;
-  int ii, kk, ll, nCols, n, nLines, nVertices, expect_coords, isEnd;
+  int ii, kk, ll, nCols, n, m, nLines, nVertices, expect_coords, isEnd;
   char *param = (char *) MALLOC(sizeof(char)*255);
   char *value = (char *) MALLOC(sizeof(char)*255);
+  double lat[512], lon[512];
 
   // Figure out the format and number of vertices
   kml_open(inFile, &format, &nLines, &nVertices);
@@ -2874,6 +2875,7 @@ static int kml2shape_from_c2v(char *inFile, char *outFile, int listFlag)
 
   kk = 0;
   n = 0;
+  m = 0;
   expect_coords = FALSE;
 
   FILE *ifp = FOPEN(inFile, "r");
@@ -2882,23 +2884,49 @@ static int kml2shape_from_c2v(char *inFile, char *outFile, int listFlag)
     if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
         strcmp(value, MAGIC_UNSET_STRING) != 0)
     {
-      for (ll=0; ll<nCols; ll++) {
-        int len = strlen(dbf[ll].header);
-        if (strncmp_case(dbf[ll].header, param, len) == 0 && dbf[ll].visible)
-        {
-          if (dbf[ll].format == DBF_STRING)
-            DBFWriteStringAttribute(dbase, n, ll, value);
-          else if (dbf[ll].format == DBF_STRING)
-            DBFWriteIntegerAttribute(dbase, n, ll, atoi(value));
-          else if (dbf[ii].format == DBF_DOUBLE)
-            DBFWriteDoubleAttribute(dbase, n, ll, atof(value));
+      if (expect_coords) {
+        if (m<512) {
+          lat[m] = atof(param);
+          lon[m] = atof(value);
+          ++m;
         }
       }
-      n++;
+      else {      
+        for (ll=0; ll<nCols; ll++) {
+          int len = strlen(dbf[ll].header);
+          if (strncmp_case(dbf[ll].header, param, len) == 0 && dbf[ll].visible)
+          {
+            if (dbf[ll].format == DBF_STRING)
+              DBFWriteStringAttribute(dbase, kk, n, value);
+            else if (dbf[ll].format == DBF_INTEGER)
+              DBFWriteIntegerAttribute(dbase, kk, n, atoi(value));
+            else if (dbf[ii].format == DBF_DOUBLE)
+              DBFWriteDoubleAttribute(dbase, kk, n, atof(value));
+            else
+              asfPrintError("Unknown dbf format for %s.\n", dbf[ll].header);
+            n++;
+          }
+        }
+      }
     }
     else if (isEnd) {
       ++kk;
       n=0;
+      if (m>0) {
+        SHPObject *shapeObj =
+          SHPCreateSimpleObject(SHPT_POLYGON, m, lon, lat, NULL);
+        SHPWriteObject(shape, -1, shapeObj);
+        SHPDestroyObject(shapeObj);
+      }
+      else if (m==0) {
+        printf("Invalid kml (no coordinate block), creating dummy shape.\n");
+        lat[0]=lon[0]=0.0;
+        SHPObject *shapeObj =
+          SHPCreateSimpleObject(SHPT_POLYGON, 1, lon, lat, NULL);
+        SHPWriteObject(shape, -1, shapeObj);
+        SHPDestroyObject(shapeObj);        
+      }
+      m=0;
     }
   }
 

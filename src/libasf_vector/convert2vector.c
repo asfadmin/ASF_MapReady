@@ -33,13 +33,20 @@ format_type_t str2format(const char *str)
 }
 
 int convert2vector(char *inFile, const char *inFormat_str,
-                   char *outFile, const char *outFormat_str, int listFlag)
+                   char *outFile_in, const char *outFormat_str, int listFlag)
 {
   int ret = 0;
   asfPrintStatus("Converting from %s to %s:\n", inFormat_str, outFormat_str);
-  asfPrintStatus("  %s -> %s.\n", inFile, outFile); 
+  asfPrintStatus("  %s -> %s.\n", inFile, outFile_in); 
   format_type_t inFormat = str2format(inFormat_str);
   format_type_t outFormat = str2format(outFormat_str);
+
+  char *outFile = STRDUP(outFile_in);
+  if (outFormat == SHAPEFILE) {
+    // the shapefile conversion does not like to have the extension added
+    char *ext = findExt(outFile);
+    if (strcmp_case(ext, ".shp")==0) *ext = '\0';
+  }
 
   if ((inFormat == META || inFormat == LEADER) && outFormat == CSV)
     ret = meta2csv(inFile, outFile, listFlag);
@@ -102,6 +109,8 @@ int convert2vector(char *inFile, const char *inFormat_str,
     ret = custom2kml(inFile, inFormat_str, outFile, listFlag);
   else
     asfPrintError("Conversion not supported.\n");
+
+  free(outFile);
 
   if (ret==1)
     asfPrintStatus("Successful completion!\n");

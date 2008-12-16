@@ -1500,7 +1500,7 @@ help_text(int step)
     "\n"
     "All the azimuth returns from a single target have now been "
     "shifted into their respective lines so that azimuth compression "
-    "will lead to well-focussed data. If you leave out range cell "
+    "will lead to well-focused data. If you leave out range cell "
     "migration, returns from targets can be distributed across two "
     "or three azimuth lines. The result in the final image is "
     "poor resolution and smearing of the target in the range "
