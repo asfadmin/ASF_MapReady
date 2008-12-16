@@ -347,10 +347,16 @@ static int find_col(char *line, char *column_header)
 // as times - get rid of it
 char *lf(double value)
 {
-  char *value_str = (char *) MALLOC(sizeof(char)*20);
-  sprintf(value_str, "%-16.11g", value);
-  strip_end_whitesp(value_str);
-  return value_str;
+    char *value_str = (char *) MALLOC(sizeof(char)*20);
+    if (meta_is_valid_double(value)) {
+        sprintf(value_str, "%-16.11g", value);
+        strip_end_whitesp(value_str);
+    }
+    else {
+        // For NaN, just leave the value blank 
+        strcpy(value_str, "");
+    }
+    return value_str;
 }
 
 // kludge function to handle duplicate SCN_RULAT columns
