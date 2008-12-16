@@ -3,8 +3,7 @@
 
 static char * new_blank_str(void)
 {
-  char *ret = MALLOC(sizeof(char)*512);
-  strcpy(ret, "");
+  char *ret = CALLOC(512, sizeof(char));
   return ret;
 }
 
