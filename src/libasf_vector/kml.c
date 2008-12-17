@@ -3025,10 +3025,10 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
   int i,j,k,nmeta,ndata,nhdr,ncoord,n=0;
   char **meta_cols, **data_cols, **hdr_cols, **coords_hdr_cols;
   split_into_array(hdr, ',', &nhdr, &hdr_cols);
-  if (nhdr != 1) {
-    asfPrintWarning("Multiple header columns found:\n");
-    print_char_array(hdr_cols, nhdr, "HDR_COLS");
-  }
+  //if (nhdr != 1) {
+  //  asfPrintWarning("Multiple header columns found:\n");
+  //  print_char_array(hdr_cols, nhdr, "HDR_COLS");
+  //}
 
   split_into_array(coords_hdr, ',', &ncoord, &coords_hdr_cols);
 
@@ -3044,9 +3044,9 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
   dbase = DBFOpen(dbaseFile, "r+b");
 
   if (ncoord>2)
-    shape = SHPCreate(inFile, SHPT_POLYGON);
+    shape = SHPCreate(outFile, SHPT_POLYGON);
   else
-    shape = SHPCreate(inFile, SHPT_POINT);
+    shape = SHPCreate(outFile, SHPT_POINT);
 
   for (i=0; i<kml_data->num_placemarks; ++i) {
 

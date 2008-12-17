@@ -881,7 +881,7 @@ static void view_debug_image(int step)
 {
     GtkWidget * output_image =
         glade_xml_get_widget(glade_xml, "output_image");
-    
+
     GtkWidget * output_file_entry =
         glade_xml_get_widget(glade_xml, "output_file_entry");
 
@@ -908,33 +908,34 @@ static void view_debug_image(int step)
       if (ext) *ext = '\0';
 
       sprintf(image_file, "%s%s.jpg", filename, suffix_for_step(step));
-    
       if (g_file_test(image_file, G_FILE_TEST_EXISTS))
-      {
+      {        
         switch_on_help(FALSE);
-        
+
         GError *err = NULL;
         GdkPixbuf *pb =
           gdk_pixbuf_new_from_file_at_size(image_file, 380, 720, &err);
-        
+
         if (err) {
           sprintf(lbl, "Error loading image: %s\n", err->message);
           gtk_widget_hide(output_image);
-        } else {
-          gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
-          g_object_unref(pb);
         }
-        
-        sprintf(lbl, " Output of Step %d", step);
+        else {
+          gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
+          g_object_unref(G_OBJECT(pb));
+          gtk_widget_show(output_image);
+
+          sprintf(lbl, " Output of Step %d", step);
+        }
+
         GtkWidget * label_view_output =
           glade_xml_get_widget(glade_xml, "label_view_output");
         gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
-
+          
         gtk_widget_show(asf_view_button);
       }
-      else
-      {
-        sprintf(lbl, "File not found: %s", image_file);
+      else {
+        snprintf(lbl, 255, "File not found: %s", image_file);
         switch_on_help(FALSE);
         gtk_widget_hide(output_image);
         

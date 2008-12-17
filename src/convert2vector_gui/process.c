@@ -177,7 +177,6 @@ void process()
     fLog = fopen(logFile, "a");
     FCLOSE(fLog);
 
-    printf("Running command> %s\n", cmd);
     if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
     {
         DWORD dw = GetLastError();
@@ -237,8 +236,6 @@ void process()
     }
     fclose(lfp);
     //unlink(logFile);
-
-    printf("Output:\n%s\nEND OF OUTPUT\n", output);
 
     char *p = output, *q;
     while (p) {

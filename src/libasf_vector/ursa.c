@@ -483,8 +483,7 @@ void shape_ursa_init(char *inFile, char *header)
   read_header_config("URSA", &dbf, &nCols);
 
   // Open database for initialization
-  dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(inFile)+5));
-  sprintf(dbaseFile, "%s.dbf", inFile);
+  dbaseFile = appendExt(inFile, ".dbf");
   dbase = DBFCreate(dbaseFile);
   if (!dbase)
     asfPrintError("Could not create database file '%s'\n", dbaseFile);
