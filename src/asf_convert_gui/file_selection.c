@@ -339,11 +339,13 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
     {
         if (n == 1 || i == 0)
         {
-            message_box("Error: Unrecognized file type, file extension, or unsupported product level.\n"
-                "MapReady does not currently support Level 0 files.  Please select the\n"
-                "leader (.L, LED-, etc) file for product types higher than Level 0 to\n"
-                "add files to the input file list.  See 'asf_import' or the ASF SAR Training\n"
-                "Processor ('stp') for more information on Level 0 processing.\n");
+            message_box(
+                    "Error: Unrecognized file type, file extension, or unsupported product level.\n"
+                    "MapReady does not currently support Level 0 or ALOS PRISM Level 1A and 1B1 files.\n\n"
+                    " Please select the leader (.L, LED-, etc) file for product types higher than Level 0 to\n"
+                    "add files to the input file list.\n\n"
+                    " See 'asf_import' or the ASF SAR Training Processor ('stp') for more information\n"
+                    "on Level 0 processing.\n");
         }
         else
         {
