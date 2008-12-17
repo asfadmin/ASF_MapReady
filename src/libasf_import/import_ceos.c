@@ -240,6 +240,12 @@ void import_ceos(char *inBaseName, char *outBaseName,
   if ((ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1) &&
        ceos->sensor == PRISM)
   {
+      asfPrintWarning("FOUND: PRISM Level %s data.  This data exists as several strips\n"
+              "of data in separate files.  Ingesting all 4 strips and combining\n"
+              "them into a single band image is not yet supported ...but will\n"
+              "be in a future build.  The import process will now continue, but\n"
+              "only a single (first found) strip from the image will be imported.\n",
+      ceos->product == LEVEL_1A ? "1A" : "1B1");
       import_single_band = TRUE;
       nBandsOut = 1;
   }
@@ -381,25 +387,25 @@ void import_ceos(char *inBaseName, char *outBaseName,
     // This is the little extra exit for importing only amplitude images
     if (band_id && strcmp_case(band_id, "NONE") == 0 && ii>0) {
       if (do_resample) {
-	if (range_scale < 0) {
-	  range_scale = DEFAULT_RANGE_SCALE;
-	}
-	
-	if (azimuth_scale < 0) {
-	  azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
-	}
-	
-	asfPrintStatus("Resampling with scale factors: "
-		       "%lf range, %lf azimuth.\n",
-		       range_scale, azimuth_scale);
-	
-	resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
-	
-	asfPrintStatus("\n\nDone.\n\n");
+    if (range_scale < 0) {
+      range_scale = DEFAULT_RANGE_SCALE;
+    }
+
+    if (azimuth_scale < 0) {
+      azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
+    }
+
+    asfPrintStatus("Resampling with scale factors: "
+               "%lf range, %lf azimuth.\n",
+               range_scale, azimuth_scale);
+
+    resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
+
+    asfPrintStatus("\n\nDone.\n\n");
       }
-      
+
       return;
-    }      
+    }
 
     if (ceos->facility == CDPF                      &&
         ceos->ceos_data_type != CEOS_SLC_DATA_INT   &&
@@ -438,7 +444,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
                                           import_single_band, nBands, rad, db_flag);
         }
         else if (ceos->product == SSG || ceos->product == GEC ||
-		 ceos->product == SCN) {
+         ceos->product == SCN) {
           import_ceos_data(inBandName[index], inMetaName[0], outDataName,
                            outMetaName, bandExt, band, nBands, nBandsOut, rad,
                            line, sample, width, height,
@@ -1063,15 +1069,15 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
       sprintf(geoStr, "geocoded ");
     }
     else if ((strncmp(meta->general->processor, "CSTARS", 6) == 0 ||
-	      strncmp(meta->general->processor, "CDPF", 4) == 0) &&
-	     meta->projection->type == SCANSAR_PROJECTION)
+          strncmp(meta->general->processor, "CDPF", 4) == 0) &&
+         meta->projection->type == SCANSAR_PROJECTION)
     {
       asfPrintStatus("   Input data type: level one data\n");
       strcpy(geoStr, "");
     }
     else if ((strncmp(meta->general->processor, "CSTARS", 6) == 0 ||
-	      strncmp(meta->general->processor, "CDPF", 4) == 0) &&
-	     meta->projection->type != SCANSAR_PROJECTION)
+          strncmp(meta->general->processor, "CDPF", 4) == 0) &&
+         meta->projection->type != SCANSAR_PROJECTION)
     {
       asfPrintStatus("   Input data type: level two data\n");
       sprintf(geoStr, "geocoded ");
