@@ -963,6 +963,8 @@ static void delete_all_generated_images()
     for (i=1; i<=12; ++i) {
         sprintf(f, "%s%s.jpg", filename, suffix_for_step(i));
         remove_file_silent(f);
+        sprintf(f, "%s%s.png", filename, suffix_for_step(i));
+        remove_file_silent(f);
         sprintf(f, "%s%s.img", filename, suffix_for_step(i));
         remove_file_silent(f);
         sprintf(f, "%s%s.meta", filename, suffix_for_step(i));
