@@ -150,6 +150,12 @@ void initialize_jpeg_file(const char *output_file_name,
                           struct jpeg_compress_struct *cinfo, int rgb);
 void finalize_jpeg_file(FILE *ojpeg, struct jpeg_compress_struct *cinfo);
 
+void initialize_png_file(const char *output_file_name,
+                         meta_parameters *meta, FILE **opng,
+                         png_structp *png_ptr, png_infop *info_ptr,
+                         int rgb);
+void finalize_png_file(FILE *opng, png_structp png_ptr, png_infop info_ptr);
+
 // Prototypes from key.c
 double spheroid_diff_from_axis (spheroid_type_t spheroid,
                                 double n_semi_major, double n_semi_minor);

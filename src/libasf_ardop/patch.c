@@ -107,7 +107,8 @@ static void clean(const char *file)
     }
 }
 
-static void patchToJpeg(char *outname)
+// if png_flag is true, outputs a PNG.  if false, outputs a jpeg
+static void patchToRGBImage(char *outname, int png_flag)
 {
   update_status("Generating %s", outname);
   if (!quietflag)
@@ -160,14 +161,25 @@ static void patchToJpeg(char *outname)
   double min = avg - 2*stddev;
   double max = avg + 2*stddev;
 
-  // open up JPEG output file
+  // open up PNG/JPEG output file
   FILE *ofp=NULL;
   struct jpeg_compress_struct cinfo;
-  char *jpgname = appendExt(outname, ".jpg");
-  initialize_jpeg_file(jpgname,meta,&ofp,&cinfo,TRUE);
-  asfPrintStatus("Generating debug image...\n");
+  png_structp png_ptr;
+  png_infop png_info_ptr;
+  char *jpgname = NULL;
+  char *pngname = NULL;
+  if (png_flag) {
+    asfPrintStatus("Generating debug image (PNG)...\n");
+    pngname = appendExt(outname, ".png");
+    initialize_png_file(pngname,meta,&ofp,&png_ptr,&png_info_ptr,TRUE);
+  }
+  else {
+    asfPrintStatus("Generating debug image (JPEG)...\n");
+    jpgname = appendExt(outname, ".jpg");
+    initialize_jpeg_file(jpgname,meta,&ofp,&cinfo,TRUE);
+  }
 
-  // now read in the polar image, calculate RGB values, write to jpeg
+  // now read in the polar image, calculate RGB values, write to jpeg/png
   for (i=0; i<nl; ++i) {
     get_band_float_line(fp,meta,0,i,amp);
     get_band_float_line(fp,meta,1,i,phase);
@@ -207,7 +219,10 @@ static void patchToJpeg(char *outname)
     }
 
     // write the line
-    write_rgb_jpeg_byte2byte(ofp,red,grn,blu,&cinfo,ns);
+    if (png_flag)
+      write_rgb_png_byte2byte(ofp,red,grn,blu,png_ptr,png_info_ptr,ns);
+    else
+      write_rgb_jpeg_byte2byte(ofp,red,grn,blu,&cinfo,ns);
 
     // keep the user interested!
     asfPercentMeter((float)i/((float)nl));
@@ -222,8 +237,12 @@ static void patchToJpeg(char *outname)
   FREE(grn);
   FREE(blu);
   meta_free(meta);
-  finalize_jpeg_file(ofp,&cinfo);
+  if (png_flag)
+    finalize_png_file(ofp,png_ptr,png_info_ptr);
+  else
+    finalize_jpeg_file(ofp,&cinfo);
   FREE(jpgname);
+  FREE(pngname);
   clean(polar_name);
   FREE(polar_name);
 }
@@ -257,7 +276,7 @@ void debugWritePatch_Line(int lineNo, complexFloat *line, char *basename,
   FCLOSE(fp);
 
   if (lineNo == meta->general->line_count - 1)
-      patchToJpeg(outname);
+    patchToRGBImage(outname, TRUE);
 
   meta_free(meta);
 }
@@ -294,7 +313,7 @@ void debugWritePatch(const patch *p,char *basename)
   FCLOSE(fp);
   meta_free(meta);
 
-  patchToJpeg(outname);
+  patchToRGBImage(outname, TRUE);
 }
 
 /*

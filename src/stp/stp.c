@@ -907,7 +907,7 @@ static void view_debug_image(int step)
       char * ext = findExt(filename);
       if (ext) *ext = '\0';
 
-      sprintf(image_file, "%s%s.jpg", filename, suffix_for_step(step));
+      sprintf(image_file, "%s%s.png", filename, suffix_for_step(step));
       if (g_file_test(image_file, G_FILE_TEST_EXISTS))
       {        
         switch_on_help(FALSE);
