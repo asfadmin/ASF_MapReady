@@ -181,6 +181,26 @@ static void create_file_chooser_dialog()
 
 #endif // #ifdef USE_GTK_FILE_CHOOSER
 
+static int is_asf_complex_data(const char *meta_file)
+{
+    char *ext = findExt(meta_file);
+    if (ext && strcmp_case(ext, ".meta")==0) {
+        meta_parameters *meta = meta_read(meta_file);
+        if (meta->general->data_type == COMPLEX_BYTE ||
+            meta->general->data_type == COMPLEX_INTEGER16 ||
+            meta->general->data_type == COMPLEX_INTEGER32 ||
+            meta->general->data_type == COMPLEX_REAL32 ||
+            meta->general->data_type == COMPLEX_REAL64)
+        {
+            meta_free(meta);
+            return 1;
+        }
+        meta_free(meta);
+    }
+
+    return 0;
+}
+
 SIGNAL_CALLBACK void
 on_browse_input_files_button_clicked(GtkWidget *widget)
 {
@@ -328,8 +348,11 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
     while (*current)
     {
         /* second clause here allows silent fail for .L files, PR 92 */
-        if (add_to_files_list(*current) || is_meta_file(*current))
+        if ((add_to_files_list(*current) || is_meta_file(*current)) &&
+             !is_asf_complex_data((const char *)(*current)))
+        {
             ++i;
+        }
 
         ++current;
         ++n;
@@ -340,8 +363,9 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
         if (n == 1 || i == 0)
         {
             message_box(
-                    "Error: Unrecognized file type, file extension, or unsupported product level.\n"
-                    "MapReady does not currently support Level 0 or ALOS PRISM Level 1A and 1B1 files.\n\n"
+                    "Error: Unrecognized file type, file extension, or unsupported product level.  MapReady\n"
+                    "does not currently support Level 0, complex-valued, or ALOS PRISM or AVNIR2 Level 1A\n"
+                    "and 1B1 files.\n\n"
                     " Please select the leader (.L, LED-, etc) file for product types higher than Level 0 to\n"
                     "add files to the input file list.\n\n"
                     " See 'asf_import' or the ASF SAR Training Processor ('stp') for more information\n"

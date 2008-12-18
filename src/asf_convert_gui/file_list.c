@@ -60,7 +60,7 @@ gboolean is_meta_file(const gchar * data_file)
   ceos_file_pairs_t s = get_ceos_names(data_file, basename,
                             &dataName, &metaName, &nBands, &trailer);
 
-    // Check for raw Palsar
+  // Check for raw Palsar, and AVNIR or PRISM level 1A or 1B1 data
   ceos_description *ceos = NULL;
   if (s != NO_CEOS_FILE_PAIR) {
       ceos = get_ceos_description(data_file, REPORT_LEVEL_NONE);
@@ -69,7 +69,8 @@ gboolean is_meta_file(const gchar * data_file)
   if (s != NO_CEOS_FILE_PAIR &&
       s != CEOS_RAW_LDR_PAIR &&
       s != CEOS_raw_ldr_PAIR &&
-      !(ceos->sensor == PRISM && (ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1)) &&
+      !((ceos->sensor == PRISM || ceos->sensor == AVNIR) &&
+        (ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1)) &&
       (ceos && ceos->product != RAW))
   {
       for (i=0; i<nBands; ++i) {
@@ -93,9 +94,33 @@ static char *file_is_valid(const gchar * file)
     // first, check if the file is ASF Internal
     char *ext = findExt(file);
     if (ext && strcmp_case(ext, ".meta")==0) {
+        // Don't support complex types when importing via the GUI
+        meta_parameters *meta = meta_read(file);
+        if (meta->general->data_type == COMPLEX_BYTE ||
+            meta->general->data_type == COMPLEX_INTEGER16 ||
+            meta->general->data_type == COMPLEX_INTEGER32 ||
+            meta->general->data_type == COMPLEX_REAL32 ||
+            meta->general->data_type == COMPLEX_REAL64)
+        {
+            meta_free(meta);
+            return NULL;
+        }
+        meta_free(meta);
         return STRDUP(file);
     }
     else if (ext && strcmp_case(ext, ".img")==0) {
+        // Don't support complex types when importing via the GUI
+        meta_parameters *meta = meta_read(file);
+        if (meta->general->data_type == COMPLEX_BYTE ||
+            meta->general->data_type == COMPLEX_INTEGER16 ||
+            meta->general->data_type == COMPLEX_INTEGER32 ||
+            meta->general->data_type == COMPLEX_REAL32 ||
+            meta->general->data_type == COMPLEX_REAL64)
+        {
+            meta_free(meta);
+            return NULL;
+        }
+        meta_free(meta);
         return appendExt(file, ".meta");
     }
 
@@ -119,7 +144,7 @@ static char *file_is_valid(const gchar * file)
 
     FREE(basename);
 
-    // Check for raw Palsar
+    // Check for raw Palsar, and AVNIR or PRISM level 1A or 1B1 data
     ceos_description *ceos = NULL;
     if (ret != NO_CEOS_FILE_PAIR) {
         ceos = get_ceos_description(file, REPORT_LEVEL_NONE);
@@ -128,7 +153,8 @@ static char *file_is_valid(const gchar * file)
     if (ret != NO_CEOS_FILE_PAIR &&
         ret != CEOS_RAW_LDR_PAIR &&
         ret != CEOS_raw_ldr_PAIR &&
-        !(ceos->sensor == PRISM && (ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1)) &&
+        !((ceos->sensor == PRISM || ceos->sensor == AVNIR) &&
+          (ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1)) &&
         (ceos && ceos->product != RAW))
     {
         // Found -- return metadata file
