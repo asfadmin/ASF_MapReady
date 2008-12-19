@@ -574,10 +574,17 @@ int main(int argc, char *argv[])
     else /*default behavior: log to tmp<pid>.log*/
         sprintf(logFile, "tmp%i.log", (int)getpid());
     logflag = TRUE; /* Since we always log, set the old school logflag to true */
-    fLog = fopen (logFile, "a");
+
+    // Open log file in output folder
+    char path[1024], tmp[1024];
+    split_dir_and_file(argv[argc-1], path, tmp);
+    strcpy(tmp, logFile);
+    sprintf(logFile, "%s%s", path, tmp);
+    fLog = fopen(logFile, "a");
     if ( fLog == NULL ) {
-        logflag = FALSE;
+      logflag = FALSE;
     }
+
     /* Set old school quiet flag (for use in our libraries) */
     quietflag = flags[f_QUIET] != FLAG_NOT_SET;
     if (flags[f_REAL_QUIET] != FLAG_NOT_SET) quietflag = 2;
@@ -798,7 +805,7 @@ int main(int argc, char *argv[])
 
     /* If the user didn't ask for a log file then we can nuke the one that
        we've been keeping since we've finished everything  */
-    if (flags[f_LOG] == FLAG_NOT_SET) {
+    if (logflag) {
         fclose (fLog);
         remove(logFile);
     }
