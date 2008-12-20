@@ -2900,10 +2900,10 @@ static int kml2shape_from_c2v(char *inFile, char *outFile, int listFlag)
               DBFWriteStringAttribute(dbase, kk, n, value);
             else if (dbf[ll].format == DBF_INTEGER)
               DBFWriteIntegerAttribute(dbase, kk, n, atoi(value));
-            else if (dbf[ii].format == DBF_DOUBLE)
+            else if (dbf[ll].format == DBF_DOUBLE)
               DBFWriteDoubleAttribute(dbase, kk, n, atof(value));
             else
-              asfPrintError("Unknown dbf format for %s.\n", dbf[ll].header);
+              asfPrintError("Unknown dbf format for %s\n", dbf[ll].header);
             n++;
           }
         }

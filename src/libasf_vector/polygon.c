@@ -50,7 +50,7 @@ void shape_polygon_init(char *inFile, int vertices)
 // Convert point to kml file
 int polygon2kml(char *inFile, char *outFile, int listFlag)
 {
-  int ii, vertices=0;
+  int line_num, ii, vertices=0;
   float *lat = NULL, *lon = NULL; 
   char *p = NULL, *q = NULL;
   char *line = NULL;
@@ -82,18 +82,37 @@ int polygon2kml(char *inFile, char *outFile, int listFlag)
   lat = (float *) MALLOC(sizeof(float)*(vertices+1));
   lon = (float *) MALLOC(sizeof(float)*(vertices+1));
   ii = 0;
+  line_num = 0;
   while (fgets(line, 1024, inFP)) {
+    ++line_num;
     line[strlen(line)-1] = '\0';
     p = line;
     while (isspace(*p)) 
       p++;
-    if (*p != '#') {
-      q = strchr(p, ',');
-      sscanf(q+1, "%f,%f", &lat[ii], &lon[ii]);
-      ii++;
+    if (*p != '#' && *p != '\0') { // skip comment & blank lines
+      int ncomma = count_char(p, ',');
+      if (ncomma == 1) {
+        // line has no ID field, just read in the lat/lon
+        sscanf(p, "%f,%f", &lat[ii], &lon[ii]);
+        ii++;
+      }
+      else if (ncomma == 2) {
+        // line has an ID field -- skip past it
+        q = strchr(p, ',');
+        if (q) { // if should always pass
+          sscanf(q+1, "%f,%f", &lat[ii], &lon[ii]);
+          ii++;
+        }
+      }
+      else {
+        asfPrintStatus("Line %d: invalid -- ignored.\n", line_num);
+      }
     }
   }
   FCLOSE(inFP);
+
+  // in case the line contained some invalid lines, adjust nvertices
+  vertices = ii;
 
   lat[vertices] = lat[0];
   lon[vertices] = lon[0];

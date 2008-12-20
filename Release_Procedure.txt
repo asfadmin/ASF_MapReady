@@ -466,6 +466,24 @@ SAR TRAINING PROCESSOR (STP) SOURCE AND RPM RELEASE PROCEDURE
     > make
     > ./makemake
 
+* Update Makefile.in
+
+    -> Update the "default" target to build stp (instead of mapready)
+    -> Update the "all" target to just include stp.
+    -> Update the "clean" target to just include STP_MODULES
+    -> In the "stp" target, delete the SVN_REV updating line
+
+* Create svn_rev.h:
+
+    cd ~/asf/svn-r<REVISION#>/asf_tools/include
+    echo "#define SVN_REV \"????\"" > svn_rev.h
+
+* Update source.stp_package, adding:
+
+    src/libasf_terrcorr
+    src/libasf_insar
+    src/stp
+
 * Run the autotar script:
 
     > cd ~/asf/svn-r<REVISION#>/release/autotar
