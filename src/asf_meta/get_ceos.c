@@ -152,7 +152,8 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
   char **dataName=NULL, **metaName=NULL;
   struct HEADER  bufhdr;
   struct trl_file_des_rec *tfdr=NULL;
-  int nOccurences=0, era=1, ii, trailer, size, total;
+  int nOccurences=0, era=1, ii, trailer, total;
+  long long size;
 
   if (recordType==CEOS_IFILEDR) {
             int nBands;
@@ -166,7 +167,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
   }
 
   for (ii=0; ii<trailer+1; ii++) {
-    size = (int)fileSize(metaName[ii]);
+    size = fileSize(metaName[ii]);
     fp=FOPEN(metaName[ii], "rb");
     total = 0;
     while (1==fread(&bufhdr, 12, 1, fp)) {
@@ -197,7 +198,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	     " sub_record[3]: %d\nsequence: %d, length: %d\n", itype, 
 	     subtype[0], subtype[1], subtype[2], rec_seq, length);
       */
-      if (total-length > size)
+      if ((long long)total-length > size)
         break;
       else
 	    FREAD((*buff)+12, length-12, 1, fp);
