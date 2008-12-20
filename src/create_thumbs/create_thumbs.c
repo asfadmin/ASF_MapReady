@@ -381,22 +381,22 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     //    imd->general->data_type != REAL64)
     {
         /* don't know how to make a thumbnail for this type ... */
-        asfPrintError("Unknown or unsupported data type: %s\n"
-                      "BYTE and 2-byte integers (INTEGER16) are currently supported\n"
-                      "for non-level 0 products but complex and other types are not (yet.)\n"
-                      "Suggestion: Use asf_import (or asf_import -amplitude for SLC L1.1\n"
-                      "products), resample, then asf_export to create thumbnails or browse\n"
-                      "images. \n",
-                      (imd->general->data_type == BYTE) ? "BYTE" :
-                      (imd->general->data_type == INTEGER16)         ? "INTEGER16"         :
-                      (imd->general->data_type == INTEGER32)         ? "INTEGER32"         :
-                      (imd->general->data_type == REAL32)            ? "REAL32"            :
-                      (imd->general->data_type == REAL64)            ? "REAL64"            :
-                      (imd->general->data_type == COMPLEX_BYTE)      ? "COMPLEX_BYTE"      :
-                      (imd->general->data_type == COMPLEX_INTEGER16) ? "COMPLEX_INTEGER16" :
-                      (imd->general->data_type == COMPLEX_INTEGER32) ? "COMPLEX_INTEGER32" :
-                      (imd->general->data_type == COMPLEX_REAL32)    ? "COMPLEX_REAL32"    :
-                      (imd->general->data_type == COMPLEX_REAL64)    ? "COMPLEX_REAL64"    : "UNKNOWN");
+        asfPrintWarning("Unknown or unsupported data type: %s\n"
+                        "BYTE and 2-byte integers (INTEGER16) are currently supported\n"
+                        "for non-level 0 products but complex and other types are not (yet.)\n"
+                        "Suggestion: Use asf_import (or asf_import -amplitude for SLC L1.1\n"
+                        "products), resample, then asf_export to create thumbnails or browse\n"
+                        "images. \n",
+                        (imd->general->data_type == BYTE) ? "BYTE" :
+                        (imd->general->data_type == INTEGER16)         ? "INTEGER16"         :
+                        (imd->general->data_type == INTEGER32)         ? "INTEGER32"         :
+                        (imd->general->data_type == REAL32)            ? "REAL32"            :
+                        (imd->general->data_type == REAL64)            ? "REAL64"            :
+                        (imd->general->data_type == COMPLEX_BYTE)      ? "COMPLEX_BYTE"      :
+                        (imd->general->data_type == COMPLEX_INTEGER16) ? "COMPLEX_INTEGER16" :
+                        (imd->general->data_type == COMPLEX_INTEGER32) ? "COMPLEX_INTEGER32" :
+                        (imd->general->data_type == COMPLEX_REAL32)    ? "COMPLEX_REAL32"    :
+                        (imd->general->data_type == COMPLEX_REAL64)    ? "COMPLEX_REAL64"    : "UNKNOWN");
         return FALSE;
     }
 
