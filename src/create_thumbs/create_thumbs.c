@@ -358,13 +358,11 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         return FALSE;
     }
     int band;
-    int not_data = 1;
+    int not_data = 0;
     for (band = 0; band < nBands; band++) {
-      if (strcmp(input_data, inBandName[band]) == 0 &&
-          !is_jpeg(inBandName[band])                &&
-          !is_tiff(inBandName[band]))
+      if (is_jpeg(input_data) || is_tiff(input_data))
       {
-        not_data = 0;
+        not_data = 1;
         break;
       }
     }
@@ -1661,9 +1659,16 @@ long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in) {
 
 int is_jpeg(const char *file)
 {
-  FILE *fp = FOPEN(file, "rb");
-  int magic1;
-  int magic2;
+  FILE *fp = NULL;
+  unsigned char magic1;
+  unsigned char magic2;
+
+  if (fileExists(file)) {
+    fp = FOPEN(file, "rb");
+  }
+  else {
+    return 0;
+  }
 
   fread(&magic1, 1, 1, fp);
   fread(&magic2, 1, 1, fp);
@@ -1674,9 +1679,16 @@ int is_jpeg(const char *file)
 
 int is_tiff(const char *file)
 {
-  FILE *fp = FOPEN(file, "rb");
-  int magic1;
-  int magic2;
+  FILE *fp = NULL;
+  unsigned char magic1;
+  unsigned char magic2;
+
+  if (fileExists(file)) {
+    fp = FOPEN(file, "rb");
+  }
+  else {
+    return 0;
+  }
 
   fread(&magic1, 1, 1, fp);
   fread(&magic2, 1, 1, fp);
