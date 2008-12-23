@@ -1685,8 +1685,30 @@ on_step12_help_button_clicked(GtkWidget *button, gpointer user_data)
   help_text(12);
 }
 
+static int
+all_selected()
+{
+  int i, ret=TRUE;
+  for (i = 1; i <= 12; ++i)
+  {
+    char button_id[32];
+    sprintf(button_id, "step%d_togglebutton", i);
+
+    GtkWidget * button =
+	glade_xml_get_widget(glade_xml, button_id);
+
+    int sel = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+    if (!sel) {
+      ret = FALSE;
+      break;
+    }
+  }
+
+  return ret;
+}
+
 static void
-select_button(int step)
+select_button(int step, int selected)
 {
     char button_id[32];
 
@@ -1695,15 +1717,19 @@ select_button(int step)
     GtkWidget * button =
 	glade_xml_get_widget(glade_xml, button_id);
 
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), TRUE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), selected);
 }
 
 SIGNAL_CALLBACK void
 on_button_select_all_clicked(GtkWidget *button, gpointer user_data)
 {
-    int i;
-    for (i = 1; i <= 12; ++i)
-        select_button(i);
+  int setting = TRUE;
+  if (all_selected())
+    setting = FALSE;
+
+  int i;
+  for (i = 1; i <= 12; ++i)
+    select_button(i, setting);
 }
 
 static char * escapify(const char * s)
@@ -1940,7 +1966,8 @@ read_doppler_parameters(const gchar * filename, float *constant,
 	}
     }
 
-    fclose(fp);
+    if (fp)
+        fclose(fp);
 
     if (!found)
     {

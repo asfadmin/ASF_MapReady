@@ -4,13 +4,13 @@
 <glade-interface>
 
 <widget class="GtkWindow" id="ardop_main">
-  <property name="width_request">1024</property>
-  <property name="height_request">625</property>
   <property name="visible">True</property>
   <property name="title" translatable="yes">SAR Training Processor</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
+  <property name="default_width">1024</property>
+  <property name="default_height">700</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="icon">stp_icon.ico</property>
