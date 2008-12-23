@@ -37,7 +37,8 @@ const char ceos_data_extensions[][12] =
     "dat.",
     "dat_",
     "IMG-",
-    "IMG_"
+    "IMG_",
+    ".dat"
 };
 
 static ceos_metadata_ext_t free_and_return(char *leaderExt,
@@ -654,6 +655,9 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *baseName,
 
   if (data_ext == CEOS_IMG && metadata_ext == CEOS_LED)
     return CEOS_IMG_LED_PAIR;
+
+  if (data_ext == CEOS_dat2 && metadata_ext == CEOS_ldr)
+    return CEOS_dat_ldr_PAIR;
 
   return NO_CEOS_FILE_PAIR;
 }

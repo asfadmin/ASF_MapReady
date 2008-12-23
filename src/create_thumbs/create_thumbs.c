@@ -645,12 +645,10 @@ void process_file(const char *file, int level, int size, int verbose,
         int nBands;
         ceos_data_ext_t data_ext = get_ceos_data_name(file, baseName, &dataName, &nBands);
         FREE(baseName);
-        if (data_ext == CEOS_RAW || data_ext == CEOS_raw) {
-            asfPrintStatus("%s%s\n", spaces(level), base);
-            generate_level0_thumbnail(*dataName, size, verbose, L0Flag, scale_factor, browseFlag,
-                                      saveMetadataFlag, nPatchesFlag, nPatches,
-                                      output_format, out_dir);
-        }
+	asfPrintStatus("%s%s\n", spaces(level), base);
+	generate_level0_thumbnail(*dataName, size, verbose, L0Flag, scale_factor, browseFlag,
+				  saveMetadataFlag, nPatchesFlag, nPatches,
+				  output_format, out_dir);
     }
 #ifdef JL0_GO
     else if (L0Flag == jaxa_l0) {
