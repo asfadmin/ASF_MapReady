@@ -859,7 +859,7 @@
 						  <child>
 						    <widget class="GtkOptionMenu" id="input_data_format_combobox">
 						      <property name="visible">True</property>
-						      <property name="tooltip" translatable="yes">Format of the input data.</property>
+						      <property name="tooltip" translatable="yes">Format of the input data.  For most SAR data, including Palsar, ERS1, ERS2, and RADARSAT-1 data, choose CEOS (Level 1).</property>
 						      <property name="can_focus">True</property>
 						      <property name="history">0</property>
 
