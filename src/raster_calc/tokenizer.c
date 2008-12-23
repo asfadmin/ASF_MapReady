@@ -99,7 +99,6 @@ EVALFUNC(varOp)
 {
 	return vars[((token *)tok)->index];
 }
-EVALFUNC(ifZOp) { return a==0 ? b : a; }
 
 /*Tokenizer Interface: Hacks up a string into
 	parts I call tokens-- these can be operators,
@@ -139,20 +138,18 @@ token *nextToken(void)
 	t->op=c;
 	switch (c)
 	{
-                case '?':
-                        t->eval=ifZOp;t->precedence=1;break;
 		case '+':
-			t->eval=addOp;t->precedence=2;break;
+			t->eval=addOp;t->precedence=1;break;
 		case '-':
-			t->eval=subOp;t->precedence=2;break;
+			t->eval=subOp;t->precedence=1;break;
 		case '*':
-			t->eval=mulOp;t->precedence=3;break;
+			t->eval=mulOp;t->precedence=2;break;
 		case '/':
-			t->eval=divOp;t->precedence=3;break;
+			t->eval=divOp;t->precedence=2;break;
 		case '%':
-			t->eval=modOp;t->precedence=4;break;
+			t->eval=modOp;t->precedence=2;break;
 		case '^':
-			t->eval=powOp;t->precedence=5;break;
+			t->eval=powOp;t->precedence=3;break;
 		case '(':
 			t->precedence=10;break;
 		case ')':
