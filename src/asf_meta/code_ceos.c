@@ -524,12 +524,12 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
       strV(decode_version,1952,16);
     }
   }
-  else if (strncmp(q->fac_id, "ES", 2)==0 ||
+  else if (strncmp(q->fac_id, "ES", 2)==0    ||
            strncmp(q->fac_id, "D-PAF", 5)==0 ||
            strncmp(q->fac_id, "I-PAF", 5)==0 ||
-	   strncmp(q->fac_id, "DERA", 4)==0 ||
-           strncmp(q->fac_id, "CSTARS", 6) ==0)
-    // && strncmp(q->mission_id, "ERS", 3) ==0))
+           strncmp(q->fac_id, "DERA", 4)==0  ||
+           (strncmp(q->fac_id, "CSTARS", 6) ==0 && strncmp(q->mission_id, "ERS", 3) ==0)
+          )
   {
     int i;
     for (i=0; i<3; i++) {
