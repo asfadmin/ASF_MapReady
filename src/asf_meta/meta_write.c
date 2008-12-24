@@ -13,7 +13,6 @@ int dump_envi_header = 0;
 
 void meta_put_string(FILE *meta_file,char *name,char  *value,char *comment);
 void meta_put_double(FILE *meta_file,char *name,double value,char *comment);
-void meta_put_double24(FILE *meta_file,char *name,double value,char *comment);
 void meta_put_int   (FILE *meta_file,char *name,int    value,char *comment);
 void meta_put_char  (FILE *meta_file,char *name,char   value,char *comment);
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
@@ -48,12 +47,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
   /* Write an 'about meta file' comment  */
   fprintf(fp,
-    "# This file contains the metadata for satellite capture file of the same base name.\n"
+  "# This file contains the metadata for satellite capture file of the same base name.\n"
   "#      '%c' is likely an unknown single character value.\n"
   "#      '%s' is likely an unknown string of characters.\n"
   "#      '%d' is likely an unknown integer value.\n"
-  "#      '%lf' is likely an unknown Real value.\n\n",
-  MAGIC_UNSET_CHAR, MAGIC_UNSET_STRING, MAGIC_UNSET_INT, MAGIC_UNSET_DOUBLE);
+  "#      'nan' is likely an unknown Real value.\n\n",
+  MAGIC_UNSET_CHAR, MAGIC_UNSET_STRING, MAGIC_UNSET_INT);
 
   /* We always write out files corresponding to the latest meta version.  */
   fprintf(fp, "meta_version: %.2f\n\n", META_VERSION);
@@ -1136,9 +1135,15 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
 {
   char param[64];
-  sprintf(param,"%-16.11g",value);
-  strtok(param," ");/*remove all trailing spaces */
-  if (is_empty(param)) { strcpy(param,"NaN"); }
+  if (meta_is_valid_double(value))
+  {
+    sprintf(param,"%-16.11g",value);
+    strtok(param," ");/*remove all trailing spaces */
+    if (is_empty(param)) { strcpy(param,"nan"); }
+  }
+  else {
+    strcpy(param,"nan");
+  }
   meta_put_string(meta_file,name,param,comment);
 }
 
@@ -1161,10 +1166,17 @@ void meta_put_char(FILE *meta_file,char *name,char value,char *comment)
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
             char *comment)
 {
-  char param[100], format[15];
-  sprintf(format, "%%-16.%ilf", decimals);
-  snprintf(param,99,format,value);
-  strtok(param," ");/*remove all trailing spaces */
-  if (is_empty(param)) { strcpy(param,"NaN"); }
+  char param[100];
+  if (meta_is_valid_double(value))
+  {
+    char format[15];
+    sprintf(format, "%%-16.%ilf", decimals);
+    snprintf(param,99,format,value);
+    strtok(param," ");/*remove all trailing spaces */
+    if (is_empty(param)) { strcpy(param,"nan"); }
+  }
+  else {
+    strcpy(param,"nan");
+  }
   meta_put_string(meta_file,name,param,comment);
 }
