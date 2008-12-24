@@ -200,8 +200,9 @@ main (int argc, char *argv[])
   inFile = argv[currArg+2];
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *meta = meta_read(meta_name);
+  int user_gave_meters = is_in_meters(argv[currArg]);
 
-  if (is_in_meters(argv[currArg]))
+  if (user_gave_meters)
     x_shift = atof(argv[currArg]) / meta->general->x_pixel_size;
   else
     x_shift = atof(argv[currArg]);
@@ -214,18 +215,33 @@ main (int argc, char *argv[])
   double x_shift_m = x_shift * meta->general->x_pixel_size;
   double y_shift_m = y_shift * meta->general->y_pixel_size;
 
-  asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n", x_shift, x_shift_m);
-  asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n", y_shift, y_shift_m);
-  asfPrintStatus("Input Metadata: %s\n", meta_name);
-
-  if (update_flag) {
-      asfPrintStatus("Input file's metadata will be updated.\n");
-      outFile = appendToBasename(inFile, "_tmp");      
-  } else {
-      outFile = argv[currArg+3];
-  }
-
   if (meta->projection) {
+    // when adjusting startX/startY, we have to take into account the
+    // fact that startX/Y <-> line 0,0 are in the upper left corner --
+    // so increasing sample numbers go to the right (and so we must shift
+    // the origin to the *left* to move points *right*), and the reverse
+    // for line numbers.  For x/y we need to flip both, since increasing
+    // x and y both move up/right, so to get points to move that direction,
+    // we must move the origin down/left.
+
+    if (user_gave_meters) {
+      asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n",
+                     x_shift, x_shift_m);
+      asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n\n",
+                     -y_shift, y_shift_m);
+      asfPrintStatus("Input Metadata: %s\n", meta_name);
+      x_shift_m = -x_shift_m;
+      y_shift_m = -y_shift_m;
+    }
+    else {
+      asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n",
+                     x_shift, x_shift_m);
+      asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n\n",
+                     y_shift, -y_shift_m);
+      asfPrintStatus("Input Metadata: %s\n", meta_name);
+      x_shift_m = -x_shift_m;
+    }
+
     // projected data -- update startX/Y
     asfPrintStatus("  StartX: %f -> %f\n"
                    "  StartY: %f -> %f\n",
@@ -237,6 +253,12 @@ main (int argc, char *argv[])
     meta->projection->startX += x_shift_m;
     meta->projection->startY += y_shift_m;
   } else {
+    asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n",
+                   x_shift, x_shift_m);
+    asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n\n",
+                   y_shift, y_shift_m);
+    asfPrintStatus("Input Metadata: %s\n", meta_name);
+
     // unprojected data -- shifting in time/slant coordinates
     double t_shift, slant_shift;
     refine_offset(x_shift, y_shift, meta, &t_shift, &slant_shift);
@@ -250,6 +272,13 @@ main (int argc, char *argv[])
 
     meta->sar->time_shift += t_shift;
     meta->sar->slant_shift += slant_shift;
+  }
+
+  if (update_flag) {
+      asfPrintStatus("Input file's metadata will be updated.\n");
+      outFile = appendToBasename(inFile, "_tmp");      
+  } else {
+      outFile = argv[currArg+3];
   }
 
   if (update_flag) {
