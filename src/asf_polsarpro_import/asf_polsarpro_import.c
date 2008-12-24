@@ -57,10 +57,6 @@
 "     data file.\n"
 
 #define ASF_OPTIONS_STRING \
-"     -classification\n"\
-"          The classification determines whether the PolSAR Pro data have\n"\
-"          a classifcation scheme, so the individual classes need to kept\n"\
-"          in byte format.\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
