@@ -80,6 +80,8 @@ STP_MODULES = \
 	src/sgpsdp \
 	src/plan \
 	src/asf_view \
+	src/metadata \
+	src/metadata_gui \
 	src/stp
 
 AP_MODULES = \
