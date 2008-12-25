@@ -480,6 +480,8 @@ SAR TRAINING PROCESSOR (STP) SOURCE AND RPM RELEASE PROCEDURE
 
 * Update source.stp_package, adding:
 
+    src/metadata
+    src/metadata_tui
     src/libasf_terrcorr
     src/libasf_insar
     src/stp
@@ -523,11 +525,11 @@ SAR TRAINING PROCESSOR (STP) SOURCE AND RPM RELEASE PROCEDURE
 
 * Make sure DEBUG_BUILD is not set to any particular debug level:
 
-    > cd ~/asf/svn-r<REVISION#>/release/rpmbuild
     > unset DEBUG_BUILD
 
 * Build the rpm:
 
+    > cd ~/asf/svn-r<REVISION#>/release/rpmbuild
     > rpmbuild -ba stp-?.?.?-1.spec
 
 * Collect rpm & source tarball for Linux & Win32 distribution using the
