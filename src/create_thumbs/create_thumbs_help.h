@@ -133,7 +133,8 @@
 "\n"\
 "     -scale (-s)\n"\
 "          Downscale factor, i.e. -scale 8 will result in an output image\n"\
-"          scaled to 1/8th the original size.\n"\
+"          scaled to 1/8th the original size.  Scaling will use the closest\n"\
+"          integer value.\n"\
 "\n"\
 "     -browse (-b)\n"\
 "          For browse images that should be named <basename>.ext rather\n"\

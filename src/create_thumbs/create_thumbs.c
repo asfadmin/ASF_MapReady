@@ -643,12 +643,12 @@ void process_file(const char *file, int level, int size, int verbose,
     else if (L0Flag == ceos && is_ceos_level0(file)) {
         char **dataName = NULL, *baseName = (char *)MALLOC(sizeof(char) * 256);
         int nBands;
-        ceos_data_ext_t data_ext = get_ceos_data_name(file, baseName, &dataName, &nBands);
+        /*ceos_data_ext_t data_ext = */get_ceos_data_name(file, baseName, &dataName, &nBands);
         FREE(baseName);
-	asfPrintStatus("%s%s\n", spaces(level), base);
-	generate_level0_thumbnail(*dataName, size, verbose, L0Flag, scale_factor, browseFlag,
-				  saveMetadataFlag, nPatchesFlag, nPatches,
-				  output_format, out_dir);
+        asfPrintStatus("%s%s\n", spaces(level), base);
+        generate_level0_thumbnail(*dataName, size, verbose, L0Flag, scale_factor, browseFlag,
+                                  saveMetadataFlag, nPatchesFlag, nPatches,
+                                  output_format, out_dir);
     }
 #ifdef JL0_GO
     else if (L0Flag == jaxa_l0) {
@@ -1102,16 +1102,20 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     sprintf(out_file, "%s%c%s_resample", tmp_folder, DIR_SEPARATOR, get_basename(file));
     meta_parameters *meta = meta_read(in_file);
     double xsf, ysf;
+    size_t isf;
     if (scale_factor > 0.0) {
-        xsf = 1.0/scale_factor;
-        ysf = 1.0/scale_factor;
+      isf = scale_factor >= 0.5 ? (size_t)(scale_factor + 0.5) : 1.0;
+      asfPrintStatus("Scaling by %d.0 ...\n", isf);
+
+      xsf = 1.0/(double)isf;
+      ysf = 1.0/(double)isf;
     }
     else if (size > 0) {
         xsf = ysf = (double) size / (double)(MAX(meta->general->line_count,
                          meta->general->sample_count));
     }
     else {
-        fprintf(stderr, "** Invalid scale factor (%f) and invalid pixel size (%d).\n"
+        asfPrintError("** Invalid scale factor (%f) and invalid pixel size (%d).\n"
                 "Only one of -scale and -size may be specified together,\n"
                 "and values must be positive.\n", scale_factor, size);
     }
