@@ -9,16 +9,19 @@
 
 #define SQR(x) (x*x)
 
-char *get_airsar(char *buf, char *str)
+static char *get_airsar(char *buf, char *str)
 {
-  char *p, *q, *value;
+  char *p, *q;
 
-  value = (char *) MALLOC(sizeof(char)*50);
-  q = (char *) MALLOC(sizeof(char)*50);
+  static char value[51];
+  memset(value,0,51);
+
+  q = (char *) CALLOC(51,sizeof(char));
   p = strstr(buf, str);
   if (p) {
     strncpy(q, p, 50);
     strcpy(value, q+strlen(str));
+    //printf("%s: %s\n", str, value);
   }
   else
     strcpy(value, "");
