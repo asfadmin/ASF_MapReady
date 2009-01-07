@@ -233,6 +233,6 @@ all of the input data.
       }
     }
 
-    printf("Successful completion!\n");
+    if (!quietflag) printf("Successful completion!\n");
     return(0);
 }
