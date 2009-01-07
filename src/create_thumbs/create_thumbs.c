@@ -171,8 +171,10 @@ int main(int argc, char *argv[])
             output_format=JPEG;
         }
         else {
-            fprintf(stderr,"\n**Invalid output format type \"%s\".  Expected tiff or jpeg.\n", tmp);
-            if (!quietflag) usage();
+            if (!quietflag) {
+                fprintf(stderr,"\n**Invalid output format type \"%s\".  Expected tiff or jpeg.\n", tmp);
+                usage();
+            }
             exit(1);
         }
     }
@@ -181,9 +183,11 @@ int main(int argc, char *argv[])
         scaleFlag=TRUE;
         scale_factor = atof(GET_ARG(1));
         if (scale_factor < 1.0) {
-            fprintf(stderr,"\n**Invalid scale factor for -scale option."
-                    "  Scale factor must be 1.0 or greater.\n");
-            if (!quietflag) usage();
+            if (!quietflag) {
+                fprintf(stderr,"\n**Invalid scale factor for -scale option."
+                        "  Scale factor must be 1.0 or greater.\n");
+                usage();
+            }
             exit(1);
         }
     }
@@ -198,9 +202,11 @@ int main(int argc, char *argv[])
         nPatchesFlag=TRUE;
         nPatches = atoi(GET_ARG(1));
         if (nPatches < 1.0) {
-            fprintf(stderr,"\n**Invalid number of patches for -patches option."
-                    "  Number of patches must be 1.0 or greater.\n");
-            if (!quietflag) usage();
+            if (!quietflag) {
+                fprintf(stderr,"\n**Invalid number of patches for -patches option."
+                        "  Number of patches must be 1.0 or greater.\n");
+                usage();
+            }
             exit(1);
         }
     }
@@ -208,8 +214,10 @@ int main(int argc, char *argv[])
         break;
     }
     else if (key[0] == '-') {
-      fprintf(stderr,"\n**Invalid option:  %s\n",argv[currArg-1]);
-      if (!quietflag) usage();
+      if (!quietflag) {
+          fprintf(stderr,"\n**Invalid option:  %s\n",argv[currArg-1]);
+          usage();
+      }
       exit(1);
     }
     else {
@@ -221,17 +229,22 @@ int main(int argc, char *argv[])
 
   // Check for conflicting options
   if (sizeFlag && scaleFlag) {
-      fprintf(stderr, "**Invalid combination of options.  You cannot use the -size and -scale options\n"
-              "at the same time.\n");
-      if (!quietflag) usage();
+      if (!quietflag) {
+          fprintf(stderr,
+                  "**Invalid combination of options.  You cannot use the -size and -scale options\n"
+                  "at the same time.\n");
+          usage();
+      }
       exit(1);
   }
   if (scaleFlag) size = 0;
   if (sizeFlag)  scale_factor = 0.0;
   if (L0Flag == not_L0 && nPatchesFlag) {
-      fprintf(stderr, "**Invalid option.  You cannot use the -patches flag without also using\n"
-              "the -L0 flag\n");
-      if (!quietflag) usage();
+      if (!quietflag) {
+        fprintf(stderr, "**Invalid option.  You cannot use the -patches flag without also using\n"
+            "the -L0 flag\n");
+        usage();
+      }
       exit(1);
   }
 
@@ -250,8 +263,10 @@ int main(int argc, char *argv[])
 
   int i;
   if (currArg >= argc) {
-      fprintf(stderr,"\n**Wrong number of options.\n");
-      if (!quietflag) usage();
+      if (!quietflag) {
+        fprintf(stderr,"\n**Wrong number of options.\n");
+        usage();
+      }
       exit(1);
   }
   for (i=currArg; i<argc; ++i) {
@@ -705,11 +720,12 @@ void process(const char *what, int level, int recursive, int size, int verbose,
     char *base = get_filename(what);
     if ((stbuf.st_mode & S_IFMT) == S_IFDIR && !is_JL0) {
         if (level==0 || recursive) {
-            if (L0Flag == jaxa_l0 && is_JL0) {
+// Not sure what the following code is for...
+/*            if (L0Flag == jaxa_l0 && is_JL0) {
                 // Trim "what" to just include the basename ...it's a JL0 basename (which
                 // is a folder BTW)
-                printf("Hi");
             }
+*/
             asfPrintStatus("%s%s/\n", spaces(level), base);
             process_dir(what, level+1, recursive, size, verbose,
                         L0Flag, scale_factor, browseFlag,
@@ -828,7 +844,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 char dir[1024], file[256], meta_out[1024];
                 split_dir_and_file(out_meta, dir, file);
                 sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
-                printf("Saving metadata to %s\n", meta_out);
+                if (!quietflag) printf("Saving metadata to %s\n", meta_out);
                 meta_write(md, meta_out);
             }
             meta_free(md);
@@ -899,7 +915,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 char dir[1024], file[256], meta_out[1024];
                 split_dir_and_file(out_meta, dir, file);
                 sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
-                printf("Saving metadata to %s\n", meta_out);
+                if (!quietflag) printf("Saving metadata to %s\n", meta_out);
                 meta_write(md, meta_out);
             }
             meta_free(md);
@@ -954,7 +970,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             band_name = (char **)MALLOC(md->general->band_count * sizeof(char*));
             char **tmp_band_name = extract_band_names(md->general->bands, md->general->band_count);
             int band;
-            printf("\nFound bands: ");
+            if (!quietflag) printf("\nFound bands: ");
             for (band=0;band<band_count;band++) {
                 band_name[band] = (char *)MALLOC(256 * sizeof(char));
             }
@@ -990,18 +1006,18 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             }
             for (band = 0; band < band_count; band++) {
                 if (band < band_count - 1) {
-                    printf("%s, ", tmp_band_name[band]);
+                    if (!quietflag) printf("%s, ", tmp_band_name[band]);
                 }
                 else {
-                    printf("%s", tmp_band_name[band]);
+                    if (!quietflag) printf("%s", tmp_band_name[band]);
                 }
             }
-            printf("\n\n");
+            if (!quietflag) printf("\n\n");
             if (saveMetadataFlag) {
                 char dir[1024], file[256], meta_out[1024];
                 split_dir_and_file(out_meta, dir, file);
                 sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
-                printf("Saving metadata to %s\n", meta_out);
+                if (!quietflag) printf("Saving metadata to %s\n", meta_out);
                 meta_write(md, meta_out);
             }
             meta_free(md);
@@ -1359,7 +1375,7 @@ int is_ceos_level0(const char *file) {
         char data_filename[256];
         split_dir_and_file(file, dir, filename);
         split_dir_and_file(*dataName, dir, data_filename);
-        printf("%s\n%s\n", get_basename(filename), get_basename(data_filename));
+        if (!quietflag) printf("%s\n%s\n", get_basename(filename), get_basename(data_filename));
         if (filename != NULL && data_filename != NULL &&
             strcmp(get_basename(filename), get_basename(data_filename)) == 0)
         {
@@ -1445,7 +1461,7 @@ int is_JL0_basename(const char *_what) {
         // Failed call to stat() ...return false to halt processing
         char msg[1024];
         sprintf(msg, "%s", what);
-        perror(msg);
+        if (!quietflag) perror(msg);
         FREE(what);
         return 0;
     }
