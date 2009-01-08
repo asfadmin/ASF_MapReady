@@ -1,6 +1,6 @@
 #ifndef _ASF_LICENSE_H_
 #define _ASF_LICENSE_H_
-
+#include <asf.h>
 enum {
         ASF_BSD_ID=1
 } license_id_t;
