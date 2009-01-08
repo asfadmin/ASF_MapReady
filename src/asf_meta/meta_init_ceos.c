@@ -374,8 +374,8 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   if (iof) {
     meta->sar->original_line_count   = iof->numofrec;
     meta->sar->original_sample_count =
-      (iof->reclen-iof->predata-iof->sufdata-iof->lbrdrpxl-iof->rbrdrpxl)
-      / iof->bytgroup;
+        ((iof->reclen-iof->predata-iof->sufdata) / iof->bytgroup)
+        - iof->lbrdrpxl - iof->rbrdrpxl;
   }
   if (meta->sar->original_line_count<=0
        || meta->sar->original_sample_count<=0) {
