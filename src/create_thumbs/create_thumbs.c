@@ -260,6 +260,12 @@ int main(int argc, char *argv[])
       asfPrintStatus("Output directory is: %s\n",
                      (out_dir_Specified) ? out_dir : "(Current directory)");
   }
+  if (!quietflag) {
+    asfPrintStatus("Output format is   : %s\n\n",
+                   (output_format == JPEG) ? "JPEG" :
+                   (output_format == TIF)  ? "TIFF" :
+                   "UNKNOWN - Programming error?");
+  }
 
   int i;
   if (currArg >= argc) {
