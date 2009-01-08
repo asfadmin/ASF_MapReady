@@ -38,11 +38,19 @@ const char *version_string(const char *program_name)
 {
   static char out_buf[1024];
 
+  // FIXME: We may want to follow the create_thumbs paradigm with
+  // the other tools that have separate build releases available, i.e.
+  // print the tool's version number as well (first)
+  if (strcmp(uc(program_name), "CREATE_THUMBS") == 0) {
+    sprintf(out_buf, "%s, revision ", CREATE_THUMBS_VERSION_STRING);
+  }
+
+  // Add the rest of the usual stuff for MapReady tools
   if (strlen(SVN_REV)>0) {
-    sprintf(out_buf, "%s (part of %s %s)",
+    sprintf(&(out_buf[strlen(out_buf)]), "%s (part of %s %s)",
             SVN_REV, TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
   } else {
-    sprintf(out_buf, "%s %s",
+    sprintf(&(out_buf[strlen(out_buf)]), "%s %s",
             TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
   }
 
@@ -51,15 +59,33 @@ const char *version_string(const char *program_name)
 
 void print_version(const char *program_name)
 {
-    if (strlen(SVN_REV)>0) {
-      printf("%s, version %s (part of %s %s)\n",
-             program_name, SVN_REV, TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
+  char *_program_name = NULL;
+
+  _program_name = (char *)MALLOC(sizeof(char) * strlen(program_name) + 64);
+  // FIXME: We may want to follow the create_thumbs paradigm with
+  // the other tools that have separate build releases available, i.e.
+  // print the tool's version number as well (first)
+  // Add the rest of the usual stuff for MapReady tools
+  if (strcmp(uc(program_name), "CREATE_THUMBS") == 0) {
+    sprintf(_program_name, "%s, version %s",
+            program_name, CREATE_THUMBS_VERSION_STRING);
+  }
+  else {
+    sprintf(_program_name, "%s",
+            program_name);
+  }
+  if (strlen(SVN_REV)>0) {
+      printf("%s, revision %s (part of %s %s)\n",
+             _program_name,
+             SVN_REV, TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
     } else {
-      printf("%s, part of %s %s (unknown build)\n", program_name,
+      printf("%s, part of %s %s (unknown build revision)\n",
+             _program_name,
              TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
     }
 
     print_copyright();
+    FREE(_program_name);
     exit (EXIT_SUCCESS);
 }
 
