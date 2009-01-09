@@ -31,7 +31,7 @@ alos_processed_line_t *read_alos_proc_line_header(const char *inName,
   int offset, length, current_line;
 
   // Determine offset and jump to it
-  offset = firstRecordLen(inName);
+  offset = firstRecordLen((char *)inName);
   fp = FOPEN(inName, "rb");
   current_line = 0;
   while (current_line < line_number) {
@@ -98,7 +98,7 @@ rsat_processed_line_t *read_rsat_proc_line_header(const char *inName,
   int offset, length, current_line;
 
   // Determine offset and jump to it
-  offset = firstRecordLen(inName);
+  offset = firstRecordLen((char *)inName);
   fp = FOPEN(inName, "rb");
   current_line = 0;
   while (current_line < line_number) {

@@ -780,6 +780,9 @@ spheroid_type_t axis_to_spheroid (double re_major, double re_minor);
 int get_satellite_sensor(const char *fName, ceos_satellite_t *satellite,
                          ceos_sensor_t *sensor, report_level_t level);
 
+// Prototypes from ceos_io.c
+int firstRecordLen(char *ceosName);
+
 /***************************************************************************
   General conversion functions between projection coordinates and geographic
   coordinates.
