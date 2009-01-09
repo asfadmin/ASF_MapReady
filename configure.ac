@@ -248,8 +248,10 @@ else
   if test "$have_xml2" = "no" ; then
    ASF_LIB_XML2="${ext_lib_src_dir}/libxml2"
    XML2_LIBS="\$(LIBDIR)/libxml2.a"
+   XML2_CLFAGS="-I../../include/libxml2"
   else
    XML2_LIBS="-lxml2"
+   XML2_CFLAGS="-I/usr/include/libxml2"
   fi
 fi
 AC_SUBST(ASF_LIB_XML2)
