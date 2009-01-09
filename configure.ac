@@ -21,6 +21,7 @@ have_gtk="no"
 have_fftw="no"
 have_png="no"
 have_exif="no"
+have_xml2="no"
 
 AC_PROG_CC
 AC_PROG_LEX
@@ -238,6 +239,21 @@ else
 fi
 AC_SUBST(ASF_LIB_EXIF)
 
+#### libxml2 check ####
+AC_CHECK_LIB([xml2],[xmlParseFile],have_xml2="yes",have_xml2="no")
+if test "$sys" = "win32" ; then
+  have_xml2="yes"
+  XML2_LIBS="-L$(GTKWIN32_DIR)/lib -lxml2"
+else
+  if test "$have_xml2" = "no" ; then
+   ASF_LIB_XML2="${ext_lib_src_dir}/libxml2"
+   XML2_LIBS="\$(LIBDIR)/libxml2.a"
+  else
+   XML2_LIBS="-lxml2"
+  fi
+fi
+AC_SUBST(ASF_LIB_XML2)
+
 #### libglade check ####
 if test "$have_gtk" = "yes" ; then
    PKG_CHECK_MODULES(LIBGLADE, libglade-2.0 > 2.0.0,
@@ -407,6 +423,9 @@ SHAPELIB_CFLAGS = $SHAPELIB_CFLAGS
 
 EXIF_LIBS = $EXIF_LIBS
 EXIF_CFLAGS = $EXIF_CFLAGS
+
+XML_LIBS = $XML2_LIBS
+XML_CFLAGS = $XML2_CFLAGS
 
 ZLIB_LIBS = $ZLIB_LIBS
 

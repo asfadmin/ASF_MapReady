@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF LIBTIFF_LOCATION ASF_LIB_PNG ASF_LIB_GEOTIFF ASF_LIB_SHAPELIB ASF_LIB_FFTW GTK_CFLAGS GTK_LIBS ASF_LIB_EXIF LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR DOCDIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF LIBTIFF_LOCATION ASF_LIB_PNG ASF_LIB_GEOTIFF ASF_LIB_SHAPELIB ASF_LIB_FFTW GTK_CFLAGS GTK_LIBS ASF_LIB_EXIF ASF_LIB_XML2 LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR DOCDIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1309,6 +1309,7 @@ have_gtk="no"
 have_fftw="no"
 have_png="no"
 have_exif="no"
+have_xml2="no"
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -4193,6 +4194,90 @@ else
 fi
 
 
+#### libxml2 check ####
+echo "$as_me:$LINENO: checking for xmlParseFile in -lxml2" >&5
+echo $ECHO_N "checking for xmlParseFile in -lxml2... $ECHO_C" >&6
+if test "${ac_cv_lib_xml2_xmlParseFile+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lxml2  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char xmlParseFile ();
+int
+main ()
+{
+xmlParseFile ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_xml2_xmlParseFile=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_xml2_xmlParseFile=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_xml2_xmlParseFile" >&5
+echo "${ECHO_T}$ac_cv_lib_xml2_xmlParseFile" >&6
+if test $ac_cv_lib_xml2_xmlParseFile = yes; then
+  have_xml2="yes"
+else
+  have_xml2="no"
+fi
+
+if test "$sys" = "win32" ; then
+  have_xml2="yes"
+  XML2_LIBS="-L$(GTKWIN32_DIR)/lib -lxml2"
+else
+  if test "$have_xml2" = "no" ; then
+   ASF_LIB_XML2="${ext_lib_src_dir}/libxml2"
+   XML2_LIBS="\$(LIBDIR)/libxml2.a"
+  else
+   XML2_LIBS="-lxml2"
+  fi
+fi
+
+
 #### libglade check ####
 if test "$have_gtk" = "yes" ; then
 
@@ -4456,6 +4541,9 @@ SHAPELIB_CFLAGS = $SHAPELIB_CFLAGS
 
 EXIF_LIBS = $EXIF_LIBS
 EXIF_CFLAGS = $EXIF_CFLAGS
+
+XML_LIBS = $XML2_LIBS
+XML_CFLAGS = $XML2_CFLAGS
 
 ZLIB_LIBS = $ZLIB_LIBS
 
@@ -5169,6 +5257,7 @@ s,@ASF_LIB_FFTW@,$ASF_LIB_FFTW,;t t
 s,@GTK_CFLAGS@,$GTK_CFLAGS,;t t
 s,@GTK_LIBS@,$GTK_LIBS,;t t
 s,@ASF_LIB_EXIF@,$ASF_LIB_EXIF,;t t
+s,@ASF_LIB_XML2@,$ASF_LIB_XML2,;t t
 s,@LIBGLADE_CFLAGS@,$LIBGLADE_CFLAGS,;t t
 s,@LIBGLADE_LIBS@,$LIBGLADE_LIBS,;t t
 s,@ASF_GUI@,$ASF_GUI,;t t
@@ -6110,6 +6199,7 @@ s,@ASF_LIB_FFTW@,$ASF_LIB_FFTW,;t t
 s,@GTK_CFLAGS@,$GTK_CFLAGS,;t t
 s,@GTK_LIBS@,$GTK_LIBS,;t t
 s,@ASF_LIB_EXIF@,$ASF_LIB_EXIF,;t t
+s,@ASF_LIB_XML2@,$ASF_LIB_XML2,;t t
 s,@LIBGLADE_CFLAGS@,$LIBGLADE_CFLAGS,;t t
 s,@LIBGLADE_LIBS@,$LIBGLADE_LIBS,;t t
 s,@ASF_GUI@,$ASF_GUI,;t t
