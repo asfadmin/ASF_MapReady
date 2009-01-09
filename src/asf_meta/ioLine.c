@@ -90,7 +90,18 @@ int get_data_lines(FILE *file, meta_parameters *meta,
 
   // Scan to the beginning of the line sample.
   for (ii=0; ii<num_lines_to_get; ii++) {
-    offset = sample_size * (sample_count * (line_number + ii) + sample_number);
+    offset = (long long)sample_size *
+        ((long long)sample_count * ((long long)line_number + (long long)ii) + (long long)sample_number);
+    if (offset<0) {
+        asfPrintError("File offset overflow error ...file is too large to read.\n"
+                      "offset = %ld (sample_size * (sample_count * (line_number + ii) + sample_number)\n"
+                      "sample_size = %d\n"
+                      "sample_count = %d\n"
+                      "line_number = %d\n"
+                      "ii = %d\n"
+                      "sample_number = %d\n",
+                      offset, sample_size, sample_count, line_number, ii, sample_number);
+    }
     FSEEK64(file, offset, SEEK_SET);
     line_samples_gotten = FREAD(temp_buffer+ii*num_samples_to_get*sample_size,
         sample_size, num_samples_to_get, file);
