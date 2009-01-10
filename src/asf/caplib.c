@@ -474,9 +474,9 @@ int FSEEK64(FILE *stream,long long offset,int ptrname)
 #endif
     if (ret==-1)
     {
-        fprintf(stderr, "The file offset passed is: %lli\n", offset);
+        fprintf(stderr, "The file offset passed is: %ld\n", offset);
         if (fLog!=NULL)
-           fprintf(fLog, "The file offset passed is: %lli\n", offset);
+           fprintf(fLog, "The file offset passed is: %ld\n", offset);
 
                 if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
             programmer_error("Stream passed to FSEEK64 is not seekable.\n");
