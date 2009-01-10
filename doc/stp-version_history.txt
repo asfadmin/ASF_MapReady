@@ -1,5 +1,19 @@
-Release version 1.1.6
-23 July 2008
+SAR Training Processor (STP) Version History
+
+
+SAR Training Processor (STP) 1.1.10
+Released 2009 January 9
+
+* Enable the window to be sized smaller than it's startup dimensions.
+* Remove spurious warnings when ASF View is started from the STP interface.
+* Use PNGs instead of JPEGs as the intermediate image files.
+* Improved portability by no longer relying on the Cygwin library in the
+  Win32 distribution.
+
+
+
+SAR Training Processor (STP) 1.1.6
+Released 2008 July 23
 
 * Streamlined the way STP generates the JPEG intermediate images,
   so STP should run faster & use less memory.
@@ -20,9 +34,8 @@ Release version 1.1.6
 * Improved build system for source builds
 
 
-
-Initial release: version 1.0.13
-30 October 2006
+SAR Training Processor (STP) 1.0.13
+Initial release: 2006 October 30
 
 The Alaska Satellite Facility (ASF) has developed a SAR Training
 Processor (STP).  This program is a synthetic aperture radar (SAR)
