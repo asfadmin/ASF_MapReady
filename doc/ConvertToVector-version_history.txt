@@ -1,5 +1,14 @@
 Convert To Vector Version History
 
+Convert to Vector 2.1.1 (released 2009 January 9)
+New Features
+* Capability to convert general KML files, not just those created by
+  convert to vector.
+* Support for converting URSA files.
+* Capability to customize which metadata fields are placed in the output file
+  by use of a configuration file.
+
+
 
 Initial public release:
 Convert To Vector 2.0.4
