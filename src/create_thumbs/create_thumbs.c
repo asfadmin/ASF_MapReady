@@ -172,8 +172,8 @@ int main(int argc, char *argv[])
         }
         else {
             if (!quietflag) {
-                fprintf(stderr,"\n**Invalid output format type \"%s\".  Expected tiff or jpeg.\n", tmp);
-                usage();
+              fprintf(stderr,"\n**Invalid output format type \"%s\".  Expected tiff or jpeg.\n", tmp);
+              usage();
             }
             exit(1);
         }
@@ -184,9 +184,9 @@ int main(int argc, char *argv[])
         scale_factor = atof(GET_ARG(1));
         if (scale_factor < 1.0) {
             if (!quietflag) {
-                fprintf(stderr,"\n**Invalid scale factor for -scale option."
-                        "  Scale factor must be 1.0 or greater.\n");
-                usage();
+              fprintf(stderr,"\n**Invalid scale factor for -scale option."
+                  "  Scale factor must be 1.0 or greater.\n");
+              usage();
             }
             exit(1);
         }
@@ -203,9 +203,9 @@ int main(int argc, char *argv[])
         nPatches = atoi(GET_ARG(1));
         if (nPatches < 1.0) {
             if (!quietflag) {
-                fprintf(stderr,"\n**Invalid number of patches for -patches option."
-                        "  Number of patches must be 1.0 or greater.\n");
-                usage();
+              fprintf(stderr,"\n**Invalid number of patches for -patches option."
+                  "  Number of patches must be 1.0 or greater.\n");
+              usage();
             }
             exit(1);
         }
@@ -215,8 +215,8 @@ int main(int argc, char *argv[])
     }
     else if (key[0] == '-') {
       if (!quietflag) {
-          fprintf(stderr,"\n**Invalid option:  %s\n",argv[currArg-1]);
-          usage();
+        fprintf(stderr,"\n**Invalid option:  %s\n",argv[currArg-1]);
+        usage();
       }
       exit(1);
     }
@@ -230,10 +230,9 @@ int main(int argc, char *argv[])
   // Check for conflicting options
   if (sizeFlag && scaleFlag) {
       if (!quietflag) {
-          fprintf(stderr,
-                  "**Invalid combination of options.  You cannot use the -size and -scale options\n"
-                  "at the same time.\n");
-          usage();
+        fprintf(stderr, "**Invalid combination of options.  You cannot use the -size and -scale"
+                        " options\nat the same time.\n");
+        usage();
       }
       exit(1);
   }
@@ -368,7 +367,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     FloatImage *img;
     char **inBandName = NULL, **inMetaName = NULL;
     char baseName[512];
-    int nBands, trailer;
+    int nBands, trailer, ns;
     ceos_file_pairs_t ceos_pair = NO_CEOS_FILE_PAIR;
 
     //Check that input data is available
@@ -393,6 +392,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 
     // Input metadata
     meta_parameters *imd = silent_meta_create(inMetaName[0]);
+    ns = imd->general->sample_count;
 
     if (imd->general->data_type != BYTE &&
         imd->general->data_type != INTEGER16)
@@ -408,7 +408,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
                         "Suggestion: Use asf_import (or asf_import -amplitude for SLC L1.1\n"
                         "products), resample, then asf_export to create thumbnails or browse\n"
                         "images. \n",
-                        (imd->general->data_type == BYTE) ? "BYTE" :
+                        (imd->general->data_type == BYTE)              ? "BYTE"              :
                         (imd->general->data_type == INTEGER16)         ? "INTEGER16"         :
                         (imd->general->data_type == INTEGER32)         ? "INTEGER32"         :
                         (imd->general->data_type == REAL32)            ? "REAL32"            :
@@ -417,8 +417,21 @@ int generate_ceos_thumbnail(const char *input_data, int size,
                         (imd->general->data_type == COMPLEX_INTEGER16) ? "COMPLEX_INTEGER16" :
                         (imd->general->data_type == COMPLEX_INTEGER32) ? "COMPLEX_INTEGER32" :
                         (imd->general->data_type == COMPLEX_REAL32)    ? "COMPLEX_REAL32"    :
-                        (imd->general->data_type == COMPLEX_REAL64)    ? "COMPLEX_REAL64"    : "UNKNOWN");
+                        (imd->general->data_type == COMPLEX_REAL64)    ? "COMPLEX_REAL64"    :
+                                                                         "UNKNOWN");
         return FALSE;
+    }
+    if (imd->optical &&
+        strcmp_case(imd->general->sensor_name, "PRISM") == 0 &&
+        (strcmp_case(imd->general->mode, "1A")  == 0 ||
+         strcmp_case(imd->general->mode, "1B1") == 0))
+    {
+      asfPrintWarning("create_thumbs does not process all available strips of image\n"
+                      "data for ALOS %s Level %s products at this time.\n"
+                      "The thumbnail or browse image will now be created, but it will\n"
+                      "have valid data in only one vertical strip within the image.\n",
+                      imd->general->sensor_name,
+                      imd->general->mode);
     }
 
     FILE *fpIn;
@@ -440,12 +453,24 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       }
 
       struct IOF_VFDR image_fdr;                /* CEOS File Descriptor Record */
-      get_ifiledr(inBandName[0], &image_fdr);
-      int leftFill = image_fdr.lbrdrpxl;
-      int rightFill = image_fdr.rbrdrpxl;
-      int headerBytes = firstRecordLen(inBandName[0]) +
-              (image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill) *
+      int leftFill = 0;
+      int rightFill = 0;
+      if (strcmp(imd->general->sensor, "ALOS") == 0 && imd->optical) {
+        get_ALOS_optical_ifiledr(inBandName[0], &image_fdr);
+        leftFill = image_fdr.predata + image_fdr.lbrdrpxl;
+        rightFill = image_fdr.sufdata + image_fdr.rbrdrpxl;
+      }
+      else {
+        get_ifiledr(inBandName[0], &image_fdr);
+        leftFill = image_fdr.lbrdrpxl;
+        rightFill = image_fdr.rbrdrpxl;
+      }
+      // Use ns (16318) not sample_count in headerBytes calculation
+      int first_rec_len = firstRecordLen(inBandName[0]);
+      int headerBytes = first_rec_len +
+              (image_fdr.reclen - (ns + leftFill + rightFill) *
               image_fdr.bytgroup);
+      imd->general->sample_count -= leftFill;
 
       // use a larger dimension at first, for our crude scaling.  We will
       // use a better scaling method later, from GdbPixbuf
@@ -493,8 +518,6 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         }
       }
       else if (scale_factor > 0.0) {
-        // Round the passed-in scale factor to nearest integer
-        //sf = (int)(scale_factor + 0.5);
         sf = scale_factor;
       }
       else {
@@ -503,8 +526,8 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       }
 
       // Thumbnail image sizes.
-      isf = (size_t)(sf + 0.5);
-      isf = isf < 1 ? 1 : isf;
+      isf = (size_t)(sf + 0.5); // Round to nearest integer
+      isf = isf < 1 ? 1 : isf; // Only allow scaling down, not up
       size_t tsx = (size_t)((float)imd->general->sample_count / isf);
       size_t tsy = (size_t)((float)imd->general->line_count / isf);
       asfPrintStatus("\nScaling image by closest integer scale factor (%d.0).  Scaling to: %d by %d\n",
@@ -522,8 +545,8 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       larger_dim = tsx > tsy ? tsx : tsy;
 
       size_t ii, jj;
-      unsigned short *line = MALLOC (sizeof(unsigned short) * imd->general->sample_count);
-      unsigned char *bytes = MALLOC (sizeof(unsigned char)  * imd->general->sample_count);
+      unsigned short *line = MALLOC (sizeof(unsigned short) * ns);
+      unsigned char *bytes = MALLOC (sizeof(unsigned char)  * ns);
 
       // Here's where we're putting all this data
       img = float_image_new(tsx, tsy);
@@ -535,7 +558,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
         {
-          FREAD(line, sizeof(unsigned short), imd->general->sample_count, fpIn);
+          FREAD(line, sizeof(unsigned short), ns, fpIn);
 
           for (jj = 0; jj < imd->general->sample_count; ++jj) {
             big16(line[jj]);
@@ -543,7 +566,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         }
         else if (imd->general->data_type == BYTE)
         {
-          FREAD(bytes, sizeof(unsigned char), imd->general->sample_count, fpIn);
+          FREAD(bytes, sizeof(unsigned char), ns, fpIn);
 
           for (jj = 0; jj < imd->general->sample_count; ++jj) {
             line[jj] = (unsigned short)bytes[jj];
@@ -560,8 +583,8 @@ int generate_ceos_thumbnail(const char *input_data, int size,
           } else {
             // We will average a couple pixels together.
             kk = (int)(jj * isf);
-            kk = kk >= imd->general->line_count ? imd->general->line_count : kk;
-            if (kk < imd->general->line_count - 1 ) {
+            kk = kk >= imd->general->sample_count ? imd->general->sample_count : kk;
+            if (kk < imd->general->sample_count - 1 ) {
               csv = (line[kk] + line[kk + 1]) / 2;
             }
             else {
@@ -726,7 +749,7 @@ void process(const char *what, int level, int recursive, int size, int verbose,
     char *base = get_filename(what);
     if ((stbuf.st_mode & S_IFMT) == S_IFDIR && !is_JL0) {
         if (level==0 || recursive) {
-// Not sure what the following code is for...
+// Not sure the reason for this code ...
 /*            if (L0Flag == jaxa_l0 && is_JL0) {
                 // Trim "what" to just include the basename ...it's a JL0 basename (which
                 // is a folder BTW)
@@ -850,7 +873,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 char dir[1024], file[256], meta_out[1024];
                 split_dir_and_file(out_meta, dir, file);
                 sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
-                if (!quietflag) printf("Saving metadata to %s\n", meta_out);
+                asfPrintStatus("Saving metadata to %s\n", meta_out);
                 meta_write(md, meta_out);
             }
             meta_free(md);
@@ -921,7 +944,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 char dir[1024], file[256], meta_out[1024];
                 split_dir_and_file(out_meta, dir, file);
                 sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
-                if (!quietflag) printf("Saving metadata to %s\n", meta_out);
+                asfPrintStatus("Saving metadata to %s\n", meta_out);
                 meta_write(md, meta_out);
             }
             meta_free(md);
@@ -976,7 +999,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             band_name = (char **)MALLOC(md->general->band_count * sizeof(char*));
             char **tmp_band_name = extract_band_names(md->general->bands, md->general->band_count);
             int band;
-            if (!quietflag) printf("\nFound bands: ");
+            asfPrintStatus("\nFound bands: ");
             for (band=0;band<band_count;band++) {
                 band_name[band] = (char *)MALLOC(256 * sizeof(char));
             }
@@ -1012,18 +1035,18 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
             }
             for (band = 0; band < band_count; band++) {
                 if (band < band_count - 1) {
-                    if (!quietflag) printf("%s, ", tmp_band_name[band]);
+                    asfPrintStatus("%s, ", tmp_band_name[band]);
                 }
                 else {
-                    if (!quietflag) printf("%s", tmp_band_name[band]);
+                    asfPrintStatus("%s", tmp_band_name[band]);
                 }
             }
-            if (!quietflag) printf("\n\n");
+            asfPrintStatus("\n\n");
             if (saveMetadataFlag) {
                 char dir[1024], file[256], meta_out[1024];
                 split_dir_and_file(out_meta, dir, file);
                 sprintf(meta_out, "%s%c%s", out_dir, DIR_SEPARATOR, file);
-                if (!quietflag) printf("Saving metadata to %s\n", meta_out);
+                asfPrintStatus("Saving metadata to %s\n", meta_out);
                 meta_write(md, meta_out);
             }
             meta_free(md);
@@ -1092,7 +1115,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         sprintf(del_files2, "%s_cpx", out_file); // Save these filenames for later deletion
         sprintf(in_file, "%s_amp", out_file);
         sprintf(out_file, "%s%c%s_gr", tmp_folder, DIR_SEPARATOR, get_basename(file));
-        asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
+        asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n",
+                       in_file, out_file);
         sr2gr(in_file, out_file);
         if (saveMetadataFlag) {
             char dir[1024], file[256], in_path[1024], out_path[1024];
@@ -1126,11 +1150,11 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     double xsf, ysf;
     size_t isf;
     if (scale_factor > 0.0) {
-      isf = scale_factor >= 0.5 ? (size_t)(scale_factor + 0.5) : 1.0;
-      asfPrintStatus("Scaling by %d.0 ...\n", isf);
+        isf = scale_factor >= 0.5 ? (size_t)(scale_factor + 0.5) : 1.0;
+        asfPrintStatus("Scaling by %d.0 ...\n", isf);
 
-      xsf = 1.0/(double)isf;
-      ysf = 1.0/(double)isf;
+        xsf = 1.0/(double)isf;
+        ysf = 1.0/(double)isf;
     }
     else if (size > 0) {
         xsf = ysf = (double) size / (double)(MAX(meta->general->line_count,
@@ -1381,7 +1405,7 @@ int is_ceos_level0(const char *file) {
         char data_filename[256];
         split_dir_and_file(file, dir, filename);
         split_dir_and_file(*dataName, dir, data_filename);
-        if (!quietflag) printf("%s\n%s\n", get_basename(filename), get_basename(data_filename));
+        asfPrintStatus("%s\n%s\n", get_basename(filename), get_basename(data_filename));
         if (filename != NULL && data_filename != NULL &&
             strcmp(get_basename(filename), get_basename(data_filename)) == 0)
         {
