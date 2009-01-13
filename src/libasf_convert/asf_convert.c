@@ -1401,6 +1401,29 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
     }
 
+    // Check whether everything in the [External] block is reasonable
+    if (cfg->general->external) {
+
+      if (strlen(cfg->external->cmd) == 0) {
+        asfPrintWarning("No external command specified.  Ignored.\n");
+        cfg->general->external = 0;
+      }
+      else {
+        // the command must contain the strings "{Input}" and "{Output}"
+        if (strstr(cfg->external->cmd, "{Input}") == NULL &&
+            strstr(cfg->external->cmd, "{Output}") == NULL)
+          asfPrintError("External command does not contain the {Input}\n"
+                        "and {Output} placeholders.");
+        else if (strstr(cfg->external->cmd, "{Input}") == NULL)
+          asfPrintError("External command does not contain the {Input} "
+                        "placeholder.");
+        else if (strstr(cfg->external->cmd, "{Output}") == NULL)
+          asfPrintError("External command does not contain the {Output} "
+                        "placeholder.");
+      }
+
+    }
+
     // Check whether everything in the [SAR processing] block is reasonable
     if (cfg->general->sar_processing) {
 
@@ -1839,6 +1862,63 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // skipping import ==> "outFile" (what import should have produced)
       // is really just the original input file (already ASF Internal)
       strcpy(outFile, cfg->general->in_name);
+    }
+
+    if (cfg->general->external) {
+      strcpy(inFile, outFile);
+      sprintf(outFile, "%s/external", cfg->general->tmp_dir);
+
+      int has_log = strstr(cfg->external->cmd, "{Log}") != NULL;
+      char *tmpLogFile = NULL;
+
+      char *cmd1 = strReplace(cfg->external->cmd, "{Input}", inFile);
+      if (has_log) {
+        tmpLogFile = appendExt(outFile, ".log");
+        char *cmd2 = strReplace(cmd1, "{Log}", tmpLogFile);
+        FREE(cmd1);
+        cmd1 = cmd2;
+      }
+      char *cmd = strReplace(cmd1, "{Output}", outFile);
+      FREE(cmd1);
+
+      asfPrintStatus("Running external command:\n  %s\n", cmd);
+      asfSystem(cmd);
+
+      // external program must have created "<outFile>.meta" and "<outFile>.img"
+      char *imgFile = appendExt(outFile, ".img");
+      int img_exists = fileExists(imgFile);
+      char *metaFile = appendExt(outFile, ".meta");
+      int meta_exists = fileExists(metaFile);
+      if (!img_exists && !meta_exists)
+        asfPrintError("The external command:\n  %s\n"
+                      "did not produce these expected files:\n"
+                      "  %s\n  %s\n", cmd, imgFile, metaFile);
+      else if (!img_exists)
+        asfPrintError("The external command:\n  %s\n"
+                      "did not produce the expected file:\n"
+                      "  %s\n", cmd, imgFile);
+      else if (!meta_exists)
+        asfPrintError("The external command:\n  %s\n"
+                      "did not produce the expected file:\n"
+                      "  %s\n", cmd, metaFile);
+
+      // if external program created a log file, eat it into our own
+      if (has_log && tmpLogFile) {
+        asfPrintToLogOnly("\nAttempting to import external log file.\n"
+                          "File: %s\n---- Begin external log\n", tmpLogFile);
+        FILE *lf = fopen(tmpLogFile, "r");
+        char line[1024];
+        while (fgets(line, 1023, lf) != NULL) {
+          asfPrintToLogOnly("%s", line);
+        }
+        fclose(lf);
+        asfPrintToLogOnly("---- End external log\n\n");
+      }
+
+      FREE(cmd);
+      FREE(imgFile);
+      FREE(metaFile);
+      FREE(tmpLogFile);
     }
 
     if (cfg->general->sar_processing) {

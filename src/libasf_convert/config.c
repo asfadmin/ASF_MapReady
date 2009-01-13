@@ -157,6 +157,11 @@ int init_convert_config(char *configFile)
           "# switched on will generate an [Import] section where you can define further\n"
           "# parameters.\n\n");
   fprintf(fConfig, "import = 1\n\n");
+  // external flag
+  fprintf(fConfig, "# If you wish to run an external program on the data after import,\n"
+          "# you can set this flag to 1, and then specify the command in\n"
+          "# the \"[External]\" section.\n\n");
+  fprintf(fConfig, "external = 0\n\n");
 
   // SAR processing flag -- removed for 3.0!
 //  fprintf(fConfig, "# The SAR processing flag indicates whether the data needs to be run\n"
@@ -283,6 +288,9 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->import->prc);
             FREE(cfg->import);
         }
+        if (cfg->external) {
+            FREE(cfg->external->cmd);
+        }
         if (cfg->airsar) {
             FREE(cfg->airsar);
         }
@@ -344,6 +352,7 @@ convert_config *init_fill_convert_config(char *configFile)
   convert_config *cfg = newStruct(convert_config);
   cfg->general = newStruct(s_general);
   cfg->import = newStruct(s_import);
+  cfg->external = newStruct(s_external);
   cfg->airsar = newStruct(s_airsar);
   cfg->sar_processing = newStruct(s_sar_processing);
   cfg->c2p = newStruct(s_c2p);
@@ -367,6 +376,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->default_out_dir = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->general->default_out_dir, "");
   cfg->general->import = 0;
+  cfg->general->external = 0;
   cfg->general->sar_processing = 0;
   cfg->general->c2p = 0;
   cfg->general->image_stats = 0;
@@ -412,6 +422,8 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->complex_slc = 0;
   cfg->import->multilook_slc = 0;
   cfg->import->ers2_gain_fix = TRUE;
+
+  cfg->external->cmd = (char *)MALLOC(sizeof(char)*1024);
 
   cfg->airsar->c_vv = 0;
   cfg->airsar->l_vv = 0;
@@ -526,6 +538,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
+      if (strncmp(test, "external", 8)==0)
+        cfg->general->external = read_int(line, "external");
       if (strncmp(test, "sar processing", 14)==0)
         cfg->general->sar_processing = read_int(line, "sar processing");
       if (strncmp(test, "c2p", 3)==0)
@@ -578,6 +592,10 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
       if (strncmp(test, "apply ers2 gain fix", 19)==0)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
+
+      // External
+      if (strncmp(test, "command", 7)==0)
+        strcpy(cfg->external->cmd, read_str(line, "command"));
 
       // AirSAR
       if (strncmp(test, "airsar c interferometric", 24)==0)
@@ -734,6 +752,8 @@ convert_config *init_fill_convert_config(char *configFile)
             strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
         if (strncmp(test, "import", 6)==0)
             cfg->general->import = read_int(line, "import");
+        if (strncmp(test, "external", 8)==0)
+            cfg->general->external = read_int(line, "external");
         if (strncmp(test, "sar processing", 14)==0)
             cfg->general->sar_processing = read_int(line, "sar processing");
         if (strncmp(test, "c2p", 3)==0)
@@ -874,6 +894,14 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
       if (strncmp(test, "apply ers2 gain fix", 19)==0)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
+      FREE(test);
+    }
+
+    if (strncmp(line, "[External]", 10)==0) strcpy(params, "External");
+    if (strncmp(params, "External", 8)==0) {
+      test = read_param(line);
+      if (strncmp(test, "command", 7)==0)
+        strcpy(cfg->external->cmd, read_str(line, "command"));
       FREE(test);
     }
 
@@ -1107,6 +1135,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# parameters.\n\n");
     }
     fprintf(fConfig, "import = %i\n", cfg->general->import);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# If you wish to run an external program on the data after import,\n"
+              "# you can set this flag to 1, and then specify the command in\n"
+              "# the \"[External]\" section.\n\n");
+    fprintf(fConfig, "external = %i\n", cfg->general->external);
     // General - SAR processing
     // In 3.0, only write this out if the flag is actually set.
     // For 3.5 or 4.0 or ?, we should be able to remove the outer if block here.
@@ -1282,7 +1315,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# The ERS2 satellite has a known gain loss problem that this program\n"
           "# will attempt to correct by applying a scale correction factor uniformly\n"
-          "# to all pixels in the image.  The correctio is dependent on the date,\n"
+          "# to all pixels in the image.  The correction is dependent on the date,\n"
           "# and is only applied to calibrated data (i.e., everything but amplitude)\n"
           "# For more information, see section 4 of:\n"
           "# <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n\n");
@@ -1321,6 +1354,28 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "airsar p polarimetric = %d\n", cfg->airsar->p_pol);
     }
 
+    // External
+    if (cfg->general->external) {
+      fprintf(fConfig, "\n[External]\n");
+      if (!shortFlag)
+        fprintf(fConfig, "\n# The following program will be run after import.  Specify the\n"
+                "# command line here, and in the place where the input and output\n"
+                "# filenames are, use {Input} and {Output}.  The program should be\n"
+                "# able to ingest ASF Internal format files, and produce ASF Internal\n"
+                "# format files.  The input and output filenames will be the basename\n"
+                "# of the file, i.e., without the .img or .meta extension.  The\n"
+                "# program must create two files, {Output}.img and {Output}.meta.\n"
+                "# Be sure the program is in your PATH, or fully specify the\n"
+                "# location of the program binary.  For example, to run sr2gr after\n"
+                "# import (with a pixel size of 12.5m):\n"
+                "#     command = sr2gr {Input} {Output} 12.5.\n"
+                "# If the external utility has the ability to specify a log file, put\n"
+                "# {Log} for the log filename in the command line.  This log file\n"
+                "# will be included in the MapReady processing log.  For example:\n"
+                "#     command = sr2gr -log {Log} {Input} {Output} 12.5\n\n");
+      fprintf(fConfig, "command = %s\n\n", cfg->external->cmd);
+    }
+
     // SAR processing
     if (cfg->general->sar_processing) {
       fprintf(fConfig, "\n[SAR processing]\n");
@@ -1333,6 +1388,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# SAR images. Their values are in power scale.\n\n");
         fprintf(fConfig, "radiometry = %s\n\n", cfg->sar_processing->radiometry);
     }
+    // C2P
     if (cfg->general->c2p) {
         fprintf(fConfig, "\n[C2P]\n");
         if (!shortFlag)

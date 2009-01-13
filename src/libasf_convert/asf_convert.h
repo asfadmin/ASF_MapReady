@@ -13,6 +13,7 @@ typedef struct
   char *default_in_dir;   // default input directory
   char *default_out_dir;  // default output directory
   int import;             // import flag
+  int external;           // external program flag
   int sar_processing;     // SAR processing flag
   int c2p;                // complex -> polar flag
   int image_stats;        // image stats flag (for internal use only)
@@ -69,6 +70,11 @@ typedef struct
   int l_pol;              // ingest the airsar L-band polarimetric image?
   int p_pol;              // ingest the airsar P-band polarimetric image?
 } s_airsar;
+
+typedef struct
+{
+  char *cmd;
+} s_external;
 
 typedef struct
 {
@@ -177,6 +183,7 @@ typedef struct
   char comment[255];                   // first line for comments
   s_general *general;                  // general processing details
   s_import *import;                    // importing parameters
+  s_external *external;                // external program to run
   s_airsar *airsar;                    // airsar processing parameters
   s_sar_processing *sar_processing;    // SAR processing parameters
   s_c2p *c2p;                          // complex -> polar parameters

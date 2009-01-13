@@ -169,6 +169,10 @@ int count_char(const char *s, char c);
 // a version of strstr that ignores case
 char *strstr_case(const char *str, const char *key);
 
+// replaces occurences in "str" of "searchStr" with "replaceStr"
+char *strReplace(const char *str, const char *searchStr,
+                 const char *replaceStr);
+
 /******************************************************************************
  * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in

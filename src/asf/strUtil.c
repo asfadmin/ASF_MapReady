@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <asf.h>
+#include <assert.h>
 
 char *uc (const char *string)
 {
@@ -180,4 +181,48 @@ char *strstr_case(const char *str, const char *key)
     str++;
   }
   return NULL;
+}
+
+// replaces occurences in "str" of "searchStr" with "replaceStr"
+char *strReplace(const char *str, const char *searchStr, const char *replaceStr)
+{
+  int searchStrLen = strlen(searchStr);
+  int replaceStrLen = strlen(replaceStr);
+  const char *curr=str, *next;
+  int n=0;
+
+  // first, just counting characters
+  do {
+    next = strstr(curr, searchStr);
+    if (!next) {
+      n += strlen(curr);
+      break;
+    }
+
+    n += next-curr + replaceStrLen;
+    curr = next + searchStrLen;
+  }
+  while (*curr != '\0');
+
+  curr = str;
+  char *ret = MALLOC(sizeof(char)*(n+2));
+  strcpy(ret, "");
+
+  // now, for reals
+  do {
+    next = strstr(curr, searchStr);
+    if (!next) {
+      strcat(ret, curr);
+      break;
+    }
+
+    strncat(ret, curr, next-curr);
+    strcat(ret, replaceStr);
+    curr = next + searchStrLen;
+
+    assert(strlen(ret) <= n);
+  }
+  while (*curr != '\0');
+
+  return ret;
 }

@@ -20,7 +20,7 @@ static void check_stop()
 }
 
 /* Do not print to the terminal, only report to the log file */
-void asf_print_to_log_only(const char *format, ...)
+void asfPrintToLogOnly(const char *format, ...)
 {
   va_list ap;
   va_start(ap, format);
@@ -189,7 +189,7 @@ void asfReport(report_level_t level, const char *format, ...)
   va_end(ap);
 
   if (level == REPORT_LEVEL_LOG)
-    asf_print_to_log_only("%s", logbuf);
+    asfPrintToLogOnly("%s", logbuf);
   else if (level == REPORT_LEVEL_STATUS)
     asfPrintStatus("%s", logbuf);
   else if (level == REPORT_LEVEL_WARNING)
