@@ -140,7 +140,7 @@ int main(int argc,char *argv[])
 {
     if (argc > 1) {
         check_for_help(argc, argv);
-        handle_license_and_version_args(argc, argv, TOOL_NAME);
+        handle_common_asf_args(&argc, &argv, TOOL_NAME);
     }
     if (argc != 4) {
       usage();
@@ -151,6 +151,8 @@ int main(int argc,char *argv[])
 
     /* Make sure we've got the right amount of arguments */
     if (argc != 4) {usage(argv[0]);}
+
+    asfPrintStatus("Converting from slant to ground range...\n");
 
     /* Get required arguments */
     grPixSize = atof(argv[3]);

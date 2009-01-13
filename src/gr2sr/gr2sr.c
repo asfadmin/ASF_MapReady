@@ -55,6 +55,8 @@ int main(int argc,char *argv[])
   char  infile[256];     /* Input file name               */
   char  outfile[256];    /* Output file name              */
 
+  handle_common_asf_args(&argc, &argv, "gr2sr");
+
   if ((argc != 5 && argc != 3) || (argc == 5 && strcmp(argv[1], "-p") != 0)) {
     usage(argv[0]);
   }
@@ -67,6 +69,7 @@ int main(int argc,char *argv[])
     create_name(outfile,argv[2],".img");
   }
 
+  asfPrintStatus("Converting from ground to slant range...\n");
   if (argc == 5) {
     srPixSize = atof(argv[2]);
     gr2sr_pixsiz(infile, outfile, srPixSize);

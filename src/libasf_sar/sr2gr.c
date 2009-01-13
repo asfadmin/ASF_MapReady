@@ -208,7 +208,6 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	}
 
 	/* Work dat magic! */
-	printf("\n");
 	for (line=0; line<out_nl; line++)
 	{
 		if (a_lower[line]+1 < in_nl)

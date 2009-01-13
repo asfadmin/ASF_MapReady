@@ -15,7 +15,7 @@ int main(int argc,char *argv[])
 
   if (argc > 1) {
     check_for_help(argc, argv);
-    handle_license_and_version_args(argc, argv, TOOL_NAME);
+    handle_common_asf_args(&argc, &argv, TOOL_NAME);
   }
   if ((argc != 5 && argc != 3) || (argc == 5 && strcmp(argv[1], "-p") != 0)) {
     asfPrintStatus("**Note enough arguments\n");
@@ -30,6 +30,8 @@ int main(int argc,char *argv[])
     create_name(infile,argv[1],".img");
     create_name(outfile,argv[2],".img");
   }
+
+  asfPrintStatus("Converting to slant range...\n");
 
   if (argc == 5) {
     srPixSize = atof(argv[2]);
