@@ -394,8 +394,14 @@ void load_external_commands()
         int len = strlen(commands[i].args[j].description);
         char *txt = MALLOC(sizeof(char)*(5+len));
         sprintf(txt, "%s: ", commands[i].args[j].description);
-        GtkWidget *label = gtk_label_new(txt);
-        gtk_widget_set_size_request(label, 200, -1);
+        GtkWidget *label = gtk_label_new("");
+        const char *format = "%s";
+        if (!commands[i].args[j].optional) // required params will be bold
+          format = "<span weight=\"bold\">%s</span>";
+        char *markup = g_markup_printf_escaped(format,txt);
+        gtk_label_set_markup(GTK_LABEL(label), markup);
+        g_free(markup);
+        gtk_widget_set_size_request(label, 120, -1);
         gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
         gtk_widget_show(label);
 
@@ -410,7 +416,7 @@ void load_external_commands()
           case 2: width = 80;  break; // int
           case 3: width = 200; break; // string
         }
-        gtk_widget_set_size_request(label, width, -1);
+        gtk_widget_set_size_request(entry, width, -1);
         gtk_widget_show(entry);
 
         // now plop into an hbox
