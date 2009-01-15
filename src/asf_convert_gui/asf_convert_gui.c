@@ -179,6 +179,8 @@ main(int argc, char **argv)
     input_data_format_combobox_changed();
     input_data_type_changed();
     geocode_options_changed();
+    load_external_commands();
+    external_settings_changed();
     set_toolbar_images();
     show_execute_button(TRUE);
 

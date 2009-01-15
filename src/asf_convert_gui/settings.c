@@ -617,6 +617,10 @@ settings_get_from_gui()
     ret->apply_metadata_fix = get_checked("apply_metadata_fix_checkbutton");
     ret->apply_ers2_gain_fix = get_checked("ers2_gain_fix_checkbutton");
 
+    ret->external_is_checked = get_checked("external_checkbutton");
+    if (ret->external_is_checked)
+      strncpy_safe(ret->cmd, get_external_command_line(), 511);
+
     ret->polarimetric_decomp_setting = POLARIMETRY_NONE;
     ret->do_farcorr = FALSE;
     if (get_checked("polarimetry_checkbutton")) {
@@ -1545,6 +1549,7 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "output file = %s\n", output_file);
     fprintf(cf, "import = %d\n",
         s->input_data_format == INPUT_FORMAT_ASF_INTERNAL ? 0 : 1);
+    fprintf(cf, "external = %d\n", s->external_is_checked);
     fprintf(cf, "sar processing = %d\n", s->process_to_level1);
     // fprintf(cf, "image stats=0\n");
     // fprintf(cf, "detect corner reflectors = 0\n");
@@ -1616,6 +1621,12 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "airsar c polarimetric = %d\n", s->airsar_c_pol);
         fprintf(cf, "airsar l polarimetric = %d\n", s->airsar_l_pol);
         fprintf(cf, "airsar p polarimetric = %d\n", s->airsar_p_pol);
+        fprintf(cf, "\n");
+    }
+
+    if (s->external_is_checked) {
+        fprintf(cf, "[External]\n");
+        fprintf(cf, "command = %s\n", s->cmd);
         fprintf(cf, "\n");
     }
 

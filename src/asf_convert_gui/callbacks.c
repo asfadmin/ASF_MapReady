@@ -912,6 +912,13 @@ on_polarimetry_checkbutton_toggled(GtkWidget * widget)
 }
 
 SIGNAL_CALLBACK void
+on_external_checkbutton_toggled(GtkWidget * widget)
+{
+    external_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
 on_polarimetric_decomp_checkbutton_toggled(GtkWidget *widget)
 {
     polarimetry_settings_changed();

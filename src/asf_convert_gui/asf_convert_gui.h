@@ -134,6 +134,10 @@ typedef struct
   double latitude_low;
   double latitude_hi;
 
+  /* external */
+  int external_is_checked;
+  char cmd[512];
+
   /* polarimetry */
   int polarimetric_decomp_setting;
   int do_farcorr;
@@ -279,6 +283,7 @@ void rgb_settings_changed();
 void import_settings_changed();
 void hide_sections_for_execute();
 void polarimetry_settings_changed();
+void external_settings_changed();
 void input_data_type_combobox_changed();
 void clear_completed_tmp_dirs();
 
@@ -417,6 +422,11 @@ gboolean completed_files_list_scroll_event_handler (GtkWidget *,
 
 /* png_util.c */
 int pixbuf2png(GdkPixbuf *pb, const char *output_png);
+
+/* plugins.c */
+void load_external_commands();
+const char *get_external_command_line();
+void external_settings_changed();
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

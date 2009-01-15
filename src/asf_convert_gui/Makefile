@@ -3,7 +3,7 @@ include ../../make_support/system_rules
 TARGET = asf_convert_gui
 DEST_TARGET = mapready
 DOC_BUILD_MACHINE = dq.asf.alaska.edu
-SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c state.c change_output_dir.c naming_scheme.c metadata.c geocode.c summary.c ceos_thumbnail.c win_font.c projfile.c view_output.c share.c terrcorr.c log.c blow_up_in.c blow_up_out.c png_util.c
+SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c state.c change_output_dir.c naming_scheme.c metadata.c geocode.c summary.c ceos_thumbnail.c win_font.c projfile.c view_output.c share.c terrcorr.c log.c blow_up_in.c blow_up_out.c png_util.c plugins.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -79,6 +79,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe $(BINDIR)/$(DEST_TARGET).exe
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
 	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
+	-cp -f plugins.cfg $(SHAREDIR)
 	-cp htmlhelp.chm $(SHAREDIR)/$(DEST_TARGET).chm
 
 htmlhelp.chm: asf_convert_gui.sgml
@@ -143,6 +144,7 @@ default: clean $(OBJS)
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
 	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
 	-cp -f $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
+	-cp -f plugins.cfg $(SHAREDIR)
 	-mv -f how_to_install.html $(SHAREDIR)/how_to_install_$(DEST_TARGET).html
 
 %.c: %.h
