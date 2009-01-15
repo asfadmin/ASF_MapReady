@@ -49,6 +49,7 @@ settings_apply_to_gui(const Settings * s)
         *input_data_type_combobox,
         *input_data_format_combobox,
         *export_checkbutton,
+        *external_checkbutton,
         *output_format_combobox,
         *output_bytes_checkbutton,
         *scaling_method_combobox,
@@ -59,6 +60,9 @@ settings_apply_to_gui(const Settings * s)
 
     input_data_format_combobox =
         get_widget_checked("input_data_format_combobox");
+
+    external_checkbutton =
+        get_widget_checked("external_checkbutton");
 
     export_checkbutton =
         get_widget_checked("export_checkbutton");
@@ -161,6 +165,15 @@ settings_apply_to_gui(const Settings * s)
     }
 
     input_data_format_combobox_changed();
+
+    gtk_toggle_button_set_active(
+        GTK_TOGGLE_BUTTON(external_checkbutton), s->external_is_checked);
+    if (s->external_is_checked) {
+      GtkWidget *external_optionmenu =
+        get_widget_checked("external_optionmenu");
+      gtk_option_menu_set_history(GTK_OPTION_MENU(external_optionmenu),
+                                  s->external_selected);
+    }
 
     gtk_toggle_button_set_active(
         GTK_TOGGLE_BUTTON(export_checkbutton), s->export_is_checked);
@@ -618,8 +631,17 @@ settings_get_from_gui()
     ret->apply_ers2_gain_fix = get_checked("ers2_gain_fix_checkbutton");
 
     ret->external_is_checked = get_checked("external_checkbutton");
-    if (ret->external_is_checked)
+    if (ret->external_is_checked) {
+      GtkWidget *external_optionmenu =
+        get_widget_checked("external_optionmenu");
+      ret->external_selected =
+        gtk_option_menu_get_history(GTK_OPTION_MENU(external_optionmenu));
       strncpy_safe(ret->cmd, get_external_command_line(), 511);
+    }
+    else {
+      ret->external_selected = 0;
+      strcpy(ret->cmd, "");
+    }
 
     ret->polarimetric_decomp_setting = POLARIMETRY_NONE;
     ret->do_farcorr = FALSE;
@@ -1850,6 +1872,34 @@ int apply_settings_from_config_file(char *configFile)
     s.latitude_low = -99; //cfg->import->lat_begin;
     s.latitude_hi = -99; //cfg->import->lat_end;
     s.apply_ers2_gain_fix = cfg->import->ers2_gain_fix;
+
+    /* external */
+    // this one is a little weird... we populate right to the textboxes,
+    // somewhat breaking our file->settings->gui (going directly file->gui)
+    // we have to open the file up again...
+    if (cfg->general->external) {
+      s.external_is_checked = 1;
+      FILE *fp = FOPEN(configFile, "r");
+      if (fp) {
+        char line[1025];
+        while (fgets(line, 1024, fp) != NULL) {
+          if (strncmp_case(line, "# external selected", 19)==0) {
+            char *p = line+19;
+            while (*p==' ' || *p=='=')
+              ++p;
+            s.external_selected = atoi(p);
+          }
+          else if (strncmp_case(line, "# external params", 17)==0) {
+            char *p = line+17;
+            while (*p==' ' || *p=='=')
+              ++p;
+            populate_external_params_from_csv(p);
+            break;
+          }
+        }
+        fclose(fp);
+      }
+    }
 
     /* polarimetry */
     s.polarimetric_decomp_setting = POLARIMETRY_NONE;

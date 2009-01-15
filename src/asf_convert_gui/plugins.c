@@ -12,6 +12,7 @@ typedef struct {
 typedef struct {
     char name[32];
     char command[1024];
+    char comment[255];
     int num_args;
     Arg args[MAX_ARGS];
 } ExternalCommand;
@@ -198,7 +199,10 @@ void load_external_commands()
     int n=0, line_num=1;
     commands[0].num_args=0;
     for (i=0; i<MAX_ARGS; ++i)
-      commands[n].args[i].type=0;
+      commands[0].args[i].type=0;
+    strcpy(commands[0].comment, "");
+    strcpy(commands[0].command, "");
+    strcpy(commands[0].name, "");
     asfPrintStatus("Parsing plugins.cfg...\n");
     while (fgets(buf, 1024, pf) != NULL) {
       char *line = trim_spaces(buf);
@@ -227,6 +231,9 @@ void load_external_commands()
           commands[n].num_args=0;
           for (i=0; i<MAX_ARGS; ++i) // setting all args to "unset"
             commands[n].args[i].type=0;
+          strcpy(commands[n].comment, "");
+          strcpy(commands[n].command, "");
+          strcpy(commands[n].name, "");
         }
       }
       else {
@@ -237,6 +244,9 @@ void load_external_commands()
         }
         else if (strcmp_case(key, "Command")==0) {
           strcpy(commands[n].command, val);
+        }
+        else if (strcmp_case(key, "Comment")==0) {
+          strcpy(commands[n].comment, val);
         }
         else if (key[0]=='P' && strlen(key)==2 && isdigit(key[1])) {
           char **cols;
@@ -308,33 +318,41 @@ void load_external_commands()
   }
   else {
     num_external = 0;
+    asfPrintStatus("No plugins.\n");
   }
 
+  if (num_external == 0)
+    asfPrintStatus("No plugins.\n");
+  else
+    asfPrintStatus("Found %d plugin%s.\n",
+                   num_external, num_external==1?"":"s");
+
   // debug check
-  {
-    for (i=0; i<num_external; ++i) {
-      printf("\n----External Command #%d----\n", i);
-      printf("  Name        : %s\n", commands[i].name);
-      printf("  Command-line: %s\n", commands[i].command);
-      printf("  Number Args : %d\n", commands[i].num_args);
-      for (j=0; j<MAX_ARGS; ++j) {
-        if (commands[i].args[j].type>0) {
-          printf("  P%d Type     : %s\n", j+1,
-                 commands[i].args[j].type==1 ? "double" :
-                 commands[i].args[j].type==2 ? "int" :
-                 commands[i].args[j].type==3 ? "string" :
-                 "error");
-          printf("  P%d Optional : %s\n", j+1,
-                 commands[i].args[j].optional ? "Yes" : "No");
-          printf("  P%d Format   : %s\n", j+1,
-                 commands[i].args[j].format);
-          printf("  P%d Descrip  : %s\n", j+1,
-                 commands[i].args[j].description);
-        }
-      }
-      printf("----END----\n");
-    }
-  }
+  //{
+  //  for (i=0; i<num_external; ++i) {
+  //    printf("\n----External Command #%d----\n", i);
+  //    printf("  Name        : %s\n", commands[i].name);
+  //    printf("  Command-line: %s\n", commands[i].command);
+  //    printf("  Comment     : %s\n", commands[i].comment);
+  //    printf("  Number Args : %d\n", commands[i].num_args);
+  //    for (j=0; j<MAX_ARGS; ++j) {
+  //      if (commands[i].args[j].type>0) {
+  //        printf("  P%d Type     : %s\n", j+1,
+  //               commands[i].args[j].type==1 ? "double" :
+  //               commands[i].args[j].type==2 ? "int" :
+  //               commands[i].args[j].type==3 ? "string" :
+  //               "error");
+  //        printf("  P%d Optional : %s\n", j+1,
+  //               commands[i].args[j].optional ? "Yes" : "No");
+  //        printf("  P%d Format   : %s\n", j+1,
+  //               commands[i].args[j].format);
+  //        printf("  P%d Descrip  : %s\n", j+1,
+  //               commands[i].args[j].description);
+  //      }
+  //    }
+  //    printf("----END----\n");
+  //  }
+  //}
 
   // now populate the menu
   GtkWidget *menu = gtk_menu_new();
@@ -439,9 +457,9 @@ void external_settings_changed()
   gtk_widget_set_sensitive(external_tab_label, external_is_checked);
   gtk_widget_set_sensitive(vbox_external, external_is_checked);
 
-  // now, hide/show all of the parameters that are appropriate for the
-  // selected tool.  See "hide_show_fn" above
   if (external_is_checked) {
+    // now, hide/show all of the parameters that are appropriate for the
+    // selected tool.  See "hide_show_fn" above
     GtkWidget *external_optionmenu =
       get_widget_checked("external_optionmenu");
     int which = gtk_option_menu_get_history(
@@ -451,6 +469,15 @@ void external_settings_changed()
 
     // the children of this vbox are all hboxes, containing the parameters
     gtk_container_foreach(GTK_CONTAINER(vbox), hide_show_fn, (gpointer)which);
+
+    // show the "Comment" for the selected plugin.
+    GtkWidget *lbl = get_widget_checked("external_comment_label");
+    if (which >= 2) {
+      gtk_label_set_text(GTK_LABEL(lbl), commands[which-2].comment);
+    }
+    else {
+      gtk_label_set_text(GTK_LABEL(lbl), "");
+    }
   }
 }
 
@@ -460,6 +487,25 @@ SIGNAL_CALLBACK void on_external_optionmenu_changed(GtkWidget *widget)
 }
 
 static char cmd_buf[512];
+
+GtkWidget *find_entry(GtkWidget *hbox, const char *name)
+{
+  GList *list = gtk_container_get_children(GTK_CONTAINER(hbox));
+  GList *curr = list;
+
+  GtkWidget *entry = NULL;
+
+  do {
+    if (strcmp(name, gtk_widget_get_name(GTK_WIDGET(curr->data)))==0) {
+      entry = GTK_WIDGET(curr->data);
+      break;
+    }
+    curr = curr->next;
+  }
+  while (curr != NULL);
+
+  return entry;
+}
 
 void collect_args_fn(GtkWidget *hbox, gpointer data)
 {
@@ -473,24 +519,11 @@ void collect_args_fn(GtkWidget *hbox, gpointer data)
     snprintf(code, sizeof(code), "entry_%d_%d", which, key_num);
 
     // find the textbox within this hbox -- that's where the parameter value is
-    GList *list = gtk_container_get_children(GTK_CONTAINER(hbox));
-    GList *curr=list;
-    GtkWidget *entry = NULL;
-    do {
-      if (strcmp(code, gtk_widget_get_name(GTK_WIDGET(curr->data)))==0) {
-        entry = GTK_WIDGET(curr->data);
-        break;
-      }
-
-      curr = curr->next;
-    }
-    while (curr != NULL);
-
+    GtkWidget *entry = find_entry(hbox, code);
     if (!entry)
       return;
 
     const char *val = gtk_entry_get_text(GTK_ENTRY(entry));
-    g_list_free(list);
 
     double d;
     int i;
@@ -532,4 +565,76 @@ const char *get_external_command_line()
   gtk_container_foreach(GTK_CONTAINER(vbox), collect_args_fn, (gpointer)which);
 
   return cmd_buf;
+}
+
+void list_args_fn(GtkWidget *hbox, gpointer data)
+{
+  int tool = (int)g_object_get_data(G_OBJECT(hbox), "tool");
+  int arg = (int)g_object_get_data(G_OBJECT(hbox), "arg");
+
+  char name[32];
+  snprintf(name, sizeof(name), "entry_%d_%d", tool, arg);
+
+  // find the textbox within this hbox -- that's where the parameter value is
+  GtkWidget *entry = find_entry(hbox, name);
+  if (!entry)
+    return;
+
+  const char *val = gtk_entry_get_text(GTK_ENTRY(entry));
+
+  strcat(cmd_buf, "\"");
+  strcat(cmd_buf, val);
+  strcat(cmd_buf, "\"");
+  strcat(cmd_buf, ",");
+}
+
+const char *get_external_parameters_as_csv()
+{
+  GtkWidget *vbox = get_widget_checked("vbox_external_params");
+  strcpy(cmd_buf, "");
+
+  // the children of this vbox are all hboxes, containing the parameters
+  gtk_container_foreach(GTK_CONTAINER(vbox), list_args_fn, NULL);
+
+  // strip trailing comma, if present
+  if (strlen(cmd_buf)>0 && cmd_buf[strlen(cmd_buf)-1]==',')
+    cmd_buf[strlen(cmd_buf)-1]='\0';
+
+  return cmd_buf;
+}
+
+void populate_external_params_from_csv(char *csv_str)
+{
+  int num;
+  char **vals;
+
+  split_into_array(csv_str, ',', &num, &vals);
+
+  GtkWidget *vbox = get_widget_checked("vbox_external_params");
+  GList *list = gtk_container_get_children(GTK_CONTAINER(vbox));
+  GList *curr = list;
+
+  int i=0;
+  do {
+    GtkWidget *hbox = (GtkWidget*)curr->data;
+
+    int tool = (int)g_object_get_data(G_OBJECT(hbox), "tool");
+    int arg = (int)g_object_get_data(G_OBJECT(hbox), "arg");
+
+    char name[32];
+    snprintf(name, sizeof(name), "entry_%d_%d", tool, arg);
+
+    GtkWidget *entry = find_entry(hbox, name);
+    if (entry) {
+      gtk_entry_set_text(GTK_ENTRY(entry), vals[i]);
+    }
+
+    curr = curr->next;
+    ++i;
+
+    if (i>=num) break;
+  }
+  while (curr != NULL);
+
+  g_list_free(list);
 }

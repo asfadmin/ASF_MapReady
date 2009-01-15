@@ -551,6 +551,7 @@ void save_config(char *config_file, char* projfile)
   fprintf(cf, "input file = %s\n", input_basename);
   fprintf(cf, "output file = %s\n", output_file);
   fprintf(cf, "import = 1\n");
+  fprintf(cf, "external = %d\n", s->external_is_checked);
   fprintf(cf, "sar processing = %d\n", s->process_to_level1);
 // fprintf(cf, "image stats=0\n");
 // fprintf(cf, "detect corner reflectors = 0\n");
@@ -599,6 +600,14 @@ void save_config(char *config_file, char* projfile)
   fprintf(cf, "output db = %d\n", s->output_db);
   fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
   fprintf(cf, "\n");
+
+  if (s->external_is_checked) {
+    fprintf(cf, "[External]\n");
+    fprintf(cf, "# external selected = %d\n", s->external_selected);
+    fprintf(cf, "# external params = %s\n", get_external_parameters_as_csv());
+    fprintf(cf, "command = %s\n", s->cmd);
+    fprintf(cf, "\n");
+  }
 
   if (s->process_to_level1) {
     fprintf(cf, "[SAR processing]\n");

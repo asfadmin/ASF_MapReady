@@ -136,6 +136,7 @@ typedef struct
 
   /* external */
   int external_is_checked;
+  int external_selected;
   char cmd[512];
 
   /* polarimetry */
@@ -427,6 +428,8 @@ int pixbuf2png(GdkPixbuf *pb, const char *output_png);
 void load_external_commands();
 const char *get_external_command_line();
 void external_settings_changed();
+const char *get_external_parameters_as_csv();
+void populate_external_params_from_csv(char *csv_str);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR
