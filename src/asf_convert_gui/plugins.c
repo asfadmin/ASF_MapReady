@@ -417,8 +417,14 @@ void load_external_commands()
         GtkWidget *hbox = gtk_hbox_new(FALSE, 1);
         gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 2);
         gtk_box_pack_end(GTK_BOX(hbox), entry, FALSE, FALSE, 2);
-        g_object_set_data(G_OBJECT(hbox), "tool", (gpointer)i);
-        g_object_set_data(G_OBJECT(hbox), "arg", (gpointer)j);
+
+	int *ip = MALLOC(sizeof(int));
+	*ip = i;
+	int *jp = MALLOC(sizeof(int));
+	*jp = j;
+
+        g_object_set_data(G_OBJECT(hbox), "tool", (gpointer)ip);
+        g_object_set_data(G_OBJECT(hbox), "arg", (gpointer)jp);
         gtk_widget_hide(hbox);
         //gtk_widget_show(hbox);
 
@@ -431,7 +437,7 @@ void load_external_commands()
 
 void hide_show_fn(GtkWidget *hbox, gpointer data)
 {
-  int which = (int)data;
+  int which = *((int*)data);
 
   // which is the item selected -- subtract 2 to eliminate "none" and "----"
   // the index is the tool ID
@@ -439,7 +445,7 @@ void hide_show_fn(GtkWidget *hbox, gpointer data)
 
   // if the tool ID matches that of the parameter specified in this hbox
   // for "None", which will be -2, which won't match anything
-  if (which == (int)g_object_get_data(G_OBJECT(hbox), "tool"))
+  if (which == *(int*)g_object_get_data(G_OBJECT(hbox), "tool"))
     gtk_widget_show(hbox);
   else
     gtk_widget_hide(hbox);
@@ -468,7 +474,9 @@ void external_settings_changed()
     GtkWidget *vbox = get_widget_checked("vbox_external_params");
 
     // the children of this vbox are all hboxes, containing the parameters
-    gtk_container_foreach(GTK_CONTAINER(vbox), hide_show_fn, (gpointer)which);
+    int *ip = MALLOC(sizeof(int));
+    *ip = which;
+    gtk_container_foreach(GTK_CONTAINER(vbox), hide_show_fn, (gpointer)ip);
 
     // show the "Comment" for the selected plugin.
     GtkWidget *lbl = get_widget_checked("external_comment_label");
@@ -509,10 +517,10 @@ GtkWidget *find_entry(GtkWidget *hbox, const char *name)
 
 void collect_args_fn(GtkWidget *hbox, gpointer data)
 {
-  int which = (int)data - 2;
+  int which = *(int*)data - 2;
 
-  if (which == (int)g_object_get_data(G_OBJECT(hbox), "tool")) {
-    int key_num = (int)g_object_get_data(G_OBJECT(hbox), "arg");
+  if (which == *(int*)g_object_get_data(G_OBJECT(hbox), "tool")) {
+    int key_num = *(int*)g_object_get_data(G_OBJECT(hbox), "arg");
 
     char key[5], code[32];
     snprintf(key, sizeof(key), "$P%d", key_num+1);
@@ -562,15 +570,17 @@ const char *get_external_command_line()
   strcpy(cmd_buf, commands[which-2].command);
 
   // the children of this vbox are all hboxes, containing the parameters
-  gtk_container_foreach(GTK_CONTAINER(vbox), collect_args_fn, (gpointer)which);
+  int *ip = MALLOC(sizeof(int));
+  *ip = which;
+  gtk_container_foreach(GTK_CONTAINER(vbox), collect_args_fn, (gpointer)ip);
 
   return cmd_buf;
 }
 
 void list_args_fn(GtkWidget *hbox, gpointer data)
 {
-  int tool = (int)g_object_get_data(G_OBJECT(hbox), "tool");
-  int arg = (int)g_object_get_data(G_OBJECT(hbox), "arg");
+  int tool = *(int*)g_object_get_data(G_OBJECT(hbox), "tool");
+  int arg = *(int*)g_object_get_data(G_OBJECT(hbox), "arg");
 
   char name[32];
   snprintf(name, sizeof(name), "entry_%d_%d", tool, arg);
@@ -618,8 +628,8 @@ void populate_external_params_from_csv(char *csv_str)
   do {
     GtkWidget *hbox = (GtkWidget*)curr->data;
 
-    int tool = (int)g_object_get_data(G_OBJECT(hbox), "tool");
-    int arg = (int)g_object_get_data(G_OBJECT(hbox), "arg");
+    int tool = *(int*)g_object_get_data(G_OBJECT(hbox), "tool");
+    int arg = *(int*)g_object_get_data(G_OBJECT(hbox), "arg");
 
     char name[32];
     snprintf(name, sizeof(name), "entry_%d_%d", tool, arg);
