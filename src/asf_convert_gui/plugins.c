@@ -10,8 +10,10 @@ typedef struct {
 
 #define MAX_ARGS 4
 #define MAX_COMMENT_LEN 400
+#define MAX_NAME_LEN 32
+
 typedef struct {
-    char name[32];
+    char name[MAX_NAME_LEN];
     char command[1024];
     char comment[MAX_COMMENT_LEN];
     int num_args;
@@ -84,6 +86,7 @@ static char *quoted_string_parse(char *p, char *s, int max_len, int line_num)
       // eat whitespace, until we get to what should be a comma
       while (isspace(*r))
         ++r;
+
       // now, eat the comma
       if (*r != ',') {
         if (line_num>0)
@@ -157,6 +160,16 @@ static void split_into_array(char *str, char sep, int *nelem, char ***parr)
 
   *parr = arr;
   *nelem = n;
+}
+
+static void free_char_array(char ***parr, int nelem)
+{
+  char **arr = *parr;
+  int i;
+  for (i=0; i<nelem; ++i)
+    if (arr[i]) free(arr[i]);
+  free(arr);
+  *parr = NULL;
 }
 
 // splits a string into two pieces, stuff before the separater character
@@ -302,10 +315,11 @@ void load_external_commands()
 
       // Parsing parameters for the current external tool
       if (strcmp_case(key, "Name")==0) {
-        if (strlen(val)>31) {
+        if (strlen(val)>=MAX_NAME_LEN) {
           asfPrintWarning("Plugin name:  %s\nis too long, truncated.\n"
-                          "Maximum 30 characters.  (Line %d)\n", val, line_num);
-          val[31]='\0';
+                          "Maximum %d characters.  (Line %d)\n",
+                          val, MAX_NAME_LEN, line_num);
+          val[MAX_NAME_LEN-1]='\0';
         }
         strcpy(commands[n].name, val);
       }
@@ -313,7 +327,7 @@ void load_external_commands()
         if (strlen(commands[n].command)>0)
           asfPrintWarning("Multiple command entries found! (line %d).\n",
                           line_num);
-        if (strlen(val)>1024) {
+        if (strlen(val)>=1024) {
           asfPrintWarning("Plugin command:\n  %s\ntoo long, truncated.\n"
                           "Maximum 1024 characters. (Line %d)\n",
                           val, line_num);
@@ -405,6 +419,7 @@ void load_external_commands()
               commands[n].num_args = which+1;
           }
         }
+        free_char_array(&cols, num);
       }
       else {
         asfPrintWarning("Invalid key found on line %d: %s\n", line_num, key);
@@ -586,6 +601,7 @@ void external_settings_changed()
     int *ip = MALLOC(sizeof(int));
     *ip = which;
     gtk_container_foreach(GTK_CONTAINER(vbox), hide_show_fn, (gpointer)ip);
+    FREE(ip);
 
     // show the "Comment" for the selected plugin.
     GtkWidget *lbl = get_widget_checked("external_comment_label");
@@ -630,6 +646,8 @@ GtkWidget *find_entry(GtkWidget *hbox, const char *name)
 // just one of the placeholders
 void collect_args_fn(GtkWidget *hbox, gpointer data)
 {
+  // this is the menu index -- we must -2 because of "None" and separator
+  // in order to get the external tool ID (index into the commands array)
   int which = *(int*)data - 2;
 
   if (which == *(int*)g_object_get_data(G_OBJECT(hbox), "tool")) {
@@ -674,7 +692,7 @@ void collect_args_fn(GtkWidget *hbox, gpointer data)
           break;
         case 3:
           if (strlen(val)==0) {
-            // required string entry left blank!
+            // required string entry left blank -- leave out entirely
             strcpy(arg, "");
           }
           else {
@@ -704,10 +722,11 @@ const char *get_external_command_line()
 {
   GtkWidget *external_optionmenu = get_widget_checked("external_optionmenu");
   int which = gtk_option_menu_get_history(GTK_OPTION_MENU(external_optionmenu));
-  GtkWidget *vbox = get_widget_checked("vbox_external_params");
   strcpy(cmd_buf, commands[which-2].command);
 
   // the children of this vbox are all hboxes, containing the parameters
+  GtkWidget *vbox = get_widget_checked("vbox_external_params");
+
   int *ip = MALLOC(sizeof(int));
   *ip = which;
 
@@ -719,6 +738,7 @@ const char *get_external_command_line()
   // the configuration file.
   gtk_container_foreach(GTK_CONTAINER(vbox), collect_args_fn, (gpointer)ip);
 
+  FREE(ip);
   return cmd_buf;
 }
 
