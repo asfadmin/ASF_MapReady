@@ -189,6 +189,56 @@ static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
   FREE(str);
 }
 
+int is_valid_external(int n, int line_num)
+{
+  int ok = TRUE;
+  if (n>=0) { 
+    if (strlen(commands[n].name)==0) {
+      asfPrintWarning("Name field not found for plugin ending on line %d.\n",
+                      line_num-1);
+      ok=FALSE;
+    }
+    else if (strlen(commands[n].command)==0) {
+      asfPrintWarning("Command field not found for plugin ending on line %d.\n",
+                      line_num-1);
+      ok=FALSE;
+    }
+    else if (strstr(commands[n].command, "{Input}")==NULL) {
+      asfPrintWarning("Command field does not specify {Input} placeholder "
+                      "for the input file,\nfor plugin ending on line %d.\n",
+                      line_num-1);
+      ok=FALSE;
+    }
+    else if (strstr(commands[n].command, "{Output}")==NULL) {
+      asfPrintWarning("Command field does not specify {Output} placeholder "
+                      "for the output file,\nfor plugin ending on line %d.\n",
+                      line_num-1);
+      ok=FALSE;
+    }
+    else {
+      int i;
+      for (i=0; i<MAX_ARGS; ++i) {
+        char key[4];
+        sprintf(key, "$P%d", i+1);
+        if (commands[n].args[i].type==0 &&
+            strstr(commands[n].command, key)!=NULL)
+        {
+          asfPrintWarning("%s not specified for command ending on "
+                          "line %d.\n", key, line_num-1);
+          ok=FALSE;
+        }
+      }
+    }
+  }
+  if (!ok) {
+    if (strlen(commands[n].name)>0)
+      asfPrintWarning("*** Plugin '%s' was not added!\n", commands[n].name);
+    else
+      asfPrintWarning("*** Plugin ending on line %d not added!\n", line_num);
+  }
+  return ok;
+}
+
 void load_external_commands()
 {
   // read the "plugins.cfg" file
@@ -196,125 +246,177 @@ void load_external_commands()
   FILE *pf = fopen_share_file("plugins.cfg", "r");
   if (pf) {
     char buf[1025];
-    int n=0, line_num=1;
-    commands[0].num_args=0;
-    for (i=0; i<MAX_ARGS; ++i)
-      commands[0].args[i].type=0;
-    strcpy(commands[0].comment, "");
-    strcpy(commands[0].command, "");
-    strcpy(commands[0].name, "");
+    int n=-1; // this is the external tool number we're parsing
+    int line_num=1;
+
     asfPrintStatus("Parsing plugins.cfg...\n");
     while (fgets(buf, 1024, pf) != NULL) {
+
+      if (buf[strlen(buf)-1] != '\n') {
+        // did not read the entire line... we will ignore the rest of the line
+        char eat[64];
+        while (fgets(eat, 63, pf) != NULL)
+          if (eat[strlen(eat)-1]=='\n') break;
+      }
+
       char *line = trim_spaces(buf);
-      if (strlen(line) == 0) {
-        int ok = TRUE;
-        if (strlen(commands[n].name)==0 || strlen(commands[n].command)==0) {
-          asfPrintWarning("Invalid blank line found on line %d.\n", line_num);
-          ok=FALSE;
-        }
-        else {
-          for (i=0; i<MAX_ARGS; ++i) {
-            char key[4];
-            sprintf(key, "$P%d", i+1);
-            if (commands[n].args[i].type==0 &&
-                strstr(commands[n].command, key)!=NULL)
-            {
-              asfPrintWarning("%s not specified for command ending on "
-                              "line %d.\n", key, line_num);
-              ok=FALSE;
-            }
-          }
-        }
-        if (ok) {
+
+      // skip comment lines, blank lines
+      if (strlen(line)==0 || line[0]=='#') {
+        ++line_num;
+        continue;
+      }
+
+      // divide the line into before & after the '='
+      char *key, *val;
+      split2(line, '=', &key, &val);
+
+      // "Name" signals the end of the external definition -- in that case,
+      // move to the next element of the array before starting parsing of
+      // this new tool definition.  A special case is the first "Name", where
+      // we just want the code that clears out the next command entry spot
+      if (strncmp_case(key, "Name", 4) == 0) {
+        if (is_valid_external(n, line_num)) {
           // move to next external command
           ++n;
-          commands[n].num_args=0;
-          for (i=0; i<MAX_ARGS; ++i) // setting all args to "unset"
-            commands[n].args[i].type=0;
-          strcpy(commands[n].comment, "");
-          strcpy(commands[n].command, "");
-          strcpy(commands[n].name, "");
+        }
+
+        // clear out this command entry.  if the definition was ok, we are
+        // clearing out the next entry (which is already empty), if we had
+        // an error we are clearing out the erroneous data from the current
+        // entry, to be overwritten by the next entry in the file
+        commands[n].num_args=0;
+        for (i=0; i<MAX_ARGS; ++i)
+          commands[n].args[i].type=0;
+        strcpy(commands[n].comment, "");
+        strcpy(commands[n].command, "");
+        strcpy(commands[n].name, "");
+      }
+
+      // n should have been incremented from -1 by now
+      if (n<0) {
+        asfPrintWarning("\"Name\" is not first specified field!\n");
+        n=0;
+      }
+
+      // Parsing parameters for the current external tool
+      if (strcmp_case(key, "Name")==0) {
+        if (strlen(val)>31) {
+          asfPrintWarning("Plugin name:  %s\nis too long, truncated.\n"
+                          "Maximum 30 characters.  (Line %d)\n", val, line_num);
+          val[31]='\0';
+        }
+        strcpy(commands[n].name, val);
+      }
+      else if (strcmp_case(key, "Command")==0) {
+        if (strlen(commands[n].command)>0)
+          asfPrintWarning("Multiple command entries found! (line %d).\n",
+                          line_num);
+        if (strlen(val)>1024) {
+          asfPrintWarning("Plugin command:\n  %s\ntoo long, truncated.\n"
+                          "Maximum 1024 characters. (Line %d)\n",
+                          val, line_num);
+          val[1023]='\0';
+        }
+        strcpy(commands[n].command, val);
+      }
+      else if (strcmp_case(key, "Comment")==0) {
+        if (strlen(commands[n].comment)>0)
+          asfPrintWarning("Multiple comment entries found! (line %d).\n",
+                          line_num);
+        if (strlen(val)>255) {
+          asfPrintWarning("Plugin comment:\n  %s\ntoo long, truncated.\n"
+                          "Maximum 255 characters.  (Line %d)\n",
+                          val, line_num);
+          val[254]='\0';
+        }
+        strcpy(commands[n].comment, val);
+      }
+      else if (key[0]=='P' && strlen(key)==2 && isdigit(key[1])) {
+        char **cols;
+        int num, type, optional;
+        char format[32], description[32];
+        split_into_array(val, ',', &num, &cols);
+        if (num != 4) {
+          asfPrintWarning("Did not find 4 columns on line %d.\n", line_num);
+        }
+        else {
+          // parsing the four columns:
+          // Column #1: parameter type
+          type=0;
+          if (strcmp_case(cols[0], "double")==0)
+            type=1;
+          else if (strcmp_case(cols[0], "int")==0)
+            type=2;
+          else if (strcmp_case(cols[0], "string")==0)
+            type=3;
+          else
+            asfPrintWarning("Invalid type entry on line %d: %s\n",
+                            line_num, cols[0]);
+
+          // Column #2: parameter optional/required flag
+          optional=1;
+          if (strcmp_case(cols[1], "optional")==0)
+            optional=1;
+          else if (strcmp_case(cols[1], "required")==0)
+            optional=0;
+          else
+            asfPrintWarning("Invalid required/optional flag on line %d: %s\n",
+                            line_num, cols[1]);
+
+          // Column #3: format
+          if (strlen(cols[2])>32)
+            asfPrintWarning("Format specification on line %d too long, "
+                            "truncated to 32 characters.\n", line_num);
+          strncpy_safe(format, cols[2], 30);
+
+          // Column #4: description
+          if (strlen(cols[3])>32)
+            asfPrintWarning("Description on line %d too long, "
+                            "truncated to 32 characters.\n", line_num);
+          strncpy_safe(description, cols[3], 30);
+
+          // Checking that this code is in the command (if the command
+          // has been given yet)
+          int which = key[1] - '1';
+          char code[4];
+          sprintf(code, "$P%d", which+1);
+
+          if (strstr(commands[n].command, code)==NULL) {
+            asfPrintWarning("%s specified on line %d is not in the "
+                            "command string (no %s).\n",
+                            key, line_num, code);
+          }
+          else if (which >= MAX_ARGS) {
+            asfPrintWarning("Currently, the maximum number of args is %d, "
+                            "arg %d on line %d is ignored.\n",
+                            MAX_ARGS, which+1, line_num);
+          }
+          else {
+            if (commands[n].args[which].type != 0)
+              asfPrintWarning("Multiple %s entries found! (line %d).\n",
+                              key, line_num);
+            commands[n].args[which].type = type;
+            commands[n].args[which].optional = optional;
+            strcpy(commands[n].args[which].format, format);
+            strcpy(commands[n].args[which].description, description);
+            if (which>=commands[n].num_args)
+              commands[n].num_args = which+1;
+          }
         }
       }
       else {
-        char *key, *val;
-        split2(line, '=', &key, &val);
-        if (strcmp_case(key, "Name")==0) {
-          strcpy(commands[n].name, val);
-        }
-        else if (strcmp_case(key, "Command")==0) {
-          strcpy(commands[n].command, val);
-        }
-        else if (strcmp_case(key, "Comment")==0) {
-          strcpy(commands[n].comment, val);
-        }
-        else if (key[0]=='P' && strlen(key)==2 && isdigit(key[1])) {
-          char **cols;
-          int num, type, optional;
-          char format[32], description[32];
-          split_into_array(val, ',', &num, &cols);
-          if (num != 4) {
-            asfPrintWarning("Did not find 4 columns on line %d.\n", line_num);
-          }
-          else {
-            type=0;
-            if (strcmp_case(cols[0], "double")==0)
-              type=1;
-            else if (strcmp_case(cols[0], "int")==0)
-              type=2;
-            else if (strcmp_case(cols[0], "string")==0)
-              type=3;
-            else
-              asfPrintWarning("Invalid type entry on line %d: %s\n",
-                              line_num, cols[0]);
-
-            optional=1;
-            if (strcmp_case(cols[1], "optional")==0)
-              optional=1;
-            else if (strcmp_case(cols[1], "required")==0)
-              optional=0;
-            else
-              asfPrintWarning("Invalid required/optional flag on line %d: %s\n",
-                              line_num, cols[1]);
-
-            strncpy_safe(format, cols[2], 30);
-            strncpy_safe(description, cols[3], 30);
-
-            int which = key[1] - '1';
-            char code[4];
-            sprintf(code, "$P%d", which+1);
-
-            if (strstr(commands[n].command, code)==NULL) {
-              asfPrintWarning("%s specified on line %d is not in the "
-                              "command string (no %s).\n",
-                              key, line_num, code);
-            }
-            else if (which >= MAX_ARGS) {
-              asfPrintWarning("Currently, the maximum number of args is %d, "
-                              "arg %d on line %d is ignored.\n",
-                              MAX_ARGS, which+1, line_num);
-            }
-            else {
-              commands[n].args[which].type = type;
-              commands[n].args[which].optional = optional;
-              strcpy(commands[n].args[which].format, format);
-              strcpy(commands[n].args[which].description, description);
-              if (which>=commands[n].num_args)
-                commands[n].num_args = which+1;
-            }
-          }
-        }
-        else {
-          asfPrintWarning("Invalid key found on line %d: %s\n", key, line_num);
-        }
+        asfPrintWarning("Invalid key found on line %d: %s\n", line_num, key);
       }
+
       ++line_num;
     }
-    if (strlen(commands[n].name)>0 && strlen(commands[n].command)>0) {
-      ++n;
-    }
-    num_external = n;
     fclose(pf);
+
+    // no "Name" to signal the end of the last entry, so move ahead manually
+    if (is_valid_external(n, line_num))
+      ++n;
+    num_external = n;
   }
   else {
     num_external = 0;
@@ -521,6 +623,10 @@ GtkWidget *find_entry(GtkWidget *hbox, const char *name)
   return entry;
 }
 
+// this is the callback function that replaces each parameters placeholder
+// with the user-entered parameter value, using the format specifier from
+// the config file.  this is called once per parameter, each time replacing
+// just one of the placeholders
 void collect_args_fn(GtkWidget *hbox, gpointer data)
 {
   int which = *(int*)data - 2;
@@ -539,27 +645,49 @@ void collect_args_fn(GtkWidget *hbox, gpointer data)
 
     const char *val = gtk_entry_get_text(GTK_ENTRY(entry));
 
-    double d;
-    int i;
+    // replace "$P<id>" in the command string with what the user entered,
+    // using the format string provided in the config file.  If the user left
+    // the entry blank, we'll replace with an empty string unless the
+    // parameters was marked as required -- in this case, double & integer
+    // parameters will be passed with zeros, and string params ... here we
+    // act as if the parameter was optional -- likely the user will get an
+    // error when the external program runs, which is the best scenario.
     char arg[64];
-    switch (commands[which].args[key_num].type) {
-      default:
-      case 0:
-        asfPrintError("Invalid type found at position %d %d\n", which, key_num);
-        break;
-      case 1:
-        d = atof(val);
-        snprintf(arg, sizeof(arg), commands[which].args[key_num].format, d);
-        break;
-      case 2:
-        i = atoi(val);
-        snprintf(arg, sizeof(arg), commands[which].args[key_num].format, i);
-        break;
-      case 3:
-        snprintf(arg, sizeof(arg), commands[which].args[key_num].format, val);
-        break;
+    if (strlen(val)>0 || !commands[which].args[key_num].optional) {
+      double d;
+      int i;
+
+      switch (commands[which].args[key_num].type) {
+        default:
+        case 0:
+          asfPrintError("Invalid type found at position %d %d\n",
+                        which, key_num);
+          break;
+        case 1:
+          d = atof(val);
+          snprintf(arg, sizeof(arg), commands[which].args[key_num].format, d);
+          break;
+        case 2:
+          i = atoi(val);
+          snprintf(arg, sizeof(arg), commands[which].args[key_num].format, i);
+          break;
+        case 3:
+          if (strlen(val)==0) {
+            // required string entry left blank!
+            strcpy(arg, "");
+          }
+          else {
+            snprintf(arg, sizeof(arg),
+                     commands[which].args[key_num].format, val);
+          }
+          break;
+      }
+    }
+    else {
+      strcpy(arg, "");
     }
 
+    // here's the actual replacement of "$P<id>" in the command string
     char *cpy = STRDUP(cmd_buf);
     char *rep = strReplace(cmd_buf, key, arg);
     strncpy_safe(cmd_buf, rep, 511);
@@ -568,6 +696,9 @@ void collect_args_fn(GtkWidget *hbox, gpointer data)
   }
 }
 
+// This code actually builds a command-line for asf_mapready to use,
+// substituting for each parameter the values entered by the user.  It
+// is called in "settings_from_gui()", to populate the "cmd" string.
 const char *get_external_command_line()
 {
   GtkWidget *external_optionmenu = get_widget_checked("external_optionmenu");
@@ -578,11 +709,20 @@ const char *get_external_command_line()
   // the children of this vbox are all hboxes, containing the parameters
   int *ip = MALLOC(sizeof(int));
   *ip = which;
+
+  // here's the loop that replaces each parameter placeholder (i.e., "$P1"
+  // $P2, etc) with the parameter's value, using the format string from
+  // the config file.  For example, "smooth $P1 {Input} {Output}" would
+  // turn into "smooth -kernel-size 7 {Input} {Output}" assuming the user
+  // has entered 7.  The "-kernel-size" comes from the format string in
+  // the configuration file.
   gtk_container_foreach(GTK_CONTAINER(vbox), collect_args_fn, (gpointer)ip);
 
   return cmd_buf;
 }
 
+// this is the callback used to generate a CSV list of all parameters
+// in all the textboxes -- used with "Save Settings"
 void list_args_fn(GtkWidget *hbox, gpointer data)
 {
   int tool = *(int*)g_object_get_data(G_OBJECT(hbox), "tool");
@@ -619,6 +759,7 @@ const char *get_external_parameters_as_csv()
   return cmd_buf;
 }
 
+// this populates the parameter textboxes from a CSV, used by "Load Settings"
 void populate_external_params_from_csv(char *csv_str)
 {
   int num;
