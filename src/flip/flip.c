@@ -29,6 +29,8 @@ void usage()
 
 int main(int argc, char *argv[])
 {
+  handle_common_asf_args(&argc, &argv, "flip");
+
   if (argc != 4) {
     usage();
   }
@@ -83,4 +85,5 @@ int main(int argc, char *argv[])
 		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
   meta_free(imd);
+  return EXIT_SUCCESS;
 }
