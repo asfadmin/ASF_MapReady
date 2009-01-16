@@ -1865,6 +1865,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
 
     if (cfg->general->external) {
+
+      update_status("Running external program...");
+
       strcpy(inFile, outFile);
       sprintf(outFile, "%s/external", cfg->general->tmp_dir);
 

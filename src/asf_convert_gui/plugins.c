@@ -9,10 +9,11 @@ typedef struct {
 } Arg;
 
 #define MAX_ARGS 4
+#define MAX_COMMENT_LEN 400
 typedef struct {
     char name[32];
     char command[1024];
-    char comment[255];
+    char comment[MAX_COMMENT_LEN];
     int num_args;
     Arg args[MAX_ARGS];
 } ExternalCommand;
@@ -324,11 +325,11 @@ void load_external_commands()
         if (strlen(commands[n].comment)>0)
           asfPrintWarning("Multiple comment entries found! (line %d).\n",
                           line_num);
-        if (strlen(val)>255) {
+        if (strlen(val)>=MAX_COMMENT_LEN) {
           asfPrintWarning("Plugin comment:\n  %s\ntoo long, truncated.\n"
-                          "Maximum 255 characters.  (Line %d)\n",
-                          val, line_num);
-          val[254]='\0';
+                          "Maximum %d characters.  (Line %d)\n",
+                          val, MAX_COMMENT_LEN, line_num);
+          val[MAX_COMMENT_LEN-1]='\0';
         }
         strcpy(commands[n].comment, val);
       }
@@ -503,7 +504,7 @@ void load_external_commands()
         char *markup = g_markup_printf_escaped(format,txt);
         gtk_label_set_markup(GTK_LABEL(label), markup);
         g_free(markup);
-        gtk_widget_set_size_request(label, 120, -1);
+        //gtk_widget_set_size_request(label, 140, -1);
         gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
         gtk_widget_show(label);
 
