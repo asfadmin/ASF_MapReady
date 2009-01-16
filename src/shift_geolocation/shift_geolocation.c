@@ -1,7 +1,7 @@
 #define ASF_NAME_STRING "shift_geolocation"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-update]\n"\
+"   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-update | -copy-image]\n"\
 "          <x-shift> <y-shift> <in_base_name> [<out_base_name>]\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -33,7 +33,8 @@
 "          calculated offsets.\n\n"\
 "          Without this option, a new metadata file is written with the\n"\
 "          provided name.  Since the image data is not affected by\n"\
-"          the geolocation shift, a new image file is not written.  However,\n"\
+"          the geolocation shift, a new image file is not written, unless\n"\
+"          the -copy-image option is also used.  If you don't use -copy-image,\n"\
 "          because most ASF tools require that the metadata basename match\n"\
 "          the image basename, you will need to either (1) make a copy\n"\
 "          of the image file with a new matching basename, or (2) make a\n"\
@@ -44,7 +45,7 @@
 "          (with 'sar.meta') and you wish to apply a shift of 3 pixels in x,\n"\
 "          and 7 pixels in y, and you use the output name 'adjusted_sar.meta',\n"\
 "          these options would be used as follows:\n\n"\
-"            (1) Make a copy of the image file: \n"\
+"            (1) Make a copy of the image file: (also see -copy-image, below)\n"\
 "                  > shift_geolocation 3 7 sar adjusted_sar\n"\
 "                  > cp sar.img adjusted_sar.img\n\n"\
 "            (2) Make a symbolic link:  (Unix only)\n"\
@@ -54,6 +55,12 @@
 "                  > shift_geolocation 3 7 sar adjusted_sar\n"\
 "                     (verify that adjusted_sar.meta is ok)\n"\
 "                  > mv adjusted_sar.meta sar.meta\n\n"\
+"\n"\
+"     -copy-image (-c)\n"\
+"          Makes a copy of the image file to match the new metadata file\n"\
+"          this is created.  Cannot be used with the -update option.\n"\
+"          It is equivalent to using option #1, from the discussion\n"\
+"          above, for what to do when you do not use the -update option.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
@@ -80,7 +87,11 @@
 "     Geolocation shift of 2 pixels in x, 5 pixels in y, creating\n"\
 "     a new metadata file:\n"\
 "       > "ASF_NAME_STRING" input_image updated\n\n"\
-"     This produces an output file 'updated.meta', and no image file.\n"\
+"     This produces an output file 'updated.meta', and no image file.\n\n"\
+"     Geolocation shift of 2 pixels in x, 5 pixels in y, creating\n"\
+"     new metadata and image files (and note that the output image\n"\
+"     file is identical to the input image file):\n"\
+"       > "ASF_NAME_STRING" -copy-image input_image updated\n\n"\
 "     Additional examples are given in the explanation for\n"\
 "     the -update option.\n"
 
@@ -155,6 +166,7 @@ main (int argc, char *argv[])
   char *inFile, *outFile;
   int currArg = 1;
   int update_flag = FALSE;
+  int copy_image_flag = FALSE;
   double x_shift=0, y_shift=0;
   int NUM_ARGS = 3;
 
@@ -183,6 +195,9 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-update","--update","-u",NULL)) {
       update_flag = TRUE;
     }
+    else if (strmatches(key,"-copy-image","--copy-image","-c",NULL)) {
+      copy_image_flag = TRUE;
+    }
     else {
         --currArg;
         break;
@@ -194,6 +209,10 @@ main (int argc, char *argv[])
     usage(argv[0]);
   } else if ((argc-currArg) > NUM_ARGS) {
     printf("Unknown argument: %s\n", argv[currArg]);
+    usage(argv[0]);
+  }
+  if (copy_image_flag && update_flag) {
+    printf("** The -update and -copy-image flags cannot be used together!\n");
     usage(argv[0]);
   }
 
@@ -281,17 +300,32 @@ main (int argc, char *argv[])
       outFile = argv[currArg+3];
   }
 
+  if (copy_image_flag) {
+    asfPrintStatus("A copy of the input image will be created to match the "
+                   "new metadata file.\n");
+  }
+
+  char *out_meta_name = appendExt(outFile, ".meta");
   if (update_flag) {
       asfPrintStatus("Updating %s\n", meta_name);
       meta_write(meta, meta_name);
   } else {
-      char *out_meta_name = appendExt(outFile, ".meta");
       asfPrintStatus("Writing %s\n", out_meta_name);
       meta_write(meta, out_meta_name);
-      free(out_meta_name);
   }
 
   free(meta_name);
+
+  if (copy_image_flag) {
+      char *img_copy = appendExt(out_meta_name, ".img");
+      char *in_img = appendExt(inFile, ".img");
+      asfPrintStatus("Copying %s to %s...\n", in_img, img_copy);
+      fileCopy(in_img, img_copy);
+      FREE(img_copy);
+      FREE(in_img);
+  }
+
+  free(out_meta_name);
   asfPrintStatus("Done.\n");
 
   return EXIT_SUCCESS;
