@@ -212,6 +212,7 @@ src/asf_calpol
 src/asf_gamma_import
 src/asf_airsar_import
 src/fftMatch
+src/flip
 
  20. Run the autotar script:
 
