@@ -5686,7 +5686,7 @@
 						<widget class="GtkTreeView" id="files_list">
 						  <property name="border_width">4</property>
 						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">If you prefer file names shown with a full path, click the 'Show full path names' check box above.</property>
+						  <property name="tooltip" translatable="yes">If you prefer file names shown with a full path, click the 'Show full path names' check box above.  NOTE: If the output file name is shown in red, it means a file by that same name exists ...it will get overwritten if you don't change it.</property>
 						  <property name="can_focus">True</property>
 						  <property name="headers_visible">True</property>
 						  <property name="rules_hint">False</property>

@@ -8,14 +8,18 @@
 #include "get_ceos_names.h"
 
 int COL_INPUT_FILE;
+int COL_INPUT_FILE_SHORT;
 int COL_INPUT_THUMBNAIL;
 int COL_BAND_LIST;
 int COL_OUTPUT_FILE;
+int COL_OUTPUT_FILE_SHORT;
 int COL_STATUS;
 int COL_LOG;
 
 int COMP_COL_INPUT_FILE;
+int COMP_COL_INPUT_FILE_SHORT;
 int COMP_COL_OUTPUT_FILE;
+int COMP_COL_OUTPUT_FILE_SHORT;
 int COMP_COL_OUTPUT_THUMBNAIL;
 int COMP_COL_OUTPUT_THUMBNAIL_BIG;
 int COMP_COL_STATUS;
@@ -397,9 +401,13 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     // now add to the completed files list!  Use the first listed file
     // as the output filename, since that is the one that was thumbnailed
     gtk_list_store_append(completed_list_store, completed_iter);
+    gchar *file_basename = g_path_get_basename(file);
+    gchar *out_basename = g_path_get_basename(outs[0]);
     gtk_list_store_set(completed_list_store, completed_iter,
                        COMP_COL_INPUT_FILE, file,
+                       COMP_COL_INPUT_FILE_SHORT, file_basename,
                        COMP_COL_OUTPUT_FILE, outs[0],
+                       COMP_COL_OUTPUT_FILE_SHORT, out_basename,
                        COMP_COL_STATUS, "Done",
                        COMP_COL_LOG, log_txt,
                        COMP_COL_TMP_DIR, tmp_dir,
@@ -411,6 +419,8 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_CLASS_MAP_FILE, class_map,
                        COMP_COL_METADATA_FILE, meta_file,
                        -1);
+    g_free(file_basename);
+    g_free(out_basename);
 
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
 
@@ -539,16 +549,23 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
         }
         else {
           /* not already in list -- add it */
+
+          // Build list of bands
           char *bands = build_band_list(input_file);
 
+          // Populate the input file fields (full path version and filename-only version)
+          gchar *basename = g_path_get_basename(input_file);
           gtk_list_store_append(list_store, iter_p);
           gtk_list_store_set(list_store, iter_p,
                              COL_INPUT_FILE, input_file,
+                             COL_INPUT_FILE_SHORT, basename,
                              COL_BAND_LIST, bands,
                              COL_STATUS, "-",
                              COL_LOG, "Has not been processed yet.",
                              -1);
+          g_free(basename);
 
+          // Determine output file name
           gchar * out_name_full;
           out_name_full = determine_default_output_file_name(input_file);
           set_output_name(iter_p, out_name_full);
@@ -675,57 +692,63 @@ void render_status(GtkTreeViewColumn *tree_column,
 }
 
 void render_output_name(GtkTreeViewColumn *tree_column,
-                        GtkCellRenderer *cell,
-                        GtkTreeModel *tree_model,
-                        GtkTreeIter *iter,
-                        gpointer data)
+                              GtkCellRenderer *cell,
+                              GtkTreeModel *tree_model,
+                              GtkTreeIter *iter,
+                              gpointer data)
 {
-    gchar *output_file;
-    gchar *status;
-    gboolean done;
-    gboolean processing;
+  gchar *output_file;
+  gchar *long_output_file;
+  gchar *status;
+  gboolean done;
+  gboolean processing;
 
-    gtk_tree_model_get (tree_model, iter,
-        COL_OUTPUT_FILE, &output_file,
-        COL_STATUS, &status, -1);
+  gtk_tree_model_get (tree_model, iter,
+                      COL_OUTPUT_FILE, &long_output_file,
+                      COL_OUTPUT_FILE_SHORT, &output_file,
+                      COL_STATUS, &status,
+                      -1);
 
     /* Do not mark the file in red if the item has been marked "Done"
-    However, if the user has changed the settings, the "Done"
-    marks are stale... so in that case do not look at "Done" */
+  However, if the user has changed the settings, the "Done"
+  marks are stale... so in that case do not look at "Done" */
 
-    done = strcmp("Done", status) == 0;
-    processing = strcmp("Processing...", status) == 0;
+  done = strcmp("Done", status) == 0;
+  processing = strcmp("Processing...", status) == 0;
 
-    if (done && settings_on_execute)
-    {
-        Settings * user_settings =
-            settings_get_from_gui();
+  if (done && settings_on_execute)
+  {
+    Settings * user_settings =
+        settings_get_from_gui();
 
-        if (!settings_equal(user_settings, settings_on_execute))
-            done = FALSE;
+    if (!settings_equal(user_settings, settings_on_execute))
+      done = FALSE;
 
-        settings_delete(user_settings);
-    }
+    settings_delete(user_settings);
+  }
 
-    if (!processing && !done &&
-        g_file_test(output_file, G_FILE_TEST_EXISTS))
-    {
-        GdkColor c;
+  if (!processing && !done &&
+       g_file_test(long_output_file, G_FILE_TEST_EXISTS))
+  {
+    GdkColor c;
 
-        c.red = 65535;
-        c.green = c.blue = 0;
+    c.red = 65535;
+    c.green = c.blue = 0;
 
-        g_object_set( G_OBJECT (cell), "foreground-gdk", &c, NULL);
-    }
-    else
-    {
-        g_object_set( G_OBJECT (cell), "foreground-gdk", NULL, NULL);
-    }
+    g_object_set( G_OBJECT (cell), "foreground-gdk", &c, NULL);
+  }
+  else
+  {
+    g_object_set( G_OBJECT (cell), "foreground-gdk", NULL, NULL);
+  }
 
-    g_object_set (G_OBJECT (cell), "text", output_file, NULL);
+  g_object_set (G_OBJECT (cell), "text",
+                (show_full_paths) ? long_output_file : output_file,
+                NULL);
 
-    g_free(output_file);
-    g_free(status);
+  g_free(output_file);
+  g_free(long_output_file);
+  g_free(status);
 }
 
 void
@@ -751,64 +774,84 @@ setup_files_list()
     GtkCellRenderer *renderer;
     GValue val = {0,};
 
-    list_store = gtk_list_store_new(6,
-                                    G_TYPE_STRING,
-                                    GDK_TYPE_PIXBUF,
-                                    G_TYPE_STRING,
-                                    G_TYPE_STRING,
-                                    G_TYPE_STRING,
-                                    G_TYPE_STRING);
+    list_store = gtk_list_store_new(8,
+                                    G_TYPE_STRING,    // Input file - Full path (usually hidden)
+                                    G_TYPE_STRING,    // Input file - No path
+                                    GDK_TYPE_PIXBUF,  // Input thumbnail
+                                    G_TYPE_STRING,    // Bands
+                                    G_TYPE_STRING,    // Output file - Full path (usually hidden)
+                                    G_TYPE_STRING,    // Output file - No path
+                                    G_TYPE_STRING,    // Status
+                                    G_TYPE_STRING);   // Log (hidden)
 
     COL_INPUT_FILE = 0;
-    COL_INPUT_THUMBNAIL = 1;
-    COL_BAND_LIST = 2;
-    COL_OUTPUT_FILE = 3;
-    COL_STATUS = 4;
-    COL_LOG = 5;
+    COL_INPUT_FILE_SHORT = 1;
+    COL_INPUT_THUMBNAIL = 2;
+    COL_BAND_LIST = 3;
+    COL_OUTPUT_FILE = 4;
+    COL_OUTPUT_FILE_SHORT = 5;
+    COL_STATUS = 6;
+    COL_LOG = 7;
 
-    completed_list_store = gtk_list_store_new(14,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              GDK_TYPE_PIXBUF,
-                                              GDK_TYPE_PIXBUF,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING,
-                                              G_TYPE_STRING);
+    completed_list_store = gtk_list_store_new(16,
+                                              G_TYPE_STRING,    // Data file-Full path (usually hid.)
+                                              G_TYPE_STRING,    // Data file - No path
+                                              G_TYPE_STRING,    // Output file-Full path (usually hid.)
+                                              G_TYPE_STRING,    // Output file - No path
+                                              GDK_TYPE_PIXBUF,  // Output thumbnail
+                                              GDK_TYPE_PIXBUF,  // Big output thumbnail (show on hover)
+                                              G_TYPE_STRING,    // Status
+                                              G_TYPE_STRING,    // Log (hidden)
+                                              G_TYPE_STRING,    // Temp folder (hidden)
+                                              G_TYPE_STRING,    // Layover shadow mask file (hidden)
+                                              G_TYPE_STRING,    // Clipped DEM file (hidden)
+                                              G_TYPE_STRING,    // Simulated SAR file (hidden)
+                                              G_TYPE_STRING,    // Faraday rotations file (hidden)
+                                              G_TYPE_STRING,    // History file (hidden)
+                                              G_TYPE_STRING,    // Class map file (hidden)
+                                              G_TYPE_STRING);   // Metadata file (hidden)
 
     COMP_COL_INPUT_FILE = 0;
-    COMP_COL_OUTPUT_FILE = 1;
-    COMP_COL_OUTPUT_THUMBNAIL = 2;
-    COMP_COL_OUTPUT_THUMBNAIL_BIG = 3;
-    COMP_COL_STATUS = 4;
-    COMP_COL_LOG = 5;
-    COMP_COL_TMP_DIR = 6;
-    COMP_COL_LAYOVER_SHADOW_MASK_FILE = 7;
-    COMP_COL_CLIPPED_DEM_FILE = 8;
-    COMP_COL_SIMULATED_SAR_FILE = 9;
-    COMP_COL_FARADAY_FILE = 10;
-    COMP_COL_HIST_FILE = 11;
-    COMP_COL_CLASS_MAP_FILE = 12;
-    COMP_COL_METADATA_FILE = 13;
+    COMP_COL_INPUT_FILE_SHORT = 1;
+    COMP_COL_OUTPUT_FILE = 2;
+    COMP_COL_OUTPUT_FILE_SHORT = 3;
+    COMP_COL_OUTPUT_THUMBNAIL = 4;
+    COMP_COL_OUTPUT_THUMBNAIL_BIG = 5;
+    COMP_COL_STATUS = 6;
+    COMP_COL_LOG = 7;
+    COMP_COL_TMP_DIR = 8;
+    COMP_COL_LAYOVER_SHADOW_MASK_FILE = 9;
+    COMP_COL_CLIPPED_DEM_FILE = 10;
+    COMP_COL_SIMULATED_SAR_FILE = 11;
+    COMP_COL_FARADAY_FILE = 12;
+    COMP_COL_HIST_FILE = 13;
+    COMP_COL_CLASS_MAP_FILE = 14;
+    COMP_COL_METADATA_FILE = 15;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
 
-    /* First Column: Input File Name */
+    /* First Column: Input File Name (full path) */
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Input File");
+    gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
     gtk_tree_view_column_set_resizable(col, TRUE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
     renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     g_object_set(renderer, "text", "?", NULL);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_INPUT_FILE);
+
+    /* Next Column: Input File Name, but without full path */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Input File");
+    gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_INPUT_FILE_SHORT);
 
     /* Next Column: thumbnail of input image.  */
     col = gtk_tree_view_column_new ();
@@ -840,9 +883,10 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_BAND_LIST);
 
-    /* Next Column: Output File Name */
+    /* Next Column: Output File Name (full path) */
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Output File");
+    gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
     gtk_tree_view_column_set_resizable(col, TRUE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
     renderer = gtk_cell_renderer_text_new();
@@ -861,7 +905,31 @@ setup_files_list()
 
     /* add our custom renderer (turns existing files red) */
     gtk_tree_view_column_set_cell_data_func(col, renderer,
-        render_output_name, NULL, NULL);
+                                            render_output_name, NULL, NULL);
+
+    /* Next Column: Output File Name, but without full path */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Output File");
+    gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+
+    /* allow editing the output filename right in the grid */
+    g_value_init(&val, G_TYPE_BOOLEAN);
+    g_value_set_boolean(&val, TRUE);
+    g_object_set_property(G_OBJECT(renderer), "editable", &val);
+
+    /* connect "editing-done" signal */
+    g_signal_connect(G_OBJECT(renderer), "edited",
+                     G_CALLBACK(edited_handler), NULL);
+
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_OUTPUT_FILE_SHORT);
+
+    /* add our custom renderer (turns existing files red) */
+    gtk_tree_view_column_set_cell_data_func(col, renderer,
+                                            render_output_name, NULL, NULL);
 
     /* Next Column: Current Status */
     col = gtk_tree_view_column_new();
@@ -894,9 +962,10 @@ setup_files_list()
     GtkWidget *completed_files_list =
         get_widget_checked("completed_files_list");
 
-    /* First Column: Input File Name */
+    /* First Column: Input File Name (with full path) */
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Data File");
+    gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
     gtk_tree_view_column_set_resizable(col, TRUE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
     renderer = gtk_cell_renderer_text_new();
@@ -905,15 +974,39 @@ setup_files_list()
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_INPUT_FILE);
 
-    /* Next Column: Output File Name */
+    /* Next Column: Input File Name (no path) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Data File");
+    gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_INPUT_FILE_SHORT);
+
+    /* Next Column: Output File Name (full path) */
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Output File");
+    gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
     gtk_tree_view_column_set_resizable(col, TRUE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
     renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_OUTPUT_FILE);
+
+    /* Next Column: Output File Name (no path) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Output File");
+    gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_OUTPUT_FILE_SHORT);
 
     /* Next Column: Pixbuf of output image */
     col = gtk_tree_view_column_new();
@@ -1059,5 +1152,9 @@ setup_files_list()
 void
 set_output_name(GtkTreeIter *iter, const gchar *name)
 {
-    gtk_list_store_set(list_store, iter, COL_OUTPUT_FILE, name, -1);
+  gchar *basename = g_path_get_basename(name);
+  gtk_list_store_set(list_store, iter,
+                     COL_OUTPUT_FILE, name,
+                     COL_OUTPUT_FILE_SHORT, basename,
+                     -1);
 }

@@ -210,14 +210,18 @@ typedef struct
 } NamingScheme;
 
 extern int COL_INPUT_FILE;
+extern int COL_INPUT_FILE_SHORT;
 extern int COL_INPUT_THUMBNAIL;
 extern int COL_BAND_LIST;
 extern int COL_OUTPUT_FILE;
+extern int COL_OUTPUT_FILE_SHORT;
 extern int COL_STATUS;
 extern int COL_LOG;
 
 extern int COMP_COL_INPUT_FILE;
+extern int COMP_COL_INPUT_FILE_SHORT;
 extern int COMP_COL_OUTPUT_FILE;
+extern int COMP_COL_OUTPUT_FILE_SHORT;
 extern int COMP_COL_OUTPUT_THUMBNAIL;
 extern int COMP_COL_OUTPUT_THUMBNAIL_BIG;
 extern int COMP_COL_STATUS;
@@ -451,6 +455,9 @@ extern GtkListStore *completed_list_store;
 
 /* TRUE during processing */
 extern gboolean processing;
+
+/* TRUE if full path names should be displayed in the input files and completed files lists */
+extern gboolean show_full_paths;
 
 /* The settings when the user clicked "Execute" (or, "Load") */
 extern Settings * settings_on_execute;

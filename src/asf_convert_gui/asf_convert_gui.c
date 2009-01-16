@@ -15,6 +15,7 @@ GladeXML *glade_xml;
 GtkListStore *list_store = NULL;
 GtkListStore *completed_list_store = NULL;
 gboolean processing;
+gboolean show_full_paths;
 Settings *settings_on_execute;
 gchar * output_directory = NULL;
 NamingScheme * current_naming_scheme = NULL;
@@ -185,6 +186,7 @@ main(int argc, char **argv)
     show_execute_button(TRUE);
 
     /* build columns in the files section */
+    show_full_paths = FALSE; // Set before setup_files_list(), default to FALSE
     setup_files_list();
 
     /* allow multiple selects */
