@@ -1158,3 +1158,41 @@ set_output_name(GtkTreeIter *iter, const gchar *name)
                      COL_OUTPUT_FILE_SHORT, basename,
                      -1);
 }
+
+void
+refresh_file_names()
+{
+  GtkTreeView *in_files_view;
+  GtkTreeView *completed_files_view;
+  GtkTreeViewColumn *col;
+  GtkWidget *in_files;
+  GtkWidget *completed_files;
+
+  // Get tree views
+  in_files = get_widget_checked("files_list");
+  in_files_view = GTK_TREE_VIEW(in_files);
+  completed_files = get_widget_checked("completed_files_list");
+  completed_files_view = GTK_TREE_VIEW(completed_files);
+
+  // Set input files column visibility to toggle between full-path file names
+  // and short file names
+  col = gtk_tree_view_get_column(in_files_view, COL_INPUT_FILE);
+  gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
+  col = gtk_tree_view_get_column(in_files_view, COL_INPUT_FILE_SHORT);
+  gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+  col = gtk_tree_view_get_column(in_files_view, COL_OUTPUT_FILE);
+  gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
+  col = gtk_tree_view_get_column(in_files_view, COL_OUTPUT_FILE_SHORT);
+  gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+
+  // Set completed files column visibility to toggle between full-path file names
+  // and short file names
+  col = gtk_tree_view_get_column(completed_files_view, COMP_COL_INPUT_FILE);
+  gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
+  col = gtk_tree_view_get_column(completed_files_view, COMP_COL_INPUT_FILE_SHORT);
+  gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+  col = gtk_tree_view_get_column(completed_files_view, COMP_COL_OUTPUT_FILE);
+  gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
+  col = gtk_tree_view_get_column(completed_files_view, COMP_COL_OUTPUT_FILE_SHORT);
+  gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+}

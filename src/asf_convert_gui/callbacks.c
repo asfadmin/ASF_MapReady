@@ -5,6 +5,18 @@ static int db_was_checked = 0;
 void export_checkbutton_toggle();
 
 void
+show_full_paths_checkbutton_toggle()
+{
+  GtkWidget *show_full_paths_checkbutton;
+
+  show_full_paths_checkbutton = get_widget_checked("show_full_paths_checkbutton");
+  show_full_paths =
+      gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(show_full_paths_checkbutton));
+
+  refresh_file_names();
+}
+
+void
 show_execute_button(gboolean show)
 {
     GtkWidget *execute_button = get_widget_checked("execute_button");
@@ -71,7 +83,7 @@ input_data_format_combobox_changed()
     gboolean show_data_type_combobox;
     gboolean show_latitude_spinbuttons;
     // Leave this next one false until we support level 0 again
-    gboolean show_process_to_level1_checkbutton = FALSE; 
+    gboolean show_process_to_level1_checkbutton = FALSE;
     gboolean show_airsar_checkbuttons;
     gboolean enable_terrain_correction;
     gboolean enable_polarimetry;
@@ -285,11 +297,11 @@ output_format_combobox_changed()
         break;
       case OUTPUT_FORMAT_GEOTIFF:
         gtk_toggle_button_set_active(
-          GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);        
+          GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);
         output_bytes_checkbutton_toggle();
         break;
     }
-    
+
     export_checkbutton_toggle();
 }
 
@@ -328,7 +340,7 @@ export_checkbutton_toggle()
     if (export_checked)
     {
         output_format = get_combo_box_item(output_format_combobox);
-      
+
         switch (output_format)
         {
           default:
@@ -341,7 +353,7 @@ export_checkbutton_toggle()
             gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
             gtk_widget_set_sensitive(scaling_method_combobox, TRUE);
             gtk_widget_set_sensitive(scaling_method_label, TRUE);
-            
+
             break;
           case OUTPUT_FORMAT_GEOTIFF:
             gtk_widget_set_sensitive(output_bytes_checkbutton, TRUE);
@@ -556,6 +568,12 @@ on_export_checkbutton_toggled(GtkWidget *widget)
 {
     export_checkbutton_toggle();
     update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_show_full_paths_checkbutton_toggled(GtkWidget *widget)
+{
+  show_full_paths_checkbutton_toggle();
 }
 
 void

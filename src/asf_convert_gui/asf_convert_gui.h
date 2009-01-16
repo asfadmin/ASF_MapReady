@@ -326,6 +326,7 @@ void set_toolbar_images();
 /* file_list.c */
 void setup_files_list();
 void populate_files_list(int, char **);
+void refresh_file_names();
 gboolean add_to_files_list(const gchar *);
 gboolean add_to_files_list_iter(const gchar *, GtkTreeIter *);
 void update_all_extensions();
@@ -336,7 +337,6 @@ int has_prepension(const gchar *);
 void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *,
                                   const char *);
 void move_from_completed_files_list(GtkTreeIter *);
-void populate_files_list(int, char **);
 
 /* help.c */
 char * escapify(const char * s);
