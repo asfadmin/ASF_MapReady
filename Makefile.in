@@ -37,6 +37,7 @@ MAPREADY_MODULES = \
 	src/asf_convert \
 	src/refine_geolocation \
 	src/shift_geolocation \
+	src/flip \
 	src/fftMatch \
 	src/trim \
 	src/sr2gr \
