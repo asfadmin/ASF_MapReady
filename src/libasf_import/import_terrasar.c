@@ -17,6 +17,8 @@ terrasar_meta *terrasar_meta_init(void)
   terrasar->imageDataDepth = MAGIC_UNSET_INT;
   terrasar->numberOfRows = MAGIC_UNSET_INT;
   terrasar->numberOfColumns = MAGIC_UNSET_INT;
+  terrasar->groundRangeResolution = MAGIC_UNSET_DOUBLE;
+  terrasar->azimuthResolution = MAGIC_UNSET_DOUBLE;
 
   return terrasar;
 }
@@ -42,6 +44,8 @@ terrasar_meta *read_terrasar_meta2(const char *dataFile)
   terrasar->imageDataDepth = xml_get_int(doc, "imageDataInfo:imageDataDepth");
   terrasar->numberOfRows = xml_get_int(doc, "imageDataInfo:numberOfRows");
   terrasar->numberOfColumns = xml_get_int(doc, "imageDataInfo:numberOfColumns");
+  terrasar->groundRangeResolution = xml_get_double(doc, "imageDataInfo:groundRangeResolution");
+  terrasar->azimuthResolution = xml_get_double(doc, "imageDataInfo:azimuthResolution");
 
   xmlFreeDoc(doc);
   xmlCleanupParser();
@@ -263,10 +267,8 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
   meta_write(meta, outBaseName);
   FCLOSE(fpIn);
   FCLOSE(fpOut);
-  if (amp)
-    FREE(amp);
-  if (phase)
-    FREE(phase);
+  FREE(amp);
+  FREE(phase);
   FREE(terrasar);
   meta_free(meta);
 }

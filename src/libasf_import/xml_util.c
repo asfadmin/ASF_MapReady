@@ -1,7 +1,9 @@
 #include "xml_util.h"
 #include "asf.h"
+#include <assert.h>
 
-static char buf[256];
+#define MAX_LEN
+static char buf[MAX_LEN];
 
 xmlNode *findNode(xmlDoc *doc, xmlNode *node, char *name)
 {
@@ -22,29 +24,40 @@ const char *xml_get_string(xmlDoc *doc, char *str)
 {
   int i,n;
   char **arr;
+  int found = TRUE;
 
   split_into_array(str, ':', &n, &arr);
 
   xmlNode *cur = xmlDocGetRootElement(doc);
 
+  // first item much match the name of the root
   if (strcmp(arr[0], (char*)cur->name)!=0) {
+    // root node doesn't match -- return empty string
     strcpy(buf, "");
-    return buf;
   }
-
-  for (i=1; i<n; ++i) {
-    xmlNode *next = findNode(doc, cur, arr[i]);
-    if (!next) {
-      strcpy(buf, "");
-      return buf;
+  else {
+    // subsequent items specify the search path through the xml tree
+    for (i=1; i<n; ++i) {
+      xmlNode *next = findNode(doc, cur, arr[i]);
+      if (!next) {
+        // not found -- return empty string
+        found = FALSE;
+        strcpy(buf, "");
+        break;
+      }
+      
+      cur = next;
     }
-
-    cur = next;
   }
-    
-  xmlChar *ret = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-  strncpy_safe(buf, (char*)ret, 255);
 
+  if (found) {
+    assert(cur != NULL);
+    xmlChar *ret = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+    strncpy_safe(buf, (char*)ret, MAX_LEN-1);
+    xmlFree(ret);
+  }
+
+  free_char_array(&arr, n);
   return buf;
 }
 
