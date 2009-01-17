@@ -11,6 +11,7 @@ LIBS  = \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
@@ -20,6 +21,7 @@ CFLAGS += \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
+	$(XML_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-D_REENTRANT \
@@ -82,11 +84,12 @@ OBJS  = \
 	utilities_ceos.o \
 	utilities_stf.o \
 	lut.o \
+	xml_util.o \
 	write_meta_and_img.o
 
 all: build_only
 	mv libasf_import.a $(LIBDIR)
-	cp asf_import.h geotiff_support.h $(ASF_INCLUDE_DIR)
+	cp asf_import.h geotiff_support.h xml_util.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_import.a

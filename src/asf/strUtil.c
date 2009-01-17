@@ -254,7 +254,7 @@ static void consolidate_quotes(char *s)
     FREE(buf);
 }
 
-char *quoted_string_parse(char *p, char *s, int max_len, int line_num)
+char *quoted_string_parse(char *p, char *s, int max_len, int line_num, char sep)
 {
   if (!p) {
     // reached end of the line prematurely
@@ -295,11 +295,11 @@ char *quoted_string_parse(char *p, char *s, int max_len, int line_num)
         ++r;
 
       // now, eat the comma
-      if (*r != ',') {
+      if (*r != sep) {
         if (line_num>0)
           printf("Line %d: Column entry has extra characters\n", line_num);
         // scan ahead to the next comma...
-        r = strchr(r,',');        
+        r = strchr(r,sep);        
       }
       
       // do not include the quotes in the returned value
@@ -326,12 +326,12 @@ char *quoted_string_parse(char *p, char *s, int max_len, int line_num)
   }
   else {
     // non-quoted string
-    char *q = strchr(p, ',');
+    char *q = strchr(p, sep);
     if (q) {
       *q = '\0'; // temporary
       strncpy_safe(s, p, max_len);
       strip_end_whitesp_inplace(s);
-      *q = ',';
+      *q = sep;
 
       // return pointer to just after the comma
       return q+1;
@@ -373,13 +373,16 @@ char *quoted_string_parse(char *p, char *s, int max_len, int line_num)
 //
 //   free_char_array(&arr, nelem);
 //
-void split_into_array(char *str, char sep, int *nelem, char ***parr)
+void split_into_array(const char *str_in, char sep, int *nelem, char ***parr)
 {
+  // we need a copy of the string we can modify
+  char *str = STRDUP(str_in);
+
   char *p = str;
   int i,n=0;
   do {
     char val[512];
-    p = quoted_string_parse(p, val, 512, -1);
+    p = quoted_string_parse(p, val, 512, -1, sep);
     ++n;
   } while (p);
 
@@ -387,13 +390,14 @@ void split_into_array(char *str, char sep, int *nelem, char ***parr)
   p = str;
   for (i=0; i<n; ++i) {
     char val[512];
-    p = quoted_string_parse(p, val, 512, -1);
+    p = quoted_string_parse(p, val, 512, -1, sep);
     arr[i] = MALLOC(sizeof(char)*(strlen(val)+5));
     strcpy(arr[i], val);
   }
 
   *parr = arr;
   *nelem = n;
+  FREE(str);
 }
 
 void free_char_array(char ***parr, int nelem)

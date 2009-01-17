@@ -39,7 +39,7 @@ static const char *get_str(char *line, int column_num, int line_num)
     static char ret[256];
 
     for (i=0; i<=column_num; ++i)
-      p = quoted_string_parse(p,ret,256,line_num);
+      p = quoted_string_parse(p,ret,256,line_num,',');
     
     return ret;
 }
@@ -177,7 +177,7 @@ FILE *csv_open(const char *filename,
 
   do {
     char col[256];
-    p = quoted_string_parse(p,col,256,1);
+    p = quoted_string_parse(p,col,256,1,',');
     ++n;
 
     if (is_lat_column(col))
@@ -216,7 +216,7 @@ FILE *csv_open(const char *filename,
 
   for (i=0; i<n; ++i) {
     char col[64];
-    p = quoted_string_parse(p,col,64,-1);
+    p = quoted_string_parse(p,col,64,-1,',');
     
     if (is_lat_column(col)) {
       assert(data_index < n_data_cols);

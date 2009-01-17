@@ -1,6 +1,8 @@
 #include "terrasar.h"
+#include "asf.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
+#include "xml_util.h"
 #include <ctype.h>
 
 terrasar_meta *terrasar_meta_init(void)
@@ -15,6 +17,34 @@ terrasar_meta *terrasar_meta_init(void)
   terrasar->imageDataDepth = MAGIC_UNSET_INT;
   terrasar->numberOfRows = MAGIC_UNSET_INT;
   terrasar->numberOfColumns = MAGIC_UNSET_INT;
+
+  return terrasar;
+}
+
+terrasar_meta *read_terrasar_meta2(const char *dataFile)
+{
+  terrasar_meta *terrasar = terrasar_meta_init();
+
+  xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
+  if (!doc)
+    asfPrintError("Could not parse file %s\n", dataFile);
+
+  strcpy(terrasar->imageData, xml_get_string(doc, "imageData:path"));
+  strcat(terrasar->imageData, "/");
+  strcat(terrasar->imageData, xml_get_string(doc, "imageData:filename"));
+
+  strcpy(terrasar->imageDataType,
+         xml_get_string(doc, "imageDataInfo:imageDataType"));
+  strcpy(terrasar->imageDataFormat,
+         xml_get_string(doc, "imageDataInfo:imageDataFormat"));
+
+  terrasar->numberOfLayers = xml_get_int(doc, "imageDataInfo:numberOfLayers");
+  terrasar->imageDataDepth = xml_get_int(doc, "imageDataInfo:imageDataDepth");
+  terrasar->numberOfRows = xml_get_int(doc, "imageDataInfo:numberOfRows");
+  terrasar->numberOfColumns = xml_get_int(doc, "imageDataInfo:numberOfColumns");
+
+  xmlFreeDoc(doc);
+  xmlCleanupParser();
 
   return terrasar;
 }
