@@ -33,6 +33,7 @@ LIBS = 	\
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(SHAPELIB_LIBS) \
