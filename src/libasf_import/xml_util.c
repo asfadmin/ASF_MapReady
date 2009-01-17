@@ -2,7 +2,7 @@
 #include "asf.h"
 #include <assert.h>
 
-#define MAX_LEN
+#define MAX_LEN 256
 static char buf[MAX_LEN];
 
 xmlNode *findNode(xmlDoc *doc, xmlNode *node, char *name)
