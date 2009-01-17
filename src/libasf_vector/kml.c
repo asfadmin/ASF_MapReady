@@ -26,6 +26,13 @@ static void swap(double *x, double *y)
     *y = tmp;
 }
 
+void strip_end_whitesp_inplace(char *s)
+{
+    char *p = s + strlen(s) - 1;
+    while (isspace(*p) && p>s)
+        *p-- = '\0';
+}
+
 int check_meta_block(const char *block, dbf_header_t *dbf, int nCols)
 {
   int ii, visible = FALSE;
@@ -2851,7 +2858,7 @@ static int kml2shape_from_c2v(char *inFile, char *outFile, int listFlag)
   char *format, *header;
   char in_line[4096];
   dbf_header_t *dbf;
-  int ii, kk, ll, nCols, n, m, nLines, nVertices, expect_coords, isEnd;
+  int kk, ll, nCols, n, m, nLines, nVertices, expect_coords, isEnd;
   char *param = (char *) MALLOC(sizeof(char)*255);
   char *value = (char *) MALLOC(sizeof(char)*255);
   double lat[512], lon[512];
@@ -2959,16 +2966,6 @@ void kml_get_data(kml_data_t *kml_data, int which_placemark,
 
   split_into_array(vals, ',', num_data_cols, data_cols);
   free(vals);
-}
-
-void free_char_array(char ***parr, int nelem)
-{
-  char **arr = *parr;
-  int i;
-  for (i=0; i<nelem; ++i)
-    if (arr[i]) free(arr[i]);
-  free(arr);
-  *parr = NULL;
 }
 
 void print_char_array(char **arr, int nelem, char *label)

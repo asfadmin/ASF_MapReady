@@ -8,7 +8,7 @@ DESCRIPTION:
  C header with definitions & prototypes for libasf_vector library
 
 ******************************************************************************/
-
+#include "asf.h"
 #include "asf_meta.h"
 #include "shapefil.h"
 
@@ -215,6 +215,7 @@ void shape_geotiff_init(char *inFile);
 int geotiff2shape(char *inFile, char *outFile, int listFlag);
 
 // Prototypes from kml.c
+void strip_end_whitesp_inplace(char *s);
 int kml2meta(char *in_file, char *out_file, int listFlag);
 int kml2point(char *in_file, char *out_file, int listFlag);
 int kml2polygon(char *in_file, char *out_file, int listFlag);
@@ -257,11 +258,5 @@ int custom2kml(char *inFile, const char *format,
 // Prototypes from convert2vector.t.c
 int test_c2v(char *inFile, const char *inFormat_str,
 	     char *outFile, const char *outFormat_str);
-
-
-// Prototypes from str.c -- string utilities
-void split_into_array(char *str, char sep, int *nelem, char ***parr);
-char *quoted_string_parse(char *p, char *s, int max_len, int line_num);
-void strip_end_whitesp_inplace(char *s);
 
 #endif

@@ -1,12 +1,6 @@
 #include "asf_vector.h"
 #include <ctype.h>
 
-void strip_end_whitesp_inplace(char *s)
-{
-    char *p = s + strlen(s) - 1;
-    while (isspace(*p) && p>s)
-        *p-- = '\0';
-}
 
 static void consolidate_quotes(char *s)
 {

@@ -173,6 +173,12 @@ char *strstr_case(const char *str, const char *key);
 char *strReplace(const char *str, const char *searchStr,
                  const char *replaceStr);
 
+// quoted-element csv string parsing routines
+char *quoted_string_parse(char *p, char *s, int max_len, int line_num);
+void split_into_array(char *str, char sep, int *nelem, char ***parr);
+void free_char_array(char ***parr, int nelem);
+void split2(const char *str_in, char sep, char **s1_out, char **s2_out);
+
 /******************************************************************************
  * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in
