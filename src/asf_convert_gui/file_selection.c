@@ -163,6 +163,11 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(airsar_filt, "*.airsar");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), airsar_filt);
 
+    GtkFileFilter *polsarpro_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(polsarpro_filt, "PolSARpro Files (*.bin)");
+    gtk_file_filter_add_pattern(polsarpro_filt, "*.bin");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), polsarpro_filt);
+
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
     gtk_file_filter_add_pattern(all_filt, "*");
@@ -180,6 +185,22 @@ static void create_file_chooser_dialog()
 }
 
 #endif // #ifdef USE_GTK_FILE_CHOOSER
+
+/* danger: returns pointer to static data!! */
+/* (Stolen from popup_menu.c)               */
+static const char * imgloc(char * file)
+{
+  static char loc[1024];
+  gchar * tmp = find_in_share(file);
+  if (tmp) {
+    strcpy(loc, tmp);
+    g_free(tmp);
+  } else {
+    strcpy(loc, file);
+  }
+
+  return loc;
+}
 
 static int is_asf_complex_data(const char *meta_file)
 {
@@ -230,6 +251,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
             "ALOS Files (LED-*)\0LED-*\0"
             "AirSAR Files (*.airsar)\0*.airsar\0"
             "ASF Internal Files (*.img)\0*.img\0"
+            "PolSARpro Files (*.bin)\0*.img\0"
             "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;
@@ -382,4 +404,114 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
     gtk_widget_hide(file_selection_dialog);
 
   show_queued_thumbnails();
+}
+
+SIGNAL_CALLBACK void
+on_ancillary_files_button_clicked(GtkWidget *widget)
+{
+  handle_browse_ancillary_file();
+}
+
+void handle_browse_ancillary_file()
+{
+  // If the Add Ancillary Files button's image is insensitive, then
+  // that means it is disabled ...return with no action take.  (Note:
+  // Yes, I could have set sensitivity to FALSE on the button itself,
+  // but this not only greys it out, but also gives it a funky 'depressed
+  // button' look that seems to imply the button has been clicked ...I like
+  // how the GUI appears when taking this approach (below) better.)
+  GtkWidget * w = get_widget_checked("ancillary_files_image");
+  if (!GTK_WIDGET_SENSITIVE(GTK_WIDGET(w))) return;
+
+  // Replace button image with non-animated version
+  w = get_widget_checked("ancillary_files_image");
+  gtk_image_set_from_file(GTK_IMAGE(w), imgloc("add_files_s.png"));
+
+#ifdef win32
+  OPENFILENAME of;
+  int retval;
+  char fname[1024];
+
+  fname[0] = '\0';
+
+  memset(&of, 0, sizeof(of));
+
+#ifdef OPENFILENAME_SIZE_VERSION_400
+  of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+#else
+  of.lStructSize = sizeof(of);
+#endif
+
+  of.hwndOwner = NULL;
+  of.lpstrFilter =
+      "CEOS Level 1 Files\0*.L;LED-*\0"
+      "RSAT/ERS CEOS L1 (*.L)\0*.D\0"
+            //"CEOS Level 0 (*.raw)\0*.raw\0"
+            //"STF Files (*.000)\0*.000\0"
+      "GeoTIFF Files (*.tif)\0*.tif\0"
+             //"Complex Files (*.cpx)\0*.cpx\0"
+      "ALOS Files (LED-*)\0LED-*\0"
+      "AirSAR Files (*.airsar)\0*.airsar\0"
+      "ASF Internal Files (*.img)\0*.img\0"
+      "PolSARpro Files (*.bin)\0*.bin\0"
+      "All Files (*.*)\0*\0";
+  of.lpstrCustomFilter = NULL;
+  of.nFilterIndex = 1;
+  of.lpstrFile = fname;
+  of.nMaxFile = sizeof(fname);
+  of.lpstrFileTitle = NULL;
+  of.lpstrInitialDir = ".";
+  of.lpstrTitle = "Select File";
+  of.lpstrDefExt = NULL;
+  of.Flags = OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT | OFN_EXPLORER;
+
+  retval = GetOpenFileName(&of);
+
+  if (!retval) {
+    if (CommDlgExtendedError())
+      message_box("File dialog box error");
+    return;
+  }
+
+  /* the returned "fname" has the following form:            */
+  /*   <directory>\0<first file>\0<second file>\0<third ...  */
+  char * dir = strdup(fname);
+  char * p = fname + strlen(dir) + 1;
+
+  if (*p) {
+    while (*p) {
+      char * dir_and_file =
+          malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
+      sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
+      add_to_files_list(dir_and_file);
+      p += strlen(p) + 1;
+      free(dir_and_file);
+    }
+  } else {
+    add_to_files_list(dir);
+  }
+
+  free(dir);
+  show_queued_thumbnails();
+
+#else // #ifdef win32
+
+  /* Linux version -- use GtkFileChooser if possible */
+
+#ifdef USE_GTK_FILE_CHOOSER
+
+  if (!browse_widget)
+    create_file_chooser_dialog();
+
+  gtk_widget_show(browse_widget);
+
+#else // #ifdef USE_GTK_FILE_CHOOSER
+
+  GtkWidget *file_selection_dialog =
+      get_widget_checked("input_file_selection");
+
+  gtk_widget_show(file_selection_dialog);
+
+#endif // #ifdef USE_GTK_FILE_CHOOSER
+#endif // #ifdef win32
 }

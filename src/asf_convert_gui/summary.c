@@ -122,6 +122,10 @@ const char *get_summary_text()
         }
         break;
 
+      case INPUT_FORMAT_POLSARPRO:
+        strcat(text, "PolSARpro");
+        break;
+
       default:
         strcat(text, "CEOS Level One");
         sprintf(text, "%s\nData type: %s%s", text, type, dbstr);

@@ -117,6 +117,7 @@ input_data_format_combobox_changed()
         case INPUT_FORMAT_CEOS_LEVEL1:
         case INPUT_FORMAT_ESRI:
         case INPUT_FORMAT_ENVI:
+        case INPUT_FORMAT_POLSARPRO:
             show_data_type_combobox = TRUE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = FALSE;
@@ -487,6 +488,13 @@ on_asf_internal_activate(GtkWidget *widget)
 
 SIGNAL_CALLBACK void
 on_airsar_activate(GtkWidget *widget)
+{
+  input_data_format_combobox_changed();
+  update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_polsarpro_activate(GtkWidget *widget)
 {
   input_data_format_combobox_changed();
   update_summary();

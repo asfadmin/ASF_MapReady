@@ -106,6 +106,9 @@ settings_apply_to_gui(const Settings * s)
         // Caution: Not implemented in the GUI
         set_combo_box_item(input_data_format_combobox, 5);
         break;
+      case INPUT_FORMAT_POLSARPRO:
+        set_combo_box_item(input_data_format_combobox, 4);
+        break;
     }
 
     set_combo_box_item(input_data_type_combobox, s->data_type);
@@ -589,7 +592,8 @@ settings_get_from_gui()
         break;
       case 4:
         // Caution: Not implemented in the GUI
-        ret->input_data_format = INPUT_FORMAT_ESRI;
+        //ret->input_data_format = INPUT_FORMAT_ESRI;
+        ret->input_data_format = INPUT_FORMAT_POLSARPRO;
         break;
       case 5:
         // Caution: Not implemented in the GUI
@@ -1084,6 +1088,10 @@ settings_get_input_data_format_string(const Settings *s)
     case INPUT_FORMAT_AIRSAR:
         format_arg_to_import = "airsar";
         break;
+
+    case INPUT_FORMAT_POLSARPRO:
+        format_arg_to_import = "polsarpro";
+        break;
     }
 
     return format_arg_to_import;
@@ -1203,6 +1211,7 @@ settings_get_output_format_extension(const Settings *s)
     case INPUT_FORMAT_GEOTIFF:
     case INPUT_FORMAT_CEOS_LEVEL1:
     case INPUT_FORMAT_AIRSAR:
+    case INPUT_FORMAT_POLSARPRO:
         if (s->export_is_checked)
         {
             switch (s->output_format)
@@ -1593,9 +1602,10 @@ settings_to_config_file(const Settings *s,
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
     fprintf(cf, "thumbnail = %d\n",
-            (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1 ||
-             s->input_data_format == INPUT_FORMAT_AIRSAR      ||
-             s->input_data_format == INPUT_FORMAT_ASF_INTERNAL) ? 1 : 0);
+            (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1    ||
+             s->input_data_format == INPUT_FORMAT_AIRSAR         ||
+             s->input_data_format == INPUT_FORMAT_ASF_INTERNAL   ||
+             s->input_data_format == INPUT_FORMAT_POLSARPRO) ? 1 : 0);
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");
@@ -1838,6 +1848,8 @@ int apply_settings_from_config_file(char *configFile)
       s.input_data_format = INPUT_FORMAT_GEOTIFF;
     else if (strncmp(uc(cfg->import->format), "AIRSAR", 6) == 0)
       s.input_data_format = INPUT_FORMAT_AIRSAR;
+    else if (strncmp(uc(cfg->import->format), "POLSARPRO", 9) == 0)
+      s.input_data_format = INPUT_FORMAT_POLSARPRO;
 
     if (s.input_data_format == INPUT_FORMAT_AIRSAR) {
       s.airsar_c_vv = cfg->airsar->c_vv;
@@ -1905,7 +1917,7 @@ int apply_settings_from_config_file(char *configFile)
     s.polarimetric_decomp_setting = POLARIMETRY_NONE;
     s.do_farcorr = FALSE;
     s.farcorr_threshold = -1;
-  
+
     if (cfg->general->polarimetry) {
       if (cfg->polarimetry->pauli)
         s.polarimetric_decomp_setting = POLARIMETRY_PAULI;

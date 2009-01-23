@@ -65,6 +65,17 @@ void set_toolbar_images()
     w = get_widget_checked("google_earth_toolbar_image");
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("google_earth_button.gif"));
 
+    // If the Add Ancillary Files button's image is insensitive, then
+    // that means it is disabled (see on_ancillary_files_button_clicked()
+    // in file_selection.c).  (Note: Yes, I could have set sensitivity to
+    // FALSE on the button itself, but this not only greys it out, but also
+    // gives it a funky 'depressed button' look that seems to imply the
+    // button has been clicked ...I like how the GUI appears when taking
+    // this approach (below) better.)
+    w = get_widget_checked("ancillary_files_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("add_files_s.png"));
+    gtk_widget_set_sensitive(GTK_WIDGET(w), FALSE); // Default to being disabled
+
   // Completed files toolbar images
     w = get_widget_checked("completed_files_remove_button_image");
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("trash_can.png"));
@@ -984,6 +995,26 @@ handle_view_input()
 }
 
 static int
+handle_add_ancillary_files()
+{
+  GtkWidget *files_list;
+  GtkTreeIter iter;
+
+  files_list = get_widget_checked("files_list");
+
+  if (get_iter_to_first_selected_row(files_list, list_store, &iter))
+  {
+    handle_browse_ancillary_file();
+  }
+  else
+  {
+    show_please_select_message();
+  }
+
+  return TRUE;
+}
+
+static int
 handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 {
     GtkWidget *files_list;
@@ -1172,7 +1203,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
             //unlink(kml_filename);
             exit(EXIT_SUCCESS);
         }
-#endif 
+#endif
     }
 
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
@@ -1416,6 +1447,12 @@ popup_menu_google_earth(GtkWidget *widget, GdkEvent *event)
 }
 
 SIGNAL_CALLBACK gint
+popup_menu_add_files(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_add_ancillary_files();
+}
+
+SIGNAL_CALLBACK gint
 popup_menu_completed_files_google_earth(GtkWidget *widget, GdkEvent *event)
 {
   return handle_completed_files_google_earth();
@@ -1625,16 +1662,22 @@ setup_files_popup_menu()
         G_CALLBACK(popup_menu_ceos_metadata), NULL);
     gtk_widget_show(item);
 
-    item = gtk_menu_item_new_with_label("View With Google Earth(tm)");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
-    g_signal_connect_swapped(G_OBJECT(item), "activate",
-        G_CALLBACK(popup_menu_google_earth), NULL);
-    gtk_widget_show(item);
-
     item = gtk_menu_item_new_with_label("View Input");
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_view_input), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View With Google Earth(tm)");
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(popup_menu_google_earth), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("Add Ancillary File");
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(popup_menu_add_files), NULL);
     gtk_widget_show(item);
 
     gtk_widget_show(menu);

@@ -48,7 +48,8 @@ enum InputFormat
     INPUT_FORMAT_ASF_INTERNAL = 2,
     INPUT_FORMAT_AIRSAR = 3,
     INPUT_FORMAT_ESRI = 4, // not implemented
-    INPUT_FORMAT_ENVI = 5  // not implemented
+    INPUT_FORMAT_ENVI = 5,  // not implemented
+    INPUT_FORMAT_POLSARPRO = 6
 };
 
 enum InputType
@@ -211,6 +212,8 @@ typedef struct
 
 extern int COL_INPUT_FILE;
 extern int COL_INPUT_FILE_SHORT;
+extern int COL_ANCILLARY_FILE;
+extern int COL_ANCILLARY_FILE_SHORT;
 extern int COL_INPUT_THUMBNAIL;
 extern int COL_BAND_LIST;
 extern int COL_OUTPUT_FILE;
@@ -347,6 +350,7 @@ void do_rename_selected(const gchar *new_name);
 void do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name);
 
 /* file_selection.c */
+void handle_browse_ancillary_file();
 
 /* state.c */
 
@@ -458,6 +462,8 @@ extern gboolean processing;
 
 /* TRUE if full path names should be displayed in the input files and completed files lists */
 extern gboolean show_full_paths;
+extern gboolean show_ancillary_files;
+extern gboolean animate_ancillary_files_button;
 
 /* The settings when the user clicked "Execute" (or, "Load") */
 extern Settings * settings_on_execute;

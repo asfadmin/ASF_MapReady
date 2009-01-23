@@ -16,6 +16,8 @@ GtkListStore *list_store = NULL;
 GtkListStore *completed_list_store = NULL;
 gboolean processing;
 gboolean show_full_paths;
+gboolean show_ancillary_files;
+gboolean animate_ancillary_files_button;
 Settings *settings_on_execute;
 gchar * output_directory = NULL;
 NamingScheme * current_naming_scheme = NULL;
@@ -187,6 +189,8 @@ main(int argc, char **argv)
 
     /* build columns in the files section */
     show_full_paths = FALSE; // Set before setup_files_list(), default to FALSE
+    show_ancillary_files = FALSE; // Set before setup_files_list(), default to FALSE
+    animate_ancillary_files_button = TRUE; // ...Until first click of Add Ancillary Files button
     widget = get_widget_checked("show_full_paths_checkbutton");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
     setup_files_list();

@@ -9,6 +9,8 @@
 
 int COL_INPUT_FILE;
 int COL_INPUT_FILE_SHORT;
+int COL_ANCILLARY_FILE;
+int COL_ANCILLARY_FILE_SHORT;
 int COL_INPUT_THUMBNAIL;
 int COL_BAND_LIST;
 int COL_OUTPUT_FILE;
@@ -32,6 +34,56 @@ int COMP_COL_FARADAY_FILE;
 int COMP_COL_HIST_FILE;
 int COMP_COL_CLASS_MAP_FILE;
 int COMP_COL_METADATA_FILE;
+
+/* danger: returns pointer to static data!! */
+/* (Stolen from popup_menu.c)               */
+static const char * imgloc(char * file)
+{
+  static char loc[1024];
+  gchar * tmp = find_in_share(file);
+  if (tmp) {
+    strcpy(loc, tmp);
+    g_free(tmp);
+  } else {
+    strcpy(loc, file);
+  }
+
+  return loc;
+}
+
+/* Returns true if a PolSARpro file set is detected based on the */
+/* filename passed in.                                           */
+int is_polsarpro(const gchar * infile)
+{
+  int found_bin = 0;
+  int found_bin_hdr = 0;
+  char *bin = NULL, *bin_hdr = NULL, *dupe = NULL, *ext = NULL;
+
+  ext = findExt(infile);
+  if (ext && (strcmp_case(ext, ".bin")==0)) {
+    bin = (char *)infile;
+    bin_hdr = STRDUP(infile);
+    strcat(bin_hdr, ".hdr");
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(bin_hdr);
+  }
+  else if (ext && (strcmp_case(ext, ".hdr")==0)) {
+    dupe = STRDUP(infile);
+    bin_hdr = (char *)infile;
+    ext = findExt(dupe);
+    *ext = '\0';
+    ext = findExt(dupe);
+    if (ext && (strcmp_case(ext, ".bin")==0)) {
+      bin = dupe;
+    }
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(dupe);
+  }
+
+  return (found_bin && found_bin_hdr);
+}
 
 /* Returns the length of the prepension if there is an allowed
    prepension, otherwise returns 0 (no prepension -> chceck extensions) */
@@ -137,6 +189,20 @@ static char *file_is_valid(const gchar * file)
     // third possibility: airsar
     if (ext && (strcmp_case(ext, ".airsar")==0))
         return STRDUP(file);
+
+    // fourth possibility: PolSARpro (.bin and .bin.hdr)
+    if (ext && (strcmp_case(ext, ".bin")==0))
+        return STRDUP(file);
+    if (ext && (strcmp_case(ext, ".hdr")==0)) {
+      char *dupe = STRDUP(file);
+      ext = findExt(dupe);
+      *ext = '\0';
+      ext = findExt(dupe);
+      if (ext && (strcmp_case(ext, ".bin")==0)) {
+        return dupe;
+      }
+      FREE(dupe);
+    }
 
     // now, the ceos check
     char *basename = MALLOC(sizeof(char)*(strlen(file)+10));
@@ -554,13 +620,33 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
           char *bands = build_band_list(input_file);
 
           // Populate the input file fields (full path version and filename-only version)
+          gchar *status = g_malloc(sizeof(gchar) * 256);
+          if (is_polsarpro(input_file)) {
+            show_ancillary_files = TRUE;
+            refresh_file_names();
+            if (animate_ancillary_files_button) {
+              animate_ancillary_files_button = FALSE;
+              GtkWidget * w = get_widget_checked("ancillary_files_image");
+              gtk_widget_set_sensitive(GTK_WIDGET(w), TRUE);
+              gtk_image_set_from_file(GTK_IMAGE(w), imgloc("add_files_s_ani.gif"));
+            }
+            // The "Add Ancillary File:" portion of the string will make the status render
+            // in red text, so don't change it without changing the status string renderer
+            g_sprintf(status, "%s",
+                      "Add Ancillary File: Original CEOS (or AIRSAR?) leader file");
+          }
+          else {
+            g_sprintf(status, "%s", "-");
+          }
           gchar *basename = g_path_get_basename(input_file);
           gtk_list_store_append(list_store, iter_p);
           gtk_list_store_set(list_store, iter_p,
                              COL_INPUT_FILE, input_file,
                              COL_INPUT_FILE_SHORT, basename,
+                             COL_ANCILLARY_FILE, (gchar *)"",
+                             COL_ANCILLARY_FILE_SHORT, (gchar *)"",
                              COL_BAND_LIST, bands,
-                             COL_STATUS, "-",
+                             COL_STATUS, status,
                              COL_LOG, "Has not been processed yet.",
                              -1);
           g_free(basename);
@@ -650,7 +736,8 @@ edited_handler(GtkCellRendererText *ce, gchar *arg1, gchar *arg2,
     do_rename_selected(arg2);
 }
 
-void render_status(GtkTreeViewColumn *tree_column,
+/* Original, but unused render_status */
+/*void render_status(GtkTreeViewColumn *tree_column,
                    GtkCellRenderer *cell,
                    GtkTreeModel *tree_model,
                    GtkTreeIter *iter,
@@ -690,6 +777,50 @@ void render_status(GtkTreeViewColumn *tree_column,
     g_object_set (G_OBJECT (cell), "text", status, NULL);
     g_free(status);
 }
+*/
+/* New render_status - turns status red if an error statement has
+   been issued (status begins with "Error:") or if status begins
+   with "Select:" .. to-do for the user */
+void render_status(GtkTreeViewColumn *tree_column,
+                   GtkCellRenderer *cell,
+                   GtkTreeModel *tree_model,
+                   GtkTreeIter *iter,
+                   gpointer data)
+{
+    gchar *status;
+    gboolean done;
+    gboolean processing;
+    gboolean error_occurred;
+    gboolean user_todo_exists;
+
+    gtk_tree_model_get (tree_model, iter, COL_STATUS, &status, -1);
+    done             = strcmp ("Done",                 status)     == 0;
+    processing       = strcmp ("Processing...",        status)     == 0;
+    error_occurred   = strncmp("Error:",              status, 6)  == 0;
+    user_todo_exists = strncmp("Select:",             status, 7)  == 0 ||
+                       strncmp("Add Ancillary File:", status, 19) == 0;
+
+    if (!done && !processing &&
+        (error_occurred   ||
+         user_todo_exists ))
+    {
+        // Condition RED...
+        GdkColor c;
+
+        c.red = 65535;
+        c.green = c.blue = 0;
+
+        g_object_set( G_OBJECT (cell), "foreground-gdk", &c, NULL);
+    }
+    else
+    {
+        // Condition SO WHAT...
+        g_object_set( G_OBJECT (cell), "foreground-gdk", NULL, NULL);
+    }
+
+    g_object_set (G_OBJECT (cell), "text", status, NULL);
+    g_free(status);
+}
 
 void render_output_name(GtkTreeViewColumn *tree_column,
                               GtkCellRenderer *cell,
@@ -709,9 +840,9 @@ void render_output_name(GtkTreeViewColumn *tree_column,
                       COL_STATUS, &status,
                       -1);
 
-    /* Do not mark the file in red if the item has been marked "Done"
-  However, if the user has changed the settings, the "Done"
-  marks are stale... so in that case do not look at "Done" */
+  /* Do not mark the file in red if the item has been marked "Done"
+     However, if the user has changed the settings, the "Done"
+     marks are stale... so in that case do not look at "Done" */
 
   done = strcmp("Done", status) == 0;
   processing = strcmp("Processing...", status) == 0;
@@ -774,9 +905,11 @@ setup_files_list()
     GtkCellRenderer *renderer;
     GValue val = {0,};
 
-    list_store = gtk_list_store_new(8,
+    list_store = gtk_list_store_new(10,
                                     G_TYPE_STRING,    // Input file - Full path (usually hidden)
                                     G_TYPE_STRING,    // Input file - No path
+                                    G_TYPE_STRING,    // Ancillary file - Full path (usually hidden)
+                                    G_TYPE_STRING,    // Ancillary file - No path (usually hidden)
                                     GDK_TYPE_PIXBUF,  // Input thumbnail
                                     G_TYPE_STRING,    // Bands
                                     G_TYPE_STRING,    // Output file - Full path (usually hidden)
@@ -786,12 +919,14 @@ setup_files_list()
 
     COL_INPUT_FILE = 0;
     COL_INPUT_FILE_SHORT = 1;
-    COL_INPUT_THUMBNAIL = 2;
-    COL_BAND_LIST = 3;
-    COL_OUTPUT_FILE = 4;
-    COL_OUTPUT_FILE_SHORT = 5;
-    COL_STATUS = 6;
-    COL_LOG = 7;
+    COL_ANCILLARY_FILE = 2;
+    COL_ANCILLARY_FILE_SHORT = 3;
+    COL_INPUT_THUMBNAIL = 4;
+    COL_BAND_LIST = 5;
+    COL_OUTPUT_FILE = 6;
+    COL_OUTPUT_FILE_SHORT = 7;
+    COL_STATUS = 8;
+    COL_LOG = 9;
 
     completed_list_store = gtk_list_store_new(16,
                                               G_TYPE_STRING,    // Data file-Full path (usually hid.)
@@ -852,6 +987,30 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     g_object_set(renderer, "text", "?", NULL);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_INPUT_FILE_SHORT);
+
+    /* First Column: Ancillary File File Name (full path) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Ancillary File");
+    gtk_tree_view_column_set_visible(col,
+                                     (show_ancillary_files && show_full_paths) ? TRUE : FALSE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_ANCILLARY_FILE);
+
+    /* Next Column: Ancillary File File Name, but without full path */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Ancillary File");
+    gtk_tree_view_column_set_visible(col,
+                                     (show_ancillary_files && !show_full_paths) ? TRUE : FALSE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_ANCILLARY_FILE_SHORT);
 
     /* Next Column: thumbnail of input image.  */
     col = gtk_tree_view_column_new ();
@@ -939,6 +1098,11 @@ setup_files_list()
     renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_STATUS);
+
+    /* add our custom renderer (turns errors and user todo's red) */
+    gtk_tree_view_column_set_cell_data_func(col, renderer,
+                                            render_status, NULL, NULL);
+
 
     /* Next Column: Log Info (hidden) */
     col = gtk_tree_view_column_new();
@@ -1180,6 +1344,10 @@ refresh_file_names()
   gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
   col = gtk_tree_view_get_column(in_files_view, COL_INPUT_FILE_SHORT);
   gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+  col = gtk_tree_view_get_column(in_files_view, COL_ANCILLARY_FILE);
+  gtk_tree_view_column_set_visible(col, (show_full_paths && show_ancillary_files) ? TRUE : FALSE);
+  col = gtk_tree_view_get_column(in_files_view, COL_ANCILLARY_FILE_SHORT);
+  gtk_tree_view_column_set_visible(col, (!show_full_paths && show_ancillary_files) ? TRUE : FALSE);
   col = gtk_tree_view_get_column(in_files_view, COL_OUTPUT_FILE);
   gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
   col = gtk_tree_view_get_column(in_files_view, COL_OUTPUT_FILE_SHORT);

@@ -220,6 +220,11 @@ data_file_name(const gchar * file_name)
     return ret;
   }
 
+  // PolSARpro
+  else if (ext && strcmp_case(ext, ".bin")==0) {
+    return g_strdup(file_name);
+  }
+
   // airsar
   else if (ext && strcmp_case(ext, ".airsar")==0) {
     char *data_name = STRDUP(file_name);
