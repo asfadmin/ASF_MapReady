@@ -68,6 +68,7 @@ LIB = \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	$(ZLIB_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32

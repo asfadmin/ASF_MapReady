@@ -81,37 +81,6 @@ enum
 // Here is the treeview's storage structure
 static GtkTreeModel *liststore = NULL;
 
-// splits a string into two pieces, stuff before the separater character
-// and the stuff after it.  The separator character is not included in
-// either string
-static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
-{
-  char *str = STRDUP(str_in);
-  char *s1 = MALLOC(sizeof(char)*(strlen(str)+1));
-  char *s2 = MALLOC(sizeof(char)*(strlen(str)+1));
-
-  char *p = strchr(str, sep);
-
-  if (p) {
-    *p = '\0';
-    strcpy(s1, str);
-    *p = sep;
-    strcpy(s2, p+1);
-  } else {
-    // no sep -- s2 is empty, s1 is a copy of str
-    strcpy(s1, str);
-    strcpy(s2, "");
-  }
-
-  // trim whitespace
-  *s1_out = trim_whitespace(s1);
-  *s2_out = trim_whitespace(s2);
-
-  FREE(s1);
-  FREE(s2);
-  FREE(str);
-}
-
 // callback for the found acquisition grid, when a user clicks on a column
 // heading to change the sort.  This is called by the GTK treeview code,
 // with pointers to two rows -- we have to return which should go first
