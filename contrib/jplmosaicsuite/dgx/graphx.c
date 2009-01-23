@@ -2952,7 +2952,9 @@ char *buff;
         
 */
 
+#ifndef __off64_t_defined
 typedef long long off64_t;
+#endif
 
 #ifdef SGI
 off64_t ioseek64_(chan, loc_byte)

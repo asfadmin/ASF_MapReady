@@ -2555,7 +2555,9 @@ char *buff;
         
 */
 
+#ifndef __off64_t_defined
 typedef long long off64_t;
+#endif
 
 off64_t ioseek64_(chan, loc_byte)
 int *chan;
