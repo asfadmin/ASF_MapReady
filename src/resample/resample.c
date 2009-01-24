@@ -128,6 +128,8 @@ int main(argc,argv)
     double  xscalfact=1;              /* x scale factor                  */
     double  yscalfact=1;              /* y scale factor                  */
 
+    handle_common_asf_args(&argc, &argv, "resample");
+
     int is_square_pixsiz = extract_flag_options(&argc, &argv, "-square", NULL);
     int is_scaling = extract_flag_options(&argc, &argv, "-scale", NULL);
     int is_scalex = extract_double_options(&argc, &argv, &xscalfact,
@@ -192,17 +194,18 @@ int main(argc,argv)
         if (scale<=0)
             asfPrintError("Invalid scale factor: %s\n", argv[1]);
         asfPrintStatus("Scaling in x and y by: %f\n", scale);
-        xscalfact = yscalfact = 1.0/scale;
+        //xscalfact = yscalfact = 1.0/scale;
+        xscalfact = yscalfact = scale;
     }
     else if (is_scalex || is_scaley) { // should always be both
         asfPrintStatus("Scaling in x by: %f\n", xscalfact);
         asfPrintStatus("Scaling in y by: %f\n", yscalfact);
         if (xscalfact<=0)
             asfPrintError("Invalid x scale factor: %f\n", xscalfact);
-        xscalfact = 1.0/xscalfact;
+        //xscalfact = 1.0/xscalfact;
         if (yscalfact<=0)
             asfPrintError("Invalid y scale factor: %f\n", yscalfact);
-        yscalfact = 1.0/yscalfact;
+        //yscalfact = 1.0/yscalfact;
     }
     else {
         double xpixsiz = atof(argv[1]);
@@ -218,7 +221,9 @@ int main(argc,argv)
         asfPrintStatus("Scaling to: %fm pixels in x.\n", xpixsiz);
         asfPrintStatus("            %fm pixels in y.\n", ypixsiz);
     }
-    
+
+    asfPrintStatus("--> %f %f <--\n", xscalfact, yscalfact);
+
     // finally ready
     resample(infile, outfile, xscalfact, yscalfact);
     

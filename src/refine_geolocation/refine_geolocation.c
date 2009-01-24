@@ -233,7 +233,7 @@ main (int argc, char *argv[])
         CHECK_ARG(1);
         if (n_other == MAX_OTHER)
             asfPrintError("-other-file option only supported %d times.\n", MAX_OTHER);
-        other_files[n_other++] = strdup(GET_ARG(1));
+        other_files[n_other++] = STRDUP(GET_ARG(1));
     }
     else {
         --currArg;

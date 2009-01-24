@@ -187,11 +187,10 @@ resample_impl(const char *infile, const char *outfile,
     char **band_name = extract_band_names(metaIn->general->bands,
                                           metaIn->general->band_count);
 
-    char *metafile = MALLOC(sizeof(char) * (10 + strlen(outfile)));
-    strcpy(metafile, outfile);
-    append_ext_if_needed(metafile, ".meta", NULL);
+    char *metafile = appendExt(outfile, ".meta");
     meta_write(metaOut, metafile);
-    for (k = 0; k < metaIn->general->band_count; ++k)
+
+    for (k=0; k < metaIn->general->band_count; ++k)
     {
         if (metaIn->general->band_count != 1)
             asfPrintStatus("Resampling band: %s\n", band_name[k]);
