@@ -222,8 +222,6 @@ int main(argc,argv)
         asfPrintStatus("            %fm pixels in y.\n", ypixsiz);
     }
 
-    asfPrintStatus("--> %f %f <--\n", xscalfact, yscalfact);
-
     // finally ready
     resample(infile, outfile, xscalfact, yscalfact);
     
