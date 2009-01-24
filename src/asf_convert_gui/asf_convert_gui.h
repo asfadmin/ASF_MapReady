@@ -332,6 +332,7 @@ void populate_files_list(int, char **);
 void refresh_file_names();
 gboolean add_to_files_list(const gchar *);
 gboolean add_to_files_list_iter(const gchar *, GtkTreeIter *);
+gboolean add_to_ancillary_files_list(const gchar *);
 void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);
 gboolean is_meta_file(const gchar *);
@@ -340,6 +341,8 @@ int has_prepension(const gchar *);
 void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *,
                                   const char *);
 void move_from_completed_files_list(GtkTreeIter *);
+gboolean have_ancillary_files_in_list();
+gboolean is_polsarpro(const gchar *);
 
 /* help.c */
 char * escapify(const char * s);

@@ -85,6 +85,32 @@ int is_polsarpro(const gchar * infile)
   return (found_bin && found_bin_hdr);
 }
 
+/* Returns true if any of the input files in the input files list */
+/* are the type that need an ancillary file, i.e. gamma and polsarpro */
+gboolean have_ancillary_files_in_list()
+{
+  gchar * input_file = NULL;
+  gboolean have_ancillary_files = FALSE;
+
+  // For each file in the input list, check to see if it is a type
+  // that requires an ancillary file
+  GtkTreeIter iter;
+  gboolean more_items =
+      gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+  while (more_items) {
+    gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                       COL_INPUT_FILE, &input_file, -1);
+    if (input_file && is_polsarpro(input_file)) {
+      have_ancillary_files = TRUE;
+      break;
+    }
+    more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+  }
+  if (input_file) g_free(input_file);
+
+  return have_ancillary_files;
+}
+
 /* Returns the length of the prepension if there is an allowed
    prepension, otherwise returns 0 (no prepension -> chceck extensions) */
 int has_prepension(const gchar * data_file_name)
@@ -488,6 +514,21 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     g_free(file_basename);
     g_free(out_basename);
 
+    // There are no more files in the input files list that require ancillary files, so
+    // remove visilibity from the ancillary files column
+    if (!have_ancillary_files_in_list()) {
+      show_ancillary_files = FALSE;
+
+      GtkWidget * files_list = get_widget_checked("files_list");
+      GtkTreeView * files_list_view = GTK_TREE_VIEW(files_list);
+      GtkTreeViewColumn * col = gtk_tree_view_get_column(files_list_view, COL_ANCILLARY_FILE);
+      gtk_tree_view_column_set_visible(col,
+                                       (show_ancillary_files && show_full_paths) ? TRUE : FALSE);
+      col = gtk_tree_view_get_column(files_list_view, COL_ANCILLARY_FILE_SHORT);
+      gtk_tree_view_column_set_visible(col,
+                                       (show_ancillary_files && !show_full_paths) ? TRUE : FALSE);
+    }
+
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
 
     free(layover_mask);
@@ -677,6 +718,77 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
     }
 
     return valid;
+}
+
+gboolean
+add_to_ancillary_files_list(const gchar *ancillary_file_in)
+{
+  gchar * input_file;
+  int valid;
+  char *ancillary_file = file_is_valid(ancillary_file_in);
+  int ancillary_valid = ancillary_file != NULL;
+
+  if (ancillary_valid)
+  {
+    // Get the input file from the current selection
+    GtkWidget *files_list;
+    GtkTreeIter iter;
+
+    files_list = get_widget_checked("files_list");
+    if (get_iter_to_first_selected_row(files_list, list_store, &iter)) {
+      gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                         COL_INPUT_FILE, &input_file, -1);
+    }
+    else {
+      show_please_select_message();
+      return FALSE;
+    }
+    valid = input_file != NULL;
+
+    if (valid && ancillary_valid) {
+      // Found the input file, so add the ancillary file to it's ancillary file column
+
+      // Populate the ancillary file field (full path version and filename-only version)
+      gchar *status = g_malloc(sizeof(gchar) * 256);
+      show_ancillary_files = TRUE;
+      animate_ancillary_files_button = FALSE;
+      GtkWidget * w = get_widget_checked("ancillary_files_image");
+      gtk_widget_set_sensitive(GTK_WIDGET(w), TRUE);
+      gtk_image_set_from_file(GTK_IMAGE(w), imgloc("add_files_s.png"));
+      g_sprintf(status, "%s", "-");
+
+      gchar *basename = g_path_get_basename(ancillary_file);
+      gtk_list_store_set(list_store, &iter,
+                         COL_ANCILLARY_FILE, (gchar *)ancillary_file,
+                         COL_ANCILLARY_FILE_SHORT, basename,
+                         COL_STATUS, status,
+                         COL_LOG, "Added ancillary file.",
+                         -1);
+      g_free(basename);
+      refresh_file_names();
+    }
+    else {
+      // Could not find input file!
+      char msg[256];
+      sprintf(msg, "Could not find input file (below) in file list:\n"
+                   "%s\n\n"
+                   "Ancillary file not added:\n%s\n",
+                   input_file, ancillary_file);
+      message_box(msg);
+    }
+
+    free(input_file);
+    free(ancillary_file);
+  }
+  else {
+      // Could not find input file!
+    char msg[256];
+    sprintf(msg, "Ancillary file \"%s\" not a supported type.  File not added to list.",
+            ancillary_file);
+    message_box(msg);
+  }
+
+  return valid && ancillary_valid;
 }
 
 void

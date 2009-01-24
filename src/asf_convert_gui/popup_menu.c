@@ -598,6 +598,21 @@ handle_remove_imp(const char *widget_name, GtkListStore *store)
         i = g_list_next(i);
     }
 
+    // There are no more files in the input files list that require ancillary files, so
+    // remove visilibity from the ancillary files column
+    if (!have_ancillary_files_in_list()) {
+      show_ancillary_files = FALSE;
+
+      GtkWidget * files_list = get_widget_checked("files_list");
+      GtkTreeView * files_list_view = GTK_TREE_VIEW(files_list);
+      GtkTreeViewColumn * col = gtk_tree_view_get_column(files_list_view, COL_ANCILLARY_FILE);
+      gtk_tree_view_column_set_visible(col,
+                                       (show_ancillary_files && show_full_paths) ? TRUE : FALSE);
+      col = gtk_tree_view_get_column(files_list_view, COL_ANCILLARY_FILE_SHORT);
+      gtk_tree_view_column_set_visible(col,
+                                       (show_ancillary_files && !show_full_paths) ? TRUE : FALSE);
+    }
+
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
     g_list_free(selected_rows);
 

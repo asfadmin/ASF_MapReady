@@ -47,7 +47,7 @@
 "     This program ingests PolSAR Pro data into ASF internal data format.\n\n"
 
 #define ASF_INPUT_STRING \
-"     The input files is required. The first input is the data in its\n"\
+"     The input files are all required. The first input is the data in its\n"\
 "     original format in order to extract the correct metadata. The second\n"\
 "     input is format of the original data (either CEOS or AIRSAR). The\n"\
 "     third input is the basename of the PolSAR Pro file.\n"
@@ -130,7 +130,7 @@ int strmatches(const char *key, ...)
 
 const char *input_format_to_str(int input_format)
 {
-  switch (input_format) 
+  switch (input_format)
     {
     case STF: return "STF";
     case CEOS: return "CEOS";
@@ -146,7 +146,7 @@ const char *input_format_to_str(int input_format)
 }
 
 static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
-				     double *p_range_scale, 
+				     double *p_range_scale,
 				     double *p_azimuth_scale)
 {
   FILE *fpIn, *fpOut;
@@ -155,7 +155,7 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
   float *power = NULL;
   double azimuth_scale, range_scale;
   char *byteBuf = NULL, *inBaseName = NULL, unscaleBaseName[1024];
-  
+
   fpIn = FOPEN(inFile, "rb");
   if (p_azimuth_scale && p_range_scale) {
     range_scale = *p_range_scale;
@@ -208,12 +208,12 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
     asfPrintStatus("Resampling with scale factors: "
 		   "%lf range, %lf azimuth.\n",
 		   range_scale, azimuth_scale);
-    
+
     resample(unscaleBaseName, outFile, range_scale, azimuth_scale);
   }
 }
 
-void asf_polsarpro_import(char *ceosName, input_format_t format, 
+void asf_polsarpro_import(char *ceosName, input_format_t format,
 			  char *polsarName, int byteFlag, char *outBaseName)
 {
   meta_parameters *metaIn = NULL, *metaOut = NULL;
@@ -237,7 +237,7 @@ void asf_polsarpro_import(char *ceosName, input_format_t format,
   else if (format == AIRSAR)
     metaOut = import_airsar_meta(ceosName, ceosName, TRUE);
   else
-    asfPrintStatus("Input format (%s) not supported.\n", 
+    asfPrintStatus("Input format (%s) not supported.\n",
 		   input_format_to_str(format));
 
   if (line_count != metaOut->general->line_count ||
@@ -250,21 +250,21 @@ void asf_polsarpro_import(char *ceosName, input_format_t format,
       multilook = TRUE;
   }
   meta_free(metaOut);
-  
-  // Ingest the CEOS/AirSAR data to generate an amplitude image (in case the 
-  // user wants to terrain correct. Will need to the metadata anyway
+
+  // Ingest the CEOS/AirSAR data to generate an amplitude image (in case the
+  // user wants to terrain correct. Will need to get the metadata anyway
   if (format == CEOS) {
     asfPrintStatus("Ingesting CEOS data ...\n");
-    import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale, 
-		p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE, 
+    import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale,
+		p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
 		FALSE, FALSE, TRUE, FALSE);
   }
   else if (format == AIRSAR) {
     asfPrintStatus("Ingesting AirSAR data ...\n");
-    ingest_airsar_polsar_amp(ceosName, outBaseName, 
+    ingest_airsar_polsar_amp(ceosName, outBaseName,
 			     p_range_scale, p_azimuth_scale);
   }
-  
+
   // Read the PolSAR Pro data into the layer stack
   sprintf(outName, "%s.img", outBaseName);
   metaIn = envi2meta(envi);
@@ -324,7 +324,7 @@ main (int argc, char *argv[])
       logflag = TRUE;
     }
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
-      
+
     }
     else if (strmatches(key,"-classification","--classification","-c",NULL)) {
       classification = TRUE;
@@ -348,7 +348,7 @@ main (int argc, char *argv[])
   polsarFile = argv[currArg+2];
   outFile = argv[currArg+3];
 
-  // There is currently no point in supporting anything else but CEOS and 
+  // There is currently no point in supporting anything else but CEOS and
   // AirSAR. For CEOS is assumed we are talking about PALSAR data.
   if (strncmp_case(formatStr, "CEOS", 4) == 0)
     format = CEOS;
@@ -359,6 +359,6 @@ main (int argc, char *argv[])
 
   asf_polsarpro_import(dataFile, format, polsarFile, classification, outFile);
   asfPrintStatus("\nDone.\n");
-  
+
   return EXIT_SUCCESS;
 }
