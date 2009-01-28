@@ -81,7 +81,7 @@ const char *xml_get_string_value(xmlDoc *doc, char *str)
 
       xmlNode *next = findNode(doc, cur, elem, k);
       if (!next) {
-        // not found -- return empty string
+        // not found -- return NULL
         found = FALSE;
         strcpy(buf, "");
         FREE(elem);
@@ -101,22 +101,32 @@ const char *xml_get_string_value(xmlDoc *doc, char *str)
   }
 
   free_char_array(&arr, n);
-  return buf;
+
+  if (found)
+    return buf;
+  else
+    return NULL;
 }
 
 double xml_get_double_value(xmlDoc *doc, char *str)
 {
   const char *val = xml_get_string_value(doc, str);
-  return atof(val);
+  if (val)
+    return atof(val);
+  else
+    return MAGIC_UNSET_DOUBLE;
 }
 
 double xml_get_int_value(xmlDoc *doc, char *str)
 {
   const char *val = xml_get_string_value(doc, str);
-  return atoi(val);
+  if (val)
+    return atoi(val);
+  else
+    return MAGIC_UNSET_INT;
 }
 
-/* 
+/*
 // Whole bunch of test code... 
 
 static int n_ok=0;
@@ -124,16 +134,25 @@ static int n_bad=0;
 static void test_string(xmlDoc *doc, char *key, const char *expected)
 {
   const char *val = xml_get_string_value(doc, key);
-  if (strcmp(val, expected) != 0) {
+  int passed;
+
+  if (!expected) {
+    passed = val==NULL;
+  }
+  else {
+    passed = strcmp(val, expected)==0;
+  }
+
+  if (passed) {
+    printf("OK for key: %s\n", key);
+    ++n_ok;
+  }
+  else {
     printf("WRONG!  for key: %s\n"
            "  Expected: %s\n"
            "       Got: %s\n",
            key, expected, val);
     ++n_bad;
-  }
-  else {
-    printf("OK for key: %s\n", key);
-    ++n_ok;
   }
 }
 
@@ -266,6 +285,7 @@ void test_xml()
   test_string(doc, TOP "." DESC "[1].ReflectorNumber", "DJ2"); 
   test_string(doc, TOP "." DESC "[2].ReflectorNumber", "DJ3"); 
   test_string(doc, TOP "." DESC "[3].ReflectorNumber", "DJ4"); 
+  test_string(doc, TOP "." DESC "[4].ReflectorNumber", NULL);
   test_string(doc, TOP "." DESC "[0].RespOrbDir", "DESCENDING"); 
   test_string(doc, TOP "." DESC "[1].RespOrbDir", "ASCENDING");
 
@@ -303,6 +323,8 @@ void test_xml()
   test_double(doc, TOP "." DESC "[3].Height", 376.3);
   test_string(doc, TOP "." DESC "[3].RefEllipsoid", "WGS84");
 
+  test_string(doc, TOP "." DESC "[4].SiteName", NULL); 
+
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].A", "A1");
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].A", "A2");
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].AA", "AA1");
@@ -312,13 +334,27 @@ void test_xml()
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].BB", "1_BB");
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB", "2_BB");
 
+  // some failure testing
+  test_string(doc, TOP "." DESC "[2].NestedListTest.ListItem[1].BB", NULL);
+  test_string(doc, TOP "." DESC "[25].NestedListTest.ListItem[1].BB", NULL);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[4].BB", NULL);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[2].A", NULL);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[200].AA", NULL);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].Arrg", NULL);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem.A", "A1");
+  test_string(doc, TOP "." DESC "[1].SiteNameXXX", NULL); 
+  test_int(doc, TOP "." DESC "[1].StortDate", MAGIC_UNSET_INT);
+  test_double(doc, TOP "." DESC "[1].Heigth", MAGIC_UNSET_DOUBLE);
+
   printf("Number ok: %d\n", n_ok);
   if (n_bad>0)
-    printf("**** Number of failures: %d\n", n_bad);
+    printf("**** Not all tests passed!\n"
+           "**** Number of failures: %d\n", n_bad);
 
   xmlFreeDoc(doc);
   xmlCleanupParser();
   unlink("test.xml");
   exit(1);
 }
+
 */
