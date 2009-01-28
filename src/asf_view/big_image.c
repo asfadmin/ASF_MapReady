@@ -400,7 +400,7 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
         int incr = ix1>ix0 ? 1 : -1;
         for (i=ix0; i!=ix1; i+=incr) {
             j = iy0 + (float)(i-ix0)/(ix1-ix0) * (iy1-iy0);
-            if (j >= 0 && i >= 0 && i <= width && j <= height) {
+            if (j >= 0 && i >= 0 && i < width && j < height) {
               p = pixels + j * rowstride + i * n_channels;
               p[0] = r; p[1] = g; p[2] = b;
             }
@@ -409,7 +409,7 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
         int incr = iy1>iy0 ? 1 : -1;
         for (j=iy0; j!=iy1; j+=incr) {
             i = ix0 + (float)(j-iy0)/(iy1-iy0) * (ix1-ix0);
-            if (j >= 0 && i >= 0 && i <= width && j <= height) {
+            if (j >= 0 && i >= 0 && i < width && j < height) {
               p = pixels + j * rowstride + i * n_channels;
               p[0] = r; p[1] = g; p[2] = b;
             }
