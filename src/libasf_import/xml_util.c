@@ -57,6 +57,12 @@ static void extract_array_specifier(const char *in, char **out_p, int *n)
   *out_p = out;
 }
 
+int xml_get_element_exists(xmlDoc *doc, char *str)
+{
+  const char *val = xml_get_string_value(doc, str);
+  return val != NULL;
+}
+
 const char *xml_get_string_value(xmlDoc *doc, char *str)
 {
   int i,n;
