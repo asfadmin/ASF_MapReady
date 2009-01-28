@@ -31,21 +31,21 @@ terrasar_meta *read_terrasar_meta2(const char *dataFile)
   if (!doc)
     asfPrintError("Could not parse file %s\n", dataFile);
 
-  strcpy(terrasar->imageData, xml_get_string(doc, "imageData:path"));
+  strcpy(terrasar->imageData, xml_get_string_value(doc, "imageData.path"));
   strcat(terrasar->imageData, "/");
-  strcat(terrasar->imageData, xml_get_string(doc, "imageData:filename"));
+  strcat(terrasar->imageData, xml_get_string_value(doc, "imageData.filename"));
 
   strcpy(terrasar->imageDataType,
-         xml_get_string(doc, "imageDataInfo:imageDataType"));
+         xml_get_string_value(doc, "imageDataInfo.imageDataType"));
   strcpy(terrasar->imageDataFormat,
-         xml_get_string(doc, "imageDataInfo:imageDataFormat"));
+         xml_get_string_value(doc, "imageDataInfo.imageDataFormat"));
 
-  terrasar->numberOfLayers = xml_get_int(doc, "imageDataInfo:numberOfLayers");
-  terrasar->imageDataDepth = xml_get_int(doc, "imageDataInfo:imageDataDepth");
-  terrasar->numberOfRows = xml_get_int(doc, "imageDataInfo:numberOfRows");
-  terrasar->numberOfColumns = xml_get_int(doc, "imageDataInfo:numberOfColumns");
-  terrasar->groundRangeResolution = xml_get_double(doc, "imageDataInfo:groundRangeResolution");
-  terrasar->azimuthResolution = xml_get_double(doc, "imageDataInfo:azimuthResolution");
+  terrasar->numberOfLayers = xml_get_int_value(doc, "imageDataInfo.numberOfLayers");
+  terrasar->imageDataDepth = xml_get_int_value(doc, "imageDataInfo.imageDataDepth");
+  terrasar->numberOfRows = xml_get_int_value(doc, "imageDataInfo.numberOfRows");
+  terrasar->numberOfColumns = xml_get_int_value(doc, "imageDataInfo.numberOfColumns");
+  terrasar->groundRangeResolution = xml_get_double_value(doc, "imageDataInfo.groundRangeResolution");
+  terrasar->azimuthResolution = xml_get_double_value(doc, "imageDataInfo.azimuthResolution");
 
   xmlFreeDoc(doc);
   xmlCleanupParser();
