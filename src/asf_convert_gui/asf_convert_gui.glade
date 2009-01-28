@@ -5314,8 +5314,35 @@
 					      </child>
 
 					      <child>
-						<widget class="GtkLabel" id="labl44">
-						  <property name="width_request">15</property>
+						<widget class="GtkButton" id="ancillary_files_button">
+						  <property name="visible">True</property>
+						  <property name="tooltip" translatable="yes">Add Ancillary File.  Naming conventions for some data sets such as those processed by the GAMMA SAR and Interferometry Software package may not exist.  Other data sets such as POLSARPRO datasets may require original, say CEOS or AIRSAR, data sets to be associated with them so that information not contained in the POLSARPRO input file can be extracted from the original dataset.  The Add Ancillary File button allows you to associate one additional file with the selected input file.  In the case of the GAMMA software, the Browse and Add Ancillary File buttons are used to selected the data and metadata files.  In the case of POLSARPRO, you use the Browse button to select the POLSARPRO file and the Add Ancillary File button to associate an original CEOS or AIRSAR format dataset with it.</property>
+						  <property name="can_focus">True</property>
+						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
+						  <signal name="clicked" handler="on_ancillary_files_button_clicked" last_modification_time="Fri, 16 Jan 2009 22:29:50 GMT"/>
+
+						  <child>
+						    <widget class="GtkImage" id="ancillary_files_image">
+						      <property name="visible">True</property>
+						      <property name="stock">gtk-no</property>
+						      <property name="icon_size">4</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						  </child>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkLabel" id="label77">
 						  <property name="visible">True</property>
 						  <property name="label" translatable="yes"></property>
 						  <property name="use_underline">False</property>
@@ -5340,7 +5367,8 @@
 					      </child>
 
 					      <child>
-						<widget class="GtkLabel" id="label77">
+						<widget class="GtkLabel" id="labl44">
+						  <property name="width_request">15</property>
 						  <property name="visible">True</property>
 						  <property name="label" translatable="yes"></property>
 						  <property name="use_underline">False</property>
@@ -5561,62 +5589,13 @@
 					      </child>
 
 					      <child>
-						<widget class="GtkButton" id="ancillary_files_button">
-						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Add Ancillary File.  Naming conventions for some data sets such as those processed by the GAMMA SAR and Interferometry Software package may not exist.  Other data sets such as POLSARPRO datasets may require original, say CEOS or AIRSAR, data sets to be associated with them so that information not contained in the POLSARPRO input file can be extracted from the original dataset.  The Add Ancillary File button allows you to associate one additional file with the selected input file.  In the case of the GAMMA software, the Browse and Add Ancillary File buttons are used to selected the data and metadata files.  In the case of POLSARPRO, you use the Browse button to select the POLSARPRO file and the Add Ancillary File button to associate an original CEOS or AIRSAR format dataset with it.</property>
-						  <property name="can_focus">True</property>
-						  <property name="relief">GTK_RELIEF_NORMAL</property>
-						  <property name="focus_on_click">True</property>
-						  <signal name="clicked" handler="on_ancillary_files_button_clicked" last_modification_time="Fri, 16 Jan 2009 22:29:50 GMT"/>
-
-						  <child>
-						    <widget class="GtkImage" id="ancillary_files_image">
-						      <property name="visible">True</property>
-						      <property name="stock">gtk-no</property>
-						      <property name="icon_size">4</property>
-						      <property name="xalign">0.5</property>
-						      <property name="yalign">0.5</property>
-						      <property name="xpad">0</property>
-						      <property name="ypad">0</property>
-						    </widget>
-						  </child>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
+						<placeholder/>
 					      </child>
 
 					      <child>
 						<widget class="GtkLabel" id="label78">
 						  <property name="visible">True</property>
 						  <property name="label" translatable="yes">       </property>
-						  <property name="use_underline">False</property>
-						  <property name="use_markup">False</property>
-						  <property name="justify">GTK_JUSTIFY_LEFT</property>
-						  <property name="wrap">False</property>
-						  <property name="selectable">False</property>
-						  <property name="xalign">0.5</property>
-						  <property name="yalign">0.5</property>
-						  <property name="xpad">0</property>
-						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">True</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkLabel" id="label43">
-						  <property name="visible">True</property>
-						  <property name="label" translatable="yes">Output Settings: </property>
 						  <property name="use_underline">False</property>
 						  <property name="use_markup">False</property>
 						  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -5642,6 +5621,31 @@
 						<widget class="GtkLabel" id="label45">
 						  <property name="visible">True</property>
 						  <property name="label" translatable="yes"> </property>
+						  <property name="use_underline">False</property>
+						  <property name="use_markup">False</property>
+						  <property name="justify">GTK_JUSTIFY_LEFT</property>
+						  <property name="wrap">False</property>
+						  <property name="selectable">False</property>
+						  <property name="xalign">0.5</property>
+						  <property name="yalign">0.5</property>
+						  <property name="xpad">0</property>
+						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkLabel" id="label43">
+						  <property name="visible">True</property>
+						  <property name="label" translatable="yes">Output Settings: </property>
 						  <property name="use_underline">False</property>
 						  <property name="use_markup">False</property>
 						  <property name="justify">GTK_JUSTIFY_LEFT</property>
