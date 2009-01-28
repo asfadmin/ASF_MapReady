@@ -24,6 +24,47 @@
 #define FLOAT_COMPARE(a, b) (abs((a) - (b)) \
 			     < UNIT_TESTS_MICRON ? 1 : 0)
 
+/* Returns true if a PolSARpro file set is detected based on the */
+/* filename passed in.                                           */
+int isPolSARpro(const char * infile)
+{
+  int found_bin = 0;
+  int found_bin_hdr = 0;
+  char *bin = NULL, *bin_hdr = NULL, *dupe = NULL, *ext = NULL;
+
+  ext = findExt(infile);
+  if (!ext) {
+    // If no file extension exists, then maybe it has been stripped
+    // off.  Guess .bin and check for existence...
+    ext = (char *) MALLOC(sizeof(char) * 16);
+    strcpy(ext, ".bin");
+  }
+  if (strcmp_case(ext, ".bin")==0) {
+    bin = (char *)infile;
+    bin_hdr = STRDUP(infile);
+    strcat(bin_hdr, ".hdr");
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(bin_hdr);
+  }
+  else if (strcmp_case(ext, ".hdr")==0) {
+    dupe = STRDUP(infile);
+    bin_hdr = (char *)infile;
+    ext = findExt(dupe);
+    *ext = '\0';
+    ext = findExt(dupe);
+    if (ext && (strcmp_case(ext, ".bin")==0)) {
+      bin = dupe;
+    }
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(dupe);
+  }
+  FREE(ext);
+
+  return (int)(found_bin && found_bin_hdr);
+}
+
 meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
 {
   airsar_header *header;
@@ -791,7 +832,7 @@ static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile,
 			     int *amp0_flag)
 {
   char tmpFile[1024];
-  
+
   // Calculate polarimetric parameters
   if (cfg->polarimetry->pauli)
     cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
@@ -806,7 +847,7 @@ static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile,
       // update the RGB Bands to Red=HH, Green=HV, Blue=VV
       strcpy(cfg->export->rgb, "SIGMA-HH,SIGMA-HV,SIGMA-VV");
       strcpy(outFile, inFile);
-      
+
       // turn off the amp0_flag -- we don't need it in this case
       *amp0_flag = FALSE;
     }
@@ -830,7 +871,7 @@ static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile,
     asfPrintError("Lee category preserving not supported yet.\n");
   else
     asfPrintError("Unsupported polarimetric processing technique.\n");
-  
+
   if (cfg->polarimetry->cloude_pottier ||
       cfg->polarimetry->cloude_pottier_ext ||
       cfg->polarimetry->cloude_pottier_nc)
@@ -876,6 +917,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   else {
     cfg = read_convert_config(configFileName);
   }
+
   // Using PGM with polarimetry is not allowed -- all are color output
   // (except when using entropy/anisotropy/alpha -- that could be PGM,
   // if each is exported as a separate file)
@@ -1319,6 +1361,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                           cfg->general->in_name);
         free(raw_file); free(RAW_file);
     }
+    //int is_polsarpro = isPolSARpro(cfg->general->in_name);
 
     // Check if the user said the file is L1, but we really have a L0 file
     if (strcmp_case(cfg->import->format, "CEOS (1)") == 0) {
@@ -1348,8 +1391,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->import->format), "BIL", 3) != 0 &&
           strncmp(uc(cfg->import->format), "GRIDFLOAT", 9) != 0 &&
           strncmp(uc(cfg->import->format), "GAMMA", 5) != 0 &&
+          strncmp(uc(cfg->import->format), "POLSARPRO", 9) != 0 &&
           strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0) {
-        asfPrintError("Chosen import format not supported\n");
+        asfPrintError("Selected import format not supported\n");
       }
 
       is_airsar = strncmp(uc(cfg->import->format), "AIRSAR", 6) == 0;
@@ -1360,7 +1404,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) != 0 &&
           strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) != 0 &&
           strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) != 0) {
-        asfPrintError("Chosen radiometry not supported\n");
+        asfPrintError("Selected radiometry not supported\n");
       }
 
       // Look up table file existence check
@@ -1438,7 +1482,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->sar_processing->radiometry), "SIGMA_IMAGE", 11) != 0 &&
           strncmp(uc(cfg->sar_processing->radiometry), "GAMMA_IMAGE", 11) != 0 &&
           strncmp(uc(cfg->sar_processing->radiometry), "BETA_IMAGE", 10) != 0) {
-        asfPrintError("Chosen radiometry not supported\n");
+        asfPrintError("Selected radiometry not supported\n");
       }
 
     }
@@ -1461,7 +1505,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (strncmp(cfg->image_stats->values, "LOOK", 4) != 0 &&
           strncmp(cfg->image_stats->values, "INCIDENCE", 9) != 0 &&
           strncmp(cfg->image_stats->values, "RANGE", 5) != 0) {
-        asfPrintError("Chosen values not supported\n");
+        asfPrintError("Selected values not supported\n");
       }
     }
 
@@ -1540,20 +1584,20 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->geocoding->datum), "NAD27", 5)  != 0 &&
           strncmp(uc(cfg->geocoding->datum), "NAD83", 5)  != 0 &&
           strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) != 0) {
-        asfPrintError("Chosen datum not supported\n");
+        asfPrintError("Selected datum not supported\n");
       }
 
       // Resampling
       if (strncmp(uc(cfg->geocoding->resampling), "NEAREST_NEIGHBOR", 16) != 0 &&
           strncmp(uc(cfg->geocoding->resampling), "BILINEAR", 8) != 0 &&
           strncmp(uc(cfg->geocoding->resampling), "BICUBIC", 7) != 0) {
-        asfPrintError("Chosen resampling method not supported\n");
+        asfPrintError("Selected resampling method not supported\n");
       }
 
       // Force resampling with Nearest Neighbor if we are doing
       // a Cloude-Pottier decomposition
       if (cfg->general->polarimetry &&
-          (cfg->polarimetry->cloude_pottier || 
+          (cfg->polarimetry->cloude_pottier ||
            cfg->polarimetry->cloude_pottier_ext) &&
           strncmp(uc(cfg->geocoding->resampling), "NEAREST_NEIGHBOR", 16)!=0)
       {
@@ -1607,7 +1651,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->export->format), "JPEG", 4) != 0 &&
           strncmp(uc(cfg->export->format), "PNG", 3) != 0 &&
           strncmp(uc(cfg->export->format), "PGM", 3) != 0) {
-        asfPrintError("Chosen export format (%s) not supported\n",
+        asfPrintError("Selected export format (%s) not supported\n",
                      cfg->export->format);
       }
 
@@ -1626,7 +1670,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             strncmp(uc(cfg->export->byte), "MINMAX", 6) != 0 &&
             strncmp(uc(cfg->export->byte), "TRUNCATE", 8) != 0 &&
             strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) != 0) {
-          asfPrintError("Chosen scaling method (%s) not supported\n",
+          asfPrintError("Selected scaling method (%s) not supported\n",
                         cfg->export->byte);
         }
       }
@@ -1778,6 +1822,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format_type = AIRSAR;
       else if (strncmp_case(cfg->import->format, "VP", 2) == 0)
         format_type = VP;
+      else if (strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0)
+        format_type = POLSARPRO;
       else {
         asfPrintError("Unknown Format: %s\n", cfg->import->format);
         format_type = CEOS; // actually this is not reached
@@ -2338,7 +2384,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         if (cfg->airsar->c_pol) {
           char *in_tmp = appendToBasename(inFile, "_c");
           char *out_tmp = appendToBasename(outFile, "_c");
-	  
+
 	  update_status("Exporting polarimetric C-band...");
 	  asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
 	  do_export(cfg, in_tmp, out_tmp);

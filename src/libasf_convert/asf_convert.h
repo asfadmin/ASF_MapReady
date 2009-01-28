@@ -9,6 +9,7 @@
 typedef struct
 {
   char *in_name;          // input file name
+  char *ancillary_file;   // ancillary file (if req'd, see PolSARpro and GAMMA req'ts)
   char *out_name;         // output file name
   char *default_in_dir;   // default input directory
   char *default_out_dir;  // default output directory

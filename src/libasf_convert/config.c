@@ -138,8 +138,12 @@ int init_convert_config(char *configFile)
   // default input directory
   fprintf(fConfig, "# Directory where to look for the input file(s). If there is a\n"
                    "# directory already specified in the input file parameter, this\n"
-           "# value will be ignored.\n\n");
+                   "# value will be ignored.\n\n");
   fprintf(fConfig, "default input dir = \n\n");
+  // ancillary file
+  fprintf(fConfig, "# This parameter looks for the basename of the ancillary file for\n");
+  fprintf(fConfig, "# PolSARpro or GAMMA ingest.\n\n");
+  fprintf(fConfig, "ancillary file = \n\n");
   // output file
   fprintf(fConfig, "# This parameter looks for the basename of the output file\n\n");
   fprintf(fConfig, "output file = \n\n");
@@ -270,6 +274,7 @@ void free_convert_config(convert_config *cfg)
     if (cfg) {
         if (cfg->general) {
             FREE(cfg->general->in_name);
+            FREE(cfg->general->ancillary_file);
             FREE(cfg->general->out_name);
             FREE(cfg->general->default_in_dir);
             FREE(cfg->general->default_out_dir);
@@ -369,6 +374,8 @@ convert_config *init_fill_convert_config(char *configFile)
 
   cfg->general->in_name = (char *)MALLOC(sizeof(char)*1200);
   strcpy(cfg->general->in_name, "");
+  cfg->general->ancillary_file = (char *)MALLOC(sizeof(char)*1200);
+  strcpy(cfg->general->ancillary_file, "");
   cfg->general->out_name = (char *)MALLOC(sizeof(char)*1200);
   strcpy(cfg->general->out_name, "");
   cfg->general->default_in_dir = (char *)MALLOC(sizeof(char)*1024);
@@ -744,6 +751,8 @@ convert_config *init_fill_convert_config(char *configFile)
         test = read_param(line);
         if (strncmp(test, "input file", 10)==0)
             strcpy(cfg->general->in_name, read_str(line, "input file"));
+        if (strncmp(test, "ancillary file", 10)==0)
+            strcpy(cfg->general->ancillary_file, read_str(line, "ancillary file"));
         if (strncmp(test, "output file", 11)==0)
             strcpy(cfg->general->out_name, read_str(line, "output file"));
         if (strncmp(test, "default input dir", 17)==0)
@@ -824,6 +833,8 @@ convert_config *read_convert_config(char *configFile)
       test = read_param(line);
       if (strncmp(test, "input file", 10)==0)
         strcpy(cfg->general->in_name, read_str(line, "input file"));
+      if (strncmp(test, "ancillary file", 10)==0)
+        strcpy(cfg->general->ancillary_file, read_str(line, "ancillary file"));
       if (strncmp(test, "output file", 11)==0)
         strcpy(cfg->general->out_name, read_str(line, "output file"));
       if (strncmp(test, "default input dir", 17)==0)
@@ -1108,12 +1119,17 @@ int write_convert_config(char *configFile, convert_config *cfg)
 
   if (strcmp(cfg->general->batchFile, "") == 0) {
     fprintf(fConfig, "%s\n", cfg->comment);
-
+  
     // General
     fprintf(fConfig, "[General]\n");
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter looks for the basename of the input file\n\n");
     fprintf(fConfig, "input file = %s\n", cfg->general->in_name);
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# This parameter looks for the basename of the ancillary file for\n");
+      fprintf(fConfig, "# PolSARpro or GAMMA ingest.\n\n");
+    }
+    fprintf(fConfig, "ancillary file = %s\n", cfg->general->ancillary_file);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter looks for the basename of the output file\n\n");
     fprintf(fConfig, "output file = %s\n", cfg->general->out_name);
@@ -1688,8 +1704,8 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (cfg->general->mosaic) {
       fprintf(fConfig, "\n[Mosaic]\n");
       if (!shortFlag)
-        fprintf(fConfig, "\n# The following overlapt are considered valid format:\
- MIN, MAX, OVERLAY, NEAR RANGE\n\n");
+        fprintf(fConfig, "\n# The following overlapt are considered valid format:"
+                         " MIN, MAX, OVERLAY, NEAR RANGE\n\n");
       fprintf(fConfig, "overlap = %s\n", cfg->mosaic->overlap);
     }
   }
