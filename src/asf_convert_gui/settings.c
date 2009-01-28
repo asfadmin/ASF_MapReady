@@ -1438,8 +1438,9 @@ settings_update_mask(Settings *s, const char *output_path)
 
 char *
 settings_to_config_file(const Settings *s,
-      const gchar *input_file, const gchar *output_full,
-      const gchar *output_path, const gchar *tmp_dir)
+      const gchar *input_file, const gchar *ancillary_file,
+      const gchar *output_full, const gchar *output_path,
+      const gchar *tmp_dir)
 {
     char *tmp_projfile = NULL;
     char *tmp_cfgfile;
@@ -1576,6 +1577,9 @@ settings_to_config_file(const Settings *s,
     }
     else {
         fprintf(cf, "input file = %s\n", input_basename);
+    }
+    if (ancillary_file && strlen(ancillary_file)) {
+      fprintf(cf, "ancillary file = %s\n", ancillary_file);
     }
     fprintf(cf, "output file = %s\n", output_file);
     fprintf(cf, "import = %d\n",

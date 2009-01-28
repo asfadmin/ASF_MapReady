@@ -267,8 +267,9 @@ void settings_update_dem(Settings *s, const char *output_path);
 void settings_delete_dem_and_mask(Settings *s);
 void settings_update_mask(Settings *s, const char *output_path);
 char *settings_to_config_file(const Settings *s,
-           const gchar *input_file, const gchar *output_file,
-           const gchar *output_path, const gchar *tmp_dir);
+           const gchar *input_file, const gchar *ancillary_file,
+           const gchar *output_file, const gchar *output_path,
+           const gchar *tmp_dir);
 int apply_settings_from_config_file(char *configFile);
 void default_to_keep_temp(void);
 

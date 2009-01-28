@@ -198,7 +198,7 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
     if (use_thumbnails)
     {
         // changed this to always do scaling, no reason not to really
-        // since it is pretty quick 
+        // since it is pretty quick
         int scaling_required = TRUE;
 
         char *basename = get_basename(out_full);
@@ -208,7 +208,7 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
 
         // if output was a png image, we will be using that instead
         // of the "_thumb" file
-        if (!fileExists(thumbnail_name) && 
+        if (!fileExists(thumbnail_name) &&
             strcmp_case(findExt(out_full), ".png") == 0)
         {
             strcpy(thumbnail_name, out_full);
@@ -339,7 +339,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
     memset(&si, 0, sizeof(si));
     memset(&pi, 0, sizeof(pi));
     si.cb = sizeof(si);
-    
+
     char *cmd = MALLOC(sizeof(char)*
         (strlen(cfg_file) + strlen(get_asf_bin_dir_win()) + 256));
     sprintf(cmd, "\"%s/asf_mapready.exe\" %s-log \"%s\" \"%s\"",
@@ -551,13 +551,14 @@ static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
              int is_first)
 {
-    gchar *in_file, *out_full, *status;
+    gchar *in_file, *out_full, *ancillary_file, *status;
     int pid;
 
     pid = getpid();
 
     gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter,
         COL_INPUT_FILE, &in_file,
+        COL_ANCILLARY_FILE, &ancillary_file,
         COL_OUTPUT_FILE, &out_full,
         COL_STATUS, &status,
         -1);
@@ -599,8 +600,10 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         set_asf_tmp_dir(tmp_dir);
 
         config_file =
-            settings_to_config_file(user_settings, in_file, out_full,
-                output_dir, tmp_dir);
+            settings_to_config_file(user_settings,
+                                    in_file, ancillary_file,
+                                    out_full, output_dir,
+                                    tmp_dir);
         if (!config_file) {
             err_string = "Error creating configuration file.";
             gtk_list_store_set(list_store, iter, COL_STATUS, err_string, -1);

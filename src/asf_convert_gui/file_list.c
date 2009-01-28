@@ -630,6 +630,7 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
 {
     char *input_file = file_is_valid(input_file_in);
     int valid = input_file != NULL;
+    int isPolSARpro;
 
     if (valid)
     {
@@ -656,6 +657,15 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
         }
         else {
           /* not already in list -- add it */
+
+          // If it is a PolSARpro file, then force the import tab input data format
+          // drop-down to select PolSARpro...
+          isPolSARpro = is_polsarpro(input_file_in);
+          if (isPolSARpro) {
+            GtkWidget * w = get_widget_checked("input_data_format_combobox");
+            set_combo_box_item(w, 4); // Input format for polsarpro is item #4 (zero ordered)
+            update_summary();
+          }
 
           // Build list of bands
           char *bands = build_band_list(input_file);
