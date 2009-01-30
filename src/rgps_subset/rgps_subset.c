@@ -63,7 +63,7 @@ static void read_subset(FILE *in, meta_parameters *meta,
     *mean = sum / lines / samples;
 }
 
-static void filter_image(float *inbuf, float *outbuf, filter_type_t filter, 
+static void filter_image(float *inbuf, float *outbuf, filter_type_t filter,
 			 int size, int inLines, int inSamples)
 {
   float half = (size - 1) / 2;
@@ -71,23 +71,23 @@ static void filter_image(float *inbuf, float *outbuf, filter_type_t filter,
 
   // Set upper margin of image to input pixel values
   for (ii=0; ii<half; ii++)
-    for (jj=0; jj<inSamples; jj++) 
+    for (jj=0; jj<inSamples; jj++)
       outbuf[ii*inSamples+jj] = 0.0;
-  
+
   // Filtering the 'regular' lines
   for (ii=half; ii<inLines-half; ii++) {
-    
+
     for (jj=0; jj<half; jj++) outbuf[jj] = 0.0;
-    for (jj=half; jj<inSamples-half; jj++) 
-      outbuf[ii*inSamples+jj] = kernel(filter, inbuf, inLines, inSamples, 
+    for (jj=half; jj<inSamples-half; jj++)
+      outbuf[ii*inSamples+jj] = kernel(filter, inbuf, inLines, inSamples,
 				       ii, jj, size, 1, 4);
     for (jj=inSamples-half; jj<inSamples; jj++) outbuf[jj] = 0.0;
-    
+
   }
-  
+
   // Set lower margin of image to input pixel values
   for (ii=inLines-half; ii<inLines; ii++)
-    for (jj=0; jj<inSamples; jj++) 
+    for (jj=0; jj<inSamples; jj++)
       outbuf[ii*inSamples+jj] = 0.0;
 }
 
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
   radiometry_t radiometry=r_AMP;
   filter_type_t filter_type;
   char srcImage[255], trgImage[255], *inFile, outFile[255], filter_str[25];
-  int startX_src, startY_src, startX_trg, startY_trg, lines, samples, size; 
+  int startX_src, startY_src, startX_trg, startY_trg, lines, samples, size;
   int subset=FALSE, filter=FALSE, geotiff=FALSE, line_count, sample_count;
   double lat_UL, lon_UL, lat_LR, lon_LR, yLine, xSample;
   float mean, scale;
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
       geotiff = TRUE;
     }
     else {
-      printf( "\n**Invalid option:  %s\n", argv[currArg-1]); 
+      printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
       usage(argv[0]);
     }
   }
@@ -156,12 +156,12 @@ int main(int argc, char **argv)
   // Ingesting CEOS files into ASF internal format
   asfPrintStatus("Ingesting source image: %s ...\n", srcImage);
   asf_import(radiometry, FALSE, FALSE, FALSE, "CEOS", "", "geocoded_image", NULL, NULL,
-	     -99.0, -99.0, NULL, NULL, NULL, TRUE, NULL, srcImage, srcImage);
+	     -99.0, -99.0, NULL, NULL, NULL, TRUE, NULL, srcImage, "", srcImage);
   metaSrc = meta_read(srcImage);
 
   asfPrintStatus("Ingesting target image: %s ...\n", trgImage);
   asf_import(radiometry, FALSE, FALSE, FALSE, "CEOS", "", "geocoded_image", NULL, NULL,
-	     -99.0, -99.0, NULL, NULL, NULL, TRUE, NULL, trgImage, trgImage);
+	     -99.0, -99.0, NULL, NULL, NULL, TRUE, NULL, trgImage, "", trgImage);
   metaTrg = meta_read(trgImage);
 
   // Check subset values for source image
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
 
   // Determine geographic location of subset
   meta_get_latLon(metaSrc, startY_src, startX_src, 0.0, &lat_UL, &lon_UL);
-  meta_get_latLon(metaSrc, startY_src+lines, startX_src+samples, 0.0, 
+  meta_get_latLon(metaSrc, startY_src+lines, startX_src+samples, 0.0,
 		  &lat_LR, &lon_LR);
   meta_get_lineSamp(metaTrg, lat_UL, lon_UL, 0.0, &yLine, &xSample);
   startX_trg = (int) (xSample + 0.5);
@@ -230,7 +230,7 @@ int main(int argc, char **argv)
   inFile = appendExt(trgImage, ".img");
   sprintf(outFile, "%s_sub.img", trgImage);
   fp = FOPEN(inFile, "rb");
-  read_subset(fp, metaTrg, startX_trg, startY_trg, samples, lines, 0.0, 
+  read_subset(fp, metaTrg, startX_trg, startY_trg, samples, lines, 0.0,
 	      &mean, img);
   FCLOSE(fp);
 
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
   }
 
   if (filter) {
-    asfPrintStatus("\nFiltering target image subset with %s (%dx%d) ...\n", 
+    asfPrintStatus("\nFiltering target image subset with %s (%dx%d) ...\n",
 		   uc(filter_str), size, size);
     filter_image(img, filtered_img, filter_type, size, lines, samples);
   }
@@ -274,12 +274,12 @@ int main(int argc, char **argv)
   inFile = appendExt(srcImage, ".img");
   sprintf(outFile, "%s_sub.img", srcImage);
   fp = FOPEN(inFile, "rb");
-  read_subset(fp, metaSrc, startX_src, startY_src, samples, lines, mean, 
+  read_subset(fp, metaSrc, startX_src, startY_src, samples, lines, mean,
 	      NULL, img);
   FCLOSE(fp);
 
   if (filter) {
-    asfPrintStatus("\nFiltering source image subset with %s (%dx%d) ...\n", 
+    asfPrintStatus("\nFiltering source image subset with %s (%dx%d) ...\n",
 		   uc(filter_str), size, size);
     filter_image(img, filtered_img, filter_type, size, lines, samples);
   }

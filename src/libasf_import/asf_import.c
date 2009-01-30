@@ -35,7 +35,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          double *p_range_scale, double *p_azimuth_scale,
          double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
          char *inMetaNameOption,
-         char *inBaseName, char *outBaseName)
+         char *inBaseName, char *ancillary_file, char *outBaseName)
 {
   char outDataName[256], outMetaName[256];
 
@@ -166,6 +166,15 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   else if (format_type == TERRASAR) {
     asfPrintStatus("   Data format: TERRASAR\n");
     import_terrasar(inBaseName, update(radiometry, db_flag), outBaseName);
+  }
+  else if (format_type == POLSARPRO) {
+    asfPrintStatus("   Data format: POLSARPRO\n");
+    // FIXME: The user interface and command line for asf_import, asf_mapready,
+    // and mapready need to set the following with an option (it means the data
+    // values are a classification or decomposition into indice values)
+    int classificationFlag = FALSE;
+    import_polsarpro(inBaseName, ancillary_file,
+                     classificationFlag, outBaseName);
   }
   // Don't recognize this data format; report & quit
   else {

@@ -598,10 +598,17 @@ handle_remove_imp(const char *widget_name, GtkListStore *store)
         i = g_list_next(i);
     }
 
+    g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
+    g_list_free(selected_rows);
+
+    g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
+    g_list_free(refs);
+
     // There are no more files in the input files list that require ancillary files, so
     // remove visilibity from the ancillary files column
     if (!have_ancillary_files_in_list()) {
       show_ancillary_files = FALSE;
+      animate_ancillary_files_button = TRUE;
 
       GtkWidget * files_list = get_widget_checked("files_list");
       GtkTreeView * files_list_view = GTK_TREE_VIEW(files_list);
@@ -611,13 +618,10 @@ handle_remove_imp(const char *widget_name, GtkListStore *store)
       col = gtk_tree_view_get_column(files_list_view, COL_ANCILLARY_FILE_SHORT);
       gtk_tree_view_column_set_visible(col,
                                        (show_ancillary_files && !show_full_paths) ? TRUE : FALSE);
+
+      GtkWidget * w = get_widget_checked("ancillary_files_image");
+      gtk_widget_set_sensitive(GTK_WIDGET(w), FALSE);
     }
-
-    g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
-    g_list_free(selected_rows);
-
-    g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
-    g_list_free(refs);
 
     return TRUE;
 }

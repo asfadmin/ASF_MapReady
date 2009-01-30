@@ -128,13 +128,13 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
                 amp0_flag, in_format, NULL, NULL, NULL, NULL,
                 cfg->ingest->prc_master, cfg->general->lat_begin,
                 cfg->general->lat_end, 0, 0, -99, -99, 0,
-                NULL, NULL, NULL, TRUE, NULL, "master", "a"),
+                NULL, NULL, NULL, TRUE, NULL, "master", "", "a"),
          "ingesting master image (asf_import)");
     check_return(asf_import(radiometry, db_flag, complex_flag, multilook_flag,
                 amp0_flag, in_format, NULL, NULL, NULL, NULL,
                 cfg->ingest->prc_slave, cfg->general->lat_begin,
                 cfg->general->lat_end, 0, 0, -99, -99, 0,
-                NULL, NULL, NULL, TRUE, NULL, "slave", "b"),
+                NULL, NULL, NULL, TRUE, NULL, "slave", "", "b"),
          "ingesting slave image (asf_import)");
 
     // Setting patches and offsets for processing level zero data
@@ -181,7 +181,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   // user interaction) we fall back to coregistering the entire FRAME.
   if (check_status(cfg->coreg->status)) {
 
-    check_return(asf_coregister(datatype, cfg->general->coreg, 
+    check_return(asf_coregister(datatype, cfg->general->coreg,
 				cfg->general->base, cfg->general->deskew,
 				&cfg->coreg->p1_master_start,
 				&cfg->coreg->p1_slave_start,
@@ -189,7 +189,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 				&cfg->coreg->pL_master_start,
 				&cfg->coreg->pL_slave_start,
 				cfg->coreg->pL_patches,
-				cfg->coreg->master_offset, 
+				cfg->coreg->master_offset,
 				cfg->coreg->slave_offset,
 				cfg->general->max_off,
 				&cfg->coreg->master_patches,
@@ -198,7 +198,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 				&cfg->coreg->p1_azimuth_offset,
 				&cfg->coreg->pL_range_offset,
 				&cfg->coreg->pL_azimuth_offset,
-				&cfg->coreg->grid, cfg->coreg->power, 
+				&cfg->coreg->grid, cfg->coreg->power,
 				"a", "b"),
 		 "coregistering master and slave image (asf_coregister)");
 

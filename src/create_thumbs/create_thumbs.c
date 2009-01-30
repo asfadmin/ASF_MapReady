@@ -787,6 +787,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     struct INPUT_ARDOP_PARAMS *params_in;
     char **band_name;
     int band_count = 0;
+    char ancillary_file[1024]="";
 
     // FIXME: The following should be command line parameters to create_thumbs and passed along...
     int true_color = 0;
@@ -855,6 +856,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        TRUE,                /* apply_ers_gain_fix     */
                        NULL,                /* inMetaNameOption       */
                        (char *)inDataName,  /* input basename         */
+                       ancillary_file,      /* ancillary file         */
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -926,6 +928,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        TRUE,                /* apply_ers2_gain_fix    */
                        NULL,                /* inMetaNameOption       */
                        (char *)*dataName,   /* input basename         */
+                       ancillary_file,      /* ancillary file         */
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -985,6 +988,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        TRUE,                /* apply_ers_gain_fix     */
                        NULL,                /* inMetaNameOption       */
                        (char *)file,        /* input basename         */
+                       ancillary_file,      /* ancillary file         */
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);

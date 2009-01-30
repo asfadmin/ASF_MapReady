@@ -37,7 +37,7 @@ airsar_header *read_airsar_header(const char *dataFile)
   FILE *fp;
   char buf[4400], *value;
   double version;
-
+printf("\n\ndataFile: %s\n\n", dataFile);
   // Allocate memory and file handling
   value = (char *) MALLOC(sizeof(char)*25);
   header = (airsar_header *) CALLOC(1, sizeof(airsar_header));
@@ -54,22 +54,22 @@ airsar_header *read_airsar_header(const char *dataFile)
   if (version > 0.0) {
     header->record_length = atoi(get_airsar(buf, "RECORD LENGTH IN BYTES ="));
     header->number_records = atoi(get_airsar(buf, "NUMBER OF HEADER RECORDS ="));
-    header->sample_count = 
+    header->sample_count =
       atoi(get_airsar(buf, "NUMBER OF SAMPLES PER RECORD ="));
-    header->line_count = 
+    header->line_count =
       atoi(get_airsar(buf, "NUMBER OF LINES IN IMAGE ="));
-    sprintf(header->processor, "%s", 
+    sprintf(header->processor, "%s",
       trim_spaces(get_airsar(buf, "JPL AIRCRAFT SAR PROCESSOR VERSION")));
     value = trim_spaces(get_airsar(buf, "DATA TYPE ="));
     if (strcmp(value, "INTEGER*2") == 0)
       header->data_type = INTEGER16;
     sprintf(header->range_projection, "%s",
 	    trim_spaces(get_airsar(buf, "RANGE PROJECTION =")));
-    header->x_pixel_size = 
+    header->x_pixel_size =
       atof(get_airsar(buf, "RANGE PIXEL SPACING (METERS) ="));
-    header->y_pixel_size = 
+    header->y_pixel_size =
       atof(get_airsar(buf, "AZIMUTH PIXEL SPACING (METERS) ="));
-    header->first_data_offset = 
+    header->first_data_offset =
       atoi(get_airsar(buf, "BYTE OFFSET OF FIRST DATA RECORD ="));
     if (header->first_data_offset == 0)
       header->first_data_offset = header->record_length*header->number_records;
@@ -77,10 +77,10 @@ airsar_header *read_airsar_header(const char *dataFile)
       atoi(get_airsar(buf, "BYTE OFFSET OF PARAMETER HEADER ="));
     header->calibration_header_offset =
       atoi(get_airsar(buf, "BYTE OFFSET OF CALIBRATION HEADER ="));
-    header->dem_header_offset = 
+    header->dem_header_offset =
       atoi(get_airsar(buf, "BYTE OFFSET OF DEM HEADER ="));
   }
-  
+
   return header;
 }
 
@@ -91,7 +91,7 @@ airsar_param_header *read_airsar_params(const char *dataFile)
   FILE *fp;
   char *buf;
   int size;
- 
+
   // Allocate memory and file handling
   params = (airsar_param_header *) CALLOC(1, sizeof(airsar_param_header));
   if (header->calibration_header_offset > 0)
@@ -108,33 +108,33 @@ airsar_param_header *read_airsar_params(const char *dataFile)
   FCLOSE(fp);
 
   // Read parameter header
-  sprintf(params->site_name, "%s", 
+  sprintf(params->site_name, "%s",
 	  trim_spaces(get_airsar(buf, "SITE NAME")));
-  sprintf(params->cct_type, "%s", 
+  sprintf(params->cct_type, "%s",
 	  trim_spaces(get_airsar(buf, "CCT TYPE")));
   params->cct_id = atoi(get_airsar(buf, "CCT ID"));
   params->start_lat =
-    atof(get_airsar(buf, 
+    atof(get_airsar(buf,
 		    "LATITUDE AT START OF SCENE (DEGREES)"));
-  params->start_lon = 
-    atof(get_airsar(buf, 
+  params->start_lon =
+    atof(get_airsar(buf,
 		    "LONGITUDE AT START OF SCENE (DEGREES)"));
-  params->end_lat = 
-    atof(get_airsar(buf, 
+  params->end_lat =
+    atof(get_airsar(buf,
 		    "LATITUDE AT END OF SCENE (DEGREES)"));
   params->end_lon =
-    atof(get_airsar(buf, 
+    atof(get_airsar(buf,
 		    "LONGITUDE AT END OF SCENE (DEGREES)"));
   sprintf(params->acquisition_date, "%s",
-	  trim_spaces(get_airsar(buf, 
+	  trim_spaces(get_airsar(buf,
 				 "DATE OF ACQUISITION (GMT)")));
   params->acquisition_seconds =
-    atof(get_airsar(buf, 
+    atof(get_airsar(buf,
 		    "TIME OF ACQUISITION: SECONDS IN DAY"));
   sprintf(params->frequencies, "%s",
-	  trim_spaces(get_airsar(buf, 
+	  trim_spaces(get_airsar(buf,
 				 "FREQUENCIES COLLECTED")));
-  params->prf = 
+  params->prf =
     atof(get_airsar(buf, "PRF AT START OF TRANSFER (HZ)"));
   params->range_sampling_rate =
     atof(get_airsar(buf, "SAMPLING RATE (MHZ)"));
@@ -153,28 +153,28 @@ airsar_param_header *read_airsar_params(const char *dataFile)
   params->far_look_angle =
     atof(get_airsar(buf, "FAR LOOK ANGLE (DEGEES)"));
   params->azimuth_look_count =
-    atoi(get_airsar(buf, 
+    atoi(get_airsar(buf,
 		    "NUMBER OF LOOKS PROCESSED IN AZIMUTH"));
   params->range_look_count =
-    atoi(get_airsar(buf, 
+    atoi(get_airsar(buf,
 		    "NUMBER OF LOOKS PROCESSED IN RANGE"));
   params->deskewed =
-    atoi(get_airsar(buf, 
+    atoi(get_airsar(buf,
 		    "DESKEW FLAG (1=DESKEWED, 2=NOT DESKEWED)"));
   params->sr_sample_spacing =
-    atof(get_airsar(buf, 
+    atof(get_airsar(buf,
 		    "SLANT RANGE SAMPLE SPACING (METERS)"));
   params->slant_range_resolution =
-    atof(get_airsar(buf, 
+    atof(get_airsar(buf,
 		    "NOMINAL SLANT RANGE RESOLUTION (METERS)"));
   params->azimuth_sample_spacing =
     atof(get_airsar(buf, "AZIMUTH SAMPLE SPACING (METERS)"));
   params->azimuth_resolution =
-    atof(get_airsar(buf, 
+    atof(get_airsar(buf,
 		    "NOMINAL AZIMUTH RESOLUTION (METERS)"));
   params->center_lat =    atof(get_airsar(buf, "IMAGE CENTER LATITUDE (DEGREES)"));
   params->center_lon =
-    atof(get_airsar(buf, 
+    atof(get_airsar(buf,
 		    "IMAGE CENTER LONGITUDE (DEGREES)"));
   params->scale_factor =
     atof(get_airsar(buf, "GENERAL SCALE FACTOR"));
@@ -186,7 +186,7 @@ airsar_param_header *read_airsar_params(const char *dataFile)
     atof(get_airsar(buf, "CALIBRATION FACTOR APPLIED, DB, VH"));
   params->cal_factor_vv =
     atof(get_airsar(buf, "CALIBRATION FACTOR APPLIED, DB, VV"));
-  params->gps_altitude = 
+  params->gps_altitude =
     atof(get_airsar(buf, "GPS ALTITUDE, M"));
   params->lat_peg_point =
     atof(get_airsar(buf, "LATITUDE OF PEG POINT"));
@@ -198,7 +198,7 @@ airsar_param_header *read_airsar_params(const char *dataFile)
     atof(get_airsar(buf, "ALONG-TRACK OFFSET S0  (M)"));
   params->cross_track_offset =
     atof(get_airsar(buf, "CROSS-TRACK OFFSET C0  (M)"));
-  
+
   return params;
 }
 
@@ -222,7 +222,7 @@ airsar_dem_header *read_airsar_dem(const char *dataFile)
 
   // Read DEM header
   dem->elevation_offset = atof(get_airsar(buf, "ELEVATION OFFSET (M) ="));
-  dem->elevation_increment = 
+  dem->elevation_increment =
     atof(get_airsar(buf, "ELEVATION INCREMENT (M) ="));
   dem->corner1_lat = atof(get_airsar(buf, "LATITUDE OF CORNER 1 ="));
   dem->corner1_lon = atof(get_airsar(buf, "LONGITUDE OF CORNER 1 ="));
@@ -232,13 +232,13 @@ airsar_dem_header *read_airsar_dem(const char *dataFile)
   dem->corner3_lon = atof(get_airsar(buf, "LONGITUDE OF CORNER 3 ="));
   dem->corner4_lat = atof(get_airsar(buf, "LATITUDE OF CORNER 4 ="));
   dem->corner4_lon = atof(get_airsar(buf, "LONGITUDE OF CORNER 4 ="));
-  dem->lat_peg_point = 
+  dem->lat_peg_point =
     atof(get_airsar(buf, "LATITUDE OF PEG POINT ="));
-  dem->lon_peg_point = 
+  dem->lon_peg_point =
     atof(get_airsar(buf, "LONGITUDE OF PEG POINT ="));
-  dem->head_peg_point = 
+  dem->head_peg_point =
     atof(get_airsar(buf, "HEADING AT PEG POINT (DEGREES) ="));
-  dem->along_track_offset = 
+  dem->along_track_offset =
     atof(get_airsar(buf, "ALONG-TRACK OFFSET S0 (M) ="));
   dem->cross_track_offset =
     atof(get_airsar(buf, "CROSS-TRACK OFFSET C0 (M) ="));
@@ -267,35 +267,35 @@ airsar_cal_header *read_airsar_cal(const char *dataFile)
   // Read DEM header
   cal->scale_factor =
     atof(get_airsar(buf, "GENERAL SCALE FACTOR (dB)"));
-  cal->hh_amp_cal_factor = 
+  cal->hh_amp_cal_factor =
     atof(get_airsar(buf, "HH AMPLITUDE CALIBRATION FACTOR (dB)"));
-  cal->hv_amp_cal_factor = 
+  cal->hv_amp_cal_factor =
     atof(get_airsar(buf, "HV AMPLITUDE CALIBRATION FACTOR (dB)"));
-  cal->vh_amp_cal_factor = 
+  cal->vh_amp_cal_factor =
     atof(get_airsar(buf, "VH AMPLITUDE CALIBRATION FACTOR (dB)"));
-  cal->vv_amp_cal_factor = 
+  cal->vv_amp_cal_factor =
     atof(get_airsar(buf, "VV AMPLITUDE CALIBRATION FACTOR (dB)"));
-  cal->hh_phase_cal_factor = 
+  cal->hh_phase_cal_factor =
     atof(get_airsar(buf, "HH PHASE CALIBRATION FACTOR (DEGREES)"));
-  cal->hv_phase_cal_factor = 
+  cal->hv_phase_cal_factor =
     atof(get_airsar(buf, "HV PHASE CALIBRATION FACTOR (DEGREES)"));
-  cal->vh_phase_cal_factor = 
+  cal->vh_phase_cal_factor =
     atof(get_airsar(buf, "VH PHASE CALIBRATION FACTOR (DEGREES)"));
-  cal->vv_phase_cal_factor = 
+  cal->vv_phase_cal_factor =
     atof(get_airsar(buf, "VV PHASE CALIBRATION FACTOR (DEGREES)"));
-  cal->hh_noise_sigma0 = 
+  cal->hh_noise_sigma0 =
     atof(get_airsar(buf, "HH NOISE EQUIVALENT SIGMA ZERO (dB)"));
-  cal->hv_noise_sigma0 = 
+  cal->hv_noise_sigma0 =
     atof(get_airsar(buf, "HV NOISE EQUIVALENT SIGMA ZERO (dB)"));
-  cal->vv_noise_sigma0 = 
+  cal->vv_noise_sigma0 =
     atof(get_airsar(buf, "VV NOISE EQUIVALENT SIGMA ZERO (dB)"));
-  cal->byte_offset_hh_corr = 
+  cal->byte_offset_hh_corr =
     atof(get_airsar(buf, "BYTE OFFSET TO HH CORRECTION VECTOR"));
-  cal->byte_offset_hv_corr = 
+  cal->byte_offset_hv_corr =
     atof(get_airsar(buf, "BYTE OFFSET TO HV CORRECTION VECTOR"));
-  cal->byte_offset_vv_corr = 
+  cal->byte_offset_vv_corr =
     atof(get_airsar(buf, "BYTE OFFSET TO VV CORRECTION VECTOR"));
-  cal->num_bytes_corr = 
+  cal->num_bytes_corr =
     atof(get_airsar(buf, "NUMBER OF BYTES IN CORRECTION VECTORS"));
 
   return cal;
@@ -449,7 +449,7 @@ meta_parameters *import_airsar_meta(const char *dataName,
     char *demFile;
     demFile = (char *) MALLOC(sizeof(char)*1024);
     int found_c_dem = FALSE, found_l_dem = FALSE, found_p_dem = FALSE;
-    
+
     // The C-Band DEM is the preferred file for extracting the metadata.
     // Look for that first. If no DEM is around then error out.
     sprintf(demFile, "%s_c.demi2", inBaseName);
@@ -463,7 +463,7 @@ meta_parameters *import_airsar_meta(const char *dataName,
       found_p_dem = TRUE;
     if (!found_c_dem && !found_l_dem && !found_p_dem)
       return NULL;
-    
+
     // Assign the correct DEM for generating the AirSAR metadata
     if (found_c_dem)
       sprintf(demFile, "%s_c.demi2", inBaseName);
@@ -471,7 +471,7 @@ meta_parameters *import_airsar_meta(const char *dataName,
       sprintf(demFile, "%s_l.demi2", inBaseName);
     else if (found_p_dem)
       sprintf(demFile, "%s_p.demi2", inBaseName);
-    
+
     dem = read_airsar_dem(demFile);
   }
   if (!dem && header->dem_header_offset > 0)
@@ -492,7 +492,7 @@ meta_parameters *import_airsar_meta(const char *dataName,
 
 static void fudge_airsar_params(meta_parameters *meta);
 
-int ingest_insar_data(const char *inBaseName, const char *outBaseName, 
+int ingest_insar_data(const char *inBaseName, const char *outBaseName,
 		      char band)
 {
   airsar_header *header;
@@ -526,7 +526,7 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     for (ii=0; ii<metaOut->general->line_count; ii++) {
       get_float_line(fpIn, metaIn, ii+line_offset, floatBuf);
       for (kk=0; kk<metaIn->general->sample_count; kk++)
-	floatBuf[kk] = floatBuf[kk]*metaIn->airsar->elevation_increment + 
+	floatBuf[kk] = floatBuf[kk]*metaIn->airsar->elevation_increment +
 	  metaIn->airsar->elevation_offset;
       put_float_line(fpOut, metaOut, ii, floatBuf);
       asfLineMeter(ii, metaOut->general->line_count);
@@ -687,9 +687,9 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 	// Scale is always 1.0 according to Bruce Chapman
 	m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
 	m12 = (float)byteBuf[2] * m11 / 127.0;
-	m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11; 
-	m14 = sign(byteBuf[4]) * SQR((float)byteBuf[4] / 127.0) * m11; 
-	m23 = sign(byteBuf[5]) * SQR((float)byteBuf[5] / 127.0) * m11; 
+	m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11;
+	m14 = sign(byteBuf[4]) * SQR((float)byteBuf[4] / 127.0) * m11;
+	m23 = sign(byteBuf[5]) * SQR((float)byteBuf[5] / 127.0) * m11;
 	m24 = sign(byteBuf[6]) * SQR((float)byteBuf[6] / 127.0) * m11;
 	m33 = (float)byteBuf[7] * m11 / 127.0;
 	m34 = (float)byteBuf[8] * m11 / 127.0;
@@ -762,7 +762,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 	else if (radiometry == r_SIGMA_DB) {
 	  svv_amp[kk] = amp;
 	  svv_phase[kk] = phase;
-	}	
+	}
       }
       put_band_float_line(fpOut, meta, 0, ii, power);
       put_band_float_line(fpOut, meta, 1, ii, shh_amp);
@@ -792,7 +792,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     FREE(inFile);
     FREE(outFile);
     FREE(byteBuf);
-    
+
     ret = TRUE;
   }
 
@@ -864,7 +864,7 @@ void import_airsar(const char *inBaseName, radiometry_t radiometry,
     asfPrintStatus("\n   Ingesting P-band polarimetric data ...\n\n");
     ingest_polsar_data(inBaseName, outBaseName, radiometry, 'p');
   }
-  
+
   FREE(general);
 }
 

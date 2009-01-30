@@ -75,6 +75,7 @@ OBJS  = \
 	import_jaxa_L0.o \
 	import_alos_mosaic.o \
 	import_terrasar.o \
+	import_polsarpro.o \
 	least_squares.o \
 	missing.o \
 	projected_image_import.o \

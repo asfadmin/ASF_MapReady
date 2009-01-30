@@ -46,6 +46,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                char *inMetaNameOption, // NULL for normal metadata naming
                                        // otherwise, this is the meta file name
                char *inBaseName, // input file
+               char *ancillary_file, // ancillary file (if needed for input file)
                char *outBaseName // output file
                );
 
@@ -104,6 +105,6 @@ void import_terrasar(const char *inFileName, radiometry_t radiometry,
 void assign_band_names(meta_parameters *meta, char *outMetaName,
                char *bandExt, int band, int nBands, int nBandsOut,
                radiometry_t radiometry, int complex_flag);
-
-
+void import_polsarpro(char *polsarName, char *ceosName,
+                      int byteFlag, char *outBaseName);
 #endif

@@ -347,6 +347,7 @@ static void print_help(void)
 int main(int argc, char *argv[])
 {
     char inBaseName[256]="";
+    char ancillary_file[256]=""; // FIXME: Need to pass this in on the command line
     char outBaseName[256]="";
     char *inMetaNameOption=NULL;
     char *lutName=NULL;
@@ -490,10 +491,10 @@ int main(int argc, char *argv[])
         if(flags[f_REAL_QUIET] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
         if(flags[f_BAND] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
-    if(flags[f_LINE] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
-    if(flags[f_SAMPLE] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
-    if(flags[f_WIDTH] != FLAG_NOT_SET)    needed_args += 2;/*option & parameter*/
-    if(flags[f_HEIGHT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+        if(flags[f_LINE] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
+        if(flags[f_SAMPLE] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+        if(flags[f_WIDTH] != FLAG_NOT_SET)    needed_args += 2;/*option & parameter*/
+        if(flags[f_HEIGHT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
         if(flags[f_SAVE_INTERMEDIATES] != FLAG_NOT_SET)  needed_args += 1;/*option*/
         if(flags[f_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
@@ -794,8 +795,7 @@ int main(int argc, char *argv[])
                    lutName,prcPath, lowerLat, upperLat, line, sample,
                    width, height, save_intermediates, p_range_scale, p_azimuth_scale,
                    p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
-                   outBaseName);
-
+                   ancillary_file, outBaseName);
     }
 
     if (lutName)

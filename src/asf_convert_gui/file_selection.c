@@ -636,6 +636,13 @@ on_ancillary_files_button_clicked(GtkWidget *widget)
 
 void handle_browse_ancillary_file()
 {
+  GtkWidget *files_list;
+  GtkTreeSelection *selection;
+  GtkTreeModel *model;
+  //GtkTreeIter iter;
+  gchar *input_file=NULL;
+  int num_selected = 0;
+
   // If the Add Ancillary Files button's image is insensitive, then
   // that means it is disabled ...return with no action take.  (Note:
   // Yes, I could have set sensitivity to FALSE on the button itself,
@@ -644,6 +651,39 @@ void handle_browse_ancillary_file()
   // how the GUI appears when taking this approach (below) better.)
   GtkWidget * w = get_widget_checked("ancillary_files_image");
   if (!GTK_WIDGET_SENSITIVE(GTK_WIDGET(w))) return;
+
+  // Make sure a PolSARpro (or GAMMA) file is selected before firing off the dialog
+  files_list = get_widget_checked("files_list");
+  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+  if (selection) {
+    num_selected = gtk_tree_selection_count_selected_rows(selection);
+    if (num_selected != 1) {
+      // User must select a single input file
+      message_box("\n Please select just one PolSARpro input file...  \n");
+      return;
+    }
+    model = GTK_TREE_MODEL(list_store);
+    GList *selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    if (!selected_rows) {
+    // No input files were selected
+      message_box("\n  Please select a PolSARpro file...  \n");
+      return;
+    }
+    GtkTreePath *path;
+    GtkTreeIter iter;
+    path = (GtkTreePath *)selected_rows->data;
+    gtk_tree_model_get_iter(model, &iter, path);
+    gtk_tree_model_get(model, &iter, COL_INPUT_FILE, &input_file, -1);
+    g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
+    g_list_free(selected_rows);
+  }
+  if (num_selected <= 0 || !is_polsarpro((char *)input_file)) {
+    // No input files were selected
+    message_box("\n  Please select a PolSARpro file...  \n");
+    g_free(input_file);
+    return;
+  }
+  g_free(input_file);
 
   // Replace button image with non-animated version now that the user has clicked
   // on the button once...

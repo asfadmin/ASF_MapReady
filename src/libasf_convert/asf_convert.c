@@ -36,8 +36,11 @@ int isPolSARpro(const char * infile)
   if (!ext) {
     // If no file extension exists, then maybe it has been stripped
     // off.  Guess .bin and check for existence...
-    ext = (char *) MALLOC(sizeof(char) * 16);
-    strcpy(ext, ".bin");
+    char *inFile = (char *)MALLOC(sizeof(char) * strlen(infile) + 5);
+    sprintf(inFile, "%s.bin", infile);
+    int ret = isPolSARpro(inFile);
+    FREE(inFile);
+    return ret;
   }
   if (strcmp_case(ext, ".bin")==0) {
     bin = (char *)infile;
@@ -149,13 +152,15 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
 int isCEOS(const char *input_file)
 {
   char **inBandName = NULL, **inMetaName = NULL;
+  char baseName[512];
   int nBands, trailer;
+  ceos_file_pairs_t ceos_pair = NO_CEOS_FILE_PAIR;
 
-  if (require_ceos_pair(input_file, &inBandName, &inMetaName,
-            &nBands, &trailer))
-    return TRUE;
-  else
-    return FALSE;
+  ceos_pair = get_ceos_names(input_file, baseName,
+                             &inBandName, &inMetaName,
+                             &nBands, &trailer);
+
+  return (ceos_pair != NO_CEOS_FILE_PAIR);
 }
 
 int isSTF(const char *input_file)
@@ -552,6 +557,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     char *tiff_basename, imported[255], geocoded[255], status[255];
     tiff_basename = stripExt(tiff_file);
     sprintf(imported, "%s/imported_%s", cfg->general->tmp_dir, what);
+    char ancillary_file[256]="";
 
     // want see "dem" as "DEM" in the status messages, and asf_import
     // requires an uppercase string for the image_data_type
@@ -580,7 +586,8 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     check_return(
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
                    NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 0,
-                   NULL, NULL, NULL, FALSE, NULL, tiff_basename, imported),
+                   NULL, NULL, NULL, FALSE, NULL, tiff_basename, ancillary_file,
+                   imported),
         status);
 
     sprintf(status, "Geocoding %s...", uc_what);
@@ -1808,6 +1815,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
 
       // Input Format Type
+      printf("\n\nINPUT FORMAT IS: %s\n\n", cfg->import->format);
       if (strncmp_case(cfg->import->format, "CEOS", 4) == 0)
         format_type = CEOS;
       else if (strncmp_case(cfg->import->format, "STF", 3) == 0)
@@ -1845,7 +1853,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               cfg->general->intermediates, NULL, NULL, NULL,
                               cfg->import->ers2_gain_fix,
                               NULL,
-                              cfg->general->in_name, outFile),
+                              cfg->general->in_name,
+                              cfg->general->ancillary_file,
+                              outFile),
                               "ingesting data file (asf_import)\n");
 
       // For AirSAR data, let's see what we actually got.
