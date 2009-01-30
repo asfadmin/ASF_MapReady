@@ -113,12 +113,12 @@ const char *xml_get_string_attribute(xmlDoc *doc, char *str)
     }
   }
 
-  free_char_array(&arr, n);
+  if (!found) {
+    strcpy(buf, MAGIC_UNSET_STRING);
+  }
 
-  if (found)
-    return buf;
-  else
-    return NULL;
+  free_char_array(&arr, n);
+  return buf;
 }
 
 const char *xml_get_string_value(xmlDoc *doc, char *str)
@@ -163,19 +163,19 @@ const char *xml_get_string_value(xmlDoc *doc, char *str)
     strncpy_safe(buf, (char*)ret, MAX_LEN-1);
     xmlFree(ret);
   }
+  else {
+    strcpy(buf, MAGIC_UNSET_STRING);
+  }
 
   free_char_array(&arr, n);
 
-  if (found)
-    return buf;
-  else
-    return NULL;
+  return buf;
 }
 
 double xml_get_double_value(xmlDoc *doc, char *str)
 {
   const char *val = xml_get_string_value(doc, str);
-  if (val)
+  if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atof(val);
   else
     return MAGIC_UNSET_DOUBLE;
@@ -184,7 +184,7 @@ double xml_get_double_value(xmlDoc *doc, char *str)
 double xml_get_int_value(xmlDoc *doc, char *str)
 {
   const char *val = xml_get_string_value(doc, str);
-  if (val)
+  if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atoi(val);
   else
     return MAGIC_UNSET_INT;
@@ -193,7 +193,7 @@ double xml_get_int_value(xmlDoc *doc, char *str)
 double xml_get_double_attribute(xmlDoc *doc, char *str)
 {
   const char *val = xml_get_string_attribute(doc, str);
-  if (val)
+  if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atof(val);
   else
     return MAGIC_UNSET_DOUBLE;
@@ -202,13 +202,12 @@ double xml_get_double_attribute(xmlDoc *doc, char *str)
 double xml_get_int_attribute(xmlDoc *doc, char *str)
 {
   const char *val = xml_get_string_attribute(doc, str);
-  if (val)
+  if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atoi(val);
   else
     return MAGIC_UNSET_INT;
 }
 
-/*
 // Whole bunch of test code... 
 
 static int n_ok=0;
@@ -455,7 +454,7 @@ void xml_test()
   test_string(doc, TOP "." DESC "[1].ReflectorNumber", "DJ2"); 
   test_string(doc, TOP "." DESC "[2].ReflectorNumber", "DJ3"); 
   test_string(doc, TOP "." DESC "[3].ReflectorNumber", "DJ4"); 
-  test_string(doc, TOP "." DESC "[4].ReflectorNumber", NULL);
+  test_string(doc, TOP "." DESC "[4].ReflectorNumber", MAGIC_UNSET_STRING);
   test_string(doc, TOP "." DESC "[0].RespOrbDir", "DESCENDING"); 
   test_string(doc, TOP "." DESC "[1].RespOrbDir", "ASCENDING");
 
@@ -493,7 +492,7 @@ void xml_test()
   test_double(doc, TOP "." DESC "[3].Height", 376.3);
   test_string(doc, TOP "." DESC "[3].RefEllipsoid", "WGS84");
 
-  test_string(doc, TOP "." DESC "[4].SiteName", NULL); 
+  test_string(doc, TOP "." DESC "[4].SiteName", MAGIC_UNSET_STRING); 
 
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].A", "A1");
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].A", "A2");
@@ -505,39 +504,40 @@ void xml_test()
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB", "2_BB");
 
   // some failure testing
-  test_string(doc, TOP "." DESC "[2].NestedListTest.ListItem[1].BB", NULL);
-  test_string(doc, TOP "." DESC "[25].NestedListTest.ListItem[1].BB", NULL);
-  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[4].BB", NULL);
-  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[2].A", NULL);
-  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[200].AA", NULL);
-  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].Arrg", NULL);
+  const char *us = MAGIC_UNSET_STRING;
+  test_string(doc, TOP "." DESC "[2].NestedListTest.ListItem[1].BB", us);
+  test_string(doc, TOP "." DESC "[25].NestedListTest.ListItem[1].BB", us);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[4].BB", us);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[2].A", us);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[200].AA", us);
+  test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].Arrg", us);
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem.A", "A1");
-  test_string(doc, TOP "." DESC "[1].SiteNameXXX", NULL); 
+  test_string(doc, TOP "." DESC "[1].SiteNameXXX", us); 
   test_int(doc, TOP "." DESC "[1].StortDate", MAGIC_UNSET_INT);
-  test_string(doc, TOP "." DESC "[1].StortDate", NULL);
+  test_string(doc, TOP "." DESC "[1].StortDate", us);
   test_double(doc, TOP "." DESC "[1].Heigth", MAGIC_UNSET_DOUBLE);
-  test_string(doc, TOP "." DESC "[1].Heigth", NULL);
+  test_string(doc, TOP "." DESC "[1].Heigth", us);
 
   // testing attributes
   test_string_attr(doc, TOP "." DESC "[0].ReflectorNumber.type", "string"); 
   test_string_attr(doc, TOP "." DESC "[0].TestingAttributes.attr",
                    "testattrvalue");
-  test_string_attr(doc, TOP "." DESC "[1].ReflectorNumber.type", NULL);
+  test_string_attr(doc, TOP "." DESC "[1].ReflectorNumber.type", us);
   test_int_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].id", 1);
   test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].BB.bb",
                    "bb1");
   test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB.bb",
                    "bb2");
   test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[2].BB.bb",
-                   NULL);
+                   us);
   test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].Bb.bb",
-                   NULL);
+                   us);
   test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].AA",
-                   NULL);
+                   us);
   test_double_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].Bb.dbl",
                    17.818);
   test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB.dbl",
-                   NULL);
+                   us);
   test_double_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB.dbl",
                    MAGIC_UNSET_DOUBLE);
 
@@ -551,4 +551,3 @@ void xml_test()
   unlink("test.xml");
   exit(1);
 }
-*/
