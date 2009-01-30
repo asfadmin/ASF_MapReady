@@ -1,5 +1,6 @@
 #include "xml_util.h"
 #include "asf.h"
+#include "asf_meta.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
@@ -203,7 +204,7 @@ double xml_get_double_value(xmlDoc *doc, char *format, ...)
     return MAGIC_UNSET_DOUBLE;
 }
 
-double xml_get_int_value(xmlDoc *doc, char *format, ...)
+int xml_get_int_value(xmlDoc *doc, char *format, ...)
 {
   va_list ap;
   char str[4096];
@@ -215,6 +216,22 @@ double xml_get_int_value(xmlDoc *doc, char *format, ...)
   const char *val = xml_get_string_value(doc, str);
   if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atoi(val);
+  else
+    return MAGIC_UNSET_INT;
+}
+
+long xml_get_long_value(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
+  const char *val = xml_get_string_value(doc, str);
+  if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
+    return atol(val);
   else
     return MAGIC_UNSET_INT;
 }
@@ -235,7 +252,7 @@ double xml_get_double_attribute(xmlDoc *doc, char *format, ...)
     return MAGIC_UNSET_DOUBLE;
 }
 
-double xml_get_int_attribute(xmlDoc *doc, char *format, ...)
+int xml_get_int_attribute(xmlDoc *doc, char *format, ...)
 {
   va_list ap;
   char str[4096];
@@ -247,6 +264,22 @@ double xml_get_int_attribute(xmlDoc *doc, char *format, ...)
   const char *val = xml_get_string_attribute(doc, str);
   if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atoi(val);
+  else
+    return MAGIC_UNSET_INT;
+}
+
+long xml_get_long_attribute(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
+  const char *val = xml_get_string_attribute(doc, str);
+  if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
+    return atol(val);
   else
     return MAGIC_UNSET_INT;
 }
