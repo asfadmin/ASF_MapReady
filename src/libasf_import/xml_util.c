@@ -63,6 +63,64 @@ int xml_get_element_exists(xmlDoc *doc, char *str)
   return val != NULL;
 }
 
+const char *xml_get_string_attribute(xmlDoc *doc, char *str)
+{
+  int i,n;
+  char **arr;
+  int found = TRUE;
+
+  split_into_array(str, '.', &n, &arr);
+
+  xmlNode *cur = xmlDocGetRootElement(doc);
+
+  // first item much match the name of the root
+  if (strcmp(arr[0], (char*)cur->name)!=0) {
+    // root node doesn't match -- return empty string
+    strcpy(buf, "");
+  }
+  else {
+    // subsequent items specify the search path through the xml tree
+    // all except the last one -- that is the attribute name
+    for (i=1; i<n-1; ++i) {
+      char *elem;
+      int k;
+      extract_array_specifier(arr[i], &elem, &k);
+
+      xmlNode *next = findNode(doc, cur, elem, k);
+      if (!next) {
+        // not found -- return NULL
+        found = FALSE;
+        strcpy(buf, "");
+        FREE(elem);
+        break;
+      }
+      
+      FREE(elem);
+      cur = next;
+    }
+  }
+
+  if (found) {
+    assert(cur != NULL);
+    xmlChar *val = xmlGetProp(cur, (xmlChar*)(arr[n-1]));
+    if (val) {
+      strncpy_safe(buf, (char*)val, MAX_LEN-1);
+      xmlFree(val);
+    }
+    else {
+      // found the node, but it did not have the requested attribute
+      found = FALSE;
+    }
+  }
+
+  free_char_array(&arr, n);
+
+  if (found)
+    return buf;
+  else
+    return NULL;
+}
+
 const char *xml_get_string_value(xmlDoc *doc, char *str)
 {
   int i,n;
@@ -132,11 +190,30 @@ double xml_get_int_value(xmlDoc *doc, char *str)
     return MAGIC_UNSET_INT;
 }
 
+double xml_get_double_attribute(xmlDoc *doc, char *str)
+{
+  const char *val = xml_get_string_attribute(doc, str);
+  if (val)
+    return atof(val);
+  else
+    return MAGIC_UNSET_DOUBLE;
+}
+
+double xml_get_int_attribute(xmlDoc *doc, char *str)
+{
+  const char *val = xml_get_string_attribute(doc, str);
+  if (val)
+    return atoi(val);
+  else
+    return MAGIC_UNSET_INT;
+}
+
 /*
 // Whole bunch of test code... 
 
 static int n_ok=0;
 static int n_bad=0;
+
 static void test_string(xmlDoc *doc, char *key, const char *expected)
 {
   const char *val = xml_get_string_value(doc, key);
@@ -162,42 +239,129 @@ static void test_string(xmlDoc *doc, char *key, const char *expected)
   }
 }
 
-static void test_double(xmlDoc *doc, char *key, double expected)
+static void test_string_attr(xmlDoc *doc, char *key, const char *expected)
 {
-  double val = xml_get_double_value(doc, key);
-  if (fabs(val-expected)>.00001 ) {
+  const char *val = xml_get_string_attribute(doc, key);
+  int passed;
+
+  if (!expected) {
+    passed = val==NULL;
+  }
+  else {
+    passed = strcmp(val, expected)==0;
+  }
+
+  if (passed) {
+    printf("OK for key: %s\n", key);
+    ++n_ok;
+  }
+  else {
     printf("WRONG!  for key: %s\n"
-           "  Expected: %f\n"
-           "       Got: %f\n",
+           "  Expected: %s\n"
+           "       Got: %s\n",
            key, expected, val);
     ++n_bad;
   }
+}
+
+static void test_double(xmlDoc *doc, char *key, double expected)
+{
+  double val = xml_get_double_value(doc, key);
+  if (meta_is_valid_double(expected)) {
+    if (fabs(val-expected)<.00001 ) {
+      printf("OK for key: %s\n", key);
+      ++n_ok;
+    }
+    else {
+      printf("WRONG!  for key: %s\n"
+             "  Expected: %f\n"
+             "       Got: %f\n",
+             key, expected, val);
+      ++n_bad;
+    }
+  }
   else {
-    printf("OK for key: %s\n", key);
-    ++n_ok;
+    if (meta_is_valid_double(val)) {
+      printf("WRONG!  for key: %s\n"
+             "  Expected: %f\n"
+             "       Got: %f\n",
+             key, expected, val);
+      ++n_bad;
+    }
+    else {
+      printf("OK for key: %s\n", key);
+      ++n_ok;
+    }
   }
 }
 
 static void test_int(xmlDoc *doc, char *key, int expected)
 {
   int val = xml_get_int_value(doc, key);
-  if (expected != val) {
+  if (expected == val) {
+    printf("OK for key: %s\n", key);
+    ++n_ok;
+  }
+  else {
     printf("WRONG!  for key: %s\n"
            "  Expected: %d\n"
            "       Got: %d\n",
            key, expected, val);
     ++n_bad;
   }
+}
+
+static void test_double_attr(xmlDoc *doc, char *key, double expected)
+{
+  double val = xml_get_double_attribute(doc, key);
+  if (meta_is_valid_double(expected)) {
+    if (fabs(val-expected)<.00001 ) {
+      printf("OK for key: %s\n", key);
+      ++n_ok;
+    }
+    else {
+      printf("WRONG!  for key: %s\n"
+             "  Expected: %f\n"
+             "       Got: %f\n",
+             key, expected, val);
+      ++n_bad;
+    }
+  }
   else {
+    if (meta_is_valid_double(val)) {
+      printf("WRONG!  for key: %s\n"
+             "  Expected: %f\n"
+             "       Got: %f\n",
+             key, expected, val);
+      ++n_bad;
+    }
+    else {
+      printf("OK for key: %s\n", key);
+      ++n_ok;
+    }
+  }
+}
+
+static void test_int_attr(xmlDoc *doc, char *key, int expected)
+{
+  int val = xml_get_int_attribute(doc, key);
+  if (expected == val) {
     printf("OK for key: %s\n", key);
     ++n_ok;
+  }
+  else {
+    printf("WRONG!  for key: %s\n"
+           "  Expected: %d\n"
+           "       Got: %d\n",
+           key, expected, val);
+    ++n_bad;
   }
 }
 
 #define TOP "CornerReflectorCoordinateListDelta"
 #define DESC "CornerReflectorDescriptor"
 
-void test_xml()
+void xml_test()
 {
   FILE *f = fopen("test.xml", "w");
   if (!f)
@@ -205,7 +369,7 @@ void test_xml()
   fprintf(f, "%s",
 "<CornerReflectorCoordinateListDelta>"
 "<CornerReflectorDescriptor>\n"
-"        <ReflectorNumber>DJ1</ReflectorNumber>\n"
+"        <ReflectorNumber type=\"string\">DJ1</ReflectorNumber>\n"
 "        <RespOrbDir>DESCENDING</RespOrbDir>\n"
 "        <StartDate>19920313</StartDate>\n"
 "        <EndDate>19971103</EndDate>\n"
@@ -244,7 +408,7 @@ void test_xml()
 "            <ListItem id=\"2\">"
 "                <A>A2</A>"
 "                <AA>AA2</AA>"
-"                <Bb>2_Bb</Bb>"
+"                <Bb dbl=\"17.818\">2_Bb</Bb>"
 "                <BB bb=\"bb2\">2_BB</BB>"
 "            </ListItem>"
 "        </NestedListTest>"
@@ -350,7 +514,32 @@ void test_xml()
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem.A", "A1");
   test_string(doc, TOP "." DESC "[1].SiteNameXXX", NULL); 
   test_int(doc, TOP "." DESC "[1].StortDate", MAGIC_UNSET_INT);
+  test_string(doc, TOP "." DESC "[1].StortDate", NULL);
   test_double(doc, TOP "." DESC "[1].Heigth", MAGIC_UNSET_DOUBLE);
+  test_string(doc, TOP "." DESC "[1].Heigth", NULL);
+
+  // testing attributes
+  test_string_attr(doc, TOP "." DESC "[0].ReflectorNumber.type", "string"); 
+  test_string_attr(doc, TOP "." DESC "[0].TestingAttributes.attr",
+                   "testattrvalue");
+  test_string_attr(doc, TOP "." DESC "[1].ReflectorNumber.type", NULL);
+  test_int_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].id", 1);
+  test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].BB.bb",
+                   "bb1");
+  test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB.bb",
+                   "bb2");
+  test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[2].BB.bb",
+                   NULL);
+  test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].Bb.bb",
+                   NULL);
+  test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].AA",
+                   NULL);
+  test_double_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].Bb.dbl",
+                   17.818);
+  test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB.dbl",
+                   NULL);
+  test_double_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB.dbl",
+                   MAGIC_UNSET_DOUBLE);
 
   printf("Number ok: %d\n", n_ok);
   if (n_bad>0)
@@ -362,5 +551,4 @@ void test_xml()
   unlink("test.xml");
   exit(1);
 }
-
 */
