@@ -2,6 +2,7 @@
 #include "asf.h"
 #include <assert.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 #define MAX_LEN 256
 static char buf[MAX_LEN];
@@ -63,8 +64,73 @@ int xml_get_element_exists(xmlDoc *doc, char *str)
   return val != NULL;
 }
 
-const char *xml_get_string_attribute(xmlDoc *doc, char *str)
+const char *xml_get_string_value(xmlDoc *doc, char *format, ...)
 {
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
+  int i,n;
+  char **arr;
+  int found = TRUE;
+
+  split_into_array(str, '.', &n, &arr);
+
+  xmlNode *cur = xmlDocGetRootElement(doc);
+
+  // first item much match the name of the root
+  if (strcmp(arr[0], (char*)cur->name)!=0) {
+    // root node doesn't match -- return empty string
+    strcpy(buf, "");
+  }
+  else {
+    // subsequent items specify the search path through the xml tree
+    for (i=1; i<n; ++i) {
+      char *elem;
+      int k;
+      extract_array_specifier(arr[i], &elem, &k);
+
+      xmlNode *next = findNode(doc, cur, elem, k);
+      if (!next) {
+        // not found -- return NULL
+        found = FALSE;
+        strcpy(buf, "");
+        FREE(elem);
+        break;
+      }
+      
+      FREE(elem);
+      cur = next;
+    }
+  }
+
+  if (found) {
+    assert(cur != NULL);
+    xmlChar *ret = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+    strncpy_safe(buf, (char*)ret, MAX_LEN-1);
+    xmlFree(ret);
+  }
+  else {
+    strcpy(buf, MAGIC_UNSET_STRING);
+  }
+
+  free_char_array(&arr, n);
+
+  return buf;
+}
+
+const char *xml_get_string_attribute(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
   int i,n;
   char **arr;
   int found = TRUE;
@@ -121,59 +187,15 @@ const char *xml_get_string_attribute(xmlDoc *doc, char *str)
   return buf;
 }
 
-const char *xml_get_string_value(xmlDoc *doc, char *str)
+double xml_get_double_value(xmlDoc *doc, char *format, ...)
 {
-  int i,n;
-  char **arr;
-  int found = TRUE;
+  va_list ap;
+  char str[4096];
 
-  split_into_array(str, '.', &n, &arr);
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
 
-  xmlNode *cur = xmlDocGetRootElement(doc);
-
-  // first item much match the name of the root
-  if (strcmp(arr[0], (char*)cur->name)!=0) {
-    // root node doesn't match -- return empty string
-    strcpy(buf, "");
-  }
-  else {
-    // subsequent items specify the search path through the xml tree
-    for (i=1; i<n; ++i) {
-      char *elem;
-      int k;
-      extract_array_specifier(arr[i], &elem, &k);
-
-      xmlNode *next = findNode(doc, cur, elem, k);
-      if (!next) {
-        // not found -- return NULL
-        found = FALSE;
-        strcpy(buf, "");
-        FREE(elem);
-        break;
-      }
-      
-      FREE(elem);
-      cur = next;
-    }
-  }
-
-  if (found) {
-    assert(cur != NULL);
-    xmlChar *ret = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-    strncpy_safe(buf, (char*)ret, MAX_LEN-1);
-    xmlFree(ret);
-  }
-  else {
-    strcpy(buf, MAGIC_UNSET_STRING);
-  }
-
-  free_char_array(&arr, n);
-
-  return buf;
-}
-
-double xml_get_double_value(xmlDoc *doc, char *str)
-{
   const char *val = xml_get_string_value(doc, str);
   if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atof(val);
@@ -181,8 +203,15 @@ double xml_get_double_value(xmlDoc *doc, char *str)
     return MAGIC_UNSET_DOUBLE;
 }
 
-double xml_get_int_value(xmlDoc *doc, char *str)
+double xml_get_int_value(xmlDoc *doc, char *format, ...)
 {
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
   const char *val = xml_get_string_value(doc, str);
   if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atoi(val);
@@ -190,8 +219,15 @@ double xml_get_int_value(xmlDoc *doc, char *str)
     return MAGIC_UNSET_INT;
 }
 
-double xml_get_double_attribute(xmlDoc *doc, char *str)
+double xml_get_double_attribute(xmlDoc *doc, char *format, ...)
 {
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
   const char *val = xml_get_string_attribute(doc, str);
   if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atof(val);
@@ -199,8 +235,15 @@ double xml_get_double_attribute(xmlDoc *doc, char *str)
     return MAGIC_UNSET_DOUBLE;
 }
 
-double xml_get_int_attribute(xmlDoc *doc, char *str)
+double xml_get_int_attribute(xmlDoc *doc, char *format, ...)
 {
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
   const char *val = xml_get_string_attribute(doc, str);
   if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
     return atoi(val);
@@ -226,7 +269,6 @@ static void test_string(xmlDoc *doc, char *key, const char *expected)
   }
 
   if (passed) {
-    printf("OK for key: %s\n", key);
     ++n_ok;
   }
   else {
@@ -234,6 +276,54 @@ static void test_string(xmlDoc *doc, char *key, const char *expected)
            "  Expected: %s\n"
            "       Got: %s\n",
            key, expected, val);
+    ++n_bad;
+  }
+}
+
+static void test_string2(xmlDoc *doc, char *expected, char *str, int arg)
+{
+  const char *val = xml_get_string_value(doc, str, arg);
+  int passed;
+
+  if (!expected) {
+    passed = val==NULL;
+  }
+  else {
+    passed = strcmp(val, expected)==0;
+  }
+
+  if (passed) {
+    ++n_ok;
+  }
+  else {
+    printf("WRONG!  for key: %s\n"
+           "  Expected: %s\n"
+           "       Got: %s\n",
+           str, expected, val);
+    ++n_bad;
+  }
+}
+
+static void test_string3(xmlDoc *doc, char *expected, char *str, int a1, int a2)
+{
+  const char *val = xml_get_string_value(doc, str, a1, a2);
+  int passed;
+
+  if (!expected) {
+    passed = val==NULL;
+  }
+  else {
+    passed = strcmp(val, expected)==0;
+  }
+
+  if (passed) {
+    ++n_ok;
+  }
+  else {
+    printf("WRONG!  for key: %s\n"
+           "  Expected: %s\n"
+           "       Got: %s\n",
+           str, expected, val);
     ++n_bad;
   }
 }
@@ -251,7 +341,6 @@ static void test_string_attr(xmlDoc *doc, char *key, const char *expected)
   }
 
   if (passed) {
-    printf("OK for key: %s\n", key);
     ++n_ok;
   }
   else {
@@ -268,7 +357,6 @@ static void test_double(xmlDoc *doc, char *key, double expected)
   double val = xml_get_double_value(doc, key);
   if (meta_is_valid_double(expected)) {
     if (fabs(val-expected)<.00001 ) {
-      printf("OK for key: %s\n", key);
       ++n_ok;
     }
     else {
@@ -288,7 +376,6 @@ static void test_double(xmlDoc *doc, char *key, double expected)
       ++n_bad;
     }
     else {
-      printf("OK for key: %s\n", key);
       ++n_ok;
     }
   }
@@ -298,7 +385,6 @@ static void test_int(xmlDoc *doc, char *key, int expected)
 {
   int val = xml_get_int_value(doc, key);
   if (expected == val) {
-    printf("OK for key: %s\n", key);
     ++n_ok;
   }
   else {
@@ -315,7 +401,6 @@ static void test_double_attr(xmlDoc *doc, char *key, double expected)
   double val = xml_get_double_attribute(doc, key);
   if (meta_is_valid_double(expected)) {
     if (fabs(val-expected)<.00001 ) {
-      printf("OK for key: %s\n", key);
       ++n_ok;
     }
     else {
@@ -335,7 +420,6 @@ static void test_double_attr(xmlDoc *doc, char *key, double expected)
       ++n_bad;
     }
     else {
-      printf("OK for key: %s\n", key);
       ++n_ok;
     }
   }
@@ -345,7 +429,6 @@ static void test_int_attr(xmlDoc *doc, char *key, int expected)
 {
   int val = xml_get_int_attribute(doc, key);
   if (expected == val) {
-    printf("OK for key: %s\n", key);
     ++n_ok;
   }
   else {
@@ -404,7 +487,7 @@ void xml_test()
 "                <Bb>1_Bb</Bb>"
 "                <BB bb=\"bb1\">1_BB</BB>"
 "            </ListItem>"
-"            <ListItem id=\"2\">"
+"            <ListItem id=\"2\" attr2=\"oops\">"
 "                <A>A2</A>"
 "                <AA>AA2</AA>"
 "                <Bb dbl=\"17.818\">2_Bb</Bb>"
@@ -450,12 +533,15 @@ void xml_test()
   if (!doc)
     asfPrintError("Could not read 'test.xml'\n");
 
-  test_string(doc, TOP "." DESC "[0].ReflectorNumber", "DJ1"); 
+  test_string(doc, TOP "." DESC "[0].ReflectorNumber", "DJ1");
+  test_string2(doc, "DJ1", TOP "." DESC "[%d].ReflectorNumber", 0);
   test_string(doc, TOP "." DESC "[1].ReflectorNumber", "DJ2"); 
+  test_string2(doc, "DJ2", TOP "." DESC "[%d].ReflectorNumber", 1);
   test_string(doc, TOP "." DESC "[2].ReflectorNumber", "DJ3"); 
   test_string(doc, TOP "." DESC "[3].ReflectorNumber", "DJ4"); 
   test_string(doc, TOP "." DESC "[4].ReflectorNumber", MAGIC_UNSET_STRING);
   test_string(doc, TOP "." DESC "[0].RespOrbDir", "DESCENDING"); 
+  test_string2(doc, "DESCENDING", TOP "." DESC "[%d].RespOrbDir", 0);
   test_string(doc, TOP "." DESC "[1].RespOrbDir", "ASCENDING");
 
   test_string(doc, TOP "." DESC "[0].SiteName", "Gerstle_River"); 
@@ -495,18 +581,28 @@ void xml_test()
   test_string(doc, TOP "." DESC "[4].SiteName", MAGIC_UNSET_STRING); 
 
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].A", "A1");
+  test_string3(doc, "A1",
+               TOP "." DESC "[%d].NestedListTest.ListItem[%d].A", 1, 0);
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].A", "A2");
+  test_string3(doc, "A2",
+               TOP "." DESC "[%d].NestedListTest.ListItem[%d].A", 1, 1);
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].AA", "AA1");
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].AA", "AA2");
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].Bb", "1_Bb");
+  test_string3(doc, "1_Bb",
+               TOP "." DESC "[%d].NestedListTest.ListItem[%d].Bb", 1, 0);
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].Bb", "2_Bb");
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].BB", "1_BB");
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB", "2_BB");
+  test_string3(doc, "2_BB",
+               TOP "." DESC "[%d].NestedListTest.ListItem[%d].BB", 1, 1);
 
   // some failure testing
   const char *us = MAGIC_UNSET_STRING;
   test_string(doc, TOP "." DESC "[2].NestedListTest.ListItem[1].BB", us);
   test_string(doc, TOP "." DESC "[25].NestedListTest.ListItem[1].BB", us);
+  test_string3(doc, us,
+               TOP "." DESC "[%d].NestedListTest.ListItem[%d].BB", 25, 1);
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[4].BB", us);
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[2].A", us);
   test_string(doc, TOP "." DESC "[1].NestedListTest.ListItem[200].AA", us);
@@ -524,6 +620,8 @@ void xml_test()
                    "testattrvalue");
   test_string_attr(doc, TOP "." DESC "[1].ReflectorNumber.type", us);
   test_int_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].id", 1);
+  test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].attr2",
+                   "oops");
   test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[0].BB.bb",
                    "bb1");
   test_string_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB.bb",
