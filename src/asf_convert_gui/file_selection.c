@@ -15,6 +15,8 @@
 
 #include "asf_convert_gui.h"
 
+
+
 #ifdef USE_GTK_FILE_CHOOSER
 
 /* If the GtkFileChooser is available -- we'll use that instead of
@@ -558,7 +560,7 @@ on_ancillary_file_selection_ok_button_clicked(GtkWidget *widget)
 {
   GtkWidget *file_selection_dialog;
   gchar **selections;
-  gchar **current;
+  gchar **current, *input_file;
   int i, n;
 
   file_selection_dialog =
@@ -578,6 +580,7 @@ on_ancillary_file_selection_ok_button_clicked(GtkWidget *widget)
     {
       ++i;
     }
+    if (i == 1) input_file = *current;
 
     ++current;
     ++n;
@@ -604,6 +607,7 @@ on_ancillary_file_selection_ok_button_clicked(GtkWidget *widget)
   g_strfreev(selections);
   gtk_widget_hide(file_selection_dialog);
 
+  add_thumbnail(input_file);
   show_queued_thumbnails();
 }
 

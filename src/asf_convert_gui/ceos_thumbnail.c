@@ -315,7 +315,7 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
     }
     *p = '\0';
 
-    meta_parameters *meta = 
+    meta_parameters *meta =
       import_airsar_meta(input_data, airsar_basename, FALSE);
     if (!meta)
       return NULL;
@@ -1005,7 +1005,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         printf("Cannot make thumbnail for: %d\n", imd->general->data_type);
         return NULL;
     }
-
+printf("\n\nIn make_input_image_thumbnail()\n\n");
     guchar *data=NULL;
     int tsx=-1, tsy=-1;
     int kk;

@@ -599,6 +599,11 @@ static void queue_thumbnail(const gchar * data_file)
     }
 }
 
+void add_thumbnail(const gchar *data_file)
+{
+  queue_thumbnail(data_file);
+}
+
 void
 show_queued_thumbnails()
 {
@@ -709,7 +714,8 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
           g_free(out_name_full);
           FREE(bands);
 
-          queue_thumbnail(input_file);
+          // PolSARpro file thumbnails are made after selecting an ancillary file
+          if (!is_polsarpro(input_file)) queue_thumbnail(input_file);
 
           /* Select the file automatically if this is the first
              file that was added (this makes the toolbar buttons

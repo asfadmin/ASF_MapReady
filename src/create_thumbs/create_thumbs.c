@@ -295,7 +295,8 @@ char *spaces(int n)
         buf[i] = i<n*3 ? ' ' : '\0';
     return buf;
 }
-
+/*
+ *
 int strmatches(const char *key, ...)
 {
     va_list ap;
@@ -315,7 +316,7 @@ int strmatches(const char *key, ...)
 
     return found;
 }
-
+*/
 void process_dir(const char *dir, int top, int recursive, int size, int verbose,
                  level_0_flag L0Flag, float scale_factor, int browseFlag,
                  int saveMetadataFlag, int nPatchesFlag, int nPatches,
