@@ -278,6 +278,44 @@ static void put_box(GdkPixbuf *pixbuf, int x1, int x2, int y1, int y2)
     }
 }
 
+#define DEBUG_STATE 0
+static void print_state(int state)
+{
+  char str[256];
+  strcpy(str, "");
+
+  if (state & GDK_SHIFT_MASK)
+    strcat(str, "Shift ");
+  if (state & GDK_LOCK_MASK)
+    strcat(str, "Lock ");
+  if (state & GDK_CONTROL_MASK)
+    strcat(str, "Ctrl ");
+  if (state & GDK_MOD1_MASK)
+    strcat(str, "Alt ");
+  if (state & GDK_MOD2_MASK)
+    strcat(str, "Mod2 ");
+  if (state & GDK_MOD3_MASK)
+    strcat(str, "Mod3 ");
+  if (state & GDK_MOD4_MASK)
+    strcat(str, "Mod4 ");
+  if (state & GDK_MOD5_MASK)
+    strcat(str, "Mod5 ");
+  if (state & GDK_BUTTON1_MASK)
+    strcat(str, "Button1 ");
+  if (state & GDK_BUTTON2_MASK)
+    strcat(str, "Button2 ");
+  if (state & GDK_BUTTON3_MASK)
+    strcat(str, "Button3 ");
+  if (state & GDK_BUTTON4_MASK)
+    strcat(str, "Button4 ");
+  if (state & GDK_BUTTON5_MASK)
+    strcat(str, "Button5 ");
+  if (state & GDK_RELEASE_MASK)
+    strcat(str, "RELEASE ");
+
+  printf("State: %s\n", str);
+}
+
 // called when user is panning (big_image_drag)
 SIGNAL_CALLBACK int
 on_motion_notify_event(
@@ -294,7 +332,14 @@ on_motion_notify_event(
     state = (GdkModifierType) event->state;
   } 
 
-  if (state & GDK_BUTTON1_MASK) {
+  if (DEBUG_STATE)
+    print_state(state);
+
+  // in normal asf view, left-click&drag is a pan operation, but in
+  // the planner, right-click&drag is a pan operation, and left-click&drag
+  // draws a box
+  if ((state & GDK_BUTTON1_MASK) ||
+      (planner_is_active() && (state & GDK_BUTTON3_MASK))) {
 
     // motion while Button 1 is pressed!
     x = (int) event->x;
@@ -312,7 +357,7 @@ on_motion_notify_event(
         start_y = y;
         big_image_drag = TRUE;
 
-        if (planner_is_active() && !(state & GDK_CONTROL_MASK))
+        if (planner_is_active() && (state & GDK_BUTTON1_MASK))
           planner_big_image_drag = TRUE;
 
         if (!win)

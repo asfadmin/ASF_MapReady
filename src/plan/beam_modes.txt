@@ -33,7 +33,8 @@ ALOS 2 FBD 55 55 8.7 2 34.3
 ALOS 2 DSN 55 55 8.7 2 34.3
 
 # Full-pol: 21.5 only
-ALOS 2 PLR 55 55 8.7 2 21.5
+#ALOS 2 PLR 55 55 8.7 2 21.5
+ALOS 2 PLR 34 65 9.6 2 21.5
 #ALOS 1 PLR 38 38 6 3 9.7 26.2 0.1
 
 # Scansar modes -- not sure if we need two of them
