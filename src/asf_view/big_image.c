@@ -923,6 +923,9 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
          event->keyval == GDK_KP_8 ||
          event->keyval == GDK_KP_9 ||
          event->keyval == GDK_KP_0 ||
+         event->keyval == GDK_KP_Add ||
+         event->keyval == GDK_KP_Subtract ||
+         event->keyval == GDK_KP_Decimal ||
          event->keyval == GDK_period ||
          event->keyval == GDK_minus ||
          event->keyval == GDK_plus ||
