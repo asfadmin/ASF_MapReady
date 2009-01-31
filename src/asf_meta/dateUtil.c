@@ -330,6 +330,17 @@ double date_difference( ymd_date *date1, hms_time *time1,
    return(fabs(t1-t2));
  }
 
+// seconds difference from two dates (with proper sign)
+double time_difference( ymd_date *date1, hms_time *time1,
+                        ymd_date *date2, hms_time *time2)
+ {
+   double t1, t2;
+   t1 = timeSince(date1,time1,1990);
+   t2 = timeSince(date2,time2,1990);
+   return(t1-t2);
+ }
+
+
 /*------------------------------
   Compare time1 to time2;
      return -1 if time1 < time2,
@@ -556,6 +567,24 @@ void date_alos2date(const char *inStr,ymd_date *date,hms_time *time)
     subStr(15,2,&sec);
     subStr(18,3,&msec);
     time->sec=sec+msec/1000.0;
+}
+
+// Extract TerraSAR-X style date from the given string:
+// instr="YYYY-MM-DDThh:mm:ss.ttttttZ"
+// index  012345678901234567890123456
+void date_terrasar2date(const char *inStr,ymd_date *date,hms_time *time)
+{
+    char buf[100];
+    int sec,msec;
+#define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+    subStr(0,4,&date->year);
+    subStr(5,2,&date->month);
+    subStr(8,2,&date->day);
+    subStr(11,2,&time->hour);
+    subStr(14,2,&time->min);
+    subStr(17,2,&sec);
+    subStr(20,6,&msec);
+    time->sec=sec+msec/1000000.0;
 }
 
 // Extract SIR-C summary style date from the given string:

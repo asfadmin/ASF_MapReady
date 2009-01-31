@@ -48,7 +48,7 @@
 
 /* Maximum length of mode field, including trailing null.  In case its
    so short for some good reason.  */
-#define MODE_FIELD_STRING_MAX 7
+#define MODE_FIELD_STRING_MAX 25
 
 /* Default value of a pixel which indicates "NO DATA" */
 #define DEFAULT_NO_DATA_VALUE 0
@@ -799,6 +799,9 @@ void alos_to_latlon(meta_parameters *meta,
 void scan_to_latlon(meta_parameters *meta,
         double x, double y, double z,
         double *lat, double *lon, double *height);
+void location_to_latlon(meta_parameters *meta,
+			double x, double y, double z,
+			double *lat_d, double *lon, double *height);
 void latlon_to_proj(meta_projection *proj, char look_dir,
         double lat, double lon, double height,
         double *x, double *y, double *z);

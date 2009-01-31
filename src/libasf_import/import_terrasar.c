@@ -3,6 +3,7 @@
 #include "asf_meta.h"
 #include "asf_endian.h"
 #include "xml_util.h"
+#include "dateUtil.h"
 #include <ctype.h>
 
 terrasar_meta *terrasar_meta_init(void)
@@ -10,132 +11,237 @@ terrasar_meta *terrasar_meta_init(void)
   terrasar_meta *terrasar;
   terrasar = (terrasar_meta *) CALLOC(1, sizeof(terrasar_meta));
  
-  strcpy(terrasar->imageData, MAGIC_UNSET_STRING);
+  // general block
+  strcpy(terrasar->filename, MAGIC_UNSET_STRING);
+  strcpy(terrasar->mission, MAGIC_UNSET_STRING);
+  strcpy(terrasar->sensor, MAGIC_UNSET_STRING);
+  strcpy(terrasar->imagingMode, MAGIC_UNSET_STRING);
+  strcpy(terrasar->elevationBeamConfiguration, MAGIC_UNSET_STRING);
   strcpy(terrasar->imageDataType, MAGIC_UNSET_STRING);
-  strcpy(terrasar->imageDataFormat, MAGIC_UNSET_STRING);
-  terrasar->numberOfLayers = MAGIC_UNSET_INT;
   terrasar->imageDataDepth = MAGIC_UNSET_INT;
+  strcpy(terrasar->imageDataFormat, MAGIC_UNSET_STRING);
+  strcpy(terrasar->azimuthTimeUTC, MAGIC_UNSET_STRING);
+  terrasar->absOrbit = MAGIC_UNSET_INT;
+  strcpy(terrasar->orbitDirection, MAGIC_UNSET_STRING);
+  terrasar->numberOfLayers = MAGIC_UNSET_INT;
+  strcpy(terrasar->bands, MAGIC_UNSET_STRING);
   terrasar->numberOfRows = MAGIC_UNSET_INT;
   terrasar->numberOfColumns = MAGIC_UNSET_INT;
-  terrasar->groundRangeResolution = MAGIC_UNSET_DOUBLE;
+  terrasar->rangeResolution = MAGIC_UNSET_DOUBLE;
   terrasar->azimuthResolution = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCenterCoordLat = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCenterCoordLon = MAGIC_UNSET_DOUBLE;
 
-  return terrasar;
-}
+  // SAR block
+  strcpy(terrasar->projection, MAGIC_UNSET_STRING);
+  strcpy(terrasar->lookDirection, MAGIC_UNSET_STRING);
+  terrasar->azimuthLooks = MAGIC_UNSET_INT;
+  terrasar->rangeLooks = MAGIC_UNSET_INT;
+  strcpy(terrasar->imageCoordinateType, MAGIC_UNSET_STRING);
+  terrasar->rowSpacing = MAGIC_UNSET_DOUBLE;
+  terrasar->columnSpacing = MAGIC_UNSET_DOUBLE;
+  terrasar->centerFrequency = MAGIC_UNSET_DOUBLE;
+  terrasar->prf = MAGIC_UNSET_DOUBLE;
+  terrasar->totalProcessedAzimuthBandwidth = MAGIC_UNSET_DOUBLE;
+  terrasar->pulseLength = MAGIC_UNSET_DOUBLE;
+  terrasar->rsf = MAGIC_UNSET_DOUBLE;
+  strcpy(terrasar->polarisationMode, MAGIC_UNSET_STRING);
 
-terrasar_meta *read_terrasar_meta2(const char *dataFile)
-{
-  terrasar_meta *terrasar = terrasar_meta_init();
-
-  xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
-  if (!doc)
-    asfPrintError("Could not parse file %s\n", dataFile);
-
-  strcpy(terrasar->imageData, xml_get_string_value(doc, "imageData.path"));
-  strcat(terrasar->imageData, "/");
-  strcat(terrasar->imageData, xml_get_string_value(doc, "imageData.filename"));
-
-  strcpy(terrasar->imageDataType,
-         xml_get_string_value(doc, "imageDataInfo.imageDataType"));
-  strcpy(terrasar->imageDataFormat,
-         xml_get_string_value(doc, "imageDataInfo.imageDataFormat"));
-
-  terrasar->numberOfLayers = xml_get_int_value(doc, "imageDataInfo.numberOfLayers");
-  terrasar->imageDataDepth = xml_get_int_value(doc, "imageDataInfo.imageDataDepth");
-  terrasar->numberOfRows = xml_get_int_value(doc, "imageDataInfo.numberOfRows");
-  terrasar->numberOfColumns = xml_get_int_value(doc, "imageDataInfo.numberOfColumns");
-  terrasar->groundRangeResolution = xml_get_double_value(doc, "imageDataInfo.groundRangeResolution");
-  terrasar->azimuthResolution = xml_get_double_value(doc, "imageDataInfo.azimuthResolution");
-
-  xmlFreeDoc(doc);
-  xmlCleanupParser();
+  // state vectors
+  strcpy(terrasar->sceneStart, MAGIC_UNSET_STRING);
+  strcpy(terrasar->sceneStop, MAGIC_UNSET_STRING);
+  terrasar->state_vectors = NULL;
+  
+  // location block
+  terrasar->sceneCornerCoord1Lat = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCornerCoord1Lon = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCornerCoord2Lat = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCornerCoord2Lon = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCornerCoord3Lat = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCornerCoord3Lon = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCornerCoord4Lat = MAGIC_UNSET_DOUBLE;
+  terrasar->sceneCornerCoord4Lon = MAGIC_UNSET_DOUBLE;
 
   return terrasar;
 }
 
 terrasar_meta *read_terrasar_meta(const char *dataFile)
 {
-  terrasar_meta *terrasar = NULL;
-  FILE *fp;
-  int check = FALSE, ii;
-  char line[1024], *valStart, *valEnd;
-
-  terrasar = terrasar_meta_init();
-  fp = FOPEN(dataFile, "r");
-
-  // quick hack for reading a few parameters to display the image
-  while (fgets(line, 1024, fp)) {
-    chomp(line);
-    if (strstr(line, "<imageData layerIndex=\"1\">"))
-      check = TRUE;
-    if (strstr(line, "<path>") && check) {
-      valStart = strstr(line, "<path>");
-      for (ii=0; ii<6; ii++)
-	valStart++;
-      valEnd = strstr(line, "</path>");
-      valEnd[0] = '\0';
-      sprintf(terrasar->imageData, "%s", valStart);
-      strcat(terrasar->imageData, "/");
-    }
-    if (strstr(line, "<filename>") && check) {
-      valStart = strstr(line, "<filename>");
-      for (ii=0; ii<10; ii++)
-	valStart++;
-      valEnd = strstr(line, "</filename>");
-      valEnd[0] = '\0';
-      strcat(terrasar->imageData, valStart);
-    }
-    if (strstr(line, "</imageData>"))
-      check = FALSE;
-    if (strstr(line, "<imageDataInfo>"))
-      check = TRUE;
-    if (strstr(line, "<imageDataType>") && check) {
-      valStart = strstr(line, "<imageDataType>");
-      for (ii=0; ii<15; ii++)
-	valStart++;
-      valEnd = strstr(line, "</imageDataType>");
-      valEnd[0] = '\0';
-      sprintf(terrasar->imageDataType, "%s", valStart);      
-    }
-    if (strstr(line, "<imageDataFormat>") && check) {
-      valStart = strstr(line, "<imageDataFormat>");
-      for (ii=0; ii<17; ii++)
-	valStart++;
-      valEnd = strstr(line, "</imageDataFormat>");
-      valEnd[0] = '\0';
-      sprintf(terrasar->imageDataFormat, "%s", valStart);      
-    }
-    if (strstr(line, "<numberOfLayers>") && check) {
-      valStart = strstr(line, "<numberOfLayers>");
-      sscanf(valStart, "<numberOfLayers>%d</numberOfLayers>", 
-	     &terrasar->numberOfLayers);
-    }
-    if (strstr(line, "<numberOfRows>") && check) {
-      valStart = strstr(line, "<numberOfRows>");
-      sscanf(valStart, "<numberOfRows>%d</numberOfRows>", 
-	     &terrasar->numberOfRows);
-    }
-    if (strstr(line, "<numberOfColumns>") && check) {
-      valStart = strstr(line, "<numberOfColumns>");
-      sscanf(valStart, "<numberOfColumns>%d</numberOfColumns>", 
-	     &terrasar->numberOfColumns);
-    }
-    if (strstr(line, "<groundRangeResolution>") && check) {
-      valStart = strstr(line, "<groundRangeResolution>");
-      sscanf(valStart, "<groundRangeResolution>%lf</groundRangeResolution>", 
-	     &terrasar->groundRangeResolution);
-    }
-    if (strstr(line, "<azimuthResolution>") && check) {
-      valStart = strstr(line, "<azimuthResolution>");
-      sscanf(valStart, "<azimuthResolution>%lf</azimuthResolution>", 
-	     &terrasar->azimuthResolution);
-    }
-    if (strstr(line, "</imageDataInfo>"))
-      check = FALSE;
-  }
-
-  FCLOSE(fp);
+  int ii, numStateVectors;
+  ymd_date imgStartDate, date;
+  hms_time imgStartTime, time;
+  julian_date julianDate;
+  char timeStr[30], str[50];
   
+  terrasar_meta *terrasar = terrasar_meta_init();
+
+  if (!fileExists(dataFile))
+    asfPrintError("Metadata file (%s) does not exist!\n", dataFile);
+  xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
+  if (!doc)
+    asfPrintError("Could not parse file %s\n", dataFile);
+
+  strcpy(terrasar->filename, xml_get_string_value(doc, 
+     "level1Product.productComponents.annotation.file.location.filename"));
+  strcpy(terrasar->mission, xml_get_string_value(doc, 
+     "level1Product.productInfo.missionInfo.mission"));
+  strcpy(terrasar->sensor, xml_get_string_value(doc, 
+     "level1Product.productInfo.acquisitionInfo.sensor"));
+  strcpy(terrasar->imagingMode, xml_get_string_value(doc,
+     "level1Product.productInfo.acquisitionInfo.imagingMode"));
+  strcpy(terrasar->elevationBeamConfiguration, xml_get_string_value(doc, 
+     "level1Product.productInfo.acquisitionInfo.elevationBeamConfiguration"));
+  strcpy(terrasar->imageDataType, xml_get_string_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageDataType"));
+  terrasar->imageDataDepth = xml_get_int_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageDataDepth");
+  strcpy(terrasar->imageDataFormat, xml_get_string_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageDataFormat"));
+  strcpy(terrasar->azimuthTimeUTC, xml_get_string_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCenterCoord.azimuthTimeUTC"));
+  terrasar->absOrbit = 
+    xml_get_int_value(doc, "level1Product.productInfo.missionInfo.absOrbit");
+  strcpy(terrasar->orbitDirection, xml_get_string_value(doc, 
+     "level1Product.productInfo.missionInfo.orbitDirection"));
+  terrasar->numberOfLayers = xml_get_int_value(doc, 
+     "level1Product.productInfo.imageDataInfo.numberOfLayers");
+  strcpy(terrasar->polarisationMode, xml_get_string_value(doc, 
+     "level1Product.productInfo.acquisitionInfo.polarisationMode"));
+  if (strcmp_case(terrasar->polarisationMode, "SINGLE") == 0)
+    strcpy(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[0]"));
+  else if (strcmp_case(terrasar->polarisationMode, "DUAL") == 0) {
+    strcpy(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[0]"));
+    strcat(terrasar->bands, ",");
+    strcat(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[1]"));
+  }
+  else if (strcmp_case(terrasar->polarisationMode, "TWIN") == 0) {
+    strcpy(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[0]"));
+    strcat(terrasar->bands, ",");
+    strcat(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[1]"));
+  }
+  else if (strcmp_case(terrasar->polarisationMode, "QUAD") == 0) {
+    strcpy(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[0]"));
+    strcat(terrasar->bands, ",");
+    strcat(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[1]"));
+    strcat(terrasar->bands, ",");
+    strcat(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[2]"));
+    strcat(terrasar->bands, ",");
+    strcat(terrasar->bands, xml_get_string_value(doc, 
+    "level1Product.productInfo.acquisitionInfo.polarisationList.polLayer[3]"));
+  }
+  terrasar->numberOfRows = xml_get_int_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageRaster.numberOfRows");
+  terrasar->numberOfColumns = xml_get_int_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageRaster.numberOfColumns");
+  strcpy(terrasar->projection, xml_get_string_value(doc, 
+     "level1Product.productInfo.productVariantInfo.projection"));
+  if (strcmp_case(terrasar->projection, "GROUNDRANGE") == 0)
+    terrasar->rangeResolution = xml_get_double_value(doc, 
+    "level1Product.productInfo.imageDataInfo.imageRaster.groundRangeResolution");
+  else if (strcmp_case(terrasar->projection, "SLANTRANGE") == 0)
+    terrasar->rangeResolution = xml_get_double_value(doc, 
+       "level1Product.productSpecific.complexImageInfo.slantRangeResolution");
+  // FIXME: cover MAP case
+  terrasar->azimuthResolution = xml_get_double_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageRaster.azimuthResolution");
+  terrasar->sceneCenterCoordLat = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCenterCoord.lat");
+  terrasar->sceneCenterCoordLon = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCenterCoord.lon");
+  strcpy(terrasar->lookDirection, xml_get_string_value(doc, 
+     "level1Product.productInfo.acquisitionInfo.lookDirection"));
+  terrasar->azimuthLooks = xml_get_int_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageRaster.azimuthLooks");
+  terrasar->rangeLooks = xml_get_int_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageRaster.rangeLooks");
+  strcpy(terrasar->imageCoordinateType, xml_get_string_value(doc, 
+     "level1Product.productSpecific.complexImageInfo.imageCoordinateType"));
+  terrasar->rowSpacing = xml_get_double_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageRaster.rowSpacing");
+  terrasar->columnSpacing =  xml_get_double_value(doc, 
+     "level1Product.productInfo.imageDataInfo.imageRaster.columnSpacing");
+  // slant range ???
+  terrasar->centerFrequency = xml_get_double_value(doc, 
+     "level1Product.instrument.radarParameters.centerFrequency");
+  terrasar->prf = xml_get_double_value(doc, 
+     "level1Product.instrument.settings.settingRecord.PRF");
+  // earth radius ???
+  // satellite height ???
+  // Doppler values ???
+  terrasar->totalProcessedAzimuthBandwidth = xml_get_double_value(doc, 
+     "level1Product.processing.processingParameter.totalProcessedAzimuthBandwidth");
+  // chirp rate ???
+  terrasar->pulseLength = xml_get_double_value(doc, 
+     "level1Product.processing.processingParameter.rangeCompression.chirps.referenceChirp.pulseLength");
+  terrasar->rsf = xml_get_double_value(doc, 
+     "level1Product.instrument.settings.RSF");
+  // pitch, roll, yaw ???
+  // incidence angle ???
+  strcpy(terrasar->sceneStart, xml_get_string_value(doc, 
+     "level1Product.productInfo.sceneInfo.start.timeUTC"));
+  date_terrasar2date(terrasar->sceneStart, &imgStartDate, &imgStartTime);
+  strcpy(terrasar->sceneStop, xml_get_string_value(doc, 
+     "level1Product.productInfo.sceneInfo.stop.timeUTC"));
+  numStateVectors = xml_get_int_value(doc, 
+     "level1Product.platform.orbit.orbitHeader.numStateVectors");
+  terrasar->state_vectors = meta_state_vectors_init(numStateVectors);
+  terrasar->state_vectors->year = imgStartDate.year;
+  date_ymd2jd(&imgStartDate, &julianDate);
+  terrasar->state_vectors->julDay = julianDate.jd;
+  terrasar->state_vectors->second = date_hms2sec(&imgStartTime);
+  for (ii=0; ii<numStateVectors; ii++) {
+    sprintf(str, "level1Product.platform.orbit.stateVec[%d].timeUTC", ii);
+    strcpy(timeStr, xml_get_string_value(doc, str));
+    date_terrasar2date(timeStr, &date, &time);
+    terrasar->state_vectors->vecs[ii].time =
+      time_difference(&date, &time, &imgStartDate, &imgStartTime);
+    sprintf(str, "level1Product.platform.orbit.stateVec[%d].posX", ii);
+    terrasar->state_vectors->vecs[ii].vec.pos.x = 
+      xml_get_double_value(doc, str);
+    sprintf(str, "level1Product.platform.orbit.stateVec[%d].posY", ii);
+    terrasar->state_vectors->vecs[ii].vec.pos.y = 
+      xml_get_double_value(doc, str);
+    sprintf(str, "level1Product.platform.orbit.stateVec[%d].posZ", ii);
+    terrasar->state_vectors->vecs[ii].vec.pos.z = 
+      xml_get_double_value(doc, str);
+    sprintf(str, "level1Product.platform.orbit.stateVec[%d].velX", ii);
+    terrasar->state_vectors->vecs[ii].vec.vel.x = 
+      xml_get_double_value(doc, str);
+    sprintf(str, "level1Product.platform.orbit.stateVec[%d].velY", ii);
+    terrasar->state_vectors->vecs[ii].vec.vel.y = 
+      xml_get_double_value(doc, str);
+    sprintf(str, "level1Product.platform.orbit.stateVec[%d].velZ", ii);
+    terrasar->state_vectors->vecs[ii].vec.vel.z = 
+      xml_get_double_value(doc, str);
+  }
+  terrasar->sceneCornerCoord1Lat = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCornerCoord[0].lat");
+  terrasar->sceneCornerCoord1Lon = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCornerCoord[0].lon");
+  terrasar->sceneCornerCoord2Lat = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCornerCoord[1].lat");
+  terrasar->sceneCornerCoord2Lon = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCornerCoord[1].lon");
+  terrasar->sceneCornerCoord3Lat = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCornerCoord[2].lat");
+  terrasar->sceneCornerCoord3Lon = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCornerCoord[2].lon");
+  terrasar->sceneCornerCoord4Lat = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCornerCoord[3].lat");
+  terrasar->sceneCornerCoord4Lon = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.sceneCornerCoord[3].lon");
+
+  xmlFreeDoc(doc);
+  xmlCleanupParser();
+
   return terrasar;
 }
 
@@ -145,12 +251,14 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
   FILE *fpIn, *fpOut;
   terrasar_meta *terrasar;
   meta_parameters *meta;
-  char dataName[1024];
+  char inDataName[1024], *inMetaName=NULL, *outDataName=NULL;
+  char polarization[10], bands[30];         ;
   unsigned char intValue[4];
   float *amp = NULL, *phase = NULL, re, im;
   short int shortReal, shortImaginary;
-  int ii, kk;
+  int ii, kk, ll, attribute;
   int asfv, aslv, rsfv, rslv;
+  long file_size;
 
   // Check radiometry
   if (radiometry != r_AMP &&
@@ -162,114 +270,156 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
   }
   
   if (!fileExists(inBaseName))
-    appendExt(inBaseName, ".xml");
+    inMetaName = appendExt(inBaseName, ".xml");
+  else {
+    inMetaName = (char *) MALLOC(sizeof(char)*1024);
+    strcpy(inMetaName, inBaseName);
+  }
+  outDataName = appendExt(outBaseName, ".img");
 
-  terrasar = read_terrasar_meta(inBaseName);
-  asfPrintStatus("   ImageDataType: %s, imageDataFormat: %s\n\n",
+  terrasar = read_terrasar_meta(inMetaName);
+  asfPrintStatus("   ImageDataType: %s, imageDataFormat: %s\n",
 		 terrasar->imageDataType, terrasar->imageDataFormat);
   meta = terrasar2meta(terrasar);
-  sprintf(dataName, "%s", terrasar->imageData);
-  if (strcmp_case(terrasar->imageDataType, "COMPLEX") == 0 &&
-      strcmp_case(terrasar->imageDataFormat, "COSAR") == 0) {
-    asfPrintStatus("Writing a two-banded image ...\n\n");
-    strcpy(meta->general->bands, "AMP,PHASE");
-    meta->general->band_count = 2;
-  }
-  else
-    asfPrintStatus("Data type (%s) and data format (%s) currently not "
-		   "supported!\n", 
-		   terrasar->imageDataType, terrasar->imageDataFormat);
+  meta_write(meta, outDataName);
+  meta_free(meta);
 
-  fpIn = FOPEN(dataName, "rb");
-  fpOut = FOPEN(outBaseName, "wb");
+  if (!fileExists(inMetaName))
+    asfPrintError("Metadata file (%s) does not exist!\n", inMetaName);
+  xmlDoc *doc = xmlReadFile(inMetaName, NULL, 0);
+  if (!doc)
+    asfPrintError("Could not parse file %s\n", inMetaName);
 
-  FREAD(&intValue, 1, 4, fpIn);
-  int bytes_in_burst = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  int range_sample_relative_index = bigInt32(intValue);;
-  FREAD(&intValue, 1, 4, fpIn);
-  int range_samples = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  int azimuth_samples = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  int burst_index = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  int rangeline_total_number_bytes = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  int total_number_lines = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-
-  /*
-  asfPrintStatus("Bytes in burst: %d, range sample relative index: %d\n", 
-		 bytes_in_burst, range_sample_relative_index);
-  asfPrintStatus("Range samples: %d, azimuth samples: %d\n", 
-		 range_samples, azimuth_samples);
-  asfPrintStatus("Burst index: %d, rangeline_total_number_bytes: %d, "
-		 "total_number_lines: %d\n", burst_index, 
-		 rangeline_total_number_bytes, total_number_lines);
-  */
-
-  // Check for the first and last azimuth and range pixel
-  asfv = 1; // azimuth sample first valid
-  FSEEK(fpIn, 2*rangeline_total_number_bytes+8, SEEK_SET);
-  for (kk=2; kk<range_samples; kk++) {
-    FREAD(&intValue, 1, 4, fpIn);
-    if (bigInt32(intValue) > asfv)
-      asfv = bigInt32(intValue);
-  }
-    
-  aslv = azimuth_samples; // azimuth sample last valid
-  FSEEK(fpIn, 3*rangeline_total_number_bytes+8, SEEK_SET);
-  for (kk=2; kk<range_samples; kk++) {
-    FREAD(&intValue, 1, 4, fpIn);
-    if (bigInt32(intValue) < aslv)
-      aslv = bigInt32(intValue);
-  }
-
-  rsfv = 1; // range sample first valid
-  rslv = range_samples; // range sample last valid
-  for (ii=4; ii<total_number_lines; ii++) {
-    FSEEK(fpIn, 4*rangeline_total_number_bytes, SEEK_SET);
-    FREAD(&intValue, 1, 4, fpIn);
-    if (bigInt32(intValue) > rsfv)
-      rsfv = bigInt32(intValue);
-    FREAD(&intValue, 1, 4, fpIn);
-    if (bigInt32(intValue) < rslv)
-      rslv = bigInt32(intValue);
-  }
-
-  /*
-  asfPrintStatus("ASFV: %d, ASLV: %d, RSFV: %d, RSLV: %d\n\n", 
-		 asfv, aslv, rsfv, rslv);
-  */
-
-  meta->general->line_count = aslv - asfv + 1;
-  meta->general->sample_count = rslv - rsfv + 1;
-  amp = (float *) MALLOC(sizeof(float)*(rslv-rsfv+1));
-  phase = (float *) MALLOC(sizeof(float)*(rslv-rsfv+1));
-
-  // Read in the image
-  for (ii=asfv+3; ii<aslv+3; ii++) {
-    FSEEK(fpIn, ii*rangeline_total_number_bytes+8, SEEK_SET);
-    for (kk=rsfv; kk<=rslv; kk++) {
-      FREAD(&shortReal, 2, 1, fpIn);
-      re = (float) shortReal;
-      FREAD(&shortImaginary, 2, 1, fpIn);
-      im = (float) shortImaginary;
-      amp[kk-rsfv] = sqrt(re*re + im*im);
-      phase[kk-rsfv] = atan2(im, re);
+  // FIXME: check existence and size of files first, then assign dataName
+  for (ii=0; ii<terrasar->numberOfLayers; ii++) {
+    meta = meta_read(outDataName);
+    attribute = xml_get_int_attribute(doc, 
+      "level1Product.productComponents.imageData[%d].layerIndex", ii);
+    if (attribute != (ii+1)) {
+      printf("attribute: %i\n", attribute);
+      asfPrintError("LayerIndex of imageData in metadata out of order!\n");
     }
-    put_band_float_line(fpOut, meta, 0, ii-3, amp);
-    put_band_float_line(fpOut, meta, 1, ii-3, phase);
-    asfLineMeter(ii, azimuth_samples);
-  }
+    strcpy(inDataName, xml_get_string_value(doc, 
+      "level1Product.productComponents.imageData[%d].file.location.path", ii));
+    strcat(inDataName, "/");
+    strcat(inDataName, xml_get_string_value(doc, 
+      "level1Product.productComponents.imageData[%d].file.location.filename", 
+      ii));
+    file_size = xml_get_long_value(doc, 
+      "level1Product.productComponents.imageData[%d].file.size", ii);
+    if (!fileExists(inDataName))
+      asfPrintError("Data file (%s) does not exist!\n", inDataName);
+    if (fileSize(inDataName) != file_size)
+      asfPrintWarning("Size of data file (%s) differ from metadata!\n", 
+		      inDataName);
+    if (strcmp_case(terrasar->imageDataType, "COMPLEX") == 0 &&
+	strcmp_case(terrasar->imageDataFormat, "COSAR") == 0) {
+      asfPrintStatus("\nIngesting data file %d/%d (%s) ...\n\n", 
+		     ii+1, terrasar->numberOfLayers, inDataName);
+      strcpy(polarization, xml_get_string_value(doc, 
+	"level1Product.productComponents.imageData[%d].polLayer", ii));
+      if (ii == 0) {
+	sprintf(meta->general->bands, "AMP-%s,PHASE-%s", 
+		polarization, polarization);
+	meta->general->band_count = 2;
+      }
+      else {
+	sprintf(bands, ",AMP-%s,PHASE-%s", polarization, polarization);
+	strcat(meta->general->bands, bands);
+	meta->general->band_count += 2;
+      }
+    }
+    else
+      asfPrintStatus("Data type (%s) and data format (%s) currently not "
+		     "supported!\n", 
+		     terrasar->imageDataType, terrasar->imageDataFormat);
+    
+    fpIn = FOPEN(inDataName, "rb");
+    if (ii == 0)
+      fpOut = FOPEN(outDataName, "wb");
+    else
+      fpOut = FOPEN(outDataName, "ab");
+    
+    FREAD(&intValue, 1, 4, fpIn);
+    //int bytes_in_burst = bigInt32(intValue);
+    FREAD(&intValue, 1, 4, fpIn);
+    //int range_sample_relative_index = bigInt32(intValue);;
+    FREAD(&intValue, 1, 4, fpIn);
+    int range_samples = bigInt32(intValue);
+    FREAD(&intValue, 1, 4, fpIn);
+    int azimuth_samples = bigInt32(intValue);
+    FREAD(&intValue, 1, 4, fpIn);
+    //int burst_index = bigInt32(intValue);
+    FREAD(&intValue, 1, 4, fpIn);
+    int rangeline_total_number_bytes = bigInt32(intValue);
+    FREAD(&intValue, 1, 4, fpIn);
+    int total_number_lines = bigInt32(intValue);
+    FREAD(&intValue, 1, 4, fpIn);
+    
+    // Check for the first and last azimuth and range pixel
+    asfv = 1; // azimuth sample first valid
+    FSEEK(fpIn, 2*rangeline_total_number_bytes+8, SEEK_SET);
+    for (kk=2; kk<range_samples; kk++) {
+      FREAD(&intValue, 1, 4, fpIn);
+      if (bigInt32(intValue) > asfv)
+	asfv = bigInt32(intValue);
+    }
+    
+    aslv = azimuth_samples; // azimuth sample last valid
+    FSEEK(fpIn, 3*rangeline_total_number_bytes+8, SEEK_SET);
+    for (kk=2; kk<range_samples; kk++) {
+      FREAD(&intValue, 1, 4, fpIn);
+      if (bigInt32(intValue) < aslv)
+	aslv = bigInt32(intValue);
+    }
+    
+    rsfv = 1; // range sample first valid
+    rslv = range_samples; // range sample last valid
+    for (kk=4; kk<total_number_lines; kk++) {
+      FSEEK(fpIn, 4*rangeline_total_number_bytes, SEEK_SET);
+      FREAD(&intValue, 1, 4, fpIn);
+      if (bigInt32(intValue) > rsfv)
+	rsfv = bigInt32(intValue);
+      FREAD(&intValue, 1, 4, fpIn);
+      if (bigInt32(intValue) < rslv)
+	rslv = bigInt32(intValue);
+    }
+    
+    /*
+      asfPrintStatus("ASFV: %d, ASLV: %d, RSFV: %d, RSLV: %d\n\n", 
+      asfv, aslv, rsfv, rslv);
+    */
+    
+    meta->general->line_count = aslv - asfv + 1;
+    meta->general->sample_count = rslv - rsfv + 1;
+    amp = (float *) MALLOC(sizeof(float)*(rslv-rsfv+1));
+    phase = (float *) MALLOC(sizeof(float)*(rslv-rsfv+1));
+    
+    // Read in the image
+    for (ll=asfv+3; ll<aslv+3; ll++) {
+      FSEEK(fpIn, ll*rangeline_total_number_bytes+8, SEEK_SET);
+      for (kk=rsfv; kk<=rslv; kk++) {
+	FREAD(&shortReal, 2, 1, fpIn);
+	re = (float) shortReal;
+	FREAD(&shortImaginary, 2, 1, fpIn);
+	im = (float) shortImaginary;
+	amp[kk-rsfv] = sqrt(re*re + im*im);
+	phase[kk-rsfv] = atan2(im, re);
+      }
+      put_band_float_line(fpOut, meta, 0, ll-3, amp);
+      put_band_float_line(fpOut, meta, 1, ll-3, phase);
+      asfLineMeter(ll, azimuth_samples);
+    }
+    meta_write(meta, outDataName);
+    meta_free(meta);
+  }    
 
-  meta_write(meta, outBaseName);
   FCLOSE(fpIn);
   FCLOSE(fpOut);
   FREE(amp);
   FREE(phase);
   FREE(terrasar);
-  meta_free(meta);
+  xmlFreeDoc(doc);
+  xmlCleanupParser();
 }
 

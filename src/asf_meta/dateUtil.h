@@ -113,6 +113,9 @@ double timeSince(ymd_date *seekDate, hms_time *seekTime, int refYear);
 double date_difference(ymd_date *date1, hms_time *time1,
                        ymd_date *date2, hms_time *time2);
 
+// seconds difference from two dates (with proper sign)
+double time_difference( ymd_date *date1, hms_time *time1,
+                        ymd_date *date2, hms_time *time2);
 
 /*-------------------------------------------
   Compare date1,time1 to date2,time2;
@@ -152,6 +155,9 @@ void date_dssr2time(const char *inStr,ymd_date *date,hms_time *time);
 
 // Extract ALOS summary style date from instr="YYYYMMDD hh:mm:ss.ttt"
 void date_alos2date(const char *inStr,ymd_date *date,hms_time *time);
+
+// Extract TerraSAR-X style date from instr="YYYY-MM-DDThh:mm:ss.ttttttZ"
+void date_terrasar2date(const char *inStr,ymd_date *date,hms_time *time);
 
 // Extract SIR-C summary style date from instr="YYYY/MM/DD hh:mm:ss.ttt"
 void date_sirc2date(const char *inStr,ymd_date *date,hms_time *time);
