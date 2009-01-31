@@ -560,7 +560,7 @@ on_ancillary_file_selection_ok_button_clicked(GtkWidget *widget)
 {
   GtkWidget *file_selection_dialog;
   gchar **selections;
-  gchar **current, *input_file;
+  gchar **current, *input_file=NULL;
   int i, n;
 
   file_selection_dialog =

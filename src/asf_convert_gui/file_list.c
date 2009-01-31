@@ -739,8 +739,8 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
 gboolean
 add_to_ancillary_files_list(const gchar *ancillary_file_in)
 {
-  gchar * input_file;
-  int valid;
+  gchar *input_file = NULL;
+  int valid = FALSE;
   char *ancillary_file = file_is_valid(ancillary_file_in);
   int ancillary_valid = ancillary_file != NULL;
 
