@@ -631,7 +631,7 @@ void xml_test()
                TOP "." DESC "[%d].NestedListTest.ListItem[%d].BB", 1, 1);
 
   // some failure testing
-  const char *us = MAGIC_UNSET_STRING;
+  char *us = MAGIC_UNSET_STRING;
   test_string(doc, TOP "." DESC "[2].NestedListTest.ListItem[1].BB", us);
   test_string(doc, TOP "." DESC "[25].NestedListTest.ListItem[1].BB", us);
   test_string3(doc, us,
