@@ -218,6 +218,10 @@ static SIGNAL_CALLBACK void ancillary_file_ok_clicked()
       message_box(msg);
       free(msg);
     }
+    else {
+      add_thumbnail(s); // Add the ancillary file to the list of thumbnails to display
+      show_queued_thumbnails();
+    }
 
     // now free up everything
     g_slist_free(file);
@@ -748,6 +752,7 @@ void handle_browse_ancillary_file()
   /*   <directory>\0<first file>\0<second file>\0<third ...  */
   char * dir = strdup(fname); // Contains only the directory
   char * p = fname + strlen(dir) + 1; // Points at first file
+  char * input_file = STRDUP(p);
 
   if (*p) {
     char * dir_and_file =
@@ -760,7 +765,9 @@ void handle_browse_ancillary_file()
   }
 
   free(dir);
+  add_thumbnail(input_file);
   show_queued_thumbnails();
+  FREE(input_file);
 
 #else // #ifdef win32
 

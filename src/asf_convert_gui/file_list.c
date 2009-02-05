@@ -301,7 +301,7 @@ do_thumbnail (const gchar *file)
 {
     gchar *metadata_file = meta_file_name (file);
     gchar *data_file = data_file_name (file);
-
+    gchar *ancillary_file;
     if (metadata_file && strlen(metadata_file) > 0 &&
         data_file && strlen(data_file) > 0)
     {
@@ -317,9 +317,25 @@ do_thumbnail (const gchar *file)
             /* Walk through the list, reading each row */
             gchar *file;
             gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
-                                COL_INPUT_FILE, &file, -1);
-
-            if ( strcmp (metadata_file, file) == 0 ||
+                                COL_INPUT_FILE, &file,
+                                COL_ANCILLARY_FILE, &ancillary_file,
+                                -1);
+            // FIXME: For PolSARpro, we are (for now) making thumbnails from the
+            // ancillary file.  Later, after we add classification selections
+            // on the import tab, then that will enable us to make color
+            // thumbnails based on the classification type ...but they are
+            // ugly in greyscale, so we show the associated data's thumbnail
+            // instead
+            if ( strcmp (metadata_file, ancillary_file) == 0 ||
+                 strcmp (data_file, ancillary_file) == 0)
+            {
+              /* We found it, so load the thumbnail.  */
+              set_input_image_thumbnail (&iter, metadata_file, data_file);
+              g_free (metadata_file);
+              g_free (data_file);
+              return;
+            }
+            else if ( strcmp (metadata_file, file) == 0 ||
                  strcmp (data_file, file) == 0)
             {
                 /* We found it, so load the thumbnail.  */
@@ -560,7 +576,7 @@ move_from_completed_files_list(GtkTreeIter *iter)
                        -1);
 
     if (get_checked("rb_keep_temp") && tmp_dir && strlen(tmp_dir) > 0) {
-      printf("Removing: %s\n", tmp_dir);
+      asfPrintStatus("Removing: %s\n", tmp_dir);
       remove_dir(tmp_dir);
     }
 
@@ -599,6 +615,8 @@ static void queue_thumbnail(const gchar * data_file)
     }
 }
 
+// This is just an externally available wrapper for
+// queue_thumbnail() (necessary in file_selection.c)
 void add_thumbnail(const gchar *data_file)
 {
   queue_thumbnail(data_file);
@@ -609,8 +627,7 @@ show_queued_thumbnails()
 {
     int i;
     for (i = 0; i < QUEUE_SIZE; ++i) {
-        if (thumb_files[i]) {
-
+      if (thumb_files[i]) {
             // do a gtk main loop iteration
             while (gtk_events_pending())
                 gtk_main_iteration();
@@ -621,10 +638,10 @@ show_queued_thumbnails()
             // loop below the statements below, however that makes the app feel
             // a little less responsive.
             if (thumb_files[i]) {
-                do_thumbnail(thumb_files[i]);
+              do_thumbnail(thumb_files[i]);
 
-                g_free(thumb_files[i]);
-                thumb_files[i] = NULL;
+              g_free(thumb_files[i]);
+              thumb_files[i] = NULL;
             }
         }
     }

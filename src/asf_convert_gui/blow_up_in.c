@@ -27,7 +27,7 @@ thumbnail_path (GtkWidget *widget, GdkEventMotion *event)
 static GtkTreeViewColumn *
 input_thumbnail_column (GtkWidget *widget, GdkEventMotion *event)
 {
-    return gtk_tree_view_get_column (GTK_TREE_VIEW (widget), 
+    return gtk_tree_view_get_column (GTK_TREE_VIEW (widget),
         COL_INPUT_THUMBNAIL);
 }
 
@@ -114,13 +114,13 @@ thumbnail_region (GtkWidget *widget, GdkEventMotion *event)
 /* Returns a reference to the thumbnail column of view in which event
 falls.  It is an error to call this routine if the event doesn't
 fall in one of the thumbnail columns.  */
-static GtkTreeViewColumn * 
+static GtkTreeViewColumn *
 thumbnail_column (GtkWidget *widget, GdkEventMotion *event)
 {
     g_assert (in_thumbnail (widget, event));
 
     GtkTreeViewColumn *result;
-    gboolean row_exists 
+    gboolean row_exists
         = gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (widget),
         event->x,
         event->y,
@@ -146,9 +146,9 @@ emit_fake_motion_signal (fake_motion_signal_args_t *args)
 
     if ( args->is_valid ) {
         /* We don't care about the return value of the signal we are emitting.  */
-        gboolean junk;	
+        gboolean junk;
         g_signal_emit_by_name (widget, "motion-notify-event", event, &junk);
-    }    
+    }
 
     g_free (args);
 
@@ -156,7 +156,7 @@ emit_fake_motion_signal (fake_motion_signal_args_t *args)
 }
 
 static GdkWindow *
-draw_popup_image (GtkWidget *widget, GtkTreePath *path, 
+draw_popup_image (GtkWidget *widget, GtkTreePath *path,
                   GtkTreeViewColumn *column, GdkRegion *tr)
 {
     g_assert (GTK_IS_TREE_VIEW (widget));
@@ -166,8 +166,8 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     we know the original thumbnail is square, the clipbox corresponds
     to the region, so we can just get the clipbox of the thumbnail
     and take the center of that as the center of our popum image.  */
-    GdkRectangle tn_rec;	
-    gdk_region_get_clipbox (tr, &tn_rec); 
+    GdkRectangle tn_rec;
+    gdk_region_get_clipbox (tr, &tn_rec);
 
     /* Size of popup image to use, in pixels on a side.  */
     const gint popup_size = THUMB_SIZE_BIG;
@@ -200,20 +200,25 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     nwa.window_type = GDK_WINDOW_CHILD;
     nwa.override_redirect = TRUE;
 
-    GdkWindow *root_window 
+    GdkWindow *root_window
         = gdk_screen_get_root_window (gdk_screen_get_default ());
 
-    GdkWindow *popup_image_window 
-        = gdk_window_new (root_window, &nwa, 
+    GdkWindow *popup_image_window
+        = gdk_window_new (root_window, &nwa,
         GDK_WA_X | GDK_WA_Y | GDK_WA_NOREDIR);
 
     /* Iterator for the data in the current row of the list.  */
     GtkTreeIter iter;
     gtk_tree_model_get_iter (GTK_TREE_MODEL (list_store), &iter, path);
 
-    char *file;
+    char *file, *ancillary_file;
     gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
-                        COL_INPUT_FILE, &file, -1);
+                        COL_INPUT_FILE, &file,
+                        COL_ANCILLARY_FILE, &ancillary_file,
+                        -1);
+    if (is_polsarpro(file)) {
+      file = ancillary_file;
+    }
 
     char *metadata_file = meta_file_name (file);
     char *data_file = data_file_name (file);
@@ -221,7 +226,7 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     if (strlen((char*)data_file) == 0 || strlen((char*)meta_file_name) == 0)
         return NULL;
 
-    GdkPixbuf *popup_image_pixbuf 
+    GdkPixbuf *popup_image_pixbuf
         = make_input_image_thumbnail_pixbuf (metadata_file, data_file,
                                              THUMB_SIZE_BIG);
 
@@ -259,7 +264,7 @@ typedef struct {
     GdkRegion *thumbnail_region;
 } maybe_clear_popup_image_args_t;
 
-static maybe_clear_popup_image_args_t maybe_clear_popup_image_args 
+static maybe_clear_popup_image_args_t maybe_clear_popup_image_args
 = {NULL, NULL, NULL};
 
 /* Forward declaration.  */
@@ -288,7 +293,7 @@ maybe_clear_popup_image (GtkWidget *widget, GdkEventMotion *event,
         /* Disconnect self.  */
         guint signal_id = g_signal_lookup ("motion-notify-event",
             GTK_WIDGET_TYPE (tree_view));
-        guint disconnect_count 
+        guint disconnect_count
             = g_signal_handlers_disconnect_matched (tree_view,
             G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA,
             signal_id,
@@ -304,11 +309,11 @@ maybe_clear_popup_image (GtkWidget *widget, GdkEventMotion *event,
         update_thumbnail_popup_process (widget, event);
 
         /* Unblock the handler for motion events on the files list.  */
-        gulong unblock_count 
-            = g_signal_handlers_unblock_by_func 
+        gulong unblock_count
+            = g_signal_handlers_unblock_by_func
             (tree_view, files_list_motion_notify_event_handler, NULL);
         g_assert (unblock_count == 1);
-    }    
+    }
 
     return FALSE;
 }
@@ -333,7 +338,7 @@ update_thumbnail_popup_process (GtkWidget *widget, GdkEventMotion *event)
     // Also, this assertion should pass, but doesn't... synthesizing
     // motion events is apparently a bit harder than I realized.
     // g_assert (event->type == GDK_MOTION_NOTIFY);
-    //g_message ("event x: %lf, event y: %lf", event->x, event->y); 
+    //g_message ("event x: %lf, event y: %lf", event->x, event->y);
     gboolean event_in_thumbnail = in_thumbnail (widget, event);
 
     /* Hover time in milliseconds required before a popup image is
@@ -353,7 +358,7 @@ update_thumbnail_popup_process (GtkWidget *widget, GdkEventMotion *event)
         //g_message ("Adding timeout from !with && in_input_thumbnail");
         fake_motion_signal_args_t *fmsa = g_new (fake_motion_signal_args_t, 1);
         fmsa->widget = widget;
-        fmsa->event = event;      
+        fmsa->event = event;
         fmsa->is_valid = TRUE;
         g_timeout_add (hover_time, (GSourceFunc) emit_fake_motion_signal, fmsa);
     }
@@ -370,7 +375,7 @@ update_thumbnail_popup_process (GtkWidget *widget, GdkEventMotion *event)
             const gint slop_time = 5;
             const gint seconds_to_mseconds_factor = 1000;
             /* If we hover for this long or longer, we should show the popup.  */
-            if ( g_timer_elapsed (hover_timer, NULL) * seconds_to_mseconds_factor 
+            if ( g_timer_elapsed (hover_timer, NULL) * seconds_to_mseconds_factor
                 >= hover_time - slop_time) {
                     //g_message ("elapsed time: %lf\n", g_timer_elapsed (hover_timer, NULL));
                     //g_message ("Do popup!!!");
@@ -389,7 +394,7 @@ update_thumbnail_popup_process (GtkWidget *widget, GdkEventMotion *event)
                     {
                         guint signal_id = g_signal_lookup ("motion-notify-event",
                             GTK_WIDGET_TYPE (widget));
-                        gulong handler_id 
+                        gulong handler_id
                             = g_signal_handler_find (widget,
                             G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_FUNC
                             | G_SIGNAL_MATCH_DATA,
@@ -410,12 +415,12 @@ update_thumbnail_popup_process (GtkWidget *widget, GdkEventMotion *event)
                         }
                         //g_message ("in_thumbnail: %d", in_thumbnail (widget, event));
                         maybe_clear_popup_image_args.thumbnail_region = tr;
-                        g_signal_connect (widget, "motion-notify-event", 
-                            G_CALLBACK (maybe_clear_popup_image), 
+                        g_signal_connect (widget, "motion-notify-event",
+                            G_CALLBACK (maybe_clear_popup_image),
                             &maybe_clear_popup_image_args);
                         //g_message ("in_thumbnail: %d", in_thumbnail (widget, event));
                     }
-                } 
+                }
             else {
                 gtk_tree_path_free (ctp);
             }
@@ -428,7 +433,7 @@ update_thumbnail_popup_process (GtkWidget *widget, GdkEventMotion *event)
             //g_message ("Adding timeout from 'different thumbnails'");
             fake_motion_signal_args_t *fmsa = g_new (fake_motion_signal_args_t, 1);
             fmsa->widget = widget;
-            fmsa->event = event;      
+            fmsa->event = event;
             fmsa->is_valid = TRUE;
             g_timeout_add (hover_time, (GSourceFunc) emit_fake_motion_signal, fmsa);
         }
@@ -467,7 +472,7 @@ files_list_leave_notify_event_handler (GtkWidget *widget,
     return FALSE;
 }
 
-gboolean    
+gboolean
 files_list_scroll_event_handler (GtkWidget *widget, GdkEventScroll *event,
                                  gpointer user_data)
 {
