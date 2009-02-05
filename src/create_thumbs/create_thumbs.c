@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
   quietflag = (checkForOption("-quiet", argc, argv)  ||
                checkForOption("--quiet", argc, argv) ||
                checkForOption("-q", argc, argv));
+
   if (argc > 1 && !quietflag) {
       check_for_help(argc, argv);
       handle_license_and_version_args(argc, argv, TOOL_NAME);
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
         logflag = TRUE;
     }
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
-        quietflag = TRUE;
+        quietflag = 2; // Force -really-quiet behavior (warnings are silenced too)
     }
     else if (strmatches(key,"-verbose","--verbose","-v",NULL)) {
         verbose = TRUE;
@@ -1739,26 +1740,39 @@ int is_jpeg(const char *file)
 
 int is_tiff(const char *file)
 {
+  int is_a_tiff = 0;
+  char *tiff_ext;
   FILE *fp = NULL;
   unsigned char magic1;
   unsigned char magic2;
 
-  if (fileExists(file)) {
+  tiff_ext = findExt(file);
+  if (tiff_ext && fileExists(file)) {
     fp = FOPEN(file, "rb");
   }
   else {
     return 0;
   }
+  tiff_ext = (strcmp_case(tiff_ext, ".tif") == 0 || strcmp_case(tiff_ext, ".tiff")) ? tiff_ext : NULL;
 
   fread(&magic1, 1, 1, fp);
   fread(&magic2, 1, 1, fp);
   FCLOSE(fp);
 
-  TIFF *tiff = TIFFOpen(file, "rb");
+  if (!quietflag) {
+    // The tiff library squawks all over the screen if the file is
+    // not a tiff file ...
+    TIFF *tiff = TIFFOpen(file, "rb");
 
-  int is_a_tiff = tiff &&
-                  ((magic1 == 'I' && magic2 == 'I') ||
-                   (magic1 == 'M' && magic2 == 'M')   );
+    is_a_tiff = tiff && tiff_ext &&
+                ((magic1 == 'I' && magic2 == 'I') ||
+                 (magic1 == 'M' && magic2 == 'M')   );
+  }
+  else {
+    is_a_tiff = tiff_ext &&
+        ((magic1 == 'I' && magic2 == 'I') ||
+         (magic1 == 'M' && magic2 == 'M')   );
+  }
 
   return is_a_tiff;
 }
