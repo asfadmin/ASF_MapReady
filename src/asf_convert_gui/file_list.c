@@ -71,10 +71,10 @@ gboolean is_polsarpro(const gchar * infile)
   }
   if (strcmp_case(ext, ".bin")==0) {
     bin = (char *)infile;
-    bin_hdr = STRDUP(infile);
-    strcat(bin_hdr, ".hdr");
-    found_bin = (gboolean)fileExists(bin);
-    found_bin_hdr = (gboolean)fileExists(bin_hdr);
+    bin_hdr = (char *)MALLOC(sizeof(char) * (strlen(infile) + 5));
+    sprintf(bin_hdr, "%s.hdr", infile);
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
     FREE(bin_hdr);
   }
   else if (strcmp_case(ext, ".hdr")==0) {

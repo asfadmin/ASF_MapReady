@@ -65,6 +65,7 @@ int is_JL0_basename(const char *what);
 long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in);
 int is_jpeg(const char *file);
 int is_tiff(const char *file);
+int is_polsarpro(const char *file);
 
 int main(int argc, char *argv[])
 {
@@ -670,6 +671,12 @@ void process_file(const char *file, int level, int size, int verbose,
     char filename[256], dir[1024];
 
     split_dir_and_file(file, dir, filename);
+    if (is_polsarpro(file)) {
+      asfPrintStatus("\n***\nPolSARpro thumbnails not yet supported.  Best workaround\n"
+          "is to create a thumbnail (browse image) from the original\n"
+          "CEOS or AIRSAR dataset used to create the PolSARpro data files.\n***\n\n");
+      return;
+    }
     if (L0Flag == stf && is_stf_level0(file)) {
         if (get_stf_data_name(file, &inDataName)) {
             if (strcmp(file, inDataName) == 0) {
@@ -1756,4 +1763,44 @@ int is_tiff(const char *file)
   return is_a_tiff;
 }
 
+int is_polsarpro(const char * infile)
+{
+  int found_bin = 0;
+  int found_bin_hdr = 0;
+  char *bin = NULL, *bin_hdr = NULL, *dupe = NULL, *ext = NULL;
+
+  ext = findExt(infile);
+  if (!ext) {
+    // If no file extension exists, then maybe it has been stripped
+    // off.  Guess .bin and check for existence...
+    char *inFile = (char *)MALLOC(sizeof(char) * strlen(infile) + 5);
+    sprintf(inFile, "%s.bin", infile);
+    int ret = is_polsarpro(inFile);
+    FREE(inFile);
+    return ret;
+  }
+  if (strcmp_case(ext, ".bin")==0) {
+    bin = (char *)infile;
+    bin_hdr = (char *)MALLOC(sizeof(char) * (strlen(infile) + 5));
+    sprintf(bin_hdr, "%s.hdr", infile);
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(bin_hdr);
+  }
+  else if (strcmp_case(ext, ".hdr")==0) {
+    dupe = STRDUP(infile);
+    bin_hdr = (char *)infile;
+    ext = findExt(dupe);
+    *ext = '\0';
+    ext = findExt(dupe);
+    if (ext && (strcmp_case(ext, ".bin")==0)) {
+      bin = dupe;
+    }
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(dupe);
+  }
+
+  return (int)(found_bin && found_bin_hdr);
+}
 
