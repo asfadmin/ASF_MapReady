@@ -12,8 +12,9 @@ following defines.
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
-"              [-format <inputFormat>] [-band <band_id | all>] [-no-ers2-gain-fix\n"\
-"              [-image-data-type <type>] [-lut <file>] [-lat <lower> <upper>]\n"\
+"              [-format <inputFormat>] [-ancillary_file <file>] [-band <band_id | all>]\n"\
+"              [-no-ers2-gain-fix] [-image-data-type <type>] [-lut <file>]\n"\
+"              [-lat <lower> <upper>] \n"\
 "              [-prc] [-log <logFile>] [-quiet] [-real-quiet] [-license] [-version]\n"\
 "              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-multilook] [-complex] [-metadata <file>]\n"\
@@ -23,9 +24,9 @@ following defines.
 
 #define ASF_DESCRIPTION_STRING \
 "   Ingests all varieties of CEOS, STF, AIRSAR, BIL, GRIDFLOAT, VP (Vexcel-Plain),\n"\
-"   JAXA Level 0 (ALOS AVNIR-2) and GeoTIFF data formats and outputs ASF Internal format\n"\
-"   metadata and data files. When the calibration parameters are applied using the\n"\
-"   -sigma, -gamma, or the -beta option the resulting image will have power scale\n"\
+"   JAXA Level 0 (ALOS AVNIR-2), PolSARpro, and GeoTIFF data formats and outputs ASF\n"\
+"   Internal format metadata and data files. When the calibration parameters are applied using\n"\
+"   the -sigma, -gamma, or the -beta option the resulting image will have power scale\n"\
 "   values (or decibels if the -db option is utilized). "ASF_NAME_STRING" can also perform\n"\
 "   several other tasks during look up such as multilooking when ingesting single-look\n"\
 "   complex (SLC) data, ingest individual bands at a time, apply a look-up table, apply\n"\
@@ -33,8 +34,8 @@ following defines.
 
 #define ASF_INPUT_STRING \
 "   The format of the input file must be specified as STF, AIRSAR, BIL, GRIDFLOAT,\n"\
-"   VP, JAXA_L0, or GEOTIFF.  Otherwise "ASF_NAME_STRING" assumes the input file is in\n"\
-"   CEOS format by default.  See the -format option below.\n"
+"   VP, JAXA_L0, POLSARPRO, or GEOTIFF.  Otherwise "ASF_NAME_STRING" assumes the input\n"\
+"   file is in CEOS format by default.  See the -format option below.\n"
 
 #define ASF_OUTPUT_STRING \
 "   Outputs data and metadata files with the user-provided base name and\n"\
@@ -62,9 +63,14 @@ following defines.
 "        (ie do not use the -db flag if you plan on statistical analysis)\n"\
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
-"        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp',\n"\
+"        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp', 'polsarpro',\n"\
 "        'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0' format refers to the\n"\
 "        ALOS AVNIR-2 Level 0 dataset format. 'CEOS' is the default behavior.\n"\
+"   -ancillary_file <file>\n"\
+"        For PolSARpro format files, the ingest process needs access to the original\n"\
+"        COES or AIRSAR format data that the PolSARpro images were created from.  The\n"\
+"        original dataset is necessary for the purpose of extracting original SAR parameters\n"\
+"        that are not otherwise available in the PolSARpro format files as they are.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that does not have the same basename as the\n"\
 "        image data.\n"\
@@ -220,6 +226,7 @@ typedef enum {
     f_PRC,
     f_NO_ERS2_GAIN_FIX,
     f_FORMAT,
+    f_ANCILLARY_FILE,
     f_OLD_META,
     f_METADATA_FILE,
     f_LOG,
@@ -347,7 +354,7 @@ static void print_help(void)
 int main(int argc, char *argv[])
 {
     char inBaseName[256]="";
-    char ancillary_file[256]=""; // FIXME: Need to pass this in on the command line
+    char ancillary_file[256]="";
     char outBaseName[256]="";
     char *inMetaNameOption=NULL;
     char *lutName=NULL;
@@ -399,6 +406,7 @@ int main(int argc, char *argv[])
     flags[f_QUIET] = checkForOption("-quiet", argc, argv);
     flags[f_REAL_QUIET] = checkForOption("-real-quiet", argc, argv);
     flags[f_FORMAT] = checkForOption("-format", argc, argv);
+    flags[f_ANCILLARY_FILE] = checkForOption("-ancillary_file", argc, argv);
     flags[f_DATA_TYPE] = checkForOption("-data-type", argc, argv);
     flags[f_IMAGE_DATA_TYPE] = checkForOption("-image-data-type", argc, argv);
     flags[f_BAND] = checkForOption("-band", argc, argv);
@@ -424,7 +432,7 @@ int main(int argc, char *argv[])
         flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
 
     if (flags[f_SPROCKET] != FLAG_NOT_SET)
-        asfPrintError("At this point, sprocket layers are not ... working.\n");
+        asfPrintError("Sprocket layers are not yet supported.\n");
 
     if (do_resample)
     {
@@ -490,6 +498,7 @@ int main(int argc, char *argv[])
         if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
         if(flags[f_REAL_QUIET] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+        if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET) needed_args += 2;/*option & parameter*/
         if(flags[f_BAND] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
         if(flags[f_LINE] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
         if(flags[f_SAMPLE] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
@@ -558,6 +567,11 @@ int main(int argc, char *argv[])
         if(   argv[flags[f_FORMAT]+1][0] == '-'
             || flags[f_FORMAT] >= argc-REQUIRED_ARGS)
             print_usage();
+    if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET)
+      /*Make sure the field following -format isn't another option*/
+      if(   argv[flags[f_ANCILLARY_FILE]+1][0] == '-'
+            || flags[f_ANCILLARY_FILE] >= argc-REQUIRED_ARGS)
+        print_usage();
     if(flags[f_BAND] != FLAG_NOT_SET)
       /*Make sure the field following -format isn't another option*/
       if(   argv[flags[f_BAND]+1][0] == '-'
@@ -663,7 +677,6 @@ int main(int argc, char *argv[])
         asfPrintWarning("-db flag must be specified with -sigma, -gamma, or -beta. Ignoring -db.\n");
     }
 
-
     /* Get the input metadata name if the flag was specified (probably for a meta
     * name with a different base name than the data name) */
     if(flags[f_METADATA_FILE] != FLAG_NOT_SET) {
@@ -694,11 +707,32 @@ int main(int argc, char *argv[])
       format_type = ALOS_MOSAIC;
     else if (strncmp_case(format_type_str, "TERRASAR", 8) == 0)
       format_type = TERRASAR;
+    else if (strncmp_case(format_type_str, "POLSARPRO", 9) == 0)
+      format_type = POLSARPRO;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }
     else
       format_type = CEOS;
+
+    // Process PolSARpro options (-format and -ancillary_flag combos)
+    if (format_type == POLSARPRO &&
+        flags[f_ANCILLARY_FILE] == FLAG_NOT_SET) {
+      // PolSARpro requires the ancillary file
+      asfPrintError("PolSARpro ingest requires the original CEOS or AIRSAR format\n"
+          "dataset that was used to create the PolSARpro data files.  Please\n"
+          "specify the original CEOS or AIRSAR format dataset with the -ancillary_file\n"
+          "option.  See asf_import -help for more information.\n");
+    }
+    if (flags[f_ANCILLARY_FILE] != FLAG_NOT_SET &&
+        format_type != POLSARPRO) {
+      // Ancillary file must be specified with PolSARpro input format (only)
+      asfPrintError("The -ancillary_file option is only used for PolSARpro ingest.\n"
+            "See asf_import -help for more information.\n");
+    }
+    if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET) {
+      strcpy(ancillary_file, argv[flags[f_ANCILLARY_FILE] + 1]);
+    }
 
     /* Deal with band_id */
     if(flags[f_BAND] != FLAG_NOT_SET) {
