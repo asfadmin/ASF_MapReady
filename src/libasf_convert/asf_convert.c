@@ -63,7 +63,6 @@ int isPolSARpro(const char * infile)
     found_bin_hdr = fileExists(bin_hdr);
     FREE(dupe);
   }
-  FREE(ext);
 
   return (int)(found_bin && found_bin_hdr);
 }
