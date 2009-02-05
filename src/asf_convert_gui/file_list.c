@@ -53,22 +53,31 @@ static const char * imgloc(char * file)
 
 /* Returns true if a PolSARpro file set is detected based on the */
 /* filename passed in.                                           */
-int is_polsarpro(const gchar * infile)
+gboolean is_polsarpro(const gchar * infile)
 {
-  int found_bin = 0;
-  int found_bin_hdr = 0;
+  gboolean found_bin = FALSE;
+  gboolean found_bin_hdr = FALSE;
   char *bin = NULL, *bin_hdr = NULL, *dupe = NULL, *ext = NULL;
 
   ext = findExt(infile);
-  if (ext && (strcmp_case(ext, ".bin")==0)) {
+  if (!ext) {
+    // If no file extension exists, then maybe it has been stripped
+    // off.  Guess .bin and check for existence...
+    char *inFile = (char *)MALLOC(sizeof(char) * strlen(infile) + 5);
+    sprintf(inFile, "%s.bin", infile);
+    gboolean ret = is_polsarpro(inFile);
+    FREE(inFile);
+    return ret;
+  }
+  if (strcmp_case(ext, ".bin")==0) {
     bin = (char *)infile;
     bin_hdr = STRDUP(infile);
     strcat(bin_hdr, ".hdr");
-    found_bin = fileExists(bin);
-    found_bin_hdr = fileExists(bin_hdr);
+    found_bin = (gboolean)fileExists(bin);
+    found_bin_hdr = (gboolean)fileExists(bin_hdr);
     FREE(bin_hdr);
   }
-  else if (ext && (strcmp_case(ext, ".hdr")==0)) {
+  else if (strcmp_case(ext, ".hdr")==0) {
     dupe = STRDUP(infile);
     bin_hdr = (char *)infile;
     ext = findExt(dupe);
@@ -77,8 +86,8 @@ int is_polsarpro(const gchar * infile)
     if (ext && (strcmp_case(ext, ".bin")==0)) {
       bin = dupe;
     }
-    found_bin = fileExists(bin);
-    found_bin_hdr = fileExists(bin_hdr);
+    found_bin = (gboolean)fileExists(bin);
+    found_bin_hdr = (gboolean)fileExists(bin_hdr);
     FREE(dupe);
   }
 
@@ -652,7 +661,7 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
 {
     char *input_file = file_is_valid(input_file_in);
     int valid = input_file != NULL;
-    int isPolSARpro;
+    gboolean isPolSARpro;
 
     if (valid)
     {
