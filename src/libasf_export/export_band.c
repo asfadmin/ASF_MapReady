@@ -122,6 +122,8 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
       // The sample format is 'unsigned integer', but the number of bytes per
       // sample, i.e. short, int, or long, is set by TIFFTAG_BITSPERSAMPLE below
       // which in turn is determined by the sample_size (in bytes) set above ;-)
+      // Note that for color images, "bits per sample" refers to one color component,
+      // not the group of 3 components.
       TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
   }
   if (!have_look_up_table && md->colormap) {
@@ -1455,7 +1457,7 @@ export_band_image (const char *metadata_file_name,
     int offset = md->general->line_count;
 
     // Allocate some memory
-    if (md->optical) {
+    if (md->optical || md->general->data_type == BYTE) {
       if (ignored[0])
         red_byte_line = (unsigned char *) CALLOC(sample_count, sizeof(char));
       else
@@ -1632,7 +1634,7 @@ export_band_image (const char *metadata_file_name,
     }
 
     for (ii=0; ii<md->general->line_count; ii++) {
-      if (md->optical) {
+      if (md->optical || md->general->data_type == BYTE) {
         // Optical images come as byte in the first place
         if (!ignored[0])
           get_byte_line(fp, md, ii+red_channel*offset, red_byte_line);

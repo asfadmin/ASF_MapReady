@@ -90,7 +90,7 @@ initialize_tile_cache_file (GString **tile_file_name)
   g_assert (current_tile_file_number < ULONG_MAX);
   current_tile_file_number++;
   //G_UNLOCK (current_tile_file_number);
-  
+
 #ifndef win32
   // We block signals while we create and unlink this file, so we
   // don't end up leaving a huge temporary file somewhere.
@@ -130,7 +130,7 @@ initialize_tile_cache_file (GString **tile_file_name)
 #endif
   }
   g_assert (tile_file != NULL);
-  
+
 #ifndef win32
   return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
   G_UNLOCK (signal_block_activity);
@@ -609,10 +609,6 @@ UInt8Image *
 uint8_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
                            off_t offset)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
-
   g_assert (size_x > 0 && size_y > 0);
 
   // Check in advance if the source file looks big enough (we will
@@ -650,10 +646,6 @@ UInt8Image *
 uint8_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
                                    FILE *file_pointer, off_t offset)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
-
   g_assert (size_x > 0 && size_y > 0);
 
   // Check in advance if the source file looks big enough (we will
@@ -1793,6 +1785,45 @@ uint8_image_equals (UInt8Image *self, UInt8Image *other)
   return TRUE;
 }
 
+// Flip an image about a horizontal line through the center of the image
+void
+uint8_image_flip_y(UInt8Image *self)
+{
+  size_t ii, jj;
+
+  asfLineMeter(jj, self->size_y);
+  for (jj = 0; jj < self->size_y / 2; ++jj) {
+    asfLineMeter(2 * jj + 1, self->size_y);
+    size_t jj2 = self->size_y - 1 - jj;
+    for (ii = 0; ii < self->size_x; ++ii) {
+      uint8 a = uint8_image_get_pixel(self, ii, jj);
+      uint8 b = uint8_image_get_pixel(self, ii, jj2);
+      uint8_image_set_pixel(self, ii, jj, b);
+      uint8_image_set_pixel(self, ii, jj2, a);
+    }
+  }
+  asfLineMeter(1, 1);
+}
+
+// Flip an image about a vertical line through the center of the image
+void
+uint8_image_flip_x(UInt8Image *self)
+{
+  size_t ii, jj;
+
+  for (ii = 0; ii < self->size_x / 2; ++ii) {
+    asfLineMeter(2 * ii + 1, self->size_y);
+    size_t ii2 = self->size_x - 1 - ii;
+    for (jj = 0; jj < self->size_y; ++jj) {
+      uint8 a = uint8_image_get_pixel(self, ii, jj);
+      uint8 b = uint8_image_get_pixel(self, ii2, jj);
+      uint8_image_set_pixel(self, ii, jj, b);
+      uint8_image_set_pixel(self, ii2, jj, a);
+    }
+  }
+  asfLineMeter(1, 1);
+}
+
 // Bring the tile cache file on the disk fully into sync with the
 // latest image data stored in the memory cache.
 static void
@@ -1898,9 +1929,9 @@ uint8_image_band_store(UInt8Image *self, const char *file,
 {
   // Give status
   if (meta->general->band_count == 1)
-    asfPrintStatus("Storing image ...\n");
+    asfPrintStatus("\n\nStoring image ...\n");
   else
-    asfPrintStatus("Storing band ...\n");
+    asfPrintStatus("\n\nStoring band ...\n");
 
   // Open the file to write to.
   FILE *fp = fopen (file, append_flag ? "ab" : "wb");

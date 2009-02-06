@@ -17,6 +17,7 @@
 #include <asf_meta.h>
 #include <asf_raster.h>
 #include "float_image.h"
+#include "uint8_image.h"
 #include <libasf_proj.h>
 #include <spheroids.h>
 #include <asf_contact.h>
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
   sprintf(output_meta_name, "%s.meta", argv[3]);
   sprintf(output_data_name, "%s.img", argv[3]);
 
-  printf("Flipping image %s.\n", 
+  printf("Flipping image %s.\n",
 	 vert && horz ? "vertically and horizontally" :
 	 (vert ? "vertically" : "horizontally"));
 
@@ -69,20 +70,41 @@ int main(int argc, char *argv[])
   meta_parameters *imd = meta_read(input_meta_name);
   meta_write(imd, output_meta_name);
 
-  FloatImage *input =
-    float_image_new_from_file(imd->general->sample_count,
-			      imd->general->line_count,
-			      input_data_name, 0,
-			      FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  FloatImage *finput = NULL;
+  UInt8Image *binput = NULL;
+  if (imd->optical || imd->general->data_type == BYTE) {
+    binput = uint8_image_new_from_file(imd->general->sample_count,
+                                       imd->general->line_count,
+                                       input_data_name, 0);
+  }
+  else {
+    finput = float_image_new_from_file(imd->general->sample_count,
+			                                 imd->general->line_count,
+			                                 input_data_name, 0,
+			                                 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  }
 
-  if (horz)
-    float_image_flip_x(input);
+  if (imd->optical || imd->general->data_type == BYTE) {
+    if (horz)
+      uint8_image_flip_x(binput);
 
-  if (vert)
-    float_image_flip_y(input);
+    if (vert)
+      uint8_image_flip_y(binput);
 
-  float_image_store(input, output_data_name,
-		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+    uint8_image_store(binput, output_data_name);
+    uint8_image_free(binput);
+  }
+  else {
+    if (horz)
+      float_image_flip_x(finput);
+
+    if (vert)
+      float_image_flip_y(finput);
+
+    float_image_store(finput, output_data_name,
+                      FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+    float_image_free(finput);
+  }
 
   meta_free(imd);
   return EXIT_SUCCESS;
