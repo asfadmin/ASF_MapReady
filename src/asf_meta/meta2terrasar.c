@@ -10,6 +10,7 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
   meta_parameters *meta;
   char *mon[13]={"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep",
      "Oct","Nov","Dec"};
+  double lat, re, rp;
 
   // Allocate memory for metadata structure
   meta = raw_init();
@@ -46,7 +47,8 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
   meta->general->y_pixel_size = terrasar->azimuthResolution;
   meta->general->center_latitude = terrasar->sceneCenterCoordLat;
   meta->general->center_longitude = terrasar->sceneCenterCoordLon;
-  // FIXME: re_minor and re_major need to be derived
+  meta->general->re_major = 6378137.000; // WGS84
+  meta->general->re_minor = 6356752.314; // WGS84
 
   // SAR block
   meta->sar = meta_sar_init();
@@ -69,9 +71,16 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
   meta->sar->sample_increment = 1;
   meta->sar->range_time_per_pixel = terrasar->columnSpacing;
   meta->sar->azimuth_time_per_pixel = terrasar->rowSpacing;
+  meta->sar->slant_range_first_pixel = terrasar->rangeTime * SPD_LIGHT / 2.0;
+  meta->sar->slant_shift = 0.0;
+  meta->sar->time_shift = 0.0;
   meta->sar->wavelength = SPD_LIGHT / terrasar->centerFrequency;
   meta->sar->prf = terrasar->prf;
-  // FIXME: earth_radius, satellite_height need to be derived
+  lat = meta->general->center_latitude * D2R;
+  re = meta->general->re_major;
+  rp = meta->general->re_minor;
+  meta->sar->earth_radius = 
+    (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
   // FIXME: Doppler values need to be filled in
   meta->sar->azimuth_processing_bandwidth = 
     terrasar->totalProcessedAzimuthBandwidth;
@@ -84,11 +93,11 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
   else if (strcmp_case(terrasar->imageDataType, "DETECTED") == 0)
     meta->sar->multilook = TRUE;
   // FIXME: pitch, roll, yaw ???
-  // FIXME: incidence angle ???
+
+  // Doppler block
+  meta->doppler = terrasar->doppler;
 
   // State vectors
-  // First pass: no propagation of state vectors
-  // FIXME: Verify the type of state vector: earth-fixed vs. inertial
   meta->state_vectors = terrasar->state_vectors;
 
   // Propagate the state vectors to start, center, end
@@ -102,6 +111,13 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
     vector_count = vector_count*2-1;
   }
   propagate_state(meta, vector_count, data_int);
+
+  data_int = date_difference(&imgStopDate, &imgStopTime, 
+			     &imgStartDate, &imgStartTime) / 2.0;
+  stateVector stVec = meta_get_stVec(meta, data_int);
+  meta->sar->satellite_height = sqrt(stVec.pos.x * stVec.pos.x +
+				     stVec.pos.y * stVec.pos.y +
+				     stVec.pos.z * stVec.pos.z);
 
   // Location block
   meta->location = meta_location_init();

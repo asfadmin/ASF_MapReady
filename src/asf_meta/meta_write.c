@@ -342,6 +342,54 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"}","","End sar");
   }
 
+  // Doppler parameter block - version 3.1
+  if (meta->doppler) {
+    int ii, kk;
+    char str[15];
+    meta_put_string(fp,"doppler {","","Begin list of Doppler parameters");
+    strcpy(comment,"Doppler type (TSX)");
+    switch (meta->doppler->type)
+      {
+      case unknown_doppler:
+	break;
+      case tsx_doppler:
+	meta_put_string(fp,"type:","TSX",comment);
+	meta_put_int(fp,"year:",meta->doppler->tsx->year,
+		     "Year for first Doppler estimate");
+	meta_put_int(fp,"julDay:",meta->doppler->tsx->julDay,
+		     "Julian day of year for first Doppler estimate)");
+	meta_put_double(fp,"second:",meta->doppler->tsx->second,
+			"Second of day for first Doppler estimate");
+	meta_put_int(fp,"doppler_count:",meta->doppler->tsx->doppler_count,
+		     "Number of Doppler estimates");
+	for (ii=0; ii<meta->doppler->tsx->doppler_count; ii++) {
+	  meta_put_string(fp,"estimate {","","Begin of single Doppler estimate");
+	  meta_put_double(fp,"time:",meta->doppler->tsx->dop[ii].time,
+			  "Time relative to first Doppler estimate time");
+	  meta_put_double(fp,"first_range_time:",
+			  meta->doppler->tsx->dop[ii].first_range_time,
+			  "Time first range pixel");
+	  meta_put_double(fp,"reference_time:",
+			  meta->doppler->tsx->dop[ii].reference_time,
+			  "Reference point time of polynomial");
+	  meta_put_double(fp,"time_increment:",
+			  meta->doppler->tsx->dop[ii].time_inc,
+			  "Time increment in range");
+	  meta_put_int(fp,"polynomial_degree:",
+		       meta->doppler->tsx->dop[ii].poly_degree,
+		       "Degree of polynomial");
+	  for (kk=0; kk<=meta->doppler->tsx->dop[ii].poly_degree; kk++) {
+	    sprintf(str, "coefficient[%d]:", kk);
+	    meta_put_double(fp,str,meta->doppler->tsx->dop[ii].coefficient[kk],
+			    "Polynomial coefficient");
+	  }
+	  meta_put_string(fp,"}","","End of single Doppler estimate");
+	}
+	break;
+      }
+    meta_put_string(fp,"}","","End doppler");
+  }
+
   if (meta->optical) {
     meta_put_string(fp,"optical {","","Begin parameters used specifically in "
         "optical imaging");

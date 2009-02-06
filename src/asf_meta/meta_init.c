@@ -211,6 +211,15 @@ meta_calibration *meta_calibration_init(void)
   return cal;
 }
 
+meta_doppler *meta_doppler_init(void)
+{
+  meta_doppler *dop = (meta_doppler *) MALLOC(sizeof(meta_doppler));
+  dop->type = unknown_doppler;
+  dop->tsx = NULL;
+
+  return dop;
+}
+
 meta_airsar *meta_airsar_init(void)
 {
   meta_airsar *airsar = (meta_airsar *) MALLOC(sizeof(meta_airsar));
@@ -357,6 +366,7 @@ meta_parameters *raw_init(void)
   meta->calibration     = NULL;
   meta->location        = NULL;
   meta->colormap        = NULL;  /* Allocated upon discovery of Palette Color TIFF embedded color map */
+  meta->doppler         = NULL;
 
   meta->meta_version = META_VERSION;
 
@@ -500,6 +510,8 @@ void meta_free(meta_parameters *meta)
     meta->transform = NULL;
     FREE(meta->airsar);
     meta->airsar = NULL;
+    FREE(meta->doppler);
+    meta->doppler = NULL;
 
     /*
     FREE(meta->geo);

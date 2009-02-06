@@ -54,6 +54,8 @@ static void *block_stack_pop(block_stack_node **stack_top_p)
    track of how many of them we have seen so far.  */
 static int vector_count;
 
+static int doppler_count;
+
 /* Arrays of stats blocks are stored in the metadata structure, this keeps
    track of how many of them we have seen so far.  */
 static int stats_block_count;
@@ -122,6 +124,8 @@ void error_message(const char *err_mes, ...)
 #define MCALIBRATION ( (meta_calibration *) current_block)
 #define MCOLORMAP ( (meta_colormap *) current_block)
 #define MRGB ( (meta_rgb *) current_block)
+#define MDOPPLER ( (meta_doppler *) current_block)
+#define MESTIMATE ( (tsx_doppler_t *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -237,6 +241,21 @@ void select_current_block(char *block_name)
       { MTL->colormap = meta_colormap_init(); }
       current_block = MTL->colormap;
       goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "doppler") ) {
+    if (MTL->doppler == NULL)
+      { MTL->doppler = meta_doppler_init(); }
+    current_block = MTL->doppler;
+    goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "estimate") ) {
+    global_meta->doppler->tsx = 
+      realloc( global_meta->doppler->tsx, sizeof(tsx_doppler_params) + 
+	       (doppler_count+1)*sizeof(tsx_doppler_t));
+    current_block = &( global_meta->doppler->tsx->dop[doppler_count++]);
+    goto MATCHED;
   }
 
   /* Got an unknown block name, so report.  */
@@ -1086,6 +1105,52 @@ void fill_structure_field(char *field_name, void *valp)
       { (MLOCATION)->lon_end_far_range = VALP_AS_DOUBLE; return; }
   }
 
+
+  // Fields which go in the doppler block of the metadata file.
+  if ( !strcmp(stack_top->block_name, "doppler") ) {
+    if ( !strcmp(field_name, "type") ) {
+      // Initialize all the type pointers
+      if ( ! strcmp(VALP_AS_CHAR_POINTER, "TSX") ) {
+	tsx_doppler_params *tsx = 
+	  (tsx_doppler_params *) MALLOC(sizeof(tsx_doppler_params));
+	(MDOPPLER)->tsx = tsx;
+	(MDOPPLER)->type = tsx_doppler;
+	return;
+      }
+    }
+    // TSX Doppler
+    if ( !strcmp(field_name, "year") && (MDOPPLER)->type == tsx_doppler)
+      { (MDOPPLER)->tsx->year = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "julDay") && (MDOPPLER)->type == tsx_doppler)
+      { (MDOPPLER)->tsx->julDay = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "second") && (MDOPPLER)->type == tsx_doppler)
+      { (MDOPPLER)->tsx->second = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "doppler_count") && (MDOPPLER)->type == tsx_doppler)
+      { (MDOPPLER)->tsx->doppler_count = VALP_AS_INT; return; }
+  }
+  // TSX Doppler estimates
+  if ( !strcmp(stack_top->block_name, "estimate") ) {
+    int ii;
+    char str[15];
+    if ( !strcmp(field_name, "time") )
+      { (MESTIMATE)->time = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "first_range_time") )
+      { (MESTIMATE)->first_range_time = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "reference_time") )
+      { (MESTIMATE)->reference_time = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "time_increment") )
+      { (MESTIMATE)->time_inc = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "polynomial_degree") )
+      { (MESTIMATE)->poly_degree = VALP_AS_INT;
+	(MESTIMATE)->coefficient = 
+	  (double *) MALLOC(sizeof(double) * ((MESTIMATE)->poly_degree + 1));
+	return; }
+    for (ii=0; ii<=(MESTIMATE)->poly_degree; ii++) {
+      sprintf(str, "coefficient[%d]", ii);
+      if ( !strcmp(field_name, str) )
+	{ (MESTIMATE)->coefficient[ii] = VALP_AS_DOUBLE; return; }
+    }
+  }
 
   /* Fields which go in the calibration block of the metadata file. */
   if ( !strcmp(stack_top->block_name, "calibration") ) {

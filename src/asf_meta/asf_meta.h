@@ -27,6 +27,7 @@
 #include "geolocate.h"    /* For stateVector.  */
 #include "ceos.h"
 #include "calibrate.h"
+#include "doppler.h"
 #include "get_ceos_names.h"
 #include "asf_complex.h"
 #include "libasf_proj.h"
@@ -35,7 +36,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 3.0
+#define META_VERSION 3.1
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -354,7 +355,6 @@ typedef struct {
   state_loc vecs[1];    /* Array sized at run-time.                     */
 } meta_state_vectors;
 
-
 /*********************************************************************
  * Location: Stores the corner coordinates of the image in latitude
  * and longitude. This feature has been requested by users a large
@@ -381,6 +381,10 @@ typedef struct {
   alos_cal_params *alos;
 } meta_calibration;
 
+typedef struct {
+  doppler_type type;
+  tsx_doppler_params *tsx;
+} meta_doppler;
 
 /* DEPRECATED */
 /*Geo_parameters: These are used in geolocating the image.*/
@@ -457,6 +461,7 @@ typedef struct {
   meta_location      *location;        // Can be NULL
   meta_calibration   *calibration;     // Can be NULL
   meta_colormap      *colormap;        // Can be NULL
+  meta_doppler       *doppler;         // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
@@ -512,6 +517,7 @@ meta_calibration *meta_calibration_init(void);
 //meta_stats *meta_stats_init(void);
 meta_location *meta_location_init(void);
 meta_colormap *meta_colormap_init(void);
+meta_doppler *meta_doppler_init(void);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */

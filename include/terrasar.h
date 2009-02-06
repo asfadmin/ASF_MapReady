@@ -36,6 +36,7 @@ typedef struct {
   char imageCoordinateType[25];       // deskewed: RAW, ZERODOPPLER
   double rowSpacing;                  // azimuth_time_per_pixel
   double columnSpacing;               // range_time_per_pixel
+  double rangeTime;                   // slant_range_first_pixel [s]
   double centerFrequency;             // wavelength
   double prf;                         // prf
   double totalProcessedAzimuthBandwidth; // azimuth_processing_bandwidth
@@ -43,6 +44,9 @@ typedef struct {
   double rsf;                         // range_sampling_rate
   char polarisationMode[10];          // polarization: SINGLE, DUAL, TWIN, QUAD
   
+  // Doppler block
+  meta_doppler *doppler;              // Doppler estimates
+
   // state vectors
   char sceneStart[30];
   char sceneStop[30];                 

@@ -1,4 +1,5 @@
 #include "terrasar.h"
+#include "doppler.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
@@ -47,6 +48,9 @@ terrasar_meta *terrasar_meta_init(void)
   terrasar->rsf = MAGIC_UNSET_DOUBLE;
   strcpy(terrasar->polarisationMode, MAGIC_UNSET_STRING);
 
+  // Doppler block
+  terrasar->doppler = NULL;
+
   // state vectors
   strcpy(terrasar->sceneStart, MAGIC_UNSET_STRING);
   strcpy(terrasar->sceneStop, MAGIC_UNSET_STRING);
@@ -65,13 +69,38 @@ terrasar_meta *terrasar_meta_init(void)
   return terrasar;
 }
 
+tsx_doppler_params *tsx_doppler_init(int numDopplerEstimates)
+{
+  tsx_doppler_params *tsx;
+  int ii, dc;
+
+  dc = numDopplerEstimates > 0 ? numDopplerEstimates : 0;
+  tsx = (tsx_doppler_params *) MALLOC(sizeof(tsx_doppler_params) +
+				      dc * sizeof(tsx_doppler_t));
+
+  tsx->doppler_count = dc;
+  tsx->year = MAGIC_UNSET_INT;
+  tsx->julDay = MAGIC_UNSET_INT;
+  tsx->second = MAGIC_UNSET_DOUBLE;
+  for (ii=0; ii<tsx->doppler_count; ii++) {
+    tsx->dop[ii].first_range_time = MAGIC_UNSET_DOUBLE;
+    tsx->dop[ii].reference_time = MAGIC_UNSET_DOUBLE;
+    tsx->dop[ii].time_inc = MAGIC_UNSET_DOUBLE;
+    tsx->dop[ii].poly_degree = MAGIC_UNSET_INT;
+    tsx->dop[ii].coefficient = NULL;
+  }
+
+  return tsx;
+}
+
 terrasar_meta *read_terrasar_meta(const char *dataFile)
 {
-  int ii, numStateVectors;
-  ymd_date imgStartDate, date;
-  hms_time imgStartTime, time;
+  int ii, kk, numStateVectors, numDopplerEstimates;
+  ymd_date imgStartDate, imgDopplerDate, date;
+  hms_time imgStartTime, imgDopplerTime, time;
   julian_date julianDate;
   char timeStr[30], str[50];
+  tsx_doppler_params *tsx;
   
   terrasar_meta *terrasar = terrasar_meta_init();
 
@@ -145,7 +174,8 @@ terrasar_meta *read_terrasar_meta(const char *dataFile)
      "level1Product.productInfo.productVariantInfo.projection"));
   if (strcmp_case(terrasar->projection, "GROUNDRANGE") == 0)
     terrasar->rangeResolution = xml_get_double_value(doc, 
-    "level1Product.productInfo.imageDataInfo.imageRaster.groundRangeResolution");
+    "level1Product.productInfo.imageDataInfo.imageRaster."
+    "groundRangeResolution");
   else if (strcmp_case(terrasar->projection, "SLANTRANGE") == 0)
     terrasar->rangeResolution = xml_get_double_value(doc, 
        "level1Product.productSpecific.complexImageInfo.slantRangeResolution");
@@ -168,23 +198,66 @@ terrasar_meta *read_terrasar_meta(const char *dataFile)
      "level1Product.productInfo.imageDataInfo.imageRaster.rowSpacing");
   terrasar->columnSpacing =  xml_get_double_value(doc, 
      "level1Product.productInfo.imageDataInfo.imageRaster.columnSpacing");
-  // slant range ???
+  terrasar->rangeTime = xml_get_double_value(doc, 
+     "level1Product.productInfo.sceneInfo.rangeTime.firstPixel");
   terrasar->centerFrequency = xml_get_double_value(doc, 
      "level1Product.instrument.radarParameters.centerFrequency");
   terrasar->prf = xml_get_double_value(doc, 
      "level1Product.instrument.settings.settingRecord.PRF");
-  // earth radius ???
-  // satellite height ???
-  // Doppler values ???
   terrasar->totalProcessedAzimuthBandwidth = xml_get_double_value(doc, 
-     "level1Product.processing.processingParameter.totalProcessedAzimuthBandwidth");
+     "level1Product.processing.processingParameter."
+     "totalProcessedAzimuthBandwidth");
   // chirp rate ???
   terrasar->pulseLength = xml_get_double_value(doc, 
-     "level1Product.processing.processingParameter.rangeCompression.chirps.referenceChirp.pulseLength");
+     "level1Product.processing.processingParameter.rangeCompression.chirps."
+     "referenceChirp.pulseLength");
   terrasar->rsf = xml_get_double_value(doc, 
      "level1Product.instrument.settings.RSF");
   // pitch, roll, yaw ???
-  // incidence angle ???
+
+  // read Doppler values
+  terrasar->doppler = meta_doppler_init();
+  terrasar->doppler->type = tsx_doppler;
+  numDopplerEstimates = xml_get_int_value(doc, 
+     "level1Product.processing.doppler.dopplerCentroid[0]."
+     "numberOfDopplerRecords");
+  tsx = tsx_doppler_init(numDopplerEstimates);
+  terrasar->doppler->tsx = tsx;
+  strcpy(str, xml_get_string_value(doc, 
+     "level1Product.processing.doppler.dopplerCentroid[0].dopplerEstimate[0]."
+     "timeUTC"));
+  date_terrasar2date(str, &imgDopplerDate, &imgDopplerTime);
+  tsx->year = imgDopplerDate.year;
+  date_ymd2jd(&imgDopplerDate, &julianDate);
+  tsx->julDay = julianDate.jd;
+  tsx->second = date_hms2sec(&imgDopplerTime);
+  for (ii=0; ii<numDopplerEstimates; ii++) {
+    strcpy(timeStr, xml_get_string_value(doc, 
+       "level1Product.processing.doppler.dopplerCentroid[0]."
+       "dopplerEstimate[%d].timeUTC", ii));
+    date_terrasar2date(timeStr, &date, &time);
+    tsx->dop[ii].time =
+      time_difference(&date, &time, &imgDopplerDate, &imgDopplerTime);
+    tsx->dop[ii].first_range_time = xml_get_double_value(doc, 
+       "level1Product.processing.doppler.dopplerCentroid[0]."
+       "dopplerEstimate[%d].combinedDoppler.validityRangeMin", ii);
+    tsx->dop[ii].reference_time = xml_get_double_value(doc, 
+       "level1Product.processing.doppler.dopplerCentroid[0]."
+       "dopplerEstimate[%d].combinedDoppler.referencePoint", ii);
+    tsx->dop[ii].time_inc = xml_get_double_value(doc, 
+       "level1Product.productInfo.imageDataInfo.imageRaster.rowSpacing");
+    tsx->dop[ii].poly_degree = xml_get_double_value(doc, 
+       "level1Product.processing.doppler.dopplerCentroid[0]."
+       "dopplerEstimate[%d].combinedDoppler.polynomialDegree", ii);
+    tsx->dop[ii].coefficient = 
+      (double *) MALLOC(sizeof(double) * (tsx->dop[ii].poly_degree+1));
+    for (kk=0; kk<=tsx->dop[ii].poly_degree; kk++)
+      tsx->dop[ii].coefficient[kk] = xml_get_double_value(doc, 
+	 "level1Product.processing.doppler.dopplerCentroid[0]."
+         "dopplerEstimate[%d].combinedDoppler.coefficient[%d]", ii, kk);
+  }  
+
+  // read state vectors
   strcpy(terrasar->sceneStart, xml_get_string_value(doc, 
      "level1Product.productInfo.sceneInfo.start.timeUTC"));
   date_terrasar2date(terrasar->sceneStart, &imgStartDate, &imgStartTime);
@@ -222,6 +295,8 @@ terrasar_meta *read_terrasar_meta(const char *dataFile)
     terrasar->state_vectors->vecs[ii].vec.vel.z = 
       xml_get_double_value(doc, str);
   }
+
+  // read location information
   terrasar->sceneCornerCoord1Lat = xml_get_double_value(doc, 
      "level1Product.productInfo.sceneInfo.sceneCornerCoord[0].lat");
   terrasar->sceneCornerCoord1Lon = xml_get_double_value(doc, 
