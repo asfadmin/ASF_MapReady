@@ -1138,8 +1138,6 @@ void fill_structure_field(char *field_name, void *valp)
       { (MESTIMATE)->first_range_time = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "reference_time") )
       { (MESTIMATE)->reference_time = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "time_increment") )
-      { (MESTIMATE)->time_inc = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "polynomial_degree") )
       { (MESTIMATE)->poly_degree = VALP_AS_INT;
 	(MESTIMATE)->coefficient = 

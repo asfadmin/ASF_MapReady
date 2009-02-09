@@ -372,9 +372,6 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	  meta_put_double(fp,"reference_time:",
 			  meta->doppler->tsx->dop[ii].reference_time,
 			  "Reference point time of polynomial");
-	  meta_put_double(fp,"time_increment:",
-			  meta->doppler->tsx->dop[ii].time_inc,
-			  "Time increment in range");
 	  meta_put_int(fp,"polynomial_degree:",
 		       meta->doppler->tsx->dop[ii].poly_degree,
 		       "Degree of polynomial");

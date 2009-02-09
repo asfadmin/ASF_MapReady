@@ -12,7 +12,6 @@ typedef struct {
   double time;              // Time relative to first Doppler estimate time
   double first_range_time;  // Time first range pixel
   double reference_time;    // Reference point time of polynomial
-  double time_inc;          // Time increment in range
   int poly_degree;          // Degree of polynomial
   double *coefficient;      // Polynomial coefficient
 } tsx_doppler_t;

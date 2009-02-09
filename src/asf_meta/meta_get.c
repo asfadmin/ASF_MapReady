@@ -19,6 +19,7 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
+#include "dateUtil.h"
 
 #ifndef SQR
 # define SQR(x) ((x)*(x))
@@ -125,14 +126,63 @@ double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
   assert (meta->sar && (meta->sar->image_type == 'S'
             || meta->sar->image_type == 'G'));
 
-    yLine += meta->general->start_line;
-    xSample += meta->general->start_sample;
-
+  yLine += meta->general->start_line;
+  xSample += meta->general->start_sample;
+  
+  if (meta->doppler && meta->doppler->tsx) {
+    int ii;
+    julian_date imgStartDate, imgDopplerDate;
+    hms_time imgStartTime, imgDopplerTime;
+    double time, refTime, *coeff;
+    imgStartDate.year = meta->state_vectors->year;
+    imgStartDate.jd = meta->state_vectors->julDay;
+    date_sec2hms(meta->state_vectors->second, &imgStartTime);
+    imgDopplerDate.year = meta->doppler->tsx->year;
+    imgDopplerDate.jd = meta->doppler->tsx->julDay;
+    date_sec2hms(meta->doppler->tsx->second, &imgDopplerTime);
+    double imgAzimuthTime = date2sec(&imgStartDate, &imgStartTime) +
+      yLine * meta->sar->range_time_per_pixel;
+    double dopAzimuthStart = date2sec(&imgDopplerDate, &imgDopplerTime);
+    for (ii=0; ii<meta->doppler->tsx->doppler_count; ii++) {
+      time = dopAzimuthStart + meta->doppler->tsx->dop[ii].time;
+      if (time > imgAzimuthTime)
+	break;
+    }
+    int max = ii;
+    int min = ii - 1;
+    double dopAzimuthMin = dopAzimuthStart + meta->doppler->tsx->dop[min].time;
+    double dopRangeTimeMin = meta->doppler->tsx->dop[min].first_range_time + 
+      xSample * meta->sar->azimuth_time_per_pixel;
+    refTime = meta->doppler->tsx->dop[min].reference_time;
+    coeff = (double *) MALLOC(sizeof(double)*
+			      meta->doppler->tsx->dop[min].poly_degree);
+    double dopplerMin = 0.0;
+    for (ii=0; ii<=meta->doppler->tsx->dop[min].poly_degree; ii++) {
+      coeff[ii] = meta->doppler->tsx->dop[min].coefficient[ii];
+      dopplerMin += coeff[ii] * pow(dopRangeTimeMin - refTime, ii);
+    }
+    FREE(coeff);
+    double dopAzimuthMax = dopAzimuthStart + meta->doppler->tsx->dop[max].time;
+    double dopRangeTimeMax = meta->doppler->tsx->dop[max].first_range_time + 
+      xSample * meta->sar->azimuth_time_per_pixel;
+    refTime = meta->doppler->tsx->dop[min].reference_time;
+    coeff = (double *) MALLOC(sizeof(double)*
+			      meta->doppler->tsx->dop[max].poly_degree);
+    double dopplerMax = 0.0;
+    for (ii=0; ii<=meta->doppler->tsx->dop[max].poly_degree; ii++) {
+      coeff[ii] = meta->doppler->tsx->dop[max].coefficient[ii];
+      dopplerMax += coeff[ii] * pow(dopRangeTimeMin - refTime, ii);
+    }
+    FREE(coeff);
+    return dopplerMin + (dopplerMax - dopplerMin) / 
+      (dopAzimuthMax - dopAzimuthMin) * (imgAzimuthTime - dopAzimuthMin);
+  }
+  else
     return meta->sar->range_doppler_coefficients[0]+
-           meta->sar->range_doppler_coefficients[1]*xSample+
-           meta->sar->range_doppler_coefficients[2]*xSample*xSample+
-           meta->sar->azimuth_doppler_coefficients[1]*yLine+
-           meta->sar->azimuth_doppler_coefficients[2]*yLine*yLine;
+      meta->sar->range_doppler_coefficients[1]*xSample+
+      meta->sar->range_doppler_coefficients[2]*xSample*xSample+
+      meta->sar->azimuth_doppler_coefficients[1]*yLine+
+      meta->sar->azimuth_doppler_coefficients[2]*yLine*yLine;
 }
 
 /*State Vector calls */

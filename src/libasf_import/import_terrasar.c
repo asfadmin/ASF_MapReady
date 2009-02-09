@@ -85,7 +85,6 @@ tsx_doppler_params *tsx_doppler_init(int numDopplerEstimates)
   for (ii=0; ii<tsx->doppler_count; ii++) {
     tsx->dop[ii].first_range_time = MAGIC_UNSET_DOUBLE;
     tsx->dop[ii].reference_time = MAGIC_UNSET_DOUBLE;
-    tsx->dop[ii].time_inc = MAGIC_UNSET_DOUBLE;
     tsx->dop[ii].poly_degree = MAGIC_UNSET_INT;
     tsx->dop[ii].coefficient = NULL;
   }
@@ -244,8 +243,6 @@ terrasar_meta *read_terrasar_meta(const char *dataFile)
     tsx->dop[ii].reference_time = xml_get_double_value(doc, 
        "level1Product.processing.doppler.dopplerCentroid[0]."
        "dopplerEstimate[%d].combinedDoppler.referencePoint", ii);
-    tsx->dop[ii].time_inc = xml_get_double_value(doc, 
-       "level1Product.productInfo.imageDataInfo.imageRaster.rowSpacing");
     tsx->dop[ii].poly_degree = xml_get_double_value(doc, 
        "level1Product.processing.doppler.dopplerCentroid[0]."
        "dopplerEstimate[%d].combinedDoppler.polynomialDegree", ii);
