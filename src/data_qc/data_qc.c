@@ -208,6 +208,7 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
   char *workreport=NULL, reason[1024]="", tmp[255];
   int ii, nBands=0, trailer, total, estimated_size, actual_size, alos=FALSE;
   int level, beam, spec=TRUE, status=TRUE, no_leader=FALSE;
+  int foundWorkreport=FALSE;
 
   // Verify that the essential files exist. Require_ceos_pair takes care 
   // of the essentials: data file, leader/trailer file
@@ -456,13 +457,23 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
 	}
 	
 	// Check for workreport file
-	fp = fopen("workreport", "r");
+	sprintf(test_name, "%s.txt", basename);
+	fp = fopen(test_name, "r");
 	if (fp){
 	  fclose(fp);
-	  workreport = (char *) MALLOC(sizeof(char)*15);
-	  strcpy(workreport, "workreport");
+	  workreport = (char *) MALLOC(sizeof(char)*1024);
+	  sprintf(workreport, "%s", test_name);
+	  foundWorkreport = TRUE;
 	}
-	else {
+	strcpy(test_name, "workreport");
+	fp = fopen(test_name, "r");
+	if (fp){
+	  fclose(fp);
+	  workreport = (char *) MALLOC(sizeof(char)*1024);
+	  strcpy(workreport, "workreport");
+	  foundWorkreport = TRUE;
+	}	
+	if (!foundWorkreport) {
 	  strcat(reason, "Missing workreport file!\n");
 	  status = FALSE;
 	}
