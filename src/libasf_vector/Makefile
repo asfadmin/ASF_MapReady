@@ -26,6 +26,7 @@ OBJS = \
 	shape.o \
 	generic_csv.o \
 	ursa.o \
+	high_altitude_photography.o \
 	custom.o \
 	utils.o
 

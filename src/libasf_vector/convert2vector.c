@@ -26,6 +26,8 @@ format_type_t str2format(const char *str)
     format = SHAPEFILE;
   else if (strcmp_case(str, "URSA") == 0)
     format = URSA;
+  else if (strcmp_case(str, "HAP") == 0)
+    format = HAP;
   else
     format = CUSTOM_FORMAT;
 
@@ -102,6 +104,10 @@ int convert2vector(char *inFile, const char *inFormat_str,
     ret = ursa2kml(inFile, outFile, listFlag);
   else if (inFormat == URSA && outFormat == SHAPEFILE)
     ret = ursa2shape(inFile, outFile, listFlag);
+  else if (inFormat == HAP && outFormat == KMLFILE)
+    ret = hap2kml(inFile, outFile, listFlag);
+  else if (inFormat == HAP && outFormat == SHAPEFILE)
+    ret = hap2shape(inFile, outFile, listFlag);
   // custom conversion defined by parameter set in 'header.lst'
   else if (inFormat == CUSTOM_FORMAT && outFormat == SHAPEFILE)
     ret = custom2shape(inFile, inFormat_str, outFile, listFlag);

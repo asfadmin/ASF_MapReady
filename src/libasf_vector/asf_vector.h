@@ -29,6 +29,7 @@ typedef enum {
   URSA,
   GEOTIFF_META,
   AUIG,
+  HAP,
   CSV,
   CUSTOM_FORMAT
 } format_type_t;
