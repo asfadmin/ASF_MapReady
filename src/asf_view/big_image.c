@@ -175,6 +175,12 @@ static int iabs(int i)
 void get_color(int color, unsigned char *r, unsigned char *g,
                unsigned char *b)
 {
+    int biggest = 36;
+    if (color>biggest) {
+      while (color>biggest)
+        color -= biggest-11;
+    }
+
     switch (color) {
       case RED:
         *r = 255;

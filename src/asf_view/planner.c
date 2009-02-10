@@ -1089,10 +1089,13 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         free(err);
       }
       else {
+        strcpy(errstr, "");
+
         char msg[256];
         sprintf(msg, "Found %d match%s.\n", n, n==1?"":"es");
         asfPrintStatus(msg);
         put_string_to_label("plan_error_label", msg);
+        strcpy(errstr, msg);
 
         for (i=0; i<pc->num; ++i) {
           asfPrintStatus("#%02d: %s (%.1f%%)\n", i+1,
@@ -1261,9 +1264,11 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
                              COL_ANGLE, pointing_angle_info,
                              COL_INDEX, index_info,
                              -1);
-              
+
           if (i>=MAX_POLYS-2) {
-            printf("Too many polygons: %d\n", pc->num);
+            sprintf(errstr, "Too many matches: %d (max is %d)\n",
+                    pc->num, MAX_POLYS-2);
+            printf("%s", errstr);
             break;
           }
         }
@@ -1274,6 +1279,9 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         GtkWidget *nb = get_widget_checked("planner_notebook");
         gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), 1);
         clear_nb_callback();
+
+        if (strlen(errstr)>0)
+          put_string_to_label("plan_result_error_label", errstr);
       }
 
       which_poly=0;
@@ -1703,4 +1711,28 @@ SIGNAL_CALLBACK void on_export_jpeg_button_clicked(GtkWidget *w)
   free(out_name);
   free(output_dir);
   free(output_file);
+}
+
+static void set_all_checkboxes(int setting)
+{
+  if (in_planning_mode) {
+    GtkTreeIter iter;
+    gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
+    while (valid)
+    {
+      gtk_list_store_set(GTK_LIST_STORE(liststore), &iter,
+                         COL_SELECTED, setting, -1);
+      valid = gtk_tree_model_iter_next(liststore, &iter);
+    }
+  }
+}
+
+SIGNAL_CALLBACK void on_select_all_checkbutton_toggled(GtkWidget *w)
+{
+  set_all_checkboxes(get_checked("select_all_checkbutton"));
+  // It actually looks weird to have the text of the checkbox change...
+  //gtk_button_set_label(
+  //    GTK_BUTTON(get_widget_checked("select_all_checkbutton")),
+  //    get_checked("select_all_checkbutton") ? "De-select All" : "Select All")
+  fill_big(curr);
 }

@@ -278,6 +278,11 @@ void clear_nb_callback(void);
 /* shape.c */
 void free_shapes();
 
+/* plugins.c */
+void load_external_commands();
+const char *get_external_command_line();
+void external_settings_changed();
+
 #ifdef HAVE_DELTA_CR
 void add_delta_shapes(meta_parameters *meta);
 #endif
@@ -314,7 +319,7 @@ extern ImageInfo image_info[2];
 extern ImageInfo *curr;
 
 // these globals all relate to the current viewing settings
-#define MAX_POLYS 25
+#define MAX_POLYS 50
 extern UserPolygon g_polys[MAX_POLYS];
 extern UserPolygon *g_poly;
 extern int which_poly;
@@ -332,5 +337,7 @@ extern int g_saved_line_count;
 // keeps track of whether or not the arrow keys should affect the
 // crosshair or the ctrl-crosshair
 extern int last_was_crosshair;
+
+extern int is_asf_internal;
 
 #endif
