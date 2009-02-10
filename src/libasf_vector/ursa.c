@@ -80,7 +80,7 @@ static void add_to_kml(FILE *fp, ursa_type_t *ursa, dbf_header_t *dbf,
       fprintf(fp, "%s<strong>Beam mode</strong>: %s <br>%s",
           begin, ursa->beam_mode, end);
     else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0)
-      fprintf(fp, "%s<strong>Off Nadir Angle</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Off Nadir Angle</strong>: %s <br>%s",
           begin, lf(ursa->off_nadir_angle), end);
     else if (strcmp(dbf[ii].header, "Start_Time") == 0)
       fprintf(fp, "%s<strong>Start Time</strong>: %s <br>%s",
