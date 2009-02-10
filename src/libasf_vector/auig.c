@@ -215,134 +215,6 @@ static void strip_end_whitesp(char *s)
         *p-- = '\0';
 }
 
-static void msg(const char *format, ...)
-{
-    char buf[1024];
-    va_list ap;
-    va_start(ap, format);
-    vsprintf(buf, format, ap);
-    va_end(ap);
-
-    // in the future, we'll be putting this in a textview or something!!
-    //GtkWidget *tv = get_widget_checked("messages_textview");
-    //GtkTextBuffer *tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(tv));
-
-    //GtkTextIter end;
-    //gtk_text_buffer_get_end_iter(tb, &end);
-    //gtk_text_buffer_insert(tb, &end, buf, -1);
-
-    printf(buf);
-}
-
-static char *my_parse_string(char *p, char *s, int max_len)
-{
-    if (!p || *p == '\0') {
-        strcpy(s, "");
-        msg("  --> Unexpected end of string\n");
-        return NULL;
-    }
-
-    // scan ahead to the comma, or end of string
-    char *q = strchr(p, ',');
-    if (q) {
-      *q = '\0'; // temporarily...
-      strncpy_safe(s, p, max_len);
-      *q = ',';
-
-      // point to beginning of next item
-      return q+1;
-    }
-    else {
-      strncpy_safe(s, p, max_len);
-
-      // no more strings
-      return NULL;
-    }
-}
-
-static char *get_str(char *line, int column_num)
-{
-    int i;
-    char *p = line;
-    static char ret[256];
-
-    for (i=0; i<=column_num; ++i)
-      p = my_parse_string(p,ret,256);
-
-    return ret;
-}
-
-static int get_int(char *line, int column_num)
-{
-    if (column_num >= 0) {
-        char *s = get_str(line, column_num);
-        if (s)
-          return atoi(s);
-        else
-          return 0;
-    }
-    else {
-        return 0;
-    }
-}
-
-static double get_double(char *line, int column_num)
-{
-    if (column_num >= 0) {
-        char *s = get_str(line, column_num);
-        if (s)
-          return atof(s);
-        else
-          return 0.0;
-    } else
-        return 0.0;
-}
-
-static double get_req_double(char *line, int column_num, int *ok)
-{
-    if (column_num >= 0) {
-        char *str = get_str(line, column_num);
-        if (str && strlen(str)>0) {
-            *ok=TRUE;
-            return atof(str);
-        }
-        else {
-            *ok=FALSE;
-            return 0.0;
-        }
-    }
-    else {
-        *ok=FALSE;
-        return 0.0;
-    }
-}
-
-//static char get_char(char *line, int column_num)
-//{
-//    char *str = get_str(line, column_num);
-//    if (str && strlen(str)>0)
-//        return str[0];
-//    else
-//        return '?';
-//}
-
-static int find_col(char *line, char *column_header)
-{
-    char *p = line;
-    char val[256];
-    int col=0;
-
-    while (p) {
-        p=my_parse_string(p,val,256);
-        if (strncmp_case(val,column_header,strlen(column_header))==0)
-          return col;
-        ++col;
-    }
-
-    // column heading was not found
-    return -1;
-}
-
 // output of double values is left aligned and leaves plenty white space
 // as times - get rid of it
 char *lf(double value)
@@ -357,28 +229,6 @@ char *lf(double value)
         strcpy(value_str, "");
     }
     return value_str;
-}
-
-// kludge function to handle duplicate SCN_RULAT columns
-// in some AUIG csv files
-static int find_2nd_col(char *line, char *column_header)
-{
-    char *p = line;
-    char val[256];
-    int col=0;
-    int n_found= 0;
-   while (p) {
-        p=my_parse_string(p,val,256);
-        if (strcmp_case(val,column_header)==0) {
-          ++n_found;
-          if (n_found==2)
-            return col;
-        }
-        ++col;
-    }
-
-    // column heading was not found
-    return -1;
 }
 
 static void add_to_kml(FILE *fp, auig_type_t *auig, dbf_header_t *dbf,
@@ -732,9 +582,9 @@ static void add_to_kml(FILE *fp, auig_type_t *auig, dbf_header_t *dbf,
 static int read_auig_line(char *header, int n,char *line, auig_type_t *auig)
 {
   int ii, ok;
-  char *test = (char *) MALLOC(sizeof(char)*255);
+  char *test = (char *) MALLOC(sizeof(char)*256);
   for (ii=0; ii<n; ii++) {
-    test = get_column(header, ii);
+    strcpy(test, get_str(header, ii));
     if (strcmp(test, "SENSOR") == 0)
       strcpy(auig->sensor, get_str(line, ii));
     else if (strcmp(test, "SCNID") == 0)
@@ -792,7 +642,7 @@ static int read_auig_line(char *header, int n,char *line, auig_type_t *auig)
     else if (strcmp(test, "SCN_LULON") == 0)
       auig->scn_lulon = get_req_double(line, ii, &ok);
     else if (strcmp(test, "SCN_RULAT") == 0) {
-      int kk = find_2nd_col(header, "SCN_RULAT");
+      int kk = find_2nd_str(header, "SCN_RULAT");
       if (kk != ii)
 	auig->scn_rulat = get_req_double(line, ii, &ok);
       else
@@ -956,20 +806,20 @@ static int check_auig_location(FILE *ifp, char **header_line, int *n)
   read_header_config("AUIG", &dbf, &nCols);
   
   // ensure we have the columns we need
-  int scnid_col = find_col(header, "SCNID");
-  int lulat_col = find_col(header, "SCN_LULAT");
-  int lulon_col = find_col(header, "SCN_LULON");
-  int rulat_col = find_col(header, "SCN_RULAT");
-  int rulon_col = find_col(header, "SCN_RULON");
-  int ldlat_col = find_col(header, "SCN_LDLAT");
-  int ldlon_col = find_col(header, "SCN_LDLON");
-  int rdlat_col = find_col(header, "SCN_RDLAT");
-  int rdlon_col = find_col(header, "SCN_RDLON");
+  int scnid_col = find_str(header, "SCNID");
+  int lulat_col = find_str(header, "SCN_LULAT");
+  int lulon_col = find_str(header, "SCN_LULON");
+  int rulat_col = find_str(header, "SCN_RULAT");
+  int rulon_col = find_str(header, "SCN_RULON");
+  int ldlat_col = find_str(header, "SCN_LDLAT");
+  int ldlon_col = find_str(header, "SCN_LDLON");
+  int rdlat_col = find_str(header, "SCN_RDLAT");
+  int rdlon_col = find_str(header, "SCN_RDLON");
   
   // kludge to handle goofy AUIG files (duplicate SCN_RULAT cols,
   // the second one should be SCN_RDLAT)
   if (rdlat_col < 0) {
-    rdlat_col = find_2nd_col(header, "SCN_RULAT");
+    rdlat_col = find_2nd_str(header, "SCN_RULAT");
     if (rdlat_col == rulat_col)
       rdlat_col = -1;
     else
@@ -978,7 +828,7 @@ static int check_auig_location(FILE *ifp, char **header_line, int *n)
   
   // Check whether all visible columns are actually available in the file
   for (ii=0; ii<nCols; ii++) {
-    if (find_col(header, dbf[ii].header) < 0 &&
+    if (find_str(header, dbf[ii].header) < 0 &&
 	strcmp(dbf[ii].header, "SCN_RDLAT") != 0) // another kludge
       dbf[ii].visible = FALSE;
   }
@@ -1056,11 +906,6 @@ int auig2kml(char *in_file, char *out_file, int listFlag)
   
   while (fgets(line, 1022, ifp) != NULL) {
     strip_end_whitesp(line);
-    
-    // ensure all lines end with a comma, that way the final column
-    // does not need special treatment
-    line[strlen(line)+1] = '\0';
-    line[strlen(line)] = ',';
     
     // now get the individual column values
     auig_init(&auig);
@@ -1213,7 +1058,7 @@ void shape_auig_init(char *inFile, char *header)
         asfPrintError("Could not add SCN_LULON field to database file\n");
     }
     else if (strcmp(dbf[ii].header, "SCN_RULAT") == 0 && 
-	     find_2nd_col(header, "SCN_RULAT") != ii && dbf[ii].visible) {
+	     find_2nd_str(header, "SCN_RULAT") != ii && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RULAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RULAT field to database file\n");
     }
@@ -1230,7 +1075,7 @@ void shape_auig_init(char *inFile, char *header)
         asfPrintError("Could not add SCN_LDLON field to database file\n");
     }
     else if (((strcmp(dbf[ii].header, "SCN_RULAT") == 0 && 
-	       find_2nd_col(header, "SCN_RULAT") == ii) || 
+	       find_2nd_str(header, "SCN_RULAT") == ii) || 
 	      strcmp(dbf[ii].header, "SCN_RDLAT") == 0) && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RDLAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RDLAT field to database file\n");
@@ -1968,12 +1813,6 @@ int auig2shape(char *inFile, char *outFile, int listFlag)
 
   while (fgets(line, 1022, ifp) != NULL) {
     strip_end_whitesp(line);
-
-    // ensure all lines end with a comma, that way the final column
-    // does not need special treatment
-    int n = strlen(line);
-    line[n+1] = '\0';
-    line[n] = ',';
 
     // now get the individual column values
     auig_init(&auig);

@@ -215,7 +215,7 @@ main (int argc, char *argv[])
 
   if (db_flag && !sigma_flag && !beta_flag && !gamma_flag) {
     asfPrintWarning("-db option ignored.  No calibration radiometry "
-                    "(-sigma, -beta, or -gamma)was specified.\n");
+                    "(-sigma, -beta, or -gamma) was specified.\n");
     db_flag = FALSE;
   }
 

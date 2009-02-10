@@ -410,6 +410,175 @@ void free_char_array(char ***parr, int nelem)
   *parr = NULL;
 }
 
+const char *get_str(char *line, int column_number)
+{
+  static char ret[256];
+
+  if (column_number >= 0) {
+    int i;
+    char *p = line;
+
+    for (i=0; i<=column_number; ++i)
+      p = quoted_string_parse(p,ret,256,-1,',');
+  }
+  else {
+    strcpy(ret, "");
+  }
+  
+  return ret;
+}
+
+int find_nth_str(char *line, char *str, int occurence)
+{
+  char *p = line;
+  char val[256];
+  int col=0;
+  int len=strlen(str);
+  int nfound=0;
+
+  while (p) {
+    p=quoted_string_parse(p,val,256,-1,',');
+    if (strncmp_case(val,str,len)==0) {
+      ++nfound;
+      if (nfound==occurence) {
+        return col;
+      }
+      ++col;
+    }
+  }
+
+  // column heading was not found
+  return -1;
+}
+
+int find_str(char *line, char *str)
+{
+  return find_nth_str(line, str, 1);
+}
+
+int find_2nd_str(char *line, char *str)
+{
+  return find_nth_str(line, str, 2);
+}
+
+int get_int(char *line, int column_number)
+{
+  if (column_number >= 0) {
+    const char *s = get_str(line, column_number);
+    return s ? atoi(s) : 0;
+  }
+  else {
+    return 0;
+  }
+}
+
+int get_long(char *line, int column_number)
+{
+  if (column_number >= 0) {
+    const char *s = get_str(line, column_number);
+    return s ? atol(s) : 0;
+  }
+  else {
+    return 0;
+  }
+}
+
+double get_double(char *line, int column_number)
+{
+  if (column_number >= 0) {
+    const char *s = get_str(line, column_number);
+    return s ? atof(s) : 0.0;
+  }
+  else {
+    return 0.0;
+  }
+}
+
+char get_char(char *line, int column_num)
+{
+    const char *str = get_str(line, column_num);
+    if (str && strlen(str)>0)
+        return str[0];
+    else
+        return '?';
+}
+
+int get_req_int(char *line, int column_number, int *ok)
+{
+  if (column_number >= 0) {
+    const char *str = get_str(line, column_number);
+    if (str && strlen(str)>0) {
+      *ok=TRUE;
+      return atoi(str);
+    }
+    else {
+      *ok=FALSE;
+      return 0;
+    }
+  }
+  else {
+    *ok=FALSE;
+    return 0;
+  }
+}
+
+long get_req_long(char *line, int column_number, int *ok)
+{
+  if (column_number >= 0) {
+    const char *str = get_str(line, column_number);
+    if (str && strlen(str)>0) {
+      *ok=TRUE;
+      return atol(str);
+    }
+    else {
+      *ok=FALSE;
+      return 0;
+    }
+  }
+  else {
+    *ok=FALSE;
+    return 0;
+  }
+}
+
+double get_req_double(char *line, int column_number, int *ok)
+{
+  if (column_number >= 0) {
+    const char *str = get_str(line, column_number);
+    if (str && strlen(str)>0) {
+      *ok=TRUE;
+      return atof(str);
+    }
+    else {
+      *ok=FALSE;
+      return 0.0;
+    }
+  }
+  else {
+    *ok=FALSE;
+    return 0.0;
+  }
+}
+
+char get_req_char(char *line, int column_number, int *ok)
+{
+  if (column_number >= 0) {
+    const char *str = get_str(line, column_number);
+    if (str && strlen(str)>0) {
+      *ok=TRUE;
+      return str[0];
+    }
+    else {
+      *ok=FALSE;
+      return '?';
+    }
+  }
+  else {
+    *ok=FALSE;
+    return '?';
+  }
+}
+
 // splits a string into two pieces, stuff before the separater character
 // and the stuff after it.  The separator character is not included in
 // either string

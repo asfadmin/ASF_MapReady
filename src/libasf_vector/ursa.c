@@ -40,127 +40,6 @@ static void strip_end_whitesp(char *s)
         *p-- = '\0';
 }
 
-static void msg(const char *format, ...)
-{
-    char buf[1024];
-    va_list ap;
-    va_start(ap, format);
-    vsprintf(buf, format, ap);
-    va_end(ap);
-
-    // in the future, we'll be putting this in a textview or something!!
-    //GtkWidget *tv = get_widget_checked("messages_textview");
-    //GtkTextBuffer *tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(tv));
-
-    //GtkTextIter end;
-    //gtk_text_buffer_get_end_iter(tb, &end);
-    //gtk_text_buffer_insert(tb, &end, buf, -1);
-
-    printf(buf);
-}
-
-static char *my_parse_string(char *p, char *s, int max_len)
-{
-    if (!p || *p == '\0') {
-        strcpy(s, "");
-        msg("  --> Unexpected end of string\n");
-        return NULL;
-    }
-
-    // scan ahead to the comma, or end of string
-    char *q = strchr(p, ',');
-    if (q) {
-      *q = '\0'; // temporarily...
-      strncpy_safe(s, p, max_len);
-      *q = ',';
-
-      // point to beginning of next item
-      return q+1;
-    }
-    else {
-      strncpy_safe(s, p, max_len);
-
-      // no more strings
-      return NULL;
-    }
-}
-
-static char *get_str(char *line, int column_num)
-{
-    int i;
-    char *p = line;
-    char *ret = (char *) MALLOC(sizeof(char)*255);;
-
-    for (i=0; i<=column_num; ++i)
-      p = my_parse_string(p,ret,256);
-
-    ret[strlen(ret)-1] = '\0';
-    ret++;
-    return ret;
-}
-
-static int get_int(char *line, int column_num)
-{
-    if (column_num >= 0) {
-        char *s = get_str(line, column_num);
-        if (s)
-          return atoi(s);
-        else
-          return 0;
-    }
-    else {
-        return 0;
-    }
-}
-
-static double get_double(char *line, int column_num)
-{
-    if (column_num >= 0) {
-        char *s = get_str(line, column_num);
-        if (s)
-          return atof(s);
-        else
-          return 0.0;
-    } else
-        return 0.0;
-}
-
-static double get_req_double(char *line, int column_num, int *ok)
-{
-    if (column_num >= 0) {
-        char *str = get_str(line, column_num);
-        if (str && strlen(str)>0) {
-            *ok=TRUE;
-            return atof(str);
-        }
-        else {
-            *ok=FALSE;
-            return 0.0;
-        }
-    }
-    else {
-        *ok=FALSE;
-        return 0.0;
-    }
-}
-
-static int find_col(char *line, char *column_header)
-{
-    char *p = line;
-    char val[256];
-    int col=0;
-
-    while (p) {
-        p=my_parse_string(p,val,256);
-        if (strncmp_case(val+1,column_header,strlen(column_header))==0)
-          return col;
-        ++col;
-    }
-
-    // column heading was not found
-    return -1;
-}
-
 static void add_to_kml(FILE *fp, ursa_type_t *ursa, dbf_header_t *dbf,
                int nCols)
 {
@@ -362,19 +241,19 @@ static int check_ursa_location(FILE *ifp, char **header_line, int *n)
   read_header_config("URSA", &dbf, &nCols);
 
   // ensure we have the columns we need
-  int granule_col = find_col(header, "Granule Name");
-  int near_start_lat_col = find_col(header, "Near Start Lat");
-  int near_start_lon_col = find_col(header, "Near Start Lon");
-  int far_start_lat_col = find_col(header, "Far Start Lat");
-  int far_start_lon_col = find_col(header, "Far Start Lon");
-  int near_end_lat_col = find_col(header, "Near End Lat");
-  int near_end_lon_col = find_col(header, "Near End Lon");
-  int far_end_lat_col = find_col(header, "Far End Lat");
-  int far_end_lon_col = find_col(header, "Far End Lon");
+  int granule_col = find_str(header, "Granule Name");
+  int near_start_lat_col = find_str(header, "Near Start Lat");
+  int near_start_lon_col = find_str(header, "Near Start Lon");
+  int far_start_lat_col = find_str(header, "Far Start Lat");
+  int far_start_lon_col = find_str(header, "Far Start Lon");
+  int near_end_lat_col = find_str(header, "Near End Lat");
+  int near_end_lon_col = find_str(header, "Near End Lon");
+  int far_end_lat_col = find_str(header, "Far End Lat");
+  int far_end_lon_col = find_str(header, "Far End Lon");
 
   // Check whether all visible columns are actually available in the file
   for (ii=0; ii<nCols; ii++) {
-    if (find_col(header, dbf[ii].header) < 0)
+    if (find_str(header, dbf[ii].header) < 0)
       dbf[ii].visible = FALSE;
   }
 
@@ -451,11 +330,6 @@ int ursa2kml(char *in_file, char *out_file, int listFlag)
 
   while (fgets(line, 1022, ifp) != NULL) {
     strip_end_whitesp(line);
-
-    // ensure all lines end with a comma, that way the final column
-    // does not need special treatment
-    line[strlen(line)+1] = '\0';
-    line[strlen(line)] = ',';
 
     // now get the individual column values
     ursa_init(&ursa);
@@ -749,11 +623,6 @@ int ursa2shape(char *inFile, char *outFile, int listFlag)
 
   while (fgets(line, 1022, ifp) != NULL) {
     strip_end_whitesp(line);
-
-    // ensure all lines end with a comma, that way the final column
-    // does not need special treatment
-    line[strlen(line)+1] = '\0';
-    line[strlen(line)] = ',';
 
     // now get the individual column values
     ursa_init(&ursa);

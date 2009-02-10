@@ -32,18 +32,6 @@ static char *strip_end_whitesp(const char *s)
     return ret;
 }
 
-static const char *get_str(char *line, int column_num, int line_num)
-{
-    int i;
-    char *p = line;
-    static char ret[256];
-
-    for (i=0; i<=column_num; ++i)
-      p = quoted_string_parse(p,ret,256,line_num,',');
-    
-    return ret;
-}
-
 static int is_lat_column(const char *name)
 {
   if (strncmp_case(name,"lat",3)==0 ||
@@ -262,7 +250,7 @@ FILE *csv_open(const char *filename,
     strip_end_whitesp_inplace(line);
     for (i=0; i<n_meta_cols; ++i) {
       int col = meta_inf[i].column_number;
-      const char *val = get_str(line, col, line_num);
+      const char *val = get_str(line, col);
 
       if (strlen(val)>1)
         non_bool_flags[col] = TRUE;
@@ -390,7 +378,7 @@ int csv_line_parse(const char *line_in, int line_num,
 
   for (i=0; i<num_data_cols*2; ++i) {
     int col = data_column_info[i].column_number;
-    const char *data = get_str(line, col, -1);
+    const char *data = get_str(line, col);
     if (!data)
       return FALSE;
 
@@ -426,7 +414,7 @@ int csv_line_parse(const char *line_in, int line_num,
   for (i=0; i<num_meta_cols; ++i) {
     column_data[i] = (char*)MALLOC(sizeof(char)*256);
     int col = meta_column_info[i].column_number;
-    const char *val = get_str(line, col, -1);
+    const char *val = get_str(line, col);
     if (!val)
       return FALSE;
 

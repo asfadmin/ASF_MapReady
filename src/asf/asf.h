@@ -179,6 +179,18 @@ char *quoted_string_parse(char *p, char *s, int max_len, int line_num,
 void split_into_array(const char *str, char sep, int *nelem, char ***parr);
 void free_char_array(char ***parr, int nelem);
 void split2(const char *str_in, char sep, char **s1_out, char **s2_out);
+const char *get_str(char *line, int column_number);
+char get_char(char *line, int column_num);
+int get_int(char *line, int column_number);
+int get_long(char *line, int column_number);
+double get_double(char *line, int column_number);
+char get_req_char(char *line, int column_num, int *ok);
+int get_req_int(char *line, int column_number, int *ok);
+long get_req_long(char *line, int column_number, int *ok);
+double get_req_double(char *line, int column_number, int *ok);
+int find_str(char *line, char *str);
+int find_2nd_str(char *line, char *str);
+int find_nth_str(char *line, char *str, int occurence);
 
 /******************************************************************************
  * FileUtil:
