@@ -645,6 +645,131 @@ NOTE: it is assumed that you have already tagged the repository in preparation
 * Rejoice! For this task is done!
 
 
+CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
+-------------------------------------------------------------
+
+* Update C2V_VERSION in include/asf_version.h
+
+* Tag the repository:
+    Trunk:
+    > svn copy svn+ssh://svn/svn/asf_tools/trunk
+               svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0
+    Or Branch:
+    > svn copy svn+ssh://svn/svn/asf_tools/branches/c2v_v?-?-x \
+               svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0
+
+* Create a clean directory where you will produce the build (etc),
+  for example:
+
+    > mkdir ~/asf/svn-r8888
+
+* Export a copy of the release in the work directory:
+
+    > cd ~/asf/svn-r8888
+    > svn export svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0 asf_tools
+
+* Check out autotar and rpmbuild into the work directory.
+
+    > cd ~/asf/svn-r8888
+    > svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
+    > svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
+
+* Make working directories for autotar:
+
+    > cd ~/asf/svn-r8888
+    > mkdir -p release/tar_filelist
+    > mkdir -p release/tar
+
+* Create svn_rev.h:
+
+      cd ~/asf/svn-r8888/asf_tools/include
+      echo "#define SVN_REV \"8888\"" > svn_rev.h
+
+* Fix up Makefile.in:
+
+     a. Eliminate the following line from Makefile.in in the c2v: target.
+        (After deleting the items above.)
+
+          echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+
+     b. The "stp" "ap" "req" "maprady", "jpl", "create_thumbs", "data_qc", and "oldtools" targets,
+        and all associated build instructions, should all be deleted from Makefile.in
+
+     c. Update the "all" target to only build "c2v".
+
+     d. Fix the "clean" target near the end of the file, to only include C2V_MODULES,
+        i.e., delete the STP_MODULES and AP_MODULES, etc.
+
+* Create the source.c2v_package file:
+
+    > cd ~/asf/svn-r8888/asf_tools/make_support
+    > make
+    > ./makemake
+
+* Run the autotar script:
+
+    > cd ~/asf/svn-r8888/release/autotar
+    > ./tarfile src ~/asf/svn-r8888 c2v_package
+
+* Run the rpmprep script:
+
+    > cd ~/asf/svn-r8888/release/autotar
+    > ./rpmprep c2v_package c2v
+
+* Copy an older .spec file to the new one:
+
+    > cd ~/asf/svn-r8888/release/rpmbuild
+    > cp c2v-1.0.0-1.spec c2v-1.0.0-1.spec
+
+* Edit the new .spec file (c2v-1.0.0-1.spec) to use the correct version.
+  The version number to be edited should be on line 2:
+
+    Text chunk:
+      Summary: ASF Convert To Vector
+      Name: c2v
+      Version: ?.?.?
+      Release: 1
+      License: BSD
+
+* If you have never copied the .rpmmacros and .rpmrc files to your
+  home directory, then do so now:
+
+    > cd ~/asf/svn-r8888/release/rpmbuild
+    > cp dot.rpmmacros ~/.rpmmacros
+    > cp dot.rpmrc ~/.rpmrc
+
+* Edit ~/.rpmmacros to update the top directory to the 'release' folder.
+  Find the %_topdir line and  edit as follows:
+
+    %_topdir      %(echo $HOME)/asf/svn-r8888/release
+
+* Make sure DEBUG_BUILD is not set to any particular debug level:
+
+    > unset DEBUG_BUILD
+
+* Build the rpm:
+
+    > rpmbuild -ba c2v-1.0.0-1.spec
+
+* Collect rpm & source tarball for Linux & Win32 distribution using the
+  tarrpms script. This should put all the *.tar.gz & *.zip files you need
+  in ~/asf/svn-r8888/release/rpmbuild/Source and
+  ~/asf/svn-r8888/release/rpmbuild/RPMS:
+
+    > cd ~/asf/svn-r8888/release/rpmbuild
+    > ./tarrpms c2v c2v
+
+* Copy all the packages to our favorite archive location. The files you're
+  sending should look something like this:
+       c2v-?.?.?-rpm.tar.gz
+       c2v-?.?.?-rpm.zip
+       c2v-?.?.?-src.tar.gz
+       c2v-?.?.?-src.zip
+
+    > cd ~/asf/svn-r8888/release/rpmbuild
+    > scp dist/* dq:/stor/dq/release_builds/c2v/1.0.0
+
+
 
 
 JPL Mosaic Suite RPM Build Procedure:
