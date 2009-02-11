@@ -142,29 +142,29 @@ static void add_to_kml(FILE *fp, hap_t *hap, dbf_header_t *dbf, int nCols)
     else if (strcmp(dbf[ii].header, "Frame") == 0)
       fprintf(fp, "%s<strong>Frame</strong>: %s <br>%s",
 	      begin, hap->frame, end);
-    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0)
-      fprintf(fp, "%s<strong>Near start lat</strong>: %s <br>%s", 
+    else if (strcmp(dbf[ii].header, "Upper_Left_Lat") == 0)
+      fprintf(fp, "%s<strong>Upper left lat</strong>: %s <br>%s", 
 	      begin, lf(hap->near_start_lat), end);
-    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0)
-      fprintf(fp, "%s<strong>Near start lon</strong>: %s <br>%s", 
+    else if (strcmp(dbf[ii].header, "Upper_Left_Lon") == 0)
+      fprintf(fp, "%s<strong>Upper left lon</strong>: %s <br>%s", 
 	      begin, lf(hap->near_start_lon), end);
-    else if (strcmp(dbf[ii].header, "Far_Start_Lat") == 0)
-      fprintf(fp, "%s<strong>Far start lat</strong>: %s <br>%s", 
+    else if (strcmp(dbf[ii].header, "Upper_Right_Lat") == 0)
+      fprintf(fp, "%s<strong>Upper right lat</strong>: %s <br>%s", 
 	      begin, lf(hap->far_start_lat), end);
-    else if (strcmp(dbf[ii].header, "Far_Start_Lon") == 0)
-      fprintf(fp, "%s<strong>Far start lon</strong>: %s <br>%s", 
+    else if (strcmp(dbf[ii].header, "Upper_Right_Lon") == 0)
+      fprintf(fp, "%s<strong>Upper right lon</strong>: %s <br>%s", 
 	      begin, lf(hap->far_start_lon), end);
-    else if (strcmp(dbf[ii].header, "Near_End_Lat") == 0)
-      fprintf(fp, "%s<strong>Near end lat</strong>: %s <br>%s", 
+    else if (strcmp(dbf[ii].header, "Lower_Left_Lat") == 0)
+      fprintf(fp, "%s<strong>Lower left lat</strong>: %s <br>%s", 
 	      begin, lf(hap->near_end_lat), end);
-    else if (strcmp(dbf[ii].header, "Near_End_Lon") == 0)
-      fprintf(fp, "%s<strong>Near end lon</strong>: %s <br>%s", 
+    else if (strcmp(dbf[ii].header, "Lower_Left_Lon") == 0)
+      fprintf(fp, "%s<strong>Lower left lon</strong>: %s <br>%s", 
 	      begin, lf(hap->near_end_lon), end);
-    else if (strcmp(dbf[ii].header, "Far_End_Lat") == 0)
-      fprintf(fp, "%s<strong>Far end lat</strong>: %s <br>%s", 
+    else if (strcmp(dbf[ii].header, "Lower_Right_Lat") == 0)
+      fprintf(fp, "%s<strong>Lower right lat</strong>: %s <br>%s", 
 	      begin, lf(hap->far_end_lat), end);
-    else if (strcmp(dbf[ii].header, "Far_End_Lon") == 0)
-      fprintf(fp, "%s<strong>Far end lon</strong>: %s <br>%s", 
+    else if (strcmp(dbf[ii].header, "Lower_Right_Lon") == 0)
+      fprintf(fp, "%s<strong>Lower right lon</strong>: %s <br>%s", 
 	      begin, lf(hap->far_end_lon), end);
     else if (strcmp(dbf[ii].header, "Comments") == 0)
       fprintf(fp, "%s<strong>Comments</strong>: %s <br>%s",
@@ -228,21 +228,21 @@ static int read_hap_line(char *header, int n,char *line, hap_t *hap)
       hap->center_lat = get_double(line, ii);
     else if (strcmp(test, "Center_Lon") == 0)
       hap->center_lon = get_double(line, ii);
-    else if (strcmp(test, "Near_Start_Lat") == 0)
+    else if (strcmp(test, "Upper_Left_Lat") == 0)
       hap->near_start_lat = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Near_Start_Lon") == 0)
+    else if (strcmp(test, "Upper_Left_Lon") == 0)
       hap->near_start_lon = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Far_Start_Lat") == 0) 
+    else if (strcmp(test, "Upper_Right_Lat") == 0) 
       hap->far_start_lat = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Far_Start_Lon") == 0)
+    else if (strcmp(test, "Upper_Right_Lon") == 0)
       hap->far_start_lon = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Near_End_Lat") == 0)
+    else if (strcmp(test, "Lower_Left_Lat") == 0)
       hap->near_end_lat = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Near_End_Lon") == 0)
+    else if (strcmp(test, "Lower_Left_Lon") == 0)
       hap->near_end_lon = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Far_End_Lat") == 0)
+    else if (strcmp(test, "Lower_Right_Lat") == 0)
       hap->far_end_lat = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Far_End_Lon") == 0)
+    else if (strcmp(test, "Lower_Right_Lon") == 0)
       hap->far_end_lon = get_req_double(line, ii, &ok);
     else if (strcmp(test, "Comments") == 0)
       strcpy(hap->comments, get_str(line, ii));
@@ -289,14 +289,14 @@ static int check_hap_location(FILE *ifp, char **header_line, int *n)
   
   // ensure we have the columns we need
   int name_col = find_str(header, "Filename");
-  int near_start_lat_col = find_str(header, "Near_Start_Lat");
-  int near_start_lon_col = find_str(header, "Near_Start_Lon");
-  int far_start_lat_col = find_str(header, "Far_Start_Lat");
-  int far_start_lon_col = find_str(header, "Far_Start_Lon");
-  int near_end_lat_col = find_str(header, "Near_End_Lat");
-  int near_end_lon_col = find_str(header, "Near_End_Lon");
-  int far_end_lat_col = find_str(header, "Far_End_Lat");
-  int far_end_lon_col = find_str(header, "Far_End_Lon");
+  int near_start_lat_col = find_str(header, "Upper_Left_Lat");
+  int near_start_lon_col = find_str(header, "Upper_Left_Lon");
+  int far_start_lat_col = find_str(header, "Upper_Right_Lat");
+  int far_start_lon_col = find_str(header, "Upper_Right_Lon");
+  int near_end_lat_col = find_str(header, "Lower_Left_Lat");
+  int near_end_lon_col = find_str(header, "Lower_Left_Lon");
+  int far_end_lat_col = find_str(header, "Lower_Right_Lat");
+  int far_end_lon_col = find_str(header, "Lower_Right_Lon");
   
   // Check whether all visible columns are actually available in the file
   for (ii=0; ii<nCols; ii++) {
@@ -310,11 +310,11 @@ static int check_hap_location(FILE *ifp, char **header_line, int *n)
     all_ok=FALSE;
   }
   if (near_start_lat_col < 0) {
-    printf("Missing: Near_Start_Lat\n");
+    printf("Missing: Upper_Left_Lat\n");
     all_ok=FALSE;
   }
   if (near_start_lon_col < 0) {
-    printf("Missing: Near_Start_Lon\n");
+    printf("Missing: Upper_Left_Lon\n");
     all_ok=FALSE;
   }
   if (far_start_lat_col < 0) {
@@ -326,19 +326,19 @@ static int check_hap_location(FILE *ifp, char **header_line, int *n)
     all_ok=FALSE;
   }
   if (near_end_lat_col < 0) {
-    printf("Missing: Near_End_Lat\n");
+    printf("Missing: Lower_Left_Lat\n");
     all_ok=FALSE;
   }
   if (near_end_lon_col < 0) {
-    printf("Missing: Near_End_Lon\n");
+    printf("Missing: Lower_Left_Lon\n");
     all_ok=FALSE;
   }
   if (far_end_lat_col < 0) {
-    printf("Missing: Far_End_Lat\n");
+    printf("Missing: Lower_Right_Lat\n");
     all_ok=FALSE;
   }
   if (far_end_lon_col < 0) {
-    printf("Missing: Far_End_Lon\n");
+    printf("Missing: Lower_Right_Lon\n");
     all_ok=FALSE;
   }
   if (!all_ok) {
@@ -455,35 +455,35 @@ void shape_hap_init(char *inFile, char *header)
       if (DBFAddField(dbase, "SCN_CLON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_CLON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Upper_Left_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_LULAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_LULAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Upper_Left_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_LULON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_LULON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Far_Start_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Upper_Right_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RULAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RULAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Far_Start_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Upper_Right_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RULON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RULON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_End_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Lower_Left_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_LDLAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_LDLAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_End_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Lower_Left_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_LDLON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_LDLON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Far_End_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Lower_Right_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RDLAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RDLAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Far_End_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Lower_Right_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RDLON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RDLON field to database file\n");
     }
@@ -548,35 +548,35 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, hap_t *hap,
       DBFWriteDoubleAttribute(dbase, n, field, hap->center_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Upper_Left_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_start_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Upper_Left_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_start_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Far_Start_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Upper_Right_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->far_start_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Far_Start_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Upper_Right_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->far_start_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_End_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Lower_Left_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_end_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_End_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Lower_Left_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_end_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Far_End_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Lower_Right_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->far_end_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Far_End_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Lower_Right_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->far_end_lon);
       field++;
     }
