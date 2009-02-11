@@ -236,7 +236,7 @@ static void get_latitude_range(Poly *region, int zone, char dir,
   double bcy = 0.5 * (region->y[0] + region->y[3]); // bottom center y
   pr2ll(bcx, bcy, zone, &lat2, &lon);
 
-  if ((dir == 'A' && lat1 < lat2) || (dir == 'D' && lat1 > lat2)) {
+  if ((dir=='A' && lat1<lat2) || (dir=='D' && lat1>lat2)) {
     *start_lat = lat1;
     *end_lat = lat2;
   }
@@ -439,29 +439,36 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
                                            &st1, t);
             pass_info_add(pass_info, t+time_adjustment, oi1);
 
-            if (i==bmi->num_buffer_frames-1) {
-              // set stopping latitude -- each frame overwrites the previous,
-              // so the last valid frame will set the stopping latitude
-              double start_lat, end_lat;
-              get_latitude_range(region, zone, dir, &start_lat, &end_lat);
-              pass_info_set_stop_latitude(pass_info, end_lat);
-            }
+            // set stopping latitude -- each frame overwrites the previous,
+            // so the last valid frame will set the stopping latitude
+            double start_lat, end_lat;
+            get_latitude_range(region, zone, dir, &start_lat, &end_lat);
+            pass_info_set_stop_latitude(pass_info, end_lat);
           }
         }
 
-        if (n>0) {
-          // make sure we set all these guys
-          assert(pass_info->start_lat != -999);
-          assert(pass_info->stop_lat != -999);
-          assert(pass_info->duration != -999);
-
-          // finally: add the pass!
+        // make sure we set all the required "after the fact" info
+        // if not, then do not add the pass... must be invalid
+        // (these used to be asserts, so it doesn't seem to ever happen)
+        if (n>0 &&
+            pass_info->start_lat != -999 &&
+            pass_info->stop_lat != -999 &&
+            pass_info->duration != -999)
+        {
+          // add the pass!
           pass_collection_add(pc, pass_info);
           ++num_found;
         }
-        else {
-          // I can't think why n would ever be 0...
-          assert(0);
+        else
+        {
+          printf("Invalid pass found.  Skipped... \n"
+                 " -- number of frames: %d, dir: %c\n"
+                 " -- date: %s, orbit %d, %f\n --> (%f,%f,%f)\n",
+                 n, pass_info->dir,
+                 pass_info->start_time_as_string,
+                 pass_info->orbit, pass_info->orbit_part,
+                 pass_info->start_lat, pass_info->stop_lat,
+                 pass_info->duration);
         }
       }
     }
@@ -472,7 +479,7 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
     //printf("Lat: %f, Orbit: %d, Orbit Part: %f\n", sat.ssplat,
     //       (int)sat.orbit, sat.orbit_part);
 
-    //asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
+    asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
   }
   asfPercentMeter(1.0);
 
