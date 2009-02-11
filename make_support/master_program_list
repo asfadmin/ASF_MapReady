@@ -264,7 +264,12 @@ CATEGORIES
 		asf_gamma_import
 		asf_airsar_import
 	}
-
+# Convert To Vector
+        c2v_package
+        {
+                convert2vector
+                convert2vector_gui
+        }
 # SAR Training Processor
 	stp_package
 	{
