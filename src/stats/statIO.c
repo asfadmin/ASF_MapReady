@@ -3,66 +3,64 @@
 #include "asf.h"
 #include "stats.h"
 
-int isspace(int c);
-
-double get_double(FILE *stat_file)
-{
-	char line[256];
-	fgets(line,255,stat_file);
-	while (line[0]=='#') fgets(line,255,stat_file); /* skip lines starting with # */
-	strtok(line,"#");/*Hack comments off the end of the line.*/
-	return strtod(line,NULL);
-}
-
-int get_int(FILE *stat_file)
-{
-	char line[256];
-	fgets(line,255,stat_file);
-	while (line[0]=='#') fgets(line,255,stat_file); /* skip lines starting with # */
-	strtok(line,"#");/*Hack comments off the end of the line.*/
-	return atoi(line);
-}
-
-/*******************************************************************************
- * Get the data from the .stat file and fill the stats structure              */
+//double stat_get_double(FILE *stat_file)
+//{
+//	char line[256];
+//	fgets(line,255,stat_file);
+//	while (line[0]=='#') fgets(line,255,stat_file); /* skip lines starting with # */
+//	strtok(line,"#");/*Hack comments off the end of the line.*/
+//	return strtod(line,NULL);
+//}
+//
+//int stat_get_int(FILE *stat_file)
+//{
+//	char line[256];
+//	fgets(line,255,stat_file);
+//	while (line[0]=='#') fgets(line,255,stat_file); /* skip lines starting with # */
+//	strtok(line,"#");/*Hack comments off the end of the line.*/
+//	return atoi(line);
+//}
+//
+///*******************************************************************************
+// * Get the data from the .stat file and fill the stats structure              */
 //void stat_read(stat_parameters *stats, const char *file_name)
 //{
-	//FILE *stat_file;
-	//char stat_name[256];
-	//char line[256];
-	//int ii=0;
-
-	//create_name(stat_name, file_name, ".stat");
-	//stat_file = FOPEN(stat_name, "r");
-
-/* get data line by line */
-	//stats->min = get_double(stat_file);
-	//stats->max = get_double(stat_file);
-	//stats->mean = get_double(stat_file);
-	//stats->rmse = get_double(stat_file);
-	//stats->std_deviation = get_double(stat_file);
-	//stats->mask = get_double(stat_file);
-	//stats->slope = get_double(stat_file);
-	//stats->offset = get_double(stat_file);
-	//stats->upper_left_line = get_int(stat_file);
-	//stats->upper_left_samp = get_int(stat_file);
-	//stats->lower_right_line = get_int(stat_file);
-	//stats->lower_right_samp = get_int(stat_file);
-
-/* get histogram */
-	//ii=0;
-	//while (fgets(line,255,stat_file) && ii<256) {
-		//char *temp;
-		//if (line[0]=='#') continue;/*Skip comments at beginning of line.*/
-		//if (line[0]=='\n') continue;/*Skip blank lines.*/
-		//temp = &line[8];
-		//sscanf(temp," %d %d %d %d %d %d %d %d\n",&stats->histogram[ii],
-			//&stats->histogram[ii+1],&stats->histogram[ii+2],
-			//&stats->histogram[ii+3],&stats->histogram[ii+4],
-			//&stats->histogram[ii+5],&stats->histogram[ii+6],
-			//&stats->histogram[ii+7]);
-		//ii+=8;
-	//}
+//	FILE *stat_file;
+//	char stat_name[256];
+//	char line[256];
+//	int ii=0;
+//
+//	create_name(stat_name, file_name, ".stat");
+//	stat_file = FOPEN(stat_name, "r");
+//
+///* get data line by line */
+//	stats->min = stat_get_double(stat_file);
+//	stats->max = stat_get_double(stat_file);
+//	stats->mean = stat_get_double(stat_file);
+//	stats->rmse = stat_get_double(stat_file);
+//	stats->std_deviation = stat_get_double(stat_file);
+//	stats->mask = stat_get_double(stat_file);
+//	stats->slope = stat_get_double(stat_file);
+//	stats->offset = stat_get_double(stat_file);
+//	stats->upper_left_line = stat_get_int(stat_file);
+//	stats->upper_left_samp = stat_get_int(stat_file);
+//	stats->lower_right_line = stat_get_int(stat_file);
+//	stats->lower_right_samp = stat_get_int(stat_file);
+//
+///* get histogram */
+//	ii=0;
+//	while (fgets(line,255,stat_file) && ii<256) {
+//		char *temp;
+//		if (line[0]=='#') continue;/*Skip comments at beginning of line.*/
+//		if (line[0]=='\n') continue;/*Skip blank lines.*/
+//		temp = &line[8];
+//		sscanf(temp," %d %d %d %d %d %d %d %d\n",&stats->histogram[ii],
+//			&stats->histogram[ii+1],&stats->histogram[ii+2],
+//			&stats->histogram[ii+3],&stats->histogram[ii+4],
+//			&stats->histogram[ii+5],&stats->histogram[ii+6],
+//			&stats->histogram[ii+7]);
+//		ii+=8;
+//	}
 //}
 
 /*******************************************************************************
