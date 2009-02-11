@@ -1,68 +1,5 @@
 #include "asf_baseline.h"
-
-static char *my_parse_string(char *p, char *s, int max_len)
-{
-    if (!p || *p == '\0') {
-        strcpy(s, "");
-        asfPrintError("  --> Unexpected end of string\n");
-        return NULL;
-    }
-
-    // scan ahead to the comma, or end of string
-    char *q = strchr(p, ',');
-    if (q) {
-      *q = '\0'; // temporarily...
-      strncpy_safe(s, p, max_len);
-      *q = ',';
-
-      // point to beginning of next item
-      return q+1;
-    }
-    else {
-      strncpy_safe(s, p, max_len);
-
-      // no more strings
-      return NULL;
-    }
-}
-
-static char *get_str(char *line, int column_num)
-{
-    int i;
-    char *p = line;
-    static char ret[256];
-
-    for (i=0; i<=column_num; ++i)
-      p = my_parse_string(p,ret,256);
-
-    return ret;
-}
-
-static int get_int(char *line, int column_num)
-{
-    if (column_num >= 0) {
-        char *s = get_str(line, column_num);
-        if (s)
-          return atoi(s);
-        else
-          return 0;
-    }
-    else {
-        return 0;
-    }
-}
-
-static double get_double(char *line, int column_num)
-{
-    if (column_num >= 0) {
-        char *s = get_str(line, column_num);
-        if (s)
-          return atof(s);
-        else
-          return 0.0;
-    } else
-        return 0.0;
-}
+#include "parse_funcs.h"
 
 void read_srf(char *input_dir, char *inFile, 
 	      struct srf_orbit **srf_orbits, int *nOrbits)
@@ -265,33 +202,33 @@ void read_palsar(char *inFile, struct srf_orbit **srf_orbits, int *nOrbits)
   fp = FOPEN(inFile, "r");
   while (fgets(line, 4096, fp)) {
     printf("%s", line);
-    sprintf(srf_orbit[n].sensor, "%s", get_str(line, 0));
-    srf_orbit[n].off_nadir = (float) get_double(line, 1);
-    srf_orbit[n].orbit = get_int(line, 2);
-    sprintf(orbit_dir, "%s", get_str(line, 3));
+    sprintf(srf_orbit[n].sensor, "%s", my_get_str(line, 0));
+    srf_orbit[n].off_nadir = (float) my_get_double(line, 1);
+    srf_orbit[n].orbit = my_get_int(line, 2);
+    sprintf(orbit_dir, "%s", my_get_str(line, 3));
     if (strncmp_case(orbit_dir, "A", 1) == 0)
       srf_orbit[n].orbit_dir = 'A';
     else if (strncmp_case(orbit_dir, "D", 1) == 0)
       srf_orbit[n].orbit_dir = 'D';
-    srf_orbit[n].frame = get_int(line, 4);
-    sprintf(srf_orbit[n].time, "%s", get_str(line, 5));
-    srf_orbit[n].c_lat = get_double(line, 6);
-    srf_orbit[n].c_lon = get_double(line, 7);
-    srf_orbit[n].ns_lat = get_double(line, 8);
-    srf_orbit[n].ns_lon = get_double(line, 9);
-    srf_orbit[n].fs_lat = get_double(line, 10);
-    srf_orbit[n].fs_lon = get_double(line, 11);
-    srf_orbit[n].ne_lat = get_double(line, 12);
-    srf_orbit[n].ne_lon = get_double(line, 13);
-    srf_orbit[n].fe_lat = get_double(line, 14);
-    srf_orbit[n].fe_lon = get_double(line, 15);
-    srf_orbit[n].x = get_double(line, 16);
-    srf_orbit[n].y = get_double(line, 17);
-    srf_orbit[n].z = get_double(line, 18);
-    srf_orbit[n].vx = get_double(line, 19);
-    srf_orbit[n].vy = get_double(line, 20);
-    srf_orbit[n].vz = get_double(line, 21);
-    sprintf(versionStr, "%s", get_str(line, 22));
+    srf_orbit[n].frame = my_get_int(line, 4);
+    sprintf(srf_orbit[n].time, "%s", my_get_str(line, 5));
+    srf_orbit[n].c_lat = my_get_double(line, 6);
+    srf_orbit[n].c_lon = my_get_double(line, 7);
+    srf_orbit[n].ns_lat = my_get_double(line, 8);
+    srf_orbit[n].ns_lon = my_get_double(line, 9);
+    srf_orbit[n].fs_lat = my_get_double(line, 10);
+    srf_orbit[n].fs_lon = my_get_double(line, 11);
+    srf_orbit[n].ne_lat = my_get_double(line, 12);
+    srf_orbit[n].ne_lon = my_get_double(line, 13);
+    srf_orbit[n].fe_lat = my_get_double(line, 14);
+    srf_orbit[n].fe_lon = my_get_double(line, 15);
+    srf_orbit[n].x = my_get_double(line, 16);
+    srf_orbit[n].y = my_get_double(line, 17);
+    srf_orbit[n].z = my_get_double(line, 18);
+    srf_orbit[n].vx = my_get_double(line, 19);
+    srf_orbit[n].vy = my_get_double(line, 20);
+    srf_orbit[n].vz = my_get_double(line, 21);
+    sprintf(versionStr, "%s", my_get_str(line, 22));
     sscanf(&versionStr[6], "%d", &version);
     
     // No range and Doppler information for ALOS PALSAR.

@@ -29,6 +29,7 @@ LIBS =  \
 
 OBJLIB = 	\
 	baseline2vector.o \
+	parse_funcs.o \
 	read_srf.o \
 	setup.o \
 	determine_baseline.o \

@@ -1,4 +1,5 @@
 #include "asf_baseline.h"
+#include "parse_funcs.h"
 
 // ALOS beam modes
 static char *alos_beam_mode[]={
@@ -17,70 +18,6 @@ static char *alos_beam_mode[]={
   "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
   "PLR1","PLR2","PLR3","PLR4","PLR5","PLR6","PLR7","PLR8","PLR9","PLR10",
   "PLR11","PLR12"};
-
-static char *my_parse_string(char *p, char *s, int max_len)
-{
-    if (!p || *p == '\0') {
-        strcpy(s, "");
-        asfPrintError("  --> Unexpected end of string\n");
-        return NULL;
-    }
-
-    // scan ahead to the comma, or end of string
-    char *q = strchr(p, ',');
-    if (q) {
-      *q = '\0'; // temporarily...
-      strncpy_safe(s, p, max_len);
-      *q = ',';
-
-      // point to beginning of next item
-      return q+1;
-    }
-    else {
-      strncpy_safe(s, p, max_len);
-
-      // no more strings
-      return NULL;
-    }
-}
-
-static char *get_str(char *line, int column_num)
-{
-    int i;
-    char *p = line;
-    static char ret[256];
-
-    for (i=0; i<=column_num; ++i)
-      p = my_parse_string(p,ret,256);
-
-    return ret;
-}
-
-static int get_int(char *line, int column_num)
-{
-    if (column_num >= 0) {
-        char *s = get_str(line, column_num);
-        if (s)
-          return atoi(s);
-        else
-          return 0;
-    }
-    else {
-        return 0;
-    }
-}
-
-static double get_double(char *line, int column_num)
-{
-    if (column_num >= 0) {
-        char *s = get_str(line, column_num);
-        if (s)
-          return atof(s);
-        else
-          return 0.0;
-    } else
-        return 0.0;
-}
 
 void get_palsar_info(char *inFile, char *outputDir, char *sensor, char *mode, 
 		     int *nFrames)
@@ -106,35 +43,35 @@ void get_palsar_info(char *inFile, char *outputDir, char *sensor, char *mode,
     if (strstr(line, "SQL>") || strchr(line, ',') == NULL)
       continue;
     else {
-      sprintf(sensorMeta, "%s", get_str(line, 8));
-      sprintf(modeMeta, "%s", alos_beam_mode[get_int(line, 17)]);
-      off_nadir = (float) get_double(line, 19);
-      orbit = get_int(line, 31);
-      sprintf(orbit_dir, "%s", get_str(line, 32));
-      frame = get_int(line, 25);
-      sprintf(timeStr, "%s", get_str(line, 36));
+      sprintf(sensorMeta, "%s", my_get_str(line, 8));
+      sprintf(modeMeta, "%s", alos_beam_mode[my_get_int(line, 17)]);
+      off_nadir = (float) my_get_double(line, 19);
+      orbit = my_get_int(line, 31);
+      sprintf(orbit_dir, "%s", my_get_str(line, 32));
+      frame = my_get_int(line, 25);
+      sprintf(timeStr, "%s", my_get_str(line, 36));
       sscanf(timeStr, "%4d%2d%2d %d:%d:%lf", 
 	     &ymd.year, &ymd.month, &ymd.day, &hms.hour, &hms.min, &hms.sec);
       date_ymd2jd(&ymd, &jd);
       sprintf(time, "%d-%dT%02d:%02d:%02.3f", 
 	      jd.year, jd.jd, hms.hour, hms.min, hms.sec);
-      c_lat = get_double(line, 37);
-      c_lon = get_double(line, 38);
-      ns_lat = get_double(line, 39);
-      ns_lon = get_double(line, 40);
-      fs_lat = get_double(line, 41);
-      fs_lon = get_double(line, 42);
-      ne_lat = get_double(line, 43);
-      ne_lon = get_double(line, 44);
-      fe_lat = get_double(line, 45);
-      fe_lon = get_double(line, 46);
-      x = get_double(line, 47);
-      y = get_double(line, 48);
-      z = get_double(line, 49);
-      vx = get_double(line, 50);
-      vy = get_double(line, 51);
-      vz = get_double(line, 52);
-      sprintf(versionStr, "%s", get_str(line, 54));
+      c_lat = my_get_double(line, 37);
+      c_lon = my_get_double(line, 38);
+      ns_lat = my_get_double(line, 39);
+      ns_lon = my_get_double(line, 40);
+      fs_lat = my_get_double(line, 41);
+      fs_lon = my_get_double(line, 42);
+      ne_lat = my_get_double(line, 43);
+      ne_lon = my_get_double(line, 44);
+      fe_lat = my_get_double(line, 45);
+      fe_lon = my_get_double(line, 46);
+      x = my_get_double(line, 47);
+      y = my_get_double(line, 48);
+      z = my_get_double(line, 49);
+      vx = my_get_double(line, 50);
+      vy = my_get_double(line, 51);
+      vz = my_get_double(line, 52);
+      sprintf(versionStr, "%s", my_get_str(line, 54));
       sscanf(&versionStr[6], "%d", &version);
       if (strcmp_case(sensor, sensorMeta) == 0 && strstr(modeMeta, mode)) {
 
