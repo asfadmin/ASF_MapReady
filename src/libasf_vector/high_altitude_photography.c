@@ -97,22 +97,21 @@ static void add_to_kml(FILE *fp, hap_t *hap, dbf_header_t *dbf, int nCols)
 	    hap->thumbnail);
   if (hap->description) {
     fpIn = FOPEN(hap->description, "r");
-    fgets(line, 1022, fpIn);
-    fprintf(fp, "<td><strong>%s</strong><br>\n", line);
+    fprintf(fp, "<td>");
     while (fgets(line, 1022, fpIn) != NULL)
       fprintf(fp, "%s", line);
-    fprintf(fp, "</td>\n");
+    fprintf(fp, "<br><br>\n");
   }
-  if (hap->thumbnail || hap->description)
-    fprintf(fp, "</tr>\n");
   if (hap->download) {
-    fprintf(fp, "<br><br>/n<strong><a href=\"%s\">Download data (%.1lf MB)</a>"
+    fprintf(fp, "<strong><a href=\"%s\">Download data (%.1lf MB)</a>"
 	    "</strong><br>", hap->download, hap->size);
     if (hap->download2)
       fprintf(fp, "<strong><a href=\"%s\">Download data (%.1lf MB)</a>"
 	      "</strong><br>", hap->download2, hap->size2);
     fprintf(fp, "</td></tr>\n");
   }
+  else if (hap->thumbnail || hap->description)
+    fprintf(fp, "</td></tr>\n");
   if (hap->thumbnail && hap->description)
     fprintf(fp, "<tr colspan=\"2\"><td>\n");
   else
@@ -255,11 +254,11 @@ static int read_hap_line(char *header, int n,char *line, hap_t *hap)
       hap->description = (char *) MALLOC(sizeof(char)*1024);
       strcpy(hap->description, get_str(line, ii));
     }
-    else if (strcmp(test, "Download") == 0) {
+    else if (strcmp(test, "Download1") == 0) {
       hap->download = (char *) MALLOC(sizeof(char)*1024);
       strcpy(hap->download, get_str(line, ii));
     }
-    else if (strcmp(test, "Size") == 0) {
+    else if (strcmp(test, "Size1") == 0) {
       hap->size = get_double(line, ii);
     }
     else if (strcmp(test, "Download2") == 0) {
@@ -482,30 +481,6 @@ void shape_hap_init(char *inFile, char *header)
       if (DBFAddField(dbase, "COMMENTS", FTString, length, 0) == -1)
         asfPrintError("Could not add COMMENTS field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Thumbnail") == 0 && dbf[ii].visible) {
-      if (DBFAddField(dbase, "THUMBNAIL", FTString, length, 0) == -1)
-        asfPrintError("Could not add THUMBNAIL field to database file\n");
-    }
-    else if (strcmp(dbf[ii].header, "Description") == 0 && dbf[ii].visible) {
-      if (DBFAddField(dbase, "DESCRIPTION", FTString, length, 0) == -1)
-        asfPrintError("Could not add DESCRIPTION field to database file\n");
-    }
-    else if (strcmp(dbf[ii].header, "Download") == 0 && dbf[ii].visible) {
-      if (DBFAddField(dbase, "DOWNLOAD", FTString, length, 0) == -1)
-        asfPrintError("Could not add DOWNLOAD field to database file\n");
-    }
-    else if (strcmp(dbf[ii].header, "Size") == 0 && dbf[ii].visible) {
-      if (DBFAddField(dbase, "SIZE", FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add SIZE field to database file\n");
-    }
-    else if (strcmp(dbf[ii].header, "Download2") == 0 && dbf[ii].visible) {
-      if (DBFAddField(dbase, "DOWNLOAD2", FTString, length, 0) == -1)
-        asfPrintError("Could not add DOWNLOAD2 field to database file\n");
-    }
-    else if (strcmp(dbf[ii].header, "Size2") == 0 && dbf[ii].visible) {
-      if (DBFAddField(dbase, "SIZE2", FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add SIZE2 field to database file\n");
-    }
   }
 
   // Close the database for initialization
@@ -563,11 +538,11 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, hap_t *hap,
       DBFWriteDoubleAttribute(dbase, n, field, hap->center_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_start_lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_start_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_start_lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_start_lon);
       field++;
     }
@@ -597,36 +572,6 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, hap_t *hap,
     }
     else if (strcmp(dbf[ii].header, "Comments") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->comments);
-      field++;
-    }
-    else if (strcmp(dbf[ii].header, "Thumbnail") == 0 && dbf[ii].visible &&
-	     hap->thumbnail) {
-      DBFWriteStringAttribute(dbase, n, field, hap->thumbnail);
-      field++;
-    }
-    else if (strcmp(dbf[ii].header, "Description") == 0 && dbf[ii].visible &&
-	     hap->description) {
-      DBFWriteStringAttribute(dbase, n, field, hap->description);
-      field++;
-    }
-    else if (strcmp(dbf[ii].header, "Download") == 0 && dbf[ii].visible &&
-	     hap->download) {
-      DBFWriteStringAttribute(dbase, n, field, hap->download);
-      field++;
-    }
-    else if (strcmp(dbf[ii].header, "Size") == 0 && dbf[ii].visible &&
-	     hap->size) {
-      DBFWriteDoubleAttribute(dbase, n, field, hap->size);
-      field++;
-    }
-    else if (strcmp(dbf[ii].header, "Download2") == 0 && dbf[ii].visible &&
-	     hap->download2) {
-      DBFWriteStringAttribute(dbase, n, field, hap->download2);
-      field++;
-    }
-    else if (strcmp(dbf[ii].header, "Size2") == 0 && dbf[ii].visible &&
-	     hap->size2) {
-      DBFWriteDoubleAttribute(dbase, n, field, hap->size2);
       field++;
     }
   }

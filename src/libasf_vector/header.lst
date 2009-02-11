@@ -311,12 +311,10 @@ Far_End_Lon = double
 Comments = string
 Thumbnail = string
 Description = string
-Download = string
-Scale = string
+Download1 = string
+Size1 = string
 Download2 = string
-Scale2 = string
-Download3 = string
-Scale3 = string
+Size2 = string
 
 [TEST]
 string = string
