@@ -706,6 +706,14 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
     > make
     > ./makemake
 
+* Update source.c2v_package, adding:
+
+    src/libasf_sar
+    src/libasf_geocode
+    src/libasf_export
+    src/convert2vector_gui
+    doc
+
 * Run the autotar script:
 
     > cd ~/asf/svn-r8888/release/autotar
@@ -749,6 +757,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 
 * Build the rpm:
 
+    > cd ~/asf/svn-r8888/release/rpmbuild
     > rpmbuild -ba c2v-1.0.0-1.spec
 
 * Collect rpm & source tarball for Linux & Win32 distribution using the

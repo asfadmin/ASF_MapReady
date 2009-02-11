@@ -117,7 +117,6 @@ C2V_MODULES = \
 	src/asf \
 	src/libasf_proj \
 	src/asf_meta \
-	src/sgpsdp \
 	src/libasf_raster \
 	src/libasf_sar \
 	src/libasf_import \
