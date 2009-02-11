@@ -404,6 +404,7 @@ clean:
 	rm -rf $(S_SHAREDIR)
 	rm -rf share
 	rm -rf man
+	rm -f Makefile.old
 	-rm -rf $(IGNORED_INCLUDES)
 	$(foreach MODULE, $(MAPREADY_MODULES) $(STP_MODULES) $(AP_MODULES) $(C2V_MODULES) $(JPL_MODULES), \
 		$(MAKE) clean -C $(MODULE) &&) true
