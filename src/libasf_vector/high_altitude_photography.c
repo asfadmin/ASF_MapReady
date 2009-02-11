@@ -375,10 +375,20 @@ int hap2kml(char *in_file, char *out_file, int listFlag)
   
   kml_header(ofp);
   
-  while (fgets(line, 1022, ifp) != NULL) {
+  if (listFlag) {
+    while (fgets(line, 1022, ifp) != NULL) {
+      strip_end_whitesp_inplace(line);
+      
+      // now get the individual column values
+      hap_init(&hap);
+      if (read_hap_line(header, nColumns, line, &hap))
+	add_to_kml(ofp, &hap, dbf, nCols);
+      hap_free(&hap);
+    }
+  }
+  else {
+    fgets(line, 1022, ifp);
     strip_end_whitesp_inplace(line);
-    
-    // now get the individual column values
     hap_init(&hap);
     if (read_hap_line(header, nColumns, line, &hap))
       add_to_kml(ofp, &hap, dbf, nCols);
@@ -609,20 +619,30 @@ int hap2shape(char *inFile, char *outFile, int listFlag)
   FILE *ifp = FOPEN(inFile, "r");
   assert(ifp);
   check_hap_location(ifp, &header, &nColumns);
-
+  
   // Initalize the database file
   shape_hap_init(outFile, header);
   open_shape(outFile, &dbase, &shape);
 
-  while (fgets(line, 1022, ifp) != NULL) {
-    strip_end_whitesp_inplace(line);
-
-    // now get the individual column values
-    hap_init(&hap);
-    if (read_hap_line(header, nColumns, line, &hap)) {
-      add_to_shape(dbase, shape, &hap, dbf, nCols, ii);
-      ii++;
+  if (listFlag) {
+    while (fgets(line, 1022, ifp) != NULL) {
+      strip_end_whitesp_inplace(line);
+      
+      // now get the individual column values
+      hap_init(&hap);
+      if (read_hap_line(header, nColumns, line, &hap)) {
+	add_to_shape(dbase, shape, &hap, dbf, nCols, ii);
+	ii++;
+      }
+      hap_free(&hap);
     }
+  }
+  else {
+    fgets(line, 1022, ifp);
+    strip_end_whitesp_inplace(line);
+    hap_init(&hap);
+    if (read_hap_line(header, nColumns, line, &hap))
+      add_to_shape(dbase, shape, &hap, dbf, nCols, 0);
     hap_free(&hap);
   }
 
