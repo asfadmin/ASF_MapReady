@@ -223,6 +223,29 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi, double look_angle,
   }
 }
 
+static void get_latitude_range(Poly *region, int zone, char dir,
+                               double *start_lat, double *end_lat)
+{
+  double lat1, lat2, lon;
+
+  double tcx = 0.5 * (region->x[1] + region->x[2]); // top center x
+  double tcy = 0.5 * (region->y[1] + region->y[2]); // top center y
+  pr2ll(tcx, tcy, zone, &lat1, &lon);
+
+  double bcx = 0.5 * (region->x[0] + region->x[3]); // bottom center x
+  double bcy = 0.5 * (region->y[0] + region->y[3]); // bottom center y
+  pr2ll(bcx, bcy, zone, &lat2, &lon);
+
+  if ((dir == 'A' && lat1 < lat2) || (dir == 'D' && lat1 > lat2)) {
+    *start_lat = lat1;
+    *end_lat = lat2;
+  }
+  else {
+    *start_lat = lat2;
+    *end_lat = lat1;
+  }
+}
+
 int plan(const char *satellite, const char *beam_mode, double look_angle,
          long startdate, long enddate, double min_lat, double max_lat,
          double clat, double clon, int pass_type,
@@ -372,8 +395,10 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
           double t = curr - i*incr;
           stateVector st1 = tle_propagate(&sat, t);
           double rclat, rclon; // viewable region center lat/lon
+
           Poly *region = get_viewable_region(&st1, bmi, look_angle,
                                              zone, clat, clon, &rclat, &rclon);
+
           if (region) {
             OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                            &st1, t);
@@ -381,7 +406,9 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
 
             if (pass_info->start_lat == -999) {
               // at the first valid buffer frame -- set starting latitude
-              pass_info_set_start_latitude(pass_info, rclat);
+              double start_lat, end_lat;
+              get_latitude_range(region, zone, dir, &start_lat, &end_lat);
+              pass_info_set_start_latitude(pass_info, start_lat);
             }
           }
         }
@@ -412,9 +439,13 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
                                            &st1, t);
             pass_info_add(pass_info, t+time_adjustment, oi1);
 
-            // set stopping latitude -- each frame overwrites the previous,
-            // so the last valid frame will set the stopping latitude
-            pass_info_set_stop_latitude(pass_info, rclat);
+            if (i==bmi->num_buffer_frames-1) {
+              // set stopping latitude -- each frame overwrites the previous,
+              // so the last valid frame will set the stopping latitude
+              double start_lat, end_lat;
+              get_latitude_range(region, zone, dir, &start_lat, &end_lat);
+              pass_info_set_stop_latitude(pass_info, end_lat);
+            }
           }
         }
 
@@ -441,7 +472,7 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
     //printf("Lat: %f, Orbit: %d, Orbit Part: %f\n", sat.ssplat,
     //       (int)sat.orbit, sat.orbit_part);
 
-    asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
+    //asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
   }
   asfPercentMeter(1.0);
 
