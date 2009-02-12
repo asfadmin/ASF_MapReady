@@ -316,12 +316,9 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
   assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);
 
   if (is_utm(zone)) {
-    printf("Target:\n"
-           "  UTM:  zone=%d\n"
-           "        %f %f\n"
-           "        %f %f\n"
-           "        %f %f\n"
-           "        %f %f\n",
+    printf("Target: UTM zone %d\n"
+           "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n"
+           "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n",
            zone,
            aoi->x[0], aoi->y[0],
            aoi->x[1], aoi->y[1],
@@ -329,12 +326,9 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
            aoi->x[3], aoi->y[3]);
   }
   else {
-    printf("Target:\n"
-           "  Polar Stereo: %s\n"
-           "        %f %f\n"
-           "        %f %f\n"
-           "        %f %f\n"
-           "        %f %f\n",
+    printf("Target: Polar Stereo %s\n"
+           "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n"
+           "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n",
            zone>0 ? "North" : "South",
            aoi->x[0], aoi->y[0],
            aoi->x[1], aoi->y[1],
@@ -354,6 +348,7 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
   // zero seconds, then we want 0 lead-up frames.
   PassCollection *pc = pass_collection_new(clat, clon, aoi);
 
+  printf("Searching...\n");
   while (curr < end_secs) {
     st = tle_propagate(&sat, curr);
     char dir = sat.ssplat > lat_prev ? 'A' : 'D';

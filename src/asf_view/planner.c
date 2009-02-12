@@ -818,6 +818,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     // beam mode
     i = get_combo_box_item("mode_combobox");
     char *beam_mode = modes[i].mode;
+    printf("\nPlanning Mode: %s\n", beam_mode);
 
     // look angle
     // have to figure out which widget to check -- entry, or combo?
@@ -874,7 +875,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         look_angle = closest*D2R;
       }
     }
-    printf("Look angle: %f\n", look_angle*R2D);
+    printf("Look angle: %.2f\n", look_angle*R2D);
 
     // get the start/end dates
     long startdate = (long)get_int_from_entry("start_date_entry");
@@ -1072,6 +1073,9 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       put_string_to_label("plan_error_label", errstr);
     }
     else {
+      // everything seems to be ok, can start the search...
+
+      // update the GUI to let the user know we're looking
       put_string_to_label("plan_error_label", "Searching...");
       enable_widget("plan_button", FALSE);
       while (gtk_events_pending())
@@ -1080,6 +1084,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       char *err;
       PassCollection *pc;
 
+      // here's the call that performs the search
       int n = plan(planner_satellite, beam_mode, look_angle,
                    startdate, enddate, max_lat, min_lat, clat, clon,
                    pass_type, zone, aoi, tle_filename, &pc, &err);
@@ -1089,6 +1094,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         free(err);
       }
       else {
+        // search was successful, convert the returned "pass collection"
+        // into polygons for display, and populate the match list
         strcpy(errstr, "");
 
         char msg[256];
@@ -1104,7 +1111,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         }
 
         // this is for debugging, can be removed
-        pass_collection_to_kml(pc, "test_kml.kml");
+        //pass_collection_to_kml(pc, "test_kml.kml");
+
         clear_found();
 
         // Polygon #0 is left alone (it is the area of interest), so
