@@ -541,6 +541,14 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     free(pixels);
 }
 
+static void put_double_to_label(const char *widget_name, const char *format,
+                                double value)
+{
+  char buf[128];
+  snprintf(buf, sizeof(buf), format, value);
+  put_string_to_label(widget_name, buf);
+}
+
 static void pop_hist(ImageInfo *ii)
 {
     int i,j;
@@ -561,7 +569,7 @@ static void pop_hist(ImageInfo *ii)
             histogram_data[j+i*w*4+2] = (unsigned char)0;
             histogram_data[j+i*w*4+3] = (unsigned char)255; // alpha
         }
-        for (j=l*4; j<w*4; j+=4) {
+        for (j=l*4; j<w*4; j += 4) {
             histogram_data[j+i*w*4] = (unsigned char)0;
             histogram_data[j+i*w*4+1] = (unsigned char)0;
             histogram_data[j+i*w*4+2] = (unsigned char)0;
@@ -580,6 +588,20 @@ static void pop_hist(ImageInfo *ii)
 
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 
+    // populate the low/mid/hi labels on the histogram
+    double max = ii->stats.map_max;
+    double min = ii->stats.map_min;
+    int n=2;
+    if (max>1000 || min<-1000) n=1;
+    if (max>10000 || min<-10000) n=0;
+    if (max<100 && min>-100) n=3;
+    if (max<10 && min>-10) n=4;
+    if (max<1 && min>-1) n=5;
+    char fmt[32];
+    sprintf(fmt, "%%%d.%df", 6, n);
+    put_double_to_label("hist_hi_label", fmt, max);
+    put_double_to_label("hist_mid_label", fmt, 0.5*(max+min));
+    put_double_to_label("hist_lo_label", fmt, min);
 }
 
 int fill_stats(ImageInfo *ii)
