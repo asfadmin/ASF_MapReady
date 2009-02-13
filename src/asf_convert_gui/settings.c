@@ -2153,18 +2153,18 @@ int apply_settings_from_config_file(char *configFile)
       if (ext_type == CEOS_LED)
       {
         // alos -- pass in metadata name
-        add_to_files_list_iter(metaName[0], &iter);
+        add_to_files_list_iter(metaName[0], NULL, &iter);
       }
       else
       {
         // regular ceos -- determine data file name
         int nBands;
 
-        add_to_files_list_iter(metaName[0], &iter);
+        add_to_files_list_iter(metaName[0], NULL, &iter);
         get_ceos_data_name(cfg->general->in_name, baseName, &dataNames, &nBands);
         assert(nBands == 1);
 
-        add_to_files_list_iter(dataNames[0], &iter);
+        add_to_files_list_iter(dataNames[0], NULL, &iter);
       }
 
       free_ceos_names(dataNames, metaName);

@@ -332,7 +332,7 @@ void setup_files_list();
 void populate_files_list(int, char **);
 void refresh_file_names();
 gboolean add_to_files_list(const gchar *);
-gboolean add_to_files_list_iter(const gchar *, GtkTreeIter *);
+gboolean add_to_files_list_iter(const gchar *, const gchar *, GtkTreeIter *);
 gboolean add_to_ancillary_files_list(const gchar *);
 void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);

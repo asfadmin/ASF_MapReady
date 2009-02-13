@@ -5,13 +5,13 @@ static int db_was_checked = 0;
 void export_checkbutton_toggle();
 
 void
-show_full_path_names_togglebutton_toggled()
+show_full_path_names_checkbutton_toggled()
 {
-  GtkWidget *show_full_path_names_togglebutton;
+  GtkWidget *show_full_path_names_checkbutton;
 
-  show_full_path_names_togglebutton = get_widget_checked("show_full_path_names_togglebutton");
+  show_full_path_names_checkbutton = get_widget_checked("show_full_path_names_checkbutton");
   show_full_paths =
-      gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(show_full_path_names_togglebutton));
+      gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(show_full_path_names_checkbutton));
 
   refresh_file_names();
 }
@@ -579,9 +579,9 @@ on_export_checkbutton_toggled(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK void
-on_show_full_path_names_togglebutton_toggled(GtkWidget *widget)
+on_show_full_path_names_checkbutton_toggled(GtkWidget *widget)
 {
-  show_full_path_names_togglebutton_toggled();
+  show_full_path_names_checkbutton_toggled();
 }
 
 void

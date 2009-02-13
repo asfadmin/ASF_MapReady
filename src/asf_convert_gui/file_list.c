@@ -20,6 +20,8 @@ int COL_LOG;
 
 int COMP_COL_INPUT_FILE;
 int COMP_COL_INPUT_FILE_SHORT;
+int COMP_COL_ANCILLARY_FILE;
+int COMP_COL_ANCILLARY_FILE_SHORT;
 int COMP_COL_OUTPUT_FILE;
 int COMP_COL_OUTPUT_FILE_SHORT;
 int COMP_COL_OUTPUT_THUMBNAIL;
@@ -34,6 +36,8 @@ int COMP_COL_FARADAY_FILE;
 int COMP_COL_HIST_FILE;
 int COMP_COL_CLASS_MAP_FILE;
 int COMP_COL_METADATA_FILE;
+
+gboolean move_to_files_list(const gchar * data_file, const gchar * ancillary_file);
 
 /* danger: returns pointer to static data!! */
 /* (Stolen from popup_menu.c)               */
@@ -439,7 +443,7 @@ gboolean
 add_to_files_list(const gchar * data_file)
 {
     GtkTreeIter iter;
-    gboolean ret = add_to_files_list_iter(data_file, &iter);
+    gboolean ret = add_to_files_list_iter(data_file, NULL, &iter);
     return ret;
 }
 
@@ -471,11 +475,19 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 {
     // iter: points into "files_list"
     // completed_iter: (returned) points into "completed_files_list"
-    gchar *output_file, *file;
+    gchar *output_file, *output_file_basename;
+    gchar *file, *file_basename;
+    gchar *ancillary_file, *ancillary_file_basename;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
-    gtk_tree_model_get(model, iter, COL_INPUT_FILE, &file,
-                       COL_OUTPUT_FILE, &output_file, -1);
+    gtk_tree_model_get(model, iter,
+                       COL_INPUT_FILE, &file,
+                       COL_INPUT_FILE_SHORT, &file_basename,
+                       COL_OUTPUT_FILE, &output_file,
+                       COL_OUTPUT_FILE_SHORT, &output_file_basename,
+                       COL_ANCILLARY_FILE, &ancillary_file,
+                       COL_ANCILLARY_FILE_SHORT, &ancillary_file_basename,
+                       -1);
 
     // pull out the useful intermediates
     char *layover_mask=NULL, *clipped_dem=NULL, *simulated_sar=NULL,
@@ -518,13 +530,13 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     // now add to the completed files list!  Use the first listed file
     // as the output filename, since that is the one that was thumbnailed
     gtk_list_store_append(completed_list_store, completed_iter);
-    gchar *file_basename = g_path_get_basename(file);
-    gchar *out_basename = g_path_get_basename(outs[0]);
     gtk_list_store_set(completed_list_store, completed_iter,
                        COMP_COL_INPUT_FILE, file,
                        COMP_COL_INPUT_FILE_SHORT, file_basename,
+                       COMP_COL_ANCILLARY_FILE, ancillary_file,
+                       COMP_COL_ANCILLARY_FILE_SHORT, ancillary_file_basename,
                        COMP_COL_OUTPUT_FILE, outs[0],
-                       COMP_COL_OUTPUT_FILE_SHORT, out_basename,
+                       COMP_COL_OUTPUT_FILE_SHORT, output_file_basename,
                        COMP_COL_STATUS, "Done",
                        COMP_COL_LOG, log_txt,
                        COMP_COL_TMP_DIR, tmp_dir,
@@ -537,7 +549,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_METADATA_FILE, meta_file,
                        -1);
     g_free(file_basename);
-    g_free(out_basename);
+    g_free(output_file_basename);
 
     // There are no more files in the input files list that require ancillary files, so
     // remove visilibity from the ancillary files column
@@ -577,10 +589,12 @@ void
 move_from_completed_files_list(GtkTreeIter *iter)
 {
     gchar *input_file;
+    gchar *ancillary_file;
     gchar *tmp_dir;
     GtkTreeModel *model = GTK_TREE_MODEL(completed_list_store);
     gtk_tree_model_get(model, iter,
                        COMP_COL_INPUT_FILE, &input_file,
+                       COMP_COL_ANCILLARY_FILE, &ancillary_file,
                        COMP_COL_TMP_DIR, &tmp_dir,
                        -1);
 
@@ -589,7 +603,7 @@ move_from_completed_files_list(GtkTreeIter *iter)
       remove_dir(tmp_dir);
     }
 
-    add_to_files_list(input_file);
+    move_to_files_list(input_file, ancillary_file);
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
     g_free(input_file);
 }
@@ -657,11 +671,46 @@ show_queued_thumbnails()
 }
 
 gboolean
-add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
+move_to_files_list(const gchar * data_file, const gchar * ancillary_file)
+{
+  GtkTreeIter iter;
+  gboolean ret;
+  if (ancillary_file && strlen(ancillary_file) &&
+      data_file      && strlen(data_file))
+  {
+    animate_ancillary_files_button = FALSE;
+    ret = add_to_files_list_iter(data_file, ancillary_file, &iter);
+  }
+  else if (data_file && strlen(data_file)) {
+    ret = add_to_files_list_iter(data_file, NULL, &iter);
+  }
+  else {
+    ret = FALSE;
+  }
+
+  return ret;
+}
+
+gboolean
+add_to_files_list_iter(const gchar *input_file_in,
+                       const gchar *ancillary_file_in,
+                       GtkTreeIter *iter_p)
 {
     char *input_file = file_is_valid(input_file_in);
+    char *ancillary_file_valid = NULL;
     int valid = input_file != NULL;
     gboolean isPolSARpro;
+
+    // NOTE: When a file is added to the input list for the first time, the ancillary_file_in
+    // will be NULL or zero length.  When a file is moved from the completed files back to
+    // the list of input files, then ancillary_file will be valid and will have a full
+    // path/filename in it (see move_to_files_list() and add_to_files_list() )
+    if (valid &&
+        ancillary_file_in != NULL &&
+        strlen(ancillary_file_in) > 0)
+    {
+      ancillary_file_valid = file_is_valid(ancillary_file_in);
+    }
 
     if (valid)
     {
@@ -715,18 +764,26 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
             // The "Add Ancillary File:" portion of the string will make the status render
             // in red text, so don't change it without changing the status string renderer
             g_sprintf(status, "%s",
-                      "Add Ancillary File: Original CEOS (or AIRSAR?) leader file");
+                      ancillary_file_valid != NULL ? "-" :
+                          "Add Ancillary File: Original CEOS (or AIRSAR?) leader file");
           }
           else {
             g_sprintf(status, "%s", "-");
           }
           gchar *basename = g_path_get_basename(input_file);
+          gchar *ancillary_basename = NULL;
+          if (ancillary_file_valid != NULL) {
+              ancillary_basename = g_path_get_basename(ancillary_file_in);
+
+          }
           gtk_list_store_append(list_store, iter_p);
           gtk_list_store_set(list_store, iter_p,
                              COL_INPUT_FILE, input_file,
                              COL_INPUT_FILE_SHORT, basename,
-                             COL_ANCILLARY_FILE, (gchar *)"",
-                             COL_ANCILLARY_FILE_SHORT, (gchar *)"",
+                             COL_ANCILLARY_FILE, ancillary_file_valid == NULL ? (gchar *)"" :
+                                                 (gchar *) ancillary_file_in,
+                             COL_ANCILLARY_FILE_SHORT, ancillary_file_valid == NULL ? (gchar *)"" :
+                                                       ancillary_basename,
                              COL_BAND_LIST, bands,
                              COL_STATUS, status,
                              COL_LOG, "Has not been processed yet.",
@@ -741,7 +798,12 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
           FREE(bands);
 
           // PolSARpro file thumbnails are made after selecting an ancillary file
-          if (!is_polsarpro(input_file)) queue_thumbnail(input_file);
+          if (!is_polsarpro(input_file)) {
+            queue_thumbnail(input_file);
+          }
+          else if (ancillary_file_valid) {
+            queue_thumbnail(ancillary_file_in);
+          }
 
           /* Select the file automatically if this is the first
              file that was added (this makes the toolbar buttons
@@ -1082,9 +1144,11 @@ setup_files_list()
     COL_STATUS = 8;
     COL_LOG = 9;
 
-    completed_list_store = gtk_list_store_new(16,
+    completed_list_store = gtk_list_store_new(18,
                                               G_TYPE_STRING,    // Data file-Full path (usually hid.)
                                               G_TYPE_STRING,    // Data file - No path
+                                              G_TYPE_STRING,    // Ancillary file-Full path (hid.)
+                                              G_TYPE_STRING,    // Ancillary file - No path (hid.)
                                               G_TYPE_STRING,    // Output file-Full path (usually hid.)
                                               G_TYPE_STRING,    // Output file - No path
                                               GDK_TYPE_PIXBUF,  // Output thumbnail
@@ -1102,20 +1166,22 @@ setup_files_list()
 
     COMP_COL_INPUT_FILE = 0;
     COMP_COL_INPUT_FILE_SHORT = 1;
-    COMP_COL_OUTPUT_FILE = 2;
-    COMP_COL_OUTPUT_FILE_SHORT = 3;
-    COMP_COL_OUTPUT_THUMBNAIL = 4;
-    COMP_COL_OUTPUT_THUMBNAIL_BIG = 5;
-    COMP_COL_STATUS = 6;
-    COMP_COL_LOG = 7;
-    COMP_COL_TMP_DIR = 8;
-    COMP_COL_LAYOVER_SHADOW_MASK_FILE = 9;
-    COMP_COL_CLIPPED_DEM_FILE = 10;
-    COMP_COL_SIMULATED_SAR_FILE = 11;
-    COMP_COL_FARADAY_FILE = 12;
-    COMP_COL_HIST_FILE = 13;
-    COMP_COL_CLASS_MAP_FILE = 14;
-    COMP_COL_METADATA_FILE = 15;
+    COMP_COL_ANCILLARY_FILE = 2;
+    COMP_COL_ANCILLARY_FILE_SHORT = 3;
+    COMP_COL_OUTPUT_FILE = 4;
+    COMP_COL_OUTPUT_FILE_SHORT = 5;
+    COMP_COL_OUTPUT_THUMBNAIL = 6;
+    COMP_COL_OUTPUT_THUMBNAIL_BIG = 7;
+    COMP_COL_STATUS = 8;
+    COMP_COL_LOG = 9;
+    COMP_COL_TMP_DIR = 10;
+    COMP_COL_LAYOVER_SHADOW_MASK_FILE = 11;
+    COMP_COL_CLIPPED_DEM_FILE = 12;
+    COMP_COL_SIMULATED_SAR_FILE = 13;
+    COMP_COL_FARADAY_FILE = 14;
+    COMP_COL_HIST_FILE = 15;
+    COMP_COL_CLASS_MAP_FILE = 16;
+    COMP_COL_METADATA_FILE = 17;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
@@ -1303,6 +1369,30 @@ setup_files_list()
     g_object_set(renderer, "text", "?", NULL);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_INPUT_FILE_SHORT);
+
+    /* Next Column: Ancillary File Name (with full path) (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Ancillary File");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_ANCILLARY_FILE);
+
+    /* Next Column: Ancillary File Name (no path) (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Ancillary File");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_ANCILLARY_FILE_SHORT);
 
     /* Next Column: Output File Name (full path) */
     col = gtk_tree_view_column_new();
