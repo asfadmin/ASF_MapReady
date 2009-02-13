@@ -752,7 +752,7 @@ void handle_browse_ancillary_file()
   /*   <directory>\0<first file>\0<second file>\0<third ...  */
   char * dir = strdup(fname); // Contains only the directory
   char * p = fname + strlen(dir) + 1; // Points at first file
-  char * input_file = STRDUP(p);
+  input_file = STRDUP(p);
 
   if (*p) {
     char * dir_and_file =
