@@ -125,6 +125,7 @@ PROGRAMS
 	cpx_spectrum { }
 	create_dem_grid { }
 	create_man_page { }
+	data_qc { }
 	dem2phase { }
 	dem2seeds { }
 	dem_diff { }
@@ -264,12 +265,14 @@ CATEGORIES
 		asf_gamma_import
 		asf_airsar_import
 	}
+
 # Convert To Vector
         c2v_package
         {
                 convert2vector
                 convert2vector_gui
         }
+
 # SAR Training Processor
 	stp_package
 	{
