@@ -253,17 +253,13 @@ void load_external_commands()
     if (is_valid_external(n, line_num))
       ++n;
     num_external = n;
+    asfPrintStatus("Found %d plugin%s.\n",
+                   num_external, num_external==1?"":"s");
   }
   else {
     num_external = 0;
     asfPrintStatus("No plugins.\n");
   }
-
-  if (num_external == 0)
-    asfPrintStatus("No plugins.\n");
-  else
-    asfPrintStatus("Found %d plugin%s.\n",
-                   num_external, num_external==1?"":"s");
 
   // debug check
   //{

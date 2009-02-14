@@ -1119,7 +1119,6 @@ setup_files_list()
 {
     GtkTreeViewColumn *col;
     GtkCellRenderer *renderer;
-    GValue val = {0,};
 
     list_store = gtk_list_store_new(10,
                                     G_TYPE_STRING,    // Input file - Full path (usually hidden)
@@ -1270,10 +1269,11 @@ setup_files_list()
     gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
     renderer = gtk_cell_renderer_text_new();
 
-    /* allow editing the output filename right in the grid */
-    g_value_init(&val, G_TYPE_BOOLEAN);
-    g_value_set_boolean(&val, TRUE);
-    g_object_set_property(G_OBJECT(renderer), "editable", &val);
+    /* allow editing the output filename right in the grid (full length version) */
+    GValue val1;
+    g_value_init(&val1, G_TYPE_BOOLEAN);
+    g_value_set_boolean(&val1, TRUE);
+    g_object_set_property(G_OBJECT(renderer), "editable", &val1);
 
     /* connect "editing-done" signal */
     g_signal_connect(G_OBJECT(renderer), "edited",
@@ -1294,10 +1294,11 @@ setup_files_list()
     gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
     renderer = gtk_cell_renderer_text_new();
 
-    /* allow editing the output filename right in the grid */
-    g_value_init(&val, G_TYPE_BOOLEAN);
-    g_value_set_boolean(&val, TRUE);
-    g_object_set_property(G_OBJECT(renderer), "editable", &val);
+    /* allow editing the output filename right in the grid (shortened version) */
+    GValue val2;
+    g_value_init(&val2, G_TYPE_BOOLEAN);
+    g_value_set_boolean(&val2, TRUE);
+    g_object_set_property(G_OBJECT(renderer), "editable", &val2);
 
     /* connect "editing-done" signal */
     g_signal_connect(G_OBJECT(renderer), "edited",

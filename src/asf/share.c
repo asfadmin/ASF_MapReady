@@ -490,7 +490,9 @@ fopen_share_file(const char * filename, const char * mode)
 
   sprintf(full_name, "%s%c%s", share_dir, DIR_SEPARATOR, filename);
 
-  fp = FOPEN(full_name, mode);
+  fp = fopen(full_name, mode);
+  if (!fp)
+    asfPrintWarning("Could not open share file: %s\n", filename);
 
   free(full_name);
   return fp;
