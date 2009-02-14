@@ -1551,7 +1551,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
         strcat(header, "Lon_4,");
     }
   }
-  header[strlen(header)-1] = '\0';
+  strip_end_whitesp_inplace(header);
   fprintf(fp, "%s\n", header);
 
   char str[255];
@@ -2566,7 +2566,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       }
     }
   }
-  line[strlen(line)-1] = '\0';
+  strip_end_whitesp_inplace(line);
   fprintf(fp, "%s\n", line);
   FCLOSE(fp);
 
@@ -2589,7 +2589,7 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
     while (fgets(line, 1024, fpIn)) {
-      line[strlen(line)-1] = '\0';
+      strip_end_whitesp_inplace(line);
       asfPrintStatus("File: %s\n\n", line);
       meta_parameters *meta = meta_read_only(line);
       kml_entry(fpOut, meta, meta->general->basename);
@@ -3796,7 +3796,7 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   if (listFlag) {
     fp = FOPEN(inFile, "r");
     fgets(line, 1024, fp);
-    line[strlen(line)-1] = '\0';
+    strip_end_whitesp_inplace(line);
     strcpy(metaFile, line);
     FCLOSE(fp);
   }
@@ -3810,7 +3810,7 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   if (listFlag) {
     fp = FOPEN(inFile, "r");
     while (fgets(line, 1024, fp)) {
-      line[strlen(line)-1] = '\0';
+      strip_end_whitesp_inplace(line);
       convert_meta2shape(line, dbase, shape, n);
       n++;
     }
@@ -3837,7 +3837,7 @@ int leader2meta(char *inFile, char *outFile, int listFlag)
   if (listFlag) {
     fp = FOPEN(inFile, "r");
     while (fgets(line, 1024, fp)) {
-      line[strlen(line)-1] = '\0';
+      strip_end_whitesp_inplace(line);
       meta = meta_read(inFile);
       meta_write(meta, outFile);
       n++;
