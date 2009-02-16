@@ -148,9 +148,9 @@ CREATE_THUMBS_MODULES = \
 	src/create_thumbs
 
 DATA_QC_MODULES = \
-	src/asf_meta \
-	src/libasf_proj \
 	src/asf \
+	src/libasf_proj \
+	src/asf_meta \
 	src/data_qc
 
 IGNORED_INCLUDES = \
