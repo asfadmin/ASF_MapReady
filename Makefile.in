@@ -387,8 +387,8 @@ install:
 	if [ -d @SHAREDIR@/asf_mapready ]; then \
 		chmod a+x "@SHAREDIR@"/proj ; \
 	fi
-	cp -R doc/*.pdf "@SHAREDIR@/doc"
-	cp -R doc/*.txt "@SHAREDIR@/doc"
+	-cp -R doc/*.pdf "@SHAREDIR@/doc"
+	-cp -R doc/*.txt "@SHAREDIR@/doc"
 	chmod -R a+r "@SHAREDIR@"
 	chmod -R ug+w "@SHAREDIR@"
 
