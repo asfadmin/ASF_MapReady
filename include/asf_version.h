@@ -31,7 +31,7 @@
 #define CREATE_THUMBS_VERSION 2.0
 
 // Data_qc
-#define DATA_QC_VERSION_STRING "1.0.1"
+#define DATA_QC_VERSION_STRING "1.0.2-dev"
 #define DATA_QC_VERSION 1.0
 
 // Set Tool suite stuff based on given build define
