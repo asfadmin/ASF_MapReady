@@ -904,6 +904,11 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
          has_focus("go_to_samp_entry") ||
          has_focus("go_to_projx_entry") ||
          has_focus("go_to_projy_entry") ||
+         has_focus("gs_custom_min_entry") ||
+         has_focus("gs_custom_max_entry") ||
+         has_focus("gs_ignore_value_entry") ||
+         has_focus("gs_ignore_range_min_entry") ||
+         has_focus("gs_ignore_range_max_entry") ||
          has_focus("look_angle_entry") ||
          has_focus("show_box_button") ||
          has_focus("mode_combobox") ||

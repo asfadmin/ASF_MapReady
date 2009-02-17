@@ -179,6 +179,7 @@ main(int argc, char **argv)
     update_zoom();
     set_font();
     fill_meta_info();
+    update_map_settings();
     fill_stats(curr);
     setup_bands_tab(curr->meta);
     disable_meta_button_if_necessary();

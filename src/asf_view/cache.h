@@ -42,6 +42,10 @@ typedef struct {
     int hist[256];           // histogram
     double no_data_value;    // value indicating "no data"
     int have_no_data;        // TRUE if "no_data_value" is present
+    double no_data_min;
+    double no_data_max;
+    int have_no_data_range;
+    int truncate;
 } ImageStats;
 
 // Stats structure -- this one is used only for RGB images, keeps track

@@ -137,7 +137,7 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
         small_image_x_dim = tsx / scale;
         small_image_y_dim = tsy / scale;
 
-        printf("Scaling to %dx%d\n", small_image_x_dim, small_image_y_dim);
+        //printf("Scaling to %dx%d\n", small_image_x_dim, small_image_y_dim);
 
         pixbuf_small =
             gdk_pixbuf_scale_simple(pb, small_image_x_dim, small_image_y_dim,

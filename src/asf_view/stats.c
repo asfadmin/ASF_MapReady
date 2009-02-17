@@ -19,6 +19,93 @@ void clear_stats(ImageInfo *ii)
         ii->stats.hist[i] = 0;
 }
 
+static int have_ignore(ImageStats *stats)
+{
+  return stats->have_no_data || stats->have_no_data_range;
+}
+
+int is_ignored(ImageStats *stats, float val)
+{
+  if (!meta_is_valid_double(val)) // always ignore NaN
+    return TRUE;
+  else if (stats->have_no_data && val == stats->no_data_value)
+    return TRUE;
+  else if (stats->have_no_data_range &&
+           val >= stats->no_data_min && val <= stats->no_data_max)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+static void set_ignores(ImageInfo *ii, int from_gui)
+{
+  ImageStats *stats = &(ii->stats);
+  if (from_gui) {
+    stats->have_no_data = get_checked("rb_gs_ignore_value_checkbutton");
+    if (stats->have_no_data)
+      stats->no_data_value = get_double_from_entry("gs_ignore_value_entry");
+    else
+      stats->no_data_value = 0;
+    
+    stats->have_no_data_range = get_checked("rb_gs_ignore_range_checkbutton");
+    if (stats->have_no_data_range) {
+      stats->no_data_min = get_double_from_entry("gs_ignore_range_min_entry");
+      stats->no_data_max = get_double_from_entry("gs_ignore_range_max_entry");
+    }
+    else {
+      stats->no_data_min = 0;
+      stats->no_data_max = 0;
+    }
+  }
+  else {
+    if (meta_is_valid_double(ii->meta->general->no_data)) {
+      stats->have_no_data = TRUE;
+      stats->no_data_value = ii->meta->general->no_data;
+    } else {
+      stats->have_no_data = FALSE;
+      stats->no_data_value = -99999; // should never be checked
+    }
+
+    stats->have_no_data_range = FALSE;
+  }
+}
+
+static void set_mapping(ImageInfo *ii, int from_gui)
+{
+  ImageStats *stats = &(ii->stats);
+  if (from_gui) {
+    if (get_checked("rb_gs_2sigma")) {
+      stats->map_min = stats->avg - 2*stats->stddev;
+      stats->map_max = stats->avg + 2*stats->stddev;
+      stats->truncate = FALSE;
+    }
+    else if (get_checked("rb_gs_3sigma")) {
+      stats->map_min = stats->avg - 3*stats->stddev;
+      stats->map_max = stats->avg + 3*stats->stddev;
+      stats->truncate = FALSE;
+    }
+    else if (get_checked("rb_gs_minmax")) {
+      stats->map_min = stats->act_min;
+      stats->map_max = stats->act_max;
+      stats->truncate = FALSE;
+    }
+    else if (get_checked("rb_gs_truncate")) {
+      stats->truncate = TRUE;
+    }
+    else if (get_checked("rb_gs_custom")) {
+      stats->map_min = get_double_from_entry("gs_custom_min_entry");
+      stats->map_max = get_double_from_entry("gs_custom_max_entry");
+      stats->truncate = FALSE;
+    }
+  }
+  else {
+    // initialize to defaults
+    stats->map_min = stats->avg - 2*stats->stddev;
+    stats->map_max = stats->avg + 2*stats->stddev;
+    stats->truncate = FALSE;
+  }
+}
+
 // Now the thumbnail generation is combined with the stats calculations,
 // to speed things up a little.  Both require a pass through the entire
 // image, so it seems natural, and the stats calculation doesn't add much
@@ -28,17 +115,11 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 {
     int i,j;
     unsigned char *bdata = MALLOC(sizeof(unsigned char)*tsx*tsy*3);
+    ImageStats *stats = &(ii->stats);
 
     // we will estimate the stats from the thumbnail data
     clear_stats(ii);
 
-    if (meta_is_valid_double(ii->meta->general->no_data)) {
-      ii->stats.have_no_data = TRUE;
-      ii->stats.no_data_value = ii->meta->general->no_data;
-    } else {
-      ii->stats.have_no_data = FALSE;
-      ii->stats.no_data_value = -99999; // should never be checked
-    }
     // Here we do the rather ugly thing of making the thumbnail
     // loading code specific to each supported data type.  This is
     // because we've combined the stats calculation into this...
@@ -48,18 +129,17 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         float *fdata = CALLOC(sizeof(float), tsx*tsy);
 
         load_thumbnail_data(ii->data_ci, tsx, tsy, fdata);
+        set_ignores(ii, glade_xml!=NULL);
 
         // split out the case where we have no ignore value --
         // should be quite a bit faster...
-        if (ii->stats.have_no_data) {
+        if (have_ignore(stats)) {
             // Compute stats -- ignore "no data" value
             int n=0;
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
-                    if (meta_is_valid_double(v) && 
-                        v!=ii->stats.no_data_value &&
-                        fabs(v)<999999999)
+                    if (!is_ignored(stats, v) && fabs(v)<999999999)
                     {
                         ii->stats.avg += v;
 
@@ -81,9 +161,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
-                    if (meta_is_valid_double(v) &&
-                        v!=ii->stats.no_data_value &&
-                        fabs(v)<999999999)
+                    if (!is_ignored(stats, v) && fabs(v)<999999999)
                     {
                         ii->stats.stddev +=
                           (v - ii->stats.avg)*(v - ii->stats.avg);
@@ -120,21 +198,10 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
         //printf("Avg, StdDev: %f, %f\n", ii->stats.avg, ii->stats.stddev);
 
-        if (ii->stats.stddev > 0) {
-          // Set the limits of the scaling - 2-sigma on either side of the mean
-          // These are globals, we will use them in the big image, too.
-          ii->stats.map_min = ii->stats.avg - 2*ii->stats.stddev;
-          ii->stats.map_max = ii->stats.avg + 2*ii->stats.stddev;
-        }
-        else {
-          // degenerate case -- pixels all have the same value
-          ii->stats.map_min = ii->stats.avg - 1;
-          ii->stats.map_min = ii->stats.avg + 1;
-        }
+        set_mapping(ii, glade_xml!=NULL);
 
         // Now actually scale the data, and convert to bytes.
         // Note that we need 3 values, one for each of the RGB channels.
-        int have_no_data = ii->stats.have_no_data;
         if (have_lut()) {
             // look up table case -- no scaling, just use the lut
             // to convert from float to rgb byte
@@ -145,9 +212,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                     float val = fdata[index];
 
                     int ival;
-                    if (!meta_is_valid_double(val) ||
-                        (have_no_data && val==ii->stats.no_data_value) ||
-                        val < 0)
+                    if (is_ignored(stats, val) || ival<0)
                         ival = 0;
                     else
                         ival = (int)val;
@@ -156,14 +221,8 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
                     // histogram will appear as if we were scaling
                     // to greyscale byte
-                    unsigned char uval;
-                    if (ival <= 0 || val < ii->stats.map_min)
-                        uval = 0;
-                    else if (val > ii->stats.map_max)
-                        uval = 255;
-                    else
-                        uval = (unsigned char)(((val-ii->stats.map_min)/(ii->stats.map_max-ii->stats.map_min))*255+0.5);
-
+                    unsigned char uval = (unsigned char)
+                      calc_scaled_pixel_value(&(ii->stats), val);
                     ii->stats.hist[uval] += 1;
                 }
             }
@@ -176,17 +235,8 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                     int index = j+i*tsx;
                     float val = fdata[index];
 
-                    unsigned char uval;
-                    if (!meta_is_valid_double(val))
-                        uval = 0;
-                    else if (have_no_data && val == ii->stats.no_data_value)
-                        uval = 0;
-                    else if (val < ii->stats.map_min)
-                        uval = 0;
-                    else if (val > ii->stats.map_max)
-                        uval = 255;
-                    else
-                        uval = (unsigned char)(((val-ii->stats.map_min)/(ii->stats.map_max-ii->stats.map_min))*255+0.5);
+                    unsigned char uval = (unsigned char)
+                      calc_scaled_pixel_value(&(ii->stats), val);
                 
                     int n = 3*index;
                     bdata[n] = uval;
@@ -452,10 +502,16 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
 int calc_scaled_pixel_value(ImageStats *stats, float val)
 {
-    if (!meta_is_valid_double(val))
+    if (is_ignored(stats, val))
         return 0;
-    else if (stats->have_no_data && val == stats->no_data_value)
+    else if (stats->truncate) {
+      if (val < 0)
         return 0;
+      else if (val > 255)
+        return 255;
+      else
+        return (int)(val+.5);
+    }
     else if (val < stats->map_min)
         return 0;
     else if (val > stats->map_max)
@@ -516,9 +572,16 @@ static void fill_stats_label(ImageInfo *ii)
     }
     else {
       // y = m*x + b
-      double m = 255.0/(ii->stats.map_max-ii->stats.map_min);
-      double b = -ii->stats.map_min*255.0/
-        (ii->stats.map_max-ii->stats.map_min);
+      double m, b;
+
+      if (ii->stats.truncate) {
+        m = 1.0;
+        b = 0.0;
+      }
+      else {
+        m = 255.0/(ii->stats.map_max-ii->stats.map_min);
+        b = -ii->stats.map_min*255.0/(ii->stats.map_max-ii->stats.map_min);
+      }
 
       // we will take charge of displaying the sign
       char c = b>0 ? '+' : '-';
@@ -589,14 +652,23 @@ static void pop_hist(ImageInfo *ii)
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 
     // populate the low/mid/hi labels on the histogram
-    double max = ii->stats.map_max;
-    double min = ii->stats.map_min;
-    int n=2;
-    if (max>1000 || min<-1000) n=1;
-    if (max>10000 || min<-10000) n=0;
-    if (max<100 && min>-100) n=3;
-    if (max<10 && min>-10) n=4;
-    if (max<1 && min>-1) n=5;
+    double max, min;
+    int n;
+    if (ii->stats.truncate) {
+      max = 255;
+      min = 0;
+      n = 0;
+    }
+    else {
+      max = ii->stats.map_max;
+      min = ii->stats.map_min;
+      n=2;
+      if (max>1000 || min<-1000) n=1;
+      if (max>10000 || min<-10000) n=0;
+      if (max<100 && min>-100) n=3;
+      if (max<10 && min>-10) n=4;
+      if (max<1 && min>-1) n=5;
+    }
     char fmt[32];
     sprintf(fmt, "%%%d.%df", 6, n);
     put_double_to_label("hist_hi_label", fmt, max);
@@ -633,4 +705,41 @@ int fill_stats(ImageInfo *ii)
     pop_hist(ii);
 
     return TRUE;
+}
+
+void update_map_settings()
+{
+  int on;
+
+  on = get_checked("rb_gs_custom");
+  enable_widget("hbox_gs_custom_range", on);
+  on = get_checked("rb_gs_ignore_range_checkbutton");
+  enable_widget("hbox_gs_ignore_range", on);
+  on = get_checked("rb_gs_ignore_value_checkbutton");
+  enable_widget("hbox_gs_ignore_value", on);
+}
+
+SIGNAL_CALLBACK void on_rb_gs_toggled(GtkWidget *w)
+{
+  update_map_settings();
+}
+
+SIGNAL_CALLBACK void on_rb_gs_ignore_range_checkbutton_toggled(GtkWidget *w)
+{
+  update_map_settings();
+}
+
+SIGNAL_CALLBACK void on_rb_gs_ignore_value_checkbutton_toggled(GtkWidget *w)
+{
+  update_map_settings();
+}
+
+SIGNAL_CALLBACK void on_map_apply_button_clicked(GtkWidget *w)
+{
+  //set_mapping();
+
+  fill_small_force_reload(curr);
+  fill_big(curr);
+  fill_stats(curr);
+  update_pixel_info(curr);
 }

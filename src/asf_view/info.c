@@ -86,15 +86,27 @@ void update_pixel_info(ImageInfo *ii)
                 unsigned char r, g, b;
                 cached_image_get_rgb(data_ci, crosshair_line, crosshair_samp,
                                      &r, &g, &b);
-                sprintf(&buf[strlen(buf)],
-                        "Pixel Value: %f -> R:%d G:%d B:%d\n",
-                        fval, (int)r, (int)g, (int)b);
+                if (is_ignored(&ii->stats, fval)) {
+                  sprintf(&buf[strlen(buf)], "Pixel Value: %f [ignored]\n",
+                          fval);
+                }
+                else {
+                  sprintf(&buf[strlen(buf)],
+                          "Pixel Value: %f -> R:%d G:%d B:%d\n",
+                          fval, (int)r, (int)g, (int)b);
+                }
             }
             else {
                 int uval = calc_scaled_pixel_value(&(ii->stats), fval);
 
-                sprintf(&buf[strlen(buf)], "Pixel Value: %f -> %d\n",
-                        fval, uval);
+                if (is_ignored(&ii->stats, fval)) {
+                  sprintf(&buf[strlen(buf)], "Pixel Value: %f [ignored]\n",
+                          fval);
+                }
+                else {
+                  sprintf(&buf[strlen(buf)], "Pixel Value: %f -> %d\n",
+                          fval, uval);
+                }
             }
         }
         else if (data_ci->data_type == RGB_BYTE) {
