@@ -4,6 +4,17 @@
 #include <asf_version.h>
 #define VERSION TOOL_SUITE_VERSION_STRING
 
+// Define JASC_PALETTE_SUPPORT to turn on support for
+// JASC (Paint Shop Pro and other) palettes
+//
+// FIXME: We need to make generic the way that we assign/remember
+// combo box indices (or peruse the list) so that when a new lut is picked
+// and applied that the right item is selected in the drop-down box.
+// FOR NOW... Don't enable JASC_PALETTE_SUPPORT until we do this, or just
+// enable it for development reasons.
+//
+// #define JASC_PALETTE_SUPPORT
+
 #define _GNU_SOURCE
 
 #include <stdlib.h>

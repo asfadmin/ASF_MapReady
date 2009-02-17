@@ -42,6 +42,7 @@ all: build_only
 	cp cloude8.cla cloude16.cla $(SHAREDIR)/classifications
 	mkdir -p $(SHAREDIR)/look_up_tables
 	cp cloude8.lut cloude16.lut $(SHAREDIR)/look_up_tables
+	cp jasc_palettes/* $(SHAREDIR)/look_up_tables
 	-cp ea_boundary.txt $(SHAREDIR)/classifications
 
 build_only: $(OBJS)

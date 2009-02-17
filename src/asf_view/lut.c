@@ -84,6 +84,18 @@ void populate_lut_combo()
                     if (n > 20)
                         break;
                 }
+                else if (p && strcmp(p, ".pal") == 0 && is_jasc_palette_lut(name)) {
+#ifdef JASC_PALETTE_SUPPORT
+                  *p = '\0'; // don't show ".pal" extension in menu
+                  names[n++] = name_dup;
+                    // quit when we get too many
+                  if (n > 20)
+                    break;
+#else
+                  // Unsupported palette, so ignore it (see asf_view.h for JASC_PALETTE_SUPPORT def)
+                  break;
+#endif
+                }
             } else
                 break;
         }
@@ -154,13 +166,17 @@ void set_lut(const char *lut_basename)
         g_lut_buffer = NULL;
     }
 
+    char jasc_lut_path[1024];
     char filename[512];
-    sprintf(filename, "%s.lut", lut_basename);
+    sprintf(jasc_lut_path, "%s%c%s.pal", get_lut_loc(), DIR_SEPARATOR, lut_basename);
+    sprintf(filename, "%s%s",
+            lut_basename,
+            is_jasc_palette_lut(jasc_lut_path) ? ".pal" : ".lut");
 
     char *lut_loc = get_lut_loc();
     char *path_and_file =
             MALLOC(sizeof(char)*(strlen(lut_loc)+strlen(filename)+20));
-    sprintf(path_and_file, "%s/%s", lut_loc, filename);
+    sprintf(path_and_file, "%sc%s", lut_loc, DIR_SEPARATOR, filename);
     free(lut_loc);
 
     g_lut_buffer = MALLOC(sizeof(unsigned char) * MAX_LUT_DN*3);
@@ -224,13 +240,16 @@ void check_lut()
     }
     else {
         // something was selected!
+        char jasc_lut_path[1024];
+        sprintf(jasc_lut_path, "%s%c%s.pal", get_lut_loc(), DIR_SEPARATOR, lut_basename);
         char filename[512];
-        sprintf(filename, "%s.lut", lut_basename);
+        sprintf(filename, "%s%s", lut_basename,
+                is_jasc_palette_lut(jasc_lut_path) ? ".pal" : ".lut");
 
         char *lut_loc = get_lut_loc();
         char *path_and_file =
             MALLOC(sizeof(char)*(strlen(lut_loc)+strlen(filename)+20));
-        sprintf(path_and_file, "%s/%s", lut_loc, filename);
+        sprintf(path_and_file, "%s%c%s", lut_loc, DIR_SEPARATOR, filename);
         free(lut_loc);
 
         g_lut_buffer = MALLOC(sizeof(unsigned char) * MAX_LUT_DN*3);
