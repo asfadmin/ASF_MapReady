@@ -20,44 +20,44 @@ Note: The MapReady binaries are mapready and asf_mapready, but
   source folders respectively.  The executable and icon file (etc)
   files are renamed as they are copied to the bin and share folders.
 
- 1. Check out the code to be released (if not already), i.e. branched version
-    or the trunk, i.e. to ~/asf/asf_tools.  NOTE: You will perform an
-    'svn export' to obtain a copy of the tools for building the release
-    later in this procedure.
+ * Check out the code to be released (if not already), i.e. branched version
+   or the trunk, i.e. to ~/asf/asf_tools.  NOTE: You will perform an
+   'svn export' to obtain a copy of the tools for building the release
+   later in this procedure.
 
- 2. Update the version number(s) in ~/asf/asf_tools/include/asf_version.h
-    and commit the change to the subversion repository.  Example:
+ * Update the version number(s) in ~/asf/asf_tools/include/asf_version.h
+   and commit the change to the subversion repository.  Example:
 
-    a) MAPREADY_VERSION_STRING "2.0.8-dev"
-       MAPREADY_VERSION 2.0
+   a) MAPREADY_VERSION_STRING "2.0.8-dev"
+      MAPREADY_VERSION 2.0
 
-        changes to
+       changes to
 
-       MAPREADY_VERSION_STRING "2.0.8"
-       MAPREADY_VERSION 2.0
+      MAPREADY_VERSION_STRING "2.0.8"
+      MAPREADY_VERSION 2.0
 
-    b) svn ci
+   b) svn ci
 
- 3. In your regular subversion checkout (not your exported version), bump
-    the version in include/asf_version.h and add "-dev" to the end, then
-    commit the change to the repository.
+ * In your regular subversion checkout (not your exported version), bump
+   the version in include/asf_version.h and add "-dev" to the end, then
+   commit the change to the repository.
 
-    a)
-       MAPREADY_VERSION_STRING "2.0.9-dev"
-       MAPREADY_VERSION 2.0
+   a)
+      MAPREADY_VERSION_STRING "2.0.9-dev"
+      MAPREADY_VERSION 2.0
 
-    b) svn ci
+   b) svn ci
 
- 4. When doing a release close to final release, you may wish to
-      update "mapready-version_history.txt" with the release date and
-      version number, and check that in.
+ * When doing a release close to final release, you may wish to
+   update "mapready-version_history.txt" with the release date and
+   version number, and check that in.
 
       For example, for 2.0.13 the first line is:
         MapReady 2.0.13 (released 2008 August 27)
 
       When building 2.0.14, this line needs to be updated accordingly.
 
- 5. Tag the repository:
+ * Tag the repository:
 
       svn copy svn+ssh://svn/svn/asf_tools/trunk
                svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-8
@@ -67,48 +67,48 @@ Note: The MapReady binaries are mapready and asf_mapready, but
                svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-8
     ]]
 
- 6. Create a clean directory where you will produce the build (etc),
-    for example (change the revision number to the one that you have
-    checked out):
+ * Create a clean directory where you will produce the build (etc),
+   for example (change the revision number to the one that you have
+   checked out):
 
       mkdir ~/asf/svn-r7665
 
- 7. Check out autotar and rpmbuild into this work directory.  Example:
+ * Check out autotar and rpmbuild into this work directory.  Example:
 
       cd ~/asf/svn-r7665
       svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
       svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
 
- 8. Make working directories:
+ * Make working directories:
 
       cd ~/asf/svn-r7665
       mkdir -p release/tar_filelist release/tar
 
- 9. If you have never copied the .rpmmacros and .rpmrc files to your
-    home directory, then do so now, otherwise skip to step 7:
+ * If you have never copied the .rpmmacros and .rpmrc files to your
+   home directory, then do so now, otherwise skip to step 7:
 
       cd ~/asf/svn-r7665/release/rpmbuild
       cp dot.rpmmacros ~/.rpmmacros
       cp dot.rpmrc ~/.rpmrc
 
- 10. Edit ~/.rpmmacros to update the top directory for your build's rpmbuild
-    parent directory, i.e. the 'release' folder.  Find the %_topdir line and
-    edit as follows:
+ * Edit ~/.rpmmacros to update the top directory for your build's rpmbuild
+   parent directory, i.e. the 'release' folder.  Find the %_topdir line and
+   edit as follows:
 
       %_topdir      %(echo $HOME)/asf/svn-r7665/release
 
- 11. Check out a copy of the release:
+ * Check out a copy of the release:
 
       cd ~/asf/svn-r7665
       svn export svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-8 asf_tools
 
- 12. Make sure the "References" section in the end of the asf_convert_gui.txt
-     file has been removed, including the 'Visible Links' that occur there.
+ * Make sure the "References" section in the end of the asf_convert_gui.txt
+   file has been removed, including the 'Visible Links' that occur there.
 
-     In the ~/asf/svn-r7665/asf_tools/src/asf_convert_gui folder, edit the
-     asf_convert_gui.txt file as follows (if they exist):
+   In the ~/asf/svn-r7665/asf_tools/src/asf_convert_gui folder, edit the
+   asf_convert_gui.txt file as follows (if they exist):
 
-     REMOVE The following (typical set of) lines:
+   REMOVE The following (typical set of) lines:
 
        References
 
@@ -127,27 +127,20 @@ Note: The MapReady binaries are mapready and asf_mapready, but
          12. file:///tmp/html-tR2820#contacting-us
          13. mailto:uso@asf.alaska.edu
 
-
- 13. Make sure DEBUG_BUILD is not set to any particular debug level:
+ * Make sure DEBUG_BUILD is not set to any particular debug level:
 
       unset DEBUG_BUILD
 
- 14. If you want to meddle with what the package will include you'll need to
-     edit ~/asf/svn-r7665/asf_tools/make_support/master_program_list. That is
-     where all the tools to be compiled are listed with other tools that they
-     depend on.  There's also a CATEGORIES category in the master_program_list.
-     You can make special groupings of tools in CATEGORIES section (eg 'mapready'
-     which includes asf_mapready, mapready, asf_export, asf_import, etc.).
+ * If you want to meddle with what the package will include you'll need to
+   edit ~/asf/svn-r7665/asf_tools/make_support/master_program_list. That is
+   where all the tools to be compiled are listed with other tools that they
+   depend on.  There's also a CATEGORIES category in the master_program_list.
+   You can make special groupings of tools in CATEGORIES section (eg 'mapready'
+   which includes asf_mapready, mapready, asf_export, asf_import, etc.).
 
-     NOTE: In general, you should not have to edit the master_program_list.
+   NOTE: In general, you should not have to edit the master_program_list.
 
- 15. ** KLUDGE #1 **
-     Create svn_rev.h:
-
-      cd ~/asf/svn-r7665/asf_tools/include
-      echo "#define SVN_REV \"7665\"" > svn_rev.h
-
- 16. ** KLUDGE #2 **
+ ** KLUDGE #2 **
      a. Edit ~/asf/svn-r7665/asf_tools/Makefile.in, eliminate the following
         lines from the MAPREADY_MODULES list:
 
@@ -159,21 +152,24 @@ Note: The MapReady binaries are mapready and asf_mapready, but
           src/convert2vector \
           src/convert2vector_gui \
 
-     b. Eliminate the following line from Makefile.in in the mapready: target.
-        At the time of writing these instructions, this line occurs near line 230.
-        (After deleting the items above.)
+     b. Change the following line in Makefile.in to include the hard coded
+        svn revision number. At the time of writing these instructions,
+        this line occurs near line 228 (after deleting the items above).
+          change:
+          SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+          to
+          SET_SVN_REV_H = echo "\#define SVN_REV \"7665\"">include/svn_rev.h
 
-          echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
-
-     c. The "stp" "ap" "req" "c2v", "jpl", "create_thumbs", "data_qc", and "oldtools" targets,
-        and all associated build instructions, should all be deleted from Makefile.in
+     c. The "stp" "ap" "req" "c2v", "jpl", "create_thumbs", "data_qc",
+        and "oldtools" targets, and all associated build instructions,
+        should all be deleted from Makefile.in
 
      d. Update the "all" target to only build "mapready".
 
-     e. Fix the "clean" target near the end of the file, to only include MAPREADY_MODULES,
-        i.e., delete the STP_MODULES and AP_MODULES, etc.
+     e. Fix the "clean" target near the end of the file, to only include
+        MAPREADY_MODULES, i.e., delete the STP_MODULES and AP_MODULES, etc.
 
- 17. ** KLUDGE #3 **
+ ** KLUDGE #3 **
 
      Edit ~/asf/svn-r7665/asf_tools/src/asf_convert_gui/Makefile, and change
      the default target to include "doc.  This should amount to uncommenting
@@ -181,15 +177,15 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 
        vi ~/asf/svn-r7665/asf_tools/src/asf_convert_gui/Makefile
 
- 18. Create the source.mapready_package file in ~/asf/svn-r7665/releast/autotar
-     (automatically by makemake if you followed the directory structure
-     instructions listed here):
+ * Create the source.mapready_package file in ~/asf/svn-r7665/releast/autotar
+   (automatically by makemake if you followed the directory structure
+   instructions listed here):
 
       cd ~/asf/svn-r7665/asf_tools/make_support
       make
       ./makemake
 
- 19. ** KLUDGE #4 **
+ ** KLUDGE #4 **
     Add missing tools to the source.mapready_package file:
 
       cd ~/asf/svn-r7665/release/autotar
@@ -214,29 +210,29 @@ src/asf_airsar_import
 src/fftMatch
 src/flip
 
- 20. Run the autotar script:
+ * Run the autotar script:
 
       cd ~/asf/svn-r7665/release/autotar
       ./tarfile src ~/asf/svn-r7665 mapready_package
 
- 21. Run the rpmprep script (from autotar folder):
+ * Run the rpmprep script (from autotar folder):
 
       ./rpmprep mapready_package asf_mapready
 
- 22. Copy an older .spec file to the new one, then edit the new .spec
-     file in to use the correct version and to add a brief version
-     history comment (towards the end of the file):
+ * Copy an older .spec file to the new one, then edit the new .spec
+   file in to use the correct version and to add a brief version
+   history comment (towards the end of the file):
 
       cd ~/asf/svn-r7665/release/rpmbuild
       cp <old .spec file> asf_mapready-2.0.8-1.spec
       vi asf_mapready-2.0.8-1.spec
 
- 23. Save the new .spec file in the repository:
+ * Save the new .spec file in the repository:
 
       svn add asf_mapready-2.0.8-1.spec
       svn ci asf_mapready-2.0.8-1.spec
 
- 24. a) If you have not already added the secret and public gpg keys
+ * a) If you have not already added the secret and public gpg keys
      to your ~/.gnupg folder, then do so now or the rpm build will
      not sign the rpms.  Note that you CAN sign the rpms after they
      have been created with "rpm --addsign <rpm file name>".  Note that
@@ -259,7 +255,7 @@ src/flip
      cd ~/asf/svn-r7665/release/rpmbuild/public_key
      sudo rpm -import asf_tools-pubkey.asc
 
- 25. Build and check the rpm:
+ * Build and check the rpm:
 
       cd ~/asf/svn-r7665/release/rpmbuild
       rpmbuild -ba --sign asf_mapready-2.0.8-1.spec
@@ -290,13 +286,13 @@ src/flip
      means the ASCII public key has not been imported with "rpm -import"
      yet.
 
- 26. Create tarballs of the rpms (the binary rpm will also contain the
-     README_rpm.txt file from ~/asf/svn-r7665/asf_tools folder):
+ * Create tarballs of the rpms (the binary rpm will also contain the
+   README_rpm.txt file from ~/asf/svn-r7665/asf_tools folder):
 
       cd ~/asf/svn-r7665/release/rpmbuild
       ./tarrpms asf_mapready mapready
 
- 27. Put the built files on dq (still in ~/asf/svn-r7665/release/rpmbuild):
+ * Put the built files on dq (still in ~/asf/svn-r7665/release/rpmbuild):
 
       mkdir /stor/dq/release_builds/mapready/v2.0.8
       cp dist/* /stor/dq/release_builds/mapready/v2.0.8
@@ -305,7 +301,7 @@ src/flip
       chgrp dq /stor/dq/release_builds/mapready/v2.0.8
       chgrp dq /stor/dq/release_builds/mapready/v2.0.8/*
 
- 28. **OPTIONAL**
+ **OPTIONAL**
      'Da Man' likes to finish up by doing this:
 
       mv ~/asf/svn-r7665 ~/asf/mapready-v2.0.8
@@ -472,12 +468,12 @@ SAR TRAINING PROCESSOR (STP) SOURCE AND RPM RELEASE PROCEDURE
     -> Update the "default" target to build stp (instead of mapready)
     -> Update the "all" target to just include stp.
     -> Update the "clean" target to just include STP_MODULES
-    -> In the "stp" target, delete the SVN_REV updating line
+    -> Hardcode the SVN revision number
+       Change:
+       SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+       to:
+       SET_SVN_REV_H = echo "\#define SVN_REV \"<REVISION#>\"">include/svn_rev.h
 
-* Create svn_rev.h:
-
-    cd ~/asf/svn-r<REVISION#>/asf_tools/include
-    echo "#define SVN_REV \"????\"" > svn_rev.h
 
 * Update source.stp_package, adding:
 
@@ -648,31 +644,15 @@ NOTE: it is assumed that you have already tagged the repository in preparation
 CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 -------------------------------------------------------------
 
-* It is suggested that you do the build on dq.
-
-* Update C2V_VERSION and C2V_VERSION_STRING in include/asf_version.h
-
-* Do a global-replace in this file of "8-8-8" with the actual version
-  number of the build.  Do not save/check-in the document with that
-  replacement!
-
-* Do a global-replace in this file of "8.8.8" with the actual version
-  number of the build.  Do not save/check-in the document with that
-  replacement!
-
-* Update the version history document to reflect the version being build,
-  and the current date.
+* Update C2V_VERSION in include/asf_version.h
 
 * Tag the repository:
     Trunk:
     > svn copy svn+ssh://svn/svn/asf_tools/trunk
-               svn+ssh://svn/svn/asf_tools/tags/c2v_v8-8-8
-    Or Branch (branch name varies...)
+               svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0
+    Or Branch:
     > svn copy svn+ssh://svn/svn/asf_tools/branches/c2v_v?-?-x \
-               svn+ssh://svn/svn/asf_tools/tags/c2v_v8-8-8
-
-* Do a global-replace in this file of "8888" with the svn revision number
-  of the copy.  Do not save/check-in the document with that replacement!
+               svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0
 
 * Create a clean directory where you will produce the build (etc),
   for example:
@@ -682,7 +662,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 * Export a copy of the release in the work directory:
 
     > cd ~/asf/svn-r8888
-    > svn export svn+ssh://svn/svn/asf_tools/tags/c2v_v8-8-8 asf_tools
+    > svn export svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0 asf_tools
 
 * Check out autotar and rpmbuild into the work directory.
 
@@ -696,36 +676,31 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
     > mkdir -p release/tar_filelist
     > mkdir -p release/tar
 
-* Create svn_rev.h:
-
-      cd ~/asf/svn-r8888/asf_tools/include
-      echo "#define SVN_REV \"8888\"" > svn_rev.h
-
 * Fix up Makefile.in:
 
-     a. Eliminate the following line from Makefile.in in the c2v: target.
-        (After deleting the items above.)
+     a. Change the following line in the Makefile.in so that the svn revision
+        number is hard coded.
+        change:
+        SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+        to:
+        SET_SVN_REV_H = echo "\#define SVN_REV \"8888\"">include/svn_rev.h
 
-          echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 
-     b. The "stp" "ap" "req" "maprady", "jpl", "create_thumbs", "data_qc", and "oldtools" targets,
-        and all associated build instructions, should all be deleted from Makefile.in
+     b. The "stp", "ap", "req", "mapready", "jpl", "create_thumbs", "data_qc",
+        and "oldtools" targets, and all associated build instructions,
+        should all be deleted from Makefile.in
 
-     c. Update the "all" and "default" targets to only build "c2v".
+     c. Update the "all" target to only build "c2v".
 
      d. Fix the "clean" target near the end of the file, to only include C2V_MODULES,
         i.e., delete the STP_MODULES and AP_MODULES, etc.
-
-* Clean out the mapready, etc documentation that is not needed in the c2v package:
-
-    > cd ~/asf/svn-r8452/asf_tools/doc
-    > rm arc* cre* dem* map* rep* SAR* stp*
 
 * Create the source.c2v_package file:
 
     > cd ~/asf/svn-r8888/asf_tools/make_support
     > make
     > ./makemake
+    > rm -f makemake ../Makefile.old
 
 * Update source.c2v_package, adding:
 
@@ -748,9 +723,9 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 * Copy an older .spec file to the new one:
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > mv c2v-1.0.0-1.spec c2v-8.8.8-1.spec
+    > cp c2v-1.0.0-1.spec c2v-1.0.0-1.spec
 
-* Edit the new .spec file (c2v-8.8.8-1.spec) to use the correct version.
+* Edit the new .spec file (c2v-1.0.0-1.i386.spec) to use the correct version.
   The version number to be edited should be on line 2:
 
     Text chunk:
@@ -760,10 +735,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
       Release: 1
       License: BSD
 
-* *** NOTE: This step only needs to be performed the first time you do a build
-            on a particular machine ***
-
-  If you have never copied the .rpmmacros and .rpmrc files to your
+* If you have never copied the .rpmmacros and .rpmrc files to your
   home directory, then do so now:
 
     > cd ~/asf/svn-r8888/release/rpmbuild
@@ -782,7 +754,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 * Build the rpm:
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > rpmbuild -ba c2v-8.8.8-1.spec
+    > rpmbuild -ba c2v-1.0.0-1.spec
 
 * Collect rpm & source tarball for Linux & Win32 distribution using the
   tarrpms script. This should put all the *.tar.gz & *.zip files you need
@@ -794,28 +766,14 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 
 * Copy all the packages to our favorite archive location. The files you're
   sending should look something like this:
-       c2v-8.8.8-rpm.tar.gz
-       c2v-8.8.8-rpm.zip
-       c2v-8.8.8-src.tar.gz
-       c2v-8.8.8-src.zip
+       c2v-?.?.?-rpm.tar.gz
+       c2v-?.?.?-rpm.zip
+       c2v-?.?.?-src.tar.gz
+       c2v-?.?.?-src.zip
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > #scp dist/* dq:/stor/dq/release_builds/c2v/8.8.8
-    > cp dist/* /stor/dq/release_builds/c2v/8.8.8
+    > scp dist/* dq:/stor/dq/release_builds/c2v/1.0.0
 
-* Upload the files to winfs:
-    http://winfs/utdtools/default.aspx
-
-  They should be uploaded to the "Convert To Vector" section.
-
-  You only need to upload the .tar.gz files for Linux/Source, and the .zip
-  file for windows.
-
-* Update this page: 
-    http://wiki/asf/C2V_releases
-
-  including writing a "release notes" entry in the wiki.  Use prior
-  versions as a template.
 
 
 
@@ -860,21 +818,17 @@ Note: The following example assumes subversion revision 8072, jpl version
      cd ~/asf/jpl-r8072
      svn export svn+ssh://svn/svn/asf_tools/tags/jplmosaicsuite_v1-0-0 asf_tools
 
-* KLUDGE #1
-  Create svn_rev.h:
-
-     cd ~/asf/jpl-r8072/asf_tools/include
-     echo '#define SVN_REV "8072"' > svn_rev.h
-
 * Use your favorite editor to edit ~/asf/jpl-r8072/asf_tools/Makefile.in
 
-  a) Change the default target to build the jpl target (around line 194).
+  a) Hard code the setting of the SVN revision number:
+     change (around line 235):
+     SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+     to:
+     SET_SVN_REV_H = echo "\#define SVN_REV \"8072\"">include/svn_rev.h
 
-	default: jpl
+  b) Change the default target to build the jpl target (around line 238).
 
-  b) Eliminate the following line the jpl target (around line 260).
-
-	echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+     default: jpl
 
 * Create the source.* files in ~/asf/jpl-r8072/release/autotar
   (automatically by makemake if you followed the directory structure
@@ -1036,10 +990,10 @@ NOTE: While the following procedure works, it definitely needs
   are also separated and editing the MAPREADY_MODULES list should
   no longer be needed etc... sigh.  FIXME!
 
- 1. Edit <path>/asf_tools/doc/create_thumbs-version_history.txt to
+ * Edit <path>/asf_tools/doc/create_thumbs-version_history.txt to
     update the create_thumbs version history.
 
- 2. Tag create_thumbs in the repository:
+ * Tag create_thumbs in the repository:
 
        svn copy svn+ssh://svn/svn/asf_tools/trunk
                 svn+ssh://svn/svn/asf_tools/tags/create_thumbs_v2-0-2
@@ -1053,46 +1007,46 @@ NOTE: While the following procedure works, it definitely needs
        is developed as a part of the mapready tool suite, but is then
        tagged and built for release separately.
 
- 3. Create a clean directory where you will produce the build (etc),
+ * Create a clean directory where you will produce the build (etc),
     for example (change the revision number to the one that you have
     checked out):
 
       mkdir ~/asf/svn-r7410ct
 
- 4. Check out autotar and rpmbuild into this work directory.  Example:
+ * Check out autotar and rpmbuild into this work directory.  Example:
 
       cd ~/asf/svn-r7410ct
       svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
       svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
 
- 5. Make working directories:
+ * Make working directories:
 
       cd ~/asf/svn-r7410ct
       mkdir -p release/tar_filelist release/tar
 
- 6. If you have never copied the .rpmmacros and .rpmrc files to your
+ * If you have never copied the .rpmmacros and .rpmrc files to your
     home directory, then do so now, otherwise skip to step 7:
 
       cd ~/asf/svn-r7410ct/release/rpmbuild
       cp dot.rpmmacros ~/.rpmmacros
       cp dot.rpmrc ~/.rpmrc
 
- 7. Edit ~/.rpmmacros to update the top directory for your build's rpmbuild
+ * Edit ~/.rpmmacros to update the top directory for your build's rpmbuild
     parent directory, i.e. the 'release' folder.  Find the %_topdir line and
     edit as follows:
 
       %_topdir      %(echo $HOME)/asf/svn-r7410ct/release
 
- 8. Check out (export w/o SVN info) a copy of the release:
+ * Check out (export w/o SVN info) a copy of the release:
 
       cd ~/asf/svn-r7410ct
       svn export svn+ssh://svn/svn/asf_tools/tags/create_thumbs_v2-0-2 asf_tools
 
- 9. Make sure DEBUG_BUILD is not set to any particular debug level:
+ * Make sure DEBUG_BUILD is not set to any particular debug level:
 
       unset DEBUG_BUILD
 
- 10. Modify the list of what packages (etc) are to be included by editing
+ * Modify the list of what packages (etc) are to be included by editing
      ~/asf/svn-r7410ct/asf_tools/make_support/master_program_list.  The
      after-editing results are shown section by section below:
 
@@ -1144,21 +1098,13 @@ CATEGORIES
 }
 
 
- 11. ** KLUDGE #1 **
-     Create svn_rev.h:
+ * Hard code the setting of the svn revision number.
+   Change (around line 235):
+   SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+   to:
+   SET_SVN_REV_H = echo "\#define SVN_REV \"7410\"">include/svn_rev.h
 
-      cd ~/asf/svn-r7410ct/asf_tools/include
-      echo "#define SVN_REV \"7410\"" > svn_rev.h
-
- 12. Eliminate the following lines from Makefile.in.  At the time of writing
-     these instructions, this line occurs in EIGHT places: near line 237, 254,
-     269, 284, 299, 314, 329, and 344, i.e in the mapready, stp, ap, req,
-     c2v, jpl, create_thumbs, and data_qc targets. FIXME: fix instructions to only
-     remove this line from the create_thumbs target.
-
-        echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
-
- 13. In the list of modules to remove during a 'make clean', remove all
+ * In the list of modules to remove during a 'make clean', remove all
      package modules, then add the create_thumbs package module:
 
 clean:
@@ -1171,7 +1117,7 @@ clean:
         $(foreach MODULE, $(CREATE_THUMBS_MODULES), \
                 $(MAKE) clean -C $(MODULE) &&) true
 
- 14. Still in Makefile.in, edit the default target to make it create_thumbs
+ * Still in Makefile.in, edit the default target to make it create_thumbs
      rather than mapready:
 
      BEFORE
@@ -1180,28 +1126,29 @@ clean:
      AFTER
      default: create_thumbs
 
- 15. Create the source.create_thumbs file in ~/asf/svn-r7410ct/release/autotar
+ * Create the source.create_thumbs file in ~/asf/svn-r7410ct/release/autotar
      (automatically by makemake if you followed the directory structure
      instructions listed here):
 
       cd ~/asf/svn-r7410/asf_tools/make_support
       make
       ./makemake
+      rm makemake ../Makefile.old
 
      NOTE: In this case, the source.mapready_package and source.create_thumbs
      files should be identical (check them with diff to make sure), so we'll
      just use the create_thumbs version from here on out ...for clarity.
 
- 16. Run the autotar script:
+ * Run the autotar script:
 
       cd ~/asf/svn-r7410ct/release/autotar
       ./tarfile src ~/asf/svn-r7410ct create_thumbs_package
 
- 17. Run the rpmprep script (from autotar folder):
+ * Run the rpmprep script (from autotar folder):
 
       ./rpmprep create_thumbs_package asf_create_thumbs
 
- 18. Copy an older .spec file to the new one, then edit the new .spec
+ * Copy an older .spec file to the new one, then edit the new .spec
      file in to use the correct version:
 
       cd ~/asf/svn-r7410ct/release/rpmbuild
@@ -1211,7 +1158,7 @@ clean:
      NOTE: See example .spec file (below) at the end of these
        release procedures
 
- 19. a) If you have not already added the secret and public gpg keys
+ * a) If you have not already added the secret and public gpg keys
      to your ~/.gnupg folder, then do so now or the rpm build will
      not sign the rpms.  Note that you CAN sign the rpms after they
      have been created with "rpm --addsign <rpm file name>".  Note that
@@ -1234,14 +1181,14 @@ clean:
      cd ~/asf/svn-r7410ct/release/rpmbuild/public_key
      sudo rpm -import asf_tools-pubkey.asc
 
- 20. Clean up any old rpm builds if necessary:
+ * Clean up any old rpm builds if necessary:
 
      cd ~/asf/svn-r7410ct/release/rpmbuild
      rm -rf BUILD/*
      rm -rf RPMS/*
      rm -rf SRPMS/*
 
- 21. Build and check the rpm:
+ * Build and check the rpm:
 
       cd ~/asf/svn-r7410ct/release/rpmbuild
       rpmbuild -ba --sign asf_create_thumbs-1.3-1.spec
@@ -1281,13 +1228,13 @@ clean:
      in rpm ...useful for checking to make sure that no components were left
      out.
 
- 22. Create tarballs of the rpms (the binary rpm will also contain the
+ * Create tarballs of the rpms (the binary rpm will also contain the
      README_rpm.txt file from ~/asf/svn-r7410/asf_tools folder):
 
       cd ~/asf/svn-r7410ct/release/rpmbuild
       ./tarrpms asf_create_thumbs create_thumbs
 
- 23. Put the built files on dq (still in ~/asf/svn-r7410/release/rpmbuild):
+ * Put the built files on dq (still in ~/asf/svn-r7410/release/rpmbuild):
 
       mkdir /stor/dq/release_builds/create_thumbs/v1.3
       cp dist/* /stor/dq/release_builds/create_thumbs/v1.3
@@ -1361,93 +1308,88 @@ rm -rf $RPM_BUILD_ROOT
 
 Data QC tool RPM Build Procedure:
 -------------------------------------
-Note: The following example assumes subversion revision 8155, data_qc
+Note: The following example assumes subversion revision 8626, data_qc
 version
-      of 1.0.0, and a work folder at ~/asf.
+      of 1.0.2, and a work folder at ~/asf.
 
 * Check out the code to be released (if not already), i.e. branched
-  version
-  or the trunk, i.e. to ~/asf/asf_tools.  NOTE: You will perform an
-  'svn export' to obtain a copy of the tools for building the release
-  later in this procedure.
+  version or the trunk, i.e. to ~/asf/asf_tools.
+  NOTE: You will perform an 'svn export' to obtain a copy of the tools
+  for building the release later in this procedure.
 
 * Update the version number(s) in
   ~/asf/asf_tools/include/asf_version.h
   and commit the change to the subversion repository.  Example:
 
-  a) DATA_QC_VERSION_STRING "1.0.0-dev"
+  a) DATA_QC_VERSION_STRING "1.0.2-dev"
       changes to
-     DATA_QC_VERSION_STRING "1.0.0"
+     DATA_QC_VERSION_STRING "1.0.2"
 
   b) svn ci
+
+* OPTIONAL: Before tagging the repository, I will usually do a test
+  build (svn export & edit Makefile steps below & then build it).
 
 * Tag the repository. Example of tagging the trunk:
 
      svn copy svn+ssh://svn/svn/asf_tools/trunk \
-              svn+ssh://svn/svn/asf_tools/tags/data_qc_v1-0-0
+              svn+ssh://svn/svn/asf_tools/tags/data_qc_v1-0-2
 
 * Create a clean directory where you will produce the build (etc),
   for example (change the revision number to the one that you have
   checked out):
 
-     mkdir ~/asf/data_qc_r8155
+     mkdir ~/asf/data_qc_r8626
 
 * Check out autotar and rpmbuild into this work directory.  Example:
 
-     cd ~/asf/data_qc_r8155
+     cd ~/asf/data_qc_r8626
      svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
      svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
 
 * Export a copy of the release:
 
-     cd ~/asf/data_qc_r8155
-     svn export svn+ssh://svn/svn/asf_tools/tags/data_qc_v1-0-0
-     asf_tools
+     cd ~/asf/data_qc_r8626
+     svn export svn+ssh://svn/svn/asf_tools/tags/data_qc_v1-0-2 asf_tools
 
-* KLUDGE #1
-  Create svn_rev.h:
+* Use your favorite editor to edit ~/asf/data_qc_r8626/asf_tools/Makefile.in
 
-     cd ~/asf/data_qc_r8155/asf_tools/include
-     echo '#define SVN_REV "8155"' > svn_rev.h
+  a) Change the following line to use a hard coded svn revistion number
+     instead of a dynamically generated one (around line 235).
+       change:
+       SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+       to:
+       SET_SVN_REV_H = echo "\#define SVN_REV \"8626\"">include/svn_rev.h
 
-* Use your favorite editor to edit
-  ~/asf/data_qc_r8155/asf_tools/Makefile.in
+  b) Change the default target to build the data_qc target
+     (about line 238).
 
-  a) Change the default target to build the data_qc target (about line
-     215).
+       default: data_qc
 
-        default: data_qc
-
-  b) Eliminate the following line the data_qc target (around line 300).
-
-        echo "#define SVN_REV \"0`svn info|grep Revision|cut
-        -c11-`\"">include/s
-vn_rev.h
-
-* Create the source.* files in ~/asf/jpl-r8072/release/autotar
+* Create the source.* files in ~/asf/data_qc_r8626/release/autotar
   (automatically by makemake if you followed the directory structure
   instructions listed here):
 
-     cd ~/asf/data_qc_r8155/asf_tools/make_support
+     cd ~/asf/data_qc_r8626/asf_tools/make_support
      make
      ./makemake
-     rm makemake
+     rm -f makemake ../Makefile.old
 
 * Run the autotar script:
 
-     cd ~/asf/data_qc_r8155/release/autotar
-     ./tarfile src ~/asf/data_qc_r8155 data_qc
+     cd ~/asf/data_qc_r8626/release/autotar
+     ./tarfile src ~/asf/data_qc_r8626 data_qc
 
 * Run the rpmprep script (from autotar folder):
 
-     ./rpmprep jpl jplmosaicsuite
+     ./rpmprep data_qc data_qc
 
 * Copy an older .spec file to the new one, then edit the new .spec
   file in to use the correct version:
 
-     cd ~/asf/data_qc_r8155/release/rpmbuild
-     cp <old .spec file> data_qc-1.0.0-1.i386.spec
-     vi data_qc-1.0.0-1.i386.spec
+     cd ~/asf/data_qc_r8626/release/rpmbuild
+     cp <old .spec file> data_qc-1.0.2-1.i386.spec
+     vi data_qc-1.0.2-1.i386.spec
 
 * Create RPM keys (if not already done)
 
@@ -1455,11 +1397,10 @@ vn_rev.h
      to your ~/.gnupg folder, then do so now or the rpm build will
      not sign the rpms.  Note that you CAN sign the rpms after they
      have been created with "rpm --addsign <rpm file name>".  Note
-     that
-     the first step below is unnessary if you already have a .gnupg
-     folder in your home directory:
+     that the first step below is unnessary if you already have a
+     .gnupg folder in your home directory:
 
-     cd ~/asf/data_qc_r8155/release/rpmbuild
+     cd ~/asf/data_qc_r8626/release/rpmbuild
      mkdir ~/.gnupg
      cp dot.gnupg* ~/.gnupg
      cd ~/.gnupg
@@ -1473,27 +1414,25 @@ vn_rev.h
      shown below (you must have root access).  Still in the rpmbuild
      folder ...do the following:
 
-     cd ~/asf/data_qc_r8155/release/rpmbuild/public_key
+     cd ~/asf/data_qc_r8626/release/rpmbuild/public_key
      sudo rpm -import asf_tools-pubkey.asc
 
 * If you have never copied the .rpmmacros and .rpmrc files to your
   home directory, then do so now, otherwise skip to step 7:
 
-     cd ~/asf/data_qc_r8155/release/rpmbuild
+     cd ~/asf/data_qc_r8626/release/rpmbuild
      cp dot.rpmmacros ~/.rpmmacros
      cp dot.rpmrc ~/.rpmrc
 
 * Edit ~/.rpmmacros to update the top directory for your build's
-  rpmbuild
-  parent directory, i.e. the 'release' folder.  Find the %_topdir line
-  and
-  edit as follows:
+  rpmbuild parent directory, i.e. the 'release' folder.  Find the
+  %_topdir line and edit as follows:
 
-     %_topdir      %(echo $HOME)/asf/data_qc_r8155/release
+     %_topdir      %(echo $HOME)/asf/data_qc_r8626/release
 
 * Clean up any old rpm builds if necessary:
 
-     cd ~/asf/data_qc_r8155/release/rpmbuild
+     cd ~/asf/data_qc_r8626/release/rpmbuild
      rm -rf BUILD/* RPMS/* SRPMS/*
 
 * Make sure DEBUG_BUILD is not set to any particular debug level:
@@ -1502,40 +1441,38 @@ vn_rev.h
 
 * Build and check the rpm:
 
-     cd ~/asf/data_qc_r8155/release/rpmbuild
-     rpmbuild -ba data_qc-1.0.0-1.i386.spec
+     cd ~/asf/data_qc_r8626/release/rpmbuild
+     rpmbuild -ba data_qc-1.0.2-1.i386.spec
      <password is 'bob'>
 
   OPTIONAL: Check the results of the rpm build:
 
-     rpm -K RPMS/data_qc-1.0.0-1.i386.rpm
+     rpm -K RPMS/data_qc-1.0.2-1.i386.rpm
 
   After the "rpm -K" command, you should see an 'OK' statement similar
   to the one below that indicates the rpm was properly signed:
 
-     RPMS/data_qc-1.0.0-1.i386.rpm: (sha1) dsa sha1 md5 OK
+     RPMS/data_qc-1.0.2-1.i386.rpm: (sha1) dsa sha1 md5 OK
 
   If you get a response that includes the words "NOT OK", then it
-  usually
-  means the ASCII public key has not been imported with "rpm -import"
-  yet.
+  usually means the ASCII public key has not been imported with
+  "rpm -import" yet.
 
-     rpm -qlp RPMS/data_qc-1.0.0-1.i386.rpm
+     rpm -qlp RPMS/data_qc-1.0.2-1.i386.rpm
 
   After the -qlp query, you'll get a long list of all that is
-  contained in
-  rpm ...useful for checking to make sure that no components were left
-  out.
+  contained in rpm ...useful for checking to make sure that no
+  components were left out.
 
 * Sign the rpm:
 
-     rpm --addsign data_qc-1.0.0-1.i386.spec
+     rpm --addsign RPMS/data_qc-1.0.2-1.i386.rpm
      <password is 'bob'>
 
-  You can run the same on the rpm again. This time you should get
+  You can run the same "rpm -K" on the rpm again. This time you should get
   this:
 
-     RPMS/data_qc-1.0.0-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
+     RPMS/data_qc-1.0.2-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
 
      IMPORTANT: If you get a response that says "OK" but does NOT have "gpg"
      in the list (see above), then the rpm is NOT signed!  Check your
@@ -1543,7 +1480,7 @@ vn_rev.h
      to the following do exist, otherwise no signing will take place:
 
      # RPM Signing stuff
-     %_signature     gpg     
+     %_signature     gpg
      %_gpg_path      ~/.gnupg
      %_gpgbin        /usr/bin/gpg
      %_gpg_name      ASF User Tool Development
@@ -1555,24 +1492,26 @@ vn_rev.h
 * Create tarballs of the rpms (the binary rpm will also contain the
   README_rpm.txt file from asf_tools folder):
 
-     cd ~/asf/data_qc_r8155/release/rpmbuild
+     cd ~/asf/data_qc_r8626/release/rpmbuild
      ./tarrpms data_qc data_qc
 
 * Put the built files on dq:
 
-     mkdir /stor/dq/release_builds/data_qc/1.0.0
-     cp dist/* /stor/dq/release_builds/data_qc/1.0.0
-     chmod 777 /stor/dq/release_builds/data_qc/1.0.0
-     chmod 666 /stor/dq/release_builds/data_qc/1.0.0/*
+     mkdir /stor/dq/release_builds/data_qc/1.0.2
+     cp dist/* /stor/dq/release_builds/data_qc/1.0.2
+     chmod 777 /stor/dq/release_builds/data_qc/1.0.2
+     chmod 666 /stor/dq/release_builds/data_qc/1.0.2/*
 
-* Not necessary, but you may want to delete ~/.rpmmacros and ~/.rpmrc
+* OPTIONAL: you may want to delete ~/.rpmmacros and ~/.rpmrc
+
+     rm -f ~/.rpmmacros ~/.rpmrc
 
 * Update the version number(s) in
   ~/asf/asf_tools/include/asf_version.h
   and commit the change to the subversion repository.  Example:
 
-  a) DATA_DQ_VERSION_STRING "1.0.0"
+  a) DATA_DQ_VERSION_STRING "1.0.2"
       changes to
-     DATA_DQ_VERSION_STRING "1.0.1-dev"
+     DATA_DQ_VERSION_STRING "1.0.3-dev"
 
   b) svn ci
