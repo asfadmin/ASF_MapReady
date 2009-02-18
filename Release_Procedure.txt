@@ -644,15 +644,31 @@ NOTE: it is assumed that you have already tagged the repository in preparation
 CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 -------------------------------------------------------------
 
-* Update C2V_VERSION in include/asf_version.h
+* It is suggested that you do the build on dq.
+
+* Update C2V_VERSION and C2V_VERSION_STRING in include/asf_version.h
+
+* Do a global-replace in this file of "8-8-8" with the actual version
+  number of the build.  Do not save/check-in the document with that
+  replacement!
+
+* Do a global-replace in this file of "8.8.8" with the actual version
+  number of the build.  Do not save/check-in the document with that
+  replacement!
+
+* Update the version history document to reflect the version being build,
+  and the current date.
 
 * Tag the repository:
     Trunk:
     > svn copy svn+ssh://svn/svn/asf_tools/trunk
-               svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0
-    Or Branch:
+               svn+ssh://svn/svn/asf_tools/tags/c2v_v8-8-8
+    Or Branch (branch name varies...)
     > svn copy svn+ssh://svn/svn/asf_tools/branches/c2v_v?-?-x \
-               svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0
+               svn+ssh://svn/svn/asf_tools/tags/c2v_v8-8-8
+
+* Do a global-replace in this file of "8888" with the svn revision number
+  of the copy.  Do not save/check-in the document with that replacement!
 
 * Create a clean directory where you will produce the build (etc),
   for example:
@@ -662,7 +678,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 * Export a copy of the release in the work directory:
 
     > cd ~/asf/svn-r8888
-    > svn export svn+ssh://svn/svn/asf_tools/tags/c2v_v1-0-0 asf_tools
+    > svn export svn+ssh://svn/svn/asf_tools/tags/c2v_v8-8-8 asf_tools
 
 * Check out autotar and rpmbuild into the work directory.
 
@@ -675,6 +691,11 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
     > cd ~/asf/svn-r8888
     > mkdir -p release/tar_filelist
     > mkdir -p release/tar
+
+* Create svn_rev.h:
+
+      cd ~/asf/svn-r8888/asf_tools/include
+      echo "#define SVN_REV \"8888\"" > svn_rev.h
 
 * Fix up Makefile.in:
 
@@ -690,10 +711,15 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
         and "oldtools" targets, and all associated build instructions,
         should all be deleted from Makefile.in
 
-     c. Update the "all" target to only build "c2v".
+     c. Update the "all" and "default" targets to only build "c2v".
 
      d. Fix the "clean" target near the end of the file, to only include C2V_MODULES,
         i.e., delete the STP_MODULES and AP_MODULES, etc.
+
+* Clean out the mapready, etc documentation that is not needed in the c2v package:
+
+    > cd ~/asf/svn-r8452/asf_tools/doc
+    > rm arc* cre* dem* map* rep* SAR* stp*
 
 * Create the source.c2v_package file:
 
@@ -723,7 +749,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 * Copy an older .spec file to the new one:
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > cp c2v-1.0.0-1.spec c2v-1.0.0-1.spec
+    > mv c2v-1.0.0-1.spec c2v-8.8.8-1.spec
 
 * Edit the new .spec file (c2v-1.0.0-1.i386.spec) to use the correct version.
   The version number to be edited should be on line 2:
@@ -754,7 +780,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 * Build the rpm:
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > rpmbuild -ba c2v-1.0.0-1.spec
+    > rpmbuild -ba c2v-8.8.8-1.spec
 
 * Collect rpm & source tarball for Linux & Win32 distribution using the
   tarrpms script. This should put all the *.tar.gz & *.zip files you need
@@ -781,6 +807,19 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
     > chgrp dq /stor/dq/release_builds/c2v/v8.8.8
     > chgrp dq /stor/dq/release_builds/c2v/v8.8.8/*
 
+* Upload the files to winfs:
+    http://winfs/utdtools/default.aspx
+
+  They should be uploaded to the "Convert To Vector" section.
+ 
+  You only need to upload the .tar.gz files for Linux/Source, and the .zip
+  file for windows.
+ 
+* Update this page: 
+    http://wiki/asf/C2V_releases
+
+  including writing a "release notes" entry in the wiki.  Use prior
+  versions as a template.
 
 
 
