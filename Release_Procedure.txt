@@ -762,17 +762,24 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
   ~/asf/svn-r8888/release/rpmbuild/RPMS:
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > ./tarrpms c2v c2v
+    > ./tarrpms c2v convert_to_vector
 
 * Copy all the packages to our favorite archive location. The files you're
   sending should look something like this:
-       c2v-?.?.?-rpm.tar.gz
-       c2v-?.?.?-rpm.zip
-       c2v-?.?.?-src.tar.gz
-       c2v-?.?.?-src.zip
+       convert_to_vector-8.8.8-rpm.tar.gz
+       convert_to_vector-8.8.8-rpm.zip
+       convert_to_vector-8.8.8-src.tar.gz
+       convert_to_vector-8.8.8-src.zip
+
+  Also, make sure permissions are good.
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > scp dist/* dq:/stor/dq/release_builds/c2v/1.0.0
+    > mkdir /stor/dq/release_builds/c2v/v8.8.8
+    > cp dist/* /stor/dq/release_builds/c2v/v8.8.8
+    > chmod 775 /stor/dq/release_builds/c2v/v8.8.8
+    > chmod 664 /stor/dq/release_builds/c2v/v8.8.8/*
+    > chgrp dq /stor/dq/release_builds/c2v/v8.8.8
+    > chgrp dq /stor/dq/release_builds/c2v/v8.8.8/*
 
 
 
