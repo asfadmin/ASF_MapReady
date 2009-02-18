@@ -122,8 +122,8 @@ main(int argc, char **argv)
     if (lut_specified)
       set_lut(lut);
 
-    assert(curr->data_name);
-    assert(curr->meta_name);
+//    assert(curr->data_name);
+//    assert(curr->meta_name);
 
     // we load the thumbnail data before bringing up the window, looks
     // much nicer.  When loading an image within the GUI, we don't need

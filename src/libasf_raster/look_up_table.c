@@ -29,6 +29,7 @@ int is_jasc_palette_lut(const char *name)
   char s_version[1024]  = "";
   char lut_path[1024] = "";
   int version = 0;
+  int ret = 0;
 
   // First just check to see if the file exists, returning false if not..
   if (!fileExists(name)) {
@@ -49,11 +50,13 @@ int is_jasc_palette_lut(const char *name)
     fgets(header, 1024, fp);
     if (!feof(fp)) fgets(s_version, 1024, fp);
     version = atoi(s_version);
-    return (strncmp(header, "JASC-PAL", 8) == 0 && version == 100);
+    ret = (strncmp(header, "JASC", 4) == 0 && version == 100) ? 1 : 0;
   }
   else {
-    return 0;
+    ret = 0;
   }
+
+  return ret;
 }
 
 int read_lut(char *lutFile, unsigned char *lut_buffer)
