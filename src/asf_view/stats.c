@@ -676,6 +676,32 @@ static void pop_hist(ImageInfo *ii)
     put_double_to_label("hist_lo_label", fmt, min);
 }
 
+void disable_map_tabs(ImageInfo *ii)
+{
+  if (ii->data_ci->data_type == GREYSCALE_FLOAT ||
+      ii->data_ci->data_type == GREYSCALE_BYTE)
+  {
+    enable_widget("greyscale_label", TRUE);
+    enable_widget("greyscale_vbox", TRUE);
+
+    enable_widget("red_label", FALSE);
+    enable_widget("red_vbox", FALSE);
+    enable_widget("green_label", FALSE);
+    enable_widget("green_vbox", FALSE);
+    enable_widget("blue_label", FALSE);
+    enable_widget("blue_vbox", FALSE);
+  }
+  else {
+    // ... don't yet support RGB
+    enable_widget("greyscale_label", FALSE);
+    enable_widget("greyscale_vbox", FALSE);
+
+    enable_widget("red_label", FALSE);
+    enable_widget("green_label", FALSE);
+    enable_widget("blue_label", FALSE);
+  }
+}
+
 int fill_stats(ImageInfo *ii)
 {
     int i, j;
@@ -703,6 +729,7 @@ int fill_stats(ImageInfo *ii)
 
     fill_stats_label(ii);
     pop_hist(ii);
+    disable_map_tabs(ii);
 
     return TRUE;
 }
