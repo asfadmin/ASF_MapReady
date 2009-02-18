@@ -225,6 +225,7 @@ int calc_scaled_pixel_value(ImageStats *stats, float val);
 int calc_rgb_scaled_pixel_value(ImageStatsRGB *stats, float val);
 void clear_stats(ImageInfo *ii);
 void update_map_settings(void);
+void set_default_ignore(ImageInfo *ii);
 
 /* google.c */
 char *find_in_path(char * file);

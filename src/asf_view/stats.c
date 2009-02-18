@@ -39,7 +39,7 @@ int is_ignored(ImageStats *stats, float val)
 
 static void set_ignores(ImageInfo *ii, int from_gui)
 {
-  ImageStats *stats = &(ii->stats);
+  ImageStats *stats = &ii->stats;
   if (from_gui) {
     stats->have_no_data = get_checked("rb_gs_ignore_value_checkbutton");
     if (stats->have_no_data)
@@ -68,6 +68,20 @@ static void set_ignores(ImageInfo *ii, int from_gui)
 
     stats->have_no_data_range = FALSE;
   }
+}
+
+void set_default_ignore(ImageInfo *ii)
+{
+  ImageStats *stats = &ii->stats;
+  set_checked("rb_gs_ignore_value_checkbutton", stats->have_no_data);
+  if (stats->have_no_data)
+    put_double_to_entry("gs_ignore_value_entry", stats->no_data_value);
+  set_checked("rb_gs_ignore_range_checkbutton", stats->have_no_data_range);
+  if (stats->have_no_data_range) {
+    put_double_to_entry("gs_ignore_range_min_entry", stats->no_data_min);
+    put_double_to_entry("gs_ignore_range_max_entry", stats->no_data_max);
+  }
+  update_map_settings();
 }
 
 static void set_mapping(ImageInfo *ii, int from_gui)
