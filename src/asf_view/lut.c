@@ -23,6 +23,39 @@ static int g_tiff_lut_index = 0;
 static int g_asf_lut_index = 0;
 static int g_current_index = 0;
 
+#define MAX_LUTS 40
+//typedef struct {
+  //char combobox_name[128];
+  //char file_name[256];
+  //int  index;
+//} combobox_lut_idx;
+//static combobox_lut_idx g_combobox_luts[MAX_LUTS];
+
+static int get_combobox_index(const gchar *item_name, const gchar * combo_box)
+{
+  int idx=0;
+  gchar *current_item = (gchar*)g_malloc(sizeof(gchar) * 256);
+  GtkTreeIter iter;
+  GtkWidget * w = get_widget_checked(combo_box);
+  gboolean more_items = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(w), &iter);
+
+  if (!current_item || !w) {
+    asfPrintError("Cannot allocate memory\n");
+  }
+
+  while (more_items) {
+    gtk_tree_model_get(GTK_TREE_MODEL(w), &iter,
+                       0, &current_item,
+                       -1);
+    if (strcmp(current_item, item_name) == 0) break;
+    idx++;
+    more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(w), &iter);
+  }
+
+  if (current_item) g_free(current_item);
+  return idx;
+}
+
 SIGNAL_CALLBACK void on_viewer_notebook_switch_page(GtkWidget *w)
 {
     GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
@@ -70,7 +103,7 @@ void populate_lut_combo()
     GDir *lut_dir = g_dir_open(lut_loc, 0, NULL);
     if (lut_dir) {
         int i, n=0;
-        char **names = MALLOC(sizeof(char*)*20); // keep the list 20 items max
+        char **names = (char**)MALLOC(sizeof(char*)*MAX_LUTS);
 
         while (1) {
             const char *name = (char*)g_dir_read_name(lut_dir);
@@ -93,7 +126,6 @@ void populate_lut_combo()
                     break;
 #else
                   // Unsupported palette, so ignore it (see asf_view.h for JASC_PALETTE_SUPPORT def)
-                  break;
 #endif
                 }
             } else
@@ -176,7 +208,7 @@ void set_lut(const char *lut_basename)
     char *lut_loc = get_lut_loc();
     char *path_and_file =
             MALLOC(sizeof(char)*(strlen(lut_loc)+strlen(filename)+20));
-    sprintf(path_and_file, "%sc%s", lut_loc, DIR_SEPARATOR, filename);
+    sprintf(path_and_file, "%s%c%s", lut_loc, DIR_SEPARATOR, filename);
     free(lut_loc);
 
     g_lut_buffer = MALLOC(sizeof(unsigned char) * MAX_LUT_DN*3);
@@ -190,6 +222,8 @@ void set_lut(const char *lut_basename)
 void select_lut(const char *lut_basename)
 {
     int which = 0;
+
+    int index = get_combobox_index("cloude16", "lut_optionmenu");
 
     // there must be a better way!
     if (strcmp_case(lut_basename, "cloude16") == 0)
