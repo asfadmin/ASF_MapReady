@@ -13,7 +13,7 @@
 // FOR NOW... Don't enable JASC_PALETTE_SUPPORT until we do this, or just
 // enable it for development reasons.
 //
-// #define JASC_PALETTE_SUPPORT
+#define JASC_PALETTE_SUPPORT
 
 #define _GNU_SOURCE
 

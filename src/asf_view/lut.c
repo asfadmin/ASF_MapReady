@@ -5,56 +5,11 @@
 static int g_have_lut = FALSE;
 static unsigned char *g_lut_buffer = NULL;
 
-// kludge, here --
-// all items we will want to pre-select should have their indexes
-// memorized here.  This will work around a deficiency in the GTK
-// menu widget, we can't iterate through the items
-// ...yes, there has to be a better way (iterate through drop-down
-// menu items)
-static int g_cloude16_index = 0;
-static int g_cloude8_index = 0;
-static int g_dem_index = 0;
-static int g_interferogram_index = 0;
-static int g_unwrapping_mask_index = 0;
-static int g_layover_mask_index = 0;
-static int g_polarimetry_index = 0;
-static int g_water_mask_index = 0;
+#define MAX_LUTS 40
 static int g_tiff_lut_index = 0;
 static int g_asf_lut_index = 0;
 static int g_current_index = 0;
-
-#define MAX_LUTS 40
-//typedef struct {
-  //char combobox_name[128];
-  //char file_name[256];
-  //int  index;
-//} combobox_lut_idx;
-//static combobox_lut_idx g_combobox_luts[MAX_LUTS];
-
-static int get_combobox_index(const gchar *item_name, const gchar * combo_box)
-{
-  int idx=0;
-  gchar *current_item = (gchar*)g_malloc(sizeof(gchar) * 256);
-  GtkTreeIter iter;
-  GtkWidget * w = get_widget_checked(combo_box);
-  gboolean more_items = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(w), &iter);
-
-  if (!current_item || !w) {
-    asfPrintError("Cannot allocate memory\n");
-  }
-
-  while (more_items) {
-    gtk_tree_model_get(GTK_TREE_MODEL(w), &iter,
-                       0, &current_item,
-                       -1);
-    if (strcmp(current_item, item_name) == 0) break;
-    idx++;
-    more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(w), &iter);
-  }
-
-  if (current_item) g_free(current_item);
-  return idx;
-}
+static GHashTable * g_lut_optionmenu_ht = NULL;
 
 SIGNAL_CALLBACK void on_viewer_notebook_switch_page(GtkWidget *w)
 {
@@ -97,12 +52,15 @@ void populate_lut_combo()
     gtk_widget_show(item);
 
     char *lut_loc = get_lut_loc();
+    if (g_lut_optionmenu_ht == NULL) {
+      g_lut_optionmenu_ht = g_hash_table_new(g_str_hash,g_str_equal);
+    }
 
     // Open up the share dir's look up tables list, populate dropdown
     // from the files in that directory.
     GDir *lut_dir = g_dir_open(lut_loc, 0, NULL);
     if (lut_dir) {
-        int i, n=0;
+        unsigned int i, n=0;
         char **names = (char**)MALLOC(sizeof(char*)*MAX_LUTS);
 
         while (1) {
@@ -121,8 +79,8 @@ void populate_lut_combo()
 #ifdef JASC_PALETTE_SUPPORT
                   *p = '\0'; // don't show ".pal" extension in menu
                   names[n++] = name_dup;
-                    // quit when we get too many
-                  if (n > 20)
+                  // quit when we get too many
+                  if (n > MAX_LUTS)
                     break;
 #else
                   // Unsupported palette, so ignore it (see asf_view.h for JASC_PALETTE_SUPPORT def)
@@ -140,42 +98,12 @@ void populate_lut_combo()
         for (i=0; i<n; ++i) {
             item = gtk_menu_item_new_with_label(names[i]);
             g_object_set_data(G_OBJECT(item), "file", (gpointer)names[i]);
+            g_object_set_data(G_OBJECT(item), "index", GUINT_TO_POINTER(i+2));
             gtk_menu_append(GTK_MENU(menu), item);
             gtk_widget_show(item);
-
-            // memorize the indexes we will need later
-            if (strncmp_case(names[i], "cloude16", 8) == 0) {
-                g_cloude16_index = i+2;
-            }
-            if (strncmp_case(names[i], "cloude8", 7) == 0) {
-                g_cloude8_index = i+2;
-            }
-            if (strncmp_case(names[i], "dem", 3) == 0) {
-                g_dem_index = i+2;
-            }
-            if (strncmp_case(names[i], "interferogram", 13) == 0) {
-                g_interferogram_index = i+2;
-            }
-            if (strncmp_case(names[i], "unwrapping_mask", 15) == 0) {
-                g_unwrapping_mask_index = i+2;
-            }
-            if (strncmp_case(names[i], "layover_mask", 12) == 0) {
-                g_layover_mask_index = i+2;
-            }
-            if (strncmp_case(names[i], "polarimetry", 11) == 0) {
-                g_polarimetry_index = i+2;
-            }
-            if (strncmp_case(names[i], "water_mask", 11) == 0) {
-                g_water_mask_index = i+2;
-            }
-            if (strncmp(names[i], EMBEDDED_TIFF_COLORMAP_LUT,
-                        strlen(EMBEDDED_TIFF_COLORMAP_LUT)) == 0) {
-                g_tiff_lut_index = i+2;
-            }
-            if (strncmp(names[i], EMBEDDED_ASF_COLORMAP_LUT,
-                        strlen(EMBEDDED_ASF_COLORMAP_LUT)) == 0) {
-                g_asf_lut_index = i+2;
-            }
+            g_hash_table_insert(g_lut_optionmenu_ht,
+                                (gpointer)g_strdup(names[i]),
+                                 GUINT_TO_POINTER(i+2));
         }
     }
 
@@ -221,38 +149,11 @@ void set_lut(const char *lut_basename)
 
 void select_lut(const char *lut_basename)
 {
-    int which = 0;
+  int which = GPOINTER_TO_INT(g_hash_table_lookup(g_lut_optionmenu_ht, lut_basename));
 
-    int index = get_combobox_index("cloude16", "lut_optionmenu");
-
-    // there must be a better way!
-    if (strcmp_case(lut_basename, "cloude16") == 0)
-      which = get_cloude16_lut_index();
-    else if (strcmp_case(lut_basename, "cloude8") == 0)
-      which = get_cloude8_lut_index();
-    else if (strcmp_case(lut_basename, "dem") == 0)
-      which = get_dem_lut_index();
-    else if (strcmp_case(lut_basename, "interferogram") == 0)
-      which = get_interferogram_lut_index();
-    else if (strcmp_case(lut_basename, "unwrapping_mask") == 0)
-      which = get_unwrapping_mask_lut_index();
-    else if (strcmp_case(lut_basename, "layover_mask") == 0)
-      which = get_layover_mask_lut_index();
-    else if (strcmp_case(lut_basename, "polarimetry") == 0)
-      which = get_polarimetry_lut_index();
-    else if (strcmp_case(lut_basename, "water_mask") == 0)
-        which = get_water_mask_lut_index();
-    else if (strcmp_case(lut_basename, EMBEDDED_TIFF_COLORMAP_LUT) == 0)
-        which = get_tiff_lut_index();
-    else if (strcmp_case(lut_basename, EMBEDDED_ASF_COLORMAP_LUT) == 0)
-        which = get_asf_lut_index();
-    else if (!lut_basename || strlen(lut_basename) < 1 ||
-             strcmp_case(lut_basename, "none") == 0)
-        which = 0; // Default to none
-
-    GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
-    gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
-    set_current_index(which);
+  GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+  gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
+  set_current_index(which);
 }
 
 void check_lut()
@@ -350,7 +251,8 @@ void apply_lut_to_data(ThumbnailData *td)
             int index = jj+ii*td->size_x;
             int n = 3*index;
             unsigned char uval = data[n];
-            double val = (((double)uval - .5) * (curr->stats.map_max-curr->stats.map_min)) / 255. + curr->stats.map_min;
+            double val = (((double)uval - .5) *
+                  (curr->stats.map_max-curr->stats.map_min)) / 255. + curr->stats.map_min;
             apply_lut((int)(val+.5), &data[n], &data[n+1], &data[n+2]);
         }
     }
@@ -387,38 +289,6 @@ int check_for_embedded_tiff_lut (char *curr_file, int *lut_specified, char *lut)
     return ret;
 }
 
-int get_cloude16_lut_index(void) {
-    return g_cloude16_index;
-}
-
-int get_cloude8_lut_index(void) {
-    return g_cloude8_index;
-}
-
-int get_dem_lut_index(void) {
-    return g_dem_index;
-}
-
-int get_interferogram_lut_index(void) {
-    return g_interferogram_index;
-}
-
-int get_unwrapping_mask_lut_index(void) {
-    return g_unwrapping_mask_index;
-}
-
-int get_layover_mask_lut_index(void) {
-    return g_layover_mask_index;
-}
-
-int get_polarimetry_lut_index(void) {
-    return g_polarimetry_index;
-}
-
-int get_water_mask_lut_index(void) {
-    return g_water_mask_index;
-}
-
 int get_tiff_lut_index(void)
 {
   return g_tiff_lut_index;
@@ -429,8 +299,9 @@ int get_asf_lut_index(void)
   return g_asf_lut_index;
 }
 
-int get_current_index(void) {
-    return g_current_index;
+int get_current_index(void)
+{
+  return g_current_index;
 }
 
 void set_current_index(int index) {
