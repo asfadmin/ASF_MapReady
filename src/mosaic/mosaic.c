@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     asf_mosaic(pp, projection_type, force_flag, resample_method,
               average_height, datum, pixel_size, multiband,  band_num, files,
               outfile, background_val, lat_min, lat_max, lon_min, lon_max,
-	       overlap);
+	       overlap, FALSE);
 
     free(outfile_full);
     for (i=0; i<n_inputs; ++i)

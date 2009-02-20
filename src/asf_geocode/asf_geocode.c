@@ -23,7 +23,7 @@ trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
-"             [-force] [-resample-method <method>] [-height <height>]\n"\
+"             [-force] [-resample-method <method>] [-height <height>] [-save-mapping]\n"\
 "             [-datum <datum>] [-pixel-size <pixel size>] [-band <band_id | all>]\n"\
 "             [-log <file>] [-write-proj-file <file>] [-read-proj-file <file>]\n"\
 "             [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
@@ -50,6 +50,12 @@ trouble, and use edit_man_header. :)
 
 #define ASF_OPTIONS_STRING \
 "%s"\
+"\n"\
+"     -save-mapping\n"\
+"          Creates two additional files during geocoding.  One will contain\n"\
+"          the line number from which the pixel was obtained from the\n"\
+"          original file, the other the sample numbers.  Together, these\n"\
+"          define the mapping of pixels performed by the geocoding.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
@@ -177,6 +183,8 @@ main (int argc, char **argv)
   resample_method_t resample_method;
   // Value to put in the region outside the image
   double background_val = 0.0;
+  // Should we save the mapping files?
+  int save_map_flag;
 
   if (detect_flag_options(argc, argv, "-help", "--help", "-h", NULL)) {
     print_help();
@@ -192,6 +200,7 @@ main (int argc, char **argv)
       }
   }
   quietflag = detect_flag_options(argc, argv, "-quiet", "--quiet", NULL);
+  save_map_flag = extract_flag_options(&argc, &argv, "-save-mapping", "--save_mapping", NULL);
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
 
@@ -256,7 +265,7 @@ main (int argc, char **argv)
   // Call library function that does the actual work
   asf_geocode(pp, projection_type, force_flag, resample_method, average_height,
           datum, pixel_size, band_id, in_base_name, out_base_name,
-              (float)background_val);
+              (float)background_val, save_map_flag);
 
   // Close Log, if needed
   if (logflag)

@@ -135,19 +135,20 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
                  int force_flag, resample_method_t resample_method,
                  double average_height, datum_type_t datum, double pixel_size,
                  char *band_id, char *in_base_name, char *out_base_name,
-                 float background_val);
+                 float background_val, int save_line_sample_mapping);
 int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
                     int force_flag, resample_method_t resample_method,
                     double average_height, datum_type_t datum, double pixel_size,
                     int multiband, int band_num, char *in_base_name,
-                    char *out_base_name, float background_val);
+                    char *out_base_name, float background_val,
+                    int save_line_sample_mapping);
 int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                int force_flag, resample_method_t resample_method,
                double average_height, datum_type_t datum, double pixel_size,
                int multiband, int band_num, char **in_base_names,
                char *out_base_name, float background_val, double lat_min,
                double lat_max, double lon_min, double lon_max,
-	       char *overlap);
+	       char *overlap, int save_line_sample_mapping);
 void sigsegv_handler (int signal_number);
 
 // Prototypes from geoid.c

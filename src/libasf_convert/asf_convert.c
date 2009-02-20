@@ -1209,7 +1209,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
            cfg->geocoding->height, datum, cfg->geocoding->pixel,
            multiband, band_num, in_base_names, outFile,
            cfg->geocoding->background,
-           lat_min, lat_max, lon_min, lon_max, cfg->mosaic->overlap);
+           lat_min, lat_max, lon_min, lon_max, cfg->mosaic->overlap, FALSE);
 
     // Export mosaic
     if (cfg->general->export) {

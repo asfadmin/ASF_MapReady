@@ -546,7 +546,7 @@ int asf_geocode_utm(resample_method_t resample_method, double average_height,
 
   return asf_geocode(&pp, projection_type, FALSE, resample_method,
                      average_height, datum, pixel_size, band_id,
-                     in_base_name, out_base_name, background_val);
+                     in_base_name, out_base_name, background_val, FALSE);
 }
 
 int asf_geocode_from_proj_file(const char *projection_file,
@@ -575,13 +575,14 @@ int asf_geocode_from_proj_file(const char *projection_file,
   }
   return asf_geocode(&pp, projection_type, force_flag, resample_method,
                      average_height, datum, pixel_size, band_id,
-                     in_base_name, out_base_name, background_val);
+                     in_base_name, out_base_name, background_val, FALSE);
 }
 
 int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
                 int force_flag, resample_method_t resample_method,
                 double average_height, datum_type_t datum, double pixel_size,
-                char *band_id, char *in_base_name, char *out_base_name, float background_val)
+                char *band_id, char *in_base_name, char *out_base_name,
+                float background_val, int save_map_flag)
 {
   char *input_meta_data;
   char *bands; // A string containing list of available band_id's
@@ -617,7 +618,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     ret = asf_geocode_ext(pp, projection_type, force_flag, resample_method,
                           average_height, datum, pixel_size,
                           multiband, band_num, in_base_name,
-                          out_base_name, background_val);
+                          out_base_name, background_val, save_map_flag);
     if (ret != 0)
     {
         char **band_names = extract_band_names(imd->general->bands,
@@ -635,7 +636,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     ret = asf_geocode_ext(pp, projection_type, force_flag, resample_method,
                           average_height, datum, pixel_size,
                           multiband, band_num, in_base_name,
-                          out_base_name, background_val);
+                          out_base_name, background_val, save_map_flag);
     asfRequire(ret == 0,
                "Failed to geocode band number 01\n");
   }
@@ -650,7 +651,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
                     int force_flag, resample_method_t resample_method,
                     double average_height, datum_type_t datum, double pixel_size,
                     int multiband, int band_num, char *in_base_name,
-                    char *out_base_name, float background_val)
+                    char *out_base_name, float background_val,
+                    int save_line_sample_mapping)
 {
     char *in_base_names[2];
     in_base_names[0] = MALLOC(sizeof(char)*(strlen(in_base_name)+1));
@@ -666,7 +668,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     return asf_mosaic(pp, projection_type, force_flag, resample_method,
         average_height, datum, pixel_size, multiband, band_num,
         in_base_names, out_base_name, background_val, lat_min, lat_max,
-        lon_min, lon_max, overlap);
+        lon_min, lon_max, overlap, save_line_sample_mapping);
 }
 
 static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
@@ -716,7 +718,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                int multiband, int band_num, char **in_base_names,
                char *out_base_name, float background_val, double lat_min,
                double lat_max, double lon_min, double lon_max,
-           char *overlap_method)
+               char *overlap_method, int save_line_sample_mapping)
 {
   int i,ret;
   int process_as_byte=TRUE;
@@ -1517,9 +1519,12 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // situation, we call resample first, since resample will do the
     // averaging first.
     // This will also result in significantly faster geocoding.
+    // We do not do this if we have been asked to save the line/sample
+    // mapping, since this will mess that up.
     int do_resample = FALSE;
-    if (pixel_size/2. > imd->general->x_pixel_size ||
-        pixel_size/2. > imd->general->y_pixel_size)
+    if (!save_line_sample_mapping && 
+        (pixel_size/2. > imd->general->x_pixel_size ||
+         pixel_size/2. > imd->general->y_pixel_size))
     {
       // this flag is so that we can clean up the intermediate resample file
       do_resample = TRUE;
@@ -1938,6 +1943,33 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
           }
         }
 
+        // Set up the line/sample mapping files, if requested to do so
+        FILE *outLineFp=NULL, *outSampFp=NULL;
+        float *line_out=NULL, *samp_out=NULL;
+        if (save_line_sample_mapping) {
+          asfPrintStatus("Setting up line/sample mapping files...\n");
+
+          char *line_filename = appendToBasename(output_image, "_lines");
+          char *line_metaname = appendExt(line_filename, ".meta");
+          outLineFp = FOPEN(line_filename, "wb");
+          meta_write(omd, line_metaname);
+          FREE(line_filename);
+          FREE(line_metaname);
+
+          char *sample_filename = appendToBasename(output_image, "_samples");
+          char *sample_metaname = appendExt(sample_filename, ".meta");
+          outSampFp = FOPEN(sample_filename, "wb");
+          meta_write(omd, sample_metaname);
+          FREE(sample_filename);
+          FREE(sample_metaname);
+
+          line_out = MALLOC(sizeof(float)*(oix_max+1));
+          samp_out = MALLOC(sizeof(float)*(oix_max+1));
+
+          // prevent doing the line/sample file again
+          save_line_sample_mapping = FALSE;
+        }
+
         // For optical data -- we'll do processing as BYTE, to save memory
         // So, only one of the {Float/UInt8}Image will be non-null
         FloatImage *iim = NULL;
@@ -1990,6 +2022,26 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
             double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
 
+            if (line_out) {
+                if (input_y_pixel < 0 || input_x_pixel < 0)
+                    line_out[oix] = 0;
+                else if (input_y_pixel > (ssize_t) ii_size_y - 1.0 ||
+                         input_x_pixel > (ssize_t) ii_size_x - 1.0)
+                    line_out[oix] = 0;
+                else
+                    line_out[oix] = input_y_pixel;
+            }
+
+            if (samp_out) {
+                if (input_y_pixel < 0 || input_x_pixel < 0)
+                    samp_out[oix] = 0;
+                else if (input_y_pixel > (ssize_t) ii_size_y - 1.0 ||
+                         input_x_pixel > (ssize_t) ii_size_x - 1.0)
+                    samp_out[oix] = 0;
+                else
+                    samp_out[oix] = input_x_pixel;
+            }
+                            
             g_assert (ii_size_x <= SSIZE_MAX);
             g_assert (ii_size_y <= SSIZE_MAX);
 
@@ -2153,11 +2205,24 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
               put_float_line(outFp, omd, oiy, output_line);
           }
 
+          if (line_out)
+              put_float_line(outLineFp, omd, oiy, line_out);
+          if (samp_out)
+              put_float_line(outSampFp, omd, oiy, samp_out);
+            
         } // End of for-each-line set output values
 
         // done writing this band
         if (output_by_line)
           fclose(outFp);
+
+        // close line/sample mapping files
+        if (outLineFp)
+          FCLOSE(outLineFp);
+        if (outSampFp)
+          FCLOSE(outSampFp);
+        FREE(line_out);
+        FREE(samp_out);
 
         // free up the input image
         g_assert(!iim_b || !iim);

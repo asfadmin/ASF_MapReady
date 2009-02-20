@@ -655,7 +655,7 @@ static int asf_mosaic_utm(char **files, char *outfile, int zone,
 
     return asf_mosaic(&pp, projection_type, force, resample, height,
         datum, ps, TRUE, 0, files, outfile, background_val,
-        lat_lo, lat_hi, lon_lo, lon_hi, overlap);
+        lat_lo, lat_hi, lon_lo, lon_hi, overlap, FALSE);
 }
 
 // External entry point
