@@ -669,7 +669,7 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *baseName,
 ceos_file_pairs_t require_ceos_pair(const char *ceosName, char ***dataName,
             char ***metaName, int *nBands, int *trailerFlag)
 {
-  char extensionList[128], baseName[512];
+  char extensionList[512], baseName[512];
   int andFlag=TRUE;
   int begin=NO_CEOS_FILE_PAIR+1, end=NUM_CEOS_FILE_PAIRS;
   int ii;
