@@ -718,7 +718,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 
 * Clean out the mapready, etc documentation that is not needed in the c2v package:
 
-    > cd ~/asf/svn-r8452/asf_tools/doc
+    > cd ~/asf/svn-r8888/asf_tools/doc
     > rm arc* cre* dem* map* rep* SAR* stp*
 
 * Create the source.c2v_package file:
@@ -800,12 +800,12 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
   Also, make sure permissions are good.
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > mkdir /stor/dq/release_builds/c2v/v8.8.8
-    > cp dist/* /stor/dq/release_builds/c2v/v8.8.8
-    > chmod 775 /stor/dq/release_builds/c2v/v8.8.8
-    > chmod 664 /stor/dq/release_builds/c2v/v8.8.8/*
-    > chgrp dq /stor/dq/release_builds/c2v/v8.8.8
-    > chgrp dq /stor/dq/release_builds/c2v/v8.8.8/*
+    > mkdir /stor/dq/release_builds/c2v/8.8.8
+    > cp dist/* /stor/dq/release_builds/c2v/8.8.8
+    > chmod 775 /stor/dq/release_builds/c2v/8.8.8
+    > chmod 664 /stor/dq/release_builds/c2v/8.8.8/*
+    > chgrp dq /stor/dq/release_builds/c2v/8.8.8
+    > chgrp dq /stor/dq/release_builds/c2v/8.8.8/*
 
 * Upload the files to winfs:
     http://winfs/utdtools/default.aspx
