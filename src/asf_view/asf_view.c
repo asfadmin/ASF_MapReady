@@ -173,6 +173,7 @@ main(int argc, char **argv)
     }
 
     // load the metadata & image data, other setup
+    setup_small_image_size();
     fill_small_have_data(thumbnail_data, curr);
     fill_big(curr);
     update_pixel_info(curr);
@@ -190,9 +191,12 @@ main(int argc, char **argv)
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
 
-    // If the last viewed file left behind a (temporary) color map lut, then get rid of it
-    if (fileExists(embedded_tiff_lut_file)) remove(embedded_tiff_lut_file);
-    if (fileExists(embedded_asf_colormap_file)) remove(embedded_asf_colormap_file);
+    // If the last viewed file left behind a (temporary) color map lut,
+    // then get rid of it
+    if (fileExists(embedded_tiff_lut_file))
+      remove(embedded_tiff_lut_file);
+    if (fileExists(embedded_asf_colormap_file))
+      remove(embedded_asf_colormap_file);
 
     image_info_free(curr);
     free_shapes();

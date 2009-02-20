@@ -1,7 +1,7 @@
 #include "asf_view.h"
 
 // size of the smaller "preview" image in the top-left corner
-static const int THUMB_SIZE = 256;
+static int THUMB_SIZE = 256;
 
 static void destroy_pb_data(guchar *pixels, gpointer data)
 {
@@ -160,7 +160,6 @@ void fill_small_force_reload(ImageInfo *ii)
     GdkPixbuf *pb = make_small_image(TRUE, NULL, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
-    //g_object_unref(pb);
 }
 
 void fill_small(ImageInfo *ii)
@@ -168,7 +167,6 @@ void fill_small(ImageInfo *ii)
     GdkPixbuf *pb = make_small_image(FALSE, NULL, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
-    //g_object_unref(pb);
 }
 
 void fill_small_have_data(ThumbnailData *thumbnail_data,
@@ -177,5 +175,12 @@ void fill_small_have_data(ThumbnailData *thumbnail_data,
     GdkPixbuf *pb = make_small_image(TRUE, thumbnail_data, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
-    //g_object_unref(pb);
+}
+
+void setup_small_image_size()
+{
+  // The planner will have a larger left-side section, so that the
+  // list of found acquisitions can display all the columns.
+  if (planner_is_active())
+    THUMB_SIZE = 360;
 }

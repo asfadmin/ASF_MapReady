@@ -1112,7 +1112,6 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
         // this is for debugging, can be removed
         //pass_collection_to_kml(pc, "test_kml.kml");
-
         clear_found();
 
         // Polygon #0 is left alone (it is the area of interest), so

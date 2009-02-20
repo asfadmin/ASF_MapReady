@@ -208,6 +208,7 @@ ThumbnailData *get_thumbnail_data(ImageInfo *ii);
 void fill_small(ImageInfo *ii);
 void fill_small_force_reload(ImageInfo *ii);
 void fill_small_have_data(ThumbnailData *thumbnail_data, ImageInfo *ii);
+void setup_small_image_size(void);
 
 /* meta.c */
 char * escapify(const char * s);
