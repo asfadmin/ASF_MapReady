@@ -2931,7 +2931,7 @@ static int kml2shape_from_c2v(char *inFile, char *outFile, int listFlag)
         SHPObject *shapeObj =
           SHPCreateSimpleObject(SHPT_POLYGON, 1, lon, lat, NULL);
         SHPWriteObject(shape, -1, shapeObj);
-        SHPDestroyObject(shapeObj);        
+        SHPDestroyObject(shapeObj);
       }
       m=0;
     }
@@ -3067,8 +3067,8 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
       SHPObject *shapeObj=NULL;
       if (ndata==2) {
         double lon[1], lat[1];
-        lon[0] = atof(data_cols[0]);
-        lat[0]=  atof(data_cols[1]);
+        lat[0] = atof(data_cols[0]);
+        lon[0]=  atof(data_cols[1]);
         shapeObj = SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0],
                                          NULL);
       }
@@ -3079,9 +3079,9 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
         for (k=0; k<ndata; ++k) {
           DBFWriteDoubleAttribute(dbase, n, k+1, atof(data_cols[k]));
           if (k%2==0)
-            write_lon[m] = atof(data_cols[k]);
+            write_lat[m] = atof(data_cols[k]);
           else
-            write_lat[m++] = atof(data_cols[k]);
+            write_lon[m++] = atof(data_cols[k]);
         }
         shapeObj = SHPCreateSimpleObject(SHPT_POLYGON, ndata/2, write_lon,
                                          write_lat, NULL);
