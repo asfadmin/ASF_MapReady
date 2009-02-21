@@ -1523,8 +1523,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // mapping, since this will mess that up.
     int do_resample = FALSE;
     if (!save_line_sample_mapping && 
-        (pixel_size/2. > imd->general->x_pixel_size ||
-         pixel_size/2. > imd->general->y_pixel_size))
+        (pixel_size/3. > imd->general->x_pixel_size &&
+         pixel_size/3. > imd->general->y_pixel_size))
     {
       // this flag is so that we can clean up the intermediate resample file
       do_resample = TRUE;
