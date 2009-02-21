@@ -183,7 +183,7 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
     }
 
     // Read the metadata from the tiff tags and geokeys
-    for (i=0; i<MAX_BANDS; i++) info->ignore[i]=0;
+    for (i=0; i<MAX_BANDS; i++) info->ignore[i]=0; // Default to ignoring no bands
     if (isGeotiff(meta_name)) {
         // Read the GeoTIFF metadata from the GeoTIFF file
         meta = read_generic_geotiff_metadata(meta_name, info->ignore, NULL);

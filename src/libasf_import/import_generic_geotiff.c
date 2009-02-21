@@ -202,7 +202,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   // Read the metadata (map-projection data etc) from the TIFF
   asfPrintStatus("\nImporting TIFF/GeoTIFF image to ASF Internal format...\n\n");
   int i;
-  for (i=0; i<MAX_BANDS; i++) ignore[i]=0;
+  for (i=0; i<MAX_BANDS; i++) ignore[i]=0; // Default to ignoring no bands
   if (pTmpChar != NULL) {
     strcpy(image_data_type, pTmpChar);
     meta = read_generic_geotiff_metadata(inFileName, ignore, image_data_type);
@@ -957,6 +957,10 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               if (read_count != 1) {
                 asfPrintWarning("Unable to determine center longitude from GeoTIFF file\n"
                     "using ProjCenterLongGeoKey as well...\n");
+              }
+              else {
+                asfPrintStatus("\nFound center longitude from ProjCenterLongGeoKey in GeoTIFF"
+                               "file...\n\n");
               }
             }
             read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);

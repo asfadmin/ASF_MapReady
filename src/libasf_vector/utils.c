@@ -24,7 +24,8 @@ void meta2text(char *inFile, FILE *outFP)
     meta_parameters *meta = NULL;
 
     if (isgeotiff(inFile)) {
-        int ignore[MAX_BANDS];
+        int i, ignore[MAX_BANDS];
+        for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring no bands
         meta = read_generic_geotiff_metadata(inFile, ignore, NULL);
     }
     else if (isleader(inFile)) {
@@ -51,7 +52,7 @@ void meta2text(char *inFile, FILE *outFP)
       asfPrintWarning("No location coordinates found in %s\n", inFile);
     fprintf(outFP, "# File type        , polygon\n");
     // Use inFile for name ...for lack of a better idea
-    fprintf(outFP, "# Polygon ID (name), %s\n", inFile); 
+    fprintf(outFP, "# Polygon ID (name), %s\n", inFile);
     fprintf(outFP, "#\n");
     fprintf(outFP, "# Latitude, Longitude\n");
     if (no_location_info) {

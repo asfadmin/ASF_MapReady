@@ -66,6 +66,8 @@ static void read_geotiff(char *inFile, geotiff_type_t **g)
   geo->band_count = (int) num_bands;
 
   // Generate metadata structure
+  int i;
+  for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring no bands
   meta = read_generic_geotiff_metadata(inFile, ignore, NULL);
   if (meta && meta->location) {
     meta_location *ml = meta->location; // Convenience pointer

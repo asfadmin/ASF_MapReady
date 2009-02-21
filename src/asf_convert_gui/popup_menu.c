@@ -1142,7 +1142,8 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 
         if (fileExists(metadata_name)) {
             if (isGeotiff(metadata_name)) {
-                int ignore[MAX_BANDS];
+                int i, ignore[MAX_BANDS];
+                for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring nothing
                 meta = read_generic_geotiff_metadata(metadata_name, ignore, NULL);
             }
             else {

@@ -51,8 +51,9 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
                    size_t max_thumbnail_dimension)
 {
     TIFF *fpIn;
-    int ignore[MAX_BANDS];
+    int i, ignore[MAX_BANDS];
 
+    for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring no bands
     meta_parameters *meta = read_generic_geotiff_metadata(input_metadata, ignore, NULL);
 
     fpIn = XTIFFOpen(input_data, "rb");

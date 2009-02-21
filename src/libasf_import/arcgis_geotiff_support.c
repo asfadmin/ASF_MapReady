@@ -1591,8 +1591,13 @@ short FindNode (FILE *fp, _Ehfa_Entry *node, char *type,
   /* If not found yet and a child node exists, look further... */
   if (node->child && !nodeFound) {
     GetNode(fp, node->child, &newNode);
-    asfRequire(newNode.prev == (unsigned long) 0,
-               "FindNode() found a child with non-NULL prev pointer\n");
+    if (newNode.prev != (unsigned long) 0) {
+      asfPrintWarning("FindNode() found a child with non-NULL prev pointer in\n"
+                      "ArcGIS .aux file ...The .aux file contains a non-standard\n"
+                      "format and likely contains no spatial reference information, i.e.\n"
+                      "the map projection information is likely in the GeoTIFF itself.\n");
+      return 0; // Node not found
+    }
     nodeFound = FindNode(fp, &newNode, type, foundNode);
   }
 
@@ -2290,7 +2295,7 @@ int isArcgisGeotiff(const char *inFile)
   strcpy(inBaseName, inFile);
   *(findExt(inBaseName)) = '\0';
   inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
-  
+
   // Done with all of this stuff
   XTIFFClose(input_tiff);
   GTIFFree(input_gtif);
