@@ -72,16 +72,18 @@ terrasar_meta *terrasar_meta_init(void)
 tsx_doppler_params *tsx_doppler_init(int numDopplerEstimates)
 {
   tsx_doppler_params *tsx;
+  tsx_doppler_t *dop;
   int ii, dc;
 
   dc = numDopplerEstimates > 0 ? numDopplerEstimates : 0;
-  tsx = (tsx_doppler_params *) MALLOC(sizeof(tsx_doppler_params) +
-				      dc * sizeof(tsx_doppler_t));
+  tsx = (tsx_doppler_params *) MALLOC(sizeof(tsx_doppler_params));
+  dop = (tsx_doppler_t *) MALLOC(sizeof(tsx_doppler_t) * dc);
 
   tsx->doppler_count = dc;
   tsx->year = MAGIC_UNSET_INT;
   tsx->julDay = MAGIC_UNSET_INT;
   tsx->second = MAGIC_UNSET_DOUBLE;
+  tsx->dop = dop;
   for (ii=0; ii<tsx->doppler_count; ii++) {
     tsx->dop[ii].first_range_time = MAGIC_UNSET_DOUBLE;
     tsx->dop[ii].reference_time = MAGIC_UNSET_DOUBLE;
@@ -171,13 +173,16 @@ terrasar_meta *read_terrasar_meta(const char *dataFile)
      "level1Product.productInfo.imageDataInfo.imageRaster.numberOfColumns");
   strcpy(terrasar->projection, xml_get_string_value(doc, 
      "level1Product.productInfo.productVariantInfo.projection"));
+  /* No speculation here - need some ground range data to verify
   if (strcmp_case(terrasar->projection, "GROUNDRANGE") == 0)
     terrasar->rangeResolution = xml_get_double_value(doc, 
     "level1Product.productInfo.imageDataInfo.imageRaster."
     "groundRangeResolution");
-  else if (strcmp_case(terrasar->projection, "SLANTRANGE") == 0)
+  */
+  if (strcmp_case(terrasar->projection, "SLANTRANGE") == 0)
     terrasar->rangeResolution = xml_get_double_value(doc, 
-       "level1Product.productSpecific.complexImageInfo.slantRangeResolution");
+       "level1Product.productSpecific.complexImageInfo.projectedSpacingRange."
+       "slantRange");
   // FIXME: cover MAP case
   terrasar->azimuthResolution = xml_get_double_value(doc, 
      "level1Product.productInfo.imageDataInfo.imageRaster.azimuthResolution");

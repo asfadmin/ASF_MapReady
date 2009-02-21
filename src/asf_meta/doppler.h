@@ -21,7 +21,7 @@ typedef struct {
   int julDay;               // Julian day of year for first Doppler estimate
   double second;            // Seconds of day for first Doppler estimate
   int doppler_count;        // Number of Doppler estimates
-  tsx_doppler_t dop[1];     // Array sized at run-time
+  tsx_doppler_t *dop;       // Array sized at run-time
 } tsx_doppler_params;
 
 #endif

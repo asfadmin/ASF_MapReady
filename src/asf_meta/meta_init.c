@@ -510,6 +510,16 @@ void meta_free(meta_parameters *meta)
     meta->transform = NULL;
     FREE(meta->airsar);
     meta->airsar = NULL;
+    if (meta->doppler->tsx) {
+      for (ii=0; ii<meta->doppler->tsx->doppler_count; ii++) {
+	FREE(meta->doppler->tsx->dop[ii].coefficient);
+	meta->doppler->tsx->dop[ii].coefficient = NULL;
+      }
+      FREE(meta->doppler->tsx->dop);
+      meta->doppler->tsx->dop = NULL;
+      FREE(meta->doppler->tsx);
+      meta->doppler->tsx = NULL;
+    }
     FREE(meta->doppler);
     meta->doppler = NULL;
 

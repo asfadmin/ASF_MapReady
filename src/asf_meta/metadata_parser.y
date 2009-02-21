@@ -251,9 +251,6 @@ void select_current_block(char *block_name)
   }
 
   if ( !strcmp(block_name, "estimate") ) {
-    global_meta->doppler->tsx = 
-      realloc( global_meta->doppler->tsx, sizeof(tsx_doppler_params) + 
-	       (doppler_count+1)*sizeof(tsx_doppler_t));
     current_block = &( global_meta->doppler->tsx->dop[doppler_count++]);
     goto MATCHED;
   }
@@ -1126,7 +1123,11 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "second") && (MDOPPLER)->type == tsx_doppler)
       { (MDOPPLER)->tsx->second = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "doppler_count") && (MDOPPLER)->type == tsx_doppler)
-      { (MDOPPLER)->tsx->doppler_count = VALP_AS_INT; return; }
+      { (MDOPPLER)->tsx->doppler_count = VALP_AS_INT;
+	tsx_doppler_t *dop = (tsx_doppler_t *) MALLOC(sizeof(tsx_doppler_t) * 
+					      (MDOPPLER)->tsx->doppler_count);
+	(MDOPPLER)->tsx->dop = dop;
+	return; }
   }
   // TSX Doppler estimates
   if ( !strcmp(stack_top->block_name, "estimate") ) {
@@ -1140,8 +1141,9 @@ void fill_structure_field(char *field_name, void *valp)
       { (MESTIMATE)->reference_time = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "polynomial_degree") )
       { (MESTIMATE)->poly_degree = VALP_AS_INT;
-	(MESTIMATE)->coefficient = 
+	double *coefficient = 
 	  (double *) MALLOC(sizeof(double) * ((MESTIMATE)->poly_degree + 1));
+	(MESTIMATE)->coefficient = coefficient;
 	return; }
     for (ii=0; ii<=(MESTIMATE)->poly_degree; ii++) {
       sprintf(str, "coefficient[%d]", ii);
@@ -1359,6 +1361,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 
   /* (Re)set file scope variable which counts number of vector blocks seen.  */
   vector_count = 0;
+  doppler_count = 0;
   stats_block_count = 0;
 
   meta_yyin = FOPEN(file_name, "r");

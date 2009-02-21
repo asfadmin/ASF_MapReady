@@ -69,8 +69,8 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
   meta->sar->original_sample_count = meta->general->sample_count;
   meta->sar->line_increment = 1;
   meta->sar->sample_increment = 1;
-  meta->sar->range_time_per_pixel = terrasar->columnSpacing;
-  meta->sar->azimuth_time_per_pixel = terrasar->rowSpacing;
+  meta->sar->range_time_per_pixel = terrasar->rowSpacing;
+  meta->sar->azimuth_time_per_pixel = terrasar->columnSpacing;
   meta->sar->slant_range_first_pixel = terrasar->rangeTime * SPD_LIGHT / 2.0;
   meta->sar->slant_shift = 0.0;
   meta->sar->time_shift = 0.0;
