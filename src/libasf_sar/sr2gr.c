@@ -13,6 +13,7 @@ DESCRIPTION:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_sar.h"
+#include "asf_raster.h"
 
 #define FUDGE_FACTOR 2
 
@@ -107,7 +108,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 {
 	int    in_np,  in_nl;               /* input number of pixels,lines  */
 	int    out_np, out_nl;              /* output number of pixels,lines */
-	int    ii,line;
+	int    ii,line,band;
 	float  oldX,oldY;
 	float  sr2gr[MAX_IMG_SIZE];
 	float  ml2gr[MAX_IMG_SIZE];
@@ -207,31 +208,41 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 		ibuf1[ii]=ibuf2[ii]=0.0;
 	}
 
+        /* Get the band info */
+        int bc = in_meta->general->band_count;
+        char **band_name = extract_band_names(in_meta->general->bands, bc);
+
 	/* Work dat magic! */
-	for (line=0; line<out_nl; line++)
-	{
-		if (a_lower[line]+1 < in_nl)
-		{
-			get_float_line(fpi,in_meta,a_lower[line],  ibuf1);
-			get_float_line(fpi,in_meta,a_lower[line]+1,ibuf2);
-		}
-		
-		for (ii=0; ii<out_np; ii++)
-		{
-			int val00,val01,val10,val11,tmp1,tmp2;
-			val00 = ibuf1[lower[ii]];
-			val01 = ibuf1[upper[ii]];
-			val10 = ibuf2[lower[ii]];
-			val11 = ibuf2[upper[ii]];
-			
-			tmp1 = val00*lfrac[ii] + val01*ufrac[ii];
-			tmp2 = val10*lfrac[ii] + val11*ufrac[ii];
-			
-			obuf[ii] = tmp1*a_lfrac[line] + tmp2*a_ufrac[line];
-		}
-		put_float_line(fpo,out_meta,line,obuf);
-                asfLineMeter(line, out_nl);
-	}
+        for (band=0; band<bc; ++band) {
+          asfPrintStatus("Working on band: %s\n", band_name[band]);
+          for (line=0; line<out_nl; line++)
+          {
+            if (a_lower[line]+1 < in_nl)
+            {
+              get_band_float_line(fpi,in_meta,band,a_lower[line],  ibuf1);
+              get_band_float_line(fpi,in_meta,band,a_lower[line]+1,ibuf2);
+            }
+            
+            for (ii=0; ii<out_np; ii++)
+            {
+              int val00,val01,val10,val11,tmp1,tmp2;
+              val00 = ibuf1[lower[ii]];
+              val01 = ibuf1[upper[ii]];
+              val10 = ibuf2[lower[ii]];
+              val11 = ibuf2[upper[ii]];
+              
+              tmp1 = val00*lfrac[ii] + val01*ufrac[ii];
+              tmp2 = val10*lfrac[ii] + val11*ufrac[ii];
+              
+              obuf[ii] = tmp1*a_lfrac[line] + tmp2*a_ufrac[line];
+            }
+            put_band_float_line(fpo,out_meta,band,line,obuf);
+            asfLineMeter(line, out_nl);
+          }
+        }
+        for (band=0; band<bc; ++band)
+          FREE(band_name[band]);
+        FREE(band_name);
         meta_free(in_meta);
         meta_free(out_meta);
 	FCLOSE(fpi);
