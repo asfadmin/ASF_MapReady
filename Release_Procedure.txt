@@ -184,6 +184,7 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       cd ~/asf/svn-r7665/asf_tools/make_support
       make
       ./makemake
+      rm -f makemake ../Makefile.old
 
  ** KLUDGE #4 **
     Add missing tools to the source.mapready_package file:
