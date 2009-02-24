@@ -367,7 +367,6 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
   if (!doc)
     asfPrintError("Could not parse file %s\n", inMetaName);
 
-  // FIXME: check existence and size of files first, then assign dataName
   for (ii=0; ii<terrasar->numberOfLayers; ii++) {
     meta = meta_read(outDataName);
     attribute = xml_get_int_attribute(doc, 
@@ -414,8 +413,6 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
     fpIn = FOPEN(inDataName, "rb");
     if (ii == 0)
       fpOut = FOPEN(outDataName, "wb");
-    else
-      fpOut = FOPEN(outDataName, "ab");
     
     FREAD(&intValue, 1, 4, fpIn);
     //int bytes_in_burst = bigInt32(intValue);
@@ -483,8 +480,8 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
 	amp[kk-rsfv] = sqrt(re*re + im*im);
 	phase[kk-rsfv] = atan2(im, re);
       }
-      put_band_float_line(fpOut, meta, 0, ll-3, amp);
-      put_band_float_line(fpOut, meta, 1, ll-3, phase);
+      put_band_float_line(fpOut, meta, ii*2, ll-3, amp);
+      put_band_float_line(fpOut, meta, ii*2+1, ll-3, phase);
       asfLineMeter(ll, azimuth_samples);
     }
     meta_write(meta, outDataName);
