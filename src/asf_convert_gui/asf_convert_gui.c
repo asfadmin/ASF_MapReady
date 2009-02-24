@@ -104,9 +104,6 @@ main(int argc, char **argv)
     widget = get_widget_checked("import_checkbutton");
     gtk_widget_set_sensitive(widget, FALSE);
 
-    widget = get_widget_checked("input_data_format_combobox");
-    set_combo_box_item(widget, INPUT_FORMAT_CEOS_LEVEL1);
-
     widget = get_widget_checked("input_data_type_combobox");
     set_combo_box_item(widget, INPUT_TYPE_AMP);
 
@@ -179,7 +176,6 @@ main(int argc, char **argv)
 
     /* fire handlers for hiding/showing stuff */
     output_format_combobox_changed();
-    input_data_format_combobox_changed();
     input_data_type_changed();
     geocode_options_changed();
     load_external_commands();
@@ -224,6 +220,7 @@ main(int argc, char **argv)
     /* explicit call to the function that refreshes the "summary" */
     /* section when options are changed, so get the settings      */
     /* initially in there                                         */
+    input_data_formats_changed();
     input_data_type_combobox_changed();
     default_to_terrcorr_on();
     default_to_keep_temp();

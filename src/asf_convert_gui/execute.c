@@ -629,6 +629,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             move_to_completed_files_list(iter, &completed_iter, cmd_output,
                                          intermediates_file);
             set_thumbnail(&completed_iter, tmp_dir, out_full);
+            input_data_formats_changed();
         }
 
         // for subsequent runs, save the imported dem & mask

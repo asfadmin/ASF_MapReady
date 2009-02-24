@@ -49,7 +49,8 @@ enum InputFormat
     INPUT_FORMAT_AIRSAR = 3,
     INPUT_FORMAT_ESRI = 4, // not implemented
     INPUT_FORMAT_ENVI = 5,  // not implemented
-    INPUT_FORMAT_POLSARPRO = 6
+    INPUT_FORMAT_POLSARPRO = 6,
+    INPUT_FORMAT_TERRASARX = 7
 };
 
 enum InputType
@@ -119,7 +120,6 @@ enum PolarimetricDecompositions
 typedef struct
 {
   /* import */
-  int input_data_format;
   int process_to_level1;
   int airsar_l_vv;
   int airsar_c_vv;
@@ -284,7 +284,7 @@ void set_stop();
 
 /* callbacks.c */
 void output_format_combobox_changed();
-void input_data_format_combobox_changed();
+void input_data_formats_changed();
 void show_execute_button(gboolean);
 void latitude_checkbutton_toggle();
 void input_data_type_changed();
@@ -316,6 +316,13 @@ void put_string_to_entry(const char *widget_name, const char *txt);
 int get_checked(const char *widget_name);
 void set_checked(const char *widget_name, int checked);
 void enable_widget(const char *widget_name, int enable);
+void put_string_to_label(const char *widget_name, const char *txt);
+const char *get_string_from_label(const char *widget_name);
+gboolean is_polsarpro(const gchar *);
+gboolean is_geotiff(const char *infile);
+gboolean is_asf_internal(const char *infile);
+gboolean is_airsar(const char *infile);
+gboolean is_terrasarx(const char *infile);
 
 /* dnd.c */
 void setup_dnd();
@@ -344,7 +351,6 @@ void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *,
                                   const char *);
 void move_from_completed_files_list(GtkTreeIter *);
 gboolean have_ancillary_files_in_list();
-gboolean is_polsarpro(const gchar *);
 
 /* help.c */
 char * escapify(const char * s);

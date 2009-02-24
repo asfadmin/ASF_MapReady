@@ -55,49 +55,6 @@ static const char * imgloc(char * file)
   return loc;
 }
 
-/* Returns true if a PolSARpro file set is detected based on the */
-/* filename passed in.                                           */
-gboolean is_polsarpro(const gchar * infile)
-{
-  gboolean found_bin = FALSE;
-  gboolean found_bin_hdr = FALSE;
-  char *bin = NULL, *bin_hdr = NULL, *dupe = NULL, *ext = NULL;
-
-  ext = findExt(infile);
-  if (!ext) {
-    // If no file extension exists, then maybe it has been stripped
-    // off.  Guess .bin and check for existence...
-    char *inFile = (char *)MALLOC(sizeof(char) * strlen(infile) + 5);
-    sprintf(inFile, "%s.bin", infile);
-    gboolean ret = is_polsarpro(inFile);
-    FREE(inFile);
-    return ret;
-  }
-  if (strcmp_case(ext, ".bin")==0) {
-    bin = (char *)infile;
-    bin_hdr = (char *)MALLOC(sizeof(char) * (strlen(infile) + 5));
-    sprintf(bin_hdr, "%s.hdr", infile);
-    found_bin = fileExists(bin);
-    found_bin_hdr = fileExists(bin_hdr);
-    FREE(bin_hdr);
-  }
-  else if (strcmp_case(ext, ".hdr")==0) {
-    dupe = STRDUP(infile);
-    bin_hdr = (char *)infile;
-    ext = findExt(dupe);
-    *ext = '\0';
-    ext = findExt(dupe);
-    if (ext && (strcmp_case(ext, ".bin")==0)) {
-      bin = dupe;
-    }
-    found_bin = (gboolean)fileExists(bin);
-    found_bin_hdr = (gboolean)fileExists(bin_hdr);
-    FREE(dupe);
-  }
-
-  return (found_bin && found_bin_hdr);
-}
-
 /* Returns true if any of the input files in the input files list */
 /* are the type that need an ancillary file, i.e. gamma and polsarpro */
 gboolean have_ancillary_files_in_list()
@@ -699,7 +656,6 @@ add_to_files_list_iter(const gchar *input_file_in,
     char *input_file = file_is_valid(input_file_in);
     char *ancillary_file_valid = NULL;
     int valid = input_file != NULL;
-    gboolean isPolSARpro;
 
     // NOTE: When a file is added to the input list for the first time, the ancillary_file_in
     // will be NULL or zero length.  When a file is moved from the completed files back to
@@ -737,15 +693,6 @@ add_to_files_list_iter(const gchar *input_file_in,
         }
         else {
           /* not already in list -- add it */
-
-          // If it is a PolSARpro file, then force the import tab input data format
-          // drop-down to select PolSARpro...
-          isPolSARpro = is_polsarpro(input_file_in);
-          if (isPolSARpro) {
-            GtkWidget * w = get_widget_checked("input_data_format_combobox");
-            set_combo_box_item(w, 4); // Input format for polsarpro is item #4 (zero ordered)
-            update_summary();
-          }
 
           // Build list of bands
           char *bands = build_band_list(input_file);
@@ -804,6 +751,10 @@ add_to_files_list_iter(const gchar *input_file_in,
           else if (ancillary_file_valid) {
             queue_thumbnail(ancillary_file_in);
           }
+
+          // Update the visible/invisible widgets in the input section,
+          // to reflect what kind of data we have
+          input_data_formats_changed();
 
           /* Select the file automatically if this is the first
              file that was added (this makes the toolbar buttons

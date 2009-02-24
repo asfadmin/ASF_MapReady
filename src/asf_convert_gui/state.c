@@ -581,16 +581,9 @@ void save_config(char *config_file, char* projfile)
   fprintf(cf, "\n");
 
   fprintf(cf, "[Import]\n");
-  if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
-    fprintf(cf, "format = CEOS (1)\n");
-  //else if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0)
-    //fprintf(cf, "format = CEOS (0)\n");
-  else
-    fprintf(cf, "format = %s\n", settings_get_input_data_format_string(s));
+  fprintf(cf, "format = CEOS (1)\n");
 
-  if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
-    fprintf(cf, "radiometry = %s_image\n",
-            settings_get_data_type_string(s));
+  fprintf(cf, "radiometry = %s_image\n", settings_get_data_type_string(s));
 // fprintf(cf, "look up table = \n");
   if (settings_get_input_data_format_allows_latitude(s) > 0) {
     fprintf(cf, "lat begin = %.2f\n", s->latitude_low);

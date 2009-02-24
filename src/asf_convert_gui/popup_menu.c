@@ -623,6 +623,7 @@ handle_remove_imp(const char *widget_name, GtkListStore *store)
       gtk_widget_set_sensitive(GTK_WIDGET(w), FALSE);
     }
 
+    input_data_formats_changed();
     return TRUE;
 }
 
@@ -1311,6 +1312,7 @@ handle_reprocess()
     g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
     g_list_free(refs);
 
+    input_data_formats_changed();
     show_queued_thumbnails();
 
     return TRUE;

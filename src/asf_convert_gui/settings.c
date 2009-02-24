@@ -13,8 +13,7 @@ datum_type_t get_datum_from_proj_file(char *file, projection_type_t type);
 static int
 settings_get_input_data_format_allows_latitude(const Settings *s)
 {
-    return -1;/*s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 ||*/
-        // s->input_data_format == INPUT_FORMAT_STF;
+    return -1;
 }
 
 static int
@@ -47,7 +46,6 @@ settings_apply_to_gui(const Settings * s)
 {
     GtkWidget
         *input_data_type_combobox,
-        *input_data_format_combobox,
         *export_checkbutton,
         *external_checkbutton,
         *output_format_combobox,
@@ -57,9 +55,6 @@ settings_apply_to_gui(const Settings * s)
 
     input_data_type_combobox =
         get_widget_checked("input_data_type_combobox");
-
-    input_data_format_combobox =
-        get_widget_checked("input_data_format_combobox");
 
     external_checkbutton =
         get_widget_checked("external_checkbutton");
@@ -72,44 +67,6 @@ settings_apply_to_gui(const Settings * s)
 
     apply_metadata_fix_checkbutton =
         get_widget_checked("apply_metadata_fix_checkbutton");
-
-    // Note: The second arg in set_combo_box_item() must match the zero-ordered position
-    // of the input data type format items in the input data format combo box
-    switch (s->input_data_format) {
-      //case INPUT_FORMAT_CEOS_LEVEL0:
-        //set_combo_box_item(input_data_format_combobox, 0);
-        //break;
-      default:
-      case INPUT_FORMAT_CEOS_LEVEL1:
-        set_combo_box_item(input_data_format_combobox, 0);
-        break;
-      //case INPUT_FORMAT_STF:
-        //set_combo_box_item(input_data_format_combobox, 2);
-        //break;
-      case INPUT_FORMAT_GEOTIFF:
-        set_combo_box_item(input_data_format_combobox, 1);
-        break;
-      //case INPUT_FORMAT_COMPLEX:
-        //set_combo_box_item(input_data_format_combobox, 4);
-        //break;
-      case INPUT_FORMAT_ASF_INTERNAL:
-        set_combo_box_item(input_data_format_combobox, 2);
-        break;
-      case INPUT_FORMAT_AIRSAR:
-        set_combo_box_item(input_data_format_combobox, 3);
-        break;
-      case INPUT_FORMAT_ESRI:
-        // Caution: Not implemented in the GUI
-        set_combo_box_item(input_data_format_combobox, 4);
-        break;
-      case INPUT_FORMAT_ENVI:
-        // Caution: Not implemented in the GUI
-        set_combo_box_item(input_data_format_combobox, 5);
-        break;
-      case INPUT_FORMAT_POLSARPRO:
-        set_combo_box_item(input_data_format_combobox, 4);
-        break;
-    }
 
     set_combo_box_item(input_data_type_combobox, s->data_type);
 
@@ -167,7 +124,7 @@ settings_apply_to_gui(const Settings * s)
         }
     }
 
-    input_data_format_combobox_changed();
+    input_data_formats_changed();
 
     gtk_toggle_button_set_active(
         GTK_TOGGLE_BUTTON(external_checkbutton), s->external_is_checked);
@@ -538,7 +495,6 @@ settings_get_from_gui()
 {
     GtkWidget
         *input_data_type_combobox,
-        *input_data_format_combobox,
         *process_to_level1_checkbutton,
         *output_format_combobox,
         *scaling_method_combobox;
@@ -547,9 +503,6 @@ settings_get_from_gui()
 
     input_data_type_combobox =
         get_widget_checked("input_data_type_combobox");
-
-    input_data_format_combobox =
-        get_widget_checked("input_data_format_combobox");
 
     output_format_combobox =
         get_widget_checked("output_format_combobox");
@@ -560,46 +513,11 @@ settings_get_from_gui()
     ret->data_type = get_combo_box_item(input_data_type_combobox);
     ret->output_format = get_combo_box_item(output_format_combobox);
 
-    // Switch statement must match order of items in the input data format combobox
-    gint input_data_format_selection = get_combo_box_item(input_data_format_combobox);
-    switch (input_data_format_selection) {
-      //case 0:
-        //ret->input_data_format = INPUT_FORMAT_CEOS_LEVEL0;
-        //break;
-      default:
-      case 0:
-        ret->input_data_format = INPUT_FORMAT_CEOS_LEVEL1;
-        break;
-      //case 1:
-        //ret->input_data_format = INPUT_FORMAT_STF;
-        //break;
-      case 1:
-        ret->input_data_format = INPUT_FORMAT_GEOTIFF;
-        break;
-      //case 4:
-        //ret->input_data_format = INPUT_FORMAT_COMPLEX;
-        //break;
-      case 2:
-        ret->input_data_format = INPUT_FORMAT_ASF_INTERNAL;
-        break;
-      case 3:
-        ret->input_data_format = INPUT_FORMAT_AIRSAR;
-        ret->airsar_p_pol = get_checked("airsar_p_pol_checkbutton");
-        ret->airsar_l_pol = get_checked("airsar_l_pol_checkbutton");
-        ret->airsar_c_pol = get_checked("airsar_c_pol_checkbutton");
-        ret->airsar_c_vv = get_checked("airsar_c_vv_checkbutton");
-        ret->airsar_l_vv = get_checked("airsar_l_vv_checkbutton");
-        break;
-      case 4:
-        // Caution: Not implemented in the GUI
-        //ret->input_data_format = INPUT_FORMAT_ESRI;
-        ret->input_data_format = INPUT_FORMAT_POLSARPRO;
-        break;
-      case 5:
-        // Caution: Not implemented in the GUI
-        ret->input_data_format = INPUT_FORMAT_ENVI;
-        break;
-    }
+    ret->airsar_p_pol = get_checked("airsar_p_pol_checkbutton");
+    ret->airsar_l_pol = get_checked("airsar_l_pol_checkbutton");
+    ret->airsar_c_pol = get_checked("airsar_c_pol_checkbutton");
+    ret->airsar_c_vv = get_checked("airsar_c_vv_checkbutton");
+    ret->airsar_l_vv = get_checked("airsar_l_vv_checkbutton");
 
     ret->output_db = get_checked("checkbutton_db") &&
         (ret->data_type == INPUT_TYPE_SIGMA ||
@@ -607,7 +525,6 @@ settings_get_from_gui()
          ret->data_type == INPUT_TYPE_GAMMA);
 
     ret->process_to_level1 = 0; // Was set equal to the following expression
-        //ret->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 &&
         //gtk_toggle_button_get_active(
             //GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
 
@@ -898,7 +815,8 @@ settings_get_latitude_argument(const Settings *s)
 {
     static gchar latitude_arg[128];
 
-    if (settings_get_input_data_format_allows_latitude(s) > 0 && s->latitude_checked)
+    if (settings_get_input_data_format_allows_latitude(s) > 0 &&
+        s->latitude_checked)
     {
         g_snprintf(latitude_arg, sizeof(latitude_arg),
             "-lat %g %g", s->latitude_low, s->latitude_hi);
@@ -1011,90 +929,31 @@ settings_get_data_type_string(const Settings *s)
 {
     const gchar * ret;
 
-    if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
+    switch (s->data_type)
     {
-        switch (s->data_type)
-        {
-        case INPUT_TYPE_SIGMA:
-            ret = "sigma";
-            break;
+    case INPUT_TYPE_SIGMA:
+        ret = "sigma";
+        break;
 
-        case INPUT_TYPE_BETA:
-            ret = "beta";
-            break;
+    case INPUT_TYPE_BETA:
+        ret = "beta";
+        break;
 
-        case INPUT_TYPE_GAMMA:
-            ret = "gamma";
-            break;
+    case INPUT_TYPE_GAMMA:
+        ret = "gamma";
+        break;
 
-        default:
-        case INPUT_TYPE_AMP:
-            ret = "amplitude";
-            break;
+    default:
+    case INPUT_TYPE_AMP:
+        ret = "amplitude";
+        break;
 
-        case INPUT_TYPE_POWER:
-            ret = "power";
-            break;
-        }
-    }
-    else
-    {
-        ret = "";
+    case INPUT_TYPE_POWER:
+        ret = "power";
+        break;
     }
 
     return ret;
-}
-
-const gchar *
-settings_get_input_data_format_string(const Settings *s)
-{
-    const gchar * format_arg_to_import;
-
-    switch (s->input_data_format)
-    {
-    //case INPUT_FORMAT_CEOS_LEVEL0:
-        //format_arg_to_import = "ceos";
-        //break;
-
-    default:
-    case INPUT_FORMAT_CEOS_LEVEL1:
-        format_arg_to_import = "ceos";
-        break;
-
-    //case INPUT_FORMAT_STF:
-        //format_arg_to_import = "stf";
-        //break;
-
-    case INPUT_FORMAT_ESRI:
-        format_arg_to_import = "esri";
-        break;
-
-    case INPUT_FORMAT_ENVI:
-        format_arg_to_import = "envi";
-        break;
-
-    //case INPUT_FORMAT_COMPLEX:
-        //format_arg_to_import = "ceos";
-        //break;
-
-    case INPUT_FORMAT_ASF_INTERNAL:
-        format_arg_to_import = "asf";
-        break;
-
-    case INPUT_FORMAT_GEOTIFF:
-        format_arg_to_import = "geotiff";
-        break;
-
-    case INPUT_FORMAT_AIRSAR:
-        format_arg_to_import = "airsar";
-        break;
-
-    case INPUT_FORMAT_POLSARPRO:
-        format_arg_to_import = "polsarpro";
-        break;
-    }
-
-    return format_arg_to_import;
 }
 
 int
@@ -1108,8 +967,7 @@ settings_equal(const Settings *s1, const Settings *s2)
     /* settings_print(s1); */
     /* settings_print(s2); */
 
-    if (s1->input_data_format == s2->input_data_format &&
-        s1->data_type == s2->data_type &&
+    if (s1->data_type == s2->data_type &&
         s1->output_db == s2->output_db &&
         s1->output_format == s2->output_format &&
         s1->keep_files == s2->keep_files &&
@@ -1196,26 +1054,11 @@ const gchar *
 settings_get_output_format_extension(const Settings *s)
 {
     const gchar * out_extension;
-    switch (s->input_data_format)
-    {
-    default:
-    //case INPUT_FORMAT_CEOS_LEVEL0:
-        //if (!s->process_to_level1)
-        //{
-            //out_extension = "raw";
-            //break;
-        //}
-        /* else, fall through */
 
-    case INPUT_FORMAT_ASF_INTERNAL:
-    case INPUT_FORMAT_GEOTIFF:
-    case INPUT_FORMAT_CEOS_LEVEL1:
-    case INPUT_FORMAT_AIRSAR:
-    case INPUT_FORMAT_POLSARPRO:
-        if (s->export_is_checked)
+    if (s->export_is_checked)
+    {
+        switch (s->output_format)
         {
-            switch (s->output_format)
-            {
             case OUTPUT_FORMAT_ASF_INTERNAL:
                 out_extension = "";
                 break;
@@ -1241,21 +1084,11 @@ settings_get_output_format_extension(const Settings *s)
             case OUTPUT_FORMAT_TIFF:
                 out_extension = "tif";
                 break;
-            }
         }
-        else
-        {
-            out_extension = "img";
-        }
-        break;
-
-    //case INPUT_FORMAT_COMPLEX:
-        //out_extension = "cpx";
-        //break;
-
-    //case INPUT_FORMAT_STF:
-        //out_extension = "raw";
-        //break;
+    } 
+    else
+    {
+        out_extension = "img";
     }
 
     return out_extension;
@@ -1353,8 +1186,7 @@ settings_get_run_import(const Settings *s)
 int
 settings_get_run_export(const Settings *s)
 {
-    return s->export_is_checked &&
-        s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1;
+    return s->export_is_checked;
 }
 
 int
@@ -1436,6 +1268,64 @@ settings_update_mask(Settings *s, const char *output_path)
     }
 }
 
+static int get_input_data_format(const char *infile)
+{
+  if (is_geotiff(infile)) {
+    return INPUT_FORMAT_GEOTIFF;
+  }
+  else if (is_asf_internal(infile)) {
+    return INPUT_FORMAT_ASF_INTERNAL;
+  }
+  else if (is_airsar(infile)) {
+    return INPUT_FORMAT_AIRSAR;
+  }
+  else if (is_terrasarx(infile)) {
+    return INPUT_FORMAT_TERRASARX;
+  }
+  else if (is_polsarpro(infile)) {
+    return INPUT_FORMAT_POLSARPRO;
+  }
+  else {
+    // catch-all...
+    return INPUT_FORMAT_CEOS_LEVEL1;
+  }
+}
+
+static const gchar *
+get_input_data_format_string(int input_data_format)
+{
+    const gchar * format_arg_to_import;
+    switch (input_data_format)
+    {
+      default:
+      case INPUT_FORMAT_CEOS_LEVEL1:
+        format_arg_to_import = "ceos";
+        break;
+
+      case INPUT_FORMAT_ASF_INTERNAL:
+        format_arg_to_import = "asf";
+        break;
+        
+      case INPUT_FORMAT_GEOTIFF:
+        format_arg_to_import = "geotiff";
+        break;
+        
+      case INPUT_FORMAT_AIRSAR:
+        format_arg_to_import = "airsar";
+        break;
+        
+      case INPUT_FORMAT_POLSARPRO:
+        format_arg_to_import = "polsarpro";
+        break;
+
+      case INPUT_FORMAT_TERRASARX:
+        format_arg_to_import = "terrasarx";
+        break;
+    }
+
+    return format_arg_to_import;
+}
+
 char *
 settings_to_config_file(const Settings *s,
       const gchar *input_file, const gchar *ancillary_file,
@@ -1448,6 +1338,7 @@ settings_to_config_file(const Settings *s,
     char *output_file;
     char *output_basename;
     char *input_basename;
+    int input_data_format = get_input_data_format(input_file);
 
     if (s->export_is_checked) {
         output_file = STRDUP(output_full);
@@ -1562,13 +1453,13 @@ settings_to_config_file(const Settings *s,
 
     fprintf(cf, "[General]\n");
     // must strip .img for asf internal
-    if (s->input_data_format == INPUT_FORMAT_ASF_INTERNAL) {
+    if (input_data_format == INPUT_FORMAT_ASF_INTERNAL) {
         char *tmp = stripExt(input_basename);
         fprintf(cf, "input file = %s\n", tmp);
         free(tmp);
     }
     // must strip _meta.airsar for airsar
-    else if (s->input_data_format == INPUT_FORMAT_AIRSAR) {
+    else if (input_data_format == INPUT_FORMAT_AIRSAR) {
         char *tmp = STRDUP(input_file);
         char *p = strstr(tmp, "_meta.airsar");
         if (p) *p = '\0';
@@ -1583,7 +1474,7 @@ settings_to_config_file(const Settings *s,
     }
     fprintf(cf, "output file = %s\n", output_file);
     fprintf(cf, "import = %d\n",
-        s->input_data_format == INPUT_FORMAT_ASF_INTERNAL ? 0 : 1);
+        input_data_format == INPUT_FORMAT_ASF_INTERNAL ? 0 : 1);
     fprintf(cf, "external = %d\n", s->external_is_checked);
     fprintf(cf, "sar processing = %d\n", s->process_to_level1);
     // fprintf(cf, "image stats=0\n");
@@ -1606,21 +1497,22 @@ settings_to_config_file(const Settings *s,
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
     fprintf(cf, "thumbnail = %d\n",
-            (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1    ||
-             s->input_data_format == INPUT_FORMAT_AIRSAR         ||
-             s->input_data_format == INPUT_FORMAT_ASF_INTERNAL   ||
-             s->input_data_format == INPUT_FORMAT_POLSARPRO) ? 1 : 0);
+            (input_data_format == INPUT_FORMAT_CEOS_LEVEL1    ||
+             input_data_format == INPUT_FORMAT_AIRSAR         ||
+             input_data_format == INPUT_FORMAT_ASF_INTERNAL   ||
+             input_data_format == INPUT_FORMAT_POLSARPRO) ? 1 : 0);
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");
-    if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
+    if (input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
         fprintf(cf, "format = CEOS (1)\n");
-    //else if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0)
+    //else if (input_data_format == INPUT_FORMAT_CEOS_LEVEL0)
         //fprintf(cf, "format = CEOS (0)\n");
     else
-        fprintf(cf, "format = %s\n", settings_get_input_data_format_string(s));
+        fprintf(cf, "format = %s\n",
+                get_input_data_format_string(input_data_format));
 
-    if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
+    if (input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
         fprintf(cf, "radiometry = %s_image\n",
                 settings_get_data_type_string(s));
     // fprintf(cf, "look up table = \n");
@@ -1631,8 +1523,8 @@ settings_to_config_file(const Settings *s,
     // fprintf(cf, "precise =\n");
     fprintf(cf, "output db = %d\n", s->output_db);
     // can't currently handle complex, L0 data in the envi dump
-    if (s->input_data_format != INPUT_FORMAT_CEOS_LEVEL1 &&
-        s->input_data_format != INPUT_FORMAT_ASF_INTERNAL)
+    if (input_data_format != INPUT_FORMAT_CEOS_LEVEL1 &&
+        input_data_format != INPUT_FORMAT_ASF_INTERNAL)
         fprintf(cf, "dump envi header = 0\n");
 
     // the "multilook SLC" option is ignored on non-SLC data
@@ -1650,7 +1542,7 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
     fprintf(cf, "\n");
 
-    if (s->input_data_format == INPUT_FORMAT_AIRSAR) {
+    if (input_data_format == INPUT_FORMAT_AIRSAR) {
         fprintf(cf, "[AirSAR]\n");
         fprintf(cf, "airsar c interferometric = %d\n", s->airsar_c_vv);
         fprintf(cf, "airsar l interferometric = %d\n", s->airsar_l_vv);
@@ -1837,37 +1729,11 @@ int apply_settings_from_config_file(char *configFile)
 
     Settings s;
 
-    s.input_data_format = INPUT_FORMAT_CEOS_LEVEL1;
-    if (strncmp(uc(cfg->import->format), "CEOS (1)", 8) == 0)
-        s.input_data_format = INPUT_FORMAT_CEOS_LEVEL1;
-    //if (strncmp(uc(cfg->import->format), "CEOS (0)", 8) == 0)
-        //s.input_data_format = INPUT_FORMAT_CEOS_LEVEL0;
-    else if (strncmp(uc(cfg->import->format), "CEOS", 4) == 0)
-        s.input_data_format = INPUT_FORMAT_CEOS_LEVEL1;
-    //else if (strncmp(uc(cfg->import->format), "STF", 3) == 0)
-        //s.input_data_format = INPUT_FORMAT_STF;
-    else if (strncmp(uc(cfg->import->format), "ASF", 3) == 0)
-        s.input_data_format = INPUT_FORMAT_ASF_INTERNAL;
-    else if (strncmp(uc(cfg->import->format), "GEOTIFF", 7) == 0)
-      s.input_data_format = INPUT_FORMAT_GEOTIFF;
-    else if (strncmp(uc(cfg->import->format), "AIRSAR", 6) == 0)
-      s.input_data_format = INPUT_FORMAT_AIRSAR;
-    else if (strncmp(uc(cfg->import->format), "POLSARPRO", 9) == 0)
-      s.input_data_format = INPUT_FORMAT_POLSARPRO;
-
-    if (s.input_data_format == INPUT_FORMAT_AIRSAR) {
-      s.airsar_c_vv = cfg->airsar->c_vv;
-      s.airsar_l_vv = cfg->airsar->l_vv;
-      s.airsar_c_pol = cfg->airsar->c_pol;
-      s.airsar_l_pol = cfg->airsar->l_pol;
-      s.airsar_p_pol = cfg->airsar->p_pol;
-    } else {
-      s.airsar_c_vv=0;
-      s.airsar_l_vv=0;
-      s.airsar_c_pol=0;
-      s.airsar_l_pol=0;
-      s.airsar_p_pol=0;
-    }
+    s.airsar_c_vv = cfg->airsar->c_vv;
+    s.airsar_l_vv = cfg->airsar->l_vv;
+    s.airsar_c_pol = cfg->airsar->c_pol;
+    s.airsar_l_pol = cfg->airsar->l_pol;
+    s.airsar_p_pol = cfg->airsar->p_pol;
 
     s.data_type = INPUT_TYPE_AMP;
     if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0)

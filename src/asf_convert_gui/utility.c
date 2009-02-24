@@ -330,3 +330,115 @@ void enable_widget(const char *widget_name, int enable)
     GtkWidget *w = get_widget_checked(widget_name);
     gtk_widget_set_sensitive(w, enable);
 }
+
+void put_string_to_label(const char *widget_name, const char *txt)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    gtk_label_set_text(GTK_LABEL(w), txt);
+}
+
+const char *get_string_from_label(const char *widget_name)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    return gtk_label_get_text(GTK_LABEL(w));
+}
+
+/* Returns true if a PolSARpro file set is detected based on the */
+/* filename passed in.                                           */
+gboolean is_polsarpro(const gchar * infile)
+{
+  gboolean found_bin = FALSE;
+  gboolean found_bin_hdr = FALSE;
+  char *bin = NULL, *bin_hdr = NULL, *dupe = NULL, *ext = NULL;
+
+  ext = findExt(infile);
+  if (!ext) {
+    // If no file extension exists, then maybe it has been stripped
+    // off.  Guess .bin and check for existence...
+    char *inFile = (char *)MALLOC(sizeof(char) * strlen(infile) + 5);
+    sprintf(inFile, "%s.bin", infile);
+    gboolean ret = is_polsarpro(inFile);
+    FREE(inFile);
+    return ret;
+  }
+  if (strcmp_case(ext, ".bin")==0) {
+    bin = (char *)infile;
+    bin_hdr = (char *)MALLOC(sizeof(char) * (strlen(infile) + 5));
+    sprintf(bin_hdr, "%s.hdr", infile);
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(bin_hdr);
+  }
+  else if (strcmp_case(ext, ".hdr")==0) {
+    dupe = STRDUP(infile);
+    bin_hdr = (char *)infile;
+    ext = findExt(dupe);
+    *ext = '\0';
+    ext = findExt(dupe);
+    if (ext && (strcmp_case(ext, ".bin")==0)) {
+      bin = dupe;
+    }
+    found_bin = (gboolean)fileExists(bin);
+    found_bin_hdr = (gboolean)fileExists(bin_hdr);
+    FREE(dupe);
+  }
+
+  return (found_bin && found_bin_hdr);
+}
+
+gboolean is_geotiff(const char *infile)
+{
+  char *ext = findExt(infile);
+  if (!ext) {
+    return FALSE; // extension must be added
+  }
+  else if (strcmp_case(ext, ".tif")==0) {
+    return TRUE;
+  }
+  else if (strcmp_case(ext, ".tiff")==0) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+gboolean is_asf_internal(const char *infile)
+{
+  int ret;
+  char *ext = findExt(infile);
+  if (!ext) {
+    ret = FALSE;
+  }
+  else if (strcmp_case(ext, ".img")==0) {
+    // have .img, make sure we have .meta
+    char *meta = appendExt(infile, ".meta");
+    ret = fileExists(meta);
+    free(meta);
+  }
+  else if (strcmp_case(ext, ".meta")==0) {
+    // have .meta, make sure we have .img
+    char *img = appendExt(infile, ".img");
+    ret = fileExists(img);
+    free(img);
+  }
+  else
+    ret = FALSE;
+  return ret;
+}
+
+gboolean is_airsar(const char *infile)
+{
+  // here we must be given the metadata file, only reliable file to check for
+  char *ext = findExt(infile);
+  if (ext && strcmp_case(ext, ".airsar")==0)
+    return TRUE;
+  return FALSE;
+}
+
+gboolean is_terrasarx(const char *infile)
+{
+  // not sure exactly what we should do here, for now just check for .xml
+  char *ext = findExt(infile);
+  if (ext && strcmp_case(ext, ".xml")==0)
+    return TRUE;
+  return FALSE;  
+}

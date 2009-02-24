@@ -935,123 +935,6 @@
 					  </child>
 
 					  <child>
-					    <widget class="GtkVBox" id="vbox79">
-					      <property name="visible">True</property>
-					      <property name="homogeneous">False</property>
-					      <property name="spacing">0</property>
-
-					      <child>
-						<widget class="GtkHBox" id="hbox86">
-						  <property name="visible">True</property>
-						  <property name="homogeneous">False</property>
-						  <property name="spacing">0</property>
-
-						  <child>
-						    <widget class="GtkLabel" id="label80">
-						      <property name="visible">True</property>
-						      <property name="label" translatable="yes">Select Data Format:    </property>
-						      <property name="use_underline">False</property>
-						      <property name="use_markup">False</property>
-						      <property name="justify">GTK_JUSTIFY_LEFT</property>
-						      <property name="wrap">False</property>
-						      <property name="selectable">False</property>
-						      <property name="xalign">0</property>
-						      <property name="yalign">0.5</property>
-						      <property name="xpad">0</property>
-						      <property name="ypad">0</property>
-						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						      <property name="width_chars">-1</property>
-						      <property name="single_line_mode">False</property>
-						      <property name="angle">0</property>
-						    </widget>
-						    <packing>
-						      <property name="padding">0</property>
-						      <property name="expand">False</property>
-						      <property name="fill">False</property>
-						    </packing>
-						  </child>
-
-						  <child>
-						    <widget class="GtkOptionMenu" id="input_data_format_combobox">
-						      <property name="visible">True</property>
-						      <property name="tooltip" translatable="yes">Format of the input data.  For most ASF data including ALOS (Palsar, Prism, and Avnir-2), ERS1 &amp; 2, JERS, and RADARSAT-1 data, choose CEOS (Level 1).</property>
-						      <property name="can_focus">True</property>
-						      <property name="history">0</property>
-
-						      <child>
-							<widget class="GtkMenu" id="menu1">
-
-							  <child>
-							    <widget class="GtkMenuItem" id="ceos_level_1">
-							      <property name="visible">True</property>
-							      <property name="label" translatable="yes">CEOS (Level 1)</property>
-							      <property name="use_underline">True</property>
-							      <signal name="activate" handler="on_ceos_level_1_activate" last_modification_time="Wed, 08 Sep 2004 19:45:09 GMT"/>
-							    </widget>
-							  </child>
-
-							  <child>
-							    <widget class="GtkMenuItem" id="geotiff">
-							      <property name="visible">True</property>
-							      <property name="label" translatable="yes">GeoTIFF</property>
-							      <property name="use_underline">True</property>
-							      <signal name="activate" handler="on_geotiff_input_activate" last_modification_time="Tue, 17 Apr 2007 18:55:23 GMT"/>
-							    </widget>
-							  </child>
-
-							  <child>
-							    <widget class="GtkMenuItem" id="asf_internal">
-							      <property name="visible">True</property>
-							      <property name="label" translatable="yes">ASF Internal</property>
-							      <property name="use_underline">True</property>
-							      <signal name="activate" handler="on_asf_internal_activate" last_modification_time="Wed, 04 Jul 2007 21:39:52 GMT"/>
-							    </widget>
-							  </child>
-
-							  <child>
-							    <widget class="GtkMenuItem" id="airsar">
-							      <property name="visible">True</property>
-							      <property name="label" translatable="yes">AirSAR</property>
-							      <property name="use_underline">True</property>
-							      <signal name="activate" handler="on_airsar_activate" last_modification_time="Thu, 10 Jul 2008 23:08:39 GMT"/>
-							    </widget>
-							  </child>
-
-							  <child>
-							    <widget class="GtkMenuItem" id="polsarpro">
-							      <property name="visible">True</property>
-							      <property name="label" translatable="yes">PolSARpro</property>
-							      <property name="use_underline">True</property>
-							      <signal name="activate" handler="on_polsarpro_activate" last_modification_time="Fri, 23 Jan 2009 00:44:49 GMT"/>
-							    </widget>
-							  </child>
-							</widget>
-						      </child>
-						    </widget>
-						    <packing>
-						      <property name="padding">0</property>
-						      <property name="expand">False</property>
-						      <property name="fill">False</property>
-						    </packing>
-						  </child>
-						</widget>
-						<packing>
-						  <property name="padding">5</property>
-						  <property name="expand">False</property>
-						  <property name="fill">True</property>
-						</packing>
-					      </child>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">0</property>
-					      <property name="right_attach">1</property>
-					      <property name="top_attach">0</property>
-					      <property name="bottom_attach">1</property>
-					      <property name="y_options">fill</property>
-					    </packing>
-					  </child>
-
-					  <child>
 					    <widget class="GtkCheckButton" id="airsar_c_vv_checkbutton">
 					      <property name="tooltip" translatable="yes">C-band cross-track interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
 					      <property name="can_focus">True</property>
@@ -1437,6 +1320,34 @@
 					      <property name="bottom_attach">5</property>
 					      <property name="x_options">fill</property>
 					      <property name="y_options"></property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkLabel" id="input_formats_label">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes"></property>
+					      <property name="use_underline">False</property>
+					      <property name="use_markup">False</property>
+					      <property name="justify">GTK_JUSTIFY_LEFT</property>
+					      <property name="wrap">True</property>
+					      <property name="selectable">False</property>
+					      <property name="xalign">0.019999999553</property>
+					      <property name="yalign">0.019999999553</property>
+					      <property name="xpad">2</property>
+					      <property name="ypad">2</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
+					    </widget>
+					    <packing>
+					      <property name="left_attach">0</property>
+					      <property name="right_attach">1</property>
+					      <property name="top_attach">0</property>
+					      <property name="bottom_attach">1</property>
+					      <property name="x_options">fill</property>
+					      <property name="y_options">fill</property>
 					    </packing>
 					  </child>
 

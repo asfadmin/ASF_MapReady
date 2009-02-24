@@ -940,8 +940,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 
     char *ext = findExt(input_data);
 
-    // don't have support for thumbnails of geotiffs yet
-    if (ext && (strcmp_case(ext, ".tif")==0 || strcmp_case(ext, ".tiff")==0))
+    if (is_geotiff(input_data))
         return make_geotiff_thumb(input_metadata, input_data,
                                   max_thumbnail_dimension);
 
@@ -950,13 +949,16 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return NULL;
 
     // split some cases into their own funcs
-    if (ext && strcmp_case(ext, ".img") == 0)
+    if (is_asf_internal(input_data))
         return make_asf_internal_thumb(input_metadata, input_data,
                                        max_thumbnail_dimension);
 
+    //if (is_terrasarx(input_metadata))
+    //    return make_terrasarx_thumb(input_metadata, input_data,
+    //                                max_thumbnail_dimension);
+
     // for airsar, need to check the metadata extension, that's more reliable
-    char *meta_ext = findExt(input_metadata);
-    if (meta_ext && strcmp_case(meta_ext, ".airsar") == 0)
+    if (is_airsar(input_metadata))
         return make_airsar_thumb(input_metadata, input_data,
                                  max_thumbnail_dimension);
 
@@ -1006,7 +1008,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         printf("Cannot make thumbnail for: %d\n", imd->general->data_type);
         return NULL;
     }
-printf("\n\nIn make_input_image_thumbnail()\n\n");
+
     guchar *data=NULL;
     int tsx=-1, tsy=-1;
     int kk;

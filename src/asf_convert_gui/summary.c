@@ -14,8 +14,6 @@ const char *get_summary_text()
     Settings * s;
     s = settings_get_from_gui();
 
-    strcpy(text, "Import: ");
-
     const char *type;
     switch (s->data_type)
     {
@@ -45,97 +43,23 @@ const char *get_summary_text()
     if (s->output_db)
       dbstr = " (dB)";
 
-    switch (s->input_data_format) {
-      //case INPUT_FORMAT_CEOS_LEVEL0:
-      //{
-        //GtkWidget *process_to_level1_checkbutton =
-            //get_widget_checked("process_to_level1_checkbutton");
-
-        //gboolean process_to_level1_is_checked =
-            //gtk_toggle_button_get_active(
-                //GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
-
-        //strcat(text, "CEOS Level Zero");
-
-        //if (process_to_level1_is_checked)
-        //{
-            //sprintf(text, "%s\n   Process to Level 1\nData Type: %s%s",
-                    //text, type, dbstr);
-        //}
-      //}
-      //break;
-
-      case INPUT_FORMAT_CEOS_LEVEL1:
-        strcat(text, "CEOS Level One");
-        sprintf(text, "%s\nData type: %s%s", text, type, dbstr);
-
-        break;
-
-      //case INPUT_FORMAT_STF:
-        //strcat(text, "STF");
-        //if (s->latitude_checked)
-       //{
-            //sprintf(text, "%s (Lat: %.2f - %.2f)", text, s->latitude_low,
-                //s->latitude_hi);
-        //}
-        //break;
-
-      //case INPUT_FORMAT_COMPLEX:
-        //strcat(text, "Complex");
-        //break;
-
-      case INPUT_FORMAT_GEOTIFF:
-        strcat(text, "Geocoded GeoTIFF");
-        break;
-
-      case INPUT_FORMAT_ASF_INTERNAL:
-        strcat(text, "ASF Internal");
-        break;
-
-      case INPUT_FORMAT_AIRSAR:
-        strcat(text, "AirSAR\n  ");
-        if (s->airsar_c_vv || s->airsar_l_vv) {
-          strcat(text, "Interferometric (");
-          if (s->airsar_c_vv && s->airsar_l_vv)
-            strcat(text, "c,l), ");
-          else if (s->airsar_c_vv)
-            strcat(text, "c), ");
-          else
-            strcat(text, "l), ");
-        }
-        if (s->airsar_l_pol || s->airsar_p_pol || s->airsar_c_pol) {
-          strcat(text, "Polarimetric (");
-          if (s->airsar_c_pol)
-            strcat(text, "c,");
-          if (s->airsar_l_pol)
-            strcat(text, "l,");
-          if (s->airsar_p_pol)
-            strcat(text, "p,");
-          if (text[strlen(text)-1]==',') // should always be true
-            text[strlen(text)-1]='\0';
-          strcat(text, "), ");
-        }
-        if (text[strlen(text)-2]==',') {
-          text[strlen(text)-2]='\0';
-        } else {
-          strcat(text, "none");
-        }
-        break;
-
-      case INPUT_FORMAT_POLSARPRO:
-        strcat(text, "PolSARpro");
-        break;
-
-      default:
-        strcat(text, "CEOS Level One");
-        sprintf(text, "%s\nData type: %s%s", text, type, dbstr);
-        break;
-    }
+    char *fmts = STRDUP(get_string_from_label("input_formats_label"));
+    char *p = strchr(fmts, ':');
+    if (strchr(fmts, ',')!=NULL)
+      strcpy(text, "Formats: ");
+    else
+      strcpy(text, "Format: ");
+    if (p)
+      strcat(text, p+2);
+    else
+      strcat(text, fmts);
+    strcat(text, "  \nData type: ");
+    strcat(text, type);
+    strcat(text, dbstr);
+    FREE(fmts);
 
     if (s->data_type != INPUT_TYPE_AMP && !s->apply_ers2_gain_fix)
-    {
         sprintf(text, "%s\n  (no ERS2 gain correction)", text);
-    }
 
     int polarimetry_on =
       s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr;

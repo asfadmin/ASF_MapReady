@@ -61,11 +61,10 @@ void latitude_checkbutton_toggle()
 }
 
 void
-input_data_format_combobox_changed()
+input_data_formats_changed()
 {
     GtkWidget *input_data_type_combobox,
         *input_data_type_label,
-        *input_data_format_combobox,
         *latitude_checkbutton,
         *latitude_low_label,
         *latitude_low_entry,
@@ -79,7 +78,6 @@ input_data_format_combobox_changed()
         *airsar_c_vv_checkbutton,
         *airsar_l_vv_checkbutton;
 
-    gint input_data_format;
     gboolean show_data_type_combobox;
     gboolean show_latitude_spinbuttons;
     // Leave this next one false until we support level 0 again
@@ -88,70 +86,88 @@ input_data_format_combobox_changed()
     gboolean enable_terrain_correction;
     gboolean enable_polarimetry;
 
-    input_data_format_combobox =
-        get_widget_checked("input_data_format_combobox");
+    // go through the input files list to see what kinds of data we have
+    // initially, everything that is conditionally enabled is set to
+    // false.  If we find that no data has been added yet, we'll turn a
+    // few things back on, though.
+    show_data_type_combobox = FALSE;
+    show_latitude_spinbuttons = FALSE;
+    show_process_to_level1_checkbutton = FALSE;
+    show_airsar_checkbuttons = FALSE;
+    enable_terrain_correction = FALSE;
+    enable_polarimetry = FALSE;
+    char formats[512];
+    strcpy(formats, "");
 
-    input_data_format =
-        gtk_option_menu_get_history(GTK_OPTION_MENU(input_data_format_combobox));
-    switch (input_data_format)
-    {
-        //case INPUT_FORMAT_STF:
-            //show_data_type_combobox = FALSE;
-            //show_latitude_spinbuttons = TRUE;
-            //show_process_to_level1_checkbutton = FALSE;
-            //show_airsar_checkbuttons = FALSE;
-            //break;
-        //case INPUT_FORMAT_COMPLEX:
-            //show_data_type_combobox = FALSE;
-            //show_latitude_spinbuttons = FALSE;
-            //show_process_to_level1_checkbutton = FALSE;
-            //show_airsar_checkbuttons = FALSE;
-            //break;
-        //case INPUT_FORMAT_CEOS_LEVEL0:
-            //show_data_type_combobox = FALSE;
-            //show_latitude_spinbuttons = FALSE;
-            //show_process_to_level1_checkbutton = TRUE;
-            //show_airsar_checkbuttons = FALSE;
-            //break;
-        default:
-        case INPUT_FORMAT_CEOS_LEVEL1:
-        case INPUT_FORMAT_ESRI:
-        case INPUT_FORMAT_ENVI:
-        case INPUT_FORMAT_POLSARPRO:
-            show_data_type_combobox = TRUE;
-            show_latitude_spinbuttons = FALSE;
-            show_process_to_level1_checkbutton = FALSE;
-            show_airsar_checkbuttons = FALSE;
-            enable_terrain_correction = TRUE;
-            enable_polarimetry = TRUE;
-            break;
-        case INPUT_FORMAT_GEOTIFF:
-            show_data_type_combobox = TRUE;
-            show_latitude_spinbuttons = FALSE;
-            show_process_to_level1_checkbutton = FALSE;
-            show_airsar_checkbuttons = FALSE;
-            enable_terrain_correction = FALSE;
-            enable_polarimetry = FALSE;
-            break;
-        case INPUT_FORMAT_ASF_INTERNAL:
-            show_data_type_combobox = FALSE;
-            show_latitude_spinbuttons = FALSE;
-            show_process_to_level1_checkbutton = FALSE;
-            show_airsar_checkbuttons = FALSE;
-            enable_terrain_correction = TRUE;
-            enable_polarimetry = TRUE;
-            break;
-      case INPUT_FORMAT_AIRSAR:
-            show_data_type_combobox = FALSE;
-            show_latitude_spinbuttons = FALSE;
-            show_process_to_level1_checkbutton = FALSE;
-            show_airsar_checkbuttons = TRUE;
-            enable_terrain_correction = FALSE;
-            // "temporarily" turning of polarimetry for AirSAR -- this is
-            // not yet working for 2.1, hopefully can be turned back on later
-            //enable_polarimetry = TRUE;
-            enable_polarimetry = FALSE;
-            break;
+    int valid,num=0;
+    GtkTreeIter iter;
+    valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+    while (valid) {
+      ++num;
+
+      gchar *file;
+      gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                         COL_INPUT_FILE, &file,
+                         -1);
+
+      if (is_polsarpro(file)) {
+        show_data_type_combobox = TRUE;
+        enable_terrain_correction = TRUE;
+        enable_polarimetry = TRUE;
+        if (!strstr(formats, "PolSARpro"))
+          strcat(formats, "PolSARpro, ");
+      }
+      else if (is_geotiff(file)) {
+        //show_data_type_combobox = TRUE;
+        if (!strstr(formats, "GeoTIFF"))
+          strcat(formats, "GeoTIFF, ");
+      }
+      else if (is_asf_internal(file)) {
+        enable_terrain_correction = TRUE;
+        enable_polarimetry = TRUE;
+        if (!strstr(formats, "ASF Internal"))
+          strcat(formats, "ASF Internal, ");
+      }
+      else if (is_airsar(file)) {
+        show_airsar_checkbuttons = TRUE;
+        if (!strstr(formats, "AirSAR"))
+          strcat(formats, "AirSAR, ");
+      }
+      else if (is_terrasarx(file)) {
+        show_airsar_checkbuttons = TRUE;
+        if (!strstr(formats, "TerraSAR-X"))
+          strcat(formats, "TerraSAR-X, ");
+      }
+      else { // probably CEOS L1... ?
+        show_data_type_combobox = TRUE;
+        enable_terrain_correction = TRUE;
+        enable_polarimetry = TRUE;
+        if (!strstr(formats, "CEOS L1"))
+          strcat(formats, "CEOS L1, ");
+      }
+
+      valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+    }
+
+    char input_formats[512];
+    if (num>0 && strlen(formats)>2) {
+      if (num>1)
+        strcpy(input_formats, "Input data formats: ");
+      else
+        strcpy(input_formats, "Input data format: ");
+      strcat(input_formats, formats);
+      input_formats[strlen(input_formats)-2]='\0'; // remove last comma/space
+    }
+    else {
+      strcpy(input_formats, "Input data formats: none");
+    }
+    put_string_to_label("input_formats_label", input_formats);
+
+    if (num==0) {
+      // no files added yet -- enable terrcorr & polarimetry, so the
+      // user can check those features out
+      enable_terrain_correction = TRUE;
+      enable_polarimetry = TRUE;
     }
 
     latitude_checkbutton = get_widget_checked("latitude_checkbutton");
@@ -159,7 +175,8 @@ input_data_format_combobox_changed()
     latitude_low_entry = get_widget_checked("latitude_low_entry");
     latitude_hi_label = get_widget_checked("latitude_hi_label");
     latitude_hi_entry = get_widget_checked("latitude_hi_entry");
-    process_to_level1_checkbutton = get_widget_checked("process_to_level1_checkbutton");
+    process_to_level1_checkbutton =
+        get_widget_checked("process_to_level1_checkbutton");
 
     gtk_widget_set_sensitive(latitude_checkbutton, show_latitude_spinbuttons);
     gtk_widget_set_sensitive(latitude_low_label, show_latitude_spinbuttons);
@@ -436,75 +453,10 @@ on_asf_convert_destroy(GtkWidget *widget, gpointer data)
   //}
 }
 
-#ifndef USE_GTK_22
-SIGNAL_CALLBACK void
-on_input_data_format_combobox_changed(GtkWidget *widget)
-{
-    input_data_format_combobox_changed();
-    update_summary();
-}
-#else
-SIGNAL_CALLBACK void
-on_ceos_level_0_activate(GtkWidget *widget)
-{
-    input_data_format_combobox_changed();
-    update_summary();
-}
-
-SIGNAL_CALLBACK void
-on_ceos_level_1_activate(GtkWidget *widget)
-{
-    input_data_format_combobox_changed();
-    update_summary();
-}
-
-SIGNAL_CALLBACK void
-on_stf_activate(GtkWidget *widget)
-{
-    input_data_format_combobox_changed();
-    update_summary();
-}
-
-//SIGNAL_CALLBACK void
-//on_complex_activate(GtkWidget *widget)
-//{
-//    input_data_format_combobox_changed();
-//    update_summary();
-//}
-
-SIGNAL_CALLBACK void
-on_geotiff_input_activate(GtkWidget *widget)
-{
-  input_data_format_combobox_changed();
-  update_summary();
-}
-
-SIGNAL_CALLBACK void
-on_asf_internal_activate(GtkWidget *widget)
-{
-  input_data_format_combobox_changed();
-  update_summary();
-}
-
-SIGNAL_CALLBACK void
-on_airsar_activate(GtkWidget *widget)
-{
-  input_data_format_combobox_changed();
-  update_summary();
-}
-
-SIGNAL_CALLBACK void
-on_polsarpro_activate(GtkWidget *widget)
-{
-  input_data_format_combobox_changed();
-  update_summary();
-}
-#endif
-
 SIGNAL_CALLBACK void
 on_process_to_level1_checkbutton_toggled(GtkWidget *widget)
 {
-    input_data_format_combobox_changed();
+    input_data_formats_changed();
     update_summary();
 }
 
