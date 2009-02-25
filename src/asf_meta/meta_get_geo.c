@@ -344,10 +344,10 @@ int meta_get_lineSamp(meta_parameters *meta,
       else { // if (meta->transform->parameter_count == 10) {
         *xSamp = a[0]          + a[1]*lat      + a[2]*lon      + a[3]*lat*lon + a[4]*lat2 +
                  a[5]*lon2     + a[6]*lat2*lon + a[7]*lat*lon2 +
-                 a[8]*lat2*lat + a[9]*lon2*lon;
+                 a[8]*lat3     + a[9]*lon3;
         *yLine = b[0]          + b[1]*lat      + b[2]*lon      + b[3]*lat*lon + b[4]*lat2 +
                  b[5]*lon2     + b[6]*lat2*lon + b[7]*lat*lon2 +
-                 b[8]*lat2*lat + b[9]*lon2*lon;
+                 b[8]*lat3     + b[9]*lon3;
       }
 
       if (elev != 0.0) {
