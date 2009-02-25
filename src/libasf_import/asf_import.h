@@ -99,6 +99,10 @@ void import_vexcel_plain(const char *inBaseName, const char *outBaseName);
 void import_jaxa_L0(const char *inBaseName, const char *outBaseName);
 void import_alos_mosaic(const char *inFileName, radiometry_t radiometry,
 			const char *outBaseName);
+int get_terrasar_params(const char *xml_file_name, int layer,
+                        meta_parameters **meta_out, int *rltnb,
+                        int *asfv, int *aslv, int *rsfv, int *rslv,
+                        char **dataFileName);
 void import_terrasar(const char *inFileName, radiometry_t radiometry,
 		     const char *outBaseName);
 

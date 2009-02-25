@@ -322,6 +322,91 @@ terrasar_meta *read_terrasar_meta(const char *dataFile)
   return terrasar;
 }
 
+//shortcut function for the GUI
+int get_terrasar_params(const char *xml_file_name, int layer,
+                        meta_parameters **meta_out, int *rltnb,
+                        int *asfv, int *aslv, int *rsfv, int *rslv,
+                        char **dataFileName)
+{
+  xmlDoc *doc = xmlReadFile(xml_file_name, NULL, 0);
+  if (!doc) {
+    asfPrintWarning("Could not parse file %s\n", xml_file_name);
+    return FALSE;
+  }
+
+  terrasar_meta *terrasar = read_terrasar_meta(xml_file_name);
+  meta_parameters *meta = terrasar2meta(terrasar);
+  *meta_out = meta;
+
+  char inDataName[1024];
+  strcpy(inDataName, xml_get_string_value(doc, 
+      "level1Product.productComponents.imageData[%d].file.location.path",
+      layer));
+  strcat(inDataName, "/");
+  strcat(inDataName, xml_get_string_value(doc, 
+      "level1Product.productComponents.imageData[%d].file.location.filename", 
+      layer));
+
+  if (!fileExists(inDataName))
+    return FALSE;
+
+  *dataFileName = STRDUP(inDataName);
+
+  FILE *fpIn = FOPEN(inDataName, "rb");
+  unsigned char intValue[4];
+
+  FREAD(&intValue, 1, 4, fpIn);
+  FREAD(&intValue, 1, 4, fpIn);
+  FREAD(&intValue, 1, 4, fpIn);
+  int range_samples = bigInt32(intValue);
+  FREAD(&intValue, 1, 4, fpIn);
+  int azimuth_samples = bigInt32(intValue);
+  FREAD(&intValue, 1, 4, fpIn);
+  FREAD(&intValue, 1, 4, fpIn);
+  int rangeline_total_number_bytes = bigInt32(intValue);
+  FREAD(&intValue, 1, 4, fpIn);
+  int total_number_lines = bigInt32(intValue);
+  FREAD(&intValue, 1, 4, fpIn);
+  int kk;
+
+  // Check for the first and last azimuth and range pixel
+  *asfv = 1; // azimuth sample first valid
+  FSEEK(fpIn, 2*rangeline_total_number_bytes+8, SEEK_SET);
+  for (kk=2; kk<range_samples; kk++) {
+    FREAD(&intValue, 1, 4, fpIn);
+    if (bigInt32(intValue) > *asfv)
+      *asfv = bigInt32(intValue);
+  }
+  
+  *aslv = azimuth_samples; // azimuth sample last valid
+  FSEEK(fpIn, 3*rangeline_total_number_bytes+8, SEEK_SET);
+  for (kk=2; kk<range_samples; kk++) {
+    FREAD(&intValue, 1, 4, fpIn);
+    if (bigInt32(intValue) < *aslv)
+      *aslv = bigInt32(intValue);
+  }
+  
+  *rsfv = 1; // range sample first valid
+  *rslv = range_samples; // range sample last valid
+  for (kk=4; kk<total_number_lines; kk++) {
+    FSEEK(fpIn, 4*rangeline_total_number_bytes, SEEK_SET);
+    FREAD(&intValue, 1, 4, fpIn);
+    if (bigInt32(intValue) > *rsfv)
+      *rsfv = bigInt32(intValue);
+    FREAD(&intValue, 1, 4, fpIn);
+    if (bigInt32(intValue) < *rslv)
+      *rslv = bigInt32(intValue);
+  }
+  FCLOSE(fpIn);
+  *rltnb = rangeline_total_number_bytes;
+
+  xmlFreeDoc(doc);
+  xmlCleanupParser();
+  FREE(terrasar);
+
+  return TRUE;
+}
+
 void import_terrasar(const char *inBaseName, radiometry_t radiometry,
 		     const char *outBaseName)
 {
@@ -413,7 +498,7 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
     fpIn = FOPEN(inDataName, "rb");
     if (ii == 0)
       fpOut = FOPEN(outDataName, "wb");
-    
+
     FREAD(&intValue, 1, 4, fpIn);
     //int bytes_in_burst = bigInt32(intValue);
     FREAD(&intValue, 1, 4, fpIn);
