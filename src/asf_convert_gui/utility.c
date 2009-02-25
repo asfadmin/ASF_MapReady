@@ -177,6 +177,11 @@ meta_file_name(const gchar * file_name)
     return g_strdup(file_name);
   }
 
+  // terrasar-x
+  else if (ext && strcmp_case(ext, ".xml")==0) {
+    return g_strdup(file_name);
+  }
+
   // geotiff
   else if (ext && (strcmp_case(ext, ".tif") == 0 || strcmp_case(ext, ".tiff") == 0)) {
       return g_strdup(file_name);
@@ -291,6 +296,11 @@ data_file_name(const gchar * file_name)
       return g_strdup(file_name);
   }
 
+  // terrasar-x ...
+  else if (ext && (strcmp_case(ext, ".xml") == 0)) {
+    return g_strdup(file_name);
+  }
+
   // second, try CEOS
   char *basename = MALLOC(sizeof(char)*(strlen(file_name)+10));
   char **dataName = NULL, **metaName = NULL;
@@ -388,6 +398,12 @@ gboolean is_polsarpro(const gchar * infile)
 
 gboolean is_geotiff(const char *infile)
 {
+  // don't bother to ensure we have a geotiff (as opposed to just a regular
+  // tiff), we'll just check the extension.  if this were to do such a
+  // check, it would appear very weird to the user, who may not know they
+  // don't have a geotiff -- mapready would refuse to recognize it but
+  // not tell them why.  If we wait until we start processing to do the
+  // full check, we can give useful error messages
   char *ext = findExt(infile);
   if (!ext) {
     return FALSE; // extension must be added
@@ -409,13 +425,13 @@ gboolean is_asf_internal(const char *infile)
     ret = FALSE;
   }
   else if (strcmp_case(ext, ".img")==0) {
-    // have .img, make sure we have .meta
+    // have .img, make sure we also have .meta
     char *meta = appendExt(infile, ".meta");
     ret = fileExists(meta);
     free(meta);
   }
   else if (strcmp_case(ext, ".meta")==0) {
-    // have .meta, make sure we have .img
+    // have .meta, make sure we also have .img
     char *img = appendExt(infile, ".img");
     ret = fileExists(img);
     free(img);

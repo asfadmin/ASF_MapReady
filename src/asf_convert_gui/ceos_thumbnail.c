@@ -928,6 +928,130 @@ make_complex_thumb(meta_parameters* imd,
 }
 
 GdkPixbuf *
+make_terrasarx_thumb(const char *input_metadata, const char *input_data,
+                     size_t max_thumbnail_dimension)
+{
+  meta_parameters *meta;
+  int asfv, aslv, rsfv, rslv, ii, jj, kk, rltnb;
+  char *inDataName;
+
+  int ret = get_terrasar_params(input_metadata, 0, &meta, &rltnb,
+                                &asfv, &aslv, &rsfv, &rslv, &inDataName);
+  if (!ret)
+    return NULL;
+
+  int nl = aslv - asfv + 1;
+  int ns = rslv - rsfv + 1;
+  meta->general->line_count = nl;
+  meta->general->sample_count = ns;
+
+  int larger_dim = 1024;
+  int vsf = ceil (meta->general->line_count / larger_dim);
+  int hsf = ceil (meta->general->sample_count / larger_dim);
+  int sf = (hsf > vsf ? hsf : vsf); // overall scale factor
+
+  // thumbnail sizes
+  size_t tsx = ns / sf;
+  size_t tsy = nl / sf;
+
+  guchar *data = g_new(guchar, 3*tsx*tsy);
+  float *fdata = g_new(float, 3*tsx*tsy);
+  float *amp = MALLOC(sizeof(float)*ns);
+  float *phase = MALLOC(sizeof(float)*ns);
+  double avg = 0.0;
+
+  FILE *fpIn = fopen(inDataName, "rb");
+  for (ii=0; ii<tsy; ++ii) {
+    int ll=asfv+3 + ii*sf;
+    assert(ll>=asfv+3 && ll<=aslv+3);
+    FSEEK(fpIn, ll*rltnb+8, SEEK_SET);
+    for (kk=rsfv; kk<=rslv; kk++) {
+      short shortReal, shortImaginary;
+      FREAD(&shortReal, 2, 1, fpIn);
+      float re = (float) shortReal;
+      FREAD(&shortImaginary, 2, 1, fpIn);
+      float im = (float) shortImaginary;
+      amp[kk-rsfv] = sqrt(re*re + im*im);
+      phase[kk-rsfv] = atan2(im, re);
+    }
+    for (jj=0; jj<tsx; ++jj) {
+      int ss = jj*sf;
+      assert(ss>=0 && ss<=ns);
+      fdata[jj+ii*tsx] = amp[ss];
+      avg += amp[ss];
+    }
+  }
+  FREE(amp);
+  FREE(phase);
+  fclose(fpIn);
+
+  // computing the standard deviation
+  avg /= tsx*tsy;
+  double stddev = 0.0;
+  for (ii = 0; ii < tsx*tsy; ++ii)
+    stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
+  stddev = sqrt(stddev / (tsx*tsy));
+  
+  // Set the limits of the scaling - 2-sigma on either side of the mean
+  double lmin = avg - 2*stddev;
+  double lmax = avg + 2*stddev;
+
+  // Now actually scale the data, and convert to bytes.
+  // Note that we need 3 values, one for each of the RGB channels.
+  for (ii = 0; ii < tsx*tsy; ++ii) {
+    float val = fdata[ii];
+    guchar uval;
+    if (val < lmin)
+      uval = 0;
+    else if (val > lmax)
+      uval = 255;
+    else
+      uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
+    
+    int n = 3*ii;
+    data[n] = uval;
+    data[n+1] = uval;
+    data[n+2] = uval;
+  }
+  
+  g_free(fdata);
+  
+  // Create the pixbuf
+  GdkPixbuf *pb =
+    gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
+                             8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
+  
+  if (!pb) {
+    printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
+    meta_free(meta);
+    g_free(data);
+    return NULL;
+  }
+  
+  // Scale down to the size we actually want, using the built-in Gdk
+  // scaling method, much nicer than what we did above
+  
+  // Must ensure we scale the same in each direction
+  double scale_y = tsy / max_thumbnail_dimension;
+  double scale_x = tsx / max_thumbnail_dimension;
+  double scale = scale_y > scale_x ? scale_y : scale_x;
+  int x_dim = tsx / scale;
+  int y_dim = tsy / scale;
+  
+  GdkPixbuf *pb_s =
+    gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
+  gdk_pixbuf_unref(pb);
+  
+  if (!pb_s)
+    printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
+  
+  meta_free(meta);
+  FREE(inDataName);
+
+  return pb_s;
+}
+
+GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    const char *input_data,
                                    size_t max_thumbnail_dimension)
@@ -953,9 +1077,9 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return make_asf_internal_thumb(input_metadata, input_data,
                                        max_thumbnail_dimension);
 
-    //if (is_terrasarx(input_metadata))
-    //    return make_terrasarx_thumb(input_metadata, input_data,
-    //                                max_thumbnail_dimension);
+    if (is_terrasarx(input_metadata))
+        return make_terrasarx_thumb(input_metadata, input_data,
+                                    max_thumbnail_dimension);
 
     // for airsar, need to check the metadata extension, that's more reliable
     if (is_airsar(input_metadata))

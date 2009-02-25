@@ -200,6 +200,10 @@ static char *file_is_valid(const gchar * file)
       FREE(dupe);
     }
 
+    // allow xml files to be added -- terrasar-x
+    if (ext && strcmp_case(ext, ".xml")==0)
+      return STRDUP(file);
+
     // now, the ceos check
     char *basename = MALLOC(sizeof(char)*(strlen(file)+10));
     char **dataName = NULL, **metaName = NULL;
@@ -657,9 +661,10 @@ add_to_files_list_iter(const gchar *input_file_in,
     char *ancillary_file_valid = NULL;
     int valid = input_file != NULL;
 
-    // NOTE: When a file is added to the input list for the first time, the ancillary_file_in
-    // will be NULL or zero length.  When a file is moved from the completed files back to
-    // the list of input files, then ancillary_file will be valid and will have a full
+    // NOTE: When a file is added to the input list for the first time,
+    // the ancillary_file_in will be NULL or zero length.  When a file is
+    // moved from the completed files back to the list of input files, then
+    // ancillary_file will be valid and will have a full
     // path/filename in it (see move_to_files_list() and add_to_files_list() )
     if (valid &&
         ancillary_file_in != NULL &&

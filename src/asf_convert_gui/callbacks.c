@@ -134,7 +134,6 @@ input_data_formats_changed()
           strcat(formats, "AirSAR, ");
       }
       else if (is_terrasarx(file)) {
-        show_airsar_checkbuttons = TRUE;
         if (!strstr(formats, "TerraSAR-X"))
           strcat(formats, "TerraSAR-X, ");
       }
