@@ -62,8 +62,10 @@ void terrcorr_options_changed()
       GtkWidget *radiometric_checkbutton;
       GtkWidget *layover_mask_checkbutton;
       GtkWidget *save_dem_checkbutton;
+      GtkWidget *tc_no_matching_checkbutton, *hbox_tc_no_matching;
 
       gboolean tc_pixel_size_is_checked;
+      gboolean tc_no_matching_is_checked;
       gboolean terrcorr_is_checked;
       gboolean mask_is_checked, mask_file_is_checked;
 
@@ -94,7 +96,15 @@ void terrcorr_options_changed()
 
       hbox_tc_pixel_size = get_widget_checked("hbox_tc_pixel_size");
 
+      tc_no_matching_checkbutton =
+          get_widget_checked("tc_no_matching_checkbutton");
+      tc_no_matching_is_checked = terrcorr_is_checked &&
+          gtk_toggle_button_get_active(
+              GTK_TOGGLE_BUTTON(tc_no_matching_checkbutton));
+      hbox_tc_no_matching = get_widget_checked("hbox_tc_no_matching");
+
       gtk_widget_set_sensitive(hbox_tc_pixel_size, tc_pixel_size_is_checked);
+      gtk_widget_set_sensitive(hbox_tc_no_matching, tc_no_matching_is_checked);
       gtk_widget_set_sensitive(mask_entry, mask_file_is_checked);
       //gtk_widget_set_sensitive(hbox_terrcorr_items, terrcorr_is_checked);
       gtk_widget_set_sensitive(rb_auto_water_mask, mask_is_checked);
@@ -107,6 +117,7 @@ void terrcorr_options_changed()
           get_widget_checked("layover_mask_checkbutton");
 
       gtk_widget_set_sensitive(tc_pixel_size_checkbutton, terrcorr_is_checked);
+      gtk_widget_set_sensitive(tc_no_matching_checkbutton, terrcorr_is_checked);
       gtk_widget_set_sensitive(interpolate_checkbutton, terrcorr_is_checked);
       gtk_widget_set_sensitive(radiometric_checkbutton, terrcorr_is_checked);
       gtk_widget_set_sensitive(layover_mask_checkbutton, terrcorr_is_checked);
@@ -145,6 +156,13 @@ on_refine_geolocation_checkbutton_toggled(GtkWidget * widget)
 
 SIGNAL_CALLBACK void
 on_tc_pixel_size_checkbutton_toggled(GtkWidget *widget)
+{
+    terrcorr_options_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_tc_no_matching_checkbutton_toggled(GtkWidget *widget)
 {
     terrcorr_options_changed();
     update_summary();

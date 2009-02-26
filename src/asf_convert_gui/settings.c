@@ -367,6 +367,7 @@ settings_apply_to_gui(const Settings * s)
             GtkWidget *save_dem_checkbutton;
             GtkWidget *layover_mask_checkbutton;
             GtkWidget *radiometric_checkbutton;
+            GtkWidget *tc_no_matching_checkbutton;
 
             tc_pixel_size_checkbutton =
                 get_widget_checked("tc_pixel_size_checkbutton");
@@ -387,6 +388,24 @@ settings_apply_to_gui(const Settings * s)
             else
             {
                 gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), "");
+            }
+
+            tc_no_matching_checkbutton =
+                get_widget_checked("tc_no_matching_checkbutton");
+
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(tc_no_matching_checkbutton),
+                s->no_matching);
+
+            if (s->no_matching)
+            {
+                put_double_to_entry("offset_x_entry", s->offset_x);
+                put_double_to_entry("offset_y_entry", s->offset_y);
+            }
+            else
+            {
+                put_string_to_entry("offset_x_entry", "");
+                put_string_to_entry("offset_y_entry", "");
             }
 
             interpolate_checkbutton =
@@ -752,6 +771,18 @@ settings_get_from_gui()
             {
                 ret->tc_pixel_size =
                     get_double_from_entry("tc_pixel_size_entry");
+            }
+
+            ret->no_matching = get_checked("tc_no_matching_checkbutton");
+            if (ret->no_matching)
+            {
+                ret->offset_x = get_double_from_entry("offset_x_entry");
+                ret->offset_y = get_double_from_entry("offset_y_entry");
+            }
+            else
+            {
+                ret->offset_x = 0;
+                ret->offset_y = 0;
             }
 
             ret->interp = get_checked("interpolate_checkbutton");
@@ -1605,6 +1636,14 @@ settings_to_config_file(const Settings *s,
             fprintf(cf, "save terrcorr dem = %d\n", s->generate_dem);
             fprintf(cf, "save terrcorr layover mask = %d\n",
                     s->generate_layover_mask);
+            if (s->no_matching) {
+              fprintf(cf, "no matching = 1\n");
+              fprintf(cf, "range offset = %f\n", s->offset_x);
+              fprintf(cf, "azimuth offset = %f\n", s->offset_y);
+            }
+            else {
+              fprintf(cf, "no matching = 0\n");
+            }
         } else if (s->refine_geolocation_is_checked) {
             fprintf(cf, "refine geolocation only = 1\n");
         }
@@ -1982,6 +2021,11 @@ int apply_settings_from_config_file(char *configFile)
         s.terrcorr_is_checked = !s.refine_geolocation_is_checked;
         strcpy(s.dem_file, cfg->terrain_correct->dem);
         s.specified_tc_pixel_size = cfg->terrain_correct->pixel != -99;
+        s.no_matching = cfg->terrain_correct->no_matching;
+        if (s.no_matching) {
+          s.offset_x = cfg->terrain_correct->range_offset;
+          s.offset_y = cfg->terrain_correct->azimuth_offset;
+        }
         s.tc_pixel_size = cfg->terrain_correct->pixel;
         s.interp = cfg->terrain_correct->interp;
         s.auto_water_mask_is_checked = cfg->terrain_correct->auto_mask_water;

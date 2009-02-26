@@ -140,6 +140,15 @@ const char *get_summary_text()
 
         if (s->terrcorr_is_checked)
         {
+            if (s->no_matching)
+            {
+                sprintf(text, "%s\n   Skip co-registration", text);
+                if (s->offset_x != 0.0 || s->offset_y != 0.0) {
+                    sprintf(text, "%s\n     (offsets: %.2f,%.2f pixels)", text,
+                            s->offset_x, s->offset_y);
+                }
+            }
+
             if (s->specified_tc_pixel_size)
             {
                 sprintf(text, "%s\n   Pixel Size: %.2f m", text,
@@ -150,7 +159,7 @@ const char *get_summary_text()
                 sprintf(text, "%s\n   Pixel Size: %.2f m (from geocode)",
                         text, s->pixel_size);
             }
-
+                    
             sprintf(text, "%s\n   Interpolate Layover: %s", text,
                     s->interp ? "Yes" : "No");
         }

@@ -194,6 +194,8 @@ typedef struct
   int generate_dem;
   int do_radiometric;
   int interp_dem_holes;
+  int no_matching;
+  double offset_x, offset_y;
 
   /* misc */
   int keep_files; // 0= keep none, 1=keep temp, 2= keep all
