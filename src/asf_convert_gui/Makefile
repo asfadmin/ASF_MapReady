@@ -3,7 +3,7 @@ include ../../make_support/system_rules
 TARGET = asf_convert_gui
 DEST_TARGET = mapready
 DOC_BUILD_MACHINE = dq.asf.alaska.edu
-SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c state.c change_output_dir.c naming_scheme.c metadata.c geocode.c summary.c ceos_thumbnail.c win_font.c projfile.c view_output.c share.c terrcorr.c log.c blow_up_in.c blow_up_out.c png_util.c plugins.c
+SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c state.c change_output_dir.c naming_scheme.c metadata.c geocode.c summary.c ceos_thumbnail.c win_font.c projfile.c view_output.c share.c terrcorr.c log.c blow_up_in.c blow_up_out.c png_util.c plugins.c tiff_util.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)

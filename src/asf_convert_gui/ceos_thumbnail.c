@@ -14,6 +14,7 @@
 #include "get_ceos_names.h"
 #include "asf_import.h"
 #include "asf_endian.h"
+#include "tiff_util.h"
 
 // Prototypes
 int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band, float *line);
@@ -931,6 +932,51 @@ GdkPixbuf *
 make_terrasarx_thumb(const char *input_metadata, const char *input_data,
                      size_t max_thumbnail_dimension)
 {
+  char *browse_file = get_terrasar_browse_file(input_metadata);
+  if (!browse_file) {
+    asfPrintWarning("Unable to get browse image for: %s\n", input_metadata);
+    return NULL;
+  }
+
+  int height, width;
+  unsigned char *data;
+  int ret = read_tiff(browse_file, &height, &width, &data);
+  if (!ret) {
+    asfPrintWarning("Error loading browse image: %s\n", browse_file);
+    return NULL;
+  }
+
+  int size = 3*height*width;
+  guchar *data_pb = g_new(guchar, size);
+  memcpy(data_pb, data, sizeof(unsigned char)*size);
+
+  GdkPixbuf *pb = gdk_pixbuf_new_from_data(data_pb, GDK_COLORSPACE_RGB, FALSE,
+                                           8, width, height, width*3,
+                                           destroy_pb_data, NULL);
+  if (!pb) {
+    asfPrintWarning("Error loading browse image: %s\n", browse_file);
+    return NULL;
+  }
+
+  // scale to requested size -- make sure to do it without distorting
+  double scale_y = height / max_thumbnail_dimension;
+  double scale_x = width / max_thumbnail_dimension;
+  double scale = scale_y > scale_x ? scale_y : scale_x;
+  int x_dim = width / scale;
+  int y_dim = height / scale;
+
+  GdkPixbuf *pb_s =
+    gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
+  gdk_pixbuf_unref(pb);
+  
+  if (!pb_s)
+    printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
+
+  //FREE(data);
+  FREE(browse_file);
+  return pb_s;
+
+/*
   meta_parameters *meta;
   int asfv, aslv, rsfv, rslv, ii, jj, kk, rltnb;
   char *inDataName;
@@ -1020,9 +1066,8 @@ make_terrasarx_thumb(const char *input_metadata, const char *input_data,
   GdkPixbuf *pb =
     gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
                              8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
-  
   if (!pb) {
-    printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
+    printf("Failed to create the thumbnail pixbuf: %s\n", input_metadata);
     meta_free(meta);
     g_free(data);
     return NULL;
@@ -1049,6 +1094,7 @@ make_terrasarx_thumb(const char *input_metadata, const char *input_data,
   FREE(inDataName);
 
   return pb_s;
+*/
 }
 
 GdkPixbuf *
