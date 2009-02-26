@@ -154,11 +154,12 @@
 "          if you specified -u, the input SAR image).\n\n"\
 "          This option may be specified more than once.\n"\
 "\n"\
-"     -no_matching\n"\
-"          Don't use the DEM for matching\n"\
+"     -no-match\n"\
+"          Don't use the DEM for matching.\n"\
 "\n"\
 "     -offsets <range offset> <azimuth offset>\n"\
 "          Use these offsets instead of matching the DEM to the SAR image.\n"\
+"          The offsets are in pixels.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
