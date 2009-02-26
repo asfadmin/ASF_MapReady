@@ -1844,11 +1844,28 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             int ns = imd->general->sample_count;
 
             ok1 = symmetry_test(imd, 2, 2, average_height);
-            ok2 = symmetry_test(imd, 200, 200, average_height);
+            ok2 = symmetry_test(imd, nl/2, ns/2, average_height);
             ok3 = symmetry_test(imd, nl-3, ns-3, average_height);
             ok4 = symmetry_test(imd, nl-3, 2, average_height);
             ok5 = symmetry_test(imd, 2, ns-3, average_height);
+
             if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5) {
+              // if any tests failed, print out which ones were ok
+              if (ok2)
+                asfPrintStatus("Symmetry test at center (%d,%d): ok\n",
+                               nl/2, ns/2);
+              if (ok1)
+                asfPrintStatus("Symmetry test at UL corner (2,2): ok\n");
+              if (ok5)
+                asfPrintStatus("Symmetry test at UR corner (%d,%d): ok\n",
+                               2, ns-2);
+              if (ok3)
+                asfPrintStatus("Symmetry test at BR corner (%d,%d): ok\n",
+                               nl-3, ns-3);
+              if (ok4)
+                asfPrintStatus("Symmetry test at BL corner (%d,%d): ok\n",
+                               nl-3, 2);
+
               report_func("Symmetry testing failed.  Use the -force (command line) option or the\n"
                           "the Ignore Projection Errors checkbox (MapReady Geocode Tab)\n");
             }
