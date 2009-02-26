@@ -1398,6 +1398,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->import->format), "GRIDFLOAT", 9) != 0 &&
           strncmp(uc(cfg->import->format), "GAMMA", 5) != 0 &&
           strncmp(uc(cfg->import->format), "POLSARPRO", 9) != 0 &&
+          strncmp(uc(cfg->import->format), "TERRASAR", 8) != 0 &&
           strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0) {
         asfPrintError("Selected import format not supported\n");
       }
@@ -1831,6 +1832,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format_type = VP;
       else if (strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0)
         format_type = POLSARPRO;
+      else if (strncmp_case(cfg->import->format, "TERRASAR", 8) == 0)
+        format_type = TERRASAR;
       else {
         asfPrintError("Unknown Format: %s\n", cfg->import->format);
         format_type = CEOS; // actually this is not reached

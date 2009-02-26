@@ -322,7 +322,26 @@ terrasar_meta *read_terrasar_meta(const char *dataFile)
   return terrasar;
 }
 
-//shortcut function for the GUI
+char *get_terrasar_browse_file(const char *xml_file_name)
+{
+  xmlDoc *doc = xmlReadFile(xml_file_name, NULL, 0);
+  if (!doc) {
+    asfPrintWarning("Could not parse file %s\n", xml_file_name);
+    return NULL;
+  }
+
+  char preview_file[1024];
+  strcpy(preview_file, xml_get_string_value(doc, 
+         "level1Product.productComponents.browseImage.file.location.path"));
+  strcat(preview_file, "/");
+  strcat(preview_file, xml_get_string_value(doc, 
+         "level1Product.productComponents.browseImage.file.location.filename"));
+  
+  return STRDUP(preview_file);
+}
+
+//shortcut function for the GUI... this one can hopefully be eliminated
+//in favor of the previous one, which doesn't reuse a ton of code
 int get_terrasar_params(const char *xml_file_name, int layer,
                         meta_parameters **meta_out, int *rltnb,
                         int *asfv, int *aslv, int *rsfv, int *rslv,

@@ -686,7 +686,7 @@ static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
 
   // We will insist that the results are symmetric to within this
   // fraction after transforming out and back.
-  const double sym_th = 0.15;   // Symmetry threshold.
+  const double sym_th = 0.15;   // Symmetry threshold (pixels)
   if (ret1 || ret2) {
     asfPrintWarning("Symmetry test failed! %s %s.\n",
                     ret1 ? "meta_get_latLon returned error" : "",
