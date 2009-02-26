@@ -22,6 +22,10 @@ int read_tiff(const char *filename, int *nlines, int *nsamps,
               unsigned char **data)
 {
   TIFF *tiff = XTIFFOpen(filename, "r");
+  if (!tiff) {
+    return FALSE;
+  }
+
   uint32 width;
   uint32 height;
   TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);

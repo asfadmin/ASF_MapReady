@@ -102,7 +102,7 @@ terrasar_meta *read_terrasar_meta(const char *dataFile)
   julian_date julianDate;
   char timeStr[30], str[50];
   tsx_doppler_params *tsx;
-  
+
   terrasar_meta *terrasar = terrasar_meta_init();
 
   if (!fileExists(dataFile))
@@ -330,100 +330,25 @@ char *get_terrasar_browse_file(const char *xml_file_name)
     return NULL;
   }
 
-  char preview_file[1024];
-  strcpy(preview_file, xml_get_string_value(doc, 
+  char preview_file[2048];
+
+  char *path = get_dirname(xml_file_name);
+  if (strlen(path)>0) {
+    strcpy(preview_file, path);
+    if (preview_file[strlen(preview_file)-1] != '/')
+      strcat(preview_file, "/");
+  }
+  else
+    strcpy(preview_file, "");
+  free(path);
+
+  strcat(preview_file, xml_get_string_value(doc, 
          "level1Product.productComponents.browseImage.file.location.path"));
   strcat(preview_file, "/");
   strcat(preview_file, xml_get_string_value(doc, 
          "level1Product.productComponents.browseImage.file.location.filename"));
   
   return STRDUP(preview_file);
-}
-
-//shortcut function for the GUI... this one can hopefully be eliminated
-//in favor of the previous one, which doesn't reuse a ton of code
-int get_terrasar_params(const char *xml_file_name, int layer,
-                        meta_parameters **meta_out, int *rltnb,
-                        int *asfv, int *aslv, int *rsfv, int *rslv,
-                        char **dataFileName)
-{
-  xmlDoc *doc = xmlReadFile(xml_file_name, NULL, 0);
-  if (!doc) {
-    asfPrintWarning("Could not parse file %s\n", xml_file_name);
-    return FALSE;
-  }
-
-  terrasar_meta *terrasar = read_terrasar_meta(xml_file_name);
-  meta_parameters *meta = terrasar2meta(terrasar);
-  *meta_out = meta;
-
-  char inDataName[1024];
-  strcpy(inDataName, xml_get_string_value(doc, 
-      "level1Product.productComponents.imageData[%d].file.location.path",
-      layer));
-  strcat(inDataName, "/");
-  strcat(inDataName, xml_get_string_value(doc, 
-      "level1Product.productComponents.imageData[%d].file.location.filename", 
-      layer));
-
-  if (!fileExists(inDataName))
-    return FALSE;
-
-  *dataFileName = STRDUP(inDataName);
-
-  FILE *fpIn = FOPEN(inDataName, "rb");
-  unsigned char intValue[4];
-
-  FREAD(&intValue, 1, 4, fpIn);
-  FREAD(&intValue, 1, 4, fpIn);
-  FREAD(&intValue, 1, 4, fpIn);
-  int range_samples = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  int azimuth_samples = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  FREAD(&intValue, 1, 4, fpIn);
-  int rangeline_total_number_bytes = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  int total_number_lines = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
-  int kk;
-
-  // Check for the first and last azimuth and range pixel
-  *asfv = 1; // azimuth sample first valid
-  FSEEK(fpIn, 2*rangeline_total_number_bytes+8, SEEK_SET);
-  for (kk=2; kk<range_samples; kk++) {
-    FREAD(&intValue, 1, 4, fpIn);
-    if (bigInt32(intValue) > *asfv)
-      *asfv = bigInt32(intValue);
-  }
-  
-  *aslv = azimuth_samples; // azimuth sample last valid
-  FSEEK(fpIn, 3*rangeline_total_number_bytes+8, SEEK_SET);
-  for (kk=2; kk<range_samples; kk++) {
-    FREAD(&intValue, 1, 4, fpIn);
-    if (bigInt32(intValue) < *aslv)
-      *aslv = bigInt32(intValue);
-  }
-  
-  *rsfv = 1; // range sample first valid
-  *rslv = range_samples; // range sample last valid
-  for (kk=4; kk<total_number_lines; kk++) {
-    FSEEK(fpIn, 4*rangeline_total_number_bytes, SEEK_SET);
-    FREAD(&intValue, 1, 4, fpIn);
-    if (bigInt32(intValue) > *rsfv)
-      *rsfv = bigInt32(intValue);
-    FREAD(&intValue, 1, 4, fpIn);
-    if (bigInt32(intValue) < *rslv)
-      *rslv = bigInt32(intValue);
-  }
-  FCLOSE(fpIn);
-  *rltnb = rangeline_total_number_bytes;
-
-  xmlFreeDoc(doc);
-  xmlCleanupParser();
-  FREE(terrasar);
-
-  return TRUE;
 }
 
 void import_terrasar(const char *inBaseName, radiometry_t radiometry,
@@ -479,12 +404,27 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       printf("attribute: %i\n", attribute);
       asfPrintError("LayerIndex of imageData in metadata out of order!\n");
     }
-    strcpy(inDataName, xml_get_string_value(doc, 
+
+    // path from the xml (metadata) file
+    char *path = get_dirname(inBaseName);
+    if (strlen(path)>0) {
+      strcpy(inDataName, path);
+      if (inDataName[strlen(inDataName)-1] != '/')
+        strcat(inDataName, "/");
+    }
+    else
+      strcpy(inDataName, "");
+    free(path);
+
+    // strcat() on the path & file from the XML entry
+    strcat(inDataName, xml_get_string_value(doc, 
       "level1Product.productComponents.imageData[%d].file.location.path", ii));
     strcat(inDataName, "/");
     strcat(inDataName, xml_get_string_value(doc, 
       "level1Product.productComponents.imageData[%d].file.location.filename", 
       ii));
+
+    // checking that the size is plausible
     file_size = xml_get_long_value(doc, 
       "level1Product.productComponents.imageData[%d].file.size", ii);
     if (!fileExists(inDataName))
