@@ -2766,7 +2766,7 @@
 								  <child>
 								    <widget class="GtkCheckButton" id="tc_no_matching_checkbutton">
 								      <property name="visible">True</property>
-								      <property name="tooltip" translatable="yes">The first part of terrain correction adjust the geolocation of the image to match the DEM.  For flat areas (with little or no topography), this match will usually fail.  Skipping this co-registration will usually produce a good result, if the geolocation of the scene is already good.</property>
+								      <property name="tooltip" translatable="yes">The first part of terrain correction adjust the geolocation of the image to match the DEM.  For flat areas (with little or no topography), this match will usually fail.  Skipping this co-registration will usually produce a good result, if the geolocation of the scene is already good.  If it isn't, you can measure and then supply the offsets manually.</property>
 								      <property name="can_focus">True</property>
 								      <property name="label" translatable="yes">Skip co-registration   </property>
 								      <property name="use_underline">True</property>
