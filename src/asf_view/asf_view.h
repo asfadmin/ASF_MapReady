@@ -189,6 +189,12 @@ int handle_pgm_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
 meta_parameters* open_pgm(const char *data_name, ClientInterface *client);
 
+/* read_brs.c */
+int try_brs(const char *filename, int try_extensions);
+int handle_brs_file(const char *filename, char *meta_name, char *data_name,
+                     char **err);
+meta_parameters* open_brs(const char *data_name, ClientInterface *client);
+
 /* big_image.c */
 GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair);
 void fill_big(ImageInfo *ii);

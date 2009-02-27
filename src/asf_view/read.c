@@ -132,6 +132,16 @@ int read_file(const char *filename, const char *band, int multilook,
             return FALSE;
         }
     }
+    else if (try_brs(filename, try_extensions)) {
+        if (handle_brs_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
+            meta = open_brs(data_name, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    }
     // NOTE: try_ceos() needs to be called LAST because get_ceos_names()
     // will add extensions, causing it to match if there are CEOS files
     // in the same directory as (eg) as GeoTIFF that the user wants to

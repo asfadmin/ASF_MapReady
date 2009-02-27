@@ -13,6 +13,7 @@ SRCS = asf_view.c \
 	read_tiff.c \
 	read_png.c \
 	read_pgm.c \
+	read_brs.c \
 	read_airsar.c \
 	big_image.c \
 	meta.c \
