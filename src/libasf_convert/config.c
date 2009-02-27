@@ -695,9 +695,9 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "no matching", 11)==0)
         cfg->terrain_correct->no_matching = read_int(line, "no matching");
       if (strncmp(test, "range offset", 12)==0)
-        cfg->terrain_correct->range_offset = read_int(line, "range offset");
+        cfg->terrain_correct->range_offset = read_double(line, "range offset");
       if (strncmp(test, "azimuth offset", 14)==0)
-        cfg->terrain_correct->azimuth_offset = read_int(line, "azimuth offset");
+        cfg->terrain_correct->azimuth_offset = read_double(line, "azimuth offset");
 
       // Geocoding
       if (strncmp(test, "projection", 10)==0)
@@ -1043,9 +1043,9 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "no matching", 11)==0)
         cfg->terrain_correct->no_matching = read_int(line, "no matching");
       if (strncmp(test, "range offset", 12)==0)
-        cfg->terrain_correct->range_offset = read_int(line, "range offset");
+        cfg->terrain_correct->range_offset = read_double(line, "range offset");
       if (strncmp(test, "azimuth offset", 14)==0)
-        cfg->terrain_correct->azimuth_offset = read_int(line, "azimuth offset");
+        cfg->terrain_correct->azimuth_offset = read_double(line, "azimuth offset");
         FREE(test);
     }
 
