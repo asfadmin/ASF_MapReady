@@ -290,20 +290,28 @@ void open_mdv()
     }
 
     if (!f) {
-        char *msg = MALLOC(sizeof(char)*(strlen(curr->filename)*3+100));
+        char *msg = MALLOC(sizeof(char)*(strlen(curr->filename)*3+256));
         if (palsar_filename) {
           sprintf(msg,
-                  " Couldn't find CEOS metadata file.\n\n"
-                  " Was looking for:\n"
-                  "    %s\n"
-                  " or\n"
-                  "    %s\n\n", ceos_filename, palsar_filename);
+              " Couldn't find CEOS metadata file.\n\n"
+              " Was looking for:\n"
+              "    %s\n"
+              " or\n"
+              "    %s\n\n"
+              "NOTE: If you processed this data with MapReady, and changed\n"
+              "the output directory or filename, ASF View won't be able to\n"
+              "find your original CEOS files.\n\n",
+                  ceos_filename, palsar_filename);
         }
         else {
           sprintf(msg,
-                  " Couldn't find CEOS metadata file.\n\n"
-                  " Was looking for:\n"
-                  "    %s\n\n", ceos_filename);
+              " Couldn't find CEOS metadata file.\n\n"
+              " Was looking for:\n"
+              "    %s\n\n"
+              "NOTE: If you processed this data with MapReady, and changed\n"
+              "the output directory or filename, ASF View won't be able to\n"
+              "find your original CEOS files.\n\n",
+                  ceos_filename);
         }
         message_box(msg);
         free(msg);
