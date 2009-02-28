@@ -3773,159 +3773,17 @@ South Pole
 			      </child>
 
 			      <child>
-				<widget class="GtkTable" id="table5">
-				  <property name="border_width">2</property>
+				<widget class="GtkFixed" id="fixed1">
+				  <property name="width_request">360</property>
+				  <property name="height_request">61</property>
 				  <property name="visible">True</property>
-				  <property name="n_rows">3</property>
-				  <property name="n_columns">3</property>
-				  <property name="homogeneous">False</property>
-				  <property name="row_spacing">2</property>
-				  <property name="column_spacing">2</property>
-
-				  <child>
-				    <widget class="GtkLabel" id="label73">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes"></property>
-				      <property name="use_underline">False</property>
-				      <property name="use_markup">False</property>
-				      <property name="justify">GTK_JUSTIFY_LEFT</property>
-				      <property name="wrap">False</property>
-				      <property name="selectable">False</property>
-				      <property name="xalign">0</property>
-				      <property name="yalign">0.5</property>
-				      <property name="xpad">0</property>
-				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">0</property>
-				      <property name="right_attach">1</property>
-				      <property name="top_attach">0</property>
-				      <property name="bottom_attach">1</property>
-				      <property name="x_options">fill</property>
-				      <property name="y_options"></property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkLabel" id="label74">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Lat: </property>
-				      <property name="use_underline">False</property>
-				      <property name="use_markup">False</property>
-				      <property name="justify">GTK_JUSTIFY_LEFT</property>
-				      <property name="wrap">False</property>
-				      <property name="selectable">False</property>
-				      <property name="xalign">0</property>
-				      <property name="yalign">0.5</property>
-				      <property name="xpad">0</property>
-				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">0</property>
-				      <property name="right_attach">1</property>
-				      <property name="top_attach">1</property>
-				      <property name="bottom_attach">2</property>
-				      <property name="x_options">fill</property>
-				      <property name="y_options"></property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkLabel" id="label75">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Lon:</property>
-				      <property name="use_underline">False</property>
-				      <property name="use_markup">False</property>
-				      <property name="justify">GTK_JUSTIFY_LEFT</property>
-				      <property name="wrap">False</property>
-				      <property name="selectable">False</property>
-				      <property name="xalign">0</property>
-				      <property name="yalign">0.5</property>
-				      <property name="xpad">0</property>
-				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">0</property>
-				      <property name="right_attach">1</property>
-				      <property name="top_attach">2</property>
-				      <property name="bottom_attach">3</property>
-				      <property name="x_options">fill</property>
-				      <property name="y_options"></property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkLabel" id="label76">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Min</property>
-				      <property name="use_underline">False</property>
-				      <property name="use_markup">False</property>
-				      <property name="justify">GTK_JUSTIFY_LEFT</property>
-				      <property name="wrap">False</property>
-				      <property name="selectable">False</property>
-				      <property name="xalign">0</property>
-				      <property name="yalign">0.5</property>
-				      <property name="xpad">0</property>
-				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">1</property>
-				      <property name="right_attach">2</property>
-				      <property name="top_attach">0</property>
-				      <property name="bottom_attach">1</property>
-				      <property name="x_options">fill</property>
-				      <property name="y_options"></property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkLabel" id="label77">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Max</property>
-				      <property name="use_underline">False</property>
-				      <property name="use_markup">False</property>
-				      <property name="justify">GTK_JUSTIFY_LEFT</property>
-				      <property name="wrap">False</property>
-				      <property name="selectable">False</property>
-				      <property name="xalign">0</property>
-				      <property name="yalign">0.5</property>
-				      <property name="xpad">0</property>
-				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">2</property>
-				      <property name="right_attach">3</property>
-				      <property name="top_attach">0</property>
-				      <property name="bottom_attach">1</property>
-				      <property name="x_options">fill</property>
-				      <property name="y_options"></property>
-				    </packing>
-				  </child>
 
 				  <child>
 				    <widget class="GtkEntry" id="lat_min_entry">
-				      <property name="width_request">70</property>
+				      <property name="width_request">100</property>
+				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Lower Latitude</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -3936,18 +3794,17 @@ South Pole
 				      <property name="activates_default">False</property>
 				    </widget>
 				    <packing>
-				      <property name="left_attach">1</property>
-				      <property name="right_attach">2</property>
-				      <property name="top_attach">1</property>
-				      <property name="bottom_attach">2</property>
-				      <property name="y_options"></property>
+				      <property name="x">128</property>
+				      <property name="y">32</property>
 				    </packing>
 				  </child>
 
 				  <child>
 				    <widget class="GtkEntry" id="lat_max_entry">
-				      <property name="width_request">70</property>
+				      <property name="width_request">100</property>
+				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Upper Latitude</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -3958,18 +3815,17 @@ South Pole
 				      <property name="activates_default">False</property>
 				    </widget>
 				    <packing>
-				      <property name="left_attach">2</property>
-				      <property name="right_attach">3</property>
-				      <property name="top_attach">1</property>
-				      <property name="bottom_attach">2</property>
-				      <property name="y_options"></property>
+				      <property name="x">128</property>
+				      <property name="y">0</property>
 				    </packing>
 				  </child>
 
 				  <child>
 				    <widget class="GtkEntry" id="lon_min_entry">
-				      <property name="width_request">70</property>
+				      <property name="width_request">100</property>
+				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Lower Longitude</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -3980,18 +3836,17 @@ South Pole
 				      <property name="activates_default">False</property>
 				    </widget>
 				    <packing>
-				      <property name="left_attach">1</property>
-				      <property name="right_attach">2</property>
-				      <property name="top_attach">2</property>
-				      <property name="bottom_attach">3</property>
-				      <property name="y_options"></property>
+				      <property name="x">24</property>
+				      <property name="y">16</property>
 				    </packing>
 				  </child>
 
 				  <child>
 				    <widget class="GtkEntry" id="lon_max_entry">
-				      <property name="width_request">70</property>
+				      <property name="width_request">100</property>
+				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Upper Longitude</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -4002,16 +3857,13 @@ South Pole
 				      <property name="activates_default">False</property>
 				    </widget>
 				    <packing>
-				      <property name="left_attach">2</property>
-				      <property name="right_attach">3</property>
-				      <property name="top_attach">2</property>
-				      <property name="bottom_attach">3</property>
-				      <property name="y_options"></property>
+				      <property name="x">232</property>
+				      <property name="y">16</property>
 				    </packing>
 				  </child>
 				</widget>
 				<packing>
-				  <property name="padding">1</property>
+				  <property name="padding">0</property>
 				  <property name="expand">False</property>
 				  <property name="fill">True</property>
 				</packing>
@@ -4233,24 +4085,6 @@ South Pole
 				      <property name="bottom_attach">1</property>
 				      <property name="x_options">fill</property>
 				      <property name="y_options"></property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkComboBox" id="mode_combobox">
-				      <property name="width_request">88</property>
-				      <property name="visible">True</property>
-				      <property name="items" translatable="yes"></property>
-				      <property name="add_tearoffs">False</property>
-				      <property name="focus_on_click">True</property>
-				      <signal name="changed" handler="on_beam_mode_combobox_changed" last_modification_time="Wed, 20 Feb 2008 19:40:33 GMT"/>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">1</property>
-				      <property name="right_attach">2</property>
-				      <property name="top_attach">0</property>
-				      <property name="bottom_attach">1</property>
-				      <property name="y_options">fill</property>
 				    </packing>
 				  </child>
 
@@ -4613,6 +4447,25 @@ Descending Only
 				      <property name="right_attach">2</property>
 				      <property name="top_attach">1</property>
 				      <property name="bottom_attach">2</property>
+				      <property name="x_options">fill</property>
+				      <property name="y_options">fill</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkComboBox" id="mode_combobox">
+				      <property name="width_request">88</property>
+				      <property name="visible">True</property>
+				      <property name="items" translatable="yes"></property>
+				      <property name="add_tearoffs">False</property>
+				      <property name="focus_on_click">True</property>
+				      <signal name="changed" handler="on_beam_mode_combobox_changed" last_modification_time="Wed, 20 Feb 2008 19:40:33 GMT"/>
+				    </widget>
+				    <packing>
+				      <property name="left_attach">1</property>
+				      <property name="right_attach">2</property>
+				      <property name="top_attach">0</property>
+				      <property name="bottom_attach">1</property>
 				      <property name="x_options">fill</property>
 				      <property name="y_options">fill</property>
 				    </packing>
