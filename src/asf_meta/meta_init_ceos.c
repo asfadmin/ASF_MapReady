@@ -196,8 +196,12 @@ meta_parameters *meta_read_only(const char *in_fName)
   report_level_t level = REPORT_LEVEL_NONE;
   ceos_description *ceos = get_ceos_description_ext(in_fName, level, FALSE);
   
-  if (ceos->sensor == SAR || ceos->sensor == PALSAR)
-    ceos_init_sar_ext(ceos, in_fName, meta, TRUE);
+  if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
+    if (ceos->product == RAW)
+      ceos_init_sar_ext(ceos, in_fName, meta, FALSE);
+    else
+      ceos_init_sar_ext(ceos, in_fName, meta, TRUE);
+  }
   else if (ceos->sensor == AVNIR || ceos->sensor == PRISM)
     ceos_init_optical(in_fName, meta);
   
@@ -580,16 +584,69 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
     ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
 
   // Location block
-  if (!meta->location && ceos->product != RAW)
+  if (!meta->location)
     meta->location = meta_location_init();
-  meta->location->lat_start_near_range = asf_facdr->nearslat;
-  meta->location->lon_start_near_range = asf_facdr->nearslon;
-  meta->location->lat_start_far_range = asf_facdr->farslat;
-  meta->location->lon_start_far_range = asf_facdr->farslon;
-  meta->location->lat_end_near_range = asf_facdr->nearelat;
-  meta->location->lon_end_near_range = asf_facdr->nearelon;
-  meta->location->lat_end_far_range = asf_facdr->farelat;
-  meta->location->lon_end_far_range = asf_facdr->farelon;
+  if (ceos->product != RAW) {
+    meta->location->lat_start_near_range = asf_facdr->nearslat;
+    meta->location->lon_start_near_range = asf_facdr->nearslon;
+    meta->location->lat_start_far_range = asf_facdr->farslat;
+    meta->location->lon_start_far_range = asf_facdr->farslon;
+    meta->location->lat_end_near_range = asf_facdr->nearelat;
+    meta->location->lon_end_near_range = asf_facdr->nearelon;
+    meta->location->lat_end_far_range = asf_facdr->farelat;
+    meta->location->lon_end_far_range = asf_facdr->farelon;
+  }
+  else {
+    double min_lat;
+    double max_lat;
+    double min_lon;
+    double max_lon;
+    meta_get_corner_coords(meta);
+    // If the scene center lat/long is not valid (usually because of
+    // 0's in the dssr) then calculate it from the center line/sample
+    min_lat = meta->location->lat_start_near_range;
+    if (min_lat > meta->location->lat_start_far_range)
+      min_lat = meta->location->lat_start_far_range;
+    if (min_lat > meta->location->lat_end_near_range)
+      min_lat = meta->location->lat_end_near_range;
+    if (min_lat > meta->location->lat_end_far_range)
+      min_lat = meta->location->lat_end_far_range;
+    max_lat = meta->location->lat_start_near_range;
+    if (max_lat < meta->location->lat_start_far_range)
+      max_lat = meta->location->lat_start_far_range;
+    if (max_lat < meta->location->lat_end_near_range)
+      max_lat = meta->location->lat_end_near_range;
+    if (max_lat < meta->location->lat_end_far_range)
+      max_lat = meta->location->lat_end_far_range;
+    min_lon = meta->location->lon_start_near_range;
+    if (min_lon > meta->location->lon_start_far_range)
+      min_lon = meta->location->lon_start_far_range;
+    if (min_lon > meta->location->lon_end_near_range)
+      min_lon = meta->location->lon_end_near_range;
+    if (min_lon > meta->location->lon_end_far_range)
+      min_lon = meta->location->lon_end_far_range;
+    max_lon = meta->location->lon_start_near_range;
+    if (max_lon < meta->location->lon_start_far_range)
+      max_lon = meta->location->lon_start_far_range;
+    if (max_lon < meta->location->lon_end_near_range)
+      max_lon = meta->location->lon_end_near_range;
+    if (max_lon < meta->location->lon_end_far_range)
+      max_lon = meta->location->lon_end_far_range;
+    if (meta->general->center_latitude < min_lat   ||
+        meta->general->center_latitude > max_lat   ||
+        meta->general->center_longitude < min_lon ||
+        meta->general->center_longitude > max_lon)
+    {
+      asfPrintStatus("\nApproximate scene center latitude and longitude\n"
+          "(%0.2f, %0.2f) appear outside the bounds of the image\n"
+          "...Recalculating from center line and sample instead.\n\n",
+          meta->general->center_latitude, meta->general->center_longitude);
+      meta_get_latLon(meta, meta->general->line_count/2,
+                      meta->general->sample_count/2, 0,
+                      &(meta->general->center_latitude),
+                      &(meta->general->center_longitude));
+    }
+  }
 
   // Clean up
   FREE(asf_facdr);

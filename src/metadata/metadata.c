@@ -364,16 +364,18 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     case (120):
       strcpy(rectype_str, "Processing parameter");
-      ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
-      if (leaderNameExists) {
-	if (get_ppr(metaName[0],ppr) >= 0)
-	  ret = sprn_ppr(ppr);
-	else if (trailer) {
-	  if (get_ppr(metaName[1],ppr) >= 0)
+      if (0 != strncmp(facility, "EOC", 3)) {
+	ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
+	if (leaderNameExists) {
+	  if (get_ppr(metaName[0],ppr) >= 0)
 	    ret = sprn_ppr(ppr);
+	  else if (trailer) {
+	    if (get_ppr(metaName[1],ppr) >= 0)
+	      ret = sprn_ppr(ppr);
+	  }
 	}
+	FREE(ppr);
       }
-      FREE(ppr);
       break;
     case (192):
       strcpy(rectype_str, "Image file descriptor");
