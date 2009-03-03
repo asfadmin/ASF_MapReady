@@ -4,12 +4,15 @@
 #include "asf_convert_gui.h"
 #include "asf_version.h"
 #include "asf_geocode.h"
+#include "asf_raster.h"
 
 // FIXME: This is from license.c ...need to either move it into a header or write
 // a function that just returns the string (without a trailing \n)
 #define ASF_COPYRIGHT_STRING \
  "Copyright (c) 2008, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
  "All rights reserved."
+
+#define MAX_LUTS 40
 
 GladeXML *glade_xml;
 GtkListStore *list_store = NULL;
@@ -22,6 +25,89 @@ Settings *settings_on_execute;
 gchar * output_directory = NULL;
 NamingScheme * current_naming_scheme = NULL;
 gboolean use_thumbnails = FALSE;
+
+static int my_strcmp(const void *v1, const void *v2)
+{
+  char **s1 = (char **)v1;
+  char **s2 = (char **)v2;
+  return strcmp_case(*s1, *s2);
+}
+
+void populate_polsarpro_classification_optionmenu()
+{
+  GtkWidget *menu = NULL;
+  GtkWidget *option_menu = get_widget_checked("polsarpro_classification_optionmenu");
+  if (option_menu) {
+    menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(option_menu));
+    if (menu) {
+      gtk_option_menu_remove_menu(GTK_OPTION_MENU(option_menu));
+    }
+  }
+  menu = gtk_menu_new();
+
+  GtkWidget *item = gtk_menu_item_new_with_label("None");
+  gtk_menu_append(GTK_MENU(menu), item);
+  gtk_widget_show(item);
+
+  item = gtk_separator_menu_item_new();
+  gtk_menu_append(GTK_MENU(menu), item);
+  gtk_widget_show(item);
+
+  char lut_loc[1024];
+  sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
+//  if (g_lut_optionmenu_ht == NULL) {
+//    g_lut_optionmenu_ht = g_hash_table_new(g_str_hash,g_str_equal);
+//  }
+
+  // Open up the share dir's look up tables list, populate dropdown
+  // from the files in that directory.
+  GDir *lut_dir = g_dir_open(lut_loc, 0, NULL);
+  if (lut_dir) {
+    unsigned int i, n=0;
+    char **names = (char**)MALLOC(sizeof(char*)*MAX_LUTS);
+
+    while (1) {
+      const char *name = (char*)g_dir_read_name(lut_dir);
+      if (name) {
+        char *name_dup = STRDUP(name);
+        char *p = findExt(name_dup);
+        if (p && strcmp(p, ".pal") == 0 && is_jasc_palette_lut(name)) {
+          *p = '\0'; // don't show ".pal" extension in menu
+          names[n++] = name_dup;
+          // quit when we get too many
+          if (n > MAX_LUTS)
+            break;
+        }
+      } else
+        break;
+    }
+    g_dir_close(lut_dir);
+
+    // alphabetize
+    qsort(names, n, sizeof(char*), my_strcmp);
+
+    // now populate the menu
+    for (i=0; i<n; ++i) {
+      item = gtk_menu_item_new_with_label(names[i]);
+      g_object_set_data(G_OBJECT(item), "file", (gpointer)names[i]);
+      g_object_set_data(G_OBJECT(item), "index", GUINT_TO_POINTER(i+2));
+      gtk_menu_append(GTK_MENU(menu), item);
+      gtk_widget_show(item);
+//      g_hash_table_insert(g_lut_optionmenu_ht,
+//                          (gpointer)g_strdup(names[i]),
+//                           GUINT_TO_POINTER(i+2));
+    }
+  }
+
+  option_menu = get_widget_checked("polsarpro_classification_optionmenu");
+
+  gtk_option_menu_set_menu(GTK_OPTION_MENU(option_menu), menu);
+  gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), 0);
+//  set_current_index(0);
+
+  gtk_widget_show(menu);
+  gtk_widget_show(option_menu);
+}
 
 int
 main(int argc, char **argv)
@@ -109,6 +195,10 @@ main(int argc, char **argv)
 
     widget = get_widget_checked("resample_option_menu");
     set_combo_box_item(widget, RESAMPLE_BILINEAR);
+
+    populate_polsarpro_classification_optionmenu();
+    widget = get_widget_checked("polsarpro_classification_optionmenu");
+    gtk_option_menu_set_history(GTK_OPTION_MENU(widget), 0);
 
     widget = get_widget_checked("output_format_combobox");
     set_combo_box_item(widget, OUTPUT_FORMAT_JPEG);

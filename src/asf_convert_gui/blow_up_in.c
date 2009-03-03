@@ -216,12 +216,17 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
                         COL_INPUT_FILE, &file,
                         COL_ANCILLARY_FILE, &ancillary_file,
                         -1);
-    if (is_polsarpro(file)) {
-      file = ancillary_file;
-    }
 
     char *metadata_file = meta_file_name (file);
     char *data_file = data_file_name (file);
+
+    if (is_polsarpro(file)) {
+      // For PolSARpro files, use the associated ENVI header file for rudimentary metadata
+      if (metadata_file) g_free(metadata_file);
+      metadata_file = (gchar *)g_malloc(sizeof(gchar) * (strlen(file) + 5));
+      sprintf(metadata_file, "%s.hdr", file);
+      if (!fileExists(metadata_file)) strcpy(metadata_file, "");
+    }
 
     if (strlen((char*)data_file) == 0 || strlen((char*)meta_file_name) == 0)
         return NULL;

@@ -275,11 +275,22 @@ do_thumbnail (const gchar *file)
 {
     gchar *metadata_file = meta_file_name (file);
     gchar *data_file = data_file_name (file);
-    gchar *ancillary_file;
-    if (metadata_file && strlen(metadata_file) > 0 &&
+
+    // NOTE: For PolSARpro files, meta_file_name() will return the name of
+    // the ancillary file (original CEOS or AIRSAR format file which was processed
+    // by PolSARpro).  But ...since the ancillary file is not necessarily available
+    // on first pass here, we can use the .bin.hdr ENVI style header file as "metadata"
+    // for thumbnails since it includes lines, samples, and data type ...and the data
+    // file is just a raw row/col binary file.
+    if (is_polsarpro(data_file)) {
+      if(metadata_file) g_free(metadata_file);
+      metadata_file = (gchar*)g_malloc(sizeof(gchar)*(strlen(data_file) + 5));
+      sprintf(metadata_file, "%s%s", data_file, ".hdr"); // Should be <file>.bin.hdr now
+      if (!fileExists(metadata_file)) strcpy(metadata_file, "");
+    }
+    if (((metadata_file && strlen(metadata_file) > 0) || is_polsarpro(data_file)) &&
         data_file && strlen(data_file) > 0)
     {
-
         /* Find the element of the list store having the file name we are
            trying to add a thumbnail of.  */
         GtkTreeIter iter;
@@ -292,24 +303,8 @@ do_thumbnail (const gchar *file)
             gchar *file;
             gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
                                 COL_INPUT_FILE, &file,
-                                COL_ANCILLARY_FILE, &ancillary_file,
                                 -1);
-            // FIXME: For PolSARpro, we are (for now) making thumbnails from the
-            // ancillary file.  Later, after we add classification selections
-            // on the import tab, then that will enable us to make color
-            // thumbnails based on the classification type ...but they are
-            // ugly in greyscale, so we show the associated data's thumbnail
-            // instead
-            if ( strcmp (metadata_file, ancillary_file) == 0 ||
-                 strcmp (data_file, ancillary_file) == 0)
-            {
-              /* We found it, so load the thumbnail.  */
-              set_input_image_thumbnail (&iter, metadata_file, data_file);
-              g_free (metadata_file);
-              g_free (data_file);
-              return;
-            }
-            else if ( strcmp (metadata_file, file) == 0 ||
+            if ( strcmp (metadata_file, file) == 0 ||
                  strcmp (data_file, file) == 0)
             {
                 /* We found it, so load the thumbnail.  */
@@ -749,13 +744,8 @@ add_to_files_list_iter(const gchar *input_file_in,
           g_free(out_name_full);
           FREE(bands);
 
-          // PolSARpro file thumbnails are made after selecting an ancillary file
-          if (!is_polsarpro(input_file)) {
-            queue_thumbnail(input_file);
-          }
-          else if (ancillary_file_valid) {
-            queue_thumbnail(ancillary_file_in);
-          }
+          // Add the file to the thumbnail queue
+          queue_thumbnail(input_file);
 
           // Update the visible/invisible widgets in the input section,
           // to reflect what kind of data we have
@@ -1564,4 +1554,33 @@ refresh_file_names()
   gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
   col = gtk_tree_view_get_column(completed_files_view, COMP_COL_OUTPUT_FILE_SHORT);
   gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+}
+
+gchar * get_ancillary_file_from_input_list(const gchar *file_name)
+{
+  gchar * input_file = NULL;
+  gchar * ancillary_file = NULL;
+
+  if (!is_polsarpro(file_name)) return NULL;
+
+  // For each file in the input list, check to see if it is the passed-in
+  // input file, then return the associated ancillary file (even if missing
+  // or blank)
+  GtkTreeIter iter;
+  gboolean more_items =
+      gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+  while (more_items) {
+    gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                       COL_INPUT_FILE, &input_file,
+                       COL_ANCILLARY_FILE, &ancillary_file,
+                       -1);
+    if (strcmp(file_name, input_file) == 0) {
+      // Found the right input file...
+      break;
+    }
+    more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+  }
+  if (input_file) g_free(input_file);
+
+  return ancillary_file;
 }

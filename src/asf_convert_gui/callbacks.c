@@ -4,6 +4,24 @@ static int db_was_checked = 0;
 
 void export_checkbutton_toggle();
 
+void polsarpro_classification_optionmenu_changed()
+{
+  GtkTreeIter iter;
+  gboolean more_items = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+  while (more_items) {
+    gchar *input_file;
+    gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                       COL_INPUT_FILE, &input_file,
+                       -1);
+    if (input_file && is_polsarpro(input_file)) {
+      add_thumbnail(input_file);
+    }
+    more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+  }
+
+  show_queued_thumbnails();
+}
+
 void
 show_full_path_names_checkbutton_toggled()
 {
@@ -76,13 +94,16 @@ input_data_formats_changed()
         *airsar_l_pol_checkbutton,
         *airsar_c_pol_checkbutton,
         *airsar_c_vv_checkbutton,
-        *airsar_l_vv_checkbutton;
+        *airsar_l_vv_checkbutton,
+        *polsarpro_classification_optionmenu,
+        *polsarpro_classification_label;
 
     gboolean show_data_type_combobox;
     gboolean show_latitude_spinbuttons;
     // Leave this next one false until we support level 0 again
     gboolean show_process_to_level1_checkbutton = FALSE;
     gboolean show_airsar_checkbuttons;
+    gboolean show_polsarpro_optionmenu;
     gboolean enable_terrain_correction;
     gboolean enable_polarimetry;
 
@@ -94,6 +115,7 @@ input_data_formats_changed()
     show_latitude_spinbuttons = FALSE;
     show_process_to_level1_checkbutton = FALSE;
     show_airsar_checkbuttons = FALSE;
+    show_polsarpro_optionmenu = FALSE;
     enable_terrain_correction = FALSE;
     enable_polarimetry = FALSE;
     char formats[512];
@@ -114,6 +136,7 @@ input_data_formats_changed()
         show_data_type_combobox = TRUE;
         enable_terrain_correction = TRUE;
         enable_polarimetry = TRUE;
+        show_polsarpro_optionmenu = TRUE;
         if (!strstr(formats, "PolSARpro"))
           strcat(formats, "PolSARpro, ");
       }
@@ -206,6 +229,17 @@ input_data_formats_changed()
       gtk_widget_hide(airsar_c_vv_checkbutton);
       gtk_widget_hide(airsar_l_vv_checkbutton);
       gtk_widget_hide(airsar_label);
+    }
+
+    polsarpro_classification_optionmenu = get_widget_checked("polsarpro_classification_optionmenu");
+    polsarpro_classification_label = get_widget_checked("polsarpro_classification_label");
+
+    if (show_polsarpro_optionmenu) {
+      gtk_widget_show(polsarpro_classification_optionmenu);
+      gtk_widget_show(polsarpro_classification_label);
+    } else {
+      gtk_widget_hide(polsarpro_classification_optionmenu);
+      gtk_widget_hide(polsarpro_classification_label);
     }
 
     if (show_process_to_level1_checkbutton)
@@ -533,6 +567,12 @@ SIGNAL_CALLBACK void
 on_show_full_path_names_checkbutton_toggled(GtkWidget *widget)
 {
   show_full_path_names_checkbutton_toggled();
+}
+
+SIGNAL_CALLBACK void
+on_polsarpro_classification_optionmenu_changed(GtkWidget *widget)
+{
+  polsarpro_classification_optionmenu_changed();
 }
 
 void

@@ -958,29 +958,6 @@
 					  </child>
 
 					  <child>
-					    <widget class="GtkCheckButton" id="airsar_l_vv_checkbutton">
-					      <property name="tooltip" translatable="yes">L-band cross-track interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
-					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">L-band interferometric</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <property name="active">True</property>
-					      <property name="inconsistent">False</property>
-					      <property name="draw_indicator">True</property>
-					      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:58:26 GMT"/>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">1</property>
-					      <property name="right_attach">2</property>
-					      <property name="top_attach">3</property>
-					      <property name="bottom_attach">4</property>
-					      <property name="x_options">fill</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
 					    <widget class="GtkCheckButton" id="airsar_c_pol_checkbutton">
 					      <property name="tooltip" translatable="yes">C-band polarimetric data contains 9 bands: power and amplitude/phase for each polarization (HH,HV,VH,VV).  AirSAR data sets contain only a subset of the five types of data.</property>
 					      <property name="can_focus">True</property>
@@ -1372,15 +1349,16 @@
 						  <property name="right_attach">2</property>
 						  <property name="top_attach">0</property>
 						  <property name="bottom_attach">1</property>
+						  <property name="y_padding">2</property>
 						  <property name="x_options">fill</property>
 						  <property name="y_options"></property>
 						</packing>
 					      </child>
 
 					      <child>
-						<widget class="GtkLabel" id="label154">
+						<widget class="GtkLabel" id="polsarpro_classification_label">
 						  <property name="visible">True</property>
-						  <property name="label" translatable="yes">Select PolSARpro Classification:    </property>
+						  <property name="label" translatable="yes">Select PolSARpro Classification: </property>
 						  <property name="use_underline">False</property>
 						  <property name="use_markup">False</property>
 						  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -1400,7 +1378,7 @@
 						  <property name="right_attach">1</property>
 						  <property name="top_attach">0</property>
 						  <property name="bottom_attach">1</property>
-						  <property name="x_padding">3</property>
+						  <property name="x_padding">2</property>
 						  <property name="y_padding">1</property>
 						  <property name="x_options">fill</property>
 						  <property name="y_options"></property>
@@ -1414,6 +1392,30 @@
 					      <property name="bottom_attach">6</property>
 					      <property name="x_options">fill</property>
 					      <property name="y_options">fill</property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkCheckButton" id="airsar_l_vv_checkbutton">
+					      <property name="tooltip" translatable="yes">L-band cross-track interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
+					      <property name="can_focus">True</property>
+					      <property name="label" translatable="yes">L-band interferometric</property>
+					      <property name="use_underline">True</property>
+					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
+					      <property name="active">True</property>
+					      <property name="inconsistent">False</property>
+					      <property name="draw_indicator">True</property>
+					      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:58:26 GMT"/>
+					    </widget>
+					    <packing>
+					      <property name="left_attach">1</property>
+					      <property name="right_attach">2</property>
+					      <property name="top_attach">3</property>
+					      <property name="bottom_attach">4</property>
+					      <property name="y_padding">3</property>
+					      <property name="x_options">fill</property>
+					      <property name="y_options"></property>
 					    </packing>
 					  </child>
 					</widget>

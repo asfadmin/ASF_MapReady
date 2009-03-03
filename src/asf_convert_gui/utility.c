@@ -187,7 +187,13 @@ meta_file_name(const gchar * file_name)
       return g_strdup(file_name);
   }
 
-  // second, try CEOS
+  // PolSARpro
+  else if (ext && (strcmp_case(ext, ".bin") == 0)) {
+    gchar *ret = get_ancillary_file_from_input_list(file_name);
+    return ret;
+  }
+
+  // No match yet?  Try CEOS
   char *basename = MALLOC(sizeof(char)*(strlen(file_name)+10));
   char **dataName = NULL, **metaName = NULL;
   int nBands, trailer;
@@ -456,5 +462,5 @@ gboolean is_terrasarx(const char *infile)
   char *ext = findExt(infile);
   if (ext && strcmp_case(ext, ".xml")==0)
     return TRUE;
-  return FALSE;  
+  return FALSE;
 }

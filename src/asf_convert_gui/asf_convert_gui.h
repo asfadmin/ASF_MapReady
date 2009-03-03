@@ -353,6 +353,7 @@ void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *,
                                   const char *);
 void move_from_completed_files_list(GtkTreeIter *);
 gboolean have_ancillary_files_in_list();
+gchar * get_ancillary_file_from_input_list(const gchar *);
 
 /* help.c */
 char * escapify(const char * s);

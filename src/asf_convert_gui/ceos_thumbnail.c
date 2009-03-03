@@ -7,6 +7,8 @@
 #include <asf_meta.h>
 #include <ceos_io.h>
 #include <float_image.h>
+#include <asf_raster.h>
+#include <envi.h>
 #include <math.h>
 
 #include "ceos_thumbnail.h"
@@ -18,6 +20,56 @@
 
 // Prototypes
 int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band, float *line);
+
+static int polsarpro_table_calculated = 0;
+static float polsarpro_table[256][2];
+int get_polsarpro_bin(float val, float range_min, float range_max, meta_parameters *meta)
+{
+  int idx = -1;
+
+  if (meta->colormap &&
+      meta->colormap->num_elements > 0 &&
+      meta->colormap->rgb)
+  {
+    // Valid colormap.  Find number of levels
+    int num_levels = 0;
+    if (!polsarpro_table_calculated) {
+      meta_rgb *rgb = meta->colormap->rgb; // Convenience pointer
+      for (idx = 0; idx < meta->colormap->num_elements; idx++) {
+        // Kind of a hack, but PolSARpro look-up tables always have 256 elements
+        // even if only the first 8 or 16 or 9 or whatever are actually used.  Those
+        // entries higher than the number actually used are usually all set to 0 or 1.
+        // The option, and maybe the better answer, is to grab the number of levels off
+        // the tail end of the lut's basename (file name), but for now we'll try to
+        // guess the number of levels by looking into the look-up table itself...
+        if (!(rgb[idx].red == rgb[idx].green &&
+              rgb[idx].red == rgb[idx].blue  &&
+              rgb[idx].red == 0) &&
+            !(rgb[idx].red == rgb[idx].green &&
+              rgb[idx].red == rgb[idx].blue  &&
+              rgb[idx].red == 1))
+        {
+          num_levels = idx + 1; // Save the highest index that doesn't have 0 or 1 fill values
+        }
+      }
+      float step_size = (range_max - range_min) / (float)num_levels;
+      for (idx=0; idx<256; idx++) {
+         polsarpro_table[idx][0] = range_min + (float)idx*step_size;
+         polsarpro_table[idx][1] = range_min + (float)(idx+1)*step_size;
+      }
+      polsarpro_table_calculated = 1;
+    }
+
+    // Bin the input val
+    for (idx=0; idx<meta->colormap->num_elements; idx++) {
+      if (val >= polsarpro_table[idx][0] && val <  polsarpro_table[idx][1]) {
+        break;
+      }
+    }
+  }
+
+  return idx;
+}
 
 // Implementations
 static void destroy_pb_data(guchar *pixels, gpointer data)
@@ -663,6 +715,219 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     return pb_s;
 }
 
+// Finds current PolSARpro look up table selection and
+// reads the appropriate look up table into a metadata colormap
+// structure
+#define MAX_JASC_LUT_DN 256
+void apply_polsarpro_palette_to_metadata(meta_parameters *imd)
+{
+  char *p = NULL;
+  FILE *fp = NULL;
+  int num_elements = 0;
+  unsigned char * lut_buffer;
+  GtkWidget *option_menu = get_widget_checked("polsarpro_classification_optionmenu");
+  GtkWidget *menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(option_menu));
+  GtkWidget *selected_item = gtk_menu_get_active(GTK_MENU(menu));
+  char *lut_basename = g_object_get_data(G_OBJECT(selected_item), "file");
+  if (!lut_basename) return;
+
+  // Check LUT file validity and allocate appropriately sized buffer
+  // to read into
+  char magic_str[1024];
+  char version_s[1024];
+  char num_elements_s[1024];
+  char lut_path[1024];
+  sprintf(lut_path, "%s%clook_up_tables%c%s.pal", get_asf_share_dir(),
+          DIR_SEPARATOR, DIR_SEPARATOR, lut_basename);
+  fp = (FILE*)FOPEN(lut_path, "rt");
+  p = fgets(magic_str, 1024, fp);
+  if (!p){
+    FCLOSE(fp);
+    return; // eof
+  }
+  p = fgets(version_s, 1024, fp);
+  if (!p){
+    FCLOSE(fp);
+    return; // eof
+  }
+  p = fgets(num_elements_s, 1024, fp);
+  FCLOSE(fp);
+  if (!p){
+    return; // eof
+  }
+  int version = atoi(version_s);
+  num_elements = atoi(num_elements_s);
+  if (strncmp(magic_str, "JASC", 4) != 0) return;
+  if (version != 100) return;
+  if (num_elements <= 0 || num_elements > (2*MAX_JASC_LUT_DN)) return;
+  if (num_elements > MAX_JASC_LUT_DN) {
+    asfPrintWarning("PolSARpro look-up table contains more than 256 elements (%d).\n"
+        "Only the first %d will be read and mapped to data.\n", MAX_JASC_LUT_DN);
+  }
+  lut_buffer = (unsigned char*)MALLOC(sizeof(unsigned char) * 3 * MAX_LUT_DN);
+
+  // Read the LUT
+  read_lut(lut_path, lut_buffer);
+
+  // Populate the metadata colormap
+  if (!imd->colormap) imd->colormap = meta_colormap_init();
+  imd->colormap->num_elements = (num_elements <= MAX_JASC_LUT_DN) ? num_elements : MAX_JASC_LUT_DN;
+  imd->colormap->rgb = (meta_rgb*)CALLOC(imd->colormap->num_elements, sizeof(meta_rgb));
+  sprintf(imd->colormap->look_up_table, "%s.pal", lut_basename);
+  int i;
+  for (i = 0; i < imd->colormap->num_elements; i++) {
+    imd->colormap->rgb[i].red   = lut_buffer[i*3];
+    imd->colormap->rgb[i].green = lut_buffer[i*3+1];
+    imd->colormap->rgb[i].blue  = lut_buffer[i*3+2];
+  }
+}
+
+// The following was lifted from make_asf_internal_thumb() and is only
+// different in that it needs to have a metadata structure populated
+// manually and must apply a PolSARpro look-up table to the data to
+// colorize it
+static GdkPixbuf *
+make_polsarpro_thumb(const char *input_metadata, const char *input_data,
+                     size_t max_thumbnail_dimension)
+{
+  FILE *fpIn = fopen(input_data, "rb");
+  if (!fpIn)
+    return NULL;
+
+  // Just use the .bin.hdr file for the metadata since we only
+  // care about lines, samples, and data type.  No need for an
+  // ancillary (CEOS or AIRSAR format) file for the full metadata
+  // which applies.
+  envi_header *envi = read_envi((char*)input_metadata); // Read the .bin.hdr file
+  meta_parameters *meta = envi2meta(envi);
+  apply_polsarpro_palette_to_metadata(meta);
+
+  int is_palette_color = meta->colormap != NULL ? 1 : 0;
+  double fmin = DBL_MAX;
+  double fmax = 0.0;
+  double avg = 0.0;
+
+  // use a larger dimension at first, for our crude scaling.  We will
+  // use a better scaling method later, from GdbPixbuf
+  int larger_dim = 1024;
+
+  // Vertical and horizontal scale factors required to meet the
+  // max_thumbnail_dimension part of the interface contract.
+  int vsf = ceil (meta->general->line_count / larger_dim);
+  int hsf = ceil (meta->general->sample_count / larger_dim);
+  // Overall scale factor to use is the greater of vsf and hsf.
+  int sf = (hsf > vsf ? hsf : vsf);
+
+  // Thumbnail image sizes.
+  size_t tsx = meta->general->sample_count / sf;
+  size_t tsy = meta->general->line_count / sf;
+
+  guchar *data = g_new(guchar, 3*tsx*tsy); // For 3-pane pixbuf
+  float *fdata = g_new(float, 1*tsx*tsy); // PolSARpro is always a 1-pane image (grey w/color index)
+
+  // Form the thumbnail image by grabbing individual pixels.
+  size_t ii, jj;
+  float *line = g_new (float, meta->general->sample_count);
+
+  // Keep track of the average pixel values, so later we can do a 2-sigma
+  // scaling (for greyscale only) - makes the thumbnail look a little nicer
+  polsarpro_table_calculated = 0;
+  for ( ii = 0 ; ii < tsy ; ii++ ) {
+    get_float_line(fpIn, meta, ii*sf, line);
+    for (jj = 0; jj < tsx; ++jj) {
+      float fval = line[jj*sf];
+      fdata[jj + ii*tsx] = fval;
+      fmin = fmin < fval ? fmin : fval;
+      fmax = fmax > fval ? fmax : fval;
+      avg += fval;
+    }
+  }
+  avg /= (float)tsx*(float)tsy;
+
+  // Compute the standard deviation, limiting the limits to the min/max
+  // of the data since sometimes non-gaussian distributions can blow past
+  // the data range when calculating upper/lower limits
+  double stddev = 0.0;
+  for (ii=0; ii<tsx*tsy; ++ii) {
+    stddev += ((double)fdata[ii] - avg) *((double)fdata[ii] - avg);
+  }
+  stddev = sqrt(stddev/(tsx*tsy));
+  double lmin = (avg - 2*stddev) < fmin ? fmin : (avg - 2*stddev);
+  double lmax = (avg + 2*stddev) > fmax ? fmax : (avg + 2*stddev);
+// min: 0.00000000000000000000000000000000000000000008968310
+// max: 0.00000000000000000000000000000000000000006896630522
+
+  g_free (line);
+  fclose(fpIn);
+
+  // Now actually scale the data, and convert to bytes.
+  // Note that we need 3 values, one for each of the RGB channels.
+  if (!is_palette_color) {
+    // Greyscale image (no look-up table applied)
+    for (ii = 0; ii < tsx*tsy; ++ii) {
+      double val = fdata[ii];
+      guchar uval;
+      if (val < lmin)
+        uval = 0;
+      else if (val > lmax)
+        uval = 255;
+      else
+        uval = (guchar) round(((val - lmin) / (lmax - lmin)) * (double)255.0);
+
+      int n = 3*ii;
+      data[n]   = uval;
+      data[n+1] = uval;
+      data[n+2] = uval;
+    }
+  }
+  else {
+    // PolSARpro image, possibly with a look-up table (noting that the data is
+    // floating point and must be bin'd to determine the index into the color table.)
+    for (ii = 0; ii < tsx*tsy; ii++) {
+      int idx = get_polsarpro_bin(fdata[ii], fmin, fmax, meta);
+      int n = 3*ii;
+      data[n]   = meta->colormap->rgb[idx].red;
+      data[n+1] = meta->colormap->rgb[idx].green;
+      data[n+2] = meta->colormap->rgb[idx].blue;
+    }
+  }
+
+  g_free(fdata);
+
+  // Create the pixbuf
+  GdkPixbuf *pb =
+      gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
+                               8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
+
+  if (!pb) {
+    printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
+    meta_free(meta);
+    g_free(data);
+    return NULL;
+  }
+
+    // Scale down to the size we actually want, using the built-in Gdk
+    // scaling method, much nicer than what we did above
+
+    // Must ensure we scale the same in each direction
+  double scale_y = tsy / max_thumbnail_dimension;
+  double scale_x = tsx / max_thumbnail_dimension;
+  double scale = scale_y > scale_x ? scale_y : scale_x;
+  int x_dim = tsx / scale;
+  int y_dim = tsy / scale;
+
+  GdkPixbuf *pb_s =
+      gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
+  gdk_pixbuf_unref(pb);
+
+  if (!pb_s)
+    asfPrintStatus("\nFailed to allocate scaled thumbnail pixbuf: %s\n\n", input_data);
+
+  polsarpro_table_calculated = 0;
+  meta_free(meta);
+  return pb_s;
+}
+
 GdkPixbuf *
 make_complex_thumb(meta_parameters* imd,
                    char *meta_name, char *data_name,
@@ -982,7 +1247,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    size_t max_thumbnail_dimension)
 {
     /* This can happen if we don't get around to drawing the thumbnail
-       until the file has already been processes & cleaned up, don't want
+       until the file has already been processed & cleaned up, don't want
        to crash in that case. */
     if (!fileExists(input_metadata))
         return NULL;
@@ -1001,6 +1266,11 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     if (is_asf_internal(input_data))
         return make_asf_internal_thumb(input_metadata, input_data,
                                        max_thumbnail_dimension);
+
+    // PolSARpro...
+    if (is_polsarpro(input_data))
+      return make_polsarpro_thumb(input_metadata, input_data,
+                                  max_thumbnail_dimension);
 
     if (is_terrasarx(input_metadata))
         return make_terrasarx_thumb(input_metadata, input_data,

@@ -218,10 +218,10 @@ static SIGNAL_CALLBACK void ancillary_file_ok_clicked()
       message_box(msg);
       free(msg);
     }
-    else {
-      add_thumbnail(s); // Add the ancillary file to the list of thumbnails to display
-      show_queued_thumbnails();
-    }
+//    else {
+//      add_thumbnail(s); // Add the ancillary file to the list of thumbnails to display
+//      show_queued_thumbnails();
+//    }
 
     // now free up everything
     g_slist_free(file);
@@ -611,8 +611,8 @@ on_ancillary_file_selection_ok_button_clicked(GtkWidget *widget)
   g_strfreev(selections);
   gtk_widget_hide(file_selection_dialog);
 
-  add_thumbnail(input_file);
-  show_queued_thumbnails();
+//  add_thumbnail(input_file);
+//  show_queued_thumbnails();
 }
 
 SIGNAL_CALLBACK gboolean
@@ -765,8 +765,8 @@ void handle_browse_ancillary_file()
   }
 
   free(dir);
-  add_thumbnail(input_file);
-  show_queued_thumbnails();
+//  add_thumbnail(input_file);
+//  show_queued_thumbnails();
   FREE(input_file);
 
 #else // #ifdef win32
