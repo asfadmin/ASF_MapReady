@@ -43,6 +43,7 @@ const char *input_format_to_str(int input_format)
     case INPUT_ALOS_CSV: return "AUIG";
     case INPUT_GENERIC_CSV: return "CSV";
     case INPUT_URSA: return "URSA";
+    case INPUT_TERRASAR: return "TERRASAR";
     default: assert(0); return "";
   }
 }

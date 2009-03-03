@@ -17,6 +17,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 CFLAGS += \

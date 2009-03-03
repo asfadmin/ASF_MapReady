@@ -28,6 +28,8 @@ format_type_t str2format(const char *str)
     format = URSA;
   else if (strcmp_case(str, "HAP") == 0)
     format = HAP;
+  else if (strcmp_case(str, "TERRASAR") == 0)
+    format = TERRASAR_META;
   else
     format = CUSTOM_FORMAT;
 
@@ -58,6 +60,14 @@ int convert2vector(char *inFile, const char *inFormat_str,
     ret = meta2shape(inFile, outFile, listFlag);
   else if (inFormat == LEADER && outFormat == META)
     ret = leader2meta(inFile, outFile, listFlag);
+  else if (inFormat == TERRASAR_META && outFormat == CSV)
+    ret = terrasar2csv(inFile, outFile, listFlag);
+  else if (inFormat == TERRASAR_META && outFormat == KMLFILE)
+    ret = terrasar2kml(inFile, outFile, listFlag);
+  else if (inFormat == TERRASAR_META && outFormat == SHAPEFILE)
+    ret = terrasar2shape(inFile, outFile, listFlag);
+  else if (inFormat == TERRASAR_META && outFormat == META)
+    ret = terrasar2meta(inFile, outFile, listFlag);
   else if (inFormat == POINT && outFormat == KMLFILE)
     ret = point2kml(inFile, outFile, listFlag);
   else if (inFormat == POINT && outFormat == SHAPEFILE)

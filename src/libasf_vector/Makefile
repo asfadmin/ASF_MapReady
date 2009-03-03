@@ -6,8 +6,11 @@ CFLAGS += \
 	$(TIFF_CFLAGS) \
 	$(GEOTIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
+	$(XML_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	-D_REENTRANT \
+	$(GSL_CFLAGS) \
 	$(CFLAGS)
 
 OBJS = \
@@ -22,6 +25,7 @@ OBJS = \
 	rgps.o \
 	multimatch.o \
 	meta.o \
+	terrasar.o \
 	kml.o \
 	shape.o \
 	generic_csv.o \
@@ -41,12 +45,13 @@ LIBS = \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
 	$(LDFAGS) \
-	-lm
+	-lm -lz
 
 all: build_only
 	mv libasf_vector.a $(LIBDIR)

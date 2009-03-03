@@ -56,6 +56,7 @@ LIB = \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
 
@@ -98,6 +99,7 @@ LDLIBS = \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	$(GTK_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \
 	$(shell /usr/bin/pkg-config --libs gthread-2.0)

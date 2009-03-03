@@ -30,6 +30,7 @@ typedef enum {
   GEOTIFF_META,
   AUIG,
   HAP,
+  TERRASAR_META,
   CSV,
   CUSTOM_FORMAT
 } format_type_t;
@@ -173,6 +174,13 @@ void shape_meta_init(char *inFile, meta_parameters *meta);
 int meta2shape(char *inFile, char *outFile, int listFlag);
 int leader2meta(char *inFile, char *outFile, int listFlag);
 
+// Prototypes from terrasar.c
+int terrasar2csv(char *inFile, char *outFile, int listFlag);
+int terrasar2kml(char *inFile, char *outFile, int listFlag);
+int terrasar2shape(char *inFile, char *outFile, int listFlag);
+int write_terrasar2meta(char *inFile, char *outFile, int listFlag);
+
+
 // Prototypes from point.c
 int point2polygon(char *inFile, char *outFile, int listFlag);
 int point2kml(char *inFile, char *outFile, int listFlag);
@@ -249,6 +257,10 @@ int multimatch2shape(char *inFile, char *outFile, int listFlag);
 // Prototypes from ursa.c
 int ursa2shape(char *inFile, char *outFile, int listFlag);
 int ursa2kml(char *in_file, char *out_file, int listFlag);
+
+// Prototypes from high_altitude_photography.c
+int hap2kml(char *in_file, char *out_file, int listFlag);
+int hap2shape(char *inFile, char *outFile, int listFlag);
 
 // Prototypes from custom.c
 int custom2shape(char *inFile, const char *format,

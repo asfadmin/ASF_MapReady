@@ -276,9 +276,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0)
       fprintf(kml_file, "%s<strong>Acquisition date</strong>: %s <br>%s",
               begin, meta->general->acquisition_date, end);
-    else if (strncmp(dbf[ii].header, "meta.general.orbit", 18) == 0)
-      fprintf(kml_file, "%s<strong>Orbit</strong>: %d <br>%s",
-              begin, meta->general->orbit, end);
     else if (strncmp(dbf[ii].header, "meta.general.orbit_direction", 28) == 0) {
       if (meta->general->orbit_direction == 'A')
         fprintf(kml_file, "%s<strong>Orbit direction</strong>: Ascending "
@@ -287,6 +284,9 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "%s<strong>Orbit direction</strong>: Descending "
                 "<br>%s", begin, end);
     }
+    else if (strncmp(dbf[ii].header, "meta.general.orbit", 18) == 0)
+      fprintf(kml_file, "%s<strong>Orbit</strong>: %d <br>%s",
+              begin, meta->general->orbit, end);
     else if (strncmp(dbf[ii].header, "meta.general.frame", 18) == 0)
       fprintf(kml_file, "%s<strong>Frame</strong>: %d <br>%s",
               begin, meta->general->frame, end);

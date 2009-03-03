@@ -66,6 +66,6 @@ typedef struct {
 
 // Function prototypes
 meta_parameters* terrasar2meta(terrasar_meta *terrasar);
-terrasar_meta *read_terrsar_meta(const char *dataFile);
+terrasar_meta *read_terrasar_meta(const char *dataFile);
 
 #endif

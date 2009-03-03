@@ -134,6 +134,11 @@ void select_defaults_by_file_type(char *f, int set_output_also)
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_ALOS_CSV);
     }
+    else if (ext && strcmp_case(ext, ".xml") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_TERRASAR);
+      if (set_output_also)
+	set_combo_box_item("output_format_combobox", OUTPUT_KML);
+    }
     else if (isgeotiff(f)) {
       set_combo_box_item("input_format_combobox", INPUT_GEOTIFF);
       if (set_output_also)
@@ -419,6 +424,12 @@ static void create_input_file_chooser_dialog()
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 gtif_filt);
 
+    GtkFileFilter *gxml_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(gxml_filt, "Terrasar Files (*.xml)");
+    gtk_file_filter_add_pattern(gxml_filt, "*.xml");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                gxml_filt);
+
     //GtkFileFilter *rgps_filt = gtk_file_filter_new();
     //gtk_file_filter_set_name(rgps_filt, "RPGS Cell Files (*.rpgs)");
     //gtk_file_filter_add_pattern(rgps_filt, "*.rpgs");
@@ -511,6 +522,7 @@ static void input_file_browse(void)
         "Shape Files (*.shp)\0*.shp\0"
         "KML Files (*.kml)\0*.kml\0"
         "Geotiff Files (*.tif)\0*.tif\0"
+        "Terrasar Files (*.xml)\0*.xml\0"
       //"RPGS Files (*.rgps)\0*.rgps\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;

@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "shapefil.h"
 #include "asf_vector.h"
+#include "terrasar.h"
 
 // Some of the functionality here is used to convert CEOS leader files as well
 // as metadata into the various. When comparing the results from the two
@@ -15,945 +16,12 @@
 // All these are not deal with in particular within 'meta_init_ceos' but in
 // 'import_ceos' instead.
 
-void shape_meta_init(char *inFile, meta_parameters *meta)
-{
-  char *dbaseFile;
-  DBFHandle dbase;
-  SHPHandle shape;
-  dbf_header_t *dbf;
-  int ii, nCols, length;
-
-  // Read configuration file
-  read_header_config("META", &dbf, &nCols);
-
-  // Open database for initialization
-  dbaseFile = appendExt(inFile, ".dbf");
-  dbase = DBFCreate(dbaseFile);
-  if (!dbase)
-    asfPrintError("Could not create database file '%s'\n", dbaseFile);
-
-  // Add fields to database
-  for (ii=0; ii<nCols; ii++) {
-    if (strncmp(dbf[ii].header, "meta.general.basename", 21) == 0 &&
-        dbf[ii].visible) {
-      length = strlen(meta->general->basename);
-      if (DBFAddField(dbase, "Basename", FTString, length, 0) == -1)
-        asfPrintError("Could not add basename field to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.sensor", 19) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Sensor", FTString, 15, 0) == -1)
-        asfPrintError("Could not add sensor field to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.sensor_name", 24) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Name", FTString, 15, 0) == -1)
-        asfPrintError("Could not add sensor name to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.mode", 17) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Mode", FTString, 15, 0) == -1)
-        asfPrintError("Could not add mode to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.processor", 22) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Processor", FTString, 25, 0) == -1)
-        asfPrintError("Could not add processor to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.data_type", 22) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Data_type", FTString, 25, 0) == -1)
-        asfPrintError("Could not add data type to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.image_data_type", 27) == 0 
-	     && dbf[ii].visible) {
-      if (DBFAddField(dbase, "Img_data_t", FTString, 25, 0) == -1)
-        asfPrintError("Could not add image data type to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.radiometry", 22) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Radiometry", FTString, 15, 0) == -1)
-        asfPrintError("Could not add radiometry to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.system", 19) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "System", FTString, 15, 0) == -1)
-        asfPrintError("Could not add system to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0 
-	     && dbf[ii].visible) {
-      if (DBFAddField(dbase, "Acq_date", FTString, 25, 0) == -1)
-        asfPrintError("Could not add acquisition date to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.orbit_direction", 27) == 0 
-	     && dbf[ii].visible) {
-      if (DBFAddField(dbase, "Direction", FTString, 20, 0) == -1)
-        asfPrintError("Could not add orbit direction to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.orbit", 17) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Orbit", FTInteger, 7, 0) == -1)
-        asfPrintError("Could not add orbit to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.frame", 18) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Frame", FTInteger, 5, 0) == -1)
-        asfPrintError("Could not add processor to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.band_count", 22) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Band_count", FTInteger, 3, 0) == -1)
-        asfPrintError("Could not add band count to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.bands", 17) == 0 &&
-             dbf[ii].visible) {
-      length = strlen(meta->general->bands) + 1;
-      if (DBFAddField(dbase, "Bands", FTString, length, 0) == -1)
-        asfPrintError("Could not add bands to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.line_count", 22) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Lines", FTInteger, 7, 0) == -1)
-        asfPrintError("Could not add line count to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.sample_count", 24) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Samples", FTInteger, 7, 0) == -1)
-        asfPrintError("Could not add sample count to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.start_line", 22) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Start_line", FTInteger, 7, 0) == -1)
-        asfPrintError("Could not add start line to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.start_sample", 24) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Start_sample", FTInteger, 7, 0) == -1)
-        asfPrintError("Could not add start sample to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.x_pixel_size", 24) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "X_pix_size", FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add x pixel size to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.y_pixel_size", 24) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Y_pix_size", FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add y pixel size to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.center_latitude", 27) == 0 
-	     && dbf[ii].visible) {
-      if (DBFAddField(dbase, "Center_lat", FTDouble, 9, 4) == -1)
-        asfPrintError("Could not add center latitude to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.center_longitude", 28) == 0 
-	     && dbf[ii].visible) {
-      if (DBFAddField(dbase, "Center_lon", FTDouble, 9, 4) == -1)
-        asfPrintError("Could not add center longitude to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.re_major", 20) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "RE_major", FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add RE major to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.re_minor", 20) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "RE major", FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add RE minor to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.bit_error_rate", 26) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "BER", FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add bit error rate to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.missing_lines", 25) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "Miss_lines", FTInteger, 7, 0) == -1)
-        asfPrintError("Could not add missing lines to database file\n");
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.no_data", 19) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "No_data", FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add no data to database file\n");
-    }
-    if (meta->sar) {
-      int kk;
-      char header[12];
-      if (strncmp(dbf[ii].header, "meta.sar.image_type", 19) == 0 &&
-          dbf[ii].visible) {
-        if (DBFAddField(dbase, "Image_type", FTString, 25, 0) == -1)
-          asfPrintError("Could not add image type to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.look_direction", 23) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Look_dir", FTString, 25, 0) == -1)
-          asfPrintError("Could not add look direction to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.look_count", 19) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Looks", FTInteger, 3, 0) == -1)
-          asfPrintError("Could not add look count field to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.deskewed", 17) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Deskewed", FTInteger, 1, 0) == -1)
-          asfPrintError("Could not add deskewed field to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.original_line_count", 28) == 0
-	       && dbf[ii].visible) {
-        if (DBFAddField(dbase, "Org_lines", FTInteger, 7, 0) == -1)
-          asfPrintError("Could not add original lines to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.sar.original_sample_count", 30) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Org_samples", FTInteger, 7, 0) == -1)
-          asfPrintError("Could not add original samples to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.line_increment", 23) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Line_inc", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add line increment to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.sample_increment", 25) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Sample_inc", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add sample increment to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.sar.range_time_per_pixel", 29) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Rng_t_pix", FTDouble, 16, 12) == -1)
-          asfPrintError("Could not add range time per pix to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.sar.azimuth_time_per_pixel", 31) == 0
-               && dbf[ii].visible) {
-        if (DBFAddField(dbase, "Az_t_pix", FTDouble, 16, 12) == -1)
-          asfPrintError("Could not add azimuth time pixel to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.sar.slant_range_first_pixel", 32) == 0
-               && dbf[ii].visible) {
-        if (DBFAddField(dbase, "Slnt_range", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add slant range 1. pix to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.slant_shift", 20) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Slnt_shift", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add slant shift to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.time_shift", 19) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Time_shift", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add time shift to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.wavelength", 19) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Wavelength", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add wavelength to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.prf", 12) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "PRF", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add PRF to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.earth_radius", 21) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Earth_rad", FTDouble, 12, 4) == -1)
-          asfPrintError("Could not add earth radius to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.earth_radius_pp", 24) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "ER_pp", FTDouble, 12, 4) == -1)
-          asfPrintError("Could not add earth radius pp to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.satellite_height", 25) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Sat_height", FTDouble, 12, 4) == -1)
-          asfPrintError("Could not add satellite height to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.sar.satellite_binary_time", 30) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Sat_bin_t", FTString, 25, 0) == -1)
-          asfPrintError("Could not add sat binary time to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.sar.satellite_clock_time", 29) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Sat_clock_t", FTString, 25, 0) == -1)
-          asfPrintError("Could not add sat clock time to database file\n");
-      }
-      else if (strncmp(dbf[ii].header,
-		       "meta.sar.range_doppler_coefficients", 35) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Rng_dop_1", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add range doppler 1 to database file\n");
-        if (DBFAddField(dbase, "Rng_dop_2", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add range doppler 2 to database file\n");
-        if (DBFAddField(dbase, "Rng_dop_3", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add range doppler 3 to database file\n");
-      }
-      else if (strncmp(dbf[ii].header,
-		       "meta.sar.azimuth_doppler_coefficients", 37) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Az_dop_1", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add azimuth doppler 1 to database file\n");
-        if (DBFAddField(dbase, "Az_dop_2", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add azimuth doppler 2 to database file\n");
-        if (DBFAddField(dbase, "Az_dop_3", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add azimuth doppler 3 to database file\n");
-      }
-      else if (strncmp(dbf[ii].header,
-		       "meta.sar.azimuth_processing_bandwidth", 37) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Az_proc_bw", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add az processing bw to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.chirp_rate", 19) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Chirp_rate", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add chirp rate to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.pulse_duration", 23) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Pulse_dur", FTDouble, 16, 12) == -1)
-          asfPrintError("Could not add pulse duration to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.range_sampling_rate", 28) == 0
-	       && dbf[ii].visible) {
-        if (DBFAddField(dbase, "Rng_samp_r", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add range samp rate to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.polarization", 21) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Polarize", FTString, 25, 0) == -1)
-          asfPrintError("Could not add polarization to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.multilook", 18) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Multilook", FTInteger, 1, 0) == -1)
-          asfPrintError("Could not add multiook to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.pitch", 14) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Pitch", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add pitch to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.roll", 13) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Roll", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add roll to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.yaw", 12) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Yaw", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add yaw to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.sar.incid_a", 16) == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<6; kk++) {
-          sprintf(header, "Incid_a[%d]", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add incidence angle to database file\n");
-        }
-      }
-    }
-    if (meta->optical) {
-      if (strncmp(dbf[ii].header, "meta.optical.pointing_direction", 31) == 0 
-	  && dbf[ii].visible) {
-        if (DBFAddField(dbase, "Point_dir", FTString, 15, 0) == -1)
-          asfPrintError("Could not add pointing direction to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.optical.off_nadir_angle", 28) == 0
-	       && dbf[ii].visible) {
-        if (DBFAddField(dbase, "Off_nadir", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add off nadir angle to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.optical.correction_level", 29) == 0 && 
-	       dbf[ii].visible) {
-        if (DBFAddField(dbase, "Corr_level", FTString, 5, 0) == -1)
-          asfPrintError("Could not add correction level to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.optical.cloud_percentage", 29) == 0 && 
-	       dbf[ii].visible) {
-        if (DBFAddField(dbase, "Cloud_perc", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add cloud percentage to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		      "meta.optical.sun_azimuth_angle", 30) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Sun_az_ang", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add sun azimuth angle to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		      "meta.optical.sun_elevation_angle", 32) == 0 && 
-	       dbf[ii].visible) {
-        if (DBFAddField(dbase, "Sun_elev", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add sun elevation to database file\n");
-      }
-    }
-    if (meta->thermal) {
-      if (strncmp(dbf[ii].header, "meta.thermal.band_gain", 22) == 0 &&
-          dbf[ii].visible) {
-        if (DBFAddField(dbase, "Band_gain", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add band gain to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.thermal.band_gain_change", 29) == 0 && 
-	       dbf[ii].visible) {
-        if (DBFAddField(dbase, "Gain_change", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not band gain change to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.thermal.day", 16) == 0 &&
-               dbf[ii].visible) {
-      }
-      if (DBFAddField(dbase, "Day", FTInteger, 1, 0) == -1)
-        asfPrintError("Could not band day flag to database file\n");
-    }
-    if (meta->transform) {
-      int kk;
-      char header[12];
-      int n = meta->transform->parameter_count;
-      if (strncmp(dbf[ii].header, "meta.transform.parameter_count", 30) == 0 &&
-          dbf[ii].visible) {
-        if (DBFAddField(dbase, "Parameters", FTInteger, 2, 0) == -1)
-          asfPrintError("Could not add parameter count to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.transform.x", 16) == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<n; kk++) {
-          sprintf(header, "X[%d]", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add parameter x to database file\n");
-        }
-      }
-      else if (strncmp(dbf[ii].header, "meta.transform.y", 16) == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<n; kk++) {
-          sprintf(header, "Y[%d]", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add parameter y to database file\n");
-        }
-      }
-      else if (strncmp(dbf[ii].header, "meta.transform.l", 16) == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<n; kk++) {
-          sprintf(header, "L[%d]", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add parameter l to database file\n");
-        }
-      }
-      else if (strncmp(dbf[ii].header, "meta.transform.s", 16) == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<n; kk++) {
-          sprintf(header, "S[%d]", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add parameter s to database file\n");
-        }
-      }
-    }
-    if (meta->airsar) {
-      if (strncmp(dbf[ii].header, "meta.airsar.scale_factor", 24) == 0 &&
-          dbf[ii].visible) {
-        if (DBFAddField(dbase, "Scale", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add scale factor to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.airsar.gps_altitude", 24) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "GPS_height", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add GPS altitude to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.airsar.lat_peg_point", 25) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lat_peg_pt", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add lat peg point to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.airsar.lon_peg_point", 25) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lon_peg_pt", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add lon peg point to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.airsar.head_peg_point", 26) == 0 
-	       && dbf[ii].visible) {
-        if (DBFAddField(dbase, "Head_pegpt", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add heading peg point to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.airsar.along_track_offset", 30) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "AT_offset", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add at offset  to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.airsar.cross_track_offset", 30) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "CT_offset", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add ct offset to database file\n");
-      }
-    }
-    if (meta->projection) {
-      if (strncmp(dbf[ii].header, "meta.projection.type", 20) == 0 &&
-          dbf[ii].visible) {
-        if (DBFAddField(dbase, "Proc_type", FTString, 16, 0) == -1)
-          asfPrintError("Could not add projection type to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.startX", 22) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Start_x", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add start x to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.startY",22) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Start_y", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add start y to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.perX", 20) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Per_x", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add per x to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.perY", 20) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Per_y", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add per y to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.units", 21) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Units", FTString, 12, 0) == -1)
-          asfPrintError("Could not add units to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.hem", 19) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Hemisphere", FTString, 10, 0) == -1)
-          asfPrintError("Could not add hemisphere to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.spheroid", 24) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Spheroid", FTString, 16, 0) == -1)
-          asfPrintError("Could not add speroid to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.re_major", 24) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Proc_major", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add re major to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.re_minor", 24) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Proc_minor", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add re minor to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.datum", 21) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Datum", FTDouble, 35, 0) == -1)
-          asfPrintError("Could not add datum to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.projection.height", 22) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Proc_ht", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not projection height to database file\n");
-      }
-      if (meta->projection->type == ALBERS_EQUAL_AREA) {
-        if (strncmp(dbf[ii].header,
-		    "meta.projection.param.albers.std_parallel1", 42) == 0 &&
-            dbf[ii].visible) {
-          if (DBFAddField(dbase, "Std_par_1", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add std parallel 1 to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.albers.std_parallel2", 42) == 0
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Std_par_2", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add std parallel 2 to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.albers.center_meridian", 
-			 44) == 0 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Center_mer", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not central meridian to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.albers.orig_latitude", 42) == 0
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Orig_lat", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add original lat to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.albers.false_easting", 42) == 0
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false easting to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.albers.false_northing", 
-			 43) == 0 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add std parallel 1 to database file\n");
-        }
-      }
-      else if (meta->projection->type == SCANSAR_PROJECTION) {
-        if (strncmp(dbf[ii].header, 
-		    "meta.projection.param.atct.rlocal", 33) == 0 &&
-            dbf[ii].visible) {
-          if (DBFAddField(dbase, "R_local", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add rlocal to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.atct.alpha1", 33) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Alpha_1", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add alpha1 to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.atct.alpha2", 33) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Alpha_2", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add alpha 2 to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.atct.alpha3", 33) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Alphar_3", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add alpha 3 to database file\n");
-        }
-      }
-      else if (meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
-        if (strncmp(dbf[ii].header,
-		    "meta.projection.param.lamaz.center_lat", 38) == 0 &&
-            dbf[ii].visible) {
-          if (DBFAddField(dbase, "Center_lat", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add center latitude to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamaz.center_lon", 38) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Center_lon", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add center longitude to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamaz.false_easting", 41) == 0 
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false easting to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamaz.false_northing", 42) == 0
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false northing to database file\n");
-        }
-      }
-      else if (meta->projection->type == LAMBERT_CONFORMAL_CONIC) {
-        if (strncmp(dbf[ii].header, 
-		    "meta.projection.param.lamcc.plat1", 33) == 0 &&
-            dbf[ii].visible) {
-          if (DBFAddField(dbase, "Std_par_1", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add std parallel 1 to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamcc.plat2", 33) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Std_par_2", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add std parallel 1 to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamcc.lat0", 32) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Orig_lat", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add lat of origin to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamcc.lon0", 32) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Center_mer", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add central meridian to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamcc.false_easting", 41) == 0 
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false easting to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamcc.false_northing", 42) == 0
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false northing to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.lamcc.scale_factor", 40) == 0 
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Proc_scale", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add scale factor to database file\n");
-        }
-      }
-      else if (meta->projection->type == POLAR_STEREOGRAPHIC) {
-        if (strncmp(dbf[ii].header, "meta.projection.param.ps.slat", 29) == 0 
-	    && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Std_par", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add std parallel to database file\n");
-        }
-        else if (strncmp(dbf[ii].header, 
-			 "meta.projection.param.ps.slon", 29) == 0 && 
-		 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Center_mer", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add central meridian to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.ps.false_easting", 38) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false easting to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.ps.false_northing", 39) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false northing to database file\n");
-        }
-      }
-      else if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-        if (strncmp(dbf[ii].header, "meta.projection.param.utm.zone", 30) == 0 
-	    && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Zone", FTDouble, 2, 0) == -1)
-            asfPrintError("Could not add zone to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.utm.false_easting", 39) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "False_east", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false easting to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.utm.false_northing", 40) == 0 
-		 && dbf[ii].visible) {
-          if (DBFAddField(dbase, "Flse_north", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add false northing to database file\n");
-        }
-        else if (strncmp(dbf[ii].header, 
-			 "meta.projection.param.utm.lat0", 30) == 0 && 
-		 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Proc_lat", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add latitude to database file\n");
-        }
-        else if (strncmp(dbf[ii].header, 
-			 "meta.projection.param.utm.lon0", 30) == 0 && 
-		 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Proc_lon", FTDouble, 9, 4) == -1)
-            asfPrintError("Could not add std parallel 1 to database file\n");
-        }
-        else if (strncmp(dbf[ii].header,
-			 "meta.projection.param.utm.scale_factor", 38) == 0 &&
-                 dbf[ii].visible) {
-          if (DBFAddField(dbase, "Proc_scale", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add scale factor to database file\n");
-        }
-      }
-      else if (meta->projection->type == STATE_PLANE) {
-        if (strncmp(dbf[ii].header, 
-		    "meta.projection.param.state.zone", 32) == 0 &&
-            dbf[ii].visible) {
-          if (DBFAddField(dbase, "Zone", FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add std parallel 1 to database file\n");
-        }
-      }
-    }
-    if (meta->stats) {
-      int kk;
-      int n = meta->stats->band_count;
-      char header[12];
-      if (strcmp(dbf[ii].header, "meta.stats.band_count") == 0 &&
-          dbf[ii].visible) {
-        if (DBFAddField(dbase, "Stat_bands", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add band count to database file\n");
-      }
-      for (kk=0; kk<n; kk++) {
-        if (strcmp(dbf[ii].header, "meta.stats.band_stats.band_id") == 0 &&
-            dbf[ii].visible) {
-          sprintf(header, "Band_ID_%d", kk+1);
-          length = strlen(meta->stats->band_stats[kk].band_id);
-          if (DBFAddField(dbase, header, FTString, length, 0) == -1)
-            asfPrintError("Could not add band ID to database file\n");
-        }
-        else if (strcmp(dbf[ii].header, "meta.stats.band_stats.min") == 0 &&
-                 dbf[ii].visible) {
-          sprintf(header, "Minimum_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add minimum to database file\n");
-        }
-        else if (strcmp(dbf[ii].header, "meta.stats.band_stats.max") == 0 &&
-                 dbf[ii].visible) {
-          sprintf(header, "Maximum_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add maximum to database file\n");
-        }
-        else if (strcmp(dbf[ii].header, "meta.stats.band_stats.mean") == 0 &&
-                 dbf[ii].visible) {
-          sprintf(header, "Mean_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add mean to database file\n");
-        }
-        else if (strcmp(dbf[ii].header, "meta.stats.band_stats.rmse") == 0 &&
-                 dbf[ii].visible) {
-          sprintf(header, "RMSE_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add root mean square to database file\n");
-        }
-        else if (strcmp(dbf[ii].header,
-                        "meta.stats.band_stats.std_deviation") == 0 &&
-                 dbf[ii].visible) {
-          sprintf(header, "Std_dev_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add std deviation to database file\n");
-        }
-        else if (strcmp(dbf[ii].header, "meta.stats.band_stats.mask") == 0 &&
-                 dbf[ii].visible) {
-          sprintf(header, "Mask_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add mask to database file\n");
-        }
-      }
-    }
-    if (meta->state_vectors) {
-      int kk;
-      int n = meta->state_vectors->vector_count;
-      char header[12];
-      if (strncmp(dbf[ii].header, "meta.state.year", 15) == 0 && 
-	  dbf[ii].visible) {
-        if (DBFAddField(dbase, "Year", FTInteger, 4, 0) == -1)
-          asfPrintError("Could not add vector count to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.state.julDay", 17) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Julian_day", FTInteger, 3, 0) == -1)
-          asfPrintError("Could not add julian day to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.state.second", 17) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Second", FTDouble, 16, 7) == -1)
-          asfPrintError("Could not add second to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.state.vector_count", 23) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Num_stVec", FTInteger, 2, 0) == -1)
-          asfPrintError("Could not add std parallel 1 to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, "meta.state.vectors", 18) == 0 &&
-               dbf[ii].visible) {
-        for (kk=0; kk<n; kk++) {
-          sprintf(header, "Time_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add stVec time to database file\n");
-          sprintf(header, "Pos_x_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add stVec time to database file\n");
-          sprintf(header, "Pos_y_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add stVec time to database file\n");
-          sprintf(header, "Pos_z_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add stVec time to database file\n");
-          sprintf(header, "Vel_x_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add stVec time to database file\n");
-          sprintf(header, "Vel_y_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add stVec time to database file\n");
-          sprintf(header, "Vel_z_%d", kk+1);
-          if (DBFAddField(dbase, header, FTDouble, 16, 7) == -1)
-            asfPrintError("Could not add stVec time to database file\n");
-        }
-      }
-    }
-    if (meta->location) {
-      if (strncmp(dbf[ii].header, 
-		  "meta.location.lat_start_near_range", 34) == 0 &&
-          dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lat_1", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add lat start near rng to database file\n");
-      }
-      else if (strncmp(dbf[ii].header,
-		       "meta.location.lon_start_near_range", 34) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lon_1", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add lon start near rng to database file\n");
-      }
-      else if (strncmp(dbf[ii].header,
-		       "meta.location.lat_start_far_range", 33) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lat_2", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add lat start far rng to database file\n");
-      }
-      else if (strncmp(dbf[ii].header,
-		       "meta.location.lon_start_far_range", 33) == 0 &&
-               dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lon_2", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add lon start far rng to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.location.lat_end_near_range", 32) == 0 && 
-	       dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lat_3", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add lat end near rng to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.location.lon_end_near_range", 32) == 0 && 
-		       dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lon_3", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add lon end near rng to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.location.lat_end_far_range", 31) == 0 && 
-	       dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lat_4", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add lat end far rng to database file\n");
-      }
-      else if (strncmp(dbf[ii].header, 
-		       "meta.location.lon_end_far_range", 31) == 0 && 
-	       dbf[ii].visible) {
-        if (DBFAddField(dbase, "Lon_4", FTDouble, 9, 4) == -1)
-          asfPrintError("Could not add lon end far rng to database file\n");
-      }
-    }
-  }
-  
-  // Close the database for initialization
-  DBFClose(dbase);
-  
-  // Open shapefile for initialization
-  char tmpInFile[1024];
-  strcpy(tmpInFile, inFile);
-  char *ext = findExt(inFile);
-  if (!ext && strcmp_case(meta->general->sensor, "ALOS") == 0) {
-    // KLUDGE ALERT!  SHPCreate() below replaces the file extension in inFile
-    // by searching from the end of the filename in reverse for a '.' character,
-    // then appends .shx and .shp to the two filenames that it produces ...
-    // Unfortunately, this results in truncated ALOS basenames in the output
-    // files AND we don't own the shape library.  So, for ALOS only, append a
-    // dummy extension for the shape library to snip off and consequently keep
-    // the original ALOS basename intact:
-    sprintf(tmpInFile, "%s.dummy", inFile);
-  }
-  shape = SHPCreate(tmpInFile, SHPT_POLYGON);
-  if (!shape)
-    asfPrintError("Could not create shapefile '%s'\n", inFile);
-  
-  // Close shapefile for initialization
-  SHPClose(shape);
-
-  FREE(dbaseFile);
-
-  return;
-}
-
 // Convert metadata to generic csv file
-int meta2csv(char *inFile, char *outFile, int listFlag)
+int terrasar2csv(char *inFile, char *outFile, int listFlag)
 {
   FILE *fp;
   meta_parameters *meta;
+  terrasar_meta *terrasar;
   dbf_header_t *dbf;
   int ii, nCols;
   char *header = (char *) MALLOC(sizeof(char)*4096);
@@ -963,7 +31,8 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
   read_header_config("META", &dbf, &nCols);
 
   // Read metadata file
-  meta = meta_read(inFile);
+  terrasar = read_terrasar_meta(inFile);
+  meta = terrasar2meta(terrasar);
 
   // Open output file
   fp = FOPEN(outFile, "w");
@@ -2573,15 +1642,19 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
   // Clean up
   FREE(header);
   FREE(line);
+  meta_free(meta);
+  FREE(terrasar);
 
   return 1;
 }
 
 
 // Convert metadata to kml file
-int meta2kml(char *inFile, char *outFile, int listFlag)
+int terrasar2kml(char *inFile, char *outFile, int listFlag)
 {
   FILE *fpIn, *fpOut;
+  meta_parameters *meta;
+  terrasar_meta *terrasar;
   char *line = (char *) MALLOC(sizeof(char)*1024);
 
   if (listFlag) {
@@ -2591,22 +1664,26 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
     while (fgets(line, 1024, fpIn)) {
       strip_end_whitesp_inplace(line);
       asfPrintStatus("File: %s\n\n", line);
-      meta_parameters *meta = meta_read_only(line);
+      terrasar = terrasar2meta(line);
+      meta = terrasar2meta(terrasar);
       kml_entry(fpOut, meta, meta->general->basename);
       meta_free(meta);
+      FREE(terrasar);
     }
     kml_footer(fpOut);
     FCLOSE(fpIn);
     FCLOSE(fpOut);
   }
   else {
-    meta_parameters *meta = meta_read_only(inFile);
+    terrasar = read_terrasar_meta(inFile);
+    meta = terrasar2meta(terrasar);
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
     kml_entry(fpOut, meta, meta->general->basename);
     kml_footer(fpOut);
     FCLOSE(fpOut);
     meta_free(meta);
+    FREE(terrasar);
   }
 
   return 1;
@@ -2615,16 +1692,18 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
 
 
 // Convert metadata to shapefile
-static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
-			      int n)
+static int convert_terrasar2shape(char *inFile, DBFHandle dbase, 
+				  SHPHandle shape, int n)
 {
   dbf_header_t *dbf;
   meta_parameters *meta;
+  terrasar_meta *terrasar;
   double lat[5], lon[5];
   int ii, field=0, nCols;
 
   // Read metadata
-  meta = meta_read(inFile);
+  terrasar = read_terrasar_meta(inFile);
+  meta = terrasar2meta(terrasar);
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
 
@@ -2772,11 +1851,6 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
                   meta->general->acquisition_date);
       field++;
     }
-    else if (strncmp(dbf[ii].header, "meta.general.orbit", 17) == 0 &&
-             dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, n, field, meta->general->orbit);
-      field++;
-    }
     else if (strncmp(dbf[ii].header, "meta.general.orbit_direction", 27) == 0 
 	     && dbf[ii].visible) {
       char orbit_direction[15];
@@ -2785,6 +1859,11 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
       else
        strcpy(orbit_direction, "Descending");
       DBFWriteStringAttribute(dbase, n, field, orbit_direction);
+      field++;
+    }
+    else if (strncmp(dbf[ii].header, "meta.general.orbit", 17) == 0 &&
+             dbf[ii].visible) {
+      DBFWriteIntegerAttribute(dbase, n, field, meta->general->orbit);
       field++;
     }
     else if (strncmp(dbf[ii].header, "meta.general.frame", 18) == 0 &&
@@ -3783,12 +2862,13 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
 }
 
 // Convert metadata to shapefile
-int meta2shape(char *inFile, char *outFile, int listFlag)
+int terrasar2shape(char *inFile, char *outFile, int listFlag)
 {
   FILE *fp;
   DBFHandle dbase;
   SHPHandle shape;
   meta_parameters *meta;
+  terrasar_meta *terrasar;
   char line[1024], metaFile[1024];
   int n=0;
 
@@ -3802,22 +2882,24 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   }
   else
     strcpy(metaFile, inFile);
-  meta = meta_read(metaFile);
+  terrasar = read_terrasar_meta(metaFile);
+  meta = terrasar2meta(terrasar);
   shape_meta_init(outFile, meta);
   open_shape(outFile, &dbase, &shape);
   meta_free(meta);
+  FREE(terrasar);
   
   if (listFlag) {
     fp = FOPEN(inFile, "r");
     while (fgets(line, 1024, fp)) {
       strip_end_whitesp_inplace(line);
-      convert_meta2shape(line, dbase, shape, n);
+      convert_terrasar2shape(line, dbase, shape, n);
       n++;
     }
     FCLOSE(fp);
   }
   else
-    convert_meta2shape(inFile, dbase, shape, 0);
+    convert_terrasar2shape(inFile, dbase, shape, 0);
 
   // Clean up
   close_shape(dbase, shape);
@@ -3827,10 +2909,11 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
 }
 
 // Convert leader file to metadata - just a simple read and write actually
-int leader2meta(char *inFile, char *outFile, int listFlag)
+int write_terrasar2meta(char *inFile, char *outFile, int listFlag)
 {
   FILE *fp;
   meta_parameters *meta;
+  terrasar_meta *terrasar;
   char *line = (char *) MALLOC(sizeof(char)*1024);
   int n=0;
 
@@ -3838,15 +2921,19 @@ int leader2meta(char *inFile, char *outFile, int listFlag)
     fp = FOPEN(inFile, "r");
     while (fgets(line, 1024, fp)) {
       strip_end_whitesp_inplace(line);
-      meta = meta_read(inFile);
+      terrasar = read_terrasar_meta(inFile);
+      meta = terrasar2meta(terrasar);
       meta_write(meta, outFile);
+      FREE(terrasar);
       n++;
     }
     FCLOSE(fp);
   }
   else {
-    meta = meta_read(inFile);
+    terrasar = read_terrasar_meta(inFile);
+    meta = terrasar2meta(terrasar);
     meta_write(meta, outFile);
+    FREE(terrasar);
   }
 
   return 1;
