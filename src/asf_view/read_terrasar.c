@@ -94,8 +94,6 @@ int read_terrasar_client(int row_start, int n_rows_to_get,
 {
   ReadTerrasarClientInfo *info = (ReadTerrasarClientInfo*) read_client_info;
   float *dest = (float*)dest_void;
-  float re, im;
-  short int shortReal, shortImaginary;
   int ii, jj, ns = meta->general->sample_count;
   int skip = 1;
   if (info->multilook) {
