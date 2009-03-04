@@ -15,6 +15,7 @@ SRCS = asf_view.c \
 	read_pgm.c \
 	read_brs.c \
 	read_airsar.c \
+	read_terrasar.c \
 	big_image.c \
 	meta.c \
 	stats.c \
@@ -91,6 +92,7 @@ LIB = \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
@@ -148,6 +150,7 @@ LDLIBS = \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	$(PNG_LIBS) \
 	$(GTK_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \

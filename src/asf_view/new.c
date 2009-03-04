@@ -103,6 +103,11 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(tiff_filt, "*.tif");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), tiff_filt);
 
+    GtkFileFilter *tsx_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(tsx_filt, "TerraSAR-X Files (*.xml)");
+    gtk_file_filter_add_pattern(tsx_filt, "*.xml");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), tsx_filt);
+
     GtkFileFilter *jpg_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(jpg_filt, "JPEG Image Files (*.jpg)");
     gtk_file_filter_add_pattern(jpg_filt, "*.jpg");

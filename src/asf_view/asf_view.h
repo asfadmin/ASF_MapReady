@@ -164,6 +164,14 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
 meta_parameters *open_airsar(const char *data_name, const char *meta_name,
                              const char *band, ClientInterface *client);
 
+// read_terrasar.c
+int try_terrasar(const char *filename);
+int handle_terrasar_file(const char *filename, char *meta_name, char *data_name,
+			 char **err);
+meta_parameters *open_terrasar(const char *data_name, const char *meta_name,
+			       const char *band, int multilook,
+			       ClientInterface *client);
+
 /* read_jpeg.c */
 int try_jpeg(const char *filename, int try_extensions);
 int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,
