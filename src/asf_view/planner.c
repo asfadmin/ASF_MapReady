@@ -292,8 +292,8 @@ static int get_alos_orbit_number_at_time(double time)
   ref_ymd.day = 26;
 
   ref_hms.hour = 6;
-  ref_hms.min = 0;
-  ref_hms.sec = 40;
+  ref_hms.min = 5;
+  ref_hms.sec = 55;
 
   int ref_orbit = 4904;
 
@@ -308,6 +308,70 @@ static int get_alos_orbit_number_at_time(double time)
 
   double revs_since_ref = (time - ref)/orbital_period;
   return (int)floor(ref_orbit + revs_since_ref);
+}
+
+static int get_alos_orbit_number_at_time2(double time)
+{
+  // KLUDGE: This should all be moved to a config file!
+  double recurrent_period = 46;              // days
+  double orbits_per_recurrent_period = 671;
+
+  // reference: 26-Dec-2006, 6:15:34
+  // reference orbit: 4904
+  
+  // We use a time slightly ahead of the reference time, to account
+  // for the fact that this scene is not at the equator crossing.
+  // Figured out the correct reference time by trial & error...
+
+  ymd_date ref_ymd;
+  hms_time ref_hms;
+
+  ref_ymd.year = 2006;
+  ref_ymd.month = 12;
+  ref_ymd.day = 26;
+
+  ref_hms.hour = 6;
+  ref_hms.min = 5;
+  ref_hms.sec = 55;
+
+  int ref_orbit = 4904;
+  int ret=0;
+
+  int i;
+  for (i=0; i<500; ++i) {
+
+    // here on out are the actual calculations, no need to change
+    // any of this if you just wanted to update the reference
+    julian_date ref_jd;
+    date_ymd2jd(&ref_ymd, &ref_jd);
+    double ref = date2sec(&ref_jd, &ref_hms);
+    
+    double revolutions_per_day = orbits_per_recurrent_period/recurrent_period;
+    double orbital_period = 24.*60.*60. / revolutions_per_day; // sec
+    
+    double revs_since_ref = (time - ref)/orbital_period;
+    int orbit = (int)floor(ref_orbit + revs_since_ref);
+
+    printf("%4d %4d %4d -- %5d/%d\n",
+           ref_hms.hour, ref_hms.min, (int)(ref_hms.sec+.5), orbit, 
+           (46*orbit+85)%671);
+
+    if (i==0) ret=orbit;
+
+    ref_hms.sec += 1;
+    if (ref_hms.sec >= 60) {
+      ref_hms.min += 1;
+      ref_hms.sec = 0;
+      if (ref_hms.min == 60) {
+        ref_hms.hour += 1;
+        ref_hms.min = 0;
+      }
+    }
+  }
+
+  printf("\n\n\n");
+
+  return ret;
 }
 
 static void update_look()
