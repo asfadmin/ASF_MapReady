@@ -197,8 +197,17 @@ meta_parameters *meta_read_only(const char *in_fName)
   ceos_description *ceos = get_ceos_description_ext(in_fName, level, FALSE);
   
   if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
-    if (ceos->product == RAW)
+    if (ceos->product == RAW) {
       ceos_init_sar_ext(ceos, in_fName, meta, FALSE);
+      double fs = meta->sar->range_sampling_rate;
+      double prf = meta->sar->prf;
+      double re = meta->sar->earth_radius;
+      double ht = meta->sar->satellite_height - meta->sar->earth_radius;
+      double vel = sqrt(9.821*re*re/(ht+re));
+      meta->general->x_pixel_size = 1.0 / fs * (SPD_LIGHT / 2.0);
+      meta->general->y_pixel_size = 1.0 / prf * vel * (re / (re + ht));
+      meta_get_corner_coords(meta);
+    }
     else
       ceos_init_sar_ext(ceos, in_fName, meta, TRUE);
   }
