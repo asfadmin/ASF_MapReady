@@ -490,7 +490,7 @@ meta_parameters *import_airsar_meta(const char *dataName,
   return ret;
 }
 
-static void fudge_airsar_params(meta_parameters *meta);
+//static void fudge_airsar_params(meta_parameters *meta);
 
 int ingest_insar_data(const char *inBaseName, const char *outBaseName,
 		      char band)
@@ -675,7 +675,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     svv_phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
     byteBuf = (char *) MALLOC(sizeof(char)*10);
     airsar_header *header = read_airsar_header(inFile);
-    airsar_param_header *params = read_airsar_params(inFile);
+//    airsar_param_header *params = read_airsar_params(inFile);
     long offset = header->first_data_offset;
     sprintf(outFile, "%s_%c.img", outBaseName, band);
     fpIn = FOPEN(inFile, "rb");
@@ -938,7 +938,7 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
 
   return GSL_SUCCESS;
 }
-
+/*
 static void coarse_search(double c0_extent_min, double c0_extent_max,
                           double s0_extent_min, double s0_extent_max,
                           double *c0_min, double *s0_min,
@@ -990,7 +990,8 @@ static void coarse_search(double c0_extent_min, double c0_extent_max,
     gsl_vector_free(v);
     gsl_vector_free(u);
 }
-
+*/
+/*
 static void
 generate_start(meta_parameters *meta, double c0, double s0,
                double *start_c0, double *start_s0)
@@ -1028,7 +1029,8 @@ generate_start(meta_parameters *meta, double c0, double s0,
         //       extent_s0_min, extent_s0_max);
     }
 }
-
+*/
+/*
 static void show_error(meta_parameters *meta, const char *descrip)
 {
   int nl = meta->general->line_count;
@@ -1064,7 +1066,8 @@ static void show_error(meta_parameters *meta, const char *descrip)
 
   asfPrintStatus("%s, average corner error: %.2f pixels\n", descrip, err/4.);
 }
-
+*/
+/*
 static void fudge_airsar_params(meta_parameters *meta)
 {
   int status, iter = 0, max_iter = 1000;
@@ -1147,3 +1150,4 @@ static void fudge_airsar_params(meta_parameters *meta)
   gsl_set_error_handler(prev);
 
 }
+*/

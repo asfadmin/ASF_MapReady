@@ -836,6 +836,7 @@ make_polsarpro_thumb(const char *input_metadata, const char *input_data,
     get_float_line(fpIn, meta, ii*sf, line);
     for (jj = 0; jj < tsx; ++jj) {
       float fval = line[jj*sf];
+      ieee_big32(fval);
       fdata[jj + ii*tsx] = fval;
       fmin = fmin < fval ? fmin : fval;
       fmax = fmax > fval ? fmax : fval;
@@ -1233,7 +1234,7 @@ make_terrasarx_thumb(const char *input_metadata, const char *input_data,
   GdkPixbuf *pb_s =
     gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
   gdk_pixbuf_unref(pb);
-  
+
   if (!pb_s)
     printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
 

@@ -12,10 +12,11 @@ following defines.
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
-"              [-format <inputFormat>] [-ancillary_file <file>] [-band <band_id | all>]\n"\
-"              [-no-ers2-gain-fix] [-image-data-type <type>] [-lut <file>]\n"\
-"              [-lat <lower> <upper>] \n"\
-"              [-prc] [-log <logFile>] [-quiet] [-real-quiet] [-license] [-version]\n"\
+"              [-format <inputFormat>] [-ancillary_file <file>] [-colormap <colormap_file>]\n"\
+"              [-band <band_id | all>] [-no-ers2-gain-fix]\n"\
+"              [-image-data-type <type>] [-lut <file>]\n"\
+"              [-lat <lower> <upper>] [-prc] [-log <logFile>]\n"\
+"              [-quiet] [-real-quiet] [-license] [-version]\n"\
 "              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-multilook] [-complex] [-metadata <file>]\n"\
 "              [-line <start line subset>] [-sample <start sample subset>]\n"\
@@ -71,6 +72,16 @@ following defines.
 "        COES or AIRSAR format data that the PolSARpro images were created from.  The\n"\
 "        original dataset is necessary for the purpose of extracting original SAR parameters\n"\
 "        that are not otherwise available in the PolSARpro format files as they are.\n"\
+"   - colormap <colormap_file>\n"\
+"        Associates a color map (RGB index) with the input file.  Does not apply to\n"\
+"        multi-band images or images containing floating point data (other than\n"\
+"        PolSARpro .bin/.bin.hdr images.)  The colormap files must exist in the\n"\
+"        application installation 'share' directory's look up table directory.  You\n"\
+"        may provide your own colormap by placing it in this folder.  File format must\n"\
+"        either be in ASF format (.lut) or in JASC-PAL (.pal) format.  See existing\n"\
+"        look-up tables for examples.  Note that the use of the colormap option will\n"\
+"        override any embedded RGB index type colormap in the file that is being\n"\
+"        imported, e.g. a TIFF or GeoTIFF with an embedded color palette.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that does not have the same basename as the\n"\
 "        image data.\n"\
@@ -243,6 +254,7 @@ typedef enum {
     f_WIDTH,
     f_HEIGHT,
     f_SAVE_INTERMEDIATES,
+    f_COLORMAP,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -358,6 +370,7 @@ int main(int argc, char *argv[])
     char outBaseName[256]="";
     char *inMetaNameOption=NULL;
     char *lutName=NULL;
+    char *colormapName=NULL;
     char *prcPath=NULL;
     char format_type_str[256]="";
     input_format_t format_type;
@@ -415,6 +428,7 @@ int main(int argc, char *argv[])
     flags[f_WIDTH] = checkForOption("-width", argc, argv);
     flags[f_HEIGHT] = checkForOption("-height", argc, argv);
     flags[f_SAVE_INTERMEDIATES] = checkForOption("-save-intermediates", argc, argv);
+    flags[f_COLORMAP] = checkForOption("-colormap", argc, argv);
 
     flags[f_RANGE_SCALE] = checkForOptionWithArg("-range-scale", argc, argv);
     if (flags[f_RANGE_SCALE] == FLAG_NOT_SET)
@@ -509,8 +523,8 @@ int main(int argc, char *argv[])
         if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
-        if(flags[f_FIX_META_YPIX] != FLAG_NOT_SET)
-            needed_args += 1;/*option*/
+        if(flags[f_FIX_META_YPIX] != FLAG_NOT_SET)   needed_args += 1;/*option*/
+        if(flags[f_COLORMAP] != FLAG_NOT_SET)   needed_args += 2; /*option & parameter*/
 
         /*Make sure we have enough arguments*/
         if(argc != needed_args)
@@ -582,6 +596,11 @@ int main(int argc, char *argv[])
         if(   argv[flags[f_IMAGE_DATA_TYPE]+1][0] == '-'
             || flags[f_IMAGE_DATA_TYPE] >= argc-REQUIRED_ARGS)
             print_usage();
+    if(flags[f_COLORMAP] != FLAG_NOT_SET)
+      /*Make sure the field following -colormap isn't another option*/
+      if(   argv[flags[f_COLORMAP]+1][0] == '-'
+            || flags[f_COLORMAP] >= argc-REQUIRED_ARGS)
+        print_usage();
 
     /* Be sure to open log ASAP */
     if(flags[f_LOG] != FLAG_NOT_SET)
@@ -639,6 +658,11 @@ int main(int argc, char *argv[])
     if(flags[f_LUT] != FLAG_NOT_SET) {
         lutName = (char *) MALLOC(sizeof(char)*256);
         strcpy(lutName, argv[flags[f_LUT] + 1]);
+    }
+
+    if(flags[f_COLORMAP] != FLAG_NOT_SET) {
+      colormapName = (char *) MALLOC(sizeof(char)*256);
+      strcpy(colormapName, argv[flags[f_COLORMAP] + 1]);
     }
 
     { /* BEGIN: Check for conflict between pixel type flags */
@@ -829,9 +853,11 @@ int main(int argc, char *argv[])
                    lutName,prcPath, lowerLat, upperLat, line, sample,
                    width, height, save_intermediates, p_range_scale, p_azimuth_scale,
                    p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
-                   ancillary_file, outBaseName);
+                   ancillary_file, colormapName, outBaseName);
     }
 
+    if (colormapName)
+        free(colormapName);
     if (lutName)
         free(lutName);
     if (prcPath)

@@ -289,9 +289,47 @@ void import_polsarpro(char *s, char *ceosName, int byteFlag,
   fpIn = FOPEN(polsarName, "rb");
   fpOut = FOPEN(outName, "ab");
 
-  // Let the reading and writing function take care of swapping bytes.
+  // Read and write the lines ...noting that PolSARpro stores data in little-endian
+  // format and our get_float_line() function assumes big-endian since it was
+  // written for our internal format files ...We have to swap bytes for PolSARpro.
+  //
+  // Check for valid little-endian format ...just in case a PolSARpro user on a big-endian
+  // machine failed to pick the output conversion option properly.  NOTE: This will NOT work
+  // for floating point data ...only for classifications, which at this time appears to
+  // be the only type that PolSARpro puts out.  The check is around the center pixel where
+  // there should always be valid data
+#define GRID_STEP 10
+  float nw,  n, ne,
+         w,  c,  e,
+        sw, _s, se;
+  int ns = metaOut->general->sample_count;
+  int nl = metaOut->general->line_count;
+  get_float_line(fpIn, metaIn, ((nl / 2) - GRID_STEP) < 0 ? 0 : ((nl / 2) - GRID_STEP), floatBuf);
+  nw = floatBuf[((ns / 2) - GRID_STEP < 0) ? 0 : ((ns / 2) - GRID_STEP)];
+  n  = floatBuf[ns / 2];
+  ne = floatBuf[((ns / 2) + GRID_STEP < 0) ? 0 : ((ns / 2) + GRID_STEP)];
+  get_float_line(fpIn, metaIn, nl / 2, floatBuf);
+  w  = floatBuf[((ns / 2) - GRID_STEP < 0) ? 0 : ((ns / 2) - GRID_STEP)];
+  c  = floatBuf[ns / 2];
+  e  = floatBuf[((ns / 2) + GRID_STEP < 0) ? 0 : ((ns / 2) + GRID_STEP)];
+  get_float_line(fpIn, metaIn, ((nl / 2) + GRID_STEP) < 0 ? 0 : ((nl / 2) + GRID_STEP), floatBuf);
+  sw = floatBuf[((ns / 2) - GRID_STEP < 0) ? 0 : ((ns / 2) - GRID_STEP)];
+  _s = floatBuf[ns / 2];
+  se = floatBuf[((ns / 2) + GRID_STEP < 0) ? 0 : ((ns / 2) + GRID_STEP)];
+  int need_ieee_big32 = 0;
+  if ((nw > 0.0 && nw < 1e-32) || (n  > 0.0 && n  < 1e-32) || (ne > 0.0 && ne < 1e-32) ||
+      (w  > 0.0 && w  < 1e-32) || (c  > 0.0 && c  < 1e-32) || (e  > 0.0 && e  < 1e-32) ||
+      (sw > 0.0 && sw < 1e-32) || (_s > 0.0 && _s < 1e-32) || (se > 0.0 && se < 1e-32))
+  {
+    need_ieee_big32 = 1;
+  }
+  // Do the ingest...
   for (ii=0; ii<metaOut->general->line_count; ii++) {
     get_float_line(fpIn, metaIn, ii, floatBuf);
+    int kk;
+    if (need_ieee_big32) {
+      for (kk=0; kk<metaOut->general->sample_count; kk++) ieee_big32(floatBuf[kk]);
+    }
     put_float_line(fpOut, metaOut, ii, floatBuf);
     asfLineMeter(ii, metaOut->general->line_count);
   }

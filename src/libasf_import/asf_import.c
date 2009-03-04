@@ -27,6 +27,48 @@ radiometry_t update(radiometry_t radiometry, int db_flag)
     return radiometry;
 }
 
+static int is_PolSARpro(const char *infile)
+{
+  int found_bin = FALSE;
+  int found_bin_hdr = FALSE;
+  char *bin = NULL, *bin_hdr = NULL, *dupe = NULL, *ext = NULL;
+
+  ext = findExt(infile);
+  if (!ext) {
+    // If no file extension exists, then maybe it has been stripped
+    // off.  Guess .bin and check for existence...
+    char *inFile = (char *)MALLOC(sizeof(char) * strlen(infile) + 5);
+    sprintf(inFile, "%s.bin", infile);
+    int ret = is_PolSARpro(inFile);
+    FREE(inFile);
+    return ret;
+  }
+  if (strcmp_case(ext, ".bin")==0) {
+    bin = (char *)infile;
+    bin_hdr = (char *)MALLOC(sizeof(char) * (strlen(infile) + 5));
+    sprintf(bin_hdr, "%s.hdr", infile);
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(bin_hdr);
+  }
+  else if (strcmp_case(ext, ".hdr")==0) {
+    dupe = STRDUP(infile);
+    bin_hdr = (char *)infile;
+    ext = findExt(dupe);
+    *ext = '\0';
+    ext = findExt(dupe);
+    if (ext && (strcmp_case(ext, ".bin")==0)) {
+      bin = dupe;
+    }
+    found_bin = fileExists(bin);
+    found_bin_hdr = fileExists(bin_hdr);
+    FREE(dupe);
+  }
+  int ret = found_bin + found_bin_hdr;
+
+  return ret;
+}
+
 int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          int multilook_flag, int amp0_flag, input_format_t format_type,
          char *band_id, char *data_type, char *image_data_type, char *lutName,
@@ -35,7 +77,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          double *p_range_scale, double *p_azimuth_scale,
          double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
          char *inMetaNameOption,
-         char *inBaseName, char *ancillary_file, char *outBaseName)
+         char *inBaseName, char *ancillary_file,
+         char *colormapName, char *outBaseName)
 {
   char outDataName[256], outMetaName[256];
 
@@ -179,6 +222,87 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   // Don't recognize this data format; report & quit
   else {
     asfPrintError("Unrecognized data format: '%d'\n",format_type);
+  }
+  int num_elements = 0;
+  int is_jasc_palette = 0;
+  meta_parameters *meta = meta_read(outMetaName);
+  if (!(colormapName != NULL && (meta->general->data_type == BYTE || is_PolSARpro(inBaseName)))) {
+    // Ooops.  Tried to apply a colormap to the wrong type of data
+    asfPrintWarning("Color map specified with the -colormap option (%s) not\n"
+        "applied during ingest.  Color maps can only be applied to byte or\n"
+        "PolSARpro data.  Data was imported as-is.\n", colormapName);
+  }
+  else {
+    // Apply the user-selected color map to the metadata
+    FILE *fp = NULL;
+    unsigned char * lut_buffer;
+    char *lut_basename = STRDUP(colormapName);
+    char *ext = findExt(lut_basename);
+    if (ext) *ext = '\0';
+
+    // Check LUT file validity and allocate appropriately sized buffer
+    // to read into
+    char magic_str[1024];
+    char version_s[1024];
+    char num_elements_s[1024];
+    char lut_path[1024];
+    sprintf(lut_path, "%s%clook_up_tables%c%s.pal", get_asf_share_dir(),
+            DIR_SEPARATOR, DIR_SEPARATOR, lut_basename);
+    if (fileExists(lut_path)) {
+      fp = (FILE*)FOPEN(lut_path, "rt");
+      fgets(magic_str, 1024, fp);
+      fgets(version_s, 1024, fp);
+      fgets(num_elements_s, 1024, fp);
+      FCLOSE(fp);
+      int version = atoi(version_s);
+      num_elements = atoi(num_elements_s);
+      is_jasc_palette = (strncmp(magic_str, "JASC", 4) == 0 && version == 100) ? 1 : 0;
+      if (is_jasc_palette && (num_elements <= 0 || num_elements > 512)) {
+        asfPrintWarning("Found invalid JASC-PAL type color map file (%s) ...color map\n"
+            "not applied.\n", colormapName);
+      }
+      if (num_elements > 256) {
+        asfPrintWarning("PolSARpro look-up table contains more than 256 elements (%d).\n"
+            "Only the first 256 will be read and mapped to data.\n", num_elements);
+      }
+    }
+    else {
+      sprintf(lut_path, "%s%clook_up_tables%c%s.lut", get_asf_share_dir(),
+              DIR_SEPARATOR, DIR_SEPARATOR, lut_basename);
+      if (fileExists(lut_path)) {
+        is_jasc_palette = 0; // Assume ASF format
+      }
+      else {
+        strcpy(lut_path, "");
+      }
+    }
+    lut_buffer = (unsigned char*)MALLOC(sizeof(unsigned char) * 3 * MAX_LUT_DN);
+
+    // Read the LUT
+    if (strlen(lut_path) > 0) {
+      int max_dn = read_lut(lut_path, lut_buffer);
+
+      // Populate the metadata colormap
+      if (!meta->colormap) meta->colormap = meta_colormap_init();
+      if (is_jasc_palette) {
+        meta->colormap->num_elements = (num_elements <= 256) ? num_elements : 256;
+        sprintf(meta->colormap->look_up_table, "%s.pal", lut_basename);
+      }
+      else {
+        num_elements = max_dn + 1;
+        meta->colormap->num_elements = num_elements;
+        sprintf(meta->colormap->look_up_table, "%s.lut", lut_basename);
+      }
+      meta->colormap->rgb = (meta_rgb*)CALLOC(meta->colormap->num_elements, sizeof(meta_rgb));
+      int i;
+      for (i = 0; i < meta->colormap->num_elements; i++) {
+        meta->colormap->rgb[i].red   = lut_buffer[i*3];
+        meta->colormap->rgb[i].green = lut_buffer[i*3+1];
+        meta->colormap->rgb[i].blue  = lut_buffer[i*3+2];
+      }
+    }
+    FREE(lut_basename);
+    meta_write(meta, outMetaName);
   }
 
   asfPrintStatus("Import complete.\n\n");

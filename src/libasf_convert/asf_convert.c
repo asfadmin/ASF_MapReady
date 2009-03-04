@@ -586,7 +586,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
                    NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 0,
                    NULL, NULL, NULL, FALSE, NULL, tiff_basename, ancillary_file,
-                   imported),
+                   NULL, imported),
         status);
 
     sprintf(status, "Geocoding %s...", uc_what);
@@ -1857,6 +1857,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               NULL,
                               cfg->general->in_name,
                               cfg->general->ancillary_file,
+                              NULL,
                               outFile),
                               "ingesting data file (asf_import)\n");
 

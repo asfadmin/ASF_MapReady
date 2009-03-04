@@ -47,6 +47,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                                        // otherwise, this is the meta file name
                char *inBaseName, // input file
                char *ancillary_file, // ancillary file (if needed for input file)
+               char *colormapName, // colormap file
                char *outBaseName // output file
                );
 
