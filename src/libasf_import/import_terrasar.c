@@ -450,9 +450,9 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       }
     }
     else
-      asfPrintStatus("Data type (%s) and data format (%s) currently not "
-		     "supported!\n", 
-		     terrasar->imageDataType, terrasar->imageDataFormat);
+      asfPrintError("Data type (%s) and data format (%s) currently not "
+		    "supported!\n", 
+		    terrasar->imageDataType, terrasar->imageDataFormat);
     
     fpIn = FOPEN(inDataName, "rb");
     if (ii == 0)
