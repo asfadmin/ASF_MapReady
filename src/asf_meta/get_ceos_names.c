@@ -29,6 +29,7 @@ const char ceos_data_extensions[][12] =
 {
     "",
     "DAT_",
+    "dat_",
     ".sard",
     ".D",
     ".RAW",

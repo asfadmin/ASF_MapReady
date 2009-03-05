@@ -123,6 +123,7 @@ extern const char ceos_metadata_extensions[][12];
 typedef enum {
   NO_CEOS_DATA=0,
   CEOS_DAT_,
+  CEOS_dat_t,
   CEOS_sard,
   CEOS_D,
   CEOS_RAW,
