@@ -22,7 +22,6 @@ DESCRIPTION:
  * Reads SAR structure parameters from CEOS into existing meta_parameters
  * structure.  Calls a facility-specific decoder. */
 void ceos_init(const char *fName, meta_parameters *sar, report_level_t level);
-meta_parameters *meta_read_only(const char *in_fName);
 
 /***************************************
  * ardop_init:

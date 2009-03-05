@@ -2577,13 +2577,12 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
   return 1;
 }
 
-
 // Convert metadata to kml file
 int meta2kml(char *inFile, char *outFile, int listFlag)
 {
+  meta_parameters *meta;
   FILE *fpIn, *fpOut;
   char *line = (char *) MALLOC(sizeof(char)*1024);
-
   if (listFlag) {
     fpIn = FOPEN(inFile, "r");
     fpOut = FOPEN(outFile, "w");
@@ -2591,7 +2590,16 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
     while (fgets(line, 1024, fpIn)) {
       strip_end_whitesp_inplace(line);
       asfPrintStatus("File: %s\n\n", line);
-      meta_parameters *meta = meta_read_only(line);
+      if (isleader(inFile)) {
+	ceos_description *ceos = 
+	  get_ceos_description(inFile, REPORT_LEVEL_NONE);
+	if (ceos->product == RAW)
+	  meta = meta_read_raw(line);
+	else
+	  meta = meta_read_only(line);
+      }
+      else
+	meta = meta_read_only(line);
       kml_entry(fpOut, meta, meta->general->basename);
       meta_free(meta);
     }
@@ -2600,7 +2608,15 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
     FCLOSE(fpOut);
   }
   else {
-    meta_parameters *meta = meta_read_only(inFile);
+    if (isleader(inFile)) {
+      ceos_description *ceos = get_ceos_description(inFile, REPORT_LEVEL_NONE);
+      if (ceos->product == RAW)
+	meta = meta_read_raw(inFile);
+      else
+	meta = meta_read_only(inFile);
+    }
+    else
+      meta = meta_read_only(inFile);
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
     kml_entry(fpOut, meta, meta->general->basename);

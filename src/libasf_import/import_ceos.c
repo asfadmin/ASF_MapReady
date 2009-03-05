@@ -2294,3 +2294,68 @@ double quadratic_2_incidence_angle(long long x, long long y, float *q)
 
     return incidence_angle;
 }
+
+// Read CEOS metadata without touching the data file
+meta_parameters *meta_read_only(const char *in_fName)
+{
+  meta_parameters *meta = raw_init();
+  report_level_t level = REPORT_LEVEL_NONE;
+  ceos_description *ceos = get_ceos_description_ext(in_fName, level, FALSE);
+  
+  if (ceos->sensor == SAR || ceos->sensor == PALSAR)
+    ceos_init_sar_ext(ceos, in_fName, meta, TRUE);
+  else if (ceos->sensor == AVNIR || ceos->sensor == PRISM)
+    ceos_init_optical(in_fName, meta);
+  
+  FREE(ceos);
+  return meta;
+}
+
+// Read CEOS metadata for raw data
+meta_parameters *meta_read_raw(const char *inFile)
+{
+  struct dataset_sum_rec *dssr=NULL;
+  double re, ht, fs, prf, vel;
+  int trash;
+  meta_parameters *meta = raw_init();
+  report_level_t level = REPORT_LEVEL_NONE;
+  ceos_description *ceos = get_ceos_description(inFile, level);
+  bin_state *s;
+  readPulseFunc readNextPulse;
+  char *baseName, tmpDir[1024], outFile[1024];
+
+  ceos_init_sar_ext(ceos, inFile, meta, FALSE);
+  re = meta->sar->earth_radius;
+  ht = meta->sar->satellite_height - meta->sar->earth_radius;
+  if (ceos->sensor != PALSAR) {
+    baseName = get_basename(inFile);
+    strcpy(tmpDir, baseName);
+    strcat(tmpDir, "-");
+    strcat(tmpDir, time_stamp_dir());
+    create_clean_dir(tmpDir);
+    sprintf(outFile, "%s/bogus.meta", tmpDir);
+    s = convertMetadata_ceos((char *)inFile, outFile, &trash, &readNextPulse);
+    meta->sar->slant_range_first_pixel = s->range_gate * SPD_LIGHT / 2.0;
+    remove_dir(tmpDir);
+    meta->sar->range_sampling_rate = fs = s->fs;
+    prf = s->prf;
+    vel = s->vel;
+  }
+  else {
+    prf = meta->sar->prf;
+    fs = meta->sar->range_sampling_rate;
+    vel = sqrt(9.821*re*re/(ht+re));
+  }
+  meta->general->x_pixel_size = 1.0 / fs * (SPD_LIGHT / 2.0);
+  meta->general->y_pixel_size = 1.0 / prf * vel * (re / (re + ht));
+  dssr = &ceos->dssr;
+  if (meta->general->center_latitude == 0.0 &&
+      meta->general->center_longitude == 0.0)
+    meta_get_latLon(meta, meta->general->line_count/2, 
+		    meta->general->sample_count/2, 0.0,
+		    &meta->general->center_latitude, 
+		    &meta->general->center_longitude);
+  meta_get_corner_coords(meta);
+ 
+  return meta;
+}

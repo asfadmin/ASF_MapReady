@@ -109,4 +109,8 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
                radiometry_t radiometry, int complex_flag);
 void import_polsarpro(char *polsarName, char *ceosName,
                       int byteFlag, char *outBaseName);
+
+meta_parameters *meta_read_only(const char *in_fName);
+meta_parameters *meta_read_raw(const char *inFile);
+
 #endif
