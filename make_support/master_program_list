@@ -254,6 +254,7 @@ CATEGORIES
 		asf_geocode
 		asf_terrcorr
 		asf_view
+		brs2jpg
 		gr2sr
 		metadata_gui
 		metadata

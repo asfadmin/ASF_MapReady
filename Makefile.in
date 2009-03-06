@@ -57,6 +57,7 @@ MAPREADY_MODULES = \
 	src/diffimage \
 	src/sgpsdp \
 	src/plan \
+	src/brs2jpg \
 	src/convert2vector_gui \
 	@ASF_GUI@
 
@@ -177,6 +178,7 @@ IGNORED_INCLUDES = \
 	include/caplib.h \
 	include/date.h \
 	include/dateUtil.h \
+	include/doppler.h \
 	include/float_image.h \
 	include/frame_calc.h \
 	include/get_ceos_names.h \
