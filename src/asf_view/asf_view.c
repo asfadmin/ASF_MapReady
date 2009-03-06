@@ -71,6 +71,11 @@ main(int argc, char **argv)
         "-lut", "--lut", NULL);
     int planner_mode = extract_flag_options(&argc, &argv,
         "-plan", "--plan", NULL);
+    if (planner_mode) {
+      if (detect_flag_options(argc, argv, "-calibrate-reference", NULL)) {
+        calibrate_planner_reference();
+      }
+    }
 
     handle_common_asf_args(&argc, &argv, "ASF View");
 

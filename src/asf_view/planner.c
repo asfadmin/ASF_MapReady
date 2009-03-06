@@ -271,6 +271,10 @@ static void clear_found()
     g_poly = &g_polys[which_poly];
 }
 
+static int s_ref_hour = 6;
+static int s_ref_min = 5;
+static int s_ref_sec = 55;
+
 static int get_alos_orbit_number_at_time(double time)
 {
   // KLUDGE: This should all be moved to a config file!
@@ -291,9 +295,9 @@ static int get_alos_orbit_number_at_time(double time)
   ref_ymd.month = 12;
   ref_ymd.day = 26;
 
-  ref_hms.hour = 6;
-  ref_hms.min = 5;
-  ref_hms.sec = 55;
+  ref_hms.hour = s_ref_hour;
+  ref_hms.min = s_ref_min;
+  ref_hms.sec = s_ref_sec;
 
   int ref_orbit = 4904;
 
@@ -308,70 +312,6 @@ static int get_alos_orbit_number_at_time(double time)
 
   double revs_since_ref = (time - ref)/orbital_period;
   return (int)floor(ref_orbit + revs_since_ref);
-}
-
-static int get_alos_orbit_number_at_time2(double time)
-{
-  // KLUDGE: This should all be moved to a config file!
-  double recurrent_period = 46;              // days
-  double orbits_per_recurrent_period = 671;
-
-  // reference: 26-Dec-2006, 6:15:34
-  // reference orbit: 4904
-  
-  // We use a time slightly ahead of the reference time, to account
-  // for the fact that this scene is not at the equator crossing.
-  // Figured out the correct reference time by trial & error...
-
-  ymd_date ref_ymd;
-  hms_time ref_hms;
-
-  ref_ymd.year = 2006;
-  ref_ymd.month = 12;
-  ref_ymd.day = 26;
-
-  ref_hms.hour = 6;
-  ref_hms.min = 5;
-  ref_hms.sec = 55;
-
-  int ref_orbit = 4904;
-  int ret=0;
-
-  int i;
-  for (i=0; i<500; ++i) {
-
-    // here on out are the actual calculations, no need to change
-    // any of this if you just wanted to update the reference
-    julian_date ref_jd;
-    date_ymd2jd(&ref_ymd, &ref_jd);
-    double ref = date2sec(&ref_jd, &ref_hms);
-    
-    double revolutions_per_day = orbits_per_recurrent_period/recurrent_period;
-    double orbital_period = 24.*60.*60. / revolutions_per_day; // sec
-    
-    double revs_since_ref = (time - ref)/orbital_period;
-    int orbit = (int)floor(ref_orbit + revs_since_ref);
-
-    printf("%4d %4d %4d -- %5d/%d\n",
-           ref_hms.hour, ref_hms.min, (int)(ref_hms.sec+.5), orbit, 
-           (46*orbit+85)%671);
-
-    if (i==0) ret=orbit;
-
-    ref_hms.sec += 1;
-    if (ref_hms.sec >= 60) {
-      ref_hms.min += 1;
-      ref_hms.sec = 0;
-      if (ref_hms.min == 60) {
-        ref_hms.hour += 1;
-        ref_hms.min = 0;
-      }
-    }
-  }
-
-  printf("\n\n\n");
-
-  return ret;
 }
 
 static void update_look()
@@ -499,6 +439,25 @@ static void populate_config_info()
         }
         free(junk);
         free(tmp);
+
+        if (!fgets(s, 255, fp))
+          strcpy(s,"reference time = 6:05:55");
+        split2(s, '=', &junk, &tmp);
+        if (strcmp_case(junk, "reference time")!=0) {
+          printf("Invalid config file file 4, "
+                 "does not specify reference time.\n");
+          s_ref_hour = 6;
+          s_ref_min = 5;
+          s_ref_sec = 55;
+        }
+        else {
+          sscanf(tmp, "%d:%d:%d", &s_ref_hour, &s_ref_min, &s_ref_sec);
+        }
+        free(junk);
+        free(tmp);
+
+        printf("Reference time: %02d:%02d:%02d\n",
+               s_ref_hour, s_ref_min, s_ref_sec);
 
         fclose(fp);
     }
@@ -850,6 +809,196 @@ int row_is_checked(int row)
 static int revolution2path(int revolution)
 {
     return ((46*revolution+85)%671);
+}
+
+static int calibrate_pass_impl(long startdate, long enddate,
+                               double lo_lat, double hi_lat,
+                               double lo_lon, double hi_lon)
+{
+  double clat = .5*(hi_lat + lo_lat);
+  double clon = .5*(hi_lon + lo_lon);
+  char *tle_filename = find_in_share("tle");
+  const char *sat = "ALOS";
+  const char *beam = "PLR";
+  double look = 21.5;
+  int zone = utm_zone(clon);
+
+  double x[4], y[4];
+  ll2pr(lo_lat, lo_lon, zone, &x[0], &y[0]);
+  ll2pr(lo_lat, hi_lon, zone, &x[1], &y[1]);
+  ll2pr(hi_lat, hi_lon, zone, &x[2], &y[2]);
+  ll2pr(hi_lat, lo_lon, zone, &x[3], &y[3]);
+  Poly *aoi = polygon_new_closed(4, x, y);
+
+  char *err=NULL;
+  PassCollection *pc;
+  int path;
+
+  int n = plan(sat, beam, look*D2R, startdate, enddate, hi_lat, lo_lat,
+               clat, clon, ASCENDING_ONLY, zone, aoi, tle_filename, &pc, &err);
+
+  if (!err && n==1) {
+    PassInfo *pi = pc->passes[0];
+    int orbit = get_alos_orbit_number_at_time(pi->start_time);
+    path = revolution2path(orbit);
+  }
+  else {
+    printf("Found more than 1 result - no test. %d\n", n);
+    path=-1;
+  }
+
+  return path;
+}
+
+const char *ref_str(int ref)
+{
+  int h = ref/3600;
+  int m = (ref - h*3600)/60;
+  int s = ref - 60*(m+h*60);
+
+  static char buf[64];
+  sprintf(buf, "%02d:%02d:%02d", h, m, s);
+  return buf;
+}
+
+static void calibrate_pass(long startdate, long enddate,
+                           double lo_lat1, double hi_lat1,
+                           double lo_lon1, double hi_lon1,
+                           int expected_path1,
+                           double lo_lat2, double hi_lat2,
+                           double lo_lon2, double hi_lon2,
+                           int expected_path2,
+                           int *ref_s)
+{
+  int m, s;
+
+  int prev_quietflag=quietflag;
+  quietflag=TRUE;
+
+  int first_m = -1;
+  int first_s = -1;
+  int last_m = -1;
+  int last_s = -1;
+
+  for (m=4; m<=6; ++m) {
+    for (s=0; s<=59; ++s) {
+
+      s_ref_min = m;
+      s_ref_sec = (double)s;
+
+      int path1 = calibrate_pass_impl(startdate, enddate, lo_lat1, hi_lat1,
+                                      lo_lon1, hi_lon1);
+      int path2 = calibrate_pass_impl(startdate, enddate, lo_lat2, hi_lat2,
+                                      lo_lon2, hi_lon2);
+
+      if (path1==expected_path1 && path2==expected_path2) {
+        //printf("6:%02d:%02d %3d/%3d %3d/%3d ok\n", m, s,
+        //       path1, expected_path1, path2, expected_path2);
+        last_m=m; last_s=s;
+        if (first_m==-1) {
+          first_m=m; first_s=s;
+        }
+      }
+      else {
+        //printf("6:%02d:%02d %3d/%3d %3d/%3d\n", m, s,
+        //       path1, expected_path1, path2, expected_path2);
+      }
+    }
+  }
+  asfPercentMeter(1.0);
+
+  int fs = first_s + 60*first_m;
+  int ls = last_s + 60*last_m;
+  int bs = (fs+ls)/2;
+
+  int best_h = 6;
+  int best_m = bs/60;
+  int best_s = bs - best_m*60;
+
+  *ref_s = best_s + 60*(best_m + 60*best_h);
+  
+  quietflag=prev_quietflag;
+}
+
+void calibrate_planner_reference()
+{
+  printf("Calibrating reference time ... \n");
+  int ref1, ref2, ref3, ref4;
+
+  printf("Area 1...\n");
+  calibrate_pass(20090315, 20090315,
+                 1.24, 1.54, -150.55, -150.13, 239,
+                 1.77, 2.09, -150.62, -150.22, 285, &ref1);
+  printf("Reference for 1: %s\n", ref_str(ref1));
+
+  printf("Area 2...\n");
+  calibrate_pass(20090306, 20090306,
+                 0.94, 1.19, 29.81, 30.18, 574,
+                 1.49, 2.86, 29.64, 30.01, 620, &ref2);
+  printf("Reference for 2: %s\n", ref_str(ref2));
+
+  printf("Area 3...\n");
+  calibrate_pass(20090320, 20090320,
+                 1.23, 1.55, 109.17, 109.55, 426,
+                 1.86, 2.14, 109.06, 109.43, 472, &ref3);
+  printf("Reference for 3: %s\n", ref_str(ref3));
+
+  printf("Area 4...\n");
+  calibrate_pass(20090325, 20090325,
+                 0.72, 1.00, -54.85, -54.45, 61,
+                 1.23, 1.55, -54.98, -54.62, 107, &ref4);
+  printf("Reference for 4: %s\n", ref_str(ref4));
+
+  int ref = (int)(.5+((double)(ref1+ref2+ref3+ref4))/4.0);
+
+  printf("New reference time: %s\n", ref_str(ref));
+
+  s_ref_hour = ref/3600;
+  s_ref_min = (ref - s_ref_hour*3600)/60;
+  s_ref_sec = ref - 60*(s_ref_min+s_ref_hour*60);
+
+  printf("Writing configuration file...\n");
+
+  const char *cfg_filename = "planner.cfg";
+  printf("Share dir: %s\n", get_asf_share_dir());
+
+  FILE *fp = fopen_share_file(cfg_filename, "r");
+  if (!fp) {
+    printf("Could not open configuration file!\n"
+           "  %s\n"
+           "  %s\n", cfg_filename, strerror(errno));
+  }
+  else {
+    char lines[10][256];
+    int l = 0;
+
+    while (fgets(lines[l], 255, fp) != NULL) {
+      if (strncmp(lines[l], "reference time", 14)==0)
+        sprintf(lines[l], "reference time = %02d:%02d:%02d\n",
+                s_ref_hour, s_ref_min, s_ref_sec);
+      if (++l>=10)
+        asfPrintError("Config file is too long!\n");
+    }
+    fclose(fp);
+
+    fp = fopen_share_file(cfg_filename, "w");
+    if (!fp) {
+      printf("Could not open configuration file!\n"
+             "  %s\n"
+             "  %s\n", cfg_filename, strerror(errno));
+    }
+    else {
+      int c = 0;
+      while (c<l) {
+        fprintf(fp, "%s", lines[c++]);
+      }
+      fclose(fp);
+    }
+  }
+
+  printf("Updated reference time in the configuration file.\n");
+  printf("Calibration complete.\n");
+  exit(1);
 }
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
@@ -1552,6 +1701,8 @@ SIGNAL_CALLBACK void on_save_setup_button_clicked(GtkWidget *w)
                 get_string_from_entry("output_file_entry"));
         fprintf(ofp, "max days = %d\n",
                 get_int_from_entry("max_days_entry"));
+        fprintf(ofp, "reference time = %02d:%02d:%02d\n",
+                s_ref_hour, s_ref_min, s_ref_sec);
         fclose(ofp);
     }
 }

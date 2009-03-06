@@ -296,6 +296,7 @@ int is_colormap_ASF_file(char *file);
 int planner_is_active(void);
 void setup_planner(void);
 int row_is_checked(int);
+void calibrate_planner_reference(void);
 
 /* csv.c */
 const char * detect_csv_assoc();
