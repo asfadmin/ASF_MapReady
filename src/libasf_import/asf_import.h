@@ -76,6 +76,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
 void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
                 char *inMetaNameOption, int lat_constrained, double lowerLat,
                 double upperLat, char *prcPath);
+meta_parameters *meta_read_stf(const char *inFile);
 
 void
 import_generic_geotiff (const char *inFileName, const char *outBaseName, ...);

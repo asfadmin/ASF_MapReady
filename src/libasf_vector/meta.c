@@ -2578,7 +2578,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
 }
 
 // Convert metadata to kml file
-int meta2kml(char *inFile, char *outFile, int listFlag)
+int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag)
 {
   meta_parameters *meta;
   FILE *fpIn, *fpOut;
@@ -2590,16 +2590,21 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
     while (fgets(line, 1024, fpIn)) {
       strip_end_whitesp_inplace(line);
       asfPrintStatus("File: %s\n\n", line);
-      if (isleader(inFile)) {
+      if (inFormat == LEADER && isleader(inFile)) {
 	ceos_description *ceos = 
-	  get_ceos_description(inFile, REPORT_LEVEL_NONE);
+	  get_ceos_description_ext(inFile, REPORT_LEVEL_NONE, FALSE);
 	if (ceos->product == RAW)
 	  meta = meta_read_raw(line);
 	else
 	  meta = meta_read_only(line);
       }
-      else
+      else if (inFormat == STF_META && isparfile(inFile))
+	meta = meta_read_stf(line);
+      else if (inFormat == META)
 	meta = meta_read_only(line);
+      else
+	asfPrintError("Chosen file format (%s) does not match provided file "
+		      "(%s)\n", inFile);
       kml_entry(fpOut, meta, meta->general->basename);
       meta_free(meta);
     }
@@ -2608,15 +2613,21 @@ int meta2kml(char *inFile, char *outFile, int listFlag)
     FCLOSE(fpOut);
   }
   else {
-    if (isleader(inFile)) {
-      ceos_description *ceos = get_ceos_description(inFile, REPORT_LEVEL_NONE);
+    if (inFormat == LEADER && isleader(inFile)) {
+      ceos_description *ceos = 
+	get_ceos_description_ext(inFile, REPORT_LEVEL_NONE, FALSE);
       if (ceos->product == RAW)
 	meta = meta_read_raw(inFile);
       else
 	meta = meta_read_only(inFile);
     }
-    else
+    else if (inFormat == STF_META && isparfile(inFile))
+      meta = meta_read_stf(inFile);
+    else if (inFormat == META)
       meta = meta_read_only(inFile);
+    else
+      asfPrintError("Chosen file format (%s) does not match provided file "
+		    "(%s)\n", inFile);
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
     kml_entry(fpOut, meta, meta->general->basename);

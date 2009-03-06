@@ -6,8 +6,10 @@ format_type_t str2format(const char *str)
 
   if (strcmp_case(str, "META") == 0)
     format = META;
-  else if (strcmp_case(str, "LEADER") == 0)
+  else if (strcmp_case(str, "LEADER") == 0 || strcmp_case(str, "CEOS") == 0)
     format = LEADER;
+  else if (strcmp_case(str, "STF") == 0)
+    format = STF_META;
   else if (strcmp_case(str, "POINT") == 0)
     format = POINT;
   else if (strcmp_case(str, "POLYGON") == 0)
@@ -54,8 +56,12 @@ int convert2vector(char *inFile, const char *inFormat_str,
 
   if ((inFormat == META || inFormat == LEADER) && outFormat == CSV)
     ret = meta2csv(inFile, outFile, listFlag);
-  else if ((inFormat == META || inFormat == LEADER) && outFormat == KMLFILE)
-    ret = meta2kml(inFile, outFile, listFlag);
+  else if (inFormat == META && outFormat == KMLFILE)
+    ret = meta2kml(inFile, outFile, META, listFlag);
+  else if (inFormat == LEADER && outFormat == KMLFILE)
+    ret = meta2kml(inFile, outFile, LEADER, listFlag);
+  else if (inFormat == STF_META && outFormat == KMLFILE)
+    ret = meta2kml(inFile, outFile, STF_META, listFlag);
   else if ((inFormat == META || inFormat == LEADER) && outFormat == SHAPEFILE)
     ret = meta2shape(inFile, outFile, listFlag);
   else if (inFormat == LEADER && outFormat == META)

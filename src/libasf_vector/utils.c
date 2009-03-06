@@ -122,6 +122,42 @@ int ismetadata(char *inFile)
     return isMetadata;
 }
 
+int isparfile(char *inFile)
+{
+  int isParfile=0;
+  char *line=NULL, *s;
+  FILE *fp = NULL;
+
+  if (findExt(inFile) && (strcmp_case(findExt(inFile), ".PAR") != 0)) {
+    strcat(inFile, ".par");
+    if (!fileExists(inFile))
+      return FALSE;
+  }
+
+  fp = fopen(inFile, "r");
+  if (fp) {
+    int line_count = 0;
+    line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+    while (fgets(line, LINE_MAX, fp)) {
+      line[strlen(line)-1] = '\0';
+      s=line;
+      while(isspace((int)(*s))) ++s;
+      if (s && strlen(s) && 
+	  strncmp_case(s, "processor_name: SKY", 19) == 0) {
+	isParfile = 1;
+	break;
+      }
+      // avoid scanning the entire contents of a huge file
+      if (++line_count>100)
+	break;
+    }
+  }
+  FREE(line);
+  FCLOSE(fp);
+  
+  return isParfile;
+}
+
 int isleader(char *inFile)
 {
     int isLeader = 0;

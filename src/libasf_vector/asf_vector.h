@@ -32,6 +32,7 @@ typedef enum {
   AUIG,
   HAP,
   TERRASAR_META,
+  STF_META,
   CSV,
   CUSTOM_FORMAT
 } format_type_t;
@@ -161,6 +162,7 @@ int ispolygon(char *inFile);
 int isshape(char *inFile);
 int isgeotiff(char *inFile);
 int isrgps(char *inFile);
+int isparfile(char *inFile);
 
 // Prototypes from header.c
 int isVisible(dbf_header_t *dbf, int nCols, char *header);
@@ -170,7 +172,7 @@ int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns);
 
 // Prototypes from meta.c
 int meta2csv(char *inFile, char *outFile, int listFlag);
-int meta2kml(char *inFile, char *outFile, int listFlag);
+int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag);
 void shape_meta_init(char *inFile, meta_parameters *meta);
 int meta2shape(char *inFile, char *outFile, int listFlag);
 int leader2meta(char *inFile, char *outFile, int listFlag);

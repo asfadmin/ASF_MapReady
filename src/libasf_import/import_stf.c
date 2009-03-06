@@ -186,3 +186,36 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
 
   free_stf_names(inDataName, inMetaName);
 }
+
+// Read STF metadata for raw data
+meta_parameters *meta_read_stf(const char *inFile)
+{
+  bin_state *s;
+  readPulseFunc readNextPulse;
+  char *baseName, tmpDir[1024], outFile[1024];
+  char *inDataName, *inMetaName;
+  int nTotal;
+  float fd, fdd, fddd;
+  meta_parameters *meta;
+
+  baseName = get_basename(inFile);
+  strcpy(tmpDir, baseName);
+  strcat(tmpDir, "-");
+  strcat(tmpDir, time_stamp_dir());
+  create_clean_dir(tmpDir);
+  sprintf(outFile, "%s/tmp.meta", tmpDir);
+  require_stf_pair(baseName, &inDataName, &inMetaName);
+  s=convertMetadata_lz(inDataName, outFile, &nTotal, &readNextPulse);
+  s->nLines = nTotal;
+  estimateDoppler(inDataName, &fd, &fdd, &fddd);
+  createMeta_lz(s, inDataName, outFile, NULL, 3, fd, fdd, fddd, 0, NULL);
+  delete_bin_state(s);
+  meta = meta_read(outFile);
+  meta_get_latLon(meta, meta->general->line_count/2, 
+		  meta->general->sample_count, 0.0, 
+		  &meta->general->center_latitude,
+		  &meta->general->center_longitude);
+  meta_get_corner_coords(meta);
+
+  return meta;
+}
