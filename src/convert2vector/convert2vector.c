@@ -208,6 +208,8 @@ int main(int argc, char **argv)
       inFormat = GEOTIFF_META;
     else if (iscsv(inFile))
       inFormat = CSV;
+    else if (isparfile(inFile))
+      inFormat = STF_META;
     else 
       asfPrintError("Could not automatically determine input file format "
 		    "for %s.\nPlease use the -input-format option to "
@@ -222,6 +224,8 @@ int main(int argc, char **argv)
     asfPrintStatus("   Converting a metadata file ");
   else if (inFormat == LEADER) 
     asfPrintStatus("   Converting a leader file ");
+  else if (inFormat == STF_META)
+    asfPrintStatus("   Converting an STF file ");
   else if (inFormat == CSV)
     asfPrintStatus("   Converting a generic csv file ");
   else if (inFormat == AUIG)
