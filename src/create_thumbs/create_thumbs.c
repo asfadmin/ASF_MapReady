@@ -561,7 +561,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       float *line = MALLOC (sizeof(float) * ns);
       unsigned short *shorts = MALLOC (sizeof(unsigned short) * ns);
       unsigned char *bytes = MALLOC (sizeof(unsigned char)  * ns);
-      unsigned short *cpx_shorts = MALLOC (sizeof(unsigned short) * 2 * ns);
+      short *cpx_shorts = MALLOC (sizeof(short) * 2 * ns);
       unsigned char *cpx_bytes = MALLOC (sizeof(unsigned char) * 2 * ns);
       float *cpx_floats = MALLOC(sizeof(float)* 2 * ns);
       float re, im;
@@ -601,7 +601,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 	  }
 	}
 	else if (imd->general->data_type == COMPLEX_INTEGER16) {
-	  FREAD(cpx_shorts, sizeof(unsigned short), 2*ns, fpIn);
+	  FREAD(cpx_shorts, sizeof(short), 2*ns, fpIn);
 	  for (jj = 0; jj < imd->general->sample_count; ++jj) {
 	    big16(cpx_shorts[jj*2]);
 	    big16(cpx_shorts[jj*2+1]);
