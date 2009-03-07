@@ -216,6 +216,7 @@ meta_parameters *meta_read_stf(const char *inFile)
 		  &meta->general->center_latitude,
 		  &meta->general->center_longitude);
   meta_get_corner_coords(meta);
+  remove_dir(tmpDir);
 
   return meta;
 }
