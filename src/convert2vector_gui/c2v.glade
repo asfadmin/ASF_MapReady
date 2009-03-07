@@ -156,7 +156,8 @@ Geotiff
 AUIG
 URSA
 Generic CSV
-Terrasar</property>
+Terrasar
+STF</property>
 			      <property name="add_tearoffs">False</property>
 			      <property name="focus_on_click">True</property>
 			      <signal name="changed" handler="on_input_format_combobox_changed" last_modification_time="Tue, 08 Apr 2008 22:29:38 GMT"/>

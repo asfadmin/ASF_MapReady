@@ -44,6 +44,7 @@ const char *input_format_to_str(int input_format)
     case INPUT_GENERIC_CSV: return "CSV";
     case INPUT_URSA: return "URSA";
     case INPUT_TERRASAR: return "TERRASAR";
+    case INPUT_STF: return "STF";
     default: assert(0); return "";
   }
 }

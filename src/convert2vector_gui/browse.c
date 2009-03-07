@@ -25,6 +25,7 @@ int ispolygon(char *inFile);
 int isshape(char *inFile);
 int isgeotiff(char *inFile);
 int isrgps(char *inFile);
+int isparfile(char *inFile);
 
 void clear_results_message()
 {
@@ -166,6 +167,11 @@ void select_defaults_by_file_type(char *f, int set_output_also)
     }
     else if (isleader(f)) {
       set_combo_box_item("input_format_combobox", INPUT_LEADER);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
+    }
+    else if (isparfile(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_STF);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
@@ -430,6 +436,13 @@ static void create_input_file_chooser_dialog()
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 gxml_filt);
 
+    GtkFileFilter *par_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(par_filt, "Sky Telemetry Format (STF) Files "
+			     "(*.par)");
+    gtk_file_filter_add_pattern(par_filt, "*.par");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                par_filt);
+
     //GtkFileFilter *rgps_filt = gtk_file_filter_new();
     //gtk_file_filter_set_name(rgps_filt, "RPGS Cell Files (*.rpgs)");
     //gtk_file_filter_add_pattern(rgps_filt, "*.rpgs");
@@ -523,6 +536,7 @@ static void input_file_browse(void)
         "KML Files (*.kml)\0*.kml\0"
         "Geotiff Files (*.tif)\0*.tif\0"
         "Terrasar Files (*.xml)\0*.xml\0"
+        "Sky Telemetry Format (STF) Files (*.par)\0*.par\0"
       //"RPGS Files (*.rgps)\0*.rgps\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
