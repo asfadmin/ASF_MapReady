@@ -370,7 +370,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     FloatImage *img;
     char **inBandName = NULL, **inMetaName = NULL;
     char baseName[512];
-    int nBands, trailer, ns;
+    int nBands, trailer, ns, nLooks;
     ceos_file_pairs_t ceos_pair = NO_CEOS_FILE_PAIR;
 
     //Check that input data is available
@@ -398,7 +398,10 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     ns = imd->general->sample_count;
 
     if (imd->general->data_type != BYTE &&
-        imd->general->data_type != INTEGER16)
+        imd->general->data_type != INTEGER16 &&
+	imd->general->data_type != COMPLEX_BYTE &&
+	imd->general->data_type != COMPLEX_INTEGER16 &&
+	imd->general->data_type != COMPLEX_REAL32)
     // Turning off support for these guys for now.
     //    imd->general->data_type != INTEGER32 &&
     //    imd->general->data_type != REAL32 &&
@@ -502,9 +505,15 @@ int generate_ceos_thumbnail(const char *input_data, int size,
             larger_dim = (float)MIN_DIMENSION;
         }
 
+	// Complex data need to be multilooked
+	if (imd->general->data_type >= COMPLEX_BYTE)
+	  nLooks = imd->sar->look_count;
+	else
+	  nLooks = 1;
+
         // Vertical and horizontal scale factors required to meet the
         // max_thumbnail_dimension part of the interface contract.
-        float vsf = (float)imd->general->line_count / larger_dim;
+        float vsf = (float)imd->general->line_count / larger_dim / nLooks;
         float hsf = (float)imd->general->sample_count / larger_dim;
 
         // Overall scale factor to use is the greater of vsf and hsf.
@@ -532,7 +541,8 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       isf = (size_t)(sf + 0.5); // Round to nearest integer
       isf = isf < 1 ? 1 : isf; // Only allow scaling down, not up
       size_t tsx = (size_t)((float)imd->general->sample_count / isf);
-      size_t tsy = (size_t)((float)imd->general->line_count / isf);
+      size_t tsy = (size_t)((float)imd->general->line_count / isf / 
+			    (float)nLooks + 0.99);
       asfPrintStatus("\nScaling image by closest integer scale factor (%d.0).  Scaling to: %d by %d\n",
           isf, tsx, tsy);
       if (size > imd->general->sample_count &&
@@ -548,33 +558,66 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       larger_dim = tsx > tsy ? tsx : tsy;
 
       size_t ii, jj;
-      unsigned short *line = MALLOC (sizeof(unsigned short) * ns);
+      float *line = MALLOC (sizeof(float) * ns);
+      unsigned short *shorts = MALLOC (sizeof(unsigned short) * ns);
       unsigned char *bytes = MALLOC (sizeof(unsigned char)  * ns);
-
+      unsigned short *cpx_shorts = MALLOC (sizeof(unsigned short) * 2 * ns);
+      unsigned char *cpx_bytes = MALLOC (sizeof(unsigned char) * 2 * ns);
+      float *cpx_floats = MALLOC(sizeof(float)* 2 * ns);
+      float re, im;
+      
       // Here's where we're putting all this data
       img = float_image_new(tsx, tsy);
 
       // Read in data line-by-line
       for ( ii = 0 ; ii < tsy ; ii++ ) {
-        long long offset = (long long)headerBytes+ii*isf*(long long)image_fdr.reclen;
+        long long offset = 
+	  (long long)headerBytes+ii*isf*nLooks*(long long)image_fdr.reclen;
 
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
         {
-          FREAD(line, sizeof(unsigned short), ns, fpIn);
-
+	  FREAD(shorts, sizeof(unsigned short), ns, fpIn);
           for (jj = 0; jj < imd->general->sample_count; ++jj) {
-            big16(line[jj]);
+	    big16(shorts[jj]);
+	    line[jj] = (float) shorts[jj];
           }
         }
         else if (imd->general->data_type == BYTE)
         {
           FREAD(bytes, sizeof(unsigned char), ns, fpIn);
-
           for (jj = 0; jj < imd->general->sample_count; ++jj) {
-            line[jj] = (unsigned short)bytes[jj];
+	    line[jj] = (float) bytes[jj];
           }
         }
+	else if (imd->general->data_type == COMPLEX_REAL32) {
+	  FREAD(cpx_floats, sizeof(float), 2*ns, fpIn);
+	  for (jj = 0; jj < imd->general->sample_count; ++jj) {
+	    big32(cpx_floats[jj*2]);
+	    big32(cpx_floats[jj*2+1]);
+	    re = (float) cpx_floats[jj*2];
+	    im = (float) cpx_floats[jj*2+1];
+	    line[jj] = sqrt(re*re + im*im);
+	  }
+	}
+	else if (imd->general->data_type == COMPLEX_INTEGER16) {
+	  FREAD(cpx_shorts, sizeof(unsigned short), 2*ns, fpIn);
+	  for (jj = 0; jj < imd->general->sample_count; ++jj) {
+	    big16(cpx_shorts[jj*2]);
+	    big16(cpx_shorts[jj*2+1]);
+	    re = (float) cpx_shorts[jj*2];
+	    im = (float) cpx_shorts[jj*2+1];
+	    line[jj] = sqrt(re*re + im*im);
+	  }
+	}
+	else if (imd->general->data_type == COMPLEX_BYTE) {
+	  FREAD(cpx_bytes, sizeof(unsigned char), 2*ns, fpIn);
+	  for (jj = 0; jj < imd->general->sample_count; ++jj) {
+	    re = (float) cpx_bytes[jj*2];
+	    im = (float) cpx_bytes[jj*2+1];
+	    line[jj] = sqrt(re*re + im*im);
+	  }
+	}
 
         int kk; // Array iterator
         for ( jj = 0 ; jj < tsx ; jj++ ) {
@@ -600,6 +643,9 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       }
       FREE (line);
       FREE (bytes);
+      FREE (cpx_floats);
+      FREE (cpx_shorts);
+      FREE (cpx_bytes);
       fclose(fpIn);
     }
 
@@ -866,6 +912,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)inDataName,  /* input basename         */
                        ancillary_file,      /* ancillary file         */
+		       NULL,                // colormap 
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -938,6 +985,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)*dataName,   /* input basename         */
                        ancillary_file,      /* ancillary file         */
+		       NULL,                // colormap
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -998,6 +1046,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)file,        /* input basename         */
                        ancillary_file,      /* ancillary file         */
+		       NULL,                // colormap
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
