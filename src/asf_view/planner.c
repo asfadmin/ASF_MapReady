@@ -272,8 +272,8 @@ static void clear_found()
 }
 
 static int s_ref_hour = 6;
-static int s_ref_min = 5;
-static int s_ref_sec = 55;
+static int s_ref_min = 6;
+static int s_ref_sec = 17;
 
 static int get_alos_orbit_number_at_time(double time)
 {
@@ -441,14 +441,14 @@ static void populate_config_info()
         free(tmp);
 
         if (!fgets(s, 255, fp))
-          strcpy(s,"reference time = 6:05:55");
+          strcpy(s,"reference time = 6:06:17");
         split2(s, '=', &junk, &tmp);
         if (strcmp_case(junk, "reference time")!=0) {
           printf("Invalid config file file 4, "
                  "does not specify reference time.\n");
           s_ref_hour = 6;
-          s_ref_min = 5;
-          s_ref_sec = 55;
+          s_ref_min = 6;
+          s_ref_sec = 17;
         }
         else {
           sscanf(tmp, "%d:%d:%d", &s_ref_hour, &s_ref_min, &s_ref_sec);
@@ -880,7 +880,7 @@ static void calibrate_pass(long startdate, long enddate,
   int last_m = -1;
   int last_s = -1;
 
-  for (m=4; m<=6; ++m) {
+  for (m=3; m<=9; ++m) {
     for (s=0; s<=59; ++s) {
 
       s_ref_min = m;
@@ -892,20 +892,13 @@ static void calibrate_pass(long startdate, long enddate,
                                       lo_lon2, hi_lon2);
 
       if (path1==expected_path1 && path2==expected_path2) {
-        //printf("6:%02d:%02d %3d/%3d %3d/%3d ok\n", m, s,
-        //       path1, expected_path1, path2, expected_path2);
         last_m=m; last_s=s;
         if (first_m==-1) {
           first_m=m; first_s=s;
         }
       }
-      else {
-        //printf("6:%02d:%02d %3d/%3d %3d/%3d\n", m, s,
-        //       path1, expected_path1, path2, expected_path2);
-      }
     }
   }
-  asfPercentMeter(1.0);
 
   int fs = first_s + 60*first_m;
   int ls = last_s + 60*last_m;
@@ -958,45 +951,69 @@ void calibrate_planner_reference()
   s_ref_sec = ref - 60*(s_ref_min+s_ref_hour*60);
 
   printf("Writing configuration file...\n");
-
-  const char *cfg_filename = "planner.cfg";
   printf("Share dir: %s\n", get_asf_share_dir());
 
-  FILE *fp = fopen_share_file(cfg_filename, "r");
-  if (!fp) {
-    printf("Could not open configuration file!\n"
-           "  %s\n"
-           "  %s\n", cfg_filename, strerror(errno));
-  }
-  else {
-    char lines[10][256];
-    int l = 0;
-
-    while (fgets(lines[l], 255, fp) != NULL) {
-      if (strncmp(lines[l], "reference time", 14)==0)
-        sprintf(lines[l], "reference time = %02d:%02d:%02d\n",
-                s_ref_hour, s_ref_min, s_ref_sec);
-      if (++l>=10)
-        asfPrintError("Config file is too long!\n");
-    }
-    fclose(fp);
-
-    fp = fopen_share_file(cfg_filename, "w");
+  const char *cfgfile = "planner.cfg";
+  char *full_config_filename = find_in_share(cfgfile);
+  printf("Full: %s\n", full_config_filename);
+  if (fileExists(full_config_filename)) {
+    // file exists already, update entries with new reference
+    FILE *fp = fopen_share_file(cfgfile, "r");
     if (!fp) {
       printf("Could not open configuration file!\n"
              "  %s\n"
-             "  %s\n", cfg_filename, strerror(errno));
+             "  %s\n", full_config_filename, strerror(errno));
     }
     else {
-      int c = 0;
-      while (c<l) {
-        fprintf(fp, "%s", lines[c++]);
+      char lines[10][256];
+      int l = 0;
+      
+      while (fgets(lines[l], 255, fp) != NULL) {
+        if (strncmp(lines[l], "reference time", 14)==0)
+          sprintf(lines[l], "reference time = %02d:%02d:%02d\n",
+                  s_ref_hour, s_ref_min, s_ref_sec);
+        if (++l>=10)
+          asfPrintError("Config file is too long!\n");
       }
       fclose(fp);
+      
+      fp = fopen_share_file(cfgfile, "w");
+      if (!fp) {
+        printf("Could not open configuration file!\n"
+               "  %s\n"
+               "  %s\n", full_config_filename, strerror(errno));
+      }
+      else {
+        int c = 0;
+        while (c<l) {
+          fprintf(fp, "%s", lines[c++]);
+        }
+        fclose(fp);
+      }
     }
+
+    printf("Updated reference time in the configuration file.\n");
+  }
+  else {
+    // file does not exist yet, populate with defaults
+    FILE *ofp = fopen_share_file(cfgfile, "w");
+    if (!ofp) {
+      printf("Could not open configuration file!\n"
+             "  %s\n"
+             "  %s\n", full_config_filename, strerror(errno));
+    }
+    else {
+      fprintf(ofp, "output directory = \n");
+      fprintf(ofp, "output file = output.csv\n");
+      fprintf(ofp, "max days = 30\n");
+      fprintf(ofp, "reference time = %02d:%02d:%02d\n",
+              s_ref_hour, s_ref_min, s_ref_sec);
+      fclose(ofp);
+    }
+
+    printf("Wrote new configuration file with reference time.\n");
   }
 
-  printf("Updated reference time in the configuration file.\n");
   printf("Calibration complete.\n");
   exit(1);
 }
