@@ -307,7 +307,7 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
 
   double time_adjustment = cycles_adjustment*repeat_cycle_time;
   if (cycles_adjustment != 0)
-    printf("Adjusted start/end times %s by %d repeat cycle%s.\n",
+    asfPrintStatus("Adjusted start/end times %s by %d repeat cycle%s.\n",
            cycles_adjustment > 0 ? "forward" : "backward",
            cycles_adjustment > 0 ? cycles_adjustment : -cycles_adjustment,
            cycles_adjustment == 1 || cycles_adjustment == -1 ? "" : "s");
@@ -316,24 +316,24 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
   assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);
 
   if (is_utm(zone)) {
-    printf("Target: UTM zone %d\n"
-           "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n"
-           "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n",
-           zone,
-           aoi->x[0], aoi->y[0],
-           aoi->x[1], aoi->y[1],
-           aoi->x[2], aoi->y[2],
-           aoi->x[3], aoi->y[3]);
+    asfPrintStatus("Target: UTM zone %d\n"
+                   "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n"
+                   "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n",
+                   zone,
+                   aoi->x[0], aoi->y[0],
+                   aoi->x[1], aoi->y[1],
+                   aoi->x[2], aoi->y[2],
+                   aoi->x[3], aoi->y[3]);
   }
   else {
-    printf("Target: Polar Stereo %s\n"
-           "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n"
-           "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n",
-           zone>0 ? "North" : "South",
-           aoi->x[0], aoi->y[0],
-           aoi->x[1], aoi->y[1],
-           aoi->x[2], aoi->y[2],
-           aoi->x[3], aoi->y[3]);
+    asfPrintStatus("Target: Polar Stereo %s\n"
+                   "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n"
+                   "  (%10.2f, %10.2f)  (%10.2f, %10.2f)\n",
+                   zone>0 ? "North" : "South",
+                   aoi->x[0], aoi->y[0],
+                   aoi->x[1], aoi->y[1],
+                   aoi->x[2], aoi->y[2],
+                   aoi->x[3], aoi->y[3]);
   }
 
   double curr = start_secs;
@@ -348,7 +348,7 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
   // zero seconds, then we want 0 lead-up frames.
   PassCollection *pc = pass_collection_new(clat, clon, aoi);
 
-  printf("Searching...\n");
+  asfPrintStatus("Searching...\n");
   while (curr < end_secs) {
     st = tle_propagate(&sat, curr);
     char dir = sat.ssplat > lat_prev ? 'A' : 'D';
@@ -456,14 +456,14 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
         }
         else
         {
-          printf("Invalid pass found.  Skipped... \n"
-                 " -- number of frames: %d, dir: %c\n"
-                 " -- date: %s, orbit %d, %f\n --> (%f,%f,%f)\n",
-                 n, pass_info->dir,
-                 pass_info->start_time_as_string,
-                 pass_info->orbit, pass_info->orbit_part,
-                 pass_info->start_lat, pass_info->stop_lat,
-                 pass_info->duration);
+          asfPrintStatus("Invalid pass found.  Skipped... \n"
+                         " -- number of frames: %d, dir: %c\n"
+                         " -- date: %s, orbit %d, %f\n --> (%f,%f,%f)\n",
+                         n, pass_info->dir,
+                         pass_info->start_time_as_string,
+                         pass_info->orbit, pass_info->orbit_part,
+                         pass_info->start_lat, pass_info->stop_lat,
+                         pass_info->duration);
         }
       }
     }
