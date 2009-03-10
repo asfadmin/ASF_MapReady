@@ -1538,13 +1538,14 @@ view_faraday(GtkWidget *widget, GdkEvent *event)
 SIGNAL_CALLBACK gint
 view_hist(GtkWidget *widget, GdkEvent *event)
 {
-  return handle_view_intermediate(COMP_COL_HIST_FILE, "-lut polarimetry");
+  return handle_view_intermediate(COMP_COL_HIST_FILE, "-colormap polarimetry");
 }
 
 SIGNAL_CALLBACK gint
 view_class_map(GtkWidget *widget, GdkEvent *event)
 {
-  return handle_view_intermediate(COMP_COL_CLASS_MAP_FILE, "-lut cloude16");
+  return handle_view_intermediate(COMP_COL_CLASS_MAP_FILE,
+                                  "-colormap cloude16");
 }
 
 static void
