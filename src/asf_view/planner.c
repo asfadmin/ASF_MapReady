@@ -918,25 +918,25 @@ void calibrate_planner_reference()
   printf("Calibrating reference time ... \n");
   int ref1, ref2, ref3, ref4;
 
-  printf("Area 1...\n");
+  printf("Area 1... (longitude -150)\n");
   calibrate_pass(20090315, 20090315,
                  1.24, 1.54, -150.55, -150.13, 239,
                  1.77, 2.09, -150.62, -150.22, 285, &ref1);
   printf("Reference for 1: %s\n", ref_str(ref1));
 
-  printf("Area 2...\n");
+  printf("Area 2... (longitude 30)\n");
   calibrate_pass(20090306, 20090306,
                  0.94, 1.19, 29.81, 30.18, 574,
                  1.49, 2.86, 29.64, 30.01, 620, &ref2);
   printf("Reference for 2: %s\n", ref_str(ref2));
 
-  printf("Area 3...\n");
+  printf("Area 3... (longitude 109)\n");
   calibrate_pass(20090320, 20090320,
                  1.23, 1.55, 109.17, 109.55, 426,
                  1.86, 2.14, 109.06, 109.43, 472, &ref3);
   printf("Reference for 3: %s\n", ref_str(ref3));
 
-  printf("Area 4...\n");
+  printf("Area 4... (longitude -54)\n");
   calibrate_pass(20090325, 20090325,
                  0.72, 1.00, -54.85, -54.45, 61,
                  1.23, 1.55, -54.98, -54.62, 107, &ref4);
