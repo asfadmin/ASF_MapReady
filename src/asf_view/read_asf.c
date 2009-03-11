@@ -495,7 +495,8 @@ int open_asf_data(const char *filename, const char *band, int multilook,
         meta->general->band_count >= 3)
     {
         // no band was specifed -- show true color (3,2,1)
-        asfPrintStatus("Avnir data: defaulting to TRUE color -- 3,2,1\n");
+        asfPrintStatus("Avnir data: defaulting to TRUE color -- "
+                       "Red=3, Green=2, Blue=1\n");
         band = "03,02,01";
     }
 

@@ -380,4 +380,9 @@ extern int last_was_crosshair;
 
 extern int is_asf_internal;
 
+extern int ignore_grey_value;
+extern int ignore_red_value;
+extern int ignore_green_value;
+extern int ignore_blue_value;
+
 #endif

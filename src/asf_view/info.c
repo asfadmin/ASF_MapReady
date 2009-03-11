@@ -111,10 +111,24 @@ void update_pixel_info(ImageInfo *ii)
         }
         else if (data_ci->data_type == RGB_BYTE) {
             unsigned char r, g, b;
+            float rf, gf, bf;
             cached_image_get_rgb(data_ci, crosshair_line, crosshair_samp,
                 &r, &g, &b);
-            sprintf(&buf[strlen(buf)], "Pixel Value: R,G,B = %d, %d, %d\n",
-                (int)r, (int)g, (int)b);
+            cached_image_get_rgb_float(data_ci, crosshair_line, crosshair_samp,
+                &rf, &gf, &bf);
+
+            if (!is_ignored_rgb(&ii->stats_r, rf) &&
+                !is_ignored_rgb(&ii->stats_g, gf) &&
+                !is_ignored_rgb(&ii->stats_b, bf))
+            {
+              sprintf(&buf[strlen(buf)], "Pixel Value: R,G,B = %d, %d, %d\n",
+                      (int)r, (int)g, (int)b);
+            }
+            else {
+              sprintf(&buf[strlen(buf)],
+                      "Pixel Value: R,G,B = %d,%d,%d [ignored]\n",
+                      (int)rf, (int)gf, (int)bf);
+            }
         }
         else if (data_ci->data_type == GREYSCALE_BYTE) {
             unsigned char r, g, b;
@@ -143,8 +157,8 @@ void update_pixel_info(ImageInfo *ii)
                     sprintf(&buf[strlen(buf)], "Pixel Value: %d\n", gs);
                 }
                 else {
-                  sprintf(&buf[strlen(buf)], "Pixel Value: %d -> %d\n",
-                          gs, (int)r);
+                    sprintf(&buf[strlen(buf)], "Pixel Value: %d -> %d\n",
+                            gs, (int)r);
                 }
             }
         }

@@ -3,6 +3,14 @@
 // global variable for the image stats
 // ImageStats g_stats;
 
+// note that these ignore values aren't fully hooked up yet -- decided
+// that to put the checks for this in the make_big_image() code would
+// be too expensive
+int ignore_grey_value = 0;
+int ignore_red_value = 0;
+int ignore_green_value = 0;
+int ignore_blue_value = 0;
+
 void clear_stats(ImageInfo *ii)
 {
     ii->stats.avg = 0.0;
@@ -50,36 +58,84 @@ int is_ignored_rgb(ImageStatsRGB *stats, float val)
     return FALSE;
 }
 
+static void set_ignores_rgb(ImageStatsRGB *stats, const char *clr)
+{
+  char buf[128];
+  sprintf(buf, "%s_ignore_value_checkbutton", clr);
+  stats->have_no_data = get_checked(buf);
+
+  if (stats->have_no_data) {
+    sprintf(buf, "%s_ignore_value_entry", clr);
+    stats->no_data_value = get_double_from_entry(buf);
+  }
+  else {
+    stats->no_data_value = 0;
+  }
+
+  sprintf(buf, "%s_ignore_range_checkbutton", clr);
+  stats->have_no_data_range = get_checked(buf);
+  if (stats->have_no_data_range) {
+    sprintf(buf, "%s_ignore_range_min_entry", clr);
+    stats->no_data_min = get_double_from_entry(buf);
+    sprintf(buf, "%s_ignore_range_max_entry", clr);
+    stats->no_data_max = get_double_from_entry(buf);
+  }
+  else {
+    stats->no_data_min = 0;
+    stats->no_data_max = 0;
+  }
+}
+
 static void set_ignores(ImageInfo *ii, int from_gui)
 {
-  ImageStats *stats = &ii->stats;
-  if (from_gui) {
-    stats->have_no_data = get_checked("gs_ignore_value_checkbutton");
-    if (stats->have_no_data)
-      stats->no_data_value = get_double_from_entry("gs_ignore_value_entry");
-    else
-      stats->no_data_value = 0;
-    
-    stats->have_no_data_range = get_checked("gs_ignore_range_checkbutton");
-    if (stats->have_no_data_range) {
-      stats->no_data_min = get_double_from_entry("gs_ignore_range_min_entry");
-      stats->no_data_max = get_double_from_entry("gs_ignore_range_max_entry");
+  if (ii->data_ci->data_type == GREYSCALE_FLOAT ||
+      ii->data_ci->data_type == GREYSCALE_BYTE)
+  {  
+    ImageStats *stats = &ii->stats;
+    if (from_gui) {
+      stats->have_no_data = get_checked("gs_ignore_value_checkbutton");
+      if (stats->have_no_data)
+        stats->no_data_value = get_double_from_entry("gs_ignore_value_entry");
+      else
+        stats->no_data_value = 0;
+      
+      stats->have_no_data_range = get_checked("gs_ignore_range_checkbutton");
+      if (stats->have_no_data_range) {
+        stats->no_data_min = get_double_from_entry("gs_ignore_range_min_entry");
+        stats->no_data_max = get_double_from_entry("gs_ignore_range_max_entry");
+      }
+      else {
+        stats->no_data_min = 0;
+        stats->no_data_max = 0;
+      }
     }
     else {
-      stats->no_data_min = 0;
-      stats->no_data_max = 0;
+      if (meta_is_valid_double(ii->meta->general->no_data)) {
+        stats->have_no_data = TRUE;
+        stats->no_data_value = ii->meta->general->no_data;
+      } else {
+        stats->have_no_data = FALSE;
+        stats->no_data_value = -99999; // should never be checked
+      }
+      
+      stats->have_no_data_range = FALSE;
     }
   }
   else {
-    if (meta_is_valid_double(ii->meta->general->no_data)) {
-      stats->have_no_data = TRUE;
-      stats->no_data_value = ii->meta->general->no_data;
-    } else {
-      stats->have_no_data = FALSE;
-      stats->no_data_value = -99999; // should never be checked
+    if (from_gui) {
+      set_ignores_rgb(&ii->stats_r, "red");
+      set_ignores_rgb(&ii->stats_g, "green");
+      set_ignores_rgb(&ii->stats_b, "blue");
+    }
+    else {
+      ii->stats_r.have_no_data = FALSE;
+      ii->stats_r.have_no_data_range = FALSE;
+      ii->stats_g.have_no_data = FALSE;
+      ii->stats_g.have_no_data_range = FALSE;
+      ii->stats_b.have_no_data = FALSE;
+      ii->stats_b.have_no_data_range = FALSE;
     }
 
-    stats->have_no_data_range = FALSE;
   }
 }
 
@@ -260,62 +316,62 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                     float v = fdata[j+i*tsx];
                     if (!is_ignored(stats, v) && fabs(v)<999999999)
                     {
-                        ii->stats.avg += v;
+                        stats->avg += v;
 
                         // first valid pixel --> initialize max/min
                         // subsequent pixels --> update max/min if needed
                         if (n==0) {
-                            ii->stats.act_max = ii->stats.act_min = v;
+                            stats->act_max = stats->act_min = v;
                         } else {
-                            if (v > ii->stats.act_max)
-                              ii->stats.act_max = v;
-                            if (v < ii->stats.act_min)
-                              ii->stats.act_min = v;
+                            if (v > stats->act_max)
+                              stats->act_max = v;
+                            if (v < stats->act_min)
+                              stats->act_min = v;
                         }
                         ++n;
                     }
                 }
             }
-            ii->stats.avg /= (double)n;
+            stats->avg /= (double)n;
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
                     if (!is_ignored(stats, v) && fabs(v)<999999999)
                     {
-                        ii->stats.stddev +=
-                          (v - ii->stats.avg)*(v - ii->stats.avg);
+                        stats->stddev +=
+                          (v - stats->avg)*(v - stats->avg);
                     }
                 }
             }
-            ii->stats.stddev = sqrt(ii->stats.stddev / (double)n);
+            stats->stddev = sqrt(stats->stddev / (double)n);
         } else {
             // Compute stats, no ignore (actually, do ignore data that is NaN)
-            ii->stats.act_max = ii->stats.act_min = fdata[0];
+            stats->act_max = stats->act_min = fdata[0];
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
                     // added in the fabs<999... thing... sometimes values
                     // are just ridiculous and we must ignore them
                     if (meta_is_valid_double(v) && fabs(v)<999999999) {
-                        ii->stats.avg += v;
-                        if (v > ii->stats.act_max) ii->stats.act_max = v;
-                        if (v < ii->stats.act_min) ii->stats.act_min = v;
+                        stats->avg += v;
+                        if (v > stats->act_max) stats->act_max = v;
+                        if (v < stats->act_min) stats->act_min = v;
                     }
                 }
             }
-            ii->stats.avg /= (double)(tsx*tsy);
+            stats->avg /= (double)(tsx*tsy);
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
                     if (meta_is_valid_double(v) && fabs(v)<999999999)
-                        ii->stats.stddev +=
-                          (v - ii->stats.avg) * (v - ii->stats.avg);
+                        stats->stddev +=
+                          (v - stats->avg) * (v - stats->avg);
                 }
             }
-            ii->stats.stddev = sqrt(ii->stats.stddev / (double)(tsx*tsy));
+            stats->stddev = sqrt(stats->stddev / (double)(tsx*tsy));
         }
 
-        //printf("Avg, StdDev: %f, %f\n", ii->stats.avg, ii->stats.stddev);
+        //printf("Avg, StdDev: %f, %f\n", stats->avg, stats->stddev);
 
         set_mapping(ii, glade_xml!=NULL);
 
@@ -332,7 +388,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
                     int ival;
                     if (is_ignored(stats, val) || ival<0)
-                        ival = 0;
+                        ival = ignore_grey_value;
                     else
                         ival = (int)val;
 
@@ -341,8 +397,8 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                     // histogram will appear as if we were scaling
                     // to greyscale byte
                     unsigned char uval = (unsigned char)
-                      calc_scaled_pixel_value(&(ii->stats), val);
-                    ii->stats.hist[uval] += 1;
+                      calc_scaled_pixel_value(stats, val);
+                    stats->hist[uval] += 1;
                 }
             }
 
@@ -359,14 +415,14 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                       calc_scaled_pixel_value(stats, val);
 
                     if (is_ignored(stats, val)) {
-                      bdata[n] = bdata[n+1] = bdata[n+2] = 0;
+                      bdata[n] = bdata[n+1] = bdata[n+2] = ignore_grey_value;
                     }
                     else {
                       bdata[n] = uval;
                       bdata[n+1] = uval;
                       bdata[n+2] = uval;
 
-                      ii->stats.hist[uval] += 1;
+                      stats->hist[uval] += 1;
                     }
                 }
             }
@@ -466,21 +522,31 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
         // clear out the stats for the greyscale image - we'll just use
         // the histogram
-        ii->stats.avg = 0;
-        ii->stats.stddev = 0;
-        ii->stats.map_min = 0;
-        ii->stats.map_max = 0;
+        stats->avg = 0;
+        stats->stddev = 0;
+        stats->map_min = 0;
+        stats->map_max = 0;
 
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
                 int kk = 3*(j+i*tsx);
 
-                bdata[kk] = (unsigned char)calc_rgb_scaled_pixel_value(
-                  stats_r, rgbdata[kk]);
-                bdata[kk+1] = (unsigned char)calc_rgb_scaled_pixel_value(
-                  stats_g, rgbdata[kk+1]);
-                bdata[kk+2] = (unsigned char)calc_rgb_scaled_pixel_value(
-                  stats_b, rgbdata[kk+2]);
+                if (!is_ignored_rgb(stats_r, rgbdata[kk]) &&
+                    !is_ignored_rgb(stats_g, rgbdata[kk+1]) &&
+                    !is_ignored_rgb(stats_b, rgbdata[kk+2]))
+                {
+                  bdata[kk] = (unsigned char)calc_rgb_scaled_pixel_value(
+                    stats_r, rgbdata[kk]);
+                  bdata[kk+1] = (unsigned char)calc_rgb_scaled_pixel_value(
+                    stats_g, rgbdata[kk+1]);
+                  bdata[kk+2] = (unsigned char)calc_rgb_scaled_pixel_value(
+                    stats_b, rgbdata[kk+2]);
+                }
+                else {
+                  bdata[kk] = ignore_red_value;
+                  bdata[kk+1] = ignore_green_value;
+                  bdata[kk+2] = ignore_blue_value;
+                }
             }
         }
 
@@ -493,7 +559,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                     !is_ignored_rgb(stats_b, rgbdata[kk+2]))
                 {   
                   unsigned char uval = (bdata[kk]+bdata[kk+1]+bdata[kk+2])/3;
-                  ii->stats.hist[uval] += 1;
+                  stats->hist[uval] += 1;
                 }
             }
         }
@@ -509,31 +575,30 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         load_thumbnail_data(ii->data_ci, tsx, tsy, (void*)gsdata);
         set_ignores(ii, glade_xml!=NULL);
 
-        ii->stats.act_max = 0;
-        ii->stats.act_min = 255;
-        ii->stats.map_min = 0;
-        ii->stats.map_max = 255;
+        stats->act_max = 0;
+        stats->act_min = 255;
+        stats->map_min = 0;
+        stats->map_max = 255;
 
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
                 unsigned char uval = gsdata[j+i*tsx];
 
-                ii->stats.avg += uval;
-                if (uval > ii->stats.act_max) ii->stats.act_max = uval;
-                if (uval < ii->stats.act_min) ii->stats.act_min = uval;
+                stats->avg += uval;
+                if (uval > stats->act_max) stats->act_max = uval;
+                if (uval < stats->act_min) stats->act_min = uval;
             }
         }
 
-        ii->stats.avg /= (double)(tsx*tsy);
+        stats->avg /= (double)(tsx*tsy);
 
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
                 unsigned char uval = gsdata[j+i*tsx];
-                ii->stats.stddev +=
-                  (uval - ii->stats.avg) * (uval - ii->stats.avg);
+                stats->stddev += (uval - stats->avg) * (uval - stats->avg);
             }
         }
-        ii->stats.stddev = sqrt(ii->stats.stddev / (double)(tsx*tsy));
+        stats->stddev = sqrt(stats->stddev / (double)(tsx*tsy));
 
         set_mapping(ii, glade_xml!=NULL);
 
@@ -544,14 +609,17 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
                 if (have_lut()) {
                     apply_lut(uval, &bdata[kk], &bdata[kk+1], &bdata[kk+2]);
-                    ii->stats.hist[uval] += 1;
+                    stats->hist[uval] += 1;
                 }
-                else if (!is_ignored(&ii->stats, uval)) {
+                else if (!is_ignored(stats, uval)) {
                     // apply selected scaling to display values
                     unsigned char display_value = (unsigned char)
-                        calc_scaled_pixel_value(&ii->stats, uval);
+                        calc_scaled_pixel_value(stats, uval);
                     bdata[kk] = bdata[kk+1] = bdata[kk+2] = display_value;
-                    ii->stats.hist[display_value] += 1;
+                    stats->hist[display_value] += 1;
+                }
+                else {
+                    bdata[kk] = bdata[kk+1] = bdata[kk+2] = ignore_grey_value;
                 }
             }
         }
@@ -648,21 +716,31 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
         // clear out the stats for the greyscale image - we'll just use
         // the histogram
-        ii->stats.avg = 0;
-        ii->stats.stddev = 0;
-        ii->stats.map_min = 0;
-        ii->stats.map_max = 0;
+        stats->avg = 0;
+        stats->stddev = 0;
+        stats->map_min = 0;
+        stats->map_max = 0;
 
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
                 int kk = 3*(j+i*tsx);
 
-                bdata[kk] = (unsigned char)calc_rgb_scaled_pixel_value(
-                  stats_r, fdata[kk]);
-                bdata[kk+1] = (unsigned char)calc_rgb_scaled_pixel_value(
-                  stats_g, fdata[kk+1]);
-                bdata[kk+2] = (unsigned char)calc_rgb_scaled_pixel_value(
-                  stats_b, fdata[kk+2]);
+                if (!is_ignored_rgb(stats_r, fdata[kk]) &&
+                    !is_ignored_rgb(stats_g, fdata[kk+1]) &&
+                    !is_ignored_rgb(stats_b, fdata[kk+2]))
+                {
+                  bdata[kk] = (unsigned char)calc_rgb_scaled_pixel_value(
+                    stats_r, fdata[kk]);
+                  bdata[kk+1] = (unsigned char)calc_rgb_scaled_pixel_value(
+                    stats_g, fdata[kk+1]);
+                  bdata[kk+2] = (unsigned char)calc_rgb_scaled_pixel_value(
+                    stats_b, fdata[kk+2]);
+                }
+                else {
+                  bdata[kk] = ignore_red_value;
+                  bdata[kk+1] = ignore_green_value;
+                  bdata[kk+2] = ignore_blue_value;
+                }
             }
         }
 
@@ -675,7 +753,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                     !is_ignored_rgb(stats_b, fdata[kk+2]))
                 {   
                   unsigned char uval = (bdata[kk]+bdata[kk+1]+bdata[kk+2])/3;
-                  ii->stats.hist[uval] += 1;
+                  stats->hist[uval] += 1;
                 }
             }
         }
@@ -736,10 +814,6 @@ static void fill_stats_label(ImageInfo *ii)
     char s[1024];
     strcpy(s, "");
 
-    // Not sure we should put the Max/Min in here... after all, these
-    // are only from a subset.  The aggregate values (avg, stddev, mapping)
-    // will be fine, but max/min could be quite far off, if there are
-    // an outlier or two.
     if (ii->data_ci->data_type == RGB_FLOAT ||
         ii->data_ci->data_type == RGB_BYTE)
     {
@@ -774,7 +848,7 @@ static void fill_stats_label(ImageInfo *ii)
               fabs(bb));
     }
     else {
-      // y = m*x + b
+      // greyscale case
       double m, b;
 
       if (ii->stats.truncate) {
