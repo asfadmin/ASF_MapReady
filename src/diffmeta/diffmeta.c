@@ -939,9 +939,6 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     validate_string(precheck_err_msgs, mg2->processor,
                     "General", "processor",
                     &failed);
-    validate_string(precheck_err_msgs, mg2->system,
-                    "General", "system",
-                    &failed);
     validate_string(precheck_err_msgs, mg2->acquisition_date,
                     "General", "acquisition_date",
                     &failed);
@@ -2146,8 +2143,6 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                       mg1->mode, mg2->mode, &failed);
   compare_meta_string(compare_err_msgs, "General", "processor",
                       mg1->processor, mg2->processor, &failed);
-  compare_meta_string(compare_err_msgs, "General", "system",
-                      mg1->system, mg2->system, &failed);
   compare_meta_string(compare_err_msgs, "General", "acquisition_date",
                       mg1->acquisition_date, mg2->acquisition_date, &failed);
   compare_meta_enum(compare_err_msgs, "General", "data_type",
