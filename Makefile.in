@@ -179,12 +179,16 @@ IGNORED_INCLUDES = \
 	include/date.h \
 	include/dateUtil.h \
 	include/doppler.h \
+	include/envi.h \
+	include/doppler.h \
 	include/float_image.h \
 	include/frame_calc.h \
+	include/gamma.h \
 	include/get_ceos_names.h \
 	include/get_stf_names.h \
 	include/ips.h \
 	include/libasf_proj.h \
+	include/line_header.h \
 	include/matrix.h \
 	include/metadisplay.h \
 	include/meta_init_stVec.h \
@@ -197,9 +201,9 @@ IGNORED_INCLUDES = \
 	include/sgpsdp.h \
 	include/spheroids.h \
 	include/uint8_image.h \
+	include/ursa.h \
 	include/vector.h \
-	include/asf_jpeg.h \
-	include/gamma.h
+	include/xml_util.h
 
 S_LIBDIR   = lib
 S_BINDIR   = bin
