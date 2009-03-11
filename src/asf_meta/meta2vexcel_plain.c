@@ -31,7 +31,6 @@ meta_parameters* vp2meta(vexcel_plain *vp)
   else if (vp->gli_product.image_desc.bytes_per_pixel == 4)
     meta->general->data_type = REAL32;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
-  strcpy(meta->general->system, meta_get_system());
   meta->general->radiometry = r_AMP;
   date_dssr2date(vp->gli_product.orbit_nr_date, &ymd, &time);
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d", 

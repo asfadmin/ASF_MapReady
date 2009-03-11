@@ -204,8 +204,6 @@ void meta_write(meta_parameters *meta, const char *file_name)
     break;
       }
   }
-  meta_put_string(fp,"system:", meta->general->system,
-      "System of samples (e.g. big_ieee)");
   meta_put_string(fp,"acquisition_date:", meta->general->acquisition_date,
       "Acquisition date of the data");
   meta_put_int   (fp,"orbit:", meta->general->orbit,

@@ -308,7 +308,6 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
     case 9:  meta->general->data_type = COMPLEX_REAL32;    break;
     default: meta->general->data_type = BYTE;              break;
     }
-  strcpy(meta->general->system, meta_get_system());
   if (ceos->facility == BEIJING)
     date_dssr2time(dssr->inp_sctim, &date, &time);
   else
@@ -1217,7 +1216,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   }
   else {
     meta->sar->earth_radius = mpdr->distplat;
-    if (dataName && strlen(dataName))
+    if (dataName && strlen(*dataName))
       meta->sar->chirp_rate = get_chirp_rate(dataName[0]);
   }
   for (ii=0; ii<6; ++ii)
@@ -2236,7 +2235,6 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
 
   meta->general->data_type = BYTE;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
-  strcpy(meta->general->system, meta_get_system());
   if (ceos->shr.sc_time[0] == ' ') {
     date_shr2date_stamp(ceos->shr.acq_date, meta->general->acquisition_date);
   } else if (strlen(ceos->dssr.inp_sctim) > 0) {

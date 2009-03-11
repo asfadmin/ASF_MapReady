@@ -36,7 +36,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 3.1
+#define META_VERSION 3.2
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -154,14 +154,6 @@ typedef struct {
    *  BETA_DB
    *  POWER
    */
-  char system[FIELD_STRING_MAX];    /* System of samples (e.g. "ieee-std") */
-/*  Possible string values for system:                                     *
- *    OUR NAME      DDR EQUIVALENT      WHAT IT IS                         *
- *    big_ieee        ieee-std       IEEE standard (ref 754)               *
- *    lil_ieee        ieee-lil       IEEE standard (ref 754) little-endian *
- *      ???           ibm-mvs        IBM MVS                               *
- *   cray_float       cray-unicos    Cray Y-MP Unicos                      *
- *      ???           other-msc      Misc. Other systems not covered       */
   char acquisition_date[FIELD_STRING_MAX]; // Data acquisition date
   int orbit;                 /* Orbit number of satellite.                 */
   char orbit_direction;      /* Ascending 'A', or descending 'D'.          */

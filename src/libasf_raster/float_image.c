@@ -1972,11 +1972,13 @@ float_image_band_store(FloatImage *self, const char *file,
     asfPrintStatus("Storing band ...\n");
 
   // Establish byte order
+  /*
   float_image_byte_order_t byte_order = 0;
   if (strcmp(meta->general->system, "big_ieee") == 0)
     byte_order = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
   else if (strcmp(meta->general->system, "lil_ieee") == 0)
     byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
+  */
 
   // Open the file to write to.
   FILE *fp = fopen (file, append_flag ? "ab" : "wb");

@@ -442,8 +442,6 @@ void fill_structure_field(char *field_name, void *valp)
       }
       return;
    }
-   if ( !strcmp(field_name, "system") )
-      { strcpy(MGENERAL->system, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "acquisition_date") )
       { strcpy(MGENERAL->acquisition_date, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "orbit") )

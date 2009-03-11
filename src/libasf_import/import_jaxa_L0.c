@@ -169,7 +169,6 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         mg->data_type = BYTE;
         mg->image_data_type = AMPLITUDE_IMAGE; // FIXME: Should this be RAW for Level 0 _optical_ data?
         mg->radiometry = r_AMP;
-        strcpy(mg->system, "lil-ieee");
         strcpy(mg->acquisition_date, "dd-mmm-yy"); // FIXME: Get the acquisition date out of the metadata!
         mg->orbit = MAGIC_UNSET_INT; // FIXME: Fill out the orbit number
         mg->orbit_direction = MAGIC_UNSET_CHAR; // FIXME: Fill out orbit direction, 'A' or 'D'

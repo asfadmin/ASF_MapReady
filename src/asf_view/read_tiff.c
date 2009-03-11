@@ -236,7 +236,6 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
             meta->general->data_type = data_type;
             meta->general->image_data_type = IMAGE;
             strcpy(meta->general->sensor, MAGIC_UNSET_STRING);
-            strcpy(meta->general->system, MAGIC_UNSET_STRING);
             strcpy(meta->general->basename, meta_name);
             meta->general->line_count = height;
             meta->general->sample_count = width;

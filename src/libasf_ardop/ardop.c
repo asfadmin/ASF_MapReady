@@ -179,7 +179,6 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
     meta->sar->azimuth_doppler_coefficients[1] = 0.0;
     meta->sar->azimuth_doppler_coefficients[2] = 0.0;
 
-    strcpy (meta->general->system, meta_get_system());
     meta->general->data_type = REAL32;
     meta->general->band_count = 1;
     meta->general->x_pixel_size = meta->sar->range_time_per_pixel

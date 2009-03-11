@@ -1270,7 +1270,6 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     strcpy(mg->sensor, "USGS Seamless data (e.g., NED, SRTM)");
     strcpy(image_data_type, "DEM");
     mg->image_data_type = DEM;
-    strcpy(mg->system, mg->data_type == REAL32 ? "big_ieee" : MAGIC_UNSET_STRING);
     is_usgs_seamless_geotiff = 1;
   }
   else if (angular_units == Angular_Degree ||
@@ -1282,7 +1281,6 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               "size of 30, 60, 90, 190 meters, i.e. SRTM, NED, DTED, etcetera...\n",
               angular_units_to_string(angular_units));
       strcpy(mg->sensor, "USGS Seamless data (e.g., NED, SRTM)");
-      strcpy(mg->system, mg->data_type == REAL32 ? "big_ieee" : MAGIC_UNSET_STRING);
       is_usgs_seamless_geotiff = 1; // This will turn on conversion of pixel size from degrees to meters
   }
   else {

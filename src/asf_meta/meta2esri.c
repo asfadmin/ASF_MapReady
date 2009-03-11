@@ -80,9 +80,6 @@ meta_parameters* esri2meta(esri_header  *esri)
       break;
     }
 
-  if (esri->byteorder == 'I') sprintf(meta->general->system, "lil_ieee");
-  else if (esri->byteorder == 'M') sprintf(meta->general->system, "big_ieee");
-
   if (!meta->projection) meta->projection = meta_projection_init();
   meta->projection->startX = esri->ulxmap;
   meta->projection->startY = esri->ulymap;

@@ -69,7 +69,6 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
     if (strncmp_case(gamma->image_data_type, "IMAGE_LAYER_STACK", 17) == 0)
       meta->general->image_data_type = IMAGE_LAYER_STACK;
   }
-  strcpy(meta->general->system, meta_get_system());
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d",
     gamma->acquisition.day, mon[gamma->acquisition.month],
     gamma->acquisition.year);
@@ -433,7 +432,6 @@ meta_parameters* gamma_msp2meta(gamma_msp *gamma)
     if (strncmp(uc(gamma->image_data_type), "MASK", 4) == 0)
       meta->general->image_data_type = MASK;
   }
-  strcpy(meta->general->system, meta_get_system());
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d",
           gamma->acquisition.day, mon[gamma->acquisition.month],
           gamma->acquisition.year);

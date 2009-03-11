@@ -29,7 +29,6 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
   else if (strcmp_case(terrasar->imageDataType, "DETECTED") == 0)
     meta->general->image_data_type = AMPLITUDE_IMAGE;
   meta->general->radiometry = r_AMP;
-  strcpy(meta->general->system, "big_ieee");
   date_terrasar2date(terrasar->azimuthTimeUTC, &date, &time);
   sprintf(meta->general->acquisition_date, "%02d-%s-%4d %02d:%02d:%02.0lf",
 	  date.day, mon[date.month], date.year, time.hour, time.min, time.sec);

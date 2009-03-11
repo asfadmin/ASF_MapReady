@@ -359,8 +359,6 @@ meta_parameters* envi2meta(envi_header *envi)
     sprintf(meta->general->sensor, "RSAT-1");
   else 
     sprintf(meta->general->sensor, "%s", envi->sensor_type);
-  if (envi->byte_order == 0) sprintf(meta->general->system, "lil_ieee");
-  else if (envi->byte_order == 1) sprintf(meta->general->system, "big_ieee");
 
   if (strcmp(envi->projection, "not map projected") != 0) {
     if (!meta->projection) meta->projection = meta_projection_init();

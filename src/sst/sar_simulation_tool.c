@@ -208,7 +208,6 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, sat_t *tle)
 	metaSAR->general->data_type = REAL32;
 	metaSAR->general->image_data_type = SIMULATED_IMAGE;
 	metaSAR->general->radiometry = r_AMP;
-	sprintf(metaSAR->general->system, "%s", meta_get_system());
 	metaSAR->general->line_count = size;
 	metaSAR->general->sample_count = size;
 	metaSAR->general->orbit_direction = orbit_direction;
@@ -325,7 +324,6 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, sat_t *tle)
   metaSAR->general->data_type = REAL32;
   metaSAR->general->image_data_type = SIMULATED_IMAGE;
   metaSAR->general->radiometry = r_AMP;
-  sprintf(metaSAR->general->system, "%s", meta_get_system());
   metaSAR->general->line_count = size;
   metaSAR->general->sample_count = size;
   metaSAR->general->orbit_direction = orbit_direction;

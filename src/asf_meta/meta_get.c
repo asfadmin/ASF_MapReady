@@ -163,8 +163,6 @@ double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
     }
     FREE(coeff);
     double dopAzimuthMax = dopAzimuthStart + meta->doppler->tsx->dop[max].time;
-    double dopRangeTimeMax = meta->doppler->tsx->dop[max].first_range_time + 
-      xSample * meta->sar->azimuth_time_per_pixel;
     refTime = meta->doppler->tsx->dop[min].reference_time;
     coeff = (double *) MALLOC(sizeof(double)*
 			      meta->doppler->tsx->dop[max].poly_degree);

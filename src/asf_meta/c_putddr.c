@@ -170,14 +170,6 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
             mds_meta->general->start_sample   = mds_ddr->master_sample - 1;
             mds_meta->sar->line_increment     = mds_ddr->line_inc;
             mds_meta->sar->sample_increment   = mds_ddr->sample_inc;
-            if (0==strcmp(mds_ddr->system,"ieee-std"))
-                    strcpy(mds_meta->general->system,"big_ieee");
-            else if (0==strcmp(mds_ddr->system,"ieee-lil"))
-                    strcpy(mds_meta->general->system,"lil_ieee");
-            else if (0==strcmp(mds_ddr->system,"cray-unicos"))
-                    strcpy(mds_meta->general->system,"cray_float");
-            else /* "ibm-mvs" or "other-msc" */
-                    strcpy(mds_meta->general->system,"???");
             if (mds_meta->sar->image_type=='P')
                     {strcpy(mds_meta->projection->units, mds_ddr->proj_units);}
             switch ( mds_ddr->dtype ) {

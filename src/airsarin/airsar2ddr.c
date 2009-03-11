@@ -201,10 +201,6 @@ void airsar2meta(char* airsarname, meta_parameters *meta)
     else if(!strcmp(dtype, "REAL*8")) meta->general->data_type = REAL64;
     printf(".");
 
-    /* computer system data is on */
-    strcpy(meta->general->system, "ieee_std");
-    printf(".");
-
     /* line relative to master image. */
     meta->general->start_line = 0; 
     printf(".");

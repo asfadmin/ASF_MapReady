@@ -332,14 +332,6 @@ void meta_read_old(meta_parameters *meta, char *fileName)
     general->start_sample   = ddr.master_sample - 1;
     sar->line_increment     = ddr.line_inc;
     sar->sample_increment   = ddr.sample_inc;
-    if (0==strcmp(ddr.system,"ieee-std"))
-      strcpy(meta->general->system,"big_ieee");
-    else if (0==strcmp(ddr.system,"ieee-lil"))
-      strcpy(meta->general->system,"lil_ieee");
-    else if (0==strcmp(ddr.system,"cray-unicos"))
-      strcpy(meta->general->system,"cray_float");
-    else /* "ibm-mvs" or "other-msc" */
-      strcpy(meta->general->system,MAGIC_UNSET_STRING);
     if (sar->image_type=='P')
       {strcpy(meta->projection->units, ddr.proj_units);}
     switch ( ddr.dtype ) {
@@ -415,14 +407,6 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta)
     printf("ERROR in meta_read_only_ddr(): Unrecognized DDR data type (%d)... Exit program.\n",ddr->dtype);
     exit (EXIT_FAILURE);
   }
-  if (strcmp(ddr->system,"ieee-std")==0)
-    strcpy(meta->general->system,"big_ieee");
-  else if (strcmp(ddr->system,"ieee-lil")==0)
-    strcpy(meta->general->system,"lil_ieee");
-  else if (strcmp(ddr->system,"cray-unicos")==0)
-    strcpy(meta->general->system,"cray_float");
-  else
-    strcpy(meta->general->system,MAGIC_UNSET_STRING);
   if (ddr->valid[DDPDV] == VALID) {
     meta->general->x_pixel_size = ddr->pdist_x;
     meta->general->y_pixel_size = ddr->pdist_y;

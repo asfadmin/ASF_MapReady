@@ -188,7 +188,6 @@ int parse_cla(int argc,char *argv[],struct ARDOP_PARAMS *g,meta_parameters **met
   meta->sar->azimuth_doppler_coefficients[1] = 0.0;
   meta->sar->azimuth_doppler_coefficients[2] = 0.0;
   
-  strcpy (meta->general->system, meta_get_system());
   meta->general->data_type = REAL32;
   meta->general->band_count = 1;
   meta->general->x_pixel_size = meta->sar->range_time_per_pixel

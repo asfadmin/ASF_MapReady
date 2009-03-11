@@ -75,11 +75,6 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
       if (DBFAddField(dbase, "Radiometry", FTString, 15, 0) == -1)
         asfPrintError("Could not add radiometry to database file\n");
     }
-    else if (strncmp(dbf[ii].header, "meta.general.system", 19) == 0 &&
-             dbf[ii].visible) {
-      if (DBFAddField(dbase, "System", FTString, 15, 0) == -1)
-        asfPrintError("Could not add system to database file\n");
-    }
     else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0 
 	     && dbf[ii].visible) {
       if (DBFAddField(dbase, "Acq_date", FTString, 25, 0) == -1)
@@ -996,9 +991,6 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
     else if (strcmp(dbf[ii].header, "meta.general.radiometry") == 0 &&
              dbf[ii].visible)
       strcat(header, "Radiometry,");
-    else if (strcmp(dbf[ii].header, "meta.general.system") == 0 &&
-             dbf[ii].visible)
-      strcat(header, "System,");
     else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0 &&
              dbf[ii].visible)
       strcat(header, "Acq_date,");
@@ -1660,11 +1652,6 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       else if (meta->general->radiometry == r_POWER)
         strcpy(radiometry, "POWER");
       sprintf(str, "%s,", radiometry);
-      strcat(line, str);
-    }
-    else if (strcmp(dbf[ii].header, "meta.general.system") == 0 &&
-             dbf[ii].visible) {
-      sprintf(str, "%s,", meta->general->system);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0 &&
@@ -2786,11 +2773,6 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
       else if (meta->general->radiometry == r_POWER)
         strcpy(radiometry, "POWER");
       DBFWriteStringAttribute(dbase, n, field, radiometry);
-      field++;
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.system", 19) == 0 &&
-             dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, n, field, meta->general->system);
       field++;
     }
     else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0 

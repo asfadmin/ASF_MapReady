@@ -65,9 +65,6 @@ int terrasar2csv(char *inFile, char *outFile, int listFlag)
     else if (strcmp(dbf[ii].header, "meta.general.radiometry") == 0 &&
              dbf[ii].visible)
       strcat(header, "Radiometry,");
-    else if (strcmp(dbf[ii].header, "meta.general.system") == 0 &&
-             dbf[ii].visible)
-      strcat(header, "System,");
     else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0 &&
              dbf[ii].visible)
       strcat(header, "Acq_date,");
@@ -729,11 +726,6 @@ int terrasar2csv(char *inFile, char *outFile, int listFlag)
       else if (meta->general->radiometry == r_POWER)
         strcpy(radiometry, "POWER");
       sprintf(str, "%s,", radiometry);
-      strcat(line, str);
-    }
-    else if (strcmp(dbf[ii].header, "meta.general.system") == 0 &&
-             dbf[ii].visible) {
-      sprintf(str, "%s,", meta->general->system);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0 &&
@@ -1838,11 +1830,6 @@ static int convert_terrasar2shape(char *inFile, DBFHandle dbase,
       else if (meta->general->radiometry == r_POWER)
         strcpy(radiometry, "POWER");
       DBFWriteStringAttribute(dbase, n, field, radiometry);
-      field++;
-    }
-    else if (strncmp(dbf[ii].header, "meta.general.system", 19) == 0 &&
-             dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, n, field, meta->general->system);
       field++;
     }
     else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0 

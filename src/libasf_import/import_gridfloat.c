@@ -201,7 +201,6 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
     strcpy(mg->basename, basename);
     free(basename);
 
-    strcpy(mg->system, "big_ieee");
     strcpy(mg->sensor, "USGS Seamless data (e.g., NED, STRM)");
     strcpy(mg->mode, "N/A");
     strcpy(mg->processor, "Unknown");

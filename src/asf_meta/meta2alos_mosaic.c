@@ -20,7 +20,6 @@ meta_parameters* alos_mosaic2meta(alos_mosaic_header *alos)
   meta->general->data_type = REAL32;
   meta->general->image_data_type = MOSAIC;
   meta->general->radiometry = r_AMP;
-  strcpy(meta->general->system, "big_ieee");
   strcpy(meta->general->acquisition_date, alos->acquisition);
   if (strncmp_case(alos->orbit_direction, "AS", 2) == 0)
     meta->general->orbit_direction = 'A';

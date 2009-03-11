@@ -25,7 +25,6 @@ meta_parameters* airsar2meta(airsar_header *header,
     strcpy(meta->general->processor, MAGIC_UNSET_STRING);
   }
   // FIXME: various data types - InSAR vs. polarimetric
-  sprintf(meta->general->system, "big_ieee");
   date_sec2hms(params->acquisition_seconds, &hms);
   sprintf(meta->general->acquisition_date, "%s %d:%d:%.3lf",
       params->acquisition_date, hms.hour, hms.min, hms.sec);

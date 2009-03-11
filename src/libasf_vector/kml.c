@@ -270,9 +270,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "%s<strong>Radiometry</strong>: POWER <br>%s",
                 begin, end);
     }
-    else if (strncmp(dbf[ii].header, "meta.general.system", 19) == 0)
-      fprintf(kml_file, "%s<strong>System</strong>: %s <br>%s",
-              begin, meta->general->system, end);
     else if (strncmp(dbf[ii].header, "meta.general.acquisition_date", 29) == 0)
       fprintf(kml_file, "%s<strong>Acquisition date</strong>: %s <br>%s",
               begin, meta->general->acquisition_date, end);
