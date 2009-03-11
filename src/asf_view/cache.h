@@ -54,6 +54,12 @@ typedef struct {
     double map_min, map_max;
     double avg, stddev;
     double act_min, act_max; // absolute min/max of all values
+    double no_data_value;
+    int have_no_data;
+    double no_data_max;
+    double no_data_min;
+    int have_no_data_range;
+    int truncate;
 } ImageStatsRGB;
 
 // NOTE: At the moment, the Pixbuf that contains the displayed data

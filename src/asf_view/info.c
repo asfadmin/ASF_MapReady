@@ -123,12 +123,29 @@ void update_pixel_info(ImageInfo *ii)
             if (have_lut()) {
                 int gs = (int)cached_image_get_pixel(data_ci,
                              crosshair_line, crosshair_samp);
-                sprintf(&buf[strlen(buf)],
-                        "Pixel Value: %d -> R:%d G:%d B:%d\n",
-                        gs, (int)r, (int)g, (int)b);
+                if (is_ignored(&ii->stats, (float)gs))
+                    sprintf(&buf[strlen(buf)],
+                            "Pixel Value: %d [ignored]\n",
+                            gs);
+                else
+                    sprintf(&buf[strlen(buf)],
+                            "Pixel Value: %d -> R:%d G:%d B:%d\n",
+                            gs, (int)r, (int)g, (int)b);
             }
             else {
-                sprintf(&buf[strlen(buf)], "Pixel Value: %d\n", (int)r);
+                int gs = (int)cached_image_get_pixel(data_ci,
+                             crosshair_line, crosshair_samp);
+                if (is_ignored(&ii->stats, gs)) {
+                    sprintf(&buf[strlen(buf)], "Pixel Value: %d [ignored]\n",
+                            gs);
+                }
+                else if (ii->stats.truncate) {
+                    sprintf(&buf[strlen(buf)], "Pixel Value: %d\n", gs);
+                }
+                else {
+                  sprintf(&buf[strlen(buf)], "Pixel Value: %d -> %d\n",
+                          gs, (int)r);
+                }
             }
         }
         else if (data_ci->data_type == RGB_FLOAT) {
@@ -138,10 +155,21 @@ void update_pixel_info(ImageInfo *ii)
                 &r, &g, &b);
             cached_image_get_rgb_float(data_ci, crosshair_line, crosshair_samp,
                 &rf, &gf, &bf);
-            sprintf(&buf[strlen(buf)],  "Red: %f -> %d\n"
-                                        "Green: %f -> %d\n"
-                                        "Blue: %f -> %d\n",
-                rf, (int)r, gf, (int)g, bf, (int)b);
+
+            if (is_ignored_rgb(&ii->stats_r, rf))
+              sprintf(&buf[strlen(buf)],  "Red: %f [ignored]\n", rf);
+            else
+              sprintf(&buf[strlen(buf)],  "Red: %f -> %d\n", rf, (int)r);
+
+            if (is_ignored_rgb(&ii->stats_g, gf))
+              sprintf(&buf[strlen(buf)],  "Green: %f [ignored]\n", gf);
+            else
+              sprintf(&buf[strlen(buf)],  "Green: %f -> %d\n", gf, (int)g);
+
+            if (is_ignored_rgb(&ii->stats_b, bf))
+              sprintf(&buf[strlen(buf)],  "Blue: %f [ignored]\n", rf);
+            else
+              sprintf(&buf[strlen(buf)],  "Blue: %f -> %d\n", bf, (int)b);
         }
     }
 

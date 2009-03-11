@@ -236,11 +236,12 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy);
 int fill_stats(ImageInfo *ii);
 void calc_stats_thread(gpointer user_data);
 int is_ignored(ImageStats *stats, float val);
+int is_ignored_rgb(ImageStatsRGB *stats, float val);
 int calc_scaled_pixel_value(ImageStats *stats, float val);
 int calc_rgb_scaled_pixel_value(ImageStatsRGB *stats, float val);
 void clear_stats(ImageInfo *ii);
-void update_map_settings(void);
-void set_default_ignore(ImageInfo *ii);
+void update_map_settings(ImageInfo *ii);
+void set_mapping_defaults(ImageInfo *ii);
 
 /* google.c */
 char *find_in_path(char * file);

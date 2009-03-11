@@ -333,17 +333,24 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
         }
     }
     else if (self->data_type == GREYSCALE_BYTE) {
-        if (have_lut())
+        if (have_lut()) {
             apply_lut((int)(*(get_pixel(self, line, samp))), r, g, b);
-        else
-            *r = *g = *b = *(get_pixel(self, line, samp));
+        }
+        else {
+            float f = (float) *(get_pixel(self, line, samp));
+            *r = *g = *b =
+                (unsigned char)calc_scaled_pixel_value(self->stats, f);
+        }
     }
     else if (self->data_type == RGB_BYTE) {
         unsigned char *uc = get_pixel(self, line, samp);
 
-        *r = uc[0];
-        *g = uc[1];
-        *b = uc[2];
+        *r = (unsigned char)calc_rgb_scaled_pixel_value(self->stats_r,
+                                                        (float)uc[0]);
+        *g = (unsigned char)calc_rgb_scaled_pixel_value(self->stats_g,
+                                                        (float)uc[1]);
+        *b = (unsigned char)calc_rgb_scaled_pixel_value(self->stats_b,
+                                                        (float)uc[2]);
     }
     else if (self->data_type == RGB_FLOAT) {
         float *f = (float*)get_pixel(self, line, samp);

@@ -909,6 +909,21 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
          has_focus("gs_ignore_value_entry") ||
          has_focus("gs_ignore_range_min_entry") ||
          has_focus("gs_ignore_range_max_entry") ||
+         has_focus("red_custom_min_entry") ||
+         has_focus("red_custom_max_entry") ||
+         has_focus("red_ignore_value_entry") ||
+         has_focus("red_ignore_range_min_entry") ||
+         has_focus("red_ignore_range_max_entry") ||
+         has_focus("green_custom_min_entry") ||
+         has_focus("green_custom_max_entry") ||
+         has_focus("green_ignore_value_entry") ||
+         has_focus("green_ignore_range_min_entry") ||
+         has_focus("green_ignore_range_max_entry") ||
+         has_focus("blue_custom_min_entry") ||
+         has_focus("blue_custom_max_entry") ||
+         has_focus("blue_ignore_value_entry") ||
+         has_focus("blue_ignore_range_min_entry") ||
+         has_focus("blue_ignore_range_max_entry") ||
          has_focus("look_angle_entry") ||
          has_focus("show_box_button") ||
          has_focus("mode_combobox") ||

@@ -127,8 +127,8 @@ main(int argc, char **argv)
     if (lut_specified)
       set_lut(lut);
 
-//    assert(curr->data_name);
-//    assert(curr->meta_name);
+    assert(curr->data_name);
+    assert(curr->meta_name);
 
     // we load the thumbnail data before bringing up the window, looks
     // much nicer.  When loading an image within the GUI, we don't need
@@ -185,9 +185,9 @@ main(int argc, char **argv)
     update_zoom();
     set_font();
     fill_meta_info();
-    update_map_settings();
+    update_map_settings(curr);
     fill_stats(curr);
-    set_default_ignore(curr);
+    set_mapping_defaults(curr);
     setup_bands_tab(curr->meta);
     disable_meta_button_if_necessary();
     if (lut_specified)

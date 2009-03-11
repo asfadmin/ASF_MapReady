@@ -84,6 +84,12 @@ void put_double_to_entry(const char *widget_name, double val)
     char tmp[64];
     sprintf(tmp, "%f", val);
 
+    // strip off trailing zeros, and a trailing decimal point
+    if (strchr(tmp, '.')) {
+      while (tmp[strlen(tmp)-1]=='0') tmp[strlen(tmp)-1]='\0';
+      if (tmp[strlen(tmp)-1]=='.') tmp[strlen(tmp)-1]='\0';
+    }
+
     gtk_entry_set_text(GTK_ENTRY(e), tmp);
 }
 
