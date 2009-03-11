@@ -9,6 +9,7 @@ typedef struct {
   int samples;               /* Number of samples */
   int lines;                 /* Number of lines */
   int bands;                 /* Number of bands */
+  char *band_name;           // Band name contains the data file name
   int header_offset;         /* Offset to be applied for header */
   char file_type[25];        /* ENVI standard (for the moment) */
   int data_type;             /* Data type - 

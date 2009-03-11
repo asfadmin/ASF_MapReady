@@ -123,6 +123,11 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(pgm_filt, "*.pgm");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), pgm_filt);
 
+    GtkFileFilter *envi_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(envi_filt, "ENVI Files (*.hdr)");
+    gtk_file_filter_add_pattern(envi_filt, "*.hdr");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), envi_filt);
+
     //GtkFileFilter *ppm_filt = gtk_file_filter_new();
     //gtk_file_filter_set_name(ppm_filt, "PPM Image Files (*.ppm)");
     //gtk_file_filter_add_pattern(ppm_filt, "*.ppm");
@@ -171,6 +176,7 @@ void new_file(void)
         "JPG (*.jpg)\0*.jpg\0"
         "PNG (*.png)\0*.png\0"
         "PGM (*.pgm)\0*.pgm\0"
+        "ENVI (*.hdr)\0*.hdr\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;

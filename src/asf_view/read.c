@@ -152,6 +152,16 @@ int read_file(const char *filename, const char *band, int multilook,
             return FALSE;
         }
     }
+    else if (try_envi(filename, try_extensions)) {
+        if (handle_envi_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
+            meta = open_envi(meta_name, band, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    }
     // NOTE: try_ceos() needs to be called LAST because get_ceos_names()
     // will add extensions, causing it to match if there are CEOS files
     // in the same directory as (eg) as GeoTIFF that the user wants to
@@ -160,8 +170,7 @@ int read_file(const char *filename, const char *band, int multilook,
         if (handle_ceos_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
             meta = read_ceos_meta(meta_name);
-            open_ceos_data(data_name, meta_name, band, multilook, meta,
-                           client);
+            open_ceos_data(data_name, meta_name, band, multilook, meta, client);
         } else {
             err_func(err);
             free(err);

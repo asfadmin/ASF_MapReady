@@ -48,8 +48,7 @@
 
 int main(int argc, char **argv)
 {
-  char meta_name[255];
-  char envi_name[255];
+  char meta_name[1024], envi_name[1024], data_name[1024];
   meta_parameters *meta=NULL;
   envi_header *envi=NULL;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
@@ -87,11 +86,16 @@ int main(int argc, char **argv)
 
   create_name(meta_name, argv[currArg], ".meta");
   create_name(envi_name, argv[currArg+1], ".hdr");
+  sprintf(data_name, "%s.img", get_basename(meta_name));
 
   asfSplashScreen(argc, argv);
 
   meta = meta_read(meta_name);
   envi = meta2envi(meta);
+  if (fileExists(data_name)) {
+    envi->band_name = (char *) MALLOC(sizeof(char)*1024);
+    sprintf(envi->band_name, "%s", data_name);
+  }
   write_envi_header(envi_name, meta, envi);
 
   /* Clean and report */

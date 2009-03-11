@@ -29,6 +29,8 @@
 
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_endian.h"
+#include "envi.h"
 #include "float_image.h"
 #include "asf_raster.h"
 #include "asf_vector.h"
@@ -202,6 +204,13 @@ int try_brs(const char *filename, int try_extensions);
 int handle_brs_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
 meta_parameters* open_brs(const char *data_name, ClientInterface *client);
+
+// read_envi.c
+int try_envi(const char *filename, int try_extensions);
+int handle_envi_file(const char *filename, char *meta_name, 
+		     char *data_name, char **err);
+meta_parameters* open_envi(const char *meta_name, const char *band_str,
+			   ClientInterface *client);
 
 /* big_image.c */
 GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair);

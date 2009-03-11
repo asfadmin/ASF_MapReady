@@ -16,11 +16,13 @@ envi_header* read_envi(char *envi_name)
 
   // Allocate memory for ESRI header structure
   envi = (envi_header *)MALLOC(sizeof(envi_header));
+  envi->band_name = NULL;
 
   // Read .hdr and fill meta structures
   fp = FOPEN(envi_name, "r");
   while (NULL != fgets(line, 255, fp)) {
     sscanf(line, "%s = %s", key, value);
+    //asfPrintStatus("key: %s\n", key);
     if (strncmp(key, "samples", 6)==0) envi->samples = atoi(value);
     else if (strncmp(key, "lines", 5)==0) envi->lines = atoi(value);
     else if (strncmp(key, "bands", 5)==0) envi->bands = atoi(value);
@@ -66,6 +68,15 @@ envi_header* read_envi(char *envi_name)
       sscanf(line, "%s %s = %s", bla, key, value);
       if (strncmp(key, "units", 5)==0)
     sprintf(envi->wavelength_units, "%s", value);
+    }
+    else if (strncmp(key, "band", 4)==0) {
+      envi->band_name = (char *) MALLOC(sizeof(char)*255);
+      fgets(line, 255, fp);
+      envi->band_name = trim_spaces(line);
+      int len = (int) strlen(envi->band_name);
+      if (envi->band_name[len-1] == '}' ||
+	  envi->band_name[len-1] == ',')
+	envi->band_name[len-1] = '\0';
     }
     // ignore wavelength for the moment
     // ignore data ignore for the moment
@@ -324,6 +335,8 @@ meta_parameters* envi2meta(envi_header *envi)
   meta = raw_init();
 
   /* Fill metadata with valid ENVI header data */
+  if (envi->band_name)
+    sprintf(meta->general->basename, "%s", envi->band_name);
   meta->general->line_count = envi->lines;
   meta->general->sample_count = envi->samples;
   meta->general->band_count = envi->bands;
@@ -519,6 +532,8 @@ void write_envi_header(const char *inFile, meta_parameters *meta,
       }
   }
   fprintf(fp, "wavelength units = %s\n", envi->wavelength_units);
+  if (envi->band_name)
+    fprintf(fp, "band names = {\n %s}\n", envi->band_name);
   /*** wavelength, data ignore and default stretch currently not used ***/
   FCLOSE(fp);
 
