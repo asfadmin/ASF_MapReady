@@ -507,10 +507,10 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
     }
     else
     {
+        gchar buffer[4096];
+        gchar *p = fgets(buffer, sizeof(buffer), output);
         while (!feof(output))
         {
-            gchar buffer[4096];
-            gchar *p = fgets(buffer, sizeof(buffer), output);
             if (p && !g_str_has_prefix(p, "Processing "))
             {
                 if (the_output)
@@ -528,6 +528,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
                     strcpy(the_output, buffer);
                 }
             }
+            p = fgets(buffer, sizeof(buffer), output);
         }
         fclose(output);
 
