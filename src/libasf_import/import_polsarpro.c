@@ -135,6 +135,7 @@ const char *input_format_to_str(int input_format)
     case JAXA_L0: return "JAXA_L0";
     case ALOS_MOSAIC: return "ALOS_MOSAIC";
     case POLSARPRO: return "POLSARPRO";
+    case GAMMA: return "GAMMA";
     default: return "UNKNOWN";
     }
 }
@@ -208,7 +209,7 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
 }
 
 void import_polsarpro(char *s, char *ceosName, int byteFlag,
-                      char *outBaseName)
+		      char *image_data_type, char *outBaseName)
 {
   meta_parameters *metaIn = NULL, *metaOut = NULL;
   envi_header *envi;

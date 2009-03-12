@@ -217,7 +217,12 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     // values are a classification or decomposition into indice values)
     int classificationFlag = FALSE;
     import_polsarpro(inBaseName, ancillary_file,
-                     classificationFlag, outBaseName);
+                     classificationFlag, image_data_type, outBaseName);
+  }
+  else if (format_type == GAMMA) {
+    asfPrintStatus("   Data format: GAMMA\n");
+    import_gamma(inBaseName, inMetaNameOption, ancillary_file, image_data_type,
+		 outBaseName);
   }
   // Don't recognize this data format; report & quit
   else {

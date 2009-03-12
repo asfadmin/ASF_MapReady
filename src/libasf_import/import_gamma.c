@@ -1,5 +1,7 @@
 #include <ctype.h>
 #include "gamma.h"
+#include "asf_import.h"
+#include "asf_raster.h"
 #include "asf_meta.h"
 #include "dateUtil.h"
 #include "asf_nan.h"
@@ -669,3 +671,185 @@ gamma_msp *gamma_msp_init()
   return g;
 }
 
+void import_gamma(char *dataName, char *metaName, char *ceosName, 
+		  char *image_data_type, char *outBaseName)
+{
+  char line[1024], key[512], tmpDir[1024], tmpFile[1024];
+
+  // GAMMA data does not necessarily follow the regular naming convention,
+  // so the basename concept does not apply. Hence, we deal with the data
+  // and metadata files directly. The CEOS file gives us the SAR geometry
+  // as any regular CEOS ingest.
+
+  // Determine the dimensions and multilooking factors from the GAMMA 
+  // metadata file.
+  gamma_meta *gamma = (gamma_meta *) MALLOC(sizeof(gamma_meta));
+  FILE *fpIn = FOPEN(metaName, "r");
+  fgets(line, 1024, fpIn);
+  if (!strncmp_case(line, "GAMMA INTERFEROMETRIC SAR PROCESSOR (ISP)", 41) &&
+      !strncmp_case(line, "GAMMA MODULAR SAR PROCESSOR (MSP)", 33))
+    asfPrintStatus("Metadata file (%s) is not in Gamma format\n");
+  while (fgets(line, 1024, fpIn)) {
+    char *p = strchr(line, ':');
+    if (p) {
+      sscanf(line, "%s:", key);
+      char *value = p + 1;
+      if (strncmp(key, "azimuth_pixels:", 15) == 0)
+	gamma->line_count = atoi(value);
+      else if (strncmp(key, "azimuth_lines:", 14) == 0)
+	gamma->line_count = atoi(value);
+      else if (strncmp(key, "range_pixels:", 13) == 0)
+	gamma->sample_count = atoi(value);
+      else if (strncmp(key, "range_samples:", 15) == 0)
+	gamma->sample_count = atoi(value);
+      else if (strncmp(key, "azimuth_looks:", 14) == 0)
+	gamma->azimuth_look_count = atoi(value);
+      else if (strncmp(key, "range_looks:", 12) == 0)
+	gamma->range_look_count = atoi(value);
+      else if (strncmp(key, "image_format:", 13) == 0) {
+	char *str = trim_spaces(value);
+	if (strcmp_case(str, "FCOMPLEX") == 0)
+	  gamma->data_type = COMPLEX_REAL32;
+	else if (strcmp_case(str, "SCOMPLEX") == 0)
+	  gamma->data_type = COMPLEX_INTEGER16;
+	else if (strcmp_case(str, "FLOAT") == 0)
+	  gamma->data_type = REAL32;
+	else if (strcmp_case(str, "SHORT") == 0)
+	  gamma->data_type = INTEGER16;
+	else if (strcmp_case(str, "BYTE") == 0)
+	  gamma->data_type = BYTE;
+      }
+    }
+  }
+  FCLOSE(fpIn);
+
+  // Create temporary directory
+  char *baseName = get_basename(outBaseName);
+  strcpy(tmpDir, baseName);
+  strcat(tmpDir, "-");
+  strcat(tmpDir, time_stamp_dir());
+  create_clean_dir(tmpDir);
+  sprintf(tmpFile, "%s/import", tmpDir);
+
+  char *outFile = appendExt(outBaseName, ".img");
+
+  // Generate an amplitude image from the first band of the ancillary CEOS file.
+  // This ensures that we can always terrain corrected the data.
+  char **inBandName=NULL, **inMetaName=NULL;
+  int nBands, trailer;
+  require_ceos_pair(ceosName, &inBandName, &inMetaName, &nBands, &trailer);
+  meta_parameters *metaIn = meta_read(inMetaName[0]);
+  if (!metaIn && !metaIn->sar)
+    asfPrintError("Ancillary file (%s) does not contain a SAR image.\n",
+		  ceosName);
+  char *polarization = get_polarization(inBandName[0]);
+  double range_scale = 1.0 / gamma->range_look_count;
+  double azimuth_scale = 1.0 / gamma->azimuth_look_count;
+  int multilook = FALSE;
+  if (gamma->range_look_count != 1 || gamma->azimuth_look_count != 1)
+    multilook = TRUE;
+  import_ceos(ceosName, tmpFile, polarization, NULL, &range_scale, 
+	      &azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE, 
+	      FALSE, FALSE, FALSE, FALSE);
+  meta_free(metaIn);  
+
+  // Write Gamma bands depending on what image data type was passed in.
+  strcat(tmpFile, ".img");
+  metaIn = meta_read(tmpFile);
+  char **band_names = 
+    extract_band_names(metaIn->general->bands, metaIn->general->band_count);
+  meta_parameters *metaOut = meta_read(tmpFile);
+  int line_count = metaIn->general->line_count;
+  int sample_count = metaIn->general->sample_count;
+  int ii, kk;
+
+  if (strcmp_case(image_data_type, "COHERENCE") == 0) {
+    asfPrintStatus("Importing GAMMA coherence image ...\n");
+    FILE *fpOut = FOPEN(outFile, "wb");
+    float *floatBuf = (float *) MALLOC(sizeof(float)*sample_count);
+    metaIn->general->band_count = 1;
+    metaIn->general->data_type = REAL32;
+    metaOut->general->band_count = 2;
+    metaOut->general->data_type = REAL32;
+    metaOut->general->image_data_type = IMAGE_LAYER_STACK;
+    metaOut->sar->multilook = multilook;
+    meta_write(metaOut, outFile);
+    sprintf(metaOut->general->bands, "%s,COHERENCE", band_names[0]);
+    fpIn = FOPEN(tmpFile, "rb");
+    for (ii=0; ii<line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      put_band_float_line(fpOut, metaOut, 0, ii, floatBuf);
+      asfLineMeter(ii, line_count);
+    }
+    FCLOSE(fpIn);
+    fpIn = FOPEN(dataName, "rb");
+    for (ii=0; ii<line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      put_band_float_line(fpOut, metaOut, 1, ii, floatBuf);
+      asfLineMeter(ii, line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    FREE(floatBuf);
+    meta_write(metaOut, outFile);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }
+  else if (strcmp_case(image_data_type, "INTERFEROGRAM") == 0) {
+    asfPrintStatus("   Importing GAMMA coherence and interferogram ...\n");
+    FILE *fpOut = FOPEN(outFile, "wb");
+    complexFloat *floatCpxBuf = 
+      (complexFloat *) MALLOC(sizeof(complexFloat)*sample_count);
+    float *floatAmpBuf = (float *) MALLOC(sizeof(float)*sample_count);
+    float *floatPhaseBuf = (float *) MALLOC(sizeof(float)*sample_count);
+    metaIn->general->band_count = 1;
+    metaIn->general->data_type = REAL32;
+    metaOut->general->band_count = 3;
+    metaOut->general->data_type = REAL32;
+    metaOut->general->image_data_type = IMAGE_LAYER_STACK;
+    metaOut->sar->multilook = multilook;
+    meta_write(metaOut, outFile);
+    sprintf(metaOut->general->bands, "%s,COHERENCE,INTERFEROGRAM", 
+	    band_names[0]);
+    fpIn = FOPEN(tmpFile, "rb");
+    for (ii=0; ii<line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+      put_band_float_line(fpOut, metaOut, 0, ii, floatAmpBuf);
+      asfLineMeter(ii, line_count);
+    }
+    FCLOSE(fpIn);
+    metaIn->general->data_type = COMPLEX_REAL32;
+    fpIn = FOPEN(dataName, "rb");
+    for (ii=0; ii<line_count; ii++) {
+      get_complexFloat_line(fpIn, metaIn, ii, floatCpxBuf);
+      for (kk=0; kk<sample_count; kk++) {
+	float re = floatCpxBuf[kk].real;
+	float im = floatCpxBuf[kk].imag;
+	if (re != 0.0 || im != 0.0) {
+	  floatAmpBuf[kk] = sqrt(re*re + im*im);
+	  floatPhaseBuf[kk] = atan2(im, re);
+	} 
+	else
+	  floatAmpBuf[kk] = floatPhaseBuf[kk] = 0.0;
+      }
+      put_band_float_line(fpOut, metaOut, 1, ii, floatAmpBuf);
+      put_band_float_line(fpOut, metaOut, 2, ii, floatPhaseBuf);
+      asfLineMeter(ii, line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    FREE(floatCpxBuf);
+    FREE(floatAmpBuf);
+    FREE(floatPhaseBuf);
+    meta_write(metaOut, outFile);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }
+  else {
+    meta_free(metaIn);
+    meta_free(metaOut);
+    asfPrintError("Unsupported GAMMA data type: %s\n", image_data_type);
+  }
+
+  remove_dir(tmpDir);
+}

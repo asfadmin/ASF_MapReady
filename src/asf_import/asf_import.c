@@ -65,7 +65,7 @@ following defines.
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp', 'polsarpro',\n"\
-"        'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0' format refers to the\n"\
+"        'gamma', 'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0' format refers to the\n"\
 "        ALOS AVNIR-2 Level 0 dataset format. 'CEOS' is the default behavior.\n"\
 "   -ancillary_file <file>\n"\
 "        For PolSARpro format files, the ingest process needs access to the original\n"\
@@ -733,6 +733,8 @@ int main(int argc, char *argv[])
       format_type = TERRASAR;
     else if (strncmp_case(format_type_str, "POLSARPRO", 9) == 0)
       format_type = POLSARPRO;
+    else if (strncmp_case(format_type_str, "GAMMA", 5) == 0)
+      format_type = GAMMA;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }
@@ -748,15 +750,36 @@ int main(int argc, char *argv[])
           "specify the original CEOS or AIRSAR format dataset with the -ancillary_file\n"
           "option.  See asf_import -help for more information.\n");
     }
-    if (flags[f_ANCILLARY_FILE] != FLAG_NOT_SET &&
-        format_type != POLSARPRO) {
-      // Ancillary file must be specified with PolSARpro input format (only)
-      asfPrintError("The -ancillary_file option is only used for PolSARpro ingest.\n"
-            "See asf_import -help for more information.\n");
+    
+    // Process Gamma options (-format, -metadata, and -ancillary_flag combos)
+    if (format_type == GAMMA &&
+        flags[f_ANCILLARY_FILE] == FLAG_NOT_SET) {
+      // GAMMA requires the ancillary file
+      asfPrintError("GAMMA ingest requires the original CEOS format\n"
+          "dataset that was used to create the GAMMA data files.  Please\n"
+          "specify the original CEOS format dataset with the -ancillary_file\n"
+          "option.  See asf_import -help for more information.\n");
     }
+    if (format_type == GAMMA &&
+        flags[f_METADATA_FILE] == FLAG_NOT_SET) {
+      // GAMMA requires the metadata file
+      asfPrintError("GAMMA ingest requires the specific name of the GAMMA\n"
+	  "metadata file. Please specify the original CEOS format dataset \n"
+	  "with the -metadata option.  See asf_import -help for more information.\n");
+    }
+    if (format_type == GAMMA &&
+	flags[f_IMAGE_DATA_TYPE] == FLAG_NOT_SET) {
+      // GAMMA requires the image data type
+      asfPrintError("GAMMA ingest requires the image data type to figure out\n"
+		    "what data type to apply during the ingest. Coherence\n"
+		    "images are regular floating point data sets, while\n"
+		    "interferograms are stored in complex form.\n");
+    }
+
     if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET) {
       strcpy(ancillary_file, argv[flags[f_ANCILLARY_FILE] + 1]);
     }
+
 
     /* Deal with band_id */
     if(flags[f_BAND] != FLAG_NOT_SET) {
@@ -779,7 +802,7 @@ int main(int argc, char *argv[])
 
     /* Deal with input image data type */
     if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
-       format_type == GENERIC_GEOTIFF)
+       (format_type == GENERIC_GEOTIFF || format_type == GAMMA))
     {
       strcpy(image_data_type, argv[flags[f_IMAGE_DATA_TYPE] + 1]);
       for (ii=0; ii<strlen(image_data_type); ii++) {

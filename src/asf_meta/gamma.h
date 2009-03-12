@@ -3,6 +3,14 @@
 
 #include "asf_meta.h"
 
+typedef struct {
+  int line_count;
+  int sample_count;
+  int azimuth_look_count;
+  int range_look_count;
+  data_type_t data_type;
+} gamma_meta;
+
 typedef struct {int year, month, day, hour, minute; double seconds;} DATE;
 typedef struct {int hour, minute; double seconds;} TIME;
 typedef struct {double x,y,z;} POS;           // x,y,z position vector [m]

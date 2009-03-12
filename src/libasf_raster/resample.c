@@ -117,8 +117,8 @@ resample_impl(const char *infile, const char *outfile,
     if (xnsk%2 == 0) xnsk++;              /* Must be odd sized kernel */
     if (ynsk%2 == 0) ynsk++;              /* Must be odd sized kernel */
 
-    onp = (np) * xscalfact;
-    onl = (nl) * yscalfact;
+    onp = (int) (np * xscalfact + 0.5);
+    onl = (int) (nl * yscalfact + 0.5);
     xbase = 1.0 / (2.0 * xscalfact) - 0.5;
     xrate = 1.0 / xscalfact;
     xhalf = (xnsk-1)/2;
