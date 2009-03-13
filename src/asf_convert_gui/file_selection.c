@@ -167,7 +167,7 @@ static void create_file_chooser_dialog()
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), airsar_filt);
 
     GtkFileFilter *polsarpro_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(polsarpro_filt, "PolSARpro Files (*.bin)");
+    gtk_file_filter_set_name(polsarpro_filt, "PolSARpro Classification Files (*.bin)");
     gtk_file_filter_add_pattern(polsarpro_filt, "*.bin");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), polsarpro_filt);
 
@@ -302,7 +302,7 @@ static void create_ancillary_file_chooser_dialog()
   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(ancillary_file_browse_widget), airsar_filt);
 
   GtkFileFilter *polsarpro_filt = gtk_file_filter_new();
-  gtk_file_filter_set_name(polsarpro_filt, "PolSARpro Files (*.bin)");
+  gtk_file_filter_set_name(polsarpro_filt, "PolSARpro Classification Files (*.bin)");
   gtk_file_filter_add_pattern(polsarpro_filt, "*.bin");
   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(ancillary_file_browse_widget), polsarpro_filt);
 
@@ -389,7 +389,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
             "ALOS Files (LED-*)\0LED-*\0"
             "AirSAR Files (*.airsar)\0*.airsar\0"
             "ASF Internal Files (*.img)\0*.img\0"
-            "PolSARpro Files (*.bin)\0*.img\0"
+            "PolSARpro Classification Files (*.bin)\0*.img\0"
             "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;
@@ -727,7 +727,7 @@ void handle_browse_ancillary_file()
       "ALOS Files (LED-*)\0LED-*\0"
       "AirSAR Files (*.airsar)\0*.airsar\0"
       "ASF Internal Files (*.img)\0*.img\0"
-      "PolSARpro Files (*.bin)\0*.bin\0"
+      "PolSARpro Classification Files (*.bin)\0*.bin\0"
       "All Files (*.*)\0*\0";
   of.lpstrCustomFilter = NULL;
   of.nFilterIndex = 1;

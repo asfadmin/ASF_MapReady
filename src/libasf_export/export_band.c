@@ -48,7 +48,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, int *palette_color_tiff, char **band_names,
-                           char *look_up_table_name);
+                           char *look_up_table_name, int is_polsarpro_band);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                               int rgb, char **band_names, int palette_color_tiff);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
@@ -57,13 +57,14 @@ int lut_to_tiff_palette(unsigned short **colors, int size, char *look_up_table_n
 void dump_palette_tiff_color_map(unsigned short *colors, int map_size);
 int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta_colormap *colormap);
 char *sample_mapping2string(scale_t sample_mapping);
+void colormap_to_lut_file(meta_colormap *cm, const char *lut_file);
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, int *palette_color_tiff, char **band_names,
-                           char *look_up_table_name)
+                           char *look_up_table_name, int is_polsarpro_band)
 {
   unsigned short sample_size;
   int max_dn, map_size = 0, palette_color = 0;
@@ -126,9 +127,19 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
       // not the group of 3 components.
       TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
   }
-  if (!have_look_up_table && md->colormap) {
-      asfPrintStatus("\nFound single-band image with RGB color map ...storing as a Palette Color TIFF\n\n");
-      asfRequire(md->general->data_type == BYTE, "Non-byte data found.\n");
+  int is_polsarpro = (strstr(uc(md->general->bands), "POLSARPRO") != NULL) ? 1 : 0;
+  if ((!have_look_up_table &&
+       md->colormap        &&
+       !is_polsarpro) ||
+      (is_polsarpro_band   &&
+       !have_look_up_table &&
+       md->colormap))
+  {
+      asfPrintStatus("\nFound single-band image with RGB color map ...storing as a Palette\n"
+          "Color TIFF\n\n");
+      if (!is_polsarpro && md->general->data_type != BYTE) {
+        asfPrintError("Non-byte data found.\n");
+      }
       palette_color = 1;
       max_dn = map_size = meta_colormap_to_tiff_palette(&colors, &byte_image, md->colormap);
   }
@@ -897,6 +908,7 @@ export_band_image (const char *metadata_file_name,
   int ii,jj;
   int palette_color_tiff = 0;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
+  char *lut_file = NULL;
 
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
@@ -925,24 +937,68 @@ export_band_image (const char *metadata_file_name,
         "%d channels are supported.\n", md->general->band_count, MAX_BANDS);
   }
 
+  if (format == PGM && look_up_table_name != NULL && strlen(look_up_table_name) > 0) {
+    asfPrintWarning("Cannot apply look up table to PGM format output files since\n"
+        "color is not supported ...Ignoring the look up table and continuing.\n");
+    have_look_up_table = 0;
+  }
+
   // NOTE: if the truecolorFlag or falsecolorFlag was set, then 'rgb' is true
   // and the band assignments are in the band_name[] array already.  The true_color
   // and false_color parameters are provided separately just in case we decide
   // to do anything different, e.g. normal rgb processing plus something specific
   // to true_color or false_color (like contrast expansion)
+  int is_polsarpro = (strstr(uc(md->general->bands), "POLSARPRO") != NULL) ? 1 : 0;
+  if (is_polsarpro && format == PGM) {
+    asfPrintWarning(
+        "Using PGM output for an image containing a PolSARpro classification\n"
+        "band will result in separate greyscale images, and the PolSARpro classification\n"
+        "will appear very DARK since all values in the image are small integers.  It is\n"
+        "best to use a viewer that can apply the appropriate classification look-up table\n"
+        "to the image, i.e. asf_view, a part of the ASF tool set.\n");
+  }
+
+  if (have_look_up_table) {
+    lut_file = STRDUP(look_up_table_name);
+    asfPrintStatus("\nApplying %s color look up table to PolSARpro band...\n\n", look_up_table_name);
+  }
+  else {
+    // No look-up table
+    lut_file = (char*)CALLOC(256, sizeof(char)); // Empty string
+    if (format != PGM) {
+      if (is_polsarpro && md->colormap) {
+        // No look up table was provided for PolSARpro output ...Use the embedded
+        // colormap that is in the metadata (if it exists)
+        strcpy(lut_file, "tmp_lut_file.lut");
+        colormap_to_lut_file(md->colormap, lut_file);
+        have_look_up_table = 1;
+        asfPrintStatus("\nNo color look up table provided for PolSARpro band.  Using\n"
+            "the colormap embedded in the ASF metadata instead (%s).\n\n",
+            md->colormap->look_up_table);
+      }
+      else {
+        asfPrintStatus("\nNo color look up table provided for PolSARpro band, and no\n"
+                      "embedded colormap in the ASF metadata ...image will be greyscale.\n\n");
+      }
+    }
+  }
+
+  // Treat all bands as greyscale except polsarpro band (see below a long ways down...
+  // Search on "is_polsarpro_band")
+  if (is_polsarpro) rgb = 0;
   if (rgb && !have_look_up_table) {
 
-    // Initialize the chosen format
+    // Initialize the selected format
     if (format == TIF) {
       is_geotiff = 0;
       initialize_tiff_file(&otif, &ogtif, output_file_name,
          metadata_file_name, is_geotiff,
-         sample_mapping, rgb, &palette_color_tiff, band_name, look_up_table_name);
+         sample_mapping, rgb, &palette_color_tiff, band_name, lut_file, 0);
     }
     else if (format == GEOTIFF) {
       initialize_tiff_file(&otif, &ogtif, output_file_name,
          metadata_file_name, is_geotiff,
-         sample_mapping, rgb, &palette_color_tiff, band_name, look_up_table_name);
+         sample_mapping, rgb, &palette_color_tiff, band_name, lut_file, 0);
     }
     else if (format == JPEG) {
       initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
@@ -1912,40 +1968,67 @@ export_band_image (const char *metadata_file_name,
     *output_names = MALLOC(sizeof(char*) * band_count);
 
     int kk;
+    int is_polsarpro_band;
     for (kk=0; kk<band_count; kk++) {
       if (band_name[kk]) {
+        is_polsarpro_band = (strncmp(uc(band_name[kk]),"POLSARPRO", 9) == 0) ? 1 : 0;
 
         if (strcmp(band_name[0], MAGIC_UNSET_STRING) != 0)
           asfPrintStatus("Writing band '%s' ...\n", band_name[kk]);
 
-        // Initialize the chosen format
+        // Initialize the selected format
+        // NOTE: For PolSARpro, the first band is amplitude and should be
+        // written out as a single-band greyscale image while the second
+        // band is a classification and should be written out as color ...and for
+        // TIFF formats, as a palette color tiff
         if (band_count > 1)
           append_band_ext(base_name, output_file_name, band_name[kk]);
         else
           append_band_ext(base_name, output_file_name, NULL);
 
-        if (format == TIF) {
-          is_geotiff = 0;
+        if (format == TIF || format == GEOTIFF) {
+          is_geotiff = (format == GEOTIFF && md->projection) ? 1 : 0;
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
-          initialize_tiff_file(&otif, &ogtif, output_file_name,
-                  metadata_file_name, is_geotiff,
-                  sample_mapping, rgb, &palette_color_tiff, band_name, look_up_table_name);
-        }
-        else if (format == GEOTIFF) {
-          append_ext_if_needed (output_file_name, ".tif", ".tiff");
-          initialize_tiff_file(&otif, &ogtif, output_file_name,
-                  metadata_file_name, is_geotiff,
-                  sample_mapping, rgb, &palette_color_tiff, band_name, look_up_table_name);
+          if (is_polsarpro) {
+            int t_rgb = (is_polsarpro_band && (have_look_up_table || md->colormap != NULL)) ? 1 : 0;
+            initialize_tiff_file(&otif, &ogtif, output_file_name,
+                       metadata_file_name, is_geotiff,
+                       (is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                       t_rgb,
+                       &palette_color_tiff, band_name,
+                       (t_rgb) ? lut_file : NULL,
+                       is_polsarpro_band);
+          }
+          else {
+            initialize_tiff_file(&otif, &ogtif, output_file_name,
+                                 metadata_file_name, is_geotiff,
+                                 sample_mapping, rgb, &palette_color_tiff, band_name,
+                                 lut_file, is_polsarpro_band);
+          }
         }
         else if (format == JPEG) {
           append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
-          initialize_jpeg_file(output_file_name, md,
-                  &ojpeg, &cinfo, rgb);
+          if (is_polsarpro) {
+            initialize_jpeg_file(output_file_name, md,
+                                 &ojpeg, &cinfo,
+                                 (is_polsarpro_band && have_look_up_table) ? 1 : 0);
+          }
+          else {
+            initialize_jpeg_file(output_file_name, md,
+                                 &ojpeg, &cinfo, rgb);
+          }
         }
         else if (format == PNG) {
           append_ext_if_needed (output_file_name, ".png", NULL);
-          initialize_png_file(output_file_name, md,
-                  &opng, &png_ptr, &png_info_ptr, rgb);
+          if (is_polsarpro) {
+            initialize_png_file(output_file_name, md,
+                                &opng, &png_ptr, &png_info_ptr,
+                                (is_polsarpro_band && have_look_up_table) ? 1 : 0);
+          }
+          else {
+            initialize_png_file(output_file_name, md,
+                                &opng, &png_ptr, &png_info_ptr, rgb);
+          }
         }
         else if (format == PGM) {
           append_ext_if_needed (output_file_name, ".pgm", ".pgm");
@@ -2027,43 +2110,53 @@ export_band_image (const char *metadata_file_name,
         unsigned char *byte_line = MALLOC(sizeof(unsigned char) * sample_count);
 
         asfPrintStatus("\nWriting output file...\n");
-        if (have_look_up_table && !palette_color_tiff) { // Apply look up table
+        if ((!is_polsarpro || (is_polsarpro && is_polsarpro_band)) &&
+             have_look_up_table && !palette_color_tiff)
+        { // Apply look up table
           for (ii=0; ii<md->general->line_count; ii++ ) {
             if (md->optical) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_byte2lut(otif, byte_line, ii, sample_count,
-                                    look_up_table_name);
+                                    lut_file);
               else if (format == JPEG)
                 write_jpeg_byte2lut(ojpeg, byte_line, &cinfo, sample_count,
-                                    look_up_table_name);
+                                    lut_file);
               else if (format == PNG)
                 write_png_byte2lut(opng, byte_line, png_ptr, png_info_ptr,
-                                   sample_count, look_up_table_name);
+                                   sample_count, lut_file);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
             else {
+              // Force a sample mapping of TRUNCATE for PolSARpro classifications
+              // (They contain low integer values stored in floats ...contrast
+              //  expansion will break the look up in the look up table.)
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == TIF || format == GEOTIFF)
-                write_tiff_float2lut(otif, float_line, stats, sample_mapping,
+                write_tiff_float2lut(otif, float_line, stats,
+                                     (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
                                      md->general->no_data, ii, sample_count,
-                                     look_up_table_name);
+                                     lut_file);
               else if (format == JPEG)
                 write_jpeg_float2lut(ojpeg, float_line, &cinfo, stats,
-                                     sample_mapping, md->general->no_data,
-                                     sample_count, look_up_table_name);
+                                     (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                     md->general->no_data,
+                                     sample_count, lut_file);
               else if (format == PNG)
                 write_png_float2lut(opng, float_line, png_ptr, png_info_ptr,
-                                    stats, sample_mapping, md->general->no_data,
-                                    sample_count, look_up_table_name);
+                                    stats,
+                                    (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                    md->general->no_data,
+                                    sample_count, lut_file);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
             asfLineMeter(ii, md->general->line_count);
           }
         }
-        else { // Regular old single band image (no look up table applied)
+        else {
+          // Regular old single band image (no look up table applied)
           for (ii=0; ii<md->general->line_count; ii++ ) {
             if (md->optical || md->general->data_type == BYTE) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
@@ -2082,7 +2175,7 @@ export_band_image (const char *metadata_file_name,
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
-            else if (sample_mapping == NONE) {
+            else if (sample_mapping == NONE && !is_polsarpro_band) {
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == GEOTIFF)
                 write_tiff_float2float(otif, float_line, ii);
@@ -2092,18 +2185,23 @@ export_band_image (const char *metadata_file_name,
             else {
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == TIF || format == GEOTIFF)
-                write_tiff_float2byte(otif, float_line, stats, sample_mapping,
+                write_tiff_float2byte(otif, float_line, stats,
+                                      (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
                                       md->general->no_data, ii, sample_count);
               else if (format == JPEG)
                 write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats,
-                                      sample_mapping, md->general->no_data,
+                                      (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                      md->general->no_data,
                                       sample_count);
               else if (format == PNG)
                 write_png_float2byte(opng, float_line, png_ptr, png_info_ptr,
-                                     stats, sample_mapping, md->general->no_data,
+                                     stats,
+                                     (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                     md->general->no_data,
                                      sample_count);
               else if (format == PGM)
-                write_pgm_float2byte(opgm, float_line, stats, sample_mapping,
+                write_pgm_float2byte(opgm, float_line, stats,
+                                     (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
                                      md->general->no_data, sample_count);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
@@ -2139,6 +2237,7 @@ export_band_image (const char *metadata_file_name,
     }
   }
 
+  FREE(lut_file);
   meta_free (md);
 }
 
@@ -2323,4 +2422,22 @@ char *sample_mapping2string(scale_t sample_mapping)
             return "UNKNOWN or UNRECOGNIZED";
             break;
     }
+}
+
+void colormap_to_lut_file(meta_colormap *cm, const char *lut_file)
+{
+  int i;
+  char line[256];
+
+  FILE *fp = FOPEN(lut_file, "wt");
+  fprintf(fp, "# Temporary look-up table file for asf_export\n");
+  fprintf(fp, "# Look-up table     : %s\n", cm->look_up_table);
+  fprintf(fp, "# Number of elements: %d\n", cm->num_elements);
+  fprintf(fp, "# Index   Red   Green   Blue\n");
+  for (i=0; i<cm->num_elements; i++) {
+    sprintf(line, "%d %d %d %d\n",
+            i, cm->rgb[i].red, cm->rgb[i].green, cm->rgb[i].blue);
+    fprintf(fp, line);
+  }
+  FCLOSE(fp);
 }

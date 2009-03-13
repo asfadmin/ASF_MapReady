@@ -69,6 +69,7 @@ settings_apply_to_gui(const Settings * s)
         get_widget_checked("apply_metadata_fix_checkbutton");
 
     set_combo_box_item(input_data_type_combobox, s->data_type);
+    select_polsarpro_classification_lut(s->polsarpro_colormap);
 
     if (s->process_to_level1)
     {
@@ -542,6 +543,15 @@ settings_get_from_gui()
         (ret->data_type == INPUT_TYPE_SIGMA ||
          ret->data_type == INPUT_TYPE_BETA ||
          ret->data_type == INPUT_TYPE_GAMMA);
+
+    GtkWidget *polsarpro_classification_optionmenu =
+        get_widget_checked("polsarpro_classification_optionmenu");
+    GtkWidget *pc_menu = gtk_option_menu_get_menu(
+        GTK_OPTION_MENU(polsarpro_classification_optionmenu));
+    GtkWidget *selected_classification = gtk_menu_get_active(GTK_MENU(pc_menu));
+    char *classification_lut = g_object_get_data(G_OBJECT(selected_classification), "file");
+    strcpy(ret->polsarpro_colormap, "");
+    if (classification_lut) strcpy(ret->polsarpro_colormap, classification_lut);
 
     ret->process_to_level1 = 0; // Was set equal to the following expression
         //gtk_toggle_button_get_active(
@@ -1116,7 +1126,7 @@ settings_get_output_format_extension(const Settings *s)
                 out_extension = "tif";
                 break;
         }
-    } 
+    }
     else
     {
         out_extension = "img";
@@ -1336,15 +1346,15 @@ get_input_data_format_string(int input_data_format)
       case INPUT_FORMAT_ASF_INTERNAL:
         format_arg_to_import = "asf";
         break;
-        
+
       case INPUT_FORMAT_GEOTIFF:
         format_arg_to_import = "geotiff";
         break;
-        
+
       case INPUT_FORMAT_AIRSAR:
         format_arg_to_import = "airsar";
         break;
-        
+
       case INPUT_FORMAT_POLSARPRO:
         format_arg_to_import = "polsarpro";
         break;
@@ -1571,6 +1581,9 @@ settings_to_config_file(const Settings *s,
 
     fprintf(cf, "multilook SLC = %d\n", multilook_on_import ? 1 : 0);
     fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
+    if (input_data_format == INPUT_FORMAT_POLSARPRO) {
+      fprintf(cf, "polsarpro colormap = %s\n", s->polsarpro_colormap);
+    }
     fprintf(cf, "\n");
 
     if (input_data_format == INPUT_FORMAT_AIRSAR) {
@@ -2064,6 +2077,10 @@ int apply_settings_from_config_file(char *configFile)
       {
         // alos -- pass in metadata name
         add_to_files_list_iter(metaName[0], NULL, &iter);
+      }
+      else if (is_polsarpro(cfg->general->in_name)) {
+        // PolSARpro -- pass in the data name
+        add_to_files_list_iter(cfg->general->in_name, NULL, &iter);
       }
       else
       {

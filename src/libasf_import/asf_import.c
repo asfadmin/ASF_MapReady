@@ -212,12 +212,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == POLSARPRO) {
     asfPrintStatus("   Data format: POLSARPRO\n");
-    // FIXME: The user interface and command line for asf_import, asf_mapready,
-    // and mapready need to set the following with an option (it means the data
-    // values are a classification or decomposition into indice values)
-    int classificationFlag = FALSE;
     import_polsarpro(inBaseName, ancillary_file,
-                     classificationFlag, image_data_type, outBaseName);
+                     colormapName, image_data_type, outBaseName);
   }
   else if (format_type == GAMMA) {
     asfPrintStatus("   Data format: GAMMA\n");

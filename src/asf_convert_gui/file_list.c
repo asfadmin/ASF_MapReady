@@ -199,6 +199,11 @@ static char *file_is_valid(const gchar * file)
       }
       FREE(dupe);
     }
+    if (is_polsarpro(file) && !ext) {
+      char *_file = (char *)MALLOC(sizeof(char)*(strlen(file)+5));
+      sprintf(_file, "%s.bin", file);
+      return _file;
+    }
 
     // allow xml files to be added -- terrasar-x
     if (ext && strcmp_case(ext, ".xml")==0)

@@ -25,6 +25,7 @@ Settings *settings_on_execute;
 gchar * output_directory = NULL;
 NamingScheme * current_naming_scheme = NULL;
 gboolean use_thumbnails = FALSE;
+static GHashTable * g_polsarpro_classification_optionmenu_ht = NULL;
 
 static int my_strcmp(const void *v1, const void *v2)
 {
@@ -55,9 +56,9 @@ void populate_polsarpro_classification_optionmenu()
 
   char lut_loc[1024];
   sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
-//  if (g_lut_optionmenu_ht == NULL) {
-//    g_lut_optionmenu_ht = g_hash_table_new(g_str_hash,g_str_equal);
-//  }
+  if (g_polsarpro_classification_optionmenu_ht == NULL) {
+    g_polsarpro_classification_optionmenu_ht = g_hash_table_new(g_str_hash,g_str_equal);
+  }
 
   // Open up the share dir's look up tables list, populate dropdown
   // from the files in that directory.
@@ -93,9 +94,9 @@ void populate_polsarpro_classification_optionmenu()
       g_object_set_data(G_OBJECT(item), "index", GUINT_TO_POINTER(i+2));
       gtk_menu_append(GTK_MENU(menu), item);
       gtk_widget_show(item);
-//      g_hash_table_insert(g_lut_optionmenu_ht,
-//                          (gpointer)g_strdup(names[i]),
-//                           GUINT_TO_POINTER(i+2));
+      g_hash_table_insert(g_polsarpro_classification_optionmenu_ht,
+                          (gpointer)g_strdup(names[i]),
+                           GUINT_TO_POINTER(i+2));
     }
   }
 
@@ -345,3 +346,13 @@ main(int argc, char **argv)
     exit (EXIT_SUCCESS);
 }
 
+void select_polsarpro_classification_lut(const char *lut_basename)
+{
+  int which = GPOINTER_TO_INT(
+                  g_hash_table_lookup(g_polsarpro_classification_optionmenu_ht,
+                                      lut_basename));
+
+  GtkWidget *option_menu =
+      get_widget_checked("polsarpro_classification_optionmenu");
+  gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
+}

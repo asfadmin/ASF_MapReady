@@ -99,8 +99,9 @@ following defines.
 "        Cannot be used together with the -band option.\n"\
 "   -lut <look up table file>\n"\
 "        Applies a color look up table to the image while exporting.\n"\
-"        Only allowed for single-band images.  Some look up\n"\
-"        table files are in the look_up_tables subdirectory in\n"\
+"        Only allowed for single-band images.  Images must contain byte (8-bit)\n"\
+"        data (except for data deriving from PolSARpro classifications.) Some\n"\
+"        look-up table files are in the look_up_tables subdirectory in\n"\
 "        the asf_tools share directory.  The tool will look in\n"\
 "        this directory for the specified file if it isn't found\n"\
 "        in the current directory.\n"\
@@ -516,8 +517,8 @@ main (int argc, char *argv[])
      )
   {
     asfPrintWarning("Greyscale PGM output is not compatible with color options:\n"
-                    "(RGB, True Color, or False Color)  ...Defaulting to producing\n"
-                    "separate greyscale PGM files for available band.\n");
+                    "(RGB, True Color, False Color, color look-up tables, Pauli, or Sinclair etc\n)"
+                    "...Defaulting to producing separate greyscale PGM files for available band.\n");
     rgbFlag = FLAG_NOT_SET;
     truecolorFlag = FLAG_NOT_SET;
     falsecolorFlag = FLAG_NOT_SET;
@@ -531,16 +532,17 @@ main (int argc, char *argv[])
       command_line.sample_mapping = NONE;
   }
   // for other data, default is based on the output type
-  else if ( strcmp (command_line.format, "TIFF") == 0
-       || strcmp (command_line.format, "TIF") == 0
-       || strcmp (command_line.format, "JPEG") == 0
-       || strcmp (command_line.format, "JPG") == 0
-       || strcmp (command_line.format, "PNG") == 0
-       || strcmp (command_line.format, "PGM") == 0)
+  else if ((strcmp (command_line.format, "GEOTIFF") == 0 && !md->projection) ||
+           strcmp (command_line.format, "TIFF") == 0 ||
+           strcmp (command_line.format, "TIF")  == 0 ||
+           strcmp (command_line.format, "JPEG") == 0 ||
+           strcmp (command_line.format, "JPG")  == 0 ||
+           strcmp (command_line.format, "PNG")  == 0 ||
+           strcmp (command_line.format, "PGM")  == 0)
   {
     command_line.sample_mapping = SIGMA;
   }
-  else if ( strcmp (command_line.format, "GEOTIFF") == 0 ) {
+  else if (strcmp (command_line.format, "GEOTIFF") == 0) {
     command_line.sample_mapping = NONE;
   }
 
@@ -740,15 +742,20 @@ main (int argc, char *argv[])
       asfPrintError("Unrecognized byte scaling method '%s'.\n",
                     sample_mapping_string);
   }
-  if ( lutFlag != FLAG_NOT_SET &&
+
+  int is_polsarpro = (md->general->bands && strstr(md->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+  if ( !is_polsarpro               &&
+       lutFlag != FLAG_NOT_SET     &&
        md->general->band_count > 1)
   {
     asfPrintError("Look up tables can only be applied to single band"
           " images\n");
   }
-  if ( lutFlag != FLAG_NOT_SET &&
+
+  if ( !is_polsarpro                       &&
+       lutFlag != FLAG_NOT_SET             &&
        command_line.sample_mapping == NONE &&
-       md->general->data_type != BYTE &&
+       md->general->data_type != BYTE      &&
        md->general->band_count == 1)
   {
     asfPrintError("Look up tables can only be applied to byte output"

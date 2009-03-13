@@ -127,6 +127,7 @@ typedef struct
   int airsar_c_pol;
   int airsar_p_pol;
   int apply_ers2_gain_fix;
+  char polsarpro_colormap[512];
 
   /* transformations */
   int data_type;
@@ -241,6 +242,9 @@ extern int COMP_COL_CLASS_MAP_FILE;
 extern int COMP_COL_METADATA_FILE;
 
 /********************************** Prototypes ******************************/
+
+/* asf_convert_gui.c */
+void select_polsarpro_classification_lut(const char *);
 
 /* settings.c */
 Settings *settings_get_from_gui();

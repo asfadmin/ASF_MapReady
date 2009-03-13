@@ -1,3 +1,4 @@
+
 #include "asf_export.h"
 #include "asf_sar.h"
 #include "asf.h"
@@ -541,7 +542,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       isf = (size_t)(sf + 0.5); // Round to nearest integer
       isf = isf < 1 ? 1 : isf; // Only allow scaling down, not up
       size_t tsx = (size_t)((float)imd->general->sample_count / isf);
-      size_t tsy = (size_t)((float)imd->general->line_count / isf / 
+      size_t tsy = (size_t)((float)imd->general->line_count / isf /
 			    (float)nLooks + 0.99);
       asfPrintStatus("\nScaling image by closest integer scale factor (%d.0).  Scaling to: %d by %d\n",
           isf, tsx, tsy);
@@ -565,13 +566,13 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       unsigned char *cpx_bytes = MALLOC (sizeof(unsigned char) * 2 * ns);
       float *cpx_floats = MALLOC(sizeof(float)* 2 * ns);
       float re, im;
-      
+
       // Here's where we're putting all this data
       img = float_image_new(tsx, tsy);
 
       // Read in data line-by-line
       for ( ii = 0 ; ii < tsy ; ii++ ) {
-        long long offset = 
+        long long offset =
 	  (long long)headerBytes+ii*isf*nLooks*(long long)image_fdr.reclen;
 
         FSEEK64(fpIn, offset, SEEK_SET);
@@ -912,7 +913,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* inMetaNameOption       */
                        (char *)inDataName,  /* input basename         */
                        ancillary_file,      /* ancillary file         */
-		       NULL,                // colormap 
+		       NULL,                // colormap
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -1296,32 +1297,38 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     if (L0Flag == jaxa_l0) {
         asf_export_bands(output_format,
                          SIGMA,
-                         1 /*rgb - must be true if true-color or false-color is set*/,
-                         0 /*true_color*/,
-                         1 /*false_color*/,
-                         0 /*pauli*/,
-                         0 /*sinclair*/,
-                         "" /*look_up_table_name*/,
+                         1, /*rgb - must be true if true-color or false-color is set*/
+                         0, /*true_color*/
+                         1, /*false_color*/
+                         0, /*pauli*/
+                         0, /*sinclair*/
+                         "", /*look_up_table_name*/
                          in_file,
                          export_path,
                          (char**)band_name,
-                         NULL/* num output files */,
-                         NULL/* output file names */);
+                         NULL,/* num output files */
+                         NULL);/* output file names */
     }
     else {
+        meta_parameters *md = meta_read(get_basename(in_file));
+        char lut_file[2048] = "";
+        if (md->colormap && md->colormap->look_up_table && strlen(md->colormap->look_up_table > 0) {
+          strcpy(lut_file, md->colormap->look_up_table);
+        }
         asf_export_bands(output_format,
                         SIGMA,
-                        0 /*rgb*/,
-                        0 /*true_color*/,
-                        0 /*false_color*/,
-                        0 /*pauli*/,
-                        0 /*sinclair*/,
-                        "" /*look_up_table_name*/,
+                        0, /*rgb*/
+                        0, /*true_color*/
+                        0, /*false_color*/
+                        0, /*pauli*/
+                        0, /*sinclair*/
+                        lut_file, /*look_up_table_name*/
                         in_file,
                         export_path,
                         (char**)band_name,
-                        NULL/* num output files */,
-                        NULL/* output file names */);
+                        NULL,/* num output files */
+                        NULL);/* output file names */
+        meta_free(md);
     }
 
     // Clean up...

@@ -109,9 +109,11 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
                char *bandExt, int band, int nBands, int nBandsOut,
                radiometry_t radiometry, int complex_flag);
 void import_polsarpro(char *polsarName, char *ceosName,
-                      int byteFlag, char *image_data_type, char *outBaseName);
-void import_gamma(char *dataName, char *metaName, char *ceosName, 
-		  char *image_data_type, char *outBaseName);
+                      char *colormapName, char *image_data_type, char *outBaseName);
+void apply_polsarpro_palette_to_metadata(const char *lut_basename,
+                                         meta_parameters *imd);
+void import_gamma(char *dataName, char *metaName, char *ceosName,
+                  char *image_data_type, char *outBaseName);
 
 meta_parameters *meta_read_only(const char *in_fName);
 meta_parameters *meta_read_raw(const char *inFile);

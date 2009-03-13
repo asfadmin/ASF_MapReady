@@ -1367,7 +1367,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                           cfg->general->in_name);
         free(raw_file); free(RAW_file);
     }
-    //int is_polsarpro = isPolSARpro(cfg->general->in_name);
 
     // Check if the user said the file is L1, but we really have a L0 file
     if (strcmp_case(cfg->import->format, "CEOS (1)") == 0) {
@@ -1815,7 +1814,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
 
       // Input Format Type
-      printf("\n\nINPUT FORMAT IS: %s\n\n", cfg->import->format);
+      char *polsarpro_colormap = NULL;
+      printf("\n\nINPUT FORMAT IS: %s\n\n", uc(cfg->import->format));
       if (strncmp_case(cfg->import->format, "CEOS", 4) == 0)
         format_type = CEOS;
       else if (strncmp_case(cfg->import->format, "STF", 3) == 0)
@@ -1830,8 +1830,14 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format_type = AIRSAR;
       else if (strncmp_case(cfg->import->format, "VP", 2) == 0)
         format_type = VP;
-      else if (strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0)
+      else if (strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0) {
+        char *cm = cfg->import->polsarpro_colormap; // convenience pointer
+        if (cm && strlen(cm)) {
+          polsarpro_colormap = (char*)MALLOC((strlen(cm) + 1) * sizeof(char));
+          strcpy(polsarpro_colormap, cm);
+        }
         format_type = POLSARPRO;
+      }
       else if (strncmp_case(cfg->import->format, "TERRASAR", 8) == 0)
         format_type = TERRASAR;
       else {
@@ -1857,9 +1863,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               NULL,
                               cfg->general->in_name,
                               cfg->general->ancillary_file,
-                              NULL,
+                              polsarpro_colormap,
                               outFile),
                               "ingesting data file (asf_import)\n");
+      FREE(polsarpro_colormap);
 
       // For AirSAR data, let's see what we actually got.
       // Not all products are always present - update settings to
@@ -2669,20 +2676,54 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             free(tmp);
           }
 
-          if (strlen(cfg->export->lut) > 0) {
+          // outFile is the thumbnail file and the following needs to also look for
+          // polsarpro input or not, whether there is a polsarpro colormap specified,
+          // and whether or not there is an embedded colormap in the metadata (regardless
+          // of type.  Check meta->general->bands, meta->colormap, and cfg->import->polsarpro_colormap
+          // => export LUT overrides all, import LUT overrides metadata lut, and metadata LUT is
+          //    used if nothing else exists, else default to non-LUT case below.
+          char lut_file[2048] = "";
+          int is_polsarpro = (strstr(meta->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+          int have_embedded_colormap = 0;
+          if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
+            strcpy(lut_file, cfg->export->lut);
+          }
+          else if (is_polsarpro &&
+                   cfg->import  &&
+                   cfg->import->polsarpro_colormap &&
+                   strlen(cfg->import->polsarpro_colormap) > 0)
+          {
+            strcpy(lut_file, cfg->import->polsarpro_colormap);
+          }
+          else if (is_polsarpro && meta->colormap &&
+                   meta->colormap->look_up_table && strlen(meta->colormap->look_up_table) > 0)
+          {
+            strcpy(lut_file, meta->colormap->look_up_table);
+            have_embedded_colormap = 0;
+          }
+          if (strlen(cfg->export->lut) > 0 ||
+              (is_polsarpro && strlen(lut_file) > 0))
+          {
             // using a LUT -- we can't downsample in this case, because
             // that will screw up the behavior of TRUNCATE.  The burden
             // will be on the GUI to do the downsampling, but after we have
             // generated an RGB image.
-            char *bands[2];
-            bands[0] = meta->general->bands;
-            bands[1] = NULL;
+            char **bands = extract_band_names(meta->general->bands,
+                                              meta->general->band_count);
+//            char *bands[2];
+//            bands[0] = meta->general->bands;
+//            bands[1] = NULL;
 
             check_return(
-              asf_export_bands(format, TRUNCATE, TRUE, 0, 0, 0, 0,
-                               cfg->export->lut, inFile, outFile, bands,
+              asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0, 0, 0,
+                               lut_file, inFile, outFile, bands,
                                NULL, NULL),
               "exporting thumbnail (asf_export), using rgb look up table.\n");
+            int i;
+            for (i=0; i<meta->general->band_count; i++) {
+              FREE(bands[i]);
+            }
+            FREE(bands);
           }
           else {
             // non-LUT case
@@ -2865,9 +2906,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
             meta_parameters *meta = meta_read(inFile);
 
-            char *bands[2];
-            bands[0] = meta->general->bands;
-            bands[1] = NULL;
+            char **bands = extract_band_names(meta->general->bands,
+                                              meta->general->band_count);
+//            char *bands[2];
+//            bands[0] = meta->general->bands;
+//            bands[1] = NULL;
 
             check_return(
                 asf_export_bands(get_format(cfg), TRUNCATE, 1, 0, 0, 0, 0,
@@ -2876,6 +2919,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 "exporting layover mask (asf_export)\n");
 
             meta_free(meta);
+            int i;
+            for (i=0; i<meta->general->band_count; i++) {
+              FREE(bands[i]);
+            }
+            FREE(bands);
         }
         else {
             // no export... just move the geocoded file out of the
@@ -2987,36 +3035,62 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
     copy_meta(cfg, inFile, outFile);
 
   meta_parameters *meta = meta_read(inFile);
-  if (strlen(cfg->export->lut) > 0) {
-    if (meta->general->band_count != 1) {
+  char lut_file[2048] = "";
+  int is_polsarpro = (strstr(meta->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+  int have_embedded_colormap = 0;
+  if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
+    strcpy(lut_file, cfg->export->lut);
+  }
+  else if (is_polsarpro &&
+           cfg->import  &&
+           cfg->import->polsarpro_colormap &&
+           strlen(cfg->import->polsarpro_colormap) > 0)
+  {
+    strcpy(lut_file, cfg->import->polsarpro_colormap);
+  }
+  else if (is_polsarpro && meta->colormap &&
+           meta->colormap->look_up_table && strlen(meta->colormap->look_up_table) > 0)
+  {
+    strcpy(lut_file, meta->colormap->look_up_table);
+    have_embedded_colormap = 0;
+  }
+  if (strlen(cfg->export->lut) > 0 ||
+      (is_polsarpro && strlen(lut_file) > 0))
+  {
+    if (!is_polsarpro && meta->general->band_count > 1) {
       asfPrintWarning("RGB Look-up-table not allowed for multi-band images."
                       " Ignored.\n");
-      strcpy(cfg->export->lut,"");
+      strcpy(lut_file,"");
     }
     else {
       if (strlen(cfg->export->rgb) > 0) {
         asfPrintWarning("RGB Banding option not allowed with RGB look up table."
                         " Ignored.\n");
       }
-      if (scale != TRUNCATE) {
+      if (!is_polsarpro && scale != TRUNCATE) {
         asfPrintWarning("Scale option %s not allowed with RGB look-up-table."
-                        " Using TRUNCATE\n",
+                        " Using TRUNCATE.\n",
                         cfg->export->byte);
       }
-      asfPrintStatus("Exporting using look-up-table: %s\n", cfg->export->lut);
+      asfPrintStatus("Exporting using look-up-table: %s\n", lut_file);
 
-      char *bands[2];
-      bands[0] = meta->general->bands;
-      bands[1] = NULL;
+      char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
+//      bands[0] = meta->general->bands;
+//      bands[1] = NULL;
 
       check_return(
-        asf_export_bands(format, TRUNCATE, TRUE, 0, 0, 0, 0, cfg->export->lut,
+        asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0, 0, 0, lut_file,
                          inFile, outFile, bands, &num_outputs, &output_names),
         "exporting data file (asf_export), using rgb look up table.\n");
+      int i;
+      for (i=0; i<meta->general->band_count; i++) {
+          FREE(bands[i]);
+      }
+      FREE(bands);
     }
   }
 
-  if (strlen(cfg->export->lut)==0) {
+  if (strlen(lut_file)==0) {
     // non look-up-table case
     if (strlen(cfg->export->rgb) > 0) {
       // user has requested banding

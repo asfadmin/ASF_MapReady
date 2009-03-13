@@ -96,7 +96,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       if (rgb || true_color || false_color || pauli || sinclair) {
           asfPrintWarning(
             "Greyscale PGM output is not compatible with color options:\n"
-            "(RGB, True Color, False Color, Pauli, or Sinclair)  ...\n"
+            "(RGB, True Color, False Color, color look-up tables, Pauli, or Sinclair etc.)  ...\n"
             "Defaulting to producing separate greyscale PGM files for "
             "available bands.\n");
         rgb = 0;

@@ -67,7 +67,7 @@ static void apply_default_dirs(convert_config *cfg)
 static char *read_param(char *line)
 {
   int i, k;
-  char *value=(char *)MALLOC(sizeof(char)*255);
+  char *value=(char *)CALLOC(256, sizeof(char));
 
   strcpy(value, "");
   i=strindex(line, "]");
@@ -217,7 +217,7 @@ int init_convert_config(char *configFile)
   fprintf(fConfig, "# Running asf_convert with the -create option and the mosaic flag\n"
           "# switched on will generate a [Mosaic] section where you can define further\n"
           "# parameters.\n\n");
-  fprintf(fConfig, "mosaic = 0\n\n");  
+  fprintf(fConfig, "mosaic = 0\n\n");
   // default values file
   fprintf(fConfig, "# The default values file is used to define the user's preferred parameter\n"
           "# settings. In most cases, you will work on a study where your area of interest is\n"
@@ -429,6 +429,8 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->complex_slc = 0;
   cfg->import->multilook_slc = 0;
   cfg->import->ers2_gain_fix = TRUE;
+  cfg->import->polsarpro_colormap = (char *)MALLOC(sizeof(char)*256);
+  strcpy(cfg->import->polsarpro_colormap, "");
 
   cfg->external->cmd = (char *)MALLOC(sizeof(char)*1024);
 
@@ -599,6 +601,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
       if (strncmp(test, "apply ers2 gain fix", 19)==0)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
+      if (strncmp(test, "polsarpro colormap", 18)==0)
+        strcpy(cfg->import->format, read_str(line, "polsarpro colormap"));
 
       // External
       if (strncmp(test, "command", 7)==0)
@@ -643,10 +647,10 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "cloude pottier", 14)==0)
         cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
       if (strncmp(test, "extended cloude pottier", 23)==0)
-        cfg->polarimetry->cloude_pottier_ext = 
+        cfg->polarimetry->cloude_pottier_ext =
           read_int(line, "extended cloude pottier");
       if (strncmp(test, "entropy anisotropy alpha", 24)==0)
-        cfg->polarimetry->cloude_pottier_nc = 
+        cfg->polarimetry->cloude_pottier_nc =
           read_int(line, "entropy anisotropy alpha");
       if (strncmp(test, "freeman durden", 14)==0)
         cfg->polarimetry->freeman_durden = read_int(line, "freeman durden");
@@ -905,6 +909,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
       if (strncmp(test, "apply ers2 gain fix", 19)==0)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
+      if (strncmp(test, "polsarpro colormap", 18)==0)
+        strcpy(cfg->import->polsarpro_colormap, read_str(line, "polsarpro colormap"));
       FREE(test);
     }
 
@@ -984,7 +990,7 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "cloude pottier", 14)==0)
         cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
       if (strncmp(test, "extended cloude pottier", 23)==0)
-        cfg->polarimetry->cloude_pottier_ext = 
+        cfg->polarimetry->cloude_pottier_ext =
           read_int(line, "extended cloude pottier");
       if (strncmp(test, "entropy anisotropy alpha", 24)==0)
         cfg->polarimetry->cloude_pottier_nc =
@@ -1119,7 +1125,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
 
   if (strcmp(cfg->general->batchFile, "") == 0) {
     fprintf(fConfig, "%s\n", cfg->comment);
-  
+
     // General
     fprintf(fConfig, "[General]\n");
     if (!shortFlag)
@@ -1235,7 +1241,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
     }
     fprintf(fConfig, "export = %i\n", cfg->general->export);
     // Genral - Mosaic
-    if (!shortFlag) { 
+    if (!shortFlag) {
       fprintf(fConfig, "\n# The mosaic flag indicates whether the data needs to be run through\n"
               "# 'asf_mosaic' (1 for running it, 0 for leaving out the export step).\n"
               "# Running asf_convert with the -create option and the mosaic flag\n"
@@ -1335,7 +1341,21 @@ int write_convert_config(char *configFile, convert_config *cfg)
           "# and is only applied to calibrated data (i.e., everything but amplitude)\n"
           "# For more information, see section 4 of:\n"
           "# <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n\n");
-    fprintf(fConfig, "apply ers2 gain fix = %d\n\n", cfg->import->ers2_gain_fix);
+    fprintf(fConfig, "apply ers2 gain fix = %d\n", cfg->import->ers2_gain_fix);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# If any input files are PolSARpro files, then it will be a single-band\n"
+          "# greyscale image containing a PolSARpro classification.  In order for the classification\n"
+              "# to be properly colored, a PolSARpro look-up table should be specified here.\n"
+              "# For a full list of available PolSARpro look-up tables, look in the ASF Tools\n"
+              "# share directory.  The available look-up tables can be found in the following\n"
+              "# path: <path>/asf_tools/share/asf_tools/mapready/look_up_tables.  In this folder,\n"
+              "# you will find files ending in \".lut\" and \".pal\".  Only the .pal files can\n"
+              "# be applied to PolSARpro files ...They originated from PolSARpro and are named\n"
+              "# according to the PolSARpro classification to which they apply.  NOTE: This field\n"
+              "# is OPTIONAL and only applies if you are processing PolSARpro files.  If not,\n"
+              "# then you may leave this field blank.  If it is blank, then any PolSARpro data\n"
+              "# that is processed will remain (non-meaningfully) greyscale.\n\n");
+    fprintf(fConfig, "polsarpro colormap = %s\n\n", cfg->import->polsarpro_colormap);
 
     // AirSAR -- only write out if the import format is AirSAR
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {
@@ -1501,7 +1521,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# the correction is always applied).\n\n");
       fprintf(fConfig, "farcorr threshold = %.2lf\n\n", cfg->polarimetry->farcorr_threshold);
     }
-    
+
     // Terrain correction
     if (cfg->general->terrain_correct) {
       fprintf(fConfig, "\n[Terrain correction]\n");

@@ -208,8 +208,8 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
   }
 }
 
-void import_polsarpro(char *s, char *ceosName, int byteFlag,
-		      char *image_data_type, char *outBaseName)
+void import_polsarpro(char *s, char *ceosName, char *colormapName,
+                      char *image_data_type, char *outBaseName)
 {
   meta_parameters *metaIn = NULL, *metaOut = NULL;
   envi_header *envi;
@@ -335,6 +335,12 @@ void import_polsarpro(char *s, char *ceosName, int byteFlag,
     asfLineMeter(ii, metaOut->general->line_count);
   }
 
+  // If there is a colormap associated with the file, then add it to the metadata
+  // as well
+  if (colormapName && strlen(colormapName)) {
+    apply_polsarpro_palette_to_metadata(colormapName, metaOut);
+  }
+
   FCLOSE(fpIn);
   FCLOSE(fpOut);
   FREE(floatBuf);
@@ -344,5 +350,67 @@ void import_polsarpro(char *s, char *ceosName, int byteFlag,
     meta_free(metaIn);
   if (metaOut)
     meta_free(metaOut);
+}
+
+// reads the appropriate look up table into a metadata colormap
+// structure
+#define MAX_JASC_LUT_DN 256
+void apply_polsarpro_palette_to_metadata(const char *lut_basename, meta_parameters *imd)
+{
+  char *p = NULL;
+  FILE *fp = NULL;
+  int num_elements = 0;
+  unsigned char * lut_buffer;
+  if (!lut_basename) return;
+
+  // Check LUT file validity and allocate appropriately sized buffer
+  // to read into
+  char magic_str[1024];
+  char version_s[1024];
+  char num_elements_s[1024];
+  char lut_path[1024];
+  sprintf(lut_path, "%s%clook_up_tables%c%s.pal", get_asf_share_dir(),
+          DIR_SEPARATOR, DIR_SEPARATOR, lut_basename);
+  fp = (FILE*)FOPEN(lut_path, "rt");
+  p = fgets(magic_str, 1024, fp);
+  if (!p){
+    FCLOSE(fp);
+    return; // eof
+  }
+  p = fgets(version_s, 1024, fp);
+  if (!p){
+    FCLOSE(fp);
+    return; // eof
+  }
+  p = fgets(num_elements_s, 1024, fp);
+  FCLOSE(fp);
+  if (!p){
+    return; // eof
+  }
+  int version = atoi(version_s);
+  num_elements = atoi(num_elements_s);
+  if (strncmp(magic_str, "JASC", 4) != 0) return;
+  if (version != 100) return;
+  if (num_elements <= 0 || num_elements > (2*MAX_JASC_LUT_DN)) return;
+  if (num_elements > MAX_JASC_LUT_DN) {
+    asfPrintWarning("PolSARpro look-up table contains more than 256 elements (%d).\n"
+        "Only the first %d will be read and mapped to data.\n", MAX_JASC_LUT_DN);
+  }
+  lut_buffer = (unsigned char*)MALLOC(sizeof(unsigned char) * 3 * MAX_LUT_DN);
+
+  // Read the LUT
+  read_lut(lut_path, lut_buffer);
+
+  // Populate the metadata colormap
+  if (!imd->colormap) imd->colormap = meta_colormap_init();
+  imd->colormap->num_elements = (num_elements <= MAX_JASC_LUT_DN) ? num_elements : MAX_JASC_LUT_DN;
+  imd->colormap->rgb = (meta_rgb*)CALLOC(imd->colormap->num_elements, sizeof(meta_rgb));
+  sprintf(imd->colormap->look_up_table, "%s.pal", lut_basename);
+  int i;
+  for (i = 0; i < imd->colormap->num_elements; i++) {
+    imd->colormap->rgb[i].red   = lut_buffer[i*3];
+    imd->colormap->rgb[i].green = lut_buffer[i*3+1];
+    imd->colormap->rgb[i].blue  = lut_buffer[i*3+2];
+  }
 }
 

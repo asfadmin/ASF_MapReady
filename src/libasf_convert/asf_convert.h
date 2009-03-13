@@ -61,6 +61,7 @@ typedef struct
                           // otherwise SLC data as stored as amp/phase
   int multilook_slc;      // flag to multilook single look complex data
   int ers2_gain_fix;      // flag to apply ers2 gain correction
+  char *polsarpro_colormap; // colormap (.pal) to apply to PolSARpro classifications
 } s_import;
 
 typedef struct
