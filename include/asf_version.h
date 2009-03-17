@@ -19,8 +19,8 @@
 #define MAPREADY_VERSION 2.1
 
 // Convert To Vector
-#define C2V_VERSION_STRING "2.1.1-dev"
-#define C2V_VERSION 2.1
+#define C2V_VERSION_STRING "2.2.0"
+#define C2V_VERSION 2.2
 
 // JPL Mosaic Suite
 #define JPL_VERSION_STRING "1.0.1-dev"
