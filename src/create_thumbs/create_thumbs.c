@@ -1312,7 +1312,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     else {
         meta_parameters *md = meta_read(get_basename(in_file));
         char lut_file[2048] = "";
-        if (md->colormap && md->colormap->look_up_table && strlen(md->colormap->look_up_table > 0) {
+        if (md->colormap && md->colormap->look_up_table &&
+            strlen(md->colormap->look_up_table) > 0) {
           strcpy(lut_file, md->colormap->look_up_table);
         }
         asf_export_bands(output_format,
