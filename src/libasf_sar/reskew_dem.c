@@ -376,21 +376,23 @@ static void handle_radiometry(meta_parameters *meta, float *amp, int n,
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
                char *outAmpFile, char *inMaskFile)
 {
-  return reskew_dem_rad(inMetafile, inDEMfile, outDEMfile, outAmpFile,
+  return reskew_dem_rad(inMetafile, inDEMfile, outDEMfile, NULL, outAmpFile,
                         inMaskFile, r_AMP);
 }
 
-int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
-                   char *outAmpFile, char *inMaskFile,
+int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMslant,
+                   char *outDEMground, char *outAmpFile, char *inMaskFile,
                    radiometry_t rad)
 {
 	float *grDEMline,*srDEMline,*outAmpLine,*inMaskLine;
 	register int line,nl;
-	FILE *inDEM,*outDEM,*outAmp,*inMask=NULL;
-	meta_parameters *metaIn, *metaDEM, *metaInMask=NULL;
+	FILE *inDEM,*outDEMsr,*outDEMgr,*outAmp,*inMask=NULL;
+	meta_parameters *metaIn, *metaDEM, *metaInMask=NULL, *metaGR=NULL;
 
 /* Get metadata */
 	metaIn = meta_read(inMetafile);
+        if (outDEMground)
+          metaGR = meta_read(inMetafile);
 	metaDEM = meta_read(inDEMfile);
 	nl = metaDEM->general->line_count;
 	gr_ns = metaDEM->general->sample_count;
@@ -399,9 +401,24 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	satHt = meta_get_sat_height(metaIn, nl/2, 0);
 	meta_get_slants(metaIn, &slant_to_first, &slant_per);
 
+/*Update ground range metadata*/
+        if (outDEMground) {
+          metaGR->sar->image_type = 'G';
+          metaGR->general->sample_count = gr_ns;
+          metaGR->general->line_count = nl;
+          double grPixSize = metaIn->general->y_pixel_size;
+          metaGR->general->x_pixel_size = grPixSize;
+          metaGR->general->y_pixel_size = grPixSize;
+          metaGR->general->start_line = metaGR->general->start_sample = 0;
+          metaGR->general->band_count = 1;
+          strcpy(metaGR->general->bands, "");
+        }
+
 /*Open files.*/
 	inDEM  = fopenImage(inDEMfile,"rb");
-	outDEM = fopenImage(outDEMfile,"wb");
+	outDEMsr = fopenImage(outDEMslant,"wb");
+        if (outDEMground)
+          outDEMgr = fopenImage(outDEMground,"wb");
 	outAmp = fopenImage(outAmpFile,"wb");
 	
 	inMaskLine = (float *)MALLOC(sizeof(float)*gr_ns);
@@ -437,8 +454,10 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
 
             dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine);
 
-            // write out slant range DEM line
-            put_float_line(outDEM,metaIn,line,srDEMline);
+            // write out slant/ground range DEM lines
+            put_float_line(outDEMsr,metaIn,line,srDEMline);
+            if (outDEMground)
+              put_float_line(outDEMgr,metaGR,line,grDEMline);
 
             // convert amplitude data to desired radiometry, then
             // write out the simulated sar image line
@@ -450,22 +469,27 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
         metaIn->general->band_count = 1; 
         strcpy(metaIn->general->bands, "");
 
-	meta_write(metaIn, outDEMfile);
+	meta_write(metaIn, outDEMslant);
 	metaIn->general->image_data_type = SIMULATED_IMAGE;
 	meta_write(metaIn, outAmpFile);
 
 /* Free memory, close files, & exit */
 	meta_free(metaDEM);
 	meta_free(metaIn);
+
 	FREE(grDEMline);
 	FREE(srDEMline);
 	FREE(outAmpLine);
 	FREE(inMaskLine);
 	FCLOSE(inDEM);
-	FCLOSE(outDEM);
+	FCLOSE(outDEMsr);
 	FCLOSE(outAmp);
-	if (inMaskFile)
-	{
+        if (outDEMground) {
+          FCLOSE(outDEMgr);
+          meta_write(metaGR, outDEMground);
+          meta_free(metaGR);
+        }
+	if (inMaskFile) {
             FCLOSE(inMask);
             meta_free(metaInMask);
 	}

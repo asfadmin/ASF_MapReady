@@ -77,6 +77,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_sar.h"
+#include <assert.h>
 
 struct deskew_dem_data {
         int numLines, numSamples;
@@ -145,7 +146,7 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
     {
         float height=inBuf[inX];
         outX=(int)SR2GR(d,(float)inX,height);
-
+        
         if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
         {
             // if either end is NO_DEM_DATA, fill the range with that value
@@ -162,10 +163,9 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
                 float curr=lastOutValue;
                 float delt=(height-lastOutValue)/(outX-lastOutX);
                 curr+=delt;
-                for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
-                {
-                    outBuf[xInterp]=curr;
-                    curr+=delt;
+                for (xInterp=lastOutX+1;xInterp<=outX;xInterp++) {
+                  outBuf[xInterp]=curr;
+                  curr+=delt;
                 }
             }
             // last resort - fill with badDEMht
@@ -193,7 +193,7 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
     double saved_ER=er;
     double er2her2,phi,phiAtSeaLevel,slantRng;
     int ns = meta->general->sample_count;
-    
+
     meta_get_slants(meta,&slantFirst,&slantPer);
     slantFirst+=slantPer*meta->general->start_sample+1;
     slantPer*=meta->sar->sample_increment;
@@ -214,10 +214,9 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
         d->cosIncidAng[x]=cos(d->incidAng[x]);
     }
     
-    d->maxPhi=acos((satHt*satHt+er*er-d->slantRangeSqr[ns-1])/
-                   (2.0*satHt*er));
+    d->maxPhi=acos((satHt*satHt+er*er-d->slantRangeSqr[ns-1])/(2.0*satHt*er));
     d->phiMul=(ns-1)/(d->maxPhi-d->minPhi);
-    
+
 /*Compute arrays indexed by ground range pixel: slantGR and heightShiftGR*/
     for (x=0;x<ns;x++)
     {
@@ -326,7 +325,8 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                 if (doInterp) {
                     /* bilinear interp */
                     out[grX]=(1-dx)*in[x] + dx*in[x+1];
-                } else {
+                }
+                else {
                     /* nearest neighbor */
                     out[grX]= dx <= 0.5 ? in[x] : in[x+1];
                 }
@@ -539,6 +539,7 @@ Here's what it looked like before optimization:
         dy=(grDEMprev[x]-grX)/d->grPixelSize;
 
         /*Attempting to smooth the horizontal deltas...*/
+/*
         double dx2=0, dx3=0;
         if (x>2 && grDEM[x-2] != badDEMht)
           dx2 = (grDEM[x-1] - grDEM[x-2])/d->grPixelSize;
@@ -554,6 +555,7 @@ Here's what it looked like before optimization:
         else if (dx3 != 0) {
           dx = (2*dx+dx3)/3.;
         }        
+*/
 
         /*Make the normal a unit vector.*/
         //vecLen=sqrt(dx*dx+dy*dy+1);
@@ -598,6 +600,7 @@ Here's what it looked like before optimization:
                     /* Ordinary diffuse radar reflection */
                     /* This is the formula that was previously in deskew_dem */
                     inout[x] *= 1-.33*pow(cosAng,7);
+                    //inout[x] = grX;
                     break;
                 case 22:
                     /* Secret test mode */
@@ -610,16 +613,18 @@ Here's what it looked like before optimization:
 
 /* inSarName can be NULL, in this case doRadiometric is ignored */
 /* inMaskName can be NULL, in this case outMaskName is ignored */
-int deskew_dem(char *inDemName, char *outName, char *inSarName,
-	       int doRadiometric, char *inMaskName, char *outMaskName,
-               int fill_holes, int fill_value)
+int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
+               char *inSarName, int doRadiometric, char *inMaskName,
+               char *outMaskName, int fill_holes, int fill_value)
 {
-	float *srDEMline,*grDEMline,*grDEMlast,*inSarLine,*outLine,*maskLine;
-	FILE *inDemFp,*inSarFp,*outFp,*inMaskFp=NULL,*outMaskFp=NULL;
-	meta_parameters *inDemMeta, *outMeta, *inSarMeta, *inMaskMeta=NULL;
+        float *srDEMline,*grDEMline,*grDEMlast,*grDEMconv,
+          *inSarLine,*outLine,*maskLine;
+	FILE *inDemSlantFp,*inDemGroundFp=NULL,*inSarFp,*outFp,
+          *inMaskFp=NULL,*outMaskFp=NULL;
+	meta_parameters *metaDEMslant, *metaDEMground=NULL, *outMeta,
+          *inSarMeta, *inMaskMeta=NULL;
 	char msg[256];
-	int inSarFlag,inMaskFlag,outMaskFlag;
-	int dem_is_ground_range=FALSE;
+	int ns,inSarFlag,inMaskFlag,outMaskFlag;
 	register int x,y,b;
         struct deskew_dem_data d;
 	int band_count=1; // in case no SAR image is passed in
@@ -632,20 +637,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	inSarMeta = NULL;
 
 /*Extract metadata*/
-	inDemMeta = meta_read(inDemName);
-	outMeta = meta_read(inDemName);
+	metaDEMslant = meta_read(inDemSlant);
+        if (inDemGround)
+          metaDEMground = meta_read(inDemGround);
+	outMeta = meta_read(inDemSlant);
 
-	/*
-        if (doRadiometric)
-            asfPrintWarning("Radiometric terrain correction is still "
-                            "experimental.\n");
-	*/
-
-        if (inDemMeta->sar->image_type == 'G') {
-	   dem_is_ground_range=TRUE;
-        }
-	if (inDemMeta->sar->image_type=='P') {
-		asfPrintError("DEM cannot be map projected for this program to work!\n");
+	if (metaDEMslant->sar->image_type=='P') {
+		asfPrintError("DEM cannot be map projected for this program "
+                              "to work!\n");
 		return FALSE;
 	}
 	if (inSarFlag) {
@@ -653,31 +652,38 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	   band_count = inSarMeta->general->band_count;
            d.meta = inSarMeta;
 	   if (inSarMeta->sar->image_type=='P') {
-	      asfPrintError("SAR image cannot be map projected for this program to work!\n");
+	      asfPrintError("SAR image cannot be map projected for this "
+                            "program to work!\n");
 	      return FALSE;
 	   }
 	   outMeta->general->data_type = inSarMeta->general->data_type;
-        } else {
+        }
+        else {
             d.meta = NULL;
         }
 
-        d.numLines = inDemMeta->general->line_count;
-        d.numSamples = inDemMeta->general->sample_count;
+        d.numLines = metaDEMslant->general->line_count;
+        d.numSamples = metaDEMslant->general->sample_count;
+        ns = d.numSamples;
+        if (metaDEMground && metaDEMground->general->sample_count != ns) {
+          asfPrintError("Slant/Ground mismatch. %d %d\n",
+                        metaDEMground->general->sample_count, ns);
+        }
 
 /*Allocate vectors.*/
-	d.slantGR       = (double*)MALLOC(sizeof(double)*d.numSamples);
-	d.groundSR      = (double*)MALLOC(sizeof(double)*d.numSamples);
-	d.heightShiftSR = (double*)MALLOC(sizeof(double)*d.numSamples);
-	d.heightShiftGR = (double*)MALLOC(sizeof(double)*d.numSamples);
-	d.slantRange    = (double*)MALLOC(sizeof(double)*d.numSamples);
-	d.slantRangeSqr = (double*)MALLOC(sizeof(double)*d.numSamples);
-	d.incidAng      = (double*)MALLOC(sizeof(double)*d.numSamples);
-	d.sinIncidAng   = (double*)MALLOC(sizeof(double)*d.numSamples);
-	d.cosIncidAng   = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.slantGR       = (double*)MALLOC(sizeof(double)*ns);
+	d.groundSR      = (double*)MALLOC(sizeof(double)*ns);
+	d.heightShiftSR = (double*)MALLOC(sizeof(double)*ns);
+	d.heightShiftGR = (double*)MALLOC(sizeof(double)*ns);
+	d.slantRange    = (double*)MALLOC(sizeof(double)*ns);
+	d.slantRangeSqr = (double*)MALLOC(sizeof(double)*ns);
+	d.incidAng      = (double*)MALLOC(sizeof(double)*ns);
+	d.sinIncidAng   = (double*)MALLOC(sizeof(double)*ns);
+	d.cosIncidAng   = (double*)MALLOC(sizeof(double)*ns);
         d.cosineScale   = NULL;
 
 /*Set up the output meta file.*/
-	d.grPixelSize = calc_ranges(&d,inDemMeta);
+	d.grPixelSize = calc_ranges(&d,metaDEMslant);
 	outMeta->sar->image_type='G';
 	outMeta->general->x_pixel_size = d.grPixelSize;
 
@@ -686,42 +692,48 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
         outMeta->general->no_data = 0.0;
 
 /*Open files.*/
-	inDemFp = fopenImage(inDemName,"rb");
+	inDemSlantFp = fopenImage(inDemSlant,"rb");
+        if (inDemGround)
+          inDemGroundFp = fopenImage(inDemGround, "rb");
+
 	outFp   = fopenImage(outName,"wb");
 	if (inSarFlag) {
-    inSarFp = fopenImage(inSarName,"rb");
-    outMeta->general->band_count = inSarMeta->general->band_count;
-    strcpy(outMeta->general->bands, inSarMeta->general->bands);
-  }
-  if (inMaskFlag) {
-            if (!inSarFlag)
-                asfPrintError("Cannot produce a mask without a SAR!\n");
-            inMaskMeta = meta_read(inMaskName);
-            if ((inSarMeta->general->line_count != inMaskMeta->general->line_count) ||
-                (inSarMeta->general->sample_count != inMaskMeta->general->sample_count))
-            {
-                asfPrintStatus(" SAR Image: %dx%d LxS.\n"
-                               "Mask Image: %dx%d LxS.\n",
-                               inSarMeta->general->line_count,
-                               inSarMeta->general->sample_count,
-                               inMaskMeta->general->line_count,
-                               inMaskMeta->general->sample_count);
+          inSarFp = fopenImage(inSarName,"rb");
+          outMeta->general->band_count = inSarMeta->general->band_count;
+          strcpy(outMeta->general->bands, inSarMeta->general->bands);
+        }
+        if (inMaskFlag) {
+          if (!inSarFlag)
+            asfPrintError("Cannot produce a mask without a SAR!\n");
+          inMaskMeta = meta_read(inMaskName);
 
-                asfPrintError("The mask and the SAR image must be the "
-                              "same size.\n");
-            }
-  }
+          meta_general *smg = inSarMeta->general;
+          meta_general *mmg = inMaskMeta->general;
+          if ((smg->line_count != mmg->line_count) ||
+              (smg->sample_count != mmg->sample_count))
+          {
+            asfPrintStatus(" SAR Image: %dx%d LxS.\n"
+                           "Mask Image: %dx%d LxS.\n",
+                           inSarMeta->general->line_count,
+                           inSarMeta->general->sample_count,
+                           inMaskMeta->general->line_count,
+                           inMaskMeta->general->sample_count);
+            
+            asfPrintError("The mask and the SAR image must be the "
+                          "same size.\n");
+          }
+        }
         
-  // output file's metadata is all set, now
+/* output file's metadata is all set, now */
 	meta_get_corner_coords(outMeta);
 	meta_write(outMeta, outName);
 
 /* Blather at user about what is going on */
 	strcpy(msg,"");
-	if (dem_is_ground_range)
-	  sprintf(msg,"%sDEM is in ground range.\n",msg);
-	else
-	  sprintf(msg,"%sDEM in slant range, but will be corrected.\n",msg);
+        if (inDemGroundFp)
+          sprintf(msg,"%sDEM is in ground range.\n",msg);
+        else
+          sprintf(msg,"%sDEM is in slant range, but will be corrected.\n",msg);
 
 	if (inSarFlag)
 	  sprintf(msg,"%sCorrecting image",msg);
@@ -737,16 +749,17 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
 /*Allocate input buffers.*/
 	if (inSarFlag) {
-	   inSarLine = (float *)MALLOC(sizeof(float)*d.numSamples);
+	   inSarLine = (float *)MALLOC(sizeof(float)*ns);
         } else {
 	   inSarLine = NULL;
         }
 
-	outLine   = (float *)MALLOC(sizeof(float)*d.numSamples);
-	srDEMline = (float *)MALLOC(sizeof(float)*d.numSamples);
-        grDEMline = (float *)MALLOC(sizeof(float)*d.numSamples);
-        grDEMlast = (float *)MALLOC(sizeof(float)*d.numSamples);
-        maskLine  = (float *)MALLOC(sizeof(float)*d.numSamples);
+	outLine   = (float *)MALLOC(sizeof(float)*ns);
+	srDEMline = (float *)MALLOC(sizeof(float)*ns);
+        grDEMline = (float *)MALLOC(sizeof(float)*ns);
+        grDEMlast = (float *)MALLOC(sizeof(float)*ns);
+        grDEMconv = (float *)MALLOC(sizeof(float)*ns);
+        maskLine  = (float *)MALLOC(sizeof(float)*ns);
 
         n_layover = n_shadow = n_user = 0;
 
@@ -757,38 +770,73 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             outMaskFp = fopenImage(outMaskName, "wb");
 
 /* Make an empty mask */
-        for (x=0; x<d.numSamples; ++x)
+        for (x=0; x<ns; ++x)
             maskLine[x] = 1;
+
+        //FILE *fpdem = fopen("gr_dem.img", "wb");
+        //meta_write(metaDEMground, "gr_dem.meta");
 
 /*Rectify data.*/
 	for (y=0;y<d.numLines;y++) {
 
-            /*Read in DEM line-by-line (keeping two lines buffered)*/
+            // Always keep last two GR dem lines (for radiometric comp)
             float *tmp=grDEMline;
             grDEMline=grDEMlast;
             grDEMlast=tmp;
-            if (dem_is_ground_range) {
-                get_float_line(inDemFp,inDemMeta,y,grDEMline);
-            } else {
-                get_float_line(inDemFp,inDemMeta,y,srDEMline);
-                //dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,fill_holes);
-                dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,TRUE);
+
+            // get slant range dem line, and convert dem to GR
+            // we have two versions of the GR dem line: grDEMline, grDEMconv
+            get_float_line(inDemSlantFp,metaDEMslant,y,srDEMline);
+            dem_sr2gr(&d,srDEMline,grDEMconv,ns,fill_holes);
+
+            // If we have the GR DEM, read it, otherwise use the converted one
+            if (inDemGroundFp) {
+              get_float_line(inDemGroundFp,metaDEMground,y,grDEMline);
+
+              // GR dem needs to be shifted -- use outLine as temp array
+              for (x=0; x<ns; ++x) {
+                int newX = (int)floor(d.slantGR[x]);
+                if (newX<0)
+                  outLine[x] = grDEMline[0];
+                else if (newX>ns-2)
+                  outLine[x] = grDEMline[ns-1];
+                else {
+                  // simple bilinear interp
+                  double frac = d.slantGR[x] - (double)newX;
+                  outLine[x] = grDEMline[newX]   * (1.-frac) +
+                               grDEMline[newX+1] * frac;
+                }
+              }
+
+              for (x=0; x<ns; ++x)
+                grDEMline[x] = outLine[x];
+
+              //put_float_line(fpdem,metaDEMground,y,grDEMline);
+            }
+            else {
+              for (x=0; x<ns; ++x)
+                grDEMline[x] = grDEMconv[x];
             }
 
+            // we can use either GR DEM to do the correction... it looks like
+            // for radiometric correction the original is clearly the better
+            // choice, but for geometric correction it is harder to say.
+            float *grDEM_for_geo = grDEMconv;
+
             if (inMaskFlag) {
-                /* Read in the next line of the mask, update the values */
+                // Read in the next line of the mask, update the values
                 get_float_line(inMaskFp,inMaskMeta,y,maskLine);
-                for (x=0; x<d.numSamples; ++x) {
+                for (x=0; x<ns; ++x) {
                     if (maskLine[x]==2.0)
                         maskLine[x] = MASK_INVALID_DATA;
                     else if (is_masked(maskLine[x]))
                         maskLine[x] = MASK_USER_MASK;
                 }
 
-                geo_compensate(&d,grDEMline,maskLine,outLine,
-                               d.numSamples,0,NULL,y);
+                geo_compensate(&d,grDEM_for_geo,maskLine,outLine,
+                               ns,0,NULL,y);
 
-                for (x=0; x<d.numSamples; ++x)
+                for (x=0; x<ns; ++x)
                     maskLine[x] = outLine[x];
             }
 
@@ -797,16 +845,16 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	      if (inSarFlag) {
                 get_band_float_line(inSarFp,inSarMeta,b,y,inSarLine);
 
-                geo_compensate(&d,grDEMline,inSarLine,outLine,
-                               d.numSamples,1,maskLine,y);
+                geo_compensate(&d,grDEM_for_geo,inSarLine,outLine,
+                               ns,1,maskLine,y);
 	      }
 	      if (y>0&&doRadiometric)
                 radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                                 d.numSamples,y,doRadiometric);
+                                 ns,y,doRadiometric);
 	      
 	      // subtract away the masked region
-	      mask_float_line(d.numSamples,fill_value,outLine,
-			      maskLine,grDEMline,&d,!fill_holes);
+	      mask_float_line(ns,fill_value,outLine,
+			      maskLine,grDEMconv,&d,!fill_holes);
 	      
 	      put_band_float_line(outFp,outMeta,b,y,outLine);
 	    }
@@ -821,6 +869,8 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             meta_free(inMaskMeta);
         }
 
+        //FCLOSE(fpdem);
+
 /*Write the updated mask*/
         if (outMaskFlag) {
             FCLOSE(outMaskFp);
@@ -834,14 +884,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
             // write the mask's metadata, then print mask stats
             meta_write(outMeta, outMaskName);
-            int tot=d.numSamples*d.numLines;
+            int tot=ns*d.numLines;
             asfPrintStatus("Mask Statistics:\n"
                    "    Layover Pixels: %9d/%d (%f%%)\n"
                    "     Shadow Pixels: %9d/%d (%f%%)\n"
                    "User Masked Pixels: %9d/%d (%f%%)\n",
-                   n_layover, tot, 100*(float)n_layover/tot, 
-                   n_shadow, tot, 100*(float)n_shadow/tot,
-                   n_user, tot, 100*(float)n_user/tot);
+                   n_layover, tot, 100.*(float)n_layover/tot, 
+                   n_shadow, tot, 100.*(float)n_shadow/tot,
+                   n_user, tot, 100.*(float)n_user/tot);
         }
 
 /* Clean up & skidattle */
@@ -853,10 +903,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	FREE(srDEMline);
 	FREE(grDEMlast);
 	FREE(grDEMline);
+        FREE(grDEMconv);
 	FREE(outLine);
-	FCLOSE(inDemFp);
+	FCLOSE(inDemSlantFp);
+        FCLOSE(inDemGroundFp);
 	FCLOSE(outFp);
-	meta_free(inDemMeta);
+	meta_free(metaDEMslant);
+        if (metaDEMground)
+          meta_free(metaDEMground);
 	meta_free(outMeta);
 	FREE(d.slantGR);
 	FREE(d.groundSR);

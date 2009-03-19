@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <limits.h>
+#include <assert.h>
 
 #include <asf.h>
 #include <asf_endian.h>
@@ -565,6 +566,7 @@ int match_dem(meta_parameters *metaSAR,
               char *userMaskFile,
               char *demTrimSimSar,
               char *demTrimSlant,
+              char *demGround,
               char *userMaskClipped,
               int dem_grid_size,
               int do_corner_matching,
@@ -634,8 +636,9 @@ int match_dem(meta_parameters *metaSAR,
                    "simulated sar image...\n");
     demSlant = getOutName(output_dir, demFile, "_slant");
     demSimSar = getOutName(output_dir, demFile, "_sim_sar");
-    reskew_dem_rad(srFile, demClipped, demSlant, demSimSar, userMaskClipped,
-                   metaSAR->general->radiometry);
+
+    reskew_dem_rad(srFile, demClipped, demSlant, demGround, demSimSar,
+                   userMaskClipped, metaSAR->general->radiometry);
 
     // Resize the simulated sar image to match the slant range SAR image.
     asfPrintStatus("Resizing simulated sar image...\n");
@@ -952,7 +955,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
 
   metaSAR = meta_read(sarFile);
   match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, userMaskFile,
-        simAmpFile, demSlant, userMaskClipped, dem_grid_size,
+            simAmpFile, demSlant, NULL, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
             madssap, clean_files, no_matching, range_offset, azimuth_offset,
@@ -978,7 +981,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                      double azimuth_offset)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
-  char *demTrimSimSar = NULL, *demTrimSlant = NULL;
+  char *demTrimSimSar = NULL, *demTrimSlant = NULL, *demGround = NULL;
   char *lsMaskFile, *padFile = NULL, *userMaskClipped = NULL;
   char *deskewDemFile = NULL, *deskewDemMask = NULL;
   char *output_dir;
@@ -1253,7 +1256,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
 
   // If we have a huge DEM, we can get much better performance by chopping
   // a chunk out of it now, with generous padding.
-  char *demChunk;
+  char *demChunk=NULL;
   if (metaDEM->general->line_count > 10000 &&
       metaDEM->general->sample_count > 10000)
   {
@@ -1272,13 +1275,15 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
      // dem isn't that big: no need to chunk out a piece, use the whole thing
      demChunk = STRDUP(demFile);
   }
+  assert(demChunk);
 
   // Assign a couple of file names and match the DEM
   demTrimSimSar = getOutName(output_dir, demChunk, "_sim_sar_trim");
   demTrimSlant = getOutName(output_dir, demChunk, "_slant_trim");
+  demGround = getOutName(output_dir, demFile, "_ground");
 
   match_dem(metaSAR, sarFile, demChunk, srFile, output_dir, userMaskFile,
-        demTrimSimSar, demTrimSlant, userMaskClipped, dem_grid_size,
+        demTrimSimSar, demTrimSlant, demGround, userMaskClipped, dem_grid_size,
         do_corner_matching, do_fftMatch_verification, FALSE,
         TRUE, TRUE, madssap, clean_files, no_matching, range_offset,
         azimuth_offset, &t_offset, &x_offset);
@@ -1311,7 +1316,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       deskewDemMask = getOutName(output_dir, srFile, "_ddm");
       trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
            metaSAR->general->line_count);
-      deskew_dem(demTrimSlant, deskewDemFile, padFile, doRadiometric,
+      deskew_dem(demTrimSlant, demGround, deskewDemFile, padFile, doRadiometric,
                  userMaskClipped, deskewDemMask, do_interp, fill_value);
 
       // After deskew_dem, there will likely be zeros on the left & right edges
@@ -1373,6 +1378,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
         clean(demChunk);
     clean(demTrimSlant);
     clean(demTrimSimSar);
+    clean(demGround);
     if (clean_resample_file) // false when resample file is the original image
         clean(resampleFile);
     clean(srFile);
@@ -1404,6 +1410,9 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   FREE(sarFile);
   FREE(outFile);
   FREE(demChunk);
+  FREE(demGround);
+  FREE(demTrimSlant);
+  FREE(demTrimSimSar);
 
   meta_free(metaSAR);
   meta_free(metaDEM);

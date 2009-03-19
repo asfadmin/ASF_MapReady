@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 		        char tmp[1024];
 			CHECK_ARG(2);
 			strcpy(tmp,GET_ARG(2));
-			inSarName = strdup(tmp);
+			inSarName = STRDUP(tmp);
 			ext=findExt(inSarName);
                         if (!ext) {
                             sprintf(tmp,"%s.amp",inSarName);
@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
 	}
 
 	int fill_value=LEAVE_MASK;
-	deskew_dem(inDemName, outName, inSarName, doRadiometric, NULL, NULL,
-                   do_interp, fill_value);
+	deskew_dem(inDemName, NULL, outName, inSarName, doRadiometric,
+                   NULL, NULL, do_interp, fill_value);
 	exit(EXIT_SUCCESS);
 }
 
