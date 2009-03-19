@@ -611,6 +611,30 @@ Here's what it looked like before optimization:
     }
 }
 
+static void shift_gr(struct deskew_dem_data *d, float *grDEMline, float *tmp)
+{
+  int x,ns = d->numSamples;
+
+  for (x=0; x<ns; ++x) {
+    int newX = (int)floor(d->slantGR[x]);
+    if (newX<0) {
+      tmp[x] = grDEMline[0];
+    }
+    else if (newX>ns-2) {
+      tmp[x] = grDEMline[ns-1];
+    }
+    else {
+      // simple linear interp
+      double frac = d->slantGR[x] - (double)newX;
+      tmp[x] = grDEMline[newX]*(1.-frac) + grDEMline[newX+1]*frac;
+    }
+  }
+  
+  for (x=0; x<ns; ++x)
+    grDEMline[x] = tmp[x];
+}
+
+
 /* inSarName can be NULL, in this case doRadiometric is ignored */
 /* inMaskName can be NULL, in this case outMaskName is ignored */
 int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
@@ -792,25 +816,7 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
             // If we have the GR DEM, read it, otherwise use the converted one
             if (inDemGroundFp) {
               get_float_line(inDemGroundFp,metaDEMground,y,grDEMline);
-
-              // GR dem needs to be shifted -- use outLine as temp array
-              for (x=0; x<ns; ++x) {
-                int newX = (int)floor(d.slantGR[x]);
-                if (newX<0)
-                  outLine[x] = grDEMline[0];
-                else if (newX>ns-2)
-                  outLine[x] = grDEMline[ns-1];
-                else {
-                  // simple bilinear interp
-                  double frac = d.slantGR[x] - (double)newX;
-                  outLine[x] = grDEMline[newX]   * (1.-frac) +
-                               grDEMline[newX+1] * frac;
-                }
-              }
-
-              for (x=0; x<ns; ++x)
-                grDEMline[x] = outLine[x];
-
+              shift_gr(&d,grDEMline,outLine);
               //put_float_line(fpdem,metaDEMground,y,grDEMline);
             }
             else {
