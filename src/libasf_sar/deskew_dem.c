@@ -611,27 +611,24 @@ Here's what it looked like before optimization:
     }
 }
 
-static void shift_gr(struct deskew_dem_data *d, float *grDEMline, float *tmp)
+static void shift_gr(struct deskew_dem_data *d, float *in, float *out)
 {
-  int x,ns = d->numSamples;
+    int x, newX, ns=d->numSamples;
 
-  for (x=0; x<ns; ++x) {
-    int newX = (int)floor(d->slantGR[x]);
-    if (newX<0) {
-      tmp[x] = grDEMline[0];
+    for (x=0; x<ns; ++x) {
+        newX = (int)floor(d->slantGR[x]);
+        if (newX<0) {
+            out[x] = in[0];
+        }
+        else if (newX>ns-2) {
+            out[x] = in[ns-1];
+        }
+        else {
+            // simple linear interp
+            double frac = d->slantGR[x] - (double)newX;
+            out[x] = in[newX]*(1.-frac) + in[newX+1]*frac;
+        }
     }
-    else if (newX>ns-2) {
-      tmp[x] = grDEMline[ns-1];
-    }
-    else {
-      // simple linear interp
-      double frac = d->slantGR[x] - (double)newX;
-      tmp[x] = grDEMline[newX]*(1.-frac) + grDEMline[newX+1]*frac;
-    }
-  }
-  
-  for (x=0; x<ns; ++x)
-    grDEMline[x] = tmp[x];
 }
 
 
@@ -642,11 +639,11 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
                char *outMaskName, int fill_holes, int fill_value)
 {
         float *srDEMline,*grDEMline,*grDEMlast,*grDEMconv,
-          *inSarLine,*outLine,*maskLine;
+              *inSarLine,*outLine,*maskLine;
 	FILE *inDemSlantFp,*inDemGroundFp=NULL,*inSarFp,*outFp,
-          *inMaskFp=NULL,*outMaskFp=NULL;
+             *inMaskFp=NULL,*outMaskFp=NULL;
 	meta_parameters *metaDEMslant, *metaDEMground=NULL, *outMeta,
-          *inSarMeta, *inMaskMeta=NULL;
+                        *inSarMeta, *inMaskMeta=NULL;
 	char msg[256];
 	int ns,inSarFlag,inMaskFlag,outMaskFlag;
 	register int x,y,b;
@@ -815,11 +812,12 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
 
             // If we have the GR DEM, read it, otherwise use the converted one
             if (inDemGroundFp) {
-              get_float_line(inDemGroundFp,metaDEMground,y,grDEMline);
-              shift_gr(&d,grDEMline,outLine);
+              get_float_line(inDemGroundFp,metaDEMground,y,outLine);
+              shift_gr(&d,outLine,grDEMline);
               //put_float_line(fpdem,metaDEMground,y,grDEMline);
             }
             else {
+              asfPrintError("Whoa!\n");
               for (x=0; x<ns; ++x)
                 grDEMline[x] = grDEMconv[x];
             }
@@ -839,8 +837,7 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
                         maskLine[x] = MASK_USER_MASK;
                 }
 
-                geo_compensate(&d,grDEM_for_geo,maskLine,outLine,
-                               ns,0,NULL,y);
+                geo_compensate(&d,grDEM_for_geo,maskLine,outLine,ns,0,NULL,y);
 
                 for (x=0; x<ns; ++x)
                     maskLine[x] = outLine[x];
