@@ -516,11 +516,6 @@ Here's what it looked like before optimization:
 
 */
 
-/*** FIXME
-     For 3.1, we force the user to use correction formula #5
-     That's the only one that's been tested... */
-    if (form > 0) form = 5;
-
     int x;
     for (x=1;x<ns;x++)
     {
@@ -538,25 +533,6 @@ Here's what it looked like before optimization:
         dx=(grX-grDEM[x-1])/d->grPixelSize;
         dy=(grDEMprev[x]-grX)/d->grPixelSize;
 
-        /*Attempting to smooth the horizontal deltas...*/
-/*
-        double dx2=0, dx3=0;
-        if (x>2 && grDEM[x-2] != badDEMht)
-          dx2 = (grDEM[x-1] - grDEM[x-2])/d->grPixelSize;
-        if (x<ns-2 && grDEM[x+1] != badDEMht)
-          dx3 = (grDEM[x+1] - grDEM[x])/d->grPixelSize;
-
-        if (dx2 != 0 && dx3 != 0) {
-          dx = (2*dx+dx2+dx3)/4.;
-        }
-        else if (dx2 != 0) {
-          dx = (2*dx+dx2)/3.;
-        }
-        else if (dx3 != 0) {
-          dx = (2*dx+dx3)/3.;
-        }        
-*/
-
         /*Make the normal a unit vector.*/
         //vecLen=sqrt(dx*dx+dy*dy+1);
         vecLen = sqrt(dx*dx+1);
@@ -564,13 +540,6 @@ Here's what it looked like before optimization:
 
         /*Take dot product of this vector and the incidence vector.*/
         cosAng=(dx*d->sinIncidAng[x]+d->cosIncidAng[x])/vecLen;
-
-        double li = acos(dz);
-        double gi = meta_incid(d->meta, line, x);
-        double tanphie = tan(gi);
-        double cosphi = cosAng;
-        double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
-        double cosphia = 1/sqrt(dx*dx+1);
 
         if (cosAng>=0) {
             switch (form) {
@@ -581,31 +550,62 @@ Here's what it looked like before optimization:
                                   form);
                     return;
                 case 1:
+                {
                     /* From the old terrcorr: ftcli */
+                    double gi = meta_incid(d->meta, line, x);
+                    double li = acos(dz);
+                    double tanphie = tan(gi);
                     inout[x] *= tan(li) / tanphie;
                     break;
+                }
                 case 2:
+                {
                     /* From the old terrcorr: ftcgo */
+                    double gi = meta_incid(d->meta, line, x);
+                    double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
+                    double cosphia = 1./sqrt(dx*dx+1);
+                    double tanphie = tan(gi);
+                    double cosphi = cosAng;
                     inout[x] *= (sinphir * cosphia) / (tanphie * cosphi);
                     break;
+                }
                 case 3:
+                {
                     /* From the old terrcorr: ftcsq */
+                    double gi = meta_incid(d->meta, line, x);
+                    double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
+                    double cosphia = 1./sqrt(dx*dx+1);
+                    double tanphie = tan(gi);
+                    double cosphi = cosAng;
                     inout[x] *= (sinphir * cosphia) / (tanphie * sqrt(cosphi));
                     break;
+                }
                 case 4:
+                {
                     /* From the old terrcorr: ftcvx */
+                    double gi = meta_incid(d->meta, line, x);
+                    double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
+                    double cosphia = 1./sqrt(dx*dx+1);
                     inout[x] *= (sinphir * cosphia) / sin(gi);
                     break;
-                case 5:
+                }
+                case 5: 
+                {
+                    /* Jeremy's new formula, this should be the new default */
+                    // What we really want is this:
+                    //      inout[x] *= sin(acos(cosAng))/sin(gi);
+                    // But we replace sin(acos(x)) with the pythagorean equiv
+                    inout[x] *= sqrt(1.-cosAng*cosAng)/d->sinIncidAng[x];
+                    break;
+                }
+                case 6:
+                {
                     /* Ordinary diffuse radar reflection */
-                    /* This is the formula that was previously in deskew_dem */
-                    inout[x] *= 1-.33*pow(cosAng,7);
-                    //inout[x] = grX;
+                    /* This is the formula that was previously in deskew_dem, */
+                    /* and the old default for asf_terrcorr -do-radiometric */
+                    inout[x] *= 1.-.33*pow(cosAng,7);
                     break;
-                case 22:
-                    /* Secret test mode */
-                    inout[x] = 4+(float)x/ns;
-                    break;
+                }
             }
         }
     }
@@ -817,7 +817,6 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
               //put_float_line(fpdem,metaDEMground,y,grDEMline);
             }
             else {
-              asfPrintError("Whoa!\n");
               for (x=0; x<ns; ++x)
                 grDEMline[x] = grDEMconv[x];
             }

@@ -393,7 +393,7 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-other-file","--other-file",NULL)) {
         CHECK_ARG(1);
-        if (n_other == MAX_OTHER)
+        if (n_other >= MAX_OTHER)
             asfPrintError("-other-file option only supported %d times.\n", MAX_OTHER);
         other_files[n_other++] = STRDUP(GET_ARG(1));
     }
