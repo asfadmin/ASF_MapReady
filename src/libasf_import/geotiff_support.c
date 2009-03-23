@@ -162,6 +162,8 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
       dest->param.lamaz.false_easting = src->param.lamaz.false_easting;
       dest->param.lamaz.false_northing = src->param.lamaz.false_northing;
       break;
+    case STATE_PLANE:
+      break;
     default:
       asfPrintError("Unsupported projection type found.\n");
       break;

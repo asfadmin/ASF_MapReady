@@ -46,6 +46,11 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
       *lat = y*D2R;
       *lon = x*D2R;
       break;
+    case STATE_PLANE: // temporary hack
+      *lat = 0.0;
+      *lon = 0.0;
+      break;
+    case UNKNOWN_PROJECTION:
     default:
       printf("Unrecognized map projection '%c' passed to proj_to_latlon!\n",
        proj->type);
@@ -311,6 +316,44 @@ void scan_to_latlon(meta_parameters *meta,
   *height = z;  // FIXME: Do we need to correct the height at all?
 }
 
+void location_to_latlon(meta_parameters *meta,
+			double x, double y, double z,
+			double *lat_d, double *lon, double *height)
+{
+  double x_ul, y_ul, x_ur, y_ur, x_ll, y_ll, x_lr, y_lr;
+  
+  // Define the UTM zone to make sure everything happens to make sure that
+  // everything happens in the right coordinate space.
+  int zone = utm_zone(meta->general->center_longitude);
+
+  // Get corner coordinates into UTM
+  latLon2UTM_zone(meta->location->lat_start_near_range,
+		  meta->location->lon_start_near_range, 0.0, zone,
+		  &x_ul, &y_ul);
+  latLon2UTM_zone(meta->location->lat_start_far_range,
+		  meta->location->lon_start_far_range, 0.0, zone,
+		  &x_ur, &y_ur);
+  latLon2UTM_zone(meta->location->lat_end_near_range,
+		  meta->location->lon_end_near_range, 0.0, zone,
+		  &x_ll, &y_ll);
+  latLon2UTM_zone(meta->location->lat_end_far_range,
+		  meta->location->lon_end_far_range, 0.0, zone,
+		  &x_lr, &y_lr);
+
+  // Bilinear interpolation to determine line/sample position in UTM coords
+  double x_scale = x / meta->general->sample_count;
+  double y_scale = y / meta->general->line_count;
+  double x_up = x_ul + x_scale*(x_ur - x_ul);
+  double y_up = y_ul + x_scale*(y_ur - y_ul);
+  double x_down = x_ll + x_scale*(x_lr - x_ll);
+  double y_down = y_ll + x_scale*(y_lr - y_ll);
+  double x_sample = x_up + y_scale*(x_down - x_up);
+  double y_line = y_up + y_scale*(y_down - y_up);
+
+  // Convert from UTM coordinates back to lat/lon and call it a day
+  UTM2latLon(x_sample, y_line, 0.0, zone, lat_d, lon);
+  *height = 0.0;
+}
 
 static void ll_ac(meta_projection *proj, char look_dir, double lat_r, double lon, double *c1, double *c2)
 {

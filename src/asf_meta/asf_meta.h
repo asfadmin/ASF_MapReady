@@ -290,7 +290,7 @@ typedef struct {
   projection_type_t type;  /* Projection types */
   double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
   double perX,perY;      /* Projection coordinates per X and Y pixel.      */
-  char units[12];        /* Units of projection (meters, arcsec, or degrees) */
+  char units[12];        /* Units of projection (meters, feet, arcsec, or degrees) */
   char hem;              /* Hemisphere Code: 'S'->southern; other northern.*/
   spheroid_type_t spheroid; /* Spheroid - will replace re_major and re_minor */
   double re_major;       /* Semimajor axis length (equator) (meters).      */

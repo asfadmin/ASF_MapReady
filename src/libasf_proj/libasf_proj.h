@@ -107,6 +107,12 @@ typedef enum {
  /* State Plane. */
   typedef struct {
     int zone;
+    char projection[50];      // Projection type: Transverse Mercator
+    double orig_latitude;     // Latitude of origin
+    double central_meridian;  // Central meridian
+    double scale_factor;      // Scale factor
+    double false_easting;     // False easting
+    double false_northing;    // False northing
   } proj_state;
   // Mercator
   typedef struct {

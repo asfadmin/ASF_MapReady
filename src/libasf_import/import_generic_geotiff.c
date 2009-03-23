@@ -505,8 +505,13 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                   (raster_type == RasterPixelIsArea)  ? "RasterPixelIsArea" : "(Unsupported type)");
   if (map_projected_geotiff) {
       asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
-                      (linear_units == Linear_Meter)        ? "Linear_Meter"       :
-                                                              "(Unsupported type of linear units)");
+                      (linear_units == Linear_Meter)                  ? "Linear_Meter"                  :
+		      (linear_units == Linear_Foot)                   ? "Linear_Foot"                   :
+		      (linear_units == Linear_Foot_US_Survey)         ? "Linear_Foot_US_Survey"         :
+		      (linear_units == Linear_Foot_Modified_American) ? "Linear_Foot_Modified_American" :
+		      (linear_units == Linear_Foot_Clarke)            ? "Linear_Foot_Clarke"            :
+		      (linear_units == Linear_Foot_Indian)            ? "Linear_Foot_Indian"            :
+                                                                        "(Unsupported type of linear units)");
   }
   else if (geographic_geotiff) {
       asfPrintStatus ("Input GeoTIFF key GeogAngularUnitsGeoKey is %s\n",
@@ -569,13 +574,30 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     if (linear_units == Linear_Meter) {
       strcpy(mp->units, "meters");
     }
+    else if (linear_units == Linear_Foot ||
+	     linear_units == Linear_Foot_US_Survey ||
+	     linear_units == Linear_Foot_Modified_American ||
+	     linear_units == Linear_Foot_Clarke ||
+	     linear_units == Linear_Foot_Indian)
+      strcpy(mp->units, "feet");
     else {
-      asfPrintError("Unsupported linear unit found in map-projected GeoTIFF.  Only meters is currently supported.\n");
+      asfPrintError("Unsupported linear unit found in map-projected GeoTIFF.  Only meters and feet are currently supported.\n");
     }
 
     ///////// STANDARD UTM (PCS CODE) //////////
     // Get datum and zone as appropriate
     read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
+
+    // Quick hack for Rick's State Plane data
+    // Only supports State Plane 
+    if (read_count && pcs >= 26931 && pcs <=26940) {
+      mp->type = STATE_PLANE;
+      projection_type = STATE_PLANE;
+      proj_coords_trans = CT_TransverseMercator;
+      datum = mp->datum = NAD83_DATUM;
+      mp->spheroid = GRS1980_SPHEROID;
+    }
+
     if (!read_count) {
       // Check to see if this is a vintage ASF UTM geotiff (they only had the UTM
       // description in the UTM string rather than in the ProejctedCSTypeGeoKey)
@@ -609,7 +631,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       mp->param.utm.scale_factor = DEFAULT_UTM_SCALE_FACTOR;
     }
     ////////// ALL OTHER PROJECTION TYPES - INCLUDING GCS/USER-DEFINED UTMS /////////
-    else {
+    else if (projection_type != STATE_PLANE) { // Hack !!!!
+
       // Not recognized as a supported UTM PCS or was a user-defined or unknown type of PCS...
       //
       // The ProjCoordTransGeoKey will be true if the PCS was user-defined or if the PCS was
@@ -659,7 +682,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             //                         - Default to WGS-84 (if GeographicTypeGeoKey is
             //                           160xx or 161xx format), else error out
             //
-            //asfPrintError("Unsupported or unknown datum found in GeoTIFF file.\n");
+            //asfPrintError("Unsupported or unknown datum found in GeoTIFF file.\n");https://rt/Ticket/Display.html?id=7763
             short gcs;
             read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &gcs, 0, 1);
             if (read_count == 1) {
@@ -1336,10 +1359,10 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
 
   float base_x_pixel_scale = pixel_scale[0];
   float base_y_pixel_scale = pixel_scale[1];
-  int x_pixel_size_meters = MAGIC_UNSET_INT;
-  int y_pixel_size_meters = MAGIC_UNSET_INT;
   if (is_usgs_seamless_geotiff) {
-      // Convert angular units to decimal degrees if necessary
+    int x_pixel_size_meters = MAGIC_UNSET_INT;
+    int y_pixel_size_meters = MAGIC_UNSET_INT;
+    // Convert angular units to decimal degrees if necessary
       switch(angular_units) {
           case Angular_Arc_Second:
               base_x_pixel_scale *= ARCSECONDS2DEGREES;
@@ -1418,9 +1441,24 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       mg->x_pixel_size = x_pixel_size_meters;
       mg->y_pixel_size = y_pixel_size_meters;
   }
+  else if (linear_units == Linear_Foot ||
+	   linear_units == Linear_Foot_US_Survey ||
+	   linear_units == Linear_Foot_Modified_American ||
+	   linear_units == Linear_Foot_Clarke ||
+	   linear_units == Linear_Foot_Indian) {
+    // Hack: The exact number for unit 'ft' needs to be extracted from the file
+    base_x_pixel_scale *= 0.3048;
+    base_y_pixel_scale *= 0.3048;
+    mg->x_pixel_size = base_x_pixel_scale;
+    mg->y_pixel_size = base_y_pixel_scale;
+    asfPrintWarning("Units converted from feet to meters by adjusting the pixel size.\n"
+		    "Azimuth pixel size changed from %.3lf ft to %.3lf m.\n"
+		    "Range pixel size changed from %.3lf ft to %.3lf m.\n", 
+		    pixel_scale[0], base_x_pixel_scale, pixel_scale[1], base_y_pixel_scale);
+  }
   else {
-      mg->x_pixel_size = x_pixel_size_meters = pixel_scale[0];
-      mg->y_pixel_size = y_pixel_size_meters = pixel_scale[1];
+      mg->x_pixel_size = pixel_scale[0];
+      mg->y_pixel_size = pixel_scale[1];
   }
 
   // For now we are going to insist that the meters per pixel in the
@@ -1451,7 +1489,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   // Calculate center of image data ...using linear meters or decimal degrees
   double center_x = MAGIC_UNSET_DOUBLE;
   double center_y = MAGIC_UNSET_DOUBLE;
-  if (linear_units == Linear_Meter) {
+  if (linear_units == Linear_Meter ||
+      linear_units == Linear_Foot ||
+      linear_units == Linear_Foot_US_Survey ||
+      linear_units == Linear_Foot_Modified_American ||
+      linear_units == Linear_Foot_Clarke ||
+      linear_units == Linear_Foot_Indian) {
       // NOTE: center_x and center_y are in meters (map projection coordinates)
       // and are converted to lat/lon for center latitude/longitude below.  Therefore,
       // since geographic geotiffs already contain angular measure, they don't need
@@ -3349,7 +3392,12 @@ void classify_geotiff(GTIF *input_gtif,
         asfPrintError("Found a Geographic (lat/lon) GeoTIFF with an unsupported type of angular\n"
                 "units (%s) in it.\n", angular_units_to_string(*angular_units));
     }
-    if (l && *linear_units != Linear_Meter) {
+    if (l && (*linear_units != Linear_Meter &&
+	      *linear_units != Linear_Foot &&
+	      *linear_units != Linear_Foot_US_Survey &&
+	      *linear_units != Linear_Foot_Modified_American &&
+	      *linear_units != Linear_Foot_Clarke &&
+	      *linear_units != Linear_Foot_Indian)) {
         // Linear units was populated but wasn't a supported type...
         asfPrintError("Found a map-projected GeoTIFF with an unsupported type of linear\n"
                 "units (%s) in it.\n", linear_units_to_string(*linear_units));
@@ -3391,15 +3439,19 @@ void classify_geotiff(GTIF *input_gtif,
                 a = 0;
                 *angular_units = -1;
             }
-            if (l &&
-                *linear_units == Linear_Meter)
+            if (l && (*linear_units == Linear_Meter ||
+		      *linear_units == Linear_Foot ||
+		      *linear_units == Linear_Foot_US_Survey ||
+		      *linear_units == Linear_Foot_Modified_American ||
+		      *linear_units == Linear_Foot_Clarke ||
+		      *linear_units == Linear_Foot_Indian))
             {
                 *geographic_geotiff    = *geocentric_geotiff  = 0;
                 *map_projected_geotiff = *geotiff_data_exists = 1;
                 return;
             }
             else {
-                asfPrintError("Only map-projected GeoTIFFs with linear meters are supported.\n");
+                asfPrintError("Only map-projected GeoTIFFs with linear meters or with a linear foot unit are supported.\n");
             }
         }
         else if (m && *model_type == ModelTypeGeographic) {
