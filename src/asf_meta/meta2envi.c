@@ -323,6 +323,7 @@ envi_header* meta2envi(meta_parameters *meta)
   }
   envi->pixel_size_x = meta->general->x_pixel_size;
   envi->pixel_size_y = meta->general->y_pixel_size;
+  envi->band_name = NULL;
 
   return envi;
 }
@@ -421,7 +422,7 @@ meta_parameters* envi2meta(envi_header *envi)
     meta->sar->wavelength = envi->wavelength;
   meta->general->x_pixel_size = envi->pixel_size_x;
   meta->general->y_pixel_size = envi->pixel_size_y;
-
+  
   return meta;
 }
 
