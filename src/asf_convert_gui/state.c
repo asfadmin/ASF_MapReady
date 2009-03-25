@@ -550,6 +550,7 @@ void save_config(char *config_file, char* projfile)
   fprintf(cf, "[General]\n");
   fprintf(cf, "input file = %s\n", input_basename);
   fprintf(cf, "output file = %s\n", output_file);
+  // fprintf(cf, "ancillary file = %s\n", s->ancillary_file);
   fprintf(cf, "import = 1\n");
   fprintf(cf, "external = %d\n", s->external_is_checked);
   fprintf(cf, "sar processing = %d\n", s->process_to_level1);
@@ -592,6 +593,7 @@ void save_config(char *config_file, char* projfile)
 // fprintf(cf, "precise =\n");
   fprintf(cf, "output db = %d\n", s->output_db);
   fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
+  fprintf(cf, "polsarpro colormap = %s\n", s->polsarpro_colormap);
   fprintf(cf, "\n");
 
   if (s->external_is_checked) {

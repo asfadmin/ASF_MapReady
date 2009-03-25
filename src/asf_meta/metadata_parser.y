@@ -1260,6 +1260,8 @@ void fill_structure_field(char *field_name, void *valp)
       char val[256], val2[256];
       if ( !strcmp(field_name, "look_up_table") )
       { strcpy((MCOLORMAP)->look_up_table, VALP_AS_CHAR_POINTER); return; }
+      if ( !strcmp(field_name, "band_id") )
+	{ strcpy((MCOLORMAP)->band_id, VALP_AS_CHAR_POINTER); return; }
       if ( !strcmp(field_name, "num_elements") )
       {
           (MCOLORMAP)->num_elements = VALP_AS_INT;

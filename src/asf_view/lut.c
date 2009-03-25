@@ -205,8 +205,8 @@ int have_lut()
 void apply_lut(int val, unsigned char *r,
                unsigned char *g, unsigned char *b)
 {
-    assert(g_have_lut);
-    assert(g_lut_buffer);
+  assert(g_have_lut);
+  assert(g_lut_buffer);
 
     if (val>MAX_LUT_DN-1)
         val = MAX_LUT_DN-1;
@@ -242,7 +242,7 @@ int set_lut_based_on_image_type(image_data_type_t image_data_type)
 
 void apply_lut_to_data(ThumbnailData *td)
 {
-    assert(g_have_lut);
+  //    assert(g_have_lut);
     unsigned char *data = td->data;
 
     int ii, jj;

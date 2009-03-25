@@ -433,6 +433,11 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       }
       else {
           // Populate the RGB colormap
+	char band_str[255];
+	strcpy(band_str, bands[0]);
+	for (i=1; i<num_bands; i++)
+	  sprintf(band_str, ",%s", bands[i]);
+	strcpy(mc->band_id, band_str);
           mc->num_elements = map_size;
           mc->rgb = (meta_rgb *)CALLOC(map_size, sizeof(meta_rgb));
           for (i=0; i<map_size; i++) {

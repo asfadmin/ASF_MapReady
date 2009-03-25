@@ -432,6 +432,7 @@ typedef struct {
 } meta_rgb;
 typedef struct {
     char look_up_table[256];        // Name of look up table file
+  char band_id[255];                // Name of the band that it applies to
     int num_elements;               // Number of elements in the color table
     meta_rgb *rgb;                  // Array allocated at run time
 } meta_colormap;                    // meta_colormap RGB look-up table

@@ -291,6 +291,7 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->import->radiometry);
             FREE(cfg->import->lut);
             FREE(cfg->import->prc);
+	    FREE(cfg->import->polsarpro_colormap);
             FREE(cfg->import);
         }
         if (cfg->external) {

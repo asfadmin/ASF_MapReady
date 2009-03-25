@@ -403,6 +403,12 @@ void apply_polsarpro_palette_to_metadata(const char *lut_basename, meta_paramete
 
   // Populate the metadata colormap
   if (!imd->colormap) imd->colormap = meta_colormap_init();
+
+  // Fill in the bands that this colormap should be applied to.
+  // For the moment we are calling all PolSARpro band POLSARPRO but at some
+  // stage we might to be more specific.
+  strcpy(imd->colormap->band_id, "POLSARPRO");
+
   imd->colormap->num_elements = (num_elements <= MAX_JASC_LUT_DN) ? num_elements : MAX_JASC_LUT_DN;
   imd->colormap->rgb = (meta_rgb*)CALLOC(imd->colormap->num_elements, sizeof(meta_rgb));
   sprintf(imd->colormap->look_up_table, "%s.pal", lut_basename);

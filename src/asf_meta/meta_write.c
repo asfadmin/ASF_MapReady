@@ -902,12 +902,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
       int i;
       char rgb_row[256], idx[64];
       meta_put_string(fp,"colormap {","","Block containing Indexed RGB colormap");
-      meta_put_string(fp,"look_up_table:",meta->colormap->look_up_table,"Type of look up table");
-      meta_put_int(fp, "num_elements:", meta->colormap->num_elements, "Number of elements in colormap");
+      meta_put_string(fp,"look_up_table:",meta->colormap->look_up_table,
+		      "Type of look up table");
+      meta_put_string(fp,"band_id:",meta->colormap->band_id,
+		      "Band that the look up table applies to");
+      meta_put_int(fp, "num_elements:", meta->colormap->num_elements, 
+		   "Number of elements in colormap");
       for (i=0; i < meta->colormap->num_elements; i++) {
           sprintf(idx, "idx(%03d):", i);
           sprintf(rgb_row, "%03d  %03d  %03d",
-                  meta->colormap->rgb[i].red, meta->colormap->rgb[i].green, meta->colormap->rgb[i].blue);
+                  meta->colormap->rgb[i].red, 
+		  meta->colormap->rgb[i].green, 
+		  meta->colormap->rgb[i].blue);
           meta_put_string(fp,idx,rgb_row,"red_value green_value blue_value");
       }
       meta_put_string(fp,"}","","End colormap");
