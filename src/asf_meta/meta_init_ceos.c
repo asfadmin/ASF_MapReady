@@ -672,51 +672,10 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
           (centerTime - firstTime) / (meta->sar->original_line_count/2);
   if (meta->sar->azimuth_time_per_pixel < -0.07 ||
       meta->sar->azimuth_time_per_pixel > 0.07)
-  {
-      // Funky azimuth_time_per_pixel ...here's a parachute
-      double er=0.0;
-      double ht=0.0;
-      switch (ceos->product) {
-          case SCANSAR:
-          case SCN:
-          case SSG:
-              meta->sar->image_type = 'P';
-              break;
-          case SLC:
-          case RAW:
-              meta->sar->image_type = 'S';
-              break;
-          case SGF:
-          case SGX:
-          case PRI:
-              meta->sar->image_type = 'G';
-              break;
-          default:
-              break; // Leave at original default setting
-      }
-      if (ceos->product == SSG) {
-          struct VMPDREC *mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
-          if (get_mpdr(in_fName, mpdr) >= 0) {
-              ht = mpdr->distplat;
-              er = mpdr->distplat - mpdr->altplat;
-          }
-          FREE(mpdr);
-      }
-      else {
-          er = meta_get_earth_radius(meta,
-                                     meta->general->line_count/2,
-                                     meta->general->sample_count/2);
-          ht = meta_get_sat_height(meta,
-                                   meta->general->line_count/2,
-                                   meta->general->sample_count/2);
-      }
-      double g = 9.81; //9.80665;
-      double swath_vel = sqrt(g*er*er/ht)*er/ht; // orbit_vel*er/ht
-      meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size / swath_vel;
-  }
+    get_azimuth_time(ceos, in_fName, meta);
 
   // State vector block
-  if (ceos->product != SSG)
+  if (ceos->product != SSG && !meta->state_vectors)
     ceos_init_stVec(in_fName,ceos,meta);
 
   meta->general->frame =

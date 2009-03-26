@@ -517,7 +517,7 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   meta_parameters *meta;
 
   /* Create metadata */
-  meta = meta_create(inMetaName);
+  meta = meta_read_raw(inMetaName);
   nl = meta->general->line_count;
 
   /*PP Earth Radius Kludge*/

@@ -115,14 +115,27 @@ int meta_get_latLon(meta_parameters *meta,
       return meta_timeSlantDop2latLon(meta,
               time,slant,doppler,elev,
               lat,lon);
-  } else { /*Bogus image type.*/
+  } 
+  else if (meta->location) {
+    double l = yLine, s = xSample;
+    if (meta->sar) {
+          l = meta->general->start_line +
+                  meta->general->line_scaling * yLine;
+          s = meta->general->start_sample +
+                  meta->general->sample_scaling * xSample;
+    }
+    location_to_latlon(meta, s, l, elev, lat, lon, &hgt);
+    return 0;
+  }
+  else { /*Bogus image type.*/
     asfPrintError(
       "meta_get_latLon: Couldn't figure out what kind of image this is!\n"
       "meta->transform = %p, so it isn't ALOS.\n"
       "meta->sar = %p, and it isn't Slant/Ground range.\n"
       "meta->projection = %p, so it isn't Projected, or Scansar.\n"
+      "meta->location = %p, so doesn't have location information.\n"
       "meta->general->name: %s\n",
-      meta->transform, meta->sar, meta->projection,
+      meta->transform, meta->sar, meta->projection, meta->location,
       meta->general ? meta->general->basename : "(null)");
     return 1; /* Not Reached */
   }
