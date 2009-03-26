@@ -479,9 +479,14 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     }
 }
 
+static int bad_dem_height(float height)
+{
+  return height < -900 || height == badDEMht;
+}
+
 static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
                              float *grDEMprev,float *inout,int ns,
-                             int line, int form)
+                             int line, int form, float *mask)
 {
   if (form==0) return;
 /*
@@ -519,22 +524,22 @@ Here's what it looked like before optimization:
     int x;
     for (x=1;x<ns;x++)
     {
-        double dx,dy,grX,vecLen,cosAng;
-        /*Find terrain normal.*/
+        // don't mess with masked pixels
+        if (mask[x]==MASK_USER_MASK)
+          continue;
+        // if we have any SRTM holes, or otherwise no DEM data, don't correct
+        if (bad_dem_height(grDEM[x]) || bad_dem_height(grDEMprev[x]) ||
+            bad_dem_height(grDEM[x-1]))
+          continue;
 
+        double dx,dy,grX,vecLen,cosAng;
+
+        /* find terrain normal */
         grX=grDEM[x];
-        if ((grX==badDEMht)||
-            (grDEMprev[x]==badDEMht)||
-            (grDEM[x-1]==badDEMht))
-        {
-            inout[x]=0;
-            continue;
-        }
         dx=(grX-grDEM[x-1])/d->grPixelSize;
         dy=(grDEMprev[x]-grX)/d->grPixelSize;
 
         /*Make the normal a unit vector.*/
-        //vecLen=sqrt(dx*dx+dy*dy+1);
         vecLen = sqrt(dx*dx+1);
         double dz = 1./vecLen;
 
@@ -852,7 +857,7 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
 	      }
 	      if (y>0&&doRadiometric)
                 radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                                 ns,y,doRadiometric);
+                                 ns,y,doRadiometric,maskLine);
 	      
 	      // subtract away the masked region
 	      mask_float_line(ns,fill_value,outLine,
