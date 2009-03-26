@@ -1835,7 +1835,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         // input data, where it is off by 1.5% or so and therefore throws
         // this error check just a bit outside of a pixel.  But if the
         // problem is somewhere else I want to know.
-        if (imd->sar && imd->sar->image_type != 'P' && !imd->transform)
+        // We used to skip this check for transform-block data, but no
+        // longer, since we now use the iterative meta_get_lineSamp() even
+        // for that (since the reverse transform doesn't seem that great)
+        if (imd->sar && imd->sar->image_type != 'P')
         {
             asfPrintStatus ("Symmetry testing latLong vs. lineSamp...\n");
 

@@ -316,6 +316,12 @@ int meta_get_lineSamp(meta_parameters *meta,
     return 0;
   }
   else {
+/*
+  // 3/26/09 -- kh
+  // Commenting out the usage of the reverse-transform (line/samp to lat/lon)
+  // for now, since we seem to be getting better results using the iterative
+  // method on the forward transform... 
+
     double *a = get_a_coeffs(meta); // Usually meta->transform->map2ls_a;
     double *b = get_b_coeffs(meta); // Usually meta->transform->map2ls_b;
 
@@ -396,6 +402,7 @@ int meta_get_lineSamp(meta_parameters *meta,
       return 0;
     }
     else {
+*/
       double x0, y0, tol = 0.2;
       int err,num_iter = 0;
 
@@ -460,7 +467,7 @@ int meta_get_lineSamp(meta_parameters *meta,
       *yLine = meta->general->line_count/2;
       return 1;
     }
-  }
+  //}
 }
 
 void meta_get_corner_coords(meta_parameters *meta)
