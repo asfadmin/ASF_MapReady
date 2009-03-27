@@ -154,8 +154,10 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
   int ii, kk, do_resample = FALSE;
   float *power = NULL;
   double azimuth_scale, range_scale;
-  char *byteBuf = NULL, *inBaseName = NULL, unscaleBaseName[1024];
+  char *byteBuf = NULL, *inBaseName = NULL, *p = NULL, unscaleBaseName[1024];
+  char *airsarFile;
 
+  // Check the scale factors to determine whether we need to resample
   fpIn = FOPEN(inFile, "rb");
   if (p_azimuth_scale && p_range_scale) {
     range_scale = *p_range_scale;
@@ -168,6 +170,36 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
   }
   else
     append_ext_if_needed(outFile, ".img", NULL);
+
+  // Check whether the main metadata file is available. Only then we can
+  // populate the location that is used for the geocoding of old AirSAR data
+  // (processor version 3.56).
+  airsarFile = STRDUP(inFile);
+  inBaseName = (char *) MALLOC(sizeof(char)*1024);
+  if (strstr(airsarFile, "_c.dat"))
+    p = strstr(airsarFile, "_c.dat");
+  else if (strstr(airsarFile, "_l.dat"))
+    p = strstr(airsarFile, "_l.dat");
+  else if (strstr(airsarFile, "_p.dat"))
+    p = strstr(airsarFile, "_p.dat");
+  if (p) {
+    p[0] = '\0';
+    sprintf(inBaseName, "%s", airsarFile);
+    strcat(inBaseName, "_meta.airsar");
+    if (!fileExists(inBaseName)) {
+      FREE(inBaseName);
+      inBaseName = NULL;
+    }
+    else
+      sprintf(inBaseName, "%s", airsarFile);
+  }
+  else {
+    FREE(inBaseName);
+    inBaseName = NULL;
+    asfPrintStatus("Data file (%s) is not polarimetric AirSAR data\n",
+		   inFile);
+  }
+      
   meta = import_airsar_meta(inFile, inBaseName, TRUE);
   meta->general->data_type = REAL32;
   meta->general->band_count = 1;
