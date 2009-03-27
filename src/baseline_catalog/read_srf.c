@@ -201,14 +201,14 @@ void read_palsar(char *inFile, struct srf_orbit **srf_orbits, int *nOrbits)
   n = 0;
   fp = FOPEN(inFile, "r");
   while (fgets(line, 4096, fp)) {
-    printf("%s", line);
+    //printf("%s", line);
     sprintf(srf_orbit[n].sensor, "%s", my_get_str(line, 0));
     srf_orbit[n].off_nadir = (float) my_get_double(line, 1);
     srf_orbit[n].orbit = my_get_int(line, 2);
     sprintf(orbit_dir, "%s", my_get_str(line, 3));
-    if (strncmp_case(orbit_dir, "A", 1) == 0)
+    if (strchr(orbit_dir, 'A'))
       srf_orbit[n].orbit_dir = 'A';
-    else if (strncmp_case(orbit_dir, "D", 1) == 0)
+    else if (strchr(orbit_dir, 'D'))
       srf_orbit[n].orbit_dir = 'D';
     srf_orbit[n].frame = my_get_int(line, 4);
     sprintf(srf_orbit[n].time, "%s", my_get_str(line, 5));

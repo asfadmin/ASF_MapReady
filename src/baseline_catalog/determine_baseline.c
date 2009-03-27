@@ -83,14 +83,24 @@ void determine_baseline(char *m_sensor, char *s_sensor, char *mode, int track,
 		  utc2gha(jd2.year, jd2.jd, hms2.hour, hms2.min, hms2.sec));
 	
 	// PALSAR metadata don't have Doppler and range information
-	if (strcmp(m_sensor, "PSR") == 0)
+	if (strcmp_case(m_sensor, "PSR") == 0) {
+	  /*
 	  target = stVec2.pos;
+	  vecScale(&stVec1.vel, 1000);
+	  vecScale(&stVec2.vel, 1000);
+	  */
+	  srf[i].doppler = 0.0;
+	}
+	/*
 	// Other baseline cases have Doppler information
 	else {
+	*/
 	  // Target is the patch of ground at beam center.
 	  // Initialize the transformation.
 	  g = init_geolocate(&stVec1);
 	  g->lambda = 0.0565646;
+	  if (strcmp_case(m_sensor, "PSR") == 0)
+	    g->lambda = 0.2360571;
 	  lat = srf[i].c_lat*D2R;
 	  rp = g->rp;
 	  re = g->re;
@@ -100,7 +110,7 @@ void determine_baseline(char *m_sensor, char *s_sensor, char *mode, int track,
 		 &lat, &phi, &earthRadius);
 	  free_geolocate(g);
 	  sph2cart(earthRadius, lat, phi, &target);
-	}
+	  //}
 	
 	// Create beam plane unit vectors
 	vecSub(stVec1.pos, target, &alongBeam);

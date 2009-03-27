@@ -25,7 +25,7 @@ void baseline2kml(int ii, struct base_pair *pairs, FILE *fp)
   
   // Write information in kml file
   fprintf(fp, "<Placemark>\n");
-  fprintf(fp, "<description><![CDATA[\n");
+  fprintf(fp, "<description><![CDATA[<table><tr><td width=400>\n");
   if (strcmp(pairs->m_sensor, pairs->s_sensor) == 0)
     fprintf(fp, "<strong>Sensor</strong>: %s<br>\n", pairs->m_sensor);
   else {
@@ -34,6 +34,8 @@ void baseline2kml(int ii, struct base_pair *pairs, FILE *fp)
   }
   fprintf(fp, "<strong>Mode</strong>: %s<br>\n", pairs->mode);
   fprintf(fp, "<strong>Frame</strong>: %d<br>\n", pairs->frame);
+  if (strcmp_case(pairs->m_sensor, "PSR") == 0)
+    fprintf(fp, "<strong>Off-nadir angle</strong>: %.4f\n", pairs->off_nadir);
   fprintf(fp, "<strong>Orbit direction</strong>: %s<br>\n", 
 	  pairs->orbit_dir);
   fprintf(fp, "<strong>Master</strong>: %d<br>\n", pairs->master);
@@ -46,37 +48,34 @@ void baseline2kml(int ii, struct base_pair *pairs, FILE *fp)
   date_jd2ymd(&jd, &ymd);
   fprintf(fp, "<strong>Slave acquisition</strong>: %d-%s-%d<br>\n", 
 	  ymd.day, mon[ymd.month], ymd.year);
-  fprintf(fp, "<strong>Parallel baseline</strong>: %d<br>\n", 
+  fprintf(fp, "<strong>Parallel baseline</strong>: %i<br>\n", 
 	  pairs->b_par);
-  fprintf(fp, "<strong>Perpendicular baseline</strong>: %d<br>\n", 
+  fprintf(fp, "<strong>Perpendicular baseline</strong>: %i<br>\n", 
 	  pairs->b_perp);
-  fprintf(fp, "<strong>Temporal baseline</strong>: %d<br>\n", 
+  fprintf(fp, "<strong>Temporal baseline</strong>: %i<br>\n", 
 	  pairs->b_temp);
   for (kk=0; kk<vertices; kk++) {
     fprintf(fp, "<strong>%d</strong> - ", kk+1);
     fprintf(fp, "<strong>Lat</strong>: %9.4f, ", lat[kk]);
     fprintf(fp, "<strong>Lon</strong>: %9.4f<br>\n", lon[kk]);
   }
-  fprintf(fp, "]]></description>\n");
-  fprintf(fp, "<name>%d - %d - %d</name>\n", 
+  fprintf(fp, "</td></tr></table>]]></description>\n");
+  fprintf(fp, "<name>Master orbit: %d - Slave orbit: %d - "
+	  "Frame: %d</name>\n", 
 	  pairs->master, pairs->slave, pairs->frame);
   fprintf(fp, "<LookAt>\n");
   fprintf(fp, "<longitude>%.4f</longitude>\n", pairs->c_lon);
   fprintf(fp, "<latitude>%.4f</latitude>\n", pairs->c_lat);
-  fprintf(fp, "<altitude>0</altitude>\n");
   fprintf(fp, "<range>500000</range>\n");
   fprintf(fp, "<heading>0</heading>\n");
   fprintf(fp, "</LookAt>\n");
-  fprintf(fp, "<Style>\n");
-  fprintf(fp, "<LineStyle><color>ff00ffff</color></LineStyle>\n");
-  fprintf(fp, "<PolyStyle><color>00fffff</color></PolyStyle>\n");
-  fprintf(fp, "</Style>\n");
+  write_kml_style_keys(fp);
   fprintf(fp, "<Polygon>\n");
   fprintf(fp, "<outerBoundaryIs>\n");
   fprintf(fp, "<LinearRing>\n");
   fprintf(fp, "<extrude>1</extrude>\n");
   fprintf(fp, "<tessellate>1</tessellate>\n");
-  fprintf(fp, "<altitudeMode>relativeToGround</altitudeMode>\n");
+  fprintf(fp, "<altitudeMode>absolute</altitudeMode>\n");
   fprintf(fp, "<coordinates>\n");
   for (kk=0; kk<=vertices; kk++)
     fprintf(fp, "%.12f,%.12f,20000\n", lon[kk], lat[kk]);
