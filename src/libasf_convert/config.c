@@ -1337,11 +1337,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
     fprintf(fConfig, "multilook SLC = %d\n", cfg->import->multilook_slc);
     if (!shortFlag)
       fprintf(fConfig, "\n# The ERS2 satellite has a known gain loss problem that this program\n"
-          "# will attempt to correct by applying a scale correction factor uniformly\n"
-          "# to all pixels in the image.  The correction is dependent on the date,\n"
-          "# and is only applied to calibrated data (i.e., everything but amplitude)\n"
-          "# For more information, see section 4 of:\n"
-          "# <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n\n");
+              "# will attempt to correct (if this option is turned on) by applying a\n"
+              "# scale correction factor uniformly to all pixels in the image.  The\n"
+              "# correction is dependent on the date, and is only applied to calibrated\n"
+              "# data (i.e., everything but amplitude).  For more information, see\n"
+              "# section 4 of:\n"
+              "# <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n\n");
     fprintf(fConfig, "apply ers2 gain fix = %d\n", cfg->import->ers2_gain_fix);
     if (!shortFlag)
       fprintf(fConfig, "\n# If any input files are PolSARpro files, then it will be a single-band\n"
