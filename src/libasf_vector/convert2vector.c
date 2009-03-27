@@ -38,6 +38,42 @@ format_type_t str2format(const char *str)
   return format;
 }
 
+char *format2str(format_type_t format)
+{
+  char *str = (char *) MALLOC(sizeof(char)*25);
+
+  if (format == META)
+    strcpy(str, "META");
+  else if (format == LEADER || format == CEOS)
+    strcpy(str, "CEOS");
+  else if (format == STF_META)
+    strcpy(str, "STF");
+  else if (format == POINT)
+    strcpy(str, "POINT");
+  else if (format == POLYGON)
+    strcpy(str, "POLYGON");
+  else if (format == CSV)
+    strcpy(str, "CSV");
+  else if (format == AUIG)
+    strcpy(str, "AUIG");
+  else if (format == MULTIMATCH)
+    strcpy(str, "MULTIMATCH");
+  else if (format == GEOTIFF_META)
+    strcpy(str, "GEOTIFF");
+  else if (format == KMLFILE)
+    strcpy(str, "KML");
+  else if (format == SHAPEFILE)
+    strcpy(str, "SHAPE");
+  else if (format == URSA)
+    strcpy(str, "URSA");
+  else if (format == HAP)
+    strcpy(str, "HAP");
+  else if (format == TERRASAR_META)
+    strcpy(str, "TERRASAR");
+
+  return str;
+}
+
 int convert2vector(char *inFile, const char *inFormat_str,
                    char *outFile_in, const char *outFormat_str, int listFlag)
 {

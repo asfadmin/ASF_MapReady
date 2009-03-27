@@ -126,6 +126,7 @@ typedef struct {
 
 // Prototypes from convert2vector.c
 format_type_t str2format(const char *str);
+char *format2str(format_type_t format);
 int convert2vector(char *inFile, const char *inFormat_str,
 		   char *outFile, const char *outFormat_str, int listFlag);
 
