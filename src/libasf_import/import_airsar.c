@@ -441,7 +441,7 @@ meta_parameters *import_airsar_meta(const char *dataName,
   airsar_dem_header *dem = NULL;
   airsar_cal_header *cal = NULL;
 
-  if (!force)
+  if (!force || inBaseName)
     general = read_airsar_general(inBaseName);
 
   if (!force && (general->c_cross_data || general->l_cross_data)) {
@@ -481,11 +481,72 @@ meta_parameters *import_airsar_meta(const char *dataName,
 
   meta_parameters *ret = airsar2meta(header, params, dem);
 
-  free(general);
-  free(header);
-  free(params);
+  // For old AirSAR data, we need to extract the corner coordinates out of the
+  // general header file. If that is not available than we can't do any
+  // geocoding later.
+  if (strcmp_case(ret->general->sensor, "AIRSAR") == 0 &&
+      strstr(ret->general->processor, "3.56")) {
+    if (inBaseName) {
+      FREE(ret->airsar);
+      ret->airsar = NULL;
+      ret->location->lat_start_near_range = general->corner1_lat;
+      ret->location->lon_start_near_range = general->corner1_lon;
+      ret->location->lat_start_far_range = general->corner2_lat;
+      ret->location->lon_start_far_range = general->corner2_lon;
+      ret->location->lat_end_near_range = general->corner4_lat;
+      ret->location->lon_end_near_range = general->corner4_lon;
+      ret->location->lat_end_far_range = general->corner3_lat;
+      ret->location->lon_end_far_range = general->corner3_lon;
+      double lat, lon;
+      double yLine, xSamp;
+      meta_get_lineSamp(ret, 37.7697, -122.5218, 0.0, &yLine, &xSamp);
+      printf("center: line: %.3lf, sample: %.3lf\n", yLine, xSamp);
+      meta_get_latLon(ret, 0, 0, 0.0, &lat, &lon);
+      printf("start near - lat: %.4lf, lon: %.4lf\n", lat, lon);
+      meta_get_lineSamp(ret, ret->location->lat_start_near_range,
+			ret->location->lon_start_near_range, 0.0, 
+			&yLine, &xSamp);
+      printf("start near - line: %.3lf, sample: %.3lf, lat: %.4lf, lon: %.4lf\n"
+	     ,yLine, xSamp, ret->location->lat_start_near_range,
+	     ret->location->lon_start_near_range);
+      meta_get_latLon(ret, 0, ret->general->sample_count, 0.0, &lat, &lon);
+      printf("start far - lat: %.4lf, lon: %.4lf\n", lat, lon);
+      meta_get_lineSamp(ret, ret->location->lat_start_far_range,
+			ret->location->lon_start_far_range, 0.0, 
+			&yLine, &xSamp);
+      printf("start far - line: %.3lf, sample: %.3lf, lat: %.4lf, lon: %.4lf\n",
+	     yLine, xSamp, ret->location->lat_start_far_range,
+	     ret->location->lon_start_far_range);
+      meta_get_latLon(ret, ret->general->line_count, 0, 0.0, &lat, &lon);
+      printf("end near - lat: %.4lf, lon: %.4lf\n", lat, lon);
+      meta_get_lineSamp(ret, ret->location->lat_end_near_range,
+			ret->location->lon_end_near_range, 0.0, 
+			&yLine, &xSamp);
+      printf("end near - line: %.3lf, sample: %.3lf, lat: %.4lf, lon: %.4lf\n", 
+	     yLine, xSamp, ret->location->lat_end_near_range,
+	     ret->location->lon_end_near_range);
+      meta_get_latLon(ret, ret->general->line_count, 
+		      ret->general->sample_count, 0.0, &lat, &lon);
+      printf("end far - lat: %.4lf, lon: %.4lf\n", lat, lon);
+      meta_get_lineSamp(ret, ret->location->lat_end_far_range,
+			ret->location->lon_end_far_range, 0.0, 
+			&yLine, &xSamp);
+      printf("end far - line: %.3lf, sample: %.3lf, lat: %.4lf, lon: %.4lf\n", 
+	     yLine, xSamp, ret->location->lat_end_far_range,
+	     ret->location->lon_end_far_range);
+
+    }
+    else
+      asfPrintWarning("No main header file available to extract location "
+		      "information. Can't geocode this data later\n");
+  }
+
+  if (general)
+    FREE(general);
+  FREE(header);
+  FREE(params);
   if (dem)
-    free(dem);
+    FREE(dem);
 
   return ret;
 }
