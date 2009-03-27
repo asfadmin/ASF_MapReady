@@ -107,7 +107,7 @@ int read_terrasar_client(int row_start, int n_rows_to_get,
       (long long) (info->header + (ii*skip + row_start) * info->width);
     FSEEK(info->fp, offset, SEEK_SET);
     FREAD(shorts, sizeof(short int), ns*2, info->fp);
-    for (jj=0; jj<ns*2; jj++) 
+    for (jj=0; jj<ns; jj++) 
       dest[jj + ii*ns] = hypot(shorts[jj*2], shorts[jj*2+1]);
   }
   free(shorts);

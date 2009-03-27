@@ -180,7 +180,7 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
     if (!quiet) {
         asfPrintStatus("Cache: loading into spot #%d: rows %d-%d\n",
             spot, rs, rs+rows_to_get);
-        print_cache_size(self);
+        //print_cache_size(self);
     }
 
     self->client->read_fn(rs, rows_to_get, (void*)(self->cache[spot]),
