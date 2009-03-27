@@ -173,6 +173,7 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client)
     meta_parameters *meta = raw_init();
     meta->general->line_count = cinfo->image_height;
     meta->general->sample_count = cinfo->image_width;
+    meta->general->data_type = BYTE;
     meta->general->band_count = 1;
     strcpy(meta->general->bands, "");
     meta->general->image_data_type = AMPLITUDE_IMAGE;

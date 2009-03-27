@@ -256,6 +256,6 @@ meta_parameters* open_png(const char *data_name, ClientInterface *client)
     meta->general->sample_count = width;
     meta->general->band_count = 1;
     strcpy(meta->general->bands, "");
-
+    meta->general->data_type = BYTE;
     return meta;
 }

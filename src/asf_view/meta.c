@@ -99,27 +99,29 @@ void fill_meta_info()
     if (meta) {
       if (meta->general) {
           sprintf(&s[strlen(s)],
-            "Size: %d x %d (LxS)\n"
-            "Data Type: %s\n"
-            "Sensor: %s\n"
-            "Mode: %s\n"
-            "Acquisition Date: %s\n",
-                meta->general->line_count, meta->general->sample_count,
-                get_data_type_str(meta->general->data_type),
-                meta->general->sensor, meta->general->mode,
-                meta->general->acquisition_date);
-
+                  "Size: %d x %d (LxS)\n"
+                  "Data Type: %s\n",
+                  meta->general->line_count, meta->general->sample_count,
+                  get_data_type_str(meta->general->data_type));
+          if (strcmp(meta->general->sensor, MAGIC_UNSET_STRING) != 0)
+            sprintf(&s[strlen(s)], "Sensor: %s\n", meta->general->sensor);
+          if (strcmp(meta->general->mode, MAGIC_UNSET_STRING) != 0)
+            sprintf(&s[strlen(s)], "Mode: %s\n", meta->general->mode);
+          if (strcmp(meta->general->acquisition_date, MAGIC_UNSET_STRING) != 0)
+            sprintf(&s[strlen(s)], "Acquisition Date: %s\n",
+                    meta->general->acquisition_date);
           if (meta->general->orbit != MAGIC_UNSET_INT &&
               meta->general->frame != MAGIC_UNSET_INT)
           {
             sprintf(&s[strlen(s)], "Orbit/Frame: %d/%d\n",
                 meta->general->orbit, meta->general->frame);
           }
-          sprintf(&s[strlen(s)],
-            "Direction: %s\n"
-            "Bands: %s\n",
-                meta->general->orbit_direction == 'A' ? "Ascending" : "Descending",
-                strlen(meta->general->bands) > 0 ? br(meta->general->bands) : "-");
+          if (meta->general->orbit_direction == 'A')
+            sprintf(&s[strlen(s)], "Direction: Ascending\n");
+          else if (meta->general->orbit_direction == 'D')
+            sprintf(&s[strlen(s)], "Direction: Descending\n");
+          sprintf(&s[strlen(s)], "Bands: %s\n",
+            strlen(meta->general->bands) > 0 ? br(meta->general->bands) : "-");
       }
       if (meta->colormap) {
         sprintf(&s[strlen(s)], "Colormap: %s (%d elements)\n",
