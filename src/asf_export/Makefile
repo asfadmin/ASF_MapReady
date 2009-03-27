@@ -53,6 +53,7 @@ LIBS  = \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	$(ZLIB_LIBS) \
+	$(XML_LIBS) \
 	-lm \
 
 LDLIBS := $(LIBS)
