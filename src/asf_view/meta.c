@@ -189,6 +189,15 @@ void fill_meta_info()
               datum_toString(meta->projection->datum),
               meta->projection->height);
       }
+      else if (meta_is_valid_double(meta->general->x_pixel_size) &&
+               meta_is_valid_double(meta->general->y_pixel_size)) {
+        if (meta->general->x_pixel_size==meta->general->y_pixel_size)
+          sprintf(&s[strlen(s)], "Pixel Size: %.1f m\n",
+                  meta->general->x_pixel_size);
+        else
+          sprintf(&s[strlen(s)], "X Pixel Size: %.1f m\nY Pixel Size: %.1f m\n",
+                  meta->general->x_pixel_size, meta->general->y_pixel_size);
+      }
     }
 
     fix_bad_chars(s);
