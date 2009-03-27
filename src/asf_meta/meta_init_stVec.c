@@ -123,7 +123,7 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
   ceos_read_stVecs(fName, ceos, meta);
 
   // Propagate three state vectors for regular frames
-  if (ceos->processor != PREC) {
+  if (ceos->processor != PREC && ceos->processor != unknownProcessor) {
       int vector_count=3;
       double data_int = meta->sar->original_line_count / 2
                   * fabs(meta->sar->azimuth_time_per_pixel);

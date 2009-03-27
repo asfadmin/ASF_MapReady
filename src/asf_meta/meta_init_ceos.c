@@ -2919,7 +2919,8 @@ ceos_description *get_ceos_description_ext(const char *fName,
     else if (0==strncmp(facStr, "EOC", 3)) {
       asfReport(level, "   Data set processed by EOC\n");
       ceos->facility = EOC;
-      if (0==strncmp(ceos->dssr.lev_code, "1.0", 3))
+      if (0==strncmp(ceos->dssr.lev_code, "1.0", 3) ||
+	  0==strncmp(prodStr, "UNPROCESSED SIGNAL DATA", 23))
         ceos->product = RAW;
       else if (0==strncmp(ceos->dssr.lev_code, "1.1", 3))
         ceos->product = SLC;
