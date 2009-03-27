@@ -244,6 +244,8 @@ int main(int argc, char **argv)
     asfPrintStatus("   Converting a Terrasar metadata file ");
   else if (inFormat == URSA)
     asfPrintStatus("   Converting a generic URSA CSV file ");
+  else if (inFormat == HAP)
+    asfPrintStatus("   Converting a high altitude photography file ");
   else {
     dbf_header_t *dbf;
     int nCols;
