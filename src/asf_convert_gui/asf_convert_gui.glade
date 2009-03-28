@@ -253,9 +253,9 @@
 					  <child>
 					    <widget class="GtkCheckButton" id="geocode_checkbutton">
 					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">Select Geocode to map-project (or re-project to a new map projection) your data.  Map projection settings are on the Geocode tab.</property>
+					      <property name="tooltip" translatable="yes">Select Geocode to map-project (or re-project to a new map projection) your data.  Map projection settings are on the Geocode tab.  If your data is already geocoded, this step can be skipped.</property>
 					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Geocode  to a Map Projection</property>
+					      <property name="label" translatable="yes">Geocode to a Map Projection</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
 					      <property name="focus_on_click">True</property>
