@@ -81,32 +81,32 @@ int strmatches(const char *key, ...)
     return found;
 }
 
-// Look up location of a particular EXIF tag
-static void lookup_exif_tag(ExifData *exif, ExifTag tag, int *ifd, int *entry)
+// Look up EXIF entry
+ExifEntry *get_exif_entry(ExifData *exif, ExifTag tag)
 {
   int ii, kk;
 
   for (ii=0; ii<EXIF_IFD_COUNT; ii++) {
     if (exif->ifd[ii] && exif->ifd[ii]->count) {
       for (kk=0; kk<exif->ifd[ii]->count; kk++) {
-	if (exif->ifd[ii]->entries[kk]->tag == tag) {
-	  *ifd = ii;
-	  *entry = kk;
-	}
+        if (exif->ifd[ii]->entries[kk]->tag == tag) {
+	  return exif->ifd[ii]->entries[kk];
+        }
       }
     }
   }
+  return exif_entry_new();
 }
 
 // Get value for EXIF tag
 char *get_exif_tag(ExifData *exif, ExifTag tag)
 {
-  int ifd, entry;
-  char value[1024];
+  char *value = (char *) MALLOC(sizeof(char)*1024);
+  const char *read;
 
-  lookup_exif_tag(exif, tag, &ifd, &entry);
-  return 
-    exif_entry_get_value(exif->ifd[ifd]->entries[entry], value, sizeof(value));
+  ExifEntry *entry = get_exif_entry(exif, tag);
+  read = exif_entry_get_value(entry, value, 1024);
+  return value;
 }
 
 // Main program body.
@@ -114,7 +114,6 @@ int
 main (int argc, char *argv[])
 {
   int currArg = 1;
-  int kernel_size = -1;
   int NUM_ARGS = 2;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
@@ -154,21 +153,58 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
-  asfPrintStatus("Extracting time stamps for image list (%s)\n\n", inFile);
+  asfPrintStatus("Extracting acquisition for image list (%s)\n\n", inFile);
 
   FILE *fpImage, *fpOut;
-  char image[1024], *shortImage;
+  int width, height;
+  double lat, lon, altitude, deg, min, sec;
+  char image[1024], *shortImage, date_time[35];
+  char lat_str[25], lon_str[25];
+  char aperture[25], exposure[25], iso_speed[25], focal_length[25];
 
   fpImage = FOPEN(inFile, "r");
   fpOut = FOPEN(outFile, "w");
+  fprintf(fpOut, "# Format: thermokarst\n");
+  fprintf(fpOut, "# ID,width,height,date,lat,lon,altitude,aperture,exposure,iso_speed,focal_length\n");
   while (fgets(image, 1024, fpImage)) {
     image[strlen(image)-1] = '\0';
     shortImage = get_basename(image);
     ExifData *exif = exif_data_new_from_file(image);
-    ExifTag tag = EXIF_TAG_DATE_TIME_ORIGINAL;
-    printf("%s, %s\n", shortImage, get_exif_tag(exif, tag));
-    fprintf(fpOut, "%s, %s\n", shortImage, get_exif_tag(exif, tag));
+    // Dimensions
+    width = atoi(get_exif_tag(exif, EXIF_TAG_PIXEL_X_DIMENSION));
+    height = atoi(get_exif_tag(exif, EXIF_TAG_PIXEL_Y_DIMENSION));
+    //printf("Width: %d, Height: %d\n",width, height);
+    // Date/time
+    strcpy(date_time, get_exif_tag(exif, EXIF_TAG_DATE_TIME_ORIGINAL));
+    //printf("Acquisition: %s\n", date_time);
+    // Lat/lon/height
+    strcpy(lat_str, get_exif_tag(exif, EXIF_TAG_GPS_LATITUDE));
+    sscanf(lat_str, "%lf, %lf, %lf\n", &deg, &min, &sec);
+    lat = deg + min/60.0 + sec/3600.0;
+    if (strncmp_case(get_exif_tag(exif, EXIF_TAG_GPS_LATITUDE_REF), "S", 1) == 0)
+      lat *= -1.0;
+    strcpy(lon_str, get_exif_tag(exif, EXIF_TAG_GPS_LONGITUDE));
+    sscanf(lon_str, "%lf, %lf, %lf\n", &deg, &min, &sec);
+    lon = deg + min/60.0 + sec/3600.0;
+    if (strncmp_case(get_exif_tag(exif, EXIF_TAG_GPS_LONGITUDE_REF), "W", 1) == 0)
+      lon *= -1.0;
+    altitude = atof(get_exif_tag(exif, EXIF_TAG_GPS_ALTITUDE));
+    //printf("Lat: %.4lf deg, Lon: %.4lf deg, Altitude: %.0lf m\n", 
+    //lat, lon, altitude);
+    // Camera parameters
+    strcpy(aperture, get_exif_tag(exif, EXIF_TAG_MAX_APERTURE_VALUE));
+    strcpy(exposure, get_exif_tag(exif, EXIF_TAG_EXPOSURE_TIME));
+    strcpy(iso_speed, get_exif_tag(exif, EXIF_TAG_ISO_SPEED_RATINGS));
+    strcpy(focal_length, get_exif_tag(exif, EXIF_TAG_FOCAL_LENGTH));
+    //printf("Aperture: %s\n", aperture);
+    //printf("Exposure: %s\n", exposure);
+    //printf("ISO speed: %s\n", iso_speed);
+    //printf("Focal length: %s\n", focal_length);
     exif_data_free(exif);
+    fprintf(fpOut, "\"%s\",%d,%d,\"%s\",%.4lf,%.4lf,%.0lf,",
+                   shortImage, width, height, date_time, lat, lon, altitude);
+    fprintf(fpOut, "\"%s\",\"%s\",\"%s\",\"%s\"\n", 
+                   aperture, exposure, iso_speed, focal_length);
   }
 
   FCLOSE(fpImage);
