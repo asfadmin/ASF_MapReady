@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <dirent.h>
 #include "asf.h"
 #include "asf_endian.h"
 #include "asf_meta.h"
@@ -36,10 +37,23 @@
 // Print minimalistic usage info & exit
 static void usage(const char *name)
 {
+  char path[1024];
+  struct dirent *dp;
+  DIR *dir;
+
   asfPrintStatus("\n"
       "Usage:\n"
       ASF_USAGE_STRING
       "\n");
+  asfPrintStatus("Currently available templates are:\n");
+  sprintf(path, "%s/metadata", get_asf_share_dir());
+  dir = opendir(path);
+  while ((dp = readdir(dir)) != NULL) {
+    if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
+      asfPrintStatus("   %s\n", dp->d_name);
+  }
+  asfPrintStatus("\n");
+  closedir(dir);
   exit(EXIT_FAILURE);
 }
 
