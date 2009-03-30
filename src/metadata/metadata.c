@@ -351,16 +351,18 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     case (80):
       strcpy(rectype_str, "Range spectra");
-      rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
-      if (leaderNameExists) {
-	if (get_rsr(metaName[0],rsr) >= 0)
-	  ret = sprn_rsr(rsr);
-	else if (trailer) {
-	  if (get_rsr(metaName[1],rsr) >= 0)
+      if (0 != strncmp(facility, "EOC", 3)) {
+	rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
+	if (leaderNameExists) {
+	  if (get_rsr(metaName[0],rsr) >= 0)
 	    ret = sprn_rsr(rsr);
+	  else if (trailer) {
+	    if (get_rsr(metaName[1],rsr) >= 0)
+	      ret = sprn_rsr(rsr);
+	  }
 	}
+	FREE(rsr);
       }
-      FREE(rsr);
       break;
     case (120):
       strcpy(rectype_str, "Processing parameter");
