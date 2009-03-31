@@ -208,7 +208,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
             FREAD(shorts, sizeof(short), ns*2, info->fp);
 
             for (jj = 0; jj < ns*2; ++jj)
-                big16(shorts[jj]);
+                ieee_big16(shorts[jj]);
 
             for (jj = 0; jj < ns; ++jj)
                 dest[jj + ii*ns] = hypot(shorts[jj*2], shorts[jj*2+1]);

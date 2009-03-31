@@ -55,14 +55,18 @@ void bigInt32_out(int in,unsigned char *out);
 /*These routines convert 16, 32, or 64 bit floating-point data
 to/from big or little endian format.*/
 #if defined(big_ieee)
+#define ieee_big16(x)
 #define ieee_big32(x) 
-#define ieee_big64(x) 
+#define ieee_big64(x)
+#define ieee_lil16(x) swap16((unsigned char *)&(x)) 
 #define ieee_lil32(x) swap32((unsigned char *)&(x))
 #define ieee_lil64(x) swap64((unsigned char *)&(x))
 
 #elif defined(lil_ieee)
+#define ieee_big16(x) swap16((unsigned char *)&(x))
 #define ieee_big32(x) swap32((unsigned char *)&(x))
 #define ieee_big64(x) swap64((unsigned char *)&(x))
+#define ieee_lil16(x)
 #define ieee_lil32(x) 
 #define ieee_lil64(x) 
 #else
