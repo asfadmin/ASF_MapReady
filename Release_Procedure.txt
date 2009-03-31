@@ -210,6 +210,7 @@ src/asf_gamma_import
 src/asf_airsar_import
 src/fftMatch
 src/flip
+src/brs2jpg
 
  * Run the autotar script:
 
