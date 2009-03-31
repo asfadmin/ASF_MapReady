@@ -136,8 +136,8 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     {
         unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns);
         for (ii=0; ii<n_rows_to_get; ++ii) {
-            long long offset = (long long)(info->headerBytes +
-                                           (ii*skip+row_start)*info->reclen);
+            long long offset = 
+	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(shorts, sizeof(unsigned short), ns, info->fp);
@@ -153,8 +153,8 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     {
         unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns);
         for (ii=0; ii<n_rows_to_get; ++ii) {
-            long long offset = (long long)(info->headerBytes +
-                                           (ii*skip+row_start)*info->reclen);
+            long long offset = 
+	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(bytes, sizeof(unsigned char), ns, info->fp);
@@ -168,8 +168,8 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     {
         float *floats = MALLOC(sizeof(float)*ns*2);
         for (ii=0; ii<n_rows_to_get; ++ii) {
-            long long offset = (long long)(info->headerBytes +
-                                           (ii*skip+row_start)*info->reclen);
+            long long offset = 
+	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(floats, sizeof(float), ns*2, info->fp);
@@ -186,8 +186,8 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     {
         unsigned char *bytes = MALLOC(sizeof(unsigned char)*2*ns);
         for (ii=0; ii<n_rows_to_get; ++ii) {
-            long long offset = (long long)(info->headerBytes +
-                                           (ii*skip+row_start)*info->reclen);
+            long long offset = 
+	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(bytes, sizeof(unsigned char), ns*2, info->fp);
@@ -201,8 +201,8 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     {
         short *shorts = MALLOC(sizeof(short)*ns*2);
         for (ii=0; ii<n_rows_to_get; ++ii) {
-            long long offset = (long long)(info->headerBytes +
-                                           (ii*skip+row_start)*info->reclen);
+            long long offset = 
+	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(shorts, sizeof(short), ns*2, info->fp);
@@ -246,8 +246,8 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
         unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns);
         for (ii=0; ii<thumb_size_y; ++ii) {
             int line = ii*sf;
-            long long offset = (long long)(info->headerBytes +
-                                           line*info->reclen);
+            long long offset = 
+	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(shorts, sizeof(unsigned short), ns, info->fp);
@@ -267,8 +267,8 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
         unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns);
         for (ii=0; ii<thumb_size_y; ++ii) {
             int line = ii*sf;
-            long long offset = (long long)(info->headerBytes +
-                                           line*info->reclen);
+            long long offset = 
+	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(bytes, sizeof(unsigned char), ns, info->fp);
@@ -285,8 +285,8 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
         float *floats = MALLOC(sizeof(float)*ns*2);
         for (ii=0; ii<thumb_size_y; ++ii) {
             int line = ii*sf;
-            long long offset = (long long)(info->headerBytes +
-                                           line*info->reclen);
+            long long offset = 
+	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(floats, sizeof(float), ns*2, info->fp);
@@ -305,8 +305,8 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
         unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns*2);
         for (ii=0; ii<thumb_size_y; ++ii) {
             int line = ii*sf;
-            long long offset = (long long)(info->headerBytes +
-                                           line*info->reclen);
+            long long offset = 
+	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(bytes, sizeof(unsigned char), ns*2, info->fp);
@@ -324,8 +324,8 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
         unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns*2);
         for (ii=0; ii<thumb_size_y; ++ii) {
             int line = ii*sf;
-            long long offset = (long long)(info->headerBytes +
-                                           line*info->reclen);
+            long long offset = 
+	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(shorts, sizeof(unsigned short), ns*2, info->fp);
