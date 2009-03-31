@@ -387,7 +387,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                     float val = fdata[index];
 
                     int ival;
-                    if (is_ignored(stats, val) || ival<0)
+                    if (is_ignored(stats, val) || val<0)
                         ival = ignore_grey_value;
                     else
                         ival = (int)val;

@@ -13,7 +13,6 @@ SRCS = asf_view.c \
 	read_tiff.c \
 	read_png.c \
 	read_pgm.c \
-	read_brs.c \
 	read_airsar.c \
 	read_terrasar.c \
 	read_envi.c \
@@ -49,6 +48,7 @@ ASF_LIB = ../../lib
 
 INCLUDE = \
 	$(JPEG_CFLAGS) \
+	$(XML_CFLAGS) \
 	-I$(ASF_INCLUDE_DIR) \
 	-I$(GTK_INC) \
 	-I$(GTK_INC)/glib-2.0 \
@@ -79,11 +79,11 @@ LIB = \
 	-L/mingw/lib \
 	-lgdi32 \
 	-llibgdk-win32-2.0 \
+	$(ASF_LIB)/libasf_vector.a \
 	$(ASF_LIB)/libasf_import.a \
 	$(ASF_LIB)/libasf_geocode.a \
 	$(ASF_LIB)/libasf_plan.a \
 	$(ASF_LIB)/libasf_sar.a \
-	$(ASF_LIB)/libasf_vector.a \
 	$(ASF_LIB)/libasf_sgpsdp.a \
 	$(ASF_LIB)/libshp.a \
 	$(ASF_LIB)/libasf_raster.a \
@@ -98,6 +98,7 @@ LIB = \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(ZLIB_LIBS) \
+	$(XML_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
 
