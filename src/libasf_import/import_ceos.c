@@ -675,8 +675,7 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
   // Check whether image needs to be flipped
   if (meta->general->orbit_direction == 'D' && !meta->projection &&
       (strncmp(meta->general->processor, "RSI", 3) == 0 ||
-       strncmp(meta->general->processor, "CDPF", 4) == 0 ||
-       strncmp(meta->general->processor, "CSTARS", 6) == 0))
+       strncmp(meta->general->processor, "CDPF", 4) == 0))
     flip = TRUE;
 
   // Read data type from metadata
