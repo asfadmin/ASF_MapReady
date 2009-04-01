@@ -651,6 +651,9 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *baseName,
   if (data_ext == CEOS_dat_ && metadata_ext == CEOS_lea_)
     return CEOS_dat_lea_PAIR;
 
+  if (data_ext == CEOS_dat_t && metadata_ext == CEOS_lea_)
+    return CEOS_dat_lea_PAIR;
+
   if (data_ext == CEOS_DAT_ && metadata_ext == CEOS_LEA_)
     return CEOS_DAT_LEA_PAIR;
 
