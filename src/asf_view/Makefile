@@ -76,7 +76,7 @@ LIB = \
 	-llibglade-2.0 \
 	-llibgdk_pixbuf-2.0 \
 	-lpango-1.0 \
-	-L/mingw/lib \
+	-L/mingw/lib -L/usr/lib/w32api \
 	-lgdi32 \
 	-llibgdk-win32-2.0 \
 	$(ASF_LIB)/libasf_vector.a \

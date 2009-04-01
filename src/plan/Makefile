@@ -21,6 +21,7 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
+	$(ZLIB_LIBS) \
 	-lm
 
 CFLAGS += \

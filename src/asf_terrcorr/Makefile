@@ -23,8 +23,9 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
+	$(XML_LIBS) \
 	$(ZLIB_LIBS) \
-	$(XML_LIBS)
+	-lm
 
 CFLAGS += \
 	$(TIFF_CFLAGS) \
