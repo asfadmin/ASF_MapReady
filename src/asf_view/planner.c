@@ -1,4 +1,5 @@
 #include "asf_view.h"
+#include "winshl.h"
 #include "plan.h"
 #include "dateUtil.h"
 #include <ctype.h>
