@@ -31,17 +31,8 @@ int handle_envi_file(const char *filename, char *meta_name,
     int has_envi_ext = has_ext && strcmp_case(ext,".hdr")==0;
     char *file;
 
-    if (!has_ext) {
-        has_envi_ext = try_ext(filename, ".hdr");
-        if (!has_envi_ext) {
-            has_envi_ext = try_ext(filename, ".hdr");
-            if (has_envi_ext)
-                file = appendExt(filename, ".hdr");
-        }
-        else {
-            file = appendExt(filename, ".hdr");
-        }
-    }
+    if (!has_ext)
+        file = appendExt(filename, ".hdr");
     else
       file = STRDUP(filename);
 
