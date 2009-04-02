@@ -118,13 +118,14 @@ void dumpLineHeader(const char *inName, const char *template, int line_number)
     subtype[2] = hdr.rectyp[3];
     rec_seq = bigInt32(hdr.recnum);
     length = bigInt32(hdr.recsiz);
-    /*
-    printf("\nRecord type: %d\n", itype);
-    printf("Sub-record[1]: %d\nSub-record[2]: %d\nSub_record[3]: %d\n",
-	   subtype[0], subtype[1], subtype[2]);
-    printf("Sequence: %d\nLength: %d\n\n", rec_seq, length);
-    */
-    offset += length;
+  
+    asfPrintStatus("\nHeader length: %d\n", offset);
+    asfPrintStatus("Record type: %d\n", itype);
+    asfPrintStatus("Sub-record[1]: %d\nSub-record[2]: %d\nSub_record[3]: %d\n",
+		   subtype[0], subtype[1], subtype[2]);
+    asfPrintStatus("Sequence: %d\nLength: %d\n\n", rec_seq, length);
+
+    //offset += length;
     current_line++;
   }
 
