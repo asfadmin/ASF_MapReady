@@ -160,6 +160,7 @@ main(int argc, char **argv)
         set_current_index(get_tiff_lut_index());
     }
     else if (is_colormap_ASF_file(curr->filename)) {
+      /*
         lut_specified = 1;
         strcpy(lut, EMBEDDED_ASF_COLORMAP_LUT);
         GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
@@ -167,6 +168,7 @@ main(int argc, char **argv)
         set_current_index(get_asf_lut_index());
         check_lut();
         apply_lut_to_data(thumbnail_data);
+      */
     }
     if (curr->meta && curr->meta->general)  {
         if (set_lut_based_on_image_type(curr->meta->general->image_data_type))

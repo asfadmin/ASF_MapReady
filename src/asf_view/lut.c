@@ -231,12 +231,17 @@ static int get_default_lut(image_data_type_t image_data_type)
     //return which;
 }
 
-int set_lut_based_on_image_type(image_data_type_t image_data_type)
+void set_lut_index(int which)
 {
-    int which = get_default_lut(image_data_type);
     GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
     GtkWidget *menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(option_menu));
     gtk_menu_set_active(GTK_MENU(menu), which);
+}
+
+int set_lut_based_on_image_type(image_data_type_t image_data_type)
+{
+    int which = get_default_lut(image_data_type);
+    set_lut_index(which);
     return which > 0;
 }
 
