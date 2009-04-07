@@ -1,6 +1,6 @@
 MapReady Version History
 
-MapReady 2.1.9 (released 2009 January 9)
+MapReady 2.1.11 (released 2009 March 30)
 New Functionality
 - New Polarimetric Decompositions:
   * The Cloude-Pottier decomposition, with 8 or 16 classifications,
@@ -14,7 +14,8 @@ New Functionality
   during processing.
 - MapReady now thumbnails GeoTIFFs loaded into the input file list.
 - GUI support for AirSAR data (interferometric)
-- Added command-line support for ERSDAC ALOS mosaicks
+- Added support for ERSDAC ALOS mosaicks
+- New tool: brs2jpg, converts ALOS .BRS files to jpeg.
 
 Bug Fixes
 - Eliminated streaking at the edge of an image with some Radarsat
