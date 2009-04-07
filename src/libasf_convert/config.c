@@ -292,6 +292,7 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->import->lut);
             FREE(cfg->import->prc);
 	    FREE(cfg->import->polsarpro_colormap);
+	    FREE(cfg->import->metadata_file);
             FREE(cfg->import);
         }
         if (cfg->external) {
@@ -432,6 +433,8 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->ers2_gain_fix = TRUE;
   cfg->import->polsarpro_colormap = (char *)MALLOC(sizeof(char)*256);
   strcpy(cfg->import->polsarpro_colormap, "");
+  cfg->import->metadata_file = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->import->metadata_file, "");
 
   cfg->external->cmd = (char *)MALLOC(sizeof(char)*1024);
 
@@ -604,6 +607,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
       if (strncmp(test, "polsarpro colormap", 18)==0)
         strcpy(cfg->import->format, read_str(line, "polsarpro colormap"));
+      if (strncmp(test, "metadata file", 13)==0)
+        strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
 
       // External
       if (strncmp(test, "command", 7)==0)
@@ -912,6 +917,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
       if (strncmp(test, "polsarpro colormap", 18)==0)
         strcpy(cfg->import->polsarpro_colormap, read_str(line, "polsarpro colormap"));
+      if (strncmp(test, "metadata file", 13)==0)
+        strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
       FREE(test);
     }
 
@@ -1357,7 +1364,15 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# is OPTIONAL and only applies if you are processing PolSARpro files.  If not,\n"
               "# then you may leave this field blank.  If it is blank, then any PolSARpro data\n"
               "# that is processed will remain (non-meaningfully) greyscale.\n\n");
-    fprintf(fConfig, "polsarpro colormap = %s\n\n", cfg->import->polsarpro_colormap);
+    fprintf(fConfig, "polsarpro colormap = %s\n", cfg->import->polsarpro_colormap);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# If the name of the metadata file is not deducible from the name\n"
+              "# given for the input file, it can be specified here.  Currently, only GAMMA\n"
+              "# data needs to do this, for other types of data either the input file is\n"
+              "# the metadata, or the metadata filename follows a standard naming convention.\n"
+              "# If you have renamed your metadata file against the standard naming scheme\n"
+              "# for the data, you should rename it back rather than using this option.\n\n");
+    fprintf(fConfig, "metadata file = %s\n\n", cfg->import->metadata_file);
 
     // AirSAR -- only write out if the import format is AirSAR
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {

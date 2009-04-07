@@ -158,6 +158,7 @@ int isCEOS(const char *input_file)
   ceos_pair = get_ceos_names(input_file, baseName,
                              &inBandName, &inMetaName,
                              &nBands, &trailer);
+  free_ceos_names(inBandName, inMetaName);
 
   return (ceos_pair != NO_CEOS_FILE_PAIR);
 }
@@ -1750,6 +1751,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       int db_flag = FALSE;
       int lut_flag = FALSE;
       input_format_t format_type;
+      char *meta_option = NULL;
 
       // Radiometry
       if (!cfg->general->sar_processing) {
@@ -1815,7 +1817,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Input Format Type
       char *polsarpro_colormap = NULL;
-      printf("\n\nINPUT FORMAT IS: %s\n\n", uc(cfg->import->format));
+      //printf("\n\nINPUT FORMAT IS: %s\n\n", uc(cfg->import->format));
       if (strncmp_case(cfg->import->format, "CEOS", 4) == 0)
         format_type = CEOS;
       else if (strncmp_case(cfg->import->format, "STF", 3) == 0)
@@ -1840,10 +1842,16 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
       else if (strncmp_case(cfg->import->format, "TERRASAR", 8) == 0)
         format_type = TERRASAR;
+      else if (strncmp_case(cfg->import->format, "GAMMA", 5) == 0)
+        format_type = GAMMA;
       else {
         asfPrintError("Unknown Format: %s\n", cfg->import->format);
         format_type = CEOS; // actually this is not reached
       }
+
+      // meta option (needed for GAMMA) -- leave NULL if not specified
+      if (strlen(cfg->import->metadata_file) > 0)
+        meta_option = cfg->import->metadata_file;
 
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
@@ -1860,12 +1868,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               cfg->import->width, cfg->import->height,
                               cfg->general->intermediates, NULL, NULL, NULL,
                               cfg->import->ers2_gain_fix,
-                              NULL,
+                              meta_option,
                               cfg->general->in_name,
                               cfg->general->ancillary_file,
                               polsarpro_colormap,
                               outFile),
-                              "ingesting data file (asf_import)\n");
+                   "ingesting data file (asf_import)\n");
       FREE(polsarpro_colormap);
 
       // For AirSAR data, let's see what we actually got.
@@ -2949,7 +2957,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     asfPrintStatus("Done at: %s\n", tmp);
 
     if (elapsed < 60) {
-      asfPrintStatus("Elapsed time: %d seconds.\n", (int)elapsed);
+      int sec=(int)elapsed;
+      asfPrintStatus("Elapsed time: %d second%s.\n", sec, sec==1?"":"s");
     }
     else if (elapsed < 60*60) {
       int min = elapsed/60;

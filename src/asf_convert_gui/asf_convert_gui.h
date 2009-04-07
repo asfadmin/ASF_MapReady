@@ -50,7 +50,8 @@ enum InputFormat
     INPUT_FORMAT_ESRI = 4, // not implemented
     INPUT_FORMAT_ENVI = 5,  // not implemented
     INPUT_FORMAT_POLSARPRO = 6,
-    INPUT_FORMAT_TERRASARX = 7
+    INPUT_FORMAT_TERRASARX = 7,
+    INPUT_FORMAT_GAMMA = 8
 };
 
 enum InputType
@@ -217,6 +218,8 @@ extern int COL_INPUT_FILE;
 extern int COL_INPUT_FILE_SHORT;
 extern int COL_ANCILLARY_FILE;
 extern int COL_ANCILLARY_FILE_SHORT;
+extern int COL_METADATA_FILE;
+extern int COL_METADATA_FILE_SHORT;
 extern int COL_INPUT_THUMBNAIL;
 extern int COL_BAND_LIST;
 extern int COL_OUTPUT_FILE;
@@ -274,6 +277,7 @@ void settings_delete_dem_and_mask(Settings *s);
 void settings_update_mask(Settings *s, const char *output_path);
 char *settings_to_config_file(const Settings *s,
            const gchar *input_file, const gchar *ancillary_file,
+           const gchar *meta_file,
            const gchar *output_file, const gchar *output_path,
            const gchar *tmp_dir);
 int apply_settings_from_config_file(char *configFile);
@@ -314,14 +318,16 @@ GtkWidget *get_widget_checked(const char *widget_name);
 void set_combo_box_item_checked(const char *, gint);
 void rgb_combo_box_setup();
 void rb_select(const char *, gboolean);
+char *get_string_from_entry(const char *widget_name);
+void put_string_to_entry(const char *widget_name, const char *txt);
 double get_double_from_entry(const char *widget_name);
 void put_double_to_entry(const char *widget_name, double val);
 int get_int_from_entry(const char *widget_name);
 void put_int_to_entry(const char *widget_name, int val);
-void put_string_to_entry(const char *widget_name, const char *txt);
 int get_checked(const char *widget_name);
 void set_checked(const char *widget_name, int checked);
 void enable_widget(const char *widget_name, int enable);
+void show_widget(const char *widget_name, int show);
 void put_string_to_label(const char *widget_name, const char *txt);
 const char *get_string_from_label(const char *widget_name);
 gboolean is_polsarpro(const gchar *);
@@ -345,7 +351,7 @@ void setup_files_list();
 void populate_files_list(int, char **);
 void refresh_file_names();
 gboolean add_to_files_list(const gchar *);
-gboolean add_to_files_list_iter(const gchar *, const gchar *, GtkTreeIter *);
+gboolean add_to_files_list_iter(const gchar *, const gchar *, const gchar *, GtkTreeIter *);
 gboolean add_to_ancillary_files_list(const gchar *);
 void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);
@@ -357,7 +363,9 @@ void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *,
                                   const char *);
 void move_from_completed_files_list(GtkTreeIter *);
 gboolean have_ancillary_files_in_list();
+gboolean have_meta_files_in_list();
 gchar * get_ancillary_file_from_input_list(const gchar *);
+gchar * get_meta_file_from_input_list(const gchar *);
 
 /* help.c */
 char * escapify(const char * s);
@@ -369,6 +377,7 @@ void do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name);
 
 /* file_selection.c */
 void handle_browse_ancillary_file();
+void init_ancillary_format_combobox();
 
 /* state.c */
 
@@ -481,6 +490,7 @@ extern gboolean processing;
 /* TRUE if full path names should be displayed in the input files and completed files lists */
 extern gboolean show_full_paths;
 extern gboolean show_ancillary_files;
+extern gboolean show_meta_files;
 extern gboolean animate_ancillary_files_button;
 
 /* The settings when the user clicked "Execute" (or, "Load") */

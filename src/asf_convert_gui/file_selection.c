@@ -790,3 +790,341 @@ void handle_browse_ancillary_file()
 #endif // #ifdef USE_GTK_FILE_CHOOSER
 #endif // #ifdef win32
 }
+
+//-----------------------------------------------------------------------------
+// Code supporting the "Add File With Ancillary Files" button
+//-----------------------------------------------------------------------------
+
+// These need to match the order of items specified for the
+// "add_file_with_ancillary_format_combobox" widget in the .glade file
+#define ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO 0
+#define ADD_FILE_WITH_ANCILLARY_FORMAT_GAMMA 1
+#define ADD_FILE_WITH_ANCILLARY_FORMAT_CEOS 2
+
+// These specify which file filters are available when the user clicks
+// one of the various "browse" buttons in the "add with ancillary" dialog
+#define D_FILT 1
+#define L_FILT 2
+#define IMG_FILT 4
+#define LED_FILT 8
+#define ALL_CEOS_DATA_FILT 16
+#define ALL_CEOS_LEADER_FILT 32
+#define HDR_FILT 64
+#define BIN_FILT 128
+
+static void do_browse_ok_clicked(gpointer button)
+{
+  GtkWidget *browse_widget =
+    GTK_WIDGET(g_object_get_data(G_OBJECT(button), "browse_widget"));
+  char *entry_to_populate =
+    (char*)g_object_get_data(G_OBJECT(browse_widget), "entry");
+
+  GSList *files = gtk_file_chooser_get_filenames(
+    GTK_FILE_CHOOSER(browse_widget));
+    
+  // done with this, now
+  gtk_widget_destroy(browse_widget);
+
+  if (files)
+  {
+    // we only have one file to add in the list
+    gchar *s = (gchar *) files->data;
+    put_string_to_entry(entry_to_populate, s);
+
+    // now free up everything (use full-list freeing code, just in case)
+    GSList *iter = files;
+    do {
+      g_free((gchar *) iter->data);
+      iter =  iter->next;
+    }
+    while(iter);
+    g_slist_free(files);
+  }
+}
+
+static void do_browse_cancel_clicked(gpointer button)
+{
+  GtkWidget *browse_widget =
+    GTK_WIDGET(g_object_get_data(G_OBJECT(button), "browse_widget"));
+  gtk_widget_destroy(browse_widget);
+}
+
+static void do_browse(const char *title, const char *entry_to_populate,
+                      int filts)
+{
+    GtkWidget *parent = get_widget_checked("asf_convert");
+
+    GtkWidget *browse_widget = gtk_file_chooser_dialog_new(
+        title, GTK_WINDOW(parent),
+        GTK_FILE_CHOOSER_ACTION_OPEN,
+        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
+        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
+        NULL);
+
+    // we need to extract the buttons, so we can connect them to our
+    // button handlers, above
+    GtkHButtonBox *box =
+        (GtkHButtonBox*)(((GtkDialog*)browse_widget)->action_area);
+    GList *buttons = box->button_box.box.children;
+
+    GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+    GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+    g_signal_connect((gpointer)cancel_btn, "clicked",
+        G_CALLBACK(do_browse_cancel_clicked), NULL);
+    g_signal_connect((gpointer)ok_btn, "clicked",
+        G_CALLBACK(do_browse_ok_clicked), NULL);
+
+    // store the entry that should be populated as aux data in the widget
+    g_object_set_data(G_OBJECT(browse_widget), "entry",
+                      (gpointer)entry_to_populate);
+
+    // store a pointer to the browse widget as aux data in the buttons
+    g_object_set_data(G_OBJECT(cancel_btn), "browse_widget",
+                      (gpointer)browse_widget);
+    g_object_set_data(G_OBJECT(ok_btn), "browse_widget",
+                      (gpointer)browse_widget);
+
+    // add the filters
+    if (filts & ALL_CEOS_DATA_FILT) {
+      GtkFileFilter *ceos_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(ceos_filt, "All CEOS Level 1 Files");
+      gtk_file_filter_add_pattern(ceos_filt, "*.D");
+      gtk_file_filter_add_pattern(ceos_filt, "IMG-*");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), ceos_filt);
+    }
+    if (filts & ALL_CEOS_LEADER_FILT) {
+      GtkFileFilter *ceos_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(ceos_filt, "All CEOS Level 1 Files");
+      gtk_file_filter_add_pattern(ceos_filt, "*.L");
+      gtk_file_filter_add_pattern(ceos_filt, "LED-*");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), ceos_filt);
+    }
+    if (filts & D_FILT) {
+      GtkFileFilter *D_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(D_filt, "RSAT/ERS CEOS L1 (*.D)");
+      gtk_file_filter_add_pattern(D_filt, "*.D");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), D_filt);
+    }
+    if (filts & L_FILT) {
+      GtkFileFilter *L_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(L_filt, "RSAT/ERS CEOS L1 (*.L)");
+      gtk_file_filter_add_pattern(L_filt, "*.L");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), L_filt);
+    }
+    if (filts & LED_FILT) {
+      GtkFileFilter *alos_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(alos_filt, "ALOS Leader Files (LED-*)");
+      gtk_file_filter_add_pattern(alos_filt, "LED-*");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
+    }
+    if (filts & IMG_FILT) {
+      GtkFileFilter *img_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(img_filt, "ALOS Data Files (IMG-*)");
+      gtk_file_filter_add_pattern(img_filt, "IMG-*");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), img_filt);
+    }
+    if (filts & BIN_FILT) {
+      GtkFileFilter *polsarpro_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(polsarpro_filt,
+                               "PolSARpro Classification Files (*.bin)");
+      gtk_file_filter_add_pattern(polsarpro_filt, "*.bin");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget),
+                                  polsarpro_filt);
+    }
+    if (filts & HDR_FILT) {
+      GtkFileFilter *hdr_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(hdr_filt, "PolSARpro Header Files (*.hdr)");
+      gtk_file_filter_add_pattern(hdr_filt, "*.hdr");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), hdr_filt);
+    }
+
+    GtkFileFilter *all_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+    gtk_file_filter_add_pattern(all_filt, "*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), all_filt);
+
+    // do not allow multi-select
+    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(browse_widget),
+                                         FALSE);
+
+    // we need to make these modal -- if the user opens multiple "open"
+    // dialogs, we'll get confused on the callbacks
+    gtk_window_set_modal(GTK_WINDOW(browse_widget), TRUE);
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(browse_widget), TRUE);
+    gtk_dialog_set_default_response(GTK_DIALOG(browse_widget),
+                                    GTK_RESPONSE_OK);
+
+    gtk_widget_show(browse_widget);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_button_clicked(GtkWidget *widget)
+{
+  show_widget("add_file_with_ancillary_dialog", TRUE);
+}
+
+static void clear_entries()
+{
+  put_string_to_entry("add_file_with_ancillary_gamma_ceos_entry", "");
+  put_string_to_entry("add_file_with_ancillary_gamma_data_entry", "");
+  put_string_to_entry("add_file_with_ancillary_gamma_metadata_entry", "");
+  put_string_to_entry("add_file_with_ancillary_polsarpro_image_entry", "");
+  put_string_to_entry("add_file_with_ancillary_polsarpro_ceos_entry", "");
+  put_string_to_entry("add_file_with_ancillary_ceos_data_entry", "");
+  put_string_to_entry("add_file_with_ancillary_ceos_leader_entry", "");
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_dialog_delete_event(GtkWidget *widget)
+{
+  clear_entries();
+  show_widget("add_file_with_ancillary_dialog", FALSE);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_gamma_ceos_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add CEOS File", "add_file_with_ancillary_gamma_ceos_entry",
+            L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_gamma_data_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add GAMMA Data File",
+            "add_file_with_ancillary_gamma_data_entry", 0);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_gamma_metadata_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add GAMMA Metadata File",
+            "add_file_with_ancillary_gamma_metadata_entry", 0);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_polsarpro_image_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add PolSARPro File",
+            "add_file_with_ancillary_polsarpro_image_entry", BIN_FILT);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_polsarpro_ceos_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add CEOS File", "add_file_with_ancillary_polsarpro_ceos_entry",
+            L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_ceos_data_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add CEOS Data File", "add_file_with_ancillary_ceos_data_entry",
+            D_FILT | IMG_FILT | ALL_CEOS_DATA_FILT);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_ceos_leader_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add CEOS Leader File",
+            "add_file_with_ancillary_ceos_leader_entry",
+            L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
+{
+  GtkWidget *combo =
+    get_widget_checked("add_file_with_ancillary_format_combobox");
+  int sel = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
+
+  GtkTreeIter iter;
+  int ok=TRUE;
+  char *data=NULL;
+
+  switch (sel) {
+    case ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO:
+    {
+      char *ceos =
+        get_string_from_entry("add_file_with_ancillary_polsarpro_ceos_entry");
+      data =
+        get_string_from_entry("add_file_with_ancillary_polsarpro_image_entry");
+      ok = add_to_files_list_iter(data, ceos, NULL, &iter);
+      break;
+    }
+
+    case ADD_FILE_WITH_ANCILLARY_FORMAT_GAMMA:
+    {
+      data = get_string_from_entry("add_file_with_ancillary_gamma_data_entry");
+      char *meta =
+        get_string_from_entry("add_file_with_ancillary_gamma_metadata_entry");
+      char *ceos =
+        get_string_from_entry("add_file_with_ancillary_gamma_ceos_entry");
+      ok = add_to_files_list_iter(data, ceos, meta, &iter);
+      break;
+    }
+
+    case ADD_FILE_WITH_ANCILLARY_FORMAT_CEOS:
+    {
+      data = get_string_from_entry("add_file_with_ancillary_ceos_data_entry");
+      char *leader =
+        get_string_from_entry("add_file_with_ancillary_ceos_leader_entry");
+      ok = add_to_files_list_iter(data, NULL, leader, &iter);
+      break;
+    }
+  }
+
+  if (!ok) {
+    if (data) {
+      char *msg = MALLOC(sizeof(char)*(strlen(data)+128));
+      sprintf(msg, "Unrecognized file:\n  %s\n\n"
+              "The file may be of a type not supported by MapReady.\n", data);
+      message_box(msg);
+      free(msg);
+    }
+    else {
+      char *msg = MALLOC(sizeof(char)*256);
+      sprintf(msg, "Unrecognized file!\n\n"
+              "The file may be of a type not supported by MapReady.\n");
+      message_box(msg);
+      free(msg);
+    }
+  }
+  else {
+    show_widget("add_file_with_ancillary_dialog", FALSE);
+    clear_entries();
+
+    show_queued_thumbnails();
+  }
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_cancel_button_clicked(GtkWidget *w)
+{
+  clear_entries();
+  show_widget("add_file_with_ancillary_dialog", FALSE);
+}
+
+static void ancillary_format_combobox_changed()
+{
+  GtkWidget *w = get_widget_checked("add_file_with_ancillary_format_combobox");
+  int sel = gtk_combo_box_get_active(GTK_COMBO_BOX(w));
+
+  show_widget("hbox_polsarpro", sel==ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO);
+  show_widget("hbox_gamma", sel==ADD_FILE_WITH_ANCILLARY_FORMAT_GAMMA);
+  show_widget("hbox_ceos", sel==ADD_FILE_WITH_ANCILLARY_FORMAT_CEOS);
+}
+
+void init_ancillary_format_combobox()
+{
+  GtkWidget *w = get_widget_checked("add_file_with_ancillary_format_combobox");
+  gtk_combo_box_set_active(GTK_COMBO_BOX(w), 0);
+  ancillary_format_combobox_changed();
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_format_combobox_changed(GtkWidget *w)
+{
+  ancillary_format_combobox_changed();
+}

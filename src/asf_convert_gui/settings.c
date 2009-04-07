@@ -1362,6 +1362,10 @@ get_input_data_format_string(int input_data_format)
       case INPUT_FORMAT_TERRASARX:
         format_arg_to_import = "terrasarx";
         break;
+
+      case INPUT_FORMAT_GAMMA:
+        format_arg_to_import = "gamma";
+        break;
     }
 
     return format_arg_to_import;
@@ -1370,6 +1374,7 @@ get_input_data_format_string(int input_data_format)
 char *
 settings_to_config_file(const Settings *s,
       const gchar *input_file, const gchar *ancillary_file,
+      const gchar *meta_file,
       const gchar *output_full, const gchar *output_path,
       const gchar *tmp_dir)
 {
@@ -1379,7 +1384,12 @@ settings_to_config_file(const Settings *s,
     char *output_file;
     char *output_basename;
     char *input_basename;
-    int input_data_format = get_input_data_format(input_file);
+    int input_data_format;
+
+    if (strlen(meta_file)>0)
+      input_data_format = INPUT_FORMAT_GAMMA;
+    else
+      input_data_format = get_input_data_format(input_file);
 
     if (s->export_is_checked) {
         output_file = STRDUP(output_full);
@@ -1583,6 +1593,9 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
     if (input_data_format == INPUT_FORMAT_POLSARPRO) {
       fprintf(cf, "polsarpro colormap = %s\n", s->polsarpro_colormap);
+    }
+    if (meta_file && strlen(meta_file)>0) {
+      fprintf(cf, "metadata file = %s\n", meta_file);
     }
     fprintf(cf, "\n");
 
@@ -2076,22 +2089,22 @@ int apply_settings_from_config_file(char *configFile)
       if (ext_type == CEOS_LED)
       {
         // alos -- pass in metadata name
-        add_to_files_list_iter(metaName[0], NULL, &iter);
+        add_to_files_list_iter(metaName[0], NULL, NULL, &iter);
       }
       else if (is_polsarpro(cfg->general->in_name)) {
         // PolSARpro -- pass in the data name
-        add_to_files_list_iter(cfg->general->in_name, NULL, &iter);
+        add_to_files_list_iter(cfg->general->in_name, NULL, NULL, &iter);
       }
       else
       {
         // regular ceos -- determine data file name
         int nBands;
 
-        add_to_files_list_iter(metaName[0], NULL, &iter);
+        add_to_files_list_iter(metaName[0], NULL, NULL, &iter);
         get_ceos_data_name(cfg->general->in_name, baseName, &dataNames, &nBands);
         assert(nBands == 1);
 
-        add_to_files_list_iter(dataNames[0], NULL, &iter);
+        add_to_files_list_iter(dataNames[0], NULL, NULL, &iter);
       }
 
       free_ceos_names(dataNames, metaName);

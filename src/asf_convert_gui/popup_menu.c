@@ -374,18 +374,26 @@ files_popup_handler(GtkWidget *widget, GdkEvent *event)
 
                 if (strstr(status, "...") != NULL)
                 {
-                    /* right-clicked on what is currently being processed */
-                    return FALSE;
+                  /* right-clicked on what is currently being processed */
+                  g_free(status);
+                  g_free(in_name);
+                  g_free(out_name);
+
+                  return FALSE;
                 }
 
                 /* check if we should disable "Display CEOS Metadata" */
                 ceos_meta_name = meta_file_name(in_name);
                 gboolean show_display_ceos_metadata_menu_item =
-                    g_file_test(ceos_meta_name, G_FILE_TEST_EXISTS);
+                  g_file_test(ceos_meta_name, G_FILE_TEST_EXISTS);
                 g_free(ceos_meta_name);
-
+                
                 /* enable/disable the items */
                 enable_menu_items(menu, show_display_ceos_metadata_menu_item);
+
+                g_free(status);
+                g_free(in_name);
+                g_free(out_name);
             }
             else
             {
@@ -473,6 +481,13 @@ completed_files_popup_handler(GtkWidget *widget, GdkEvent *event)
 
                 // enable all top-level menu items
                 enable_menu_items(menu, TRUE);
+
+                g_free(layover);
+                g_free(dem);
+                g_free(simsar);
+                g_free(faraday);
+                g_free(hist);
+                g_free(class_map);
             }
             else
             {
@@ -610,17 +625,14 @@ handle_remove_imp(const char *widget_name, GtkListStore *store)
       show_ancillary_files = FALSE;
       animate_ancillary_files_button = TRUE;
 
-      GtkWidget * files_list = get_widget_checked("files_list");
-      GtkTreeView * files_list_view = GTK_TREE_VIEW(files_list);
-      GtkTreeViewColumn * col = gtk_tree_view_get_column(files_list_view, COL_ANCILLARY_FILE);
-      gtk_tree_view_column_set_visible(col,
-                                       (show_ancillary_files && show_full_paths) ? TRUE : FALSE);
-      col = gtk_tree_view_get_column(files_list_view, COL_ANCILLARY_FILE_SHORT);
-      gtk_tree_view_column_set_visible(col,
-                                       (show_ancillary_files && !show_full_paths) ? TRUE : FALSE);
+      refresh_file_names();
 
       GtkWidget * w = get_widget_checked("ancillary_files_image");
       gtk_widget_set_sensitive(GTK_WIDGET(w), FALSE);
+    }
+    if (!have_meta_files_in_list()) {
+      show_meta_files = FALSE;
+      refresh_file_names();
     }
 
     input_data_formats_changed();
@@ -690,6 +702,7 @@ handle_display_ceos_metadata()
             COL_INPUT_FILE, &in_name, -1);
 
         show_ceos_meta_data(in_name);
+        g_free(in_name);
     }
     else
     {
@@ -1086,9 +1099,9 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
         GtkTreePath * path;
         GtkTreeIter iter;
         GtkTreeRowReference * ref;
-        gchar * input_name;
-        gchar * out_name;
-        gchar * metadata_name;
+        gchar * input_name=NULL;
+        gchar * out_name=NULL;
+        gchar * metadata_name=NULL;
         GdkPixbuf *pb = NULL;
         meta_parameters *meta;
 
@@ -1102,12 +1115,15 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
                 COMP_COL_OUTPUT_FILE, &out_name,
                 COMP_COL_OUTPUT_THUMBNAIL_BIG, &pb,
                 -1);
+
             metadata_name = build_asf_metadata_filename(out_name);
-        } else {
+        }
+        else {
             gtk_tree_model_get(model, &iter,
                 COL_INPUT_FILE, &input_name,
                 COL_OUTPUT_FILE, &out_name,
                 -1);
+
             metadata_name = meta_file_name(input_name);
         }
 
@@ -1186,8 +1202,11 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
         }
 
         free(base_output_name);
-
         g_free(metadata_name);
+        g_free(input_name);
+        g_free(out_name);
+        if (pb) g_object_unref(pb);
+
         i = g_list_next(i);
     }
 

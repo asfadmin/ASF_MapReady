@@ -61,6 +61,18 @@ rb_select(const char *widget_name, gboolean is_on)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb), is_on);
 }
 
+char *get_string_from_entry(const char *widget_name)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    return STRDUP(gtk_entry_get_text(GTK_ENTRY(e)));
+}
+
+void put_string_to_entry(const char *widget_name, const char *txt)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    gtk_entry_set_text(GTK_ENTRY(e), txt);
+}
+
 double get_double_from_entry(const char *widget_name)
 {
     GtkWidget *e = get_widget_checked(widget_name);
@@ -91,12 +103,6 @@ void put_int_to_entry(const char *widget_name, int val)
     sprintf(tmp, "%d", val);
 
     gtk_entry_set_text(GTK_ENTRY(e), tmp);
-}
-
-void put_string_to_entry(const char *widget_name, const char *txt)
-{
-    GtkWidget *e = get_widget_checked(widget_name);
-    gtk_entry_set_text(GTK_ENTRY(e), txt);
 }
 
 int get_checked(const char *widget_name)
@@ -345,6 +351,15 @@ void enable_widget(const char *widget_name, int enable)
 {
     GtkWidget *w = get_widget_checked(widget_name);
     gtk_widget_set_sensitive(w, enable);
+}
+
+void show_widget(const char *widget_name, int show)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    if (show)
+        gtk_widget_show(w);
+    else
+        gtk_widget_hide(w);
 }
 
 void put_string_to_label(const char *widget_name, const char *txt)

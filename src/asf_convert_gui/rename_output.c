@@ -45,6 +45,8 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
         }
     }
 
+    g_free(file_name);
+
     /* do not allow user to move output file to a different location */
     name_without_path = g_path_get_basename(new_name);
 
@@ -76,24 +78,21 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
         int len = strlen(path) + strlen(basename) + strlen(ext) + 2;
         fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-        g_snprintf(fixed_name, len,
-            "%s%s.%s", path, basename, ext);
+        g_snprintf(fixed_name, len, "%s%s.%s", path, basename, ext);
     }
     else if (strcmp(user_ext, ext) != 0)
     {
         int len = strlen(path) + strlen(name_without_path) + strlen(ext) + 2;
         fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-        g_snprintf(fixed_name, len,
-            "%s%s.%s", path, name_without_path, ext);
+        g_snprintf(fixed_name, len, "%s%s.%s", path, name_without_path, ext);
     }
     else
     {
         int len = strlen(path) + strlen(name_without_path) + 2;
         fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-        g_snprintf(fixed_name, len,
-            "%s%s", path, name_without_path);
+        g_snprintf(fixed_name, len, "%s%s", path, name_without_path);
     }
 
     g_free(basename);

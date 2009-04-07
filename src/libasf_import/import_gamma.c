@@ -763,6 +763,30 @@ void import_gamma(char *dataName, char *metaName, char *ceosName,
   int sample_count = metaIn->general->sample_count;
   int ii, kk;
 
+  if (strcmp(image_data_type, MAGIC_UNSET_STRING) == 0) {
+    // user did not specify image data type... we will try to figure
+    // it out based on the size of the file!
+    long long sz = fileSize(dataName);
+    long long coherence_sz = line_count*sample_count*4;
+    long long interferogram_sz = coherence_sz * 2;
+    // we are reassigning the pointer image_data_type, but since the caller
+    // frees this anyway, we aren't going to leak the original pointed-to val
+    if (sz == coherence_sz)
+      image_data_type = "COHERENCE";
+    else if (sz == interferogram_sz)
+      image_data_type = "INTERFEROGRAM";
+    else
+      asfPrintError("Could not determine what type of GAMMA data this is!\n"
+                    "  The file size is: %lld\n"
+                    "  A coherence image would be: %lld\n"
+                    "  An interferogram image would be: %lld\n"
+                    "Import using the command-line asf_import, and specify\n"
+                    "the image data type using the command-line option.\n",
+                    sz, coherence_sz, interferogram_sz);
+
+    asfPrintStatus("Detected GAMMA image: %s\n\n", image_data_type);
+  }
+
   if (strcmp_case(image_data_type, "COHERENCE") == 0) {
     asfPrintStatus("Importing GAMMA coherence image ...\n");
     FILE *fpOut = FOPEN(outFile, "wb");

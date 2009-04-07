@@ -16,6 +16,7 @@ void polsarpro_classification_optionmenu_changed()
     if (input_file && is_polsarpro(input_file)) {
       add_thumbnail(input_file);
     }
+    g_free(input_file);
     more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
 
@@ -127,9 +128,10 @@ input_data_formats_changed()
     while (valid) {
       ++num;
 
-      gchar *file;
+      gchar *file, *metadata_file;
       gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                          COL_INPUT_FILE, &file,
+                         COL_METADATA_FILE, &metadata_file,
                          -1);
 
       if (is_polsarpro(file)) {
@@ -160,6 +162,11 @@ input_data_formats_changed()
         if (!strstr(formats, "TerraSAR-X"))
           strcat(formats, "TerraSAR-X, ");
       }
+      else if (strlen(metadata_file)>0) {
+        // as of now, only gamma uses the metadata column...
+        if (!strstr(formats, "GAMMA"))
+          strcat(formats, "GAMMA, ");
+      }
       else { // probably CEOS L1... ?
         show_data_type_combobox = TRUE;
         enable_terrain_correction = TRUE;
@@ -168,6 +175,7 @@ input_data_formats_changed()
           strcat(formats, "CEOS L1, ");
       }
 
+      g_free(file);
       valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
 
@@ -654,6 +662,7 @@ void clear_completed_tmp_dirs()
               remove_dir(tmp_dir);
             }
 
+            g_free(tmp_dir);
             valid = gtk_tree_model_iter_next(
               GTK_TREE_MODEL(completed_list_store), &iter);
         }
@@ -951,15 +960,6 @@ on_farcorr_checkbutton_toggled(GtkWidget *widget)
 
 static int files_is_shown = TRUE;
 static int completed_files_is_shown = FALSE;
-
-static void show_widget(const char *widget_name, int show)
-{
-    GtkWidget *w = get_widget_checked(widget_name);
-    if (show)
-        gtk_widget_show(w);
-    else
-        gtk_widget_hide(w);
-}
 
 SIGNAL_CALLBACK void
 on_settings_button_expanded_clicked(GtkWidget *widget)

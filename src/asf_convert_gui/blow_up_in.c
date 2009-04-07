@@ -228,15 +228,20 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
       if (!fileExists(metadata_file)) strcpy(metadata_file, "");
     }
 
-    if (strlen((char*)data_file) == 0 || strlen((char*)meta_file_name) == 0)
-        return NULL;
-
     GdkPixbuf *popup_image_pixbuf
         = make_input_image_thumbnail_pixbuf (metadata_file, data_file,
                                              THUMB_SIZE_BIG);
 
-    g_free (metadata_file);
-    g_free (data_file);
+    if (!popup_image_pixbuf && strlen(ancillary_file) > 0)
+    {
+        popup_image_pixbuf = make_input_image_thumbnail_pixbuf (
+            ancillary_file, ancillary_file, THUMB_SIZE_BIG);          
+    }
+
+    g_free(file);
+    g_free(ancillary_file);
+    g_free(metadata_file);
+    g_free(data_file);
 
     if (popup_image_pixbuf)
     {

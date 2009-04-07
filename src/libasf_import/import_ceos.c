@@ -357,7 +357,8 @@ void import_ceos(char *inBaseName, char *outBaseName,
         sprintf(file_prefix, "IMG-%s-", band_id);
         ii = 0;
         do {
-          if (strncmp(inBandName[ii], file_prefix, strlen(file_prefix)) == 0) {
+          char *band_basename = get_basename(inBandName[ii]);
+          if (strncmp(band_basename, file_prefix, strlen(file_prefix)) == 0) {
             found = 1;
           }
           ii++;
@@ -367,6 +368,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
                           "selected band (\"%s\") file was not found \"%s\"\n",
                           band_id, strcat(file_prefix, inBaseName));
           }
+          free(band_basename);
         } while (!found);
         if (found) {
           ii--;

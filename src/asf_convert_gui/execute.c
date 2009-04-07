@@ -558,7 +558,7 @@ static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
              int is_first)
 {
-    gchar *in_file, *out_full, *ancillary_file, *status;
+    gchar *in_file, *out_full, *ancillary_file, *meta_file, *status;
     int pid;
 
     pid = getpid();
@@ -566,6 +566,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
     gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter,
         COL_INPUT_FILE, &in_file,
         COL_ANCILLARY_FILE, &ancillary_file,
+        COL_METADATA_FILE, &meta_file,
         COL_OUTPUT_FILE, &out_full,
         COL_STATUS, &status,
         -1);
@@ -608,7 +609,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
         config_file =
             settings_to_config_file(user_settings,
-                                    in_file, ancillary_file,
+                                    in_file, ancillary_file, meta_file,
                                     out_full, output_dir,
                                     tmp_dir);
         if (!config_file) {
@@ -658,6 +659,8 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
     g_free(status);
     g_free(out_full);
+    g_free(ancillary_file);
+    g_free(meta_file);
     g_free(in_file);
 }
 

@@ -11,6 +11,8 @@ int COL_INPUT_FILE;
 int COL_INPUT_FILE_SHORT;
 int COL_ANCILLARY_FILE;
 int COL_ANCILLARY_FILE_SHORT;
+int COL_METADATA_FILE;
+int COL_METADATA_FILE_SHORT;
 int COL_INPUT_THUMBNAIL;
 int COL_BAND_LIST;
 int COL_OUTPUT_FILE;
@@ -22,6 +24,7 @@ int COMP_COL_INPUT_FILE;
 int COMP_COL_INPUT_FILE_SHORT;
 int COMP_COL_ANCILLARY_FILE;
 int COMP_COL_ANCILLARY_FILE_SHORT;
+int COMP_COL_ORIGINAL_METADATA_FILE;
 int COMP_COL_OUTPUT_FILE;
 int COMP_COL_OUTPUT_FILE_SHORT;
 int COMP_COL_OUTPUT_THUMBNAIL;
@@ -37,7 +40,8 @@ int COMP_COL_HIST_FILE;
 int COMP_COL_CLASS_MAP_FILE;
 int COMP_COL_METADATA_FILE;
 
-gboolean move_to_files_list(const gchar * data_file, const gchar * ancillary_file);
+gboolean move_to_files_list(const gchar * data_file, const gchar * ancillary_file,
+                            const gchar *meta_file);
 
 /* danger: returns pointer to static data!! */
 /* (Stolen from popup_menu.c)               */
@@ -59,7 +63,6 @@ static const char * imgloc(char * file)
 /* are the type that need an ancillary file, i.e. gamma and polsarpro */
 gboolean have_ancillary_files_in_list()
 {
-  gchar * input_file = NULL;
   gboolean have_ancillary_files = FALSE;
 
   // For each file in the input list, check to see if it is a type
@@ -68,17 +71,48 @@ gboolean have_ancillary_files_in_list()
   gboolean more_items =
       gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
   while (more_items) {
+    gchar * input_file;
     gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                        COL_INPUT_FILE, &input_file, -1);
     if (input_file && is_polsarpro(input_file)) {
       have_ancillary_files = TRUE;
+    }
+    g_free(input_file);
+    if (have_ancillary_files) {
       break;
     }
     more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
-  if (input_file) g_free(input_file);
 
   return have_ancillary_files;
+}
+
+/* Returns true if any of the input files in the input files list */
+/* are the type that need an ancillary file, i.e. gamma and polsarpro */
+gboolean have_meta_files_in_list()
+{
+  gboolean have_meta_files = FALSE;
+
+  // For each file in the input list, check to see if it is a type
+  // that requires an ancillary file
+  GtkTreeIter iter;
+  gboolean more_items =
+      gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+  while (more_items) {
+    gchar * meta_file;
+    gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                       COL_METADATA_FILE, &meta_file, -1);
+    if (meta_file && strlen(meta_file)>0) {
+      have_meta_files = TRUE;
+    }
+    g_free(meta_file);
+    if (have_meta_files) {
+      break;
+    }
+    more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+  }
+
+  return have_meta_files;
 }
 
 /* Returns the length of the prepension if there is an allowed
@@ -266,13 +300,27 @@ static char *file_is_valid(const gchar * file)
 
 static void set_input_image_thumbnail(GtkTreeIter *iter,
                                       const gchar *metadata_file,
-                                      const gchar *data_file)
+                                      const gchar *data_file,
+                                      const gchar *ancillary_file)
 {
     GdkPixbuf *pb = make_input_image_thumbnail_pixbuf (
         metadata_file, data_file, THUMB_SIZE);
 
-    if (pb)
+    if (pb) {
         gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
+    }
+    else {
+        // failed to generate a thumbnail from the data file -- if this is
+        // gamma data, this failure is to be expected, we'll generate one
+        // from the ancillary (CEOS) data
+        if (strlen(ancillary_file) > 0) {
+          pb = make_input_image_thumbnail_pixbuf (
+            ancillary_file, ancillary_file, THUMB_SIZE);
+          
+          if (pb)
+            gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
+        }
+    }
 }
 
 static void
@@ -293,9 +341,9 @@ do_thumbnail (const gchar *file)
       sprintf(metadata_file, "%s%s", data_file, ".hdr"); // Should be <file>.bin.hdr now
       if (!fileExists(metadata_file)) strcpy(metadata_file, "");
     }
-    if (((metadata_file && strlen(metadata_file) > 0) || is_polsarpro(data_file)) &&
-        data_file && strlen(data_file) > 0)
-    {
+    //if (((metadata_file && strlen(metadata_file) > 0) ||
+    //     is_polsarpro(data_file)) && data_file && strlen(data_file) > 0)
+    //{
         /* Find the element of the list store having the file name we are
            trying to add a thumbnail of.  */
         GtkTreeIter iter;
@@ -305,19 +353,28 @@ do_thumbnail (const gchar *file)
                                                &iter);
         while ( valid ) {
             /* Walk through the list, reading each row */
-            gchar *file;
+            gchar *input_file;
+            gchar *ancillary_file;
             gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
-                                COL_INPUT_FILE, &file,
+                                COL_INPUT_FILE, &input_file,
+                                COL_ANCILLARY_FILE, &ancillary_file,
                                 -1);
-            if ( strcmp (metadata_file, file) == 0 ||
-                 strcmp (data_file, file) == 0)
+            if ( strcmp (metadata_file, input_file) == 0 ||
+                 strcmp (data_file, input_file) == 0 ||
+                 strcmp (file, input_file) == 0 )
             {
                 /* We found it, so load the thumbnail.  */
-                set_input_image_thumbnail (&iter, metadata_file, data_file);
+                set_input_image_thumbnail (&iter, metadata_file, data_file,
+                                           ancillary_file);
                 g_free (metadata_file);
                 g_free (data_file);
+                g_free (input_file);
+                g_free (ancillary_file);
                 return;
             }
+
+            g_free (input_file);
+            g_free (ancillary_file);
 
             valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store),
                                               &iter);
@@ -328,7 +385,7 @@ do_thumbnail (const gchar *file)
 
         g_free (metadata_file);
         g_free (data_file);
-    }
+    //}
 }
 
 #endif
@@ -404,7 +461,7 @@ gboolean
 add_to_files_list(const gchar * data_file)
 {
     GtkTreeIter iter;
-    gboolean ret = add_to_files_list_iter(data_file, NULL, &iter);
+    gboolean ret = add_to_files_list_iter(data_file, NULL, NULL, &iter);
     return ret;
 }
 
@@ -439,6 +496,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     gchar *output_file, *output_file_basename;
     gchar *file, *file_basename;
     gchar *ancillary_file, *ancillary_file_basename;
+    gchar *original_metadata_file;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
     gtk_tree_model_get(model, iter,
@@ -448,6 +506,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COL_OUTPUT_FILE_SHORT, &output_file_basename,
                        COL_ANCILLARY_FILE, &ancillary_file,
                        COL_ANCILLARY_FILE_SHORT, &ancillary_file_basename,
+                       COL_METADATA_FILE, &original_metadata_file,
                        -1);
 
     // pull out the useful intermediates
@@ -496,6 +555,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_INPUT_FILE_SHORT, file_basename,
                        COMP_COL_ANCILLARY_FILE, ancillary_file,
                        COMP_COL_ANCILLARY_FILE_SHORT, ancillary_file_basename,
+                       COMP_COL_ORIGINAL_METADATA_FILE, original_metadata_file,
                        COMP_COL_OUTPUT_FILE, outs[0],
                        COMP_COL_OUTPUT_FILE_SHORT, output_file_basename,
                        COMP_COL_STATUS, "Done",
@@ -509,8 +569,6 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_CLASS_MAP_FILE, class_map,
                        COMP_COL_METADATA_FILE, meta_file,
                        -1);
-    g_free(file_basename);
-    g_free(output_file_basename);
 
     // There are no more files in the input files list that require ancillary files, so
     // remove visilibity from the ancillary files column
@@ -525,6 +583,18 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
       col = gtk_tree_view_get_column(files_list_view, COL_ANCILLARY_FILE_SHORT);
       gtk_tree_view_column_set_visible(col,
                                        (show_ancillary_files && !show_full_paths) ? TRUE : FALSE);
+    }
+    if (!have_meta_files_in_list()) {
+      show_meta_files = FALSE;
+
+      GtkWidget * files_list = get_widget_checked("files_list");
+      GtkTreeView * files_list_view = GTK_TREE_VIEW(files_list);
+      GtkTreeViewColumn * col = gtk_tree_view_get_column(files_list_view, COL_METADATA_FILE);
+      gtk_tree_view_column_set_visible(col,
+                                       (show_meta_files && show_full_paths) ? TRUE : FALSE);
+      col = gtk_tree_view_get_column(files_list_view, COL_METADATA_FILE_SHORT);
+      gtk_tree_view_column_set_visible(col,
+                                       (show_meta_files && !show_full_paths) ? TRUE : FALSE);
     }
 
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
@@ -544,6 +614,11 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 
     g_free(file);
     g_free(output_file);
+    g_free(file_basename);
+    g_free(output_file_basename);
+    g_free(ancillary_file);
+    g_free(ancillary_file_basename);
+    g_free(original_metadata_file);
 }
 
 void
@@ -551,11 +626,13 @@ move_from_completed_files_list(GtkTreeIter *iter)
 {
     gchar *input_file;
     gchar *ancillary_file;
+    gchar *meta_file;
     gchar *tmp_dir;
     GtkTreeModel *model = GTK_TREE_MODEL(completed_list_store);
     gtk_tree_model_get(model, iter,
                        COMP_COL_INPUT_FILE, &input_file,
                        COMP_COL_ANCILLARY_FILE, &ancillary_file,
+                       COMP_COL_ORIGINAL_METADATA_FILE, &meta_file,
                        COMP_COL_TMP_DIR, &tmp_dir,
                        -1);
 
@@ -564,9 +641,14 @@ move_from_completed_files_list(GtkTreeIter *iter)
       remove_dir(tmp_dir);
     }
 
-    move_to_files_list(input_file, ancillary_file);
+    move_to_files_list(input_file, ancillary_file, meta_file);
+
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
+
     g_free(input_file);
+    g_free(ancillary_file);
+    g_free(meta_file);
+    g_free(tmp_dir);
 }
 
 // The thumbnailing works like this: When a user adds a file, or a bunch of
@@ -632,18 +714,32 @@ show_queued_thumbnails()
 }
 
 gboolean
-move_to_files_list(const gchar * data_file, const gchar * ancillary_file)
+move_to_files_list(const gchar * data_file, const gchar * ancillary_file,
+                   const gchar * meta_file)
 {
   GtkTreeIter iter;
   gboolean ret;
   if (ancillary_file && strlen(ancillary_file) &&
-      data_file      && strlen(data_file))
+      data_file      && strlen(data_file) &&
+      meta_file      && strlen(meta_file))
   {
     animate_ancillary_files_button = FALSE;
-    ret = add_to_files_list_iter(data_file, ancillary_file, &iter);
+    ret = add_to_files_list_iter(data_file, ancillary_file, meta_file, &iter);
+  }
+  else if (meta_file && strlen(meta_file) &&
+           data_file && strlen(data_file))
+  {
+    animate_ancillary_files_button = FALSE;
+    ret = add_to_files_list_iter(data_file, NULL, meta_file, &iter);
+  }
+  else if (ancillary_file && strlen(ancillary_file) &&
+           data_file      && strlen(data_file))
+  {
+    animate_ancillary_files_button = FALSE;
+    ret = add_to_files_list_iter(data_file, ancillary_file, NULL, &iter);
   }
   else if (data_file && strlen(data_file)) {
-    ret = add_to_files_list_iter(data_file, NULL, &iter);
+    ret = add_to_files_list_iter(data_file, NULL, NULL, &iter);
   }
   else {
     ret = FALSE;
@@ -655,9 +751,14 @@ move_to_files_list(const gchar * data_file, const gchar * ancillary_file)
 gboolean
 add_to_files_list_iter(const gchar *input_file_in,
                        const gchar *ancillary_file_in,
+                       const gchar *meta_file_in,
                        GtkTreeIter *iter_p)
 {
     char *input_file = file_is_valid(input_file_in);
+    if (!input_file && meta_file_in && strlen(meta_file_in) > 0) {
+      // gamma data -- file_is_valid() returns false for gamma...
+      input_file = STRDUP(input_file_in);
+    }
     char *ancillary_file_valid = NULL;
     int valid = input_file != NULL;
 
@@ -684,10 +785,11 @@ add_to_files_list_iter(const gchar *input_file_in,
           gchar *input_file_in_list;
           gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                              COL_INPUT_FILE, &input_file_in_list, -1);
-          if (strcmp(input_file, input_file_in_list) == 0) {
+          if (strcmp(input_file, input_file_in_list) == 0)
             found = TRUE;
+          g_free(input_file_in_list);
+          if (found)
             break;
-          }
           more_items = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store),
                                                  &iter);
         }
@@ -726,7 +828,15 @@ add_to_files_list_iter(const gchar *input_file_in,
           gchar *ancillary_basename = NULL;
           if (ancillary_file_valid != NULL) {
               ancillary_basename = g_path_get_basename(ancillary_file_in);
-
+          }
+          gchar *meta_basename = NULL;
+          if (meta_file_in != NULL) {
+            if (!show_meta_files) {
+              show_meta_files = TRUE;
+              show_ancillary_files = TRUE;
+              refresh_file_names();
+            }
+            meta_basename = g_path_get_basename(meta_file_in);
           }
           gtk_list_store_append(list_store, iter_p);
           gtk_list_store_set(list_store, iter_p,
@@ -736,11 +846,16 @@ add_to_files_list_iter(const gchar *input_file_in,
                                                  (gchar *) ancillary_file_in,
                              COL_ANCILLARY_FILE_SHORT, ancillary_file_valid == NULL ? (gchar *)"" :
                                                        ancillary_basename,
+                             COL_METADATA_FILE, meta_file_in ? (gchar*)meta_file_in : (gchar*)"",
+                             COL_METADATA_FILE_SHORT, meta_file_in ? (gchar *)meta_basename : (gchar *)"",
                              COL_BAND_LIST, bands,
                              COL_STATUS, status,
                              COL_LOG, "Has not been processed yet.",
                              -1);
+
           g_free(basename);
+          g_free(ancillary_basename);
+          g_free(meta_basename);
 
           // Determine output file name
           gchar * out_name_full;
@@ -832,7 +947,7 @@ add_to_ancillary_files_list(const gchar *ancillary_file_in)
       message_box(msg);
     }
 
-    free(input_file);
+    g_free(input_file);
     free(ancillary_file);
   }
   else {
@@ -1071,11 +1186,13 @@ setup_files_list()
     GtkTreeViewColumn *col;
     GtkCellRenderer *renderer;
 
-    list_store = gtk_list_store_new(10,
+    list_store = gtk_list_store_new(12,
                                     G_TYPE_STRING,    // Input file - Full path (usually hidden)
                                     G_TYPE_STRING,    // Input file - No path
                                     G_TYPE_STRING,    // Ancillary file - Full path (usually hidden)
                                     G_TYPE_STRING,    // Ancillary file - No path (usually hidden)
+                                    G_TYPE_STRING,    // Meta file - Full path (usually hidden)
+                                    G_TYPE_STRING,    // Meta file - No path (usually hidden)
                                     GDK_TYPE_PIXBUF,  // Input thumbnail
                                     G_TYPE_STRING,    // Bands
                                     G_TYPE_STRING,    // Output file - Full path (usually hidden)
@@ -1087,14 +1204,16 @@ setup_files_list()
     COL_INPUT_FILE_SHORT = 1;
     COL_ANCILLARY_FILE = 2;
     COL_ANCILLARY_FILE_SHORT = 3;
-    COL_INPUT_THUMBNAIL = 4;
-    COL_BAND_LIST = 5;
-    COL_OUTPUT_FILE = 6;
-    COL_OUTPUT_FILE_SHORT = 7;
-    COL_STATUS = 8;
-    COL_LOG = 9;
+    COL_METADATA_FILE = 4;
+    COL_METADATA_FILE_SHORT = 5;
+    COL_INPUT_THUMBNAIL = 6;
+    COL_BAND_LIST = 7;
+    COL_OUTPUT_FILE = 8;
+    COL_OUTPUT_FILE_SHORT = 9;
+    COL_STATUS = 10;
+    COL_LOG = 11;
 
-    completed_list_store = gtk_list_store_new(18,
+    completed_list_store = gtk_list_store_new(19,
                                               G_TYPE_STRING,    // Data file-Full path (usually hid.)
                                               G_TYPE_STRING,    // Data file - No path
                                               G_TYPE_STRING,    // Ancillary file-Full path (hid.)
@@ -1112,6 +1231,7 @@ setup_files_list()
                                               G_TYPE_STRING,    // Faraday rotations file (hidden)
                                               G_TYPE_STRING,    // History file (hidden)
                                               G_TYPE_STRING,    // Class map file (hidden)
+                                              G_TYPE_STRING,    // Original metadata file (hidden)
                                               G_TYPE_STRING);   // Metadata file (hidden)
 
     COMP_COL_INPUT_FILE = 0;
@@ -1131,7 +1251,8 @@ setup_files_list()
     COMP_COL_FARADAY_FILE = 14;
     COMP_COL_HIST_FILE = 15;
     COMP_COL_CLASS_MAP_FILE = 16;
-    COMP_COL_METADATA_FILE = 17;
+    COMP_COL_ORIGINAL_METADATA_FILE = 17;
+    COMP_COL_METADATA_FILE = 18;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
@@ -1181,6 +1302,30 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     g_object_set(renderer, "text", "?", NULL);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_ANCILLARY_FILE_SHORT);
+
+    /* First Column: Meta File File Name (full path) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Meta File");
+    gtk_tree_view_column_set_visible(col,
+                                     (show_meta_files && show_full_paths) ? TRUE : FALSE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_METADATA_FILE);
+
+    /* Next Column: Meta File File Name, but without full path */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Meta File");
+    gtk_tree_view_column_set_visible(col,
+                                     (show_meta_files && !show_full_paths) ? TRUE : FALSE);
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_METADATA_FILE_SHORT);
 
     /* Next Column: thumbnail of input image.  */
     col = gtk_tree_view_column_new ();
@@ -1489,6 +1634,16 @@ setup_files_list()
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_CLASS_MAP_FILE);
 
+    /* Next Column: Original Metadata File (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Original Metadata");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_ORIGINAL_METADATA_FILE);
+
     /* Next Column: Metadata File (hidden) */
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Metadata");
@@ -1537,33 +1692,36 @@ refresh_file_names()
   // Set input files column visibility to toggle between full-path file names
   // and short file names
   col = gtk_tree_view_get_column(in_files_view, COL_INPUT_FILE);
-  gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
+  gtk_tree_view_column_set_visible(col, show_full_paths);
   col = gtk_tree_view_get_column(in_files_view, COL_INPUT_FILE_SHORT);
-  gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+  gtk_tree_view_column_set_visible(col, !show_full_paths);
   col = gtk_tree_view_get_column(in_files_view, COL_ANCILLARY_FILE);
-  gtk_tree_view_column_set_visible(col, (show_full_paths && show_ancillary_files) ? TRUE : FALSE);
+  gtk_tree_view_column_set_visible(col, show_full_paths && show_ancillary_files);
   col = gtk_tree_view_get_column(in_files_view, COL_ANCILLARY_FILE_SHORT);
-  gtk_tree_view_column_set_visible(col, (!show_full_paths && show_ancillary_files) ? TRUE : FALSE);
+  gtk_tree_view_column_set_visible(col, !show_full_paths && show_ancillary_files);
+  col = gtk_tree_view_get_column(in_files_view, COL_METADATA_FILE);
+  gtk_tree_view_column_set_visible(col, show_full_paths && show_meta_files);
+  col = gtk_tree_view_get_column(in_files_view, COL_METADATA_FILE_SHORT);
+  gtk_tree_view_column_set_visible(col, !show_full_paths && show_meta_files);
   col = gtk_tree_view_get_column(in_files_view, COL_OUTPUT_FILE);
-  gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
+  gtk_tree_view_column_set_visible(col, show_full_paths);
   col = gtk_tree_view_get_column(in_files_view, COL_OUTPUT_FILE_SHORT);
-  gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+  gtk_tree_view_column_set_visible(col, !show_full_paths);
 
   // Set completed files column visibility to toggle between full-path file names
   // and short file names
   col = gtk_tree_view_get_column(completed_files_view, COMP_COL_INPUT_FILE);
-  gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
+  gtk_tree_view_column_set_visible(col, show_full_paths);
   col = gtk_tree_view_get_column(completed_files_view, COMP_COL_INPUT_FILE_SHORT);
-  gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+  gtk_tree_view_column_set_visible(col, !show_full_paths);
   col = gtk_tree_view_get_column(completed_files_view, COMP_COL_OUTPUT_FILE);
-  gtk_tree_view_column_set_visible(col, (show_full_paths) ? TRUE : FALSE);
+  gtk_tree_view_column_set_visible(col, show_full_paths);
   col = gtk_tree_view_get_column(completed_files_view, COMP_COL_OUTPUT_FILE_SHORT);
-  gtk_tree_view_column_set_visible(col, (show_full_paths) ? FALSE : TRUE);
+  gtk_tree_view_column_set_visible(col, !show_full_paths);
 }
 
 gchar * get_ancillary_file_from_input_list(const gchar *file_name)
 {
-  gchar * input_file = NULL;
   gchar * ancillary_file = NULL;
 
   if (!is_polsarpro(file_name)) return NULL;
@@ -1575,17 +1733,61 @@ gchar * get_ancillary_file_from_input_list(const gchar *file_name)
   gboolean more_items =
       gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
   while (more_items) {
+    int found=FALSE;
+    gchar * input_file;
     gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                        COL_INPUT_FILE, &input_file,
                        COL_ANCILLARY_FILE, &ancillary_file,
                        -1);
     if (strcmp(file_name, input_file) == 0) {
       // Found the right input file...
-      break;
+      // But don't exit loop yet, must g_free input_file first
+      found = TRUE;
     }
+
+    g_free(input_file);
+
+    if (found)
+      break;
+
+    g_free(ancillary_file); // wasn't the right one, free it
     more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
-  if (input_file) g_free(input_file);
 
   return ancillary_file;
+}
+
+gchar * get_meta_file_from_input_list(const gchar *file_name)
+{
+  gchar * meta_file = NULL;
+
+  // For each file in the input list, check to see if it is the passed-in
+  // input file, then return the associated ancillary file (even if missing
+  // or blank)
+  GtkTreeIter iter;
+  gboolean more_items =
+      gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+  while (more_items) {
+    int found=FALSE;
+    gchar * input_file;
+    gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                       COL_INPUT_FILE, &input_file,
+                       COL_METADATA_FILE, &meta_file,
+                       -1);
+    if (strcmp(file_name, input_file) == 0) {
+      // Found the right input file...
+      // But don't exit loop yet, must g_free() input_file
+      found = TRUE;
+    }
+
+    g_free(input_file);
+
+    if (found)
+      break;
+
+    g_free(meta_file);
+    more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+  }
+
+  return meta_file;
 }
