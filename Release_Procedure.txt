@@ -146,8 +146,6 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 
           src/ardop \
           src/llh2ls \
-          src/diffimage \
-          src/diffmeta \
           src/gr2sr \
           src/convert2vector \
           src/convert2vector_gui \

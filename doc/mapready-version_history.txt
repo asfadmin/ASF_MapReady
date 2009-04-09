@@ -1,5 +1,10 @@
 MapReady Version History
 
+MapReady 2.2.0 (released ...)
+New Functionality
+- New tool: diffimage (reports statistical differences b/w images)
+- New tool: diffmeta (report differences in metadata files)
+
 MapReady 2.1.11 (released 2009 March 30)
 New Functionality
 - New Polarimetric Decompositions:
