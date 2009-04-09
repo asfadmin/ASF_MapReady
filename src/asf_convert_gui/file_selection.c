@@ -20,6 +20,18 @@
 
 #include "asf_convert_gui.h"
 
+// These need to match the order of items in the format selector next to the
+// "Browse..." button
+#define FORMAT_CEOS 0
+#define FORMAT_AIRSAR 1
+#define FORMAT_POLSARPRO 2
+#define FORMAT_GAMMA 3
+#define FORMAT_TERRASARX 4
+#define FORMAT_GEOTIFF 5
+#define FORMAT_ASF_INTERNAL 6
+
+
+#ifndef win32
 static GtkWidget *browse_widget = NULL;
 
 // called when "cancel" clicked on the GtkFileChooser
@@ -89,16 +101,6 @@ static SIGNAL_CALLBACK void ok_clicked()
         show_queued_thumbnails();
     }
 }
-
-// These need to match the order of items in the format selector next to the
-// "Browse..." button
-#define FORMAT_CEOS 0
-#define FORMAT_AIRSAR 1
-#define FORMAT_POLSARPRO 2
-#define FORMAT_GAMMA 3
-#define FORMAT_TERRASARX 4
-#define FORMAT_GEOTIFF 5
-#define FORMAT_ASF_INTERNAL 6
 
 // sets up the file chooser dialog
 static void create_file_chooser_dialog(int selected)
@@ -190,6 +192,7 @@ static void create_file_chooser_dialog(int selected)
     gtk_dialog_set_default_response(GTK_DIALOG(browse_widget),
                                     GTK_RESPONSE_OK);
 }
+#endif
 
 static int is_asf_complex_data(const char *meta_file)
 {
