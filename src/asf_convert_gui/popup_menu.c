@@ -24,6 +24,7 @@ static const int popup_menu_item_remove = 0;
 static const int popup_menu_item_process = 1;
 static const int popup_menu_item_reprocess = 1;
 static const int popup_menu_item_display_ceos_metadata = 4;
+static const int popup_menu_item_view_input = 5;
 static const int popup_menu_item_google_earth = 5;
 
 /* danger: returns pointer to static data!! */
@@ -64,17 +65,6 @@ void set_toolbar_images()
 
     w = get_widget_checked("google_earth_toolbar_image");
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("google_earth_button.gif"));
-
-    // If the Add Ancillary Files button's image is insensitive, then
-    // that means it is disabled (see on_ancillary_files_button_clicked()
-    // in file_selection.c).  (Note: Yes, I could have set sensitivity to
-    // FALSE on the button itself, but this not only greys it out, but also
-    // gives it a funky 'depressed button' look that seems to imply the
-    // button has been clicked ...I like how the GUI appears when taking
-    // this approach (below) better.)
-    w = get_widget_checked("ancillary_files_image");
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("add_files_s.png"));
-    gtk_widget_set_sensitive(GTK_WIDGET(w), FALSE); // Default to being disabled
 
   // Completed files toolbar images
     w = get_widget_checked("completed_files_remove_button_image");
@@ -154,7 +144,8 @@ static GtkMenu *find_submenu(GtkMenu *menu)
 }
 
 static void
-enable_menu_items(GtkMenu * menu, gboolean enable_display_ceos_metadata)
+enable_menu_items(GtkMenu * menu, gboolean enable_display_ceos_metadata,
+                  gboolean enable_view_input)
 {
     GList * children;
     GList * iter;
@@ -168,8 +159,9 @@ enable_menu_items(GtkMenu * menu, gboolean enable_display_ceos_metadata)
         gboolean enable = TRUE;
         GtkWidget * item = GTK_WIDGET(iter->data);
 
-        if (n == popup_menu_item_display_ceos_metadata &&
-            (!enable_display_ceos_metadata || !use_thumbnails))
+        if ((n == popup_menu_item_view_input && !enable_view_input) ||
+            (n == popup_menu_item_display_ceos_metadata &&
+             (!enable_display_ceos_metadata || !use_thumbnails)))
         {
             enable = FALSE;
         }
@@ -202,8 +194,8 @@ enable_submenu_items(GtkMenu *menu, int *e)
 
 /* static */ void
 enable_toolbar_buttons(gboolean enable_view_output,
-               gboolean enable_display_ceos_metadata,
-               gboolean enable_display_asf_metadata)
+                       gboolean enable_display_ceos_metadata,
+                       gboolean enable_display_asf_metadata)
 {
     GtkWidget *rename_button;
     GtkWidget *view_log_button;
@@ -358,7 +350,7 @@ files_popup_handler(GtkWidget *widget, GdkEvent *event)
                 event_button->x, event_button->y,
                 &path, NULL, NULL, NULL))
             {
-                gchar *status, *out_name, *in_name, *ceos_meta_name;
+              gchar *status, *out_name, *in_name, *ceos_meta_name, *aux_meta;
 
                 gtk_tree_selection_unselect_all(selection);
                 gtk_tree_selection_select_path(selection, path);
@@ -368,6 +360,7 @@ files_popup_handler(GtkWidget *widget, GdkEvent *event)
                 gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                     COL_STATUS, &status,
                     COL_INPUT_FILE, &in_name,
+                    COL_METADATA_FILE, &aux_meta,
                     COL_OUTPUT_FILE, &out_name, -1);
 
                 gtk_tree_path_free(path);
@@ -387,9 +380,15 @@ files_popup_handler(GtkWidget *widget, GdkEvent *event)
                 gboolean show_display_ceos_metadata_menu_item =
                   g_file_test(ceos_meta_name, G_FILE_TEST_EXISTS);
                 g_free(ceos_meta_name);
-                
+
+                /* check if we should disable "View Input" (gamma) */
+                gboolean show_view_input = TRUE;
+                if (strlen(aux_meta) > 0)
+                  show_view_input = FALSE;
+
                 /* enable/disable the items */
-                enable_menu_items(menu, show_display_ceos_metadata_menu_item);
+                enable_menu_items(menu, show_display_ceos_metadata_menu_item,
+                                  show_view_input);
 
                 g_free(status);
                 g_free(in_name);
@@ -480,7 +479,7 @@ completed_files_popup_handler(GtkWidget *widget, GdkEvent *event)
                     enable_submenu_items(submenu, enable);
 
                 // enable all top-level menu items
-                enable_menu_items(menu, TRUE);
+                enable_menu_items(menu, TRUE, TRUE);
 
                 g_free(layover);
                 g_free(dem);
@@ -619,23 +618,9 @@ handle_remove_imp(const char *widget_name, GtkListStore *store)
     g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
     g_list_free(refs);
 
-    // There are no more files in the input files list that require ancillary files, so
-    // remove visilibity from the ancillary files column
-    if (!have_ancillary_files_in_list()) {
-      show_ancillary_files = FALSE;
-      animate_ancillary_files_button = TRUE;
-
-      refresh_file_names();
-
-      GtkWidget * w = get_widget_checked("ancillary_files_image");
-      gtk_widget_set_sensitive(GTK_WIDGET(w), FALSE);
-    }
-    if (!have_meta_files_in_list()) {
-      show_meta_files = FALSE;
-      refresh_file_names();
-    }
-
+    refresh_file_names();
     input_data_formats_changed();
+
     return TRUE;
 }
 
@@ -1028,26 +1013,6 @@ handle_view_input()
 }
 
 static int
-handle_add_ancillary_files()
-{
-  GtkWidget *files_list;
-  GtkTreeIter iter;
-
-  files_list = get_widget_checked("files_list");
-
-  if (get_iter_to_first_selected_row(files_list, list_store, &iter))
-  {
-    handle_browse_ancillary_file();
-  }
-  else
-  {
-    show_please_select_message();
-  }
-
-  return TRUE;
-}
-
-static int
 handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 {
     GtkWidget *files_list;
@@ -1332,6 +1297,7 @@ handle_reprocess()
     g_list_free(refs);
 
     input_data_formats_changed();
+    refresh_file_names();
     show_queued_thumbnails();
 
     return TRUE;
@@ -1485,12 +1451,6 @@ SIGNAL_CALLBACK gint
 popup_menu_google_earth(GtkWidget *widget, GdkEvent *event)
 {
   return handle_google_earth();
-}
-
-SIGNAL_CALLBACK gint
-popup_menu_add_files(GtkWidget *widget, GdkEvent *event)
-{
-  return handle_add_ancillary_files();
 }
 
 SIGNAL_CALLBACK gint
@@ -1714,12 +1674,6 @@ setup_files_popup_menu()
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
                              G_CALLBACK(popup_menu_google_earth), NULL);
-    gtk_widget_show(item);
-
-    item = gtk_menu_item_new_with_label("Add Ancillary File");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
-    g_signal_connect_swapped(G_OBJECT(item), "activate",
-                             G_CALLBACK(popup_menu_add_files), NULL);
     gtk_widget_show(item);
 
     gtk_widget_show(menu);

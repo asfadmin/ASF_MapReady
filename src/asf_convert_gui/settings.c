@@ -126,6 +126,7 @@ settings_apply_to_gui(const Settings * s)
     }
 
     input_data_formats_changed();
+    refresh_file_names();
 
     gtk_toggle_button_set_active(
         GTK_TOGGLE_BUTTON(external_checkbutton), s->external_is_checked);
@@ -1440,7 +1441,7 @@ settings_to_config_file(const Settings *s,
             fprintf(pf, "[Polar Stereographic]\n");
             fprintf(pf, "First Standard Parallel=%.10f\n", s->plat1);
             fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-            fprintf(pf, "Northern Projection=%d\n", (s->lat0 > 0 ? 1 : 0) || (s->plat1 > 0 ? 1 : 0));
+            fprintf(pf, "Northern Projection=%d\n", s->lat0>0 || s->plat1>0);
             fprintf(pf, "Spheroid=%s\n", spheroid_str);
           }
           break;
@@ -1548,9 +1549,10 @@ settings_to_config_file(const Settings *s,
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
     fprintf(cf, "thumbnail = %d\n",
-            (input_data_format == INPUT_FORMAT_CEOS_LEVEL1    ||
-             input_data_format == INPUT_FORMAT_AIRSAR         ||
-             input_data_format == INPUT_FORMAT_ASF_INTERNAL   ||
+            (input_data_format == INPUT_FORMAT_CEOS_LEVEL1  ||
+             input_data_format == INPUT_FORMAT_AIRSAR       ||
+             input_data_format == INPUT_FORMAT_ASF_INTERNAL ||
+             input_data_format == INPUT_FORMAT_GAMMA        ||
              input_data_format == INPUT_FORMAT_POLSARPRO) ? 1 : 0);
     fprintf(cf, "\n");
 

@@ -5339,15 +5339,14 @@
 
 					      <child>
 						<widget class="GtkLabel" id="label6">
-						  <property name="width_request">60</property>
 						  <property name="visible">True</property>
-						  <property name="label" translatable="yes">Add Files:</property>
+						  <property name="label" translatable="yes">Add: </property>
 						  <property name="use_underline">False</property>
 						  <property name="use_markup">False</property>
 						  <property name="justify">GTK_JUSTIFY_LEFT</property>
 						  <property name="wrap">False</property>
 						  <property name="selectable">False</property>
-						  <property name="xalign">0.5</property>
+						  <property name="xalign">0</property>
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
@@ -5355,6 +5354,27 @@
 						  <property name="width_chars">-1</property>
 						  <property name="single_line_mode">False</property>
 						  <property name="angle">0</property>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkComboBox" id="browse_format_combobox">
+						  <property name="visible">True</property>
+						  <property name="items" translatable="yes">CEOS (Level 1)
+AirSAR
+PolSARPro
+GAMMA
+TerraSAR-X
+GeoTIFF
+ASF Internal
+</property>
+						  <property name="add_tearoffs">False</property>
+						  <property name="focus_on_click">True</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5461,62 +5481,6 @@
 							  </child>
 							</widget>
 						      </child>
-						    </widget>
-						  </child>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkButton" id="add_file_with_ancillary_button">
-						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Browse and select datasets for processing, together with ancillary files which are required for some data formats (such as PolSARPro and GAMMA)</property>
-						  <property name="can_focus">True</property>
-						  <property name="relief">GTK_RELIEF_NORMAL</property>
-						  <property name="focus_on_click">True</property>
-						  <signal name="clicked" handler="on_add_file_with_ancillary_button_clicked" last_modification_time="Wed, 01 Apr 2009 18:17:55 GMT"/>
-
-						  <child>
-						    <widget class="GtkImage" id="image44">
-						      <property name="visible">True</property>
-						      <property name="stock">gtk-add</property>
-						      <property name="icon_size">4</property>
-						      <property name="xalign">0.5</property>
-						      <property name="yalign">0.5</property>
-						      <property name="xpad">0</property>
-						      <property name="ypad">0</property>
-						    </widget>
-						  </child>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkButton" id="ancillary_files_button">
-						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Add Ancillary File.  Naming conventions for some data sets such as those processed by the GAMMA SAR and Interferometry Software package may not exist.  Other data sets such as POLSARPRO datasets may require original, say CEOS or AIRSAR, data sets to be associated with them so that information not contained in the POLSARPRO input file can be extracted from the original dataset.  The Add Ancillary File button allows you to associate one additional file with the selected input file.  In the case of the GAMMA software, the Browse and Add Ancillary File buttons are used to selected the data and metadata files.  In the case of POLSARPRO, you use the Browse button to select the POLSARPRO file and the Add Ancillary File button to associate an original CEOS or AIRSAR format dataset with it.</property>
-						  <property name="can_focus">True</property>
-						  <property name="relief">GTK_RELIEF_NORMAL</property>
-						  <property name="focus_on_click">True</property>
-						  <signal name="clicked" handler="on_ancillary_files_button_clicked" last_modification_time="Fri, 16 Jan 2009 22:29:50 GMT"/>
-
-						  <child>
-						    <widget class="GtkImage" id="ancillary_files_image">
-						      <property name="visible">True</property>
-						      <property name="stock">gtk-no</property>
-						      <property name="icon_size">4</property>
-						      <property name="xalign">0.5</property>
-						      <property name="yalign">0.5</property>
-						      <property name="xpad">0</property>
-						      <property name="ypad">0</property>
 						    </widget>
 						  </child>
 						</widget>
@@ -8753,52 +8717,6 @@ uso@asf.alaska.edu</property>
   </child>
 </widget>
 
-<widget class="GtkFileSelection" id="ancillary_file_selection">
-  <property name="border_width">10</property>
-  <property name="width_request">800</property>
-  <property name="height_request">600</property>
-  <property name="title" translatable="yes">Select Ancillary File</property>
-  <property name="type">GTK_WINDOW_TOPLEVEL</property>
-  <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
-  <property name="resizable">True</property>
-  <property name="destroy_with_parent">False</property>
-  <property name="icon">mapready.ico</property>
-  <property name="decorated">True</property>
-  <property name="skip_taskbar_hint">False</property>
-  <property name="skip_pager_hint">False</property>
-  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
-  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
-  <property name="show_fileops">True</property>
-  <signal name="delete_event" handler="on_ancillary_file_selection_delete_event" last_modification_time="Fri, 23 Jan 2009 21:20:07 GMT"/>
-  <signal name="destroy_event" handler="on_ancillary_file_selection_destroy_event" last_modification_time="Fri, 23 Jan 2009 21:20:15 GMT"/>
-  <signal name="destroy" handler="on_ancillary_file_selection_destroy" last_modification_time="Fri, 23 Jan 2009 21:20:25 GMT"/>
-
-  <child internal-child="cancel_button">
-    <widget class="GtkButton" id="button5">
-      <property name="visible">True</property>
-      <property name="can_default">True</property>
-      <property name="can_focus">True</property>
-      <property name="relief">GTK_RELIEF_NORMAL</property>
-      <property name="focus_on_click">True</property>
-      <signal name="clicked" handler="on_input_file_selection_cancel_button_clicked" last_modification_time="Thu, 12 Aug 2004 00:02:35 GMT"/>
-    </widget>
-  </child>
-
-  <child internal-child="ok_button">
-    <widget class="GtkButton" id="button6">
-      <property name="visible">True</property>
-      <property name="can_default">True</property>
-      <property name="can_focus">True</property>
-      <property name="relief">GTK_RELIEF_NORMAL</property>
-      <property name="focus_on_click">True</property>
-      <signal name="clicked" handler="on_input_file_selection_ok_button_clicked" last_modification_time="Thu, 12 Aug 2004 00:02:15 GMT"/>
-    </widget>
-  </child>
-</widget>
-
 <widget class="GtkDialog" id="add_file_with_ancillary_dialog">
   <property name="width_request">800</property>
   <property name="title" translatable="yes">Add File</property>
@@ -8965,20 +8883,27 @@ uso@asf.alaska.edu</property>
 			      </child>
 
 			      <child>
-				<widget class="GtkComboBox" id="add_file_with_ancillary_format_combobox">
+				<widget class="GtkLabel" id="add_with_ancillary_format_label">
 				  <property name="visible">True</property>
-				  <property name="items" translatable="yes">PolSARPro
-GAMMA
-CEOS (Level 1)
-</property>
-				  <property name="add_tearoffs">False</property>
-				  <property name="focus_on_click">True</property>
-				  <signal name="changed" handler="on_add_file_with_ancillary_format_combobox_changed" last_modification_time="Wed, 01 Apr 2009 17:37:50 GMT"/>
+				  <property name="label" translatable="yes">Unknown</property>
+				  <property name="use_underline">False</property>
+				  <property name="use_markup">False</property>
+				  <property name="justify">GTK_JUSTIFY_LEFT</property>
+				  <property name="wrap">False</property>
+				  <property name="selectable">False</property>
+				  <property name="xalign">0.5</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				  <property name="width_chars">-1</property>
+				  <property name="single_line_mode">False</property>
+				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="padding">0</property>
 				  <property name="expand">False</property>
-				  <property name="fill">True</property>
+				  <property name="fill">False</property>
 				</packing>
 			      </child>
 			    </widget>
@@ -9042,9 +8967,9 @@ CEOS (Level 1)
 					  <property name="column_spacing">2</property>
 
 					  <child>
-					    <widget class="GtkLabel" id="label160">
+					    <widget class="GtkLabel" id="label161">
 					      <property name="visible">True</property>
-					      <property name="label" translatable="yes">Original CEOS File: </property>
+					      <property name="label" translatable="yes">GAMMA Data File: </property>
 					      <property name="use_underline">False</property>
 					      <property name="use_markup">False</property>
 					      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -9070,9 +8995,52 @@ CEOS (Level 1)
 					  </child>
 
 					  <child>
-					    <widget class="GtkLabel" id="label161">
+					    <widget class="GtkEntry" id="add_file_with_ancillary_gamma_data_entry">
 					      <property name="visible">True</property>
-					      <property name="label" translatable="yes">GAMMA Data File: </property>
+					      <property name="tooltip" translatable="yes">Name of the GAMMA data file (e.g., the coherence or intergerogram data)</property>
+					      <property name="can_focus">True</property>
+					      <property name="editable">True</property>
+					      <property name="visibility">True</property>
+					      <property name="max_length">0</property>
+					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
+					      <property name="invisible_char">●</property>
+					      <property name="activates_default">False</property>
+					    </widget>
+					    <packing>
+					      <property name="left_attach">1</property>
+					      <property name="right_attach">2</property>
+					      <property name="top_attach">0</property>
+					      <property name="bottom_attach">1</property>
+					      <property name="y_options"></property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkButton" id="add_file_with_ancillary_gamma_data_browse_button">
+					      <property name="visible">True</property>
+					      <property name="can_focus">True</property>
+					      <property name="label" translatable="yes">Browse...</property>
+					      <property name="use_underline">True</property>
+					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
+					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_data_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 17:49:48 GMT"/>
+					    </widget>
+					    <packing>
+					      <property name="left_attach">2</property>
+					      <property name="right_attach">3</property>
+					      <property name="top_attach">0</property>
+					      <property name="bottom_attach">1</property>
+					      <property name="x_options">fill</property>
+					      <property name="y_options"></property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkLabel" id="label162">
+					      <property name="width_request">160</property>
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">GAMMA Metadata File: </property>
 					      <property name="use_underline">False</property>
 					      <property name="use_markup">False</property>
 					      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -9098,10 +9066,51 @@ CEOS (Level 1)
 					  </child>
 
 					  <child>
-					    <widget class="GtkLabel" id="label162">
-					      <property name="width_request">160</property>
+					    <widget class="GtkEntry" id="add_file_with_ancillary_gamma_metadata_entry">
 					      <property name="visible">True</property>
-					      <property name="label" translatable="yes">GAMMA Metadata File: </property>
+					      <property name="tooltip" translatable="yes">The name of the GAMMA metadata file.</property>
+					      <property name="can_focus">True</property>
+					      <property name="editable">True</property>
+					      <property name="visibility">True</property>
+					      <property name="max_length">0</property>
+					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
+					      <property name="invisible_char">●</property>
+					      <property name="activates_default">False</property>
+					    </widget>
+					    <packing>
+					      <property name="left_attach">1</property>
+					      <property name="right_attach">2</property>
+					      <property name="top_attach">1</property>
+					      <property name="bottom_attach">2</property>
+					      <property name="y_options"></property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkButton" id="add_file_with_ancillary_gamma_metadata_browse_button">
+					      <property name="visible">True</property>
+					      <property name="can_focus">True</property>
+					      <property name="label" translatable="yes">Browse...</property>
+					      <property name="use_underline">True</property>
+					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
+					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_metadata_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 17:49:57 GMT"/>
+					    </widget>
+					    <packing>
+					      <property name="left_attach">2</property>
+					      <property name="right_attach">3</property>
+					      <property name="top_attach">1</property>
+					      <property name="bottom_attach">2</property>
+					      <property name="x_options">fill</property>
+					      <property name="y_options"></property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkLabel" id="label160">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">Original CEOS File: </property>
 					      <property name="use_underline">False</property>
 					      <property name="use_markup">False</property>
 					      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -9142,50 +9151,6 @@ CEOS (Level 1)
 					    <packing>
 					      <property name="left_attach">1</property>
 					      <property name="right_attach">2</property>
-					      <property name="top_attach">0</property>
-					      <property name="bottom_attach">1</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkEntry" id="add_file_with_ancillary_gamma_data_entry">
-					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">Name of the GAMMA data file (e.g., the coherence or intergerogram data)</property>
-					      <property name="can_focus">True</property>
-					      <property name="editable">True</property>
-					      <property name="visibility">True</property>
-					      <property name="max_length">0</property>
-					      <property name="text" translatable="yes"></property>
-					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
-					      <property name="activates_default">False</property>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">1</property>
-					      <property name="right_attach">2</property>
-					      <property name="top_attach">1</property>
-					      <property name="bottom_attach">2</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkEntry" id="add_file_with_ancillary_gamma_metadata_entry">
-					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">The name of the GAMMA metadata file.</property>
-					      <property name="can_focus">True</property>
-					      <property name="editable">True</property>
-					      <property name="visibility">True</property>
-					      <property name="max_length">0</property>
-					      <property name="text" translatable="yes"></property>
-					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
-					      <property name="activates_default">False</property>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">1</property>
-					      <property name="right_attach">2</property>
 					      <property name="top_attach">2</property>
 					      <property name="bottom_attach">3</property>
 					      <property name="y_options"></property>
@@ -9201,46 +9166,6 @@ CEOS (Level 1)
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
 					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_ceos_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 17:45:13 GMT"/>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">2</property>
-					      <property name="right_attach">3</property>
-					      <property name="top_attach">0</property>
-					      <property name="bottom_attach">1</property>
-					      <property name="x_options">fill</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkButton" id="add_file_with_ancillary_gamma_data_browse_button">
-					      <property name="visible">True</property>
-					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Browse...</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_data_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 17:49:48 GMT"/>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">2</property>
-					      <property name="right_attach">3</property>
-					      <property name="top_attach">1</property>
-					      <property name="bottom_attach">2</property>
-					      <property name="x_options">fill</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkButton" id="add_file_with_ancillary_gamma_metadata_browse_button">
-					      <property name="visible">True</property>
-					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Browse...</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_metadata_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 17:49:57 GMT"/>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">2</property>
@@ -9282,34 +9207,6 @@ CEOS (Level 1)
 					  <property name="column_spacing">2</property>
 
 					  <child>
-					    <widget class="GtkLabel" id="label164">
-					      <property name="visible">True</property>
-					      <property name="label" translatable="yes">Original CEOS File: </property>
-					      <property name="use_underline">False</property>
-					      <property name="use_markup">False</property>
-					      <property name="justify">GTK_JUSTIFY_LEFT</property>
-					      <property name="wrap">False</property>
-					      <property name="selectable">False</property>
-					      <property name="xalign">0</property>
-					      <property name="yalign">0.5</property>
-					      <property name="xpad">0</property>
-					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">0</property>
-					      <property name="right_attach">1</property>
-					      <property name="top_attach">0</property>
-					      <property name="bottom_attach">1</property>
-					      <property name="x_options">fill</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
 					    <widget class="GtkLabel" id="label165">
 					      <property name="width_request">160</property>
 					      <property name="visible">True</property>
@@ -9331,31 +9228,37 @@ CEOS (Level 1)
 					    <packing>
 					      <property name="left_attach">0</property>
 					      <property name="right_attach">1</property>
-					      <property name="top_attach">1</property>
-					      <property name="bottom_attach">2</property>
+					      <property name="top_attach">0</property>
+					      <property name="bottom_attach">1</property>
 					      <property name="x_options">fill</property>
 					      <property name="y_options"></property>
 					    </packing>
 					  </child>
 
 					  <child>
-					    <widget class="GtkEntry" id="add_file_with_ancillary_polsarpro_ceos_entry">
+					    <widget class="GtkLabel" id="label164">
 					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">The name of the original CEOS file that was used by PolSARPro to produce the data &amp; metadata files.</property>
-					      <property name="can_focus">True</property>
-					      <property name="editable">True</property>
-					      <property name="visibility">True</property>
-					      <property name="max_length">0</property>
-					      <property name="text" translatable="yes"></property>
-					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
-					      <property name="activates_default">False</property>
+					      <property name="label" translatable="yes">Original CEOS File: </property>
+					      <property name="use_underline">False</property>
+					      <property name="use_markup">False</property>
+					      <property name="justify">GTK_JUSTIFY_LEFT</property>
+					      <property name="wrap">False</property>
+					      <property name="selectable">False</property>
+					      <property name="xalign">0</property>
+					      <property name="yalign">0.5</property>
+					      <property name="xpad">0</property>
+					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
-					      <property name="left_attach">1</property>
-					      <property name="right_attach">2</property>
-					      <property name="top_attach">0</property>
-					      <property name="bottom_attach">1</property>
+					      <property name="left_attach">0</property>
+					      <property name="right_attach">1</property>
+					      <property name="top_attach">1</property>
+					      <property name="bottom_attach">2</property>
+					      <property name="x_options">fill</property>
 					      <property name="y_options"></property>
 					    </packing>
 					  </child>
@@ -9376,28 +9279,30 @@ CEOS (Level 1)
 					    <packing>
 					      <property name="left_attach">1</property>
 					      <property name="right_attach">2</property>
-					      <property name="top_attach">1</property>
-					      <property name="bottom_attach">2</property>
+					      <property name="top_attach">0</property>
+					      <property name="bottom_attach">1</property>
 					      <property name="y_options"></property>
 					    </packing>
 					  </child>
 
 					  <child>
-					    <widget class="GtkButton" id="add_file_with_ancillary_polsarpro_ceos_browse_button">
+					    <widget class="GtkEntry" id="add_file_with_ancillary_polsarpro_ceos_entry">
 					      <property name="visible">True</property>
+					      <property name="tooltip" translatable="yes">The name of the original CEOS file that was used by PolSARPro to produce the data &amp; metadata files.</property>
 					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Browse...</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <signal name="clicked" handler="on_add_file_with_ancillary_polsarpro_ceos_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 17:48:57 GMT"/>
+					      <property name="editable">True</property>
+					      <property name="visibility">True</property>
+					      <property name="max_length">0</property>
+					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
+					      <property name="invisible_char">●</property>
+					      <property name="activates_default">False</property>
 					    </widget>
 					    <packing>
-					      <property name="left_attach">2</property>
-					      <property name="right_attach">3</property>
-					      <property name="top_attach">0</property>
-					      <property name="bottom_attach">1</property>
-					      <property name="x_options">fill</property>
+					      <property name="left_attach">1</property>
+					      <property name="right_attach">2</property>
+					      <property name="top_attach">1</property>
+					      <property name="bottom_attach">2</property>
 					      <property name="y_options"></property>
 					    </packing>
 					  </child>
@@ -9415,64 +9320,6 @@ CEOS (Level 1)
 					    <packing>
 					      <property name="left_attach">2</property>
 					      <property name="right_attach">3</property>
-					      <property name="top_attach">1</property>
-					      <property name="bottom_attach">2</property>
-					      <property name="x_options">fill</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-					</widget>
-					<packing>
-					  <property name="padding">0</property>
-					  <property name="expand">True</property>
-					  <property name="fill">True</property>
-					</packing>
-				      </child>
-				    </widget>
-				    <packing>
-				      <property name="padding">0</property>
-				      <property name="expand">True</property>
-				      <property name="fill">True</property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkHBox" id="hbox_ceos">
-				      <property name="visible">True</property>
-				      <property name="homogeneous">False</property>
-				      <property name="spacing">0</property>
-
-				      <child>
-					<widget class="GtkTable" id="table20">
-					  <property name="visible">True</property>
-					  <property name="n_rows">2</property>
-					  <property name="n_columns">3</property>
-					  <property name="homogeneous">False</property>
-					  <property name="row_spacing">2</property>
-					  <property name="column_spacing">2</property>
-
-					  <child>
-					    <widget class="GtkLabel" id="label166">
-					      <property name="width_request">160</property>
-					      <property name="visible">True</property>
-					      <property name="label" translatable="yes">CEOS Leader File: </property>
-					      <property name="use_underline">False</property>
-					      <property name="use_markup">False</property>
-					      <property name="justify">GTK_JUSTIFY_LEFT</property>
-					      <property name="wrap">False</property>
-					      <property name="selectable">False</property>
-					      <property name="xalign">0</property>
-					      <property name="yalign">0.5</property>
-					      <property name="xpad">0</property>
-					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">0</property>
-					      <property name="right_attach">1</property>
 					      <property name="top_attach">0</property>
 					      <property name="bottom_attach">1</property>
 					      <property name="x_options">fill</property>
@@ -9481,106 +9328,14 @@ CEOS (Level 1)
 					  </child>
 
 					  <child>
-					    <widget class="GtkLabel" id="label167">
-					      <property name="visible">True</property>
-					      <property name="label" translatable="yes">CEOS Data File: </property>
-					      <property name="use_underline">False</property>
-					      <property name="use_markup">False</property>
-					      <property name="justify">GTK_JUSTIFY_LEFT</property>
-					      <property name="wrap">False</property>
-					      <property name="selectable">False</property>
-					      <property name="xalign">0</property>
-					      <property name="yalign">0.5</property>
-					      <property name="xpad">0</property>
-					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">0</property>
-					      <property name="right_attach">1</property>
-					      <property name="top_attach">1</property>
-					      <property name="bottom_attach">2</property>
-					      <property name="x_options">fill</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkEntry" id="add_file_with_ancillary_ceos_leader_entry">
-					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">The name of the CEOS leader file.</property>
-					      <property name="can_focus">True</property>
-					      <property name="editable">True</property>
-					      <property name="visibility">True</property>
-					      <property name="max_length">0</property>
-					      <property name="text" translatable="yes"></property>
-					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
-					      <property name="activates_default">False</property>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">1</property>
-					      <property name="right_attach">2</property>
-					      <property name="top_attach">0</property>
-					      <property name="bottom_attach">1</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkEntry" id="add_file_with_ancillary_ceos_data_entry">
-					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">The name of the CEOS data file.</property>
-					      <property name="can_focus">True</property>
-					      <property name="editable">True</property>
-					      <property name="visibility">True</property>
-					      <property name="max_length">0</property>
-					      <property name="text" translatable="yes"></property>
-					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
-					      <property name="activates_default">False</property>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">1</property>
-					      <property name="right_attach">2</property>
-					      <property name="top_attach">1</property>
-					      <property name="bottom_attach">2</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkButton" id="add_file_with_ancillary_ceos_leader_browse_button">
+					    <widget class="GtkButton" id="add_file_with_ancillary_polsarpro_ceos_browse_button">
 					      <property name="visible">True</property>
 					      <property name="can_focus">True</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
 					      <property name="focus_on_click">True</property>
-					      <signal name="clicked" handler="on_add_file_with_ancillary_ceos_leader_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 18:36:46 GMT"/>
-					    </widget>
-					    <packing>
-					      <property name="left_attach">2</property>
-					      <property name="right_attach">3</property>
-					      <property name="top_attach">0</property>
-					      <property name="bottom_attach">1</property>
-					      <property name="x_options">fill</property>
-					      <property name="y_options"></property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkButton" id="add_file_with_ancillary_ceos_data_browse_button">
-					      <property name="visible">True</property>
-					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Browse...</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <signal name="clicked" handler="on_add_file_with_ancillary_ceos_data_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 18:36:53 GMT"/>
+					      <signal name="clicked" handler="on_add_file_with_ancillary_polsarpro_ceos_browse_button_clicked" last_modification_time="Wed, 01 Apr 2009 17:48:57 GMT"/>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">2</property>
@@ -9617,6 +9372,107 @@ CEOS (Level 1)
 			      <property name="padding">0</property>
 			      <property name="expand">True</property>
 			      <property name="fill">True</property>
+			    </packing>
+			  </child>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">True</property>
+			  <property name="fill">True</property>
+			</packing>
+		      </child>
+		    </widget>
+		    <packing>
+		      <property name="padding">0</property>
+		      <property name="expand">True</property>
+		      <property name="fill">True</property>
+		    </packing>
+		  </child>
+
+		  <child>
+		    <widget class="GtkVBox" id="vbox89">
+		      <property name="visible">True</property>
+		      <property name="homogeneous">False</property>
+		      <property name="spacing">0</property>
+
+		      <child>
+			<widget class="GtkLabel" id="label169">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes"></property>
+			  <property name="use_underline">False</property>
+			  <property name="use_markup">False</property>
+			  <property name="justify">GTK_JUSTIFY_LEFT</property>
+			  <property name="wrap">False</property>
+			  <property name="selectable">False</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			  <property name="width_chars">-1</property>
+			  <property name="single_line_mode">False</property>
+			  <property name="angle">0</property>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">False</property>
+			</packing>
+		      </child>
+
+		      <child>
+			<widget class="GtkHBox" id="hbox101">
+			  <property name="visible">True</property>
+			  <property name="homogeneous">False</property>
+			  <property name="spacing">0</property>
+
+			  <child>
+			    <widget class="GtkLabel" id="label168">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">  </property>
+			      <property name="use_underline">False</property>
+			      <property name="use_markup">False</property>
+			      <property name="justify">GTK_JUSTIFY_LEFT</property>
+			      <property name="wrap">False</property>
+			      <property name="selectable">False</property>
+			      <property name="xalign">0.5</property>
+			      <property name="yalign">0.5</property>
+			      <property name="xpad">0</property>
+			      <property name="ypad">0</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkLabel" id="add_with_ancillary_error_label">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes"></property>
+			      <property name="use_underline">False</property>
+			      <property name="use_markup">False</property>
+			      <property name="justify">GTK_JUSTIFY_LEFT</property>
+			      <property name="wrap">False</property>
+			      <property name="selectable">False</property>
+			      <property name="xalign">0</property>
+			      <property name="yalign">0</property>
+			      <property name="xpad">0</property>
+			      <property name="ypad">5</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
 			    </packing>
 			  </child>
 			</widget>

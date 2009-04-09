@@ -217,9 +217,9 @@ typedef struct
 extern int COL_INPUT_FILE;
 extern int COL_INPUT_FILE_SHORT;
 extern int COL_ANCILLARY_FILE;
-extern int COL_ANCILLARY_FILE_SHORT;
 extern int COL_METADATA_FILE;
-extern int COL_METADATA_FILE_SHORT;
+extern int COL_ALL_AUX_FILES;
+extern int COL_ALL_AUX_FILES_SHORT;
 extern int COL_INPUT_THUMBNAIL;
 extern int COL_BAND_LIST;
 extern int COL_OUTPUT_FILE;
@@ -229,6 +229,8 @@ extern int COL_LOG;
 
 extern int COMP_COL_INPUT_FILE;
 extern int COMP_COL_INPUT_FILE_SHORT;
+extern int COMP_COL_ANCILLARY_FILE;
+extern int COMP_COL_ORIGINAL_METADATA_FILE;
 extern int COMP_COL_OUTPUT_FILE;
 extern int COMP_COL_OUTPUT_FILE_SHORT;
 extern int COMP_COL_OUTPUT_THUMBNAIL;
@@ -377,7 +379,7 @@ void do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name);
 
 /* file_selection.c */
 void handle_browse_ancillary_file();
-void init_ancillary_format_combobox();
+void init_browse_format_combobox();
 
 /* state.c */
 
