@@ -30,6 +30,7 @@ LIBS = \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	$(LIBDIR)/asf_fft.a \
 
 all: asf_check_geolocation
