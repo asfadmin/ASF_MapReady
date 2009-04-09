@@ -9,7 +9,7 @@ OBJS = math.o obs.o in.o time.o solar.o $(TARGET).o
 LIBS  = $(LIBDIR)/asf.a -lm
 CFLAGS += -D_XOPEN_SOURCE=600
 
-all: lib exe clean
+all: lib clean
 
 lib: build_only
 	mv $(LIBNAME) $(LIBDIR)
