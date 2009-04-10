@@ -757,7 +757,7 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
     Text chunk:
       Summary: ASF Convert To Vector
       Name: c2v
-      Version: ?.?.?
+      Version: 8.8.8
       Release: 1
       License: BSD
 
@@ -780,7 +780,18 @@ CONVERT TO VECTOR SOURCE AND RPM RELEASE PROCEDURE
 * Build the rpm:
 
     > cd ~/asf/svn-r8888/release/rpmbuild
-    > rpmbuild -ba c2v-8.8.8-1.spec
+    > rpmbuild -ba --sign c2v-8.8.8-1.spec
+
+  The password is 'bob'
+
+  Check that the rpm was properly signed:
+
+    > rpm -K RPMS/asf_mapready-2.0.8-1.i386.rpm
+
+  After this, you should see an 'OK' statement similar to the one below:
+      asf_mapready-2.0.8-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
+
+  **--> Ensure that 'gpg' is present in the list. <--**
 
 * Collect rpm & source tarball for Linux & Win32 distribution using the
   tarrpms script. This should put all the *.tar.gz & *.zip files you need
