@@ -2184,6 +2184,14 @@ static int download_tle(char **err)
     return FALSE;
   }
 
+  // back up the old TLE
+  char old_name[1024];
+  sprintf(old_name, "%s/tle", get_asf_share_dir());
+  char new_name[1024];
+  sprintf(new_name, "%s/tle.old", get_asf_share_dir());
+  asfPrintStatus("Creating backup of current TLE:\n  %s\n", new_name);
+  fileCopy(old_name, new_name);
+
   // write to TLE file in share dir
   FILE *fp = fopen_share_file("tle", "w");
   if (fp) {
@@ -2212,4 +2220,6 @@ SIGNAL_CALLBACK void on_update_tle_button_clicked(GtkWidget *w)
 
   calibrate_planner_reference();
   populate_tle_info();
+
+  asfPrintStatus("\nDone.\n");
 }
