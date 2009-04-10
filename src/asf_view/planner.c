@@ -862,6 +862,62 @@ const char *ref_str(int ref)
   return buf;
 }
 
+typedef struct {
+    long startdate, enddate;
+    double lo_lat1, hi_lat1;
+    double lo_lon1, hi_lon1;
+    int expected_path1, expected_path2;
+    double lo_lat2, hi_lat2;
+    double lo_lon2, hi_lon2;
+} PassEvalInfo;
+
+static int eval_pass_at(int m_and_s,
+                        PassEvalInfo *p)
+{
+  int m = m_and_s/60;
+  int s = m_and_s - m*60;
+
+  s_ref_min = m;
+  s_ref_sec = (double)s;
+
+  int path1 = calibrate_pass_impl(p->startdate, p->enddate,
+                                  p->lo_lat1, p->hi_lat1,
+                                  p->lo_lon1, p->hi_lon1);
+  int path2 = calibrate_pass_impl(p->startdate, p->enddate,
+                                  p->lo_lat2, p->hi_lat2,
+                                  p->lo_lon2, p->hi_lon2);
+
+  //printf("%2d:%02d -- %3d %3d -- %3d,%3d\n",
+  //       m, s, path1, p->expected_path1, path2, p->expected_path2);
+
+  if (path1!=p->expected_path1 && path2!=p->expected_path2) {
+    // we don't expect this to happen...
+    asfPrintWarning("Unexpected path values: %d != %d && %d != %d\n",
+                    path1, p->expected_path1, path2, p->expected_path2);
+    return -99;
+  }
+
+  // normal cases
+  else if (path1==p->expected_path1 && path2!=p->expected_path2)
+    return -1;
+  else if (path1!=p->expected_path1 && path2==p->expected_path2)
+    return 1;
+  else
+    return 0;
+}
+
+static const char *ms2str(int m_and_s)
+{
+  static char buf[64];
+  
+  int m = m_and_s/60;
+  int s = m_and_s - m*60;
+
+  sprintf(buf, "%2d:%02d", m, s);
+
+  return buf;
+}
+
 static void calibrate_pass(long startdate, long enddate,
                            double lo_lat1, double hi_lat1,
                            double lo_lon1, double hi_lon1,
@@ -871,38 +927,131 @@ static void calibrate_pass(long startdate, long enddate,
                            int expected_path2,
                            int *ref_s)
 {
+  PassEvalInfo p;
+  p.startdate = startdate;
+  p.enddate = enddate;
+  p.lo_lat1 = lo_lat1;
+  p.hi_lat1 = hi_lat1;
+  p.lo_lon1 = lo_lon1;
+  p.hi_lon1 = hi_lon1;
+  p.lo_lat2 = lo_lat2;
+  p.hi_lat2 = hi_lat2;
+  p.lo_lon2 = lo_lon2;
+  p.hi_lon2 = hi_lon2;
+  p.expected_path1 = expected_path1;
+  p.expected_path2 = expected_path2;
+
   int m, s;
 
   int prev_quietflag=quietflag;
   quietflag=TRUE;
 
-  int first_m = -1;
-  int first_s = -1;
-  int last_m = -1;
-  int last_s = -1;
+  int fs, ls;
 
-  for (m=3; m<=9; ++m) {
-    for (s=0; s<=59; ++s) {
+  // search the interval 06:03:00 to 06:10:00 ... we may have to widen
+  // this at some point...
 
-      s_ref_min = m;
-      s_ref_sec = (double)s;
+  int interval_lo = 0*60;
+  int val_lo = eval_pass_at(interval_lo, &p);
 
-      int path1 = calibrate_pass_impl(startdate, enddate, lo_lat1, hi_lat1,
-                                      lo_lon1, hi_lon1);
-      int path2 = calibrate_pass_impl(startdate, enddate, lo_lat2, hi_lat2,
-                                      lo_lon2, hi_lon2);
+  int interval_hi = 20*60;
+  int val_hi = eval_pass_at(interval_hi, &p);
 
-      if (path1==expected_path1 && path2==expected_path2) {
-        last_m=m; last_s=s;
-        if (first_m==-1) {
-          first_m=m; first_s=s;
+  if (val_lo == val_hi) {
+    asfPrintWarning("Unable to calibrate using the fast method!\n"
+                    "Falling back to the old (slow!) search...\n");
+
+    int first_m = -1;
+    int first_s = -1;
+    int last_m = -1;
+    int last_s = -1;
+
+    // use linear search
+    for (m=3; m<=9; ++m) {
+      for (s=0; s<=59; ++s) {
+        
+        s_ref_min = m;
+        s_ref_sec = (double)s;
+        
+        int path1 = calibrate_pass_impl(startdate, enddate, lo_lat1, hi_lat1,
+                                        lo_lon1, hi_lon1);
+        int path2 = calibrate_pass_impl(startdate, enddate, lo_lat2, hi_lat2,
+                                        lo_lon2, hi_lon2);
+        
+        printf("%d:%02d --> %3d %3d, %3d %3d\n", m, s,
+               path1, expected_path1, path2, expected_path2);
+
+        if (path1==expected_path1 && path2==expected_path2) {
+          last_m=m; last_s=s;
+          if (first_m==-1) {
+            first_m=m; first_s=s;
+          }
         }
       }
     }
-  }
 
-  int fs = first_s + 60*first_m;
-  int ls = last_s + 60*last_m;
+    fs = first_s + 60*first_m;
+    ls = last_s + 60*last_m;
+  }
+  else {
+    // use binary search
+    int niter=0;
+    while (1) {
+      ++niter;
+      if (niter>100) {
+        asfPrintWarning("Failed to converge!\nGiving up.\n");
+        *ref_s = -1;
+        return;
+      }
+
+      printf("%d: Searching interval: %s", niter, ms2str(interval_lo));
+      printf(" -- %s\n", ms2str(interval_hi));
+
+      int interval_mid = (interval_lo + interval_hi)/2;
+      int val_mid = eval_pass_at(interval_mid, &p);
+
+      // we're taking advantage of the fact that eval_pass_at return -1,0,1
+      if (interval_lo+1 == interval_hi) {
+        // this can happen if the range of agreement is really small
+        fs = interval_lo;
+        ls = interval_hi;
+        break;
+      }
+      else if (val_mid == val_lo) {
+        // redo with reduced interval
+        interval_lo = interval_mid;
+      }
+      else if (val_mid == val_hi) {
+        // reto with reduced interval
+        interval_hi = interval_mid;
+      }
+      else {
+        // found a place were it agrees... find the bounds
+        printf("Found a match... looking for the bounds.\n");
+
+        printf("Looking for lower bound...\n");
+        fs = interval_mid;
+        int val = val_mid;
+        while (val==0) {          
+          //printf("Checking %s...\n", ms2str(fs-1));
+          val = eval_pass_at(fs-1, &p);
+          --fs;
+        }
+        printf("Found %s.\nLooking for upper bound...\n", ms2str(fs));
+        ls = interval_mid;
+        val = val_mid;
+        while (val==0) {
+          //printf("Checking %s...\n", ms2str(ls+1));
+          val = eval_pass_at(ls+1, &p);
+          ++ls;
+        }
+        printf("Found %s.\n", ms2str(ls));
+
+        break;
+      }
+    }
+  } 
+
   int bs = (fs+ls)/2;
 
   int best_h = 6;
@@ -923,100 +1072,131 @@ void calibrate_planner_reference()
   calibrate_pass(20090315, 20090315,
                  1.24, 1.54, -150.55, -150.13, 239,
                  1.77, 2.09, -150.62, -150.22, 285, &ref1);
-  printf("Reference for 1: %s\n", ref_str(ref1));
+  printf("Reference for 1: %s\n\n", ref_str(ref1));
 
   printf("Area 2... (longitude 30)\n");
   calibrate_pass(20090306, 20090306,
                  0.94, 1.19, 29.81, 30.18, 574,
                  1.49, 2.86, 29.64, 30.01, 620, &ref2);
-  printf("Reference for 2: %s\n", ref_str(ref2));
+  printf("Reference for 2: %s\n\n", ref_str(ref2));
 
   printf("Area 3... (longitude 109)\n");
   calibrate_pass(20090320, 20090320,
                  1.23, 1.55, 109.17, 109.55, 426,
                  1.86, 2.14, 109.06, 109.43, 472, &ref3);
-  printf("Reference for 3: %s\n", ref_str(ref3));
+  printf("Reference for 3: %s\n\n", ref_str(ref3));
 
   printf("Area 4... (longitude -54)\n");
   calibrate_pass(20090325, 20090325,
                  0.72, 1.00, -54.85, -54.45, 61,
                  1.23, 1.55, -54.98, -54.62, 107, &ref4);
-  printf("Reference for 4: %s\n", ref_str(ref4));
+  printf("Reference for 4: %s\n\n", ref_str(ref4));
 
-  int ref = (int)(.5+((double)(ref1+ref2+ref3+ref4))/4.0);
-
-  printf("New reference time: %s\n", ref_str(ref));
-
-  s_ref_hour = ref/3600;
-  s_ref_min = (ref - s_ref_hour*3600)/60;
-  s_ref_sec = ref - 60*(s_ref_min+s_ref_hour*60);
-
-  printf("Writing configuration file...\n");
-  printf("Share dir: %s\n", get_asf_share_dir());
-
-  const char *cfgfile = "planner.cfg";
-  char *full_config_filename = find_in_share(cfgfile);
-  printf("Full: %s\n", full_config_filename);
-  if (fileExists(full_config_filename)) {
-    // file exists already, update entries with new reference
-    FILE *fp = fopen_share_file(cfgfile, "r");
-    if (!fp) {
-      printf("Could not open configuration file!\n"
-             "  %s\n"
-             "  %s\n", full_config_filename, strerror(errno));
+  int ref=0,ok=TRUE;
+  if (ref1>0 && ref2>0 && ref3>0 && ref4>0) {
+    ref = (int)(.5+((double)(ref1+ref2+ref3+ref4))/4.0);
+  }
+  else {
+    // some results were invalid!
+    int num_valid = 0;
+    if (ref1>0) {
+      num_valid++;
+      ref += ref1;
+    }
+    if (ref2>0) {
+      num_valid++;
+      ref += ref2;
+    }
+    if (ref3>0) {
+      num_valid++;
+      ref += ref3;
+    }
+    if (ref4>0) {
+      num_valid++;
+      ref += ref4;
+    }
+    if (num_valid>0) {
+      ref = (int)(.5 + (double)ref/(double)num_valid);
     }
     else {
-      char lines[10][256];
-      int l = 0;
-      
-      while (fgets(lines[l], 255, fp) != NULL) {
-        if (strncmp(lines[l], "reference time", 14)==0)
-          sprintf(lines[l], "reference time = %02d:%02d:%02d\n",
-                  s_ref_hour, s_ref_min, s_ref_sec);
-        if (++l>=10)
-          asfPrintError("Config file is too long!\n");
-      }
-      fclose(fp);
-      
-      fp = fopen_share_file(cfgfile, "w");
+      asfPrintWarning("Failed to calibrate the reference time.\n");
+      ok=FALSE;
+    }
+  }
+
+  if (ok) {
+    printf("New reference time: %s\n", ref_str(ref));
+
+    s_ref_hour = ref/3600;
+    s_ref_min = (ref - s_ref_hour*3600)/60;
+    s_ref_sec = ref - 60*(s_ref_min+s_ref_hour*60);
+
+    printf("Writing configuration file...\n");
+    printf("Share dir: %s\n", get_asf_share_dir());
+
+    const char *cfgfile = "planner.cfg";
+    char *full_config_filename = find_in_share(cfgfile);
+    printf("Full: %s\n", full_config_filename);
+    if (fileExists(full_config_filename)) {
+      // file exists already, update entries with new reference
+      FILE *fp = fopen_share_file(cfgfile, "r");
       if (!fp) {
         printf("Could not open configuration file!\n"
                "  %s\n"
                "  %s\n", full_config_filename, strerror(errno));
       }
       else {
-        int c = 0;
-        while (c<l) {
-          fprintf(fp, "%s", lines[c++]);
+        char lines[10][256];
+        int l = 0;
+        
+        while (fgets(lines[l], 255, fp) != NULL) {
+          if (strncmp(lines[l], "reference time", 14)==0)
+            sprintf(lines[l], "reference time = %02d:%02d:%02d\n",
+                    s_ref_hour, s_ref_min, s_ref_sec);
+          if (++l>=10)
+            asfPrintError("Config file is too long!\n");
         }
         fclose(fp);
+        
+        fp = fopen_share_file(cfgfile, "w");
+        if (!fp) {
+          printf("Could not open configuration file!\n"
+                 "  %s\n"
+                 "  %s\n", full_config_filename, strerror(errno));
+        }
+        else {
+          int c = 0;
+          while (c<l) {
+            fprintf(fp, "%s", lines[c++]);
+          }
+          fclose(fp);
+        }
       }
-    }
 
-    printf("Updated reference time in the configuration file.\n");
-  }
-  else {
-    // file does not exist yet, populate with defaults
-    FILE *ofp = fopen_share_file(cfgfile, "w");
-    if (!ofp) {
-      printf("Could not open configuration file!\n"
-             "  %s\n"
-             "  %s\n", full_config_filename, strerror(errno));
+      printf("Updated reference time in the configuration file.\n");
     }
     else {
-      fprintf(ofp, "output directory = \n");
-      fprintf(ofp, "output file = output.csv\n");
-      fprintf(ofp, "max days = 30\n");
-      fprintf(ofp, "reference time = %02d:%02d:%02d\n",
-              s_ref_hour, s_ref_min, s_ref_sec);
-      fclose(ofp);
+      // file does not exist yet, populate with defaults
+      FILE *ofp = fopen_share_file(cfgfile, "w");
+      if (!ofp) {
+        printf("Could not open configuration file!\n"
+               "  %s\n"
+               "  %s\n", full_config_filename, strerror(errno));
+      }
+      else {
+        fprintf(ofp, "output directory = \n");
+        fprintf(ofp, "output file = output.csv\n");
+        fprintf(ofp, "max days = 30\n");
+        fprintf(ofp, "reference time = %02d:%02d:%02d\n",
+                s_ref_hour, s_ref_min, s_ref_sec);
+        fclose(ofp);
+      }
+      
+      printf("Wrote new configuration file with reference time.\n");
     }
-
-    printf("Wrote new configuration file with reference time.\n");
+    
+    printf("Calibration complete.\n");
   }
-
-  printf("Calibration complete.\n");
-  exit(1);
 }
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
@@ -1975,4 +2155,61 @@ SIGNAL_CALLBACK void on_select_all_checkbutton_toggled(GtkWidget *w)
   //    GTK_BUTTON(get_widget_checked("select_all_checkbutton")),
   //    get_checked("select_all_checkbutton") ? "De-select All" : "Select All")
   fill_big(curr);
+}
+
+static const char *TLE_URL = "http://celestrak.com/NORAD/elements/resource.txt";
+
+static int download_tle(char **err)
+{
+  asfPrintStatus("Downloading TLE for %s...\n", planner_satellite);
+
+  int len;
+  unsigned char *u_tle_txt = download_url(TLE_URL, TRUE, &len);
+  if (!u_tle_txt) {
+    *err = MALLOC(sizeof(char)*512);
+    strcpy(*err, "Failed to download TLE file from:\n");
+    strcat(*err, TLE_URL);
+    return FALSE;
+  }
+
+  char *tle_txt = (char *)u_tle_txt;
+
+  // make sure it contains the satellite we want!
+  if (strstr(tle_txt, planner_satellite)==NULL) {
+    *err = MALLOC(sizeof(char)*512);
+    strcpy(*err, "Successfully downloaded a TLE file, but it did not contain "
+           "a two-line element for: ");
+    strcat(*err, planner_satellite);
+    free(u_tle_txt);
+    return FALSE;
+  }
+
+  // write to TLE file in share dir
+  FILE *fp = fopen_share_file("tle", "w");
+  if (fp) {
+    FWRITE(u_tle_txt, sizeof(char), len, fp);
+    fclose(fp);
+  }
+  else {
+    *err = STRDUP("Could not write TLE file in the ASF share directory.");
+    free(u_tle_txt);
+    return FALSE;
+  }
+
+  free(u_tle_txt);
+  return TRUE;
+}
+
+SIGNAL_CALLBACK void on_update_tle_button_clicked(GtkWidget *w)
+{
+  char *err=NULL;
+  int ok = download_tle(&err);
+
+  if (!ok) {
+    message_box(err);
+    return;
+  }
+
+  calibrate_planner_reference();
+  populate_tle_info();
 }

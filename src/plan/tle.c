@@ -232,12 +232,28 @@ const char *get_tle_info(const char *tle_filename, const char *satellite)
     read_tle(tle_filename, satellite, &sat);
 
     static char tle_info[256];
-    sprintf(tle_info,
-            "Satellite: %s\n"
-            "Date: %s",
-            satellite, date_str_long(time_to_secs(sat.tle.epoch_year,
-                                                  sat.tle.epoch_day,
-                                                  sat.tle.epoch_fod)));
+
+    double t = time_to_secs(sat.tle.epoch_year,
+                            sat.tle.epoch_day,
+                            sat.tle.epoch_fod);
+
+    double now = seconds_from_long(current_date());
+    int age = (now - t) / (24*60*60);
+
+    if (age==0) {
+      sprintf(tle_info,
+              "Satellite: %s\n"
+              "Date: %s\n"
+              "Current",
+              satellite, date_str_long(t));
+    }
+    else {
+      sprintf(tle_info,
+              "Satellite: %s\n"
+              "Date: %s\n"
+              "%d day%s old",
+              satellite, date_str_long(t), age, age==1?"":"s");
+    }
 
     return tle_info;
 }

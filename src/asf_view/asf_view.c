@@ -74,6 +74,7 @@ main(int argc, char **argv)
     if (planner_mode) {
       if (detect_flag_options(argc, argv, "-calibrate-reference", NULL)) {
         calibrate_planner_reference();
+        exit(EXIT_SUCCESS);
       }
     }
 
@@ -218,4 +219,3 @@ void image_info_free(ImageInfo *ii)
     if (ii->data_name) free(ii->meta_name);
     if (ii->meta_name) free(ii->data_name);
 }
-

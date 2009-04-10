@@ -299,7 +299,7 @@ static void set_input_image_thumbnail(GtkTreeIter *iter,
         if (strlen(ancillary_file) > 0) {
           pb = make_input_image_thumbnail_pixbuf (
             ancillary_file, ancillary_file, THUMB_SIZE);
-          
+
           if (pb)
             gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
         }
@@ -551,6 +551,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_METADATA_FILE, meta_file,
                        -1);
 
+    // remove from the input list
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
 
     free(layover_mask);
@@ -573,6 +574,8 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     g_free(ancillary_file);
     g_free(original_metadata_file);
 
+    // hide/show the ancillary files column and update the input formats
+    // list, now that one of the files has been removed
     refresh_file_names();
     input_data_formats_changed();
 }
