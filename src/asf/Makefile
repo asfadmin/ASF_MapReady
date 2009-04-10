@@ -28,7 +28,9 @@ OBJS  = caplib.o \
 	matrix.o \
 	vector.o \
 	complex.o \
-	solve1d.o
+	solve1d.o \
+	socket.o \
+	httpUtil.o
 
 CFLAGS += $(shell \
 	if [ "$(SYS)x" != "solarisx" ]; \

@@ -343,6 +343,10 @@ typedef double solve1d_fn(void *params, double x);
 int solve1d(solve1d_fn *f, void *params, int min_x, int max_x, double acc,
             double *root);
 
+// httpUtil.c
+unsigned char *download_url(const char *url, int verbose, int *length);
+int download_url_to_file(const char *url, const char *filename);
+
 /* Prototypes from diagnostics.c *********************************************/
 /* Given a condition, and an optional printf()-style message string (possibly
    with additional variadic arguments), this macro will print an assert style
