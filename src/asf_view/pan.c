@@ -316,6 +316,8 @@ static void print_state(int state)
   printf("State: %s\n", str);
 }
 
+static GdkWindow *big_image_ptr = NULL;
+
 // called when user is panning (big_image_drag)
 SIGNAL_CALLBACK int
 on_motion_notify_event(
@@ -500,12 +502,35 @@ on_motion_notify_event(
     else {
       // Hmph.
       // 
-      // Commented this out ...it creates annoying error messages when you click and
-      // drag silly things like tab labels in the GUI
+      // Commented this out ...it creates annoying error messages 
+      // when you click and drag silly things like tab labels in the GUI
       //printf("Unknown drag event: %s %d %d %f %f\n",
              //gtk_widget_get_name(widget), x, y, event->x_root, event->y_root);
     }
   }
+  else if (big_image_ptr) {
+    x = (int) event->x;
+    y = (int) event->y;
+
+    if (big_image_ptr == event->window) {
+      double line, samp;
+      img2ls(x, y, &line, &samp);
+
+      if (meta_supports_meta_get_latLon(curr->meta)) {
+        char buf[128];
+        double lat, lon;
+        meta_get_latLon(curr->meta, line, samp, 0, &lat, &lon);
+        sprintf(buf, "Lat: %7.3f Lon: %7.3f", lat, lon);
+        put_string_to_label("motion_label", buf);
+      }
+    }
+  }
 
   return TRUE;
+}
+
+void setup_gdk_window_ids()
+{
+  GtkWidget *w = get_widget_checked("big_image");
+  big_image_ptr = w->window;
 }

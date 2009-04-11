@@ -181,6 +181,7 @@ main(int argc, char **argv)
     }
 
     // load the metadata & image data, other setup
+    setup_gdk_window_ids();
     setup_small_image_size();
     fill_small_have_data(thumbnail_data, curr);
     fill_big(curr);

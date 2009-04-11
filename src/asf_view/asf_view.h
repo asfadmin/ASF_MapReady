@@ -314,6 +314,7 @@ void open_csv(const char *csv_file);
 
 /* pan.c */
 void clear_nb_callback(void);
+void setup_gdk_window_ids(void);
 
 /* shape.c */
 void free_shapes();
