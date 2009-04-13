@@ -9374,6 +9374,7 @@ Slant Range
 Time
 Doppler
 Scaled Pixel Values
+Lat/Lon
 </property>
 	      <property name="add_tearoffs">False</property>
 	      <property name="focus_on_click">True</property>

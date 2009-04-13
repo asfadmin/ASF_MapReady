@@ -10,6 +10,7 @@
 #define SCALED_PIXEL_VALUE 4
 #define TIME 5
 #define DOPPLER 6
+#define LAT_LON_2_BAND 7
 
 #include "asf_view.h"
 
@@ -40,6 +41,9 @@ static int get_what_to_save()
         case 4: return TIME;
         case 5: return DOPPLER;
         case 6: return SCALED_PIXEL_VALUE;
+        case 7: return LAT_LON_2_BAND;
+        //case 8: return LATITUDE;
+        //case 9: return LONGITUDE;
     }
 
     // not reached
@@ -287,7 +291,7 @@ static float get_data(ImageInfo *ii, int what_to_save, int line, int samp)
                 return d;
             } else
                 return 0;
-
+ 
         default:
             assert(0);
             return 0;
@@ -307,6 +311,7 @@ static meta_parameters *build_metadata(meta_parameters *meta,
     out_meta->general->line_count = nl;
     out_meta->general->sample_count = ns;
     out_meta->general->data_type = REAL32; //should we really do this?
+    out_meta->general->image_data_type = IMAGE;
     out_meta->general->band_count = 1;
     out_meta->general->start_line += line_min;
     out_meta->general->start_sample += samp_min;
@@ -395,6 +400,11 @@ static int save_as_asf(ImageInfo *ii,
     meta_parameters *out_meta =
         build_metadata(meta, out_file, nl, ns, line_min, samp_min);
 
+    if (what_to_save == LAT_LON_2_BAND) {
+      out_meta->general->band_count = 2;
+      strcpy(out_meta->general->bands, "LAT,LON");
+    }
+
     // define clipping region, if necessary
     double xp[MAX_POLY_LEN+2], yp[MAX_POLY_LEN+2];
     int i,j,n=0;
@@ -411,26 +421,55 @@ static int save_as_asf(ImageInfo *ii,
     meta_write(out_meta, out_metaname);
 
     // now actually write the data
-    float *buf = MALLOC(sizeof(float)*ns);
     printf("Generating %s...\n", out_file);
 
-    for (i=0; i<nl; ++i) {
+    if (what_to_save != LAT_LON_2_BAND) {
+      // normal case
+      float *buf = MALLOC(sizeof(float)*ns);
+      for (i=0; i<nl; ++i) {
         int l = line_min+i;
         for (j=0; j<ns; ++j) {
             int s = samp_min+j;
             float val;
             if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
                 val = get_data(ii, what_to_save, l, s);
-            } else {
+            }
+            else {
                 val = ndv;
             }
             buf[j] = val;
         }
         put_float_line(outFp, out_meta, i, buf);
         asfLineMeter(i,nl);
+      }
+      free(buf);
     }
-
-    free(buf);
+    else {
+      // dump a 2-band image
+      float *lats = MALLOC(sizeof(float)*ns);
+      float *lons = MALLOC(sizeof(float)*ns);
+      for (i=0; i<nl; ++i) {
+        int l = line_min+i;
+        for (j=0; j<ns; ++j) {
+            int s = samp_min+j;
+            if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
+                double lat, lon;
+                meta_get_latLon(meta, l, s, 0, &lat, &lon);
+                lats[j] = (float)lat;
+                lons[j] = (float)lon;
+            }
+            else {
+                lats[j] = ndv;
+                lons[j] = ndv;
+            }
+        }
+        put_band_float_line(outFp, out_meta, 0, i, lats);
+        put_band_float_line(outFp, out_meta, 1, i, lons);
+        asfLineMeter(i,nl);
+      }
+      free(lats);
+      free(lons);
+    }
     fclose(outFp);
     meta_free(out_meta);
 
@@ -479,20 +518,43 @@ static int save_as_csv(ImageInfo *ii,
     // generate csv
     fprintf(outFp, ",");
     for (j=0; j<ns; ++j) {
+      if (what_to_save==LAT_LON_2_BAND)        
+        fprintf(outFp, "%d,%s", samp_min+j, j==ns-1 ? "\n" : ",");
+      else
         fprintf(outFp, "%d%s", samp_min+j, j==ns-1 ? "\n" : ",");
+    }
+    if (what_to_save==LAT_LON_2_BAND) {
+      fprintf(outFp, ",");
+      for (j=0; j<ns; ++j) {
+        fprintf(outFp, "Lat,Lon%s", j==ns-1 ? "\n" : ",");
+      }
     }
     for (i=0; i<nl; ++i) {
         int l = line_min+i;
         fprintf(outFp, "%d,", l);
         for (j=0; j<ns; ++j) {
             int s = samp_min+j;
-            float val;
-            if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
-                val = get_data(ii, what_to_save, l, s);
-            } else {
-                val = 0;
+            if (what_to_save==LAT_LON_2_BAND) {
+              float lat, lon;
+              if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
+                double dlat, dlon;
+                meta_get_latLon(meta, l, s, 0, &dlat, &dlon);
+                lat = (float)dlat;
+                lon = (float)dlon;
+              } else {
+                lat = lon = 0.;
+              }
+              fprintf(outFp, "%f,%f%s", lat, lon, j==ns-1 ? "\n" : ",");
             }
-            fprintf(outFp, "%f%s", val, j==ns-1 ? "\n" : ",");
+            else {
+              float val;
+              if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
+                val = get_data(ii, what_to_save, l, s);
+              } else {
+                val = 0;
+              }
+              fprintf(outFp, "%f%s", val, j==ns-1 ? "\n" : ",");
+            }
         }
         asfLineMeter(i,nl);
     }
