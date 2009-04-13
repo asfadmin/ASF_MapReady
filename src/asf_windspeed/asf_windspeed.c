@@ -1,37 +1,43 @@
 #include <asf_contact.h>
 #include <asf_license.h>
+
+// Defaults
+#define DEFAULT_LANDMASK_HEIGHT "1.0"
+#define DEFAULT_HH_POL_ALPHA 0.6
+// See call to ws_inv_cmod5() on line 206 for min/max windspeed setting for cmod5
+#define MIN_CMOD5_WINDSPEED 1.0
+#define MAX_CMOD5_WINDSPEED 70.0
+// See Frank Monaldo's ws_sig2ws.pro (February 2009 version), lines 126-130 for limits
+// FIXME: Need to check with Frank and find out why the latitude constraints...
+#define MIN_CMOD4_LATITUDE 16.0
+#define MAX_CMOD4_LATITUDE 54.0
+
 /*==================BEGIN ASF DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
 If you wish to edit the documentation for this program, you need to change the
 following defines.
 */
-
 #define ASF_NAME_STRING \
 "asf_windspeed"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" -format <inputFormat> -wind-dir <wind direction>\n"\
-"              [-pol <polarization>] [-band <band_id | all>] [-no-ers2-gain-fix]\n"\
-"              [-colormap <file>] [-lat <lower> <upper>] [-prc] [-log <logFile>]\n"\
-"              [-cmod4] [-landmask <maskFile> || -landmask-height <height>]\n"\
-"              [-quiet] [-real-quiet] [-license] [-version]\n"\
-"              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
-"              [-range-scale[=<scale>] [-metadata <file>]\n"\
-"              [-line <start line subset>] [-sample <start sample subset>]\n"\
-"              [-width <subset width>] [-height <subset height>] [-help]\n"\
-"              <inBaseName> <outBaseName>\n"
+"   "ASF_NAME_STRING" -wind-dir <wind direction> [-band <band_id | all>] [-colormap <file>]\n"\
+"                 [-log <logFile>] [-cmod4] [-landmask <maskFile> || -landmask-height <height>]\n"\
+"                 [-dem <dem file>] [-quiet] [-real-quiet] [-license] [-version]\n"\
+"                 [-help]\n"\
+"                 <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"   Ingests RADARSAT-1, ALOS PALSAR, TERRASAR-X, and ERS-1 varieties of data formats in HH or,\n"\
-"   VV polarizations (only), calculates windspeed (over water regions) from normalized\n"\
+"   Ingests RADARSAT-1, ALOS PALSAR, TERRASAR-X, and ERS-1 varieties of data in ASF Internal format\n"\
+"   in HH or, VV polarizations (only), calculates windspeed from normalized\n"\
 "   (calibrated sigma nought) radar cross section, and outputs ASF Internal format metadata\n"\
-"   and data files in floating point format and an imbedded color table. The wind speed\n"\
+"   and data files in floating point format (including an imbedded color table.) The wind speed\n"\
 "   calculation will use an appropriate algorithm based on the wavelength of the data,\n"\
 "   i.e. CMOD5 for C-band data (unless forced to CMOD4 with the -cmod4 switch) etc.  These\n"\
 "   algorithms were developed for the VV polarization, but if an HH polarization is being\n"\
-"   processed then a modified version developed for HH polarizations by Frank Monaldo (John\n"\
-"   Hopkins University, Advanced Physics Laboratory) will be applied.  If a land mask file is\n"\
+"   processed then a modified version developed for HH polarizations by Dr. Frank M. Monaldo of\n"\
+"   John Hopkins University, Applied Physics Laboratory will be applied.  If a land mask file is\n"\
 "   provided then it will be utilized for masking out land regions, i.e. land regions will have\n"\
 "   pixel values set to a no-data value.  By default, "ASF_NAME_STRING" will automatically\n"\
 "   develop a land mask by assuming that any terrain higher than "DEFAULT_LANDMASK_HEIGHT"\n"\
@@ -42,101 +48,74 @@ following defines.
 "   tools will round the floating point values to the nearest byte value then utilize that byte\n"\
 "   value as a look-up index into the color table.  "ASF_NAME_STRING" can also perform\n"\
 "   several other tasks during look up such as ingesting individual bands at a time, force a\n"\
-"   particular look-up table rather than the built-in default (from Frank Monaldo of John\n"\
-"   Hopkins University, Advanced Physics Laboratory), apply latitude constraints, etcetera.\n"\
+"   particular look-up table rather than the built-in default (from Dr. Frank M. Monaldo of John\n"\
+"   Hopkins University, Applied Physics Laboratory), apply latitude constraints, etcetera.\n"\
+"\n"\
+"   NOTE: Automatic land mask determination requires a DEM file, i.e. when specifying\n"\
+"   -landmask-height you must also specify a DEM file with the -dem option.  If you specify only\n"\
+"   a DEM file, then the default height (see above) for determining where land is will be applied\n"\
+"   to the DEM in order to automatically develop a land mask.  Alternatively, you may use the\n"\
+"   -landmask option to specify a land mask file (see Appendix B in the MapReady manual.)  Finally,\n"\
+"   if you do not use either of these two methods to tell "ASF_NAME_STRING" how to mask out land\n"\
+"   areas, then "ASF_NAME_STRING" will apply the windspeed algorithm to the entire image as though it\n"\
+"   were all water.  This is the default behavior.\n"\
 
 #define ASF_INPUT_STRING \
-"   The format of the input file must be specified as RSAT1, PALSAR, TERRASARX, or ERS1.\n"\
-"   See the -format option below.  A default single wind direction estimate must be provided\n"\
-"   with the -wind-dir parameter, noting that future releases will likely support utilizing\n"\
-"   wind direction grids in various formats.\n"
+"   A default single wind direction estimate must be provided with the -wind-dir parameter.  Note \n"\
+"   that future releases will likely support utilizing wind direction grids in various formats.\n"
 
 #define ASF_OUTPUT_STRING \
 "   Outputs data and metadata files with the user-provided base name and\n"\
 "   appropriate extensions (.img and .meta) as described above.\n"
 
 #define ASF_OPTIONS_STRING \
-"   -format <inputFormat>\n"\
-"        Force input data to be read as the given format type. Valid formats\n"\
-"        are 'rsat1', 'palsar', 'terrasarx', ers1', and 'asf'. NOTE: At this time, only\n"\
-"        'rsat1' is supported.  ASF Internal Format and the other formats will be supported\n"\
-"        soon.\n"\
 "   -wind-dir <wind direction>\n"\
 "        A best estimate average wind direction (for the entire image) must be\n"\
 "        provided.  The wind direction is the direction it is coming FROM, not\n"\
 "        the direction it is blowing towards.  Wind direction value can range from\n"\
 "        0 to 360, with 0 meaning directly from the North.\n"\
-// FIXME: This option may need to be added back for TerraSAR-X?  Need to check... 
-//"   -ancillary_file <file>\n"\
-//"        For PolSARpro format files, the ingest process needs access to the original\n"\
-//"        COES or AIRSAR format data that the PolSARpro images were created from.  The\n"\
-//"        original dataset is necessary for the purpose of extracting original SAR parameters\n"\
-//"        that are not otherwise available in the PolSARpro format files as they are.\n"\
-"   -pol <polarization>\n"\
-"        Force the assumption that the data is in the given polarization.  Applies to all\n"\
-"        available bands.  Valid values are \"H\", \"HH\", \"V\", or \"VV\".  Cross\n"\
-"        polarizations (HV, VH) are not supported.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then ingest and process the band identified by 'band_id' (only).  If 'all' is\n"\
 "        specified rather than a band_id, then import all available bands into\n"\
 "        a single ASF-format file.  Default is '-band all'.\n"\
-"   -no-ers2-gain-fix\n"\
-"        Do not apply the ERS2 gain correction.  (See the 'Notes' section\n"\
-"        below.)\n"\
-"   - colormap <colormap_file>\n"\
+"   -colormap <colormap_file>\n"\
 "        Associates a color map (RGB index) with the resultant wind speed file, specifically the\n"\
-"        windspeed bands within the output file.  Results in the default colormap file\n"\
-"        ("ASF_DEFAULT_WINDSPEED_COLORMAP") being replaced with the user-specified map for\n"\
-"        the purpose of applying pseudo-color to the output, i.e. with asf_view or asf_export.\n"\
-"        The colormap files must exist in the application installation 'share' directory's look\n"\
-"        up table directory.  You may provide your own colormap by placing it in this folder.\n"\
-"        The file format must either be in ASF format (.lut) or in JASC-PAL (.pal) format.\n"\
-"        See existing look-up tables for examples.\n"\
-"   -landmask <maskFile>\n"\
-"        \n"\
-"        \n"\
-"        \n"\
-"        \n"\
-"        \n"\
-"        \n"\
-"        \n"\
-"        \n"\
-"   -metadata <metadata file>\n"\
-"        Allows the ingest of metadata that does not have the same basename as the\n"\
-"        image data.\n"\
-"   -image-data-type <type>\n"\
-"        Force input data to be interpreted as the given image data type. Valid\n"\
-"        formats are 'amplitude_image', 'phase_image', 'coherence_image',\n"\
-"        'lut_image', 'elevation', 'dem', and 'image', 'mask'.  NOTE: This option\n"\
-"        only applies to GeoTIFFs (-format option is \"geotiff\").  If the input\n"\
-"        format is not \"geotiff\", then this option is ignored.\n"\
-"   -lut <file>\n"\
-"        Applies a user defined look up table to the data. Look up contains\n"\
-"        incidence angle dependent scaling factor.\n\n"\
-"        asf_import may apply a look up table automatically.  Automatically\n"\
-"        applied look up tables are in the asf share directory, in the\n"\
-"        look_up_table/import subdirectory.  asf_import will check to see\n"\
-"        if the first line of any file in that directory has the format:\n"\
-"           # ASF Import YYYY/MM/DD <sensor>\n"\
-"        and, if so, if the imported file's sensor matches that given in the\n"\
-"        file, and the acquisition date is on or after what is given in the\n"\
-"        file, the look up table will be automatically applied.\n"\
-"   -lat <lower> <upper>\n"\
-"        Specify lower and upper latitude contraints (only available\n"\
-"        for STF). Note that the program is not able to verify whether\n"\
-"        the chosen latitude constraint is within the image.\n"\
-"   -prc\n"\
-"        Replace the restituted state vectors from the original raw data\n"\
-"        acquired by the ERS satellites with precision vectors\n"\
-"   -save-intermediates\n"\
-"        Save any intermediate files which may have been created during the\n"\
-"        import process.  At this time, this only applies to the ingest of \n"\
-"        'jaxa_L0' format since this type of dataset is first imported into\n"\
-"        a standard JPEG format then the JPEG is converted to ASF Internal\n"\
-"        format.\n"\
+"        windspeed bands within the output file.  Results in the default colormap being replaced\n"\
+"        with the user-specified map for the purpose of applying pseudo-color to the output,\n"\
+"        i.e. with asf_view or asf_export.  The colormap files must exist in the application\n"\
+"        installation 'share' directory's look up table directory.  You may provide your own\n"\
+"        colormap by placing it in this folder.  The file format must either be in ASF format\n"\
+"        (.lut) or in JASC-PAL (.pal) format.  See existing look-up tables for examples.\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
+"   -cmod4\n"\
+"        For C-band data (only), force the windspeed calculation to use the CMOD4 algorithm\n"\
+"        rather than the default CMOD5 algorithm.  Note that this only applies to C-band data\n"\
+"        and as usual, if the polarization is \"HH\" rather than \"VV\" then the horizontal\n"\
+"        polarization version of the CMOD4 algorithm will be applied (per Dr. Frank M. Monaldo,\n"\
+"        John Hopkins University, Applied Physics Laboratory) .\n"\
+"   -landmask <maskFile>\n"\
+"        A land mask file can be used to force the processing to ignore areas where land exists.\n"\
+"        Normally, a default land mask is generated by assuming all elevations greater than the\n"\
+"        default of "DEFAULT_LANDMASK_HEIGHT", or if the -landmask-height option is utilized, the\n"\
+"        land mask is automatically generated by assuming that all terrain higher than the\n"\
+"        height setting is assumed to be land.  If a land mask file is created (ASF Internal\n"\
+"        Format or GeoTIFF - See Appendix B in the ASF MapReady User Manual), then all areas\n"\
+"        in the mask that have pixels set to '1' are included in the windspeed processing and\n"\
+"        all areas that have pixels set to '0' are ignored in the processing.  A no-data value\n"\
+"        will be written to all pixels in the output file that are ignored due to masking.  Use\n"\
+"        the instructions in Appendix B of the ASF MapReady User Manual to generate the land mask\n"\
+"        but rather than setting water regions to '0' and land regions to '1', do the opposite.\n"\
+"        Set land regions to '0' so they will be ignored and set water regions to '1' so they\n"\
+"        will be included for processing.\n"\
+"   -landmask-height <height>\n"\
+"        Sets minimum height below which all data is assumed to be water.  Pixels with terrain\n"\
+"        equal to or higher than this height will not be processed for wind speed determination.\n"\
+"        See -landmask option above for more information.  Also see the -dem option. When using\n"\
+"        the -landmask-height option, then you must also specify a DEM with the -dem option below.\n"\
+"   -dem <dem basename>\n"\
+"        The DEM file used for automatic land mask generation.  See -landmask and -landmask-height.\n"\
 "   -quiet\n"\
 "        Supresses all non-essential output.\n"\
 "   -real-quiet\n"\
@@ -147,70 +126,24 @@ following defines.
 "        Print version and copyright then exit.\n"\
 "   -help\n"\
 "        Print a help page and exit.\n\n"\
-"The following options allow correction of scaling errors in the original\n"\
-"data.\n\n"\
-"   -range-scale[=<scale-factor>]\n"\
-"        Apply the provided range scale factor to the imported data.  If\n"\
-"        the option is specified without an argument, a default value of\n"\
-"        %f will be used.\n\n"\
-"        The metadata will not be updated after scaling - this option is\n"\
-"        intended to be used to correct errors in the data.\n\n"\
-"   -azimuth-scale[=<scale-factor>]\n"\
-"        Apply the provided azimuth scale factor to the imported data.  If\n"\
-"        the option is specified without an argument, a default value will\n"\
-"        be calculated from the metadata.\n\n"\
-"        This option cannot be used with -fix-meta-ypix\n\n"\
-"        The metadata will not be updated after scaling - this option is\n"\
-"        intended to be used to correct errors in the data.\n\n"\
-"   -fix-meta-ypix[=<pixel-size>]\n"\
-"        This option is similar to -azimuth-scale, but does not resample the\n"\
-"        input data, it just changes the y pixel size in the metadata.\n"\
-"        This option cannot be used with -azimuth-scale.\n"\
 
 #define ASF_EXAMPLES_STRING \
-"   To import CEOS format to the ASF tools internal format run:\n"\
-"        example> asf_import fileCEOS fileASF\n"\
+"   To produce an ASF Internal Format file containing per-pixel wind speed values\n"\
+"   from ASF format dataset, assuming a wind direction from the NW, run:\n\n"\
+"   Example>\n"\
+"     "ASF_NAME_STRING" -wind-dir 315 in_basename out_basename\n"\
 "\n"\
-"   To import a STF fileset (fileSTF.000 & file.000.par) you will need to\n"\
-"   specify the -format option since STF is not the default.\n"\
-"        example> asf_import -format stf fileSTF.000 fileASF\n" \
-"\n"\
-"   To import an ALOS Palsar fileset (IMG-HH-file, IMG-HV-file, IMG-VH-file,\n"\
-"   IMG-VV-file, and LED-file) you will need to specify the input basename 'file'.\n"\
-"   When importing optical or other multi-band CEOS-formatted data such as ALOS\n"\
-"   Avnir optical images, you only need to specify the file names in the same way\n"\
-"   as well.\n"\
-"        example> asf_import file outfile\n"\
-"\n"\
-"   To import a single band of an ALOS fileset (IMG-HH-file, IMG-HV-file,\n"\
-"   IMG-VH-file,IMG-VV-file, and LED-file; or IMG-01-file, IMG-02-file, etc) you\n"\
-"   will need to specify the band_id and input basename 'file'.\n"\
-"        example1> asf_import -band VH file outfile\n"\
-"        example2> asf_import -band 04 file outfile\n"
 
 #define ASF_NOTES_STRING \
-"   The ERS2 satellite has a known gain loss problem that this program\n"\
-"   will attempt to correct by applying a scale correction factor uniformly\n"\
-"   to all pixels in the image.  The correction is dependent on the date,\n"\
-"   and is only applied to calibrated data (i.e., everything but amplitude)\n"\
-"   For more information, see section 4 of:\n"\
-"   <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n"
+"\n"
 
 #define ASF_LIMITATIONS_STRING \
-"   CEOS base name issue:\n"\
-"        If you have two or more CEOS filesets ([*.D & *.L], [*.RAW & *.LDR],\n"\
-"        or [dat.* & lea.*]) with the same base name, then this program will\n"\
-"        automatically fetch the first set in the aforementioned list and ignore\n"\
-"        the rest.  The workaround is to move files with similar basenames, but\n"\
-"        different extensions, to different work folders before processing.\n"
+"   The input data must be calibrated to sigma nought, not in decibels, in ground range geometry,\n"\
+"   in HH or VV polarizations, and from one of the following platforms: RSAT1, ERS1, ALOS PALSAR,\n"\
+"   or TERRASAR-X.\n"\
 
 #define ASF_SEE_ALSO_STRING \
-"   asf_mapready, asf_export\n"
-
-// Option -old removed from the help and description above ...but still supported.
-// Just not advertised
-//"   -old\n"\
-//"        Output in old style ASF internal format.\n"\
+"   asf_mapready, asf_import, asf_view, asf_export\n"
 
 /*===================END ASF DOCUMENTATION===================*/
 
@@ -234,41 +167,49 @@ char *strdup(char *);
 
 /* Index keys for all flags used in this program via a 'flags' array */
 typedef enum {
-    f_AMP=1,
-    f_SIGMA,
-    f_BETA,
-    f_GAMMA,
-    f_POWER,
-    f_COMPLEX,
-    f_MULTILOOK,
-    f_AMP0,
-    f_DB,
-    f_SPROCKET,
-    f_LUT,
-    f_LAT_CONSTRAINT,
-    f_PRC,
-    f_NO_ERS2_GAIN_FIX,
-    f_FORMAT,
-    f_ANCILLARY_FILE,
-    f_OLD_META,
-    f_METADATA_FILE,
-    f_LOG,
+    f_LOG = 1,
     f_QUIET,
     f_REAL_QUIET,
-    f_RANGE_SCALE,
-    f_AZIMUTH_SCALE,
-    f_FIX_META_YPIX,
-    f_DATA_TYPE,
-    f_IMAGE_DATA_TYPE,
     f_BAND,
-    f_LINE,
-    f_SAMPLE,
-    f_WIDTH,
-    f_HEIGHT,
-    f_SAVE_INTERMEDIATES,
     f_COLORMAP,
-    NUM_IMPORT_FLAGS
-} import_flag_indices_t;
+    f_WINDDIR,
+    f_CMOD4,
+    f_LANDMASK,
+    f_LANDMASK_HEIGHT,
+    f_DEM,
+    NUM_WINDSPEED_FLAGS
+} windspeed_flag_indices_t;
+
+/* Platform/data type/wavelength related types */
+typedef enum {
+   p_RSAT1 = 1,
+   p_PALSAR, // Not supported yet
+   p_TERRASARX, // Not supported yet
+   p_ERS1, // Not supported yet
+   p_ERS2, // Not supported yet
+   NUM_PLATFORM_TYPES
+} platform_type_t;
+
+/* Prototypes */
+int asf_windspeed(platform_type_t platform_type, char *band_id,
+                  double wind_dir, int cmod4,
+                  double landmaskHeight, char *landmaskFile, char *demFile,
+                  char *inBaseName, char *colormapName, char *outBaseName);
+double asf_r_look(meta_parameters *md);
+int ws_inv_cmod5(double sigma0, double phi0, double theta0,
+                 double *wnd1, double *wnd2,
+                 double min_ws, double max_ws,
+                 double hh);
+// IDL look-alikes
+int ll2rb(double lon_r, double lat_r,
+          double lon_t, double lat_t,
+          double *range, double *bearing);
+int polrec3d(double radius, double theta, double phi,
+             double *x, double *y, double *z);
+int rot_3d(int axis, double x, double y, double z, double angle,
+           double *xrot, double *yrot, double *zrot);
+int recpol3d(double x, double y, double z, double *r, double *az, double *ax);
+int recpol(double x, double y, double *r, double *a);
 
 /* Helpful functions */
 
@@ -285,63 +226,6 @@ static int checkForOption(char* key, int argc, char* argv[])
     ++ii;
   }
   return(FLAG_NOT_SET);
-}
-
-/* Check to see if an option with (or without) an argument
-   was supplied.  If it was found, return its argument
-   number.  otherwise return FLAG_NOT_SET.
-
-   The argument is assumed to be of the form "<key>[=value]"
-   The [=value] part is optional. */
-static int checkForOptionWithArg(char *key, int argc, char *argv[])
-{
-  int ii = 0;
-  while (ii < argc)
-  {
-    /* make a copy of the arg, and remove anything past the "=" */
-    char *arg = STRDUP(argv[ii]);
-    char *eq = strchr(arg, '=');
-    if (eq) *eq = '\0';
-
-    /* now check for an exact match */
-    int match = !strcmp(key, arg);
-    FREE(arg);
-    if (match) {
-      return ii;
-    }
-    ++ii;
-  }
-  return FLAG_NOT_SET;
-}
-
-static double getDoubleOptionArgWithDefault(char *arg, double def)
-{
-  double val = def;
-  char *arg_cpy = strdup(arg);
-  char *eq = strchr(arg_cpy, '=');
-  if (eq) {
-    ++eq;
-    char *endptr;
-    double d = strtod(eq, &endptr);
-    if (endptr != eq) val = d;
-  }
-  free(arg_cpy);
-
-  return val;
-}
-
-static void
-pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName)
-{
-  if (*flag_count==0)
-    strcat(flags_used, flagName);
-  else if (*flag_count==1)
-    strcat(strcat(flags_used, " and "), flagName);
-  else if (*flag_count>1)
-    strcat(strcat(flags_used, ", and "), flagName);
-  else
-    asfPrintError("Programmer error dealing with the %s flag.\n", flagName);
-  (*flag_count)++;
 }
 
 // Print minimalistic usage info & exit
@@ -378,27 +262,20 @@ static void print_help(void)
 int main(int argc, char *argv[])
 {
     char inBaseName[256]="";
-    char ancillary_file[256]="";
     char outBaseName[256]="";
-    char *inMetaNameOption=NULL;
-    char *lutName=NULL;
-    char *colormapName=NULL;
-    char *prcPath=NULL;
-    char format_type_str[256]="";
-    input_format_t format_type;
+    char *colormapName = NULL;
     char band_id[256]="";
-    char data_type[256]="";
-    char image_data_type[256]="";
+    double wind_dir = 315.0; // Default to wind from the NW
+    int cmod4 = 0;
+    char *landmaskFile = NULL;
+    double landmaskHeight = atof(DEFAULT_LANDMASK_HEIGHT);
+    platform_type_t platform_type;
+    char *demFile = NULL;
     int ii;
-    int flags[NUM_IMPORT_FLAGS];
-    double lowerLat=-99.0, upperLat=-99.0;
-    int line=0, sample=0, height=-99, width=-99;
-    double range_scale=NAN, azimuth_scale=NAN, correct_y_pixel_size=NAN;
-    int do_resample;
-    int do_metadata_fix;
+    int flags[NUM_WINDSPEED_FLAGS];
 
     /* Set all flags to 'not set' */
-    for (ii=0; ii<NUM_IMPORT_FLAGS; ii++) {
+    for (ii=0; ii<NUM_WINDSPEED_FLAGS; ii++) {
         flags[ii] = FLAG_NOT_SET;
     }
 
@@ -411,207 +288,69 @@ int main(int argc, char *argv[])
     handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
 
     /*Check to see if any options were provided*/
-    flags[f_AMP] = checkForOption("-amplitude", argc, argv);
-    flags[f_SIGMA] = checkForOption("-sigma", argc, argv);
-    flags[f_BETA] = checkForOption("-beta", argc, argv);
-    flags[f_GAMMA] = checkForOption("-gamma", argc, argv);
-    flags[f_POWER] = checkForOption("-power", argc, argv);
-    flags[f_COMPLEX] = checkForOption("-complex", argc, argv);
-    flags[f_MULTILOOK] = checkForOption("-multilook", argc, argv);
-    flags[f_AMP0] = checkForOption("-amp0", argc, argv);
-    flags[f_DB] = checkForOption("-db", argc, argv);
-    flags[f_SPROCKET] = checkForOption("-sprocket", argc, argv);
-    flags[f_LUT] = checkForOption("-lut", argc, argv);
-    flags[f_LAT_CONSTRAINT] = checkForOption("-lat", argc, argv);
-    flags[f_PRC] = checkForOption("-prc", argc, argv);
-    flags[f_NO_ERS2_GAIN_FIX] = checkForOption("-no-ers2-gain-fix", argc, argv);
-    flags[f_OLD_META] = checkForOption("-old", argc, argv);
-    flags[f_METADATA_FILE] = checkForOption("-metadata", argc, argv);
     flags[f_LOG] = checkForOption("-log", argc, argv);
     flags[f_QUIET] = checkForOption("-quiet", argc, argv);
     flags[f_REAL_QUIET] = checkForOption("-real-quiet", argc, argv);
-    flags[f_FORMAT] = checkForOption("-format", argc, argv);
-    flags[f_ANCILLARY_FILE] = checkForOption("-ancillary_file", argc, argv);
-    flags[f_DATA_TYPE] = checkForOption("-data-type", argc, argv);
-    flags[f_IMAGE_DATA_TYPE] = checkForOption("-image-data-type", argc, argv);
     flags[f_BAND] = checkForOption("-band", argc, argv);
-    flags[f_LINE] = checkForOption("-line", argc, argv);
-    flags[f_SAMPLE] = checkForOption("-sample", argc, argv);
-    flags[f_WIDTH] = checkForOption("-width", argc, argv);
-    flags[f_HEIGHT] = checkForOption("-height", argc, argv);
-    flags[f_SAVE_INTERMEDIATES] = checkForOption("-save-intermediates", argc, argv);
     flags[f_COLORMAP] = checkForOption("-colormap", argc, argv);
-
-    flags[f_RANGE_SCALE] = checkForOptionWithArg("-range-scale", argc, argv);
-    if (flags[f_RANGE_SCALE] == FLAG_NOT_SET)
-        flags[f_RANGE_SCALE] = checkForOptionWithArg("-range_scale", argc, argv);
-
-    flags[f_AZIMUTH_SCALE] = checkForOptionWithArg("-azimuth-scale", argc, argv);
-    if (flags[f_AZIMUTH_SCALE] == FLAG_NOT_SET)
-        flags[f_AZIMUTH_SCALE] = checkForOptionWithArg("-azimuth_scale", argc, argv);
-
-    flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix-meta-ypix", argc, argv);
-    if (flags[f_FIX_META_YPIX] == FLAG_NOT_SET)
-        flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix_meta_ypix", argc, argv);
-
-    do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
-        flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
-
-    if (flags[f_SPROCKET] != FLAG_NOT_SET)
-        asfPrintError("Sprocket layers are not yet supported.\n");
-
-    if (do_resample)
-    {
-        range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 :
-      getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]], -1);
-
-        azimuth_scale = flags[f_AZIMUTH_SCALE] == FLAG_NOT_SET ? 1.0 :
-      getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE]], -1);
-    }
-
-    do_metadata_fix = flags[f_FIX_META_YPIX] != FLAG_NOT_SET;
-
-    if (do_metadata_fix)
-    {
-        correct_y_pixel_size =
-      getDoubleOptionArgWithDefault(argv[flags[f_FIX_META_YPIX]], -1);
-    }
-
-    { /*Check for mutually exclusive options: we can only have one of these*/
-        int temp = 0;
-        if(flags[f_AMP] != FLAG_NOT_SET)      temp++;
-        if(flags[f_SIGMA] != FLAG_NOT_SET)    temp++;
-        if(flags[f_BETA] != FLAG_NOT_SET)     temp++;
-        if(flags[f_GAMMA] != FLAG_NOT_SET)    temp++;
-        if(flags[f_POWER] != FLAG_NOT_SET)    temp++;
-        if(flags[f_SPROCKET] != FLAG_NOT_SET) temp++;
-        if(flags[f_LUT] != FLAG_NOT_SET)      temp++;
-        if(temp > 1)/*If more than one option was selected*/
-
-            print_usage();
-    }
-
-    /* Cannot specify the fix-meta-ypix & the resampling of azimuth
-    options at the same time */
-    if (flags[f_FIX_META_YPIX] != FLAG_NOT_SET &&
-        flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)
-    {
-        asfPrintStatus("You cannot specify both -azimuth-scale "
-            "and -fix-meta-ypix.\n");
-        print_usage();
-    }
+    flags[f_WINDDIR] = checkForOption("-wind-dir", argc, argv);
+    flags[f_CMOD4] = checkForOption("-cmod4", argc, argv);
+    flags[f_LANDMASK] = checkForOption("-landmask", argc, argv);
+    flags[f_LANDMASK_HEIGHT] = checkForOption("-landmask-height", argc, argv);
+    flags[f_DEM] = checkForOption("-dem", argc, argv);
 
     { /*We need to make sure the user specified the proper number of arguments*/
         int needed_args = 1 + REQUIRED_ARGS;    /*command + REQUIRED_ARGS*/
-        if(flags[f_AMP] != FLAG_NOT_SET)      needed_args += 1;/*option*/
-        if(flags[f_SIGMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
-        if(flags[f_BETA] != FLAG_NOT_SET)     needed_args += 1;/*option*/
-        if(flags[f_GAMMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
-        if(flags[f_POWER] != FLAG_NOT_SET)    needed_args += 1;/*option*/
-        if(flags[f_COMPLEX] != FLAG_NOT_SET)  needed_args += 1;/*option*/
-        if(flags[f_MULTILOOK] != FLAG_NOT_SET) needed_args += 1;/*option*/
-        if(flags[f_AMP0] != FLAG_NOT_SET)     needed_args += 1;/*option*/
-        if(flags[f_DB] != FLAG_NOT_SET)       needed_args += 1;/*option*/
-        if(flags[f_SPROCKET] != FLAG_NOT_SET) needed_args += 1;/*option*/
-        if(flags[f_LUT] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
-        if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
-            needed_args += 3;/*option & parameter & parameter*/
-        if(flags[f_PRC] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
-        if(flags[f_NO_ERS2_GAIN_FIX] != FLAG_NOT_SET) needed_args += 1;/*option*/
-        if(flags[f_OLD_META] != FLAG_NOT_SET) needed_args += 1;/*option*/
-        if(flags[f_METADATA_FILE] != FLAG_NOT_SET)  needed_args += 2;/*option & parameter*/
         if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
         if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
         if(flags[f_REAL_QUIET] != FLAG_NOT_SET) needed_args += 1;/*option*/
-        if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
-        if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET) needed_args += 2;/*option & parameter*/
         if(flags[f_BAND] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
-        if(flags[f_LINE] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
-        if(flags[f_SAMPLE] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
-        if(flags[f_WIDTH] != FLAG_NOT_SET)    needed_args += 2;/*option & parameter*/
-        if(flags[f_HEIGHT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
-        if(flags[f_SAVE_INTERMEDIATES] != FLAG_NOT_SET)  needed_args += 1;/*option*/
-        if(flags[f_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
-        if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
-        if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
-        if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
-        if(flags[f_FIX_META_YPIX] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_COLORMAP] != FLAG_NOT_SET)   needed_args += 2; /*option & parameter*/
+        if(flags[f_WINDDIR] != FLAG_NOT_SET) needed_args += 2; /*option & parameter*/
+        if(flags[f_CMOD4] != FLAG_NOT_SET) needed_args += 2; /*option & parameter*/
+        if(flags[f_LANDMASK] != FLAG_NOT_SET) needed_args += 2; /*option & parameter*/
+        if(flags[f_LANDMASK_HEIGHT] != FLAG_NOT_SET) needed_args += 2; /*option & parameter*/
+        if(flags[f_DEM] != FLAG_NOT_SET) needed_args += 2; /*option & parameter*/
 
         /*Make sure we have enough arguments*/
         if(argc != needed_args)
             print_usage();/*This exits with a failure*/
     }
 
-    /*We also need to make sure any options that have parameters are specified
-    correctly.  This includes: -lat, -prc, -log, -lut etc */
-    if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
-        /*Make sure there's no "bleeding" into the required arguments
-        No check for '-' in the two following fields because negative numbers
-        are legit (eg -lat -67.5 -70.25)*/
-        if(flags[f_LAT_CONSTRAINT] >= argc - (REQUIRED_ARGS+1))
-            print_usage();
-    if(flags[f_LINE] != FLAG_NOT_SET)
-        if(   argv[flags[f_LINE]+1][0] == '-'
-            || flags[f_LINE] >= argc-REQUIRED_ARGS)
-            print_usage();
-    if(flags[f_SAMPLE] != FLAG_NOT_SET)
-        if(   argv[flags[f_SAMPLE]+1][0] == '-'
-            || flags[f_SAMPLE] >= argc-REQUIRED_ARGS)
-            print_usage();
-    if(flags[f_HEIGHT] != FLAG_NOT_SET)
-        if(   argv[flags[f_HEIGHT]+1][0] == '-'
-            || flags[f_HEIGHT] >= argc-REQUIRED_ARGS)
-            print_usage();
-    if(flags[f_WIDTH] != FLAG_NOT_SET)
-        if(   argv[flags[f_WIDTH]+1][0] == '-'
-            || flags[f_WIDTH] >= argc-REQUIRED_ARGS)
-            print_usage();
-    if(flags[f_PRC] != FLAG_NOT_SET)
-        /*Make sure the field following -prc isn't another option
-        Also check for bleeding into required arguments*/
-        if(   argv[flags[f_PRC]+1][0] == '-'
-            || flags[f_PRC] >= argc-REQUIRED_ARGS)
-            print_usage();
-    if(flags[f_METADATA_FILE] != FLAG_NOT_SET)
-        /*Make sure the field following -metadata isn't another option*/
-        if(   argv[flags[f_METADATA_FILE] + 1][0] == '-'
-            || flags[f_METADATA_FILE] >= argc - REQUIRED_ARGS)
-            print_usage();
     if(flags[f_LOG] != FLAG_NOT_SET)
         /*Make sure the field following -log isn't another option*/
         if(   argv[flags[f_LOG]+1][0] == '-'
             || flags[f_LOG] >= argc-REQUIRED_ARGS)
             print_usage();
-    if(flags[f_LUT] != FLAG_NOT_SET)
-        /*Make sure the field following -lut isn't another option*/
-        if(   argv[flags[f_LUT]+1][0] == '-'
-            || flags[f_LUT] >= argc-REQUIRED_ARGS)
-            print_usage();
-    if(flags[f_FORMAT] != FLAG_NOT_SET)
-        /*Make sure the field following -format isn't another option*/
-        if(   argv[flags[f_FORMAT]+1][0] == '-'
-            || flags[f_FORMAT] >= argc-REQUIRED_ARGS)
-            print_usage();
-    if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET)
-      /*Make sure the field following -format isn't another option*/
-      if(   argv[flags[f_ANCILLARY_FILE]+1][0] == '-'
-            || flags[f_ANCILLARY_FILE] >= argc-REQUIRED_ARGS)
-        print_usage();
     if(flags[f_BAND] != FLAG_NOT_SET)
       /*Make sure the field following -format isn't another option*/
       if(   argv[flags[f_BAND]+1][0] == '-'
             || flags[f_BAND] >= argc-REQUIRED_ARGS)
         print_usage();
-    if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)
-        /*Make sure the field following -format isn't another option*/
-        if(   argv[flags[f_IMAGE_DATA_TYPE]+1][0] == '-'
-            || flags[f_IMAGE_DATA_TYPE] >= argc-REQUIRED_ARGS)
-            print_usage();
     if(flags[f_COLORMAP] != FLAG_NOT_SET)
       /*Make sure the field following -colormap isn't another option*/
       if(   argv[flags[f_COLORMAP]+1][0] == '-'
             || flags[f_COLORMAP] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_WINDDIR] != FLAG_NOT_SET)
+      if(   argv[flags[f_WINDDIR]+1][0] == '-'
+            || flags[f_WINDDIR] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_CMOD4] != FLAG_NOT_SET)
+      if(   argv[flags[f_CMOD4]+1][0] == '-'
+            || flags[f_CMOD4] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_LANDMASK] != FLAG_NOT_SET)
+      if(   argv[flags[f_LANDMASK]+1][0] == '-'
+            || flags[f_LANDMASK] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_LANDMASK_HEIGHT] != FLAG_NOT_SET)
+      if(   argv[flags[f_LANDMASK_HEIGHT]+1][0] == '-'
+            || flags[f_LANDMASK_HEIGHT] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_DEM] != FLAG_NOT_SET)
+      if(   argv[flags[f_DEM]+1][0] == '-'
+            || flags[f_DEM] >= argc-REQUIRED_ARGS)
         print_usage();
 
     /* Be sure to open log ASAP */
@@ -635,165 +374,47 @@ int main(int argc, char *argv[])
     quietflag = flags[f_QUIET] != FLAG_NOT_SET;
     if (flags[f_REAL_QUIET] != FLAG_NOT_SET) quietflag = 2;
 
-    /*We must be close to good enough at this point... log & quiet flags are set
-    Report what was retrieved at the command line */
+    /* We must be close to good enough at this point... log & quiet flags are set
+       Report what was retrieved at the command line */
     asfSplashScreen(argc, argv);
 
-    if(flags[f_PRC] != FLAG_NOT_SET) {
-        prcPath = (char *)MALLOC(sizeof(char)*256);
-        strcpy(prcPath, argv[flags[f_PRC] + 1]);
-    }
-
-    if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
-        lowerLat = strtod(argv[flags[f_LAT_CONSTRAINT] + 2],NULL);
-        upperLat = strtod(argv[flags[f_LAT_CONSTRAINT] + 1],NULL);
-        if(lowerLat > upperLat) {
-            float swap = upperLat;
-            upperLat = lowerLat;
-            lowerLat = swap;
-        }
-        if(lowerLat < -90.0 || lowerLat > 90.0 || upperLat < -90.0 || upperLat > 90.0)
-        {
-            asfPrintError("Invalid latitude constraint (must be -90 to 90)");
-        }
-    }
-
-    if(flags[f_LINE] != FLAG_NOT_SET)
-      line = atoi(argv[flags[f_LINE]+1]);
-    if(flags[f_SAMPLE] != FLAG_NOT_SET)
-      sample = atoi(argv[flags[f_SAMPLE]+1]);
-    if(flags[f_WIDTH] != FLAG_NOT_SET)
-      width = atoi(argv[flags[f_WIDTH]+1]);
-    if(flags[f_HEIGHT] != FLAG_NOT_SET)
-      height = atoi(argv[flags[f_HEIGHT]+1]);
-
-    if(flags[f_LUT] != FLAG_NOT_SET) {
-        lutName = (char *) MALLOC(sizeof(char)*256);
-        strcpy(lutName, argv[flags[f_LUT] + 1]);
-    }
-
     if(flags[f_COLORMAP] != FLAG_NOT_SET) {
-      colormapName = (char *) MALLOC(sizeof(char)*256);
+      colormapName = (char *) MALLOC(sizeof(char)*1024);
       strcpy(colormapName, argv[flags[f_COLORMAP] + 1]);
     }
-
-    { /* BEGIN: Check for conflict between pixel type flags */
-        char flags_used[256] = "";
-        int flag_count=0;
-
-        if (flags[f_AMP] != FLAG_NOT_SET) {
-            pixel_type_flag_looker(&flag_count, flags_used, "amplitude");
-        }
-        if (flags[f_SIGMA] != FLAG_NOT_SET) {
-            pixel_type_flag_looker(&flag_count, flags_used, "sigma");
-        }
-        if (flags[f_GAMMA] != FLAG_NOT_SET) {
-            pixel_type_flag_looker(&flag_count, flags_used, "gamma");
-        }
-        if (flags[f_BETA] != FLAG_NOT_SET) {
-            pixel_type_flag_looker(&flag_count, flags_used, "beta");
-        }
-        if (flags[f_POWER] != FLAG_NOT_SET) {
-            pixel_type_flag_looker(&flag_count, flags_used, "power");
-        }
-        if (flags[f_LUT] != FLAG_NOT_SET) {
-            pixel_type_flag_looker(&flag_count, flags_used, "lut");
-        }
-        if (flag_count > 1) {
-            sprintf(logbuf, "Cannot mix the %s flags.", flags_used);
-            asfPrintError(logbuf);
-        }
-    } /* END: Check for conflict between pixel type flags */
-
-    if (   flags[f_DB] != FLAG_NOT_SET
-        && !(   flags[f_SIGMA] != FLAG_NOT_SET
-        || flags[f_GAMMA] != FLAG_NOT_SET
-        || flags[f_BETA] != FLAG_NOT_SET ) )
-    {
-        asfPrintWarning("-db flag must be specified with -sigma, -gamma, or -beta. Ignoring -db.\n");
+    if (flags[f_WINDDIR] != FLAG_NOT_SET) {
+      wind_dir = atof(argv[flags[f_WINDDIR]+1]);
+    }
+    if (flags[f_LANDMASK] != FLAG_NOT_SET) {
+      landmaskFile = (char *) MALLOC(sizeof(char)*1024);
+      strncpy(landmaskFile, argv[flags[f_LANDMASK]], 8);
+    }
+    if (flags[f_LANDMASK_HEIGHT] != FLAG_NOT_SET) {
+      landmaskHeight = atof(argv[flags[f_LANDMASK_HEIGHT]]);
+    }
+    if (flags[f_DEM] != FLAG_NOT_SET) {
+      demFile = (char *) MALLOC(sizeof(char)*1024);
+      strncpy(demFile, argv[flags[f_DEM]], 8);
     }
 
-    /* Get the input metadata name if the flag was specified (probably for a meta
-    * name with a different base name than the data name) */
-    if(flags[f_METADATA_FILE] != FLAG_NOT_SET) {
-        inMetaNameOption=(char *)MALLOC(sizeof(char)*256);
-        strcpy(inMetaNameOption, argv[flags[f_METADATA_FILE] + 1]);
+    // Check validity
+    if (flags[f_LANDMASK] != FLAG_NOT_SET &&
+        (flags[f_LANDMASK_HEIGHT] != FLAG_NOT_SET || flags[f_DEM] != FLAG_NOT_SET)) {
+      asfPrintStatus("\nCannot use the -landmask option together with -landmask-height\n"
+                     "or -dem.\n\n");
+      print_usage();
+    }
+    if (wind_dir < 0.0 || wind_dir >= 360.0) {
+      asfPrintError("Wind direction specified with the -wind-dir argument must range\n"
+          "from 0.0 up to, but not including, 360.0.  Wind direction is specified\n"
+          "as being the direction the wind blows FROM in degrees clockwise from\n"
+          "North, with North being 0.0 degrees.\n");
+    }
+    if (landmaskHeight <= 0.0) {
+      asfPrintStatus("\nLandmask height set with -landmask-height must be a positive height\n\n");
+      print_usage();
     }
 
-    /* Deal with input format type */
-    if(flags[f_FORMAT] != FLAG_NOT_SET) {
-        strcpy(format_type_str, argv[flags[f_FORMAT] + 1]);
-    if (strncmp_case(format_type_str, "STF", 3) == 0)
-      format_type = STF;
-    else if (strncmp_case(format_type_str, "CEOS", 4) == 0)
-      format_type = CEOS;
-    else if (strncmp_case(format_type_str, "GEOTIFF", 7) == 0)
-      format_type = GENERIC_GEOTIFF;
-    else if (strncmp_case(format_type_str, "BIL", 3) == 0)
-      format_type = BIL;
-    else if (strncmp_case(format_type_str, "GRIDFLOAT", 9) == 0)
-      format_type = GRIDFLOAT;
-    else if (strncmp_case(format_type_str, "AIRSAR", 6) == 0)
-      format_type = AIRSAR;
-    else if (strncmp_case(format_type_str, "VP", 2) == 0)
-      format_type = VP;
-    else if (strncmp_case(format_type_str, "JAXA_L0", 7) == 0)
-      format_type = JAXA_L0;
-    else if (strncmp_case(format_type_str, "ALOS_MOSAIC", 11) == 0)
-      format_type = ALOS_MOSAIC;
-    else if (strncmp_case(format_type_str, "TERRASAR", 8) == 0)
-      format_type = TERRASAR;
-    else if (strncmp_case(format_type_str, "POLSARPRO", 9) == 0)
-      format_type = POLSARPRO;
-    else if (strncmp_case(format_type_str, "GAMMA", 5) == 0)
-      format_type = GAMMA;
-    else
-      asfPrintError("Unsupported format: %s\n", format_type_str);
-    }
-    else
-      format_type = CEOS;
-
-    // Process PolSARpro options (-format and -ancillary_flag combos)
-    if (format_type == POLSARPRO &&
-        flags[f_ANCILLARY_FILE] == FLAG_NOT_SET) {
-      // PolSARpro requires the ancillary file
-      asfPrintError("PolSARpro ingest requires the original CEOS or AIRSAR format\n"
-          "dataset that was used to create the PolSARpro data files.  Please\n"
-          "specify the original CEOS or AIRSAR format dataset with the -ancillary_file\n"
-          "option.  See asf_import -help for more information.\n");
-    }
-    
-    // Process Gamma options (-format, -metadata, and -ancillary_flag combos)
-    if (format_type == GAMMA &&
-        flags[f_ANCILLARY_FILE] == FLAG_NOT_SET) {
-      // GAMMA requires the ancillary file
-      asfPrintError("GAMMA ingest requires the original CEOS format\n"
-          "dataset that was used to create the GAMMA data files.  Please\n"
-          "specify the original CEOS format dataset with the -ancillary_file\n"
-          "option.  See asf_import -help for more information.\n");
-    }
-    if (format_type == GAMMA &&
-        flags[f_METADATA_FILE] == FLAG_NOT_SET) {
-      // GAMMA requires the metadata file
-      asfPrintError("GAMMA ingest requires the specific name of the GAMMA\n"
-	  "metadata file. Please specify the original CEOS format dataset \n"
-	  "with the -metadata option.  See asf_import -help for more information.\n");
-    }
-    if (format_type == GAMMA &&
-	flags[f_IMAGE_DATA_TYPE] == FLAG_NOT_SET) {
-      // GAMMA requires the image data type
-      asfPrintError("GAMMA ingest requires the image data type to figure out\n"
-		    "what data type to apply during the ingest. Coherence\n"
-		    "images are regular floating point data sets, while\n"
-		    "interferograms are stored in complex form.\n");
-    }
-
-    if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET) {
-      strcpy(ancillary_file, argv[flags[f_ANCILLARY_FILE] + 1]);
-    }
-
-
-    /* Deal with band_id */
     if(flags[f_BAND] != FLAG_NOT_SET) {
       strcpy(band_id, argv[flags[f_BAND] + 1]);
       if (strlen(band_id) && strcmp("ALL", uc(band_id)) == 0) {
@@ -801,102 +422,78 @@ int main(int argc, char *argv[])
       }
     }
 
-    // Deal with input data type
-    if (flags[f_DATA_TYPE] != FLAG_NOT_SET) {
-        asfPrintWarning("Use of the -data-type option is currently disabled.\n"
-                       "The data type (pixel) will be interpreted as described in\n"
-                       "the data set metadata instead.\n");
-      //strcpy(data_type, argv[flags[f_DATA_TYPE] + 1]);
-      //for (ii=0; ii<strlen(data_type); ii++) {
-//        data_type[ii] = (char)toupper(data_type[ii]);
-      //}
-    }
-
-    /* Deal with input image data type */
-    if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
-       (format_type == GENERIC_GEOTIFF || format_type == GAMMA))
-    {
-      strcpy(image_data_type, argv[flags[f_IMAGE_DATA_TYPE] + 1]);
-      for (ii=0; ii<strlen(image_data_type); ii++) {
-        image_data_type[ii] = (char)toupper(image_data_type[ii]);
-      }
-    }
-    else
-    {
-      if (flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
-          format_type != GENERIC_GEOTIFF)
-      {
-        asfPrintWarning("The -image-data-type option is only valid for GeoTIFFs.\n"
-                "If the input format is not \"geotiff\", then the -image-data-type\n"
-                "option is ignored.  If your dataset is a geotiff, please use\n"
-                "the \"-format geotiff\" option on the command line.\n");
-      }
-      strcpy(image_data_type, "???");
-    }
-
-    /* Make sure STF specific options are not used with other data types */
-    if (format_type == STF) {
-        if (flags[f_PRC] != FLAG_NOT_SET) {
-            asfPrintWarning("Precision state vectors only work with STF data\n"
-                "and will not be used with this data set!\n");
-            flags[f_PRC]=FLAG_NOT_SET;
-        }
-        if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
-            asfPrintWarning("No latitude constraints only work with STF data\n"
-                "and will not be used with this data set!\n");
-            flags[f_LAT_CONSTRAINT]=FLAG_NOT_SET;
-        }
-    }
-
     /* Fetch required arguments */
-    strcpy(inBaseName, argv[argc - 2]);
-    strcpy(outBaseName,argv[argc - 1]);
+    strcpy(inBaseName,  argv[argc - 2]);
+    strcpy(outBaseName, argv[argc - 1]);
 
     /***********************END COMMAND LINE PARSING STUFF***********************/
 
     asfSplashScreen (argc, argv);
 
-    { // scoping block
-        int db_flag = flags[f_DB] != FLAG_NOT_SET;
-        int complex_flag = flags[f_COMPLEX] != FLAG_NOT_SET;
-        int multilook_flag = flags[f_MULTILOOK] != FLAG_NOT_SET;
-        int amp0_flag = flags[f_AMP0] != FLAG_NOT_SET;
-        int apply_ers2_gain_fix = flags[f_NO_ERS2_GAIN_FIX] == FLAG_NOT_SET;
-        int save_intermediates = flags[f_SAVE_INTERMEDIATES] != FLAG_NOT_SET;
-
-        double *p_correct_y_pixel_size = NULL;
-        if (do_metadata_fix)
-            p_correct_y_pixel_size = &correct_y_pixel_size;
-
-        double *p_range_scale = NULL;
-        if (flags[f_RANGE_SCALE] != FLAG_NOT_SET)
-            p_range_scale = &range_scale;
-
-        double *p_azimuth_scale = NULL;
-        if (flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)
-            p_azimuth_scale = &azimuth_scale;
-
-        radiometry_t radiometry = r_AMP;
-        if(flags[f_AMP] != FLAG_NOT_SET)      radiometry = r_AMP;
-        if(flags[f_SIGMA] != FLAG_NOT_SET)    radiometry = r_SIGMA;
-        if(flags[f_BETA] != FLAG_NOT_SET)     radiometry = r_BETA;
-        if(flags[f_GAMMA] != FLAG_NOT_SET)    radiometry = r_GAMMA;
-        if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
-
-        asf_import(radiometry, db_flag, complex_flag, multilook_flag,
-                   amp0_flag, format_type, band_id, data_type, image_data_type,
-                   lutName,prcPath, lowerLat, upperLat, line, sample,
-                   width, height, save_intermediates, p_range_scale, p_azimuth_scale,
-                   p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
-                   ancillary_file, colormapName, outBaseName);
+    // Check the metadata to find out if this is data we an process
+    meta_parameters *md = meta_read(inBaseName);
+    meta_general *mg = md->general; // convenience ptr
+    meta_sar *ms = md->sar; // convenience ptr
+    if ((strncmp(mg->sensor, "RSAT-1", 6) != 0 &&
+         strncmp(mg->sensor, "ERS1",   4) != 0 &&
+         strncmp(mg->sensor, "ALOS",   4) != 0 &&
+         strncmp(mg->sensor, "TSX-1",  5) != 0) ||
+        strncmp(mg->sensor_name, "SAR", 3) != 0)
+    {
+      asfPrintError("Only SAR products from RSAT1, ERS1, ALOS PALSAR, and TERRASAR\n"
+          "are supported.  Found sensor %s, sensor_name %s in metadata.\n",
+          mg->sensor, mg->sensor_name);
+    }
+    if (mg->radiometry != r_SIGMA) {
+      asfPrintError("Only sigma-nought products (not in decibels) are currently supported.\n"
+          "See asf_import -help for more info on how to produce these from \n"
+          "original format data.\n");
+    }
+    if (!strstr(mg->bands, "HH") && !strstr(mg->bands, "VV")) {
+      asfPrintError("Only HH and VV polarizations are supported.  Found bands %s\n",
+                    mg->bands);
+    }
+    if (ms->image_type != 'G') {
+      asfPrintError("Only ground range images are currently supported.  Found %s image\n",
+                    (ms->image_type == 'R') ? "GEOREFERENCED" :
+                    (ms->image_type == 'S') ? "SLANT RANGE"   :
+                    (ms->image_type == 'P') ? "MAP PROJECTED" : "UNKNOWN TYPE");
     }
 
-    if (colormapName)
-        free(colormapName);
-    if (lutName)
-        free(lutName);
-    if (prcPath)
-        free(prcPath);
+    // As-yet unimplemented feature bail-outs...
+    if (strncmp(mg->sensor, "RSAT-1", 6) != 0) {
+      // Temporary bail-out until we add the other platforms
+      asfPrintError("Platforms other than RSAT1 not yet supported...\n");
+    }
+    if (flags[f_COLORMAP]        != FLAG_NOT_SET ||
+        flags[f_CMOD4]           != FLAG_NOT_SET ||
+        flags[f_LANDMASK]        != FLAG_NOT_SET ||
+        flags[f_LANDMASK_HEIGHT] != FLAG_NOT_SET ||
+        flags[f_DEM]             != FLAG_NOT_SET)
+    {
+      asfPrintError("The following options are not yet supported:\n"
+          "  -colormap\n"
+          "  -cmod4\n"
+          "  -landmask\n"
+          "  -landmask-height\n"
+          "  -dem\n");
+    }
+
+    // Determine platform type
+    // RSAT-1 (C-band), ERS1 (C-band), ALOS (L-band), TSX-1 (X-band)
+    platform_type = (strncmp(mg->sensor, "RSAT-1", 6) == 0) ? p_RSAT1     :
+                    (strncmp(mg->sensor, "ERS1",   4) == 0) ? p_ERS1      :
+                    (strncmp(mg->sensor, "ALOS",   4) == 0) ? p_PALSAR    :
+                    (strncmp(mg->sensor, "TSX-1",  5) == 0) ? p_TERRASARX : 0;
+    meta_free(md);
+
+    asf_windspeed(platform_type, band_id, wind_dir, cmod4,
+                  landmaskHeight, landmaskFile, demFile,
+                  inBaseName, colormapName, outBaseName);
+
+    FREE(colormapName);
+    FREE(landmaskFile);
+    FREE(demFile);
 
     /* If the user didn't ask for a log file then we can nuke the one that
        we've been keeping since we've finished everything  */
@@ -908,3 +505,371 @@ int main(int argc, char *argv[])
     exit(EXIT_SUCCESS);
 }
 
+int asf_windspeed(platform_type_t platform_type, char *band_id,
+                  double wind_dir, int cmod4,
+                  double landmaskHeight, char *landmaskFile, char *demFile,
+                  char *inBaseName, char *colormapName, char *outBaseName)
+{
+  char *inDataName, outDataName[1024], outMetaName[1024];
+  FILE *in = NULL, *out = NULL;
+
+  asfPrintStatus("\n   Determining windspeeds in: %s\n", inBaseName);
+
+  strcpy(outDataName, outBaseName);
+  strcpy(outMetaName, outBaseName);
+  inDataName = (char *)MALLOC(sizeof(char) * (strlen(inBaseName) + 10));
+  strcpy(inDataName, inBaseName);
+  append_ext_if_needed(inDataName, ".img", NULL);
+  append_ext_if_needed(outDataName, ".img", NULL);
+  append_ext_if_needed(outMetaName, ".meta", NULL);
+
+  // New images for processing in to out
+  meta_parameters *imd = meta_read(inBaseName);
+  meta_general *img = imd->general; // convenience ptr
+  meta_sar *ms = imd->sar; // convenience ptr
+  meta_parameters *omd = meta_read(inBaseName);
+  meta_general *omg = omd->general; // convenience ptr
+  meta_sar *oms = omd->sar; // convenience ptr
+  omg->band_count = 0;
+  strcpy(omg->bands, "");
+  strcpy(oms->polarization, "");
+  if (strstr(img->bands, "VV") == NULL && strstr(img->bands, "HH") == NULL) {
+    asfPrintError("Cannot find any VV or HH polarized bands in this data.  Available\n"
+        "bands are %s).  Wind speeds can only be determined on Sigma0-\n"
+        "calibrated SAR data in HH or VV polarizations.\n", img->bands);
+  }
+  in = (FILE *)FOPEN(inDataName, "rb");
+  out = (FILE *)FOPEN(outDataName, "wb");
+  FREE(inDataName);
+
+  // For each band
+  double alpha = 1.0; // Default for VV polarization;
+  int band_num;
+  float *data = (float *)MALLOC(sizeof(float) * img->sample_count);
+  for (band_num = 0; band_num < img->band_count; band_num++) {
+    // Get band name, check for proper polarization, and create new output bandname, set alpha
+    char *band_name = get_band_name(img->bands, img->band_count, band_num);
+    long offset = img->line_count * band_num;
+    char polarization[2]="";
+    if (strncmp_case(band_name, "SIGMA-VV", 8) == 0 ||
+        strncmp_case(band_name, "SIGMA-HH", 8) == 0)
+    {
+      asfPrintStatus("\nProcessing wind speed calculations on band %s...\n\n", band_name);
+
+      (omg->band_count)++;
+      strcpy(polarization, (strstr(band_name, "VV") != NULL) ? "VV" : "HH");
+      sprintf(&omg->bands[strlen(omg->bands)], "WINDSPEED-%s%s", polarization,
+              (band_num < img->band_count - 1 && img->band_count > 0) ? ", " : "");
+      alpha = (strcmp(polarization, "VV") == 0) ? 1.0 : DEFAULT_HH_POL_ALPHA; // For CMODx
+    }
+    else {
+      asfPrintStatus("\nFound band: %s (Cannot calculate wind speed on this type of band)\n\n");
+      continue; // Skip this band
+    }
+
+    // Calculate average r_look for entire image (r_look is the angle between the NADIR line
+    // and a line point directly north, the 'look angle' of the platform.)
+    double r_look = asf_r_look(imd);
+    double phi_diff = wind_dir - r_look;
+    int line, sample;
+    double windspeed1 = 0.0, windspeed2 = 0.0;
+    for (line = 0; line < img->line_count; line++) {
+      // Get a line
+      get_float_line(in, imd, line+offset, data);
+      for (sample = 0; sample < img->sample_count; sample++) {
+        // FIXME: Here is where we should apply a land mask ...in this if-statement expression
+        if (meta_is_valid_double(data[sample]) && data[sample] > 0.0) {
+          // Calculate windspeed
+          // FIXME: This returns the angle, at the target pixel location, between straight up
+          // and the line to the satellite.  Make sure Frank's code doesn't assume the angle
+          // between the line to the satellite and a horizontal line, i.e. 90 degrees minus
+          // this angle.
+          double incidence_angle = meta_incid(imd, line, sample);
+          switch (platform_type) {
+            case p_RSAT1:
+              if (!cmod4) {
+                // Use CMOD5 to calculate windspeeds
+                double hh = alpha;
+                ws_inv_cmod5((double)data[sample], phi_diff, incidence_angle,
+                             &windspeed1, &windspeed2,
+                             (double)MIN_CMOD5_WINDSPEED, (double)MAX_CMOD5_WINDSPEED,
+                             hh);
+                data[sample] = windspeed1; // When 2 answers exist, take the lower (per Frank Monaldo)
+              }
+              else {
+                // Use CMOD4 to calculate windspeeds
+                asfPrintError("The CMOD4 algorithm is not yet supported.  Avoid the -cmod4\n"
+                    "option for now and let %s default to using the CMOD5 algorithm\n"
+                    "instead.\n");
+              }
+              break;
+            case p_PALSAR:
+            case p_TERRASARX:
+            case p_ERS1:
+            case p_ERS2:
+            default:
+              asfPrintError("Found a platform type (%s) that is not yet supported.\n",
+                            (platform_type == p_PALSAR)    ? "PALSAR" :
+                            (platform_type == p_TERRASARX) ? "TerraSAR-X" :
+                            (platform_type == p_ERS1)      ? "ERS-1" :
+                            (platform_type == p_ERS2)      ? "ERS-2" : "UNKNOWN PLATFORM");
+          }
+        }
+      }
+      put_float_line(out, omd, line+offset, data);
+      asfLineMeter(line, img->line_count);
+    }
+  } // end for (each band)
+  FREE(data);
+
+  // Insert colormap into metadata
+
+  meta_write(omd, outMetaName);
+  meta_free(imd);
+  meta_free(omd);
+
+  asfPrintStatus("Windspeed calculation complete.\n\n");
+
+  return EXIT_SUCCESS;
+}
+
+// Lat/lon to range and bearing, ll2rb()
+// Calculates range and bearing from reference lat/lon (lat_r, lon_r)
+// to target lat/lon (lat_t, lon_t).  Lat/lon should be in degrees.
+// Latitude is from -90.0 to +90.0 degrees.  Longitude is from -180.0 to
+// +180.0 degrees.  Range is in radians, bearing is in degrees.
+// Assumes the earth is a sphere.  To convert range to distance on the
+// surface of the sphere, multiply it by the radius of the sphere.
+#define X_AXIS 1
+#define Y_AXIS 2
+#define Z_AXIS 3
+int ll2rb(double lon_r, double lat_r,
+          double lon_t, double lat_t,
+          double *range, double *bearing)
+{
+  double radius = 1.0;
+  double x1, y1, z1,
+         x2, y2, z2,
+         x3, y3, z3;
+
+  if (lat_r < -90.0 || lat_r >   90.0 ||
+      lat_t < -90.0 || lat_t >   90.0 ||
+      lon_r <   0.0 || lon_r >= 360.0 ||
+      lon_t <   0.0 || lon_t >= 360.0)
+  {
+    asfPrintError("ll2rb() latitude/longitude out of range.  Found:\n"
+        " (lat_r, lon_r) = (%0.2f, %0.2f)\n"
+        " (lat_t, lon_t) = (%0.2f, %0.2f)\n",
+        lat_r, lon_r, lat_t, lon_t);
+  }
+  polrec3d(radius, (90.0 - lat_t) * D2R, lon_t * D2R, &x1, &y1, &z1);
+  rot_3d(Z_AXIS, x1, y1, z1, -(180.0 - lon_r) * D2R, &x2, &y2, &z2);
+  rot_3d(Y_AXIS, x2, y2, z2, -(90.0 - lat_r) * D2R, &x3, &y3, &z3);
+  recpol3d(x3, y3, z3, &radius, range, bearing);
+  g_assert(*bearing > 0.0); // Should never happen.  Drill down to recpol() below.
+  g_assert((*bearing * R2D) <= 360.0); // Ditto...
+  *bearing = fmod(360.0 - (*bearing * R2D), 360.0);
+
+  return 0;
+}
+#undef X_AXIS
+#undef Y_AXIS
+#undef Z_AXIS
+
+// Convert spherical coordinates to cartesian.  Assumes
+// radius is in the units of your choosing, theta and phi
+// in radians.
+int polrec3d(double radius, double theta, double phi,
+             double *x, double *y, double *z)
+{
+  *x = sin(theta) * cos(phi);
+  *y = sin(theta) * sin(phi);
+  *z = cos(theta);
+
+  return 0;
+}
+
+// Assumes angle is in radians.  Axis is defined by X = 1, Y = 2, and Z = 3
+int rot_3d(int axis,
+           double x, double y, double z, double angle,
+           double *xrot, double *yrot, double *zrot)
+{
+  double c = cos(angle);
+  double s = sin(angle);
+
+  switch (axis) {
+    case 1:
+      // Rotate around the X-Axis
+      *xrot =          x;
+      *yrot =  c*y + s*z;
+      *zrot = -s*y + c*z;
+      break;
+    case 2:
+      // Rotate around the Y-Axis
+      *xrot =  c*x - s*z;
+      *yrot =          y;
+      *zrot =  s*x + c*z;
+      break;
+    case 3:
+      // Rotate around the Z-Axis
+      *xrot =  c*x + s*y;
+      *yrot = -s*x + c*y;
+      *zrot =          z;
+      break;
+    default:
+      // Should never reach here (duhhhh)
+      asfPrintError("Bad axis number (%d).  Use 1 for X axis, 2 for Y axis, and 3 for Z axis.\n",
+                    axis);
+      break;
+  }
+
+  return 0;
+}
+
+// Converts cartesian vector to spherical polar form.  Angle az is the angle from the
+// Z-axis and ax is the angle from the X-axis, both in radians. r is the output radius.
+int recpol3d(double x, double y, double z, double *r, double *az, double *ax)
+{
+  double rxy;
+  recpol(x,   y, &rxy, ax);
+  recpol(z, rxy,    r, az);
+
+  return 0;
+}
+
+// Convert 2D rectangular coordinates (x, y) to polar coordinates (r, a)
+// Returned angle ranges from 0 to 2PI
+int recpol(double x, double y, double *r, double *a)
+{
+  *a = atan2(y, x); // Returns -PI to PI
+  *a = (*a < 0.0) ? *a + 2.0*PI : *a;
+  *r = sqrt(x*x + y*y);
+
+  return 0;
+}
+
+double asf_r_look(meta_parameters *md)
+{
+  double r_look = 0.0;
+  meta_general *mg = md->general;
+  meta_sar *ms = md->sar;
+  meta_location *ml = md->location;
+  g_assert(ms != NULL); // Should already be checked long before calling this function
+  g_assert(ml != NULL); // Will have to use meta_get_latLon() if this ever goes false...
+  char look_direction = ms->look_direction; // 'L' or 'R'
+  char orbit_direction = mg->orbit_direction; // 'A' or 'D'
+  double range = 0.0, bearing = 0.0;
+
+  // Get reference and target lat/lon's
+  double near_start_lat = ml->lat_start_near_range; // Reference latitude for ll2rb
+  double near_start_lon = ml->lon_start_near_range; // Reference longitude  "  "
+  double near_end_lat   = ml->lat_end_near_range;   // Target latitude  "  "
+  double near_end_lon   = ml->lon_end_near_range;   // Target longitude  "  "
+  double far_start_lon  = ml->lon_start_far_range;
+
+  // Trick the look direction for the math below, if necessary
+  look_direction = (orbit_direction == 'A' && near_start_lon > far_start_lon) ? 'L' : look_direction;
+  look_direction = (orbit_direction == 'D' && near_start_lon < far_start_lon) ? 'L' : look_direction;
+
+  // Find direction of ground track from lat/lon pair
+  ll2rb(near_start_lon, near_start_lat,
+        near_end_lon, near_end_lat,
+        &range, &bearing);
+  bearing = (look_direction == 'R') ? bearing + 90.0 : bearing + 270.0;
+
+  // Radar look direction from bearing
+  r_look = fmod(bearing, 360.0);
+
+  return r_look;
+}
+
+#define WND_FROM_MAX_SIGMA0   -999
+#define WND1_IS_MINIMUM_WIND -9999
+int ws_inv_cmod5(double sigma0, double phi0, double theta0,
+                 double *wnd1, double *wnd2,
+                 double min_ws, double max_ws,
+                 double hh)
+{
+  // See lines 118-123 in ws_inv_cmod5.pro
+  // NOTE: The CMOD5 and CMOD4 algorithms need an adjustment when the polarization
+  // is HH (since the original algorithms were developed for VV polarization only)
+  // hh == -3 when polarization is VV, hh == 0.6 when polarization is HH
+  // FIXME: Add cases for hh eq to -1 and -2
+  double rr = (hh > 0.0) ? ws_pol_ratio(theta0, hh) : 1.0;
+  sigma0 = (hh != -3) ? sigma0 / rr : sigma0; // HH adjustment or not
+
+  // ws_cmod5 will return a 2-element array where the first element is the sigma0
+  // that you'd get at min_ws, and the second element is the sigma0 that you get
+  // at max_ws;
+  // (phi0 is phi_diff, the diff between wind_dir and r_look, and theta0 is incidence angle)
+  // FIXME? the 0.0 is r_look according to ws_cmod5, but frank just passes in 0 for it ...
+  // because?
+  double *sg0 = ws_cmod5(min_ws, max_ws, phi0, theta0, 0.0);
+
+  // If sigma0 is lower than what you'd get at minimum windspeed, then set the windspeed to
+  // the minimum and return
+  if (sigma0 < sg0[0]) {
+    *wnd1 = min_ws;
+    *wnd2 = WND1_IS_FROM_MINIMUM_WIND;
+    return 0;
+  }
+
+  //
+
+  return 0;
+}
+
+// FIXME: What I have as min_ws is called u10, "Neutral stability wind speed at 10 m" in
+// Frank's code ...my interpretation may be wrong.
+double *ws_cmod5(double min_ws, double max_ws,
+                 double wdir, double incid, double r_look)
+{
+  // Necessary constants
+  double thetm = 40.0; // Degrees
+  double thethr = 25.0; // Degrees
+  double zpow = 1.6;
+  double c[28] =
+    {-0.6880, -0.7930,  0.3380, -0.1730,  0.0000,  0.0040, 0.1110,
+      0.0162,  6.3400,  2.5700, -2.1800,  0.4000, -0.6000, 0.0450,
+      0.0070,  0.3300,  0.0120, 22.0000,  1.9500,  3.0000, 8.3900,
+     -3.4400,  1.3600,  5.3500,  1.9900,  0.2900,  3.8000, 1.5300};
+  double y0, pn, a, b, csfi, x, a0, a1, a2, gam, s1, s2, a3, anz, b0, b1, v0, d1, d2, sigma;
+  double u10 = min_ws;
+
+  y0 = c[18];
+  pn = c[19];
+  a = y0 - (y0 - 1.0) / pn;
+  b = 1.0 / (pn * powf((y0 - 1.0), (pn - 1)));
+
+  // Compute difference between radar look and wind direction,
+  // convert to radians, and calculate the cosine
+  csfi = cos((wdir - r_look)*D2R);
+
+  // Note that since we are taking ratios, there is no need to
+  // convert the incidence angle parameters to radians:
+  x = (incid - thetm) / thethr;
+  a0 = ((c[3]*x + c[2])*x + c[1])*x + c[0];
+  a1 = c[4] + c[5]*x;
+  a2 = c[6] + c[7]*x;
+  gam = ( c[10]*x + c[9] ) * x + c[8];
+  s1 = c[11] + c[12]*x;
+  s2 = a2 * u10;
+  // a3 = s2;
+  // w = where(s2 lt s1, anz)
+  // if anz gt 0 then a3(w)=s1(w)
+  a3 = (s2 < s1) ? s1 : s2;
+  a3 = (s2 < s1) ? 1.0 / (1.0 + exp(-a3)) :
+                   powf((s2 / s1),(s1 * (1.0 - a3))) * a3;
+  b0 = powf(a3,gam) * powf(10.0, (a0 + a1 + u10));
+  // Was (note big 'X') in Frank's code: b1 = c[14] * u10 * (0.5 + X - tanh(4.0 * (x + c[15] + c[16] * u10)));
+  b1 = c[14] * u10 * (0.5 + x - tanh(4.0 * (x + c[15] + c[16] * u10)));
+  b1 = (c[13] * (1.0 + x) - b1) / (exp(0.34 * (u10 - c[17])) + 1.0);
+  v0 = (c[22]*x + c[21])*x + c[20];
+  d1 = (c[25]*x + c[24])*x + c[23];
+  d2 = c[26] + c[27]*x;
+  v2 = (v2 < y0) ? (a+b*powf((v2-1.0),pn) : (u10 / v0 + 1.0);
+  b2 = (-d1 + d2*v2)*exp(-v2);
+  sigma = b0 * powf((1.0 + b1*csfi + b2*(2.0*csfi*csfi - 1.0)),zpow);
+
+  return sigma;
+}
