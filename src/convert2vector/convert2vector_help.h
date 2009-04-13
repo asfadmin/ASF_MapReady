@@ -36,6 +36,7 @@
         "        polygon   (ASF-style CSV text file describing a single polygon (per file), use -help for more info)\n" \
         "        geotiff   (GeoTIFF file)\n\n" \
         "        csv       (Comma-separated value file)" \
+        "        stf       (.PAR file for the Sky Telemetry Format)" \
         "   And the output format is one of the following:\n" \
         "        shape     (ESRI format shapefile output)\n" \
         "        kml       (Google Earth(tm) kml file output for viewing in Google Earth(tm) - DEFAULT)\n" \
