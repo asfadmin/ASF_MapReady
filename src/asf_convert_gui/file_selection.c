@@ -31,7 +31,7 @@
 #define FORMAT_ASF_INTERNAL 6
 
 
-#ifndef win32
+#ifdef USE_GTK_FILE_CHOOSER
 static GtkWidget *browse_widget = NULL;
 
 // called when "cancel" clicked on the GtkFileChooser
