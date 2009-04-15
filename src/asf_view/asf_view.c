@@ -147,7 +147,13 @@ main(int argc, char **argv)
     set_button_images();
 
     // set up the acquisition planner, if we are in that mode
-    if (planner_mode) setup_planner();
+    if (planner_mode) {
+      setup_planner();
+
+      // getting rid of the info section makes more room for the found
+      // acquisitions, and isn't really necessary in the planner
+      show_widget("info_hbox", FALSE);
+    }
 
     // populate the look up table list, and apply the default
     // look-up-table, if there is one.  In this case, we will need to

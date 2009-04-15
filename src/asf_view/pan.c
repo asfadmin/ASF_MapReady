@@ -427,7 +427,7 @@ on_motion_notify_event(
           // image is all black! no action needed
           ;
         }
-        // switched to using these loops with memcpy()s, much faster
+
         // 4 cases: user has panned up&left, up&right, down&left, down&right
         else if (off_x >= 0 && off_y >= 0) {
           for (ii=off_y; ii<bih; ++ii)
@@ -505,24 +505,22 @@ on_motion_notify_event(
       // Commented this out ...it creates annoying error messages 
       // when you click and drag silly things like tab labels in the GUI
       //printf("Unknown drag event: %s %d %d %f %f\n",
-             //gtk_widget_get_name(widget), x, y, event->x_root, event->y_root);
+          //gtk_widget_get_name(widget), x, y, event->x_root, event->y_root);
     }
   }
-  else if (big_image_ptr) {
+  else if (big_image_ptr && big_image_ptr == event->window) {
     x = (int) event->x;
     y = (int) event->y;
 
-    if (big_image_ptr == event->window) {
-      double line, samp;
-      img2ls(x, y, &line, &samp);
+    double line, samp;
+    img2ls(x, y, &line, &samp);
 
-      if (meta_supports_meta_get_latLon(curr->meta)) {
-        char buf[128];
-        double lat, lon;
-        meta_get_latLon(curr->meta, line, samp, 0, &lat, &lon);
-        sprintf(buf, "Lat: %7.3f Lon: %7.3f", lat, lon);
-        put_string_to_label("motion_label", buf);
-      }
+    if (meta_supports_meta_get_latLon(curr->meta)) {
+      char buf[128];
+      double lat, lon;
+      meta_get_latLon(curr->meta, line, samp, 0, &lat, &lon);
+      sprintf(buf, "Lat: %7.3f, Lon: %7.3f", lat, lon);
+      put_string_to_label("motion_label", buf);
     }
   }
 

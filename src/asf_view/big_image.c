@@ -362,9 +362,9 @@ void get_color(int color, unsigned char *r, unsigned char *g,
     }
 }
 
-static void put_line(GdkPixbuf *pixbuf, double line0, double samp0, 
-                     double line1, double samp1, int color,
-                     ImageInfo *ii)
+void put_line(GdkPixbuf *pixbuf, double line0, double samp0, 
+              double line1, double samp1, int color,
+              ImageInfo *ii)
 {
   if (fabs(samp0-samp1)>20000) return;
   //if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
@@ -599,7 +599,8 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
                 r = background_red;
                 g = background_green;
                 b = background_blue;
-            } else {
+            }
+            else {
                 // here we have some averaging, that will make the
                 // images look a bit smoother when zoomed out
                 if (zoom<2) {
@@ -681,30 +682,6 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
         put_crosshair(pb, g_poly->line[g_poly->c], g_poly->samp[g_poly->c],
             FALSE, ii);
 
-    // draw old polygons
-    for (k=0; k<MAX_POLYS; ++k) {
-      if (g_polys[k].n > 0 && row_is_checked(k)) {
-        for (i=0; i<g_polys[k].n-1; ++i) {
-            put_line(pb, g_polys[k].line[i], g_polys[k].samp[i],
-                g_polys[k].line[i+1], g_polys[k].samp[i+1], 10+k, ii);
-        }
-      }
-    }
-
-    // draw the polygon
-    if (g_poly->n > 0) {
-        put_line(pb, crosshair_line, crosshair_samp,
-            g_poly->line[0], g_poly->samp[0], RED, ii);
-        for (i=0; i<g_poly->n-1; ++i) {
-            put_line(pb, g_poly->line[i], g_poly->samp[i],
-                g_poly->line[i+1], g_poly->samp[i+1], RED, ii);
-        }
-    } else if (g_poly->show_extent) {
-        // no polygon -- close "save subset" window, if open
-        show_widget("save_subset_window", FALSE);
-        g_poly->show_extent = FALSE;
-    }
-
     // green crosshair goes second, so if the two overlap, we will see
     // the green one (the main one)
     if (show_crosshair)
@@ -741,12 +718,55 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
     if (meta_supports_meta_get_latLon(ii->meta))
       add_north_arrow(pb, ii);
 
+    // draw the polygon
+    if (g_poly->n > 0) {
+        put_line(pb, crosshair_line, crosshair_samp,
+            g_poly->line[0], g_poly->samp[0], RED, ii);
+        for (i=0; i<g_poly->n-1; ++i) {
+            put_line(pb, g_poly->line[i], g_poly->samp[i],
+                g_poly->line[i+1], g_poly->samp[i+1], RED, ii);
+        }
+    }
+    else if (g_poly->show_extent) {
+        // no polygon -- close "save subset" window, if open
+        show_widget("save_subset_window", FALSE);
+        g_poly->show_extent = FALSE;
+    }
+
+    // draw old polygons
+    if (planner_is_active()) {
+      // decided to put in a cheat for the planner... to make the frames
+      // look more distinct
+      for (k=0; k<MAX_POLYS; ++k) {
+        if (g_polys[k].n > 0 && row_is_checked(k)) {
+          for (j=0; j<g_polys[k].n-1; j+=5) {
+            for (i=j; i<j+4; ++i) {
+              put_line(pb, g_polys[k].line[i], g_polys[k].samp[i],
+                       g_polys[k].line[i+1], g_polys[k].samp[i+1], 10+k, ii);
+            }
+          }
+        }
+      }
+    }
+    else {
+      for (k=0; k<MAX_POLYS; ++k) {
+        if (g_polys[k].n > 0 && row_is_checked(k)) {
+          for (i=0; i<g_polys[k].n-1; ++i) {
+            put_line(pb, g_polys[k].line[i], g_polys[k].samp[i],
+                     g_polys[k].line[i+1], g_polys[k].samp[i+1], 10+k, ii);
+          }
+        }
+      }
+
+    }
+
     return pb;
 }
 
 void fill_big(ImageInfo *ii)
 {
-  GdkPixbuf *pb = make_big_image(ii, TRUE);
+    // never show the crosshair for the planner -- not needed any longer
+    GdkPixbuf *pb = make_big_image(ii, !planner_is_active());
     GtkWidget *img = get_widget_checked("big_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
     //g_object_unref(pb);
@@ -794,9 +814,18 @@ void big_clicked(GdkEventButton *event)
             last_was_crosshair = FALSE;
         }
         // left-click: move crosshair
+        // (planner: select point's matched acquisitions)
         else {
-            img2ls((int)event->x, (int)event->y, &crosshair_line, &crosshair_samp);
+          if (planner_is_active()) {
+            double l, s;
+            img2ls((int)event->x, (int)event->y, &l, &s);
+            planner_click((int)(l+.5),(int)(s+.5));
+          }
+          else {
+            img2ls((int)event->x, (int)event->y,
+                   &crosshair_line, &crosshair_samp);
             last_was_crosshair = TRUE;
+          }
         }
         update_pixel_info(curr);
         fill_big(curr);

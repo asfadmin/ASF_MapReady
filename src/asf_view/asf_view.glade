@@ -324,7 +324,7 @@
 	      </child>
 
 	      <child>
-		<widget class="GtkHBox" id="hbox13">
+		<widget class="GtkHBox" id="info_hbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">0</property>

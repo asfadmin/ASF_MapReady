@@ -220,11 +220,15 @@ int get_big_image_width(void);
 int get_big_image_width2(void);
 int get_big_image_height(void);
 int get_big_image_height2(void);
+GdkPixbuf *get_saved_pb();
 void get_color(int color, unsigned char *r, unsigned char *g,
                unsigned char *b);
 void big_clicked(GdkEventButton *event);
 void small_clicked(GdkEventButton *event);
 void img2ls(int x, int y, double *line, double *samp);
+void put_line(GdkPixbuf *pixbuf, double line0, double samp0, 
+              double line1, double samp1, int color,
+              ImageInfo *ii);
 
 /* small_image.c */
 ThumbnailData *get_thumbnail_data(ImageInfo *ii);
@@ -307,6 +311,7 @@ int planner_is_active(void);
 void setup_planner(void);
 int row_is_checked(int);
 void calibrate_planner_reference(void);
+void planner_click(int l, int s);
 
 /* csv.c */
 const char * detect_csv_assoc();

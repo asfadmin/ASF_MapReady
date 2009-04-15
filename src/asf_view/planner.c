@@ -769,6 +769,81 @@ void setup_planner()
     update_look();
 }
 
+void highlight_row(int row, int highlight)
+{
+  if (in_planning_mode) {
+    if (row <= gtk_tree_model_iter_n_children(liststore, NULL)) {
+
+      GtkTreeIter iter;
+      gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
+      while (valid)
+      {
+        gboolean selected;
+        char *index_str;
+
+        gtk_tree_model_get(liststore, &iter, COL_INDEX, &index_str,
+                           COL_SELECTED, &selected, -1);
+
+        int index = atoi(index_str);
+        g_free(index_str);
+
+        if (index == row) {
+          // found the row we are looking for
+          GtkTreeSelection *selection;
+          GtkWidget *tv = get_widget_checked("treeview_planner");
+          selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tv));
+          if (highlight)
+            gtk_tree_selection_select_iter(selection, &iter);
+          else
+            gtk_tree_selection_unselect_iter(selection, &iter);
+          break;
+        }
+
+        valid = gtk_tree_model_iter_next(liststore, &iter);
+      }
+    }
+  }
+}
+
+// this one is customized for the way the planner stores the matches,
+// which has 5 points per frame:
+//  0-4:   frame #1 (#4 is a duplicate of #0)
+//  5-9:   frame #2 (#9 is a duplicate of #1)
+//  10-14: frame #3 (#10 is a duplicate of #14)
+//  15-19: etc
+// they are drawn as one polygon, however this is a little bit of a
+// cheat -- they are really a bunch of polygons in a row.  For the
+// overlap test, we use the real frames to avoid any weirdness resulting
+// from the conjoined polygon being re-entrant, etc.  Also, this
+// should be a teeny bit faster...
+static int poly_contains(UserPolygon *p, double line, double samp)
+{
+  int k, i, j, c = 0;
+  for (k=0; k<p->n;  k+= 5) {
+    for (i = k, j = k+3; i < k+4; j = i++) {
+      if ((((p->line[i]<=line) && (line<p->line[j])) ||
+           ((p->line[j]<=line) && (line<p->line[i]))) &&
+          (samp < (p->samp[j] - p->samp[i]) * (line - p->line[i]) /
+           (p->line[j] - p->line[i]) + p->samp[i]))
+        c = !c;
+    }
+    if (c) return c;
+  }
+  return c;
+}
+
+void planner_click(int line, int samp)
+{
+  // this is called when the user has clicked somewhere in the image
+  int i;
+
+  for (i=0; i<MAX_POLYS; ++i) {
+    if (g_polys[i].n > 1 && row_is_checked(i)) {
+      highlight_row(i, poly_contains(&g_polys[i], line, samp));
+    }
+  }
+}
+
 // returns true if that row # in the found acquisitions is checked
 // return false if we aren't running the planner, or the row # is
 // not checked
