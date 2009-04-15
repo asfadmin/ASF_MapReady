@@ -1988,7 +1988,8 @@ SIGNAL_CALLBACK void on_beam_mode_combobox_changed(GtkWidget *w)
 SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
 {
     int i = get_combo_box_item("planner_map_combobox");
-  
+    int width=-1, height=-1;
+
     switch (i) {
       default:
       case 0:
@@ -2000,20 +2001,28 @@ SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
         // "Standard"
         printf("Loading standard map...\n");
         load_file("land_shallow_topo_21600.jpg");
+        width=320; height=256;
         break;
 
       case 2:
         // "North Pole"
         printf("Loading north pole map...\n");
         load_file("Arctic4_1800.tif");
+        width=320; height=320;
         break;
 
       case 3:
         // "South Pole"
         printf("Loading south pole map...\n");
         load_file("moa125_hp1.tif");
+        width=320; height=320;
         break;
     }
+
+    if (width>0 && height>0) {
+      GtkWidget *small_img = get_widget_checked("small_image");
+      gtk_widget_set_size_request(small_img, width, height);
+    } 
 }
 
 #ifndef win32
