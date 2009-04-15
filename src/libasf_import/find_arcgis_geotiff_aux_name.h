@@ -2,6 +2,7 @@
 #define FIND_ARCGIS_GEOTIFF_AUX_NAME_H
 
 #include <glib.h>
+#include "asf.h"
 
 // Given a file name without an extension (though it might include a
 // path), look for a file with an extension appropriate for an ArcGIS GeoTIFF

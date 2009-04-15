@@ -17,7 +17,7 @@ find_arcgis_geotiff_aux_name (const char *inBaseName)
   GString *result = NULL;
 
   // Find first possibility which exists.
-  if ( g_file_test (p1->str, G_FILE_TEST_EXISTS) ) {
+  if ( fileExists (p1->str) ) {
     result = p1; 
     g_string_free (p2, TRUE);
     g_string_free (p3, TRUE);
@@ -25,7 +25,7 @@ find_arcgis_geotiff_aux_name (const char *inBaseName)
     g_string_free (p5, TRUE);
     g_string_free (p6, TRUE);
   }
-  else if ( g_file_test (p2->str, G_FILE_TEST_EXISTS) ) {
+  else if ( fileExists (p2->str) ) {
     result = p2;
     g_string_free (p1, TRUE);
     g_string_free (p3, TRUE);
@@ -33,7 +33,7 @@ find_arcgis_geotiff_aux_name (const char *inBaseName)
     g_string_free (p5, TRUE);
     g_string_free (p6, TRUE);
   }
-  else if ( g_file_test (p3->str, G_FILE_TEST_EXISTS) ) {
+  else if ( fileExists (p3->str) ) {
     result = p3;
     g_string_free (p1, TRUE);
     g_string_free (p2, TRUE);
@@ -41,7 +41,7 @@ find_arcgis_geotiff_aux_name (const char *inBaseName)
     g_string_free (p5, TRUE);
     g_string_free (p6, TRUE);
   }
-  else if ( g_file_test (p4->str, G_FILE_TEST_EXISTS) ) {
+  else if ( fileExists (p4->str) ) {
     result = p4;
     g_string_free (p1, TRUE);
     g_string_free (p2, TRUE);
@@ -49,7 +49,7 @@ find_arcgis_geotiff_aux_name (const char *inBaseName)
     g_string_free (p5, TRUE);
     g_string_free (p6, TRUE);
   }
-  else if ( g_file_test (p5->str, G_FILE_TEST_EXISTS) ) {
+  else if ( fileExists (p5->str) ) {
     result = p5;
     g_string_free (p1, TRUE);
     g_string_free (p2, TRUE);
@@ -57,7 +57,7 @@ find_arcgis_geotiff_aux_name (const char *inBaseName)
     g_string_free (p4, TRUE);
     g_string_free (p6, TRUE);
   }
-  else if ( g_file_test (p6->str, G_FILE_TEST_EXISTS) ) {
+  else if ( fileExists (p6->str) ) {
     result = p6;
     g_string_free (p1, TRUE);
     g_string_free (p2, TRUE);

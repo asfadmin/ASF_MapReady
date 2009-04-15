@@ -2,6 +2,7 @@
 #define FORM_GEOTIFF_NAME_H
 
 #include <glib.h>
+#include "asf.h"
 
 // Given a file name without an extension (though it might include a
 // path), look for a file with an extension appropriate for a TIFF
