@@ -7,7 +7,7 @@
 #define STP_VERSION 1.1
 
 // Acquisition Planner
-#define AP_VERSION_STRING "1.0.5"
+#define AP_VERSION_STRING "1.0.7"
 #define AP_VERSION 1.0
 
 // Request Generator
