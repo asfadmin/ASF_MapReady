@@ -542,7 +542,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   // Start of reading projection parameters from geotiff
   if (model_type == ModelTypeProjected && geotiff_data_exists) {
     char hemisphere;
-    projection_type_t projection_type;
+    projection_type_t projection_type=UNKNOWN_PROJECTION;
     unsigned long pro_zone; // UTM zone (UTM only)
     short proj_coords_trans = UNKNOWN_PROJECTION_TYPE;
     short pcs;
@@ -601,9 +601,6 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       proj_coords_trans = CT_TransverseMercator;
       datum = mp->datum = NAD83_DATUM;
       mp->spheroid = GRS1980_SPHEROID;
-    }
-    else {
-      projection_type = UNKNOWN_PROJECTION;
     }
 
     if (!read_count) {
