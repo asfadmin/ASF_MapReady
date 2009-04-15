@@ -602,6 +602,9 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       datum = mp->datum = NAD83_DATUM;
       mp->spheroid = GRS1980_SPHEROID;
     }
+    else {
+      projection_type = UNKNOWN_PROJECTION;
+    }
 
     if (!read_count) {
       // Check to see if this is a vintage ASF UTM geotiff (they only had the UTM
