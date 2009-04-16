@@ -148,7 +148,7 @@ int isparfile(char *inFile)
 	break;
       }
       // avoid scanning the entire contents of a huge file
-      if (++line_count>100)
+      if (++line_count>1000)
 	break;
     }
   }
