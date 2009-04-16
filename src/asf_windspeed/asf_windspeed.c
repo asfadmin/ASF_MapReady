@@ -203,6 +203,7 @@ int ws_inv_cmod5(double sigma0, double phi0, double theta0,
 double *ws_cmod5(double wd[], int npts, double wdir, double incid, double r_look);
 double arr_min(double *arr, int n);
 double arr_max(double *arr, int n);
+double ws_pol_ratio(double theta, double alpha);
 
 // IDL look-alikes
 int ll2rb(double lon_r, double lat_r,
@@ -215,7 +216,9 @@ int rot_3d(int axis, double x, double y, double z, double angle,
 int recpol3d(double x, double y, double z, double *r, double *az, double *ax);
 int recpol(double x, double y, double *r, double *a);
 double *maken(double first, double last, int num);
-double *poly_fit(double *wd, double *sg0, int ix1, int ix2, int ix3, double order, double *fit);
+double *poly_fit(double *y, double *x,
+                 int ix1, int ix2, int ix3, int degree,
+                 double *fit);
 
 /* Helpful functions */
 
@@ -532,7 +535,6 @@ int asf_windspeed(platform_type_t platform_type, char *band_id,
   // New images for processing in to out
   meta_parameters *imd = meta_read(inBaseName);
   meta_general *img = imd->general; // convenience ptr
-  meta_sar *ms = imd->sar; // convenience ptr
   meta_parameters *omd = meta_read(inBaseName);
   meta_general *omg = omd->general; // convenience ptr
   meta_sar *oms = omd->sar; // convenience ptr
@@ -801,7 +803,7 @@ double asf_r_look(meta_parameters *md)
 #endif
 int ws_inv_cmod5(double sigma0, double phi0, double theta0,
                  double *wnd1, double *wnd2,
-                 double min_ws, double max_ws, int npts
+                 double min_ws, double max_ws, int npts,
                  double hh)
 {
   // ws_cmod5 will return a 2-element array where the first element is the sigma0
@@ -837,7 +839,7 @@ int ws_inv_cmod5(double sigma0, double phi0, double theta0,
   double min_nrcs = arr_min(sg0, npts); // Min should be sg0[0], but make sure...
   if (sigma0 < min_nrcs) {
     *wnd1 = wd[0];
-    *wnd2 = WND1_IS_FROM_MINIMUM_WIND;
+    *wnd2 = WND1_IS_MINIMUM_WIND;
     FREE(wd);
     FREE(sg0);
     return 0;
@@ -865,57 +867,63 @@ int ws_inv_cmod5(double sigma0, double phi0, double theta0,
   // Calculate wind for the 3 cases (no sign changes, one sign change, two sign changes, and other)
   switch(ct) {
     case 0:
-      // No sign changes means sigma0 > max(sg0[])
-      int nn = npts;
-      double max_sg0 = arr_max(sg0);
-      int idx_first_max = -1;
-      int *w = (int *)CALLOC(nn, sizeof(int));
-      int wx = 0;
-      for (i=0; i<npts; i++) {
-        if (sg0[i] >= max_sg0) {
-          idx_first_max = (idx_first_max < 0) ? i : idx_first_max;
-          w[wx++] = i; // Collect indices of max's
+      {
+        // No sign changes means sigma0 > max(sg0[])
+        int nn = npts;
+        double max_sg0 = arr_max(sg0, npts);
+        int idx_first_max = -1;
+        int *w = (int *)CALLOC(nn, sizeof(int));
+        int wx = 0;
+        for (i=0; i<npts; i++) {
+          if (sg0[i] >= max_sg0) {
+            idx_first_max = (idx_first_max < 0) ? i : idx_first_max;
+            w[wx++] = i; // Collect indices of max's
+          }
         }
+        if (idx_first_max == nn - 1) {
+          // Last element was the largest element, so send back max wind
+          *wnd1 = wd[nn-1];
+          *wnd2 = WND_FROM_MAX_SIGMA0;
+        }
+        else {
+          int ix1 = (w[0] - 1 >= 0) ? w[0] - 1 : 0;
+          int ix2 = w[0];
+          int ix3 = w[0] + 1;
+          double fit1;
+          double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
+          *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sg0[ix2])))/2/f1[2];
+          *wnd2 = WND_FROM_MAX_SIGMA0;
+        }
+        FREE(w);
       }
-      if (idx_first_max == nn - 1) {
-        // Last element was the largest element, so send back max wind
-        *wnd1 = wd[nn-1];
-        *wnd2 = WND_FROM_MAX_SIGMA0;
-      }
-      else {
-        int ix1 = (w[0] - 1 >= 0) ? w[0] - 1 : 0;
-        int ix2 = w[0];
-        int ix3 = w[0] + 1;
-        double fit1;
-        double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
-        *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sg0[ix2])))/2/f1[2];
-        *wnd2 = WND_FROM_MAX_SIGMA0;
-      }
-      FREE(w);
       break;
     case 1:
-      // Single solution
-      int ix1 = ww;
-      int ix2 = (ww+1) > npts - 1 ? npts - 1 : ww+1;
-      int ix3 = (ww+2) > npts - 1 ? npts - 1 : ww+2;
-      double fit1;
-      double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
-      *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sigma0)))/2/f1[2];
-      *wnd2 = WND1_IS_ONLY_SOLUTION;
+      {
+        // Single solution
+        int ix1 = ww;
+        int ix2 = (ww+1) > npts - 1 ? npts - 1 : ww+1;
+        int ix3 = (ww+2) > npts - 1 ? npts - 1 : ww+2;
+        double fit1;
+        double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
+        *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sigma0)))/2/f1[2];
+        *wnd2 = WND1_IS_ONLY_SOLUTION;
+      }
       break;
     case 2:
-      // Two solutions (usually lowest answer of the two is best answer)
-      int ix1 = ww;
-      int ix2 = (ww+1) > npts - 1 ? npts - 1 : ww+1;
-      int ix3 = (ww+2) > npts - 1 ? npts - 1 : ww+2;
-      int ix4 = ww2;
-      int ix5 = (ww2+1) > npts - 1 ? npts - 1 : ww2+1;
-      int ix6 = (ww2+2) > npts - 1 ? npts - 1 : ww2+2;
-      double fit1, fit2;
-      double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
-      double *f2 = poly_fit(wd, sg0, ix4, ix5, ix6, 2, &fit2);
-      *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sigma0)))/2/f1[2];
-      *wnd2 = (f2[1]+sqrt(f2[1]*f2[1]-4.0*f2[2]*(f2[0]-sigma0)))/2/f2[2];
+      {
+        // Two solutions (usually lowest answer of the two is best answer)
+        int ix1 = ww;
+        int ix2 = (ww+1) > npts - 1 ? npts - 1 : ww+1;
+        int ix3 = (ww+2) > npts - 1 ? npts - 1 : ww+2;
+        int ix4 = ww2;
+        int ix5 = (ww2+1) > npts - 1 ? npts - 1 : ww2+1;
+        int ix6 = (ww2+2) > npts - 1 ? npts - 1 : ww2+2;
+        double fit1, fit2;
+        double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
+        double *f2 = poly_fit(wd, sg0, ix4, ix5, ix6, 2, &fit2);
+        *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sigma0)))/2/f1[2];
+        *wnd2 = (f2[1]+sqrt(f2[1]*f2[1]-4.0*f2[2]*(f2[0]-sigma0)))/2/f2[2];
+      }
       break;
     default:
       *wnd1 = WND_FROM_MAX_SIGMA0;
@@ -943,7 +951,7 @@ double *ws_cmod5(double u10[], int npts, double wdir, double incid, double r_loo
       0.0162,  6.3400,  2.5700, -2.1800,  0.4000, -0.6000, 0.0450,
       0.0070,  0.3300,  0.0120, 22.0000,  1.9500,  3.0000, 8.3900,
      -3.4400,  1.3600,  5.3500,  1.9900,  0.2900,  3.8000, 1.5300};
-  double y0, pn, a, b, csfi, x, a0, a1, a2, gam, s1, anz, v0, d1, d2, sigma;
+  double y0, pn, a, b, csfi, x, a0, a1, a2, gam, s1, v0, d1, d2;
   double *s2    = (double *)MALLOC(sizeof(double) * npts);
   double *a3    = (double *)MALLOC(sizeof(double) * npts);
   double *b0    = (double *)MALLOC(sizeof(double) * npts);
@@ -987,7 +995,7 @@ double *ws_cmod5(double u10[], int npts, double wdir, double incid, double r_loo
   d1 = (c[25]*x + c[24])*x + c[23];
   d2 = c[26] + c[27]*x;
   for (i=0; i<npts; i++) {
-    v2[i] = (v2[i] < y0) ? (a+b*powf((v2[i]-1.0),pn) : (u10[i] / v0 + 1.0);
+    v2[i] = (v2[i] < y0) ? (a+b*powf((v2[i]-1.0),pn)) : (u10[i] / v0 + 1.0);
     b2[i] = (-d1 + d2*v2[i])*exp(-v2[i]);
     sigma[i] = b0[i] * powf((1.0 + b1[i]*csfi + b2[i]*(2.0*csfi*csfi - 1.0)),zpow);
   }
@@ -1010,9 +1018,11 @@ double *maken(double first, double last, int num)
   if (num < 1) return NULL;
   double *arr = (double *)MALLOC(sizeof(double) * num);
 
-  for (i=0; i<npts; i++) {
-    arr = first + ((i+1)/num)*(last - first);
+  for (i=0; i<num; i++) {
+    arr[i] = first + ((i+1)/num)*(last - first);
   }
+
+  return arr;
 }
 
 double arr_min(double *arr, int n)
@@ -1036,7 +1046,7 @@ double arr_max(double *arr, int n)
   g_assert(n > 0 && arr != NULL);
 
   max = arr[0];
-  for (i=1; i<; i++) {
+  for (i=1; i<n; i++) {
     max = MAX(max, arr[i]);
   }
 
@@ -1044,40 +1054,46 @@ double arr_max(double *arr, int n)
 }
 
 // Fit a polynomial to a function using linear least-squares
-double *poly_fit(double *wd, double *sg0,
-                 int ix1, int ix2, int ix3,
-                 double order, double *fit)
+// Unlike the IDL function poly_fit, this routine is limited to degree==2
+double *poly_fit(double *y, double *x,
+                 int ix1, int ix2, int ix3, int degree,
+                 double *fit)
 {
-  x;
+  g_assert(y != NULL && x != NULL);
+  if (degree != 2) asfPrintError("poly_fit() only supports 2nd degree polynomial fits...\n");
+  double x1 = x[ix1];
+  double x2 = x[ix2];
+  double x3 = x[ix3];
+  double y1 = y[ix1];
+  double y2 = y[ix2];
+  double y3 = y[ix3];
+
+  double n = 1.0;
+  double p = x1 + x2 + x3;
+  double q = x1*x1 + x2*x2 + x3*x3;
+  double r = x1*x1*x1 + x2*x2*x2 + x3*x3*x3;
+  double s = x1*x1*x1*x1 + x2*x2*x2*x2 + x3*x3*x3*x3;
+  double t = y1 + y2 + y3;
+  double u = x1*y1 + x2*y2 + x3*y3;
+  double v = powf(x1, 2.0*y1) + powf(x2, 2.0*y2) + powf(x3, 2.0*y3);
+  double w = n*q*s + 2.0*p*q*r - powf(q, 3.0) - powf(p, 2.0)*s - n*powf(r, 2.0);
+
+  double *coeffs = (double *)MALLOC(3 * sizeof(double));
+  coeffs[0] = (n*q*v + p*r*t + p*q*u - powf(q, 2.0)*t - powf(p, 2.0)*v - n*r*u)          / w;
+  coeffs[1] = (n*s*u + p*q*v + q*r*t - powf(q, 2.0)*u - p*s*t          - n*r*v)          / w;
+  coeffs[2] = (q*s*t + q*r*u + p*r*v - powf(q, 2.0)*v - p*s*u          - powf(r, 2.0)*t) / w;
+
+  return coeffs;
 }
 
+// FIXME: Implement Hauser ratio with and without phi dependence
+double ws_pol_ratio(double theta, double alpha)
+{
+  g_assert(alpha > 0.0);
+  double tantheta = tan(theta * D2R);
+  double tantheta2 = tantheta*tantheta;
+  double rp = (1.0 + alpha*tantheta2) / (1.0 + 2.0*tantheta2);
+  rp *= rp;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return rp;
+}
