@@ -198,8 +198,12 @@ int asf_windspeed(platform_type_t platform_type, char *band_id,
 double asf_r_look(meta_parameters *md);
 int ws_inv_cmod5(double sigma0, double phi0, double theta0,
                  double *wnd1, double *wnd2,
-                 double min_ws, double max_ws,
+                 double min_ws, double max_ws, int npts,
                  double hh);
+double *ws_cmod5(double wd[], int npts, double wdir, double incid, double r_look);
+double arr_min(double *arr, int n);
+double arr_max(double *arr, int n);
+
 // IDL look-alikes
 int ll2rb(double lon_r, double lat_r,
           double lon_t, double lat_t,
@@ -210,6 +214,8 @@ int rot_3d(int axis, double x, double y, double z, double angle,
            double *xrot, double *yrot, double *zrot);
 int recpol3d(double x, double y, double z, double *r, double *az, double *ax);
 int recpol(double x, double y, double *r, double *a);
+double *maken(double first, double last, int num);
+double *poly_fit(double *wd, double *sg0, int ix1, int ix2, int ix3, double order, double *fit);
 
 /* Helpful functions */
 
@@ -592,7 +598,7 @@ int asf_windspeed(platform_type_t platform_type, char *band_id,
                 double hh = alpha;
                 ws_inv_cmod5((double)data[sample], phi_diff, incidence_angle,
                              &windspeed1, &windspeed2,
-                             (double)MIN_CMOD5_WINDSPEED, (double)MAX_CMOD5_WINDSPEED,
+                             (double)MIN_CMOD5_WINDSPEED, (double)MAX_CMOD5_WINDSPEED, 25,
                              hh);
                 data[sample] = windspeed1; // When 2 answers exist, take the lower (per Frank Monaldo)
               }
@@ -783,13 +789,41 @@ double asf_r_look(meta_parameters *md)
   return r_look;
 }
 
+#define WND1_IS_ONLY_SOLUTION  -99
 #define WND_FROM_MAX_SIGMA0   -999
 #define WND1_IS_MINIMUM_WIND -9999
+#define SIGN(a)  (((a) < 0.0) ? (-1.0) : (((a) > 0.0) ? (1.0) : (0.0)))
+#ifndef MIN
+#define MIN(a,b)  (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a,b)  (((a) > (b)) ? (a) : (b))
+#endif
 int ws_inv_cmod5(double sigma0, double phi0, double theta0,
                  double *wnd1, double *wnd2,
-                 double min_ws, double max_ws,
+                 double min_ws, double max_ws, int npts
                  double hh)
 {
+  // ws_cmod5 will return a 2-element array where the first element is the sigma0
+  // that you'd get at min_ws, and the second element is the sigma0 that you get
+  // at max_ws;
+  // (phi0 is phi_diff, the diff between wind_dir and r_look, and theta0 is incidence angle)
+  // Note that the 0.0 (last parameter) is r_look according to ws_cmod5, but the ws_cmod5 function
+  // doesn't make use of it ...or more accurately, it's already built into the phi0 value.
+  g_assert(max_ws > min_ws);
+  g_assert(npts > 0);
+  double *wd;
+  int i;
+
+  // Make an npts-element array of windspeeds that range from min_ws to max_ws linearly
+  wd = maken(min_ws, max_ws, npts);
+  g_assert(wd != NULL);
+
+  // Calculate an npts-element array of normalized radar cross section (NRCS) using
+  // the CMOD5 algorithm
+  double *sg0 = ws_cmod5(wd, npts, phi0, theta0, 0.0); // Returned sg0[] has npts elements in it
+  g_assert(sg0 != NULL);
+
   // See lines 118-123 in ws_inv_cmod5.pro
   // NOTE: The CMOD5 and CMOD4 algorithms need an adjustment when the polarization
   // is HH (since the original algorithms were developed for VV polarization only)
@@ -798,43 +832,125 @@ int ws_inv_cmod5(double sigma0, double phi0, double theta0,
   double rr = (hh > 0.0) ? ws_pol_ratio(theta0, hh) : 1.0;
   sigma0 = (hh != -3) ? sigma0 / rr : sigma0; // HH adjustment or not
 
-  // ws_cmod5 will return a 2-element array where the first element is the sigma0
-  // that you'd get at min_ws, and the second element is the sigma0 that you get
-  // at max_ws;
-  // (phi0 is phi_diff, the diff between wind_dir and r_look, and theta0 is incidence angle)
-  // FIXME? the 0.0 is r_look according to ws_cmod5, but frank just passes in 0 for it ...
-  // because?
-  double *sg0 = ws_cmod5(min_ws, max_ws, phi0, theta0, 0.0);
-
   // If sigma0 is lower than what you'd get at minimum windspeed, then set the windspeed to
-  // the minimum and return
-  if (sigma0 < sg0[0]) {
-    *wnd1 = min_ws;
+  // the minimum and return. (Line 129)
+  double min_nrcs = arr_min(sg0, npts); // Min should be sg0[0], but make sure...
+  if (sigma0 < min_nrcs) {
+    *wnd1 = wd[0];
     *wnd2 = WND1_IS_FROM_MINIMUM_WIND;
+    FREE(wd);
+    FREE(sg0);
     return 0;
   }
 
-  //
+  // Create sign of differences array
+  int ct=0;
+  double *s = (double *)MALLOC(sizeof(double) * npts);
+  for (i=0; i<npts; i++) {
+    s[i] = SIGN(sg0[i] - sigma0);
+    ct += s[i] == 0 ? 1 : 0;
+    s[i] = (ct > 0 && s[i] == 0) ? 1.0 : s[i];
+  }
+
+  // Count the sign changes
+  ct = 0;
+  int ww = -1; // Where first sign change occurs
+  int ww2 = -1; // Where second sign change occurs
+  for (i=1; i<npts; i++) {
+    ct += (s[i] != s[i-1]) ? 1 : 0;
+    ww = (ct > 0 && ww < 0) ? i : ww;
+    ww2 = (ct > 0 && ww > 0 && ww2 < 0) ? i : ww2;
+  }
+
+  // Calculate wind for the 3 cases (no sign changes, one sign change, two sign changes, and other)
+  switch(ct) {
+    case 0:
+      // No sign changes means sigma0 > max(sg0[])
+      int nn = npts;
+      double max_sg0 = arr_max(sg0);
+      int idx_first_max = -1;
+      int *w = (int *)CALLOC(nn, sizeof(int));
+      int wx = 0;
+      for (i=0; i<npts; i++) {
+        if (sg0[i] >= max_sg0) {
+          idx_first_max = (idx_first_max < 0) ? i : idx_first_max;
+          w[wx++] = i; // Collect indices of max's
+        }
+      }
+      if (idx_first_max == nn - 1) {
+        // Last element was the largest element, so send back max wind
+        *wnd1 = wd[nn-1];
+        *wnd2 = WND_FROM_MAX_SIGMA0;
+      }
+      else {
+        int ix1 = (w[0] - 1 >= 0) ? w[0] - 1 : 0;
+        int ix2 = w[0];
+        int ix3 = w[0] + 1;
+        double fit1;
+        double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
+        *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sg0[ix2])))/2/f1[2];
+        *wnd2 = WND_FROM_MAX_SIGMA0;
+      }
+      FREE(w);
+      break;
+    case 1:
+      // Single solution
+      int ix1 = ww;
+      int ix2 = (ww+1) > npts - 1 ? npts - 1 : ww+1;
+      int ix3 = (ww+2) > npts - 1 ? npts - 1 : ww+2;
+      double fit1;
+      double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
+      *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sigma0)))/2/f1[2];
+      *wnd2 = WND1_IS_ONLY_SOLUTION;
+      break;
+    case 2:
+      // Two solutions (usually lowest answer of the two is best answer)
+      int ix1 = ww;
+      int ix2 = (ww+1) > npts - 1 ? npts - 1 : ww+1;
+      int ix3 = (ww+2) > npts - 1 ? npts - 1 : ww+2;
+      int ix4 = ww2;
+      int ix5 = (ww2+1) > npts - 1 ? npts - 1 : ww2+1;
+      int ix6 = (ww2+2) > npts - 1 ? npts - 1 : ww2+2;
+      double fit1, fit2;
+      double *f1 = poly_fit(wd, sg0, ix1, ix2, ix3, 2, &fit1);
+      double *f2 = poly_fit(wd, sg0, ix4, ix5, ix6, 2, &fit2);
+      *wnd1 = (f1[1]+sqrt(f1[1]*f1[1]-4.0*f1[2]*(f1[0]-sigma0)))/2/f1[2];
+      *wnd2 = (f2[1]+sqrt(f2[1]*f2[1]-4.0*f2[2]*(f2[0]-sigma0)))/2/f2[2];
+      break;
+    default:
+      *wnd1 = WND_FROM_MAX_SIGMA0;
+      *wnd2 = WND_FROM_MAX_SIGMA0;
+      break;
+  }
+
+  FREE(s);
+  FREE(wd);
+  FREE(sg0);
 
   return 0;
 }
 
-// FIXME: What I have as min_ws is called u10, "Neutral stability wind speed at 10 m" in
-// Frank's code ...my interpretation may be wrong.
-double *ws_cmod5(double min_ws, double max_ws,
-                 double wdir, double incid, double r_look)
+double *ws_cmod5(double u10[], int npts, double wdir, double incid, double r_look)
 {
+  int i;
+
   // Necessary constants
-  double thetm = 40.0; // Degrees
+  double thetm  = 40.0; // Degrees
   double thethr = 25.0; // Degrees
-  double zpow = 1.6;
-  double c[28] =
+  double zpow   = 1.6;
+  double c[28]  =
     {-0.6880, -0.7930,  0.3380, -0.1730,  0.0000,  0.0040, 0.1110,
       0.0162,  6.3400,  2.5700, -2.1800,  0.4000, -0.6000, 0.0450,
       0.0070,  0.3300,  0.0120, 22.0000,  1.9500,  3.0000, 8.3900,
      -3.4400,  1.3600,  5.3500,  1.9900,  0.2900,  3.8000, 1.5300};
-  double y0, pn, a, b, csfi, x, a0, a1, a2, gam, s1, s2, a3, anz, b0, b1, v0, d1, d2, sigma;
-  double u10 = min_ws;
+  double y0, pn, a, b, csfi, x, a0, a1, a2, gam, s1, anz, v0, d1, d2, sigma;
+  double *s2    = (double *)MALLOC(sizeof(double) * npts);
+  double *a3    = (double *)MALLOC(sizeof(double) * npts);
+  double *b0    = (double *)MALLOC(sizeof(double) * npts);
+  double *b1    = (double *)MALLOC(sizeof(double) * npts);
+  double *b2    = (double *)MALLOC(sizeof(double) * npts);
+  double *v2    = (double *)MALLOC(sizeof(double) * npts);
+  double *sigma = (double *)MALLOC(sizeof(double) * npts);
 
   y0 = c[18];
   pn = c[19];
@@ -853,23 +969,115 @@ double *ws_cmod5(double min_ws, double max_ws,
   a2 = c[6] + c[7]*x;
   gam = ( c[10]*x + c[9] ) * x + c[8];
   s1 = c[11] + c[12]*x;
-  s2 = a2 * u10;
-  // a3 = s2;
-  // w = where(s2 lt s1, anz)
-  // if anz gt 0 then a3(w)=s1(w)
-  a3 = (s2 < s1) ? s1 : s2;
-  a3 = (s2 < s1) ? 1.0 / (1.0 + exp(-a3)) :
-                   powf((s2 / s1),(s1 * (1.0 - a3))) * a3;
-  b0 = powf(a3,gam) * powf(10.0, (a0 + a1 + u10));
-  // Was (note big 'X') in Frank's code: b1 = c[14] * u10 * (0.5 + X - tanh(4.0 * (x + c[15] + c[16] * u10)));
-  b1 = c[14] * u10 * (0.5 + x - tanh(4.0 * (x + c[15] + c[16] * u10)));
-  b1 = (c[13] * (1.0 + x) - b1) / (exp(0.34 * (u10 - c[17])) + 1.0);
+  for (i=0; i<npts; i++) {
+    s2[i] = a2 * u10[i];
+    // a3 = s2;
+    // w = where(s2 lt s1, anz)
+    // if anz gt 0 then a3(w)=s1(w)
+    a3[i] = (s2[i] < s1) ? s1 : s2[i];
+    a3[i] = (s2[i] < s1) ? powf((s2[i] / s1),(s1 * (1.0 - a3[i]))) * a3[i] :
+                    1.0 / (1.0 + exp(-a3[i]));
+    b0[i] = powf(a3[i],gam) * powf(10.0, (a0 + a1 + u10[i]));
+    // Note the lower case 'x' below was a capital 'X' in Frank's code:
+    //     b1 = c[14] * u10 * (0.5 + X - tanh(4.0 * (x + c[15] + c[16] * u10)));
+    b1[i] = c[14] * u10[i] * (0.5 + x - tanh(4.0 * (x + c[15] + c[16] * u10[i])));
+    b1[i] = (c[13] * (1.0 + x) - b1[i]) / (exp(0.34 * (u10[i] - c[17])) + 1.0);
+  }
   v0 = (c[22]*x + c[21])*x + c[20];
   d1 = (c[25]*x + c[24])*x + c[23];
   d2 = c[26] + c[27]*x;
-  v2 = (v2 < y0) ? (a+b*powf((v2-1.0),pn) : (u10 / v0 + 1.0);
-  b2 = (-d1 + d2*v2)*exp(-v2);
-  sigma = b0 * powf((1.0 + b1*csfi + b2*(2.0*csfi*csfi - 1.0)),zpow);
+  for (i=0; i<npts; i++) {
+    v2[i] = (v2[i] < y0) ? (a+b*powf((v2[i]-1.0),pn) : (u10[i] / v0 + 1.0);
+    b2[i] = (-d1 + d2*v2[i])*exp(-v2[i]);
+    sigma[i] = b0[i] * powf((1.0 + b1[i]*csfi + b2[i]*(2.0*csfi*csfi - 1.0)),zpow);
+  }
+
+  FREE(s2);
+  FREE(a3);
+  FREE(b0);
+  FREE(b1);
+  FREE(b2);
+  FREE(v2);
+  FREE(u10);
 
   return sigma;
 }
+
+double *maken(double first, double last, int num)
+{
+  int i;
+
+  if (num < 1) return NULL;
+  double *arr = (double *)MALLOC(sizeof(double) * num);
+
+  for (i=0; i<npts; i++) {
+    arr = first + ((i+1)/num)*(last - first);
+  }
+}
+
+double arr_min(double *arr, int n)
+{
+  double min;
+  int i;
+  g_assert(n > 0 && arr != NULL);
+
+  min = arr[0];
+  for (i=1; i<n; i++) {
+    min = MIN(min, arr[i]);
+  }
+
+  return min;
+}
+
+double arr_max(double *arr, int n)
+{
+  double max;
+  int i;
+  g_assert(n > 0 && arr != NULL);
+
+  max = arr[0];
+  for (i=1; i<; i++) {
+    max = MAX(max, arr[i]);
+  }
+
+  return max;
+}
+
+// Fit a polynomial to a function using linear least-squares
+double *poly_fit(double *wd, double *sg0,
+                 int ix1, int ix2, int ix3,
+                 double order, double *fit)
+{
+  x;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
