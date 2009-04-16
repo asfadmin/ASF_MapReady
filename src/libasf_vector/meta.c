@@ -2614,7 +2614,7 @@ int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag)
       meta = meta_read_only(inFile);
     else
       asfPrintError("Chosen file format (%s) does not match provided file "
-		    "(%s)\n", inFile);
+		    "(%s)\n", format2str(inFormat), inFile);
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
     kml_entry(fpOut, meta, meta->general->basename);
