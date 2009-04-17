@@ -1,5 +1,9 @@
 Convert To Vector Version History
 
+Convert to Vector 2.2.2 (released 2009 April 17)
+New Features
+* Ability to convert STF/Level 0 CEOS Files
+
 Convert to Vector 2.1.1 (released 2009 January 9)
 New Features
 * Capability to convert general KML files, not just those created by
