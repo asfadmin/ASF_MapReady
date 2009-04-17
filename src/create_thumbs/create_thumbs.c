@@ -373,6 +373,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     char baseName[512];
     int nBands, trailer, ns, nLooks;
     ceos_file_pairs_t ceos_pair = NO_CEOS_FILE_PAIR;
+    char *file = get_filename(input_data);
 
     //Check that input data is available
     ceos_pair = get_ceos_names(input_data, baseName,
@@ -390,6 +391,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         break;
       }
     }
+    not_data = (ceos_pair == CEOS_IMG_LED_PAIR && strncmp(file, "LED", 3) != 0) ? 1 : not_data;
     if (not_data) {
       return FALSE;
     }
@@ -400,9 +402,9 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 
     if (imd->general->data_type != BYTE &&
         imd->general->data_type != INTEGER16 &&
-	imd->general->data_type != COMPLEX_BYTE &&
-	imd->general->data_type != COMPLEX_INTEGER16 &&
-	imd->general->data_type != COMPLEX_REAL32)
+        imd->general->data_type != COMPLEX_BYTE &&
+        imd->general->data_type != COMPLEX_INTEGER16 &&
+        imd->general->data_type != COMPLEX_REAL32)
     // Turning off support for these guys for now.
     //    imd->general->data_type != INTEGER32 &&
     //    imd->general->data_type != REAL32 &&
@@ -497,6 +499,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       if (size < 0 && scale_factor > 0.0) size = 0;
       if (scale_factor < 0 && size > 0) scale_factor = 0.0;
       float sf = 1.0; // Default scale factor
+      nLooks = 1;
       if (size > 0) // if size == 0 then a scale factor is being used
       {
         larger_dim = (float)size;
@@ -506,11 +509,8 @@ int generate_ceos_thumbnail(const char *input_data, int size,
             larger_dim = (float)MIN_DIMENSION;
         }
 
-	// Complex data need to be multilooked
-	if (imd->general->data_type >= COMPLEX_BYTE)
-	  nLooks = imd->sar->look_count;
-	else
-	  nLooks = 1;
+        // Complex data need to be multilooked
+        nLooks = (imd->general->data_type >= COMPLEX_BYTE) ? imd->sar->look_count : nLooks;
 
         // Vertical and horizontal scale factors required to meet the
         // max_thumbnail_dimension part of the interface contract.
@@ -542,8 +542,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       isf = (size_t)(sf + 0.5); // Round to nearest integer
       isf = isf < 1 ? 1 : isf; // Only allow scaling down, not up
       size_t tsx = (size_t)((float)imd->general->sample_count / isf);
-      size_t tsy = (size_t)((float)imd->general->line_count / isf /
-			    (float)nLooks + 0.99);
+      size_t tsy = (size_t)((float)imd->general->line_count / isf / (float)nLooks + 0.99);
       asfPrintStatus("\nScaling image by closest integer scale factor (%d.0).  Scaling to: %d by %d\n",
           isf, tsx, tsy);
       if (size > imd->general->sample_count &&
@@ -766,7 +765,7 @@ void process_file(const char *file, int level, int size, int verbose,
 #endif
     else if (!is_ceos_level0(file)) {
       generate_ceos_thumbnail(file, size, output_format, out_dir,
-                              saveMetadataFlag, scale_factor, browseFlag);
+                                saveMetadataFlag, scale_factor, browseFlag);
     }
     else {
         // Should never reach here
@@ -805,12 +804,6 @@ void process(const char *what, int level, int recursive, int size, int verbose,
     char *base = get_filename(what);
     if ((stbuf.st_mode & S_IFMT) == S_IFDIR && !is_JL0) {
         if (level==0 || recursive) {
-// Not sure the reason for this code ...
-/*            if (L0Flag == jaxa_l0 && is_JL0) {
-                // Trim "what" to just include the basename ...it's a JL0 basename (which
-                // is a folder BTW)
-            }
-*/
             asfPrintStatus("%s%s/\n", spaces(level), base);
             process_dir(what, level+1, recursive, size, verbose,
                         L0Flag, scale_factor, browseFlag,
