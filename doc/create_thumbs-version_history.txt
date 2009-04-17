@@ -1,5 +1,13 @@
 Create Thumbs Version History
 
+Create Thumbs 2.2.1-dev (not released yet)
+New Functionality
+- Added L1.1 SLC support (produces a single amplitude
+  thumbnail or browse image)
+Bug Fixes
+- Given a data set from ALOS, was producing a
+  thumbnail for every file, i.e. LED-, IMG-, etc.
+
 Create Thumbs 2.0.2 (released 2008 December 09)
 Bug Fixes
 - Some output images were scaled to sizes a lot
