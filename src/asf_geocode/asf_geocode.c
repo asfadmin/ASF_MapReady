@@ -23,10 +23,11 @@ trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
-"             [-force] [-resample-method <method>] [-height <height>] [-save-mapping]\n"\
+"             [-force] [-resample-method <method>] [-height <height>]\n"\
 "             [-datum <datum>] [-pixel-size <pixel size>] [-band <band_id | all>]\n"\
 "             [-log <file>] [-write-proj-file <file>] [-read-proj-file <file>]\n"\
-"             [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
+"             [-save-mapping] [-background <value>] [-quiet] [-license]\n"\
+"             [-version] [-help]\n"\
 "             <in_base_name> <out_base_name>\n"\
 "\n"\
 "   Use the -help option for more projection parameter controls.\n"
