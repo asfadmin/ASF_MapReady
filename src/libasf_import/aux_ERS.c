@@ -112,13 +112,20 @@ void ERS_auxUpdate(ERS_aux *aux,bin_state *s)
     strcpy(s->satName,"ERS1");
     outputDelay=CONF_ERS1_rangePulseDelay;
   }
-  else if (aux->rfAtten==38) {/*Reciever attenuation at 38-- is ERS-2*/
+  else if (aux->rfAtten==38 || aux->rfAtten==36) {
+    /*Reciever attenuation at 36,38-- is ERS-2*/
     strcpy(s->satName,"ERS2");
     outputDelay=CONF_ERS2_rangePulseDelay;
   }
-  else
-    asfPrintWarning("Can't tell if this is ERS-1 or ERS-2!!  RF Atten=%d\n",
+  else {
+    /* Some newer ERS-2 data is attenuated differently??? */
+    asfPrintWarning("Can't tell if this is ERS-1 or ERS-2!  RF Atten=%d\n"
+                    "ERS-1 RF Atten: 30, ERS-2 RF Atten: 36 or 38.\n"
+                    "Assuming ERS-2.\n",
                     aux->rfAtten);
+    strcpy(s->satName,"ERS2");
+    outputDelay=CONF_ERS2_rangePulseDelay;
+  }
 
 /*Compute slant range to first pixel:*/
   s->prf=aux->prf;
