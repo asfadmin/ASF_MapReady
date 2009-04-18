@@ -7,7 +7,7 @@
 #define STP_VERSION 1.1
 
 // Acquisition Planner
-#define AP_VERSION_STRING "1.0.7"
+#define AP_VERSION_STRING "1.0.8-dev"
 #define AP_VERSION 1.0
 
 // Request Generator
@@ -19,7 +19,7 @@
 #define MAPREADY_VERSION 2.1
 
 // Convert To Vector
-#define C2V_VERSION_STRING "2.2.2"
+#define C2V_VERSION_STRING "2.2.3-dev"
 #define C2V_VERSION 2.2
 
 // JPL Mosaic Suite
