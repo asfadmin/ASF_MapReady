@@ -660,18 +660,21 @@ int ll2rb(double lon_r, double lat_r,
          x2, y2, z2,
          x3, y3, z3;
 
-  if (lat_r < -90.0 || lat_r >   90.0 ||
-      lat_t < -90.0 || lat_t >   90.0 ||
-      lon_r <   0.0 || lon_r >= 360.0 ||
-      lon_t <   0.0 || lon_t >= 360.0)
+  double _lon_r = (lon_r < 0.0) ? lon_r + 360.0 : lon_r; // If lon 0 to 180, make 0-360 instead
+  double _lon_t = (lon_t < 0.0) ? lon_t + 360.0 : lon_t; // If lon 0 to 180, make 0-360 instead
+
+  if (lat_r  < -90.0 || lat_r >   90.0 ||
+      lat_t  < -90.0 || lat_t >   90.0 ||
+      _lon_r <   0.0 || lon_r >= 360.0 ||
+      _lon_t <   0.0 || lon_t >= 360.0)
   {
     asfPrintError("ll2rb() latitude/longitude out of range.  Found:\n"
         " (lat_r, lon_r) = (%0.2f, %0.2f)\n"
         " (lat_t, lon_t) = (%0.2f, %0.2f)\n",
         lat_r, lon_r, lat_t, lon_t);
   }
-  polrec3d(radius, (90.0 - lat_t) * D2R, lon_t * D2R, &x1, &y1, &z1);
-  rot_3d(Z_AXIS, x1, y1, z1, -(180.0 - lon_r) * D2R, &x2, &y2, &z2);
+  polrec3d(radius, (90.0 - lat_t) * D2R,  _lon_t * D2R, &x1, &y1, &z1);
+  rot_3d(Z_AXIS, x1, y1, z1, -(180.0 - _lon_r) * D2R, &x2, &y2, &z2);
   rot_3d(Y_AXIS, x2, y2, z2, -(90.0 - lat_r) * D2R, &x3, &y3, &z3);
   recpol3d(x3, y3, z3, &radius, range, bearing);
   g_assert(*bearing > 0.0); // Should never happen.  Drill down to recpol() below.
