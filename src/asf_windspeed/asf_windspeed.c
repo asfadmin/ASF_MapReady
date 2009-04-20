@@ -1061,6 +1061,7 @@ double *poly_fit(double *y, double *x,
 {
   g_assert(y != NULL && x != NULL);
   if (degree != 2) asfPrintError("poly_fit() only supports 2nd degree polynomial fits...\n");
+  double *coeffs = (double *)MALLOC(3 * sizeof(double));
   double x1 = x[ix1];
   double x2 = x[ix2];
   double x3 = x[ix3];
@@ -1068,20 +1069,16 @@ double *poly_fit(double *y, double *x,
   double y2 = y[ix2];
   double y3 = y[ix3];
 
-  double n = 1.0;
-  double p = x1 + x2 + x3;
-  double q = x1*x1 + x2*x2 + x3*x3;
-  double r = x1*x1*x1 + x2*x2*x2 + x3*x3*x3;
-  double s = x1*x1*x1*x1 + x2*x2*x2*x2 + x3*x3*x3*x3;
-  double t = y1 + y2 + y3;
-  double u = x1*y1 + x2*y2 + x3*y3;
-  double v = powf(x1, 2.0*y1) + powf(x2, 2.0*y2) + powf(x3, 2.0*y3);
-  double w = n*q*s + 2.0*p*q*r - powf(q, 3.0) - powf(p, 2.0)*s - n*powf(r, 2.0);
+  double M = y1 - y2;
+  double N = y3 - y2;
+  double P = x1 - x2;
+  double Q = x3 - x1;
+  double R = x3 - x2;
+  double S = x2*x2 - x1*x1;
 
-  double *coeffs = (double *)MALLOC(3 * sizeof(double));
-  coeffs[0] = (n*q*v + p*r*t + p*q*u - powf(q, 2.0)*t - powf(p, 2.0)*v - n*r*u)          / w;
-  coeffs[1] = (n*s*u + p*q*v + q*r*t - powf(q, 2.0)*u - p*s*t          - n*r*v)          / w;
-  coeffs[2] = (q*s*t + q*r*u + p*r*v - powf(q, 2.0)*v - p*s*u          - powf(r, 2.0)*t) / w;
+  coeffs[0] = (N/(R*Q)) - (M/(P*Q));                // a
+  coeffs[1] = (M + coeffs[0]*S)/P;                  // b
+  coeffs[2] = y1 - coeffs[0]*x1*x1 - coeffs[1]*x1;  // c
 
   return coeffs;
 }
