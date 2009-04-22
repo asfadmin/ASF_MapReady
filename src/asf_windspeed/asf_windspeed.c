@@ -7,6 +7,7 @@
 // See call to ws_inv_cmod5() on line 206 for min/max windspeed setting for cmod5
 #define MIN_CMOD5_WINDSPEED 1.0
 #define MAX_CMOD5_WINDSPEED 70.0
+#define WINDSPEED_BAND_BASENAME "WINDSPEED-"
 // See Frank Monaldo's ws_sig2ws.pro (February 2009 version), lines 126-130 for limits
 // FIXME: Need to check with Frank and find out why the latitude constraints...
 #define MIN_CMOD4_LATITUDE 16.0
@@ -566,12 +567,14 @@ int asf_windspeed(platform_type_t platform_type, char *band_id,
 
       (omg->band_count)++;
       strcpy(polarization, (strstr(band_name, "VV") != NULL) ? "VV" : "HH");
-      sprintf(&omg->bands[strlen(omg->bands)], "WINDSPEED-%s%s", polarization,
+      strcpy(oms->polarization, polarization);
+      sprintf(&omg->bands[strlen(omg->bands)], "%s%s%s", WINDSPEED_BAND_BASENAME, polarization,
               (band_num < img->band_count - 1 && img->band_count > 0) ? ", " : "");
       alpha = (strcmp(polarization, "VV") == 0) ? 1.0 : DEFAULT_HH_POL_ALPHA; // For CMODx
     }
     else {
-      asfPrintStatus("\nFound band: %s (Cannot calculate wind speed on this type of band)\n\n");
+      asfPrintStatus("\nFound band: %s (Cannot calculate wind speed on this type of band)\n\n",
+                     band_name);
       continue; // Skip this band
     }
 
@@ -579,20 +582,26 @@ int asf_windspeed(platform_type_t platform_type, char *band_id,
     // and a line point directly north, the 'look angle' of the platform.)
     double r_look = asf_r_look(imd);
     double phi_diff = wind_dir - r_look;
+
+    // Pre-populate incidence angles (as a function of sample)
     int line, sample;
+    double *incids = (double *)MALLOC(img->sample_count * sizeof(double));
+    for (sample = 0; sample < img->sample_count; sample++) {
+      incids[sample] = R2D * meta_incid(imd, img->line_count / 2, sample);
+    }
     double windspeed1 = 0.0, windspeed2 = 0.0;
     for (line = 0; line < img->line_count; line++) {
       // Get a line
       get_float_line(in, imd, line+offset, data);
       for (sample = 0; sample < img->sample_count; sample++) {
         // FIXME: Here is where we should apply a land mask ...in this if-statement expression
-        if (meta_is_valid_double(data[sample]) && data[sample] > 0.0) {
+        if (meta_is_valid_double(data[sample]) && data[sample] >= 0.0) {
           // Calculate windspeed
           // FIXME: This returns the angle, at the target pixel location, between straight up
           // and the line to the satellite.  Make sure Frank's code doesn't assume the angle
           // between the line to the satellite and a horizontal line, i.e. 90 degrees minus
           // this angle.
-          double incidence_angle = meta_incid(imd, line, sample);
+          double incidence_angle = incids[sample];
           switch (platform_type) {
             case p_RSAT1:
               if (!cmod4) {
@@ -962,11 +971,15 @@ double *ws_cmod5(double u10[], int npts, double wdir, double incid, double r_loo
   double *b2    = (double *)MALLOC(sizeof(double) * npts);
   double *v2    = (double *)MALLOC(sizeof(double) * npts);
   double *sigma = (double *)MALLOC(sizeof(double) * npts);
+  double t;
 
   y0 = c[18];
-  pn = c[19];
-  a = y0 - (y0 - 1.0) / pn;
-  b = 1.0 / (pn * powf((y0 - 1.0), (pn - 1)));
+  pn = c[19]; // c[19] is 3.000
+  t = y0 - 1.0;
+  // a = y0 - (y0 - 1.0) / pn;
+  a = y0 - t / pn;
+  //b = 1.0 / (pn * powf((y0 - 1.0), (pn - 1)));
+  b = 1.0 / (pn * t*t);
 
   // Compute difference between radar look and wind direction,
   // convert to radians, and calculate the cosine
@@ -998,7 +1011,9 @@ double *ws_cmod5(double u10[], int npts, double wdir, double incid, double r_loo
   d1 = (c[25]*x + c[24])*x + c[23];
   d2 = c[26] + c[27]*x;
   for (i=0; i<npts; i++) {
-    v2[i] = (v2[i] < y0) ? (a+b*powf((v2[i]-1.0),pn)) : (u10[i] / v0 + 1.0);
+    // v2[i] = (v2[i] < y0) ? (a+b*powf((v2[i]-1.0),pn)) : (u10[i] / v0 + 1.0);
+    t = v2[i] - 1.0; // Note: pn == 3
+    v2[i] = (v2[i] < y0) ? (a+b*(t*t*t)) : (u10[i] / v0 + 1.0);
     b2[i] = (-d1 + d2*v2[i])*exp(-v2[i]);
     sigma[i] = b0[i] * powf((1.0 + b1[i]*csfi + b2[i]*(2.0*csfi*csfi - 1.0)),zpow);
   }
@@ -1009,7 +1024,6 @@ double *ws_cmod5(double u10[], int npts, double wdir, double incid, double r_loo
   FREE(b1);
   FREE(b2);
   FREE(v2);
-  FREE(u10);
 
   return sigma;
 }
@@ -1020,9 +1034,10 @@ double *maken(double first, double last, int num)
 
   if (num < 1) return NULL;
   double *arr = (double *)MALLOC(sizeof(double) * num);
+  double incr = (last - first)/(num - 1);
 
   for (i=0; i<num; i++) {
-    arr[i] = first + ((i+1)/num)*(last - first);
+    arr[i] = first + (double)i*incr;
   }
 
   return arr;
