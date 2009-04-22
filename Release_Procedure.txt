@@ -1050,6 +1050,10 @@ NOTE: While the following procedure works, it definitely needs
  * Edit <path>/asf_tools/doc/create_thumbs-version_history.txt to
     update the create_thumbs version history.
 
+ * Edit <path>/asf_tools/include/asf_version.h to update the
+   create_thumbs version, i.e. remove "-dev" from end of version
+   number. Check this version in.
+
  * Tag create_thumbs in the repository:
 
        svn copy svn+ssh://svn/svn/asf_tools/trunk
@@ -1098,6 +1102,11 @@ NOTE: While the following procedure works, it definitely needs
 
       cd ~/asf/svn-r7410ct
       svn export svn+ssh://svn/svn/asf_tools/tags/create_thumbs_v2-0-2 asf_tools
+
+ * In your development check out, not the exported version above,
+   edit <path>/asf_tools/include/asf_version.h to update the
+   create_thumbs version, i.e. increment the version number and add
+   "-dev" to the end.  Check this version in.
 
  * Make sure DEBUG_BUILD is not set to any particular debug level:
 

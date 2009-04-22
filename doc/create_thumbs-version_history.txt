@@ -1,6 +1,12 @@
 Create Thumbs Version History
 
-Create Thumbs 2.2.1-dev (not released yet)
+Create Thumbs 2.0.5 (unleashed 2009 April 21)
+Bug Fixes
+- When processing Level 0 STF format RSAT data
+  errors for 'Cannot find CEOS format file' would
+  occur when exporting to JPEG.
+
+Create Thumbs 2.0.4 (released 2009 April 17)
 New Functionality
 - Added L1.1 SLC support (produces a single amplitude
   thumbnail or browse image)
