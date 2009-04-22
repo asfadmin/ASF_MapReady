@@ -1166,7 +1166,7 @@ CATEGORIES
 
  * In ~/asf/svn-r7410ct/Makefile.in, hard code the setting of the svn revision number.
 
-   Change (around line 235):
+   Change (around line 242):
    SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
    to:
    SET_SVN_REV_H = echo "\#define SVN_REV \"7410\"">include/svn_rev.h
@@ -1202,21 +1202,14 @@ clean:
       ./makemake
       rm makemake ../Makefile.old
 
-     IMPORTANT NOTE: In this case, the source.mapready_package and source.create_thumbs
-     files should be almost identical (check them with diff to make sure), but the
-     source.mapready_package package will have "doc/create_thumbs-version_history.txt"
-     added to it so we want to use it rather than the source.create_thumbs file below.
-     If you use source.create_thumbs instead, then the rpm build will fail ...the
-     doc/create_thumbs-version_history.txt file will be missing.
-
  * Run the autotar script:
 
       cd ~/asf/svn-r7410ct/release/autotar
-      ./tarfile src ~/asf/svn-r7410ct mapready_package
+      ./tarfile src ~/asf/svn-r7410ct create_thumbs_package
 
  * Run the rpmprep script (from autotar folder):
 
-      ./rpmprep mapready_package asf_create_thumbs
+      ./rpmprep create_thumbs_package asf_create_thumbs
 
  * Copy an older .spec file to the new one, then edit the new .spec
      file in to use the correct version:
