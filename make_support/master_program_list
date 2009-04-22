@@ -306,4 +306,10 @@ CATEGORIES
 		byteswap
 	}
 
+# Create Thumbs package
+	create_thumbs_package
+	{
+		create_thumbs
+		create_thumbs-version_history.txt
+	}
 }
