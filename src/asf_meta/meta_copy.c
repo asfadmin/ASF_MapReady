@@ -75,6 +75,20 @@ meta_parameters *meta_copy(meta_parameters *src)
   } else
     ret->thermal = NULL;
 
+  if (src->colormap) {
+    // free default created one, if there
+    if (ret->colormap) {
+      FREE(ret->colormap->rgb);
+      FREE(ret->colormap);
+    }
+    // now create the copy
+    ret->colormap = meta_colormap_init();
+    memcpy(ret->colormap, src->colormap, sizeof(meta_colormap));
+    size_t sz = sizeof(meta_rgb)*ret->colormap->num_elements;
+    ret->colormap->rgb = MALLOC(sz);
+    memcpy(ret->colormap->rgb, src->colormap->rgb, sz);
+  }
+
 /* Copy Depricated structures
   memcpy(ret->geo, src->geo, sizeof(geo_parameters));
   memcpy(ret->ifm, src->ifm, sizeof(ifm_parameters));
