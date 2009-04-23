@@ -313,7 +313,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
     /* the returned "fname" has the following form:            */
     /*   <directory>\0<first file>\0<second file>\0<third ...  */
-    char * dir = strdup(fname);
+    char * dir = STRDUP(fname);
     char * p = fname + strlen(dir) + 1;
 
     if (*p) {
@@ -325,7 +325,8 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
             p += strlen(p) + 1;
             free(dir_and_file);
         }
-    } else {
+    }
+    else {
         add_to_files_list(dir);
     }
 
@@ -460,6 +461,7 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 #define HDR_FILT 64
 #define BIN_FILT 128
 
+#ifndef win32
 static void do_browse_ok_clicked(gpointer button)
 {
   GtkWidget *browse_widget =
@@ -496,10 +498,89 @@ static void do_browse_cancel_clicked(gpointer button)
     GTK_WIDGET(g_object_get_data(G_OBJECT(button), "browse_widget"));
   gtk_widget_destroy(browse_widget);
 }
+#endif
 
 static void do_browse(const char *title, const char *entry_to_populate,
                       int filts)
 {
+#ifdef win32
+    OPENFILENAME of;
+    int retval;
+    char fname[1024];
+    fname[0] = '\0';
+    memset(&of, 0, sizeof(of));
+
+#ifdef OPENFILENAME_SIZE_VERSION_400
+    of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+#else
+    of.lStructSize = sizeof(of);
+#endif
+
+    of.hwndOwner = NULL;
+
+    char filters[512];
+    filters[0]='\0';
+
+    if (filts & ALL_CEOS_DATA_FILT)
+      strcat(filters, "All CEOS Level 1 Files\0*.D;IMG-*\0");
+    if (filts & ALL_CEOS_LEADER_FILT)
+      strcat(filters, "CEOS Level 1 Files\0*.L;LED-*\0");
+    if (filts & D_FILT)
+      strcat(filters, "RSAT/ERS CEOS L1\0*.D\0");
+    if (filts & L_FILT)
+      strcat(filters, "RSAT/ERS CEOS L1\0*.L\0");
+    if (filts & LED_FILT)
+      strcat(filters, "ALOS Leader Files\0LED-*\0");
+    if (filts & IMG_FILT)
+      strcat(filters, "ALOS Leader Files\0IMG-*\0");
+    if (filts & BIN_FILT)
+      strcat(filters, "PolSARpro Classification Files\0*.bin\0");
+    if (filts & HDR_FILT)
+      strcat(filters, "PolSARpro Header Files\0*.hdr\0");
+    strcat(filters, "All Files\0*\0");
+    of.lpstrCustomFilter = filters;
+
+    of.lpstrCustomFilter = NULL;
+    of.nFilterIndex = 1;
+    of.lpstrFile = fname;
+    of.nMaxFile = sizeof(fname);
+    of.lpstrFileTitle = NULL;
+    of.lpstrInitialDir = ".";
+    of.lpstrTitle = "Select File";
+    of.lpstrDefExt = NULL;
+    of.Flags = OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT | OFN_EXPLORER;
+
+    retval = GetOpenFileName(&of);
+
+    if (!retval) {
+        if (CommDlgExtendedError())
+            message_box("File dialog box error");
+        return;
+    }
+
+    /* the returned "fname" has the following form:            */
+    /*   <directory>\0<first file>\0<second file>\0<third ...  */
+    char * dir = STRDUP(fname);
+    char * p = fname + strlen(dir) + 1;
+
+    if (*p) {
+        while (*p) {
+            char * dir_and_file =
+                malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
+            sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
+            put_string_to_entry(entry_to_populate, dir_and_file);
+            p += strlen(p) + 1;
+            free(dir_and_file);
+        }
+    }
+    else {
+      put_string_to_entry(entry_to_populate, dir);
+    }
+
+    free(dir);
+
+#else // #ifdef win32
+
     GtkWidget *parent = get_widget_checked("asf_convert");
 
     GtkWidget *browse_widget = gtk_file_chooser_dialog_new(
@@ -604,6 +685,7 @@ static void do_browse(const char *title, const char *entry_to_populate,
                                     GTK_RESPONSE_OK);
 
     gtk_widget_show(browse_widget);
+#endif
 }
 
 static void clear_entries()
