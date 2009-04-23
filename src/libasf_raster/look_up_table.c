@@ -139,7 +139,7 @@ int read_lut(char *lutFile, unsigned char *lut_buffer)
     style = 2;
   }
 
-  for (ii=0; ii<MAX_DN*3 && ii<num_elements; ii+=3) {
+  for (ii=0; ii<MAX_DN*3 && ii<num_elements*3; ii+=3) {
     int red, green, blue;
 
     p = fgets(heading, 1024, fp);
