@@ -6,20 +6,20 @@
 int asf_export(output_format_t format, scale_t sample_mapping,
                char *in_base_name, char *output_name)
 {
-  return asf_export_bands(format, sample_mapping, 0, 0, 0, 0, 0, NULL,
+  return asf_export_bands(format, sample_mapping, 0, 0, 0, NULL,
               in_base_name, output_name, NULL, NULL, NULL);
 }
 
 int asf_export_with_lut(output_format_t format, scale_t sample_mapping,
             char *lutFile, char *inFile, char *outFile)
 {
-  return asf_export_bands(format, sample_mapping, 1, 0, 0, 0, 0,
+  return asf_export_bands(format, sample_mapping, 1, 0, 0,
               lutFile, inFile, outFile, NULL, NULL, NULL);
 }
 
 
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
-                     int true_color, int false_color, int pauli, int sinclair,
+                     int true_color, int false_color,
                      char *look_up_table_name, char *in_base_name,
                      char *output_name, char **band_name,
                      int *noutputs, char ***output_names)
@@ -52,7 +52,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       append_ext_if_needed(out_name, ".tif", ".tiff");
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
-                        true_color, false_color, pauli, sinclair,
+                        true_color, false_color,
                         look_up_table_name, TIF,
                         &nouts, &outs);
   }
@@ -64,7 +64,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       append_ext_if_needed(out_name, ".tif", ".tiff");
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
-                        true_color, false_color, pauli, sinclair,
+                        true_color, false_color,
                         look_up_table_name, GEOTIFF,
                         &nouts, &outs);
   }
@@ -76,7 +76,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       append_ext_if_needed(out_name, ".jpg", ".jpeg");
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
-                        true_color, false_color, pauli, sinclair,
+                        true_color, false_color,
                         look_up_table_name, JPEG,
                         &nouts, &outs);
   }
@@ -88,22 +88,20 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       append_ext_if_needed(out_name, ".png", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
-                        true_color, false_color, pauli, sinclair,
+                        true_color, false_color,
                         look_up_table_name, PNG,
                         &nouts, &outs);
   }
   else if ( format == PGM ) {
-      if (rgb || true_color || false_color || pauli || sinclair) {
+      if (rgb || true_color || false_color) {
           asfPrintWarning(
             "Greyscale PGM output is not compatible with color options:\n"
-            "(RGB, True Color, False Color, color look-up tables, Pauli, or Sinclair etc.)  ...\n"
+            "(RGB, True Color, False Color, color look-up tables, etc.)  ...\n"
             "Defaulting to producing separate greyscale PGM files for "
             "available bands.\n");
         rgb = 0;
         true_color = 0;
         false_color = 0;
-        pauli = 0;
-        sinclair = 0;
       }
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
@@ -112,7 +110,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       append_ext_if_needed(out_name, ".pgm", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
-                        true_color, false_color, pauli, sinclair,
+                        true_color, false_color,
                         look_up_table_name, PGM,
                         &nouts, &outs);
   }

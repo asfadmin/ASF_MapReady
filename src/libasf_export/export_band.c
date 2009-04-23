@@ -48,7 +48,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, int *palette_color_tiff, char **band_names,
-                           char *look_up_table_name, int is_polsarpro_band);
+                           char *look_up_table_name, int is_colormapped);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                               int rgb, char **band_names, int palette_color_tiff);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
@@ -64,7 +64,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, int *palette_color_tiff, char **band_names,
-                           char *look_up_table_name, int is_polsarpro_band)
+                           char *look_up_table_name, int is_colormapped)
 {
   unsigned short sample_size;
   int max_dn, map_size = 0, palette_color = 0;
@@ -127,19 +127,12 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
       // not the group of 3 components.
       TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
   }
-  int is_polsarpro = (strstr(uc(md->general->bands), "POLSARPRO") != NULL) ? 1 : 0;
-  if ((!have_look_up_table &&
-       md->colormap        &&
-       !is_polsarpro) ||
-      (is_polsarpro_band   &&
-       !have_look_up_table &&
-       md->colormap))
+  // use the metadata's colormap if we have one.  a -lut specified on the command
+  // line will override, though
+  if (is_colormapped && md->colormap && !have_look_up_table)
   {
       asfPrintStatus("\nFound single-band image with RGB color map ...storing as a Palette\n"
           "Color TIFF\n\n");
-      if (!is_polsarpro && md->general->data_type != BYTE) {
-        asfPrintError("Non-byte data found.\n");
-      }
       palette_color = 1;
       max_dn = map_size = meta_colormap_to_tiff_palette(&colors, &byte_image, md->colormap);
   }
@@ -767,123 +760,6 @@ void finalize_ppm_file(FILE *oppm)
   FCLOSE(oppm);
 }
 
-static int all_valid(double *values, int num, double no_data)
-{
-    // returns true if all pixel values are valid
-    // (i.e., not "no data" and not NAN)
-    if (meta_is_valid_double(no_data))
-    {
-        int i;
-        for (i=0; i<num; ++i) {
-            if (values[i] == no_data)
-                return FALSE; // found a "no data" value
-            else if (!meta_is_valid_double(values[i]))
-                return FALSE; // found a "NAN"
-        }
-        return TRUE; // no "no data" found
-    }
-    else
-    {
-        // "no data" value is NAN, just check for NANs
-        int i;
-        for (i=0; i<num; ++i) {
-            if (!meta_is_valid_double(values[i]))
-                return FALSE; // found a "NAN"
-        }
-        return TRUE; // no "no data" found
-    }
-
-    // not reached
-    assert(0);
-    return FALSE;
-}
-
-static double pauli_red(double *band_values, double no_data)
-{
-    if (!all_valid(band_values, 4, no_data))
-        return no_data;
-
-    double HH_amp = band_values[0];
-    double HH_phase = band_values[1];
-    double VV_amp = band_values[2];
-    double VV_phase = band_values[3];
-
-    // |HH-VV|
-
-    double HH_re = HH_amp*cos(HH_phase);
-    double HH_im = HH_amp*sin(HH_phase);
-    double VV_re = VV_amp*cos(VV_phase);
-    double VV_im = VV_amp*sin(VV_phase);
-
-    double re = HH_re - VV_re;
-    double im = HH_im - VV_im;
-
-    return hypot(re, im);
-}
-
-static double pauli_blue(double *band_values, double no_data)
-{
-    if (!all_valid(band_values, 4, no_data))
-        return no_data;
-
-    double HH_amp = band_values[0];
-    double HH_phase = band_values[1];
-    double VV_amp = band_values[2];
-    double VV_phase = band_values[3];
-
-    // |HH+VV|
-
-    double HH_re = HH_amp*cos(HH_phase);
-    double HH_im = HH_amp*sin(HH_phase);
-    double VV_re = VV_amp*cos(VV_phase);
-    double VV_im = VV_amp*sin(VV_phase);
-
-    double re = HH_re + VV_re;
-    double im = HH_im + VV_im;
-
-    return hypot(re, im);
-}
-
-static double pauli_green(double *band_values, double no_data)
-{
-    // |HV|
-    return band_values[0];
-}
-
-static double sinclair_green(double *band_values, double no_data)
-{
-    if (!all_valid(band_values, 2, no_data))
-        return no_data;
-
-    double HV = band_values[0];
-    double VH = band_values[1];
-
-    return .5*(HV+VH);
-}
-
-static double sinclair_green_cpx(double *band_values, double no_data)
-{
-    if (!all_valid(band_values, 4, no_data))
-        return no_data;
-
-    double HV_amp = band_values[0];
-    double HV_phase = band_values[1];
-    double VH_amp = band_values[2];
-    double VH_phase = band_values[3];
-
-    // |HV+VH| / 2
-
-    double HV_re = HV_amp*cos(HV_phase);
-    double HV_im = HV_amp*sin(HV_phase);
-    double VH_re = VH_amp*cos(VH_phase);
-    double VH_im = VH_amp*sin(VH_phase);
-
-    double re = HV_re + VH_re;
-    double im = HV_im + VH_im;
-
-    return .5*hypot(re, im);
-}
-
 void
 export_band_image (const char *metadata_file_name,
                    const char *image_data_file_name,
@@ -891,7 +767,6 @@ export_band_image (const char *metadata_file_name,
                    scale_t sample_mapping,
                    char **band_name, int rgb,
                    int true_color, int false_color,
-                   int pauli, int sinclair,
                    char *look_up_table_name,
                    output_format_t format,
                    int *noutputs,
@@ -948,8 +823,7 @@ export_band_image (const char *metadata_file_name,
   // and false_color parameters are provided separately just in case we decide
   // to do anything different, e.g. normal rgb processing plus something specific
   // to true_color or false_color (like contrast expansion)
-  int is_polsarpro = (strstr(uc(md->general->bands), "POLSARPRO") != NULL) ? 1 : 0;
-  if (is_polsarpro && format == PGM) {
+  if (strstr(uc(md->general->bands), "POLSARPRO") != NULL && format == PGM) {
     asfPrintWarning(
         "Using PGM output for an image containing a PolSARpro classification\n"
         "band will result in separate greyscale images, and the PolSARpro classification\n"
@@ -960,34 +834,25 @@ export_band_image (const char *metadata_file_name,
 
   if (have_look_up_table) {
     lut_file = STRDUP(look_up_table_name);
-    asfPrintStatus("\nApplying %s color look up table to PolSARpro band...\n\n", look_up_table_name);
+    asfPrintStatus("\nApplying %s color look up table...\n\n", look_up_table_name);
   }
   else {
     // No look-up table
     lut_file = (char*)CALLOC(256, sizeof(char)); // Empty string
     if (format != PGM) {
-      if (is_polsarpro && md->colormap) {
-        // No look up table was provided for PolSARpro output ...Use the embedded
-        // colormap that is in the metadata (if it exists)
+      if (md->colormap) {
+        // No look up table was provided for colormapped output ...Use the embedded
+        // colormap that is in the metadata
         strcpy(lut_file, "tmp_lut_file.lut");
         colormap_to_lut_file(md->colormap, lut_file);
-        have_look_up_table = 1;
-        asfPrintStatus("\nNo color look up table provided for PolSARpro band.  Using\n"
-            "the colormap embedded in the ASF metadata instead (%s).\n\n",
+        have_look_up_table = TRUE;
+        asfPrintStatus("\nUsing the colormap embedded in the ASF metadata (%s).\n\n",
             md->colormap->look_up_table);
-      }
-      else {
-        asfPrintStatus("\nNo color look up table provided for PolSARpro band, and no\n"
-                      "embedded colormap in the ASF metadata ...image will be greyscale.\n\n");
       }
     }
   }
 
-  // Treat all bands as greyscale except polsarpro band (see below a long ways down...
-  // Search on "is_polsarpro_band")
-  if (is_polsarpro) rgb = 0;
   if (rgb && !have_look_up_table) {
-
     // Initialize the selected format
     if (format == TIF) {
       is_geotiff = 0;
@@ -1019,32 +884,6 @@ export_band_image (const char *metadata_file_name,
         }
     }
 
-    // these are used only in the sinclair decompositions
-    int HH_channel=0, VV_channel=0, HV_channel=0, VH_channel=0;
-    // these are used only in the pauli/sinclair decomposition
-    int HH_amp_channel=0, HH_phase_channel=0,
-        HV_amp_channel=0, HV_phase_channel=0,
-        VH_amp_channel=0, VH_phase_channel=0,
-        VV_amp_channel=0, VV_phase_channel=0;
-
-    // Determines which band names we need to pass to the calculation
-    // routines -- the band names are different for the various flavors
-    // of data.
-    // this is used by sinclair & pauli only
-    const int QP_TYPE_NON_CPX=0;
-    const int QP_TYPE_PALSAR11=1;
-    const int QP_TYPE_AIRSAR=2;
-    int quad_pol_type=0;
-
-    // names of the required bands -- these are determined by the
-    // kind of data (airsar or palsar)
-    char *pauli_red_bands=NULL;
-    char *pauli_green_bands=NULL;
-    char *pauli_blue_bands=NULL;
-    char *sinclair_red_bands=NULL;
-    char *sinclair_green_bands=NULL;
-    char *sinclair_blue_bands=NULL;
-
     channel_stats_t red_stats, blue_stats, green_stats;
     red_stats.hist = NULL; red_stats.hist_pdf = NULL;
     green_stats.hist = NULL; green_stats.hist_pdf = NULL;
@@ -1055,217 +894,6 @@ export_band_image (const char *metadata_file_name,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
 
-      if (sinclair)
-      {
-          // Sanity checks -- require quad-pol data
-          if (md->general->band_count == 4) {
-            // palsar 1.5 data looks like this
-            asfRequire(strcmp(band_name[0], "HH") == 0 &&
-                       strcmp(band_name[1], "HV") == 0 &&
-                       strcmp(band_name[2], "VH") == 0 &&
-                       strcmp(band_name[3], "VV") == 0,
-                "Attempted to apply Sinclair to non-quad-pol data.\n");
-            quad_pol_type=QP_TYPE_NON_CPX;
-            sinclair_red_bands="VV";
-            sinclair_green_bands="HV,HV";
-            sinclair_blue_bands="HH";
-          } else if (md->general->band_count == 8) {
-            // palsar 1.1 data looks like this
-            asfRequire(strcmp(band_name[0], "AMP-HH") == 0 &&
-                       strcmp(band_name[1], "PHASE-HH") == 0 &&
-                       strcmp(band_name[2], "AMP-HV") == 0 &&
-                       strcmp(band_name[3], "PHASE-HV") == 0 &&
-                       strcmp(band_name[4], "AMP-VH") == 0 &&
-                       strcmp(band_name[5], "PHASE-VH") == 0 &&
-                       strcmp(band_name[6], "AMP-VV") == 0 &&
-                       strcmp(band_name[7], "PHASE-VV") == 0,
-                "Attempted to apply Sinclair to non-quad-pol data.\n");
-            quad_pol_type=QP_TYPE_PALSAR11;
-            sinclair_red_bands="AMP-VV";
-            sinclair_green_bands="AMP-HV,PHASE-HV,AMP-VH,PHASE-VH";
-            sinclair_blue_bands="AMP-HH";
-          } else if (md->general->band_count == 9) {
-            // airsar data looks like this
-            asfRequire(strcmp(band_name[0], "POWER") == 0 &&
-                       strcmp(band_name[1], "SHH_AMP") == 0 &&
-                       strcmp(band_name[2], "SHH_PHASE") == 0 &&
-                       strcmp(band_name[3], "SHV_AMP") == 0 &&
-                       strcmp(band_name[4], "SHV_PHASE") == 0 &&
-                       strcmp(band_name[5], "SVH_AMP") == 0 &&
-                       strcmp(band_name[6], "SVH_PHASE") == 0 &&
-                       strcmp(band_name[7], "SVV_AMP") == 0 &&
-                       strcmp(band_name[8], "SVV_PHASE") == 0,
-                "Attempted to apply Sinclair to non-quad pole data.\n");
-            quad_pol_type=QP_TYPE_AIRSAR;
-            sinclair_red_bands="SVV_AMP";
-            sinclair_green_bands="SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE";
-            sinclair_blue_bands="SHH_AMP";
-          } else {
-            asfPrintError("Attempted to apply Sinclair to non-quad-pol data.\n");
-          }
-      }
-      else if (pauli)
-      {
-          // Sanity checks -- require quad-pol complex data
-          if (md->general->band_count == 8) {
-            // palsar 1.1
-            asfRequire(strcmp(band_name[0], "AMP-HH") == 0 &&
-                       strcmp(band_name[1], "PHASE-HH") == 0 &&
-                       strcmp(band_name[2], "AMP-HV") == 0 &&
-                       strcmp(band_name[3], "PHASE-HV") == 0 &&
-                       strcmp(band_name[4], "AMP-VH") == 0 &&
-                       strcmp(band_name[5], "PHASE-VH") == 0 &&
-                       strcmp(band_name[6], "AMP-VV") == 0 &&
-                       strcmp(band_name[7], "PHASE-VV") == 0,
-                "Attempted to apply Pauli to non-quad-pol, non-complex data.\n");
-
-            quad_pol_type=QP_TYPE_PALSAR11;
-            pauli_red_bands="AMP-HH,PHASE-HH,AMP-VV,PHASE-VV";
-            pauli_green_bands="AMP-HV,PHASE-HV,AMP-VH,PHASE-VH";
-            pauli_blue_bands="AMP-HH,PHASE-HH,AMP-VV,PHASE-VV";
-            sinclair_red_bands="AMP-VV";
-            sinclair_green_bands="AMP-HV,PHASE-HV,AMP-VH,PHASE-VH";
-            sinclair_blue_bands="AMP-HH";
-          } else if (md->general->band_count == 9) {
-            // airsar
-            asfRequire(strcmp(band_name[0], "POWER") == 0 &&
-                       strcmp(band_name[1], "SHH_AMP") == 0 &&
-                       strcmp(band_name[2], "SHH_PHASE") == 0 &&
-                       strcmp(band_name[3], "SHV_AMP") == 0 &&
-                       strcmp(band_name[4], "SHV_PHASE") == 0 &&
-                       strcmp(band_name[5], "SVH_AMP") == 0 &&
-                       strcmp(band_name[6], "SVH_PHASE") == 0 &&
-                       strcmp(band_name[7], "SVV_AMP") == 0 &&
-                       strcmp(band_name[8], "SVV_PHASE") == 0,
-                "Attempted to apply Pauli to non-quad-pol, non-complex data.\n");
-
-            quad_pol_type=QP_TYPE_AIRSAR;
-            pauli_red_bands="SHH_AMP,SHH_PHASE,SVV_AMP,SVV_PHASE";
-            pauli_green_bands="SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE";
-            pauli_blue_bands="SHH_AMP,SHH_PHASE,SVV_AMP,SVV_PHASE";
-            sinclair_red_bands="SVV_AMP";
-            sinclair_green_bands="SHV_AMP,SHV_PHASE,SVH_AMP,SVH_PHASE";
-            sinclair_blue_bands="SHH_AMP";
-          } else {
-            asfPrintError("Attempted to apply Pauli to non-quad-pol, non-complex data.\n");
-          }
-      }
-
-      if (pauli && sample_mapping != NONE)
-      {
-        // Red channel statistics
-        asfPrintStatus("\nGathering red channel statistics ...\n");
-        calc_stats_from_file_with_formula(image_data_file_name,
-                             pauli_red_bands, pauli_red, md->general->no_data,
-                             &red_stats.min, &red_stats.max, &red_stats.mean,
-                             &red_stats.standard_deviation, &red_stats.hist);
-        if (sample_mapping == SIGMA) {
-            double omin = red_stats.mean - 2*red_stats.standard_deviation;
-            double omax = red_stats.mean + 2*red_stats.standard_deviation;
-            if (omin > red_stats.min) red_stats.min = omin;
-            if (omax < red_stats.max) red_stats.max = omax;
-        }
-        if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-            red_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
-            gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
-        }
-
-        // Green channel statistics
-        asfPrintStatus("\nGathering green channel statistics ...\n");
-        calc_stats_from_file_with_formula(image_data_file_name,
-                             pauli_green_bands, pauli_green, md->general->no_data,
-                             &green_stats.min, &green_stats.max,
-                             &green_stats.mean, &green_stats.standard_deviation,
-                             &green_stats.hist);
-        if (sample_mapping == SIGMA) {
-            double omin = green_stats.mean - 2*green_stats.standard_deviation;
-            double omax = green_stats.mean + 2*green_stats.standard_deviation;
-            if (omin > green_stats.min) green_stats.min = omin;
-            if (omax < green_stats.max) green_stats.max = omax;
-        }
-        if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-            green_stats.hist_pdf = gsl_histogram_pdf_alloc(256);
-            gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
-        }
-
-        // Blue channel statistics
-        asfPrintStatus("\nGathering blue channel statistics ...\n");
-        calc_stats_from_file_with_formula(image_data_file_name,
-                             pauli_blue_bands, pauli_blue, md->general->no_data,
-                             &blue_stats.min, &blue_stats.max,
-                             &blue_stats.mean, &blue_stats.standard_deviation,
-                             &blue_stats.hist);
-        if (sample_mapping == SIGMA) {
-            double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
-            double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
-            if (omin > blue_stats.min) blue_stats.min = omin;
-            if (omax < blue_stats.max) blue_stats.max = omax;
-        }
-        if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-            blue_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
-            gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
-        }
-      }
-      else if (sinclair && sample_mapping != NONE)
-      {
-        // Red channel statistics
-        asfPrintStatus("\nGathering red channel statistics ...\n");
-        calc_stats_from_file(image_data_file_name, sinclair_red_bands,
-                             md->general->no_data,
-                             &red_stats.min, &red_stats.max, &red_stats.mean,
-                             &red_stats.standard_deviation, &red_stats.hist);
-        if (sample_mapping == SIGMA) {
-            double omin = red_stats.mean - 2*red_stats.standard_deviation;
-            double omax = red_stats.mean + 2*red_stats.standard_deviation;
-            if (omin > red_stats.min) red_stats.min = omin;
-            if (omax < red_stats.max) red_stats.max = omax;
-        }
-        if (sample_mapping == HISTOGRAM_EQUALIZE ) {
-            red_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
-            gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
-        }
-
-        // Green channel statistics
-        asfPrintStatus("\nGathering green channel statistics ...\n");
-        calc_stats_from_file_with_formula(image_data_file_name,
-                         sinclair_green_bands,
-                         sinclair_green_cpx, md->general->no_data,
-                         &green_stats.min, &green_stats.max,
-                         &green_stats.mean,
-                         &green_stats.standard_deviation,
-                         &green_stats.hist);
-        if (sample_mapping == SIGMA) {
-            double omin = green_stats.mean - 2*green_stats.standard_deviation;
-            double omax = green_stats.mean + 2*green_stats.standard_deviation;
-            if (omin > green_stats.min) green_stats.min = omin;
-            if (omax < green_stats.max) green_stats.max = omax;
-        }
-        if (sample_mapping == HISTOGRAM_EQUALIZE ) {
-            green_stats.hist_pdf = gsl_histogram_pdf_alloc(256);
-            gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
-        }
-
-        // Blue channel statistics
-        asfPrintStatus("\nGathering blue channel statistics ...\n");
-        calc_stats_from_file(image_data_file_name, sinclair_blue_bands,
-                             md->general->no_data,
-                             &blue_stats.min, &blue_stats.max,
-                             &blue_stats.mean,
-                             &blue_stats.standard_deviation,
-                             &blue_stats.hist);
-        if (sample_mapping == SIGMA) {
-            double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
-            double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
-            if (omin > blue_stats.min) blue_stats.min = omin;
-            if (omax < blue_stats.max) blue_stats.max = omax;
-        }
-        if (sample_mapping == HISTOGRAM_EQUALIZE ) {
-            blue_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
-            gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
-        }
-      }
-      else
-      {
         /*** Normal straight per-channel stats (no combined-band stats) */
 
         // Red channel statistics
@@ -1412,95 +1040,11 @@ export_band_image (const char *metadata_file_name,
             }
           }
         }
-      }
-    }
-
-    // Get channel numbers
-    if (sinclair && quad_pol_type==QP_TYPE_NON_CPX) {
-        HH_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "HH");
-        HV_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "HV");
-        VH_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "VH");
-        VV_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "VV");
-    }
-    else if (quad_pol_type==QP_TYPE_PALSAR11 && (pauli || sinclair)) {
-        HH_amp_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "AMP-HH");
-        HV_amp_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "AMP-HV");
-        VH_amp_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "AMP-VH");
-        VV_amp_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "AMP-VV");
-        HH_phase_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "PHASE-HH");
-        HV_phase_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "PHASE-HV");
-        VH_phase_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "PHASE-VH");
-        VV_phase_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "PHASE-VV");
-    }
-    else if (quad_pol_type==QP_TYPE_AIRSAR && (pauli || sinclair)) {
-        HH_amp_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "SHH_AMP");
-        HV_amp_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "SHV_AMP");
-        VH_amp_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "SVH_AMP");
-        VV_amp_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "SVV_AMP");
-        HH_phase_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "SHH_PHASE");
-        HV_phase_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "SHV_PHASE");
-        VH_phase_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "SVH_PHASE");
-        VV_phase_channel = get_band_number(md->general->bands,
-                                     md->general->band_count, "SVV_PHASE");
-    }
-    else {
-        red_channel = get_band_number(md->general->bands,
-                                      md->general->band_count,
-                                      band_name[0]);
-        if (!ignored[0] && !(red_channel >= 0 && red_channel < MAX_BANDS)) {
-            asfPrintError("Band number (%d) out of range for %s channel.\n",
-                          red_channel, "red");
-        }
-        green_channel = get_band_number(md->general->bands,
-                                        md->general->band_count,
-                                        band_name[1]);
-        if (!ignored[1] && !(green_channel >= 0 && green_channel < MAX_BANDS)) {
-            asfPrintError("Band number (%d) out of range for %s channel.\n",
-                          green_channel, "green");
-        }
-        blue_channel = get_band_number(md->general->bands,
-                                       md->general->band_count,
-                                       band_name[2]);
-        if (!ignored[2] && !(blue_channel >= 0 && blue_channel < MAX_BANDS)) {
-            asfPrintError("Band number (%d) out of range for %s channel.\n",
-                          blue_channel, "blue");
-        }
     }
 
     float *red_float_line = NULL;
     float *green_float_line = NULL;
     float *blue_float_line = NULL;
-
-    // these are only used by the pauli decomposition
-    float *amp_HH_buf = NULL;
-    float *phase_HH_buf = NULL;
-    float *amp_VV_buf = NULL;
-    float *phase_VV_buf = NULL;
-
-    // these are only used by the sinclair decomposition, for complex data
-    float *amp_HV_buf = NULL;
-    float *phase_HV_buf = NULL;
-    float *amp_VH_buf = NULL;
-    float *phase_VH_buf = NULL;
 
     unsigned char *red_byte_line = NULL;
     unsigned char *green_byte_line = NULL;
@@ -1551,24 +1095,6 @@ export_band_image (const char *metadata_file_name,
           blue_float_line[ii] = md->general->no_data;
         }
       }
-    }
-
-    if (pauli) {
-        // These are temporary arrays for values used in the pauli calculation
-        amp_HH_buf = MALLOC(sample_count * sizeof(float));
-        phase_HH_buf = MALLOC(sample_count * sizeof(float));
-        amp_VV_buf = MALLOC(sample_count * sizeof(float));
-        phase_VV_buf = MALLOC(sample_count * sizeof(float));
-    }
-
-    if (sinclair && quad_pol_type!=QP_TYPE_NON_CPX) {
-        // These are temporary arrays for values used in the sinclair calculation,
-        // when the data is complex.  (For sinclair data, the calculation can
-        // still be done on amplitude only data.)
-        amp_HV_buf = MALLOC(sample_count * sizeof(float));
-        phase_HV_buf = MALLOC(sample_count * sizeof(float));
-        amp_VH_buf = MALLOC(sample_count * sizeof(float));
-        phase_VH_buf = MALLOC(sample_count * sizeof(float));
     }
 
     double r_omin=0, r_omax=0;
@@ -1729,112 +1255,6 @@ export_band_image (const char *metadata_file_name,
         else
           asfPrintError("Impossible: unexpected format %d\n", format);
       }
-      else if (pauli) {
-        // first need HH-VV && HH+VV, into red & blue, respectively
-        get_float_line(fp, md, ii+HH_amp_channel*offset, amp_HH_buf);
-        get_float_line(fp, md, ii+HH_phase_channel*offset, phase_HH_buf);
-        get_float_line(fp, md, ii+VV_amp_channel*offset, amp_VV_buf);
-        get_float_line(fp, md, ii+VV_phase_channel*offset, phase_VV_buf);
-        for (jj=0; jj<md->general->sample_count; ++jj) {
-          double val_arr[4];
-          val_arr[0] = amp_HH_buf[jj];
-          val_arr[1] = phase_HH_buf[jj];
-          val_arr[2] = amp_VV_buf[jj];
-          val_arr[3] = phase_VV_buf[jj];
-          red_float_line[jj] = pauli_red(val_arr, md->general->no_data);
-          blue_float_line[jj] = pauli_blue(val_arr, md->general->no_data);
-        }
-
-        // now HV into green
-        get_float_line(fp, md, ii+HV_amp_channel*offset, green_float_line);
-
-        // write out as normal
-        if (format == TIF || format == GEOTIFF) {
-            if (sample_mapping == NONE)
-              write_rgb_tiff_float2float(otif, red_float_line, green_float_line,
-                                    blue_float_line, ii, sample_count);
-            else
-              write_rgb_tiff_float2byte(otif, red_float_line, green_float_line,
-                                    blue_float_line, red_stats, green_stats,
-                                    blue_stats, sample_mapping,
-                                    md->general->no_data, ii, sample_count);
-        } else if (format == JPEG)
-          write_rgb_jpeg_float2byte(ojpeg, red_float_line, green_float_line,
-                                    blue_float_line, &cinfo, red_stats,
-                                    green_stats, blue_stats, sample_mapping,
-                                    md->general->no_data, sample_count);
-        else if (format == PNG)
-          write_rgb_png_float2byte(opng, red_float_line, green_float_line,
-                                   blue_float_line, png_ptr, png_info_ptr,
-                                   red_stats, green_stats, blue_stats,
-                                   sample_mapping, md->general->no_data,
-                                   sample_count);
-        else
-          asfPrintError("Impossible: unexpected format %d\n", format);
-      }
-      else if (sinclair) {
-          if (quad_pol_type != QP_TYPE_NON_CPX) {
-            // first do the green (cross-term average) calculation
-            get_float_line(fp, md, ii+HV_amp_channel*offset, amp_HV_buf);
-            get_float_line(fp, md, ii+HV_phase_channel*offset, phase_HV_buf);
-            get_float_line(fp, md, ii+VH_amp_channel*offset, amp_VH_buf);
-            get_float_line(fp, md, ii+VH_phase_channel*offset, phase_VH_buf);
-
-            for (jj=0; jj<md->general->sample_count; ++jj) {
-                double val_arr[4];
-                val_arr[0] = amp_HV_buf[jj];
-                val_arr[1] = phase_HV_buf[jj];
-                val_arr[2] = amp_VH_buf[jj];
-                val_arr[3] = phase_VH_buf[jj];
-                green_float_line[jj] = sinclair_green_cpx(val_arr, md->general->no_data);
-            }
-
-            // now VV into red, and HH into blue
-            get_float_line(fp, md, ii+HH_amp_channel*offset, blue_float_line);
-            get_float_line(fp, md, ii+VV_amp_channel*offset, red_float_line);
-          }
-          else { // sinclair && !is_complex
-            // temporary, load HV & VH into red & blue
-            get_float_line(fp, md, ii+HV_channel*offset, red_float_line);
-            get_float_line(fp, md, ii+VH_channel*offset, blue_float_line);
-
-            for (jj=0; jj<md->general->sample_count; ++jj) {
-                double val_arr[2];
-                val_arr[0] = red_float_line[jj]; // HV
-                val_arr[1] = blue_float_line[jj]; // VH
-                green_float_line[jj] = sinclair_green(val_arr, md->general->no_data);
-            }
-
-            // now VV into red, and HH into blue
-            get_float_line(fp, md, ii+HH_channel*offset, blue_float_line);
-            get_float_line(fp, md, ii+VV_channel*offset, red_float_line);
-          }
-
-          // write out as normal
-          if (format == TIF || format == GEOTIFF) {
-            if (sample_mapping == NONE)
-                write_rgb_tiff_float2float(otif, red_float_line, green_float_line,
-                                        blue_float_line, ii, sample_count);
-            else
-                write_rgb_tiff_float2byte(otif, red_float_line, green_float_line,
-                                        blue_float_line, red_stats, green_stats,
-                                        blue_stats, sample_mapping,
-                                        md->general->no_data, ii, sample_count);
-          } else if (format == JPEG) {
-            write_rgb_jpeg_float2byte(ojpeg, red_float_line, green_float_line,
-                                    blue_float_line, &cinfo, red_stats,
-                                    green_stats, blue_stats, sample_mapping,
-                                    md->general->no_data, sample_count);
-          } else if (format == PNG) {
-            write_rgb_png_float2byte(opng, red_float_line, green_float_line,
-                                    blue_float_line, png_ptr, png_info_ptr,
-                                    red_stats, green_stats, blue_stats,
-                                    sample_mapping, md->general->no_data,
-                                    sample_count);
-          } else {
-            asfPrintError("Impossible: unexpected format %d\n", format);
-          }
-      }
       else if (sample_mapping == NONE) {
         // Write float->float lines if float image
         if (!ignored[0])
@@ -1887,14 +1307,6 @@ export_band_image (const char *metadata_file_name,
     FREE(red_float_line);
     FREE(green_float_line);
     FREE(blue_float_line);
-    FREE(amp_HH_buf);
-    FREE(phase_HH_buf);
-    FREE(amp_VV_buf);
-    FREE(phase_VV_buf);
-    FREE(amp_HV_buf);
-    FREE(phase_HV_buf);
-    FREE(amp_VH_buf);
-    FREE(phase_VH_buf);
 
     // Finalize the chosen format
     if (format == TIF || format == GEOTIFF)
@@ -1968,10 +1380,20 @@ export_band_image (const char *metadata_file_name,
     *output_names = MALLOC(sizeof(char*) * band_count);
 
     int kk;
-    int is_polsarpro_band;
+    int is_colormap_band;
     for (kk=0; kk<band_count; kk++) {
       if (band_name[kk]) {
-        is_polsarpro_band = (strncmp(uc(band_name[kk]),"POLSARPRO", 9) == 0) ? 1 : 0;
+        is_colormap_band = FALSE;
+        // two ways we can be applying a colormap to this band:
+        //  (1) the metadata has an embedded colormap, and it's band_id
+        //      is this band.
+        //  (2) user used the "-lut" option -- we have the !md->colormap
+        //      here to avoid thinking we've got -lut when it was really
+        //      just the md->colormap (which sets have_look_up_table, above)
+        if ((md->colormap &&
+             strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
+            (have_look_up_table && !md->colormap))
+          is_colormap_band = TRUE;
 
         if (strcmp(band_name[0], MAGIC_UNSET_STRING) != 0)
           asfPrintStatus("Writing band '%s' ...\n", band_name[kk]);
@@ -1979,8 +1401,8 @@ export_band_image (const char *metadata_file_name,
         // Initialize the selected format
         // NOTE: For PolSARpro, the first band is amplitude and should be
         // written out as a single-band greyscale image while the second
-        // band is a classification and should be written out as color ...and for
-        // TIFF formats, as a palette color tiff
+        // band is a classification and should be written out as color ...
+        // and for TIFF formats, as a palette color tiff
         if (band_count > 1)
           append_band_ext(base_name, output_file_name, band_name[kk]);
         else
@@ -1989,29 +1411,26 @@ export_band_image (const char *metadata_file_name,
         if (format == TIF || format == GEOTIFF) {
           is_geotiff = (format == GEOTIFF && md->projection) ? 1 : 0;
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
-          if (is_polsarpro) {
-            int t_rgb = (is_polsarpro_band && (have_look_up_table || md->colormap != NULL)) ? 1 : 0;
+          if (is_colormap_band) {
             initialize_tiff_file(&otif, &ogtif, output_file_name,
-                       metadata_file_name, is_geotiff,
-                       (is_polsarpro_band) ? TRUNCATE : sample_mapping,
-                       t_rgb,
-                       &palette_color_tiff, band_name,
-                       (t_rgb) ? lut_file : NULL,
-                       is_polsarpro_band);
+                                 metadata_file_name, is_geotiff,
+                                 TRUNCATE, TRUE,
+                                 &palette_color_tiff, band_name,
+                                 lut_file, TRUE);
           }
           else {
             initialize_tiff_file(&otif, &ogtif, output_file_name,
                                  metadata_file_name, is_geotiff,
-                                 sample_mapping, rgb, &palette_color_tiff, band_name,
-                                 lut_file, is_polsarpro_band);
+                                 sample_mapping, rgb,
+                                 &palette_color_tiff, band_name,
+                                 lut_file, FALSE);
           }
         }
         else if (format == JPEG) {
           append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
-          if (is_polsarpro) {
+          if (is_colormap_band) {
             initialize_jpeg_file(output_file_name, md,
-                                 &ojpeg, &cinfo,
-                                 (is_polsarpro_band && have_look_up_table) ? 1 : 0);
+                                 &ojpeg, &cinfo, TRUE);
           }
           else {
             initialize_jpeg_file(output_file_name, md,
@@ -2020,10 +1439,9 @@ export_band_image (const char *metadata_file_name,
         }
         else if (format == PNG) {
           append_ext_if_needed (output_file_name, ".png", NULL);
-          if (is_polsarpro) {
+          if (is_colormap_band) {
             initialize_png_file(output_file_name, md,
-                                &opng, &png_ptr, &png_info_ptr,
-                                (is_polsarpro_band && have_look_up_table) ? 1 : 0);
+                                &opng, &png_ptr, &png_info_ptr, TRUE);
           }
           else {
             initialize_png_file(output_file_name, md,
@@ -2110,8 +1528,7 @@ export_band_image (const char *metadata_file_name,
         unsigned char *byte_line = MALLOC(sizeof(unsigned char) * sample_count);
 
         asfPrintStatus("\nWriting output file...\n");
-        if ((!is_polsarpro || (is_polsarpro && is_polsarpro_band)) &&
-             have_look_up_table && !palette_color_tiff)
+        if (is_colormap_band)
         { // Apply look up table
           for (ii=0; ii<md->general->line_count; ii++ ) {
             if (md->optical) {
@@ -2135,18 +1552,18 @@ export_band_image (const char *metadata_file_name,
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_float2lut(otif, float_line, stats,
-                                     (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                     is_colormap_band ? TRUNCATE : sample_mapping,
                                      md->general->no_data, ii, sample_count,
                                      lut_file);
               else if (format == JPEG)
                 write_jpeg_float2lut(ojpeg, float_line, &cinfo, stats,
-                                     (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                     is_colormap_band ? TRUNCATE : sample_mapping,
                                      md->general->no_data,
                                      sample_count, lut_file);
               else if (format == PNG)
                 write_png_float2lut(opng, float_line, png_ptr, png_info_ptr,
                                     stats,
-                                    (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                    is_colormap_band ? TRUNCATE : sample_mapping,
                                     md->general->no_data,
                                     sample_count, lut_file);
               else
@@ -2175,7 +1592,7 @@ export_band_image (const char *metadata_file_name,
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
-            else if (sample_mapping == NONE && !is_polsarpro_band) {
+            else if (sample_mapping == NONE && !is_colormap_band) {
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == GEOTIFF)
                 write_tiff_float2float(otif, float_line, ii);
@@ -2186,22 +1603,22 @@ export_band_image (const char *metadata_file_name,
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_float2byte(otif, float_line, stats,
-                                      (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                      is_colormap_band ? TRUNCATE : sample_mapping,
                                       md->general->no_data, ii, sample_count);
               else if (format == JPEG)
                 write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats,
-                                      (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                      is_colormap_band ? TRUNCATE : sample_mapping,
                                       md->general->no_data,
                                       sample_count);
               else if (format == PNG)
                 write_png_float2byte(opng, float_line, png_ptr, png_info_ptr,
                                      stats,
-                                     (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                     is_colormap_band ? TRUNCATE : sample_mapping,
                                      md->general->no_data,
                                      sample_count);
               else if (format == PGM)
                 write_pgm_float2byte(opgm, float_line, stats,
-                                     (is_polsarpro && is_polsarpro_band) ? TRUNCATE : sample_mapping,
+                                     is_colormap_band ? TRUNCATE : sample_mapping,
                                      md->general->no_data, sample_count);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);

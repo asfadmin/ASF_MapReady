@@ -2723,7 +2723,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 //            bands[1] = NULL;
 
             check_return(
-              asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0, 0, 0,
+              asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0,
                                lut_file, inFile, outFile, bands,
                                NULL, NULL),
               "exporting thumbnail (asf_export), using rgb look up table.\n");
@@ -2754,7 +2754,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 char **bands = find_bands(inFile, 1, red, green, blue, &n);
                 if (n > 0) {
                   check_return(
-                    asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
+                    asf_export_bands(format, scale, TRUE, 0, 0, NULL,
                                      tmpFile, outFile, bands, NULL, NULL),
                     "exporting thumbnail data file (asf_export), banded\n");
                   for (i=0; i<n; ++i)
@@ -2790,7 +2790,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     }
                     check_return(
                       asf_export_bands(format, NONE, TRUE,
-                                       true_color, false_color, 0, 0, NULL,
+                                       true_color, false_color, NULL,
                                        tmpFile, outFile, bands, NULL, NULL),
                       "exporting thumbnail (asf_export), color banded.\n");
                     for (i=0; i<meta->general->band_count; ++i)
@@ -2811,7 +2811,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     FREE(bands[i]); bands[i] = NULL;
                   }
                   check_return(
-                    asf_export_bands(format, scale, FALSE, 0, 0, 0, 0, NULL,
+                    asf_export_bands(format, scale, FALSE, 0, 0, NULL,
                                      tmpFile, outFile, bands, NULL, NULL),
                     "exporting thumbnail data file (asf_export)\n");
                   // strip off the band name at the end!
@@ -2921,7 +2921,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 //            bands[1] = NULL;
 
             check_return(
-                asf_export_bands(get_format(cfg), TRUNCATE, 1, 0, 0, 0, 0,
+                asf_export_bands(get_format(cfg), TRUNCATE, 1, 0, 0,
                                  "layover_mask.lut", inFile, outFile, bands,
                                  NULL, NULL),
                 "exporting layover mask (asf_export)\n");
@@ -3088,8 +3088,9 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 //      bands[1] = NULL;
 
       check_return(
-        asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0, 0, 0, lut_file,
-                         inFile, outFile, bands, &num_outputs, &output_names),
+        asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0,
+                         lut_file, inFile, outFile, bands, &num_outputs,
+                         &output_names),
         "exporting data file (asf_export), using rgb look up table.\n");
       int i;
       for (i=0; i<meta->general->band_count; i++) {
@@ -3114,7 +3115,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
                          "Green band: %s\n"
                          "Blue band : %s\n\n",
                          red, green, blue);
-          check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
+          check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
                                         inFile, outFile, bands, &num_outputs,
                                         &output_names),
                        "export data file (asf_export), banded.\n");
@@ -3181,7 +3182,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
             strcpy(bands[3], "");
           }
           check_return(asf_export_bands(format, SIGMA, TRUE,
-                                        true_color, false_color, 0, 0, NULL,
+                                        true_color, false_color, NULL,
                                         inFile, outFile, bands,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), color banded.\n");
@@ -3205,7 +3206,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
           asfPrintStatus("\nExporting %d bands as separate greyscale files...\n",
                          meta->general->band_count);
           check_return(asf_export_bands(format, scale, FALSE,
-                                        0, 0, 0, 0, NULL,
+                                        0, 0, NULL,
                                         inFile, outFile, NULL,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), greyscale bands.\n");
@@ -3221,7 +3222,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
             asfPrintError("Selected band for export not found.\n");
           }
           check_return(asf_export_bands(format, scale, FALSE,
-                                        0, 0, 0, 0, NULL,
+                                        0, 0, NULL,
                                         inFile, outFile, band_names,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), single selected greyscale band.\n");
@@ -3230,7 +3231,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         }
         else {
           // single band
-          check_return(asf_export_bands(format, scale, 0, 0, 0, 0, 0, NULL,
+          check_return(asf_export_bands(format, scale, 0, 0, 0, NULL,
                                         inFile, outFile, NULL,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), single band.\n");
