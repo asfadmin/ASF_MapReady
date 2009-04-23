@@ -21,7 +21,7 @@ void help()
 "Tool name:\n"
 "    %s\n\n"
 "Usage:\n"
-"    %s <outfile> <infile1> <infile2> ... \n\n"
+"    %s [-background <value>] <outfile> <infile1> <infile2> ... \n\n"
 "Description:\n"
 "    This program mosaics the input files together, producing an output image\n"
 "    that is the union of all listed input images.  Where the input images\n"
@@ -39,6 +39,9 @@ void help()
 "    in size from equal to the largest input image, to much larger than the\n"
 "    total size of all input images.\n\n"
 "Options:\n"
+"    -background <value> (-b)\n"
+"        Specifies a value to use for background pixels.  If not given, 0 is\n"
+"        used.\n"
 "    -help\n"
 "        Print this help information and exit.\n"
 "    -license\n"
@@ -53,8 +56,9 @@ void help()
 "    situation the process will be quite slow.\n\n"
 "    All input images MUST be in the same projection, with the same projection\n"
 "    parameters, and the same pixel size.\n\n"
+"    Does not handle multi-band images.\n\n"
 "See also:\n"
-"    asf_geocode\n\n"
+"    asf_mosaic, asf_geocode\n\n"
 "Contact:\n"
 "%s\n",
 ASF_NAME_STRING, ASF_NAME_STRING, ASF_NAME_STRING,
@@ -66,7 +70,7 @@ ASF_CONTACT_STRING);
 void usage()
 {
     printf("Usage:\n"
-           "    %s <outfile> <infile1> <infile2> ... \n\n"
+           "    %s [-background <value>] <outfile> <infile1> <infile2> ... \n\n"
            "At least 2 input files are required.\n", ASF_NAME_STRING);
     exit(1);
 }
@@ -368,6 +372,10 @@ int main(int argc, char *argv[])
         help();
     if (argc<3) usage();
 
+    double background_val=0;
+    extract_double_options(&argc, &argv, &background_val, "-background",
+                           "--background", "-b", NULL);
+
     char *outfile = argv[1];
     char **infiles = &argv[2];
     int n_inputs = argc - 2;
@@ -393,7 +401,11 @@ int main(int argc, char *argv[])
     asfPrintStatus("    Per X,Y: %.2f,%.2f\n", per_x, per_y);
 
     // float_image will handle cacheing of the large output image
-    FloatImage *out = float_image_new(size_x, size_y);
+    FloatImage *out;
+    if (background_val != 0)
+      out = float_image_new_with_value(size_x, size_y, (float)background_val);
+    else
+      out = float_image_new(size_x, size_y);
 
     // loop over the input images, last to first, so that the files listed
     // first have their pixels overwrite files listed later on the command line
