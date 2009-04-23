@@ -192,18 +192,17 @@ meta_parameters *meta_read_stf(const char *inFile)
 {
   bin_state *s;
   readPulseFunc readNextPulse;
-  char *baseName, tmpDir[1024], outFile[1024];
   char *inDataName, *inMetaName;
   int nTotal;
   float fd, fdd, fddd;
   meta_parameters *meta;
 
-  baseName = get_basename(inFile);
-  strcpy(tmpDir, baseName);
-  strcat(tmpDir, "-");
-  strcat(tmpDir, time_stamp_dir());
-  create_clean_dir(tmpDir);
-  sprintf(outFile, "%s/tmp.meta", tmpDir);
+  const char *dir = get_asf_tmp_dir();
+  char *suff = time_stamp_dir();
+  char *outFile = MALLOC(sizeof(char)*(strlen(dir)+strlen(suff)+64));
+  sprintf(outFile, "%s/temp_%s.meta", dir, suff);
+
+  char *baseName = stripExt(inFile);
   require_stf_pair(baseName, &inDataName, &inMetaName);
   s=convertMetadata_lz(inDataName, outFile, &nTotal, &readNextPulse);
   s->nLines = nTotal;
@@ -216,7 +215,23 @@ meta_parameters *meta_read_stf(const char *inFile)
 		  &meta->general->center_latitude,
 		  &meta->general->center_longitude);
   meta_get_corner_coords(meta);
-  remove_dir(tmpDir);
+
+  // clean up
+  remove_file(outFile);
+
+  char *fmt = appendExt(outFile, ".fmt");
+  remove_file(fmt);
+  free(fmt);
+
+  char *in = appendExt(outFile, ".in");
+  remove_file(in);
+  free(in);
+
+  free(outFile);
+  free(baseName);
+  free(inDataName);
+  free(inMetaName);
+  free(suff);
 
   return meta;
 }
