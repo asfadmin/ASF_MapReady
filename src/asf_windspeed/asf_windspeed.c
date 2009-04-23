@@ -583,12 +583,40 @@ int asf_windspeed(platform_type_t platform_type, char *band_id,
     double r_look = asf_r_look(imd);
     double phi_diff = wind_dir - r_look;
 
-    // Pre-populate incidence angles (as a function of sample)
+    // Pre-populate incidence angles (as a function of sample) and get min/max incidence angle
+    // as well
     int line, sample;
     double *incids = (double *)MALLOC(img->sample_count * sizeof(double));
+    double min_incid = DBL_MAX;
+    double max_incid = DBL_MIN;
     for (sample = 0; sample < img->sample_count; sample++) {
       incids[sample] = R2D * meta_incid(imd, img->line_count / 2, sample);
+      min_incid = (incids[sample] < min_incid) ? incids[sample] : min_incid;
+      max_incid = (incids[sample] > max_incid) ? incids[sample] : max_incid;
     }
+
+    // Get min/max radar cross-sections
+    asfPrintStatus("\nFinding min/max radar cross-sections...\n\n");
+    double rcs_min = DBL_MAX;
+    double rcs_max = DBL_MIN;
+    for (line = 0; line < img->line_count; line++) {
+      // Get a line
+      get_float_line(in, imd, line+offset, data);
+      for (sample = 0; sample < img->sample_count; sample++) {
+        if (meta_is_valid_double(data[sample]) && data[sample] >= 0.0) {
+          rcs_min = (data[sample] < rcs_min) ? data[sample] : rcs_min;
+          rcs_max = (data[sample] > rcs_max) ? data[sample] : rcs_max;
+        }
+      }
+      asfLineMeter(line, img->line_count);
+    }
+
+    // FIXME: Generate 2D array of windspeeds here.  One dimension is incidence angle and
+    // the other is radar cross-section.  The values in the table are wind speed as a function
+    // of incidence angle and radar cross-section (given the provided wind direction.)  The idea
+    // is to more-quickly populate a grid of results and then to interpolate results for each
+    // pixel of the image rather then perform the full calculation (very sloooow)
+
     double windspeed1 = 0.0, windspeed2 = 0.0;
     for (line = 0; line < img->line_count; line++) {
       // Get a line
@@ -669,8 +697,9 @@ int ll2rb(double lon_r, double lat_r,
          x2, y2, z2,
          x3, y3, z3;
 
-  double _lon_r = (lon_r < 0.0) ? lon_r + 360.0 : lon_r; // If lon 0 to 180, make 0-360 instead
-  double _lon_t = (lon_t < 0.0) ? lon_t + 360.0 : lon_t; // If lon 0 to 180, make 0-360 instead
+  // Fix for someone who passed in longitudes that go from -180 to +180 instead of 0-360
+  double _lon_r = (lon_r < 0.0) ? lon_r + 360.0 : lon_r;
+  double _lon_t = (lon_t < 0.0) ? lon_t + 360.0 : lon_t;
 
   if (lat_r  < -90.0 || lat_r >   90.0 ||
       lat_t  < -90.0 || lat_t >   90.0 ||
