@@ -122,8 +122,9 @@ int ismetadata(char *inFile)
     return isMetadata;
 }
 
-int isparfile(char *inFile)
+int isparfile(char *file)
 {
+  char *inFile = STRDUP(file);
   int isParfile=0;
   char *line=NULL, *s;
   FILE *fp = NULL;
@@ -153,6 +154,7 @@ int isparfile(char *inFile)
     }
   }
   FREE(line);
+  FREE(inFile);
   FCLOSE(fp);
   
   return isParfile;

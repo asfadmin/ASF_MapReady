@@ -37,6 +37,7 @@
    "        polygon   (ASF-style CSV text file describing a single polygon\n"\
    "                       (per file), use -help for more info)\n" \
    "        geotiff   (GeoTIFF file)\n\n" \
+   "        terrasar  (TerraSAR-X metadata file (.xml))\n\n" \
    "        csv       (Comma-separated value file)\n" \
    "        stf       (.PAR file for the Sky Telemetry Format)\n" \
    "\n"\
@@ -80,6 +81,9 @@
    "    geotiff          shape (polygon type)         Y\n" \
    "    geotiff          kml                          Y\n" \
    "    geotiff          text                         Y\n" \
+   "    terrasar         shape (polygon type)         Y\n" \
+   "    terrasar         kml                          Y\n" \
+   "    terrasar         text                         Y\n" \
    "    csv              shape (polygon or point)     Y\n" \
    "    csv              kml                          Y\n" \
    "    csv              text                    Not required\n" \
@@ -102,6 +106,7 @@
    "     leader: CEOS format leader data file (.L, LED-, etc)\n" \
    "     shape: shapes defined in a standard ESRI-type shapefile\n"\
    "     geotiff: a map-projected GeoTIFF (.tif) file\n"\
+   "     terrasar: TerraSAR-X metadata file (.xml)\n"\
    "     csv: a text comma-separated value file\n" \
    "     stf: Sky Telemetry Fromat metadata file\n" \
    "\n"\

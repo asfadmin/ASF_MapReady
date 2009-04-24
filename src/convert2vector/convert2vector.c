@@ -20,6 +20,19 @@ static int iscsv(char *file)
   }
 }
 
+static int isxmlfile(char *file)
+{
+  char *ext = findExt(file);
+  if (!ext) {
+    char *xmlfile = appendExt(file, ".xml");
+    int ret = fileExists(xmlfile);
+    free(xmlfile);
+    return ret;
+  } else {
+    return strcmp_case(ext,".xml")==0;
+  }
+}
+
 int main(int argc, char **argv)
 {
   char informat_str[25], outformat_str[25], *inFile, *outFile;
@@ -194,22 +207,42 @@ int main(int argc, char **argv)
   if (!inputFormatFlag) {
     // If the input format option was not used, try to determine the input 
     // format from the file itself
-    if (ismetadata(inFile))
+    if (ismetadata(inFile)) {
       inFormat = META;
-    else if (isleader(inFile))
+      strcpy(informat_str, "meta");
+    }
+    else if (isleader(inFile)) {
       inFormat = LEADER;
-    else if (ispoint(inFile))
+      strcpy(informat_str, "leader");
+    }
+    else if (ispoint(inFile)) {
       inFormat = POINT;
-    else if (ispolygon(inFile))
+      strcpy(informat_str, "point");
+    }
+    else if (ispolygon(inFile)) {
       inFormat = POLYGON;
-    else if (isshape(inFile))
+      strcpy(informat_str, "polygon");
+    }
+    else if (isshape(inFile)) {
       inFormat = SHAPEFILE;
-    else if (isgeotiff(inFile))
+      strcpy(informat_str, "shape");
+    }
+    else if (isgeotiff(inFile)) {
       inFormat = GEOTIFF_META;
-    else if (iscsv(inFile))
+      strcpy(informat_str, "geotiff");
+    }
+    else if (iscsv(inFile)) {
       inFormat = CSV;
-    else if (isparfile(inFile))
+      strcpy(informat_str, "csv");
+    }
+    else if (isxmlfile(inFile)) {
+      inFormat = TERRASAR_META;
+      strcpy(informat_str, "terrasar");
+    }
+    else if (isparfile(inFile)) {
       inFormat = STF_META;
+      strcpy(informat_str, "stf");
+    }
     else 
       asfPrintError("Could not automatically determine input file format "
 		    "for %s.\nPlease use the -input-format option to "
