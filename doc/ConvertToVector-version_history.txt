@@ -1,6 +1,6 @@
 Convert To Vector Version History
 
-Convert to Vector 2.2.2 (released 2009 April 17)
+Convert to Vector 2.2.3 (released 2009 April 23)
 New Features
 * Ability to convert STF/Level 0 CEOS Files
 
