@@ -903,7 +903,11 @@ int match_dem(meta_parameters *metaSAR,
 "     amplitude band to your data, which generally terrain corrects\n"
 "     succesfully.  The same offsets and other terrain correction\n"
 "     transformations are then applied to the data with the troublesome\n"
-"     radiometry.  (The MapReady GUI will do this automatically.)\n",
+"     radiometry.  (The MapReady GUI will do this automatically.)\n\n"
+" (6) If all else fails, you can specify an average height for the\n"
+"     scene during geocoding, and skip terrain correction.  This will\n"
+"     give good accuracy for points near the average height, and so\n"
+"     for fairly flat areas this may be adequate.\n\n",
                       dx, dy, dx2, dy2);
       }
     }
