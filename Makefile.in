@@ -59,6 +59,7 @@ MAPREADY_MODULES = \
 	src/sgpsdp \
 	src/plan \
 	src/brs2jpg \
+	src/sample_plugin \
 	src/convert2vector_gui \
 	@ASF_GUI@
 
