@@ -299,7 +299,9 @@ static float get_data(ImageInfo *ii, int what_to_save, int line, int samp)
 }
 
 static meta_parameters *build_metadata(meta_parameters *meta,
-    const char *out_file, int nl, int ns, int line_min, int samp_min)
+                                       const char *out_file, int nl, int ns,
+                                       int line_min, int samp_min,
+                                       data_type_t data_type)
 {
     meta_parameters *out_meta = meta_copy(meta);
     if (out_meta->sar) {
@@ -310,7 +312,7 @@ static meta_parameters *build_metadata(meta_parameters *meta,
     }
     out_meta->general->line_count = nl;
     out_meta->general->sample_count = ns;
-    out_meta->general->data_type = REAL32; //should we really do this?
+    out_meta->general->data_type = data_type;
     out_meta->general->image_data_type = IMAGE;
     out_meta->general->band_count = 1;
     out_meta->general->start_line += line_min;
@@ -397,8 +399,14 @@ static int save_as_asf(ImageInfo *ii,
     char *out_metaname = appendExt(out_file, ".meta");
     printf("Generating %s...\n", out_metaname);
 
+    // data will be saved as floating point, except scaled pixel values,
+    // which we can make bytes.
+    data_type_t data_type = REAL32;
+    if (what_to_save == SCALED_PIXEL_VALUE)
+      data_type = BYTE;
+
     meta_parameters *out_meta =
-        build_metadata(meta, out_file, nl, ns, line_min, samp_min);
+      build_metadata(meta, out_file, nl, ns, line_min, samp_min, data_type);
 
     if (what_to_save == LAT_LON_2_BAND) {
       out_meta->general->band_count = 2;
