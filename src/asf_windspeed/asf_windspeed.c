@@ -1,6 +1,51 @@
 #include <asf_contact.h>
 #include <asf_license.h>
 
+/*
+ *  Status: PROJECT HALTED ON 22-APRIL-2009 BY OFFICIAL DECREE FROM SCOTT ARKO
+ *
+ *  Remaining To-Dos for Minimum Test and Validation:
+ *  - The program does not provide good output yet.  Images are blank and filled with
+ *    a single greyscale value
+ *  - The program does not yet insert a colortable into the output metadata file yet.
+ *    The output metadata should have a IDL Colormap #33 inserted into it (Google it)
+ *  - A single typical RADARSAT-1 image takes a very long time to run, something around
+ *    half an hour with current speed-ups.  MORE speed-up is needed.  The solution is to
+ *    calculate windspeeds for a set of radar cross-sections that span min to max for the
+ *    image, across a set of incidence angles that span min to max for the image.  This
+ *    will effectively produce a 2D grid of windspeed values into which we can bilinearly
+ *    interpolate output pixel windspeeds (as a function of each pixel's incidence angle
+ *    and cross-section.)  The code below finds the min/max incidence angle and cross-section
+ *    but does not yet create the interpolation table nor has the code for quickly determining
+ *    proper indices into the table (for the interpolation) exist yet.
+ *  => ALL RESULTS NEED TO BE VALIDATED AGAINST RESULTS FROM FRANK MONALDO'S IDL CODE
+ *
+ *  To-Dos for Producing a Full-Featured Wind Speed Utility:
+ *  - The current rendition only supports RSAT1 using the CMOD5 algorithm, both HH and VV
+ *    poloarizations.  All other platforms supported by Frank Monaldo's IDL version need to
+ *    be added: ERSx, PALSAR, TERRASAR-X.
+ *  - In support of the item above, the XMOD and LMOD algorithms need to be ported from IDL
+ *    into C as well.
+ *  - For the -cmod4 flag, the CMOD4 algorithm needs to be ported to C as well so it can
+ *    be used for C-band data.
+ *  - As of right now, there is no land mask support.  Wind speed values will be calculated
+ *    for land mass pixels as well as over water, but the results over the land regions
+ *    will be meaningless.  The program needs to be able to utilize an externally generated
+ *    land mask file much as asf_terrcorr utilizes an externally generated water mask, so
+ *    it can avoid processing over land (faster too.)  COMPLICATING FACTORS: Either include
+ *    the original land data and add complexity to the application of a colormap, OR fill
+ *    the land regions with no-data values.  It would be nice to have the results in a
+ *    graphics file format with the water regions colored according to the colormap, but
+ *    the original land region data displayed in greyscale.  I will leave these decisions
+ *    and complexities to whoever picks up this task in the future ...if anyone ever does.
+ *  - There is no reason that a DEM cannot be provided, and maybe a water height, for the
+ *    purpose of automatically generating a land mask during processing.  See the -dem
+ *    option below.
+ *  => ALL RESULTS NEED TO BE VALIDATED AGAINST RESULTS FROM FRANK MONALDO'S IDL CODE
+ *
+ *  'Good luck with that!' and 'So long and thanks for all the fish!'
+ */
+
 // Defaults
 #define DEFAULT_LANDMASK_HEIGHT "1.0"
 #define DEFAULT_HH_POL_ALPHA 0.6
