@@ -261,8 +261,6 @@ int extract_double_options(int *argc, char **argv[], double *val, ... )
     char * arg = NULL;
     int found = FALSE;
     
-    *val = MAGIC_UNSET_DOUBLE;
-
     va_start(ap, val);
     do
     {
@@ -346,8 +344,6 @@ int extract_int_options(int *argc, char **argv[], int *val, ... )
     char * arg = NULL;
     int found = FALSE;
     
-    *val = MAGIC_UNSET_INT;
-
     va_start(ap, val);
     do
     {
@@ -427,8 +423,6 @@ int extract_string_options(int *argc, char **argv[], char *val, ... )
   va_list ap;
   char * arg = NULL;
   int found = FALSE;
-
-  *val = '\0';
 
   va_start(ap, val);
   do
