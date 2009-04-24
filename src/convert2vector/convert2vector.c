@@ -287,6 +287,12 @@ int main(int argc, char **argv)
       asfPrintError("   Unsupported output format (%s)\n", uc(outformat_str));
   }
 
+  // Set output directory as the temporary directory -- where all temp files
+  // created during import should be put
+  char *tmpdir = get_dirname(outFile);
+  if (tmpdir && strlen(tmpdir) > 0)
+    set_asf_tmp_dir(tmpdir);
+
   if (testFlag)
     test_c2v(inFile, informat_str, outFile, outformat_str);
   else
