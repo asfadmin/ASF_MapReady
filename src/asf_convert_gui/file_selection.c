@@ -518,27 +518,21 @@ static void do_browse(const char *title, const char *entry_to_populate,
 
     of.hwndOwner = NULL;
 
-    char filters[512];
-    filters[0]='\0';
-
-    if (filts & ALL_CEOS_DATA_FILT)
-      strcat(filters, "All CEOS Level 1 Files\0*.D;IMG-*\0");
-    if (filts & ALL_CEOS_LEADER_FILT)
-      strcat(filters, "CEOS Level 1 Files\0*.L;LED-*\0");
-    if (filts & D_FILT)
-      strcat(filters, "RSAT/ERS CEOS L1\0*.D\0");
-    if (filts & L_FILT)
-      strcat(filters, "RSAT/ERS CEOS L1\0*.L\0");
-    if (filts & LED_FILT)
-      strcat(filters, "ALOS Leader Files\0LED-*\0");
-    if (filts & IMG_FILT)
-      strcat(filters, "ALOS Leader Files\0IMG-*\0");
-    if (filts & BIN_FILT)
-      strcat(filters, "PolSARpro Classification Files\0*.bin\0");
-    if (filts & HDR_FILT)
-      strcat(filters, "PolSARpro Header Files\0*.hdr\0");
-    strcat(filters, "All Files\0*\0");
-    of.lpstrCustomFilter = filters;
+    if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT)) {
+      of.lpstrFilter = 
+        "CEOS Level 1 Files\0*.L;LED-*\0"
+        "RSAT/ERS CEOS L1\0*.L\0"
+        "ALOS Leader Files\0LED-*\0"
+        "All Files\0*\0";
+    }
+    else if (filts == BIN_FILT) {
+      of.lpstrFilter =
+        "PolSARpro Classification Files\0*.bin\0"
+        "All Files\0*\0";
+    }
+    else {
+      of.lpstrFilter = "All Files\0*\0";
+    }
 
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;
