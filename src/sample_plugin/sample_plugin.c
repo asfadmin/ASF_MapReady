@@ -1,5 +1,31 @@
 #include "asf_meta.h"
 
+//
+// This is a very simple program that illustrates how a person might write
+// a "plugin" for the MapReady GUI.  (I.e., an item in the dropdown list on
+// the "External" tab.)
+//
+// Hopefully there is enough here to serve as a starting point for writing
+// your own tools that can be used by MapReady.  All plugins run after
+// import, but before any additional processing starts (such as terrain
+// correction or geocoding).
+//
+// This program just adds a given offset to all pixels in an image, producing
+// an output image.  To add this to the GUI, you would need to modify the
+// "plugins.cfg" file in the MapReady directory (asf_convert_gui).  Add
+// lines like the following:
+//
+// Name=Sample
+// Command=sample_plugin -log {Log} -offset $P1 {Input} {Output}
+// Comment=Adds the given offset to all pixels in the image.
+// P1=double,required,"%f","Offset"
+//
+// This sample actually has the offset as optional, however there isn't
+// much point in that (adds 0 to all pixels, leaving the output exactly
+// the same as the input), so we can mark the offset value as required. 
+//
+
+
 void usage()
 {
   printf("sample_plugin [-offset <offset>] <input_file> <output_file>\n");
