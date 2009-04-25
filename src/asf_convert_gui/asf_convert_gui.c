@@ -32,10 +32,14 @@ static int my_strcmp(const void *v1, const void *v2)
   return strcmp_case(*s1, *s2);
 }
 
+// Populate both the drop-down on the import tab and within the file browse dialog
 void populate_polsarpro_classification_optionmenu()
 {
+  // Set up the menus (one on the import tab, the other on the input file browse dialog
   GtkWidget *menu = NULL;
+  GtkWidget *browse_menu = NULL;
   GtkWidget *option_menu = get_widget_checked("polsarpro_classification_optionmenu");
+  GtkWidget *browse_option_menu = get_widget_checked("browse_select_colormap_optionmenu");
   if (option_menu) {
     menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(option_menu));
     if (menu) {
@@ -43,14 +47,27 @@ void populate_polsarpro_classification_optionmenu()
     }
   }
   menu = gtk_menu_new();
+  if (browse_option_menu) {
+    browse_menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(browse_option_menu));
+    if (browse_menu) {
+      gtk_option_menu_remove_menu(GTK_OPTION_MENU(browse_option_menu));
+    }
+  }
+  browse_menu = gtk_menu_new();
 
   GtkWidget *item = gtk_menu_item_new_with_label("None");
   gtk_menu_append(GTK_MENU(menu), item);
   gtk_widget_show(item);
+  GtkWidget *browse_item = gtk_menu_item_new_with_label("None");
+  gtk_menu_append(GTK_MENU(browse_menu), browse_item);
+  gtk_widget_show(browse_item);
 
   item = gtk_separator_menu_item_new();
   gtk_menu_append(GTK_MENU(menu), item);
   gtk_widget_show(item);
+  browse_item = gtk_separator_menu_item_new();
+  gtk_menu_append(GTK_MENU(browse_menu), browse_item);
+  gtk_widget_show(browse_item);
 
   char lut_loc[1024];
   sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
@@ -85,13 +102,18 @@ void populate_polsarpro_classification_optionmenu()
     // alphabetize
     qsort(names, n, sizeof(char*), my_strcmp);
 
-    // now populate the menu
+    // now populate the menus
     for (i=0; i<n; ++i) {
       item = gtk_menu_item_new_with_label(names[i]);
+      browse_item = gtk_menu_item_new_with_label(names[i]);
       g_object_set_data(G_OBJECT(item), "file", (gpointer)names[i]);
       g_object_set_data(G_OBJECT(item), "index", GUINT_TO_POINTER(i+2));
+      g_object_set_data(G_OBJECT(browse_item), "file", (gpointer)names[i]);
+      g_object_set_data(G_OBJECT(browse_item), "index", GUINT_TO_POINTER(i+2));
       gtk_menu_append(GTK_MENU(menu), item);
+      gtk_menu_append(GTK_MENU(browse_menu), browse_item);
       gtk_widget_show(item);
+      gtk_widget_show(browse_item);
       g_hash_table_insert(g_polsarpro_classification_optionmenu_ht,
                           (gpointer)g_strdup(names[i]),
                            GUINT_TO_POINTER(i+2));
@@ -99,13 +121,17 @@ void populate_polsarpro_classification_optionmenu()
   }
 
   option_menu = get_widget_checked("polsarpro_classification_optionmenu");
+  browse_option_menu = get_widget_checked("browse_select_colormap_optionmenu");
 
   gtk_option_menu_set_menu(GTK_OPTION_MENU(option_menu), menu);
   gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), 0);
-//  set_current_index(0);
+  gtk_option_menu_set_menu(GTK_OPTION_MENU(browse_option_menu), browse_menu);
+  gtk_option_menu_set_history(GTK_OPTION_MENU(browse_option_menu), 0);
 
   gtk_widget_show(menu);
   gtk_widget_show(option_menu);
+  gtk_widget_show(browse_menu);
+  gtk_widget_show(browse_option_menu);
 }
 
 int
@@ -195,8 +221,12 @@ main(int argc, char **argv)
     widget = get_widget_checked("resample_option_menu");
     set_combo_box_item(widget, RESAMPLE_BILINEAR);
 
+    // Populate the colormap drop-downs on both the import tab and in the
+    // browse dialog
     populate_polsarpro_classification_optionmenu();
     widget = get_widget_checked("polsarpro_classification_optionmenu");
+    gtk_option_menu_set_history(GTK_OPTION_MENU(widget), 0);
+    widget = get_widget_checked("browse_select_colormap_optionmenu");
     gtk_option_menu_set_history(GTK_OPTION_MENU(widget), 0);
 
     widget = get_widget_checked("output_format_combobox");
@@ -261,6 +291,19 @@ main(int argc, char **argv)
     gtk_label_set_attributes(GTK_LABEL(widget), attrs);
     gtk_label_set_text(GTK_LABEL(widget), text);
     font_desc = pango_font_description_from_string("Sans 12");
+    gtk_widget_modify_font(widget, font_desc);
+
+    // Add pango-marked up text to colormap selection combobox on
+    // browse dialog
+    widget = get_widget_checked("browse_select_colormap_note_label");
+    str = gtitle;
+    strcpy(gtitle,
+           "<b>  <i>NOTE:</i> Selected PolSARpro classification colormap "
+           "will apply to <i>all</i> PolSARpro images</b>");
+    pango_parse_markup(str, -1, 0, &attrs, &text, NULL, NULL);
+    gtk_label_set_attributes(GTK_LABEL(widget), attrs);
+    gtk_label_set_text(GTK_LABEL(widget), text);
+    font_desc = pango_font_description_from_string("Sans 8");
     gtk_widget_modify_font(widget, font_desc);
 
     /* fire handlers for hiding/showing stuff */
@@ -351,5 +394,8 @@ void select_polsarpro_classification_lut(const char *lut_basename)
 
   GtkWidget *option_menu =
       get_widget_checked("polsarpro_classification_optionmenu");
+  gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
+  option_menu =
+      get_widget_checked("browse_select_colormap_optionmenu");
   gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
 }

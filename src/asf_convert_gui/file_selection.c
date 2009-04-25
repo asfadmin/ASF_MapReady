@@ -30,7 +30,6 @@
 #define FORMAT_GEOTIFF 5
 #define FORMAT_ASF_INTERNAL 6
 
-
 #ifdef USE_GTK_FILE_CHOOSER
 static GtkWidget *browse_widget = NULL;
 
@@ -146,7 +145,7 @@ static void create_file_chooser_dialog(int selected)
       gtk_file_filter_add_pattern(alos_filt, "LED-*");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
     }
-      
+
     if (selected==FORMAT_GEOTIFF) {
       GtkFileFilter *geotiff_filt = gtk_file_filter_new();
       gtk_file_filter_set_name(geotiff_filt, "GeoTIFF Files (*.tif)");
@@ -218,6 +217,10 @@ SIGNAL_CALLBACK void
 on_browse_input_files_button_clicked(GtkWidget *widget)
 {
   GtkWidget *combo = get_widget_checked("browse_format_combobox");
+  GtkWidget *browse_select_colormap_optionmenu =
+      get_widget_checked("browse_select_colormap_optionmenu");
+  GtkWidget *browse_select_colormap_label =
+      get_widget_checked("browse_select_colormap_label");
   int sel = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
 
   // open the "add with ancillary" if needed, otherwise we'll use the
@@ -231,6 +234,9 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         break;
       case FORMAT_POLSARPRO:
         put_string_to_label("add_with_ancillary_format_label", "PolSARPro");
+        gtk_widget_show(browse_select_colormap_optionmenu);
+        gtk_widget_show(browse_select_colormap_label);
+//        set_show_polsarpro_optionmenu(TRUE);
         break;
       default:
         put_string_to_label("add_with_ancillary_format_label", "Unknown");
@@ -471,7 +477,7 @@ static void do_browse_ok_clicked(gpointer button)
 
   GSList *files = gtk_file_chooser_get_filenames(
     GTK_FILE_CHOOSER(browse_widget));
-    
+
   // done with this, now
   gtk_widget_destroy(browse_widget);
 
