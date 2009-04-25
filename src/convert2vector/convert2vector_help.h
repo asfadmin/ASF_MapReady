@@ -36,8 +36,8 @@
    "                       use -help for more info)\n" \
    "        polygon   (ASF-style CSV text file describing a single polygon\n"\
    "                       (per file), use -help for more info)\n" \
-   "        geotiff   (GeoTIFF file)\n\n" \
-   "        terrasar  (TerraSAR-X metadata file (.xml))\n\n" \
+   "        geotiff   (GeoTIFF file)\n" \
+   "        terrasar  (TerraSAR-X metadata file (.xml))\n" \
    "        csv       (Comma-separated value file)\n" \
    "        stf       (.PAR file for the Sky Telemetry Format)\n" \
    "\n"\
