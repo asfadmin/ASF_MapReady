@@ -1293,8 +1293,6 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                          1, /*rgb - must be true if true-color or false-color is set*/
                          0, /*true_color*/
                          1, /*false_color*/
-                         0, /*pauli*/
-                         0, /*sinclair*/
                          "", /*look_up_table_name*/
                          in_file,
                          export_path,
@@ -1314,8 +1312,6 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                         0, /*rgb*/
                         0, /*true_color*/
                         0, /*false_color*/
-                        0, /*pauli*/
-                        0, /*sinclair*/
                         lut_file, /*look_up_table_name*/
                         in_file,
                         export_path,
