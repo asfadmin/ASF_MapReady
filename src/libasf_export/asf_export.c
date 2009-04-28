@@ -93,18 +93,22 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                         &nouts, &outs);
   }
   else if ( format == PGM ) {
-      if (rgb || true_color || false_color) {
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      meta_parameters *md = meta_read(in_meta_name);
+      int is_polsarpro = (md->general->bands && strstr(md->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+      meta_free(md);
+      if (rgb || true_color || false_color || is_polsarpro) {
           asfPrintWarning(
             "Greyscale PGM output is not compatible with color options:\n"
-            "(RGB, True Color, False Color, color look-up tables, etc.)  ...\n"
+            "(RGB, True Color, False Color, color look-up tables, PolSARpro\n"
+            "classifications, etc)  ...\n"
             "Defaulting to producing separate greyscale PGM files for "
             "available bands.\n");
         rgb = 0;
         true_color = 0;
         false_color = 0;
       }
-      in_data_name = appendExt(in_base_name, ".img");
-      in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
       append_ext_if_needed(out_name, ".pgm", NULL);

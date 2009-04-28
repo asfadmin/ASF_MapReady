@@ -1566,6 +1566,10 @@ export_band_image (const char *metadata_file_name,
                                     is_colormap_band ? TRUNCATE : sample_mapping,
                                     md->general->no_data,
                                     sample_count, lut_file);
+              else if (format == PGM) // Can't put color in a PGM file, so map it...
+                write_pgm_float2byte(opgm, float_line, stats,
+                                     is_colormap_band ? TRUNCATE : sample_mapping,
+                                     md->general->no_data, sample_count);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
