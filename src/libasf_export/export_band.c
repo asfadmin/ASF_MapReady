@@ -1042,6 +1042,28 @@ export_band_image (const char *metadata_file_name,
         }
     }
 
+    red_channel = get_band_number(md->general->bands,
+                                  md->general->band_count,
+                                  band_name[0]);
+    if (!ignored[0] && !(red_channel >= 0 && red_channel < MAX_BANDS)) {
+      asfPrintError("Band number (%d) out of range for %s channel.\n",
+                    red_channel, "red");
+    }
+    green_channel = get_band_number(md->general->bands,
+                                    md->general->band_count,
+                                    band_name[1]);
+    if (!ignored[1] && !(green_channel >= 0 && green_channel < MAX_BANDS)) {
+      asfPrintError("Band number (%d) out of range for %s channel.\n",
+                    green_channel, "green");
+    }
+    blue_channel = get_band_number(md->general->bands,
+                                   md->general->band_count,
+                                   band_name[2]);
+    if (!ignored[2] && !(blue_channel >= 0 && blue_channel < MAX_BANDS)) {
+      asfPrintError("Band number (%d) out of range for %s channel.\n",
+                    blue_channel, "blue");
+    }
+
     float *red_float_line = NULL;
     float *green_float_line = NULL;
     float *blue_float_line = NULL;
