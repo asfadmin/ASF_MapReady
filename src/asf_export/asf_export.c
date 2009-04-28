@@ -18,15 +18,15 @@ following defines.
 #define ASF_DESCRIPTION_STRING \
 "   This program ingests ASF internal format data and exports said data to a\n"\
 "   number of graphics file formats (TIFF/GEOTIFF, JPEG, PGM, and PNG). If the\n"\
-"   input data was geocoded and the ouput format supports geocoding, that information\n"\
-"   will be included.  Optionally, you may apply look-up tables, assign color bands (-rgb,\n"\
-"   -truecolor, -falsecolor).\n"
+"   input data was geocoded and the ouput format supports geocoding, that\n"\
+"   information will be included.  Optionally, you may apply look-up tables,\n"\
+"   assign color bands (-rgb, -truecolor, -falsecolor).\n"
 
 #define ASF_INPUT_STRING \
 "   A file set in the ASF internal data format.\n"
 
 #define ASF_OUTPUT_STRING \
-"   The converted data in the output file.\n"
+"   The converted data in the output file, with the requested format.\n"
 
 #define ASF_OPTIONS_STRING \
 "   -format <format>\n"\
@@ -36,18 +36,19 @@ following defines.
 "            jpeg    - Lossy compressed image, with byte valued pixels\n"\
 "            pgm     - Portable graymap image, with byte valued pixels\n"\
 "            png     - Portable network graphic, with byte valued pixels\n\n"\
-"   NOTE: When exporting to a GeoTIFF format file, all map-projection information\n"\
-"         is included in GeoKeys as specified in the GeoTIFF standard.  The other\n"\
-"         graphics file formats do not support the storing of map-projection parameters\n"\
-"         in the output file.  If you wish to maintain the map-projection and/or\n"\
-"         georeference (corner point) information in the output, you should choose the\n"\
-"         GeoTIFF output format.\n\n"\
-"   NOTE: When exporting to a GeoTIFF format file, the data format (floating point,\n"\
-"         byte, 16-bit integer, etc) will be maintained.  Many viewers cannot view\n"\
-"         non-integer data.  Leaving the data format the same as the original produces\n"\
-"         the most accurate export, but remapping it to byte range (0-255) with the -byte\n"\
-"         option will result in the greatest compatibility with viewers and GIS software\n"\
-"         packages.\n\n"\
+"   NOTE: When exporting to a GeoTIFF format file, all map-projection\n"\
+"         information is included in GeoKeys as specified in the GeoTIFF\n"\
+"         standard.  The other graphics file formats do not support the\n"\
+"         storing of map-projection parameters in the output file.  If you\n"\
+"         wish to maintain the map-projection and/or georeference (corner\n"\
+"         point) information in the output, you should choose the GeoTIFF\n"\
+"         output format.\n\n"\
+"   NOTE: When exporting to a GeoTIFF format file, the data format (floating\n"\
+"         point, byte, 16-bit integer, etc) will be maintained.  Many viewers\n"\
+"         cannot view non-integer data.  Leaving the data format the same as\n"\
+"         the original produces the most accurate export, but remapping it to\n"\
+"         byte range (0-255) with the -byte option will result in the greatest\n"\
+"         compatibility with viewers and GIS software packages.\n\n"\
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
 "            truncate\n"\
@@ -58,31 +59,35 @@ following defines.
 "            minmax\n"\
 "                determines the minimum and maximum values of the input image\n"\
 "                and linearly maps those values to the byte range of 0 to 255.\n"\
-"                The remapping is accomplished using real (floating point) numbers\n"\
-"                then the result is converted to a whole number by truncating the\n"\
-"                fractional part.\n"\
+"                The remapping is accomplished using real (floating point)\n"\
+"                numbers then the result is converted to a whole number by\n"\
+"                truncating the fractional part.\n"\
 "            sigma\n"\
 "                determines the mean and standard deviation of an image and\n"\
-"                definess a range of 2 sigma around the mean value, and maps\n"\
-"                this buffer to the byte range 0 to 255 as described for minmax\n"\
-"                above.  The range limits are adjusted if the either of the 2 sigma\n"\
-"                range limits lie outside the range of the original values.  As with\n"\
-"                the other remapping methods, the calculation of values are made with\n"\
-"                real numbers and the result converted to a whole number by truncating\n"\
+"                defines a range of +/- two standard deviations (2-sigma)\n"\
+"                around the mean value, and maps this buffer to the byte range\n"\
+"                0 to 255 as described for minmax above.  The range limits are\n"\
+"                adjusted if the either of the 2-sigma range limits lie outside\n"\
+"                the range of the original values.  As with the other remapping\n"\
+"                methods, the calculation of values are made with real numbers\n"\
+"                and the result is converted to a whole number by truncating\n"\
 "                any fractional part.\n"\
 "            histogram_equalize\n"\
-"                develops a look-up table by integrating the (no-adaptation) whole-image\n"\
-"                histogram and then normalizing the result to the 0-255 range.  The result\n"\
-"                is that areas of low contrast, i.e. flat topography, have a stronger\n"\
-"                contrast expansion applied while areas of high contrast, i.e. non-flat\n"\
-"                topography, will receive less contrast expansion.  Histogram equalization\n"\
-"                is a useful transform for making hard-to-see detail more visible for the\n"\
-"                the viewer but is likewise a nonlinear transform that results in minor\n"\
-"                (apparent) topography shifts within the image.  Since shifts occur the most\n"\
-"                in areas where the contrast is expanded the most, i.e. flat topography, and\n"\
-"                less in areas of more interesting topography, the pragmatic conclusion is that\n"\
-"                the nonlinear shifts are quite insignificant for the majority of users ...only\n"\
-"                important if performing precision geography measurements or overlays.\n"\
+"                develops a look-up table by integrating the (no-adaptation)\n"\
+"                whole-image histogram and then normalizing the result to the\n"\
+"                0-255 range.  The result is that areas of low contrast, i.e.\n"\
+"                flat topography, have a stronger contrast expansion applied\n"\
+"                while areas of high contrast, i.e. non-flat topography, will\n"\
+"                receive less contrast expansion.  Histogram equalization\n"\
+"                is a useful transform for making hard-to-see detail more\n"\
+"                visible for the the viewer but is likewise a nonlinear\n"\
+"                transform that results in minor (apparent) topography shifts\n"\
+"                within the image.  Since shifts occur the most in areas where\n"\
+"                the contrast is expanded the most, i.e. flat topography, and\n"\
+"                less in areas of more interesting topography, the pragmatic\n"\
+"                conclusion is that the nonlinear shifts are quite\n"\
+"                insignificant for the majority of users ...only important\n"\
+"                if performing precision geography measurements or overlays.\n"\
 "   -rgb <red> <green> <blue>\n"\
 "        Converts output image into a color RGB image.\n"\
 "        <red>, <green>, and <blue> specify which band (channel)\n"\
@@ -107,24 +112,26 @@ following defines.
 "        For 3 or 4 band optical satellite images where the first band is the\n"\
 "        the blue band, the second green, and the third red.  This option will\n"\
 "        export the third band as the red element, the second band as the green\n"\
-"        element, and the first band as the blue element.  Performs a 2-sigma constrast\n"\
-"        expansion on each individual band during the export (similar to most GIS\n"\
-"        software packages.)  To export a true-color image WITHOUT the contrast\n"\
-"        expansion associated with the truecolor option, use the -rgb option instead.\n"\
-"        The rgb option will directly assign the available bands, unaltered, to the\n"\
-"        RGB color channels in the output file, e.g.\n\n"\
+"        element, and the first band as the blue element.  Performs a 2-sigma\n"\
+"        constrast expansion on each individual band during the export (similar\n"\
+"        to most GIS software packages.)  To export a true-color image WITHOUT\n"\
+"        the contrast expansion associated with the truecolor option, use the\n"\
+"        -rgb option instead.  The rgb option will directly assign the\n"\
+"        available bands, unaltered, to the RGB color channels in the output\n"\
+"        file, e.g.\n\n"\
 "          'asf_export -rgb 03 02 01 <infile> <outfile>'.\n\n"\
 "        Only allowed for multi-band images with 3 or more bands.\n"\
-"        The truecolor option cannot be used together with any of the following options:\n"\
-"        -rgb, -band, or -falsecolor.\n"\
+"        The truecolor option cannot be used together with any of the\n"\
+"        following options: -rgb, -band, or -falsecolor.\n"\
 "   -falsecolor\n"\
-"        For 4 band optical satellite images where the second band is green, the third\n"\
-"        red, and the fourth is the near-infrared band.  Exports the fourth (IR) band as.\n"\
-"        as the red element, the third band as the green element, and\n"\
-"        the second band as the blue element.  Performs a 2-sigma constrast\n"\
-"        expansion on the individual bands during the export.  To export a\n"\
-"        falsecolor image WITHOUT the contrast expansion, use the -rgb flag\n"\
-"        to directly assign the available bands to the RGB color channels, e.g.\n\n"\
+"        For 4 band optical satellite images where the second band is green,\n"\
+"        the third red, and the fourth is the near-infrared band.  Exports\n"\
+"        the fourth (IR) band as the red element, the third band as the green\n"\
+"        element, and the second band as the blue element.  Performs a 2-sigma\n"\
+"        constrast expansion on the individual bands during the export.  To\n"\
+"        export a falsecolor image WITHOUT the contrast expansion, use the\n"\
+"        -rgb flag to directly assign the available bands to the RGB color\n"\
+"        channels, e.g.\n\n"\
 "          'asf_export -rgb 04 03 02 <infile> <outfile>'.\n\n"\
 "        Only allowed for multi-band images with 4 bands.\n"\
 "        Cannot be used together with any of the following: -rgb, -band,\n"\
@@ -150,14 +157,15 @@ following defines.
 "   To export to the default GeoTIFF format from file1.img and file1.meta\n"\
 "   to file1.tif:\n"\
 "        example> "ASF_NAME_STRING" file1 file1\n\n"\
-"   NOTE: When exporting to a GeoTIFF format file, all map-projection information\n"\
-"         is included in GeoKeys as specified in the GeoTIFF standard.\n\n"\
-"   NOTE: When exporting to a GeoTIFF format file, the data format (floating point,\n"\
-"         byte, 16-bit integer, etc) will be maintained.  Many viewers cannot view\n"\
-"         non-integer data.  Leaving the data format the same as the original produces\n"\
-"         the most accurate export, but remapping it to byte range (0-255) with the -byte\n"\
-"         option will result in the greatest compatibility with viewers and GIS software\n"\
-"         packages.\n"\
+"   NOTE: When exporting to a GeoTIFF format file, all map-projection\n"\
+"         information is included in GeoKeys as specified in the GeoTIFF\n"\
+"         standard.\n\n"\
+"   NOTE: When exporting to a GeoTIFF format file, the data format (floating\n"\
+"         point, byte, 16-bit integer, etc) will be maintained.  Many viewers\n"\
+"         cannot view non-integer data.  Leaving the data format the same as\n"\
+"         the original produces the most accurate export, but remapping it to\n"\
+"         byte range (0-255) with the -byte option will result in the greatest\n"\
+"         compatibility with viewers and GIS software packages.\n"\
 "\n"\
 "   To export to file2.jpg in the jpeg format:\n"\
 "        example> "ASF_NAME_STRING" -format jpeg file1 file2\n"\
