@@ -3088,7 +3088,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 //      bands[1] = NULL;
 
       check_return(
-        asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0,
+        asf_export_bands(format, is_polsarpro ? scale : TRUNCATE,
+                         is_polsarpro ? FALSE : TRUE, 0, 0,
                          lut_file, inFile, outFile, bands, &num_outputs,
                          &output_names),
         "exporting data file (asf_export), using rgb look up table.\n");
