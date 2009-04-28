@@ -29,21 +29,22 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "                <config_file>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"   This program can ingest level one CEOS and GeoTIFF format data, calibrate it to\n"\
-"   various radiometries, perform polarimetric decompositions, perform Faraday Rotation\n"\
-"   correction, perform terrain correction, geocode it, and then export it to a variety\n"\
-"   of graphics file formats. The user is able to control how "ASF_NAME_STRING"\n"\
-"   dictates the processiong flow by creating a configuration file, which must then be\n"\
-"   edited, which is fed into "ASF_NAME_STRING" when it is called.\n"
+"   This program can ingest level one CEOS and GeoTIFF format data, calibrate\n"\
+"   it to various radiometries, perform polarimetric decompositions, perform\n"\
+"   Faraday Rotation correction, perform terrain correction, geocode it, and\n"\
+"   then export it to a variety of graphics file formats. The user is able to\n"\
+"   control how "ASF_NAME_STRING" dictates the processiong flow by creating a\n"\
+"   configuration file, which must then be edited, which is fed into\n"\
+"   "ASF_NAME_STRING" when it is called.\n"
 
 #define ASF_REQUIRED_ARGUMENTS_STRING \
 "   config_file\n"\
-"        A configuration file that "ASF_NAME_STRING" uses to find which files to\n"\
-"        use for input and output, what options to use, and how the data should\n"\
-"        be processed. It is either read or created based on whether or not\n"\
-"        the -create option is specified (see below.)\n"\
-"        NOTE: When a new configuration file is created, it is filled with comments\n"\
-"        that help the user with the available settings.\n"
+"        A configuration file that "ASF_NAME_STRING" uses to find which files\n"\
+"        to use for input and output, what options to use, and how the data\n"\
+"        should be processed. It is either read or created based on whether or\n"\
+"        not the -create option is specified (see below).\n"\
+"        NOTE: When a new configuration file is created, it is filled with\n"\
+"        comments that help the user with the available settings.\n"
 
 #define ASF_OPTIONS_STRING \
 "   -create <config_file>\n"\
@@ -70,9 +71,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "      example> "ASF_NAME_STRING" config.my_conf\n"
 
 #define ASF_LIMITATIONS_STRING \
-"   Level 0 data is not yet supported.  GeoTIFF SAR files created by ASF tools do not\n"\
-"   contain SAR related data and this prevents certain processing: terrain correction etc.\n"\
-"   when importing and processing from the GeoTIFF format.\n"
+"   Level 0 data is not yet supported.  GeoTIFF SAR files created by ASF tools\n"\
+"   do not contain SAR related data and this prevents certain processing:\n"\
+"   terrain correction etc. when importing and processing from the GeoTIFF\n"\
+"   format.\n"
 
 #define ASF_SEE_ALSO_STRING \
 "   asf_import, asf_terrcorr, asf_geocode, asf_export\n"
