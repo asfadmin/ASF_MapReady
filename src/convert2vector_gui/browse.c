@@ -268,20 +268,88 @@ SIGNAL_CALLBACK void on_input_format_combobox_changed(GtkWidget *w)
     clear_results_message();
 }
 
+static GtkWidget *output_browse_widget = NULL;
+
+SIGNAL_CALLBACK void output_browse_cancel_clicked()
+{
+    gtk_widget_hide(output_browse_widget);
+}
+
+SIGNAL_CALLBACK void output_browse_ok_clicked()
+{
+    GSList *files = gtk_file_chooser_get_filenames(
+        GTK_FILE_CHOOSER(output_browse_widget));
+
+    gtk_widget_hide(output_browse_widget);
+    if (files)
+    {
+        GSList *iter = files;
+
+        do {
+          gchar *s = (gchar *) iter->data;
+          put_string_to_entry("output_directory_entry", s);
+          g_free(s);
+          iter =  iter->next;
+        }
+        while(iter);
+
+        g_slist_free(files);
+    }
+}
+
+SIGNAL_CALLBACK void output_browse_widget_destroy()
+{
+    gtk_widget_destroy(output_browse_widget);
+    output_browse_widget = NULL;
+}
+
+static void create_output_file_chooser_dialog()
+{
+    GtkWidget *parent = get_widget_checked("c2v_window");
+
+    output_browse_widget = gtk_file_chooser_dialog_new(
+        "Select Output Directory", GTK_WINDOW(parent),
+        GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
+        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
+        NULL);
+
+    // we need to extract the buttons, so we can connect them to our
+    // button handlers, above
+    GtkHButtonBox *box =
+        (GtkHButtonBox*)(((GtkDialog*)output_browse_widget)->action_area);
+    GList *buttons = box->button_box.box.children;
+
+    GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+    GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+    g_signal_connect((gpointer)cancel_btn, "clicked",
+        G_CALLBACK(output_browse_cancel_clicked), NULL);
+    g_signal_connect((gpointer)ok_btn, "clicked",
+        G_CALLBACK(output_browse_ok_clicked), NULL);
+    g_signal_connect(output_browse_widget, "destroy",
+        G_CALLBACK(output_browse_widget_destroy), NULL);
+    g_signal_connect(output_browse_widget, "destroy_event",
+        G_CALLBACK(output_browse_widget_destroy), NULL);
+    g_signal_connect(output_browse_widget, "delete_event",
+        G_CALLBACK(output_browse_widget_destroy), NULL);
+
+    // we need to make these modal -- if the user opens multiple "open"
+    // dialogs, we'll get confused on the callbacks
+    gtk_window_set_modal(GTK_WINDOW(output_browse_widget), TRUE);
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(output_browse_widget), TRUE);
+    gtk_dialog_set_default_response(GTK_DIALOG(output_browse_widget),
+                                    GTK_RESPONSE_OK);
+}
+
 #ifndef win32
 
 static GtkWidget *input_browse_widget = NULL;
-static GtkWidget *output_browse_widget = NULL;
 
 // called when "cancel" clicked on the GtkFileChooser
 SIGNAL_CALLBACK void input_browse_cancel_clicked()
 {
     gtk_widget_hide(input_browse_widget);
-}
-
-SIGNAL_CALLBACK void output_browse_cancel_clicked()
-{
-    gtk_widget_hide(output_browse_widget);
 }
 
 // called when "ok" clicked on the GtkFileChooser
@@ -307,38 +375,10 @@ SIGNAL_CALLBACK void input_browse_ok_clicked()
     }
 }
 
-SIGNAL_CALLBACK void output_browse_ok_clicked()
-{
-    GSList *files = gtk_file_chooser_get_filenames(
-        GTK_FILE_CHOOSER(output_browse_widget));
-
-    gtk_widget_hide(output_browse_widget);
-    if (files)
-    {
-        GSList *iter = files;
-
-        do {
-          gchar *s = (gchar *) iter->data;
-          put_string_to_entry("output_directory_entry", s);
-          g_free(s);
-          iter =  iter->next;
-        }
-        while(iter);
-
-        g_slist_free(files);
-    }
-}
-
 SIGNAL_CALLBACK void input_browse_widget_destroy()
 {
     gtk_widget_destroy(input_browse_widget);
     input_browse_widget = NULL;
-}
-
-SIGNAL_CALLBACK void output_browse_widget_destroy()
-{
-    gtk_widget_destroy(output_browse_widget);
-    output_browse_widget = NULL;
 }
 
 // sets up the file chooser dialog
@@ -467,45 +507,6 @@ static void create_input_file_chooser_dialog()
                                     GTK_RESPONSE_OK);
 }
 
-static void create_output_file_chooser_dialog()
-{
-    GtkWidget *parent = get_widget_checked("c2v_window");
-
-    output_browse_widget = gtk_file_chooser_dialog_new(
-        "Select Output Directory", GTK_WINDOW(parent),
-        GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
-        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
-        NULL);
-
-    // we need to extract the buttons, so we can connect them to our
-    // button handlers, above
-    GtkHButtonBox *box =
-        (GtkHButtonBox*)(((GtkDialog*)output_browse_widget)->action_area);
-    GList *buttons = box->button_box.box.children;
-
-    GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
-    GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
-
-    g_signal_connect((gpointer)cancel_btn, "clicked",
-        G_CALLBACK(output_browse_cancel_clicked), NULL);
-    g_signal_connect((gpointer)ok_btn, "clicked",
-        G_CALLBACK(output_browse_ok_clicked), NULL);
-    g_signal_connect(output_browse_widget, "destroy",
-        G_CALLBACK(output_browse_widget_destroy), NULL);
-    g_signal_connect(output_browse_widget, "destroy_event",
-        G_CALLBACK(output_browse_widget_destroy), NULL);
-    g_signal_connect(output_browse_widget, "delete_event",
-        G_CALLBACK(output_browse_widget_destroy), NULL);
-
-    // we need to make these modal -- if the user opens multiple "open"
-    // dialogs, we'll get confused on the callbacks
-    gtk_window_set_modal(GTK_WINDOW(output_browse_widget), TRUE);
-    gtk_window_set_destroy_with_parent(GTK_WINDOW(output_browse_widget), TRUE);
-    gtk_dialog_set_default_response(GTK_DIALOG(output_browse_widget),
-                                    GTK_RESPONSE_OK);
-}
-
 #endif // #ifndef win32
 
 static void input_file_browse(void)
@@ -568,22 +569,10 @@ static void input_file_browse(void)
 
 static void output_file_browse(void)
 {
-#ifdef win32
-    BROWSEINFO bi = { 0 };
-    bi.lpszTitle = "Select Output Directory";
-    LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
-    if (pidl != 0)
-    {
-        TCHAR path[MAX_PATH];
-        if (SHGetPathFromIDList(pidl, path))
-            put_string_to_entry("output_directory_entry", path);
-    }
-#else // #ifdef win32
     if (!output_browse_widget)
         create_output_file_chooser_dialog();
 
     gtk_widget_show(output_browse_widget);
-#endif // #ifdef win32
 }
 
 SIGNAL_CALLBACK void
