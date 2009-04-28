@@ -12,31 +12,33 @@ following defines.
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
-"              [-format <inputFormat>] [-ancillary_file <file>] [-colormap <colormap_file>]\n"\
-"              [-band <band_id | all>] [-no-ers2-gain-fix]\n"\
-"              [-image-data-type <type>] [-lut <file>]\n"\
+"              [-format <inputFormat>] [-ancillary_file <file>]\n"\
+"              [-colormap <colormap_file>] [-band <band_id | all>]\n"\
+"              [-no-ers2-gain-fix] [-image-data-type <type>] [-lut <file>]\n"\
 "              [-lat <lower> <upper>] [-prc] [-log <logFile>]\n"\
-"              [-quiet] [-real-quiet] [-license] [-version]\n"\
+"              [-quiet] [-real-quiet] [-license] [-version] [-multilook]\n"\
 "              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
-"              [-range-scale[=<scale>] [-multilook] [-complex] [-metadata <file>]\n"\
+"              [-range-scale[=<scale>] [-complex] [-metadata <file>]\n"\
 "              [-line <start line subset>] [-sample <start sample subset>]\n"\
 "              [-width <subset width>] [-height <subset height>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"   Ingests all varieties of CEOS, STF, AIRSAR, BIL, GRIDFLOAT, VP (Vexcel-Plain),\n"\
-"   JAXA Level 0 (ALOS AVNIR-2), PolSARpro, and GeoTIFF data formats and outputs ASF\n"\
-"   Internal format metadata and data files. When the calibration parameters are applied using\n"\
-"   the -sigma, -gamma, or the -beta option the resulting image will have power scale\n"\
-"   values (or decibels if the -db option is utilized). "ASF_NAME_STRING" can also perform\n"\
-"   several other tasks during look up such as multilooking when ingesting single-look\n"\
-"   complex (SLC) data, ingest individual bands at a time, apply a look-up table, apply\n"\
-"   latitude constraints, etcetera.\n"\
+"   Ingests all varieties of CEOS, STF, AIRSAR, BIL, GRIDFLOAT, VP\n"\
+"   (Vexcel-Plain), JAXA Level 0 (ALOS AVNIR-2), PolSARpro, and GeoTIFF data\n"\
+"   formats and outputs ASF Internal format metadata and data files. When\n"\
+"   the calibration parameters are applied using the -sigma, -gamma, or the\n"\
+"   -beta option the resulting image will have power scale values (or\n"\
+"   decibels if the -db option is utilized). "ASF_NAME_STRING" can also\n"\
+"   perform several other tasks during look up such as multilooking when\n"\
+"   ingesting single-look complex (SLC) data, ingest individual bands at a\n"\
+"   time, apply a look-up table, apply latitude constraints, etcetera.\n"\
 
 #define ASF_INPUT_STRING \
-"   The format of the input file must be specified as STF, AIRSAR, BIL, GRIDFLOAT,\n"\
-"   VP, JAXA_L0, POLSARPRO, or GEOTIFF.  Otherwise "ASF_NAME_STRING" assumes the input\n"\
-"   file is in CEOS format by default.  See the -format option below.\n"
+"   The format of the input file must be specified as STF, AIRSAR, BIL,\n"\
+"   GRIDFLOAT, VP, JAXA_L0, POLSARPRO, or GEOTIFF.  Otherwise,\n"\
+"   "ASF_NAME_STRING" assumes the input file is in CEOS format by default.\n"\
+"   See the -format option below.\n"
 
 #define ASF_OUTPUT_STRING \
 "   Outputs data and metadata files with the user-provided base name and\n"\
@@ -64,27 +66,30 @@ following defines.
 "        (ie do not use the -db flag if you plan on statistical analysis)\n"\
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
-"        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp', 'polsarpro',\n"\
-"        'gamma', 'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0' format refers to the\n"\
-"        ALOS AVNIR-2 Level 0 dataset format. 'CEOS' is the default behavior.\n"\
+"        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp',\n"\
+"        'polsarpro', 'gamma', 'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0'\n"\
+"        format refers to the ALOS AVNIR-2 Level 0 dataset format. 'CEOS' is\n"\
+"        the default behavior.\n"\
 "   -ancillary_file <file>\n"\
-"        For PolSARpro format files, the ingest process needs access to the original\n"\
-"        COES or AIRSAR format data that the PolSARpro images were created from.  The\n"\
-"        original dataset is necessary for the purpose of extracting original SAR parameters\n"\
-"        that are not otherwise available in the PolSARpro format files as they are.\n"\
+"        For PolSARpro format files, the ingest process needs access to the\n"\
+"        original COES or AIRSAR format data that the PolSARpro images were\n"\
+"        created from.  The original dataset is necessary for the purpose of\n"\
+"        extracting original SAR parameters that are not otherwise available\n"\
+"        in the PolSARpro format files as they are.\n"\
 "   - colormap <colormap_file>\n"\
-"        Associates a color map (RGB index) with the input file.  Does not apply to\n"\
-"        multi-band images or images containing floating point data (other than\n"\
-"        PolSARpro .bin/.bin.hdr images.)  The colormap files must exist in the\n"\
-"        application installation 'share' directory's look up table directory.  You\n"\
-"        may provide your own colormap by placing it in this folder.  File format must\n"\
-"        either be in ASF format (.lut) or in JASC-PAL (.pal) format.  See existing\n"\
-"        look-up tables for examples.  Note that the use of the colormap option will\n"\
-"        override any embedded RGB index type colormap in the file that is being\n"\
+"        Associates a color map (RGB index) with the input file.  Does not\n"\
+"        apply to multi-band images or images containing floating point data\n"\
+"        (other than PolSARpro .bin/.bin.hdr images.)  The colormap files\n"\
+"        must exist in the application installation 'share' directory's look\n"\
+"        up table directory.  You may provide your own colormap by placing\n"\
+"        it in this folder.  File format must either be in ASF format (.lut)\n"\
+"        or in JASC-PAL (.pal) format.  See existing look-up tables for\n"\
+"        examples.  Note that the use of the colormap option will override\n"\
+"        any embedded RGB index type colormap in the file that is being\n"\
 "        imported, e.g. a TIFF or GeoTIFF with an embedded color palette.\n"\
 "   -metadata <metadata file>\n"\
-"        Allows the ingest of metadata that does not have the same basename as the\n"\
-"        image data.\n"\
+"        Allows the ingest of metadata that does not have the same basename\n"\
+"        as the image data.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then import the band identified by 'band_id' (only).  If 'all' is\n"\
@@ -93,9 +98,9 @@ following defines.
 "   -image-data-type <type>\n"\
 "        Force input data to be interpreted as the given image data type. Valid\n"\
 "        formats are 'amplitude_image', 'phase_image', 'coherence_image',\n"\
-"        'lut_image', 'elevation', 'dem', and 'image', 'mask'.  NOTE: This option\n"\
-"        only applies to GeoTIFFs (-format option is \"geotiff\").  If the input\n"\
-"        format is not \"geotiff\", then this option is ignored.\n"\
+"        'lut_image', 'elevation', 'dem', and 'image', 'mask'.  NOTE: This\n"\
+"        option only applies to GeoTIFFs (-format option is \"geotiff\").\n"\
+"        If the input format is not \"geotiff\", then this option is ignored.\n"\
 "   -lut <file>\n"\
 "        Applies a user defined look up table to the data. Look up contains\n"\
 "        incidence angle dependent scaling factor.\n\n"\
@@ -164,10 +169,10 @@ following defines.
 "        example> asf_import -format stf fileSTF.000 fileASF\n" \
 "\n"\
 "   To import an ALOS Palsar fileset (IMG-HH-file, IMG-HV-file, IMG-VH-file,\n"\
-"   IMG-VV-file, and LED-file) you will need to specify the input basename 'file'.\n"\
+"   IMG-VV-file, and LED-file) you may specify the input basename 'file',\n"\
+"   or the full name of the leader (LED-file) file.\n"\
 "   When importing optical or other multi-band CEOS-formatted data such as ALOS\n"\
-"   Avnir optical images, you only need to specify the file names in the same way\n"\
-"   as well.\n"\
+"   Avnir optical images, you can specify the file names in the same way.\n"\
 "        example> asf_import file outfile\n"\
 "\n"\
 "   To import a single band of an ALOS fileset (IMG-HH-file, IMG-HV-file,\n"\
