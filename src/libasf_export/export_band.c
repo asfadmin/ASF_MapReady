@@ -1288,7 +1288,7 @@ export_band_image (const char *metadata_file_name,
           get_float_line(fp, md, ii+green_channel*offset, green_float_line);
         if (!ignored[2])
           get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
-        if (format == GEOTIFF)
+        if (format == GEOTIFF || format == TIF)
           write_rgb_tiff_float2float(otif, red_float_line, green_float_line,
                                      blue_float_line, ii, sample_count);
         else
@@ -1632,7 +1632,7 @@ export_band_image (const char *metadata_file_name,
             }
             else if (sample_mapping == NONE && !is_colormap_band) {
               get_float_line(fp, md, ii+channel*offset, float_line);
-              if (format == GEOTIFF)
+              if (format == GEOTIFF || format == TIF)
                 write_tiff_float2float(otif, float_line, ii);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
