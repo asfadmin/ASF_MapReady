@@ -847,8 +847,6 @@ int main(int argc, char *argv[])
 
     /***********************END COMMAND LINE PARSING STUFF***********************/
 
-    asfSplashScreen (argc, argv);
-
     { // scoping block
         int db_flag = flags[f_DB] != FLAG_NOT_SET;
         int complex_flag = flags[f_COMPLEX] != FLAG_NOT_SET;
