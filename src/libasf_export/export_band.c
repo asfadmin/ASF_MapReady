@@ -103,6 +103,8 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                       "different than expected (2 bytes).\n", sizeof(unsigned short));
           }
           // Try #1 ...Try 2 bytes just to get past lut_to_tiff_palette() with no errors
+          // ...More accurately, we are using lut_to_tiff_palette() to determine max_dn, the
+          // minimum number of entries that the color table must have
           sample_size = 2; // Unsigned short ...2 bytes allows a color map 65535 elements long or smaller
           map_size = 1 << (sample_size * 8); // 2^bits_per_sample;
           max_dn = lut_to_tiff_palette(&colors, map_size, look_up_table_name);
@@ -129,7 +131,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   }
   // use the metadata's colormap if we have one.  a -lut specified on the command
   // line will override, though
-  if (is_colormapped && md->colormap && !have_look_up_table)
+  if (is_colormapped && (md->colormap || have_look_up_table))
   {
       asfPrintStatus("\nFound single-band image with RGB color map ...storing as a Palette\n"
           "Color TIFF\n\n");
@@ -846,7 +848,8 @@ export_band_image (const char *metadata_file_name,
         strcpy(lut_file, "tmp_lut_file.lut");
         colormap_to_lut_file(md->colormap, lut_file);
         have_look_up_table = TRUE;
-        asfPrintStatus("\nUsing the colormap embedded in the ASF metadata (%s).\n\n",
+        asfPrintStatus("\nUsing the colormap embedded in the ASF metadata (%s).\n"
+            "for applicable bands.\n\n",
             md->colormap->look_up_table);
       }
     }
@@ -1434,9 +1437,11 @@ export_band_image (const char *metadata_file_name,
           is_geotiff = (format == GEOTIFF && md->projection) ? 1 : 0;
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
           if (is_colormap_band) {
+            sample_mapping = TRUNCATE;
+            rgb = FALSE;
             initialize_tiff_file(&otif, &ogtif, output_file_name,
                                  metadata_file_name, is_geotiff,
-                                 TRUNCATE, TRUE,
+                                 sample_mapping, rgb,
                                  &palette_color_tiff, band_name,
                                  lut_file, TRUE);
           }
@@ -1445,7 +1450,7 @@ export_band_image (const char *metadata_file_name,
                                  metadata_file_name, is_geotiff,
                                  sample_mapping, rgb,
                                  &palette_color_tiff, band_name,
-                                 lut_file, FALSE);
+                                 NULL, FALSE);
           }
         }
         else if (format == JPEG) {
@@ -1573,22 +1578,28 @@ export_band_image (const char *metadata_file_name,
               //  expansion will break the look up in the look up table.)
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == TIF || format == GEOTIFF)
-                write_tiff_float2lut(otif, float_line, stats,
-                                     is_colormap_band ? TRUNCATE : sample_mapping,
-                                     md->general->no_data, ii, sample_count,
-                                     lut_file);
+                // Unlike the other graphics file formats, the TIFF file uses an embedded
+                // colormap (palette) and therefore each pixel should be a single byte value
+                // where each byte value is an index into the colormap.  The other graphics
+                // file formats use interlaced RGB lines and no index or colormap instead.
+                write_tiff_float2byte(otif, float_line, stats,
+                                      is_colormap_band ? TRUNCATE : sample_mapping,
+                                      md->general->no_data, ii, sample_count);
               else if (format == JPEG)
+                // Use lut to write an RGB line to the file
                 write_jpeg_float2lut(ojpeg, float_line, &cinfo, stats,
                                      is_colormap_band ? TRUNCATE : sample_mapping,
                                      md->general->no_data,
                                      sample_count, lut_file);
               else if (format == PNG)
+                // Use lut to write an RGB line to the file
                 write_png_float2lut(opng, float_line, png_ptr, png_info_ptr,
                                     stats,
                                     is_colormap_band ? TRUNCATE : sample_mapping,
                                     md->general->no_data,
                                     sample_count, lut_file);
-              else if (format == PGM) { // Can't put color in a PGM file, so map it...
+              else if (format == PGM) {
+                // Can't put color in a PGM file, so map it to greyscale and write that
                 write_pgm_float2byte(opgm, float_line, stats,
                                      is_colormap_band ? TRUNCATE : sample_mapping,
                                      md->general->no_data, sample_count);
