@@ -499,6 +499,27 @@ static void create_input_file_chooser_dialog()
     //gtk_file_chooser_set_select_multiple(
     //    GTK_FILE_CHOOSER(input_browse_widget), TRUE);
 
+    // set the default filter
+    int fmt = get_combo_box_item("input_format_combobox");
+    GtkFileFilter *filt;
+    switch (fmt) {
+      default:
+      case INPUT_AUTO:        filt = all_filt;  break;
+      case INPUT_META:        filt = meta_filt; break;
+      case INPUT_LEADER:      filt = L_filt;    break;
+      case INPUT_POINT:       filt = csv_filt;  break;
+      case INPUT_POLYGON:     filt = csv_filt;  break;
+      case INPUT_SHAPE:       filt = shp_filt;  break;
+      case INPUT_KML:         filt = kml_filt;  break;
+      case INPUT_GEOTIFF:     filt = gtif_filt; break;
+      case INPUT_ALOS_CSV:    filt = csv_filt;  break;
+      case INPUT_URSA:        filt = kml_filt;  break;
+      case INPUT_GENERIC_CSV: filt = csv_filt;  break;
+      case INPUT_TERRASAR:    filt = gxml_filt; break;
+      case INPUT_STF:         filt = par_filt;  break;
+    }
+    gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(input_browse_widget), filt);
+
     // we need to make these modal -- if the user opens multiple "open"
     // dialogs, we'll get confused on the callbacks
     gtk_window_set_modal(GTK_WINDOW(input_browse_widget), TRUE);
@@ -541,7 +562,28 @@ static void input_file_browse(void)
       //"RPGS Files (*.rgps)\0*.rgps\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
-    of.nFilterIndex = 1;
+
+    int fmt = get_combo_box_item("input_format_combobox");
+    int filt;
+    switch (fmt) {
+      default:
+      case INPUT_AUTO:        filt = 10; break;
+      case INPUT_META:        filt = 2;  break;
+      case INPUT_LEADER:      filt = 3;  break;
+      case INPUT_POINT:       filt = 1;  break;
+      case INPUT_POLYGON:     filt = 1;  break;
+      case INPUT_SHAPE:       filt = 5;  break;
+      case INPUT_KML:         filt = 6;  break;
+      case INPUT_GEOTIFF:     filt = 7;  break;
+      case INPUT_ALOS_CSV:    filt = 1;  break;
+      case INPUT_URSA:        filt = 6;  break;
+      case INPUT_GENERIC_CSV: filt = 1;  break;
+      case INPUT_TERRASAR:    filt = 8;  break;
+      case INPUT_STF:         filt = 9;  break;
+    }
+
+    of.nFilterIndex = filt;
+
     of.lpstrFile = fname;
     of.nMaxFile = sizeof(fname);
     of.lpstrFileTitle = NULL;
@@ -560,8 +602,12 @@ static void input_file_browse(void)
 
     add_input_file(fname);
 #else // #ifdef win32
-    if (!input_browse_widget)
-        create_input_file_chooser_dialog();
+    if (input_browse_widget) {
+      gtk_widget_destroy(input_browse_widget);
+      input_browse_widget=NULL;
+    }
+
+    create_input_file_chooser_dialog();
 
     gtk_widget_show(input_browse_widget);
 #endif // #ifdef win32
