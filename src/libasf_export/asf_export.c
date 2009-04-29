@@ -28,8 +28,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 
   asfPrintStatus("Exporting ...\n\n");
 
-  int i, nouts;
-  char **outs;
+  int i, nouts = 0;
+  char **outs = NULL;
 
   // Do that exporting magic!
   if ( format == ENVI ) {

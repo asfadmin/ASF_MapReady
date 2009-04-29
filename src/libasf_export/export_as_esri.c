@@ -25,13 +25,17 @@ export_as_esri (const char *metadata_file_name,
   spheroid_type_t spheroid = UNKNOWN_SPHEROID;
   char esri_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
 
+  // Gracefully exit ...the ESRI export has not been validated and the first
+  // try resulted in "Invalid raster type" in ArcMAP
+  asfPrintError("ESRI format export is not yet supported.\n");
+
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
-  if (   md->general->data_type == BYTE
-      || md->general->data_type == INTEGER16
-      || md->general->data_type == INTEGER32
-      || md->general->data_type == REAL32
-      || md->general->data_type == REAL64)
+  if (md->general->data_type == COMPLEX_BYTE      ||
+      md->general->data_type == COMPLEX_INTEGER16 ||
+      md->general->data_type == COMPLEX_INTEGER32 ||
+      md->general->data_type == COMPLEX_REAL32    ||
+      md->general->data_type == COMPLEX_REAL64)
   {
     asfPrintError("Input data cannot be complex.\n");
   }
