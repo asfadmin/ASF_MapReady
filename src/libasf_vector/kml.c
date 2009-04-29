@@ -26,6 +26,11 @@ static void swap(double *x, double *y)
     *y = tmp;
 }
 
+const char *altitude_mode()
+{
+  return "relativeToGround";
+}
+
 void strip_end_whitesp_inplace(char *s)
 {
     char *p = s + strlen(s) - 1;
@@ -1104,14 +1109,11 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   write_kml_style_keys(kml_file);
 
   fprintf(kml_file, "  <Polygon>\n");
-  // different behavior if we have an overlay - no extrude, and draw on
-  // the ground instead of at an absolute height above the terrain
-  fprintf(kml_file, "    <extrude>%d</extrude>\n",
-          png_filename ? 0 : 1);
-  fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n",
-          png_filename ? "relativeToGround" : "absolute");
+  fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
   fprintf(kml_file, "    <outerBoundaryIs>\n");
   fprintf(kml_file, "      <LinearRing>\n");
+  fprintf(kml_file, "        <extrude>%d</extrude>\n",
+          png_filename ? 0 : 1);
   fprintf(kml_file, "        <coordinates>\n");
 
   double h = 0.0;
@@ -1362,7 +1364,7 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   fprintf(kml_file, "  <LineString>\n");
   fprintf(kml_file, "    <extrude>1</extrude>\n");
   fprintf(kml_file, "    <tessellate>1</tessellate>\n");
-  fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+  fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
   fprintf(kml_file, "    <coordinates>\n");
 
   fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);

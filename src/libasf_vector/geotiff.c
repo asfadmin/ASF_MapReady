@@ -231,7 +231,7 @@ static void add_placemark(FILE *fp, geotiff_type_t *geo, dbf_header_t *dbf,
 
   fprintf(fp, "  <Polygon>\n");
   fprintf(fp, "    <extrude>1</extrude>\n");
-  fprintf(fp, "    <altitudeMode>absolute</altitudeMode>\n");
+  fprintf(fp, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
   fprintf(fp, "    <outerBoundaryIs>\n");
   fprintf(fp, "     <LinearRing>\n");
   fprintf(fp, "      <coordinates>\n");

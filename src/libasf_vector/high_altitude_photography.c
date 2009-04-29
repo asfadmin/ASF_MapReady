@@ -266,7 +266,7 @@ static void add_to_kml(FILE *fp, hap_t *hap, dbf_header_t *dbf, int nCols)
 
   fprintf(fp, "  <Polygon>\n");
   fprintf(fp, "    <extrude>1</extrude>\n");
-  fprintf(fp, "    <altitudeMode>absolute</altitudeMode>\n");
+  fprintf(fp, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
   fprintf(fp, "    <outerBoundaryIs>\n");
   fprintf(fp, "     <LinearRing>\n");
   fprintf(fp, "      <coordinates>\n");

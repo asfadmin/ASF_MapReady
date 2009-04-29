@@ -49,7 +49,7 @@ void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp)
   write_kml_style_keys(fp);
   fprintf(fp, "<Polygon>\n");
   fprintf(fp, "<extrude>1</extrude>\n");
-  fprintf(fp, "<altitudeMode>absolute</altitudeMode>\n");
+  fprintf(fp, "<altitudeMode>%s</altitudeMode>\n", altitude_mode());
   fprintf(fp, "<outerBoundaryIs>\n");
   fprintf(fp, "<LinearRing>\n");
   fprintf(fp, "<coordinates>\n");

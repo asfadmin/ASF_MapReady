@@ -708,7 +708,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
 
     fprintf(ofp, "  <Polygon>\n");
     fprintf(ofp, "    <extrude>1</extrude>\n");
-    fprintf(ofp, "    <altitudeMode>absolute</altitudeMode>\n");
+    fprintf(ofp, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
     fprintf(ofp, "    <outerBoundaryIs>\n");
     fprintf(ofp, "     <LinearRing>\n");
     fprintf(ofp, "      <coordinates>\n");

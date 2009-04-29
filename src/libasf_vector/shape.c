@@ -648,7 +648,7 @@ int shape2kml(char *inFile, char *outFile, int listFlag)
 	fprintf(fp, "<LineString>\n");
         fprintf(fp, "<extrude>1</extrude>\n");
         fprintf(fp, "<tessellate>1</tessellate>\n");
-        fprintf(fp, "<altitudeMode>absolute</altitudeMode>\n");
+        fprintf(fp, "<altitudeMode>%s</altitudeMode>\n", altitude_mode());
         fprintf(fp, "<coordinates>\n");
  	for (kk=part[ll]; kk<part[ll+1]; kk++)
 	  fprintf(fp, "%.6f,%.6f,%.3f\n", lon[kk], lat[kk], height[kk]);
