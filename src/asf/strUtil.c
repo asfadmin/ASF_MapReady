@@ -443,8 +443,8 @@ int find_nth_str(char *line, char *str, int occurence)
       if (nfound==occurence) {
         return col;
       }
-      ++col;
     }
+    ++col;
   }
 
   // column heading was not found
