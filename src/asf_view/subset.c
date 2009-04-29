@@ -494,7 +494,6 @@ static int save_as_csv(ImageInfo *ii,
 {
     int i,j;
 
-    printf("Generating %s...\n", out_file);
     FILE *outFp = fopen(out_file, "w");
     if (!outFp) {
         // failed to open the output file!
@@ -520,12 +519,14 @@ static int save_as_csv(ImageInfo *ii,
         // too big for csv -- Excel etc. will choke
         char errbuf[1024];
         snprintf(errbuf, 1024,
-                 "Region is too large (%dx%d) to export as CSV (500x500 max)\n",
-                 nl, ns);
+             "\nRegion is too large (%dx%d) to export as CSV (500x500 max)\n\n",
+             nl, ns);
         message_box(errbuf);
         printf(errbuf);
         return FALSE; // failure
     }
+
+    printf("Generating %s...\n", out_file);
 
     // define clipping region, if necessary
     double xp[MAX_POLY_LEN+2], yp[MAX_POLY_LEN+2];
