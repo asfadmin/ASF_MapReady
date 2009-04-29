@@ -2588,7 +2588,7 @@ int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag)
       else if (inFormat == STF_META && isparfile(line))
 	meta = meta_read_stf(line);
       else if (inFormat == META)
-	meta = meta_read_only(line);
+	meta = meta_read(line);
       else
 	asfPrintError("Chosen file format (%s) does not match provided file "
 		      "(%s)\n", format2str(inFormat), line);
@@ -2611,7 +2611,7 @@ int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag)
     else if (inFormat == STF_META && isparfile(inFile))
       meta = meta_read_stf(inFile);
     else if (inFormat == META)
-      meta = meta_read_only(inFile);
+      meta = meta_read(inFile);
     else
       asfPrintError("Chosen file format (%s) does not match provided file "
 		    "(%s)\n", format2str(inFormat), inFile);
