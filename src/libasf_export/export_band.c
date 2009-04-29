@@ -1692,6 +1692,11 @@ export_band_image (const char *metadata_file_name,
     }
   }
 
+  if (lut_file && strstr(lut_file, "tmp_lut_file.lut") && fileExists(lut_file)) {
+    // If a temporary look-up table was generated (from an embedded colormap in the
+    // metadata) then remove it now.
+    remove(lut_file);
+  }
   FREE(lut_file);
   meta_free (md);
 }
