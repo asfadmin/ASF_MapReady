@@ -2976,7 +2976,7 @@ void print_char_array(char **arr, int nelem, char *label)
     printf("  %d: %s\n", i, arr[i]);
 }
 
-int kml2shape(char *inFile, char *outFile, int listFlag)
+int kml2shape(char *inFile, char *outBase, int listFlag)
 {
   if (listFlag) {
     asfPrintError("Not implemented.\n");
@@ -2997,15 +2997,26 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
 
     asfPrintStatus("Using kml-to-shape back-converter.\n");
 
-    int ret = kml2shape_from_c2v(inFile, outFile, listFlag);
+    int ret = kml2shape_from_c2v(inFile, outBase, listFlag);
     return ret;
+  }
+
+  char *outFile, *ext = findExt(outBase);
+  if (!ext) {
+    // add .dummy extension -- shapefile lib always strips an extension
+    // so we must be sure there is one there for it strip
+    outFile = appendExt(outBase, ".dummy");
+  }
+  else {
+    // already has an extension
+    outFile = STRDUP(outBase);
   }
 
   asfPrintStatus("Using generic kml-to-shape converter.\n");
 
   DBFHandle dbase;
   SHPHandle shape;
-  char *dbaseFile = appendExt(outFile, ".dbf");
+  char *dbaseFile = appendExt(outBase, ".dbf");
   dbase = DBFCreate(dbaseFile);
   if (!dbase)
     asfPrintError("Could not create database file '%s'\n", dbaseFile);
@@ -3097,10 +3108,11 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
 
   SHPClose(shape);
   DBFClose(dbase);
-  write_esri_proj_file(outFile);
+  write_esri_proj_file(outBase);
 
   free(hdr);
   free(coords_hdr);
+  free(outFile);
 
   return 1;
 }
