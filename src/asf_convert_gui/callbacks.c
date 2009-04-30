@@ -179,6 +179,7 @@ input_data_formats_changed()
       else if (is_terrasarx(file)) {
         if (!strstr(formats, "TerraSAR-X"))
           strcat(formats, "TerraSAR-X, ");
+        enable_terrain_correction = TRUE;
       }
       else if (strlen(metadata_file)>0) {
         // as of now, only gamma uses the metadata column...
