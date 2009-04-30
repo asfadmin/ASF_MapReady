@@ -1,8 +1,8 @@
 Convert To Vector Version History
 
-Convert to Vector 2.2.3 (released 2009 April 23)
+Convert to Vector 2.2.4 (released 2009 April 29)
 New Features
-* Ability to convert STF/Level 0 CEOS Files
+* Ability to convert STF files, TerraSAR-X files.
 
 Convert to Vector 2.1.1 (released 2009 January 9)
 New Features
