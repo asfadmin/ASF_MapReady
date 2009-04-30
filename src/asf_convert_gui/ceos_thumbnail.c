@@ -515,6 +515,16 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     int *min = g_new(int, num_bands);
     int *max = g_new(int, num_bands);
 
+    // Use first colormap band for the thumbnail (if one exists), else use the first
+    // band in the file.
+    int offset = 0; // Default to first band
+    if (is_palette_color_asf) {
+      int band_id = get_band_number(meta->general->bands,
+                                    meta->general->band_count,
+                                    meta->colormap->band_id);
+      offset = band_id * meta->general->line_count;
+    }
+
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
     int larger_dim = 1024;
@@ -550,7 +560,7 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     // For non-colormap ASF files, always display as a single-band greyscale image
     // (rather than make assumptions about which band should be assigned to r, g, and b
     for ( ii = 0 ; ii < tsy ; ii++ ) {
-      get_float_line(fpIn, meta, ii*sf, line);
+      get_float_line(fpIn, meta, offset + ii*sf, line);
       for (jj = 0; jj < tsx; ++jj) {
         if (!is_palette_color_asf) {
           // Display as greyscale
