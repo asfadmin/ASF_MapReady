@@ -13,30 +13,30 @@ export_as_envi (const char *metadata_file_name,
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
-  char envi_file_name[2 * MAX_IMAGE_NAME_LENGTH];
+  char *envi_file_name = NULL;
   envi_header *envi;
   FILE *fp;
-  time_t time;
+  time_t calendar_time;
   char t_stamp[15];
-  char envi_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
-  if (   md->general->data_type == BYTE
-      || md->general->data_type == INTEGER16
-      || md->general->data_type == INTEGER32
-      || md->general->data_type == REAL32
-      || md->general->data_type == REAL64)
+  if (   md->general->data_type == COMPLEX_BYTE
+      || md->general->data_type == COMPLEX_INTEGER16
+      || md->general->data_type == COMPLEX_INTEGER32
+      || md->general->data_type == COMPLEX_REAL32
+      || md->general->data_type == COMPLEX_REAL64)
   {
     asfPrintError("Input data cannot be complex.\n");
   }
 
-  create_name (envi_file_name, output_file_name, ".hdr");
+  envi_file_name = appendExt(output_file_name, ".hdr");
   envi = meta2envi (md);
 
   /* Write ENVI header file */
   fp = FOPEN(envi_file_name, "w");
-  strftime(t_stamp, 12, "%d-%b-%Y", localtime(&time));
+  calendar_time = time(NULL);
+  strftime(t_stamp, 12, "%d-%b-%Y", localtime(&calendar_time));
   fprintf(fp, "ENVI\n");
   fprintf(fp, "description = {\n"
               "  Converted to ENVI format on (%s)}\n", t_stamp);
@@ -135,12 +135,11 @@ export_as_envi (const char *metadata_file_name,
   fprintf(fp, "wavelength units = %s\n", envi->wavelength_units);
   /*** wavelength, data ignore and default stretch currently not used ***/
   FCLOSE(fp);
+  FREE(envi_file_name);
 
   /* Clean and report */
   free (envi);
   meta_free (md);
 
-  strcpy (envi_data_file_name, output_file_name);
-  strcat (envi_data_file_name, ".bil");
-  fileCopy(image_data_file_name, envi_data_file_name);
+  fileCopy(image_data_file_name, output_file_name);
 }

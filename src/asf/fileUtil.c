@@ -132,6 +132,7 @@ char *findExt(const char *name)
         strcmp_case(ext, ".D") == 0         ||
         strcmp_case(ext, ".L") == 0         ||
         strcmp_case(ext, ".BIL") == 0       ||
+        strcmp_case(ext, ".BSQ") == 0       ||
         strcmp_case(ext, ".PAR") == 0       ||
         strcmp_case(ext, ".PAL") == 0       ||
         strcmp_case(ext, ".SHP") == 0       ||

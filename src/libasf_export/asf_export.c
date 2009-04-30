@@ -35,7 +35,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   if ( format == ENVI ) {
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
-      out_name = appendExt(output_name, ".envi");
+      out_name = appendExt(output_name, ".bsq");
       export_as_envi (in_meta_name, in_data_name, out_name);
   }
   else if ( format == ESRI ) {
