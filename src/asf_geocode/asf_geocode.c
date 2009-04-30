@@ -172,12 +172,14 @@ main (int argc, char **argv)
 
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
-  // Terrain height to assume.  Defaults to 0.
-  double average_height;
+  // Terrain height to assume.  Defaults to 0 (no height correction)
+  double average_height = 0.0;
   // Pixel size to use for output image, in projection coordinate
   // units.  This variable corresponds to a "private"
   // (i.e. undocumented, so users don't fiddle with it) option.
-  double pixel_size;
+  // NOTE: Setting the pixel size to a negative number results in the
+  // code to pick a pixel size from the metadata
+  double pixel_size = -1;
   // Datum to use in the target projection
   datum_type_t datum;
   // Method to use to resample images.
