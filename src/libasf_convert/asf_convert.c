@@ -2926,12 +2926,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                                  NULL, NULL),
                 "exporting layover mask (asf_export)\n");
 
-            meta_free(meta);
             int i;
             for (i=0; i<meta->general->band_count; i++) {
               FREE(bands[i]);
             }
             FREE(bands);
+            meta_free(meta);
         }
         else {
             // no export... just move the geocoded file out of the

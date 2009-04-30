@@ -130,8 +130,9 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
       TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
   }
   // use the metadata's colormap if we have one.  a -lut specified on the command
-  // line will override, though
-  if (is_colormapped && (md->colormap || have_look_up_table))
+  // line will override, though (and in that case we should have already set
+  // up the colormap via lut_to_tiff_palette())
+  if (is_colormapped && md->colormap && !have_look_up_table)
   {
       asfPrintStatus("\nFound single-band image with RGB color map ...storing as a Palette\n"
           "Color TIFF\n\n");
