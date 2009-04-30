@@ -1510,8 +1510,13 @@ export_band_image (const char *metadata_file_name,
                 "different than expected.\n");
           if (md->stats                  &&
               md->stats->band_count > 0  &&
+              meta_is_valid_double(md->stats->band_stats[channel].mean) &&
+              meta_is_valid_double(md->stats->band_stats[channel].min) &&
+              meta_is_valid_double(md->stats->band_stats[channel].max) &&
+              meta_is_valid_double(md->stats->band_stats[channel].std_deviation) &&
               sample_mapping != HISTOGRAM_EQUALIZE)
           {
+            asfPrintStatus("Using metadata statistics - skipping stats computations.\n");
             stats.min  = md->stats->band_stats[channel].min;
             stats.max  = md->stats->band_stats[channel].max;
             stats.mean = md->stats->band_stats[channel].mean;

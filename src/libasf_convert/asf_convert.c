@@ -1544,6 +1544,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // reasonable
     if (cfg->general->terrain_correct) {
       // Reference DEM file existence check
+      if (strlen(cfg->terrain_correct->dem)==0) {
+        asfPrintError("A DEM was not selected.\n");
+      }
       if (!findDemFile(cfg->terrain_correct->dem)) {
         asfPrintError("Reference DEM file '%s' does not exist\n",
                       cfg->terrain_correct->dem);
@@ -2870,8 +2873,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         //DEMs be geocoded for terrain correction ingest).  So, proceed
         //directly to export.
         if (cfg->general->export) {
-            update_status("Exporting clipped DEM...");
-
+            update_status("Exporting clipped DEM... ");
+            printf("Exporting clipped DEM: %s -> %s\n", inFile, outFile);
             check_return(
                 asf_export(get_format(cfg), SIGMA, inFile, outFile),
                 "exporting clipped dem (asf_export)\n");
