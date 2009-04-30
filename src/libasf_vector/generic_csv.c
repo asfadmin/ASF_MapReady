@@ -699,7 +699,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
     fprintf(ofp, "    <longitude>%.10f</longitude>\n", clon);
     fprintf(ofp, "    <latitude>%.10f</latitude>\n", clat);
     fprintf(ofp, "    <range>400000</range>\n");
-    fprintf(ofp, "    <tilt>30</tilt>\n");
+    //fprintf(ofp, "    <tilt>30</tilt>\n");
     fprintf(ofp, "  </LookAt>\n");
     fprintf(ofp, "  <visibility>1</visibility>\n");
     fprintf(ofp, "  <open>1</open>\n");

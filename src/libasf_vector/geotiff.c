@@ -222,7 +222,7 @@ static void add_placemark(FILE *fp, geotiff_type_t *geo, dbf_header_t *dbf,
   fprintf(fp, "    <longitude>%.10f</longitude>\n", geo->lon[0]);
   fprintf(fp, "    <latitude>%.10f</latitude>\n", geo->lat[0]);
   fprintf(fp, "    <range>400000</range>\n");
-  fprintf(fp, "    <tilt>30</tilt>\n");
+  //fprintf(fp, "    <tilt>30</tilt>\n");
   fprintf(fp, "  </LookAt>\n");
   fprintf(fp, "  <visibility>1</visibility>\n");
   fprintf(fp, "  <open>1</open>\n");

@@ -554,7 +554,7 @@ static void add_to_kml(FILE *fp, auig_type_t *auig, dbf_header_t *dbf,
   fprintf(fp, "    <longitude>%.10f</longitude>\n", auig->scn_clon);
   fprintf(fp, "    <latitude>%.10f</latitude>\n", auig->scn_clat);
   fprintf(fp, "    <range>400000</range>\n");
-  fprintf(fp, "    <tilt>30</tilt>\n");
+  //fprintf(fp, "    <tilt>30</tilt>\n");
   fprintf(fp, "  </LookAt>\n");
   fprintf(fp, "  <visibility>1</visibility>\n");
   fprintf(fp, "  <open>1</open>\n");

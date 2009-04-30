@@ -28,7 +28,7 @@ static void swap(double *x, double *y)
 
 const char *altitude_mode()
 {
-  return "relativeToGround";
+  return "clampToGround";
 }
 
 void strip_end_whitesp_inplace(char *s)
