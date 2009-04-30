@@ -304,6 +304,7 @@ meta_colormap *meta_colormap_init(void)
 
   colormap = (meta_colormap *)CALLOC(1, sizeof(meta_colormap));
   strcpy(colormap->look_up_table, MAGIC_UNSET_STRING);
+  strcpy(colormap->band_id, MAGIC_UNSET_STRING);
   colormap->num_elements = MAGIC_UNSET_INT;
   colormap->rgb=NULL;
 
