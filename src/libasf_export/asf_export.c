@@ -119,6 +119,13 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                         &nouts, &outs);
   }
   else if ( format == KML ) {
+      // Export format -kml is here in order to produce a kml file with image
+      // overlay ...currently not supported.  Send the user to convert2vector
+      // for an image extents kml file and gracefully exit.
+      asfPrintError("Export to KMZ or KML output with overlay image is not yet\n"
+          "supported.  Please use convert2vector or c2v (GUI) to produce\n"
+          "a KML file that can be used with Google Earth to view image\n"
+          "extents on the Earth's surface.\n");
       in_data_name = appendExt(in_base_name, ".img");
       in_meta_name = appendExt(in_base_name, ".meta");
       write_kml_overlay (in_data_name);
