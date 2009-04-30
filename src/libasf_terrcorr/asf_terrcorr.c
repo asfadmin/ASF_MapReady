@@ -161,10 +161,10 @@ fftMatch_atCorners(char *output_dir, char *sar, char *dem, const int size)
 
   // Require the image be 4x the chip size in each direction, otherwise
   // the corner matching isn't really that meaningful
-  if (nl < 4*size || ns < 4*size) {
-    asfPrintStatus("Image is too small, skipping corner matching.\n");
-    return;
-  }
+  //if (nl < 4*size || ns < 4*size) {
+  //  asfPrintStatus("Image is too small, skipping corner matching.\n");
+  //  return;
+  //}
 
   trim(sar, chopped_sar, (long long)0, (long long)0, lsz, lsz);
   trim(dem, chopped_dem, (long long)0, (long long)0, lsz, lsz);
@@ -507,7 +507,7 @@ clip_dem(meta_parameters *metaSAR,
     // Fit a fifth order polynomial to the grid points.
     // This polynomial is then used to extract a subset out of the reference
     // DEM.
-    asfPrintStatus("Fitting order %d polynomial to %s...\n", polyOrder, what);
+    asfPrintStatus("Fitting polynomial to %s...\n", what);
     double maxErr;
     poly_2d *fwX, *fwY, *bwX, *bwY;
     fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
@@ -850,6 +850,9 @@ int match_dem(meta_parameters *metaSAR,
     }
     
   } while (redo_clipping);
+
+  // debug thing... delete
+  do_corner_matching=TRUE;
 
   if (!no_matching) {
     // Corner test
