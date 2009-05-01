@@ -185,6 +185,7 @@ input_data_formats_changed()
         // as of now, only gamma uses the metadata column...
         if (!strstr(formats, "GAMMA"))
           strcat(formats, "GAMMA, ");
+        enable_terrain_correction = TRUE;
       }
       else { // probably CEOS L1... ?
         show_data_type_combobox = TRUE;
