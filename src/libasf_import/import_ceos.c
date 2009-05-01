@@ -389,21 +389,21 @@ void import_ceos(char *inBaseName, char *outBaseName,
     // This is the little extra exit for importing only amplitude images
     if (band_id && strcmp_case(band_id, "NONE") == 0 && ii>0) {
       if (do_resample) {
-    if (range_scale < 0) {
-      range_scale = DEFAULT_RANGE_SCALE;
-    }
+        if (range_scale < 0) {
+          range_scale = DEFAULT_RANGE_SCALE;
+        }
 
-    if (azimuth_scale < 0) {
-      azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
-    }
+        if (azimuth_scale < 0) {
+          azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
+        }
 
-    asfPrintStatus("Resampling with scale factors: "
-               "%lf range, %lf azimuth.\n",
-               range_scale, azimuth_scale);
+        asfPrintStatus("Resampling with scale factors: "
+                   "%lf range, %lf azimuth.\n",
+                   range_scale, azimuth_scale);
 
-    resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
+        resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
 
-    asfPrintStatus("\n\nDone.\n\n");
+        asfPrintStatus("\n\nDone.\n\n");
       }
 
       return;
