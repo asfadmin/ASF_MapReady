@@ -11,6 +11,7 @@
 #include <xtiffio.h>
 #include <geotiff_support.h>
 
+void read_tiff_colormap(const char *tiff_file, meta_colormap *mc);
 int read_tiff_rgb_scanline (TIFF *tiff, tiff_format_t format, tiff_data_config_t *data_config,
                             uint32 row, uint32 scanlineSize, int sample_count,
                             int band_r, int band_g, int band_b,
@@ -252,7 +253,13 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
     // If the tiff file is a single-band image with RGB color map, then store
     // the color map as an ASF style look-up table
     if (is_palette_color_tiff) {
+      meta->colormap = meta_colormap_init();
       meta_colormap *mc = meta->colormap;
+      strcpy(mc->look_up_table, EMBEDDED_TIFF_COLORMAP_LUT_FILE);
+      strcpy(mc->band_id, "01");
+      mc->num_elements = 1<<bits_per_sample;
+      mc->rgb = (meta_rgb *)CALLOC(mc->num_elements, sizeof(meta_rgb));
+      read_tiff_colormap(meta_name, mc);
       char lut_file[256];
       char *lut_loc = (char *)MALLOC(sizeof(char)*(strlen(get_asf_share_dir())+64));
       sprintf(lut_loc, "%s%clook_up_tables", get_asf_share_dir(), DIR_SEPARATOR);
@@ -1177,6 +1184,7 @@ void add_empties(const char *tiff_file, char *band_str, short *num_bands,
   char **band_names;
 
   TIFF *tiff = TIFFOpen(tiff_file, "r");
+  if (tiff == NULL) asfPrintError("Cannot open tiff file %s\n", tiff_file);
   for (i=0, num_empty = 0; i<MAX_BANDS; i++) num_empty += empty[i] ? 1 : 0;
   if (num_empty > 0 && tiff) {
     short samplesPerPixel;
@@ -1215,4 +1223,36 @@ void add_empties(const char *tiff_file, char *band_str, short *num_bands,
     }
   }
   if (tiff) TIFFClose(tiff);
+}
+
+// Assumes mc->num_elements has been set properly to 2^bits_per_sample
+void read_tiff_colormap(const char *tiff_file, meta_colormap *mc)
+{
+  unsigned short *colors = NULL;
+  unsigned short *red    = NULL;
+  unsigned short *green  = NULL;
+  unsigned short *blue   = NULL;
+  TIFF *tiff = TIFFOpen(tiff_file, "r");
+  if (tiff == NULL) asfPrintError("Cannot open tiff file %s\n", tiff_file);
+  asfRequire(mc && mc->num_elements > 0, "Invalid colormap");
+
+  colors = (unsigned short*)CALLOC(3 * mc->num_elements, sizeof(unsigned short));
+  red    = &colors[                   0];
+  green  = &colors[    mc->num_elements];
+  blue   = &colors[2 * mc->num_elements];
+
+  if (TIFFGetField(tiff, TIFFTAG_COLORMAP, &red, &green, &blue)) {
+    int i;
+    for (i=0; i<mc->num_elements; i++) {
+      mc->rgb[i].red   = red[i]   >> 8;
+      mc->rgb[i].green = green[i] >> 8;
+      mc->rgb[i].blue  = blue[i]  >> 8;
+    }
+  }
+  else {
+    asfPrintError("Cannot read colormap from TIFF file %s\n", tiff_file);
+  }
+
+  if (tiff) TIFFClose(tiff);
+  FREE(colors);
 }
