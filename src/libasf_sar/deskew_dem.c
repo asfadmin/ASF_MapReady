@@ -525,7 +525,7 @@ Here's what it looked like before optimization:
     for (x=1;x<ns;x++)
     {
         // don't mess with masked pixels
-        if (mask[x]==MASK_USER_MASK)
+        if (mask[x]!=MASK_NORMAL)
           continue;
         // if we have any SRTM holes, or otherwise no DEM data, don't correct
         if (bad_dem_height(grDEM[x]) || bad_dem_height(grDEMprev[x]) ||
