@@ -487,6 +487,12 @@ void import_ceos(char *inBaseName, char *outBaseName,
                    range_scale, azimuth_scale);
 
     resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
+    char *del_file = appendExt(unscaledBaseName, ".img");
+    remove_file(del_file);
+    FREE(del_file);
+    del_file = appendExt(unscaledBaseName, ".meta");
+    remove_file(del_file);
+    FREE(del_file);
 
     asfPrintStatus("\n\nDone.\n\n");
   }
@@ -2302,12 +2308,12 @@ meta_parameters *meta_read_only(const char *in_fName)
   meta_parameters *meta = raw_init();
   report_level_t level = REPORT_LEVEL_NONE;
   ceos_description *ceos = get_ceos_description_ext(in_fName, level, FALSE);
-  
+
   if (ceos->sensor == SAR || ceos->sensor == PALSAR)
     ceos_init_sar_ext(ceos, in_fName, meta, TRUE);
   else if (ceos->sensor == AVNIR || ceos->sensor == PRISM)
     ceos_init_optical(in_fName, meta);
-  
+
   FREE(ceos);
   return meta;
 }
@@ -2352,11 +2358,11 @@ meta_parameters *meta_read_raw(const char *inFile)
   dssr = &ceos->dssr;
   if (meta->general->center_latitude == 0.0 &&
       meta->general->center_longitude == 0.0)
-    meta_get_latLon(meta, meta->general->line_count/2, 
+    meta_get_latLon(meta, meta->general->line_count/2,
 		    meta->general->sample_count/2, 0.0,
-		    &meta->general->center_latitude, 
+		    &meta->general->center_latitude,
 		    &meta->general->center_longitude);
   meta_get_corner_coords(meta);
- 
+
   return meta;
 }
