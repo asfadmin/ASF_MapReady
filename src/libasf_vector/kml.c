@@ -1100,7 +1100,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
           meta->general->center_longitude);
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
           meta->general->center_latitude);
-  fprintf(kml_file, "    <range>400000</range>\n");
+  fprintf(kml_file, "    <range>300000</range>\n");
   //fprintf(kml_file, "    <tilt>30</tilt>\n");
   //fprintf(kml_file, "    <heading>50</heading>\n");
   fprintf(kml_file, "  </LookAt>\n");
@@ -1159,11 +1159,11 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
 
   if (!png_filename || !meta->projection || fabs(ang) > .1)
     {
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LL, lat_LL);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LR, lat_LR);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UR, lat_UR);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
 
       fprintf(kml_file, "        </coordinates>\n");
       fprintf(kml_file, "      </LinearRing>\n");
@@ -1244,11 +1244,11 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       //fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, lower_lat);
       //fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, upper_lat);
       //fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
-      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LL, lat_LL);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LR, lat_LR);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UR, lat_UR);
+      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
       fprintf(kml_file, "        </coordinates>\n");
       fprintf(kml_file, "      </LinearRing>\n");
       fprintf(kml_file, "    </outerBoundaryIs>\n");
@@ -1259,9 +1259,9 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "  <LookAt>\n");
       fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
       fprintf(kml_file, "    <latitude>%.10f</latitude>\n", clat);
-      fprintf(kml_file, "    <range>400000</range>\n");
+      fprintf(kml_file, "    <range>300000</range>\n");
       //fprintf(kml_file, "    <tilt>45</tilt>\n");
-      fprintf(kml_file, "    <heading>50</heading>\n");
+      //fprintf(kml_file, "    <heading>50</heading>\n");
       fprintf(kml_file, "  </LookAt>\n");
       fprintf(kml_file, "  <color>ffffffff</color>\n");
       fprintf(kml_file, "  <Icon>\n");
@@ -1384,9 +1384,9 @@ void kml_entry_overlay(FILE *kml_file, char *name)
       meta->general->center_longitude);
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
       meta->general->center_latitude);
-  fprintf(kml_file, "    <range>400000</range>\n");
+  fprintf(kml_file, "    <range>300000</range>\n");
   //fprintf(kml_file, "    <tilt>45</tilt>\n");
-  fprintf(kml_file, "    <heading>50</heading>\n");
+  //fprintf(kml_file, "    <heading>50</heading>\n");
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <color>9effffff</color>\n");
   fprintf(kml_file, "  <Icon>\n");
@@ -1443,7 +1443,7 @@ void write_kml_style_keys(FILE *kml_file)
     fprintf(kml_file, "  <Style>\n");
     fprintf(kml_file, "    <LineStyle>\n");
     fprintf(kml_file, "      <color>ffff9900</color>\n");
-    fprintf(kml_file, "      <width>2</width>\n");
+    fprintf(kml_file, "      <width>5</width>\n");
     fprintf(kml_file, "    </LineStyle>\n");
     fprintf(kml_file, "    <PolyStyle>\n");
     fprintf(kml_file, "      <color>1fff5500</color>\n");
