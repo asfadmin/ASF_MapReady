@@ -1,4 +1,5 @@
 #include "asf_view.h"
+#include <asf_contact.h>
 
 /************************************************************************
  * Global variables...
@@ -61,9 +62,42 @@ static void set_button_images()
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("save_as.png"));
 }
 
+static void help()
+{
+  asfPrintStatus(
+    "Usage:\n"
+    "   asf_view [-band <band_name>] [-colormap <colormap_name>] <filename>\n"
+    "\n"
+    "Description:\n"
+    "   Viewer for most image types that ASF software can ingest or export:\n"
+    "   CEOS (ERS-1, ERS-2, RADARSAT-1, ALOS are officially supported,\n"
+    "   many others will work), AirSAR, TerraSAR-X, ASF Internal, GeoTIFF,\n"
+    "   JPEG, TIFF, PNG, PGM.  ENVI .img/.hdr files may also work.\n"
+    "\n"
+    "Options:\n"
+    "   -band <band_name> (-b)\n"
+    "       Load the specified band.  Generally this is only used for multiband\n"
+    "       ASF Internal format files.  If not specified, the first band is\n"
+    "       shown.  You may select other bands within ASF View on the 'Display'\n"
+    "       tab.\n"
+    "\n"
+    "   -colormap <colormap_name>\n"
+    "       Apply a colormap to the data when displaying it.  Colormaps convert\n"
+    "       greyscale pixel values to RGB values.  If the specified colormap\n"
+    "       is not found in the current directory, the ASF share directory is\n"
+    "       checked.\n"
+    "\n");
+  asfPrintStatus("Contact:\n" ASF_CONTACT_STRING "\n");
+  asfPrintStatus("Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n");
+  exit(EXIT_FAILURE);
+}
+
 int
 main(int argc, char **argv)
 {
+    if (detect_flag_options(argc, argv, "-help", "--help", NULL))
+      help();
+
     char band[512], lut[512];
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);
