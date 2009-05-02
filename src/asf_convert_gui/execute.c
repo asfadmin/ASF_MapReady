@@ -449,8 +449,10 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
                 FILE *fStat = fopen(statFile, "r");
                 if (fStat)
                 {
-                    fgets(buf, sizeof(buf), fStat);
-                    fclose(fStat);
+                    if (fgets(buf, sizeof(buf), fStat))
+                        fclose(fStat);
+                    else
+                        strcpy(buf,"");
 
                     gtk_list_store_set(list_store, iter, COL_STATUS, buf, -1);
 
