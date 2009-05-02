@@ -74,8 +74,8 @@ int main(int argc, char *argv[])
   // structure, or have a look at a .meta file, it is plain ascii text.
   meta_parameters *meta = meta_read(input_meta_file);
 
-  // FOPEN() is just like fopen(), except is aborts if the file is not
-  // found (when reading) or otherwise couldn't be opened.
+  // FOPEN() is just like fopen(), except it aborts if the file is not
+  // found (when reading), or otherwise couldn't be opened.
   FILE *in_fp = FOPEN(input_img_file, "rb");
   FILE *out_fp = FOPEN(output_img_file, "wb");
 
@@ -84,7 +84,8 @@ int main(int argc, char *argv[])
 
   // allocate a place to put the read-in values -- one line's worth
   // MALLOC() is just like malloc() except it aborts if memory could
-  // not be allocated
+  // not be allocated.  We create an array of floats, even though we
+  // may not be reading float-point data... see get_float_line(), below.
   float *buf = MALLOC(sizeof(float) * meta->general->sample_count);
 
   int i,j;
@@ -93,7 +94,9 @@ int main(int argc, char *argv[])
     // the data array.  The "float" refers to the kind of array you must pass,
     // not the data in the file -- if the data is BYTE data (as specified by
     // the metadata that is passed in), it'll be read as bytes and then put
-    // into the floating-point array
+    // into the floating-point array.  So, for any data type supported by
+    // the ASF tools, you'll end up with floating points number after they
+    // are read in.
     get_float_line(in_fp, meta, i, buf);
 
     // for this sample program we just add the offset to each pixel
@@ -103,10 +106,12 @@ int main(int argc, char *argv[])
     // put_float_line() is similar to get_float_line() in that it does not
     // necessarily write floating point, the float refers to the type of
     // array that you pass in.  The type of the data written out is determined
-    // from meta->general->data_type.
+    // from meta->general->data_type.  We're using the same metadata for the
+    // input and output -- so the same data type is written as was read.
     put_float_line(out_fp, meta, i, buf);
 
     // asfLineMeter is the code the prints "Processed x of y lines"
+    // every so often.  -quiet will turn it off.
     asfLineMeter(i,meta->general->line_count);
   }
 
