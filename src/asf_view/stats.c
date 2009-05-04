@@ -281,6 +281,46 @@ static void set_mapping(ImageInfo *ii, int from_gui)
   }
 }
 
+static double calc_rgb_min(ImageStatsRGB *stats)
+{
+  return stats->truncate ? 0 : stats->map_min;
+}
+
+static double calc_rgb_max(ImageStatsRGB *stats)
+{
+  return stats->truncate ? 255 : stats->map_max;
+}
+
+static double calc_fake_min(ImageInfo *ii)
+{
+  if (ii->stats_r.truncate && ii->stats_b.truncate && ii->stats_g.truncate) {
+    return 0.;
+  }
+  else {
+    // average three channel mins
+    double r_min = calc_rgb_min(&ii->stats_r);
+    double g_min = calc_rgb_min(&ii->stats_g);
+    double b_min = calc_rgb_min(&ii->stats_b);
+
+    return (r_min + g_min + b_min)/3.;
+  }
+}
+
+static double calc_fake_max(ImageInfo *ii)
+{
+  if (ii->stats_r.truncate && ii->stats_b.truncate && ii->stats_g.truncate) {
+    return 255.;
+  }
+  else {
+    // average three channel maxs
+    double r_max = calc_rgb_max(&ii->stats_r);
+    double g_max = calc_rgb_max(&ii->stats_g);
+    double b_max = calc_rgb_max(&ii->stats_b);
+
+    return (r_max + g_max + b_max)/3.;
+  }
+}
+
 // Now the thumbnail generation is combined with the stats calculations,
 // to speed things up a little.  Both require a pass through the entire
 // image, so it seems natural, and the stats calculation doesn't add much
@@ -524,8 +564,13 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         // the histogram
         stats->avg = 0;
         stats->stddev = 0;
-        stats->map_min = 0;
-        stats->map_max = 0;
+
+	// these are used for the axis labels on the histogram, so we put
+	// in the averages of the mins... these are sort of bogus anyway, we
+	// really should have 3 histograms
+        stats->map_min = calc_fake_min(ii);
+	stats->map_max = calc_fake_max(ii);
+	printf("%f %f\n", stats->map_min, stats->map_max);
 
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
@@ -718,8 +763,12 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         // the histogram
         stats->avg = 0;
         stats->stddev = 0;
-        stats->map_min = 0;
-        stats->map_max = 0;
+
+	// these are used for the axis labels on the histogram, so we put
+	// in the averages of the mins... these are sort of bogus anyway, we
+	// really should have 3 histograms
+        stats->map_min = calc_fake_min(ii);
+	stats->map_max = calc_fake_max(ii);
 
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
@@ -817,12 +866,16 @@ static void fill_stats_label(ImageInfo *ii)
     if (ii->data_ci->data_type == RGB_FLOAT ||
         ii->data_ci->data_type == RGB_BYTE)
     {
-      double rb = -ii->stats_r.map_min*255.0/
-        (ii->stats_r.map_max-ii->stats_r.map_min);
-      double gb = -ii->stats_g.map_min*255.0/
-        (ii->stats_g.map_max-ii->stats_g.map_min);
-      double bb = -ii->stats_b.map_min*255.0/
-        (ii->stats_b.map_max-ii->stats_b.map_min);
+      double r_min = calc_rgb_min(&ii->stats_r);
+      double r_max = calc_rgb_max(&ii->stats_r);
+      double g_min = calc_rgb_min(&ii->stats_g);
+      double g_max = calc_rgb_max(&ii->stats_g);
+      double b_min = calc_rgb_min(&ii->stats_b);
+      double b_max = calc_rgb_max(&ii->stats_b);
+
+      double rb = -r_min*255.0/(r_max-r_min);
+      double gb = -g_min*255.0/(g_max-g_min);
+      double bb = -b_min*255.0/(b_max-b_min);
 
       sprintf(&s[strlen(s)],
               "Average: %.3f, %.3f, %.3f\n"
@@ -837,13 +890,13 @@ static void fill_stats_label(ImageInfo *ii)
               ii->stats_r.stddev,
               ii->stats_g.stddev,
               ii->stats_b.stddev,
-              255.0/(ii->stats_r.map_max-ii->stats_r.map_min),
+              255.0/(r_max-r_min),
               rb > 0 ? '+' : '-',
               fabs(rb),
-              255.0/(ii->stats_g.map_max-ii->stats_g.map_min),
+              255.0/(g_max-g_min),
               gb > 0 ? '+' : '-',
               fabs(gb),
-              255.0/(ii->stats_b.map_max-ii->stats_b.map_min),
+              255.0/(b_max-b_min),
               bb > 0 ? '+' : '-',
               fabs(bb));
     }
