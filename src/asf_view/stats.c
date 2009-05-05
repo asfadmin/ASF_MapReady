@@ -570,7 +570,6 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 	// really should have 3 histograms
         stats->map_min = calc_fake_min(ii);
 	stats->map_max = calc_fake_max(ii);
-	printf("%f %f\n", stats->map_min, stats->map_max);
 
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
