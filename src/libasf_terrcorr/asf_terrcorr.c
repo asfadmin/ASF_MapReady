@@ -851,9 +851,6 @@ int match_dem(meta_parameters *metaSAR,
     
   } while (redo_clipping);
 
-  // debug thing... delete
-  do_corner_matching=TRUE;
-
   if (!no_matching) {
     // Corner test
     if (do_corner_matching) {
