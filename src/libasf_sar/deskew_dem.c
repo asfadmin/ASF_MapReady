@@ -142,18 +142,21 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
     int lastOutX=-1;
     float lastOutValue=badDEMht;
 
+    for (outX=0; outX<ns; outX++)
+        outBuf[outX]=badDEMht;
+
     for (inX=0;inX<ns;inX++)
     {
         float height=inBuf[inX];
         outX=(int)SR2GR(d,(float)inX,height);
         
-        if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
+        if ((height>badDEMht)&&(outX>=0)&&(outX<ns))
         {
             // if either end is NO_DEM_DATA, fill the range with that value
             if (eq(lastOutValue,NO_DEM_DATA,.0001) ||
                 eq(height,NO_DEM_DATA,.0001))
             {
-                for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
+              for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
                     outBuf[xInterp]=NO_DEM_DATA;                
             }
             // normal case: two valid slant range value to interpolate through
@@ -168,17 +171,9 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
                   curr+=delt;
                 }
             }
-            // last resort - fill with badDEMht
-            else {
-                for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
-                    outBuf[xInterp]=badDEMht;
-            }
             lastOutValue=height;
             lastOutX=outX;
         }
-    }
-    for (outX=lastOutX+1;outX<ns;outX++) {
-        outBuf[outX]=badDEMht;
     }
 }
 
@@ -799,8 +794,8 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
         for (x=0; x<ns; ++x)
             maskLine[x] = 1;
 
-        //FILE *fpdem = fopen("gr_dem.img", "wb");
-        //meta_write(metaDEMground, "gr_dem.meta");
+        //FILE *fpdem = fopen("gr_dem.img", "wb"); // ***
+        //meta_write(metaDEMground, "gr_dem.meta"); // ***
 
 /*Rectify data.*/
 	for (y=0;y<d.numLines;y++) {
@@ -819,12 +814,14 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
             if (inDemGroundFp) {
               get_float_line(inDemGroundFp,metaDEMground,y,outLine);
               shift_gr(&d,outLine,grDEMline);
-              //put_float_line(fpdem,metaDEMground,y,grDEMline);
+              //put_float_line(fpdem,metaDEMground,y,grDEMline); // ***
             }
             else {
               for (x=0; x<ns; ++x)
                 grDEMline[x] = grDEMconv[x];
             }
+
+            //put_float_line(fpdem,metaDEMground,y,grDEMconv); // ***
 
             // we can use either GR DEM to do the correction... it looks like
             // for radiometric correction the original is clearly the better
@@ -876,7 +873,7 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
             meta_free(inMaskMeta);
         }
 
-        //FCLOSE(fpdem);
+        //FCLOSE(fpdem); // ***
 
 /*Write the updated mask*/
         if (outMaskFlag) {
