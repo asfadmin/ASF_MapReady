@@ -105,8 +105,10 @@ int get_alos_delta_time (const char *fileName, double *delta)
       sprintf(dateStr, "%s", str+1);
       dateStr[strlen(dateStr)-2] = '\0';
       date_alos2date(dateStr, &summary_date, &summary_time);
+      // bumped up the tolerance to 2 seconds... can't see how this would
+      // introduce any false positives, and definitely reduces false negatives
       if (date_difference(&dssr_date, &dssr_time,
-          &summary_date, &summary_time) > 0.0)
+          &summary_date, &summary_time) > 2.0)
       {
         asfPrintWarning("Summary file does not correspond to leader file.\n"
                         "DSSR: %s\nSummary: %s\n",
