@@ -2280,8 +2280,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                              cfg->terrain_correct->do_radiometric,
                              cfg->terrain_correct->smooth_dem_holes,
                              NULL, cfg->terrain_correct->no_matching,
-                 cfg->terrain_correct->range_offset,
-                 cfg->terrain_correct->azimuth_offset),
+                             cfg->terrain_correct->range_offset,
+                             cfg->terrain_correct->azimuth_offset,
+                             cfg->terrain_correct->use_gr_dem),
             "terrain correcting data file (asf_terrcorr)\n");
       }
 

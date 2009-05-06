@@ -152,6 +152,8 @@ typedef struct
                           // not matched
   double range_offset;    // Overwrite the range offset determined by matching
   double azimuth_offset;  // Overwrite the azimuth offset determined by matching;
+  int use_gr_dem;    // If TRUE, use the ground-range DEM for terrcorr, if
+                     // FALSE, use the backconverted slant-range DEM (default).
 } s_terrain_correct;
 
 typedef struct

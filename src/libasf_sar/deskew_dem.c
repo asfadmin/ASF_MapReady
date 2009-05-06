@@ -313,7 +313,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             if (height > max_height) max_height = height;
             last_good_height = height;
 
-            if (srX >= 0 && srX < ns-1)
+            if (srX >= 1 && srX < ns-1)
             {
                 int x=floor(srX);
                 double dx=srX-x;
@@ -636,7 +636,8 @@ static void shift_gr(struct deskew_dem_data *d, float *in, float *out)
 /* inMaskName can be NULL, in this case outMaskName is ignored */
 int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
                char *inSarName, int doRadiometric, char *inMaskName,
-               char *outMaskName, int fill_holes, int fill_value)
+               char *outMaskName, int fill_holes, int fill_value,
+               int which_gr_dem)
 {
         float *srDEMline,*grDEMline,*grDEMlast,*grDEMconv,
               *inSarLine,*outLine,*maskLine;
@@ -826,7 +827,12 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
             // we can use either GR DEM to do the correction... it looks like
             // for radiometric correction the original is clearly the better
             // choice, but for geometric correction it is harder to say.
-            float *grDEM_for_geo = grDEMconv;
+            // Now force caller to specify -- default is backconverted
+            float *grDEM_for_geo=grDEMconv;
+            if (which_gr_dem==BACKCONVERTED_GR_DEM)
+              grDEM_for_geo = grDEMconv;
+            else if (which_gr_dem==ORIGINAL_GR_DEM)
+              grDEM_for_geo = grDEMline;
 
             if (inMaskFlag) {
                 // Read in the next line of the mask, update the values

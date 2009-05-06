@@ -79,6 +79,24 @@
 "          more than a factor of two your image may be automatically\n"\
 "          downsampled).\n"\
 "\n"\
+"     -use-gr-dem\n"\
+"     -use-sr-dem\n"\
+"          The DEM that is provided to asf_terrcorr is generally in ground\n"\
+"          range, and is converted to slant range as part of the coregistration\n"\
+"          process.  After coregistration, you can use either the original\n"\
+"          ground range DEM, or the slant range DEM, to do the actual terrain\n"\
+"          correction.  By default, the slant range DEM is used, specifying\n"\
+"          -use-gr-dem will use the ground range DEM.\n\n"\
+"          The choice only makes a significant difference in regions of layover.\n"\
+"          (And in those regions, the difference is quite significant!)\n"\
+"\n"\
+"          Both produce similar results in areas without layover.  In regions\n"\
+"          of layover, however the results are quite different; using the slant\n"\
+"          range DEM results in more aggressive interpolations, which sometimes\n"\
+"          results in streaky-looking layover regions, whereas using the ground\n"\
+"          range DEM preserves more structure within the layover regions, but\n"\
+"          looks worse if the coregistration is off in those areas.\n"\
+"\n"\
 "     -mask-file <filename>\n"\
 "          Specify a file that contains regions to be omitted from terrain\n"\
 "          correction.  These regions will also not be considered when\n"\
@@ -273,6 +291,7 @@ main (int argc, char *argv[])
   int mask_height_cutoff_specified = FALSE;
   int smooth_dem_holes = FALSE;
   int no_matching = FALSE;
+  int use_gr_dem = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   char *other_files[MAX_OTHER];
@@ -312,6 +331,12 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-no-match","--no-match",NULL)) {
       no_matching = TRUE;
+    }
+    else if (strmatches(key,"-use-gr-dem", "--use-gr-dem",NULL)) {
+      use_gr_dem = TRUE;
+    }
+    else if (strmatches(key,"-use-sr-dem", "--use-sr-dem",NULL)) {
+      use_gr_dem = FALSE;
     }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
         CHECK_ARG(1);
@@ -424,7 +449,8 @@ main (int argc, char *argv[])
                               update_original_metadata_with_offsets,
                               mask_height_cutoff, doRadiometric,
                               smooth_dem_holes, other_files,
-                  no_matching, range_offset, azimuth_offset);
+                              no_matching, range_offset, azimuth_offset,
+                              use_gr_dem);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])

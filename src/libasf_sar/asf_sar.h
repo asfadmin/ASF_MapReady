@@ -25,6 +25,10 @@
 /** The value of "fill_value" that means "leave masked out data as-is" */
 #define LEAVE_MASK -1
 
+/* Values for "which_gr_dem" in deskew_dem */
+#define BACKCONVERTED_GR_DEM 1
+#define ORIGINAL_GR_DEM 2
+
 #include <stdio.h>
 #include "poly.h"
 #include "asf_meta.h"
@@ -64,7 +68,8 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMslant,
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
                char *inSarName, int doRadiometric, char *inMaskName,
-               char *outMaskName, int fill_holes, int fill_value);
+               char *outMaskName, int fill_holes, int fill_value,
+               int which_gr_dem);
 
 /* Prototypes from create_dem_grid.c */
 int create_dem_grid(const char *demName, const char *sarName,

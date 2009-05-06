@@ -489,7 +489,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->no_matching = 0;
   cfg->terrain_correct->range_offset = 0;
   cfg->terrain_correct->azimuth_offset = 0;
-
+  cfg->terrain_correct->use_gr_dem = 0;
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj",
           get_asf_share_dir());
@@ -708,6 +708,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->terrain_correct->range_offset = read_double(line, "range offset");
       if (strncmp(test, "azimuth offset", 14)==0)
         cfg->terrain_correct->azimuth_offset = read_double(line, "azimuth offset");
+      if (strncmp(test, "use gr dem", 10)==0)
+        cfg->terrain_correct->use_gr_dem = read_int(line, "use gr dem");
 
       // Geocoding
       if (strncmp(test, "projection", 10)==0)
@@ -1060,7 +1062,9 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->range_offset = read_double(line, "range offset");
       if (strncmp(test, "azimuth offset", 14)==0)
         cfg->terrain_correct->azimuth_offset = read_double(line, "azimuth offset");
-        FREE(test);
+      if (strncmp(test, "use gr dem", 10)==0)
+        cfg->terrain_correct->use_gr_dem = read_int(line, "use gr dem");
+      FREE(test);
     }
 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
@@ -1639,6 +1643,19 @@ int write_convert_config(char *configFile, convert_config *cfg)
         "# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
                 "# image.  The offset is specified in pixels.\n\n");
       fprintf(fConfig, "azimuth offset = %lf\n", cfg->terrain_correct->azimuth_offset);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# The DEM that is provided to asf_terrcorr is generally in ground range,\n"
+                "# and is converted to slant range as part of the coregistration procedure.\n"
+                "# After coregistration, you can use either the original ground range DEM, or\n"
+                "# the slant range DEM, to do the actual terrain correction.  By default, the\n"
+                "# slant range DEM is used, specifying 'use gr dem = 1' will use the ground range\n"
+                "# DEM.  The choice only makes a significant difference in regions of layover;\n"
+                "# both produce similar results in areas without layover.  Using the slant range\n"
+                "# DEM results in more aggressive interpolations, which sometimes results in\n"
+                "# streaky-looking layover regions, whereas using the ground range DEM preserves\n"
+                "# more structure within the layover regions, but can look worse if the\n"
+                "# coregistration is off in those areas.\n\n");
+      fprintf(fConfig, "use gr dem = %d\n", cfg->terrain_correct->use_gr_dem);
     }
 
     // Geocoding

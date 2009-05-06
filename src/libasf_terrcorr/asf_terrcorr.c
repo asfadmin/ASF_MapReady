@@ -234,6 +234,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int no_matching = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
+  int use_gr_dem=FALSE;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
       clean_files, do_resample, do_corner_matching,
@@ -242,7 +243,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
       generate_water_mask, save_clipped_dem,
       update_original_metadata_with_offsets, mask_height_cutoff,
       doRadiometric, smooth_dem_holes, NULL,
-      no_matching, range_offset, azimuth_offset);
+      no_matching, range_offset, azimuth_offset, use_gr_dem);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
@@ -265,6 +266,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int no_matching = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
+  int use_gr_dem = FALSE;
 
   int ret =
       asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
@@ -274,7 +276,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        save_clipped_dem, update_orig_metadata_with_offsets,
                        mask_height_cutoff, doRadiometric, smooth_dem_holes,
                        other_files_to_update_with_offsets,
-                       no_matching, range_offset, azimuth_offset);
+                       no_matching, range_offset, azimuth_offset, use_gr_dem);
 
   if (ret==0)
   {
@@ -989,7 +991,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                      int smooth_dem_holes,
                      char **other_files_to_update_with_offset,
                      int no_matching, double range_offset,
-                     double azimuth_offset)
+                     double azimuth_offset, int use_gr_dem)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimSar = NULL, *demTrimSlant = NULL, *demGround = NULL;
@@ -1003,6 +1005,15 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   int madssap = FALSE; // mask and dem same size and projection
   int clean_resample_file = TRUE;
   int image_was_ground_range = TRUE;
+
+  // Which DEM should we use during terrain correction -- the original
+  // ground range DEM (new method), or the backconverted one (old method)?
+  // Neither is clearly preferable, so we allow the user to specify
+  int which_dem=0;
+  if (use_gr_dem)
+    which_dem = ORIGINAL_GR_DEM;
+  else
+    which_dem = BACKCONVERTED_GR_DEM;
 
   asfPrintStatus("Starting terrain correction pre-processing.\n");
 
@@ -1328,7 +1339,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
            metaSAR->general->line_count);
       deskew_dem(demTrimSlant, demGround, deskewDemFile, padFile, doRadiometric,
-                 userMaskClipped, deskewDemMask, do_interp, fill_value);
+                 userMaskClipped, deskewDemMask, do_interp, fill_value,
+                 which_dem);
 
       // After deskew_dem, there will likely be zeros on the left & right edges
       // of the image, we trim those off before finishing up.
