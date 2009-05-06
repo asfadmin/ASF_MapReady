@@ -334,7 +334,7 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
       quietflag = TRUE;
     }
-    else if (strmatches(key,"-bands","--bands",NULL)) {
+    else if (strmatches(key,"-bands","--bands","-band","--band",NULL)) {
       CHECK_ARG(1);
       strcpy(bands,GET_ARG(1));
     }
