@@ -1673,7 +1673,9 @@ settings_to_config_file(const Settings *s,
               fprintf(cf, "no matching = 0\n");
             }
             // maybe we should use "1" for quad-pol??
-            fprintf(cf, "use gr dem = 0\n");
+            //   commenting this out ... let users set a default in
+            //   asf_mapready.defaults
+            // fprintf(cf, "use gr dem = 0\n");
         } else if (s->refine_geolocation_is_checked) {
             fprintf(cf, "refine geolocation only = 1\n");
         }
