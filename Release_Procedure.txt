@@ -20,6 +20,8 @@ Note: The MapReady binaries are mapready and asf_mapready, but
   source folders respectively.  The executable and icon file (etc)
   files are renamed as they are copied to the bin and share folders.
 
+ * It is suggested that you do the build on dq.
+
  * Check out the code to be released (if not already), i.e. branched version
    or the trunk, i.e. to ~/asf/asf_tools.  NOTE: You will perform an
    'svn export' to obtain a copy of the tools for building the release
@@ -47,6 +49,16 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       MAPREADY_VERSION 2.0
 
    b) svn ci
+
+ * Update the asf_convert_gui.glade file to eliminate all the cruft added
+   by more modern version of glade.
+
+      > cd asf_tools/src/asf_convert_gui
+      > glade-2 asf_convert_gui.glade
+
+   Simply click "Save" and then exit.
+
+      > svn ci
 
  * When doing a release close to final release, you may wish to
    update "mapready-version_history.txt" with the release date and
