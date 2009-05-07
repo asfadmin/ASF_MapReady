@@ -724,6 +724,7 @@ on_execute_button_clicked (GtkWidget *button)
 
     if (confirm_overwrite())
     {
+        keep_going = TRUE;
         user_settings = settings_get_from_gui();
         settings_on_execute = settings_copy(user_settings);
 
