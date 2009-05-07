@@ -381,7 +381,7 @@ static int save_as_asf(ImageInfo *ii,
             strerror(errno));
         message_box(errbuf);
         strcat(errbuf, "\n");
-        printf(errbuf);
+        printf("%s", errbuf);
         return FALSE; // failure
     }
 
@@ -408,6 +408,14 @@ static int save_as_asf(ImageInfo *ii,
     meta_parameters *out_meta =
       build_metadata(meta, out_file, nl, ns, line_min, samp_min, data_type);
 
+    // put_float_line() will always dump BYTE data if the optical block
+    // is present... we want to be in control of the data type, so we must
+    // wipe out this block
+    if (out_meta->optical) {
+      FREE(out_meta->optical);
+      out_meta->optical=NULL;
+    }
+
     if (what_to_save == LAT_LON_2_BAND) {
       out_meta->general->band_count = 2;
       strcpy(out_meta->general->bands, "LAT,LON");
@@ -431,29 +439,8 @@ static int save_as_asf(ImageInfo *ii,
     // now actually write the data
     printf("Generating %s...\n", out_file);
 
-    if (what_to_save != LAT_LON_2_BAND) {
-      // normal case
-      float *buf = MALLOC(sizeof(float)*ns);
-      for (i=0; i<nl; ++i) {
-        int l = line_min+i;
-        for (j=0; j<ns; ++j) {
-            int s = samp_min+j;
-            float val;
-            if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
-                val = get_data(ii, what_to_save, l, s);
-            }
-            else {
-                val = ndv;
-            }
-            buf[j] = val;
-        }
-        put_float_line(outFp, out_meta, i, buf);
-        asfLineMeter(i,nl);
-      }
-      free(buf);
-    }
-    else {
-      // dump a 2-band image
+    if (what_to_save == LAT_LON_2_BAND) {
+      // dump a 2-band image, lat & lon data
       float *lats = MALLOC(sizeof(float)*ns);
       float *lons = MALLOC(sizeof(float)*ns);
       for (i=0; i<nl; ++i) {
@@ -477,6 +464,27 @@ static int save_as_asf(ImageInfo *ii,
       }
       free(lats);
       free(lons);
+    }
+    else {
+      // normal case
+      float *buf = MALLOC(sizeof(float)*ns);
+      for (i=0; i<nl; ++i) {
+        int l = line_min+i;
+        for (j=0; j<ns; ++j) {
+            int s = samp_min+j;
+            float val;
+            if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
+                val = get_data(ii, what_to_save, l, s);
+            }
+            else {
+                val = ndv;
+            }
+            buf[j] = val;
+        }
+        put_float_line(outFp, out_meta, i, buf);
+        asfLineMeter(i,nl);
+      }
+      free(buf);
     }
     fclose(outFp);
     meta_free(out_meta);
@@ -502,7 +510,7 @@ static int save_as_csv(ImageInfo *ii,
             strerror(errno));
         message_box(errbuf);
         strcat(errbuf, "\n");
-        printf(errbuf);
+        printf("%s", errbuf);
         return FALSE; // failure
     }
 
@@ -522,7 +530,7 @@ static int save_as_csv(ImageInfo *ii,
              "\nRegion is too large (%dx%d) to export as CSV (500x500 max)\n\n",
              nl, ns);
         message_box(errbuf);
-        printf(errbuf);
+        printf("%s", errbuf);
         return FALSE; // failure
     }
 
