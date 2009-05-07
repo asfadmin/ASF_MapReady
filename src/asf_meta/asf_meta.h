@@ -265,6 +265,7 @@ typedef struct {
   // utilities such as diffmeta which compare or use various versions of
   // metadata need to have a copy here to please the compiler...
   double incid_a[6];      // Deprecated as of metadata version 2.8 => See meta_sar
+  int use_reverse_transform; // TRUE=yes, FALSE=no, MAGIC_UNSET=don't know yet
 } meta_transform;
 
 // meta_airsar: parameters for AirSAR geocoding
@@ -589,6 +590,8 @@ int meta_get_latLon(meta_parameters *sar,
 
 /* Finds line and sample corresponding to given
 latitude and longitude. */
+void meta_set_lineSamp_tolerance(double tol);
+double meta_get_lineSamp_tolerance();
 int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSample);

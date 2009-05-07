@@ -686,7 +686,7 @@ static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
 
   // We will insist that the results are symmetric to within this
   // fraction after transforming out and back.
-  const double sym_th = 0.15;   // Symmetry threshold (pixels)
+  const double sym_th = 0.15;    // Symmetry threshold (pixels)
   if (ret1 || ret2) {
     asfPrintWarning("Symmetry test failed! %s %s.\n",
                     ret1 ? "meta_get_latLon returned error" : "",
@@ -1791,7 +1791,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             "control points:\n");
         asfPrintStatus ("Mean: %g\n", mean_error);
         asfPrintStatus ("Standard deviation: %g\n", error_standard_deviation);
-        asfPrintStatus ("Maximum (Worst observed error in pixel index distance): "
+        asfPrintStatus ("Maximum (worst observed error in pixel index distance): "
             "%g\n", largest_error);
         asfPrintStatus ("Maximum x error (worst observed error in x pixel index): "
             "%g\n", largest_x_error);
@@ -1834,13 +1834,18 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         // believe it is pretty good for everything but scansar projected
         // input data, where it is off by 1.5% or so and therefore throws
         // this error check just a bit outside of a pixel.  But if the
-        // problem is somewhere else I want to know.
-        // We used to skip this check for transform-block data, but no
-        // longer, since we now use the iterative meta_get_lineSamp() even
-        // for that (since the reverse transform doesn't seem that great)
-        if (imd->sar && imd->sar->image_type != 'P')
+        // problem is somewhere else I want to know.  Skip this test for
+        // data with a transform block.
+        if (imd->sar && imd->sar->image_type != 'P' && !imd->transform)
         {
+          double start_tol = 0.2;
+          meta_set_lineSamp_tolerance(start_tol);
+          int niter=1;
+
+          while (1)
+          {
             asfPrintStatus ("Symmetry testing latLong vs. lineSamp...\n");
+            asfPrintStatus ("tolerance  = %f\n", meta_get_lineSamp_tolerance());
 
             int ok1,ok2,ok3,ok4,ok5;
             int nl = imd->general->line_count;
@@ -1869,12 +1874,29 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                 asfPrintStatus("Symmetry test at BL corner (%d,%d): ok\n",
                                nl-3, 2);
 
-              report_func("Symmetry testing failed.  Use the -force (command line) option or the\n"
-                          "the Ignore Projection Errors checkbox (MapReady Geocode Tab)\n");
+              if (niter==1 || niter==2) {
+                // reduce the tolerance... and try again.  makes it slower
+                // but more accurate, and apparently we need it
+                asfPrintStatus("\nTightening up the tolerance of lineSamp.\n");
+                ++niter;
+                meta_set_lineSamp_tolerance(start_tol / (double)niter );
+                continue;
+              }
+              else {
+                // give up!
+                report_func("Symmetry testing failed.  Use the -force "
+                            "(command line) option or\nthe Ignore Projection "
+                            "Errors checkbox (MapReady Geocode Tab)\n");
+                // go back to the original tolerance
+                meta_set_lineSamp_tolerance(start_tol);
+                break;
+              }
             }
             else {
               asfPrintStatus("Good.\n");
+              break;
             }
+          }
         }
 
         double ul_x, ul_y;

@@ -192,7 +192,7 @@ meta_transform *meta_transform_init(void)
     map->map2ls_a[ii] = MAGIC_UNSET_DOUBLE;
     map->map2ls_b[ii] = MAGIC_UNSET_DOUBLE;
   }
-
+  map->use_reverse_transform = MAGIC_UNSET_INT;
   return map;
 }
 

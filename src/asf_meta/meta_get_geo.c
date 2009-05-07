@@ -299,6 +299,17 @@ static int meta_get_lineSamp_imp(meta_parameters *meta,
   return 0;
 }
 
+static double tolerance = 0.2;
+void meta_set_lineSamp_tolerance(double tol)
+{
+  tolerance = tol;
+}
+
+double meta_get_lineSamp_tolerance()
+{
+  return tolerance;
+}
+
 int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSamp)
@@ -315,159 +326,190 @@ int meta_get_lineSamp(meta_parameters *meta,
 
     return 0;
   }
-  else {
-/*
-  // 3/26/09 -- kh
-  // Commenting out the usage of the reverse-transform (line/samp to lat/lon)
-  // for now, since we seem to be getting better results using the iterative
-  // method on the forward transform... 
 
-    double *a = get_a_coeffs(meta); // Usually meta->transform->map2ls_a;
-    double *b = get_b_coeffs(meta); // Usually meta->transform->map2ls_b;
+  // only use the reverse transform for Palsar -- for some reason, the
+  // Prism and Avnir reverse transforms are not very good.  Palsar is the
+  // only one with 25 parameters at this point... and if the other two
+  // do start to use 25 in the future, we will try to use them...
 
-    if (meta->transform && a != NULL && b  != NULL)
-    {
-      int pc = meta->transform->parameter_count;
-      assert(pc==25 || pc==10 || pc==4);
+  if (meta->transform) {
 
-      if (meta->transform->parameter_count == 25) {
-        //printf("before - lat: %.4lf, lon: %.4lf\n", lat, lon);
-        lat -= meta->transform->origin_lat;
-        lon -= meta->transform->origin_lon;
-        //printf("after - lat: %.4lf, lon: %.4lf\n", lat, lon);
+    if (meta->transform->use_reverse_transform == MAGIC_UNSET_INT) {
+      double *a = get_a_coeffs(meta);
+      double *b = get_b_coeffs(meta);
+
+      if (a != NULL && b != NULL &&
+          strcmp_case(meta->general->sensor, "ALOS")==0 &&
+          strcmp_case(meta->general->sensor_name, "SAR")==0) {
+        meta->transform->use_reverse_transform = TRUE;
+        asfPrintStatus("PALSAR -- Using reverse transform block.\n");
       }
-      // If a valid transform block was found, use it...
-      double lat2 = lat  * lat;
-      double lon2 = lon  * lon;
-      double lat3 = lat2 * lat;
-      double lon3 = lon2 * lon;
-      double lat4 = lat2 * lat2;
-      double lon4 = lon2 * lon2;
-
-      if (meta->transform->parameter_count == 25) {
-        *xSamp = a[0] *lat4*lon4 + a[1] *lat4*lon3 + a[2] *lat4*lon2 +
-                 a[3] *lat4*lon  + a[4] *lat4      + a[5] *lat3*lon4 + a[6] *lat3*lon3 +
-                 a[7] *lat3*lon2 + a[8] *lat3*lon  + a[9] *lat3      + a[10]*lat2*lon4 +
-                 a[11]*lat2*lon3 + a[12]*lat2*lon2 + a[13]*lat2*lon  +
-                 a[14]*lat2      + a[15]*lat*lon4  + a[16]*lat*lon3  + a[17]*lat*lon2  +
-                 a[18]*lat*lon   + a[19]*lat       + a[20]*lon4      + a[21]*lon3      +
-                 a[22]*lon2      + a[23]*lon       + a[24];
-        *yLine = b[0] *lat4*lon4 + b[1] *lat4*lon3 + b[2] *lat4*lon2 +
-                 b[3] *lat4*lon  + b[4] *lat4      + b[5] *lat3*lon4 + b[6] *lat3*lon3 +
-                 b[7] *lat3*lon2 + b[8] *lat3*lon  + b[9] *lat3      + b[10]*lat2*lon4 +
-                 b[11]*lat2*lon3 + b[12]*lat2*lon2 + b[13]*lat2*lon  +
-                 b[14]*lat2      + b[15]*lat*lon4  + b[16]*lat*lon3  + b[17]*lat*lon2  +
-                 b[18]*lat*lon   + b[19]*lat       + b[20]*lon4      + b[21]*lon3      +
-                 b[22]*lon2      + b[23]*lon       + b[24];
+      else {
+        meta->transform->use_reverse_transform = FALSE;
+        asfPrintStatus("Not PALSAR -- Using iterative reverse transform.\n");
       }
-      else { // if (meta->transform->parameter_count == 10) {
-        *xSamp = a[0]          + a[1]*lat      + a[2]*lon      + a[3]*lat*lon + a[4]*lat2 +
-                 a[5]*lon2     + a[6]*lat2*lon + a[7]*lat*lon2 +
-                 a[8]*lat3     + a[9]*lon3;
-        *yLine = b[0]          + b[1]*lat      + b[2]*lon      + b[3]*lat*lon + b[4]*lat2 +
-                 b[5]*lon2     + b[6]*lat2*lon + b[7]*lat*lon2 +
-                 b[8]*lat3     + b[9]*lon3;
-      }
+    }
 
-      if (elev != 0.0) {
-        // note that we don't need to worry about an expensive meta_incid()
-        // call, since for Palsar it is calculated from the transform block
-        double incid = meta_incid(meta, *yLine, *xSamp);
+    if (meta->transform->use_reverse_transform) {
+      double *a = get_a_coeffs(meta); // Usually meta->transform->map2ls_a;
+      double *b = get_b_coeffs(meta); // Usually meta->transform->map2ls_b;
 
-        // shift LEFT in ascending images, RIGHT in descending
-        if (meta->general->orbit_direction=='A')
-          *xSamp -= elev*tan(PI/2-incid)/meta->general->x_pixel_size;
-        else
-          *xSamp += elev*tan(PI/2-incid)/meta->general->x_pixel_size;
-      }
+      if (a != NULL && b  != NULL)
+      {
+        int pc = meta->transform->parameter_count;
+        assert(pc==25 || pc==10 || pc==4);
+      
+        if (meta->transform->parameter_count == 25) {
+          //printf("before - lat: %.4lf, lon: %.4lf\n", lat, lon);
+          lat -= meta->transform->origin_lat;
+          lon -= meta->transform->origin_lon;
+          //printf("after - lat: %.4lf, lon: %.4lf\n", lat, lon);
+        }
+        // If a valid transform block was found, use it...
+        double lat2 = lat  * lat;
+        double lon2 = lon  * lon;
+        double lat3 = lat2 * lat;
+        double lon3 = lon2 * lon;
+        double lat4 = lat2 * lat2;
+        double lon4 = lon2 * lon2;
+        
+        if (meta->transform->parameter_count == 25) {
+          *xSamp = 
+            a[0] *lat4*lon4 + a[1] *lat4*lon3 + a[2] *lat4*lon2 +
+            a[3] *lat4*lon  + a[4] *lat4      + a[5] *lat3*lon4 + 
+            a[6] *lat3*lon3 + a[7] *lat3*lon2 + a[8] *lat3*lon  +
+            a[9] *lat3      + a[10]*lat2*lon4 + a[11]*lat2*lon3 +
+            a[12]*lat2*lon2 + a[13]*lat2*lon  + a[14]*lat2      +
+            a[15]*lat*lon4  + a[16]*lat*lon3  + a[17]*lat*lon2  +
+            a[18]*lat*lon   + a[19]*lat       + a[20]*lon4      +
+            a[21]*lon3      + a[22]*lon2      + a[23]*lon       +
+            a[24];
 
-      // we use 0-based indexing, whereas these functions are 1-based.
-      if (meta->transform->parameter_count != 25) {
-        *xSamp -= 1;
-        *yLine -= 1;
-      }
+          *yLine =
+            b[0] *lat4*lon4 + b[1] *lat4*lon3 + b[2] *lat4*lon2 +
+            b[3] *lat4*lon  + b[4] *lat4      + b[5] *lat3*lon4 +
+            b[6] *lat3*lon3 + b[7] *lat3*lon2 + b[8] *lat3*lon  +
+            b[9] *lat3      + b[10]*lat2*lon4 + b[11]*lat2*lon3 +
+            b[12]*lat2*lon2 + b[13]*lat2*lon  + b[14]*lat2      +
+            b[15]*lat*lon4  + b[16]*lat*lon3  + b[17]*lat*lon2  +
+            b[18]*lat*lon   + b[19]*lat       + b[20]*lon4      +
+            b[21]*lon3      + b[22]*lon2      + b[23]*lon       +
+            b[24];
+        }
+        else { // if (meta->transform->parameter_count == 10) {
+          *xSamp =
+            a[0]          + a[1]*lat      + a[2]*lon      + a[3]*lat*lon +
+            a[4]*lat2     + a[5]*lon2     + a[6]*lat2*lon + a[7]*lat*lon2 +
+            a[8]*lat3     + a[9]*lon3;
 
-      // result is in the original line/sample count units,
-      // adjust in case we have scaled
-      if (meta->sar && (
+          *yLine =
+            b[0]          + b[1]*lat      + b[2]*lon      + b[3]*lat*lon +
+            b[4]*lat2     + b[5]*lon2     + b[6]*lat2*lon + b[7]*lat*lon2 +
+            b[8]*lat3     + b[9]*lon3;
+        }
+        
+        if (elev != 0.0) {
+          // note that we don't need to worry about an expensive meta_incid()
+          // call, since for Palsar it is calculated from the transform block
+          double incid = meta_incid(meta, *yLine, *xSamp);
+          
+          // shift LEFT in ascending images, RIGHT in descending
+          if (meta->general->orbit_direction=='A')
+            *xSamp -= elev*tan(PI/2-incid)/meta->general->x_pixel_size;
+          else
+            *xSamp += elev*tan(PI/2-incid)/meta->general->x_pixel_size;
+        }
+        
+        // we use 0-based indexing, whereas these functions are 1-based.
+        if (meta->transform->parameter_count != 25) {
+          *xSamp -= 1;
+          *yLine -= 1;
+        }
+        
+        // result is in the original line/sample count units,
+        // adjust in case we have scaled
+        if (meta->sar && (
             (meta->sar->original_line_count != meta->general->line_count) ||
             (meta->sar->original_sample_count != meta->general->sample_count)))
-      {
-        *yLine *= (double)meta->general->line_count/
-                  (double)meta->sar->original_line_count;
-        *xSamp *= (double)meta->general->sample_count/
-                  (double)meta->sar->original_sample_count;
+        {
+          *yLine *= (double)meta->general->line_count/
+            (double)meta->sar->original_line_count;
+          *xSamp *= (double)meta->general->sample_count/
+            (double)meta->sar->original_sample_count;
+        }
+        
+        return 0;
       }
-
-      return 0;
     }
-    else {
-*/
-      double x0, y0, tol = 0.2;
-      int err,num_iter = 0;
+  }
 
-      // Plan: added a tolerance factor to meta_get_lineSamp_imp, slowly
-      // increase it as we get more and more desperate for convergence.
-      // We shouldn't ever get past the first iteration, the only cases
-      // where this was needed were cases near the zero doppler line, which
-      // was fixed up in another way.
-      while (++num_iter <= 6)
-      {
-        //if (num_iter > 1)
-        //  printf("Iteration #%d: tolerance: %f\n", num_iter, tol);
+  // no shortcuts -- use the iterative method
+  double tol_incr = tolerance;
+  double x0, y0, tol = tolerance;
+  int err,num_iter = 0;
+  
+  // Plan: added a tolerance factor to meta_get_lineSamp_imp, slowly
+  // increase it as we get more and more desperate for convergence.
+  // We shouldn't ever get past the first iteration, the only cases
+  // where this was needed were cases near the zero doppler line, which
+  // was fixed up in another way.
+  while (++num_iter <= 6)
+  {
+    //if (num_iter > 1)
+    //  printf("Iteration #%d: tolerance: %f\n", num_iter, tol);
+    
+    x0 = meta->general->sample_count/2;
+    y0 = meta->general->line_count/2;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+                                yLine, xSamp, tol);
+    if (!err) return 0;
+    
+    // First attempt failed to converge... try another starting location,
+    // near one of the corners.  If this corner fails, then we'll try each
+    // of the other corners.
+    //printf("Failed to converge at center point... trying UL corner.\n");
+    x0 = meta->general->sample_count/8;
+    y0 = meta->general->line_count/8;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+                                yLine, xSamp, tol);
+    if (!err) return 0;
+    
+    //printf("Failed to converge at UL corner... trying LR corner.\n");
+    x0 = 7*meta->general->sample_count/8;
+    y0 = 7*meta->general->line_count/8;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+                                yLine, xSamp, tol);
+    if (!err) return 0;
+    
+    //printf("Failed to converge at LR corner... trying LL corner.\n");
+    x0 = meta->general->sample_count/8;
+    y0 = 7*meta->general->line_count/8;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+                                yLine, xSamp, tol);
+    if (!err) return 0;
+    
+    //printf("Failed to converge at LL corner... trying UR corner.\n");
+    x0 = 7*meta->general->sample_count/8;
+    y0 = meta->general->line_count/8;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+                                yLine, xSamp, tol);
+    if (!err) return 0;
+    
+    //printf("Failed to converge at UR corner... trying (0,0) ??\n");
+    x0 = y0 = 0.0;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+                                yLine, xSamp, tol);
+    if (!err) return 0;
+    
+    tol += tol_incr;
+  }
 
-        x0 = meta->general->sample_count/2;
-        y0 = meta->general->line_count/2;
-        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-            yLine, xSamp, tol);
-        if (!err) return 0;
-
-        // First attempt failed to converge... try another starting location,
-        // near one of the corners.  If this corner fails, then we'll try each
-        // of the other corners.
-        //printf("Failed to converge at center point... trying UL corner.\n");
-        x0 = meta->general->sample_count/8;
-        y0 = meta->general->line_count/8;
-        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-            yLine, xSamp, tol);
-        if (!err) return 0;
-
-        //printf("Failed to converge at UL corner... trying LR corner.\n");
-        x0 = 7*meta->general->sample_count/8;
-        y0 = 7*meta->general->line_count/8;
-        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-            yLine, xSamp, tol);
-        if (!err) return 0;
-
-        //printf("Failed to converge at LR corner... trying LL corner.\n");
-        x0 = meta->general->sample_count/8;
-        y0 = 7*meta->general->line_count/8;
-        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-            yLine, xSamp, tol);
-        if (!err) return 0;
-
-        //printf("Failed to converge at LL corner... trying UR corner.\n");
-        x0 = 7*meta->general->sample_count/8;
-        y0 = meta->general->line_count/8;
-        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-            yLine, xSamp, tol);
-        if (!err) return 0;
-
-        //printf("Failed to converge at UR corner... trying (0,0) ??\n");
-        x0 = y0 = 0.0;
-        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-            yLine, xSamp, tol);
-        if (!err) return 0;
-
-        tol += 0.2;
-      }
-
-      // Return center point just for something to return...
-      *xSamp = meta->general->sample_count/2;
-      *yLine = meta->general->line_count/2;
-      return 1;
-    }
-  //}
+  // All methods failed...
+  
+  // Return center point just for something to return...
+  *xSamp = meta->general->sample_count/2;
+  *yLine = meta->general->line_count/2;
+  return 1;
 }
 
 void meta_get_corner_coords(meta_parameters *meta)
