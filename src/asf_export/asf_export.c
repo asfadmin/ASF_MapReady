@@ -490,8 +490,7 @@ main (int argc, char *argv[])
       command_line.sample_mapping = NONE;
   }
   // for other data, default is based on the output type
-  else if ((strcmp (command_line.format, "GEOTIFF") == 0 && !md->projection) ||
-           strcmp (command_line.format, "TIFF") == 0 ||
+  else if (strcmp (command_line.format, "TIFF") == 0 ||
            strcmp (command_line.format, "TIF")  == 0 ||
            strcmp (command_line.format, "JPEG") == 0 ||
            strcmp (command_line.format, "JPG")  == 0 ||

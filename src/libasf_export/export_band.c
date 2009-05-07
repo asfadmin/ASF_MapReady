@@ -316,7 +316,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
   if (!map_projected) {
     asfPrintWarning("Image is not map-projected or the projection type is\n"
         "unrecognized or unsupported.\n\n"
-        "Exporting a non-geocoded, but georeferenced if possible, TIFF file instead...\n");
+        "Exporting a non-geocoded, standard TIFF file instead...\n");
   }
 
   if (is_slant_range_image) {
@@ -1435,7 +1435,7 @@ export_band_image (const char *metadata_file_name,
           append_band_ext(base_name, output_file_name, NULL);
 
         if (format == TIF || format == GEOTIFF) {
-          is_geotiff = (format == GEOTIFF && md->projection) ? 1 : 0;
+          is_geotiff = (format == GEOTIFF) ? 1 : 0;
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
           if (is_colormap_band) {
             sample_mapping = TRUNCATE;
