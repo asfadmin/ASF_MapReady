@@ -133,10 +133,16 @@ static void create_file_chooser_dialog(int selected)
       gtk_file_filter_set_name(ceos_filt, "All CEOS Level 1 Files");
       gtk_file_filter_add_pattern(ceos_filt, "*.L");
       gtk_file_filter_add_pattern(ceos_filt, "LED-*");
+      gtk_file_filter_add_pattern(ceos_filt, "*.LEA");
+      gtk_file_filter_add_pattern(ceos_filt, "*.lea");
+      gtk_file_filter_add_pattern(ceos_filt, "LEA_*");
+      gtk_file_filter_add_pattern(ceos_filt, "lea_*");
+      gtk_file_filter_add_pattern(ceos_filt, "*.ldr");
+      gtk_file_filter_add_pattern(ceos_filt, "*.sarl");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), ceos_filt);
 
       GtkFileFilter *L_filt = gtk_file_filter_new();
-      gtk_file_filter_set_name(L_filt, "RSAT/ERS CEOS L1 (*.L)");
+      gtk_file_filter_set_name(L_filt, "RSAT/ERS/JERS CEOS L1 (*.L)");
       gtk_file_filter_add_pattern(L_filt, "*.L");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), L_filt);
 
@@ -144,12 +150,31 @@ static void create_file_chooser_dialog(int selected)
       gtk_file_filter_set_name(alos_filt, "ALOS Leader Files (LED-*)");
       gtk_file_filter_add_pattern(alos_filt, "LED-*");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
+
+      GtkFileFilter *lea_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(lea_filt, "LEA Leader Files (LEA_*, lea_*, *.lea, *.LEA)");
+      gtk_file_filter_add_pattern(lea_filt, "*.LEA");
+      gtk_file_filter_add_pattern(lea_filt, "*.lea");
+      gtk_file_filter_add_pattern(lea_filt, "LEA_*");
+      gtk_file_filter_add_pattern(lea_filt, "lea_*");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), lea_filt);
+
+      GtkFileFilter *ldr_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(ldr_filt, "LDR Leader Files (*.ldr)");
+      gtk_file_filter_add_pattern(ldr_filt, "*.ldr");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), ldr_filt);
+
+      GtkFileFilter *sarl_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(sarl_filt, "SARL Leader Files (*.sarl)");
+      gtk_file_filter_add_pattern(sarl_filt, "*.sarl");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), sarl_filt);
     }
 
     if (selected==FORMAT_GEOTIFF) {
       GtkFileFilter *geotiff_filt = gtk_file_filter_new();
       gtk_file_filter_set_name(geotiff_filt, "GeoTIFF Files (*.tif)");
       gtk_file_filter_add_pattern(geotiff_filt, "*.tif");
+      gtk_file_filter_add_pattern(geotiff_filt, "*.tiff");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget),
                                   geotiff_filt);
     }
@@ -268,9 +293,12 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     switch (sel) {
       case FORMAT_CEOS:
         of.lpstrFilter =
-            "CEOS Level 1 Files\0*.L;LED-*\0"
+            "CEOS Level 1 Files\0*.L;LED-*;*.LEA;*.lea;LEA_*;lea_*;*.ldr;*.sarl\0"
             "RSAT/ERS CEOS L1 (*.L)\0*.L\0"
             "ALOS Files (LED-*)\0LED-*\0"
+            "LEA Leader Files (LEA_*, lea_*, *.lea, *.LEA)\0LEA_*;lea_*;*.lea;*.LEA\0"
+            "LDR Leader Files (*.ldr)\0*.ldr\0"
+            "SARL Leader Files (*.sarl)\0*.sarl\0"
             "All Files\0*\0";
         break;
 
@@ -288,7 +316,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
       case FORMAT_GEOTIFF:
         of.lpstrFilter =
-            "GeoTIFF Files (*.tif)\0*.tif\0"
+            "GeoTIFF Files (*.tif, *.tiff)\0*.tif;*.tiff\0"
             "All Files\0*\0";
         break;
 
@@ -525,7 +553,7 @@ static void do_browse(const char *title, const char *entry_to_populate,
     of.hwndOwner = NULL;
 
     if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT)) {
-      of.lpstrFilter = 
+      of.lpstrFilter =
         "CEOS Level 1 Files\0*.L;LED-*\0"
         "RSAT/ERS CEOS L1\0*.L\0"
         "ALOS Leader Files\0LED-*\0"
