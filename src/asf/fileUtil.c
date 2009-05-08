@@ -508,7 +508,12 @@ void fileCopy(const char *src, const char *dst)
    do {
       amount = fread( buffer, sizeof(char), BUFFER_SIZE, srcFp );
       if (amount) {
-         fwrite( buffer, sizeof(char), amount, dstFp );
+         int a = fwrite( buffer, sizeof(char), amount, dstFp );
+	 if (a<amount) {
+	   asfPrintError("Error copying file %s -> %s\n"
+			 "Only %d of %d bytes written.\n%s\n",
+			 src, dst, a, amount, strerror(errno));
+	 }
       }
    /* when amount read is < BUFSZ, copy is done */
    } while (amount == BUFFER_SIZE);

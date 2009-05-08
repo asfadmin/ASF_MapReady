@@ -193,9 +193,10 @@ static int check_for_version_file_in_share_dir(const char *dir)
 
   FILE *f = fopen(file, "r");
   if (f) {
-    fgets(file, len, f);
-    if (strncmp(file, ver, strlen(ver)) == 0)
-      found = 1;
+    if (fgets(file, len, f)) {
+      if (strncmp(file, ver, strlen(ver)) == 0)
+	found = 1;
+    }
     fclose(f);
   }
 

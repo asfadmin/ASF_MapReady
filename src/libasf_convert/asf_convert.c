@@ -1175,7 +1175,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       fList = FOPEN(cfg->general->batchFile, "r");
     while (fgets(line, 255, fList) != NULL) {
       line[strlen(line)-1] = '\0';
-      sprintf(in_base_names[ii], line);
+      strcpy(in_base_names[ii], line);
       ++ii;
     }
     FCLOSE(fList);
@@ -1245,7 +1245,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       char *tmpFile = MALLOC(sizeof(char)*(strlen(cfg->general->defaults)+1));
       split_dir_and_file(cfg->general->defaults, tmpDir, tmpFile);
       char cwd[10000];
-      getcwd(cwd,10000);
+      char *buf = getcwd(cwd,10000);
+      if (!buf) asfPrintError("Error determining cwd: %s\n", strerror(errno));
       int defaultsLen;
       if (strlen(cfg->general->defaults) > strlen(cwd)+strlen(tmpFile)) {
         defaultsLen = strlen(cfg->general->defaults);

@@ -39,9 +39,9 @@ void programmer_error(char *mess)
         "* Please contact ASF via email at uso@asf.alaska.edu.\n"
         "**     Program terminating... internal program error.\n",
         mess);
-    fprintf(stderr,error_message);
+    fprintf(stderr,"%s",error_message);
     if (fLog!=NULL)
-      fprintf(fLog,error_message);
+      fprintf(fLog,"%s",error_message);
 
         /* always abort for programmer error */
     exit(199);
@@ -96,9 +96,9 @@ void *MALLOC(size_t size)
                 "* more real memory to your system.\n"
                 "**    Program terminating... Out of memory.\n",
                 (int)size);
-            fprintf(stderr,error_message);
+            fprintf(stderr,"%s",error_message);
             if (fLog!=NULL)
-              fprintf(fLog,error_message);
+              fprintf(fLog,"%s",error_message);
 
                         exit(200);
         }
@@ -122,9 +122,9 @@ void *MALLOC(size_t size)
                     "* later, when there are fewer people on.\n"
                     "**    Program terminating... Out of memory.\n",
                     (int)size);
-                fprintf(stderr,error_message);
+                fprintf(stderr,"%s",error_message);
                 if (fLog!=NULL)
-                  fprintf(fLog,error_message);
+                  fprintf(fLog,"%s",error_message);
 
                                 exit(201);
             }
@@ -142,9 +142,9 @@ void *MALLOC(size_t size)
             "* more real memory to your system.\n"
             "**    Program terminating... Out of memory.\n",
             (int)size);
-        fprintf(stderr,error_message);
+        fprintf(stderr,"%s",error_message);
         if (fLog!=NULL)
-          fprintf(fLog,error_message);
+          fprintf(fLog,"%s",error_message);
 
                 exit(202);
     }
@@ -172,9 +172,9 @@ void *CALLOC(size_t nmemb, size_t size)
               "* more real memory to your system.\n"
               "**    Program terminating... Out of memory.\n",
               (int)size * (int)nmemb);
-      fprintf(stderr,error_message);
+      fprintf(stderr,"%s",error_message);
       if (fLog!=NULL)
-        fprintf(fLog,error_message);
+        fprintf(fLog,"%s",error_message);
 
       exit(200);
     }
@@ -198,9 +198,9 @@ void *CALLOC(size_t nmemb, size_t size)
                 "* later, when there are fewer people on.\n"
                 "**    Program terminating... Out of memory.\n",
                 (int)size * (int)nmemb);
-        fprintf(stderr,error_message);
+        fprintf(stderr,"%s",error_message);
         if (fLog!=NULL)
-          fprintf(fLog,error_message);
+          fprintf(fLog,"%s",error_message);
 
         exit(201);
       }
@@ -218,9 +218,9 @@ void *CALLOC(size_t nmemb, size_t size)
             "* more real memory to your system.\n"
             "**    Program terminating... Out of memory.\n",
             (int)size * (int)nmemb);
-    fprintf(stderr,error_message);
+    fprintf(stderr,"%s",error_message);
     if (fLog!=NULL)
-      fprintf(fLog,error_message);
+      fprintf(fLog,"%s",error_message);
 
     exit(202);
   }
@@ -260,25 +260,25 @@ FILE *FOPEN(const char *file,const char *mode)
             "* \n"
             "*    This program tried to open the file named\n"
             "* '%s' ",file);
-        fprintf(stderr,error_message);
-        if (fLog!=NULL)  fprintf(fLog,error_message);
+        fprintf(stderr,"%s",error_message);
+        if (fLog!=NULL)  fprintf(fLog,"%s",error_message);
 
         if (mode[0]=='r') {
             sprintf(error_message,"for reading.\n");
-            fprintf(stderr,error_message);
-            if (fLog!=NULL) fprintf(fLog,error_message);
+            fprintf(stderr,"%s",error_message);
+            if (fLog!=NULL) fprintf(fLog,"%s",error_message);
         }
 
         else if (mode[0]=='w'||mode[0]=='a') {
             sprintf(error_message,"for writing.\n");
-            fprintf(stderr,error_message);
-            if (fLog!=NULL) fprintf(fLog,error_message);
+            fprintf(stderr,"%s",error_message);
+            if (fLog!=NULL) fprintf(fLog,"%s",error_message);
         }
 
         else {
             sprintf(error_message,"in the unknown way '%s'.\n",mode);
-            fprintf(stderr,error_message);
-            if (fLog!=NULL) fprintf(fLog,error_message);
+            fprintf(stderr,"%s",error_message);
+            if (fLog!=NULL) fprintf(fLog,"%s",error_message);
         }
 
                 sprintf(error_message,
@@ -290,8 +290,8 @@ FILE *FOPEN(const char *file,const char *mode)
                             "**   Program terminating... Cannot open file.\n");
                 }
 
-                fprintf(stderr,error_message);
-                if (fLog!=NULL) fprintf(fLog,error_message);
+                fprintf(stderr,"%s",error_message);
+                if (fLog!=NULL) fprintf(fLog,"%s",error_message);
 
                 if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
                     exit(203);
@@ -325,15 +325,15 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
             if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
                 strcat(error_message, "**    Program terminating... Attempted read past end of file.\n");
 
-            fprintf(stderr,error_message);
+            fprintf(stderr,"%s",error_message);
             if (fLog!=NULL)
-                fprintf(fLog,error_message);
+	      fprintf(fLog,"%s",error_message);
 
             if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
                 exit(204);
             else
                 return ret;
-            fprintf(stderr, error_message);
+            fprintf(stderr, "%s",error_message);
             exit(204);
         }
 
@@ -342,9 +342,9 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
             "* \n"
             "*    When reading the file stream %p, this program\n"
             "*  encountered the following error:\n", stream);
-        fprintf(stderr,error_message);
+        fprintf(stderr,"%s",error_message);
         if (fLog!=NULL)
-            fprintf(fLog,error_message);
+	  fprintf(fLog,"%s",error_message);
 
         perror(NULL);
 
@@ -354,9 +354,9 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
         if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
             strcat(error_message, "**   Program terminating... Error encounter while reading.\n");
 
-        fprintf(stderr,error_message);
+        fprintf(stderr,"%s",error_message);
         if (fLog!=NULL)
-            fprintf(fLog,error_message);
+	  fprintf(fLog,"%s",error_message);
 
         if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
             exit(205);
@@ -409,8 +409,8 @@ size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
             "*   This program tried to write %d bytes to\n"
             "* the stream %p.  This writing failed, because:\n",
             (int)(size*nitems),stream);
-        fprintf(stderr,error_message);
-        if (fLog!=NULL) fprintf(fLog,error_message);
+        fprintf(stderr,"%s",error_message);
+        if (fLog!=NULL) fprintf(fLog,"%s",error_message);
 
         perror(NULL);
         sprintf(error_message,
@@ -420,9 +420,9 @@ size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
             "* on your current volume.  Many of ASF's utilities\n"
             "* require very large amounts of disk space.\n"
             "**   Program terminating... error during file write.\n");
-        fprintf(stderr,error_message);
+        fprintf(stderr,"%s",error_message);
         if (fLog!=NULL)
-          fprintf(fLog,error_message);
+          fprintf(fLog,"%s",error_message);
 
                 /* write errors we will still make fatal */
                 exit(206);
@@ -551,12 +551,6 @@ char *STRDUP (const char *s)
   return result;
 }
 
-// Some systems don't seem to have "strdup" ... here we define
-// one for ourselves -- also, it goes through our checked-malloc,
-// MALLOC, so now all memory is really checked, plus if we ever
-// add mem-leak detection in MALLOC we can trace strdup's usage
-// as well.
-//
 // STRDUP_PLUS is the same as STRDUP except it allows you to
 // create a dup'd string with additional space, e.g. for adding
 // an extension.

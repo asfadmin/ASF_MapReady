@@ -110,7 +110,7 @@ void asfPrintWarning(const char *format, ...)
   }
   
   if (quietflag < 2) {
-    printf(warningEnd);
+    printf("%s", warningEnd);
     fflush (stdout);
   }
   if (logflag) {
@@ -148,7 +148,7 @@ void asfPrintError(const char *format, ...)
     va_end(ap);
   }
 
-  printf(errorEnd);
+  printf("%s", errorEnd);
 
   if (logflag) {
     fprintf(fLog, "%s", errorEnd);
