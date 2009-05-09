@@ -762,6 +762,38 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   int n_bands=1;
   meta_parameters *meta = meta_read(in_base_names[0]);
 
+  // Spit out a warning about products that have not been validated against ground
+  // control points
+  meta_general *mg = meta->general;
+  if (!strstr(mg->processor, "JAXA") && !strstr(mg->processor, "ASF")) {
+    asfPrintStatus("\n\nNOTE: Non-ASF processed data detected.  Products not processed\n"
+        "at the Alaska Satellite Facility may not have been fully validated\n"
+        "geographically against ground control points.  If, after geocoding,\n"
+        "your results are not quite accurate geograhically, you may consider\n"
+        "correcting the geolocation using one of the following methods:\n\n"
+        "1. Obtain an appropriate DEM and reprocess the data, but this time\n"
+        "   select terrain correction and check the \"Refine Geolocation Only\"\n"
+        "   radio button on the Terrain Correction tab.  Doing so will result\n"
+        "   in a geographically accurate result that has NOT had terrain correction\n"
+        "   applied to it.  Of course, if you choose to apply terrain correction\n"
+        "   by not checking this radio button, the geographic location will also\n"
+        "   be corrected.\n"
+        "2. Use the asf_terrcorr command-line to do the same thing as described in 1.\n"
+        "   above.  See asf_terrcorr -help for more info.\n"
+        "3. If you know the necessary geographic location correction, use the\n"
+        "   shift_geolocation command line tool to shift the scene to the correct\n"
+        "   location.\n"
+        "4. If all else fails, you may try applying a height correction by checking\n"
+        "   the \"Specify Height\" checkbox on the Geocode tab and entering a terrain\n"
+        "   elevation (usually for the most important area of interest in the scene).\n"
+        "   You may do the same thing with the asf_geocode command line utility.  See\n"
+        "   asf_geocode -help for more info.\n"
+        "5. Export your data to GeoTIFF format after geocoding then make the correction\n"
+        "   in your favorite GIS software, making sure you choose to convert the data\n"
+        "   to byte format on the Export tab if your GIS software is unable to view/use\n"
+        "   floating point data or cannot re-map to byte values on the fly.\n\n");
+  }
+
   void (*report_func) (const char *format, ...);
   report_func = force_flag ? asfPrintWarning : asfPrintError;
 
@@ -1522,7 +1554,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // We do not do this if we have been asked to save the line/sample
     // mapping, since this will mess that up.
     int do_resample = FALSE;
-    if (!save_line_sample_mapping && 
+    if (!save_line_sample_mapping &&
         (pixel_size/3. > imd->general->x_pixel_size &&
          pixel_size/3. > imd->general->y_pixel_size))
     {
@@ -1847,17 +1879,23 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             asfPrintStatus ("Symmetry testing latLong vs. lineSamp...\n");
             asfPrintStatus ("tolerance  = %f\n", meta_get_lineSamp_tolerance());
 
-            int ok1,ok2,ok3,ok4,ok5;
+            int ok1,ok2,ok3,ok4,ok5,ok6,ok7,ok8,ok9;
             int nl = imd->general->line_count;
             int ns = imd->general->sample_count;
 
-            ok1 = symmetry_test(imd, 2, 2, average_height);
-            ok2 = symmetry_test(imd, nl/2, ns/2, average_height);
-            ok3 = symmetry_test(imd, nl-3, ns-3, average_height);
-            ok4 = symmetry_test(imd, nl-3, 2, average_height);
-            ok5 = symmetry_test(imd, 2, ns-3, average_height);
+            ok1 = symmetry_test(imd, 2, 2, average_height);       // Top left
+            ok2 = symmetry_test(imd, nl/2, ns/2, average_height); // Middle
+            ok3 = symmetry_test(imd, nl-3, ns-3, average_height); // Bottom right
+            ok4 = symmetry_test(imd, nl-3, 2, average_height);    // Bottom left
+            ok5 = symmetry_test(imd, 2, ns-3, average_height);    // Top right
+            ok6 = symmetry_test(imd, 2, ns/2, average_height);    // Top center
+            ok7 = symmetry_test(imd, nl-3, ns/2, average_height); // Bottom center
+            ok8 = symmetry_test(imd, nl/2, 2, average_height);    // Left center
+            ok9 = symmetry_test(imd, nl/2, ns-3, average_height); // Right center
 
-            if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5) {
+            if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5 ||
+                !ok6 || !ok7 || !ok8 || !ok9)
+            {
               // if any tests failed, print out which ones were ok
               if (ok2)
                 asfPrintStatus("Symmetry test at center (%d,%d): ok\n",
@@ -1873,6 +1911,18 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
               if (ok4)
                 asfPrintStatus("Symmetry test at BL corner (%d,%d): ok\n",
                                nl-3, 2);
+              if (ok6)
+                asfPrintStatus("Symmetry test at top center (%d,%d): ok\n",
+                               2, ns/2);
+              if (ok7)
+                asfPrintStatus("Symmetry test at bottom center (%d,%d): ok\n",
+                               nl-3, ns/2);
+              if (ok8)
+                asfPrintStatus("Symmetry test at left center (%d,%d): ok\n",
+                               nl/2, 2);
+              if (ok9)
+                asfPrintStatus("Symmetry test at right center (%d,%d): ok\n",
+                               nl/2, ns-3);
 
               if (niter==1 || niter==2) {
                 // reduce the tolerance... and try again.  makes it slower
@@ -2083,7 +2133,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                 else
                     samp_out[oix] = input_x_pixel;
             }
-                            
+
             g_assert (ii_size_x <= SSIZE_MAX);
             g_assert (ii_size_y <= SSIZE_MAX);
 
@@ -2251,7 +2301,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
               put_float_line(outLineFp, omd, oiy, line_out);
           if (samp_out)
               put_float_line(outSampFp, omd, oiy, samp_out);
-            
+
         } // End of for-each-line set output values
 
         // done writing this band
