@@ -60,7 +60,6 @@ char *alos_beam_mode[132]={
   "PLR1","PLR2","PLR3","PLR4","PLR5","PLR6","PLR7","PLR8","PLR9","PLR10",
   "PLR11","PLR12"};
 
-
 // Internal Prototypes
 // Importing CEOS SAR data
 void ceos_init_sar(ceos_description *ceos, const char *in_fName,
@@ -2693,7 +2692,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
   return get_ceos_description_ext(fName, level, TRUE);
 }
 
-ceos_description *get_ceos_description_ext(const char *fName, 
+ceos_description *get_ceos_description_ext(const char *fName,
 					   report_level_t level,
 					   int dataFlag)
 {
