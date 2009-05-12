@@ -591,7 +591,7 @@ int meta_get_latLon(meta_parameters *sar,
 /* Finds line and sample corresponding to given
 latitude and longitude. */
 void meta_set_lineSamp_tolerance(double tol);
-double meta_get_lineSamp_tolerance();
+double meta_get_lineSamp_tolerance(void);
 int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSample);
