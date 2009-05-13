@@ -426,6 +426,22 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
         }
     }
 
+    // close 1-pixel holes in the mask
+    if (mask) {
+        for (grX=2;grX<ns-2;grX++) {
+            if (mask[grX]==MASK_NORMAL) {
+                if (mask[grX-1]==MASK_LAYOVER && mask[grX+1]==MASK_LAYOVER) {
+                    ++n_layover;
+                    mask[grX]=MASK_LAYOVER;
+                }
+                else if (mask[grX-1]==MASK_SHADOW && mask[grX+1]==MASK_SHADOW) {
+                    ++n_shadow;
+                    mask[grX]=MASK_SHADOW;
+                }
+            }
+        }
+    }
+
     //-----------------------------------------------------------------------
     // Invalid data, on the left & right edges
 
@@ -437,8 +453,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     for (grX=ns-1;grX>=0;grX--)
     {
         double height=grDEM[grX];
-        if (height > -900 && height!=badDEMht)
-        {
+        if (height > -900 && height!=badDEMht) {
             last_good_height = height;
             double srX=dem_gr2sr(d,grX,height);
             if (srX>=0 && srX < min_valid_srX) {
@@ -472,6 +487,12 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 
         free(sr_hits);
     }
+}
+
+static void bad_rtc(int form)
+{
+  asfPrintError("Use of an untested radiometric terrain correction "
+                "formula: #%d.\n", form);
 }
 
 static int bad_dem_height(float height)
@@ -559,6 +580,7 @@ Here's what it looked like before optimization:
                     double li = acos(dz);
                     double tanphie = tan(gi);
                     inout[x] *= tan(li) / tanphie;
+                    bad_rtc(form);
                     break;
                 }
                 case 2:
@@ -570,6 +592,7 @@ Here's what it looked like before optimization:
                     double tanphie = tan(gi);
                     double cosphi = cosAng;
                     inout[x] *= (sinphir * cosphia) / (tanphie * cosphi);
+                    bad_rtc(form);
                     break;
                 }
                 case 3:
@@ -581,6 +604,7 @@ Here's what it looked like before optimization:
                     double tanphie = tan(gi);
                     double cosphi = cosAng;
                     inout[x] *= (sinphir * cosphia) / (tanphie * sqrt(cosphi));
+                    bad_rtc(form);
                     break;
                 }
                 case 4:
@@ -590,6 +614,7 @@ Here's what it looked like before optimization:
                     double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
                     double cosphia = 1./sqrt(dx*dx+1);
                     inout[x] *= (sinphir * cosphia) / sin(gi);
+                    bad_rtc(form);
                     break;
                 }
                 case 5: 
@@ -607,6 +632,7 @@ Here's what it looked like before optimization:
                     /* This is the formula that was previously in deskew_dem, */
                     /* and the old default for asf_terrcorr -do-radiometric */
                     inout[x] *= 1.-.33*pow(cosAng,7);
+                    bad_rtc(form);
                     break;
                 }
             }
