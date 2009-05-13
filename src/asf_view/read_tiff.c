@@ -105,7 +105,9 @@ int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
     if (has_tif_ext || has_tiff_ext)
     {
         char *d=NULL;
-        if (has_tif_ext)
+        if (has_ext)
+            d = STRDUP(filename);
+        else if (has_tif_ext)
             d = appendExt(filename, ".tif");
         else if (has_tiff_ext)
             d = appendExt(filename, ".tiff");

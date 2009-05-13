@@ -38,7 +38,9 @@ int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,
     if (has_jpg_ext || has_jpeg_ext)
     {
         char *d=NULL;
-        if (has_jpg_ext)
+	if (has_ext)
+            d = STRDUP(filename);
+        else if (has_jpg_ext)
             d = appendExt(filename, ".jpg");
         else if (has_jpeg_ext)
             d = appendExt(filename, ".jpeg");

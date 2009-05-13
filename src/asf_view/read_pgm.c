@@ -36,7 +36,9 @@ int handle_pgm_file(const char *filename, char *meta_name, char *data_name,
     if (has_pgm_ext || has_ppm_ext)
     {
         char *d=NULL;
-        if (has_pgm_ext)
+        if (has_ext)
+            d = STRDUP(filename);
+        else if (has_pgm_ext)
             d = appendExt(filename, ".pgm");
         else if (has_ppm_ext)
             d = appendExt(filename, ".ppm");

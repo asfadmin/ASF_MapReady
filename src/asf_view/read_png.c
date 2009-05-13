@@ -39,7 +39,9 @@ int handle_png_file(const char *filename, char *meta_name, char *data_name,
     if (has_png_ext)
     {
         char *d=NULL;
-        if (has_png_ext)
+        if (has_ext)
+            d = STRDUP(filename);
+        else if (has_png_ext)
             d = appendExt(filename, ".png");
         assert(d);
 
