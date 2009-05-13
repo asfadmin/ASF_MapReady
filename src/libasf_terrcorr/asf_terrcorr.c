@@ -1006,6 +1006,28 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   int clean_resample_file = TRUE;
   int image_was_ground_range = TRUE;
 
+  // -- debug prints, uncomment as needed
+  //printf("pixel size: %f\n", pixel_size);
+  //printf("clean_files: %d\n", clean_files);
+  //printf("do_resample: %d\n", do_resample);
+  //printf("do_corner_matching: %d\n", do_corner_matching);
+  //printf("do_interp: %d\n", do_interp);
+  //printf("do_fftMatch_verification: %d\n", do_fftMatch_verification);
+  //printf("dem_grid_size: %d\n", dem_grid_size);
+  //printf("do_terrain_correction: %d\n", do_terrain_correction);
+  //printf("fill_value: %d\n", fill_value);
+  //printf("generate_water_mask: %d\n", generate_water_mask);
+  //printf("save_clipped_dem: %d\n", save_clipped_dem);
+  //printf("update_original_metadata_with_offsets: %d\n",
+  //       update_original_metadata_with_offsets);
+  //printf("mask_height_cutoff: %f\n", mask_height_cutoff);
+  //printf("doRadiometric: %d\n", doRadiometric);
+  //printf("smooth_dem_holes: %d\n", smooth_dem_holes);
+  //printf("no_matching: %d\n", no_matching);
+  //printf("range_offset: %f\n", range_offset);
+  //printf("azimuth_offset: %f\n", azimuth_offset);
+  //printf("use_gr_dem: %d\n", use_gr_dem);
+
   // Which DEM should we use during terrain correction -- the original
   // ground range DEM (new method), or the backconverted one (old method)?
   // Neither is clearly preferable, so we allow the user to specify

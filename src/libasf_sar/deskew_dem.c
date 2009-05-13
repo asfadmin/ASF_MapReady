@@ -272,7 +272,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 {
     int i,grX;
     int valid_data_yet=0;
-    const int num_hits_required_for_layover=3;
+    const int num_hits_required_for_layover=2;
     int *sr_hits=NULL;
     float max_height=grDEM[0];
     double last_good_height = 0;
@@ -515,6 +515,9 @@ Here's what it looked like before optimization:
 		}
 
 */
+
+    // hard-coded to use formula #5 for now
+    form=5;
 
     int x;
     for (x=1;x<ns;x++)
