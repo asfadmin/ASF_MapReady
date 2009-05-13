@@ -240,27 +240,15 @@ void import_ceos(char *inBaseName, char *outBaseName,
   if ((ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1) &&
        ceos->sensor == PRISM)
   {
-      asfPrintWarning("FOUND: PRISM Level %s data.  This data exists as several strips\n"
-              "of data in separate files.  Ingesting all 4 strips and combining\n"
-              "them into a single band image is not yet supported ...but will\n"
-              "be in a future build.  The import process will now continue, but\n"
-              "only a single (first found) strip from the image will be imported.\n",
+    asfPrintWarning(
+      "FOUND: PRISM Level %s data.  This data exists as several strips\n"
+      "of data in separate files.  Ingesting all 4 strips and combining\n"
+      "them into a single band image is not yet supported ...but will\n"
+      "be in a future build.  The import process will now continue, but\n"
+      "only a single (first found) strip from the image will be imported.\n",
       ceos->product == LEVEL_1A ? "1A" : "1B1");
-      import_single_band = TRUE;
-      nBandsOut = 1;
-  }
-  if (ceos->product == SLC && ceos->sensor == ERS &&
-      radiometry > r_AMP && radiometry < r_POWER)
-  {
-      asfPrintError("Single-look complex products contain a relative calibration.  Applying\n"
-                    "an absolute %s calibration is not (yet) supported.\n",
-                    radiometry == r_SIGMA    ? "SIGMA"    :
-                    radiometry == r_BETA     ? "BETA"     :
-                    radiometry == r_GAMMA    ? "GAMMA"    :
-                    radiometry == r_SIGMA_DB ? "SIGMA dB" :
-                    radiometry == r_BETA_DB  ? "BETA dB"  :
-                    radiometry == r_GAMMA_DB ? "GAMMA dB" : "UNKNOWN TYPE OF"
-                    );
+    import_single_band = TRUE;
+    nBandsOut = 1;
   }
 
   for (ii=0; ii<nBandsOut; ii++) {

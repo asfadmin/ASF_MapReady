@@ -210,6 +210,8 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
   facilityStr = trim_spaces(dssr.fac_id);
   processorStr = trim_spaces(dssr.sys_id);
 
+  ceos_description *ceos = get_ceos_description(inSAR, REPORT_LEVEL_NONE);
+
   if (strncmp(facilityStr , "ASF"  , 3) == 0 &&
       strncmp(processorStr, "FOCUS", 5) != 0 &&
       ((meta->projection && meta->projection->type == SCANSAR_PROJECTION) ||
@@ -295,6 +297,14 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
       asf->a0 = rdr.a[0];
       asf->a1 = rdr.a[1];
       asf->a2 = rdr.a[2];
+    }
+
+    if (ceos->product == SLC && ceos->sensor == ERS &&
+        meta->general->radiometry > r_AMP &&
+        meta->general->radiometry < r_POWER)
+    {
+      asfPrintStatus("Applying calibration adjustment of x1.3 for SLC data.\n");
+      asf->a1 *= 1.3;
     }
 
     // grab the noise vector
