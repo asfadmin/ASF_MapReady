@@ -175,27 +175,6 @@ void geocode_options_changed(int is_source)
               GTK_ENTRY(latitude_of_origin_entry),
               double_to_string(pps->albers.orig_latitude));
             break;
-
-          case PROJ_MER:
-            gtk_entry_set_text(
-              GTK_ENTRY(first_standard_parallel_entry),
-              double_to_string(pps->albers.std_parallel1));
-            gtk_entry_set_text(
-              GTK_ENTRY(central_meridian_entry),
-              double_to_string(pps->albers.center_meridian));
-            gtk_entry_set_text(
-              GTK_ENTRY(latitude_of_origin_entry),
-              double_to_string(pps->albers.orig_latitude));
-            break;
-
-          case PROJ_EQR:
-            gtk_entry_set_text(
-              GTK_ENTRY(central_meridian_entry),
-              double_to_string(pps->albers.center_meridian));
-            gtk_entry_set_text(
-              GTK_ENTRY(latitude_of_origin_entry),
-              double_to_string(pps->albers.orig_latitude));
-            break;
         }
 
         g_free(pps);
@@ -243,17 +222,6 @@ void geocode_options_changed(int is_source)
         case PROJ_ALBERS:
           enable_first_standard_parallel = TRUE;
           enable_second_standard_parallel = TRUE;
-          enable_central_meridian = TRUE;
-          enable_latitude_of_origin = TRUE;
-          break;
-
-        case PROJ_MER:
-          enable_first_standard_parallel = TRUE;
-          enable_central_meridian = TRUE;
-          enable_latitude_of_origin = TRUE;
-          break;
-
-        case PROJ_EQR:
           enable_central_meridian = TRUE;
           enable_latitude_of_origin = TRUE;
           break;
@@ -323,18 +291,6 @@ void geocode_options_changed(int is_source)
 }
 
 SIGNAL_CALLBACK void
-on_source_equirectangular_activate(GtkWidget * widget)
-{
-    geocode_options_changed(TRUE);
-}
-
-SIGNAL_CALLBACK void
-on_source_mercator_activate(GtkWidget * widget)
-{
-    geocode_options_changed(TRUE);
-}
-
-SIGNAL_CALLBACK void
 on_source_albers_equal_area_conic_activate(GtkWidget * widget)
 {
     geocode_options_changed(TRUE);
@@ -392,18 +348,6 @@ SIGNAL_CALLBACK void
 on_source_nad83_activate(GtkWidget * widget)
 {
     geocode_options_changed(TRUE);
-}
-
-SIGNAL_CALLBACK void
-on_target_equirectangular_activate(GtkWidget * widget)
-{
-    geocode_options_changed(FALSE);
-}
-
-SIGNAL_CALLBACK void
-on_target_mercator_activate(GtkWidget * widget)
-{
-    geocode_options_changed(FALSE);
 }
 
 SIGNAL_CALLBACK void

@@ -13,8 +13,6 @@ static GtkWidget * source_albers_menu = NULL;
 static GtkWidget * source_lamcc_menu = NULL;
 static GtkWidget * source_lamaz_menu = NULL;
 static GtkWidget * source_latlon_menu = NULL;
-static GtkWidget * source_mer_menu = NULL;
-static GtkWidget * source_eqr_menu = NULL;
 
 static GtkWidget * target_utm_menu = NULL;
 static GtkWidget * target_ps_menu = NULL;
@@ -22,8 +20,7 @@ static GtkWidget * target_albers_menu = NULL;
 static GtkWidget * target_lamcc_menu = NULL;
 static GtkWidget * target_lamaz_menu = NULL;
 static GtkWidget * target_latlon_menu = NULL;
-static GtkWidget * target_mer_menu = NULL;
-static GtkWidget * target_eqr_menu = NULL;
+
 
 static char * projection_directory(int projection)
 {
@@ -50,14 +47,6 @@ static char * projection_directory(int projection)
     case PROJ_ALBERS:
         location = "albers_equal_area_conic";
         break;
-	
-    case PROJ_MER:
-      location = "mercator";
-      break;
-
-    case PROJ_EQR:
-      location = "equi_rectangular";
-      break;
     }
 
     ret = (char *) malloc(sizeof(char) *
@@ -114,12 +103,6 @@ static const char * projection_file_prefix(int projection)
 
     case PROJ_ALBERS:
         return "albers_equal_area_conic_";
-
-    case PROJ_MER:
-      return "mercator_";
-
-    case PROJ_EQR:
-      return "equi_rectangular_";
     }
 }
 
@@ -249,8 +232,6 @@ void release_predefined_projections()
         g_object_unref(source_lamcc_menu);
         g_object_unref(source_lamaz_menu);
         g_object_unref(source_albers_menu);
-        g_object_unref(source_mer_menu);
-        g_object_unref(source_eqr_menu);
 
         g_object_unref(target_utm_menu);
         g_object_unref(target_latlon_menu);
@@ -258,8 +239,6 @@ void release_predefined_projections()
         g_object_unref(target_lamcc_menu);
         g_object_unref(target_lamaz_menu);
         g_object_unref(target_albers_menu);
-        g_object_unref(target_mer_menu);
-        g_object_unref(target_eqr_menu);
     }
 }
 
@@ -305,24 +284,12 @@ void set_predefined_projections(int is_source, int projection)
         target_albers_menu =
             populate_predefined_projections(PROJ_ALBERS);
 
-        source_mer_menu =
-            populate_predefined_projections(PROJ_MER);
-        target_mer_menu =
-            populate_predefined_projections(PROJ_MER);
-
-        source_eqr_menu =
-            populate_predefined_projections(PROJ_EQR);
-        target_eqr_menu =
-            populate_predefined_projections(PROJ_EQR);
-
         g_object_ref(source_latlon_menu);
         g_object_ref(source_utm_menu);
         g_object_ref(source_ps_menu);
         g_object_ref(source_lamcc_menu);
         g_object_ref(source_lamaz_menu);
         g_object_ref(source_albers_menu);
-        g_object_ref(source_mer_menu);
-        g_object_ref(source_eqr_menu);
 
         g_object_ref(target_latlon_menu);
         g_object_ref(target_utm_menu);
@@ -330,8 +297,6 @@ void set_predefined_projections(int is_source, int projection)
         g_object_ref(target_lamcc_menu);
         g_object_ref(target_lamaz_menu);
         g_object_ref(target_albers_menu);
-        g_object_ref(target_mer_menu);
-        g_object_ref(target_eqr_menu);
     }
 
     predefined_projection_option_menu = is_source ?
@@ -363,14 +328,6 @@ void set_predefined_projections(int is_source, int projection)
     case PROJ_ALBERS:
         menu = is_source ? source_albers_menu : target_albers_menu;
         break;
-
-    case PROJ_MER:
-      menu = is_source ? source_mer_menu : target_mer_menu;
-      break;
-
-    case PROJ_EQR:
-      menu = is_source ? source_eqr_menu : target_eqr_menu;
-      break;
     }
 
     g_assert(menu);
