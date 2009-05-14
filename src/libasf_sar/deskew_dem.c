@@ -619,7 +619,8 @@ Here's what it looked like before optimization:
                 }
                 case 5: 
                 {
-                    /* Jeremy's new formula, this should be the new default */
+                    // Jeremy's new formula, this should be the new default,
+                    // from Kellndorfer, IEEE TGRS 1998, 1396-1411
                     // What we really want is this:
                     //      inout[x] *= sin(acos(cosAng))/sin(gi);
                     // But we replace sin(acos(x)) with the pythagorean equiv

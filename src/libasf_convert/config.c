@@ -1584,9 +1584,10 @@ int write_convert_config(char *configFile, convert_config *cfg)
       if (!shortFlag)
           fprintf(fConfig, "\n# Normally during terrain correction, only geometric terrain is\n"
                   "# applied.  This option will also turn on radiometric terrain correction.\n"
-                  "# This option is still experimental.  Currently, terrain corrected pixel\n"
-                  "# values are scaled using the formula: 1 - .7*pow(cos(li),7), where li is\n"
-                  "# is the local incidence angle.\n\n");
+                  "# This option is still experimental.  The correction adjusts the values to\n"
+                  "# account for the actual incidence angle (using the DEM), instead of the\n"
+                  "# estimated incidence angle (using the Earth-as-ellipsoid) used during\n"
+                  "# processing.\n\n");
       fprintf(fConfig, "do radiometric = %d\n", cfg->terrain_correct->do_radiometric);
       if (!shortFlag)
           fprintf(fConfig, "\n# If your DEM has a number of \"holes\" in it, this can cause streaking\n"
