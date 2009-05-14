@@ -1008,6 +1008,15 @@ static double calc_swath_velocity(struct dataset_sum_rec *dssr,
   const double g = 9.81; //9.80665;
   double orbit_vel = sqrt(g*er*er/ht);
 
+  // nadir velocity calculation... see all the stuff commented out below
+  return orbit_vel * er/ht;
+
+/*
+  // Commenting this out for now -- corrects away from the workreport
+  // Suspicious of the orbit_vel calculation, it would probably be better
+  // to calculate directly from the state vectors rather than using the
+  // sqrt(g*r*r/h) formula.
+
   // Don's super-duper calculation!
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
@@ -1082,6 +1091,7 @@ static double calc_swath_velocity(struct dataset_sum_rec *dssr,
 
   double r = sqrt(R0*R0 - z*z);
   printf("r = %f\n", r);
+  printf("er = %f\n", er);
 
   double vel = orbit_vel * r/ht;
 
@@ -1089,7 +1099,14 @@ static double calc_swath_velocity(struct dataset_sum_rec *dssr,
   printf("calculated nadir velocity: %f\n", orbit_vel * er/ht);
   printf("calculated swath velocity: %f\n", vel);
 
+  printf("azimuth time per pixel (using swath): %.10f\n",
+         meta->general->y_pixel_size / vel);
+  printf("azimuth time per pixel (using nadir): %.10f\n",
+         meta->general->y_pixel_size / (orbit_vel * er/ht));
+
   return vel;
+*/
+
 }
 
 static void get_alos_linehdr(struct PHEADER *linehdr, const char *fName)
