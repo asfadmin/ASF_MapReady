@@ -1008,9 +1008,88 @@ static double calc_swath_velocity(struct dataset_sum_rec *dssr,
   const double g = 9.81; //9.80665;
   double orbit_vel = sqrt(g*er*er/ht);
 
+  // Don's super-duper calculation!
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  double R0 = er;
+  double srfp = dssr->rng_gate
+    * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
+  double slant_per = meta->general->x_pixel_size;
+  printf("srfp= %f\n", srfp);
+  printf("slant_per = %f\n", slant_per);
+  double sr = srfp + ns/2 * slant_per;
+  printf("sr = %f\n", sr);
+
+  sr = sr/1000.;
+  double sr2=sr*sr;
+  double incid =
+      dssr->incid_a[0] +
+      dssr->incid_a[1] * sr +
+      dssr->incid_a[2] * sr2 +
+      dssr->incid_a[3] * sr2 * sr +
+      dssr->incid_a[4] * sr2 * sr2 +
+      dssr->incid_a[5] * sr2 * sr2 * sr;
+
+  double tani = tan(incid);
+  double tan2i = tani*tani;
+  double h = ht-R0;
+
+  printf("R0 = %f\n", R0);
+  printf("incid = %f\n", incid*R2D);
+  printf("h = %f\n", h);
+
+  double a = 1 + tan2i;
+  double b = 2*h*tan2i - 2*R0;
+  double c = h*h*tan2i;
+
+  printf("a= %f\n", a);
+  printf("b= %f\n", b);
+  printf("c= %f\n", c);
+
+  double D = b*b - 4*a*c;
+  printf("D= %f\n", D);
+
+  if (D<0) {
+    printf("D<0 ... sorry, guys. :(\n");
+    return orbit_vel * er / ht;
+  }
+
+  double dh1 = (-b + sqrt(D))/(2*a);
+  double dh2 = (-b - sqrt(D))/(2*a);
+
+  printf("dh1 = %f\n", dh1);
+  printf("dh2 = %f\n", dh2);
+
+  double dh;
+  if (dh1>0 && dh1<h)
+    dh=dh1;
+  else if (dh2>0 && dh2<h)
+    dh=dh2;
+  else {
+    printf("no good dh to take ... sorry, guys. :(\n");
+    return orbit_vel * er / ht;
+  }
+
+  printf("dh = %f\n", dh);
+
+  double z = (h+dh)*tani;
+  printf("z = %f\n", z);
+
+  if (z>R0) {
+    printf("z is too large ... sorry, guys. :(\n");
+    return orbit_vel * er / ht;
+  }
+
+  double r = sqrt(R0*R0 - z*z);
+  printf("r = %f\n", r);
+
+  double vel = orbit_vel * r/ht;
+
   // simple scaling to get swath velocity from orbit vel
-  // printf("calculated swath velocity: %f\n", orbit_vel * er/ht);
-  return orbit_vel * er / ht;
+  printf("calculated nadir velocity: %f\n", orbit_vel * er/ht);
+  printf("calculated swath velocity: %f\n", vel);
+
+  return vel;
 }
 
 static void get_alos_linehdr(struct PHEADER *linehdr, const char *fName)
@@ -1219,9 +1298,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
         latLon2UTM(lat, lon, 0, &x2, &y2);
 
         meta->general->y_pixel_size = hypot(x1-x2, y1-y2)/(double)nl;
-        printf("Calculated y pixel size: %f\n", meta->general->y_pixel_size);
 
         double swath_vel = calc_swath_velocity(dssr,dataName[0],meta);
+
+        printf("Calculated y pixel size: %f\n", meta->general->y_pixel_size);
         printf("     Other method gives: %f\n",
             meta->sar->azimuth_time_per_pixel * swath_vel);
 
