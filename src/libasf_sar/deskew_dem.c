@@ -544,7 +544,8 @@ Here's what it looked like before optimization:
     for (x=1;x<ns;x++)
     {
         // don't mess with masked pixels
-        if (mask[x]!=MASK_NORMAL)
+        //if (mask[x]!=MASK_NORMAL)
+        if (mask[x]==MASK_USER_MASK)
           continue;
         // if we have any SRTM holes, or otherwise no DEM data, don't correct
         if (bad_dem_height(grDEM[x]) || bad_dem_height(grDEMprev[x]) ||
@@ -839,7 +840,7 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
             // get slant range dem line, and convert dem to GR
             // we have two versions of the GR dem line: grDEMline, grDEMconv
             get_float_line(inDemSlantFp,metaDEMslant,y,srDEMline);
-            dem_sr2gr(&d,srDEMline,grDEMconv,ns,fill_holes);
+            dem_sr2gr(&d,srDEMline,grDEMconv,ns,TRUE /* fill_holes */ );
 
             // If we have the GR DEM, read it, otherwise use the converted one
             if (inDemGroundFp) {
