@@ -210,7 +210,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
   facilityStr = trim_spaces(dssr.fac_id);
   processorStr = trim_spaces(dssr.sys_id);
 
-  ceos_description *ceos = get_ceos_description(inSAR, REPORT_LEVEL_NONE);
+  ceos_description *ceos = get_ceos_description_ext(inSAR, REPORT_LEVEL_NONE, FALSE);
 
   if (strncmp(facilityStr , "ASF"  , 3) == 0 &&
       strncmp(processorStr, "FOCUS", 5) != 0 &&
