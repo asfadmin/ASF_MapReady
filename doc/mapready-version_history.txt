@@ -1,9 +1,16 @@
 MapReady Version History
 
-MapReady 2.2.0 (released ...)
+MapReady 2.2.5 (released 2009 May 23)
 New Functionality
+- New 'external' tab in the MapReady GUI, allows running of a command-line
+  tool after import, prior to terrain correction or polarimetric processing.
+- Support for ingest of PolSARPro data in the MapReady GUI
+- Improved radiometric terrain correction (new correction formula)
+- Experimental support for TerraSAR-X and GAMMA data
 - New tool: diffimage (reports statistical differences b/w images)
 - New tool: diffmeta (report differences in metadata files)
+- New tool: adjust_bands (allows combining/reordering/removing bands in
+  multi-band files)
 
 MapReady 2.1.11 (released 2009 March 30)
 New Functionality
