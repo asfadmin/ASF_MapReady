@@ -100,11 +100,11 @@ int convert2vector(c2v_config *cfg)
   if ((inFormat == META || inFormat == LEADER) && outFormat == CSV)
     ret = meta2csv(inFile, outFile, listFlag);
   else if (inFormat == META && outFormat == KMLFILE)
-    ret = meta2kml(inFile, outFile, META, listFlag, cfg);
+    ret = meta2kml(inFile, outFile, META, cfg);
   else if (inFormat == LEADER && outFormat == KMLFILE)
-    ret = meta2kml(inFile, outFile, LEADER, listFlag, cfg);
+    ret = meta2kml(inFile, outFile, LEADER, cfg);
   else if (inFormat == STF_META && outFormat == KMLFILE)
-    ret = meta2kml(inFile, outFile, STF_META, listFlag, cfg);
+    ret = meta2kml(inFile, outFile, STF_META, cfg);
   else if ((inFormat == META || inFormat == LEADER) && outFormat == SHAPEFILE)
     ret = meta2shape(inFile, outFile, listFlag);
   else if (inFormat == LEADER && outFormat == META)
