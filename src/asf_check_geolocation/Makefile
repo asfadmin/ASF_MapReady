@@ -6,6 +6,7 @@ include ../../make_support/system_rules
 
 CFLAGS += \
 	$(GSL_CFLAGS) \
+	$(XML_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(TIFF_CFLAGS) \
@@ -24,6 +25,7 @@ LIBS = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(SHAPELIB_LIBS) \
+	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
