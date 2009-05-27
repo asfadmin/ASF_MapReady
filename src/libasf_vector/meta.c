@@ -2565,12 +2565,13 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
 }
 
 // Convert metadata to kml file
-int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag)
+int meta2kml(char *inFile, char *outFile, format_type_t inFormat, 
+	     c2v_config *cfg)
 {
   meta_parameters *meta;
   FILE *fpIn, *fpOut;
   char *line = (char *) MALLOC(sizeof(char)*1024);
-  if (listFlag) {
+  if (cfg->list) {
     fpIn = FOPEN(inFile, "r");
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
@@ -2592,7 +2593,7 @@ int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag)
       else
 	asfPrintError("Chosen file format (%s) does not match provided file "
 		      "(%s)\n", format2str(inFormat), line);
-      kml_entry(fpOut, meta, meta->general->basename);
+      kml_entry_ext(fpOut, meta, meta->general->basename, cfg);
       meta_free(meta);
     }
     kml_footer(fpOut);
@@ -2617,7 +2618,7 @@ int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag)
 		    "(%s)\n", format2str(inFormat), inFile);
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
-    kml_entry(fpOut, meta, meta->general->basename);
+    kml_entry_ext(fpOut, meta, meta->general->basename, cfg);
     kml_footer(fpOut);
     FCLOSE(fpOut);
     meta_free(meta);
@@ -2638,7 +2639,7 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
   int ii, field=0, nCols;
 
   // Read metadata
-  meta = meta_read(inFile);
+  meta = meta_read_only(inFile);
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
 
@@ -3811,7 +3812,7 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   }
   else
     strcpy(metaFile, inFile);
-  meta = meta_read(metaFile);
+  meta = meta_read_only(metaFile);
   shape_meta_init(outFile, meta);
   open_shape(outFile, &dbase, &shape);
   meta_free(meta);

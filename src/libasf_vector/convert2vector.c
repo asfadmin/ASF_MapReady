@@ -74,9 +74,16 @@ char *format2str(format_type_t format)
   return str;
 }
 
-int convert2vector(char *inFile, const char *inFormat_str,
-                   char *outFile_in, const char *outFormat_str, int listFlag)
+int convert2vector(c2v_config *cfg)
 {
+  char inFormat_str[25], outFormat_str[25], inFile[512], outFile_in[512];
+  strcpy(inFormat_str, cfg->input_format);
+  strcpy(outFormat_str, cfg->output_format);
+  strcpy(inFile, cfg->input_file);
+  strcpy(outFile_in, cfg->output_file);
+  int listFlag = cfg->list;
+  int timeFlag = cfg->time;
+
   int ret = 0;
   asfPrintStatus("Converting from %s to %s:\n", inFormat_str, outFormat_str);
   asfPrintStatus("  %s -> %s.\n", inFile, outFile_in); 
@@ -93,11 +100,11 @@ int convert2vector(char *inFile, const char *inFormat_str,
   if ((inFormat == META || inFormat == LEADER) && outFormat == CSV)
     ret = meta2csv(inFile, outFile, listFlag);
   else if (inFormat == META && outFormat == KMLFILE)
-    ret = meta2kml(inFile, outFile, META, listFlag);
+    ret = meta2kml(inFile, outFile, META, listFlag, cfg);
   else if (inFormat == LEADER && outFormat == KMLFILE)
-    ret = meta2kml(inFile, outFile, LEADER, listFlag);
+    ret = meta2kml(inFile, outFile, LEADER, listFlag, cfg);
   else if (inFormat == STF_META && outFormat == KMLFILE)
-    ret = meta2kml(inFile, outFile, STF_META, listFlag);
+    ret = meta2kml(inFile, outFile, STF_META, listFlag, cfg);
   else if ((inFormat == META || inFormat == LEADER) && outFormat == SHAPEFILE)
     ret = meta2shape(inFile, outFile, listFlag);
   else if (inFormat == LEADER && outFormat == META)

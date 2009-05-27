@@ -32,7 +32,8 @@ OBJS = \
 	ursa.o \
 	high_altitude_photography.o \
 	custom.o \
-	utils.o
+	utils.o \
+	config.o
 
 LIBS = \
 	$(LIBDIR)/libasf_vector.a \
@@ -59,6 +60,7 @@ all: build_only
 	cp ursa.h $(ASF_INCLUDE_DIR)
 	mkdir -p $(SHAREDIR)
 	cp header.lst $(SHAREDIR)
+	cp convert2vector.config $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f libasf_vector.a

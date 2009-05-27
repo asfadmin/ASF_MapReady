@@ -1,4 +1,3 @@
-
 #include "shapefil.h"
 #include "asf_vector.h"
 #include "asf.h"
@@ -12,6 +11,8 @@
 #include "ursa.h"
 #include <stdio.h>
 #include <math.h>
+
+void write_kml_style_keys_ext(FILE *kml_file, c2v_config *cfg);
 
 /*
    When invoking google earth from the command line, you can put a kml
@@ -102,7 +103,8 @@ static void rotate(double x_in, double y_in, double x0, double y0, double ang,
 //}
 
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
-                           char *name, char *png_filename, char *dir)
+                           char *name, char *png_filename, char *dir,
+			   c2v_config *cfg)
 {
   dbf_header_t *dbf;
   int ii, kk, nCols;
@@ -1094,6 +1096,14 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   }
   fprintf(kml_file, "</td></tr></table>\n");
   fprintf(kml_file, "  ]]></description>\n");
+  if (cfg->time) {
+    ymd_date date;
+    hms_time time;
+    parse_DMYdate(meta->general->acquisition_date, &date, &time);
+    fprintf(kml_file, "  <TimeStamp><when>%d-%02d-%02dT%02d:%02d:%.0lf"
+	    "</when></TimeStamp>\n",
+	    date.year, date.month, date.day, time.hour, time.min, time.sec);
+  }
   fprintf(kml_file, "  <name>%s</name>\n", name);
   fprintf(kml_file, "  <LookAt>\n");
   fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
@@ -1106,14 +1116,39 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <visibility>1</visibility>\n");
   fprintf(kml_file, "  <open>1</open>\n");
-  write_kml_style_keys(kml_file);
+  
+  // Check for valid drawing parameters
+  if (strcmp_case(cfg->boundary, "POLYGON") != 0 &&
+      strcmp_case(cfg->boundary, "LINE") != 0) {
+    asfPrintWarning("Invalid boundary type '%s'.\n"
+		    "Will reset the boundary type to 'POLYGON'\n",
+		    cfg->boundary);
+    strcpy(cfg->boundary, "POLYGON");
+  }
+  if (strcmp_case(cfg->height, "RELATIVETOGROUND") != 0 &&
+      strcmp_case(cfg->height, "CLAMPEDTOGROUND") != 0) {
+    asfPrintWarning("Invalid height reference '%s'.\n"
+		    "Will reset the height reference to 'clampToGround'\n",
+		    cfg->height);
+    strcpy(cfg->height, "clampToGround");
+  }
 
-  fprintf(kml_file, "  <Polygon>\n");
-  fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
-  fprintf(kml_file, "    <outerBoundaryIs>\n");
-  fprintf(kml_file, "      <LinearRing>\n");
-  fprintf(kml_file, "        <extrude>%d</extrude>\n",
-          png_filename ? 0 : 1);
+  write_kml_style_keys_ext(kml_file, cfg);
+  if (strcmp_case(cfg->boundary, "LINE") == 0) {
+    fprintf(kml_file, "  <LineString>\n");
+    fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", cfg->height);
+    fprintf(kml_file, "    <extrude>1</extrude>\n");
+    fprintf(kml_file, "    <tesselate>1</tesselate>\n");
+  }
+  else {
+    write_kml_style_keys(kml_file);
+    fprintf(kml_file, "  <Polygon>\n");
+    fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", cfg->height);
+    fprintf(kml_file, "    <outerBoundaryIs>\n");
+    fprintf(kml_file, "      <LinearRing>\n");
+    fprintf(kml_file, "        <extrude>%d</extrude>\n",
+	    png_filename ? 0 : 1);
+  }
   fprintf(kml_file, "        <coordinates>\n");
 
   double h = 0.0;
@@ -1166,9 +1201,14 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
 
       fprintf(kml_file, "        </coordinates>\n");
-      fprintf(kml_file, "      </LinearRing>\n");
-      fprintf(kml_file, "    </outerBoundaryIs>\n");
-      fprintf(kml_file, "  </Polygon>\n");
+      if (strcmp_case(cfg->boundary, "LINE") == 0) {
+	fprintf(kml_file, "  </LineString>\n");
+      }
+      else {
+	fprintf(kml_file, "      </LinearRing>\n");
+	fprintf(kml_file, "    </outerBoundaryIs>\n");
+	fprintf(kml_file, "  </Polygon>\n");
+      }
       fprintf(kml_file, "</Placemark>\n");
 
       if (!quietflag) {
@@ -1406,12 +1446,18 @@ void kml_entry_overlay(FILE *kml_file, char *name)
 void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, char *name,
                             char *png_filename, char *dir)
 {
-   kml_entry_impl(kml_file, meta, name, png_filename, dir);
+  kml_entry_impl(kml_file, meta, name, png_filename, dir, NULL);
 }
 
 void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
 {
-  kml_entry_impl(kml_file, meta, name, NULL, NULL);
+  kml_entry_impl(kml_file, meta, name, NULL, NULL, NULL);
+}
+
+void kml_entry_ext(FILE *kml_file, meta_parameters *meta, char *name,
+		   c2v_config *cfg)
+{
+  kml_entry_impl(kml_file, meta, name, NULL, NULL, cfg);
 }
 
 void kml_footer(FILE *kml_file)
@@ -1438,17 +1484,28 @@ void write_kml_overlay(char *filename)
 
 void write_kml_style_keys(FILE *kml_file)
 {
-    // so all of our methods use the same "look" for the
-    // boxes/lines.
-    fprintf(kml_file, "  <Style>\n");
-    fprintf(kml_file, "    <LineStyle>\n");
+  write_kml_style_keys_ext(kml_file, NULL);
+}
+
+void write_kml_style_keys_ext(FILE *kml_file, c2v_config *cfg)
+{
+  // so all of our methods use the same "look" for the
+  // boxes/lines.
+  fprintf(kml_file, "  <Style>\n");
+  fprintf(kml_file, "    <LineStyle>\n");
+  if (cfg) {
+    fprintf(kml_file, "      <color>%s</color>\n", cfg->color);
+    fprintf(kml_file, "      <width>%d</width>\n", cfg->width);
+  }
+  else {
     fprintf(kml_file, "      <color>ffff9900</color>\n");
     fprintf(kml_file, "      <width>5</width>\n");
-    fprintf(kml_file, "    </LineStyle>\n");
-    fprintf(kml_file, "    <PolyStyle>\n");
-    fprintf(kml_file, "      <color>1fff5500</color>\n");
-    fprintf(kml_file, "    </PolyStyle>\n");
-    fprintf(kml_file, "  </Style>\n");
+  }
+  fprintf(kml_file, "    </LineStyle>\n");
+  fprintf(kml_file, "    <PolyStyle>\n");
+  fprintf(kml_file, "      <color>1fff5500</color>\n");
+  fprintf(kml_file, "    </PolyStyle>\n");
+  fprintf(kml_file, "  </Style>\n");
 }
 
 typedef struct

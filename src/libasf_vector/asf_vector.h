@@ -124,11 +124,34 @@ typedef struct {
   int alive;
 } cell_t;
 
+
+// Prototype from config.c
+typedef struct
+{
+  char comment[255];             // first line for comments
+  char directory[1024];          // default directory
+  char input_file[512];          // input file name
+  char output_file[512];         // output file name
+  char input_format[25];         // input format
+  char output_format[25];        // output format
+  int list;                      // list of files flag
+  int time;                      // time series flag
+  char boundary[25];             // polygon/line
+  char height[25];               // reference: clampToGround/relativeToGround
+  int width;                     // width of boundary line
+  char color[25];                // color of boundary line
+  int short_config;              // short configuration file flag
+} c2v_config;
+
+int init_c2v_config(char *configFile);
+c2v_config *init_fill_c2v_config();
+c2v_config *read_c2v_config(char *configFile);
+int write_c2v_config(char *configFile, c2v_config *cfg);
+
 // Prototypes from convert2vector.c
 format_type_t str2format(const char *str);
 char *format2str(format_type_t format);
-int convert2vector(char *inFile, const char *inFormat_str,
-		   char *outFile, const char *outFormat_str, int listFlag);
+int convert2vector(c2v_config *cfg);
 
 // Prototypes from kml_utils.c
 void kml_header(FILE *kml_file);
@@ -136,6 +159,8 @@ void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta,
                             char *name, char *ceos_fileame,
                             char *jpeg_dir);
 void kml_entry(FILE *kml_file, meta_parameters *meta, char *name);
+void kml_entry_ext(FILE *kml_file, meta_parameters *meta, char *name, 
+		   c2v_config *cfg);
 void kml_point_entry(FILE *kml_file, char *name, float lat, float lon);
 void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat,
                float *lon, int n);
@@ -174,7 +199,8 @@ int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns);
 
 // Prototypes from meta.c
 int meta2csv(char *inFile, char *outFile, int listFlag);
-int meta2kml(char *inFile, char *outFile, format_type_t inFormat, int listFlag);
+int meta2kml(char *inFile, char *outFile, format_type_t inFormat, 
+	     c2v_config *cfg);
 void shape_meta_init(char *inFile, meta_parameters *meta);
 int meta2shape(char *inFile, char *outFile, int listFlag);
 int leader2meta(char *inFile, char *outFile, int listFlag);
