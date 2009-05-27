@@ -35,28 +35,34 @@ static int isxmlfile(char *file)
 
 int main(int argc, char **argv)
 {
-  char informat_str[25], outformat_str[25], *inFile, *outFile;
+  char informat_str[25], outformat_str[25], configFile[255];
   int listFlag=0;
+  int timeFlag=0;
   int testFlag=0;
   int inputFormatFlag=0;
   int outputFormatFlag=0;
+  int configFlag=0;
   int needed_args=3;
   format_type_t inFormat, outFormat;
+  c2v_config *cfg=NULL;
 
   if (argc > 1) {
       check_for_help(argc, argv);
       handle_common_asf_args(&argc, &argv, TOOL_NAME);
   }
 
-  // allocate some memory
-  inFile = (char *) MALLOC(sizeof(char)*512);
-  outFile = (char *) MALLOC(sizeof(char)*512);
-
   /* parse command line */
   strcpy(informat_str, "GEOTIFF"); // Default value
   strcpy(outformat_str, "KML"); // Default value
-  strcpy(inFile, MAGIC_UNSET_STRING);
-  strcpy(outFile, MAGIC_UNSET_STRING);
+  configFlag =  
+    checkForOption("-config", argc, argv) ?
+    getStringOption("-config", argc, argv, configFile, NULL) :
+    checkForOption("--config", argc, argv) ?
+    getStringOption("--config", argc, argv, configFile, NULL) :
+    checkForOption("-c", argc, argv) ?
+    getStringOption("-c", argc, argv, configFile, NULL) : 0;
+  if (!configFlag)
+    cfg = init_fill_c2v_config();
   listFlag = checkForOption("-list", argc, argv)    ?
                checkForOption("-list", argc, argv)  :
              checkForOption("--list", argc, argv)   ?
@@ -64,6 +70,11 @@ int main(int argc, char **argv)
              checkForOption("-l", argc, argv)       ?
                checkForOption("-l", argc, argv)     :
              0;
+  if (listFlag)
+    cfg->list = TRUE;
+  timeFlag = checkForOption("-time", argc, argv);
+  if (timeFlag)
+    cfg->time = TRUE;
   testFlag = checkForOption("-test", argc, argv)    ?
                checkForOption("-test", argc, argv)  :
              checkForOption("--test", argc, argv)   ?
@@ -73,20 +84,21 @@ int main(int argc, char **argv)
              0;
   inputFormatFlag =  
     checkForOption("-input-format", argc, argv) ?
-    getStringOption("-input-format", argc, argv, informat_str, NULL) :
+    getStringOption("-input-format", argc, argv, cfg->input_format, NULL) :
     checkForOption("--input-format", argc, argv) ?
-    getStringOption("--input-format", argc, argv, informat_str, NULL) :
+    getStringOption("--input-format", argc, argv, cfg->input_format, NULL) :
     checkForOption("-i", argc, argv) ?
-    getStringOption("-i", argc, argv, informat_str, NULL) : 0;
+    getStringOption("-i", argc, argv, cfg->input_format, NULL) : 0;
   outputFormatFlag =  
     checkForOption("-output-format", argc, argv) ?
-    getStringOption("-output-format", argc, argv, outformat_str, NULL) :
+    getStringOption("-output-format", argc, argv, cfg->output_format, NULL) :
     checkForOption("--output-format", argc, argv) ?
-    getStringOption("--output-format", argc, argv, outformat_str, NULL) :
+    getStringOption("--output-format", argc, argv, cfg->output_format, NULL) :
     checkForOption("-o", argc, argv) ?
-    getStringOption("-o", argc, argv, outformat_str, NULL) : 0;
+    getStringOption("-o", argc, argv, cfg->output_format, NULL) : 0;
   needed_args += listFlag         ? 1 : 0; // No argument
   needed_args += testFlag         ? 1 : 0; // No argument
+  needed_args += timeFlag         ? 1 : 0; // No argument
   needed_args += inputFormatFlag  ? 2 : 0; // w/Argument
   needed_args += outputFormatFlag ? 2 : 0; // w/Argument
   if (argc < needed_args) {
@@ -98,6 +110,7 @@ int main(int argc, char **argv)
       exit(1);
   }
   if (listFlag         >= argc - 1  ||
+      timeFlag         >= argc - 1  ||
       inputFormatFlag  >= argc - 2  ||
       outputFormatFlag >= argc - 2  )
   {
@@ -106,140 +119,72 @@ int main(int argc, char **argv)
       usage(NULL);
       exit(1);
   }
-  sprintf(inFile, "%s", argv[argc - 2]);
-  sprintf(outFile, "%s", argv[argc - 1]);
+  if (!configFlag) {
+    sprintf(cfg->input_file, "%s", argv[argc - 2]);
+    sprintf(cfg->output_file, "%s", argv[argc - 1]);
+  }
 
   asfSplashScreen (argc, argv);
 
-  /*
-  int meta_found    = ismetadata(inFile);
-  int leader_found  = isleader(inFile);
-  int point_found   = ispoint(inFile);
-  int polygon_found = ispolygon(inFile);
-  int shape_found   = isshape(inFile);
-  int geotiff_found = isgeotiff(inFile);
-  int csv_found     = iscsv(inFile);
-  if (point_found || polygon_found) csv_found = FALSE;
-  int types_found = meta_found    +
-                    leader_found  +
-                    point_found   +
-                    polygon_found +
-                    shape_found   +
-                    geotiff_found +
-                    csv_found     ;
-  if (types_found > 1) {
-      char *type_list = (char *)MALLOC(sizeof(char)*types_found*1024);
-      char msg[7168];
 
-      *type_list = '\0';
-      if (meta_found) {
-          sprintf(msg, "    %s.meta\n", inFile);
-          strcat(type_list, msg);
-      }
-      if (leader_found) {
-          sprintf(msg, "    %s.L (or LED-%s etcetera)\n", inFile, inFile);
-          strcat(type_list, msg);
-      }
-      if (point_found || polygon_found) {
-          sprintf(msg, "    %s.csv\n", inFile);
-          strcat(type_list, msg);
-      }
-      if (shape_found) {
-          sprintf(msg, "    %s.shp (etcetera)\n", inFile);
-          strcat(type_list, msg);
-      }
-      if (geotiff_found) {
-          sprintf(msg, "    %s.tif or %s.tiff\n", inFile, inFile);
-          strcat(type_list, msg);
-      }
-      if (csv_found) {
-          sprintf(msg, "    %s.csv\n", inFile);
-          strcat(type_list, msg);
-      }
-      sprintf(msg, "More than one file sharing the given basename, \"%s\", "
-	      "was found\nTry running convert2vector again but provide the "
-	      "full file name\nfor the input file.  The following files were "
-	      "found:\n\n%s\n", inFile, type_list);
-      FREE(type_list);
-      asfPrintError(msg);
-  }
-  */
-
-  inFormat = str2format(informat_str);
-  outFormat = str2format(outformat_str);
-
-  /*
-  if (types_found == 1 && inputFormatFlag) {
-    if ((meta_found    && inFormat != META) ||
-	(leader_found  && inFormat != LEADER) ||
-	(point_found   && inFormat != POINT) ||
-	(polygon_found && inFormat != POLYGON) ||
-	(shape_found   && inFormat != SHAPEFILE) ||
-	(geotiff_found && inFormat != GEOTIFF_META) ||
-	(csv_found     && inFormat != AUIG && inFormat != CSV)) {
-      asfPrintWarning("\nData type found in input file does not agree with\n"
-		      "the data type specified with the -input-format flag "
-		      "(%s).\n\n"
-		      "Defaulting to the data type which was automatically "
-		      "found\nin the input file (%s)\n\n",
-                  uc(informat_str),
-                  meta_found    ? "ASF Metadata (META)"                  :
-                  leader_found  ? "CEOS Leader data (LEADER)"            :
-                  point_found   ? "Point data in a CSV file (POINT)"     :
-                  polygon_found ? "Polygon data in a CSV file (POLYGON)" :
-                  shape_found   ? "Shape file (SHAPE)"                   :
-                  geotiff_found ? "GeoTIFF file (GEOTIFF)"               :
-                  csv_found     ? "CSV file (CSV)"                       :
-                                  "UNKNOWN FILE TYPE");
-      strcpy(informat_str,
-	     meta_found    ? "META"    :
-	     leader_found  ? "LEADER"  :
-	     point_found   ? "POINT"   :
-	     polygon_found ? "POLYGON" :
-	     shape_found   ? "SHAPE"   :
-	     geotiff_found ? "GEOTIFF" :
-	     csv_found     ? "CSV"     :
-	     MAGIC_UNSET_STRING);
+  // Read configuration file
+  if (configFlag) {
+    cfg = read_c2v_config(configFile);
+    if (cfg) {
+      asfPrintStatus("Reading parameters from configuration file.\n"
+		     "Input and output formats as well as the list flag, "
+		     "given on the command line,\nsupersede configuration file "
+		     "information.\n\n");
+      if (cfg->list)
+	listFlag = TRUE;
+      // fix me: take care of directory
     }
+    else
+      asfPrintError("Could not read configuration file '%s'.\n"
+		    "There is a sample configuration file located at\n"
+		    "'%s/convert2vector.config'.\n", 
+		    configFile, get_asf_share_dir());
   }
-  */
 
-  if (!inputFormatFlag) {
+  inFormat = str2format(cfg->input_format);
+  outFormat = str2format(cfg->output_format);
+
+  if (!inputFormatFlag && !configFlag) {
     // If the input format option was not used, try to determine the input 
     // format from the file itself
-    if (ismetadata(inFile)) {
+    if (ismetadata(cfg->input_file)) {
       inFormat = META;
       strcpy(informat_str, "meta");
     }
-    else if (isleader(inFile)) {
+    else if (isleader(cfg->input_file)) {
       inFormat = LEADER;
       strcpy(informat_str, "leader");
     }
-    else if (ispoint(inFile)) {
+    else if (ispoint(cfg->input_file)) {
       inFormat = POINT;
       strcpy(informat_str, "point");
     }
-    else if (ispolygon(inFile)) {
+    else if (ispolygon(cfg->input_file)) {
       inFormat = POLYGON;
       strcpy(informat_str, "polygon");
     }
-    else if (isshape(inFile)) {
+    else if (isshape(cfg->input_file)) {
       inFormat = SHAPEFILE;
       strcpy(informat_str, "shape");
     }
-    else if (isgeotiff(inFile)) {
+    else if (isgeotiff(cfg->input_file)) {
       inFormat = GEOTIFF_META;
       strcpy(informat_str, "geotiff");
     }
-    else if (iscsv(inFile)) {
+    else if (iscsv(cfg->input_file)) {
       inFormat = CSV;
       strcpy(informat_str, "csv");
     }
-    else if (isxmlfile(inFile)) {
+    else if (isxmlfile(cfg->input_file)) {
       inFormat = TERRASAR_META;
       strcpy(informat_str, "terrasar");
     }
-    else if (isparfile(inFile)) {
+    else if (isparfile(cfg->input_file)) {
       inFormat = STF_META;
       strcpy(informat_str, "stf");
     }
@@ -247,9 +192,9 @@ int main(int argc, char **argv)
       asfPrintError("Could not automatically determine input file format "
 		    "for %s.\nPlease use the -input-format option to "
 		    "explicitly select an input\nformat type.  Try "
-		    "convert2vector -help.\n", inFile);
+		    "convert2vector -help.\n", cfg->input_file);
   }
-  else if (inFormat == GEOTIFF_META && !isgeotiff(inFile))
+  else if (inFormat == GEOTIFF_META && !isgeotiff(cfg->input_file))
     asfPrintError("Input TIFF file is not a GeoTIFF.\n");
 
   // Input formats
@@ -285,10 +230,11 @@ int main(int argc, char **argv)
 
     // Check whether you can find information about the format in the header
     // list file in the share directory
-    if (read_header_config(uc(informat_str), &dbf, &nCols))
-      asfPrintStatus("   Converting a %s format file ", uc(informat_str));
+    if (read_header_config(uc(cfg->input_format), &dbf, &nCols))
+      asfPrintStatus("   Converting a %s format file ", uc(cfg->input_format));
     else
-      asfPrintError("   Unsupported input format (%s)\n", uc(informat_str));
+      asfPrintError("   Unsupported input format (%s)\n", 
+		    uc(cfg->input_format));
   }
   
   // Output formats
@@ -314,28 +260,26 @@ int main(int argc, char **argv)
 
     // Check whether you can find information about the format in the header
     // list file in the share directory
-    if (read_header_config(uc(outformat_str), &dbf, &nCols))
-      asfPrintStatus("into a %s format file ...\n\n", uc(outformat_str));
+    if (read_header_config(uc(cfg->output_format), &dbf, &nCols))
+      asfPrintStatus("into a %s format file ...\n\n", uc(cfg->output_format));
     else
-      asfPrintError("   Unsupported output format (%s)\n", uc(outformat_str));
+      asfPrintError("   Unsupported output format (%s)\n", 
+		    uc(cfg->output_format));
   }
 
   // Set output directory as the temporary directory -- where all temp files
   // created during import should be put
-  char *tmpdir = get_dirname(outFile);
+  char *tmpdir = get_dirname(cfg->output_file);
   if (tmpdir && strlen(tmpdir) > 0)
     set_asf_tmp_dir(tmpdir);
 
   if (testFlag)
-    test_c2v(inFile, informat_str, outFile, outformat_str);
+    test_c2v(cfg->input_file, cfg->input_format, 
+	     cfg->output_file, cfg->output_format);
   else
-    convert2vector(inFile, informat_str, outFile, outformat_str, listFlag);
+    convert2vector(cfg);
 
   asfPrintStatus("Done.\n\n");
-
-  // Clean up
-  FREE(inFile);
-  FREE(outFile);
 
   return(0);
 }

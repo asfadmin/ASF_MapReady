@@ -26,6 +26,7 @@
 #endif
 #define TOOL_USAGE \
   TOOL_NAME" [-list] [-input-format <format>] [-output-format <format>]\n" \
+   "                  [-time] [-config <configuration file>]\n" \
    "                  <input filename> <output filename>\n" \
    "                  [-log <filename>] [-license] [-version] [-help]\n\n" \
    "   Where the input format is one of the following:\n" \
@@ -164,6 +165,15 @@
    "        By default, the output file format will be for Google Earth(tm)\n"\
    "        (a kml file).  If some other output format is desired, then the\n"\
    "        -output-format option should be used.\n"\
+   "\n"\
+   "   -time\n" \
+   "        This KML specific option treats a list of input files as a time\n"\
+   "        series. Each file in the list will have a time stamp associated\n"\
+   "        with it.\n"\
+   "   -config\n" \
+   "        This option allows the user to specify format options and the\n"\
+   "        list flag. Furthermore, options for drawing the boundary in KML\n"\
+   "        files can be specified.\n" \
    "\n"\
    "   -log <log file>\n"\
    "        Output will be written to a specified log file.\n"\
