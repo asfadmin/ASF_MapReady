@@ -2644,7 +2644,23 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
   int ns = meta->general->sample_count;
 
   // Determine corner coordinates
-  if (meta->location) {
+  if (meta->projection) {
+    int nl = meta->general->line_count;
+    int ns = meta->general->sample_count;
+    double xPix = meta->projection->perX;
+    double yPix = fabs(meta->projection->perY);
+    double startX = meta->projection->startX;
+    double startY = meta->projection->startY;
+    lon[0] = startX;
+    lat[0] = startY;
+    lon[1] = startX + ns*xPix;
+    lat[1] = startY;
+    lon[2] = startX + ns*xPix;
+    lat[2] = startY + nl*yPix;
+    lon[3] = startX;
+    lat[3] = startY + nl*yPix;
+  }
+  else if (meta->location) {
     lat[0] = meta->location->lat_start_near_range;
     lon[0] = meta->location->lon_start_near_range;
     lat[3] = meta->location->lat_start_far_range;
@@ -3815,7 +3831,6 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   meta = meta_read_only(metaFile);
   shape_meta_init(outFile, meta);
   open_shape(outFile, &dbase, &shape);
-  meta_free(meta);
   
   if (listFlag) {
     fp = FOPEN(inFile, "r");
@@ -3831,7 +3846,12 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
 
   // Clean up
   close_shape(dbase, shape);
-  write_esri_proj_file(outFile);
+  if (meta->projection)
+    write_asf2esri_proj(meta, NULL, outFile);
+  else
+    write_esri_proj_file(outFile);
+
+  meta_free(meta);
 
   return 1;
 }
@@ -3848,14 +3868,14 @@ int leader2meta(char *inFile, char *outFile, int listFlag)
     fp = FOPEN(inFile, "r");
     while (fgets(line, 1024, fp)) {
       strip_end_whitesp_inplace(line);
-      meta = meta_read(inFile);
+      meta = meta_read_only(inFile);
       meta_write(meta, outFile);
       n++;
     }
     FCLOSE(fp);
   }
   else {
-    meta = meta_read(inFile);
+    meta = meta_read_only(inFile);
     meta_write(meta, outFile);
   }
 

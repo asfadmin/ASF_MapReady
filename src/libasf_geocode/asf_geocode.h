@@ -7,13 +7,6 @@
 #define SSIZE_MAX 32767
 #endif
 
-// This is the old parse_options.h
-/* Type describing the resampling method to be used.  */
-typedef enum {
-  RESAMPLE_NEAREST_NEIGHBOR = 0, // Must be zero (0) ...asf_convert_gui depends on this
-  RESAMPLE_BILINEAR = 1, // Must be one (1) ...asf_convert_gui depends on this
-  RESAMPLE_BICUBIC = 2 // Must be two (2) ...asf_convert_gui depends on this
-} resample_method_t;
 
 typedef enum {         // In areas that overlap:
   MIN_OVERLAP = 1,     // 1 - Pixel values are the least between 1st and 2nd image
@@ -84,9 +77,6 @@ project_parameters_t * get_geocode_options(int *argc, char ***argv,
 /* Handy for those asfPrintStatus()s */
 char *proj_info_as_string(projection_type_t projection_type,
                           project_parameters_t *pp, datum_type_t *datum);
-
-int parse_proj_args_file(const char *file, project_parameters_t *pps,
-        projection_type_t *proj_type, datum_type_t *datum, char **err);
 
 /* Might want to make these static... they are called from get_geocode_options
    before it returns. */

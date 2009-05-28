@@ -868,4 +868,15 @@ quadratic_2d get_incid(char *sarName, meta_parameters *meta);
 // Prototypes from get_ceos.c
 void dumpCeosRecord(const char *inName);
 
+// Prototypes from parse_options.c
+int parse_proj_args_file(const char *file, project_parameters_t *pps,
+        projection_type_t *proj_type, datum_type_t *datum, char **err);
+
+typedef enum {
+  RESAMPLE_NEAREST_NEIGHBOR = 0, // Must be zero (0) ...asf_convert_gui depends on this
+  RESAMPLE_BILINEAR = 1, // Must be one (1) ...asf_convert_gui depends on this
+  RESAMPLE_BICUBIC = 2 // Must be two (2) ...asf_convert_gui depends on this
+} resample_method_t;
+
+
 #endif

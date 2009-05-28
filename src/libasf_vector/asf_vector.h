@@ -178,6 +178,7 @@ int write_shape(char *inFile, char *outFile, format_type_t format, int list);
 void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape);
 void close_shape(DBFHandle dbase, SHPHandle shape);
 void write_esri_proj_file(char *inFile);
+void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile);
 
 // Prototypes from utils.c
 void meta2text(char *inFile, FILE *outFP);

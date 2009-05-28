@@ -71,6 +71,7 @@ typedef struct
 int child_func(void *params)
 {
   child_params_t *cp = (child_params_t *)params;
+  c2v_config *cfg = init_fill_c2v_config();
 
   char *lf = appendExt(cp->out_file, ".log");
   strcpy(logFile, lf);
@@ -81,8 +82,11 @@ int child_func(void *params)
 
   fLog = FOPEN(logFile, "a");
 
-  int ret = convert2vector(cp->in_file, cp->in_format,
-                           cp->out_file, cp->out_format, FALSE);
+  strcpy(cfg->input_file, cp->in_file);
+  strcpy(cfg->output_file, cp->out_file);
+  strcpy(cfg->input_format, cp->in_format);
+  strcpy(cfg->output_format, cp->out_format);
+  int ret = convert2vector(cfg);
 
   asfPrintStatus("Successful completion!\n");
 

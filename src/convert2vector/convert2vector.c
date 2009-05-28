@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   if (listFlag         >= argc - 1  ||
       timeFlag         >= argc - 1  ||
       inputFormatFlag  >= argc - 2  ||
-      outputFormatFlag >= argc - 2  )
+      outputFormatFlag >= argc - 2)
   {
       // Options other than -help, -version, and -license must precede the input and
       // output filenames
@@ -125,7 +125,6 @@ int main(int argc, char **argv)
   }
 
   asfSplashScreen (argc, argv);
-
 
   // Read configuration file
   if (configFlag) {
@@ -146,6 +145,7 @@ int main(int argc, char **argv)
 		    configFile, get_asf_share_dir());
   }
 
+  printf("after reading configuration file\n");
   inFormat = str2format(cfg->input_format);
   outFormat = str2format(cfg->output_format);
 

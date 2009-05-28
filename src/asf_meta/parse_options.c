@@ -1,4 +1,3 @@
-#include "asf_geocode.h"
 #include "asf.h"
 #include "cla.h"
 #include "asf_nan.h"
@@ -10,8 +9,9 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include <glib.h>
+//#include <glib.h>
 
+datum_type_t get_datum(FILE *fp);
 
 static int print_warn = 1;
 
