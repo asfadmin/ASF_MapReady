@@ -4,7 +4,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
-#include "float_image.h"
+#include "banded_float_image.h"
 
 #include "asf_contact.h"
 #include "asf_license.h"
@@ -56,7 +56,6 @@ void help()
 "    situation the process will be quite slow.\n\n"
 "    All input images MUST be in the same projection, with the same projection\n"
 "    parameters, and the same pixel size.\n\n"
-"    Does not handle multi-band images.\n\n"
 "See also:\n"
 "    asf_mosaic, asf_geocode\n\n"
 "Contact:\n"
@@ -226,7 +225,7 @@ static void update_corners(double px, double py,
 }
 
 static void determine_extents(char **infiles, int n_inputs,
-                              int *size_x, int *size_y,
+                              int *size_x, int *size_y, int *n_bands,
                               double *start_x, double *start_y,
                               double *per_x, double *per_y)
 {
@@ -256,6 +255,9 @@ static void determine_extents(char **infiles, int n_inputs,
 
     projection_type_t proj_type = meta0->projection->type;
 
+    int nBands;
+    nBands = *n_bands = meta0->general->band_count;
+
     int i, n_ok = 1, n_bad = 0;
     for (i=1; i<n_inputs; ++i) {
         char *file = infiles[i];
@@ -275,6 +277,8 @@ static void determine_extents(char **infiles, int n_inputs,
             why = "Image is in a different projection";
         else if (!proj_parms_match(meta0, meta))
             why = "Projection parameters differ";
+	else if (meta->general->band_count != nBands)
+	  why = "Number of bands differ";
 
         if (strlen(why) > 0) {
             ++n_bad;
@@ -308,7 +312,7 @@ static void determine_extents(char **infiles, int n_inputs,
     meta_free(meta0);
 }
 
-static void add_pixels(FloatImage *out, char *file,
+static void add_pixels(BandedFloatImage *out, char *file,
                        int size_x, int size_y,
                        double start_x, double start_y,
                        double per_x, double per_y)
@@ -328,12 +332,15 @@ static void add_pixels(FloatImage *out, char *file,
 
     int ns = meta->general->sample_count;
     int nl = meta->general->line_count;
+    int nb = meta->general->band_count;
+    char **bands = extract_band_names(meta->general->bands, nb);
 
     asfPrintStatus("  Location in combined is S:%d-%d, L:%d-%d\n",
         start_sample, start_sample + ns,
         start_line, start_line + nl);
 
-    if (start_sample + ns > out->size_x || start_line + nl > out->size_y) {
+    if (start_sample + ns > out->images[0]->size_x || 
+	start_line + nl > out->images[0]->size_y) {
         asfPrintError("Image extents were not calculated correctly!\n");
     }
 
@@ -344,20 +351,27 @@ static void add_pixels(FloatImage *out, char *file,
 
     float *line = MALLOC(sizeof(float)*ns);
 
-    int y;
-    for (y=0; y<nl; ++y) {
-        get_float_line(img, meta, y, line);
+    int z;
+    for (z=0; z<nb; ++z) {
 
+      asfPrintStatus("  Band: %s\n", bands[z]);
+
+      int y;
+      for (y=0; y<nl; ++y) {
+        get_band_float_line(img, meta, z, y, line);
+	
         int x;
         for (x=0; x<ns; ++x) {
-            float v = line[x];
-
-            // don't write out "no data" values
-            if (v != meta->general->no_data)
-                float_image_set_pixel(out, x + start_sample, y + start_line, v);
+	  float v = line[x];
+	  
+	  // don't write out "no data" values
+	  if (v != meta->general->no_data)
+	    banded_float_image_set_pixel(out, z, 
+					 x+start_sample, y+start_line, v);
         }
-
+	
         asfLineMeter(y, nl);
+      }
     }
 
     fclose(img);
@@ -380,7 +394,7 @@ int main(int argc, char *argv[])
     char **infiles = &argv[2];
     int n_inputs = argc - 2;
 
-    int ret, i, size_x, size_y;
+    int ret, i, size_x, size_y, n_bands;
     double start_x, start_y;
     double per_x, per_y;
 
@@ -393,19 +407,21 @@ int main(int argc, char *argv[])
         asfPrintStatus("   %d: %s%s\n", i+1, infiles[i], i==0 ? " (reference)" : "");
 
     // determine image parameters
-    determine_extents(infiles, n_inputs, &size_x, &size_y, &start_x, &start_y,
-        &per_x, &per_y);
+    determine_extents(infiles, n_inputs, &size_x, &size_y, &n_bands,
+		      &start_x, &start_y, &per_x, &per_y);
+
+    // float_image will handle cacheing of the large output image
+    asfPrintStatus("\nAllocating space for output image ...\n");
+    BandedFloatImage *out;
+    if (background_val != 0)
+      out = banded_float_image_new_with_value(n_bands, size_x, size_y, 
+					      (float)background_val);
+    else
+      out = banded_float_image_new(n_bands, size_x, size_y);
 
     asfPrintStatus("\nCombined image size: %dx%d LxS\n", size_y, size_x);
     asfPrintStatus("  Start X,Y: %f,%f\n", start_x, start_y);
     asfPrintStatus("    Per X,Y: %.2f,%.2f\n", per_x, per_y);
-
-    // float_image will handle cacheing of the large output image
-    FloatImage *out;
-    if (background_val != 0)
-      out = float_image_new_with_value(size_x, size_y, (float)background_val);
-    else
-      out = float_image_new(size_x, size_y);
 
     // loop over the input images, last to first, so that the files listed
     // first have their pixels overwrite files listed later on the command line
@@ -435,9 +451,9 @@ int main(int argc, char *argv[])
     meta_write(meta_out, outfile);
 
     char *outfile_full = appendExt(outfile, ".img");
-    ret = float_image_store(out, outfile_full, fibo_be);
+    ret = banded_float_image_store(out, outfile_full, fibo_be);
     if (ret!=0) asfPrintError("Error storing output image!\n");
-    float_image_free(out);
+    banded_float_image_free(out);
     free(outfile_full);
 
     meta_free(meta_out);

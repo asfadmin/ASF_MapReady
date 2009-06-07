@@ -21,6 +21,22 @@ banded_float_image_new(int nbands, size_t size_x, size_t size_y)
     return self;
 }
 
+BandedFloatImage *
+banded_float_image_new_with_value(int nbands, ssize_t size_x, ssize_t size_y, 
+				  float value)
+{
+  BandedFloatImage *self = MALLOC(sizeof(BandedFloatImage));
+  
+  self->images = MALLOC(sizeof(FloatImage*)*nbands);
+  self->nbands = nbands;
+  
+  int i;
+  for (i=0; i<nbands; ++i)
+    self->images[i] = float_image_new_with_value(size_x, size_y, value);
+  
+  return self;
+}
+
 static void
 banded_image_self_test(BandedFloatImage *self)
 {
@@ -202,4 +218,27 @@ banded_float_image_export_as_jpeg(BandedFloatImage *self, const char *output_nam
   jpeg_finish_compress (&cinfo);
   FCLOSE (ofp);
   jpeg_destroy_compress (&cinfo);
+}
+
+int
+banded_float_image_store (BandedFloatImage *self, const char *file,
+			  float_image_byte_order_t byte_order)
+{
+  int ii, retBands=0, ret;
+  meta_parameters *meta;
+  meta = meta_read(file);
+
+  for (ii=0; ii<self->nbands; ii++) {
+    if (ii == 0)
+      retBands += float_image_band_store(self->images[0], file, meta, 0);
+    else
+      retBands += float_image_band_store(self->images[ii], file, meta, 1);
+  }
+  meta_free(meta);
+  if (retBands == self->nbands)
+    ret = TRUE;
+  else
+    ret = FALSE;
+  
+  return ret;
 }
