@@ -83,10 +83,11 @@ main (int argc, char *argv[])
   FILE *fp;
   struct dataset_sum_rec dssr;
   meta_parameters *meta;
-  char *inFile, *outFile;
+  char *inFile, *outFile, type[5];
   double ambiguity;
   int currArg = 1;
   int NUM_ARGS = 2;
+  double zero = 0.0;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -155,44 +156,29 @@ main (int argc, char *argv[])
   fprintf(fp, "  PLATFORM = \"RADARSAT-1\"\n");
   fprintf(fp, "  REVOLUTION = %d\n", meta->general->orbit);
   fprintf(fp, "  FRAME_ID = %d\n", meta->general->frame);
-  //printf("Product ID: '%s'\n", dssr.product_id);
-  switch (dssr.product_id[12])
-    {
-    case 'S':
-      fprintf(fp, "  PRODUCT_TYPE = \"STANDARD\"\n");
-      break;
-    case 'Q':
-      fprintf(fp, "  PRODUCT_TYPE = \"QUICKLOOK\"\n");
-      break;
-    case 'X':
-      fprintf(fp, "  PRODUCT_TYPE = \"COMPLEX\"\n");
-      break;
-    case 'R':
-      fprintf(fp, "  PRODUCT_TYPE = \"RAMP\"\n");
-      break;
-    default:
-      fprintf(fp, "  PRODUCT_TYPE = \"UNKNOWN IMAGE TYPE %c\"\n", 
-	      dssr.product_id[12]);
-      break;
-    }
+  strncpy(type, meta->general->mode, 2);
+  if (strcmp_case(type, "SW") == 0)
+    fprintf(fp, "  PRODUCT_TYPE = \"UNKNOWN IMAGE TYPE U\"\n"); 
+  else // FIX ME: does not distinguish standard, quicklook, complex and ramp
+    fprintf(fp, "  PRODUCT_TYPE = \"STANDARD\"\n");
   fprintf(fp, "  NO_BEAMS = %d\n", dssr.no_beams);
   fprintf(fp, "  BEAM1 = \"%s\" \n", dssr.beam1);
   fprintf(fp, "  BEAM2 = \"%s\" \n", dssr.beam2);
   fprintf(fp, "  BEAM3 = \"%s\" \n", dssr.beam3);
   fprintf(fp, "  BEAM4 = \"%s\" \n", dssr.beam4);
-  fprintf(fp, "  PRF1 = %.3lf Hz\n", dssr.prf1);
-  fprintf(fp, "  PRF2 = %.3lf Hz\n", dssr.prf2);
-  fprintf(fp, "  PRF3 = %.3lf Hz\n", dssr.prf3);
-  fprintf(fp, "  PRF4 = %.3lf Hz\n", dssr.prf4);
-  fprintf(fp, "  ALT_DOPCEN     = (%.3lf %.3lf %.3lf ) Hz\n",
+  fprintf(fp, "  PRF1 = %e\n", dssr.prf1);
+  fprintf(fp, "  PRF2 = %e\n", dssr.prf2);
+  fprintf(fp, "  PRF3 = %e\n", dssr.prf3);
+  fprintf(fp, "  PRF4 = %e\n", dssr.prf4);
+  fprintf(fp, "  ALT_DOPCEN     = (%e, %e, %e)\n",
 	  dssr.alt_dopcen[0], dssr.alt_dopcen[1], dssr.alt_dopcen[2]);
-  fprintf(fp, "  ALT_DOPCEN_DELTA  = (0.0 0.0 0.0) Hz\n");
-  fprintf(fp, "  CRT_DOPCEN     = (%.3lf %.3lf %.3lf ) Hz\n",
+  fprintf(fp, "  ALT_DOPCEN_DELTA  = (%e, %e, %e)\n", zero, zero, zero);
+  fprintf(fp, "  CRT_DOPCEN     = (%e, %e, %e)\n",
 	  dssr.crt_dopcen[0], dssr.crt_dopcen[1], dssr.crt_dopcen[2]);
-  fprintf(fp, "  CRT_DOPCEN_DELTA  = (%.3lf 0.0 0.0) Hz\n", doppler);
-  fprintf(fp, "  ALT_RATE       = (%.3lf %.3lf %.3lf) Hz/sec\n",
+  fprintf(fp, "  CRT_DOPCEN_DELTA  = (%e, %e, %e)\n", doppler, zero, zero);
+  fprintf(fp, "  ALT_RATE       = (%e, %e, %e)\n",
 	  dssr.alt_rate[0], dssr.alt_rate[1], dssr.alt_rate[2]);
-  fprintf(fp, "  CRT_RATE       = (%.3lf %.3lf %.3lf) Hz/sec\n",
+  fprintf(fp, "  CRT_RATE       = (%e, %e, %e)\n",
 	  dssr.crt_rate[0], dssr.crt_rate[1], dssr.crt_rate[2]);
   fprintf(fp, "END_OBJECT = PROCESSING_PARAMETERS\n");
   FCLOSE(fp);
