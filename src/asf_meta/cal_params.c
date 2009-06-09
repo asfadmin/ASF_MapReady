@@ -210,7 +210,8 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
   facilityStr = trim_spaces(dssr.fac_id);
   processorStr = trim_spaces(dssr.sys_id);
 
-  ceos_description *ceos = get_ceos_description_ext(inSAR, REPORT_LEVEL_NONE, FALSE);
+  ceos_description *ceos = 
+    get_ceos_description_ext(inSAR, REPORT_LEVEL_NONE, FALSE);
 
   if (strncmp(facilityStr , "ASF"  , 3) == 0 &&
       strncmp(processorStr, "FOCUS", 5) != 0 &&
@@ -388,6 +389,13 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     // should never get here
     asfPrintWarning("Unknown calibration parameter scheme!\n");
 
+}
+
+void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db)
+{
+  create_cal_params(inSAR, meta);
+  if (db)
+    meta->general->no_data = -30.0;
 }
 
 // incid_init()
