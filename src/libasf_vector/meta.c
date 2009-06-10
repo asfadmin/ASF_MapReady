@@ -944,25 +944,20 @@ void shape_meta_init(char *inFile, meta_parameters *meta)
   return;
 }
 
-// Convert metadata to generic csv file
-int meta2csv(char *inFile, char *outFile, int listFlag)
+
+static void write_csv_header(char *inFile, FILE *fp)
 {
-  FILE *fp;
-  meta_parameters *meta;
   dbf_header_t *dbf;
-  int ii, nCols;
+  meta_parameters *meta;
   char *header = (char *) MALLOC(sizeof(char)*4096);
-  char *line = (char *) MALLOC(sizeof(char)*4096);
+  int ii, nCols;
 
   // Read configuration file
   read_header_config("META", &dbf, &nCols);
+  strcpy(header, "");
 
   // Read metadata file
-  meta = meta_read(inFile);
-
-  // Open output file
-  fp = FOPEN(outFile, "w");
-  strcpy(header, "");
+  meta = meta_read_only(inFile);
 
   // Write header line
   for (ii=0; ii<nCols; ii++) {
@@ -1544,7 +1539,26 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
     }
   }
   strip_end_whitesp_inplace(header);
+  header[strlen(header)-1] = '\0';
   fprintf(fp, "%s\n", header);
+
+  FREE(header);
+}
+
+// Convert metadata to generic csv file
+static int convert_meta2csv(char *inFile, FILE *fp)
+{
+  dbf_header_t *dbf;
+  meta_parameters *meta;
+  int ii, nCols;
+  char *line = (char *) MALLOC(sizeof(char)*4096);
+  strcpy(line, "");
+
+  // Read configuration file
+  read_header_config("META", &dbf, &nCols);
+
+  // Read metadata file
+  meta = meta_read_only(inFile);
 
   char str[255];
 
@@ -1553,27 +1567,27 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
     // General block
     if (strcmp(dbf[ii].header, "meta.general.basename") == 0 &&
         dbf[ii].visible) {
-      sprintf(str, "%s,", meta->general->basename);
+      sprintf(str, "\"%s\",", meta->general->basename);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.sensor") == 0 &&
              dbf[ii].visible) {
-      sprintf(str, "%s,", meta->general->sensor);
+      sprintf(str, "\"%s\",", meta->general->sensor);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.sensor_name") == 0 &&
              dbf[ii].visible) {
-      sprintf(str, "%s,", meta->general->sensor_name);
+      sprintf(str, "\"%s\",", meta->general->sensor_name);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.mode") == 0 &&
              dbf[ii].visible) {
-      sprintf(str, "%s,", meta->general->mode);
+      sprintf(str, "\"%s\",", meta->general->mode);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.processor") == 0 &&
              dbf[ii].visible) {
-      sprintf(str, "%s,", meta->general->processor);
+      sprintf(str, "\"%s\",", meta->general->processor);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.data_type") == 0 &&
@@ -1599,7 +1613,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
         strcpy(data_type, "COMPLEX_REAL32");
       else if (meta->general->data_type == COMPLEX_REAL64)
         strcpy(data_type, "COMPLEX_REAL64");
-      sprintf(str, "%s,", data_type);
+      sprintf(str, "\"%s\",", data_type);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.image_data_type") == 0 &&
@@ -1629,7 +1643,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
         strcpy(image_data_type, "IMAGE");
       else if (meta->general->image_data_type == MASK)
         strcpy(image_data_type, "MASK");
-      sprintf(str, "%s,", image_data_type);
+      sprintf(str, "\"%s\",", image_data_type);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.radiometry") == 0 &&
@@ -1651,7 +1665,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
         strcpy(radiometry, "GAMMA_DB");
       else if (meta->general->radiometry == r_POWER)
         strcpy(radiometry, "POWER");
-      sprintf(str, "%s,", radiometry);
+      sprintf(str, "\"%s\",", radiometry);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0 &&
@@ -1684,7 +1698,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
     }
     else if (strcmp(dbf[ii].header, "meta.general.bands") == 0 &&
              dbf[ii].visible) {
-      sprintf(str, "%s,", meta->general->bands);
+      sprintf(str, "\"%s\",", meta->general->bands);
       strcat(line, str);
     }
     else if (strcmp(dbf[ii].header, "meta.general.line_count") == 0 &&
@@ -1848,12 +1862,12 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       }
       else if (strcmp(dbf[ii].header, "meta.sar.satellite_binary_time") == 0 &&
                dbf[ii].visible) {
-        sprintf(str, "%s,", meta->sar->satellite_binary_time);
+        sprintf(str, "\"%s\",", meta->sar->satellite_binary_time);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.sar.satellite_clock_time") == 0 &&
                dbf[ii].visible) {
-        sprintf(str, "%s,", meta->sar->satellite_clock_time);
+        sprintf(str, "\"%s\",", meta->sar->satellite_clock_time);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header,
@@ -1903,7 +1917,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       }
       else if (strcmp(dbf[ii].header, "meta.sar.polarization") == 0 &&
                dbf[ii].visible) {
-        sprintf(str, "%s,", meta->sar->polarization);
+        sprintf(str, "\"%s\",", meta->sar->polarization);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.sar.multilook") == 0 &&
@@ -1933,7 +1947,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
     if (meta->optical) {
       if (strcmp(dbf[ii].header, "meta.optical.pointing_direction") == 0 &&
           dbf[ii].visible) {
-        sprintf(str, "%s,", meta->optical->pointing_direction);
+        sprintf(str, "\"%s\",", meta->optical->pointing_direction);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.optical.off_nadir_angle") == 0 &&
@@ -1943,7 +1957,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       }
       else if (strcmp(dbf[ii].header, "meta.optical.correction_level") == 0 &&
                dbf[ii].visible) {
-        sprintf(str, "%s,", meta->optical->correction_level);
+        sprintf(str, "\"%s\",", meta->optical->correction_level);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.optical.cloud_percentage") == 0 &&
@@ -2086,7 +2100,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
           strcpy(type, "LAT LONG PSEUDO PROJECTION");
         else if (meta->projection->type == UNKNOWN_PROJECTION)
           strcpy(type, "UNKNOWN PROJECTION");
-        sprintf(str, "%s,", type);
+        sprintf(str, "\"%s\",", type);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.projection.startX") == 0 &&
@@ -2111,7 +2125,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       }
       else if (strcmp(dbf[ii].header, "meta.projection.units") == 0 &&
                dbf[ii].visible) {
-        sprintf(str, "%s,", meta->projection->units);
+        sprintf(str, "\"%s\",", meta->projection->units);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.projection.hem") == 0 &&
@@ -2149,7 +2163,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
           strcpy(spheroid, "HUGHES");
         else
           strcpy(spheroid, "UNKNOWN");
-        sprintf(str, "%s,", spheroid);
+        sprintf(str, "\"%s\",", spheroid);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.projection.re_major") == 0 &&
@@ -2187,7 +2201,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
           strcpy(datum, "HUGHES");
         else
           strcpy(datum, "UNKNOWN");
-        sprintf(str, "%s,", datum);
+        sprintf(str, "\"%s\",", datum);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.projection.height") == 0 &&
@@ -2418,7 +2432,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
       for (kk=0; kk<meta->stats->band_count; kk++) {
         if (strcmp(dbf[ii].header, "meta.stats.band_stats.band_id") == 0 &&
             dbf[ii].visible) {
-          sprintf(str, "%s,", meta->stats->band_stats[kk].band_id);
+          sprintf(str, "\"%s\",", meta->stats->band_stats[kk].band_id);
           strcat(line, str);
         }
         if (strcmp(dbf[ii].header, "meta.stats.band_stats.min") == 0 &&
@@ -2554,15 +2568,46 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
     }
   }
   strip_end_whitesp_inplace(line);
+  line[strlen(line)-1] = '\0';
   fprintf(fp, "%s\n", line);
-  FCLOSE(fp);
 
   // Clean up
-  FREE(header);
   FREE(line);
 
   return 1;
 }
+
+// Convert metadata to shapefile
+int meta2csv(char *inFile, char *outFile, int listFlag)
+{
+  FILE *fpIn, *fpOut;
+  char line[1024];
+  int n=0;
+
+  // Open output file
+  fpOut = FOPEN(outFile, "w");
+  
+  if (listFlag) {
+    fpIn = FOPEN(inFile, "r");
+    while (fgets(line, 1024, fpIn)) {
+      strip_end_whitesp_inplace(line);
+      if (n == 0)
+	write_csv_header(line, fpOut);
+      convert_meta2csv(line, fpOut);
+      n++;
+    }
+    FCLOSE(fpIn);
+  }
+  else {
+    write_csv_header(inFile, fpOut);
+    convert_meta2csv(inFile, fpOut);
+  }
+
+  FCLOSE(fpOut);
+
+  return 1;
+}
+
 
 // Convert metadata to kml file
 int meta2kml(char *inFile, char *outFile, format_type_t inFormat, 
