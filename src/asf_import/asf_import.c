@@ -12,7 +12,7 @@ following defines.
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
-"              [-format <inputFormat>] [-ancillary_file <file>]\n"\
+"              [-format <inputFormat>] [-ancillary-file <file>]\n"\
 "              [-colormap <colormap_file>] [-band <band_id | all>]\n"\
 "              [-no-ers2-gain-fix] [-image-data-type <type>] [-lut <file>]\n"\
 "              [-lat <lower> <upper>] [-prc] [-log <logFile>]\n"\
@@ -70,7 +70,7 @@ following defines.
 "        'polsarpro', 'gamma', 'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0'\n"\
 "        format refers to the ALOS AVNIR-2 Level 0 dataset format. 'CEOS' is\n"\
 "        the default behavior.\n"\
-"   -ancillary_file <file>\n"\
+"   -ancillary-file <file>\n"\
 "        For PolSARpro format files, the ingest process needs access to the\n"\
 "        original COES or AIRSAR format data that the PolSARpro images were\n"\
 "        created from.  The original dataset is necessary for the purpose of\n"\
@@ -200,10 +200,11 @@ following defines.
 #define ASF_SEE_ALSO_STRING \
 "   asf_mapready, asf_export\n"
 
-// Option -old removed from the help and description above ...but still supported.
+/* Option -old removed from the help and description above ...but still supported.
 // Just not advertised
 //"   -old\n"\
 //"        Output in old style ASF internal format.\n"\
+*/
 
 /*===================END ASF DOCUMENTATION===================*/
 
@@ -424,7 +425,6 @@ int main(int argc, char *argv[])
     flags[f_QUIET] = checkForOption("-quiet", argc, argv);
     flags[f_REAL_QUIET] = checkForOption("-real-quiet", argc, argv);
     flags[f_FORMAT] = checkForOption("-format", argc, argv);
-    flags[f_ANCILLARY_FILE] = checkForOption("-ancillary_file", argc, argv);
     flags[f_DATA_TYPE] = checkForOption("-data-type", argc, argv);
     flags[f_IMAGE_DATA_TYPE] = checkForOption("-image-data-type", argc, argv);
     flags[f_BAND] = checkForOption("-band", argc, argv);
@@ -434,6 +434,10 @@ int main(int argc, char *argv[])
     flags[f_HEIGHT] = checkForOption("-height", argc, argv);
     flags[f_SAVE_INTERMEDIATES] = checkForOption("-save-intermediates", argc, argv);
     flags[f_COLORMAP] = checkForOption("-colormap", argc, argv);
+
+    flags[f_ANCILLARY_FILE] = checkForOption("-ancillary-file", argc, argv);
+    if (flags[f_ANCILLARY_FILE] == FLAG_NOT_SET)
+        flags[f_ANCILLARY_FILE] = checkForOption("-ancillary_file", argc, argv);
 
     flags[f_RANGE_SCALE] = checkForOptionWithArg("-range-scale", argc, argv);
     if (flags[f_RANGE_SCALE] == FLAG_NOT_SET)
