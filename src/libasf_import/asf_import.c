@@ -78,7 +78,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
          char *inMetaNameOption,
          char *inBaseName, char *ancillary_file,
-         char *colormapName, char *outBaseName)
+	 char *colormapName, int classification, char *outBaseName)
 {
   char outDataName[256], outMetaName[256];
 

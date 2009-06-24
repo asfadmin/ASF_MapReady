@@ -167,7 +167,7 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
   meta->general->data_type = REAL32;
   meta->general->band_count = 1;
   strcpy(meta->general->bands, "AMP");
-  meta->general->image_data_type = IMAGE_LAYER_STACK;
+  //meta->general->image_data_type = IMAGE_LAYER_STACK;
 
   power = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
   byteBuf = (char *) MALLOC(sizeof(char)*10);
@@ -286,6 +286,10 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   metaOut->general->band_count = 2;
   strcat(metaOut->general->bands, ",POLSARPRO");
   floatBuf = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
+
+  // Update image data type
+  if (strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0)
+    metaOut->general->image_data_type = POLARIMETRIC_SEGMENTATION;
 
   fpIn = FOPEN(polsarName, "rb");
   fpOut = FOPEN(outName, "ab");

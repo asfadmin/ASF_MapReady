@@ -48,6 +48,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                char *inBaseName, // input file
                char *ancillary_file, // ancillary file (if needed for input file)
                char *colormapName, // colormap file
+	       int classification, // treat the image as polarimetric segmentation result
                char *outBaseName // output file
                );
 

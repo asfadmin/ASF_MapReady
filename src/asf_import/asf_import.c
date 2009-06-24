@@ -20,7 +20,8 @@ following defines.
 "              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-complex] [-metadata <file>]\n"\
 "              [-line <start line subset>] [-sample <start sample subset>]\n"\
-"              [-width <subset width>] [-height <subset height>] [-help]\n"\
+"              [-width <subset width>] [-height <subset height>]\n"\
+"              [-classification] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -112,6 +113,10 @@ following defines.
 "        and, if so, if the imported file's sensor matches that given in the\n"\
 "        file, and the acquisition date is on or after what is given in the\n"\
 "        file, the look up table will be automatically applied.\n"\
+"   -classification\n"\
+"        Indicates that the input file is a polarimetric segmentation, i.e.\n"\
+"        it is a single-band image that can safely converted into byte values\n"\
+"        by using 'truncate'\n"\
 "   -lat <lower> <upper>\n"\
 "        Specify lower and upper latitude contraints (only available\n"\
 "        for STF). Note that the program is not able to verify whether\n"\
@@ -261,6 +266,7 @@ typedef enum {
     f_HEIGHT,
     f_SAVE_INTERMEDIATES,
     f_COLORMAP,
+    f_CLASSIFICATION,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -390,6 +396,7 @@ int main(int argc, char *argv[])
     double range_scale=NAN, azimuth_scale=NAN, correct_y_pixel_size=NAN;
     int do_resample;
     int do_metadata_fix;
+    int classification;
 
     /* Set all flags to 'not set' */
     for (ii=0; ii<NUM_IMPORT_FLAGS; ii++) {
@@ -434,6 +441,7 @@ int main(int argc, char *argv[])
     flags[f_HEIGHT] = checkForOption("-height", argc, argv);
     flags[f_SAVE_INTERMEDIATES] = checkForOption("-save-intermediates", argc, argv);
     flags[f_COLORMAP] = checkForOption("-colormap", argc, argv);
+    flags[f_CLASSIFICATION] = checkForOption("-classification", argc, argv);
 
     flags[f_ANCILLARY_FILE] = checkForOption("-ancillary-file", argc, argv);
     if (flags[f_ANCILLARY_FILE] == FLAG_NOT_SET)
@@ -467,6 +475,7 @@ int main(int argc, char *argv[])
     }
 
     do_metadata_fix = flags[f_FIX_META_YPIX] != FLAG_NOT_SET;
+    classification = flags[f_CLASSIFICATION] != FLAG_NOT_SET;
 
     if (do_metadata_fix)
     {
@@ -534,6 +543,7 @@ int main(int argc, char *argv[])
         if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_FIX_META_YPIX] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_COLORMAP] != FLAG_NOT_SET)   needed_args += 2; /*option & parameter*/
+	if(flags[f_CLASSIFICATION] != FLAG_NOT_SET) needed_args += 1; // option
 
         /*Make sure we have enough arguments*/
         if(argc != needed_args)
@@ -830,6 +840,10 @@ int main(int argc, char *argv[])
       }
       strcpy(image_data_type, "???");
     }
+    // When the classification flag is set, we know that we are dealing with
+    // a polarimetric segmentation
+    if (flags[f_CLASSIFICATION] != FLAG_NOT_SET)
+      strcpy(image_data_type, "POLARIMETRIC_SEGMENTATION");
 
     /* Make sure STF specific options are not used with other data types */
     if (format_type == STF) {
@@ -883,7 +897,7 @@ int main(int argc, char *argv[])
                    lutName,prcPath, lowerLat, upperLat, line, sample,
                    width, height, save_intermediates, p_range_scale, p_azimuth_scale,
                    p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
-                   ancillary_file, colormapName, outBaseName);
+                   ancillary_file, colormapName, classification, outBaseName);
     }
 
     if (colormapName)

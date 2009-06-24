@@ -435,6 +435,7 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->import->polsarpro_colormap, "");
   cfg->import->metadata_file = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->import->metadata_file, "");
+  cfg->import->classification = 0;
 
   cfg->external->cmd = (char *)MALLOC(sizeof(char)*1024);
 
@@ -609,6 +610,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->import->format, read_str(line, "polsarpro colormap"));
       if (strncmp(test, "metadata file", 13)==0)
         strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
+      if (strncmp(test, "classification", 14)==0)
+        cfg->import->classification = read_int(line, "classification");
 
       // External
       if (strncmp(test, "command", 7)==0)
@@ -921,6 +924,8 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->import->polsarpro_colormap, read_str(line, "polsarpro colormap"));
       if (strncmp(test, "metadata file", 13)==0)
         strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
+      if (strncmp(test, "classification", 14)==0)
+        cfg->import->classification = read_int(line, "classification");
       FREE(test);
     }
 
@@ -1376,7 +1381,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# the metadata, or the metadata filename follows a standard naming convention.\n"
               "# If you have renamed your metadata file against the standard naming scheme\n"
               "# for the data, you should rename it back rather than using this option.\n\n");
-    fprintf(fConfig, "metadata file = %s\n\n", cfg->import->metadata_file);
+    fprintf(fConfig, "metadata file = %s\n", cfg->import->metadata_file);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The classfication flag is used to indicate the input is the result\n"
+	      "# of a polarimetric segmentation, i.e. it is a single band image whose values can\n"
+	      "# safely be truncated to convert it into a byte image in order to apply a \n"
+	      "# look up table.\n\n");
+    fprintf(fConfig, "classification = %d\n\n", cfg->import->classification);
 
     // AirSAR -- only write out if the import format is AirSAR
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {

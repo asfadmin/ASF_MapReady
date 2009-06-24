@@ -587,7 +587,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
                    NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 0,
                    NULL, NULL, NULL, FALSE, NULL, tiff_basename, ancillary_file,
-                   NULL, imported),
+                   NULL, FALSE, imported),
         status);
 
     sprintf(status, "Geocoding %s...", uc_what);
@@ -1876,6 +1876,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               cfg->general->in_name,
                               cfg->general->ancillary_file,
                               polsarpro_colormap,
+			      cfg->import->classification,
                               outFile),
                    "ingesting data file (asf_import)\n");
       FREE(polsarpro_colormap);
@@ -1933,6 +1934,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                         cfg->export->band, cfg->general->in_name,
                         meta->general->bands);
         }
+
+	// Update image data type for polarimetric segmentation
+	if (cfg->import->classification) {
+	  meta->general->image_data_type = POLARIMETRIC_SEGMENTATION;
+	  meta_write(meta, outFile);
+	}
+
         meta_free(meta);
       }
     }

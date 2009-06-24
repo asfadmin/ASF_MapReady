@@ -63,7 +63,8 @@ typedef struct
   int ers2_gain_fix;      // flag to apply ers2 gain correction
   char *polsarpro_colormap; // colormap (.pal) to apply to PolSARpro classifications
   char *metadata_file;    // Name of a (non-ASF) metadata file (if it can't
-                          // be deduced), currently only needed by GAMMA
+                          // be deduced)
+  int classification;     // classification flag (for PolSARpro ingest)
 } s_import;
 
 typedef struct
