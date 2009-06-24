@@ -218,7 +218,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   double *p_azimuth_scale = NULL, *p_range_scale = NULL;
   double azimuth_scale, range_scale;
   char enviName[1024], outName[1024];
-  int ii, multilook = FALSE;
+  int ii, multilook = FALSE, need_ieee_big32;
   char *polsarName = s;
 
   // Read the ENVI header first. We need to know the dimensions of the
@@ -251,6 +251,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     metaOut = import_airsar_meta(ceosName, ceosName, TRUE);
   else
     asfPrintError(
+
         "Ancillary file is not CEOS or AIRSAR format (required):\n%s\n",
         ceosName);
 
@@ -294,6 +295,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   fpIn = FOPEN(polsarName, "rb");
   fpOut = FOPEN(outName, "ab");
 
+  /*
   // Read and write the lines ...noting that PolSARpro stores data in little-endian
   // format and our get_float_line() function assumes big-endian since it was
   // written for our internal format files ...We have to swap bytes for PolSARpro.
@@ -328,6 +330,14 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   {
     need_ieee_big32 = 1;
   }
+  */
+
+  // Check endianess from ENVI header file
+  if (envi->byte_order)
+    need_ieee_big32 = 0;
+  else
+    need_ieee_big32 = 1;    
+
   // Do the ingest...
   for (ii=0; ii<metaOut->general->line_count; ii++) {
     get_float_line(fpIn, metaIn, ii, floatBuf);
@@ -348,6 +358,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   FCLOSE(fpIn);
   FCLOSE(fpOut);
   FREE(floatBuf);
+  FREE(envi);
   metaOut->sar->multilook = multilook;
   meta_write(metaOut, outBaseName);
   if (metaIn)
