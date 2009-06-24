@@ -900,7 +900,10 @@ handle_view_output()
           // Doesn't hurt to leave it, though it shouldn't ever run.
           char *tmp_out=NULL;
 
-          if (try_suffix(out_name, "_HH", &tmp_out))
+          if (try_suffix(out_name, "_POLSARPRO", &tmp_out)
+            show_image_with_asf_view(tmp_out);
+
+          else if (try_suffix(out_name, "_HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_VV", &tmp_out))
             show_image_with_asf_view(tmp_out);
