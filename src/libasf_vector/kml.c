@@ -233,8 +233,20 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "%s<strong>Image data type</strong>: "
                 "COHERENCE_IMAGE <br>%s", begin, end);
       else if (meta->general->image_data_type == POLARIMETRIC_IMAGE)
+	fprintf(kml_file, "%s<strong>Image data type</strong>: "
+		"POLARIMETRIC_IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_SEGMENTATION)
         fprintf(kml_file, "%s<strong>Image data type</strong>: "
-                "POLARIMETRIC_IMAGE <br>%s", begin, end);
+                "POLARIMETRIC_SEGMENTATION <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_DECOMPOSITION <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETERS)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_PARAMETERS <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_MATRIX <br>%s", begin, end);
       else if (meta->general->image_data_type == LUT_IMAGE)
         fprintf(kml_file, "%s<strong>Image data type</strong>: "
                 "LUT_IMAGE <br>%s", begin, end);

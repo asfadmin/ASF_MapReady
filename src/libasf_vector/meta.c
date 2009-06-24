@@ -1632,7 +1632,15 @@ static int convert_meta2csv(char *inFile, FILE *fp)
       else if (meta->general->image_data_type == COHERENCE_IMAGE)
         strcpy(image_data_type, "COHERENCE_IMAGE");
       else if (meta->general->image_data_type == POLARIMETRIC_IMAGE)
-        strcpy(image_data_type, "POLARIMETRIC_IMAGE");
+	strcpy(image_data_type, "POLARIMETRIC_IMAGE");
+      else if (meta->general->image_data_type == POLARIMETRIC_SEGMENTATION)
+        strcpy(image_data_type, "POLARIMETRIC_SEGMENTATION");
+      else if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
+        strcpy(image_data_type, "POLARIMETRIC_DECOMPOSITION");
+      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETERS)
+        strcpy(image_data_type, "POLARIMETRIC_PARAMETERS");
+      else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_MATRIX");
       else if (meta->general->image_data_type == LUT_IMAGE)
         strcpy(image_data_type, "LUT_IMAGE");
       else if (meta->general->image_data_type == ELEVATION)
@@ -2801,7 +2809,15 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
       else if (meta->general->image_data_type == COHERENCE_IMAGE)
         strcpy(image_data_type, "COHERENCE_IMAGE");
       else if (meta->general->image_data_type == POLARIMETRIC_IMAGE)
-        strcpy(image_data_type, "POLARIMETRIC_IMAGE");
+	strcpy(image_data_type, "POLARIMETRIC_IMAGE");
+      else if (meta->general->image_data_type == POLARIMETRIC_SEGMENTATION)
+        strcpy(image_data_type, "POLARIMETRIC_SEGMENTATION");
+      else if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
+        strcpy(image_data_type, "POLARIMETRIC_DECOMPOSITION");
+      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETERS)
+        strcpy(image_data_type, "POLARIMETRIC_PARAMETERS");
+      else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_MATRIX");
       else if (meta->general->image_data_type == LUT_IMAGE)
         strcpy(image_data_type, "LUT_IMAGE");
       else if (meta->general->image_data_type == ELEVATION)

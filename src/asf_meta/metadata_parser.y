@@ -389,7 +389,15 @@ void fill_structure_field(char *field_name, void *valp)
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOCODED_IMAGE") )
           MGENERAL->image_data_type = GEOCODED_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_IMAGE") )
-        MGENERAL->image_data_type = POLARIMETRIC_IMAGE;
+	MGENERAL->image_data_type = POLARIMETRIC_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_SEGMENTATION") )
+        MGENERAL->image_data_type = POLARIMETRIC_SEGMENTATION;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_DECOMPOSITION") )
+        MGENERAL->image_data_type = POLARIMETRIC_DECOMPOSITION;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_PARAMETERS") )
+        MGENERAL->image_data_type = POLARIMETRIC_PARAMETERS;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_MATRIX") )
+        MGENERAL->image_data_type = POLARIMETRIC_MATRIX;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "LUT_IMAGE") )
           MGENERAL->image_data_type = LUT_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ELEVATION") )
@@ -434,7 +442,10 @@ void fill_structure_field(char *field_name, void *valp)
         // Means the parser is order-dependent... image_data_type MUST
         // occur before radiometry in the meta file.
         if (MGENERAL->image_data_type == AMPLITUDE_IMAGE ||
-            MGENERAL->image_data_type == POLARIMETRIC_IMAGE)
+            MGENERAL->image_data_type == POLARIMETRIC_SEGMENTATION ||
+	    MGENERAL->image_data_type == POLARIMETRIC_DECOMPOSITION ||
+	    MGENERAL->image_data_type == POLARIMETRIC_PARAMETERS ||
+	    MGENERAL->image_data_type == POLARIMETRIC_MATRIX)
         {
           warning_message("Unrecognized radiometry (%s).\n",VALP_AS_CHAR_POINTER);
         }

@@ -408,15 +408,15 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       }
       // Pauli decomposition only works for complex quad-pol data
       if (cfg->polarimetry->pauli &&
-      (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
-       strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
+	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
        meta->general->band_count < 8))
         asfPrintError("Pauli decomposition requires complex quad-pol data\n");
       // Sinclair decomposition ought to work on complex and detected
       // quad-pol data
       if (cfg->polarimetry->sinclair &&
-      (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
-       strcmp_case(meta->sar->polarization, "QUAD-POL") != 0))
+	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0))
         asfPrintError("Sinclair decomposition requires quad-pol data\n");
     }
     else {

@@ -142,6 +142,21 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case POLARIMETRIC_IMAGE:
         meta_put_string(fp,"image_data_type:","POLARIMETRIC_IMAGE",comment);
         break;
+      case POLARIMETRIC_SEGMENTATION:
+        meta_put_string(fp,"image_data_type:","POLARIMETRIC_SEGMENTATION",
+			comment);
+        break;
+      case POLARIMETRIC_DECOMPOSITION:
+        meta_put_string(fp,"image_data_type:","POLARIMETRIC_DECOMPOSITION",
+			comment);
+        break;
+      case POLARIMETRIC_PARAMETERS:
+        meta_put_string(fp,"image_data_type:","POLARIMETRIC_PARAMETERS",
+			comment);
+        break;
+      case POLARIMETRIC_MATRIX:
+        meta_put_string(fp,"image_data_type:","POLARIMETRIC_MATRIX",comment);
+        break;
       case LUT_IMAGE:
         meta_put_string(fp,"image_data_type:","LUT_IMAGE",comment);
         break;
