@@ -51,14 +51,11 @@ int main(int argc, char *argv[])
     usage();
   }
 
-  char input_meta_name[256], input_data_name[256];
-  char output_meta_name[256], output_data_name[256];
+  char *input_meta_name = appendExt(argv[2], ".meta");
+  char *input_data_name = appendExt(argv[2], ".img");
 
-  sprintf(input_meta_name, "%s.meta", argv[2]);
-  sprintf(input_data_name, "%s.img", argv[2]);
-
-  sprintf(output_meta_name, "%s.meta", argv[3]);
-  sprintf(output_data_name, "%s.img", argv[3]);
+  char *output_meta_name = appendExt(argv[3], ".meta");
+  char *output_data_name = appendExt(argv[3], ".img");
 
   printf("Flipping image %s.\n",
 	 vert && horz ? "vertically and horizontally" :
@@ -79,9 +76,9 @@ int main(int argc, char *argv[])
   }
   else {
     finput = float_image_new_from_file(imd->general->sample_count,
-			                                 imd->general->line_count,
-			                                 input_data_name, 0,
-			                                 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+                                       imd->general->line_count,
+                                       input_data_name, 0,
+                                       FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   }
 
   if (imd->optical || imd->general->data_type == BYTE) {
@@ -107,5 +104,11 @@ int main(int argc, char *argv[])
   }
 
   meta_free(imd);
+
+  free(input_data_name);
+  free(input_meta_name);
+  free(output_data_name);
+  free(output_meta_name);
+
   return EXIT_SUCCESS;
 }

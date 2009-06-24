@@ -229,6 +229,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int fill_value = 0;
   int doRadiometric = FALSE;
   int smooth_dem_holes = FALSE;
+  int add_speckle = TRUE;
   int update_original_metadata_with_offsets = FALSE;
   float mask_height_cutoff = -999; // not used
   int no_matching = FALSE;
@@ -243,7 +244,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
       generate_water_mask, save_clipped_dem,
       update_original_metadata_with_offsets, mask_height_cutoff,
       doRadiometric, smooth_dem_holes, NULL,
-      no_matching, range_offset, azimuth_offset, use_gr_dem);
+      no_matching, range_offset, azimuth_offset, use_gr_dem, add_speckle);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
@@ -261,6 +262,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int save_clipped_dem = FALSE;
   int doRadiometric = FALSE;
   int smooth_dem_holes = FALSE;
+  int add_speckle = TRUE;
   int fill_value = 0;
   int update_orig_metadata_with_offsets = FALSE;
   int no_matching = FALSE;
@@ -276,7 +278,8 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        save_clipped_dem, update_orig_metadata_with_offsets,
                        mask_height_cutoff, doRadiometric, smooth_dem_holes,
                        other_files_to_update_with_offsets,
-                       no_matching, range_offset, azimuth_offset, use_gr_dem);
+                       no_matching, range_offset, azimuth_offset, use_gr_dem,
+                       add_speckle);
 
   if (ret==0)
   {
@@ -579,6 +582,7 @@ int match_dem(meta_parameters *metaSAR,
               int mask_dem_same_size_and_projection,
               int clean_files,
               int no_matching,
+              int add_speckle,
               double range_offset,
               double azimuth_offset,
               double *t_offset,
@@ -640,12 +644,16 @@ int match_dem(meta_parameters *metaSAR,
     demSimSar = getOutName(output_dir, demFile, "_sim_sar");
 
     reskew_dem_rad(srFile, demClipped, demSlant, demGround, demSimSar,
-                   userMaskClipped, metaSAR->general->radiometry);
+                   userMaskClipped, metaSAR->general->radiometry,add_speckle);
 
     // Resize the simulated sar image to match the slant range SAR image.
     asfPrintStatus("Resizing simulated sar image...\n");
     trim(demSimSar, demTrimSimSar, 0, 0, metaSAR->general->sample_count,
      demHeight);
+
+    if (!add_speckle)
+      asfPrintError("User specified no speckle -- quitting.\n"
+                    "Simulated SAR image is %s.img\n", demTrimSimSar);
 
     if (!no_matching)
       asfPrintStatus("Determining image offsets...\n");
@@ -952,6 +960,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_trim_slant_range_dem = TRUE;
   int apply_dem_padding = FALSE;
   int clean_files = TRUE;
+  int add_speckle = TRUE;
   int madssap = FALSE; // mask and dem same size and projection
   int dem_grid_size = 20;
   double t_offset, x_offset;
@@ -971,8 +980,8 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
             simAmpFile, demSlant, NULL, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
-            madssap, clean_files, no_matching, range_offset, azimuth_offset,
-        &t_offset, &x_offset);
+            madssap, clean_files, no_matching, add_speckle,
+            range_offset, azimuth_offset, &t_offset, &x_offset);
 
   if (clean_files)
       clean(userMaskClipped);
@@ -991,7 +1000,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                      int smooth_dem_holes,
                      char **other_files_to_update_with_offset,
                      int no_matching, double range_offset,
-                     double azimuth_offset, int use_gr_dem)
+                     double azimuth_offset, int use_gr_dem, int add_speckle)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimSar = NULL, *demTrimSlant = NULL, *demGround = NULL;
@@ -1027,6 +1036,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   //printf("range_offset: %f\n", range_offset);
   //printf("azimuth_offset: %f\n", azimuth_offset);
   //printf("use_gr_dem: %d\n", use_gr_dem);
+  //printf("add speckle: %d\n", add_speckle);
 
   // Which DEM should we use during terrain correction -- the original
   // ground range DEM (new method), or the backconverted one (old method)?
@@ -1329,8 +1339,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   match_dem(metaSAR, sarFile, demChunk, srFile, output_dir, userMaskFile,
         demTrimSimSar, demTrimSlant, demGround, userMaskClipped, dem_grid_size,
         do_corner_matching, do_fftMatch_verification, FALSE,
-        TRUE, TRUE, madssap, clean_files, no_matching, range_offset,
-        azimuth_offset, &t_offset, &x_offset);
+        TRUE, TRUE, madssap, clean_files, no_matching, add_speckle,
+        range_offset, azimuth_offset, &t_offset, &x_offset);
 
   if (update_original_metadata_with_offsets)
   {

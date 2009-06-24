@@ -60,10 +60,10 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 
 /* Prototypes from reskew_dem.c */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-           char *outAmpFile, char *inMaskFile);
+               char *outAmpFile, char *inMaskFile, int add_speckle);
 int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMslant,
                    char *outDEMground, char *outAmpFile, char *inMaskFile,
-                   radiometry_t rad);
+                   radiometry_t rad, int add_speckle);
 
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,

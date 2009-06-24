@@ -242,7 +242,7 @@ on_input_file_browse_button_clicked(GtkWidget *button)
 
   of.hwndOwner = NULL;
   of.lpstrFilter = "CEOS Level 0 File (*.raw)\0*.raw\0"
-                   "STF (*.000)\0*.000\0"
+                   "STF (*.000, *.001)\0*.000;*.001\0"
                    "ASF Internal Format (*.img)\0*.img\0"
                    "All Files\0*\0";
   of.lpstrCustomFilter = NULL;
@@ -680,9 +680,12 @@ check_files(const char * input_file)
     char *RAW_file = change_extension(input_file, "RAW");
     char *ldr_file = change_extension(input_file, "ldr");
     char *LDR_file = change_extension(input_file, "LDR");
-    char *stf_file = change_extension(input_file, "000");
-    char *par_file = change_extension(input_file, "000.par");
-    char *PAR_file = change_extension(input_file, "000.PAR");
+    char *stf0_file = change_extension(input_file, "000");
+    char *par0_file = change_extension(input_file, "000.par");
+    char *PAR0_file = change_extension(input_file, "000.PAR");
+    char *stf1_file = change_extension(input_file, "001");
+    char *par1_file = change_extension(input_file, "001.par");
+    char *PAR1_file = change_extension(input_file, "001.PAR");
 
     int raw_exists=FALSE;
     int ldr_exists=FALSE;
@@ -702,7 +705,12 @@ check_files(const char * input_file)
         status = STATUS_LDR_INSTEAD;
     }
     else if (strcmp_case(ext, "000")==0) {
-      par_exists = file_exists(par_file) || file_exists(PAR_file);
+      par_exists = file_exists(par0_file) || file_exists(PAR0_file);
+      if (par_exists)
+        status = STATUS_STF_INSTEAD;
+    }
+    else if (strcmp_case(ext, "001")==0) {
+      par_exists = file_exists(par1_file) || file_exists(PAR1_file);
       if (par_exists)
         status = STATUS_STF_INSTEAD;
     }
@@ -730,22 +738,31 @@ check_files(const char * input_file)
         status = STATUS_LDR_INSTEAD;
       }
       else {
-        // Second: check for STF
-        stf_exists = file_exists(stf_file);
-        par_exists = file_exists(par_file) || file_exists(PAR_file);
+        // Second: check for STF .000
+        stf_exists = file_exists(stf0_file);
+        par_exists = file_exists(par0_file) || file_exists(PAR0_file);
         
         if (stf_exists && par_exists) {
           status = STATUS_STF_INSTEAD;
         }
         else {
-          // Third: check for ASF Internal
-          img_exists = file_exists(img_file);
-          meta_exists = file_exists(meta_file);
-          in_exists = file_exists(in_file);
-          fmt_exists = file_exists(fmt_file);
-          
-          if (meta_exists && in_exists && fmt_exists && img_exists) {
-            status = STATUS_OK;
+          // Third: check for STF .001
+          stf_exists = file_exists(stf1_file);
+          par_exists = file_exists(par1_file) || file_exists(PAR1_file);
+
+          if (stf_exists && par_exists) {
+            status = STATUS_STF_INSTEAD;
+          }
+          else {
+            // Last: check for ASF Internal
+            img_exists = file_exists(img_file);
+            meta_exists = file_exists(meta_file);
+            in_exists = file_exists(in_file);
+            fmt_exists = file_exists(fmt_file);
+            
+            if (meta_exists && in_exists && fmt_exists && img_exists) {
+              status = STATUS_OK;
+            }
           }
         }
       }
@@ -778,7 +795,15 @@ check_files(const char * input_file)
                 "  %s: Found\n"
                 "  %s: NOT FOUND",
                 input_file,
-                par_file);
+                par0_file);
+      }
+      else if (strcmp_case(ext, ".001") == 0) {
+        sprintf(msg, "STF Data:\n"
+                "Not all of the required files were found.\n"
+                "  %s: Found\n"
+                "  %s: NOT FOUND",
+                input_file,
+                par1_file);
       }
       else {
         char *meta_file_ok = meta_exists ? "Found" : "NOT FOUND";
@@ -806,9 +831,12 @@ check_files(const char * input_file)
     FREE (RAW_file);
     FREE (ldr_file);
     FREE (LDR_file);
-    FREE (stf_file);
-    FREE (par_file);
-    FREE (PAR_file);
+    FREE (stf0_file);
+    FREE (par0_file);
+    FREE (PAR0_file);
+    FREE (stf1_file);
+    FREE (par1_file);
+    FREE (PAR1_file);
 
     return status;
 }

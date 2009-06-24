@@ -180,6 +180,14 @@
 "          Use these offsets instead of matching the DEM to the SAR image.\n"\
 "          The offsets are in pixels.\n"\
 "\n"\
+"     -no-speckle\n"\
+"          When generating the simulated SAR image for co-registration, do\n"\
+"          not add speckle.  Generally, this will cause co-registration to\n"\
+"          fail; usually, you would do this only if you are interested only\n"\
+"          in the simulated image itself (and not the terrain corrected\n"\
+"          product).  So, processing will stop after generating the simulated\n"\
+"          SAR image.\n"\
+"\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
@@ -293,6 +301,7 @@ main (int argc, char *argv[])
   int smooth_dem_holes = FALSE;
   int no_matching = FALSE;
   int use_gr_dem = FALSE;
+  int add_speckle = TRUE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   char *other_files[MAX_OTHER];
@@ -338,6 +347,9 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-use-sr-dem", "--use-sr-dem",NULL)) {
       use_gr_dem = FALSE;
+    }
+    else if (strmatches(key,"-no-speckle", "--no-speckle",NULL)) {
+      add_speckle = FALSE;
     }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
         CHECK_ARG(1);
@@ -451,7 +463,7 @@ main (int argc, char *argv[])
                               mask_height_cutoff, doRadiometric,
                               smooth_dem_holes, other_files,
                               no_matching, range_offset, azimuth_offset,
-                              use_gr_dem);
+                              use_gr_dem, add_speckle);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])

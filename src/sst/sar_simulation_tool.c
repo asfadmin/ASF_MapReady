@@ -417,7 +417,7 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, sat_t *tle)
   sprintf(demSlant, "%s_slant.img", demBaseName);
   char *demSimAmp = (char *) MALLOC(sizeof(char)*512);
   sprintf(demSimAmp, "%s_sim.img", demBaseName);
-  reskew_dem(srFile, demClipped, demSlant, demSimAmp, NULL);
+  reskew_dem(srFile, demClipped, demSlant, demSimAmp, NULL, TRUE);
 
   // Resample simulated SAR image to DEM pixel size
   char *resampSim = (char *) MALLOC(sizeof(char)*512);

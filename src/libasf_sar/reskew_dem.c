@@ -115,14 +115,15 @@ static float gaussRand(int num)
 /*Note: it may seem stupid to add speckle to our simulated
 SAR images, but the speckle has an important statistical 
 contribution to the image.*/
-static float *createSpeckle(void)
+static float *createSpeckle(int add_speckle)
 {
 	int i;
 #define speckleLen 0x0fff
 #define getSpeckle speckle[specklePtr=((specklePtr+7)&speckleLen)]
 	float *speckle=(float *)MALLOC(sizeof(float)*(speckleLen+1));
-	for (i=0;i<=speckleLen;i++)
-            speckle[i]=gaussRand(4);
+        for (i=0;i<=speckleLen;i++)
+          speckle[i]=add_speckle ? gaussRand(4) : 1;
+        
 	return speckle;
 }
 
@@ -132,7 +133,8 @@ static int eq(double a, double b, double tol) {
 
 /*dem_gr2sr: map one line of a ground range DEM into
 one line of a slant range DEM && one line of simulated amplitude image.*/
-static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask)
+static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask,
+                      int add_speckle)
 {
     int x,grX;
     double lastSrX=-1;/*Slant range pixels up to (and including) here 
@@ -145,7 +147,7 @@ static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask)
     static float *speckle=NULL;
     int specklePtr=rand();
     if (speckle==NULL)
-        speckle=createSpeckle();
+        speckle=createSpeckle(add_speckle);
 
     outmask=MALLOC(sizeof(int)*sr_ns);
 
@@ -374,15 +376,15 @@ static void handle_radiometry(meta_parameters *meta, float *amp, int n,
 }
 */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-               char *outAmpFile, char *inMaskFile)
+               char *outAmpFile, char *inMaskFile, int add_speckle)
 {
   return reskew_dem_rad(inMetafile, inDEMfile, outDEMfile, NULL, outAmpFile,
-                        inMaskFile, r_AMP);
+                        inMaskFile, r_AMP, add_speckle);
 }
 
 int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMslant,
                    char *outDEMground, char *outAmpFile, char *inMaskFile,
-                   radiometry_t rad)
+                   radiometry_t rad, int add_speckle)
 {
 	float *grDEMline,*srDEMline,*outAmpLine,*inMaskLine;
 	register int line,nl;
@@ -452,7 +454,7 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMslant,
             if (inMaskFile)
                 get_float_line(inMask,metaInMask,line,inMaskLine);
 
-            dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine);
+            dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine,add_speckle);
 
             // write out slant/ground range DEM lines
             put_float_line(outDEMsr,metaIn,line,srDEMline);

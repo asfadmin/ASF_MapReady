@@ -483,7 +483,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                 mask[i] = MASK_INVALID_DATA;
         if (min_valid_grX < ns-1 && min_valid_grX >= 0)        
             for (i=min_valid_grX; i>=0; --i)
-                mask[i] = MASK_INVALID_DATA;
+                if (out[i]==0.0) mask[i] = MASK_INVALID_DATA;
 
         free(sr_hits);
     }
