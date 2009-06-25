@@ -34,7 +34,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   in_data_name = appendExt(in_base_name, ".img");
   in_meta_name = appendExt(in_base_name, ".meta");
   meta_parameters *md = meta_read(in_meta_name);
-  int is_polsarpro = (md->general->bands && strstr(md->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+  int is_polsarpro = (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
   meta_free(md);
 
   // Do that exporting magic!

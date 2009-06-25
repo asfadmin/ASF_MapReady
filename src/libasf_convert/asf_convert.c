@@ -2819,37 +2819,50 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                                "exporting thumbnail data file (asf_export)\n");
                 }
                 else {
+
+		  char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
                   // just the first band -- set the others to NULL
+		  /*
                   char **bands = find_single_band(tmpFile, "all", &n);
                   for (i=1; i<n; ++i) {
                     FREE(bands[i]); bands[i] = NULL;
                   }
+		  */
+		  char *band = (char *) MALLOC(sizeof(char)*128);
+		  if (is_polsarpro)
+		    sprintf(band, "%s", bands[1]);
+		  else
+		    sprintf(band, "%s", bands[0]);
                   check_return(
                     asf_export_bands(format, scale, FALSE, 0, 0, NULL,
-                                     tmpFile, outFile, bands, NULL, NULL),
+                                     tmpFile, outFile, band, NULL, NULL),
                     "exporting thumbnail data file (asf_export)\n");
-                  // strip off the band name at the end!
-                  char *banded_name =
-                    MALLOC(sizeof(char)*(strlen(outFile)+32));
-                  if (cfg->general->intermediates) {
-                    sprintf(banded_name, "%s/%s_thumb_%s.png",
-                            cfg->general->tmp_dir, basename, bands[0]);
-                    sprintf(outFile, "%s/%s_thumb.png",
-                            cfg->general->tmp_dir, basename);
-                  }
-                  else {
-                    sprintf(banded_name, "%s_thumb_%s.png",
-                            cfg->general->out_name, bands[0]);
-                    char *tmp = appendToBasename(cfg->general->out_name,
-                                                 "_thumb");
-                    strcpy(outFile, tmp);
-                    strcat(outFile, ".png");
-                    free(tmp);
-                  }
-                  fileRename(banded_name, outFile);
-                  FREE(bands[0]);
+		  printf("got back from exporting\n");
+		  if (!is_polsarpro) {
+		    // strip off the band name at the end!
+		    char *banded_name =
+		      MALLOC(sizeof(char)*(strlen(outFile)+32));
+		    if (cfg->general->intermediates) {
+		      sprintf(banded_name, "%s/%s_thumb_%s.png",
+			      cfg->general->tmp_dir, basename, bands[0]);
+		      sprintf(outFile, "%s/%s_thumb.png",
+			      cfg->general->tmp_dir, basename);
+		    }
+		    else {
+		      sprintf(banded_name, "%s_thumb_%s.png",
+			      cfg->general->out_name, bands[0]);
+		      char *tmp = appendToBasename(cfg->general->out_name,
+						   "_thumb");
+		      strcpy(outFile, tmp);
+		      strcat(outFile, ".png");
+		      free(tmp);
+		    }
+		    fileRename(banded_name, outFile);
+		    FREE(banded_name);
+		  }
+		  for (i=0; i<meta->general->band_count; i++)
+		    FREE(bands[i]);
                   FREE(bands);
-                  FREE(banded_name);
                 }
               }
             }
@@ -2859,6 +2872,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           free(basename);
         }
     }
+    printf("Generated thumbnails ...\n");
 
     // Process the clipped DEM if requested
     if (cfg->terrain_correct->save_terrcorr_dem) {
