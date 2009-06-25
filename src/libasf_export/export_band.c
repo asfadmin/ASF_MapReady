@@ -1438,7 +1438,7 @@ export_band_image (const char *metadata_file_name,
           is_geotiff = (format == GEOTIFF) ? 1 : 0;
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
           if (is_colormap_band) {
-            sample_mapping = TRUNCATE;
+            //sample_mapping = TRUNCATE;
             rgb = FALSE;
             initialize_tiff_file(&otif, &ogtif, output_file_name,
                                  metadata_file_name, is_geotiff,
@@ -1589,25 +1589,29 @@ export_band_image (const char *metadata_file_name,
                 // where each byte value is an index into the colormap.  The other graphics
                 // file formats use interlaced RGB lines and no index or colormap instead.
                 write_tiff_float2byte(otif, float_line, stats,
-                                      is_colormap_band ? TRUNCATE : sample_mapping,
+                                      //is_colormap_band ? TRUNCATE : sample_mapping,
+                                      sample_mapping,
                                       md->general->no_data, ii, sample_count);
               else if (format == JPEG)
                 // Use lut to write an RGB line to the file
                 write_jpeg_float2lut(ojpeg, float_line, &cinfo, stats,
-                                     is_colormap_band ? TRUNCATE : sample_mapping,
+                                     //is_colormap_band ? TRUNCATE : sample_mapping,
+                                     sample_mapping,
                                      md->general->no_data,
                                      sample_count, lut_file);
               else if (format == PNG)
                 // Use lut to write an RGB line to the file
                 write_png_float2lut(opng, float_line, png_ptr, png_info_ptr,
                                     stats,
-                                    is_colormap_band ? TRUNCATE : sample_mapping,
+                                    //is_colormap_band ? TRUNCATE : sample_mapping,
+                                    sample_mapping,
                                     md->general->no_data,
                                     sample_count, lut_file);
               else if (format == PGM) {
                 // Can't put color in a PGM file, so map it to greyscale and write that
                 write_pgm_float2byte(opgm, float_line, stats,
-                                     is_colormap_band ? TRUNCATE : sample_mapping,
+                                     //is_colormap_band ? TRUNCATE : sample_mapping,
+                                     sample_mapping,
                                      md->general->no_data, sample_count);
               }
               else
@@ -1647,22 +1651,26 @@ export_band_image (const char *metadata_file_name,
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_float2byte(otif, float_line, stats,
-                                      is_colormap_band ? TRUNCATE : sample_mapping,
+                                      //is_colormap_band ? TRUNCATE : sample_mapping,
+                                      sample_mapping,
                                       md->general->no_data, ii, sample_count);
               else if (format == JPEG)
                 write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats,
-                                      is_colormap_band ? TRUNCATE : sample_mapping,
+                                      //is_colormap_band ? TRUNCATE : sample_mapping,
+                                      sample_mapping,
                                       md->general->no_data,
                                       sample_count);
               else if (format == PNG)
                 write_png_float2byte(opng, float_line, png_ptr, png_info_ptr,
                                      stats,
-                                     is_colormap_band ? TRUNCATE : sample_mapping,
+                                     //is_colormap_band ? TRUNCATE : sample_mapping,
+                                     sample_mapping,
                                      md->general->no_data,
                                      sample_count);
               else if (format == PGM)
                 write_pgm_float2byte(opgm, float_line, stats,
-                                     is_colormap_band ? TRUNCATE : sample_mapping,
+                                     //is_colormap_band ? TRUNCATE : sample_mapping,
+                                     sample_mapping,
                                      md->general->no_data, sample_count);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
