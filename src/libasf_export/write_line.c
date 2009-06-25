@@ -145,7 +145,7 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping,
                stats.min, stats.max, stats.hist,
-               stats.hist_pdf, NAN);
+               stats.hist_pdf, no_data);
   }
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
@@ -158,8 +158,8 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
 
 void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line,
                           channel_stats_t stats, scale_t sample_mapping,
-              struct jpeg_compress_struct *cinfo,
-              int sample_count)
+                          struct jpeg_compress_struct *cinfo,
+                          int sample_count)
 {
   int jj;
 
@@ -308,7 +308,7 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping,
                stats.min, stats.max, stats.hist,
-               stats.hist_pdf, NAN);
+               stats.hist_pdf, no_data);
   }
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
@@ -462,7 +462,7 @@ void write_png_float2lut(FILE *opng, float *float_line,
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping,
                stats.min, stats.max, stats.hist,
-               stats.hist_pdf, NAN);
+               stats.hist_pdf, no_data);
   }
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,

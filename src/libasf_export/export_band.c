@@ -837,7 +837,6 @@ export_band_image (const char *metadata_file_name,
 
   if (have_look_up_table) {
     lut_file = STRDUP(look_up_table_name);
-    asfPrintStatus("\nApplying %s color look up table...\n\n", look_up_table_name);
   }
   else {
     // No look-up table
@@ -1416,10 +1415,23 @@ export_band_image (const char *metadata_file_name,
         //  (2) user used the "-lut" option -- we have the !md->colormap
         //      here to avoid thinking we've got -lut when it was really
         //      just the md->colormap (which sets have_look_up_table, above)
-        if ((md->colormap &&
-             strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
-            (have_look_up_table && !md->colormap))
+        int is_polsarpro =
+            (md->general->bands && strstr(md->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+        if (
+            ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
+            (!md->colormap && have_look_up_table && md->general->data_type == BYTE) ||
+            (!md->colormap && have_look_up_table &&
+              md->general->data_type != BYTE && sample_mapping != NONE)             ||
+            (is_polsarpro  && strcmp_case(band_name[kk], "POLSARPRO") == 0)
+           )
+        {
           is_colormap_band = TRUE;
+          sample_mapping = is_polsarpro ? TRUNCATE : sample_mapping;
+        }
+
+        if (have_look_up_table && is_colormap_band) {
+          asfPrintStatus("\nApplying %s color look up table...\n\n", look_up_table_name);
+        }
 
         if (strcmp(band_name[0], MAGIC_UNSET_STRING) != 0)
           asfPrintStatus("Writing band '%s' ...\n", band_name[kk]);
