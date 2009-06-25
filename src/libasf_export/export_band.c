@@ -1415,8 +1415,8 @@ export_band_image (const char *metadata_file_name,
         //  (2) user used the "-lut" option -- we have the !md->colormap
         //      here to avoid thinking we've got -lut when it was really
         //      just the md->colormap (which sets have_look_up_table, above)
-        int is_polsarpro =
-            (md->general->bands && strstr(md->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+        int is_polsarpro = 
+	  (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
         if (
             ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
             (!md->colormap && have_look_up_table && md->general->data_type == BYTE) ||
