@@ -13,7 +13,15 @@ int try_envi(const char *filename, int try_extensions)
     char *ext = findExt(filename);
 
     if (ext && strlen(ext) > 0) {
-      return strcmp_case(ext, ".hdr") == 0;
+      if (strcmp_case(ext, ".hdr") == 0)
+        return TRUE;
+      else if (strcmp_case(ext, ".bin") == 0) {
+        // check for a corresponding .bin.hdr
+        char *hdr = appendExt(filename, ".bin.hdr");
+        int ret = fileExists(hdr);
+        free(hdr);
+        return ret;
+      }
     } else if (try_extensions) {
       int ret = try_ext(filename, ".hdr");
       if (!ret)
@@ -32,7 +40,11 @@ int handle_envi_file(const char *filename, char *meta_name,
     char *file;
 
     if (!has_ext)
-        file = appendExt(filename, ".hdr");
+      file = appendExt(filename, ".hdr");
+    else if (strcmp_case(ext, ".bin") == 0) {
+      file = appendExt(filename, ".bin.hdr");
+      has_envi_ext = TRUE;
+    }
     else
       file = STRDUP(filename);
 
