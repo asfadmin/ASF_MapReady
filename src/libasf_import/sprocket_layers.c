@@ -583,8 +583,8 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
                 double frac  = index - base;
                 double noise = noise_table[base] + frac
                                * (noise_table[base+1] - noise_table[base]);
-                sigmaBuf[bufInd] = get_cal_dn(cal_param,noise, 1.0,
-                                                       (int)ampBuf[bufInd]);
+                sigmaBuf[bufInd] = 
+		  get_cal_dn(cal_param,noise, 1.0, NULL, (int)ampBuf[bufInd]);
             }
             else {
               sigmaBuf[bufInd]=0;
@@ -642,8 +642,9 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
                 double frac  = index - base;
                 double noise = noise_table[base] + frac
                                * (noise_table[base+1] - noise_table[base]);
-                sigmaBuf[bufInd] = sprocket_get_cal_dn(cal_param, noise, 1.0,
-                                                       (int)ampBuf[bufInd]);
+                sigmaBuf[bufInd] = 
+		  sprocket_get_cal_dn(cal_param, noise, 1.0, NULL,
+				      (int)ampBuf[bufInd]);
             }
             else {
               sigmaBuf[bufInd]=0;

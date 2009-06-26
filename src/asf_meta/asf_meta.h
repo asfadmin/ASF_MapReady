@@ -866,7 +866,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta);
 void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db);
 float *incid_init(meta_parameters *meta);
 float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
-         float inDn, int dbFlag);
+		 float inDn, char *bandExt, int dbFlag);
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
 quadratic_2d get_incid(char *sarName, meta_parameters *meta);

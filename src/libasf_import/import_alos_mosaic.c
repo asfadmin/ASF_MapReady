@@ -238,10 +238,10 @@ void import_alos_mosaic(const char *inBaseName, radiometry_t radiometry,
       // Only sigma values are valid in mosaics (no incidence angle)
       if (radiometry == r_SIGMA)
 	floatBuf[kk] = 
-	  get_cal_dn(meta, 0.0, kk, (float) lilInt16(shortValue), FALSE);
+	  get_cal_dn(meta, 0.0, kk, (float) lilInt16(shortValue), NULL, FALSE);
       else if (radiometry == r_SIGMA_DB)
 	floatBuf[kk] =
-	  get_cal_dn(meta, 0.0, kk, (float) lilInt16(shortValue), TRUE);
+	  get_cal_dn(meta, 0.0, kk, (float) lilInt16(shortValue), NULL, TRUE);
       else
 	floatBuf[kk] = (float) lilInt16(shortValue);
     }

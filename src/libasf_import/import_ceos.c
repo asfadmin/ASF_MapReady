@@ -1794,7 +1794,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                 else {
                     incidence_angle = incid[kk];
                 }
-                amp_float_buf[ll*ns + kk] = get_cal_dn(meta, incidence_angle, kk, fValue, db_flag);
+                amp_float_buf[ll*ns + kk] = 
+		  get_cal_dn(meta, incidence_angle, kk, fValue, bandExt, 
+			     db_flag);
                 phase_float_buf[ll*ns + kk] =  atan2(cpx.imag, cpx.real);
             }
           }
@@ -1858,7 +1860,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                   else {
                       incidence_angle = incid[kk];
                   }
-                  amp_float_buf[kk] = get_cal_dn(meta, incidence_angle, kk, amp, db_flag);
+                  amp_float_buf[kk] = 
+		    get_cal_dn(meta, incidence_angle, kk, amp, bandExt, 
+			       db_flag);
               }
               else {
                   amp_float_buf[kk] = amp;
@@ -2060,7 +2064,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                         else {
                             incidence_angle = incid[kk];
                         }
-                        amp_float_buf[kk] = get_cal_dn(meta, incidence_angle, kk, (float)byte_buf[kk], db_flag);
+                        amp_float_buf[kk] = 
+			  get_cal_dn(meta, incidence_angle, kk, 
+				     (float)byte_buf[kk], bandExt, db_flag);
                     }
                     else if (radiometry == r_POWER) {
                         amp_float_buf[kk] = (float) byte_buf[kk]*byte_buf[kk];
@@ -2091,7 +2097,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                         else {
                             incidence_angle = incid[kk];
                         }
-                        amp_float_buf[kk] = get_cal_dn(meta, incidence_angle, kk, (float)short_buf[kk], db_flag);
+                        amp_float_buf[kk] = 
+			  get_cal_dn(meta, incidence_angle, kk, 
+				     (float)short_buf[kk], bandExt, db_flag);
                     }
                     else if (radiometry == r_POWER) {
                         amp_float_buf[kk] = (float) short_buf[kk]*short_buf[kk];
@@ -2112,7 +2120,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                         else {
                             incidence_angle = incid[kk];
                         }
-                        amp_float_buf[kk] = get_cal_dn(meta, incidence_angle, kk, (float)int_buf[kk], db_flag);
+                        amp_float_buf[kk] = 
+			  get_cal_dn(meta, incidence_angle, kk, 
+				     (float)int_buf[kk], bandExt, db_flag);
                     }
                     else if (radiometry == r_POWER) {
                         amp_float_buf[ns+kk] = (float) int_buf[kk]*int_buf[kk];
@@ -2133,7 +2143,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                         else {
                             incidence_angle = incid[kk];
                         }
-                        amp_float_buf[kk] = get_cal_dn(meta, incidence_angle, kk, float_buf[kk], db_flag);
+                        amp_float_buf[kk] = 
+			  get_cal_dn(meta, incidence_angle, kk, float_buf[kk], 
+				     bandExt, db_flag);
                     }
                     else if (radiometry == r_POWER) {
                         amp_float_buf[kk] = float_buf[kk]*float_buf[kk];
@@ -2154,8 +2166,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                         else {
                             incidence_angle = incid[kk];
                         }
-                        amp_float_buf[kk] = get_cal_dn(meta, incidence_angle, kk, (float)double_buf[kk],
-                                                       db_flag);
+                        amp_float_buf[kk] = 
+			  get_cal_dn(meta, incidence_angle, kk, 
+				     (float)double_buf[kk], bandExt, db_flag);
                     }
                     else if (radiometry == r_POWER) {
                         amp_float_buf[kk] = (float) double_buf[kk]*double_buf[kk];

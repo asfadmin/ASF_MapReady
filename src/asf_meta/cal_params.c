@@ -602,7 +602,7 @@ float *incid_init(meta_parameters *meta)
         number (in power scale), given the current noise value.
 ----------------------------------------------------------------------*/
 float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
-                 float inDn, int dbFlag)
+                 float inDn, char *bandExt, int dbFlag)
 {
   double scaledPower, calValue, invIncAngle;
   radiometry_t radiometry = meta->general->radiometry;
@@ -718,8 +718,17 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       invIncAngle = 1/sin(incidence_angle);
 
     alos_cal_params *p = meta->calibration->alos;
-
-    scaledPower = pow(10, p->cf_hh/10.0)*inDn*inDn*invIncAngle;
+    double cf;
+    if (strstr(bandExt, "HH"))
+      cf = p->cf_hh;
+    else if (strstr(bandExt, "HV"))
+      cf = p->cf_hv;
+    else if (strstr(bandExt, "VH"))
+      cf = p->cf_vh;
+    else if (strstr(bandExt, "VV"))
+      cf = p->cf_vv;
+    
+    scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
   }
   else
     // should never get here
