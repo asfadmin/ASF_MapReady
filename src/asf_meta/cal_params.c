@@ -195,6 +195,14 @@ Fills in the calibration block in metadata by reading the parameters
 given inSAR CEOS file.
 **************************************************************************/
 
+static void recalibration(char *str)
+{
+      asfPrintWarning("Hardcoded calibration parameters published by JAXA are "
+		      "automatically applied:\n%s\n"
+		      "If you don't want to apply these changes, please "
+		      "(temporarily) remove\nthe workreport file.\n", str);
+}
+
 void create_cal_params(const char *inSAR, meta_parameters *meta)
 {
   int ii, kk;
@@ -378,12 +386,150 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     meta->calibration->type = alos_cal;
     meta->calibration->alos = alos;
 
+    // Determine beam mode
+    int beam = dssr.ant_beam_num;
+    int beam_count = dssr.nchn;
+    if (beam >= 0 && beam <= 35 && beam_count == 2)
+      beam += 36; // actually dual-pol data (HH+HV or VV+VH)
+    else if (beam == 3 && beam_count == 4)
+      beam = 127; // actually PLR 21.5
+
     // Reading calibration coefficient
     get_ardr(sarName, &ardr);
-    if (strncmp(dssr.lev_code, "1.1", 3) == 0) // SLC
-      alos->cf = ardr.calibration_factor - 32;
-    else if (strncmp(dssr.lev_code, "1.5", 3) == 0) // regular detected
-      alos->cf = ardr.calibration_factor;
+    if (strncmp(dssr.lev_code, "1.1", 3) == 0) { // SLC
+      // HH polarization
+      if ((beam >=   0 && beam <=  17) || // FBS HH polarization
+	  (beam >=  36 && beam <=  53) || // FBD HH+HV polarization
+	  (beam >=  72 && beam <=  73) || // WB  HH3scan
+	  (beam >=  76 && beam <=  77) || // WB  HH4scan
+	  (beam >=  80 && beam <=  81) || // WB  HH5scan
+	  (beam >=  84 && beam <= 101) || // DSN HH polarization
+	  (beam >= 120 && beam <= 131))   // PLR
+	alos->cf_hh = ardr.calibration_factor - 32;
+      else
+	alos->cf_hh = MAGIC_UNSET_DOUBLE;
+      // HV polarization
+      if ((beam >=  36 && beam <=  53) || // FBD HH+HV polarization
+	  (beam >= 120 && beam <= 131))   // PLR
+	alos->cf_hv = ardr.calibration_factor - 32;
+      else
+	alos->cf_hv = MAGIC_UNSET_DOUBLE;
+      // VH polarization
+      if ((beam >=  54 && beam <=  71) || // FBD VV+VH polarization
+	  (beam >= 120 && beam <= 131))   // PLR
+	alos->cf_vh = ardr.calibration_factor - 32;
+      else
+	alos->cf_vh = MAGIC_UNSET_DOUBLE;
+      // VV polarization
+      if ((beam >=  18 && beam <=  35) || // FBS VV polarization
+	  (beam >=  54 && beam <=  71) || // FBD VV+VH polarization
+	  (beam >=  74 && beam <=  75) || // WB  VV3scan
+	  (beam >=  78 && beam <=  79) || // WB  VV4scan
+	  (beam >=  82 && beam <=  83) || // WB  VV5scan
+	  (beam >= 102 && beam <= 119) || // DSN VV polarization
+	  (beam >= 120 && beam <= 131))   // PLR
+	alos->cf_vv = ardr.calibration_factor - 32;
+      else
+	alos->cf_vv = MAGIC_UNSET_DOUBLE;
+    }
+    else if (strncmp(dssr.lev_code, "1.5", 3) == 0) { // regular detected
+      // HH polarization
+      if ((beam >=   0 && beam <=  17) || // FBS HH polarization
+	  (beam >=  36 && beam <=  53) || // FBD HH+HV polarization
+	  (beam >=  72 && beam <=  73) || // WB  HH3scan
+	  (beam >=  76 && beam <=  77) || // WB  HH4scan
+	  (beam >=  80 && beam <=  81) || // WB  HH5scan
+	  (beam >=  84 && beam <= 101) || // DSN HH polarization
+	  (beam >= 120 && beam <= 131))   // PLR
+	alos->cf_hh = ardr.calibration_factor;
+      else
+	alos->cf_hh = MAGIC_UNSET_DOUBLE;
+      // HV polarization
+      if ((beam >=  36 && beam <=  53) || // FBD HH+HV polarization
+	  (beam >= 120 && beam <= 131))   // PLR
+	alos->cf_hv = ardr.calibration_factor;
+      else
+	alos->cf_hv = MAGIC_UNSET_DOUBLE;
+      // VH polarization
+      if ((beam >=  54 && beam <=  71) || // FBD VV+VH polarization
+	  (beam >= 120 && beam <= 131))   // PLR
+	alos->cf_vh = ardr.calibration_factor;
+      else
+	alos->cf_vh = MAGIC_UNSET_DOUBLE;
+      // VV polarization
+      if ((beam >=  18 && beam <=  35) || // FBS VV polarization
+	  (beam >=  54 && beam <=  71) || // FBD VV+VH polarization
+	  (beam >=  74 && beam <=  75) || // WB  VV3scan
+	  (beam >=  78 && beam <=  79) || // WB  VV4scan
+	  (beam >=  82 && beam <=  83) || // WB  VV5scan
+	  (beam >= 102 && beam <= 119) || // DSN VV polarization
+	  (beam >= 120 && beam <= 131))   // PLR
+	alos->cf_vv = ardr.calibration_factor;
+      else
+	alos->cf_vv = MAGIC_UNSET_DOUBLE;
+    }
+
+    // Check on processor version
+    // Prior to processor version 9.02 some calibration parameters have been
+    // determined again.
+    double version;
+    if (!get_alos_processor_version(inSAR, &version))
+      asfPrintWarning("Could not find workreport file!\n"
+		      "Calibration parameters applied to the data might be "
+		      "inaccurate!\n");
+    else if (version < 9.02) {
+      char str[512];
+      
+      switch (beam)
+	{
+	case 0: 
+	  alos->cf_hh = -83.16; // FBS  9.9 HH
+	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	  recalibration(str);
+	  break;
+	case 3:
+	  alos->cf_hh = -83.55; // FBS 21.5 HH
+	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	  recalibration(str);
+	  break;
+	case 7:
+	  alos->cf_hh = -83.40; // FBS 34.3 HH
+	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	  recalibration(str);
+	  break;
+	case 10:
+	  alos->cf_hh = -83.65; // FBS 41.5 HH
+	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	  recalibration(str);
+	  break;
+	case 35:
+	  alos->cf_hh = -83.30; // FBS 50.8 HH
+	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	  recalibration(str);
+	  break;
+	case 43:
+	  alos->cf_hh = -83.20; // FBD 34.3 HH
+	  alos->cf_hv = -80.20; // FBD 34.3 HV
+	  sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
+	  recalibration(str);
+	  break;
+	case 46:
+	  alos->cf_hh = -83.19; // FBD 41.5 HH
+	  alos->cf_hv = -80.19; // FBD 41.5 HV
+	  sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
+	  recalibration(str);
+	  break;
+	case 127:
+	  alos->cf_hh = -83.40; // PLR 21.5 HH
+	  alos->cf_hv = -83.40; // PLR 21.5 HV
+	  alos->cf_vh = -83.40; // PLR 21.5 VH
+	  alos->cf_vv = -83.40; // PLR 21.5 VV
+	  sprintf(str, "HH: %.2lf\nHV: %.2lf\nVH: %.2lf\nVV: %.2lf", 
+		  alos->cf_hh, alos->cf_hv, alos->cf_vh, alos->cf_vv);
+	  recalibration(str);
+	  break;
+	}
+    }
   }
   else
     // should never get here
@@ -563,6 +709,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
   }
   else if (meta->calibration->type == alos_cal) { // ALOS data
 
+
     if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
       invIncAngle = 1.0;
     else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
@@ -572,7 +719,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
 
     alos_cal_params *p = meta->calibration->alos;
 
-    scaledPower = pow(10, p->cf/10.0)*inDn*inDn*invIncAngle;
+    scaledPower = pow(10, p->cf_hh/10.0)*inDn*inDn*invIncAngle;
   }
   else
     // should never get here

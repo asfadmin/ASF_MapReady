@@ -905,8 +905,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case alos_cal:
     meta_put_string(fp,"type:","ALOS",comment);
     // scaledPower = pow(10, p->cf/10.0)*inDn*inDn*invIncAngle;
-    meta_put_double(fp,"cf:",meta->calibration->alos->cf,
-            "Calibration factor");
+    if (!ISNAN(meta->calibration->alos->cf_hh))
+      meta_put_double(fp,"cf_hh:",meta->calibration->alos->cf_hh,
+		      "Calibration factor: HH");
+    if (!ISNAN(meta->calibration->alos->cf_hv))
+      meta_put_double(fp,"cf_hv:",meta->calibration->alos->cf_hv,
+		      "Calibration factor: HV");
+    if (!ISNAN(meta->calibration->alos->cf_vh))
+      meta_put_double(fp,"cf_vh:",meta->calibration->alos->cf_vh,
+		      "Calibration factor: VH");
+    if (!ISNAN(meta->calibration->alos->cf_vv))
+      meta_put_double(fp,"cf_vv:",meta->calibration->alos->cf_vv,
+		      "Calibration factor: VV");
     break;
       }
     meta_put_string(fp,"}","","End calibration");

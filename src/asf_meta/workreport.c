@@ -137,6 +137,32 @@ int get_alos_delta_time (const char *fileName, double *delta)
   return TRUE;
 }
 
+// Get the SAR processor version from the workreport
+int get_alos_processor_version (const char *fileName, double *version)
+{
+  char line[512], versionStr[10], *str;
+
+  FILE *fp = fopen_workreport(fileName);
+  if (!fp) {
+    // no workreport file...
+    *version = 0.0;
+    return FALSE;
+  }
+
+  while (fgets(line, 512, fp)) {
+    if (strstr(line, "Ver_PSR_CorPrcSigmaSAR")) {
+      str = strchr(line, '"');
+      sprintf(versionStr, "%s", str+1);
+      versionStr[strlen(versionStr)-2] = '\0';
+      *version = atof(versionStr);
+    }
+  }
+
+  FCLOSE(fp);
+  return TRUE;
+}
+
+
 // ------------------------------------------------------------------------
 // helper code for refine_slc_geolocation_from_workreport()
 

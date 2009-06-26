@@ -1261,8 +1261,22 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "focus") && (MCALIBRATION)->type == rsat_cal)
       { (MCALIBRATION)->rsat->focus = VALP_AS_INT; return; }
     // ALOS calibration
+    if ( !strcmp(field_name, "cf_hh") && (MCALIBRATION)->type == alos_cal)
+      { (MCALIBRATION)->alos->cf_hh = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "cf_hv") && (MCALIBRATION)->type == alos_cal)
+      { (MCALIBRATION)->alos->cf_hv = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "cf_vh") && (MCALIBRATION)->type == alos_cal)
+      { (MCALIBRATION)->alos->cf_vh = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "cf_vv") && (MCALIBRATION)->type == alos_cal)
+      { (MCALIBRATION)->alos->cf_vv = VALP_AS_DOUBLE; return; }
+    // long live backwards compatibility
+    // assign the value to all bands, since we don't know any better
     if ( !strcmp(field_name, "cf") && (MCALIBRATION)->type == alos_cal)
-      { (MCALIBRATION)->alos->cf = VALP_AS_DOUBLE; return; }
+      { (MCALIBRATION)->alos->cf_hh = VALP_AS_DOUBLE;
+	(MCALIBRATION)->alos->cf_hv = VALP_AS_DOUBLE;
+	(MCALIBRATION)->alos->cf_vh = VALP_AS_DOUBLE;
+	(MCALIBRATION)->alos->cf_vv = VALP_AS_DOUBLE; 
+	return; }
   }
 
   /* Fields which normally go in a colormap block.  */

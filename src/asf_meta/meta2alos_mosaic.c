@@ -139,7 +139,7 @@ meta_parameters* alos_mosaic2meta(alos_mosaic_header *alos)
   meta->calibration->type = alos_cal;
   meta->calibration->alos = 
     (alos_cal_params *) MALLOC(sizeof(alos_cal_params));
-  meta->calibration->alos->cf = alos->cal_factor;
+  meta->calibration->alos->cf_hh = alos->cal_factor;
     
   return meta;
 }

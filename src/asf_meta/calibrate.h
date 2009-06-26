@@ -53,7 +53,10 @@ typedef struct {
 } rsat_cal_params;
 
 typedef struct {
-  double cf;          // calibration factor
+  double cf_hh;       // calibration factor: HH
+  double cf_hv;       // calibration factor: HV
+  double cf_vh;       // calibration factor: VH
+  double cf_vv;       // calibration factor: VV
 } alos_cal_params;
 
 typedef struct {

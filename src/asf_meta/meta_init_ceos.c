@@ -44,21 +44,33 @@ PROGRAM HISTORY:
 
 // ALOS beam modes
 char *alos_beam_mode[132]={
-  "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
-  "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
-  "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
-  "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
-  "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
-  "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
-  "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
-  "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
-  "WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2",
-  "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
-  "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
-  "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
-  "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
-  "PLR1","PLR2","PLR3","PLR4","PLR5","PLR6","PLR7","PLR8","PLR9","PLR10",
-  "PLR11","PLR12"};
+  "FBS  9.9 HH","FBS 14.0 HH","FBS 18.0 HH","FBS 21.5 HH","FBS 25.8 HH",
+  "FBS 28.8 HH","FBS 30.8 HH","FBS 34.3 HH","FBS 36.9 HH","FBS 38.8 HH",
+  "FBS 41.5 HH","FBS 43.4 HH","FBS 45.2 HH","FBS 46.6 HH","FBS 47.8 HH",
+  "FBS 49.0 HH","FBS 50.0 HH","FBS 50.8 HH","FBS  9.9 VV","FBS 14.0 VV",
+  "FBS 18.0 VV","FBS 21.5 VV","FBS 25.8 VV","FBS 28.8 VV","FBS 30.8 VV",
+  "FBS 34.3 VV","FBS 36.9 VV","FBS 38.8 VV","FBS 41.5 VV","FBS 43.4 VV",
+  "FBS 45.2 VV","FBS 46.6 VV","FBS 47.8 VV","FBS 49.0 VV","FBS 50.0 VV",
+  "FBS 50.8 VV","FBD  9.9 HH+HV","FBD 14.0 HH+HV","FBD 18.0 HH+HV","FBD 21.5 HH+HV",
+  "FBD 25.8 HH+HV","FBD 28.8 HH+HV","FBD 30.8 HH+HV","FBD 34.3 HH+HV","FBD 36.9 HH+HV",
+  "FBD 38.8 HH+HV","FBD 41.5 HH+HV","FBD 43.4 HH+HV","FBD 45.2 HH+HV","FBD 46.6 HH+HV",
+  "FBD 47.8 HH+HV","FBD 49.0 HH+HV","FBD 50.0 HH+HV","FBD 50.8 HH+HV","FBD  9.9 VV+VH",
+  "FBD 14.0 VV+VH","FBD 18.0 VV+VH","FBD 21.5 VV+VH","FBD 25.8 VV+VH","FBD 28.8 VV+VH",
+  "FBD 30.8 VV+VH","FBD 34.3 VV+VH","FBD 36.9 VV+VH","FBD 38.8 VV+VH","FBD 41.5 VV+VH",
+  "FBD 43.4 VV+VH","FBD 45.2 VV+VH","FBD 46.6 VV+VH","FBD 47.8 VV+VH","FBD 49.0 VV+VH",
+  "FBD 50.0 VV+VH","FBD 50.8 VV+VH","WB1 24.6 HH3scan","WB2 24.6 HH3scan","WB1 24.6 VV3scan",
+  "WB2 24.6 VV3scan","WB1 25.9 HH4scan","WB2 25.9 HH4scan","WB1 25.9 VV4scan","WB2 25.9 VV4scan",
+  "WB1 27.1 HH5scan","WB2 27.1 HH5scan","WB1 27.1 VV5scan","WB2 27.1 VV5scan","DSN  9.9 HH",
+  "DSN 14.0 HH","DSN 18.0 HH","DSN 21.5 HH","DSN 25.8 HH","DSN 28.8 HH",
+  "DSN 30.8 HH","DSN 34.3 HH","DSN 36.9 HH","DSN 38.8 HH","DSN 41.5 HH",
+  "DSN 43.4 HH","DSN 45.2 HH","DSN 46.6 HH","DSN 47.8 HH","DSN 49.0 HH",
+  "DSN 50.0 HH","DSN 50.8 HH","DSN  9.9 VV","DSN 14.0 VV","DSN 18.0 VV",
+  "DSN 21.5 VV","DSN 25.8 VV","DSN 28.8 VV","DSN 30.8 VV","DSN 34.3 VV",
+  "DSN 36.9 VV","DSN 38.8 VV","DSN 41.5 VV","DSN 43.4 VV","DSN 45.2 VV",
+  "DSN 46.6 VV","DSN 47.8 VV","DSN 49.0 VV","DSN 50.0 VV","DSN 50.8 VV",
+  "PLR  9.7","PLR 13.8","PLR 16.2","PLR 17.3","PLR 17.9",
+  "PLR 19.2","PLR 20.5","PLR 21.5","PLR 23.1","PLR 24.2",
+  "PLR 25.2","PLR 26.2"};
 
 // Internal Prototypes
 // Importing CEOS SAR data
@@ -1148,7 +1160,20 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   // General block
   strcpy(meta->general->processor, "JAXA");
   strcpy(meta->general->sensor,"ALOS");
-  strcpy(meta->general->mode, alos_beam_mode[ceos->dssr.ant_beam_num]);
+
+  // Fix me: Adjustment of beam number does not apply to direct downlinks yet
+  int beam = ceos->dssr.ant_beam_num;
+  int beam_count = ceos->dssr.nchn;
+  if (beam >= 0 && beam <= 35 && beam_count == 2)
+    beam += 36; // actually dual-pol data (HH+HV or VV+VH)
+  else if (beam == 3 && beam_count == 4)
+    beam = 127; // actually PLR 21.5
+  else
+    asfPrintWarning("Can't deternube beam mode properly!\n"
+		    "Beam mode will reflect beam mode of first channel\n");
+  strcpy(meta->general->mode, alos_beam_mode[beam]);
+  asfPrintStatus("   Beam mode: %s\n", meta->general->mode);
+
   strncpy(buf, &dssr->product_id[11], 4);
   buf[4]=0;
   sscanf(buf, "%d", &meta->general->frame);
