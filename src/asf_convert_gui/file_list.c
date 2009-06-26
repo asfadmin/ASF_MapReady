@@ -569,13 +569,20 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 
     // now add to the completed files list!  Use the first listed file
     // as the output filename, since that is the one that was thumbnailed
+    // Exception: PolSARPro.  Here we use the second one (if we have it)
+    // since the first is the amplitude, and likely the user is interested
+    // in the second one (the PolSARPro one).
+    int output_idx = 0;
+    if (polsarpro_aux_info && strlen(polsarpro_aux_info)>0 && num_outputs>1)
+      output_idx = 1;
+
     gtk_list_store_append(completed_list_store, completed_iter);
     gtk_list_store_set(completed_list_store, completed_iter,
                        COMP_COL_INPUT_FILE, file,
                        COMP_COL_INPUT_FILE_SHORT, file_basename,
                        COMP_COL_ANCILLARY_FILE, ancillary_file,
                        COMP_COL_ORIGINAL_METADATA_FILE, original_metadata_file,
-                       COMP_COL_OUTPUT_FILE, outs[0],
+                       COMP_COL_OUTPUT_FILE, outs[output_idx],
                        COMP_COL_OUTPUT_FILE_SHORT, output_file_basename,
                        COMP_COL_STATUS, "Done",
                        COMP_COL_LOG, log_txt,

@@ -193,7 +193,7 @@ static char *check_for_error(gchar * txt)
 }
 
 static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
-                          const gchar *out_full)
+                          const gchar *out_full, int is_PolSARpro)
 {
     if (use_thumbnails)
     {
@@ -202,7 +202,6 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
         int scaling_required = TRUE;
 
         char *basename = get_basename(out_full);
-        int is_PolSARpro = is_polsarpro(basename);
         char *thumbnail_name =
             MALLOC(sizeof(char)*(strlen(tmp_dir)+strlen(basename)+32));
 
@@ -575,6 +574,8 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         COL_POLSARPRO_INFO, &polsarpro_aux_info,
         -1);
 
+    int isPolSARPro = polsarpro_aux_info && strlen(polsarpro_aux_info)>0;
+
     if (strcmp(status, "Done") != 0 || !skip_done)
     {
         //char *in_basename = stripExt(in_file);
@@ -640,7 +641,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             GtkTreeIter completed_iter;
             move_to_completed_files_list(iter, &completed_iter, cmd_output,
                                          intermediates_file);
-            set_thumbnail(&completed_iter, tmp_dir, out_full);
+            set_thumbnail(&completed_iter, tmp_dir, out_full, isPolSARPro);
             input_data_formats_changed();
             refresh_file_names();
         }
