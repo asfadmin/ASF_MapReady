@@ -862,7 +862,8 @@ int refine_slc_geolocation_from_workreport(const char *metaName,
                                            double *slant_shift_adjustment);
 
 // Calibration functions from cal_params.c
-void create_cal_params(const char *inSAR, meta_parameters *meta);
+void create_cal_params(const char *inSAR, meta_parameters *meta,
+		       report_level_t level);
 void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db);
 float *incid_init(meta_parameters *meta);
 float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,

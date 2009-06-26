@@ -195,15 +195,16 @@ Fills in the calibration block in metadata by reading the parameters
 given inSAR CEOS file.
 **************************************************************************/
 
-static void recalibration(char *str)
+static void recalibration(char *str, report_level_t level)
 {
-      asfPrintWarning("Hardcoded calibration parameters published by JAXA are "
-		      "automatically applied:\n%s\n"
-		      "If you don't want to apply these changes, please "
-		      "(temporarily) remove\nthe workreport file.\n", str);
+  asfReport(level, "Hardcoded calibration parameters published by JAXA are "
+	    "automatically applied:\n%s\n"
+	    "If you don't want to apply these changes, please "
+	    "(temporarily) remove\nthe workreport file.\n", str);
 }
 
-void create_cal_params(const char *inSAR, meta_parameters *meta)
+void create_cal_params(const char *inSAR, meta_parameters *meta, 
+		       report_level_t level)
 {
   int ii, kk;
   struct dataset_sum_rec dssr; // Data set summary record
@@ -474,9 +475,9 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
     // determined again.
     double version;
     if (!get_alos_processor_version(inSAR, &version))
-      asfPrintWarning("Could not find workreport file!\n"
-		      "Calibration parameters applied to the data might be "
-		      "inaccurate!\n");
+      asfReport(level, "Could not find workreport file!\n"
+		"Calibration parameters applied to the data might be "
+		"inaccurate!\n");
     else if (version < 9.02) {
       char str[512];
       
@@ -485,39 +486,39 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
 	case 0: 
 	  alos->cf_hh = -83.16; // FBS  9.9 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str);
+	  recalibration(str, level);
 	  break;
 	case 3:
 	  alos->cf_hh = -83.55; // FBS 21.5 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str);
+	  recalibration(str, level);
 	  break;
 	case 7:
 	  alos->cf_hh = -83.40; // FBS 34.3 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str);
+	  recalibration(str, level);
 	  break;
 	case 10:
 	  alos->cf_hh = -83.65; // FBS 41.5 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str);
+	  recalibration(str, level);
 	  break;
 	case 35:
 	  alos->cf_hh = -83.30; // FBS 50.8 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str);
+	  recalibration(str, level);
 	  break;
 	case 43:
 	  alos->cf_hh = -83.20; // FBD 34.3 HH
 	  alos->cf_hv = -80.20; // FBD 34.3 HV
 	  sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
-	  recalibration(str);
+	  recalibration(str, level);
 	  break;
 	case 46:
 	  alos->cf_hh = -83.19; // FBD 41.5 HH
 	  alos->cf_hv = -80.19; // FBD 41.5 HV
 	  sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
-	  recalibration(str);
+	  recalibration(str, level);
 	  break;
 	case 127:
 	  alos->cf_hh = -83.40; // PLR 21.5 HH
@@ -526,7 +527,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
 	  alos->cf_vv = -83.40; // PLR 21.5 VV
 	  sprintf(str, "HH: %.2lf\nHV: %.2lf\nVH: %.2lf\nVV: %.2lf", 
 		  alos->cf_hh, alos->cf_hv, alos->cf_vh, alos->cf_vv);
-	  recalibration(str);
+	  recalibration(str, level);
 	  break;
 	}
     }
@@ -539,7 +540,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta)
 
 void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db)
 {
-  create_cal_params(inSAR, meta);
+  create_cal_params(inSAR, meta, REPORT_LEVEL_WARNING);
   if (db)
     meta->general->no_data = -30.0;
 }

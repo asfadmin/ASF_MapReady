@@ -10,7 +10,7 @@
 #include <gsl/gsl_multiroots.h>
 
 
-FILE *fopen_workreport(const char *fileName)
+static FILE *fopen_workreport_ext(const char *fileName, report_level_t level)
 {
   char *path = getPath(fileName);
   char *basename = get_basename(fileName);
@@ -55,20 +55,20 @@ FILE *fopen_workreport(const char *fileName)
       }
       else {
         // success with 'summary.txt'
-        asfPrintStatus("workreport file found as: summary.txt\n");
+        asfReport(level, "workreport file found as: summary.txt\n");
         fp = FOPEN(workreport_filename, "r");
       }
     }
     else {
       // success with 'workreport'
-      asfPrintStatus("workreport file found as: workreport\n");
+      asfReport(level, "workreport file found as: workreport\n");
       fp = FOPEN(workreport_filename, "r");
     }
   }
   else {
     // success with 'basename.txt'
     char *basename = get_basename(workreport_filename);
-    asfPrintStatus("workreport file found as: %s\n", basename);
+    asfReport(level, "workreport file found as: %s\n", basename);
     fp = FOPEN(workreport_filename, "r");
     FREE(basename);
   }
@@ -79,6 +79,11 @@ FILE *fopen_workreport(const char *fileName)
   FREE(basename);
 
   return fp;
+}
+
+FILE *fopen_workreport(const char *fileName)
+{
+  return fopen_workreport_ext(fileName, REPORT_LEVEL_STATUS);
 }
 
 // Get the delta image time for ALOS data out of the summary file
@@ -142,7 +147,7 @@ int get_alos_processor_version (const char *fileName, double *version)
 {
   char line[512], versionStr[10], *str;
 
-  FILE *fp = fopen_workreport(fileName);
+  FILE *fp = fopen_workreport_ext(fileName, REPORT_LEVEL_NONE);
   if (!fp) {
     // no workreport file...
     *version = 0.0;

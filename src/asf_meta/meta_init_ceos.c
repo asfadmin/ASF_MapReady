@@ -252,7 +252,7 @@ void ceos_init_sar_ext(ceos_description *ceos, const char *in_fName,
   else
     asfPrintError("Should never get here!\n");
 
-  create_cal_params(in_fName, meta);
+  create_cal_params(in_fName, meta, REPORT_LEVEL_NONE);
 
 }
 

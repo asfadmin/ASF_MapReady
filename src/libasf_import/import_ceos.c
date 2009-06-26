@@ -1402,7 +1402,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Initialize calibration if you need to
   if (radiometry >= r_SIGMA && radiometry <= r_GAMMA && meta->sar) 
-    create_cal_params(inMetaName, meta);
+    create_cal_params(inMetaName, meta, REPORT_LEVEL_WARNING);
   else if (radiometry >= r_SIGMA_DB && radiometry <= r_GAMMA_DB && meta->sar)
     create_cal_params_ext(inMetaName, meta, TRUE);    
 
