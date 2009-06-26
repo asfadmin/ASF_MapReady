@@ -1,7 +1,6 @@
 #include "asf_convert_gui.h"
 
 static int db_was_checked = 0;
-static gboolean show_polsarpro_optionmenu;
 
 void export_checkbutton_toggle();
 
@@ -24,20 +23,6 @@ void update_polsarpro_input_file_thumbnails()
   }
 
   show_queued_thumbnails();
-}
-void polsarpro_classification_optionmenu_changed() {
-  GtkWidget *option_menu = get_widget_checked("polsarpro_classification_optionmenu");
-  GtkWidget *browse_option_menu = get_widget_checked("browse_select_colormap_optionmenu");
-  int idx = gtk_option_menu_get_history(GTK_OPTION_MENU(option_menu));
-  gtk_option_menu_set_history(GTK_OPTION_MENU(browse_option_menu), idx);
-  update_polsarpro_input_file_thumbnails();
-}
-void browse_select_colormap_optionmenu_changed() {
-  GtkWidget *option_menu = get_widget_checked("polsarpro_classification_optionmenu");
-  GtkWidget *browse_option_menu = get_widget_checked("browse_select_colormap_optionmenu");
-  int idx = gtk_option_menu_get_history(GTK_OPTION_MENU(browse_option_menu));
-  gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), idx);
-  update_polsarpro_input_file_thumbnails();
 }
 
 void
@@ -112,11 +97,7 @@ input_data_formats_changed()
         *airsar_l_pol_checkbutton,
         *airsar_c_pol_checkbutton,
         *airsar_c_vv_checkbutton,
-        *airsar_l_vv_checkbutton,
-        *polsarpro_classification_optionmenu,
-        *polsarpro_classification_label;
-//        *browse_select_colormap_optionmenu,
-//        *browse_select_colormap_label;
+        *airsar_l_vv_checkbutton;
 
     gboolean show_data_type_combobox;
     gboolean show_latitude_spinbuttons;
@@ -134,7 +115,6 @@ input_data_formats_changed()
     show_latitude_spinbuttons = FALSE;
     show_process_to_level1_checkbutton = FALSE;
     show_airsar_checkbuttons = FALSE;
-    show_polsarpro_optionmenu = FALSE;
     enable_terrain_correction = FALSE;
     enable_polarimetry = FALSE;
     char formats[512];
@@ -156,7 +136,6 @@ input_data_formats_changed()
         show_data_type_combobox = TRUE;
         enable_terrain_correction = TRUE;
         enable_polarimetry = TRUE;
-        show_polsarpro_optionmenu = TRUE;
         if (!strstr(formats, "PolSARpro"))
           strcat(formats, "PolSARpro, ");
       }
@@ -257,23 +236,6 @@ input_data_formats_changed()
       gtk_widget_hide(airsar_c_vv_checkbutton);
       gtk_widget_hide(airsar_l_vv_checkbutton);
       gtk_widget_hide(airsar_label);
-    }
-
-    polsarpro_classification_optionmenu = get_widget_checked("polsarpro_classification_optionmenu");
-    polsarpro_classification_label = get_widget_checked("polsarpro_classification_label");
-//    browse_select_colormap_optionmenu = get_widget_checked("browse_select_colormap_optionmenu");
-//    browse_select_colormap_label = get_widget_checked("browse_select_colormap_label");
-
-    if (show_polsarpro_optionmenu) {
-      gtk_widget_show(polsarpro_classification_optionmenu);
-      gtk_widget_show(polsarpro_classification_label);
-//      gtk_widget_show(browse_select_colormap_optionmenu);
-//      gtk_widget_show(browse_select_colormap_label);
-    } else {
-      gtk_widget_hide(polsarpro_classification_optionmenu);
-      gtk_widget_hide(polsarpro_classification_label);
-//      gtk_widget_hide(browse_select_colormap_optionmenu);
-//      gtk_widget_hide(browse_select_colormap_label);
     }
 
     if (show_process_to_level1_checkbutton)
@@ -601,24 +563,6 @@ SIGNAL_CALLBACK void
 on_show_full_path_names_checkbutton_toggled(GtkWidget *widget)
 {
   show_full_path_names_checkbutton_toggled();
-}
-
-SIGNAL_CALLBACK void
-on_polsarpro_classification_optionmenu_changed(GtkWidget *widget)
-{
-  polsarpro_classification_optionmenu_changed();
-}
-
-SIGNAL_CALLBACK void
-on_browse_select_colormap_optionmenu_changed(GtkWidget *widget)
-{
-  browse_select_colormap_optionmenu_changed();
-}
-
-void
-set_show_polsarpro_optionmenu(gboolean flag)
-{
-  show_polsarpro_optionmenu = flag;
 }
 
 void

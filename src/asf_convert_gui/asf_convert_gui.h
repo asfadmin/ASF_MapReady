@@ -226,6 +226,8 @@ extern int COL_OUTPUT_FILE;
 extern int COL_OUTPUT_FILE_SHORT;
 extern int COL_STATUS;
 extern int COL_LOG;
+extern int COL_POLSARPRO_INFO;
+extern int COL_POLSARPRO_DISPLAY;
 
 extern int COMP_COL_INPUT_FILE;
 extern int COMP_COL_INPUT_FILE_SHORT;
@@ -250,6 +252,13 @@ extern int COMP_COL_METADATA_FILE;
 
 /* asf_convert_gui.c */
 void select_polsarpro_classification_lut(const char *);
+
+/* ceos_thumbnail.c */
+GdkPixbuf *
+make_input_image_thumbnail_pixbuf (const char *input_metadata,
+                                   const char *input_data,
+                                   const char *lut_basename,
+                                   size_t max_thumbnail_dimension);
 
 /* settings.c */
 Settings *settings_get_from_gui();
@@ -278,10 +287,11 @@ void settings_update_dem(Settings *s, const char *output_path);
 void settings_delete_dem_and_mask(Settings *s);
 void settings_update_mask(Settings *s, const char *output_path);
 char *settings_to_config_file(const Settings *s,
-           const gchar *input_file, const gchar *ancillary_file,
-           const gchar *meta_file,
-           const gchar *output_file, const gchar *output_path,
-           const gchar *tmp_dir);
+      const gchar *input_file, const gchar *ancillary_file,
+      const gchar *meta_file,
+      const gchar *output_full, const gchar *output_path,
+      const gchar *tmp_dir,
+      const gchar *polsarpro_aux_info);
 int apply_settings_from_config_file(char *configFile);
 void default_to_keep_temp(void);
 
@@ -338,6 +348,8 @@ gboolean is_geotiff(const char *infile);
 gboolean is_asf_internal(const char *infile);
 gboolean is_airsar(const char *infile);
 gboolean is_terrasarx(const char *infile);
+char *extract_lut_name(const char *polsarpro_aux_info);
+int extract_classification_flag(const char *polsarpro_aux_info);
 
 /* dnd.c */
 void setup_dnd();
@@ -354,7 +366,7 @@ void setup_files_list();
 void populate_files_list(int, char **);
 void refresh_file_names();
 gboolean add_to_files_list(const gchar *);
-gboolean add_to_files_list_iter(const gchar *, const gchar *, const gchar *, GtkTreeIter *);
+gboolean add_to_files_list_iter(const gchar *, const gchar *, const gchar *, const gchar *, GtkTreeIter *);
 gboolean add_to_ancillary_files_list(const gchar *);
 void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);

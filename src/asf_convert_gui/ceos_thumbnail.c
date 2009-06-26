@@ -734,7 +734,7 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
 // colorize it
 static GdkPixbuf *
 make_polsarpro_thumb(const char *input_metadata, const char *input_data,
-                     size_t max_thumbnail_dimension)
+                     const char *lut_basename, size_t max_thumbnail_dimension)
 {
   FILE *fpIn = fopen(input_data, "rb");
   if (!fpIn)
@@ -747,10 +747,6 @@ make_polsarpro_thumb(const char *input_metadata, const char *input_data,
   envi_header *envi = read_envi((char*)input_metadata); // Read the .bin.hdr file
   meta_parameters *meta = envi2meta(envi);
 
-  GtkWidget *option_menu = get_widget_checked("polsarpro_classification_optionmenu");
-  GtkWidget *menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(option_menu));
-  GtkWidget *selected_item = gtk_menu_get_active(GTK_MENU(menu));
-  char *lut_basename = g_object_get_data(G_OBJECT(selected_item), "file");
   if (lut_basename && strlen(lut_basename)) {
     apply_polsarpro_palette_to_metadata(lut_basename, meta);
   }
@@ -1199,6 +1195,7 @@ make_terrasarx_thumb(const char *input_metadata, const char *input_data,
 GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    const char *input_data,
+                                   const char *lut_basename,
                                    size_t max_thumbnail_dimension)
 {
     /* This can happen if we don't get around to drawing the thumbnail
@@ -1225,7 +1222,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     // PolSARpro...
     if (is_polsarpro(input_data))
       return make_polsarpro_thumb(input_metadata, input_data,
-                                  max_thumbnail_dimension);
+                                  lut_basename, max_thumbnail_dimension);
 
     if (is_terrasarx(input_metadata))
         return make_terrasarx_thumb(input_metadata, input_data,

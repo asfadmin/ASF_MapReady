@@ -69,7 +69,6 @@ settings_apply_to_gui(const Settings * s)
         get_widget_checked("apply_metadata_fix_checkbutton");
 
     set_combo_box_item(input_data_type_combobox, s->data_type);
-    select_polsarpro_classification_lut(s->polsarpro_colormap);
 
     if (s->process_to_level1)
     {
@@ -545,14 +544,8 @@ settings_get_from_gui()
          ret->data_type == INPUT_TYPE_BETA ||
          ret->data_type == INPUT_TYPE_GAMMA);
 
-    GtkWidget *polsarpro_classification_optionmenu =
-        get_widget_checked("polsarpro_classification_optionmenu");
-    GtkWidget *pc_menu = gtk_option_menu_get_menu(
-        GTK_OPTION_MENU(polsarpro_classification_optionmenu));
-    GtkWidget *selected_classification = gtk_menu_get_active(GTK_MENU(pc_menu));
-    char *classification_lut = g_object_get_data(G_OBJECT(selected_classification), "file");
+    // this one is set on a per-file basis
     strcpy(ret->polsarpro_colormap, "");
-    if (classification_lut) strcpy(ret->polsarpro_colormap, classification_lut);
 
     ret->process_to_level1 = 0; // Was set equal to the following expression
         //gtk_toggle_button_get_active(
@@ -1375,9 +1368,9 @@ get_input_data_format_string(int input_data_format)
 char *
 settings_to_config_file(const Settings *s,
       const gchar *input_file, const gchar *ancillary_file,
-      const gchar *meta_file,
-      const gchar *output_full, const gchar *output_path,
-      const gchar *tmp_dir)
+      const gchar *meta_file, const gchar *output_full,
+      const gchar *output_path, const gchar *tmp_dir,
+      const gchar *polsarpro_aux_info)
 {
     char *tmp_projfile = NULL;
     char *tmp_cfgfile;
@@ -1385,6 +1378,8 @@ settings_to_config_file(const Settings *s,
     char *output_file;
     char *output_basename;
     char *input_basename;
+    char *lut_basename = extract_lut_name(polsarpro_aux_info);
+    int classification = extract_classification_flag(polsarpro_aux_info);
     int input_data_format;
 
     if (strlen(meta_file)>0)
@@ -1595,7 +1590,10 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "multilook SLC = %d\n", multilook_on_import ? 1 : 0);
     fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
     if (input_data_format == INPUT_FORMAT_POLSARPRO) {
-      fprintf(cf, "polsarpro colormap = %s\n", s->polsarpro_colormap);
+      if (strlen(lut_basename)>0 &&
+          strcmp_case(lut_basename,"none")!=0)
+        fprintf(cf, "polsarpro colormap = %s\n", lut_basename);
+      fprintf(cf, "classification = %d\n", classification);
     }
     if (meta_file && strlen(meta_file)>0) {
       fprintf(cf, "metadata file = %s\n", meta_file);
@@ -2096,22 +2094,22 @@ int apply_settings_from_config_file(char *configFile)
       if (ext_type == CEOS_LED)
       {
         // alos -- pass in metadata name
-        add_to_files_list_iter(metaName[0], NULL, NULL, &iter);
+        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, &iter);
       }
       else if (is_polsarpro(cfg->general->in_name)) {
         // PolSARpro -- pass in the data name
-        add_to_files_list_iter(cfg->general->in_name, NULL, NULL, &iter);
+        add_to_files_list_iter(cfg->general->in_name, NULL, NULL, "None", &iter);
       }
       else
       {
         // regular ceos -- determine data file name
         int nBands;
 
-        add_to_files_list_iter(metaName[0], NULL, NULL, &iter);
+        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, &iter);
         get_ceos_data_name(cfg->general->in_name, baseName, &dataNames, &nBands);
         assert(nBands == 1);
 
-        add_to_files_list_iter(dataNames[0], NULL, NULL, &iter);
+        add_to_files_list_iter(dataNames[0], NULL, NULL, NULL, &iter);
       }
 
       free_ceos_names(dataNames, metaName);

@@ -261,7 +261,6 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         put_string_to_label("add_with_ancillary_format_label", "PolSARPro");
         gtk_widget_show(browse_select_colormap_optionmenu);
         gtk_widget_show(browse_select_colormap_label);
-//        set_show_polsarpro_optionmenu(TRUE);
         break;
       default:
         put_string_to_label("add_with_ancillary_format_label", "Unknown");
@@ -780,6 +779,7 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
   GtkTreeIter iter;
   int ok=TRUE;
   char *data=NULL;
+  char *aux_info="";
 
   switch (sel) {
     case ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO:
@@ -794,8 +794,28 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
         return;
       }
       else {
+        GtkWidget *browse_option_menu =
+          get_widget_checked("browse_select_colormap_optionmenu");
+        GtkWidget *menu = gtk_option_menu_get_menu(
+          GTK_OPTION_MENU(browse_option_menu));
+        GtkWidget *selected_item = gtk_menu_get_active(GTK_MENU(menu));
+        int classification_flag =
+          get_checked("polsarpro_classification_checkbutton");
+
+        char *lut_basename = g_object_get_data(G_OBJECT(selected_item), "file");
+        if (lut_basename) {
+          aux_info = MALLOC(sizeof(char)*(strlen(lut_basename)+25));
+          sprintf(aux_info, "%d;%s", classification_flag, lut_basename);
+        }
+        else {
+          aux_info = MALLOC(sizeof(char)*25);
+          sprintf(aux_info, "%d;none", classification_flag);
+        }
+
         put_string_to_label("add_with_ancillary_error_label", "");
-        ok = add_to_files_list_iter(data, ceos, NULL, &iter);
+        ok = add_to_files_list_iter(data, ceos, NULL, aux_info, &iter);
+
+        free(aux_info);
       }
       break;
     }
@@ -814,7 +834,7 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
       }
       else {
         put_string_to_label("add_with_ancillary_error_label", "");
-        ok = add_to_files_list_iter(data, ceos, meta, &iter);
+        ok = add_to_files_list_iter(data, ceos, meta, aux_info, &iter);
       }
       break;
     }

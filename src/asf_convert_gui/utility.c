@@ -479,3 +479,28 @@ gboolean is_terrasarx(const char *infile)
     return TRUE;
   return FALSE;
 }
+
+char *extract_lut_name(const char *polsarpro_aux_info)
+{
+  if (!polsarpro_aux_info || strlen(polsarpro_aux_info)==0)
+    return STRDUP("");
+
+  char *p = strchr(polsarpro_aux_info, ';');
+  if (p) {
+    ++p;
+    if (strcmp_case(p, "None")==0)
+      return STRDUP("");
+    else
+      return STRDUP(p);
+  }
+  else {
+    return STRDUP("");
+  }
+}
+
+int extract_classification_flag(const char *polsarpro_aux_info)
+{
+  if (!polsarpro_aux_info || strlen(polsarpro_aux_info)==0)
+    return 0;
+  return polsarpro_aux_info[0]=='1';
+}

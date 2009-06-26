@@ -560,7 +560,8 @@ static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
              int is_first)
 {
-    gchar *in_file, *out_full, *ancillary_file, *meta_file, *status;
+    gchar *in_file, *out_full, *ancillary_file, *meta_file,
+          *status, *polsarpro_aux_info;
     int pid;
 
     pid = getpid();
@@ -571,6 +572,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         COL_METADATA_FILE, &meta_file,
         COL_OUTPUT_FILE, &out_full,
         COL_STATUS, &status,
+        COL_POLSARPRO_INFO, &polsarpro_aux_info,
         -1);
 
     if (strcmp(status, "Done") != 0 || !skip_done)
@@ -613,7 +615,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             settings_to_config_file(user_settings,
                                     in_file, ancillary_file, meta_file,
                                     out_full, output_dir,
-                                    tmp_dir);
+                                    tmp_dir, polsarpro_aux_info);
         if (!config_file) {
             err_string = "Error creating configuration file.";
             gtk_list_store_set(list_store, iter, COL_STATUS, err_string, -1);
@@ -665,6 +667,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
     g_free(ancillary_file);
     g_free(meta_file);
     g_free(in_file);
+    g_free(polsarpro_aux_info);
 }
 
 void
