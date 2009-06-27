@@ -1001,11 +1001,31 @@ handle_view_input()
     if (get_iter_to_first_selected_row(files_list, list_store, &iter))
     {
         gchar * in_name;
+        gchar * polsarpro_aux_info;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-                           COL_INPUT_FILE, &in_name, -1);
-        show_image_with_asf_view(in_name);
+                           COL_INPUT_FILE, &in_name,
+                           COL_POLSARPRO_INFO, &polsarpro_aux_info,
+                           -1);
+
+        if (polsarpro_aux_info && strlen(polsarpro_aux_info)>0) {
+          char *lut_name = extract_lut_name(polsarpro_aux_info);
+          if (lut_name && strlen(lut_name)>0) {
+            char *arg = MALLOC(sizeof(char)*(strlen(lut_name)+16));
+            sprintf(arg, "-colormap %s", lut_name);
+            show_image_with_asf_view_arg(in_name, arg);
+            free(arg);
+          }
+          else
+            show_image_with_asf_view(in_name);
+          if (lut_name)
+            free(lut_name);
+        }
+        else
+          show_image_with_asf_view(in_name);
+
         g_free(in_name);
+        g_free(polsarpro_aux_info);
     }
     else
     {
