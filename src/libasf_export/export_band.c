@@ -886,165 +886,6 @@ export_band_image (const char *metadata_file_name,
             ignored[ii] = 1;
         }
     }
-
-    channel_stats_t red_stats, blue_stats, green_stats;
-    red_stats.hist = NULL; red_stats.hist_pdf = NULL;
-    green_stats.hist = NULL; green_stats.hist_pdf = NULL;
-    blue_stats.hist = NULL; blue_stats.hist_pdf = NULL;
-
-    if (!md->optical) {
-      asfRequire (sizeof(unsigned char) == 1,
-                  "Size of the unsigned char data type on this machine is "
-                  "different than expected.\n");
-
-        /*** Normal straight per-channel stats (no combined-band stats) */
-
-        // Red channel statistics
-        if (!ignored[0]                           &&  // Non-blank band
-            sample_mapping != NONE                &&  // Float-to-byte resampling needed
-            sample_mapping != HISTOGRAM_EQUALIZE  &&  // A histogram is not needed
-            md->stats      != NULL                &&  // Stats exist and are valid
-            md->stats       > 0                   &&
-            meta_is_valid_string(band_name[0])    &&  // Band name exists and is valid
-            strlen(band_name[0]) > 0)
-        {
-          // If the stats already exist, then use them
-          int band_no = get_band_number(md->general->bands,
-                                        md->general->band_count,
-                                        band_name[0]);
-          red_stats.min  = md->stats->band_stats[band_no].min;
-          red_stats.max  = md->stats->band_stats[band_no].max;
-          red_stats.mean = md->stats->band_stats[band_no].mean;
-          red_stats.standard_deviation = md->stats->band_stats[band_no].std_deviation;
-          red_stats.hist     = NULL;
-          red_stats.hist_pdf = NULL;
-          if (sample_mapping == SIGMA) {
-            double omin = red_stats.mean - 2*red_stats.standard_deviation;
-            double omax = red_stats.mean + 2*red_stats.standard_deviation;
-            if (omin > red_stats.min) red_stats.min = omin;
-            if (omax < red_stats.max) red_stats.max = omax;
-          }
-        }
-        else {
-          // Calculate the stats if you have to...
-          if (sample_mapping != NONE && !ignored[0]) { // byte image
-            asfPrintStatus("\nGathering red channel statistics ...\n");
-            calc_stats_from_file(image_data_file_name, band_name[0],
-                                md->general->no_data,
-                                &red_stats.min, &red_stats.max, &red_stats.mean,
-                                &red_stats.standard_deviation, &red_stats.hist);
-            if (sample_mapping == SIGMA) {
-              double omin = red_stats.mean - 2*red_stats.standard_deviation;
-              double omax = red_stats.mean + 2*red_stats.standard_deviation;
-              if (omin > red_stats.min) red_stats.min = omin;
-              if (omax < red_stats.max) red_stats.max = omax;
-            }
-            if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-              red_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
-              gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
-            }
-          }
-        }
-
-        // Green channel statistics
-        if (!ignored[0]                           &&  // Non-blank band
-             sample_mapping != NONE                &&  // Float-to-byte resampling needed
-             sample_mapping != HISTOGRAM_EQUALIZE  &&  // A histogram is not needed
-             md->stats      != NULL                &&  // Stats exist and are valid
-             md->stats       > 0                   &&
-             meta_is_valid_string(band_name[0])    &&  // Band name exists and is valid
-             strlen(band_name[0]) > 0)
-        {
-          // If the stats already exist, then use them
-          int band_no = get_band_number(md->general->bands,
-                                        md->general->band_count,
-                                        band_name[0]);
-          green_stats.min  = md->stats->band_stats[band_no].min;
-          green_stats.max  = md->stats->band_stats[band_no].max;
-          green_stats.mean = md->stats->band_stats[band_no].mean;
-          green_stats.standard_deviation = md->stats->band_stats[band_no].std_deviation;
-          green_stats.hist     = NULL;
-          green_stats.hist_pdf = NULL;
-          if (sample_mapping == SIGMA) {
-            double omin = green_stats.mean - 2*green_stats.standard_deviation;
-            double omax = green_stats.mean + 2*green_stats.standard_deviation;
-            if (omin > green_stats.min) green_stats.min = omin;
-            if (omax < green_stats.max) green_stats.max = omax;
-          }
-        }
-        else {
-          // Calculate the stats if you have to...
-          if (sample_mapping != NONE && !ignored[1]) { // byte image
-            asfPrintStatus("\nGathering green channel statistics ...\n");
-            calc_stats_from_file(image_data_file_name, band_name[1],
-                                md->general->no_data,
-                                &green_stats.min, &green_stats.max,
-                                &green_stats.mean,
-                                &green_stats.standard_deviation,
-                                &green_stats.hist);
-            if (sample_mapping == SIGMA) {
-              double omin = green_stats.mean - 2*green_stats.standard_deviation;
-              double omax = green_stats.mean + 2*green_stats.standard_deviation;
-              if (omin > green_stats.min) green_stats.min = omin;
-              if (omax < green_stats.max) green_stats.max = omax;
-            }
-            if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-              green_stats.hist_pdf = gsl_histogram_pdf_alloc(256);
-              gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
-            }
-          }
-        }
-
-        // Blue channel statistics
-        if (!ignored[0]                           &&  // Non-blank band
-             sample_mapping != NONE                &&  // Float-to-byte resampling needed
-             sample_mapping != HISTOGRAM_EQUALIZE  &&  // A histogram is not needed
-             md->stats      != NULL                &&  // Stats exist and are valid
-             md->stats       > 0                   &&
-             meta_is_valid_string(band_name[0])    &&  // Band name exists and is valid
-             strlen(band_name[0]) > 0)
-        {
-          // If the stats already exist, then use them
-          int band_no = get_band_number(md->general->bands,
-                                        md->general->band_count,
-                                        band_name[0]);
-          blue_stats.min  = md->stats->band_stats[band_no].min;
-          blue_stats.max  = md->stats->band_stats[band_no].max;
-          blue_stats.mean = md->stats->band_stats[band_no].mean;
-          blue_stats.standard_deviation = md->stats->band_stats[band_no].std_deviation;
-          blue_stats.hist     = NULL;
-          blue_stats.hist_pdf = NULL;
-          if (sample_mapping == SIGMA) {
-            double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
-            double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
-            if (omin > blue_stats.min) blue_stats.min = omin;
-            if (omax < blue_stats.max) blue_stats.max = omax;
-          }
-        }
-        else {
-          // Calculate the stats if you have to...
-          if (sample_mapping != NONE && !ignored[2]) { // byte image
-            asfPrintStatus("\nGathering blue channel statistics ...\n");
-            calc_stats_from_file(image_data_file_name, band_name[2],
-                                md->general->no_data,
-                                &blue_stats.min, &blue_stats.max,
-                                &blue_stats.mean,
-                                &blue_stats.standard_deviation,
-                                &blue_stats.hist);
-            if (sample_mapping == SIGMA) {
-              double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
-              double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
-              if (omin > blue_stats.min) blue_stats.min = omin;
-              if (omax < blue_stats.max) blue_stats.max = omax;
-            }
-            if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-              blue_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
-              gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
-            }
-          }
-        }
-    }
-
     red_channel = get_band_number(md->general->bands,
                                   md->general->band_count,
                                   band_name[0]);
@@ -1067,6 +908,164 @@ export_band_image (const char *metadata_file_name,
                     blue_channel, "blue");
     }
 
+    channel_stats_t red_stats, blue_stats, green_stats;
+    red_stats.hist = NULL; red_stats.hist_pdf = NULL;
+    green_stats.hist = NULL; green_stats.hist_pdf = NULL;
+    blue_stats.hist = NULL; blue_stats.hist_pdf = NULL;
+
+    if (!md->optical) {
+      asfRequire (sizeof(unsigned char) == 1,
+                  "Size of the unsigned char data type on this machine is "
+                  "different than expected.\n");
+
+        /*** Normal straight per-channel stats (no combined-band stats) */
+
+        // Red channel statistics
+        if (!ignored[red_channel]                           &&  // Non-blank band
+            sample_mapping != NONE                          &&  // Float-to-byte resampling needed
+            sample_mapping != HISTOGRAM_EQUALIZE            &&  // A histogram is not needed
+            md->stats      != NULL                          &&  // Stats exist and are valid
+            md->stats       > 0                             &&
+            meta_is_valid_string(band_name[red_channel])    &&  // Band name exists and is valid
+            strlen(band_name[red_channel]) > 0)
+        {
+          // If the stats already exist, then use them
+          int band_no = get_band_number(md->general->bands,
+                                        md->general->band_count,
+                                        band_name[red_channel]);
+          red_stats.min  = md->stats->band_stats[band_no].min;
+          red_stats.max  = md->stats->band_stats[band_no].max;
+          red_stats.mean = md->stats->band_stats[band_no].mean;
+          red_stats.standard_deviation = md->stats->band_stats[band_no].std_deviation;
+          red_stats.hist     = NULL;
+          red_stats.hist_pdf = NULL;
+          if (sample_mapping == SIGMA) {
+            double omin = red_stats.mean - 2*red_stats.standard_deviation;
+            double omax = red_stats.mean + 2*red_stats.standard_deviation;
+            if (omin > red_stats.min) red_stats.min = omin;
+            if (omax < red_stats.max) red_stats.max = omax;
+          }
+        }
+        else {
+          // Calculate the stats if you have to...
+          if (sample_mapping != NONE && !ignored[red_channel]) { // byte image
+            asfPrintStatus("\nGathering red channel statistics ...\n");
+            calc_stats_from_file(image_data_file_name, band_name[red_channel],
+                                md->general->no_data,
+                                &red_stats.min, &red_stats.max, &red_stats.mean,
+                                &red_stats.standard_deviation, &red_stats.hist);
+            if (sample_mapping == SIGMA) {
+              double omin = red_stats.mean - 2*red_stats.standard_deviation;
+              double omax = red_stats.mean + 2*red_stats.standard_deviation;
+              if (omin > red_stats.min) red_stats.min = omin;
+              if (omax < red_stats.max) red_stats.max = omax;
+            }
+            if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+              red_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
+              gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
+            }
+          }
+        }
+
+        // Green channel statistics
+        if (!ignored[green_channel]                          &&  // Non-blank band
+             sample_mapping != NONE                          &&  // Float-to-byte resampling needed
+             sample_mapping != HISTOGRAM_EQUALIZE            &&  // A histogram is not needed
+             md->stats      != NULL                          &&  // Stats exist and are valid
+             md->stats       > 0                             &&
+             meta_is_valid_string(band_name[green_channel])  &&  // Band name exists and is valid
+             strlen(band_name[green_channel]) > 0)
+        {
+          // If the stats already exist, then use them
+          int band_no = get_band_number(md->general->bands,
+                                        md->general->band_count,
+                                        band_name[green_channel]);
+          green_stats.min  = md->stats->band_stats[band_no].min;
+          green_stats.max  = md->stats->band_stats[band_no].max;
+          green_stats.mean = md->stats->band_stats[band_no].mean;
+          green_stats.standard_deviation = md->stats->band_stats[band_no].std_deviation;
+          green_stats.hist     = NULL;
+          green_stats.hist_pdf = NULL;
+          if (sample_mapping == SIGMA) {
+            double omin = green_stats.mean - 2*green_stats.standard_deviation;
+            double omax = green_stats.mean + 2*green_stats.standard_deviation;
+            if (omin > green_stats.min) green_stats.min = omin;
+            if (omax < green_stats.max) green_stats.max = omax;
+          }
+        }
+        else {
+          // Calculate the stats if you have to...
+          if (sample_mapping != NONE && !ignored[green_channel]) { // byte image
+            asfPrintStatus("\nGathering green channel statistics ...\n");
+            calc_stats_from_file(image_data_file_name, band_name[green_channel],
+                                md->general->no_data,
+                                &green_stats.min, &green_stats.max,
+                                &green_stats.mean,
+                                &green_stats.standard_deviation,
+                                &green_stats.hist);
+            if (sample_mapping == SIGMA) {
+              double omin = green_stats.mean - 2*green_stats.standard_deviation;
+              double omax = green_stats.mean + 2*green_stats.standard_deviation;
+              if (omin > green_stats.min) green_stats.min = omin;
+              if (omax < green_stats.max) green_stats.max = omax;
+            }
+            if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+              green_stats.hist_pdf = gsl_histogram_pdf_alloc(256);
+              gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
+            }
+          }
+        }
+
+        // Blue channel statistics
+        if (!ignored[blue_channel]                          &&  // Non-blank band
+             sample_mapping != NONE                         &&  // Float-to-byte resampling needed
+             sample_mapping != HISTOGRAM_EQUALIZE           &&  // A histogram is not needed
+             md->stats      != NULL                         &&  // Stats exist and are valid
+             md->stats       > 0                            &&
+             meta_is_valid_string(band_name[blue_channel])  &&  // Band name exists and is valid
+             strlen(band_name[blue_channel]) > 0)
+        {
+          // If the stats already exist, then use them
+          int band_no = get_band_number(md->general->bands,
+                                        md->general->band_count,
+                                        band_name[blue_channel]);
+          blue_stats.min  = md->stats->band_stats[band_no].min;
+          blue_stats.max  = md->stats->band_stats[band_no].max;
+          blue_stats.mean = md->stats->band_stats[band_no].mean;
+          blue_stats.standard_deviation = md->stats->band_stats[band_no].std_deviation;
+          blue_stats.hist     = NULL;
+          blue_stats.hist_pdf = NULL;
+          if (sample_mapping == SIGMA) {
+            double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
+            double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
+            if (omin > blue_stats.min) blue_stats.min = omin;
+            if (omax < blue_stats.max) blue_stats.max = omax;
+          }
+        }
+        else {
+          // Calculate the stats if you have to...
+          if (sample_mapping != NONE && !ignored[blue_channel]) { // byte image
+            asfPrintStatus("\nGathering blue channel statistics ...\n");
+            calc_stats_from_file(image_data_file_name, band_name[blue_channel],
+                                md->general->no_data,
+                                &blue_stats.min, &blue_stats.max,
+                                &blue_stats.mean,
+                                &blue_stats.standard_deviation,
+                                &blue_stats.hist);
+            if (sample_mapping == SIGMA) {
+              double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
+              double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
+              if (omin > blue_stats.min) blue_stats.min = omin;
+              if (omax < blue_stats.max) blue_stats.max = omax;
+            }
+            if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+              blue_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
+              gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
+            }
+          }
+        }
+    }
+
     float *red_float_line = NULL;
     float *green_float_line = NULL;
     float *blue_float_line = NULL;
@@ -1083,17 +1082,17 @@ export_band_image (const char *metadata_file_name,
 
     // Allocate some memory
     if (md->optical || md->general->data_type == BYTE) {
-      if (ignored[0])
+      if (ignored[red_channel])
         red_byte_line = (unsigned char *) CALLOC(sample_count, sizeof(char));
       else
         red_byte_line = (unsigned char *) MALLOC(sample_count * sizeof(char));
 
-      if (ignored[1])
+      if (ignored[green_channel])
         green_byte_line = (unsigned char *) CALLOC(sample_count, sizeof(char));
       else
         green_byte_line = (unsigned char *) MALLOC(sample_count * sizeof(char));
 
-      if (ignored[2])
+      if (ignored[blue_channel])
         blue_byte_line = (unsigned char *) CALLOC(sample_count, sizeof(char));
       else
         blue_byte_line = (unsigned char *) MALLOC(sample_count * sizeof(char));
@@ -1101,21 +1100,21 @@ export_band_image (const char *metadata_file_name,
     else {
       // Not optical data
       red_float_line = (float *) MALLOC(sample_count * sizeof(float));
-      if (ignored[0]){
+      if (ignored[red_channel]){
         for (ii=0; ii<sample_count; ++ii) {
           red_float_line[ii] = md->general->no_data;
         }
       }
 
       green_float_line = (float *) MALLOC(sample_count * sizeof(float));
-      if (ignored[1]) {
+      if (ignored[green_channel]) {
         for (ii=0; ii<sample_count; ++ii) {
           green_float_line[ii] = md->general->no_data;
         }
       }
 
       blue_float_line = (float *) MALLOC(sample_count * sizeof(float));
-      if (ignored[2]) {
+      if (ignored[blue_channel]) {
         for (ii=0; ii<sample_count; ++ii) {
           blue_float_line[ii] = md->general->no_data;
         }
@@ -1148,16 +1147,16 @@ export_band_image (const char *metadata_file_name,
                      true_color ? "True Color" : false_color ? "False Color" : "Unknown");
 
       // Set up red resampling
-      if (md->stats                           &&
-          md->stats->band_count >= 3          &&
-          meta_is_valid_string(band_name[0])  &&
-          strlen(band_name[0]) > 0            &&
+      if (md->stats                                     &&
+          md->stats->band_count >= 3                    &&
+          meta_is_valid_string(band_name[red_channel])  &&
+          strlen(band_name[red_channel]) > 0            &&
           sample_mapping != HISTOGRAM_EQUALIZE)
       {
           // If the stats already exist, then use them
         int band_no = get_band_number(md->general->bands,
                                       md->general->band_count,
-                                      band_name[0]);
+                                      band_name[red_channel]);
         red_stats.min  = md->stats->band_stats[band_no].min;
         red_stats.max  = md->stats->band_stats[band_no].max;
         red_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1167,7 +1166,7 @@ export_band_image (const char *metadata_file_name,
       }
       else {
         asfPrintStatus("\nGathering red channel statistics...\n");
-        calc_stats_from_file(image_data_file_name, band_name[0],
+        calc_stats_from_file(image_data_file_name, band_name[red_channel],
                              md->general->no_data,
                              &red_stats.min, &red_stats.max, &red_stats.mean,
                              &red_stats.standard_deviation, &red_stats.hist);
@@ -1178,16 +1177,16 @@ export_band_image (const char *metadata_file_name,
       if (r_omax > red_stats.max) r_omax = red_stats.max;
 
       // Set up green resampling
-      if (md->stats                           &&
-          md->stats->band_count >= 3          &&
-          meta_is_valid_string(band_name[1])  &&
-          strlen(band_name[1]) > 0            &&
+      if (md->stats                                       &&
+          md->stats->band_count >= 3                      &&
+          meta_is_valid_string(band_name[green_channel])  &&
+          strlen(band_name[green_channel]) > 0            &&
           sample_mapping != HISTOGRAM_EQUALIZE)
       {
         // If the stats already exist, then use them
         int band_no = get_band_number(md->general->bands,
                                       md->general->band_count,
-                                      band_name[1]);
+                                      band_name[green_channel]);
         green_stats.min  = md->stats->band_stats[band_no].min;
         green_stats.max  = md->stats->band_stats[band_no].max;
         green_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1197,7 +1196,7 @@ export_band_image (const char *metadata_file_name,
       }
       else {
         asfPrintStatus("\nGathering green channel statistics...\n");
-        calc_stats_from_file(image_data_file_name, band_name[1],
+        calc_stats_from_file(image_data_file_name, band_name[green_channel],
                               md->general->no_data,
                               &green_stats.min, &green_stats.max, &green_stats.mean,
                               &green_stats.standard_deviation, &green_stats.hist);
@@ -1208,16 +1207,16 @@ export_band_image (const char *metadata_file_name,
       if (g_omax > green_stats.max) g_omax = green_stats.max;
 
       // Set up blue resampling
-      if (md->stats                           &&
-          md->stats->band_count >= 3          &&
-          meta_is_valid_string(band_name[2])  &&
-          strlen(band_name[2]) > 0            &&
+      if (md->stats                                      &&
+          md->stats->band_count >= 3                     &&
+          meta_is_valid_string(band_name[blue_channel])  &&
+          strlen(band_name[blue_channel]) > 0            &&
           sample_mapping != HISTOGRAM_EQUALIZE)
       {
         // If the stats already exist, then use them
         int band_no = get_band_number(md->general->bands,
                                       md->general->band_count,
-                                      band_name[2]);
+                                      band_name[blue_channel]);
         blue_stats.min  = md->stats->band_stats[band_no].min;
         blue_stats.max  = md->stats->band_stats[band_no].max;
         blue_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1227,7 +1226,7 @@ export_band_image (const char *metadata_file_name,
       }
       else {
         asfPrintStatus("\nGathering blue channel statistics...\n\n");
-        calc_stats_from_file(image_data_file_name, band_name[2],
+        calc_stats_from_file(image_data_file_name, band_name[blue_channel],
                              md->general->no_data,
                              &blue_stats.min, &blue_stats.max, &blue_stats.mean,
                              &blue_stats.standard_deviation, &blue_stats.hist);
@@ -1243,11 +1242,11 @@ export_band_image (const char *metadata_file_name,
     for (ii=0; ii<md->general->line_count; ii++) {
       if (md->optical || md->general->data_type == BYTE) {
         // Optical images come as byte in the first place
-        if (!ignored[0])
+        if (!ignored[red_channel])
           get_byte_line(fp, md, ii+red_channel*offset, red_byte_line);
-        if (!ignored[1])
+        if (!ignored[green_channel])
           get_byte_line(fp, md, ii+green_channel*offset, green_byte_line);
-        if (!ignored[2])
+        if (!ignored[blue_channel])
           get_byte_line(fp, md, ii+blue_channel*offset, blue_byte_line);
         // If true or false color flag was set, then (re)sample with 2-sigma
         // contrast expansion
@@ -1282,11 +1281,11 @@ export_band_image (const char *metadata_file_name,
       }
       else if (sample_mapping == NONE) {
         // Write float->float lines if float image
-        if (!ignored[0])
+        if (!ignored[red_channel])
           get_float_line(fp, md, ii+red_channel*offset, red_float_line);
-        if (!ignored[1])
+        if (!ignored[green_channel])
           get_float_line(fp, md, ii+green_channel*offset, green_float_line);
-        if (!ignored[2])
+        if (!ignored[blue_channel])
           get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
         if (format == GEOTIFF || format == TIF)
           write_rgb_tiff_float2float(otif, red_float_line, green_float_line,
@@ -1296,11 +1295,11 @@ export_band_image (const char *metadata_file_name,
       }
       else {
         // Write float->byte lines if byte image
-        if (!ignored[0])
+        if (!ignored[red_channel])
           get_float_line(fp, md, ii+red_channel*offset, red_float_line);
-        if (!ignored[1])
+        if (!ignored[green_channel])
           get_float_line(fp, md, ii+green_channel*offset, green_float_line);
-        if (!ignored[2])
+        if (!ignored[blue_channel])
           get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
         if (format == TIF || format == GEOTIFF)
           write_rgb_tiff_float2byte(otif, red_float_line, green_float_line,
