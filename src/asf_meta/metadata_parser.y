@@ -1201,6 +1201,10 @@ void fill_structure_field(char *field_name, void *valp)
         alos_cal_params *alos = (alos_cal_params *) MALLOC(sizeof(alos_cal_params));
         (MCALIBRATION)->alos = alos;
         (MCALIBRATION)->type = alos_cal;
+	(MCALIBRATION)->alos->cf_hh = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->alos->cf_hv = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->alos->cf_vh = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->alos->cf_vv = MAGIC_UNSET_DOUBLE;
         return;
       }
     }
