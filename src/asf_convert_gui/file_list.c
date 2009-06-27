@@ -870,9 +870,14 @@ add_to_files_list_iter(const gchar *input_file_in,
             if (p) {
               polsarpro_display =
                 g_malloc(sizeof(gchar)*strlen(polsarpro_aux_info)+64);
-              const char *c = polsarpro_aux_info[0]=='1' ? " (Classification)" : "";
-              if (strcmp_case(p+1, "none")==0) {
-                sprintf(polsarpro_display, "No colormap%s", c);
+              int is_classification = polsarpro_aux_info[0]=='1';
+              int is_colormapped = strcmp_case(p+1, "none")!=0;
+              const char *c = is_classification ? " (Classification)" : "";
+              if (!is_colormapped && !is_classification) {
+                strcpy(polsarpro_display, "-");
+              }
+              else if (!is_colormapped) {
+                sprintf(polsarpro_display, "Greyscale%s", c);
               }
               else {
                 sprintf(polsarpro_display, "%s%s", p+1, c);

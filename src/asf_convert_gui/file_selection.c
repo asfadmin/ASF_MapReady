@@ -261,6 +261,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         put_string_to_label("add_with_ancillary_format_label", "PolSARPro");
         gtk_widget_show(browse_select_colormap_optionmenu);
         gtk_widget_show(browse_select_colormap_label);
+        polsarpro_classification_checkbutton_toggled();
         break;
       default:
         put_string_to_label("add_with_ancillary_format_label", "Unknown");

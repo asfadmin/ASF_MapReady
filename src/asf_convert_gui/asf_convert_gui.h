@@ -318,6 +318,7 @@ void external_settings_changed();
 void input_data_type_combobox_changed();
 void clear_completed_tmp_dirs();
 void set_show_polsarpro_optionmenu(gboolean flag);
+void polsarpro_classification_checkbutton_toggled();
 
 /* utility.c */
 void setup_band_comboboxes();

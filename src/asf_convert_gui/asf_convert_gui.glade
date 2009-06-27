@@ -9369,6 +9369,7 @@ uso@asf.alaska.edu</property>
 					      <property name="active">False</property>
 					      <property name="inconsistent">False</property>
 					      <property name="draw_indicator">True</property>
+					      <signal name="toggled" handler="on_polsarpro_classification_checkbutton_toggled" last_modification_time="Fri, 26 Jun 2009 21:38:06 GMT"/>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">1</property>

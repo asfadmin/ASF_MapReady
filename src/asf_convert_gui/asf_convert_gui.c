@@ -351,11 +351,7 @@ void select_polsarpro_classification_lut(const char *lut_basename)
   int which = GPOINTER_TO_INT(
                   g_hash_table_lookup(g_polsarpro_classification_optionmenu_ht,
                                       lut_basename));
-
-  GtkWidget *option_menu =
-      get_widget_checked("polsarpro_classification_optionmenu");
-  gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
-  option_menu =
-      get_widget_checked("browse_select_colormap_optionmenu");
+  GtkWidget *option_menu;
+  option_menu = get_widget_checked("browse_select_colormap_optionmenu");
   gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), which);
 }

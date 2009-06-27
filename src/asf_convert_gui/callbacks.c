@@ -1149,3 +1149,21 @@ on_view_dem_button_clicked(GtkWidget *widget)
     show_image_with_asf_view(dem);
     free(dem);
 }
+
+void polsarpro_classification_checkbutton_toggled()
+{
+  int is_checked = get_checked("polsarpro_classification_checkbutton");
+  if (!is_checked) {
+    // select colormap "None", then disable selection.
+    GtkWidget *option_menu =
+      get_widget_checked("browse_select_colormap_optionmenu");
+    gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), 0);
+  }
+  enable_widget("browse_select_colormap_optionmenu", is_checked);
+}
+
+SIGNAL_CALLBACK void
+on_polsarpro_classification_checkbutton_toggled(GtkWidget *widget)
+{
+  polsarpro_classification_checkbutton_toggled();
+}
