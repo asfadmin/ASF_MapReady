@@ -111,6 +111,18 @@ char *proj_info_as_string(projection_type_t projection_type,
          (datum) ? datum_str : "\n");
       break;
 
+    case EQUI_RECTANGULAR:
+      if (datum) {
+        sprintf(datum_str, "   Datum             : %s\n\n", datum_toString(*datum));
+      }
+      sprintf(ret,
+         "Projection: Equirectangular\n"
+         "   Latitude of origin: %.4f\n"
+         "   Central meridian  : %.4f\n%s",
+         pp->eqr.orig_latitude, pp->eqr.central_meridian,
+         (datum) ? datum_str : "\n");
+      break;
+
     case SCANSAR_PROJECTION:
       sprintf(ret,
          "Projection: ScanSAR\n");
@@ -454,6 +466,12 @@ static void determine_projection_fns(int projection_type, project_t **project,
       if (project_arr) *project_arr = NULL; // shouldn't need this
       if (unproject) *unproject = project_lat_long_pseudo_inv;
       if (unproject_arr) *unproject_arr = NULL; // or this
+      break;
+    case EQUI_RECTANGULAR:
+      if (project) *project = project_eqr;
+      if (project_arr) *project_arr = project_eqr_arr;
+      if (unproject) *unproject = project_eqr_inv;
+      if (unproject_arr) *unproject_arr = project_eqr_arr_inv;
       break;
     default:
       g_assert_not_reached ();

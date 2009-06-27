@@ -127,8 +127,12 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
       verify_valid_latitude(pps->lamcc.lat0);
       verify_valid_longitude(pps->lamcc.lon0);
       break;
+    case EQUI_RECTANGULAR:
+      verify_valid_latitude(pps->eqr.orig_latitude);
+      verify_valid_longitude(pps->eqr.central_meridian);
+      break;
     default:
-      asfPrintError("sanity_check: illegal projection type!");
+      asfPrintError("sanity_check: illegal projection type!\n");
   }
 }
 
@@ -244,8 +248,20 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
         pps->lamcc.lon0 = meta->general->center_longitude;
       break;
 
+    case EQUI_RECTANGULAR:
+      if (ISNAN(pps->eqr.false_easting))
+        pps->eqr.false_easting = 0;
+      if (ISNAN(pps->eqr.false_northing))
+        pps->eqr.false_northing = 0;
+
+      if (ISNAN(pps->eqr.orig_latitude))
+        pps->eqr.orig_latitude = 0.0;
+      if (ISNAN(pps->eqr.central_meridian))
+        pps->eqr.central_meridian = 0.0;
+      break;
+
     default:
-      asfPrintError("apply_defaults: illegal projection type!");
+      asfPrintError("apply_defaults: illegal projection type!\n");
   }
 }
 

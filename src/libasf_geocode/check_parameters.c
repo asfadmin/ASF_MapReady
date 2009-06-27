@@ -363,6 +363,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       }
 
       break;
+
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
 
       // Outside range tests
@@ -374,6 +375,20 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
            pp->lamaz.center_lat < -90 || pp->lamaz.center_lat > 90)
 	report_func("Latitude of origin '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->lamaz.center_lat);
+
+      break;
+
+    case EQUI_RECTANGULAR:
+
+      // Outside range tests
+      if (!meta_is_valid_double(pp->eqr.central_meridian) ||
+           pp->eqr.central_meridian < -180 || pp->eqr.central_meridian > 180)
+	report_func("Central meridian '%.4f' outside the defined range "
+		      "(-180 deg to 180 deg)\n", pp->eqr.central_meridian);
+      if (!meta_is_valid_double(pp->eqr.orig_latitude) ||
+           pp->eqr.orig_latitude < -90 || pp->eqr.orig_latitude > 90)
+	report_func("Latitude of origin '%.4f' outside the defined range "
+		      "(-90 deg to 90 deg)\n", pp->eqr.orig_latitude);
 
       break;
 

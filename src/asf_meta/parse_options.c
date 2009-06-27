@@ -172,6 +172,9 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
   case LAMBERT_CONFORMAL_CONIC:
     return "[Lambert Conformal Conic]";
 
+  case EQUI_RECTANGULAR:
+    return "[Equirectangular]";
+
   default:
     asfPrintError("projection_name: illegal projection type!");
     return "";
@@ -245,6 +248,14 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
     //1.0 :
     //pps->lamcc.scale_factor);
 
+    break;
+
+  case EQUI_RECTANGULAR:
+    fprintf(fp, "Central Meridian=%.10f\n", pps->eqr.central_meridian);
+    fprintf(fp, "Latitude of Origin=%.10f\n", pps->eqr.orig_latitude);
+    fprintf(fp, "False Easting=%.10f\n", pps->eqr.false_easting);
+    fprintf(fp, "False Northing=%.10f\n", pps->eqr.false_northing);
+    fprintf(fp, "datum=%s\n", datum_toString(datum));
     break;
 
   default:
@@ -349,6 +360,18 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
 
     if (pps->utm.zone == 0 || !meta_is_valid_double(zone))
       pps->utm.zone = MAGIC_UNSET_INT;
+  }
+  else if (strcmp_case(buf, bracketed_projection_name(
+    EQUI_RECTANGULAR)) == 0)
+  {
+    *proj_type = EQUI_RECTANGULAR;
+    get_fields(fp,
+      "Central Meridian", &pps->eqr.central_meridian,
+      "Latitude of Origin", &pps->eqr.orig_latitude,
+      "False Easting", &pps->eqr.false_easting,
+      "False Northing", &pps->eqr.false_northing,
+      NULL);
+    *datum = get_datum(fp);
   }
   else
   {
@@ -1160,6 +1183,64 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 
         break;
       }
+      else if (strcmp((*argv)[i], "equirectangular") == 0)
+      {
+        int specified_lat0 = FALSE;
+        int specified_lon0 = FALSE;
+        int specified_false_easting = FALSE;
+        int specified_false_northing = FALSE;
+
+        *proj_type = EQUI_RECTANGULAR;
+
+        while (TRUE)
+        {
+          if (!ok)
+            return NULL;
+
+          if (++i == *argc)
+            break;
+
+          if (parse_write_proj_file_option(
+            &i, *argc, *argv, &write_file, &ok))
+            continue;
+
+          if (parse_center_latitude_option(
+            &i, *argc, *argv, &specified_lat0,
+            &pps->eqr.orig_latitude, &ok))
+            continue;
+
+          if (parse_central_meridian_option(
+            &i, *argc, *argv, &specified_lon0,
+            &pps->eqr.central_meridian, &ok))
+            continue;
+
+          if (parse_false_easting_option(
+            &i, *argc, *argv, &specified_false_easting,
+            &pps->eqr.false_easting, &ok))
+            continue;
+
+          if (parse_false_northing_option(
+            &i, *argc, *argv, &specified_false_northing,
+            &pps->eqr.false_northing, &ok))
+            continue;
+
+          break;
+        }
+
+        if (!specified_lat0)
+          pps->eqr.orig_latitude = MAGIC_UNSET_DOUBLE;
+
+        if (!specified_lon0)
+          pps->eqr.central_meridian = MAGIC_UNSET_DOUBLE;
+
+        if (!specified_false_easting)
+          pps->eqr.false_easting = MAGIC_UNSET_DOUBLE;
+
+        if (!specified_false_northing)
+          pps->eqr.false_northing = MAGIC_UNSET_DOUBLE;
+
+        break;
+      }
       else
       {
         asfPrintWarning("Unknown projection: %s\n", (*argv)[i]);
@@ -1239,6 +1320,10 @@ datum_type_t get_datum(FILE *fp)
            strcmp_case(buf, "[UTM]") == 0)
   {
       proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  }
+  else if (strcmp_case(buf, bracketed_projection_name(EQUI_RECTANGULAR)) == 0)
+  {
+      proj_type = EQUI_RECTANGULAR;
   }
   else
   {

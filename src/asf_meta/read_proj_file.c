@@ -317,6 +317,16 @@ void read_proj_file(char * file, project_parameters_t * pps,
       if (pps->utm.zone == 0 || ISNAN(zone))
 	pps->utm.zone = MAGIC_UNSET_INT;
     }
+  else if (strcmp_case(buf, bracketed_projection_name(EQUI_RECTANGULAR)) == 0)
+    {
+      *proj_type = EQUI_RECTANGULAR;
+      get_fields(fp,
+		 "Latitude of Origin", &pps->eqr.orig_latitude,
+		 "Central Meridian", &pps->eqr.central_meridian,
+		 "False Easting", &pps->eqr.false_easting,
+		 "False Northing", &pps->eqr.false_northing,
+		 NULL);
+    }
   else
     {
       asfPrintError("Unknown projection in file '%s': %s %d\n",
