@@ -184,6 +184,21 @@ int init_c2v_config(char *configFile)
   fprintf(fConfig, "# This parameter defines the color of the boundary. It is expressed as aabbggrr,\n");
   fprintf(fConfig, "# where aa=alpha (00 to ff); bb=blue (00 to ff); gg=green (00 to ff); rr=red (00 to ff).\n\n");
   fprintf(fConfig, "color = \n\n");
+  // overlay
+  fprintf(fConfig, "# This parameter defines the name of the overlay file.\n\n");
+  fprintf(fConfig, "overlay = \n\n");  
+  // north
+  fprintf(fConfig, "# This parameter defines the northern boundary of the overlay.\n\n");
+  fprintf(fConfig, "north = \n\n");  
+  // south
+  fprintf(fConfig, "# This parameter defines the southern boundary of the overlay.\n\n");
+  fprintf(fConfig, "south = \n\n");  
+  // east
+  fprintf(fConfig, "# This parameter defines the eastern boundary of the overlay.\n\n");
+  fprintf(fConfig, "east = \n\n");  
+  // west
+  fprintf(fConfig, "# This parameter defines the western boundary of the overlay.\n\n");
+  fprintf(fConfig, "west = \n\n");  
 
   FCLOSE(fConfig);
 
@@ -213,6 +228,7 @@ c2v_config *init_fill_c2v_config()
   strcpy(cfg->output_file, "");
   strcpy(cfg->input_format, "META");
   strcpy(cfg->output_format, "KML");
+  strcpy(cfg->overlay, "");
   cfg->list = 0;
   cfg->time = 0;
   strcpy(cfg->boundary, "polygon");
@@ -268,6 +284,8 @@ c2v_config *read_c2v_config(char *configFile)
 	cfg->width = read_int(line, "width");
       if (strncmp(test, "color", 5)==0)
 	strcpy(cfg->color, read_str(line, "color"));
+      if (strncmp(test, "overlay", 7)==0)
+	strcpy(cfg->overlay, read_str(line, "overlay"));
       FREE(test);
     } 
   }
@@ -357,6 +375,26 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
     fprintf(fConfig, "\n# This parameter defines the color of the boundary. It is expressed as aabbggrr,\n"
 	    "# where aa=alpha (00 to ff); bb=blue (00 to ff); gg=green (00 to ff); rr=red (00 to ff).\n\n");
   fprintf(fConfig, "color = %s\n", cfg->color);
+  // overlay
+  if (!shortFlag)
+    fprintf(fConfig, "# This parameter defines the name of the overlay file.\n\n");
+  fprintf(fConfig, "overlay = %d\n", cfg->overlay);  
+  // north
+  if (!shortFlag)
+    fprintf(fConfig, "# This parameter defines the northern boundary of the overlay.\n\n");
+  fprintf(fConfig, "north = \n\n");  
+  // south
+  if (!shortFlag)  
+    fprintf(fConfig, "# This parameter defines the southern boundary of the overlay.\n\n");
+  fprintf(fConfig, "south = \n\n");  
+  // east
+  if (!shortFlag)
+    fprintf(fConfig, "# This parameter defines the eastern boundary of the overlay.\n\n");
+  fprintf(fConfig, "east = \n\n");  
+  // west
+  if (!shortFlag)
+    fprintf(fConfig, "# This parameter defines the western boundary of the overlay.\n\n");
+  fprintf(fConfig, "west = \n\n");  
 
   FCLOSE(fConfig);
 

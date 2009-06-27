@@ -1138,7 +1138,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     strcpy(cfg->boundary, "POLYGON");
   }
   if (strcmp_case(cfg->height, "RELATIVETOGROUND") != 0 &&
-      strcmp_case(cfg->height, "CLAMPEDTOGROUND") != 0) {
+      strcmp_case(cfg->height, "CLAMPTOGROUND") != 0) {
     asfPrintWarning("Invalid height reference '%s'.\n"
 		    "Will reset the height reference to 'clampToGround'\n",
 		    cfg->height);
@@ -1174,6 +1174,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     asfPrintStatus("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
   }
 
+  /*
   double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
     ctr_x, ctr_y;
   double ul_x_rot, ul_y_rot, ur_x_rot, ur_y_rot,
@@ -1203,41 +1204,59 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   double ang1 = atan2(ul_y-ur_y, ur_x-ul_x);
   double ang2 = atan2(ll_y-lr_y, lr_x-ll_x);
   double ang = (ang1+ang2)/2;
+  
 
   if (!png_filename || !meta->projection || fabs(ang) > .1)
-    {
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LL, lat_LL);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LR, lat_LR);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UR, lat_UR);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
+  */
+  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
+  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LL, lat_LL);
+  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LR, lat_LR);
+  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UR, lat_UR);
+  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
+  
+  fprintf(kml_file, "        </coordinates>\n");
+  if (strcmp_case(cfg->boundary, "LINE") == 0) {
+    fprintf(kml_file, "  </LineString>\n");
+  }
+  else {
+    fprintf(kml_file, "      </LinearRing>\n");
+    fprintf(kml_file, "    </outerBoundaryIs>\n");
+    fprintf(kml_file, "  </Polygon>\n");
+  }
+  fprintf(kml_file, "</Placemark>\n");
+  
+  if (png_filename) {
+      fprintf(kml_file, "<GroundOverlay>\n");
+      fprintf(kml_file, "  <name>%s</name>\n", name);
+      fprintf(kml_file, "  <color>60ffffff</color>\n");
+      fprintf(kml_file, "  <Icon>\n");
+      fprintf(kml_file, "      <href>%s</href>\n", png_filename);
+      fprintf(kml_file, "      <viewBoundScale>0.75</viewBoundScale>\n");
+      fprintf(kml_file, "  </Icon>\n");
+      fprintf(kml_file, "  <LatLonBox>\n");
+      fprintf(kml_file, "      <north>%.4f</north>\n", cfg->north);
+      fprintf(kml_file, "      <south>%.4f</south>\n", cfg->south);
+      fprintf(kml_file, "      <east>%.4f</east>\n", cfg->east);
+      fprintf(kml_file, "      <west>%.4f</west>\n", cfg->west);
+      fprintf(kml_file, "  </LatLonBox>\n");
 
-      fprintf(kml_file, "        </coordinates>\n");
-      if (strcmp_case(cfg->boundary, "LINE") == 0) {
-	fprintf(kml_file, "  </LineString>\n");
-      }
-      else {
-	fprintf(kml_file, "      </LinearRing>\n");
-	fprintf(kml_file, "    </outerBoundaryIs>\n");
-	fprintf(kml_file, "  </Polygon>\n");
-      }
-      fprintf(kml_file, "</Placemark>\n");
+      fprintf(kml_file, "</GroundOverlay>\n");
+  }
 
-      if (!quietflag) {
-        if (!png_filename || !meta->projection)
-          printf("\nGoogle Earth(tm) overlay image not produced (because the "
-                 "data is not in a UTM map projection\n"
-                 "as required) -OR- a Google Earth(tm) (.kml) file is being "
-                 "produced from a non-image source such\n"
-                 "as an ASF metadata file etc.)  The data will be displayed "
-                 "as a transparent polygon (only)\n"
-                 "in Google Earth(tm).\n\n");
-        else
-          printf("Google Earth(tm) overlay not produced (because the image's "
-                 "rotation angle\n"
-                 "is too large to overlay: %lf)\n\n", ang*R2D);
-      }
-    }
+  /*
+  if (!quietflag) {
+    if (!png_filename || !meta->projection)
+      printf("\nGoogle Earth(tm) overlay image not produced (because the "
+	     "data is not in a UTM map projection\n"
+	     "as required) -OR- a Google Earth(tm) (.kml) file is being "
+	     "produced from a non-image source such\n"
+	     "as an ASF metadata file etc.)  The data will be displayed "
+	     "as a transparent polygon (only)\n"
+	     "in Google Earth(tm).\n\n");
+    else
+      printf("Google Earth(tm) overlay not produced (because the image's "
+	     "rotation angle\n"
+	     "is too large to overlay: %lf)\n\n", ang*R2D);
   else {
     asfPrintStatus("png filename: %s\n", png_filename);
 
@@ -1330,6 +1349,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "</GroundOverlay>\n");
     }
   }
+  */
 }
 
 static
@@ -1469,7 +1489,10 @@ void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
 void kml_entry_ext(FILE *kml_file, meta_parameters *meta, char *name,
 		   c2v_config *cfg)
 {
-  kml_entry_impl(kml_file, meta, name, NULL, NULL, cfg);
+  if (strlen(cfg->overlay) > 5)
+    kml_entry_impl(kml_file, meta, name, cfg->overlay, NULL, cfg);
+  else
+    kml_entry_impl(kml_file, meta, name, NULL, NULL, cfg);
 }
 
 void kml_footer(FILE *kml_file)

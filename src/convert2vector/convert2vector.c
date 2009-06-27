@@ -42,6 +42,8 @@ int main(int argc, char **argv)
   int inputFormatFlag=0;
   int outputFormatFlag=0;
   int configFlag=0;
+  int overlayFlag=0;
+  int northFlag=0, southFlag=0, eastFlag=0, westFlag=0;
   int needed_args=3;
   format_type_t inFormat, outFormat;
   c2v_config *cfg=NULL;
@@ -82,6 +84,39 @@ int main(int argc, char **argv)
              checkForOption("-t", argc, argv)       ?
                checkForOption("-t", argc, argv)     :
              0;
+  overlayFlag =
+    checkForOption("-png", argc, argv) ?
+    getStringOption("-png", argc, argv, cfg->overlay, NULL) :
+    checkForOption("--png", argc, argv) ?
+    getStringOption("--png", argc, argv, cfg->overlay, NULL) : 0;
+  northFlag =  
+    checkForOption("-north", argc, argv) ?
+    getDoubleOption("-north", argc, argv, &cfg->north, MAGIC_UNSET_DOUBLE) :
+    checkForOption("--north", argc, argv) ?
+    getDoubleOption("--north", argc, argv, &cfg->north, MAGIC_UNSET_DOUBLE) :
+    checkForOption("-n", argc, argv) ?
+    getDoubleOption("-n", argc, argv, &cfg->north, MAGIC_UNSET_DOUBLE) : 0;
+  southFlag =  
+    checkForOption("-south", argc, argv) ?
+    getDoubleOption("-south", argc, argv, &cfg->south, MAGIC_UNSET_DOUBLE) :
+    checkForOption("--south", argc, argv) ?
+    getDoubleOption("--south", argc, argv, &cfg->south, MAGIC_UNSET_DOUBLE) :
+    checkForOption("-s", argc, argv) ?
+    getDoubleOption("-s", argc, argv, &cfg->south, MAGIC_UNSET_DOUBLE) : 0;
+  eastFlag =  
+    checkForOption("-east", argc, argv) ?
+    getDoubleOption("-east", argc, argv, &cfg->east, MAGIC_UNSET_DOUBLE) :
+    checkForOption("--east", argc, argv) ?
+    getDoubleOption("--east", argc, argv, &cfg->east, MAGIC_UNSET_DOUBLE) :
+    checkForOption("-e", argc, argv) ?
+    getDoubleOption("-e", argc, argv, &cfg->east, MAGIC_UNSET_DOUBLE) : 0;
+  westFlag =  
+    checkForOption("-west", argc, argv) ?
+    getDoubleOption("-west", argc, argv, &cfg->west, MAGIC_UNSET_DOUBLE) :
+    checkForOption("--west", argc, argv) ?
+    getDoubleOption("--west", argc, argv, &cfg->west, MAGIC_UNSET_DOUBLE) :
+    checkForOption("-w", argc, argv) ?
+    getDoubleOption("-w", argc, argv, &cfg->west, MAGIC_UNSET_DOUBLE) : 0;
   inputFormatFlag =  
     checkForOption("-input-format", argc, argv) ?
     getStringOption("-input-format", argc, argv, cfg->input_format, NULL) :
@@ -101,6 +136,11 @@ int main(int argc, char **argv)
   needed_args += timeFlag         ? 1 : 0; // No argument
   needed_args += inputFormatFlag  ? 2 : 0; // w/Argument
   needed_args += outputFormatFlag ? 2 : 0; // w/Argument
+  needed_args += overlayFlag      ? 2 : 0; // w/Argument
+  needed_args += northFlag        ? 2 : 0; // w/Argument
+  needed_args += southFlag        ? 2 : 0; // w/Argument
+  needed_args += eastFlag         ? 2 : 0; // w/Argument
+  needed_args += westFlag         ? 2 : 0; // w/Argument
   if (argc < needed_args) {
       usage("Insufficient arguments.");
       exit(1);
@@ -145,7 +185,6 @@ int main(int argc, char **argv)
 		    configFile, get_asf_share_dir());
   }
 
-  printf("after reading configuration file\n");
   inFormat = str2format(cfg->input_format);
   outFormat = str2format(cfg->output_format);
 

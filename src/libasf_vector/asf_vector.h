@@ -134,6 +134,11 @@ typedef struct
   char output_file[512];         // output file name
   char input_format[25];         // input format
   char output_format[25];        // output format
+  char overlay[512];             // overlay file name
+  double north;                  // northern extent of the overlay
+  double south;                  // southern extent of the overlay
+  double east;                   // eastern extent of the overlay
+  double west;                   // western extent of the overlay
   int list;                      // list of files flag
   int time;                      // time series flag
   char boundary[25];             // polygon/line
