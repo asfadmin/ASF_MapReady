@@ -15,56 +15,6 @@ static int strindex(char s[], char t[])
   return -1;
 }
 
-/*
-static void apply_default_dirs(c2v_config *cfg)
-{
-  // apply default dir to input name if there isn't a dir there already
-  char file_dir[4096], file[4096];
-  split_dir_and_file(cfg->general->in_name, file_dir, file);
-  int file_len = strlen(file);
-  int file_dir_len = strlen(file_dir);
-  int def_dir_len = strlen(cfg->general->default_in_dir);
-  if (file_dir_len==0 && def_dir_len!=0 && file_len>0) {
-    char *tmpstr = (char*)MALLOC(sizeof(char)*(file_len+def_dir_len+2));
-    strcpy(tmpstr, cfg->general->default_in_dir);
-    strcat(tmpstr, DIR_SEPARATOR_STR);
-    strcat(tmpstr, file);
-    cfg->general->in_name = (char*)realloc(cfg->general->in_name,
-                                           sizeof(char)*(strlen(tmpstr)+2));
-    strcpy(cfg->general->in_name, tmpstr);
-    FREE(tmpstr);
-  }
-  // Sneak a directory separator on to the end of the default in dir
-  if (strlen(cfg->general->default_in_dir) &&
-      strncmp(cfg->general->default_in_dir, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0 &&
-      DIR_SEPARATOR != cfg->general->default_in_dir[def_dir_len-1]) {
-    strcat(cfg->general->default_in_dir, DIR_SEPARATOR_STR);
-  }
-
-  // apply default dir to output name if there isn't a dir there already
-  split_dir_and_file(cfg->general->out_name, file_dir, file);
-  file_len = strlen(file);
-  file_dir_len = strlen(file_dir);
-  def_dir_len = strlen(cfg->general->default_out_dir);
-  if (file_dir_len==0 && def_dir_len!=0 && file_len>0) {
-    char *tmpstr = (char*)MALLOC(sizeof(char)*(file_len+def_dir_len+2));
-    strcpy(tmpstr, cfg->general->default_out_dir);
-    strcat(tmpstr, DIR_SEPARATOR_STR);
-    strcat(tmpstr, file);
-    cfg->general->out_name = (char*)realloc(cfg->general->out_name,
-                                            sizeof(char)*(strlen(tmpstr)+2));
-    strcpy(cfg->general->out_name, tmpstr);
-    FREE(tmpstr);
-  }
-  // Sneak a directory separator on to the end of the default out dir
-  if (strlen(cfg->general->default_out_dir) &&
-      strncmp(cfg->general->default_out_dir, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0 &&
-      DIR_SEPARATOR != cfg->general->default_out_dir[def_dir_len-1]) {
-    strcat(cfg->general->default_out_dir, DIR_SEPARATOR_STR);
-  }
-}
-*/
-
 static char *read_param(char *line)
 {
   int i, k;
@@ -198,7 +148,10 @@ int init_c2v_config(char *configFile)
   fprintf(fConfig, "east = \n\n");  
   // west
   fprintf(fConfig, "# This parameter defines the western boundary of the overlay.\n\n");
-  fprintf(fConfig, "west = \n\n");  
+  fprintf(fConfig, "west = \n\n");
+  // transparency
+  fprintf(fConfig, "# This parameter defines the transparency of the overlay (0 to 100).\n\n");
+  fprintf(fConfig, "transparency = \n\n");
 
   FCLOSE(fConfig);
 
@@ -229,6 +182,11 @@ c2v_config *init_fill_c2v_config()
   strcpy(cfg->input_format, "META");
   strcpy(cfg->output_format, "KML");
   strcpy(cfg->overlay, "");
+  cfg->north = 0;
+  cfg->south = 0;
+  cfg->east = 0;
+  cfg->west = 0;
+  cfg->transparency = 50;
   cfg->list = 0;
   cfg->time = 0;
   strcpy(cfg->boundary, "polygon");
@@ -286,6 +244,16 @@ c2v_config *read_c2v_config(char *configFile)
 	strcpy(cfg->color, read_str(line, "color"));
       if (strncmp(test, "overlay", 7)==0)
 	strcpy(cfg->overlay, read_str(line, "overlay"));
+      if (strncmp(test, "north", 5)==0)
+	cfg->north = read_double(line, "north");
+      if (strncmp(test, "south", 5)==0)
+	cfg->south = read_double(line, "south");
+      if (strncmp(test, "east", 4)==0)
+	cfg->east = read_double(line, "east");
+      if (strncmp(test, "west", 4)==0)
+        cfg->west = read_double(line, "west");
+      if (strncmp(test, "transparency", 12)==0)
+	cfg->transparency = read_int(line, "transparency");
       FREE(test);
     } 
   }
@@ -360,7 +328,7 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the type of boundary should be used in KML.\n"
 	    "# The recognized boundary types are 'polygon' and 'line'.\n\n");
-  fprintf("boundary = %s\n", cfg->boundary);
+  fprintf(fConfig, "boundary = %s\n", cfg->boundary);
   // height
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the height references for KML.\n"
@@ -377,24 +345,28 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
   fprintf(fConfig, "color = %s\n", cfg->color);
   // overlay
   if (!shortFlag)
-    fprintf(fConfig, "# This parameter defines the name of the overlay file.\n\n");
-  fprintf(fConfig, "overlay = %d\n", cfg->overlay);  
+    fprintf(fConfig, "\n# This parameter defines the name of the overlay file.\n\n");
+  fprintf(fConfig, "overlay = %s\n", cfg->overlay);  
   // north
   if (!shortFlag)
-    fprintf(fConfig, "# This parameter defines the northern boundary of the overlay.\n\n");
-  fprintf(fConfig, "north = \n\n");  
+    fprintf(fConfig, "\n# This parameter defines the northern boundary of the overlay.\n\n");
+  fprintf(fConfig, "north = %.4lf\n", cfg->north);  
   // south
   if (!shortFlag)  
-    fprintf(fConfig, "# This parameter defines the southern boundary of the overlay.\n\n");
-  fprintf(fConfig, "south = \n\n");  
+    fprintf(fConfig, "\n# This parameter defines the southern boundary of the overlay.\n\n");
+  fprintf(fConfig, "south = %.4lf\n", cfg->south);  
   // east
   if (!shortFlag)
-    fprintf(fConfig, "# This parameter defines the eastern boundary of the overlay.\n\n");
-  fprintf(fConfig, "east = \n\n");  
+    fprintf(fConfig, "\n# This parameter defines the eastern boundary of the overlay.\n\n");
+  fprintf(fConfig, "east = %.4lf\n", cfg->east);  
   // west
   if (!shortFlag)
-    fprintf(fConfig, "# This parameter defines the western boundary of the overlay.\n\n");
-  fprintf(fConfig, "west = \n\n");  
+    fprintf(fConfig, "\n# This parameter defines the western boundary of the overlay.\n\n");
+  fprintf(fConfig, "west = %.4lf\n", cfg->west);  
+  // transparency
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the transparency of the overlay (0 to 100).\n\n");
+  fprintf(fConfig, "transparency = %d\n", cfg->transparency);
 
   FCLOSE(fConfig);
 

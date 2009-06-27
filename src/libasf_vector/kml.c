@@ -82,26 +82,6 @@ static void rotate(double x_in, double y_in, double x0, double y0, double ang,
     *yr = y0 + cos(ang)*x - sin(ang)*y;
 }
 
-//static double max2(double a, double b)
-//{
-//    return a > b ? a : b;
-//}
-
-//static double max4(double a, double b, double c, double d)
-//{
-//    return max2(max2(a,b), max2(c,d));
-//}
-
-//static double min2(double a, double b)
-//{
-//    return a < b ? a : b;
-//}
-
-//static double min4(double a, double b, double c, double d)
-//{
-//    return min2(min2(a,b), min2(c,d));
-//}
-
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
                            char *name, char *png_filename, char *dir,
 			   c2v_config *cfg)
@@ -1123,8 +1103,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
           meta->general->center_latitude);
   fprintf(kml_file, "    <range>300000</range>\n");
-  //fprintf(kml_file, "    <tilt>30</tilt>\n");
-  //fprintf(kml_file, "    <heading>50</heading>\n");
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <visibility>1</visibility>\n");
   fprintf(kml_file, "  <open>1</open>\n");
@@ -1174,40 +1152,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     asfPrintStatus("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
   }
 
-  /*
-  double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
-    ctr_x, ctr_y;
-  double ul_x_rot, ul_y_rot, ur_x_rot, ur_y_rot,
-    ll_x_rot, ll_y_rot, lr_x_rot, lr_y_rot;
-  double lat_UL_rot, lon_UL_rot;
-  double lat_UR_rot, lon_UR_rot;
-  double lat_LR_rot, lon_LR_rot;
-  double lat_LL_rot, lon_LL_rot;
-
-  int zone = utm_zone(clon);
-
-  latLon2UTM_zone(lat_UL, lon_UL, h, zone, &ul_x, &ul_y);
-  latLon2UTM_zone(lat_UR, lon_UR, h, zone, &ur_x, &ur_y);
-  latLon2UTM_zone(lat_LR, lon_LR, h, zone, &lr_x, &lr_y);
-  latLon2UTM_zone(lat_LL, lon_LL, h, zone, &ll_x, &ll_y);
-  latLon2UTM_zone(clat, clon, h, zone, &ctr_x, &ctr_y);
-
-  // for points in the southern hemisphere, eliminate the false
-  // northing, so all points are -10000000 to +10000000 (normally,
-  // UTM has 0 to +10000000 twice)
-  if (lat_UL < 0) ul_y -= 10000000;
-  if (lat_UR < 0) ur_y -= 10000000;
-  if (lat_LL < 0) ll_y -= 10000000;
-  if (lat_LR < 0) lr_y -= 10000000;
-  if (clat < 0) ctr_y -= 10000000;
-
-  double ang1 = atan2(ul_y-ur_y, ur_x-ul_x);
-  double ang2 = atan2(ll_y-lr_y, lr_x-ll_x);
-  double ang = (ang1+ang2)/2;
-  
-
-  if (!png_filename || !meta->projection || fabs(ang) > .1)
-  */
   fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
   fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LL, lat_LL);
   fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LR, lat_LR);
@@ -1226,253 +1170,23 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   fprintf(kml_file, "</Placemark>\n");
   
   if (png_filename) {
-      fprintf(kml_file, "<GroundOverlay>\n");
-      fprintf(kml_file, "  <name>%s</name>\n", name);
-      fprintf(kml_file, "  <color>60ffffff</color>\n");
-      fprintf(kml_file, "  <Icon>\n");
-      fprintf(kml_file, "      <href>%s</href>\n", png_filename);
-      fprintf(kml_file, "      <viewBoundScale>0.75</viewBoundScale>\n");
-      fprintf(kml_file, "  </Icon>\n");
-      fprintf(kml_file, "  <LatLonBox>\n");
-      fprintf(kml_file, "      <north>%.4f</north>\n", cfg->north);
-      fprintf(kml_file, "      <south>%.4f</south>\n", cfg->south);
-      fprintf(kml_file, "      <east>%.4f</east>\n", cfg->east);
-      fprintf(kml_file, "      <west>%.4f</west>\n", cfg->west);
-      fprintf(kml_file, "  </LatLonBox>\n");
-
-      fprintf(kml_file, "</GroundOverlay>\n");
+    fprintf(kml_file, "<GroundOverlay>\n");
+    fprintf(kml_file, "  <name>%s</name>\n", name);
+    fprintf(kml_file, "  <color>%xffffff</color>\n", 
+	    (int)((100 - cfg->transparency) * 2.55 + 0.5));
+    fprintf(kml_file, "  <Icon>\n");
+    fprintf(kml_file, "      <href>%s</href>\n", png_filename);
+    fprintf(kml_file, "      <viewBoundScale>0.75</viewBoundScale>\n");
+    fprintf(kml_file, "  </Icon>\n");
+    fprintf(kml_file, "  <LatLonBox>\n");
+    fprintf(kml_file, "      <north>%.4f</north>\n", cfg->north);
+    fprintf(kml_file, "      <south>%.4f</south>\n", cfg->south);
+    fprintf(kml_file, "      <east>%.4f</east>\n", cfg->east);
+    fprintf(kml_file, "      <west>%.4f</west>\n", cfg->west);
+    fprintf(kml_file, "  </LatLonBox>\n");
+    
+    fprintf(kml_file, "</GroundOverlay>\n");
   }
-
-  /*
-  if (!quietflag) {
-    if (!png_filename || !meta->projection)
-      printf("\nGoogle Earth(tm) overlay image not produced (because the "
-	     "data is not in a UTM map projection\n"
-	     "as required) -OR- a Google Earth(tm) (.kml) file is being "
-	     "produced from a non-image source such\n"
-	     "as an ASF metadata file etc.)  The data will be displayed "
-	     "as a transparent polygon (only)\n"
-	     "in Google Earth(tm).\n\n");
-    else
-      printf("Google Earth(tm) overlay not produced (because the image's "
-	     "rotation angle\n"
-	     "is too large to overlay: %lf)\n\n", ang*R2D);
-  else {
-    asfPrintStatus("png filename: %s\n", png_filename);
-
-    if (!dir)
-      asfPrintError("Must pass in a directory for the overlay files!\n");
-    else {
-      //printf("UL: %lf,%lf %f,%f\n", ul_x,ul_y,lat_UL,lon_UL);
-      //printf("UR: %lf,%lf %f,%f\n", ur_x,ur_y,lat_UR,lon_UR);
-      //printf("LL: %lf,%lf %f,%f\n", ll_x,ll_y,lat_LL,lon_LL);
-      //printf("LR: %lf,%lf %f,%f\n", lr_x,lr_y,lat_LR,lon_LR);
-      //printf("angle= %lf\n", ang*R2D);
-
-      rotate(ul_x, ul_y, ctr_x, ctr_y, ang, &ul_x_rot, &ul_y_rot);
-      rotate(ur_x, ur_y, ctr_x, ctr_y, ang, &ur_x_rot, &ur_y_rot);
-      rotate(ll_x, ll_y, ctr_x, ctr_y, ang, &ll_x_rot, &ll_y_rot);
-      rotate(lr_x, lr_y, ctr_x, ctr_y, ang, &lr_x_rot, &lr_y_rot);
-
-      //printf("Rotated UL: %lf,%lf\n", ul_x_rot,ul_y_rot);
-      //printf("Rotated UR: %lf,%lf\n", ur_x_rot,ur_y_rot);
-      //printf("Rotated LL: %lf,%lf\n", ll_x_rot,ll_y_rot);
-      //printf("Rotated LR: %lf,%lf\n", lr_x_rot,lr_y_rot);
-
-      UTM2latLon(ul_x_rot, ul_y_rot, h, zone, &lat_UL_rot, &lon_UL_rot);
-      UTM2latLon(ur_x_rot, ur_y_rot, h, zone, &lat_UR_rot, &lon_UR_rot);
-      UTM2latLon(ll_x_rot, ll_y_rot, h, zone, &lat_LL_rot, &lon_LL_rot);
-      UTM2latLon(lr_x_rot, lr_y_rot, h, zone, &lat_LR_rot, &lon_LR_rot);
-
-      //printf("corner points (lat/lon):\n");
-      //printf("UL: %f,%f\n", lat_UL_rot, lon_UL_rot);
-      //printf("UR: %f,%f\n", lat_UR_rot, lon_UR_rot);
-      //printf("LL: %f,%f\n", lat_LL_rot, lon_LL_rot);
-      //printf("LR: %f,%f\n", lat_LR_rot, lon_LR_rot);
-
-      double box_north_lat = lat_UL_rot;
-      double box_south_lat = lat_LR_rot;
-      double box_east_lon = lon_UL_rot;
-      double box_west_lon = lon_LR_rot;
-
-      if (box_south_lat > box_north_lat)
-        swap(&box_south_lat, &box_north_lat);
-      if (box_east_lon < box_west_lon)
-        swap(&box_east_lon, &box_west_lon);
-
-      //double upper_lat = max4(lat_UL_rot, lat_LL_rot, lat_LR_rot, lat_UR_rot);
-      //double lower_lat = min4(lat_UL_rot, lat_LL_rot, lat_LR_rot, lat_UR_rot);
-      //double upper_lon = max4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
-      //double lower_lon = min4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
-
-      //printf("Upper lat: %f\n", upper_lat);
-      //printf("Lower lat: %f\n", lower_lat);
-      //printf("Upper lon: %f\n", upper_lon);
-      //printf("Lower lon: %f\n", lower_lon);
-
-      //fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
-      //fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, lower_lat);
-      //fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, lower_lat);
-      //fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, upper_lat);
-      //fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LL, lat_LL);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LR, lat_LR);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UR, lat_UR);
-      fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
-      fprintf(kml_file, "        </coordinates>\n");
-      fprintf(kml_file, "      </LinearRing>\n");
-      fprintf(kml_file, "    </outerBoundaryIs>\n");
-      fprintf(kml_file, "  </Polygon>\n");
-      fprintf(kml_file, "</Placemark>\n");
-      fprintf(kml_file, "<GroundOverlay>\n");
-      fprintf(kml_file, "  <name>%s</name>\n", name);
-      fprintf(kml_file, "  <LookAt>\n");
-      fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
-      fprintf(kml_file, "    <latitude>%.10f</latitude>\n", clat);
-      fprintf(kml_file, "    <range>300000</range>\n");
-      //fprintf(kml_file, "    <tilt>45</tilt>\n");
-      //fprintf(kml_file, "    <heading>50</heading>\n");
-      fprintf(kml_file, "  </LookAt>\n");
-      fprintf(kml_file, "  <color>ffffffff</color>\n");
-      fprintf(kml_file, "  <Icon>\n");
-      fprintf(kml_file, "      <href>%s</href>\n", png_filename);
-      fprintf(kml_file, "  </Icon>\n");
-      fprintf(kml_file, "  <LatLonBox>\n");
-      fprintf(kml_file, "      <north>%.12f</north>\n", box_north_lat);
-      fprintf(kml_file, "      <south>%.12f</south>\n", box_south_lat);
-      fprintf(kml_file, "      <east>%.12f</east>\n", box_east_lon);
-      fprintf(kml_file, "      <west>%.12f</west>\n", box_west_lon);
-      fprintf(kml_file, "      <rotation>%.12f</rotation>\n", -ang*R2D);
-      fprintf(kml_file, "  </LatLonBox>\n");
-
-      fprintf(kml_file, "</GroundOverlay>\n");
-    }
-  }
-  */
-}
-
-static
-void kml_entry_overlay(FILE *kml_file, char *name)
-{
-  julian_date jdate;
-  ymd_date ymd;
-  meta_parameters *meta;
-  char input_image[512], output_image[512];
-  int nl, ns;
-  double lat_UL, lon_UL;
-  double lat_UR, lon_UR;
-  double lat_LL, lon_LL;
-  double lat_LR, lon_LR;
-  double max_lat = -90, max_lon = -180, min_lat = 90, min_lon = 180;
-  char *mon[13]={"", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-  double ul_x, ul_y, ur_x, ur_y, ang;
-
-  meta = meta_read(name);
-  nl = meta->general->line_count;
-  ns = meta->general->sample_count;
-
-  jdate.year = meta->state_vectors->year;
-  jdate.jd = meta->state_vectors->julDay;
-  date_jd2ymd(&jdate, &ymd);
-
-  // Get corner coordinates from metadata
-  meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
-  meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
-  meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
-  meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
-
-  // Figure out rotation and box coordinates
-  latLon2UTM(lat_UL, lon_UL, 0.0, &ul_x, &ul_y);
-  latLon2UTM(lat_UR, lon_UR, 0.0, &ur_x, &ur_y);
-  ang = atan2(ur_y-ul_y, ur_x-ul_x);
-
-  // Need to figure out the correct way of applying the affine transformation
-  // that Kirk came up with. Should be able to get everything line up.
-  update_latlon_maxes(lat_UL, lon_UL, &max_lat, &min_lat, &max_lon, &min_lon);
-  update_latlon_maxes(lat_LL, lon_LL, &max_lat, &min_lat, &max_lon, &min_lon);
-  update_latlon_maxes(lat_LR, lon_LR, &max_lat, &min_lat, &max_lon, &min_lon);
-  update_latlon_maxes(lat_UR, lon_UR, &max_lat, &min_lat, &max_lon, &min_lon);
-
-  // Read the image and generate a JPEG from it
-  create_name(input_image, name, ".img");
-  create_name(output_image, name, ".png");
-  //img2png(meta, input_image, 512, output_image);
-
-  // Write everything into kml file
-  fprintf(kml_file, "<Placemark>\n");
-  fprintf(kml_file, "  <description><![CDATA[\n");
-  fprintf(kml_file, "<strong>Sensor</strong>: %s<br>\n",
-          meta->general->sensor);
-  fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n",
-          meta->general->mode);
-  fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
-  fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
-  fprintf(kml_file, "<strong>Acquisition date</strong>: %d-%s-%d<br>\n",
-          ymd.day, mon[ymd.month], ymd.year);
-  if (meta->general->orbit_direction == 'D')
-    fprintf(kml_file, "<strong>Orbit direction</strong>: Descending<br>\n");
-  else if (meta->general->orbit_direction == 'A')
-    fprintf(kml_file, "<strong>Orbit direction</strong>: Ascending<br>\n");
-  fprintf(kml_file, "<strong>Center latitude</strong>: %9.4lf<br>\n",
-          meta->general->center_latitude);
-  fprintf(kml_file, "<strong>Center longitude</strong>: %9.4lf<br>\n",
-          meta->general->center_longitude);
-  fprintf(kml_file, "  ]]></description>\n");
-  fprintf(kml_file, "  <name>%s</name>\n", name);
-  fprintf(kml_file, "  <LookAt>\n");
-  fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
-          meta->general->center_longitude);
-  fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
-          meta->general->center_latitude);
-  fprintf(kml_file, "    <range>400000</range>\n");
-  //fprintf(kml_file, "    <tilt>45</tilt>\n");
-  fprintf(kml_file, "    <heading>50</heading>\n");
-  fprintf(kml_file, "  </LookAt>\n");
-  fprintf(kml_file, "  <visibility>1</visibility>\n");
-  fprintf(kml_file, "  <open>1</open>\n");
-  write_kml_style_keys(kml_file);
-  fprintf(kml_file, "  <LineString>\n");
-  fprintf(kml_file, "    <extrude>1</extrude>\n");
-  fprintf(kml_file, "    <tessellate>1</tessellate>\n");
-  fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
-  fprintf(kml_file, "    <coordinates>\n");
-
-  fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
-  fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_LL, lat_LL);
-  fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_LR, lat_LR);
-  fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UR, lat_UR);
-  fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
-
-  fprintf(kml_file, "    </coordinates>\n");
-  fprintf(kml_file, "  </LineString>\n");
-  fprintf(kml_file, "</Placemark>\n");
-
-  fprintf(kml_file, "<GroundOverlay>\n");
-  fprintf(kml_file, "  <name>%s</name>\n", name);
-  fprintf(kml_file, "  <LookAt>\n");
-  fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
-      meta->general->center_longitude);
-  fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
-      meta->general->center_latitude);
-  fprintf(kml_file, "    <range>300000</range>\n");
-  //fprintf(kml_file, "    <tilt>45</tilt>\n");
-  //fprintf(kml_file, "    <heading>50</heading>\n");
-  fprintf(kml_file, "  </LookAt>\n");
-  fprintf(kml_file, "  <color>9effffff</color>\n");
-  fprintf(kml_file, "  <Icon>\n");
-  fprintf(kml_file, "      <href>%s</href>\n", output_image);
-  fprintf(kml_file, "  </Icon>\n");
-  fprintf(kml_file, "  <LatLonBox>\n");
-  fprintf(kml_file, "      <north>%.12f</north>\n", max_lat);
-  fprintf(kml_file, "      <south>%.12f</south>\n", min_lat);
-  fprintf(kml_file, "      <east>%.12f</east>\n", max_lon);
-  fprintf(kml_file, "      <west>%.12f</west>\n", min_lon);
-  fprintf(kml_file, "      <rotation>%.12f</rotation>\n", -ang*R2D);
-  fprintf(kml_file, "  </LatLonBox>\n");
-  fprintf(kml_file, "</GroundOverlay>\n");
-
 }
 
 void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, char *name,
@@ -1499,22 +1213,6 @@ void kml_footer(FILE *kml_file)
 {
     fprintf(kml_file, "</Document>\n");
     fprintf(kml_file, "</kml>\n");
-}
-
-void write_kml_overlay(char *filename)
-{
-  char *kml_filename = appendExt(filename, ".kml");
-  char *basename = get_basename(filename);
-
-  FILE *kml_file = FOPEN(kml_filename, "w");
-
-  kml_header(kml_file);
-  kml_entry_overlay(kml_file, basename);
-  kml_footer(kml_file);
-
-  FCLOSE(kml_file);
-  FREE(basename);
-  FREE(kml_filename);
 }
 
 void write_kml_style_keys(FILE *kml_file)

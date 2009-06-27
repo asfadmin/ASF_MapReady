@@ -43,6 +43,7 @@ int main(int argc, char **argv)
   int outputFormatFlag=0;
   int configFlag=0;
   int overlayFlag=0;
+  int transparencyFlag=0;
   int northFlag=0, southFlag=0, eastFlag=0, westFlag=0;
   int needed_args=3;
   format_type_t inFormat, outFormat;
@@ -80,15 +81,17 @@ int main(int argc, char **argv)
   testFlag = checkForOption("-test", argc, argv)    ?
                checkForOption("-test", argc, argv)  :
              checkForOption("--test", argc, argv)   ?
-               checkForOption("--test", argc, argv) :
-             checkForOption("-t", argc, argv)       ?
-               checkForOption("-t", argc, argv)     :
-             0;
+               checkForOption("--test", argc, argv) : 0;
   overlayFlag =
     checkForOption("-png", argc, argv) ?
     getStringOption("-png", argc, argv, cfg->overlay, NULL) :
     checkForOption("--png", argc, argv) ?
     getStringOption("--png", argc, argv, cfg->overlay, NULL) : 0;
+  transparencyFlag =
+    checkForOption("-transparency", argc, argv) ?
+    getIntegerOption("-transparency", argc, argv, &cfg->transparency, 50) :
+    checkForOption("--transparency", argc, argv) ?
+    getIntegerOption("--transparency", argc, argv, &cfg->transparency, 50) : 0;
   northFlag =  
     checkForOption("-north", argc, argv) ?
     getDoubleOption("-north", argc, argv, &cfg->north, MAGIC_UNSET_DOUBLE) :
@@ -137,6 +140,7 @@ int main(int argc, char **argv)
   needed_args += inputFormatFlag  ? 2 : 0; // w/Argument
   needed_args += outputFormatFlag ? 2 : 0; // w/Argument
   needed_args += overlayFlag      ? 2 : 0; // w/Argument
+  needed_args += transparencyFlag ? 2 : 0; // w/Argument
   needed_args += northFlag        ? 2 : 0; // w/Argument
   needed_args += southFlag        ? 2 : 0; // w/Argument
   needed_args += eastFlag         ? 2 : 0; // w/Argument
@@ -183,6 +187,27 @@ int main(int argc, char **argv)
 		    "There is a sample configuration file located at\n"
 		    "'%s/convert2vector.config'.\n", 
 		    configFile, get_asf_share_dir());
+  }
+
+  // Check the lat/lon extents of the overlay
+  if (cfg->north < -90.0 || cfg->north > 90.0)
+    asfPrintError("Northern extent (%.4lf) outside the valid value range"
+		  " (-90 to 90)\n", cfg->north);
+  if (cfg->south < -90.0 || cfg->south > 90.0)
+    asfPrintError("Southern extent (%.4lf) outside the valid value range"
+		  " (-90 to 90)\n", cfg->south);
+  if (cfg->east < -180.0 || cfg->east > 180.0)
+    asfPrintError("Eastern extent (%.4lf) outside the valid value range"
+		  " (-180 to 180)\n", cfg->east);
+  if (cfg->west < -180.0 || cfg->west > 180.0)
+    asfPrintError("Western extent (%.4lf) outside the valid value range"
+		  " (-180 to 180)\n", cfg->west);
+  
+  // Check the opacity
+  if (cfg->transparency < 0 || cfg->transparency > 100) {
+    asfPrintWarning("Transparency (%d) outside the valid value range (0 to 100)\n"
+		    "Setting it to the default value of 50\n", cfg->transparency);
+    cfg->transparency = 50;
   }
 
   inFormat = str2format(cfg->input_format);

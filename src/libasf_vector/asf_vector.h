@@ -139,6 +139,7 @@ typedef struct
   double south;                  // southern extent of the overlay
   double east;                   // eastern extent of the overlay
   double west;                   // western extent of the overlay
+  int transparency;              // transparency of the overlay
   int list;                      // list of files flag
   int time;                      // time series flag
   char boundary[25];             // polygon/line
@@ -170,7 +171,6 @@ void kml_point_entry(FILE *kml_file, char *name, float lat, float lon);
 void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat,
                float *lon, int n);
 void kml_footer(FILE *kml_file);
-void write_kml_overlay(char *filename);
 void write_kml_style_keys(FILE *kml_file);
 const char *altitude_mode();
 
