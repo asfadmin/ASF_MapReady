@@ -265,6 +265,7 @@ CATEGORIES
 		mapready-version_history.txt
 		asf_gamma_import
 		asf_airsar_import
+		asf_kml_overlay
 	}
 
 # Convert To Vector
