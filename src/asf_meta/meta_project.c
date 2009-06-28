@@ -571,6 +571,32 @@ void UTM2latLon(double projX, double projY, double elev, int zone,
   *lon *= R2D;
 }
 
+void EQR2latLon(double projX, double projY, double *lat, double *lon)
+{
+  project_parameters_t pps;
+  projection_type_t proj_type;
+  meta_projection *meta_proj;
+  double h;
+
+  proj_type = EQUI_RECTANGULAR;
+
+  pps.eqr.central_meridian = 0.0;
+  pps.eqr.orig_latitude = 0.0;
+  pps.eqr.false_easting = 0.0;
+  pps.eqr.false_northing = 0.0;
+
+  // Initialize meta_projection block
+  meta_proj = meta_projection_init();
+  meta_proj->type = proj_type;
+  meta_proj->datum = WGS84_DATUM; // assumed...
+  meta_proj->param = pps;
+
+  proj_to_latlon(meta_proj, projX, projY, 0.0, lat, lon, &h);
+
+  *lat *= R2D;
+  *lon *= R2D;
+}
+
 void to_radians(projection_type_t pt, project_parameters_t * pps)
 {
     switch (pt)

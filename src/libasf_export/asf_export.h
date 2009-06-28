@@ -51,6 +51,8 @@ typedef enum {
   JPEG,                         /* Joint Photographic Experts Group.  */
   PGM,                          /* Portable GrayMap.  */
   PNG,                          /* Portable Network Graphic */
+  PNG_ALPHA,                    // Transparent PNG (8-bit)
+  PNG_GE,                       // Transparent PNG (32-bit), Google Earth style
   KML                           // JPEG with GoogleEarth overlay file
 } output_format_t;
 
@@ -153,6 +155,10 @@ void initialize_png_file(const char *output_file_name,
                          meta_parameters *meta, FILE **opng,
                          png_structp *png_ptr, png_infop *info_ptr,
                          int rgb);
+void initialize_png_file_ext(const char *output_file_name,
+			     meta_parameters *meta, FILE **opng,
+			     png_structp *png_ptr, png_infop *info_ptr,
+			     int rgb, int alpha);
 void finalize_png_file(FILE *opng, png_structp png_ptr, png_infop info_ptr);
 
 // Prototypes from key.c

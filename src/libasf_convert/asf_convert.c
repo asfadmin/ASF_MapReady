@@ -544,6 +544,10 @@ static output_format_t get_format(convert_config *cfg)
     format = JPEG;
   } else if (strncmp(uc(cfg->export->format), "PGM", 3) == 0) {
     format = PGM;
+  } else if (strncmp(uc(cfg->export->format), "PNG_ALPHA", 9) == 0) {
+    format = PNG_ALPHA;
+  } else if (strncmp(uc(cfg->export->format), "PNG_GE", 6) == 0) {
+    format = PNG_GE;
   } else if (strncmp(uc(cfg->export->format), "PNG", 3) == 0) {
     format = PNG;
   }

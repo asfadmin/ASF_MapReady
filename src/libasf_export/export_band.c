@@ -195,10 +195,19 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   *palette_color_tiff = palette_color;
 }
 
+
 void initialize_png_file(const char *output_file_name,
-                         meta_parameters *meta, FILE **opng,
-                         png_structp *png_ptr, png_infop *info_ptr,
-                         int rgb)
+			 meta_parameters *meta, FILE **opng,
+			 png_structp *png_ptr, png_infop *info_ptr,
+			 int rgb)
+{
+  return initialize_png_file_ext(output_file_name, meta, opng, png_ptr, 
+				 info_ptr, rgb, FALSE);
+}
+void initialize_png_file_ext(const char *output_file_name,
+			     meta_parameters *meta, FILE **opng,
+			     png_structp *png_ptr, png_infop *info_ptr,
+			     int rgb, int alpha)
 {
     *opng = FOPEN(output_file_name, "wb");
     *png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
@@ -214,7 +223,33 @@ void initialize_png_file(const char *output_file_name,
 
     int width = meta->general->sample_count;
     int height = meta->general->line_count;
-    png_byte color_type = rgb ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_GRAY;
+    png_byte color_type;
+    if (alpha == 1) {
+      color_type = rgb ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_GRAY;
+      int ii;
+      if (rgb) {
+	png_color_16 trans_rgb_value[256];
+	for (ii=0; ii<256; ii++) {
+	  trans_rgb_value[ii].red = 255;
+	  trans_rgb_value[ii].green = 255;
+	  trans_rgb_value[ii].blue = 255;
+	}
+	// setting black to transparent
+	trans_rgb_value[0].red = 0;
+	trans_rgb_value[0].green = 0;
+	trans_rgb_value[0].blue = 0;
+	png_set_tRNS(*png_ptr, *info_ptr, trans_rgb_value, 256, NULL);
+      }
+      else {
+	png_byte trans_values[256];
+	for (ii=0; ii<256; ii++)
+	  trans_values[ii] = 255;
+	trans_values[0] = 0; // setting black to transparent
+	png_set_tRNS(*png_ptr, *info_ptr, trans_values, 256, NULL);
+      }
+    }
+    else if (alpha == 2)
+      color_type = PNG_COLOR_TYPE_RGB_ALPHA;
 
     png_set_IHDR(*png_ptr, *info_ptr, width, height, 8, color_type,
             PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
@@ -875,6 +910,14 @@ export_band_image (const char *metadata_file_name,
       initialize_png_file(output_file_name, md, &opng, &png_ptr,
           &png_info_ptr, rgb);
     }
+    else if (format == PNG_ALPHA) {
+      initialize_png_file_ext(output_file_name, md, &opng, &png_ptr,
+			      &png_info_ptr, rgb, TRUE);
+    }
+    else if (format == PNG_GE) {
+      initialize_png_file_ext(output_file_name, md, &opng, &png_ptr,
+			      &png_info_ptr, rgb, 2);
+    }
     int ignored[4] = {0, 0, 0, 0};
     int red_channel=-1, green_channel=-1, blue_channel=-1;
     for (ii = 0; ii < 4; ii++) {
@@ -1272,7 +1315,7 @@ export_band_image (const char *metadata_file_name,
         else if (format == JPEG)
           write_rgb_jpeg_byte2byte(ojpeg, red_byte_line, green_byte_line,
                                    blue_byte_line, &cinfo, sample_count);
-        else if (format == PNG)
+        else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
           write_rgb_png_byte2byte(opng, red_byte_line, green_byte_line,
                                   blue_byte_line, png_ptr, png_info_ptr,
                                   sample_count);
@@ -1311,7 +1354,7 @@ export_band_image (const char *metadata_file_name,
                                     blue_float_line, &cinfo, red_stats,
                                     green_stats, blue_stats, sample_mapping,
                                     md->general->no_data, sample_count);
-        else if (format == PNG)
+        else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
           write_rgb_png_float2byte(opng, red_float_line, green_float_line,
                                    blue_float_line, png_ptr, png_info_ptr,
                                    red_stats, green_stats, blue_stats,
@@ -1337,7 +1380,7 @@ export_band_image (const char *metadata_file_name,
       finalize_tiff_file(otif, ogtif, is_geotiff);
     else if (format == JPEG)
       finalize_jpeg_file(ojpeg, &cinfo);
-    else if (format == PNG)
+    else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
       finalize_png_file(opng, png_ptr, png_info_ptr);
     else
       asfPrintError("Impossible: unexpected format %d\n", format);
@@ -1487,6 +1530,16 @@ export_band_image (const char *metadata_file_name,
                                 &opng, &png_ptr, &png_info_ptr, rgb);
           }
         }
+        else if (format == PNG_ALPHA) {
+          append_ext_if_needed (output_file_name, ".png", NULL);
+	  initialize_png_file_ext(output_file_name, md,
+				  &opng, &png_ptr, &png_info_ptr, FALSE, TRUE);
+        }
+        else if (format == PNG_GE) {
+          append_ext_if_needed (output_file_name, ".png", NULL);
+	  initialize_png_file_ext(output_file_name, md,
+				  &opng, &png_ptr, &png_info_ptr, 1, 2);
+        }
         else if (format == PGM) {
           append_ext_if_needed (output_file_name, ".pgm", ".pgm");
           initialize_pgm_file(output_file_name, md, &opgm);
@@ -1583,7 +1636,7 @@ export_band_image (const char *metadata_file_name,
               else if (format == JPEG)
                 write_jpeg_byte2lut(ojpeg, byte_line, &cinfo, sample_count,
                                     lut_file);
-              else if (format == PNG)
+              else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
                 write_png_byte2lut(opng, byte_line, png_ptr, png_info_ptr,
                                    sample_count, lut_file);
               else
@@ -1610,7 +1663,7 @@ export_band_image (const char *metadata_file_name,
                                      sample_mapping,
                                      md->general->no_data,
                                      sample_count, lut_file);
-              else if (format == PNG)
+              else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
                 // Use lut to write an RGB line to the file
                 write_png_float2lut(opng, float_line, png_ptr, png_info_ptr,
                                     stats,
@@ -1642,7 +1695,7 @@ export_band_image (const char *metadata_file_name,
               else if (format == JPEG)
                 write_jpeg_byte2byte(ojpeg, byte_line, stats, sample_mapping,
                                      &cinfo, sample_count);
-              else if (format == PNG)
+              else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
                 write_png_byte2byte(opng, byte_line, stats, sample_mapping,
                                     png_ptr, png_info_ptr, sample_count);
               else if (format == PGM)
@@ -1671,7 +1724,7 @@ export_band_image (const char *metadata_file_name,
                                       sample_mapping,
                                       md->general->no_data,
                                       sample_count);
-              else if (format == PNG)
+              else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
                 write_png_float2byte(opng, float_line, png_ptr, png_info_ptr,
                                      stats,
                                      //is_colormap_band ? TRUNCATE : sample_mapping,
@@ -1701,7 +1754,7 @@ export_band_image (const char *metadata_file_name,
           finalize_tiff_file(otif, ogtif, is_geotiff);
         else if (format == JPEG)
           finalize_jpeg_file(ojpeg, &cinfo);
-        else if (format == PNG)
+        else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
           finalize_png_file(opng, png_ptr, png_info_ptr);
         else if (format == PGM)
           finalize_ppm_file(opgm);

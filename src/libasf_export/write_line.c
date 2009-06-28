@@ -354,14 +354,34 @@ void write_png_float2byte(FILE *opng, float *float_line,
                scale_t sample_mapping,
                float no_data, int sample_count)
 {
-  int jj;
+  int jj, value;
+  
+  png_byte *row_pointer;
+  int color_type = png_get_color_type(png_ptr, png_info_ptr);
+  if (color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
+    row_pointer = g_new(png_byte, sample_count * 4);
+    
+    for (jj=0; jj<sample_count; jj++) {
+      value = pixel_float2byte(float_line[jj], sample_mapping, stats.min, 
+			       stats.max, stats.hist, stats.hist_pdf, no_data);
 
-  png_byte *row_pointer = g_new(png_byte, sample_count);
+      row_pointer[jj*4]     = (png_byte) value;
+      row_pointer[(jj*4)+1] = (png_byte) value;
+      row_pointer[(jj*4)+2] = (png_byte) value;
+      if (value == 0)
+	row_pointer[(jj*4)+3] = (png_byte) 0;
+      else
+	row_pointer[(jj*4)+3] = (png_byte) 255;
+    }
+  }
+  else {
+    row_pointer = g_new(png_byte, sample_count);
 
-  for (jj=0; jj<sample_count; jj++) {
-    row_pointer[jj] = (png_byte)
-      pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
-               stats.hist, stats.hist_pdf, no_data);
+    for (jj=0; jj<sample_count; jj++) {
+      row_pointer[jj] = (png_byte)
+	pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
+			 stats.hist, stats.hist_pdf, no_data);
+    }
   }
 
   png_write_row(png_ptr, row_pointer);
@@ -420,23 +440,44 @@ void write_rgb_png_float2byte(FILE *opng,
                    scale_t sample_mapping,
                    float no_data, int sample_count)
 {
-  int jj;
+  int jj, nb, alpha;
 
-  png_byte *row_pointer = g_new(png_byte, sample_count * 3);
+  png_byte *row_pointer;
+  int color_type = png_get_color_type(png_ptr, png_info_ptr);
+  if (color_type == PNG_COLOR_TYPE_RGB_ALPHA)
+    nb = 4;
+  else
+    nb = 3;
+  row_pointer = g_new(png_byte, sample_count * nb);
 
   for (jj=0; jj<sample_count; jj++) {
-    row_pointer[jj*3] = (png_byte)
+    row_pointer[jj*nb] = (png_byte)
       pixel_float2byte(red_float_line[jj], sample_mapping,
                red_stats.min, red_stats.max, red_stats.hist,
                red_stats.hist_pdf, no_data);
-    row_pointer[(jj*3)+1] = (png_byte)
+    row_pointer[(jj*nb)+1] = (png_byte)
       pixel_float2byte(green_float_line[jj], sample_mapping,
                green_stats.min, green_stats.max, green_stats.hist,
                green_stats.hist_pdf, no_data);
-    row_pointer[(jj*3)+2] = (png_byte)
+    row_pointer[(jj*nb)+2] = (png_byte)
       pixel_float2byte(blue_float_line[jj], sample_mapping,
                blue_stats.min, blue_stats.max, blue_stats.hist,
                blue_stats.hist_pdf, no_data);
+    if (nb == 4) {
+      alpha = pixel_float2byte(red_float_line[jj], sample_mapping,
+		        red_stats.min, red_stats.max, red_stats.hist,
+		        red_stats.hist_pdf, no_data);
+      alpha += pixel_float2byte(green_float_line[jj], sample_mapping,
+			green_stats.min, green_stats.max, green_stats.hist,
+			green_stats.hist_pdf, no_data);
+      alpha += pixel_float2byte(blue_float_line[jj], sample_mapping,
+			blue_stats.min, blue_stats.max, blue_stats.hist,
+			blue_stats.hist_pdf, no_data);
+      if (alpha == 0)
+	row_pointer[(jj*nb)+3] = (png_byte) 0;
+      else
+	row_pointer[(jj*nb)+3] = (png_byte) 255;
+    }
   }
 
   png_write_row(png_ptr, row_pointer);

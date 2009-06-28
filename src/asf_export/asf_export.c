@@ -495,7 +495,9 @@ main (int argc, char *argv[])
            strcmp (command_line.format, "JPEG") == 0 ||
            strcmp (command_line.format, "JPG")  == 0 ||
            strcmp (command_line.format, "PNG")  == 0 ||
-           strcmp (command_line.format, "PGM")  == 0)
+           strcmp (command_line.format, "PGM")  == 0 ||
+	   strcmp (command_line.format, "PNG_ALPHA") == 0 ||
+	   strcmp (command_line.format, "PNG_GE") == 0)
   {
     command_line.sample_mapping = SIGMA;
   }
@@ -770,11 +772,17 @@ main (int argc, char *argv[])
   else if ( strcmp (command_line.format, "PNG") == 0 ) {
     format = PNG;
   }
+  else if ( strcmp (command_line.format, "PNG_ALPHA") == 0 ) {
+    format = PNG_ALPHA;
+  }
+  else if ( strcmp (command_line.format, "PNG_GE") == 0 ) {
+    format = PNG_GE;
+  }
   else if ( strcmp (command_line.format, "KML") == 0 ) {
     format = KML;
   }
   else {
-    asfPrintError("Unrecognized output format specified");
+    asfPrintError("Unrecognized output format specified\n");
   }
 
   /* Complex data generally can't be output into meaningful images, so

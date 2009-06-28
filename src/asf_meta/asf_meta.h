@@ -823,6 +823,7 @@ void latLon2UTM_zone(double lat, double lon, double elev, int zone,
                      double *projX, double *projY);
 void UTM2latLon(double projX, double projY, double elev, int zone,
                 double *lat, double *lon);
+void EQR2latLon(double projX, double projY, double *lat, double *lon);
 void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
                            meta_parameters *meta, int metaOnly);
 void ceos_init_sar_ext(ceos_description *ceos, const char *in_fName,

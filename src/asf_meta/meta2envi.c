@@ -269,12 +269,16 @@ envi_header* meta2envi(meta_parameters *meta)
 	envi->center_lat = meta->projection->param.lamaz.center_lat;
 	envi->center_lon = meta->projection->param.lamaz.center_lon;
 	break;
+      case EQUI_RECTANGULAR:
+	sprintf(envi->projection, "Equi Rectangualr");
+	envi->center_lat = meta->projection->param.eqr.orig_latitude;
+	envi->center_lon = meta->projection->param.eqr.central_meridian;
+	break;
       case STATE_PLANE: 
       case SCANSAR_PROJECTION: 
 	break;
       case LAT_LONG_PSEUDO_PROJECTION:
       case MERCATOR:
-      case EQUI_RECTANGULAR:
       case UNKNOWN_PROJECTION:
 	// I haven't tested this at all.
 	assert (0);

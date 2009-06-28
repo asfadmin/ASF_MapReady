@@ -98,6 +98,30 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                         look_up_table_name, PNG,
                         &nouts, &outs);
   }
+  else if ( format == PNG_ALPHA ) {
+      //in_data_name = appendExt(in_base_name, ".img");
+      //in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+      strcpy(out_name, output_name);
+      append_ext_if_needed(out_name, ".png", NULL);
+      export_band_image(in_meta_name, in_data_name, out_name,
+                        sample_mapping, band_name, rgb,
+                        true_color, false_color,
+                        look_up_table_name, PNG_ALPHA,
+                        &nouts, &outs);
+  }
+  else if ( format == PNG_GE ) {
+      //in_data_name = appendExt(in_base_name, ".img");
+      //in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+      strcpy(out_name, output_name);
+      append_ext_if_needed(out_name, ".png", NULL);
+      export_band_image(in_meta_name, in_data_name, out_name,
+                        sample_mapping, band_name, rgb,
+                        true_color, false_color,
+                        look_up_table_name, PNG_GE,
+                        &nouts, &outs);
+  }
   else if ( format == PGM ) {
       //in_data_name = appendExt(in_base_name, ".img");
       //in_meta_name = appendExt(in_base_name, ".meta");
