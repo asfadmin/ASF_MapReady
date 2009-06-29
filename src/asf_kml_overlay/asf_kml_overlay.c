@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
 
   // Check whether required files actually exist
   char **dataName=NULL, **metaName=NULL;
-  int step=1, nBands, trailer;
+  int nBands, trailer;
   require_ceos_pair(inFile, &dataName, &metaName, &nBands, &trailer);
 
   // Create temporary processing directory
@@ -311,15 +311,8 @@ int main(int argc, char *argv[])
   meta_parameters *meta;
   meta = meta_read(inFile);
   double pixel_size = meta->general->x_pixel_size;
-  int sample_count = meta->general->sample_count;
   meta_free(meta);
-  while (step) {
-    if (sample_count > 750 && sample_count < 1100) {
-      step = FALSE;
-    }
-    pixel_size *= 2.0;
-    sample_count /= 2;
-  }
+  pixel_size *= 8.0;
 
   // Generate output names
   char *baseName = get_basename(outFile);
@@ -352,7 +345,7 @@ int main(int argc, char *argv[])
   if (tcFlag != FLAG_NOT_SET || rgFlag != FLAG_NOT_SET) {
     fprintf(fp, "[Terrain correction]\n");
     fprintf(fp, "digital elevation model = %s\n", demFile);
-    fprintf(fp, "pixel spacing = %.2lf\n", pixel_size);
+    fprintf(fp, "pixel spacing = 30\n");
     fprintf(fp, "auto mask water = 1\n");
     fprintf(fp, "water height cutoff = 1.0\n");
     fprintf(fp, "smooth dem holes = 1\n");
