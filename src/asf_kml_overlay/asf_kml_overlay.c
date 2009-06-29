@@ -307,7 +307,6 @@ int main(int argc, char *argv[])
   char tmpDir[512];
   create_and_set_tmp_dir(inFile, outFile, tmpDir);
   strcat(tmpDir, DIR_SEPARATOR_STR);
-  printf("tmpDir: %s\n", tmpDir);
 
   meta_parameters *meta;
   meta = meta_read(inFile);
@@ -453,7 +452,6 @@ int main(int argc, char *argv[])
   remove_file(kmlFile);
   remove_file(pngFile);
   remove_file(metaFile);
-  FREE(tmpDir);
   asfPrintStatus("\nSuccessful completion!\n\n");
 
   return(EXIT_SUCCESS);
