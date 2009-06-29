@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
   require_ceos_pair(inFile, &dataName, &metaName, &nBands, &trailer);
 
   // Create temporary processing directory
-  char *tmpDir = MALLOC(sizeof(char)*1024);
+  char tmpDir[512];
   create_and_set_tmp_dir(inFile, outFile, tmpDir);
   strcat(tmpDir, DIR_SEPARATOR_STR);
   printf("tmpDir: %s\n", tmpDir);
