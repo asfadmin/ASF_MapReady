@@ -778,7 +778,7 @@ int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
         }
         
 /* output file's metadata is all set, now */
-	meta_get_corner_coords(outMeta);
+	//meta_get_corner_coords(outMeta);
 	meta_write(outMeta, outName);
 
 /* Blather at user about what is going on */
