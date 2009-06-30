@@ -865,7 +865,7 @@ add_to_files_list_iter(const gchar *input_file_in,
           }
 
           gchar *polsarpro_display;
-          if (strlen(polsarpro_aux_info)>0) {
+          if (polsarpro_aux_info && strlen(polsarpro_aux_info)>0) {
             char *p = strchr(polsarpro_aux_info, ';');
             if (p) {
               polsarpro_display =
