@@ -224,7 +224,9 @@ void initialize_png_file_ext(const char *output_file_name,
     int width = meta->general->sample_count;
     int height = meta->general->line_count;
     png_byte color_type;
-    if (alpha == 1) {
+    if (alpha == 0)
+      color_type = rgb ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_GRAY;
+    else if (alpha == 1) {
       color_type = rgb ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_GRAY;
       int ii;
       if (rgb) {
