@@ -221,8 +221,6 @@ void initialize_png_file_ext(const char *output_file_name,
 
     png_init_io(*png_ptr, *opng);
 
-    printf("rgb: %d, alpha: %d\n", rgb, alpha);
-
     int width = meta->general->sample_count;
     int height = meta->general->line_count;
     png_byte color_type;
