@@ -671,7 +671,8 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
   // Check whether image needs to be flipped
   if (meta->general->orbit_direction == 'D' && !meta->projection &&
       (strncmp(meta->general->processor, "RSI", 3) == 0 ||
-       strncmp(meta->general->processor, "CDPF", 4) == 0))
+       strncmp(meta->general->processor, "CDPF", 4) == 0 ||
+       strncmp(meta->general->processor, "KACST", 5) == 0))
     flip = TRUE;
 
   // Read data type from metadata
@@ -830,7 +831,8 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
   // Check whether image needs to be flipped
   if (meta->general->orbit_direction == 'D' && !meta->projection &&
       (strncmp(meta->general->processor, "RSI", 3) == 0 ||
-       strncmp(meta->general->processor, "CDPF", 4) == 0))
+       strncmp(meta->general->processor, "CDPF", 4) == 0 ||
+       strncmp(meta->general->processor, "KACST", 5) == 0))
     flip = TRUE;
 
   // Read data type from metadata
@@ -1620,7 +1622,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   if (meta->general->orbit_direction == 'D' &&
       (!meta->projection || meta->projection->type != SCANSAR_PROJECTION) &&
       (strncmp_case(meta->general->processor, "CDPF", 4) == 0 ||
-       strncmp_case(meta->general->processor, "RSI", 3) == 0))
+       strncmp_case(meta->general->processor, "RSI", 3) == 0 ||
+       strncmp_case(meta->general->processor, "KACST", 5) == 0))
   {
     flip = TRUE;
   }

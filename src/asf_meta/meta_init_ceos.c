@@ -246,6 +246,8 @@ void ceos_init_sar_ext(ceos_description *ceos, const char *in_fName,
     ceos_init_sar_westfreugh(ceos, in_fName, meta);
   else if (ceos->facility == DERA)
     ceos_init_sar_dera(ceos, in_fName, meta);
+  else if (ceos->facility = KACST)
+    ceos_init_sar_rsi(ceos, in_fName, meta);
   else if (ceos->facility == unknownFacility)
     asfPrintError("Unknown CEOS facility! Data cannot be imported "
       "at this time.\n");
@@ -3065,7 +3067,7 @@ ceos_description *get_ceos_description_ext(const char *fName,
       else if (0==strncmp(prodStr, "SAR GEOREF FINE",15))
         ceos->product = SGF;
       else if (0==strncmp(prodStr, "UNPROCESSED SIGNAL DATA",23))
-  ceos->product = RAW;
+	ceos->product = RAW;
       else {
         asfReport(level, "Get_ceos_description Warning! "
                   "Unknown RSI product type '%s'!\n", prodStr);
@@ -3163,6 +3165,18 @@ ceos_description *get_ceos_description_ext(const char *fName,
         asfReport(level, "Get_ceos_description Warning! "
                     "Unknown Dera product type '%s'!\n", prodStr);
         ceos->product = unknownProduct;
+      }
+    }
+    else if (0==strncmp(facStr, "KACST", 5)) {
+      asfReport(level, "   Data set processed by KACST\n");
+      ceos->facility = KACST;
+      // Currently known: SGF
+      if (0==strncmp(trim_spaces(prodStr),"SAR GEOREF FINE",15))
+	ceos->product = SGF;
+      else {
+	asfReport(level, "Get_ceos_description Warning! "
+		  "Unknown Dera product type '%s'!\n", prodStr);
+	ceos->product = unknownProduct;
       }
     }
   }

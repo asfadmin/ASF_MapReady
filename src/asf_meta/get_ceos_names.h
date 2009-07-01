@@ -46,7 +46,8 @@ typedef struct {
     BEIJING,
     TROMSO,
     WESTFREUGH,
-    DERA
+    DERA,
+    KACST,
   } facility;
   ceos_satellite_t satellite;
   ceos_sensor_t sensor;
