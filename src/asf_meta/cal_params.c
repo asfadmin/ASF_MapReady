@@ -548,7 +548,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	  recalibration(str, level);
 	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
 	    alos->cf_hh -= 32;
-	    alos->cf_vv -= 32;
+	    alos->cf_hv -= 32;
 	    alos->cf_vh -= 32;
 	    alos->cf_vv -= 32;
 	  }
