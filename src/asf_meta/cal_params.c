@@ -487,38 +487,56 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	  alos->cf_hh = -83.16; // FBS  9.9 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
 	  recalibration(str, level);
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	    alos->cf_hh -= 32;
 	  break;
 	case 3:
 	  alos->cf_hh = -83.55; // FBS 21.5 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
 	  recalibration(str, level);
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	    alos->cf_hh -= 32;
 	  break;
 	case 7:
 	  alos->cf_hh = -83.40; // FBS 34.3 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
 	  recalibration(str, level);
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	    alos->cf_hh -= 32;
 	  break;
 	case 10:
 	  alos->cf_hh = -83.65; // FBS 41.5 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
 	  recalibration(str, level);
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	    alos->cf_hh -= 32;
 	  break;
 	case 35:
 	  alos->cf_hh = -83.30; // FBS 50.8 HH
 	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
 	  recalibration(str, level);
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	    alos->cf_hh -= 32;
 	  break;
 	case 43:
 	  alos->cf_hh = -83.20; // FBD 34.3 HH
 	  alos->cf_hv = -80.20; // FBD 34.3 HV
 	  sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
 	  recalibration(str, level);
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
+	    alos->cf_hh -= 32;
+	    alos->cf_hv -= 32;
+	  }
 	  break;
 	case 46:
 	  alos->cf_hh = -83.19; // FBD 41.5 HH
 	  alos->cf_hv = -80.19; // FBD 41.5 HV
 	  sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
 	  recalibration(str, level);
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
+	    alos->cf_hh -= 32;
+	    alos->cf_hv -= 32;
+	  }
 	  break;
 	case 127:
 	  alos->cf_hh = -83.40; // PLR 21.5 HH
@@ -528,6 +546,12 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	  sprintf(str, "HH: %.2lf\nHV: %.2lf\nVH: %.2lf\nVV: %.2lf", 
 		  alos->cf_hh, alos->cf_hv, alos->cf_vh, alos->cf_vv);
 	  recalibration(str, level);
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
+	    alos->cf_hh -= 32;
+	    alos->cf_vv -= 32;
+	    alos->cf_vh -= 32;
+	    alos->cf_vv -= 32;
+	  }
 	  break;
 	}
     }
