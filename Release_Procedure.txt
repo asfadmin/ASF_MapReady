@@ -226,6 +226,7 @@ src/sample_plugin
 src/adjust_bands
 src/diffimage
 src/diffmeta
+src/asf_kml_overlay
 
  * Run the autotar script:
 
