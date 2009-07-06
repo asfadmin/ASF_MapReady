@@ -149,7 +149,11 @@ static char *check_for_error(gchar * txt)
                 int n = 0;
                 do {
                     p = q + 1;
-                    q = strchr(p, '\n') - 1;
+                    q = strchr(p, '\n');
+                    if (!q)
+                      q = p + strlen(p) - 1;
+                    else
+                      --q;
                     while (isspace(*q)) --q;
                     if (q - p > 2) {
                         char *err_string = MALLOC(sizeof(char)*64);
