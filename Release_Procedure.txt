@@ -221,6 +221,7 @@ src/farcorr
 src/asf_calpol
 src/fftMatch
 src/flip
+src/write_ppf
 src/brs2jpg
 src/sample_plugin
 src/adjust_bands

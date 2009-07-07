@@ -38,6 +38,7 @@ MAPREADY_MODULES = \
 	src/refine_geolocation \
 	src/shift_geolocation \
 	src/flip \
+	src/write_ppf \
 	src/adjust_bands \
 	src/fftMatch \
 	src/trim \
