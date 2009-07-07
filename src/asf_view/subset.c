@@ -301,7 +301,7 @@ static float get_data(ImageInfo *ii, int what_to_save, int line, int samp)
 static meta_parameters *build_metadata(meta_parameters *meta,
                                        const char *out_file, int nl, int ns,
                                        int line_min, int samp_min,
-                                       data_type_t data_type)
+                                       data_type_t data_type, int what_to_save)
 {
     meta_parameters *out_meta = meta_copy(meta);
     if (out_meta->sar) {
@@ -314,10 +314,37 @@ static meta_parameters *build_metadata(meta_parameters *meta,
     out_meta->general->sample_count = ns;
     out_meta->general->data_type = data_type;
     out_meta->general->image_data_type = IMAGE;
-    out_meta->general->band_count = 1;
     out_meta->general->start_line += line_min;
     out_meta->general->start_sample += samp_min;
-    strcpy(out_meta->general->bands, "");
+
+    out_meta->general->band_count = 1;
+
+    switch (what_to_save) {
+      default:
+        strcpy(out_meta->general->bands, "");
+        break;
+      case PIXEL_VALUE:
+        // can leave the bands string as it is
+        break;
+      case INCIDENCE_ANGLE:
+        strcpy(out_meta->general->bands, "INCIDENCE_ANGLE");
+        break;
+      case LOOK_ANGLE:
+        strcpy(out_meta->general->bands, "LOOK_ANGLE");
+        break;
+      case SLANT_RANGE:
+        strcpy(out_meta->general->bands, "SLANT_RANGE");
+        break;
+      case SCALED_PIXEL_VALUE:
+        strcpy(out_meta->general->bands, "SCALED_PIXEL_VALUE");
+        break;
+      case TIME:
+        strcpy(out_meta->general->bands, "TIME");
+        break;
+      case DOPPLER:
+        strcpy(out_meta->general->bands, "DOPPLER");
+        break;
+    }
 
     // From what I can figure, we don't need to update the projection block,
     // the startX/Y values are calculated from the original line/sample coords
@@ -406,7 +433,8 @@ static int save_as_asf(ImageInfo *ii,
       data_type = BYTE;
 
     meta_parameters *out_meta =
-      build_metadata(meta, out_file, nl, ns, line_min, samp_min, data_type);
+      build_metadata(meta, out_file, nl, ns, line_min, samp_min, data_type,
+                     what_to_save);
 
     // put_float_line() will always dump BYTE data if the optical block
     // is present... we want to be in control of the data type, so we must
