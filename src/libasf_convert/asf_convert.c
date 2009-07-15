@@ -2296,7 +2296,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                              cfg->terrain_correct->range_offset,
                              cfg->terrain_correct->azimuth_offset,
                              cfg->terrain_correct->use_gr_dem,
-                             TRUE),
+                             TRUE, // use_speckle
+			     cfg->terrain_correct->if_coreg_fails_use_zero_offsets),
             "terrain correcting data file (asf_terrcorr)\n");
       }
 

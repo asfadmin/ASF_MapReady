@@ -491,6 +491,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->range_offset = 0;
   cfg->terrain_correct->azimuth_offset = 0;
   cfg->terrain_correct->use_gr_dem = 0;
+  cfg->terrain_correct->if_coreg_fails_use_zero_offsets = 0;
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj",
           get_asf_share_dir());
@@ -713,6 +714,9 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->terrain_correct->azimuth_offset = read_double(line, "azimuth offset");
       if (strncmp(test, "use gr dem", 10)==0)
         cfg->terrain_correct->use_gr_dem = read_int(line, "use gr dem");
+      if (strncmp(test, "use zero offsets if match fails", 31)==0)
+        cfg->terrain_correct->if_coreg_fails_use_zero_offsets =
+	  read_int(line, "use zero offsets if match fails");
 
       // Geocoding
       if (strncmp(test, "projection", 10)==0)
@@ -1069,6 +1073,9 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->azimuth_offset = read_double(line, "azimuth offset");
       if (strncmp(test, "use gr dem", 10)==0)
         cfg->terrain_correct->use_gr_dem = read_int(line, "use gr dem");
+      if (strncmp(test, "use zero offsets if match fails", 31)==0)
+        cfg->terrain_correct->if_coreg_fails_use_zero_offsets =
+	  read_int(line, "use zero offsets if match fails");
       FREE(test);
     }
 
@@ -1668,6 +1675,17 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# more structure within the layover regions, but can look worse if the\n"
                 "# coregistration is off in those areas.\n\n");
       fprintf(fConfig, "use gr dem = %d\n", cfg->terrain_correct->use_gr_dem);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# This option causes terrain correction to try to use the DEM\n"
+		"# to refine the geolocation of the SAR image before terrain correcting,\n"
+		"# but if this fails then proceed with terrain correction anyway, using\n"
+		"# offsets of zero.  (I.e., assume the geolocation of the SAR image is\n"
+		"# good enough for terrain correction.)  This often produces good\n"
+		"# results, especially if the terrain is fairly flat.  When this option\n"
+		"# if turned off (i.e., set to zero, the default), terrain correction\n"
+		"# will abort with an error if the coregistration fails.\n\n");
+      fprintf(fConfig, "use zero offsets if match fails = %d\n",
+	      cfg->terrain_correct->if_coreg_fails_use_zero_offsets);
     }
 
     // Geocoding

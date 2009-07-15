@@ -230,6 +230,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int doRadiometric = FALSE;
   int smooth_dem_holes = FALSE;
   int add_speckle = TRUE;
+  int if_coreg_fails_use_zero_offsets = FALSE;
   int update_original_metadata_with_offsets = FALSE;
   float mask_height_cutoff = -999; // not used
   int no_matching = FALSE;
@@ -244,7 +245,8 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
       generate_water_mask, save_clipped_dem,
       update_original_metadata_with_offsets, mask_height_cutoff,
       doRadiometric, smooth_dem_holes, NULL,
-      no_matching, range_offset, azimuth_offset, use_gr_dem, add_speckle);
+      no_matching, range_offset, azimuth_offset, use_gr_dem, add_speckle,
+      if_coreg_fails_use_zero_offsets);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
@@ -263,6 +265,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int doRadiometric = FALSE;
   int smooth_dem_holes = FALSE;
   int add_speckle = TRUE;
+  int if_coreg_fails_use_zero_offsets = FALSE;
   int fill_value = 0;
   int update_orig_metadata_with_offsets = FALSE;
   int no_matching = FALSE;
@@ -279,7 +282,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        mask_height_cutoff, doRadiometric, smooth_dem_holes,
                        other_files_to_update_with_offsets,
                        no_matching, range_offset, azimuth_offset, use_gr_dem,
-                       add_speckle);
+                       add_speckle, if_coreg_fails_use_zero_offsets);
 
   if (ret==0)
   {
@@ -583,6 +586,7 @@ int match_dem(meta_parameters *metaSAR,
               int clean_files,
               int no_matching,
               int add_speckle,
+	      int if_coreg_fails_use_zero_offsets,
               double range_offset,
               double azimuth_offset,
               double *t_offset,
@@ -657,6 +661,7 @@ int match_dem(meta_parameters *metaSAR,
 
     if (!no_matching)
       asfPrintStatus("Determining image offsets...\n");
+
     if (userMaskFile) {
       // OK now if we have a mask we need to find square patches that
       // can be fftMatched without running into the mask.
@@ -887,9 +892,43 @@ int match_dem(meta_parameters *metaSAR,
                      100*cert, dx2, dy2);
 
       if (fabs(dy2) > required_match || fabs(dx2) > required_match) {
-        asfPrintError("Correlated images failed to match!\n\n"
-                      " Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
-                      "   After shift, offset is: (dx,dy) = %14.9f,%14.9f\n\n"
+        // coreg failed...
+
+	if (if_coreg_fails_use_zero_offsets) {
+
+          // coregistration failed, but user would like to proceed anyway,
+          // using zero offsets.
+
+          asfPrintStatus("Correlated images failed to match!\n\n"
+			 "Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
+			 "After shift, offset is: (dx,dy) = %14.9f,%14.9f\n\n"
+			 "Proceeding with terrain correction using offsets\n"
+			 "of (0,0).\n\n",
+			 dx, dy, dx2, dy2);
+
+          // must recurse in order to re-clip the DEM, it was likely shifted
+          // way off during the attempted coregistration
+
+          clean(demClipped);   FREE(demClipped);
+          clean(demSimSar);    FREE(demSimSar);
+          clean(demSlant);     FREE(demSlant);
+	  
+	  return match_dem(metaSAR, sarFile, demFile, srFile, output_dir,
+			   userMaskFile, demTrimSimSar, demTrimSlant,
+			   demGround, userMaskClipped, dem_grid_size,
+			   FALSE, FALSE, FALSE, do_trim_slant_range_dem,
+                           apply_dem_padding,mask_dem_same_size_and_projection,
+			   clean_files, TRUE, TRUE, FALSE,
+			   0.0, 0.0, t_offset, x_offset);
+	}
+	else {
+
+          // coregistration failed -- abort with error
+
+	  asfPrintError(
+"Correlated images failed to match!\n\n"
+" Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
+" After shift, offset is: (dx,dy) = %14.9f,%14.9f\n\n"
 " If you are trying to terrain correct an area that does not have enough\n"
 " relief, or has too much water, or too many moving features (such as\n"
 " glaciers), it can be difficult to determine good offsets.\n\n"
@@ -919,6 +958,7 @@ int match_dem(meta_parameters *metaSAR,
 "     give good accuracy for points near the average height, and so\n"
 "     for fairly flat areas this may be adequate.\n\n",
                       dx, dy, dx2, dy2);
+	}
       }
     }
   }
@@ -980,7 +1020,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
             simAmpFile, demSlant, NULL, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
-            madssap, clean_files, no_matching, add_speckle,
+            madssap, clean_files, no_matching, add_speckle, FALSE,
             range_offset, azimuth_offset, &t_offset, &x_offset);
 
   if (clean_files)
@@ -1000,7 +1040,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                      int smooth_dem_holes,
                      char **other_files_to_update_with_offset,
                      int no_matching, double range_offset,
-                     double azimuth_offset, int use_gr_dem, int add_speckle)
+                     double azimuth_offset, int use_gr_dem, int add_speckle,
+                     int if_coreg_fails_use_zero_offsets)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimSar = NULL, *demTrimSlant = NULL, *demGround = NULL;
@@ -1037,6 +1078,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   //printf("azimuth_offset: %f\n", azimuth_offset);
   //printf("use_gr_dem: %d\n", use_gr_dem);
   //printf("add speckle: %d\n", add_speckle);
+  //printf("if coreg fails use zero offsets: %d\n",
+  //       if_coreg_fails_use_zero_offsets);
 
   // Which DEM should we use during terrain correction -- the original
   // ground range DEM (new method), or the backconverted one (old method)?
@@ -1340,6 +1383,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
         demTrimSimSar, demTrimSlant, demGround, userMaskClipped, dem_grid_size,
         do_corner_matching, do_fftMatch_verification, FALSE,
         TRUE, TRUE, madssap, clean_files, no_matching, add_speckle,
+        if_coreg_fails_use_zero_offsets,
         range_offset, azimuth_offset, &t_offset, &x_offset);
 
   if (update_original_metadata_with_offsets)

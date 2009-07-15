@@ -1663,14 +1663,18 @@ settings_to_config_file(const Settings *s,
             fprintf(cf, "save terrcorr dem = %d\n", s->generate_dem);
             fprintf(cf, "save terrcorr layover mask = %d\n",
                     s->generate_layover_mask);
-            if (s->no_matching) {
-              fprintf(cf, "no matching = 1\n");
-              fprintf(cf, "range offset = %f\n", s->offset_x);
-              fprintf(cf, "azimuth offset = %f\n", s->offset_y);
-            }
-            else {
-              fprintf(cf, "no matching = 0\n");
-            }
+            // for now, the "no matching" checkbutton will be "skip matching"
+            // if it fails
+            //if (s->no_matching) {
+            //  fprintf(cf, "no matching = 1\n");
+            //  fprintf(cf, "range offset = %f\n", s->offset_x);
+            //  fprintf(cf, "azimuth offset = %f\n", s->offset_y);
+            //}
+            //else {
+            //  fprintf(cf, "no matching = 0\n");
+            //}
+            fprintf(cf, "use zero offsets if match fails = %d\n",
+		    s->no_matching);
             // maybe we should use "1" for quad-pol??
             //   commenting this out ... let users set a default in
             //   asf_mapready.defaults

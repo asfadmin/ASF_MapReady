@@ -10,7 +10,7 @@ static void asf_view_thread (GString *file, gpointer user_data)
 
     char buf[1024];
     char *escaped_str = escapify(file->str);
-    sprintf(buf, "\"%s\" %s", asf_view, escaped_str);
+    snprintf(buf, sizeof(buf), "\"%s\" %s", asf_view, escaped_str);
     free(escaped_str);
     asfSystem(buf);
     g_string_free(file, TRUE);

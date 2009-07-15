@@ -8,6 +8,7 @@
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
 "          [-other-file <basename>] [-do-radiometric] [-smooth-dem-holes]\n"\
 "          [-no_matching] [-offsets <range> <azimuth>]\n"\
+"          [-use-zero-offsets-if-match-fails]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -180,6 +181,17 @@
 "          Use these offsets instead of matching the DEM to the SAR image.\n"\
 "          The offsets are in pixels.\n"\
 "\n"\
+"     -use-zero-offsets-if-match-fails\n"\
+"          Try to use the DEM to refine the geolocation of the SAR image\n"\
+"          before terrain correcting, but if this fails proceed with terrain\n"\
+"          correction using offsets of zero.  (I.e., assume the geolocation\n"\
+"          of the SAR image is good enough for terrain correction.)  This\n"\
+"          often produces good results, especially if the terrain is fairly\n"\
+"          flat (a situation that often results in poor or failed\n"\
+"          coregistration).\n\n"\
+"          Normally, if the coregistration fails, asf_terrcorr will abort\n"\
+"          with an error.\n"\
+"\n"\
 "     -no-speckle\n"\
 "          When generating the simulated SAR image for co-registration, do\n"\
 "          not add speckle.  Generally, this will cause co-registration to\n"\
@@ -302,6 +314,7 @@ main (int argc, char *argv[])
   int no_matching = FALSE;
   int use_gr_dem = FALSE;
   int add_speckle = TRUE;
+  int if_coreg_fails_use_zero_offsets = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   char *other_files[MAX_OTHER];
@@ -350,6 +363,10 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-no-speckle", "--no-speckle",NULL)) {
       add_speckle = FALSE;
+    }
+    else if (strmatches(key,"-use-zero-offsets-if-match-fails",
+                            "--use-zero-offsets-if-match-fails",NULL)) {
+      if_coreg_fails_use_zero_offsets = FALSE;
     }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
         CHECK_ARG(1);
@@ -463,7 +480,8 @@ main (int argc, char *argv[])
                               mask_height_cutoff, doRadiometric,
                               smooth_dem_holes, other_files,
                               no_matching, range_offset, azimuth_offset,
-                              use_gr_dem, add_speckle);
+                              use_gr_dem, add_speckle,
+                              if_coreg_fails_use_zero_offsets);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])
