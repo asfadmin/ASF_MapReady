@@ -899,7 +899,7 @@ int match_dem(meta_parameters *metaSAR,
           // coregistration failed, but user would like to proceed anyway,
           // using zero offsets.
 
-          asfPrintStatus("Correlated images failed to match!\n\n"
+          asfPrintWarning("Correlated images failed to match!\n\n"
 			 "Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
 			 "After shift, offset is: (dx,dy) = %14.9f,%14.9f\n\n"
 			 "Proceeding with terrain correction using offsets\n"
