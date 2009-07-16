@@ -19,8 +19,6 @@
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_CENTER</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <signal name="destroy" handler="on_asf_convert_destroy" last_modification_time="Thu, 05 Aug 2004 18:44:12 GMT"/>
 
   <child>
@@ -102,10 +100,6 @@
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
-			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-			      <property name="width_chars">-1</property>
-			      <property name="single_line_mode">False</property>
-			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -200,14 +194,10 @@
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>
 					  <property name="wrap">False</property>
 					  <property name="selectable">False</property>
-					  <property name="xalign">0.019999999553</property>
-					  <property name="yalign">0.519999980927</property>
+					  <property name="xalign">0.02</property>
+					  <property name="yalign">0.52</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
-					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					  <property name="width_chars">-1</property>
-					  <property name="single_line_mode">False</property>
-					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="padding">12</property>
@@ -396,10 +386,6 @@
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
-					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					  <property name="width_chars">-1</property>
-					  <property name="single_line_mode">False</property>
-					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="padding">0</property>
@@ -538,10 +524,6 @@
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="padding">0</property>
@@ -607,10 +589,6 @@
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
-					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					  <property name="width_chars">-1</property>
-					  <property name="single_line_mode">False</property>
-					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="left_attach">0</property>
@@ -701,10 +679,6 @@
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="type">tab</property>
@@ -758,10 +732,6 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
-						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						      <property name="width_chars">-1</property>
-						      <property name="single_line_mode">False</property>
-						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">2</property>
@@ -902,10 +872,6 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
-							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							      <property name="width_chars">-1</property>
-							      <property name="single_line_mode">False</property>
-							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -1072,10 +1038,6 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="left_attach">1</property>
@@ -1098,7 +1060,7 @@
 						  <property name="max_length">0</property>
 						  <property name="text" translatable="yes"></property>
 						  <property name="has_frame">True</property>
-						  <property name="invisible_char">*</property>
+						  <property name="invisible_char" translatable="yes">*</property>
 						  <property name="activates_default">False</property>
 						  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:31:10 GMT"/>
 						</widget>
@@ -1126,10 +1088,6 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="left_attach">1</property>
@@ -1152,7 +1110,7 @@
 						  <property name="max_length">0</property>
 						  <property name="text" translatable="yes"></property>
 						  <property name="has_frame">True</property>
-						  <property name="invisible_char">*</property>
+						  <property name="invisible_char" translatable="yes">*</property>
 						  <property name="activates_default">False</property>
 						  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:31:25 GMT"/>
 						</widget>
@@ -1179,10 +1137,6 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="left_attach">0</property>
@@ -1240,10 +1194,6 @@
 					      <property name="yalign">1</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">1</property>
@@ -1309,14 +1259,10 @@
 					      <property name="justify">GTK_JUSTIFY_LEFT</property>
 					      <property name="wrap">True</property>
 					      <property name="selectable">False</property>
-					      <property name="xalign">0.019999999553</property>
-					      <property name="yalign">0.019999999553</property>
+					      <property name="xalign">0.02</property>
+					      <property name="yalign">0.02</property>
 					      <property name="xpad">2</property>
 					      <property name="ypad">2</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -1385,10 +1331,6 @@
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="type">tab</property>
@@ -1432,10 +1374,6 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">2</property>
 						  <property name="ypad">2</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -1485,10 +1423,6 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">4</property>
 						  <property name="ypad">4</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">12</property>
@@ -1564,10 +1498,6 @@
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="type">tab</property>
@@ -1634,10 +1564,6 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -1692,10 +1618,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -1752,10 +1674,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -1878,10 +1796,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -1924,10 +1838,6 @@
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="padding">0</property>
@@ -1976,10 +1886,6 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -2056,10 +1962,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -2079,7 +1981,7 @@
 							  <property name="max_length">5</property>
 							  <property name="text" translatable="yes"></property>
 							  <property name="has_frame">True</property>
-							  <property name="invisible_char">*</property>
+							  <property name="invisible_char" translatable="yes">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Mon, 08 Sep 2008 18:22:18 GMT"/>
 							</widget>
@@ -2103,10 +2005,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -2169,10 +2067,6 @@
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="type">tab</property>
@@ -2241,10 +2135,6 @@
 								  <property name="yalign">0.5</property>
 								  <property name="xpad">0</property>
 								  <property name="ypad">0</property>
-								  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-								  <property name="width_chars">-1</property>
-								  <property name="single_line_mode">False</property>
-								  <property name="angle">0</property>
 								</widget>
 								<packing>
 								  <property name="padding">2</property>
@@ -2264,7 +2154,7 @@
 								  <property name="max_length">0</property>
 								  <property name="text" translatable="yes"></property>
 								  <property name="has_frame">True</property>
-								  <property name="invisible_char">*</property>
+								  <property name="invisible_char" translatable="yes">*</property>
 								  <property name="activates_default">False</property>
 								  <signal name="changed" handler="update_summary" last_modification_time="Thu, 27 Apr 2006 02:03:07 GMT"/>
 								</widget>
@@ -2314,10 +2204,6 @@
 									      <property name="yalign">0.5</property>
 									      <property name="xpad">0</property>
 									      <property name="ypad">0</property>
-									      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-									      <property name="width_chars">-1</property>
-									      <property name="single_line_mode">False</property>
-									      <property name="angle">0</property>
 									    </widget>
 									    <packing>
 									      <property name="padding">0</property>
@@ -2507,10 +2393,6 @@
 								      <property name="yalign">0.5</property>
 								      <property name="xpad">0</property>
 								      <property name="ypad">0</property>
-								      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-								      <property name="width_chars">-1</property>
-								      <property name="single_line_mode">False</property>
-								      <property name="angle">0</property>
 								    </widget>
 								    <packing>
 								      <property name="padding">0</property>
@@ -2589,10 +2471,6 @@
 								      <property name="yalign">0.5</property>
 								      <property name="xpad">0</property>
 								      <property name="ypad">0</property>
-								      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-								      <property name="width_chars">-1</property>
-								      <property name="single_line_mode">False</property>
-								      <property name="angle">0</property>
 								    </widget>
 								    <packing>
 								      <property name="padding">0</property>
@@ -2612,7 +2490,7 @@
 								      <property name="max_length">0</property>
 								      <property name="text" translatable="yes"></property>
 								      <property name="has_frame">True</property>
-								      <property name="invisible_char">*</property>
+								      <property name="invisible_char" translatable="yes">*</property>
 								      <property name="activates_default">False</property>
 								      <signal name="changed" handler="update_summary" last_modification_time="Thu, 27 Apr 2006 02:03:07 GMT"/>
 								    </widget>
@@ -2662,10 +2540,6 @@
 										  <property name="yalign">0.5</property>
 										  <property name="xpad">0</property>
 										  <property name="ypad">0</property>
-										  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-										  <property name="width_chars">-1</property>
-										  <property name="single_line_mode">False</property>
-										  <property name="angle">0</property>
 										</widget>
 										<packing>
 										  <property name="padding">0</property>
@@ -2743,10 +2617,6 @@
 									      <property name="yalign">0.5</property>
 									      <property name="xpad">0</property>
 									      <property name="ypad">0</property>
-									      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-									      <property name="width_chars">-1</property>
-									      <property name="single_line_mode">False</property>
-									      <property name="angle">0</property>
 									    </widget>
 									    <packing>
 									      <property name="padding">0</property>
@@ -2766,7 +2636,7 @@
 									      <property name="max_length">0</property>
 									      <property name="text" translatable="yes"></property>
 									      <property name="has_frame">True</property>
-									      <property name="invisible_char">●</property>
+									      <property name="invisible_char" translatable="yes">●</property>
 									      <property name="activates_default">False</property>
 									      <signal name="changed" handler="update_summary" last_modification_time="Thu, 26 Feb 2009 02:13:27 GMT"/>
 									    </widget>
@@ -2790,10 +2660,6 @@
 									      <property name="yalign">0.5</property>
 									      <property name="xpad">0</property>
 									      <property name="ypad">0</property>
-									      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-									      <property name="width_chars">-1</property>
-									      <property name="single_line_mode">False</property>
-									      <property name="angle">0</property>
 									    </widget>
 									    <packing>
 									      <property name="padding">0</property>
@@ -2813,7 +2679,7 @@
 									      <property name="max_length">0</property>
 									      <property name="text" translatable="yes"></property>
 									      <property name="has_frame">True</property>
-									      <property name="invisible_char">●</property>
+									      <property name="invisible_char" translatable="yes">●</property>
 									      <property name="activates_default">False</property>
 									      <signal name="changed" handler="update_summary" last_modification_time="Thu, 26 Feb 2009 02:13:41 GMT"/>
 									    </widget>
@@ -2837,10 +2703,6 @@
 									      <property name="yalign">0.5</property>
 									      <property name="xpad">0</property>
 									      <property name="ypad">0</property>
-									      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-									      <property name="width_chars">-1</property>
-									      <property name="single_line_mode">False</property>
-									      <property name="angle">0</property>
 									    </widget>
 									    <packing>
 									      <property name="padding">0</property>
@@ -2920,7 +2782,7 @@
 									      <property name="max_length">8</property>
 									      <property name="text" translatable="yes"></property>
 									      <property name="has_frame">True</property>
-									      <property name="invisible_char">*</property>
+									      <property name="invisible_char" translatable="yes">*</property>
 									      <property name="activates_default">False</property>
 									      <signal name="changed" handler="update_summary" last_modification_time="Wed, 08 Mar 2006 18:48:51 GMT"/>
 									    </widget>
@@ -2944,10 +2806,6 @@
 									      <property name="yalign">0.5</property>
 									      <property name="xpad">0</property>
 									      <property name="ypad">0</property>
-									      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-									      <property name="width_chars">-1</property>
-									      <property name="single_line_mode">False</property>
-									      <property name="angle">0</property>
 									    </widget>
 									    <packing>
 									      <property name="padding">0</property>
@@ -3129,10 +2987,6 @@
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="type">tab</property>
@@ -3172,10 +3026,6 @@
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="padding">0</property>
@@ -3262,10 +3112,6 @@
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="padding">0</property>
@@ -3360,10 +3206,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="left_attach">0</property>
@@ -3389,10 +3231,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="left_attach">0</property>
@@ -3418,10 +3256,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="left_attach">0</property>
@@ -3447,10 +3281,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="left_attach">0</property>
@@ -3476,10 +3306,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="left_attach">0</property>
@@ -3505,10 +3331,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="left_attach">0</property>
@@ -3530,7 +3352,7 @@
 							  <property name="max_length">0</property>
 							  <property name="text" translatable="yes"></property>
 							  <property name="has_frame">True</property>
-							  <property name="invisible_char">*</property>
+							  <property name="invisible_char" translatable="yes">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:25:43 GMT"/>
 							</widget>
@@ -3554,7 +3376,7 @@
 							  <property name="max_length">0</property>
 							  <property name="text" translatable="yes"></property>
 							  <property name="has_frame">True</property>
-							  <property name="invisible_char">*</property>
+							  <property name="invisible_char" translatable="yes">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:27:22 GMT"/>
 							</widget>
@@ -3578,7 +3400,7 @@
 							  <property name="max_length">0</property>
 							  <property name="text" translatable="yes"></property>
 							  <property name="has_frame">True</property>
-							  <property name="invisible_char">*</property>
+							  <property name="invisible_char" translatable="yes">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:27:42 GMT"/>
 							</widget>
@@ -3602,7 +3424,7 @@
 							  <property name="max_length">0</property>
 							  <property name="text" translatable="yes"></property>
 							  <property name="has_frame">True</property>
-							  <property name="invisible_char">*</property>
+							  <property name="invisible_char" translatable="yes">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:27:59 GMT"/>
 							</widget>
@@ -3626,7 +3448,7 @@
 							  <property name="max_length">0</property>
 							  <property name="text" translatable="yes"></property>
 							  <property name="has_frame">True</property>
-							  <property name="invisible_char">*</property>
+							  <property name="invisible_char" translatable="yes">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:28:11 GMT"/>
 							</widget>
@@ -3650,7 +3472,7 @@
 							  <property name="max_length">0</property>
 							  <property name="text" translatable="yes"></property>
 							  <property name="has_frame">True</property>
-							  <property name="invisible_char">*</property>
+							  <property name="invisible_char" translatable="yes">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:28:35 GMT"/>
 							</widget>
@@ -3696,10 +3518,6 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
-							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							  <property name="width_chars">-1</property>
-							  <property name="single_line_mode">False</property>
-							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="left_attach">0</property>
@@ -3722,7 +3540,7 @@
 							  <property name="max_length">0</property>
 							  <property name="text" translatable="yes"></property>
 							  <property name="has_frame">True</property>
-							  <property name="invisible_char">*</property>
+							  <property name="invisible_char" translatable="yes">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Thu, 20 Jan 2005 19:04:36 GMT"/>
 							</widget>
@@ -3825,10 +3643,6 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
-						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						      <property name="width_chars">-1</property>
-						      <property name="single_line_mode">False</property>
-						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -3848,7 +3662,7 @@
 						      <property name="max_length">12</property>
 						      <property name="text" translatable="yes"></property>
 						      <property name="has_frame">True</property>
-						      <property name="invisible_char">*</property>
+						      <property name="invisible_char" translatable="yes">*</property>
 						      <property name="activates_default">False</property>
 						      <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:28:50 GMT"/>
 						    </widget>
@@ -3872,10 +3686,6 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
-						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						      <property name="width_chars">-1</property>
-						      <property name="single_line_mode">False</property>
-						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -3932,10 +3742,6 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
-						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						      <property name="width_chars">-1</property>
-						      <property name="single_line_mode">False</property>
-						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -3955,7 +3761,7 @@
 						      <property name="max_length">0</property>
 						      <property name="text" translatable="yes"></property>
 						      <property name="has_frame">True</property>
-						      <property name="invisible_char">*</property>
+						      <property name="invisible_char" translatable="yes">*</property>
 						      <property name="activates_default">False</property>
 						      <signal name="changed" handler="update_summary" last_modification_time="Wed, 08 Mar 2006 18:48:51 GMT"/>
 						    </widget>
@@ -3979,10 +3785,6 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
-						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						      <property name="width_chars">-1</property>
-						      <property name="single_line_mode">False</property>
-						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -4018,10 +3820,6 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
-						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						      <property name="width_chars">-1</property>
-						      <property name="single_line_mode">False</property>
-						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -4112,10 +3910,6 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
-						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						      <property name="width_chars">-1</property>
-						      <property name="single_line_mode">False</property>
-						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -4217,10 +4011,6 @@
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="type">tab</property>
@@ -4257,10 +4047,6 @@
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
-					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					  <property name="width_chars">-1</property>
-					  <property name="single_line_mode">False</property>
-					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="padding">4</property>
@@ -4380,10 +4166,6 @@
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
-					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					  <property name="width_chars">-1</property>
-					  <property name="single_line_mode">False</property>
-					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="padding">0</property>
@@ -4564,10 +4346,6 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
-							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							      <property name="width_chars">-1</property>
-							      <property name="single_line_mode">False</property>
-							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -4695,10 +4473,6 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
-							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							      <property name="width_chars">-1</property>
-							      <property name="single_line_mode">False</property>
-							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -4729,10 +4503,6 @@
 								  <property name="yalign">0.5</property>
 								  <property name="xpad">0</property>
 								  <property name="ypad">0</property>
-								  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-								  <property name="width_chars">-1</property>
-								  <property name="single_line_mode">False</property>
-								  <property name="angle">0</property>
 								</widget>
 								<packing>
 								  <property name="left_attach">0</property>
@@ -4757,10 +4527,6 @@
 								  <property name="yalign">0.5</property>
 								  <property name="xpad">0</property>
 								  <property name="ypad">0</property>
-								  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-								  <property name="width_chars">-1</property>
-								  <property name="single_line_mode">False</property>
-								  <property name="angle">0</property>
 								</widget>
 								<packing>
 								  <property name="left_attach">0</property>
@@ -4785,10 +4551,6 @@
 								  <property name="yalign">0.5</property>
 								  <property name="xpad">0</property>
 								  <property name="ypad">0</property>
-								  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-								  <property name="width_chars">-1</property>
-								  <property name="single_line_mode">False</property>
-								  <property name="angle">0</property>
 								</widget>
 								<packing>
 								  <property name="left_attach">0</property>
@@ -4805,9 +4567,6 @@
 								  <property name="width_request">100</property>
 								  <property name="visible">True</property>
 								  <property name="items" translatable="yes">-</property>
-								  <property name="add_tearoffs">False</property>
-								  <property name="has_frame">True</property>
-								  <property name="focus_on_click">True</property>
 								  <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:46:04 GMT"/>
 								</widget>
 								<packing>
@@ -4824,9 +4583,6 @@
 								  <property name="width_request">100</property>
 								  <property name="visible">True</property>
 								  <property name="items" translatable="yes">-</property>
-								  <property name="add_tearoffs">False</property>
-								  <property name="has_frame">True</property>
-								  <property name="focus_on_click">True</property>
 								  <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:45:40 GMT"/>
 								</widget>
 								<packing>
@@ -4844,9 +4600,6 @@
 								  <property name="width_request">100</property>
 								  <property name="visible">True</property>
 								  <property name="items" translatable="yes">-</property>
-								  <property name="add_tearoffs">False</property>
-								  <property name="has_frame">True</property>
-								  <property name="focus_on_click">True</property>
 								  <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:45:51 GMT"/>
 								</widget>
 								<packing>
@@ -4927,10 +4680,6 @@
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="type">tab</property>
@@ -4972,10 +4721,6 @@
 				      <property name="yalign">0</property>
 				      <property name="xpad">15</property>
 				      <property name="ypad">5</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
 				    </widget>
 				  </child>
 
@@ -4992,10 +4737,6 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="type">label_item</property>
@@ -5028,10 +4769,6 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -5091,10 +4828,6 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -5170,10 +4903,6 @@
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
-			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-			      <property name="width_chars">-1</property>
-			      <property name="single_line_mode">False</property>
-			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -5282,10 +5011,6 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5305,8 +5030,6 @@ TerraSAR-X
 GeoTIFF
 ASF Internal
 </property>
-						  <property name="add_tearoffs">False</property>
-						  <property name="focus_on_click">True</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5329,10 +5052,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5400,10 +5119,6 @@ ASF Internal
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
-							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							      <property name="width_chars">-1</property>
-							      <property name="single_line_mode">False</property>
-							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -5436,10 +5151,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5462,10 +5173,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5687,10 +5394,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5712,10 +5415,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5737,10 +5436,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5806,10 +5501,6 @@ ASF Internal
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
-							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							      <property name="width_chars">-1</property>
-							      <property name="single_line_mode">False</property>
-							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -5874,9 +5565,6 @@ ASF Internal
 						  <property name="rules_hint">False</property>
 						  <property name="reorderable">False</property>
 						  <property name="enable_search">False</property>
-						  <property name="fixed_height_mode">False</property>
-						  <property name="hover_selection">False</property>
-						  <property name="hover_expand">False</property>
 						</widget>
 					      </child>
 					    </widget>
@@ -5902,10 +5590,6 @@ ASF Internal
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
-					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					  <property name="width_chars">-1</property>
-					  <property name="single_line_mode">False</property>
-					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="type">label_item</property>
@@ -5987,10 +5671,6 @@ ASF Internal
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
-			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-			      <property name="width_chars">-1</property>
-			      <property name="single_line_mode">False</property>
-			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -6100,10 +5780,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6293,10 +5969,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6318,10 +5990,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6386,10 +6054,6 @@ ASF Internal
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
-							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-							      <property name="width_chars">-1</property>
-							      <property name="single_line_mode">False</property>
-							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -6434,9 +6098,6 @@ ASF Internal
 						  <property name="rules_hint">False</property>
 						  <property name="reorderable">False</property>
 						  <property name="enable_search">False</property>
-						  <property name="fixed_height_mode">False</property>
-						  <property name="hover_selection">False</property>
-						  <property name="hover_expand">False</property>
 						</widget>
 					      </child>
 					    </widget>
@@ -6462,10 +6123,6 @@ ASF Internal
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
-					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					  <property name="width_chars">-1</property>
-					  <property name="single_line_mode">False</property>
-					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="type">label_item</property>
@@ -6592,10 +6249,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6628,10 +6281,6 @@ ASF Internal
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -6698,10 +6347,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6760,10 +6405,6 @@ ASF Internal
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -6785,10 +6426,6 @@ ASF Internal
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
-				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				      <property name="width_chars">-1</property>
-				      <property name="single_line_mode">False</property>
-				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -6854,10 +6491,6 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
-						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-						  <property name="width_chars">-1</property>
-						  <property name="single_line_mode">False</property>
-						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6935,8 +6568,6 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_input_file_selection_delete_event" last_modification_time="Mon, 16 Aug 2004 23:33:49 GMT"/>
   <signal name="destroy_event" handler="on_input_file_selection_destroy_event" last_modification_time="Mon, 16 Aug 2004 23:33:54 GMT"/>
@@ -6979,8 +6610,6 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="destroy" handler="on_change_output_name_dialog_destroy" last_modification_time="Mon, 16 Aug 2004 23:16:32 GMT"/>
   <signal name="delete_event" handler="on_change_output_name_dialog_delete_event" last_modification_time="Mon, 16 Aug 2004 23:16:42 GMT"/>
@@ -7057,10 +6686,6 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">0</property>
@@ -7085,10 +6710,6 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">0</property>
@@ -7113,10 +6734,6 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -7137,7 +6754,7 @@ ASF Internal
 	      <property name="max_length">48</property>
 	      <property name="text" translatable="yes"></property>
 	      <property name="has_frame">True</property>
-	      <property name="invisible_char">*</property>
+	      <property name="invisible_char" translatable="yes">*</property>
 	      <property name="activates_default">False</property>
 	    </widget>
 	    <packing>
@@ -7175,8 +6792,6 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="destroy_event" handler="on_help_dialog_destroy_event" last_modification_time="Mon, 16 Aug 2004 23:02:50 GMT"/>
   <signal name="delete_event" handler="on_help_dialog_delete_event" last_modification_time="Mon, 16 Aug 2004 23:02:59 GMT"/>
@@ -7236,10 +6851,6 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>
@@ -7309,8 +6920,6 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="destroy" handler="on_change_output_directory_dialog_destroy" last_modification_time="Thu, 26 Aug 2004 22:34:29 GMT"/>
   <signal name="destroy_event" handler="on_change_output_directory_dialog_destroy_event" last_modification_time="Thu, 26 Aug 2004 22:34:39 GMT"/>
@@ -7388,10 +6997,6 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">0</property>
@@ -7416,10 +7021,6 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">0</property>
@@ -7441,7 +7042,7 @@ ASF Internal
 	      <property name="max_length">128</property>
 	      <property name="text" translatable="yes"></property>
 	      <property name="has_frame">True</property>
-	      <property name="invisible_char">*</property>
+	      <property name="invisible_char" translatable="yes">*</property>
 	      <property name="activates_default">False</property>
 	    </widget>
 	    <packing>
@@ -7466,10 +7067,6 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -7493,10 +7090,6 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">2</property>
@@ -7553,8 +7146,6 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="delete_event" handler="on_dialog_cons_delete_event" last_modification_time="Fri, 27 Aug 2004 23:06:02 GMT"/>
   <signal name="destroy_event" handler="on_dialog_cons_destroy_event" last_modification_time="Fri, 27 Aug 2004 23:06:08 GMT"/>
@@ -7637,10 +7228,6 @@ ASF Internal
 		  <property name="yalign">0.5</property>
 		  <property name="xpad">0</property>
 		  <property name="ypad">0</property>
-		  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-		  <property name="width_chars">-1</property>
-		  <property name="single_line_mode">False</property>
-		  <property name="angle">0</property>
 		</widget>
 		<packing>
 		  <property name="left_attach">0</property>
@@ -7665,10 +7252,6 @@ ASF Internal
 		  <property name="yalign">0.5</property>
 		  <property name="xpad">0</property>
 		  <property name="ypad">0</property>
-		  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-		  <property name="width_chars">-1</property>
-		  <property name="single_line_mode">False</property>
-		  <property name="angle">0</property>
 		</widget>
 		<packing>
 		  <property name="left_attach">0</property>
@@ -7689,7 +7272,7 @@ ASF Internal
 		  <property name="max_length">32</property>
 		  <property name="text" translatable="yes"></property>
 		  <property name="has_frame">True</property>
-		  <property name="invisible_char">*</property>
+		  <property name="invisible_char" translatable="yes">*</property>
 		  <property name="activates_default">False</property>
 		</widget>
 		<packing>
@@ -7711,7 +7294,7 @@ ASF Internal
 		  <property name="max_length">32</property>
 		  <property name="text" translatable="yes"></property>
 		  <property name="has_frame">True</property>
-		  <property name="invisible_char">*</property>
+		  <property name="invisible_char" translatable="yes">*</property>
 		  <property name="activates_default">False</property>
 		</widget>
 		<packing>
@@ -7775,14 +7358,10 @@ ASF Internal
 		  <property name="justify">GTK_JUSTIFY_LEFT</property>
 		  <property name="wrap">False</property>
 		  <property name="selectable">False</property>
-		  <property name="xalign">0.10000000149</property>
+		  <property name="xalign">0.1</property>
 		  <property name="yalign">0.5</property>
 		  <property name="xpad">0</property>
 		  <property name="ypad">8</property>
-		  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-		  <property name="width_chars">-1</property>
-		  <property name="single_line_mode">False</property>
-		  <property name="angle">0</property>
 		</widget>
 		<packing>
 		  <property name="padding">0</property>
@@ -7814,10 +7393,6 @@ ASF Internal
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
-		      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-		      <property name="width_chars">-1</property>
-		      <property name="single_line_mode">False</property>
-		      <property name="angle">0</property>
 		    </widget>
 		    <packing>
 		      <property name="left_attach">0</property>
@@ -7838,7 +7413,7 @@ ASF Internal
 		      <property name="max_length">64</property>
 		      <property name="text" translatable="yes"></property>
 		      <property name="has_frame">True</property>
-		      <property name="invisible_char">*</property>
+		      <property name="invisible_char" translatable="yes">*</property>
 		      <property name="activates_default">False</property>
 		    </widget>
 		    <packing>
@@ -7888,8 +7463,6 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
 
   <child internal-child="vbox">
@@ -7953,10 +7526,6 @@ If you proceed, they will be overwritten.</property>
 	  <property name="yalign">0.5</property>
 	  <property name="xpad">0</property>
 	  <property name="ypad">0</property>
-	  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	  <property name="width_chars">-1</property>
-	  <property name="single_line_mode">False</property>
-	  <property name="angle">0</property>
 	</widget>
 	<packing>
 	  <property name="padding">0</property>
@@ -7984,8 +7553,6 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="delete_event" handler="on_metadata_dialog_delete_event" last_modification_time="Tue, 28 Sep 2004 00:27:50 GMT"/>
   <signal name="destroy_event" handler="on_metadata_dialog_destroy_event" last_modification_time="Tue, 28 Sep 2004 00:28:01 GMT"/>
@@ -8044,10 +7611,6 @@ If you proceed, they will be overwritten.</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>
@@ -8119,8 +7682,6 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_dem_file_selection_delete_event" last_modification_time="Thu, 27 Apr 2006 01:47:29 GMT"/>
   <signal name="destroy_event" handler="on_dem_file_selection_destroy_event" last_modification_time="Thu, 27 Apr 2006 01:47:43 GMT"/>
@@ -8163,8 +7724,6 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_output_directory_selection_delete_event" last_modification_time="Tue, 16 May 2006 18:45:05 GMT"/>
   <signal name="destroy_event" handler="on_output_directory_selection_destroy_event" last_modification_time="Tue, 16 May 2006 18:45:11 GMT"/>
@@ -8207,8 +7766,6 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_mask_file_selection_delete_event" last_modification_time="Mon, 18 Sep 2006 22:57:55 GMT"/>
   <signal name="destroy_event" handler="on_mask_file_selection_destroy_event" last_modification_time="Mon, 18 Sep 2006 22:58:01 GMT"/>
@@ -8252,8 +7809,6 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="delete_event" handler="on_log_dialog_delete_event" last_modification_time="Fri, 09 Feb 2007 18:30:27 GMT"/>
   <signal name="destroy_event" handler="on_log_dialog_destroy_event" last_modification_time="Fri, 09 Feb 2007 18:30:35 GMT"/>
@@ -8312,10 +7867,6 @@ If you proceed, they will be overwritten.</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>
@@ -8386,8 +7937,6 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_save_config_file_selection_delete_event" last_modification_time="Tue, 20 Mar 2007 22:26:17 GMT"/>
   <signal name="destroy_event" handler="on_save_config_file_selection_destroy_event" last_modification_time="Tue, 20 Mar 2007 22:26:28 GMT"/>
@@ -8432,8 +7981,6 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_load_config_file_selection_delete_event" last_modification_time="Wed, 21 Mar 2007 21:17:12 GMT"/>
   <signal name="destroy_event" handler="on_load_config_file_selection_destroy_event" last_modification_time="Wed, 21 Mar 2007 21:17:19 GMT"/>
@@ -8475,8 +8022,6 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_CENTER</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="close" handler="on_about_dialog_close" last_modification_time="Tue, 13 Nov 2007 21:53:10 GMT"/>
   <signal name="delete_event" handler="on_about_dialog_delete_event" last_modification_time="Tue, 13 Nov 2007 21:53:35 GMT"/>
@@ -8540,10 +8085,6 @@ All rights reserved.</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">9</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -8587,10 +8128,6 @@ All rights reserved.</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -8624,10 +8161,6 @@ uso@asf.alaska.edu</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
-	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-	      <property name="width_chars">-1</property>
-	      <property name="single_line_mode">False</property>
-	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -8662,8 +8195,6 @@ uso@asf.alaska.edu</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_CENTER</property>
-  <property name="focus_on_map">True</property>
-  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="delete_event" handler="on_add_file_with_ancillary_dialog_delete_event" last_modification_time="Wed, 01 Apr 2009 18:14:14 GMT"/>
   <signal name="destroy_event" handler="on_add_file_with_ancillary_dialog_delete_event" last_modification_time="Wed, 01 Apr 2009 18:14:25 GMT"/>
@@ -8747,10 +8278,6 @@ uso@asf.alaska.edu</property>
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
-		      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-		      <property name="width_chars">-1</property>
-		      <property name="single_line_mode">False</property>
-		      <property name="angle">0</property>
 		    </widget>
 		    <packing>
 		      <property name="padding">0</property>
@@ -8802,10 +8329,6 @@ uso@asf.alaska.edu</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="padding">0</property>
@@ -8827,10 +8350,6 @@ uso@asf.alaska.edu</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
-				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-				  <property name="width_chars">-1</property>
-				  <property name="single_line_mode">False</property>
-				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="padding">0</property>
@@ -8859,10 +8378,6 @@ uso@asf.alaska.edu</property>
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
-			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-			      <property name="width_chars">-1</property>
-			      <property name="single_line_mode">False</property>
-			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -8911,10 +8426,6 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -8936,7 +8447,7 @@ uso@asf.alaska.edu</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
 					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
+					      <property name="invisible_char" translatable="yes">●</property>
 					      <property name="activates_default">False</property>
 					    </widget>
 					    <packing>
@@ -8982,10 +8493,6 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9007,7 +8514,7 @@ uso@asf.alaska.edu</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
 					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
+					      <property name="invisible_char" translatable="yes">●</property>
 					      <property name="activates_default">False</property>
 					    </widget>
 					    <packing>
@@ -9052,10 +8559,6 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9077,7 +8580,7 @@ uso@asf.alaska.edu</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
 					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
+					      <property name="invisible_char" translatable="yes">●</property>
 					      <property name="activates_default">False</property>
 					    </widget>
 					    <packing>
@@ -9152,10 +8655,6 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9180,10 +8679,6 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9205,7 +8700,7 @@ uso@asf.alaska.edu</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
 					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
+					      <property name="invisible_char" translatable="yes">●</property>
 					      <property name="activates_default">False</property>
 					    </widget>
 					    <packing>
@@ -9227,7 +8722,7 @@ uso@asf.alaska.edu</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
 					      <property name="has_frame">True</property>
-					      <property name="invisible_char">●</property>
+					      <property name="invisible_char" translatable="yes">●</property>
 					      <property name="activates_default">False</property>
 					    </widget>
 					    <packing>
@@ -9292,10 +8787,6 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9341,10 +8832,6 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
-					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-					      <property name="width_chars">-1</property>
-					      <property name="single_line_mode">False</property>
-					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9441,10 +8928,6 @@ uso@asf.alaska.edu</property>
 			  <property name="yalign">0.5</property>
 			  <property name="xpad">0</property>
 			  <property name="ypad">0</property>
-			  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-			  <property name="width_chars">-1</property>
-			  <property name="single_line_mode">False</property>
-			  <property name="angle">0</property>
 			</widget>
 			<packing>
 			  <property name="padding">0</property>
@@ -9472,10 +8955,6 @@ uso@asf.alaska.edu</property>
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
-			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-			      <property name="width_chars">-1</property>
-			      <property name="single_line_mode">False</property>
-			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -9497,10 +8976,6 @@ uso@asf.alaska.edu</property>
 			      <property name="yalign">0</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">5</property>
-			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
-			      <property name="width_chars">-1</property>
-			      <property name="single_line_mode">False</property>
-			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
