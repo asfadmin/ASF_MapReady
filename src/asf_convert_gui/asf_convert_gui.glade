@@ -2838,7 +2838,7 @@
 							      <child>
 								<widget class="GtkCheckButton" id="radiometric_checkbutton">
 								  <property name="visible">True</property>
-								  <property name="tooltip" translatable="yes">Radiometric terrain correction attempts to correct for backscatter variations caused by terrain geometry.</property>
+								  <property name="tooltip" translatable="yes">Radiometric terrain correction attempts to correct for backscatter variations caused by terrain geometry.  When turning this on, it is usually a good idea to turn off the interpolation of layover regions, it tends to look bad. </property>
 								  <property name="can_focus">True</property>
 								  <property name="label" translatable="yes">Also apply radiometric Terrain Correction</property>
 								  <property name="use_underline">True</property>
