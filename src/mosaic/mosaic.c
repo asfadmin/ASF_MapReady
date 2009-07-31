@@ -138,6 +138,31 @@ int main(int argc, char *argv[])
 
     asfSplashScreen(argc, argv);
 
+    asfPrintStatus("Projection: ");
+    switch (projection_type)
+      {
+      case UNIVERSAL_TRANSVERSE_MERCATOR:
+	asfPrintStatus("Universal Transverse Mercator\n");
+	break;
+      case POLAR_STEREOGRAPHIC:
+	asfPrintStatus("Polar Stereographic\n");
+	break;
+      case ALBERS_EQUAL_AREA:
+	asfPrintStatus("Albers Conical Equal Area\n");
+	break;
+      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	asfPrintStatus("Lambert Azimuthal Equal Area\n");
+	break;
+      case LAMBERT_CONFORMAL_CONIC:
+	asfPrintStatus("Lambert Conformal Conic\n");
+	break;
+      case EQUI_RECTANGULAR:
+	asfPrintStatus("Equirectangular\n");
+	break;
+      default:
+	break;
+      }
+
     asfPrintStatus("Output file: %s\n", outfile);
 
     //char **infiles = &argv[2];
