@@ -164,7 +164,7 @@ $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
 clean:
 	rm -rf *.o $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
 	$(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
-	asf_meta_tester meta_update asf_meta.a
+	asf_meta_tester meta_update asf_meta.a metadata_parser.c
 
 check: asf_meta_tester.c build_only
 	$(CC) $(CFLAGS) $< asf_meta.a \
