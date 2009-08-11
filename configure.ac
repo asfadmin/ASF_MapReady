@@ -83,7 +83,8 @@ ext_lib_src_dir=${asfDir}/external/work_dir
 
 #### GSL check ####
 AC_CHECK_LIB(gslcblas,main)
-AC_CHECK_LIB(gsl,main,have_gsl="yes",have_gsl="no")
+AC_CHECK_HEADER(gsl/gsl_errno.h,
+  AC_CHECK_LIB(gsl,main,have_gsl="yes",have_gsl="no"), have_gsl="no")
 if test "$have_gsl" = "no" ; then
    ASF_LIB_GSL="${ext_lib_src_dir}/libgsl"
    GSL_LIBS="\$(LIBDIR)/libgsl.a \$(LIBDIR)/libgslcblas.a"
