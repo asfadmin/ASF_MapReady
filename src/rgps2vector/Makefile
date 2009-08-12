@@ -3,13 +3,13 @@
 include ../../make_support/system_rules
 
 LIBS  = \
-	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_export.a \
-	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
@@ -17,6 +17,8 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(GLIB_LIBS) \
+	$(ZLIB_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 CFLAGS += \
