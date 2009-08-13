@@ -550,6 +550,8 @@ static output_format_t get_format(convert_config *cfg)
     format = PNG_GE;
   } else if (strncmp(uc(cfg->export->format), "PNG", 3) == 0) {
     format = PNG;
+  } else if (strncmp_case(cfg->export->format, "POLSARPRO_HDR", 13) == 0) {
+    format = POLSARPRO_HDR;
   }
   return format;
 }
@@ -969,6 +971,14 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     strcpy(cfg->export->rgb, "");
     cfg->export->truecolor = 0;
     cfg->export->falsecolor = 0;
+  }
+
+  // Check for sampling option in PolsarPro data
+  if (strncmp_case(cfg->export->format, "POLSARPRO_HDR", 13) == 0 && 
+      strlen(cfg->export->byte)>0) {
+    asfPrintWarning("No sampling to byte values permitted when exporting data"
+		    "to PolsarPro format.\nDefaulting to no sampling.\n");
+    strcpy(cfg->export->byte, "");
   }
 
   // Check for and resolve input/output name clashes
@@ -1665,7 +1675,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->export->format), "GEOTIFF", 7) != 0 &&
           strncmp(uc(cfg->export->format), "JPEG", 4) != 0 &&
           strncmp(uc(cfg->export->format), "PNG", 3) != 0 &&
-          strncmp(uc(cfg->export->format), "PGM", 3) != 0) {
+          strncmp(uc(cfg->export->format), "PGM", 3) != 0 &&
+	  strncmp_case(cfg->export->format, "POLSARPRO_HDR", 13) != 0) {
         asfPrintError("Selected export format (%s) not supported\n",
                      cfg->export->format);
       }

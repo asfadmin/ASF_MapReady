@@ -53,7 +53,8 @@ typedef enum {
   PNG,                          /* Portable Network Graphic */
   PNG_ALPHA,                    // Transparent PNG (8-bit)
   PNG_GE,                       // Transparent PNG (32-bit), Google Earth style
-  KML                           // JPEG with GoogleEarth overlay file
+  KML,                          // JPEG with GoogleEarth overlay file
+  POLSARPRO_HDR                 // PolsarPro with ENVI header
 } output_format_t;
 
 /* Ellipsoid used for the data.  */

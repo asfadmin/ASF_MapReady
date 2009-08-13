@@ -145,6 +145,19 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                         look_up_table_name, PGM,
                         &nouts, &outs);
   }
+  else if ( format == POLSARPRO_HDR ) {
+      //in_data_name = appendExt(in_base_name, ".img");
+      //in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+      strcpy(out_name, output_name);
+      append_ext_if_needed(out_name, ".bin", NULL);
+printf("out_name: %s\n", out_name);
+      export_band_image(in_meta_name, in_data_name, out_name,
+                        sample_mapping, band_name, rgb,
+                        true_color, false_color,
+                        look_up_table_name, POLSARPRO_HDR,
+                        &nouts, &outs);
+  }
 
   if (noutputs && output_names) {
     asfPrintStatus("\n\nExport complete.\nGenerated %d output file%s:\n",

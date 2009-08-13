@@ -11,6 +11,7 @@
 
 #include "asf_jpeg.h"
 #include <png.h>
+#include "envi.h"
 
 #include <asf_nan.h>
 #include <asf_endian.h>
@@ -327,6 +328,19 @@ void initialize_pgm_file(const char *output_file_name,
   fprintf (*opgm, "%ld\n", (long int) meta->general->line_count);
   fprintf (*opgm, "%d\n", max_color_value);
 
+  return;
+}
+
+void initialize_polsarpro_file(const char *output_file_name,
+			       meta_parameters *meta, FILE **ofp)
+{
+  *ofp = FOPEN(output_file_name, "w");
+
+  strcat(output_file_name, ".hdr");
+  envi_header *envi = meta2envi(meta);
+  write_envi_header(output_file_name, meta, envi);
+  FREE(envi);
+  
   return;
 }
 
@@ -816,7 +830,7 @@ export_band_image (const char *metadata_file_name,
   int is_geotiff = 1;
   TIFF *otif = NULL; // FILE* pointer for TIFF files
   GTIF *ogtif = NULL;
-  FILE *ojpeg = NULL, *opgm=NULL, *opng=NULL;
+  FILE *ojpeg = NULL, *opgm=NULL, *opng=NULL, *ofp=NULL;
   struct jpeg_compress_struct cinfo;
   png_structp png_ptr;
   png_infop png_info_ptr;
@@ -1485,10 +1499,12 @@ export_band_image (const char *metadata_file_name,
         // written out as a single-band greyscale image while the second
         // band is a classification and should be written out as color ...
         // and for TIFF formats, as a palette color tiff
+printf("output_file_name (before): %s\n", output_file_name);
         if (band_count > 1)
           append_band_ext(base_name, output_file_name, band_name[kk]);
         else
           append_band_ext(base_name, output_file_name, NULL);
+printf("output_file_name (after): %s\n", output_file_name);
 
         if (format == TIF || format == GEOTIFF) {
           is_geotiff = (format == GEOTIFF) ? 1 : 0;
@@ -1546,6 +1562,11 @@ export_band_image (const char *metadata_file_name,
           append_ext_if_needed (output_file_name, ".pgm", ".pgm");
           initialize_pgm_file(output_file_name, md, &opgm);
         }
+	else if (format == POLSARPRO_HDR) {
+	  //append_ext_if_needed (output_file_name, ".bin", NULL);
+	  initialize_polsarpro_file(output_file_name, md, &ofp);
+	}
+
         else {
           asfPrintError("Impossible: unexpected format %d\n", format);
         }
@@ -1622,6 +1643,7 @@ export_band_image (const char *metadata_file_name,
         }
 
         // Write the output image
+printf("image_data_file_name: %s\n", image_data_file_name);
         FILE *fp = FOPEN(image_data_file_name, "rb");
         float *float_line = (float *) MALLOC(sizeof(float) * sample_count);
         unsigned char *byte_line = MALLOC(sizeof(unsigned char) * sample_count);
@@ -1710,6 +1732,8 @@ export_band_image (const char *metadata_file_name,
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == GEOTIFF || format == TIF)
                 write_tiff_float2float(otif, float_line, ii);
+	      else if (format == POLSARPRO_HDR)
+		put_float_line(ofp, md, ii+channel*offset, float_line);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
@@ -1738,6 +1762,8 @@ export_band_image (const char *metadata_file_name,
                                      //is_colormap_band ? TRUNCATE : sample_mapping,
                                      sample_mapping,
                                      md->general->no_data, sample_count);
+	      else if (format == POLSARPRO_HDR)
+		put_float_line(ofp, md, ii+channel*offset, float_line);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
