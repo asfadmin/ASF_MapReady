@@ -74,6 +74,7 @@ OBJS  = \
 	import_vexcel_plain.o \
 	import_jaxa_L0.o \
 	import_alos_mosaic.o \
+	import_radarsat2.o \
 	import_terrasar.o \
 	import_polsarpro.o \
 	least_squares.o \

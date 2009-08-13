@@ -175,6 +175,18 @@ double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
     return dopplerMin + (dopplerMax - dopplerMin) / 
       (dopAzimuthMax - dopAzimuthMin) * (imgAzimuthTime - dopAzimuthMin);
   }
+  else if (meta->doppler && meta->doppler->r2) {
+    int ii;
+    double doppler = 0.0;
+    radarsat2_doppler_params *r2 = meta->doppler->r2;
+    double slant_time = 
+      r2->time_first_sample + xSample * meta->sar->range_time_per_pixel;
+    for (ii=0; ii<r2->doppler_count; ii)
+      doppler += 
+	r2->centroid[ii] * pow((slant_time - r2->ref_time_centroid), ii);
+
+    return doppler;
+  }
   else
     return meta->sar->range_doppler_coefficients[0]+
       meta->sar->range_doppler_coefficients[1]*xSample+

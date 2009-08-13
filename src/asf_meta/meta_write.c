@@ -396,6 +396,28 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	  meta_put_string(fp,"}","","End of single Doppler estimate");
 	}
 	break;
+      case radarsat2_doppler:
+	meta_put_string(fp,"type:","RADARSAT2",comment);
+	meta_put_int(fp,"doppler_count:",meta->doppler->r2->doppler_count,
+		     "Number of Doppler estimates");
+	meta_put_double(fp,"centroid_time:",
+			meta->doppler->r2->ref_time_centroid,
+			"Reference time for centroid (t0)");
+	for (kk=0; kk<meta->doppler->r2->doppler_count; kk++) {
+	  sprintf(str, "centroid[%d]:", kk);
+	  meta_put_double(fp,str,meta->doppler->r2->centroid[kk],
+			  "Polynomial coefficients for Doppler centroid");
+	}
+	meta_put_double(fp, "rate_time:",meta->doppler->r2->ref_time_rate,
+			"Reference time for rate (t0)");
+	for (kk=0; kk<meta->doppler->r2->doppler_count; kk++) {
+	  sprintf(str, "rate[%d]:", kk);
+	  meta_put_double(fp,str,meta->doppler->r2->rate[kk],
+			  "Polynomial coefficients for Doppler rate");
+	}
+	meta_put_double(fp, "time_first_sample:",
+			meta->doppler->r2->time_first_sample,
+			"Slant range time for first range sample");
       }
     meta_put_string(fp,"}","","End doppler");
   }

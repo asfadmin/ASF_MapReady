@@ -1114,6 +1114,8 @@ void fill_structure_field(char *field_name, void *valp)
 
   // Fields which go in the doppler block of the metadata file.
   if ( !strcmp(stack_top->block_name, "doppler") ) {
+    int ii;
+    char str[25];
     if ( !strcmp(field_name, "type") ) {
       // Initialize all the type pointers
       if ( ! strcmp(VALP_AS_CHAR_POINTER, "TSX") ) {
@@ -1121,6 +1123,13 @@ void fill_structure_field(char *field_name, void *valp)
 	  (tsx_doppler_params *) MALLOC(sizeof(tsx_doppler_params));
 	(MDOPPLER)->tsx = tsx;
 	(MDOPPLER)->type = tsx_doppler;
+	return;
+      }
+      if ( ! strcmp(VALP_AS_CHAR_POINTER, "RADARSAT2") ) {
+	radarsat2_doppler_params *r2 =
+	  (radarsat2_doppler_params *) MALLOC(sizeof(radarsat2_doppler_params));
+	(MDOPPLER)->r2 = r2;
+	(MDOPPLER)->type = radarsat2_doppler;
 	return;
       }
     }
@@ -1137,6 +1146,37 @@ void fill_structure_field(char *field_name, void *valp)
 					      (MDOPPLER)->tsx->doppler_count);
 	(MDOPPLER)->tsx->dop = dop;
 	return; }
+    // RADARSAT2 Doppler
+    if ( !strcmp(field_name, "doppler_count") && 
+	 (MDOPPLER)->type == radarsat2_doppler)
+      { (MDOPPLER)->r2->doppler_count = VALP_AS_INT;
+	double *centroid = 
+	  (double *) MALLOC(sizeof(double)*(MDOPPLER)->r2->doppler_count);
+	(MDOPPLER)->r2->centroid = centroid;
+	double *rate =
+	  (double *) MALLOC(sizeof(double)*(MDOPPLER)->r2->doppler_count);
+	(MDOPPLER)->r2->rate = rate;
+	return;
+      }
+    if ( !strcmp(field_name, "centroid_time") &&
+	 (MDOPPLER)->type == radarsat2_doppler)
+      { (MDOPPLER)->r2->ref_time_centroid = VALP_AS_DOUBLE; return; }
+    for (ii=0; ii<(MDOPPLER)->r2->doppler_count; ii++) {
+      sprintf(str, "centroid[%d]", ii);
+      if ( !strcmp(field_name, str) && (MDOPPLER)->type == radarsat2_doppler)
+	{ (MDOPPLER)->r2->centroid[ii] = VALP_AS_DOUBLE; return; }
+    } 
+    if ( !strcmp(field_name, "rate_time") &&
+	 (MDOPPLER)->type == radarsat2_doppler)
+      { (MDOPPLER)->r2->ref_time_rate = VALP_AS_DOUBLE; return; }
+    for (ii=0; ii<(MDOPPLER)->r2->doppler_count; ii++) {
+      sprintf(str, "rate[%d]", ii);
+      if ( !strcmp(field_name, str) && (MDOPPLER)->type == radarsat2_doppler)
+	{ (MDOPPLER)->r2->rate[ii] = VALP_AS_DOUBLE; return; }
+    }
+    if ( !strcmp(field_name, "time_first_sample") &&
+	 (MDOPPLER)->type == radarsat2_doppler)
+      { (MDOPPLER)->r2->time_first_sample = VALP_AS_DOUBLE; return; }
   }
   // TSX Doppler estimates
   if ( !strcmp(stack_top->block_name, "estimate") ) {

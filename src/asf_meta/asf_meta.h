@@ -110,6 +110,7 @@ typedef enum {
   JAXA_L0, // JAXA PRISM and AVNIR-2 (optical) Level 0 Format
   ALOS_MOSAIC,
   TERRASAR,
+  RADARSAT2,
   POLSARPRO,
   GAMMA
 } input_format_t;
@@ -382,6 +383,7 @@ typedef struct {
 typedef struct {
   doppler_type type;
   tsx_doppler_params *tsx;
+  radarsat2_doppler_params *r2;
 } meta_doppler;
 
 /* DEPRECATED */

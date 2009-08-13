@@ -5,7 +5,8 @@
 
 typedef enum {
   unknown_doppler=0,
-  tsx_doppler               // TerraSAR: polynominal for time stamps
+  tsx_doppler,              // TerraSAR: polynominal for time stamps
+  radarsat2_doppler         // Radarsat2: polynomial as function of slant range
 } doppler_type;
 
 typedef struct {
@@ -23,5 +24,14 @@ typedef struct {
   int doppler_count;        // Number of Doppler estimates
   tsx_doppler_t *dop;       // Array sized at run-time
 } tsx_doppler_params;
+
+typedef struct {
+  double ref_time_centroid; // Reference time for centroid (t0)
+  double ref_time_rate;     // Reference time for rate (t0)
+  int doppler_count;        // Number of Doppler estimates
+  double *centroid;         // Polynomial coefficients for Doppler centroid
+  double *rate;             // Polynomial coefficients for Doppler rate
+  double time_first_sample; // Slant range time for first range sample
+} radarsat2_doppler_params;
 
 #endif

@@ -750,6 +750,8 @@ int main(int argc, char *argv[])
       format_type = ALOS_MOSAIC;
     else if (strncmp_case(format_type_str, "TERRASAR", 8) == 0)
       format_type = TERRASAR;
+    else if (strncmp_case(format_type_str, "RADARSAT2", 9) == 0)
+      format_type = RADARSAT2;
     else if (strncmp_case(format_type_str, "POLSARPRO", 9) == 0)
       format_type = POLSARPRO;
     else if (strncmp_case(format_type_str, "GAMMA", 5) == 0)
