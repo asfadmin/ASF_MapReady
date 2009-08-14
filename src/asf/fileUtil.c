@@ -305,7 +305,8 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
        strcmp_case(ext, ".JPG") == 0 ||
        strcmp_case(ext, ".JPEG") == 0 ||
        strcmp_case(ext, ".PNG") == 0 ||
-       strcmp_case(ext, ".PGM") == 0))
+       strcmp_case(ext, ".PGM") == 0 ||
+       strcmp_case(ext, ".BIN") == 0))
     base_name = stripExt(inFile);
   else
     strcpy(base_name, inFile);

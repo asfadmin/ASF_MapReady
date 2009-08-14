@@ -1499,12 +1499,10 @@ export_band_image (const char *metadata_file_name,
         // written out as a single-band greyscale image while the second
         // band is a classification and should be written out as color ...
         // and for TIFF formats, as a palette color tiff
-printf("output_file_name (before): %s\n", output_file_name);
         if (band_count > 1)
           append_band_ext(base_name, output_file_name, band_name[kk]);
         else
           append_band_ext(base_name, output_file_name, NULL);
-printf("output_file_name (after): %s\n", output_file_name);
 
         if (format == TIF || format == GEOTIFF) {
           is_geotiff = (format == GEOTIFF) ? 1 : 0;
@@ -1643,7 +1641,6 @@ printf("output_file_name (after): %s\n", output_file_name);
         }
 
         // Write the output image
-printf("image_data_file_name: %s\n", image_data_file_name);
         FILE *fp = FOPEN(image_data_file_name, "rb");
         float *float_line = (float *) MALLOC(sizeof(float) * sample_count);
         unsigned char *byte_line = MALLOC(sizeof(unsigned char) * sample_count);
