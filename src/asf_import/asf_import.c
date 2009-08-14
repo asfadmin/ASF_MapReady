@@ -762,6 +762,12 @@ int main(int argc, char *argv[])
     else
       format_type = CEOS;
 
+    
+    // Will need to check the ancillary file input at a lower level.
+    // If the PolSARpro header includes map projection information,
+    // we don't need to know the SAR geometry.
+
+    /*
     // Process PolSARpro options (-format and -ancillary_flag combos)
     if (format_type == POLSARPRO &&
         flags[f_ANCILLARY_FILE] == FLAG_NOT_SET) {
@@ -771,6 +777,7 @@ int main(int argc, char *argv[])
           "specify the original CEOS or AIRSAR format dataset with the -ancillary_file\n"
           "option.  See asf_import -help for more information.\n");
     }
+    */
     
     // Process Gamma options (-format, -metadata, and -ancillary_flag combos)
     if (format_type == GAMMA &&

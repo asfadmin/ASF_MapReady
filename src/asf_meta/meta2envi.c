@@ -88,7 +88,7 @@ envi_header* read_envi(char *envi_name)
     {
     case 3:
       sprintf(envi->projection, "UTM");
-      sscanf(map_info, ", %i %i %lf %lf %lf %lf %i %s",
+      sscanf(map_info, ", %i, %i, %lf, %lf, %lf, %lf, %i, %s",
          &envi->ref_pixel_x, &envi->ref_pixel_y,
          &envi->pixel_easting, &envi->pixel_northing,
          &envi->proj_dist_x, &envi->proj_dist_y,
@@ -116,7 +116,7 @@ envi_header* read_envi(char *envi_name)
          &envi->pixel_easting, &envi->pixel_northing,
          &envi->proj_dist_x, &envi->proj_dist_y,
          envi->hemisphere);
-      sscanf(proj_info, ", %lf, %lf, %lf, %lf, %lf %lf %lf %lf%s}",
+      sscanf(proj_info, ", %lf, %lf, %lf, %lf, %lf %lf, %lf, %lf, %s}",
          &envi->semimajor_axis, &envi->semiminor_axis, &envi->center_lat,
          &envi->center_lon, &fTmp1, &fTmp2, &envi->standard_parallel1,
          &envi->standard_parallel2, bla);
@@ -371,7 +371,7 @@ meta_parameters* envi2meta(envi_header *envi)
     if (strncmp(envi->projection, "UTM", 3)==0) {
       meta->projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
       meta->projection->param.utm.zone = envi->projection_zone;
-      meta->projection->param.utm.lat0 =envi->center_lat;
+      meta->projection->param.utm.lat0 = envi->center_lat;
       meta->projection->param.utm.lon0 = envi->center_lon;
       meta->projection->param.utm.false_easting = envi->ref_pixel_x;
       meta->projection->param.utm.false_northing = envi->ref_pixel_y;

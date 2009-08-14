@@ -237,6 +237,11 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   int line_count = envi->lines;
   int sample_count = envi->samples;
 
+  // Check for the map projection information in the ENVI header
+  metaIn = envi2meta(envi);
+  meta_write(metaIn, "test.meta");
+  exit(0);
+
   // Determine if the ancillary file is CEOS or AIRSAR
   if (ceosName == NULL || strlen(ceosName) <= 0)
     asfPrintError("Please add CEOS or AIRSAR ancillary files to the PolSARpro\n"
@@ -282,7 +287,6 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 
   // Read the PolSAR Pro data into the layer stack
   sprintf(outName, "%s.img", outBaseName);
-  metaIn = envi2meta(envi);
   metaOut = meta_read(outBaseName);
   metaOut->general->band_count = 2;
   strcat(metaOut->general->bands, ",POLSARPRO");
