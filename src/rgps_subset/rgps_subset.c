@@ -258,7 +258,7 @@ int main(int argc, char **argv)
   metaTrg->general->start_sample = startX_trg;
   meta_write(metaTrg, outFile);
   envi = meta2envi(metaTrg);
-  write_envi_header(outFile, metaTrg, envi);
+  write_envi_header(outFile, outFile, metaTrg, envi);
 
   fp = FOPEN(outFile, "wb");
   if (filter)
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
   metaSrc->general->start_sample = startX_src;
   meta_write(metaSrc, outFile);
   envi = meta2envi(metaSrc);
-  write_envi_header(outFile, metaSrc, envi);
+  write_envi_header(outFile, outFile, metaSrc, envi);
 
   fp = FOPEN(outFile, "wb");
   if (filter)

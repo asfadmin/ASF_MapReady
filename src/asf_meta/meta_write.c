@@ -34,7 +34,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
       if (datatype2envi(meta->general->data_type) != -1) {
           char *hdr_file_name_with_extension = appendExt(file_name, ".hdr");
           envi_header *envi = meta2envi(meta);
-          write_envi_header(hdr_file_name_with_extension, meta, envi);
+          write_envi_header(hdr_file_name_with_extension, file_name, 
+			    meta, envi);
           FREE(envi);
           FREE(hdr_file_name_with_extension);
       } else {

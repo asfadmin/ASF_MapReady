@@ -232,6 +232,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     polsarName = appendExt(s, ".bin");
   }
 
+  sprintf(outName, "%s.img", outBaseName);
   sprintf(enviName, "%s.hdr", polsarName);
   envi = read_envi(enviName);
   int line_count = envi->lines;
@@ -239,102 +240,68 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 
   // Check for the map projection information in the ENVI header
   metaIn = envi2meta(envi);
-  meta_write(metaIn, "test.meta");
-  exit(0);
 
-  // Determine if the ancillary file is CEOS or AIRSAR
-  if (ceosName == NULL || strlen(ceosName) <= 0)
-    asfPrintError("Please add CEOS or AIRSAR ancillary files to the PolSARpro\n"
-        "input files as appropriate\n");
+  if (!metaIn->projection) {
+    // Determine if the ancillary file is CEOS or AIRSAR
+    if (ceosName == NULL || strlen(ceosName) <= 0)
+      asfPrintError("Please add CEOS or AIRSAR ancillary files to the "
+		    "PolSARpro\ninput files as appropriate\n");
+    
+    int is_airsar = isAIRSAR(ceosName);
+    int is_ceos = isCEOS(ceosName);
+    
+    if (is_ceos)
+      metaOut = meta_read(ceosName);
+    else if (is_airsar)
+      metaOut = import_airsar_meta(ceosName, ceosName, TRUE);
+    else
+      asfPrintError("Ancillary file is not CEOS or AIRSAR format (required):"
+		    "\n%s\n", ceosName);
+    
+    if (line_count != metaOut->general->line_count ||
+	sample_count != metaOut->general->sample_count) {
+      azimuth_scale = 1.0 / (metaOut->general->line_count / line_count);
+      range_scale = 1.0 / (metaOut->general->sample_count / sample_count);
+      p_azimuth_scale = &azimuth_scale;
+      p_range_scale = &range_scale;
+      if (!FLOAT_EQUIVALENT(azimuth_scale, range_scale))
+	multilook = TRUE;
+    }
+    meta_free(metaOut);
 
-  int is_airsar = isAIRSAR(ceosName);
-  int is_ceos = isCEOS(ceosName);
+    // Ingest the CEOS/AirSAR data to generate an amplitude image (in case the
+    // user wants to terrain correct. Will need to get the metadata anyway
+    if (is_ceos) {
+      asfPrintStatus("Ingesting CEOS data ...\n");
+      import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale,
+		  p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
+		  FALSE, FALSE, TRUE, FALSE);
+    }
+    else if (is_airsar) {
+      asfPrintStatus("Ingesting AirSAR data ...\n");
+      ingest_airsar_polsar_amp(ceosName, outBaseName,
+			       p_range_scale, p_azimuth_scale);
+    }
 
-  if (is_ceos)
-    metaOut = meta_read(ceosName);
-  else if (is_airsar)
-    metaOut = import_airsar_meta(ceosName, ceosName, TRUE);
-  else
-    asfPrintError(
-
-        "Ancillary file is not CEOS or AIRSAR format (required):\n%s\n",
-        ceosName);
-
-  if (line_count != metaOut->general->line_count ||
-      sample_count != metaOut->general->sample_count) {
-    azimuth_scale = 1.0 / (metaOut->general->line_count / line_count);
-    range_scale = 1.0 / (metaOut->general->sample_count / sample_count);
-    p_azimuth_scale = &azimuth_scale;
-    p_range_scale = &range_scale;
-    if (!FLOAT_EQUIVALENT(azimuth_scale, range_scale))
-      multilook = TRUE;
+    // Read the PolSAR Pro data into the layer stack
+    metaOut = meta_read(outBaseName);
+    metaOut->general->band_count = 2;
+    strcat(metaOut->general->bands, ",POLSARPRO");
+    fpOut = FOPEN(outName, "ab");
   }
-  meta_free(metaOut);
-
-  // Ingest the CEOS/AirSAR data to generate an amplitude image (in case the
-  // user wants to terrain correct. Will need to get the metadata anyway
-  if (is_ceos) {
-    asfPrintStatus("Ingesting CEOS data ...\n");
-    import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale,
-		p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
-		FALSE, FALSE, TRUE, FALSE);
+  else {
+    metaOut = envi2meta(envi);
+    metaOut->general->image_data_type = POLARIMETRIC_IMAGE;
+    fpOut = FOPEN(outName, "wb");
   }
-  else if (is_airsar) {
-    asfPrintStatus("Ingesting AirSAR data ...\n");
-    ingest_airsar_polsar_amp(ceosName, outBaseName,
-			     p_range_scale, p_azimuth_scale);
-  }
-
-  // Read the PolSAR Pro data into the layer stack
-  sprintf(outName, "%s.img", outBaseName);
-  metaOut = meta_read(outBaseName);
-  metaOut->general->band_count = 2;
-  strcat(metaOut->general->bands, ",POLSARPRO");
-  floatBuf = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
+  floatBuf = 
+    (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
 
   // Update image data type
   if (strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0)
     metaOut->general->image_data_type = POLARIMETRIC_SEGMENTATION;
 
   fpIn = FOPEN(polsarName, "rb");
-  fpOut = FOPEN(outName, "ab");
-
-  /*
-  // Read and write the lines ...noting that PolSARpro stores data in little-endian
-  // format and our get_float_line() function assumes big-endian since it was
-  // written for our internal format files ...We have to swap bytes for PolSARpro.
-  //
-  // Check for valid little-endian format ...just in case a PolSARpro user on a big-endian
-  // machine failed to pick the output conversion option properly.  NOTE: This will NOT work
-  // for floating point data ...only for classifications, which at this time appears to
-  // be the only type that PolSARpro puts out.  The check is around the center pixel where
-  // there should always be valid data
-#define GRID_STEP 10
-  float nw,  n, ne,
-         w,  c,  e,
-        sw, _s, se;
-  int ns = metaOut->general->sample_count;
-  int nl = metaOut->general->line_count;
-  get_float_line(fpIn, metaIn, ((nl / 2) - GRID_STEP) < 0 ? 0 : ((nl / 2) - GRID_STEP), floatBuf);
-  nw = floatBuf[((ns / 2) - GRID_STEP < 0) ? 0 : ((ns / 2) - GRID_STEP)];
-  n  = floatBuf[ns / 2];
-  ne = floatBuf[((ns / 2) + GRID_STEP < 0) ? 0 : ((ns / 2) + GRID_STEP)];
-  get_float_line(fpIn, metaIn, nl / 2, floatBuf);
-  w  = floatBuf[((ns / 2) - GRID_STEP < 0) ? 0 : ((ns / 2) - GRID_STEP)];
-  c  = floatBuf[ns / 2];
-  e  = floatBuf[((ns / 2) + GRID_STEP < 0) ? 0 : ((ns / 2) + GRID_STEP)];
-  get_float_line(fpIn, metaIn, ((nl / 2) + GRID_STEP) < 0 ? 0 : ((nl / 2) + GRID_STEP), floatBuf);
-  sw = floatBuf[((ns / 2) - GRID_STEP < 0) ? 0 : ((ns / 2) - GRID_STEP)];
-  _s = floatBuf[ns / 2];
-  se = floatBuf[((ns / 2) + GRID_STEP < 0) ? 0 : ((ns / 2) + GRID_STEP)];
-  int need_ieee_big32 = 0;
-  if ((nw > 0.0 && nw < 1e-32) || (n  > 0.0 && n  < 1e-32) || (ne > 0.0 && ne < 1e-32) ||
-      (w  > 0.0 && w  < 1e-32) || (c  > 0.0 && c  < 1e-32) || (e  > 0.0 && e  < 1e-32) ||
-      (sw > 0.0 && sw < 1e-32) || (_s > 0.0 && _s < 1e-32) || (se > 0.0 && se < 1e-32))
-  {
-    need_ieee_big32 = 1;
-  }
-  */
 
   // Check endianess from ENVI header file
   if (envi->byte_order)
@@ -363,7 +330,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   FCLOSE(fpOut);
   FREE(floatBuf);
   FREE(envi);
-  metaOut->sar->multilook = multilook;
+  if (metaOut->sar)
+    metaOut->sar->multilook = multilook;
   meta_write(metaOut, outBaseName);
   if (metaIn)
     meta_free(metaIn);

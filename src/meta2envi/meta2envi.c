@@ -96,7 +96,7 @@ int main(int argc, char **argv)
     envi->band_name = (char *) MALLOC(sizeof(char)*1024);
     sprintf(envi->band_name, "%s", data_name);
   }
-  write_envi_header(envi_name, meta, envi);
+  write_envi_header(envi_name, meta_name, meta, envi);
 
   /* Clean and report */
   meta_free(meta);

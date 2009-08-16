@@ -43,6 +43,8 @@ typedef struct {
   double center_lon;         /* Longitude at center of projection */
   double standard_parallel1; /* First standard parallel */
   double standard_parallel2; /* Second standard parallel */
+  double false_easting;      // False easting
+  double false_northing;     // False northing
   double semimajor_axis;     /* Semimajor axis */
   double semiminor_axis;     /* Semiminor axis */
   char hemisphere[10];       /* Hemisphere */
@@ -60,7 +62,7 @@ envi_header* read_envi(char *envi_name);
 int datatype2envi(int data_type);
 envi_header* meta2envi(meta_parameters *meta);
 meta_parameters* envi2meta(envi_header *envi);
-void write_envi_header(const char *inFile, meta_parameters *meta,
-		       envi_header *envi);
+void write_envi_header(const char *headerFile, const char *dataFile,
+		       meta_parameters *meta, envi_header *envi);
 
 #endif
