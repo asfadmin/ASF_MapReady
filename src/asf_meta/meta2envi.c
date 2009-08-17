@@ -391,10 +391,17 @@ meta_parameters* envi2meta(envi_header *envi)
   strcpy(meta->general->sensor, envi->sensor_type);
   meta->general->line_count = envi->lines;
   meta->general->sample_count = envi->samples;
+  // We have to assume that we are not dealing with a subset.
+  // Hence, the start line/sample are set to 0.
+  meta->general->start_line = 0;
+  meta->general->start_sample = 0;
   meta->general->band_count = envi->bands;
   strcpy(meta->general->bands, envi->band_name);
   meta->general->re_major = envi->semimajor_axis;
   meta->general->re_minor = envi->semiminor_axis;
+  // Another assumption is that we are dealing with geocoded data that has
+  // regular zero fill.
+  meta->general->no_data = 0.0;
 
   switch (envi->data_type)
     {
