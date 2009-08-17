@@ -336,7 +336,7 @@ void initialize_polsarpro_file(const char *output_file_name,
 {
   *ofp = FOPEN(output_file_name, "w");
   
-  char *output_header_file_name = appendExt(output_file_name, ".hdr");
+  char *output_header_file_name = strcat(output_file_name, ".hdr");
   envi_header *envi = meta2envi(meta);
   write_envi_header(output_header_file_name, output_file_name, meta, envi);
   FREE(envi);
