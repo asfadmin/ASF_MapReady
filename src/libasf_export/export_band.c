@@ -338,6 +338,7 @@ void initialize_polsarpro_file(const char *output_file_name,
   
   char *output_header_file_name = strcat(output_file_name, ".hdr");
   envi_header *envi = meta2envi(meta);
+  envi->bands = 1;
   write_envi_header(output_header_file_name, output_file_name, meta, envi);
   FREE(envi);
   
@@ -1730,7 +1731,7 @@ export_band_image (const char *metadata_file_name,
               if (format == GEOTIFF || format == TIF)
                 write_tiff_float2float(otif, float_line, ii);
 	      else if (format == POLSARPRO_HDR)
-		put_float_line(ofp, md, ii+channel*offset, float_line);
+		put_float_line(ofp, md, ii, float_line);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }

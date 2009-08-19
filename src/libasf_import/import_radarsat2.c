@@ -79,9 +79,10 @@ static int getNumParamsInString (char *str)
 {
   int ii, count=0;
  
-  for (ii>0; ii<strlen(str); ii++)
+  for (ii>0; ii<strlen(str); ii++) {
     if (str[ii] == ' ')
       count++;
+  }
 
   return count+1;
 }
@@ -108,9 +109,9 @@ radarsat2_doppler_params *radarsat2_doppler_init(int numDopplerEstimates)
 
 radarsat2_meta *read_radarsat2_meta(const char *dataFile)
 {
-  int ii, kk, numStateVectors, numDopplerEstimates;
-  ymd_date imgStartDate, imgDopplerDate, date;
-  hms_time imgStartTime, imgDopplerTime, time;
+  int ii, numStateVectors, numDopplerEstimates;
+  ymd_date imgStartDate, date;
+  hms_time imgStartTime, time;
   julian_date julianDate;
   char timeStr[30], str[150];
   radarsat2_doppler_params *r2_doppler;
@@ -412,13 +413,13 @@ radarsat2_meta *read_radarsat2_meta(const char *dataFile)
 }
 
 void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
-		     const char *outBaseName)
+		      const char *outBaseName, int ampOnly)
 {
   FILE *fp;
   radarsat2_meta *radarsat2;
   meta_parameters *meta;
-  char **inDataNames=NULL, *inMetaName=NULL, *outDataName=NULL;
-  char polarization[10], bands[30], str[512], **bandNames=NULL;
+  char **inDataNames=NULL, inDataName[1024], *inMetaName=NULL;
+  char *outDataName=NULL, str[512];
   float *amp = NULL, *phase = NULL, *tmp = NULL, re, im;
   int band, sample;
 
@@ -458,22 +459,41 @@ void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
   GTIF *gtif = NULL;
   data_type_t data_type;
   short sample_format, bits_per_sample, planar_config;
-  int num_bands, is_scanline_format, is_palette_color_tiff, wrong=FALSE;
+  short num_bands;
+  int is_scanline_format, is_palette_color_tiff, wrong=FALSE;
   char *error_message = (char *) MALLOC(sizeof(char)*2048);
 
   inDataNames = extract_band_names(meta->general->basename, 
 				   meta->general->band_count);
   fp = FOPEN(outDataName, "wb");
 
-  for (band=0; band<radarsat2->band_count; band++) {
+  int band_count = radarsat2->band_count;
+  if (ampOnly) {
+    strcpy(meta->general->bands, "AMP");
+    meta->general->band_count = 1;
+    band_count = 1;
+  }
+  for (band=0; band<band_count; band++) {
 
-    tiff = XTIFFOpen(inDataNames[band], "r");
+    // path from the xml (metadata) file
+    char *path = get_dirname(inBaseName);
+    if (strlen(path)>0) {
+      strcpy(inDataName, path);
+      if (inDataName[strlen(inDataName)-1] != '/')
+        strcat(inDataName, "/");
+    }
+    else
+      strcpy(inDataName, "");
+    free(path);
+    strcat(inDataName, inDataNames[band]);
+
+    tiff = XTIFFOpen(inDataName, "r");
     if (!tiff)
-      asfPrintError("Could not open data file (%s)\n", inDataNames[band]);
+      asfPrintError("Could not open data file (%s)\n", inDataName);
     gtif = GTIFNew(tiff);
     if (!gtif)
       asfPrintError("Could not read GeoTIFF keys from data file (%s)\n",
-		    inDataNames[band]);
+		    inDataName);
 
     // Check image dimensions
     uint32 tif_sample_count;
@@ -501,7 +521,7 @@ void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
     if (sample_format != SAMPLEFORMAT_UINT && 
 	sample_format != SAMPLEFORMAT_INT) {
       strcat(error_message, 
-	     "Problem with sampling format. Was looking for intger, ");
+	     "Problem with sampling format. Was looking for integer, ");
       if (sample_format == SAMPLEFORMAT_COMPLEXIEEEFP)
 	strcat(error_message, "found complex floating point instead!\n");
       else if (sample_format == SAMPLEFORMAT_COMPLEXINT)
@@ -608,7 +628,6 @@ void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
     // FIXME: still need to implement flipping vertically
     // Read file line by line
     uint32 row;
-    int line_count = meta->general->line_count;
     int sample_count = meta->general->sample_count;
     for (row=0; row<(uint32)meta->general->line_count; row++) {
       asfLineMeter(row, meta->general->line_count);
@@ -653,7 +672,8 @@ void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
       }
 	  
       put_band_float_line(fp, meta, band*2, (int)row, amp);
-      put_band_float_line(fp, meta, band*2+1, (int)row, phase);
+      if (!ampOnly)
+	put_band_float_line(fp, meta, band*2+1, (int)row, phase);
     }
       
     FREE(amp);
@@ -667,13 +687,16 @@ void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
   }
 
   // update the name field with directory name
-  char *path = g_get_current_dir();
+  char *path = get_dirname(inBaseName);
+  if (strlen(path)<=0)
+    path = g_get_current_dir();
   char *p = path, *q = path;
   while (q) {
     if ((q = strchr(p, DIR_SEPARATOR)) != NULL)
       p = q+1;
   }
-  strcpy(meta->general->basename, p);
+  sprintf(meta->general->basename, "%s", p);
+  FREE(path);
   meta_write(meta, outDataName);
 
   meta_free(meta);

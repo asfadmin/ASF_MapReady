@@ -352,7 +352,7 @@ char *get_terrasar_browse_file(const char *xml_file_name)
 }
 
 void import_terrasar(const char *inBaseName, radiometry_t radiometry,
-		     const char *outBaseName)
+		     const char *outBaseName, int ampOnly)
 {
   FILE *fpIn, *fpOut;
   terrasar_meta *terrasar;
@@ -388,7 +388,6 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
 		 terrasar->imageDataType, terrasar->imageDataFormat);
   meta = terrasar2meta(terrasar);
   meta_write(meta, outDataName);
-  meta_free(meta);
 
   if (!fileExists(inMetaName))
     asfPrintError("Metadata file (%s) does not exist!\n", inMetaName);
@@ -396,8 +395,14 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
   if (!doc)
     asfPrintError("Could not parse file %s\n", inMetaName);
 
-  for (ii=0; ii<terrasar->numberOfLayers; ii++) {
-    meta = meta_read(outDataName);
+  int numberOfLayers = terrasar->numberOfLayers;
+  if (ampOnly) {
+    strcpy(meta->general->bands, "AMP");
+    meta->general->band_count = 1;
+    numberOfLayers = 1;
+  }
+
+  for (ii=0; ii<numberOfLayers; ii++) {
     attribute = xml_get_int_attribute(doc, 
       "level1Product.productComponents.imageData[%d].layerIndex", ii);
     if (attribute != (ii+1)) {
@@ -438,15 +443,17 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
 		     ii+1, terrasar->numberOfLayers, inDataName);
       strcpy(polarization, xml_get_string_value(doc, 
 	"level1Product.productComponents.imageData[%d].polLayer", ii));
-      if (ii == 0) {
-	sprintf(meta->general->bands, "AMP-%s,PHASE-%s", 
-		polarization, polarization);
-	meta->general->band_count = 2;
-      }
-      else {
-	sprintf(bands, ",AMP-%s,PHASE-%s", polarization, polarization);
-	strcat(meta->general->bands, bands);
-	meta->general->band_count += 2;
+      if (!ampOnly) {
+	if (ii == 0) {
+	  sprintf(meta->general->bands, "AMP-%s,PHASE-%s", 
+		  polarization, polarization);
+	  meta->general->band_count = 2;
+	}
+	else {
+	  sprintf(bands, ",AMP-%s,PHASE-%s", polarization, polarization);
+	  strcat(meta->general->bands, bands);
+	  meta->general->band_count += 2;
+	}
       }
     }
     else
@@ -525,7 +532,8 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
 	phase[kk-rsfv] = atan2(im, re);
       }
       put_band_float_line(fpOut, meta, ii*2, ll-3, amp);
-      put_band_float_line(fpOut, meta, ii*2+1, ll-3, phase);
+      if (!ampOnly)
+	put_band_float_line(fpOut, meta, ii*2+1, ll-3, phase);
       asfLineMeter(ll, azimuth_samples);
     }
     meta_write(meta, outDataName);

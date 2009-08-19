@@ -4,9 +4,12 @@
 #include <asf_license.h>
 #include <asf_contact.h>
 #include <envi.h>
+#include "radarsat2.h"
+#include "terrasar.h"
 #include <airsar.h>
 #include <asf_import.h>
 #include <asf_raster.h>
+#include "xml_util.h"
 
 static int isCEOS(const char *dataFile)
 {
@@ -97,8 +100,52 @@ int isAIRSAR(char *dataFile)
   FCLOSE(fp);
   version = atof(get_airsar(buf, "JPL AIRCRAFT SAR PROCESSOR VERSION"));
   P_airsar = (version > 0.0) ? 1 : 0;
+  FREE(value);
+  FREE(header);
+  FREE(band_data);
 
   return (L_airsar || C_airsar || P_airsar);
+}
+
+int isTerrasar(char *dataFile)
+{
+  int found = FALSE;
+  char *satellite = NULL;
+  satellite = (char *) MALLOC(sizeof(char)*25);
+  FILE *fp;
+  fp = fopen(dataFile, "r");
+  xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
+  if (doc)
+    strcpy(satellite, xml_get_string_value(doc, 
+      "level1Product.productInfo.missionInfo.mission"));
+  if (satellite &&
+      strncmp_case(satellite, "TSX", 3) == 0)
+    found = TRUE;
+  fclose(fp);
+  xmlFreeDoc(doc);
+  xmlCleanupParser();
+
+  return found;
+}
+
+int isRadarsat2(char *dataFile)
+{
+  int found = FALSE;
+  char *satellite = (char *) MALLOC(sizeof(char)*25);
+  FILE *fp;
+  fp = fopen(dataFile, "r");
+  xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
+  if (doc)
+    strcpy(satellite, 
+	   xml_get_string_value(doc, "product.sourceAttributes.satellite"));
+  if (satellite &&
+      strcmp_case(satellite, "RADARSAT-2") == 0)
+    found = TRUE;
+  fclose(fp);
+  xmlFreeDoc(doc);
+  xmlCleanupParser();
+
+  return found;
 }
 
 int strmatches(const char *key, ...)
@@ -232,6 +279,18 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     polsarName = appendExt(s, ".bin");
   }
 
+  if (s)
+    printf("s: %d, %s\n", strlen(s), s);
+  if (ceosName)
+    printf("ceosName: %d, %s\n", strlen(ceosName), ceosName);
+  if (colormapName)
+    printf("colormapName: %d, %s\n", strlen(colormapName), colormapName);
+  if (image_data_type)
+    printf("image_data_type: %d, %s\n", 
+	   strlen(image_data_type), image_data_type);
+  if (outBaseName)
+    printf("outBaseName: %d, %s\n", strlen(outBaseName), outBaseName);
+
   sprintf(outName, "%s.img", outBaseName);
   sprintf(enviName, "%s.hdr", polsarName);
   envi = read_envi(enviName);
@@ -249,11 +308,31 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     
     int is_airsar = isAIRSAR(ceosName);
     int is_ceos = isCEOS(ceosName);
+    int is_radarsat2 = isRadarsat2(ceosName);
+    int is_terrasar = isTerrasar(ceosName);
     
     if (is_ceos)
       metaOut = meta_read(ceosName);
     else if (is_airsar)
       metaOut = import_airsar_meta(ceosName, ceosName, TRUE);
+    else if (is_radarsat2) {
+      radarsat2_meta *radarsat2 = read_radarsat2_meta(ceosName);
+      if (strcmp_case(radarsat2->dataType, "COMPLEX") != 0)
+	asfPrintError("Wrong data type!\nPolarimetric processing requires SLC "
+		      "data!\n");
+      metaOut = radarsat2meta(radarsat2);
+      FREE(radarsat2);
+    }
+    else if (is_terrasar) {
+      terrasar_meta *terrasar = read_terrasar_meta(ceosName);
+      if (strcmp_case(terrasar->imageDataType, "COMPLEX") != 0)
+	asfPrintError("Wrong data type!\nPolarimetric processing requires SLC "
+		      "data!\n");
+      if (strcmp_case(terrasar->imageDataFormat, "COSAR") != 0)
+	asfPrintError("Currently only COSAR data format supported!\n");
+      metaOut = terrasar2meta(terrasar);
+      FREE(terrasar);
+    }
     else
       asfPrintError("Ancillary file is not CEOS or AIRSAR format (required):"
 		    "\n%s\n", ceosName);
@@ -272,15 +351,25 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     // Ingest the CEOS/AirSAR data to generate an amplitude image (in case the
     // user wants to terrain correct. Will need to get the metadata anyway
     if (is_ceos) {
-      asfPrintStatus("Ingesting CEOS data ...\n");
+      asfPrintStatus("   Ingesting CEOS data ...\n");
       import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale,
 		  p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
 		  FALSE, FALSE, TRUE, FALSE);
     }
     else if (is_airsar) {
-      asfPrintStatus("Ingesting AirSAR data ...\n");
+      asfPrintStatus("   Ingesting AirSAR data ...\n");
       ingest_airsar_polsar_amp(ceosName, outBaseName,
 			       p_range_scale, p_azimuth_scale);
+    }
+    // FIXME: No scaling or multilooking yet
+    else if (is_radarsat2) {
+      asfPrintStatus("   Ingesting Radarsat-2 data ...\n");
+      import_radarsat2(ceosName, r_AMP, outBaseName, TRUE);
+    }
+    // FIXME: No scaling or multilooking yet
+    else if (is_terrasar) {
+      asfPrintStatus("   Ingesting TerraSAR-X data ...\n");
+      import_terrasar(ceosName, r_AMP, outBaseName, TRUE);
     }
 
     // Read the PolSAR Pro data into the layer stack

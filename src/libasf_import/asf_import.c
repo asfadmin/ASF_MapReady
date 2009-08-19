@@ -208,11 +208,11 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == TERRASAR) {
     asfPrintStatus("   Data format: TERRASAR\n");
-    import_terrasar(inBaseName, update(radiometry, db_flag), outBaseName);
+    import_terrasar(inBaseName, update(radiometry, db_flag), outBaseName, 0);
   }
   else if (format_type == RADARSAT2) {
     asfPrintStatus("   Data format: RADARSAT2\n");
-    import_radarsat2(inBaseName, update(radiometry, db_flag), outBaseName);
+    import_radarsat2(inBaseName, update(radiometry, db_flag), outBaseName, 0);
   }
   else if (format_type == POLSARPRO) {
     asfPrintStatus("   Data format: POLSARPRO\n");
