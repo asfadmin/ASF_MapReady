@@ -781,6 +781,9 @@ main (int argc, char *argv[])
   else if ( strcmp (command_line.format, "KML") == 0 ) {
     format = KML;
   }
+  else if ( strcmp (command_line.format, "POLSARPRO") == 0 ) {
+    format = POLSARPRO_HDR;
+  }
   else {
     asfPrintError("Unrecognized output format specified\n");
   }
