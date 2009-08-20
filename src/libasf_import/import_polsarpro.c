@@ -37,7 +37,6 @@ static char *get_airsar(char *buf, char *str)
   if (p) {
     strncpy(q, p, 50);
     strcpy(value, q+strlen(str));
-    //printf("%s: %s\n", str, value);
   }
   else
     strcpy(value, "");
@@ -278,18 +277,6 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     // finding the intended data and try again.
     polsarName = appendExt(s, ".bin");
   }
-
-  if (s)
-    printf("s: %d, %s\n", strlen(s), s);
-  if (ceosName)
-    printf("ceosName: %d, %s\n", strlen(ceosName), ceosName);
-  if (colormapName)
-    printf("colormapName: %d, %s\n", strlen(colormapName), colormapName);
-  if (image_data_type)
-    printf("image_data_type: %d, %s\n", 
-	   strlen(image_data_type), image_data_type);
-  if (outBaseName)
-    printf("outBaseName: %d, %s\n", strlen(outBaseName), outBaseName);
 
   sprintf(outName, "%s.img", outBaseName);
   sprintf(enviName, "%s.hdr", polsarName);
