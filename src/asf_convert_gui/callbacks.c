@@ -342,6 +342,7 @@ output_format_combobox_changed()
           GTK_TOGGLE_BUTTON(output_bytes_checkbutton), TRUE);
         set_combo_box_item(scaling_method_combobox, SCALING_METHOD_SIGMA);
         break;
+      case OUTPUT_FORMAT_POLSARPRO:
       case OUTPUT_FORMAT_GEOTIFF:
         gtk_toggle_button_set_active(
           GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);
@@ -403,6 +404,7 @@ export_checkbutton_toggle()
 
             break;
           case OUTPUT_FORMAT_GEOTIFF:
+  	  case OUTPUT_FORMAT_POLSARPRO:
             gtk_widget_set_sensitive(output_bytes_checkbutton, TRUE);
             output_bytes_checkbutton_toggle();
             break;
@@ -532,6 +534,13 @@ on_pgm_activate(GtkWidget *widget)
     GtkWidget *rb_all = get_widget_checked("rb_all");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb_all), TRUE);
 
+    output_format_combobox_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_polsarpro_export_activate(GtkWidget *widget)
+{
     output_format_combobox_changed();
     update_summary();
 }

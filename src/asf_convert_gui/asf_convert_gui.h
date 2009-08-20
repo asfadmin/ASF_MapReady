@@ -27,6 +27,7 @@
 #define USE_GTK_FILE_CHOOSER
 #endif
 
+// must match Glade's order
 enum OutputFormat
 {
     OUTPUT_FORMAT_JPEG = 0,
@@ -34,8 +35,9 @@ enum OutputFormat
     OUTPUT_FORMAT_PGM = 2,
     OUTPUT_FORMAT_TIFF = 3,
     OUTPUT_FORMAT_GEOTIFF = 4,
-    OUTPUT_FORMAT_ASF_INTERNAL = 5,
-    OUTPUT_FORMAT_CEOS = 6
+    OUTPUT_FORMAT_POLSARPRO = 5,
+    OUTPUT_FORMAT_ASF_INTERNAL = 6,
+    OUTPUT_FORMAT_CEOS = 7
 };
 
 enum InputFormat

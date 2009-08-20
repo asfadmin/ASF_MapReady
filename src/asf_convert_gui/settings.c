@@ -1119,6 +1119,10 @@ settings_get_output_format_extension(const Settings *s)
             case OUTPUT_FORMAT_TIFF:
                 out_extension = "tif";
                 break;
+
+	    case OUTPUT_FORMAT_POLSARPRO:
+	        out_extension = "bin";
+		break;
         }
     }
     else
@@ -1163,6 +1167,10 @@ settings_get_output_format_string(const Settings *s)
     case OUTPUT_FORMAT_TIFF:
         format_arg_to_export = "tiff";
         break;
+
+    case OUTPUT_FORMAT_POLSARPRO:
+        format_arg_to_export = "polsarpro";
+	break;
     }
 
     return format_arg_to_export;
@@ -1899,6 +1907,8 @@ int apply_settings_from_config_file(char *configFile)
         s.output_format = OUTPUT_FORMAT_PGM;
     else if (strncmp(uc(cfg->export->format), "PNG", 3) == 0)
         s.output_format = OUTPUT_FORMAT_PNG;
+    else if (strncmp(uc(cfg->export->format), "POLSARPRO", 9) == 0)
+        s.output_format = OUTPUT_FORMAT_POLSARPRO;
 
     s.apply_scaling = 0;
     s.longest_dimension = 0;

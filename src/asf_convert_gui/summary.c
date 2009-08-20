@@ -295,8 +295,11 @@ const char *get_summary_text()
         case OUTPUT_FORMAT_TIFF:
             strcat(text, "TIFF");
             break;
-        }
 
+        case OUTPUT_FORMAT_POLSARPRO:
+            strcat(text, "POLSARPRO");
+	    break;
+	}
         if (s->output_bytes)
         {
             strcat(text, " (byte)\n   Scaling Method: ");
