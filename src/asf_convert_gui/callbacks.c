@@ -403,8 +403,11 @@ export_checkbutton_toggle()
             gtk_widget_set_sensitive(scaling_method_label, TRUE);
 
             break;
-          case OUTPUT_FORMAT_GEOTIFF:
   	  case OUTPUT_FORMAT_POLSARPRO:
+            gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
+            output_bytes_checkbutton_toggle();
+	    break;
+          case OUTPUT_FORMAT_GEOTIFF:
             gtk_widget_set_sensitive(output_bytes_checkbutton, TRUE);
             output_bytes_checkbutton_toggle();
             break;
