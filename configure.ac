@@ -155,7 +155,9 @@ fi
 AC_SUBST(ASF_LIB_JPEG)
 
 #### libtiff check ####
-AC_CHECK_LIB(tiff,TIFFGetTagListCount,have_tiff="yes",have_tiff="no")
+AC_CHECK_HEADER(tiff.h,
+  AC_CHECK_LIB(tiff,TIFFGetTagListCount,have_tiff="yes",have_tiff="no"),
+  have_tiff="no")
 if test "$sys" = "win32" ; then
   have_tiff="no"
 fi
@@ -184,7 +186,9 @@ fi
 AC_SUBST(ASF_LIB_PNG)
 
 #### libgeotiff check ####
-AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no")
+AC_CHECK_HEADER(geotiff.h,
+  AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no"),
+  have_geotiff="no")
 if test "$sys" = "win32" ; then
   have_geotiff="no"
 fi
