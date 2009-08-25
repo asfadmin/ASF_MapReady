@@ -294,8 +294,6 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
 {
   char *ext, *base_name;
 
-  base_name = (char *) MALLOC(sizeof(char)*255);
-
   ext = findExt(inFile);
 
   if (ext &&
@@ -308,14 +306,17 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
        strcmp_case(ext, ".PGM") == 0 ||
        strcmp_case(ext, ".BIN") == 0))
     base_name = stripExt(inFile);
-  else
+  else {
+    base_name = (char *) MALLOC(sizeof(char)*255);
     strcpy(base_name, inFile);
+  }
   if (bandExt)
     sprintf(outFile, "%s_%s", base_name, bandExt);
   else
-    strcpy(outFile, base_name);
+    sprintf(outFile, "%s", base_name);
   if (ext)
     strcat(outFile, ext);
+  free(base_name);
 }
 
 /****************************************************************************

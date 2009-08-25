@@ -462,6 +462,7 @@ get_asf_share_dir()
 	    printf("Using default share dir: %s\n", s_share_dir);
 
 	FREE(buf);
+	FREE(share);
     }
 
 #endif
