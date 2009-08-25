@@ -1088,7 +1088,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   }
   fprintf(kml_file, "</td></tr></table>\n");
   fprintf(kml_file, "  ]]></description>\n");
-  if (cfg->time) {
+  if (cfg && cfg->time) {
     ymd_date date;
     hms_time time;
     parse_DMYdate(meta->general->acquisition_date, &date, &time);
@@ -1106,25 +1106,27 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <visibility>1</visibility>\n");
   fprintf(kml_file, "  <open>1</open>\n");
-  
-  // Check for valid drawing parameters
-  if (strcmp_case(cfg->boundary, "POLYGON") != 0 &&
-      strcmp_case(cfg->boundary, "LINE") != 0) {
-    asfPrintWarning("Invalid boundary type '%s'.\n"
-		    "Will reset the boundary type to 'POLYGON'\n",
-		    cfg->boundary);
-    strcpy(cfg->boundary, "POLYGON");
-  }
-  if (strcmp_case(cfg->height, "RELATIVETOGROUND") != 0 &&
-      strcmp_case(cfg->height, "CLAMPTOGROUND") != 0) {
-    asfPrintWarning("Invalid height reference '%s'.\n"
-		    "Will reset the height reference to 'clampToGround'\n",
-		    cfg->height);
-    strcpy(cfg->height, "clampToGround");
+ 
+  if (cfg) { 
+    // Check for valid drawing parameters
+    if (strcmp_case(cfg->boundary, "POLYGON") != 0 &&
+        strcmp_case(cfg->boundary, "LINE") != 0) {
+      asfPrintWarning("Invalid boundary type '%s'.\n"
+   		      "Will reset the boundary type to 'POLYGON'\n",
+		      cfg->boundary);
+      strcpy(cfg->boundary, "POLYGON");
+    }
+    if (strcmp_case(cfg->height, "RELATIVETOGROUND") != 0 &&
+        strcmp_case(cfg->height, "CLAMPTOGROUND") != 0) {
+      asfPrintWarning("Invalid height reference '%s'.\n"
+   		      "Will reset the height reference to 'clampToGround'\n",
+		      cfg->height);
+      strcpy(cfg->height, "clampToGround");
+    }
   }
 
   write_kml_style_keys_ext(kml_file, cfg);
-  if (strcmp_case(cfg->boundary, "LINE") == 0) {
+  if (cfg && strcmp_case(cfg->boundary, "LINE") == 0) {
     fprintf(kml_file, "  <LineString>\n");
     fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", cfg->height);
     fprintf(kml_file, "    <extrude>1</extrude>\n");
@@ -1133,7 +1135,8 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   else {
     write_kml_style_keys(kml_file);
     fprintf(kml_file, "  <Polygon>\n");
-    fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", cfg->height);
+    fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", 
+            cfg ? cfg->height : "3000");
     fprintf(kml_file, "    <outerBoundaryIs>\n");
     fprintf(kml_file, "      <LinearRing>\n");
     fprintf(kml_file, "        <extrude>%d</extrude>\n",
@@ -1159,7 +1162,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
   
   fprintf(kml_file, "        </coordinates>\n");
-  if (strcmp_case(cfg->boundary, "LINE") == 0) {
+  if (cfg && strcmp_case(cfg->boundary, "LINE") == 0) {
     fprintf(kml_file, "  </LineString>\n");
   }
   else {
@@ -1172,18 +1175,21 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   if (png_filename) {
     fprintf(kml_file, "<GroundOverlay>\n");
     fprintf(kml_file, "  <name>%s</name>\n", name);
-    fprintf(kml_file, "  <color>%xffffff</color>\n", 
-	    (int)((100 - cfg->transparency) * 2.55 + 0.5));
+    if (cfg)
+      fprintf(kml_file, "  <color>%xffffff</color>\n", 
+  	      (int)((100 - cfg->transparency) * 2.55 + 0.5));
     fprintf(kml_file, "  <Icon>\n");
     fprintf(kml_file, "      <href>%s</href>\n", png_filename);
     fprintf(kml_file, "      <viewBoundScale>0.75</viewBoundScale>\n");
     fprintf(kml_file, "  </Icon>\n");
-    fprintf(kml_file, "  <LatLonBox>\n");
-    fprintf(kml_file, "      <north>%.4f</north>\n", cfg->north);
-    fprintf(kml_file, "      <south>%.4f</south>\n", cfg->south);
-    fprintf(kml_file, "      <east>%.4f</east>\n", cfg->east);
-    fprintf(kml_file, "      <west>%.4f</west>\n", cfg->west);
-    fprintf(kml_file, "  </LatLonBox>\n");
+    if (cfg) {
+      fprintf(kml_file, "  <LatLonBox>\n");
+      fprintf(kml_file, "      <north>%.4f</north>\n", cfg->north);
+      fprintf(kml_file, "      <south>%.4f</south>\n", cfg->south);
+      fprintf(kml_file, "      <east>%.4f</east>\n", cfg->east);
+      fprintf(kml_file, "      <west>%.4f</west>\n", cfg->west);
+      fprintf(kml_file, "  </LatLonBox>\n");
+    }
     
     fprintf(kml_file, "</GroundOverlay>\n");
   }
