@@ -313,6 +313,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     }
   }
 
+  meta_free(meta);
   asfPrintStatus("Import complete.\n\n");
   return 0;
 }
