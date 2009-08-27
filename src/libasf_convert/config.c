@@ -436,7 +436,6 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->ers2_gain_fix = TRUE;
   cfg->import->polsarpro_colormap = (char *)MALLOC(sizeof(char)*256);
   strcpy(cfg->import->polsarpro_colormap, "");
-  cfg->import->matrix = 0;
   cfg->import->metadata_file = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->import->metadata_file, "");
 
@@ -612,8 +611,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
       if (strncmp(test, "polsarpro colormap", 18)==0)
         strcpy(cfg->import->format, read_str(line, "polsarpro colormap"));
-      if (strncmp(test, "matrix", 6)==0)
-        cfg->import->matrix = read_int(line, "matrix");
+      if (strncmp(test, "image data type", 15)==0)
+        strcpy(cfg->import->image_data_type, read_str(line, "image data type"));
       if (strncmp(test, "metadata file", 13)==0)
         strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
 
@@ -928,10 +927,10 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "apply ers2 gain fix", 19)==0)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
       if (strncmp(test, "polsarpro colormap", 18)==0)
-        strcpy(cfg->import->polsarpro_colormap, read_str(line, "polsarpro colormap"));
-      if (strncmp(test, "matrix", 6)==0)
-        cfg->import->matrix = read_int(line, "matrix");
-      if (strncmp(test, "metadata file", 13)==0)
+        strcpy(cfg->import->polsarpro_colormap, 
+	       read_str(line, "polsarpro colormap"));
+      if (strncmp(test, "image data type", 15)==0)
+        strcpy(cfg->import->image_data_type, read_str(line, "image data type"));      if (strncmp(test, "metadata file", 13)==0)
         strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
       FREE(test);
     }
@@ -1385,10 +1384,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# that is processed will remain (non-meaningfully) greyscale.\n\n");
     fprintf(fConfig, "polsarpro colormap = %s\n", cfg->import->polsarpro_colormap);
     if (!shortFlag)
-      fprintf(fConfig, "\n# Flag indicating that the input is a matrix (e.g. T3).\n"
-	      "# The input file can be any of the matrix elements. This flag is only valid if\n"
-	      "# input format is 'POLSARPRO'.\n\n");
-    fprintf(fConfig, "matrix = %d\n", cfg->import->matrix);
+      fprintf(fConfig, "\n# The image data type is only relevant for PolSARPro ingest.\n"
+              "# It determines whether the input needs to be as a matrix or a file.\n"
+	      "# Current options: POLARIMETRIC_SEGMENTATION, POLARIMETRIC_DECOMPOSITION,\n"
+	      "# POLARIMETRIC_PARAMETERS and POLARIMETRIC_MATRIX,\n\n");
+    fprintf(fConfig, "image data type = %s\n", cfg->import->image_data_type);
     if (!shortFlag)
       fprintf(fConfig, "\n# If the name of the metadata file is not deducible from the name\n"
               "# given for the input file, it can be specified here.  Currently, only GAMMA\n"
