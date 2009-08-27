@@ -290,6 +290,7 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->import->format);
             FREE(cfg->import->radiometry);
             FREE(cfg->import->lut);
+	    FREE(cfg->import->image_data_type);
             FREE(cfg->import->prc);
 	    FREE(cfg->import->polsarpro_colormap);
 	    FREE(cfg->import->metadata_file);
@@ -419,6 +420,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->import->radiometry, "AMPLITUDE_IMAGE");
   cfg->import->lut = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->import->lut, "");
+  cfg->import->image_data_type = (char *)MALLOC(sizeof(char)*50);
+  strcpy(cfg->import->image_data_type, "");
   cfg->import->lat_begin = -99.0;
   cfg->import->lat_end = -99.0;
   cfg->import->line = 0;
@@ -433,9 +436,9 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->ers2_gain_fix = TRUE;
   cfg->import->polsarpro_colormap = (char *)MALLOC(sizeof(char)*256);
   strcpy(cfg->import->polsarpro_colormap, "");
+  cfg->import->matrix = 0;
   cfg->import->metadata_file = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->import->metadata_file, "");
-  cfg->import->classification = 0;
 
   cfg->external->cmd = (char *)MALLOC(sizeof(char)*1024);
 
@@ -609,10 +612,10 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
       if (strncmp(test, "polsarpro colormap", 18)==0)
         strcpy(cfg->import->format, read_str(line, "polsarpro colormap"));
+      if (strncmp(test, "matrix", 6)==0)
+        cfg->import->matrix = read_int(line, "matrix");
       if (strncmp(test, "metadata file", 13)==0)
         strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
-      if (strncmp(test, "classification", 14)==0)
-        cfg->import->classification = read_int(line, "classification");
 
       // External
       if (strncmp(test, "command", 7)==0)
@@ -926,10 +929,10 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
       if (strncmp(test, "polsarpro colormap", 18)==0)
         strcpy(cfg->import->polsarpro_colormap, read_str(line, "polsarpro colormap"));
+      if (strncmp(test, "matrix", 6)==0)
+        cfg->import->matrix = read_int(line, "matrix");
       if (strncmp(test, "metadata file", 13)==0)
         strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
-      if (strncmp(test, "classification", 14)==0)
-        cfg->import->classification = read_int(line, "classification");
       FREE(test);
     }
 
@@ -1382,6 +1385,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# that is processed will remain (non-meaningfully) greyscale.\n\n");
     fprintf(fConfig, "polsarpro colormap = %s\n", cfg->import->polsarpro_colormap);
     if (!shortFlag)
+      fprintf(fConfig, "\n# Flag indicating that the input is a matrix (e.g. T3).\n"
+	      "# The input file can be any of the matrix elements. This flag is only valid if\n"
+	      "# input format is 'POLSARPRO'.\n\n");
+    fprintf(fConfig, "matrix = %d\n", cfg->import->matrix);
+    if (!shortFlag)
       fprintf(fConfig, "\n# If the name of the metadata file is not deducible from the name\n"
               "# given for the input file, it can be specified here.  Currently, only GAMMA\n"
               "# data needs to do this, for other types of data either the input file is\n"
@@ -1389,12 +1397,6 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# If you have renamed your metadata file against the standard naming scheme\n"
               "# for the data, you should rename it back rather than using this option.\n\n");
     fprintf(fConfig, "metadata file = %s\n", cfg->import->metadata_file);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The classfication flag is used to indicate the input is the result\n"
-	      "# of a polarimetric segmentation, i.e. it is a single band image whose values can\n"
-	      "# safely be truncated to convert it into a byte image in order to apply a \n"
-	      "# look up table.\n\n");
-    fprintf(fConfig, "classification = %d\n\n", cfg->import->classification);
 
     // AirSAR -- only write out if the import format is AirSAR
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {

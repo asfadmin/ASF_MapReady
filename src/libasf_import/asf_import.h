@@ -48,7 +48,6 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                char *inBaseName, // input file
                char *ancillary_file, // ancillary file (if needed for input file)
                char *colormapName, // colormap file
-	       int classification, // treat the image as polarimetric segmentation result
                char *outBaseName // output file
                );
 
@@ -120,5 +119,7 @@ void import_gamma(char *dataName, char *metaName, char *ceosName,
 
 meta_parameters *meta_read_only(const char *in_fName);
 meta_parameters *meta_read_raw(const char *inFile);
+
+int isPolsarproMatrix(char *dataFile, char **matrixType);
 
 #endif

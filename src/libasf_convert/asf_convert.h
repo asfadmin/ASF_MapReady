@@ -53,6 +53,7 @@ typedef struct
   int sample;             // start sample for subset
   int width;              // width of subset
   int height;             // height of subset
+  char *image_data_type;  // image data type, e.g. POLARIMETRIC_MATRIX
   char *prc;              // precision state vector location (to be 
                           //        implemented)
   int output_db;          // TRUE if the output is db.  Only applies to
@@ -62,9 +63,9 @@ typedef struct
   int multilook_slc;      // flag to multilook single look complex data
   int ers2_gain_fix;      // flag to apply ers2 gain correction
   char *polsarpro_colormap; // colormap (.pal) to apply to PolSARpro classifications
+  int matrix;             // flag for input being a matrix
   char *metadata_file;    // Name of a (non-ASF) metadata file (if it can't
                           // be deduced)
-  int classification;     // classification flag (for PolSARpro ingest)
 } s_import;
 
 typedef struct
