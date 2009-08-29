@@ -565,7 +565,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 {
     gchar *in_file, *out_full, *ancillary_file, *meta_file,
           *status, *polsarpro_aux_info;
-    int pid;
+    int pid, isPolSARPro = FALSE;
 
     pid = getpid();
 
@@ -578,7 +578,9 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         COL_POLSARPRO_INFO, &polsarpro_aux_info,
         -1);
 
-    int isPolSARPro = polsarpro_aux_info && strlen(polsarpro_aux_info)>0;
+    int image_data_type = extract_image_data_type(polsarpro_aux_info);
+    if (image_data_type >= 0 && image_data_type < 3)
+      isPolSARPro = TRUE;
 
     if (strcmp(status, "Done") != 0 || !skip_done)
     {

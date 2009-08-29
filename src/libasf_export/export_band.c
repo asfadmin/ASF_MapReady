@@ -43,6 +43,27 @@
    instead going to be specified by more detailed low level tags.  */
 static const int user_defined_value_code = 32767;
 
+static char *t3_matrix[9] = {"T11.bin","T12_real.bin","T12_imag.bin",
+			     "T13_real.bin","T13_imag.bin","T22.bin",
+			     "T23_real.bin","T23_imag.bin","T33.bin"};
+static char *t4_matrix[16] = {"T11.bin","T12_real.bin","T12_imag.bin",
+			      "T13_real.bin","T13_imag.bin","T14_real.bin",
+			      "T14_imag.bin","T22.bin","T23_real.bin",
+			      "T23_imag.bin","T24_real.bin","T24_imag.bin",
+			      "T33.bin","T34_real.bin","T34_imag.bin",
+			      "T44.bin"};
+static char *c2_matrix[4] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			     "C22.bin"};
+static char *c3_matrix[9] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			     "C13_real.bin","C13_imag.bin","C22.bin",
+			     "C23_real.bin","C23_imag.bin","C33.bin"};
+static char *c4_matrix[16] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			      "C13_real.bin","C13_imag.bin","C14_real.bin",
+			      "C14_imag.bin","C22.bin","C23_real.bin",
+			      "C23_imag.bin","C24_real.bin","C24_imag.bin",
+			      "C33.bin","C34_real.bin","C34_imag.bin",
+			      "C44.bin"};
+
 int is_slant_range(meta_parameters *md);
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
@@ -194,6 +215,8 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   }
 
   *palette_color_tiff = palette_color;
+
+  meta_free(md);
 }
 
 
@@ -337,9 +360,15 @@ void initialize_polsarpro_file(const char *output_file_name,
   *ofp = FOPEN(output_file_name, "w");
   
   char *output_header_file_name = strcat(output_file_name, ".hdr");
+  char *band_name = get_filename(output_file_name);
   envi_header *envi = meta2envi(meta);
   envi->bands = 1;
+  char *band = stripExt(band_name);
+  strcpy(envi->band_name, band_name);
   write_envi_header(output_header_file_name, output_file_name, meta, envi);
+  FREE(output_header_file_name);
+  FREE(band_name);
+  FREE(band);
   FREE(envi);
   
   return;
@@ -766,6 +795,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
       default:
         asfPrintWarning ("Unsupported map projection found.  TIFF file will not\n"
             "contain projection information.\n");
+	free(citation);
         break;
     }
   }
@@ -842,6 +872,10 @@ export_band_image (const char *metadata_file_name,
 
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
+
+  if (md->general->image_data_type != POLARIMETRIC_MATRIX &&
+      format == POLSARPRO_HDR)
+    append_ext_if_needed(output_file_name, ".bin", NULL);
 
   asfRequire( !(look_up_table_name == NULL &&
                 sample_mapping == TRUNCATE &&
@@ -1421,9 +1455,13 @@ export_band_image (const char *metadata_file_name,
     // Single-band image output (one grayscale file for each available band)
     int free_band_names=FALSE;
     int band_count = md->general->band_count;
-    char base_name[255], bands[1024];
+    char base_name[255];
+    char *bands = (char *) MALLOC(sizeof(char)*1024);
     strcpy(bands, md->general->bands);
     strcpy(base_name, output_file_name);
+    char *matrix = (char *) MALLOC(sizeof(char)*5);
+    char *path_name = (char *) MALLOC(sizeof(char)*1024);
+    char *out_file = NULL;
 
     if (!band_name)
     {
@@ -1459,6 +1497,37 @@ export_band_image (const char *metadata_file_name,
       free_band_names = TRUE;
     }
 
+    // If we are dealing with polarimetric matrices, the output file name
+    // becomes the name of an output directory. We need to figure out from
+    // the bands string, what kind of matrix we have, because we need to
+    // create the appropriate subdirectory. Otherwise, PolSARPro can't handle
+    // the files out of the box.
+    if (md->general->image_data_type == POLARIMETRIC_MATRIX) {
+      snprintf(matrix, 3, "%s", band_name[band_count-1]);
+      char *dirName = (char *) MALLOC(sizeof(char)*1024);
+      char *fileName = (char *) MALLOC(sizeof(char)*1024);
+      split_dir_and_file(output_file_name, dirName, fileName);
+      char *path = get_dirname(output_file_name);
+      //if (strlen(path)<=0 || strcmp(path, "./") == 0) {
+      if (strlen(dirName) <= 0) {
+	path = g_get_current_dir();
+	sprintf(path_name, "%s%c%s%c%s", 
+		path, DIR_SEPARATOR, output_file_name, DIR_SEPARATOR, matrix);
+      }
+      else {
+	sprintf(path_name, "%s%c%s", output_file_name, DIR_SEPARATOR, matrix);
+	sprintf(path_name, "%s%c%s%c%s", 
+		dirName, DIR_SEPARATOR, fileName, DIR_SEPARATOR, matrix);
+      }
+      if (is_dir(path_name))
+	asfPrintError("Output directory (%s) already exists.\n", path_name);
+      else if(create_dir(path_name) == -1)
+	asfPrintError("Can't generate output directory (%s).\n", path_name);
+      FREE(path);
+      FREE(dirName);
+      FREE(fileName);
+    }
+
     // store the names of the generated files here
     *noutputs = 0;
     *output_names = MALLOC(sizeof(char*) * band_count);
@@ -1475,7 +1544,11 @@ export_band_image (const char *metadata_file_name,
         //      here to avoid thinking we've got -lut when it was really
         //      just the md->colormap (which sets have_look_up_table, above)
         int is_polsarpro = 
-	  (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
+	  (md->general->image_data_type == POLARIMETRIC_IMAGE || 
+	   md->general->image_data_type == POLARIMETRIC_SEGMENTATION || 
+	   md->general->image_data_type == POLARIMETRIC_DECOMPOSITION || 
+	   md->general->image_data_type == POLARIMETRIC_PARAMETERS ||
+	   md->general->image_data_type == POLARIMETRIC_MATRIX) ? 1 : 0;
         if (
             ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
             (!md->colormap && have_look_up_table && md->general->data_type == BYTE) ||
@@ -1492,33 +1565,79 @@ export_band_image (const char *metadata_file_name,
           asfPrintStatus("\nApplying %s color look up table...\n\n", look_up_table_name);
         }
 
-        if (strcmp(band_name[0], MAGIC_UNSET_STRING) != 0)
-          asfPrintStatus("Writing band '%s' ...\n", band_name[kk]);
+	out_file = (char *) MALLOC(sizeof(char)*1024);
+	strcpy(out_file, output_file_name);
 
         // Initialize the selected format
         // NOTE: For PolSARpro, the first band is amplitude and should be
         // written out as a single-band greyscale image while the second
         // band is a classification and should be written out as color ...
-        // and for TIFF formats, as a palette color tiff
-        if (band_count > 1)
-          append_band_ext(base_name, output_file_name, band_name[kk]);
-        else
-          append_band_ext(base_name, output_file_name, NULL);
+        // and for TIFF formats, as a palette color tiff.
+	// The only exception to this rule are polarimetric matrices
+	if (md->general->image_data_type == POLARIMETRIC_MATRIX) {
+	  int ll, found_band = FALSE;
+	  int band_count;
+	  if (strcmp(matrix, "T3") == 0)
+	    band_count = 9;
+	  if (strcmp(matrix, "T4") == 0)
+	    band_count = 16;
+	  if (strcmp(matrix, "C2") == 0)
+	    band_count = 4;
+	  if (strcmp(matrix, "C3") == 0)
+	    band_count = 9;
+	  if (strcmp(matrix, "C4") == 0)
+	    band_count = 16;
+	  for (ll=0; ll<band_count; ll++) {
+	    if (strcmp(matrix, "T3") == 0 && 
+		strncmp(band_name[kk], t3_matrix[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(matrix, "T4") == 0 && 
+		strncmp(band_name[kk], t4_matrix[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(matrix, "C2") == 0 && 
+		strncmp(band_name[kk], c2_matrix[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(matrix, "C3") == 0 && 
+		strncmp(band_name[kk], c3_matrix[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(matrix, "C4") == 0 && 
+		strncmp(band_name[kk], c4_matrix[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	  }
+	  if (!found_band)
+	    continue;
+	  sprintf(out_file, "%s%c%s", 
+		  path_name, DIR_SEPARATOR, band_name[kk]);
+	}
+	else {
+	  if (band_count > 1)
+	    append_band_ext(base_name, out_file, band_name[kk]);
+	  else
+	    append_band_ext(base_name, out_file, NULL);
+	}
+
+        if (strcmp(band_name[0], MAGIC_UNSET_STRING) != 0)
+          asfPrintStatus("\n\nWriting band '%s' ...\n", band_name[kk]);
 
         if (format == TIF || format == GEOTIFF) {
           is_geotiff = (format == GEOTIFF) ? 1 : 0;
-          append_ext_if_needed (output_file_name, ".tif", ".tiff");
+          append_ext_if_needed (out_file, ".tif", ".tiff");
           if (is_colormap_band) {
             //sample_mapping = TRUNCATE;
             rgb = FALSE;
-            initialize_tiff_file(&otif, &ogtif, output_file_name,
+            initialize_tiff_file(&otif, &ogtif, out_file,
                                  metadata_file_name, is_geotiff,
                                  sample_mapping, rgb,
                                  &palette_color_tiff, band_name,
                                  lut_file, TRUE);
           }
           else {
-            initialize_tiff_file(&otif, &ogtif, output_file_name,
+            initialize_tiff_file(&otif, &ogtif, out_file,
                                  metadata_file_name, is_geotiff,
                                  sample_mapping, rgb,
                                  &palette_color_tiff, band_name,
@@ -1526,61 +1645,65 @@ export_band_image (const char *metadata_file_name,
           }
         }
         else if (format == JPEG) {
-          append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
+          append_ext_if_needed (out_file, ".jpg", ".jpeg");
           if (is_colormap_band) {
-            initialize_jpeg_file(output_file_name, md,
+            initialize_jpeg_file(out_file, md,
                                  &ojpeg, &cinfo, TRUE);
           }
           else {
-            initialize_jpeg_file(output_file_name, md,
+            initialize_jpeg_file(out_file, md,
                                  &ojpeg, &cinfo, rgb);
           }
         }
         else if (format == PNG) {
-          append_ext_if_needed (output_file_name, ".png", NULL);
+          append_ext_if_needed (out_file, ".png", NULL);
           if (is_colormap_band) {
-            initialize_png_file(output_file_name, md,
+            initialize_png_file(out_file, md,
                                 &opng, &png_ptr, &png_info_ptr, TRUE);
           }
           else {
-            initialize_png_file(output_file_name, md,
+            initialize_png_file(out_file, md,
                                 &opng, &png_ptr, &png_info_ptr, rgb);
           }
         }
         else if (format == PNG_ALPHA) {
-          append_ext_if_needed (output_file_name, ".png", NULL);
-	  initialize_png_file_ext(output_file_name, md,
+          append_ext_if_needed (out_file, ".png", NULL);
+	  initialize_png_file_ext(out_file, md,
 				  &opng, &png_ptr, &png_info_ptr, FALSE, TRUE);
         }
         else if (format == PNG_GE) {
-          append_ext_if_needed (output_file_name, ".png", NULL);
-	  initialize_png_file_ext(output_file_name, md,
+          append_ext_if_needed (out_file, ".png", NULL);
+	  initialize_png_file_ext(out_file, md,
 				  &opng, &png_ptr, &png_info_ptr, 1, 2);
         }
         else if (format == PGM) {
-          append_ext_if_needed (output_file_name, ".pgm", ".pgm");
-          initialize_pgm_file(output_file_name, md, &opgm);
+          append_ext_if_needed (out_file, ".pgm", ".pgm");
+          initialize_pgm_file(out_file, md, &opgm);
         }
 	else if (format == POLSARPRO_HDR) {
-	  //append_ext_if_needed (output_file_name, ".bin", NULL);
-	  initialize_polsarpro_file(output_file_name, md, &ofp);
+          append_ext_if_needed (out_file, ".bin", NULL);
+	  initialize_polsarpro_file(out_file, md, &ofp);
 	}
 
         else {
           asfPrintError("Impossible: unexpected format %d\n", format);
         }
 
-        (*output_names)[*noutputs] = STRDUP(output_file_name);
+        (*output_names)[*noutputs] = STRDUP(out_file);
         *noutputs += 1;
 
         // Determine which channel to read
         int channel;
-        if (md->general->band_count == 1)
-          channel = 0;
-        else
-          channel = get_band_number(bands, band_count, band_name[kk]);
-        asfRequire(channel >= 0 && channel <= MAX_BANDS,
-                   "Band number out of range\n");
+ 	if (md->general->image_data_type == POLARIMETRIC_MATRIX)
+	  channel = kk;
+	else {
+	  if (md->general->band_count == 1)
+	    channel = 0;
+	  else
+	    channel = get_band_number(bands, band_count, band_name[kk]);
+	  asfRequire(channel >= 0 && channel <= MAX_BANDS,
+		     "Band number out of range\n");
+	}
 
         int sample_count = md->general->sample_count;
         int offset = md->general->line_count;
@@ -1794,6 +1917,9 @@ export_band_image (const char *metadata_file_name,
         FREE(band_name[ii]);
       FREE(band_name);
     }
+    FREE(path_name);
+    FREE(matrix);
+    FREE(out_file);
   }
 
   if (lut_file && strstr(lut_file, "tmp_lut_file.lut") && fileExists(lut_file)) {

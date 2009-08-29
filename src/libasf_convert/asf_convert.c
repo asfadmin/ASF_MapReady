@@ -2769,6 +2769,19 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             out_x_pixel_size = meta->general->x_pixel_size*in_side_length/512.;
             out_y_pixel_size = meta->general->y_pixel_size*in_side_length/512.;
 
+	    // make sure that only the first band of a multi-band image
+	    // is resized for generating a thumbnail
+	    meta_parameters *metaTmp = meta_read(inFile);
+	    int original_band_count = metaTmp->general->band_count;
+	    if (original_band_count > 1) {
+	      metaTmp->general->band_count = 1;
+	      meta_write(metaTmp, inFile);
+	    }
+	    else {
+	      meta_free(metaTmp);
+	      metaTmp = NULL;
+	    }
+
             check_return(
               resample_to_pixsiz(inFile, tmpFile, out_x_pixel_size,
                                  out_y_pixel_size),
@@ -2826,7 +2839,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 }
               }
               else { // not a true or false color optical image
-                if (meta->general->band_count == 1) {
+                if (meta->general->band_count == 1 ||
+		    meta->general->image_data_type == POLARIMETRIC_MATRIX) {
                   check_return(asf_export(format, scale, tmpFile, outFile),
                                "exporting thumbnail data file (asf_export)\n");
                 }
@@ -2874,6 +2888,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 }
               }
             }
+	    // in case we had changed the metadata, let's restore things
+	    if (metaTmp) {
+	      metaTmp->general->band_count = original_band_count;
+	      meta_free(metaTmp);
+	    }
           }
 
           meta_free(meta);
@@ -3081,6 +3100,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   meta_parameters *meta = meta_read(inFile);
   char lut_file[2048] = "";
   int is_polsarpro = (strstr(meta->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+  int is_matrix = 
+    meta->general->image_data_type == POLARIMETRIC_MATRIX ? 1 : 0;
   int have_embedded_colormap = 0;
   if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
     strcpy(lut_file, cfg->export->lut);

@@ -16,6 +16,9 @@
 
 #include "asf.h"
 #include "asf_meta.h"
+#include "xml_util.h"
+#include "envi.h"
+#include "asf_import.h"
 
 #define THUMB_SIZE 48
 #define THUMB_SIZE_BIG 512
@@ -53,7 +56,8 @@ enum InputFormat
     INPUT_FORMAT_ENVI = 5,  // not implemented
     INPUT_FORMAT_POLSARPRO = 6,
     INPUT_FORMAT_TERRASARX = 7,
-    INPUT_FORMAT_GAMMA = 8
+    INPUT_FORMAT_RADARSAT2 = 8,
+    INPUT_FORMAT_GAMMA = 9
 };
 
 enum InputType
@@ -101,6 +105,14 @@ enum PolarimetricDecompositions
     POLARIMETRY_CLOUDE16 = 4,
     POLARIMETRY_CLOUDE_NOCLASSIFY = 5,
     POLARIMETRY_FREEMAN_DURDEN = 6
+};
+
+enum ImageDataType
+{
+  SELECT_POLARIMETRIC_SEGMENTATION = 0,
+  SELECT_POLARIMETRIC_DECOMPOSITION = 1,
+  SELECT_POLARIMETRIC_PARAMETER = 2,
+  SELECT_POLARIMETRIC_MATRIX = 3
 };
 
 /*enum
@@ -258,7 +270,7 @@ void select_polsarpro_classification_lut(const char *);
 /* ceos_thumbnail.c */
 GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
-                                   const char *input_data,
+                                   char *input_data,
                                    const char *lut_basename,
                                    size_t max_thumbnail_dimension);
 
@@ -321,6 +333,7 @@ void input_data_type_combobox_changed();
 void clear_completed_tmp_dirs();
 void set_show_polsarpro_optionmenu(gboolean flag);
 void polsarpro_classification_checkbutton_toggled();
+void polsarpro_image_data_type_changed();
 
 /* utility.c */
 void setup_band_comboboxes();
@@ -351,8 +364,10 @@ gboolean is_geotiff(const char *infile);
 gboolean is_asf_internal(const char *infile);
 gboolean is_airsar(const char *infile);
 gboolean is_terrasarx(const char *infile);
+gboolean is_radarsat2(const char *infile);
 char *extract_lut_name(const char *polsarpro_aux_info);
-int extract_classification_flag(const char *polsarpro_aux_info);
+int extract_image_data_type(const char *polsarpro_aux_info);
+char *encode_polsarpro_aux_info(int image_data_type_flag, char *lut_basename);
 
 /* dnd.c */
 void setup_dnd();
@@ -396,6 +411,7 @@ void do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name);
 /* file_selection.c */
 void handle_browse_ancillary_file();
 void init_browse_format_combobox();
+void init_image_data_type_combobox();
 
 /* state.c */
 

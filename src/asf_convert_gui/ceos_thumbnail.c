@@ -17,6 +17,7 @@
 #include "asf_import.h"
 #include "asf_endian.h"
 #include "tiff_util.h"
+#include "radarsat2.h"
 
 // Prototypes
 int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band, float *line);
@@ -100,14 +101,25 @@ static meta_parameters * silent_meta_read(const char *filename)
 }
 
 static GdkPixbuf *
-make_geotiff_thumb(const char *input_metadata, const char *input_data,
+make_geotiff_thumb(const char *input_metadata, char *input_data,
                    size_t max_thumbnail_dimension)
 {
     TIFF *fpIn;
+    radarsat2_meta *radarsat2 = NULL;
     int i, ignore[MAX_BANDS];
 
     for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring no bands
-    meta_parameters *meta = read_generic_geotiff_metadata(input_metadata, ignore, NULL);
+    meta_parameters *meta;
+    if (is_radarsat2(input_data)) {
+      radarsat2 = read_radarsat2_meta(input_metadata);
+      meta = radarsat2meta(radarsat2);
+      //free(radarsat2);
+      char **inDataNames = extract_band_names(meta->general->basename, 
+					      meta->general->band_count);
+      sprintf(input_data, "%s", inDataNames[0]);
+    }
+    else
+      meta = read_generic_geotiff_metadata(input_metadata, ignore, NULL);
 
     fpIn = XTIFFOpen(input_data, "rb");
     if (!fpIn) {
@@ -200,7 +212,28 @@ make_geotiff_thumb(const char *input_metadata, const char *input_data,
         min[band] = DBL_MAX;
         max[band] = DBL_MIN;
     }
-    if (!is_palette_color_tiff) {
+    if (radarsat2) {
+      // FIXME: We currently assume SLC data
+      float re, im, value;
+      for ( ii = 0 ; ii < tsy ; ii++ ) {
+	ret = get_geotiff_float_line(fpIn, meta, (int)(ii*sf), 0, line[0]);
+	ret = get_geotiff_float_line(fpIn, meta, (int)(ii*sf), 1, line[1]);
+	if (!ret) break;
+
+	for (jj = 0; jj < tsx; ++jj) {
+	  re = line[0][jj*sf];
+	  im = line[1][jj*sf];
+	  value = sqrt(re*re + im*im);
+	  fdata[0][jj + ii*tsx] = value;
+	  fdata[1][jj + ii*tsx] = value;
+	  min[0] = (value < min[0]) ? value : min[0];
+	  max[0] = (value > max[0]) ? value : max[0];
+	  min[1] = min[0];
+	  max[1] = max[0];
+	}
+      }
+    }
+    else if (!is_palette_color_tiff) {
       // Handle single-band and RGB tiffs
       for (band = 0; band < num_bands; band++) {
           for ( ii = 0 ; ii < tsy ; ii++ ) {
@@ -1194,7 +1227,7 @@ make_terrasarx_thumb(const char *input_metadata, const char *input_data,
 
 GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
-                                   const char *input_data,
+                                   char *input_data,
                                    const char *lut_basename,
                                    size_t max_thumbnail_dimension)
 {
@@ -1227,6 +1260,14 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     if (is_terrasarx(input_metadata))
         return make_terrasarx_thumb(input_metadata, input_data,
                                     max_thumbnail_dimension);
+
+    // FIXME: not implemented yet
+    if (is_radarsat2(input_metadata)) 
+      /*
+      return make_geotiff_thumb(input_metadata, input_data,
+                                  max_thumbnail_dimension);
+      */
+      return NULL;
 
     // for airsar, need to check the metadata extension, that's more reliable
     if (is_airsar(input_metadata))

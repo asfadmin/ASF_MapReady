@@ -160,6 +160,11 @@ input_data_formats_changed()
           strcat(formats, "TerraSAR-X, ");
         enable_terrain_correction = TRUE;
       }
+      else if (is_radarsat2(file)) {
+        if (!strstr(formats, "Radarsat-2"))
+          strcat(formats, "Radarsat-2, ");
+        enable_terrain_correction = TRUE;
+      }
       else if (strlen(metadata_file)>0) {
         // as of now, only gamma uses the metadata column...
         if (!strstr(formats, "GAMMA"))
@@ -1178,4 +1183,79 @@ SIGNAL_CALLBACK void
 on_polsarpro_classification_checkbutton_toggled(GtkWidget *widget)
 {
   polsarpro_classification_checkbutton_toggled();
+}
+
+void polsarpro_image_data_type_changed()
+{
+  GtkWidget *combo = 
+    get_widget_checked("browse_select_image_data_type_optionmenu");
+  int selected = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
+  GtkWidget *polsarpro_ancillary_file =
+    get_widget_checked("add_file_with_ancillary_polsarpro_ceos_entry");
+  switch (selected) 
+    {
+    case SELECT_POLARIMETRIC_SEGMENTATION:
+      enable_widget("browse_select_colormap_optionmenu", TRUE);  
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+      put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
+      break;
+    case SELECT_POLARIMETRIC_DECOMPOSITION:
+      enable_widget("browse_select_colormap_optionmenu", FALSE);  
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+      put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
+      break;
+    case SELECT_POLARIMETRIC_PARAMETER:
+      enable_widget("browse_select_colormap_optionmenu", TRUE);  
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+      put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
+      break;
+    case SELECT_POLARIMETRIC_MATRIX:
+      enable_widget("browse_select_colormap_optionmenu", FALSE);  
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
+      put_string_to_label("polsarpro_data_label", "PolSARPro Data Directory:");
+      break;
+    }
+}
+
+SIGNAL_CALLBACK void
+on_browse_select_image_data_type_optionmenu_changed(GtkWidget *widget)
+{
+  polsarpro_image_data_type_changed();
+}
+
+void polsarpro_geocoding_check()
+{
+  char *matrixType, infile[1024];
+  envi_header *envi = NULL;
+  meta_parameters *meta = NULL;
+  char *inFile = 
+    get_string_from_entry("add_file_with_ancillary_polsarpro_image_entry");
+  strcpy(infile, inFile);
+  int is_polsarpro_matrix = isPolsarproMatrix(infile, &matrixType);
+  if (is_polsarpro_matrix) {
+    if (strcmp(matrixType, "T3") == 0 || strcmp(matrixType, "T4") == 0)
+      strcat(infile, "/T11.bin.hdr");
+    else if (strcmp(matrixType, "C2") == 0 || 
+	     strcmp(matrixType, "C3") == 0 ||
+	     strcmp(matrixType, "C4") == 0)
+      strcat(infile, "/C11.bin.hdr");
+    envi = read_envi(infile);
+    meta = envi2meta(envi);
+    if (envi)
+      free(envi);
+    GtkWidget *polsarpro_ancillary_file =
+      get_widget_checked("add_file_with_ancillary_polsarpro_ceos_entry");
+    if (!meta->projection)
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+    else
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
+    if (meta)
+      meta_free(meta);
+  }
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_polsarpro_image_entry_changed(GtkWidget *widget)
+{
+  polsarpro_geocoding_check();
 }

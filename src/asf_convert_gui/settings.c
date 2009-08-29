@@ -1325,6 +1325,9 @@ static int get_input_data_format(const char *infile)
   else if (is_terrasarx(infile)) {
     return INPUT_FORMAT_TERRASARX;
   }
+  else if (is_radarsat2(infile)) {
+    return INPUT_FORMAT_RADARSAT2;
+  }
   else if (is_polsarpro(infile)) {
     return INPUT_FORMAT_POLSARPRO;
   }
@@ -1365,6 +1368,10 @@ get_input_data_format_string(int input_data_format)
         format_arg_to_import = "terrasarx";
         break;
 
+      case INPUT_FORMAT_RADARSAT2:
+        format_arg_to_import = "radarsat2";
+	break;
+
       case INPUT_FORMAT_GAMMA:
         format_arg_to_import = "gamma";
         break;
@@ -1387,7 +1394,7 @@ settings_to_config_file(const Settings *s,
     char *output_basename;
     char *input_basename;
     char *lut_basename = extract_lut_name(polsarpro_aux_info);
-    int classification = extract_classification_flag(polsarpro_aux_info);
+    int image_data_type = extract_image_data_type(polsarpro_aux_info);
     int input_data_format;
 
     if (strlen(meta_file)>0)
@@ -1521,6 +1528,16 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "input file = %s\n", tmp);
         free(tmp);
     }
+    // must extract the directory name
+    else if (image_data_type == SELECT_POLARIMETRIC_MATRIX){
+      char *dirName = (char *) MALLOC(sizeof(char)*1024);
+      char *fileName = (char *) MALLOC(sizeof(char)*1024);
+      split_dir_and_file(input_file, dirName, fileName);
+      dirName[strlen(dirName)-1] = '\0';
+      fprintf(cf, "input file = %s\n", dirName);
+      free(dirName);
+      free(fileName);
+    }
     else {
         fprintf(cf, "input file = %s\n", input_basename);
     }
@@ -1557,6 +1574,7 @@ settings_to_config_file(const Settings *s,
              input_data_format == INPUT_FORMAT_ASF_INTERNAL ||
              input_data_format == INPUT_FORMAT_GAMMA        ||
              input_data_format == INPUT_FORMAT_TERRASARX    ||
+	     input_data_format == INPUT_FORMAT_RADARSAT2    ||
              input_data_format == INPUT_FORMAT_POLSARPRO) ? 1 : 0);
     fprintf(cf, "\n");
 
@@ -1601,7 +1619,21 @@ settings_to_config_file(const Settings *s,
       if (strlen(lut_basename)>0 &&
           strcmp_case(lut_basename,"none")!=0)
         fprintf(cf, "polsarpro colormap = %s\n", lut_basename);
-      fprintf(cf, "classification = %d\n", classification);
+      switch (image_data_type)
+	{
+	case SELECT_POLARIMETRIC_SEGMENTATION:
+	  fprintf(cf, "image data type = POLARIMETRIC_SEGMENTATION\n");
+	  break;
+	case SELECT_POLARIMETRIC_DECOMPOSITION:
+	  fprintf(cf, "image data type = POLARIMETRIC_DECOMPOSITION\n");
+	  break;
+	case SELECT_POLARIMETRIC_PARAMETER:
+	  fprintf(cf, "image data type = POLARIMETRIC_PARAMETER\n");
+	  break;
+	case SELECT_POLARIMETRIC_MATRIX:
+	  fprintf(cf, "image data type = POLARIMETRIC_MATRIX\n");
+	  break;
+	}
     }
     if (meta_file && strlen(meta_file)>0) {
       fprintf(cf, "metadata file = %s\n", meta_file);

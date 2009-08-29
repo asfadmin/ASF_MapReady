@@ -18,13 +18,17 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
 {
     const gchar * ext;
     gchar *user_ext, *basename, *name_without_path, *p, *fixed_name,
-        *file_name, *path;
+      *file_name, *path, *polsarpro_aux_info;
     Settings * user_settings;
 
     user_settings = settings_get_from_gui();
     ext = settings_get_output_format_extension(user_settings);
 
-    gtk_tree_model_get(model, iter, COL_INPUT_FILE, &file_name, -1);
+    gtk_tree_model_get(model, iter, 
+		       COL_INPUT_FILE, &file_name, 
+		       COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
+    int image_data_type = extract_image_data_type(polsarpro_aux_info);
+
     if (output_directory)
     {
         path = g_strdup(output_directory);
@@ -46,6 +50,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
     }
 
     g_free(file_name);
+    g_free(polsarpro_aux_info);
 
     /* do not allow user to move output file to a different location */
     name_without_path = g_path_get_basename(new_name);
@@ -78,14 +83,20 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
         int len = strlen(path) + strlen(basename) + strlen(ext) + 2;
         fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-        g_snprintf(fixed_name, len, "%s%s.%s", path, basename, ext);
+	if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+	  g_snprintf(fixed_name, len, "%s%s", path, basename);
+	else
+	  g_snprintf(fixed_name, len, "%s%s.%s", path, basename, ext);
     }
     else if (strcmp(user_ext, ext) != 0)
     {
         int len = strlen(path) + strlen(name_without_path) + strlen(ext) + 2;
         fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-        g_snprintf(fixed_name, len, "%s%s.%s", path, name_without_path, ext);
+	if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+	  g_snprintf(fixed_name, len, "%s%s", path, name_without_path);
+	else
+	  g_snprintf(fixed_name, len, "%s%s.%s", path, name_without_path, ext);
     }
     else
     {

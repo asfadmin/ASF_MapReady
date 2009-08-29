@@ -314,8 +314,8 @@ static char *file_is_valid(const gchar * file)
 
 static void set_input_image_thumbnail(GtkTreeIter *iter,
                                       const gchar *metadata_file,
-                                      const gchar *data_file,
-                                      const gchar *ancillary_file,
+                                      gchar *data_file,
+                                      gchar *ancillary_file,
                                       const char *lut_basename)
 {
     GdkPixbuf *pb = make_input_image_thumbnail_pixbuf (
@@ -971,12 +971,15 @@ update_all_extensions()
         while (ok)
         {
             gchar * current_output_name;
+            gchar * polsarpro_aux_info;
             gchar * new_output_name;
             gchar * basename;
             gchar * p;
 
             gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-                COL_OUTPUT_FILE, &current_output_name, -1);
+			       COL_OUTPUT_FILE, &current_output_name, 
+			       COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
+	    int image_data_type = extract_image_data_type(polsarpro_aux_info);
 
             basename = g_strdup(current_output_name);
             p = strrchr(basename, '.');
@@ -987,13 +990,17 @@ update_all_extensions()
                 (gchar *) g_malloc(sizeof(gchar) * (strlen(basename) +
                 strlen(ext) + 2));
 
-            g_sprintf(new_output_name, "%s.%s", basename, ext);
+	    if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+	      g_sprintf(new_output_name, "%s", basename);
+	    else
+	      g_sprintf(new_output_name, "%s.%s", basename, ext);
 
             set_output_name(&iter, new_output_name);
 
             g_free(basename);
             g_free(new_output_name);
             g_free(current_output_name);
+	    g_free(polsarpro_aux_info);
 
             ok = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
         }

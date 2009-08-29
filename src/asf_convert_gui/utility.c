@@ -473,11 +473,58 @@ gboolean is_airsar(const char *infile)
 
 gboolean is_terrasarx(const char *infile)
 {
-  // not sure exactly what we should do here, for now just check for .xml
+  int found = FALSE;
+
+  // Let's first check for an .xml extension
   char *ext = findExt(infile);
-  if (ext && strcmp_case(ext, ".xml")==0)
-    return TRUE;
-  return FALSE;
+
+  // If it has the correct extension, investigate it further
+  // Might sound a little harsh but avoids some XML parser warning otherwise.
+  if (ext && strcmp_case(ext, ".xml") == 0) {
+    char *satellite = NULL;
+    satellite = (char *) MALLOC(sizeof(char)*25);
+    FILE *fp;
+    fp = fopen(infile, "r");
+    xmlDoc *doc = xmlReadFile(infile, NULL, 0);
+    if (doc)
+      strcpy(satellite, xml_get_string_value(doc, 
+	"level1Product.productInfo.missionInfo.mission"));
+    if (satellite && strncmp_case(satellite, "TSX", 3) == 0)
+      found = TRUE;
+    fclose(fp);
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+  }
+   
+  return found;
+}
+
+gboolean is_radarsat2(const char *infile)
+{
+  int found = FALSE;
+
+  // Let's first check for an .xml extension
+  char *ext = findExt(infile);
+
+  // If it has the correct extension, investigate it further
+  // Might sound a little harsh but avoids some XML parser warning otherwise.
+  if (ext && strcmp_case(ext, ".xml") == 0) {
+    char *satellite = (char *) MALLOC(sizeof(char)*25);
+    FILE *fp;
+    fp = fopen(infile, "r");
+    xmlDoc *doc = xmlReadFile(infile, NULL, 0);
+    if (doc)
+      strcpy(satellite, 
+	     xml_get_string_value(doc, "product.sourceAttributes.satellite"));
+    if (satellite &&
+	strcmp_case(satellite, "RADARSAT-2") == 0)
+      found = TRUE;
+    fclose(fp);
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+  }
+
+  return found; 
 }
 
 char *extract_lut_name(const char *polsarpro_aux_info)
@@ -498,9 +545,28 @@ char *extract_lut_name(const char *polsarpro_aux_info)
   }
 }
 
-int extract_classification_flag(const char *polsarpro_aux_info)
+int extract_image_data_type(const char *polsarpro_aux_info)
 {
   if (!polsarpro_aux_info || strlen(polsarpro_aux_info)==0)
-    return 0;
-  return polsarpro_aux_info[0]=='1';
+    return -1;
+  char *aux_info = STRDUP(polsarpro_aux_info);
+  aux_info[1] = '\0';
+  int image_data_type = atoi(aux_info);
+  free(aux_info);
+  return image_data_type;
+}
+
+
+char *encode_polsarpro_aux_info(int image_data_type_flag, char *lut_basename)
+{
+  char *aux_info;
+  if (lut_basename) {
+    aux_info = MALLOC(sizeof(char)*(strlen(lut_basename)+25));
+    sprintf(aux_info, "%d;%s", image_data_type_flag, lut_basename);
+  }
+  else {
+    aux_info = MALLOC(sizeof(char)*25);
+    sprintf(aux_info, "%d;none", image_data_type_flag);
+  }
+  return aux_info;
 }

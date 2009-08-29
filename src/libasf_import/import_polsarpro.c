@@ -11,6 +11,27 @@
 #include <asf_raster.h>
 #include "xml_util.h"
 
+static char *t3_matrix[9] = {"T11.bin","T12_real.bin","T12_imag.bin",
+			     "T13_real.bin","T13_imag.bin","T22.bin",
+			     "T23_real.bin","T23_imag.bin","T33.bin"};
+static char *t4_matrix[16] = {"T11.bin","T12_real.bin","T12_imag.bin",
+			      "T13_real.bin","T13_imag.bin","T14_real.bin",
+			      "T14_imag.bin","T22.bin","T23_real.bin",
+			      "T23_imag.bin","T24_real.bin","T24_imag.bin",
+			      "T33.bin","T34_real.bin","T34_imag.bin",
+			      "T44.bin"};
+static char *c2_matrix[4] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			     "C22.bin"};
+static char *c3_matrix[9] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			     "C13_real.bin","C13_imag.bin","C22.bin",
+			     "C23_real.bin","C23_imag.bin","C33.bin"};
+static char *c4_matrix[16] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			      "C13_real.bin","C13_imag.bin","C14_real.bin",
+			      "C14_imag.bin","C22.bin","C23_real.bin",
+			      "C23_imag.bin","C24_real.bin","C24_imag.bin",
+			      "C33.bin","C34_real.bin","C34_imag.bin",
+			      "C44.bin"};
+
 static int isCEOS(const char *dataFile)
 {
   char **inBandName = NULL, **inMetaName = NULL;
@@ -147,6 +168,100 @@ int isRadarsat2(char *dataFile)
   return found;
 }
 
+static char *fileName(char *path, char *file)
+{
+  char *file_name = (char *) MALLOC(sizeof(char)*1024);
+  strcpy(file_name, "");
+  if (strlen(path)>0) {
+    if (path[strlen(path)-1] != DIR_SEPARATOR)
+      sprintf(file_name, "%s%c", path, DIR_SEPARATOR);
+  }
+  else
+    sprintf(file_name, "%s", path);
+  strcat(file_name, file);
+  
+  return file_name;
+}
+
+static void checkFile(char *type, char *path, char *file, char *matrix)
+{
+  char file_name[1024];
+  sprintf(file_name, "%s", fileName(path, file));
+  if (!fileExists(file_name))
+    asfPrintError("%s file (%s) of %s matrix element missing.\n",
+		  type, file, matrix);
+}
+
+int isPolsarproMatrix(char *dataFile, char **matrixType)
+{
+  int matrix = FALSE;
+  char *path;
+  if (!dataFile || strlen(dataFile)<=0)
+    return FALSE;
+  if (is_dir(dataFile))
+    path = STRDUP(dataFile);
+  else
+    path = get_dirname(dataFile);
+  if (strlen(path)<=0 || strcmp(path, "./") == 0) 
+    path = g_get_current_dir();
+  char *p = path, *q = path;
+  while (q) {
+    if ((q = strchr(p, DIR_SEPARATOR)) != NULL)
+      p = q+1;
+  }
+  int ii;
+  char *directory = STRDUP(p);
+  char headerFile[1024];
+  // check files for coherency matrix T3
+  if (strcmp_case(directory, "T3") == 0) {
+    for (ii=0; ii<9; ii++) {
+      checkFile("Data", path, t3_matrix[ii], directory);
+      sprintf(headerFile, "%s.hdr", t3_matrix[ii]);
+      checkFile("Header", path, headerFile, directory);
+    }
+    matrix = TRUE;
+  }
+  // check files for coherency matrix T4
+  else if (strcmp_case(directory, "T4") == 0) {
+    for (ii=0; ii<16; ii++) {
+      checkFile("Data", path, t4_matrix[ii], directory);
+      sprintf(headerFile, "%s.hdr", t4_matrix[ii]);
+      checkFile("Header", path, headerFile, directory);
+    }
+    matrix = TRUE;
+  }
+  // check files for covariance matrix C2
+  else if (strcmp_case(directory, "C2") == 0) {
+    for (ii=0; ii<4; ii++) {
+      checkFile("Data", path, c2_matrix[ii], directory);
+      sprintf(headerFile, "%s.hdr", c2_matrix[ii]);
+      checkFile("Header", path, headerFile, directory);
+    }
+    matrix = TRUE;
+  }
+  // check files for covariance matrix C3
+  else if (strcmp_case(directory, "C3") == 0) {
+    for (ii=0; ii<16; ii++) {
+      checkFile("Data", path, c3_matrix[ii], directory);
+      sprintf(headerFile, "%s.hdr", c3_matrix[ii]);
+      checkFile("Header", path, headerFile, directory);
+    }
+    matrix = TRUE;
+  }
+  // check files for covariance matrix C4
+  else if (strcmp_case(directory, "C4") == 0) {
+    for (ii=0; ii<16; ii++) {
+      checkFile("Data", path, c4_matrix[ii], directory);
+      sprintf(headerFile, "%s.hdr", c4_matrix[ii]);
+      checkFile("Header", path, headerFile, directory);
+    }
+    matrix = TRUE;
+  }
+  *matrixType = directory;
+
+  return matrix;
+}
+
 int strmatches(const char *key, ...)
 {
     va_list ap;
@@ -260,12 +375,42 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   meta_parameters *metaIn = NULL, *metaOut = NULL;
   envi_header *envi;
   FILE *fpIn, *fpOut;
-  float *floatBuf;
+  float *floatBuf, *tmp = NULL;
   double *p_azimuth_scale = NULL, *p_range_scale = NULL;
   double azimuth_scale, range_scale;
-  char enviName[1024], outName[1024];
-  int ii, multilook = FALSE, need_ieee_big32;
-  char *polsarName = s;
+  char enviName[1024], outName[1024], *matrixType, bandStr[50];
+  int ii, multilook = FALSE, need_ieee_big32, matrix = FALSE, flip_horizontal = FALSE;
+  char *polsarName = (char *) MALLOC(sizeof(char)*(strlen(s) + 20));
+  sprintf(polsarName, "%s", s);
+
+  // Check whether the PolSARPro data is a matrix
+  if (strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") == 0)
+    matrix = TRUE;
+  int is_polsarpro_matrix = 
+    matrix ? isPolsarproMatrix(polsarName, &matrixType) : 0;
+  if (is_polsarpro_matrix) {
+    // Need to get the metadata information from the first element of the matrix
+    if (strcmp(matrixType, "T3") == 0) {
+      asfPrintStatus("   Found all elements of the coherency matrix T3.\n");
+      strcat(polsarName, "/T11.bin");
+    }
+    else if (strcmp(matrixType, "T4") == 0) {
+      asfPrintStatus("   Found all elements of the coherency matrix T4.\n");
+      strcat(polsarName, "/T11.bin");
+    }
+    else if (strcmp(matrixType, "C2") == 0) {
+      asfPrintStatus("   Found all elements of the covariance matrix C2.\n");
+      strcat(polsarName, "/C11.bin");
+    }
+    else if (strcmp(matrixType, "C3") == 0) {
+      asfPrintStatus("   Found all elements of the covariance matrix C3.\n");
+      strcat(polsarName, "/C11.bin");
+    }
+    else if (strcmp(matrixType, "C4") == 0) {
+      asfPrintStatus("   Found all elements of the covariance matrix C4.\n");
+      strcat(polsarName, "/C11.bin");
+    }
+  }
 
   // Read the ENVI header first. We need to know the dimensions of the
   // polarimetric data first in order to resample the amplitude data to the
@@ -284,6 +429,60 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   int line_count = envi->lines;
   int sample_count = envi->samples;
 
+  int band, band_count;
+  char **bands;
+  if (strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") == 0) {
+    if (strcmp(matrixType, "T3") == 0) {
+      band_count = 9;
+      bands = (char **) MALLOC(sizeof(char *)*band_count);
+      for (band=0; band<band_count; band++) {
+	bands[band] = (char *) MALLOC(sizeof(char)*1024);
+	char *band_name = STRDUP(t3_matrix[band]);
+	char *p = strchr(band_name, '\.');
+	p[0] = '\0';
+	sprintf(bands[band], "%s", band_name);
+      }
+    }
+    else if (strcmp(matrixType, "T4") == 0) {
+      band_count = 16;
+      bands = (char **) MALLOC(sizeof(char *)*band_count);
+      for (band=0; band<band_count; band++) {
+	bands[band] = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(bands[band], "%s", t4_matrix[band]);
+      }
+    }
+    else if (strcmp(matrixType, "C2") == 0) {
+      band_count = 4;
+      bands = (char **) MALLOC(sizeof(char *)*band_count);
+      for (band=0; band<band_count; band++) {
+	bands[band] = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(bands[band], "%s", c2_matrix[band]);
+      }
+    }
+    else if (strcmp(matrixType, "C3") == 0) {
+      band_count = 9;
+      bands = (char **) MALLOC(sizeof(char *)*band_count);
+      for (band=0; band<band_count; band++) {
+	bands[band] = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(bands[band], "%s", c3_matrix[band]);
+      }
+    }
+    else if (strcmp(matrixType, "C4") == 0) {
+      band_count = 16;
+      bands = (char **) MALLOC(sizeof(char *)*band_count);
+      for (band=0; band<band_count; band++) {
+	bands[band] = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(bands[band], "%s", c4_matrix[band]);
+      }
+    }
+  }
+  else {
+    band_count = 1;
+    bands = (char **) MALLOC(sizeof(char *));
+    bands[0] = (char *) MALLOC(sizeof(char)*1024);
+    sprintf(bands[0], "%s", polsarName);
+  }
+
   // Check for the map projection information in the ENVI header
   metaIn = envi2meta(envi);
 
@@ -292,11 +491,14 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     if (ceosName == NULL || strlen(ceosName) <= 0)
       asfPrintError("Please add CEOS or AIRSAR ancillary files to the "
 		    "PolSARpro\ninput files as appropriate\n");
-    
-    int is_airsar = isAIRSAR(ceosName);
-    int is_ceos = isCEOS(ceosName);
-    int is_radarsat2 = isRadarsat2(ceosName);
-    int is_terrasar = isTerrasar(ceosName);
+
+    int is_airsar = FALSE, is_ceos = FALSE;
+    int is_radarsat2 = FALSE, is_terrasar = FALSE;
+   
+    is_airsar = isAIRSAR(ceosName);
+    is_ceos = isCEOS(ceosName);
+    is_radarsat2 = isRadarsat2(ceosName);
+    is_terrasar = isTerrasar(ceosName);
     
     if (is_ceos)
       metaOut = meta_read(ceosName);
@@ -307,6 +509,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       if (strcmp_case(radarsat2->dataType, "COMPLEX") != 0)
 	asfPrintError("Wrong data type!\nPolarimetric processing requires SLC "
 		      "data!\n");
+      if (strcmp_case(radarsat2->pixelTimeOrdering, "DECREASING") == 0)
+	flip_horizontal = TRUE;
       metaOut = radarsat2meta(radarsat2);
       FREE(radarsat2);
     }
@@ -333,9 +537,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       if (!FLOAT_EQUIVALENT(azimuth_scale, range_scale))
 	multilook = TRUE;
     }
-    meta_free(metaOut);
 
-    // Ingest the CEOS/AirSAR data to generate an amplitude image (in case the
+    // Ingest the data to generate an amplitude image (in case the
     // user wants to terrain correct. Will need to get the metadata anyway
     if (is_ceos) {
       asfPrintStatus("   Ingesting CEOS data ...\n");
@@ -361,53 +564,91 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 
     // Read the PolSAR Pro data into the layer stack
     metaOut = meta_read(outBaseName);
-    metaOut->general->band_count = 2;
-    strcat(metaOut->general->bands, ",POLSARPRO");
-    fpOut = FOPEN(outName, "ab");
+    if (strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") != 0)
+      strcat(metaOut->general->bands, ",POLSARPRO");
   }
   else {
     metaOut = envi2meta(envi);
-    metaOut->general->image_data_type = POLARIMETRIC_IMAGE;
-    fpOut = FOPEN(outName, "wb");
+    strcpy(metaOut->general->bands, "");
   }
-  floatBuf = 
-    (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
+  floatBuf = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
+  if (flip_horizontal)
+    tmp = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
 
-  // Update image data type
-  if (strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0)
-    metaOut->general->image_data_type = POLARIMETRIC_SEGMENTATION;
-
-  fpIn = FOPEN(polsarName, "rb");
-
-  // Check endianess from ENVI header file
-  if (envi->byte_order)
-    need_ieee_big32 = 0;
-  else
-    need_ieee_big32 = 1;    
-
-  // Do the ingest...
-  for (ii=0; ii<metaOut->general->line_count; ii++) {
-    get_float_line(fpIn, metaIn, ii, floatBuf);
-    int kk;
-    if (need_ieee_big32) {
-      for (kk=0; kk<metaOut->general->sample_count; kk++) ieee_big32(floatBuf[kk]);
+  for (band=0; band<band_count; band++) {
+    if (band == 0 && metaIn->projection)
+      fpOut = FOPEN(outName, "wb");
+    else
+      fpOut = FOPEN(outName, "ab");
+    if (band_count == 1) {
+      asfPrintStatus("\n   Ingesting PolSARPro data ...\n");
+      sprintf(polsarName, "%s", bands[band]);
     }
-    put_float_line(fpOut, metaOut, ii, floatBuf);
-    asfLineMeter(ii, metaOut->general->line_count);
-  }
+    else {
+      asfPrintStatus("\n   Ingesting PolSARPro matrix file (%s) ...\n", bands[band]);
+      if (flip_horizontal)
+        asfPrintStatus("   Data will be flipped horizontally while ingesting!\n");
+      if (band == 0 && strlen(metaOut->general->bands) <= 0)
+	sprintf(bandStr, "%s", bands[band]);
+      else
+	sprintf(bandStr, ",%s", bands[band]);
+      strcat(metaOut->general->bands, bandStr);
+      sprintf(polsarName, "%s%c%s.bin", s, DIR_SEPARATOR, bands[band]);
+    }
+    fpIn = FOPEN(polsarName, "rb");
 
-  // If there is a colormap associated with the file, then add it to the metadata
-  // as well
-  if (colormapName && strlen(colormapName)) {
-    apply_polsarpro_palette_to_metadata(colormapName, metaOut);
-  }
+    // Check endianess from ENVI header file
+    if (envi->byte_order)
+      need_ieee_big32 = 0;
+    else
+      need_ieee_big32 = 1;
+    
+    // Do the ingest...
+    for (ii=0; ii<metaOut->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatBuf);
+      int kk;
+      if (need_ieee_big32) {
+	for (kk=0; kk<metaOut->general->sample_count; kk++) 
+	  ieee_big32(floatBuf[kk]);
+      }
+      if (flip_horizontal) {
+	for (kk=0; kk<metaOut->general->sample_count; kk++)
+	  tmp[kk] = floatBuf[kk];
+	for (kk=0; kk<metaOut->general->sample_count; kk++)
+	  floatBuf[kk] = tmp[metaOut->general->sample_count-kk-1];
+      }
+      put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaOut->general->line_count);
+    }
 
-  FCLOSE(fpIn);
+    // If there is a colormap associated with the file, then add it to the metadata
+    // as well
+    if (colormapName && strlen(colormapName)) {
+      apply_polsarpro_palette_to_metadata(colormapName, metaOut);
+    }
+
+    FCLOSE(fpIn);
+  }
   FCLOSE(fpOut);
   FREE(floatBuf);
   FREE(envi);
   if (metaOut->sar)
     metaOut->sar->multilook = multilook;
+
+  // Update image data type
+  if (strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0)
+    metaOut->general->image_data_type = POLARIMETRIC_SEGMENTATION;
+  else if (strcmp_case(image_data_type, "POLARIMETRIC_DECOMPOSITION") == 0)
+    metaOut->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
+  else if (strcmp_case(image_data_type, "POLARIMETRIC_PARAMETERS") == 0)
+    metaOut->general->image_data_type = POLARIMETRIC_PARAMETERS;
+  else if (strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") == 0)
+    metaOut->general->image_data_type = POLARIMETRIC_MATRIX;
+  else
+    metaOut->general->image_data_type = POLARIMETRIC_IMAGE;
+  metaOut->general->band_count = band_count;
+  if (!metaIn->projection)
+    metaOut->general->band_count++;
   meta_write(metaOut, outBaseName);
   if (metaIn)
     meta_free(metaIn);

@@ -26,7 +26,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 {
   char *in_meta_name=NULL, *in_data_name=NULL, *out_name=NULL;
 
-  asfPrintStatus("Exporting ...\n\n");
+  asfPrintStatus("Exporting ...\n");
 
   int i, nouts = 0;
   char **outs = NULL;
@@ -34,7 +34,10 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   in_data_name = appendExt(in_base_name, ".img");
   in_meta_name = appendExt(in_base_name, ".meta");
   meta_parameters *md = meta_read(in_meta_name);
-  int is_polsarpro = (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
+  int is_polsarpro = 
+    (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
+  int is_matrix =
+    (md->general->image_data_type == POLARIMETRIC_MATRIX) ? 1 : 0;
   meta_free(md);
 
   // Do that exporting magic!
@@ -55,7 +58,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       //in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      append_ext_if_needed(out_name, ".tif", ".tiff");
+      if (!is_matrix)
+	append_ext_if_needed(out_name, ".tif", ".tiff");
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
@@ -67,7 +71,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       //in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      append_ext_if_needed(out_name, ".tif", ".tiff");
+      if (!is_matrix)
+	append_ext_if_needed(out_name, ".tif", ".tiff");
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
@@ -79,7 +84,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       //in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      append_ext_if_needed(out_name, ".jpg", ".jpeg");
+      if (!is_matrix)
+	append_ext_if_needed(out_name, ".jpg", ".jpeg");
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
@@ -91,7 +97,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       //in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      append_ext_if_needed(out_name, ".png", NULL);
+      if (!is_matrix)
+	append_ext_if_needed(out_name, ".png", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
@@ -103,7 +110,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       //in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      append_ext_if_needed(out_name, ".png", NULL);
+      if (!is_matrix)
+	append_ext_if_needed(out_name, ".png", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
@@ -115,7 +123,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       //in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      append_ext_if_needed(out_name, ".png", NULL);
+      if (!is_matrix)
+	append_ext_if_needed(out_name, ".png", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
@@ -138,7 +147,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       }
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      append_ext_if_needed(out_name, ".pgm", NULL);
+      if (!is_matrix)
+	append_ext_if_needed(out_name, ".pgm", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
@@ -150,12 +160,11 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       //in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      append_ext_if_needed(out_name, ".bin", NULL);
       export_band_image(in_meta_name, in_data_name, out_name,
-                        NONE, band_name, rgb,
-                        true_color, false_color,
-                        look_up_table_name, POLSARPRO_HDR,
-                        &nouts, &outs);
+			NONE, band_name, rgb,
+			true_color, false_color,
+			look_up_table_name, POLSARPRO_HDR,
+			&nouts, &outs);
   }
 
   if (noutputs && output_names) {

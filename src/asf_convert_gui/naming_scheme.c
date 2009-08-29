@@ -272,8 +272,8 @@ static void apply_naming_scheme(const NamingScheme * new,
         gchar * old_output_name;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-            COL_INPUT_FILE, &input_file_name,
-            COL_OUTPUT_FILE, &current_output_name, -1);
+			   COL_INPUT_FILE, &input_file_name,
+			   COL_OUTPUT_FILE, &current_output_name, -1);
 
         old_output_name =
             determine_default_output_file_name_schemed(input_file_name, old);
@@ -421,6 +421,21 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     gchar * filename;
     gchar * schemed_filename;
     gchar * p;
+    gchar * input_file_name;
+    gchar * polsarpro_aux_info;
+    GtkTreeIter iter;
+
+    gboolean valid;
+    valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (list_store),
+					   &iter);
+    while (valid) {
+      gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+			 COL_INPUT_FILE, &input_file_name,
+			 COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
+      if (strcmp(data_file_name, input_file_name) == 0)
+        break;
+    }
+    int image_data_type = extract_image_data_type(polsarpro_aux_info);
 
     int prepension = has_prepension(data_file_name);
     if (prepension > 0) {
@@ -464,6 +479,8 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     g_free(schemed_filename);
     g_free(filename);
     g_free(path);
+    g_free(input_file_name);
+    g_free(polsarpro_aux_info);
 
     user_settings = settings_get_from_gui();
     ext = settings_get_output_format_extension(user_settings);
@@ -472,7 +489,10 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
         (gchar *) g_malloc(sizeof(gchar) *
         (strlen(basename) + strlen(ext) + 10));
 
-    g_sprintf(output_name_full, "%s.%s", basename, ext);
+    if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+      g_sprintf(output_name_full, "%s", basename);
+    else
+      g_sprintf(output_name_full, "%s.%s", basename, ext);
 
     // CEOS Level 0 uses RAW and raw as default extensions...
     // And, importing an ASF internal format file and processing it
@@ -482,7 +502,11 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     // ...So we have this kludge to avoid errors and overwriting of
     // input files with output data
     if (strcmp_case(output_name_full, data_file_name) == 0) {
-      g_sprintf(output_name_full, "%s_out.%s", basename, ext);
+      if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+	g_sprintf(output_name_full, "%s_out", basename);
+      else
+	g_sprintf(output_name_full, "%s_out.%s", basename, ext);
+      
     }
 
     g_free(basename);
