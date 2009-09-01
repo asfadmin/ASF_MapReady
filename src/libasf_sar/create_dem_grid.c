@@ -154,7 +154,6 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       double lat,lon; /*This is how we go between SAR and DEM images.*/
       double demProj_x,demProj_y; /*These are the projection coordinates for the DEM.*/
       double demProj_z;
-      int orig_x,orig_y;
       int grid_x, grid_y;
 
       getNextSarPt(metaSar,gridCount,&grid_x,&grid_y,
@@ -163,8 +162,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 		   gridResX, gridResY);
 
       /*Compute the latitude and longitude of this location on the ground.*/
-      meta_get_original_line_sample(metaSar, sar_y, sar_x, &orig_y, &orig_x);
-      meta_get_latLon(metaSar,(float)orig_y,(float)orig_x,elev,&lat,&lon);
+      meta_get_latLon(metaSar,(float)sar_y,(float)sar_x,elev,&lat,&lon);
 
       /*Compute the projection coordinates of this location in the DEM.*/
       latlon_to_proj(metaDem->projection, metaSar->sar->look_direction,
@@ -172,9 +170,9 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 		     &demProj_z);
       /*Compute the line,sample coordinates of this location in the DEM.*/
       dem_x = (demProj_x - metaDem->projection->startX) /
-          metaDem->projection->perX - metaDem->general->start_sample;
+	metaDem->projection->perX - metaDem->general->start_sample;
       dem_y = (demProj_y - metaDem->projection->startY) /
-          metaDem->projection->perY - metaDem->general->start_line;
+	metaDem->projection->perY - metaDem->general->start_line; 
 
       if (dem_x > 0 && dem_y > 0 &&
 	  dem_x < metaDem->general->sample_count &&
