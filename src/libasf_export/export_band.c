@@ -359,7 +359,9 @@ void initialize_polsarpro_file(const char *output_file_name,
 {
   *ofp = FOPEN(output_file_name, "w");
   
-  char *output_header_file_name = strcat(output_file_name, ".hdr");
+  char *output_header_file_name = 
+    (char *) MALLOC(sizeof(char) * strlen(output_file_name) + 5);
+  sprintf(output_header_file_name, "%s.hdr", output_file_name);
   char *band_name = get_filename(output_file_name);
   envi_header *envi = meta2envi(meta);
   envi->bands = 1;
@@ -1502,7 +1504,8 @@ export_band_image (const char *metadata_file_name,
     // the bands string, what kind of matrix we have, because we need to
     // create the appropriate subdirectory. Otherwise, PolSARPro can't handle
     // the files out of the box.
-    if (md->general->image_data_type == POLARIMETRIC_MATRIX) {
+    if (md->general->image_data_type == POLARIMETRIC_MATRIX &&
+	md->general->band_count != 1) {
       snprintf(matrix, 3, "%s", band_name[band_count-1]);
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
@@ -1574,7 +1577,8 @@ export_band_image (const char *metadata_file_name,
         // band is a classification and should be written out as color ...
         // and for TIFF formats, as a palette color tiff.
 	// The only exception to this rule are polarimetric matrices
-	if (md->general->image_data_type == POLARIMETRIC_MATRIX) {
+	if (md->general->image_data_type == POLARIMETRIC_MATRIX &&
+	    md->general->band_count != 1) {
 	  int ll, found_band = FALSE;
 	  int band_count;
 	  if (strcmp(matrix, "T3") == 0)
@@ -1622,7 +1626,7 @@ export_band_image (const char *metadata_file_name,
 	}
 
         if (strcmp(band_name[0], MAGIC_UNSET_STRING) != 0)
-          asfPrintStatus("\n\nWriting band '%s' ...\n", band_name[kk]);
+          asfPrintStatus("\nWriting band '%s' ...\n", band_name[kk]);
 
         if (format == TIF || format == GEOTIFF) {
           is_geotiff = (format == GEOTIFF) ? 1 : 0;
@@ -1769,7 +1773,7 @@ export_band_image (const char *metadata_file_name,
         float *float_line = (float *) MALLOC(sizeof(float) * sample_count);
         unsigned char *byte_line = MALLOC(sizeof(unsigned char) * sample_count);
 
-        asfPrintStatus("\nWriting output file...\n");
+        asfPrintStatus("Writing output file...\n");
         if (is_colormap_band)
         { // Apply look up table
           for (ii=0; ii<md->general->line_count; ii++ ) {

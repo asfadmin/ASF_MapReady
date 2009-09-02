@@ -2839,58 +2839,54 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 }
               }
               else { // not a true or false color optical image
-                if (meta->general->band_count == 1 ||
-		    meta->general->image_data_type == POLARIMETRIC_MATRIX) {
-                  check_return(asf_export(format, scale, tmpFile, outFile),
-                               "exporting thumbnail data file (asf_export)\n");
-                }
-                else {
+                if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
+		  meta->general->band_count = 1;
 
-		  char **bands = extract_band_names(meta->general->bands, 
-						    meta->general->band_count);
-                  check_return(
-                    asf_export_bands(format, scale, FALSE, 0, 0, NULL,
-                                     tmpFile, outFile, bands, NULL, NULL),
-                    "exporting thumbnail data file (asf_export)\n");
-		  // strip off the band name at the end!
-		  char *banded_name =
-		    MALLOC(sizeof(char)*(strlen(outFile)+32));
-		  if (cfg->general->intermediates) {
-		    if (meta->general->image_data_type > POLARIMETRIC_IMAGE &&
-			meta->general->image_data_type < POLARIMETRIC_MATRIX)
-		      sprintf(banded_name, "%s/%s_thumb_%s.png",
-			      cfg->general->tmp_dir, basename, bands[1]);
-		    else
-		      sprintf(banded_name, "%s/%s_thumb_%s.png",
-			      cfg->general->tmp_dir, basename, bands[0]);
-		    sprintf(outFile, "%s/%s_thumb.png",
-			    cfg->general->tmp_dir, basename);
-		  }
-		  else {
-		    if (meta->general->image_data_type > POLARIMETRIC_IMAGE &&
-			meta->general->image_data_type < POLARIMETRIC_MATRIX)
-		      sprintf(banded_name, "%s_thumb_%s.png",
-			      cfg->general->out_name, bands[1]);
-		    else
-		      sprintf(banded_name, "%s_thumb_%s.png",
-			      cfg->general->out_name, bands[0]);
-		    char *tmp = appendToBasename(cfg->general->out_name,
-						 "_thumb");
-		    strcpy(outFile, tmp);
-		    strcat(outFile, ".png");
-		    free(tmp);
-		  }
-		  fileRename(banded_name, outFile);
-		  FREE(banded_name);
-		  for (i=0; i<meta->general->band_count; i++)
-		    FREE(bands[i]);
-                  FREE(bands);
-                }
-              }
+		char **bands = extract_band_names(meta->general->bands, 
+						  meta->general->band_count);
+		check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
+					      tmpFile, outFile, bands, NULL, 
+					      NULL),
+			     "exporting thumbnail data file (asf_export)\n");
+		// strip off the band name at the end!
+		char *banded_name =
+		  MALLOC(sizeof(char)*(strlen(outFile)+32));
+		if (cfg->general->intermediates) {
+		  if (meta->general->image_data_type > POLARIMETRIC_IMAGE &&
+		      meta->general->image_data_type < POLARIMETRIC_MATRIX)
+		    sprintf(banded_name, "%s/%s_thumb_%s.png",
+			    cfg->general->tmp_dir, basename, bands[1]);
+		  else
+		    sprintf(banded_name, "%s/%s_thumb_%s.png",
+			    cfg->general->tmp_dir, basename, bands[0]);
+		  sprintf(outFile, "%s/%s_thumb.png",
+			  cfg->general->tmp_dir, basename);
+		}
+		else {
+		  if (meta->general->image_data_type > POLARIMETRIC_IMAGE &&
+		      meta->general->image_data_type < POLARIMETRIC_MATRIX)
+		    sprintf(banded_name, "%s_thumb_%s.png",
+			    cfg->general->out_name, bands[1]);
+		  else
+		    sprintf(banded_name, "%s_thumb_%s.png",
+			    cfg->general->out_name, bands[0]);
+		  char *tmp = appendToBasename(cfg->general->out_name,
+					       "_thumb");
+		  strcpy(outFile, tmp);
+		  strcat(outFile, ".png");
+		  free(tmp);
+		}
+		fileRename(banded_name, outFile);
+		FREE(banded_name);
+		for (i=0; i<meta->general->band_count; i++)
+		  FREE(bands[i]);
+		FREE(bands);
+	      }
             }
 	    // in case we had changed the metadata, let's restore things
 	    if (metaTmp) {
 	      metaTmp->general->band_count = original_band_count;
+	      meta_write(metaTmp, inFile);
 	      meta_free(metaTmp);
 	    }
           }
@@ -3260,8 +3256,12 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         }
         if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
           // multi-band, exporting as separate greyscale files
-          asfPrintStatus("\nExporting %d bands as separate greyscale files...\n",
-                         meta->general->band_count);
+	  if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
+	    asfPrintStatus("\nExporting %d bands as separate greyscale files "
+			   "...\n", meta->general->band_count-1);
+	  else
+	    asfPrintStatus("\nExporting %d bands as separate greyscale files "
+			   "...\n", meta->general->band_count);
           check_return(asf_export_bands(format, scale, FALSE,
                                         0, 0, NULL,
                                         inFile, outFile, NULL,
