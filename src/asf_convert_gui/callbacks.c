@@ -1196,17 +1196,17 @@ void polsarpro_image_data_type_changed()
     {
     case SELECT_POLARIMETRIC_SEGMENTATION:
       enable_widget("browse_select_colormap_optionmenu", TRUE);  
-      gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_DECOMPOSITION:
       enable_widget("browse_select_colormap_optionmenu", FALSE);  
-      gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_PARAMETER:
       enable_widget("browse_select_colormap_optionmenu", TRUE);  
-      gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+      gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_MATRIX:
