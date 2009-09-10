@@ -83,7 +83,8 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
         int len = strlen(path) + strlen(basename) + strlen(ext) + 2;
         fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-	if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+	if (image_data_type == SELECT_POLARIMETRIC_MATRIX ||
+	    image_data_type == SELECT_POLARIMETRIC_DECOMPOSITION)
 	  g_snprintf(fixed_name, len, "%s%s", path, basename);
 	else
 	  g_snprintf(fixed_name, len, "%s%s.%s", path, basename, ext);
@@ -93,7 +94,8 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
         int len = strlen(path) + strlen(name_without_path) + strlen(ext) + 2;
         fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-	if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+	if (image_data_type == SELECT_POLARIMETRIC_MATRIX ||
+	    image_data_type == SELECT_POLARIMETRIC_DECOMPOSITION)
 	  g_snprintf(fixed_name, len, "%s%s", path, name_without_path);
 	else
 	  g_snprintf(fixed_name, len, "%s%s.%s", path, name_without_path, ext);

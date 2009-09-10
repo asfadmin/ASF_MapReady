@@ -60,8 +60,8 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
       meta->general->image_data_type = POLARIMETRIC_SEGMENTATION;
     if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_DECOMPOSITION", 26) == 0)
       meta->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
-    if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_PARAMETERS", 23) == 0)
-      meta->general->image_data_type = POLARIMETRIC_PARAMETERS;
+    if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_PARAMETER", 22) == 0)
+      meta->general->image_data_type = POLARIMETRIC_PARAMETER;
     if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_MATRIX", 19) == 0)
       meta->general->image_data_type = POLARIMETRIC_MATRIX;
     if (strncmp_case(gamma->image_data_type, "LUT_IMAGE", 9) == 0)
@@ -433,8 +433,8 @@ meta_parameters* gamma_msp2meta(gamma_msp *gamma)
       meta->general->image_data_type = POLARIMETRIC_SEGMENTATION;
     if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_DECOMPOSITION", 26) == 0)
       meta->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
-    if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_PARAMETERS", 23) == 0)
-      meta->general->image_data_type = POLARIMETRIC_PARAMETERS;
+    if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_PARAMETER", 22) == 0)
+      meta->general->image_data_type = POLARIMETRIC_PARAMETER;
     if (strncmp_case(gamma->image_data_type, "POLARIMETRIC_MATRIX", 19) == 0)
       meta->general->image_data_type = POLARIMETRIC_MATRIX;
     if (strncmp(uc(gamma->image_data_type), "LUT_IMAGE", 9) == 0)

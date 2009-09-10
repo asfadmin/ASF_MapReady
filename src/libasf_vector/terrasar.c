@@ -697,8 +697,8 @@ int terrasar2csv(char *inFile, char *outFile, int listFlag)
         strcpy(image_data_type, "POLARIMETRIC_SEGMENTATION");
       else if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
         strcpy(image_data_type, "POLARIMETRIC_DECOMPOSITION");
-      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETERS)
-        strcpy(image_data_type, "POLARIMETRIC_PARAMETERS");
+      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
+        strcpy(image_data_type, "POLARIMETRIC_PARAMETER");
       else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
         strcpy(image_data_type, "POLARIMETRIC_MATRIX");
       else if (meta->general->image_data_type == LUT_IMAGE)
@@ -1809,8 +1809,8 @@ static int convert_terrasar2shape(char *inFile, DBFHandle dbase,
         strcpy(image_data_type, "POLARIMETRIC_SEGMENTATION");
       else if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
         strcpy(image_data_type, "POLARIMETRIC_DECOMPOSITION");
-      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETERS)
-        strcpy(image_data_type, "POLARIMETRIC_PARAMETERS");
+      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
+        strcpy(image_data_type, "POLARIMETRIC_PARAMETER");
       else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
         strcpy(image_data_type, "POLARIMETRIC_MATRIX");
       else if (meta->general->image_data_type == LUT_IMAGE)

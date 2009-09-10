@@ -489,7 +489,8 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
         (gchar *) g_malloc(sizeof(gchar) *
         (strlen(basename) + strlen(ext) + 10));
 
-    if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+    if (image_data_type == SELECT_POLARIMETRIC_MATRIX ||
+	image_data_type == SELECT_POLARIMETRIC_DECOMPOSITION)
       g_sprintf(output_name_full, "%s", basename);
     else
       g_sprintf(output_name_full, "%s.%s", basename, ext);
@@ -502,7 +503,8 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     // ...So we have this kludge to avoid errors and overwriting of
     // input files with output data
     if (strcmp_case(output_name_full, data_file_name) == 0) {
-      if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+      if (image_data_type == SELECT_POLARIMETRIC_MATRIX ||
+	  image_data_type == SELECT_POLARIMETRIC_DECOMPOSITION)
 	g_sprintf(output_name_full, "%s_out", basename);
       else
 	g_sprintf(output_name_full, "%s_out.%s", basename, ext);

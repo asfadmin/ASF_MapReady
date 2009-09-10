@@ -120,6 +120,12 @@ void import_gamma(char *dataName, char *metaName, char *ceosName,
 meta_parameters *meta_read_only(const char *in_fName);
 meta_parameters *meta_read_raw(const char *inFile);
 
-int isPolsarproMatrix(char *dataFile, char **matrixType);
+int isGeocoded(const char *dataFile);
+int isCEOS(const char *dataFile, char **error);
+int isPolsarproMatrix(char *dataFile, char **matrixType, char **error);
+int isPolsarproDecomposition(char *dataFile, char **decompositionType, 
+			     char **error);
+int isPolsarproSegmentation(char *dataFile, char **error);
+int isPolsarproParameter(char *dataFile, char **error);
 
 #endif

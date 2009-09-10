@@ -63,6 +63,29 @@ static char *c4_matrix[16] = {"C11.bin","C12_real.bin","C12_imag.bin",
 			      "C23_imag.bin","C24_real.bin","C24_imag.bin",
 			      "C33.bin","C34_real.bin","C34_imag.bin",
 			      "C44.bin"};
+static char *freeman2_decomposition[2] = 
+  {"Freeman2_Ground.bin","Freeman2_Vol.bin"};
+static char *freeman3_decomposition[3] = 
+  {"Freeman_Dbl.bin","Freeman_Odd.bin","Freeman_Vol.bin"};
+static char *vanZyl3_decomposition[3] = 
+  {"VanZyl3_Dbl.bin","VanZyl3_Odd.bin","VanZyl3_Vol.bin"};
+static char *yamaguchi3_decomposition[3] = 
+  {"Yamaguchi3_Dbl.bin","Yamaguchi3_Odd.bin","Yamaguchi3_Vol.bin"};
+static char *yamaguchi4_decomposition[4] = 
+  {"Yamaguchi4_Dbl.bin","Yamaguchi4_Hlx.bin","Yamaguchi4_Odd.bin",
+   "Yamaguchi4_Vol.bin"};
+static char *krogager_decomposition[3] = 
+  {"Krogager_Kd.bin","Krogager_Kh.bin","Krogager_Ks.bin"};
+static char *touzi1_decomposition[3] = 
+  {"TSVM_alpha_s1.bin","TSVM_alpha_s2.bin","TSVM_alpha_s3.bin"};
+static char *touzi2_decomposition[3] = 
+  {"TSVM_phi_s1.bin","TSVM_phi_s2.bin","TSVM_phi_s3.bin"};
+static char *touzi3_decomposition[3] = 
+  {"TSVM_tau_m1.bin","TSVM_tau_m2.bin","TSVM_tau_m3.bin"};
+static char *touzi4_decomposition[3] = 
+  {"TSVM_psi1.bin","TSVM_psi2.bin","TSVM_psi3.bin"};
+static char *touzi5_decomposition[4] = 
+  {"TSVM_alpha_s.bin","TSVM_phi_s.bin","TSVM_tau_m.bin","TSVM_psi.bin"};
 
 int is_slant_range(meta_parameters *md);
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
@@ -876,6 +899,7 @@ export_band_image (const char *metadata_file_name,
   map_projected = is_map_projected(md);
 
   if (md->general->image_data_type != POLARIMETRIC_MATRIX &&
+      md->general->image_data_type != POLARIMETRIC_DECOMPOSITION &&
       format == POLSARPRO_HDR)
     append_ext_if_needed(output_file_name, ".bin", NULL);
 
@@ -1462,6 +1486,7 @@ export_band_image (const char *metadata_file_name,
     strcpy(bands, md->general->bands);
     strcpy(base_name, output_file_name);
     char *matrix = (char *) MALLOC(sizeof(char)*5);
+    char *decomposition = (char *) MALLOC(sizeof(char)*25);
     char *path_name = (char *) MALLOC(sizeof(char)*1024);
     char *out_file = NULL;
 
@@ -1511,17 +1536,14 @@ export_band_image (const char *metadata_file_name,
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
       char *path = get_dirname(output_file_name);
-      //if (strlen(path)<=0 || strcmp(path, "./") == 0) {
       if (strlen(dirName) <= 0) {
 	path = g_get_current_dir();
 	sprintf(path_name, "%s%c%s%c%s", 
 		path, DIR_SEPARATOR, output_file_name, DIR_SEPARATOR, matrix);
       }
-      else {
-	sprintf(path_name, "%s%c%s", output_file_name, DIR_SEPARATOR, matrix);
+      else
 	sprintf(path_name, "%s%c%s%c%s", 
 		dirName, DIR_SEPARATOR, fileName, DIR_SEPARATOR, matrix);
-      }
       if (is_dir(path_name))
 	asfPrintError("Output directory (%s) already exists.\n", path_name);
       else if(create_dir(path_name) == -1)
@@ -1529,6 +1551,33 @@ export_band_image (const char *metadata_file_name,
       FREE(path);
       FREE(dirName);
       FREE(fileName);
+    }
+
+    // We treat polarimetric decompositions in a similar way. The output file
+    // name becomes the name of an output directory again. The actual file
+    // names can be extracted from the bands string.
+    if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
+	md->general->band_count != 1) {
+      strcpy(decomposition, band_name[band_count-1]);
+      char *dirName = (char *) MALLOC(sizeof(char)*1024);
+      char *fileName = (char *) MALLOC(sizeof(char)*1024);
+      split_dir_and_file(output_file_name, dirName, fileName);
+      char *path = get_dirname(output_file_name);
+      if (strlen(dirName) <= 0) {
+	path = g_get_current_dir();
+	sprintf(path_name, "%s%c%s", 
+		path, DIR_SEPARATOR, output_file_name);
+      }
+      else
+	sprintf(path_name, "%s%c%s", 
+		dirName, DIR_SEPARATOR, fileName);
+      if (is_dir(path_name))
+	asfPrintError("Output directory (%s) already exists.\n", path_name);
+      else if(create_dir(path_name) == -1)
+	asfPrintError("Can't generate output directory (%s).\n", path_name);
+      FREE(path);
+      FREE(dirName);
+      FREE(fileName);      
     }
 
     // store the names of the generated files here
@@ -1550,7 +1599,7 @@ export_band_image (const char *metadata_file_name,
 	  (md->general->image_data_type == POLARIMETRIC_IMAGE || 
 	   md->general->image_data_type == POLARIMETRIC_SEGMENTATION || 
 	   md->general->image_data_type == POLARIMETRIC_DECOMPOSITION || 
-	   md->general->image_data_type == POLARIMETRIC_PARAMETERS ||
+	   md->general->image_data_type == POLARIMETRIC_PARAMETER ||
 	   md->general->image_data_type == POLARIMETRIC_MATRIX) ? 1 : 0;
         if (
             ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
@@ -1563,6 +1612,10 @@ export_band_image (const char *metadata_file_name,
           is_colormap_band = TRUE;
           sample_mapping = is_polsarpro ? TRUNCATE : sample_mapping;
         }
+	if (format == POLSARPRO_HDR) {
+	  is_colormap_band = FALSE;
+	  sample_mapping = NONE;
+	}
 
         if (have_look_up_table && is_colormap_band) {
           asfPrintStatus("\nApplying %s color look up table...\n\n", look_up_table_name);
@@ -1618,6 +1671,87 @@ export_band_image (const char *metadata_file_name,
 	  sprintf(out_file, "%s%c%s", 
 		  path_name, DIR_SEPARATOR, band_name[kk]);
 	}
+	else if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
+		 md->general->band_count != 1) {
+	  int ll, found_band = FALSE;
+	  int band_count;
+	  if (strcmp(decomposition, "Freeman2_Vol") == 0)
+	    band_count = 2;
+	  else if (strcmp(decomposition, "Freeman_Vol") == 0)
+	    band_count = 3;
+	  else if (strcmp(decomposition, "VanZyl3_Vol") == 0)
+	    band_count = 3;
+	  else if (strcmp(decomposition, "Yamaguchi3_Vol") == 0)
+	    band_count = 3;
+	  else if (strcmp(decomposition, "Yamaguchi4_Vol") == 0)
+	    band_count = 4;
+	  else if (strcmp(decomposition, "Krogager_Ks") == 0)
+	    band_count = 3;
+	  else if (strcmp(decomposition, "TSVM_alpha_s3") == 0)
+	    band_count = 3;
+	  else if (strcmp(decomposition, "TSVM_phi_s3") == 0)
+	    band_count = 3;
+	  else if (strcmp(decomposition, "TSVM_tau_m3") == 0)
+	    band_count = 3;
+	  else if (strcmp(decomposition, "TSVM_psi3") == 0)
+	    band_count = 3;
+	  else if (strcmp(decomposition, "TSVM_psi") == 0)
+	    band_count = 4;
+	  for (ll=0; ll<band_count; ll++) {
+	    if (strcmp(decomposition, "Freeman2_Vol") == 0 && 
+		strncmp(band_name[kk], freeman2_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "Freeman_Vol") == 0 && 
+		strncmp(band_name[kk], freeman3_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "VanZyl3_Vol") == 0 && 
+		strncmp(band_name[kk], vanZyl3_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "Yamaguchi3_Vol") == 0 && 
+		strncmp(band_name[kk], yamaguchi3_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "Yamaguchi4_Vol") == 0 && 
+		strncmp(band_name[kk], yamaguchi4_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "Krogager_Ks") == 0 && 
+		strncmp(band_name[kk], krogager_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "TSVM_alpha_s3") == 0 && 
+		strncmp(band_name[kk], touzi1_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "TSVM_phi_s3") == 0 && 
+		strncmp(band_name[kk], touzi2_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "TSVM_tau_m3") == 0 && 
+		strncmp(band_name[kk], touzi3_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "TSVM_psi3") == 0 && 
+		strncmp(band_name[kk], touzi4_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	    else if (strcmp(decomposition, "TSVM_psi") == 0 && 
+		strncmp(band_name[kk], touzi5_decomposition[ll], 
+			strlen(band_name[kk])) == 0)
+	      found_band = TRUE;
+	  }
+	  if (!found_band)
+	    continue;
+	  sprintf(out_file, "%s%c%s", 
+		  path_name, DIR_SEPARATOR, band_name[kk]);
+	  
+	}
+	else if (md->general->image_data_type == POLARIMETRIC_SEGMENTATION ||
+		 md->general->image_data_type == POLARIMETRIC_PARAMETER)
+	  append_band_ext(base_name, out_file, NULL);
 	else {
 	  if (band_count > 1)
 	    append_band_ext(base_name, out_file, band_name[kk]);
@@ -1698,7 +1832,8 @@ export_band_image (const char *metadata_file_name,
 
         // Determine which channel to read
         int channel;
- 	if (md->general->image_data_type == POLARIMETRIC_MATRIX)
+ 	if (md->general->image_data_type >  POLARIMETRIC_IMAGE &&
+	    md->general->image_data_type <= POLARIMETRIC_MATRIX)
 	  channel = kk;
 	else {
 	  if (md->general->band_count == 1)
@@ -1923,6 +2058,7 @@ export_band_image (const char *metadata_file_name,
     }
     FREE(path_name);
     FREE(matrix);
+    FREE(decomposition);
     FREE(out_file);
   }
 

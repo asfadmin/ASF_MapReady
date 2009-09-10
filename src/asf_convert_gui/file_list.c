@@ -870,9 +870,9 @@ add_to_files_list_iter(const gchar *input_file_in,
             if (p) {
               polsarpro_display =
                 g_malloc(sizeof(gchar)*strlen(polsarpro_aux_info)+64);
-              int is_classification = polsarpro_aux_info[0]=='1';
+              int is_classification = polsarpro_aux_info[0]=='0';
               int is_colormapped = strcmp_case(p+1, "none")!=0;
-              const char *c = is_classification ? " (Classification)" : "";
+              const char *c = is_classification ? " (Segmentation)" : "";
               if (!is_colormapped && !is_classification) {
                 strcpy(polsarpro_display, "-");
               }
@@ -990,7 +990,8 @@ update_all_extensions()
                 (gchar *) g_malloc(sizeof(gchar) * (strlen(basename) +
                 strlen(ext) + 2));
 
-	    if (image_data_type == SELECT_POLARIMETRIC_MATRIX)
+	    if (image_data_type == SELECT_POLARIMETRIC_MATRIX ||
+		image_data_type == SELECT_POLARIMETRIC_DECOMPOSITION)
 	      g_sprintf(new_output_name, "%s", basename);
 	    else
 	      g_sprintf(new_output_name, "%s.%s", basename, ext);

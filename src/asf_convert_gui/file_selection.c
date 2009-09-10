@@ -260,6 +260,8 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
   GtkWidget *browse_select_image_data_type_label =
       get_widget_checked("browse_select_colormap_label");
   int sel = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
+  GtkWidget *ok_button =
+    get_widget_checked("add_file_with_ancillary_ok_button");
 
   // open the "add with ancillary" if needed, otherwise we'll use the
   // normal 'open file' dialog
@@ -276,6 +278,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         gtk_widget_show(browse_select_colormap_label);
         gtk_widget_show(browse_select_image_data_type_optionmenu);
         gtk_widget_show(browse_select_image_data_type_label);
+	gtk_widget_set_sensitive(ok_button, FALSE);	
 	init_image_data_type_combobox();
 	polsarpro_image_data_type_changed();
         break;
@@ -756,7 +759,7 @@ static void do_browse(const char *title, const char *entry_to_populate,
 #endif
 }
 
-static void clear_entries()
+void clear_entries()
 {
   put_string_to_entry("add_file_with_ancillary_gamma_ceos_entry", "");
   put_string_to_entry("add_file_with_ancillary_gamma_data_entry", "");
@@ -764,6 +767,9 @@ static void clear_entries()
   put_string_to_entry("add_file_with_ancillary_polsarpro_image_entry", "");
   put_string_to_entry("add_file_with_ancillary_polsarpro_ceos_entry", "");
   put_string_to_label("add_with_ancillary_error_label", "");
+  GtkWidget *ok_button =
+    get_widget_checked("add_file_with_ancillary_ok_button");
+  gtk_widget_set_sensitive(ok_button, FALSE);
 }
 
 SIGNAL_CALLBACK void
@@ -826,18 +832,20 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
     sel = ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO;
   GtkTreeIter iter;
   int ok=TRUE;
-  char *dataFile=NULL, *data=NULL;
+  char *dataFile=NULL, *data=NULL, *ceos=NULL;
   char *aux_info="";
 
   switch (sel) {
     case ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO:
     {
-      char *ceos =
-        get_string_from_entry("add_file_with_ancillary_polsarpro_ceos_entry");
+      GtkWidget *ok_button =
+	get_widget_checked("add_file_with_ancillary_ok_button");
+      gtk_widget_set_sensitive(ok_button, FALSE);
       dataFile =
         get_string_from_entry("add_file_with_ancillary_polsarpro_image_entry");
-      char *matrixType;
-      int is_polsarpro_matrix = isPolsarproMatrix(dataFile, &matrixType);
+      char *matrixType, *error;
+      int is_polsarpro_matrix = 
+	isPolsarproMatrix(dataFile, &matrixType, &error);
       if (is_polsarpro_matrix) {
 	data = (char *) MALLOC(sizeof(char)*(strlen(dataFile) + 15));
 	if (strcmp(matrixType, "T3") == 0 || strcmp(matrixType, "T4") == 0)
@@ -850,7 +858,11 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
       else
 	data = STRDUP(dataFile);
       free(matrixType);
-      if (!is_polsarpro_matrix && (strlen(ceos)==0 || strlen(data)==0)) {
+      int is_geocoded = isGeocoded(data);
+      if (!is_geocoded)
+	ceos = get_string_from_entry(
+	  "add_file_with_ancillary_polsarpro_ceos_entry");
+      if (!is_geocoded && (strlen(ceos)==0 || strlen(data)==0)) {
         put_string_to_label("add_with_ancillary_error_label",
                             "Please choose all required files!");
         return;

@@ -148,21 +148,6 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
     return meta;
 }
 
-int isCEOS(const char *input_file)
-{
-  char **inBandName = NULL, **inMetaName = NULL;
-  char baseName[512];
-  int nBands, trailer;
-  ceos_file_pairs_t ceos_pair = NO_CEOS_FILE_PAIR;
-
-  ceos_pair = get_ceos_names(input_file, baseName,
-                             &inBandName, &inMetaName,
-                             &nBands, &trailer);
-  free_ceos_names(inBandName, inMetaName);
-
-  return (ceos_pair != NO_CEOS_FILE_PAIR);
-}
-
 int isSTF(const char *input_file)
 {
   char **inBandName = NULL, **inMetaName = NULL;
@@ -188,9 +173,9 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   setup_tmp_dir(tmpDir);
 
   // Get the regular metadata structure
-  char **inBandName = NULL, **inMetaName = NULL;
+  char **inBandName = NULL, **inMetaName = NULL, *error;
   int nBands=1, trailer;
-  if (isCEOS(inName))
+  if (isCEOS(inName, &error))
     require_ceos_pair(inName, &inBandName, &inMetaName,
               &nBands, &trailer);
   else if (isSTF(inName))
@@ -377,7 +362,7 @@ void check_return(int ret, char *msg)
 void check_input(convert_config *cfg, char *processing_step, char *input)
 {
   meta_parameters *meta;
-  char **inBandName = NULL, **inMetaName = NULL;
+  char **inBandName = NULL, **inMetaName = NULL, *error;
   int nBands, trailer, airsar_c, airsar_l, airsar_p;
 
   if (strcmp_case(processing_step, "polarimetry") == 0) {
@@ -391,7 +376,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       cfg->airsar->l_pol = airsar_l;
       cfg->airsar->p_pol = airsar_p;
     }
-    else if (isCEOS(input)) {
+    else if (isCEOS(input, &error)) {
       require_ceos_pair(input, &inBandName, &inMetaName,
             &nBands, &trailer);
       meta = meta_create(inMetaName[0]);
@@ -2839,7 +2824,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 }
               }
               else { // not a true or false color optical image
-                if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
+                if (meta->general->image_data_type >  POLARIMETRIC_IMAGE ||
+		    meta->general->image_data_type <= POLARIMETRIC_MATRIX) 
 		  meta->general->band_count = 1;
 
 		char **bands = extract_band_names(meta->general->bands, 
@@ -2852,8 +2838,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 		char *banded_name =
 		  MALLOC(sizeof(char)*(strlen(outFile)+32));
 		if (cfg->general->intermediates) {
-		  if (meta->general->image_data_type > POLARIMETRIC_IMAGE &&
-		      meta->general->image_data_type < POLARIMETRIC_MATRIX)
+		  if (meta->general->image_data_type == POLARIMETRIC_IMAGE)
 		    sprintf(banded_name, "%s/%s_thumb_%s.png",
 			    cfg->general->tmp_dir, basename, bands[1]);
 		  else
@@ -2863,8 +2848,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 			  cfg->general->tmp_dir, basename);
 		}
 		else {
-		  if (meta->general->image_data_type > POLARIMETRIC_IMAGE &&
-		      meta->general->image_data_type < POLARIMETRIC_MATRIX)
+		  if (meta->general->image_data_type == POLARIMETRIC_IMAGE)
 		    sprintf(banded_name, "%s_thumb_%s.png",
 			    cfg->general->out_name, bands[1]);
 		  else
@@ -3096,8 +3080,6 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   meta_parameters *meta = meta_read(inFile);
   char lut_file[2048] = "";
   int is_polsarpro = (strstr(meta->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
-  int is_matrix = 
-    meta->general->image_data_type == POLARIMETRIC_MATRIX ? 1 : 0;
   int have_embedded_colormap = 0;
   if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
     strcpy(lut_file, cfg->export->lut);
@@ -3256,7 +3238,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         }
         if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
           // multi-band, exporting as separate greyscale files
-	  if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
+	  if (meta->general->image_data_type == POLARIMETRIC_MATRIX ||
+	      meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
 	    asfPrintStatus("\nExporting %d bands as separate greyscale files "
 			   "...\n", meta->general->band_count-1);
 	  else

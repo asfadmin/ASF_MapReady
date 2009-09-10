@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "shapefil.h"
 #include "asf_vector.h"
+#include "asf_raster.h"
 
 // Some of the functionality here is used to convert CEOS leader files as well
 // as metadata into the various. When comparing the results from the two
@@ -1637,8 +1638,8 @@ static int convert_meta2csv(char *inFile, FILE *fp)
         strcpy(image_data_type, "POLARIMETRIC_SEGMENTATION");
       else if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
         strcpy(image_data_type, "POLARIMETRIC_DECOMPOSITION");
-      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETERS)
-        strcpy(image_data_type, "POLARIMETRIC_PARAMETERS");
+      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
+        strcpy(image_data_type, "POLARIMETRIC_PARAMETER");
       else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
         strcpy(image_data_type, "POLARIMETRIC_MATRIX");
       else if (meta->general->image_data_type == LUT_IMAGE)
@@ -2624,6 +2625,7 @@ int meta2kml(char *inFile, char *outFile, format_type_t inFormat,
   meta_parameters *meta;
   FILE *fpIn, *fpOut;
   char *line = (char *) MALLOC(sizeof(char)*1024);
+  double northbc, southbc, westbc, eastbc;
   if (cfg->list) {
     fpIn = FOPEN(inFile, "r");
     fpOut = FOPEN(outFile, "w");
@@ -2671,6 +2673,15 @@ int meta2kml(char *inFile, char *outFile, format_type_t inFormat,
 		    "(%s)\n", format2str(inFormat), inFile);
     fpOut = FOPEN(outFile, "w");
     kml_header(fpOut);
+    get_boundaries(meta->location, &northbc, &southbc, &eastbc, &westbc);
+    if (cfg && FLOAT_EQUIVALENT(cfg->north, 0.0) == 0)
+      cfg->north = northbc;
+    if (cfg && FLOAT_EQUIVALENT(cfg->south, 0.0) == 0)
+      cfg->south = southbc;
+    if (cfg && FLOAT_EQUIVALENT(cfg->east, 0.0) == 0)
+      cfg->east = eastbc;
+    if (cfg && FLOAT_EQUIVALENT(cfg->west, 0.0) == 0)
+      cfg->west = westbc;
     kml_entry_ext(fpOut, meta, meta->general->basename, cfg);
     kml_footer(fpOut);
     FCLOSE(fpOut);
@@ -2814,8 +2825,8 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
         strcpy(image_data_type, "POLARIMETRIC_SEGMENTATION");
       else if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
         strcpy(image_data_type, "POLARIMETRIC_DECOMPOSITION");
-      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETERS)
-        strcpy(image_data_type, "POLARIMETRIC_PARAMETERS");
+      else if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
+        strcpy(image_data_type, "POLARIMETRIC_PARAMETER");
       else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
         strcpy(image_data_type, "POLARIMETRIC_MATRIX");
       else if (meta->general->image_data_type == LUT_IMAGE)

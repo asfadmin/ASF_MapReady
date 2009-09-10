@@ -151,8 +151,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
         meta_put_string(fp,"image_data_type:","POLARIMETRIC_DECOMPOSITION",
 			comment);
         break;
-      case POLARIMETRIC_PARAMETERS:
-        meta_put_string(fp,"image_data_type:","POLARIMETRIC_PARAMETERS",
+      case POLARIMETRIC_PARAMETER:
+        meta_put_string(fp,"image_data_type:","POLARIMETRIC_PARAMETER",
 			comment);
         break;
       case POLARIMETRIC_MATRIX:

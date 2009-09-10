@@ -209,11 +209,8 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
         char *thumbnail_name =
             MALLOC(sizeof(char)*(strlen(tmp_dir)+strlen(basename)+32));
 
-        sprintf(thumbnail_name, "%s%c%s_thumb%s.png",
-                tmp_dir,
-                DIR_SEPARATOR,
-                basename,
-                is_PolSARpro ? "_POLSARPRO" : "");
+        sprintf(thumbnail_name, "%s%c%s_thumb.png",
+                tmp_dir, DIR_SEPARATOR, basename);
 
         // if output was a png image, we will be using that instead
         // of the "_thumb" file

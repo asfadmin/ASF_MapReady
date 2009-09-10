@@ -412,6 +412,7 @@ void do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name);
 void handle_browse_ancillary_file();
 void init_browse_format_combobox();
 void init_image_data_type_combobox();
+void clear_entries();
 
 /* state.c */
 

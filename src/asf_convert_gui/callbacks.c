@@ -3,6 +3,8 @@
 static int db_was_checked = 0;
 
 void export_checkbutton_toggle();
+int polsarpro_geocoding_check();
+int polsarpro_data_check();
 
 // When the polsarpro classification optionmenu changes, make new (colormapped) thumbnails
 // for all polsarpro files in the input files list
@@ -1215,6 +1217,12 @@ void polsarpro_image_data_type_changed()
       put_string_to_label("polsarpro_data_label", "PolSARPro Data Directory:");
       break;
     }
+  put_string_to_label("add_with_ancillary_error_label", "");
+  clear_entries();
+  GtkWidget *ok_button =
+    get_widget_checked("add_file_with_ancillary_ok_button");
+  if (polsarpro_geocoding_check() && polsarpro_data_check())
+    gtk_widget_set_sensitive(ok_button, TRUE);
 }
 
 SIGNAL_CALLBACK void
@@ -1223,39 +1231,121 @@ on_browse_select_image_data_type_optionmenu_changed(GtkWidget *widget)
   polsarpro_image_data_type_changed();
 }
 
-void polsarpro_geocoding_check()
+int polsarpro_geocoding_check()
 {
-  char *matrixType, infile[1024];
+  int ret = FALSE;
+  char *matrixType, *decompositionType;
+  char infile[1024];
+  char *errorMatrix = NULL, *errorDecomposition = NULL; 
+  char *errorSegmentation = NULL, *errorParameter = NULL;
   envi_header *envi = NULL;
   meta_parameters *meta = NULL;
   char *inFile = 
     get_string_from_entry("add_file_with_ancillary_polsarpro_image_entry");
   strcpy(infile, inFile);
-  int is_polsarpro_matrix = isPolsarproMatrix(infile, &matrixType);
-  if (is_polsarpro_matrix) {
-    if (strcmp(matrixType, "T3") == 0 || strcmp(matrixType, "T4") == 0)
-      strcat(infile, "/T11.bin.hdr");
-    else if (strcmp(matrixType, "C2") == 0 || 
-	     strcmp(matrixType, "C3") == 0 ||
-	     strcmp(matrixType, "C4") == 0)
-      strcat(infile, "/C11.bin.hdr");
-    envi = read_envi(infile);
-    meta = envi2meta(envi);
-    if (envi)
-      free(envi);
-    GtkWidget *polsarpro_ancillary_file =
-      get_widget_checked("add_file_with_ancillary_polsarpro_ceos_entry");
-    if (!meta->projection)
-      gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
-    else
-      gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
-    if (meta)
-      meta_free(meta);
+  GtkWidget *combo = 
+    get_widget_checked("browse_select_image_data_type_optionmenu");
+  int type = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
+  GtkWidget *ok_button =
+    get_widget_checked("add_file_with_ancillary_ok_button");
+  int is_polsarpro_matrix = 
+    isPolsarproMatrix(infile, &matrixType, &errorMatrix);
+  int is_polsarpro_decomposition = 
+    isPolsarproDecomposition(infile, &decompositionType, &errorDecomposition);
+  int is_polsarpro_segmentation =
+    isPolsarproSegmentation(infile, &errorSegmentation);
+  int is_polsarpro_parameter =
+    isPolsarproParameter(infile, &errorParameter);
+  if ((is_polsarpro_matrix && !errorMatrix) ||
+      (is_polsarpro_decomposition && !errorDecomposition) ||
+      (is_polsarpro_segmentation && !errorSegmentation) ||
+      (is_polsarpro_parameter && !errorParameter)) {
+    if (is_polsarpro_matrix) {
+      if (strcmp(matrixType, "T3") == 0 || strcmp(matrixType, "T4") == 0)
+	strcat(infile, "/T11.bin.hdr");
+      else if (strcmp(matrixType, "C2") == 0 || 
+	       strcmp(matrixType, "C3") == 0 ||
+	       strcmp(matrixType, "C4") == 0)
+	strcat(infile, "/C11.bin.hdr");
+    }
+    else if (is_polsarpro_decomposition || is_polsarpro_segmentation ||
+	     is_polsarpro_parameter)
+      strcat(infile, ".hdr");
+    else if (strlen(infile) > 0)
+      strcat(infile, ".hdr");
+    if (strlen(infile) > 0 && (!is_dir(inFile) || is_polsarpro_matrix)) {
+      envi = read_envi(infile);
+      meta = envi2meta(envi);
+      if (envi)
+	free(envi);
+      GtkWidget *polsarpro_ancillary_file =
+	get_widget_checked("add_file_with_ancillary_polsarpro_ceos_entry");
+      if (!meta->projection) {
+	gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+	gtk_widget_set_sensitive(ok_button, FALSE);
+      }
+      else {
+	gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
+	gtk_widget_set_sensitive(ok_button, TRUE);
+      }
+      if (meta)
+	meta_free(meta);
+    }
+    put_string_to_label("add_with_ancillary_error_label", "");
+    ret = TRUE;
   }
+  else if (errorSegmentation && type == SELECT_POLARIMETRIC_SEGMENTATION) {
+    put_string_to_label("add_with_ancillary_error_label", errorSegmentation);
+    gtk_widget_set_sensitive(ok_button, FALSE);
+  }
+  else if (errorDecomposition && type == SELECT_POLARIMETRIC_DECOMPOSITION) {
+    put_string_to_label("add_with_ancillary_error_label", errorDecomposition);
+    gtk_widget_set_sensitive(ok_button, FALSE);
+  }
+  else if (errorParameter && type == SELECT_POLARIMETRIC_PARAMETER) {
+    put_string_to_label("add_with_ancillary_error_label", errorParameter);
+    gtk_widget_set_sensitive(ok_button, FALSE);
+  }
+  else if (errorMatrix && type == SELECT_POLARIMETRIC_MATRIX) {
+    put_string_to_label("add_with_ancillary_error_label", errorMatrix);
+    gtk_widget_set_sensitive(ok_button, FALSE);
+  }
+
+  return ret;
 }
+
+int polsarpro_data_check()
+{
+  char *error = NULL;
+  int ret = FALSE;
+  char *inFile = 
+    get_string_from_entry("add_file_with_ancillary_polsarpro_ceos_entry");
+  GtkWidget *ok_button =
+    get_widget_checked("add_file_with_ancillary_ok_button");
+  if (isCEOS(inFile, &error))
+    ret = TRUE;
+  else if (error) {
+    put_string_to_label("add_with_ancillary_error_label", error);    
+    gtk_widget_set_sensitive(ok_button, FALSE);
+  }
+
+  return ret;
+}	
 
 SIGNAL_CALLBACK void
 on_add_file_with_ancillary_polsarpro_image_entry_changed(GtkWidget *widget)
 {
-  polsarpro_geocoding_check();
+  GtkWidget *ok_button =
+    get_widget_checked("add_file_with_ancillary_ok_button");
+  if (polsarpro_geocoding_check() && polsarpro_data_check())
+    gtk_widget_set_sensitive(ok_button, TRUE);
+}
+	
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_polsarpro_ceos_entry_changed(GtkWidget *widget)
+{
+  GtkWidget *ok_button =
+    get_widget_checked("add_file_with_ancillary_ok_button");
+  if (polsarpro_geocoding_check() && polsarpro_data_check())
+    gtk_widget_set_sensitive(ok_button, TRUE);
 }
