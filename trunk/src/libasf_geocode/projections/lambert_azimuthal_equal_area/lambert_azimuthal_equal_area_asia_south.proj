@@ -1,8 +1,0 @@
-[Lambert Azimuthal Equal Area]
-Area = Asia South
-Datum = WGS84
-Spheroid = WGS84
-Central meridian = 125
-Latitude of origin = -15
-False easting = 0
-False northing = 0
