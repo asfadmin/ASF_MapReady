@@ -434,6 +434,8 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
 			 COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
       if (strcmp(data_file_name, input_file_name) == 0)
         break;
+
+      valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
     int image_data_type = extract_image_data_type(polsarpro_aux_info);
 
