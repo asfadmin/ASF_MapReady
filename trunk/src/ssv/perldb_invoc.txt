@@ -1,0 +1,8 @@
+
+# First non-comment non-blank line of this file is the argument to
+# give to the emacs perldb command when invoking the perl debugger.
+# Make sure its one long line.
+
+perl check_balance.perl Beginning Ending test_log.txt
+
+You might save an alternate invocation string here, and switch back and forth

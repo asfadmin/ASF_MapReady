@@ -1,0 +1,4 @@
+#!/bin/sh
+CXX="icpc"
+CFLAGS_ARCH=" -rdynamic"
+SHARED="-shared -fpic"

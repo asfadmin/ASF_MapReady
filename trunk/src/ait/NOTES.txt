@@ -1,0 +1,21 @@
+To get gtk-- working on Windows, I used the installer file:
+  gtkmm-devel-2.8.8-2.exe
+And created "gtk-2.8.8.zip" from that.  A kludge... yes.
+Might be a better way to do this.
+
+The "etc" directory needs to found at runtime... had to add the
+etc dir from gtkwin32 in asf_tools (at the same level as bin).
+
+Had to put everything in gtkwin32/bin in asf_tools/bin
+
+Had to edit pango.modules (in asf_tools/etc/pango)
+
+Had to chmod a+x on the files pointed to in pango.modules
+ -- actually this may not be necessary? 
+
+pango.modules sample entry:
+"c:/cygwin/home/Kirk/svn/asf_tools/bin/lib/pango/1.5.0/modules/pango-arabic-fc.dll" ArabicScriptEngine PangoEngineShape PangoRenderFc arabic:*
+
+It looks like we might be able to use a relative path:
+"../bin/lib/pango/1.5.0/modules/pango-arabic-fc.dll" ArabicScriptEngine PangoEngineShape PangoRenderFc arabic:*
+

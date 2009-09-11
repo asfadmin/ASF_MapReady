@@ -1,0 +1,26 @@
+
+README FILE FOR   auto_sar_mosaic
+
+PACKING LIST:
+        NAME                       DESCRIPTION
+	----		           -----------
+        auto_sar_mosaic.readme     This file
+        auto_sar_mosaic            Executable shell script
+	auto_sar_mosaic.man	   Man page for auto_sar_mosaic
+
+
+INSTALLATION INSTRUCTIONS:
+	Check to make sure that auto_sar_mosaic is pointing to the
+	correct directory for ksh. By default, auto_sar_mosaic uses /bin/ksh.
+	If this path is not correct for your system, change the first line of
+	auto_sar_mosaic.
+
+SITE SPECIFIC MODIFICATIONS:
+
+TEST/EVALUATION PROCEDURES:
+
+
+NOTES:
+
+
+

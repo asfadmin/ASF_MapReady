@@ -1,0 +1,201 @@
+
+xid README file
+####################################################################
+INTRODUCTION:
+ 
+    If you've gotten far enough to read this note, congratulations!
+You've uncompressed and untarred the software correctly.  This note 
+will tell you how to install the software you just untarred.
+ 
+WHAT YOU'VE DOWNLOADED:
+ 
+    This file is in a directory called asf_tools, which was
+created when you untarred the software.  Also present in this
+asf_tools directory are several sub-directories. Depending
+on what you've downloaded, not all of these may be present.
+Additionally, if you've downloaded other ASF STEP software
+you may have other subdirectories. For xid these are the
+files you should have: 
+ 
+ 
+asf_tools+----README_xid                         This file.
+         |
+         |
+         |           irix        .
+         |            or
+         +----bin--- solaris----+---xid     binary executable 
+         |            or        | 
+         |           sunos      +---nad27sp 
+         |                      |            map projection files
+         |                      +---nad83sp
+         |
+         |
+         +----man---cat1---xid.1             xid man page
+         |
+         \----xid_help---*.html    xid help pages in html format
+ 
+#################################################################
+INSTALLATION:
+
+1. CHECK THAT YOU HAVE X-WINDOWS IN YOUR PATH:
+
+Because XID uses X-Windows you need to have its software
+subdirectory in your path environment variable.  To show your
+current path variable use the command:
+
+      echo $PATH
+
+The path is usually set by a system start-up file and can be modified
+by your start up file .profile or .cshrc.  
+
+On most systems the X-Windows files are usually in /usr/lib/X11. 
+If this is already in your path you can skip the rest of step 1.
+
+If /usr/lib/X11 is not in your path you need to check this directory 
+to see if it exists and if so you can add it to your path. Solaris systems 
+in particular may not have this directory and solaris users need to 
+follow the additional instructions if the X11 directory is not under 
+/usr/lib.
+
+If /usr/lib/X11 exists, adding it to your path depends on 
+which shell you are running:
+
+(ksh-- add these lines to your ~/.profile file)
+        PATH=/usr/lib/X11:$PATH
+        export PATH
+ 
+(csh-- add this line to your ~/.cshrc file)
+        setenv PATH /usr/lib/X11:$PATH
+
+To re-run your start-up use the source command so that these will
+take effect for your current session:
+        source .cshrc
+
+If X11 is not in /usr/lib/X11 you need to find out if it is on your 
+system somewhere else.  On solaris systems it is usually under
+/usr/openwin/lib/. XID expects it in /usr/lib/ so a link needs to be
+set so that XID can find it. A system manager or someone with root
+access will have to set up this link:
+
+cd /usr/lib
+ln -s /usr/openwin/lib/X11 X11
+
+Once the link is set up you will still need to add /usr/lib/X11
+to your path as shown above.
+ 
+2. ADD THE XID BINARY TO YOUR PATH:
+ 
+   Since when you untarred our software it installed the binaries
+in the <your directory>/asf_tools/bin/<your system> directory, you
+have to add this directory to your PATH environment variable.  
+Exactly how you do this depends on where you installed the software 
+and what UNIX shell (ksh or csh) you're using.  For example, if you're 
+running Solaris and installed the software in your home directory
+called '/user1/yourName', you need to:
+ 
+(ksh-- add these lines to your ~/.profile file)
+        PATH=/user1/yourName/asf_tools/bin/solaris:$PATH
+        export PATH
+ 
+(csh-- add this line to your ~/.cshrc file)
+        setenv PATH /user1/yourName/asf_tools/bin/solaris:$PATH
+
+Use the source command to re-run the start-up file so that these
+take effect for your current session.
+ 
+3. SET NEEDED ENVIRONMENT VARIABLES
+ 
+Two environment variables DATASYS and (WORCONFIG/LASTALBES) need to be
+set.  Again how this is done depends on the shell (ksh or csh) you're
+using.  If you installed the software in your home directory called
+'/user1/yourName', you need to:
+
+(ksh-- add these lines to your ~/.profile file)
+        DATASYS=ieee-std
+        export DATASYS
+ 
+(csh-- add these lines to your ~/.cshrc file)
+        setenv DATASYS ieee-std
+
+For Solaris:
+(ksh-- add these lines to your ~/.profile file)
+        WORCONFIG=/user1/yourName/asf_tools/bin/solaris
+        export WORCONFIG
+
+(csh-- add these lines to your ~/.cshrc file)
+        setenv WORCONFIG /user1/yourName/asf_tools/bin/solaris
+
+Or for Irix:
+(ksh-- add these lines to your ~/.profile file)
+        DATASYS=ieee-std
+        export DATASYS
+
+(csh-- add these lines to your ~/.cshrc file)
+        setenv DATASYS ieee-std
+        setenv LASTABLES /user1/yourName/asf_tools/bin/solaris
+
+
+4. ADD xid MAN PAGE:
+ 
+  To access the xid man page, you need to add the asf_tools/man
+directory to your MANPATH environment variable.  For example, if
+you installed the ASF-STEP Tools in your home directory, the
+MANPATH variable should have <your home directory>/asf_tools/man 
+added to it. The exact way you do this depends on which UNIX shell 
+(ksh or csh) you're using:
+ 
+(ksh-- add these lines to your ~/.profile file)
+        MANPATH=/user1/yourName/asf_tools/man:$MANPATH
+        export MANPATH
+ 
+(csh-- add this line to your ~/.cshrc file)
+        setenv MANPATH /user1/yourName/asf_tools/man:$MANPATH
+
+Use the source command again to make these take effect for your
+current session.
+ 
+Some systems may not have a MANPATH environment variable defined.
+In this case you can set your own by replacing the $MANPATH above
+with the rest of the man directories on your system as listed in
+the man manual page. For example, an IRIX .cshrc file could contain:
+       setenv MANPATH /user1/yourName/asf_tools/man:/usr/share/catman:
+       /usr/share/man:/usr/catman:/usr/man
+
+USAGE NOTES:
+
+1. Filenames must be in lower case. The file load function uses the 
+standard motif file selector to provide a list of *.img files in the 
+current directory. This function only displays filenames that are in lower
+case.  Any name typed into the selection box is converted to lower case.
+A filename not in lower case may be rejected by file save functions.
+
+2. The help function was implemented to use Mosaic to retrieve html
+formatted help files.  This function is broken. While we are working on
+a fix, we've provided the html files in the asf_tools/xid_help 
+subdirectory. These can be viewed using your system's html browser
+by opening the file using the complete filename e.g.
+
+         /user1/yourName/asf_tools/xid_help/file.html
+
+3. Colormap flashing problems. On some systems xid "shares" the colormap
+used in other X applications resulting in color changes in other windows.
+This also occurs in xid panels when selecting 256 colors in the preferences
+option.
+
+4. If you get an error "Error opening X color database" xid is not
+finding the X window files. If you are on solaris check that you have an 
+X11 link as described in Step 1 and that the file it points to contains 
+rgb.txt.
+
+##############################################################################
+OTHER HELP:
+ 
+   For help running xid software, getting test data, or downloading
+more software, There are several resources.  First, the ASF/STEP web page 
+at http://www.images.alaska.edu has links to all the software we offer, 
+tutorials, further contacts, and more. The STEP Lab Manager, Rick Guritz, 
+is available via e-mail at rguritz@images.alaska.edu and telephone at 
+(907) 474-6666 x7886.
+ 
+
+--D. Corbett 10/10/97 dcorbett@images.alaska.edu

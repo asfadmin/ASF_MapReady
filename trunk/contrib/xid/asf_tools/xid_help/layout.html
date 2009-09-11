@@ -1,0 +1,75 @@
+<TITLE>7.0 Setup Functions</TITLE>
+<H2>7.0 Setup Functions</H2>
+
+<H2>7.1 Memory Layout</H2>
+
+The layout function is used to change the number or size of memory
+or image planes allocated, and/or to change the size of the 
+displayed image area (viewport).
+
+<P>
+<IMG SRC="layout.gif">
+<P>
+
+<DL>
+<DT><B>Memory Plane Configuration:</B>
+<DD>The memory plane configuration is defined by width, height
+    and depth.  The size of the memory or image plane determines
+    the maximum size of an image that can be loaded into memory.
+    The depth of the memory plane determines how many bands of 
+    an image and/or how many images can be loaded into memory at 
+    one time.
+<P>
+
+<DT><B>Width:</B>
+<DD>The memory plane width defines the number of samples that can be 
+    loaded into memory.  Images larger than this size will be subsampled
+    to fit within the defined width.  The default width is 1024.
+<P>
+
+<DT><B>Height:</B>
+<DD>The memory plane height defines the number of lines that can be 
+    loaded into memory.  Images larger than this size will be subsampled
+    to fit within the defined height.  The default height is 1024.
+<P>
+
+<DT><B>Depth:</B>
+<DD>The memory plane depth defines the number of image bands that can be 
+loaded into memory at one time.  The default depth is three.
+<P>
+
+<DT><B>Viewport Configuration:</B>
+<DD>The viewport configuration is defined by width and height.
+    This size determines what portion of the loaded image is 
+    visible.  If the loaded image is larger than the viewport
+    size, scrollbars allow the user to view the remainder of
+    the image.
+<P>
+
+<DT><B>Width:</B>
+<DD>The viewport width defines the number of samples that are
+    visible at one time.  The default width is 512.
+<P>
+
+<DT><B>Height:</B>
+<DD>The viewport height defines the number of lines that are
+    visible at one time.  The default height is 512.
+<P>
+
+<DT><B>Allocate:</B>
+<DD>Allocate the amount of memory required based on the memory
+    plane width, height and depth specified.  If a sufficient 
+    amount of memory is available, the layout panel is closed.
+    If a sufficient amount of memory is not available, an error
+    message is displayed and the layout panel is left open so that
+    the user may modify the layout parameters and try again.
+</B>
+
+<DT><B>Reset:</B>
+<DD>Set both the memory plane configuration parameters and the viewport 
+    configuration parameters back to their default values.
+<P>
+
+<DT><B>Cancel:</B>
+<DD>Close the layout panel without modifying the current layout.
+</DL>

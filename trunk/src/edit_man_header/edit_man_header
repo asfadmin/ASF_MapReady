@@ -1,0 +1,325 @@
+#!/usr/bin/perl -w
+
+#This tool pulls the manual header chunk from an editable source file, opens the
+#user's prefered text editor, and returns the edited text to the header portion
+#of the source file, formatted with #defines, etc.
+
+#This program will read and produce defines for any section you define using the
+##define ASF_<something>_STRING \ format, so if you wish to add some other section,
+#that is acceptable. Just make sure you at least have the sections defined below.
+
+#The following code block reads in a file and checks for the man page strings,
+#of the following format:
+
+#   #define ASF_<section_name>_STRING \
+#   "Some text pertaining to this section, such as the tool name\n"\
+#   "Another line of text, but this is part of the same define\n"\
+#   "because we remembered to end the previous line with a back-\n"\
+#   "slash.\n\n"\
+#   "That previous line put an extra newline in our documentation,\n"\
+#   "as only the last newline, followed by a quote, and a backslash\n"\
+#   "is recognized. This is the last line of our define."
+
+#The ending sequence \n"\ is stripped, putting it all in one long string.
+#The name of the section is printed to a file, followed by a newline, and
+#then the text of that define is printed.
+
+#The sections you should define are as follows (these would fill in <section_name>
+#from above.
+#NAME         The command name of the tool: my_tool
+#USAGE        The basic usage of the tool: [-option <parameter>] <required_argument>
+#DESCRIPTION  What the tool does: This tool produces widgets (green or red only)
+#INPUT        What the input needs to be, be it files (and their formats) or user input
+#OUTPUT       What the output is, where it will go, etc.
+#EXAMPLES     Some (simple!) examples of command-lines for this tool
+#LIMITATIONS  Any limitations your tool may have
+#SEE_ALSO     Other tools that are related or may provide more information
+#COPYRIGHT    The copyright used by this tool (yes, the whole copyright)
+
+use Env;
+
+if($#ARGV < 0)
+{
+	print STDOUT "USAGE:\n   edit_man_header [--help] source_file\n";
+	print STDOUT "\n";
+	print STDOUT "P.S. If you use the --help option, do yourself a favor\n";
+	print STDOUT "     and pipe it through less or something similar...\n\n";
+	exit();
+}
+foreach (@ARGV)
+{
+	if($_ eq "--help")
+	{
+		print STDOUT "What this tool does:\n";
+		print STDOUT "   This is a simple tool designed to alter C/C++ source files\n";
+		print STDOUT "   so that all documentation is self-contained and does not require\n";
+		print STDOUT "   any actual installation on the user's part. This tool will add\n";
+		print STDOUT "   a number of #defines to the beginning of your source file, which\n";
+		print STDOUT "   can then be used in your code, as you please.\n";
+		print STDOUT "\n";
+		print STDOUT "How to use this tool:\n";
+		print STDOUT "   It's really quite simple. Almost *too* simple...\n";
+		print STDOUT "   Anyhow, run the tool, providing it with the name of your source\n";
+		print STDOUT "   file. So, something like:\n";
+		print STDOUT "      edit_man_header my_phat_kodez.c\n";
+		print STDOUT "   The tool will then scan your source file to see if any of these\n";
+		print STDOUT "   auto-generated defines already exist. If so, they are dumped into\n";
+		print STDOUT "   a temporary text file which is then opened by your favorite editor,\n";
+		print STDOUT "   or vi. Vi was chosen as the backup because it has an *ever* so\n";
+		print STDOUT "   slightly larger install base than emacs. If this bothers you, define\n";
+		print STDOUT "   the environment variable \$EDITOR...but I digress.\n";
+		print STDOUT "   The temporary file is then opened by an editor, at which point you\n";
+		print STDOUT "   are thoroughly cleared to have your way with it. The only thing you\n";
+		print STDOUT "   need to know is the simple format the text should be in when you\n";
+		print STDOUT "   are done. You can define as many sections as you wish, as follows:\n";
+		print STDOUT "      <name>_START\n";
+		print STDOUT "      Whatever you want to say goes in here, be it one line\n";
+		print STDOUT "      or several.\n";
+		print STDOUT "      <name>_END\n";
+		print STDOUT "   That's it. Really. Just replace <name> with whatever you want. Some\n";
+		print STDOUT "   good recommendations for sections you should include:\n";
+		print STDOUT "      NAME          The name of the tool\n";
+		print STDOUT "      USAGE         A simple usage string to jog the user's memory.\n";
+		print STDOUT "      DESCRIPTION   What does it *do*? What is its motivation?\n";
+		print STDOUT "      INPUT         What sort of input, if any, does the tool expect?\n";
+		print STDOUT "      OUTPUT        What sort of output will the tool produce?\n";
+		print STDOUT "      OPTIONS       A semi-detailed description of all available options\n";
+		print STDOUT "      EXAMPLES      A few simple examples--don't over-do this\n";
+		print STDOUT "      LIMITATIONS   What *won't* the tool do?\n";
+		print STDOUT "      KNOWN_BUGS    Nobody's perfect, and you know it\n";
+		print STDOUT "      SEE_ALSO      Similar tools, or just a reference to a good book\n";
+		print STDOUT "      COPYRIGHT     Your mouth is moving, but all I hear is blah, blah, blah\n";
+		print STDOUT "   If you want to add others, that's entirely up to you.\n";
+		print STDOUT "   After you've set up these SECTION_START/SECTION_END pairs, save the file\n";
+		print STDOUT "   and exit the editor. The script will then scan the temporary file and\n";
+		print STDOUT "   embed the appropriate defines in your source code. You can use the auto-\n";
+		print STDOUT "   generated #defines by ASF_<section_name>_STRING, such as\n";
+		print STDOUT "      ASF_NAME_STRING\n";
+		print STDOUT "      ASF_USAGE_STRING\n";
+		print STDOUT "      ASF_KNOWN_BUGS_STRING\n";
+		print STDOUT "   Lastly, the tool will output an html file ready to be tossed on the web.\n";
+		print STDOUT "\n";
+		print STDOUT "Safety blanket:\n";
+		print STDOUT "   Before your source file is ever opened in write-mode, it is backed up to\n";
+		print STDOUT "      <original_name>~\n";
+		print STDOUT "   This should make using this tool slightly less frightening.\n";
+		print STDOUT "\n";
+		print STDOUT "Known bugs/limitations:\n";
+		print STDOUT "   Like I said, nobody's perfect.\n";
+		print STDOUT "   1) Anything between the BEGIN/END AUTO-GENERATED CODE tags that is not\n";
+		print STDOUT "      part of a define will be nuked. Don't write love-letters to your\n";
+		print STDOUT "      sweetie in here: she won't ever see them.\n";
+		print STDOUT "   2) Don't muck with the #defines. The tool expects them to be in a\n";
+		print STDOUT "      (perhaps overly) specific format. Only ding around with them if you\n";
+		print STDOUT "      know what you're up to. Otherwise, if you mess around and then run\n";
+		print STDOUT "      the tool, lines of documentation may disappear (your actual source\n";
+		print STDOUT "      code outside the BEGIN/END tags will still be safe, however.)\n";
+		print STDOUT "   3) Whatever editor you use, it should not return before you're done\n";
+		print STDOUT "      editing. Kate in single-process mode, for instance, will not work.\n";
+		print STDOUT "   4) While editing the temporary file, anything not inside of a START/\n";
+		print STDOUT "      END pair will not be included in the auto-generated code, just like\n";
+		print STDOUT "      in bug/limitation/feature #1.\n";
+		print STDOUT "   5) Never, ever, EVER write documentation like I have just done, setting\n";
+		print STDOUT "      it up in a million print statements. It's stupid. You'll be labelled\n";
+		print STDOUT "      a fool, as will your children and your children's children. Your\n";
+		print STDOUT "      children's children's children might not be, and certainly their\n";
+		print STDOUT "      children won't be, but at least two generations after you. All fools.\n";
+		print STDOUT "      Don't do it to them. For heaven's sake, don't do it to yourself.\n";
+		print STDOUT "\n";
+		print STDOUT "--Munki out\n\n";
+		exit();
+	}
+}
+
+$source_file = $ARGV[0];
+$backup_file = "$ARGV[0]~";
+$temp_file = "temp.txt";
+$html_file = "$source_file.html";
+{
+    print STDOUT "Opening $source_file for read and $temp_file for write...\n";
+    open SOURCE_FILE, "<$source_file" or die "Couldn't open source file $source_file: $!";
+    open TEMP_FILE, ">$temp_file" or die "Couldn't open temp file $temp_file: $!";
+
+    $edit_section = FALSE;
+    $continued_define = FALSE;
+    $section_name = 0;
+    
+    while(<SOURCE_FILE>)
+    {
+        print STDOUT "\rScanning line $.";
+        if(/BEGIN\sASF\sAUTO\-GENERATED\sDOCUMENTATION/)
+        {
+            $edit_section = TRUE;
+        }
+        elsif(/END\sASF\sAUTO\-GENERATED\sDOCUMENTATION/)
+        {
+            $edit_section = FALSE;
+        }
+        elsif($edit_section eq TRUE)
+        {
+            if(/^(\#define\sASF\_)(.*)(\_STRING\s\\)$/)   #Matches: #define ASF_<something>_STRING \
+            {
+                $section_name = $2;
+                print TEMP_FILE "$section_name\_START\n";
+                $continued_define = TRUE;
+            }
+            elsif(/^(")(.*)(\\n"\\)$/ && $continued_define eq TRUE)
+            {
+                $temp = $2;
+                $temp =~ s/'/"/g;
+                $temp =~ s/\\"/"/g; #replace incoming \" with "
+                $temp =~ s/\\\\/\\/g; #replace incoming \\ with \
+                print TEMP_FILE "$temp\n";
+                $continued_define = TRUE;
+            }
+            elsif(/^(\")(.*)(\")$/ && $continued_define eq TRUE)
+            {
+                $temp = $2;
+                $temp =~ s/'/"/g;
+                $temp =~ s/\\"/"/g; #replace incoming \" with "
+                $temp =~ s/\\\\/\\/g; #replace incoming \\ with \
+                print TEMP_FILE "$temp\n";
+                print TEMP_FILE "$section_name\_END\n\n";
+                $continued_define = FALSE;
+            }
+        }
+    }
+    
+    close TEMP_FILE;
+    close SOURCE_FILE;
+    
+    print STDOUT "...Done scanning file.\n";
+}
+
+#perform some editing thingie on $temp_file
+{
+    print STDOUT "Opening file $temp_file for editing...\n";
+    if(defined $EDITOR)
+    {
+        print STDOUT "Using $EDITOR\n";
+        system("$EDITOR $temp_file");
+    }
+    else
+    {
+        print STDOUT "Using vi\n";
+        system("vi $temp_file");
+    }
+    print STDOUT "...Done editing file.\n";
+}
+
+#create a backup file of the original source and paste the new header in to the original file.
+{
+    print STDOUT "Opening $backup_file for write and $source_file for read...\n";
+    open BACKUP_FILE, ">$backup_file" or die "Couldn't open backup file $backup_file: $!";
+    open SOURCE_FILE, "<$source_file" or die "Couldn't open source file $source_file: $!";
+    while(<SOURCE_FILE>)
+    {
+        print STDOUT "\rWriting line $.";
+        print BACKUP_FILE;
+    }
+    close SOURCE_FILE;
+    close BACKUP_FILE;
+    print STDOUT "...Done creating backup.\n";
+    
+    print STDOUT "Opening $backup_file and $temp_file for read, $source_file and $html_file for write...\n";
+    open BACKUP_FILE, "<$backup_file" or die "Couldn't open backup file $backup_file: $!";
+    open TEMP_FILE, "<$temp_file" or die "Couldn't open temp file $temp_file: $!";
+    open SOURCE_FILE, ">$source_file" or die "Couldn't open source file $source_file: $!";
+    open HTML_FILE, ">$html_file" or die "Couldn't open html file $html_file: $!";
+    
+    print SOURCE_FILE "/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/\n";
+    print SOURCE_FILE "/*\n";
+    print SOURCE_FILE "ABOUT EDITING THIS DOCUMENTATION:\n";
+    print SOURCE_FILE "If you wish to edit the documentation for this program, you need to change the\n";
+    print SOURCE_FILE "following defines. For the short ones (like ASF_NAME_STRING) this is no big\n";
+    print SOURCE_FILE "deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it\n";
+    print SOURCE_FILE "can be a daunting task to get all the newlines in correctly, etc. In order to\n";
+    print SOURCE_FILE "help you with this task, there is a tool, edit_man_header. The tool *only*\n";
+    print SOURCE_FILE "works with this portion of the code, so fear not. It will scan in defines of\n";
+    print SOURCE_FILE "the format #define ASF_<something>_STRING between the two auto-generated\n";
+    print SOURCE_FILE "documentation markers, format them for a text editor, run that editor, allow\n";
+    print SOURCE_FILE "you to edit the text in a clean manner, and then automatically generate these\n";
+    print SOURCE_FILE "defines, formatted appropriately. The only warning is that any text between\n";
+    print SOURCE_FILE "those two markers and not part of one of those defines will not be preserved,\n";
+    print SOURCE_FILE "and that all of this auto-generated code will be at the top of the source\n";
+    print SOURCE_FILE "file. Save yourself the time and trouble, and use edit_man_header. :)\n";
+    print SOURCE_FILE "*/\n\n";
+
+    #Prep the html help file
+    print HTML_FILE "<html>\n<body>\n<table width=\"100%\" border=0 cellpadding=0>\n<tr>\n<td>\n<pre>\n";
+
+    $def_line = 0;
+    $active = 0;
+    while(<TEMP_FILE>)
+    {
+        print STDOUT "\rWriting header line $.";
+        if(/^(.*)\_START/)
+        {
+            $def_line = 1;
+            $active = 1;
+            print SOURCE_FILE "#define ASF_$1_STRING ";
+            print HTML_FILE "<hr width=70%>\n<b>$1</b>\n\n";
+        }
+        elsif(/^(.*)\_END/)
+        {
+            $def_line = 0;
+            $active = 0;
+            print SOURCE_FILE "\"\n\n";
+        }
+        elsif($active == 1)
+        {
+            if($def_line == 1)
+            {
+                print SOURCE_FILE "\\\n";
+            }
+            else
+            {
+                print SOURCE_FILE "\\n\"\\\n";
+            }
+            $def_line = 0;
+            chomp;
+            $temp = $_;
+            $temp =~ s/&/&amp;/g; #fix &'s for HTML
+            $temp =~ s/</&lt;/g; #fix <'s for HTML
+            $temp =~ s/>/&gt;/g; #fix >'s for HTML
+            $temp =~ s/"/&quot;/g; #fix "'s for HTML
+            print HTML_FILE "$temp\n";
+            s/\\/\\\\/g; #replace any outgoing \ with \\
+            s/"/\\"/g; #replace any outgoing " with \"
+            s/'/\\"/g; #replace any outgoing ' with \"
+            print SOURCE_FILE "\"$_";
+        }
+    }
+    print SOURCE_FILE "/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/\n";
+    print HTML_FILE "<hr width=70%>\n</pre>\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
+    
+    $edit_section = FALSE;
+    while(<BACKUP_FILE>)
+    {
+        if(/BEGIN\sASF\sAUTO\-GENERATED\sDOCUMENTATION/)
+        {
+            $edit_section = TRUE;
+        }
+        elsif(/END\sASF\sAUTO\-GENERATED\sDOCUMENTATION/)
+        {
+            $edit_section = FALSE;
+        }
+        elsif($edit_section eq FALSE)
+        {
+            print STDOUT "\rWriting source line $.";
+            print SOURCE_FILE;
+        }
+    }
+    close HTML_FILE;
+    close TEMP_FILE;
+    close SOURCE_FILE;
+    close BACKUP_FILE;
+    print STDOUT "...Done writing source.\n";
+}
+
+{
+    print STDOUT "Removing temporary files...";
+    system("rm $temp_file");
+    print STDOUT "Done removing temporary files.\n";
+    print STDOUT "\nA backup of the original $source_file can be found in $backup_file\n\n";
+}

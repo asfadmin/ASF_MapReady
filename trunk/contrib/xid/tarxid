@@ -1,0 +1,20 @@
+#!/bin/ksh
+# NAME: tarxid
+# DESCRIPTION:  tars up xid binaries and associated files
+# USAGE: run from /proj3/asf_tools/contrib
+##########
+# global variables
+set -A SYSTYPE solaris sunos irix
+for sys in ${SYSTYPE[*]}
+do
+  tarobj[0]=asf_tools/README_xid
+  tarobj[1]=asf_tools/bin/$sys/xid
+  tarobj[2]=asf_tools/bin/$sys/nad27sp
+  tarobj[3]=asf_tools/bin/$sys/nad83sp
+  tarobj[4]=asf_tools/man/cat1/xid.1
+  tarobj[5]=asf_tools/xid_help
+tar cvf - ${tarobj[*]} >asf_tools/tar/xid.$sys.bin.tar
+compress asf_tools/tar/xid.$sys.bin.tar
+unset tarobj
+done
+  

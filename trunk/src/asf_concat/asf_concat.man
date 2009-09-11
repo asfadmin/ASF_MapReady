@@ -1,0 +1,13 @@
+NAME:		ASF_CONCAT.A
+
+DESCRIPTION:	Library of LAS 6.0 support routines that have been ported
+		to run without any TAE dependencies, but are used only
+		by concat and concatm
+
+CONTENTS:
+This library contains the LAS 6.0 image I/O routines used 
+only by concat and concatm.
+
+The c_eopen and c_estep interface is complex and depricated-- 
+use getFloatLine and putFloatLine (see asf_las).
+

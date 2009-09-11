@@ -1,0 +1,7 @@
+#!../bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/09/13
+#
+string a=string "This is an int: " b=int 17 c=string ".  This is a real: " d=real 2.34;
+echo string=@string.out;

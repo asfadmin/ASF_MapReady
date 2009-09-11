@@ -1,0 +1,105 @@
+# This file contains the metadata for satellite capture file of the same base name.
+#
+# This is the .meta file for an ARDoP image of Delta Junction, Alaska.
+# Three corner reflectors are visible; their coordinates in this image are
+# (to within 10 meters)
+#  Refl  Lat (deg)     Lon (deg)   Elev (m)   y    x  (pixels)
+#   DJ9 63.80011361, -145.80429333, 711.6   15310 4184
+#   DJ1 63.80828389, -145.00790111, 452.1   12465 2238
+#   DJ5 64.14553389, -145.78424306, 315.1    5860 4736
+#
+
+meta_version: 1.60
+
+general {                                  # Begin parameters generally used in remote sensing
+    sensor: ERS1                               # Imaging sensor
+    mode: STD                                  # Imaging mode
+    processor: ASF/AISP/2.90                   # Name and Version of Processor
+    data_type: BYTE                            # Type of samples (e.g. REAL64)
+    image_data_type: ???                       # Image data type (e.g. AMPLITUDE_IMAGE)
+    system: lil_ieee                           # System of samples (e.g. big_ieee)
+    orbit: 22089                               # Orbit Number for this datatake
+    orbit_direction: D                         # Ascending 'A', or descending 'D'
+    frame: 0                                   # Frame for this image [-1 if n/a]
+    band_number: 0                             # Band number; first band is 0
+    line_count: 1000                           # Number of lines in image
+    sample_count: 1200                         # Number of samples in image
+    start_line: 0                              # First line relative to original image
+    start_sample: 0                            # First sample relative to original image
+    x_pixel_size: 7.9048894474                 # Range pixel size [m]
+    y_pixel_size: 3.9922930564                 # Azimuth pixel size [m]
+    center_latitude: nan                       # Approximate image center latitude
+    center_longitude: nan                      # Approximate image center longitude
+    re_major: 6378144                          # Major (equator) Axis of earth [m]
+    re_minor: 6356754.9                        # Minor (polar) Axis of earth [m]
+    bit_error_rate: 1                          # Fraction of bits which are in error
+    missing_lines: -999999999                  # Number of missing lines in data take
+}                                          # End general
+
+sar {                                      # Begin parameters used specifically in SAR imaging
+    image_type: S                              # [S=slant range; G=ground range; P=map projected]
+    look_direction: R                          # SAR Satellite look direction [R=right; L=left]
+    look_count: 5                              # Number of looks to take from SLC
+    deskewed: 0                                # Image moved to zero doppler? [1=yes; 0=no]
+    original_line_count: 36394                 # Number of lines in original image
+    original_sample_count: 5616                # Number of samples in original image
+    line_increment: 1                          # Line increment for sampling
+    sample_increment: 1                        # Sample increment for sampling
+    range_time_per_pixel: 5.2735745923e-08     # Time per pixel in range [s]
+    azimuth_time_per_pixel: 0.00059527282744   # Time per pixel in azimuth [s]
+    slant_range_first_pixel: 837495.83833      # Slant range to first pixel [m]
+    slant_shift: -0.00026251839357             # Error correction factor, in slant range [m]
+    time_shift: -2.4836943694e-05              # Error correction factor, in time [s]
+    wavelength: 0.056565001607                 # SAR carrier wavelength [m]
+    prf: 1679.9023936                          # Pulse Repetition Frequency [Hz]
+    earth_radius: 6361397.5                    # Earth radius at scene center [m]
+    earth_radius_pp: nan                       # Earth radius used by the PP during L0 processsing. [m]
+    satellite_height: 7155412.5                # Satellite height from earth's center [m]
+    satellite_binary_time: 4044215701.000000   # Satellite Binary Time
+    satellite_clock_time: 0                    # Satellite Clock Time (UTC)
+    dopRangeCen: 308.78146362                  # Range doppler centroid [Hz]
+    dopRangeLin: 0.0096063893288               # Range doppler per range pixel [Hz/pixel]
+    dopRangeQuad: -3.5117732295e-06            # Range doppler per range pixel sq. [Hz/(pixel^2)]
+    dopAzCen: 308.78146362                     # Azimuth doppler centroid [Hz]
+    dopAzLin: 0                                # Azimuth doppler per azimuth pixel [Hz/pixel]
+    dopAzQuad: 0                               # Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]
+    azimuth_bandwidth: 0                       # Azimuth processing bandwidth [Hz]
+    chirp_rate: 0                              # Chirp rate [Hz/sec]
+    pulse_duration: 0                          # Pulse duration [s]
+    range_samp_rate: 0                         # Range sampling rate [Hz]
+}                                          # End sar
+
+state {                                    # Begin list of state vectors for satellite, over image
+    year: 1995                                 # Year of image start
+    julDay: 278                                # Julian day of the year for image start
+    second: 75325.915                          # Second of the day for image start
+    vector_count: 3                            # Number of state vectors below
+    vector {                                   # Begin a single state vector
+        time: -0.23812499284                       # Time, relative to image start [s]
+        x: -2427480.1116                           # X Coordinate, earth-fixed [m]
+        y: -2114902.5921                           # Y Coordinate, earth-fixed [m]
+        z: 6390055.2333                            # Z Coordinate, earth-fixed [m]
+        vx: -6519.245567                           # X Velocity, earth-fixed [m/s]
+        vy: -2096.9229731                          # Y Velocity, earth-fixed [m/s]
+        vz: -3163.9899675                          # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 9.3749                               # Time, relative to image start [s]
+        x: -2490041.9107                           # X Coordinate, earth-fixed [m]
+        y: -2134910.7757                           # Y Coordinate, earth-fixed [m]
+        z: 6359319.3432                            # Z Coordinate, earth-fixed [m]
+        vx: -6496.6702493                          # X Velocity, earth-fixed [m/s]
+        vy: -2065.7668751                          # Y Velocity, earth-fixed [m/s]
+        vz: -3230.5831205                          # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 18.988                               # Time, relative to image start [s]
+        x: -2552383.5576                           # X Coordinate, earth-fixed [m]
+        y: -2154618.6811                           # Y Coordinate, earth-fixed [m]
+        z: 6327944.7359                            # Z Coordinate, earth-fixed [m]
+        vx: -6473.4028445                          # X Velocity, earth-fixed [m/s]
+        vy: -2034.4363525                          # Y Velocity, earth-fixed [m/s]
+        vz: -3296.8537731                          # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+}                                          # End the list of state vectors
+

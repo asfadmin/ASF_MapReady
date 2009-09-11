@@ -1,0 +1,58 @@
+Tool name:
+   trim
+
+Usage:
+   trim [-log <logfile>] [-height height] [-width width]
+         [-license] [-version] [-help]
+        <infile> <outfile> <new_top_line> <new_left_sample>
+
+Description:
+   trim allows you to trim/add any number of line or samples to an image
+   (in ASF Internal format), and updates the metadata accordingly.
+
+Input:
+   <infile>  The basename of the input data file.  Must be in ASF Internal
+        format (.img)
+   <new_top_line> Line in input that will be the top of output
+   <new_top_sample> Sample in input that will be left side of output
+
+Output:
+   <outfile>  The basename of the output file.  The output file will be stored
+        in ASF Internal format (.img and .meta)
+
+Options:
+   -log <logfile>
+        Save all tool output in <logfile>
+   -height <height>
+        Height of the output file.
+   -width <width>
+        Width of the output file.
+   -license
+        Print copyright and license for this software then exit.
+   -version
+        Print version and copyright then exit.
+   -help
+        Print this help information and then exit.
+
+Examples:
+   Remove a 100x100 section, starting at line 50, sample 200
+   from the file "test.img", and "test.meta".
+   > trim -width 100 -height 100 test test_trimmed 50 200
+
+Limitations:
+   Only works on ASF Internal files.
+
+Contact:
+   Alaska Satellite Facility
+   Geophysical Institute
+   University of Alaska Fairbanks
+   P.O. Box 757320
+   Fairbanks, AK 99775-7320
+   http://www.asf.alaska.edu
+   uso@asf.alaska.edu
+
+trim, version 6621 (part of MapReady 1.0.2)
+
+Copyright (c) 2007, University of Alaska Fairbanks, Alaska Satellite Facility.
+All rights reserved.
+

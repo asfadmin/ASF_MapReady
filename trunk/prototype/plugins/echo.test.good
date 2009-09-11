@@ -1,0 +1,17 @@
+echo: This is a string.
+echo: This is a string, with integer: 23
+echo: This is a string, with integer & real 23 3.456000
+echo:  999
+echo: Generic int:
+int:
+! ASF Parameter
+ 12
+echo: Generic real:
+real:
+! ASF Parameter
+ 12
+echo: Generic string:
+string:
+! ASF Parameter
+ 20
+ 'g' 'e' 'n' 'e' 'r' 'i' 'c' '-' 's' 't' 'y' 'l' 'e' ' ' 's' 't' 'r' 'i' 'n' 'g'

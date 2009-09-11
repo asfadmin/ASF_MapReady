@@ -1,0 +1,187 @@
+
+SIGNING RPMS:
+
+1) Add the following lines to the end of your ~/.rpmmacros file:
+
+  # RPM Signing stuff
+  %_signature       gpg
+  %_gpg_path        ~/.gnupg
+  %_gpgbin          /usr/bin/gpg
+  %_gpg_name        ASF User Tool Development
+
+   => The _gpg_name must match the name of the key that is generated below (exactly),
+      i.e. ASF User Tool Development
+
+2) Find the %packager and %distribution lines, then add a %vendor line right after them:
+
+  %packager         ASF User Tool Development <uso@asf.alaska.edu>
+  %distribution     ASF Tools rpms
+  %vendor           ASF User Tool Development <uso@asf.alaska.edu>
+
+3) Assuming you do not have the public and secret keys for signing ASF UTD rpms, you can generate a new
+   set of keys and then proceed.  NOTE: You can check to see what keys you've already generated with the
+   "gpg --list-keys" command.  In the 'release/keys' folder, generate your new key pair with the following
+   command:
+
+  gpg --gen-key
+
+   You will be prompted for what type of key you want ...you want "DSA and ElGamal (default".
+   Next, you will be prompted for a key size (bits) ...accept the default of 1024.
+   Next, you will be asked how long the key should be good ...accept "key does not expire" option.
+   If all is correct, type 'y' to accept.
+   => When prompted for Real Name, Commend and Email Address ...IGNORE the suggested form.  You
+      will be prompted for each piece of information individually ...typing it in using the
+      suggested form will give you "Invalid character" error messages.
+   => When prompted for a passphrase, use anything you want as long as YOU will remember it (else
+      you will have to generate a new key pair again next time.)  Use "ASF User Tool Development"
+      for the name and use "uso@asf.alaska.edu" for the email address ...exactly as shown here
+      including capitalization (and without the quotes.)
+
+gpg (GnuPG) 1.2.6; Copyright (C) 2004 Free Software Foundation, Inc.
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions. See the file COPYING for details.
+
+Please select what kind of key you want:
+   (1) DSA and ElGamal (default)
+   (2) DSA (sign only)
+   (4) RSA (sign only)
+Your selection?
+DSA keypair will have 1024 bits.
+About to generate a new ELG-E keypair.
+              minimum keysize is  768 bits
+              default keysize is 1024 bits
+    highest suggested keysize is 2048 bits
+What keysize do you want? (1024)
+Requested keysize is 1024 bits
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0)
+Key does not expire at all
+Is this correct (y/n)? y
+
+You need a User-ID to identify your key; the software constructs the user id
+from Real Name, Comment and Email Address in this form:
+    "Heinrich Heine (Der Dichter) <heinrichh@duesseldorf.de>"
+
+Real name: ASF User Tool Development
+Email address: uso@asf.alaska.edu
+Comment:
+You selected this USER-ID:
+    "ASF User Tool Development <uso@asf.alaska.edu>"
+
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? O
+You need a Passphrase to protect your secret key.
+
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+++++++++++.+++++.++++++++++.+++++++++++++++...+++++.++++++++++++++++++++++++++++++++++++++++++++++++++.
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+.++++++++++.++++++++++++++++++++++++++++++++++++++++++++++++++...+++++.+++++..+++++++++++++++..++++++++
+public and secret key created and signed.
+key marked as ultimately trusted.
+
+pub  1024D/C9D7E959 2008-03-18 ASF User Tool Development <uso@asf.alaska.edu>
+     Key fingerprint = 2312 DB34 91AB 000E 0E6B  D9A8 41C6 359D C9D7 E959
+sub  1024g/8F5BCB58 2008-03-18
+
+
+4) If you want to check to see that the keys were made and are accessible by gpg, type
+   the following command:
+
+  gpg --list-keys
+
+   You will see output like the following:
+
+  /home/user_dir/.gnupg/pubring.gpg
+  -------------------------------
+  pub  1024D/C9D7E959 2008-03-18 ASF User Tool Development <uso@asf.alaska.edu>
+  sub  1024g/8F5BCB58 2008-03-18
+
+5) For the sake of convenience in the following steps, add another uid in addition to
+   the "ASF User Tool Development" uid.  You do this with the gpg and the edit option:
+
+  gpg --edit-key "ASF User Tool Development"
+
+   The key editor mode of gpg will respond with a "Command>" prompt.  Use the adduid
+   command to add "asf_tools" as another uid (use the passphrase that you established
+   above when you are prompted.)  Here's an example adduid session:
+
+  gpg (GnuPG) 1.2.6; Copyright (C) 2004 Free Software Foundation, Inc.
+  This program comes with ABSOLUTELY NO WARRANTY.
+  This is free software, and you are welcome to redistribute it
+  under certain conditions. See the file COPYING for details.
+
+  Secret key is available.
+
+  pub  1024D/789AAF46  created: 2008-03-18 expires: never      trust: u/u
+  sub  1024g/CFFB0ECE  created: 2008-03-18 expires: never
+  (1). ASF User Tool Development <uso@asf.alaska.edu>
+
+  Command> adduid
+  Real name: asf_tools
+  Email address: uso@asf.alaska.edu
+  Comment:
+  You selected this USER-ID:
+      "asf_tools <uso@asf.alaska.edu>"
+
+  Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? O
+
+  You need a passphrase to unlock the secret key for
+  user: "ASF User Tool Development <uso@asf.alaska.edu>"
+  1024-bit DSA key, ID 789AAF46, created 2008-03-18
+
+
+  pub  1024D/789AAF46  created: 2008-03-18 expires: never      trust: u/u
+  sub  1024g/CFFB0ECE  created: 2008-03-18 expires: never
+  (1)  ASF User Tool Development <uso@asf.alaska.edu>
+  (2). asf_tools <uso@asf.alaska.edu>
+
+  Command> quit
+  Save changes? yes
+
+6) Jumping back to the release procedure, go ahead and do the rpmbuild now.  When you
+   run rpmbuild, make sure you use the --sign option and type in the passphrase that you
+   used above.
+
+7) Still in the 'release/keys' folder, export the public key for whoever will need to
+   install the rpms:
+
+  gpg --armour --export asf_tools > asf_tools-pubkey.asc
+
+8) On the build machine, someone with root access then needs to import the public key into
+   the rpm public key database:
+
+  rpm --import asf_tools-pubkey.asc
+
+   If you don't have root access, you'll get the following errors (or similar):
+
+  error: cannot get exclusive lock on /var/lib/rpm/Packages
+  error: cannot open Packages index using db3 - Operation not permitted (1)
+  error: cannot open Packages database in /var/lib/rpm
+  error: asf_tools-pubkey.asc: import failed.
+
+9) Now that the public key has been imported into the rpm public key database, you can
+   check the rpms to see that they have been properly signed.  Type the following command:
+
+  rpm -K asf_mapready-1.1.1-0.src.rpm
+
+   You should see a response something like the one below ...and if you get a "NOT OK"
+   in the response, it means the public key is likely not in the rpm public key database:
+
+  asf_mapready-1.1.1-1.src.rpm: (sha1) dsa sha1 md5 gpg OK
+
+10) Jumping back to the release procedure, the tarrpms script will make the tarball that
+    contains the rpm, README files, and the exported public key (asf_tools-pubkey.asc)
+
+
+

@@ -1,0 +1,124 @@
+Basic idea:
+  Improve performance by processing image data
+  on an on-demand, tile-by-tile basis.
+
+Want to support:
+- High performance support.  
+That is, we want to run at CPU speeds, 
+not at disk or memory speeds.
+This implies we need to:
+  1.) Load up (or synthesize) a cache-sized chunk of the image.
+  2.) Do *everything* (all steps) we're going to do to that chunk.
+  3.) Write out the chunk.
+One way of implementing "chunk" above is just
+via small square tiles.
+The tile size should be small enough that a 
+few of them will fit in cache, or about 
+64KB = 16KPix = 128 pixels on a side.
+
+- Trivial parallelization.  A tile-processing tool
+shouldn't have to do anything special to be run in 
+parallel-- tiles can be processed in parallel, with
+boundaries passed between machines.  All the data 
+passing, setup, synchronization should be able to be
+handled underneath the tile-processing level.
+
+- Easy & separate development of modules.
+Each module could be a DLL, loaded at runtime.
+This allows separate compilation and easy substitution
+of modules.  The program they're loaded into could be 
+a command-line wrapper driven by a script,
+a nice drag-and-drop GUI, etc.
+
+
+----------------------------------
+Example: DEM generation:
+
+register_ccsd:
+(for top and bottom patches):
+	lz2raw
+	aisp
+	resolve
+	fico
+	calc_deltas
+(for whole image:)
+	aisp
+	igram
+	coh
+
+tandem_ifm:
+	deramp
+	ml
+	escher/snaphu
+	refine_base:
+		getphase
+		genab
+		bp
+		test_base
+	deramp
+	elev
+	deskew_dem
+	amp2img
+	geocode:
+		geoLatLon
+		projectGeo
+		fit_quadratic
+		remap
+
+
+Processing categories:
+
+STREAMING: Simple per-pixel, totally aligned processing
+
+Read one image, do simple per-pixel processing, write one image:
+  calibrate, dem2phase, deramp, deramp_const, elev, eleverr
+
+Read two images, do simple per-pixel processing, write one image:
+  diff_las, igram
+
+Read n images, do arbitrary per-pixel processing, write out:
+  las_op
+
+MULTIPASS/"WHOLE-IMAGE": 
+  amp2img (2 passes: calculate max/min, convert to byte)
+  dem2seeds (2 passes: calculate seeds, sort, output)
+  escher (really needs entire image for charge search)
+
+SYNTHESIS: Create new raster images.
+  las_text, las_ramp, mark_tpl
+
+SHIFTING: Simple geometric relationship between input and output
+  remap, resample, trim, trim_slc, ssar_crop, geocode,
+  coh, ml
+
+PADDING: Simple geometric relationship, plus padding
+  deskew_dem, reskew_dem, aisp
+
+SHIFT & COMBINE: Read multiple image tiles, align, and output
+  auto_sar_mosiac, auto_swath_mosaic, concat, concat_dem,
+  concatm, idimage
+
+
+--------- Image matching ----------
+Global: Whole-image
+  resolve, fftMatch, las_stack
+Local (tiled):
+  fico, phase_filter
+
+--------- Metadata/non-image ------------
+  display_pdr, dspddr, makeddr, metadata, propagate,
+  accum_offset, projprm, psconv, twoway,
+  fit_line, fit_plane, fit_warp, 
+
+I/O & FORMAT:
+  dump_multi_volume, las2jpeg, las2ppm,
+  sarin, sarout, sdts2las, usgs2las
+
+CONTROL:
+  refine_base, refine_offset, register_ccsd/slc,
+  tandem_ifm
+
+SIGNAL DATA:
+  lops_qc, lz2raw
+
+Not covered: src_tc

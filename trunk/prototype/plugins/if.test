@@ -1,0 +1,19 @@
+#!../bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/09/15
+#
+if condition=1 { echo string="if(1) works..."; } ;
+if condition=2 { 
+	echo string="if(2) works..."; 
+} ;
+if condition=0 { 
+	echo string="if(0) DOES NOT WORK"; 
+	assert_equal a=int 1 b=int 2;
+} ;
+if condition=0 { 
+	echo string="if(0)/else DOES NOT WORK"; 
+	assert_equal a=int 1 b=int 2;
+} else {
+	echo string="if(0) else branch works"; 	
+} ;

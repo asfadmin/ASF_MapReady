@@ -1,0 +1,8 @@
+[Lambert Azimuthal Equal Area]
+Area = Africa
+Datum = WGS84
+Spheroid = WGS84
+Central meridian = 25
+Latitude of origin = 0
+False easting = 0
+False northing = 0

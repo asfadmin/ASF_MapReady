@@ -1,0 +1,58 @@
+NAME: concat_dem
+
+SYNOPSIS:
+
+	concat_dem <out img.ext> <in img1.ext> [ <in img2.ext> [...]]
+	 	
+		<out img.ext>  Name of LAS 6.0 image to be created.
+		<in img...>  single-banded LAS images.
+
+DESCRIPTION:
+	Concat_dem combines the input images to create an output image,
+respecting the geolocations of each image.  It will translate the images 
+so they line up with one another, but not rotate or flip them
+(for that, use the geocode(1) program).
+
+	Where several input images overlap, concat_dem combines them
+by finding the trimmed average of their values, as described below.
+
+	Unlike concat(1), concat_dem did not begin life as a LAS tool.
+Concat_dem works best with Digital Elevation Models (DEMs), while
+concat is aimed at SAR images.
+
+
+OPTIONS:
+	The output.ext parameter is the name of a LAS 6.0 image to be created.
+The pixels of the output image are a trimmed mean of the pixels of the
+input images-- the algorithm used for each output pixel is:
+	-find the average value of all non-zero input pixels
+	-throw out pixels that differ by more than 60m from the average
+	-re-average remaining values
+
+	The input images can be any sort (byte, short, float, long) of 
+single-banded LAS images in any LAS projection, but they must all
+be in the same map projection and have the same pixel size.
+
+ERROR MESSAGES:	
+ MESSAGE GIVEN:				REASON:
+------------------------------------------------------------------------
+
+EXAMPLES:
+  
+  >concat_dem output.dem in1.img in2.img in3.img
+Finds the trimmed average of in1, in2, and in3, which need not
+cover exactly the same ground area.
+
+SEE ALSO:
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: Orion Lawlor, 6/98
+
+CONTACT:
+	apd@asf.alaska.edu
+	http://www.asf.alaska.edu/apd
+
+

@@ -1,0 +1,96 @@
+.TH multilook 1 "February 2004"
+
+.SH NAME:
+multilook \- Converts an interferogram's .amp & .phase files into an image.
+
+.SH SYNOPSIS:
+.B "multilook"
+[-l \fIh\fPx\fIw\fP] [-s \fIh\fPx\fIw\fP] [-n metafile] [-a]
+.in +10
+.BI "<interferogram> <outfile>"
+
+.SH DESCRIPTION:
+.B "Multilook "
+is a low pass filter which also makes the image square (i.e. makes the aspect
+ratio equal to one). It does this by performing a box average on some number of
+pixels.
+.PP
+For ERS-1, and ERS-2, this box should be 5 pixels in azimuth by 1 pixel in range
+in order to produce neraly square pixels (This is the default). For JRS, the box
+should be 3x1 pixels. For RADARSAT, the box should be 3x1 for most beams, but
+1x1 for fine beams.
+.PP
+In
+.B "multilook", 
+look area is defined using option switches, but has default values of 1 col (1
+pixel in range) and 5 rows (5 pixels in azimuth). The step area defines the size
+of the input area that will be made equal to 1 pixel in the output area. The
+look area defines how much input data will be used to determine the value of one
+pixel in the output data.
+.B "Multilook "
+uses default values of 1 col and 5 rows for step area. In most cases, the
+default look values should work. For noisy data, try a look area of 2 cols by 10
+rows.
+.PP
+To calculate multilooked amplitude, add the square of each amplitude value in
+look area.  Divide by the number of amplitude entries and take square root of
+this value.  To calculate multilooked phase, add all the real parameters of each
+entry in look area. Then add all the imaginary parameters of each entry in look
+area. Take atan2() of imag over real.
+.PP
+Multilook creates an amp, phase, and a corresponding ASF tools image file
+including a .meta file. The image file has byte data in 3 bands. The first band
+corresponds to red, the second to green, and the third to blue. The bands are in
+sequential order.
+
+.SH COMMAND LINE OPTIONS:
+.TP 8
+.B "-l \fIh\fPx\fIw\fP"
+Change the height (azimuth size) and width (range size) of the look box. Default is 5x1.
+.TP 8
+.B "-s \fIh\fPx\fIw\fP"
+Change the height and width of the step box. Default is 5x1.
+.TP 8
+.B "-n metafile"
+Change the look and step box to nLooks by 1 (as read from metafile).
+.TP 8
+.B "<interferogram>"
+Input interferogram files (.amp, .phase, .ddr). Usually the output of igram(1).
+.TP 8
+.B "<outfile>"
+Output image (.amp, .phase, .img, .ddr).
+.B "Multilook"
+creates a ASF tools image with a corresponding DDR that can be displayed.
+All extensions are automatically added.
+
+.SH EXAMPLES:
+.ce 1
+example% multilook ifm1 fred
+.PP
+Multilook the amplitude and phase files ifm1.amp and ifm1.phase using
+image dimensions in ifm1.ddr, and store the results in fred.img,
+fred.ddr, fred.amp and fred.phase.
+.PP
+.ce 1
+example% multilook -l 10x2 ifm1 fred
+.PP
+Same as above except change the look area to 10 rows and 2 cols.
+
+.SH SEE ALSO:
+deramp (1), igram(1)
+
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+None known.
+
+.SH BUGS:
+None known.
+
+.SH AUTHOR:
+Mike Shindle,  6/1997
+.br
+Patrick Denny, 2/2004
+
+.SH CONTACT:
+uso@asf.alaska.edu
+.br
+http://www.asf.alaska.edu

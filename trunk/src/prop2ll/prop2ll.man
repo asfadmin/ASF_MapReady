@@ -1,0 +1,39 @@
+
+    NAME:  prop2ll --
+
+    SYNOPSIS:  prop2ll <rsvFile> <inVecFile> <outLATLONfile>
+
+    DESCRIPTION:  Takes as input the raw state vectors of a given orbit
+	(rsvFile) and uses those to convert the list of inertial
+	coordinates contained in inVecFile created by 'propagate' to a
+	list of lat/lon coordinates for the near and far edge of a swath,
+	given nominal near and far look angles.
+
+    OPTIONS:
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+    Program Aborted				One or more external
+						associates terminated
+						abnormally.  
+    Couldn't open data file: <filename>		The file, <filename>,
+						could not be read.
+
+    EXAMPLES:	prop2ll e1_24222.rsv PROP.1 LatLon.1
+	    This takes the propagated ssv inertial coordinates contained
+	in PROP.1 as generated with 'propagate' and uses the raw state
+	vectors of e1_24222 to create a file, LatLon.1, with latitude and
+	longitude coordinates of the near and far edges of the swath, given
+	nominal near and far look angles.
+
+    SEE ALSO:
+
+	propagate  ll2proj
+
+    AUTHOR:  Mike Jessop.  Updated by J. Badgley, 11/00.
+
+    CONTACT: Rick Guritz -- rguritz@asf.alaska.edu
+	     Tom Logan -- tlogan@asf.alaska.edu
+
+

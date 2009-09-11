@@ -1,0 +1,160 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
+<book>
+  <bookinfo>
+    <date>June, 2008</date>
+    <title>The ASF MapReady Installation Guide</title>
+  </bookinfo>
+  <toc></toc>
+  <chapter id="obtaining">
+    <title>Obtaining and Installing the Tool</title>
+    <para>The latest version can be downloaded from the ASF web
+       site at http://www.asf.alaska.edu.
+    </para>
+    <para>How you install the tool depends on which operating system
+       you are using. Windows packages come with an installer, Linux
+       packages come as an RPM, and Source packages contain source
+       code with an autoconf-style configure script.</para>
+
+    <sect1 id="Windows">
+      <title>Windows Installation</title>
+      <para>The Windows package contains just a single file, the
+        installer.</para>
+      <para>To install, you open the archive file that
+        you downloaded (double-clicking on it will open it); then
+        run the installer program contained within.</para>
+      <para>After installation, you will have a start-menu group
+        called "ASF Tools", and inside that another program group
+        called "MapReady 2.0".  Inside that group, "ASF MapReady" is
+        the main program (formerly known as "Convert").</para>
+      <para>The "MapReady 2.0" start menu group also contains a link to the
+        ASF MapReady Manual, an extensive document that describes
+        all of the installed programs and contains examples of their use.</para>
+      <para>Also installed: ASF View (a viewer application which can display
+        CEOS format data, as well as GeoTIFFs, ASF Internal Format files, etc.),
+        the CEOS Metadata Viewer, and the Projection Coordinate Conveter. 
+      </para>
+      <para>By default, the installer also creates desktop icons for MapReady
+        and ASF View.</para>
+    </sect1>
+
+
+    <sect1 id="Linux">
+      <title>Linux Installation</title>
+      <para>To install the RPM, you must have root access. If you
+        do not, you will need your system administrator to install
+        the package for you. If this is not feasible, the Source
+        package can instead downloaded, compiled, and installed
+        in your own home directory which does not require root
+        privileges.</para>
+      <para>To install the package:</para>
+      <para>First extract the rpm from the archive:</para>
+      <simplelist>
+        <member>gunzip mapready-X.X.X-linux.tar.gz</member>
+        <member>tar xvf mapready-X.X.X-linux.tar</member>
+      </simplelist>
+      <para>Then, as root, install the rpm:</para>
+      <simplelist>
+        <member>rpm -i asf_mapready-X.X.X-1.i386.rpm</member>
+      </simplelist>
+      <para>(Of course you need to replace the X's with whatever
+        version you downloaded, for example:
+        "rpm -i asf_mapready-2.0.5-1.i386.rpm")
+      </para>
+      <para>After the package is installed, you can find out where
+        individual compenents were put by using this rpm command,
+        which does not require root access:</para>
+      <simplelist><member>rpm -ql asf_mapready | grep asf_import</member></simplelist>
+      <para>You should see something like the following:</para>
+      <simplelist><member>/usr/local/bin/asf_import</member></simplelist>
+      <para>which tells you that the package has been installed in
+        /usr/local, which is the default.</para>
+      <para>This directory needs to be added to your path, in order to
+        run the tools. Exactly how you do this depends on which UNIX
+        shell you are using.</para>
+      <para>For example, suppose the software was installed in
+        /opt/asf_tools.  For sh, ksh, bash, or the like, add these lines
+	to your ~/.profile or ~/.bashrc file:</para>
+      <simplelist>
+        <member>PATH=/opt/asf_tools/bin:$PATH</member>
+        <member>export PATH</member>
+      </simplelist>
+      <para>For csh or tcsh, add this line to your ~/.cshrc file:</para>
+      <simplelist>
+        <member>setenv PATH /opt/asf_tools/bin:$PATH</member>
+      </simplelist>
+      <para>If you've gone with the default installation location of
+        /usr/local, you may already have /usr/local/bin in your path,
+        in which case you don't need to do anything.</para>
+    </sect1>
+
+    <sect1 id="Source">
+      <title>Source Installation</title>
+      <para>After you've downloaded the archive, you need to extract
+      the package and compile the tools before they can be installed.
+      To do this, make sure you're in the directory where the archive
+      was downloaded to and:</para>
+      <para>First extract the directory tree from the archive:</para>
+      <simplelist>
+        <member>gunzip mapready-X.X.X-src.tar.gz</member>
+        <member>tar xvf mapready-X.X.X-src.tar</member>
+      </simplelist>
+      <para>Then build the tools. Please note that you will need
+      permissions to put files into [[installation location]]! The
+      default is /usr/local.</para>
+      <simplelist>
+        <member>cd asf_tools</member>
+        <member>./configure --prefix=[[installation location]]</member>
+        <member>make</member>
+      </simplelist>
+      <para>Next install them:</para>
+      <simplelist>
+        <member>make install</member>
+      </simplelist>
+      <para>Lastly you need to include the tools in your path. You do this
+      one of two ways depending on the UNIX shell you are using.</para>
+      <para>For sh, ksh, bash, and the like, add the following lines to
+      either the ~/.profile or ~/.bashrc file.</para>
+      <simplelist>
+        <member>PATH=[[installation location]]/bin:$PATH</member>
+        <member>export PATH</member>
+      </simplelist>
+      <para>For csh or tcsh, add this line to the ~/.cshrc file:</para>
+      <simplelist>
+        <member>setenv PATH [[installation location]]/bin:$PATH</member>
+      </simplelist>
+      <para>For example, say you would like to install the tools in
+      a folder called "asf_tools" in your home directory
+      (/home/jdoe/asf_tools), and you use the bash UNIX shell</para>
+      <simplelist>
+        <member>./configure --prefix=/home/jdoe/asf_tools</member>
+        <member>make</member>
+        <member>make install</member>
+        <member>echo "PATH=/home/jdoe/asf_tools/bin:$PATH" >> ~/.bashrc</member>
+        <member>echo "export PATH" >> ~/.bashrc</member>
+      </simplelist>
+    </sect1>
+  </chapter>
+
+  <chapter id="contacting-us">
+    <title>Contacting Us</title>
+    <para>If you have any questions or comments about this software,
+      we would love to hear from you!</para>
+    <address>
+      Mailing address:
+        <othername>Alaska Satellite Facility</othername>
+        <othername>Geophysical Institute</othername>
+        <othername>University of Alaska Fairbanks</othername>
+        <pob>P.O. Box 757320</pob>
+        <city>Fairbanks</city>, <state>AK</state> <postcode>99775-7320</postcode>
+
+      E-Mail: <ulink url="mailto:uso@asf.alaska.edu">uso@asf.alaska.edu</ulink>
+      Phone: <phone>907 474-6166</phone>
+      Fax: <fax>907 474-2665</fax>
+
+      Web page: <ulink url="http://www.asf.alaska.edu/">http://www.asf.alaska.edu</ulink>
+    </address>
+
+  </chapter>
+</book>

@@ -1,0 +1,7 @@
+# Layover/shadow mask look up table
+0 0 0        # NOT USED! (the values are numbered starting at 1)
+0 0 0        # normal
+0 0 153      # user masked (e.g.  water)
+255 64 0     # shadow
+0 153 32     # layover
+64 64 64     # invalid (e.g.  edges)

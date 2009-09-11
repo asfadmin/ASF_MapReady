@@ -1,0 +1,32 @@
+
+    README FILE FOR concatm --  Creates a mosaic of LAS 6.0 images, using
+				user specified locations.
+
+    PACKING LIST:
+    This ASF software tool release is based on modified LAS 6.0 routines.
+    They were modified in order to remove dependencies on TAE to allow
+    operation for the Unix command-line.
+
+        NAME            DESCRIPTION
+	make.sun	Unix Make tool script, builds executable for Suns
+	concatm.c	Main routine
+	concatm.readme	This file;  Installation instructions and notes 
+	concatm.man	Unix style man page/help file
+	averopt.c	Sets values for the averaging option choosen
+	overlay_img.c	Overlays input images into output image
+	pad.c		Creates the output image (padded to mask value)
+	set_dtype.c	Determines output data type 
+
+    INSTALLATION INSTRUCTIONS:
+    This executable relies on the library file asf_las.a and on LAS 6.0
+    include files.  These files are included with this software tool 
+    release and should be available in the directory asf_tools/lib/SYS/
+    where SYS is the name of the local system type.
+
+    SITE SPECIFIC MODIFICATIONS:
+    The routine c_getsys.c, in the asf_las.a library, may need to be modified
+    to indicate the correct system numerical representation type.
+
+    TEST/EVALUATION PROCEDURES:
+
+    NOTES:

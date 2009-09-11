@@ -1,0 +1,41 @@
+Create Thumbs Version History
+
+Create Thumbs 2.0.5 (unleashed 2009 April 21)
+Bug Fixes
+- When processing Level 0 STF format RSAT data
+  errors for 'Cannot find CEOS format file' would
+  occur when exporting to JPEG.
+
+Create Thumbs 2.0.4 (released 2009 April 17)
+New Functionality
+- Added L1.1 SLC support (produces a single amplitude
+  thumbnail or browse image)
+Bug Fixes
+- Given a data set from ALOS, was producing a
+  thumbnail for every file, i.e. LED-, IMG-, etc.
+
+Create Thumbs 2.0.2 (released 2008 December 09)
+Bug Fixes
+- Some output images were scaled to sizes a lot
+  smaller than requested with -size option (noting
+  that the requested maximum size is a limit, not
+  a guaranteed exact result ...resampling gets
+  close but not exact.)
+- Multiple results were produced for ALOS images, i.e. one
+  for the VOL- file, the TRL- file, the LED- file, as well
+  as all of the IMG- files.  Now only produces results for
+  the IMG- files (one for each band.)
+- If the output folder is the same as the data folder and
+  create_thumbs were run twice, 'read past end of file'
+  errors could occur.
+
+Create Thumbs 2.0.1 (released 2008 October 28)
+New Functionality
+- Added support for JAXA Level 0 (AVNIR-2) data
+
+Bug Fixes
+- Fixed crash occurring when processing swaths whose
+  acquisition time spanned midnight
+
+<NOTE: Version History not actively maintained prior to version 2.0.1>
+

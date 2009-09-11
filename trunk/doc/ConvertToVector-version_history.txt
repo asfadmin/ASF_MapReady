@@ -1,0 +1,30 @@
+Convert To Vector Version History
+
+Convert to Vector 2.2.4 (released 2009 April 29)
+New Features
+* Ability to convert STF files, TerraSAR-X files.
+
+Convert to Vector 2.1.1 (released 2009 January 9)
+New Features
+* Capability to convert general KML files, not just those created by
+  convert to vector.
+* Support for converting URSA files.
+* Capability to customize which metadata fields are placed in the output file
+  by use of a configuration file.
+
+
+
+Initial public release:
+Convert To Vector 2.0.4
+2008 July 30
+ASF releases a light duty software kit, Covert to Vector. This tool transforms
+point or scene information to various other formats that are compatible with
+external applications such as Google Earth(tm), GIS software such as
+ArcGIS(tm), text editors, and spreadsheets. One of the primary purposes of this
+software is to enable users to quickly and easily view the extents of a SAR
+dataset or a metadata file. This is done simply by dropping the file in
+question into the Convert to Vector tool which can automatically detect the
+data type, create a new file based on the available data, and open that file
+in Google Earth to display the image boundaries. Of course, other
+transformations are possible; all the tool needs is latitude and longitude
+information.

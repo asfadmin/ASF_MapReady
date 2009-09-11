@@ -1,0 +1,12 @@
+#!../bin/clui
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/09/15
+#
+echo string='This is a string.';
+echo string='This is a string, with integer:' int=23;
+echo string='This is a string, with integer & real' int=23 real=3.456;
+echo int=999;
+echo string='Generic int:'   generic=int  12;
+echo string='Generic real:'    generic=real  12.0;
+echo string='Generic string:' generic=string 'generic-style string';
+

@@ -1,0 +1,58 @@
+#!/bin/sh
+
+if [ $# -lt 2 ]
+then
+  echo "Usage:"
+  echo "  zerofilltest <Palsar basename> <geocode height>"
+  echo ""
+  echo "Example:"
+  echo "  zerofilltest ALPSRP042631270-H1.5_UA 450"
+  echo ""
+  echo "Creates four UTM geotiffs with different zero fill removal"
+  echo "  <basename>_none.tif   --No zerofill removed"
+  echo "  <basename>_top.tif    --Top/bottom zerofill removed"
+  echo "  <basename>_left.tif   --Left/right zerofill removed"
+  echo "  <basename>_both.tif   --Top/bottom & left/right zerofill removed"
+  echo "Geocoded to a height of 450m."
+  exit 1
+fi
+
+Do() {
+	echo "Executing> $@"
+	"$@" || exit 1
+}
+
+Do asf_import $1 $1
+Do trim_zeros -dqtest $1
+
+Do asf_geocode -p utm --height $2 $1 $1_utm
+Do asf_export -format geotiff $1_utm $1_both
+
+Do asf_geocode -p utm --height $2 $1_top $1_top_utm
+Do asf_export -format geotiff $1_top_utm $1_top
+
+Do asf_geocode -p utm --height $2 $1_left $1_left_utm
+Do asf_export -format geotiff $1_left_utm $1_left
+
+Do asf_geocode -p utm --height $2 $1_none $1_none_utm
+Do asf_export -format geotiff $1_none_utm $1_none
+
+exit 1
+echo "Deleting temporary files..."
+rm $1_none.img
+rm $1_none.meta
+rm $1_none_utm.img
+rm $1_none_utm.meta
+rm $1_left.img
+rm $1_left.meta
+rm $1_left_utm.img
+rm $1_left_utm.meta
+rm $1_top.img
+rm $1_top.meta
+rm $1_top_utm.img
+rm $1_top_utm.meta
+rm $1.img
+rm $1.meta
+rm $1_utm.img
+rm $1_utm.meta
+

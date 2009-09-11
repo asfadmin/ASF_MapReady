@@ -1,0 +1,72 @@
+NAME:  auto_swath_mosaic - create a mosaic from two or more nongeocoded
+			   images. Will also calibrate the input images and
+			   resample the final mosaic.
+
+SYNOPSIS: 
+
+	auto_swath_mosaic [-c] [-r sample_size] output_file <input files...>
+
+
+DESCRIPTION:
+
+     Auto_swath_mosaic takes as input a set of files from a single
+     swath.  The output is a pasted-together image of the entire
+     swath.
+
+OPTIONS:
+
+     -c                Calibrate option. Do not calibrate images before
+                       performing the mosaic. 
+
+     -r                Resample size. Final mosaic will be resampled to
+                       specified pixel size. For example, low resolution
+                       ASF images have a pixel size of 100m. By placing a
+                       -r 300 on the command line, the final mosaic would
+                       have a pixel size of 300m. 
+
+     input files...    Multiple input CEOS SAR images.
+
+     output_file       Name of final mosaic, which will be in LAS format.
+
+ERROR MESSAGES:
+	MESSAGE GIVEN:                           REASON:
+------------------------------------------------------------------------------
+
+EXAMPLES:
+
+   Mosaic the CEOS files E1203, E1204, and E1205 into the
+   LAS image swath.img:
+
+	example% auto_swath_mosaic swath E1203 E1204 E1205
+
+   
+   Works exactly as above, but data is not calibrated before mosaicing.
+
+	example% auto_swath_mosaic -c swath E1203 E1204 E1205
+   
+   Same as above, but resample swath.img to 500m resolution.
+
+	example% auto_swath_mosaic -r 500 swath E1203 E1204 E1205
+
+
+SEE ALSO:
+   accum_offset
+   auto_swath_mosaic (shell script)
+   calibrate
+   concatm
+   metadata
+   sarin
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR:
+   Mike Shindle, Alaska SAR Facility, Fairbanks, AK
+  
+
+CONTACT:
+   apd@asf.alaska.edu
+   http://www.asf.alaska.edu/apd
+
+

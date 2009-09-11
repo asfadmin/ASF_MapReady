@@ -1,0 +1,41 @@
+NAME: genab
+
+SYNOPSIS: genab <seeds> <base> <meta> <A> <b>
+
+DESCRIPTION:
+	Genab is called by refine_base, and only refine_base.
+	
+	    Genab is used during the process of baseline refinement
+	to generate the matrix A and vector b (hence the name: gen A b)
+	for use with bp(1).  
+	
+	    It uses a tie point file and the CEOS metadata to do so.
+ 
+OPTIONS:
+	<seeds>: data file containing elevation, tie point, & phases
+		 format:  indx    x    y    z    uwp
+	<base>:  file containing baseline params. used to unwrap
+	         format:  Bn_c   dBn   Bp_c   dBp
+	
+	<meta>:  the name of the file that contains the
+	         metadata for image 1 of the interferogram pair.
+	<A>:     output matrix (for bp(1))
+	<b>:     output vector (for bp(1))
+	
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+-------------------------------------------------------------------
+
+EXAMPLES:
+
+SEE ALSO:
+	getphase(1), bp(1)
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: Rob Fatland, ASF 1997
+
+CONTACT: apd@asf.alaska.edu
+	 or visit http://www.asf.alaska.edu/apd

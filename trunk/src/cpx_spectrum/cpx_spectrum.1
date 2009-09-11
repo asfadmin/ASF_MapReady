@@ -1,0 +1,61 @@
+NAME:cpx_spectrum- Calculates the azimuthal spectrum of a complex image product 
+
+SYNOPSIS:
+  cpx_spectrum <complex img input> <azimuthal spectrum file> <start_line>
+
+	<complex img input>		Input Complex Image
+	<azimuthal spectrum file>	ASCII file containing the spectrum
+	<start_line>			Line to begin processing at
+
+    DESCRIPTION:
+
+	This program is used to generate an azimuthal spectrum of
+	a complex  SAR image  product.   Its  main use is for bandpass filtering
+	of complex image data (see cpx_autofilter) .It takes a processed complex 
+	image and calculates an average azimuthal spectrum over all the range
+	samples.  It uses a simple one-dimensional FFT to calculate the 
+	spectrum and outputs the frequency, amplitude, and phase an ASCII
+	file for inspection.  The output file appends the extension .spectra
+	to the end of the <azimuthal spectrum file> filename.
+	The file format is:
+	
+	Column #
+	1.  Frequency - All positive values.  The FFT has been examined from 0->fs
+	where fs is the sampling frequency.  Standard FFT's generate data from 
+	-fs/2->fs/2, but since this data is complex, there is no intrinsic symmetry
+	so 0->fs is perfectly acceptable.  For ERS1-ERS2 fs~1679 Hz or 1 PRF.
+
+	2.  Amplitude - The amplitude of the calculated spectrum.  This is a linear
+	representation of the amplitude spectrum.
+	
+	3.  Phase - The phase of the calculated spectrum.  This field doesn't really
+	appear to have much use, but was included for completeness.
+
+		This file is very easy to view in a program such as Matlab or Excel.  
+OPTIONS:
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+---------------------------------------------------------------------------    
+
+EXAMPLES:
+	Suppose you have an input image ers1.cpx, then to generate the
+        azimuthal spectrum, the command line input would simply be:
+
+	cpx_spectrum ers1.cpx ers1 0
+		
+SEE ALSO:
+
+	cpx_autofilter(1), pcpx_autofilter(1)
+
+HARDWARE/SOFTWARE LIMITATION:
+
+BUGS:
+
+AUTHOR: Mark Ayers, ASF Graduate Research Assitant, 2000
+
+CONTACT:  apd@asf.alaska.edu
+          or visit http://www.asf.alaska.edu/apd
+
+
+

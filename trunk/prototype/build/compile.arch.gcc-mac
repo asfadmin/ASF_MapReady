@@ -1,0 +1,9 @@
+#!/bin/sh
+CXX="g++"
+CFLAGS_ARCH="-Wall"
+SHARED="-dynamiclib "
+DllToOutput() {
+	echo "-o $1 -install_name "`pwd`"/$1"
+}
+RPATHS=" -L../lib "
+

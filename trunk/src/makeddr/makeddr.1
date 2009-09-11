@@ -1,0 +1,132 @@
+NAME:
+  makeddr  --  creates a ddr file from the command line.
+
+SYNOPSIS:
+  makeddr [<projection> <specific parameters> <ULn> <ULe> <LRn> <LRe> <pdist>]
+	  [-log <file>] [-d <datum code] <filename> <nl> <ns> <type>
+	  
+DESCRIPTION: 
+	Create a LAS 6.0 DDR (Data Descriptor Record) from the command line.
+  This is only useful when you don't have a DDR already (which is actually
+  pretty rare, but when you need one it's tough to get along without it).
+  This might happen if you're importing data from an source that doesn't use
+  LAS (the Land Analysis System).
+
+  The required inputes are:
+    filename	The created DDR is called "filename.ddr".
+    nl		Describes an image with a height of nl lines.
+    ns		Describes an image with a width of ns samples.
+    type	The data types are:
+
+	data type	Description
+	----------------------------------------------------------------
+	byte		unsigned 1 byte integer data
+	short		signed 2 byte integer data
+	long		signed 4 byte integer data
+	float		IEEE 4 byte single-precision floating-point data
+	double		IEEE 8 byte double-precision floating-point data
+
+
+OPTIONS:
+  -log	Option to have output written to a log <file>.
+
+  -d	Option to specify a <datum code>
+  	  The datum code is a predefined number describing the eccentricity
+	  of the earth. Here is a table:
+	CODE      DATUM NAME            EQUITORIAL RADIUS       POLAR RADIUS
+	  0:   Clarke 1866                 6378206.4           6356583.8
+	  1:   Clarke 1880                 6378249.145         6356514.86955
+	  2:   Bessel                      6377397.155         6356078.96284
+	  3:   International 1967          6378157.5           6356772.2
+	  4:   International 1909          6378388.0           6356911.94613
+	  5:   WGS 72                      6378135.0           6356750.519915
+	  6:   Everest                     6377276.3452        6356075.4133                          
+	  7:   WGS 66                      6378145.0           6356759.769356                      
+	  8:   GRS 1980/WGS 84             6378137.0           6356752.31414   
+	  9:   Airy                        6377563.396         6356256.91
+	 10:   Modified Everest            6377304.063         6356103.039        
+	 11:   Modified Airy               6377340.189         6356034.448
+	 12:   Walbeck                     6378137.0           6356752.314245
+	 13:   Southeast Asia              6378155.0           6356773.3205
+	 14:   Australian National         6378160.0           6356774.719
+	 15:   Krassovsky                  6378245.0           6356863.0188                          
+	 16:   Hough                       6378270.0           6356794.343479
+	 17:   Mercury 1960                6378166.0           6356784.283666
+	 18:   Modified Mercury 1968       6378150.0           6356768.337303   
+	 19:   Sphere                      6370997.0           6370997.0
+
+  -p	Option to specify the type of projection to interpret the associated
+	  image with. If you need to do any geographic analysis with the data,
+	  you will need to enter geolocation information as well.  This is
+	  done via optional command line parameters.  All projections require
+	  the following information:
+
+	Projection type			(Described below)
+	Projection parameters		(Described below)
+        ULn				Upper Left Northing Coordinate
+        ULe				Upper Left Easting Coordinate
+        LRn				Lower Right Northing Coordinate
+        LRe				Lower Right Easting Coordinate
+        pdist				Projection Distance (units per pixel)
+
+	NOTE: ULn, ULe, LRn, LRe, and pdist units are meters for all
+		projections except GEOGRAPH in which case they are in degrees
+
+	Projection |		Parameters			| Units
+	-----------+--------------------------------------------+-----
+	  GEOGRAPH | N/A					| N/A
+	  PLSTEREO | Standard Parallel, Central Meridian	| degrees
+	       UTM | Zone					| Zone number
+	  LAMAZEQA | Central Latitude, Central Longitude,	| degrees
+		   |	Radius of reference sphere		| meters
+	    ALBERS | 1st Standard Parallel, 2nd Std Parallel,	| degrees
+		   |	Central Meridian			| degrees
+
+
+EXAMPLES:
+     1)	If you want to make a ddr for a floating-point image named "bob.amp"
+        with dimensions of 100 lines by 20 samples, type:
+	
+	makeddr bob 100 20 float
+	
+	And the program will create a 1-band DDR named "bob.ddr".
+
+     2) If you want to make a ddr for a unsigned 2-byte int image named
+	"mydem.img" with dimensions of 7480 lines by 5911 samples, 
+	geolocations of Upper Left (6652899.87North, 440890.23East) and
+  	Lower Right (6428499.87North, 618220.23East) in UTM Zone 8 at 
+	30.0 meter pixel spacings, type:
+
+	makeddr  -p UTM 8 6652899.87 440890.23 6428499.87 618220.23 30.0 \
+	  mydem 7480 5911 short
+
+	(don't type the '\' it is there only to signify a wrapped line)
+
+	And the program will create a 1-band int*2 DDR named "mydem.ddr"
+	with valid projection information.
+
+     3) If you want to make a ddr for a 8 byte floating point image
+        using a Geographic projection with dimensions 4096 lines by
+	2000 samples, geolocations of Upper Left (65.5north -146.0east)
+	and Lower Right (65.0north -145.0east), and 10.0 meter pixel
+	spacing, type:
+	
+        makeddr -p GEOGRAPH 65.5 -146.0 65.0 -145.0 10.0 mydem 4096 2000 \
+	  double
+        
+        (don't type the '\' it is there only to signify a wrapped line)
+
+        And the program will create a 1-band real*8 DDR named "mydem.ddr"
+        with valid projection information.
+
+SEE ALSO:
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+	
+AUTHORS: Orion Lawlor, Tom Logan, Patrick Denny
+
+CONTACT:
+	apd@asf.alaska.edu
+	http://www.asf.alaska.edu/apd

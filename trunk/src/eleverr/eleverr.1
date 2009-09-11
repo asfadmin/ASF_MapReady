@@ -1,0 +1,38 @@
+NAME:  eleverr -- generate DEM errors from coherence file
+
+SYNOPSIS: eleverr [-i <init_err>] [-log <file>] [-mask <file>]
+			<coherence> <base> <outfile>
+	      
+
+    <coherence>:  coherence file (from coh(1))
+         <base>:  file containing baseline parameters.
+	          format:  Bn_c   dBn   Bp_c   dBp 
+      <outfile>:  output file containing one sigma errors.
+	  
+DESCRIPTION:
+
+    Generate a slant range DEM error map from a coherence image and an
+    unwrapped phase file.
+    
+OPTIONS:
+	
+	-i init_err:  error associated with seed elevation in meters.
+	  		Default is 0.0 meters.
+	-log <file>:  allows the output to be written to a log file.
+	-mask <file>: mask file created by escher containg integration info.
+		
+EXAMPLE:
+
+SEE ALSO:
+	coh(1), tandem_ifm(1).
+
+HARDWARE/SOFTWARE LIMITATIONS: None known.
+
+BUGS: None known.
+
+AUTHOR: Mike Shindle
+
+CONTACT: apd@asf.alaska.edu
+	 http://www.asf.alaska.edu/apd
+
+

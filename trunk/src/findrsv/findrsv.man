@@ -1,0 +1,39 @@
+    NAME:  findrsv
+
+    SYNOPSIS:  findrsv inORBITfile inDEMfile outRSVfile
+
+    DESCRIPTION:  This program finds the raw state vectors in an
+	ORBITfile, verifies them against a DEMfile, and then writes them
+	out to an RSVfile (.rsv)
+
+    OPTIONS:
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+    No orbits cover the range			The raw state vectors are
+						outside the lat/lon
+						restraints of the DEMfile.
+    Couldn't open data file			There was a problem
+						opening inORBITfile.
+    Orbit number not found!			The specified orbit number
+						was not found in the given
+						ORBITfile.
+
+    EXAMPLES:
+		findrsv V1996_061_RSV.D main_utm5_dem e1_24222
+	 This will prompt for an orbit number, which will then be found in
+	V1996_061_RSV.D.  The corresponding data in the file will be
+	checked against the attributes of main_utm5_dem and then written
+	to e1_24222.rsv
+
+    SEE ALSO:
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR:	Mike Jessop
+
+    CONTACT:	rguritz@asf.alaska.edu
+

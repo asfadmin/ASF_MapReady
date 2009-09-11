@@ -1,0 +1,54 @@
+
+Tool name:
+   deskew
+
+Usage:
+   deskew <input file> <input metadata file> <output file> <output metadata file>
+             [-license] [-version] [-help]
+
+Description:
+   Deskew removes squint-induced skew from ground range images.
+   The squint angle of an image along with the look angle is used
+   to determine the amount of parallelogram shift skew that has
+   been introduced in an image due to the doppler centroid selection
+   during image processing.  It then remaps the image, using a bi-
+   linear interpolation, to remove this skew.
+
+Input:
+   <input file>  An ASF Internal format file (.img, .ddr) that has
+        not been deskewed (check the 'deskewed:' flag in the metadata
+        file sar block)
+   <input metadata file>  The metadata file that is associated
+        with the input file.
+
+Output:
+   <output file>  An ASF Internal format file (.img, .ddr) that
+        has been deskewed.
+   <output metadata file>  The metadata file associated with the
+        output file.
+
+Options:
+   -license
+        Print copyright and license for this software then exit.
+   -version
+        Print version and copyright then exit.
+   -help
+        Print this help information and then exit.
+
+See Also:
+   sr2gr (slant range to ground range converter), and
+   gr2sr (ground range to slant range converter)
+
+Contact:
+   Alaska Satellite Facility
+   Geophysical Institute
+   University of Alaska Fairbanks
+   P.O. Box 757320
+   Fairbanks, AK 99775-7320
+   http://www.asf.alaska.edu
+   uso@asf.alaska.edu
+deskew, version 6602 (part of MapReady 1.0.2-dev)
+
+Copyright (c) 2007, University of Alaska Fairbanks, Alaska Satellite Facility.
+All rights reserved.
+

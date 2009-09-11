@@ -1,0 +1,89 @@
+.TH coregister_coarse 1 "February 2004"
+
+.SH NAME:
+coregister_coarse \- calculate the pixel offset and baseline between two images 
+
+.SH SYNOPSIS:
+.B "coregister_coarse"
+.BI "[-log <file>] [-quiet]"
+.in +17
+.BI " <img1> <img2> <baseline> <ctrl-file>"
+
+.SH DESCRIPTION:
+Using orbital metadata and a FFT on the data files,
+.B "coregister_coarse"
+calculates the pixel offset of the second image to the first. 
+.B "Coregister_coarse"
+also creates a baseline file called \fIbaseline\fP. This file contains the 
+calculated baseline coordinates (both parallel and perpendicular) of the two 
+images plus the rate of change of these two values across the scene. The file 
+format is perpendicular baseline, rate of change, parallel baseline, and rate of 
+change. The rate of change is determined in meters per scene.
+.PP
+.B "Coregister_coarse"
+also creates a parameter file to be used with coregister_fine, the sub-pixel
+image registration program. It does this by lining up the amplitude images of
+the given complex scenes with 
+.BR "fftMatch".
+
+.SH ARGUMENTS:
+.TP 8
+.B img1
+First input image. This image is usually the earlier image of the pair. The data 
+format is either a short integer complex scene from ASF with the appropriate 
+metadata file, or float complex (.cpx) with valid ASF metadata (.meta). No 
+extension should be specified.
+.TP 8
+.B img2
+Second input image. This image is usually the later image of the pair. The data 
+format is either a short integer complex scene from ASF with the appropriate 
+metadata file, or float complex (.cpx) with valid ASF metadata (.meta). No 
+extension should be specified.
+.TP 8
+.B baseline
+Baseline file. This file will be created and the computed baseline values 
+written here. By convention, the baseline estimate is called base.00.
+.TP 8
+.B ctrl-file
+Fico parameter file. This file will be created and the necessary parameters for 
+fico will be entered.
+
+.SH OPTIONS:
+.TP 8
+.B -log
+Copies terminal output to a log \fIfile\fP.
+.TP 8
+.B -quiet
+Suppresses terminal (and log) output to only the essential.
+
+.SH EXAMPLES:
+.ce 1
+example% coregister_coarse 100 200 foo.base foo.ctrl
+.PP
+After calculating the image shift between these two images,
+.B "Coregister_coarse"
+will create the fico control file, foo.ctrl, using these and other parameters.
+The calculated baseline will be placed in the file foo.base.  The input scenes
+are assumed to be .cpx float complex data.
+.PP
+.PP
+
+.SH SEE ALSO:
+fico(1), fftMatch(1), igram(1)
+
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+None known.
+
+.SH BUGS:
+None known.
+
+.SH AUTHOR:
+Orion Lawlor,  6/1997
+.br
+Patrick Denny, 2/2004
+
+.SH CONTACT:
+uso@asf.alaska.edu
+.br
+http://www.asf.alaska.edu
+

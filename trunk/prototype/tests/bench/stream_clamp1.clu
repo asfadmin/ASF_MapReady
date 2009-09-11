@@ -1,0 +1,9 @@
+#!../../bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
+#
+
+image_input_las filename="tmp/benchfile.img";
+image_clamp min=5.2 max=5.8 in=@image_input_las.out;
+image_output_binary in=@image_clamp.out filename="tmp/clamped.img";

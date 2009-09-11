@@ -1,0 +1,17 @@
+mode = DEM
+reference dem = /3dsar2/tlogan/dem/alaska_fixed.img
+data type = STF
+coregistration = PATCH
+doppler = average
+deskew = 0
+maximum offset = 3
+precise master = /3dsar2/tlogan/PRC/ERS2
+precise slave = /3dsar2/tlogan/PRC/ERS1
+minimum coherence = 0.3
+phase unwrapping = snaphu
+tiles per degree = 10
+tile overlap = 100
+projection file = /export/apd/rgens/ips/albers_equal_area_conic_alaska.proj
+projection name = albers
+resampling method = bilinear
+pixel spacing = 20

@@ -1,0 +1,44 @@
+.TH c2p 1 "17 June 1996"
+.SH NAME:
+c2p \- complex to polar (amplitude & phase) stream converter
+.SH SYNOPSIS:
+.B "c2p"
+.BI "infile outfile"
+.SH DESCRIPTION:
+.B "C2p" 
+converts each complex value into an amplitude and phase value. These 
+values are written into files with the extensions "amp" and "phase".
+.PP
+The c2p program is part of the interferometry processing software and is
+meant to be used as the last step in sub-pixel registration. When 
+registration is finished, the .cpx files need to be converted into .amp 
+and .phase files. C2p preforms this conversion.
+.SH COMMAND LINE OPTIONS:
+.TP 8
+.B "infile"
+Input complex (cpx) file. 
+.TP 8
+.B "outfile"
+Output amplitude (amp), phase (phase), and data descriptor record (ddr)
+files.
+.SH ERROR MESSAGES:
+.SH MESSAGE_GIVEN: \t\t\t\t\tREASON:
+------------------------------------------------------------------------
+.SH EXAMPLES:
+.ce 1
+example% c2p bob ted
+.PP
+Creates three files ted.amp, ted.phase, and ted.ddr from the input file
+bob.cpx. 
+.SH SEE ALSO:
+.BR fico (1)
+.BR resolve (1)
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+.SH BUGS:
+.SH AUTHOR:
+\tMike Shindle, Alaska SAR Facility, Fairbanks, AK
+.SH CONTACT:
+\tapd@asf.alaska.edu
+\thttp://www.asf.alaska.edu/apd
+
+

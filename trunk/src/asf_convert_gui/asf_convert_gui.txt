@@ -1,0 +1,1106 @@
+                                  ASF MapReady
+
+   ---------------------------------------------------------------------------
+
+   Table of Contents
+
+   [1]Overview
+
+   [2]General Tab Options
+
+   [3]Import Tab Options
+
+   [4]Polarimetry Tab Options
+
+   [5]Terrain Correction Tab Options
+
+   [6]Geocode Tab Options
+
+   [7]Export Tab Options
+
+   [8]The File List Sections
+
+   [9]Process All
+
+   [10]Toolbar Buttons
+
+   [11]Processing Caveats
+
+   [12]Contacting Us
+
+   ---------------------------------------------------------------------------
+
+                                    Overview
+
+    ASF MapReady is a program for converting SAR data into a GIS-ready image
+   format (i.e., GeoTIFF). Also, the SAR data can be geocoded, and/or terrain
+   corrected. Version 2.0 (and later) versions of MapReady now supports SLC
+   (single-look complex) SAR data, and for quad-pol SLC (i.e., ALOS/PALSAR
+   Level 1.1) data, some polarimetric analysis is supported.
+
+    This document only pertains to the ASF MapReady tool in its graphical
+   user interface form. For information on the command- line version of this
+   and other common ASF command-line tools, please refer to the ASF MapReady
+   User's Manual. Other tools are documented separately and/or display help
+   information by providing the -help flag (alone) on their command lines.
+
+    The ASF MapReady tool performs the following functions, all of which are
+   optional processing steps (other than import):
+
+    1. Data Import (required):
+
+        Imports a wide variety of satellite data formats into ASF Internal
+       Format. Note: If the data is already in ASF Internal Format, it is
+       read directly for processing. Import processing includes the option of
+       processing to a particular radiometry selection (Amplitude, Power,
+       Sigma, Beta, or Gamma). Import options may be set on the Import tab.
+       ASF Internal format consists of 2 files, a) a metadata file that
+       contains information about the data itself, and b) a binary file which
+       contains the pixels of data themselves. All processing by ASF tools
+       other than import require the data to be in ASF Internal Format file
+       format.
+
+    2. Polarimetry:
+
+        Allows the user to select one of a few standard polarimetric
+       decompositions to process quad-pol SLC (single-look complex) data.
+       Currently, this means ALOS/Palsar Level 1.1 data, though the Sinclair
+       decomposition can be done with quad-pol Palsar 1.5 data. Using a
+       polarimetric decomposition is a technique used to visualize the great
+       deal of information contained in quad-pol data with an RGB image.
+
+    3. Terrain Correction:
+
+        Terrain correction processing allows geometric correction of SAR
+       related geolocation errors, and optionally, radiometric correction of
+       backscatter variation caused by local changes in topology. Terrain
+       correction options, including selection of an appropriate DEM, may be
+       set on the Terrain Correction tab.
+
+    4. Geocoding:
+
+        Geocoding map-projects a SAR, or previously- geocoded, image into a
+       user-selected map projection. Geocode options may be set on the
+       Geocode tab.
+
+    5. Export:
+
+        Export processing transorms an ASF Internal Format image (from
+       importation or previous processing of data) into graphics file formats
+       such as JPEG, TIFF, and GeoTIFF for greater compatibility with other
+       GIS and data-viewing programs. Export options may be set on the Export
+       tab. If no export is to be performed then the result of the selected
+       processing will be in ASF Internal Format (see Data Import above.)
+       Note that after exporting, a metadata (.meta) file will remain. The
+       information in the metadata file represents the data prior to export,
+       i.e., before remapping values to bytes etc ... which means information
+       such as data statistics may not be valid for the exported file (but is
+       valid for the data prior to export).
+
+   Navigating the Graphical User Interface (GUI):
+
+    The graphical user interface is divided up into several major sections:
+
+   
+
+    1. Settings Section:
+
+        The top approximate one third of the application window is the
+       'Settings' section. It may be hidden or shown by clicking the small
+       button in the top-left portion of the window (red ball with a minus
+       sign or green ball with plus sign.)
+
+        In the Settings section, you are presented with 5 different settings
+       tabs, one for each available processing step. MapReady starts up with
+       the General tab displayed.
+
+    2. Summary Section:
+
+        The Summary Section is located in the top-right portion of the
+       application window and is visible at all times. It shows the current
+       status of all settings at a glance.
+
+    3. Input Files Section:
+
+        The Input Files section occupies the center third of the application
+       window and is where both the list of data files to be processed
+       resides as well as a variety of buttons that provide file-specific
+       functionality, i.e. viewing a data set's metadata or the area
+       subtended by the image and shown by Google Earth(tm). The Input Files
+       section may be hidden or shown by clicking the small button in the
+       top-left portion of this section (red ball with a minus sign or green
+       ball with plus sign.)
+
+    4. Output Files Section:
+
+        The Output Files section occupies the bottom third of the
+       application window and is where both the list of data files that have
+       completed processing resides as well as a variety of buttons that
+       provide file-specific functionality, i.e. viewing a data set's ASF
+       metadata or the area subtended by the image and shown by Google
+       Earth(tm). The Output Files section may be hidden or shown by clicking
+       the small button in the top-left portion of this section (red ball
+       with a minus sign or green ball with plus sign.)
+
+    ASF MapReady was designed so that all pertinent settings are visible and
+   available to the user for individual each processing step. Each processing
+   step has its own tab. All settings and selections are available as
+   buttons, checkboxes, radio buttons, and drop-down list ...not buried or
+   hidden in multi-level menus.
+
+   ---------------------------------------------------------------------------
+
+                              General Tab Options
+
+    The General Tab is your starting point when using MapReady. On this tab,
+   you select which processing steps you wish to utilize and whether or not
+   you wish to save all intermediate files.
+
+    ASF MapReady is designed to be set up in a left-to-right order in the
+   tabbed setup pages which appear in the graphical user interface. In
+   general, you will first want to select the list of processing steps that
+   you would like to apply to your data (import, polarimetry, terrain
+   correction, geocoding, and exporting) by checking the appropriate
+   checkboxes on the General tab, then go to each individual tab to set up
+   each individual processing step. The graphical user interface will
+   activate each tab which may require additional set up or selections based
+   upon your processing step selections on the General tab. If various
+   processing steps are deselected on the General tab, then the associated
+   set up tabs will be deactivated (greyed out.) Each tab is described in
+   further detail below.
+
+    The general tab also contains the "Keep Intermediate Files" options. The
+   processing flow creates a number of intermediate results for the various
+   processing steps. For troubleshooting purposes or further analysis those
+   intermediate results can be kept. Examples include the imported data,
+   layover and shadow masks automatically generated, imported versions of
+   your DEM, clipped DEMs etcetera. By saving the intermediate products, you
+   can often troubleshoot your processing if you did not achieve your desired
+   results. Some intermediate products are viewable through MapReady with the
+   "View Intermediates" right-click context menu in the Completed Files
+   section, however not all of them are. Those that aren't can be viewed with
+   ASF View by selecting the file within ASF View.
+
+    The "Temporarily keep intermediate files" option, the default, means
+   that these intermediates are kept until you exit MapReady, or remove the
+   processed product from the "Completed Files" section. Keeping these
+   intermediates around after processing is done allows you to look at these
+   files, with the "View Intermediates" option in the right-click context
+   menu for files in the Completed Files section.
+
+    If you select the "Keep no intermediate files" option, the intermediate
+   files are deleted as soon as processing completes. (This was the default
+   behavior in MapReady 2.0.) This means the "View Intermediates" menu in the
+   Completed Files will not be available. This option should be used if you
+   are going to process a number of files, and are concerned about disk
+   space, since the intermediate files can take up quite a bit of space.
+
+    If you check the "Keep Intermediates" checkbox, all intermediate
+   products developed during the processing of your data will be kept. Some
+   will be in the same folder as your data, and some will be in a sub-folder
+   (includes a time-stamp in the name of the folder for easier
+   identification.)
+
+   Adding Files to the Input Files list:
+
+    At this time, your data files must have the same basename as the
+   metadata files associated with them. You will not need to specify every
+   file in a given granule -- just the data files. The meta-data files should
+   be located in the same directory as the data file(s).
+
+    For ALOS data, you should choose the leader file (starts with LED-),
+   instead of choosing an individual band data file.
+
+   There are several ways to add files to the Input Files list:
+
+    1. Specify the source files on the command line:
+
+        When you run the utility, you can put a list of files as arguments
+       on the command line. For example:
+
+       Select the file "file1.D":
+
+       mapready file1.D
+
+       Select all .D files in the current directory:
+
+       mapready *.D
+
+       Select all LED-* files in the current directory:
+
+       mapready LED-*
+
+       Select all .D files in the "data" directory:
+
+       mapready data/*.D
+
+       Select all LED- files in the "data" directory:
+
+       mapready data/LED-*
+
+    2. Use the "Browse" button:
+
+        You can also click "Browse" to pull up a file selection dialog. Use
+       ctrl-click or shift-click to select more than one file.
+
+        Files exist in data and metadata pairs. The file you should select
+       is the data file (such as .D), and not the metadata (such as .L).
+
+        For ALOS data, there is one metadata file (LED-*) and one or more
+       image files (IMG-*). There is one image (IMG-) file for each band in
+       the input data.
+
+   ---------------------------------------------------------------------------
+
+                               Import Tab Options
+
+    The Import checkbox is always checked on the General tab because
+   'import' is always required. Because it is always required, it is also
+   greyed out so the user cannot deselect the Import step. In the context of
+   the ASF MapReady tools, the term "import" means "read the file from disk",
+   regardless of format. The reason that MapReady asks the user to specify
+   the type of import is because certain other settings either apply, or
+   don't apply, to particular types of data. ASF MapReady attempts to prevent
+   errors and the selection of non-applicable settings whenever possible.
+
+   The following are the Import Tab options:
+
+    1. Select Data Format:
+
+        This is where you select the type of data that you have. The
+       default, "CEOS (Level 1)" is the most common format, i.e. files ending
+       in .D/.L or ALOS LED-/IMG- files etc.
+
+        When you select the AirSAR input format, some additional options
+       appear, where you may select which AirSAR products you wish to
+       process. Note that all products will be imported, regardless of
+       selection. If you select products not available in your dataset, those
+       selections are ignored.
+
+    2. Select Radiometry:
+
+        The "Select Radiometry" drop-down list allows you to process the
+       image to sigma naught, beta, gamma, amplitude, or power during import.
+       Additionally, if you select sigma, beta, or gamma, you may also select
+       whether or not you want the data scaled to decibels (dB) as well.
+
+       Radiometry Type selections:
+
+        Amplitude: Create an amplitude image. The pixels of an amplitude     
+       image represent radar backscatter intensity values. This is the        
+       default behavior.                                                      
+        Sigma: Create a calibrated image. The pixels of these images are     
+       corrected for the gain variability of the radar antenna in the range   
+       direction, and normalized with respect to the area per pixel in the    
+       ground plane. values).                                                 
+        Gamma: Create a calibrated image similar to a sigma image (described 
+       above), but with pixels normalized with respect to the pixel area in a 
+       direction perpendicular to the radar look direction.                   
+        Beta: Create a calibrated image similar to a sigma image (described  
+       above), but with pixels normalized with respect to the pixel area in   
+       the radar look direction.                                              
+        Power: Create a power image. The pixels of a power image are given   
+       by the squares of the amplitude (backscatter) values.                  
+
+        When either of sigma, gamma, or beta is selected, you can choose to
+       output the result in decibles (the resulting values are
+       logarithmically scaled).
+
+    3. Apply ERS Gain Correction
+
+        The ERS2 satellite has a known gain loss problem that MapReady will
+       attempt to correct by applying a scale correction factor uniformly to
+       all pixels in the image. The correction is dependent on the date, and
+       is only applied to calibrated data (i.e., everything but amplitude)
+
+        For more information, see section 4 of:
+       http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf
+
+   ---------------------------------------------------------------------------
+
+                            Polarimetry Tab Options
+
+    MapReady 2.0 supports two polarimetric decompositions, Pauli and
+   Sinclair. The Pauli decomposition only works with quad-pol SLC
+   (single-look complex) images. (Only ALOS/Palsar currently supplies such
+   imagery, it is Level 1.1 data.) The Sinclair decomposition also requires
+   quad-pol imagery but can be done on non-complex (Level 1.5) data as well
+   as SLC (Level 1.1) data.
+
+    1. The Pauli Decomposition
+
+       Red: HH-VV (even bounce)
+
+       Green: 2HV (rotated dihedral)
+
+       Blue: HH+VV (odd bounce)
+
+       Using the Pauli decomposotion to visualize the data allows one to see
+       the dominant scattering mechanisms in different areas of the scene.
+       For example, areas with buildings (where the even bounce return will
+       dominate) will look reddish.
+
+    2. The Sinclair Decomposition
+
+       This is a simple decomposition that combines all four polarizations
+       into a single RGB image in a simple way that doesn't require complex
+       data. The green channel is the average of the cross-polarization
+       terms, which theoretically are equal but may not be due to noise, etc.
+
+    3. Cloude-Pottier Classification
+
+        The Cloude-Pottier classification scheme produces output with the
+       data categorized into either 8 or 16 classes. The classification is
+       based on three parameters which can be calculated from the 4-band
+       complex data at each pixel.
+
+        These parameters are calculated from the coherence matrix, which is
+       calculated for each pixel. These parameters are entropy, anisotropy,
+       and alpha.
+
+        Entropy is an indication of the degree of randomness in the
+       scattering process. Low entropy means there is a single dominant
+       scattering mechanism in that pixel; high entropy means multiple
+       scattering mechanisms are present in the pixel.
+
+        Anisotropy represents the relative importance of the non-dominant
+       scatterers. When entropy is low, the anisotropy parameter means very
+       little, but for high entropy it is a useful indication of the strength
+       of the secondary scatters.
+
+        Alpha can be used to identify what type of scatterer is the dominant
+       one. When alpha is close to 0, single-bounce scattering (e.g., a rough
+       surface) is dominant. For alpha near 90 degrees, the dominant
+       scatterer is double-bounce. Alphas in between these extremes represent
+       a combination of both; at 45 degrees we have equal amounts of both
+       which usually corresponds to volume scattering.
+
+        The Cloude-Pottier parameters can be obtained directly (skipping the
+       classification) by selecting the "Entropy, Anisotropy, Alpha" option.
+       This is the only option where you may assign RGB channels yourself, or
+       choose to export three separate greyscale images (one for each of
+       entropy, anisotropy, and alpha); with the other polarimetric
+       decompositions the RGB channel assignment is determined by the
+       decomposition
+
+    4. Freeman-Durden
+
+        The Freeman-Durden decomposition is a model-based approach it
+       attempts to fit the combination of three simple scattering mechanisms
+       to the polarimetric data. These mechanisms are (i) even- or
+       double-bounce scatter from a pair of orthogonal surfaces with
+       different dielectric constants, (ii) canopy scatter from a cloud of
+       randomly oriented dipoles, and (iii) Bragg scatter from a moderately
+       rough surface.
+
+        These three components are assigned to the three color channels
+       during export: the double-bounce component (i) is assigned to the Red
+       channel, the canopy component (ii) is assigned to the Green channel,
+       and the rough surface component (iii) is assigned to the Blue channel.
+
+        The results look similar to the Pauli decomposition.
+
+    When the Polarimetry tab is active, the Export tab's RGB options changes
+   to "Export RGB Image according to Polarimetric selection". This means that
+   the RGB channels in the final result are determined by the polarimetric
+   decomposition. The channels and how they are calculated from the input
+   qual-pol data are listed next to the radio button on the Polarimetry tab
+   for some of the decompositions. For example, for Pauli the red channel is
+   calculated by subtracting the complex VV-band value from the complex
+   HH-band value, and then determining the magnitude of the resulting complex
+   value.
+
+   Faraday Rotation
+
+    Atmospheric conditions are another condition which can affect the
+   backscatter values, in addition to the scatterers on the ground. This
+   effect is called Faraday Rotation, and usually this is an undesirable
+   effect, the ground scatterers are the only contributions of interest.
+   Turning this option on will attempt to correct the data for Faraday
+   Rotation. The method used to apply the correction requires quad-pol SLC
+   data.
+
+    The correction is done by estimating the rotation angle at each pixel,
+   and then applying the correction using a smoothed rotation angle, or the
+   average of all the rotation angles.
+
+    If the rotation angle is small, you may wish to skip the correction. If
+   you specify a threshold angle, then the average Faraday Rotation angle is
+   smaller (in absolute value) than the threshold, then the Faraday Rotation
+   correction is skipped. If you always want to apply the correction, then
+   leave the box blank.
+
+   ---------------------------------------------------------------------------
+
+                         Terrain Correction Tab Options
+
+    If you check the Terrain Correction checkbox on the General Tab, then
+   terrain correction processing will be enabled. If you have a digital
+   elevation model (DEM) available for the scene, you can use this DEM to
+   refine the geolocation of the SAR data, or to perform terrain correction.
+
+    Terrain correction necessarily involves geolocation refinement as well.
+   The terrain correction process alters the data in the SAR image,
+   attempting to correct for the side-looking geometry of SAR.
+
+    Geolocation refinement doesn't affect the image data, however the
+   image's metadata values are adjusted in order to improve geolocation. The
+   specific metadata fields that are updated are "slant_shift" and
+   "time_shift".
+
+    DEMs may be provided in either the ASF internal format, or as a GeoTIFF.
+   If the given DEM is a GeoTIFF, it is automatically converted into ASF
+   internal format prior to terrain correction.
+
+    GeoTIFF DEMs can be downloaded from the USGS Seamless site,
+   http://seamless.usgs.gov. You will need to change the format of the
+   downloaded DEM to GeoTIFF (at the USGS Seamless site prior to download.)
+   ASF provides a command-line utility "akdem_grab" which will download
+   GeoTIFFs from the seamless site for you if you prefer.
+
+    Note that at this time a single DEM must apply to all of the scenes in
+   the Input Files list.
+
+    1. DEM File:
+
+        Use the "Browse" button to select the DEM. The DEM should be either
+       in GeoTIFF or ASF internal format.
+
+       Fill DEM holes with interpolated values:
+
+        Some DEMs have holes in them; this is often a problem with SRTM
+       DEMs. Holes are small spots or areas in the image that have no height
+       data in them (or a data value that indicates 'no data'.) If this is
+       the case, the terrain corrected product will often contain streaks in
+       the areas near the holes. You can fill the holes with values
+       interpolated from the surrounding terrain prior to terrain correction
+       with this option. Choosing to fill DEM holes with interpolated values
+       will reduce or even eliminate these streaks. While this allows the
+       terrain surrounding the holes to be terrain corrected properly, you
+       should assume that the data within an area that had a hole in it is
+       still just a best guess... a mathematical best guess.
+
+        If you are planning to apply radiometric terrain correction, you
+       should be especially careful in the hole-filled regions.
+
+    2. Geolocation Refinement Only or Apply Terrain Correction:
+
+        With a DEM, you can either select the "Refine Geolocation Only"
+       radio button, or the "Apply Terrain Correction" radio button. Refining
+       the geolocation does not change the image data, only the metadata is
+       adjusted. Terrain correction also applies geolocation refinement, and
+       corrects the image data for the side-looking SAR geometry.
+
+        The default is terrain correction. Some of the following options are
+       only available if you've selected terrain correction.
+
+    3. Apply a User Mask:
+
+        If you wish, you may use masking to improve geolocation refinement
+       and/or terrain correction. For many scenes this won't be necessary; in
+       general, it is only necessary if the scene contains large areas that
+       won't correlate well with the DEM. For example, water bodies provide
+       very poor correlation.
+
+        Using a mask means that the geolocation refinement only utilizes
+       portions of the image you think will yield good correlation.
+
+        You can either provide a mask file yourself, or have one
+       automatically generated for you. An automatically generated mask masks
+       out regions of the DEM at 1m or less (the water regions). A mask that
+       you provide should have the value 0 in regions that provide good
+       correlation, and 1 (or any positive value) where the correlation is
+       expected to be poor.
+
+    4. Specify Pixel Size:
+
+        Enter in the desired pixel size of the terrain corrected image. This
+       option doesn't apply to geolocation refinement without terrain
+       correction, since in this case the image data is not changed.
+
+        If you do not enter a pixel size, the pixel size in the input SAR
+       image will be retained -- unless the DEM image has a much larger pixel
+       size than the SAR image, in which case your SAR image will be
+       downsampled to have a pixel size of half that of the DEM. For example,
+       if the SAR image has 12.5 meter pixels, and the DEM has 60 meter
+       pixels, the terrain correction processing will downsample your SAR
+       data to 30 meters.
+
+        If you do specify a pixel size, your requested value will be used
+       even though you are limited to the accuracy of the DEM. For example,
+       if the SAR image has 12.5 meter pixels, and the DEM has 60 meter
+       pixels, and you specify a 12.5 meter pixel size, that value will be
+       used even though your terrain corrected result will be oversampled.
+
+        This value differs from the value specified in on the geocoding
+       section in that here your main concern is the difference between the
+       SAR and DEM pixel sizes, whereas the pixel size specified on the
+       geocode tab is the pixel size you want in the output data.
+
+    5. Also apply radiometric Terrain Correction:
+
+        Radiometric terrain correction consists of normalising a SAR image
+       for well-understood variations in backscatter contributions from the
+       terrain slope. For example, a hill facing towards the sensor will
+       produce might brighter returns than a backslope of the hill. Since
+       these slope values can be obtained from the DEM, the expected
+       backscatter can be adjusted to remove the impact of the slope.
+
+       The idea is to amplify less easily apparent influences, i.e. thematic
+       land cover variance for example.
+
+    6. Interpolate Layover/Shadow Regions:
+
+        By default, regions of layover in the output are filled in with
+       values, however these values will not be scientifically valid since it
+       isn't possible to recover the actual backscatter values in the layover
+       regions. However, doing so does produce a nicer looking result. You
+       may wish to leave the layover regions blank instead. In a similar
+       manner, area in SAR shadow regions area also missing data. Selecting
+       this option will also result in interpolated values getting placed
+       into the shadow regions.
+
+    7. Save Layover/Shadow Mask:
+
+        If you wish, a copy of the layover/shadow mask generated during the
+       terrain correction process can be saved, and then geocoded and
+       exported using the same parameters as the SAR scene.
+
+    8. Save Clipped DEM:
+
+        If you wish, a copy of the clipped DEM generated during the terrain
+       correction process can be saved, and then geocoded and exported using
+       the same parameters as the SAR scene.
+
+        The DEM will cover a larger area than the SAR image and the
+       layover/shadow mask, since a little extra around the perimeter is left
+       during clipping in order to account for relief near the edges.
+
+   ---------------------------------------------------------------------------
+
+                              Geocode Tab Options
+
+    If you check the Geocode checkbox on the General Tab and then set up
+   geocoding options on the Geocode Tab, the data will map-projected (or
+   re-projected) as a final step prior to exportation to graphics file
+   formats.
+
+    At this point in time, you may select from Universal Transverse Mercator
+   (UTM), Polar Stereographic, Albers Conical Equal Area, Lambert Azimuthal
+   Equal Area, or Lambert Conformal Conic types of projections. As you select
+   different projection types from the drop-down menu, additional data entry
+   boxes will appear (or disappear) for entering map-projection parameters
+   appropriate to the type you selected.
+
+    Each projection has a "User Defined" option (the default), where the
+   parameters for the projection are specified manually. Optionally, you may
+   select predefined settings from the drop-down menu that define projection
+   parameters appropriate to the region indicated. If, after selecting a
+   predefined set of parameters, you wish to slightly adjust them, you just
+   need to re-select "User Defined". The predefined settings will become
+   available for editing.
+
+    Sometimes projection errors that will cause asf_geocode to quit
+   processing the data. This may occur if the settings may result in large
+   accuracy errors given the geographic location of your data, i.e. it
+   doesn't make sense to use a polar stereographic projection for equatorial
+   regions. If asf_geocode reports that your projection errors are too large,
+   but you wish to use the projection type and settings as they are anyway,
+   check the "Ignore projection errors" check box. With this box checked,
+   errors will be issued as warnings instead and processing will continue
+   (unless a nonrecoverable error occurs.)
+
+    The following list indicates the parameters that can or must be set for
+   each of the possible map projection selections:
+
+    1. UTM:
+
+        Here the only additional parameter is the UTM Zone. If no zone
+       number is entered, then MapReady will automatically determine the best
+       UTM zone based on the geographical location of the data. The globe is
+       divided into 60 north and south zones, each spanning 6 degrees of
+       longitude. Zones 1 to 60 are northern zones, and -1 to -60 are the
+       southern zones.
+
+        Be sure that your data does lie in (or near) the specified zone --
+       an error will occur if you've specified a zone that is more than one
+       zone away from the zone in which your data lies.
+
+    2. Polar Stereographic:
+
+        Here the two parameters are a Central Meridian, and a First Standard
+       Parallel.
+
+        Central Meridian: This is the longitude that extends vertically down
+       from the center pole.
+
+        First Standard Parallel: This is the "latitude of true scale". At
+       this latitude, the projection does not introduce any distortion.
+
+        An error will occur if you try to use this projection for data that
+       is not near either the north or south pole.
+
+    3. Albers Conical Equal Area:
+
+        This is a conical projection. You must specify two standard
+       parallels, the latitudes at which the projection cone intersects the
+       Earth (and, so, at these latitudes the projection doesn't introduce
+       any distortion), as well as the location of the projection's origin.
+
+        You may omit the origin (the image's center will be used as the
+       origin), however the standard parallels are required.
+
+    4. Lambert Conformal Conic:
+
+        This is a conical projection. You must specify two standard
+       parallels, the latitudes at which the projection cone intersects the
+       Earth (and, so, at these latitudes the projection doesn't introduce
+       any distortion), as well as the location of the projection's origin.
+
+        You may omit the origin (the image's center will be used as the
+       origin), however the standard parallels are required.
+
+    5. Lambert Azimuthal Equal Area:
+
+        You may omit the point of tangency (the image's center will be
+       used).
+
+   Also, on this tab:
+
+    1. Specify Height:
+
+        Assume that terrain in the image is the specified height (in meters)
+       above the reference GEM6 ellipsoid. Optimal geolocation accuracy will
+       then be achieved for pixels on terrain at this height. The geolocation
+       of terrain at other heights will be off by about the height difference
+       between the terrain and the given height, assuming a satellite look
+       angle 45 degrees from horizontal.
+
+        This height value is ignored if you've performed terrain correction
+       (which, in effect, applies a height correction to every pixel
+       individually.) When using "refine geolocation" in the terrain
+       correction section, however, it is a good idea to apply a height
+       correction.
+
+    2. Specify Pixel Size:
+
+        Scales the output image such that each pixel is the specified size,
+       in projection coordinates (i.e. meters) on a side.
+
+        The geocoding process won't work if you select a pixel size that
+       will result in severely oversampled data.
+
+        This value differs from the value specified in on the terrain
+       correction tab in that there your main concern is the difference
+       between the SAR and DEM pixel sizes, whereas the pixel size specified
+       here is the pixel size you want in the output data.
+
+    3. Datum:
+
+        Specifies the datum that is used when projecting. The datum applies
+       to the target coordinate system.
+
+        Note that the "Hughes" datum option is only applicable when using a
+       Polar Stereographic projection. Also, many GIS packages do not support
+       the Hughes datum.
+
+    4. Resample:
+
+        Selects the method used to resample the data. In the geocoding
+       process, the pixel values in the geocoded image are determined by
+       locating the corresponding point in the original, and resampling the
+       original image pixels closest to this point. "Nearest Neighbor" simply
+       selects the pixel closest to the point, "Bilinear" does linear
+       interpolation between the nearest pixels, and "Bicubic" fits a cubic
+       spline through the nearest pixels. The bicubic method is the most
+       accurate, however it is also the slowest, and can also have the effect
+       of low-pass filtering the image.
+
+    5. Ignore projection errors:
+
+        Force the geocode calculations to continue even if the detected
+       errors are larger than would normally be allowed.
+
+        Normally, asf_geocode will not permit you to geocode regions where
+       the projection is likely to produce poor results. Also, if asf_geocode
+       detects large projection errors in the scene then it will stop
+       processing with an error. If you wish to process in spite of these,
+       you can do so by selecting this option.
+
+   ---------------------------------------------------------------------------
+
+                               Export Tab Options
+
+    After processing is complete, the data will be in ASF Internal Format,
+   i.e. a ".meta" metadata file plus an ".img" data file. You may export this
+   file into a standard graphics format if you select 'Export' on the General
+   Tab and then select appropriate options on the Export Tab.
+
+    1. Export Format:
+
+        This is the format you want your output data in. The default is
+       JPEG, but you may also select GeoTIFF, TIFF or JPEG, PGM, or PNG. Only
+       the GeoTIFF format will contain map-projection information, i.e. in
+       TIFF tags and GeoKeys understood by GIS software packages.
+
+    2. Output Data in Byte Format:
+
+        Satellite imagery is generally in complex, floating point, or byte
+       format (per pixel.) While exportation of complex data into a graphics
+       file format is not currently supported, both floating point and byte
+       data are (if the selected graphics file format type supports your
+       selection.) If this option is turned off, the data format that is
+       contained in the ASF Internal Format file will be the format used in
+       the graphics file (if supported by the selected type.) When this
+       option is turned on, floating point data is mapped into byte (8-bits
+       per pixel) format prior to producing the output file. Re-mapping
+       methods are only available for floating point data since byte data is
+       already (somewhat obviously) in byte format.
+
+        At this time, floating point format is only available for TIFF and
+       GeoTIFF formats since the other graphics file formats do not support
+       floating point data. Regardless, if remapping is necessary or
+       selected, you must select the algorithm which will be used. NOTE: If
+       you prefer TIFF or GeoTIFF output, be aware that many, if not most,
+       viewing applications either do not support floating point data or
+       require additional workaround steps in your workflow in order to
+       utilize these images. Therefore, we generally recommend output in byte
+       format unless you have compelling reasons to do otherwise. Remapping
+       options include the following:
+
+         a.  Statistical 2 Sigma: Determines the mean and standard deviation
+            of the floating point image and then remaps the data that ranges
+            from the mean minus 2 standard deviations to the mean plus 2
+            standard deviations into a byte-compatible 0-255 range of values.
+            Data points below this range are remapped to 0, and data points
+            above this range are remapped to 255.
+
+         b.  MinMax: determines the minimum and maximum values of the input
+            image and maps those values to the byte range of 0 to 255. This
+            algorithm maps the entire range of data to the byte range,
+            including possibly 'bad' values resulting from saturated sensors
+            and/or noise.
+
+         c.  Truncate: truncates the input values at 0.0 and 255.0
+            regardless of the available floating point range. If most of the
+            data is above 255.0 or below 0.0, then the resulting output image
+            may appear to be solid black (byte value 0).
+
+         d.  Histogram Equalization: Input values are remapped to output
+            values according to a look-up table that is developed from the
+            integration of the histogram bins that represent the image. This
+            remapping method is nonlinear and may result in some (very) minor
+            shifts in the geolocations of high-contrast boundaries within the
+            image, i.e. coastlines, ridge tops, etecetera. Since histogram
+            equalization increases contrast in areas that have low contrast
+            within the image (mostly dark or light regions) and decreases
+            contrast in regions that already had high contrast, its most
+            useful application is for making hard-to-detect details visible
+            to the observer. Noting that only the most discriminating users
+            will be able to detect the minor shifts in some of the
+            geolocations within the image, it is good to note that it is
+            suggested that either the 2-Sigma or MinMax algorithm is selected
+            instead if you want the best possible accuracy in geolocation.
+
+       The default floating point to byte remapping method is "Statistical 2
+       Sigma".
+
+    3. Export All Bands as Separate Images:
+
+        This is the default option, and the only option that applies to
+       single-band data. (At this point, all non-ALOS data is single band.)
+
+        With this option selected, each input band will be exported into a
+       separate file. The band name is appended to the output filename just
+       before the extension. So, for example, if you've set your output
+       filename to "test", and you are processing quad-pol data to geotiff,
+       you will get four greyscale files: test_HH.tif, test_HV.tif,
+       test_VH.tif, and test_VV.tif
+
+    4. Export RGB Image according to Polarimetric selection:
+
+        This option is automatically activated when the "Polarimetry"
+       checkbox in the "General" tab has been checked. The assignment of band
+       to RGB channels is determined by the selected Polarimetric
+       decomposition.
+
+    5. Export Multiple Bands in a Single RGB Image:
+
+        Turning on this option outputs the image into a color RGB image. The
+       selected bands are assigned to the color planes red, green, or blue.
+       Only 3 bands may be selected for output since only 3 bands can be
+       mapped to red, green, and blue planes. If more than 3 bands exist, the
+       non-selected bands are not exported.
+
+        The "User Defined" option allows you to specify which band is
+       assigned to which color channel.
+
+        The True Color option exports the third band as red, second as
+       green, and third as blue, and individually performs a 2-sigma contrast
+       expansion on each band. This is different than if you choose "User
+       Defined" and select 3,2,1 -- in that case, the 2-sigma contrast
+       expansion is not performed. Note that for optical satellite imagery,
+       the 3-2-1 mapping to red-green-blue is expected and results in
+       realistic coloration. The contrast expansion is typically applied as
+       well (by most satellite image processing and GIS software packages.)
+
+        The False Color option exports the fourth (IR) band as red, third as
+       green, and second as blue, and performs a 2-sigma contrast expansion
+       on each band. This is different than if you choose "User Defined" and
+       select 4,3,2 -- in that case, the 2-sigma contrast expansion is not
+       performed.
+
+   ---------------------------------------------------------------------------
+
+                             The File List Sections
+
+    The Input Files section lists all of the files that you've selected for
+   processing. Note that the settings selected on the various processing tabs
+   will apply to all files which have been added to the Input Files list of
+   files when you click the 'Process All' button.
+
+    The second (lower) list in the user interface is the list of files that
+   have successfully completed processing. If errors occurred during
+   processing, the files will remain in the Input Files section so that you
+   may process them again, with a different selection of settings perhaps, if
+   you desire.
+
+    1. Thumbnails:
+
+        If possible, thumbnails of the input and completed images are
+       generated and shown in the "Thumbnail" column. These are generated in
+       the background, so if you have many files it can take some time for
+       the input thumbnails to appear for all input files. If you hover the
+       mouse pointer over the thumbnail images, a medium-sized image pops up
+       for you to view. If you desire a full-resolution viewing of the file,
+       then click on the filename in the Input (or Completed) Files section
+       and then click the "View selected..." button in the toolbar. When you
+       do this, the ASF View application will be opened to automatically
+       display the image for you (including statistics, geolocation
+       information, zooming capability, etcetera.)
+
+    2. Destination Folder:
+
+        By default, the tool stores the generated files in the same
+       directory as the input files. Here you may specify a different
+       directory if you prefer. If this is a read-only directory (such as a
+       CD), you will need to change the output directory or errors will
+       result!)
+
+    3. Add Output File Prefix or Suffix:
+
+        The "Add Output File Prefix or Suffix" buttom will produce a pop-up
+       dialog for you to enter either a prefix and/or suffix that will be
+       appended to the names of the output files (except those you've changed
+       manually.)
+
+        If you enter a file prefix or suffix (or both), it will be added to
+       each of the output file names. When processing the same data more than
+       once, the automatically determined output filenames will be the same,
+       so this feature can be a handy way to prevent output file name
+       clashes. You can also use this feature to add descriptive (of the
+       processing, versions, etc) text to the output file names, i.e. _utm,
+       _albers, _sigma, or whatever.
+
+   ---------------------------------------------------------------------------
+
+                                  Process All
+
+    The "Process All" button initiates processing of all the files listed in
+   the Input Files section according to the processing selections that you
+   have made.
+
+    The processing starts with the first file in the list, and processes
+   each in turn until the last file in the list has been processed.
+
+    Files that have completed their processing will not be processed again
+   if you click "Stop Processing" and then click the "Process All" button
+   again. Clicking the "Process All" button otherwise continues processing
+   from where it left off. Note that if you've changed any settings prior to
+   clicking "Process All" (again), the new settings will apply to all
+   remaining unprocessed files.
+
+    Clicking "Stop Processing" will stop all processing at the earliest
+   point possible. It may take a moment or two for the processing to stop.
+
+    If any of the output files exist with the same name as that produced for
+   the current list of input files, the output filename will be highlighted
+   in red. If this occurs, a warning will pop up when you attempt to process
+   the data. In this case, you will need to confirm that you don't mind
+   overwriting those files. If you do not want these existing files to be
+   overwritten, then it is suggested that you make use of the "Add Output
+   File Prefix or Suffix" button to add an output filename prefix or suffix
+   that will differentiate the output from the existing files.
+
+    As the processing proceeds, the asf_import, asf_terrcorr, asf_geocode,
+   and asf_export tools are invoked for each file in sequence according to
+   the processing steps that you have selected. All processing steps (tools)
+   generate output messages which are captured by the tool and displayed in
+   the terminal window that opened when the graphical user interface (GUI)
+   was opened. This log information is also available by clicking the "View
+   MapReady processing log" button in the toolbar(s).
+
+    If an error occurs during the processing of a file, instead of "Done" in
+   the status column, you'll see "Error". If this occurs, an error message is
+   generally supplied with the 'error' status. To find out more about what
+   went wrong, you can either scan the messages in the terminal window, or
+   select the file and click the "View MapReady processing log file" button
+   on the toolbar to view the log file.
+
+   ---------------------------------------------------------------------------
+
+                                Toolbar Buttons
+
+    Just above each files section is a set of toolbar buttons. To use the
+   buttons, select one or more files in the files grid, and then click on the
+   button you wish to use.
+
+    If you right-click on a row in the files grid, a menu will appear with
+   options that are the same as those available in the toolbar. These options
+   will apply to the file(s) in the Input or Completed Files section that are
+   selected. Some options may be disabled in some circumstances.
+
+    1. Remove:
+
+        This will remove the entry from the files grid. The files on disk
+       are not affected.
+
+    2. Process:
+
+        This processes the selected file, just as if you'd clicked the
+       "Process All" button with only this file in the input list. After
+       completion, the file is moved to the "Completed Files" list if it
+       processed successfully.
+
+    3. Queue for Re-Processing:
+
+        Moves the file from the "Completed Files" section back to the
+       yet-to-be-processed list.
+
+    4. Rename Output:
+
+        Change the name of the output file. This option only allows renaming
+       of the output file. If you also wish the output to be placed in a
+       different directory, then use the "Change Output Directory" button to
+       do that.
+
+        You can also change the name of the output file by double-clicking
+       on the "Output File" column.
+
+    5. View Log:
+
+        This will pull up the messages that were generated during
+       processing. If a file fails to process, you can get the detailed error
+       information in the log.
+
+    6. Display CEOS Metadata:
+
+        Opens up the ASF Metadata Viewer to display the CEOS metadata for
+       the selected dataset. ASF MetadataViewer will look for and open the
+       associated CEOS-format (.L or LED- etcetera) file instead of ASF's
+       .meta file. If some other type of CEOS file is selected, i.e. .D or
+       IMG- etcetera, then any CEOS type metadata stored in that type of file
+       will be displayed.
+
+        This option is disabled if you don't have the .L (etc) file for the
+       data available (such as when you're not working with Level 1 CEOS
+       data).
+
+    7. Display ASF Metadata:
+
+        Opens up a new window to display the ASF format metadata for the
+       selected file. The metadata file is generated by the import procedure,
+       so if the file hasn't been processed yet, the metadata file won't have
+       been generated. In this situation, this option will be greyed out.
+
+    8. View Input/Output:
+
+        Opens up the input file (or, for the Completed Files section, the
+       output file) with ASF View (asf_view.)
+
+    9. Display Geographic Area in Google Earth(tm)
+
+        If you select a file in the Input Files section then click this
+       button, Google Earth(tm) will execute (if installed on your machine)
+       and display an outline of the geographical area where your input data
+       resides. Future releases of MapReady will likely overlay the actual
+       data from the data file in Google Earth(tm) as well.
+
+        If you select a file in the Output Files section AND the file is
+       geocoded with a UTM map-projection, then when Google Earth(tm) opens
+       to display the data location, the actual image data will be overlaid
+       on top of the earth in the correct geographical location. If the file
+       that you selected is not geocoded to a UTM map projection then only an
+       outline of the area represented will be displayed in Google Earth(tm).
+       Future releases of MapReady will likely overlay all types of data in
+       Google Earth(tm).
+
+    In addition to the menu options which duplicate the functionality of the
+   toolbar buttons, there is also a "View Intermediates" menu. If you have
+   chosen to "Temporarily keep intermediate files" or "Keep intermediate
+   files" (selected in the General Tab of the settings), then a few selected
+   intermediates files can be loaded in to ASF View using this menu.
+   Intermediate files which are not available, or do not apply to the
+   selected dataset, are greyed out.
+
+   ---------------------------------------------------------------------------
+
+                               Processing Caveats
+
+    1. Floating Point GeoTIFFs
+
+        Most GIS software packages have some troubles displaying or
+       ingesting GeoTIFFs that contain floating point data. ASF MapReady is
+       able to produce (and ingest) floating point GeoTIFFs, but that doesn't
+       mean that it is a good idea to do so. Some justifications for doing so
+       include the desire to maintain maximum accuracy of the data values and
+       minute differences in geolocations. Choosing to resample to byte
+       output invariably changes the data range and in some cases, the
+       perceived locations of very small geographical features (sub-pixel) as
+       the data is remapped to the 0-255 data range.
+
+        If you are using ArcGIS (ArcMap) and seeing a pure black image when
+       you add a GeoTIFF as a raster data layer, it doesn't mean the data
+       isn't there. It's just not mapped to a displayable range of values,
+       and that occurs if ArcMap does not know what the range of data values
+       are. The 'fix' is to let ArcMap determine and make use of the range of
+       floating point values so it can display the data properly:
+
+        ArcMap v9.1+ Work Flow for Floating Point GeoTIFFs #1: Open ArcMap
+       but do not (yet) add the floating point GeoTIFF to the data frame.
+       Next, from the ArcToolbox run Data Management Tools->Raster->Calculate
+       Statistics. Browse to your floating point GeoTIFF and click OK. Now
+       that ArcMap has calculated the statistics for the file, you may add it
+       to your data frame with the usual Add Data button.
+
+        ArcMap v9.1+ Work Flow for Floating Point GeoTIFFs #2: Open ArcMap
+       and add add the floating point GeoTIFF to the data frame. Next,
+       right-click the GeoTIFF's raster data layer name in the Layers tree
+       and select Properties. In the Properties dialog, click the Symbology
+       tab. In the Stretch section of the Symbology tab (near bottom), select
+       a type of stretch and click OK. The data should display properly now.
+       Version 9.1 of ArcMap may sometimes require calculation of the
+       Histogram(s).
+
+        Viewing floating point GeoTiffs: ASF View displays floating point
+       GeoTIFFs without problem. Some other packages such as OpenEV will as
+       well, as do some GIS packages (sometimes via a workaround as
+       described.)
+
+   ---------------------------------------------------------------------------
+
+                                 Contacting Us
+
+    If you have any questions or comments about this software, we would love
+   to hear from you!
+
+               http://www.asf.alaska.edu
+               <[13]uso@asf.alaska.edu>
+          
+
+               Alaska Satellite Facility
+               Geophysical Institute
+               University of Alaska Fairbanks
+               P.O. Box 757320
+               Fairbanks, AK 99775-7320
+          

@@ -1,0 +1,54 @@
+SAR Training Processor (STP) Version History
+
+
+SAR Training Processor (STP) 1.1.10
+Released 2009 January 9
+
+* Enable the window to be sized smaller than it's startup dimensions.
+* Remove spurious warnings when ASF View is started from the STP interface.
+* Use PNGs instead of JPEGs as the intermediate image files.
+* Improved portability by no longer relying on the Cygwin library in the
+  Win32 distribution.
+
+
+
+SAR Training Processor (STP) 1.1.6
+Released 2008 July 23
+
+* Streamlined the way STP generates the JPEG intermediate images,
+  so STP should run faster & use less memory.
+* Vertically shrunk the GUI, so that the "Execute" button is not
+  off the bottom of the screen in 1024x768.
+* Fixed spurious "Invalid UTF8 string" warning.
+* Added a button to view the debug images with ASF View.
+* Added processing updates.  The Step currently being executed
+  is red, and completed steps (where the debug images can be
+  viewed) are bolded.
+* Added the import functionality from MapReady to STP, so that
+  a user may choose a Level 0 .raw file, or an STF .000 file
+  directly in STP (without having to run MapReady first).
+* Added an "Abort" button to halt processing.
+* Added a "Clear" button, to remove intermediate files and the
+  generated debug JPEGs.
+* Upgraded the installer for better integration with MapReady
+* Improved build system for source builds
+
+
+SAR Training Processor (STP) 1.0.13
+Initial release: 2006 October 30
+
+The Alaska Satellite Facility (ASF) has developed a SAR Training
+Processor (STP).  This program is a synthetic aperture radar (SAR)
+processor integrated with a graphical user interface (GUI) and is
+built for use in the ASF SAR training courses. The STP assists users 
+who are either new to SAR or who want a more in-depth knowledge of
+SAR processing to learn what happens when a raw SAR image is processed
+from Level 0 raw data to a Level 1 image via the range-Doppler
+technique.  The STP has built-in hooks that allow images to be written
+at each processing stage, giving the user an insider's view of
+intermediate steps in the process. The GUI allows the user to choose
+important parameters as well as which SAR processing steps to perform
+in order to see the affects of each. It explains each step and
+displays the imagery produced. With this capability at their
+fingertips, users are able to better understand the significance of
+each step in the range-Doppler SAR processing technique.

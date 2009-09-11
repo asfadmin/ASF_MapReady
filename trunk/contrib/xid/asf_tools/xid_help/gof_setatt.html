@@ -1,0 +1,37 @@
+<TITLE>6.3 Set Attributes</TITLE>
+<H2>6.3 Set Attributes</H2>
+
+This function allows the user to give values to defined attributes for the 
+current graphics element.  Each defined attribute will be listed followed
+by a text entry area followed by a 3-letter code indicating the defined
+data type for the attribute.  The code <I>CHA</I> indicates the user may
+enter any ascii characters, the code <I>INT</I> indicates the user may enter
+only integer values and the code <I>REA</I> indicates the user may enter only
+floating point values.  Enter the attribute value in the
+text entry area and press <B>enter</B>.  This will accept and verify the
+value and advance the cursor to the next attribute name in the list.
+<P>
+
+Attribute values may be specified before, during, or after a graphics element 
+has been selected.  Attribute values may also be specified while editting a 
+graphics element.
+<P>
+
+XID defines 5 attributes which are used to store the color, font, line width,
+and label location.  These attributes will appear on the set attributes
+panel but should <B>not</B> be modified by the user.  The names of these 
+attributes are XID_COL, XID_FONT, XID_LW, XID_LABX, and XID_LABY.
+
+<P>
+<IMG SRC="gof_setatt.gif">
+<P>
+
+<DT><B>Apply:</B>
+<DD>Close the set attributes panel and save the specified attribute
+    values.
+<P>
+
+<DT><B>Cancel:</B>
+<DD>Close the set attributes panel without saving the specified attribute
+    values.
+</DL>

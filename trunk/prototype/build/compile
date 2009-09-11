@@ -1,0 +1,141 @@
+#!/bin/sh
+# Compiler wrapper script.
+# This script is cross-platform (at least on UNIX boxes); it
+# gets its platform-dependent parts from compile.arch.
+#
+
+if [ $# -eq 0 -o "$1" = "-h" -o "$1" = "--help" ]
+then
+	echo "Usage: $0 "
+	echo "     [ -O ] [ -g ] [-I<path>] [ -o <dest> ]"
+	echo "     [ -l<library> ] [  ]"
+	echo "     <source code>"
+	echo " Compiles source code into shared libraries"
+	echo "Version 0.1"
+	exit 1
+fi
+
+############ Set *default* flag values ##############
+# Path to ASF top level:
+ASFTOP="`dirname $0`/.."
+
+# Include path:
+INCDIRS=". .. $ASFTOP"
+
+# Optimization level:
+OPT_G="-g"
+OPT_O="-O"
+OPT=""
+
+# Shared-library generation flags:
+SHARED="-shared"
+
+# Compiler flags:
+OUTFLAG="-o "
+OUTSUFFIX=""
+INCFLAG="-I"
+LIBFLAG="-l"
+CFLAGS_USER=""
+CFLAGS_ARCH=""
+LIBS="-ldl -lm"
+
+# List of source files
+SOURCEFILES=""
+# List of libraries to link in
+DLLS=""
+# Convert input library "foo/bar.dll" to the thing to put on the link line.
+#  It's usually best to just use absolute paths here.
+RPATH="-Wl,-rpath="
+RPATHS="${RPATH}. ${RPATH}.. ${RPATH}../lib ${RPATH}${ASFTOP}/lib"
+DllToLink() {
+	echo $1
+	# | awk -F/ '{
+	#	dll=$0; $NF=""; path=$0;
+	#	print dll" -Wl,-rpath="path" -Wl,-rpath='`pwd`'/"path
+	#}'
+}
+# Convert output filename into link line.
+#  A soname really helps the dynamic linker find our libraries...
+SONAME="-Wl,-soname="
+DllToOutput() {
+	libname=`echo $1 | sed -e 'sX.*/XXg'`
+	echo "-o $1 $SONAME$libname";
+}
+# Single output file
+OUTFILE=""
+
+# Execute this command
+Do() {
+	echo "Running> $@"
+	"$@" || exit 1
+}
+
+# Compile $SOURCEFILES into the DLL $OUTFILE
+CompileDLL() {
+	Do $CXX $SOURCEFILES $DLLS \
+		`DllToOutput "$OUTFILE"` $CFLAGS $SHARED
+}
+
+# Compile $SOURCEFILES into the executable $OUTFILE
+CompileEXE() {
+	Do $CXX $SOURCEFILES  $RPATHS $DLLS $OUTFLAG$OUTFILE$OUTSUFFIX $CFLAGS $LIBS $LFLAGS
+}
+
+# Clean up any temporary files
+Clean() {
+	true  # empty subroutine seems to freak out bash 2.05b...
+}
+
+# Run the architecture-dependent script, which may
+#  set any flags, or override CompileDLL/CompileEXE.
+. $0.arch || exit 1
+
+# Parse command-line arguments:
+while [ $# -ne 0 ]
+do
+	arg="$1"
+	shift
+	case "$arg" in
+	*.cpp) SOURCEFILES="$SOURCEFILES $arg"
+		# Support magic comment to add libraries to link line.
+		newdll=`grep '@$&_LINK_LIBRARY_REQUIRED' $arg | awk '{print $2}'`
+		[ ! -z "$newdll" ] && DLLS="$DLLS -l$newdll"
+		# Support magic comment to add include path to compile line.
+		newinc=`grep '@$&_INCLUDE_PATH_REQUIRED' $arg | awk '{print $2}'`
+		[ ! -z "$newinc" ] && INCDIRS="$INCDIRS $newinc"
+		;;
+	*.dll) arg=`DllToLink "$arg"`; DLLS="$DLLS $arg";;
+	-o)  OUTFILE="$1"; shift;;
+	-g)  OPT="$OPT_G";;
+	-O)  OPT="$OPT_O";;
+	-I)  INCDIRS="$INCDIRS $1"; shift;;
+	CXX=*) CXX=`echo $arg | sed -e 's/.*=//'` ;;
+	CFLAGS_ARCH=*) CFLAGS_ARCH=`echo $arg | sed -e 's/.*=//'` ;;
+	SHARED=*) SHARED=`echo $arg | sed -e 's/.*=//'` ;;
+	-*)  CFLAGS_USER="$CFLAGS_USER $arg";;
+	*)
+		echo "build/make> Unrecognized argument $arg"
+		exit 1
+	esac
+done
+
+
+if [ "$OUTFILE" = "" ]
+then
+# No output file specified-- generate a dll output
+	OUTFILE=`echo "$SOURCEFILES" | sed -e "s/\.cpp/\.dll/"`
+fi
+
+# Convert INCDIRS to a single INC flag:
+for dir in $INCDIRS
+do
+	INC="$INC $INCFLAG$dir";
+done
+
+CFLAGS="$OPT $INC $CFLAGS_USER $CFLAGS_ARCH ";
+
+case "$OUTFILE" in
+*.dll) CompileDLL;;
+*) CompileEXE;;
+esac
+Clean

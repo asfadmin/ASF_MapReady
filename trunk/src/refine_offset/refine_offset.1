@@ -1,0 +1,86 @@
+    NAME: refine_offset
+
+    SYNOPSIS: refine_offset metadata ddr_file [ DJ# | locSpec ] y x 
+    				[ [ DJ# | locSpec ] y x ] [...]
+
+    DESCRIPTION:
+          Refine_offset takes as input a set of points in a SAR image 
+    whose latitude and longitude are known.  Using this, the 
+    program refines the slant range and timing offset in 
+    the .meta file, which improves the geolocation of the image.
+    (for example, in demIFM(1) or geocode(1))
+    
+          We have to do this because the CEOS timing information is
+    inaccurate, often by a large fraction of a second, in the
+    along-track (azimuth) direction.
+    
+    	The timing and slant range compensations are written to
+    the the given .meta file as "timeShift" and "slantShift",
+    in seconds and meters.  Typically, the slant range values
+    are very good, and the shift is only a few dozen meters.
+    The timing offset is less predictable-- this value is 
+    nominally about 0.25 seconds (half the synthetic aperture
+    time), but can vary by as much as a half second
+    (corresponding to 3 kilometers of geolocation error).
+    
+    	When the image point and latitude and longitude are
+    accurate, you can expect sub-pixel geolocation accuracy
+    (<10m).  If you pick the point incorrectly, or mis-type
+    the latitude or longitude, the geolocations of the image
+    will be correspondingly shifted.
+    
+    	It is not necessary, but may help to enter multiple
+    points.  Using multiple points helps cancel out any
+    random error that may be present in the latitudes and
+    longitudes, or uncertainty in location. 
+
+
+    OPTIONS: 
+     metdata: image metadata, either .meta or .L
+     elev: elevation of imaged point (meters-- default 0.0)
+     ddr_file: Image from which the pixel positions were taken
+     
+     The position can be specified as:
+     	DJ#: the number of a corner reflector in Delta Junction
+     	     (e.g. 'DJ3')
+     or as a lat/lon/elevation set (e.g. '63.45234/-145.398/527.5')
+        lat: Image point latitude (decimal degrees)
+        lon: Image point longitude (decimal degrees)
+        elevation: height of point above ellipsoid (meters)
+     
+     y: line position of point in image (pixels)
+     x: sample position of point in image (pixels)
+    
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    -------------------------------------------------------------        
+
+    EXAMPLES:
+        If you have a CCSD SAR image named "e1_amp.img", with
+    metadata  "e1.meta", and you have picked out a mountain 
+    peak or corner reflector in "e1_amp.img" at
+    line 2314, sample 390; and you know the elevation of the
+    object is 423.2 meters above the WGS-84 ellipsoid, and
+    the latitude and longitude of the point is 63.458, -145.29:
+    
+    example1% refine_offset e1 e1_amp 63.458/-145.29/423.2 2314 390
+    
+    will improve the along-track geolocations of e1_amp by modifying
+    the timing offset in "e1.meta".  If you later use geocode to
+    register e1_amp to a map projection, you will find the geolocations
+    are much better.
+    
+
+    SEE ALSO:
+        tandem_ifm(1), geocode(1)
+
+    HARDWARE/SOFTWARE LIMITATIONS: none
+
+    BUGS: none known
+
+    AUTHOR: Orion Lawlor, June 1997
+
+    CONTACT: apd@asf.alaska.edu
+	     http://www.asf.alaska.edu/apd
+
+

@@ -1,0 +1,21 @@
+
+1. The size of the cache is still arbitrary at 1GB.  Need to be able to
+   use a larger cache if possible, and a smaller one if necessary.
+
+2. A "Settings" tab would be nice.  Some ideas for what goes in here:
+
+   a.  Choose what color the crosshairs/lines are.
+   b.  Select how the data is mapped from floating points to bytes.  We
+       currently only do 2-sigma.
+
+3. The histogram doesn't look good for raw ceos data, since it only has
+   a subset of the full 0-256 range.  So, the histogram looks sparse.
+   I'm not sure how to best solve this problem.  Make the bars wider,
+   when this situation is detected?  Make the histogram shorter? Of course,
+   the vertical spacing needs to be uniform, so we can't just shrink out
+   the zero sections.
+
+4. ASF Internal format data that is byte is stored with bytes -- do this
+   also with raw CEOS.
+   
+5. When viewing ALOS CEOS data, allow switching/combining bands, too.

@@ -1,0 +1,10 @@
+[Albers Equal Area Conic]
+Area = Hawaii
+Datum = NAD83
+Spheroid = GRS1980
+First standard parallel = 8
+Second standard parallel = 18
+Central meridian = -157
+Latitude of origin = 13
+False easting = 0
+False northing = 0

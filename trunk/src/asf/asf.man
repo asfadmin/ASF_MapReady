@@ -1,0 +1,49 @@
+NAME:		ASF.A
+
+DESCRIPTION:	Library of utility and support routines that 
+		are used throughout the tools.
+
+CONTENTS:
+This library contains the ASF-STEP standard support routines,
+including the caplib and extention routines.
+
+The extention routines are in asf.h and include small routines
+like fileExists, extExists, findExt, appendExt, and create_name.
+These routines let you easily work with file extentions.
+
+
+CAPLIB LOGIC:
+Many of our programs were cluttered up with (poor) error-checking
+code, as:
+	FILE *f=fopen(fName,"wb");
+	if (f==NULL)
+	{
+		fprintf(stderr,"Couldn't open file '%s'!\n");
+		exit(1);
+	}
+Note that the error-checking code will crash if it is ever
+executed, because we forgot to pass fName to fprintf.
+But since the code is only executed rarely-- for example, if 
+the disk is full-- so we may never catch this error.
+
+In addition, the error code (even if it worked) isn't very useful--
+it's not at all obvious that the program was trying to create 
+the file.  The error-checking code also draws your eye away from 
+the flow of the logic, making the program seem larger and more complex.
+
+
+CAPLIB SOLUTION:
+We have created wrapper routines for the most commonly-used
+standard library calls (malloc,free, fopen, fread, etc.)
+which carefully check their error codes and print informative
+error messages (using errno when possible).  To keep the routines
+simple and easy to use, the interface is exactly the same as the
+standard library routines.
+
+Thus the problematic, unhelpful, ugly code above would become
+	FILE *f=FOPEN(fName,"wb");
+and that's all.  Should anything go wrong, FOPEN will print an 
+appropriate, informative error message, using errno; and exit.
+
+About the only time you shouldn't use the caplib routines is
+when you *want* to deal with the routine failing.

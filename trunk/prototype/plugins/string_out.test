@@ -1,0 +1,8 @@
+#!../bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/09/13
+#
+string_out filename="textfile_out.test.out" string='Howdy!  Wazzup?
+This is the second line!
+';

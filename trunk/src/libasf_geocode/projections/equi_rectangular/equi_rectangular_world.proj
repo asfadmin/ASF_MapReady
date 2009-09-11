@@ -1,0 +1,8 @@
+[Equirectangular]
+Area = World
+Datum = WGS84
+Spheroid = WGS84
+Central meridian = 0
+Latitude of origin = 0
+False easting = 0
+False northing = 0

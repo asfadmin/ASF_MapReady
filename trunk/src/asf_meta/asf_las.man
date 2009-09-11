@@ -1,0 +1,149 @@
+NAME:		ASF_LAS.A
+
+DESCRIPTION:	Library of LAS 6.0 support routines that have been ported
+		to run without any TAE dependencies.
+
+CONTENTS:
+This library contains the ASF-STEP standard routines for reading and 
+writing LAS images.
+
+Most ASF-STEP software calls at least c_getddr and c_putddr, which 
+read and write a "struct DDR" from a .ddr file on disk.  The DDR
+contains the image width, height, data type, and projection information 
+(projection type, zone, corners and pixel size).  The .ddr file is a 
+mixed ASCII and Binary Label Services (c_lsopen, c_lsread, etc.) file.
+
+The lasIO.c file contains wrapper routines for actually
+reading the pixels from a LAS image.  getFloatLine (and getFloatLine_mb)
+read a single line from a LAS image, converting the data type 
+and format (byte-swapping, and floating-point conversion) into machine-native
+floating-point values.  PutFloatLine do less work, always writing
+data in the machine's native format; but they still convert the data type.
+
+
+SAMPLE CODE:
+/*BEGIN sample program
+This is a sample program which copies each line of 
+"input_image" into a new "output_image".
+It must be linked to asf.a and asf_las.a
+*/
+#include "asf.h"
+#include "ddr.h"
+
+void main(void)
+{
+	int y;/*Line of image to be processed (read or written)*/
+	float *buffer;/*Buffer to store one line of the image*/
+
+/*Input file variables*/
+	char *in_name="input_image";/*Name's extention is optional*/
+	struct DDR in_ddr;
+	FILE *in_fp;
+
+/*Output file variables*/
+	char *out_name="output_image";/*Name's extention is optional*/
+	struct DDR out_ddr;
+	FILE *out_fp;
+
+/*Open and read DDR of input file*/
+	in_fp=fopenImage(in_name,"rb");
+	c_getddr(in_name,&in_ddr);
+
+/*Open and create DDR of output file*/
+	out_fp=fopenImage(out_name,"wb");
+	out_ddr=in_ddr;
+	c_putddr(out_name,&out_ddr);
+
+/*Allocate input buffer*/
+	buffer=(float *)MALLOC(sizeof(float)*in_ddr.ns);
+
+/*Read and write each line of data*/
+	for (y=0;y<in_ddr.nl;y++)
+	{
+		getFloatLine(in_fp,&in_ddr,y,buffer);
+		/*Might manipulate buffer here...*/
+		putFloatLine(out_fp,&out_ddr,y,buffer);
+	}
+	
+/*Close files and leave*/
+	FCLOSE(in_fp);
+	FCLOSE(out_fp);
+	FREE(buffer);
+}
+/*END sample program*/
+
+
+BANDS/FILE LAYOUT:
+Most SAR images are greyscale, so only one number is needed to
+convey the brightness of each pixel.  But in multitemporal or
+multipolarization SAR images (or optical images), each pixel
+has brightnesses in several colors.  So while most SAR images have
+only one "band" (or color), some images have several (most often
+3-- red, green, and blue) bands.
+
+The image layout for a single-banded image is very simple--
+the values for the pixels in the top row come first, read
+left-to-right, then the next row, and so on to the bottom of 
+the image.  Since all the image size and type information is
+in the .ddr (and .meta) files, the .img file is very simple--
+no headers, variable-length lines, etc.  Many programs just
+read single-banded images directly (although they probably
+should call getFloatLine).
+
+So to access the (zero-based) point (x,y) in a single-banded image,
+access element (y*ddr.ns+x) of the .img file.
+
+LAS supports multi-banded images, but the layout is fairly odd--
+all the pixels for the first band (in the left-right, top-down
+order above) come before all the pixels in the second band,
+and so on.  (Compare this with the TIFF/BMP practice of storing
+all a pixel's colors together).  
+
+Thus to access the point (x,y) in band n of an image, 
+access element (n*ddr.nl*ddr.ns+y*ddr.ns+x) of the .img file.
+
+
+
+DIRECTIONS:
+The horizontal direction (to the right) has many names--
+x, sample, or range (a SAR term).  The vertical direction
+(down) is called y, line, or azimuth (again, a SAR term).
+
+LAS seems to use line and sample; while mathematicians 
+prefer (x,y).  What this means is that sometimes you'll
+find coordinates stored as "horizontal, then vertical"
+(x,y) and sometimes as "vertical, then horizontal" 
+(line,sample).  So keep your eyes open.
+
+
+
+DATA TYPES & FORMATS:
+The currently accepted data types are:
+
+	1-byte [8-bit unsigned]
+	2-short [16-bit signed]
+	3-long [32-bit signed]
+	4-float [32-bit]
+	5-double [64-bit]
+
+In addition to the data types above, the DDR contains a "system"
+string which describes how the data is actually stored.  It can be:
+	"ieee_std"-big-endian machine; IEEE standard floats
+	"ieee_lil"-little-endian machine; IEEE standard floats
+	"cray-unicos"-big-endian machine; cray-proprietary floats
+
+Note that most workstations, Macs, and UNIX machines are big-endian;
+while IBM PCs & VAX machines are little-endian.  The difference lies
+in which byte is considered the most significant: in a big-endian 
+machine, the first byte is the most significant (as we write in decimal);
+while in a little-endian machine, the last byte is the most significant.
+Hence the bytes 0x00 and 0x01 represent the number 0x0001 (1) on a big-endian
+machine; but the same bytes represent the number 0x0100 (256) on a little-
+endian machine.  
+
+Hence when a big-endian machine reads a file written by a little-endian 
+machine (or vice versa), the bytes in a word (or long, or float) 
+have to be swapped.  Luckily, the LAS library figures out when
+this needs to be done (via c_getsys) and does the conversion for you
+(via c_pxsys).  All you need to do is call getFloatLine.
+

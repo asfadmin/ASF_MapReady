@@ -1,0 +1,151 @@
+NAME:  remap (moves around, scales, and rotates) an image file
+
+SYNOPSIS: 
+    remap
+map:      [-rotate <deg>][-scale <sX> <sY>][-translate <tX> <tY>] 
+          [-matrix <matrixFile>][-ppf <ppfFile>][-deltas <deltaFile>] 
+                     [-quadratic <quadFile>][-warp <warpImages>]
+sample:   [-nearest|-bilinear|-sinc 
+                     |-kernel <sizeX> <sizeY>|-fileKernel <kernelFile>]
+data type:[-background <fill>]
+          [-byte [-map <min> <max>] |-char|-short|-int|-float|-double] 
+size:     [-width <width>][-height <height>][-sameSize][-asDDR <ddr>]
+	  [-log <file>] 
+required: <infile> <outfile>
+
+
+DESCRIPTION:
+
+	Remap works with arbitrary LAS 6.0 images.  Pass it two filenames.
+	A DDR must exist for the input image, and a DDR will be created for
+	the output.
+
+	Remap will perform a remapping and a resampling of the input image
+	to the output image.  Remapping changes the LOCATION of pixels 
+	(e.g. translation); resampling changes the VALUE of pixels 
+	(e.g. a 3x3 kernel).  
+
+	The other command line options can be entered in any order.  Although
+	case is significant, the unique start of each option is always
+	sufficient to identify it (e.g. "-rot 45" instead of "-rotation 45").
+	Specifing no parameters (other than the file names) will result an
+	output image which is in every way identical to the first.
+
+	If this isn't what you want (and it probably isn't), you
+	will specify one of 4 groups of options:
+
+
+
+OPTIONS:
+
+	This options are split into four different groups for your
+	convenience.  The four groups are: MAPPING, SAMPLING, OUTPUT
+	DATA TYPE AND OUTPUT SIZE.
+
+    MAPPING:
+	The map options (-rotate, -scale, -translate) can be applied in any 
+order, and can be repeated.  Rotation is clockwise in degrees, and scaling 
+and rotation operate around the origin of the coordinate system (initially 
+the origin of the input image).  These transformations are applied in 
+the order they are passed, i.e. left-to-right.  Since they are 
+concatenated into a matrix, the number of transformations specified 
+will not affect the execution time.  
+	Remap defines the top,left corner of the input and output images
+to be (0,0).
+
+	For example, to rotate about the center 
+of a 1000x1000 image, you would first translate the input image so the origin 
+is at its center (with -translate -500 -500), then perform the rotation 
+(for example, -rotate 20), then translate it back (-translate 500 500).
+
+In total, that's:
+	remap a.img b.img  -translate -500 -500  -rotate 20  -translate 500 500
+
+	Instead of specifying the transformation at the command line, you
+can read in the image transformation matrix directly with the -matrix
+option (also see fit_plane(1)).  The format is:
+		out.x=in.x*<num 1>+in.y*<num 2>+<num 3>
+		out.y=in.x*<num 4>+in.y*<num 5>+<num 6>
+		
+		Where <num 1> ... <num 6> are floating-point numbers read 
+		sequentially from the matrix file, separated by whitespace.
+		
+		e.g.:  A matrix file which scales the X coordinates by 2, and then
+			shifts the image 11.5 pixels to the right (+x) and 13 pixels 
+			down (+y) is:
+			
+			2 0 11.5
+			0 1 13
+	
+	You can also read in other matrix formats with the -ppf
+(for a correlate(1) .ppf coefficients file), -deltas (for a 
+calc_deltas(1) offsets file), or -quadratic (from fit_quadratic)
+options.
+
+	Another mapping option is the "warping image" (-warp option).
+This mapping moves each pixel by an offset read from smaller "offset 
+images".  To use this map, create zoomed-out (by a factor of 16 in both
+directions) images named ".horiz" (whose pixel values
+specify how the image is to be moved horizontally) and ".vert" 
+(whose values specify the vertical movement).  Positive pixel values 
+indicate that the output image should be moved right and down 
+(respectively); while negative values to the left and up (respectively).
+
+
+    SAMPLING:
+	The second set of options you might want to specify are the
+sampling functions.  -nearest selects nearest neighbor sampling, -bilinear
+(the default) selects bilinear interpolation, -kernel specifies a uniform
+kernel of the specified size, and -fileKernel specifies a kernel from a file.
+	The format of this kernel file is:
+         <size of kernel in X (sx) > <size of kernel in Y (sy) >
+         <kernel top left>    ...    <kernel top right>
+                ...           ...           ...
+        <kernel bottom left>  ...   <kernel bottom right>
+		
+	In total, there are 2+sx*sy numbers in the kernel.
+	The kernel is not normalized.  Its values can be negative.
+	
+	The -sinc option specifies a dynamically generated sinc image
+kernel.  The kernel size is always 8x8.  The sinc kernel is often used
+in the Fourier domain or with interferometry-based SAR images.
+	
+
+    OUTPUT DATA TYPE:
+	By default, the output data type (byte, short, float, etc.) is the
+same as the input data type.  If you specify one of the data type
+options, the output data will be converted into the specified type.
+Note that since remap uses float data internally, this is the
+fastest data type to use.
+
+
+    OUTPUT SIZE:
+	By default, the output image is big enough to contain the entire
+post-transformation section of the input image which ends up in non-negative 
+coordinate space (e.g. after a translation of (-100, -250), a 1000 x 2000
+pixel input image will produce a clipped 900 x 1750 image).  This applies
+even after rotations and scaling.
+	However, you can fix the width and/or height to whatever
+you want with the -width and -height options, or specify that
+the output image should be the same size as the input image (-sameSize).
+	You can also specify a DDR from which to copy the size and
+projection information with the -asDDR parameter.
+
+
+EXAMPLE:
+
+SEE ALSO:
+
+HARDWARE/SOFTWARE LIMITATIONS:
+	Remap is a large and complex program, and may take while to learn.
+	But I've found it quite useful in many graphics-related tasks,
+	and ASF currently uses it for their complex interferometry, and 
+	for geocoding.  I hope you enjoy it.
+
+BUGS:
+
+AUTHOR:  Remap Vers. 2.1 by Orion Lawlor, 3/14/99  --  ASF SAR Tools
+
+CONTACT:  apd@asf.alaska.edu
+	  or visit http://www.asf.alaska.edu/apd
+

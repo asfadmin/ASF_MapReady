@@ -1,0 +1,32 @@
+
+README FILE FOR   auto_swath_mosaic
+
+PACKING LIST:
+        NAME                       DESCRIPTION
+	----		           -----------
+        auto_swath_mosaic.readme   This file
+        auto_swath_mosaic          Executable shell script
+	auto_swath_mosaic.man	   Man page for auto_swath_mosaic
+
+
+INSTALLATION INSTRUCTIONS:
+	Before auto_swath_mosaic can be run, metadata, sarin, concatm,
+	resample, and accum_offset must be compiled.
+
+SITE SPECIFIC MODIFICATIONS:
+	Check to make sure that auto_swath_mosaic is pointing to the
+	correct directory for ksh. By default, auto_swath_mosaic uses /bin/ksh.
+	If this path is not correct for your system, change the first line of
+	auto_swath_mosaic.
+
+NOTES:
+
+
+
+TEST/EVALUATION PROCEDURES:
+
+
+NOTES:
+
+
+

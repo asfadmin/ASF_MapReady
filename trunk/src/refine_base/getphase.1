@@ -1,0 +1,36 @@
+NAME: getphase
+
+SYNOPSIS: getphase phase_file tie_point_file outfile
+
+DESCRIPTION:
+	Getphase is called by refine_base, and only refine_base.
+	
+	    Getphase reads the phase for each tie point
+	location in the tie point file, and then outputs this
+	phase.  This information is then used by genab.
+ 
+OPTIONS:
+	phase_file: is the unwrapped phase file, from escher(1)
+	tie_point_file: Tie point location file.
+  	outfile: an output ASCII file of tie points with elevations & phase
+	
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+--------------------------------------------------------------
+
+EXAMPLES:
+
+SEE ALSO:
+	escher(1), genab(1), deramp(1)
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: Tom Logan, ASF 1997
+
+CONTACT: apd@asf.alaska.edu
+	 or visit http://www.asf.alaska.edu/apd
+
+
+

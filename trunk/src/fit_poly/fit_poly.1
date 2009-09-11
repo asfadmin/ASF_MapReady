@@ -1,0 +1,47 @@
+NAME: fit_quadratic
+
+SYNOPSIS: fit_quadratic <in> <out>
+
+DESCRIPTION:
+    	fit_quadratic fits a least-squares planar quadratic mapping to the
+    given input data.  This is a mapping of the form:
+    	<out>=A + B*x + C*y + D*x*x + E*x*y + F*y*y
+    
+    A mapping is calculated which maps the input points (see below) to 
+    the output points and back again.  Each mapping is written out.
+    
+    In addition, this program lists the fit error it finds for each point.
+
+OPTIONS:
+    	<in> an fico offset point file.  Contains pixel locations of type
+    		<output X> <output Y> <input X> <input Y>
+    		...
+    
+    	<out> a file in remap -quad compatible format:
+    		The 6 quadratic coefficients above are stored for
+    		  <input to output X>
+    		  <input to output Y>
+    		  <output to input X>
+    		  <output to input Y>
+    		in ABCDEFG order, as floating-point numbers.
+    		
+ERROR MESSAGES:
+MESSAGE GIVEN:			REASON:
+-----------------------------------------------------------
+
+EXAMPLES:
+	Don't run this program directly-- call geocode.
+	
+SEE ALSO:
+    	geocode(1).
+
+HARDWARE/SOFTWARE LIMITATIONS: none
+
+BUGS: none known
+
+AUTHOR: Orion Lawlor, March 1998
+
+CONTACT: apd@asf.alaska.edu
+         or visit http://www.asf.alaska.edu/apd
+
+

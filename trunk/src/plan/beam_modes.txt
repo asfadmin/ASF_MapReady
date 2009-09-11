@@ -1,0 +1,55 @@
+#
+# The sequence is:  (fields must be separated by spaces)
+#
+#  Satellite,1,Beam Mode,
+#  Swath Width (km),Swath Length (km),Swath Length (sec),# Buffer Frames
+#  Min Look Angle,Max Look Angle,Increment
+#
+# -*OR*-
+#
+#  Satellite,2,Beam Mode,
+#  Swath Width (km),Swath Length (km),Swath Length (sec),# Buffer Frames,
+#  Allowable Beam Modes (1 or more, separated by commas)
+#
+# In case 1, the look angle is given as a text box, and checked
+# against the specified min/max, rounded to the nearest value allowed
+# by the increment.
+#
+# In case 2, the look angle is given as a selection list.
+#
+# Got some of this info from 
+#   http://earth.esa.int/object/index.cfm?fobjectid=5194
+#
+# Fine-beam single-pol: 3 calibrated look angles: 21.5, 34.3, 41.5, 50.8
+ALOS 2 FBS 55 55 8.7 2 21.5,34.3,41.5,50.8
+#ALOS 1 FBS 55 55 8.7 2 9.9 50.8 0.1
+
+# Fine-beam dual-pol: only 34.3 is calibrated
+ALOS 2 FBD 55 55 8.7 2 34.3
+#ALOS 1 FBD 9.9 50.8 0.1 55 55 8.7 2
+
+# I don't even know what this is?  34.3 only, according to Michelle
+#ALOS 1 DSN 55 55 8.7 2 9.9 50.8 0.1
+ALOS 2 DSN 55 55 8.7 2 34.3
+
+# Full-pol: 21.5 only -- added 23.1 on 2/2/09
+#ALOS 2 PLR 55 55 8.7 2 21.5
+ALOS 2 PLR 34 65 9.6 2 21.5,23.1
+#ALOS 1 PLR 38 38 6 3 9.7 26.2 0.1
+
+# Scansar modes -- not sure if we need two of them
+# Don't know the calibrated modes, for now allow full range
+#ALOS 1 WB1 300 300 45 1 20.1 36.5 0.1
+ALOS 2 WB1 300 300 45 1 27.1
+#removing WB2 for now
+#ALOS 1 WB2 300 300 45 1 20.1 36.5 0.1
+
+# Prism: -1.5 to 1.5?
+#ALOS 2 Prism 40 40 6.3 5 -1.5,1.5
+ALOS 1 Prism 40 40 6.3 9 -1.5 1.5 0.1
+
+# Avnir... ?
+ALOS 1 Avnir 70 70 11 1 -44 44 0.1
+
+# ERS
+ERS-2 2 STD 100 100 15.5 0 17.2

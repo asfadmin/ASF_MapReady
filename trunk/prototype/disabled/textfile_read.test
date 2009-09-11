@@ -1,0 +1,8 @@
+#!../bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/09/13
+#
+textfile_read filename="textfile_write.test.out";
+
+echo generic=@textfile_read.a;

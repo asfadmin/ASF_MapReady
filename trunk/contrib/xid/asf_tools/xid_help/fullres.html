@@ -1,0 +1,73 @@
+<TITLE>4.0 Image Views</TITLE>
+<H2>4.0 Image Views</H2>
+
+<H2>4.1 Full Resolution Image</H2>
+
+The full resolution option allows the user to load (from
+disk) full resolution windows of subsampled images.  The 
+full resolution image is loaded into a separate display
+window (i.e., it does not overwrite the main image window).
+The <B>left mouse button</B> is used to select the center point
+of an area of interest within the main image window.  A
+full resolution window of the specified size is then read
+from disk and displayed.  Edge conditions are handled by
+moving the selected point of interest such that the 
+specified size may be loaded.  If the full resolution
+window size specified is larger than the loaded image,
+the entire image will be loaded.  On both 8-bit and 24-bit
+displays, the full resolution window will use the same
+colormap as the main image window.
+
+<P>
+<IMG SRC="fullres.gif">
+<P>
+
+The <B>256x256</B>, <B>512x512</B>, <B>Full Screen</B>, and 
+<B>User-Selected</B> radio buttons allow the user to select the 
+size of the full resolution window to be loaded.  
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>256x256:</B>
+    <DD>Load a full resolution window of 256 lines 
+	and 256 samples based on the point of interest selected.
+    <P>
+
+    <DT><B>512x512:</B>
+    <DD>Loads a full resolution window of 512 lines 
+	and 512 samples based on the point of interest selected.
+    <P>
+
+    <DT><B>Full Screen:</B>
+    <DD>Load a full resolution window the size of the display monitor.
+    <P>
+
+    <DT><B>User-Selected:</B>
+    <DD>The user is allowed to outline the area in the main image window that
+	is to be loaded at full resolution.  Place the cursor at the upper
+	left corner of the desired window; press and hold the left mouse
+	button while dragging the mouse to the lower right corner of the 
+	window; release the left mouse button and the outlined area will be
+	loaded at full resolution.
+</DL>
+</BLOCKQUOTE>
+
+<DL>
+<DT><B>Show Outline:</B>
+<DD>When selected, display a graphic outline in the main image window of the
+    currently loaded full resolution image.
+<P>
+
+<DT><B>Width:</B>
+<DD>The width of the current full resolution window.  The user is
+    not allowed to modify this field.
+<P>
+
+<DT><B>Height:</B>
+<DD>The height of the current full resolution window.  The user is
+    not allowed to modify this field.
+<P>
+
+<DT><B>Dismiss:</B>
+<DD>Close the full resolution panels.
+</DL>

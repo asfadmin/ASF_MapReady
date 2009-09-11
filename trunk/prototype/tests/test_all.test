@@ -1,0 +1,6 @@
+#!../bin/clui -v10 -l
+# Tests all the dll's in this directory.  
+#  Curiously, this script doesn't need to say *anything*, since
+# the dll's in the current directory are loaded & run automatically
+# by clui.
+

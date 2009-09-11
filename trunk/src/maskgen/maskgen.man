@@ -1,0 +1,44 @@
+
+    NAME:	maskgen.c
+
+    SYNOPSIS:   maskgen inRSVfile inDEMfile outBASENAME [-l]
+
+    DESCRIPTION:
+		This program creates a mask of the given DEM over the
+		orbit specified by the raw state vector from the RSV file.
+		The mask highlights areas of layover and shadow in the
+		DEM, marking them for easy identification.
+
+    OPTIONS:	-l	Option to leave behind temporary files.
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+    Couldn't open data file			The input RSV file could
+						not be read.
+    ERROR: rsv file doesn't cover latitudes...	The RSV file doesn't cover
+						the requisite latitudes
+						(hilat and lolat)
+    Not enough points... check rsv file		The RSV file does not have
+						the correct number of
+						points.
+
+
+    EXAMPLES:
+		maskgen e1_24222 main_utm_dem 24222_utm
+	This will create a .img and .ddr file for the mask of main_utm_dem
+	along the swath specified by e1_24222.rsv, with the basename
+	24222_utm_mask.
+
+    SEE ALSO:
+	propagate, prop2ll, ll2proj, projfit, demclip, sarsim, concat
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR:
+	Mike Jessop, modified by Joshua Badgley
+
+    CONTACT:
+	rguritz@asf.alaska.edu
+

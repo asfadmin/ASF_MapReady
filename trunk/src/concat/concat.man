@@ -1,0 +1,75 @@
+NAME:		concat --  Creates a mosaic of all input geocoded SAR images
+                           to produce an output image of an equal area.
+
+SYNOPSIS:  
+
+   concat [-m mask][-v ovrlp][-c][-n] <outfile> <file1 file2 ...>
+			  
+DESCRIPTION:
+		Create an output image by overlaying each input image into
+            	the output at the specified locations.  This Unix routine
+		provides similar functionality to the LAS 6.0 routine
+		concat-auto, but operates from the Unix command line.  The
+		output is a large area geocoded SAR image with a valid DDR, 
+ 		describing the geolocation of the image. 
+
+		inputs:  file1 file2 ...    LAS 6.0 .img files and there .ddr
+					    valid metadata files.  At least
+				            one input image must be specified.
+					    Inputs should not include extensions
+
+		output:  outfile.img,	    LAS 6.0 .img file and its
+			 outfile.ddr	    .ddr file giving the geolocation.
+				   	    This input must be specified. 
+					    No extension should be given, the
+					    .img will be appended.
+
+OPTIONS:
+		-m mask		Sets mask value for output mosaic, 
+				default is 0.
+
+		-v ovrlp	Overlap pixel options.  Can be REPLAC, 
+				LEAVE, or AVER.  Default is REPLAC.
+		
+		-c		Concatenate successive images into successive
+				bands (e.g. first image -> red band,
+				second image -> green band,
+				third image -> blue band,
+				fourth image -> red band).  Works with
+				any number of images.
+
+		-n		Set everything up, but do not copy image data.
+				This is useful to find the offsets between a set
+				of LAS images.
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+---------------------------------------------------------------------
+
+EXAMPLES:
+	example>  concat strip 87239las 87240las 87241las 87242las 87243las
+
+	This example creates the output SAR mosaic strip.img by placing all
+	of the pixels from the input images 87239las.img, 87240las.img, 
+	87241las.img, 87242las.img, and 87243las.img into the output space 
+	based on calculated positions from the input geolocations.  The
+	background (mask) values are all set to 0 by default and overlapping
+   	pixels are simply replaced by the newer values.  The input images'
+	.ddr files are all consulted, and the output file strip.ddr will
+	contain valid geolocation information for the output image.
+
+SEE ALSO:
+	geocode(1), auto_sar_mosaic(1)
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR:		Removal of TAE dependencies performed by T. Logan (ASF)
+
+CONTACT:	apd@asf.alaska.edu
+		http://www.asf.alaska.edu/apd
+
+
+
+

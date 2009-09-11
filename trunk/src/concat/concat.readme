@@ -1,0 +1,41 @@
+
+README FILE FOR concat -- Creates a mosaic of all geocoded input SAR images
+			  to produce an output image of an equal area.
+
+PACKING LIST:
+
+        This ASF software tool release is based entirely on modified
+        LAS 6.0 routines.  Unless otherwise noted in the description, the
+        routines are from LAS 6.0.  A small number of these LAS routines were
+        modified in order to remove dependencies on TAE.  The list of 
+        all modifications made to the LAS routines is included in the 
+        file concat.diffs.
+
+        NAME            DESCRIPTION
+	Makefile	Unix Make tool script, builds executable
+	concat.c	Main routine
+	concat.readme	This file;  Installation instructions and notes 
+	concat.man	Unix style man page/help file
+	averopt.c
+	cal_lin_smp.c
+	overlay_img.c
+	pad.c
+	set_dtype.c
+
+INSTALLATION INSTRUCTIONS:
+   This executable relies on the library file asf_las.a and on LAS 6.0
+   include files.  These files are included in this tool release and 
+   should be available in the directory asf_tools/lib/SYS, where
+   SYS is the local system type.
+
+SITE SPECIFIC MODIFICATIONS:
+
+TEST/EVALUATION PROCEDURES:
+   A suitable test for this program would be to create a SAR mosaic of 
+   geocoded images.  The result should be a large area mosaic containing
+   all of the input images, and having a valid DDR file.
+
+NOTES:
+   This routine will only work on geocoded SAR images.  A different set of 
+   ASF routines will be released to make strip mode (non-geocoded) SAR 
+   mosaics.

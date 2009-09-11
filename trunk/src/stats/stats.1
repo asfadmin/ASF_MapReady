@@ -1,0 +1,111 @@
+.PU
+
+.TH stats 1 "March 2003"
+
+.SH NAME:
+stats \- Get basic statistics on a SAR image file
+
+.SH SYNOPSIS:
+.B stats
+.I "[-mask <value>] [-log <logFile>] [-quiet] [-overmeta]"
+.I "[-nometa] [-overstat] [-nostat] [-startline <line>]"
+.I "[-startsample <sample>] [-width <width>]"
+.I "[-height <height>] <\fBimageName\fP>"
+
+.SH DESCRIPTION:
+The \fBstats\fP command figures the statistics for the given \fBimageName\fP
+data file (you must include the file extention [e.g. "data_file.img"]). It then
+writes the statistics into a .stat file of the same base name as
+\fBimageName\fP. It also fills a stats block in the .meta file of the same base
+name as \fBimageName\fP.
+
+.SH COMMAND LINE OPTIONS:
+.TP 8
+.B "-mask \fIvalue\fP"
+Ignore \fIvalue\fP while taking statistics.
+.TP 8
+.B "-log \fIlogFile\fP"
+Copy terminal output to \fIlogFile\fP.
+.TP 8
+.B "-quiet"
+Supress terminal output to essential.
+.TP 8
+.B "-overmeta"
+Force overwrite of existing .meta file.
+.B "-nometa"
+Do not generate output in a .meta file.
+.TP 8
+.B "-overstat"
+Force overwrite of existing .stat file.
+.TP 8
+.B "-nostat"
+Do not generate output in a .stat file.
+.TP 8
+.B "-startline \fIline\fP"
+Generate statistics for window starting at \fIline\fP. (implies -nometa)
+.TP 8
+.B "-startsample \fIsample\fP"
+Generate statistics for window starting at \fIsample\fP. (implies -nometa)
+.TP 8
+.B "-height \fIheight\fP"
+Generate statistics for window of \fIheight\fP lines. (implies -nometa)
+.TP 8
+.B "-width \fIwidth\fP"
+Generate statistics for window of \fIwidth\fP samples. (implies -nometa)
+.TP 8
+.B "imageName"
+Name of input image file (include extension).
+
+.SH EXAMPLES:
+Assume you have the file 'data_file.img' in your working directory. In order to
+create 'data_file.stat' and populate 'data_file.meta' with a stats block, you
+would run the command:
+.in +8
+.B "% stats data_file.img"
+.in -8
+
+.PP
+
+Say 'data_file.stat' already exists and 'data_file.meta' already has a stats
+block, but you want to update both sets of statistics information, then run:
+.in +8
+.B "% stats -overstat -overmeta data_file.img"
+.in -8
+
+.PP
+
+This time say 'data_file.stat' already exists and 'data_file.meta' already has a
+stats block, and you only want to update the meta file statistics, then run:
+.in +8
+.B "% stats -nostat -overmeta data_file.img"
+.in -8
+
+.PP
+
+If you have an image (data_file.img again) with a solid background of sorts,
+lets say black (denoted by value '0' [zero]) in this case, and you want the
+statistics to disregard that value, then use this command line:
+.in +8
+.B "% stats -mask 0.0 data_file.img"
+.in -8
+
+.PP
+
+To take statistics in a window 4000 lines high and 2000 samples wide that
+starts at line 200 and sample 10 use this command line on data_file.amp:
+.in +8
+.B "% stats -startline 200 -height 4000 -startsample 10"
+.in +8
+.B "-width 2000 data_file.amp"
+.in -16
+
+.SH NOTES:
+None.
+
+.SH BUGS:
+None known.
+
+.SH CONTACT:
+E-Mail:  apd@asf.alaska.edu
+.RE
+Website: http://www.asf.alaska.edu/apd

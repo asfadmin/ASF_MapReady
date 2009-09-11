@@ -1,0 +1,87 @@
+meta_version: 0.9                # ASF-STEP Lab Metadata File.
+
+geo {                            # begin parameters used in geolocating the image.
+    type: P                          # Image type: [S=slant range; G=ground range; P=map projected]
+    proj {                           # Map Projection parameters
+        type: P                          # Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]
+        startX: -376900                  # Projection Coordinate at top-left, X direction
+        startY: -1492200                 # Projection Coordinate at top-left, Y direction
+        perX: 100                        # Projection Coordinate per pixel, X direction
+        perY: -100                       # Projection Coordinate per pixel, X direction
+        hem: N                           # Hemisphere: [N=northern hemisphere; S=southern hemisphere]
+        re_major: 6378206.4              # Major (equator) Axis of earth (meters)
+        re_minor: 6356583.8              # Minor (polar) Axis of earth (meters)
+        ps_lat: 72.374152778             # Polar Stereographic reference Latitude
+        ps_lon: -158.3591                # Polar Stereographic reference Longitude
+    }                                # end proj
+    lookDir: R                       # SAR Satellite look direction (normally R) [R=right; L=left]
+    deskew: 1                        # Image moved to zero doppler? [1=yes; 0=no]
+    xPix: 100                        # Pixel size in X direction [m]
+    yPix: 100                        # Pixel size in Y direction [m]
+    rngPixTime: 4.4545603728e-07     # Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]
+    azPixTime: 0.015099817313        # Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]
+    slantShift: 0                    # Error correction factor, in slant range [m]
+    timeShift: 0                     # Error correction factor, in time [s]
+    slantFirst: 843458.4961          # Slant range to first image pixel [m]
+    wavelength: 0.0565646            # SAR Carrier Wavelength [m]
+    dopRangeCen: -2063.1489258       # Doppler centroid [Hz]
+    dopRangeLin: -1.0057592          # Doppler per range pixel [Hz/pixel]
+    dopRangeQuad: 0.0001246          # Doppler per range pixel sq. [Hz/(pixel^2)]
+    dopAzCen: -3848.7553711          # Doppler centroid [Hz]
+    dopAzLin: 0.1466008              # Doppler per azimuth pixel [Hz/pixel]
+    dopAzQuad: 2e-07                 # Doppler per azimuth pixel sq. [Hz/(pixel^2)]
+}                                # end geo
+
+ifm {                            # begin interferometry-related parameters
+    er: 6358730.957                  # Local earth radius [m]
+    ht: 7161753.479                  # Satellite height, from center of earth [m]
+    nLooks: 4                        # Number of looks to take from SLC
+    orig_lines: 5066                 # Number of lines in original image
+    orig_samples: 6240               # Number of samples in original image
+}                                # end ifm
+
+state {                          # begin list of state vectors for satellite, over image
+    year: 2000                       # Year of image start
+    day: 168                         # Julian day of the year for image start
+    second: 13389.686523             # Second of the day for image start
+    number: 3                        # Number of state vectors below
+    vector {                         # begin a single state vector
+        time: 0                          # Time, relative to image start [s]
+        x: -2552706.9706                 # X Coordinate, earth-fixed [m]
+        y: -527173.37181                 # Y Coordinate, earth-fixed [m]
+        z: 6671126.4648                  # Z Coordinate, earth-fixed [m]
+        vx: 5550.8796374                 # X Velocity, earth-fixed [m/s]
+        vy: 4462.3930198                 # Y Velocity, earth-fixed [m/s]
+        vz: 2471.651123                  # Z Velocity, earth-fixed [m/s]
+    }                                # end vector
+    vector {                         # begin a single state vector
+        time: 37.706176758               # Time, relative to image start [s]
+        x: -2341042.6582                 # X Coordinate, earth-fixed [m]
+        y: -359150.94171                 # Y Coordinate, earth-fixed [m]
+        z: 6759163.5742                  # Z Coordinate, earth-fixed [m]
+        vx: 5674.538933                  # X Velocity, earth-fixed [m/s]
+        vy: 4449.525434                  # Y Velocity, earth-fixed [m/s]
+        vz: 2197.4035645                 # Z Velocity, earth-fixed [m/s]
+    }                                # end vector
+    vector {                         # begin a single state vector
+        time: 75.412353516               # Time, relative to image start [s]
+        x: -2124881.5086                 # X Coordinate, earth-fixed [m]
+        y: -191753.01428                 # Y Coordinate, earth-fixed [m]
+        z: 6836795.4102                  # Z Coordinate, earth-fixed [m]
+        vx: 5789.429254                  # X Velocity, earth-fixed [m/s]
+        vy: 4429.2036738                 # Y Velocity, earth-fixed [m/s]
+        vz: 1919.7941895                 # Z Velocity, earth-fixed [m/s]
+    }                                # end vector
+}                                # end of list of state vectors
+
+extra {                          # begin extra sensor information
+    sensor: RSAT-1                   # Imaging sensor
+    mode: SWB                        # Imaging mode
+    processor: ASF/SP2-D/VERS2.61    # Name & Version of SAR Processor
+    orbit: 24090                     # Orbit Number for this datatake
+    bitErrorRate: 2e-07              # Bit Error Rate
+    satBinTime:                0     # Satellite Binary Time
+    satClkTime:                      # Satellite Clock Time (UTC)
+    prf: 0                           # Pulse Repition Frequency
+}                                # end extra
+

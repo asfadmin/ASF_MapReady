@@ -1,0 +1,28 @@
+Compiling under Win32:
+
+The asf_core.dll/.lib library is built with:
+
+cl /nologo /GR /EHsc /DWIN32=1 src/yaddayadda.cpp -olib/asf_core.dll /RTC1 /Zi /Yd -I. -I.. -Ibuild/.. -Isrc -DASF_BUILD_COREDLL=1 /LD /link
+
+"/GR" enables runtime type info (for dynamic_cast<>).
+"/EHsc" enables C++ exception handling (for STL).
+"/DWIN32=1" sets the WIN32 symbol (for #ifdef's).
+"/RTC1 /Zi /Yd" export debugging info.
+"-I" sets the #include path.
+"-DASF_BUILD_COREDLL=1" makes ASF_COREDLL expand to 
+   __declspec(dllexport), which in turn makes the stuff
+   in asf_core.dll actually linkable.
+
+"/LD" creates a dynamically-linked library.
+"/link" sets linker options.
+
+
+
+
+
+Common problems:
+	clui_cli.obj : error LNK2019: unresolved external symbol "void __cdecl asf::execute_list(class asf::parameter_control_list const &)" (?execute_list@asf@@YAXABVparameter_control_list@1@@Z) referenced in function _main
+or any similar unresolved symbol when actually listed in the ASF core DLL.  This is a sure sign the core DLL isn't properly exporting the symbol--make sure you've declared the relevant class or routine as ASF_COREDLL in the header file.  The ASF_COREDLL macro expands to __declspec(dllimport) from outside.
+
+
+

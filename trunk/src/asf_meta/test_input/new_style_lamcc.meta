@@ -1,0 +1,112 @@
+# This file contains the metadata for satellite capture file of the same base name.
+#      '?' is likely an unknown single character value.
+#      '???' is likely an unknown string of characters.
+#      '-999999999' is likely an unknown integer value.
+#      'NaN' is likely an unknown Real value.
+
+meta_version: 1.10
+
+general {                                  # Begin parameters generally used in remote sensing
+    sensor: RSAT-1                             # Imaging sensor
+    mode: SWB                                  # Imaging mode
+    processor: ASF/SP2-D/VERS2.61              # Name and Version of Processor
+    data_type: BYTE                            # Type of samples (e.g. REAL*4)
+    system: big_ieee                           # System of samples (e.g. big_ieee)
+    orbit: 24090                               # Orbit Number for this datatake
+    orbit_direction: A                         # Ascending 'A', or descending 'D'
+    frame: 0                                   # Frame for this image [-1 if n/a]
+    band_number: 0                             # Band number; first band is 0
+    line_count: 8262                           # Number of lines in image
+    sample_count: 8261                         # Number of samples in image
+    start_line: 0                              # First line relative to original image
+    start_sample: 0                            # First sample relative to original image
+    x_pixel_size: 100                          # Range pixel size [m]
+    y_pixel_size: 100                          # Azimuth pixel size [m]
+    center_latitude: NaN                       # Approximate image center latitude
+    center_longitude: NaN                      # Approximate image center longitude
+    re_major: 6378206.4                        # Major (equator) Axis of earth [m]
+    re_minor: 6356583.8                        # Minor (polar) Axis of earth [m]
+    bit_error_rate: 2e-07                      # Fraction of bits which are in error
+    missing_lines: -999999999                 # Number of missing lines in data take
+}                                          # End general
+
+sar {                                      # Begin parameters used specifically in SAR imaging
+    image_type: P                              # [S=slant range; G=ground range; P=map projected]
+    look_direction: R                          # SAR Satellite look direction [R=right; L=left]
+    look_count: 4                              # Number of looks to take from SLC
+    deskewed: 1                                # Image moved to zero doppler? [1=yes; 0=no]
+    original_line_count: 5066                  # Number of lines in original image
+    original_sample_count: 6240                # Number of samples in original image
+    line_increment: 1                          # Line increment for sampling
+    sample_increment: 1                        # Sample increment for sampling
+    range_time_per_pixel: 4.4545603728e-07     # Time per pixel in range [s]
+    azimuth_time_per_pixel: 0.015099817313     # Time per pixel in azimuth [s]
+    slant_range_first_pixel: 843458.4961       # Slant range to first pixel [m]
+    slant_shift: 0                             # Error correction factor, in slant range [m]
+    time_shift: 0                              # Error correction factor, in time [s]
+    wavelength: 0.0565646                      # SAR carrier wavelength [m]
+    prf: 0                                     # Pulse Repition Frequency
+    satellite_binary_time:                0    # Satellite Binary Time
+    satellite_clock_time:                0     # Satellite Clock Time (UTC)
+    dopRangeCen: -2063.1489258                 # Range doppler centroid [Hz]
+    dopRangeLin: -1.0057592                    # Range doppler per range pixel [Hz/pixel]
+    dopRangeQuad: 0.0001246                    # Range doppler per range pixel sq. [Hz/(pixel^2)]
+    dopAzCen: -3848.7553711                    # Azimuth doppler centroid [Hz]
+    dopAzLin: 0.1466008                        # Azimuth doppler per azimuth pixel [Hz/pixel]
+    dopAzQuad: 2e-07                           # Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]
+}                                          # End sar
+
+state {                                    # Begin list of state vectors for satellite, over image
+    year: 2000                                 # Year of image start
+    julDay: 168                                # Julian day of the year for image start
+    second: 13389.686523                       # Second of the day for image start
+    vector_count: 3                            # Number of state vectors below
+    vector {                                   # Begin a single state vector
+        time: 0                                    # Time, relative to image start [s]
+        x: -2552706.9706                           # X Coordinate, earth-fixed [m]
+        y: -527173.37181                           # Y Coordinate, earth-fixed [m]
+        z: 6671126.4648                            # Z Coordinate, earth-fixed [m]
+        vx: 5550.8796374                           # X Velocity, earth-fixed [m/s]
+        vy: 4462.3930198                           # Y Velocity, earth-fixed [m/s]
+        vz: 2471.651123                            # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 37.706176758                         # Time, relative to image start [s]
+        x: -2341042.6582                           # X Coordinate, earth-fixed [m]
+        y: -359150.94171                           # Y Coordinate, earth-fixed [m]
+        z: 6759163.5742                            # Z Coordinate, earth-fixed [m]
+        vx: 5674.538933                            # X Velocity, earth-fixed [m/s]
+        vy: 4449.525434                            # Y Velocity, earth-fixed [m/s]
+        vz: 2197.4035645                           # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 75.412353516                         # Time, relative to image start [s]
+        x: -2124881.5086                           # X Coordinate, earth-fixed [m]
+        y: -191753.01428                           # Y Coordinate, earth-fixed [m]
+        z: 6836795.4102                            # Z Coordinate, earth-fixed [m]
+        vx: 5789.429254                            # X Velocity, earth-fixed [m/s]
+        vy: 4429.2036738                           # Y Velocity, earth-fixed [m/s]
+        vz: 1919.7941895                           # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+}                                          # End the list of state vectors
+
+projection {                               # Map Projection parameters
+    type: L                                    # Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]
+    startX: -376900                            # Projection Coordinate at top-left, X direction
+    startY: -1492200                           # Projection Coordinate at top-left, Y direction
+    perX: 100                                  # Projection Coordinate per pixel, X direction
+    perY: -100                                 # Projection Coordinate per pixel, Y direction
+    units: meters                              # Units of projection [meters, seconds]
+    hem: N                                     # Hemisphere: [N=northern hemisphere; S=southern hemisphere]
+    re_major: 6378206.4                        # Major Axis (equator) of earth [m]
+    re_minor: 6356583.8                        # Minor Axis (polar) of earth [m]
+    param {                                    # Projection specific parameters
+        lamcc {                                # Begin Lambert Conformal Conic projection
+            plat1: 73.123                              # First standard parallel
+            plat2: 71.123                              # Second standard parallel
+            lat0: 72.123                               # Original latitude
+            lon0: -158.123                             # Original longitude
+        }                                          # End lamcc
+    }                                          # End param
+}                                          # End projection
+

@@ -1,0 +1,10 @@
+[Lambert Conformal Conic]
+Area = CIS
+Datum = WGS84
+Spheroid = WGS84
+First standard parallel = 49
+Second standard parallel = 77
+Central meridian = -100
+Latitude of origin = 40
+False easting = 0
+False northing = 0

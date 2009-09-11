@@ -1,0 +1,57 @@
+
+    NAME: fit_warp
+
+    SYNOPSIS: fit_warp <in> <image> <out>
+
+    DESCRIPTION:
+    	
+    	fit_warp finds a weighted combination of the point offsets
+    from fico to generate two output translation LAS images--
+    out.horiz and out.vert.  These can be fed to the "-warp" option
+    in remap.
+    
+       The resulting warping images can represent a non-linear 
+    image-image shift, which may result in much higher phase
+    coherence for interferometry over moving and deforming surfaces,
+    such as glaciers or ice sheets.
+    
+
+    OPTIONS:
+    	<in> an fico offset point file
+    	<image> is a LAS image, used to set the size of the offset files.
+    	     Otherwise, it is unused.
+    	<out> the base name for the warp image files.
+    	     out.horiz will the be the horizontal warping offset image;
+    	     out.vert will be the vertical warping offset image.
+    	
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:
+	If you had previously performed a correlation with
+	fico to generate "fico1", to generate files for 
+	use with remap (called warped.horiz and warped.vert)
+	on the image "remapThis", you would type:
+	
+		fit_warp fico1 remapThis warped
+	
+	You could later line remapThis up with:
+		remap -warp warped -sameSize remapThis out
+	
+    SEE ALSO:
+    	fico(1), remap(1), compare to fit_plane(1).
+
+    HARDWARE/SOFTWARE LIMITATIONS: none
+
+    BUGS: none known
+
+    AUTHOR: Orion Lawlor, May 1999
+
+    CONTACT: apd@asf.alaska.edu
+	     http://www.asf.alaska.edu/apd
+
+
+
+
+

@@ -1,0 +1,47 @@
+
+Tool name:
+   resample
+
+Usage:
+   resample <infile> <outfile> <pixsize>
+             [-license] [-version] [-help]
+
+Description:
+   The resample tool resamples the input file to produce a new
+   file with the given pixel size.  Resampling is accomplished with a
+   square filter kernel centered on the pixel to best interpolate the
+   values around the pixel to produce the new value.
+
+Input:
+   <infile>  The basename of the input data file
+   <pixsize>  The desired pixel size in the output file.
+
+Output:
+   <outfile>  The basename of the output file.  The output file will contain
+        <pixsize> sized pixels.
+
+Options:
+   -license
+        Print copyright and license for this software then exit.
+   -version
+        Print version and copyright then exit.
+   -help
+        Print this help information and then exit.
+
+Limitations:
+  At this time, fill_holes only works on ASF Internal format files (.img)
+
+Contact:
+   Alaska Satellite Facility
+   Geophysical Institute
+   University of Alaska Fairbanks
+   P.O. Box 757320
+   Fairbanks, AK 99775-7320
+   http://www.asf.alaska.edu
+   uso@asf.alaska.edu
+
+resample, version 6602 (part of MapReady 1.0.2-dev)
+
+Copyright (c) 2007, University of Alaska Fairbanks, Alaska Satellite Facility.
+All rights reserved.
+

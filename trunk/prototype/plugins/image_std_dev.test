@@ -1,0 +1,11 @@
+#!/test/home/olawlor/prototype/bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
+#
+
+image_input_las filename="grey.img";
+image_std_dev in=@image_input_las.out radius=1;
+image_output_binary 
+	in=@image_std_dev.out 
+	filename="image_std_dev.test.img";

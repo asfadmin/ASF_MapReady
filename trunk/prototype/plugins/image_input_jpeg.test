@@ -1,0 +1,9 @@
+#!../bin/clui
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
+
+image_input_jpeg filename="colorbars.jpg";
+image_clamp min=100.0 max=200.0 in=@image_input_jpeg.out;
+image_output_binary 
+	in=@image_clamp.out 
+	filename="image_input_jpeg.test.img";

@@ -1,0 +1,3 @@
+# Layover/shadow mask look up table
+0 0 153        # Index 0 == water
+0 153 32       # Index 1 == land

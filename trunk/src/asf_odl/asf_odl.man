@@ -1,0 +1,12 @@
+NAME:		ASF_ODL.A
+
+DESCRIPTION:	Library of routines which read ODL files.
+
+CONTENTS:
+The Jet Propulsion Laboratory (JPL) uses the Object
+Description Language (ODL) extensively.  This library
+lets us read ODL files.
+
+ODL is an ASCII "field = value" format.
+
+The main API is in "odl.h"

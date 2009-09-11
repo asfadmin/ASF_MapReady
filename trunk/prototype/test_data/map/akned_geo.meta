@@ -1,0 +1,92 @@
+# This file contains the metadata for satellite capture file of the same base name.
+#      '?' is likely an unknown single character value.
+#      '???' is likely an unknown string of characters.
+#      '-999999999' is likely an unknown integer value.
+#      'nan' is likely an unknown Real value.
+
+meta_version: 1.60
+
+general {                                  # Begin parameters generally used in remote sensing
+    sensor: USGS Seamless data (e.g., NED, SRTM) # Imaging sensor
+    mode: N/A                                  # Imaging mode
+    processor: Unknown                         # Name and Version of Processor
+    data_type: REAL32                          # Type of samples (e.g. REAL64)
+    image_data_type: DEM                       # Image data type (e.g. AMPLITUDE_IMAGE)
+    system: big_ieee                           # System of samples (e.g. big_ieee)
+    orbit: -999999999                          # Orbit Number for this datatake
+    orbit_direction: ?                         # Ascending 'A', or descending 'D'
+    frame: -999999999                          # Frame for this image [-1 if n/a]
+    band_number: -999999999                    # Band number; first band is 0
+    line_count: 180                            # Number of lines in image
+    sample_count: 180                          # Number of samples in image
+    start_line: 0                              # First line relative to original image
+    start_sample: 0                            # First sample relative to original image
+    x_pixel_size: 0.00055555555556             # Range pixel size [m]
+    y_pixel_size: 0.00055555555556             # Azimuth pixel size [m]
+    center_latitude: 63.05                     # Approximate image center latitude
+    center_longitude: -145.95                  # Approximate image center longitude
+    re_major: 6378206.4                        # Major (equator) Axis of earth [m]
+    re_minor: 6356583.8                        # Minor (polar) Axis of earth [m]
+    bit_error_rate: nan                        # Fraction of bits which are in error
+    missing_lines: -999999999                  # Number of missing lines in data take
+}                                          # End general
+
+sar {                                      # Begin parameters used specifically in SAR imaging
+    image_type: P                              # [S=slant range; G=ground range; P=map projected]
+    look_direction: ?                          # SAR Satellite look direction [R=right; L=left]
+    look_count: -999999999                     # Number of looks to take from SLC
+    deskewed: -999999999                       # Image moved to zero doppler? [1=yes; 0=no]
+    original_line_count: -999999999            # Number of lines in original image
+    original_sample_count: -999999999          # Number of samples in original image
+    line_increment: nan                        # Line increment for sampling
+    sample_increment: nan                      # Sample increment for sampling
+    range_time_per_pixel: nan                  # Time per pixel in range [s]
+    azimuth_time_per_pixel: nan                # Time per pixel in azimuth [s]
+    slant_range_first_pixel: nan               # Slant range to first pixel [m]
+    slant_shift: nan                           # Error correction factor, in slant range [m]
+    time_shift: nan                            # Error correction factor, in time [s]
+    wavelength: nan                            # SAR carrier wavelength [m]
+    prf: nan                                   # Pulse Repetition Frequency [Hz]
+    earth_radius: nan                          # Earth radius at scene center [m]
+    earth_radius_pp: nan                       # Earth radius used by the PP during L0 processsing. [m]
+    satellite_height: nan                      # Satellite height from earth's center [m]
+    satellite_binary_time: ???                 # Satellite Binary Time
+    satellite_clock_time: ???                  # Satellite Clock Time (UTC)
+    dopRangeCen: nan                           # Range doppler centroid [Hz]
+    dopRangeLin: nan                           # Range doppler per range pixel [Hz/pixel]
+    dopRangeQuad: nan                          # Range doppler per range pixel sq. [Hz/(pixel^2)]
+    dopAzCen: nan                              # Azimuth doppler centroid [Hz]
+    dopAzLin: nan                              # Azimuth doppler per azimuth pixel [Hz/pixel]
+    dopAzQuad: nan                             # Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]
+    azimuth_bandwidth: 5.5481687601e+170       # Azimuth processing bandwidth [Hz]
+    chirp_rate: 9.643025719e+194               # Chirp rate [Hz/sec]
+    pulse_duration: 2.558088303e+238           # Pulse duration [s]
+    range_samp_rate: -1.1268548438e-296        # Range sampling rate [Hz]
+}                                          # End sar
+
+projection {                               # Map Projection parameters
+    type: LAT_LONG_PSEUDO_PROJECTION           # Projection Type
+    startX: -146                               # Projection Coordinate at top-left, X direction
+    startY: 63.1                               # Projection Coordinate at top-left, Y direction
+    perX: 0.00055555555556                     # Projection Coordinate per pixel, X direction
+    perY: -0.00055555555556                    # Projection Coordinate per pixel, Y direction
+    units: degrees                             # Units of projection [meters, seconds, degrees]
+    hem: N                                     # Hemisphere: [N=northern hemisphere; S=southern hemisphere]
+    spheroid: CLARKE1866                       # Spheroid
+    re_major: 6378206.4                        # Major Axis (equator) of earth [m]
+    re_minor: 6356583.8                        # Minor Axis (polar) of earth [m]
+    datum: NAD27                               # Geodetic Datum
+    height: 986.55041504                       # Height [m]
+    param {                                    # Projection specific parameters
+    }                                          # End param
+}                                          # End projection
+
+stats {                                    # Block containing basic image statistics
+    min: nan                                   # Minimum sample value
+    max: nan                                   # Maximum sample value
+    mean: 986.55041504                         # Mean average of sample values
+    rmse: 145.7155304                          # Root mean squared error
+    std_deviation: 145.7155304                 # Standard deviation
+    mask: 0                                    # Value ignored while taking statistics
+}                                          # End stats
+

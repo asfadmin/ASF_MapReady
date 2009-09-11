@@ -1,0 +1,316 @@
+################################ Master Program List ####################
+#
+# This is the Master List of All ASF Programs, Libraries, and Tools.
+#
+#########################################################################
+#
+#   The program makemake, in asf_tools/make_support, reads this file
+# to automatically generate the following files (these files should
+# NOT be edited!)
+#    asf_tools/Makefile
+#    release/autotar/source.*
+#    release/autotar/binary.*
+#
+#   To add a new program or tool, just put an entry for it
+# in the PROGRAMS or TOOLS sections of this file.  The new entry
+# should be the name of the folder in the src folder that contains
+# the tool's Makefile.  Then run makemake.  It will parse this file
+# and generate new copies of the files above, replacing old copies.
+#
+# makemake ignores any line beginning with a #,
+# but will completely misunderstand a line with a # in the middle.
+#
+# makemake uses lines starting with @ to find the path to
+# the program source code (e.g., src_tc vs. src_geo).
+#
+# Other than # and @, makemake couldn't care less about what form whitespace
+# takes, as long as it's there.  Any indentation, returns, etc.
+# which you see below are purely for human enjoyment.
+#
+# Also, note that:
+#     progname { BINS x }   is ok, but
+#     progname {BINS x}     is not ok (no space between tokens),
+#     progname            is not ok (missing braces).
+#
+# The general syntax is:
+#     LIBS { <libraries ...> }
+#     PROGRAMS { <programs ...> }
+#
+#     <programs...>=<program> [ <programs...> ]
+#     <program>= <program name> { [ PROGRAMS <program names> ] [ BINS <bin/sys/file names>] }
+#
+# Here, a "program" is a full-fledged package, with an entry
+# in the top-level PROGRAMS list, while "binaries" are just
+# files in the bin/$SYS/ directory.
+#
+
+######################### A listing of libraries (easy). ######################
+# The external libraries are built without the master_program_list
+#@external/work_dir/
+#	libgsl
+#	libproj	
+#	libglib
+#	libjpeg
+#	libtiff
+#	libgeotiff
+# asf_meta depends on libasf_proj .h files
+# libasf_convert depends on asf_import.h asf_terrcorr.h asf_geocode.h asf_export.h
+# libasf_elevation depends on libasf_sar (asf_sar.h)
+# libasf_igram_coh depends on libasf_raster (asf_raster.h)
+LIBS
+{
+@src/
+	asf
+	asf_concat
+	asf_fft
+	libasf_proj
+	asf_meta
+	asf_odl
+	libasf_sar
+	libasf_raster
+	libasf_vector
+	libifm
+	libasf_import
+	libasf_ardop
+	libasf_terrcorr
+	libasf_geocode
+	libasf_export
+	libasf_convert
+	libasf_insar
+	metadata
+	sgpsdp
+	plan
+}
+############################### END OF LIBRARIES ##############################
+
+###################### A listing of programs (not so easy). ###################
+PROGRAMS
+{
+@src/
+	accum_offset { }
+	addapole { }
+#	airsarin { }
+#	ait { }
+	ardop { BINS calc_deltas spectra }
+	asf_check_geolocation { }
+	asf_convert { }
+#	asf_convert_gui { } -- see bottom of this list
+	asf_elevation { }
+	asf_export { }
+	asf_geocode { }
+	asf_import { }
+	asf_terrcorr { }
+#	asf_view { BINS plan } -- see bottom of this list
+	atdp { }
+	auto_refine_base { }
+#	auto_sar_mosaic { } -- see bottom of this list
+#	auto_swath_mosaic { } -- see bottom of this list
+#	automg { }
+	avg_in_dop { }
+	baseline_catalog { }
+	byteswap { }
+	c2p { }
+	ceos2meta { }
+	coh { }
+	concat { }
+	concat_dem { }
+	concatm { }
+#	convert2byte { } -- see bottom of this list
+	convert2jpeg { }
+#	convert2vector { } -- see bottom of this list
+#	coregister_coarse { } -- see bottom of this list
+	coregister_fine { }
+	corner_coords { }
+#	cpx_autofilter { } -- see bottom of this list
+	cpx_spectrum { }
+	create_dem_grid { }
+	create_man_page { }
+	data_qc { }
+	dem2phase { }
+	dem2seeds { }
+	dem_diff { }
+	deramp { }
+	deskew { }
+	deskew_dem { }
+	detect_cr { }
+	dspddr { }
+	dumphfa { }
+	elev { }
+	eleverr { }
+	escher { }
+	extract_window { }
+	fftMatch { }
+	filter { }
+	filter_tie_points { }
+	findrsv { }
+	fit_line { }
+	fit_plane { }
+	fit_poly { }
+	fit_quadratic { }
+	fit_warp { }
+#	flicker { }
+	flip { }
+	geotiffdump { }
+	gr2sr { }
+	hdr2ddr { }
+	idimage { BINS idtable }
+	igram { }
+	image_layers { }
+	image_stats { }
+	ips { }
+	leader2pdf { }
+#	ll2proj { }
+	makeddr { }
+	mask_from_dem { }
+	maskgen { }
+	meta2ddr { BINS ddr2meta }
+	meta2envi { }
+	meta2esri { }
+	meta_check { }
+	metadata { }
+#	metadata_gui { } -- see bottom of this list
+	mosaic { }
+	multilook { }
+	offset_test { }
+	p2c { }
+	phase_filter { }
+#	proj2proj { } -- see bottom of this list
+	profile_dump { }
+	projfit { }
+	prop2ll { }
+	pta { }
+	raster_calc { }
+	raster_diff { }
+	refine_base { }
+	refine_geolocation { }
+	refine_offset { }
+	remap { }
+	resample { }
+	reskew_dem { }
+	sgpsdp { }
+	shaded_relief { }
+	sr2gr { }
+	srf2shape { }
+	stats { }
+#	stp { } -- see bottom of this list
+#	tle2equator { }
+	trim { }
+	xpix_ypix { }
+	zeroify { }
+	
+# put programs that depend on other programs below the other programs
+	auto_sar_mosaic { PROGRAMS concat idtable }
+	auto_swath_mosaic { PROGRAMS accum_offset concatm resample }
+	convert2byte { PROGRAMS stats }
+	coregister_coarse { PROGRAMS c2p convert2byte fftMatch }
+	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
+
+# put GUIs at the bottom of the list since they can hose the build
+#	ait { } -- don't include this GUI for now... :(
+	asf_convert_gui { }
+	asf_view { BINS asf_planner }
+	convert2vector { }
+	metadata_gui { }
+	proj2proj { }
+	stp { }
+	
+@contrib/
+	jplmosaicsuite { }
+#		the jplmosaicsuite directory contains the following:
+#			ampscheby { }
+#			detilt_hgt { }
+#			dgx { }
+#			match_20488nr { BINS multimatch multicull multitps }
+#			multimosaic30_20941nr { BINS multimosaic multiaffine3d }
+}
+
+############################### END OF PROGRAMS ###############################
+
+
+############################# A list of documents #############################
+DOCUMENTATION
+{
+@doc/
+	mapready_manual.pdf
+	mapready-version_history.txt
+	SAR_training_processor.pdf
+	stp-version_history.txt
+}
+############################ END OF DOCUMENTATION #############################
+
+
+############################## List of Categories #############################
+# The categories have no directories or source, but are valid autotar and
+# makefile targets.
+CATEGORIES
+{
+# MapReady package
+	mapready_package
+	{
+		asf_convert_gui
+		asf_convert
+		asf_export
+		asf_import
+		asf_geocode
+		asf_terrcorr
+		asf_view
+		brs2jpg
+		gr2sr
+		metadata_gui
+		metadata
+		mosaic
+		refine_geolocation
+		sr2gr
+		mapready_manual.pdf
+		mapready-version_history.txt
+		asf_gamma_import
+		asf_airsar_import
+		asf_kml_overlay
+	}
+
+# Convert To Vector
+        c2v_package
+        {
+                convert2vector
+                convert2vector_gui
+        }
+
+# SAR Training Processor
+	stp_package
+	{
+		ardop
+		asf_export
+		asf_import
+		asf_view
+		metadata
+		plan
+		sgpsdp
+		stp
+		SAR_training_processor.pdf
+		stp-version_history.txt
+	}
+
+# Data quality tools
+	dq-tools
+	{
+		detect_cr
+		image_stats
+		meta_check
+		offset_test
+		pta
+	}
+
+# JPL Mosaic Suite
+	jpl
+	{
+		jplmosaicsuite
+		byteswap
+	}
+
+# Create Thumbs package
+	create_thumbs_package
+	{
+		create_thumbs
+		create_thumbs-version_history.txt
+	}
+}

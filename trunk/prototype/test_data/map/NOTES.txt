@@ -1,0 +1,19 @@
+#
+# Akned2 in many projections:
+#   Self-contained hill at right curve of river bank
+
+# Original geographic image
+#   Lat: 63.068333  Lon: -145.957778  Elevation 892m
+# xy=(75,57)
+
+
+#   Lat: 63.066240  Lon: -145.958271  Elevation 771m
+# xy=(35,58)
+asf_geocode -p utm akned2 akned_utm
+
+# All four of these projections look almost identical:
+# xy=(46,61)  (plus or minus 1 pixel in each projection)
+asf_geocode -p ps  --north-pole  --first-standard-parallel 65.0 --central-meridian -140 akned2 akned_ps
+asf_geocode -p lamcc --first-standard-parallel 60 --second-standard-parallel 70 --latitude-of-origin 65 --central-meridian -140 akned2 akned_lamcc
+asf_geocode -p lamaz --latitude-of-origin 65 --central-meridian -140 akned2 akned_lamaz
+asf_geocode -p albers --first-standard-parallel 60 --second-standard-parallel 70 --latitude-of-origin 65 --central-meridian -140  akned2 akned_albers

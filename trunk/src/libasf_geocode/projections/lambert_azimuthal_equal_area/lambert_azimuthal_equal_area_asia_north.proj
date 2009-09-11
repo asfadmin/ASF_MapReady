@@ -1,0 +1,8 @@
+[Lambert Azimuthal Equal Area]
+Area =  Asia North
+Datum = WGS84
+Spheroid = WGS84
+Central meridian = 95
+Latitude of origin = 30
+False easting = 0
+False northing = 0

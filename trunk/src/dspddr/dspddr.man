@@ -1,0 +1,55 @@
+
+NAME:	      dspddr 
+
+SYNOPSIS:     dspddr [-b band] [-f filename] SARfile
+
+DESCRIPTION:
+	Dspddr displays all the information in the DDR file. By default,
+	dspddr will output to the screen all information unless overridden by
+	the -f option. To display specific bands, denote each band by a -b
+	followed by the band number. SARfile should be the DDR file without
+	extensions.
+
+OPTIONS:  
+	-b	Specify which band to give information on. If no bands are
+		indicated, all bands will be displayed.
+
+	-f	Place output in filename. No information will be displayed.
+
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+------------------------------------------------------------------------
+
+EXAMPLES:
+	Normal operation will only require the SARfile. For example, if you
+	have a SAR image with corresponding DDR, test.img and test.ddr, type
+
+		example% dspddr test
+
+	If you only wish information on bands 1 & 3, type
+
+		example% dspddr -b 1 -b 3 test
+
+	Finally to place output in a file called ddr.info, type
+
+		example% dspddr -f ddr.info test
+
+	and if you only want one band,
+
+		example% dspddr -b 3 -f ddr.info test
+
+
+SEE ALSO:
+	sarin
+	sargeoin
+
+HARDWARE/SOFTWARE LIMITATIONS:
+	
+BUGS:
+
+AUTHOR:	  M. Shindle (ASF) converted from LAS 6.0 routine
+
+CONTACT: apd@asf.alaska.edu
+	 http://www.asf.alaska.edu/apd
+
