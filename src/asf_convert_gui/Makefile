@@ -17,7 +17,7 @@ GTK_LIB = $(GTKWIN32_DIR)/lib
 ASF_LIB = ../../lib
 
 INCLUDE = \
-	$(JPEG_CFLAGS) \
+	$(JPEG_CFLAGS) $(XML_CFLAGS) \
 	-I$(ASF_INCLUDE_DIR) \
 	-I$(GTK_INC) \
 	-I$(GTK_INC)/glib-2.0 \
