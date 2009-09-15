@@ -1194,26 +1194,32 @@ void polsarpro_image_data_type_changed()
   int selected = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
   GtkWidget *polsarpro_ancillary_file =
     get_widget_checked("add_file_with_ancillary_polsarpro_ceos_entry");
+  GtkWidget *polsarpro_ancillary_browse_button = 
+    get_widget_checked("add_file_with_ancillary_polsarpro_ceos_browse_button");
   switch (selected) 
     {
     case SELECT_POLARIMETRIC_SEGMENTATION:
       enable_widget("browse_select_colormap_optionmenu", TRUE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
+      gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_DECOMPOSITION:
       enable_widget("browse_select_colormap_optionmenu", FALSE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
+      gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_PARAMETER:
       enable_widget("browse_select_colormap_optionmenu", TRUE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
+      gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_MATRIX:
       enable_widget("browse_select_colormap_optionmenu", FALSE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
+      gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data Directory:");
       break;
     }
@@ -1280,12 +1286,16 @@ int polsarpro_geocoding_check()
 	free(envi);
       GtkWidget *polsarpro_ancillary_file =
 	get_widget_checked("add_file_with_ancillary_polsarpro_ceos_entry");
+      GtkWidget *polsarpro_ancillary_browse_button = 
+	get_widget_checked("add_file_with_ancillary_polsarpro_ceos_browse_button");
       if (!meta->projection) {
 	gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
+	gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, TRUE);
 	gtk_widget_set_sensitive(ok_button, FALSE);
       }
       else {
 	gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
+	gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
 	gtk_widget_set_sensitive(ok_button, TRUE);
       }
       if (meta)

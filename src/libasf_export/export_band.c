@@ -1548,6 +1548,16 @@ export_band_image (const char *metadata_file_name,
 	asfPrintError("Output directory (%s) already exists.\n", path_name);
       else if(create_dir(path_name) == -1)
 	asfPrintError("Can't generate output directory (%s).\n", path_name);
+      char *configFile = 
+	(char *) MALLOC(sizeof(char)*(strlen(path_name)+15));
+      sprintf(configFile, "%s%cconfig.txt", path_name, DIR_SEPARATOR);
+      FILE *fpConfig = FOPEN(configFile, "w");
+      fprintf(fpConfig, "Nrow\n%d\n", md->general->line_count);
+      fprintf(fpConfig, "---------\nNcol\n%d\n", md->general->sample_count);
+      fprintf(fpConfig, "---------\nPolarCase\nmonostatic\n");
+      fprintf(fpConfig, "---------\nPolarType\nfull\n");
+      FCLOSE(fpConfig);
+      FREE(configFile);
       FREE(path);
       FREE(dirName);
       FREE(fileName);
@@ -1575,6 +1585,16 @@ export_band_image (const char *metadata_file_name,
 	asfPrintError("Output directory (%s) already exists.\n", path_name);
       else if(create_dir(path_name) == -1)
 	asfPrintError("Can't generate output directory (%s).\n", path_name);
+      char *configFile = 
+	(char *) MALLOC(sizeof(char)*(strlen(path_name)+15));
+      sprintf(configFile, "%s%cconfig.txt", path_name, DIR_SEPARATOR);
+      FILE *fpConfig = FOPEN(configFile, "w");
+      fprintf(fpConfig, "Nrow\n%d\n", md->general->line_count);
+      fprintf(fpConfig, "---------\nNcol\n%d\n", md->general->sample_count);
+      fprintf(fpConfig, "---------\nPolarCase\nmonostatic\n");
+      fprintf(fpConfig, "---------\nPolarType\nfull\n");
+      FCLOSE(fpConfig);
+      FREE(configFile);
       FREE(path);
       FREE(dirName);
       FREE(fileName);      
