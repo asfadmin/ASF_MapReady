@@ -56,6 +56,9 @@
 "          options are selected, otherwise the output will be the same\n"\
 "          as the input.\n"\
 "\n"\
+"     -ksize <kernel size>\n"\
+"          Size of the smoothing kernel.  Must be an odd integer.\n"\
+"\n"\
 "     -sigma\n"\
 "          After Faraday Rotation correction, calibrate the image using\n"\
 "          Sigma powerscale values. Use only one of: -sigma, -beta, -gamma.\n"\
@@ -162,6 +165,7 @@ main (int argc, char *argv[])
   int NUM_ARGS = 2;
   int sigma_flag=FALSE, beta_flag=FALSE, gamma_flag=FALSE, db_flag=FALSE;
   double threshold = -1;
+  int ksize=599;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -207,6 +211,10 @@ main (int argc, char *argv[])
       CHECK_ARG(1);
       threshold = atof(GET_ARG(1));
     }
+    else if (strmatches(key,"-ksize","--ksize",NULL)) {
+      CHECK_ARG(1);
+      ksize = atoi(GET_ARG(1));
+    }
     else {
         --currArg;
         break;
@@ -243,8 +251,10 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
+  asfPrintStatus("Using kernel size: %d\n", ksize);
+
   faraday_correct(inFile, outFile, threshold, keep_flag, single_angle_flag,
-                  radiometry);
+                  radiometry, ksize);
 
   asfPrintStatus("Done.\n");
 

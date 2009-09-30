@@ -221,7 +221,7 @@ static void do_append(const char *file, const char *append_file,
 
 void faraday_correct(const char *inFile, const char *outFile, double threshold,
                      int save_intermediates, int use_single_rotation_value,
-                     radiometry_t output_radiometry)
+                     radiometry_t output_radiometry, int ksize)
 {
   // to get debug images (where an intermediate is generated after
   // faraday rotation correction, but before calibration, so that the
@@ -382,8 +382,9 @@ void faraday_correct(const char *inFile, const char *outFile, double threshold,
 
   // STEP 2: Smooth the Faraday rotation angle image, if necessary
   if (!use_single_rotation_value && do_farcorr) {
-    asfPrintStatus("Smoothing rotation angle image...\n");
-    smooth(rot_img_name, smoothed_img_name, 599, EDGE_TRUNCATE);
+    asfPrintStatus("Smoothing rotation angle image (kernel size %d)...\n",
+                   ksize);
+    smooth(rot_img_name, smoothed_img_name, ksize, EDGE_TRUNCATE);
   }
     
   // STEP 3: Calculate corrected values

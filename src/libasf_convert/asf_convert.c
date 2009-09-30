@@ -2188,7 +2188,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         radiometry_t rad = saved_radiometry;
         asfPrintStatus("\nApplying Faraday Rotation correction.\n");
         faraday_correct(inFile, outFile, cfg->polarimetry->farcorr_threshold,
-                        keep_flag, single_angle_flag, rad);
+                        keep_flag, single_angle_flag, rad, 599);
         asfPrintStatus("Done.\n\n");
 
         sprintf(tmpFile, "%s/import_farrot.img", cfg->general->tmp_dir);
@@ -2755,17 +2755,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             out_y_pixel_size = meta->general->y_pixel_size*in_side_length/512.;
 
 	    // make sure that only the first band of a multi-band image
-	    // is resized for generating a thumbnail
-	    meta_parameters *metaTmp = meta_read(inFile);
-	    int original_band_count = metaTmp->general->band_count;
-	    if (original_band_count > 1) {
-	      metaTmp->general->band_count = 1;
-	      meta_write(metaTmp, inFile);
-	    }
-	    else {
-	      meta_free(metaTmp);
-	      metaTmp = NULL;
-	    }
+	    // is resized for generating a thumbnail, for polsarpro
+            meta_parameters *metaTmp = NULL;
+            int original_band_count = 0;
+            if (is_polsarpro) {
+              metaTmp = meta_read(inFile);
+              original_band_count = metaTmp->general->band_count;
+              if (original_band_count > 1) {
+                metaTmp->general->band_count = 1;
+                meta_write(metaTmp, inFile);
+              }
+              else {
+                meta_free(metaTmp);
+                metaTmp = NULL;
+              }
+            }
 
             check_return(
               resample_to_pixsiz(inFile, tmpFile, out_x_pixel_size,
@@ -2867,6 +2871,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 		FREE(bands);
 	      }
             }
+
 	    // in case we had changed the metadata, let's restore things
 	    if (metaTmp) {
 	      metaTmp->general->band_count = original_band_count;
