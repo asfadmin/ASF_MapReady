@@ -2,7 +2,7 @@
 #include "asf_raster.h"
 #include <assert.h>
 
-static float prev_col_result = -1;
+static float prev_col_result = -99999.99999;
 static int prev_col_total = -1;
 
 static float filter(      /****************************************/
@@ -18,7 +18,7 @@ static float filter(      /****************************************/
   // off the window, add the row that moved into the window
   if (x>0) {
 
-    assert(prev_col_result != -1);
+    //assert(prev_col_result != -99999.99999);
     assert(prev_col_total != -1);
 
     int half = (nsk-1)/2;
