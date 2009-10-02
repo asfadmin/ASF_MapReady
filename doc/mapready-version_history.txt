@@ -1,6 +1,6 @@
 MapReady Version History
 
-MapReady 2.2.8 (released 2009 September 10)
+MapReady 2.2.9 (released 2009 October 2)
 New Functionality
 - Ability to terrain correct in flat areas, via the "Skip coregistration
   when it fails" option.
