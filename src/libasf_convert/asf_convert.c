@@ -2828,9 +2828,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 }
               }
               else { // not a true or false color optical image
-                if (meta->general->image_data_type >  POLARIMETRIC_IMAGE ||
-		    meta->general->image_data_type <= POLARIMETRIC_MATRIX) 
-		  meta->general->band_count = 1;
+                //if (meta->general->image_data_type >  POLARIMETRIC_IMAGE ||
+		//    meta->general->image_data_type <= POLARIMETRIC_MATRIX) 
+		//  meta->general->band_count = 1;
 
 		char **bands = extract_band_names(meta->general->bands, 
 						  meta->general->band_count);
@@ -2842,7 +2842,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 		char *banded_name =
 		  MALLOC(sizeof(char)*(strlen(outFile)+32));
 		if (cfg->general->intermediates) {
-		  if (meta->general->image_data_type == POLARIMETRIC_IMAGE)
+		  if (is_polsarpro &&
+                      meta->general->image_data_type == POLARIMETRIC_IMAGE)
 		    sprintf(banded_name, "%s/%s_thumb_%s.png",
 			    cfg->general->tmp_dir, basename, bands[1]);
 		  else
@@ -2852,7 +2853,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 			  cfg->general->tmp_dir, basename);
 		}
 		else {
-		  if (meta->general->image_data_type == POLARIMETRIC_IMAGE)
+		  if (is_polsarpro &&
+                      meta->general->image_data_type == POLARIMETRIC_IMAGE)
 		    sprintf(banded_name, "%s_thumb_%s.png",
 			    cfg->general->out_name, bands[1]);
 		  else
