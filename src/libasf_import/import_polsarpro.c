@@ -1179,20 +1179,12 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 
     fpIn = FOPEN(polsarName, "rb");
 
-    // Check endianess from ENVI header file
-    if (envi->byte_order)
-      need_ieee_big32 = 0;
-    else
-      need_ieee_big32 = 1;
-    
     // Do the ingest...
     for (ii=0; ii<metaOut->general->line_count; ii++) {
       get_float_line(fpIn, metaIn, ii, floatBuf);
       int kk;
-      if (need_ieee_big32) {
-	for (kk=0; kk<metaOut->general->sample_count; kk++) 
-	  ieee_big32(floatBuf[kk]);
-      }
+      for (kk=0; kk<metaOut->general->sample_count; kk++) 
+	ieee_big32(floatBuf[kk]);
       if (flip_horizontal) {
 	for (kk=0; kk<metaOut->general->sample_count; kk++)
 	  tmp[kk] = floatBuf[kk];

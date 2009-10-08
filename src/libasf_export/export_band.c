@@ -2012,8 +2012,12 @@ export_band_image (const char *metadata_file_name,
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == GEOTIFF || format == TIF)
                 write_tiff_float2float(otif, float_line, ii);
-	      else if (format == POLSARPRO_HDR)
+	      else if (format == POLSARPRO_HDR) {
+		int sample;
+		for (sample=0; sample<md->general->sample_count; sample++)
+		  ieee_big32(float_line[sample]);
 		put_float_line(ofp, md, ii, float_line);
+	      }
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
@@ -2042,8 +2046,12 @@ export_band_image (const char *metadata_file_name,
                                      //is_colormap_band ? TRUNCATE : sample_mapping,
                                      sample_mapping,
                                      md->general->no_data, sample_count);
-	      else if (format == POLSARPRO_HDR)
+	      else if (format == POLSARPRO_HDR) {
+		int sample;
+		for (sample=0; sample<md->general->sample_count; sample++)
+		  ieee_big32(float_line[sample]);
 		put_float_line(ofp, md, ii+channel*offset, float_line);
+	      }
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
