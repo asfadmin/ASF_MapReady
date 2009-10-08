@@ -763,7 +763,10 @@ void import_gamma(char *dataName, char *metaName, char *ceosName,
   int sample_count = metaIn->general->sample_count;
   int ii, kk;
 
-  if (strcmp(image_data_type, MAGIC_UNSET_STRING) == 0) {
+  if (!image_data_type ||
+      strlen(image_data_type) == 0 ||
+      strcmp(image_data_type, MAGIC_UNSET_STRING) == 0)
+  {
     // user did not specify image data type... we will try to figure
     // it out based on the size of the file!
     long long sz = fileSize(dataName);
