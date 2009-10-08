@@ -3381,7 +3381,7 @@ void classify_geotiff(GTIF *input_gtif,
     }
     r = GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, raster_type, 0, 0);
     if (r && *raster_type != RasterPixelIsArea) {
-        asfPrintError("GeoTIFFs with 'point' type raster pixels are unsupported (so far.)\n");
+        asfPrintWarning("GeoTIFFs with 'point' type raster pixels are unsupported (so far.)\nContinuing, however geolocations may be off by up to a pixel.\n");
     }
     if (m && *model_type == ModelTypeProjected) {
         l = GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, linear_units, 0, 1);
