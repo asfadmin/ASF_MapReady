@@ -1147,7 +1147,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   char buf[50], basename[512];
   char **dataName=NULL, **metaName=NULL;
   int ii, nBands, trailer;
-  double headerTime;
+  //double headerTime;
 
   dssr = &ceos->dssr;
   mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
@@ -1314,7 +1314,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
         asfPrintStatus("From workreport: %.10f\n", workreport_atpp);
         asfPrintStatus("     Calculated: %.10f\n",
                        meta->sar->azimuth_time_per_pixel);
-	asfPrintStatus("    Line header: %.10f\n", headerTime);
+	//asfPrintStatus("    Line header: %.10f\n", headerTime);
         asfPrintStatus("Using workreport value.\n\n");
         meta->sar->azimuth_time_per_pixel = workreport_atpp;
     }
@@ -1322,7 +1322,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       asfPrintStatus("From Workreport: (not available)\n");
       asfPrintStatus("Calculated: %.10f\n",
                      meta->sar->azimuth_time_per_pixel);
-      asfPrintStatus("Line header: %.10f\n\n", headerTime);
+      //asfPrintStatus("Line header: %.10f\n\n", headerTime);
     }
 
     // fix x_pixel_size & y_pixel_size values if needed
