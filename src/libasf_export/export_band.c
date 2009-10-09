@@ -390,6 +390,7 @@ void initialize_polsarpro_file(const char *output_file_name,
   envi->bands = 1;
   char *band = stripExt(band_name);
   strcpy(envi->band_name, band_name);
+  envi->byte_order = 0; // PolSARPro data is little endian by default
   write_envi_header(output_header_file_name, output_file_name, meta, envi);
   FREE(output_header_file_name);
   FREE(band_name);
