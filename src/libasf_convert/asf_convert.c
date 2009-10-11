@@ -2828,9 +2828,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 }
               }
               else { // not a true or false color optical image
-                //if (meta->general->image_data_type >  POLARIMETRIC_IMAGE ||
-		//    meta->general->image_data_type <= POLARIMETRIC_MATRIX) 
-		//  meta->general->band_count = 1;
+                if (is_polsarpro &&
+                    (meta->general->image_data_type >  POLARIMETRIC_IMAGE ||
+                     meta->general->image_data_type <= POLARIMETRIC_MATRIX))
+		  meta->general->band_count = 1;
 
 		char **bands = extract_band_names(meta->general->bands, 
 						  meta->general->band_count);
