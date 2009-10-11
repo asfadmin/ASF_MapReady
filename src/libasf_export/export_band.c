@@ -380,7 +380,7 @@ void initialize_pgm_file(const char *output_file_name,
 void initialize_polsarpro_file(const char *output_file_name,
 			       meta_parameters *meta, FILE **ofp)
 {
-  *ofp = FOPEN(output_file_name, "w");
+  *ofp = FOPEN(output_file_name, "wb");
   
   char *output_header_file_name = 
     (char *) MALLOC(sizeof(char) * strlen(output_file_name) + 5);
@@ -1617,168 +1617,168 @@ export_band_image (const char *metadata_file_name,
         //      here to avoid thinking we've got -lut when it was really
         //      just the md->colormap (which sets have_look_up_table, above)
         int is_polsarpro = 
-	  (md->general->image_data_type == POLARIMETRIC_IMAGE || 
-	   md->general->image_data_type == POLARIMETRIC_SEGMENTATION || 
-	   md->general->image_data_type == POLARIMETRIC_DECOMPOSITION || 
-	   md->general->image_data_type == POLARIMETRIC_PARAMETER ||
-	   md->general->image_data_type == POLARIMETRIC_MATRIX) ? 1 : 0;
+          (md->general->image_data_type == POLARIMETRIC_IMAGE || 
+          md->general->image_data_type == POLARIMETRIC_SEGMENTATION || 
+          md->general->image_data_type == POLARIMETRIC_DECOMPOSITION || 
+          md->general->image_data_type == POLARIMETRIC_PARAMETER ||
+          md->general->image_data_type == POLARIMETRIC_MATRIX) ? 1 : 0;
         if (
-            ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
-            (!md->colormap && have_look_up_table && md->general->data_type == BYTE) ||
-            (!md->colormap && have_look_up_table &&
-              md->general->data_type != BYTE && sample_mapping != NONE)             ||
-            (is_polsarpro  && strcmp_case(band_name[kk], "POLSARPRO") == 0)
-           )
+          ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
+          (!md->colormap && have_look_up_table && md->general->data_type == BYTE) ||
+          (!md->colormap && have_look_up_table &&
+          md->general->data_type != BYTE && sample_mapping != NONE)             ||
+          (is_polsarpro  && strcmp_case(band_name[kk], "POLSARPRO") == 0)
+          )
         {
           is_colormap_band = TRUE;
           sample_mapping = is_polsarpro ? TRUNCATE : sample_mapping;
         }
-	if (format == POLSARPRO_HDR) {
-	  is_colormap_band = FALSE;
-	  sample_mapping = NONE;
-	}
+        if (format == POLSARPRO_HDR) {
+          is_colormap_band = FALSE;
+          sample_mapping = NONE;
+        }
 
         if (have_look_up_table && is_colormap_band) {
           asfPrintStatus("\nApplying %s color look up table...\n\n", look_up_table_name);
         }
 
-	out_file = (char *) MALLOC(sizeof(char)*1024);
-	strcpy(out_file, output_file_name);
+        out_file = (char *) MALLOC(sizeof(char)*1024);
+        strcpy(out_file, output_file_name);
 
         // Initialize the selected format
         // NOTE: For PolSARpro, the first band is amplitude and should be
         // written out as a single-band greyscale image while the second
         // band is a classification and should be written out as color ...
         // and for TIFF formats, as a palette color tiff.
-	// The only exception to this rule are polarimetric matrices
-	if (md->general->image_data_type == POLARIMETRIC_MATRIX &&
-	    md->general->band_count != 1) {
-	  int ll, found_band = FALSE;
-	  int band_count;
-	  if (strcmp(matrix, "T3") == 0)
-	    band_count = 9;
-	  if (strcmp(matrix, "T4") == 0)
-	    band_count = 16;
-	  if (strcmp(matrix, "C2") == 0)
-	    band_count = 4;
-	  if (strcmp(matrix, "C3") == 0)
-	    band_count = 9;
-	  if (strcmp(matrix, "C4") == 0)
-	    band_count = 16;
-	  for (ll=0; ll<band_count; ll++) {
-	    if (strcmp(matrix, "T3") == 0 && 
-		strncmp(band_name[kk], t3_matrix[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(matrix, "T4") == 0 && 
-		strncmp(band_name[kk], t4_matrix[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(matrix, "C2") == 0 && 
-		strncmp(band_name[kk], c2_matrix[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(matrix, "C3") == 0 && 
-		strncmp(band_name[kk], c3_matrix[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(matrix, "C4") == 0 && 
-		strncmp(band_name[kk], c4_matrix[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	  }
-	  if (!found_band)
-	    continue;
-	  sprintf(out_file, "%s%c%s", 
-		  path_name, DIR_SEPARATOR, band_name[kk]);
-	}
-	else if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
-		 md->general->band_count != 1) {
-	  int ll, found_band = FALSE;
-	  int band_count;
-	  if (strcmp(decomposition, "Freeman2_Vol") == 0)
-	    band_count = 2;
-	  else if (strcmp(decomposition, "Freeman_Vol") == 0)
-	    band_count = 3;
-	  else if (strcmp(decomposition, "VanZyl3_Vol") == 0)
-	    band_count = 3;
-	  else if (strcmp(decomposition, "Yamaguchi3_Vol") == 0)
-	    band_count = 3;
-	  else if (strcmp(decomposition, "Yamaguchi4_Vol") == 0)
-	    band_count = 4;
-	  else if (strcmp(decomposition, "Krogager_Ks") == 0)
-	    band_count = 3;
-	  else if (strcmp(decomposition, "TSVM_alpha_s3") == 0)
-	    band_count = 3;
-	  else if (strcmp(decomposition, "TSVM_phi_s3") == 0)
-	    band_count = 3;
-	  else if (strcmp(decomposition, "TSVM_tau_m3") == 0)
-	    band_count = 3;
-	  else if (strcmp(decomposition, "TSVM_psi3") == 0)
-	    band_count = 3;
-	  else if (strcmp(decomposition, "TSVM_psi") == 0)
-	    band_count = 4;
-	  for (ll=0; ll<band_count; ll++) {
-	    if (strcmp(decomposition, "Freeman2_Vol") == 0 && 
-		strncmp(band_name[kk], freeman2_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "Freeman_Vol") == 0 && 
-		strncmp(band_name[kk], freeman3_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "VanZyl3_Vol") == 0 && 
-		strncmp(band_name[kk], vanZyl3_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "Yamaguchi3_Vol") == 0 && 
-		strncmp(band_name[kk], yamaguchi3_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "Yamaguchi4_Vol") == 0 && 
-		strncmp(band_name[kk], yamaguchi4_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "Krogager_Ks") == 0 && 
-		strncmp(band_name[kk], krogager_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "TSVM_alpha_s3") == 0 && 
-		strncmp(band_name[kk], touzi1_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "TSVM_phi_s3") == 0 && 
-		strncmp(band_name[kk], touzi2_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "TSVM_tau_m3") == 0 && 
-		strncmp(band_name[kk], touzi3_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "TSVM_psi3") == 0 && 
-		strncmp(band_name[kk], touzi4_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	    else if (strcmp(decomposition, "TSVM_psi") == 0 && 
-		strncmp(band_name[kk], touzi5_decomposition[ll], 
-			strlen(band_name[kk])) == 0)
-	      found_band = TRUE;
-	  }
-	  if (!found_band)
-	    continue;
-	  sprintf(out_file, "%s%c%s", 
-		  path_name, DIR_SEPARATOR, band_name[kk]);
-	  
-	}
-	else if (md->general->image_data_type == POLARIMETRIC_SEGMENTATION ||
-		 md->general->image_data_type == POLARIMETRIC_PARAMETER)
-	  append_band_ext(base_name, out_file, NULL);
-	else {
-	  if (band_count > 1)
-	    append_band_ext(base_name, out_file, band_name[kk]);
-	  else
-	    append_band_ext(base_name, out_file, NULL);
-	}
+        // The only exception to this rule are polarimetric matrices
+        if (md->general->image_data_type == POLARIMETRIC_MATRIX &&
+          md->general->band_count != 1) {
+            int ll, found_band = FALSE;
+            int band_count;
+            if (strcmp(matrix, "T3") == 0)
+              band_count = 9;
+            if (strcmp(matrix, "T4") == 0)
+              band_count = 16;
+            if (strcmp(matrix, "C2") == 0)
+              band_count = 4;
+            if (strcmp(matrix, "C3") == 0)
+              band_count = 9;
+            if (strcmp(matrix, "C4") == 0)
+              band_count = 16;
+            for (ll=0; ll<band_count; ll++) {
+              if (strcmp(matrix, "T3") == 0 && 
+                strncmp(band_name[kk], t3_matrix[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(matrix, "T4") == 0 && 
+                strncmp(band_name[kk], t4_matrix[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(matrix, "C2") == 0 && 
+                strncmp(band_name[kk], c2_matrix[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(matrix, "C3") == 0 && 
+                strncmp(band_name[kk], c3_matrix[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(matrix, "C4") == 0 && 
+                strncmp(band_name[kk], c4_matrix[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+            }
+            if (!found_band)
+              continue;
+            sprintf(out_file, "%s%c%s", 
+              path_name, DIR_SEPARATOR, band_name[kk]);
+          }
+        else if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
+          md->general->band_count != 1) {
+            int ll, found_band = FALSE;
+            int band_count;
+            if (strcmp(decomposition, "Freeman2_Vol") == 0)
+              band_count = 2;
+            else if (strcmp(decomposition, "Freeman_Vol") == 0)
+              band_count = 3;
+            else if (strcmp(decomposition, "VanZyl3_Vol") == 0)
+              band_count = 3;
+            else if (strcmp(decomposition, "Yamaguchi3_Vol") == 0)
+              band_count = 3;
+            else if (strcmp(decomposition, "Yamaguchi4_Vol") == 0)
+              band_count = 4;
+            else if (strcmp(decomposition, "Krogager_Ks") == 0)
+              band_count = 3;
+            else if (strcmp(decomposition, "TSVM_alpha_s3") == 0)
+              band_count = 3;
+            else if (strcmp(decomposition, "TSVM_phi_s3") == 0)
+              band_count = 3;
+            else if (strcmp(decomposition, "TSVM_tau_m3") == 0)
+              band_count = 3;
+            else if (strcmp(decomposition, "TSVM_psi3") == 0)
+              band_count = 3;
+            else if (strcmp(decomposition, "TSVM_psi") == 0)
+              band_count = 4;
+            for (ll=0; ll<band_count; ll++) {
+              if (strcmp(decomposition, "Freeman2_Vol") == 0 && 
+                strncmp(band_name[kk], freeman2_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "Freeman_Vol") == 0 && 
+                strncmp(band_name[kk], freeman3_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "VanZyl3_Vol") == 0 && 
+                strncmp(band_name[kk], vanZyl3_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "Yamaguchi3_Vol") == 0 && 
+                strncmp(band_name[kk], yamaguchi3_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "Yamaguchi4_Vol") == 0 && 
+                strncmp(band_name[kk], yamaguchi4_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "Krogager_Ks") == 0 && 
+                strncmp(band_name[kk], krogager_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "TSVM_alpha_s3") == 0 && 
+                strncmp(band_name[kk], touzi1_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "TSVM_phi_s3") == 0 && 
+                strncmp(band_name[kk], touzi2_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "TSVM_tau_m3") == 0 && 
+                strncmp(band_name[kk], touzi3_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "TSVM_psi3") == 0 && 
+                strncmp(band_name[kk], touzi4_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+              else if (strcmp(decomposition, "TSVM_psi") == 0 && 
+                strncmp(band_name[kk], touzi5_decomposition[ll], 
+                strlen(band_name[kk])) == 0)
+                found_band = TRUE;
+            }
+            if (!found_band)
+              continue;
+            sprintf(out_file, "%s%c%s", 
+              path_name, DIR_SEPARATOR, band_name[kk]);
+
+          }
+        else if (md->general->image_data_type == POLARIMETRIC_SEGMENTATION ||
+          md->general->image_data_type == POLARIMETRIC_PARAMETER)
+          append_band_ext(base_name, out_file, NULL);
+        else {
+          if (band_count > 1)
+            append_band_ext(base_name, out_file, band_name[kk]);
+          else
+            append_band_ext(base_name, out_file, NULL);
+        }
 
         if (strcmp(band_name[0], MAGIC_UNSET_STRING) != 0)
           asfPrintStatus("\nWriting band '%s' ...\n", band_name[kk]);
@@ -1790,59 +1790,59 @@ export_band_image (const char *metadata_file_name,
             //sample_mapping = TRUNCATE;
             rgb = FALSE;
             initialize_tiff_file(&otif, &ogtif, out_file,
-                                 metadata_file_name, is_geotiff,
-                                 sample_mapping, rgb,
-                                 &palette_color_tiff, band_name,
-                                 lut_file, TRUE);
+              metadata_file_name, is_geotiff,
+              sample_mapping, rgb,
+              &palette_color_tiff, band_name,
+              lut_file, TRUE);
           }
           else {
             initialize_tiff_file(&otif, &ogtif, out_file,
-                                 metadata_file_name, is_geotiff,
-                                 sample_mapping, rgb,
-                                 &palette_color_tiff, band_name,
-                                 NULL, FALSE);
+              metadata_file_name, is_geotiff,
+              sample_mapping, rgb,
+              &palette_color_tiff, band_name,
+              NULL, FALSE);
           }
         }
         else if (format == JPEG) {
           append_ext_if_needed (out_file, ".jpg", ".jpeg");
           if (is_colormap_band) {
             initialize_jpeg_file(out_file, md,
-                                 &ojpeg, &cinfo, TRUE);
+              &ojpeg, &cinfo, TRUE);
           }
           else {
             initialize_jpeg_file(out_file, md,
-                                 &ojpeg, &cinfo, rgb);
+              &ojpeg, &cinfo, rgb);
           }
         }
         else if (format == PNG) {
           append_ext_if_needed (out_file, ".png", NULL);
           if (is_colormap_band) {
             initialize_png_file(out_file, md,
-                                &opng, &png_ptr, &png_info_ptr, TRUE);
+              &opng, &png_ptr, &png_info_ptr, TRUE);
           }
           else {
             initialize_png_file(out_file, md,
-                                &opng, &png_ptr, &png_info_ptr, rgb);
+              &opng, &png_ptr, &png_info_ptr, rgb);
           }
         }
         else if (format == PNG_ALPHA) {
           append_ext_if_needed (out_file, ".png", NULL);
-	  initialize_png_file_ext(out_file, md,
-				  &opng, &png_ptr, &png_info_ptr, FALSE, TRUE);
+          initialize_png_file_ext(out_file, md,
+            &opng, &png_ptr, &png_info_ptr, FALSE, TRUE);
         }
         else if (format == PNG_GE) {
           append_ext_if_needed (out_file, ".png", NULL);
-	  initialize_png_file_ext(out_file, md,
-				  &opng, &png_ptr, &png_info_ptr, 1, 2);
+          initialize_png_file_ext(out_file, md,
+            &opng, &png_ptr, &png_info_ptr, 1, 2);
         }
         else if (format == PGM) {
           append_ext_if_needed (out_file, ".pgm", ".pgm");
           initialize_pgm_file(out_file, md, &opgm);
         }
-	else if (format == POLSARPRO_HDR) {
+        else if (format == POLSARPRO_HDR) {
           append_ext_if_needed (out_file, ".bin", NULL);
-	  initialize_polsarpro_file(out_file, md, &ofp);
-	}
+          initialize_polsarpro_file(out_file, md, &ofp);
+        }
 
         else {
           asfPrintError("Impossible: unexpected format %d\n", format);
@@ -1853,37 +1853,37 @@ export_band_image (const char *metadata_file_name,
 
         // Determine which channel to read
         int channel;
- 	if (md->general->image_data_type >  POLARIMETRIC_IMAGE &&
-	    md->general->image_data_type <= POLARIMETRIC_MATRIX)
-	  channel = kk;
-	else {
-	  if (md->general->band_count == 1)
-	    channel = 0;
-	  else
-	    channel = get_band_number(bands, band_count, band_name[kk]);
-	  asfRequire(channel >= 0 && channel <= MAX_BANDS,
-		     "Band number out of range\n");
-	}
+        if (md->general->image_data_type >  POLARIMETRIC_IMAGE &&
+          md->general->image_data_type <= POLARIMETRIC_MATRIX)
+          channel = kk;
+        else {
+          if (md->general->band_count == 1)
+            channel = 0;
+          else
+            channel = get_band_number(bands, band_count, band_name[kk]);
+          asfRequire(channel >= 0 && channel <= MAX_BANDS,
+            "Band number out of range\n");
+        }
 
         int sample_count = md->general->sample_count;
         int offset = md->general->line_count;
 
         // Get the statistics if necessary
         channel_stats_t stats;
-              stats.hist = NULL; stats.hist_pdf = NULL;
+        stats.hist = NULL; stats.hist_pdf = NULL;
 
         if (sample_mapping != NONE && sample_mapping != TRUNCATE)
         {
           asfRequire (sizeof(unsigned char) == 1,
-                "Size of the unsigned char data type on this machine is "
-                "different than expected.\n");
+            "Size of the unsigned char data type on this machine is "
+            "different than expected.\n");
           if (md->stats                  &&
-              md->stats->band_count > 0  &&
-              meta_is_valid_double(md->stats->band_stats[channel].mean) &&
-              meta_is_valid_double(md->stats->band_stats[channel].min) &&
-              meta_is_valid_double(md->stats->band_stats[channel].max) &&
-              meta_is_valid_double(md->stats->band_stats[channel].std_deviation) &&
-              sample_mapping != HISTOGRAM_EQUALIZE)
+            md->stats->band_count > 0  &&
+            meta_is_valid_double(md->stats->band_stats[channel].mean) &&
+            meta_is_valid_double(md->stats->band_stats[channel].min) &&
+            meta_is_valid_double(md->stats->band_stats[channel].max) &&
+            meta_is_valid_double(md->stats->band_stats[channel].std_deviation) &&
+            sample_mapping != HISTOGRAM_EQUALIZE)
           {
             asfPrintStatus("Using metadata statistics - skipping stats computations.\n");
             stats.min  = md->stats->band_stats[channel].min;
@@ -1895,21 +1895,21 @@ export_band_image (const char *metadata_file_name,
           else {
             asfPrintStatus("Gathering statistics ...\n");
             calc_stats_from_file(image_data_file_name, band_name[kk],
-                                md->general->no_data,
-                                &stats.min, &stats.max, &stats.mean,
-                                &stats.standard_deviation, &stats.hist);
+              md->general->no_data,
+              &stats.min, &stats.max, &stats.mean,
+              &stats.standard_deviation, &stats.hist);
           }
           if (sample_mapping == TRUNCATE && !have_look_up_table) {
             if (stats.mean >= 255)
               asfPrintWarning("The image contains HIGH values and will turn out very\n"
-                              "bright or all-white.\n  Min : %f\n  Max : %f\n  Mean: %f\n"
-                              "=> Consider using a sample mapping method other than TRUNCATE\n",
-                              stats.min, stats.max, stats.mean);
+              "bright or all-white.\n  Min : %f\n  Max : %f\n  Mean: %f\n"
+              "=> Consider using a sample mapping method other than TRUNCATE\n",
+              stats.min, stats.max, stats.mean);
             if (stats.mean < 10)
               asfPrintWarning("The image contains LOW values and will turn out very\n"
-                              "dark or all-black.\n  Min : %f\n  Max : %f\n  Mean: %f\n"
-                              "=> Consider using a sample mapping method other than TRUNCATE\n",
-                              stats.min, stats.max, stats.mean);
+              "dark or all-black.\n  Min : %f\n  Max : %f\n  Mean: %f\n"
+              "=> Consider using a sample mapping method other than TRUNCATE\n",
+              stats.min, stats.max, stats.mean);
           }
           if (sample_mapping == SIGMA)
           {
@@ -1937,13 +1937,13 @@ export_band_image (const char *metadata_file_name,
               get_byte_line(fp, md, ii+channel*offset, byte_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_byte2lut(otif, byte_line, ii, sample_count,
-                                    lut_file);
+                lut_file);
               else if (format == JPEG)
                 write_jpeg_byte2lut(ojpeg, byte_line, &cinfo, sample_count,
-                                    lut_file);
+                lut_file);
               else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
                 write_png_byte2lut(opng, byte_line, png_ptr, png_info_ptr,
-                                   sample_count, lut_file);
+                sample_count, lut_file);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
@@ -1958,30 +1958,30 @@ export_band_image (const char *metadata_file_name,
                 // where each byte value is an index into the colormap.  The other graphics
                 // file formats use interlaced RGB lines and no index or colormap instead.
                 write_tiff_float2byte(otif, float_line, stats,
-                                      //is_colormap_band ? TRUNCATE : sample_mapping,
-                                      sample_mapping,
-                                      md->general->no_data, ii, sample_count);
+                //is_colormap_band ? TRUNCATE : sample_mapping,
+                sample_mapping,
+                md->general->no_data, ii, sample_count);
               else if (format == JPEG)
                 // Use lut to write an RGB line to the file
                 write_jpeg_float2lut(ojpeg, float_line, &cinfo, stats,
-                                     //is_colormap_band ? TRUNCATE : sample_mapping,
-                                     sample_mapping,
-                                     md->general->no_data,
-                                     sample_count, lut_file);
+                //is_colormap_band ? TRUNCATE : sample_mapping,
+                sample_mapping,
+                md->general->no_data,
+                sample_count, lut_file);
               else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
                 // Use lut to write an RGB line to the file
                 write_png_float2lut(opng, float_line, png_ptr, png_info_ptr,
-                                    stats,
-                                    //is_colormap_band ? TRUNCATE : sample_mapping,
-                                    sample_mapping,
-                                    md->general->no_data,
-                                    sample_count, lut_file);
+                stats,
+                //is_colormap_band ? TRUNCATE : sample_mapping,
+                sample_mapping,
+                md->general->no_data,
+                sample_count, lut_file);
               else if (format == PGM) {
                 // Can't put color in a PGM file, so map it to greyscale and write that
                 write_pgm_float2byte(opgm, float_line, stats,
-                                     //is_colormap_band ? TRUNCATE : sample_mapping,
-                                     sample_mapping,
-                                     md->general->no_data, sample_count);
+                  //is_colormap_band ? TRUNCATE : sample_mapping,
+                  sample_mapping,
+                  md->general->no_data, sample_count);
               }
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
@@ -1996,16 +1996,16 @@ export_band_image (const char *metadata_file_name,
               get_byte_line(fp, md, ii+channel*offset, byte_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_byte2byte(otif, byte_line, stats, sample_mapping,
-                                     sample_count, ii);
+                sample_count, ii);
               else if (format == JPEG)
                 write_jpeg_byte2byte(ojpeg, byte_line, stats, sample_mapping,
-                                     &cinfo, sample_count);
+                &cinfo, sample_count);
               else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
                 write_png_byte2byte(opng, byte_line, stats, sample_mapping,
-                                    png_ptr, png_info_ptr, sample_count);
+                png_ptr, png_info_ptr, sample_count);
               else if (format == PGM)
                 write_pgm_byte2byte(opgm, byte_line, stats, sample_mapping,
-                                    sample_count);
+                sample_count);
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
@@ -2013,12 +2013,12 @@ export_band_image (const char *metadata_file_name,
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == GEOTIFF || format == TIF)
                 write_tiff_float2float(otif, float_line, ii);
-	      else if (format == POLSARPRO_HDR) {
-		int sample;
-		for (sample=0; sample<md->general->sample_count; sample++)
-		  ieee_big32(float_line[sample]);
-		put_float_line(ofp, md, ii, float_line);
-	      }
+              else if (format == POLSARPRO_HDR) {
+                int sample;
+                for (sample=0; sample<sample_count; sample++)
+                  ieee_lil32(float_line[sample]);
+                fwrite(float_line,4,sample_count,ofp);
+              }
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
@@ -2026,40 +2026,39 @@ export_band_image (const char *metadata_file_name,
               get_float_line(fp, md, ii+channel*offset, float_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_float2byte(otif, float_line, stats,
-                                      //is_colormap_band ? TRUNCATE : sample_mapping,
-                                      sample_mapping,
-                                      md->general->no_data, ii, sample_count);
+                //is_colormap_band ? TRUNCATE : sample_mapping,
+                sample_mapping,
+                md->general->no_data, ii, sample_count);
               else if (format == JPEG)
                 write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats,
-                                      //is_colormap_band ? TRUNCATE : sample_mapping,
-                                      sample_mapping,
-                                      md->general->no_data,
-                                      sample_count);
+                //is_colormap_band ? TRUNCATE : sample_mapping,
+                sample_mapping,
+                md->general->no_data,
+                sample_count);
               else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
                 write_png_float2byte(opng, float_line, png_ptr, png_info_ptr,
-                                     stats,
-                                     //is_colormap_band ? TRUNCATE : sample_mapping,
-                                     sample_mapping,
-                                     md->general->no_data,
-                                     sample_count);
+                stats,
+                //is_colormap_band ? TRUNCATE : sample_mapping,
+                sample_mapping,
+                md->general->no_data,
+                sample_count);
               else if (format == PGM)
                 write_pgm_float2byte(opgm, float_line, stats,
-                                     //is_colormap_band ? TRUNCATE : sample_mapping,
-                                     sample_mapping,
-                                     md->general->no_data, sample_count);
-	      else if (format == POLSARPRO_HDR) {
-		int sample;
-		for (sample=0; sample<md->general->sample_count; sample++)
-		  ieee_big32(float_line[sample]);
-		put_float_line(ofp, md, ii+channel*offset, float_line);
-	      }
+                //is_colormap_band ? TRUNCATE : sample_mapping,
+                sample_mapping,
+                md->general->no_data, sample_count);
+              else if (format == POLSARPRO_HDR) {
+                int sample;
+                for (sample=0; sample<sample_count; sample++)
+                  ieee_lil32(float_line[sample]);
+                fwrite(float_line,4,sample_count,ofp);
+              }
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
             asfLineMeter(ii, md->general->line_count);
           } // End for each line
         } // End if multi or single band
-
         // Free memory
         FREE(float_line);
         FREE(byte_line);
@@ -2075,6 +2074,8 @@ export_band_image (const char *metadata_file_name,
           finalize_png_file(opng, png_ptr, png_info_ptr);
         else if (format == PGM)
           finalize_ppm_file(opgm);
+        else if (format == POLSARPRO_HDR)
+          FCLOSE(ofp);
 
         FCLOSE(fp);
       }
