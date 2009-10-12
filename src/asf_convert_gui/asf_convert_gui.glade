@@ -8863,7 +8863,7 @@ uso@asf.alaska.edu</property>
 					  <child>
 					    <widget class="GtkComboBox" id="browse_select_image_data_type_optionmenu">
 					      <property name="visible">True</property>
-					      <property name="items" translatable="yes">Polarimetric segmenation
+					      <property name="items" translatable="yes">Polarimetric segmentation
 Polarimetric decomposition
 Polarimetric parameter
 Polarimetric matrix</property>
