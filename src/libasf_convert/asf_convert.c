@@ -1687,6 +1687,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         }
       }
 
+      // Only allow PolSARPro as export format if we are actually dealing
+      // with PolSARPro data as input as well
+      if (strncmp_case(cfg->import->format, "POLSARPRO", 9) != 0)
+	asfPrintError("Export format 'POLSARPRO' requires the same format "
+		      "as input format!\n");
+
       // If RGB Banding option is "ignore,ignore,ignore" then the
       // user has probably been using the gui, and didn't pick
       // anything for any of the RGB channels.
