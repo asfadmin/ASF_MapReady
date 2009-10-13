@@ -2712,7 +2712,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             (strstr(meta->general->bands, "POLSARPRO") != NULL) ||
             ((strstr(meta->general->bands, "T11") != NULL) &&
              (strstr(meta->general->bands, "T22") != NULL) &&
-             (strstr(meta->general->bands, "T33") != NULL));
+             (strstr(meta->general->bands, "T33") != NULL)) ||
+            ((strstr(meta->general->bands, "C11") != NULL) &&
+             (strstr(meta->general->bands, "C22") != NULL));
 
           int have_embedded_colormap = 0;
           if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
