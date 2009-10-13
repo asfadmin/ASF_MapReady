@@ -1210,8 +1210,10 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     metaOut->sar->multilook = multilook;
 
   // Update image data type
-  if (strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0)
+  if (strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0) {
     metaOut->general->image_data_type = POLARIMETRIC_SEGMENTATION;
+    strcpy(metaOut->general->bands, "POLSARPRO");
+  }
   else if (strcmp_case(image_data_type, "POLARIMETRIC_DECOMPOSITION") == 0)
     metaOut->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
   else if (strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0)
