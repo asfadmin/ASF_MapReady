@@ -1212,7 +1212,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   // Update image data type
   if (strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0) {
     metaOut->general->image_data_type = POLARIMETRIC_SEGMENTATION;
-    strcpy(metaOut->general->bands, "POLSARPRO");
+    if (metaOut->projection)
+      strcpy(metaOut->general->bands, "POLSARPRO");
   }
   else if (strcmp_case(image_data_type, "POLARIMETRIC_DECOMPOSITION") == 0)
     metaOut->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
