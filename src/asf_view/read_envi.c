@@ -20,10 +20,17 @@ int try_envi(const char *filename, int try_extensions)
         char *hdr = appendExt(filename, ".bin.hdr");
         int ret = fileExists(hdr);
         free(hdr);
+        if (!ret) {
+          // try just plain .hdr
+          hdr = appendExt(filename, ".hdr");
+          ret = fileExists(hdr);
+          free(hdr);
+        }
         return ret;
       }
-    } else if (try_extensions) {
-      int ret = try_ext(filename, ".hdr");
+    }
+    else if (try_extensions) {
+      int ret = try_ext(filename, ".bin");
       if (!ret)
         ret = try_ext(filename, ".hdr");
       return ret;
@@ -34,60 +41,129 @@ int try_envi(const char *filename, int try_extensions)
 int handle_envi_file(const char *filename, char *meta_name, 
 			  char *data_name, char **err)
 {
+  // six cases:
+  // case (1) user gave us the basename 'base', and we need to find
+  //          "base.hdr" and "base.bin"
+  // case (2) user have us the basename 'base', and we need to find
+  //          "base.bin.hdr" and "base.bin"
+  // case (3) user gave us 'base.bin' and we need to find 'base.hdr'
+  // case (4) user gave us 'base.bin' and we need to find 'base.bin.hdr'
+  // case (5) user gave us 'base.hdr' and we need to find 'base.bin'
+  // case (6) user gave us 'base.bin.hdr' and we need to find 'base.bin'
+
     char *ext = findExt(filename);
     int has_ext = ext && strlen(ext) > 0;
-    int has_envi_ext = has_ext && strcmp_case(ext,".hdr")==0;
-    char *file;
+    int l = sizeof(char)*strlen(filename)+255;
+    int ret = FALSE;
 
-    if (!has_ext)
-      file = appendExt(filename, ".hdr");
-    else if (strcmp_case(ext, ".bin") == 0) {
-      file = appendExt(filename, ".bin.hdr");
-      has_envi_ext = TRUE;
-    }
-    else
-      file = STRDUP(filename);
-
-    if (has_envi_ext)
-    {
-      char *dirName = (char *) MALLOC(sizeof(char) * 512);
-      char *fileName = (char *) MALLOC(sizeof(char) * 512);
-      split_dir_and_file(file, dirName, fileName);
-      strcpy(meta_name, file);
-      envi_header *hdr = read_envi((char *)meta_name);
-      meta_parameters *meta = envi2meta(hdr);
-      
-      sprintf(data_name, "%s%s", dirName, meta->general->basename);
-      meta_free(meta);
-      if (hdr->band_name)
-	FREE(hdr->band_name);
-      FREE(hdr);
-      
-      int ret;
-      if (!fileExists(data_name)) {
-	// I don't think this will actually ever run
-	int l = sizeof(char)*strlen(filename)+255;
+    if (!has_ext) {
+      // case (1) or case (2) ??
+      // both cases should have "base.bin" though
+      char *file = appendExt(filename, ".bin");
+      if (!fileExists(file)) {
 	*err = MALLOC(l);
-	snprintf(*err, l, "Error opening ENVI file: %s\n", data_name);
-	ret = FALSE;
+	snprintf(*err, l, "Error opening ENVI data file: %s\n", file);
       }
-      else
-	ret = TRUE;
-      
+      else {
+        // found data file, try to find the .hdr file
+        char *file2 = appendExt(filename, ".hdr");
+        if (fileExists(file2)) {
+          // case (1), success
+          strcpy(meta_name, file2);
+          ret = TRUE;
+        }
+        else {
+          free(file2);
+          file2 = appendExt(filename, ".bin.hdr");
+          if (fileExists(file2)) {
+            // case(2), success
+            strcpy(meta_name, file2);
+            ret = TRUE;
+          }
+          else {
+            // neither (1) nor (2), fail.
+            *err = MALLOC(l);
+            snprintf(*err, l, "Error opening ENVI header file.\n"
+                     "Expected '%s.hdr' or '%s.bin.hdr'\n", filename, filename);
+          }
+        }
+        free(file2);
+      }
+      if (ret)
+        strcpy(data_name, file);
       free(file);
-      return ret;
+    }
+    else if (strcmp_case(ext, ".bin")==0) {
+      if (!fileExists(filename)) {
+        *err = MALLOC(l);
+        snprintf(*err, l, "Error opening ENVI data file: %s\n", filename);
+      }
+      else {
+        // case (3) or case (4) ??
+        char *file = appendExt(filename, ".hdr");
+        if (fileExists(file)) {
+          // case (3), success
+          strcpy(meta_name, file);
+          ret = TRUE;
+        }
+        else {
+          char *file2 = appendExt(filename, ".bin.hdr");
+          if (fileExists(file2)) {
+            // case (4), success
+            strcpy(meta_name, file2);
+            ret = TRUE;
+          }
+          else {
+            // neither (3) nor (4), fail.
+            *err = MALLOC(l);
+            snprintf(*err, l, "Error opening ENVI header file.\n"
+                     "Expected '%s' or '%s'\n", file, file2);
+          }
+          free(file2);
+        }
+        if (ret)
+          strcpy(data_name, filename);
+        free(file);
+      }
+    }
+    else if (strcmp_case(ext, ".hdr")==0) {
+      if (!fileExists(filename)) {
+        *err = MALLOC(l);
+        snprintf(*err, l, "Error opening ENVI header file: %s\n", filename);
+      }
+      else {
+        // case (5) or case (6) ??
+        char *datafile=NULL;
+        if (endsWith(filename, ".bin.hdr")) {
+          datafile = stripExt(filename); // strips .hdr, left with .bin
+        }
+        else {
+          datafile = appendExt(filename, ".bin");
+        }
+        if (fileExists(datafile)) {
+          strcpy(meta_name, filename);
+          strcpy(data_name, datafile);
+          ret = TRUE;
+        }
+        else {
+          char *base = stripExt(filename);
+          *err = MALLOC(l);
+          snprintf(*err, l, "Error opening ENVI data file.\n"
+                   "Expected '%s.bin' or '%s.bin.hdr'\n", base, base);
+          free(base);
+        }
+        if (ret)
+          strcpy(meta_name, filename);
+      }
     }
     else {
-        int l = sizeof(char)*strlen(filename)+255;
-        *err = MALLOC(l);
-        snprintf(*err, l, "Failed to open %s as an ENVI File.\n", filename);
-        free(file);
-        return FALSE;
+      // I don't think this will actually ever run
+      *err = MALLOC(l);
+      snprintf(*err, l, "Error opening ENVI file: %s\n", filename);
+      ret = FALSE;
     }
 
-    // not reached
-    assert(FALSE);
-    return FALSE;
+    return ret;
 }
 
 int read_envi_client(int row_start, int n_rows_to_get,
@@ -157,21 +233,17 @@ void free_envi_client_info(void *read_client_info)
     free(info);
 }
 
-// for brs, combined the "open_meta" and "open_data" functions -- both
-// will be opening the same file.
-meta_parameters* open_envi(const char *meta_name, const char *band_str,
-				ClientInterface *client)
+meta_parameters* open_envi(const char *meta_name,
+                           const char *data_name,
+                           const char *band_str,
+                           ClientInterface *client)
 {
   int ii;
-  char data_name[1024], str[5];
+  char str[5];
   ReadEnviClientInfo *info = MALLOC(sizeof(ReadEnviClientInfo));
   envi_header *hdr = read_envi((char *)meta_name);
   info->big_endian = hdr->byte_order;
   meta_parameters *meta = envi2meta(hdr);
-  char *dirName = (char *) MALLOC(sizeof(char) * 512);
-  char *fileName = (char *) MALLOC(sizeof(char) * 512);
-  split_dir_and_file(meta_name, dirName, fileName);
-  sprintf(data_name, "%s%s", dirName, meta->general->basename);
   if (hdr->band_name)
     FREE(hdr->band_name);
   FREE(hdr);

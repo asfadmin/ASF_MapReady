@@ -145,7 +145,7 @@ int read_file(const char *filename, const char *band, int multilook,
     else if (try_envi(filename, try_extensions)) {
         if (handle_envi_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
-            meta = open_envi(meta_name, band, client);
+            meta = open_envi(meta_name, data_name, band, client);
         } else {
             err_func(err);
             free(err);

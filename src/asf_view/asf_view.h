@@ -209,7 +209,8 @@ meta_parameters* open_brs(const char *data_name, ClientInterface *client);
 int try_envi(const char *filename, int try_extensions);
 int handle_envi_file(const char *filename, char *meta_name, 
 		     char *data_name, char **err);
-meta_parameters* open_envi(const char *meta_name, const char *band_str,
+meta_parameters* open_envi(const char *meta_name, const char *data_name,
+                           const char *band_str,
 			   ClientInterface *client);
 
 /* big_image.c */
