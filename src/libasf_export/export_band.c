@@ -1633,6 +1633,11 @@ export_band_image (const char *metadata_file_name,
           is_colormap_band = TRUE;
           sample_mapping = is_polsarpro ? TRUNCATE : sample_mapping;
         }
+	// skip the 'AMP' band if we have POlSARPro data and the user wants
+	// to apply a LUT
+	if (strcmp_case(band_name[kk], "AMP") == 0 && is_polsarpro)
+	  continue;
+
         if (format == POLSARPRO_HDR) {
           is_colormap_band = FALSE;
           sample_mapping = NONE;
