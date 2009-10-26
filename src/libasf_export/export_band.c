@@ -1650,6 +1650,11 @@ export_band_image (const char *metadata_file_name,
         out_file = (char *) MALLOC(sizeof(char)*1024);
         strcpy(out_file, output_file_name);
 
+	// We enforce a byte conversion using truncate for polarimetric segmentation, regardless of
+	// applying a look up table
+	if (md->general->image_data_type == POLARIMETRIC_SEGMENTATION)
+	  sample_mapping = TRUNCATE;
+
         // Initialize the selected format
         // NOTE: For PolSARpro, the first band is amplitude and should be
         // written out as a single-band greyscale image while the second
@@ -1791,7 +1796,7 @@ export_band_image (const char *metadata_file_name,
         if (format == TIF || format == GEOTIFF) {
           is_geotiff = (format == GEOTIFF) ? 1 : 0;
           append_ext_if_needed (out_file, ".tif", ".tiff");
-          if (is_colormap_band) {
+          if (is_colormap_band && strlen(lut_file) > 0) {
             //sample_mapping = TRUNCATE;
             rgb = FALSE;
             initialize_tiff_file(&otif, &ogtif, out_file,
