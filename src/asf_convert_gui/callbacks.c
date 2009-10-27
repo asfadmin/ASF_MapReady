@@ -1189,6 +1189,8 @@ on_polsarpro_classification_checkbutton_toggled(GtkWidget *widget)
 
 void polsarpro_image_data_type_changed()
 {
+  GtkWidget *look_up_table = 
+    get_widget_checked("browse_select_colormap_optionmenu");
   GtkWidget *combo = 
     get_widget_checked("browse_select_image_data_type_optionmenu");
   int selected = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
@@ -1199,24 +1201,28 @@ void polsarpro_image_data_type_changed()
   switch (selected) 
     {
     case SELECT_POLARIMETRIC_SEGMENTATION:
+      gtk_option_menu_set_history(GTK_OPTION_MENU(look_up_table), 0);
       enable_widget("browse_select_colormap_optionmenu", TRUE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_DECOMPOSITION:
+      gtk_option_menu_set_history(GTK_OPTION_MENU(look_up_table), 0);
       enable_widget("browse_select_colormap_optionmenu", FALSE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_PARAMETER:
-      enable_widget("browse_select_colormap_optionmenu", TRUE);  
+      gtk_option_menu_set_history(GTK_OPTION_MENU(look_up_table), 0);
+      enable_widget("browse_select_colormap_optionmenu", FALSE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");
       break;
     case SELECT_POLARIMETRIC_MATRIX:
+      gtk_option_menu_set_history(GTK_OPTION_MENU(look_up_table), 0);
       enable_widget("browse_select_colormap_optionmenu", FALSE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
@@ -1279,7 +1285,8 @@ int polsarpro_geocoding_check()
       strcat(infile, ".hdr");
     else if (strlen(infile) > 0)
       strcat(infile, ".hdr");
-    if (strlen(infile) > 0 && (!is_dir(inFile) || is_polsarpro_matrix)) {
+    if (fileExists(infile) && strlen(infile) > 0 && 
+	(!is_dir(inFile) || is_polsarpro_matrix)) {
       envi = read_envi(infile);
       meta = envi2meta(envi);
       if (envi)
@@ -1304,19 +1311,19 @@ int polsarpro_geocoding_check()
     put_string_to_label("add_with_ancillary_error_label", "");
     ret = TRUE;
   }
-  else if (errorSegmentation && type == SELECT_POLARIMETRIC_SEGMENTATION) {
+  if (errorSegmentation && type == SELECT_POLARIMETRIC_SEGMENTATION) {
     put_string_to_label("add_with_ancillary_error_label", errorSegmentation);
     gtk_widget_set_sensitive(ok_button, FALSE);
   }
-  else if (errorDecomposition && type == SELECT_POLARIMETRIC_DECOMPOSITION) {
+  if (errorDecomposition && type == SELECT_POLARIMETRIC_DECOMPOSITION) {
     put_string_to_label("add_with_ancillary_error_label", errorDecomposition);
     gtk_widget_set_sensitive(ok_button, FALSE);
   }
-  else if (errorParameter && type == SELECT_POLARIMETRIC_PARAMETER) {
+  if (errorParameter && type == SELECT_POLARIMETRIC_PARAMETER) {
     put_string_to_label("add_with_ancillary_error_label", errorParameter);
     gtk_widget_set_sensitive(ok_button, FALSE);
   }
-  else if (errorMatrix && type == SELECT_POLARIMETRIC_MATRIX) {
+  if (errorMatrix && type == SELECT_POLARIMETRIC_MATRIX) {
     put_string_to_label("add_with_ancillary_error_label", errorMatrix);
     gtk_widget_set_sensitive(ok_button, FALSE);
   }

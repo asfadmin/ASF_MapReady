@@ -344,21 +344,16 @@ do_thumbnail (const gchar *file)
     gchar *metadata_file = meta_file_name (file);
     gchar *data_file = data_file_name (file);
 
-    // NOTE: For PolSARpro files, meta_file_name() will return the name of
-    // the ancillary file (original CEOS or AIRSAR format file which was processed
-    // by PolSARpro).  But ...since the ancillary file is not necessarily available
-    // on first pass here, we can use the .bin.hdr ENVI style header file as "metadata"
-    // for thumbnails since it includes lines, samples, and data type ...and the data
-    // file is just a raw row/col binary file.
+    // Forcing of CEOS thumbnails when available
     if (is_polsarpro(data_file)) {
-      if(metadata_file) g_free(metadata_file);
-      metadata_file = (gchar*)g_malloc(sizeof(gchar)*(strlen(data_file) + 5));
-      sprintf(metadata_file, "%s%s", data_file, ".hdr"); // Should be <file>.bin.hdr now
+      if(metadata_file) {
+	g_free(data_file);
+	data_file = (gchar*)g_malloc(sizeof(gchar)*(strlen(metadata_file)));
+	sprintf(data_file, "%s", metadata_file);
+      }
       if (!fileExists(metadata_file)) strcpy(metadata_file, "");
     }
-    //if (((metadata_file && strlen(metadata_file) > 0) ||
-    //     is_polsarpro(data_file)) && data_file && strlen(data_file) > 0)
-    //{
+
         /* Find the element of the list store having the file name we are
            trying to add a thumbnail of.  */
         GtkTreeIter iter;
@@ -385,7 +380,7 @@ do_thumbnail (const gchar *file)
                 set_input_image_thumbnail (&iter, metadata_file, data_file,
                                            ancillary_file, lut_basename);
                 g_free (metadata_file);
-                g_free (data_file);
+		g_free (data_file);
                 g_free (input_file);
                 g_free (ancillary_file);
                 FREE(lut_basename);
@@ -403,7 +398,7 @@ do_thumbnail (const gchar *file)
     got a chance to draw it's thumbnail.  Oh well.  */
 
         g_free (metadata_file);
-        g_free (data_file);
+	g_free (data_file);
     //}
 }
 

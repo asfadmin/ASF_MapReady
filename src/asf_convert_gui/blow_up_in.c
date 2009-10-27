@@ -223,10 +223,9 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     char *lut_basename = extract_lut_name(polsarpro_aux_info);
 
     if (is_polsarpro(file)) {
-      // For PolSARpro files, use the associated ENVI header file for rudimentary metadata
-      if (metadata_file) g_free(metadata_file);
-      metadata_file = (gchar *)g_malloc(sizeof(gchar) * (strlen(file) + 5));
-      sprintf(metadata_file, "%s.hdr", file);
+      if(metadata_file) g_free(data_file);
+      data_file = (gchar*)g_malloc(sizeof(gchar)*(strlen(metadata_file)));
+      sprintf(data_file, "%s", metadata_file);
       if (!fileExists(metadata_file)) strcpy(metadata_file, "");
     }
 

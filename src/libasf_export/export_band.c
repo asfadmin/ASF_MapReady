@@ -1626,9 +1626,7 @@ export_band_image (const char *metadata_file_name,
           ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
           (!md->colormap && have_look_up_table && md->general->data_type == BYTE) ||
           (!md->colormap && have_look_up_table &&
-          md->general->data_type != BYTE && sample_mapping != NONE)             ||
-          (is_polsarpro  && strcmp_case(band_name[kk], "POLSARPRO") == 0)
-          )
+          md->general->data_type != BYTE && sample_mapping != NONE))
         {
           is_colormap_band = TRUE;
           sample_mapping = is_polsarpro ? TRUNCATE : sample_mapping;
