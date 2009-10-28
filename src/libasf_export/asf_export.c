@@ -37,7 +37,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   int is_polsarpro = 
     (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
   int is_matrix =
-    (md->general->image_data_type == POLARIMETRIC_MATRIX) ? 1 : 0;
+    (md->general->image_data_type == POLARIMETRIC_MATRIX ||
+     md->general->image_data_type == POLARIMETRIC_DECOMPOSITION) ? 1 : 0;
   meta_free(md);
 
   // Do that exporting magic!

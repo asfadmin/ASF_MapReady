@@ -2709,6 +2709,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           // => export LUT overrides all, import LUT overrides metadata lut, and metadata LUT is
           //    used if nothing else exists, else default to non-LUT case below.
           char lut_file[2048] = "";
+	  /*
           int is_polsarpro =
             (strstr(meta->general->bands, "POLSARPRO") != NULL) ||
             ((strstr(meta->general->bands, "T11") != NULL) &&
@@ -2716,6 +2717,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
              (strstr(meta->general->bands, "T33") != NULL)) ||
             ((strstr(meta->general->bands, "C11") != NULL) &&
              (strstr(meta->general->bands, "C22") != NULL));
+	  */
+	  int is_polsarpro = 0;
+	  if (meta->general->image_data_type >  POLARIMETRIC_IMAGE &&
+	      meta->general->image_data_type <= POLARIMETRIC_MATRIX)
+	    is_polsarpro = 1;
 
           int have_embedded_colormap = 0;
           if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
@@ -2843,7 +2849,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               }
               else { // not a true or false color optical image
                 if (is_polsarpro &&
-                    (meta->general->image_data_type >  POLARIMETRIC_IMAGE ||
+                    (meta->general->image_data_type >  POLARIMETRIC_IMAGE &&
                      meta->general->image_data_type <= POLARIMETRIC_MATRIX))
 		  meta->general->band_count = 1;
 

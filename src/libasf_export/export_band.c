@@ -1633,7 +1633,8 @@ export_band_image (const char *metadata_file_name,
         }
 	// skip the 'AMP' band if we have POlSARPro data and the user wants
 	// to apply a LUT
-	if (strcmp_case(band_name[kk], "AMP") == 0 && is_polsarpro)
+	if (strcmp_case(band_name[kk], "AMP") == 0 && is_polsarpro  &&
+	    band_count > 1)
 	  continue;
 
         if (format == POLSARPRO_HDR) {
