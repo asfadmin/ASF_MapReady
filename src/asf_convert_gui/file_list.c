@@ -347,9 +347,8 @@ do_thumbnail (const gchar *file)
     // Forcing of CEOS thumbnails when available
     if (is_polsarpro(data_file)) {
       if(strlen(metadata_file) > 0) {
-	g_free(data_file);
-	data_file = (gchar*)g_malloc(sizeof(gchar)*(strlen(metadata_file)));
-	sprintf(data_file, "%s", metadata_file);
+        g_free(data_file);
+        data_file = g_strdup(metadata_file);
       }
       else {
 	g_free(metadata_file);
