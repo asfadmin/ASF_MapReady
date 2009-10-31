@@ -807,7 +807,7 @@ on_add_file_with_ancillary_polsarpro_image_browse_button_clicked(GtkWidget *w)
     get_widget_checked("browse_select_image_data_type_optionmenu");
   int selected = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
   if (selected == SELECT_POLARIMETRIC_MATRIX)
-    do_browse("Add PolSARPro File",
+    do_browse("Add PolSARPro Matrix Directory",
             "add_file_with_ancillary_polsarpro_image_entry", DIR_FILT);
   else
     do_browse("Add PolSARPro File",
@@ -843,11 +843,25 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
       gtk_widget_set_sensitive(ok_button, FALSE);
       dataFile =
         get_string_from_entry("add_file_with_ancillary_polsarpro_image_entry");
-      char *matrixType, *error;
+      char *matrixType, *error, *decompositionType, *derror;
+      char *serror, *perror;
       int is_polsarpro_matrix = 
 	isPolsarproMatrix(dataFile, &matrixType, &error);
-      if (is_polsarpro_matrix) {
+      int is_polsarpro_decomposition =
+	isPolsarproDecomposition(dataFile, &decompositionType, &derror);
+      int is_polsarpro_segmentation =
+	isPolsarproSegmentation(dataFile, &serror);
+      int is_polsarpro_parameter =
+	isPolsarproParameter(dataFile, &perror);
+      if (is_polsarpro_matrix && !is_polsarpro_decomposition &&
+	  !is_polsarpro_segmentation && !is_polsarpro_parameter) {
 	data = (char *) MALLOC(sizeof(char)*(strlen(dataFile) + 15));
+	if (!is_dir(dataFile)) {
+	  char *tmp = (char *) MALLOC(sizeof(char)*(strlen(dataFile)+1));
+	  tmp = get_dirname(dataFile);
+	  dataFile[strlen(tmp)-1] = '\0';
+	  FREE(tmp);
+	}
 	if (strcmp(matrixType, "T3") == 0 || strcmp(matrixType, "T4") == 0)
 	  sprintf(data, "%s/T11.bin", dataFile);
 	else if (strcmp(matrixType, "C2") == 0 || 

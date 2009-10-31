@@ -1260,14 +1260,18 @@ int polsarpro_geocoding_check()
   int type = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
   GtkWidget *ok_button =
     get_widget_checked("add_file_with_ancillary_ok_button");
-  int is_polsarpro_matrix = 
-    isPolsarproMatrix(infile, &matrixType, &errorMatrix);
+  int is_polsarpro_matrix = (type == SELECT_POLARIMETRIC_MATRIX) ?
+    isPolsarproMatrix(infile, &matrixType, &errorMatrix) : 0;
   int is_polsarpro_decomposition = 
-    isPolsarproDecomposition(infile, &decompositionType, &errorDecomposition);
+    (type == SELECT_POLARIMETRIC_DECOMPOSITION) ?
+    isPolsarproDecomposition(infile, &decompositionType, &errorDecomposition) :
+    0;
   int is_polsarpro_segmentation =
-    isPolsarproSegmentation(infile, &errorSegmentation);
+    (type == SELECT_POLARIMETRIC_SEGMENTATION) ?    
+    isPolsarproSegmentation(infile, &errorSegmentation) : 0;
   int is_polsarpro_parameter =
-    isPolsarproParameter(infile, &errorParameter);
+    (type == SELECT_POLARIMETRIC_PARAMETER) ?
+    isPolsarproParameter(infile, &errorParameter) : 0;
   if ((is_polsarpro_matrix && !errorMatrix) ||
       (is_polsarpro_decomposition && !errorDecomposition) ||
       (is_polsarpro_segmentation && !errorSegmentation) ||

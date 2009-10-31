@@ -307,6 +307,8 @@ int isPolsarproMatrix(char *dataFile, char **matrixType, char **error)
     path = get_dirname(dataFile);
   if (strlen(path)<=0) 
     path = g_get_current_dir();
+  if (path[strlen(path)-1] == DIR_SEPARATOR)
+    path[strlen(path)-1] = '\0';
   char *p = path, *q = path;
   while (q) {
     if ((q = strchr(p, DIR_SEPARATOR)) != NULL)
