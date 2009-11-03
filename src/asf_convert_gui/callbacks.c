@@ -1226,7 +1226,7 @@ void polsarpro_image_data_type_changed()
       enable_widget("browse_select_colormap_optionmenu", FALSE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
-      put_string_to_label("polsarpro_data_label", "PolSARPro Data Directory:");
+      put_string_to_label("polsarpro_data_label", "PolSARPro Matrix File:");
       break;
     }
   put_string_to_label("add_with_ancillary_error_label", "");
@@ -1277,6 +1277,13 @@ int polsarpro_geocoding_check()
       (is_polsarpro_segmentation && !errorSegmentation) ||
       (is_polsarpro_parameter && !errorParameter)) {
     if (is_polsarpro_matrix) {
+      // Temporary fix - only for the case that we select file in matrix
+      // directory
+      char dirName[1024], fileName[1024];
+      split_dir_and_file(infile, dirName, fileName);
+      dirName[strlen(dirName)-1] = '\0';
+      sprintf(infile, "%s", dirName);
+      // This part works out of the box once the input is a directory
       if (strcmp(matrixType, "T3") == 0 || strcmp(matrixType, "T4") == 0)
 	strcat(infile, "/T11.bin.hdr");
       else if (strcmp(matrixType, "C2") == 0 || 

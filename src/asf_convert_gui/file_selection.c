@@ -807,8 +807,8 @@ on_add_file_with_ancillary_polsarpro_image_browse_button_clicked(GtkWidget *w)
     get_widget_checked("browse_select_image_data_type_optionmenu");
   int selected = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
   if (selected == SELECT_POLARIMETRIC_MATRIX)
-    do_browse("Add PolSARPro Matrix Directory",
-            "add_file_with_ancillary_polsarpro_image_entry", DIR_FILT);
+    do_browse("Add PolSARPro Matrix File",
+            "add_file_with_ancillary_polsarpro_image_entry", BIN_FILT);
   else
     do_browse("Add PolSARPro File",
 	      "add_file_with_ancillary_polsarpro_image_entry", BIN_FILT);

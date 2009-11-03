@@ -1651,7 +1651,8 @@ export_band_image (const char *metadata_file_name,
 
 	// We enforce a byte conversion using truncate for polarimetric segmentation, regardless of
 	// applying a look up table
-	if (md->general->image_data_type == POLARIMETRIC_SEGMENTATION)
+	if (md->general->image_data_type == POLARIMETRIC_SEGMENTATION &&
+	    md->colormap)
 	  sample_mapping = TRUNCATE;
 
         // Initialize the selected format
