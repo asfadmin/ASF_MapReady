@@ -357,14 +357,14 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
   FILE *fpIn, *fpOut;
   terrasar_meta *terrasar;
   meta_parameters *meta;
-  char inDataName[1024], *inMetaName=NULL, *outDataName=NULL;
+  char *inDataName=NULL, *inMetaName=NULL, *outDataName=NULL, *path=NULL;
   char polarization[10], bands[30];         ;
   unsigned char intValue[4];
   float *amp = NULL, *phase = NULL, re, im;
   short int shortReal, shortImaginary;
   int ii, kk, ll, attribute;
   int asfv, aslv, rsfv, rslv;
-  long file_size;
+  long long file_size;
 
   // Check radiometry
   if (radiometry != r_AMP &&
@@ -378,8 +378,8 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
   if (!fileExists(inBaseName))
     inMetaName = appendExt(inBaseName, ".xml");
   else {
-    inMetaName = (char *) MALLOC(sizeof(char)*1024);
-    strcpy(inMetaName, inBaseName);
+    inMetaName = (char *) MALLOC(sizeof(char)*(strlen(inBaseName)+2));
+    sprintf(inMetaName, "%s", inBaseName);
   }
   outDataName = appendExt(outBaseName, ".img");
 
@@ -411,7 +411,8 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
     }
 
     // path from the xml (metadata) file
-    char *path = get_dirname(inBaseName);
+    path = get_dirname(inBaseName);
+    inDataName = (char *) MALLOC(sizeof(char)*(strlen(path)+100));
     if (strlen(path)>0) {
       strcpy(inDataName, path);
       if (inDataName[strlen(inDataName)-1] != '/')
@@ -419,7 +420,6 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
     }
     else
       strcpy(inDataName, "");
-    free(path);
 
     // strcat() on the path & file from the XML entry
     strcat(inDataName, xml_get_string_value(doc, 
@@ -537,7 +537,8 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       asfLineMeter(ll, azimuth_samples);
     }
     meta_write(meta, outDataName);
-    meta_free(meta);
+    FREE(path);
+    FREE(inDataName);
   }    
 
   FCLOSE(fpIn);
@@ -545,6 +546,8 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
   FREE(amp);
   FREE(phase);
   FREE(terrasar);
+  meta_free(meta);
+  FREE(inMetaName);
   xmlFreeDoc(doc);
   xmlCleanupParser();
 }
