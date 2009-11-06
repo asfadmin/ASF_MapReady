@@ -328,7 +328,7 @@ main (int argc, char *argv[])
 			 center_lat, center_lon, codg_file);
 
     // Drop a line in the output file
-    fprintf(fpOut, "%d\t%.1lf\t%d\t%d\t%d\t%d\t%.4lf\t%.4lf\t%.2lf", 
+    fprintf(fpOut, "%d\t%.1lf\t%d\t%d\t%d\t%d\t%.4lf\t%.4lf\t%.2lf\n", 
 	    frame_id, look_angle, year, day, hour, minute, 
 	    center_lat, center_lon, faraday_rotation);
   }
