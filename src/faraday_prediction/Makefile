@@ -5,16 +5,7 @@ TARGET = faraday_prediction
 CFLAGS += $(GLIBS_CFLAGS)
 
 LIBS  = \
-	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/libasf_raster.a \
-	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
-	$(PROJ_LIBS) \
-	$(GSL_LIBS) \
-	$(GLIB_LIBS) \
-	$(JPEG_LIBS) \
 	-lm
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)

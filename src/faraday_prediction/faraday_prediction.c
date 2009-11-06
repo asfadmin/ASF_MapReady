@@ -194,13 +194,12 @@ void sez2ijk(double south, double east, double z, double lat, double lon,
   *k = -cos(l)*south + sin(l)*z;
 }
 
-double alos_pointing(int frame_id, double look_angle, 
-		     double *south, double *east, double *z)
+void alos_pointing(int frame_id, double look_angle, 
+		   double *south, double *east, double *z)
 {
   double inclination = 98.16;
   double angle = cos((90-inclination)*D2R);
   int orbit = frame_id*360/7200*D2R;
-  double sat_lat = asin(sin(orbit)*angle)*R2D;
   double slope_lat = angle*cos(orbit) / 
     sqrt(1 - angle*sin(orbit)*angle*sin(orbit));
   double vertical = 1/tan(look_angle*D2R);
@@ -255,7 +254,7 @@ double faraday_prediction(int frame_id, double look_angle, int year, int day,
   double psi = acos(dot_mag_pt / norm_mag / norm_pt);
   double omega = K/frequency/frequency*tec*tecu*nano;
   omega *= norm_mag*cos(psi)/cos(look)*R2D;
-  printf("omega: %lf\n", omega);
+  //printf("omega: %lf\n", omega);
 
   return omega;
 }
@@ -328,8 +327,8 @@ main (int argc, char *argv[])
 			 center_lat, center_lon, codg_file);
 
     // Drop a line in the output file
-    fprintf(fpOut, "%d\t%.1lf\t%d\t%d\t%d\t%d\t%.4lf\t%.4lf\t%.2lf\n", 
-	    frame_id, look_angle, year, day, hour, minute, 
+    fprintf(fpOut, "%s\t%d\t%.1lf\t%d\t%d\t%d\t%d\t%.4lf\t%.4lf\t%.2lf\n", 
+	    granule_name, frame_id, look_angle, year, day, hour, minute, 
 	    center_lat, center_lon, faraday_rotation);
   }
   FCLOSE(fpIn);
