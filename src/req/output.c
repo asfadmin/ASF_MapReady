@@ -12,6 +12,7 @@ static void generate(char **dir, char **file)
     *file = MALLOC(sizeof(char)*32);
 
     int request_type = settings_get_request_type();
+    int is_aadn = settings_get_is_aadn();
 
     if (request_type==ON_DEMAND_LEVEL_0) {
         time_t t = time(NULL);
@@ -21,7 +22,8 @@ static void generate(char **dir, char **file)
     } else if (request_type != UNSELECTED_REQUEST_TYPE) {
         char e = settings_get_is_emergency() ? 'E' : 'W';
         if (request_type == OBSERVATION_REQUEST)
-            snprintf(*file, 32, "REQ%c%06d", e, s->obs_req_num);
+          snprintf(*file, 32, "REQ%c%06d", e,
+                   is_aadn ? s->obs_req_num_aadn : s->obs_req_num_tdrs);
         else if (request_type == ACQUISITION_REQUEST)
             snprintf(*file, 32, "RQT%c%06d", e, s->acq_req_num);
         else

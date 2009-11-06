@@ -104,10 +104,11 @@ on_request_type_combobox_changed(GtkWidget *w, gpointer callback_data)
 
 void hook_up_csv_dir_entry_changed()
 {
-    GtkWidget *w = get_widget_checked("csv_dir_combobox");
-    GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
-    g_signal_connect(GTK_OBJECT(e), "csv_changed",
-        G_CALLBACK(on_csv_dir_combobox_changed), NULL);
+  // This is no longer needed
+    //GtkWidget *w = get_widget_checked("csv_dir_combobox");
+    //GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
+    //g_signal_connect(GTK_OBJECT(e), "csv_changed",
+    //    G_CALLBACK(on_csv_dir_combobox_changed), NULL);
 
 }
 

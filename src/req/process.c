@@ -55,14 +55,6 @@ static void msg(const char *format, ...)
     }
 }
 
-static void
-get_combo_box_entry_item(const char *widget_name, char *dest)
-{
-    GtkWidget *w = get_widget_checked(widget_name);
-    GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
-    strcpy(dest, gtk_entry_get_text(e));
-}
-
 static int is_all_asterisks(char *s)
 {
     assert(s && strlen(s)>0);
@@ -215,7 +207,11 @@ static int parse_line(// input
             }
         }
     } else {
-        strcpy(drf, settings_get_station_code());
+        if (settings_get_is_aadn())
+            strcpy(drf, "AADN");
+        else
+            strcpy(drf, "TDRS");
+        //strcpy(drf, settings_get_station_code());
     }
     assert(strlen(drf)==4);
 
@@ -884,7 +880,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
     t = time(NULL);
     struct tm *ts = gmtime(&t);
     char time_stamp[10];
-    strftime(time_stamp, 10, "%T", ts);
+    strftime(time_stamp, 10, "%H:%I:%S", ts);
     char date_stamp[10];
     strftime(date_stamp, 10, "%Y%m%d", ts);
 
@@ -1315,7 +1311,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
     time_t t;
     t = time(NULL);
     char time_stamp[10];
-    strftime(time_stamp, 10, "%T", gmtime(&t));
+    strftime(time_stamp, 10, "%H:%I:%S", gmtime(&t));
     char date_stamp[10];
     strftime(date_stamp, 10, "%Y%m%d", gmtime(&t));
 

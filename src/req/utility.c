@@ -248,3 +248,11 @@ void show_widget(const char *widget_name, int show)
     else
         gtk_widget_hide(w);
 }
+
+void
+get_combo_box_entry_item(const char *widget_name, char *dest)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
+    strcpy(dest, gtk_entry_get_text(e));
+}

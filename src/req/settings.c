@@ -9,8 +9,10 @@ Settings *settings_new()
 
     s->csv_dir = NULL;
     s->output_dir = NULL;
-    s->obs_req_num = 1;
-    s->obs_req_id = 1;
+    s->obs_req_num_aadn = 1;
+    s->obs_req_id_aadn = 1;
+    s->obs_req_num_tdrs = 1;
+    s->obs_req_id_tdrs = 1;
     s->acq_req_num = 1;
     s->odl0_seq_num = 1;
     s->odl0_req_id = 1;
@@ -82,8 +84,10 @@ static void read_int_param(const char *buf, const char *key, int *value)
 // label each of the parameters
 static const char *csv_dir_key = "csv directory";
 static const char *output_dir_key = "output directory";
-static const char *obs_req_num_key = "next observation request number";
-static const char *obs_req_id_key = "next observation request id";
+static const char *obs_req_num_aadn_key = "next observation request number";
+static const char *obs_req_num_tdrs_key = "tdrs next observation request number";
+static const char *obs_req_id_aadn_key = "next observation request id";
+static const char *obs_req_id_tdrs_key = "tdrs next observation request id";
 static const char *acq_req_num_key = "next acquisition request number";
 static const char *acq_req_id_key = "next acquisition request id";
 static const char *acq_req_stn_code_key = "acquisition request station code";
@@ -98,8 +102,10 @@ settings_print(const Settings *s)
     printf("Settings:\n");
     printf("  %s: %s\n", csv_dir_key, s->csv_dir);
     printf("  %s: %s\n", output_dir_key, s->output_dir);
-    printf("  %s: %d\n", obs_req_num_key, s->obs_req_num);
-    printf("  %s: %d\n", obs_req_id_key, s->obs_req_id);
+    printf("  %s: %d\n", obs_req_num_aadn_key, s->obs_req_num_aadn);
+    printf("  %s: %d\n", obs_req_id_aadn_key, s->obs_req_id_aadn);
+    printf("  %s: %d\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
+    printf("  %s: %d\n", obs_req_id_tdrs_key, s->obs_req_id_tdrs);
     printf("  %s: %d\n", acq_req_num_key, s->acq_req_num);
 
     int i;
@@ -131,8 +137,10 @@ Settings *settings_load()
             while (fgets(buf, 1024, fp) != NULL) {
                 read_string_param(buf, csv_dir_key, &s->csv_dir);
                 read_string_param(buf, output_dir_key, &s->output_dir);
-                read_int_param(buf, obs_req_num_key, &s->obs_req_num);
-                read_int_param(buf, obs_req_id_key, &s->obs_req_id);
+                read_int_param(buf, obs_req_num_aadn_key, &s->obs_req_num_aadn);
+                read_int_param(buf, obs_req_id_aadn_key, &s->obs_req_id_aadn);
+                read_int_param(buf, obs_req_num_tdrs_key, &s->obs_req_num_tdrs);
+                read_int_param(buf, obs_req_id_tdrs_key, &s->obs_req_id_tdrs);
                 read_int_param(buf, acq_req_num_key, &s->acq_req_num);
                 read_int_param(buf, odl0_seq_num_key, &s->odl0_seq_num);
                 read_int_param(buf, odl0_req_id_key, &s->odl0_req_id);
@@ -162,8 +170,10 @@ Settings *settings_load()
 
     FREE(sav_file);
 
-    if (s->obs_req_num < 1) s->obs_req_num = 1;
-    if (s->obs_req_id < 1) s->obs_req_id = 1;
+    if (s->obs_req_num_aadn < 1) s->obs_req_num_aadn = 1;
+    if (s->obs_req_id_aadn < 1) s->obs_req_id_aadn = 1;
+    if (s->obs_req_num_tdrs < 1) s->obs_req_num_tdrs = 1;
+    if (s->obs_req_id_tdrs < 1) s->obs_req_id_tdrs = 1;
     if (s->acq_req_num < 1) s->acq_req_num = 1;
     for (i=0; i<MAX_STATIONS; ++i)
         if (s->acq_req_ids[i] < 1) s->acq_req_ids[i] = 1;
@@ -184,8 +194,10 @@ static void apply_settings_to_gui(Settings *s)
 {
     put_string_to_entry("csv_directory_entry", s->csv_dir);
     put_string_to_entry("output_directory_entry", s->output_dir);
-    put_int_to_entry("next_obs_request_number_entry", s->obs_req_num);
-    put_int_to_entry("next_obs_request_id_entry", s->obs_req_id);
+    put_int_to_entry("next_obs_request_number_entry", s->obs_req_num_aadn);
+    put_int_to_entry("next_obs_request_id_entry", s->obs_req_id_aadn);
+    put_int_to_entry("next_obs_request_number_tdrs_entry", s->obs_req_num_tdrs);
+    put_int_to_entry("next_obs_request_id_tdrs_entry", s->obs_req_id_tdrs);
     put_int_to_entry("next_acq_request_number_entry", s->acq_req_num);
     put_int_to_entry("odl0_sequence_number_entry", s->odl0_seq_num);
     put_int_to_entry("next_odl0_request_id_entry", s->odl0_req_id);
@@ -251,11 +263,13 @@ void settings_save(Settings *s)
         printf("Found settings file: %s\n", sav_file);
         char *new_sav_txt = MALLOC(sizeof(char)*1024);
         strcpy(new_sav_txt, "");
-        int i,len=1024;
+        int i,len=2048;
         int wrote_csv=FALSE,
             wrote_output=FALSE,
-            wrote_obs_req_num=FALSE,
-            wrote_obs_req_id=FALSE,
+            wrote_obs_req_num_aadn=FALSE,
+            wrote_obs_req_id_aadn=FALSE,
+            wrote_obs_req_num_tdrs=FALSE,
+            wrote_obs_req_id_tdrs=FALSE,
             wrote_acq_req_num=FALSE,
             wrote_odl0_seq_num=FALSE,
             wrote_odl0_req_id=FALSE,
@@ -284,14 +298,22 @@ void settings_save(Settings *s)
                 add_to_text(&new_sav_txt, &len,
                     "%s = %s\r\n", output_dir_key, s->output_dir);
                 wrote_output = TRUE;
-            } else if (matches(buf, obs_req_num_key)) {
+            } else if (matches(buf, obs_req_num_aadn_key)) {
                 add_to_text(&new_sav_txt, &len,
-                    "%s = %d\r\n", obs_req_num_key, s->obs_req_num);
-                wrote_obs_req_num = TRUE;
-            } else if (matches(buf, obs_req_id_key)) {
+                    "%s = %d\r\n", obs_req_num_aadn_key, s->obs_req_num_aadn);
+                wrote_obs_req_num_aadn = TRUE;
+            } else if (matches(buf, obs_req_id_aadn_key)) {
                 add_to_text(&new_sav_txt, &len,
-                    "%s = %d\r\n", obs_req_id_key, s->obs_req_id);
-                wrote_obs_req_id = TRUE;
+                    "%s = %d\r\n", obs_req_id_aadn_key, s->obs_req_id_aadn);
+                wrote_obs_req_id_aadn = TRUE;
+            } else if (matches(buf, obs_req_num_tdrs_key)) {
+                add_to_text(&new_sav_txt, &len,
+                    "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
+                wrote_obs_req_num_tdrs = TRUE;
+            } else if (matches(buf, obs_req_id_tdrs_key)) {
+                add_to_text(&new_sav_txt, &len,
+                    "%s = %d\r\n", obs_req_id_tdrs_key, s->obs_req_id_tdrs);
+                wrote_obs_req_id_tdrs = TRUE;
             } else if (matches(buf, acq_req_num_key)) {
                 add_to_text(&new_sav_txt, &len,
                     "%s = %d\r\n", acq_req_num_key, s->acq_req_num);
@@ -338,12 +360,18 @@ void settings_save(Settings *s)
         if (s->output_dir && !wrote_output)
             add_to_text(&new_sav_txt, &len,
                 "%s = %s\r\n", output_dir_key, s->output_dir);
-        if (!wrote_obs_req_num && s->obs_req_num > 1)
+        if (!wrote_obs_req_num_aadn && s->obs_req_num_aadn > 1)
             add_to_text(&new_sav_txt, &len,
-                "%s = %d\r\n", obs_req_num_key, s->obs_req_num);
-        if (!wrote_obs_req_id && s->obs_req_id > 1)
+                "%s = %d\r\n", obs_req_num_aadn_key, s->obs_req_num_aadn);
+        if (!wrote_obs_req_id_aadn && s->obs_req_id_aadn > 1)
             add_to_text(&new_sav_txt, &len,
-                "%s = %d\r\n", s->obs_req_id);
+                "%s = %d\r\n", obs_req_id_aadn_key, s->obs_req_id_aadn);
+        if (!wrote_obs_req_num_tdrs && s->obs_req_num_tdrs > 1)
+            add_to_text(&new_sav_txt, &len,
+                "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
+        if (!wrote_obs_req_id_tdrs && s->obs_req_id_tdrs > 1)
+            add_to_text(&new_sav_txt, &len,
+                "%s = %d\r\n", obs_req_id_tdrs_key, s->obs_req_id_tdrs);
         if (!wrote_acq_req_num && s->acq_req_num > 1)
             add_to_text(&new_sav_txt, &len,
                 "%s = %d\r\n", acq_req_num_key, s->acq_req_num);
@@ -384,8 +412,10 @@ void settings_save(Settings *s)
             fprintf(fp, "%s = %s\r\n", csv_dir_key, s->csv_dir);
         if (s->output_dir)
             fprintf(fp, "%s = %s\r\n", output_dir_key, s->output_dir);
-        fprintf(fp, "%s = %d\r\n", obs_req_num_key, s->obs_req_num);
-        fprintf(fp, "%s = %d\r\n", obs_req_id_key, s->obs_req_id);
+        fprintf(fp, "%s = %d\r\n", obs_req_num_aadn_key, s->obs_req_num_aadn);
+        fprintf(fp, "%s = %d\r\n", obs_req_id_aadn_key, s->obs_req_id_aadn);
+        fprintf(fp, "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
+        fprintf(fp, "%s = %d\r\n", obs_req_id_tdrs_key, s->obs_req_id_tdrs);
         fprintf(fp, "%s = %d\r\n", acq_req_num_key, s->acq_req_num);
         fprintf(fp, "%s = %d\r\n", odl0_seq_num_key, s->odl0_seq_num);
         fprintf(fp, "%s = %d\r\n", odl0_req_id_key, s->odl0_req_id);
@@ -421,8 +451,10 @@ Settings *settings_new_from_gui()
 
     s->csv_dir = settings_get_csv_dir();
     s->output_dir = settings_get_output_dir();
-    s->obs_req_num = atoi(get_string_from_entry("next_obs_request_number_entry"));
-    s->obs_req_id = atoi(get_string_from_entry("next_obs_request_id_entry"));
+    s->obs_req_num_aadn = atoi(get_string_from_entry("next_obs_request_number_entry"));
+    s->obs_req_id_aadn = atoi(get_string_from_entry("next_obs_request_id_entry"));
+    s->obs_req_num_tdrs = atoi(get_string_from_entry("next_obs_request_number_tdrs_entry"));
+    s->obs_req_id_tdrs = atoi(get_string_from_entry("next_obs_request_id_tdrs_entry"));
     s->acq_req_num = atoi(get_string_from_entry("next_acq_request_number_entry"));
     s->odl0_seq_num = atoi(get_string_from_entry("odl0_sequence_number_entry"));
     s->odl0_req_id = atoi(get_string_from_entry("next_odl0_request_id_entry"));
@@ -441,11 +473,11 @@ Settings *settings_new_from_gui()
 int save_settings()
 {
     Settings *s = settings_new_from_gui();
-    if (!fileExists(s->csv_dir)) {
+    if (!is_dir(s->csv_dir)) {
         message_box("CSV Directory doesn't exist.");
         return FALSE;
     }
-    if (!fileExists(s->output_dir)) {
+    if (!is_dir(s->output_dir)) {
         message_box("Output Directory doesn't exist.");
         return FALSE;
     }
@@ -491,8 +523,20 @@ int settings_get_next_req_id(int request_type, const char *drf)
     int id;
     switch (request_type) {
         case OBSERVATION_REQUEST:
-            id = s->obs_req_id;
+        {
+            const char *stn = settings_get_aadn_or_tdrs();
+            if (strncmp_case(stn, "AADN", 4)==0) {
+                id = s->obs_req_id_aadn;
+            }
+            else if (strncmp_case(stn, "TDRS", 4)==0) {
+                id = s->obs_req_id_tdrs;
+            }
+            else {
+                printf("[ID] Unexpected STN: %s\n", stn);
+                id = s->obs_req_id_aadn;
+            }
             break;
+        }
 
         case ACQUISITION_REQUEST:
         {
@@ -532,11 +576,25 @@ void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type,
 
     switch (request_type) {
         case OBSERVATION_REQUEST:
-            if (req_id <= s->obs_req_id)
-                printf("*** New observation request id is smaller!?\n");
-            s->obs_req_id = req_id;
-            ++s->obs_req_num;
+        {
+            const char *stn = settings_get_aadn_or_tdrs();
+            if (strncmp_case(stn, "AADN", 4)==0) {
+                if (req_id <= s->obs_req_id_aadn)
+                    printf("*** New observation request id is smaller!?\n");
+                s->obs_req_id_aadn = req_id;
+                ++s->obs_req_num_aadn;
+            }
+            else if (strncmp_case(stn, "TDRS", 4)==0) {
+                if (req_id <= s->obs_req_id_tdrs)
+                    printf("*** New observation request id is smaller!?\n");
+                s->obs_req_id_tdrs = req_id;
+                ++s->obs_req_num_tdrs;
+            }
+            else {
+                printf("[NUM] Unexpected STN: %s\n", stn);
+            }
             break;
+        }
 
         case ACQUISITION_REQUEST:
         {
@@ -570,7 +628,6 @@ void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type,
             printf("This should never happen!!\n");
             break;
     }
-
     settings_save(s);
     apply_settings_to_gui(s);
 
@@ -688,4 +745,25 @@ SIGNAL_CALLBACK void on_end_date_entry_changed(GtkWidget *w)
 {
     update_output_file();
     gui_process(FALSE);
+}
+
+const char *settings_get_aadn_or_tdrs()
+{
+    char *ret = MALLOC(5*sizeof(char));
+    // if the input file starts with "TDRS" we will use TDRS, otherwise
+    // we will call is AADN.
+    char csv_file[1024];
+    get_combo_box_entry_item("csv_dir_combobox", csv_file);
+    char *file = get_filename(csv_file);
+    if (strncmp_case(file, "TDRS", 4)==0)
+      strcpy(ret, "TDRS");
+    else
+      strcpy(ret, "AADN");
+    FREE(file);
+    return ret;
+}
+
+int settings_get_is_aadn()
+{
+    return strcmp(settings_get_aadn_or_tdrs(), "AADN")==0;
 }

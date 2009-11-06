@@ -34,8 +34,10 @@ typedef struct
 {
     char *csv_dir;
     char *output_dir;
-    int obs_req_num;
-    int obs_req_id;
+    int obs_req_num_aadn;
+    int obs_req_id_aadn;
+    int obs_req_num_tdrs;
+    int obs_req_id_tdrs;
     int acq_req_num;
     char acq_req_stn_codes[5][5];
     int acq_req_ids[5];
@@ -73,6 +75,7 @@ void put_file_in_textview(const char *file, const char *widget_name);
 void put_string_in_textview(const char *widget_name, const char *txt);
 void put_string_to_label(const char *widget_name, const char *format, ...);
 void show_widget(const char *widget_name, int show);
+void get_combo_box_entry_item(const char *widget_name, char *dest);
 
 /* req.c */
 char *find_in_share(const char * filename);
@@ -95,6 +98,8 @@ void settings_set_request_type(int request_type);
 int settings_get_request_type(void);
 const char *settings_get_station_code(void);
 int settings_get_sequence_number(void);
+int settings_get_is_aadn(void);
+const char *settings_get_aadn_or_tdrs(void);
 
 /* csv_list.c */
 void populate_csvs(void);
