@@ -1,0 +1,4 @@
+Faraday prediction Version History
+
+Faraday prediction 1.0.1 (unleashed 2009 November 6)
+  rewritten Matlab code, originally developed by Jeremy and Franz.
