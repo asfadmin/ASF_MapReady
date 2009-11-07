@@ -34,6 +34,10 @@
 #define DATA_QC_VERSION_STRING "1.0.2-dev"
 #define DATA_QC_VERSION 1.0
 
+// Faraday prediction
+#define FARADAY_VERSION_STRING "1.0.1"
+#define FARADAY_VERSION 1.0
+
 // Set Tool suite stuff based on given build define
 // The values of the TOOL_SUITE_SHARE_DIR value must match what is
 // used in the top-level Makefile
@@ -76,6 +80,12 @@
 #elif defined (_PKG_DATA_QC)
 #define TOOL_SUITE_NAME                 "DataQC"
 #define TOOL_SUITE_SHARE_DIR            "data_qc"
+#define TOOL_SUITE_VERSION_STRING       DATA_QC_VERSION_STRING
+#define TOOL_SUITE_VERSION              DATA_QC_VERSION
+
+#elif defined (_PKG_FARADAY)
+#define TOOL_SUITE_NAME                 "FaradayPrediction"
+#define TOOL_SUITE_SHARE_DIR            "faraday_prediction"
 #define TOOL_SUITE_VERSION_STRING       DATA_QC_VERSION_STRING
 #define TOOL_SUITE_VERSION              DATA_QC_VERSION
 
