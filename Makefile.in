@@ -158,6 +158,10 @@ DATA_QC_MODULES = \
 	src/asf_meta \
 	src/data_qc
 
+FARADAY_MODULES = \
+	src/asf \
+	src/faraday_prediction
+
 IGNORED_INCLUDES = \
 	include/ardop_defs.h \
 	include/asf_baseline.h \
@@ -241,6 +245,7 @@ VERSION_C2V = $(shell awk -F '"' '$$1 ~ /define C2V_VERSION_STRING/ {print $$2}'
 VERSION_JPL = $(shell awk -F '"' '$$1 ~ /define JPL_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_CREATE_THUMBS = $(shell awk -F '"' '$$1 ~ /define CREATE_THUMBS_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_DATA_QC = $(shell awk -F '"' '$$1 ~ /define DATA_QC_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_FARADAY = $(shell awk -F '"' '$$1 ~ /define FARADAY_STRING/ {print $$2}' include/asf_version.h)
 
 SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 
@@ -370,6 +375,21 @@ data_qc: mkdirs_for_build external_libs
 	$(foreach MODULE, $(DATA_QC_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX Data QC Compiled! XXXXXXXXXXX"
+	@ echo ""
+
+# Faraday prediction
+faraday: mkdirs_for_build external_libs
+	mkdir -p $(FARADAY_SHAREDIR)
+	-cp -R external/share/* $(FARADAY_SHAREDIR)
+	-chmod -R ug+w share
+	echo BUILD_PKG = -D_PKG_FARADAY > make_support/build_pkg.mk
+	echo SHAREDIR = ../../$(FARADAY_SHAREDIR) >> make_support/build_pkg.mk
+	cp LICENSE.txt $(FARADAY_SHAREDIR)
+	echo $(VERSION_FARADAY) > $(FARADAY_SHAREDIR)/faraday_version.txt
+	$(SET_SVN_REV_H)
+	$(foreach MODULE, $(FARADAY_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX Faraday prediction Compiled! XXXXXXXXXXX"
 	@ echo ""
 
 # Build using our old system

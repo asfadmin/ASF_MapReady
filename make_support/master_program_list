@@ -313,4 +313,11 @@ CATEGORIES
 		create_thumbs
 		create_thumbs-version_history.txt
 	}
+
+# Faraday prediction package
+	faraday_package
+	{
+		faraday_prediction
+	}
+
 }
