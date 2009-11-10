@@ -11,7 +11,7 @@ Settings *settings_new()
     s->output_dir = NULL;
     s->obs_req_num_aadn = 1;
     s->obs_req_id_aadn = 1;
-    s->obs_req_num_tdrs = 1;
+    //s->obs_req_num_tdrs = 1;
     s->obs_req_id_tdrs = 1;
     s->acq_req_num = 1;
     s->odl0_seq_num = 1;
@@ -85,7 +85,7 @@ static void read_int_param(const char *buf, const char *key, int *value)
 static const char *csv_dir_key = "csv directory";
 static const char *output_dir_key = "output directory";
 static const char *obs_req_num_aadn_key = "next observation request number";
-static const char *obs_req_num_tdrs_key = "tdrs next observation request number";
+//static const char *obs_req_num_tdrs_key = "tdrs next observation request number";
 static const char *obs_req_id_aadn_key = "next observation request id";
 static const char *obs_req_id_tdrs_key = "tdrs next observation request id";
 static const char *acq_req_num_key = "next acquisition request number";
@@ -104,7 +104,7 @@ settings_print(const Settings *s)
     printf("  %s: %s\n", output_dir_key, s->output_dir);
     printf("  %s: %d\n", obs_req_num_aadn_key, s->obs_req_num_aadn);
     printf("  %s: %d\n", obs_req_id_aadn_key, s->obs_req_id_aadn);
-    printf("  %s: %d\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
+    //printf("  %s: %d\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
     printf("  %s: %d\n", obs_req_id_tdrs_key, s->obs_req_id_tdrs);
     printf("  %s: %d\n", acq_req_num_key, s->acq_req_num);
 
@@ -139,7 +139,7 @@ Settings *settings_load()
                 read_string_param(buf, output_dir_key, &s->output_dir);
                 read_int_param(buf, obs_req_num_aadn_key, &s->obs_req_num_aadn);
                 read_int_param(buf, obs_req_id_aadn_key, &s->obs_req_id_aadn);
-                read_int_param(buf, obs_req_num_tdrs_key, &s->obs_req_num_tdrs);
+                //read_int_param(buf, obs_req_num_tdrs_key, &s->obs_req_num_tdrs);
                 read_int_param(buf, obs_req_id_tdrs_key, &s->obs_req_id_tdrs);
                 read_int_param(buf, acq_req_num_key, &s->acq_req_num);
                 read_int_param(buf, odl0_seq_num_key, &s->odl0_seq_num);
@@ -172,7 +172,7 @@ Settings *settings_load()
 
     if (s->obs_req_num_aadn < 1) s->obs_req_num_aadn = 1;
     if (s->obs_req_id_aadn < 1) s->obs_req_id_aadn = 1;
-    if (s->obs_req_num_tdrs < 1) s->obs_req_num_tdrs = 1;
+    //if (s->obs_req_num_tdrs < 1) s->obs_req_num_tdrs = 1;
     if (s->obs_req_id_tdrs < 1) s->obs_req_id_tdrs = 1;
     if (s->acq_req_num < 1) s->acq_req_num = 1;
     for (i=0; i<MAX_STATIONS; ++i)
@@ -196,7 +196,7 @@ static void apply_settings_to_gui(Settings *s)
     put_string_to_entry("output_directory_entry", s->output_dir);
     put_int_to_entry("next_obs_request_number_entry", s->obs_req_num_aadn);
     put_int_to_entry("next_obs_request_id_entry", s->obs_req_id_aadn);
-    put_int_to_entry("next_obs_request_number_tdrs_entry", s->obs_req_num_tdrs);
+    //put_int_to_entry("next_obs_request_number_tdrs_entry", s->obs_req_num_tdrs);
     put_int_to_entry("next_obs_request_id_tdrs_entry", s->obs_req_id_tdrs);
     put_int_to_entry("next_acq_request_number_entry", s->acq_req_num);
     put_int_to_entry("odl0_sequence_number_entry", s->odl0_seq_num);
@@ -268,7 +268,7 @@ void settings_save(Settings *s)
             wrote_output=FALSE,
             wrote_obs_req_num_aadn=FALSE,
             wrote_obs_req_id_aadn=FALSE,
-            wrote_obs_req_num_tdrs=FALSE,
+          //wrote_obs_req_num_tdrs=FALSE,
             wrote_obs_req_id_tdrs=FALSE,
             wrote_acq_req_num=FALSE,
             wrote_odl0_seq_num=FALSE,
@@ -306,10 +306,10 @@ void settings_save(Settings *s)
                 add_to_text(&new_sav_txt, &len,
                     "%s = %d\r\n", obs_req_id_aadn_key, s->obs_req_id_aadn);
                 wrote_obs_req_id_aadn = TRUE;
-            } else if (matches(buf, obs_req_num_tdrs_key)) {
-                add_to_text(&new_sav_txt, &len,
-                    "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
-                wrote_obs_req_num_tdrs = TRUE;
+          //} else if (matches(buf, obs_req_num_tdrs_key)) {
+          //    add_to_text(&new_sav_txt, &len,
+          //      "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
+          //  wrote_obs_req_num_tdrs = TRUE;
             } else if (matches(buf, obs_req_id_tdrs_key)) {
                 add_to_text(&new_sav_txt, &len,
                     "%s = %d\r\n", obs_req_id_tdrs_key, s->obs_req_id_tdrs);
@@ -366,9 +366,9 @@ void settings_save(Settings *s)
         if (!wrote_obs_req_id_aadn && s->obs_req_id_aadn > 1)
             add_to_text(&new_sav_txt, &len,
                 "%s = %d\r\n", obs_req_id_aadn_key, s->obs_req_id_aadn);
-        if (!wrote_obs_req_num_tdrs && s->obs_req_num_tdrs > 1)
-            add_to_text(&new_sav_txt, &len,
-                "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
+        //if (!wrote_obs_req_num_tdrs && s->obs_req_num_tdrs > 1)
+        //    add_to_text(&new_sav_txt, &len,
+        //        "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
         if (!wrote_obs_req_id_tdrs && s->obs_req_id_tdrs > 1)
             add_to_text(&new_sav_txt, &len,
                 "%s = %d\r\n", obs_req_id_tdrs_key, s->obs_req_id_tdrs);
@@ -414,7 +414,7 @@ void settings_save(Settings *s)
             fprintf(fp, "%s = %s\r\n", output_dir_key, s->output_dir);
         fprintf(fp, "%s = %d\r\n", obs_req_num_aadn_key, s->obs_req_num_aadn);
         fprintf(fp, "%s = %d\r\n", obs_req_id_aadn_key, s->obs_req_id_aadn);
-        fprintf(fp, "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
+        //fprintf(fp, "%s = %d\r\n", obs_req_num_tdrs_key, s->obs_req_num_tdrs);
         fprintf(fp, "%s = %d\r\n", obs_req_id_tdrs_key, s->obs_req_id_tdrs);
         fprintf(fp, "%s = %d\r\n", acq_req_num_key, s->acq_req_num);
         fprintf(fp, "%s = %d\r\n", odl0_seq_num_key, s->odl0_seq_num);
@@ -453,7 +453,7 @@ Settings *settings_new_from_gui()
     s->output_dir = settings_get_output_dir();
     s->obs_req_num_aadn = atoi(get_string_from_entry("next_obs_request_number_entry"));
     s->obs_req_id_aadn = atoi(get_string_from_entry("next_obs_request_id_entry"));
-    s->obs_req_num_tdrs = atoi(get_string_from_entry("next_obs_request_number_tdrs_entry"));
+    //s->obs_req_num_tdrs = atoi(get_string_from_entry("next_obs_request_number_tdrs_entry"));
     s->obs_req_id_tdrs = atoi(get_string_from_entry("next_obs_request_id_tdrs_entry"));
     s->acq_req_num = atoi(get_string_from_entry("next_acq_request_number_entry"));
     s->odl0_seq_num = atoi(get_string_from_entry("odl0_sequence_number_entry"));
@@ -588,7 +588,8 @@ void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type,
                 if (req_id <= s->obs_req_id_tdrs)
                     printf("*** New observation request id is smaller!?\n");
                 s->obs_req_id_tdrs = req_id;
-                ++s->obs_req_num_tdrs;
+                //++s->obs_req_num_tdrs;
+                ++s->obs_req_num_aadn;
             }
             else {
                 printf("[NUM] Unexpected STN: %s\n", stn);
