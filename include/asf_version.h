@@ -11,8 +11,8 @@
 #define AP_VERSION 1.0
 
 // Request Generator
-#define REQ_VERSION_STRING "2.0.6-dev"
-#define REQ_VERSION 2.0
+#define REQ_VERSION_STRING "2.1.1"
+#define REQ_VERSION 2.1
 
 // MapReady
 #define MAPREADY_VERSION_STRING "2.3.3"

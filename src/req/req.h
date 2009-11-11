@@ -34,9 +34,8 @@ typedef struct
 {
     char *csv_dir;
     char *output_dir;
-    int obs_req_num_aadn;
+    int obs_req_num;
     int obs_req_id_aadn;
-    //int obs_req_num_tdrs;
     int obs_req_id_tdrs;
     int acq_req_num;
     char acq_req_stn_codes[5][5];

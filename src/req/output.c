@@ -22,7 +22,7 @@ static void generate(char **dir, char **file)
     } else if (request_type != UNSELECTED_REQUEST_TYPE) {
         char e = settings_get_is_emergency() ? 'E' : 'W';
         if (request_type == OBSERVATION_REQUEST)
-          snprintf(*file, 32, "REQ%c%06d", e, s->obs_req_num_aadn);
+            snprintf(*file, 32, "REQ%c%06d", e, s->obs_req_num);
         else if (request_type == ACQUISITION_REQUEST)
             snprintf(*file, 32, "RQT%c%06d", e, s->acq_req_num);
         else
