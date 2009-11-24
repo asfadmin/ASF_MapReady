@@ -299,9 +299,10 @@ int main(int argc, char *argv[])
   // End command line parsing *************************************************
 
   // Check whether required files actually exist
-  char **dataName=NULL, **metaName=NULL;
+  ceos_file_pairs_t pair;
+  char **dataName=NULL, **metaName=NULL, base[512];
   int nBands, trailer;
-  require_ceos_pair(inFile, &dataName, &metaName, &nBands, &trailer);
+  pair = get_ceos_names(inFile, base, &dataName, &metaName, &nBands, &trailer);
 
   // Create temporary processing directory
   char tmpDir[512];
@@ -330,7 +331,10 @@ int main(int argc, char *argv[])
   fprintf(fp, "[General]\n");
   fprintf(fp, "input file = %s\n", inFile);
   fprintf(fp, "output file = %s\n", pngFile);
-  fprintf(fp, "import = 1\n");
+  if (pair != NO_CEOS_FILE_PAIR)
+    fprintf(fp, "import = 1\n");
+  else
+    fprintf(fp, "import = 0\n");
   if (tcFlag != FLAG_NOT_SET || rgFlag != FLAG_NOT_SET)
     fprintf(fp, "terrain correction = 1\n");
   else
@@ -339,9 +343,11 @@ int main(int argc, char *argv[])
   fprintf(fp, "export =1\n");
   fprintf(fp, "dump envi header = 0\n");
   fprintf(fp, "short configuration file = 1\n\n");
-  fprintf(fp, "[Import]\n");
-  fprintf(fp, "format = CEOS\n");
-  fprintf(fp, "radiometry = AMPLITUDE_IMAGE\n\n");
+  if (pair != NO_CEOS_FILE_PAIR) {
+    fprintf(fp, "[Import]\n");
+    fprintf(fp, "format = CEOS\n");
+    fprintf(fp, "radiometry = AMPLITUDE_IMAGE\n\n");
+  }
   if (tcFlag != FLAG_NOT_SET || rgFlag != FLAG_NOT_SET) {
     fprintf(fp, "[Terrain correction]\n");
     fprintf(fp, "digital elevation model = %s\n", demFile);
