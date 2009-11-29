@@ -474,9 +474,15 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     }
 
     basename = (gchar *) g_realloc(basename,
-        sizeof(gchar) * (strlen(path) + strlen(schemed_filename) + 2));
+        sizeof(gchar) * (strlen(path) + strlen(schemed_filename) + 10));
 
-    sprintf(basename, "%s%s", path, schemed_filename);
+    if (image_data_type == SELECT_POLARIMETRIC_MATRIX ||
+	image_data_type == SELECT_POLARIMETRIC_DECOMPOSITION) {
+      snprintf(basename, strlen(path)-3, "%s", path);
+      strcat(basename, "_MapReady");
+    }
+    else
+      sprintf(basename, "%s%s", path, schemed_filename);
 
     g_free(schemed_filename);
     g_free(filename);
