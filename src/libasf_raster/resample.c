@@ -96,11 +96,12 @@ resample_impl(const char *infile, const char *outfile,
              s_line,                /* start line for input file      */
              xi = 0,                /* inbuf int x sample #           */
              yi = 0,                /* inbuf int y line #             */
-             i,j,k;                 /* loop counters                  */
+             i,j,k,l;               /* loop counters                  */
     float    xpixsiz,               /* range pixel size               */
              ypixsiz,               /* azimuth pixel size             */
              xbase,ybase,           /* base sample/line               */
-             xrate,yrate;           /* # input pixels/output pixel    */
+             xrate,yrate,           /* # input pixels/output pixel    */
+             tmp;
 
     //asfPrintStatus("\n\n\nResample: Performing filtering and subsampling..\n\n");
     //asfPrintStatus("  Input image is %s\n",infile);
@@ -208,12 +209,25 @@ resample_impl(const char *infile, const char *outfile,
 
             s_line += k*nl;
             get_float_lines(fpin, metaIn, s_line, n_lines, inbuf);
+	    if (metaIn->general->radiometry >= r_SIGMA_DB &&
+		metaIn->general->radiometry <= r_GAMMA_DB) {
+	      for (l=0; l<(np*n_lines); l++) {
+		tmp = inbuf[l];
+		inbuf[l] = pow(10.0, tmp/10.0);
+	      }
+	    }
+	    
 
             /*--------- Produce the output line and write to disk -------*/
             for (j = 0; j < onp; j++)
             {
                 xi = j * xrate + xbase + 0.5;
                 outbuf[j] = filter(inbuf,n_lines,np,xi,xnsk);
+		if (metaOut->general->radiometry >= r_SIGMA_DB &&
+		    metaOut->general->radiometry <= r_GAMMA_DB) {
+		  tmp = outbuf[j];
+		  outbuf[j] = 10.0 * log10(tmp);
+		}
             }
 
             put_float_line(fpout, metaOut, i, outbuf);
