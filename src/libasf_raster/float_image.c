@@ -1123,6 +1123,10 @@ float_image_band_new_from_metadata(meta_parameters *meta,
     for (i = 0; i < nl; ++i) {
         get_float_line(fp, meta, i+band*nl, buf);
         for (j = 0; j < ns; ++j)
+	  if (meta->general->radiometry >= r_SIGMA_DB &&
+	      meta->general->radiometry <= r_GAMMA_DB)
+            float_image_set_pixel(fi, j, i, pow(10, buf[j]/10.0));
+	  else
             float_image_set_pixel(fi, j, i, buf[j]);
         asfPercentMeter((float)i/(float)(nl-1));
     }

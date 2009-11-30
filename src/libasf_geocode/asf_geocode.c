@@ -2155,7 +2155,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             g_assert (ii_size_x <= SSIZE_MAX);
             g_assert (ii_size_y <= SSIZE_MAX);
 
-            float value, ref_value;
+            float value, ref_value, power;
 
             // If we are outside the extent of the input image, set to the
             // fill value.  We do this only on the first image -- subsequent
@@ -2180,14 +2180,21 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
               if (process_as_byte) {
                 value = uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
                                            uint8_image_sample_method);
-              }
+	      }
               else if ( imd->general->image_data_type == DEM ) {
                 value = dem_sample(iim, input_x_pixel, input_y_pixel,
                                    float_image_sample_method);
               }
               else {
-                value = float_image_sample(iim, input_x_pixel, input_y_pixel,
-                                           float_image_sample_method);
+		if (imd->general->radiometry >= r_SIGMA_DB &&
+		    imd->general->radiometry <= r_GAMMA_DB) {
+		  power = float_image_sample(iim, input_x_pixel, input_y_pixel,
+					     float_image_sample_method);
+		  value = 10.0 * log10(power);
+		}
+		else
+		  value = float_image_sample(iim, input_x_pixel, input_y_pixel,
+					     float_image_sample_method);		
 
                 if (omd->general->data_type == BYTE && value < 0.0) {
                   value = 0.0;
