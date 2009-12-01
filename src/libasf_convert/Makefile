@@ -4,7 +4,8 @@ include ../../make_support/system_rules
 
 OBJS  = asf_convert.o \
 	config.o \
-	functions.o
+	functions.o \
+	kml_overlay.o
 
 CFLAGS += $(GLIB_CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS)
 
