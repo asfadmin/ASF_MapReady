@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
   // Report the command line
   asfSplashScreen(argc, argv);
 
-  kml_overlay(inFile, outFile, demFile, !tcFlag, !rgFlag);
+  kml_overlay(inFile, outFile, demFile, !tcFlag, !rgFlag, TRUE);
 
   FREE(demFile);
 

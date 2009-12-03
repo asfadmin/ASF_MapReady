@@ -899,6 +899,9 @@ export_band_image (const char *metadata_file_name,
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
 
+  if (format == PNG_GE)
+    meta_write(md, output_file_name);
+
   if (md->general->image_data_type != POLARIMETRIC_MATRIX &&
       md->general->image_data_type != POLARIMETRIC_DECOMPOSITION &&
       format == POLSARPRO_HDR)

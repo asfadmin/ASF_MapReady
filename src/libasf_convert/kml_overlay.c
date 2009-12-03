@@ -36,14 +36,8 @@ static double min4(double a, double b, double c, double d)
 }
 
 int kml_overlay(char *inFile, char *outFile, char *demFile, 
-		int terrain_correct, int refine_geolocation)
+		int terrain_correct, int refine_geolocation, int zip)
 {
-  // Setup
-  const int pid = getpid();
-  sprintf(logFile, "tmp%i.log", pid);
-  logflag = TRUE;
-  fLog = FOPEN(logFile, "a");
-
   // Check whether required files actually exist
   ceos_file_pairs_t pair;
   char **dataName=NULL, **metaName=NULL, base[512];
@@ -56,11 +50,14 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   }
 
   // Create temporary processing directory
+  char cwd[1024];
+  getcwd(cwd, 1024);
   char *tmpDir = (char *) MALLOC(sizeof(char)*512);
-  sprintf(tmpDir, "%s-",outFile);
+  sprintf(tmpDir, "%s-", outFile);
   strcat(tmpDir, time_stamp_dir());
   create_clean_dir(tmpDir);
 
+  // Determine size of output
   meta_parameters *meta;
   meta = meta_read(inFile);
   double pixel_size = meta->general->x_pixel_size;
@@ -68,21 +65,38 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
     pixel_size *= 8.0;
   meta_free(meta);
 
+  // Generate input names
+  char *inName = (char *) MALLOC(sizeof(char)*(strlen(inFile)+1));
+  char *inDir = (char *) MALLOC(sizeof(char)*1024);
+  split_dir_and_file(inFile, inDir, inName);
+  if (strlen(inDir) == 0)
+    sprintf(inDir, "%s%c", cwd, DIR_SEPARATOR);
+
   // Generate output names
-  char *baseName = get_basename(outFile);
+  char *baseName = (char *) MALLOC(sizeof(char)*(strlen(outFile)+1));
+  char *outDir = (char *) MALLOC(sizeof(char)*1024);
+  split_dir_and_file(outFile, outDir, baseName);
+  if (strlen(outDir) == 0)
+    sprintf(outDir, "%s%c", cwd, DIR_SEPARATOR);
   char metaFile[512], pngFile[512], kmlFile[512], kmzFile[512];
-  sprintf(metaFile, "%s.meta", baseName);
-  sprintf(pngFile, "%s.png", baseName);
+  sprintf(pngFile, "%s%s.png", outDir, baseName);
   sprintf(kmlFile, "%s.kml", baseName);
-  sprintf(kmzFile, "%s.kmz", baseName);
+  sprintf(kmzFile, "%s%s.kmz", outDir, baseName);
+
+  // Setup
+  const int pid = getpid();
+  sprintf(logFile, "%stmp%i.log", outDir, pid);
+  logflag = TRUE;
+  fLog = FOPEN(logFile, "a");
 
   // Generating a customized configuration for asf_mapready
+  chdir(tmpDir);
   char configFileName[255];
-  sprintf(configFileName, "%s%casf_mapready.config", tmpDir, DIR_SEPARATOR);
+  sprintf(configFileName, "asf_mapready.config");
   FILE *fp = FOPEN(configFileName, "w");
   fprintf(fp, "Temporary asf_mapready configuration file\n\n");
   fprintf(fp, "[General]\n");
-  fprintf(fp, "input file = %s\n", inFile);
+  fprintf(fp, "input file = %s%s\n", inDir, inName);
   fprintf(fp, "output file = %s\n", pngFile);
   if (pair != NO_CEOS_FILE_PAIR)
     fprintf(fp, "import = 1\n");
@@ -130,6 +144,9 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
 
   // Remove log file if we created it (leave it if the user asked for it)
   remove(logFile);
+  baseName = get_basename(outFile);
+  sprintf(kmlFile, "%s.kml", baseName);
+  sprintf(metaFile, "%s%s.meta", outDir, baseName);
 
   // Calculate the lat/lon extents from the geocoded browse image
   meta = meta_read(metaFile);
@@ -173,11 +190,11 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
 
   // Generate a configuration file for convert2vector
   asfPrintStatus("\n\nGenerating KML file ...\n\n");
-  sprintf(configFileName, "%s%cconvert2vector.config", tmpDir, DIR_SEPARATOR);
+  sprintf(configFileName, "convert2vector.config");
   fp = FOPEN(configFileName, "w");
   fprintf(fp, "[General]\n");
   fprintf(fp, "input file = %s\n", metaFile);
-  fprintf(fp, "output file = %s\n", kmlFile);
+  fprintf(fp, "output file = %s%s\n", outDir, kmlFile);
   fprintf(fp, "input format = META\n");
   fprintf(fp, "output format = KML\n");
   fprintf(fp, "list = 0\n\n");
@@ -200,29 +217,44 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   convert2vector(cfg);
   FREE(cfg);
 
-  // Zip the KML and PNG into a KMZ file
-  char cmd[512];
-  asfPrintStatus("\n\nGenerating KMZ file ...\n\n");
-  sprintf(cmd, "zip %s %s %s", kmzFile, kmlFile, pngFile);
-  asfSystem(cmd);
+  // Zip the KML and PNG into a KMZ fill
+  chdir(outDir);
+  if (zip) {
+    char cmd[512];
+    asfPrintStatus("\n\nGenerating KMZ file ...\n\n");
+    sprintf(cmd, "zip %s %s %s", kmzFile, kmlFile, pngFile);
+    asfSystem(cmd);
+  }
 
   // Clean up
-  remove_dir(tmpDir);
-  FREE(tmpDir);
+  remove(logFile);
   remove_file(kmlFile);
   if (band_count == 1) {
-    remove_file(pngFile);
+    if (zip) {
+      sprintf(pngFile, "%s%s.png", outDir, baseName);
+      remove_file(pngFile);
+    }
     FREE(bands[0]);
   }
   else {
     for (ii=0; ii<band_count; ii++) {
-      sprintf(pngFile, "%s_%s.png", baseName, bands[ii]);
-      remove_file(pngFile);
+      if (zip) {
+	sprintf(pngFile, "%s, %s_%s.png", outDir, baseName, bands[ii]);
+	remove_file(pngFile);
+      }
       FREE(bands[ii]);
     }
   }
+  chdir(cwd);
   FREE(bands);
   remove_file(metaFile);
+  remove_dir(tmpDir);
+  FREE(tmpDir);
+  FREE(baseName);
+  FREE(outDir);
+  FREE(inName);
+  FREE(inDir);
+ 
   asfPrintStatus("\nSuccessful completion!\n\n");
 
   return(EXIT_SUCCESS);
