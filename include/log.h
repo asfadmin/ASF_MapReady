@@ -18,5 +18,7 @@ void printLog(const char *msg);
 void set_status_file(const char *status_file);
 void update_status(const char *format, ...);
 void clear_status_file(void);
+void status_on(void);
+void status_off(void);
 
 #endif

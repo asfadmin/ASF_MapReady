@@ -85,6 +85,8 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
 
   // Generating a customized configuration for asf_mapready
   chdir(tmpDir);
+  status_off();
+  quietflag = TRUE;
   char configFileName[255];
   sprintf(configFileName, "asf_mapready.config");
   FILE *fp = FOPEN(configFileName, "w");
@@ -135,6 +137,7 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   // Run input file through asf_mapready
   asfPrintStatus("\n\nGenerating overlay PNG file ...\n\n");
   asf_convert(FALSE, configFileName);
+  status_on();
 
   baseName = get_basename(outFile);
   sprintf(kmlFile, "%s.kml", baseName);
@@ -208,6 +211,7 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   c2v_config *cfg = read_c2v_config(configFileName);
   convert2vector(cfg);
   FREE(cfg);
+  quietflag = FALSE;
 
   // Zip the KML and PNG into a KMZ fill
   chdir(outDir);
@@ -253,7 +257,5 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   remove_dir(tmpDir);
   FREE(tmpDir);
  
-  asfPrintStatus("\nSuccessful completion!\n\n");
-
   return(EXIT_SUCCESS);
 }

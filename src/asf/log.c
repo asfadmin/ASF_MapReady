@@ -19,11 +19,14 @@ void printLog(const char *msg)
    "status" column during processing. */
 
 char *g_status_file=NULL;   /* name of a "status" file, if being used */
+int statusflag=FALSE; // flag to switch on/off status reports
 
 void set_status_file(const char *status_file)
 {
-  if (status_file && strlen(status_file) > 0)
+  if (status_file && strlen(status_file) > 0) {
     g_status_file = STRDUP(status_file);
+    statusflag = TRUE;
+  }
   else
     clear_status_file();
 }
@@ -32,7 +35,7 @@ void update_status(const char *format, ...)
 {
   if (g_status_file && strlen(g_status_file) > 0) {
     FILE *fStat = fopen(g_status_file, "w");
-    if (fStat) {
+    if (fStat && statusflag) {
       va_list ap;
       va_start(ap, format);
       vfprintf(fStat, format, ap);
@@ -47,5 +50,16 @@ void clear_status_file()
   if (g_status_file) {
     FREE(g_status_file);
     g_status_file = NULL;
+    statusflag = FALSE;
   }
+}
+
+void status_on()
+{
+  statusflag = TRUE;
+}
+
+void status_off()
+{
+  statusflag = FALSE;
 }

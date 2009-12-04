@@ -259,5 +259,7 @@ int main(int argc, char *argv[])
   FCLOSE(fLog);
   remove(logFile);
 
+  asfPrintStatus("\nSuccessful completion!\n\n");
+
   return(EXIT_SUCCESS);
 }

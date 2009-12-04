@@ -1043,13 +1043,13 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     GtkTreeSelection *selection;
     GList * selected_rows, * i;
     GList * refs;
-    FILE *kml_file = NULL;
+    //FILE *kml_file = NULL;
     char kml_filename[256];
-    int pid, first = TRUE;
+    int pid;//, first = TRUE;
     gchar *ge;
     char *output_dir = NULL;
-    int n_ok = 0;
-    int n_bad = 0;
+    //int n_ok = 0;
+    //int n_bad = 0;
 
     files_list = get_widget_checked(widget_name);
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
@@ -1081,130 +1081,46 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 
     i = refs;
     pid = getpid();
+    
+    GtkTreePath * path;
+    GtkTreeIter iter;
+    GtkTreeRowReference * ref;
+    gchar * input_name=NULL;
+    gchar * out_name=NULL;
+    gchar * tmp_dir=NULL;
+    gchar * metadata_name=NULL;
+    GdkPixbuf *pb = NULL;
+    //meta_parameters *meta;
 
-    while (i)
-    {
-        GtkTreePath * path;
-        GtkTreeIter iter;
-        GtkTreeRowReference * ref;
-        gchar * input_name=NULL;
-        gchar * out_name=NULL;
-        gchar * metadata_name=NULL;
-        GdkPixbuf *pb = NULL;
-        meta_parameters *meta;
-
-        ref = (GtkTreeRowReference *) i->data;
-        path = gtk_tree_row_reference_get_path(ref);
-        gtk_tree_model_get_iter(model, &iter, path);
-
-        if (strstr(widget_name, "completed")) {
-            gtk_tree_model_get(model, &iter,
+    ref = (GtkTreeRowReference *) i->data;
+    path = gtk_tree_row_reference_get_path(ref);
+    gtk_tree_model_get_iter(model, &iter, path);
+    
+    if (strstr(widget_name, "completed")) {
+      gtk_tree_model_get(model, &iter,
                 COMP_COL_INPUT_FILE, &input_name,
-                COMP_COL_OUTPUT_FILE, &out_name,
-                COMP_COL_OUTPUT_THUMBNAIL_BIG, &pb,
-                -1);
-
-            metadata_name = build_asf_metadata_filename(out_name);
-        }
-        else {
-            gtk_tree_model_get(model, &iter,
-                COL_INPUT_FILE, &input_name,
-                COL_OUTPUT_FILE, &out_name,
-                -1);
-
-            metadata_name = meta_file_name(input_name);
-        }
-
-        if (first)
-        {
-            output_dir = MALLOC(sizeof(char) * (strlen(out_name) + 1));
-            char *tmp = MALLOC(sizeof(char) * (strlen(out_name) + 1));
-            split_dir_and_file(out_name, output_dir, tmp);
-            free(tmp);
-
-            sprintf(kml_filename, "%stmp%d.kml", output_dir, pid);
-            printf("Temporary kml file: %s\n", kml_filename);
-            kml_file = fopen(kml_filename, "w");
-            if (!kml_file)
-            {
-                message_box("Couldn't open kml file!");
-
-                g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
-                g_list_free(selected_rows);
-
-                g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
-                g_list_free(refs);
-
-                return FALSE;
-            }
-
-            kml_header(kml_file);
-
-            first = FALSE;
-        }
-
-        char *base_output_name = get_basename(out_name);
-
-        if (fileExists(metadata_name)) {
-            if (isGeotiff(metadata_name)) {
-                int i, ignore[MAX_BANDS];
-                for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring nothing
-                meta = read_generic_geotiff_metadata(metadata_name, ignore, NULL);
-            }
-            else {
-                meta = meta_read(metadata_name);
-            }
-        }
-        else {
-            meta = meta_create(metadata_name);
-        }
-
-        if (meta && meta->general &&
-            meta_is_valid_double(meta->general->center_latitude) &&
-            meta_is_valid_double(meta->general->center_longitude))
-        {
-            printf("Adding to kml: %s\n", input_name);
-            if (pb) {
-                // we have a pixbuf to use as an overlay
-                char *png_filename = MALLOC(sizeof(char)*
-                    (strlen(output_dir) + strlen(base_output_name) + 10));
-                sprintf(png_filename, "%s%s.png", output_dir,
-                    base_output_name);
-                printf("Generating png: %s\n", png_filename);
-                pixbuf2png(pb, png_filename);
-                kml_entry_with_overlay(kml_file, meta, base_output_name,
-                    png_filename, output_dir);
-                FREE(png_filename);
-                // FIXME: remember png files, so we can delete later?
-            } else {
-                kml_entry(kml_file, meta, base_output_name);
-            }
-            meta_free(meta);
-            ++n_ok;
-        }
-        else
-        {
-            printf("Failed to add to kml: %s\n", metadata_name);
-            if (meta) meta_free(meta);
-            ++n_bad;
-        }
-
-        free(base_output_name);
-        g_free(metadata_name);
-        g_free(input_name);
-        g_free(out_name);
-        if (pb) g_object_unref(pb);
-
-        i = g_list_next(i);
+			 COMP_COL_OUTPUT_FILE, &out_name,
+			 COMP_COL_OUTPUT_THUMBNAIL_BIG, &pb,
+			 COMP_COL_TMP_DIR, &tmp_dir,
+			 -1);
+      
+      metadata_name = build_asf_metadata_filename(out_name);
     }
-
-    kml_footer(kml_file);
-    fclose(kml_file);
-
-    if (n_bad > 0)
-    {
-        message_box("Some of the metadata files failed to load.\n");
+    else {
+      gtk_tree_model_get(model, &iter,
+			 COL_INPUT_FILE, &input_name,
+			 COL_OUTPUT_FILE, &out_name,
+			 -1);
+      
+      metadata_name = meta_file_name(input_name);
     }
+    
+    char *base_output_name = get_basename(out_name);
+    sprintf(kml_filename, "%s/%s_overlay.kmz", tmp_dir, base_output_name);
+    free(base_output_name);
+    g_free(metadata_name);
+    g_free(input_name);
+    g_free(out_name);
 
 #ifdef win32
     char path[1024];
@@ -1220,16 +1136,15 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     }
 #endif
 
-    if (n_ok > 0)
+    if (fileExists(kml_filename))
     {
 #ifdef win32
         asfSystem("\"%s\" \"%s\"", ge, kml_filename);
 #else
         int pid = fork();
         if (pid == 0) {
-            asfSystem("\"%s\" \"%s\"", ge, kml_filename);
-            //unlink(kml_filename);
-            exit(EXIT_SUCCESS);
+	  asfSystem("\"%s\" \"%s\"", ge, kml_filename);
+	  exit(EXIT_SUCCESS);
         }
 #endif
     }
