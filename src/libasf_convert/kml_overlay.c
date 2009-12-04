@@ -219,7 +219,6 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   }
 
   // Clean up
-  remove_file(kmlFile);
   if (band_count == 1) {
     if (zip) {
       sprintf(pngFile, "%s%s.png", outDir, baseName);
@@ -236,15 +235,23 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
       FREE(bands[ii]);
     }
   }
-  chdir(cwd);
+  for (ii=0; ii<nBands; ii++) {
+    FREE(dataName[ii]);
+    FREE(metaName[ii]);
+  }
+  FREE(dataName);
+  FREE(metaName);
   FREE(bands);
-  remove_file(metaFile);
-  remove_dir(tmpDir);
-  FREE(tmpDir);
   FREE(baseName);
   FREE(outDir);
   FREE(inName);
   FREE(inDir);
+  remove_file(kmlFile);
+  remove_file(metaFile);
+
+  chdir(cwd);
+  remove_dir(tmpDir);
+  FREE(tmpDir);
  
   asfPrintStatus("\nSuccessful completion!\n\n");
 
