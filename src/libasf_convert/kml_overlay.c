@@ -83,12 +83,6 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   sprintf(kmlFile, "%s.kml", baseName);
   sprintf(kmzFile, "%s%s.kmz", outDir, baseName);
 
-  // Setup
-  const int pid = getpid();
-  sprintf(logFile, "%stmp%i.log", outDir, pid);
-  logflag = TRUE;
-  fLog = FOPEN(logFile, "a");
-
   // Generating a customized configuration for asf_mapready
   chdir(tmpDir);
   char configFileName[255];
@@ -142,8 +136,6 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   asfPrintStatus("\n\nGenerating overlay PNG file ...\n\n");
   asf_convert(FALSE, configFileName);
 
-  // Remove log file if we created it (leave it if the user asked for it)
-  remove(logFile);
   baseName = get_basename(outFile);
   sprintf(kmlFile, "%s.kml", baseName);
   sprintf(metaFile, "%s%s.meta", outDir, baseName);
@@ -227,7 +219,6 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   }
 
   // Clean up
-  remove(logFile);
   remove_file(kmlFile);
   if (band_count == 1) {
     if (zip) {
