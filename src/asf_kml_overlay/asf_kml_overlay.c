@@ -144,51 +144,6 @@ static double min4(double a, double b, double c, double d)
   return min2(min2(a,b), min2(c,d));
 }
 
-static void create_and_set_tmp_dir(char *in_name, char *out_name, char *tmp_dir)
-{
-  int length = strlen(in_name)+1;
-  if ((strlen(out_name)+1) > length) {
-    length = strlen(out_name)+1;
-  }
-  char *junk     = MALLOC(sizeof(char)*length);
-  char *basename = MALLOC(sizeof(char)*length);
-  char *out_dir  = MALLOC(sizeof(char)*length);
-
-  split_dir_and_file(in_name, junk, basename);
-  split_dir_and_file(out_name, out_dir, junk);
-  FREE(junk);
-
-  int tmp_len = strlen(tmp_dir);
-  int out_len = strlen(out_dir);
-
-  if (0==tmp_len) {
-    if (0==out_len) {
-      strcpy(tmp_dir, "");
-    }
-    else {
-      strcpy(tmp_dir, out_dir);
-      strcat(tmp_dir, DIR_SEPARATOR_STR);
-    }
-    strcat(tmp_dir, "kml-");
-    strcat(tmp_dir, basename);
-    strcat(tmp_dir, "-");
-    strcat(tmp_dir, time_stamp_dir());
-    create_clean_dir(tmp_dir);
-  }
-  else {
-    DIR *dirp = opendir(tmp_dir);
-    if (!dirp)
-      create_clean_dir(tmp_dir);
-    else
-      closedir(dirp);
-  }
-
-  set_asf_tmp_dir(tmp_dir);
-
-  FREE(basename);
-  FREE(out_dir);
-}
-
 int main(int argc, char *argv[])
 {
   char inFile[512], outFile[512], *demFile=NULL;
@@ -301,6 +256,8 @@ int main(int argc, char *argv[])
   kml_overlay(inFile, outFile, demFile, !tcFlag, !rgFlag, TRUE);
 
   FREE(demFile);
+  FCLOSE(fLog);
+  remove(logFile);
 
   return(EXIT_SUCCESS);
 }
