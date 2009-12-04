@@ -123,6 +123,20 @@ char *proj_info_as_string(projection_type_t projection_type,
          (datum) ? datum_str : "\n");
       break;
 
+    case MERCATOR:
+      if (datum) {
+        sprintf(datum_str, "   Datum             : %s\n\n", datum_toString(*datum));
+      }
+      sprintf(ret,
+	      "Projection: Mercator\n"
+	      "   Standard parallel : %.4f\n"
+	      "   Latitude of origin: %.4f\n"
+	      "   Central meridian  : %.4f\n%s",
+	      pp->mer.standard_parallel, pp->mer.orig_latitude, 
+	      pp->mer.central_meridian,
+         (datum) ? datum_str : "\n");
+      break;
+
     case SCANSAR_PROJECTION:
       sprintf(ret,
          "Projection: ScanSAR\n");
