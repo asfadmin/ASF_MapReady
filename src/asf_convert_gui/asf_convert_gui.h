@@ -57,7 +57,8 @@ enum InputFormat
     INPUT_FORMAT_POLSARPRO = 6,
     INPUT_FORMAT_TERRASARX = 7,
     INPUT_FORMAT_RADARSAT2 = 8,
-    INPUT_FORMAT_GAMMA = 9
+    INPUT_FORMAT_GAMMA = 9,
+    INPUT_FORMAT_ALOS_MOSAIC = 10
 };
 
 enum InputType
@@ -365,6 +366,7 @@ gboolean is_asf_internal(const char *infile);
 gboolean is_airsar(const char *infile);
 gboolean is_terrasarx(const char *infile);
 gboolean is_radarsat2(const char *infile);
+gboolean is_alos_mosaic(const char *infile);
 char *extract_lut_name(const char *polsarpro_aux_info);
 int extract_image_data_type(const char *polsarpro_aux_info);
 char *encode_polsarpro_aux_info(int image_data_type_flag, char *lut_basename);

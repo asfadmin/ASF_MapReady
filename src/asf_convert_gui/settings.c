@@ -1331,6 +1331,9 @@ static int get_input_data_format(const char *infile)
   else if (is_polsarpro(infile)) {
     return INPUT_FORMAT_POLSARPRO;
   }
+  else if (is_alos_mosaic(infile)) {
+    return INPUT_FORMAT_ALOS_MOSAIC;
+  }
   else {
     // catch-all...
     return INPUT_FORMAT_CEOS_LEVEL1;
@@ -1370,6 +1373,10 @@ get_input_data_format_string(int input_data_format)
 
       case INPUT_FORMAT_RADARSAT2:
         format_arg_to_import = "radarsat2";
+	break;
+
+      case INPUT_FORMAT_ALOS_MOSAIC:
+	format_arg_to_import = "alos_mosaic";
 	break;
 
       case INPUT_FORMAT_GAMMA:

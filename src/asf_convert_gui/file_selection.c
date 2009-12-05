@@ -28,8 +28,9 @@
 #define FORMAT_GAMMA 3
 #define FORMAT_TERRASARX 4
 #define FORMAT_RADARSAT2 5
-#define FORMAT_GEOTIFF 6
-#define FORMAT_ASF_INTERNAL 7
+#define FORMAT_ALOS_MOSAIC 6
+#define FORMAT_GEOTIFF 7
+#define FORMAT_ASF_INTERNAL 8
 
 #ifdef USE_GTK_FILE_CHOOSER
 static GtkWidget *browse_widget = NULL;
@@ -196,6 +197,16 @@ static void create_file_chooser_dialog(int selected)
                                   radarsat2_filt);
     }
 
+    if (selected==FORMAT_ALOS_MOSAIC) {
+      GtkFileFilter *alos_mosaic_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(alos_mosaic_filt, 
+			       "ALOS mosaic Metadata (*HDR.txt, *HDR)");
+      gtk_file_filter_add_pattern(alos_mosaic_filt, "*HDR.txt");
+      gtk_file_filter_add_pattern(alos_mosaic_filt, "*HDR");      
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget),
+                                  alos_mosaic_filt);
+    }
+
     if (selected==FORMAT_ASF_INTERNAL) {
       GtkFileFilter *img_filt = gtk_file_filter_new();
       gtk_file_filter_set_name(img_filt, "ASF Internal Files (*.img)");
@@ -336,6 +347,12 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
       case FORMAT_RADARSAT2:
         of.lpstrFilter =
             "Radarsat-2 Metadata Files (*.xml)\0*.xml\0"
+            "All Files\0*\0";
+        break;
+
+      case FORMAT_ALOS_MOSAIC:
+        of.lpstrFilter =
+            "ALOS mosaic Metadata Files (*HDR.txt, *HDR.txt)\0*HDR.txt;*HDR\0"
             "All Files\0*\0";
         break;
 
@@ -522,7 +539,8 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 #define HDR_FILT 64
 #define BIN_FILT 128
 #define XML_FILT 256
-#define DIR_FILT 512
+#define MOSAIC_FILT 512
+#define DIR_FILT 1024
 
 #ifndef win32
 static void do_browse_ok_clicked(gpointer button)
@@ -581,12 +599,14 @@ static void do_browse(const char *title, const char *entry_to_populate,
 
     of.hwndOwner = NULL;
 
-    if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT)) {
+    if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT | 
+		  MOSAIC_FILT)) {
       of.lpstrFilter =
         "CEOS Level 1 Files\0*.L;LED-*\0"
         "RSAT/ERS CEOS L1\0*.L\0"
         "ALOS Leader Files\0LED-*\0"
 	"TerraSAR-X/Radarsat-2\0*.xml\0"
+	"ALOS mosaics\0*HDR.txt;*HDR\0"
         "All Files\0*\0";
     }
     else if (filts == BIN_FILT) {
@@ -730,6 +750,13 @@ static void do_browse(const char *title, const char *entry_to_populate,
       gtk_file_filter_set_name(xml_filt, "TerraSAR-X/Radarsat-2 Files (*.xml)");
       gtk_file_filter_add_pattern(xml_filt, "*.xml");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), xml_filt);
+    }
+    if (filts & MOSAIC_FILT) {
+      GtkFileFilter *mosaic_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(mosaic_filt, "ALOS mosaic Files (*HDR.txt, *HDR)");
+      gtk_file_filter_add_pattern(mosaic_filt, "*HDR.txt");
+      gtk_file_filter_add_pattern(mosaic_filt, "*HDR");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), mosaic_filt);
     }
     if (filts & DIR_FILT) {
       GtkFileFilter *dir_filt = gtk_file_filter_new();

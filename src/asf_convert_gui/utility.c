@@ -527,6 +527,34 @@ gboolean is_radarsat2(const char *infile)
   return found; 
 }
 
+gboolean is_alos_mosaic(const char *infile)
+{
+  int found = FALSE;
+
+  // Should have gotten the basename
+  // Let's check for the existence for the header file
+  char *headerFile = (char *) MALLOC(sizeof(char)*(strlen(infile)+10));
+  sprintf(headerFile, "%s_HDR", infile);
+  if (!fileExists(headerFile))
+    strcat(headerFile, ".txt");
+
+  // If the header file actually exists, look for the mosaic string
+  if (fileExists(headerFile)) {
+    FILE *fp;
+    char line[512];
+    fp = fopen(headerFile, "r");
+    while (fgets(line, 1024, fp)) {
+      if (strstr(line, "SIGMA-SAR-MOSAIC")) {
+	found = TRUE;
+	break;
+      }
+    }
+    fclose(fp);
+  }
+
+  return found; 
+}
+
 char *extract_lut_name(const char *polsarpro_aux_info)
 {
   if (!polsarpro_aux_info || strlen(polsarpro_aux_info)==0)

@@ -253,9 +253,18 @@ static char *file_is_valid(const gchar * file)
       return _file;
     }
 
-    // allow xml files to be added -- terrasar-x
+    // allow xml files to be added -- Terrasar-x, Radarsat-2
     if (ext && strcmp_case(ext, ".xml")==0)
       return STRDUP(file);
+
+    // check for ALOS mosaics - might have an extension (or not)
+    // so we check for a little more
+    if (endsWith(file, "_HDR.txt") || endsWith(file, "_HDR")) {
+      char *dupe = STRDUP(file);
+      char *p = strstr(dupe, "_HDR");
+      *p = '\0';
+      return dupe;
+    }
 
     // now, the ceos check
     char *basename = MALLOC(sizeof(char)*(strlen(file)+10));

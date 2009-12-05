@@ -1400,6 +1400,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->import->format), "POLSARPRO", 9) != 0 &&
           strncmp(uc(cfg->import->format), "TERRASAR", 8) != 0 &&
 	  strncmp(uc(cfg->import->format), "RADARSAT2", 9) != 0 &&
+	  strncmp(uc(cfg->import->format), "ALOS_MOSAIC", 11) != 0 &&
           strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0) {
         asfPrintError("Selected import format not supported\n");
       }
@@ -1856,6 +1857,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format_type = TERRASAR;
       else if (strncmp_case(cfg->import->format, "RADARSAT2", 9) == 0)
 	format_type = RADARSAT2;
+      else if (strncmp_case(cfg->import->format, "ALOS_MOSAIC", 11) == 0)
+	format_type = ALOS_MOSAIC;
       else if (strncmp_case(cfg->import->format, "GAMMA", 5) == 0)
         format_type = GAMMA;
       else {
