@@ -818,6 +818,120 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         free (citation);
       }
         break;
+      case EQUI_RECTANGULAR:
+      {
+        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+                    CT_Equirectangular);
+        if (meta_is_valid_double(md->projection->param.eqr.central_meridian)) {
+          GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.eqr.central_meridian);
+        }
+        if (meta_is_valid_double(md->projection->param.eqr.orig_latitude)) {
+          GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.eqr.orig_latitude);
+        }
+        if (meta_is_valid_double(md->projection->param.eqr.false_easting)) {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.eqr.false_easting);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        if (meta_is_valid_double(md->projection->param.eqr.false_northing)) {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.eqr.false_northing);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        // This writes the GeographicTypeGeoKey
+        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+
+        /* Set the citation key.  */
+        char datum_str[256];
+        datum_2_string (datum_str, md->projection->datum);
+        citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+        snprintf (citation, max_citation_length + 1,
+                  "Equi-rectangular projected GeoTIFF using "
+                  "%s %s written by Alaska Satellite "
+                      "Facility tools.", datum_str,
+                  md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
+        append_band_names(band_names, rgb, citation, palette_color_tiff);
+        citation_length = strlen(citation);
+        asfRequire (citation_length >= 0 &&
+            citation_length <= max_citation_length,
+                "bad citation length");
+        // The following is not needed for any but UTM (according to the standard)
+        // but it appears that everybody uses it anyway... so we'll write it
+        GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+        // The following is recommended by the standard
+        GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+        free (citation);
+      }
+        break;
+      case MERCATOR:
+      {
+        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+                    CT_TransverseMercator);
+        if (meta_is_valid_double(md->projection->param.mer.central_meridian)) {
+          GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.mer.central_meridian);
+        }
+        if (meta_is_valid_double(md->projection->param.mer.orig_latitude)) {
+          GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.mer.orig_latitude);
+        }
+        if (meta_is_valid_double(md->projection->param.mer.standard_parallel)) {
+          GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.mer.standard_parallel);
+        }
+        if (meta_is_valid_double(md->projection->param.mer.false_easting)) {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.mer.false_easting);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        if (meta_is_valid_double(md->projection->param.mer.false_northing)) {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.mer.false_northing);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        // This writes the GeographicTypeGeoKey
+        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+
+        /* Set the citation key.  */
+        char datum_str[256];
+        datum_2_string (datum_str, md->projection->datum);
+        citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+        snprintf (citation, max_citation_length + 1,
+                  "Mercator projected GeoTIFF using "
+                  "%s %s written by Alaska Satellite "
+                      "Facility tools.", datum_str,
+                  md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
+        append_band_names(band_names, rgb, citation, palette_color_tiff);
+        citation_length = strlen(citation);
+        asfRequire (citation_length >= 0 &&
+            citation_length <= max_citation_length,
+                "bad citation length");
+        // The following is not needed for any but UTM (according to the standard)
+        // but it appears that everybody uses it anyway... so we'll write it
+        GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+        // The following is recommended by the standard
+        GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+        free (citation);
+      }
+        break;
       default:
         asfPrintWarning ("Unsupported map projection found.  TIFF file will not\n"
             "contain projection information.\n");

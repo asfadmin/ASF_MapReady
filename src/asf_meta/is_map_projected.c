@@ -26,6 +26,8 @@ int is_map_projected(meta_parameters *md)
            mp->type == ALBERS_EQUAL_AREA              ||
            mp->type == LAMBERT_CONFORMAL_CONIC        ||
            mp->type == LAMBERT_AZIMUTHAL_EQUAL_AREA   ||
+	   mp->type == EQUI_RECTANGULAR ||
+	   mp->type == MERCATOR ||
            mp->type == STATE_PLANE) &&
            !(mp->type == SCANSAR_PROJECTION           ||
              mp->type == LAT_LONG_PSEUDO_PROJECTION)
