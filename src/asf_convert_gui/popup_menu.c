@@ -1123,9 +1123,10 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     g_free(out_name);
 
 #ifdef win32
-    char path[1024];
-    FindExecutable((LPCTSTR)kml_filename, (LPCTSTR)output_dir, (LPTSTR)path);
-    ge = STRDUP(escapify(path));
+    char ge_path[1024];
+    FindExecutable((LPCTSTR)kml_filename, (LPCTSTR)output_dir, 
+                   (LPTSTR)ge_path);
+    ge = STRDUP(escapify(ge_path));
     printf("Path to google earth: %s\n", ge);
 #else
     ge = find_in_path("googleearth");
