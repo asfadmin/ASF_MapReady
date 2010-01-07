@@ -570,8 +570,8 @@ void data_qc(char *ceosName, int ignore_spec, int essential)
       }
     }
     if (estimated_size != actual_size || (!spec && !ignore_spec)) {
-      sprintf(tmp, "Estimated file size differs from the actual file size "
-	      "(%.3f MB).\n", fabs(estimated_size - actual_size));
+      sprintf(tmp, "Band %d: estimated file size differs from the actual file size "
+	      "(%.0f bytes).\n", ii, fabs(estimated_size - actual_size));
       strcat(reason, tmp);
       status = FALSE;
     }
