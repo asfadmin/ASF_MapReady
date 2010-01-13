@@ -3,7 +3,7 @@
 include ../Makerules.mk
 
 CFLAGS += -DM10 -DM4 -DIO64
-FFLAGS += -DM10 -DM4 -DIO64 -fno-globals -Wno-globals
+FFLAGS += -DM4 -DIO64
 
 DGX_C_SRC = graphx.c
 DGX_C_OBJ = $(DGX_C_SRC:.c=.o)

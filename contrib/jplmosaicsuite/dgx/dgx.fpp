@@ -434,7 +434,9 @@ c
 
         call defcolors(i_colnum,i_colors)
 
-      i_inarg = iargc()
+c      i_inarg = iargc()  //this is the original f77 line, the following line is using fortran 2003 standard for gfortran
+      i_inarg = command_argument_count()
+
       if(i_inarg .eq. 0)then
          call write_greeting()
          stop 'done'
@@ -1662,7 +1664,7 @@ c
                               i_flg = i_flgtgl - i_flg
                             end if
 
-                              if (i_debug .ge. 3) write(6,'(x,a,2x,i)') 'Re-computing scale factor.... ', i_flg
+                              if (i_debug .ge. 3) write(6,'(x,a,2x,i10)') 'Re-computing scale factor.... ', i_flg;
 
                               i_err=0
                               i_cnt = 0
@@ -2174,7 +2176,7 @@ c                            !
                             do i=4,3*i_npsamp
                               b_out(i)=32
                             end do
-                            write(a_value,'(3i)') i_npsamp,i_npline,255
+                            write(a_value,'(3i10)') i_npsamp,i_npline,255;
                             do i = 1,length(a_value)
                               b_out(3*i_npsamp-length(a_value)-1+i) = ichar(a_value(i:i))
                             end do
@@ -2286,7 +2288,7 @@ c                            !
                             do i=4,3*i_npsamp
                               b_out(i)=32
                             end do
-                            write(a_value,'(3i)') i_npsamp,i_npline,255
+                            write(a_value,'(3i10)') i_npsamp,i_npline,255;
                             do i = 1,length(a_value)
                               b_out(3*i_npsamp-length(a_value)-1+i) = ichar(a_value(i:i))
                             end do
@@ -2802,7 +2804,7 @@ c     &                     'display=',i_bdat(1,1),i_bdat(2,1),i_bdat(3,1),i_bda
                         if (i_path .ge. 2) then
                           if (i_epath .eq. 1) then
                             if (i_debug .ge. 3) write(6,*) ' '
-                            if (i_debug .ge. 3) write(6,'(x,a,i)') 'Displaying height along path',i_path
+                            if (i_debug .ge. 3) write(6,'(x,a,i10)') 'Displaying height along path',i_path;
                             open(unit=33,file='path.dat',status='unknown',form='formatted')
                             r_dist=0.
                             write(33,*) r_dist,r_hpath(1),r_apath(1)
@@ -2925,10 +2927,10 @@ c     &                     'display=',i_bdat(1,1),i_bdat(2,1),i_bdat(3,1),i_bda
                           r_stde = 0.
                         end if
                         if (r_spc(1) .ne. 0. .and. r_spc(2) .ne. 0.) then
-                          write(31,'(x,5f)') sqrt(((ixx-i_x1)*r_spc(1))**2 + ((iyy-i_y1)*r_spc(2))**2), 
-     &                       r_avge, r_stde, sngl(r_lat*r_rtod), sngl(r_lon*r_rtod)
+                          write(31,'(x,5f10.6)') sqrt(((ixx-i_x1)*r_spc(1))**2 + ((iyy-i_y1)*r_spc(2))**2), 
+     &                       r_avge, r_stde, sngl(r_lat*r_rtod), sngl(r_lon*r_rtod);
                         else
-                          write(31,'(x,3f)') r_ddd,r_avge, r_stde
+                          write(31,'(x,3f10.6)') r_ddd,r_avge, r_stde;
                         end if
                       end if
                     end do
@@ -3022,10 +3024,10 @@ c     &                     'display=',i_bdat(1,1),i_bdat(2,1),i_bdat(3,1),i_bda
                           r_stde = 0.
                         end if
                         if (r_spc(1) .ne. 0. .and. r_spc(2) .ne. 0.) then
-                          write(32,'(x,5f)') sqrt(((ixx-i_x1)*r_spc(1))**2 + ((iyy-i_y1)*r_spc(2))**2), 
-     &                       r_avge, r_stde, sngl(r_lat*r_rtod), sngl(r_lon*r_rtod)
+                          write(32,'(x,5f10.6)') sqrt(((ixx-i_x1)*r_spc(1))**2 + ((iyy-i_y1)*r_spc(2))**2), 
+     &                       r_avge, r_stde, sngl(r_lat*r_rtod), sngl(r_lon*r_rtod);
                         else
-                          write(32,'(x,3f)') r_ddd,r_avge, r_stde
+                          write(32,'(x,3f10.6)') r_ddd,r_avge, r_stde;
                         end if
                       end if
                     end do
@@ -3241,7 +3243,7 @@ c     &                     'display=',i_bdat(1,1),i_bdat(2,1),i_bdat(3,1),i_bda
                         if (i_path .ge. 2) then
                           if (i_epath .eq. 1) then
                             if (i_debug .ge. 1) write(6,*) ' '
-                            if (i_debug .ge. 1) write(6,'(x,a,i)') 'Displaying height along path',i_path
+                            if (i_debug .ge. 1) write(6,'(x,a,i10)') 'Displaying height along path',i_path;
                             open(unit=33,file='path.dat',status='unknown',form='formatted')
                             r_dist=0.
                             write(33,*) r_dist,r_hpath(1),r_apath(1)
@@ -3364,10 +3366,10 @@ c     &                     'display=',i_bdat(1,1),i_bdat(2,1),i_bdat(3,1),i_bda
                           r_stde = 0.
                         end if
                         if (r_spc(1) .ne. 0. .and. r_spc(2) .ne. 0.) then
-                          write(31,'(x,5f)') sqrt(((ixx-i_x1)*r_spc(1))**2 + ((iyy-i_y1)*r_spc(2))**2), 
-     &                       r_avge, r_stde, sngl(r_lat*r_rtod), sngl(r_lon*r_rtod)
+                          write(31,'(x,5f10.6)') sqrt(((ixx-i_x1)*r_spc(1))**2 + ((iyy-i_y1)*r_spc(2))**2), 
+     &                       r_avge, r_stde, sngl(r_lat*r_rtod), sngl(r_lon*r_rtod);
                         else
-                          write(31,'(x,3f)') r_ddd,r_avge, r_stde
+                          write(31,'(x,3f10.6)') r_ddd,r_avge, r_stde;
                         end if
                       end if
                     end do
@@ -3461,10 +3463,10 @@ c     &                     'display=',i_bdat(1,1),i_bdat(2,1),i_bdat(3,1),i_bda
                           r_stde = 0.
                         end if
                         if (r_spc(1) .ne. 0. .and. r_spc(2) .ne. 0.) then
-                          write(32,'(x,5f)') sqrt(((ixx-i_x1)*r_spc(1))**2 + ((iyy-i_y1)*r_spc(2))**2), 
-     &                       r_avge, r_stde, sngl(r_lat*r_rtod), sngl(r_lon*r_rtod)
+                          write(32,'(x,5f10.6)') sqrt(((ixx-i_x1)*r_spc(1))**2 + ((iyy-i_y1)*r_spc(2))**2), 
+     &                       r_avge, r_stde, sngl(r_lat*r_rtod), sngl(r_lon*r_rtod);
                         else
-                          write(32,'(x,3f)') r_ddd,r_avge, r_stde
+                          write(32,'(x,3f10.6)') r_ddd,r_avge, r_stde;
                         end if
                       end if
                     end do
@@ -6238,8 +6240,8 @@ c            write(i_num,'(a)') '50    24000 700 700 nasa fill'
           end if
 
           write(i_num,'(a)') 'gsave 0 800 translate /picstr 1 string def '
-          write(i_num,'(2i,a)') i_xmax,i_ymax,' scale '
-          write(i_num,'(3i,a,6i,a)') i_npsamp,i_npline,8,' [',i_npsamp,0,0,i_npline,0,0,']'
+          write(i_num,'(2i10,a)') i_xmax,i_ymax,' scale ';
+          write(i_num,'(3i10,a,6i10,a)') i_npsamp,i_npline,8,' [',i_npsamp,0,0,i_npline,0,0,']';
           write(i_num,'(a)') '/COLORTAB < '
        
           write(i_num,'(8(3z2.2,x))') (i_ctable(1,i),i_ctable(2,i),i_ctable(3,i),i=0,255)

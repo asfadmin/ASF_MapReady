@@ -5,8 +5,8 @@ include ../../../make_support/system_rules
 
 BINDIR = ../../../bin
 
-FC     = g77
-FFLAGS = $(OPTFLAG) $(DEBUGFLAGS) $(HP_SGI) $(LARGEFILE_FLAGS) -ffixed-line-length-132
+FC     = gfortran -ff2c
+FFLAGS = $(OPTFLAG) $(DEBUGFLAGS) $(LARGEFILE_FLAGS) -ffixed-line-length-132
 #FFLAGS = $(OPTFLAG) $(LARGEFILE_FLAGS) \
 #         -fno-globals -Wno-globals -ffixed-line-length-132
 
