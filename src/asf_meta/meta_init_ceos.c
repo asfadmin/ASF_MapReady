@@ -1170,9 +1170,14 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     beam += 36; // actually dual-pol data (HH+HV or VV+VH)
   else if (beam == 3 && beam_count == 4)
     beam = 127; // actually PLR 21.5
+  // Warning more misleading than good. Beam number does not necessarily
+  // reflect polarization. However, polarization is reported just before this
+  // based on other information.
+  /*
   else if (beam_count > 1)
     asfPrintWarning("Can't determine beam mode properly!\n"
 		    "Beam mode will reflect beam mode of first channel\n");
+  */
   strcpy(meta->general->mode, alos_beam_mode[beam]);
   asfPrintStatus("   Beam mode: %s\n", meta->general->mode);
 

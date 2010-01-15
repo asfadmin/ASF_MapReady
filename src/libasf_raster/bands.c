@@ -319,6 +319,10 @@ int get_band_number(char *bands, int band_count, const char *channel)
         int b = get_band_number(bands, band_count, amp);
         if (b >= 0) return b;
 
+        sprintf(amp, "SIGMA-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
         sprintf(amp, "SIGMA-AMP-%s", channel);
         b = get_band_number(bands, band_count, amp);
         if (b >= 0) return b;
@@ -327,11 +331,19 @@ int get_band_number(char *bands, int band_count, const char *channel)
         b = get_band_number(bands, band_count, amp);
         if (b >= 0) return b;
 
+        sprintf(amp, "BETA-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
         sprintf(amp, "BETA-AMP-%s", channel);
         b = get_band_number(bands, band_count, amp);
         if (b >= 0) return b;
 
         sprintf(amp, "BETA_DB-AMP-%s", channel);
+        b = get_band_number(bands, band_count, amp);
+        if (b >= 0) return b;
+
+        sprintf(amp, "GAMMA-%s", channel);
         b = get_band_number(bands, band_count, amp);
         if (b >= 0) return b;
 
