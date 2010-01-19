@@ -1000,6 +1000,33 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
 
 void Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir)
 {
+  struct HEADER  bufhdr;
+  memcpy((void*)&bufhdr, (void*)bf, 12);
+  int length = bigInt32(bufhdr.recsiz);
+  if (length==1024) {
+    // Old Palsar data, before the larger transformation blocks were
+    // added, so we do not have as much available for decoding.
+    int off=12, i;
+    shrtV(seqence_number,off,4);
+    for (i=0; i<10; i++) {
+      fltV(a_map[i],16+i*20,20);
+    }
+    for (i=0; i<10; i++) {
+      fltV(b_map[i],216+i*20,20);
+    }
+    off=416;
+    shrtV(cal_data_indicator,off,4);
+    intV(start_line_up,off,8);
+    intV(stop_line_up,off,8);
+    intV(start_line_bottom,off,8);
+    intV(stop_line_bottom,off,8);
+    shrtV(prf_switching_indicator,off,4);
+    intV(line_prf_switching,off,8);
+    intV(sigma_start_line,off,8);
+    intV(number_loss_lines_L0,off,8);
+    intV(number_loss_lines_L1,off,8);
+  }
+  else {
     int off=12, i;
     shrtV(seqence_number,off,4);
     for (i=0; i<10; i++) {
@@ -1035,6 +1062,7 @@ void Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir)
     }
     fltV(origin_lat,3064,20);
     fltV(origin_lon,3084,20);
+  }
 }
 
 void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
