@@ -50,7 +50,7 @@ static void readline(FILE * f, char * buffer, size_t n)
   char * p;
   p = fgets(buffer, n, f);
 
-  if (!p)
+  if (!p || strlen(buffer)<=0)
   {
     strcpy(buffer, "");
   }
