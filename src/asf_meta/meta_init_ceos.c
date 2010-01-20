@@ -1170,6 +1170,30 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     beam += 36; // actually dual-pol data (HH+HV or VV+VH)
   else if (beam == 3 && beam_count == 4)
     beam = 127; // actually PLR 21.5
+  else if (beam_count == 1 && ceos->dssr.product_id[3] == 'S') {
+    if (ceos->dssr.off_nadir_angle < 25.0) {
+      if (ceos->dssr.bnd_rng < 20000.0)
+	beam = 72; // WB1 HH3scan
+      else
+	beam = 73; // WB2 HH3scan
+    }
+    else if (ceos->dssr.off_nadir_angle > 25.0 && 
+	     ceos->dssr.off_nadir_angle < 26.0) {
+      if (ceos->dssr.off_nadir_angle < 25.0) {
+	if (ceos->dssr.bnd_rng < 20000.0)
+	  beam = 76; // WB1 HH4scan
+	else
+	  beam = 77; // WB2 HH4scan
+      }
+    }
+    else {
+      if (ceos->dssr.bnd_rng < 20000.0)
+	beam = 80; // WB1 HH5scan
+      else
+	beam = 81; // WB2 HH5scan
+    }
+  }
+
   // Warning more misleading than good. Beam number does not necessarily
   // reflect polarization. However, polarization is reported just before this
   // based on other information.
@@ -1406,7 +1430,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
     if (!meta->transform)
       meta->transform = meta_transform_init();
-    if (tfdr.facdr_len[10] < 5000) {
+    if (tfdr.facdr_len[10] < 5000 || 
+	strncmp_case(meta->general->mode, "WB", 2) == 0) {
       meta->transform->parameter_count = 4;
       meta->transform->x[0] = mpdr->a11;
       meta->transform->x[1] = mpdr->a12;

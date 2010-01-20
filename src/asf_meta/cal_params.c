@@ -394,6 +394,31 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
       beam += 36; // actually dual-pol data (HH+HV or VV+VH)
     else if (beam == 3 && beam_count == 4)
       beam = 127; // actually PLR 21.5
+    else if (beam_count == 1 && dssr.product_id[3] == 'S') {
+      // some fine backwards engineering here to figure out the correct beam
+      // number - off nadir angle and processing bandwidth required
+      // don't care for the HH versus VV at the moment
+      if (dssr.off_nadir_angle < 25.0) {
+	if (dssr.bnd_rng < 20000.0)
+	  beam = 72; // WB1 HH3scan
+	else
+	  beam = 73; // WB2 HH3scan
+      }
+      else if (dssr.off_nadir_angle > 25.0 && dssr.off_nadir_angle < 26.0) {
+	if (dssr.off_nadir_angle < 25.0) {
+	  if (dssr.bnd_rng < 20000.0)
+	    beam = 76; // WB1 HH4scan
+	  else
+	    beam = 77; // WB2 HH4scan
+	}
+      }
+      else {
+	if (dssr.bnd_rng < 20000.0)
+	  beam = 80; // WB1 HH5scan
+	else
+	  beam = 81; // WB2 HH5scan
+      }
+    }
 
     // Reading calibration coefficient
     get_ardr(sarName, &ardr);
