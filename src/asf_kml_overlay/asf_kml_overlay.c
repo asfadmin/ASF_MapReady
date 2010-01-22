@@ -253,7 +253,11 @@ int main(int argc, char *argv[])
   // Report the command line
   asfSplashScreen(argc, argv);
 
-  kml_overlay(inFile, outFile, demFile, !tcFlag, !rgFlag, TRUE);
+  // No zipping at the moment
+  asfPrintStatus("A system independent zipping function is currently not "
+		 "available.\nFor the moment the KML and PNG files need to "
+		 "manually zipped together.\n");
+  kml_overlay(inFile, outFile, demFile, !tcFlag, !rgFlag, FALSE);
 
   FREE(demFile);
   FCLOSE(fLog);
