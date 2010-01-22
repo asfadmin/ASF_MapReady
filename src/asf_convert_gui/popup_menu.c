@@ -1116,7 +1116,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     }
     
     char *base_output_name = get_basename(out_name);
-    sprintf(kml_filename, "%s/%s_overlay.kmz", tmp_dir, base_output_name);
+    sprintf(kml_filename, "%s/%s_overlay.kml", tmp_dir, base_output_name);
     free(base_output_name);
     g_free(metadata_name);
     g_free(input_name);

@@ -2803,7 +2803,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               resample_to_pixsiz(inFile, tmpFile, out_x_pixel_size,
                                  out_y_pixel_size),
               "resampling data to thumbnail size (resample)\n");
-	    kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, TRUE);
 
             if (strlen(cfg->export->rgb) > 0) {
               char *red, *green, *blue;
@@ -2814,7 +2813,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     asf_export_bands(format, scale, TRUE, 0, 0, NULL,
                                      tmpFile, outFile, bands, NULL, NULL),
                     "exporting thumbnail data file (asf_export), banded\n");
-		  kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, TRUE);
+		  // No zipping for the moment
+		  kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, FALSE);
                   for (i=0; i<n; ++i)
                     FREE(bands[i]);
                   FREE(bands);
@@ -2851,7 +2851,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                                        true_color, false_color, NULL,
                                        tmpFile, outFile, bands, NULL, NULL),
                       "exporting thumbnail (asf_export), color banded.\n");
-		    kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, TRUE);
+		    // No zipping for the moment
+		    kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, 
+				FALSE);
                     for (i=0; i<meta->general->band_count; ++i)
                       FREE (bands[i]);
                     FREE(bands);
@@ -2870,7 +2872,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 					      tmpFile, outFile, bands, NULL, 
 					      NULL),
 			     "exporting thumbnail data file (asf_export)\n");
-		kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, TRUE);
+		// No zipping for the moment
+		kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, FALSE);
 		// strip off the band name at the end!
 		char *banded_name =
 		  MALLOC(sizeof(char)*(strlen(outFile)+32));
