@@ -4,6 +4,7 @@
 #include "asf_nan.h"
 #include "asf_import.h"
 #include "asf_meta.h"
+#include "asf_raster.h"
 #include "asf_endian.h"
 #include "dateUtil.h"
 #include "xml_util.h"
@@ -306,6 +307,11 @@ radarsat2_meta *read_radarsat2_meta(const char *dataFile)
   strcpy(radarsat2->zeroDopplerTimeLastLine, xml_get_string_value(doc, 
      "product.imageGenerationParameters.sarProcessingInformation."
      "zeroDopplerTimeLastLine"));
+  // Accommodate data stored in reverse time
+  if (strcmp_case(radarsat2->lineTimeOrdering, "DECREASING") == 0)
+    date_terrasar2date(radarsat2->zeroDopplerTimeLastLine, 
+		       &imgStartDate, &imgStartTime);
+  
   // FIXME: determine numStateVector from data - count the entries
   //numStateVectors = xml_get_int_value(doc, 
   //   "product.platform.orbit.orbitHeader.numStateVectors");
@@ -622,33 +628,60 @@ void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
       asfPrintStatus("   Data will be flipped horizontally while ingesting!\n");
       flip_horizontal = TRUE;
     }
-    if (flip_vertical || flip_horizontal)
+    if (flip_horizontal)
       tmp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
 
     // FIXME: still need to implement flipping vertically
     // Read file line by line
     uint32 row;
     int sample_count = meta->general->sample_count;
+    int line_count = meta->general->line_count;
     for (row=0; row<(uint32)meta->general->line_count; row++) {
       asfLineMeter(row, meta->general->line_count);
-      switch (tiffInfo.format) 
-	{
-	case SCANLINE_TIFF:
-	  TIFFReadScanline(tiff, tiff_real_buf, row, 0);
-	  TIFFReadScanline(tiff, tiff_imag_buf, row, 1);
-	  break;
-	case STRIP_TIFF:
-	  ReadScanline_from_TIFF_Strip(tiff, tiff_real_buf, row, 0);
-	  ReadScanline_from_TIFF_Strip(tiff, tiff_imag_buf, row, 1);
-	  break;
-	case TILED_TIFF:
-	  ReadScanline_from_TIFF_TileRow(tiff, tiff_real_buf, row, 0);
-	  ReadScanline_from_TIFF_TileRow(tiff, tiff_imag_buf, row, 1);
-	  break;
-	default:
-	  asfPrintError("Can't read this TIFF format!\n");
-	  break;
-	}
+      if (flip_vertical) {
+	switch (tiffInfo.format) 
+	  {
+	  case SCANLINE_TIFF:
+	    TIFFReadScanline(tiff, tiff_real_buf, line_count-row-1, 0);
+	    TIFFReadScanline(tiff, tiff_imag_buf, line_count-row-1, 1);
+	    break;
+	  case STRIP_TIFF:
+	    ReadScanline_from_TIFF_Strip(tiff, tiff_real_buf, 
+					 line_count-row-1, 0);
+	    ReadScanline_from_TIFF_Strip(tiff, tiff_imag_buf, 
+					 line_count-row-1, 1);
+	    break;
+	  case TILED_TIFF:
+	    ReadScanline_from_TIFF_TileRow(tiff, tiff_real_buf, 
+					   line_count-row-1, 0);
+	    ReadScanline_from_TIFF_TileRow(tiff, tiff_imag_buf, 
+					   line_count-row-1, 1);
+	    break;
+	  default:
+	    asfPrintError("Can't read this TIFF format!\n");
+	    break;
+	  }
+      }
+      else {
+	switch (tiffInfo.format) 
+	  {
+	  case SCANLINE_TIFF:
+	    TIFFReadScanline(tiff, tiff_real_buf, row, 0);
+	    TIFFReadScanline(tiff, tiff_imag_buf, row, 1);
+	    break;
+	  case STRIP_TIFF:
+	    ReadScanline_from_TIFF_Strip(tiff, tiff_real_buf, row, 0);
+	    ReadScanline_from_TIFF_Strip(tiff, tiff_imag_buf, row, 1);
+	    break;
+	  case TILED_TIFF:
+	    ReadScanline_from_TIFF_TileRow(tiff, tiff_real_buf, row, 0);
+	    ReadScanline_from_TIFF_TileRow(tiff, tiff_imag_buf, row, 1);
+	    break;
+	  default:
+	    asfPrintError("Can't read this TIFF format!\n");
+	    break;
+	  }
+      }
       for (sample=0; sample<sample_count; sample++) {
 	switch (sample_format)
 	  {
