@@ -885,7 +885,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       bands = (char **) MALLOC(sizeof(char *)*band_count);
       for (band=0; band<band_count; band++) {
 	bands[band] = (char *) MALLOC(sizeof(char)*1024);
-	char *band_name = STRDUP(t3_matrix[band]);
+	char *band_name = STRDUP(t4_matrix[band]);
 	char *p = strchr(band_name, '.');
 	p[0] = '\0';
 	sprintf(bands[band], "%s", band_name);
@@ -896,7 +896,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       bands = (char **) MALLOC(sizeof(char *)*band_count);
       for (band=0; band<band_count; band++) {
 	bands[band] = (char *) MALLOC(sizeof(char)*1024);
-	char *band_name = STRDUP(t3_matrix[band]);
+	char *band_name = STRDUP(c2_matrix[band]);
 	char *p = strchr(band_name, '.');
 	p[0] = '\0';
 	sprintf(bands[band], "%s", band_name);
@@ -907,7 +907,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       bands = (char **) MALLOC(sizeof(char *)*band_count);
       for (band=0; band<band_count; band++) {
 	bands[band] = (char *) MALLOC(sizeof(char)*1024);
-	char *band_name = STRDUP(t3_matrix[band]);
+	char *band_name = STRDUP(c3_matrix[band]);
 	char *p = strchr(band_name, '.');
 	p[0] = '\0';
 	sprintf(bands[band], "%s", band_name);
@@ -918,7 +918,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       bands = (char **) MALLOC(sizeof(char *)*band_count);
       for (band=0; band<band_count; band++) {
 	bands[band] = (char *) MALLOC(sizeof(char)*1024);
-	char *band_name = STRDUP(t3_matrix[band]);
+	char *band_name = STRDUP(c4_matrix[band]);
 	char *p = strchr(band_name, '.');
 	p[0] = '\0';
 	sprintf(bands[band], "%s", band_name);
