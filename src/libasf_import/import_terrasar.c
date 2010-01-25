@@ -483,23 +483,11 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
     
     // Check for the first and last azimuth and range pixel
     asfv = 1; // azimuth sample first valid
-    FSEEK(fpIn, 2*rangeline_total_number_bytes+8, SEEK_SET);
-    for (kk=2; kk<range_samples; kk++) {
-      FREAD(&intValue, 1, 4, fpIn);
-      if (bigInt32(intValue) > asfv)
-	asfv = bigInt32(intValue);
-    }
-    
     aslv = azimuth_samples; // azimuth sample last valid
-    FSEEK(fpIn, 3*rangeline_total_number_bytes+8, SEEK_SET);
-    for (kk=2; kk<range_samples; kk++) {
-      FREAD(&intValue, 1, 4, fpIn);
-      if (bigInt32(intValue) < aslv)
-	aslv = bigInt32(intValue);
-    }
-    
     rsfv = 1; // range sample first valid
     rslv = range_samples; // range sample last valid
+
+    // Check valid range samples
     for (kk=4; kk<total_number_lines; kk++) {
       FSEEK(fpIn, 4*rangeline_total_number_bytes, SEEK_SET);
       FREAD(&intValue, 1, 4, fpIn);
@@ -508,6 +496,22 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       FREAD(&intValue, 1, 4, fpIn);
       if (bigInt32(intValue) < rslv)
 	rslv = bigInt32(intValue);
+    }
+
+    // Check first valid azimuth sample
+    FSEEK(fpIn, 2*rangeline_total_number_bytes+8, SEEK_SET);
+    for (kk=2; kk<rslv; kk++) {
+      FREAD(&intValue, 1, 4, fpIn);
+      if (bigInt32(intValue) > asfv)
+	asfv = bigInt32(intValue);
+    }
+    
+    // Check last valid azimuth sample
+    FSEEK(fpIn, 3*rangeline_total_number_bytes+8, SEEK_SET);
+    for (kk=2; kk<rslv; kk++) {
+      FREAD(&intValue, 1, 4, fpIn);
+      if (bigInt32(intValue) < aslv)
+	rslv = kk - 1;
     }
     
     /*
