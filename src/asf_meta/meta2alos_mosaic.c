@@ -6,7 +6,7 @@
 meta_parameters* alos_mosaic2meta(alos_mosaic_header *alos)
 {
   meta_parameters *meta;
-  double lat, lon, startX, startY, z;
+  double lat, lon, height, startX, startY, z, centerX, centerY;
 
   // Allocate memory for metadata structure
   meta = raw_init();
@@ -121,6 +121,14 @@ meta_parameters* alos_mosaic2meta(alos_mosaic_header *alos)
     latlon_to_proj(meta->projection, 'R', lat, lon, 0.0, &startX, &startY, &z);
     meta->projection->startX = startX;
     meta->projection->startY = startY;
+
+    // Determine center lat/lon from projection block
+    centerX = startX + meta->general->sample_count/2 * meta->projection->perX;
+    centerY = startY + meta->general->line_count/2 * meta->projection->perY;
+    proj_to_latlon(meta->projection, centerX, centerY, 0.0, 
+		   &lat, &lon, &height);
+    meta->general->center_latitude = lat * R2D; 
+    meta->general->center_longitude = lon * R2D;
   }
 
   // Location block
