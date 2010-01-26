@@ -1963,21 +1963,32 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       strcpy(inFile, outFile);
       sprintf(outFile, "%s/external", cfg->general->tmp_dir);
 
+      char *quoted_inFile = MALLOC(sizeof(char)*(strlen(inFile)+8));
+      sprintf(quoted_inFile, "\"%s\"", inFile);
+      char *quoted_outFile = MALLOC(sizeof(char)*(strlen(outFile)+8));
+      sprintf(quoted_outFile, "\"%s\"", outFile);
+
       int has_log = strstr(cfg->external->cmd, "{Log}") != NULL;
       char *tmpLogFile = NULL;
 
-      char *cmd1 = strReplace(cfg->external->cmd, "{Input}", inFile);
+      char *cmd1 = strReplace(cfg->external->cmd, "{Input}", quoted_inFile);
       if (has_log) {
         tmpLogFile = appendExt(outFile, ".log");
-        char *cmd2 = strReplace(cmd1, "{Log}", tmpLogFile);
+        char *quoted_logFile = MALLOC(sizeof(char)*(strlen(tmpLogFile)+8));
+        sprintf(quoted_logFile, "\"%s\"", tmpLogFile);
+        char *cmd2 = strReplace(cmd1, "{Log}", quoted_logFile);
         FREE(cmd1);
         cmd1 = cmd2;
+        FREE(quoted_logFile);
       }
-      char *cmd = strReplace(cmd1, "{Output}", outFile);
+      char *cmd = strReplace(cmd1, "{Output}", quoted_outFile);
       FREE(cmd1);
 
       asfPrintStatus("Running external command:\n  %s\n", cmd);
       asfSystem(cmd);
+
+      FREE(quoted_inFile);
+      FREE(quoted_outFile);
 
       // external program must have created "<outFile>.meta" and "<outFile>.img"
       char *imgFile = appendExt(outFile, ".img");
