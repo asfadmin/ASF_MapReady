@@ -26,10 +26,11 @@ following defines.
 
 #define ASF_DESCRIPTION_STRING \
 "   Ingests all varieties of CEOS, STF, AIRSAR, BIL, GRIDFLOAT, VP\n"\
-"   (Vexcel-Plain), JAXA Level 0 (ALOS AVNIR-2), PolSARpro, and GeoTIFF data\n"\
-"   formats and outputs ASF Internal format metadata and data files. When\n"\
-"   the calibration parameters are applied using the -sigma, -gamma, or the\n"\
-"   -beta option the resulting image will have power scale values (or\n"\
+"   (Vexcel-Plain), JAXA Level 0 (ALOS AVNIR-2), ALOS mosaics, TerraSAR-X\n"\
+"   Radarsat-2, GAMMA, PolSARpro, and GeoTIFF data formats and outputs\n"\
+"   ASF Internal format metadata and data files.\n"\
+"   When the calibration parameters are applied using the -sigma, -gamma, or\n"\
+"   the -beta option the resulting image will have power scale values (or\n"\
 "   decibels if the -db option is utilized). "ASF_NAME_STRING" can also\n"\
 "   perform several other tasks during look up such as multilooking when\n"\
 "   ingesting single-look complex (SLC) data, ingest individual bands at a\n"\
@@ -68,9 +69,9 @@ following defines.
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp',\n"\
-"        'polsarpro', 'gamma', 'alos_mosaic' and 'jaxa_L0'. The 'jaxa_L0'\n"\
-"        format refers to the ALOS AVNIR-2 Level 0 dataset format. 'CEOS' is\n"\
-"        the default behavior.\n"\
+"        'polsarpro', 'gamma', 'alos_mosaic', 'terrasar', 'radarsat2'  and\n"\
+"        'jaxa_L0'. The 'jaxa_L0' format refers to the ALOS AVNIR-2 Level 0\n"\
+"        dataset format. 'CEOS' is the default behavior.\n"\
 "   -ancillary-file <file>\n"\
 "        For PolSARpro format files, the ingest process needs access to the\n"\
 "        original COES or AIRSAR format data that the PolSARpro images were\n"\
