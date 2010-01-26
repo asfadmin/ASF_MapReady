@@ -17,9 +17,9 @@ following defines.
 
 #define ASF_DESCRIPTION_STRING \
 "   This program ingests ASF internal format data and exports said data to a\n"\
-"   number of graphics file formats (TIFF/GEOTIFF, JPEG, PGM, and PNG). If the\n"\
-"   input data was geocoded and the ouput format supports geocoding, that\n"\
-"   information will be included.  Optionally, you may apply look-up tables,\n"\
+"   number of graphics file formats (TIFF/GEOTIFF, JPEG, PGM, PNG and POlSARPRO).\n"\
+"   If the input data was geocoded and the ouput format supports geocoding,\n"\
+"   that information will be included.  Optionally, you may apply look-up tables,\n"\
 "   assign color bands (-rgb, -truecolor, -falsecolor).\n"
 
 #define ASF_INPUT_STRING \
@@ -31,11 +31,12 @@ following defines.
 #define ASF_OPTIONS_STRING \
 "   -format <format>\n"\
 "        Format to export to. Must be one of the following:\n"\
-"            tiff    - Tagged Image File Format, with byte valued pixels\n"\
-"            geotiff - GeoTIFF file, with floating point or byte valued pixels\n"\
-"            jpeg    - Lossy compressed image, with byte valued pixels\n"\
-"            pgm     - Portable graymap image, with byte valued pixels\n"\
-"            png     - Portable network graphic, with byte valued pixels\n\n"\
+"            tiff      - Tagged Image File Format, with byte valued pixels\n"\
+"            geotiff   - GeoTIFF file, with floating point or byte valued pixels\n"\
+"            jpeg      - Lossy compressed image, with byte valued pixels\n"\
+"            pgm       - Portable graymap image, with byte valued pixels\n"\
+"            png       - Portable network graphic, with byte valued pixels\n"\
+"            polsarpro - Flat binary floating point files in PolSARPro format\n\n"\
 "   NOTE: When exporting to a GeoTIFF format file, all map-projection\n"\
 "         information is included in GeoKeys as specified in the GeoTIFF\n"\
 "         standard.  The other graphics file formats do not support the\n"\
