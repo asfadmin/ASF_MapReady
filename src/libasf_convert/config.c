@@ -1312,8 +1312,9 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (cfg->general->import) {
       fprintf(fConfig, "\n\n[Import]\n");
       if (!shortFlag)
-        fprintf(fConfig, "\n# The recognized import formats are: ASF, CEOS, AirSAR, and\n"
-                "# STF.  Defining ASF, being the internal format, as the import format is\n"
+        fprintf(fConfig, "\n# The recognized import formats are: ASF, CEOS, STF, AIRSAR, GEOTIFF\n"
+		"# ALOS_MOSAIC, TERRASAR, RADARSAT2, GAMMA or POLSARPRO.\n"
+                "# Defining ASF, being the internal format, as the import format is\n"
                 "# just another way of actually skipping the import step.  For AirSAR,\n"
                 "# you can configure which products are processed with the AirSAR block.\n\n");
       fprintf(fConfig, "format = %s\n", cfg->import->format);
