@@ -162,7 +162,6 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 	  src/asf_airsar_import \
           src/llh2ls \
           src/gr2sr \
-          src/analyze_yaw \
           src/convert2vector \
           src/convert2vector_gui \
 
@@ -222,6 +221,7 @@ src/farcorr
 src/asf_calpol
 src/fftMatch
 src/flip
+src/analyze_yaw
 src/write_ppf
 src/brs2jpg
 src/sample_plugin
