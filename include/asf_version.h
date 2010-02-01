@@ -15,7 +15,7 @@
 #define REQ_VERSION 2.1
 
 // MapReady
-#define MAPREADY_VERSION_STRING "2.3.5"
+#define MAPREADY_VERSION_STRING "2.3.6"
 #define MAPREADY_VERSION 2.3
 
 // Convert To Vector
@@ -31,7 +31,7 @@
 #define CREATE_THUMBS_VERSION 2.1
 
 // Data_qc
-#define DATA_QC_VERSION_STRING "1.0.2-dev"
+#define DATA_QC_VERSION_STRING "1.0.2"
 #define DATA_QC_VERSION 1.0
 
 // Faraday prediction

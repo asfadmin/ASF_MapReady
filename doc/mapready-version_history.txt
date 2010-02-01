@@ -1,12 +1,19 @@
 MapReady Version History
 
-MapReady 2.3.5 (released 2010 January 26)
+MapReady 2.3.6 (released 2010 February 1)
 New Functionality
+- Generation of KML overlays
+- Support for the Equirectangular and Mercator projections.
+- Support in the MapReady GUI for the ALOS KC mosaics.
 - Ability to terrain correct in flat areas, via the "Skip coregistration
   when it fails" option.
+- Support for some TerraSAR-X and RADARSAT-2 data.
 - Palsar calibration updated according to latest JAXA specifications.
 - Support for ingest of more types of PolSARPro data in the MapReady GUI
 - Support for export to PolSARPro format.
+
+Bug Fixes
+- Geocoding of dB values was slightly off
 
 MapReady 2.2.5 (released 2009 Map 23)
 - New 'external' tab in the MapReady GUI, allows running of a command-line
