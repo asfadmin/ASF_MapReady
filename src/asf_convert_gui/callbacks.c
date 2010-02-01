@@ -1350,13 +1350,18 @@ int polsarpro_data_check()
     get_string_from_entry("add_file_with_ancillary_polsarpro_ceos_entry");
   GtkWidget *ok_button =
     get_widget_checked("add_file_with_ancillary_ok_button");
-  if (isCEOS(inFile, &error))
+  int is_ceos = isCEOS(inFile, &error);
+  int is_terrasar = isTerrasar(inFile, &error);
+  int is_radarsat2 = isRadarsat2(inFile, &error);
+  if (is_ceos || is_terrasar || is_radarsat2)
     ret = TRUE;
-  else if (error) {
-    put_string_to_label("add_with_ancillary_error_label", error);    
+  else {
+    put_string_to_label("add_with_ancillary_error_label",
+			"Could not find any complex CEOS, TerraSAR-X or "
+			"Radarsat-2 data");
     gtk_widget_set_sensitive(ok_button, FALSE);
   }
-
+ 
   return ret;
 }	
 

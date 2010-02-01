@@ -122,6 +122,8 @@ meta_parameters *meta_read_raw(const char *inFile);
 
 int isGeocoded(const char *dataFile);
 int isCEOS(const char *dataFile, char **error);
+int isTerrasar(char *dataFile, char **error);
+int isRadarsat2(char *dataFile, char **error);
 int isPolsarproMatrix(char *dataFile, char **matrixType, char **error);
 int isPolsarproDecomposition(char *dataFile, char **decompositionType, 
 			     char **error);

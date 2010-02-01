@@ -72,7 +72,7 @@ int isGeocoded(const char *dataFile)
 
 int isCEOS(const char *dataFile, char **error)
 {
-  char **inBandName = NULL, **inMetaName = NULL, *message = NULL;
+  char **inBandName = NULL, **inMetaName = NULL, tmp[1024], *message = NULL;
   char baseName[512];
   int ret = TRUE, nBands, trailer;
   ceos_metadata_ext_t metadata_ext;
@@ -88,13 +88,16 @@ int isCEOS(const char *dataFile, char **error)
   data_ext = get_ceos_data_name(dataFile, baseName, &inBandName, &nBands);
   if (data_ext == NO_CEOS_DATA) {
     message = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(message, "Data file%s of original data (%s) missing.",
+    sprintf(tmp, "Data file%s of original data (%s) missing.\n",
 	    (nBands>1) ? "s" : "", fileName);
+    strcat(message, tmp);
     ret = FALSE;
   }    
   if (metadata_ext == NO_CEOS_METADATA) {
-    message = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(message, "Metadata file of original data (%s) missing.", fileName);
+    if (!message)
+      message = (char *) MALLOC(sizeof(char)*1024);
+    sprintf(tmp, "Metadata file of original data (%s) missing.\n", fileName);
+    strcat(message, tmp);
     ret = FALSE;
   }
 
@@ -200,9 +203,9 @@ int isAIRSAR(char *dataFile)
   return (L_airsar || C_airsar || P_airsar);
 }
 
-int isTerrasar(char *dataFile)
+int isTerrasar(char *dataFile, char **error)
 {
-  int found = FALSE;
+  int found = TRUE;
   // Let's first check for an .xml extension
   char *ext = findExt(dataFile);
 
@@ -210,42 +213,151 @@ int isTerrasar(char *dataFile)
   // Might sound a little harsh but avoids some XML parser warning otherwise.
   if (ext && strcmp_case(ext, ".xml") == 0) {
     char *satellite = NULL;
+    char tmp[256], *message = NULL, *path=NULL, *inDataName=NULL;
+    char imageDataType[25];
+    int ii, numberOfLayers;
     satellite = (char *) MALLOC(sizeof(char)*25);
     FILE *fp;
     fp = fopen(dataFile, "r");
     xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
-    if (doc)
+    if (doc) {
       strcpy(satellite, xml_get_string_value(doc, 
         "level1Product.productInfo.missionInfo.mission"));
-    if (satellite && strncmp_case(satellite, "TSX", 3) == 0)
-    found = TRUE;
+
+      // only care about TerraSAR-X data
+      if (satellite && strncmp_case(satellite, "TSX", 3) == 0) {
+
+	strcpy(imageDataType, xml_get_string_value(doc, 
+	  "level1Product.productInfo.imageDataInfo.imageDataType"));
+	if (strcmp_case(imageDataType, "COMPLEX") != 0) {
+	  if (!message)
+	    message = (char *) MALLOC(sizeof(char)*1024);
+	  sprintf(tmp, "Wrong data type!\n"
+		  "Polarimetric processing requires SLC data!\n");
+	  strcat(message, tmp);
+	  found = FALSE;
+	}
+
+	// path from the xml (metadata) file
+	path = get_dirname(dataFile);
+	inDataName = (char *) MALLOC(sizeof(char)*(strlen(path)+100));
+	numberOfLayers = xml_get_int_value(doc, 
+	  "level1Product.productInfo.imageDataInfo.numberOfLayers");
+
+	for (ii=0; ii<numberOfLayers; ii++) {
+	  if (strlen(path)>0) {
+	    strcpy(inDataName, path);
+	    if (inDataName[strlen(inDataName)-1] != '/')
+	      strcat(inDataName, "/");
+	  }
+	  else
+	    strcpy(inDataName, "");
+	  
+	  // check whether data file exists
+	  strcat(inDataName, xml_get_string_value(doc, 
+	    "level1Product.productComponents.imageData[%d].file.location.path",
+	    ii));
+	  strcat(inDataName, "/");
+	  strcat(inDataName, xml_get_string_value(doc, 
+	    "level1Product.productComponents.imageData[%d].file.location."
+	    "filename", ii));
+	  if (!fileExists(inDataName)) {
+	    if (!message)
+	      message = (char *) MALLOC(sizeof(char)*1024);
+	    sprintf(tmp, "Data file (%s) does not exist!\n", inDataName);
+	    strcat(message, tmp);
+	    found = FALSE;
+	  }	
+	}
+      }
+      else
+	found = FALSE;
+    }
     fclose(fp);
     xmlFreeDoc(doc);
     xmlCleanupParser();
+    if (path)
+      FREE(path);
+    if (inDataName)
+      FREE(inDataName);
   }
 
   return found;
 }
 
-int isRadarsat2(char *dataFile)
+int isRadarsat2(char *dataFile, char **error)
 {
-  int found = FALSE;
+  char dataType[25];
+  int found = TRUE;
   // Let's first check for an .xml extension
   char *ext = findExt(dataFile);
 
   // If it has the correct extension, investigate it further
   // Might sound a little harsh but avoids some XML parser warning otherwise.
   if (ext && strcmp_case(ext, ".xml") == 0) {
+    int ii, band_count;
+    char tmp[256], *path = NULL, *message = NULL, *inDataName = NULL;
+    char polarizations[20];
     char *satellite = (char *) MALLOC(sizeof(char)*25);
     FILE *fp;
     fp = fopen(dataFile, "r");
     xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
-    if (doc)
+    if (doc) {
       strcpy(satellite, 
 	     xml_get_string_value(doc, "product.sourceAttributes.satellite"));
-    if (satellite &&
-	strcmp_case(satellite, "RADARSAT-2") == 0)
-      found = TRUE;
+      
+      // only care about Radarsat-2 data
+      if (satellite &&
+	  strcmp_case(satellite, "RADARSAT-2") == 0) {
+	
+	strcpy(dataType, xml_get_string_value(doc, 
+          "product.imageAttributes.rasterAttributes.dataType"));	
+	if (strcmp_case(dataType, "COMPLEX") != 0) {
+	  if (!message)
+	    message = (char *) MALLOC(sizeof(char)*1024);
+	  sprintf(tmp, "Wrong data type!\n"
+		  "Polarimetric processing requires SLC data!\n");
+	  strcat(message, tmp);
+	  found = FALSE;
+	}
+	
+	// path from the xml (metadata) file
+	path = get_dirname(dataFile);
+	inDataName = (char *) MALLOC(sizeof(char)*(strlen(path)+100));
+	strcpy(polarizations, xml_get_string_value(doc, 
+	  "product.sourceAttributes.radarParameters.polarizations"));
+	for (ii=0; ii<strlen(polarizations)-1; ii++)
+	  if (polarizations[ii] == ' ')
+	  polarizations[ii] = ',';
+	if (strstr(polarizations, "HH"))
+	  band_count++;
+	if (strstr(polarizations, "VV"))
+	  band_count++;
+	if (strstr(polarizations, "HV"))
+	  band_count++;
+	if (strstr(polarizations, "VH"))
+	  band_count++;
+	
+	for (ii=0; ii<band_count; ii++) {
+	  if (strlen(path)>0) {
+	    strcpy(inDataName, path);
+	    if (inDataName[strlen(inDataName)-1] != '/')
+	      strcat(inDataName, "/");
+	  }
+	  else
+	    strcpy(inDataName, "");
+	  strcat(inDataName, xml_get_string_value(doc, 
+	    "product.imageAttributes.fullResolutionImageData[%d]", ii));
+	  if (!fileExists(inDataName)) {
+	    if (!message)
+	      message = (char *) MALLOC(sizeof(char)*1024);
+	    sprintf(tmp, "Data file (%s) does not exist!\n", inDataName);
+	    strcat(message, tmp);
+	    found = FALSE;
+	  }
+	}
+      }
+    }
     fclose(fp);
     xmlFreeDoc(doc);
     xmlCleanupParser();
@@ -786,6 +898,35 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
   }
 }
 
+static void ingest_radarsat2_polsar_amp(char *inFile, char *outFile,
+					double *p_range_scale,
+					double *p_azimuth_scale)
+{
+  int do_resample = FALSE;
+  double azimuth_scale, range_scale;
+  char unscaleBaseName[1024];
+
+  if (p_azimuth_scale && p_range_scale) {
+    range_scale = *p_range_scale;
+    azimuth_scale = *p_azimuth_scale;
+    do_resample = TRUE;
+  }
+  if (do_resample) {
+    sprintf(unscaleBaseName, "%s_unscale", outFile);
+    import_radarsat2(inFile, r_AMP, unscaleBaseName, TRUE);
+  }
+  else
+    import_radarsat2(inFile, r_AMP, outFile, TRUE);
+ 
+  if (do_resample) {
+    asfPrintStatus("Resampling with scale factors: "
+		   "%lf range, %lf azimuth.\n",
+		   range_scale, azimuth_scale);
+
+    resample(unscaleBaseName, outFile, range_scale, azimuth_scale);
+  }
+}
+
 void import_polsarpro(char *s, char *ceosName, char *colormapName,
                       char *image_data_type, char *outBaseName)
 {
@@ -1069,10 +1210,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
    
     is_airsar = isAIRSAR(ceosName);
     is_ceos = isCEOS(ceosName, &error);
-    if (error)
-      asfPrintError("%s\n", error);
-    is_radarsat2 = isRadarsat2(ceosName);
-    is_terrasar = isTerrasar(ceosName);
+    is_radarsat2 = isRadarsat2(ceosName, &error);
+    is_terrasar = isTerrasar(ceosName, &error);
     
     if (is_ceos)
       metaOut = meta_read(ceosName);
@@ -1080,9 +1219,6 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       metaOut = import_airsar_meta(ceosName, ceosName, TRUE);
     else if (is_radarsat2) {
       radarsat2_meta *radarsat2 = read_radarsat2_meta(ceosName);
-      if (strcmp_case(radarsat2->dataType, "COMPLEX") != 0)
-	asfPrintError("Wrong data type!\nPolarimetric processing requires SLC "
-		      "data!\n");
       if (strcmp_case(radarsat2->pixelTimeOrdering, "DECREASING") == 0)
 	flip_horizontal = TRUE;
       metaOut = radarsat2meta(radarsat2);
@@ -1090,11 +1226,6 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     }
     else if (is_terrasar) {
       terrasar_meta *terrasar = read_terrasar_meta(ceosName);
-      if (strcmp_case(terrasar->imageDataType, "COMPLEX") != 0)
-	asfPrintError("Wrong data type!\nPolarimetric processing requires SLC "
-		      "data!\n");
-      if (strcmp_case(terrasar->imageDataFormat, "COSAR") != 0)
-	asfPrintError("Currently only COSAR data format supported!\n");
       metaOut = terrasar2meta(terrasar);
       FREE(terrasar);
     }
@@ -1125,10 +1256,11 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       ingest_airsar_polsar_amp(ceosName, outBaseName,
 			       p_range_scale, p_azimuth_scale);
     }
-    // FIXME: No scaling or multilooking yet
     else if (is_radarsat2) {
       asfPrintStatus("   Ingesting Radarsat-2 data ...\n");
-      import_radarsat2(ceosName, r_AMP, outBaseName, TRUE);
+      ingest_radarsat2_polsar_amp(ceosName, outBaseName,
+				  p_range_scale, p_azimuth_scale);
+      //import_radarsat2(ceosName, r_AMP, outBaseName, TRUE);
     }
     // FIXME: No scaling or multilooking yet
     else if (is_terrasar) {
