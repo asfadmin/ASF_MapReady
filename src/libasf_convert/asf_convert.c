@@ -1971,17 +1971,17 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       int has_log = strstr(cfg->external->cmd, "{Log}") != NULL;
       char *tmpLogFile = NULL;
 
-      char *cmd1 = strReplace(cfg->external->cmd, "{Input}", quoted_inFile);
+      char *cmd1 = asf_strReplace(cfg->external->cmd, "{Input}", quoted_inFile);
       if (has_log) {
         tmpLogFile = appendExt(outFile, ".log");
         char *quoted_logFile = MALLOC(sizeof(char)*(strlen(tmpLogFile)+8));
         sprintf(quoted_logFile, "\"%s\"", tmpLogFile);
-        char *cmd2 = strReplace(cmd1, "{Log}", quoted_logFile);
+        char *cmd2 = asf_strReplace(cmd1, "{Log}", quoted_logFile);
         FREE(cmd1);
         cmd1 = cmd2;
         FREE(quoted_logFile);
       }
-      char *cmd = strReplace(cmd1, "{Output}", quoted_outFile);
+      char *cmd = asf_strReplace(cmd1, "{Output}", quoted_outFile);
       FREE(cmd1);
 
       asfPrintStatus("Running external command:\n  %s\n", cmd);

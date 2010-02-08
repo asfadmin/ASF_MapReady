@@ -184,7 +184,7 @@ char *strstr_case(const char *str, const char *key)
 }
 
 // replaces occurences in "str" of "searchStr" with "replaceStr"
-char *strReplace(const char *str, const char *searchStr, const char *replaceStr)
+char *asf_strReplace(const char *str, const char *searchStr, const char *replaceStr)
 {
   int searchStrLen = strlen(searchStr);
   int replaceStrLen = strlen(replaceStr);

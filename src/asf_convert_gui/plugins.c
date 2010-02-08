@@ -524,7 +524,7 @@ void collect_args_fn(GtkWidget *hbox, gpointer data)
 
     // here's the actual replacement of "$P<id>" in the command string
     char *cpy = STRDUP(cmd_buf);
-    char *rep = strReplace(cmd_buf, key, arg);
+    char *rep = asf_strReplace(cmd_buf, key, arg);
     strncpy_safe(cmd_buf, rep, 511);
     FREE(cpy);
     FREE(rep);
