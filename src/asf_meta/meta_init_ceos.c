@@ -2037,15 +2037,22 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
   }
 
   // Azimuth time per pixel need to be known for state vector propagation
-  date_ppr2date(ppr->act_ing_start, &date, &time);
-  firstTime = date2sec(&date, &time);
-  date_ppr2date(ppr->act_ing_stop, &date, &time);
-  lastTime = date2sec(&date, &time);
-  meta->sar->azimuth_time_per_pixel =
-    (lastTime - firstTime) / meta->sar->original_line_count;
+  if (ppr) {
+    date_ppr2date(ppr->act_ing_start, &date, &time);
+    firstTime = date2sec(&date, &time);
+    date_ppr2date(ppr->act_ing_stop, &date, &time);
+    lastTime = date2sec(&date, &time);
+    meta->sar->azimuth_time_per_pixel =
+      (lastTime - firstTime) / meta->sar->original_line_count;
+  }
 
   // SAR block
-  if (ceos->product == SNA) {
+  if (ceos->product == RAW) {
+    meta->general->image_data_type = RAW_IMAGE;
+    meta->sar->image_type = 'S';
+    meta->sar->look_count = 1;
+  }
+  else if (ceos->product == SNA) {
     meta->sar->image_type = 'P';
     meta->sar->look_count = 4;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
@@ -2057,28 +2064,35 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
     strcpy(meta->general->mode, "SNB");
   }
-  meta->sar->range_doppler_coefficients[0] = ppr->dopcen_est[0].dopcen_coef[0];
+  if (ppr)
+    meta->sar->range_doppler_coefficients[0] = 
+      ppr->dopcen_est[0].dopcen_coef[0];
+  else
+    meta->sar->range_doppler_coefficients[0] = 0.0;
   meta->sar->range_doppler_coefficients[1] = 0.0;
   meta->sar->range_doppler_coefficients[2] = 0.0;
   meta->sar->deskewed = 1;
-  meta->sar->earth_radius =
-    meta_get_earth_radius(meta,
-                          meta->general->line_count/2,
-                          meta->general->sample_count/2);
-  meta->sar->satellite_height = ppr->eph_orb_data[0];
-  meta->sar->slant_range_first_pixel = ppr->srgr_coefset[0].srgr_coef[0];
-  if (meta->sar->slant_range_first_pixel == 0.0)
-    meta->sar->slant_range_first_pixel =
-      slant_from_incid(ppr->beam_info[0].beam_look_ang *D2R,
-		       meta->sar->earth_radius,
-		       meta->sar->satellite_height);
+  if (ppr) {
+    meta->sar->earth_radius =
+      meta_get_earth_radius(meta,
+			    meta->general->line_count/2,
+			    meta->general->sample_count/2);
+    meta->sar->satellite_height = ppr->eph_orb_data[0];
+    meta->sar->slant_range_first_pixel = ppr->srgr_coefset[0].srgr_coef[0];
+    if (meta->sar->slant_range_first_pixel == 0.0)
+      meta->sar->slant_range_first_pixel =
+	slant_from_incid(ppr->beam_info[0].beam_look_ang *D2R,
+			 meta->sar->earth_radius,
+			 meta->sar->satellite_height);
+  }
   meta->sar->slant_shift = 0;
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
-  get_attitude_data(att, &meta->sar->yaw, &meta->sar->pitch, &meta->sar->roll);
+  if (att)
+    get_attitude_data(att, &meta->sar->yaw, &meta->sar->pitch, &meta->sar->roll);
 
   // State vector block
   ceos_init_stVec(in_fName, ceos, meta);
@@ -3166,6 +3180,8 @@ ceos_description *get_ceos_description_ext(const char *fName,
       // Currently known: SNA, SNB
       if (0==strncmp(prodStr, "SCANSAR NARROW", 14))
         get_scansar_beam_mode(ceos, fName);
+      if (0==strncmp(prodStr, "UNPROCESSED SIGNAL DATA", 23))
+        ceos->product = RAW;      
       else {
         asfReport(level, "Get_ceos_description Warning! "
                     "Unknown Tromso product type '%s'!\n", prodStr);
