@@ -170,8 +170,8 @@ int count_char(const char *s, char c);
 char *strstr_case(const char *str, const char *key);
 
 // replaces occurences in "str" of "searchStr" with "replaceStr"
-char *strReplace(const char *str, const char *searchStr,
-                 const char *replaceStr);
+char *asf_strReplace(const char *str, const char *searchStr,
+		     const char *replaceStr);
 
 // quoted-element csv string parsing routines
 char *quoted_string_parse(char *p, char *s, int max_len, int line_num,
