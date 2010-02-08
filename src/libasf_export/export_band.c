@@ -880,7 +880,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
-                    CT_TransverseMercator);
+                    CT_Mercator);
         if (meta_is_valid_double(md->projection->param.mer.central_meridian)) {
           GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.mer.central_meridian);
@@ -890,8 +890,17 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                       md->projection->param.mer.orig_latitude);
         }
         if (meta_is_valid_double(md->projection->param.mer.standard_parallel)) {
-          GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
-                      md->projection->param.mer.standard_parallel);
+	  // GeoTIFF only supports the scale factor version.
+	  // Hence some fancy calculation
+	  double lat = md->projection->param.mer.orig_latitude;
+	  double lat1 = md->projection->param.mer.standard_parallel;
+	  double re = md->projection->re_major;
+	  double rp = md->projection->re_minor;
+	  double e2 = sqrt(1.0 - rp*rp/(re*re));
+	  double scale = (sqrt(1.0 - e2*sin(lat)*sin(lat))/cos(lat)) * 
+	    (cos(lat1)/sqrt(1.0 - e2*sin(lat1)*sin(lat1)));
+
+          GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1, scale);
         }
         if (meta_is_valid_double(md->projection->param.mer.false_easting)) {
           GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
