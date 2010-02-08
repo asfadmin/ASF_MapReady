@@ -77,6 +77,8 @@ OBJS  = \
 	import_radarsat2.o \
 	import_terrasar.o \
 	import_polsarpro.o \
+	import_fgdc_meta.o \
+	config_fgdc.o \
 	least_squares.o \
 	missing.o \
 	projected_image_import.o \

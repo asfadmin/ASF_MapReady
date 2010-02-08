@@ -29,6 +29,9 @@ datum_spheroid (datum_type_t datum)
   case HUGHES_DATUM:
     return HUGHES_SPHEROID;
 
+  case SAD69_DATUM:
+    return GRS1967_SPHEROID;
+
   default:
     assert (0);
     return WGS84_SPHEROID;
@@ -79,6 +82,9 @@ const char *datum_toString(datum_type_t datum)
       case HUGHES_DATUM:    
           return "HUGHES";
 
+      case SAD69_DATUM:
+	  return "SAD69";
+
       case UNKNOWN_DATUM:
           return "UNKNOWN";
 
@@ -105,6 +111,9 @@ const char *spheroid_toString(spheroid_type_t spheroid)
 
       case GEM10C_SPHEROID:
           return "GEM10C";
+
+      case GRS1967_SPHEROID:
+	  return "GRS1967";
 
       case GRS1980_SPHEROID:
           return "GRS1980";

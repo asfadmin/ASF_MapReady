@@ -27,6 +27,10 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor)
     *major = GEM10C_SEMIMAJOR;
     *minor = *major - (1.0 / GEM10C_INV_FLATTENING) * *major;
     break;
+  case GRS1967_SPHEROID:
+    *major = GRS1967_SEMIMAJOR;
+    *minor = *major - (1.0 / GRS1967_INV_FLATTENING) * *major;
+    break;
   case GRS1980_SPHEROID:
     *major = GRS1980_SEMIMAJOR;
     *minor = *major - (1.0 / GRS1980_INV_FLATTENING) * *major;

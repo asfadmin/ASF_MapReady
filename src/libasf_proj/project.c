@@ -875,7 +875,7 @@ static char * albers_projection_desc(project_parameters_t * pps,
   static char albers_projection_description[128];
 
   /* Establish description of output projection. */
-  if (datum != HUGHES_DATUM) {
+  if (datum != HUGHES_DATUM && datum != SAD69_DATUM) {
     sprintf(albers_projection_description,
         "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
         pps->albers.std_parallel1,
@@ -884,7 +884,7 @@ static char * albers_projection_desc(project_parameters_t * pps,
         pps->albers.center_meridian,
         datum_str(datum));
   }
-  else {
+  else if (datum == HUGHES_DATUM) {
     sprintf(albers_projection_description,
         "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
         pps->albers.std_parallel1,
@@ -893,6 +893,16 @@ static char * albers_projection_desc(project_parameters_t * pps,
         pps->albers.center_meridian,
             (float)HUGHES_SEMIMAJOR,
             (float)HUGHES_INV_FLATTENING);
+  }
+  else if (datum == SAD69_DATUM) {
+    sprintf(albers_projection_description,
+        "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+        pps->albers.std_parallel1,
+        pps->albers.std_parallel2,
+        pps->albers.orig_latitude,
+        pps->albers.center_meridian,
+            (float)GRS1967_SEMIMAJOR,
+            (float)GRS1967_INV_FLATTENING);
   }
 
   return albers_projection_description;

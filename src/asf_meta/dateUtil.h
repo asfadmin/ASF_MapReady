@@ -203,4 +203,6 @@ long current_date(void);
 void date_tester(void);
 int date_diff(long date1, long date2);
 
+char *fgdc_date(void);
+
 #endif

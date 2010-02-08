@@ -516,14 +516,6 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   meta = meta_read_raw(inMetaName);
   nl = meta->general->line_count;
 
-  /*PP Earth Radius Kludge*/
-  if (isPP(meta))
-    {
-      double pp_er, pp_atpp;
-      pp_get_corrected_vals(inMetaName, &pp_er, &pp_atpp);
-      if (meta->sar) meta->sar->earth_radius_pp = pp_er;
-    }
-
   /* Let the user know what format we are working on */
   asfPrintStatus("   Input data type: level zero raw data\n"
      "   Output data type: complex byte raw data\n");
@@ -542,7 +534,6 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   /* Handle output files */
   strcat(outDataName,TOOLS_RAW_EXT);
   // FIXME: should we output floats or bytes?
-  meta->general->image_data_type = RAW_IMAGE;
   s = convertMetadata_ceos(inMetaName, outMetaName, &trash, &readNextPulse);
   asfRequire (s->nBeams==1,"Unable to import level 0 ScanSAR data.\n");
   iqBuf = (iqType*)MALLOC(sizeof(iqType)*2*(s->nSamp));
@@ -555,28 +546,10 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
     asfLineMeter(ii,nl);
     s->nLines++;
   }
-  struct dataset_sum_rec dssr;
-  get_dssr(inMetaName, &dssr);
-  if (strncmp(s->satName, "JERS1", 5) == 0) {
-      s->prf = dssr.prf;
-      s->range_gate = dssr.rng_gate / 1000000.0;
-  }
-  if (strncmp(s->satName, "ERS1", 4) == 0) {
-      double outputDelay=CONF_ERS1_rangePulseDelay;
-      s->range_gate = s->dwp+9.0/s->prf-outputDelay;
-  }
-  if (meta->sar && strncmp(s->satName, "JERS1", 5) == 0 &&
-      meta_is_valid_double(meta->sar->earth_radius) &&
-      meta_is_valid_double(meta->sar->satellite_height))
-  {
-      s->re = meta->sar->earth_radius;
-      s->ht = meta->sar->satellite_height - meta->sar->earth_radius;
-      s->vel = sqrt(9.821*s->re*(s->re/(s->ht+s->re))); // sqrt(g*re*re/ht) where ht is platform ht from ctr earth
-  }
-  updateMeta(s,meta,NULL,0);
-  meta->general->radiometry = r_AMP;
   strcpy(meta->general->basename, inDataName);
   meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
+  struct dataset_sum_rec dssr;
+  get_dssr(inMetaName, &dssr);
   if (dssr.sensor_id && strlen(dssr.sensor_id) && nBands == 1) {
     // HACK ALERT!!!  There must be a better way to get the polarizations and band names...
     char *s = dssr.sensor_id + strlen(dssr.sensor_id) - 1;
@@ -2332,12 +2305,22 @@ meta_parameters *meta_read_raw(const char *inFile)
   report_level_t level = REPORT_LEVEL_NONE;
   ceos_description *ceos = get_ceos_description(inFile, level);
   bin_state *s;
+  iqType *iqBuf; 
   readPulseFunc readNextPulse;
   char *baseName, tmpDir[1024], outFile[1024];
 
   ceos_init_sar_ext(ceos, inFile, meta, FALSE);
-  re = meta->sar->earth_radius;
-  ht = meta->sar->satellite_height - meta->sar->earth_radius;
+  meta->general->image_data_type = RAW_IMAGE;
+  meta->general->radiometry = r_AMP;
+
+  // PP Earth Radius Kludge
+  if (isPP(meta)) {
+      double pp_er, pp_atpp;
+      pp_get_corrected_vals(inFile, &pp_er, &pp_atpp);
+      if (meta->sar) 
+	meta->sar->earth_radius_pp = pp_er;
+  }
+
   if (ceos->sensor != PALSAR) {
     baseName = get_basename(inFile);
     strcpy(tmpDir, baseName);
@@ -2346,17 +2329,45 @@ meta_parameters *meta_read_raw(const char *inFile)
     create_clean_dir(tmpDir);
     sprintf(outFile, "%s/bogus.meta", tmpDir);
     s = convertMetadata_ceos((char *)inFile, outFile, &trash, &readNextPulse);
+    iqBuf = (iqType*)MALLOC(sizeof(iqType)*2*(s->nSamp));
+    FILE *fpOut = FOPEN(outFile, "wb");
+    getNextCeosLine(s->binary, s, inFile, outFile);
+    s->nLines = 0;
+    readNextPulse(s, iqBuf, inFile, outFile);
+    FCLOSE(fpOut);
+    s->nLines = meta->general->line_count;
+    struct dataset_sum_rec dssr;
+    get_dssr(inFile, &dssr);
+    if (strncmp(s->satName, "JERS1", 5) == 0) {
+      s->prf = dssr.prf;
+      s->range_gate = dssr.rng_gate / 1000000.0;
+    }
+    if (strncmp(s->satName, "ERS1", 4) == 0) {
+      double outputDelay=CONF_ERS1_rangePulseDelay;
+      s->range_gate = s->dwp+9.0/s->prf-outputDelay;
+    }
+    if (meta->sar && strncmp(s->satName, "JERS1", 5) == 0 &&
+	meta_is_valid_double(meta->sar->earth_radius) &&
+	meta_is_valid_double(meta->sar->satellite_height)) {
+      s->re = meta->sar->earth_radius;
+      s->ht = meta->sar->satellite_height - meta->sar->earth_radius;
+      s->vel = sqrt(9.821*s->re*(s->re/(s->ht+s->re)));
+    }
+    updateMeta(s, meta, NULL, 0);
+
     meta->sar->slant_range_first_pixel = s->range_gate * SPD_LIGHT / 2.0;
-    remove_dir(tmpDir);
     meta->sar->range_sampling_rate = fs = s->fs;
     prf = s->prf;
     vel = s->vel;
+    remove_dir(tmpDir);
   }
   else {
     prf = meta->sar->prf;
     fs = meta->sar->range_sampling_rate;
     vel = sqrt(9.821*re*re/(ht+re));
   }
+  re = meta->sar->earth_radius;
+  ht = meta->sar->satellite_height - meta->sar->earth_radius;
   meta->general->x_pixel_size = 1.0 / fs * (SPD_LIGHT / 2.0);
   meta->general->y_pixel_size = 1.0 / prf * vel * (re / (re + ht));
   dssr = &ceos->dssr;

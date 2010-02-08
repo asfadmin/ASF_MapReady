@@ -793,3 +793,15 @@ double seconds_from_str(const char *date_str)
 
   return date2sec(&jd, &t);
 }
+
+char *fgdc_date(void)
+{
+  time_t t;
+  char *t_stamp;
+
+  t_stamp = (char*) MALLOC(25*sizeof(char));
+  t = time(NULL);
+  strftime(t_stamp, 10, "%Y%m%d", localtime(&t));
+
+  return t_stamp;  
+} 

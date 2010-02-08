@@ -27,6 +27,7 @@ typedef enum {
   CLARKE1880_SPHEROID,
   GEM6_SPHEROID,
   GEM10C_SPHEROID,
+  GRS1967_SPHEROID,
   GRS1980_SPHEROID,
   INTERNATIONAL1924_SPHEROID,
   INTERNATIONAL1967_SPHEROID,
@@ -53,7 +54,8 @@ typedef enum {
   WGS84_DATUM,   /* World Geodetic System 1984 (WGS84) */
   TOKYO_DATUM,   /* Tokyo Datum (based on Bessel 1841) */
   JGD2000_DATUM, /* JGD2000 Datum (currently used by Japan) */
-  HUGHES_DATUM
+  HUGHES_DATUM,
+  SAD69_DATUM    // South American Datum 1969
 } datum_type_t;
 
  /* Albers Conical Equal Area. */
@@ -119,6 +121,7 @@ typedef enum {
     double orig_latitude;     // Latitude of origin
     double central_meridian;  // Central meridian
     double standard_parallel; // Standard parallel
+    double scale_factor;      // Scale factor (alternative)
     double false_easting;     // False easting
     double false_northing;    // False northing
   } proj_mer;
