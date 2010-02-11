@@ -97,6 +97,12 @@ int init_fgdc_config(char *configFile, char *type)
 	    "data set was developed.\n\n");
   fprintf(fCfg, "purpose = whatever that is\n");
   if (comment)
+    fprintf(fCfg, "\n# Acquisition -- date and time of image acquisition. This"
+	    " parameter will\n# overwrite all information that is extracted "
+	    "from the data.\n"
+	    "# Format: YYYY-MM-DD hh:mm:ss\n");
+  fprintf(fCfg, "acquisition = 2007-05-24 21:50:38\n");
+  if (comment)
     fprintf(fCfg, "\n# Currentness Reference -- the basis on which the time\n"
 	    "# period of content information is determined.\n# Values: "
 	    "\"ground condition\" \"publication date\" free text\n\n");
@@ -126,7 +132,7 @@ int init_fgdc_config(char *configFile, char *type)
 	    "privacy or intellectual property, and any special\n# restrictions"
 	    " or limitations on obtaining the data set.\n"
 	    "# Values: \"none\" free text\n\n");
-  fprintf(fCfg, "access_constraints = Copyright of Canadian Space Agency\n");
+  fprintf(fCfg, "access_constraints = Need to be a NASA approved user.\n");
   if (comment)
     fprintf(fCfg, "\n# Use Constraints -- restrictions and legal prerequisites"
 	    "for using\n# the data set after access is granted. These include "
@@ -134,7 +140,12 @@ int init_fgdc_config(char *configFile, char *type)
 	    "privacy or intellectual property,\n# and any special restrictions"
 	    " or limitations on using the data set.\n"
 	    "# Values: \"none\" free text\n\n");
-  fprintf(fCfg, "use_constraints = Copyright of Canadian Space Agency\n");
+  fprintf(fCfg, "use_constraints = No sharing of data.\n");
+  if (comment)
+    fprintf(fCfg, "\n# Copyright -- name of the copyright holder.\n"
+	    "# This is a user defined field (not part of FGDC metadata "
+	    "standard).\n\n");
+  fprintf(fCfg, "copyright = Canadian Space Agency\n");
   if (comment)
     fprintf(fCfg, "\n# Browse Graphic File Name -- name of a related graphic "
 	    "file that provides\n# an illustration of the data set.\n\n");
@@ -215,6 +226,7 @@ int init_fgdc_config(char *configFile, char *type)
 	    "data\" \"video\" \"view\" free text\n\n");
   fprintf(fCfg, "data_form = remote-sensing image\n\n\n");
 
+  /* FIXME: sort out the keywords
   // Keywords
   fprintf(fCfg, "[Keywords]\n");
   if (comment)
@@ -243,6 +255,7 @@ int init_fgdc_config(char *configFile, char *type)
 	    "covered by a data set.on.\n\n");
   fprintf(fCfg, "place = place 1\n");
   fprintf(fCfg, "place = place 2\n");
+  */
 
   // Data Quality Information
   fprintf(fCfg, "[Data Quality Information]\n");
@@ -460,6 +473,11 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->abstract, read_str(line, "abstract"));
       if (strncmp(test, "purpose", 7)==0)
         strcpy(fgdc->purpose, read_str(line, "purpose"));
+      if (strncmp(test, "acquisition", 11)==0 &&
+	  strlen(read_str(line, "acquisition")) > 0) {
+	fgdc->center_time = (char *) MALLOC(sizeof(char)*30);
+        strcpy(fgdc->center_time, read_str(line, "acquisition"));
+      }
       if (strncmp(test, "currentness", 11)==0)
         strcpy(fgdc->current, read_str(line, "currentness"));
       if (strncmp(test, "progress", 8)==0)
@@ -474,6 +492,11 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->accconst, read_str(line, "platform"));
       if (strncmp(test, "use_constraints", 15)==0)
         strcpy(fgdc->useconst, read_str(line, "use_constraints"));
+      if (strncmp(test, "copyright", 9)==0 &&
+	  strlen(read_str(line, "copyright")) > 0) {
+	fgdc->copyright = (char *) MALLOC(sizeof(char)*50);
+        strcpy(fgdc->copyright, read_str(line, "copyright"));
+      }
       if (strncmp(test, "browse_name", 11)==0 &&
 	  strlen(read_str(line, "browse_name")) > 0) {
 	fgdc->browse = (browseinfo *) MALLOC(sizeof(browseinfo));
@@ -526,14 +549,18 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
       FREE(test);
     }
 
+    /* FIXME: sort out this business later
     if (strncmp(line, "[Keywords]", 10)==0) 
       strcpy(params, "Keywords");
     if (strncmp(params, "Keywords", 8)==0) {
       test = read_param(line);
+      if (strncmp(test, "theme_count", 11) == 0)
+	fgdc->keyword.theme_count = read_int(line, "theme_count");
+      if (fgdc->keyword.theme_count > 0) {
       if (strncmp(test, "theme_thesaurus", 15)==0)
-        strcpy(fgdc->, read_str(line, "theme_thesaurus"));
+        strcpy(fgdc->keyword, read_str(line, "theme_thesaurus"));
       if (strncmp(test, "", 10)==0)
-        strcpy(fgdc->prolevau.origin, read_str(line, "originator"));
+        strcpy(fgdc->read_str(line, "originator"));
       if (strncmp(test, "publication_date", 16)==0)
         strcpy(fgdc->prolevau.pubdate, read_str(line, "publication_date"));
       if (strncmp(test, "title", 5)==0)
@@ -542,6 +569,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->prolevau.geoform, read_str(line, "data_form"));
       FREE(test);
     }
+    */
 
     if (strncmp(line, "[Spatial Reference Information]", 31)==0) 
       strcpy(params, "Spatial");
@@ -555,7 +583,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->storord, read_str(line, "storage_order"));
       FREE(test);
     }
-
+    
     if (strncmp(line, "[Data Quality Information]", 26)==0) 
       strcpy(params, "Quality");
     if (strncmp(params, "Quality", 7)==0) {
@@ -581,7 +609,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
       }
       FREE(test);
     }
-
+    
     if (strncmp(line, "[Spatial Data Organization Information]", 39)==0) 
       strcpy(params, "Organization");
     if (strncmp(params, "Organization", 12)==0) {
@@ -592,7 +620,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->rasttype, read_str(line, "raster_type"));
       FREE(test);
     }
-
+    
     if (strncmp(line, "[Spatial Reference Information]", 31)==0) 
       strcpy(params, "Spatial");
     if (strncmp(params, "Spatial", 7)==0) {
@@ -605,7 +633,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->storord, read_str(line, "storage_order"));
       FREE(test);
     }
-
+    
     if (strncmp(line, "[Distribution Information]", 26)==0) 
       strcpy(params, "Distribution");
     if (strncmp(params, "Distribution", 12)==0) {
@@ -706,6 +734,6 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
       FREE(test);
     }
   }
-
+  
   FCLOSE(fConfig);
 }

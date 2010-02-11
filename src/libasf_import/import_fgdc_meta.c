@@ -24,7 +24,9 @@ fgdc_meta *fgdc_meta_init(void)
   strcpy(fgdc->citation.onlink, "Unknown");
   strcpy(fgdc->abstract, MAGIC_UNSET_STRING);
   strcpy(fgdc->purpose, MAGIC_UNSET_STRING);
-  strcpy(fgdc->timeperd, "Unknown");
+  strcpy(fgdc->start_time, "Unknown");
+  fgdc->center_time = NULL;
+  strcpy(fgdc->end_time, "Unknown");
   strcpy(fgdc->current, "Unknown");
   strcpy(fgdc->progress, "Unknown");
   strcpy(fgdc->update, "Unknown");
@@ -68,7 +70,8 @@ fgdc_meta *fgdc_meta_init(void)
   fgdc->numbands = MAGIC_UNSET_INT;
   strcpy(fgdc->accconst, "Unknown");
   strcpy(fgdc->useconst, "Unknown");
-  fgdc->browse == NULL;
+  fgdc->copyright = NULL;
+  fgdc->browse = NULL;
   strcpy(fgdc->secsys, "Unknown");
   strcpy(fgdc->secclass, "Unknown");
   strcpy(fgdc->sechandl, "Unknown");
@@ -104,6 +107,8 @@ fgdc_meta *fgdc_meta_init(void)
     strcpy(fgdc->procstep[ii].procdesc, "Unknown");
     strcpy(fgdc->procstep[ii].procdate, "Unknown");
   }
+  strcpy(fgdc->ascdscin, "Unknown");
+  fgdc->mode = NULL;
 
   // Spatial Data Organization Information
   strcpy(fgdc->direct, "Unknown");
@@ -200,6 +205,49 @@ fgdc_meta *get_fgdc_meta(const char *dataFile)
       meta = meta_read(dataFile);
     isCEOS = TRUE;
     FREE(ceos);
+  }
+
+  // Some information can only be extracted from the metadata structure
+  if (meta) {
+    if (meta->general->orbit_direction == 'A')
+      sprintf(fgdc->ascdscin, "ascending");
+    else if (meta->general->orbit_direction == 'D')
+      sprintf(fgdc->ascdscin, "descending");
+    fgdc->mode = (char *) MALLOC(sizeof(char)*25);
+    strcpy(fgdc->mode, meta->general->mode);
+
+    if (!fgdc->center_time) {
+      // Read center time
+      int ii;
+      const char *monthName[12]=
+	{"JAN","FEB","MAR","APR","MAY","JUN",
+	 "JUL","AUG","SEP","OCT","NOV","DEC"};
+      ymd_date center_date, start_date, end_date;
+      hms_time center_time, start_time, end_time;
+      char month[5];
+      sscanf(meta->general->acquisition_date, "%d-%[^- ]-%d, %d:%d:%lf",
+	     &center_date.day, month, &center_date.year, 
+	     &center_time.hour, &center_time.min, &center_time.sec);    
+      for (ii=0; ii<12; ii++)
+	if (strcmp_case(month, monthName[ii]) == 0)
+	  center_date.month = ii+1;
+      
+      // Determine time range
+      double half_time = meta->sar->azimuth_time_per_pixel * 
+	meta->sar->original_line_count / 2;
+      start_date = end_date = center_date;
+      start_time = end_time = center_time;
+      add_time(half_time, &end_date, &end_time);
+      end_time.sec += 0.5;
+      sub_time(half_time, &start_date, &start_time);
+      start_time.sec += 0.5;
+      sprintf(fgdc->start_time, "%04d-%02d-%02d %02d:%02d:%02.0lf",
+	      start_date.year, start_date.month, start_date.day,
+	      start_time.hour, start_time.min, start_time.sec);
+      sprintf(fgdc->end_time, "%04d-%02d-%02d %02d:%02d:%02.0lf",
+	      end_date.year, end_date.month, end_date.day,
+	      end_time.hour, end_time.min, end_time.sec);
+    }
   }
 
   // Establish a file list ourselves
@@ -469,6 +517,7 @@ fgdc_meta *get_fgdc_meta(const char *dataFile)
 void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile) 
 {
   int ii, kk;
+  int year, month, day, hour, minute, second;
   FILE *fp;
   fp = FOPEN(outFile, "w");
 
@@ -497,9 +546,32 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
   fprintf(fp, "    </descript>\n");
   fprintf(fp, "    <timeperd>\n");
   fprintf(fp, "      <timeinfo>\n");
-  fprintf(fp, "        <sngdate>\n");
-  fprintf(fp, "          <caldate>%s</caldate>\n", fgdc->timeperd);
-  fprintf(fp, "        </sngdate>\n");
+  if (fgdc->center_time) {
+    sscanf(fgdc->center_time, "%d-%d-%d %d:%d:%d",
+	   &year, &month, &day, &hour, &minute, &second);
+    fprintf(fp, "        <sngdate>\n");
+    fprintf(fp, "          <caldate>%04d-%02d-%02d</caldate>\n", 
+	    year, month, day);
+    fprintf(fp, "          <time>%02d:%02d:%02d</time>\n", 
+	    hour, minute, second);
+    fprintf(fp, "        </sngdate>\n");
+  }
+  else {
+    fprintf(fp, "        <rngdates>\n");
+    sscanf(fgdc->start_time, "%d-%d-%d %d:%d:%d",
+	   &year, &month, &day, &hour, &minute, &second);
+    fprintf(fp, "          <begdate>%04d%02d%02d</begdate>\n", 
+	    year, month, day);
+    fprintf(fp, "          <begtime>%02d%02d%02d</begtime>\n", 
+	    hour, minute, second);
+    sscanf(fgdc->end_time, "%d-%d-%d %d:%d:%d",
+	   &year, &month, &day, &hour, &minute, &second);
+    fprintf(fp, "          <enddate>%04d%02d%02d</enddate>\n", 
+	    year, month, day);
+    fprintf(fp, "          <endtime>%02d%02d%02d</endtime>\n", 
+	    hour, minute, second);
+    fprintf(fp, "        </rngdates>\n");
+  }
   fprintf(fp, "      </timeinfo>\n");
   fprintf(fp, "      <current>%s</current>\n", fgdc->current);
   fprintf(fp, "    </timeperd>\n");
@@ -553,12 +625,16 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
   fprintf(fp, "    <plainsid>\n");
   fprintf(fp, "      <platflnm>%s</platflnm>\n", fgdc->platflnm);
   fprintf(fp, "      <instflnm>%s</instflnm>\n", fgdc->instflnm);
+  if (fgdc->mode)
+    fprintf(fp, "      <mode>%s</mode>\n", fgdc->mode);
   fprintf(fp, "    </plainsid>\n");
   fprintf(fp, "    <bandidnt>\n");
   fprintf(fp, "      <numbands>%d</numbands>\n", fgdc->numbands);
   fprintf(fp, "    </bandidnt>\n");
   fprintf(fp, "    <accconst>%s</accconst>\n", fgdc->accconst);
   fprintf(fp, "    <useconst>%s</useconst>\n", fgdc->useconst);
+  if (fgdc->copyright)
+    fprintf(fp, "    <copyright>%s</copyright>\n", fgdc->copyright);
   if (fgdc->browse) {
     fprintf(fp, "    <browse>\n");
     fprintf(fp, "      <browsen>%s</browsen>\n", fgdc->browse->browsen);
@@ -571,9 +647,6 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
   fprintf(fp, "      <secclass>%s</secclass>\n", fgdc->secclass);
   fprintf(fp, "      <sechandl>%s</sechandl>\n", fgdc->sechandl);
   fprintf(fp, "    </secinfo>\n");
-  fprintf(fp, "    <native>\n");
-  // FIXME: Here goes the information about the files and their sizes
-  fprintf(fp, "    </native>\n");
   fprintf(fp, "  </idinfo>\n");
 
   // Data Quality Information
@@ -635,6 +708,19 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
     fprintf(fp, "      </procstep>\n");
   }
   fprintf(fp, "    </lineage>\n");
+  if (strcmp_case(fgdc->ascdscin, "Unknown") != 0 || fgdc->mode) {
+    fprintf(fp, "    <acqinfo>\n");
+    fprintf(fp, "      <satlocza>0.0</satlocza>\n");
+    fprintf(fp, "      <satlocaa>0.0</satlocaa>\n");
+    fprintf(fp, "      <solarzea>0.0</solarzea>\n");
+    fprintf(fp, "      <solaraza>0.0</solaraza>\n");
+    fprintf(fp, "      <clocdrft>0.0</clocdrft>\n");
+    if (strcmp_case(fgdc->ascdscin, "ascending") == 0)
+      fprintf(fp, "      <ascdscin>0</ascdscin>\n");
+    else if (strcmp_case(fgdc->ascdscin, "descending") == 0)
+      fprintf(fp, "      <ascdscin>1</ascdscin>\n");
+    fprintf(fp, "    </acqinfo>\n");
+  }
   fprintf(fp, "  </dataqual>\n");
 
   // Spatial Data Organization Information

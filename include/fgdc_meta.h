@@ -74,7 +74,9 @@ typedef struct
   citeinfo citation;   // Citation flag
   char abstract[5000]; // Abstract
   char purpose[5000];  // Purpose
-  char timeperd[30];   // Time Period of Content
+  char start_time[30]; // Start Time
+  char *center_time;   // Center Time
+  char end_time[30];   // End Time
   char current[50];    // Currentness Reference
   char progress[50];   // Progress
   char update[50];     // Update
@@ -90,6 +92,7 @@ typedef struct
   int numbands;        // Number of Bands
   char accconst[50];   // Access Constraints
   char useconst[50];   // Use Constraints
+  char *copyright;     // Copyright Holder (user defined)
   browseinfo *browse;  // Browse image (optional)
   char secsys[50];     // Security Classification System
   char secclass[30];   // Security Classification
@@ -105,6 +108,8 @@ typedef struct
   sourceinfo *srcinfo; // Source Information
   int process_count;
   processinfo *procstep; // Processing Step
+  char ascdscin[15];   // Ascending/Descending Indicator
+  char *mode;          // Acquisition mode (user defined)
 
   // Spatial Data Organization Information
   char direct[20];     // Direct Spatial Reference Method
