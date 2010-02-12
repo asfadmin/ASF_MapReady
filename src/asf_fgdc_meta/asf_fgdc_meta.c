@@ -24,7 +24,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-create <type> <configFile] [-config <configFile>]\n"\
-"                [-log <logFile>] [-quiet] [-license] [-version] [-help]\n"\
+"                [-kml] [-log <logFile>] [-quiet] [-license] [-version] "\
+"[-help]\n"\
 "                <inFile> <outFile>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -60,11 +61,12 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "ceos.h"
 #include "asf_meta.h"
 #include "asf_import.h"
+#include "asf_vector.h"
 #include "proj.h"
 #include "asf_contact.h"
 #include <unistd.h>
 #include "gdal.h"
-
+#include "fgdc_meta.h"
 
 #define REQUIRED_ARGS 1
 #define FLAG_NOT_SET -1
@@ -110,6 +112,130 @@ static int checkForOption(char* key, int argc, char* argv[])
   return(FLAG_NOT_SET);
 }
 
+static void generateKML(char *inFile, char *outFile)
+{
+  meta_parameters *meta = NULL;
+  meta_projection *proj = NULL;
+  GDALDatasetH hGdal = NULL;
+  GDALDriverH hDriver = NULL;
+  char format[50];
+
+  // Register all known drivers
+  GDALAllRegister();
+
+  // Open file
+  hGdal = GDALOpen(inFile, GA_ReadOnly);
+  if (!hGdal)
+    asfPrintError("Failed to open file (%s)\n", inFile);
+
+  // Determine what we are dealing with
+  hDriver = GDALGetDatasetDriver(hGdal);
+  strcpy(format, GDALGetDriverShortName(hDriver));
+
+  // For CEOS we might need some extra help
+  // Just in case some of the parameters are not correctly filled
+  // e.g. KSAT raw did not have correct number of samples
+  int rowcount, colcount;
+  if (strcmp_case(format, "CEOS") == 0) {
+    report_level_t level = REPORT_LEVEL_NONE;
+    ceos_description *ceos = get_ceos_description(inFile, level);
+    if (ceos->product == RAW)
+      meta = meta_read_raw(inFile);
+    else
+      meta = meta_read(inFile);
+    FREE(ceos);
+    colcount = meta->general->sample_count;
+    rowcount = meta->general->line_count;
+  }
+  else {
+    colcount = GDALGetRasterXSize(hGdal);
+    rowcount = GDALGetRasterYSize(hGdal);
+    proj = gdal2meta_projection(hGdal, rowcount, colcount);
+  }
+  if (!meta && !proj) {
+    asfPrintWarning("No projection information to be extracted.\n"
+		    "Can't generate KML files!\n");
+    return;
+  }
+
+  // For the URSA metadata ingest we will generate KML files that carries
+  // the geographic information.
+  
+  // Setup file names
+  char *tmpDir = (char *) MALLOC(sizeof(char)*512);
+  sprintf(tmpDir, "kml-");
+  strcat(tmpDir, time_stamp_dir());
+  create_clean_dir(tmpDir);  
+
+  // Create the point file (and polygon file) and convert
+  FILE *fp;
+  char *baseName = get_basename(outFile);
+  char pointFile[512], pointKML[512], polygonFile[512], polygonKML[512];
+  double lat, lon, height;
+  double startX, startY, centerX, centerY, endX, endY;
+  startX = proj->startX;
+  startY = proj->startY;
+  endX = startX + proj->perX*colcount;
+  endY = startY + proj->perY*rowcount;
+  centerX = startX + (endX - startX)/2;
+  centerY = startY + (endY - startY)/2;
+
+  // Write boundary polygon file
+  sprintf(polygonFile, "%s%c%s_boundary.csv", 
+	  tmpDir, DIR_SEPARATOR, baseName);
+  fp = FOPEN(polygonFile, "w");
+  if (meta) {
+    fprintf(fp, "# Format: POLYGON\n#\n# ID,Latitude,Longitude\n");
+    fprintf(fp, "1,%.4lf,%.4lf\n", meta->location->lat_start_near_range,
+	    meta->location->lon_start_near_range);
+    fprintf(fp, "2,%.4lf,%.4lf\n", meta->location->lat_start_far_range,
+	    meta->location->lon_start_far_range);
+    fprintf(fp, "3,%.4lf,%.4lf\n", meta->location->lat_end_far_range,
+	    meta->location->lon_end_far_range);
+    fprintf(fp, "4,%.4lf,%.4lf\n", meta->location->lat_end_near_range,
+	    meta->location->lon_end_near_range);
+  }
+  else {
+    proj_to_latlon(proj, startX, startY, 0.0, &lat, &lon, &height);
+    fprintf(fp, "1,%.4lf,%.4lf\n", lat*R2D, lon*R2D);
+    proj_to_latlon(proj, endX, startY, 0.0, &lat, &lon, &height);
+    fprintf(fp, "2,%.4lf,%.4lf\n", lat*R2D, lon*R2D);
+    proj_to_latlon(proj, endX, endY, 0.0, &lat, &lon, &height);
+    fprintf(fp, "3,%.4lf,%.4lf\n", lat*R2D, lon*R2D);
+    proj_to_latlon(proj, startX, endY, 0.0, &lat, &lon, &height);
+    fprintf(fp, "4,%.4lf,%.4lf\n", lat*R2D, lon*R2D);
+  }
+  FCLOSE(fp);
+  sprintf(polygonKML, "%s_boundary.kml", baseName);
+  polygon2kml(polygonFile, polygonKML, FALSE);
+
+  // Write center point file
+  sprintf(pointFile, "%s%c%s_center.csv", tmpDir, DIR_SEPARATOR, baseName);
+  fp = FOPEN(pointFile, "w");
+  fprintf(fp, "# Format: POINT\n#\n# ID,Latitude,Longitude\n");
+  if (meta)
+    fprintf(fp, "1,%.4lf,%.4lf\n", meta->general->center_latitude,
+	    meta->general->center_longitude);
+  else {
+    proj_to_latlon(proj, centerX, centerY, 0.0, &lat, &lon, &height);
+    fprintf(fp, "1,%.4lf,%.4lf\n", lat*R2D, lon*R2D);
+  }
+  FCLOSE(fp);
+  sprintf(pointKML, "%s_center.kml", baseName);
+  point2kml(pointFile, pointKML, FALSE);
+  
+  // Clean up
+  remove_dir(tmpDir);
+  FREE(tmpDir);
+  FREE(baseName);
+  if (proj)
+    FREE(proj);
+  GDALClose(hGdal);
+  GDALDestroyDriverManager();
+  if (meta)
+    meta_free(meta);
+}
+
 int main(int argc, char *argv[])
 {
   char inFile[512], outFile[512], *configFile=NULL, type[10];
@@ -118,6 +244,7 @@ int main(int argc, char *argv[])
   int quiet_f;  /* log_f is a static global */
   int createFlag = FLAG_NOT_SET; // create configuration file flag
   int configFlag = FLAG_NOT_SET; // use configuration file flag
+  int kmlFlag = FLAG_NOT_SET;
 
   logflag = quietflag = FALSE;
   log_f = quiet_f = FLAG_NOT_SET;
@@ -136,6 +263,7 @@ int main(int argc, char *argv[])
   quiet_f  = checkForOption("-quiet", argc, argv);
   createFlag = checkForOption("-create", argc, argv);
   configFlag = checkForOption("-config", argc, argv);
+  kmlFlag = checkForOption("-kml", argc, argv);
 
   // We need to make sure the user specified the proper number of arguments
   int needed_args = 2 + REQUIRED_ARGS; // command & REQUIRED_ARGS
@@ -144,7 +272,8 @@ int main(int argc, char *argv[])
   if (quiet_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
   if (createFlag != FLAG_NOT_SET) {needed_args += 3; num_flags++;} // option & params
   if (configFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
-
+  if (kmlFlag != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
+  
   // Make sure we have the right number of args
   if(argc != needed_args) {
     print_usage();
@@ -206,6 +335,9 @@ int main(int argc, char *argv[])
     import_fgdc(inFile, configFile, outFile);
   else
     import_fgdc(inFile, NULL, outFile);
+
+  if (kmlFlag != FLAG_NOT_SET)
+    generateKML(inFile, outFile);
 
   FREE(configFile);
   FCLOSE(fLog);

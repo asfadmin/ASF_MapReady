@@ -1,7 +1,4 @@
 #include "fgdc_meta.h"
-#include "gdal.h"
-#include "ogr_srs_api.h"
-#include "cpl_conv.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_import.h"
@@ -160,167 +157,9 @@ fgdc_meta *fgdc_meta_init(void)
   return fgdc;
 }
 
-fgdc_meta *get_fgdc_meta(const char *dataFile)
+meta_projection *gdal2meta_projection(GDALDatasetH hGdal, 
+				      int rowcount, int colcount)
 {
-  meta_parameters *meta = NULL;
-  fgdc_meta *fgdc = fgdc_meta_init();
-  int isCEOS = FALSE;
-
-  if (!fileExists(dataFile))
-    asfPrintError("File (%s) does not exist!\n", dataFile);
-
-  // We are currently assuming that we deal with raster data in form of pixels.
-  // Other data can certainly be covered. At that stage we probably want to
-  // define some subroutines that take of that.
-
-  GDALDatasetH hGdal = NULL;
-  GDALRasterBandH hBand = NULL;
-  GDALDriverH hDriver = NULL;
-
-  // Register all known drivers
-  GDALAllRegister();
-
-  // Open file
-  hGdal = GDALOpen(dataFile, GA_ReadOnly);
-  if (!hGdal)
-    asfPrintError("Failed to open file (%s)\n", dataFile);
-
-  sprintf(fgdc->datsetid, "%s", dataFile);
-
-  // Determine what we are dealing with
-  hDriver = GDALGetDatasetDriver(hGdal);
-  strcpy(fgdc->formname, GDALGetDriverShortName(hDriver));
-  if (strcmp_case(fgdc->formname, "GTiff") == 0)
-    strcpy(fgdc->formname, "GeoTIFF");
-
-  // For CEOS we might need some extra help
-  // Just in case some of the parameters are not correctly filled
-  // e.g. KSAT raw did not have correct number of samples
-  if (strcmp_case(fgdc->formname, "CEOS") == 0) {
-    report_level_t level = REPORT_LEVEL_NONE;
-    ceos_description *ceos = get_ceos_description(dataFile, level);
-    if (ceos->product == RAW)
-      meta = meta_read_raw(dataFile);
-    else
-      meta = meta_read(dataFile);
-    isCEOS = TRUE;
-    FREE(ceos);
-  }
-
-  // Some information can only be extracted from the metadata structure
-  if (meta) {
-    if (meta->general->orbit_direction == 'A')
-      sprintf(fgdc->ascdscin, "ascending");
-    else if (meta->general->orbit_direction == 'D')
-      sprintf(fgdc->ascdscin, "descending");
-    fgdc->mode = (char *) MALLOC(sizeof(char)*25);
-    strcpy(fgdc->mode, meta->general->mode);
-
-    if (!fgdc->center_time) {
-      // Read center time
-      int ii;
-      const char *monthName[12]=
-	{"JAN","FEB","MAR","APR","MAY","JUN",
-	 "JUL","AUG","SEP","OCT","NOV","DEC"};
-      ymd_date center_date, start_date, end_date;
-      hms_time center_time, start_time, end_time;
-      char month[5];
-      sscanf(meta->general->acquisition_date, "%d-%[^- ]-%d, %d:%d:%lf",
-	     &center_date.day, month, &center_date.year, 
-	     &center_time.hour, &center_time.min, &center_time.sec);    
-      for (ii=0; ii<12; ii++)
-	if (strcmp_case(month, monthName[ii]) == 0)
-	  center_date.month = ii+1;
-      
-      // Determine time range
-      double half_time = meta->sar->azimuth_time_per_pixel * 
-	meta->sar->original_line_count / 2;
-      start_date = end_date = center_date;
-      start_time = end_time = center_time;
-      add_time(half_time, &end_date, &end_time);
-      end_time.sec += 0.5;
-      sub_time(half_time, &start_date, &start_time);
-      start_time.sec += 0.5;
-      sprintf(fgdc->start_time, "%04d-%02d-%02d %02d:%02d:%02.0lf",
-	      start_date.year, start_date.month, start_date.day,
-	      start_time.hour, start_time.min, start_time.sec);
-      sprintf(fgdc->end_time, "%04d-%02d-%02d %02d:%02d:%02.0lf",
-	      end_date.year, end_date.month, end_date.day,
-	      end_time.hour, end_time.min, end_time.sec);
-    }
-  }
-
-  // Establish a file list ourselves
-  // GDALGetFileList does not provide anything complete
-
-  // Determine data type
-  // FIX ME: Check endianess issue
-  hBand = GDALGetRasterBand(hGdal, 1);
-  int dataType = GDALGetRasterDataType(hBand);
-
-  // Apparently GDAL does not know anything about complex_byte
-  if ((dataType == GDT_Unknown || dataType == GDT_Byte) && isCEOS) {
-    if (meta->general->data_type == BYTE)
-      strcpy(fgdc->cvaltype, "unsigned eight bit integer");
-    if (meta->general->data_type == INTEGER16)
-      strcpy(fgdc->cvaltype, "unsigned sixteen bit integer");
-    if (meta->general->data_type == INTEGER32)
-      strcpy(fgdc->cvaltype, "unsigned thirtytwo bit integer");
-    if (meta->general->data_type == REAL32)
-      strcpy(fgdc->cvaltype, "single precision IEEE floating point");
-    if (meta->general->data_type == REAL64)
-      strcpy(fgdc->cvaltype, "double precision IEEE floating point");
-    if (meta->general->data_type == COMPLEX_BYTE)
-      strcpy(fgdc->cvaltype, "complex eight bit integer");
-    if (meta->general->data_type == COMPLEX_INTEGER16)
-      strcpy(fgdc->cvaltype, "complex sixteen bit integer");
-    if (meta->general->data_type == COMPLEX_INTEGER32)
-      strcpy(fgdc->cvaltype, "complex thirtytwo bit integer");
-    if (meta->general->data_type == COMPLEX_REAL32)
-      strcpy(fgdc->cvaltype, "complex single precision IEEE floating point");
-    if (meta->general->data_type == COMPLEX_REAL64)
-      strcpy(fgdc->cvaltype, "complex double precision IEEE floating point");
-  }
-  else if (dataType == GDT_Byte)
-    strcpy(fgdc->cvaltype, "unsigned eight bit integer");
-  else if (dataType == GDT_UInt16)
-    strcpy(fgdc->cvaltype, "unsigned sixteen bit integer");
-  else if (dataType == GDT_Int16)
-    strcpy(fgdc->cvaltype, "signed sixteen bit integer");
-  else if (dataType == GDT_UInt32)
-    strcpy(fgdc->cvaltype, "unsigned thirtytwo bit integer");
-  else if (dataType == GDT_Int32)
-    strcpy(fgdc->cvaltype, "signed thirtytwo bit integer");
-  else if (dataType == GDT_Float32)
-    strcpy(fgdc->cvaltype, "single precision IEEE floating point");
-  else if (dataType == GDT_Float64)
-    strcpy(fgdc->cvaltype, "double precision IEEE floating point");
-  else if (dataType == GDT_CInt16)
-    strcpy(fgdc->cvaltype, "complex sixteen bit integer");
-  else if (dataType == GDT_CInt32)
-    strcpy(fgdc->cvaltype, "complex thirtytwo bit integer");
-  else if (dataType == GDT_CFloat32)
-    strcpy(fgdc->cvaltype, "complex single precision IEEE floating point");
-  else if (dataType == GDT_CFloat64)
-    strcpy(fgdc->cvaltype, "complex double precision IEEE floating point");
-
-  // Check image dimensions
-  fgdc->colcount = GDALGetRasterXSize(hGdal);
-  if (fgdc->colcount <= 0 && isCEOS)
-    fgdc->colcount = meta->general->sample_count;
-  fgdc->rowcount = GDALGetRasterYSize(hGdal);
-  if (fgdc->rowcount <= 0 && isCEOS)
-    fgdc->rowcount = meta->general->line_count;
-  fgdc->numbands = GDALGetRasterCount(hGdal);
-  if (fgdc->numbands <= 0 && isCEOS)
-    fgdc->numbands = meta->general->band_count;
-
-  // FGDC metadata do not define the geographic corner coordinates of an image.
-  // Those need to be determined from the map projection corner coordinates.
-  // Unprojected data does not contain this type of information. This will
-  // need additional functionality such as metadata structure for CEOS data.
-
-  // Check projection information
   char *map_projection = NULL;
   meta_projection *proj = NULL;
   double adfGeoTransform[6];
@@ -330,22 +169,16 @@ fgdc_meta *get_fgdc_meta(const char *dataFile)
     if (OSRImportFromWkt(hSRS, &map_projection) == CE_None) {
       OGRErr ogr_error;
       proj = (meta_projection *) MALLOC(sizeof(meta_projection));
-      if (!meta) {
-	meta = raw_init();
-	meta->general->start_line = 0;
-	meta->general->start_sample = 0;
-	meta->general->line_count = fgdc->rowcount;
-	meta->general->sample_count = fgdc->colcount;
-      }
-      fgdc->projection = proj;
+      meta_parameters *meta = raw_init();
+      meta->general->start_line = 0;
+      meta->general->start_sample = 0;
+      meta->general->line_count = rowcount;
+      meta->general->sample_count = colcount;      
 
       // Extract projection specific map projection parameters
-      if (OSRIsGeographic(hSRS)) {
-	fgdc->projected = TRUE;
+      if (OSRIsGeographic(hSRS))
 	proj->type = LAT_LONG_PSEUDO_PROJECTION;
-      }
       else if (OSRIsProjected(hSRS)) {
-	fgdc->projected = TRUE;
 	char *projection = (char *) MALLOC(sizeof(char)*50);
 	sprintf(projection, "%s", OSRGetAttrValue(hSRS, "PROJECTION", 0));
 	if (strcmp_case(projection, "Albers_Conic_Equal_Area") == 0) {
@@ -357,10 +190,10 @@ fgdc_meta *get_fgdc_meta(const char *dataFile)
 	    OSRGetProjParm(hSRS, "standard_parallel_2", MAGIC_UNSET_DOUBLE, 
 			   &ogr_error);
 	  proj->param.albers.center_meridian =
-	    OSRGetProjParm(hSRS, "latitude_of_center", MAGIC_UNSET_DOUBLE, 
+	    OSRGetProjParm(hSRS, "longitude_of_center", MAGIC_UNSET_DOUBLE, 
 			   &ogr_error);
 	  proj->param.albers.orig_latitude =
-	    OSRGetProjParm(hSRS, "longitude_of_center", MAGIC_UNSET_DOUBLE, 
+	    OSRGetProjParm(hSRS, "latitude_of_center", MAGIC_UNSET_DOUBLE, 
 			   &ogr_error);
 	  proj->param.albers.false_easting =
 	    OSRGetProjParm(hSRS, "false_easting", MAGIC_UNSET_DOUBLE, 
@@ -493,6 +326,181 @@ fgdc_meta *get_fgdc_meta(const char *dataFile)
 
     OSRDestroySpatialReference(hSRS);
   }
+  return proj;
+}
+
+fgdc_meta *get_fgdc_meta(const char *dataFile)
+{
+  meta_parameters *meta = NULL;
+  fgdc_meta *fgdc = fgdc_meta_init();
+  int isCEOS = FALSE;
+
+  if (!fileExists(dataFile))
+    asfPrintError("File (%s) does not exist!\n", dataFile);
+
+  // We are currently assuming that we deal with raster data in form of pixels.
+  // Other data can certainly be covered. At that stage we probably want to
+  // define some subroutines that take of that.
+
+  GDALDatasetH hGdal = NULL;
+  GDALRasterBandH hBand = NULL;
+  GDALDriverH hDriver = NULL;
+
+  // Register all known drivers
+  GDALAllRegister();
+
+  // Open file
+  hGdal = GDALOpen(dataFile, GA_ReadOnly);
+  if (!hGdal)
+    asfPrintError("Failed to open file (%s)\n", dataFile);
+
+  sprintf(fgdc->datsetid, "%s", dataFile);
+
+  // Determine what we are dealing with
+  hDriver = GDALGetDatasetDriver(hGdal);
+  strcpy(fgdc->formname, GDALGetDriverShortName(hDriver));
+  if (strcmp_case(fgdc->formname, "GTiff") == 0)
+    strcpy(fgdc->formname, "GeoTIFF");
+
+  // For CEOS we might need some extra help
+  // Just in case some of the parameters are not correctly filled
+  // e.g. KSAT raw did not have correct number of samples
+  if (strcmp_case(fgdc->formname, "CEOS") == 0) {
+    report_level_t level = REPORT_LEVEL_NONE;
+    ceos_description *ceos = get_ceos_description(dataFile, level);
+    if (ceos->product == RAW)
+      meta = meta_read_raw(dataFile);
+    else
+      meta = meta_read(dataFile);
+    isCEOS = TRUE;
+    FREE(ceos);
+  }
+
+  // Some information can only be extracted from the metadata structure
+  if (meta) {
+    if (meta->general->orbit_direction == 'A')
+      sprintf(fgdc->ascdscin, "ascending");
+    else if (meta->general->orbit_direction == 'D')
+      sprintf(fgdc->ascdscin, "descending");
+    fgdc->mode = (char *) MALLOC(sizeof(char)*25);
+    strcpy(fgdc->mode, meta->general->mode);
+
+    if (!fgdc->center_time) {
+      // Read center time
+      int ii;
+      const char *monthName[12]=
+	{"JAN","FEB","MAR","APR","MAY","JUN",
+	 "JUL","AUG","SEP","OCT","NOV","DEC"};
+      ymd_date center_date, start_date, end_date;
+      hms_time center_time, start_time, end_time;
+      char month[5];
+      sscanf(meta->general->acquisition_date, "%d-%[^- ]-%d, %d:%d:%lf",
+	     &center_date.day, month, &center_date.year, 
+	     &center_time.hour, &center_time.min, &center_time.sec);    
+      for (ii=0; ii<12; ii++)
+	if (strcmp_case(month, monthName[ii]) == 0)
+	  center_date.month = ii+1;
+      
+      // Determine time range
+      double half_time = meta->sar->azimuth_time_per_pixel * 
+	meta->sar->original_line_count / 2;
+      start_date = end_date = center_date;
+      start_time = end_time = center_time;
+      add_time(half_time, &end_date, &end_time);
+      end_time.sec += 0.5;
+      sub_time(half_time, &start_date, &start_time);
+      start_time.sec += 0.5;
+      sprintf(fgdc->start_time, "%04d-%02d-%02d %02d:%02d:%02.0lf",
+	      start_date.year, start_date.month, start_date.day,
+	      start_time.hour, start_time.min, start_time.sec);
+      sprintf(fgdc->end_time, "%04d-%02d-%02d %02d:%02d:%02.0lf",
+	      end_date.year, end_date.month, end_date.day,
+	      end_time.hour, end_time.min, end_time.sec);
+    }
+  }
+
+  // Determine data type
+  // FIX ME: Check endianess issue
+  hBand = GDALGetRasterBand(hGdal, 1);
+  int dataType = GDALGetRasterDataType(hBand);
+
+  // Apparently GDAL does not know anything about complex_byte
+  if ((dataType == GDT_Unknown || dataType == GDT_Byte) && isCEOS) {
+    if (meta->general->data_type == BYTE)
+      strcpy(fgdc->cvaltype, "unsigned eight bit integer");
+    if (meta->general->data_type == INTEGER16)
+      strcpy(fgdc->cvaltype, "unsigned sixteen bit integer");
+    if (meta->general->data_type == INTEGER32)
+      strcpy(fgdc->cvaltype, "unsigned thirtytwo bit integer");
+    if (meta->general->data_type == REAL32)
+      strcpy(fgdc->cvaltype, "single precision IEEE floating point");
+    if (meta->general->data_type == REAL64)
+      strcpy(fgdc->cvaltype, "double precision IEEE floating point");
+    if (meta->general->data_type == COMPLEX_BYTE)
+      strcpy(fgdc->cvaltype, "complex eight bit integer");
+    if (meta->general->data_type == COMPLEX_INTEGER16)
+      strcpy(fgdc->cvaltype, "complex sixteen bit integer");
+    if (meta->general->data_type == COMPLEX_INTEGER32)
+      strcpy(fgdc->cvaltype, "complex thirtytwo bit integer");
+    if (meta->general->data_type == COMPLEX_REAL32)
+      strcpy(fgdc->cvaltype, "complex single precision IEEE floating point");
+    if (meta->general->data_type == COMPLEX_REAL64)
+      strcpy(fgdc->cvaltype, "complex double precision IEEE floating point");
+  }
+  else if (dataType == GDT_Byte)
+    strcpy(fgdc->cvaltype, "unsigned eight bit integer");
+  else if (dataType == GDT_UInt16)
+    strcpy(fgdc->cvaltype, "unsigned sixteen bit integer");
+  else if (dataType == GDT_Int16)
+    strcpy(fgdc->cvaltype, "signed sixteen bit integer");
+  else if (dataType == GDT_UInt32)
+    strcpy(fgdc->cvaltype, "unsigned thirtytwo bit integer");
+  else if (dataType == GDT_Int32)
+    strcpy(fgdc->cvaltype, "signed thirtytwo bit integer");
+  else if (dataType == GDT_Float32)
+    strcpy(fgdc->cvaltype, "single precision IEEE floating point");
+  else if (dataType == GDT_Float64)
+    strcpy(fgdc->cvaltype, "double precision IEEE floating point");
+  else if (dataType == GDT_CInt16)
+    strcpy(fgdc->cvaltype, "complex sixteen bit integer");
+  else if (dataType == GDT_CInt32)
+    strcpy(fgdc->cvaltype, "complex thirtytwo bit integer");
+  else if (dataType == GDT_CFloat32)
+    strcpy(fgdc->cvaltype, "complex single precision IEEE floating point");
+  else if (dataType == GDT_CFloat64)
+    strcpy(fgdc->cvaltype, "complex double precision IEEE floating point");
+
+  // Check image dimensions
+  fgdc->colcount = GDALGetRasterXSize(hGdal);
+  if (fgdc->colcount <= 0 && isCEOS)
+    fgdc->colcount = meta->general->sample_count;
+  fgdc->rowcount = GDALGetRasterYSize(hGdal);
+  if (fgdc->rowcount <= 0 && isCEOS)
+    fgdc->rowcount = meta->general->line_count;
+  fgdc->numbands = GDALGetRasterCount(hGdal);
+  if (fgdc->numbands <= 0 && isCEOS)
+    fgdc->numbands = meta->general->band_count;
+
+  // FGDC metadata do not define the geographic corner coordinates of an image.
+  // Those need to be determined from the map projection corner coordinates.
+  // Unprojected data does not contain this type of information. This will
+  // need additional functionality such as metadata structure for CEOS data.
+
+  // Check projection information
+  meta_projection *proj = gdal2meta_projection(hGdal, 
+					       fgdc->rowcount, fgdc->colcount);
+  fgdc->projection = proj;
+  if (proj)
+    fgdc->projected = TRUE;
+
+  // Setup up metadata structure if we have to
+  if (!meta) {
+    meta = raw_init();
+    meta->general->start_line = 0;
+    meta->general->start_sample = 0;
+    meta->general->line_count = fgdc->rowcount;
+    meta->general->sample_count = fgdc->colcount;      
+  }
 
   // Determine bounding box
   if (!meta->projection) {
@@ -503,9 +511,6 @@ fgdc_meta *get_fgdc_meta(const char *dataFile)
 			&fgdc->westbc, &fgdc->eastbc);
   meta->projection = NULL;
   
-  // For the URSA metadata ingest we will generate a KML file that carries
-  // the geographic information.
-
   GDALClose(hGdal);
   GDALDestroyDriverManager();
   if (meta)
@@ -531,9 +536,7 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
   fprintf(fp, "        <origin>%s</origin>\n", fgdc->citation.origin);
   fprintf(fp, "        <pubdate>%s</pubdate>\n", fgdc->citation.pubdate);
   fprintf(fp, "        <title>%s</title>\n", fgdc->citation.title);
-  fprintf(fp, "        <onlink>\n");
-  fprintf(fp, "        %s\n", fgdc->citation.onlink);
-  fprintf(fp, "        </onlink>\n");
+  fprintf(fp, "        <onlink>%s</onlink>\n", fgdc->citation.onlink);
   fprintf(fp, "      </citeinfo>\n");
   fprintf(fp, "    </citation>\n");
   fprintf(fp, "    <descript>\n");

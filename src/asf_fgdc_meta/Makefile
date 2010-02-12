@@ -5,6 +5,7 @@ DEST_TARGET = asf_fgdc_meta
 include ../../make_support/system_rules
 
 LIBS  = \
+	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \

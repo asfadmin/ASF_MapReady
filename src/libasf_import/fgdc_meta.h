@@ -2,6 +2,8 @@
 #define __FGDC_H__
 
 #include "asf_meta.h"
+#include "gdal.h"
+#include "ogr_srs_api.h"
 
 typedef struct
 {
@@ -141,6 +143,13 @@ typedef struct
 } fgdc_meta;
 
 // Function prototypes
+void import_fgdc(const char *inBaseName, const char *configFile,
+		 const char *outBaseName);
+meta_projection *gdal2meta_projection(GDALDatasetH hGdal, 
+				      int rowcount, int colcount);
+fgdc_meta *fgdc_meta_init(void);
 fgdc_meta *read_fgdc_meta(const char *dataFile);
+void update_fgdc_meta(fgdc_meta *fgdc, char *configFile);
+
 
 #endif

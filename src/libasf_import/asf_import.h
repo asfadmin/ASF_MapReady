@@ -5,10 +5,6 @@
 #include "asf_meta.h"
 #endif
 
-#ifndef __FGDC_META_H__
-#include "fgdc_meta.h"
-#endif
-
 #define TOOLS_META_EXT    ".meta"
 #define TOOLS_IMAGE_EXT   ".img"
 #define TOOLS_RAW_EXT     ".img"
@@ -110,11 +106,6 @@ void import_terrasar(const char *inFileName, radiometry_t radiometry,
 		     const char *outBaseName, int ampOnly);
 void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
 		      const char *outBaseName, int ampOnly);
-
-void import_fgdc(const char *inBaseName, const char *configFile,
-		 const char *outBaseName);
-fgdc_meta *fgdc_meta_init(void);
-void update_fgdc_meta(fgdc_meta *fgdc, char *configFile);
 
 void assign_band_names(meta_parameters *meta, char *outMetaName,
                char *bandExt, int band, int nBands, int nBandsOut,
