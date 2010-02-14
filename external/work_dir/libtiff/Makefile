@@ -20,7 +20,6 @@ build_stamp:
 	tar xvf $(TARFILE)
 	rm -f $(TARFILE)
 	(   cd $(UNPACK_DIR) ; \
-		CFLAGS="-fPIC" \
 	    ./configure --prefix=$(ROOT_DIR) --disable-jpeg --disable-zlib --disable-shared; \
 	    $(MAKE) ; \
 	    $(MAKE) install ; \

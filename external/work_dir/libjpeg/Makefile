@@ -25,7 +25,6 @@ build_stamp:
 	tar xvf $(TARFILE)
 	rm -f $(TARFILE)
 	(   cd $(UNPACK_DIR) ; \
-		CFLAGS="-fPIC" \
 	    ./configure --prefix=$(ROOT_DIR) ; \
 	    make ; \
 	    make install-lib ; \
