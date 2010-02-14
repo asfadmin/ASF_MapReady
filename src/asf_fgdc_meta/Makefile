@@ -20,7 +20,8 @@ LIBS  = \
         $(PNG_LIBS) \
         $(GEOTIFF_LIBS) \
 	$(XML_LIBS) \
-	$(ZLIB_LIBS)
+	$(ZLIB_LIBS) \
+	-ldl
 
 OBJS  = asf_fgdc_meta.o
 
