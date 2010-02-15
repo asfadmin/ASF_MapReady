@@ -27,7 +27,8 @@ build_stamp:
 			--prefix=$(ROOT_DIR) \
 		--with-png=internal --with-jpeg=internal \
 		--with-libtiff=internal --with-geotiff=internal \
-		--with-libz=internal --without-jasper --without-oci; \
+		--with-libz=internal --with-gif=internal \
+		--without-oci --without-curl --without-jasper; \
 		make ; \
 		make install ; \
 	)
