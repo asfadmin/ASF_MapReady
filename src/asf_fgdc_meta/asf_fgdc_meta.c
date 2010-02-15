@@ -173,12 +173,14 @@ static void generateKML(char *inFile, char *outFile)
   char pointFile[512], pointKML[512], polygonFile[512], polygonKML[512];
   double lat, lon, height;
   double startX, startY, centerX, centerY, endX, endY;
-  startX = proj->startX;
-  startY = proj->startY;
-  endX = startX + proj->perX*colcount;
-  endY = startY + proj->perY*rowcount;
-  centerX = startX + (endX - startX)/2;
-  centerY = startY + (endY - startY)/2;
+  if (proj) {
+    startX = proj->startX;
+    startY = proj->startY;
+    endX = startX + proj->perX*colcount;
+    endY = startY + proj->perY*rowcount;
+    centerX = startX + (endX - startX)/2;
+    centerY = startY + (endY - startY)/2;
+  }
 
   // Write boundary polygon file
   sprintf(polygonFile, "%s%c%s_boundary.csv", 
