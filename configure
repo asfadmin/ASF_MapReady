@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG ac_pt_PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF LIBTIFF_LOCATION ASF_LIB_PNG ASF_LIB_GEOTIFF ASF_LIB_SHAPELIB ASF_LIB_FFTW GTK_CFLAGS GTK_LIBS ASF_LIB_EXIF ASF_LIB_XML2 LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR DOCDIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG ac_pt_PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF LIBTIFF_LOCATION ASF_LIB_PNG ASF_LIB_GEOTIFF ASF_LIB_SHAPELIB ASF_LIB_FFTW GTK_CFLAGS GTK_LIBS ASF_LIB_EXIF ASF_LIB_XML2 ASF_LIB_GDAL LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR DOCDIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -3946,219 +3946,9 @@ fi
 
 
 #### libtiff check ####
-if test "${ac_cv_header_tiff_h+set}" = set; then
-  echo "$as_me:$LINENO: checking for tiff.h" >&5
-echo $ECHO_N "checking for tiff.h... $ECHO_C" >&6
-if test "${ac_cv_header_tiff_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-fi
-echo "$as_me:$LINENO: result: $ac_cv_header_tiff_h" >&5
-echo "${ECHO_T}$ac_cv_header_tiff_h" >&6
-else
-  # Is the header compilable?
-echo "$as_me:$LINENO: checking tiff.h usability" >&5
-echo $ECHO_N "checking tiff.h usability... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <tiff.h>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_header_compiler=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_header_compiler=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-echo "${ECHO_T}$ac_header_compiler" >&6
-
-# Is the header present?
-echo "$as_me:$LINENO: checking tiff.h presence" >&5
-echo $ECHO_N "checking tiff.h presence... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <tiff.h>
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_c_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-  ac_header_preproc=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
-fi
-rm -f conftest.err conftest.$ac_ext
-echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-echo "${ECHO_T}$ac_header_preproc" >&6
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { echo "$as_me:$LINENO: WARNING: tiff.h: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: tiff.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: tiff.h: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: tiff.h: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: tiff.h: present but cannot be compiled" >&5
-echo "$as_me: WARNING: tiff.h: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: tiff.h:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: tiff.h:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: tiff.h: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: tiff.h: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: tiff.h:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: tiff.h:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: tiff.h: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: tiff.h: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: tiff.h: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: tiff.h: in the future, the compiler will take precedence" >&2;}
-    (
-      cat <<\_ASBOX
-## ------------------------------------------ ##
-## Report this to the AC_PACKAGE_NAME lists.  ##
-## ------------------------------------------ ##
-_ASBOX
-    ) |
-      sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-echo "$as_me:$LINENO: checking for tiff.h" >&5
-echo $ECHO_N "checking for tiff.h... $ECHO_C" >&6
-if test "${ac_cv_header_tiff_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_header_tiff_h=$ac_header_preproc
-fi
-echo "$as_me:$LINENO: result: $ac_cv_header_tiff_h" >&5
-echo "${ECHO_T}$ac_cv_header_tiff_h" >&6
-
-fi
-if test $ac_cv_header_tiff_h = yes; then
-  echo "$as_me:$LINENO: checking for TIFFGetTagListCount in -ltiff" >&5
-echo $ECHO_N "checking for TIFFGetTagListCount in -ltiff... $ECHO_C" >&6
-if test "${ac_cv_lib_tiff_TIFFGetTagListCount+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-ltiff  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char TIFFGetTagListCount ();
-int
-main ()
-{
-TIFFGetTagListCount ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_lib_tiff_TIFFGetTagListCount=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_lib_tiff_TIFFGetTagListCount=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_tiff_TIFFGetTagListCount" >&5
-echo "${ECHO_T}$ac_cv_lib_tiff_TIFFGetTagListCount" >&6
-if test $ac_cv_lib_tiff_TIFFGetTagListCount = yes; then
-  have_tiff="yes"
-else
-  have_tiff="no"
-fi
-
-else
-  have_tiff="no"
-fi
-
-
+#AC_CHECK_HEADER(tiff.h,
+#  AC_CHECK_LIB(tiff,TIFFGetTagListCount,have_tiff="yes",have_tiff="no"),
+#  have_tiff="no")
 if test "$sys" = "win32" ; then
   have_tiff="no"
 fi
@@ -4256,213 +4046,9 @@ fi
 
 
 #### libgeotiff check ####
-if test "${ac_cv_header_geotiff_h+set}" = set; then
-  echo "$as_me:$LINENO: checking for geotiff.h" >&5
-echo $ECHO_N "checking for geotiff.h... $ECHO_C" >&6
-if test "${ac_cv_header_geotiff_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-fi
-echo "$as_me:$LINENO: result: $ac_cv_header_geotiff_h" >&5
-echo "${ECHO_T}$ac_cv_header_geotiff_h" >&6
-else
-  # Is the header compilable?
-echo "$as_me:$LINENO: checking geotiff.h usability" >&5
-echo $ECHO_N "checking geotiff.h usability... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <geotiff.h>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_header_compiler=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_header_compiler=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-echo "${ECHO_T}$ac_header_compiler" >&6
-
-# Is the header present?
-echo "$as_me:$LINENO: checking geotiff.h presence" >&5
-echo $ECHO_N "checking geotiff.h presence... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <geotiff.h>
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_c_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-  ac_header_preproc=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
-fi
-rm -f conftest.err conftest.$ac_ext
-echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-echo "${ECHO_T}$ac_header_preproc" >&6
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { echo "$as_me:$LINENO: WARNING: geotiff.h: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: geotiff.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: geotiff.h: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: geotiff.h: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: geotiff.h: present but cannot be compiled" >&5
-echo "$as_me: WARNING: geotiff.h: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: geotiff.h:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: geotiff.h:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: geotiff.h: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: geotiff.h: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: geotiff.h:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: geotiff.h:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: geotiff.h: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: geotiff.h: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: geotiff.h: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: geotiff.h: in the future, the compiler will take precedence" >&2;}
-    (
-      cat <<\_ASBOX
-## ------------------------------------------ ##
-## Report this to the AC_PACKAGE_NAME lists.  ##
-## ------------------------------------------ ##
-_ASBOX
-    ) |
-      sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-echo "$as_me:$LINENO: checking for geotiff.h" >&5
-echo $ECHO_N "checking for geotiff.h... $ECHO_C" >&6
-if test "${ac_cv_header_geotiff_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_header_geotiff_h=$ac_header_preproc
-fi
-echo "$as_me:$LINENO: result: $ac_cv_header_geotiff_h" >&5
-echo "${ECHO_T}$ac_cv_header_geotiff_h" >&6
-
-fi
-if test $ac_cv_header_geotiff_h = yes; then
-  echo "$as_me:$LINENO: checking for main in -lgeotiff" >&5
-echo $ECHO_N "checking for main in -lgeotiff... $ECHO_C" >&6
-if test "${ac_cv_lib_geotiff_main+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgeotiff  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-main ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_lib_geotiff_main=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_lib_geotiff_main=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_geotiff_main" >&5
-echo "${ECHO_T}$ac_cv_lib_geotiff_main" >&6
-if test $ac_cv_lib_geotiff_main = yes; then
-  have_geotiff="yes"
-else
-  have_geotiff="no"
-fi
-
-else
-  have_geotiff="no"
-fi
-
-
+#AC_CHECK_HEADER(geotiff.h,
+#  AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no"),
+#  have_geotiff="no")
 if test "$sys" = "win32" ; then
   have_geotiff="no"
 fi
@@ -4799,6 +4385,18 @@ else
    XML2_LIBS="-lxml2"
    XML2_CFLAGS="-I/usr/include/libxml2"
   fi
+fi
+
+
+#### libgdal check ####
+##### --> always use our own libgdal version
+#####     not point in trying to sort out external dependencies
+have_gdal="no"
+if test "$have_gdal" = "no" ; then
+   ASF_LIB_GDAL="${ext_lib_src_dir}/libgdal"
+   GDAL_LIBS="\$(LIBDIR)/libgdal.a"
+else
+   GDAL_LIBS="-lgdal"
 fi
 
 
@@ -5758,6 +5356,7 @@ s,@GTK_CFLAGS@,$GTK_CFLAGS,;t t
 s,@GTK_LIBS@,$GTK_LIBS,;t t
 s,@ASF_LIB_EXIF@,$ASF_LIB_EXIF,;t t
 s,@ASF_LIB_XML2@,$ASF_LIB_XML2,;t t
+s,@ASF_LIB_GDAL@,$ASF_LIB_GDAL,;t t
 s,@LIBGLADE_CFLAGS@,$LIBGLADE_CFLAGS,;t t
 s,@LIBGLADE_LIBS@,$LIBGLADE_LIBS,;t t
 s,@ASF_GUI@,$ASF_GUI,;t t
@@ -6701,6 +6300,7 @@ s,@GTK_CFLAGS@,$GTK_CFLAGS,;t t
 s,@GTK_LIBS@,$GTK_LIBS,;t t
 s,@ASF_LIB_EXIF@,$ASF_LIB_EXIF,;t t
 s,@ASF_LIB_XML2@,$ASF_LIB_XML2,;t t
+s,@ASF_LIB_GDAL@,$ASF_LIB_GDAL,;t t
 s,@LIBGLADE_CFLAGS@,$LIBGLADE_CFLAGS,;t t
 s,@LIBGLADE_LIBS@,$LIBGLADE_LIBS,;t t
 s,@ASF_GUI@,$ASF_GUI,;t t

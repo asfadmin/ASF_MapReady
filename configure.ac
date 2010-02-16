@@ -155,9 +155,9 @@ fi
 AC_SUBST(ASF_LIB_JPEG)
 
 #### libtiff check ####
-AC_CHECK_HEADER(tiff.h,
-  AC_CHECK_LIB(tiff,TIFFGetTagListCount,have_tiff="yes",have_tiff="no"),
-  have_tiff="no")
+#AC_CHECK_HEADER(tiff.h,
+#  AC_CHECK_LIB(tiff,TIFFGetTagListCount,have_tiff="yes",have_tiff="no"),
+#  have_tiff="no")
 if test "$sys" = "win32" ; then
   have_tiff="no"
 fi
@@ -186,9 +186,9 @@ fi
 AC_SUBST(ASF_LIB_PNG)
 
 #### libgeotiff check ####
-AC_CHECK_HEADER(geotiff.h,
-  AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no"),
-  have_geotiff="no")
+#AC_CHECK_HEADER(geotiff.h,
+#  AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no"),
+#  have_geotiff="no")
 if test "$sys" = "win32" ; then
   have_geotiff="no"
 fi
@@ -260,6 +260,18 @@ else
   fi
 fi
 AC_SUBST(ASF_LIB_XML2)
+
+#### libgdal check ####
+##### --> always use our own libgdal version
+#####     not point in trying to sort out external dependencies
+have_gdal="no"
+if test "$have_gdal" = "no" ; then
+   ASF_LIB_GDAL="${ext_lib_src_dir}/libgdal"
+   GDAL_LIBS="\$(LIBDIR)/libgdal.a"
+else
+   GDAL_LIBS="-lgdal"
+fi
+AC_SUBST(ASF_LIB_GDAL)
 
 #### libglade check ####
 if test "$have_gtk" = "yes" ; then
