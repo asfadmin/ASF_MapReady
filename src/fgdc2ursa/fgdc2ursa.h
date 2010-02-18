@@ -1,7 +1,9 @@
 #ifndef __FGDC2URSA_H__
 #define __FGDC2URSA_H__
 
+#include "sqlca.h"
 #include "asf_meta.h"
+#include "dateUtil.h"
 
 #define MAX_DATASET_ID 75
 #define MAX_ORIGIN 50
@@ -48,13 +50,13 @@ typedef struct
   char platform[MAX_PLATFORM];        // Platform
   char instrument[MAX_INSTRUMENT];    // Instrument
   int band_count;             // Number of bands
-  char browse_location[MAX_BROWSE_LOCATION];     // Browse image location
-  char browse_format[MAX_BROWSE_FORMAT];         // Browse image format
+  char *browse_location;      // Browse image location
+  char *browse_format;        // Browse image format
   char access[MAX_ACCESS];    // Data access level
   char copyright[MAX_COPYRIGHT];      // Copyright holder
-  char start_time[MAX_START_TIME];    // Image start time
-  char center_time[MAX_CENTER_TIME];  // Image center time
-  char end_time[MAX_END_TIME];        // Image end time
+  char *start_time;           // Image start time
+  char *center_time;          // Image center time
+  char *end_time;             // Image end time
   char orbit_direction[MAX_ORBIT_DIRECTION];     // Orbit direction
   char mode[MAX_MODE];        // Imaging mode
   char spatial_reference[MAX_SPATIAL_REFERENCE]; // Spatial reference
@@ -65,6 +67,9 @@ typedef struct
   char format[MAX_FORMAT];    // Format name
   float fees;                 // Fees
 } dataset_t;
+
+void addData(dataset_t *data);
+void getCenterTime(char *start_time, char *end_time, char *center_time);
 
 
 #endif

@@ -40,16 +40,16 @@ fgdc_meta *fgdc_meta_init(void)
   fgdc->keywords.theme = 
     (keyinfo *) MALLOC(sizeof(keyinfo)*fgdc->keywords.theme_count);
   for (kk=0; kk<fgdc->keywords.theme_count; kk++) {
-    strcpy(fgdc->keywords.theme[kk].thesaurus, "Unknown");
+    strcpy(fgdc->keywords.theme[kk].thesaurus, "SAR backscatter");
     fgdc->keywords.theme[kk].key_count = 1;
     fgdc->keywords.theme[kk].keyword =
       (char **) MALLOC(sizeof(char *)*fgdc->keywords.theme[kk].key_count);
     for (ii=0; ii<fgdc->keywords.theme[kk].key_count; ii++) {
       fgdc->keywords.theme[kk].keyword[ii] = (char *) MALLOC(sizeof(char)*50);
-      strcpy(fgdc->keywords.theme[kk].keyword[ii], "Unknown");
+      strcpy(fgdc->keywords.theme[kk].keyword[ii], "Raw signal");
     }
   }
-  fgdc->keywords.place_count = 1;
+  fgdc->keywords.place_count = 0;
   fgdc->keywords.place = 
     (keyinfo *) MALLOC(sizeof(keyinfo)*fgdc->keywords.place_count);
   for (kk=0; kk<fgdc->keywords.place_count; kk++) {
@@ -80,7 +80,7 @@ fgdc_meta *fgdc_meta_init(void)
   fgdc->horizpar = NULL;
   fgdc->vertaccr = NULL;
   // fgdc->source_count = MAGIC_UNSET_INT;
-  fgdc->source_count = 1;
+  fgdc->source_count = 0;
   // fgdc->srcinfo = NULL;
   fgdc->srcinfo = (sourceinfo *) MALLOC(sizeof(browseinfo)*fgdc->source_count);
   for (ii=0; ii<fgdc->source_count; ii++) {
@@ -654,19 +654,27 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 
   // Data Quality Information
   fprintf(fp, "  <dataqual>\n");
-  fprintf(fp, "    <attracc>\n");
-  fprintf(fp, "      <attraccr>%s</attraccr>\n", fgdc->attraccr);
-  fprintf(fp, "    </attracc>\n");
+  if (fgdc->attraccr) {
+    fprintf(fp, "    <attracc>\n");
+    fprintf(fp, "      <attraccr>%s</attraccr>\n", fgdc->attraccr);
+    fprintf(fp, "    </attracc>\n");
+  }
   fprintf(fp, "    <logic>%s</logic>\n", fgdc->logic);
   fprintf(fp, "    <complete>%s</complete>\n", fgdc->complete);
-  fprintf(fp, "    <posacc>\n");
-  fprintf(fp, "      <horizpa>\n");
-  fprintf(fp, "        <horizpar>%s</horizpar>\n", fgdc->horizpar);
-  fprintf(fp, "      </horizpa>\n");
-  fprintf(fp, "      <vertacc>\n");
-  fprintf(fp, "        <vertaccr>%s</vertaccr>\n", fgdc->vertaccr);
-  fprintf(fp, "      </vertacc>\n");
-  fprintf(fp, "    </posacc>\n");
+  if (fgdc->horizpar || fgdc->vertaccr) {
+    fprintf(fp, "    <posacc>\n");
+    if (fgdc->horizpar) {
+      fprintf(fp, "      <horizpa>\n");
+      fprintf(fp, "        <horizpar>%s</horizpar>\n", fgdc->horizpar);
+      fprintf(fp, "      </horizpa>\n");
+    }
+    if (fgdc->vertaccr) {
+      fprintf(fp, "      <vertacc>\n");
+      fprintf(fp, "        <vertaccr>%s</vertaccr>\n", fgdc->vertaccr);
+      fprintf(fp, "      </vertacc>\n");
+    }
+    fprintf(fp, "    </posacc>\n");
+  }
   fprintf(fp, "    <lineage>\n");
   for (ii=0; ii<fgdc->source_count; ii++) {
     fprintf(fp, "      <srcinfo>\n");

@@ -1,6 +1,8 @@
 # Makefile for fgdc2ursa
 
 DEST_TARGET = fgdc2ursa
+ORACLE_PRECOMP = /oracle/u01/app/oracle/product/10.1.0/Db_1/precomp/public
+ORACLE_LIB = /oracle/u01/app/oracle/product/10.1.0/Db_1/lib
 
 include ../../make_support/system_rules
 
@@ -18,13 +20,18 @@ LIBS  = \
         $(PNG_LIBS) \
         $(GEOTIFF_LIBS) \
 	$(XML_LIBS) \
-	$(ZLIB_LIBS)
+	$(ZLIB_LIBS) \
+	$(ORACLE_LIB)/libclntsh.so \
+	$(ORACLE_LIB)/libsql10.a
 
 CFLAGS += $(XML_CFLAGS) -D REENTRANT
 
-OBJS  = fgdc2ursa.o
+OBJS  = oracle.o fgdc2ursa.o
 
-all:    fgdc2ursa clean
+all:	oracle fgdc2ursa clean
+
+oracle:
+	cp $(ORACLE_PRECOMP)/*.h $(ASF_INCLUDE_DIR)
 
 fgdc2ursa: $(OBJS)
 	$(CC) $(CFLAGS) -o fgdc2ursa $(OBJS) $(LIBS) $(LDFLAGS)

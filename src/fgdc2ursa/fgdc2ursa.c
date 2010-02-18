@@ -175,6 +175,26 @@ static char *checkTime(int year, int month, int day,
   return message;
 }
 
+
+void getCenterTime(char *start_time, char *end_time, char *center_time)
+{
+  ymd_date beginDate, endDate;
+  hms_time beginTime, endTime;
+
+  sscanf(start_time, "%d-%d-%d %d:%d:%lf",
+	 &beginDate.year, &beginDate.month, &beginDate.day,
+	 &beginTime.hour, &beginTime.min, &beginTime.sec);
+  sscanf(end_time, "%d-%d-%d %d:%d:%lf",
+	 &endDate.year, &endDate.month, &endDate.day,
+	 &endTime.hour, &endTime.min, &endTime.sec);
+  double deltaTime = 
+    fabs(time_difference(&beginDate, &beginTime, &endDate, &endTime)) / 2.0;
+  add_time(deltaTime, &beginDate, &beginTime);
+  sprintf(center_time, "%04d-%02d-%02d %02d:%02d:%02.0lf\n",
+	  beginDate.year, beginDate.month, beginDate.day,
+	  beginTime.hour, beginTime.min, beginTime.sec);
+}
+
 int main(int argc, char *argv[])
 {
   char inFile[512], *configFile=NULL, type[10];
@@ -287,13 +307,13 @@ int main(int argc, char *argv[])
   strcpy(data->platform, MAGIC_UNSET_STRING);
   strcpy(data->instrument, MAGIC_UNSET_STRING);
   data->band_count = MAGIC_UNSET_INT;
-  strcpy(data->browse_location, MAGIC_UNSET_STRING);
-  strcpy(data->browse_format, MAGIC_UNSET_STRING);
+  data->browse_location = NULL;
+  data->browse_format = NULL;
   strcpy(data->access, MAGIC_UNSET_STRING);
   strcpy(data->copyright, MAGIC_UNSET_STRING);
-  strcpy(data->start_time, MAGIC_UNSET_STRING);
-  strcpy(data->center_time, MAGIC_UNSET_STRING);
-  strcpy(data->end_time, MAGIC_UNSET_STRING);
+  data->start_time = NULL;
+  data->center_time = NULL;
+  data->end_time = NULL;
   strcpy(data->orbit_direction, MAGIC_UNSET_STRING);
   strcpy(data->mode, MAGIC_UNSET_STRING);
   strcpy(data->spatial_reference, MAGIC_UNSET_STRING);
@@ -319,13 +339,13 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_DATASET_ID) {
     error = TRUE;
     sprintf(tmp, "Dataset ID - String length: %d, allowed characters: %d\n", 
-	    strlen(string), MAX_DATASET_ID);
+	    (int) strlen(string), MAX_DATASET_ID);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->dataset_id, 
 	   xml_get_string_value(doc, "metadata.idinfo.datsetid"));
-    printf("Dataset ID: %s\n", data->dataset_id);
+    //printf("Dataset ID: %s\n", data->dataset_id);
   }
 
   // Origin
@@ -334,13 +354,13 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_ORIGIN) {
     error = TRUE;
     sprintf(tmp, "Origin - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_ORIGIN);
+	    (int) strlen(string), MAX_ORIGIN);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->origin, xml_get_string_value(doc, 
       "metadata.idinfo.citation.citeinfo.origin"));
-    printf("Origin: %s\n", data->origin);
+    //printf("Origin: %s\n", data->origin);
   }
 
   // Title
@@ -349,13 +369,13 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_TITLE) {
     error = TRUE;
     sprintf(tmp, "Title - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_TITLE);
+	    (int) strlen(string), MAX_TITLE);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->title, xml_get_string_value(doc, 
       "metadata.idinfo.citation.citeinfo.title"));
-    printf("Title: %s\n", data->title);
+    //printf("Title: %s\n", data->title);
   }
 
   // Online link
@@ -364,13 +384,13 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_ONLINE_LINK) {
     error = TRUE;
     sprintf(tmp, "Online link - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_ONLINE_LINK);
+	    (int) strlen(string), MAX_ONLINE_LINK);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->online_link, xml_get_string_value(doc, 
       "metadata.idinfo.citation.citeinfo.onlink"));
-    printf("Online link: %s\n", data->online_link);
+    //printf("Online link: %s\n", data->online_link);
   }
 
   // West bounding coordinate
@@ -384,7 +404,7 @@ int main(int argc, char *argv[])
   else {
     data->west_bounding =
       xml_get_double_value(doc, "metadata.idinfo.spdom.bounding.westbc");
-    printf("West bounding coordinate: %.4lf\n", data->west_bounding);
+    //printf("West bounding coordinate: %.4lf\n", data->west_bounding);
   }
 
   // East bounding coordinate
@@ -398,7 +418,7 @@ int main(int argc, char *argv[])
   else {
     data->east_bounding =
       xml_get_double_value(doc, "metadata.idinfo.spdom.bounding.eastbc");
-    printf("East bounding coordinate: %.4lf\n", data->east_bounding);
+    //printf("East bounding coordinate: %.4lf\n", data->east_bounding);
   }
 
   // North bounding coordinate
@@ -412,7 +432,7 @@ int main(int argc, char *argv[])
   else {
     data->north_bounding =
       xml_get_double_value(doc, "metadata.idinfo.spdom.bounding.northbc");
-    printf("West bounding coordinate: %.4lf\n", data->north_bounding);
+    //printf("West bounding coordinate: %.4lf\n", data->north_bounding);
   }
 
   // South bounding coordinate
@@ -426,7 +446,7 @@ int main(int argc, char *argv[])
   else {
     data->south_bounding =
       xml_get_double_value(doc, "metadata.idinfo.spdom.bounding.southbc");
-    printf("South bounding coordinate: %.4lf\n", data->south_bounding);
+    //printf("South bounding coordinate: %.4lf\n", data->south_bounding);
   }
 
   // Open KML for reading
@@ -447,14 +467,14 @@ int main(int argc, char *argv[])
 	   &data->near_end_lat, &data->near_end_lon, &height,
 	   &data->far_end_lat, &data->far_end_lon, &height,
 	   &data->far_start_lat, &data->far_start_lon);
-    printf("Near start latitude: %.4f\n", data->near_start_lat);
-    printf("Near start longitude: %.4f\n", data->near_start_lon);
-    printf("Near end latitude: %.4f\n", data->near_end_lat);
-    printf("Near end longitude: %.4f\n", data->near_end_lon);
-    printf("Far start latitude: %.4f\n", data->far_start_lat);
-    printf("Far start longitude: %.4f\n", data->far_start_lon);
-    printf("Far end latitude: %.4f\n", data->far_end_lat);
-    printf("Far end longitude: %.4f\n", data->far_end_lon);
+    //printf("Near start latitude: %.4f\n", data->near_start_lat);
+    //printf("Near start longitude: %.4f\n", data->near_start_lon);
+    //printf("Near end latitude: %.4f\n", data->near_end_lat);
+    //printf("Near end longitude: %.4f\n", data->near_end_lon);
+    //printf("Far start latitude: %.4f\n", data->far_start_lat);
+    //printf("Far start longitude: %.4f\n", data->far_start_lon);
+    //printf("Far end latitude: %.4f\n", data->far_end_lat);
+    //printf("Far end longitude: %.4f\n", data->far_end_lon);
   }
   xmlFreeDoc(xmlBoundary);
 
@@ -465,8 +485,8 @@ int main(int argc, char *argv[])
     strcpy(coordStr, xml_get_string_value(xmlCenter, 
       "kml.Document.Placemark.Point.coordinates"));
     sscanf(coordStr, "%f,%f", &data->center_lat, &data->center_lon);
-    printf("Center latitude: %.4f\n", data->center_lat);
-    printf("Center longitude: %.4f\n", data->center_lon);
+    //printf("Center latitude: %.4f\n", data->center_lat);
+    //printf("Center longitude: %.4f\n", data->center_lon);
   }
   xmlFreeDoc(xmlCenter);
 
@@ -477,13 +497,13 @@ int main(int argc, char *argv[])
     error = TRUE;
     sprintf(tmp, 
 	    "Processing level - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_PROCESSING_LEVEL);
+	    (int) strlen(string), MAX_PROCESSING_LEVEL);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->processing_level, xml_get_string_value(doc, 
       "metadata.idinfo.proclevl.prolevid"));
-    printf("Processing level: %s\n", data->processing_level);
+    //printf("Processing level: %s\n", data->processing_level);
   }
 
   // Platform
@@ -492,13 +512,13 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_PLATFORM) {
     error = TRUE;
     sprintf(tmp, "Platform - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_PLATFORM);
+	    (int) strlen(string), MAX_PLATFORM);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->platform, xml_get_string_value(doc, 
       "metadata.idinfo.plainsid.platflnm"));
-    printf("Platform: %s\n", data->platform);
+    //printf("Platform: %s\n", data->platform);
   }
 
   // Instrument
@@ -507,13 +527,13 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_INSTRUMENT) {
     error = TRUE;
     sprintf(tmp, "Instrument - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_INSTRUMENT);
+	    (int) strlen(string), MAX_INSTRUMENT);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->instrument, xml_get_string_value(doc, 
       "metadata.idinfo.plainsid.instflnm"));
-    printf("Instrument: %s\n", data->instrument);
+    //printf("Instrument: %s\n", data->instrument);
   }
 
   // Number of bands
@@ -527,7 +547,7 @@ int main(int argc, char *argv[])
   else {
     data->band_count =
       xml_get_int_value(doc, "metadata.idinfo.bandidnt.numbands");
-    printf("Number of bands: %i\n", data->band_count);
+    //printf("Number of bands: %i\n", data->band_count);
   }
 
   // Browse image location
@@ -535,13 +555,14 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_BROWSE_LOCATION) {
     error = TRUE;
     sprintf(tmp, "Browse image location - String length: %d, allowed "
-	    "characters: %d\n", strlen(string), MAX_BROWSE_LOCATION);
+	    "characters: %d\n", (int) strlen(string), MAX_BROWSE_LOCATION);
     strcat(errorMessage, tmp);
   }
-  else {
+  else if (strcmp_case(string, MAGIC_UNSET_STRING) != 0) {
+    data->browse_location = (char *) MALLOC(sizeof(char)*MAX_BROWSE_LOCATION);
     strcpy(data->browse_location, xml_get_string_value(doc, 
       "metadata.idinfo.browse.browsen"));
-    printf("Browse image location: %s\n", data->browse_location);
+    //printf("Browse image location: %s\n", data->browse_location);
   }
 
   // Browse image format
@@ -549,13 +570,14 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_BROWSE_FORMAT) {
     error = TRUE;
     sprintf(tmp, "Browse image format - String length: %d, allowed characters:"
-	    " %d\n", strlen(string), MAX_BROWSE_FORMAT);
+	    " %d\n", (int) strlen(string), MAX_BROWSE_FORMAT);
     strcat(errorMessage, tmp);
   }
-  else {
+  else if (strcmp_case(string, MAGIC_UNSET_STRING) != 0) {
+    data->browse_format = (char *) MALLOC(sizeof(char)*MAX_BROWSE_FORMAT);
     strcpy(data->browse_format, xml_get_string_value(doc, 
       "metadata.idinfo.browse.browset"));
-    printf("Browse format: %s\n", data->browse_format);
+    //printf("Browse format: %s\n", data->browse_format);
   }
 
   // Data access level
@@ -564,13 +586,13 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_ACCESS) {
     error = TRUE;
     sprintf(tmp, "Data access level - String length: %d, allowed characters: "
-	    "%d\n", strlen(string), MAX_ACCESS);
+	    "%d\n", (int) strlen(string), MAX_ACCESS);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->access, xml_get_string_value(doc, 
       "metadata.idinfo.secinfo.secclass"));
-    printf("Data access level: %s\n", data->access);
+    //printf("Data access level: %s\n", data->access);
   }
 
   // Copyright
@@ -578,13 +600,13 @@ int main(int argc, char *argv[])
   if (strlen(string) > MAX_COPYRIGHT) {
     error = TRUE;
     sprintf(tmp, "Copyright - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_COPYRIGHT);
+	    (int) strlen(string), MAX_COPYRIGHT);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->copyright, xml_get_string_value(doc, 
       "metadata.idinfo.copyright"));
-    printf("Copyright: %s\n", data->copyright);
+    //printf("Copyright: %s\n", data->copyright);
   }
 
   // Start time
@@ -610,9 +632,10 @@ int main(int argc, char *argv[])
 	strcat(errorMessage, tmp);
       }
       else {
+	data->start_time = (char *) MALLOC(sizeof(char)*MAX_START_TIME);
 	sprintf(data->start_time, "%04d-%02d-%02d %02d:%02d:%02d", 
 		year, month, day, hour, minute, second);
-	printf("Start time: %s\n", data->start_time);
+	//printf("Start time: %s\n", data->start_time);
       }
     }
   }
@@ -638,9 +661,10 @@ int main(int argc, char *argv[])
 	strcat(errorMessage, tmp);
       }
       else {
+	data->center_time = (char *) MALLOC(sizeof(char)*MAX_CENTER_TIME);
 	sprintf(data->center_time, "%04d-%02d-%02d %02d:%02d:%02d", 
 		year, month, day, hour, minute, second);
-	printf("Center time: %s\n", data->center_time);
+	//printf("Center time: %s\n", data->center_time);
       }
     }
   }
@@ -666,9 +690,10 @@ int main(int argc, char *argv[])
 	strcat(errorMessage, tmp);
       }
       else {
+	data->end_time = (char *) MALLOC(sizeof(char)*MAX_END_TIME);
 	sprintf(data->end_time, "%04d-%02d-%02d %02d:%02d:%02d", 
 		year, month, day, hour, minute, second);
-	printf("End time: %s\n", data->end_time);
+	//printf("End time: %s\n", data->end_time);
       }
     }
   }
@@ -687,7 +712,7 @@ int main(int argc, char *argv[])
 	strcpy(data->orbit_direction, "Ascending");
       else if (nValue == 1)
 	strcpy(data->orbit_direction, "Descending");
-      printf("Orbit direction: %s\n", data->orbit_direction);
+      //printf("Orbit direction: %s\n", data->orbit_direction);
     }
   }
   else
@@ -699,13 +724,13 @@ int main(int argc, char *argv[])
     if (strlen(string) > MAX_MODE) {
       error = TRUE;
       sprintf(tmp, "Imaging mode - String length: %d, allowed characters: %d"
-	      "\n", strlen(string), MAX_MODE);
+	      "\n", (int) strlen(string), MAX_MODE);
       strcat(errorMessage, tmp);
     }
     else {
       strcpy(data->mode, 
 	     xml_get_string_value(doc, "metadata.idinfo.plainsid.mode"));
-      printf("Imaging mode: %s\n", data->mode);
+      //printf("Imaging mode: %s\n", data->mode);
     }
   }
   else
@@ -724,7 +749,7 @@ int main(int argc, char *argv[])
   else {
     strcpy(data->spatial_reference, 
 	   xml_get_string_value(doc, "metadata.spdoinfo.direct"));
-    printf("Spatial reference: %s\n", data->spatial_reference);
+    //printf("Spatial reference: %s\n", data->spatial_reference);
   }
 
   // Cell value type
@@ -734,13 +759,13 @@ int main(int argc, char *argv[])
     error = TRUE;
     sprintf(tmp, 
 	    "Cell value type - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_CELL_VALUE);
+	    (int) strlen(string), MAX_CELL_VALUE);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->cell_value, xml_get_string_value(doc, 
       "metadata.spdoinfo.rastinfo.cvaltype"));
-    printf("Cell value type: %s\n", data->cell_value);
+    //printf("Cell value type: %s\n", data->cell_value);
   }
 
   // Raster object type
@@ -760,7 +785,7 @@ int main(int argc, char *argv[])
   else {
     strcpy(data->raster_object, xml_get_string_value(doc, 
       "metadata.spdoinfo.rastinfo.rasttype"));
-    printf("Raster object type: %s\n", data->raster_object);
+    //printf("Raster object type: %s\n", data->raster_object);
   }
 
   // Number of rows
@@ -774,7 +799,7 @@ int main(int argc, char *argv[])
   else {
     data->row_count =
       xml_get_int_value(doc, "metadata.spdoinfo.rastinfo.rowcount");
-    printf("Number of rows: %i\n", data->row_count);
+    //printf("Number of rows: %i\n", data->row_count);
   }
 
   // Number of columns
@@ -788,7 +813,7 @@ int main(int argc, char *argv[])
   else {
     data->col_count =
       xml_get_int_value(doc, "metadata.spdoinfo.rastinfo.colcount");
-    printf("Number of columns: %i\n", data->col_count);
+    //printf("Number of columns: %i\n", data->col_count);
   }
 
   // Format name
@@ -798,13 +823,13 @@ int main(int argc, char *argv[])
     error = TRUE;
     sprintf(tmp, 
 	    "Format name - String length: %d, allowed characters: %d\n",
-	    strlen(string), MAX_FORMAT);
+	    (int) strlen(string), MAX_FORMAT);
     strcat(errorMessage, tmp);
   }
   else {
     strcpy(data->format, xml_get_string_value(doc, 
       "metadata.distinfo.stdorder.digform.digtinfo.formname"));
-    printf("Format name: %s\n", data->format);
+    //printf("Format name: %s\n", data->format);
   }
 
   // Fees
@@ -817,7 +842,7 @@ int main(int argc, char *argv[])
   }
   else {
     data->fees = xml_get_double_value(doc, "metadata.distinfo.stdorder.fees");
-    printf("Fees: %.2lf\n", data->fees);
+    //printf("Fees: %.2lf\n", data->fees);
   }
 
   if (error)
@@ -829,6 +854,11 @@ int main(int argc, char *argv[])
   FREE(configFile);
   FCLOSE(fLog);
   remove(logFile);
+
+  // Add dataset to database
+  addData(data);
+
+  FREE(data);
 
   asfPrintStatus("\nSuccessful completion!\n\n");
 

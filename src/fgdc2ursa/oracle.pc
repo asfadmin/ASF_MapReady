@@ -1,0 +1,181 @@
+#include "fgdc2ursa.h"
+
+#define USER_LEN 10
+#define PASS_LEN 15
+
+EXEC SQL INCLUDE sqlca;
+VARCHAR username[USER_LEN], password[PASS_LEN];
+
+void sql_error(void)
+{
+    printf("sqlcaid  = %s\n",sqlca.sqlcaid);
+    printf("sqlabc   = %d\n",sqlca.sqlabc);
+    printf("sqlcode  = %d\n",sqlca.sqlcode);
+    printf("sqlerrml = %d\n",sqlca.sqlerrm.sqlerrml);
+    printf("sqlerrmc = %s\n",sqlca.sqlerrm.sqlerrmc);
+    printf("sqlerrp  = %s\n",sqlca.sqlerrp);
+    printf("sqlerrd  = %d %d %d %d %d %d\n",sqlca.sqlerrd[0],
+		     sqlca.sqlerrd[1],sqlca.sqlerrd[2],
+		     sqlca.sqlerrd[3],sqlca.sqlerrd[4],
+                     sqlca.sqlerrd[5]);
+    printf("sqlwarn  = %s\n",sqlca.sqlwarn);
+    printf("sqlext   = %s\n",sqlca.sqlext);
+    exit(0);
+}
+
+void addData(dataset_t *data)
+{
+    /* Straight out of the header file */
+    char dataset_id[MAX_DATASET_ID];    // Dataset ID
+    char origin[MAX_ORIGIN];            // Origin
+    char title[MAX_TITLE];              // Title
+    char online_link[MAX_ONLINE_LINK];  // Online link
+    float west_bounding;        // West bounding coordinate (minimum longitude)
+    float east_bounding;        // East bounding coordinate (maximum longitude)
+    float north_bounding;       // North bounding coordinate (maximum latitude)
+    float south_bounding;       // South bounding coordinate (minimum latitude)
+    float near_start_lat;       // Near start latitude
+    float near_start_lon;       // Near start longitude
+    float far_start_lat;        // Far start latitude
+    float far_start_lon;        // Far start longitude
+    float far_end_lat;          // Far end latitude
+    float far_end_lon;          // Far end longitude
+    float near_end_lat;         // Near end latitude
+    float near_end_lon;         // Near end longitude
+    float center_lat;           // Center latitude
+    float center_lon;           // Center longitude
+    char processing_level[MAX_PROCESSING_LEVEL];   // Processing level
+    char platform[MAX_PLATFORM];     // Platform
+    char instrument[MAX_INSTRUMENT]; // Instrument
+    int band_count;             // Number of bands
+    char *browse_location = NULL;    // Browse image location
+    char *browse_format = NULL;      // Browse image format
+    char data_access[MAX_ACCESS];    // Data access level
+    char copyright[MAX_COPYRIGHT];   // Copyright holder
+    char *start_time = NULL;    // Image start time
+    char *center_time = NULL;   // Image center time
+    char *end_time = NULL;      // Image end time
+    char orbit_direction[MAX_ORBIT_DIRECTION];     // Orbit direction
+    char data_mode[MAX_MODE];   // Imaging mode
+    char spatial_reference[MAX_SPATIAL_REFERENCE]; // Spatial reference
+    char cell_value[MAX_CELL_VALUE]; // Cell value type
+    char raster_object[MAX_RASTER_OBJECT];         // Raster object type
+    int row_count;              // Number of rows
+    int col_count;              // Number of columns
+    char data_format[MAX_FORMAT];    // Format name
+    float fees;                 // Fees
+
+    char pwd[15];
+    sprintf(pwd, "Asf4d|\\\/|");
+    strncpy((char *) username.arr, "ASFADM", USER_LEN);
+    username.len = strlen((char *) username.arr);
+    strncpy((char *) password.arr, pwd, PASS_LEN);
+    password.len = strlen((char *) password.arr);
+    
+    sprintf(dataset_id, "%s", data->dataset_id);
+    sprintf(origin, "%s", data->origin);
+    sprintf(title, "%s", data->title);
+    sprintf(online_link, "%s", data->online_link);
+    west_bounding = data->west_bounding;
+    east_bounding = data->east_bounding;
+    north_bounding = data->north_bounding;
+    south_bounding = data->south_bounding;
+    near_start_lat = data->near_start_lat;
+    near_start_lon = data->near_start_lon;
+    far_start_lat = data->far_start_lat;
+    far_start_lon = data->far_start_lon;
+    near_end_lat = data->near_end_lat;
+    near_end_lon = data->near_end_lon;
+    far_end_lat = data->far_end_lat;
+    far_end_lon = data->far_end_lon;
+    center_lat = data->center_lat;
+    center_lon = data->center_lon;
+    sprintf(processing_level, "%s", data->processing_level);
+    sprintf(platform, "%s", data->platform);
+    sprintf(instrument, "%s", data->instrument);
+    band_count = data->band_count;
+    if (data->browse_location) {
+      browse_location = (char *) MALLOC(sizeof(char)*MAX_BROWSE_LOCATION);
+      sprintf(browse_location, "%s", data->browse_location);
+    }
+    if (data->browse_format) {
+      browse_location = (char *) MALLOC(sizeof(char)*MAX_BROWSE_FORMAT);
+      sprintf(browse_format, "%s", data->browse_format);
+    }
+    sprintf(data_access, "%s", data->access);
+    sprintf(copyright, "%s", data->copyright);
+    if (data->start_time) {
+      start_time = (char *) MALLOC(sizeof(char)*MAX_START_TIME);
+      sprintf(start_time, "%s", data->start_time);
+    }
+    if (data->center_time) {
+      center_time = (char *) MALLOC(sizeof(char)*MAX_CENTER_TIME);    
+      sprintf(center_time, "%s", data->center_time);
+    }
+    if (data->end_time) {
+      end_time = (char *) MALLOC(sizeof(char)*MAX_END_TIME);
+      sprintf(end_time, "%s", data->end_time);
+    }
+    if (data->start_time && data->end_time && !data->center_time) {
+      center_time = (char *) MALLOC(sizeof(char)*MAX_CENTER_TIME);
+      getCenterTime(start_time, end_time, center_time);
+    }
+    sprintf(orbit_direction, "%s", data->orbit_direction);
+    sprintf(data_mode, "%s", data->mode);
+    sprintf(spatial_reference, "%s", data->spatial_reference);
+    sprintf(cell_value, "%s", data->cell_value);
+    sprintf(raster_object, "%s", data->raster_object);
+    row_count = data->row_count;
+    col_count = data->col_count;
+    sprintf(data_format, "%s", data->format);
+    fees = data->fees;
+
+    EXEC SQL WHENEVER SQLERROR DO sql_error();
+    EXEC SQL CONNECT :username IDENTIFIED BY :password;
+    if (data->center_time) 
+    {
+        EXEC SQL INSERT INTO dataset (dataset_id, origin, title, online_link,  
+	west_bounding, east_bounding, north_bounding, south_bounding, 
+	near_start_lat, near_start_lon, far_start_lat, far_start_lon, 
+	near_end_lat, near_end_lon, far_end_lat, far_end_lon, 
+	center_lat, center_lon, processing_level, platform, instrument, 
+	band_count, browse_location, browse_format, data_access,
+	copyright, start_time, center_time, end_time, orbit_direction, 
+	data_mode, spatial_reference, cell_value, raster_object, 
+	row_count, col_count, data_format, fees) 
+	VALUES (:dataset_id, :origin, :title, :online_link, 
+	:west_bounding, :east_bounding, :north_bounding, :south_bounding, 
+	:near_start_lat, :near_start_lon, :far_start_lat, :far_start_lon, 
+	:near_end_lat, :near_end_lon, :far_end_lat, :far_end_lon, 
+	:center_lat, :center_lon, :processing_level, :platform, :instrument, 
+	:band_count, :browse_location, :browse_format, :data_access, 
+	:copyright, NULL, TO_TIMESTAMP(:center_time,'YYYY-MM-DD HH24:MI:SS'), 
+	NULL, :orbit_direction, :data_mode, :spatial_reference, :cell_value, 
+	:raster_object, :row_count, :col_count, :data_format, :fees);
+    }
+    else 
+    {
+        EXEC SQL INSERT INTO dataset (dataset_id, origin, title, online_link,  
+	west_bounding, east_bounding, north_bounding, south_bounding, 
+	near_start_lat, near_start_lon, far_start_lat, far_start_lon, 
+	near_end_lat, near_end_lon, far_end_lat, far_end_lon, 
+	center_lat, center_lon, processing_level, platform, instrument, 
+	band_count, browse_location, browse_format, data_access,
+	copyright, start_time, center_time, end_time, orbit_direction, 
+	data_mode, spatial_reference, cell_value, raster_object, 
+	row_count, col_count, data_format, fees) 
+	VALUES (:dataset_id, :origin, :title, :online_link, 
+	:west_bounding, :east_bounding, :north_bounding, :south_bounding, 
+	:near_start_lat, :near_start_lon, :far_start_lat, :far_start_lon, 
+	:near_end_lat, :near_end_lon, :far_end_lat, :far_end_lon, 
+	:center_lat, :center_lon, :processing_level, :platform, :instrument, 
+	:band_count, :browse_location, :browse_format, :data_access, 
+	:copyright, TO_TIMESTAMP(:start_time,'YYYY-MM-DD HH24:MI:SS'), 
+	TO_TIMESTAMP(:center_time,'YYYY-MM-DD HH24:MI:SS'), 
+	TO_TIMESTAMP(:end_time,'YYYY-MM-DD HH24:MI:SS'),
+	:orbit_direction, :data_mode, :spatial_reference, :cell_value, 
+	:raster_object, :row_count, :col_count, :data_format, :fees);
+    }
+    EXEC SQL COMMIT WORK RELEASE;
+    exit(0);
+}

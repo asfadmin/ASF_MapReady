@@ -101,7 +101,7 @@ int init_fgdc_config(char *configFile, char *type)
 	    " parameter will\n# overwrite all information that is extracted "
 	    "from the data.\n"
 	    "# Format: YYYY-MM-DD hh:mm:ss\n");
-  fprintf(fCfg, "acquisition = 2007-05-24 21:50:38\n");
+  fprintf(fCfg, "acquisition =\n");
   if (comment)
     fprintf(fCfg, "\n# Currentness Reference -- the basis on which the time\n"
 	    "# period of content information is determined.\n# Values: "
@@ -493,26 +493,28 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
       if (strncmp(test, "use_constraints", 15)==0)
         strcpy(fgdc->useconst, read_str(line, "use_constraints"));
       if (strncmp(test, "copyright", 9)==0 &&
-	  strlen(read_str(line, "copyright")) > 0) {
+	  strlen(read_str(line, "copyright")) > 1) {
 	fgdc->copyright = (char *) MALLOC(sizeof(char)*50);
         strcpy(fgdc->copyright, read_str(line, "copyright"));
       }
       if (strncmp(test, "browse_name", 11)==0 &&
-	  strlen(read_str(line, "browse_name")) > 0) {
+	  strlen(read_str(line, "browse_name")) > 1) {
 	fgdc->browse = (browseinfo *) MALLOC(sizeof(browseinfo));
         strcpy(fgdc->browse->browsen, read_str(line, "browse_name"));
       }
       if (strncmp(test, "browse_description", 18)==0 &&
-	  strlen(read_str(line, "browse_description")) > 0)
+	  strlen(read_str(line, "browse_description")) > 1)
         strcpy(fgdc->browse->browsed, read_str(line, "browse_description"));
       if (strncmp(test, "browse_type", 11)==0 &&
-	  strlen(read_str(line, "browse_type")) > 0)
+	  strlen(read_str(line, "browse_type")) > 1)
         strcpy(fgdc->browse->browset, read_str(line, "browse_type"));
-      if (strncmp(test, "security_system", 15)==0)
+      if (strncmp(test, "security_system", 15)==0 &&
+	  strlen(read_str(line, "security_system")) > 1)
         strcpy(fgdc->secsys, read_str(line, "security_system"));
       if (strncmp(test, "security_classification", 23)==0)
         strcpy(fgdc->secclass, read_str(line, "security_classification"));
-      if (strncmp(test, "security_handling", 17)==0)
+      if (strncmp(test, "security_handling", 17)==0 &&
+	  strlen(read_str(line, "security_handling")) > 1)
         strcpy(fgdc->sechandl, read_str(line, "security_handling"));
       FREE(test);
     }
