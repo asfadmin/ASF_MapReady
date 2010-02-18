@@ -45,6 +45,7 @@ void addData(dataset_t *data)
     float center_lat;           // Center latitude
     float center_lon;           // Center longitude
     char processing_level[MAX_PROCESSING_LEVEL];   // Processing level
+    char *place = NULL;         // Geographic location
     char platform[MAX_PLATFORM];     // Platform
     char instrument[MAX_INSTRUMENT]; // Instrument
     int band_count;             // Number of bands
@@ -91,6 +92,10 @@ void addData(dataset_t *data)
     center_lat = data->center_lat;
     center_lon = data->center_lon;
     sprintf(processing_level, "%s", data->processing_level);
+    if (data->place) {
+      place = (char *) MALLOC(sizeof(char)*MAX_PLACE);
+      sprintf(place, "%s", data->place);
+    }
     sprintf(platform, "%s", data->platform);
     sprintf(instrument, "%s", data->instrument);
     band_count = data->band_count;
@@ -138,7 +143,7 @@ void addData(dataset_t *data)
 	west_bounding, east_bounding, north_bounding, south_bounding, 
 	near_start_lat, near_start_lon, far_start_lat, far_start_lon, 
 	near_end_lat, near_end_lon, far_end_lat, far_end_lon, 
-	center_lat, center_lon, processing_level, platform, instrument, 
+	center_lat, center_lon, processing_level, place, platform, instrument, 
 	band_count, browse_location, browse_format, data_access,
 	copyright, start_time, center_time, end_time, orbit_direction, 
 	data_mode, spatial_reference, cell_value, raster_object, 
@@ -147,9 +152,10 @@ void addData(dataset_t *data)
 	:west_bounding, :east_bounding, :north_bounding, :south_bounding, 
 	:near_start_lat, :near_start_lon, :far_start_lat, :far_start_lon, 
 	:near_end_lat, :near_end_lon, :far_end_lat, :far_end_lon, 
-	:center_lat, :center_lon, :processing_level, :platform, :instrument, 
-	:band_count, :browse_location, :browse_format, :data_access, 
-	:copyright, NULL, TO_TIMESTAMP(:center_time,'YYYY-MM-DD HH24:MI:SS'), 
+	:center_lat, :center_lon, :processing_level, :place, :platform, 
+        :instrument, :band_count, :browse_location, :browse_format, 
+        :data_access, :copyright, NULL, 
+        TO_TIMESTAMP(:center_time,'YYYY-MM-DD HH24:MI:SS'), 
 	NULL, :orbit_direction, :data_mode, :spatial_reference, :cell_value, 
 	:raster_object, :row_count, :col_count, :data_format, :fees);
     }
@@ -159,7 +165,7 @@ void addData(dataset_t *data)
 	west_bounding, east_bounding, north_bounding, south_bounding, 
 	near_start_lat, near_start_lon, far_start_lat, far_start_lon, 
 	near_end_lat, near_end_lon, far_end_lat, far_end_lon, 
-	center_lat, center_lon, processing_level, platform, instrument, 
+	center_lat, center_lon, processing_level, place, platform, instrument, 
 	band_count, browse_location, browse_format, data_access,
 	copyright, start_time, center_time, end_time, orbit_direction, 
 	data_mode, spatial_reference, cell_value, raster_object, 
@@ -168,9 +174,10 @@ void addData(dataset_t *data)
 	:west_bounding, :east_bounding, :north_bounding, :south_bounding, 
 	:near_start_lat, :near_start_lon, :far_start_lat, :far_start_lon, 
 	:near_end_lat, :near_end_lon, :far_end_lat, :far_end_lon, 
-	:center_lat, :center_lon, :processing_level, :platform, :instrument, 
-	:band_count, :browse_location, :browse_format, :data_access, 
-	:copyright, TO_TIMESTAMP(:start_time,'YYYY-MM-DD HH24:MI:SS'), 
+	:center_lat, :center_lon, :processing_level, :place, :platform, 
+        :instrument, :band_count, :browse_location, :browse_format, 
+	:data_access, :copyright, 
+	TO_TIMESTAMP(:start_time,'YYYY-MM-DD HH24:MI:SS'), 
 	TO_TIMESTAMP(:center_time,'YYYY-MM-DD HH24:MI:SS'), 
 	TO_TIMESTAMP(:end_time,'YYYY-MM-DD HH24:MI:SS'),
 	:orbit_direction, :data_mode, :spatial_reference, :cell_value, 

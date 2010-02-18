@@ -10,6 +10,7 @@
 #define MAX_TITLE 50
 #define MAX_ONLINE_LINK 100
 #define MAX_PROCESSING_LEVEL 25
+#define MAX_PLACE 25
 #define MAX_PLATFORM 25
 #define MAX_INSTRUMENT 25
 #define MAX_BROWSE_LOCATION 100
@@ -47,6 +48,7 @@ typedef struct
   float center_lat;           // Center latitude
   float center_lon;           // Center longitude
   char processing_level[MAX_PROCESSING_LEVEL];   // Processing level
+  char *place;                // Geographic location
   char platform[MAX_PLATFORM];        // Platform
   char instrument[MAX_INSTRUMENT];    // Instrument
   int band_count;             // Number of bands

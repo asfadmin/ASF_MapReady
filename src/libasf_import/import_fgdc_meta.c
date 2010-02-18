@@ -40,26 +40,26 @@ fgdc_meta *fgdc_meta_init(void)
   fgdc->keywords.theme = 
     (keyinfo *) MALLOC(sizeof(keyinfo)*fgdc->keywords.theme_count);
   for (kk=0; kk<fgdc->keywords.theme_count; kk++) {
-    strcpy(fgdc->keywords.theme[kk].thesaurus, "SAR backscatter");
+    strcpy(fgdc->keywords.theme[kk].thesaurus, "None");
     fgdc->keywords.theme[kk].key_count = 1;
     fgdc->keywords.theme[kk].keyword =
       (char **) MALLOC(sizeof(char *)*fgdc->keywords.theme[kk].key_count);
     for (ii=0; ii<fgdc->keywords.theme[kk].key_count; ii++) {
       fgdc->keywords.theme[kk].keyword[ii] = (char *) MALLOC(sizeof(char)*50);
-      strcpy(fgdc->keywords.theme[kk].keyword[ii], "Raw signal");
+      strcpy(fgdc->keywords.theme[kk].keyword[ii], "SAR backscatter");
     }
   }
-  fgdc->keywords.place_count = 0;
+  fgdc->keywords.place_count = 1;
   fgdc->keywords.place = 
     (keyinfo *) MALLOC(sizeof(keyinfo)*fgdc->keywords.place_count);
   for (kk=0; kk<fgdc->keywords.place_count; kk++) {
-    strcpy(fgdc->keywords.place[kk].thesaurus, "Unknown");
+    strcpy(fgdc->keywords.place[kk].thesaurus, "None");
     fgdc->keywords.place[kk].key_count = 1;
     fgdc->keywords.place[kk].keyword =
       (char **) MALLOC(sizeof(char *)*fgdc->keywords.place[kk].key_count);
     for (ii=0; ii<fgdc->keywords.place[kk].key_count; ii++) {
       fgdc->keywords.place[kk].keyword[ii] = (char *) MALLOC(sizeof(char)*50);
-      strcpy(fgdc->keywords.place[kk].keyword[ii], "Unknown");
+      strcpy(fgdc->keywords.place[kk].keyword[ii], "Greenland");
     }
   }
   strcpy(fgdc->platflnm, "Unknown");

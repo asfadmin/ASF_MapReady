@@ -32,6 +32,7 @@ all:	oracle fgdc2ursa clean
 
 oracle:
 	cp $(ORACLE_PRECOMP)/*.h $(ASF_INCLUDE_DIR)
+	proc iname=oracle.pc
 
 fgdc2ursa: $(OBJS)
 	$(CC) $(CFLAGS) -o fgdc2ursa $(OBJS) $(LIBS) $(LDFLAGS)

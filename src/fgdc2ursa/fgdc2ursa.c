@@ -506,6 +506,23 @@ int main(int argc, char *argv[])
     //printf("Processing level: %s\n", data->processing_level);
   }
 
+  // Place
+  strcpy(string, xml_get_string_value(doc, 
+    "metadata.idinfo.keywords.place.placekey[0]"));
+  if (strlen(string) > MAX_PLACE) {
+    error = TRUE;
+    sprintf(tmp, 
+	    "Place - String length: %d, allowed characters: %d\n",
+	    (int) strlen(string), MAX_PLACE);
+    strcat(errorMessage, tmp);
+  }
+  else {
+    data->place = (char *) MALLOC(sizeof(char)*MAX_PLACE);
+    strcpy(data->place, xml_get_string_value(doc, 
+      "metadata.idinfo.keywords.place.placekey[0]"));
+    //printf("Place: %s\n", data->place);
+  }
+
   // Platform
   strcpy(string, xml_get_string_value(doc, 
     "metadata.idinfo.plainsid.platflnm"));
