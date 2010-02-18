@@ -19,8 +19,8 @@ MODULES = \
 	@ASF_LIB_SHAPELIB@ \
 	@ASF_LIB_FFTW@ \
 	@ASF_LIB_EXIF@ \
-	@ASF_LIB_XML2@
-
+	@ASF_LIB_XML2@ \
+	@ASF_LIB_GDAL
 
 all: libs gtkwin32
 
