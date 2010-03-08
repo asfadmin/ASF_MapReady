@@ -64,8 +64,10 @@ int main(int argc, char **argv)
     getStringOption("--config", argc, argv, configFile, NULL) :
     checkForOption("-c", argc, argv) ?
     getStringOption("-c", argc, argv, configFile, NULL) : 0;
-  if (!configFlag)
-    cfg = init_fill_c2v_config();
+  if (!configFlag) {
+    sprintf(configFile, "%s/convert2vector.config", get_asf_share_dir());
+    cfg = read_c2v_config(configFile);
+  }
   listFlag = checkForOption("-list", argc, argv)    ?
                checkForOption("-list", argc, argv)  :
              checkForOption("--list", argc, argv)   ?
