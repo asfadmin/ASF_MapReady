@@ -144,3 +144,5 @@ void sigsegv_handler (int signal_number);
 // Prototypes from geoid.c
 float get_geoid_height(double lat, double lon);
 
+// Prototypes from clip.c
+int clip(char *inFile, char *maskFile, char *outFile);

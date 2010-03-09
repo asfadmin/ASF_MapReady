@@ -18,7 +18,6 @@ OBJS = \
 	scaling.o \
 	bands.o \
 	stats.o \
-	clip.o \
 	trim.o \
 	fftMatch.o \
 	shaded_relief.o \
@@ -28,7 +27,6 @@ OBJS = \
 	look_up_table.o
 
 LIBS :=	\
-	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
