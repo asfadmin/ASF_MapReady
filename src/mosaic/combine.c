@@ -379,6 +379,35 @@ static void add_pixels(BandedFloatImage *out, char *file,
     meta_free(meta);
 }
 
+void update_location_block(meta_parameters *meta)
+{
+  if (!meta->projection)
+    asfPrintWarning("Image does not have a projection block.\n"
+		    "Not updating location block!\n");
+  else
+    asfPrintWarning("Location block is updated based on the projection "
+		    "information.\nThis might no reflect the actual corner "
+		    "coordinates as it could\ninclude background values.\n");
+  
+  double startX = meta->projection->startX;
+  double startY = meta->projection->startY;
+  double endX = startX + meta->general->sample_count*meta->projection->perX;
+  double endY = startY + meta->general->line_count*meta->projection->perY;
+  double lat, lon, height;
+  proj_to_latlon(meta->projection, startX, startY, 0.0, &lat, &lon, &height);
+  meta->location->lat_start_near_range = lat*R2D;
+  meta->location->lon_start_near_range = lon*R2D;
+  proj_to_latlon(meta->projection, startX, endY, 0.0, &lat, &lon, &height);
+  meta->location->lat_end_near_range = lat*R2D;
+  meta->location->lon_end_near_range = lon*R2D;
+  proj_to_latlon(meta->projection, endX, startY, 0.0, &lat, &lon, &height);
+  meta->location->lat_start_far_range = lat*R2D;
+  meta->location->lon_start_far_range = lon*R2D;
+  proj_to_latlon(meta->projection, endX, endY, 0.0, &lat, &lon, &height);
+  meta->location->lat_end_far_range = lat*R2D;
+  meta->location->lon_end_far_range = lon*R2D;
+}
+
 int main(int argc, char *argv[])
 {
     handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
@@ -447,6 +476,9 @@ int main(int argc, char *argv[])
     meta_out->projection->startY = start_y;
     meta_out->general->line_count = size_y;
     meta_out->general->sample_count = size_x;
+
+    // Update location block
+    update_location_block(meta_out);
 
     meta_write(meta_out, outfile);
 
