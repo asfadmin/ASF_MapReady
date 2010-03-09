@@ -22,7 +22,7 @@ build_stamp:
 	(	cd $(UNPACK_DIR) ; \
 		LDFLAGS="-L$(LIB_DIR)" \
 		CFLAGS="-I$(INCLUDE_DIR)" \
-		CPPFLAGS+="-I$(INCLUDE_DIR)" \
+		CPPFLAGS="-I$(INCLUDE_DIR)" \
 		./configure --enable-float -C  \
 			--prefix=$(ROOT_DIR) \
 		--with-png=internal --with-jpeg=internal \
