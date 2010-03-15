@@ -5,6 +5,7 @@
 #include "asf_meta.h"
 #include "asf_raster.h"
 #include "banded_float_image.h"
+#include "dateUtil.h"
 
 #include "asf_contact.h"
 #include "asf_license.h"
@@ -39,6 +40,11 @@ void help()
 "    in size from equal to the largest input image, to much larger than the\n"
 "    total size of all input images.\n\n"
 "Options:\n"
+"    -preference <value>\n"
+"        Specifies a preference for the order the images are combined.\n"
+"        Valied entries are: north, south, east, west, old, new.\n"
+"        The value \"north\", for example,  means the image with the center\n"
+"        farthest to the north will be on top of the image stack.\n"
 "    -background <value> (-b)\n"
 "        Specifies a value to use for background pixels.  If not given, 0 is\n"
 "        used.\n"
@@ -312,6 +318,95 @@ static void determine_extents(char **infiles, int n_inputs,
     meta_free(meta0);
 }
 
+int compare_big_doubles(const double *a, const double *b)
+{
+  double temp = *a - *b;
+  if (temp > 0)
+    return 1;
+  else if (temp < 0)
+    return -1;
+  else
+    return 0;
+}
+
+int compare_small_doubles(const double *a, const double *b)
+{
+  double temp = *a - *b;
+  if (temp > 0)
+    return -1;
+  else if (temp < 0)
+    return 1;
+  else
+    return 0;
+}
+
+static void sort_input_preference(char **infiles, int n_inputs, 
+				  char *preference)
+{
+  int ii, kk;
+  double lat[n_inputs], lon[n_inputs], sec[n_inputs], sorter[n_inputs];
+  ymd_date date;
+  hms_time time;
+  char **tmpfiles = (char **) MALLOC(sizeof(char *)*n_inputs);
+
+  asfPrintStatus("Sort input images for preference: %s\n\n", preference);
+
+  // Read in metadata
+  for (ii=0; ii<n_inputs; ii++) {
+    tmpfiles[ii] = (char *) MALLOC(sizeof(char)*50);
+    meta_parameters *meta = meta_read(infiles[ii]);
+    lat[ii] = meta->general->center_latitude;
+    lon[ii] = meta->general->center_longitude;
+    parse_DMYdate(meta->general->acquisition_date, &date, &time);
+    sec[ii] = date2sec(&date, &time);
+    if (strcmp_case(preference, "north") == 0 ||
+	strcmp_case(preference, "south") == 0)
+      sorter[ii] = lat[ii];
+    else if (strcmp_case(preference, "west") == 0 ||
+	     strcmp_case(preference, "east") == 0)
+      sorter[ii] = lon[ii];
+    else if (strcmp_case(preference, "old") == 0 ||
+	     strcmp_case(preference, "new") == 0)
+      sorter[ii] = sec[ii];
+    meta_free(meta);
+  }
+  
+  // Get on with the sorting business
+  if (strcmp_case(preference, "south") == 0 ||
+      strcmp_case(preference, "west") == 0 ||
+      strcmp_case(preference, "old") == 0)
+    qsort(sorter, n_inputs, sizeof(double), compare_big_doubles);
+  else
+    qsort(sorter, n_inputs, sizeof(double), compare_small_doubles);
+
+  // Apply the order to input file list
+  for (ii=0; ii<n_inputs; ii++) {
+    for (kk=0; kk<n_inputs; kk++) {
+      if ((strcmp_case(preference, "north") == 0 ||
+	   strcmp_case(preference, "south") == 0) &&
+	  sorter[ii] == lat[kk])
+	sprintf(tmpfiles[ii], "%s", infiles[kk]);
+      else if ((strcmp_case(preference, "east") == 0 ||
+		strcmp_case(preference, "west") == 0) &&
+	       sorter[ii] == lon[kk])
+	sprintf(tmpfiles[ii], "%s", infiles[kk]);
+      else if ((strcmp_case(preference, "old") == 0 ||
+		strcmp_case(preference, "new") == 0) &&
+	       sorter[ii] == sec[kk])
+	sprintf(tmpfiles[ii], "%s", infiles[kk]);
+    }
+  }
+  for (ii=0; ii<n_inputs; ii++) {
+    sprintf(infiles[ii], "%s", tmpfiles[ii]);
+    //printf("Sorted file[%d]: %s\n", ii+1, infiles[ii]);
+  }
+
+  // Clean up
+  for (ii=0; ii<n_inputs; ii++)
+    FREE(tmpfiles[ii]);
+  FREE(tmpfiles);
+}
+
 static void add_pixels(BandedFloatImage *out, char *file,
                        int size_x, int size_y,
                        double start_x, double start_y,
@@ -418,7 +513,20 @@ int main(int argc, char *argv[])
     double background_val=0;
     extract_double_options(&argc, &argv, &background_val, "-background",
                            "--background", "-b", NULL);
+    char *preference = (char *) MALLOC(sizeof(char)*50);
+    sprintf(preference, "");
+    extract_string_options(&argc, &argv, preference, "-preference",
+			   "--preference", "-p", NULL);
 
+    if (strlen(preference) <= 0 ||
+	(strcmp_case(preference, "north") != 0 &&
+	 strcmp_case(preference, "south") != 0 &&
+	 strcmp_case(preference, "east") != 0 &&
+	 strcmp_case(preference, "west") != 0 &&
+	 strcmp_case(preference, "old") != 0 &&
+	 strcmp_case(preference, "new") != 0))
+      asfPrintError("Can't handle this preference (%s)!\n", preference);
+    
     char *outfile = argv[1];
     char **infiles = &argv[2];
     int n_inputs = argc - 2;
@@ -430,6 +538,10 @@ int main(int argc, char *argv[])
     asfSplashScreen(argc, argv);
 
     asfPrintStatus("Combining %d files to produce: %s\n", n_inputs, outfile);
+
+    // Sort the input files, in case we have a different preference
+    if (strlen(preference) > 0)
+      sort_input_preference(infiles, n_inputs, preference);
 
     asfPrintStatus("Input files:\n");
     for (i = 0; i < n_inputs; ++i)
