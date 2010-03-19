@@ -5,6 +5,7 @@
 include ../../make_support/system_rules
 
 LIBS  = \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
@@ -12,16 +13,13 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	-lm
 
-OBJS  = tokenizer.o \
-	expression.o \
-	raster_calc.o
+OBJS  = raster_calc.o
 
 all: raster_calc clean
 
 raster_calc: $(OBJS)
 	$(CC) $(CFLAGS) -o raster_calc $(OBJS) $(LIBS) $(LDFLAGS)
 	mv raster_calc$(BIN_POSTFIX) $(BINDIR)
-	cp raster_calc.1 ../../man/cat1/
 
 clean:
 	rm -f core *.o

@@ -124,6 +124,10 @@ void trim_zeros(char *infile, char *outfile, int *startX, int *endX);
 void trim_zeros_ext(char *infile, char *outfile, int update_meta,
                     int do_top, int do_left);
 
+// Prototypes from raster_calc.c
+int raster_calc(char *outFile, char *expression, int input_count, 
+		char **inFiles);
+
 /* Prototypes from fftMatch.c ************************************************/
 int fftMatch(char *inFile1, char *inFile2, char *corrFile,
 	     float *dx, float *dy, float *certainty);

@@ -113,14 +113,11 @@ void usage(char *name)
 
 int main(int argc,char **argv)
 {
-  int ii, xx, yy;
-  char *expr,*cookie;
-  float *outbuf,*inbuf[MAXIMGS];
-  char *outfile,*infile[MAXIMGS];
-  FILE *outF,*inF[MAXIMGS];
-  int nInputs;
+  int ii;
+  char *expression;
+  char *outFile,*inFiles[MAXIMGS];
+  int input_count;
   extern int currArg;         /* in cla.h from asf.h; initialized to 1 */
-  meta_parameters *inMeta, *outMeta, *tmpMeta;
 
   fLog=NULL;
   logflag=FALSE;
@@ -134,73 +131,17 @@ int main(int argc,char **argv)
       fLog = FOPEN(logFile,"a");
       logflag=TRUE;
     }
-    /*  else {
-      printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
-      usage(argv[0]);
-      }*/
   }
 
-  outfile = argv[currArg++];
-  expr    = argv[currArg++];
-  nInputs = argc - currArg;
+  outFile = argv[currArg++];
+  expression = argv[currArg++];
+  input_count = argc - currArg;
+  for (ii=0; ii<input_count; ii++)
+    inFiles[ii] = argv[currArg+ii];
 
-  printf("%s\n",date_time_stamp());
-  printf("Program: raster_calc\n\n");
+  asfSplashScreen(argc, argv);
 
-  inMeta = meta_read(argv[currArg]);
-  for (ii=0; ii<nInputs; ii++)
-  {
-    infile[ii] = argv[currArg+ii];
-    tmpMeta    = meta_read(infile[ii]);
-    inF[ii]    = fopenImage(infile[ii],"rb");
-    /* Make sure each image is at least as big as the first image. */
-    if (ii != 0) {
-      if (   (tmpMeta->general->line_count   < inMeta->general->line_count)
-          || (tmpMeta->general->sample_count < inMeta->general->sample_count))
-      {
-        fprintf(stderr,
-                " * The images must all be as least as\n"
-                " * big as the first input image.\n");
-        exit(EXIT_FAILURE);
-      }
-    }
-    inbuf[ii] = (float*)MALLOC( sizeof(float)*tmpMeta->general->sample_count);
-    meta_free(tmpMeta);
-  }
-  outF   = fopenImage(outfile,"wb");
-  outMeta = meta_copy(inMeta);
-  meta_write(outMeta, outfile);
-
-
-  outbuf=(float *)MALLOC(sizeof(float)*outMeta->general->sample_count);
-  cookie=expression2cookie(expr,nInputs);
-  if (NULL==cookie)
-    exit(EXIT_FAILURE);
-  for (yy=0; yy<outMeta->general->line_count; yy++) {
-    double variables[26];
-
-    variables['y'-'a'] = yy;
-
-    for (ii=0; ii<nInputs; ii++)
-      get_float_line(inF[ii], inMeta, yy, inbuf[ii]);
-
-    for (xx=0; xx<outMeta->general->sample_count; xx++) {
-      variables['x'-'a'] = xx;
-      for (ii=0; ii<nInputs; ii++) {
-        variables[ii] = inbuf[ii][xx];
-      }
-      outbuf[xx] = evaluate(cookie,variables);
-    }
-    put_float_line(outF, outMeta, yy, outbuf);
-
-    if ((yy%100)==0) {
-      printf("   Now Processing Line %d\r",yy);
-      fflush(NULL);
-    }
-  }
-  printf("   Processed %d Lines.          \n\n",yy);
-
-  /*  StopWatchLog(fLog);*/
+  raster_calc(outFile, expression, input_count, inFiles);
 
   exit(EXIT_SUCCESS);
 }

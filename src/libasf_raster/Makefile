@@ -24,7 +24,8 @@ OBJS = \
 	resample.o \
 	smooth.o \
 	tile.o \
-	look_up_table.o
+	look_up_table.o \
+	raster_calc.o \
 
 LIBS :=	\
 	$(LIBDIR)/asf_meta.a \
@@ -41,7 +42,8 @@ LIBS :=	\
 
 all: build_only
 	cp libasf_raster.a $(LIBDIR)
-	cp asf_raster.h float_image.h banded_float_image.h uint8_image.h $(ASF_INCLUDE_DIR)
+	cp asf_raster.h float_image.h banded_float_image.h uint8_image.h \
+	expression.h $(ASF_INCLUDE_DIR)
 	rm -rf $(SHAREDIR)/look_up_tables
 	cp -R look_up_tables/ $(SHAREDIR)
 
