@@ -9,7 +9,7 @@ typedef struct
 {
   char origin[255];    // Originator
   char pubdate[30];    // Publication Date
-  char title[50];      // Title
+  char title[500];     // Title
   char geoform[50];    // Geospatial Data Presentation Form
   char onlink[255];    // Online Linkage
 } citeinfo;
@@ -17,6 +17,7 @@ typedef struct
 typedef struct
 {
   char cntorg[100];    // Contact Organization
+  char cntper[100];    // Contact Person
   char *cntpos;        // Contact Position
   char addrtype[25];   // Address Type
   char address[255];   // Address
@@ -33,7 +34,7 @@ typedef struct
 {
   char thesaurus[50];  // Keyword Thesaurus
   int key_count;       // Number of keywords
-  char **keyword;      // Keyword
+  char **key;          // Keyword
 } keyinfo;
 
 typedef struct
@@ -53,8 +54,14 @@ typedef struct
 
 typedef struct
 {
+  char secsys[50];     // Security Classification System
+  char secclass[30];   // Security Classification
+  char sechandl[100];  // Security Handling Description
+} securityinfo;
+
+typedef struct
+{
   citeinfo srccite;    // Source Citation
-  int srcscale;        // Source Scale Denominator
   char typesrc[50];    // Type of Source Media
   char srctime[30];    // Source Time Period of Content
   char srccurr[50];    // Source Currentness Reference
@@ -66,6 +73,7 @@ typedef struct
 {
   char procdesc[5000]; // Process Description
   char procdate[30];   // Process Date
+  contactinfo proccont; // Process Contact
 } processinfo;
 
 // FGDC meta structure
@@ -76,6 +84,7 @@ typedef struct
   citeinfo citation;   // Citation flag
   char abstract[5000]; // Abstract
   char purpose[5000];  // Purpose
+  char *supplinf;      // Supplemental information
   char start_time[30]; // Start Time
   char *center_time;   // Center Time
   char end_time[30];   // End Time
@@ -86,24 +95,24 @@ typedef struct
   double eastbc;       // East Bounding Coordinate
   double northbc;      // North Bounding Coordinate
   double southbc;      // South Bounding Coordinate
-  char prolevid[25];   // Processing Level
+  char prolevid[50];   // Processing Level
   citeinfo prolevau;   // Processing Level Authority
   keywordinfo keywords;// Keywords
   char platflnm[50];   // Platform Full Name
   char instflnm[50];   // Instrument Full Name
   int numbands;        // Number of Bands
-  char accconst[50];   // Access Constraints
-  char useconst[50];   // Use Constraints
+  char accconst[5000]; // Access Constraints
+  char useconst[5000]; // Use Constraints
   char *copyright;     // Copyright Holder (user defined)
+  contactinfo *ptcontac; // Point of Contact (optional)
   browseinfo *browse;  // Browse image (optional)
-  char secsys[50];     // Security Classification System
-  char secclass[30];   // Security Classification
-  char sechandl[100];  // Security Handling Description
+  char *datacred;      // Data credit
+  securityinfo *security; // Security information (optional)
 
   // Data Quality Information
   char *attraccr;      // Attribute Accuracy Report
-  char logic[500];     // Logical Consistency Report
-  char complete[500];  // Completeness Report
+  char logic[1000];    // Logical Consistency Report
+  char complete[1000]; // Completeness Report
   char *horizpar;      // Horizontal Positional Accuracy Report
   char *vertaccr;      // Vertical Positioanl Accuracy Report
   int source_count;
@@ -129,7 +138,7 @@ typedef struct
 
   // Distribution Information
   contactinfo distrib; // Distributor
-  char distliab[500];  // Distribution Liability
+  char distliab[1000]; // Distribution Liability
   char formname[20];   // Digital Form
   char networkr[200];  // Network Resource Name
   char fees[50];       // Fees

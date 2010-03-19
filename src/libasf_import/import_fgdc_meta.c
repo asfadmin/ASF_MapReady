@@ -21,6 +21,7 @@ fgdc_meta *fgdc_meta_init(void)
   strcpy(fgdc->citation.onlink, "Unknown");
   strcpy(fgdc->abstract, MAGIC_UNSET_STRING);
   strcpy(fgdc->purpose, MAGIC_UNSET_STRING);
+  fgdc->supplinf = NULL;
   strcpy(fgdc->start_time, "Unknown");
   fgdc->center_time = NULL;
   strcpy(fgdc->end_time, "Unknown");
@@ -36,42 +37,20 @@ fgdc_meta *fgdc_meta_init(void)
   strcpy(fgdc->prolevau.pubdate, "Unknown");
   strcpy(fgdc->prolevau.title, "Unknown");
   strcpy(fgdc->prolevau.geoform, "Unknown");
-  fgdc->keywords.theme_count = 1;
-  fgdc->keywords.theme = 
-    (keyinfo *) MALLOC(sizeof(keyinfo)*fgdc->keywords.theme_count);
-  for (kk=0; kk<fgdc->keywords.theme_count; kk++) {
-    strcpy(fgdc->keywords.theme[kk].thesaurus, "None");
-    fgdc->keywords.theme[kk].key_count = 1;
-    fgdc->keywords.theme[kk].keyword =
-      (char **) MALLOC(sizeof(char *)*fgdc->keywords.theme[kk].key_count);
-    for (ii=0; ii<fgdc->keywords.theme[kk].key_count; ii++) {
-      fgdc->keywords.theme[kk].keyword[ii] = (char *) MALLOC(sizeof(char)*50);
-      strcpy(fgdc->keywords.theme[kk].keyword[ii], "SAR backscatter");
-    }
-  }
-  fgdc->keywords.place_count = 1;
-  fgdc->keywords.place = 
-    (keyinfo *) MALLOC(sizeof(keyinfo)*fgdc->keywords.place_count);
-  for (kk=0; kk<fgdc->keywords.place_count; kk++) {
-    strcpy(fgdc->keywords.place[kk].thesaurus, "None");
-    fgdc->keywords.place[kk].key_count = 1;
-    fgdc->keywords.place[kk].keyword =
-      (char **) MALLOC(sizeof(char *)*fgdc->keywords.place[kk].key_count);
-    for (ii=0; ii<fgdc->keywords.place[kk].key_count; ii++) {
-      fgdc->keywords.place[kk].keyword[ii] = (char *) MALLOC(sizeof(char)*50);
-      strcpy(fgdc->keywords.place[kk].keyword[ii], "Greenland");
-    }
-  }
+  fgdc->keywords.theme_count = 0;
+  fgdc->keywords.theme = NULL;
+  fgdc->keywords.place_count = 0;
+  fgdc->keywords.place = NULL;
   strcpy(fgdc->platflnm, "Unknown");
   strcpy(fgdc->instflnm, "Unknown");
   fgdc->numbands = MAGIC_UNSET_INT;
   strcpy(fgdc->accconst, "Unknown");
   strcpy(fgdc->useconst, "Unknown");
   fgdc->copyright = NULL;
+  fgdc->ptcontac = NULL;
   fgdc->browse = NULL;
-  strcpy(fgdc->secsys, "Unknown");
-  strcpy(fgdc->secclass, "Unknown");
-  strcpy(fgdc->sechandl, "Unknown");
+  fgdc->datacred = NULL;
+  fgdc->security = NULL;
 
   // Data Quality Information
   fgdc->attraccr = NULL;
@@ -79,31 +58,10 @@ fgdc_meta *fgdc_meta_init(void)
   strcpy(fgdc->complete, "Unknown");
   fgdc->horizpar = NULL;
   fgdc->vertaccr = NULL;
-  // fgdc->source_count = MAGIC_UNSET_INT;
   fgdc->source_count = 0;
-  // fgdc->srcinfo = NULL;
-  fgdc->srcinfo = (sourceinfo *) MALLOC(sizeof(browseinfo)*fgdc->source_count);
-  for (ii=0; ii<fgdc->source_count; ii++) {
-    strcpy(fgdc->srcinfo[ii].srccite.origin, "Unknown");
-    strcpy(fgdc->srcinfo[ii].srccite.pubdate, "Unknown");
-    strcpy(fgdc->srcinfo[ii].srccite.title, "Unknown");
-    strcpy(fgdc->srcinfo[ii].srccite.geoform, "Unknown");
-    fgdc->srcinfo[ii].srcscale = MAGIC_UNSET_INT;
-    strcpy(fgdc->srcinfo[ii].typesrc, "Unknown");
-    strcpy(fgdc->srcinfo[ii].srctime, "Unknown");
-    strcpy(fgdc->srcinfo[ii].srccurr, "Unknown");
-    strcpy(fgdc->srcinfo[ii].srccitea, "Unknown");
-    strcpy(fgdc->srcinfo[ii].srccontr, "Unknown");
-  }
-  //fgdc->process_count = MAGIC_UNSET_INT;
-  fgdc->process_count = 1;
-  //fgdc->procstep = NULL;
-  fgdc->procstep = 
-    (processinfo *) MALLOC(sizeof(processinfo)*fgdc->process_count);
-  for (ii=0; ii<fgdc->process_count; ii++) {
-    strcpy(fgdc->procstep[ii].procdesc, "Unknown");
-    strcpy(fgdc->procstep[ii].procdate, "Unknown");
-  }
+  fgdc->srcinfo = NULL;
+  fgdc->process_count = 0;
+  fgdc->procstep = NULL;
   strcpy(fgdc->ascdscin, "Unknown");
   fgdc->mode = NULL;
 
@@ -317,11 +275,17 @@ meta_projection *gdal2meta_projection(GDALDatasetH hGdal,
       sprintf(datum, "%s", OSRGetAttrValue(hSRS, "DATUM", 0));
       if (strcmp_case(datum, "WGS_1984") == 0)
 	proj->datum = WGS84_DATUM;
+      else if (strcmp_case(datum, "North_American_Datum_1983") == 0)
+	proj->datum = NAD83_DATUM;
+      else if (strcmp_case(datum, "North_American_Datum_1927") == 0)
+	proj->datum = NAD27_DATUM;
 
       char *spheroid = (char *) MALLOC(sizeof(char)*50);
       sprintf(spheroid, "%s", OSRGetAttrValue(hSRS, "SPHEROID", 0));
       if (strcmp_case(spheroid, "WGS 84") == 0)
 	proj->spheroid = WGS84_SPHEROID;
+      else if (strcmp_case(spheroid, "GRS 1980")==0)
+	proj->spheroid = GRS1980_SPHEROID;
     }
 
     OSRDestroySpatialReference(hSRS);
@@ -540,12 +504,10 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
   fprintf(fp, "      </citeinfo>\n");
   fprintf(fp, "    </citation>\n");
   fprintf(fp, "    <descript>\n");
-  fprintf(fp, "      <abstract>\n");
-  fprintf(fp, "%s\n", fgdc->abstract);
-  fprintf(fp, "      </abstract>\n");
-  fprintf(fp, "      <purpose>\n");
-  fprintf(fp, "%s\n", fgdc->purpose);
-  fprintf(fp, "      </purpose>\n");
+  fprintf(fp, "      <abstract>%s</abstract>\n", fgdc->abstract);
+  fprintf(fp, "      <purpose>%s</purpose>\n", fgdc->purpose);
+  if (fgdc->supplinf) 
+    fprintf(fp, "      <supplinf>%s</supplinf>\n", fgdc->supplinf);
   fprintf(fp, "    </descript>\n");
   fprintf(fp, "    <timeperd>\n");
   fprintf(fp, "      <timeinfo>\n");
@@ -608,7 +570,7 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	    fgdc->keywords.theme[kk].thesaurus);
     for (ii=0; ii<fgdc->keywords.theme[kk].key_count; ii++) {
       fprintf(fp, "        <themekey>%s</themekey>\n",
-	      fgdc->keywords.theme[kk].keyword[ii]);
+	      fgdc->keywords.theme[kk].key[ii]);
     }
     fprintf(fp, "      </theme>\n");
   }
@@ -619,7 +581,7 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	      fgdc->keywords.place[kk].thesaurus);
       for (ii=0; ii<fgdc->keywords.place[kk].key_count; ii++) {
 	fprintf(fp, "        <placekey>%s</placekey>\n",
-		fgdc->keywords.place[kk].keyword[ii]);
+		fgdc->keywords.place[kk].key[ii]);
       }
       fprintf(fp, "      </place>\n");
     }
@@ -645,11 +607,15 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
     fprintf(fp, "      <browset>%s</browset>\n", fgdc->browse->browset);
     fprintf(fp, "    </browse>\n");
   }
-  fprintf(fp, "    <secinfo>\n");
-  fprintf(fp, "      <secsys>%s</secsys>\n", fgdc->secsys);
-  fprintf(fp, "      <secclass>%s</secclass>\n", fgdc->secclass);
-  fprintf(fp, "      <sechandl>%s</sechandl>\n", fgdc->sechandl);
-  fprintf(fp, "    </secinfo>\n");
+  if (fgdc->datacred)
+    fprintf(fp, "    <datacred>%s</datacred>\n", fgdc->datacred);
+  if (fgdc->security) {
+    fprintf(fp, "    <secinfo>\n");
+    fprintf(fp, "      <secsys>%s</secsys>\n", fgdc->security->secsys);
+    fprintf(fp, "      <secclass>%s</secclass>\n", fgdc->security->secclass);
+    fprintf(fp, "      <sechandl>%s</sechandl>\n", fgdc->security->sechandl);
+    fprintf(fp, "    </secinfo>\n");
+  }
   fprintf(fp, "  </idinfo>\n");
 
   // Data Quality Information
@@ -690,9 +656,6 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	    fgdc->srcinfo[ii].srccite.geoform);
     fprintf(fp, "          </citeinfo>\n");
     fprintf(fp, "        </srccite>\n");
-    if (fgdc->srcinfo[ii].srcscale != MAGIC_UNSET_INT)
-      fprintf(fp, "        <srcscale>%d</srcscale>\n", 
-	      fgdc->srcinfo[ii].srcscale);
     fprintf(fp, "        <typesrc>%s</typesrc>\n", fgdc->srcinfo[ii].typesrc);
     fprintf(fp, "        <srctime>\n");
     fprintf(fp, "          <timeinfo>\n");
@@ -716,6 +679,51 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	    fgdc->procstep[ii].procdesc);
     fprintf(fp, "        <procdate>%s</procdate>\n",
 	    fgdc->procstep[ii].procdate);
+    if (strlen(fgdc->procstep[ii].proccont.cntper) > 2 ||
+	strlen(fgdc->procstep[ii].proccont.cntorg) > 2) {
+      fprintf(fp, "        <proccont>\n");
+      fprintf(fp, "          <cntinfo>\n");
+      fprintf(fp, "            <cntperp>\n");
+      fprintf(fp, "              <cntper>%s</cntper>\n", 
+	      fgdc->procstep[ii].proccont.cntper);
+      fprintf(fp, "              <cntorg>%s</cntorg>\n", 
+	      fgdc->procstep[ii].proccont.cntorg);
+      fprintf(fp, "            </cntperp>\n");
+      if (fgdc->procstep[ii].proccont.cntpos &&
+	  strlen(fgdc->procstep[ii].proccont.cntpos) > 1)
+	fprintf(fp, "            <cntpos>%s</cntpos>\n", 
+		fgdc->procstep[ii].proccont.cntpos);
+      fprintf(fp, "            <cntaddr>\n");
+      fprintf(fp, "              <addrtype>%s</addrtype>\n", 
+	      fgdc->procstep[ii].proccont.addrtype);
+      fprintf(fp, "              <address>%s</address>\n", 
+	      fgdc->procstep[ii].proccont.address);
+      fprintf(fp, "              <city>%s</city>\n", 
+	      fgdc->procstep[ii].proccont.city);
+      fprintf(fp, "              <state>%s</state>\n", 
+	      fgdc->procstep[ii].proccont.state);
+      fprintf(fp, "              <postal>%s</postal>\n", 
+	      fgdc->procstep[ii].proccont.postal);
+      if (fgdc->procstep[ii].proccont.country &&
+	  strlen(fgdc->procstep[ii].proccont.country) > 1)
+	fprintf(fp, "              <country>%s</country>\n", 
+		fgdc->procstep[ii].proccont.country);
+      fprintf(fp, "            </cntaddr>\n");
+      if (fgdc->procstep[ii].proccont.cntvoice &&
+	  strlen(fgdc->procstep[ii].proccont.cntvoice) > 1)
+	fprintf(fp, "            <cntvoice>%s</cntvoice>\n", 
+		fgdc->procstep[ii].proccont.cntvoice);
+      if (fgdc->procstep[ii].proccont.cntfax &&
+	  strlen(fgdc->procstep[ii].proccont.cntfax) > 1)
+	fprintf(fp, "            <cntfax>%s</cntfax>\n", 
+		fgdc->procstep[ii].proccont.cntfax);
+      if (fgdc->procstep[ii].proccont.cntemail &&
+	  strlen(fgdc->procstep[ii].proccont.cntemail) > 1)
+	fprintf(fp, "            <cntemail>%s</cntemail>\n", 
+		fgdc->procstep[ii].proccont.cntemail);
+      fprintf(fp, "          </cntinfo>\n");
+      fprintf(fp, "        </proccont>\n");
+    }
     fprintf(fp, "      </procstep>\n");
   }
   fprintf(fp, "    </lineage>\n");
