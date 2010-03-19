@@ -347,6 +347,7 @@ static void sort_input_preference(char **infiles, int n_inputs,
   double lat[n_inputs], lon[n_inputs], sec[n_inputs], sorter[n_inputs];
   ymd_date date;
   hms_time time;
+  julian_date jd;
   char **tmpfiles = (char **) MALLOC(sizeof(char *)*n_inputs);
 
   asfPrintStatus("Sort input images for preference: %s\n\n", preference);
@@ -358,7 +359,8 @@ static void sort_input_preference(char **infiles, int n_inputs,
     lat[ii] = meta->general->center_latitude;
     lon[ii] = meta->general->center_longitude;
     parse_DMYdate(meta->general->acquisition_date, &date, &time);
-    sec[ii] = date2sec(&date, &time);
+    date_ymd2jd(&date, &jd);
+    sec[ii] = date2sec(&jd, &time);
     if (strcmp_case(preference, "north") == 0 ||
 	strcmp_case(preference, "south") == 0)
       sorter[ii] = lat[ii];
@@ -518,13 +520,13 @@ int main(int argc, char *argv[])
     extract_string_options(&argc, &argv, preference, "-preference",
 			   "--preference", "-p", NULL);
 
-    if (strlen(preference) <= 0 ||
-	(strcmp_case(preference, "north") != 0 &&
-	 strcmp_case(preference, "south") != 0 &&
-	 strcmp_case(preference, "east") != 0 &&
-	 strcmp_case(preference, "west") != 0 &&
-	 strcmp_case(preference, "old") != 0 &&
-	 strcmp_case(preference, "new") != 0))
+    if (strlen(preference) > 0 &&
+	strcmp_case(preference, "north") != 0 &&
+	strcmp_case(preference, "south") != 0 &&
+	strcmp_case(preference, "east") != 0 &&
+	strcmp_case(preference, "west") != 0 &&
+	strcmp_case(preference, "old") != 0 &&
+	strcmp_case(preference, "new") != 0)
       asfPrintError("Can't handle this preference (%s)!\n", preference);
     
     char *outfile = argv[1];
