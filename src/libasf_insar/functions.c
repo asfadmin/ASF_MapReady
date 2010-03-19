@@ -202,23 +202,4 @@ int escher(char *inFile, char *outFile)
   return ret;
 }
 
-int raster_calc(char *outFile, char *operation)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "raster_calc %s %s %s", options, outFile, operation);
-  
-  printf("\nCommand line: %s\n", command);
-  //fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  fLog = FOPEN(logFile, "a");
-  
-  return ret;
-}
-
 #endif

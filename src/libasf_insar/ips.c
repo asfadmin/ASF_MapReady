@@ -259,13 +259,23 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     check_return(dem2phase("dem_slant.img", base2str(0, cfg->general->base),
                "out_dem_phase.img"),
          "creating simulated phase (dem2phase)");
-    sprintf(tmp, "\'(a-b)%%6.2831853-3.14159265\' ml_phase.img "
-        "out_dem_phase.img");
-    check_return(raster_calc("dinsar_phase.img", tmp),
+    //sprintf(tmp, "\'(a-b)%%6.2831853-3.14159265\' ml_phase.img "
+    //    "out_dem_phase.img");
+    sprintf(tmp, "\'(a-b)%%6.2831853-3.14159265\'");
+    char **inFiles = (char **) MALLOC(sizeof(char *)*2);
+    int ii;
+    for (ii=0; ii<2; ii++)
+      inFiles[ii] = (char *) MALLOC(sizeof(char)*50);
+    sprintf(inFiles[0], "ml_phase.img");
+    sprintf(inFiles[1], "out_dem_phase.img");
+    check_return(raster_calc("dinsar_phase.img", tmp, 2, inFiles),
          "calculating differential interferogram (raster_calc)");
     sprintf(cfg->dinsar->status, "success");
     check_return(write_config(configFile, cfg),
          "Could not update configuration file");
+    for (ii=0; ii<2; ii++)
+      FREE(inFiles[ii]);
+    FREE(inFiles);
     exit(0);
   }
 

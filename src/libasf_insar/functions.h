@@ -25,7 +25,6 @@ int remap(char *inFile, char *outFile, char *options);
 int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1, 
 	   char *pwrFile2, char *config, char *outFile, int nAzimuth, int nRange, 
 	   int nOverAzi, int nOverRng, int nProcs, int flattening);
-int raster_calc(char *outFile,char *operation);
 
 #define ARDOP_VALID_PATCH_LENGTH 3300
 

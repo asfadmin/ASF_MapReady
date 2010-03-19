@@ -84,7 +84,11 @@ int asf_phase_unwrap(char *algorithm, char *interferogram, char *metaFile,
 		     char *demFile, char *baseline, double filter_strength, 
 		     int flattening, char *mask, char *unwrapped_phase)
 {
+  int ii;
   char tmp[255];
+  char **inFiles = (char **) MALLOC(sizeof(char *)*2);
+  for (ii=0; ii<2; ii++)
+    inFiles[ii] = (char *) MALLOC(sizeof(char)*50);
 
   // Simulated phase image from DEM
   asfPrintStatus("\n   Simulating a phase image from DEM ...\n\n");
@@ -102,9 +106,10 @@ int asf_phase_unwrap(char *algorithm, char *interferogram, char *metaFile,
   // Remove known topographic phase
   asfPrintStatus("\n   Removing known topographic phase ...\n");
   if (flattening == 1) {
+    sprintf(inFiles[0], "ml_phase.img");
+    sprintf(inFiles[1], "dem_phase.img");
     check_return(raster_calc("ml_dem_phase.img", 
-			     "\'(a-b)%6.2831853-3.14159265\' "
-			     "ml_phase.img dem_phase.img"),
+			     "\'(a-b)%6.2831853-3.14159265\' ", 2, inFiles),
 		 "subtracting terrain induced phase (raster_calc)");
   }
   
@@ -134,8 +139,10 @@ int asf_phase_unwrap(char *algorithm, char *interferogram, char *metaFile,
       asfPrintStatus("   Performing phase unwrapping ...\n");
       check_return(escher(tmp,"unwrap_dem"), "phase unwrapping (escher)");
       asfPrintStatus("   Adding known topographic phase again ...\n");
-      check_return(raster_calc("unwrap_phase.img", "\'(a+b)*(a/a)*(b/b)\' "
-			       "unwrap_dem.img dem_phase.img"),
+      sprintf(inFiles[0], "unwrap_dem.img");
+      sprintf(inFiles[1], "dem_phase.img");
+      check_return(raster_calc("unwrap_phase.img", "\'(a+b)*(a/a)*(b/b)\' ",
+			       2, inFiles),
 		   "adding terrain induced phase back (raster_calc)");
     }
     else
@@ -191,6 +198,10 @@ int asf_phase_unwrap(char *algorithm, char *interferogram, char *metaFile,
     link("ml_phase.meta", "unwrap_phase.meta");
     */
   }
+
+  for (ii=0; ii<2; ii++)
+    FREE(inFiles[ii]);
+  FREE(inFiles);
 
   return(0);
 }
