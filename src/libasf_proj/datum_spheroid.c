@@ -32,6 +32,12 @@ datum_spheroid (datum_type_t datum)
   case SAD69_DATUM:
     return GRS1967_SPHEROID;
 
+  case ITRF97_DATUM:
+    return GRS1980_SPHEROID;
+
+  case ED50_DATUM:
+    return INTERNATIONAL1924_SPHEROID;
+
   default:
     assert (0);
     return WGS84_SPHEROID;

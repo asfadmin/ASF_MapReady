@@ -122,6 +122,10 @@ double spheroid_diff_from_axis (spheroid_type_t spheroid, double n_semi_major, d
       s_semi_major = GEM10C_SEMIMAJOR;
       s_semi_minor = GEM10C_SEMIMAJOR * (1.0 - 1.0/GEM10C_INV_FLATTENING);
       break;
+    case GRS1967_SPHEROID:
+      s_semi_major = GRS1980_SEMIMAJOR;
+      s_semi_minor = GRS1980_SEMIMAJOR * (1.0 - 1.0/GRS1980_INV_FLATTENING);
+      break;
     case GRS1980_SPHEROID:
       s_semi_major = GRS1980_SEMIMAJOR;
       s_semi_minor = GRS1980_SEMIMAJOR * (1.0 - 1.0/GRS1980_INV_FLATTENING);
@@ -380,7 +384,7 @@ void pcs_2_string (char *datum_str, short pcs) {
     strcpy (datum_str, "NAD83");
   }
   else if (pcsNNN == NNN_WGS84N || pcsNNN == NNN_WGS84S) {
-    strcpy (datum_str, "WGS 84");
+    strcpy (datum_str, "WGS84");
   }
   else {
     strcpy (datum_str, "UNKNOWN or UNSUPPORTED");
@@ -398,13 +402,19 @@ void datum_2_string (char *datum_str, datum_type_t datum)
       strcpy (datum_str, "NAD83");
       break;
     case WGS84_DATUM:
-      strcpy (datum_str, "WGS 84");
+      strcpy (datum_str, "WGS84");
       break;
     case ITRF97_DATUM:
-      strcpy(datum_str, "ITRF97 (WGS 84)");
+      strcpy(datum_str, "ITRF97");
       break;
     case HUGHES_DATUM:
-      strcpy(datum_str, "HUGHES 1980");
+      strcpy(datum_str, "HUGHES80");
+      break;
+    case ED50_DATUM:
+      strcpy(datum_str, "ED50");
+      break;
+    case SAD69_DATUM:
+      strcpy(datum_str, "SAD69");
       break;
     default:
       strcpy (datum_str, "UNKNOWN or UNSUPPORTED");
@@ -435,14 +445,20 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
     case NAD83_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_NAD83);
       break;
+    case SAD69_DATUM:
+      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_SAD69);
+      break;
     case WGS72_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_72);
       break;
-    case ITRF97_DATUM:
+    case ITRF97_DATUM:      
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 6655);
+      break;
     case WGS84_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_84);
       break;
     case HUGHES_DATUM:
+      /*
       // The GeoTIFF standard knows nothing of a Hughes ellipsoid/spheroid or
       // datum... the following implements a user-defined version (what the
       // standard calls "a rare bird indeed")
@@ -455,6 +471,8 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
                   (double) HUGHES_INV_FLATTENING);
       double semi_minor = HUGHES_SEMIMAJOR * (1.0 - 1.0/HUGHES_INV_FLATTENING);
       GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, semi_minor);
+      */
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 6054);      
       break;
     case EGM96_DATUM:
     case ETRF89_DATUM:
@@ -495,6 +513,7 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
           GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_WGS84);
           break;
         case HUGHES_SPHEROID:
+	  /*
           // The Hughes datum (really the ellipsoid) is special ..a little recursion lets
           // the key-writing code exist in one place (see case above) instead of repeating
           // it here.
@@ -508,6 +527,8 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
           // to include either a pointer to metadata or the projection type.  I prefer
           // loose coupling...
           write_datum_key (ogtif, HUGHES_DATUM, re_major, re_minor);
+	  */
+	  GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7058);
           break;
         default:
             // Don't write anything into GeographicTypeGeoKey (including 'user-defined'

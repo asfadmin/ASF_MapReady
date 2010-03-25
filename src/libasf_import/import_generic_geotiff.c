@@ -58,7 +58,7 @@
 #define NAD27_DATUM_STR   "NAD27"
 #define NAD83_DATUM_STR   "NAD83"
 #define HARN_DATUM_STR    "HARN"
-#define WGS84_DATUM_STR   "WGS 84"
+#define WGS84_DATUM_STR   "WGS84"
 #define HUGHES_DATUM_STR  "HUGHES"
 
 #define USER_DEFINED_PCS             32767
@@ -702,6 +702,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                     case GCS_NAD83:
                         datum = NAD83_DATUM;
                         break;
+		    case GCS_ED50:
+		      datum = ED50_DATUM;
+		      break;
+		    case GCS_SAD69:
+		      datum = SAD69_DATUM;
+		      break;
                     default:
                         datum = UNKNOWN_DATUM;
                         break;
@@ -722,6 +728,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                         case Datum_North_American_Datum_1983:
                             datum = NAD83_DATUM;
                             break;
+		        case 6655: // ITRF97
+			  datum = ITRF97_DATUM;
+			  break;
+		        case 6054: // HUGHES80
+			  datum = HUGHES_DATUM;
+			  break;
                         default:
                             datum = UNKNOWN_DATUM;
                             break;
@@ -820,6 +832,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             case GCS_NAD83:
               datum = NAD83_DATUM;
               break;
+	    case GCS_ED50:
+	      datum = ED50_DATUM;
+	      break;
+	    case GCS_SAD69:
+	      datum = SAD69_DATUM;
+	      break;
             default:
               datum = UNKNOWN_DATUM;
               break;
@@ -840,6 +858,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               case Datum_North_American_Datum_1983:
                 datum = NAD83_DATUM;
                 break;
+	      case 6655: // ITRF97
+		datum = ITRF97_DATUM;
+		break;
+	      case 6054: // HUGHES80
+		datum = HUGHES_DATUM;
+		break;
               default:
                 datum = UNKNOWN_DATUM;
                 break;
@@ -1175,6 +1199,73 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             mp->param.lamaz.false_northing = false_northing;
             check_projection_parameters(mp);
             break;
+	  case CT_Equirectangular:
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center latitude from GeoTIFF file\n"
+                  "using ProjNatOriginLatGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center longitude from GeoTIFF file\n"
+                  "using ProjNatOriginLongGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false easting from GeoTIFF file\n"
+                  "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false northing from GeoTIFF file\n"
+                  "using ProjFalseNorthingGeoKey\n");
+            }
+            mp->type = EQUI_RECTANGULAR;
+            mp->hem = (latOrigin > 0.0) ? 'N' : 'S';
+            mp->param.eqr.orig_latitude = latOrigin;
+            mp->param.eqr.central_meridian = lonOrigin;
+            mp->param.eqr.false_easting = false_easting;
+            mp->param.eqr.false_northing = false_northing;
+            check_projection_parameters(mp);
+	    break;
+	  case CT_Mercator:
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center latitude from GeoTIFF file\n"
+                  "using ProjNatOriginLatGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center longitude from GeoTIFF file\n"
+                  "using ProjNatOriginLongGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false easting from GeoTIFF file\n"
+                  "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false northing from GeoTIFF file\n"
+                  "using ProjFalseNorthingGeoKey\n");
+            }
+            // FIXME: convert scale factor into standard parallel
+            mp->type = MERCATOR;
+            mp->hem = (latOrigin > 0.0) ? 'N' : 'S';
+            mp->param.mer.orig_latitude = latOrigin;
+            mp->param.mer.central_meridian = lonOrigin;
+            mp->param.mer.false_easting = false_easting;
+            mp->param.mer.false_northing = false_northing;
+            check_projection_parameters(mp);
+	    break;
           default:
             asfPrintWarning(
                 "Unable to determine projection type from GeoTIFF file\n"

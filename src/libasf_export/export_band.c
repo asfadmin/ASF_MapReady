@@ -647,18 +647,18 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                       md->projection->param.lamcc.plat2);
         }
         if (meta_is_valid_double(md->projection->param.lamcc.false_easting)) {
-          GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.lamcc.false_easting);
         }
         else {
-          GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
         if (meta_is_valid_double(md->projection->param.lamcc.false_northing)) {
-          GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.lamcc.false_northing);
         }
         else {
-          GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
         if (meta_is_valid_double(md->projection->param.lamcc.lon0)) {
           GTIFKeySet (ogtif, ProjFalseOriginLongGeoKey, TYPE_DOUBLE, 1,

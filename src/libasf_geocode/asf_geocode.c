@@ -487,6 +487,12 @@ static void determine_projection_fns(int projection_type, project_t **project,
       if (unproject) *unproject = project_eqr_inv;
       if (unproject_arr) *unproject_arr = project_eqr_arr_inv;
       break;
+    case MERCATOR:
+      if (project) *project = project_mer;
+      if (project_arr) *project_arr = project_mer_arr;
+      if (unproject) *unproject = project_mer_inv;
+      if (unproject_arr) *unproject_arr = project_mer_arr_inv;
+      break;
     default:
       g_assert_not_reached ();
       if (project) *project = NULL;
@@ -1448,7 +1454,23 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         = HUGHES_SEMIMAJOR * (1 - (1 / HUGHES_INV_FLATTENING));
     omd->projection->re_major = HUGHES_SEMIMAJOR;
     omd->projection->re_minor = hughes_semiminor_axis;
-  } else {
+  }
+  else if (datum == SAD69_DATUM) {
+    // SAD69 datum is based on GRS1967 ellipsoid
+    const double grs1967_semiminor_axis
+      = GRS1967_SEMIMAJOR * (1 - (1 / GRS1967_INV_FLATTENING));
+    omd->projection->re_major = GRS1967_SEMIMAJOR;
+    omd->projection->re_minor = grs1967_semiminor_axis;
+  }
+  else if (datum == ED50_DATUM) {
+    // ED50 datum is based on INTERNATIONAL1924 ellipsoid
+    const double international1924_semiminor_axis
+      = INTERNATIONAL1924_SEMIMAJOR * 
+           (1 - (1 / INTERNATIONAL1924_INV_FLATTENING));
+    omd->projection->re_major = INTERNATIONAL1924_SEMIMAJOR;
+    omd->projection->re_minor = international1924_semiminor_axis;
+  }
+  else {
     asfPrintError("Unsupported datum! %d\n", datum_toString(datum));
   }
 

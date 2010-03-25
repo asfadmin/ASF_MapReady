@@ -131,6 +131,11 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
       verify_valid_latitude(pps->eqr.orig_latitude);
       verify_valid_longitude(pps->eqr.central_meridian);
       break;
+    case MERCATOR:
+      verify_valid_latitude(pps->mer.standard_parallel);
+      verify_valid_latitude(pps->mer.orig_latitude);
+      verify_valid_longitude(pps->mer.central_meridian);
+      break;
     default:
       asfPrintError("sanity_check: illegal projection type!\n");
   }
@@ -258,6 +263,18 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
         pps->eqr.orig_latitude = 0.0;
       if (ISNAN(pps->eqr.central_meridian))
         pps->eqr.central_meridian = 0.0;
+      break;
+
+    case MERCATOR:
+      if (ISNAN(pps->mer.false_easting))
+	pps->mer.false_easting = 0;
+      if (ISNAN(pps->mer.false_northing))
+	pps->mer.false_northing = 0;
+
+      if (ISNAN(pps->mer.orig_latitude))
+	pps->mer.orig_latitude = meta->general->center_latitude;
+      if (ISNAN(pps->mer.central_meridian))
+	pps->mer.central_meridian = meta->general->center_longitude;
       break;
 
     default:
@@ -454,5 +471,5 @@ const char *geocode_projection_options_help()
 "          utilized.  One example is attempting to use a NADxx (North\n"
 "          American) datum in an area outside of North America will\n"
 "          result in projection library errors regardless.\n"
-    ;
+      ;
 }

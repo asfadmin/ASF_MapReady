@@ -175,6 +175,9 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
   case EQUI_RECTANGULAR:
     return "[Equirectangular]";
 
+  case MERCATOR:
+    return "[Mercator]";
+
   default:
     asfPrintError("projection_name: illegal projection type!");
     return "";
@@ -361,8 +364,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
     if (pps->utm.zone == 0 || !meta_is_valid_double(zone))
       pps->utm.zone = MAGIC_UNSET_INT;
   }
-  else if (strcmp_case(buf, bracketed_projection_name(
-    EQUI_RECTANGULAR)) == 0)
+  else if (strcmp_case(buf, bracketed_projection_name(EQUI_RECTANGULAR)) == 0)
   {
     *proj_type = EQUI_RECTANGULAR;
     get_fields(fp,
@@ -371,6 +373,18 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       "False Easting", &pps->eqr.false_easting,
       "False Northing", &pps->eqr.false_northing,
       NULL);
+    *datum = get_datum(fp);
+  }
+  else if (strcmp_case(buf, bracketed_projection_name(MERCATOR)) == 0)
+  {
+    *proj_type = MERCATOR;
+    get_fields(fp,
+	       "First Standard Parallel", &pps->mer.standard_parallel,
+	       "Central Meridian", &pps->mer.central_meridian,
+	       "Latitude of Origin", &pps->mer.orig_latitude,
+	       "False Easting", &pps->mer.false_easting,
+	       "False Northing", &pps->mer.false_northing,
+	       NULL);
     *datum = get_datum(fp);
   }
   else
@@ -423,6 +437,14 @@ static int matches_read_proj_file(char * param)
        strcmp(param, "-rpf") == 0
     || strcmp(param, "-read-proj-file") == 0
     || strcmp(param, "--read-proj-file") == 0;
+}
+
+static int matches_project_to_file(char * param)
+{
+  return
+    strcmp(param, "-pt") == 0 ||
+    strcmp(param, "-project-to") == 0 ||
+    strcmp(param, "--project-to") == 0;
 }
 
 static int parse_zone_option(int *i, int argc,
@@ -618,6 +640,38 @@ static int parse_read_proj_file_option(int *i, int argc, char *argv[],
   }
 }
 
+static int parse_project_to_file_option(int *i, int argc, char *argv[],
+					projection_type_t *proj_type,
+					datum_type_t *datum,
+					project_parameters_t *pps, int *ok)
+{
+  if (matches_project_to_file(argv[*i]))
+  {
+    ++(*i);
+
+    if (*i == argc) {
+      no_arg(argv[*i-1]);
+      *ok = FALSE;
+    }
+    else {
+      meta_parameters *meta = meta_read(argv[*i]);
+      if (meta->projection) {
+	*proj_type = meta->projection->type;
+	*datum = meta->projection->datum;
+	*pps = meta->projection->param;
+      }
+      else
+        asfPrintError("Reference (%s) does not have map projection "
+		      "information\n", argv[*i]);
+      *ok = TRUE;
+    }
+    ++(*i);
+    return TRUE;
+  }
+  else
+    return FALSE;
+}
+
 static void extract_flag(int *argc, char **argv[],
                          char *arg, int *found)
 {
@@ -726,7 +780,7 @@ void parse_other_options(int *argc, char **argv[],
                          char *band_id)
 {
   *datum = parse_datum_option(argc, argv);
-        extract_string_options(argc, argv, band_id, "-band", "--band", NULL);
+  extract_string_options(argc, argv, band_id, "-band", "--band", NULL); 
   extract_double_options(argc, argv, height, "--height", "-height", "-h", NULL);
   extract_double_options(argc, argv, pixel_size,
     "--pixel-size", "-pixel-size", "-pix", "-ps", NULL);
@@ -761,6 +815,15 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
         return NULL;
       }
 
+      break;
+    }
+
+    else if (parse_project_to_file_option(&i, *argc, *argv, proj_type, datum, 
+					  pps, &ok)) {
+      if (!ok) {
+	FREE(pps);
+	return NULL;
+      }
       break;
     }
 
@@ -1325,6 +1388,8 @@ datum_type_t get_datum(FILE *fp)
   {
       proj_type = EQUI_RECTANGULAR;
   }
+  else if (strcmp_case(buf, bracketed_projection_name(MERCATOR)) == 0)
+    proj_type = MERCATOR;
   else
   {
       // this should never happen
@@ -1379,6 +1444,9 @@ datum_type_t get_datum(FILE *fp)
           else if (strncmp(uc(s), "NAD83", 5)  == 0) {
               datum = NAD83_DATUM;
           }
+	  else if (strncmp_case(s, "SAD69", 5) == 0) {
+	    datum = SAD69_DATUM;
+          }
           else if (strncmp(uc(s), "WGS72", 5)  == 0) {
               datum = WGS72_DATUM;
           }
@@ -1415,19 +1483,22 @@ datum_type_t get_datum(FILE *fp)
           else if (strncmp(uc(s), "GEM10C", 6) == 0) {
               spheroid = GEM10C_SPHEROID;
           }
-          else if (strncmp(uc(s), "GRS1980", 5)  == 0) {
+	  else if (strncmp_case(s, "GRS1967", 7) == 0) {
+	    spheroid = GRS1967_SPHEROID;
+	  }
+          else if (strncmp(uc(s), "GRS1980", 7)  == 0) {
               spheroid = GRS1980_SPHEROID;
           }
-          else if (strncmp(uc(s), "INTERNATIONAL1924", 5)  == 0) {
+          else if (strncmp(uc(s), "INTERNATIONAL1924", 17)  == 0) {
               spheroid = INTERNATIONAL1924_SPHEROID;
           }
-          else if (strncmp(uc(s), "INTERNATIONAL1967", 5)  == 0) {
+          else if (strncmp(uc(s), "INTERNATIONAL1967", 17)  == 0) {
               spheroid = INTERNATIONAL1967_SPHEROID;
           }
           else if (strncmp(uc(s), "WGS72", 5)  == 0) {
               spheroid = WGS72_SPHEROID;
           }
-          else if (strncmp(uc(s), "WGS84", 6) == 0) {
+          else if (strncmp(uc(s), "WGS84", 5) == 0) {
               spheroid = WGS84_SPHEROID;
           }
           else if (strncmp(uc(s), "HUGHES", 6) == 0) {

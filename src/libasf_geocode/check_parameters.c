@@ -392,6 +392,41 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
 
       break;
 
+    case MERCATOR:
+
+      // Outside range tests
+      if (!meta_is_valid_double(pp->mer.central_meridian) ||
+           pp->mer.central_meridian < -180 || pp->mer.central_meridian > 180)
+	report_func("Central meridian '%.4f' outside the defined range "
+		      "(-180 deg to 180 deg)\n", pp->mer.central_meridian);
+      if (!meta_is_valid_double(pp->mer.orig_latitude) ||
+           pp->mer.orig_latitude < -90 || pp->mer.orig_latitude > 90)
+	report_func("Latitude of origin '%.4f' outside the defined range "
+		      "(-90 deg to 90 deg)\n", pp->mer.orig_latitude);
+
+      // Distortion test - only areas with a latitude not more than 30 degrees
+      // outside the latitude range defined by first and second parallel are
+      // permitted.
+      min_lat = pp->mer.standard_parallel - 30.0;
+      max_lat = pp->mer.standard_parallel + 30.0;
+      if (!meta_is_valid_double(meta->general->center_latitude))
+        report_func("Invalid center latitude found (%.4f).\n",
+                    meta->general->center_latitude);
+      if (meta->general->center_latitude > max_lat ||
+	  meta->general->center_latitude < min_lat) {
+	if (force_flag)
+	  report_func("Geocoding of areas with latitudes outside the defined range "
+		      "(%.1f deg %.1f deg) in the Mercator projection with the "
+		      "standard parallel (%.1f) is not advisable.\n", min_lat,
+		      max_lat, pp->mer.standard_parallel);
+	else
+	  report_func("Geocoding of areas with latitudes outside the defined range "
+		      "(%.1f deg %.1f deg) in the Mercator projection with the "
+		      "standard parallel (%.1f) is not supported by this tool.\n", 
+		      min_lat, max_lat, pp->mer.standard_parallel);
+      }
+      break;
+
     default:
       asfPrintError("Chosen projection type not supported!\n");
       break;

@@ -783,6 +783,8 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->spheroid = GEM10C_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GRS1980") )
         MPROJ->spheroid = GRS1980_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GRS1967") )
+	MPROJ->spheroid - GRS1967_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTERNATIONAL1924") )
         MPROJ->spheroid = INTERNATIONAL1924_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTERNATIONAL1967") )
@@ -822,6 +824,8 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->datum = NAD27_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD83") )
         MPROJ->datum = NAD83_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SAD69") )
+	MPROJ->datum = SAD69_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS72") )
         MPROJ->datum = WGS72_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS84") )

@@ -162,6 +162,20 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
       dest->param.lamaz.false_easting = src->param.lamaz.false_easting;
       dest->param.lamaz.false_northing = src->param.lamaz.false_northing;
       break;
+    case EQUI_RECTANGULAR:
+      dest->param.eqr.orig_latitude = src->param.eqr.orig_latitude;
+      dest->param.eqr.central_meridian = src->param.eqr.central_meridian;
+      dest->param.eqr.false_easting = src->param.eqr.false_easting;
+      dest->param.eqr.false_northing = src->param.eqr.false_northing;
+      break;
+    case MERCATOR:
+      dest->param.mer.orig_latitude = src->param.mer.orig_latitude;
+      dest->param.mer.central_meridian = src->param.mer.central_meridian;
+      dest->param.mer.standard_parallel = src->param.mer.standard_parallel;
+      dest->param.mer.scale_factor = src->param.mer.scale_factor;
+      dest->param.mer.false_easting = src->param.mer.false_easting;
+      dest->param.mer.false_northing = src->param.mer.false_northing;
+      break;
     case STATE_PLANE:
       break;
     default:
