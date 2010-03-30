@@ -600,6 +600,36 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
   fprintf(fp, "    <useconst>%s</useconst>\n", fgdc->useconst);
   if (fgdc->copyright)
     fprintf(fp, "    <copyright>%s</copyright>\n", fgdc->copyright);
+  if (fgdc->ptcontac) {
+    fprintf(fp, "    <ptcontac>\n");
+    fprintf(fp, "      <cntinfo>\n");
+    fprintf(fp, "        <cntperp>\n");
+    fprintf(fp, "          <cntper>%s</cntper>\n", fgdc->ptcontac->cntper);
+    fprintf(fp, "          <cntorg>%s</cntorg>\n", fgdc->ptcontac->cntorg);
+    fprintf(fp, "        </cntperp>\n");
+    if (fgdc->ptcontac->cntpos && strlen(fgdc->ptcontac->cntpos) > 1)
+      fprintf(fp, "        <cntpos>%s</cntpos>\n", fgdc->ptcontac->cntpos);
+    fprintf(fp, "        <cntaddr>\n");
+    fprintf(fp, "          <addrtype>%s</addrtype>\n", 
+	    fgdc->ptcontac->addrtype);
+    fprintf(fp, "          <address>%s</address>\n", fgdc->ptcontac->address);
+    fprintf(fp, "          <city>%s</city>\n", fgdc->ptcontac->city);
+    fprintf(fp, "          <state>%s</state>\n", fgdc->ptcontac->state);
+    fprintf(fp, "          <postal>%s</postal>\n", fgdc->ptcontac->postal);
+    if (fgdc->ptcontac->country && strlen(fgdc->ptcontac->country) > 1)
+      fprintf(fp, "          <country>%s</country>\n", fgdc->ptcontac->country);
+    fprintf(fp, "        </cntaddr>\n");
+    if (fgdc->ptcontac->cntvoice && strlen(fgdc->ptcontac->cntvoice) > 1)
+      fprintf(fp, "        <cntvoice>%s</cntvoice>\n", 
+	      fgdc->ptcontac->cntvoice);
+    if (fgdc->ptcontac->cntfax && strlen(fgdc->ptcontac->cntfax) > 1)
+      fprintf(fp, "        <cntfax>%s</cntfax>\n", fgdc->ptcontac->cntfax);
+    if (fgdc->ptcontac->cntemail && strlen(fgdc->ptcontac->cntemail) > 1)
+      fprintf(fp, "        <cntemail>%s</cntemail>\n", 
+	      fgdc->ptcontac->cntemail);
+    fprintf(fp, "      </cntinfo>\n");
+    fprintf(fp, "    </ptcontac>\n");
+  }
   if (fgdc->browse) {
     fprintf(fp, "    <browse>\n");
     fprintf(fp, "      <browsen>%s</browsen>\n", fgdc->browse->browsen);
