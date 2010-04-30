@@ -220,6 +220,16 @@ void update_pixel_info(ImageInfo *ii)
             R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s, t);
     }
 
+    if (meta->projection &&
+        meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+      distortion_t d;
+      map_distortions(meta->projection, lat*D2R, lon*D2R, &d);
+      sprintf(&buf[strlen(buf)], "Meridian scale factor: %.6lf\n", d.h);
+      sprintf(&buf[strlen(buf)], "Parallel scale factor: %.6lf\n", d.k);
+      sprintf(&buf[strlen(buf)], "Areal scale factor: %.6lf\n", d.s);
+      sprintf(&buf[strlen(buf)], "Angular distortion: %.4lf (deg)\n", d.omega);
+    }
+
     if (g_poly->n > 0) {
         // start distance measure at crosshair coords
         double cross_x, cross_y, prev_x, prev_y;

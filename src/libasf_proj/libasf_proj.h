@@ -42,7 +42,6 @@ typedef enum {
 } spheroid_type_t;
 
 typedef enum {
-  UNKNOWN_DATUM = 0,
   EGM96_DATUM,   /* Earth Gravity Model 1996 (spheroid: WGS84) */
   ED50_DATUM,    /* European Datum 1950 (International 1924) */
   ETRF89_DATUM,  /* European Terrestrial Reference Frame 1989 (WGS84) */
@@ -55,7 +54,8 @@ typedef enum {
   TOKYO_DATUM,   /* Tokyo Datum (based on Bessel 1841) */
   JGD2000_DATUM, /* JGD2000 Datum (currently used by Japan) */
   HUGHES_DATUM,
-  SAD69_DATUM    // South American Datum 1969
+  SAD69_DATUM,   // South American Datum 1969
+  UNKNOWN_DATUM
 } datum_type_t;
 
  /* Albers Conical Equal Area. */
@@ -150,6 +150,15 @@ typedef enum {
   } param_t;
 typedef param_t project_parameters_t;
 
+typedef struct {
+  double h;     // Meridian scale factor
+  double k;     // Parallel scale factor
+  double s;     // Areal scale factor
+  double omega; // Angular distortion
+  double a;     // Tissot indicatrix major axis
+  double b;     // Tissot indicatrix minor axis
+} distortion_t;
+
 /* Return the spheroid generally associated with a given datum.
    Unfortunately, in the larger world, a given datum isn't really
    always necessarily associated with a particular spheroid.  For the
@@ -171,6 +180,7 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor);
 /* String identifying the datum */
 const char *datum_toString(datum_type_t);
 const char *spheroid_toString(spheroid_type_t spheroid);
+datum_type_t getDatum(char datum_str);
 
 /**************************************************************************
    project_set_avg_height
@@ -563,5 +573,13 @@ int project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
 
 int utm_zone(double lon);
 int test_nad27(double lat, double lon);
+
+char *albers_projection_desc(project_parameters_t *pps, datum_type_t datum);
+char *utm_projection_description(project_parameters_t *pps, datum_type_t datum);
+char *ps_projection_desc(project_parameters_t *pps, datum_type_t datum);
+char *lamaz_projection_desc(project_parameters_t *pps, datum_type_t datum);
+char *lamcc_projection_desc(project_parameters_t *pps, datum_type_t datum);
+char *mer_projection_desc(project_parameters_t *pps, datum_type_t datum);
+char *eqr_projection_desc(project_parameters_t *pps, datum_type_t datum);
 
 #endif

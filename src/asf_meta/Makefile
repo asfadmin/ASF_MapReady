@@ -137,6 +137,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	is_map_projected.o \
 	band_util.o \
 	workreport.o \
+	distortions.o \
 	$(LAS_OBJS)
 
 all: asf_meta
