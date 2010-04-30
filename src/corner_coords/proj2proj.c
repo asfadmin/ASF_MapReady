@@ -43,9 +43,6 @@
 
 #define VERSION 1.0
 
-void read_proj_file(char * file, project_parameters_t * pps,
-		    projection_type_t * proj_type);
-
 static
 void usage(char *name)
 {
@@ -89,6 +86,8 @@ int main(int argc, char **argv)
   FILE *fp;
   project_parameters_t ppsIn, ppsOut;
   projection_type_t proj_typeIn, proj_typeOut;
+  datum_type_t datumIn, datumOut;
+  spheroid_type_t spheroidIn, spheroidOut;
   meta_projection *meta_projIn, *meta_projOut;
   double lat, lon, height, projXIn, projYIn, projXOut, projYOut, projZOut;
   int listFlag = FALSE;
@@ -121,8 +120,8 @@ int main(int argc, char **argv)
   printf("Program: proj2proj\n\n");
 
   // Read projection files
-  read_proj_file(projFileIn, &ppsIn, &proj_typeIn);
-  read_proj_file(projFileOut, &ppsOut, &proj_typeOut);
+  read_proj_file(projFileIn, &ppsIn, &proj_typeIn, &datumIn, &spheroidIn);
+  read_proj_file(projFileOut, &ppsOut, &proj_typeOut, &datumOut, &spheroidOut);
 
   // Check whether UTM projection has a zone defined
   if (proj_typeIn == UNIVERSAL_TRANSVERSE_MERCATOR &&
@@ -174,11 +173,11 @@ int main(int argc, char **argv)
   // Initialize meta_projection blocks
   meta_projIn = meta_projection_init();
   meta_projIn->type = proj_typeIn;
-  meta_projIn->datum = WGS84_DATUM;
+  meta_projIn->datum = datumIn;
   meta_projIn->param = ppsIn;
   meta_projOut = meta_projection_init();
   meta_projOut->type = proj_typeOut;
-  meta_projOut->datum = WGS84_DATUM;
+  meta_projOut->datum = datumOut;
   meta_projOut->param = ppsOut;
 
   // Read coordinates from list if needed and convert to map coordinates

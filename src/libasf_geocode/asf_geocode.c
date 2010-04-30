@@ -596,9 +596,10 @@ int asf_geocode_from_proj_file(const char *projection_file,
   project_parameters_t pp;
   projection_type_t projection_type;
   datum_type_t tmp_datum = datum;
+  spheroid_type_t spheroid;
   char *err=NULL;
 
-  if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, &err)) {
+  if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, &spheroid, &err)) {
        asfPrintError("%s",err);
   }
   if (tmp_datum != UNKNOWN_DATUM &&

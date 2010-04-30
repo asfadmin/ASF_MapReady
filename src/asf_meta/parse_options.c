@@ -12,6 +12,7 @@
 //#include <glib.h>
 
 datum_type_t get_datum(FILE *fp);
+spheroid_type_t get_spheroid(FILE *fp);
 
 static int print_warn = 1;
 
@@ -270,7 +271,8 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
 }
 
 int parse_proj_args_file(const char *file, project_parameters_t *pps,
-        projection_type_t* proj_type, datum_type_t *datum, char **err)
+			 projection_type_t* proj_type, datum_type_t *datum, 
+			 spheroid_type_t *spheroid, char **err)
 {
   FILE * fp;
   char buf[256];
@@ -300,6 +302,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       "False Northing", &pps->albers.false_northing,
       NULL);
     *datum = get_datum(fp);
+    *spheroid = get_spheroid(fp);
   }
   else if (strcmp_case(buf, bracketed_projection_name(
     LAMBERT_AZIMUTHAL_EQUAL_AREA)) == 0)
@@ -312,6 +315,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       "False Northing", &pps->lamaz.false_northing,
       NULL);
     *datum = get_datum(fp);
+    *spheroid = get_spheroid(fp);
   }
   else if (strcmp_case(buf, bracketed_projection_name(
     LAMBERT_CONFORMAL_CONIC)) == 0)
@@ -327,6 +331,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       /* "Scale Factor", &pps->lamcc.scale_factor, */
       NULL);
     *datum = get_datum(fp);
+    *spheroid = get_spheroid(fp);
   }
   else if (strcmp_case(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
   {
@@ -343,6 +348,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       NULL);
     pps->ps.is_north_pole = pps->ps.slat > 0;
     *datum = get_datum(fp);
+    *spheroid = get_spheroid(fp);
   }
   else if (strcmp_case(buf, bracketed_projection_name(
                     UNIVERSAL_TRANSVERSE_MERCATOR)) == 0 ||
@@ -359,6 +365,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       "Zone", &zone,
       NULL);
     *datum = get_datum(fp);
+    *spheroid = get_spheroid(fp);
     pps->utm.zone = (int) zone;
 
     if (pps->utm.zone == 0 || !meta_is_valid_double(zone))
@@ -374,6 +381,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       "False Northing", &pps->eqr.false_northing,
       NULL);
     *datum = get_datum(fp);
+    *spheroid = get_spheroid(fp);
   }
   else if (strcmp_case(buf, bracketed_projection_name(MERCATOR)) == 0)
   {
@@ -386,6 +394,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
 	       "False Northing", &pps->mer.false_northing,
 	       NULL);
     *datum = get_datum(fp);
+    *spheroid = get_spheroid(fp);
   }
   else
   {
@@ -611,6 +620,7 @@ static int parse_write_proj_file_option(int *i, int argc, char *argv[],
 static int parse_read_proj_file_option(int *i, int argc, char *argv[],
                                        projection_type_t *proj_type,
                                        datum_type_t *datum,
+				       spheroid_type_t *spheroid,
                                        project_parameters_t *pps, int *ok)
 {
   if (matches_read_proj_file(argv[*i]))
@@ -625,7 +635,7 @@ static int parse_read_proj_file_option(int *i, int argc, char *argv[],
     else
     {
       char *err=NULL;
-      if (!parse_proj_args_file(argv[*i], pps, proj_type, datum, &err)) {
+      if (!parse_proj_args_file(argv[*i], pps, proj_type, datum, spheroid, &err)) {
         asfPrintError("%s",err);
       }
       *ok = TRUE;
@@ -798,6 +808,7 @@ void parse_other_options(int *argc, char **argv[],
 project_parameters_t * parse_projection_options(int *argc, char **argv[],
                                                 projection_type_t * proj_type,
                                                 datum_type_t *datum,
+						spheroid_type_t *spheroid,
                                                 int *did_write_proj_file)
 {
   int i;
@@ -808,7 +819,7 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 
   for (i = 0; i < *argc; ++i)
   {
-    if (parse_read_proj_file_option(&i, *argc, *argv, proj_type, datum, pps, &ok))
+    if (parse_read_proj_file_option(&i, *argc, *argv, proj_type, datum, spheroid, pps, &ok))
     {
       if (!ok) {
         FREE(pps);
@@ -1556,50 +1567,58 @@ spheroid_type_t get_spheroid(FILE *fp)
                     s = eq;
                     s++;
                     while (isspace((int)*s))s++;
-                    if (strncmp(uc(s), "BESSEL", 5) == 0) {
+                    if (strncmp_case(s, "BESSEL", 6) == 0) {
                         spheroid = BESSEL_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "CLARKE1866", 4)   == 0) {
+                    else if (strncmp_case(s, "CLARKE1866", 10)   == 0) {
                         spheroid = CLARKE1866_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "CLARKE1880", 6) == 0) {
+                    else if (strncmp_case(s, "CLARKE1880", 10) == 0) {
                         spheroid = CLARKE1880_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "GEM6", 6) == 0) {
+                    else if (strncmp_case(s, "GEM6", 4) == 0) {
                         spheroid = GEM6_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "GEM10C", 6) == 0) {
+                    else if (strncmp_case(s, "GEM10C", 6) == 0) {
                         spheroid = GEM10C_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "GRS1980", 5)  == 0) {
+                    else if (strncmp_case(s, "GRS1967", 7)  == 0) {
+                        spheroid = GRS1967_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp_case(s, "GRS1980", 7)  == 0) {
                         spheroid = GRS1980_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "INTERNATIONAL1924", 5)  == 0) {
+                    else if (strncmp_case(s, "INTERNATIONAL1924", 17)  == 0) {
                         spheroid = INTERNATIONAL1924_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "INTERNATIONAL1967", 5)  == 0) {
+                    else if (strncmp_case(s, "INTERNATIONAL1967", 17)  == 0) {
                         spheroid = INTERNATIONAL1967_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "WGS72", 5)  == 0) {
+                    else if (strncmp_case(s, "WGS72", 5)  == 0) {
                         spheroid = WGS72_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "WGS84", 6) == 0) {
+                    else if (strncmp_case(s, "WGS84", 5) == 0) {
                         spheroid = WGS84_SPHEROID;
                         break;
                     }
-                    else if (strncmp(uc(s), "HUGHES", 6) == 0) {
+                    else if (strncmp_case(s, "HUGHES", 6) == 0) {
                         spheroid = HUGHES_SPHEROID;
                         break;
                     }
+		    else {
+		      spheroid = UNKNOWN_SPHEROID;
+		      break;
+		    }
                 }
             }
         }

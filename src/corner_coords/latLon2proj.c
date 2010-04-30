@@ -42,9 +42,6 @@
 
 #define VERSION 1.0
 
-void read_proj_file(char * file, project_parameters_t * pps,
-		    projection_type_t * proj_type);
-
 static
 void usage(char *name)
 {
@@ -88,6 +85,8 @@ int main(int argc, char **argv)
   FILE *fp;
   project_parameters_t pps;
   projection_type_t proj_type;
+  datum_type_t datum;
+  spheroid_type_t spheroid;
   meta_projection *meta_proj;
   double lat, lon, projX, projY, projZ;
   int listFlag = FALSE;
@@ -118,7 +117,7 @@ int main(int argc, char **argv)
   printf("Program: latLon2proj\n\n");
 
   // Read projection file
-  read_proj_file(projFile, &pps, &proj_type);
+  read_proj_file(projFile, &pps, &proj_type, &datum, &spheroid);
 
   // Read lat/lon from list if needed and convert to map coordinates
   if (listFlag) {

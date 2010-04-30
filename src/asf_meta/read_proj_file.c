@@ -87,8 +87,23 @@ static int parse_val(char * inbuf, char * key, double * val)
 	    }
 	  else
 	    {
-	      asfPrintWarning("Illegal value found for key '%s': %s\n",
-			      key, p);
+	      int ii=0;
+	      while (ii < UNKNOWN_DATUM) {
+		if (strcmp_case(p, datum_toString(ii)) == 0) {
+		  *val = ii;
+		  match = TRUE;
+		}
+		ii++;
+	      }
+	      while (ii < UNKNOWN_SPHEROID) {
+		if (strcmp_case(p, spheroid_toString(ii)) == 0) {
+		  *val = ii;
+		  match = TRUE;
+		}
+	      }
+	      if (!match)
+		asfPrintWarning("Illegal value found for key '%s': %s\n",
+				key, p);
 	    }
 	}
     }
@@ -162,6 +177,12 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
       
     case LAMBERT_CONFORMAL_CONIC:
       return "[Lambert Conformal Conic]";
+
+    case EQUI_RECTANGULAR:
+      return "[Equirectangular]";
+
+    case MERCATOR:
+      return "[Mercator]";
       
     default:
       asfPrintError("projection_name: illegal projection type!");
@@ -229,10 +250,12 @@ FILE *fopen_proj_file(const char *file, const char *mode)
 }
 
 void read_proj_file(char * file, project_parameters_t * pps,
-		    projection_type_t * proj_type)
+		    projection_type_t * proj_type, datum_type_t *datum,
+		    spheroid_type_t *spheroid)
 {
   FILE * fp;
   char buf[256];
+  double ddatum = -1, dspheroid = -1;
 
   fp = fopen_proj_file(file, "r");
   if (!fp)
@@ -254,6 +277,8 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 "Latitude of Origin", &pps->albers.orig_latitude,
 		 "False Easting", &pps->albers.false_easting,
 		 "False Northing", &pps->albers.false_northing,
+		 "Datum", &ddatum,
+		 "Spheroid", &dspheroid,
 		 NULL);
     }
   else if 
@@ -265,6 +290,8 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 "Latitude of Origin", &pps->lamaz.center_lat,
 		 "False Easting", &pps->lamaz.false_easting,
 		 "False Northing", &pps->lamaz.false_northing,
+		 "Datum", &ddatum,
+		 "Spheroid", &dspheroid,
 		 NULL);
     }
   else if 
@@ -279,6 +306,8 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 "False Easting", &pps->lamcc.false_easting,
 		 "False Northing", &pps->lamcc.false_northing,
 		 /* "Scale Factor", &pps->lamcc.scale_factor, */
+		 "Datum", &ddatum,
+		 "Spheroid", &dspheroid,
 		 NULL);
     }
   else if (strcmp_case(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
@@ -293,6 +322,8 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 "False Easting", &pps->ps.false_easting,
 		 "False Northing", &pps->ps.false_northing,
 		 "Hemisphere", &is_north_pole,
+		 "Datum", &ddatum,
+		 "Spheroid", &dspheroid,
 		 NULL);
       pps->ps.is_north_pole = pps->ps.slat > 0;
     }
@@ -310,6 +341,8 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 "False Easting", &pps->utm.false_easting,
 		 "False Northing", &pps->utm.false_northing,
 		 "Zone", &zone,
+		 "Datum", &ddatum,
+		 "Spheroid", &dspheroid,
 		 NULL);
       
       pps->utm.zone = (int) zone;
@@ -325,6 +358,8 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 "Central Meridian", &pps->eqr.central_meridian,
 		 "False Easting", &pps->eqr.false_easting,
 		 "False Northing", &pps->eqr.false_northing,
+		 "Datum", &ddatum,
+		 "Spheroid", &dspheroid,
 		 NULL);
     }
   else
@@ -334,5 +369,10 @@ void read_proj_file(char * file, project_parameters_t * pps,
     }
   
   fclose(fp);
+
+  if (ddatum != -1)
+    *datum = (datum_type_t) ddatum;
+  if (dspheroid != -1)
+    *spheroid = (spheroid_type_t) dspheroid;
 }
 

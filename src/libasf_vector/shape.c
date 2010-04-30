@@ -241,9 +241,9 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
       semimajor / (semimajor - meta->projection->re_minor);
   }
   else if (projFile) {
-    parse_proj_args_file(projFile, &pps, &proj_type, &datum, error);
+    parse_proj_args_file(projFile, &pps, &proj_type, &datum, &spheroid, error);
     fpIn = FOPEN(projFile, "r");
-    spheroid = get_spheroid(fpIn);
+    //spheroid = get_spheroid(fpIn);
     FCLOSE(fpIn);
 
     switch (spheroid)

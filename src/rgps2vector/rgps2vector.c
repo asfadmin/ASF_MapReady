@@ -48,6 +48,8 @@ int main(int argc, char **argv)
   SHPHandle shape;
   project_parameters_t pps;
   projection_type_t proj_type;
+  datum_type_t datum;
+  spheroid_type_t spheroid;
   meta_projection *meta_proj;
   ymd_date date, rgpsDate;
   julian_date jd;
@@ -360,12 +362,14 @@ int main(int argc, char **argv)
     }
 
     // Read projection file
-    read_proj_file("polar_stereographic_north.proj", &pps, &proj_type);
+    read_proj_file("polar_stereographic_north.proj", 
+		   &pps, &proj_type, &datum, &spheroid);
 
     // Initialize meta_projection block
     meta_proj = meta_projection_init();
     meta_proj->type = proj_type;
-    meta_proj->datum = WGS84_DATUM;
+    meta_proj->datum = datum;
+    meta_proj->spheroid = spheroid;
     meta_proj->param = pps;
 
     // Determine how many observations are available in the grid point file
