@@ -94,7 +94,20 @@ enum Datums
     DATUM_WGS84 = 0,
     DATUM_NAD27 = 1,
     DATUM_NAD83 = 2,
-    DATUM_HUGHES = 3
+    DATUM_HUGHES = 3,
+    DATUM_ITRF97 = 4,
+    DATUM_ED50 = 5,
+    DATUM_SAD69 = 6
+};
+
+enum Spheroids
+{
+  SPHEROID_UNKNOWN = 0,
+  SPHEROID_WGS84 = 1,
+  SPHEROID_HUGHES = 2,
+  SPHEROID_GRS1967 = 3,
+  SPHEROID_GRS1980 = 4,
+  SPHEROID_INTERNATIONAL1924 = 5
 };
 
 enum PolarimetricDecompositions
@@ -194,6 +207,7 @@ typedef struct
   int specified_pixel_size;
   double pixel_size;
   int datum;
+  int spheroid;
   int resample_method;
   int geocode_force;
 
@@ -441,6 +455,7 @@ void update_summary();
 const char *geocode_options_string(const Settings * settings);
 void geocode_options_changed();
 const char *datum_string(int datum);
+const char *spheroid_string(int spheroid);
 const char *resample_method_string(int resample_method);
 
 /* win_font.c */
@@ -449,7 +464,8 @@ void set_font();
 /* projfile.c */
 project_parameters_t *
   load_selected_predefined_projection_parameters(int projection,
-                                                 datum_type_t *datum);
+                                                 datum_type_t *datum, 
+						 spheroid_type_t *spheroid);
 
 void set_predefined_projections(int projection);
 void release_predefined_projections();

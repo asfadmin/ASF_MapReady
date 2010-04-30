@@ -327,6 +327,7 @@ void free_convert_config(convert_config *cfg)
         if (cfg->geocoding) {
             FREE(cfg->geocoding->projection);
             FREE(cfg->geocoding->datum);
+	    FREE(cfg->geocoding->spheroid);
             FREE(cfg->geocoding->resampling);
             FREE(cfg->geocoding);
         }
@@ -501,6 +502,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->geocoding->height = 0.0;
   cfg->geocoding->datum = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocoding->datum, "WGS84");
+  cfg->geocoding->spheroid = NULL;
   cfg->geocoding->resampling = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocoding->resampling, "BILINEAR");
   cfg->geocoding->force = 0;
@@ -729,6 +731,11 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->geocoding->height = read_double(line, "height");
       if (strncmp(test, "datum", 5)==0)
         strcpy(cfg->geocoding->datum, read_str(line, "datum"));
+      if (strncmp(test, "spheroid", 8)==0) {
+	if (!cfg->geocoding->spheroid)
+	  cfg->geocoding->spheroid = (char *) MALLOC(sizeof(char)*255);
+        strcpy(cfg->geocoding->spheroid, read_str(line, "spheroid"));	
+      }
       if (strncmp(test, "resampling", 10)==0)
         strcpy(cfg->geocoding->resampling, read_str(line, "resampling"));
       if (strncmp(test, "background", 10)==0)
@@ -1092,6 +1099,11 @@ convert_config *read_convert_config(char *configFile)
         cfg->geocoding->height = read_double(line, "height");
       if (strncmp(test, "datum", 5)==0)
         strcpy(cfg->geocoding->datum, read_str(line, "datum"));
+      if (strncmp(test, "spheroid", 8)==0) {
+	if (!cfg->geocoding->spheroid)
+	  cfg->geocoding->spheroid = (char *) MALLOC(sizeof(char)*255);
+        strcpy(cfg->geocoding->spheroid, read_str(line, "spheroid"));	
+      }
       if (strncmp(test, "resampling", 10)==0)
         strcpy(cfg->geocoding->resampling, read_str(line, "resampling"));
       if (strncmp(test, "background", 10)==0)

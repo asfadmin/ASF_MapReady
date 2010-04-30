@@ -164,7 +164,8 @@ typedef struct
   char *projection;       // projection parameters file
   double pixel;           // pixel size for geocoded product
   double height;          // average height of the data
-  char *datum;            // datum: WGS84, NAD27, NAD83
+  char *datum;            // datum: WGS84, NAD27, NAD83, ITRF97, ED50, SAD69
+  char *spheroid;         // spheroids: internally passed along only
   char *resampling;       // resampling method: NEAREST_NEIGHBOR, BILINEAR, BICUBIC
   int force;              // force flag
   float background;       // value to use for pixels outside the image

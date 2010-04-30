@@ -442,13 +442,15 @@ static void latLon2proj_imp(double lat, double lon, double elev,
 {
   project_parameters_t pps;
   projection_type_t proj_type;
+  datum_type_t datum;
+  spheroid_type_t spheroid;
   meta_projection *meta_proj;
   double projZ;
 
   if (projFile)
   {
       // Read projection file
-      read_proj_file(projFile, &pps, &proj_type);
+    read_proj_file(projFile, &pps, &proj_type, &datum, &spheroid);
 
       // Report the conversion type
       switch(proj_type)
@@ -499,7 +501,8 @@ static void latLon2proj_imp(double lat, double lon, double elev,
   // Initialize meta_projection block
   meta_proj = meta_projection_init();
   meta_proj->type = proj_type;
-  meta_proj->datum = WGS84_DATUM;
+  meta_proj->datum = datum;
+  meta_proj->spheroid = spheroid;
 
   if (proj_type == UNIVERSAL_TRANSVERSE_MERCATOR)
     fill_in_utm(lat, lon, &meta_proj->param);

@@ -784,7 +784,7 @@ void fill_structure_field(char *field_name, void *valp)
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GRS1980") )
         MPROJ->spheroid = GRS1980_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GRS1967") )
-	MPROJ->spheroid - GRS1967_SPHEROID;
+	MPROJ->spheroid = GRS1967_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTERNATIONAL1924") )
         MPROJ->spheroid = INTERNATIONAL1924_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTERNATIONAL1967") )

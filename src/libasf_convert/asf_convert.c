@@ -1185,6 +1185,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     project_parameters_t pp;
     projection_type_t proj_type;
     datum_type_t datum;
+    spheroid_type_t spheroid;
     resample_method_t resample_method;
     int multiband = 1;
     int band_num = 0;
@@ -1201,7 +1202,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       sprintf(outFile, "%s/%s", mosaic_dir, cfg->general->out_name);
     else
       sprintf(outFile, "%s", cfg->general->out_name);
-    if (!parse_proj_args_file(cfg->geocoding->projection, &pp, &proj_type, &datum, &err)) {
+    if (!parse_proj_args_file(cfg->geocoding->projection, &pp, &proj_type, &datum, &spheroid, 
+			      &err)) {
       asfPrintError("%s",err);
     }
     update_status("Mosaicking...");
@@ -1595,7 +1597,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->geocoding->datum), "WGS84", 5)  != 0 &&
           strncmp(uc(cfg->geocoding->datum), "NAD27", 5)  != 0 &&
           strncmp(uc(cfg->geocoding->datum), "NAD83", 5)  != 0 &&
-          strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) != 0) {
+          strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) != 0 &&
+	  strncmp_case(cfg->geocoding->datum, "ITRF97", 6) != 0 &&
+	  strncmp_case(cfg->geocoding->datum, "ED50", 4) != 0 &&
+	  strncmp_case(cfg->geocoding->datum, "SAD69", 5) != 0) {
         asfPrintError("Selected datum not supported\n");
       }
 
@@ -2375,6 +2380,15 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
       else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0 ) {
         datum = HUGHES_DATUM;
+      }
+      else if (strncmp_case(cfg->geocoding->datum, "ITRF97", 6) == 0) {
+	datum = ITRF97_DATUM;
+      }
+      else if (strncmp_case(cfg->geocoding->datum, "ED50", 4) == 0) {
+	datum = ED50_DATUM;
+      }
+      else if (strncmp_case(cfg->geocoding->datum, "SAD69", 5) == 0) {
+	datum = SAD69_DATUM;
       }
       else {
         datum = WGS84_DATUM;

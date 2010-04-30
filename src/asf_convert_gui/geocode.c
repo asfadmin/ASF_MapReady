@@ -15,6 +15,32 @@ const char * datum_string(int datum)
         return "NAD83";
     case DATUM_HUGHES:
         return "HUGHES";
+    case DATUM_ITRF97:
+      return "ITRF97";
+    case DATUM_ED50:
+      return "ED50";
+    case DATUM_SAD69:
+      return "SAD69";
+    }
+}
+
+const char *spheroid_string(int spheroid)
+{
+  switch (spheroid)
+    {
+    default:
+    case SPHEROID_UNKNOWN:
+      return "";
+    case SPHEROID_WGS84:
+      return "WGS84";
+    case SPHEROID_HUGHES:
+      return "HUGHES";
+    case SPHEROID_GRS1967:
+      return "GRS1967";
+    case SPHEROID_GRS1980:
+      return "GRS1980";
+    case SPHEROID_INTERNATIONAL1924:
+      return "INTERNATIONAL1924";
     }
 }
 
@@ -243,6 +269,8 @@ void geocode_options_changed()
     GtkWidget * vbox_geocode;
     GtkWidget * geocode_tab_label;
 
+    GtkWidget * spheroid_entry;
+
     gboolean geocode_projection_is_checked;
     gboolean predefined_projection_is_selected;
     gboolean average_height_is_checked;
@@ -322,6 +350,9 @@ void geocode_options_changed()
     datum_option_menu =
         get_widget_checked("datum_option_menu");
 
+    spheroid_entry =
+        get_widget_checked("spheroid_entry");
+
     projection =
         gtk_option_menu_get_history(GTK_OPTION_MENU(projection_option_menu));
 
@@ -336,7 +367,9 @@ void geocode_options_changed()
         gtk_widget_set_sensitive(geocode_tab_label, TRUE);
 
         datum_type_t datum = WGS84_DATUM;
+	spheroid_type_t spheroid = WGS84_DATUM;
         int datum_selection = DATUM_WGS84;
+	int spheroid_selection = SPHEROID_WGS84;
         predefined_projection_is_selected =
             0 < gtk_option_menu_get_history(
             GTK_OPTION_MENU(predefined_projection_option_menu));
@@ -349,7 +382,8 @@ void geocode_options_changed()
         {
             /* all widgets remain disabled -- load settings from file */
             project_parameters_t * pps =
-                load_selected_predefined_projection_parameters(projection, &datum);
+	      load_selected_predefined_projection_parameters(projection, 
+							     &datum, &spheroid);
 
             if (!pps)
             {
@@ -371,6 +405,8 @@ void geocode_options_changed()
                     GTK_ENTRY(false_northing_entry), "");
                 gtk_entry_set_text(
                     GTK_ENTRY(false_easting_entry), "");
+		gtk_entry_set_text(
+                    GTK_ENTRY(spheroid_entry), "");
                 switch(datum) {
                   case NAD27_DATUM:
                     datum_selection = DATUM_NAD27;
@@ -381,6 +417,15 @@ void geocode_options_changed()
                   case HUGHES_DATUM:
                     datum_selection = DATUM_HUGHES;
                     break;
+		  case ITRF97_DATUM:
+		    datum_selection = DATUM_ITRF97;
+		    break;
+		  case ED50_DATUM:
+		    datum_selection = DATUM_ED50;
+		    break;
+		  case SAD69_DATUM:
+		    datum_selection = DATUM_SAD69;
+		    break;
                   case WGS84_DATUM:
                   default:
                     datum_selection = DATUM_WGS84;
@@ -388,6 +433,22 @@ void geocode_options_changed()
                 }
                 set_combo_box_item(datum_option_menu, datum_selection);
                 enable_datum_hbox = FALSE;
+
+		if (spheroid == WGS84_SPHEROID)
+		  spheroid_selection = SPHEROID_WGS84;
+		else if (spheroid == HUGHES_SPHEROID) 
+		  spheroid_selection = SPHEROID_HUGHES;
+		else if (spheroid == GRS1967_SPHEROID)
+		  spheroid_selection = SPHEROID_GRS1967;
+		else if (spheroid == GRS1980_SPHEROID)
+		  spheroid_selection = SPHEROID_GRS1980;
+		else if (spheroid == INTERNATIONAL1924_SPHEROID) 
+		  spheroid_selection = SPHEROID_INTERNATIONAL1924;
+		else
+		  spheroid_selection = SPHEROID_UNKNOWN;
+		gtk_entry_set_text(GTK_ENTRY(spheroid_entry),
+				   spheroid_string(spheroid_selection));
+
 
                 switch (projection)
                 {
@@ -692,23 +753,49 @@ void geocode_options_changed()
 SIGNAL_CALLBACK void
 on_albers_conical_equal_area_activate(GtkWidget * widget)
 {
+    GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
+    gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");
     geocode_options_changed();
 }
 
 SIGNAL_CALLBACK void
 on_lambert_conformal_conic_activate(GtkWidget * widget)
 {
+    GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
+    gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");
     geocode_options_changed();
 }
 
 SIGNAL_CALLBACK void
 on_lambert_azimuthal_equal_area_activate(GtkWidget * widget)
 {
+    GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
+    gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");
     geocode_options_changed();
 }
 
 SIGNAL_CALLBACK void
 on_polar_stereographic_activate(GtkWidget * widget)
+{
+    GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
+    gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_itrf97_activate(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_ed50_activate(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_sad69_activate(GtkWidget * widget)
 {
     geocode_options_changed();
 }
@@ -720,19 +807,24 @@ on_universal_transverse_mercator_activate(GtkWidget * widget)
     // user can change it if they like...
     GtkWidget *datum_option_menu = get_widget_checked("datum_option_menu");
     set_combo_box_item(datum_option_menu, DATUM_WGS84);
-
+    GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
+    gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");
     geocode_options_changed();
 }
 
 SIGNAL_CALLBACK void
 on_mercator_activate(GtkWidget * widget)
 {
+    GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
+    gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");
     geocode_options_changed();
 }
 
 SIGNAL_CALLBACK void
 on_equirectangular_activate(GtkWidget * widget)
 {
+    GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
+    gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");
     geocode_options_changed();
 }
 
@@ -809,6 +901,7 @@ on_projection_option_menu_changed(GtkWidget * widget)
   GtkWidget * second_standard_parallel_entry;
   GtkWidget * false_northing_entry;
   GtkWidget * false_easting_entry;
+  GtkWidget *spheroid_entry;
 
   gboolean geocode_projection_is_checked;
 
@@ -838,6 +931,9 @@ on_projection_option_menu_changed(GtkWidget * widget)
 
   false_easting_entry =
       get_widget_checked("false_easting_entry");
+
+  spheroid_entry = 
+    get_widget_checked("spheroid_entry");
 
   if (geocode_projection_is_checked)
   {

@@ -88,8 +88,17 @@ const char *datum_toString(datum_type_t datum)
       case HUGHES_DATUM:    
           return "HUGHES";
 
+      // South American Datum 1969
       case SAD69_DATUM:
 	  return "SAD69";
+
+      // Tokyo Datum (based on Bessel 1841)
+      case TOKYO_DATUM:
+	  return "TOKYO";
+  
+      // JGD2000 Datum (currently used by Japan)
+      case JGD2000_DATUM:
+	  return "JGD2000";
 
       case UNKNOWN_DATUM:
           return "UNKNOWN";
@@ -142,4 +151,51 @@ const char *spheroid_toString(spheroid_type_t spheroid)
       default:
           return MAGIC_UNSET_STRING;
   }
+}
+
+datum_type_t getDatum(char datum_str)
+{
+  // Earth Gravity Model 1996 (spheroid: WGS84)
+  if (strcmp_case(datum_str, "EGM96") == 0)
+    return EGM96_DATUM;
+  
+  // European Datum 1950 (International 1924)
+  else if (strcmp_case(datum_str, "ED50") == 0)
+    return ED50_DATUM;
+   
+  // European Terrestrial Reference Frame 1989 (WGS84)
+  else if (strcmp_case(datum_str, "ETRF89") == 0)
+    return ETRF89_DATUM;
+   
+  // European Terrestrial Reference System 1989 (GRS 1980)
+  else if (strcmp_case(datum_str, "ETRS89") == 0)
+    return ETRS89_DATUM;
+   
+  // International Terrestrial Reference Frame (GRS 1980)
+  else if (strcmp_case(datum_str, "ITRF97") == 0)
+    return ITRF97_DATUM;
+   
+  // North American Datum 1927 (Clarke 1866)
+  else if (strcmp_case(datum_str, "NAD27") == 0)
+    return NAD27_DATUM;
+   
+  // North American Datum 1983 (GRS 1980)
+  else if (strcmp_case(datum_str, "NAD83") == 0)
+    return NAD83_DATUM;
+   
+  // World Geodetic System 1972 (WGS72)
+  else if (strcmp_case(datum_str, "WGS72") == 0)
+    return WGS72_DATUM;
+   
+  // World Geodetic System 1984 (WGS84)
+  else if (strcmp_case(datum_str, "WGS84") == 0)
+    return WGS84_DATUM;
+   
+  // Hughes
+  else if (strcmp_case(datum_str, "HUGHES") == 0)
+    return HUGHES_DATUM;
+   
+  // South American Datum 1969
+  else if (strcmp_case(datum_str, "SAD69") == 0)
+    return SAD69_DATUM;
 }

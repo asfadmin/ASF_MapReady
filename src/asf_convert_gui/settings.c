@@ -328,6 +328,9 @@ settings_apply_to_gui(const Settings * s)
 
             set_combo_box_item(resample_option_menu, s->resample_method);
 
+	    put_string_to_entry("spheroid_entry", 
+				spheroid_string(s->spheroid));
+
             set_checked("force_checkbutton", s->geocode_force);
         }
     }
@@ -734,6 +737,20 @@ settings_get_from_gui()
         ret->datum =
             gtk_option_menu_get_history(
               GTK_OPTION_MENU(datum_option_menu));
+
+	char *spheroid_str = get_string_from_entry("spheroid_entry");
+	if (strcmp_case(spheroid_str, "WGS84") == 0)
+	  ret->spheroid = SPHEROID_WGS84;
+	else if (strcmp_case(spheroid_str, "HUGHES") == 0)
+	  ret->spheroid = SPHEROID_HUGHES;
+	else if (strcmp_case(spheroid_str, "GRS1967") == 0)
+	  ret->spheroid = SPHEROID_GRS1967;
+	else if (strcmp_case(spheroid_str, "GRS1980") == 0)
+	  ret->spheroid = SPHEROID_GRS1980;
+	else if (strcmp_case(spheroid_str, "INTERNATIONAL1924") == 0)
+	  ret->spheroid = SPHEROID_INTERNATIONAL1924;
+	else
+	  ret->spheroid = SPHEROID_UNKNOWN;
 
         resample_option_menu =
             get_widget_checked("resample_option_menu");
@@ -1471,6 +1488,7 @@ settings_to_config_file(const Settings *s,
           fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
           fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
           fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+	  fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
           break;
 
         case PROJ_LAMAZ:
@@ -1478,6 +1496,7 @@ settings_to_config_file(const Settings *s,
           fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
           fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
           fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+	  fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
           break;
 
         case PROJ_LAMCC:
@@ -1487,6 +1506,7 @@ settings_to_config_file(const Settings *s,
           fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
           fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
           fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+	  fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
           break;
 
         case PROJ_MER:
@@ -1494,14 +1514,16 @@ settings_to_config_file(const Settings *s,
 	  fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
 	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
 	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
-	  fprintf(pf, "Datum=%s", datum_string(s->datum));
+	  fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+	  fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
 	  break;
 
         case PROJ_EQR:
 	  fprintf(pf, "[Equirectangular]\n");
 	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
 	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
-	  fprintf(pf, "Datum=%s", datum_string(s->datum));
+	  fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+	  fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
 	  break;
 
         default:
@@ -1754,6 +1776,7 @@ settings_to_config_file(const Settings *s,
       // but we also write it here, to avoid an annoying warning in
       // asf_mapready.
       fprintf(cf, "datum = %s\n", datum_string(s->datum));
+      fprintf(cf, "spheroid = %s\n", spheroid_string(s->spheroid));
       // Always write nearest neighbor for Cloude-Pottier...
       // Actually... let's not do this, instead we do it in command-line...
       //if (s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE8 ||
@@ -2000,7 +2023,12 @@ int apply_settings_from_config_file(char *configFile)
     if (s.geocode_is_checked) {
         project_parameters_t pps;
         projection_type_t type;
-        read_proj_file(cfg->geocoding->projection, &pps, &type);
+	datum_type_t datum;
+	spheroid_type_t spheroid;
+        read_proj_file(cfg->geocoding->projection, 
+		       &pps, &type, &datum, &spheroid);
+	printf("read_proj_file - datum: %s, spheroid: %s\n",
+	       datum_toString(datum), spheroid_toString(spheroid));
 
         if (type == UNIVERSAL_TRANSVERSE_MERCATOR) {
             s.projection = PROJ_UTM;
@@ -2044,46 +2072,44 @@ int apply_settings_from_config_file(char *configFile)
         s.geocode_force = cfg->geocoding->force;
 
         // GET DATUM
-        // - Default to WGS84, then
-        // - If the datum is appropriately set in the config file, use that, then
-        // - If reading from a proj file, allow THAT datum to override all else
         s.datum = DATUM_WGS84;
-        if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
+        if (datum == WGS84_DATUM) {
           s.datum = DATUM_WGS84;
         }
-        else if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0) {
+        else if (datum == NAD27_DATUM) {
           s.datum = DATUM_NAD27;
         }
-        else if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
+        else if (datum == NAD83_DATUM) {
           s.datum = DATUM_NAD83;
         }
-        else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0) {
+        else if (datum == HUGHES_DATUM) {
           s.datum = DATUM_HUGHES;
         }
-        datum_type_t datum_type = get_datum_from_proj_file(cfg->geocoding->projection, type);
-        switch(datum_type) {
-          case WGS84_DATUM:
-            s.datum = DATUM_WGS84;
-            break;
-          case NAD27_DATUM:
-            s.datum = DATUM_NAD27;
-            break;
-          case NAD83_DATUM:
-            s.datum = DATUM_NAD83;
-            break;
-          case HUGHES_DATUM:
-            s.datum = DATUM_HUGHES;
-            break;
-          case EGM96_DATUM:
-          case ED50_DATUM:
-          case ETRF89_DATUM:
-          case ETRS89_DATUM:
-          case ITRF97_DATUM:
-          case UNKNOWN_DATUM:
-          default:
-            s.datum = DATUM_WGS84;
-            break;
-        }
+	else if (datum == ITRF97_DATUM) {
+	  s.datum = DATUM_ITRF97;
+	}
+	else if (datum == ED50_DATUM) {
+	  s.datum = DATUM_ED50;
+	}
+	else if (datum == SAD69_DATUM) {
+	  s.datum = DATUM_SAD69;
+	}
+
+	if (spheroid == WGS84_SPHEROID) {
+	  s.spheroid = SPHEROID_WGS84;
+	}
+	else if (spheroid == HUGHES_SPHEROID) {
+	  s.spheroid = SPHEROID_HUGHES;
+	}
+	else if (spheroid == GRS1967_SPHEROID) {
+	  s.spheroid = SPHEROID_GRS1967;
+	}
+	else if (spheroid == GRS1980_SPHEROID) {
+	  s.spheroid = SPHEROID_GRS1980;
+	}
+	else if (spheroid == INTERNATIONAL1924_SPHEROID) {
+	  s.spheroid = SPHEROID_INTERNATIONAL1924;
+	}
 
         s.resample_method = RESAMPLE_BILINEAR;
         if (strncmp(uc(cfg->geocoding->resampling),"NEAREST_NEIGHBOR",16) == 0)

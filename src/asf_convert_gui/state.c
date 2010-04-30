@@ -517,6 +517,7 @@ void save_config(char *config_file, char* projfile)
         fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
         fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
         fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+	fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
         break;
 
       case PROJ_LAMAZ:
@@ -524,6 +525,7 @@ void save_config(char *config_file, char* projfile)
         fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
         fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
         fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+	fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
         break;
 
       case PROJ_LAMCC:
@@ -533,6 +535,7 @@ void save_config(char *config_file, char* projfile)
         fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
         fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
         fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+	fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
         break;
 
       default:

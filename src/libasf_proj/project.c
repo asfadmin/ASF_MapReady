@@ -104,7 +104,8 @@ int test_nad27(double lat, double lon)
     }
     else if (pj_errno != 0) // some other error (pj errors are negative,
     {                       // system errors are positive)
-        asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
+        asfPrintError("libproj Error: %s (test_nad27)\n", 
+		      pj_strerrno(pj_errno));
     }
 
     pj_free(ll_proj);
@@ -237,7 +238,8 @@ static int project_worker_arr(const char * projection_description,
 
   if (pj_errno != 0)
   {
-      asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
+      asfPrintError("libproj Error: %s (initializing geographic projection)\n",
+		    pj_strerrno(pj_errno));
       ok = FALSE;
   }
 
@@ -249,7 +251,9 @@ static int project_worker_arr(const char * projection_description,
 
       if (pj_errno != 0)
       {
-    asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
+	printf("proj: %s\n", projection_description);
+    asfPrintError("libproj Error: %s (initializing output projection)\n", 
+		  pj_strerrno(pj_errno));
     ok = FALSE;
       }
 
@@ -262,7 +266,8 @@ static int project_worker_arr(const char * projection_description,
 
     if (pj_errno != 0)
     {
-        asfPrintWarning("libproj error: %s\n", pj_strerrno(pj_errno));
+        asfPrintWarning("libproj error: %s (projection transformation)\n", 
+			pj_strerrno(pj_errno));
         ok = FALSE;
     }
 
@@ -383,7 +388,8 @@ project_worker_arr_inv(const char * projection_description,
 
   if (pj_errno != 0)
   {
-      asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
+      asfPrintError("libproj Error: %s (initializing inverse geographic "
+		    "projection)\n", pj_strerrno(pj_errno));
       ok = FALSE;
   }
 
@@ -395,7 +401,8 @@ project_worker_arr_inv(const char * projection_description,
 
       if (pj_errno != 0)
       {
-    asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
+    asfPrintError("libproj Error: %s\n (intializing inverse output "
+		  "projection)\n", pj_strerrno(pj_errno));
     ok = FALSE;
       }
 
@@ -408,7 +415,8 @@ project_worker_arr_inv(const char * projection_description,
 
     if (pj_errno != 0)
     {
-        asfPrintWarning("libproj error: %s\n", pj_strerrno(pj_errno));
+        asfPrintWarning("libproj error: %s (inverse projection transformation)"
+			"\n", pj_strerrno(pj_errno));
         ok = FALSE;
     }
 
@@ -453,13 +461,12 @@ static double utm_nudge(double lon_0)
   return lon_0;
 }
 
-static const char *
-utm_projection_description(project_parameters_t * pps, datum_type_t datum)
+char *utm_projection_description(project_parameters_t *pps, datum_type_t datum)
 {
   static char utm_projection_description[128];
 
   /* Establish description of output projection. */
-  if (datum != HUGHES_DATUM) {
+  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM) {
     if (pps->utm.zone == MAGIC_UNSET_INT)
     {
       sprintf(utm_projection_description,
@@ -472,7 +479,22 @@ utm_projection_description(project_parameters_t * pps, datum_type_t datum)
           datum_str(datum));
     }
   }
-  else { // HUGHES
+  else if (datum == ITRF97_DATUM) {
+    if (pps->utm.zone == MAGIC_UNSET_INT) {
+      sprintf(utm_projection_description,
+              "+proj=utm +lon_0=%f +a=%f +rf=%f",
+              utm_nudge(pps->utm.lon0 * RAD_TO_DEG),
+              (float)INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_SEMIMAJOR,
+              (float)INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_INV_FLATTENING);
+    } else {
+      sprintf(utm_projection_description,
+              "+proj=utm +zone=%d %s+a=%f +rf=%f",
+              pps->utm.zone, pps->utm.false_northing == 10000000 ? "+south " : "",
+              (float)INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_SEMIMAJOR,
+              (float)INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_INV_FLATTENING);
+    }
+  }
+  else if (datum == HUGHES_DATUM) {
     if (pps->utm.zone == MAGIC_UNSET_INT) {
       sprintf(utm_projection_description,
               "+proj=utm +lon_0=%f +a=%f +rf=%f",
@@ -535,13 +557,12 @@ project_utm_arr_inv (project_parameters_t * pps,
 /****************************************************************************
  Polar Sterographic (PS)
 ****************************************************************************/
-static const char *
-ps_projection_desc(project_parameters_t * pps, datum_type_t datum)
+char *ps_projection_desc(project_parameters_t *pps, datum_type_t datum)
 {
   static char ps_projection_description[128];
 
   /* Establish description of output projection. */
-  if (datum != HUGHES_DATUM) {
+  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM) {
     sprintf(ps_projection_description,
       "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
         "+k_0=%f +datum=%s",
@@ -551,7 +572,7 @@ ps_projection_desc(project_parameters_t * pps, datum_type_t datum)
       1.0 /* pps->ps.scale_factor */,
       datum_str(datum));
   }
-  else { // HUGHES
+  else if (datum == HUGHES_DATUM) { 
     sprintf(ps_projection_description,
             "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
                 "+k_0=%f +a=%f +rf=%f",
@@ -605,42 +626,41 @@ project_ps_arr_inv(project_parameters_t * pps,
 /****************************************************************************
  Lambert Azimuthal Equal Area
 ****************************************************************************/
-static char * lamaz_projection_desc(project_parameters_t * pps,
-                                    datum_type_t datum)
+char *lamaz_projection_desc(project_parameters_t *pps, datum_type_t datum)
 {
   static char lamaz_projection_description[128];
 
   /* Establish description of output projection. */
-  if (datum == HUGHES_DATUM) {
+  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM) {
     sprintf(lamaz_projection_description,
-        "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
-        pps->lamaz.center_lat,
-        pps->lamaz.center_lon,
+	    "+proj=laea +lat_0=%f +lon_0=%f +datum=%s",
+	    pps->lamaz.center_lat,
+	    pps->lamaz.center_lon,
+	    datum_str(datum));
+  }
+  else if (datum == HUGHES_DATUM) {
+    sprintf(lamaz_projection_description,
+	    "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+	    pps->lamaz.center_lat,
+	    pps->lamaz.center_lon,
             (float)HUGHES_SEMIMAJOR,
             (float)HUGHES_INV_FLATTENING);
   }
   else if (datum == ED50_DATUM) {
     sprintf(lamaz_projection_description,
-        "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
-        pps->lamaz.center_lat,
-        pps->lamaz.center_lon,
+	    "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+	    pps->lamaz.center_lat,
+	    pps->lamaz.center_lon,
             (float)INTERNATIONAL1924_SEMIMAJOR,
             (float)INTERNATIONAL1924_INV_FLATTENING);
   }
   else if (datum == SAD69_DATUM) {
     sprintf(lamaz_projection_description,
-        "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
-        pps->lamaz.center_lat,
-        pps->lamaz.center_lon,
+	    "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+	    pps->lamaz.center_lat,
+	    pps->lamaz.center_lon,
             (float)GRS1980_SEMIMAJOR,
             (float)GRS1980_INV_FLATTENING);
-  }
-  else {
-    sprintf(lamaz_projection_description,
-        "+proj=laea +lat_0=%f +lon_0=%f +datum=%s",
-        pps->lamaz.center_lat,
-        pps->lamaz.center_lon,
-        datum_str(datum));
   }
 
   return lamaz_projection_description;
@@ -686,12 +706,20 @@ project_lamaz_arr_inv(project_parameters_t *pps,
 /****************************************************************************
  Lambert Conformal Conic
 ****************************************************************************/
-static char * lamcc_projection_desc(project_parameters_t * pps,
-                                    datum_type_t datum)
+char *lamcc_projection_desc(project_parameters_t *pps, datum_type_t datum)
 {
   static char lamcc_projection_description[128];
 
   /* Establish description of output projection. */
+  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM) {
+    sprintf(lamcc_projection_description,
+        "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
+        pps->lamcc.plat1,
+        pps->lamcc.plat2,
+        pps->lamcc.lat0,
+        pps->lamcc.lon0,
+        datum_str(datum));
+  }
   if (datum == HUGHES_DATUM) {
     sprintf(lamcc_projection_description,
         "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
@@ -721,15 +749,6 @@ static char * lamcc_projection_desc(project_parameters_t * pps,
         pps->lamcc.lon0,
             (float)GRS1980_SEMIMAJOR,
             (float)GRS1980_INV_FLATTENING);
-  }
-  else {
-    sprintf(lamcc_projection_description,
-        "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
-        pps->lamcc.plat1,
-        pps->lamcc.plat2,
-        pps->lamcc.lat0,
-        pps->lamcc.lon0,
-        datum_str(datum));
   }
 
   return lamcc_projection_description;
@@ -773,8 +792,7 @@ project_lamcc_arr_inv(project_parameters_t *pps,
 }
 
 // Mercator
-static char * mer_projection_desc(project_parameters_t * pps,
-                                     datum_type_t datum)
+char *mer_projection_desc(project_parameters_t *pps, datum_type_t datum)
 {
   static char mer_projection_description[128];
 
@@ -844,8 +862,7 @@ project_mer_arr_inv(project_parameters_t *pps,
 }
 
 // Equirectangular
-static char * eqr_projection_desc(project_parameters_t * pps,
-				  datum_type_t datum)
+char *eqr_projection_desc(project_parameters_t *pps, datum_type_t datum)
 {
   static char eqr_projection_description[128];
 
@@ -917,13 +934,22 @@ project_eqr_arr_inv(project_parameters_t *pps,
 /****************************************************************************
   Albers Equal-Area Conic
 ****************************************************************************/
-static char * albers_projection_desc(project_parameters_t * pps,
-                                     datum_type_t datum)
+char * albers_projection_desc(project_parameters_t * pps,
+			      datum_type_t datum)
 {
   static char albers_projection_description[128];
 
   /* Establish description of output projection. */
-  if (datum == HUGHES_DATUM) {
+  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM) {
+    sprintf(albers_projection_description,
+        "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
+        pps->albers.std_parallel1,
+        pps->albers.std_parallel2,
+        pps->albers.orig_latitude,
+        pps->albers.center_meridian,
+        datum_str(datum));
+  }
+  else if (datum == HUGHES_DATUM) {
     sprintf(albers_projection_description,
         "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
         pps->albers.std_parallel1,
@@ -952,15 +978,6 @@ static char * albers_projection_desc(project_parameters_t * pps,
         pps->albers.center_meridian,
             (float)INTERNATIONAL1924_SEMIMAJOR,
             (float)INTERNATIONAL1924_INV_FLATTENING);
-  }
-  else {
-    sprintf(albers_projection_description,
-        "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
-        pps->albers.std_parallel1,
-        pps->albers.std_parallel2,
-        pps->albers.orig_latitude,
-        pps->albers.center_meridian,
-        datum_str(datum));
   }
 
   return albers_projection_description;
