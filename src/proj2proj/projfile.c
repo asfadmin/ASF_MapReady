@@ -353,7 +353,8 @@ static int out_of_sync(const char * filename, int projection)
 
 project_parameters_t *
 load_selected_predefined_projection_parameters(int is_source, int projection,
-                                               datum_type_t *datum)
+                                               datum_type_t *datum,
+					       spheroid_type_t *spheroid)
 {
     GtkWidget * predefined_projection_option_menu;
     GtkWidget * menu;
@@ -390,7 +391,8 @@ load_selected_predefined_projection_parameters(int is_source, int projection,
     sprintf(path_and_filename, "%s/%s", path, filename);
 
     ret = (project_parameters_t *) g_malloc(sizeof(project_parameters_t));
-    if (!parse_proj_args_file(path_and_filename, ret, &type, datum, &err))
+    if (!parse_proj_args_file(path_and_filename, ret, &type, datum, spheroid,
+			      &err))
     {
         message_box(err);
         free(err);

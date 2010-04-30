@@ -44,7 +44,20 @@ enum Datums
   DATUM_WGS84 = 0,
   DATUM_NAD27 = 1,
   DATUM_NAD83 = 2,
-  DATUM_HUGHES = 3
+  DATUM_HUGHES = 3,
+  DATUM_ITRF97 = 4,
+  DATUM_ED50 = 5,
+  DATUM_SAD69 = 6
+};
+
+enum Spheroids
+{
+  SPHEROID_UNKNOWN = 0,
+  SPHEROID_WGS84 = 1,
+  SPHEROID_HUGHES = 2,
+  SPHEROID_GRS1967 = 3,
+  SPHEROID_GRS1980 = 4,
+  SPHEROID_INTERNATIONAL1924 = 5
 };
 
 /********************************** Prototypes ******************************/
@@ -84,7 +97,8 @@ char *find_in_share(const char * filename);
 /* projfile.c */
 project_parameters_t *
 load_selected_predefined_projection_parameters(int is_source, int projection,
-                                               datum_type_t *datum);
+                                               datum_type_t *datum,
+					       spheroid_type_t *spheroid);
 void set_predefined_projections(int is_source, int projection);
 
 /* geocode.c */

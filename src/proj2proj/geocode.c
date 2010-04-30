@@ -15,6 +15,32 @@ const char * datum_string(int datum)
         return "NAD83";
     case DATUM_HUGHES:
         return "HUGHES";
+    case DATUM_ITRF97:
+      return "ITRF97";
+    case DATUM_ED50:
+      return "ED50";
+    case DATUM_SAD69:
+      return "SAD69";
+    }
+}
+
+const char *spheroid_string(int spheroid)
+{
+  switch (spheroid)
+    {
+    default:
+    case SPHEROID_UNKNOWN:
+      return "";
+    case SPHEROID_WGS84:
+      return "WGS84";
+    case SPHEROID_HUGHES:
+      return "HUGHES";
+    case SPHEROID_GRS1967:
+      return "GRS1967";
+    case SPHEROID_GRS1980:
+      return "GRS1980";
+    case SPHEROID_INTERNATIONAL1924:
+      return "INTERNATIONAL1924";
     }
 }
 
@@ -70,6 +96,7 @@ void geocode_options_changed(int is_source)
       projection != PROJ_UTM && projection != PROJ_LATLON;
 
     datum_type_t datum = WGS84_DATUM;
+    spheroid_type_t spheroid = WGS84_SPHEROID;
     int datum_selection = DATUM_WGS84;
     int predefined_projection_is_selected =
       0 < gtk_option_menu_get_history(
@@ -89,8 +116,8 @@ void geocode_options_changed(int is_source)
     {
       /* all widgets remain disabled -- load settings from file */
       project_parameters_t * pps =
-        load_selected_predefined_projection_parameters(
-          is_source, projection, &datum);
+        load_selected_predefined_projection_parameters(is_source, projection, 
+						       &datum, &spheroid);
 
       if (!pps) {
         predefined_projection_is_selected = FALSE;
@@ -112,6 +139,15 @@ void geocode_options_changed(int is_source)
           case HUGHES_DATUM:
             datum_selection = DATUM_HUGHES;
             break;
+	  case ITRF97_DATUM:
+	    datum_selection = DATUM_ITRF97;
+	    break;
+	  case ED50_DATUM:
+	    datum_selection = DATUM_ED50;
+	    break;
+	  case SAD69_DATUM:
+	    datum_selection = DATUM_SAD69;
+	    break;
           case WGS84_DATUM:
           default:
             datum_selection = DATUM_WGS84;

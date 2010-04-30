@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
   project_parameters_t source_pp, target_pp;
   projection_type_t source_proj, target_proj;
   datum_type_t source_datum, target_datum;
+  spheroid_type_t source_spheroid, target_spheroid;
 
   const char *source_proj_file = argv[1];
   const char *target_proj_file = argv[2];
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
   }
   else {
     parse_proj_args_file(source_proj_file, &source_pp, &source_proj,
-                       &source_datum, &err);
+			 &source_datum, &source_spheroid, &err);
     if (err)
       asfPrintError(err);
   }
@@ -69,7 +70,7 @@ int main(int argc, char *argv[])
   }
   else {
     parse_proj_args_file(target_proj_file, &target_pp, &target_proj,
-                       &target_datum, &err);
+			 &target_datum, &target_spheroid, &err);
     if (err)
       asfPrintError(err);
   }
