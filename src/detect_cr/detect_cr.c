@@ -436,6 +436,7 @@ bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY,
   project_parameters_t pps;
   projection_type_t proj_type;
   datum_type_t datum;
+  spheroid_type_t spheroid;
   static float *s=NULL;
   float max=-10000000.0;
   char szChip[255], szText[255], szChipGeo[255];
@@ -507,7 +508,8 @@ bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY,
     s = NULL;
     sprintf(szChipGeo, "%s_geo", chip);
     metaChip = meta_read(chip);
-    if (!parse_proj_args_file(projFile, &pps, &proj_type, &datum, &err)) {
+    if (!parse_proj_args_file(projFile, &pps, &proj_type, &datum, &spheroid,
+			      &err)) {
       asfPrintError("%s",err);
     }
     asf_geocode (&pps, proj_type, 0, RESAMPLE_BILINEAR, elev, datum,
