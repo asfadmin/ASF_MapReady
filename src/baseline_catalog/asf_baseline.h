@@ -32,43 +32,47 @@
 #define R1_ORBITS_PER_CYCLE 343
 
 #define E1_A_MIN_ORBIT 126
-#define E1_A_MAX_ORBIT 2104
+#define E1_A_MAX_ORBIT 2103
 #define E1_A_ORBITS_PER_CYCLE 43
 
 #define E1_B_MIN_ORBIT 2354
-#define E1_B_MAX_ORBIT 3713
+#define E1_B_MAX_ORBIT 3695
 #define E1_B_ORBITS_PER_CYCLE 43
 
 #define E1_C_MIN_ORBIT 3901
-#define E1_C_MAX_ORBIT 12749
+#define E1_C_MAX_ORBIT 12707
 #define E1_C_ORBITS_PER_CYCLE 501
 
-#define E1_D_MIN_ORBIT 12574
+#define E1_D_MIN_ORBIT 12754
 #define E1_D_MAX_ORBIT 14300
 #define E1_D_ORBITS_PER_CYCLE 43
+
+#define E1_E_MIN_ORBIT 14302
+#define E1_E_MAX_ORBIT 16745
+#define E1_E_ORBITS_PER_CYCLE 43
 
 #define E1_F_MIN_ORBIT 16747
 #define E1_F_MAX_ORBIT 19247
 #define E1_F_ORBITS_PER_CYCLE 1784
 
 #define E1_G_MIN_ORBIT 19248
-#define E1_G_MAX_ORBIT 100000 // Michelle's number: 25539 looks a little small
+#define E1_G_MAX_ORBIT 45251
 #define E1_G_ORBITS_PER_CYCLE 501
 
 #define E2_MIN_ORBIT 202
 #define E2_MAX_ORBIT 200000 // still rock and rolling
 #define E2_ORBITS_PER_CYCLE 501
 
-#define E1_TANDEM_MIN_ORBIT 19248 // FIX ME: check exact orbit
-#define E1_TANDEM_MAX_ORBIT 200000 // FIX ME: check exact orbit
+#define E1_TANDEM_MIN_ORBIT 19248
+#define E1_TANDEM_MAX_ORBIT 45251
 #define E1_TANDEM_ORBITS_PER_CYCLE 501
 
 #define E2_TANDEM_MIN_ORBIT 202
-#define E2_TANDEM_MAX_ORBIT 200000 // FIX ME: check exact orbit
+#define E2_TANDEM_MAX_ORBIT 25564
 #define E2_TANDEM_ORBITS_PER_CYCLE 501
 
-#define J1_MIN_ORBIT 300 // FIX ME: need exact number
-#define J1_MAX_ORBIT 50000 // FIX ME: need exact number
+#define J1_MIN_ORBIT 1826
+#define J1_MAX_ORBIT 36581
 #define J1_ORBITS_PER_CYCLE 659
 
 
