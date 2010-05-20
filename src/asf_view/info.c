@@ -221,7 +221,8 @@ void update_pixel_info(ImageInfo *ii)
     }
 
     if (meta->projection &&
-        meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+        meta->projection->type != LAT_LONG_PSEUDO_PROJECTION &&
+	meta->projection->type != SCANSAR_PROJECTION) {
       distortion_t d;
       map_distortions(meta->projection, lat*D2R, lon*D2R, &d);
       sprintf(&buf[strlen(buf)], "Meridian scale factor: %.6lf\n", d.h);
