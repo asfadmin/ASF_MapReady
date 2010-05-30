@@ -1489,8 +1489,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
           meta_get_latLon(meta, meta->general->line_count/2.,
                           meta->general->sample_count/2., 0, &lat, &lon);
           asfPrintStatus("Before center lat/lon: %f,%f\n", lat, lon);
-          latLon2UTM(lat, lon, 0, &px1, &py1);
           int zone = utm_zone(lon);
+          latLon2UTM_zone(lat, lon, 0, zone, &px1, &py1);
           meta->sar->time_shift += time_shift;
           meta->sar->slant_shift += slant_shift;
           meta_get_latLon(meta, meta->general->line_count/2.,
@@ -3861,8 +3861,8 @@ void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
           meta->sar->look_count = 8;
       } else if (D == '6' && E == '2') {
           // polarimetry mode
-          asfPrintStatus("   Polarimetric data (look count = 8)\n");
-          meta->sar->look_count = 8;
+          asfPrintStatus("   Polarimetric data (look count = 7)\n");
+          meta->sar->look_count = 7;
       } else if (D == '6' && E == '3') {
           // direct downlink mode
           asfPrintStatus("   Direct downlink data (look count = 4)\n");
