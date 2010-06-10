@@ -2595,6 +2595,10 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
    else
      projection = meta->projection;
 
+   projection->type = UNKNOWN_PROJECTION;
+   projection->spheroid = UNKNOWN_SPHEROID;
+   projection->datum = UNKNOWN_DATUM;
+
    if (meta->sar) {
      meta->sar->image_type = 'P';/*Map-Projected image.*/
      meta->general->sample_count = mpdr->npixels;
@@ -2691,12 +2695,12 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                      "Geolocations may turn out wrong.\n");
              look_direction = 'R';
          }
+         projection->datum = ITRF97_DATUM;
          latlon_to_proj(projection, look_direction, lat*D2R, lon*D2R, 0.0, &x, &y, &z);
          projection->startY = y;
          projection->startX = x;
          projection->perY = -mpdr->nomild;
          projection->perX = mpdr->nomipd;
-         projection->datum = ITRF97_DATUM;
      }
      else if (projection->type != SCANSAR_PROJECTION){
        projection->startY = mpdr->tlcnorth;
