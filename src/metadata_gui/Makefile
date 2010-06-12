@@ -91,7 +91,8 @@ LDLIBS = \
 	$(JPEG_LIBS) \
 	$(GTK_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \
-	$(shell /usr/bin/pkg-config --libs gthread-2.0)
+	$(shell /usr/bin/pkg-config --libs gthread-2.0) \
+	-lm
 
 LDFLAGS = -Wl,--export-dynamic
 
