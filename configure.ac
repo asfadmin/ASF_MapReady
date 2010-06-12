@@ -22,6 +22,7 @@ have_fftw="no"
 have_png="no"
 have_exif="no"
 have_xml2="no"
+have_gdal="no"
 
 AC_PROG_CC
 AC_PROG_LEX
