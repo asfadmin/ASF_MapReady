@@ -998,11 +998,9 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
     strV(spare6,off,10238);
 }
 
-void Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir)
+void Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir,
+                     int length)
 {
-  struct HEADER  bufhdr;
-  memcpy((void*)&bufhdr, (void*)bf, 12);
-  int length = bigInt32(bufhdr.recsiz);
   if (length==1024) {
     // Old Palsar data, before the larger transformation blocks were
     // added, so we do not have as much available for decoding.

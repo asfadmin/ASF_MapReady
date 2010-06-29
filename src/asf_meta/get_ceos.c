@@ -60,6 +60,7 @@ void dumpCeosRecord(const char *inName)
       subtype[2] = bufhdr.rectyp[3];
       rec_seq = bigInt32(bufhdr.recnum);
       length = bigInt32(bufhdr.recsiz);
+      printf(">>> length=%d\n", length);
       total += length;
       if ((itype==CEOS_FACDR && rec_seq==17 && length<=5000) ||
           (itype==CEOS_FACDR && rec_seq==18)) {
@@ -327,7 +328,10 @@ int get_jaxa_facdr(const char *filename,struct JAXA_FACDR *rec)
   unsigned char *buff;
   int era;
   if ( (era = getCeosRecord(filename,CEOS_JAXAFACDR,1,&buff)) != -1) {
-    Code_JAXA_FACDR(buff,rec,fromASCII);
+    struct trl_file_des_rec *tfdr =
+        (struct trl_file_des_rec *) MALLOC(sizeof(struct trl_file_des_rec));
+    get_tfdr((char*)filename, tfdr);
+    Code_JAXA_FACDR(buff,rec,fromASCII,tfdr->facdr_len[10]);
     FREE(buff);
   }
 

@@ -1696,7 +1696,8 @@ void   Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir);
 void   Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir);
 void   Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir);
 void   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir);
-void   Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir);
+void   Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir,
+                       int length);
 void   Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir);
 void   Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir);
 void   Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir);
