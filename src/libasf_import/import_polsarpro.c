@@ -1287,7 +1287,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     else
       fpOut = FOPEN(outName, "ab");
     if (band_count == 1) {
-      asfPrintStatus("\n   Ingesting PolSARPro data (%s) ...\n");
+      asfPrintStatus("\n   Ingesting PolSARPro data (%s) ...\n",
+		     bands[band]);
       sprintf(polsarName, "%s", bands[band]);
     }
     else {
@@ -1299,7 +1300,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       else if (is_polsarpro_decomposition) {
 	asfPrintStatus("\n   Ingesting PolSARPro decomposition file (%s) ..."
 		       "\n", bands[band]);
-	sprintf(polsarName, "%s%c%s.bin", dirName, DIR_SEPARATOR, bands[band]);
+	sprintf(polsarName, "%s.bin", bands[band]);
       }
       if (band == 0 && strlen(metaOut->general->bands) <= 0)
 	sprintf(bandStr, "%s", bands[band]);
