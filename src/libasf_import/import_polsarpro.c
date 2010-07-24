@@ -473,7 +473,7 @@ int isPolsarproMatrix(char *dataFile, char **matrixType, char **error)
   }
   // check files for covariance matrix C3
   else if (strcmp_case(directory, "C3") == 0) {
-    for (ii=0; ii<16; ii++) {
+    for (ii=0; ii<9; ii++) {
       if (!checkMatrixFile("Data", path, dataFile, c3_matrix[ii], directory, 
 			   error))
 	return FALSE;
