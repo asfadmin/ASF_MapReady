@@ -851,9 +851,16 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
             meta->general->sample_count/2);
   re = meta->general->re_major;
   rp = meta->general->re_minor;
-  tan_lat = dssr->plat_lat*D2R;
-  meta->sar->earth_radius = rp*sqrt(1 + tan_lat*tan_lat) /
-    sqrt(rp*rp/(re*re) + tan_lat*tan_lat);
+  if (ceos->product == RAW) 
+    meta->sar->earth_radius =
+      meta_get_earth_radius(meta,
+			    meta->general->line_count/2,
+			    meta->general->sample_count/2);
+  else {
+    tan_lat = dssr->plat_lat*D2R;
+    meta->sar->earth_radius = rp*sqrt(1 + tan_lat*tan_lat) /
+      sqrt(rp*rp/(re*re) + tan_lat*tan_lat);
+  }
   if (ppr && ppr->eph_orb_data[0] > 0.0)
     meta->sar->satellite_height = ppr->eph_orb_data[0];
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
