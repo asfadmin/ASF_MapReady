@@ -1812,20 +1812,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                   float im = cpx_float_ml_buf[mm*ns + kk].imag;
                   cpx.real += re;
                   cpx.imag += im;
-                  if (meta->sar && radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-                      // Calibrated case
-                      amp += re*re + im*im; // Sum the squares (power)
-                  }
-                  else {
-                      // Amplitude case
-                      amp += sqrt(re*re + im*im); // Sum the amplitude
-                  }
+		  amp += sqrt(re*re + im*im); // Sum the amplitude
               }
               amp /= (float)lc; // Average of the squares
-              if (meta->sar && radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-                  // The calibrated case is squared and must be converted to amplitude
-                  amp = sqrt(amp);
-              }
               cpx.real /= (float)lc;
               cpx.imag /= (float)lc;
               if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
