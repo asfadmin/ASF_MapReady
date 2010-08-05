@@ -39,30 +39,39 @@ static double min4(double a, double b, double c, double d)
   return min2(min2(a,b), min2(c,d));
 }
 
-static int compressFile(FILE *fpIn, FILE *fpOut)
+// Zlib does not handle zip archives. 
+// Compresses just fine but can't put two files in one archive.
+static int zipFiles(char *kmzFile, char *kmlFile, char *pngFile)
 {
-  int flush;
-  unsigned int outBytes;
+  FILE *fpKML = NULL, *fpPNG = NULL, *fpOut = NULL;
   z_stream stream;
+  int flush, ret;
+  unsigned int outBytes;
   unsigned char inBuf[CHUNK], outBuf[CHUNK];
-  
+
+  // Open files
+  fpKML = FOPEN(kmlFile, "rb");
+  fpPNG = FOPEN(pngFile, "rb");
+  fpOut = FOPEN(kmzFile, "wb");
+
   // Initialization with average compression level with
   // usual compromise of size versus speed
   stream.zalloc = Z_NULL;
   stream.zfree = Z_NULL;
   stream.opaque = Z_NULL;
-  int ret = deflateInit(&stream, Z_DEFAULT_COMPRESSION);
+  ret = deflateInit(&stream, Z_DEFAULT_COMPRESSION);
   if (ret != Z_OK) {
     return ret;
   }
-  
+
+  // Compress KML file
   do {
-    stream.avail_in = fread(inBuf, 1, CHUNK, fpIn);
-    if (ferror(fpIn)) {
-      deflateEnd(&stream);
+    stream.avail_in = fread(inBuf, 1, CHUNK, fpKML);
+    if (ferror(fpKML)) {
+      (void)deflateEnd(&stream);
       return Z_ERRNO;
     }
-    flush = feof(fpIn) ? Z_FINISH : Z_NO_FLUSH;
+    flush = feof(fpKML) ? Z_FINISH : Z_NO_FLUSH;
     stream.next_in = inBuf;
     do {
       stream.avail_out = CHUNK;
@@ -71,50 +80,45 @@ static int compressFile(FILE *fpIn, FILE *fpOut)
       assert(ret != Z_STREAM_ERROR);
       outBytes = CHUNK - stream.avail_out;
       if (fwrite(outBuf, 1, outBytes, fpOut) != outBytes || ferror(fpOut)) {
-	deflateEnd(&stream);
+	(void)deflateEnd(&stream);
 	return Z_ERRNO;
       }
     } while (stream.avail_out == 0);
     assert(stream.avail_in == 0);
   } while (flush != Z_FINISH);
-  printf("\noutBytes: %d\n", outBytes);
-  printf("avail_in: %d\n", stream.avail_in);
-  printf("total_in: %d\n", stream.total_in);
-  printf("avail_out: %d\n", stream.avail_out);
-  printf("total_out: %d\n", stream.total_out);
-  printf("msg: %s\n", stream.msg);
-  printf("data_type: %d\n", stream.data_type);
-  assert(ret == Z_STREAM_END);
-  float compression = 100.0 - stream.total_out*100.0/stream.total_in;
-  asfPrintStatus("(%.0f%%)\n", compression + 0.5);
-  printf("total bytes in: %d\n", stream.total_in);
-  printf("total bytes out: %d\n", stream.total_out);
-  ret = deflateEnd(&stream);
-  return Z_OK;
-}
 
-static int zipFiles(char *kmzFile, char *kmlFile, char *pngFile)
-{
-  FILE *fpIn = NULL, *fpOut = NULL;
-
-  // Open output file
-  fpOut = FOPEN(kmzFile, "wb");
-
-  // Compress KML file
-  fpIn = FOPEN(kmlFile, "rb");
-  asfPrintStatus("Compressing %s ", kmlFile);
-  compressFile(fpIn, fpOut);
-  FCLOSE(fpIn);
+  deflateReset(&stream);
 
   // Compress PNG file
-  fpIn = FOPEN(pngFile, "rb");
-  asfPrintStatus("Compressed %s ", pngFile);
-  compressFile(fpIn, fpOut);
-  FCLOSE(fpIn);
+  do {
+    stream.avail_in = fread(inBuf, 1, CHUNK, fpPNG);
+    if (ferror(fpPNG)) {
+      (void)deflateEnd(&stream);
+      return Z_ERRNO;
+    }
+    flush = feof(fpPNG) ? Z_FINISH : Z_NO_FLUSH;
+    stream.next_in = inBuf;
+    do {
+      stream.avail_out = CHUNK;
+      stream.next_out = outBuf;
+      ret = deflate(&stream, flush);
+      assert(ret != Z_STREAM_ERROR);
+      outBytes = CHUNK - stream.avail_out;
+      if (fwrite(outBuf, 1, outBytes, fpOut) != outBytes || ferror(fpOut)) {
+	(void)deflateEnd(&stream);
+	return Z_ERRNO;
+      }
+    } while (stream.avail_out == 0);
+    assert(stream.avail_in == 0);
+  } while (flush != Z_FINISH);
 
   // Clean up
+  (void)deflateEnd(&stream);
+  FCLOSE(fpKML);
+  FCLOSE(fpPNG);
   FCLOSE(fpOut);
   //remove_file(kmlFile);
+
   return FALSE;
 }
 
@@ -147,6 +151,9 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   if (meta->general->line_count > 1024)
     pixel_size *= 8.0;
   meta_free(meta);
+
+  // Test
+  pixel_size /= 2.0;
 
   // Generate input names
   char *inName = (char *) MALLOC(sizeof(char)*(strlen(inFile)+1));
@@ -295,18 +302,17 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   convert2vector(cfg);
   FREE(cfg);
   quietflag = FALSE;
+  asfPrintStatus("\nGenerating %s ...\n", kmlFile);
 
   // Will revisit the zipping later
   // Could not get it to work - will go with the uncompressed KML file for now
 
-  /*
   // Zip the KML and PNG into a KMZ fill
   chdir(outDir);
   if (zip) {
     asfPrintStatus("\n\nGenerating KMZ file ...\n\n");
     zipFiles(kmzFile, kmlFile, pngFile);
   }
-  */
 
   // Clean up
   if (band_count == 1) {
@@ -318,16 +324,20 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   }
   else {
     for (ii=0; ii<band_count; ii++) {
-      if (zip) {
-	sprintf(pngFile, "%s, %s_%s.png", outDir, baseName, bands[ii]);
-	remove_file(pngFile);
-      }
+      //if (zip) {
+	sprintf(pngFile, "%s%s_%s.png", outDir, baseName, bands[ii]);
+	if (ii>0)
+	  remove_file(pngFile);
+	else
+	  asfPrintStatus("Generating %s_%s.png  ...\n", baseName, bands[ii]);
+	//}
       FREE(bands[ii]);
     }
   }
   for (ii=0; ii<nBands; ii++) {
     FREE(dataName[ii]);
-    FREE(metaName[ii]);
+    if (ii<2)
+      FREE(metaName[ii]);
   }
   FREE(dataName);
   FREE(metaName);
