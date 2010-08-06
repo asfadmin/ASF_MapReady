@@ -941,6 +941,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   char *matrixType, *decompositionType, *error;
   int ii, multilook = FALSE, need_ieee_big32, matrix = FALSE;
   int flip_horizontal = FALSE;
+  int flip_vertical = FALSE;
   char *polsarName = (char *) MALLOC(sizeof(char)*(strlen(s) + 20));
   sprintf(polsarName, "%s", s);
   split_dir_and_file(polsarName, dirName, fileName);  
@@ -1219,6 +1220,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       metaOut = import_airsar_meta(ceosName, ceosName, TRUE);
     else if (is_radarsat2) {
       radarsat2_meta *radarsat2 = read_radarsat2_meta(ceosName);
+      if (strcmp_case(radarsat2->lineTimeOrdering, "DECREASING") == 0) 
+	flip_vertical = TRUE;
       if (strcmp_case(radarsat2->pixelTimeOrdering, "DECREASING") == 0)
 	flip_horizontal = TRUE;
       metaOut = radarsat2meta(radarsat2);
@@ -1311,12 +1314,18 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     if (flip_horizontal)
       asfPrintStatus("   Data will be flipped horizontally while ingesting!"
 		     "\n");
+    if (flip_vertical)
+      asfPrintStatus("   Data will be flipped vertically while ingesting!\n");
 
     fpIn = FOPEN(polsarName, "rb");
 
     // Do the ingest...
     for (ii=0; ii<metaOut->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatBuf);
+      if (flip_vertical)
+	get_float_line(fpIn, metaIn, metaOut->general->line_count-ii-1, 
+		       floatBuf);
+      else
+	get_float_line(fpIn, metaIn, ii, floatBuf);
       int kk;
       for (kk=0; kk<metaOut->general->sample_count; kk++) 
 	ieee_big32(floatBuf[kk]);

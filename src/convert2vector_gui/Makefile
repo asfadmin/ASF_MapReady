@@ -52,6 +52,7 @@ LIB = \
 	$(ASF_LIB)/asf_meta.a \
 	$(ASF_LIB)/asf.a \
 	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
 	$(PROJ_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
@@ -82,6 +83,7 @@ CFLAGS += \
 	$(GTK_CFLAGS) \
 	$(shell /usr/bin/pkg-config --cflags libglade-2.0) \
 	$(GSL_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
@@ -96,6 +98,7 @@ LDLIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
 	$(PROJ_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
@@ -104,7 +107,8 @@ LDLIBS = \
 	$(ZLIB_LIBS) \
 	$(GTK_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \
-	$(shell /usr/bin/pkg-config --libs gthread-2.0)
+	$(shell /usr/bin/pkg-config --libs gthread-2.0) \
+	-lm
 
 LDFLAGS = -Wl,--export-dynamic
 
