@@ -125,6 +125,14 @@ static int zipFiles(char *kmzFile, char *kmlFile, char *pngFile)
 int kml_overlay(char *inFile, char *outFile, char *demFile, 
 		int terrain_correct, int refine_geolocation, int zip)
 {
+  return kml_overlay_ext(inFile, outFile, demFile, terrain_correct, 
+			 refine_geolocation, 8, zip);
+}
+
+int kml_overlay_ext(char *inFile, char *outFile, char *demFile, 
+		    int terrain_correct, int refine_geolocation, 
+		    int reduction, int zip)
+{
   // Check whether required files actually exist
   ceos_file_pairs_t pair;
   char **dataName=NULL, **metaName=NULL, base[512];
@@ -149,11 +157,8 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   meta = meta_read(inFile);
   double pixel_size = meta->general->x_pixel_size;
   if (meta->general->line_count > 1024)
-    pixel_size *= 8.0;
+    pixel_size *= reduction;
   meta_free(meta);
-
-  // Test
-  pixel_size /= 2.0;
 
   // Generate input names
   char *inName = (char *) MALLOC(sizeof(char)*(strlen(inFile)+1));
@@ -175,7 +180,7 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
 
   // Generating a customized configuration for asf_mapready
   chdir(tmpDir);
-  status_off();
+  //status_off();
   quietflag = TRUE;
   char configFileName[255];
   sprintf(configFileName, "asf_mapready.config");
@@ -227,7 +232,7 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
   // Run input file through asf_mapready
   asfPrintStatus("\n\nGenerating overlay PNG file ...\n\n");
   asf_convert(FALSE, configFileName);
-  status_on();
+  //status_on();
 
   baseName = get_basename(outFile);
   sprintf(kmlFile, "%s.kml", baseName);

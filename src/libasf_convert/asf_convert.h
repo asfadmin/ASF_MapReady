@@ -238,5 +238,8 @@ int call_asf_convert(char *configFile); // FIXME: Change the name ... Now calls 
 
 int kml_overlay(char *inFile, char *outFile, char *demFile, 
 		int terrain_correct, int refine_geolocation, int zip);
+int kml_overlay_ext(char *inFile, char *outFile, char *demFile, 
+		    int terrain_correct, int refine_geolocation, 
+		    int reduction, int zip);
 
 #endif

@@ -29,7 +29,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-terrain_correct <demFile> | -refine_geolocation <demFile>]\n"\
-"                [-log <logFile>] [-quiet] [-license] [-version] [-help]\n"\
+"                [-reduction_factor <factor>] [-log <logFile>]\n"\
+"                [-quiet] [-license] [-version] [-help]\n"\
 "                <inFile> <outFile>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -46,6 +47,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Terrain corrects the image with the DEM.\n"\
 "   -refine_geolocation <demFile>\n"\
 "        Uses the DEM for refining the geolocation only.\n"\
+"   -reduction_factor <factor>\n"\
+"        Defines the factor that the pixel size is multiplied to reduce\n"\
+"        the size of the output image.\n"\
 "   -log <logFile>\n"\
 "        Set the name and location of the log file. Default behavior is to\n"\
 "        log to tmp<processIDnumber>.log\n"\
@@ -149,9 +153,11 @@ int main(int argc, char *argv[])
   char inFile[512], outFile[512], *demFile=NULL;
   const int pid = getpid();
   extern int logflag, quietflag;
+  int reduction;
   int quiet_f;  /* log_f is a static global */
   int tcFlag = FLAG_NOT_SET; // terrain correction flag
   int rgFlag = FLAG_NOT_SET; // refine geolocation only flag
+  int redFlag = FLAG_NOT_SET; // reduction factor flag
 
   logflag = quietflag = FALSE;
   log_f = quiet_f = FLAG_NOT_SET;
@@ -170,6 +176,7 @@ int main(int argc, char *argv[])
   quiet_f  = checkForOption("-quiet", argc, argv);
   tcFlag = checkForOption("-terrain_correct", argc, argv);
   rgFlag = checkForOption("-refine_geolocation", argc, argv);
+  redFlag = checkForOption("-reduction_factor", argc, argv);
 
   // We need to make sure the user specified the proper number of arguments
   int needed_args = 2 + REQUIRED_ARGS; // command & REQUIRED_ARGS
@@ -178,6 +185,7 @@ int main(int argc, char *argv[])
   if (quiet_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
   if (tcFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (rgFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
+  if (redFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
 
   // Make sure we have the right number of args
   if(argc != needed_args) {
@@ -201,13 +209,19 @@ int main(int argc, char *argv[])
       print_usage();
     }
   }
+  if (redFlag != FLAG_NOT_SET) {
+    if ( (argv[redFlag+1][0]=='-') || (redFlag>=(argc-REQUIRED_ARGS)) ) {
+      print_usage();
+    }
+  }
 
   // Make sure all options occur before the config file name argument
   if (num_flags == 1 &&
       (log_f   > 1 ||
        quiet_f > 1 ||
        tcFlag  > 1 ||
-       rgFlag  > 1))
+       rgFlag  > 1 ||
+       redFlag > 1))
   {
     print_usage();
   }
@@ -215,7 +229,8 @@ int main(int argc, char *argv[])
 	   (log_f   >= argc - REQUIRED_ARGS - 1 ||
             quiet_f >= argc - REQUIRED_ARGS - 1 ||
 	    tcFlag  >= argc - REQUIRED_ARGS - 1 ||
-	    rgFlag  >= argc - REQUIRED_ARGS - 1))
+	    rgFlag  >= argc - REQUIRED_ARGS - 1 ||
+	    redFlag >= argc - REQUIRED_ARGS -1))
   {
     print_usage();
   }
@@ -234,6 +249,8 @@ int main(int argc, char *argv[])
     demFile = (char *) MALLOC(sizeof(char)*1024);
     sprintf(demFile, "%s", argv[rgFlag+1]);
   }
+  if (redFlag != FLAG_NOT_SET)
+    reduction = argv[redFlag+1];
   if (log_f != FLAG_NOT_SET) {
     strcpy(logFile, argv[log_f+1]);
   }
@@ -257,7 +274,11 @@ int main(int argc, char *argv[])
   asfPrintStatus("A system independent zipping function is currently not "
 		 "available.\nFor the moment the KML and PNG files need to "
 		 "manually zipped together.\n");
-  kml_overlay(inFile, outFile, demFile, !tcFlag, !rgFlag, FALSE);
+  if (redFlag)
+    kml_overlay_ext(inFile, outFile, demFile, !tcFlag, !rgFlag, reduction, 
+		    FALSE);
+  else
+    kml_overlay(inFile, outFile, demFile, !tcFlag, !rgFlag, FALSE);
 
   FREE(demFile);
   FCLOSE(fLog);
