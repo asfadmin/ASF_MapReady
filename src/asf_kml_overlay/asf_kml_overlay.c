@@ -280,11 +280,11 @@ int main(int argc, char *argv[])
   else
     kml_overlay(inFile, outFile, demFile, !tcFlag, !rgFlag, FALSE);
 
+  asfPrintStatus("\nSuccessful completion!\n\n");
+
   FREE(demFile);
   FCLOSE(fLog);
   remove(logFile);
-
-  asfPrintStatus("\nSuccessful completion!\n\n");
 
   return(EXIT_SUCCESS);
 }

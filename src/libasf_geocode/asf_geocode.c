@@ -1588,6 +1588,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         height_correction = 400;
     }
 
+    /* Confused more than it helped. RG
+
     // Issue a warning when the chosen pixel size is smaller than the
     // input pixel size.
     if ( MAX(imd->general->x_pixel_size,
@@ -1598,6 +1600,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         "(%0.1f meters).\n", pixel_size,
         MAX (imd->general->x_pixel_size, imd->general->y_pixel_size));
     }
+    */
 
     // We will call "resample" on the input data if the geocoding
     // will significantly downsample.  This is because asf_geocode will

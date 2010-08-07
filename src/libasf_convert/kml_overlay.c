@@ -8,6 +8,7 @@
 
 #include "asf.h"
 #include "ceos.h"
+#include "envi.h"
 #include "asf_meta.h"
 #include "asf_convert.h"
 #include "asf_raster.h"
@@ -133,11 +134,16 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
 		    int terrain_correct, int refine_geolocation, 
 		    int reduction, int zip)
 {
+  meta_parameters *meta;
+  double pixel_size;
   // Check whether required files actually exist
-  ceos_file_pairs_t pair;
-  char **dataName=NULL, **metaName=NULL, base[512];
+  char **dataName=NULL, **metaName=NULL, *error;
   int nBands, trailer;
-  pair = get_ceos_names(inFile, base, &dataName, &metaName, &nBands, &trailer);
+  int is_polsarpro = isPolSARpro(inFile);
+  int is_ceos = isCEOS(inFile, &error);
+  if (is_ceos)
+    require_ceos_pair(inFile, &dataName, &metaName,
+		      &nBands, &trailer);
   if (demFile && !fileExists(demFile)) {
     asfPrintWarning("DEM does not exist. Will leave out terrain correction!\n");
     terrain_correct = FALSE;
@@ -153,12 +159,36 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   create_clean_dir(tmpDir);
 
   // Determine size of output
-  meta_parameters *meta;
-  meta = meta_read(inFile);
-  double pixel_size = meta->general->x_pixel_size;
-  if (meta->general->line_count > 1024)
-    pixel_size *= reduction;
-  meta_free(meta);
+  if (is_polsarpro) {
+    // Only going to work safely when PolSARPro data is already geocoded
+    char *polsarName = (char *) MALLOC(sizeof(char)*(strlen(inFile) + 20));
+    sprintf(polsarName, "%s", inFile);
+    char *ext = findExt(polsarName);
+    if (!ext || (ext && (strcmp_case(ext, ".bin") != 0)))
+      polsarName = appendExt(inFile, ".bin");
+    char *headerName = (char *) MALLOC(sizeof(char)*(strlen(polsarName) + 10));
+    sprintf(headerName, "%s.hdr", polsarName);
+    envi_header *envi = read_envi(headerName);
+    meta = envi2meta(envi);
+    if (!meta->projection) {
+      meta_free(meta);
+      FREE(envi);
+      asfPrintError("PolSARPro data (%s) is not map projected\n", polsarName);
+    }
+    else {
+      pixel_size = meta->projection->perX;
+      meta_free(meta);
+      FREE(envi);
+    }
+  }
+  else {
+    meta;
+    meta = meta_read(inFile);
+    pixel_size = meta->general->x_pixel_size;
+    if (meta->general->line_count > 1024)
+      pixel_size *= reduction;
+    meta_free(meta);
+  }
 
   // Generate input names
   char *inName = (char *) MALLOC(sizeof(char)*(strlen(inFile)+1));
@@ -180,7 +210,6 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
 
   // Generating a customized configuration for asf_mapready
   chdir(tmpDir);
-  //status_off();
   quietflag = TRUE;
   char configFileName[255];
   sprintf(configFileName, "asf_mapready.config");
@@ -189,7 +218,7 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   fprintf(fp, "[General]\n");
   fprintf(fp, "input file = %s%s\n", inDir, inName);
   fprintf(fp, "output file = %s\n", pngFile);
-  if (pair != NO_CEOS_FILE_PAIR)
+  if (is_ceos || is_polsarpro)
     fprintf(fp, "import = 1\n");
   else
     fprintf(fp, "import = 0\n");
@@ -201,9 +230,14 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   fprintf(fp, "export =1\n");
   fprintf(fp, "dump envi header = 0\n");
   fprintf(fp, "short configuration file = 1\n\n");
-  if (pair != NO_CEOS_FILE_PAIR) {
+  if (is_ceos) {
     fprintf(fp, "[Import]\n");
     fprintf(fp, "format = CEOS\n");
+    fprintf(fp, "radiometry = AMPLITUDE_IMAGE\n\n");
+  }
+  else if (is_polsarpro) {
+    fprintf(fp, "[Import]\n");
+    fprintf(fp, "format = POLSARPRO\n");
     fprintf(fp, "radiometry = AMPLITUDE_IMAGE\n\n");
   }
   if (terrain_correct || refine_geolocation) {
@@ -232,7 +266,6 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   // Run input file through asf_mapready
   asfPrintStatus("\n\nGenerating overlay PNG file ...\n\n");
   asf_convert(FALSE, configFileName);
-  //status_on();
 
   baseName = get_basename(outFile);
   sprintf(kmlFile, "%s.kml", baseName);

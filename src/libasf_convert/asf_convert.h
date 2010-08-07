@@ -236,6 +236,7 @@ int asf_convert(int createflag, char *configFileName);
 int asf_convert_ext(int createflag, char *configFileName, int saveDEM);
 int call_asf_convert(char *configFile); // FIXME: Change the name ... Now calls asf_mapready
 
+int isPolSARpro(const char * infile);
 int kml_overlay(char *inFile, char *outFile, char *demFile, 
 		int terrain_correct, int refine_geolocation, int zip);
 int kml_overlay_ext(char *inFile, char *outFile, char *demFile, 
