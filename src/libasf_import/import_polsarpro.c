@@ -933,13 +933,13 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   meta_parameters *metaIn = NULL, *metaOut = NULL;
   envi_header *envi;
   FILE *fpIn, *fpOut;
-  float *floatBuf, *tmp = NULL;
+  float *floatBuf, *tmp = NULL, fValue;
   double *p_azimuth_scale = NULL, *p_range_scale = NULL;
-  double azimuth_scale, range_scale;
+  double azimuth_scale, range_scale, min, max, slope, offset;
   char enviName[1024], outName[1024], bandStr[50];
   char dirName[1024], fileName[1024];
   char *matrixType, *decompositionType, *error;
-  int ii, multilook = FALSE, need_ieee_big32, matrix = FALSE;
+  int ii, multilook = FALSE, matrix = FALSE;
   int flip_horizontal = FALSE;
   int flip_vertical = FALSE;
   char *polsarName = (char *) MALLOC(sizeof(char)*(strlen(s) + 20));
@@ -1278,7 +1278,20 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   }
   else {
     metaOut = envi2meta(envi);
-    strcpy(metaOut->general->bands, "");
+    metaOut->general->band_count = band_count;
+    if (strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0 ||
+	strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0)
+      strcpy(metaOut->general->bands, "POLSARPRO");
+    else
+      strcpy(metaOut->general->bands, "");
+    strcpy(metaOut->general->basename, polsarName);
+    if (colormapName && strlen(colormapName) &&
+	strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0) {
+      calc_minmax_polsarpro(polsarName, &min, &max);
+      slope = 255 / (max-min);
+      offset = -slope * min;
+      metaOut->general->data_type = BYTE;
+    }
   }
   floatBuf = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
   if (flip_horizontal)
@@ -1303,7 +1316,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       else if (is_polsarpro_decomposition) {
 	asfPrintStatus("\n   Ingesting PolSARPro decomposition file (%s) ..."
 		       "\n", bands[band]);
-	sprintf(polsarName, "%s.bin", bands[band]);
+	sprintf(polsarName, "%s%c%s.bin", dirName, DIR_SEPARATOR, bands[band]);
       }
       if (band == 0 && strlen(metaOut->general->bands) <= 0)
 	sprintf(bandStr, "%s", bands[band]);
@@ -1327,8 +1340,14 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       else
 	get_float_line(fpIn, metaIn, ii, floatBuf);
       int kk;
-      for (kk=0; kk<metaOut->general->sample_count; kk++) 
+      for (kk=0; kk<metaOut->general->sample_count; kk++) {
 	ieee_big32(floatBuf[kk]);
+	if (colormapName && strlen(colormapName) &&
+	    strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0) {
+	  fValue = slope * floatBuf[kk] + offset;
+	  floatBuf[kk] = fValue;
+	}
+      }
       if (flip_horizontal) {
 	for (kk=0; kk<metaOut->general->sample_count; kk++)
 	  tmp[kk] = floatBuf[kk];
@@ -1346,8 +1365,9 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     }
 
     FCLOSE(fpIn);
+    FCLOSE(fpOut);
   }
-  FCLOSE(fpOut);
+  //FCLOSE(fpOut);
   FREE(floatBuf);
   FREE(envi);
   if (metaOut->sar)

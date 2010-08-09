@@ -127,12 +127,13 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
 		int terrain_correct, int refine_geolocation, int zip)
 {
   return kml_overlay_ext(inFile, outFile, demFile, terrain_correct, 
-			 refine_geolocation, 8, zip);
+			 refine_geolocation, 8, 0, NULL, NULL, NULL, zip);
 }
 
 int kml_overlay_ext(char *inFile, char *outFile, char *demFile, 
 		    int terrain_correct, int refine_geolocation, 
-		    int reduction, int zip)
+		    int reduction, int transparency, char *colormap, 
+		    char *rgb, char *polsarpro, int zip)
 {
   meta_parameters *meta;
   double pixel_size;
@@ -180,6 +181,28 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
       meta_free(meta);
       FREE(envi);
     }
+
+    // Only colormap or rgb option can be chosen. Not both.
+    if (colormap && strlen(colormap) && rgb && strlen(rgb))
+      asfPrintError("Only colormap or rgb option can be chosen. Not both.\n");
+
+    // Check if colormap is supposed to be applied. Needs to have a PolSARPro 
+    // data type defined as well.
+    if (colormap && strlen(colormap) && polsarpro && strlen(polsarpro))
+      asfPrintStatus("Colormap (%s) is applied to PolSARPro %s ...\n",
+		     colormap, polsarpro);
+    else if (colormap && strlen(colormap))
+      asfPrintError("When applying a colormap to PolSARPro data, the "
+		    "PolSARPro\ndata type needs to be defined as well.\n");
+
+    // Check if PolSARPro decomposition is chosen. Needs to have the bands in
+    // the RGB option defined as well.
+    if (polsarpro && strcmp_case(polsarpro, "DECOMPOSITION") == 0 && 
+	rgb && strlen(rgb))
+      asfPrintStatus("PolSARPro decomposition stored as RGB (%s)\n", rgb);
+    else if (rgb && strlen(rgb))
+      asfPrintError("For PolSARPro decomposition the RGB channels need to be "
+		    "\ndefined as well.\n");
   }
   else {
     meta;
@@ -227,7 +250,7 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   else
     fprintf(fp, "terrain correction = 0\n");
   fprintf(fp, "geocoding = 1\n");
-  fprintf(fp, "export =1\n");
+  fprintf(fp, "export = 1\n");
   fprintf(fp, "dump envi header = 0\n");
   fprintf(fp, "short configuration file = 1\n\n");
   if (is_ceos) {
@@ -238,7 +261,18 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   else if (is_polsarpro) {
     fprintf(fp, "[Import]\n");
     fprintf(fp, "format = POLSARPRO\n");
-    fprintf(fp, "radiometry = AMPLITUDE_IMAGE\n\n");
+    fprintf(fp, "radiometry = AMPLITUDE_IMAGE\n");
+    if (colormap)
+      fprintf(fp, "polsarpro colormap = %s\n", colormap);
+    if (polsarpro) {
+      if (strcmp_case(polsarpro, "SEGMENTATION") == 0)
+	fprintf(fp, "image data type = POLARIMETRIC_SEGMENTATION\n");
+      else if (strcmp_case(polsarpro, "DECOMPOSITION") == 0)
+	fprintf(fp, "image data type = POLARIMETRIC_DECOMPOSITION\n");
+      else if (strcmp_case(polsarpro, "PARAMETER") == 0)
+	fprintf(fp, "image data type = POLARIMETRIC_PARAMETER\n");
+    }
+    fprintf(fp, "\n");
   }
   if (terrain_correct || refine_geolocation) {
     fprintf(fp, "[Terrain correction]\n");
@@ -260,7 +294,12 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   fprintf(fp, "force = 1\n\n");
   fprintf(fp, "[Export]\n");
   fprintf(fp, "format = PNG_GE\n");
-  fprintf(fp, "byte conversion = SIGMA\n");
+  if (colormap && strlen(colormap))
+    fprintf(fp, "byte conversion = TRUNCATE\n");
+  else
+    fprintf(fp, "byte conversion = SIGMA\n");
+  if (rgb && strlen(rgb))
+    fprintf(fp, "rgb banding = %s\n", rgb);
   FCLOSE(fp);
 
   // Run input file through asf_mapready
@@ -306,7 +345,7 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   int band_count = meta->general->band_count;
   char **bands = extract_band_names(meta->general->bands, band_count);
   meta_free(meta);
-  if (band_count == 1)
+  if (band_count == 1 || (rgb && strlen(rgb)))
     sprintf(pngFile, "%s.png", baseName);
   else
     sprintf(pngFile, "%s_%s.png", baseName, bands[0]);
@@ -332,7 +371,7 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
   fprintf(fp, "south = %.4lf\n", south);
   fprintf(fp, "east = %.4lf\n", east);
   fprintf(fp, "west = %.4lf\n", west);
-  fprintf(fp, "transparency = 50\n");
+  fprintf(fp, "transparency = %d\n", transparency);
   FCLOSE(fp);
 
   // Run configuration file through convert2vector
@@ -361,13 +400,15 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
     FREE(bands[0]);
   }
   else {
+    if (rgb && strlen(rgb))
+      asfPrintStatus("Generating %s ...\n", pngFile);
     for (ii=0; ii<band_count; ii++) {
       //if (zip) {
 	sprintf(pngFile, "%s%s_%s.png", outDir, baseName, bands[ii]);
 	if (ii>0)
 	  remove_file(pngFile);
-	else
-	  asfPrintStatus("Generating %s_%s.png  ...\n", baseName, bands[ii]);
+	else if (!rgb || !strlen(rgb))
+	  asfPrintStatus("Generating %s_%s.png ...\n", baseName, bands[ii]);
 	//}
       FREE(bands[ii]);
     }

@@ -412,18 +412,37 @@ void write_png_byte2lut(FILE *opng, unsigned char *byte_line,
              png_structp png_ptr, png_infop png_info_ptr,
              int sample_count, char *look_up_table_name)
 {
-  int jj;
+  int jj, nBands;
   unsigned char *rgb_line;
+  int color_type = png_get_color_type(png_ptr, png_info_ptr);
+  if (color_type == PNG_COLOR_TYPE_RGB_ALPHA) 
+    nBands = 4;
+  else
+    nBands = 3;
 
-  png_byte *row_pointer = g_new(png_byte, sample_count * 3);
+  png_byte *row_pointer = g_new(png_byte, sample_count * nBands);
   rgb_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
-              rgb_line);
+			   rgb_line);
 
-  for (jj=0; jj<sample_count*3; jj++)
-    row_pointer[jj] = (png_byte) rgb_line[jj];
+  for (jj=0; jj<sample_count; jj++) {
+    if (nBands == 3) {
+      row_pointer[jj*3] = (png_byte) rgb_line[jj*3];
+      row_pointer[(jj*3)+1] = (png_byte) rgb_line[(jj*3)+1];
+      row_pointer[(jj*3)+2] = (png_byte) rgb_line[(jj*3)+2];
+    }
+    else {
+      row_pointer[jj*4]     = (png_byte) rgb_line[jj*3];
+      row_pointer[(jj*4)+1] = (png_byte) rgb_line[(jj*3)+1];
+      row_pointer[(jj*4)+2] = (png_byte) rgb_line[(jj*3)+2];
+      if (byte_line[jj] == 0)
+	row_pointer[(jj*4)+3] = (png_byte) 0;
+      else
+	row_pointer[(jj*4)+3] = (png_byte) 255;
+    }
+  }
 
   png_write_row(png_ptr, row_pointer);
   g_free(row_pointer);
@@ -490,10 +509,15 @@ void write_png_float2lut(FILE *opng, float *float_line,
               float no_data, int sample_count,
               char *look_up_table_name)
 {
-  int jj;
+  int jj, nBands;
   unsigned char *byte_line, *rgb_line;
+  int color_type = png_get_color_type(png_ptr, png_info_ptr);
+  if (color_type == PNG_COLOR_TYPE_RGB_ALPHA) 
+    nBands = 4;
+  else
+    nBands = 3;
 
-  png_byte *row_pointer = g_new(png_byte, sample_count * 3);
+  png_byte *row_pointer = g_new(png_byte, sample_count * nBands);
   byte_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count);
   rgb_line = (unsigned char *)
@@ -509,8 +533,22 @@ void write_png_float2lut(FILE *opng, float *float_line,
   apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
               rgb_line);
 
-  for (jj=0; jj<sample_count*3; jj++)
-    row_pointer[jj] = (png_byte) rgb_line[jj];
+  for (jj=0; jj<sample_count; jj++) {
+    if (nBands == 3) {
+      row_pointer[jj*3] = (png_byte) rgb_line[jj*3];
+      row_pointer[(jj*3)+1] = (png_byte) rgb_line[(jj*3)+1];
+      row_pointer[(jj*3)+2] = (png_byte) rgb_line[(jj*3)+2];
+    }
+    else {
+      row_pointer[jj*4]     = (png_byte) rgb_line[jj*3];
+      row_pointer[(jj*4)+1] = (png_byte) rgb_line[(jj*3)+1];
+      row_pointer[(jj*4)+2] = (png_byte) rgb_line[(jj*3)+2];
+      if (byte_line[jj] == 0)
+	row_pointer[(jj*4)+3] = (png_byte) 0;
+      else
+	row_pointer[(jj*4)+3] = (png_byte) 255;
+    }
+  }
 
   png_write_row(png_ptr, row_pointer);
   g_free(row_pointer);

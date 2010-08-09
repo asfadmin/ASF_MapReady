@@ -62,7 +62,8 @@ meta_parameters* radarsat2meta(radarsat2_meta *radarsat2)
     meta->sar->look_direction = 'L';
   else if (strcmp_case(radarsat2->antennaPointing, "RIGHT") == 0)
     meta->sar->look_direction = 'R';
-  meta->sar->look_count = 4;
+  //meta->sar->look_count = 4;
+  meta->sar->look_count = radarsat2->numberOfAzimuthLooks;
   // TO BE ADDED: radarsat2->numberOfRangeLooks
   meta->sar->deskewed = 1;
   meta->sar->original_line_count = meta->general->line_count;

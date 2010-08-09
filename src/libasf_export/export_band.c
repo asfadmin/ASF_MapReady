@@ -2069,7 +2069,7 @@ export_band_image (const char *metadata_file_name,
         if (is_colormap_band)
         { // Apply look up table
           for (ii=0; ii<md->general->line_count; ii++ ) {
-            if (md->optical) {
+            if (md->optical || md->general->data_type == BYTE) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_byte2lut(otif, byte_line, ii, sample_count,

@@ -1,8 +1,10 @@
 #include <math.h>
 #include <assert.h>
 #include "asf.h"
+#include "asf_endian.h"
 #include "asf_nan.h"
 #include "asf_raster.h"
+#include "envi.h"
 
 /* Calculate minimum, maximum, mean and standard deviation for a floating point
    image. A mask value can be defined that is excluded from this calculation.
@@ -424,4 +426,37 @@ calc_stats_rmse_from_file(const char *inFile, char *band, double mask,
     FREE(data);
 
     *histogram = hist;
+}
+
+void calc_minmax_polsarpro(const char *inFile, double *min, double *max)
+{
+  int ii,jj;
+  
+  *min = 999999;
+  *max = -999999;
+  
+  char *enviName = (char *) MALLOC(sizeof(char)*(strlen(inFile) + 10));
+  sprintf(enviName, "%s.hdr", inFile);
+  envi_header *envi = read_envi(enviName);
+  meta_parameters *meta = envi2meta(envi);
+  float *data = MALLOC(sizeof(float) * meta->general->sample_count);
+  
+  FILE *fp = FOPEN(inFile, "rb");
+  asfPrintStatus("\nCalculating min and max ...\n");
+  for (ii=0; ii<meta->general->line_count; ++ii) {
+    asfPercentMeter(((double)ii/(double)meta->general->line_count));
+    get_float_line(fp, meta, ii, data);
+    
+    for (jj=0; jj<meta->general->sample_count; ++jj) {
+      ieee_big32(data[jj]);
+      if (data[jj] < *min) *min = data[jj];
+      if (data[jj] > *max) *max = data[jj];
+    }
+  }
+  asfPercentMeter(1.0);
+  FCLOSE(fp);
+  FREE(data);
+  meta_free(meta);
+  FREE(envi);
+  FREE(enviName);
 }

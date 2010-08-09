@@ -241,6 +241,7 @@ int kml_overlay(char *inFile, char *outFile, char *demFile,
 		int terrain_correct, int refine_geolocation, int zip);
 int kml_overlay_ext(char *inFile, char *outFile, char *demFile, 
 		    int terrain_correct, int refine_geolocation, 
-		    int reduction, int zip);
+		    int reduction, int transparency, char *colormap, 
+		    char *rgb, char *polsarpro, int zip);
 
 #endif
