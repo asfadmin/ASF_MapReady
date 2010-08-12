@@ -357,6 +357,8 @@ int isRadarsat2(char *dataFile, char **error)
 	  }
 	}
       }
+      else
+	found = FALSE;
     }
     fclose(fp);
     xmlFreeDoc(doc);
@@ -927,6 +929,35 @@ static void ingest_radarsat2_polsar_amp(char *inFile, char *outFile,
   }
 }
 
+static void ingest_terrasar_polsar_amp(char *inFile, char *outFile,
+				       double *p_range_scale,
+				       double *p_azimuth_scale)
+{
+  int do_resample = FALSE;
+  double azimuth_scale, range_scale;
+  char unscaleBaseName[1024];
+
+  if (p_azimuth_scale && p_range_scale) {
+    range_scale = *p_range_scale;
+    azimuth_scale = *p_azimuth_scale;
+    do_resample = TRUE;
+  }
+  if (do_resample) {
+    sprintf(unscaleBaseName, "%s_unscale", outFile);
+    import_terrasar(inFile, r_AMP, unscaleBaseName, TRUE);
+  }
+  else
+    import_terrasar(inFile, r_AMP, outFile, TRUE);
+ 
+  if (do_resample) {
+    asfPrintStatus("Resampling with scale factors: "
+		   "%lf range, %lf azimuth.\n",
+		   range_scale, azimuth_scale);
+
+    resample(unscaleBaseName, outFile, range_scale, azimuth_scale);
+  }
+}
+
 void import_polsarpro(char *s, char *ceosName, char *colormapName,
                       char *image_data_type, char *outBaseName)
 {
@@ -1208,7 +1239,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 
     int is_airsar = FALSE, is_ceos = FALSE;
     int is_radarsat2 = FALSE, is_terrasar = FALSE;
-   
+
     is_airsar = isAIRSAR(ceosName);
     is_ceos = isCEOS(ceosName, &error);
     is_radarsat2 = isRadarsat2(ceosName, &error);
@@ -1263,12 +1294,11 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       asfPrintStatus("   Ingesting Radarsat-2 data ...\n");
       ingest_radarsat2_polsar_amp(ceosName, outBaseName,
 				  p_range_scale, p_azimuth_scale);
-      //import_radarsat2(ceosName, r_AMP, outBaseName, TRUE);
     }
-    // FIXME: No scaling or multilooking yet
     else if (is_terrasar) {
       asfPrintStatus("   Ingesting TerraSAR-X data ...\n");
-      import_terrasar(ceosName, r_AMP, outBaseName, TRUE);
+      ingest_terrasar_polsar_amp(ceosName, outBaseName,
+				p_range_scale, p_azimuth_scale);
     }
 
     // Read the PolSAR Pro data into the layer stack
