@@ -93,7 +93,7 @@ int read_tiff(const char *filename, int *nlines, int *nsamps,
   if (data_config.bits_per_sample != 8)
     return FALSE;
 
-  int is_rgb = data_config.samples_per_pixel == 3;
+  int is_rgb = data_config.samples_per_pixel >= 3;
 
   // Populate the buffer with actual data
   if (is_rgb) {

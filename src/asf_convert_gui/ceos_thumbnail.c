@@ -1226,6 +1226,69 @@ make_terrasarx_thumb(const char *input_metadata, const char *input_data,
 }
 
 GdkPixbuf *
+make_radarsat2_thumb(const char *input_metadata, const char *input_data,
+                     size_t max_thumbnail_dimension)
+{
+  int height, width;
+  unsigned char *data;
+  char *browse_file = (char *) MALLOC(sizeof(char)*1024);
+  char *path = get_dirname(input_metadata);
+  if (strlen(path)>0) {
+    strcpy(browse_file, path);
+    if (browse_file[strlen(browse_file)-1] != '/')
+      strcat(browse_file, "/");
+  }
+  else
+    strcpy(browse_file, "");
+  free(path);
+  strcat(browse_file, "BrowseImage.tif");
+  int ret = read_tiff(browse_file, &height, &width, &data);
+  if (!ret) {
+    asfPrintWarning("Error loading browse image: %s\n", browse_file);
+    return NULL;
+  }
+
+  // HACK ALERT
+  // Radarsat-2 browse images are currently stored as four-band image, even 
+  // though only the red has actually values in it. Copying those values into 
+  // green and blue channel to avoid red thumbnails.
+  int ii;
+  for (ii=0; ii<height*width; ii++) {
+    data[ii*3+1] = data[ii*3];
+    data[ii*3+2] = data[ii*3];
+  }
+  
+  int size = 3*height*width;
+  guchar *data_pb = g_new(guchar, size);
+  memcpy(data_pb, data, sizeof(unsigned char)*size);
+
+  GdkPixbuf *pb = gdk_pixbuf_new_from_data(data_pb, GDK_COLORSPACE_RGB, FALSE,
+                                           8, width, height, width*3,
+                                           destroy_pb_data, NULL);
+  if (!pb) {
+    asfPrintWarning("Error loading browse image: %s\n", browse_file);
+    return NULL;
+  }
+
+  // scale to requested size -- make sure to do it without distorting
+  double scale_y = height / max_thumbnail_dimension;
+  double scale_x = width / max_thumbnail_dimension;
+  double scale = scale_y > scale_x ? scale_y : scale_x;
+  int x_dim = width / scale;
+  int y_dim = height / scale;
+
+  GdkPixbuf *pb_s =
+    gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
+  gdk_pixbuf_unref(pb);
+
+  if (!pb_s)
+    printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
+
+  FREE(browse_file);
+  return pb_s;
+}
+
+GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    char *input_data,
                                    const char *lut_basename,
@@ -1261,13 +1324,9 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return make_terrasarx_thumb(input_metadata, input_data,
                                     max_thumbnail_dimension);
 
-    // FIXME: not implemented yet
     if (is_radarsat2(input_metadata)) 
-      /*
-      return make_geotiff_thumb(input_metadata, input_data,
+      return make_radarsat2_thumb(input_metadata, input_data,
                                   max_thumbnail_dimension);
-      */
-      return NULL;
 
     // for airsar, need to check the metadata extension, that's more reliable
     if (is_airsar(input_metadata))
