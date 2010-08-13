@@ -1,6 +1,6 @@
 MapReady Version History
 
-MapReady 2.3.7 (released 2010 July 28)
+MapReady 2.3.8 (released 2010 August 13)
 New Functionality
 - Generation of KML overlays
 - Support for the Equirectangular and Mercator projections.
