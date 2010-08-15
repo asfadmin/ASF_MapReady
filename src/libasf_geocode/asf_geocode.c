@@ -602,6 +602,8 @@ int asf_geocode_from_proj_file(const char *projection_file,
   if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, &spheroid, &err)) {
        asfPrintError("%s",err);
   }
+
+  /*
   if (tmp_datum != UNKNOWN_DATUM &&
       datum     != tmp_datum)
   {
@@ -612,6 +614,7 @@ int asf_geocode_from_proj_file(const char *projection_file,
               "file (%s overrides %s).\n",
               datum_toString(datum), datum_toString(tmp_datum));
   }
+  */
   return asf_geocode(&pp, projection_type, force_flag, resample_method,
                      average_height, datum, pixel_size, band_id,
                      in_base_name, out_base_name, background_val, FALSE);

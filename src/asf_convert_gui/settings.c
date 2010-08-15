@@ -1468,16 +1468,12 @@ settings_to_config_file(const Settings *s,
 
         case PROJ_PS:
           {
-            char spheroid_str[256];
-            strcpy(spheroid_str, "WGS84");
-            if (s->datum == DATUM_HUGHES) {
-              strcpy(spheroid_str, "WGS84");
-            }
             fprintf(pf, "[Polar Stereographic]\n");
             fprintf(pf, "First Standard Parallel=%.10f\n", s->plat1);
             fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
             fprintf(pf, "Northern Projection=%d\n", s->lat0>0 || s->plat1>0);
-            fprintf(pf, "Spheroid=%s\n", spheroid_str);
+	    fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+            fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
           }
           break;
 

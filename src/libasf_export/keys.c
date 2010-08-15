@@ -458,21 +458,10 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_84);
       break;
     case HUGHES_DATUM:
-      /*
-      // The GeoTIFF standard knows nothing of a Hughes ellipsoid/spheroid or
-      // datum... the following implements a user-defined version (what the
-      // standard calls "a rare bird indeed")
-      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, user_defined);
-      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, user_defined);
-      GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, user_defined);
-      GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1,
-                  (double) HUGHES_SEMIMAJOR);
-      GTIFKeySet (ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
-                  (double) HUGHES_INV_FLATTENING);
-      double semi_minor = HUGHES_SEMIMAJOR * (1.0 - 1.0/HUGHES_INV_FLATTENING);
-      GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, semi_minor);
-      */
-      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 6054);      
+      // The GeoTIFF is absolutely correct. However, ArcGIS can't handle this
+      // as of version 9.3. Erdas Imagine and ENVI seem to have the same
+      // problem.
+      GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 3411);      
       break;
     case EGM96_DATUM:
     case ETRF89_DATUM:
