@@ -746,6 +746,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           // realm of 'normal' GeoTIFFs, we put all the pertinent projection parameters
           // into the citation strings to help users if their s/w doesn't 'like' user-defined
           // datums.
+	  /*
           snprintf (citation, max_citation_length + 1,
                     "Polar stereographic projected GeoTIFF using Hughes "
                     "ellipsoid written by Alaska Satellite Facility "
@@ -757,6 +758,8 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           asfRequire (citation_length >= 0 &&
               citation_length <= max_citation_length,
           "bad citation length");
+	  */
+	  sprintf(citation, "NSIDC Sea Ice Polar Stereographic North");
         }
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
