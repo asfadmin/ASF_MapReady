@@ -461,8 +461,9 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
       // The GeoTIFF is absolutely correct. However, ArcGIS can't handle this
       // as of version 9.3. Erdas Imagine and ENVI seem to have the same
       // problem.
-      // GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 3411);      
+      GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 3411);      
 
+      /*
       // So for the moment we go back to the user defined glory.
       GTIFKeySet (ogtif, GeogCitationGeoKey, TYPE_ASCII, 1, "GCS_Hughes_1980");
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, user_defined);
@@ -475,6 +476,7 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
                   (double) HUGHES_INV_FLATTENING);
       double semi_minor = HUGHES_SEMIMAJOR * (1.0 - 1.0/HUGHES_INV_FLATTENING);
       GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, semi_minor);
+      */
       break;
     case EGM96_DATUM:
     case ETRF89_DATUM:
