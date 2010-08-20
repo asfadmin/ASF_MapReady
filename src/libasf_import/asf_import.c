@@ -226,8 +226,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
 		 coherence_file, baseline_file, outBaseName);
   }
   else if (format_type == ROIPAC) {
-    asfPrintStatus("   Data format: ROIPAC\n");
-    asfPrintError("Ingest still in the works!\n");
+    asfPrintStatus("   Data format: ROI_PAC\n");
+    import_roipac(inBaseName, outBaseName);
   }
   // Don't recognize this data format; report & quit
   else {

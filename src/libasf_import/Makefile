@@ -78,6 +78,7 @@ OBJS  = \
 	import_terrasar.o \
 	import_polsarpro.o \
 	import_fgdc_meta.o \
+	import_roipac.o \
 	config_fgdc.o \
 	least_squares.o \
 	missing.o \

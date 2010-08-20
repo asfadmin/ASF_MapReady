@@ -234,11 +234,9 @@ following defines.
 #include "asf_raster.h"
 #include <ctype.h>
 
-/*
 #ifdef linux
 char *strdup(char *);
 #endif
-*/
 
 #define REQUIRED_ARGS 2
 
@@ -334,7 +332,7 @@ static int checkForOptionWithArg(char *key, int argc, char *argv[])
 static double getDoubleOptionArgWithDefault(char *arg, double def)
 {
   double val = def;
-  char *arg_cpy = STRDUP(arg);
+  char *arg_cpy = strdup(arg);
   char *eq = strchr(arg_cpy, '=');
   if (eq) {
     ++eq;

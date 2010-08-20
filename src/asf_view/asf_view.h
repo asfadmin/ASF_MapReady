@@ -166,6 +166,14 @@ int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
 meta_parameters *open_airsar(const char *data_name, const char *meta_name,
                              const char *band, ClientInterface *client);
 
+// read_roipac.c
+int try_roipac(const char *filename);
+int handle_roipac_file(const char *filename, char *meta_name, char *data_name,
+                       char **err);
+meta_parameters *open_roipac(const char *filename, const char *band,
+                             const char *metaname, const char *dataname,
+                             int multilook, ClientInterface *client);
+
 // read_terrasar.c
 int try_terrasar(const char *filename);
 int handle_terrasar_file(const char *filename, char *meta_name, char *data_name,

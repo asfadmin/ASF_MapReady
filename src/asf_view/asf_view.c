@@ -99,6 +99,8 @@ main(int argc, char **argv)
       help();
 
     char band[512], lut[512];
+    strcpy(band, "");
+
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);
     int lut_specified = extract_string_options(&argc, &argv, lut,
