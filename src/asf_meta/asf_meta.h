@@ -36,7 +36,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 3.2
+#define META_VERSION 3.3
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -82,6 +82,7 @@ typedef enum {
   BETA_IMAGE,
   INTERFEROGRAM,
   COHERENCE_IMAGE,
+  INSAR_STACK,
   GEOREFERENCED_IMAGE,
   GEOCODED_IMAGE,
   POLARIMETRIC_IMAGE,
@@ -112,7 +113,8 @@ typedef enum {
   TERRASAR,
   RADARSAT2,
   POLSARPRO,
-  GAMMA
+  GAMMA,
+  ROIPAC
 } input_format_t;
 
 /********************************************************************
@@ -445,6 +447,27 @@ typedef struct {
 } meta_colormap;                    // meta_colormap RGB look-up table
 
 /********************************************************************
+ * meta_insar: Parameters used for interferometric processing such as
+ * Doppler and baseline. Stored for writing them out with interferometric
+ * products/
+ */
+typedef struct {
+  char processor[FIELD_STRING_MAX];    // Name of processor: ROIPAC, GAMMA
+  char master_image[FIELD_STRING_MAX]; // Name of the master image
+  char slave_image[FIELD_STRING_MAX];  // Name of the slave image
+  double center_look_angle;            // Center look angle
+  double doppler;                      // Constant Doppler
+  double doppler_rate;                 // Doppler rate
+  double baseline_length;              // Baseline length
+  double baseline_parallel;            // Parallel baseline component
+  double baseline_parallel_rate;       // Parallel baseline rate component
+  double baseline_perpendicular;       // Perpendicular baseline component
+  double baseline_perpendicular_rate;  // Perpendicular baseline rate component
+  int baseline_temporal;               // Temporal baseline
+  double baseline_critical;            // Length of critical baseline
+} meta_insar;
+
+/********************************************************************
  * General ASF metadta structure.  Collection of all above.
  */
 typedef struct {
@@ -463,6 +486,7 @@ typedef struct {
   meta_calibration   *calibration;     // Can be NULL
   meta_colormap      *colormap;        // Can be NULL
   meta_doppler       *doppler;         // Can be NULL
+  meta_insar         *insar;           // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
@@ -519,6 +543,7 @@ meta_calibration *meta_calibration_init(void);
 meta_location *meta_location_init(void);
 meta_colormap *meta_colormap_init(void);
 meta_doppler *meta_doppler_init(void);
+meta_insar *meta_insar_init(void);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */

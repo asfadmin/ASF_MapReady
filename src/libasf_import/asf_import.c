@@ -78,7 +78,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
          char *inMetaNameOption,
          char *inBaseName, char *ancillary_file,
-	 char *colormapName, char *outBaseName)
+	 char *colormapName, char *slave_file, char *interferogram_file,
+	 char *coherence_file, char *baseline_file, char *outBaseName)
 {
   char outDataName[256], outMetaName[256];
 
@@ -221,8 +222,12 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == GAMMA) {
     asfPrintStatus("   Data format: GAMMA\n");
-    import_gamma(inBaseName, inMetaNameOption, ancillary_file, image_data_type,
-		 outBaseName);
+    import_gamma(inBaseName, inMetaNameOption, slave_file, interferogram_file,
+		 coherence_file, baseline_file, outBaseName);
+  }
+  else if (format_type == ROIPAC) {
+    asfPrintStatus("   Data format: ROIPAC\n");
+    asfPrintError("Ingest still in the works!\n");
   }
   // Don't recognize this data format; report & quit
   else {

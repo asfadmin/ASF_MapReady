@@ -347,6 +347,29 @@ meta_location *meta_location_init(void)
   return location;
 }
 
+/*******************************************************************
+ * meta_insar_init():
+ * Allocate memory for and initialize elements of a meta insar
+ * structure */
+meta_insar *meta_insar_init(void)
+{
+  meta_insar *insar = (meta_insar *) MALLOC(sizeof(meta_insar));
+  strcpy(insar->processor, MAGIC_UNSET_STRING);
+  strcpy(insar->master_image, MAGIC_UNSET_STRING);
+  strcpy(insar->slave_image, MAGIC_UNSET_STRING);
+  insar->center_look_angle = MAGIC_UNSET_DOUBLE;
+  insar->doppler = MAGIC_UNSET_DOUBLE;
+  insar->doppler_rate = MAGIC_UNSET_DOUBLE;
+  insar->baseline_length = MAGIC_UNSET_DOUBLE;
+  insar->baseline_parallel = MAGIC_UNSET_DOUBLE;
+  insar->baseline_parallel_rate = MAGIC_UNSET_DOUBLE;
+  insar->baseline_perpendicular = MAGIC_UNSET_DOUBLE;
+  insar->baseline_perpendicular_rate = MAGIC_UNSET_DOUBLE;
+  insar->baseline_temporal = MAGIC_UNSET_DOUBLE;
+  insar->baseline_critical = MAGIC_UNSET_DOUBLE;
+  return insar;
+}
+
 /****************************************************
  * raw_init:
  * Allocate memory for a fresh meta structure and fill
@@ -367,6 +390,7 @@ meta_parameters *raw_init(void)
   meta->location        = NULL;
   meta->colormap        = NULL;  /* Allocated upon discovery of Palette Color TIFF embedded color map */
   meta->doppler         = NULL;
+  meta->insar           = NULL;
 
   meta->meta_version = META_VERSION;
 

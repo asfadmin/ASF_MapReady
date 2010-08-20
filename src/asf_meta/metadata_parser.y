@@ -126,6 +126,7 @@ void error_message(const char *err_mes, ...)
 #define MRGB ( (meta_rgb *) current_block)
 #define MDOPPLER ( (meta_doppler *) current_block)
 #define MESTIMATE ( (tsx_doppler_t *) current_block)
+#define MINSAR ( (meta_insar *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -240,6 +241,13 @@ void select_current_block(char *block_name)
       if (MTL->colormap == NULL)
       { MTL->colormap = meta_colormap_init(); }
       current_block = MTL->colormap;
+      goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "insar") ) {
+      if (MTL->insar == NULL)
+      { MTL->insar = meta_insar_init(); }
+      current_block = MTL->insar;
       goto MATCHED;
   }
 
@@ -412,6 +420,8 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = SIMULATED_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "IMAGE_LAYER_STACK") )
 	MGENERAL->image_data_type = IMAGE_LAYER_STACK;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INSAR_STACK") )
+	MGENERAL->image_data_type = INSAR_STACK;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "MOSAIC") )
 	MGENERAL->image_data_type = MOSAIC;
       else {
@@ -1115,6 +1125,35 @@ void fill_structure_field(char *field_name, void *valp)
       { (MLOCATION)->lon_end_far_range = VALP_AS_DOUBLE; return; }
   }
 
+  // Fields which go in the insar block of the metadata file.
+  if ( !strcmp(stack_top->block_name, "insar") ) {
+    if ( !strcmp(field_name, "baseline_critical") )
+      { strcpy((MINSAR)->processor, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "master_image") )
+      { strcpy((MINSAR)->master_image, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "slave_image") )
+      { strcpy((MINSAR)->slave_image, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "center_look_angle") )
+      { (MINSAR)->center_look_angle = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "doppler") )
+      { (MINSAR)->doppler = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "doppler_rate") )
+      { (MINSAR)->doppler_rate = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "baseline_length") )
+      { (MINSAR)->baseline_length = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "baseline_parallel") )
+      { (MINSAR)->baseline_parallel = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "baseline_parallel_rate") )
+      { (MINSAR)->baseline_parallel_rate = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "baseline_perpendicular") )
+      { (MINSAR)->baseline_perpendicular = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "baseline_perpendicular_rate") )
+      { (MINSAR)->baseline_perpendicular_rate = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "baseline_temporal") )
+      { (MINSAR)->baseline_temporal = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "baseline_critical") )
+      { (MINSAR)->baseline_critical = VALP_AS_DOUBLE; return; }
+  }
 
   // Fields which go in the doppler block of the metadata file.
   if ( !strcmp(stack_top->block_name, "doppler") ) {

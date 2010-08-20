@@ -179,6 +179,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case IMAGE_LAYER_STACK:
         meta_put_string(fp, "image_data_type:","IMAGE_LAYER_STACK",comment);
 	break;
+      case INSAR_STACK:
+	meta_put_string(fp, "image_data_type:","INSAR_STACK",comment);
+	break;
       case MOSAIC:
         meta_put_string(fp, "image_data_type:","MOSAIC",comment);
 	break;
@@ -965,6 +968,45 @@ void meta_write(meta_parameters *meta, const char *file_name)
           meta_put_string(fp,idx,rgb_row,"red_value green_value blue_value");
       }
       meta_put_string(fp,"}","","End colormap");
+  }
+
+  // Write out insar block
+  if (meta->insar) {
+    meta_put_string(fp, "insar {","","Block containing InSAR parameters");
+    meta_put_string(fp, "processor:", meta->insar->processor,
+		    "Name of processor: ROIPAC, GAMMA");
+    meta_put_string(fp, "master_image:", meta->insar->master_image,
+		    "Name of master image");
+    meta_put_string(fp, "slave_image:", meta->insar->slave_image,
+		    "Name of slave image");
+    meta_put_double_lf(fp, "center_look_angle:", 
+		       meta->insar->center_look_angle, 4,
+		       "Center look angle [degrees]");
+    meta_put_double(fp, "doppler:", meta->insar->doppler,
+		    "Doppler (constant term) [Hz]");
+    meta_put_double(fp, "doppler_rate:", 
+		    meta->insar->doppler_rate, 
+		    "Doppler rate [Hz/m]");
+    meta_put_double_lf(fp, "baseline_length:", meta->insar->baseline_length, 1,
+		       "Length of baseline [m]");
+    meta_put_double_lf(fp, "baseline_parallel:", 
+		       meta->insar->baseline_parallel, 1,
+		       "Parallel baseline component [m]");
+    meta_put_double(fp, "baseline_parallel_rate:",
+		    meta->insar->baseline_parallel_rate,
+		    "Parallel baseline rate [m/s]");
+    meta_put_double_lf(fp, "baseline_perpendicular:", 
+		       meta->insar->baseline_perpendicular, 1,
+		       "Perpendicular baseline component [m]");
+    meta_put_double(fp, "baseline_perpendicular_rate:",
+		    meta->insar->baseline_perpendicular_rate,
+		    "Perpendicular baseline rate [m/s]");
+    meta_put_int(fp, "baseline_temporal:", meta->insar->baseline_temporal,
+		 "Temporal baseline [days]");
+    meta_put_double_lf(fp, "baseline_critical:", 
+		       meta->insar->baseline_critical, 1,
+		       "Critical baseline [m]");
+    meta_put_string(fp,"}","","End insar");
   }
 
   FCLOSE(fp);

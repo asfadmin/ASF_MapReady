@@ -48,6 +48,10 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                char *inBaseName, // input file
                char *ancillary_file, // ancillary file (if needed for input file)
                char *colormapName, // colormap file
+	       char *slave_file, // slave metadata file
+	       char *interferogram_file, // interferogram file
+	       char *coherence_file, // coherence image file
+	       char *baseline_file, // baseline file
                char *outBaseName // output file
                );
 
@@ -114,8 +118,9 @@ void import_polsarpro(char *polsarName, char *ceosName,
                       char *colormapName, char *image_data_type, char *outBaseName);
 void apply_polsarpro_palette_to_metadata(const char *lut_basename,
                                          meta_parameters *imd);
-void import_gamma(char *dataName, char *metaName, char *ceosName,
-                  char *image_data_type, char *outBaseName);
+void import_gamma(char *dataName, char *metaName, char *slaveName,
+                  char *igramName, char *cohName, char *baselineName, 
+		  char *outBaseName);
 
 meta_parameters *meta_read_only(const char *in_fName);
 meta_parameters *meta_read_raw(const char *inFile);

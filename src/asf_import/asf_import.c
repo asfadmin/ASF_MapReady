@@ -19,9 +19,10 @@ following defines.
 "              [-quiet] [-real-quiet] [-license] [-version] [-multilook]\n"\
 "              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-complex] [-metadata <file>]\n"\
-"              [-line <start line subset>] [-sample <start sample subset>]\n"\
-"              [-width <subset width>] [-height <subset height>]\n"\
-"              [-help]\n"\
+"              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
+"              [-baseline <file>] [-line <start line subset>]\n"\
+"              [-sample <start sample subset>] [-width <subset width>]\n"\
+"              [-height <subset height>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -69,9 +70,9 @@ following defines.
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp',\n"\
-"        'polsarpro', 'gamma', 'alos_mosaic', 'terrasar', 'radarsat2'  and\n"\
-"        'jaxa_L0'. The 'jaxa_L0' format refers to the ALOS AVNIR-2 Level 0\n"\
-"        dataset format. 'CEOS' is the default behavior.\n"\
+"        'polsarpro', 'gamma', 'roipac', 'alos_mosaic', 'terrasar',\n"\
+"        'radarsat2' and 'jaxa_L0'. The 'jaxa_L0' format refers to the ALOS\n"\
+"        AVNIR-2 Level 0 dataset format. 'CEOS' is the default behavior.\n"\
 "   -ancillary-file <file>\n"\
 "        For PolSARpro format files, the ingest process needs access to the\n"\
 "        original COES or AIRSAR format data that the PolSARpro images were\n"\
@@ -92,6 +93,20 @@ following defines.
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that does not have the same basename\n"\
 "        as the image data.\n"\
+"   -interferogram <file>\n"\
+"        Allows the ingest of an interferogram that is in the same geometry\n"\
+"        as the amplitude image that is ingested as the main file.\n"\
+"        Requires the format to be 'gamma' or 'roipac'.\n"\
+"   -coherence <file<\n"\
+"        Allows the ingest of an coherence image that is in the same geometry\n"\
+"        as the amplitude image that is ingested as the main file.\n"\
+"        Requires the format to be 'gamma' or 'roipac'.\n"\
+"   -slave <file>\n"\
+"        Defines the metadata of the interferometric slave image.\n"\
+"        Requires the format to be 'gamma' or 'roipac'.\n"\
+"   -baseline <file>\n"\
+"        Provides baseline information of the interferometric pair.\n"\
+"        Requires the format to be 'gamma' or 'roipac'.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then import the band identified by 'band_id' (only).  If 'all' is\n"\
@@ -265,6 +280,10 @@ typedef enum {
     f_HEIGHT,
     f_SAVE_INTERMEDIATES,
     f_COLORMAP,
+    f_INTERFEROGRAM,
+    f_COHERENCE,
+    f_SLAVE,
+    f_BASELINE,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -381,6 +400,10 @@ int main(int argc, char *argv[])
     char *inMetaNameOption=NULL;
     char *lutName=NULL;
     char *colormapName=NULL;
+    char *interferogram_file=NULL;
+    char *coherence_file=NULL;
+    char *slave_file=NULL;
+    char *baseline_file=NULL;
     char *prcPath=NULL;
     char format_type_str[256]="";
     input_format_t format_type;
@@ -438,6 +461,10 @@ int main(int argc, char *argv[])
     flags[f_HEIGHT] = checkForOption("-height", argc, argv);
     flags[f_SAVE_INTERMEDIATES] = checkForOption("-save-intermediates", argc, argv);
     flags[f_COLORMAP] = checkForOption("-colormap", argc, argv);
+    flags[f_INTERFEROGRAM] = checkForOption("-interferogram", argc, argv);
+    flags[f_COHERENCE] = checkForOption("-coherence", argc, argv);
+    flags[f_SLAVE] = checkForOption("-slave", argc, argv);
+    flags[f_BASELINE] = checkForOption("-baseline", argc, argv);
 
     flags[f_ANCILLARY_FILE] = checkForOption("-ancillary-file", argc, argv);
     if (flags[f_ANCILLARY_FILE] == FLAG_NOT_SET)
@@ -538,6 +565,10 @@ int main(int argc, char *argv[])
         if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_FIX_META_YPIX] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_COLORMAP] != FLAG_NOT_SET)   needed_args += 2; /*option & parameter*/
+	if(flags[f_INTERFEROGRAM] != FLAG_NOT_SET) needed_args += 2;
+	if(flags[f_COHERENCE] != FLAG_NOT_SET) needed_args += 2;
+	if(flags[f_SLAVE] != FLAG_NOT_SET) needed_args += 2;
+	if(flags[f_BASELINE] != FLAG_NOT_SET) needed_args += 2;
 
         /*Make sure we have enough arguments*/
         if(argc != needed_args)
@@ -614,6 +645,26 @@ int main(int argc, char *argv[])
       if(   argv[flags[f_COLORMAP]+1][0] == '-'
             || flags[f_COLORMAP] >= argc-REQUIRED_ARGS)
         print_usage();
+    if(flags[f_INTERFEROGRAM] != FLAG_NOT_SET)
+      /*Make sure the field following -colormap isn't another option*/
+      if(   argv[flags[f_INTERFEROGRAM]+1][0] == '-'
+            || flags[f_INTERFEROGRAM] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_COHERENCE] != FLAG_NOT_SET)
+      /*Make sure the field following -colormap isn't another option*/
+      if(   argv[flags[f_COHERENCE]+1][0] == '-'
+            || flags[f_COHERENCE] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_SLAVE] != FLAG_NOT_SET)
+      /*Make sure the field following -colormap isn't another option*/
+      if(   argv[flags[f_SLAVE]+1][0] == '-'
+            || flags[f_SLAVE] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_BASELINE] != FLAG_NOT_SET)
+      /*Make sure the field following -colormap isn't another option*/
+      if(   argv[flags[f_BASELINE]+1][0] == '-'
+            || flags[f_BASELINE] >= argc-REQUIRED_ARGS)
+        print_usage();
 
     /* Be sure to open log ASAP */
     if(flags[f_LOG] != FLAG_NOT_SET)
@@ -676,6 +727,22 @@ int main(int argc, char *argv[])
     if(flags[f_COLORMAP] != FLAG_NOT_SET) {
       colormapName = (char *) MALLOC(sizeof(char)*256);
       strcpy(colormapName, argv[flags[f_COLORMAP] + 1]);
+    }
+    if(flags[f_INTERFEROGRAM] != FLAG_NOT_SET) {
+      interferogram_file = (char *) MALLOC(sizeof(char)*1024);
+      strcpy(interferogram_file, argv[flags[f_INTERFEROGRAM] + 1]);
+    }
+    if(flags[f_COHERENCE] != FLAG_NOT_SET) {
+      coherence_file = (char *) MALLOC(sizeof(char)*1024);
+      strcpy(coherence_file, argv[flags[f_COHERENCE] + 1]);
+    }
+    if(flags[f_SLAVE] != FLAG_NOT_SET) {
+      slave_file = (char *) MALLOC(sizeof(char)*1024);
+      strcpy(slave_file, argv[flags[f_SLAVE] + 1]);
+    }
+    if(flags[f_BASELINE] != FLAG_NOT_SET) {
+      baseline_file = (char *) MALLOC(sizeof(char)*1024);
+      strcpy(baseline_file, argv[flags[f_BASELINE] + 1]);
     }
 
     { /* BEGIN: Check for conflict between pixel type flags */
@@ -750,52 +817,56 @@ int main(int argc, char *argv[])
       format_type = POLSARPRO;
     else if (strncmp_case(format_type_str, "GAMMA", 5) == 0)
       format_type = GAMMA;
+    else if (strncmp_case(format_type_str, "ROIPAC", 6) == 0)
+      format_type = ROIPAC;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }
     else
       format_type = CEOS;
-
     
-    // Will need to check the ancillary file input at a lower level.
-    // If the PolSARpro header includes map projection information,
-    // we don't need to know the SAR geometry.
-
-    /*
-    // Process PolSARpro options (-format and -ancillary_flag combos)
-    if (format_type == POLSARPRO &&
-        flags[f_ANCILLARY_FILE] == FLAG_NOT_SET) {
-      // PolSARpro requires the ancillary file
-      asfPrintError("PolSARpro ingest requires the original CEOS or AIRSAR format\n"
-          "dataset that was used to create the PolSARpro data files.  Please\n"
-          "specify the original CEOS or AIRSAR format dataset with the -ancillary_file\n"
-          "option.  See asf_import -help for more information.\n");
-    }
-    */
-    
-    // Process Gamma options (-format, -metadata, and -ancillary_flag combos)
-    if (format_type == GAMMA &&
-        flags[f_ANCILLARY_FILE] == FLAG_NOT_SET) {
-      // GAMMA requires the ancillary file
-      asfPrintError("GAMMA ingest requires the original CEOS format\n"
-          "dataset that was used to create the GAMMA data files.  Please\n"
-          "specify the original CEOS format dataset with the -ancillary_file\n"
-          "option.  See asf_import -help for more information.\n");
-    }
-    if (format_type == GAMMA &&
+    // Process InSAR (Gamma/ROIPAC) options:
+    // -format, -metadata, -slave, -interferogram, -coherence, -baseline
+    if ((format_type == GAMMA || format_type == ROIPAC) &&
         flags[f_METADATA_FILE] == FLAG_NOT_SET) {
-      // GAMMA requires the metadata file
-      asfPrintError("GAMMA ingest requires the specific name of the GAMMA\n"
-	  "metadata file. Please specify the original CEOS format dataset \n"
-	  "with the -metadata option.  See asf_import -help for more information.\n");
+      // GAMMA/ROIPAC requires the metadata file
+      asfPrintError("%s ingest requires the specific name of the %s\n"
+	  "metadata file. See asf_import -help for more information.\n", 
+	  format_type_str, format_type_str);
     }
-    if (format_type == GAMMA &&
-	flags[f_IMAGE_DATA_TYPE] == FLAG_NOT_SET) {
-      // GAMMA requires the image data type
-      asfPrintError("GAMMA ingest requires the image data type to figure out\n"
-		    "what data type to apply during the ingest. Coherence\n"
-		    "images are regular floating point data sets, while\n"
-		    "interferograms are stored in complex form.\n");
+    if (flags[f_SLAVE] != FLAG_NOT_SET &&
+	format_type != GAMMA && format_type != ROIPAC) {
+      // slave metadata require InSAR format to be useful
+      asfPrintError("Use of the -slave option requires the ingest of "
+		    "interferometric data.\n");
+    }
+    if (flags[f_INTERFEROGRAM] != FLAG_NOT_SET &&
+	format_type != GAMMA && format_type != ROIPAC) {
+      // interferogram require InSAR format to be useful
+      asfPrintError("Use of the -interferogram option requires the ingest of "
+		    "interferometric data.\n");
+    }
+    if (flags[f_COHERENCE] != FLAG_NOT_SET &&
+	format_type != GAMMA && format_type != ROIPAC) {
+      // coherence image require InSAR format to be useful
+      asfPrintError("Use of the -coherence option requires the ingest of "
+		    "interferometric data.\n");
+    }
+    if (flags[f_BASELINE] != FLAG_NOT_SET &&
+	format_type != GAMMA && format_type != ROIPAC) {
+      // baseline require InSAR format to be useful
+      asfPrintError("Use of the -baseline option requires the ingest of "
+		    "interferometric data.\n");
+    }
+    if ((format_type == GAMMA || format_type == ROIPAC) &&
+	flags[f_SLAVE] != FLAG_NOT_SET && flags[f_BASELINE] == FLAG_NOT_SET) {
+      asfPrintError("Use of the -slave option is only valid when the "
+		    "-baseline option\nis specified at the same time.\n");
+    }
+    if ((format_type == GAMMA || format_type == ROIPAC) &&
+	flags[f_BASELINE] != FLAG_NOT_SET && flags[f_SLAVE] == FLAG_NOT_SET) {
+      asfPrintError("Use of the -baseline option is only valid when the "
+		    "-slave option\nis specified at the same time.\n");
     }
 
     if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET) {
@@ -824,8 +895,7 @@ int main(int argc, char *argv[])
 
     /* Deal with input image data type */
     if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
-       (format_type == GENERIC_GEOTIFF || format_type == GAMMA || 
-	format_type == POLSARPRO))
+       (format_type == GENERIC_GEOTIFF || format_type == POLSARPRO))
     {
       strcpy(image_data_type, argv[flags[f_IMAGE_DATA_TYPE] + 1]);
       for (ii=0; ii<strlen(image_data_type); ii++) {
@@ -896,11 +966,20 @@ int main(int argc, char *argv[])
                    lutName,prcPath, lowerLat, upperLat, line, sample,
                    width, height, save_intermediates, p_range_scale, p_azimuth_scale,
                    p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
-                   ancillary_file, colormapName, outBaseName);
+                   ancillary_file, colormapName, slave_file, interferogram_file,
+		   coherence_file, baseline_file, outBaseName);
     }
 
     if (colormapName)
         free(colormapName);
+    if (slave_file)
+      free(slave_file);
+    if (interferogram_file)
+      free(interferogram_file);
+    if (coherence_file)
+      free(coherence_file);
+    if (baseline_file)
+      free(baseline_file);
     if (lutName)
         free(lutName);
     if (prcPath)

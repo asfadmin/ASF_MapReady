@@ -578,7 +578,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
                    NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 0,
                    NULL, NULL, NULL, FALSE, NULL, tiff_basename, ancillary_file,
-                   NULL, imported),
+                   NULL, NULL, NULL, NULL, NULL, imported),
         status);
 
     sprintf(status, "Geocoding %s...", uc_what);
@@ -1894,6 +1894,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               cfg->general->in_name,
                               cfg->general->ancillary_file,
                               polsarpro_colormap,
+			      NULL, // FIXME: slave file
+			      NULL, // FIXME: interferogram file
+			      NULL, // FIXME: coherence image file
+			      NULL, // FIXME: baseline file
                               outFile),
                    "ingesting data file (asf_import)\n");
       FREE(polsarpro_colormap);

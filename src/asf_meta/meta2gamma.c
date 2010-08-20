@@ -20,7 +20,7 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
   strcpy(meta->general->sensor, gamma->sensor);
   strcpy(meta->general->sensor_name, MAGIC_UNSET_STRING); // Sensor name not available in ISP metadata
   strcpy(meta->general->mode, MAGIC_UNSET_STRING); // Mode not available in ISP metadata
-  strcpy(meta->general->processor, MAGIC_UNSET_STRING); // Processor not available in ISP metadata
+  strcpy(meta->general->processor, "GAMMA ISP");
   if (strncmp_case(gamma->image_format, "FCOMPLEX", 8) == 0)
     meta->general->data_type = COMPLEX_REAL32;
   else if (strncmp_case(gamma->image_format, "SCOMPLEX", 8) == 0)
@@ -76,6 +76,8 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
       meta->general->image_data_type = MASK;
     if (strncmp_case(gamma->image_data_type, "IMAGE_LAYER_STACK", 17) == 0)
       meta->general->image_data_type = IMAGE_LAYER_STACK;
+    if (strncmp_case(gamma->image_data_type, "INSAR_STACK", 11) == 0)
+      meta->general->image_data_type = INSAR_STACK;
   }
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d",
     gamma->acquisition.day, mon[gamma->acquisition.month],
@@ -156,10 +158,15 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
         gamma->doppler_polynomial[3]);
   }
   for (i=0; i<3; i++) {
-    meta->sar->range_doppler_coefficients[i] = gamma->doppler_polynomial[i];
-    meta->sar->azimuth_doppler_coefficients[i] = 0.0; // FIXME: We have gamma->radar_frequency and state vectors ...we should estimate the azimuth doppler stuff
-    meta->sar->azimuth_doppler_coefficients[0] = gamma->doppler_polynomial[0];
+    meta->sar->range_doppler_coefficients[i] = gamma->doppler_polynomial[i]; 
+    meta->sar->azimuth_doppler_coefficients[i] = 0.0;
   }
+  // Adjust for difference in units [Hz/m] -> [Hz/pixel]
+  meta->sar->range_doppler_coefficients[1] /= gamma->range_pixel_spacing;
+  meta->sar->range_doppler_coefficients[2] /= 
+    gamma->range_pixel_spacing * gamma->range_pixel_spacing;
+
+  meta->sar->azimuth_doppler_coefficients[0] = gamma->doppler_polynomial[0];
   meta->sar->azimuth_processing_bandwidth = gamma->azimuth_proc_bandwidth;
   meta->sar->chirp_rate = gamma->chirp_bandwidth;
   meta->sar->pulse_duration = MAGIC_UNSET_DOUBLE;
@@ -393,7 +400,7 @@ meta_parameters* gamma_msp2meta(gamma_msp *gamma)
   strcpy(meta->general->sensor, MAGIC_UNSET_STRING); // Sensor not available in MSP metadata
   strcpy(meta->general->sensor_name, MAGIC_UNSET_STRING); // Sensor name not available in MSP metadata
   strcpy(meta->general->mode, MAGIC_UNSET_STRING); // Mode not available in MSP metadata
-  strcpy(meta->general->processor, MAGIC_UNSET_STRING); // Processor not available in MSP metadata
+  strcpy(meta->general->processor, "GAMMA MSP");
   if (strncmp(uc(gamma->image_format), "FCOMPLEX", 8) == 0)
     meta->general->data_type = COMPLEX_REAL32;
   else if (strncmp(uc(gamma->image_format), "SCOMPLEX", 8) == 0)
