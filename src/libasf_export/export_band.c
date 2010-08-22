@@ -1736,6 +1736,15 @@ export_band_image (const char *metadata_file_name,
 
     int kk;
     int is_colormap_band;
+
+    // Save settings for InSAR stack
+    scale_t sample_mapping_org = sample_mapping;
+    char *lut_file_org = NULL;
+    if (lut_file) {
+      lut_file_org = (char *) MALLOC(sizeof(char)*255);
+      strcpy(lut_file_org, lut_file);
+    }
+    
     for (kk=0; kk<band_count; kk++) {
       if (band_name[kk]) {
         is_colormap_band = FALSE;
@@ -1770,6 +1779,29 @@ export_band_image (const char *metadata_file_name,
           is_colormap_band = FALSE;
           sample_mapping = NONE;
         }
+
+	// Take care of color interferogram	
+	if (md->general->image_data_type == INSAR_STACK) {
+	  if (strcmp_case(band_name[kk], "INTERFEROGRAM_PHASE") == 0) {
+	    if (!lut_file)
+	      lut_file = (char *) MALLOC(sizeof(char)*255);
+	    strcpy(lut_file, "interferogram.lut");
+	    sample_mapping = MINMAX;
+	    is_colormap_band = TRUE;
+	    asfPrintStatus("\nApplying interferometric color look up table "
+			   "to interferogram ...\n");
+	  }
+	  else {
+	    if (!lut_file_org && lut_file) {
+	      FREE(lut_file);
+	      lut_file = NULL;
+	    }
+	    else if (lut_file_org)
+	      strcpy(lut_file, lut_file_org);
+	    sample_mapping = sample_mapping_org;
+	    is_colormap_band = FALSE;
+	  }
+	}
 
         if (have_look_up_table && is_colormap_band) {
           asfPrintStatus("\nApplying %s color look up table...\n\n", look_up_table_name);
@@ -1913,8 +1945,12 @@ export_band_image (const char *metadata_file_name,
           md->general->image_data_type == POLARIMETRIC_PARAMETER)
           append_band_ext(base_name, out_file, NULL);
         else {
-          if (band_count > 1)
-            append_band_ext(base_name, out_file, band_name[kk]);
+          if (band_count > 1) {
+	    if (strcmp_case(band_name[kk], "INTERFEROGRAM_PHASE") == 0)
+	      append_band_ext(base_name, out_file, "INTERFEROGRAM_RGB");
+	    else
+	      append_band_ext(base_name, out_file, band_name[kk]);
+	  }
           else
             append_band_ext(base_name, out_file, NULL);
         }
@@ -2439,4 +2475,49 @@ void colormap_to_lut_file(meta_colormap *cm, const char *lut_file)
     fprintf(fp, line);
   }
   FCLOSE(fp);
+}
+
+void write_insar_xml(char *meta_name)
+{
+  meta_parameters *meta = meta_read(meta_name);
+  if (meta->general->image_data_type == INSAR_STACK && meta->insar) {
+    char *output_file_name = 
+      (char *) MALLOC(sizeof(char)*(strlen(meta_name)+10));
+    sprintf(output_file_name, "%s.xml", get_basename(meta_name));
+    asfPrintStatus("\nWriting InSAR metadata (%s) ...\n", output_file_name);
+    FILE *fp = FOPEN(output_file_name, "wt");
+    fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\""
+	    "?>\n");
+    fprintf(fp, "<insar>\n");
+    fprintf(fp, "  <processor>%s</processor>\n", meta->insar->processor);
+    fprintf(fp, "  <master_image>%s</master_image>\n", 
+	    meta->insar->master_image);
+    fprintf(fp, "  <slave_image>%s</slave_image>\n", meta->insar->slave_image);
+    fprintf(fp, "  <center_look_angle>%.4lf</center_look_angle>\n",
+	    meta->insar->center_look_angle);
+    fprintf(fp, "  <doppler units=\"Hz\">%.4lf</doppler>\n",
+	    meta->insar->doppler);
+    fprintf(fp, "  <doppler_rate units=\"Hz/m\">%.8lf</doppler_rate>\n",
+	    meta->insar->doppler_rate);
+    fprintf(fp, "  <baseline_length units=\"m\">%.1lf</baseline_length>\n",
+	    meta->insar->baseline_length);
+    fprintf(fp, "  <baseline_parallel units=\"m\">%.1lf</baseline_parallel>\n",
+	    meta->insar->baseline_parallel);
+    fprintf(fp, "  <baseline_parallel_rate units=\"m/s\">%.8lf"
+	    "</baseline_parallel_rate>\n", 
+	    meta->insar->baseline_parallel_rate);
+    fprintf(fp, "  <baseline_perpendicular units=\"m\">%.1lf"
+	    "</baseline_perpendicular>\n", 
+	    meta->insar->baseline_perpendicular);
+    fprintf(fp, "  <baseline_perpendicular_rate units=\"m/s\">%.8lf"
+	    "</basesline_perpendicular_rate>\n",
+	    meta->insar->baseline_perpendicular_rate);
+    fprintf(fp, "  <baseline_temporal units=\"days\">%d</baseline_temporal>\n",
+	    meta->insar->baseline_temporal);
+    fprintf(fp, "  <baseline_critical units=\"m\">%.1lf</baseline_critical>\n",
+	    meta->insar->baseline_critical);
+    fprintf(fp, "</insar>\n");
+    fprintf(fp, "</xml>\n");
+    FCLOSE(fp);
+  }
 }

@@ -1127,7 +1127,7 @@ void fill_structure_field(char *field_name, void *valp)
 
   // Fields which go in the insar block of the metadata file.
   if ( !strcmp(stack_top->block_name, "insar") ) {
-    if ( !strcmp(field_name, "baseline_critical") )
+    if ( !strcmp(field_name, "processor") )
       { strcpy((MINSAR)->processor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "master_image") )
       { strcpy((MINSAR)->master_image, VALP_AS_CHAR_POINTER); return; }

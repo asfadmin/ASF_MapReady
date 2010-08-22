@@ -79,6 +79,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                         true_color, false_color,
                         look_up_table_name, GEOTIFF,
                         &nouts, &outs);
+      write_insar_xml(in_meta_name);
   }
   else if ( format == JPEG ) {
       //in_data_name = appendExt(in_base_name, ".img");
