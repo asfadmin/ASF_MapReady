@@ -1737,14 +1737,6 @@ export_band_image (const char *metadata_file_name,
     int kk;
     int is_colormap_band;
 
-    // Save settings for InSAR stack
-    scale_t sample_mapping_org = sample_mapping;
-    char *lut_file_org = NULL;
-    if (lut_file) {
-      lut_file_org = (char *) MALLOC(sizeof(char)*255);
-      strcpy(lut_file_org, lut_file);
-    }
-    
     for (kk=0; kk<band_count; kk++) {
       if (band_name[kk]) {
         is_colormap_band = FALSE;
@@ -1779,29 +1771,6 @@ export_band_image (const char *metadata_file_name,
           is_colormap_band = FALSE;
           sample_mapping = NONE;
         }
-
-	// Take care of color interferogram	
-	if (md->general->image_data_type == INSAR_STACK) {
-	  if (strcmp_case(band_name[kk], "INTERFEROGRAM_PHASE") == 0) {
-	    if (!lut_file)
-	      lut_file = (char *) MALLOC(sizeof(char)*255);
-	    strcpy(lut_file, "interferogram.lut");
-	    sample_mapping = MINMAX;
-	    is_colormap_band = TRUE;
-	    asfPrintStatus("\nApplying interferometric color look up table "
-			   "to interferogram ...\n");
-	  }
-	  else {
-	    if (!lut_file_org && lut_file) {
-	      FREE(lut_file);
-	      lut_file = NULL;
-	    }
-	    else if (lut_file_org)
-	      strcpy(lut_file, lut_file_org);
-	    sample_mapping = sample_mapping_org;
-	    is_colormap_band = FALSE;
-	  }
-	}
 
         if (have_look_up_table && is_colormap_band) {
           asfPrintStatus("\nApplying %s color look up table...\n\n", look_up_table_name);
@@ -1946,7 +1915,8 @@ export_band_image (const char *metadata_file_name,
           append_band_ext(base_name, out_file, NULL);
         else {
           if (band_count > 1) {
-	    if (strcmp_case(band_name[kk], "INTERFEROGRAM_PHASE") == 0)
+	    if (strcmp_case(band_name[kk], "INTERFEROGRAM_PHASE") == 0 &&
+		is_colormap_band)
 	      append_band_ext(base_name, out_file, "INTERFEROGRAM_RGB");
 	    else
 	      append_band_ext(base_name, out_file, band_name[kk]);
@@ -2477,13 +2447,30 @@ void colormap_to_lut_file(meta_colormap *cm, const char *lut_file)
   FCLOSE(fp);
 }
 
-void write_insar_xml(char *meta_name)
+void write_insar_xml(char *in_meta_name, char *in_data_name, char *out_name)
 {
-  meta_parameters *meta = meta_read(meta_name);
+  meta_parameters *meta = meta_read(in_meta_name);
   if (meta->general->image_data_type == INSAR_STACK && meta->insar) {
+    
+    // Export interferometric phase 
+    int ii, nouts = 0;
+    char **outs = NULL;
+    char **band_name = (char **) CALLOC(MAX_BANDS, sizeof(char*));
+    band_name[0] = (char*) MALLOC(sizeof(char)*100);
+    strcpy(band_name[0], "INTERFEROGRAM_PHASE");
+    export_band_image(in_meta_name, in_data_name, out_name,
+		      MINMAX, band_name, FALSE, FALSE, FALSE,
+		      "interferogram.lut", GEOTIFF, &nouts, &outs);
+    FREE(band_name[0]);
+    FREE(band_name);
+    for (ii=0; ii<nouts; ii++)
+      FREE(outs[ii]);
+    FREE(outs);
+
+    // Write InSAR metadata
     char *output_file_name = 
-      (char *) MALLOC(sizeof(char)*(strlen(meta_name)+10));
-    sprintf(output_file_name, "%s.xml", get_basename(meta_name));
+      (char *) MALLOC(sizeof(char)*(strlen(in_meta_name)+10));
+    sprintf(output_file_name, "%s.xml", get_basename(out_name));
     asfPrintStatus("\nWriting InSAR metadata (%s) ...\n", output_file_name);
     FILE *fp = FOPEN(output_file_name, "wt");
     fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\""
@@ -2519,5 +2506,7 @@ void write_insar_xml(char *meta_name)
     fprintf(fp, "</insar>\n");
     fprintf(fp, "</xml>\n");
     FCLOSE(fp);
+    FREE(output_file_name);
   }
+  meta_free(meta);
 }

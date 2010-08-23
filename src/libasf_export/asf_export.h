@@ -161,7 +161,7 @@ void initialize_png_file_ext(const char *output_file_name,
 			     png_structp *png_ptr, png_infop *info_ptr,
 			     int rgb, int alpha);
 void finalize_png_file(FILE *opng, png_structp png_ptr, png_infop info_ptr);
-void write_insar_xml(char *meta_name);
+void write_insar_xml(char *in_meta_name, char *in_data_name, char *out_name);
 
 // Prototypes from key.c
 double spheroid_diff_from_axis (spheroid_type_t spheroid,
