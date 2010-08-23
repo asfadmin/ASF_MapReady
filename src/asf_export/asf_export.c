@@ -691,6 +691,7 @@ main (int argc, char *argv[])
   int is_polsarpro = (md->general->bands && strstr(md->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
   if ( !is_polsarpro               &&
        lutFlag != FLAG_NOT_SET     &&
+       bandFlag == FLAG_NOT_SET    &&
        md->general->band_count > 1)
   {
     asfPrintError("Look up tables can only be applied to single band"
