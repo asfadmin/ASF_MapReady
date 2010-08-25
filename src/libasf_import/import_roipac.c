@@ -484,12 +484,21 @@ static int min3(int a, int b, int c) {
   return min2(min2(a,b),c);
 }
 
-void import_roipac(const char *basename, const char *outFile)
+void import_roipac(const char *basename_in, const char *outFile)
 {
+  char *tmp = stripExt(basename_in);
+  char *basename = stripExt(tmp);
+  free(tmp);
+
   char *path="";
   char *path1 = get_dirname(basename);
-  if (strlen(path1) > 0)
-    path = appendStr(path1, "/");
+  if (strlen(path1) > 0) {
+    if (path1[strlen(path1)-1] != '/')
+      path = appendStr(path1, "/");
+    else
+      path = STRDUP(path1);
+  }
+  free(path1);
 
   char *amp = appendExt(basename, ".amp");
   char *amp_rsc = appendExt(basename, ".amp.rsc");
@@ -502,12 +511,15 @@ void import_roipac(const char *basename, const char *outFile)
   char bands[256];
   strcpy(bands, "");
 
+  char *filename = get_filename(basename);
   char *sv_file, *master, *slave;
-  split2(basename, '-', &master, &slave);
+  split2(filename, '-', &master, &slave);
+  free(filename);
 
   if (strlen(master)>0 && strlen(slave)>0) {
     sv_file = MALLOC(sizeof(char)*(strlen(path)+strlen(master)+64));
     sprintf(sv_file, "%shdr_data_points_%s.rsc", path, master);
+    printf("try: %s\n", sv_file);
     if (!fileExists(sv_file)) {
       sprintf(sv_file, "%sodr_data_points_%s.rsc", path, master);
       if (!fileExists(sv_file)) {
@@ -675,7 +687,15 @@ void import_roipac(const char *basename, const char *outFile)
   }
 
   meta_write(meta, outFile);
+
   FREE(imgFile);
+  FREE(basename);
+  FREE(amp); FREE(amp_rsc);
+  FREE(cor); FREE(cor_rsc);
+  FREE(inf); FREE(inf_rsc);
+  FREE(rsc_baseline_file);
+  FREE(rsc_master_file);
+  FREE(sv_file);
 }
 
 /*----------------------------------------------------------------*/
