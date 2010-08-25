@@ -490,6 +490,8 @@ void import_roipac(const char *basename_in, const char *outFile)
   char *basename = stripExt(tmp);
   free(tmp);
 
+  char *filename = get_filename(basename);
+
   char *path="";
   char *path1 = get_dirname(basename);
   if (strlen(path1) > 0) {
@@ -504,17 +506,25 @@ void import_roipac(const char *basename_in, const char *outFile)
   char *amp_rsc = appendExt(basename, ".amp.rsc");
   char *cor = appendExt(basename, ".cor");
   char *cor_rsc = appendExt(basename, ".cor.rsc");
-  char *inf = appendExt(basename, ".int");
-  char *inf_rsc = appendExt(basename, ".int.rsc");
+
+  char *inf, *inf_rsc;
+  inf = MALLOC(sizeof(char)*(strlen(path)+strlen(basename)+64));
+  sprintf(inf, "%sflat_HDR_%s.int", path, filename);
+  inf_rsc = appendStr(inf, ".rsc");
+  if (!fileExists(inf) || !fileExists(inf_rsc)) {
+    asfPrintStatus("flat interferogram not found, trying unflattened.\n");
+    inf = appendExt(basename, ".int");
+    inf_rsc = appendExt(basename, ".int.rsc");
+  }
+  else
+    asfPrintStatus("Using flattened interferogram file.\n");
 
   int nbands=0;
   char bands[256];
   strcpy(bands, "");
 
-  char *filename = get_filename(basename);
   char *sv_file, *master, *slave;
   split2(filename, '-', &master, &slave);
-  free(filename);
 
   if (strlen(master)>0 && strlen(slave)>0) {
     sv_file = MALLOC(sizeof(char)*(strlen(path)+strlen(master)+64));
@@ -690,6 +700,7 @@ void import_roipac(const char *basename_in, const char *outFile)
 
   FREE(imgFile);
   FREE(basename);
+  FREE(filename);
   FREE(amp); FREE(amp_rsc);
   FREE(cor); FREE(cor_rsc);
   FREE(inf); FREE(inf_rsc);
