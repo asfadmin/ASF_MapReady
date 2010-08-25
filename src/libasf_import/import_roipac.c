@@ -36,16 +36,22 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
   strcpy(meta->general->basename, in);
   meta->general->data_type = COMPLEX_REAL32;
   meta->general->image_data_type = IMAGE;
+  strcpy(meta->general->sensor_name, "SAR");
 
   meta->sar = meta_sar_init();
   meta->sar->look_direction = 'R';
   meta->sar->image_type = 'S';
   meta->sar->slant_shift = 0.0;
+  meta->sar->multilook = 1; // kind of
+  meta->sar->deskewed = 1;
+  meta->sar->line_increment = 1;
+  meta->sar->sample_increment = 1;
   strcpy(meta->general->processor, "");
 
   FILE *ifp = FOPEN(in, "r");
   int nl, ns, yr, mo, da, hr, mn, sc, ms=0, tm_val=0;
   double utc1=0, utc2=0, utc3=0;
+  double prf=0, dop0=0, dop1=0, dop2=0;
   char line[1024];
   while (fgets(line, 1024, ifp)) {
     char *field, *value;
@@ -66,8 +72,18 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
       meta->general->center_latitude = atof(value);
     else if (strcmp_case(field, "LONGITUDE")==0)
       meta->general->center_longitude = atof(value);
+    else if (strcmp_case(field, "EQUATORIAL_RADIUS")==0)
+      meta->general->re_major = atof(value);
+    else if (strcmp_case(field, "ECCENTRICITY_SQUARED")==0)
+      meta->general->re_minor = meta->general->re_major*sqrt(1-atof(value));
     else if (strcmp_case(field, "STARTING_RANGE")==0)
       meta->sar->slant_range_first_pixel = atof(value);
+    else if (strcmp_case(field, "CHIRP_SLOPE")==0)
+      meta->sar->chirp_rate = atof(value);
+    else if (strcmp_case(field, "RANGE_SAMPLING_FREQUENCY")==0)
+      meta->sar->range_sampling_rate = atof(value);
+    else if (strcmp_case(field, "PULSE_LENGTH")==0)
+      meta->sar->pulse_duration = atof(value);
     else if (strcmp_case(field, "DELTA_LINE_UTC")==0)
       meta->sar->azimuth_time_per_pixel = atof(value);
     else if (strcmp_case(field, "PROCESSING_SYSTEM")==0) {
@@ -90,7 +106,13 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
     else if (sv_file == NULL && strcmp_case(field, "HEIGHT_TOP")==0)
       meta->sar->satellite_height = atof(value);
     else if (strcmp_case(field, "PRF")==0)
-      meta->sar->prf = atof(value);
+      meta->sar->prf = prf = atof(value);
+    else if (strcmp_case(field, "DOPPLER_RANGE0")==0)
+      dop0 = atof(value);
+    else if (strcmp_case(field, "DOPPLER_RANGE1")==0)
+      dop1 = atof(value);
+    else if (strcmp_case(field, "DOPPLER_RANGE2")==0)
+      dop2 = atof(value);
     else if (strcmp_case(field, "ORBIT_DIRECTION")==0)
       meta->general->orbit_direction= strcmp_case(value, "descending")==0 ? 'D' :
                                       strcmp_case(value, "ascending")==0 ? 'A' : '?';
@@ -216,6 +238,19 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
 
   FCLOSE(ifp);
 
+  meta->sar->original_line_count = meta->general->line_count;
+  meta->sar->original_sample_count = meta->general->sample_count;
+  meta->sar->slant_shift = 0;
+  meta->sar->time_shift = 0;
+
+  // roipac stores doppler in units of prf, here we conver to Hz
+  meta->sar->range_doppler_coefficients[0] = prf*dop0;
+  meta->sar->range_doppler_coefficients[1] = prf*dop1;
+  meta->sar->range_doppler_coefficients[2] = prf*dop2;
+  meta->sar->azimuth_doppler_coefficients[0] = prf*dop0;
+  meta->sar->azimuth_doppler_coefficients[1] = 0;
+  meta->sar->azimuth_doppler_coefficients[2] = 0;
+
   return meta;
 }
 
@@ -335,7 +370,7 @@ static void populate_baseline(meta_parameters *meta,
   double p_baseline_top=0.0;
   double p_baseline_bottom=0.0;
   double time_span_year=0.0;
-  double d2r = 180.0/(4*atan2(1,1));
+  double r2d = 180.0/(4*atan2(1,1));
 
   char line[1024];
   while (fgets(line, 1024, ifp)) {
@@ -362,6 +397,11 @@ static void populate_baseline(meta_parameters *meta,
   }
   fclose(ifp);
 
+  double base_c = h_baseline_top_hdr;
+  double base_n = v_baseline_top_hdr;
+  double base_dc = h_baseline_rate_hdr;
+  double base_dn = v_baseline_rate_hdr;
+
   ifp = FOPEN(rsc_master_file, "r");
 
   while (fgets(line, 1024, ifp)) {
@@ -381,6 +421,7 @@ static void populate_baseline(meta_parameters *meta,
   double h_baseline_center = h_baseline_top_hdr +
                                  h_baseline_rate_hdr * x +
                                  h_baseline_acc_hdr * x * x;
+
   double v_baseline_center = v_baseline_top_hdr +
                                  v_baseline_rate_hdr * x +
                                  v_baseline_acc_hdr * x * x;
@@ -413,15 +454,28 @@ static void populate_baseline(meta_parameters *meta,
     meta->insar = meta_insar_init();
 
   strcpy(meta->insar->processor, "ROI_PAC");
-  
+  double look = meta_look(meta, nl/2, ns/2);
+  meta->insar->center_look_angle = look*r2d;
+  meta->insar->doppler = meta->sar->range_doppler_coefficients[0];
+  meta->insar->doppler_rate = meta->sar->range_doppler_coefficients[1];
+ 
+  double sin_look = sin(look);
+  double cos_look = cos(look); 
   meta->insar->baseline_length = len;
-  meta->insar->baseline_parallel = par;
-  meta->insar->baseline_perpendicular = perp;
+  meta->insar->baseline_parallel = base_c*sin_look - base_n*cos_look;
+  meta->insar->baseline_parallel_rate = base_dc*sin_look - base_dn*cos_look;
+  meta->insar->baseline_perpendicular = base_c*cos_look + base_n*sin_look;
+  meta->insar->baseline_perpendicular_rate = base_dc*cos_look + base_dn*sin_look;
   meta->insar->baseline_temporal = temporal;
-  meta->insar->center_look_angle = d2r*meta_look(meta, nl/2, ns/2);
+
+  // Calculate critical baseline
+  double range = meta_get_slant(meta, nl/2, ns/2);
+  double wavelength = meta->sar->wavelength;
+  double bandwidth = meta->sar->chirp_rate;
+  double tan_incid = tan(meta_incid(meta, nl/2, ns/2));
+  meta->insar->baseline_critical =
+      fabs(wavelength * range * bandwidth * tan_incid / SPD_LIGHT);
 }
-
-
 
 static int min2(int a, int b) {
   return a<b ? a : b;
