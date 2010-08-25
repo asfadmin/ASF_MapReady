@@ -61,7 +61,7 @@ int handle_roipac_file(const char *filename, char *meta_name, char *data_name,
 
 static meta_parameters *read_roipac_meta(const char *meta_name)
 {
-  return meta_read_roipac(meta_name);
+  return meta_read_roipac(meta_name,NULL);
 }
 
 int read_roipac_client(int row_start, int n_rows_to_get,

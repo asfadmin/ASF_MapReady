@@ -145,7 +145,7 @@ int read_file(const char *filename, const char *band, int multilook,
     else if (try_roipac(filename)) {
         if (handle_roipac_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
-            meta = open_roipac(filename, band, data_name, meta_name,
+            meta = open_roipac(data_name, band, data_name, meta_name,
                                multilook, client);
         } else {
             err_func(err);
