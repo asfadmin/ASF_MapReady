@@ -149,6 +149,7 @@ char *findExt(const char *name)
         strcmp_case(ext, ".AMP") == 0       || // roipac
         strcmp_case(ext, ".COR") == 0       || // roipac
         strcmp_case(ext, ".INT") == 0       || // roipac
+        strcmp_case(ext, ".RSC") == 0       || // roipac
 	strcmp_case(ext, ".XML") == 0)
         return (char *) &name[ii];
     else
