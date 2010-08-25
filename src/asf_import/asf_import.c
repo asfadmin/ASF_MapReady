@@ -825,7 +825,7 @@ int main(int argc, char *argv[])
     
     // Process InSAR (Gamma/ROIPAC) options:
     // -format, -metadata, -slave, -interferogram, -coherence, -baseline
-    if ((format_type == GAMMA || format_type == ROIPAC) &&
+    if ((format_type == GAMMA) &&
         flags[f_METADATA_FILE] == FLAG_NOT_SET) {
       // GAMMA/ROIPAC requires the metadata file
       asfPrintError("%s ingest requires the specific name of the %s\n"

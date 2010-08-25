@@ -121,7 +121,7 @@ void apply_polsarpro_palette_to_metadata(const char *lut_basename,
 void import_gamma(char *dataName, char *metaName, char *slaveName,
                   char *igramName, char *cohName, char *baselineName, 
 		  char *outBaseName);
-meta_parameters *meta_read_roipac(const char *in);
+meta_parameters *meta_read_roipac(const char *in, const char *sv_file);
 void import_roipac(const char *baseName, const char *outName);
 
 meta_parameters *meta_read_only(const char *in_fName);
