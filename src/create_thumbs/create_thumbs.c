@@ -907,6 +907,10 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        (char *)inDataName,  /* input basename         */
                        ancillary_file,      /* ancillary file         */
 		       NULL,                // colormap
+		       NULL,                // slave (gamma)
+		       NULL,                // interferogram (gamma)
+		       NULL,                // coherence (gamma)
+                       NULL,                // baseline (gamma)
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -980,6 +984,10 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        (char *)*dataName,   /* input basename         */
                        ancillary_file,      /* ancillary file         */
 		       NULL,                // colormap
+		       NULL,                // slave (gamma)
+		       NULL,                // interferogram (gamma)
+		       NULL,                // coherence (gamma)
+                       NULL,                // baseline (gamma)
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -1041,6 +1049,10 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        (char *)file,        /* input basename         */
                        ancillary_file,      /* ancillary file         */
 		       NULL,                // colormap
+		       NULL,                // slave (gamma)
+		       NULL,                // interferogram (gamma)
+		       NULL,                // coherence (gamma)
+                       NULL,                // baseline (gamma)
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
