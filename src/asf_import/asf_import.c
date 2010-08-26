@@ -968,6 +968,7 @@ int main(int argc, char *argv[])
 		   coherence_file, baseline_file, outBaseName);
     }
 
+    // clean up
     if (colormapName)
         free(colormapName);
     if (slave_file)
