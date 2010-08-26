@@ -807,6 +807,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // Spit out a warning about products that have not been validated against ground
   // control points
   meta_general *mg = meta->general;
+  /*
   if (!strstr(mg->processor, "JAXA") && !strstr(mg->processor, "ASF")) {
     asfPrintStatus("\n\nNOTE: Non-ASF processed data detected.  Products not processed\n"
         "at the Alaska Satellite Facility may not have been fully validated\n"
@@ -835,6 +836,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         "   to byte format on the Export tab if your GIS software is unable to view/use\n"
         "   floating point data or cannot re-map to byte values on the fly.\n\n");
   }
+  */
 
   void (*report_func) (const char *format, ...);
   report_func = force_flag ? asfPrintWarning : asfPrintError;

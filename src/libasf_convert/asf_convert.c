@@ -1399,6 +1399,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->import->format), "BIL", 3) != 0 &&
           strncmp(uc(cfg->import->format), "GRIDFLOAT", 9) != 0 &&
           strncmp(uc(cfg->import->format), "GAMMA", 5) != 0 &&
+          strncmp(uc(cfg->import->format), "ROIPAC", 6) != 0 &&
           strncmp(uc(cfg->import->format), "POLSARPRO", 9) != 0 &&
           strncmp(uc(cfg->import->format), "TERRASAR", 8) != 0 &&
 	  strncmp(uc(cfg->import->format), "RADARSAT2", 9) != 0 &&
@@ -1866,6 +1867,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	format_type = ALOS_MOSAIC;
       else if (strncmp_case(cfg->import->format, "GAMMA", 5) == 0)
         format_type = GAMMA;
+      else if (strncmp_case(cfg->import->format, "ROIPAC", 6) == 0)
+        format_type = ROIPAC;
       else {
         asfPrintError("Unknown Format: %s\n", cfg->import->format);
         format_type = CEOS; // actually this is not reached
@@ -1894,10 +1897,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               cfg->general->in_name,
                               cfg->general->ancillary_file,
                               polsarpro_colormap,
-			      NULL, // FIXME: slave file
-			      NULL, // FIXME: interferogram file
-			      NULL, // FIXME: coherence image file
-			      NULL, // FIXME: baseline file
+			      cfg->import->slave_metadata,
+			      cfg->import->interferogram,
+			      cfg->import->coherence,
+			      cfg->import->baseline,
                               outFile),
                    "ingesting data file (asf_import)\n");
       FREE(polsarpro_colormap);

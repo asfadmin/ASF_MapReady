@@ -294,6 +294,10 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->import->prc);
 	    FREE(cfg->import->polsarpro_colormap);
 	    FREE(cfg->import->metadata_file);
+	    FREE(cfg->import->interferogram);
+	    FREE(cfg->import->coherence);
+	    FREE(cfg->import->slave_metadata);
+	    FREE(cfg->import->baseline);
             FREE(cfg->import);
         }
         if (cfg->external) {
@@ -439,6 +443,14 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->import->polsarpro_colormap, "");
   cfg->import->metadata_file = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->import->metadata_file, "");
+  cfg->import->interferogram = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->import->interferogram, "");
+  cfg->import->coherence = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->import->coherence, "");
+  cfg->import->slave_metadata = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->import->slave_metadata, "");
+  cfg->import->baseline = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->import->baseline, "");
 
   cfg->external->cmd = (char *)MALLOC(sizeof(char)*1024);
 
@@ -617,6 +629,14 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->import->image_data_type, read_str(line, "image data type"));
       if (strncmp(test, "metadata file", 13)==0)
         strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
+      if (strncmp(test, "interferogram", 13)==0)
+        strcpy(cfg->import->interferogram, read_str(line, "interferogram"));
+      if (strncmp(test, "coherence", 9)==0)
+        strcpy(cfg->import->coherence, read_str(line, "coherence"));
+      if (strncmp(test, "slave metadata", 14)==0)
+        strcpy(cfg->import->slave_metadata, read_str(line, "slave metadata"));
+      if (strncmp(test, "baseline", 8)==0)
+        strcpy(cfg->import->baseline, read_str(line, "baseline"));
 
       // External
       if (strncmp(test, "command", 7)==0)
@@ -937,8 +957,17 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->import->polsarpro_colormap, 
 	       read_str(line, "polsarpro colormap"));
       if (strncmp(test, "image data type", 15)==0)
-        strcpy(cfg->import->image_data_type, read_str(line, "image data type"));      if (strncmp(test, "metadata file", 13)==0)
+        strcpy(cfg->import->image_data_type, read_str(line, "image data type"));      
+      if (strncmp(test, "metadata file", 13)==0)
         strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
+      if (strncmp(test, "interferogram", 13)==0)
+        strcpy(cfg->import->interferogram, read_str(line, "interferogram"));
+      if (strncmp(test, "coherence", 9)==0)
+        strcpy(cfg->import->coherence, read_str(line, "coherence"));
+      if (strncmp(test, "slave metadata", 14)==0)
+        strcpy(cfg->import->slave_metadata, read_str(line, "slave metadata"));
+      if (strncmp(test, "baseline", 8)==0)
+        strcpy(cfg->import->baseline, read_str(line, "baseline"));
       FREE(test);
     }
 
@@ -1278,7 +1307,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# parameters.\n\n");
     }
     fprintf(fConfig, "export = %i\n", cfg->general->export);
-    // Genral - Mosaic
+    // General - Mosaic
     if (!shortFlag) {
       fprintf(fConfig, "\n# The mosaic flag indicates whether the data needs to be run through\n"
               "# 'asf_mosaic' (1 for running it, 0 for leaving out the export step).\n"
@@ -1410,6 +1439,24 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# If you have renamed your metadata file against the standard naming scheme\n"
               "# for the data, you should rename it back rather than using this option.\n\n");
     fprintf(fConfig, "metadata file = %s\n", cfg->import->metadata_file);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
+              "# The interferogram is stored as complex floating point values.\n\n");
+    fprintf(fConfig, "interferogram = %s\n", cfg->import->interferogram);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
+              "# The coherence image is stored in floating point values between 0 and 1.\n\n");
+    fprintf(fConfig, "coherence = %s\n", cfg->import->coherence);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
+              "# The metadata of the SLC slave image is used to define the temporal\n"
+	      "# baseline.\n\n");
+    fprintf(fConfig, "slave metadata = %s\n", cfg->import->slave_metadata);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
+              "# This file contains the baseline components that describe the geometry of\n"
+	      "# the interferometric pairs.\n\n");
+    fprintf(fConfig, "baseline = %s\n", cfg->import->baseline);
 
     // AirSAR -- only write out if the import format is AirSAR
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {

@@ -2450,9 +2450,9 @@ void colormap_to_lut_file(meta_colormap *cm, const char *lut_file)
 void write_insar_xml(char *in_meta_name, char *in_data_name, char *out_name)
 {
   meta_parameters *meta = meta_read(in_meta_name);
-  if (meta->general->image_data_type == INSAR_STACK && meta->insar) {
     
-    // Export interferometric phase 
+  // Export interferometric phase 
+  if (meta->general->image_data_type == INSAR_STACK) {
     int ii, nouts = 0;
     char **outs = NULL;
     char **band_name = (char **) CALLOC(MAX_BANDS, sizeof(char*));
@@ -2466,8 +2466,10 @@ void write_insar_xml(char *in_meta_name, char *in_data_name, char *out_name)
     for (ii=0; ii<nouts; ii++)
       FREE(outs[ii]);
     FREE(outs);
+  }
 
-    // Write InSAR metadata
+  // Write InSAR metadata
+  if (meta->general->image_data_type == INSAR_STACK && meta->insar) {
     char *output_file_name = 
       (char *) MALLOC(sizeof(char)*(strlen(in_meta_name)+10));
     sprintf(output_file_name, "%s.xml", get_basename(out_name));

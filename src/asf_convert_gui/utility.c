@@ -503,7 +503,7 @@ gboolean is_radarsat2(const char *infile)
 {
   int found = FALSE;
 
-  // Let's first check for an .xml extension
+  // Let's first check for an .rsc extension
   char *ext = findExt(infile);
 
   // If it has the correct extension, investigate it further
@@ -522,6 +522,30 @@ gboolean is_radarsat2(const char *infile)
     fclose(fp);
     xmlFreeDoc(doc);
     xmlCleanupParser();
+  }
+
+  return found; 
+}
+
+gboolean is_roipac(const char *infile)
+{
+  int found = FALSE;
+
+  // Let's first check for an .xml extension
+  char *ext = findExt(infile);
+
+  // If it has the correct extension, investigate it further
+  // The metadata does not have any header line to track. So we are entirely
+  // depending here on the ROI_PAC_VERSION line
+  if (ext && strcmp_case(ext, ".rsc") == 0) {
+    char line[1024];
+    FILE *fp;
+    fp = fopen(infile, "r");
+    while (fgets(line, 1024, fp)) {
+      if (strncmp_case(line, "ROI_PAC", 7) == 0)
+	found = TRUE;
+    }
+    fclose(fp);
   }
 
   return found; 

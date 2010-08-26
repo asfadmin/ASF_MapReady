@@ -65,6 +65,11 @@ typedef struct
   char *polsarpro_colormap; // colormap (.pal) to apply to PolSARpro classifications
   char *metadata_file;    // Name of a (non-ASF) metadata file (if it can't
                           // be deduced)
+  char *interferogram;    // interferogram file
+  char *coherence;        // coherence file
+  char *slave_metadata;   // metadata of the slave image
+  char *baseline;         // baseline file
+
 } s_import;
 
 typedef struct

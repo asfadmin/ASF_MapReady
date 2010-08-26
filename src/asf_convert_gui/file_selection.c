@@ -26,11 +26,12 @@
 #define FORMAT_AIRSAR 1
 #define FORMAT_POLSARPRO 2
 #define FORMAT_GAMMA 3
-#define FORMAT_TERRASARX 4
-#define FORMAT_RADARSAT2 5
-#define FORMAT_ALOS_MOSAIC 6
-#define FORMAT_GEOTIFF 7
-#define FORMAT_ASF_INTERNAL 8
+#define FORMAT_ROIPAC 4
+#define FORMAT_TERRASARX 5
+#define FORMAT_RADARSAT2 6
+#define FORMAT_ALOS_MOSAIC 7
+#define FORMAT_GEOTIFF 8
+#define FORMAT_ASF_INTERNAL 9
 
 #ifdef USE_GTK_FILE_CHOOSER
 static GtkWidget *browse_widget = NULL;
@@ -197,6 +198,14 @@ static void create_file_chooser_dialog(int selected)
                                   radarsat2_filt);
     }
 
+    if (selected==FORMAT_ROIPAC) {
+      GtkFileFilter *roipac_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(roipac_filt, "ROI_PAC Metadata (*.rsc)");
+      gtk_file_filter_add_pattern(roipac_filt, "*.rsc");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget),
+                                  roipac_filt);
+    }
+
     if (selected==FORMAT_ALOS_MOSAIC) {
       GtkFileFilter *alos_mosaic_filt = gtk_file_filter_new();
       gtk_file_filter_set_name(alos_mosaic_filt, 
@@ -282,6 +291,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     switch (sel) {
       case FORMAT_GAMMA:
         put_string_to_label("add_with_ancillary_format_label", "GAMMA");
+	gtk_widget_set_sensitive(ok_button, TRUE);	
         break;
       case FORMAT_POLSARPRO:
         put_string_to_label("add_with_ancillary_format_label", "PolSARPro");
@@ -347,6 +357,12 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
       case FORMAT_RADARSAT2:
         of.lpstrFilter =
             "Radarsat-2 Metadata Files (*.xml)\0*.xml\0"
+            "All Files\0*\0";
+        break;
+
+      case FORMAT_ROIPAC:
+        of.lpstrFilter =
+            "ROI_PAC Metadata Files (*.rsc)\0*.rsc\0"
             "All Files\0*\0";
         break;
 
@@ -538,9 +554,10 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 #define ALL_CEOS_LEADER_FILT 32
 #define HDR_FILT 64
 #define BIN_FILT 128
-#define XML_FILT 256
-#define MOSAIC_FILT 512
-#define DIR_FILT 1024
+#define RSC_FILT 256
+#define XML_FILT 512
+#define MOSAIC_FILT 1024
+#define DIR_FILT 2048
 
 #ifndef win32
 static void do_browse_ok_clicked(gpointer button)
@@ -600,13 +617,14 @@ static void do_browse(const char *title, const char *entry_to_populate,
     of.hwndOwner = NULL;
 
     if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT | 
-		  MOSAIC_FILT)) {
+		  RSC_FILT | MOSAIC_FILT)) {
       of.lpstrFilter =
         "CEOS Level 1 Files\0*.L;LED-*\0"
         "RSAT/ERS CEOS L1\0*.L\0"
         "ALOS Leader Files\0LED-*\0"
 	"TerraSAR-X/Radarsat-2\0*.xml\0"
 	"ALOS mosaics\0*HDR.txt;*HDR\0"
+	"ROI_PAC Files\0*.rsc\0"
         "All Files\0*\0";
     }
     else if (filts == BIN_FILT) {
@@ -751,6 +769,12 @@ static void do_browse(const char *title, const char *entry_to_populate,
       gtk_file_filter_add_pattern(xml_filt, "*.xml");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), xml_filt);
     }
+    if (filts & RSC_FILT) {
+      GtkFileFilter *rsc_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(rsc_filt, "ROI_PAC Files (*.rsc)");
+      gtk_file_filter_add_pattern(rsc_filt, "*.rsc");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), rsc_filt);
+    }
     if (filts & MOSAIC_FILT) {
       GtkFileFilter *mosaic_filt = gtk_file_filter_new();
       gtk_file_filter_set_name(mosaic_filt, "ALOS mosaic Files (*HDR.txt, *HDR)");
@@ -788,15 +812,15 @@ static void do_browse(const char *title, const char *entry_to_populate,
 
 void clear_entries()
 {
-  put_string_to_entry("add_file_with_ancillary_gamma_ceos_entry", "");
+  put_string_to_entry("add_file_with_ancillary_gamma_baseline_entry", "");
+  put_string_to_entry("add_file_with_ancillary_gamma_slave_entry", "");
+  put_string_to_entry("add_file_with_ancillary_gamma_coh_entry", "");
+  put_string_to_entry("add_file_with_ancillary_gamma_igram_entry", "");
   put_string_to_entry("add_file_with_ancillary_gamma_data_entry", "");
   put_string_to_entry("add_file_with_ancillary_gamma_metadata_entry", "");
   put_string_to_entry("add_file_with_ancillary_polsarpro_image_entry", "");
   put_string_to_entry("add_file_with_ancillary_polsarpro_ceos_entry", "");
   put_string_to_label("add_with_ancillary_error_label", "");
-  GtkWidget *ok_button =
-    get_widget_checked("add_file_with_ancillary_ok_button");
-  gtk_widget_set_sensitive(ok_button, FALSE);
 }
 
 SIGNAL_CALLBACK void
@@ -807,23 +831,44 @@ on_add_file_with_ancillary_dialog_delete_event(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK void
-on_add_file_with_ancillary_gamma_ceos_browse_button_clicked(GtkWidget *w)
+on_add_file_with_ancillary_gamma_baseline_browse_button_clicked(GtkWidget *w)
 {
-  do_browse("Add CEOS File", "add_file_with_ancillary_gamma_ceos_entry",
-            L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT);
+  do_browse("Add GAMMA Baseline File", 
+	    "add_file_with_ancillary_gamma_baseline_entry", 0);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_gamma_slave_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add GAMMA Slave Image Metadata", 
+	    "add_file_with_ancillary_gamma_slave_entry", 0);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_gamma_coh_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add GAMMA Coherence Image", 
+	    "add_file_with_ancillary_gamma_coh_entry", 0);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_gamma_igram_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add GAMMA Interferogram", 
+	    "add_file_with_ancillary_gamma_igram_entry", 0);
 }
 
 SIGNAL_CALLBACK void
 on_add_file_with_ancillary_gamma_data_browse_button_clicked(GtkWidget *w)
 {
-  do_browse("Add GAMMA Data File",
+  do_browse("Add GAMMA Amplitude Data File",
             "add_file_with_ancillary_gamma_data_entry", 0);
 }
 
 SIGNAL_CALLBACK void
 on_add_file_with_ancillary_gamma_metadata_browse_button_clicked(GtkWidget *w)
 {
-  do_browse("Add GAMMA Metadata File",
+  do_browse("Add GAMMA Ampliutde Metadata File",
             "add_file_with_ancillary_gamma_metadata_entry", 0);
 }
 
@@ -920,7 +965,8 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
 	char *lut_basename = g_object_get_data(G_OBJECT(selected_item), "file");
 	aux_info = encode_polsarpro_aux_info(image_data_type, lut_basename);
         put_string_to_label("add_with_ancillary_error_label", "");
-        ok = add_to_files_list_iter(data, ceos, NULL, aux_info, &iter);
+        ok = add_to_files_list_iter(data, ceos, NULL, aux_info, 
+				    NULL, NULL, NULL, NULL, &iter);
 
         free(aux_info);
       }
@@ -929,19 +975,47 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
 
     case ADD_FILE_WITH_ANCILLARY_FORMAT_GAMMA:
     {
+      GtkWidget *ok_button =
+	get_widget_checked("add_file_with_ancillary_ok_button");
+      gtk_widget_set_sensitive(ok_button, TRUE);
       data = get_string_from_entry("add_file_with_ancillary_gamma_data_entry");
       char *meta =
         get_string_from_entry("add_file_with_ancillary_gamma_metadata_entry");
-      char *ceos =
-        get_string_from_entry("add_file_with_ancillary_gamma_ceos_entry");
-      if (strlen(ceos)==0 || strlen(data)==0 || strlen(meta)==0) {
+      if (strlen(data)==0 || strlen(meta)==0) {
         put_string_to_label("add_with_ancillary_error_label",
                             "Please choose all required files!");
         return;
       }
       else {
         put_string_to_label("add_with_ancillary_error_label", "");
-        ok = add_to_files_list_iter(data, ceos, meta, aux_info, &iter);
+	char *interferogram, *coherence, *slave_metadata, *baseline;
+	interferogram =
+	  get_string_from_entry("add_file_with_ancillary_gamma_igram_entry");
+	coherence =
+	  get_string_from_entry("add_file_with_ancillary_gamma_coh_entry");
+	slave_metadata =
+	  get_string_from_entry("add_file_with_ancillary_gamma_slave_entry");
+	baseline =
+	  get_string_from_entry("add_file_with_ancillary_gamma_baseline_entry");
+	if (strlen(interferogram) == 0) {
+	  FREE(interferogram);
+	  interferogram = NULL;
+	}
+	if (strlen(coherence) == 0) {
+	  FREE(coherence);
+	  coherence = NULL;
+	}
+	if (strlen(slave_metadata) == 0) {
+	  FREE(slave_metadata);
+	  slave_metadata = NULL;
+	}
+	if (strlen(baseline) == 0) {
+	  FREE(baseline);
+	  baseline = NULL;
+	}
+        ok = add_to_files_list_iter(data, ceos, meta, aux_info, 
+				    interferogram, coherence, 
+				    slave_metadata, baseline, &iter);
       }
       break;
     }

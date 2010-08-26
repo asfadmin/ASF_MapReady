@@ -1346,6 +1346,9 @@ static int get_input_data_format(const char *infile)
   else if (is_radarsat2(infile)) {
     return INPUT_FORMAT_RADARSAT2;
   }
+  else if (is_roipac(infile)) {
+    return INPUT_FORMAT_ROIPAC;
+  }
   else if (is_polsarpro(infile)) {
     return INPUT_FORMAT_POLSARPRO;
   }
@@ -1400,6 +1403,10 @@ get_input_data_format_string(int input_data_format)
       case INPUT_FORMAT_GAMMA:
         format_arg_to_import = "gamma";
         break;
+
+      case INPUT_FORMAT_ROIPAC:
+        format_arg_to_import = "roipac";
+        break;
     }
 
     return format_arg_to_import;
@@ -1407,10 +1414,17 @@ get_input_data_format_string(int input_data_format)
 
 char *
 settings_to_config_file(const Settings *s,
-      const gchar *input_file, const gchar *ancillary_file,
-      const gchar *meta_file, const gchar *output_full,
-      const gchar *output_path, const gchar *tmp_dir,
-      const gchar *polsarpro_aux_info)
+			const gchar *input_file, 
+			const gchar *ancillary_file,
+			const gchar *meta_file, 
+			const gchar *output_full,
+			const gchar *output_path, 
+			const gchar *tmp_dir,
+			const gchar *polsarpro_aux_info,\
+			const gchar *interferogram,
+			const gchar *coherence,
+			const gchar *slave_metadata,
+			const gchar *baseline)
 {
     char *tmp_projfile = NULL;
     char *tmp_cfgfile;
@@ -1667,6 +1681,14 @@ settings_to_config_file(const Settings *s,
     if (meta_file && strlen(meta_file)>0) {
       fprintf(cf, "metadata file = %s\n", meta_file);
     }
+    if (interferogram && strlen(interferogram) > 0)
+      fprintf(cf, "interferogram = %s\n", interferogram);
+    if (coherence && strlen(coherence) > 0)
+      fprintf(cf, "coherence = %s\n", coherence);
+    if (slave_metadata && strlen(slave_metadata) > 0)
+      fprintf(cf, "slave metadata = %s\n", slave_metadata);
+    if (baseline && strlen(baseline) > 0)
+      fprintf(cf, "baseline = %s\n", baseline);
     fprintf(cf, "\n");
 
     if (input_data_format == INPUT_FORMAT_AIRSAR) {
@@ -2173,22 +2195,22 @@ int apply_settings_from_config_file(char *configFile)
       if (ext_type == CEOS_LED)
       {
         // alos -- pass in metadata name
-        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, &iter);
+        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
       }
       else if (is_polsarpro(cfg->general->in_name)) {
         // PolSARpro -- pass in the data name
-        add_to_files_list_iter(cfg->general->in_name, NULL, NULL, "None", &iter);
+        add_to_files_list_iter(cfg->general->in_name, NULL, NULL, "None", NULL, NULL, NULL, NULL, &iter);
       }
       else
       {
         // regular ceos -- determine data file name
         int nBands;
 
-        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, &iter);
+        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
         get_ceos_data_name(cfg->general->in_name, baseName, &dataNames, &nBands);
         assert(nBands == 1);
 
-        add_to_files_list_iter(dataNames[0], NULL, NULL, NULL, &iter);
+        add_to_files_list_iter(dataNames[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
       }
 
       free_ceos_names(dataNames, metaName);

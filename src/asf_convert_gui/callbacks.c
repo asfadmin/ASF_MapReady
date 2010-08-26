@@ -167,6 +167,11 @@ input_data_formats_changed()
           strcat(formats, "Radarsat-2, ");
         enable_terrain_correction = TRUE;
       }
+      else if (is_roipac(file)) {
+        if (!strstr(formats, "ROI_PAC"))
+          strcat(formats, "ROI_PAC, ");
+        enable_terrain_correction = TRUE;
+      }
       else if (strlen(metadata_file)>0) {
         // as of now, only gamma uses the metadata column...
         if (!strstr(formats, "GAMMA"))

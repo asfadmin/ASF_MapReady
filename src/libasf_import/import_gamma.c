@@ -699,30 +699,10 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
     strcat(reason, tmp);
     status = FALSE;
   }
-  if (slaveName && !fileExists(slaveName)) {
-    sprintf(tmp, "Missing slave metadata file (%s)\n", slaveName);
-    strcat(reason, tmp);
-    status = FALSE;
-  }
-  if (igramName && !fileExists(igramName)) {
-    sprintf(tmp, "Missing interferogram file (%s)\n", igramName);
-    strcat(reason, tmp);
-    status = FALSE;
-  }
-  else if (igramName)
+  if (igramName && fileExists(igramName))
     bands += 2;
-  if (cohName && !fileExists(cohName)) {
-    sprintf(tmp, "Missing coherence file (%s)\n", cohName);
-    strcat(reason, tmp);
-    status = FALSE;
-  }
-  else if (cohName)
+  if (cohName && fileExists(cohName))
     bands++;
-  if (baselineName && !fileExists(baselineName)) {
-    sprintf(tmp, "Missing baseline file (%s)\n", baselineName);
-    strcat(reason, tmp);
-    status = FALSE;
-  }
   if (!status)
     asfPrintError("Could not find all files!\n%s\n", reason);
 
@@ -773,7 +753,7 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
   
   // Lets add an interferogram. This is a little trickier, since it comes
   // in complex form, and we need to store it a two bands
-  if (igramName) {
+  if (igramName && strlen(igramName) > 0) {
     fpIn = FOPEN(igramName, "rb");
     current_band += 2;
     asfPrintStatus("\nWriting interferogram ...\n");
@@ -807,7 +787,7 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
 
   // Lets add a coherence image. This is the simple case, because it
   // comes as floating point.
-  if (cohName) {
+  if (cohName && strlen(cohName) > 0) {
     fpIn = FOPEN(cohName, "rb");
     current_band++;
     asfPrintStatus("\nWriting coherence image ...\n");
@@ -825,7 +805,8 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
   FCLOSE(fpOut);
 
   // Add the InSAR block
-  if (slaveName && baselineName) {
+  if (slaveName && strlen(slaveName) > 0 && 
+      baselineName && strlen(baselineName) > 0) {
     metaOut->insar = meta_insar_init();
     strcpy(metaOut->insar->processor, "GAMMA");
     sprintf(metaOut->insar->master_image, "%s", get_basename(metaName));

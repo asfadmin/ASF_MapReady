@@ -21,6 +21,10 @@ int COL_STATUS;
 int COL_LOG;
 int COL_POLSARPRO_INFO;
 int COL_POLSARPRO_DISPLAY;
+int COL_INTERFEROGRAM;
+int COL_COHERENCE;
+int COL_SLAVE_METADATA;
+int COL_BASELINE;
 
 int COMP_COL_INPUT_FILE;
 int COMP_COL_INPUT_FILE_SHORT;
@@ -41,11 +45,19 @@ int COMP_COL_HIST_FILE;
 int COMP_COL_CLASS_MAP_FILE;
 int COMP_COL_METADATA_FILE;
 int COMP_COL_POLSARPRO_INFO;
+int COMP_COL_INTERFEROGRAM;
+int COMP_COL_COHERENCE;
+int COMP_COL_SLAVE_METADATA;
+int COMP_COL_BASELINE;
 
 gboolean move_to_files_list(const gchar *data_file,
                             const gchar *ancillary_file,
                             const gchar *meta_file,
-                            const gchar *polsarpro_aux_info);
+                            const gchar *polsarpro_aux_info,
+			    const gchar *interferogram_file,
+			    const gchar *coherence_file,
+			    const gchar *slave_metadata_file,
+			    const gchar *baseline_file);
 
 /* Returns true if any of the input files in the input files list */
 /* are the type that need an ancillary file, i.e. gamma and polsarpro */
@@ -255,6 +267,12 @@ static char *file_is_valid(const gchar * file)
 
     // allow xml files to be added -- Terrasar-x, Radarsat-2
     if (ext && strcmp_case(ext, ".xml")==0)
+      return STRDUP(file);
+
+    // check for ROI_PAC files
+    // FIXME: amplitude image for the moment - make sure that the amplitude
+    // file name is returned in any case
+    if (ext && strcmp_case(ext, ".rsc")==0)
       return STRDUP(file);
 
     // check for ALOS mosaics - might have an extension (or not)
@@ -488,7 +506,7 @@ gboolean
 add_to_files_list(const gchar * data_file)
 {
     GtkTreeIter iter;
-    gboolean ret = add_to_files_list_iter(data_file, NULL, NULL, NULL, &iter);
+    gboolean ret = add_to_files_list_iter(data_file, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
     return ret;
 }
 
@@ -525,6 +543,10 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     gchar *ancillary_file;
     gchar *original_metadata_file;
     gchar *polsarpro_aux_info;
+    gchar *interferogram_file;
+    gchar *coherence_file;
+    gchar *slave_metadata_file;
+    gchar *baseline_file;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
     gtk_tree_model_get(model, iter,
@@ -535,6 +557,10 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COL_ANCILLARY_FILE, &ancillary_file,
                        COL_METADATA_FILE, &original_metadata_file,
                        COL_POLSARPRO_INFO, &polsarpro_aux_info,
+		       COL_INTERFEROGRAM, &interferogram_file,
+		       COL_COHERENCE, &coherence_file,
+		       COL_SLAVE_METADATA, &slave_metadata_file,
+		       COL_BASELINE, &baseline_file,
                        -1);
 
     // pull out the useful intermediates
@@ -603,6 +629,10 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_CLASS_MAP_FILE, class_map,
                        COMP_COL_METADATA_FILE, meta_file,
                        COMP_COL_POLSARPRO_INFO, polsarpro_aux_info,
+		       COMP_COL_INTERFEROGRAM, interferogram_file,
+		       COMP_COL_COHERENCE, coherence_file,
+		       COMP_COL_SLAVE_METADATA, slave_metadata_file,
+		       COMP_COL_BASELINE, baseline_file,
                        -1);
 
     // remove from the input list
@@ -643,6 +673,10 @@ move_from_completed_files_list(GtkTreeIter *iter)
     gchar *meta_file;
     gchar *tmp_dir;
     gchar *polsarpro_aux_info;
+    gchar *interferogram_file;
+    gchar *coherence_file;
+    gchar *slave_metadata_file;
+    gchar *baseline_file;
 
     GtkTreeModel *model = GTK_TREE_MODEL(completed_list_store);
     gtk_tree_model_get(model, iter,
@@ -651,6 +685,10 @@ move_from_completed_files_list(GtkTreeIter *iter)
                        COMP_COL_ORIGINAL_METADATA_FILE, &meta_file,
                        COMP_COL_TMP_DIR, &tmp_dir,
                        COMP_COL_POLSARPRO_INFO, &polsarpro_aux_info,
+		       COMP_COL_INTERFEROGRAM, &interferogram_file,
+		       COMP_COL_COHERENCE, &coherence_file,
+		       COMP_COL_SLAVE_METADATA, &slave_metadata_file,
+		       COMP_COL_BASELINE, &baseline_file,
                        -1);
 
     if (get_checked("rb_keep_temp") && tmp_dir && strlen(tmp_dir) > 0) {
@@ -659,7 +697,8 @@ move_from_completed_files_list(GtkTreeIter *iter)
     }
 
     move_to_files_list(input_file, ancillary_file, meta_file,
-                       polsarpro_aux_info);
+                       polsarpro_aux_info, interferogram_file, coherence_file,
+		       slave_metadata_file, baseline_file);
 
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
 
@@ -668,6 +707,12 @@ move_from_completed_files_list(GtkTreeIter *iter)
     g_free(meta_file);
     g_free(tmp_dir);
     g_free(polsarpro_aux_info);
+    /*
+    g_free(interferogram_file);
+    g_free(coherence_file);
+    g_free(slave_metadata_file);
+    g_free(baseline_file);
+    */
 }
 
 // The thumbnailing works like this: When a user adds a file, or a bunch of
@@ -735,33 +780,54 @@ show_queued_thumbnails()
 gboolean move_to_files_list(const gchar *data_file,
                             const gchar *ancillary_file,
                             const gchar *meta_file,
-                            const gchar *polsarpro_aux_info)
+                            const gchar *polsarpro_aux_info,
+			    const gchar *interferogram_file,
+			    const gchar *coherence_file,
+			    const gchar *slave_metadata_file,
+			    const gchar *baseline_file)
 {
   GtkTreeIter iter;
   gboolean ret;
-  if (ancillary_file && strlen(ancillary_file) &&
+  
+  if (data_file      && strlen(data_file) &&
+      meta_file      && strlen(meta_file) &&
+      ((interferogram_file && strlen(interferogram_file)) ||
+       (coherence_file && strlen(coherence_file)) ||
+       (slave_metadata_file && strlen(slave_metadata_file) &&
+	baseline_file && strlen(baseline_file))))
+  {
+    ret = add_to_files_list_iter(data_file, ancillary_file,
+                                 meta_file, polsarpro_aux_info,
+				 interferogram_file, coherence_file,
+				 slave_metadata_file, baseline_file,
+                                 &iter);
+  }
+  else if (ancillary_file && strlen(ancillary_file) &&
       data_file      && strlen(data_file) &&
       meta_file      && strlen(meta_file))
   {
     ret = add_to_files_list_iter(data_file, ancillary_file,
                                  meta_file, polsarpro_aux_info,
-                                 &iter);
+				 NULL, NULL, NULL, NULL, &iter);
   }
   else if (meta_file && strlen(meta_file) &&
            data_file && strlen(data_file))
   {
     ret = add_to_files_list_iter(data_file, NULL, meta_file, 
-                                 polsarpro_aux_info, &iter);
+                                 polsarpro_aux_info, NULL, NULL, NULL, NULL,
+				 &iter);
   }
   else if (ancillary_file && strlen(ancillary_file) &&
            data_file      && strlen(data_file))
   {
     ret = add_to_files_list_iter(data_file, ancillary_file, NULL,
-                                 polsarpro_aux_info, &iter);
+                                 polsarpro_aux_info, NULL, NULL, NULL, NULL,
+				 &iter);
   }
   else if (data_file && strlen(data_file)) {
     ret = add_to_files_list_iter(data_file, NULL, NULL,
-                                 polsarpro_aux_info, &iter);
+                                 polsarpro_aux_info, NULL, NULL, NULL, NULL,
+				 &iter);
   }
   else {
     ret = FALSE;
@@ -775,6 +841,10 @@ add_to_files_list_iter(const gchar *input_file_in,
                        const gchar *ancillary_file_in,
                        const gchar *meta_file_in,
                        const gchar *polsarpro_aux_info,
+		       const gchar *interferogram_file,
+		       const gchar *coherence_file,
+		       const gchar *slave_metadata_file,
+		       const gchar *baseline_file,
                        GtkTreeIter *iter_p)
 {
     char *input_file = file_is_valid(input_file_in);
@@ -912,6 +982,10 @@ add_to_files_list_iter(const gchar *input_file_in,
                              COL_BAND_LIST, bands,
                              COL_POLSARPRO_INFO, polsarpro_aux_info,
                              COL_POLSARPRO_DISPLAY, polsarpro_display,
+			     COL_INTERFEROGRAM, interferogram_file,
+			     COL_COHERENCE, coherence_file,
+			     COL_SLAVE_METADATA, slave_metadata_file,
+			     COL_BASELINE, baseline_file,
                              COL_STATUS, "-",
                              COL_LOG, "Has not been processed yet.",
                              -1);
@@ -922,7 +996,13 @@ add_to_files_list_iter(const gchar *input_file_in,
           g_free(ancillary_fullname);
           g_free(meta_fullname);
           g_free(polsarpro_display);
-
+	  /*
+	  g_free(interferogram_file);
+	  g_free(coherence_file);
+	  g_free(slave_metadata_file);
+	  g_free(baseline_file);
+	  */
+	  
           free(aux_files);
           free(aux_files_short);
 
@@ -1195,7 +1275,7 @@ setup_files_list()
     GtkTreeViewColumn *col;
     GtkCellRenderer *renderer;
 
-    list_store = gtk_list_store_new(14,
+    list_store = gtk_list_store_new(18,
                                     G_TYPE_STRING,    // Input file - Full path (usually hidden)
                                     G_TYPE_STRING,    // Input file - No path
                                     G_TYPE_STRING,    // Ancillary file - Full path (usually hidden)
@@ -1209,7 +1289,11 @@ setup_files_list()
                                     G_TYPE_STRING,    // Status
                                     G_TYPE_STRING,    // Log (hidden)
                                     G_TYPE_STRING,    // PolSARPRo aux info (hidden)
-                                    G_TYPE_STRING);   // PolSARPRo aux display
+                                    G_TYPE_STRING,    // PolSARPRo aux display
+				    G_TYPE_STRING,    // Interferogram (hidden)
+				    G_TYPE_STRING,    // Coherence image (hidden)
+				    G_TYPE_STRING,    // Slave metadata (hidden)
+				    G_TYPE_STRING);   // Baseline (hidden)
 
     COL_INPUT_FILE = 0;
     COL_INPUT_FILE_SHORT = 1;
@@ -1225,8 +1309,12 @@ setup_files_list()
     COL_LOG = 11;
     COL_POLSARPRO_INFO = 12;
     COL_POLSARPRO_DISPLAY = 13;
+    COL_INTERFEROGRAM = 14;
+    COL_COHERENCE = 15;
+    COL_SLAVE_METADATA = 16;
+    COL_BASELINE = 17;
 
-    completed_list_store = gtk_list_store_new(19,
+    completed_list_store = gtk_list_store_new(23,
                                               G_TYPE_STRING,    // Data file-Full path (usually hid.)
                                               G_TYPE_STRING,    // Data file - No path
                                               G_TYPE_STRING,    // Ancillary file-Full path (hid.)
@@ -1245,7 +1333,11 @@ setup_files_list()
                                               G_TYPE_STRING,    // Class map file (hidden)
                                               G_TYPE_STRING,    // Original metadata file (hidden)
                                               G_TYPE_STRING,    // Metadata file (hidden)
-                                              G_TYPE_STRING);   // PolSARPro aux info (hidden)
+                                              G_TYPE_STRING,    // PolSARPro aux info (hidden)
+					      G_TYPE_STRING,    // Interferogram (hidden)
+					      G_TYPE_STRING,    // Coherence (hidden)
+					      G_TYPE_STRING,    // Slave metadata (hidden)
+					      G_TYPE_STRING);   // Baseline (hidden)
 
     COMP_COL_INPUT_FILE = 0;
     COMP_COL_INPUT_FILE_SHORT = 1;
@@ -1266,6 +1358,10 @@ setup_files_list()
     COMP_COL_ORIGINAL_METADATA_FILE = 16;
     COMP_COL_METADATA_FILE = 17;
     COMP_COL_POLSARPRO_INFO = 18;
+    COMP_COL_INTERFEROGRAM = 19;
+    COMP_COL_COHERENCE = 20;
+    COMP_COL_SLAVE_METADATA = 21;
+    COMP_COL_BASELINE = 22;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
@@ -1466,6 +1562,50 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COL_POLSARPRO_DISPLAY);
+
+    /* Next Column: Interferogram (always hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Interferogram");
+    gtk_tree_view_column_set_resizable(col, FALSE);
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COL_INTERFEROGRAM);
+
+    /* Next Column: Coherence (always hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Coherence");
+    gtk_tree_view_column_set_resizable(col, FALSE);
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COL_COHERENCE);
+
+    /* Next Column: Slave metadata (always hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Slave metadata");
+    gtk_tree_view_column_set_resizable(col, FALSE);
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COL_SLAVE_METADATA);
+
+    /* Next Column: Baseline (always hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Baseline");
+    gtk_tree_view_column_set_resizable(col, FALSE);
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COL_BASELINE);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(files_list),
         GTK_TREE_MODEL(list_store));
@@ -1678,6 +1818,46 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_METADATA_FILE);
+
+    /* Next Column: Interferogram (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Interferogram");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_INTERFEROGRAM);
+
+    /* Next Column: Coherence (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Coherence");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_COHERENCE);
+
+    /* Next Column: Slave metadata (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Slave metadata");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_SLAVE_METADATA);
+
+    /* Next Column: Baseline (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Baseline");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_BASELINE);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list),
         GTK_TREE_MODEL(completed_list_store));
