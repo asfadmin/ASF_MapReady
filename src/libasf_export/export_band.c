@@ -2447,7 +2447,8 @@ void colormap_to_lut_file(meta_colormap *cm, const char *lut_file)
   FCLOSE(fp);
 }
 
-void write_insar_xml(char *in_meta_name, char *in_data_name, char *out_name)
+void write_insar_xml(output_format_t format, 
+                     char *in_meta_name, char *in_data_name, char *out_name)
 {
   meta_parameters *meta = meta_read(in_meta_name);
     
@@ -2460,7 +2461,7 @@ void write_insar_xml(char *in_meta_name, char *in_data_name, char *out_name)
     strcpy(band_name[0], "INTERFEROGRAM_PHASE");
     export_band_image(in_meta_name, in_data_name, out_name,
 		      MINMAX, band_name, FALSE, FALSE, FALSE,
-		      "interferogram.lut", GEOTIFF, &nouts, &outs);
+		      "interferogram.lut", format, &nouts, &outs);
     FREE(band_name[0]);
     FREE(band_name);
     for (ii=0; ii<nouts; ii++)
@@ -2499,14 +2500,13 @@ void write_insar_xml(char *in_meta_name, char *in_data_name, char *out_name)
 	    "</baseline_perpendicular>\n", 
 	    meta->insar->baseline_perpendicular);
     fprintf(fp, "  <baseline_perpendicular_rate units=\"m/s\">%.8lf"
-	    "</basesline_perpendicular_rate>\n",
+	    "</baseline_perpendicular_rate>\n",
 	    meta->insar->baseline_perpendicular_rate);
     fprintf(fp, "  <baseline_temporal units=\"days\">%d</baseline_temporal>\n",
 	    meta->insar->baseline_temporal);
     fprintf(fp, "  <baseline_critical units=\"m\">%.1lf</baseline_critical>\n",
 	    meta->insar->baseline_critical);
     fprintf(fp, "</insar>\n");
-    fprintf(fp, "</xml>\n");
     FCLOSE(fp);
     FREE(output_file_name);
   }
