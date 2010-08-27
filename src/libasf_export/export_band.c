@@ -2450,8 +2450,14 @@ void colormap_to_lut_file(meta_colormap *cm, const char *lut_file)
 void write_insar_xml(output_format_t format, 
                      char *in_meta_name, char *in_data_name, char *out_name)
 {
+  if (!in_meta_name) return;
+  if (!fileExists(in_meta_name)) return;
+  if (!endsWith(in_meta_name, ".meta")) return;
+
   meta_parameters *meta = meta_read(in_meta_name);
-    
+  if (!meta) return;
+  assert(meta->general);
+ 
   // Export interferometric phase 
   if (meta->general->image_data_type == INSAR_STACK) {
     int ii, nouts = 0;

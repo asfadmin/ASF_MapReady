@@ -471,7 +471,8 @@ static void populate_baseline(meta_parameters *meta,
   // Calculate critical baseline
   double range = meta_get_slant(meta, nl/2, ns/2);
   double wavelength = meta->sar->wavelength;
-  double bandwidth = meta->sar->chirp_rate;
+  //double bandwidth = meta->sar->chirp_rate;
+  double bandwidth = meta->sar->range_sampling_rate;
   double tan_incid = tan(meta_incid(meta, nl/2, ns/2));
   meta->insar->baseline_critical =
       fabs(wavelength * range * bandwidth * tan_incid / SPD_LIGHT);
@@ -529,7 +530,6 @@ void import_roipac(const char *basename_in, const char *outFile)
   if (strlen(master)>0 && strlen(slave)>0) {
     sv_file = MALLOC(sizeof(char)*(strlen(path)+strlen(master)+64));
     sprintf(sv_file, "%shdr_data_points_%s.rsc", path, master);
-    printf("try: %s\n", sv_file);
     if (!fileExists(sv_file)) {
       sprintf(sv_file, "%sodr_data_points_%s.rsc", path, master);
       if (!fileExists(sv_file)) {
