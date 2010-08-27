@@ -629,7 +629,7 @@ static void do_browse(const char *title, const char *entry_to_populate,
     }
     else if (filts == BIN_FILT) {
       of.lpstrFilter =
-        "PolSARpro Classification Files\0*.bin\0"
+        "PolSARPro Files\0*.bin\0"
         "All Files\0*\0";
     }
     else {
