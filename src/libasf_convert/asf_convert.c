@@ -44,7 +44,8 @@ int isPolSARpro(const char * infile)
   }
   if (strcmp_case(ext, ".bin")==0) {
     bin = (char *)infile;
-    bin_hdr = STRDUP(infile);
+    bin_hdr = MALLOC(sizeof(char)*(strlen(infile)+32));
+    strcpy(bin_hdr, infile);
     strcat(bin_hdr, ".hdr");
     found_bin = fileExists(bin);
     found_bin_hdr = fileExists(bin_hdr);
@@ -146,6 +147,15 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
   }
   else
     return meta;
+}
+
+int isASFInternal(const char *input_file)
+{
+  char *meta_file = appendExt(input_file, ".meta");
+  if (fileExists(meta_file))
+    return TRUE;
+  else
+    return FALSE;
 }
 
 int isSTF(const char *input_file)
@@ -375,6 +385,25 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       cfg->airsar->c_pol = airsar_c;
       cfg->airsar->l_pol = airsar_l;
       cfg->airsar->p_pol = airsar_p;
+    }
+    else if (isASFInternal(input)) {
+      meta = meta_read(input);
+      if (meta && meta->sar) {
+        if (cfg->polarimetry->pauli &&
+	    (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+	     strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
+             meta->general->band_count < 8))
+         asfPrintError("Pauli decomposition requires complex quad-pol data\n");
+        if (cfg->polarimetry->sinclair &&
+	    (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+	     strcmp_case(meta->sar->polarization, "QUAD-POL") != 0))
+         asfPrintError("Sinclair decomposition requires quad-pol data\n");
+      }
+      else {
+        asfPrintError("Polarimetry requires SAR data.\n");
+      }
+      if (meta) meta_free(meta);
+      return;
     }
     else if (isCEOS(input, &error)) {
       require_ceos_pair(input, &inBandName, &inMetaName,

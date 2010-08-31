@@ -413,10 +413,12 @@ int kml_overlay_ext(char *inFile, char *outFile, char *demFile,
       FREE(bands[ii]);
     }
   }
-  for (ii=0; ii<nBands; ii++) {
-    FREE(dataName[ii]);
-    if (ii<2)
-      FREE(metaName[ii]);
+  if (dataName) {
+    for (ii=0; ii<nBands; ii++) {
+      FREE(dataName[ii]);
+      if (ii<2)
+        FREE(metaName[ii]);
+    }
   }
   FREE(dataName);
   FREE(metaName);
