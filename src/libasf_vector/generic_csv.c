@@ -706,24 +706,32 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
 
     write_kml_style_keys(ofp);
 
-    fprintf(ofp, "  <Polygon>\n");
-    fprintf(ofp, "    <extrude>1</extrude>\n");
-    fprintf(ofp, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
-    fprintf(ofp, "    <outerBoundaryIs>\n");
-    fprintf(ofp, "     <LinearRing>\n");
-    fprintf(ofp, "      <coordinates>\n");
-
-    // deal with the point (lat/lon) data
-    for (i=0; i<num_data_cols; ++i)
-      fprintf(ofp, "       %.12f,%.12f,7000\n", lons[i],lats[i]);
-
-    // close polygon
-    fprintf(ofp, "       %.12f,%.12f,7000\n", lons[0],lats[0]);
-
-    fprintf(ofp, "      </coordinates>\n");
-    fprintf(ofp, "     </LinearRing>\n");
-    fprintf(ofp, "    </outerBoundaryIs>\n");
-    fprintf(ofp, "  </Polygon>\n");
+    if (num_data_cols > 1) {
+      fprintf(ofp, "  <Polygon>\n");
+      fprintf(ofp, "    <extrude>1</extrude>\n");
+      fprintf(ofp, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
+      fprintf(ofp, "    <outerBoundaryIs>\n");
+      fprintf(ofp, "     <LinearRing>\n");
+      fprintf(ofp, "      <coordinates>\n");
+      
+      // deal with the point (lat/lon) data
+      for (i=0; i<num_data_cols; ++i)
+	fprintf(ofp, "       %.12f,%.12f,7000\n", lons[i],lats[i]);
+      
+      // close polygon
+      fprintf(ofp, "       %.12f,%.12f,7000\n", lons[0],lats[0]);
+      
+      fprintf(ofp, "      </coordinates>\n");
+      fprintf(ofp, "     </LinearRing>\n");
+      fprintf(ofp, "    </outerBoundaryIs>\n");
+      fprintf(ofp, "  </Polygon>\n");
+    }
+    else {
+      fprintf(ofp, "  <Point>\n");
+      fprintf(ofp, "    <coordinates>%f,%f,0</coordinates>\n", 
+	      lons[0], lats[0]);
+      fprintf(ofp, "  </Point>\n");
+    }
     fprintf(ofp, "</Placemark>\n");
 
     csv_free(num_meta_cols, column_data, lats, lons);
