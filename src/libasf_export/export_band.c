@@ -1176,13 +1176,13 @@ export_band_image (const char *metadata_file_name,
             sample_mapping != HISTOGRAM_EQUALIZE            &&  // A histogram is not needed
             md->stats      != NULL                          &&  // Stats exist and are valid
             md->stats       > 0                             &&
-            meta_is_valid_string(band_name[red_channel])    &&  // Band name exists and is valid
-            strlen(band_name[red_channel]) > 0)
+            meta_is_valid_string(band_name[0])              &&  // Band name exists and is valid
+            strlen(band_name[0]) > 0)
         {
           // If the stats already exist, then use them
           int band_no = get_band_number(md->general->bands,
                                         md->general->band_count,
-                                        band_name[red_channel]);
+                                        band_name[0]);
           red_stats.min  = md->stats->band_stats[band_no].min;
           red_stats.max  = md->stats->band_stats[band_no].max;
           red_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1200,7 +1200,7 @@ export_band_image (const char *metadata_file_name,
           // Calculate the stats if you have to...
           if (sample_mapping != NONE && !ignored[red_channel]) { // byte image
             asfPrintStatus("\nGathering red channel statistics ...\n");
-            calc_stats_from_file(image_data_file_name, band_name[red_channel],
+            calc_stats_from_file(image_data_file_name, band_name[0],
                                 md->general->no_data,
                                 &red_stats.min, &red_stats.max, &red_stats.mean,
                                 &red_stats.standard_deviation, &red_stats.hist);
@@ -1223,13 +1223,13 @@ export_band_image (const char *metadata_file_name,
              sample_mapping != HISTOGRAM_EQUALIZE            &&  // A histogram is not needed
              md->stats      != NULL                          &&  // Stats exist and are valid
              md->stats       > 0                             &&
-             meta_is_valid_string(band_name[green_channel])  &&  // Band name exists and is valid
-             strlen(band_name[green_channel]) > 0)
+             meta_is_valid_string(band_name[1])              &&  // Band name exists and is valid
+             strlen(band_name[1]) > 0)
         {
           // If the stats already exist, then use them
           int band_no = get_band_number(md->general->bands,
                                         md->general->band_count,
-                                        band_name[green_channel]);
+                                        band_name[1]);
           green_stats.min  = md->stats->band_stats[band_no].min;
           green_stats.max  = md->stats->band_stats[band_no].max;
           green_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1247,7 +1247,7 @@ export_band_image (const char *metadata_file_name,
           // Calculate the stats if you have to...
           if (sample_mapping != NONE && !ignored[green_channel]) { // byte image
             asfPrintStatus("\nGathering green channel statistics ...\n");
-            calc_stats_from_file(image_data_file_name, band_name[green_channel],
+            calc_stats_from_file(image_data_file_name, band_name[1],
                                 md->general->no_data,
                                 &green_stats.min, &green_stats.max,
                                 &green_stats.mean,
@@ -1272,13 +1272,13 @@ export_band_image (const char *metadata_file_name,
              sample_mapping != HISTOGRAM_EQUALIZE           &&  // A histogram is not needed
              md->stats      != NULL                         &&  // Stats exist and are valid
              md->stats       > 0                            &&
-             meta_is_valid_string(band_name[blue_channel])  &&  // Band name exists and is valid
-             strlen(band_name[blue_channel]) > 0)
+             meta_is_valid_string(band_name[2])             &&  // Band name exists and is valid
+             strlen(band_name[2]) > 0)
         {
           // If the stats already exist, then use them
           int band_no = get_band_number(md->general->bands,
                                         md->general->band_count,
-                                        band_name[blue_channel]);
+                                        band_name[2]);
           blue_stats.min  = md->stats->band_stats[band_no].min;
           blue_stats.max  = md->stats->band_stats[band_no].max;
           blue_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1296,7 +1296,7 @@ export_band_image (const char *metadata_file_name,
           // Calculate the stats if you have to...
           if (sample_mapping != NONE && !ignored[blue_channel]) { // byte image
             asfPrintStatus("\nGathering blue channel statistics ...\n");
-            calc_stats_from_file(image_data_file_name, band_name[blue_channel],
+            calc_stats_from_file(image_data_file_name, band_name[2],
                                 md->general->no_data,
                                 &blue_stats.min, &blue_stats.max,
                                 &blue_stats.mean,
@@ -1399,14 +1399,14 @@ export_band_image (const char *metadata_file_name,
       // Set up red resampling
       if (md->stats                                     &&
           md->stats->band_count >= 3                    &&
-          meta_is_valid_string(band_name[red_channel])  &&
-          strlen(band_name[red_channel]) > 0            &&
+          meta_is_valid_string(band_name[0])            &&
+          strlen(band_name[0]) > 0                      &&
           sample_mapping != HISTOGRAM_EQUALIZE)
       {
           // If the stats already exist, then use them
         int band_no = get_band_number(md->general->bands,
                                       md->general->band_count,
-                                      band_name[red_channel]);
+                                      band_name[0]);
         red_stats.min  = md->stats->band_stats[band_no].min;
         red_stats.max  = md->stats->band_stats[band_no].max;
         red_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1416,7 +1416,7 @@ export_band_image (const char *metadata_file_name,
       }
       else {
         asfPrintStatus("\nGathering red channel statistics...\n");
-        calc_stats_from_file(image_data_file_name, band_name[red_channel],
+        calc_stats_from_file(image_data_file_name, band_name[0],
                              md->general->no_data,
                              &red_stats.min, &red_stats.max, &red_stats.mean,
                              &red_stats.standard_deviation, &red_stats.hist);
@@ -1429,14 +1429,14 @@ export_band_image (const char *metadata_file_name,
       // Set up green resampling
       if (md->stats                                       &&
           md->stats->band_count >= 3                      &&
-          meta_is_valid_string(band_name[green_channel])  &&
-          strlen(band_name[green_channel]) > 0            &&
+          meta_is_valid_string(band_name[1])              &&
+          strlen(band_name[1]) > 0                        &&
           sample_mapping != HISTOGRAM_EQUALIZE)
       {
         // If the stats already exist, then use them
         int band_no = get_band_number(md->general->bands,
                                       md->general->band_count,
-                                      band_name[green_channel]);
+                                      band_name[1]);
         green_stats.min  = md->stats->band_stats[band_no].min;
         green_stats.max  = md->stats->band_stats[band_no].max;
         green_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1446,7 +1446,7 @@ export_band_image (const char *metadata_file_name,
       }
       else {
         asfPrintStatus("\nGathering green channel statistics...\n");
-        calc_stats_from_file(image_data_file_name, band_name[green_channel],
+        calc_stats_from_file(image_data_file_name, band_name[1],
                               md->general->no_data,
                               &green_stats.min, &green_stats.max, &green_stats.mean,
                               &green_stats.standard_deviation, &green_stats.hist);
@@ -1459,14 +1459,14 @@ export_band_image (const char *metadata_file_name,
       // Set up blue resampling
       if (md->stats                                      &&
           md->stats->band_count >= 3                     &&
-          meta_is_valid_string(band_name[blue_channel])  &&
-          strlen(band_name[blue_channel]) > 0            &&
+          meta_is_valid_string(band_name[2])             &&
+          strlen(band_name[2]) > 0                       &&
           sample_mapping != HISTOGRAM_EQUALIZE)
       {
         // If the stats already exist, then use them
         int band_no = get_band_number(md->general->bands,
                                       md->general->band_count,
-                                      band_name[blue_channel]);
+                                      band_name[2]);
         blue_stats.min  = md->stats->band_stats[band_no].min;
         blue_stats.max  = md->stats->band_stats[band_no].max;
         blue_stats.mean = md->stats->band_stats[band_no].mean;
@@ -1476,7 +1476,7 @@ export_band_image (const char *metadata_file_name,
       }
       else {
         asfPrintStatus("\nGathering blue channel statistics...\n\n");
-        calc_stats_from_file(image_data_file_name, band_name[blue_channel],
+        calc_stats_from_file(image_data_file_name, band_name[2],
                              md->general->no_data,
                              &blue_stats.min, &blue_stats.max, &blue_stats.mean,
                              &blue_stats.standard_deviation, &blue_stats.hist);
