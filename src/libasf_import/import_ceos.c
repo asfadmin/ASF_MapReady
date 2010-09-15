@@ -2040,11 +2040,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                              meta->optical)
                     {
                         if (kk+leftFill>=ns) {
-                            //printf("%d %d %d!!\n", kk, leftFill, ns);
+                            amp_float_buf[kk] = 0.0;
                         } else {
-                            //assert(kk+leftFill<ns);
+                            amp_float_buf[kk] = (float) byte_buf[kk+leftFill];
                         }
-                        amp_float_buf[kk] = (float) byte_buf[kk+leftFill];
                     }
                     else {
                         amp_float_buf[kk] = (float) byte_buf[kk];
