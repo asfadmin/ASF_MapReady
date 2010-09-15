@@ -247,6 +247,10 @@ void write_png_byte2byte(FILE *opng, unsigned char *byte_line,
                          channel_stats_t stats, scale_t sample_mapping,
                          png_structp png_ptr, png_infop png_info_ptr,
                          int sample_count);
+void write_png_byte2rgbalpha(FILE *opng, unsigned char *byte_line,
+                             channel_stats_t stats, scale_t sample_mapping,
+                             png_structp png_ptr, png_infop png_info_ptr,
+                             int sample_count);
 void write_png_float2byte(FILE *opng, float *float_line,
                png_structp png_ptr, png_infop png_info_ptr,
 			   channel_stats_t stats,

@@ -348,6 +348,39 @@ void write_png_byte2byte(FILE *opng, unsigned char *byte_line,
   g_free(row_pointer);
 }
 
+void write_png_byte2rgbalpha(FILE *opng, unsigned char *byte_line,
+                             channel_stats_t stats, scale_t sample_mapping,
+                             png_structp png_ptr, png_infop png_info_ptr,
+                             int sample_count)
+{
+  png_byte *row_pointer = g_new(png_byte, sample_count*4);
+
+  if (sample_mapping != NONE) {
+    int jj, kk;
+    for (jj=0; jj<sample_count; jj++) {
+      kk = jj*4;
+      row_pointer[kk] =
+          (png_byte)pixel_float2byte((float)byte_line[jj], sample_mapping,
+                stats.min, stats.max, stats.hist, stats.hist_pdf, NAN);
+      row_pointer[kk+1] = row_pointer[kk];
+      row_pointer[kk+2] = row_pointer[kk];
+      row_pointer[kk+3] = 0;
+    }
+  } else {
+    int jj, kk;
+    for (jj=0; jj<sample_count; jj++) {
+      kk = jj*4;
+      row_pointer[kk] = (png_byte)byte_line[jj];
+      row_pointer[kk+1] = row_pointer[kk];
+      row_pointer[kk+2] = row_pointer[kk];
+      row_pointer[kk+3] = 0;
+    }
+  }
+
+  png_write_row(png_ptr, row_pointer);
+  g_free(row_pointer);
+}
+
 void write_png_float2byte(FILE *opng, float *float_line,
                png_structp png_ptr, png_infop png_info_ptr,
                channel_stats_t stats,

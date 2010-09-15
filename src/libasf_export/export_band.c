@@ -2145,9 +2145,15 @@ export_band_image (const char *metadata_file_name,
               else if (format == JPEG)
                 write_jpeg_byte2byte(ojpeg, byte_line, stats, sample_mapping,
                 &cinfo, sample_count);
-              else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
+              else if (format == PNG)
                 write_png_byte2byte(opng, byte_line, stats, sample_mapping,
                 png_ptr, png_info_ptr, sample_count);
+              else if (format == PNG_ALPHA) {
+                asfPrintError("PNG_ALPHA not supported.\n");
+              }
+              else if (format == PNG_GE)
+                write_png_byte2rgbalpha(opng, byte_line, stats, sample_mapping,
+                                        png_ptr, png_info_ptr, sample_count);
               else if (format == PGM)
                 write_pgm_byte2byte(opgm, byte_line, stats, sample_mapping,
                 sample_count);

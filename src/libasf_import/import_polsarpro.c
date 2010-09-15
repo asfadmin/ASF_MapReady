@@ -88,14 +88,17 @@ int isCEOS(const char *dataFile, char **error)
   data_ext = get_ceos_data_name(dataFile, baseName, &inBandName, &nBands);
   if (data_ext == NO_CEOS_DATA) {
     message = (char *) MALLOC(sizeof(char)*1024);
+    strcpy(message, "");
     sprintf(tmp, "Data file%s of original data (%s) missing.\n",
 	    (nBands>1) ? "s" : "", fileName);
     strcat(message, tmp);
     ret = FALSE;
   }    
   if (metadata_ext == NO_CEOS_METADATA) {
-    if (!message)
+    if (!message) {
       message = (char *) MALLOC(sizeof(char)*1024);
+      strcpy(message, "");
+    }
     sprintf(tmp, "Metadata file of original data (%s) missing.\n", fileName);
     strcat(message, tmp);
     ret = FALSE;
