@@ -36,6 +36,8 @@ LIBS = 	\
 	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(SHAPELIB_LIBS) \
 	-lm -lz
 

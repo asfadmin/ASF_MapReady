@@ -30,6 +30,8 @@ LIBS = \
 	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(ZLIB_LIBS)
 
 CFLAGS += \

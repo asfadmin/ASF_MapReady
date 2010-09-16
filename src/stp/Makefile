@@ -20,6 +20,8 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(GLIB_LIBS) \
 	$(ZLIB_LIBS)
 

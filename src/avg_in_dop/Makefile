@@ -22,6 +22,8 @@ LIBS  = \
 	$(JPEG_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(GLIB_LIBS) \
 	-lz
 
