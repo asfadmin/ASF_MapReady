@@ -28,6 +28,8 @@ LIBS  = \
 	$(PNG_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(XML_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(ZLIB_LIBS)
 
 OBJS  = asf_convert.o

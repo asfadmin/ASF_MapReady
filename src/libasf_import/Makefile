@@ -14,6 +14,8 @@ LIBS  = \
 	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(GSL_LIBS) \
 	-lz
 
@@ -80,7 +82,6 @@ OBJS  = \
 	import_fgdc_meta.o \
 	import_roipac.o \
 	config_fgdc.o \
-	least_squares.o \
 	missing.o \
 	projected_image_import.o \
         tiff_to_byte_image.o \

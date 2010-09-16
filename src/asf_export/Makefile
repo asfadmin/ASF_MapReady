@@ -53,6 +53,8 @@ LIBS  = \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	$(XML_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm \
 

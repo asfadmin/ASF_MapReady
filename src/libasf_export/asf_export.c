@@ -167,6 +167,24 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 			look_up_table_name, POLSARPRO_HDR,
 			&nouts, &outs);
   }
+  else if ( format == HDF ) {
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+      strcpy(out_name, output_name);
+      export_band_image(in_meta_name, in_data_name, out_name,
+			NONE, band_name, rgb,
+			true_color, false_color,
+			look_up_table_name, HDF,
+			&nouts, &outs);
+  }
+  else if ( format == NC ) {
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+      strcpy(out_name, output_name);
+      export_band_image(in_meta_name, in_data_name, out_name,
+			NONE, band_name, rgb,
+			true_color, false_color,
+			look_up_table_name, NC,
+			&nouts, &outs);
+  }
 
   // will write an insar xml file, if warranted
   write_insar_xml(format, in_meta_name, in_data_name, out_name);

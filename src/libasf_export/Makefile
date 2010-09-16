@@ -14,6 +14,8 @@ include ../../make_support/system_rules
 
 SOURCES := asf_export.c \
 	export_band.c \
+	export_netcdf.c \
+	export_geotiff.c \
 	export_as_envi.c \
 	export_as_esri.c \
 	util.c \
@@ -51,6 +53,8 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm
 

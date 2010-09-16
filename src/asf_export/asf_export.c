@@ -36,7 +36,8 @@ following defines.
 "            jpeg      - Lossy compressed image, with byte valued pixels\n"\
 "            pgm       - Portable graymap image, with byte valued pixels\n"\
 "            png       - Portable network graphic, with byte valued pixels\n"\
-"            polsarpro - Flat binary floating point files in PolSARPro format\n\n"\
+"            polsarpro - Flat binary floating point files in PolSARPro format\n"\
+"            netcdf    - netCDF format compliant to the CF conventions\n"\
 "   NOTE: When exporting to a GeoTIFF format file, all map-projection\n"\
 "         information is included in GeoKeys as specified in the GeoTIFF\n"\
 "         standard.  The other graphics file formats do not support the\n"\
@@ -785,6 +786,12 @@ main (int argc, char *argv[])
   }
   else if ( strcmp (command_line.format, "POLSARPRO") == 0 ) {
     format = POLSARPRO_HDR;
+  }
+  else if ( strcmp (command_line.format, "HDF5") == 0 ) {
+    format = HDF;
+  }
+  else if ( strcmp (command_line.format, "NETCDF") == 0 ) {
+    format = NC;
   }
   else {
     asfPrintError("Unrecognized output format specified\n");

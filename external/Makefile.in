@@ -20,6 +20,9 @@ MODULES = \
 	@ASF_LIB_FFTW@ \
 	@ASF_LIB_EXIF@ \
 	@ASF_LIB_XML2@ \
+	@ASF_LIB_CURL@ \
+	@ASF_LIB_HDF5@ \
+	@ASF_LIB_NETCDF@ \
 	@ASF_LIB_GDAL@
 
 all: libs gtkwin32

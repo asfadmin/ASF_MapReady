@@ -27,6 +27,8 @@ LIBS  = \
 	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(GSL_LIBS) \
 	$(ZLIB_LIBS) \
 	$(XML_LIBS) \

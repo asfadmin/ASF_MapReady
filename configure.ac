@@ -23,6 +23,8 @@ have_png="no"
 have_exif="no"
 have_xml2="no"
 have_gdal="no"
+have_hdf5="no"
+have_netcdf="no"
 
 AC_PROG_CC
 AC_PROG_LEX
@@ -274,6 +276,42 @@ else
 fi
 AC_SUBST(ASF_LIB_GDAL)
 
+#### libcurl check ####
+##### --> always use our own libcurl version
+#####     no point in trying to sort out external dependencies
+have_curl="no"
+if test "$have_curl" = "no" ; then
+   ASF_LIB_CURL="${ext_lib_src_dir}/libcurl"
+   CURL_LIBS="\$(LIBDIR)/libcurl.a"
+else
+   CURL_LIBS="-lcurl"
+fi
+AC_SUBST(ASF_LIB_CURL)
+
+#### libhdf5 check ####
+##### --> always use our own libhdf5 version
+#####     no point in trying to sort out external dependencies
+have_hdf5="no"
+if test "$have_hdf5" = "no" ; then
+   ASF_LIB_HDF5="${ext_lib_src_dir}/libhdf5"
+   HDF5_LIBS="\$(LIBDIR)/libhdf5_hl.a \$(LIBDIR)/libhdf5.a"
+else
+   HDF5_LIBS="-lhdf5_hl -lhdf5"
+fi
+AC_SUBST(ASF_LIB_HDF5)
+
+#### libnetcdf check ####
+##### --> always use our own libnetcdf version
+#####     no point in trying to sort out external dependencies
+have_netcdf="no"
+if test "$have_netcdf" = "no" ; then
+   ASF_LIB_NETCDF="${ext_lib_src_dir}/libnetcdf"
+   NETCDF_LIBS="\$(LIBDIR)/libnetcdf.a"
+else
+   NETCDF_LIBS="-lnetcdf"
+fi
+AC_SUBST(ASF_LIB_NETCDF)
+
 #### libglade check ####
 if test "$have_gtk" = "yes" ; then
    PKG_CHECK_MODULES(LIBGLADE, libglade-2.0 > 2.0.0,
@@ -446,6 +484,15 @@ EXIF_CFLAGS = $EXIF_CFLAGS
 
 XML_LIBS = $XML2_LIBS
 XML_CFLAGS = $XML2_CFLAGS
+
+CURL_LIBS = $CURL_LIBS
+CURL_CFLAGS = $CURL_CFLAGS
+
+HDF5_LIBS = $HDF5_LIBS
+HDF5_CFLAGS = $HDF5_CFLAGS
+
+NETCDF_LIBS = $NETCDF_LIBS
+NETCDF_CFLAGS = $NETCDF_CFLAGS
 
 ZLIB_LIBS = $ZLIB_LIBS
 

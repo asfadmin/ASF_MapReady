@@ -94,6 +94,12 @@ quadratic_2d find_quadratic(const double *out, const double *x,
   return c;
 }
 
+void quadratic_write(const quadratic_2d *c,FILE *stream)
+{
+  fprintf(stream,"%.18f %.18f %.18f %.18f %.18f %.18f %.18f %.18f %.18f %.18f %.18f\n",
+          c->A,c->B,c->C,c->D,c->E,c->F,c->G,c->H,c->I,c->J,c->K);
+}
+
 double get_satellite_height(double time, stateVector stVec)
 {
   return sqrt(stVec.pos.x*stVec.pos.x +

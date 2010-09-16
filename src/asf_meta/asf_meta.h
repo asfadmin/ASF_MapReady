@@ -899,6 +899,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
 		 float inDn, char *bandExt, int dbFlag);
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
+void quadratic_write(const quadratic_2d *c,FILE *stream);
 quadratic_2d get_incid(char *sarName, meta_parameters *meta);
 
 // Prototypes from get_ceos.c

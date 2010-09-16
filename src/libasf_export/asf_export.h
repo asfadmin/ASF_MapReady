@@ -10,6 +10,7 @@
 #include "asf_raster.h"
 #include "libasf_proj.h"
 #include "asf_nan.h"
+#include "netcdf.h"
 
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
@@ -54,7 +55,9 @@ typedef enum {
   PNG_ALPHA,                    // Transparent PNG (8-bit)
   PNG_GE,                       // Transparent PNG (32-bit), Google Earth style
   KML,                          // JPEG with GoogleEarth overlay file
-  POLSARPRO_HDR                 // PolsarPro with ENVI header
+  POLSARPRO_HDR,                // PolsarPro with ENVI header
+  HDF,                          // HDF5 - NASA Earth Observation standard
+  NC                            // netCDF - modeler oriented format
 } output_format_t;
 
 /* Ellipsoid used for the data.  */
@@ -65,6 +68,14 @@ typedef enum {
   WGS66,                        /* Ancient crummy ellipsoid.  */
   USER_DEFINED                  /* Some unknown user defined ellipsoid.  */
 } asf_export_ellipsoid_t;
+
+// netCDF pointer structure
+typedef struct {
+  //int dimension_count;          // Number of dimensions in netCDF file
+  int ncid;                     // Pointer to the netCDF file
+  int var_count;                // Number of variables
+  int *var_id;                  // Variable IDs
+} netcdf_t;
 
 /* Structure to hold elements of the command line.  */
 typedef struct {
@@ -163,6 +174,25 @@ void initialize_png_file_ext(const char *output_file_name,
 void finalize_png_file(FILE *opng, png_structp png_ptr, png_infop info_ptr);
 void write_insar_xml(output_format_t format,
                      char *in_meta_name, char *in_data_name, char *out_name);
+
+// Prototypes from export_geotiff.c
+void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
+                           const char *output_file_name,
+                           const char *metadata_file_name,
+                           int is_geotiff, scale_t sample_mapping,
+                           int rgb, int *palette_color_tiff, char **band_names,
+                           char *look_up_table_name, int is_colormapped);
+GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
+                              int rgb, char **band_names, int palette_color_tiff);
+void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
+int lut_to_tiff_palette(unsigned short **colors, int size, char *look_up_table_name);
+void dump_palette_tiff_color_map(unsigned short *colors, int map_size);
+int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta_colormap *colormap);
+
+// Prototypes from export_netcdf.c
+netcdf_t *initialize_netcdf_file(const char *output_file, 
+				 meta_parameters *meta);
+void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md, float *nc);
 
 // Prototypes from key.c
 double spheroid_diff_from_axis (spheroid_type_t spheroid,

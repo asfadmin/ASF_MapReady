@@ -16,6 +16,8 @@ LIBS  = \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(NETCDF_LIBS) \
+	$(HDF5_LIBS) \
 	$(ZLIB_LIBS)
 
 LIBC = $(LIBS) -lm 
