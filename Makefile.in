@@ -52,6 +52,7 @@ MAPREADY_MODULES = \
 	src/resample \
 	src/fill_holes \
 	src/meta2envi \
+	src/meta2xml \
 	src/mosaic \
 	src/llh2ls \
 	src/smooth \

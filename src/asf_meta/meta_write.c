@@ -18,6 +18,124 @@ void meta_put_char  (FILE *meta_file,char *name,char   value,char *comment);
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
                         char *comment);
 
+char *data_type2str(data_type_t data_type)
+{
+  char *str = (char *) MALLOC(sizeof(char)*256);
+
+  if (data_type == BYTE)
+    strcpy(str, "BYTE");
+  else if (data_type == INTEGER16)
+    strcpy(str, "INTEGER16");
+  else if (data_type == INTEGER32)
+    strcpy(str, "INTEGER32");
+  else if (data_type == REAL32)
+    strcpy(str, "REAL32");
+  else if (data_type == REAL64)
+    strcpy(str, "REAL64");
+  else if (data_type == COMPLEX_BYTE)
+    strcpy(str, "COMPLEX_BYTE");
+  else if (data_type == COMPLEX_INTEGER16)
+    strcpy(str, "COMPLEX_INTEGER16");
+  else if (data_type == COMPLEX_INTEGER32)
+    strcpy(str, "COMPLEX_INTEGER32");
+  else if (data_type == COMPLEX_REAL32)
+    strcpy(str, "COMPLEX_REAL32");
+  else if (data_type == COMPLEX_REAL64)
+    strcpy(str, "COMPLEX_REAL64");
+  else
+    strcpy(str, MAGIC_UNSET_STRING);
+  
+  return str;
+}
+
+char *image_data_type2str(image_data_type_t image_data_type)
+{
+  char *str = (char *) MALLOC(sizeof(char)*256);
+
+  if (image_data_type == RAW_IMAGE)
+    strcpy(str, "RAW_IMAGE");
+  else if (image_data_type == COMPLEX_IMAGE)
+    strcpy(str, "COMPLEX_IMAGE");
+  else if (image_data_type == AMPLITUDE_IMAGE)
+    strcpy(str, "AMPLITUDE_IMAGE");
+  else if (image_data_type == PHASE_IMAGE)
+    strcpy(str, "PHASE_IMAGE");
+  else if (image_data_type == POWER_IMAGE)
+    strcpy(str, "POWER_IMAGE");
+  else if (image_data_type == SIGMA_IMAGE)
+    strcpy(str, "SIGMA_IMAGE");
+  else if (image_data_type == GAMMA_IMAGE)
+    strcpy(str, "GAMMA_IMAGE");
+  else if (image_data_type == BETA_IMAGE)
+    strcpy(str, "BETA_IMAGE");
+  else if (image_data_type == INTERFEROGRAM)
+    strcpy(str, "INTERFEROGRAM");
+  else if (image_data_type == COHERENCE_IMAGE)
+    strcpy(str, "COHERENCE_IMAGE");
+  else if (image_data_type == GEOREFERENCED_IMAGE)
+    strcpy(str, "GEOREFERENCED_IMAGE");
+  else if (image_data_type == GEOCODED_IMAGE)
+    strcpy(str, "GEOCODED_IMAGE");
+  else if (image_data_type == POLARIMETRIC_IMAGE)
+    strcpy(str, "POLARIMETRIC_IMAGE");
+  else if (image_data_type == POLARIMETRIC_SEGMENTATION)
+    strcpy(str, "POLARIMETRIC_SEGMENTATION");
+  else if (image_data_type == POLARIMETRIC_DECOMPOSITION)
+    strcpy(str, "POLARIMETRIC_DECOMPOSITION");
+  else if (image_data_type == POLARIMETRIC_PARAMETER)
+    strcpy(str, "POLARIMETRIC_PARAMETER");
+  else if (image_data_type == POLARIMETRIC_MATRIX)
+    strcpy(str, "POLARIMETRIC_MATRIX");
+  else if (image_data_type == LUT_IMAGE)
+    strcpy(str, "LUT_IMAGE");
+  else if (image_data_type == ELEVATION)
+    strcpy(str, "ELEVATION");
+  else if (image_data_type == DEM)
+    strcpy(str, "DEM");
+  else if (image_data_type == IMAGE)
+    strcpy(str, "IMAGE");
+  else if (image_data_type == MASK)
+    strcpy(str, "MASK");
+  else if (image_data_type == SIMULATED_IMAGE)
+    strcpy(str, "SIMULATED_IMAGE");
+  else if (image_data_type == IMAGE_LAYER_STACK)
+    strcpy(str, "IMAGE_LAYER_STACK");
+  else if (image_data_type == INSAR_STACK)
+    strcpy(str, "INSAR_STACK");
+  else if (image_data_type == MOSAIC)
+    strcpy(str, "MOSAIC");
+  else
+    strcpy(str, MAGIC_UNSET_STRING);
+
+  return str;
+}
+
+char *radiometry2str(radiometry_t radiometry)
+{
+  char *str = (char *) MALLOC(sizeof(char)*256);
+
+  if (radiometry == r_AMP)
+    strcpy(str, "AMPLITUDE");
+  else if (radiometry == r_SIGMA)
+    strcpy(str, "SIGMA");
+  else if (radiometry == r_GAMMA)
+    strcpy(str, "GAMMA");
+  else if (radiometry == r_BETA)
+    strcpy(str, "BETA");
+  else if (radiometry == r_SIGMA_DB)
+    strcpy(str, "SIGMA_DB");
+  else if (radiometry == r_GAMMA_DB)
+    strcpy(str, "GAMMA_DB");
+  else if (radiometry == r_BETA_DB)
+    strcpy(str, "BETA_DB");
+  else if (radiometry == r_POWER)
+    strcpy(str, "POWER");
+  else
+    strcpy(str, MAGIC_UNSET_STRING);
+  
+  return str;
+}
+
 /* Given a meta_parameters structure pointer and a file name, write a
    metadata file for that structure.  */
 void meta_write(meta_parameters *meta, const char *file_name)
@@ -66,162 +184,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
   meta_put_string(fp,"processor:", meta->general->processor,"Name and Version of Processor");
   strcpy(comment,"Type of samples (e.g. REAL64)");
-  switch (meta->general->data_type) {
-    case BYTE:
-      meta_put_string(fp,"data_type:","BYTE",comment);
-      break;
-    case INTEGER16:
-      meta_put_string(fp,"data_type:","INTEGER16",comment);
-      break;
-    case INTEGER32:
-      meta_put_string(fp,"data_type:","INTEGER32",comment);
-      break;
-    case REAL32:
-      meta_put_string(fp,"data_type:","REAL32",comment);
-      break;
-    case REAL64:
-      meta_put_string(fp,"data_type:","REAL64",comment);
-      break;
-    case COMPLEX_BYTE:
-      meta_put_string(fp,"data_type:","COMPLEX_BYTE",comment);
-      break;
-    case COMPLEX_INTEGER16:
-      meta_put_string(fp,"data_type:","COMPLEX_INTEGER16",comment);
-      break;
-    case COMPLEX_INTEGER32:
-      meta_put_string(fp,"data_type:","COMPLEX_INTEGER32",comment);
-      break;
-    case COMPLEX_REAL32:
-      meta_put_string(fp,"data_type:","COMPLEX_REAL32",comment);
-      break;
-    case COMPLEX_REAL64:
-      meta_put_string(fp,"data_type:","COMPLEX_REAL64",comment);
-      break;
-    default:
-      meta_put_string(fp,"data_type:",MAGIC_UNSET_STRING,comment);
-      break;
-  }
+  meta_put_string(fp, "data_type:", data_type2str(meta->general->data_type),
+		  comment);
   if (META_VERSION >= 1.2) {
     strcpy(comment,"Image data type (e.g. AMPLITUDE_IMAGE)");
-    switch (meta->general->image_data_type) {
-      case RAW_IMAGE:
-        meta_put_string(fp,"image_data_type:","RAW_IMAGE",comment);
-        break;
-      case COMPLEX_IMAGE:
-        meta_put_string(fp,"image_data_type:","COMPLEX_IMAGE",comment);
-        break;
-      case AMPLITUDE_IMAGE:
-        meta_put_string(fp,"image_data_type:","AMPLITUDE_IMAGE",comment);
-        break;
-      case PHASE_IMAGE:
-        meta_put_string(fp,"image_data_type:","PHASE_IMAGE",comment);
-        break;
-      case POWER_IMAGE:
-        meta_put_string(fp,"image_data_type:","POWER_IMAGE",comment);
-        break;
-      case SIGMA_IMAGE:
-        meta_put_string(fp,"image_data_type:","SIGMA_IMAGE",comment);
-        break;
-      case GAMMA_IMAGE:
-        meta_put_string(fp,"image_data_type:","GAMMA_IMAGE",comment);
-        break;
-      case BETA_IMAGE:
-        meta_put_string(fp,"image_data_type:","BETA_IMAGE",comment);
-        break;
-      case INTERFEROGRAM:
-        meta_put_string(fp,"image_data_type:","INTERFEROGRAM",comment);
-        break;
-      case COHERENCE_IMAGE:
-        meta_put_string(fp,"image_data_type:","COHERENCE_IMAGE",comment);
-        break;
-      case GEOREFERENCED_IMAGE:
-        meta_put_string(fp,"image_data_type:","GEOREFERENCED_IMAGE",comment);
-        break;
-      case GEOCODED_IMAGE:
-        meta_put_string(fp,"image_data_type:","GEOCODED_IMAGE",comment);
-        break;
-      case POLARIMETRIC_IMAGE:
-        meta_put_string(fp,"image_data_type:","POLARIMETRIC_IMAGE",comment);
-        break;
-      case POLARIMETRIC_SEGMENTATION:
-        meta_put_string(fp,"image_data_type:","POLARIMETRIC_SEGMENTATION",
-			comment);
-        break;
-      case POLARIMETRIC_DECOMPOSITION:
-        meta_put_string(fp,"image_data_type:","POLARIMETRIC_DECOMPOSITION",
-			comment);
-        break;
-      case POLARIMETRIC_PARAMETER:
-        meta_put_string(fp,"image_data_type:","POLARIMETRIC_PARAMETER",
-			comment);
-        break;
-      case POLARIMETRIC_MATRIX:
-        meta_put_string(fp,"image_data_type:","POLARIMETRIC_MATRIX",comment);
-        break;
-      case LUT_IMAGE:
-        meta_put_string(fp,"image_data_type:","LUT_IMAGE",comment);
-        break;
-      case ELEVATION:
-        meta_put_string(fp,"image_data_type:","ELEVATION",comment);
-        break;
-      case DEM:
-        meta_put_string(fp,"image_data_type:","DEM",comment);
-        break;
-      case IMAGE:
-        meta_put_string(fp,"image_data_type:","IMAGE",comment);
-        break;
-      case MASK:
-        meta_put_string(fp,"image_data_type:","MASK",comment);
-        break;
-      case SIMULATED_IMAGE:
-	meta_put_string(fp,"image_data_type:","SIMULATED_IMAGE",comment);
-	break;
-      case IMAGE_LAYER_STACK:
-        meta_put_string(fp, "image_data_type:","IMAGE_LAYER_STACK",comment);
-	break;
-      case INSAR_STACK:
-	meta_put_string(fp, "image_data_type:","INSAR_STACK",comment);
-	break;
-      case MOSAIC:
-        meta_put_string(fp, "image_data_type:","MOSAIC",comment);
-	break;
-      default:
-        meta_put_string(fp,"image_data_type:",MAGIC_UNSET_STRING,comment);
-        break;
-    }
+    meta_put_string(fp, "image_data_type:", 
+		    image_data_type2str(meta->general->image_data_type),
+		    comment);
   }
   if (META_VERSION >= 2.5) {
     strcpy(comment,"Radiometry (e.g. SIGMA)");
-    switch (meta->general->radiometry)
-      {
-      case r_AMP:
-    meta_put_string(fp,"radiometry:","AMPLITUDE",comment);
-    break;
-      case r_SIGMA:
-    meta_put_string(fp,"radiometry:","SIGMA",comment);
-    break;
-      case r_GAMMA:
-    meta_put_string(fp,"radiometry:","GAMMA",comment);
-    break;
-      case r_BETA:
-    meta_put_string(fp,"radiometry:","BETA",comment);
-    break;
-      case r_SIGMA_DB:
-    meta_put_string(fp,"radiometry:","SIGMA_DB",comment);
-    break;
-      case r_GAMMA_DB:
-    meta_put_string(fp,"radiometry:","GAMMA_DB",comment);
-    break;
-      case r_BETA_DB:
-    meta_put_string(fp,"radiometry:","BETA_DB",comment);
-    break;
-      case r_POWER:
-    meta_put_string(fp,"radiometry:","POWER",comment);
-    break;
-      default:
-    meta_put_string(fp,"radiometry:","???",comment);
-    break;
-      }
+    meta_put_string(fp, "radiometry:", 
+		    radiometry2str(meta->general->radiometry),comment);
   }
   meta_put_string(fp,"acquisition_date:", meta->general->acquisition_date,
       "Acquisition date of the data");
@@ -518,6 +492,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case EQUI_RECTANGULAR:
 	meta_put_string (fp, "type:", "EQUI_RECTANGULAR", "Projection Type");
 	break;
+      case SINUSOIDAL:
+	break;
       case UNKNOWN_PROJECTION:
         meta_put_string(fp,"type:","UNKNOWN_PROJECTION","Projection Type");
 	break;
@@ -708,6 +684,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 			 "False northing [m]");
       meta_put_string(fp,"}","","End eqr");
       break;
+    case SINUSOIDAL:
     case LAT_LONG_PSEUDO_PROJECTION:
     case UNKNOWN_PROJECTION:
       /* This projection type doesn't need its own parameter block,
@@ -1318,4 +1295,602 @@ void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
     strcpy(param,"nan");
   }
   meta_put_string(meta_file,name,param,comment);
+}
+
+void meta_write_xml(meta_parameters *meta, const char *file_name)
+{
+  char *file_name_with_extension = appendExt(file_name, ".xml");
+  FILE *fp = FOPEN(file_name_with_extension, "w");
+  FREE(file_name_with_extension);
+  int ii, kk;
+  meta_general *mg = meta->general;
+  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+  fprintf(fp, "<metadata>\n");
+  fprintf(fp, "  <metadata_type>Alaska Satellite Facility</metadata_type>\n");
+  fprintf(fp, "  <meta_version>%.2lf</meta_version>\n", meta->meta_version);
+  fprintf(fp, "  <general>\n");
+  fprintf(fp, "    <name>%s</name>\n", mg->basename);
+  fprintf(fp, "    <sensor>%s</sensor>\n", mg->sensor);
+  fprintf(fp, "    <sensor_name>%s</sensor_name>\n", mg->sensor_name);
+  fprintf(fp, "    <mode>%s</mode>\n", mg->mode);
+  fprintf(fp, "    <processor>%s</processor>\n", mg->processor);
+  fprintf(fp, "    <data_type>%s</data_type>\n", data_type2str(mg->data_type));
+  fprintf(fp, "    <image_data_type>%s</image_data_type>\n",
+	  image_data_type2str(mg->image_data_type));
+  fprintf(fp, "    <radiometry>%s</radiometry>\n", 
+	  radiometry2str(mg->radiometry));
+  fprintf(fp, "    <acquisition_date>%s</acquisition_date>\n",
+	  mg->acquisition_date);
+  fprintf(fp, "    <orbit>%d</orbit>\n", mg->orbit);
+  if (mg->orbit_direction == 'A')
+    fprintf(fp, "    <orbit_direction>ascending</orbit_direction>\n");
+  else if (mg->orbit_direction == 'D')
+    fprintf(fp, "    <orbit_direction>descending</orbit_direction>\n");
+  fprintf(fp, "    <frame>%d</frame>\n", mg->frame);
+  fprintf(fp, "    <band_count>%d</band_count>\n", mg->band_count);
+  fprintf(fp, "    <bands>%s</bands>\n", mg->bands);
+  fprintf(fp, "    <line_count>%d</line_count>\n", mg->line_count);
+  fprintf(fp, "    <sample_count>%d</sample_count>\n", mg->sample_count);
+  fprintf(fp, "    <start_line>%d</start_line>\n", mg->start_line);
+  fprintf(fp, "    <start_sample>%d</start_sample>\n", mg->start_sample);
+  fprintf(fp, "    <x_pixel_size units=\"m\">%-16.11g</x_pixel_size>\n", 
+	  mg->x_pixel_size);
+  fprintf(fp, "    <y_pixel_size units=\"m\">%-16.11g</y_pixel_size>\n", 
+	  mg->y_pixel_size);
+  fprintf(fp, "    <center_latitude units=\"degrees\">%.4lf</center_latitude>"
+	  "\n", mg->center_latitude);
+  fprintf(fp, "    <center_longitude units=\"degrees\">%.4lf"
+	  "</center_longitude>\n", mg->center_longitude);
+  fprintf(fp, "    <re_major units=\"m\">%.3lf</re_major>\n", mg->re_major);
+  fprintf(fp, "    <re_minor units=\"m\">%.3lf</re_minor>\n", mg->re_minor);
+  fprintf(fp, "    <bit_error_rate>%g</bit_error_rate>\n", mg->bit_error_rate);
+  fprintf(fp, "    <missing_lines>%i</missing_lines>\n", mg->missing_lines);
+  fprintf(fp, "    <no_data>%f</no_data>\n", mg->no_data);
+  fprintf(fp, "  </general>\n");
+
+  if (meta->sar) {
+    meta_sar *ms = meta->sar;
+    fprintf(fp, "  <sar>\n");
+    fprintf(fp, "    <polarization>%s</polarization>\n", ms->polarization);
+    if (ms->image_type == 'S')
+      fprintf(fp, "    <image_type>slant range</image_type>\n");
+    else if (ms->image_type == 'G')
+      fprintf(fp, "    <image_type>ground range</image_type>\n");
+    else if (ms->image_type == 'P')
+      fprintf(fp, "    <image_type>projected</image_type>\n");
+    else if (ms->image_type == 'R')
+      fprintf(fp, "    <image_type>georeferenced</image_type>\n");
+    if (ms->look_direction == 'R')
+      fprintf(fp, "    <look_direction>right</look_direction>\n");
+    else if (ms->look_direction == 'L')
+      fprintf(fp, "    <look_direction>left</look_direction>\n");
+    fprintf(fp, "    <look_count>%d</look_count>\n", ms->look_count);
+    fprintf(fp, "    <multilook>%d</multilook>\n", ms->multilook);
+    fprintf(fp, "    <deskewed>%d</deskewed>\n", ms->deskewed);
+    fprintf(fp, "    <original_line_count>%d</original_line_count>\n",
+	    ms->original_line_count);
+    fprintf(fp, "    <original_sample_count>%d</original_sample_count>\n",
+	    ms->original_sample_count);
+    fprintf(fp, "    <line_increment>%-16.11g</line_increment>\n", 
+	    ms->line_increment);
+    fprintf(fp, "    <sample_increment>%-16.11g</sample_increment>\n",
+	    ms->sample_increment);
+    fprintf(fp, "    <range_time_per_pixel units=\"s\">%-16.11g"
+	    "</range_time_per_pixel>\n", ms->range_time_per_pixel);
+    fprintf(fp, "    <azimuth_time_per_pixel units=\"s\">%-16.11g"
+	    "</azimuth_time_per_pixel>\n", ms->azimuth_time_per_pixel);
+    fprintf(fp, "    <slant_range_first_pixel units=\"m\">%.3lf"
+	    "</slant_range_first_pixel>\n", ms->slant_range_first_pixel);
+    fprintf(fp, "    <slant_shift units=\"m\">%-16.11g</slant_shift>\n",
+	    ms->slant_shift);
+    fprintf(fp, "    <time_shift units=\"s\">%-16.11g</time_shift>\n", 
+	    ms->time_shift);
+    fprintf(fp, "    <wavelength units=\"m\">%-16.11g</wavelength>\n", 
+	    ms->wavelength);
+    fprintf(fp, "    <prf units=\"Hz\">%-16.11g</prf>\n", ms->prf);
+    fprintf(fp, "    <earth_radius units=\"m\">%.3lf</earth_radius>\n", 
+	    ms->earth_radius);
+    fprintf(fp, "    <earth_radius_pp units=\"m\">%.3lf</earth_radius_pp>\n",
+	    ms->earth_radius_pp);
+    fprintf(fp, "    <satellite_height units=\"m\">%.3lf</satellite_height>\n",
+	    ms->satellite_height);
+    fprintf(fp, "    <satellite_binary_time>%s</satellite_binary_time>\n",
+	    ms->satellite_binary_time);
+    fprintf(fp, "    <satellite_clock_time>%s</satellite_clock_time>\n",
+	    ms->satellite_clock_time);
+    fprintf(fp, "    <dopRangeCen units=\"Hz\">%-16.11g</dopRangeCen>\n", 
+	    ms->range_doppler_coefficients[0]);
+    fprintf(fp, "    <dopRangeLin units=\"Hz/pixel\">%-16.11g</dopRangeLin>"
+	    "\n", ms->range_doppler_coefficients[1]);
+    fprintf(fp, "    <dopRangeQuad units=\"Hz/(pixel^2)\">%-16.11g"
+	    "</dopRangeQuad>\n", ms->range_doppler_coefficients[2]);
+    fprintf(fp, "    <dopAzCen units=\"Hz\">%-16.11g</dopAzCen>\n",
+	    ms->azimuth_doppler_coefficients[0]);
+    fprintf(fp, "    <dopAzLin units=\"Hz/pixel\">%-16.11g</dopAzLin>\n",
+	    ms->azimuth_doppler_coefficients[1]);
+    fprintf(fp, "    <dopAzQuad units=\"Hz/(pixel^2)\">%-16.11g</dopAzQuad>\n",
+	    ms->azimuth_doppler_coefficients[2]);
+    fprintf(fp, "    <pitch units=\"degrees\">%.4lf</pitch>\n", ms->pitch);
+    fprintf(fp, "    <roll units=\"degrees\">%.4lf</roll>\n", ms->roll);
+    fprintf(fp, "    <yaw units=\"degrees\">%.4lf</yaw>\n", ms->yaw);
+    fprintf(fp, "    <azimuth_bandwidth units=\"Hz\">%-16.11g"
+	    "</azimuth_bandwidth>\n", ms->azimuth_processing_bandwidth);
+    fprintf(fp, "    <chirp_rate units=\"Hz/sec\">%-16.11g</chirp_rate>\n", 
+	    ms->chirp_rate);
+    fprintf(fp, "    <pulse_duration units=\"s\">%-16.11g</pulse_duration>\n",
+	    ms->pulse_duration);
+    fprintf(fp, "    <range_samp_rate units=\"Hz\">%-16.11g</range_samp_rate>"
+	    "\n", ms->range_sampling_rate);
+    for (ii=0; ii<6; ii++)
+      fprintf(fp, "    <incid_a exponent=\"%d\">%-16.11g</incid_a>\n", ii, 
+	      ms->incid_a[ii]);
+    fprintf(fp, "  </sar>\n");
+  }
+
+  if (meta->doppler) {
+    meta_doppler *md = meta->doppler;
+    fprintf(fp, "  <doppler>\n");
+    if (md->type == tsx_doppler) {
+      fprintf(fp, "    <type>TSX</type>\n");
+      fprintf(fp, "    <year>%d</year>\n", md->tsx->year);
+      fprintf(fp, "    <julDay>%d</julDay>\n", md->tsx->julDay);
+      fprintf(fp, "    <second>%lf</second>\n", md->tsx->second);
+      fprintf(fp, "    <doppler_count>%d</doppler_count>\n", 
+	      md->tsx->doppler_count);
+      for (ii=0; ii<md->tsx->doppler_count; ii++) {
+	fprintf(fp,"    <estimate num=\"%d\">\n", ii+1);
+	fprintf(fp,"    <time units=\"s\">%-16.11g</time>\n", 
+		md->tsx->dop[ii].time);
+	fprintf(fp,"    <first_range_time units=\"s\">%-16.11g"
+		"</first_range_time>\n", md->tsx->dop[ii].first_range_time);
+	fprintf(fp,"    <reference_time units=\"s\">%-16.11g</reference_time>"
+		"\n", md->tsx->dop[ii].reference_time);
+	fprintf(fp,"    <polynomial_degree>%d</polynomial_degree>\n",
+		md->tsx->dop[ii].poly_degree);
+	for (kk=0; kk<=md->tsx->dop[ii].poly_degree; kk++)
+	  fprintf(fp, "    <coefficient num=\"%d\">%-16.11g</coefficient>\n",
+		  kk, md->tsx->dop[ii].coefficient[kk]);
+	fprintf(fp, "    </estimate>\n");
+      }
+    }
+    else if (md->type == radarsat2_doppler) {
+      fprintf(fp, "    <type>RADARSAT2</type>\n");
+      fprintf(fp, "    <doppler_count>%d</doppler_count>\n",
+	      md->r2->doppler_count);
+      fprintf(fp, "    <centroid_time units=\"s\">%-16.11g</centroid_time>\n",
+	      md->r2->ref_time_centroid);
+      for (kk=0; kk<md->r2->doppler_count; kk++)
+	fprintf(fp, "    <centroid exponent=\"%d\">%-16.11g</centroid>\n", 
+		kk,md->r2->centroid[kk]);
+      fprintf(fp, "    <rate_time units=\"s\">%-16.11g</rate_time>\n",
+	      md->r2->ref_time_rate);
+      for (kk=0; kk<md->r2->doppler_count; kk++)
+	fprintf(fp, "    <rate exponent=\"%d\">%-16.11g</rate>\n", kk,
+		md->r2->rate[kk]);
+      fprintf(fp, "    <time_first_sample units=\"s\">%-16.11g"
+	      "</time_first_sample>\n", md->r2->time_first_sample);
+    }
+    fprintf(fp, "  </doppler>\n");
+  }
+
+  if (meta->optical) {
+    meta_optical *mo = meta->optical;
+    fprintf(fp,"  <optical>\n");
+    fprintf(fp,"    <pointing_direction>%s</pointing_direction>\n",
+	    mo->pointing_direction);
+    fprintf(fp,"    <off_nadir_angle units=\"degrees\">%.4lf</off_nadir_angle>"
+	    "\n", mo->off_nadir_angle);
+    if (strcmp_case(mo->correction_level, "N") == 0)
+      fprintf(fp,"    <correction_level>uncorrected</correction_level>\n");
+    else if (strcmp_case(mo->correction_level, "R") == 0)
+      fprintf(fp, "   <correction_level>georeferenced</correction_level>\n");
+    else if (strcmp_case(mo->correction_level, "G") == 0)
+      fprintf(fp, "   <correction_level>geocoded</correction_level>\n");
+    else if (strcmp_case(mo->correction_level, "D") == 0)
+      fprintf(fp, "   <correction_level>DEM corrected</correction_level>\n");
+    fprintf(fp, "    <cloud_percentage units=\"percent\">%.1lf"
+	    "</cloud_percentage>\n", mo->cloud_percentage);
+    fprintf(fp, "    <sun_azimuth_angle units=\"degrees\">%.4lf"
+	    "</sun_azimuth_angle>\n", mo->sun_azimuth_angle);
+    fprintf(fp, "    <sun_elevation_angle units=\"degrees\">%.4lf"
+	    "</sun_elevation_angle>\n", mo->sun_elevation_angle);
+    fprintf(fp,"  </optical>\n");
+  }
+
+  if (meta->state_vectors) {
+    meta_state_vectors *mo = meta->state_vectors;
+    fprintf(fp, "  <state>\n");
+    fprintf(fp, "    <year>%d</year>\n", mo->year);
+    fprintf(fp, "    <julDay>%d</julDay>\n", mo->julDay);
+    fprintf(fp, "    <second units=\"s\">%-16.11g</second>\n", mo->second);
+    fprintf(fp, "    <vector_count>%d</vector_count>\n", mo->vector_count);
+    for (ii=0; ii<mo->vector_count; ii++) {
+      fprintf(fp, "    <vector num=\"%d\">\n", ii+1);
+      fprintf(fp, "      <time units=\"s\">%-16.11g</time>\n", 
+	      mo->vecs[ii].time);
+      fprintf(fp, "      <posX units=\"m\">%.3lf</posX>\n",
+	      mo->vecs[ii].vec.pos.x);
+      fprintf(fp, "      <posY units=\"m\">%.3lf</posY>\n",
+	      mo->vecs[ii].vec.pos.y);
+      fprintf(fp, "      <posZ units=\"m\">%.3lf</posZ>\n",
+	      mo->vecs[ii].vec.pos.z);
+      fprintf(fp, "      <velX units=\"m/s\">%.3lf</velX>\n",
+	      mo->vecs[ii].vec.vel.x);
+      fprintf(fp, "      <velY units=\"m/s\">%.3lf</velY>\n",
+	      mo->vecs[ii].vec.vel.y);
+      fprintf(fp, "      <velZ units=\"m/s\">%.3lf</velZ>\n",
+	      mo->vecs[ii].vec.vel.z);
+      fprintf(fp, "    </vector>\n");
+    }
+    fprintf(fp, "  </state>\n");
+  }
+
+  if (meta->projection) {
+    meta_projection *mp = meta->projection;
+    fprintf(fp, "  <projection>\n");
+    if (mp->type == UNIVERSAL_TRANSVERSE_MERCATOR)
+      fprintf(fp, "    <type>UNIVERSAL_TRANSVERSE_MERCATOR</type>\n");
+    else if (mp->type == POLAR_STEREOGRAPHIC)
+      fprintf(fp, "    <type>POLAR_STEREOGRAPHIC</type>\n");
+    else if (mp->type == ALBERS_EQUAL_AREA)
+      fprintf(fp, "    <type>ALBERS_CONICAL_EQUAL_AREA</type>\n");
+    else if (mp->type == LAMBERT_CONFORMAL_CONIC)
+      fprintf(fp, "    <type>LAMBERT_CONFORMAL_CONIC</type>\n");
+    else if (mp->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)
+      fprintf(fp, "    <type>LAMBERT_AZIMUTHAL_EQUAL_AREA</type>\n");
+    else if (mp->type == STATE_PLANE)
+      fprintf(fp, "    <type>STATE_PLANE</type>\n");
+    else if (mp->type == SCANSAR_PROJECTION)
+      fprintf(fp, "    <type>SCANSAR_PROJECTION</type>\n");
+    else if (mp->type == LAT_LONG_PSEUDO_PROJECTION)
+      fprintf(fp, "    <type>LAT_LONG_PSEUDO_PROJECTION</type>\n");
+    else if (mp->type == MERCATOR)
+      fprintf(fp, "    <type>MERCATOR</type>\n");
+    else if (mp->type == EQUI_RECTANGULAR)
+      fprintf(fp, "    <type>EQUI_RECTANGULAR</type>\n");
+    else if (mp->type == SINUSOIDAL)
+      fprintf(fp, "    <type>SINUSOIDAL</type>\n");
+    else if (mp->type == UNKNOWN_PROJECTION)
+      fprintf(fp, "    <type>UNKNOWN_PROJECTION</type>\n");
+    if (mp->type != LAT_LONG_PSEUDO_PROJECTION) {
+      fprintf(fp, "    <startX units=\"m\">%.3lf</startX>\n", mp->startX);
+      fprintf(fp, "    <startY units=\"m\">%.3lf</startY>\n", mp->startY);
+      fprintf(fp, "    <perX units=\"m\">%.3lf</perX>\n", mp->perX);
+      fprintf(fp, "    <perY units=\"m\">%.3lf</perY>\n", mp->perY);
+    }
+    else {
+      fprintf(fp, "    <startX units=\"degrees\">%.4lf</startX>\n", 
+	      mp->startX);
+      fprintf(fp, "    <startY units=\"degrees\">%.4lf</startY>\n", 
+	      mp->startY);
+      fprintf(fp, "    <perX units=\"degrees\">%-16.11g</perX>\n", mp->perX);
+      fprintf(fp, "    <perY units=\"degrees\">%-16.11g</perY>\n", mp->perY);
+    }
+    fprintf(fp, "    <units>%s</units>", mp->units);
+    if (mp->hem == 'N')
+      fprintf(fp, "    <hemisphere>northern</hemisphere>\n");
+    else if (mp->hem == 'S')
+      fprintf(fp, "    <hemisphere>southern</hemisphere>\n");
+    fprintf(fp, "    <spheroid>%s</spheroid>\n", 
+	    spheroid_toString(mp->spheroid));
+    fprintf(fp, "    <re_major units=\"m\">%.3lf</re_major>\n", mp->re_major);
+    fprintf(fp, "    <re_minor units=\"m\">%.3lf</re_minor>\n", mp->re_minor);
+    fprintf(fp, "    <datum>%s</datum>\n",
+	    datum_toString(meta->projection->datum));
+    fprintf(fp, "    <height units=\"m\">%.3lf</height>\n", mp->height);
+    if (mp->type == SCANSAR_PROJECTION) {
+      fprintf(fp, "    <scansar_projection>\n");
+      fprintf(fp, "      <rlocal units=\"m\">%.3lf</rlocal>\n", 
+	      mp->param.atct.rlocal);
+      fprintf(fp, "      <alpha1 units=\"degrees\">%.4lf</alpha1>\n", 
+	      mp->param.atct.alpha1);
+      fprintf(fp, "      <alpha2 units=\"degrees\">%.4lf</alpha2>\n",
+	      mp->param.atct.alpha2);
+      fprintf(fp, "      <alpha3 units=\"degrees\">%.4lf</alpha3>\n",
+	      mp->param.atct.alpha3);
+      fprintf(fp, "    </scansar_projection>\n");
+    }
+    else if (mp->type == ALBERS_EQUAL_AREA) {
+      fprintf(fp, "    <albers_conical_equal_area>\n");
+      fprintf(fp, "      <std_parallel1 units=\"degrees\">%.4lf"
+	      "</std_parallel1>\n", mp->param.albers.std_parallel1);
+      fprintf(fp, "      <std_parallel2 units=\"degrees\">%.4lf"
+	      "</std_parallel2>\n", mp->param.albers.std_parallel2);
+      fprintf(fp, "      <center_meridian units=\"degrees\">%.4lf"
+	      "</center_meridian>\n", mp->param.albers.center_meridian);
+      fprintf(fp, "      <orig_latitude units=\"degrees\">%.4lf"
+	      "</orig_latitude>\n", mp->param.albers.orig_latitude);
+      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+	      mp->param.albers.false_easting);
+      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+	      mp->param.albers.false_northing);
+      fprintf(fp,"    </albers_conical_equal_area>\n");
+    }
+    else if (mp->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
+      fprintf(fp, "    <lambert_azimuthal_equal_area>\n");
+      fprintf(fp, "      <center_lat units=\"degrees\">%.4lf</center_lat>\n",
+	      mp->param.lamaz.center_lat);
+      fprintf(fp, "      <center_lon units=\"degrees\">%.4lf</center_lon>\n",
+	      mp->param.lamaz.center_lon);
+      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+	      mp->param.lamaz.false_easting);
+      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+	      mp->param.lamaz.false_northing);
+      fprintf(fp, "    </lambert_azimuthal_equal_area>\n");
+    }
+    else if (mp->type == LAMBERT_CONFORMAL_CONIC) {
+      fprintf(fp, "    <lambert_conformal_conic>\n");
+      fprintf(fp, "      <plat1 units=\"degrees\">%.4lf</plat1>\n",
+	      mp->param.lamcc.plat1);
+      fprintf(fp, "      <plat2 units=\"degrees\">%.4lf</plat2>\n",
+	      mp->param.lamcc.plat2);
+      fprintf(fp, "      <lat0 units=\"degrees\">%.4lf</lat0>\n",
+	      mp->param.lamcc.lat0);
+      fprintf(fp, "      <lon0 units=\"degrees\">%.4lf</lon0>\n",
+	      mp->param.lamcc.lon0);
+      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+	      mp->param.lamcc.false_easting);
+      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+	      mp->param.lamcc.false_northing);
+      fprintf(fp, "      <scale_factor>%-16.11g</scale_factor>\n",
+	      mp->param.lamcc.scale_factor);
+      fprintf(fp, "    </lambert_conformal_conic>\n");
+    }
+    else if (mp->type == POLAR_STEREOGRAPHIC) {
+      fprintf(fp, "    <polar_stereographic>\n");
+      fprintf(fp, "      <slat units=\"degrees\">%.4lf</slat>\n",
+	      mp->param.ps.slat);
+      fprintf(fp, "      <slon units=\"degrees\">%.4lf</slon>\n",
+	      mp->param.ps.slon);
+      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+	      mp->param.ps.false_easting);
+      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+	      mp->param.ps.false_northing);
+      fprintf(fp, "    </polar_stereographic>\n");
+    }
+    else if (mp->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+      fprintf(fp, "    <universal_transverse_mercator>\n");
+      fprintf(fp, "      <zone>%d</zone>\n", mp->param.utm.zone);
+      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+	      mp->param.utm.false_easting);
+      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+	      mp->param.utm.false_northing);
+      fprintf(fp, "      <latitude units=\"degrees\">%.4lf</latitude>\n",
+	      mp->param.utm.lat0);
+      fprintf(fp, "      <longitude units=\"degrees\">%.4lf</longitude>\n",
+	      mp->param.utm.lon0);
+      fprintf(fp, "      <scale_factor>%-16.11g</scale_factor>\n", 
+	      mp->param.utm.scale_factor);
+      fprintf(fp, "    </universal_transverse_mercator>\n");
+    }
+    else if (mp->type == STATE_PLANE) {
+      fprintf(fp, "    <state_plane>\n");
+      fprintf(fp, "      <zone>%d</zone>\n", mp->param.state.zone);
+      fprintf(fp, "    </state_plane>\n");
+    }
+    else if (mp->type == MERCATOR) {
+      fprintf(fp, "    <mercator>\n");
+      fprintf(fp, "      <standard_parallel units=\"degrees\">%.4lf"
+	      "</standard_parallel>\n", mp->param.mer.standard_parallel);
+      fprintf(fp, "      <central_meridian units=\"degrees\">%.4lf"
+	      "</central_meridian>\n", mp->param.mer.central_meridian);
+      fprintf(fp, "      <orig_latitude units=\"degress\">%.4lf"
+	      "</orig_latitude>\n", mp->param.mer.orig_latitude);
+      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+	      mp->param.mer.false_easting);
+      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+	      mp->param.mer.false_northing);
+      fprintf(fp, "    </mercator>\n");
+    }
+    else if (mp->type == EQUI_RECTANGULAR) {
+      fprintf(fp, "    <equi_rectangular>\n");
+      fprintf(fp, "      <central_meridian units=\"degrees\">%.4lf"
+	      "</central_meridian>\n", mp->param.eqr.central_meridian);
+      fprintf(fp, "      <orig_latitude units=\"degrees\">%.4lf"
+	      "</orig_latitude>\n", mp->param.eqr.orig_latitude);
+      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+	      mp->param.eqr.false_easting);
+      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+	      mp->param.eqr.false_northing);
+      fprintf(fp, "    </equi_rectangular>\n");
+    }
+    fprintf(fp,"  </projection>\n");
+  }
+
+  if (meta->transform) {
+    meta_transform *mt = meta->transform;
+    fprintf(fp, "  <transform>\n");
+    fprintf(fp, "    <parameter_count>%d</parameter_count>\n",
+	    mt->parameter_count);
+    for (ii=0; ii<mt->parameter_count; ii++)
+      fprintf(fp, "    <phi coefficient=\"%d\">%-16.11g</phi>\n", ii,
+	      mt->y[ii]);
+    for (ii=0; ii<mt->parameter_count; ii++)
+      fprintf(fp, "    <lambda coefficient=\"%d\">%-16.11g</lambda>\n", ii,
+	      mt->x[ii]);
+    if (mt->parameter_count == 25) {
+      fprintf(fp, "    <origin_pixel>%-16.11g</origin_pixel>\n", 
+	      mt->origin_pixel);
+      fprintf(fp, "    <origin_line>%-16.11g</origin_line>\n", 
+	      mt->origin_line);
+    }
+    for (ii=0; ii<mt->parameter_count; ii++)
+      fprintf(fp, "    <i coefficient=\"%d\">%-16.11g</i>\n", ii, mt->s[ii]);
+    for (ii=0; ii<mt->parameter_count; ii++)
+      fprintf(fp, "    <j coeeficient=\"%d\">%-16.11g</j>\n", ii, mt->l[ii]);
+    if (mt->parameter_count == 25) {
+      fprintf(fp, "    <origin_lat units=\"degrees\">%.4lf</origin_lat>\n", 
+	      mt->origin_lat);
+      fprintf(fp, "    <origin_lon units=\"degrees\">%.4lf</origin_lon>\n", 
+	      mt->origin_lon);
+    }
+    for (ii=0; ii<10; ++ii)
+      fprintf(fp, "    <map_a coefficient=\"%d\">%-16.11g</map_a>\n", ii,
+	      mt->map2ls_a[ii]);
+    for (ii=0; ii<10; ++ii)
+      fprintf(fp, "    <map_b coefficient=\"%d\">%-16.11g</map_b>\n", ii,
+	      mt->map2ls_b[ii]);
+    fprintf(fp, "  </transform>\n");
+  }
+
+  if (meta->airsar) {
+    meta_airsar *ma = meta->airsar;
+    fprintf(fp, "  <airsar>\n");
+    fprintf(fp, "    <scale_factor>%-16.11g</scale_factor>\n", 
+	    ma->scale_factor);
+    fprintf(fp, "    <gps_altitude units=\"m\">%.3lf</gps_altitude>\n", 
+	    ma->gps_altitude);
+    fprintf(fp, "    <lat_peg_point units=\"degrees\">%.4lf</lat_peg_point>"
+	    "\n", ma->lat_peg_point);
+    fprintf(fp, "    <lon_peg_point units=\"degrees\">%.4lf</lon_peg_point>"
+	    "\n", ma->lon_peg_point);
+    fprintf(fp, "    <head_peg_point units=\"degrees\">%.4lf"
+	    "</head_peg_point>\n", ma->head_peg_point);
+    fprintf(fp, "    <along_track_offset units=\"m\">%.3lf"
+	    "</along_track_offset>\n", ma->along_track_offset);
+    fprintf(fp, "    <cross_track_offset units=\"m\">%.3lf"
+	    "</cross_track_offset>\n", ma->cross_track_offset);
+    fprintf(fp, "  </airsar>\n");
+  }
+
+  if (meta->stats) {
+    meta_statistics *ms = meta->stats;
+    fprintf(fp, "  <statistics>\n");
+    fprintf(fp, "    <band_count>%d</band_count>\n", ms->band_count);
+    for (ii=0; ii<ms->band_count; ii++) {
+      fprintf(fp, "    <band_stats num=\"%d\">\n", ii+1);
+      fprintf(fp, "      <band_id>%s</band_id>\n", ms->band_stats[ii].band_id);
+      fprintf(fp, "      <min>%-16.11g</min>\n", ms->band_stats[ii].min);
+      fprintf(fp, "      <max>%-16.11g</max>\n", ms->band_stats[ii].max);
+      fprintf(fp, "      <mean>%-16.11g</mean>\n", ms->band_stats[ii].mean);
+      fprintf(fp, "      <rmse>%-16.11g</rmse>\n", ms->band_stats[ii].rmse);
+      fprintf(fp, "      <std_deviation>%-16.11g</std_deviation>\n",
+	      ms->band_stats[ii].std_deviation);
+      fprintf(fp, "      <mask>%-16.11g</mask>\n", ms->band_stats[ii].mask);
+      fprintf(fp, "    </band_stats>\n");
+    }
+    fprintf(fp, "  </statistics>\n");
+  }
+    
+  if (meta->location) {
+    meta_location *ml = meta->location;
+    fprintf(fp, "  <location>\n");
+    fprintf(fp, "    <lat_start_near_range>%.4lf</lat_start_near_range>\n",
+	    ml->lat_start_near_range);
+    fprintf(fp, "    <lon_start_near_range>%.4lf</lon_start_near_range>\n",
+	    ml->lon_start_near_range);
+    fprintf(fp, "    <lat_start_far_range>%.4lf</lat_start_far_range>\n",
+	    ml->lat_start_far_range);
+    fprintf(fp, "    <lon_start_far_range>%.4lf</lon_start_far_range>\n",
+	    ml->lon_start_far_range);
+    fprintf(fp, "    <lat_end_near_range>%.4lf</lat_end_near_range>\n",
+	    ml->lat_end_near_range);
+    fprintf(fp, "    <lon_end_near_range>%.4lf</lon_end_near_range>\n",
+	    ml->lon_end_near_range);
+    fprintf(fp, "    <lat_end_far_range>%.4lf</lat_end_far_range>\n",
+	    ml->lat_end_far_range);
+    fprintf(fp, "    <lon_end_far_range>%.4lf</lon_end_far_range>\n",
+	    ml->lon_end_far_range);
+    fprintf(fp, "  </location>\n");
+  }
+
+  if (meta->calibration) {
+    meta_calibration *mc = meta->calibration;
+    fprintf(fp,"  <calibration>\n");
+    if (mc->type == asf_cal) {
+      fprintf(fp, "    <type>ASF</type>\n");
+      fprintf(fp, "    <a coefficient=\"0\">%-16.11g</a>\n", mc->asf->a0);
+      fprintf(fp, "    <a coefficient=\"1\">%-16.11g</a>\n", mc->asf->a1);
+      fprintf(fp, "    <a coefficient=\"2\">%-16.11g</a>\n", mc->asf->a2);
+      fprintf(fp, "    <sample_count>%d</sample_count>\n",
+	      mc->asf->sample_count);
+      for (ii=0; ii<256; ii++)
+	fprintf(fp, "    <noise element=\"%d\">%-16.11g</noise>\n", 
+		ii, mc->asf->noise[ii]);
+    }
+    else if (mc->type == asf_scansar_cal) {
+      fprintf(fp, "    <type>ASF_SCANSAR</type>\n");
+      fprintf(fp, "    <a coefficient=\"0\">%-16.11g</a>\n", 
+	      mc->asf_scansar->a0);
+      fprintf(fp, "    <a coefficient=\"1\">%-16.11g</a>\n", 
+	      mc->asf_scansar->a1);
+      fprintf(fp, "    <a coefficient=\"2\">%-16.11g</a>\n",
+	      mc->asf_scansar->a2);
+      for (ii=0; ii<256; ii++)
+	fprintf(fp, "    <noise element=\"%d\">%-16.11g</noise>\n", 
+		ii, mc->asf_scansar->noise[ii]);
+    }
+    else if (mc->type == esa_cal) {
+      fprintf(fp, "    <type>ESA</type>\n");
+      fprintf(fp, "    <k>%-16.11g</k>\n", mc->esa->k);
+      fprintf(fp, "    <ref_incid>%-16.11g</ref_incid>\n", mc->esa->ref_incid);
+    }
+    else if (mc->type == rsat_cal) {
+      fprintf(fp, "    <type>RSAT</type>\n");
+      fprintf(fp, "    <table_entries>%d</table_entries>\n", mc->rsat->n);
+      for (ii=0; ii<mc->rsat->n; ii++)
+	fprintf(fp, "    <lut coefficient=\"%d\">%-16.11g</lut>\n", 
+		ii, mc->rsat->lut[ii]);
+      fprintf(fp, "    <sample_inc>%d</sample_inc>\n", mc->rsat->samp_inc);
+      fprintf(fp, "    <a3>%-16.11g</a3>\n", mc->rsat->a3);
+      fprintf(fp, "    <slc>%d</slc>\n", mc->rsat->slc);
+      fprintf(fp, "    <focus>%d</focus>\n", mc->rsat->focus);
+    }
+    else if (mc->type == alos_cal) {
+      fprintf(fp, "    <type>ALOS</type>\n");
+      if (!ISNAN(mc->alos->cf_hh))
+	fprintf(fp, "    <cf_hh>%-16.11g</cf_hh>\n", mc->alos->cf_hh);
+      if (!ISNAN(mc->alos->cf_hv))
+	fprintf(fp, "    <cf_hv>%-16.11g</cf_hv>\n", mc->alos->cf_hv);
+      if (!ISNAN(mc->alos->cf_vh))
+	fprintf(fp, "    <cf_vh>%-16.11g</cf_vh>\n", mc->alos->cf_vh);
+      if (!ISNAN(mc->alos->cf_vv))
+	fprintf(fp, "    <cf_vv>%-16.11g</cf_vv>\n", mc->alos->cf_vv);
+    }
+    fprintf(fp, "  </calibration>\n");
+  }
+
+  if (meta->colormap) {
+    meta_colormap *mc = meta->colormap;
+    fprintf(fp, "  <colormap>\n");
+    fprintf(fp, "    <look_up_table>%s</look_up_table>\n", mc->look_up_table);
+    fprintf(fp, "    <band_id>%s</band_id>\n", mc->band_id);
+    fprintf(fp, "    <num_elements>%d</num_elements>\n", mc->num_elements);
+    for (ii=0; ii<mc->num_elements; ii++)
+      fprintf(fp, "    <idx element=\"%03d\">%03d  %03d  %03d</idx>\n",
+	      ii, mc->rgb[ii].red, mc->rgb[ii].green, mc->rgb[ii].blue);
+    fprintf(fp, "  </colormap>\n");
+  }
+
+  if (meta->insar) {
+    meta_insar *mi = meta->insar;
+    fprintf(fp, "  <insar>\n");
+    fprintf(fp, "    <processor>%s</processor>\n", mi->processor);
+    fprintf(fp, "    <master_image>%s</master_image>\n", mi->master_image);
+    fprintf(fp, "    <slave_image>%s</slave_image>\n", mi->slave_image);
+    fprintf(fp, "    <center_look_angle units=\"degrees\">%.4lf"
+	    "</center_look_angle>\n", mi->center_look_angle);
+    fprintf(fp, "    <doppler units=\"Hz\">%-16.11g</doppler>\n", mi->doppler);
+    fprintf(fp, "    <doppler_rate units=\"Hz/m\">%-16.11g</doppler_rate>\n",
+	    mi->doppler_rate);
+    fprintf(fp, "    <baseline_length units=\"m\">%.1lf</baseline_length>\n", 
+	    mi->baseline_length);
+    fprintf(fp, "    <baseline_parallel units=\"m\">%.1lf</baseline_parallel>"
+	    "\n", mi->baseline_parallel);
+    fprintf(fp, "    <baseline_parallel_rate units=\"m/s\">%-16.11g"
+	    "</baseline_parallel_rate>\n", mi->baseline_parallel_rate);
+    fprintf(fp, "    <baseline_perpendicular units=\"m\">%.1lf"
+	    "</baseline_perpendicular>\n", mi->baseline_perpendicular);
+    fprintf(fp, "    <baseline_perpendicular_rate units=\"m/s\">%-16.11g"
+	    "</baseline_perpendicular_rate>\n", 
+	    mi->baseline_perpendicular_rate);
+    fprintf(fp, "    <baseline_temporal units=\"days\">%d</baseline_temporal>"
+	    "\n", mi->baseline_temporal);
+    fprintf(fp, "    <baseline_critical units=\"m\">%.1lf</baseline_critical>"
+	    "\n", mi->baseline_critical);
+    fprintf(fp, "  </insar>\n");
+  }
+
+  fprintf(fp, "</metadata>\n");
+  FCLOSE(fp);
 }

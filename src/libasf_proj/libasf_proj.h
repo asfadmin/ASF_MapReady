@@ -18,6 +18,7 @@ typedef enum {
   LAT_LONG_PSEUDO_PROJECTION,
   MERCATOR,
   EQUI_RECTANGULAR,
+  SINUSOIDAL,
   UNKNOWN_PROJECTION
 } projection_type_t;
 

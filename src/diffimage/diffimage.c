@@ -223,7 +223,6 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
                             int num_bands, shift_data_t *shift,
                            stats_t *stats1, stats_t *stats2);
 void diffErrOut(char *outputFile, char *err_msg);
-char *data_type2str(data_type_t data_type);
 void get_tiff_info_from_file(char *file, tiff_data_t *t);
 void get_tiff_info(TIFF *tif, tiff_data_t *t);
 void get_geotiff_keys(char *file, geotiff_data_t *g);
@@ -2413,50 +2412,6 @@ void diffErrOut(char *outputFile, char *err_msg)
 
       fprintf(stderr, "-----------------------------------------------\n\n");
   }
-}
-
-// User must free the returned string
-char *data_type2str(data_type_t data_type)
-{
-  char *retstr = (char*)CALLOC(64, sizeof(char));
-
-  switch (data_type) {
-    case BYTE:
-      strcpy(retstr, "BYTE");
-      break;
-    case INTEGER16:
-      strcpy(retstr, "INTEGER16");
-      break;
-    case INTEGER32:
-      strcpy(retstr, "INTEGER32");
-      break;
-    case REAL32:
-      strcpy(retstr, "REAL32");
-      break;
-    case REAL64:
-      strcpy(retstr, "REAL64");
-      break;
-    case COMPLEX_BYTE:
-      strcpy(retstr, "COMPLEX_BYTE");
-      break;
-    case COMPLEX_INTEGER16:
-      strcpy(retstr, "COMPLEX_INTEGER16");
-      break;
-    case COMPLEX_INTEGER32:
-      strcpy(retstr, "COMPLEX_INTEGER32");
-      break;
-    case COMPLEX_REAL32:
-      strcpy(retstr, "COMPLEX_REAL32");
-      break;
-    case COMPLEX_REAL64:
-      strcpy(retstr, "COMPLEX_REAL64");
-      break;
-    default:
-      strcpy(retstr, "UNKNOWN");
-      break;
-  }
-
-  return retstr;
 }
 
 void get_tiff_info_from_file(char *file, tiff_data_t *t)

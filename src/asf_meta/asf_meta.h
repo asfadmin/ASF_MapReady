@@ -518,7 +518,11 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta);
 meta_parameters *meta_copy(meta_parameters *src);
 
 /* In meta_write.c */
+char *data_type2str(data_type_t data_type);
+char *image_data_type2str(image_data_type_t image_data_type);
+char *radiometry2str(radiometry_t radiometry);
 void meta_write(meta_parameters *meta,const char *outName);
+void meta_write_xml(meta_parameters *meta, const char *file_name);
 
 /* Write  sprocket style metadata */
 void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
