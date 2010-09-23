@@ -11,6 +11,7 @@
 #include "libasf_proj.h"
 #include "asf_nan.h"
 #include "netcdf.h"
+#include "hdf5.h"
 
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
@@ -71,11 +72,19 @@ typedef enum {
 
 // netCDF pointer structure
 typedef struct {
-  //int dimension_count;          // Number of dimensions in netCDF file
   int ncid;                     // Pointer to the netCDF file
   int var_count;                // Number of variables
   int *var_id;                  // Variable IDs
 } netcdf_t;
+
+// HDF5 pointer structure
+typedef struct {
+  hid_t file;                   // File identifier
+  hid_t space;                  // Data space identifier
+  int band_count;               // Number of bands
+  hid_t *data_amp;              // Array of data set identifiers (amplitude)
+  hid_t *data_phase;            // Array of data set identifiers (phase)
+} hdf_t;
 
 /* Structure to hold elements of the command line.  */
 typedef struct {
@@ -192,7 +201,11 @@ int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta
 // Prototypes from export_netcdf.c
 netcdf_t *initialize_netcdf_file(const char *output_file, 
 				 meta_parameters *meta);
-void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md, float *nc);
+void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md);
+
+// Prototypes from export_hdf.c
+hdf_t *initialize_hdf5_file(const char *output_file_name, meta_parameters *md);
+void finalize_hdf5_file(hdf_t *hdf);
 
 // Prototypes from key.c
 double spheroid_diff_from_axis (spheroid_type_t spheroid,

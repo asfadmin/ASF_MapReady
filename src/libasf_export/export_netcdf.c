@@ -30,11 +30,69 @@
 #define RES 16
 #define MAX_PTS 256
 
+struct double_meters {
+  double value;
+  char *units;
+};
+
+struct double_seconds {
+  double value;
+  char *units;
+};
+
+struct double_latitude {
+  double value;
+  char *units;
+};
+
+struct double_longitude {
+  double value;
+  char *units;
+};
+
+struct double_hertz {
+  double value;
+  char *units;
+};
+
+struct double_hertz_pixel {
+  double value;
+  char *units;
+};
+
+struct double_hertz_pixel2 {
+  double value;
+  char *units;
+};
+
+struct vector_time {
+  int number;
+  double time;
+  char *units;
+};
+
+struct position {
+  int number;
+  double x;
+  double y;
+  double z;
+  char *units;
+};
+
+struct velocity {
+  int number;
+  double x;
+  double y;
+  double z;
+  char *units;
+};
+
 netcdf_t *initialize_netcdf_file(const char *output_file, 
 				 meta_parameters *meta)
 {
   int ii, status, ncid, var_id;
   int dim_xgrid_id, dim_ygrid_id, dim_lat_id, dim_lon_id, dim_time_id;
+  char *spatial_ref=NULL, *datum=NULL, *spheroid=NULL;
 
   // Assign parameters
   int projected = FALSE;
@@ -60,221 +118,244 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
   netcdf->var_id = (int *) MALLOC(sizeof(int)*variable_count);
 
   // Create the actual file
-  status = nc_create(output_file, NC_CLOBBER|NC_NETCDF4|NC_CLASSIC_MODEL, 
-		     &ncid);
+  //status = nc_create(output_file, NC_CLOBBER|NC_NETCDF4|NC_CLASSIC_MODEL, 
+  //	     &ncid);
+  status = nc_create(output_file, NC_CLOBBER|NC_NETCDF4, &ncid);
   netcdf->ncid = ncid;
   if (status != NC_NOERR)
     asfPrintError("Could not open netCDF file (%s).\n", nc_strerror(status));
 
+  // Define compound data type for metadata values with units
+  nc_type met_id;
+  nc_def_compound(ncid, sizeof(struct double_meters), "value_met", &met_id);
+  nc_insert_compound(ncid, met_id, "value", 
+		     NC_COMPOUND_OFFSET(struct double_meters, value), 
+		     NC_DOUBLE);
+  nc_insert_compound(ncid, met_id, "units", 
+		     NC_COMPOUND_OFFSET(struct double_meters, units), 
+		     NC_STRING);
+  struct double_meters metCom[1];
+  metCom[0].units = (char *) MALLOC(sizeof(char)*25);
+  strcpy(metCom[0].units, "meters");
+
+  nc_type sec_id;
+  nc_def_compound(ncid, sizeof(struct double_seconds), "value_sec", &sec_id);
+  nc_insert_compound(ncid, sec_id, "value", 
+		     NC_COMPOUND_OFFSET(struct double_seconds, value), 
+		     NC_DOUBLE);
+  nc_insert_compound(ncid, sec_id, "units", 
+		     NC_COMPOUND_OFFSET(struct double_seconds, units), 
+		     NC_STRING);
+  struct double_seconds secCom[1];
+  secCom[0].units = (char *) MALLOC(sizeof(char)*25);
+  strcpy(secCom[0].units, "seconds");
+
+  nc_type lat_id;
+  nc_def_compound(ncid, sizeof(struct double_latitude), "value_lat", &lat_id);
+  nc_insert_compound(ncid, lat_id, "value", 
+		     NC_COMPOUND_OFFSET(struct double_latitude, value), 
+		     NC_DOUBLE);
+  nc_insert_compound(ncid, lat_id, "units", 
+		     NC_COMPOUND_OFFSET(struct double_latitude, units), 
+		     NC_STRING);
+  struct double_latitude latCom[1];
+  latCom[0].units = (char *) MALLOC(sizeof(char)*25);
+  strcpy(latCom[0].units, "degrees_north");
+
+  nc_type lon_id;
+  nc_def_compound(ncid, sizeof(struct double_longitude), "value_lon", &lon_id);
+  nc_insert_compound(ncid, lon_id, "value", 
+		     NC_COMPOUND_OFFSET(struct double_longitude, value), 
+		     NC_DOUBLE);
+  nc_insert_compound(ncid, lon_id, "units", 
+		     NC_COMPOUND_OFFSET(struct double_longitude, units), 
+		     NC_STRING);
+  struct double_seconds lonCom[1];
+  lonCom[0].units = (char *) MALLOC(sizeof(char)*25);
+  strcpy(lonCom[0].units, "degrees_east");
+
+  nc_type hz_id;
+  nc_def_compound(ncid, sizeof(struct double_hertz), "value_hz", &hz_id);
+  nc_insert_compound(ncid, hz_id, "value", 
+		     NC_COMPOUND_OFFSET(struct double_hertz, value), 
+		     NC_DOUBLE);
+  nc_insert_compound(ncid, hz_id, "units", 
+		     NC_COMPOUND_OFFSET(struct double_hertz, units), 
+		     NC_STRING);
+  struct double_hertz hzCom[1];
+  hzCom[0].units = (char *) MALLOC(sizeof(char)*25);
+  strcpy(hzCom[0].units, "hertz");
+
+  nc_type hz2_id;
+  nc_def_compound(ncid, sizeof(struct double_hertz_pixel), "value_hz_pix", 
+		  &hz2_id);
+  nc_insert_compound(ncid, hz2_id, "value", 
+		     NC_COMPOUND_OFFSET(struct double_hertz_pixel, value), 
+		     NC_DOUBLE);
+  nc_insert_compound(ncid, hz2_id, "units", 
+		     NC_COMPOUND_OFFSET(struct double_hertz_pixel, units), 
+		     NC_STRING);
+  struct double_hertz_pixel hz2Com[1];
+  hz2Com[0].units = (char *) MALLOC(sizeof(char)*25);
+  strcpy(hz2Com[0].units, "hertz per pixel");
+
+  nc_type hz3_id;
+  nc_def_compound(ncid, sizeof(struct double_hertz_pixel2), "value_hz_pix2", 
+		  &hz3_id);
+  nc_insert_compound(ncid, hz3_id, "value", 
+		     NC_COMPOUND_OFFSET(struct double_hertz_pixel2, value), 
+		     NC_DOUBLE);
+  nc_insert_compound(ncid, hz3_id, "units", 
+		     NC_COMPOUND_OFFSET(struct double_hertz_pixel2, units), 
+		     NC_STRING);
+  struct double_hertz_pixel2 hz3Com[1];
+  hz3Com[0].units = (char *) MALLOC(sizeof(char)*25);
+  strcpy(hz3Com[0].units, "hertz per square pixel");
+
+  int vector_count;
+  if (meta->state_vectors)
+    vector_count = meta->state_vectors->vector_count;
+  else
+    vector_count = 1;
+  nc_type vec_time_id, pos_id, vel_id;
+  struct vector_time vecTimeCom[vector_count];
+  struct position posCom[vector_count];
+  struct position velCom[vector_count];
+  if (meta->state_vectors) {
+    nc_def_compound(ncid, sizeof(struct vector_time), "vector_time", 
+		    &vec_time_id);
+    nc_insert_compound(ncid, vec_time_id, "number",
+		       NC_COMPOUND_OFFSET(struct vector_time, number), NC_INT);
+    nc_insert_compound(ncid, vec_time_id, "time", 
+		       NC_COMPOUND_OFFSET(struct vector_time, time), 
+		       NC_DOUBLE);
+    nc_insert_compound(ncid, vec_time_id, "units", 
+		       NC_COMPOUND_OFFSET(struct vector_time, units), 
+		       NC_STRING);
+    for (ii=0; ii<vector_count; ii++) {
+      vecTimeCom[ii].units = (char *) MALLOC(sizeof(char)*25);
+      strcpy(vecTimeCom[ii].units, "seconds");
+    }
+    
+    nc_def_compound(ncid, sizeof(struct position), "position", &pos_id);
+    nc_insert_compound(ncid, pos_id, "number",
+		       NC_COMPOUND_OFFSET(struct position, number), NC_INT);
+    nc_insert_compound(ncid, pos_id, "x", 
+		       NC_COMPOUND_OFFSET(struct position, x), NC_DOUBLE);
+    nc_insert_compound(ncid, pos_id, "y", 
+		       NC_COMPOUND_OFFSET(struct position, y), NC_DOUBLE);
+    nc_insert_compound(ncid, pos_id, "z", 
+		       NC_COMPOUND_OFFSET(struct position, z), NC_DOUBLE);
+    nc_insert_compound(ncid, pos_id, "units", 
+		       NC_COMPOUND_OFFSET(struct position, units), NC_STRING);
+    for (ii=0; ii<meta->state_vectors->vector_count; ii++) {
+      posCom[ii].units = (char *) MALLOC(sizeof(char)*25);
+      strcpy(posCom[ii].units, "meters");
+    }
+    
+    nc_def_compound(ncid, sizeof(struct velocity), "velocity", &vel_id);
+    nc_insert_compound(ncid, vel_id, "number",
+		       NC_COMPOUND_OFFSET(struct position, number), NC_INT);
+    nc_insert_compound(ncid, vel_id, "x", 
+		       NC_COMPOUND_OFFSET(struct position, x), NC_DOUBLE);
+    nc_insert_compound(ncid, vel_id, "y", 
+		       NC_COMPOUND_OFFSET(struct position, y), NC_DOUBLE);
+    nc_insert_compound(ncid, vel_id, "z", 
+		       NC_COMPOUND_OFFSET(struct position, z), NC_DOUBLE);
+    nc_insert_compound(ncid, vel_id, "units", 
+		       NC_COMPOUND_OFFSET(struct position, units), NC_STRING);
+    for (ii=0; ii<meta->state_vectors->vector_count; ii++) {
+      velCom[ii].units = (char *) MALLOC(sizeof(char)*30);
+      strcpy(velCom[ii].units, "meters per second");
+    }
+  }
+
   // Define dimensions
   if (projected) {
-    status = nc_def_dim(ncid, "xgrid", sample_count, &dim_xgrid_id);
-    if (status != NC_NOERR)
-      asfPrintError("Could not define xgrid dimension (%s).\n", 
-		    nc_strerror(status));
-    status = nc_def_dim(ncid, "ygrid", line_count, &dim_ygrid_id);
-    if (status != NC_NOERR)
-      asfPrintError("Could not define ygrid dimension (%s).\n", 
-		    nc_strerror(status));
+    nc_def_dim(ncid, "xgrid", sample_count, &dim_xgrid_id);
+    nc_def_dim(ncid, "ygrid", line_count, &dim_ygrid_id);
   }
   else {
-    status = nc_def_dim(ncid, "longitude", sample_count, &dim_lon_id);
-    if (status != NC_NOERR)
-      asfPrintError("Could not define longitude dimension (%s).\n", 
-		    nc_strerror(status));
-    status = nc_def_dim(ncid, "latitude", line_count, &dim_lat_id);
-    if (status != NC_NOERR)
-      asfPrintError("Could not define latitude dimension (%s).\n", 
-		    nc_strerror(status));
+    nc_def_dim(ncid, "longitude", sample_count, &dim_lon_id);
+    nc_def_dim(ncid, "latitude", line_count, &dim_lat_id);
   }
-  status = nc_def_dim(ncid, "time", 1, &dim_time_id);
-  if (status != NC_NOERR)
-    asfPrintError("Could not define time dimension (%s).\n", 
-		  nc_strerror(status));
+  nc_def_dim(ncid, "time", 1, &dim_time_id);
 
   // Define projection
+  char *str = (char *) MALLOC(sizeof(char)*1024);
+  float *fValue = (float *) MALLOC(sizeof(float));
   if (projected) {
-    status = nc_def_var(ncid, "projection", NC_CHAR, 0, 0, &var_id);
-    if (status != NC_NOERR)
-      asfPrintError("Could not define projection variable (%s),\n", 
-		    nc_strerror(status));
+    nc_def_var(ncid, "projection", NC_CHAR, 0, 0, &var_id);
     if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
 
-      proj_utm utm = meta->projection->param.utm;
       meta_projection *mp = meta->projection;
-      char *grid_mapping_name = (char *) MALLOC(sizeof(char)*50);
-      strcpy(grid_mapping_name, "transverse_mercator");
-      status = nc_put_att_text(ncid, var_id, "grid_mapping_name", 
-			       strlen(grid_mapping_name), grid_mapping_name);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add grid mapping name attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(grid_mapping_name);
-      float *scale_factor_at_central_meridian = 
-	(float *) MALLOC(sizeof(float));
-      *scale_factor_at_central_meridian = (float) utm.scale_factor;
-      status = nc_put_att_float(ncid, var_id,
-				"scale_factor_at_central_meridian",
-				NC_FLOAT, 1,
-				scale_factor_at_central_meridian);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add scale factor at central meridian "
-		      "attribute (%s)\n", nc_strerror(status));
-      FREE(scale_factor_at_central_meridian);
-      float *longitude_of_central_meridian = (float *) MALLOC(sizeof(float));
-      *longitude_of_central_meridian = (float) utm.lon0;
-      status = nc_put_att_float(ncid, var_id, "longitude_of_central_meridian",
-				NC_FLOAT, 1, longitude_of_central_meridian);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add longitude of central meridian attribute "
-		      "(%s)\n", nc_strerror(status));
-      FREE(longitude_of_central_meridian);
-      float *latitude_of_projection_origin = (float *) MALLOC(sizeof(float));
-      *latitude_of_projection_origin = (float) utm.lat0;
-      status = nc_put_att_float(ncid, var_id, "latitude_of_projection_origin",
-				NC_FLOAT, 1, latitude_of_projection_origin);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add latitude of projection origin attribute "
-		      "(%s)\n", nc_strerror(status));
-      FREE(latitude_of_projection_origin);
-      float *false_easting = (float *) MALLOC(sizeof(float));
-      *false_easting = (float) utm.false_easting;
-      status = nc_put_att_float(ncid, var_id, "false_easting", NC_FLOAT, 1, 
-				false_easting);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add false easting attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(false_easting);
-      float *false_northing = (float *) MALLOC(sizeof(float));
-      *false_northing = (float) utm.false_northing;
-      status = nc_put_att_float(ncid, var_id, "false_northing", NC_FLOAT, 1, 
-				false_northing);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add false northing attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(false_northing);
-      char *projection_x_coordinate = (char *) MALLOC(sizeof(char)*25);
-      strcpy(projection_x_coordinate, "xgrid");
-      status = nc_put_att_text(ncid, var_id, "projection_x_coordinate",
-			       strlen(projection_x_coordinate), 
-			       projection_x_coordinate);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add projection x coordinate attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(projection_x_coordinate);
-      char *projection_y_coordinate = (char *) MALLOC(sizeof(char)*25);
-      strcpy(projection_y_coordinate, "ygrid");
-      status = nc_put_att_text(ncid, var_id, "projection_y_coordinate",
-			       strlen(projection_y_coordinate), 
-			       projection_y_coordinate);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add projection y coordinate attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(projection_y_coordinate);
-      char *units = (char *) MALLOC(sizeof(char)*25);
-      strcpy(units, "m");
-      status = nc_put_att_text(ncid, var_id, "units", strlen(units), units); 
-      if (status != NC_NOERR)
-	asfPrintError("Could not add units attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(units);
-      float *grid_boundary_top_projected_y = (float *) MALLOC(sizeof(float));
-      *grid_boundary_top_projected_y = mp->startY;
-      status = nc_put_att_float(ncid, var_id, "grid_boundary_top_projected_y",
-				NC_FLOAT, 1, grid_boundary_top_projected_y);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add grid boundary top projected y attribute "
-		      "(%s)\n", nc_strerror(status));
-      FREE(grid_boundary_top_projected_y);
-      float *grid_boundary_bottom_projected_y = 
-	(float *) MALLOC(sizeof(float));
-      *grid_boundary_bottom_projected_y = 
-	mp->startY + meta->general->line_count * mp->perY;
-      status = nc_put_att_float(ncid, var_id, 
-				"grid_boundary_bottom_projected_y",
-				NC_FLOAT, 1, grid_boundary_bottom_projected_y);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add grid boundary bottom projected y "
-		      "attribute (%s)\n", nc_strerror(status));
-      FREE(grid_boundary_bottom_projected_y);
-      float *grid_boundary_right_projected_x = (float *) MALLOC(sizeof(float));
-      *grid_boundary_right_projected_x = 
-	mp->startX + meta->general->sample_count * mp->perX;
-      status = nc_put_att_float(ncid, var_id, 
-				"grid_boundary_right_projected_x",
-				NC_FLOAT, 1, grid_boundary_right_projected_x);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add grid boundary right projected x "
-		      "attribute (%s)\n", nc_strerror(status));
-      FREE(grid_boundary_right_projected_x);
-      float *grid_boundary_left_projected_x = (float *) MALLOC(sizeof(float));
-      *grid_boundary_left_projected_x = mp->startX;
-      status = nc_put_att_float(ncid, var_id, "grid_boundary_left_projected_x",
-				NC_FLOAT, 1, grid_boundary_left_projected_x);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add grid boundary left projected x attribute "
-		      "(%s)\n", nc_strerror(status));
-      FREE(grid_boundary_left_projected_x);
-      char *spatial_ref = (char *) MALLOC(sizeof(char)*1024);
-      char *datum = (char *) MALLOC(sizeof(char)*25);
+      strcpy(str, "transverse_mercator");
+      nc_put_att_text(ncid, var_id, "grid_mapping_name", strlen(str), str);
+      *fValue = (float) mp->param.utm.scale_factor;
+      nc_put_att_float(ncid, var_id, "scale_factor_at_central_meridian", 
+		       NC_FLOAT, 1, fValue);
+      *fValue = (float) mp->param.utm.lon0;
+      nc_put_att_float(ncid, var_id, "longitude_of_central_meridian",
+		       NC_FLOAT, 1, fValue);
+      *fValue = (float) mp->param.utm.lat0;
+      nc_put_att_float(ncid, var_id, "latitude_of_projection_origin",
+		       NC_FLOAT, 1, fValue);
+      *fValue = (float) mp->param.utm.false_easting;
+      nc_put_att_float(ncid, var_id, "false_easting", NC_FLOAT, 1, fValue);
+      *fValue = (float) mp->param.utm.false_northing;
+      nc_put_att_float(ncid, var_id, "false_northing", NC_FLOAT, 1, fValue);
+      strcpy(str, "xgrid");
+      nc_put_att_text(ncid, var_id, "projection_x_coordinate", strlen(str), 
+		      str);
+      strcpy(str, "ygrid");
+      nc_put_att_text(ncid, var_id, "projection_y_coordinate", strlen(str), 
+		      str);
+      strcpy(str, "meters");
+      nc_put_att_text(ncid, var_id, "units", strlen(str), str); 
+      *fValue = (float) mp->startY;
+      nc_put_att_float(ncid, var_id, "grid_boundary_top_projected_y",
+		       NC_FLOAT, 1, fValue);
+      *fValue = (float) (mp->startY + meta->general->line_count * mp->perY);
+      nc_put_att_float(ncid, var_id, "grid_boundary_bottom_projected_y",
+		       NC_FLOAT, 1, fValue);
+      *fValue = (float) (mp->startX + meta->general->sample_count * mp->perX);
+      nc_put_att_float(ncid, var_id, "grid_boundary_right_projected_x",
+		       NC_FLOAT, 1, fValue);
+      *fValue = (float) mp->startX;
+      nc_put_att_float(ncid, var_id, "grid_boundary_left_projected_x",
+		       NC_FLOAT, 1, fValue);
+      spatial_ref = (char *) MALLOC(sizeof(char)*1024);
+      datum = (char *) MALLOC(sizeof(char)*25);
       if (mp->datum == WGS84_DATUM)
 	strcpy(datum, "WGS_1984");
-      char *spheroid = (char *) MALLOC(sizeof(char)*25);
+      else
+	strcpy(datum, "");
+      spheroid = (char *) MALLOC(sizeof(char)*25);
       if (mp->spheroid == WGS84_SPHEROID)
 	strcpy(spheroid, "WGS_1984");
-      sprintf(spatial_ref, "PROJCS[\"%s_UTM_Zone_%d%c\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.1lf,%.8lf]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",%.1lf],PARAMETER[\"False_Northing\",%.1lf],PARAMETER[\"Central_Meridian\",%.1lf],PARAMETER[\"Scale_Factor\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.1lf],UNIT[\"Meter\",1]]",
-	      spheroid, utm.zone, mp->hem, spheroid, datum, spheroid,
-	      mp->re_major, mp->re_major/(mp->re_major - mp->re_minor),
-	      utm.false_easting, utm.false_northing, utm.lon0, 
-	      utm.scale_factor, utm.lat0);
+      else
+	strcpy(spheroid, "");
+      double flat = mp->re_major/(mp->re_major - mp->re_minor);
+      sprintf(spatial_ref, "PROJCS[\"%s_UTM_Zone_%d%c\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.1lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",%.1lf],PARAMETER[\"False_Northing\",%.1lf],PARAMETER[\"Central_Meridian\",%.1lf],PARAMETER[\"Scale_Factor\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.1lf],UNIT[\"Meter\",1]]",
+	      spheroid, mp->param.utm.zone, mp->hem, spheroid, datum, 
+	      spheroid, mp->re_major, flat, mp->param.utm.false_easting, 
+	      mp->param.utm.false_northing, mp->param.utm.lon0, 
+	      mp->param.utm.scale_factor, mp->param.utm.lat0);
       status = nc_put_att_text(ncid, var_id, "spatial_ref", 
 			       strlen(spatial_ref), spatial_ref);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add spatial ref attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(spatial_ref);
-      char *proj4text = (char *) MALLOC(sizeof(char)*255);
-      sprintf(proj4text, "+proj=utm +zone=%d", utm.zone);
+      sprintf(str, "+proj=utm +zone=%d", mp->param.utm.zone);
       if (meta->general->center_latitude < 0)
-	strcat(proj4text, " +south");
-      status = nc_put_att_text(ncid, var_id, "proj4text", strlen(proj4text),
-			       proj4text);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add proj4text attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(proj4text);
-      int *zone = (int *) MALLOC(sizeof(int));
-      *zone = utm.zone;
-      status = nc_put_att_int(ncid, var_id, "zone", NC_INT, 1, zone);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add zone attribute (%s)\n", 
-		      nc_strerror(status));
-      FREE(zone);
-      float *semimajor_radius = (float *) MALLOC(sizeof(float));
-      *semimajor_radius = mp->re_major;
-      status = nc_put_att_float(ncid, var_id, "semimajor_radius", NC_FLOAT, 1,
-				semimajor_radius);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add semimajor radius attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(semimajor_radius);
-      float *semiminor_radius = (float *) MALLOC(sizeof(float));
-      *semiminor_radius = mp->re_minor;
-      status = nc_put_att_float(ncid, var_id, "semiminor_radius", NC_FLOAT, 1,
-				semiminor_radius);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add semiminor radius attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(semiminor_radius);
-      char *GeoTransform = (char *) MALLOC(sizeof(char)*255);
-      sprintf(GeoTransform, "%.6lf %.6lf 0 %.6lf 0 %.6lf",
-	      mp->startX, mp->perX, mp->startY, mp->perY); 
-      status = nc_put_att_text(ncid, var_id, "GeoTransform", 
-			       strlen(GeoTransform), GeoTransform);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add GeoTransform attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(GeoTransform);
+	strcat(str, " +south");
+      nc_put_att_text(ncid, var_id, "proj4text", strlen(str), str);
+      status = nc_put_att_int(ncid, var_id, "zone", NC_INT, 1, 
+			      &mp->param.utm.zone);
+      *fValue = (float) mp->re_major;
+      nc_put_att_float(ncid, var_id, "semimajor_radius", NC_FLOAT, 1, fValue);
+      *fValue = (float) mp->re_minor;
+      nc_put_att_float(ncid, var_id, "semiminor_radius", NC_FLOAT, 1, fValue);
+      sprintf(str, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+	      mp->startY, mp->perY); 
+      nc_put_att_text(ncid, var_id, "GeoTransform", strlen(str), str);
     }
     else if (meta->projection->type == POLAR_STEREOGRAPHIC) {
       /*
@@ -346,79 +427,35 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
   }
   for (ii=0; ii<band_count; ii++) {
     
-    status = nc_def_var(ncid, band_name[ii], datatype, 3, dims_bands, &var_id);
-    if (status != NC_NOERR)
-      asfPrintError("Could not define %s variable (%s),\n", 
-		    band_name[ii], nc_strerror(status));
+    nc_def_var(ncid, band_name[ii], datatype, 3, dims_bands, &var_id);
     netcdf->var_id[ii] = var_id;
     nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
-    float *fillvalue = (float *) MALLOC(sizeof(float));
-    *fillvalue = -999.0;
-    status = nc_put_att_float(ncid, var_id, "_FillValue", NC_FLOAT, 1, 
-			      fillvalue);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add fill value attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(fillvalue);
-    char *long_name = (char *) MALLOC(sizeof(char)*255);
-    sprintf(long_name, "%s", meta->general->sensor);
+    *fValue = -999.0;
+    nc_put_att_float(ncid, var_id, "_FillValue", NC_FLOAT, 1, fValue);
+    sprintf(str, "%s", meta->general->sensor);
     if (meta->general->image_data_type < 9)
-      strcat(long_name, " radar backscatter");
+      strcat(str, " radar backscatter");
     if (meta->general->radiometry >= r_SIGMA_DB &&
 	meta->general->radiometry <= r_GAMMA_DB)
-      strcat(long_name, " in dB");
-    status = nc_put_att_text(ncid, var_id, "long_name", strlen(long_name),
-			     long_name);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add long name attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(long_name);
-    char *cell_methods = (char *) MALLOC(sizeof(char)*25);
-    strcpy(cell_methods, "area: backcatter value");
-    status = nc_put_att_text(ncid, var_id, "cell_methods", 
-			     strlen(cell_methods), cell_methods);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add cell methods attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(cell_methods);
-    char *units = (char *) MALLOC(sizeof(char)*5);
-    strcpy(units, "1");
-    status = nc_put_att_text(ncid, var_id, "units", strlen(units), units);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add units attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(units);
-    char *units_description = (char *) MALLOC(sizeof(char)*255);
-    strcpy(units_description, "unitless normalized radar cross-section");
+      strcat(str, " in dB");
+    nc_put_att_text(ncid, var_id, "long_name", strlen(str), str);
+    strcpy(str, "area: backcatter value");
+    nc_put_att_text(ncid, var_id, "cell_methods", strlen(str), str);
+    strcpy(str, "1");
+    nc_put_att_text(ncid, var_id, "units", strlen(str), str);
+    strcpy(str, "unitless normalized radar cross-section");
     if (meta->general->radiometry >= r_SIGMA &&
 	meta->general->radiometry <= r_GAMMA)
-      strcat(units_description, " stored as powerscale");
+      strcat(str, " stored as powerscale");
     else if (meta->general->radiometry >= r_SIGMA_DB &&
 	     meta->general->radiometry <= r_GAMMA_DB)
-      strcat(units_description, " stored as dB=10*log10(*)");
-    status = nc_put_att_text(ncid, var_id, "units_description", 
-			     strlen(units_description), units_description);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add units description attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(units_description);
-    char *coordinates = (char *) MALLOC(sizeof(char)*25);
-    strcpy(coordinates, "longitude latitude");
-    status = nc_put_att_text(ncid, var_id, "coordinates", strlen(coordinates),
-			     coordinates);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add coordinates attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(coordinates);
+      strcat(str, " stored as dB=10*log10(*)");
+    nc_put_att_text(ncid, var_id, "units_description", strlen(str), str);
+    strcpy(str, "longitude latitude");
+    nc_put_att_text(ncid, var_id, "coordinates", strlen(str), str);
     if (projected) {
-      char *grid_mapping = (char *) MALLOC(sizeof(char)*25);
-      strcpy(grid_mapping, "projection");
-      status = nc_put_att_text(ncid, var_id, "grid_mapping", 
-			       strlen(grid_mapping), grid_mapping);
-      if (status != NC_NOERR)
-	asfPrintError("Could not add grid_mapping attribute (%s)\n",
-		      nc_strerror(status));
-      FREE(grid_mapping);
+      strcpy(str, "projection");
+      nc_put_att_text(ncid, var_id, "grid_mapping", strlen(str), str);
     } 
   }
   // Define other attributes
@@ -429,335 +466,308 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
   // Time
   ii = band_count;
   int dims_time[1] = { dim_time_id };
-  status = nc_def_var(ncid, "time", NC_FLOAT, 1, dims_time, &var_id);
-  if (status != NC_NOERR)
-    asfPrintError("Could not define time variable (%s),\n", 
-		  nc_strerror(status));
+  nc_def_var(ncid, "time", NC_FLOAT, 1, dims_time, &var_id);
   netcdf->var_id[ii] = var_id;
-  char *units = (char *) MALLOC(sizeof(char)*50);
-  strcpy(units, "seconds since 1900-01-01T00:00:00Z");
-  status = nc_put_att_text(ncid, var_id, "units", strlen(units), units);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add units attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(units);
-  char *reference = (char *) MALLOC(sizeof(char)*50);
-  strcpy(reference, "scene center time");
-  status = nc_put_att_text(ncid, var_id, "references", strlen(reference), 
-			   reference);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add references attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(reference);
-  char *standard_name = (char *) MALLOC(sizeof(char)*50);
-  strcpy(standard_name, "time");
-  status = nc_put_att_text(ncid, var_id, "standard_name", 
-			   strlen(standard_name), standard_name);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add standard name attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(standard_name);
-  char *axis = (char *) MALLOC(sizeof(char)*5);
-  strcpy(axis, "T");
-  status = nc_put_att_text(ncid, var_id, "axis", strlen(axis), axis);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add axis attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(axis);
-  char *long_name = (char *) MALLOC(sizeof(char)*50);
-  strcpy(long_name, "serial date");
-  status = nc_put_att_text(ncid, var_id, "long_name", strlen(long_name), 
-			   long_name);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add long name attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(long_name);
+  strcpy(str, "seconds since 1900-01-01T00:00:00Z");
+  nc_put_att_text(ncid, var_id, "units", strlen(str), str);
+  strcpy(str, "scene center time");
+  nc_put_att_text(ncid, var_id, "references", strlen(str), str);
+  strcpy(str, "time");
+  nc_put_att_text(ncid, var_id, "standard_name", strlen(str), str);
+  strcpy(str, "T");
+  nc_put_att_text(ncid, var_id, "axis", strlen(str), str);
+  strcpy(str, "serial date");
+  nc_put_att_text(ncid, var_id, "long_name", strlen(str), str);
   
   // Longitude
   ii++;
   if (projected) {
     int dims_lon[2] = { dim_ygrid_id, dim_xgrid_id };
-    status = nc_def_var(ncid, "longitude", NC_FLOAT, 2, dims_lon, &var_id);
+    nc_def_var(ncid, "longitude", NC_FLOAT, 2, dims_lon, &var_id);
   }
   else {
     int dims_lon[2] = { dim_lon_id, dim_lat_id };
-    status = nc_def_var(ncid, "longitude", NC_FLOAT, 2, dims_lon, &var_id);
+    nc_def_var(ncid, "longitude", NC_FLOAT, 2, dims_lon, &var_id);
   }
-  if (status != NC_NOERR)
-    asfPrintError("Could not define longitude variable (%s),\n", 
-		  nc_strerror(status));
   netcdf->var_id[ii] = var_id;
   nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
-  standard_name = (char *) MALLOC(sizeof(char)*50);
-  strcpy(standard_name, "longitude");
-  status = nc_put_att_text(ncid, var_id, "standard_name", 
-			   strlen(standard_name), standard_name);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add standard name attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(standard_name);  
-  long_name = (char *) MALLOC(sizeof(char)*50);
-  strcpy(long_name, "longitude");
-  status = nc_put_att_text(ncid, var_id, "long_name", strlen(long_name), 
-			   long_name);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add long name attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(long_name);  
-  units = (char *) MALLOC(sizeof(char)*50);
-  strcpy(units, "degrees_east");
-  status = nc_put_att_text(ncid, var_id, "units", strlen(units), units);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add units attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(units);
+  strcpy(str, "longitude");
+  nc_put_att_text(ncid, var_id, "standard_name", strlen(str), str);
+  strcpy(str, "longitude");
+  nc_put_att_text(ncid, var_id, "long_name", strlen(str), str);
+  strcpy(str, "degrees_east");
+  nc_put_att_text(ncid, var_id, "units", strlen(str), str);
   float *valid_range = (float *) MALLOC(sizeof(float)*2);
   valid_range[0] = -180.0;
   valid_range[1] = 180.0;
-  status = nc_put_att_float(ncid, var_id, "valid_range", NC_FLOAT, 2, 
-			    valid_range);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add valid range attribute (%s)\n",
-		  nc_strerror(status));
+  nc_put_att_float(ncid, var_id, "valid_range", NC_FLOAT, 2, valid_range);
   FREE(valid_range);
-  float *fillvalue = (float *) MALLOC(sizeof(float));
-  *fillvalue = -999.0;
-  status = nc_put_att_float(ncid, var_id, "_FillValue", NC_FLOAT, 1, 
-			    fillvalue);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add fill value attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(fillvalue);
+  *fValue = -999.0;
+  nc_put_att_float(ncid, var_id, "_FillValue", NC_FLOAT, 1, fValue);
 
   // Latitude
   ii++;
   if (projected) {
     int dims_lat[2] = { dim_ygrid_id, dim_xgrid_id };
-    status = nc_def_var(ncid, "latitude", NC_FLOAT, 2, dims_lat, &var_id);
+    nc_def_var(ncid, "latitude", NC_FLOAT, 2, dims_lat, &var_id);
   }
   else {
     int dims_lat[2] = { dim_lat_id, dim_lon_id };
-    status = nc_def_var(ncid, "latitude", NC_FLOAT, 2, dims_lat, &var_id);
+    nc_def_var(ncid, "latitude", NC_FLOAT, 2, dims_lat, &var_id);
   }
-  if (status != NC_NOERR)
-    asfPrintError("Could not define latitude variable (%s),\n", 
-		  nc_strerror(status));
   netcdf->var_id[ii] = var_id;
   nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
-  standard_name = (char *) MALLOC(sizeof(char)*50);
-  strcpy(standard_name, "latitude");
-  status = nc_put_att_text(ncid, var_id, "standard_name", 
-			   strlen(standard_name), standard_name);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add standard name attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(standard_name);  
-  long_name = (char *) MALLOC(sizeof(char)*50);
-  strcpy(long_name, "latitude");
-  status = nc_put_att_text(ncid, var_id, "long_name", strlen(long_name), 
-			   long_name);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add long name attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(long_name);  
-  units = (char *) MALLOC(sizeof(char)*50);
-  strcpy(units, "degrees_north");
-  status = nc_put_att_text(ncid, var_id, "units", strlen(units), units);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add units attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(units);
+  strcpy(str, "latitude");
+  nc_put_att_text(ncid, var_id, "standard_name", strlen(str), str);
+  strcpy(str, "latitude");
+  nc_put_att_text(ncid, var_id, "long_name", strlen(str), str);
+  strcpy(str, "degrees_north");
+  nc_put_att_text(ncid, var_id, "units", strlen(str), str);
   valid_range = (float *) MALLOC(sizeof(float)*2);
   valid_range[0] = -90.0;
   valid_range[1] = 90.0;
-  status = nc_put_att_float(ncid, var_id, "valid_range", NC_FLOAT, 2, 
-			    valid_range);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add valid range attribute (%s)\n",
-		  nc_strerror(status));
+  nc_put_att_float(ncid, var_id, "valid_range", NC_FLOAT, 2, valid_range);
   FREE(valid_range);
-  fillvalue = (float *) MALLOC(sizeof(float));
-  *fillvalue = -999.0;
-  status = nc_put_att_float(ncid, var_id, "_FillValue", NC_FLOAT, 1, 
-			    fillvalue);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add fill value attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(fillvalue);
+  *fValue = -999.0;
+  nc_put_att_float(ncid, var_id, "_FillValue", NC_FLOAT, 1, fValue);
 
   if (projected) {
 
     // ygrid
     ii++;
     int dims_ygrid[1] = { dim_ygrid_id };
-    status = nc_def_var(ncid, "ygrid", NC_FLOAT, 1, dims_ygrid, &var_id);
-    if (status != NC_NOERR)
-      asfPrintError("Could not define ygrid variable (%s),\n", 
-		    nc_strerror(status));
+    nc_def_var(ncid, "ygrid", NC_FLOAT, 1, dims_ygrid, &var_id);
     netcdf->var_id[ii] = var_id;
     nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
-    standard_name = (char *) MALLOC(sizeof(char)*50);
-    strcpy(standard_name, "projection_y_coordinates");
-    status = nc_put_att_text(ncid, var_id, "standard_name", 
-			     strlen(standard_name), standard_name);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add standard name attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(standard_name);  
-    long_name = (char *) MALLOC(sizeof(char)*50);
-    strcpy(long_name, "projection_grid_y_centers");
-    status = nc_put_att_text(ncid, var_id, "long_name", strlen(long_name), 
-			     long_name);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add long name attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(long_name);  
-    units = (char *) MALLOC(sizeof(char)*50);
-    strcpy(units, "meters");
-    status = nc_put_att_text(ncid, var_id, "units", strlen(units), units);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add units attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(units);
-    axis = (char *) MALLOC(sizeof(char)*5);
-    strcpy(axis, "Y");
-    status = nc_put_att_text(ncid, var_id, "axis", strlen(axis), axis);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add axis attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(axis);
+    strcpy(str, "projection_y_coordinates");
+    nc_put_att_text(ncid, var_id, "standard_name", strlen(str), str);
+    strcpy(str, "projection_grid_y_centers");
+    nc_put_att_text(ncid, var_id, "long_name", strlen(str), str);
+    strcpy(str, "meters");
+    nc_put_att_text(ncid, var_id, "units", strlen(str), str);
+    strcpy(str, "Y");
+    nc_put_att_text(ncid, var_id, "axis", strlen(str), str);
 
     // xgrid
     ii++;
     int dims_xgrid[1] = { dim_xgrid_id };
-    status = nc_def_var(ncid, "xgrid", NC_FLOAT, 1, dims_xgrid, &var_id);
-    if (status != NC_NOERR)
-      asfPrintError("Could not define xgrid variable (%s),\n", 
-		    nc_strerror(status));
+    nc_def_var(ncid, "xgrid", NC_FLOAT, 1, dims_xgrid, &var_id);
     netcdf->var_id[ii] = var_id;
     nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
-    standard_name = (char *) MALLOC(sizeof(char)*50);
-    strcpy(standard_name, "projection_x_coordinates");
-    status = nc_put_att_text(ncid, var_id, "standard_name", 
-			     strlen(standard_name), standard_name);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add standard name attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(standard_name);  
-    long_name = (char *) MALLOC(sizeof(char)*50);
-    strcpy(long_name, "projection_grid_x_centers");
-    status = nc_put_att_text(ncid, var_id, "long_name", strlen(long_name), 
-			     long_name);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add long name attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(long_name);  
-    units = (char *) MALLOC(sizeof(char)*50);
-    strcpy(units, "meters");
-    status = nc_put_att_text(ncid, var_id, "units", strlen(units), units);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add units attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(units);
-    axis = (char *) MALLOC(sizeof(char)*5);
-    strcpy(axis, "X");
-    status = nc_put_att_text(ncid, var_id, "axis", strlen(axis), axis);
-    if (status != NC_NOERR)
-      asfPrintError("Could not add axis attribute (%s)\n",
-		    nc_strerror(status));
-    FREE(axis);    
+    strcpy(str, "projection_x_coordinates");
+    nc_put_att_text(ncid, var_id, "standard_name", strlen(str), str);
+    strcpy(str, "projection_grid_x_centers");
+    nc_put_att_text(ncid, var_id, "long_name", strlen(str), str);
+    strcpy(str, "meters");
+    nc_put_att_text(ncid, var_id, "units", strlen(str), str);
+    strcpy(str, "X");
+    nc_put_att_text(ncid, var_id, "axis", strlen(str), str);
   }
   
   // Define global attributes
-  char *convention = (char *) MALLOC(sizeof(char)*25);
-  strcpy(convention, "CF-1.4");
-  status = nc_put_att_text(ncid, NC_GLOBAL, "Conventions", strlen(convention),
-			   convention);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add global conventions attribute (%s)\n", 
-		  nc_strerror(status));
-  FREE(convention);
-  char *institution = (char *) MALLOC(sizeof(char)*255);
-  strcpy(institution, "Alaska Satellite Facility");
-  status = nc_put_att_text(ncid, NC_GLOBAL, "institution", strlen(institution),
-			   institution);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add global institution attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(institution);
-  char *title = (char *) MALLOC(sizeof(char)*255);
-  sprintf(title, "%s %s %s image", 
-	  meta->general->sensor, meta->general->sensor_name, 
-	  meta->general->mode);
-  status = nc_put_att_text(ncid, NC_GLOBAL, "title", strlen(title), title);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add global title attribute (%s)\n", 
-		  nc_strerror(status));
-  FREE(title);
-  char *source = (char *) MALLOC(sizeof(char)*255);
+  strcpy(str, "CF-1.4");
+  nc_put_att_text(ncid, NC_GLOBAL, "Conventions", strlen(str), str);
+  strcpy(str, "Alaska Satellite Facility");
+  nc_put_att_text(ncid, NC_GLOBAL, "institution", strlen(str), str);
+  sprintf(str, "%s %s %s image", meta->general->sensor, 
+	  meta->general->sensor_name, meta->general->mode);
+  nc_put_att_text(ncid, NC_GLOBAL, "title", strlen(str), str);
   if (meta->general->image_data_type == AMPLITUDE_IMAGE)
-    strcpy(source, "SAR backcatter image");
-  status = nc_put_att_text(ncid, NC_GLOBAL, "source", strlen(source), source);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add global source attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(source);
-  char *original_file = (char *) MALLOC(sizeof(char)*255);
-  sprintf(original_file, "%s", meta->general->basename);
-  status = nc_put_att_text(ncid, NC_GLOBAL, "original_file", 
-			   strlen(original_file), original_file);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add global original file attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(original_file);
-  char *comment = (char *) MALLOC(sizeof(char)*255);
+    strcpy(str, "SAR backcatter image");
+  nc_put_att_text(ncid, NC_GLOBAL, "source", strlen(str), str);
+  sprintf(str, "%s", meta->general->basename);
+  nc_put_att_text(ncid, NC_GLOBAL, "original_file", strlen(str), str);
   if (strcmp_case(meta->general->sensor, "RSAT-1") == 0)
-    sprintf(comment, "Copyright Canadian Space Agency, %d", ymd.year);
+    sprintf(str, "Copyright Canadian Space Agency, %d", ymd.year);
   else if (strncmp_case(meta->general->sensor, "ERS", 3) == 0)
-    sprintf(comment, "Copyright European Space Agency, %d", ymd.year);
+    sprintf(str, "Copyright European Space Agency, %d", ymd.year);
   else if (strcmp_case(meta->general->sensor, "JERS-1") == 0 ||
 	   strcmp_case(meta->general->sensor, "ALOS") == 0)
-    sprintf(comment, "Copyright Japan Aerospace Exploration Agency , %d", 
+    sprintf(str, "Copyright Japan Aerospace Exploration Agency , %d", 
 	    ymd.year);
-  status = nc_put_att_text(ncid, NC_GLOBAL, "comment", strlen(comment), 
-			   comment);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add global comment attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(comment);
-  reference = (char *) MALLOC(sizeof(char)*255);
-  strcpy(reference, "Documentation available at: www.asf.alaska.edu");
-  status = nc_put_att_text(ncid, NC_GLOBAL, "references", strlen(reference),
-			   reference);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add global references attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(reference);
-  char *history = (char *) MALLOC(sizeof(char)*255);
+  nc_put_att_text(ncid, NC_GLOBAL, "comment", strlen(str), str);
+  strcpy(str, "Documentation available at: www.asf.alaska.edu");
+  nc_put_att_text(ncid, NC_GLOBAL, "references", strlen(str), str);
   time_t t;
   struct tm *timeinfo;
   time(&t);
   timeinfo = gmtime(&t);
-  sprintf(history, "%s", asctime(timeinfo));
-  chomp(history);
-  strcat(history, ", UTC: netCDF File created.");
-  status = nc_put_att_text(ncid, NC_GLOBAL, "history", strlen(history), 
-			   history);
-  if (status != NC_NOERR)
-    asfPrintError("Could not add global history attribute (%s)\n",
-		  nc_strerror(status));
-  FREE(history);
+  sprintf(str, "%s", asctime(timeinfo));
+  chomp(str);
+  strcat(str, ", UTC: netCDF File created.");
+  nc_put_att_text(ncid, NC_GLOBAL, "history", strlen(str), str);
+  
+  // Metadata - general block
+  status = nc_def_var(ncid, "overview", NC_CHAR, 0, 0, &var_id);
+  strcpy(str, meta->general->basename);
+  nc_put_att_text(ncid, var_id, "name", strlen(str), str);
+  strcpy(str, meta->general->sensor);
+  nc_put_att_text(ncid, var_id, "sensor", strlen(str), str);
+  strcpy(str, meta->general->sensor_name);
+  nc_put_att_text(ncid, var_id, "sensor_name", strlen(str), str);
+  strcpy(str, meta->general->mode);
+  nc_put_att_text(ncid, var_id, "mode", strlen(str), str);
+  strcpy(str, meta->general->processor);
+  nc_put_att_text(ncid, var_id, "processor", strlen(str), str);
+  strcpy(str, data_type2str(meta->general->data_type));
+  nc_put_att_text(ncid, var_id, "data_type", strlen(str), str);
+  strcpy(str, image_data_type2str(meta->general->image_data_type));
+  nc_put_att_text(ncid, var_id, "image_data_type", strlen(str), str);
+  strcpy(str, radiometry2str(meta->general->radiometry));
+  nc_put_att_text(ncid, var_id, "radiometry", strlen(str), str);
+  strcpy(str, meta->general->acquisition_date);
+  nc_put_att_text(ncid, var_id, "acquisition_date", strlen(str), str);
+  nc_put_att_int(ncid, var_id, "orbit", NC_INT, 1, &meta->general->orbit);
+  if (meta->general->orbit_direction == 'A')
+    strcpy(str, "Ascending");
+  else
+    strcpy(str, "Descending");
+  nc_put_att_text(ncid, var_id, "orbit_direction", strlen(str), str);
+  nc_put_att_int(ncid, var_id, "frame", NC_INT, 1, &meta->general->frame);
+  nc_put_att_int(ncid, var_id, "band_count", NC_INT, 1, 
+		 &meta->general->band_count);
+  strcpy(str, meta->general->bands);
+  nc_put_att_text(ncid, var_id, "bands", strlen(str), str);
+  nc_put_att_int(ncid, var_id, "line_count", NC_INT, 1, 
+		 &meta->general->line_count);
+  nc_put_att_int(ncid, var_id, "sample_count", NC_INT, 1, 
+		 &meta->general->sample_count);
+  nc_put_att_int(ncid, var_id, "start_line", NC_INT, 1, 
+		 &meta->general->start_line);
+  nc_put_att_int(ncid, var_id, "start_sample", NC_INT, 1, 
+		 &meta->general->start_sample);
+  metCom[0].value = meta->general->x_pixel_size;
+  nc_put_att(ncid, var_id, "x_pixel_size", met_id, 1, metCom);
+  metCom[0].value = meta->general->y_pixel_size;
+  nc_put_att(ncid, var_id, "y_pixel_size", met_id, 1, metCom);
+  latCom[0].value = meta->general->center_latitude;
+  nc_put_att(ncid, var_id, "center_latitude", lat_id, 1, latCom);
+  lonCom[0].value = meta->general->center_longitude;
+  nc_put_att(ncid, var_id, "center_longitude", lon_id, 1, lonCom);
+  metCom[0].value = meta->general->re_major;
+  nc_put_att(ncid, var_id, "re_major", met_id, 1, metCom);
+  metCom[0].value = meta->general->re_minor;
+  nc_put_att(ncid, var_id, "re_minor", met_id, 1, metCom);
+  nc_put_att_double(ncid, var_id, "bit_error_rate", NC_DOUBLE, 1, 
+		    &meta->general->bit_error_rate);
+  nc_put_att_int(ncid, var_id, "missing_lines", NC_INT, 1, 
+		 &meta->general->missing_lines);
+  nc_put_att_float(ncid, var_id, "no_data", NC_FLOAT, 1, 
+		   &meta->general->no_data);
+  if (meta->sar) {
+    // Metadata - SAR block
+    nc_def_var(ncid, "SAR", NC_CHAR, 0, 0, &var_id);
+    if (meta->sar->image_type == 'S')
+      strcpy(str, "slant range");
+    else if (meta->sar->image_type == 'G')
+      strcpy(str, "ground range");
+    else if (meta->sar->image_type == 'P')
+      strcpy(str, "projected");
+    else if (meta->sar->image_type == 'R')
+      strcpy(str, "georeferenced");
+    nc_put_att_text(ncid, var_id, "image_type", strlen(str), str);
+    if (meta->sar->look_direction == 'R')
+      strcpy(str, "right");
+    else if (meta->sar->look_direction == 'L')
+      strcpy(str, "left");
+    nc_put_att_text(ncid, var_id, "look_direction", strlen(str), str);
+    nc_put_att_int(ncid, var_id, "look_count", NC_INT, 1, 
+		   &meta->sar->look_count);
+    nc_put_att_int(ncid, var_id, "multilook", NC_INT, 1, 
+		   &meta->sar->multilook);
+    nc_put_att_int(ncid, var_id, "deskewed", NC_INT, 1, &meta->sar->deskewed);
+    nc_put_att_int(ncid, var_id, "original_line_count", NC_INT, 1, 
+		   &meta->sar->original_line_count);
+    nc_put_att_int(ncid, var_id, "original_sample_count", NC_INT, 1, 
+		   &meta->sar->original_sample_count);
+    nc_put_att_double(ncid, var_id, "line_increment", NC_DOUBLE, 1, 
+		      &meta->sar->line_increment);
+    nc_put_att_double(ncid, var_id, "sample_increment", NC_DOUBLE, 1, 
+		      &meta->sar->sample_increment);
+    secCom[0].value = meta->sar->range_time_per_pixel;
+    nc_put_att(ncid, var_id, "range_time_per_pixel", sec_id, 1, secCom);
+    secCom[0].value = meta->sar->azimuth_time_per_pixel;
+    nc_put_att(ncid, var_id, "azimuth_time_per_pixel", sec_id, 1, secCom);
+    metCom[0].value = meta->sar->slant_range_first_pixel;
+    nc_put_att(ncid, var_id, "slant_range_first_pixel", met_id, 1, metCom);
+    metCom[0].value = meta->sar->slant_shift;
+    nc_put_att(ncid, var_id, "slant_shift", met_id, 1, metCom);
+    secCom[0].value = meta->sar->time_shift;
+    nc_put_att(ncid, var_id, "time_shift", sec_id, 1, secCom);
+    metCom[0].value = meta->sar->wavelength;
+    nc_put_att(ncid, var_id, "wavelength", met_id, 1, metCom);
+    hzCom[0].value = meta->sar->prf;
+    nc_put_att(ncid, var_id, "pulse_repetition_frequency", hz_id, 1, hzCom);
+    metCom[0].value = meta->sar->earth_radius;
+    nc_put_att(ncid, var_id, "earth_radius", met_id, 1, metCom);
+    metCom[0].value = meta->sar->satellite_height;
+    nc_put_att(ncid, var_id, "satellite_height", met_id, 1, metCom);
+    hzCom[0].value = meta->sar->range_doppler_coefficients[0];
+    nc_put_att(ncid, var_id, "range_doppler_centroid", hz_id, 1, hzCom);
+    hz2Com[0].value = meta->sar->range_doppler_coefficients[1];
+    nc_put_att(ncid, var_id, "range_doppler_linear", hz2_id, 1, hz2Com);
+    hz3Com[0].value = meta->sar->range_doppler_coefficients[2];
+    nc_put_att(ncid, var_id, "range_doppler_quadratic", hz3_id, 1, hz3Com);
+    hzCom[0].value = meta->sar->azimuth_doppler_coefficients[0];
+    nc_put_att(ncid, var_id, "azimuth_doppler_centroid", hz_id, 1, hzCom);
+    hz2Com[0].value = meta->sar->azimuth_doppler_coefficients[1];
+    nc_put_att(ncid, var_id, "azimuth_doppler_linear", hz2_id, 1, hz2Com);
+    hz3Com[0].value = meta->sar->azimuth_doppler_coefficients[2];
+    nc_put_att(ncid, var_id, "azimuth_doppler_quadratic", hz3_id, 1, hz3Com);
+  }
+
+  if (meta->state_vectors) {
+    // Metadata - state vector block
+    nc_def_var(ncid, "orbit", NC_CHAR, 0, 0, &var_id);
+    nc_put_att_int(ncid, var_id, "year", NC_INT, 1, 
+		   &meta->state_vectors->year);
+    nc_put_att_int(ncid, var_id, "day_of_year", NC_INT, 1, 
+		   &meta->state_vectors->julDay);
+    secCom[0].value = meta->state_vectors->second;
+    nc_put_att(ncid, var_id, "second_of_day", sec_id, 1, secCom);
+    nc_put_att_int(ncid, var_id, "vector_count", NC_INT, 1, 
+		   &meta->state_vectors->vector_count);
+    for (ii=0; ii<meta->state_vectors->vector_count; ii++) {
+      vecTimeCom[ii].number = ii+1;
+      vecTimeCom[ii].time = meta->state_vectors->vecs[ii].time;
+      posCom[ii].number = ii+1;
+      posCom[ii].x = meta->state_vectors->vecs[ii].vec.pos.x;
+      posCom[ii].y = meta->state_vectors->vecs[ii].vec.pos.y;
+      posCom[ii].z = meta->state_vectors->vecs[ii].vec.pos.z;
+      velCom[ii].number = ii+1;
+      velCom[ii].x = meta->state_vectors->vecs[ii].vec.vel.x;
+      velCom[ii].y = meta->state_vectors->vecs[ii].vec.vel.y;
+      velCom[ii].z = meta->state_vectors->vecs[ii].vec.vel.z;
+    }
+    nc_put_att(ncid, var_id, "vector_time", vec_time_id, 3, vecTimeCom);
+    nc_put_att(ncid, var_id, "vector_position", pos_id, 3, posCom);
+    nc_put_att(ncid, var_id, "vector_velocity", vel_id, 3, velCom);
+  }
 
   // Finish off definition block
-  status = nc_enddef(ncid);
-  if (status != NC_NOERR)
-    asfPrintError("Could not leave definition mode (%s)\n",
-		  nc_strerror(status));
+  nc_enddef(ncid);
 
+  // Write ASF metadata to XML file
+  char *output_file_name = 
+    (char *) MALLOC(sizeof(char)*(strlen(output_file)+5));
+  sprintf(output_file_name, "%s.xml", output_file);
+  meta_write_xml(meta, output_file_name);
+  FREE(output_file_name);
+
+  // Clean up
+  FREE(str);
+  FREE(fValue);
+  if (datum)
+    FREE(datum);
+  if (spheroid)
+    FREE(spheroid);
+  if (spatial_ref)
+    FREE(spatial_ref);
+  
   return netcdf;
 }
 
-void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md, float *nc)
+void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md)
 {
   int ncid = netcdf->ncid;
   int n = md->general->band_count;
@@ -769,12 +779,9 @@ void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md, float *nc)
     projected = TRUE;
 
   // Extra bands - Time
-  double time = seconds_from_str(md->general->acquisition_date);
-  float *time_value = (float *) MALLOC(sizeof(float));
-  *time_value = (float) time;
+  float time = (float) seconds_from_str(md->general->acquisition_date);
   asfPrintStatus("Storing band 'time' ...\n");
-  nc_put_var_float(ncid, netcdf->var_id[n], &time_value[0]);
-  FREE(time_value);
+  nc_put_var_float(ncid, netcdf->var_id[n], &time);
 
   // Extra bands - longitude
   n++;
@@ -896,5 +903,4 @@ void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md, float *nc)
     asfPrintError("Could not close netCDF file (%s).\n", nc_strerror(status));
   FREE(netcdf->var_id);
   FREE(netcdf);
-  FREE(nc);
 }

@@ -275,7 +275,7 @@ export_band_image (const char *metadata_file_name,
   struct jpeg_compress_struct cinfo;
   png_structp png_ptr;
   png_infop png_info_ptr;
-  //hid_t hdf5_file, hdf5_space, hdf5_data;
+  hdf_t *hdf=NULL;
   netcdf_t *netcdf=NULL;
   float *nc = NULL;
   float *hdf5 = NULL;
@@ -387,14 +387,12 @@ export_band_image (const char *metadata_file_name,
       initialize_png_file_ext(output_file_name, md, &opng, &png_ptr,
 			      &png_info_ptr, rgb, 2);
     }
-    /*
     else if (format == HDF) {
-      initialize_hdf5_file(output_file_name, md, 
-			   &hdf5_file, &hdf5_space, &hdf5_data);
+      hdf = (hdf_t *) MALLOC(sizeof(hdf_t));
+      hdf = initialize_hdf5_file(output_file_name, md);
       hdf5 = (float *) 
 	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);
     }
-    */
     else if (format == NC) {
       netcdf = (netcdf_t *) MALLOC(sizeof(netcdf_t));
       netcdf = initialize_netcdf_file(output_file_name, md);
@@ -864,12 +862,10 @@ export_band_image (const char *metadata_file_name,
       finalize_jpeg_file(ojpeg, &cinfo);
     else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
       finalize_png_file(opng, png_ptr, png_info_ptr);
-    /*
     else if (format == HDF)
-      finalize_hdf5_file(hdf5_file, hdf5_space, hdf5_data, hdf5);
-    */
+      finalize_hdf5_file(hdf);
     else if (format == NC) {
-      finalize_netcdf_file(netcdf, md, nc);
+      finalize_netcdf_file(netcdf, md);
     }
     else
       asfPrintError("Impossible: unexpected format %d\n", format);
@@ -1270,15 +1266,13 @@ export_band_image (const char *metadata_file_name,
           append_ext_if_needed (out_file, ".bin", NULL);
           initialize_polsarpro_file(out_file, md, &ofp);
         }
-	/*
 	else if (format == HDF) {
-	  append_ext_if_needed (out_file, ".he5", NULL);
-	  initialize_hdf5_file(out_file, md, 
-			       &hdf5_file, &hdf5_space, &hdf5_data);
+	  append_ext_if_needed (out_file, ".h5", NULL);
+	  hdf = initialize_hdf5_file(out_file, md);
 	  hdf5 = (float *) 
-	    MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);
+	    MALLOC(sizeof(float)*md->general->line_count*
+		   md->general->sample_count);
 	}
-	*/
         else if (format == NC) {
           append_ext_if_needed (out_file, ".nc", NULL);
 	  netcdf = initialize_netcdf_file(output_file_name, md);
@@ -1468,13 +1462,11 @@ export_band_image (const char *metadata_file_name,
                   ieee_lil32(float_line[sample]);
                 fwrite(float_line,4,sample_count,ofp);
               }
-	      /*
 	      else if (format == HDF) {
 		int sample;
 		for (sample=0; sample<sample_count; sample++)
 		  hdf5[ii*sample_count+sample] = float_line[sample];
 	      }
-	      */
 	      else if (format == NC) {
 		int sample;
 		for (sample=0; sample<sample_count; sample++) {
@@ -1538,13 +1530,20 @@ export_band_image (const char *metadata_file_name,
           finalize_ppm_file(opgm);
         else if (format == POLSARPRO_HDR)
           FCLOSE(ofp);
-	/*
-	else if (format == HDF5)
-	  finalize_hdf5_file(hdf5_file, hdf5_space, hdf5_data, hdf5);
-	*/
+	else if (format == HDF) {
+	  herr_t status;
+	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
+	  if (strstr(band_name[kk], "PHASE"))
+	    status = H5Dwrite(hdf->data_phase[kk/2], H5T_NATIVE_FLOAT, 
+			      H5S_ALL, H5S_ALL, H5P_DEFAULT, hdf5);
+	  else
+	    status = H5Dwrite(hdf->data_amp[kk/2], H5T_NATIVE_FLOAT, H5S_ALL, 
+			      H5S_ALL, H5P_DEFAULT, hdf5);
+	}
 	else if (format == NC) {
 	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
 	  nc_put_var_float(netcdf->ncid, netcdf->var_id[kk], &nc[0]);
+	  FREE(nc);
 	}
 
         FCLOSE(fp);
@@ -1552,7 +1551,9 @@ export_band_image (const char *metadata_file_name,
     } // End for each band (kk is band number)
 
     if (format == NC)
-      finalize_netcdf_file(netcdf, md, nc);
+      finalize_netcdf_file(netcdf, md);
+    else if (format == HDF)
+      finalize_hdf5_file(hdf);
 
     if (free_band_names) {
       for (ii=0; ii<band_count; ++ii)

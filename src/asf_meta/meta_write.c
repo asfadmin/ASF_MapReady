@@ -1299,9 +1299,7 @@ void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
 
 void meta_write_xml(meta_parameters *meta, const char *file_name)
 {
-  char *file_name_with_extension = appendExt(file_name, ".xml");
-  FILE *fp = FOPEN(file_name_with_extension, "w");
-  FREE(file_name_with_extension);
+  FILE *fp = FOPEN(file_name, "w");
   int ii, kk;
   meta_general *mg = meta->general;
   fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -1333,9 +1331,9 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
   fprintf(fp, "    <sample_count>%d</sample_count>\n", mg->sample_count);
   fprintf(fp, "    <start_line>%d</start_line>\n", mg->start_line);
   fprintf(fp, "    <start_sample>%d</start_sample>\n", mg->start_sample);
-  fprintf(fp, "    <x_pixel_size units=\"m\">%-16.11g</x_pixel_size>\n", 
+  fprintf(fp, "    <x_pixel_size units=\"m\">%.11g</x_pixel_size>\n", 
 	  mg->x_pixel_size);
-  fprintf(fp, "    <y_pixel_size units=\"m\">%-16.11g</y_pixel_size>\n", 
+  fprintf(fp, "    <y_pixel_size units=\"m\">%.11g</y_pixel_size>\n", 
 	  mg->y_pixel_size);
   fprintf(fp, "    <center_latitude units=\"degrees\">%.4lf</center_latitude>"
 	  "\n", mg->center_latitude);
@@ -1371,23 +1369,23 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	    ms->original_line_count);
     fprintf(fp, "    <original_sample_count>%d</original_sample_count>\n",
 	    ms->original_sample_count);
-    fprintf(fp, "    <line_increment>%-16.11g</line_increment>\n", 
+    fprintf(fp, "    <line_increment>%.11g</line_increment>\n", 
 	    ms->line_increment);
-    fprintf(fp, "    <sample_increment>%-16.11g</sample_increment>\n",
+    fprintf(fp, "    <sample_increment>%.11g</sample_increment>\n",
 	    ms->sample_increment);
-    fprintf(fp, "    <range_time_per_pixel units=\"s\">%-16.11g"
+    fprintf(fp, "    <range_time_per_pixel units=\"s\">%.11g"
 	    "</range_time_per_pixel>\n", ms->range_time_per_pixel);
-    fprintf(fp, "    <azimuth_time_per_pixel units=\"s\">%-16.11g"
+    fprintf(fp, "    <azimuth_time_per_pixel units=\"s\">%.11g"
 	    "</azimuth_time_per_pixel>\n", ms->azimuth_time_per_pixel);
     fprintf(fp, "    <slant_range_first_pixel units=\"m\">%.3lf"
 	    "</slant_range_first_pixel>\n", ms->slant_range_first_pixel);
-    fprintf(fp, "    <slant_shift units=\"m\">%-16.11g</slant_shift>\n",
+    fprintf(fp, "    <slant_shift units=\"m\">%.11g</slant_shift>\n",
 	    ms->slant_shift);
-    fprintf(fp, "    <time_shift units=\"s\">%-16.11g</time_shift>\n", 
+    fprintf(fp, "    <time_shift units=\"s\">%.11g</time_shift>\n", 
 	    ms->time_shift);
-    fprintf(fp, "    <wavelength units=\"m\">%-16.11g</wavelength>\n", 
+    fprintf(fp, "    <wavelength units=\"m\">%.11g</wavelength>\n", 
 	    ms->wavelength);
-    fprintf(fp, "    <prf units=\"Hz\">%-16.11g</prf>\n", ms->prf);
+    fprintf(fp, "    <prf units=\"Hz\">%.11g</prf>\n", ms->prf);
     fprintf(fp, "    <earth_radius units=\"m\">%.3lf</earth_radius>\n", 
 	    ms->earth_radius);
     fprintf(fp, "    <earth_radius_pp units=\"m\">%.3lf</earth_radius_pp>\n",
@@ -1398,31 +1396,31 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	    ms->satellite_binary_time);
     fprintf(fp, "    <satellite_clock_time>%s</satellite_clock_time>\n",
 	    ms->satellite_clock_time);
-    fprintf(fp, "    <dopRangeCen units=\"Hz\">%-16.11g</dopRangeCen>\n", 
+    fprintf(fp, "    <dopRangeCen units=\"Hz\">%.11g</dopRangeCen>\n", 
 	    ms->range_doppler_coefficients[0]);
-    fprintf(fp, "    <dopRangeLin units=\"Hz/pixel\">%-16.11g</dopRangeLin>"
+    fprintf(fp, "    <dopRangeLin units=\"Hz/pixel\">%.11g</dopRangeLin>"
 	    "\n", ms->range_doppler_coefficients[1]);
-    fprintf(fp, "    <dopRangeQuad units=\"Hz/(pixel^2)\">%-16.11g"
+    fprintf(fp, "    <dopRangeQuad units=\"Hz/(pixel^2)\">%.11g"
 	    "</dopRangeQuad>\n", ms->range_doppler_coefficients[2]);
-    fprintf(fp, "    <dopAzCen units=\"Hz\">%-16.11g</dopAzCen>\n",
+    fprintf(fp, "    <dopAzCen units=\"Hz\">%.11g</dopAzCen>\n",
 	    ms->azimuth_doppler_coefficients[0]);
-    fprintf(fp, "    <dopAzLin units=\"Hz/pixel\">%-16.11g</dopAzLin>\n",
+    fprintf(fp, "    <dopAzLin units=\"Hz/pixel\">%.11g</dopAzLin>\n",
 	    ms->azimuth_doppler_coefficients[1]);
-    fprintf(fp, "    <dopAzQuad units=\"Hz/(pixel^2)\">%-16.11g</dopAzQuad>\n",
+    fprintf(fp, "    <dopAzQuad units=\"Hz/(pixel^2)\">%.11g</dopAzQuad>\n",
 	    ms->azimuth_doppler_coefficients[2]);
     fprintf(fp, "    <pitch units=\"degrees\">%.4lf</pitch>\n", ms->pitch);
     fprintf(fp, "    <roll units=\"degrees\">%.4lf</roll>\n", ms->roll);
     fprintf(fp, "    <yaw units=\"degrees\">%.4lf</yaw>\n", ms->yaw);
-    fprintf(fp, "    <azimuth_bandwidth units=\"Hz\">%-16.11g"
+    fprintf(fp, "    <azimuth_bandwidth units=\"Hz\">%.11g"
 	    "</azimuth_bandwidth>\n", ms->azimuth_processing_bandwidth);
-    fprintf(fp, "    <chirp_rate units=\"Hz/sec\">%-16.11g</chirp_rate>\n", 
+    fprintf(fp, "    <chirp_rate units=\"Hz/sec\">%.11g</chirp_rate>\n", 
 	    ms->chirp_rate);
-    fprintf(fp, "    <pulse_duration units=\"s\">%-16.11g</pulse_duration>\n",
+    fprintf(fp, "    <pulse_duration units=\"s\">%.11g</pulse_duration>\n",
 	    ms->pulse_duration);
-    fprintf(fp, "    <range_samp_rate units=\"Hz\">%-16.11g</range_samp_rate>"
+    fprintf(fp, "    <range_samp_rate units=\"Hz\">%.11g</range_samp_rate>"
 	    "\n", ms->range_sampling_rate);
     for (ii=0; ii<6; ii++)
-      fprintf(fp, "    <incid_a exponent=\"%d\">%-16.11g</incid_a>\n", ii, 
+      fprintf(fp, "    <incid_a exponent=\"%d\">%.11g</incid_a>\n", ii, 
 	      ms->incid_a[ii]);
     fprintf(fp, "  </sar>\n");
   }
@@ -1439,16 +1437,16 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	      md->tsx->doppler_count);
       for (ii=0; ii<md->tsx->doppler_count; ii++) {
 	fprintf(fp,"    <estimate num=\"%d\">\n", ii+1);
-	fprintf(fp,"    <time units=\"s\">%-16.11g</time>\n", 
+	fprintf(fp,"    <time units=\"s\">%.11g</time>\n", 
 		md->tsx->dop[ii].time);
-	fprintf(fp,"    <first_range_time units=\"s\">%-16.11g"
+	fprintf(fp,"    <first_range_time units=\"s\">%.11g"
 		"</first_range_time>\n", md->tsx->dop[ii].first_range_time);
-	fprintf(fp,"    <reference_time units=\"s\">%-16.11g</reference_time>"
+	fprintf(fp,"    <reference_time units=\"s\">%.11g</reference_time>"
 		"\n", md->tsx->dop[ii].reference_time);
 	fprintf(fp,"    <polynomial_degree>%d</polynomial_degree>\n",
 		md->tsx->dop[ii].poly_degree);
 	for (kk=0; kk<=md->tsx->dop[ii].poly_degree; kk++)
-	  fprintf(fp, "    <coefficient num=\"%d\">%-16.11g</coefficient>\n",
+	  fprintf(fp, "    <coefficient num=\"%d\">%.11g</coefficient>\n",
 		  kk, md->tsx->dop[ii].coefficient[kk]);
 	fprintf(fp, "    </estimate>\n");
       }
@@ -1457,17 +1455,17 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "    <type>RADARSAT2</type>\n");
       fprintf(fp, "    <doppler_count>%d</doppler_count>\n",
 	      md->r2->doppler_count);
-      fprintf(fp, "    <centroid_time units=\"s\">%-16.11g</centroid_time>\n",
+      fprintf(fp, "    <centroid_time units=\"s\">%.11g</centroid_time>\n",
 	      md->r2->ref_time_centroid);
       for (kk=0; kk<md->r2->doppler_count; kk++)
-	fprintf(fp, "    <centroid exponent=\"%d\">%-16.11g</centroid>\n", 
+	fprintf(fp, "    <centroid exponent=\"%d\">%.11g</centroid>\n", 
 		kk,md->r2->centroid[kk]);
-      fprintf(fp, "    <rate_time units=\"s\">%-16.11g</rate_time>\n",
+      fprintf(fp, "    <rate_time units=\"s\">%.11g</rate_time>\n",
 	      md->r2->ref_time_rate);
       for (kk=0; kk<md->r2->doppler_count; kk++)
-	fprintf(fp, "    <rate exponent=\"%d\">%-16.11g</rate>\n", kk,
+	fprintf(fp, "    <rate exponent=\"%d\">%.11g</rate>\n", kk,
 		md->r2->rate[kk]);
-      fprintf(fp, "    <time_first_sample units=\"s\">%-16.11g"
+      fprintf(fp, "    <time_first_sample units=\"s\">%.11g"
 	      "</time_first_sample>\n", md->r2->time_first_sample);
     }
     fprintf(fp, "  </doppler>\n");
@@ -1502,11 +1500,11 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "  <state>\n");
     fprintf(fp, "    <year>%d</year>\n", mo->year);
     fprintf(fp, "    <julDay>%d</julDay>\n", mo->julDay);
-    fprintf(fp, "    <second units=\"s\">%-16.11g</second>\n", mo->second);
+    fprintf(fp, "    <second units=\"s\">%.11g</second>\n", mo->second);
     fprintf(fp, "    <vector_count>%d</vector_count>\n", mo->vector_count);
     for (ii=0; ii<mo->vector_count; ii++) {
       fprintf(fp, "    <vector num=\"%d\">\n", ii+1);
-      fprintf(fp, "      <time units=\"s\">%-16.11g</time>\n", 
+      fprintf(fp, "      <time units=\"s\">%.11g</time>\n", 
 	      mo->vecs[ii].time);
       fprintf(fp, "      <posX units=\"m\">%.3lf</posX>\n",
 	      mo->vecs[ii].vec.pos.x);
@@ -1563,8 +1561,8 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	      mp->startX);
       fprintf(fp, "    <startY units=\"degrees\">%.4lf</startY>\n", 
 	      mp->startY);
-      fprintf(fp, "    <perX units=\"degrees\">%-16.11g</perX>\n", mp->perX);
-      fprintf(fp, "    <perY units=\"degrees\">%-16.11g</perY>\n", mp->perY);
+      fprintf(fp, "    <perX units=\"degrees\">%.11g</perX>\n", mp->perX);
+      fprintf(fp, "    <perY units=\"degrees\">%.11g</perY>\n", mp->perY);
     }
     fprintf(fp, "    <units>%s</units>", mp->units);
     if (mp->hem == 'N')
@@ -1632,7 +1630,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	      mp->param.lamcc.false_easting);
       fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
 	      mp->param.lamcc.false_northing);
-      fprintf(fp, "      <scale_factor>%-16.11g</scale_factor>\n",
+      fprintf(fp, "      <scale_factor>%.11g</scale_factor>\n",
 	      mp->param.lamcc.scale_factor);
       fprintf(fp, "    </lambert_conformal_conic>\n");
     }
@@ -1659,7 +1657,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	      mp->param.utm.lat0);
       fprintf(fp, "      <longitude units=\"degrees\">%.4lf</longitude>\n",
 	      mp->param.utm.lon0);
-      fprintf(fp, "      <scale_factor>%-16.11g</scale_factor>\n", 
+      fprintf(fp, "      <scale_factor>%.11g</scale_factor>\n", 
 	      mp->param.utm.scale_factor);
       fprintf(fp, "    </universal_transverse_mercator>\n");
     }
@@ -1703,21 +1701,21 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <parameter_count>%d</parameter_count>\n",
 	    mt->parameter_count);
     for (ii=0; ii<mt->parameter_count; ii++)
-      fprintf(fp, "    <phi coefficient=\"%d\">%-16.11g</phi>\n", ii,
+      fprintf(fp, "    <phi coefficient=\"%d\">%.11g</phi>\n", ii,
 	      mt->y[ii]);
     for (ii=0; ii<mt->parameter_count; ii++)
-      fprintf(fp, "    <lambda coefficient=\"%d\">%-16.11g</lambda>\n", ii,
+      fprintf(fp, "    <lambda coefficient=\"%d\">%.11g</lambda>\n", ii,
 	      mt->x[ii]);
     if (mt->parameter_count == 25) {
-      fprintf(fp, "    <origin_pixel>%-16.11g</origin_pixel>\n", 
+      fprintf(fp, "    <origin_pixel>%.11g</origin_pixel>\n", 
 	      mt->origin_pixel);
-      fprintf(fp, "    <origin_line>%-16.11g</origin_line>\n", 
+      fprintf(fp, "    <origin_line>%.11g</origin_line>\n", 
 	      mt->origin_line);
     }
     for (ii=0; ii<mt->parameter_count; ii++)
-      fprintf(fp, "    <i coefficient=\"%d\">%-16.11g</i>\n", ii, mt->s[ii]);
+      fprintf(fp, "    <i coefficient=\"%d\">%.11g</i>\n", ii, mt->s[ii]);
     for (ii=0; ii<mt->parameter_count; ii++)
-      fprintf(fp, "    <j coeeficient=\"%d\">%-16.11g</j>\n", ii, mt->l[ii]);
+      fprintf(fp, "    <j coeeficient=\"%d\">%.11g</j>\n", ii, mt->l[ii]);
     if (mt->parameter_count == 25) {
       fprintf(fp, "    <origin_lat units=\"degrees\">%.4lf</origin_lat>\n", 
 	      mt->origin_lat);
@@ -1725,10 +1723,10 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	      mt->origin_lon);
     }
     for (ii=0; ii<10; ++ii)
-      fprintf(fp, "    <map_a coefficient=\"%d\">%-16.11g</map_a>\n", ii,
+      fprintf(fp, "    <map_a coefficient=\"%d\">%.11g</map_a>\n", ii,
 	      mt->map2ls_a[ii]);
     for (ii=0; ii<10; ++ii)
-      fprintf(fp, "    <map_b coefficient=\"%d\">%-16.11g</map_b>\n", ii,
+      fprintf(fp, "    <map_b coefficient=\"%d\">%.11g</map_b>\n", ii,
 	      mt->map2ls_b[ii]);
     fprintf(fp, "  </transform>\n");
   }
@@ -1736,7 +1734,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
   if (meta->airsar) {
     meta_airsar *ma = meta->airsar;
     fprintf(fp, "  <airsar>\n");
-    fprintf(fp, "    <scale_factor>%-16.11g</scale_factor>\n", 
+    fprintf(fp, "    <scale_factor>%.11g</scale_factor>\n", 
 	    ma->scale_factor);
     fprintf(fp, "    <gps_altitude units=\"m\">%.3lf</gps_altitude>\n", 
 	    ma->gps_altitude);
@@ -1760,13 +1758,13 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     for (ii=0; ii<ms->band_count; ii++) {
       fprintf(fp, "    <band_stats num=\"%d\">\n", ii+1);
       fprintf(fp, "      <band_id>%s</band_id>\n", ms->band_stats[ii].band_id);
-      fprintf(fp, "      <min>%-16.11g</min>\n", ms->band_stats[ii].min);
-      fprintf(fp, "      <max>%-16.11g</max>\n", ms->band_stats[ii].max);
-      fprintf(fp, "      <mean>%-16.11g</mean>\n", ms->band_stats[ii].mean);
-      fprintf(fp, "      <rmse>%-16.11g</rmse>\n", ms->band_stats[ii].rmse);
-      fprintf(fp, "      <std_deviation>%-16.11g</std_deviation>\n",
+      fprintf(fp, "      <min>%.11g</min>\n", ms->band_stats[ii].min);
+      fprintf(fp, "      <max>%.11g</max>\n", ms->band_stats[ii].max);
+      fprintf(fp, "      <mean>%.11g</mean>\n", ms->band_stats[ii].mean);
+      fprintf(fp, "      <rmse>%.11g</rmse>\n", ms->band_stats[ii].rmse);
+      fprintf(fp, "      <std_deviation>%.11g</std_deviation>\n",
 	      ms->band_stats[ii].std_deviation);
-      fprintf(fp, "      <mask>%-16.11g</mask>\n", ms->band_stats[ii].mask);
+      fprintf(fp, "      <mask>%.11g</mask>\n", ms->band_stats[ii].mask);
       fprintf(fp, "    </band_stats>\n");
     }
     fprintf(fp, "  </statistics>\n");
@@ -1799,53 +1797,53 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp,"  <calibration>\n");
     if (mc->type == asf_cal) {
       fprintf(fp, "    <type>ASF</type>\n");
-      fprintf(fp, "    <a coefficient=\"0\">%-16.11g</a>\n", mc->asf->a0);
-      fprintf(fp, "    <a coefficient=\"1\">%-16.11g</a>\n", mc->asf->a1);
-      fprintf(fp, "    <a coefficient=\"2\">%-16.11g</a>\n", mc->asf->a2);
+      fprintf(fp, "    <a coefficient=\"0\">%.11g</a>\n", mc->asf->a0);
+      fprintf(fp, "    <a coefficient=\"1\">%.11g</a>\n", mc->asf->a1);
+      fprintf(fp, "    <a coefficient=\"2\">%.11g</a>\n", mc->asf->a2);
       fprintf(fp, "    <sample_count>%d</sample_count>\n",
 	      mc->asf->sample_count);
       for (ii=0; ii<256; ii++)
-	fprintf(fp, "    <noise element=\"%d\">%-16.11g</noise>\n", 
+	fprintf(fp, "    <noise element=\"%d\">%.11g</noise>\n", 
 		ii, mc->asf->noise[ii]);
     }
     else if (mc->type == asf_scansar_cal) {
       fprintf(fp, "    <type>ASF_SCANSAR</type>\n");
-      fprintf(fp, "    <a coefficient=\"0\">%-16.11g</a>\n", 
+      fprintf(fp, "    <a coefficient=\"0\">%.11g</a>\n", 
 	      mc->asf_scansar->a0);
-      fprintf(fp, "    <a coefficient=\"1\">%-16.11g</a>\n", 
+      fprintf(fp, "    <a coefficient=\"1\">%.11g</a>\n", 
 	      mc->asf_scansar->a1);
-      fprintf(fp, "    <a coefficient=\"2\">%-16.11g</a>\n",
+      fprintf(fp, "    <a coefficient=\"2\">%.11g</a>\n",
 	      mc->asf_scansar->a2);
       for (ii=0; ii<256; ii++)
-	fprintf(fp, "    <noise element=\"%d\">%-16.11g</noise>\n", 
+	fprintf(fp, "    <noise element=\"%d\">%.11g</noise>\n", 
 		ii, mc->asf_scansar->noise[ii]);
     }
     else if (mc->type == esa_cal) {
       fprintf(fp, "    <type>ESA</type>\n");
-      fprintf(fp, "    <k>%-16.11g</k>\n", mc->esa->k);
-      fprintf(fp, "    <ref_incid>%-16.11g</ref_incid>\n", mc->esa->ref_incid);
+      fprintf(fp, "    <k>%.11g</k>\n", mc->esa->k);
+      fprintf(fp, "    <ref_incid>%.11g</ref_incid>\n", mc->esa->ref_incid);
     }
     else if (mc->type == rsat_cal) {
       fprintf(fp, "    <type>RSAT</type>\n");
       fprintf(fp, "    <table_entries>%d</table_entries>\n", mc->rsat->n);
       for (ii=0; ii<mc->rsat->n; ii++)
-	fprintf(fp, "    <lut coefficient=\"%d\">%-16.11g</lut>\n", 
+	fprintf(fp, "    <lut coefficient=\"%d\">%.11g</lut>\n", 
 		ii, mc->rsat->lut[ii]);
       fprintf(fp, "    <sample_inc>%d</sample_inc>\n", mc->rsat->samp_inc);
-      fprintf(fp, "    <a3>%-16.11g</a3>\n", mc->rsat->a3);
+      fprintf(fp, "    <a3>%.11g</a3>\n", mc->rsat->a3);
       fprintf(fp, "    <slc>%d</slc>\n", mc->rsat->slc);
       fprintf(fp, "    <focus>%d</focus>\n", mc->rsat->focus);
     }
     else if (mc->type == alos_cal) {
       fprintf(fp, "    <type>ALOS</type>\n");
       if (!ISNAN(mc->alos->cf_hh))
-	fprintf(fp, "    <cf_hh>%-16.11g</cf_hh>\n", mc->alos->cf_hh);
+	fprintf(fp, "    <cf_hh>%.11g</cf_hh>\n", mc->alos->cf_hh);
       if (!ISNAN(mc->alos->cf_hv))
-	fprintf(fp, "    <cf_hv>%-16.11g</cf_hv>\n", mc->alos->cf_hv);
+	fprintf(fp, "    <cf_hv>%.11g</cf_hv>\n", mc->alos->cf_hv);
       if (!ISNAN(mc->alos->cf_vh))
-	fprintf(fp, "    <cf_vh>%-16.11g</cf_vh>\n", mc->alos->cf_vh);
+	fprintf(fp, "    <cf_vh>%.11g</cf_vh>\n", mc->alos->cf_vh);
       if (!ISNAN(mc->alos->cf_vv))
-	fprintf(fp, "    <cf_vv>%-16.11g</cf_vv>\n", mc->alos->cf_vv);
+	fprintf(fp, "    <cf_vv>%.11g</cf_vv>\n", mc->alos->cf_vv);
     }
     fprintf(fp, "  </calibration>\n");
   }
@@ -1870,18 +1868,18 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <slave_image>%s</slave_image>\n", mi->slave_image);
     fprintf(fp, "    <center_look_angle units=\"degrees\">%.4lf"
 	    "</center_look_angle>\n", mi->center_look_angle);
-    fprintf(fp, "    <doppler units=\"Hz\">%-16.11g</doppler>\n", mi->doppler);
-    fprintf(fp, "    <doppler_rate units=\"Hz/m\">%-16.11g</doppler_rate>\n",
+    fprintf(fp, "    <doppler units=\"Hz\">%.11g</doppler>\n", mi->doppler);
+    fprintf(fp, "    <doppler_rate units=\"Hz/m\">%.11g</doppler_rate>\n",
 	    mi->doppler_rate);
     fprintf(fp, "    <baseline_length units=\"m\">%.1lf</baseline_length>\n", 
 	    mi->baseline_length);
     fprintf(fp, "    <baseline_parallel units=\"m\">%.1lf</baseline_parallel>"
 	    "\n", mi->baseline_parallel);
-    fprintf(fp, "    <baseline_parallel_rate units=\"m/s\">%-16.11g"
+    fprintf(fp, "    <baseline_parallel_rate units=\"m/s\">%.11g"
 	    "</baseline_parallel_rate>\n", mi->baseline_parallel_rate);
     fprintf(fp, "    <baseline_perpendicular units=\"m\">%.1lf"
 	    "</baseline_perpendicular>\n", mi->baseline_perpendicular);
-    fprintf(fp, "    <baseline_perpendicular_rate units=\"m/s\">%-16.11g"
+    fprintf(fp, "    <baseline_perpendicular_rate units=\"m/s\">%.11g"
 	    "</baseline_perpendicular_rate>\n", 
 	    mi->baseline_perpendicular_rate);
     fprintf(fp, "    <baseline_temporal units=\"days\">%d</baseline_temporal>"

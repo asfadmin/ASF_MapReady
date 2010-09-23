@@ -135,10 +135,10 @@ char *findExt(const char *name)
         strcmp_case(ext, ".BSQ") == 0       ||
         strcmp_case(ext, ".PAR") == 0       ||
         strcmp_case(ext, ".PAL") == 0       ||
-        strcmp_case(ext, ".SHP") == 0       ||
-        strcmp_case(ext, ".SHX") == 0       ||
-        strcmp_case(ext, ".DBF") == 0       ||
-        strcmp_case(ext, ".PRJ") == 0       ||
+        strcmp_case(ext, ".SHP") == 0       || // ArcGIS
+        strcmp_case(ext, ".SHX") == 0       || // ArcGIS
+        strcmp_case(ext, ".DBF") == 0       || // ArcGIS
+        strcmp_case(ext, ".PRJ") == 0       || // ArcGIS
         strcmp_case(ext, ".KML") == 0       ||
         strcmp_case(ext, ".PI") == 0        ||
         strcmp_case(ext, ".TAR") == 0       ||
@@ -150,6 +150,8 @@ char *findExt(const char *name)
         strcmp_case(ext, ".COR") == 0       || // roipac
         strcmp_case(ext, ".INT") == 0       || // roipac
         strcmp_case(ext, ".RSC") == 0       || // roipac
+	strcmp_case(ext, ".NC") == 0        || // netCDF
+	strcmp_case(ext, ".H5") == 0        || // HDF5
 	strcmp_case(ext, ".XML") == 0)
         return (char *) &name[ii];
     else
