@@ -38,8 +38,6 @@ CAVEATS:
 /**** PROTOTYPES ****/
 void usage(char *name);
 int  is_geocentric(meta_parameters *meta);
-char *data_type2str(int data_type);
-char *image_data_type2str(int image_data_type);
 void projection_type_2_str(projection_type_t proj, char *proj_str);
 void report_validation_errors(char *outputFile, char *file,
                               char *err_msg, char *block_id);
@@ -301,122 +299,6 @@ void usage(char *name)
       "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " "MAPREADY_VERSION_STRING ")\n\n",
       name);
   exit(1);
-}
-
-// User must free the returned string
-char *image_data_type2str(int image_data_type)
-{
-  image_data_type_t type = (image_data_type_t)image_data_type;
-  char *retstr = (char*)CALLOC(64, sizeof(char));
-
-  switch (type) {
-    case RAW_IMAGE:
-      strcpy(retstr, "RAW_IMAGE");
-      break;
-    case COMPLEX_IMAGE:
-      strcpy(retstr, "COMPLEX_IMAGE");
-      break;
-    case AMPLITUDE_IMAGE:
-      strcpy(retstr, "AMPLITUDE_IMAGE");
-      break;
-    case PHASE_IMAGE:
-      strcpy(retstr, "PHASE_IMAGE");
-      break;
-    case POWER_IMAGE:
-      strcpy(retstr, "POWER_IMAGE");
-      break;
-    case SIGMA_IMAGE:
-      strcpy(retstr, "SIGMA_IMAGE");
-      break;
-    case GAMMA_IMAGE:
-      strcpy(retstr, "GAMMA_IMAGE");
-      break;
-    case BETA_IMAGE:
-      strcpy(retstr, "BETA_IMAGE");
-      break;
-    case INTERFEROGRAM:
-      strcpy(retstr, "INTERFEROGRAM");
-      break;
-    case COHERENCE_IMAGE:
-      strcpy(retstr, "COHERENCE_IMAGE");
-      break;
-    case GEOREFERENCED_IMAGE:
-      strcpy(retstr, "GEOREFERENCED_IMAGE");
-      break;
-    case GEOCODED_IMAGE:
-      strcpy(retstr, "GEOCODED_IMAGE");
-      break;
-    case POLARIMETRIC_IMAGE:
-      strcpy(retstr, "POLARIMETRIC_IMAGE");
-    case LUT_IMAGE:
-      strcpy(retstr, "LUT_IMAGE");
-      break;
-    case ELEVATION:
-      strcpy(retstr, "ELEVATION");
-      break;
-    case DEM:
-      strcpy(retstr, "DEM");
-      break;
-    case IMAGE:
-      strcpy(retstr, "IMAGE");
-      break;
-    case SIMULATED_IMAGE:
-      strcpy(retstr, "SIMULATED_IMAGE");
-      break;
-    case MASK:
-      strcpy(retstr, "MASK");
-      break;
-    default:
-      strcpy(retstr, "UNKNOWN");
-      break;
-  }
-
-  return retstr;
-}
-
-// User must free the returned string
-char *data_type2str(int data_type)
-{
-  data_type_t type = (data_type_t)data_type;
-  char *retstr = (char*)CALLOC(64, sizeof(char));
-
-  switch (type) {
-    case BYTE:
-      strcpy(retstr, "BYTE");
-      break;
-    case INTEGER16:
-      strcpy(retstr, "INTEGER16");
-      break;
-    case INTEGER32:
-      strcpy(retstr, "INTEGER32");
-      break;
-    case REAL32:
-      strcpy(retstr, "REAL32");
-      break;
-    case REAL64:
-      strcpy(retstr, "REAL64");
-      break;
-    case COMPLEX_BYTE:
-      strcpy(retstr, "COMPLEX_BYTE");
-      break;
-    case COMPLEX_INTEGER16:
-      strcpy(retstr, "COMPLEX_INTEGER16");
-      break;
-    case COMPLEX_INTEGER32:
-      strcpy(retstr, "COMPLEX_INTEGER32");
-      break;
-    case COMPLEX_REAL32:
-      strcpy(retstr, "COMPLEX_REAL32");
-      break;
-    case COMPLEX_REAL64:
-      strcpy(retstr, "COMPLEX_REAL64");
-      break;
-    default:
-      strcpy(retstr, "UNKNOWN");
-      break;
-  }
-
-  return retstr;
 }
 
 void projection_type_2_str(projection_type_t proj, char *proj_str)
