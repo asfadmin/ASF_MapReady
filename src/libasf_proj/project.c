@@ -583,6 +583,21 @@ char *ps_projection_desc(project_parameters_t *pps, datum_type_t datum)
             (float)HUGHES_SEMIMAJOR,
             (float)HUGHES_INV_FLATTENING);
   }
+  else if (datum == ITRF97_DATUM) { 
+    sprintf(ps_projection_description,
+            "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
+                "+k_0=%f +a=%f +rf=%f",
+            pps->ps.is_north_pole ? "90" : "-90",
+            pps->ps.slat,
+            pps->ps.slon,
+            1.0 /* pps->ps.scale_factor */,
+            (float)INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_SEMIMAJOR,
+            (float)INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_INV_FLATTENING);
+  }
+  else {
+    asfPrintError("Unknown datum passed to ps_projection_desc: %d (%s)\n",
+                  (int)datum, datum_str(datum));
+  }
 
   return ps_projection_description;
 }
@@ -661,6 +676,10 @@ char *lamaz_projection_desc(project_parameters_t *pps, datum_type_t datum)
 	    pps->lamaz.center_lon,
             (float)GRS1980_SEMIMAJOR,
             (float)GRS1980_INV_FLATTENING);
+  }
+  else {
+    asfPrintError("Unknown datum passed to lamaz_projection_desc: %d (%s)\n",
+                  (int)datum, datum_str(datum));
   }
 
   return lamaz_projection_description;
@@ -749,6 +768,10 @@ char *lamcc_projection_desc(project_parameters_t *pps, datum_type_t datum)
         pps->lamcc.lon0,
             (float)GRS1980_SEMIMAJOR,
             (float)GRS1980_INV_FLATTENING);
+  }
+  else {
+    asfPrintError("Unknown datum passed to lamcc_projection_desc: %d (%s)\n",
+                  (int)datum, datum_str(datum));
   }
 
   return lamcc_projection_description;
@@ -978,6 +1001,10 @@ char * albers_projection_desc(project_parameters_t * pps,
         pps->albers.center_meridian,
             (float)INTERNATIONAL1924_SEMIMAJOR,
             (float)INTERNATIONAL1924_INV_FLATTENING);
+  }
+  else {
+    asfPrintError("Unknown datum passed to albers_projection_desc: %d (%s)\n",
+                  (int)datum, datum_str(datum));
   }
 
   return albers_projection_description;
