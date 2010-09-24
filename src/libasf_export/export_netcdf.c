@@ -347,8 +347,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
       if (meta->general->center_latitude < 0)
 	strcat(str, " +south");
       nc_put_att_text(ncid, var_id, "proj4text", strlen(str), str);
-      status = nc_put_att_int(ncid, var_id, "zone", NC_INT, 1, 
-			      &mp->param.utm.zone);
+      nc_put_att_int(ncid, var_id, "zone", NC_INT, 1, &mp->param.utm.zone);
       *fValue = (float) mp->re_major;
       nc_put_att_float(ncid, var_id, "semimajor_radius", NC_FLOAT, 1, fValue);
       *fValue = (float) mp->re_minor;
@@ -654,9 +653,10 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 		 &meta->general->missing_lines);
   nc_put_att_float(ncid, var_id, "no_data", NC_FLOAT, 1, 
 		   &meta->general->no_data);
+
   if (meta->sar) {
     // Metadata - SAR block
-    nc_def_var(ncid, "SAR", NC_CHAR, 0, 0, &var_id);
+    nc_def_var(ncid, "sar", NC_CHAR, 0, 0, &var_id);
     if (meta->sar->image_type == 'S')
       strcpy(str, "slant range");
     else if (meta->sar->image_type == 'G')
