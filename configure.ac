@@ -307,9 +307,9 @@ AC_SUBST(ASF_LIB_HDF5)
 have_hdfeos5="no"
 if test "$have_hdfeos5" = "no" ; then
    ASF_LIB_HDFEOS5="${ext_lib_src_dir}/libhdfeos5"
-   HDFEOS5_LIBS="\$(LIBDIR)/libhe5_hdfeos.a"
+   HDFEOS5_LIBS="\$(LIBDIR)/libhe5_hdfeos.a \$(LIBDIR)/libGctp.a"
 else
-   HDFEOS5_LIBS="-lhe5_hdfeos"
+   HDFEOS5_LIBS="-lhe5_hdfeos -lGctp"
 fi
 AC_SUBST(ASF_LIB_HDFEOS5)
 

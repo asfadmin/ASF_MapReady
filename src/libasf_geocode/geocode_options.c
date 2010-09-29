@@ -66,7 +66,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
   return pps;
 }
 
-int calc_utm_zone(double lon)
+int asf_calc_utm_zone(double lon)
 {
   return((int)(((lon + 180.0) / 6.0) + 1.0));
 }
@@ -181,7 +181,7 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
               "you prefer (via user interface or .proj definition file.)\n",
           meta->general->center_longitude);
         }
-        pps->utm.zone = calc_utm_zone(meta->general->center_longitude);
+        pps->utm.zone = asf_calc_utm_zone(meta->general->center_longitude);
       }
 
       // Set the latitude/longitude of origin

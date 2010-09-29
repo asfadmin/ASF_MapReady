@@ -88,7 +88,7 @@ void apply_defaults(projection_type_t proj_type, project_parameters_t * pps,
 /* Get the UTM zone number in which a given longitude falls.  Puts
    longitudes that fall on zone thresholds into the higher numbered
    UTM zone.  */
-int calc_utm_zone (double lon);
+int asf_calc_utm_zone (double lon);
 void check_parameters(projection_type_t projection_type, datum_type_t datum,
                       project_parameters_t *pp, meta_parameters *meta,
                       int force_flag);

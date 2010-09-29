@@ -7,7 +7,7 @@
 #include <asf_raster.h>
 
 // Prototypes
-int calc_utm_zone(double lon);
+int asf_calc_utm_zone(double lon);
 void check_parameters(projection_type_t projection_type, datum_type_t datum,
 		      project_parameters_t *pp, meta_parameters *meta,
 		      int force_flag);
@@ -160,7 +160,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
           lon = meta->location->lon_start_near_range;
       else
           meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
-      zone = calc_utm_zone(lon);
+      zone = asf_calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
@@ -170,7 +170,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       else
           meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0,
               &lat, &lon);
-      zone = calc_utm_zone(lon);
+      zone = asf_calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
@@ -180,7 +180,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       else
           meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0,
               &lat, &lon);
-      zone = calc_utm_zone(lon);
+      zone = asf_calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
@@ -190,7 +190,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       else
           meta_get_latLon(meta, meta->general->line_count - 1,
       	      meta->general->sample_count - 1, 0.0, &lat, &lon);
-      zone = calc_utm_zone(lon);
+      zone = asf_calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
