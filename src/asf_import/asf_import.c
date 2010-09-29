@@ -235,7 +235,7 @@ following defines.
 #include <ctype.h>
 
 #ifdef linux
-char *strdup(char *);
+//char *strdup(char *);
 #endif
 
 #define REQUIRED_ARGS 2

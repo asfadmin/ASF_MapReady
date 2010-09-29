@@ -23,6 +23,7 @@ have_png="no"
 have_exif="no"
 have_xml2="no"
 have_gdal="no"
+have_hdfeos5="no"
 have_hdf5="no"
 have_netcdf="no"
 
@@ -300,6 +301,18 @@ else
 fi
 AC_SUBST(ASF_LIB_HDF5)
 
+#### libhdfeos check ####
+##### --> always use our own libhdfeos version
+#####     no point in trying to sort out external dependencies
+have_hdfeos5="no"
+if test "$have_hdfeos5" = "no" ; then
+   ASF_LIB_HDFEOS5="${ext_lib_src_dir}/libhdfeos5"
+   HDFEOS5_LIBS="\$(LIBDIR)/libhe5_hdfeos.a"
+else
+   HDFEOS5_LIBS="-lhe5_hdfeos"
+fi
+AC_SUBST(ASF_LIB_HDFEOS5)
+
 #### libnetcdf check ####
 ##### --> always use our own libnetcdf version
 #####     no point in trying to sort out external dependencies
@@ -490,6 +503,9 @@ CURL_CFLAGS = $CURL_CFLAGS
 
 HDF5_LIBS = $HDF5_LIBS
 HDF5_CFLAGS = $HDF5_CFLAGS
+
+HDFEOS5_LIBS = $HDFEOS5_LIBS
+HDFEOS5_CFLAGS = $HDFEOS5_CFLAGS
 
 NETCDF_LIBS = $NETCDF_LIBS
 NETCDF_CFLAGS = $NETCDF_CFLAGS

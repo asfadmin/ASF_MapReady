@@ -76,8 +76,6 @@ switch (*proj_code)
 	   break;
    case ALASKA:strcpy(string,"(23)ALASKA CONFORMAL");
 	   break;
-   case GOOD:strcpy(string,"(24)INTERRUPTED GOODE HOMOLOSINE");
-	   break;
    case MOLL:strcpy(string,"(25)MOLLWEIDE");
 	   break;
    case IMOLL:strcpy(string,"(26)INTERRUPTED MOLLWEIDE");

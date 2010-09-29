@@ -23,6 +23,7 @@ MODULES = \
 	@ASF_LIB_CURL@ \
 	@ASF_LIB_HDF5@ \
 	@ASF_LIB_NETCDF@ \
+	@ASF_LIB_HDFEOS5@ \
 	@ASF_LIB_GDAL@
 
 all: libs gtkwin32

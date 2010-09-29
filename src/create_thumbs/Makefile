@@ -32,6 +32,7 @@ LIBS = \
 	$(XML_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
+	$(HDFEOS5_LIBS) \
 	$(ZLIB_LIBS)
 
 CFLAGS += \

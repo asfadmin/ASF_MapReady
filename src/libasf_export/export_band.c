@@ -1267,7 +1267,10 @@ export_band_image (const char *metadata_file_name,
           initialize_polsarpro_file(out_file, md, &ofp);
         }
 	else if (format == HDF) {
-	  append_ext_if_needed (out_file, ".h5", NULL);
+	  if (md->projection && md->projection->type != SCANSAR_PROJECTION)
+	    append_ext_if_needed(out_file, ".he5", NULL);
+	  else
+	    append_ext_if_needed (out_file, ".h5", NULL);
 	  hdf = initialize_hdf5_file(out_file, md);
 	  hdf5 = (float *) 
 	    MALLOC(sizeof(float)*md->general->line_count*

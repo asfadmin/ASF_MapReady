@@ -71,6 +71,7 @@ LIB = \
 	$(XML_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
+	$(HDFEOS5_LIBS) \
 	$(ZLIB_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
@@ -130,6 +131,7 @@ LDLIBS = \
 	$(GEOTIFF_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
+	$(HDFEOS5_LIBS) \
 	$(GTK_LIBS) \
 	$(PNG_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \

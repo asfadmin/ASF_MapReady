@@ -25,6 +25,7 @@
 #include <spheroids.h>
 #include <typlim.h>
 #include <hdf5.h>
+#include <HE5_HdfEosDef.h>
 
 typedef struct vector_time_t {
   int number;
@@ -40,15 +41,11 @@ typedef struct vector_xyz_t {
 
 hdf_t *initialize_hdf5_file(const char *output_file_name, meta_parameters *md)
 {
-  hid_t hdf5_group, hdf5_data, hdf5_attr;
+  hid_t hdf5_file, hdf5_group, hdf5_data, hdf5_attr;
   herr_t status;
-  int ii, complex=FALSE;
+  int ii, complex=FALSE, projected=FALSE;
   char dataset[50], groupname[50], band[5], str_attr[50];
   char *spatial_ref=NULL, *datum=NULL, *spheroid=NULL;
-
-  // Check for complex data
-  if (md->general->image_data_type == COMPLEX_IMAGE)
-    complex = TRUE;
 
   // Initialize the HDF pointer structure
   hdf_t *hdf = (hdf_t *) MALLOC(sizeof(hdf_t));
@@ -59,9 +56,24 @@ hdf_t *initialize_hdf5_file(const char *output_file_name, meta_parameters *md)
   else
     hdf->data_phase = NULL;
 
+  // Check for complex data
+  if (md->general->image_data_type == COMPLEX_IMAGE)
+    complex = TRUE;
+
+  // Check whether data is map projected
+  if (md->projection && md->projection->type != SCANSAR_PROJECTION) {
+    projected = TRUE;
+    hdf->projected = TRUE;
+  }
+  else
+    hdf->projected = FALSE;
+
   // Create new HDF5 file
-  hid_t hdf5_file = 
-    H5Fcreate(output_file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  if (projected)
+    hdf5_file = HE5_GDopen(output_file_name, H5F_ACC_TRUNC);
+  else
+    hdf5_file = 
+      H5Fcreate(output_file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   hdf->file = hdf5_file;
 
   // Create data space
@@ -232,7 +244,6 @@ hdf_t *initialize_hdf5_file(const char *output_file_name, meta_parameters *md)
 
   // Add projection parameters
   double *lfValue = (double *) MALLOC(sizeof(double));
-  int projected = FALSE;
   if (md->projection && md->projection->type != SCANSAR_PROJECTION)
     projected = TRUE;
   if (projected) {
@@ -769,7 +780,10 @@ void finalize_hdf5_file(hdf_t *hdf)
   status = H5Sclose(hdf->space);
   if (status == -1)
     asfPrintError("Could not close HDF5 data space!\n");
-  status = H5Fclose(hdf->file);
+  if (hdf->projected)
+    status = HE5_GDclose(hdf->file);
+  else
+    status = H5Fclose(hdf->file);
   if (status == -1)
     asfPrintError("Could not close HDF5 file!\n");
 

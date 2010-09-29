@@ -38,6 +38,7 @@ LIBS = 	\
 	$(GLIB_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
+	$(HDFEOS5_LIBS) \
 	$(SHAPELIB_LIBS) \
 	-lm -lz
 

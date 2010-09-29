@@ -12,6 +12,7 @@
 #include "asf_nan.h"
 #include "netcdf.h"
 #include "hdf5.h"
+#include "HE5_HdfEosDef.h"
 
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
@@ -84,6 +85,7 @@ typedef struct {
   int band_count;               // Number of bands
   hid_t *data_amp;              // Array of data set identifiers (amplitude)
   hid_t *data_phase;            // Array of data set identifiers (phase)
+  int projected;                // Flag whether data is map projected
 } hdf_t;
 
 /* Structure to hold elements of the command line.  */

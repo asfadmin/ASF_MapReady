@@ -152,6 +152,7 @@ char *findExt(const char *name)
         strcmp_case(ext, ".RSC") == 0       || // roipac
 	strcmp_case(ext, ".NC") == 0        || // netCDF
 	strcmp_case(ext, ".H5") == 0        || // HDF5
+	strcmp_case(ext, ".HE5") == 0      || // HDF-EOS5
 	strcmp_case(ext, ".XML") == 0)
         return (char *) &name[ii];
     else

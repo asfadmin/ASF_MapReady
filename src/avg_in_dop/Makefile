@@ -24,6 +24,7 @@ LIBS  = \
 	$(GEOTIFF_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
+	$(HDFEOS5_LIBS) \
 	$(GLIB_LIBS) \
 	-lz
 
