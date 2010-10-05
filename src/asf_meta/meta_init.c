@@ -115,6 +115,7 @@ meta_sar *meta_sar_init(void)
   sar->pitch = MAGIC_UNSET_DOUBLE;
   sar->roll = MAGIC_UNSET_DOUBLE;
   sar->yaw = MAGIC_UNSET_DOUBLE;
+  sar->azimuth_processing_bandwidth = MAGIC_UNSET_DOUBLE;
   for (ii=0; ii<6; ii++) {
     sar->incid_a[ii] = MAGIC_UNSET_DOUBLE;
   }
@@ -357,6 +358,8 @@ meta_insar *meta_insar_init(void)
   strcpy(insar->processor, MAGIC_UNSET_STRING);
   strcpy(insar->master_image, MAGIC_UNSET_STRING);
   strcpy(insar->slave_image, MAGIC_UNSET_STRING);
+  strcpy(insar->master_acquisition_date, MAGIC_UNSET_STRING);
+  strcpy(insar->slave_acquisition_date, MAGIC_UNSET_STRING);
   insar->center_look_angle = MAGIC_UNSET_DOUBLE;
   insar->doppler = MAGIC_UNSET_DOUBLE;
   insar->doppler_rate = MAGIC_UNSET_DOUBLE;
@@ -365,7 +368,7 @@ meta_insar *meta_insar_init(void)
   insar->baseline_parallel_rate = MAGIC_UNSET_DOUBLE;
   insar->baseline_perpendicular = MAGIC_UNSET_DOUBLE;
   insar->baseline_perpendicular_rate = MAGIC_UNSET_DOUBLE;
-  insar->baseline_temporal = MAGIC_UNSET_DOUBLE;
+  insar->baseline_temporal = MAGIC_UNSET_INT;
   insar->baseline_critical = MAGIC_UNSET_DOUBLE;
   return insar;
 }

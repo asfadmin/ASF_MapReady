@@ -1133,6 +1133,10 @@ void fill_structure_field(char *field_name, void *valp)
       { strcpy((MINSAR)->master_image, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "slave_image") )
       { strcpy((MINSAR)->slave_image, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "master_acquisition_date") )
+      { strcpy((MINSAR)->master_acquisition_date, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "slave_acquisition_date") )
+      { strcpy((MINSAR)->slave_acquisition_date, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "center_look_angle") )
       { (MINSAR)->center_look_angle = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "doppler") )

@@ -1662,6 +1662,10 @@ void write_insar_xml(output_format_t format,
     fprintf(fp, "  <master_image>%s</master_image>\n", 
 	    meta->insar->master_image);
     fprintf(fp, "  <slave_image>%s</slave_image>\n", meta->insar->slave_image);
+    fprintf(fp, "  <master_acquisition_date>%s</master_acquisition_date>\n",
+            meta->insar->master_acquisition_date);
+    fprintf(fp, "  <slave_acquisition_date>%s</slave_acquisition_date>\n",
+            meta->insar->slave_acquisition_date);
     fprintf(fp, "  <center_look_angle>%.4lf</center_look_angle>\n",
 	    meta->insar->center_look_angle);
     fprintf(fp, "  <doppler units=\"Hz\">%.4lf</doppler>\n",

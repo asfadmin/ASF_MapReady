@@ -956,6 +956,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		    "Name of master image");
     meta_put_string(fp, "slave_image:", meta->insar->slave_image,
 		    "Name of slave image");
+    meta_put_string(fp, "master_acquisition_date:",
+                    meta->insar->master_acquisition_date,
+		    "Acquisition date of master image");
+    meta_put_string(fp, "slave_acquisition_date:",
+                    meta->insar->slave_acquisition_date,
+		    "Acquisition date of slave image");
     meta_put_double_lf(fp, "center_look_angle:", 
 		       meta->insar->center_look_angle, 4,
 		       "Center look angle [degrees]");

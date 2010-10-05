@@ -455,6 +455,8 @@ typedef struct {
   char processor[FIELD_STRING_MAX];    // Name of processor: ROIPAC, GAMMA
   char master_image[FIELD_STRING_MAX]; // Name of the master image
   char slave_image[FIELD_STRING_MAX];  // Name of the slave image
+  char master_acquisition_date[FIELD_STRING_MAX]; // Data acquisition date, master
+  char slave_acquisition_date[FIELD_STRING_MAX]; // Data acquisition date, slave
   double center_look_angle;            // Center look angle
   double doppler;                      // Constant Doppler
   double doppler_rate;                 // Doppler rate

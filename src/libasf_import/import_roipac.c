@@ -487,8 +487,15 @@ static int min3(int a, int b, int c) {
 
 void import_roipac(const char *basename_in, const char *outFile)
 {
-  char *tmp = stripExt(basename_in);
-  char *basename = stripExt(tmp);
+  char *basename;
+  if (strstr(basename_in, "flat_HDR"))
+    basename = asf_strReplace(basename_in, "flat_HDR_", "");
+  else
+    basename = STRDUP(basename_in);
+
+  char *tmp = stripExt(basename);
+  free(basename);
+  basename = stripExt(tmp);
   free(tmp);
 
   char *filename = get_filename(basename);
@@ -545,7 +552,7 @@ void import_roipac(const char *basename_in, const char *outFile)
   if (sv_file)
     asfPrintStatus("Found state vectors file: %s\n", sv_file);
 
-  meta_parameters *meta; 
+  meta_parameters *meta = NULL; 
 
   meta_parameters *ampMeta = NULL;
   if (fileExists(amp) && fileExists(amp_rsc)) {
@@ -592,9 +599,9 @@ void import_roipac(const char *basename_in, const char *outFile)
     nl_amp = ampMeta->general->line_count;
     int nl_calc = (int)(fileSize(amp) / ns_amp / 4 / 2);
     if (nl_calc < nl_amp) {
-      printf("Amplitude file size shorter than expected, truncating.\n"
-             "  (line count from metadata: %d, from file size: %d)\n",
-             nl_amp, nl_calc);
+      asfPrintStatus("Amplitude file size shorter than expected, truncating.\n"
+                     "  (line count from metadata: %d, from file size: %d)\n",
+                     nl_amp, nl_calc);
       nl_amp = nl_calc;
     }
   }
@@ -603,9 +610,9 @@ void import_roipac(const char *basename_in, const char *outFile)
     nl_inf = infMeta->general->line_count;
     int nl_calc = (int)(fileSize(inf) / ns_inf / 4 / 2);
     if (nl_calc < nl_inf) {
-      printf("Interferogram file size shorter than expected, truncating.\n"
-             "  (line count from metadata: %d, from file size: %d)\n",
-             nl_inf, nl_calc);
+      asfPrintStatus("Interferogram file shorter than expected, truncating.\n"
+                     "  (line count from metadata: %d, from file size: %d)\n",
+                     nl_inf, nl_calc);
       nl_inf = nl_calc;
     }
   }
@@ -614,15 +621,15 @@ void import_roipac(const char *basename_in, const char *outFile)
     nl_cor = corMeta->general->line_count;
     int nl_calc = (int)(fileSize(cor) / ns_cor / 4 / 2);
     if (nl_calc < nl_cor) {
-      printf("Correlation file size shorter than expected, truncating.\n"
-             "  (line count from metadata: %d, from file size: %d)\n",
-             nl_cor, nl_calc);
+      asfPrintStatus("Correlation file shorter than expected, truncating.\n"
+                     "  (line count from metadata: %d, from file size: %d)\n",
+                     nl_cor, nl_calc);
       nl_cor = nl_calc;
     }
   }
 
   int nl = min3(nl_amp, nl_cor, nl_inf);
-  printf("Output line count: %d\n", nl);
+  asfPrintStatus("Output line count: %d\n", nl);
 
   meta->general->data_type = REAL32;
   meta->general->image_data_type = INSAR_STACK;
