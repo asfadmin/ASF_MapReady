@@ -1435,7 +1435,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->import->format), "TERRASAR", 8) != 0 &&
 	  strncmp(uc(cfg->import->format), "RADARSAT2", 9) != 0 &&
 	  strncmp(uc(cfg->import->format), "ALOS_MOSAIC", 11) != 0 &&
-          strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0) {
+          strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0 &&
+          strncmp(uc(cfg->import->format), "ROIPAC", 6) != 0) {
         asfPrintError("Selected import format not supported\n");
       }
 

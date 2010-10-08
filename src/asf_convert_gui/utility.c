@@ -537,15 +537,17 @@ gboolean is_roipac(const char *infile)
   // If it has the correct extension, investigate it further
   // The metadata does not have any header line to track. So we are entirely
   // depending here on the ROI_PAC_VERSION line
+  //  --- taking out this check, does not seem reliable... 10/8/10, kh
   if (ext && strcmp_case(ext, ".rsc") == 0) {
-    char line[1024];
-    FILE *fp;
-    fp = fopen(infile, "r");
-    while (fgets(line, 1024, fp)) {
-      if (strncmp_case(line, "ROI_PAC", 7) == 0)
-	found = TRUE;
-    }
-    fclose(fp);
+    found = TRUE;
+    //char line[1024];
+    //FILE *fp;
+    //fp = fopen(infile, "r");
+    //while (fgets(line, 1024, fp)) {
+    //  if (strncmp_case(line, "ROI_PAC", 7) == 0)
+	//found = TRUE;
+    //}
+    //fclose(fp);
   }
 
   return found; 
