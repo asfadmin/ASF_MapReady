@@ -193,6 +193,9 @@ main (int argc, char *argv[])
       double lat, lon;
       meta_get_latLon(meta, nl/2, ns/2, 0.0, &lat, &lon);
       if (meta_is_valid_double(lon)) {
+        asfPrintStatus("Original center longitude: %f\n",
+                       meta->general->center_longitude);
+        asfPrintStatus("Populating center longitude: %f\n", lon);
         meta->general->center_longitude = lon;
       }
     }
@@ -206,5 +209,6 @@ main (int argc, char *argv[])
 
   meta_write(meta, metaFile);
 
+  asfPrintStatus("Done.\n");
   return EXIT_SUCCESS;
 }

@@ -562,6 +562,8 @@ void import_roipac(const char *basename_in, const char *outFile)
     strcat(bands, "AMP,");
   } else {
     asfPrintStatus("Amplitude file '%s' not found.\n", amp);
+    asfPrintWarning("Since the amplitude file is not present, you will not "
+	"be able\nto terrain corect this data!\n");
   }
 
   meta_parameters *infMeta = NULL;
