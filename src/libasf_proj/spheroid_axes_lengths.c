@@ -63,6 +63,10 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor)
     *major = JGD2000_SEMIMAJOR;
     *minor = *major - (1.0 / JGD2000_INV_FLATTENING) * *major;
     break;
+  case SPHERE:
+    *major = SINUSOIDAL_SPHERE;
+    *minor = SINUSOIDAL_SPHERE;
+    break;
   default:
     assert (0);
   break;

@@ -401,7 +401,7 @@ project_worker_arr_inv(const char * projection_description,
 
       if (pj_errno != 0)
       {
-    asfPrintError("libproj Error: %s\n (intializing inverse output "
+    asfPrintError("libproj Error: %s\n (initializing inverse output "
 		  "projection)\n", pj_strerrno(pj_errno));
     ok = FALSE;
       }
@@ -583,21 +583,6 @@ char *ps_projection_desc(project_parameters_t *pps, datum_type_t datum)
             (float)HUGHES_SEMIMAJOR,
             (float)HUGHES_INV_FLATTENING);
   }
-  else if (datum == ITRF97_DATUM) { 
-    sprintf(ps_projection_description,
-            "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
-                "+k_0=%f +a=%f +rf=%f",
-            pps->ps.is_north_pole ? "90" : "-90",
-            pps->ps.slat,
-            pps->ps.slon,
-            1.0 /* pps->ps.scale_factor */,
-            (float)INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_SEMIMAJOR,
-            (float)INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_INV_FLATTENING);
-  }
-  else {
-    asfPrintError("Unknown datum passed to ps_projection_desc: %d (%s)\n",
-                  (int)datum, datum_str(datum));
-  }
 
   return ps_projection_description;
 }
@@ -676,10 +661,6 @@ char *lamaz_projection_desc(project_parameters_t *pps, datum_type_t datum)
 	    pps->lamaz.center_lon,
             (float)GRS1980_SEMIMAJOR,
             (float)GRS1980_INV_FLATTENING);
-  }
-  else {
-    asfPrintError("Unknown datum passed to lamaz_projection_desc: %d (%s)\n",
-                  (int)datum, datum_str(datum));
   }
 
   return lamaz_projection_description;
@@ -769,10 +750,6 @@ char *lamcc_projection_desc(project_parameters_t *pps, datum_type_t datum)
             (float)GRS1980_SEMIMAJOR,
             (float)GRS1980_INV_FLATTENING);
   }
-  else {
-    asfPrintError("Unknown datum passed to lamcc_projection_desc: %d (%s)\n",
-                  (int)datum, datum_str(datum));
-  }
 
   return lamcc_projection_description;
 }
@@ -861,6 +838,17 @@ project_mer_arr(project_parameters_t *pps,
 		double **projected_x, double **projected_y,
 		double **projected_z, long length, datum_type_t datum)
 {
+  long ii; 
+  int negative=FALSE, positive=FALSE;
+  for (ii=0; ii<length; ii++) {
+    if (lon[ii] < 0.0)
+      negative = TRUE;
+    else if (lon[ii] > 0.0)
+      positive = TRUE;
+  }
+  if (negative && positive)
+    asfPrintError("Projection problem: Image crosses the dateline.\n"
+		  "Mercator projection does not handle this case well.\n");
   return project_worker_arr(mer_projection_desc(pps, datum),
                 lat, lon, height, projected_x, projected_y, projected_z,
                 length);
@@ -882,6 +870,72 @@ project_mer_arr_inv(project_parameters_t *pps,
 {
     return project_worker_arr_inv(mer_projection_desc(pps, datum),
                   x, y, z, lat, lon, height, length);
+}
+
+// Sinusoidal
+char *sin_projection_desc(project_parameters_t *pps)
+{
+  static char sin_projection_description[128];
+
+  /* Establish description of output projection. */
+  sprintf(sin_projection_description,
+	  "+proj=sinu +lon_0=%f +x_0=%f +y_0=%f +a=%f +b=%f +units=m",
+	  pps->sin.longitude_center,
+	  pps->sin.false_easting,
+	  pps->sin.false_northing,
+	  pps->sin.sphere,
+	  pps->sin.sphere);
+
+  return sin_projection_description;
+}
+
+int
+project_sin(project_parameters_t *pps,
+	    double lat, double lon, double height,
+	    double *x, double *y, double *z)
+{
+  return project_worker_arr(sin_projection_desc(pps),
+			    &lat, &lon, &height, &x, &y, &z, 1);
+}
+
+int
+project_sin_arr(project_parameters_t *pps,
+		double *lat, double *lon, double *height,
+		double **projected_x, double **projected_y,
+		double **projected_z, long length)
+{
+  long ii; 
+  int negative=FALSE, positive=FALSE;
+  for (ii=0; ii<length; ii++) {
+    if (lon[ii] < 0.0)
+      negative = TRUE;
+    else if (lon[ii] > 0.0)
+      positive = TRUE;
+  }
+  if (negative && positive)
+    asfPrintError("Projection problem: Image crosses the dateline.\n"
+		  "Sinusoidal projection does not handle this case well.\n");
+  return project_worker_arr(sin_projection_desc(pps),
+			    lat, lon, height, projected_x, projected_y, 
+			    projected_z, length);
+}
+
+int
+project_sin_inv(project_parameters_t *pps, double x, double y, double z,
+		double *lat, double *lon, double *height)
+{
+  return project_worker_arr_inv(sin_projection_desc(pps),
+				&x, &y, &z, &lat, &lon, &height, 1);
+}
+
+int
+project_sin_arr_inv(project_parameters_t *pps,
+		    double *x, double *y, double *z,
+		    double **lat, double **lon, double **height,
+		    long length)
+{
+  return project_worker_arr_inv(sin_projection_desc(pps),
+				x, y, z, lat, lon, height, length);
 }
 
 // Equirectangular
@@ -931,6 +985,18 @@ project_eqr_arr(project_parameters_t *pps,
 		double **projected_x, double **projected_y,
 		double **projected_z, long length, datum_type_t datum)
 {
+  long ii; 
+  int negative=FALSE, positive=FALSE;
+  for (ii=0; ii<length; ii++) {
+    if (lon[ii] < 0.0)
+      negative = TRUE;
+    else if (lon[ii] > 0.0)
+      positive = TRUE;
+  }
+  if (negative && positive)
+    asfPrintError("Projection problem: Image crosses the dateline.\n"
+		  "Equi-rectangular projection does not handle this case well."
+		  "\n");
   return project_worker_arr(eqr_projection_desc(pps, datum),
                 lat, lon, height, projected_x, projected_y, projected_z,
                 length);
@@ -1001,10 +1067,6 @@ char * albers_projection_desc(project_parameters_t * pps,
         pps->albers.center_meridian,
             (float)INTERNATIONAL1924_SEMIMAJOR,
             (float)INTERNATIONAL1924_INV_FLATTENING);
-  }
-  else {
-    asfPrintError("Unknown datum passed to albers_projection_desc: %d (%s)\n",
-                  (int)datum, datum_str(datum));
   }
 
   return albers_projection_description;

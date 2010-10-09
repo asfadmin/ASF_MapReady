@@ -147,6 +147,9 @@ const char *spheroid_toString(spheroid_type_t spheroid)
 
       case HUGHES_SPHEROID:
           return "HUGHES";
+	  
+      case SPHERE:
+	  return "SPHERE";
 
       default:
           return MAGIC_UNSET_STRING;
