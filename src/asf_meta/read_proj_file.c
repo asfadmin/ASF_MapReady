@@ -184,6 +184,9 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
     case MERCATOR:
       return "[Mercator]";
       
+    case SINUSOIDAL:
+      return "[Sinusoidal]";
+      
     default:
       asfPrintError("projection_name: illegal projection type!");
       return "";
@@ -360,6 +363,16 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 "False Northing", &pps->eqr.false_northing,
 		 "Datum", &ddatum,
 		 "Spheroid", &dspheroid,
+		 NULL);
+    }
+  else if (strcmp_case(buf, bracketed_projection_name(SINUSOIDAL)) == 0)
+    {
+      *proj_type = SINUSOIDAL;
+      get_fields(fp,
+		 "Longitude center", &pps->sin.longitude_center,
+		 "False Easting", &pps->sin.false_easting,
+		 "False Northing", &pps->sin.false_northing,
+		 "Sphere", &pps->sin.sphere,
 		 NULL);
     }
   else

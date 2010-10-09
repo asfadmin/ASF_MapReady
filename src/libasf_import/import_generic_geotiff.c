@@ -17,6 +17,8 @@
 
 #include "float_image.h"
 #include "asf_tiff.h"
+#include "geo_tiffp.h"
+#include "geo_keyp.h"
 
 #include <gsl/gsl_math.h>
 
@@ -124,6 +126,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                          // the array, e.g. read_tiff_meta() in the asf_view tool.
 
   // Open the input tiff file.
+  TIFFErrorHandler oldHandler;
+  oldHandler = TIFFSetWarningHandler(NULL);
   input_tiff = XTIFFOpen (inFileName, "r");
   if (input_tiff == NULL)
     asfPrintError ("Error opening input TIFF file:\n    %s\n", inFileName);
@@ -244,6 +248,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   short linear_units=-1;
   short angular_units=-1;
   double scale_factor;
+  char no_data[25];
   TIFF *input_tiff;
   GTIF *input_gtif;
   meta_parameters *meta_out; // Return value
@@ -914,6 +919,13 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             {
               datum = HUGHES_DATUM;
             }
+	    else if (read_count >=2 && 
+		     FLOAT_COMPARE_TOLERANCE(semi_minor, semi_major, FLOAT_TOLERANCE)) {
+	      mp->spheroid = SPHERE;
+	      mp->re_major = semi_major;
+	      mp->re_minor = semi_minor;
+	      datum = UNKNOWN_DATUM;
+	    }
             else {
               datum = UNKNOWN_DATUM;
             }
@@ -922,7 +934,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             datum = UNKNOWN_DATUM;
           }
         }
-        if (datum == UNKNOWN_DATUM) {
+        if (datum == UNKNOWN_DATUM && mp->spheroid != SPHERE) {
           asfPrintWarning("Unable to determine datum type from GeoTIFF file\n"
                         "Defaulting to WGS-84 ...This may result in projection errors\n");
           datum = WGS84_DATUM;
@@ -1266,6 +1278,33 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             mp->param.mer.false_northing = false_northing;
             check_projection_parameters(mp);
 	    break;
+	  case CT_Sinusoidal:
+            read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center longitude from GeoTIFF file\n"
+                  "using ProjCenterLongGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false easting from GeoTIFF file\n"
+                  "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false northing from GeoTIFF file\n"
+                  "using ProjFalseNorthingGeoKey\n");
+            }
+	    mp->type = SINUSOIDAL;
+	    mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
+	    mp->param.sin.longitude_center = lonOrigin;
+	    mp->param.sin.false_easting = false_easting;
+	    mp->param.sin.false_northing = false_northing;
+	    mp->param.sin.sphere = mp->re_major;
+            check_projection_parameters(mp);
+      	    break;
           default:
             asfPrintWarning(
                 "Unable to determine projection type from GeoTIFF file\n"
@@ -2140,6 +2179,15 @@ void check_projection_parameters(meta_projection *mp)
       }
       break;
 
+    case SINUSOIDAL:
+      if (!meta_is_valid_double(pp->sin.longitude_center) ||
+           pp->sin.longitude_center < -180 || 
+	  pp->sin.longitude_center > 180) {
+        asfPrintError("Longitude center '%.4f' outside the defined range "
+            "(-180 deg to 180 deg)\n", pp->lamaz.center_lon);
+      }
+      break;
+
     default:
       break;
   }
@@ -2719,7 +2767,7 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
     {
       asfPrintStatus("\nWriting binary image...\n");
     }
-    FILE *fp=(FILE*)FOPEN(outName, band > 0 ? "ab" : "wb");
+    FILE *fp = FOPEN(outName, band > 0 ? "ab" : "wb");
     if (fp == NULL) return 1;
     if (!ignore[band]) {
       for (row=0; row < omd->general->line_count; row++) {
@@ -2783,7 +2831,8 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
                   ((float*)buf)[col] = (float)(((uint32*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_INT:
-                  ((float*)buf)[col] = (float)(((long*)tif_buf)[col]);
+                  //((float*)buf)[col] = (float)(((long*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((int32*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_IEEEFP:
                   ((float*)buf)[col] = (float)(((float*)tif_buf)[col]);
@@ -2886,7 +2935,7 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
 {
   int read_count;
   tiff_type_t t;
-  tdata_t sbuf;
+  tdata_t sbuf=NULL;
   tstrip_t strip;
   uint32 strip_row; // The row within the strip that contains the requested data row
 
@@ -3045,7 +3094,7 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
     }
   }
 
-  _TIFFfree(sbuf);
+  if (sbuf) _TIFFfree(sbuf);
 }
 
 void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, int band)

@@ -2,6 +2,9 @@
 #include "asf_nan.h"
 #include "asf_import.h"
 #include "asf_tiff.h"
+#include "geo_tiffp.h"
+#include "geo_keyp.h"
+
 #include "geotiff_support.h"
 
 int guess_planar_configuration(TIFF *tif, short *planar_config);
@@ -176,7 +179,14 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
       dest->param.mer.false_easting = src->param.mer.false_easting;
       dest->param.mer.false_northing = src->param.mer.false_northing;
       break;
+    case SINUSOIDAL:
+      dest->param.sin.longitude_center = src->param.sin.longitude_center;
+      dest->param.sin.false_easting = src->param.sin.false_easting;
+      dest->param.sin.false_northing = src->param.sin.false_northing;
+      dest->param.sin.sphere = src->param.sin.sphere;
+      break;
     case STATE_PLANE:
+    case LAT_LONG_PSEUDO_PROJECTION:
       break;
     default:
       asfPrintError("Unsupported projection type found.\n");

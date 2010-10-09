@@ -1,0 +1,6 @@
+[Sinusoidal]
+Area = World (MODIS)
+Sphere = 6371007.181
+Longitude center = 0
+False easting = 0
+False northing = 0

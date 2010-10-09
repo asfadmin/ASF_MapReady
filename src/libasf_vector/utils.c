@@ -2,6 +2,8 @@
 #include <ctype.h>
 
 #include "asf_tiff.h"
+#include "geo_tiffp.h"
+#include "geo_keyp.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "dateUtil.h"

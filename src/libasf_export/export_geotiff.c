@@ -24,7 +24,6 @@
 #include <float_image.h>
 #include <spheroids.h>
 #include <typlim.h>
-#include <netcdf.h>
 
 #ifdef  MAX_RGB
 #undef  MAX_RGB
@@ -669,7 +668,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
       }
         break;
       case EQUI_RECTANGULAR:
-      {
+	{
         GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
@@ -721,10 +720,10 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
         free (citation);
-      }
+	}
         break;
       case MERCATOR:
-      {
+	{
         GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
@@ -789,8 +788,55 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
         free (citation);
-      }
+	}
         break;
+      case SINUSOIDAL:
+	{
+	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+		      user_defined_value_code);
+	  GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+		      user_defined_value_code);
+	  GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+		      CT_Sinusoidal);
+	  if (meta_is_valid_double(md->projection->param.sin.longitude_center))
+	    GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.sin.longitude_center);
+	  if (meta_is_valid_double(md->projection->param.sin.false_easting))
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.sin.false_easting);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  if (meta_is_valid_double(md->projection->param.sin.false_northing)) 
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.sin.false_northing);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+
+	  // Write spherical paramters
+	  GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
+		      user_defined_value_code);
+	  GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1,
+		      md->projection->re_major);
+	  GTIFKeySet (ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  
+	  /* Set the citation key.  */
+	  //char datum_str[256];
+	  //datum_2_string (datum_str, md->projection->datum);
+	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	  snprintf (citation, max_citation_length + 1,
+		    "Sinusoidal projected GeoTIFF using "
+		    "sphere written by Alaska Satellite "
+		    "Facility tools.");
+	  append_band_names(band_names, rgb, citation, palette_color_tiff);
+	  citation_length = strlen(citation);
+	  asfRequire (citation_length >= 0 &&
+		      citation_length <= max_citation_length,
+		      "bad citation length");
+	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+	  free (citation);
+	}
+	break;
       default:
         asfPrintWarning ("Unsupported map projection found.  TIFF file will not\n"
             "contain projection information.\n");

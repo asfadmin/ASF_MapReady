@@ -137,6 +137,14 @@ char *proj_info_as_string(projection_type_t projection_type,
          (datum) ? datum_str : "\n");
       break;
 
+    case SINUSOIDAL:
+      sprintf(ret,
+	      "Projection: SINUSOIDAL\n"
+	      "   Longitude center : %.4f\n"
+	      "   Spherical radius : %.3f\n",
+	      pp->sin.longitude_center, pp->sin.sphere);
+      break;
+
     case SCANSAR_PROJECTION:
       sprintf(ret,
          "Projection: ScanSAR\n");
@@ -493,6 +501,12 @@ static void determine_projection_fns(int projection_type, project_t **project,
       if (unproject) *unproject = project_mer_inv;
       if (unproject_arr) *unproject_arr = project_mer_arr_inv;
       break;
+    case SINUSOIDAL:
+      if (project) *project = project_sin;
+      if (project_arr) *project_arr = project_sin_arr;
+      if (unproject) *unproject = project_sin_inv;
+      if (unproject_arr) *unproject_arr = project_sin_arr_inv;
+      break;
     default:
       g_assert_not_reached ();
       if (project) *project = NULL;
@@ -597,9 +611,11 @@ int asf_geocode_from_proj_file(const char *projection_file,
   projection_type_t projection_type;
   datum_type_t tmp_datum = datum;
   spheroid_type_t spheroid;
+  double sphere;
   char *err=NULL;
 
-  if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, &spheroid, &err)) {
+  if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, 
+			    &spheroid, &err)) {
        asfPrintError("%s",err);
   }
 
@@ -1230,9 +1246,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       asfPrintStatus("Number of bands in the output: %d\n",
         multiband ? n_bands : 1);
 
-  //asfPrintStatus("Before applying the lat/lon box:\n"
-  //    "  x: %f - %f\n  y: %f - %f\n", min_x, max_x, min_y, max_y);
-
   // now apply the input lat/lon "bounding box" restriction to the
   // calculated extents.  Do this by converting the 4 corner points of
   // the lat/lon box.
@@ -1246,7 +1259,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       project (pp, lat_min*D2R, lon_min*D2R, average_height,
           &x, &y, &z, datum);
 
-      //printf("min,min: %f %f\n", x, y);
       if (x < bb_min_x) bb_min_x = x;    if (x > bb_max_x) bb_max_x = x;
       if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
@@ -1254,7 +1266,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       project (pp, lat_min*D2R, lon_max*D2R, average_height,
           &x, &y, &z, datum);
 
-      //printf("min,max: %f %f\n", x, y);
       if (x < bb_min_x) bb_min_x = x;    if (x > bb_max_x) bb_max_x = x;
       if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
@@ -1262,7 +1273,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       project (pp, lat_max*D2R, lon_min*D2R, average_height,
           &x, &y, &z, datum);
 
-      //printf("max,min: %f %f\n", x, y);
       if (x < bb_min_x) bb_min_x = x;    if (x > bb_max_x) bb_max_x = x;
       if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
@@ -1270,7 +1280,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       project (pp, lat_max*D2R, lon_max*D2R, average_height,
           &x, &y, &z, datum);
 
-      //printf("max,max: %f %f\n", x, y);
       if (x < bb_min_x) bb_min_x = x;    if (x > bb_max_x) bb_max_x = x;
       if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
@@ -1281,10 +1290,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     if (bb_min_y != 99999999 && bb_min_y > min_y) min_y = bb_min_y;
     if (bb_max_y != 0 && bb_max_y < max_y) max_y = bb_max_y;
   }
-
-  //asfPrintStatus("After applying the lat/lon box:\n"
-  //    "  x: %f - %f\n  y: %f - %f\n", min_x, max_x, min_y, max_y);
-
+	 
   // Projection coordinates per pixel in output image.  There is a
   // significant assumption being made here: we assume that the
   // projection coordinates (which are in meters) come at least
@@ -1495,6 +1501,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   omd->projection->param = *pp;
   free(input_spheroid);
   input_spheroid = NULL;
+
+  // Special attention to Sinusoidal map projection
+  if (projection_type == SINUSOIDAL) {
+    omd->projection->spheroid = SPHERE;
+    omd->projection->datum = UNKNOWN_DATUM;
+    omd->projection->re_major = pp->sin.sphere;
+    omd->projection->re_minor = 0.0;
+  }
 
   // Adjust bands and band_count for the case where the user
   // selected to geocode only a single band out of a multi-band

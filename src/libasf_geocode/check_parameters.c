@@ -427,6 +427,16 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       }
       break;
 
+    case SINUSOIDAL:
+
+      // Outside range tests
+      if (!meta_is_valid_double(pp->sin.longitude_center) ||
+           pp->sin.longitude_center < -180 || pp->sin.longitude_center > 180)
+	report_func("Longitude center '%.4f' outside the defined range "
+		      "(-180 deg to 180 deg)\n", pp->sin.longitude_center);
+
+      break;
+
     default:
       asfPrintError("Chosen projection type not supported!\n");
       break;

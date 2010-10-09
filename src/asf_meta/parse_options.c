@@ -179,6 +179,9 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
   case MERCATOR:
     return "[Mercator]";
 
+  case SINUSOIDAL:
+    return "[Sinusoidal]";
+
   default:
     asfPrintError("projection_name: illegal projection type!");
     return "";
@@ -260,6 +263,13 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
     fprintf(fp, "False Easting=%.10f\n", pps->eqr.false_easting);
     fprintf(fp, "False Northing=%.10f\n", pps->eqr.false_northing);
     fprintf(fp, "datum=%s\n", datum_toString(datum));
+    break;
+
+  case SINUSOIDAL:
+    fprintf(fp, "Longitude center=%.10f\n", pps->eqr.orig_latitude);
+    fprintf(fp, "False Easting=%.10f\n", pps->eqr.false_easting);
+    fprintf(fp, "False Northing=%.10f\n", pps->eqr.false_northing);
+    fprintf(fp, "datum=%.3lf\n", datum_toString(datum));
     break;
 
   default:
@@ -395,6 +405,16 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
 	       NULL);
     *datum = get_datum(fp);
     *spheroid = get_spheroid(fp);
+  }
+  else if (strcmp_case(buf, bracketed_projection_name(SINUSOIDAL)) == 0)
+  {
+    *proj_type = SINUSOIDAL;
+    get_fields(fp,
+	       "Longitude Center", &pps->sin.longitude_center,
+	       "False Easting", &pps->sin.false_easting,
+	       "False Northing", &pps->sin.false_northing,
+	       "Sphere", &pps->sin.sphere,
+	       NULL);
   }
   else
   {
@@ -635,7 +655,8 @@ static int parse_read_proj_file_option(int *i, int argc, char *argv[],
     else
     {
       char *err=NULL;
-      if (!parse_proj_args_file(argv[*i], pps, proj_type, datum, spheroid, &err)) {
+      if (!parse_proj_args_file(argv[*i], pps, proj_type, datum, spheroid, 
+				&err)) {
         asfPrintError("%s",err);
       }
       *ok = TRUE;
@@ -819,7 +840,8 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 
   for (i = 0; i < *argc; ++i)
   {
-    if (parse_read_proj_file_option(&i, *argc, *argv, proj_type, datum, spheroid, pps, &ok))
+    if (parse_read_proj_file_option(&i, *argc, *argv, proj_type, datum, 
+				    spheroid, pps, &ok))
     {
       if (!ok) {
         FREE(pps);

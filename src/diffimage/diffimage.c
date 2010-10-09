@@ -32,6 +32,8 @@ ISSUES:
 #include "libasf_proj.h"
 #include "asf_jpeg.h"
 #include "asf_tiff.h"
+#include "geo_tiffp.h"
+#include "geo_keyp.h"
 #include <png.h>
 #include <gsl/gsl_math.h>
 #include "diffimage_tolerances.h"

@@ -189,6 +189,8 @@ void select_current_block(char *block_name)
     { current_block = &((*( (param_t *) current_block)).mer); goto MATCHED; }
   if ( !strcmp(block_name, "eqr") )
     { current_block = &((*( (param_t *) current_block)).eqr); goto MATCHED; }
+  if ( !strcmp(block_name, "sin") )
+    { current_block = &((*( (param_t *) current_block)).sin); goto MATCHED; }
 
   if ( !strcmp(block_name, "transform") ) {
     if (MTL->transform == NULL)
@@ -757,6 +759,10 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->type = EQUI_RECTANGULAR;
         map_projection_type = 1;
       }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SINUSOIDAL") ) {
+        MPROJ->type = SINUSOIDAL;
+        map_projection_type = 1;
+      }
       else {
         MPROJ->type = UNKNOWN_PROJECTION;
         // Only complain if the image is truly map projected
@@ -805,6 +811,8 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->spheroid = WGS84_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "HUGHES") )
         MPROJ->spheroid = HUGHES_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SPHERE") )
+        MPROJ->spheroid = SPHERE;
       else {
         MPROJ->spheroid = UNKNOWN_SPHEROID;
         // Only complain if the image is truly map projected
@@ -954,7 +962,6 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Fields that go in the (proj->param).mer block.  */
-  /* Check for both lamcc and lambert for backwards compatibility */
   if ( !strcmp(stack_top->block_name, "mer")) {
     if ( !strcmp(field_name, "standard_parallel") )
       { (*MPARAM).mer.standard_parallel = VALP_AS_DOUBLE; return; }
@@ -969,7 +976,6 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Fields that go in the (proj->param).eqr block.  */
-  /* Check for both lamcc and lambert for backwards compatibility */
   if ( !strcmp(stack_top->block_name, "eqr")) {
     if ( !strcmp(field_name, "central_meridian") )
       { (*MPARAM).eqr.central_meridian = VALP_AS_DOUBLE; return; }
@@ -979,6 +985,16 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).eqr.false_easting = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "false_northing") )
       { (*MPARAM).eqr.false_northing = VALP_AS_DOUBLE; return; }
+  }
+
+  /* Fields that go in the (proj->param).sin block.  */
+  if ( !strcmp(stack_top->block_name, "sin")) {
+    if ( !strcmp(field_name, "longitude_center") )
+      { (*MPARAM).sin.longitude_center = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).sin.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).sin.false_northing = VALP_AS_DOUBLE; return; }
   }
 
   /* Note that the projection-specific param data block associated

@@ -10,8 +10,6 @@
 #include <tiffio.h>
 #include <xtiffio.h>
 #include <geokeys.h>
-#include <geo_tiffp.h>
-#include <geo_keyp.h>
 #include <geotiff.h>
 #include <geotiffio.h>
 

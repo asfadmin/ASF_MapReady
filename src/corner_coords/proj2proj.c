@@ -90,6 +90,7 @@ int main(int argc, char **argv)
   spheroid_type_t spheroidIn, spheroidOut;
   meta_projection *meta_projIn, *meta_projOut;
   double lat, lon, height, projXIn, projYIn, projXOut, projYOut, projZOut;
+  double sphere;
   int listFlag = FALSE;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
 
@@ -120,8 +121,10 @@ int main(int argc, char **argv)
   printf("Program: proj2proj\n\n");
 
   // Read projection files
-  read_proj_file(projFileIn, &ppsIn, &proj_typeIn, &datumIn, &spheroidIn);
-  read_proj_file(projFileOut, &ppsOut, &proj_typeOut, &datumOut, &spheroidOut);
+  read_proj_file(projFileIn, &ppsIn, &proj_typeIn, &datumIn, &spheroidIn,
+		 &sphere);
+  read_proj_file(projFileOut, &ppsOut, &proj_typeOut, &datumOut, &spheroidOut,
+		 &sphere);
 
   // Check whether UTM projection has a zone defined
   if (proj_typeIn == UNIVERSAL_TRANSVERSE_MERCATOR &&

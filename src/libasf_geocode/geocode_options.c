@@ -35,8 +35,8 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 
   /* get the projection params out of the cmd line & remove from cmd line */
   *datum = WGS84_DATUM; // Default datum
-  pps = parse_projection_options(argc, argv, proj_type, datum,
-                                 &did_write_proj_file);
+  pps = parse_projection_options(argc, argv, proj_type, datum, 
+				 &did_write_proj_file);
 
   if (pps)
   {
@@ -135,6 +135,9 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
       verify_valid_latitude(pps->mer.standard_parallel);
       verify_valid_latitude(pps->mer.orig_latitude);
       verify_valid_longitude(pps->mer.central_meridian);
+      break;
+    case SINUSOIDAL:
+      verify_valid_longitude(pps->sin.longitude_center);
       break;
     default:
       asfPrintError("sanity_check: illegal projection type!\n");
@@ -275,6 +278,16 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 	pps->mer.orig_latitude = meta->general->center_latitude;
       if (ISNAN(pps->mer.central_meridian))
 	pps->mer.central_meridian = meta->general->center_longitude;
+      break;
+
+    case SINUSOIDAL:
+      if (ISNAN(pps->sin.false_easting))
+	pps->sin.false_easting = 0;
+      if (ISNAN(pps->sin.false_northing))
+	pps->sin.false_northing = 0;
+
+      if (ISNAN(pps->sin.longitude_center))
+	pps->sin.longitude_center = 0;
       break;
 
     default:

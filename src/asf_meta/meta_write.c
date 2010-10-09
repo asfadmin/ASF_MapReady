@@ -493,6 +493,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	meta_put_string (fp, "type:", "EQUI_RECTANGULAR", "Projection Type");
 	break;
       case SINUSOIDAL:
+	meta_put_string (fp, "type:", "SINUSOIDAL", "Projection Type");
 	break;
       case UNKNOWN_PROJECTION:
         meta_put_string(fp,"type:","UNKNOWN_PROJECTION","Projection Type");
@@ -685,6 +686,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"}","","End eqr");
       break;
     case SINUSOIDAL:
+      meta_put_string(fp,"sin {","","Begin Sinusoidal projection");
+      meta_put_double_lf(fp,"longitude_center:",
+			 meta->projection->param.sin.longitude_center, 4,
+			 "Longitude of the projection center [degrees]");
+      meta_put_double_lf(fp,"false_easting:",
+			 meta->projection->param.sin.false_easting, 3,
+			 "False easting [m]");
+      meta_put_double_lf(fp,"false_northing:",
+			 meta->projection->param.sin.false_northing, 3,
+			 "False northing [m]");
+      meta_put_string(fp,"}","","End sin");
+      break;
     case LAT_LONG_PSEUDO_PROJECTION:
     case UNKNOWN_PROJECTION:
       /* This projection type doesn't need its own parameter block,
