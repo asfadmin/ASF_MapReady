@@ -117,7 +117,7 @@ int main(int argc, char **argv)
   printf("Program: proj2latLon\n\n");
 
   // Read projection file
-  read_proj_file(projFile, &pps, &proj_type, &datum, &spheroid, &sphere);
+  read_proj_file(projFile, &pps, &proj_type, &datum, &spheroid);
 
   // Check whether UTM projection has a zone defined
   if (proj_type == UNIVERSAL_TRANSVERSE_MERCATOR &&
@@ -125,24 +125,16 @@ int main(int argc, char **argv)
     asfPrintError("Undefined zone for UTM projection\n");
 
   // Report the conversion type
-  switch(proj_type) 
-    {
-    case ALBERS_EQUAL_AREA:
-      printf("Albers Equal Area to Lat/Lon\n\n");
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      printf("Lambert Azimuthal Equal Area to Lat/Lon\n\n");
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      printf("Lambert Conformal Conic to Lat/Lon\n\n");
-      break;
-    case POLAR_STEREOGRAPHIC:
-      printf("Polar Stereographic to Lat/Lon\n\n");
-      break;
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      printf("UTM to Lat/Lon\n\n");
-      break;
-    }
+  if (proj_type == ALBERS_EQUAL_AREA)
+    printf("Albers Equal Area to Lat/Lon\n\n");
+  else if (proj_type == LAMBERT_AZIMUTHAL_EQUAL_AREA)
+    printf("Lambert Azimuthal Equal Area to Lat/Lon\n\n");
+  else if (proj_type == LAMBERT_CONFORMAL_CONIC)
+    printf("Lambert Conformal Conic to Lat/Lon\n\n");
+  else if (proj_type == POLAR_STEREOGRAPHIC)
+    printf("Polar Stereographic to Lat/Lon\n\n");
+  else if (proj_type == UNIVERSAL_TRANSVERSE_MERCATOR)
+    printf("UTM to Lat/Lon\n\n");
 
   // Initialize meta_projection block
   meta_proj = meta_projection_init();

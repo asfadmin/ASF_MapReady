@@ -24,7 +24,8 @@ LIBS  = \
 	$(HDF5_LIBS) \
 	$(HDFEOS5_LIBS) \
 	$(GLIB_LIBS) \
-	$(ZLIB_LIBS)
+	$(ZLIB_LIBS) \
+	-lm
 
 # different procedures for win/unix
 

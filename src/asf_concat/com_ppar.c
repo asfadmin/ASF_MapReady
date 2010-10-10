@@ -149,7 +149,7 @@ switch (ddr1.proj_code)
 			  PREC2,default_flag,image1,image2);
 		break;
 
-   case GOOD:
+		//case GOOD:
    case IMOLL:	comp_prec(ddr1.proj_coef[0],ddr2.proj_coef[0],ppar_flag,
 			  PREC2,default_flag,image1,image2);
 		comp_prec(ddr1.proj_coef[6],ddr2.proj_coef[6],ppar_flag,

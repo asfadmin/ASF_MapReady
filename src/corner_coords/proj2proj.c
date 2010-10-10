@@ -121,10 +121,8 @@ int main(int argc, char **argv)
   printf("Program: proj2proj\n\n");
 
   // Read projection files
-  read_proj_file(projFileIn, &ppsIn, &proj_typeIn, &datumIn, &spheroidIn,
-		 &sphere);
-  read_proj_file(projFileOut, &ppsOut, &proj_typeOut, &datumOut, &spheroidOut,
-		 &sphere);
+  read_proj_file(projFileIn, &ppsIn, &proj_typeIn, &datumIn, &spheroidIn);
+  read_proj_file(projFileOut, &ppsOut, &proj_typeOut, &datumOut, &spheroidOut);
 
   // Check whether UTM projection has a zone defined
   if (proj_typeIn == UNIVERSAL_TRANSVERSE_MERCATOR &&
@@ -135,43 +133,27 @@ int main(int argc, char **argv)
     asfPrintError("Undefined zone for output UTM projection\n");
 
   // Report the conversion type
-  switch(proj_typeIn) 
-    {
-    case ALBERS_EQUAL_AREA:
-      printf("Albers Equal Area to ");
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      printf("Lambert Azimuthal Equal Area to ");
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      printf("Lambert Conformal Conic to ");
-      break;
-    case POLAR_STEREOGRAPHIC:
-      printf("Polar Stereographic to ");
-      break;
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      printf("UTM to ");
-      break;
-    }
+  if (proj_typeIn == ALBERS_EQUAL_AREA)
+    printf("Albers Equal Area to ");
+  else if (proj_typeIn == LAMBERT_AZIMUTHAL_EQUAL_AREA)
+    printf("Lambert Azimuthal Equal Area to ");
+  else if (proj_typeIn == LAMBERT_CONFORMAL_CONIC)
+    printf("Lambert Conformal Conic to ");
+  else if (proj_typeIn == POLAR_STEREOGRAPHIC)
+    printf("Polar Stereographic to ");
+  else if (proj_typeIn == UNIVERSAL_TRANSVERSE_MERCATOR)
+    printf("UTM to ");
 
-  switch(proj_typeOut) 
-    {
-    case ALBERS_EQUAL_AREA:
-      printf("Albers Equal Area\n\n");
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      printf("Lambert Azimuthal Equal Area\n\n");
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      printf("Lambert Conformal Conic\n\n");
-      break;
-    case POLAR_STEREOGRAPHIC:
-      printf("Polar Stereographic\n\n");
-      break;
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      printf("UTM\n\n");
-      break;
-    }
+  if (proj_typeOut == ALBERS_EQUAL_AREA)
+    printf("Albers Equal Area\n\n");
+  else if (proj_typeOut == LAMBERT_AZIMUTHAL_EQUAL_AREA)
+    printf("Lambert Azimuthal Equal Area\n\n");
+  else if (proj_typeOut == LAMBERT_CONFORMAL_CONIC)
+    printf("Lambert Conformal Conic\n\n");
+  else if (proj_typeOut == POLAR_STEREOGRAPHIC)
+    printf("Polar Stereographic\n\n");
+  else if (proj_typeOut == UNIVERSAL_TRANSVERSE_MERCATOR)
+    printf("UTM\n\n");
 
   // Initialize meta_projection blocks
   meta_projIn = meta_projection_init();

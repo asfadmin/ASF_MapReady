@@ -88,7 +88,7 @@ int main(int argc, char **argv)
   datum_type_t datum;
   spheroid_type_t spheroid;
   meta_projection *meta_proj;
-  double lat, lon, projX, projY, projZ, sphere;
+  double lat, lon, projX, projY;
   int listFlag = FALSE;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
 
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
   printf("Program: latLon2proj\n\n");
 
   // Read projection file
-  read_proj_file(projFile, &pps, &proj_type, &datum, &spheroid, &sphere);
+  read_proj_file(projFile, &pps, &proj_type, &datum, &spheroid);
 
   // Read lat/lon from list if needed and convert to map coordinates
   if (listFlag) {
