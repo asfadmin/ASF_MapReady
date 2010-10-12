@@ -291,10 +291,12 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     switch (sel) {
       case FORMAT_GAMMA:
         put_string_to_label("add_with_ancillary_format_label", "GAMMA");
+	show_widget("hbox_gamma_description", TRUE);
 	gtk_widget_set_sensitive(ok_button, TRUE);	
         break;
       case FORMAT_POLSARPRO:
         put_string_to_label("add_with_ancillary_format_label", "PolSARPro");
+	show_widget("hbox_gamma_description", FALSE);
         gtk_widget_show(browse_select_colormap_optionmenu);
         gtk_widget_show(browse_select_colormap_label);
         gtk_widget_show(browse_select_image_data_type_optionmenu);
