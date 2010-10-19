@@ -95,7 +95,7 @@ int read_file(const char *filename, const char *band, int multilook,
             // Must be called before read_tiff_meta()
             open_tiff_data(data_name, band, client); 
             if (meta) meta_free(meta);
-            meta = read_tiff_meta(meta_name, client);
+            meta = read_tiff_meta(meta_name, client, filename);
         } else {
             err_func(err);
             free(err);

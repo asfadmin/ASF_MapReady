@@ -192,7 +192,7 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client);
 int try_tiff(const char *filename, int try_extensions);
 int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
-meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client);
+meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client, char *filename);
 int open_tiff_data(const char *data_name, const char *band, ClientInterface *client);
 
 /* read_png.c */

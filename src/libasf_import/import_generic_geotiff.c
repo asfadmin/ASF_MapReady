@@ -72,11 +72,6 @@
 #endif
 #define USHORT_MAX  65535
 
-#ifdef MAX_RGB
-#undef MAX_RGB
-#endif
-#define MAX_RGB  255
-
 // Do not change the BAND_ID_STRING.  It will break ingest of legacy TIFFs exported with this
 // string in their citation strings.  If you are changing the citation string to have some _other_
 // identifying string, then use a _new_ definition rather than replace what is in this one.

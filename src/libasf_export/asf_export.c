@@ -39,7 +39,6 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   int is_matrix =
     (md->general->image_data_type == POLARIMETRIC_MATRIX ||
      md->general->image_data_type == POLARIMETRIC_DECOMPOSITION) ? 1 : 0;
-  meta_free(md);
 
   // Do that exporting magic!
   if ( format == ENVI ) {
@@ -66,6 +65,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                         true_color, false_color,
                         look_up_table_name, TIF,
                         &nouts, &outs);
+
   }
   else if ( format == GEOTIFF ) {
       //in_data_name = appendExt(in_base_name, ".img");
@@ -79,6 +79,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                         true_color, false_color,
                         look_up_table_name, GEOTIFF,
                         &nouts, &outs);
+      
   }
   else if ( format == JPEG ) {
       //in_data_name = appendExt(in_base_name, ".img");
@@ -186,8 +187,20 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 			&nouts, &outs);
   }
 
-  // will write an insar xml file, if warranted
-  write_insar_xml(format, in_meta_name, in_data_name, out_name);
+  if (should_write_insar_rgb(band_name)) {
+      write_insar_rgb(GEOTIFF, in_meta_name, in_data_name, out_name);
+  }
+
+  if (should_write_insar_xml_meta(md)) {
+      char *xml_meta = get_insar_xml_string(md);
+      char *xml_output_file_name = 
+          (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
+      sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
+
+      write_insar_xml_to_file(xml_output_file_name, xml_meta);
+      FREE(xml_meta);
+      FREE(xml_output_file_name);
+  }
 
   if (noutputs && output_names) {
     asfPrintStatus("\n\nExport complete.\nGenerated %d output file%s:\n",
@@ -208,7 +221,107 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   FREE(in_data_name);
   FREE(in_meta_name);
   FREE(out_name);
+  meta_free(md);
 
   asfPrintStatus("Export successful!\n\n");
   return (EXIT_SUCCESS);
+}
+
+int
+should_write_insar_xml_meta(meta_parameters *md) {
+    return ( (int) md->insar);
+}
+
+int
+should_write_insar_rgb(char *band_name) {
+    return ( strcmp_case(band_name, "INTERFEROGRAM_PHASE") );
+}
+
+/**
+ * preconditions:
+ *  * in_meta_name exists on filesystem and ends with .meta extension
+ *  * interferogram.lut is available in the mapready share directory
+ */
+void 
+write_insar_rgb(output_format_t format, char *in_meta_name, char *in_data_name, char *out_name)
+{
+    int ii, nouts = 0;
+    char **outs = NULL;
+    char **band_name = (char **) CALLOC(MAX_BANDS, sizeof(char*));
+    band_name[0] = (char*) MALLOC(sizeof(char)*100);
+    strcpy(band_name[0], "INTERFEROGRAM_PHASE");
+    export_band_image(in_meta_name, in_data_name, out_name,
+		      MINMAX, band_name, FALSE, FALSE, FALSE,
+		      "interferogram.lut", format, &nouts, &outs);
+    FREE(band_name[0]);
+    FREE(band_name);
+    for (ii=0; ii<nouts; ii++)
+      FREE(outs[ii]);
+    FREE(outs);
+}
+
+/**
+ * returns a string of valid XML suitable to be stored in both
+ * a TIFF tag and written to the filesystem.
+ *
+ * assumptions: upper bound of 2000 characters for the xml metadata
+ * postcontitions: client must free the allocated memory.
+ */
+char*
+get_insar_xml_string(meta_parameters *meta)
+{
+    // assume upper bound of 2000 characters.
+    char *insar_xml_string = (char *) MALLOC(sizeof(char) * 2000);
+
+    sprintf(insar_xml_string, 
+            "<GDALMetadata>\n"
+            "<Item name=\"INSAR_PROCESSOR\" units=\"1\">%s</Item>\n"
+            "<Item name=\"INSAR_MASTER_IMAGE\" units=\"1\">%s</Item>\n"
+            "<Item name=\"INSAR_SLAVE_IMAGE\" units=\"1\">%s</Item>\n"
+            "<Item name=\"INSAR_MASTER_ACQUISITION_DATE\" units=\"1\">%s"
+	    "</Item>\n"
+            "<Item name=\"INSAR_SLAVE_ACQUISITION_DATE\" units=\"1\">%s"
+	    "</Item>\n"
+            "<Item name=\"INSAR_CENTER_LOOK_ANGLE\" units=\"degrees\">%.4lf"
+	    "</Item>\n"
+            "<Item name=\"INSAR_DOPPLER\" units=\"Hz\">%.4lf</Item>\n"
+            "<Item name=\"INSAR_DOPPLER_RATE\" units=\"Hz/m\">%.8lf</Item>\n"
+            "<Item name=\"INSAR_BASELINE_LENGTH\" units=\"m\">%.1lf</Item>\n"
+            "<Item name=\"INSAR_BASELINE_PARALLEL\" units=\"m\">%.1lf</Item>\n"
+            "<Item name=\"INSAR_BASELINE_PARALLEL_RATE\" units=\"m/s\">%.8lf"
+	    "</Item>\n"
+            "<Item name=\"INSAR_BASELINE_PERPENDICULAR\" units=\"m\">%.1lf"
+	    "</Item>\n"
+            "<Item name=\"INSAR_BASELINE_PERPENDICULAR_RATE\" units=\"m/s\">"
+	    "%.8lf</Item>\n"
+            "<Item name=\"INSAR_BASELINE_TEMPORAL\" units=\"days\">%d</Item>\n"
+            "<Item name=\"INSAR_BASELINE_CRITICAL\" units=\"m\">%.1lf</Item>\n"
+            "</GDALMetadata>\n"
+            , meta->insar->processor
+            , meta->insar->master_image
+            , meta->insar->slave_image
+            , meta->insar->master_acquisition_date
+            , meta->insar->slave_acquisition_date
+            , meta->insar->center_look_angle
+            , meta->insar->doppler
+            , meta->insar->doppler_rate
+            , meta->insar->baseline_length
+            , meta->insar->baseline_parallel
+            , meta->insar->baseline_parallel_rate
+            , meta->insar->baseline_perpendicular
+            , meta->insar->baseline_perpendicular_rate
+            , meta->insar->baseline_temporal
+            , meta->insar->baseline_critical );
+    return insar_xml_string;
+}
+
+void
+write_insar_xml_to_file(char *output_file_name, char *insar_xml)
+{
+     asfPrintStatus("\nWriting InSAR metadata (%s) ...\n", output_file_name);
+     FILE *fp = FOPEN(output_file_name, "wt");
+    if ( NULL != fp ) {
+        fprintf(fp, insar_xml);
+        FCLOSE(fp);
+    }
 }

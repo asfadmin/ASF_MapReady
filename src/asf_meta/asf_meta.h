@@ -458,15 +458,25 @@ typedef struct {
   char master_acquisition_date[FIELD_STRING_MAX]; // Data acquisition date, master
   char slave_acquisition_date[FIELD_STRING_MAX]; // Data acquisition date, slave
   double center_look_angle;            // Center look angle
+  char center_look_angle_units[FIELD_STRING_MAX];
   double doppler;                      // Constant Doppler
+  char doppler_units[FIELD_STRING_MAX];
   double doppler_rate;                 // Doppler rate
+  char doppler_rate_units[FIELD_STRING_MAX];
   double baseline_length;              // Baseline length
+  char baseline_length_units[FIELD_STRING_MAX];
   double baseline_parallel;            // Parallel baseline component
+  char baseline_parallel_units[FIELD_STRING_MAX];
   double baseline_parallel_rate;       // Parallel baseline rate component
+  char baseline_parallel_rate_units[FIELD_STRING_MAX];
   double baseline_perpendicular;       // Perpendicular baseline component
+  char baseline_perpendicular_units[FIELD_STRING_MAX];
   double baseline_perpendicular_rate;  // Perpendicular baseline rate component
+  char baseline_perpendicular_rate_units[FIELD_STRING_MAX];
   int baseline_temporal;               // Temporal baseline
+  char baseline_temporal_units[FIELD_STRING_MAX];
   double baseline_critical;            // Length of critical baseline
+  char baseline_critical_units[FIELD_STRING_MAX];
 } meta_insar;
 
 /********************************************************************

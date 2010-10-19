@@ -1,6 +1,6 @@
 MapReady Version History
 
-MapReady 2.3.11-test (released 2010 September 24)
+MapReady 2.3.12-test (released 2010 October 11)
 New Functionality
 - Generation of KML overlays
 - Support for the Equirectangular and Mercator projections.
@@ -11,6 +11,7 @@ New Functionality
 - Palsar calibration updated according to latest JAXA specifications.
 - Support for ingest of more types of PolSARPro data in the MapReady GUI
 - Support for export to PolSARPro format.
+- Support for ingest & viewing of certain ROI_PAC files.
 
 Bug Fixes
 - Geocoding of dB values was slightly off

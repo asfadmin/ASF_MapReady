@@ -12,6 +12,10 @@
 #include <geokeys.h>
 #include <geotiff.h>
 #include <geotiffio.h>
+#include <asf.h>
+
+#define TIFFTAG_ASF_INSAR_METADATA  42112
+#define N(a)  (sizeof (a) / sizeof (a[0]))
 
 #ifdef win32
 #undef BYTE
@@ -23,3 +27,9 @@
 #endif
 
 #endif
+
+#ifdef  MAX_RGB
+#undef  MAX_RGB
+#endif
+#define MAX_RGB             255
+void _XTIFFInitialize(void);

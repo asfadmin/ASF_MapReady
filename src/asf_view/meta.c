@@ -123,6 +123,53 @@ void fill_meta_info()
           sprintf(&s[strlen(s)], "Bands: %s\n",
             strlen(meta->general->bands) > 0 ? br(meta->general->bands) : "-");
       }
+
+      if (meta->insar) {
+          sprintf(&s[strlen(s)], 
+                  "\nInterferometry information:\n"	
+                  "Processor: %s\n"
+                  "Master image: %s\n"
+                  "Master acquisition date: %s\n"
+                  "Slave image: %s\n"
+                  "Slave acquisition date: %s\n"
+                  "Center look angle: %.4lf %s\n"
+                  "Doppler: %.4lf %s\n"
+                  "Doppler Rate: %.8lf %s\n"
+                  "Baseline Length: %.1lf %s\n"
+                  "Baseline Parallel: %.1lf %s\n"
+                  "Baseline Parallel Rate: %.8lf %s\n"
+                  "Baseline Perpendicular: %.1f %s\n"
+                  "Baseline Perpendicular Rate: %.8f %s\n"
+                  "Baseline Temporal: %d %s\n"
+                  "Baseline Critical: %.1lf %s\n", 
+                  meta->insar->processor,
+                  meta->insar->master_image,
+                  meta->insar->master_acquisition_date,
+                  meta->insar->slave_image,
+                  meta->insar->slave_acquisition_date,
+                  meta->insar->center_look_angle,
+                  meta->insar->center_look_angle_units,
+                  meta->insar->doppler,
+                  meta->insar->doppler_units,
+                  meta->insar->doppler_rate,
+                  meta->insar->doppler_rate_units,
+                  meta->insar->baseline_length,
+                  meta->insar->baseline_length_units,
+                  meta->insar->baseline_parallel,
+                  meta->insar->baseline_parallel_units,
+                  meta->insar->baseline_parallel_rate,
+                  meta->insar->baseline_parallel_rate_units,
+                  meta->insar->baseline_perpendicular,
+                  meta->insar->baseline_perpendicular_units,
+                  meta->insar->baseline_perpendicular_rate,
+                  meta->insar->baseline_perpendicular_rate_units,
+                  meta->insar->baseline_temporal,
+                  meta->insar->baseline_temporal_units,
+                  meta->insar->baseline_critical,
+                  meta->insar->baseline_critical_units
+                      );
+      }
+
       if (meta->colormap) {
         sprintf(&s[strlen(s)], "Colormap: %s (%d elements)\n",
                 (!strncmp(meta->colormap->look_up_table, "UNKNOWN", 7)) ? "(Unnamed)" :

@@ -9,7 +9,8 @@
 
 include ../../make_support/system_rules
 
-OBJS  = caplib.o \
+OBJS  = asf_tiff.o \
+	caplib.o \
 	check.o \
 	cla.o \
 	endian.o \

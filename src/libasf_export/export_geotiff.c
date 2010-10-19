@@ -25,10 +25,6 @@
 #include <spheroids.h>
 #include <typlim.h>
 
-#ifdef  MAX_RGB
-#undef  MAX_RGB
-#endif
-#define MAX_RGB             255
 #define USHORT_MAX          65535
 
 // If you change the BAND_ID_STRING here, make sure you make an identical
@@ -120,6 +116,8 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   unsigned short rows_per_strip;
   unsigned short *colors = NULL;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name) > 0;
+
+  _XTIFFInitialize();
 
   // Open output tiff file
   *otif = XTIFFOpen (output_file_name, "w");
@@ -239,6 +237,12 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
 
   if (is_geotiff) {
       *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, rgb, band_names, palette_color);
+  }
+
+  if (should_write_insar_xml_meta(md)) {
+      char *xml_meta = get_insar_xml_string(md);
+      TIFFSetField(*otif, TIFFTAG_ASF_INSAR_METADATA, xml_meta);
+      FREE(xml_meta);
   }
 
   *palette_color_tiff = palette_color;

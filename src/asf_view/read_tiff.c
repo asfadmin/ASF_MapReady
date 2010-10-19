@@ -10,6 +10,10 @@
 #include <tiffio.h>
 #include <xtiffio.h>
 #include <geotiff_support.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
 
 void read_tiff_colormap(const char *tiff_file, meta_colormap *mc);
 int read_tiff_rgb_scanline (TIFF *tiff, tiff_format_t format, tiff_data_config_t *data_config,
@@ -39,6 +43,12 @@ int copy_scanline_to_float_buff(float *dest, tdata_t *tif_buf,
                                 tiff_data_config_t *data_config, int empty);
 void add_empties(const char *tiff_file, char *band_str, short *num_bands,
                  char *meta_bands, int meta_band_count, int *empty);
+static void populate_insar_metadata(meta_parameters *meta, const char *filename);
+static void get_string_by_xpath(xmlDoc *doc, const char *xpath_expr, char *receiver);
+static double get_double_by_xpath(xmlDoc *doc, const char *xpath_expr);
+static xmlNode* get_node_by_xpath(xmlDoc *doc, const char *xpath_expr);
+static xmlDocPtr get_insar_xml_tree_from_string(const char *insar_xml);
+static int get_insar_xml_from_tiff_tag(const char *tiff_name, xmlDocPtr *doc);
 
 typedef struct {
     TIFF  *tiff;              // Data file pointer
@@ -152,7 +162,7 @@ int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
 // customize the signature to fit your needs.  The read_jpeg client, for
 // example, eliminated this function entirely, and returned metadata
 // with the "open_" function, below.
-meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
+meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client, char *filename)
 {
     ReadTiffClientInfo *info = (ReadTiffClientInfo *)client->read_client_info;
     int i;
@@ -209,6 +219,9 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
             strcpy(meta->general->bands, band_str);
             meta->general->band_count = num_bands;
         }
+
+        populate_insar_metadata(meta, filename);
+
     }
     else {
         // The TIFF is not a GeoTIFF, so populate the metadata with generic
@@ -559,8 +572,10 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
 {
   int i;
   char *band_selection = STRDUP(band);
-
   ReadTiffClientInfo *info = MALLOC(sizeof(ReadTiffClientInfo));
+
+  // ensure any custom tags are installed & recognized by libtiff
+  _XTIFFInitialize();
 
   info->tiff = XTIFFOpen(data_name, "r");
   info->gtif = GTIFNew(info->tiff);
@@ -1257,4 +1272,279 @@ void read_tiff_colormap(const char *tiff_file, meta_colormap *mc)
 
   if (tiff) TIFFClose(tiff);
   FREE(colors);
+}
+
+static void
+get_string_by_xpath(xmlDoc *doc, const char *xpath_expr, char *receiver) {
+	strcpy(receiver, xmlXPathCastNodeToString(get_node_by_xpath(doc, xpath_expr)));
+}
+
+static double
+get_double_by_xpath(xmlDoc *doc, const char *xpath_expr) {
+	return xmlXPathCastNodeToNumber(get_node_by_xpath(doc, xpath_expr));
+}
+
+static xmlNode*
+get_node_by_xpath(xmlDoc *doc, const char *xpath_expr) {
+    xmlXPathContextPtr xpathCtx;
+    xmlXPathObjectPtr xpathObj;
+
+	/* Create xpath evaluation context */
+	xpathCtx = xmlXPathNewContext(doc);
+	if (xpathCtx == NULL) {
+		asfPrintStatus("Error: unable to create new XPath context\n");
+		return NULL;
+	}
+
+	/* Evaluate xpath expression */
+	xpathObj = xmlXPathEvalExpression(xpath_expr, xpathCtx);
+	if (xpathObj == NULL) {
+		asfPrintStatus("Error: unable to evaluate xpath expression [%s]", xpath_expr);
+		xmlXPathFreeContext(xpathCtx);
+		return NULL;
+	}
+
+	return xpathObj->nodesetval->nodeTab[0]->children;
+}
+
+static xmlXPathObjectPtr
+getnodeset(xmlDocPtr doc, xmlChar *xpath){
+	
+  xmlXPathContextPtr context;
+  xmlXPathObjectPtr result;
+  
+  context = xmlXPathNewContext(doc);
+  if (context == NULL) {
+    printf("Error in xmlXPathNewContext\n");
+    return NULL;
+  }
+  result = xmlXPathEvalExpression(xpath, context);
+  xmlXPathFreeContext(context);
+  if (result == NULL) {
+    printf("Error in xmlXPathEvalExpression\n");
+    return NULL;
+  }
+  if(xmlXPathNodeSetIsEmpty(result->nodesetval)){
+    xmlXPathFreeObject(result);
+    printf("No result\n");
+    return NULL;
+  }
+  return result;
+}
+
+static int get_meta_xml_item(xmlDocPtr doc, char *parameter)
+{
+  int ii, found;
+  xmlNodeSetPtr keyNode;
+  xmlXPathObjectPtr key;
+  xmlChar *keyword;
+  key = getnodeset(doc, (xmlChar*)"/GDALMetadata/Item/@name");
+  if (key) {
+    keyNode = key->nodesetval;
+    for (ii=0; ii<keyNode->nodeNr; ii++) {
+      keyword = 
+	xmlNodeListGetString(doc, keyNode->nodeTab[ii]->xmlChildrenNode, 1);
+      if (strcmp_case(keyword, parameter) == 0)
+	found = ii;
+      xmlFree(keyword);
+    }
+  }
+  return found;
+}
+
+static xmlChar *get_meta_xml_units(xmlDocPtr doc, char *parameter)
+{
+  xmlNodeSetPtr unitsNode;
+  xmlXPathObjectPtr units;
+  int item = get_meta_xml_item(doc, parameter);
+  units = getnodeset(doc, (xmlChar*)"/GDALMetadata/Item/@units");
+  if (units) {
+    unitsNode = units->nodesetval;
+    return
+      xmlNodeListGetString(doc, unitsNode->nodeTab[item]->xmlChildrenNode, 1);
+  }
+  return NULL;
+}
+
+static double get_meta_xml_double(xmlDocPtr doc, char *parameter)
+{
+  xmlNodeSetPtr valNode;
+  xmlXPathObjectPtr val;
+  xmlChar *value;
+  int item = get_meta_xml_item(doc, parameter);
+  val = getnodeset(doc, (xmlChar*)"/GDALMetadata/Item");
+  if (val) {
+    valNode = val->nodesetval;
+    value = 
+      xmlNodeListGetString(doc, valNode->nodeTab[item]->xmlChildrenNode, 1);
+    return
+      atof((char *)value);
+  }
+  return MAGIC_UNSET_DOUBLE;
+}
+
+static char *get_meta_xml_string(xmlDocPtr doc, char *parameter)
+{
+  xmlNodeSetPtr valNode;
+  xmlXPathObjectPtr val;
+  int item = get_meta_xml_item(doc, parameter);
+  val = getnodeset(doc, (xmlChar*)"/GDALMetadata/Item");
+  if (val) {
+    valNode = val->nodesetval;
+    return
+      xmlNodeListGetString(doc, valNode->nodeTab[item]->xmlChildrenNode, 1);
+  }
+  return MAGIC_UNSET_STRING;
+}
+
+/**
+ * Parse the in memory document and free the resulting tree
+ */
+static xmlDocPtr
+get_insar_xml_tree_from_string(const char *document) {
+    xmlDocPtr doc;
+
+    /*
+     * The document being in memory, it have no base per RFC 2396,
+     * and the "noname.xml" argument will serve as its base.
+     */
+    doc = xmlReadMemory(document, strlen(document), "noname.xml", NULL, 0);
+    if ( NULL == doc ) {
+        asfPrintStatus("Failed to parse in-memory XML metadata document for InSAR product.\n");
+    }
+    return doc;
+}
+
+/**
+ * gotchas: xmlDocPtr is passed by reference
+ * returns: bool success
+ */
+static int
+get_insar_xml_from_tiff_tag(const char *tiff_name, xmlDocPtr *doc)
+{
+    TIFF *tiff = NULL;
+    char *insar_xml = (char *) MALLOC(sizeof(char)*2000);
+    
+    asfPrintStatus("Checking for ASF InSAR metadata from GDAL metadata tag...");
+    tiff = XTIFFOpen(tiff_name, "r");
+    if (tiff) {
+        if ( 0 == TIFFGetField(tiff, TIFFTAG_ASF_INSAR_METADATA, &insar_xml) )
+        {
+            asfPrintStatus("...didn't find it.\n");
+            return FALSE;
+        } else {
+            asfPrintStatus("...found it!\n");
+            *doc = get_insar_xml_tree_from_string(insar_xml);
+            return TRUE;
+        }   
+        XTIFFClose(tiff);
+    }
+    return FALSE;
+}
+
+/**
+ * assumptions: the metadata isn't more than 2kb in size.
+ * precondition: meta_parameters meta is initialized
+ * postcondition: meta->insar has a reference to a valid InSAR data structure
+ *     (could be empty).
+ */
+static void
+populate_insar_metadata(meta_parameters *meta, const char *filename)
+{
+    meta_insar *insar = meta_insar_init();
+    LIBXML_TEST_VERSION // Check for version/compilation/libraries
+    xmlDocPtr doc = NULL;
+    
+    if ( FALSE == get_insar_xml_from_tiff_tag(filename, &doc) ) 
+    {
+    	asfPrintStatus("Didn't find an InSAR metadata in embedded TIFF metadata.\n");
+    } else {
+      /*
+        get_string_by_xpath(doc, "/insar/processor", insar->processor);
+        get_string_by_xpath(doc, "/insar/master_image", insar->master_image);
+        get_string_by_xpath(doc, "/insar/master_acquisition_date", insar->master_acquisition_date);
+        get_string_by_xpath(doc, "/insar/slave_image", insar->slave_image);
+        get_string_by_xpath(doc, "/insar/slave_acquisition_date", insar->slave_acquisition_date);
+        insar->baseline_parallel_rate = get_double_by_xpath(doc, "/insar/baseline_parallel_rate");
+        get_string_by_xpath(doc, "/insar/baseline_parallel_rate/@units", insar->baseline_parallel_rate_units);
+        insar->baseline_critical = get_double_by_xpath(doc, "/insar/baseline_critical");
+        get_string_by_xpath(doc, "/insar/baseline_critical/@units", insar->baseline_critical_units);
+        insar->baseline_length = get_double_by_xpath(doc, "/insar/baseline_length");
+        get_string_by_xpath(doc, "/insar/baseline_length/@units", insar->baseline_length_units);
+        insar->baseline_parallel = get_double_by_xpath(doc, "/insar/baseline_parallel");
+        get_string_by_xpath(doc, "/insar/baseline_parallel/@units", insar->baseline_parallel_units);
+        insar->baseline_parallel_rate = get_double_by_xpath(doc, "/insar/baseline_parallel_rate");
+        get_string_by_xpath(doc, "/insar/baseline_parallel_rate/@units", insar->baseline_parallel_rate_units);
+        insar->baseline_perpendicular = get_double_by_xpath(doc, "/insar/baseline_perpendicular");
+        get_string_by_xpath(doc, "/insar/baseline_perpendicular/@units", insar->baseline_perpendicular_units);
+        insar->baseline_perpendicular_rate = get_double_by_xpath(doc, "/insar/baseline_perpendicular_rate");
+        get_string_by_xpath(doc, "/insar/baseline_perpendicular_rate/@units", insar->baseline_perpendicular_rate_units);
+        insar->baseline_temporal = get_double_by_xpath(doc, "/insar/baseline_temporal");
+        get_string_by_xpath(doc, "/insar/baseline_temporal/@units", insar->baseline_temporal_units);
+        insar->center_look_angle = get_double_by_xpath(doc, "/insar/center_look_angle");
+        insar->doppler = get_double_by_xpath(doc, "/insar/doppler");
+        get_string_by_xpath(doc, "/insar/doppler/@units", insar->doppler_units);
+        insar->doppler_rate = get_double_by_xpath(doc, "/insar/doppler_rate");
+        get_string_by_xpath(doc, "/insar/doppler_rate/@units", insar->doppler_rate_units);
+      */
+      strcpy(insar->processor, 
+	     get_meta_xml_string(doc, (xmlChar *)"INSAR_PROCESSOR"));
+      strcpy(insar->master_image, 
+	     get_meta_xml_string(doc, (xmlChar *)"INSAR_MASTER_IMAGE"));
+      strcpy(insar->slave_image, 
+	     get_meta_xml_string(doc, (xmlChar *)"INSAR_SLAVE_IMAGE"));
+      strcpy(insar->master_acquisition_date, 
+	     get_meta_xml_string(doc, 
+				 (xmlChar *)"INSAR_MASTER_ACQUISITION_DATE"));
+      strcpy(insar->slave_acquisition_date, 
+	     get_meta_xml_string(doc, 
+				 (xmlChar *)"INSAR_SLAVE_ACQUISITION_DATE"));
+      insar->center_look_angle = 
+	get_meta_xml_double(doc, (xmlChar *)"INSAR_CENTER_LOOK_ANGLE");
+      strcpy(insar->center_look_angle_units, 
+	     get_meta_xml_units(doc, (xmlChar *)"INSAR_CENTER_LOOK_ANGLE"));
+      insar->doppler = get_meta_xml_double(doc, (xmlChar *)"INSAR_DOPPLER");
+      strcpy(insar->doppler_units, 
+	     get_meta_xml_units(doc, (xmlChar *)"INSAR_DOPPLER"));
+      insar->doppler_rate = 
+	get_meta_xml_double(doc, (xmlChar *)"INSAR_DOPPLER_RATE");
+      strcpy(insar->doppler_rate_units, 
+	     get_meta_xml_units(doc, (xmlChar *)"INSAR_DOPPLER_RATE"));
+      insar->baseline_length = 
+	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_LENGTH");
+      strcpy(insar->baseline_length_units, 
+	     get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_LENGTH"));
+      insar->baseline_parallel = 
+	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL");
+      strcpy(insar->baseline_parallel_units, 
+	     get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL"));
+      insar->baseline_parallel_rate = 
+	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL_RATE");
+      strcpy(insar->baseline_parallel_rate_units, 
+	     get_meta_xml_units(doc, 
+				(xmlChar *)"INSAR_BASELINE_PARALLEL_RATE"));
+      insar->baseline_perpendicular = 
+	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PERPENDICULAR");
+      strcpy(insar->baseline_perpendicular_units, 
+	     get_meta_xml_units(doc, 
+				(xmlChar *)"INSAR_BASELINE_PERPENDICULAR"));
+      insar->baseline_perpendicular_rate = 
+	get_meta_xml_double(doc, 
+			    (xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE");
+      strcpy(insar->baseline_perpendicular_rate_units, 
+	     get_meta_xml_units(doc, 
+				(xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE"));
+      insar->baseline_temporal = 
+	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_TEMPORAL");
+      strcpy(insar->baseline_temporal_units, 
+	     get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_TEMPORAL"));
+      insar->baseline_critical = 
+	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_CRITICAL");
+      strcpy(insar->baseline_critical_units, 
+	     get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_CRITICAL"));
+      meta->insar = insar;
+      
+      xmlFreeDoc(doc);
+      xmlCleanupParser();
+    }
 }

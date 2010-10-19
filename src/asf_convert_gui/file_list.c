@@ -1008,7 +1008,14 @@ add_to_files_list_iter(const gchar *input_file_in,
 
           // Determine output file name
           gchar * out_name_full;
-          out_name_full = determine_default_output_file_name(input_file);
+	  if (interferogram_file && strlen(interferogram_file) > 0)
+	    out_name_full = 
+	      determine_default_output_file_name(interferogram_file);
+	  else if (coherence_file && strlen(coherence_file) > 0)
+	    out_name_full = 
+	      determine_default_output_file_name(coherence_file);
+	  else
+	    out_name_full = determine_default_output_file_name(input_file);
           set_output_name(iter_p, out_name_full);
           g_free(out_name_full);
           FREE(bands);

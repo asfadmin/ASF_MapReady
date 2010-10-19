@@ -362,14 +362,23 @@ meta_insar *meta_insar_init(void)
   strcpy(insar->slave_acquisition_date, MAGIC_UNSET_STRING);
   insar->center_look_angle = MAGIC_UNSET_DOUBLE;
   insar->doppler = MAGIC_UNSET_DOUBLE;
+  strcpy(insar->doppler_units, MAGIC_UNSET_STRING);
   insar->doppler_rate = MAGIC_UNSET_DOUBLE;
+  strcpy(insar->doppler_rate_units, MAGIC_UNSET_STRING);
   insar->baseline_length = MAGIC_UNSET_DOUBLE;
+  strcpy(insar->baseline_length_units, MAGIC_UNSET_STRING);
   insar->baseline_parallel = MAGIC_UNSET_DOUBLE;
+  strcpy(insar->baseline_parallel_units, MAGIC_UNSET_STRING);
   insar->baseline_parallel_rate = MAGIC_UNSET_DOUBLE;
+  strcpy(insar->baseline_parallel_rate_units, MAGIC_UNSET_STRING);
   insar->baseline_perpendicular = MAGIC_UNSET_DOUBLE;
+  strcpy(insar->baseline_perpendicular_units, MAGIC_UNSET_STRING);
   insar->baseline_perpendicular_rate = MAGIC_UNSET_DOUBLE;
+  strcpy(insar->baseline_perpendicular_rate_units, MAGIC_UNSET_STRING);
   insar->baseline_temporal = MAGIC_UNSET_INT;
+  strcpy(insar->baseline_temporal_units, MAGIC_UNSET_STRING);
   insar->baseline_critical = MAGIC_UNSET_DOUBLE;
+  strcpy(insar->baseline_critical_units, MAGIC_UNSET_STRING);
   return insar;
 }
 
