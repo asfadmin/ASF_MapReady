@@ -187,7 +187,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 			&nouts, &outs);
   }
 
-  if (should_write_insar_rgb(band_name)) {
+  if (should_write_insar_rgb(md->general->bands)) {
       write_insar_rgb(GEOTIFF, in_meta_name, in_data_name, out_name);
   }
 
@@ -229,12 +229,12 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 
 int
 should_write_insar_xml_meta(meta_parameters *md) {
-    return ( (int) md->insar);
+    return ( NULL != md->insar);
 }
 
 int
 should_write_insar_rgb(char *band_name) {
-    return ( strcmp_case(band_name, "INTERFEROGRAM_PHASE") );
+    return ( NULL != strstr_case(band_name, "INTERFEROGRAM_PHASE") );
 }
 
 /**
