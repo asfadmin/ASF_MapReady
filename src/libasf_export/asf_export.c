@@ -188,7 +188,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   }
 
   if (should_write_insar_rgb(md->general->bands)) {
-      write_insar_rgb(GEOTIFF, in_meta_name, in_data_name, out_name);
+      write_insar_rgb(format, in_meta_name, in_data_name, out_name);
   }
 
   if (should_write_insar_xml_meta(md)) {
