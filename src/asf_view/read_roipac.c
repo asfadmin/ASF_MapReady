@@ -76,7 +76,10 @@ int read_roipac_client(int row_start, int n_rows_to_get,
 
     // note that we will not use the capitalized versions of seek and read,
     // roipac files are bad for not being long enough -- we'll pad with zeros
-    if (info->roipac_file_type == ROIPAC_CPX) {
+    // We are treating the SLC files as CPX -- this means the "multilook"
+    // checkbox won't be available, that can be added later (FIXME) if at all
+    if (info->roipac_file_type == ROIPAC_CPX ||
+        info->roipac_file_type == ROIPAC_SLC) {
       // alternating pixel values of I and Q
       float *buf = CALLOC(sizeof(float), len);
       int ret = fseek(info->fp, row_start*ns*2*sizeof(float), SEEK_SET);
@@ -108,10 +111,6 @@ int read_roipac_client(int row_start, int n_rows_to_get,
           fseek(info->fp, ns*sizeof(float), SEEK_CUR);
         }
       }
-    }
-    else if (info->roipac_file_type == ROIPAC_SLC) {
-      // not implemented yet
-      assert(FALSE);
     }
     else {
       // can't happen
