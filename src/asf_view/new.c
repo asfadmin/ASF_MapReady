@@ -333,11 +333,11 @@ static void load_file_banded_imp(const char *file, const char *band,
 
         if (get_tiff_lut_index() == 0) {
             populate_lut_combo();
-            select_lut(lut);
 
             GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
             gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
             set_current_index(get_tiff_lut_index());
+            select_lut(lut);
         }
         else {
             set_current_index(idx);
