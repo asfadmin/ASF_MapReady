@@ -369,6 +369,7 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
     double scale_y = tsy / max_thumbnail_dimension;
     double scale_x = tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
+    if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
     int y_dim = tsy / scale;
 
@@ -519,6 +520,7 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
     double scale_y = tsy / max_thumbnail_dimension;
     double scale_x = tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
+    if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
     int y_dim = tsy / scale;
 
@@ -568,10 +570,14 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     int hsf = ceil (meta->general->sample_count / larger_dim);
     // Overall scale factor to use is the greater of vsf and hsf.
     int sf = (hsf > vsf ? hsf : vsf);
+    if (sf == 0) sf = 1;
 
     // Thumbnail image sizes.
-    size_t tsx = meta->general->sample_count / sf;
-    size_t tsy = meta->general->line_count / sf;
+    int ns = meta->general->sample_count;
+    int nl = meta->general->line_count;
+
+    size_t tsx = ns / sf;
+    size_t tsy = nl / sf;
 
     guchar *data = g_new(guchar, 3*tsx*tsy);
     float **fdata = g_new(float *, num_bands);
@@ -738,6 +744,7 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     double scale_y = tsy / max_thumbnail_dimension;
     double scale_x = tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
+    if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
     int y_dim = tsy / scale;
 
@@ -897,6 +904,7 @@ make_polsarpro_thumb(const char *input_metadata, const char *input_data,
   double scale_y = tsy / max_thumbnail_dimension;
   double scale_x = tsx / max_thumbnail_dimension;
   double scale = scale_y > scale_x ? scale_y : scale_x;
+  if (scale == 0) scale = 1;
   int x_dim = tsx / scale;
   int y_dim = tsy / scale;
 
@@ -1158,6 +1166,7 @@ make_complex_thumb(meta_parameters* imd,
     double scale_y = tsy / max_thumbnail_dimension;
     double scale_x = tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
+    if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
     int y_dim = tsy / scale;
 
@@ -1211,6 +1220,7 @@ make_terrasarx_thumb(const char *input_metadata, const char *input_data,
   double scale_y = height / max_thumbnail_dimension;
   double scale_x = width / max_thumbnail_dimension;
   double scale = scale_y > scale_x ? scale_y : scale_x;
+  if (scale == 0) scale = 1;
   int x_dim = width / scale;
   int y_dim = height / scale;
 
@@ -1274,6 +1284,7 @@ make_radarsat2_thumb(const char *input_metadata, const char *input_data,
   double scale_y = height / max_thumbnail_dimension;
   double scale_x = width / max_thumbnail_dimension;
   double scale = scale_y > scale_x ? scale_y : scale_x;
+  if (scale == 0) scale = 1;
   int x_dim = width / scale;
   int y_dim = height / scale;
 
@@ -1578,6 +1589,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     double scale_y = tsy / max_thumbnail_dimension;
     double scale_x = tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
+    if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
     int y_dim = tsy / scale;
 
