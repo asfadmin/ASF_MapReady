@@ -92,7 +92,7 @@ static void fix_bad_chars(char *s)
 
 void fill_meta_info()
 {
-    char s[1024];
+    char s[2048];
     strcpy(s, "");
 
     meta_parameters *meta = curr->meta;

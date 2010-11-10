@@ -1334,7 +1334,7 @@ getnodeset(xmlDocPtr doc, xmlChar *xpath){
 
 static int get_meta_xml_item(xmlDocPtr doc, char *parameter)
 {
-  int ii, found;
+  int ii, found=-1;
   xmlNodeSetPtr keyNode;
   xmlXPathObjectPtr key;
   xmlChar *keyword;
@@ -1358,7 +1358,7 @@ static xmlChar *get_meta_xml_units(xmlDocPtr doc, char *parameter)
   xmlXPathObjectPtr units;
   int item = get_meta_xml_item(doc, parameter);
   units = getnodeset(doc, (xmlChar*)"/GDALMetadata/Item/@units");
-  if (units) {
+  if (units && item >= 0) {
     unitsNode = units->nodesetval;
     return
       xmlNodeListGetString(doc, unitsNode->nodeTab[item]->xmlChildrenNode, 1);
@@ -1373,7 +1373,7 @@ static double get_meta_xml_double(xmlDocPtr doc, char *parameter)
   xmlChar *value;
   int item = get_meta_xml_item(doc, parameter);
   val = getnodeset(doc, (xmlChar*)"/GDALMetadata/Item");
-  if (val) {
+  if (val && item >= 0) {
     valNode = val->nodesetval;
     value = 
       xmlNodeListGetString(doc, valNode->nodeTab[item]->xmlChildrenNode, 1);
@@ -1389,7 +1389,7 @@ static char *get_meta_xml_string(xmlDocPtr doc, char *parameter)
   xmlXPathObjectPtr val;
   int item = get_meta_xml_item(doc, parameter);
   val = getnodeset(doc, (xmlChar*)"/GDALMetadata/Item");
-  if (val) {
+  if (val && item >= 0) {
     valNode = val->nodesetval;
     return
       xmlNodeListGetString(doc, valNode->nodeTab[item]->xmlChildrenNode, 1);
