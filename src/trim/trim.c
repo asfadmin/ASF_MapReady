@@ -115,7 +115,6 @@ int main(int argc, char *argv[])
 
   logflag=0;
   currArg=1;      /* from cla.h in asf.h, points to current argv string */
-  system("date");
   printf("Program: trim\n\n");
 
 /* Parse command line args */
