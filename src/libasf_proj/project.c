@@ -720,7 +720,7 @@ char *lamcc_projection_desc(project_parameters_t *pps, datum_type_t datum)
         pps->lamcc.lon0,
         datum_str(datum));
   }
-  if (datum == HUGHES_DATUM) {
+  else if (datum == HUGHES_DATUM) {
     sprintf(lamcc_projection_description,
         "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
         pps->lamcc.plat1,
