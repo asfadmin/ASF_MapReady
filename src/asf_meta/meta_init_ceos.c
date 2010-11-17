@@ -1193,7 +1193,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 	  beam = 77; // WB2 HH4scan
       }
     }
-    else {
+    else if (ceos->dssr.off_nadir_angle > 27.0 &&
+	     ceos->dssr.off_nadir_angle < 28.0) {
       if (ceos->dssr.bnd_rng < 20000.0)
 	beam = 80; // WB1 HH5scan
       else
