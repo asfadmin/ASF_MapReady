@@ -192,7 +192,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   }
 
   if (should_write_insar_xml_meta(md)) {
-      char *xml_meta = get_insar_xml_string(md);
+    char *xml_meta = get_insar_xml_string(md, FALSE);
       char *xml_output_file_name = 
           (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
       sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
@@ -268,50 +268,94 @@ write_insar_rgb(output_format_t format, char *in_meta_name, char *in_data_name, 
  * postcontitions: client must free the allocated memory.
  */
 char*
-get_insar_xml_string(meta_parameters *meta)
+get_insar_xml_string(meta_parameters *meta, int gdal)
 {
     // assume upper bound of 2000 characters.
     char *insar_xml_string = (char *) MALLOC(sizeof(char) * 2000);
+    
+    if (gdal)
+      sprintf(insar_xml_string, 
+	      "<GDALMetadata>\n"
+	      "<Item name=\"INSAR_PROCESSOR\" units=\"1\">%s</Item>\n"
+	      "<Item name=\"INSAR_MASTER_IMAGE\" units=\"1\">%s</Item>\n"
+	      "<Item name=\"INSAR_SLAVE_IMAGE\" units=\"1\">%s</Item>\n"
+	      "<Item name=\"INSAR_MASTER_ACQUISITION_DATE\" units=\"1\">%s"
+	      "</Item>\n"
+	      "<Item name=\"INSAR_SLAVE_ACQUISITION_DATE\" units=\"1\">%s"
+	      "</Item>\n"
+	      "<Item name=\"INSAR_CENTER_LOOK_ANGLE\" units=\"degrees\">%.4lf"
+	      "</Item>\n"
+	      "<Item name=\"INSAR_DOPPLER\" units=\"Hz\">%.4lf</Item>\n"
+	      "<Item name=\"INSAR_DOPPLER_RATE\" units=\"Hz/m\">%.8lf</Item>\n"
+	      "<Item name=\"INSAR_BASELINE_LENGTH\" units=\"m\">%.1lf</Item>\n"
+	      "<Item name=\"INSAR_BASELINE_PARALLEL\" units=\"m\">%.1lf"
+	      "</Item>\n"
+	      "<Item name=\"INSAR_BASELINE_PARALLEL_RATE\" units=\"m/s\">%.8lf"
+	      "</Item>\n"
+	      "<Item name=\"INSAR_BASELINE_PERPENDICULAR\" units=\"m\">%.1lf"
+	      "</Item>\n"
+	      "<Item name=\"INSAR_BASELINE_PERPENDICULAR_RATE\" units=\"m/s\">"
+	      "%.8lf</Item>\n"
+	      "<Item name=\"INSAR_BASELINE_TEMPORAL\" units=\"days\">%d"
+	      "</Item>\n"
+	      "<Item name=\"INSAR_BASELINE_CRITICAL\" units=\"m\">%.1lf"
+	      "</Item>\n"
+	      "</GDALMetadata>\n"
+	      , meta->insar->processor
+	      , meta->insar->master_image
+	      , meta->insar->slave_image
+	      , meta->insar->master_acquisition_date
+	      , meta->insar->slave_acquisition_date
+	      , meta->insar->center_look_angle
+	      , meta->insar->doppler
+	      , meta->insar->doppler_rate
+	      , meta->insar->baseline_length
+	      , meta->insar->baseline_parallel
+	      , meta->insar->baseline_parallel_rate
+	      , meta->insar->baseline_perpendicular
+	      , meta->insar->baseline_perpendicular_rate
+	      , meta->insar->baseline_temporal
+	      , meta->insar->baseline_critical);
+    else
+      sprintf(insar_xml_string, 
+	      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+	      "<insar>\n"
+	      "  <processor>%s</processor>\n"
+	      "  <master_image>%s</master_image>\n"
+	      "  <slave_image>%s</slave_image>\n"
+	      "  <master_acquisition_date>%s</master_acquisition_date>\n"
+	      "  <slave_acquisition_date>%s</slave_acquisition_date>\n"
+	      "  <center_look_angle units=\"degrees\">%.4lf"
+	      "</center_look_angle>\n"
+	      "  <doppler units=\"Hz\">%.11g</doppler>\n"
+	      "  <doppler_rate units=\"Hz/m\">%.11g</doppler_rate>\n"
+	      "  <baseline_length units=\"m\">%.1lf</baseline_length>\n"
+	      "  <baseline_parallel units=\"m\">%.1lf</baseline_parallel>\n"
+	      "  <baseline_parallel_rate units=\"m/s\">%.11g"
+	      "</baseline_parallel_rate>\n"
+	      "  <baseline_perpendicular units=\"m\">%.1lf"
+	      "</baseline_perpendicular>\n"
+	      "  <baseline_perpendicular_rate units=\"m/s\">%.11g"
+	      "</baseline_perpendicular_rate>\n"
+	      "  <baseline_temporal units=\"days\">%d</baseline_temporal>\n"
+	      "  <baseline_critical units=\"m\">%.1lf</baseline_critical>\n"
+	      "</insar>\n"
+	      , meta->insar->processor
+	      , meta->insar->master_image
+	      , meta->insar->slave_image
+	      , meta->insar->master_acquisition_date
+	      , meta->insar->slave_acquisition_date
+	      , meta->insar->center_look_angle
+	      , meta->insar->doppler
+	      , meta->insar->doppler_rate
+	      , meta->insar->baseline_length
+	      , meta->insar->baseline_parallel
+	      , meta->insar->baseline_parallel_rate
+	      , meta->insar->baseline_perpendicular
+	      , meta->insar->baseline_perpendicular_rate
+	      , meta->insar->baseline_temporal
+	      , meta->insar->baseline_critical);
 
-    sprintf(insar_xml_string, 
-            "<GDALMetadata>\n"
-            "<Item name=\"INSAR_PROCESSOR\" units=\"1\">%s</Item>\n"
-            "<Item name=\"INSAR_MASTER_IMAGE\" units=\"1\">%s</Item>\n"
-            "<Item name=\"INSAR_SLAVE_IMAGE\" units=\"1\">%s</Item>\n"
-            "<Item name=\"INSAR_MASTER_ACQUISITION_DATE\" units=\"1\">%s"
-	    "</Item>\n"
-            "<Item name=\"INSAR_SLAVE_ACQUISITION_DATE\" units=\"1\">%s"
-	    "</Item>\n"
-            "<Item name=\"INSAR_CENTER_LOOK_ANGLE\" units=\"degrees\">%.4lf"
-	    "</Item>\n"
-            "<Item name=\"INSAR_DOPPLER\" units=\"Hz\">%.4lf</Item>\n"
-            "<Item name=\"INSAR_DOPPLER_RATE\" units=\"Hz/m\">%.8lf</Item>\n"
-            "<Item name=\"INSAR_BASELINE_LENGTH\" units=\"m\">%.1lf</Item>\n"
-            "<Item name=\"INSAR_BASELINE_PARALLEL\" units=\"m\">%.1lf</Item>\n"
-            "<Item name=\"INSAR_BASELINE_PARALLEL_RATE\" units=\"m/s\">%.8lf"
-	    "</Item>\n"
-            "<Item name=\"INSAR_BASELINE_PERPENDICULAR\" units=\"m\">%.1lf"
-	    "</Item>\n"
-            "<Item name=\"INSAR_BASELINE_PERPENDICULAR_RATE\" units=\"m/s\">"
-	    "%.8lf</Item>\n"
-            "<Item name=\"INSAR_BASELINE_TEMPORAL\" units=\"days\">%d</Item>\n"
-            "<Item name=\"INSAR_BASELINE_CRITICAL\" units=\"m\">%.1lf</Item>\n"
-            "</GDALMetadata>\n"
-            , meta->insar->processor
-            , meta->insar->master_image
-            , meta->insar->slave_image
-            , meta->insar->master_acquisition_date
-            , meta->insar->slave_acquisition_date
-            , meta->insar->center_look_angle
-            , meta->insar->doppler
-            , meta->insar->doppler_rate
-            , meta->insar->baseline_length
-            , meta->insar->baseline_parallel
-            , meta->insar->baseline_parallel_rate
-            , meta->insar->baseline_perpendicular
-            , meta->insar->baseline_perpendicular_rate
-            , meta->insar->baseline_temporal
-            , meta->insar->baseline_critical );
     return insar_xml_string;
 }
 

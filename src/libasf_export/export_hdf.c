@@ -25,733 +25,844 @@
 #include <spheroids.h>
 #include <typlim.h>
 #include <hdf5.h>
-#include <HE5_HdfEosDef.h>
 
-typedef struct vector_time_t {
-  int number;
-  double time;
-} vector_time_t;
+#define RES 16
+#define MAX_PTS 256
 
-typedef struct vector_xyz_t {
-  int number;
-  double x;
-  double y;
-  double z;
-} vector_xyz_t;
-
-hdf_t *initialize_hdf5_file(const char *output_file_name, meta_parameters *md)
+void h5_att_double(hid_t data, hid_t space, char *name, double value)
 {
-  hid_t hdf5_file, hdf5_group, hdf5_data, hdf5_attr;
-  herr_t status;
-  int ii, complex=FALSE, projected=FALSE;
-  char dataset[50], groupname[50], band[5], str_attr[50];
+  hid_t attr = H5Acreate(data, name, H5T_NATIVE_DOUBLE, space, H5P_DEFAULT, 
+			 H5P_DEFAULT);
+  H5Awrite(attr, H5T_NATIVE_DOUBLE, &value);
+  H5Aclose(attr);
+}
+
+void h5_att_float(hid_t data, hid_t space, char *name, float value)
+{
+  hid_t attr = H5Acreate(data, name, H5T_NATIVE_FLOAT, space, H5P_DEFAULT, 
+			 H5P_DEFAULT);
+  H5Awrite(attr, H5T_NATIVE_FLOAT, &value);
+  H5Aclose(attr);
+}
+
+void h5_att_int(hid_t data, hid_t space, char *name, int value)
+{
+  hid_t attr = H5Acreate(data, name, H5T_NATIVE_INT, space, H5P_DEFAULT, 
+			 H5P_DEFAULT);
+  H5Awrite(attr, H5T_NATIVE_INT, &value);
+  H5Aclose(attr);
+}
+
+void h5_att_float2(hid_t data, hid_t space, char *name, float *value)
+{
+  hid_t attr = H5Acreate(data, name, H5T_NATIVE_FLOAT, space, H5P_DEFAULT, 
+			 H5P_DEFAULT);
+  H5Awrite(attr, H5T_NATIVE_FLOAT, value);
+  H5Aclose(attr);
+}
+
+void h5_att_str(hid_t data, hid_t space, char *name, char *value)
+{
+  hid_t str = H5Tcopy(H5T_C_S1);
+  H5Tset_size(str, strlen(value));
+  hid_t attr = H5Acreate(data, name, str, space, H5P_DEFAULT, H5P_DEFAULT);
+  H5Awrite(attr, str, value);
+  H5Aclose(attr);
+}
+
+void h5_value_double(hid_t file, char *group, char *name, 
+		     double value, char *long_name, char *units)
+{
+  char meta[100];
+  sprintf(meta, "%s/%s", group, name);
+  hid_t h5_space = H5Screate(H5S_SCALAR);
+  hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_DOUBLE, h5_space,
+			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(h5_data, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+  h5_att_str(h5_data, h5_space, "long_name", long_name);
+  if (units && strlen(units) > 0) 
+    h5_att_str(h5_data, h5_space, "units", units);
+  H5Dclose(h5_data);
+  H5Sclose(h5_space);
+}
+
+void h5_value_float(hid_t file, char *group, char *name, 
+		    float value, char *long_name, char *units)
+{
+  char meta[100];
+  sprintf(meta, "%s/%s", group, name);
+  hid_t h5_space = H5Screate(H5S_SCALAR);
+  hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_FLOAT, h5_space,
+			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+  h5_att_str(h5_data, h5_space, "long_name", long_name);
+  if (units && strlen(units) > 0)
+    h5_att_str(h5_data, h5_space, "units", units);
+  H5Dclose(h5_data);
+  H5Sclose(h5_space);
+}
+
+void h5_value_int(hid_t file, char *group, char *name, 
+		  int value, char *long_name, char *units)
+{
+  char meta[100];
+  sprintf(meta, "%s/%s", group, name);
+  hid_t h5_space = H5Screate(H5S_SCALAR);
+  hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_INT, h5_space,
+			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(h5_data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+  h5_att_str(h5_data, h5_space, "long_name", long_name);
+  if (units && strlen(units) > 0)
+    h5_att_str(h5_data, h5_space, "units", units);
+  H5Dclose(h5_data);
+  H5Sclose(h5_space);
+}
+
+void h5_value_str(hid_t file, char *group, char *name, 
+		  char *value, char *long_name, char *units)
+{
+  char meta[100];
+  sprintf(meta, "%s/%s", group, name);
+  hid_t h5_space = H5Screate(H5S_SCALAR);
+  hid_t h5_str = H5Tcopy(H5T_C_S1);
+  H5Tset_size(h5_str, strlen(value));
+  hid_t h5_data = H5Dcreate(file, meta, h5_str, h5_space,
+			 H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(h5_data, h5_str, H5S_ALL, H5S_ALL, H5P_DEFAULT, value);
+  h5_att_str(h5_data, h5_space, "long_name", long_name);
+  if (units && strlen(units) > 0)
+    h5_att_str(h5_data, h5_space, "units", units);
+  H5Dclose(h5_data);
+  H5Sclose(h5_space);
+}
+
+h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
+{
+  hid_t h5_file, h5_datagroup, h5_metagroup, h5_data, h5_proj;
+  hid_t h5_array, h5_string, h5_time, h5_lat, h5_lon, h5_xgrid, h5_ygrid;
+  int ii, kk, complex=FALSE, projected=FALSE;
   char *spatial_ref=NULL, *datum=NULL, *spheroid=NULL;
+  char dataset[50], group[50], band[5], str_attr[50], tmp[50];
+  double lfValue;
 
-  // Initialize the HDF pointer structure
-  hdf_t *hdf = (hdf_t *) MALLOC(sizeof(hdf_t));
-  hdf->band_count = md->general->band_count;
-  hdf->data_amp = (hid_t *) MALLOC(sizeof(hid_t)*hdf->band_count);
-  if (complex)
-    hdf->data_phase = (hid_t *) MALLOC(sizeof(hid_t)*hdf->band_count);
-  else
-    hdf->data_phase = NULL;
-
-  // Check for complex data
-  if (md->general->image_data_type == COMPLEX_IMAGE)
-    complex = TRUE;
+  // Convenience variables
+  meta_general *mg = md->general;
+  meta_sar *ms = md->sar;
+  meta_state_vectors *mo = md->state_vectors;
+  meta_projection *mp = md->projection;
 
   // Check whether data is map projected
-  if (md->projection && md->projection->type != SCANSAR_PROJECTION) {
+  if (mp && mp->type != SCANSAR_PROJECTION)
+    //asfPrintError("Image is map projected. Wrong initialization function!\n");
     projected = TRUE;
-    hdf->projected = TRUE;
-  }
-  else
-    hdf->projected = FALSE;
+
+  // Initialize the HDF pointer structure
+  h5_t *h5 = (h5_t *) MALLOC(sizeof(h5_t));
+  int band_count = mg->band_count;
+  h5->var_count = band_count;
+  h5->var = (hid_t *) MALLOC(sizeof(hid_t)*h5->var_count);
+
+  // Check for complex data
+  if (mg->image_data_type == COMPLEX_IMAGE)
+    complex = TRUE;
 
   // Create new HDF5 file
-  if (projected)
-    hdf5_file = HE5_GDopen(output_file_name, H5F_ACC_TRUNC);
-  else
-    hdf5_file = 
-      H5Fcreate(output_file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-  hdf->file = hdf5_file;
+  h5_file = 
+    H5Fcreate(output_file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  h5->file = h5_file;
 
   // Create data space
-  hsize_t adims[1] = { 1 };
-  hsize_t dims[2] = { md->general->line_count, md->general->sample_count };
-  hsize_t cdims[2] = { 100, md->general->sample_count };
-  hid_t hdf5_space = H5Screate_simple(2, dims, NULL);
-  hdf->space = hdf5_space;
+  int samples = mg->sample_count;
+  int lines = mg->line_count;
+  hsize_t dims[2] = { lines, samples };
+  hsize_t cdims[2] = { 100, samples };
+  hsize_t rdims[2] = { 1, 2 };
+  h5_array = H5Screate_simple(2, dims, NULL);
+  h5->space = h5_array;
+  h5_string = H5Screate(H5S_SCALAR);
+  hid_t h5_range = H5Screate(H5S_SIMPLE);
+  H5Sset_extent_simple(h5_range, 2, rdims, NULL); 
   
   // Create data structure
-  char **band_name = extract_band_names(md->general->bands, hdf->band_count);
-  hid_t hdf5_plist = H5Pcreate(H5P_DATASET_CREATE);
-  H5Pset_chunk(hdf5_plist, 2, cdims);
-  H5Pset_deflate(hdf5_plist, 6);
-
-  for (ii=0; ii<hdf->band_count; ii++) {
-    // Create a group per band
-    strncpy(band, band_name[ii], 2);
-    band[2] = '\0';
-    sprintf(groupname, "/%s", band);
-    hdf5_group = H5Gcreate(hdf5_file, groupname, H5P_DEFAULT, H5P_DEFAULT, 
+  char **band_name = extract_band_names(mg->bands, band_count);
+  hid_t h5_plist = H5Pcreate(H5P_DATASET_CREATE);
+  H5Pset_chunk(h5_plist, 2, cdims);
+  H5Pset_deflate(h5_plist, 6);
+  
+  // Create a data group
+  sprintf(group, "/data");
+  h5_datagroup = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
 			   H5P_DEFAULT);
-    
-    // Create data set
-    // Might want to consider big endian floating point - H5T_IEEE_F32BE
-    sprintf(dataset, "%s/AMPLITUDE_IMAGE", groupname);
-    hdf5_data = H5Dcreate(hdf5_file, dataset, H5T_NATIVE_FLOAT, hdf5_space,
-			  H5P_DEFAULT, hdf5_plist, H5P_DEFAULT);
-    hdf->data_amp[ii] = hdf5_data;
-    if (complex) {
-      sprintf(dataset, "%s/PHASE_IMAGE", groupname);
-      hdf5_data = H5Dcreate(hdf5_file, dataset, H5T_NATIVE_FLOAT, hdf5_space,
-			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      hdf->data_phase[ii] = hdf5_data;
-    }
+  // Projection information
+  if (projected) { 
+    sprintf(group, "/data/projection");
+    h5_proj = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-    // Close group
-    status = H5Gclose(hdf5_group);
-    if (status == -1)
-      asfPrintError("Could not close group!\n");
-  }
+    if (mp->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
 
-  // Define units
-  hid_t hdf5_units = H5Gcreate(hdf5_file, "/units", H5P_DEFAULT,
-			      H5P_DEFAULT, H5P_DEFAULT);
-  hdf5_space = H5Screate_simple(1, adims, NULL);
-  hid_t met_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-  H5Tcommit(hdf5_units, "meters", met_type_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t sec_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-  H5Tcommit(hdf5_units, "seconds", sec_type_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t lat_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-  H5Tcommit(hdf5_units, "degrees_north", lat_type_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t lon_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-  H5Tcommit(hdf5_units, "degrees_east", lon_type_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t hz_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-  H5Tcommit(hdf5_units, "hertz", hz_type_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t hz2_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-  H5Tcommit(hdf5_units, "hertz per pixel", hz2_type_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t hz3_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-  H5Tcommit(hdf5_units, "hertz per square pixel", hz3_type_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t met_sec_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-  H5Tcommit(hdf5_units, "meters per second", met_sec_type_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-  hid_t vec_time_id = H5Tcreate(H5T_COMPOUND, sizeof(vector_time_t));
-  H5Tinsert(vec_time_id, "number []", HOFFSET(vector_time_t, number), 
-	    H5T_NATIVE_INT);
-  H5Tinsert(vec_time_id, "time [seconds]", HOFFSET(vector_time_t, time), 
-	    sec_type_id);
-  H5Tcommit(hdf5_units, "vector_time", vec_time_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t vec_pos_id = H5Tcreate(H5T_COMPOUND, sizeof(vector_xyz_t));
-  H5Tinsert(vec_pos_id, "number []", HOFFSET(vector_time_t, number), 
-	    H5T_NATIVE_INT);
-  H5Tinsert(vec_pos_id, "x [meters]", HOFFSET(vector_xyz_t, x), met_type_id);
-  H5Tinsert(vec_pos_id, "y [meters]", HOFFSET(vector_xyz_t, y), met_type_id);
-  H5Tinsert(vec_pos_id, "z [meters]", HOFFSET(vector_xyz_t, z), met_type_id);
-  H5Tcommit(hdf5_units, "vector_position", vec_pos_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t vec_vel_id = H5Tcreate(H5T_COMPOUND, sizeof(vector_xyz_t));
-  H5Tinsert(vec_vel_id, "number []", HOFFSET(vector_time_t, number), 
-	    H5T_NATIVE_INT);
-  H5Tinsert(vec_vel_id, "x [meters per second]", HOFFSET(vector_xyz_t, x), 
-	    met_sec_type_id);
-  H5Tinsert(vec_vel_id, "y [meters per second]", HOFFSET(vector_xyz_t, y), 
-	    met_sec_type_id);
-  H5Tinsert(vec_vel_id, "z [meters per second]", HOFFSET(vector_xyz_t, z), 
-	    met_sec_type_id);
-  H5Tcommit(hdf5_units, "vector_velocity", vec_vel_id, 
-	    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  
-  H5Sclose(hdf5_space);
-  H5Gclose(hdf5_units);
-  
-  // Adding global attributes
-  hid_t hdf5_global = H5Gopen(hdf5_file, "/", H5P_DEFAULT);
-  hdf5_space = H5Screate_simple(1, adims, NULL);
-  hid_t hdf5_str = H5Tcopy(H5T_C_S1);
-  sprintf(str_attr, "Alaska Satellite Facility");
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_global, "institution", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);
-  sprintf(str_attr, "%s %s %s image", 
-	  md->general->sensor, md->general->sensor_name, md->general->mode);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_global, "title", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);
-  if (md->general->image_data_type == AMPLITUDE_IMAGE)
-    strcpy(str_attr, "SAR backcatter image");
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_global, "source", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);
-  sprintf(str_attr, "%s", md->general->basename);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_global, "original_file", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  ymd_date ymd;
-  hms_time hms;
-  parse_date(md->general->acquisition_date, &ymd, &hms);
-  if (strcmp_case(md->general->sensor, "RSAT-1") == 0)
-    sprintf(str_attr, "Copyright Canadian Space Agency, %d", ymd.year);
-  else if (strncmp_case(md->general->sensor, "ERS", 3) == 0)
-    sprintf(str_attr, "Copyright European Space Agency, %d", ymd.year);
-  else if (strcmp_case(md->general->sensor, "JERS-1") == 0 ||
-	   strcmp_case(md->general->sensor, "ALOS") == 0)
-    sprintf(str_attr, "Copyright Japan Aerospace Exploration Agency , %d", 
-	    ymd.year);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_global, "comment", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  strcpy(str_attr, "Documentation available at: www.asf.alaska.edu");
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_global, "reference", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  time_t t;
-  struct tm *timeinfo;
-  time(&t);
-  timeinfo = gmtime(&t);
-  sprintf(str_attr, "%s", asctime(timeinfo));
-  chomp(str_attr);
-  strcat(str_attr, ", UTC: HDF5 File created.");
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_global, "history", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  H5Sclose(hdf5_space);
-  H5Gclose(hdf5_global);
-
-  // Add projection parameters
-  double *lfValue = (double *) MALLOC(sizeof(double));
-  if (md->projection && md->projection->type != SCANSAR_PROJECTION)
-    projected = TRUE;
-  if (projected) {
-    hid_t hdf5_proj = H5Gcreate(hdf5_file, "/projection", H5P_DEFAULT,
-				H5P_DEFAULT, H5P_DEFAULT);
-    hdf5_space = H5Screate_simple(1, adims, NULL);
-    if (md->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-
-      meta_projection *mp = md->projection;
-      strcpy(str_attr, "transverse_mercator");
-      H5Tset_size(hdf5_str, strlen(str_attr));
-      hdf5_attr = H5Acreate(hdf5_proj, "grid_mapping_name", hdf5_str, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, hdf5_str, str_attr);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "scale_factor_at_central_meridian", 
-			    H5T_NATIVE_DOUBLE, hdf5_space, 
-			    H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, H5T_NATIVE_DOUBLE, &mp->param.utm.scale_factor);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "longitude_of_central_meridian", 
-			    lon_type_id, hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, lon_type_id, &mp->param.utm.lon0);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "latitude_of_projection_origin", 
-			    lat_type_id, hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, lat_type_id, &mp->param.utm.lat0);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "false_easting", met_type_id, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, met_type_id, &mp->param.utm.false_easting);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "false_northing", met_type_id,
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, met_type_id, &mp->param.utm.false_northing);
-      H5Aclose(hdf5_attr);
-      strcpy(str_attr, "xgrid");
-      H5Tset_size(hdf5_str, strlen(str_attr));
-      hdf5_attr = H5Acreate(hdf5_proj, "projection_x_coordinate", hdf5_str, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, hdf5_str, str_attr);
-      H5Aclose(hdf5_attr);
-      strcpy(str_attr, "ygrid");
-      H5Tset_size(hdf5_str, strlen(str_attr));
-      hdf5_attr = H5Acreate(hdf5_proj, "projection_y_coordinate", hdf5_str, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, hdf5_str, str_attr);
-      H5Aclose(hdf5_attr);
-      strcpy(str_attr, "meters");
-      H5Tset_size(hdf5_str, strlen(str_attr));
-      hdf5_attr = H5Acreate(hdf5_proj, "units", hdf5_str, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, hdf5_str, str_attr);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "grid_boundary_top_projected_y", 
-			    met_type_id, hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, met_type_id, &mp->startY);
-      H5Aclose(hdf5_attr);
-      *lfValue = mp->startY + md->general->line_count * mp->perY;
-      hdf5_attr = H5Acreate(hdf5_proj, "grid_boundary_bottom_projected_y", 
-			    met_type_id, hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, met_type_id, lfValue);
-      H5Aclose(hdf5_attr);
-      *lfValue = mp->startX + md->general->sample_count * mp->perX;
-      hdf5_attr = H5Acreate(hdf5_proj, "grid_boundary_right_projected_x", 
-			    met_type_id, hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, met_type_id, lfValue);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "grid_boundary_left_projected_x", 
-			    met_type_id, hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, met_type_id, &mp->startX);
-      H5Aclose(hdf5_attr);
+      h5_att_str(h5_proj, h5_string, "grid_mapping_name", 
+		 "transverse_mercator");
+      h5_att_double(h5_proj, h5_string, "scale_factor_at_central_meridian", 
+		    mp->param.utm.scale_factor);
+      h5_att_double(h5_proj, h5_string, "longitude_of_central_meridian", 
+		    mp->param.utm.lon0);
+      h5_att_double(h5_proj, h5_string, "latitude_of_projection_origin",
+		    mp->param.utm.lat0);
+      h5_att_double(h5_proj, h5_string, "false_easting", 
+		    mp->param.utm.false_easting);
+      h5_att_double(h5_proj, h5_string, "false_northing", 
+		    mp->param.utm.false_northing);
+      h5_att_str(h5_proj, h5_string, "projection_x_coordinate", "xgrid");
+      h5_att_str(h5_proj, h5_string, "projection_y_coordinate", "ygrid");
+      h5_att_str(h5_proj, h5_string, "units", "meters"); 
+      h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
+		    mp->startY);
+      lfValue = mp->startY + mg->line_count * mp->perY;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
+		    lfValue);
+      lfValue = mp->startX + mg->sample_count * mp->perX;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
+		    lfValue);
+      h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
+		    mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
-      datum = (char *) MALLOC(sizeof(char)*25);
-      if (mp->datum == WGS84_DATUM)
-	strcpy(datum, "WGS_1984");
-      else
-	strcpy(datum, "");
-      spheroid = (char *) MALLOC(sizeof(char)*25);
-      if (mp->spheroid == WGS84_SPHEROID)
-	strcpy(spheroid, "WGS_1984");
-      else
-	strcpy(spheroid, "");
+      datum = (char *) datum_toString(mp->datum);
+      spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
       sprintf(spatial_ref, "PROJCS[\"%s_UTM_Zone_%d%c\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.1lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",%.1lf],PARAMETER[\"False_Northing\",%.1lf],PARAMETER[\"Central_Meridian\",%.1lf],PARAMETER[\"Scale_Factor\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.1lf],UNIT[\"Meter\",1]]",
 	      spheroid, mp->param.utm.zone, mp->hem, spheroid, datum, 
 	      spheroid, mp->re_major, flat, mp->param.utm.false_easting, 
 	      mp->param.utm.false_northing, mp->param.utm.lon0, 
 	      mp->param.utm.scale_factor, mp->param.utm.lat0);
-      H5Tset_size(hdf5_str, strlen(spatial_ref));
-      hdf5_attr = H5Acreate(hdf5_proj, "spatial_ref", hdf5_str, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, hdf5_str, spatial_ref);
-      H5Aclose(hdf5_attr);
+      h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
       sprintf(str_attr, "+proj=utm +zone=%d", mp->param.utm.zone);
-      if (md->general->center_latitude < 0)
+      if (mg->center_latitude < 0)
 	strcat(str_attr, " +south");
-      H5Tset_size(hdf5_str, strlen(str_attr));
-      hdf5_attr = H5Acreate(hdf5_proj, "proj4text", hdf5_str, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, hdf5_str, str_attr);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "zone", H5T_NATIVE_INT, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, H5T_NATIVE_INT, &mp->param.utm.zone);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "semimajor_radius", 
-			    met_type_id, hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, met_type_id, &mp->re_major);
-      H5Aclose(hdf5_attr);
-      hdf5_attr = H5Acreate(hdf5_proj, "semiminor_radius", 
-			    met_type_id, hdf5_space, 
-			    H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, met_type_id, &mp->re_minor);
-      H5Aclose(hdf5_attr);
+      h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
+      h5_att_int(h5_proj, h5_string, "zone", mp->param.utm.zone);
+      h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
+      h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
       sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
-      H5Tset_size(hdf5_str, strlen(str_attr));
-      hdf5_attr = H5Acreate(hdf5_proj, "GeoTransform", hdf5_str, 
-			    hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(hdf5_attr, hdf5_str, str_attr);
-      H5Aclose(hdf5_attr);
+      h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
-    else if (md->projection->type == POLAR_STEREOGRAPHIC) {
-      /*
-    projection:grid_mapping_name = "polar_stereographic" ;
-    projection:straight_vertical_longitude_from_pole = 135. ;
-    projection:latitude_of_projection_origin = 90. ;
-    projection:standard_parallel = 70. ;
-    projection:false_easting = 0. ;
-    projection:false_northing = 0. ;
-    projection:projection_x_coordinate = "xgrid" ;
-    projection:projection_y_coordinate = "ygrid" ;
-    projection:units = "m" ;
-    projection:grid_boundary_top_projected_y = 3408500. ;
-    projection:grid_boundary_bottom_projected_y = -3400000. ;
-    projection:grid_boundary_right_projected_x = 3408500. ;
-    projection:grid_boundary_left_projected_x = -3400000. ;
-    projection:spatial_ref = "PROJCS[\"Stereographic_North_Pole\",GEOGCS[\"unnamed ellipse\",DATUM[\"D_unknown\",SPHEROID[\"Unknown\",6378273.000,298.7802446]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0002247191011236]],PROJECTION[\"Stereographic_North_Pole\"],PARAMETER[\"standard_parallel_1\",   70.00],PARAMETER[\"central_meridian\",  -45.00],PARAMETER[\"scale_factor\", 1],PARAMETER[\"false_easting\", 0],PARAMETER[\"false_northing\", 0],UNIT[\"Meter\",1, AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"3411\"]]" ;
-    projection:proj4text = "+proj=stere +lat_0=90.000000 +lat_ts=70.000000 +lon_0=-45.000000 +k=1 +x_0=0 +y_0=0 +a=6378273.000 +b=6356889.449 +units=m +no_defs" ;
-    projection:latitude_of_true_scale = 70. ;
-    projection:longitude_of_projection_origin = -45. ;
-    projection:scaling_factor = 1. ;
-    projection:semimajor_radius = 6378273. ;
-    projection:semiminor_radius = 6356889.44856411 ;
-    projection:GeoTransform = "-3400000.000000 4450.000000 0 3408500.000000 0 -4450.000000" ; 
-      */
+    else if (mp->type == POLAR_STEREOGRAPHIC) {
+
+      h5_att_str(h5_proj, h5_string, "grid_mapping_name", 
+		 "polar_stereographic");
+      h5_att_double(h5_proj, h5_string, "straight_vertical_longitude_from_pole",
+		    mp->param.ps.slon);
+      h5_att_double(h5_proj, h5_string, "latitude_of_projection_origin", 
+		    mp->param.ps.slat);
+      h5_att_double(h5_proj, h5_string, "scale_factor_at_projection_origin",
+		    1.0);
+      h5_att_double(h5_proj, h5_string, "false_easting", 
+		    mp->param.ps.false_easting);
+      h5_att_double(h5_proj, h5_string, "false_northing",
+		    mp->param.ps.false_northing);
+      h5_att_str(h5_proj, h5_string, "projection_x_coordinate", "xgrid");
+      h5_att_str(h5_proj, h5_string, "projection_y_coordinate", "ygrid");
+      h5_att_str(h5_proj, h5_string, "units", "meters");
+      h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
+		    mp->startY);
+      lfValue = mp->startY + mg->line_count * mp->perY;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
+		    lfValue);
+      lfValue = mp->startX + mg->sample_count * mp->perX;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
+		    lfValue);
+      h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
+		    mp->startX);
+      spatial_ref = (char *) MALLOC(sizeof(char)*1024);
+      double flat = mp->re_major/(mp->re_major - mp->re_minor);
+      sprintf(spatial_ref, "PROJCS[\"Stereographic_North_Pole\",GEOGCS[\"unnamed ellipse\",DATUM[\"D_unknown\",SPHEROID[\"Unknown\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0002247191011236]],PROJECTION[\"Stereographic_North_Pole\"],PARAMETER[\"standard_parallel_1\",%.4lf],PARAMETER[\"central_meridian\",%.4lf],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",%.1lf],PARAMETER[\"false_northing\",%.1lf],UNIT[\"Meter\",1, AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"3411\"]]",
+	      mp->re_major, flat, mp->param.ps.slat, mp->param.ps.slon,
+	      mp->param.ps.false_easting, mp->param.ps.false_northing);
+      h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
+      if (mp->param.ps.is_north_pole)
+	sprintf(str_attr, "+proj=stere +lat_0=90.0000 +lat_ts=%.4lf "
+		"+lon_0=%.4lf +k=1 +x_0=%.3lf +y_0=%.3lf +a=%.3lf +b=%.3lf "
+		"+units=m +no_defs", mp->param.ps.slat, mp->param.ps.slon,
+		mp->param.ps.false_easting, mp->param.ps.false_northing,
+		mp->re_major, mp->re_minor);
+      else
+	sprintf(str_attr, "+proj=stere +lat_0=-90.0000 +lat_ts=%.4lf "
+		"+lon_0=%.4lf +k=1 +x_0=%.3lf +y_0=%.3lf +a=%.3lf +b=%.3lf "
+		"+units=m +no_defs", mp->param.ps.slat, mp->param.ps.slon,
+		mp->param.ps.false_easting, mp->param.ps.false_northing,
+		mp->re_major, mp->re_minor);
+      h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
+      h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
+      h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
+      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+	      mp->startY, mp->perY); 
+      h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
-    else if (md->projection->type == ALBERS_EQUAL_AREA) {
-      /*
-	grid_mapping_name = albers_conical_equal_area
-	standard_parallel
-	longitude_of_central_meridian
-	latitude_of_projection_origin
-	false_easting
-	false_northing
-      */
+    else if (mp->type == ALBERS_EQUAL_AREA) {
+
+      h5_att_str(h5_proj, h5_string, "grid_mapping_name", 
+		 "albers_conical_equal_area");
+      h5_att_double(h5_proj, h5_string, "standard_parallel_1",
+		    mp->param.albers.std_parallel1);
+      h5_att_double(h5_proj, h5_string, "standard_parallel_2",
+		    mp->param.albers.std_parallel2);
+      h5_att_double(h5_proj, h5_string, "longitude_of_central_meridian", 
+		    mp->param.albers.center_meridian);
+      h5_att_double(h5_proj, h5_string, "latitude_of_projection_origin",
+		    mp->param.albers.orig_latitude);
+      h5_att_double(h5_proj, h5_string, "false_easting", 
+		    mp->param.albers.false_easting);
+      h5_att_double(h5_proj, h5_string, "false_northing",
+		    mp->param.albers.false_northing);
+      h5_att_str(h5_proj, h5_string, "projection_x_coordinate", "xgrid");
+      h5_att_str(h5_proj, h5_string, "projection_y_coordinate", "ygrid");
+      h5_att_str(h5_proj, h5_string, "units", "meters");
+      h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
+		    mp->startY);
+      lfValue = mp->startY + mg->line_count * mp->perY;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
+		    lfValue);
+      lfValue = mp->startX + mg->sample_count * mp->perX;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
+		    lfValue);
+      h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
+		    mp->startX);
+      spatial_ref = (char *) MALLOC(sizeof(char)*1024);
+      datum = (char *) datum_toString(mp->datum);
+      spheroid = (char *) spheroid_toString(mp->spheroid);
+      double flat = mp->re_major/(mp->re_major - mp->re_minor);
+      sprintf(spatial_ref, "PROJCS[\"Albers_Equal_Area_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Standard_Parallel_1\",%.4lf],PARAMETER[\"Standard_Parallel_2\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+	      datum, datum, spheroid, mp->re_major, flat, 
+	      mp->param.albers.false_easting, mp->param.albers.false_northing,
+	      mp->param.albers.center_meridian, mp->param.albers.std_parallel1,
+	      mp->param.albers.std_parallel2, mp->param.albers.orig_latitude);
+      h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
+      sprintf(str_attr, "+proj=aea +lat_1=%.4lf +lat_2=%.4lf +lat_0=%.4lf "
+	      "+lon_0=%.4lf +x_0=%.3lf +y_0=%.3lf", 
+	      mp->param.albers.std_parallel1, mp->param.albers.std_parallel2,
+	      mp->param.albers.orig_latitude, mp->param.albers.center_meridian,
+	      mp->param.albers.false_easting, mp->param.albers.false_northing);
+      h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
+      h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
+      h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
+      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+	      mp->startY, mp->perY); 
+      h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
-    else if (md->projection->type == LAMBERT_CONFORMAL_CONIC) {
-      /*
-	grid_mapping_name = lambert_conformal_conic
-	standard_parallel
-	longitude_of_central_meridian
-	latitude_of_projection_origin
-	false_easting
-	false_northing
-      */
+    else if (mp->type == LAMBERT_CONFORMAL_CONIC) {
+
+      h5_att_str(h5_proj, h5_string, "grid_mapping_name", 
+		 "lambert_conformal_conic");
+      h5_att_double(h5_proj, h5_string, "standard_parallel_1",
+		    mp->param.lamcc.plat1);
+      h5_att_double(h5_proj, h5_string, "standard_parallel_2",
+		    mp->param.lamcc.plat2);
+      h5_att_double(h5_proj, h5_string, "longitude_of_central_meridian", 
+		    mp->param.lamcc.lon0);
+      h5_att_double(h5_proj, h5_string, "latitude_of_projection_origin",
+		    mp->param.lamcc.lat0);
+      h5_att_double(h5_proj, h5_string, "false_easting", 
+		    mp->param.lamcc.false_easting);
+      h5_att_double(h5_proj, h5_string, "false_northing",
+		    mp->param.lamcc.false_northing);
+      h5_att_str(h5_proj, h5_string, "projection_x_coordinate", "xgrid");
+      h5_att_str(h5_proj, h5_string, "projection_y_coordinate", "ygrid");
+      h5_att_str(h5_proj, h5_string, "units", "meters");
+      h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
+		    mp->startY);
+      lfValue = mp->startY + mg->line_count * mp->perY;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
+		    lfValue);
+      lfValue = mp->startX + mg->sample_count * mp->perX;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
+		    lfValue);
+      h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
+		    mp->startX);
+      spatial_ref = (char *) MALLOC(sizeof(char)*1024);
+      datum = (char *) datum_toString(mp->datum);
+      spheroid = (char *) spheroid_toString(mp->spheroid);
+      double flat = mp->re_major/(mp->re_major - mp->re_minor);
+      sprintf(spatial_ref, "PROJCS[\"Lambert_Conformal_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Standard_Parallel_1\",%.4lf],PARAMETER[\"Standard_Parallel_2\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+	      datum, datum, spheroid, mp->re_major, flat, 
+	      mp->param.lamcc.false_easting, mp->param.lamcc.false_northing,
+	      mp->param.lamcc.lon0, mp->param.lamcc.plat1,
+	      mp->param.lamcc.plat2, mp->param.lamcc.lat0);
+      h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
+      sprintf(str_attr, "+proj=lcc +lat_1=%.4lf +lat_2=%.4lf +lat_0=%.4lf "
+	      "+lon_0=%.4lf +x_0=%.3lf +y_0=%.3lf", 
+	      mp->param.lamcc.plat1, mp->param.lamcc.plat2,
+	      mp->param.lamcc.lat0, mp->param.lamcc.lon0,
+	      mp->param.lamcc.false_easting, mp->param.lamcc.false_northing);
+      h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
+      h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
+      h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
+      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+	      mp->startY, mp->perY); 
+      h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
-    else if (md->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
-      /*
-	grid_mapping_name = lambert_azimuthal_equal_area
-	longitude_of_projection_origin
-	latitude_of_projection_origin
-	false_easting
-	false_northing
-      */
+    else if (mp->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
+
+      h5_att_str(h5_proj, h5_string, "grid_mapping_name", 
+		 "lambert_azimuthal_equal_area");
+      h5_att_double(h5_proj, h5_string, "longitude_of_projection_origin", 
+		    mp->param.lamaz.center_lon);
+      h5_att_double(h5_proj, h5_string, "latitude_of_projection_origin",
+		    mp->param.lamaz.center_lat);
+      h5_att_double(h5_proj, h5_string, "false_easting", 
+		    mp->param.lamaz.false_easting);
+      h5_att_double(h5_proj, h5_string, "false_northing",
+		    mp->param.lamaz.false_northing);
+      h5_att_str(h5_proj, h5_string, "projection_x_coordinate", "xgrid");
+      h5_att_str(h5_proj, h5_string, "projection_y_coordinate", "ygrid");
+      h5_att_str(h5_proj, h5_string, "units", "meters");
+      h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
+		    mp->startY);
+      lfValue = mp->startY + mg->line_count * mp->perY;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
+		    lfValue);
+      lfValue = mp->startX + mg->sample_count * mp->perX;
+      h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
+		    lfValue);
+      h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
+		    mp->startX);
+      spatial_ref = (char *) MALLOC(sizeof(char)*1024);
+      datum = (char *) datum_toString(mp->datum);
+      spheroid = (char *) spheroid_toString(mp->spheroid);
+      double flat = mp->re_major/(mp->re_major - mp->re_minor);
+      sprintf(spatial_ref, "PROJCS[\"Lambert_Azimuthal_Equal_Area\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+	      datum, datum, spheroid, mp->re_major, flat, 
+	      mp->param.lamaz.false_easting, mp->param.lamaz.false_northing,
+	      mp->param.lamaz.center_lon, mp->param.lamaz.center_lat);
+      h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
+      sprintf(str_attr, "+proj=laea +lat_0=%.4lf +lon_0=%.4lf +x_0=%.3lf "
+	      "+y_0=%.3lf", 
+	      mp->param.lamaz.center_lat, mp->param.lamaz.center_lon,
+	      mp->param.lamaz.false_easting, mp->param.lamaz.false_northing);
+      h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
+      h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
+      h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
+      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+	      mp->startY, mp->perY); 
+      h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
-    H5Sclose(hdf5_space);
-    H5Gclose(hdf5_proj);
   }
-  FREE(lfValue);
+
+  for (ii=0; ii<band_count; ii++) {
+
+    // Create data set
+    strncpy(band, band_name[ii], 2);
+    band[2] = '\0';
+    sprintf(dataset, "/data/%s_AMPLITUDE_IMAGE", band);
+    h5_data = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
+			H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+    h5->var[ii] = h5_data;
+
+    // Add attributes (from CF convention)
+    sprintf(str_attr, "%s", mg->sensor);
+    if (mg->image_data_type < 9)
+      strcat(str_attr, " radar backscatter");
+    if (mg->radiometry >= r_SIGMA_DB && mg->radiometry <= r_GAMMA_DB)
+      strcat(str_attr, " in dB");
+    h5_att_str(h5_data, h5_string, "long_name", str_attr);
+    h5_att_str(h5_data, h5_string, "cell_methods", "area: backscatter value");
+    h5_att_str(h5_data, h5_string, "units", "1");
+    h5_att_str(h5_data, h5_string, "units_description",
+	       "unitless normalized radar cross-section");
+    if (mg->radiometry >= r_SIGMA && mg->radiometry <= r_GAMMA)
+      strcat(str_attr, " stored as powerscale");
+    else if (mg->radiometry >= r_SIGMA_DB && mg->radiometry <= r_GAMMA_DB)
+      strcat(str_attr, " stored as dB=10*log10(*)");
+    h5_att_float(h5_data, h5_string, "_FillValue", -999);
+    h5_att_str(h5_data, h5_string, "coordinates", "longitude latitude");
+    if (projected)
+      h5_att_str(h5_data, h5_string, "grid_mapping", "projection");
+
+    // Close up
+    H5Dclose(h5_data);
+  }
+
+  // Extra bands - Time
+  asfPrintStatus("Storing band 'time' ...\n");  
+  float serial_date = seconds_from_str(mg->acquisition_date);
+  sprintf(dataset, "/data/time");
+  h5_time = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_string,
+		      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(h5_time, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, 
+	   &serial_date);
+  h5_att_str(h5_time, h5_string, "units", "seconds since 1900-01-01T00:00:00Z");
+  h5_att_str(h5_time, h5_string, "references", "scene center time");
+  h5_att_str(h5_time, h5_string, "standard_name", "time");
+  h5_att_str(h5_time, h5_string, "axis", "T");
+  h5_att_str(h5_time, h5_string, "long_name", "serial date");
+  H5Dclose(h5_time);
+  
+  // Extra bands - Longitude
+  int nl = mg->line_count;
+  int ns = mg->sample_count;
+  long pixel_count = mg->line_count * mg->sample_count;
+  double *value = (double *) MALLOC(sizeof(double)*MAX_PTS);
+  double *l = (double *) MALLOC(sizeof(double)*MAX_PTS);
+  double *s = (double *) MALLOC(sizeof(double)*MAX_PTS);
+  double line, sample, lat, lon, first_value;
+  float *lons = (float *) MALLOC(sizeof(float)*pixel_count);
+  asfPrintStatus("Generating band 'longitude' ...\n");
+  meta_get_latLon(md, 0, 0, 0.0, &lat, &lon);
+  if (lon < 0.0)
+    first_value = lon + 360.0;
+  else
+    first_value = lon;
+  asfPrintStatus("Calculating grid for quadratic fit ...\n");
+  for (ii=0; ii<RES; ii++) {
+    for (kk=0; kk<RES; kk++) {
+      line = ii * nl / RES;
+      sample = kk * ns / RES;
+      meta_get_latLon(md, line, sample, 0.0, &lat, &lon);
+      l[ii*RES+kk] = line;
+      s[ii*RES+kk] = sample;
+      if (lon < 0.0)
+	value[ii*RES+kk] = lon + 360.0;
+      else
+	value[ii*RES+kk] = lon;
+    }
+    asfLineMeter(ii, nl);
+  }
+  quadratic_2d q = find_quadratic(value, l, s, MAX_PTS);
+  q.A = first_value;
+  for (ii=0; ii<nl; ii++) {
+    for (kk=0; kk<ns; kk++) {
+      lons[ii*ns+kk] = (float)
+	(q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
+	 q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
+	 q.K*kk*kk*kk) - 360.0;
+      if (lons[ii*ns+kk] < -180.0)
+	lons[ii*ns+kk] += 360.0;
+    }
+    asfLineMeter(ii, nl);
+  }
+  asfPrintStatus("Storing band 'longitude' ...\n");
+  sprintf(dataset, "/data/longitude");
+  h5_lon = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
+		     H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+  H5Dwrite(h5_lon, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, lons);
+  h5_att_str(h5_lon, h5_string, "units", "degrees_east");
+  h5_att_str(h5_lon, h5_string, "long_name", "longitude");
+  h5_att_str(h5_lon, h5_string, "standard_name", "longitude");
+  float valid_range[2] = { -180.0, 180.0 };
+  h5_att_float2(h5_lon, h5_range, "valid_range", valid_range);
+  h5_att_float(h5_lon, h5_string, "_FillValue", -999);
+  H5Dclose(h5_lon);
+  FREE(lons);
+
+  // Extra bands - Latitude
+  float *lats = (float *) MALLOC(sizeof(float)*pixel_count);
+  asfPrintStatus("Generating band 'latitude' ...\n");
+  meta_get_latLon(md, 0, 0, 0.0, &lat, &lon);
+  first_value = lat + 180.0;
+  asfPrintStatus("Calculating grid for quadratic fit ...\n");
+  for (ii=0; ii<RES; ii++) {
+    for (kk=0; kk<RES; kk++) {
+      line = ii * nl / RES;
+      sample = kk * ns / RES;
+      meta_get_latLon(md, line, sample, 0.0, &lat, &lon);
+      l[ii*RES+kk] = line;
+      s[ii*RES+kk] = sample;
+      value[ii*RES+kk] = lat + 180.0;
+    }
+    asfLineMeter(ii, nl);
+  }
+  q = find_quadratic(value, l, s, MAX_PTS);
+  q.A = first_value;
+  for (ii=0; ii<nl; ii++) {
+    for (kk=0; kk<ns; kk++) {
+      if (mg->orbit_direction == 'A')
+	lats[(nl-ii-1)*ns+kk] = (float)
+	  (q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
+	   q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
+	   q.K*kk*kk*kk) - 180.0;
+      else
+	lats[ii*ns+kk] = (float)
+	  (q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
+	   q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
+	   q.K*kk*kk*kk) - 180.0;
+    }
+    asfLineMeter(ii, nl);
+  }
+  asfPrintStatus("Storing band 'latitude' ...\n");
+  sprintf(dataset, "/data/latitude");
+  h5_lat = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
+		     H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+  H5Dwrite(h5_lat, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, lats);
+  h5_att_str(h5_lat, h5_string, "units", "degrees_north");
+  h5_att_str(h5_lat, h5_string, "long_name", "latitude");
+  h5_att_str(h5_lat, h5_string, "standard_name", "latitude");
+  valid_range[0] = -90.0;
+  valid_range[1] = 90.0;
+  h5_att_float2(h5_lat, h5_range, "valid_range", valid_range);
+  h5_att_float(h5_lat, h5_string, "_FillValue", -999);
+  H5Dclose(h5_lat);
+  FREE(lats);
+
+  if (projected) {
+    // Extra bands - ygrid
+    float *ygrids = (float *) MALLOC(sizeof(float)*pixel_count);
+    for (ii=0; ii<nl; ii++) {
+      for (kk=0; kk<ns; kk++)
+	ygrids[ii*ns+kk] = mp->startY + kk*mp->perY;
+      asfLineMeter(ii, nl);
+    }
+    asfPrintStatus("Storing band 'ygrid' ...\n");
+    sprintf(dataset, "/data/ygrid");
+    h5_ygrid = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
+			 H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+    H5Dwrite(h5_ygrid, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, ygrids);
+    h5_att_str(h5_ygrid, h5_string, "units", "meters");
+    h5_att_str(h5_ygrid, h5_string, "long_name", 
+	       "projection_grid_y_coordinates");
+    h5_att_str(h5_ygrid, h5_string, "standard_name", 
+	       "projection_y_coordinates");
+    h5_att_str(h5_ygrid, h5_string, "axis", "Y");
+    H5Dclose(h5_ygrid);
+    FREE(ygrids);
+    
+    // Extra bands - xgrid
+    float *xgrids = (float *) MALLOC(sizeof(float)*pixel_count);
+    for (ii=0; ii<nl; ii++) {
+      for (kk=0; kk<ns; kk++) 
+	xgrids[ii*ns+kk] = mp->startX + kk*mp->perX;
+      asfLineMeter(ii, nl);
+    }
+    asfPrintStatus("Storing band 'xgrid' ...\n");
+    sprintf(dataset, "/data/xgrid");
+    h5_xgrid = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
+			 H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+    H5Dwrite(h5_xgrid, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, xgrids);
+    h5_att_str(h5_xgrid, h5_string, "units", "meters");
+    h5_att_str(h5_xgrid, h5_string, "long_name", 
+	       "projection_grid_x_coordinates");
+    h5_att_str(h5_xgrid, h5_string, "standard_name", 
+	       "projection_x_coordinates");
+    h5_att_str(h5_xgrid, h5_string, "axis", "X");
+    H5Dclose(h5_xgrid);
+    FREE(xgrids);
+  }
+
+  H5Gclose(h5_datagroup);
+
+  // Adding global attributes
+  hid_t h5_global = H5Gopen(h5_file, "/", H5P_DEFAULT);
+  h5_att_str(h5_global, h5_string, "institution", "Alaska Satellite Facility");
+  sprintf(str_attr, "%s %s %s image", mg->sensor, mg->sensor_name, mg->mode);
+  h5_att_str(h5_global, h5_string, "title", str_attr); 
+  if (mg->image_data_type == AMPLITUDE_IMAGE)
+    strcpy(str_attr, "SAR backcatter image");
+  h5_att_str(h5_global, h5_string, "source", str_attr);
+  h5_att_str(h5_global, h5_string, "original_file", mg->basename);
+  ymd_date ymd;
+  hms_time hms;
+  parse_date(mg->acquisition_date, &ymd, &hms);
+  if (strcmp_case(mg->sensor, "RSAT-1") == 0)
+    sprintf(str_attr, "Copyright Canadian Space Agency, %d", ymd.year);
+  else if (strncmp_case(mg->sensor, "ERS", 3) == 0)
+    sprintf(str_attr, "Copyright European Space Agency, %d", ymd.year);
+  else if (strcmp_case(mg->sensor, "JERS-1") == 0 ||
+	   strcmp_case(mg->sensor, "ALOS") == 0)
+    sprintf(str_attr, "Copyright Japan Aerospace Exploration Agency , %d", 
+	    ymd.year);
+  h5_att_str(h5_global, h5_string, "comment", str_attr); 
+  h5_att_str(h5_global, h5_string, "reference",
+	     "Documentation available at: www.asf.alaska.edu");
+  time_t t;
+  struct tm *timeinfo;
+  time(&t);
+  timeinfo = gmtime(&t);
+  sprintf(str_attr, "%s", asctime(timeinfo));
+  chomp(str_attr);
+  strcat(str_attr, ", UTC: H5 File created.");
+  h5_att_str(h5_global, h5_string, "history", str_attr); 
+  H5Gclose(h5_global);
+
+  // Metadata
+  sprintf(group, "/metadata");
+  h5_metagroup = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
+			   H5P_DEFAULT);
 
   // Metadata - General block
-  hid_t hdf5_meta = H5Gcreate(hdf5_file, "/overview", H5P_DEFAULT,
-			      H5P_DEFAULT, H5P_DEFAULT);
-  hdf5_space = H5Screate_simple(1, adims, NULL);
-  strcpy(str_attr, md->general->basename);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "name", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);
-  strcpy(str_attr, md->general->sensor);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "sensor", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);
-  strcpy(str_attr, md->general->sensor_name);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "sensor_name", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  strcpy(str_attr, md->general->mode);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "mode", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  strcpy(str_attr, md->general->processor);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "processor", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);
-  strcpy(str_attr, data_type2str(md->general->data_type));
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "data_type", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);
-  strcpy(str_attr, image_data_type2str(md->general->image_data_type));
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "image_data_type", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  strcpy(str_attr, radiometry2str(md->general->radiometry));
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "radiometry", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  strcpy(str_attr, md->general->acquisition_date);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "acquisition_date", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  hdf5_attr = H5Acreate(hdf5_meta, "orbit", H5T_NATIVE_INT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->general->orbit);
-  H5Aclose(hdf5_attr);
-  if (md->general->orbit_direction == 'A')
+  h5_value_str(h5_file, group, "general_name", mg->basename, "file_name", NULL);
+  h5_value_str(h5_file, group, "general_sensor", mg->sensor,
+	       "imaging satellite", NULL);
+  h5_value_str(h5_file, group, "general_sensor_name", mg->sensor_name, 
+	       "imaging sensor", NULL);
+  h5_value_str(h5_file, group, "general_mode", mg->mode, "imaging mode", NULL);
+  h5_value_str(h5_file, group, "general_processor", mg->processor, 
+	       "name and version of processor", NULL);
+  h5_value_str(h5_file, group, "general_data_type", 
+	       data_type2str(mg->data_type), "type of samples (e.g. REAL64)", 
+	       NULL);
+  h5_value_str(h5_file, group, "general_image_data_type",
+	       image_data_type2str(mg->image_data_type),
+	       "image data type (e.g. AMPLITUDE_IMAGE)", NULL);
+  h5_value_str(h5_file, group, "general_radiometry",
+	       radiometry2str(mg->radiometry), "radiometry (e.g. SIGMA)", NULL);
+  // FIXME: UDUNITS seconds since ...
+  h5_value_str(h5_file, group, "general_acquisition_date", mg->acquisition_date,
+	       "acquisition date of image", NULL);
+  h5_value_int(h5_file, group, "general_orbit", mg->orbit,
+	       "orbit number of image", NULL);
+  if (mg->orbit_direction == 'A')
     strcpy(str_attr, "Ascending");
   else
     strcpy(str_attr, "Descending");
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "orbit_direction", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "frame", H5T_NATIVE_INT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->general->frame);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "band_count", H5T_NATIVE_INT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->general->band_count);
-  H5Aclose(hdf5_attr);
-  strcpy(str_attr, md->general->bands);
-  H5Tset_size(hdf5_str, strlen(str_attr));
-  hdf5_attr = H5Acreate(hdf5_meta, "bands", hdf5_str, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, hdf5_str, str_attr);
-  H5Aclose(hdf5_attr);  
-  hdf5_attr = H5Acreate(hdf5_meta, "line_count", H5T_NATIVE_INT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->general->line_count);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "sample_count", H5T_NATIVE_INT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->general->sample_count);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "start_line", H5T_NATIVE_INT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->general->start_line);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "start_sample", H5T_NATIVE_INT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->general->start_sample);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "x_pixel_size", met_type_id, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, met_type_id, &md->general->x_pixel_size);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "y_pixel_size", met_type_id, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, met_type_id, &md->general->y_pixel_size);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "center_latitude", lat_type_id, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, lat_type_id, &md->general->center_latitude);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "center_longitude", lon_type_id, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, lon_type_id, &md->general->center_longitude);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "re_major", met_type_id, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, met_type_id, &md->general->re_major);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "re_minor", met_type_id, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, met_type_id, &md->general->re_minor);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "bit_error_rate", H5T_NATIVE_DOUBLE, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_DOUBLE, &md->general->bit_error_rate);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "missing_lines", H5T_NATIVE_INT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->general->missing_lines);
-  H5Aclose(hdf5_attr);
-  hdf5_attr = H5Acreate(hdf5_meta, "no_data", H5T_NATIVE_FLOAT, 
-			hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-  H5Awrite(hdf5_attr, H5T_NATIVE_FLOAT, &md->general->no_data);
-  H5Aclose(hdf5_attr);
-  H5Sclose(hdf5_space);
-  H5Gclose(hdf5_meta);
+  h5_value_str(h5_file, group, "general_orbit_direction", str_attr,
+	       "orbit direction", NULL);
+  h5_value_int(h5_file, group, "general_frame", mg->frame,
+	       "frame number of image", NULL);
+  h5_value_int(h5_file, group, "general_band_count", mg->band_count,
+	       "number of bands in image", NULL);
+  h5_value_str(h5_file, group, "general_bands", mg->bands,
+	       "bands of the sensor", NULL);
+  h5_value_int(h5_file, group, "general_line_count", mg->line_count,
+	       "number of lines in image", NULL);
+  h5_value_int(h5_file, group, "general_sample_count", mg->sample_count, 
+	       "number of samples in image", NULL);
+  h5_value_int(h5_file, group, "general_start_line", mg->start_line,
+	       "first line relative to original image", NULL);
+  h5_value_int(h5_file, group, "general_start_sample", mg->start_sample, 
+	       "first sample relative to original image", NULL);
+  h5_value_double(h5_file, group, "general_x_pixel_size", mg->x_pixel_size, 
+		  "range pixel size", "m");
+  h5_value_double(h5_file, group, "general_y_pixel_size", mg->y_pixel_size, 
+		  "azimuth pixel size", "m");
+  h5_value_double(h5_file, group, "general_center_latitude", 
+		  mg->center_latitude, "approximate image center latitude", 
+		  "degrees_north");
+  h5_value_double(h5_file, group, "general_center_longitude",
+		  mg->center_longitude, "approximate image center longitude", 
+		  "degrees_east");
+  h5_value_double(h5_file, group, "general_re_major", mg->re_major,
+		  "major (equator) axis of earth", "m");
+  h5_value_double(h5_file, group, "general_re_minor", mg->re_minor,
+		  "minor (polar) axis of earth", "m");
+  h5_value_double(h5_file, group, "general_bit_error_rate", mg->bit_error_rate, 
+		  "fraction of bits which are in error", NULL);
+  h5_value_int(h5_file, group, "general_missing_lines", mg->missing_lines, 
+	       "number of missing lines in image", NULL);
+  h5_value_float(h5_file, group, "general_no_data", mg->no_data,
+		 "value indicating no data for a pixel", NULL);
 
-  if (md->sar) {
-    // Metadata - SAR block
-    hid_t hdf5_sar = H5Gcreate(hdf5_file, "/sar", H5P_DEFAULT,
-			       H5P_DEFAULT, H5P_DEFAULT);
-    hdf5_space = H5Screate_simple(1, adims, NULL);
-    if (md->sar->image_type == 'S')
+  if (ms) {
+    if (ms->image_type == 'S')
       strcpy(str_attr, "slant range");
-    else if (md->sar->image_type == 'G')
+    else if (ms->image_type == 'G')
       strcpy(str_attr, "ground range");
-    else if (md->sar->image_type == 'P')
+    else if (ms->image_type == 'P')
       strcpy(str_attr, "projected");
-    else if (md->sar->image_type == 'R')
+    else if (ms->image_type == 'R')
       strcpy(str_attr, "georeferenced");
-    H5Tset_size(hdf5_str, strlen(str_attr));
-    hdf5_attr = H5Acreate(hdf5_meta, "image_type", hdf5_str, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hdf5_str, str_attr);
-    H5Aclose(hdf5_attr);
-    if (md->sar->look_direction == 'R')
+    h5_value_str(h5_file, group, "sar_image_type", str_attr, "image type", 
+		 NULL);
+    if (ms->look_direction == 'R')
       strcpy(str_attr, "right");
-    else if (md->sar->look_direction == 'L')
+    else if (ms->look_direction == 'L')
       strcpy(str_attr, "left");
-    H5Tset_size(hdf5_str, strlen(str_attr));
-    hdf5_attr = H5Acreate(hdf5_meta, "look_direction", hdf5_str, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hdf5_str, str_attr);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "look_count", H5T_NATIVE_INT, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->sar->look_count);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "multilook", H5T_NATIVE_INT, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->sar->multilook);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "deskewed", H5T_NATIVE_INT, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->sar->deskewed);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "original_line_count", H5T_NATIVE_INT, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->sar->original_line_count);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "original_sample_count", H5T_NATIVE_INT, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->sar->original_sample_count);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "line_increment", H5T_NATIVE_DOUBLE, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_DOUBLE, &md->sar->line_increment);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "sample_increment", H5T_NATIVE_DOUBLE, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_DOUBLE, &md->sar->sample_increment);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "range_time_per_pixel", sec_type_id,
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, sec_type_id, &md->sar->range_time_per_pixel);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "azimuth_time_per_pixel", 
-			  sec_type_id, hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, sec_type_id, &md->sar->azimuth_time_per_pixel);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "slant_range_first_pixel", met_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, met_type_id, &md->sar->slant_range_first_pixel);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "slant_shift", met_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, met_type_id, &md->sar->slant_shift);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "time_shift", sec_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, sec_type_id, &md->sar->time_shift);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "wavelength", met_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, met_type_id, &md->sar->wavelength);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "pulse_repetition_frequency", hz_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hz_type_id, &md->sar->prf);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "earth_radius", met_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, met_type_id, &md->sar->earth_radius);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "satellite_height", met_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, met_type_id, &md->sar->satellite_height);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "range_doppler_centroid", hz_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hz_type_id, &md->sar->range_doppler_coefficients[0]);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "range_doppler_linear", hz2_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hz2_type_id, &md->sar->range_doppler_coefficients[1]);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "range_doppler_quadratic", hz3_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hz3_type_id, &md->sar->range_doppler_coefficients[2]);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "azimuth_doppler_centroid", hz_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hz_type_id, &md->sar->azimuth_doppler_coefficients[0]);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "azimuth_doppler_linear", hz2_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hz2_type_id, 
-	     &md->sar->azimuth_doppler_coefficients[1]);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "azimuth_doppler_quadratic", hz3_type_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, hz3_type_id, 
-	     &md->sar->azimuth_doppler_coefficients[2]);
-    H5Aclose(hdf5_attr);
-    H5Sclose(hdf5_space);
-    H5Gclose(hdf5_sar);
+    h5_value_str(h5_file, group, "sar_look_direction", str_attr,
+		 "SAR satellite look direction", NULL);
+    h5_value_int(h5_file, group, "sar_look_count", ms->look_count,
+		 "number of looks to take from SLC", NULL);
+    h5_value_int(h5_file, group, "sar_multilook", ms->multilook,
+		 "multilooking flag", NULL);
+    h5_value_int(h5_file, group, "sar_deskewed", ms->deskewed,
+		 "zero doppler deskew flag", NULL);
+    h5_value_int(h5_file, group, "sar_original_line_count",
+		 ms->original_line_count, "number of lines in original image", 
+		 NULL);
+    h5_value_int(h5_file, group, "sar_original_sample_count",
+		 ms->original_sample_count,
+		 "number of samples in original image", NULL);
+    h5_value_double(h5_file, group, "sar_line_increment", 
+		    ms->line_increment, "line increment for sampling", NULL);
+    h5_value_double(h5_file, group, "sar_sample_increment",
+		    ms->sample_increment, "sample increment for sampling",
+		    NULL);
+    h5_value_double(h5_file, group, "sar_range_time_per_pixel",
+		    ms->range_time_per_pixel, "time per pixel in range", "s");
+    h5_value_double(h5_file, group, "sar_azimuth_time_per_pixel",
+		    ms->azimuth_time_per_pixel, "time per pixel in azimuth", 
+		    "s");
+    h5_value_double(h5_file, group, "sar_slant_range_first_pixel",
+		    ms->slant_range_first_pixel, "slant range to first pixel", 
+		    "m");
+    h5_value_double(h5_file, group, "sar_slant_shift", ms->slant_shift, 
+		    "error correction factor in slant range", "m");
+    h5_value_double(h5_file, group, "sar_time_shift", ms->time_shift, 
+		    "error correction factor in time", "s");
+    h5_value_double(h5_file, group, "sar_wavelength", ms->wavelength,
+		    "SAR carrier wavelength", "m");
+    h5_value_double(h5_file, group, "sar_pulse_repetition_frequency", 
+		    ms->prf, "pulse repetition frequency", "Hz");
+    h5_value_double(h5_file, group, "sar_earth_radius", ms->earth_radius, 
+		    "earth radius at image center", "m");
+    h5_value_double(h5_file, group, "sar_satellite_height", 
+		    ms->satellite_height, 
+		    "satellite height from earth's center", "m");
+    h5_value_double(h5_file, group, "sar_range_doppler_centroid",
+		    ms->range_doppler_coefficients[0], "range doppler centroid",
+		    "Hz");
+    // FIXME: UDUNITS unit_description
+    h5_value_double(h5_file, group, "sar_range_doppler_linear",
+		    ms->range_doppler_coefficients[1],
+		    "range doppler per range pixel", "Hz/pixel");
+    // FIXME: UDUNITS unit description
+    h5_value_double(h5_file, group, "sar_range_doppler_quadratic",
+		    ms->range_doppler_coefficients[2],
+		    "range doppler per range pixel square", "Hz/pixel^2");
+    h5_value_double(h5_file, group, "sar_azimuth_doppler_centroid",
+		    ms->azimuth_doppler_coefficients[0],
+		    "azimuth doppler centroid", "Hz");
+    h5_value_double(h5_file, group, "sar_azimuth_doppler_linear",
+		    ms->azimuth_doppler_coefficients[1],
+		    "azimuth doppler per azimuth pixel", "Hz/pixel");
+    h5_value_double(h5_file, group, "sar_azimuth_doppler_quadratic",
+		    ms->azimuth_doppler_coefficients[2],
+		    "azimuth doppler per azimuth pixel square", "Hz/pixel^2");
   }
 
-  if (md->state_vectors) {
-    // Metadata - state vector block
-    int vector_count = md->state_vectors->vector_count;
-    hid_t hdf5_orbit = H5Gcreate(hdf5_file, "/orbit", H5P_DEFAULT,
-				 H5P_DEFAULT, H5P_DEFAULT);
-    hdf5_space = H5Screate_simple(1, adims, NULL);
-    hdf5_attr = H5Acreate(hdf5_meta, "year", H5T_NATIVE_INT, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->state_vectors->year);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "day_of_year", H5T_NATIVE_INT, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_INT, &md->state_vectors->julDay);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "second_of_day", sec_type_id,
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, sec_type_id, &md->state_vectors->second);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_meta, "vector_count", H5T_NATIVE_INT, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, H5T_NATIVE_INT, &vector_count);
-    H5Aclose(hdf5_attr);
-    H5Sclose(hdf5_space);
-
-    hsize_t vdims[1] = { vector_count };
-    hdf5_space = H5Screate_simple(1, vdims, NULL);
-    vector_time_t *vector_time =
-      (vector_time_t *) MALLOC(sizeof(vector_time_t)*vector_count);
-    vector_xyz_t *vector_xyz =
-      (vector_xyz_t *) MALLOC(sizeof(vector_xyz_t)*vector_count);
+  if (mo) {
+    int vector_count = mo->vector_count;
+    h5_value_int(h5_file, group, "orbit_year", mo->year,
+		 "year of image start", NULL);
+    h5_value_int(h5_file, group, "orbit_day_of_year", mo->julDay, 
+		 "day of year at image start", NULL);
+    h5_value_double(h5_file, group, "orbit_second_of_day", mo->second,
+		    "second of day at image start", "s");
+    h5_value_int(h5_file, group, "orbit_vector_count", vector_count,
+		 "number of state vectors", NULL);
     for (ii=0; ii<vector_count; ii++) {
-      vector_time[ii].number = ii+1;
-      vector_time[ii].time = md->state_vectors->vecs[ii].time;
-      vector_xyz[ii].number = ii+1;
-      vector_xyz[ii].x = md->state_vectors->vecs[ii].vec.pos.x;
-      vector_xyz[ii].y = md->state_vectors->vecs[ii].vec.pos.y;
-      vector_xyz[ii].z = md->state_vectors->vecs[ii].vec.pos.z;
+      sprintf(tmp, "orbit_vector[%d]_time", ii+1);
+      h5_value_double(h5_file, group, tmp, mo->vecs[ii].time,
+		      "time relative to image start", "s");
+      sprintf(tmp, "orbit_vector[%d]_position_x", ii+1);
+      h5_value_double(h5_file, group, tmp, mo->vecs[ii].vec.pos.x,
+		      "x coordinate, earth-fixed", "m");
+      sprintf(tmp, "orbit_vector[%d]_position_y", ii+1);
+      h5_value_double(h5_file, group, tmp, mo->vecs[ii].vec.pos.y,
+		      "y coordinate, earth-fixed", "m");
+      sprintf(tmp, "orbit_vector[%d]_position_z", ii+1);
+      h5_value_double(h5_file, group, tmp, mo->vecs[ii].vec.pos.z,
+		      "z coordinate, earth-fixed", "m");
+      sprintf(tmp, "orbit_vector[%d]_velocity_x", ii+1);
+      h5_value_double(h5_file, group, tmp, mo->vecs[ii].vec.vel.x,
+		      "x velocity, earth-fixed", "m/s");
+      sprintf(tmp, "orbit_vector[%d]_velocity_y", ii+1);
+      h5_value_double(h5_file, group, tmp, mo->vecs[ii].vec.vel.y,
+		      "y velocity, earth-fixed", "m/s");
+      sprintf(tmp, "orbit_vector[%d]_velocity_z", ii+1);
+      h5_value_double(h5_file, group, tmp, mo->vecs[ii].vec.vel.z,
+		      "z velocity, earth-fixed", "m/s");
     }
-    hdf5_attr = H5Acreate(hdf5_orbit, "vector_time", vec_time_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, vec_time_id, vector_time);
-    H5Aclose(hdf5_attr);
-    hdf5_attr = H5Acreate(hdf5_orbit, "vector_position", vec_pos_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, vec_pos_id, vector_xyz);
-    H5Aclose(hdf5_attr);  
-    for (ii=0; ii<vector_count; ii++) {
-      vector_xyz[ii].number = ii+1;
-      vector_xyz[ii].x = md->state_vectors->vecs[ii].vec.vel.x;
-      vector_xyz[ii].y = md->state_vectors->vecs[ii].vec.vel.y;
-      vector_xyz[ii].z = md->state_vectors->vecs[ii].vec.vel.z;
-    
-    }
-    hdf5_attr = H5Acreate(hdf5_orbit, "vector_velocity", vec_vel_id, 
-			  hdf5_space, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(hdf5_attr, vec_vel_id, vector_xyz);
-    H5Aclose(hdf5_attr);
-    H5Tclose(vec_time_id);
-    H5Tclose(vec_pos_id);
-    H5Tclose(vec_vel_id);
-    H5Sclose(hdf5_space);
-    H5Gclose(hdf5_orbit);
-    FREE(vector_time);
-    FREE(vector_xyz);
   }
+  H5Gclose(h5_metagroup);
+  H5Sclose(h5_string);
+  H5Sclose(h5_array);
 
   // Write ASF metadata to XML file
   char *output_file = 
@@ -760,36 +871,14 @@ hdf_t *initialize_hdf5_file(const char *output_file_name, meta_parameters *md)
   meta_write_xml(md, output_file);
   FREE(output_file);
 
-  return hdf;
+  return h5;
 }
 
-void finalize_hdf5_file(hdf_t *hdf)
+void finalize_h5_file(h5_t *hdf)
 {
-  int ii;
-  herr_t status;
-  for (ii=0; ii<hdf->band_count; ii++) {
-    status = H5Dclose(hdf->data_amp[ii]);
-    if (status == -1)
-      asfPrintError("Could not close HDF5 amp data set!\n");
-    if (hdf->data_phase) {
-      status = H5Dclose(hdf->data_phase[ii]);
-      if (status == -1)
-	asfPrintError("Could not close HDF5 phase data set!\n");
-    }
-  }
-  status = H5Sclose(hdf->space);
-  if (status == -1)
-    asfPrintError("Could not close HDF5 data space!\n");
-  if (hdf->projected)
-    status = HE5_GDclose(hdf->file);
-  else
-    status = H5Fclose(hdf->file);
-  if (status == -1)
-    asfPrintError("Could not close HDF5 file!\n");
-
+  H5Fclose(hdf->file);
+  
   // Clean up
-  FREE(hdf->data_amp);
-  if (hdf->data_phase)
-    FREE(hdf->data_phase);
+  FREE(hdf->var);
   FREE(hdf);
 }

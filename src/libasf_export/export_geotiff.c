@@ -240,7 +240,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   }
 
   if (should_write_insar_xml_meta(md)) {
-      char *xml_meta = get_insar_xml_string(md);
+    char *xml_meta = get_insar_xml_string(md, TRUE);
       TIFFSetField(*otif, TIFFTAG_ASF_INSAR_METADATA, xml_meta);
       FREE(xml_meta);
   }

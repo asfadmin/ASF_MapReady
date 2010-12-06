@@ -12,7 +12,6 @@
 #include "asf_nan.h"
 #include "netcdf.h"
 #include "hdf5.h"
-#include "HE5_HdfEosDef.h"
 
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
@@ -82,11 +81,9 @@ typedef struct {
 typedef struct {
   hid_t file;                   // File identifier
   hid_t space;                  // Data space identifier
-  int band_count;               // Number of bands
-  hid_t *data_amp;              // Array of data set identifiers (amplitude)
-  hid_t *data_phase;            // Array of data set identifiers (phase)
-  int projected;                // Flag whether data is map projected
-} hdf_t;
+  int var_count;                // Number of variables
+  hid_t *var;                   // Variable identifiers
+} h5_t;
 
 /* Structure to hold elements of the command line.  */
 typedef struct {
@@ -187,9 +184,8 @@ int should_write_insar_xml_meta(meta_parameters *md);
 int should_write_insar_rgb(char *band_name);
 void write_insar_rgb(output_format_t format, char *in_meta_name, char *in_data_name, char *out_name);
 void write_insar_xml_to_file(char *output_file_name, char *xml_meta);
-void write_meta_to_insar_xml(char *output_file_name, meta_insar *mi);
-char* get_insar_xml_string(meta_parameters *meta);
- 
+char* get_insar_xml_string(meta_parameters *meta, int gdal);
+
 // Prototypes from export_geotiff.c
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
@@ -210,8 +206,8 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md);
 
 // Prototypes from export_hdf.c
-hdf_t *initialize_hdf5_file(const char *output_file_name, meta_parameters *md);
-void finalize_hdf5_file(hdf_t *hdf);
+h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md);
+void finalize_h5_file(h5_t *hdf);
 
 // Prototypes from key.c
 double spheroid_diff_from_axis (spheroid_type_t spheroid,

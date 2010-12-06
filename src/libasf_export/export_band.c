@@ -25,6 +25,7 @@
 #include <spheroids.h>
 #include <typlim.h>
 #include <netcdf.h>
+#include <HE5_HdfEosDef.h>
 
 #define PGM_MAGIC_NUMBER    "P5"
 #ifdef  OPT_STRIP_BYTES
@@ -275,10 +276,10 @@ export_band_image (const char *metadata_file_name,
   struct jpeg_compress_struct cinfo;
   png_structp png_ptr;
   png_infop png_info_ptr;
-  hdf_t *hdf=NULL;
+  h5_t *h5=NULL;
   netcdf_t *netcdf=NULL;
   float *nc = NULL;
-  float *hdf5 = NULL;
+  float *hdf = NULL;
   int ii,jj;
   int palette_color_tiff = 0;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
@@ -388,12 +389,13 @@ export_band_image (const char *metadata_file_name,
 			      &png_info_ptr, rgb, 2);
     }
     else if (format == HDF) {
-      hdf = (hdf_t *) MALLOC(sizeof(hdf_t));
-      hdf = initialize_hdf5_file(output_file_name, md);
-      hdf5 = (float *) 
+      append_ext_if_needed (output_file_name, ".h5", NULL);
+      h5 = initialize_h5_file(output_file_name, md);
+      hdf = (float *) 
 	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);
     }
     else if (format == NC) {
+      append_ext_if_needed(output_file_name, ".nc", NULL);
       netcdf = (netcdf_t *) MALLOC(sizeof(netcdf_t));
       netcdf = initialize_netcdf_file(output_file_name, md);
       nc = (float *)
@@ -862,8 +864,13 @@ export_band_image (const char *metadata_file_name,
       finalize_jpeg_file(ojpeg, &cinfo);
     else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
       finalize_png_file(opng, png_ptr, png_info_ptr);
-    else if (format == HDF)
-      finalize_hdf5_file(hdf);
+    else if (format == HDF) {
+      if (md->projection && md->projection->type != SCANSAR_PROJECTION)
+	//finalize_he5_file(he5);
+	finalize_h5_file(h5);
+      else
+	finalize_h5_file(h5);
+    }
     else if (format == NC) {
       finalize_netcdf_file(netcdf, md);
     }
@@ -1267,12 +1274,17 @@ export_band_image (const char *metadata_file_name,
           initialize_polsarpro_file(out_file, md, &ofp);
         }
 	else if (format == HDF) {
-	  if (md->projection && md->projection->type != SCANSAR_PROJECTION)
-	    append_ext_if_needed(out_file, ".he5", NULL);
-	  else
+	  if (md->projection && md->projection->type != SCANSAR_PROJECTION) {
+	    //append_ext_if_needed(out_file, ".he5", NULL);
+	    //he5 = initialize_he5_file(out_file, md);
+	    append_ext_if_needed(out_file, ".h5", NULL);
+	    h5 = initialize_h5_file(out_file, md);
+	  }
+	  else {
 	    append_ext_if_needed (out_file, ".h5", NULL);
-	  hdf = initialize_hdf5_file(out_file, md);
-	  hdf5 = (float *) 
+	    h5 = initialize_h5_file(out_file, md);
+	  }
+	  hdf = (float *) 
 	    MALLOC(sizeof(float)*md->general->line_count*
 		   md->general->sample_count);
 	}
@@ -1468,7 +1480,7 @@ export_band_image (const char *metadata_file_name,
 	      else if (format == HDF) {
 		int sample;
 		for (sample=0; sample<sample_count; sample++)
-		  hdf5[ii*sample_count+sample] = float_line[sample];
+		  hdf[ii*sample_count+sample] = float_line[sample];
 	      }
 	      else if (format == NC) {
 		int sample;
@@ -1534,14 +1546,32 @@ export_band_image (const char *metadata_file_name,
         else if (format == POLSARPRO_HDR)
           FCLOSE(ofp);
 	else if (format == HDF) {
-	  herr_t status;
 	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
-	  if (strstr(band_name[kk], "PHASE"))
-	    status = H5Dwrite(hdf->data_phase[kk/2], H5T_NATIVE_FLOAT, 
-			      H5S_ALL, H5S_ALL, H5P_DEFAULT, hdf5);
-	  else
-	    status = H5Dwrite(hdf->data_amp[kk/2], H5T_NATIVE_FLOAT, H5S_ALL, 
-			      H5S_ALL, H5P_DEFAULT, hdf5);
+	  if (strstr(band_name[kk], "PHASE")) {
+	    if (md->projection && md->projection->type != SCANSAR_PROJECTION)
+	      ;
+	      //HE5_GDwritefield(he5->var[kk], "PHASE_IMAGE", NULL,
+	      //	       NULL, NULL, hdf);
+	    else
+	      ;
+	    //H5Dwrite(h5->var[kk], H5T_NATIVE_FLOAT, H5S_ALL, 
+	    //	       H5S_ALL, H5P_DEFAULT, hdf);
+	  }
+	  else {
+	    if (md->projection && md->projection->type != SCANSAR_PROJECTION)
+	      ;
+	      //HE5_GDwritefield(he5->var[kk], "AMPLITUDE_IMAGE", NULL,
+	      //	       NULL, NULL, hdf);
+	    else {
+	      ;
+	      /*
+	      hid_t data = H5Dopen(h5->file, "/data/HH/AMPLITUDE_IMAGE", 
+				   H5P_DEFAULT);
+	      H5Dwrite(data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, 
+		       hdf);
+	      */
+	    }
+	  }
 	}
 	else if (format == NC) {
 	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
@@ -1555,8 +1585,14 @@ export_band_image (const char *metadata_file_name,
 
     if (format == NC)
       finalize_netcdf_file(netcdf, md);
-    else if (format == HDF)
-      finalize_hdf5_file(hdf);
+    else if (format == HDF) {
+      if (md->projection && md->projection->type != SCANSAR_PROJECTION)
+	finalize_h5_file(h5);
+      //finalize_he5_file(he5);
+      else
+	finalize_h5_file(h5);
+      FREE(hdf);
+    }
 
     if (free_band_names) {
       for (ii=0; ii<band_count; ++ii)
