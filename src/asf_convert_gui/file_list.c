@@ -876,9 +876,22 @@ add_to_files_list_iter(const gchar *input_file_in,
           gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
         while (more_items) {
           gchar *input_file_in_list;
+	  gchar *igram_file_in_list;
+	  gchar *coh_file_in_list;
           gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                              COL_INPUT_FILE, &input_file_in_list, -1);
-          if (strcmp(input_file, input_file_in_list) == 0)
+          gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                             COL_INTERFEROGRAM, &igram_file_in_list, -1);
+          gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                             COL_COHERENCE, &coh_file_in_list, -1);
+	  if (interferogram_file && 
+	      strcmp(interferogram_file, igram_file_in_list) == 0)
+	    found = TRUE;
+	  else if (coherence_file &&
+		   strcmp(coherence_file, coh_file_in_list) == 0)
+	    found = TRUE;
+          else if (!interferogram_file && !coherence_file &&
+		   strcmp(input_file, input_file_in_list) == 0)
             found = TRUE;
           g_free(input_file_in_list);
           if (found)
