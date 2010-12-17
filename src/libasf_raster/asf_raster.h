@@ -21,6 +21,7 @@ DESCRIPTION:
 typedef enum {
   TRUNCATE=1,
   MINMAX,
+  MINMAX_MEDIAN,
   SIGMA,
   HISTOGRAM_EQUALIZE,
   NONE
@@ -33,7 +34,11 @@ typedef enum {
   LAPLACE2,
   LAPLACE3,
   SOBEL,
+  SOBEL_X,
+  SOBEL_Y,
   PREWITT,
+  PREWITT_X,
+  PREWITT_Y,
   EDGE,
   MEDIAN,
   LEE,
@@ -66,6 +71,7 @@ typedef enum {
 typedef struct {
   double min;
   double max;
+  double median;
   double mean;
   double standard_deviation;
   gsl_histogram *hist;
@@ -73,6 +79,9 @@ typedef struct {
 } channel_stats_t;
 
 typedef double calc_stats_formula_t(double band_values[], double no_data_value);
+
+// Prototypes from arithmetic.c
+int arithmetic(char *refFile, char *targetFile, char *operation, char *outFile);
 
 // Prototypes from bands.c
 char **extract_band_names(char *bands, int band_count);
@@ -108,12 +117,12 @@ calc_stats_from_file_with_formula(const char *inFile, char *bands,
                                   double *mean, double *stdDev,
                                   gsl_histogram **histogram);
 
-void calc_minmax_polsarpro(const char *inFile, double *min, double *max);
-
 /* Prototypes from kernel.c **************************************************/
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 	     int xLine, int xSample, int kernel_size, float damping_factor,
 	     int nLooks);
+void kernel_filter(char *inFile, char *outFile, filter_type_t filter, 
+		   int kernel_size, float damping, int nLooks);
 
 /* Prototypes from interpolate.c *********************************************/
 float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLine,
