@@ -362,6 +362,7 @@ pixel_float2byte(float paf, scale_t sample_mapping,
     }
     break;
   case MINMAX:
+  case MINMAX_MEDIAN:
   case SIGMA:
     slope = max_brightness / (omax-omin);
     offset = -slope * omin;
