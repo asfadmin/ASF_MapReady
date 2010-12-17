@@ -25,8 +25,9 @@ build_stamp:
 		CPPFLAGS="-I$(INCLUDE_DIR)" \
 		./configure --enable-float -C  \
 			--prefix=$(ROOT_DIR) \
-		--with-png=internal --with-jpeg=internal \
-		--with-libtiff=internal --with-geotiff=internal \
+		--without-libtool --without-ld-shared \
+	        --with-png=../../.. --with-jpeg=../../.. \
+		--with-libtiff=../../.. --with-geotiff=../../.. \
 		--with-libz=internal --with-gif=internal \
 		--without-oci --without-curl --without-jasper; \
 		make ; \

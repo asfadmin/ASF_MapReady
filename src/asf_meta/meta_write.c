@@ -791,6 +791,29 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp, "}", "", "End airsar");
   }
 
+  // Write out uavsar geocoding parameters
+  if (meta->uavsar) {
+    meta_put_string(fp, "uavsar {", "",
+            "Block containing UAVSAR parameters for geocoding");
+    meta_put_double(fp, "scale_factor:", meta->uavsar->scale_factor,
+            "General scale factor");
+    meta_put_double_lf(fp, "gps_altitude:", meta->uavsar->gps_altitude, 3,
+            "GPS altitude [m]");
+    meta_put_double_lf(fp, "lat_peg_point:", meta->uavsar->lat_peg_point, 4,
+            "Latitude of peg point [degrees]");
+    meta_put_double_lf(fp, "lon_peg_point:", meta->uavsar->lon_peg_point, 4,
+            "Longitude of peg point [degrees]");
+    meta_put_double_lf(fp, "head_peg_point:", meta->uavsar->head_peg_point, 4,
+            "Heading at peg point [degrees]");
+    meta_put_double_lf(fp, "along_track_offset:",
+               meta->uavsar->along_track_offset, 4,
+               "Along-track offset S0 [m]");
+    meta_put_double_lf(fp, "cross_track_offset:",
+               meta->uavsar->cross_track_offset, 4,
+               "Cross-track offset C0 [m]");
+    meta_put_string(fp, "}", "", "End uavsar");
+  }
+
   /* Write out statistics block */
   if (meta->stats) {
     int ii;
@@ -1885,6 +1908,10 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <processor>%s</processor>\n", mi->processor);
     fprintf(fp, "    <master_image>%s</master_image>\n", mi->master_image);
     fprintf(fp, "    <slave_image>%s</slave_image>\n", mi->slave_image);
+    fprintf(fp, "    <master_acquisition_date>%s</master_acquisition_date>\n",
+	    mi->master_acquisition_date);
+    fprintf(fp, "    <slave_acquisition_date>%s</slave_acquisition_date>\n",
+	    mi->slave_acquisition_date);
     fprintf(fp, "    <center_look_angle units=\"degrees\">%.4lf"
 	    "</center_look_angle>\n", mi->center_look_angle);
     fprintf(fp, "    <doppler units=\"Hz\">%.11g</doppler>\n", mi->doppler);

@@ -22,14 +22,14 @@ following defines.
 "              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
 "              [-baseline <file>] [-line <start line subset>]\n"\
 "              [-sample <start sample subset>] [-width <subset width>]\n"\
-"              [-height <subset height>] [-help]\n"\
+"              [-height <subset height>] [-uavsar <type>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"   Ingests all varieties of CEOS, STF, AIRSAR, BIL, GRIDFLOAT, VP\n"\
+"   Ingests all varieties of CEOS, STF, AIRSAR, UAVSAR, BIL, GRIDFLOAT, VP\n"\
 "   (Vexcel-Plain), JAXA Level 0 (ALOS AVNIR-2), ALOS mosaics, TerraSAR-X\n"\
-"   Radarsat-2, GAMMA, PolSARpro, and GeoTIFF data formats and outputs\n"\
-"   ASF Internal format metadata and data files.\n"\
+"   Radarsat-2, GAMMA, ROIPAC, PolSARpro, and GeoTIFF data formats and\n"\
+"   outputs ASF Internal format metadata and data files.\n"\
 "   When the calibration parameters are applied using the -sigma, -gamma, or\n"\
 "   the -beta option the resulting image will have power scale values (or\n"\
 "   decibels if the -db option is utilized). "ASF_NAME_STRING" can also\n"\
@@ -38,9 +38,10 @@ following defines.
 "   time, apply a look-up table, apply latitude constraints, etcetera.\n"\
 
 #define ASF_INPUT_STRING \
-"   The format of the input file must be specified as STF, AIRSAR, BIL,\n"\
-"   GRIDFLOAT, VP, JAXA_L0, POLSARPRO, or GEOTIFF.  Otherwise,\n"\
-"   "ASF_NAME_STRING" assumes the input file is in CEOS format by default.\n"\
+"   The format of the input file must be specified as STF, AIRSAR, UAVSAR, \n"\
+"   BIL, GRIDFLOAT, VP, JAXA_L0, POLSARPRO, GAMMA, ROIPAC or GEOTIFF.\n"\
+"   Otherwise, "ASF_NAME_STRING" assumes the input file is in CEOS format\n"\
+"   by default.\n"\
 "   See the -format option below.\n"
 
 #define ASF_OUTPUT_STRING \
@@ -69,17 +70,18 @@ following defines.
 "        (ie do not use the -db flag if you plan on statistical analysis)\n"\
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
-"        are 'ceos', 'stf', 'geotiff', 'airsar', 'bil', 'gridfloat', 'vp',\n"\
-"        'polsarpro', 'gamma', 'roipac', 'alos_mosaic', 'terrasar',\n"\
-"        'radarsat2' and 'jaxa_L0'. The 'jaxa_L0' format refers to the ALOS\n"\
-"        AVNIR-2 Level 0 dataset format. 'CEOS' is the default behavior.\n"\
+"        are 'ceos', 'stf', 'geotiff', 'airsar', 'uavsar', 'bil',\n"\
+"        'gridfloat', 'vp', 'polsarpro', 'gamma', 'roipac', 'alos_mosaic',\n"\
+"        'terrasar', 'radarsat2' and 'jaxa_L0'.\n"\
+"        The 'jaxa_L0' format refers to the ALOS AVNIR-2 Level 0 dataset\n"\
+"        format. 'CEOS' is the default behavior.\n"\
 "   -ancillary-file <file>\n"\
 "        For PolSARpro format files, the ingest process needs access to the\n"\
 "        original COES or AIRSAR format data that the PolSARpro images were\n"\
 "        created from.  The original dataset is necessary for the purpose of\n"\
 "        extracting original SAR parameters that are not otherwise available\n"\
 "        in the PolSARpro format files as they are.\n"\
-"   - colormap <colormap_file>\n"\
+"   -colormap <colormap_file>\n"\
 "        Associates a color map (RGB index) with the input file.  Does not\n"\
 "        apply to multi-band images or images containing floating point data\n"\
 "        (other than PolSARpro .bin/.bin.hdr images.)  The colormap files\n"\
@@ -139,6 +141,14 @@ following defines.
 "   -no-ers2-gain-fix\n"\
 "        Do not apply the ERS2 gain correction.  (See the 'Notes' section\n"\
 "        below.)\n"\
+"   -uavsar <type>\n"\
+"        Defines what type of UAVSAR data to be ingested:\n"\
+"        SLC: single look complex slant range image\n"\
+"        MLC: multilook cross product slant range image\n"\
+"        DAT: compressed Stokes matrix of multilooked data\n"\
+"        GRD: ground range projected (equi-rectangular) and multilooked data\n"\
+"        HGT: DEM used for GRD\n"\
+"        ALL: all the above\n"\
 "   -save-intermediates\n"\
 "        Save any intermediate files which may have been created during the\n"\
 "        import process.  At this time, this only applies to the ingest of \n"\
@@ -234,6 +244,10 @@ following defines.
 #include "asf_raster.h"
 #include <ctype.h>
 
+//#ifdef linux
+//char *strdup(char *);
+//#endif
+
 #define REQUIRED_ARGS 2
 
 #define FLAG_SET 1
@@ -278,6 +292,7 @@ typedef enum {
     f_COHERENCE,
     f_SLAVE,
     f_BASELINE,
+    f_UAVSAR,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -398,6 +413,7 @@ int main(int argc, char *argv[])
     char *coherence_file=NULL;
     char *slave_file=NULL;
     char *baseline_file=NULL;
+    char *uavsar_type=NULL;
     char *prcPath=NULL;
     char format_type_str[256]="";
     input_format_t format_type;
@@ -459,6 +475,7 @@ int main(int argc, char *argv[])
     flags[f_COHERENCE] = checkForOption("-coherence", argc, argv);
     flags[f_SLAVE] = checkForOption("-slave", argc, argv);
     flags[f_BASELINE] = checkForOption("-baseline", argc, argv);
+    flags[f_UAVSAR] = checkForOption("-uavsar", argc, argv);
 
     flags[f_ANCILLARY_FILE] = checkForOption("-ancillary-file", argc, argv);
     if (flags[f_ANCILLARY_FILE] == FLAG_NOT_SET)
@@ -563,6 +580,7 @@ int main(int argc, char *argv[])
 	if(flags[f_COHERENCE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_SLAVE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_BASELINE] != FLAG_NOT_SET) needed_args += 2;
+	if(flags[f_UAVSAR] != FLAG_NOT_SET) needed_args += 2;
 
         /*Make sure we have enough arguments*/
         if(argc != needed_args)
@@ -659,6 +677,11 @@ int main(int argc, char *argv[])
       if(   argv[flags[f_BASELINE]+1][0] == '-'
             || flags[f_BASELINE] >= argc-REQUIRED_ARGS)
         print_usage();
+    if(flags[f_UAVSAR] != FLAG_NOT_SET)
+      /*Make sure the field following -colormap isn't another option*/
+      if(   argv[flags[f_UAVSAR]+1][0] == '-'
+            || flags[f_UAVSAR] >= argc-REQUIRED_ARGS)
+        print_usage();
 
     /* Be sure to open log ASAP */
     if(flags[f_LOG] != FLAG_NOT_SET)
@@ -738,6 +761,10 @@ int main(int argc, char *argv[])
       baseline_file = (char *) MALLOC(sizeof(char)*1024);
       strcpy(baseline_file, argv[flags[f_BASELINE] + 1]);
     }
+    if(flags[f_UAVSAR] != FLAG_NOT_SET) {
+      uavsar_type = (char *) MALLOC(sizeof(char)*10);
+      strcpy(uavsar_type, argv[flags[f_UAVSAR] + 1]);
+    }
 
     { /* BEGIN: Check for conflict between pixel type flags */
         char flags_used[256] = "";
@@ -797,6 +824,8 @@ int main(int argc, char *argv[])
       format_type = GRIDFLOAT;
     else if (strncmp_case(format_type_str, "AIRSAR", 6) == 0)
       format_type = AIRSAR;
+    else if (strncmp_case(format_type_str, "UAVSAR", 6) == 0)
+      format_type = UAVSAR;
     else if (strncmp_case(format_type_str, "VP", 2) == 0)
       format_type = VP;
     else if (strncmp_case(format_type_str, "JAXA_L0", 7) == 0)
@@ -861,6 +890,10 @@ int main(int argc, char *argv[])
 	flags[f_BASELINE] != FLAG_NOT_SET && flags[f_SLAVE] == FLAG_NOT_SET) {
       asfPrintError("Use of the -baseline option is only valid when the "
 		    "-slave option\nis specified at the same time.\n");
+    }
+    if (format_type == UAVSAR && flags[f_UAVSAR] == FLAG_NOT_SET) {
+      asfPrintError("For UAVSAR data the data type needs to be defined "
+		    "using the -uavsar option.\n");
     }
 
     if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET) {
@@ -961,7 +994,7 @@ int main(int argc, char *argv[])
                    width, height, save_intermediates, p_range_scale, p_azimuth_scale,
                    p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
                    ancillary_file, colormapName, slave_file, interferogram_file,
-		   coherence_file, baseline_file, outBaseName);
+		   coherence_file, baseline_file, uavsar_type, outBaseName);
     }
 
     // clean up

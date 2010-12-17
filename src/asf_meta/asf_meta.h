@@ -107,6 +107,7 @@ typedef enum {
   BIL,
   GRIDFLOAT,
   AIRSAR,
+  UAVSAR,
   VP,
   JAXA_L0, // JAXA PRISM and AVNIR-2 (optical) Level 0 Format
   ALOS_MOSAIC,
@@ -287,6 +288,17 @@ typedef struct {
   double elevation_increment; // Elevation increment [m] - version 2.9
   double elevation_offset;    // Elevation offset [m] - version 2.9
 } meta_airsar;
+
+// meta_uavsar: parameters for UAVSAR geocoding
+typedef struct {
+  double scale_factor;        // General scale factor
+  double gps_altitude;        // GPS altitude [m]
+  double lat_peg_point;       // Latitude of peg point [degrees]
+  double lon_peg_point;       // Longitude of peg point [degrees]
+  double head_peg_point;      // Heading at peg point [degrees]
+  double along_track_offset;  // Along-track offset S0 [m]
+  double cross_track_offset;  // Cross-track offset C0 [m]
+} meta_uavsar;
 
 /********************************************************************
  * meta_projection / proj_parameters: These describe a map projection.
@@ -492,6 +504,7 @@ typedef struct {
   meta_projection    *projection;      /* Can be NULL (check!).  */
   meta_transform     *transform;       // Can be NULL (check!)
   meta_airsar        *airsar;          // Can be NULL (check!)
+  meta_uavsar        *uavsar;          // Can be NULL (check!)
   meta_statistics    *stats;           // Can be NULL
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
   meta_location      *location;        // Can be NULL
@@ -936,5 +949,7 @@ typedef enum {
 void map_distortions(meta_projection *proj, double lat, double lon, 
 		     distortion_t *distortion);
 
+// Prototypes for meta_tiff.c
+meta_insar *populate_insar_metadata(const char *filename);
 
 #endif

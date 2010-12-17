@@ -73,6 +73,7 @@ OBJS  = \
 	import_bil.o \
 	import_gridfloat.o \
 	import_airsar.o \
+	import_uavsar.o \
 	import_gamma.o \
 	import_vexcel_plain.o \
 	import_jaxa_L0.o \

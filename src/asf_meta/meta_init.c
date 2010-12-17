@@ -235,6 +235,19 @@ meta_airsar *meta_airsar_init(void)
   return airsar;
 }
 
+meta_uavsar *meta_uavsar_init(void)
+{
+  meta_uavsar *uavsar = (meta_uavsar *) MALLOC(sizeof(meta_uavsar));
+  uavsar->scale_factor = MAGIC_UNSET_DOUBLE;
+  uavsar->gps_altitude = MAGIC_UNSET_DOUBLE;
+  uavsar->lat_peg_point = MAGIC_UNSET_DOUBLE;
+  uavsar->lon_peg_point = MAGIC_UNSET_DOUBLE;
+  uavsar->head_peg_point = MAGIC_UNSET_DOUBLE;
+  uavsar->along_track_offset = MAGIC_UNSET_DOUBLE;
+  uavsar->cross_track_offset = MAGIC_UNSET_DOUBLE;
+  return uavsar;
+}
+
 /*******************************************************************************
  * meta_state_vectors_init():
  * Allocate memory for and initialize elements of a meta_state_vectors structure.
@@ -396,6 +409,7 @@ meta_parameters *raw_init(void)
   meta->projection      = NULL;  /* Allocated later if geocoded */
   meta->transform       = NULL;
   meta->airsar          = NULL;
+  meta->uavsar          = NULL;
   meta->stats           = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
   meta->calibration     = NULL;
@@ -546,6 +560,8 @@ void meta_free(meta_parameters *meta)
     meta->transform = NULL;
     FREE(meta->airsar);
     meta->airsar = NULL;
+    FREE(meta->uavsar);
+    meta->uavsar = NULL;
     if (meta->colormap) {
       FREE(meta->colormap->rgb);
       FREE(meta->colormap);

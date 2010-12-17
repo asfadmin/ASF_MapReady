@@ -76,10 +76,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          int line, int sample, int width, int height, int save_intermediates,
          double *p_range_scale, double *p_azimuth_scale,
          double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
-         char *inMetaNameOption,
-         char *inBaseName, char *ancillary_file,
+         char *inMetaNameOption, char *inBaseName, char *ancillary_file,
 	 char *colormapName, char *slave_file, char *interferogram_file,
-	 char *coherence_file, char *baseline_file, char *outBaseName)
+	 char *coherence_file, char *baseline_file, char *uavsar_type,
+	 char *outBaseName)
 {
   char outDataName[256], outMetaName[256];
 
@@ -195,6 +195,11 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintStatus("   Data format: AIRSAR\n");
     import_airsar(inBaseName, update(radiometry, db_flag), outBaseName);
   }
+  else if (format_type == UAVSAR) {
+    asfPrintStatus("   Data format: UAVSAR\n");
+    import_uavsar(inBaseName, update(radiometry, db_flag), uavsar_type,
+		  outBaseName);
+  }
   else if (format_type == VP) {
     asfPrintStatus("   Data format: VP\n");
     import_vexcel_plain(inBaseName, outBaseName);
@@ -217,8 +222,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == POLSARPRO) {
     asfPrintStatus("   Data format: POLSARPRO\n");
-    import_polsarpro(inBaseName, ancillary_file,
-                     colormapName, image_data_type, outBaseName);
+    import_polsarpro(inBaseName, ancillary_file, colormapName, image_data_type,
+		     db_flag, outBaseName);
   }
   else if (format_type == GAMMA) {
     asfPrintStatus("   Data format: GAMMA\n");

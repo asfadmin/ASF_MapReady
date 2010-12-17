@@ -597,7 +597,7 @@ void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db)
 {
   create_cal_params(inSAR, meta, REPORT_LEVEL_WARNING);
   if (db)
-    meta->general->no_data = -30.0;
+    meta->general->no_data = -35.0;
 }
 
 // incid_init()
@@ -800,12 +800,13 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
     else
       calValue = scaledPower;
   }
-  else {
+  else if (inDn > 0.0) {
     if (dbFlag)
       calValue = -30.0;
     else
       calValue = 0.001;
   }
+  else calValue = meta->general->no_data;
 
   return calValue;
 }

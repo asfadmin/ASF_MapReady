@@ -52,6 +52,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
 	       char *interferogram_file, // interferogram file
 	       char *coherence_file, // coherence image file
 	       char *baseline_file, // baseline file
+	       char *uavsar_type, // data type for UAVSAR data
                char *outBaseName // output file
                );
 
@@ -92,6 +93,8 @@ void import_airsar(const char *inFileName, radiometry_t radiometry,
 		   const char *outBaseName);
 meta_parameters *import_airsar_meta(const char *dataName,
 				    const char *inBaseName, int force);
+void import_uavsar(const char *inFileName, radiometry_t radiometry,
+		   const char *data_type, const char *outBaseName);
 
 void import_gamma_isp(const char *inDataName, const char *inMetaName,
               const char *data_type, const char *image_data_type,
@@ -114,8 +117,8 @@ void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
 void assign_band_names(meta_parameters *meta, char *outMetaName,
                char *bandExt, int band, int nBands, int nBandsOut,
                radiometry_t radiometry, int complex_flag);
-void import_polsarpro(char *polsarName, char *ceosName,
-                      char *colormapName, char *image_data_type, char *outBaseName);
+void import_polsarpro(char *polsarName, char *ceosName, char *colormapName, 
+		      char *image_data_type, int db_flag, char *outBaseName);
 void apply_polsarpro_palette_to_metadata(const char *lut_basename,
                                          meta_parameters *imd);
 void import_gamma(char *dataName, char *metaName, char *slaveName,

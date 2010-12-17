@@ -121,6 +121,7 @@ void error_message(const char *err_mes, ...)
 #define MLOCATION ( (meta_location *) current_block)
 #define MTRANSFORM ( (meta_transform *) current_block)
 #define MAIRSAR ( (meta_airsar *) current_block)
+#define MUAVSAR ( (meta_uavsar *) current_block)
 #define MCALIBRATION ( (meta_calibration *) current_block)
 #define MCOLORMAP ( (meta_colormap *) current_block)
 #define MRGB ( (meta_rgb *) current_block)
@@ -203,6 +204,13 @@ void select_current_block(char *block_name)
     if (MTL->airsar == NULL)
        { MTL->airsar = meta_airsar_init();}
     current_block = MTL->airsar;
+    goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "uavsar") ) {
+    if (MTL->uavsar == NULL)
+       { MTL->uavsar = meta_uavsar_init();}
+    current_block = MTL->uavsar;
     goto MATCHED;
   }
 
@@ -1074,6 +1082,24 @@ void fill_structure_field(char *field_name, void *valp)
       { MAIRSAR->along_track_offset = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "cross_track_offset") )
       { MAIRSAR->cross_track_offset = VALP_AS_DOUBLE; return; }
+  }
+
+  // Fields which normally go in the uavsar block of the metadata file
+  if ( !strcmp(stack_top->block_name, "uavsar") ) {
+    if ( !strcmp(field_name, "scale_factor") )
+      { MUAVSAR->scale_factor = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "gps_altitude") )
+      { MUAVSAR->gps_altitude = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lat_peg_point") )
+      { MUAVSAR->lat_peg_point = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lon_peg_point") )
+      { MUAVSAR->lon_peg_point = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "head_peg_point") )
+      { MUAVSAR->head_peg_point = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "along_track_offset") )
+      { MUAVSAR->along_track_offset = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "cross_track_offset") )
+      { MUAVSAR->cross_track_offset = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */
