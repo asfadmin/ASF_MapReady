@@ -11,6 +11,8 @@
 #include <asf_raster.h>
 #include "xml_util.h"
 
+#define EPS 1E-15
+
 static char *t3_matrix[9] = {"T11.bin","T12_real.bin","T12_imag.bin",
 			     "T13_real.bin","T13_imag.bin","T22.bin",
 			     "T23_real.bin","T23_imag.bin","T33.bin"};
@@ -962,7 +964,7 @@ static void ingest_terrasar_polsar_amp(char *inFile, char *outFile,
 }
 
 void import_polsarpro(char *s, char *ceosName, char *colormapName,
-                      char *image_data_type, char *outBaseName)
+                      char *image_data_type, int db_flag, char *outBaseName)
 {
   meta_parameters *metaIn = NULL, *metaOut = NULL;
   envi_header *envi;
@@ -1349,7 +1351,11 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       else if (is_polsarpro_decomposition) {
 	asfPrintStatus("\n   Ingesting PolSARPro decomposition file (%s) ..."
 		       "\n", bands[band]);
-	sprintf(polsarName, "%s%c%s.bin", dirName, DIR_SEPARATOR, bands[band]);
+	if (strlen(dirName) > 0)
+	  sprintf(polsarName, "%s%c%s.bin", 
+		  dirName, DIR_SEPARATOR, bands[band]);
+	else
+	  sprintf(polsarName, "%s.bin", bands[band]);
       }
       if (band == 0 && strlen(metaOut->general->bands) <= 0)
 	sprintf(bandStr, "%s", bands[band]);
@@ -1380,6 +1386,12 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 	  fValue = slope * floatBuf[kk] + offset;
 	  floatBuf[kk] = fValue;
 	}
+	if (is_polsarpro_decomposition && db_flag) {
+	  fValue = floatBuf[kk];
+	  if (fValue <= EPS)
+	    fValue = EPS;
+	  floatBuf[kk] = 10*log10(fValue);
+	} 
       }
       if (flip_horizontal) {
 	for (kk=0; kk<metaOut->general->sample_count; kk++)
