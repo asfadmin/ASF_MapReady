@@ -28,11 +28,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_kml_overlay"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-terrain_correct <demFile> | -refine_geolocation <demFile>]\n"\
-"                [-reduction_factor <factor>] [-transparency <factor>]\n"\
+"   "ASF_NAME_STRING" [-reduction_factor <factor>] [-transparency <factor>]\n"\
 "                [-colormap <look up table>] [-rgb <red>,<green>,<blue>]\n"\
-"                [-polsarpro <type> ] [-log <logFile>] [-quiet] [-license]\n"\
-"                [-version] [-help]\n"\
+"                [-polsarpro <type>] [-band <band name>] [-log <logFile>]\n"\
+"                [-quiet] [-license] [-version] [-help]\n"\
 "                <inFile> <outFile>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -40,15 +39,11 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_REQUIRED_ARGUMENTS_STRING \
 "   inFile\n"\
-"        The level one CEOS level one data file.\n"\
+"        The ASF internal or PolSARPro data file.\n"\
 "   outFile\n"\
 "        The basename of the KML overlay file.\n"\
 
 #define ASF_OPTIONS_STRING \
-"   -terrain_correct <demFile>\n"\
-"        Terrain corrects the image with the DEM.\n"\
-"   -refine_geolocation <demFile>\n"\
-"        Uses the DEM for refining the geolocation only.\n"\
 "   -reduction_factor <factor>\n"\
 "        Defines the factor that the pixel size is multiplied to reduce\n"\
 "        the size of the output image.\n"\
@@ -64,6 +59,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   -polsarpro <type>\n"\
 "        Defines the type of PolSARPro image data.\n"\
 "        Values are: segmentation, decomposition and parameter.\n"\
+"   -band <band name>\n"\
+"        Defines the band name to to used from a multi-band image.\n"\
 "   -log <logFile>\n"\
 "        Set the name and location of the log file. Default behavior is to\n"\
 "        log to tmp<processIDnumber>.log\n"\
@@ -96,7 +93,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf_contact.h"
 #include <unistd.h>
 
-#define REQUIRED_ARGS 1
+#define REQUIRED_ARGS 2
 #define FLAG_NOT_SET -1
 
 static int log_f;
@@ -164,20 +161,19 @@ static double min4(double a, double b, double c, double d)
 
 int main(int argc, char *argv[])
 {
-  char inFile[512], outFile[512], *demFile=NULL, *colormap=NULL;
-  char *polsarpro=NULL, *rgb=NULL;
+  char inFile[512], outFile[512], *colormap=NULL;
+  char *polsarpro=NULL, *band=NULL, *rgb=NULL;
   const int pid = getpid();
   extern int logflag, quietflag;
   int reduction = 8;
   int transparency = 0;
   int quiet_f;  /* log_f is a static global */
-  int tcFlag = FLAG_NOT_SET; // terrain correction flag
-  int rgFlag = FLAG_NOT_SET; // refine geolocation only flag
   int redFlag = FLAG_NOT_SET; // reduction factor flag
   int transFlag = FLAG_NOT_SET; // level of transparency flag
   int colorFlag = FLAG_NOT_SET; // colormap flag
   int rgbFlag = FLAG_NOT_SET; // RGB flag
   int polFlag = FLAG_NOT_SET; // polarimetry type flag
+  int bandFlag = FLAG_NOT_SET; // band flag
 
   logflag = quietflag = FALSE;
   log_f = quiet_f = FLAG_NOT_SET;
@@ -194,26 +190,24 @@ int main(int argc, char *argv[])
   // Check which options were provided
   log_f    = checkForOption("-log", argc, argv);
   quiet_f  = checkForOption("-quiet", argc, argv);
-  tcFlag = checkForOption("-terrain_correct", argc, argv);
-  rgFlag = checkForOption("-refine_geolocation", argc, argv);
   redFlag = checkForOption("-reduction_factor", argc, argv);
   transFlag = checkForOption("-transparency", argc, argv);
   colorFlag = checkForOption("-colormap", argc, argv);
   rgbFlag = checkForOption("-rgb", argc, argv);
   polFlag = checkForOption("-polsarpro", argc, argv);
+  bandFlag = checkForOption("-band", argc, argv);
 
   // We need to make sure the user specified the proper number of arguments
-  int needed_args = 2 + REQUIRED_ARGS; // command & REQUIRED_ARGS
+  int needed_args = 1 + REQUIRED_ARGS; // command & REQUIRED_ARGS
   int num_flags = 0;
   if (log_f != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (quiet_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
-  if (tcFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
-  if (rgFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (redFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (transFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (colorFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (rgbFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (polFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
+  if (bandFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
 
   // Make sure we have the right number of args
   if(argc != needed_args) {
@@ -224,16 +218,6 @@ int main(int argc, char *argv[])
   // option flag & is not a required argument
   if (log_f != FLAG_NOT_SET) {
     if ( (argv[log_f+1][0]=='-') || (log_f>=(argc-REQUIRED_ARGS)) ) {
-      print_usage();
-    }
-  }
-  if (tcFlag != FLAG_NOT_SET) {
-    if ( (argv[tcFlag+1][0]=='-') || (tcFlag>=(argc-REQUIRED_ARGS)) ) {
-      print_usage();
-    }
-  }
-  if (rgFlag != FLAG_NOT_SET) {
-    if ( (argv[rgFlag+1][0]=='-') || (rgFlag>=(argc-REQUIRED_ARGS)) ) {
       print_usage();
     }
   }
@@ -262,49 +246,39 @@ int main(int argc, char *argv[])
       print_usage();
     }
   }
+  if (bandFlag != FLAG_NOT_SET) {
+    if ( (argv[bandFlag+1][0]=='-') || (bandFlag>=(argc-REQUIRED_ARGS)) ) {
+      print_usage();
+    }
+  }
 
   // Make sure all options occur before the config file name argument
   if (num_flags == 1 &&
       (log_f     > 1 ||
        quiet_f   > 1 ||
-       tcFlag    > 1 ||
-       rgFlag    > 1 ||
        redFlag   > 1 ||
        transFlag > 1 ||
        colorFlag > 1 ||
        rgbFlag   > 1 ||
-       polFlag   > 1))
+       polFlag   > 1 ||
+       bandFlag  > 1))
   {
     print_usage();
   }
   else if (num_flags > 1 &&
 	   (log_f     >= argc - REQUIRED_ARGS - 1 ||
             quiet_f   >= argc - REQUIRED_ARGS - 1 ||
-	    tcFlag    >= argc - REQUIRED_ARGS - 1 ||
-	    rgFlag    >= argc - REQUIRED_ARGS - 1 ||
 	    redFlag   >= argc - REQUIRED_ARGS - 1 ||
 	    transFlag >= argc - REQUIRED_ARGS - 1 ||
 	    colorFlag >= argc - REQUIRED_ARGS - 1 ||
 	    rgbFlag   >= argc - REQUIRED_ARGS - 1 ||
-	    polFlag   >= argc - REQUIRED_ARGS - 1))
+	    polFlag   >= argc - REQUIRED_ARGS - 1 ||
+	    bandFlag  >= argc - REQUIRED_ARGS - 1))
   {
     print_usage();
   }
 
-  // Make sure that the DEM is used for only one thing
-  if (tcFlag != FLAG_NOT_SET && rgFlag != FLAG_NOT_SET)
-    asfPrintError("The tool can either terrain correct or refine the "
-		  "geolocation, not both!\n");
-
   // Do the actual flagging & such for each flag
-  if (tcFlag != FLAG_NOT_SET) {
-    demFile = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(demFile, "%s", argv[tcFlag+1]);
-  }
-  if (rgFlag != FLAG_NOT_SET) {
-    demFile = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(demFile, "%s", argv[rgFlag+1]);
-  }
   if (redFlag != FLAG_NOT_SET) {
     reduction = atoi(argv[redFlag+1]);
   }
@@ -322,6 +296,10 @@ int main(int argc, char *argv[])
   if (polFlag != FLAG_NOT_SET) {
     polsarpro = (char *) MALLOC(sizeof(char)*1024);
     strcpy(polsarpro, argv[polFlag+1]);
+  }
+  if (bandFlag != FLAG_NOT_SET) {
+    band = (char *) MALLOC(sizeof(char)*1024);
+    strcpy(band, argv[bandFlag+1]);
   }
   if (log_f != FLAG_NOT_SET) {
     strcpy(logFile, argv[log_f+1]);
@@ -346,12 +324,11 @@ int main(int argc, char *argv[])
   asfPrintStatus("A system independent zipping function is currently not "
 		 "available.\nFor the moment the KML and PNG files need to "
 		 "be manually zipped together.\n\n");
-  kml_overlay_ext(inFile, outFile, demFile, !tcFlag, !rgFlag, reduction, 
-		  transparency, colormap, rgb, polsarpro, FALSE);
+  kml_overlay_ext(inFile, outFile, reduction, transparency, colormap, rgb, 
+		  polsarpro, band, FALSE);
 
   asfPrintStatus("\nSuccessful completion!\n\n");
 
-  FREE(demFile);
   FCLOSE(fLog);
   remove(logFile);
 

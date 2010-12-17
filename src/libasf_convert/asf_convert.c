@@ -24,6 +24,21 @@
 #define FLOAT_COMPARE(a, b) (abs((a) - (b)) \
 			     < UNIT_TESTS_MICRON ? 1 : 0)
 
+int isInSAR(const char *infile)
+{
+  int found = FALSE;
+  meta_parameters *meta=NULL;
+  char *meta_name = appendExt(infile, ".meta");
+  if (fileExists(meta_name)) {
+    meta = meta_read(meta_name);
+    if (meta->insar)
+      found = TRUE;
+    meta_free(meta);
+  }
+
+  return found;
+}
+
 /* Returns true if a PolSARpro file set is detected based on the */
 /* filename passed in.                                           */
 int isPolSARpro(const char * infile)
@@ -609,7 +624,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
                    NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 0,
                    NULL, NULL, NULL, FALSE, NULL, tiff_basename, ancillary_file,
-                   NULL, NULL, NULL, NULL, NULL, imported),
+                   NULL, NULL, NULL, NULL, NULL, NULL, imported),
         status);
 
     sprintf(status, "Geocoding %s...", uc_what);
@@ -1933,6 +1948,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 			      cfg->import->interferogram,
 			      cfg->import->coherence,
 			      cfg->import->baseline,
+			      cfg->import->uavsar,
                               outFile),
                    "ingesting data file (asf_import)\n");
       FREE(polsarpro_colormap);
@@ -2878,7 +2894,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                                      tmpFile, outFile, bands, NULL, NULL),
                     "exporting thumbnail data file (asf_export), banded\n");
 		  // No zipping for the moment
-		  kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, FALSE);
+		  kml_overlay(tmpFile, overlayFile, FALSE);
                   for (i=0; i<n; ++i)
                     FREE(bands[i]);
                   FREE(bands);
@@ -2916,8 +2932,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                                        tmpFile, outFile, bands, NULL, NULL),
                       "exporting thumbnail (asf_export), color banded.\n");
 		    // No zipping for the moment
-		    kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, 
-				FALSE);
+		    kml_overlay(tmpFile, overlayFile, FALSE);
                     for (i=0; i<meta->general->band_count; ++i)
                       FREE (bands[i]);
                     FREE(bands);
@@ -2937,7 +2952,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 					      NULL),
 			     "exporting thumbnail data file (asf_export)\n");
 		// No zipping for the moment
-		kml_overlay(tmpFile, overlayFile, NULL, FALSE, FALSE, FALSE);
+		kml_overlay(tmpFile, overlayFile, FALSE);
 		// strip off the band name at the end!
 		char *banded_name =
 		  MALLOC(sizeof(char)*(strlen(outFile)+32));
@@ -3154,15 +3169,17 @@ static scale_t get_scale(convert_config *cfg)
   scale_t scale = SIGMA;
 
   // Byte scaling
-  if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0) {
+  if (strncmp_case(cfg->export->byte, "TRUNCATE", 8) == 0) {
     scale = TRUNCATE;
-  } else if (strncmp(uc(cfg->export->byte), "MINMAX", 6) == 0) {
+  } else if (strncmp_case(cfg->export->byte, "MINMAX_MEDIAN", 13) == 0) {
+    scale = MINMAX_MEDIAN;
+  } else if (strncmp_case(cfg->export->byte, "MINMAX", 6) == 0) {
     scale = MINMAX;
-  } else if (strncmp(uc(cfg->export->byte), "SIGMA", 5) == 0) {
+  } else if (strncmp_case(cfg->export->byte, "SIGMA", 5) == 0) {
     scale = SIGMA;
-  } else if (strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) == 0) {
+  } else if (strncmp_case(cfg->export->byte, "HISTOGRAM_EQUALIZE", 18) == 0) {
     scale = HISTOGRAM_EQUALIZE;
-  } else if (strncmp(uc(cfg->export->byte), "NONE", 4) == 0) {
+  } else if (strncmp_case(cfg->export->byte, "NONE", 4) == 0) {
     scale = NONE;
   }
 
@@ -3183,6 +3200,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   int is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6)==0;
   if (cfg->general->import && !is_airsar)
     copy_meta(cfg, inFile, outFile);
+  int is_insar = isInSAR(inFile);
 
   meta_parameters *meta = meta_read(inFile);
   char lut_file[2048] = "";
@@ -3205,9 +3223,9 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
     have_embedded_colormap = 0;
   }
   if (strlen(cfg->export->lut) > 0 ||
-      (is_polsarpro && strlen(lut_file) > 0))
+      ((is_polsarpro || is_insar) && strlen(lut_file) > 0))
   {
-    if (!is_polsarpro && meta->general->band_count > 1) {
+    if (!is_polsarpro && !is_insar && meta->general->band_count > 1) {
       asfPrintWarning("RGB Look-up-table not allowed for multi-band images."
                       " Ignored.\n");
       strcpy(lut_file,"");
@@ -3217,7 +3235,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         asfPrintWarning("RGB Banding option not allowed with RGB look up table."
                         " Ignored.\n");
       }
-      if (!is_polsarpro && scale != TRUNCATE) {
+      if (!is_polsarpro && !is_insar && scale != TRUNCATE) {
         asfPrintWarning("Scale option %s not allowed with RGB look-up-table."
                         " Using TRUNCATE.\n",
                         cfg->export->byte);
@@ -3229,7 +3247,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 //      bands[1] = NULL;
 
       check_return(
-        asf_export_bands(format, is_polsarpro ? scale : TRUNCATE,
+	asf_export_bands(format, (is_polsarpro || is_insar) ? scale : TRUNCATE,
                          is_polsarpro ? FALSE : TRUE, 0, 0,
                          lut_file, inFile, outFile, bands, &num_outputs,
                          &output_names),

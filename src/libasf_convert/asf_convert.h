@@ -24,6 +24,7 @@ typedef struct
   int geocoding;          // geocoding flag
   int export;             // export flag
   int mosaic;             // mosaic flag
+  int kml_overlay;        // KML overlay flag
   int intermediates;      // flag to keep intermediates
   int quiet;              // quiet flag
   int short_config;       // short configuration file flag;
@@ -69,6 +70,7 @@ typedef struct
   char *coherence;        // coherence file
   char *slave_metadata;   // metadata of the slave image
   char *baseline;         // baseline file
+  char *uavsar;           // UAVSAR data type
 
 } s_import;
 
@@ -195,6 +197,15 @@ typedef struct
 
 typedef struct
 {
+  double north;           // North bounding coordinate (degrees latitude)
+  double south;           // South bounding coordinate (degrees latitude)
+  double east;            // East bounding coordinate (degress longitude)
+  double west;            // West bounding coordinate (degrees longitude)
+  int transparency;       // Level of transparency (0 to 100)
+} s_kml_overlay;
+
+typedef struct
+{
   char comment[255];                   // first line for comments
   s_general *general;                  // general processing details
   s_import *import;                    // importing parameters
@@ -209,6 +220,7 @@ typedef struct
   s_geocoding *geocoding;              // geocoding parameters
   s_export *export;                    // exporting parameters
   s_mosaic *mosaic;                    // mosaicking parameters
+  s_kml_overlay *kml_overlay;          // KML overlay parameters
 } convert_config;
 
 meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg);
@@ -241,12 +253,11 @@ int asf_convert(int createflag, char *configFileName);
 int asf_convert_ext(int createflag, char *configFileName, int saveDEM);
 int call_asf_convert(char *configFile); // FIXME: Change the name ... Now calls asf_mapready
 
+int isInSAR(const char *infile);
 int isPolSARpro(const char * infile);
-int kml_overlay(char *inFile, char *outFile, char *demFile, 
-		int terrain_correct, int refine_geolocation, int zip);
-int kml_overlay_ext(char *inFile, char *outFile, char *demFile, 
-		    int terrain_correct, int refine_geolocation, 
-		    int reduction, int transparency, char *colormap, 
-		    char *rgb, char *polsarpro, int zip);
+int kml_overlay(char *inFile, char *outFile, int zip);
+int kml_overlay_ext(char *inFile, char *outFile, int reduction, 
+		    int transparency, char *colormap, char *rgb, 
+		    char *polsarpro, char *band, int zip);
 
 #endif

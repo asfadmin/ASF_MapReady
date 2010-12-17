@@ -218,6 +218,13 @@ int init_convert_config(char *configFile)
           "# switched on will generate a [Mosaic] section where you can define further\n"
           "# parameters.\n\n");
   fprintf(fConfig, "mosaic = 0\n\n");
+  // overlay flag
+  fprintf(fConfig, "# The overlay flag indicates whether the data needs to be run through\n"
+          "# 'asf_kml_overlay' (1 for running it, 0 for leaving out the export step).\n");
+  fprintf(fConfig, "# Running asf_convert with the -create option and the overlay flag\n"
+          "# switched on will generate a [KML overlay] section where you can define further\n"
+          "# parameters.\n\n");
+  fprintf(fConfig, "overlay = 0\n\n");
   // default values file
   fprintf(fConfig, "# The default values file is used to define the user's preferred parameter\n"
           "# settings. In most cases, you will work on a study where your area of interest is\n"
@@ -298,6 +305,7 @@ void free_convert_config(convert_config *cfg)
 	    FREE(cfg->import->coherence);
 	    FREE(cfg->import->slave_metadata);
 	    FREE(cfg->import->baseline);
+	    FREE(cfg->import->uavsar);
             FREE(cfg->import);
         }
         if (cfg->external) {
@@ -451,6 +459,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->import->slave_metadata, "");
   cfg->import->baseline = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->import->baseline, "");
+  cfg->import->uavsar = (char *)MALLOC(sizeof(char)*10);
+  strcpy(cfg->import->uavsar, "");
 
   cfg->external->cmd = (char *)MALLOC(sizeof(char)*1024);
 
