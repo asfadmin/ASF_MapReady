@@ -6,6 +6,10 @@
 #include "asf_raster.h"
 #include "envi.h"
 
+#define SWAP(a,b) { register float t=(a); (a)=(b); (b)=t; }
+#define EPSILON 1.E-15
+#define INIT_MINMAX 1.E+30 
+
 /* Calculate minimum, maximum, mean and standard deviation for a floating point
    image. A mask value can be defined that is excluded from this calculation.
    If no mask value is supposed to be used, pass the mask value as NAN. */
@@ -459,4 +463,155 @@ void calc_minmax_polsarpro(const char *inFile, double *min, double *max)
   meta_free(meta);
   FREE(envi);
   FREE(enviName);
+}
+
+// Coming from "Numerical recipes in C" - Eric Pottier's implementation
+static float median_value(float *data, long n)
+{
+  int low = 0;
+  int high = n - 1;
+  int median = (low + high) / 2;
+  int middle, ll, hh;
+  
+  for (;;) {
+    if (high <= low)
+      return data[median];
+    if (high == low + 1) {
+      if (data[low] > data[high])
+	SWAP(data[low], data[high]);
+      return data[median];
+    }
+  
+    middle = (low + high) / 2;
+    if (data[middle] > data[high])
+      SWAP(data[middle], data[high]);
+    if (data[low] > data[high])
+      SWAP(data[low], data[high]);
+    if (data[middle] > data[low])
+      SWAP(data[middle], data[low]);
+
+    SWAP(data[middle], data[low+1]);
+
+    ll = low + 1;
+    hh = high;
+    for (;;) {
+      do ll++; while (data[low] > data[ll]);
+      do hh--; while (data[hh] > data[low]);
+      if (hh < ll)
+	break;
+      SWAP(data[ll], data[hh]);
+    }
+
+    SWAP(data[low], data[hh]);
+
+    if (hh <= median) 
+      low = ll;
+    if (hh >= median)
+      high = hh - 1;
+  }
+}
+
+void calc_minmax_median(const char *inFile, char *band, double mask, 
+			double *min, double *max)
+{
+  long long ii, jj;
+  float logeps = 10.0 * log10(EPSILON);
+  float median, median0;
+  
+  meta_parameters *meta = meta_read(inFile);
+  int band_number =
+    (!band || strlen(band) == 0 || strcmp(band, "???") == 0) ? 0 :
+    get_band_number(meta->general->bands, meta->general->band_count, band);
+  long sample_count = meta->general->sample_count;
+  long line_count = meta->general->line_count;
+  long pixel_count = sample_count*line_count;
+  long offset = line_count * band_number;
+  float *data_line = MALLOC(sizeof(float) * sample_count);
+  float *data = MALLOC(sizeof(float) * pixel_count);
+  float *data2 = MALLOC(sizeof(float) * pixel_count);
+			    
+  // Culling invalid pixels
+  FILE *fp = FOPEN(inFile, "rb");
+  long valid_pixel_count = 0;
+  asfPrintStatus("\nCalculating min and max using median...\n");
+  for (ii=0; ii<line_count; ++ii) {
+    get_float_line(fp, meta, ii + offset, data_line);
+    asfPercentMeter(((double)ii/(double)line_count));
+    for (jj=0; jj<sample_count; ++jj) {
+      if (!FLOAT_EQUIVALENT(data_line[jj], -9999.99) ||
+	  !FLOAT_EQUIVALENT(data_line[jj], logeps)) {
+	data[valid_pixel_count] = data_line[jj];
+	valid_pixel_count++;
+      }
+    }
+  }
+  asfPercentMeter(1.0);
+  FCLOSE(fp);
+  FREE(data_line);
+  
+  // Determine initial min and max
+  *min = INIT_MINMAX;
+  *max = -INIT_MINMAX;
+  float minmin = INIT_MINMAX;
+  float maxmax = -INIT_MINMAX;
+  for (ii=0; ii<valid_pixel_count; ++ii) {
+    data2[ii] = data[ii];
+    if (data[ii] < minmin)
+      minmin = data[ii];
+    if (data[ii] > maxmax)
+      maxmax = data[ii];
+  }
+
+  median0 = median_value(data, valid_pixel_count);
+
+  // Determine minimum
+  median = median0;
+  *min = median0;
+  for (ii=0; ii<3; ii++) {
+    pixel_count = -1;
+    for (jj=0; jj<valid_pixel_count; ++jj)
+      if (median0 == minmin) {
+	if (data[jj] <= median) {
+	  pixel_count++;
+	  data2[pixel_count] = data[jj];
+	}
+      }
+      else {
+	if (data[jj] < median) {
+	  pixel_count++;
+	  data2[pixel_count] = data[jj];
+	}
+      }
+    median = median_value(data2, pixel_count);
+    if (median == minmin)
+      median = *min;
+    *min = median;
+  }
+
+  // Determine maximum
+  median = median0;
+  *max = median0;
+  for (ii=0; ii<3; ii++) {
+    pixel_count = -1;
+    for (jj=0; jj<valid_pixel_count; ++jj)
+      if (median0 == maxmax) {
+	if (data[jj] >= median) {
+	  pixel_count++;
+	  data2[pixel_count] = data[jj];
+	}
+      }
+      else {
+	if (data[jj] > median) {
+	  pixel_count++;
+	  data2[pixel_count] = data[jj];
+	}
+      }
+    median = median_value(data2, pixel_count);
+    if (median == maxmax)
+      median = *max;
+    *max = median;
+  }
+
+  FREE(data);
+  FREE(data2);
 }
