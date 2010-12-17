@@ -718,49 +718,48 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->useconst, read_para(fConfig, line, "use_constraints"));
       if (strncmp(test, "copyright", 9)==0 &&
 	  strlen(read_str(line, "copyright")) > 1) {
-	fgdc->copyright = (char *) MALLOC(sizeof(char)*50);
+	fgdc->copyright = (char *) MALLOC(sizeof(char)*100);
         strcpy(fgdc->copyright, read_str(line, "copyright"));
       }
       if (strncmp(test, "contact", 7)==0) {
-	fgdc->ptcontac = (contactinfo *) MALLOC(sizeof(contactinfo));
-        strcpy(fgdc->ptcontac->cntper, read_str(line, "contact"));
+        strcpy(fgdc->ptcontac.cntper, read_str(line, "contact"));
       }
       if (strncmp(test, "organization", 12)==0)
-	strcpy(fgdc->ptcontac->cntorg, read_str(line, "organization"));
+	strcpy(fgdc->ptcontac.cntorg, read_str(line, "organization"));
       if (strncmp(test, "position", 8)==0 &&
 	  strlen(read_str(line, "position")) > 0) {
-	fgdc->ptcontac->cntpos = (char *) MALLOC(sizeof(char)*255);
-        strcpy(fgdc->ptcontac->cntpos, read_str(line, "position"));
+	fgdc->ptcontac.cntpos = (char *) MALLOC(sizeof(char)*255);
+        strcpy(fgdc->ptcontac.cntpos, read_str(line, "position"));
       }
       if (strncmp(test, "address_type", 12)==0)
-        strcpy(fgdc->ptcontac->addrtype, read_str(line, "address_type"));
+        strcpy(fgdc->ptcontac.addrtype, read_str(line, "address_type"));
       if (strncmp(test, "address_line", 12)==0)
-        strcpy(fgdc->ptcontac->address, read_str(line, "address_line"));
+        strcpy(fgdc->ptcontac.address, read_str(line, "address_line"));
       if (strncmp(test, "city", 4)==0)
-        strcpy(fgdc->ptcontac->city, read_str(line, "city"));
+        strcpy(fgdc->ptcontac.city, read_str(line, "city"));
       if (strncmp(test, "state", 5)==0)
-        strcpy(fgdc->ptcontac->state, read_str(line, "state"));
+        strcpy(fgdc->ptcontac.state, read_str(line, "state"));
       if (strncmp(test, "postal", 6)==0)
-        strcpy(fgdc->ptcontac->postal, read_str(line, "postal"));
+        strcpy(fgdc->ptcontac.postal, read_str(line, "postal"));
       if (strncmp(test, "country", 7)==0 &&
 	  strlen(read_str(line, "country")) > 0) {
-	fgdc->ptcontac->country = (char *) MALLOC(sizeof(char)*255);
-        strcpy(fgdc->ptcontac->country, read_str(line, "country"));
+	fgdc->ptcontac.country = (char *) MALLOC(sizeof(char)*255);
+        strcpy(fgdc->ptcontac.country, read_str(line, "country"));
       }
       if (strncmp(test, "phone", 5)==0 &&
 	  strlen(read_str(line, "phone")) > 0) {
-	fgdc->ptcontac->cntvoice = (char *) MALLOC(sizeof(char)*100);
-        strcpy(fgdc->ptcontac->cntvoice, read_str(line, "phone"));
+	fgdc->ptcontac.cntvoice = (char *) MALLOC(sizeof(char)*100);
+        strcpy(fgdc->ptcontac.cntvoice, read_str(line, "phone"));
       }
       if (strncmp(test, "fax", 3)==0 &&
 	  strlen(read_str(line, "fax")) > 0) {
-	fgdc->ptcontac->cntfax = (char *) MALLOC(sizeof(char)*100);
-        strcpy(fgdc->ptcontac->cntfax, read_str(line, "fax"));
+	fgdc->ptcontac.cntfax = (char *) MALLOC(sizeof(char)*100);
+        strcpy(fgdc->ptcontac.cntfax, read_str(line, "fax"));
       }
       if (strncmp(test, "email", 5)==0 &&
 	  strlen(read_str(line, "email")) > 0) {
-	fgdc->ptcontac->cntemail = (char *) MALLOC(sizeof(char)*100);
-        strcpy(fgdc->ptcontac->cntemail, read_str(line, "email"));
+	fgdc->ptcontac.cntemail = (char *) MALLOC(sizeof(char)*100);
+        strcpy(fgdc->ptcontac.cntemail, read_str(line, "email"));
       }
       if (strncmp(test, "browse_name", 11)==0 &&
 	  strlen(read_str(line, "browse_name")) > 1) {
@@ -789,7 +788,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
       if (strncmp(test, "security_handling", 17)==0 &&
 	  strlen(read_str(line, "security_handling")) > 1)
         strcpy(fgdc->security->sechandl, read_str(line, "security_handling"));
-      FREE(test);
+      //FREE(test);
     }
 
     if (strncmp(line, "[Citation]", 10)==0) 
@@ -804,7 +803,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->citation.title, read_para(fConfig, line, "title"));
       if (strncmp(test, "online_link", 11)==0)
         strcpy(fgdc->citation.onlink, read_str(line, "online_link"));
-      FREE(test);
+      //FREE(test);
     }
 
     if (strncmp(line, "[Processing Level]", 18)==0) 
@@ -821,7 +820,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->prolevau.title, read_str(line, "title"));
       if (strncmp(test, "data_form", 9)==0)
         strcpy(fgdc->prolevau.geoform, read_str(line, "data_form"));
-      FREE(test);
+      //FREE(test);
     }
 
     if (strncmp(line, "[Keywords]", 10)==0) 
@@ -831,9 +830,9 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
       if (strncmp(test, "theme_count", 11) == 0) {
 	theme_count = read_int(line, "theme_count");
 	fgdc->keywords.theme_count  = theme_count;
+	fgdc->keywords.theme = 
+	  (keyinfo *) MALLOC(sizeof(keyinfo)*theme_count);
 	for (ii=0; ii<theme_count; ii++) {
-	  fgdc->keywords.theme = 
-	    (keyinfo *) MALLOC(sizeof(keyinfo)*theme_count);
 	  fgets(line, 255, fConfig); 
 	  strcpy(fgdc->keywords.theme[ii].thesaurus, 
 		 read_str(line, "theme_thesaurus"));
@@ -874,7 +873,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
 	  }
 	}
       }
-      FREE(test);
+      //FREE(test);
     }
 
     if (strncmp(line, "[Spatial Reference Information]", 31)==0) 
@@ -887,7 +886,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->ptpos, read_str(line, "point_position"));
       if (strncmp(test, "storage_order", 13)==0)
         strcpy(fgdc->storord, read_str(line, "storage_order"));
-      FREE(test);
+      //FREE(test);
     }
     
     if (strncmp(line, "[Data Quality Information]", 26)==0) 
@@ -913,7 +912,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
 	fgdc->vertaccr = (char *) MALLOC(sizeof(char)*1000);
         strcpy(fgdc->vertaccr, read_para(fConfig, line, "vertical_accuracy"));
       }
-      FREE(test);
+      //FREE(test);
     }
     
     if (strncmp(line, "[Lineage]", 9)==0) 
@@ -1010,7 +1009,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
 		 read_str(line, "email"));
 	}
       }
-      FREE(test);
+      //FREE(test);
     }
     
     if (strncmp(line, "[Spatial Data Organization Information]", 39)==0) 
@@ -1021,7 +1020,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->direct, read_str(line, "spatial_reference"));
       if (strncmp(test, "raster_type", 11)==0)
         strcpy(fgdc->rasttype, read_str(line, "raster_type"));
-      FREE(test);
+      //FREE(test);
     }
     
     if (strncmp(line, "[Spatial Reference Information]", 31)==0) 
@@ -1034,7 +1033,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->ptpos, read_str(line, "point_position"));
       if (strncmp(test, "storage_order", 13)==0)
         strcpy(fgdc->storord, read_str(line, "storage_order"));
-      FREE(test);
+      //FREE(test);
     }
     
     if (strncmp(line, "[Distribution Information]", 26)==0) 
@@ -1084,7 +1083,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->networkr, read_str(line, "network_path"));
       if (strncmp(test, "fees", 4)==0)
         strcpy(fgdc->fees, read_str(line, "fees"));
-      FREE(test);
+      //FREE(test);
     }
     
     if (strncmp(line, "[Metadata Reference Information]", 32)==0) 
@@ -1134,7 +1133,7 @@ void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
         strcpy(fgdc->metstdv, read_str(line, "standard_version"));
       if (strncmp(test, "profile_name", 12)==0)
         strcpy(fgdc->metprof, read_str(line, "profile_name"));
-      FREE(test);
+      //FREE(test);
     }
   }
   

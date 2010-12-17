@@ -104,7 +104,7 @@ typedef struct
   char accconst[5000]; // Access Constraints
   char useconst[5000]; // Use Constraints
   char *copyright;     // Copyright Holder (user defined)
-  contactinfo *ptcontac; // Point of Contact (optional)
+  contactinfo ptcontac; // Point of Contact (optional)
   browseinfo *browse;  // Browse image (optional)
   char *datacred;      // Data credit
   securityinfo *security; // Security information (optional)

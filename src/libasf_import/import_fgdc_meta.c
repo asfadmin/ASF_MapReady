@@ -10,7 +10,6 @@
 
 fgdc_meta *fgdc_meta_init(void)
 {
-  int ii, kk;
   fgdc_meta *fgdc = (fgdc_meta *) CALLOC(1, sizeof(fgdc_meta));
  
   // Identification Information
@@ -47,7 +46,6 @@ fgdc_meta *fgdc_meta_init(void)
   strcpy(fgdc->accconst, "Unknown");
   strcpy(fgdc->useconst, "Unknown");
   fgdc->copyright = NULL;
-  fgdc->ptcontac = NULL;
   fgdc->browse = NULL;
   fgdc->datacred = NULL;
   fgdc->security = NULL;
@@ -245,8 +243,25 @@ meta_projection *gdal2meta_projection(GDALDatasetH hGdal,
 	  int north;
 	  proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
 	  proj->param.utm.zone = OSRGetUTMZone(hSRS, &north);
-	  if (!north)
-	    proj->param.utm.zone *= -1;
+	  if (north)
+	    proj->hem = 'N';
+	  else
+	    proj->hem = 'S';
+	  proj->param.utm.scale_factor = 
+	    OSRGetProjParm(hSRS, "scale_factor", MAGIC_UNSET_DOUBLE, 
+			   &ogr_error);
+	  proj->param.utm.lat0 = 
+	    OSRGetProjParm(hSRS, "latitude_of_origin", MAGIC_UNSET_DOUBLE, 
+			   &ogr_error);
+	  proj->param.utm.lon0 = 
+	    OSRGetProjParm(hSRS, "central_meridian", MAGIC_UNSET_DOUBLE, 
+			   &ogr_error);
+	  proj->param.utm.false_easting = 
+	    OSRGetProjParm(hSRS, "false_easting", MAGIC_UNSET_DOUBLE, 
+			   &ogr_error);
+	  proj->param.utm.false_northing = 
+	    OSRGetProjParm(hSRS, "false_northing", MAGIC_UNSET_DOUBLE, 
+			   &ogr_error);	    
 	}
 	FREE(projection);
       }
@@ -515,9 +530,9 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
     sscanf(fgdc->center_time, "%d-%d-%d %d:%d:%d",
 	   &year, &month, &day, &hour, &minute, &second);
     fprintf(fp, "        <sngdate>\n");
-    fprintf(fp, "          <caldate>%04d-%02d-%02d</caldate>\n", 
+    fprintf(fp, "          <caldate>%04d%02d%02d</caldate>\n", 
 	    year, month, day);
-    fprintf(fp, "          <time>%02d:%02d:%02d</time>\n", 
+    fprintf(fp, "          <time>%02d%02d%02d</time>\n", 
 	    hour, minute, second);
     fprintf(fp, "        </sngdate>\n");
   }
@@ -600,36 +615,34 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
   fprintf(fp, "    <useconst>%s</useconst>\n", fgdc->useconst);
   if (fgdc->copyright)
     fprintf(fp, "    <copyright>%s</copyright>\n", fgdc->copyright);
-  if (fgdc->ptcontac) {
-    fprintf(fp, "    <ptcontac>\n");
-    fprintf(fp, "      <cntinfo>\n");
-    fprintf(fp, "        <cntperp>\n");
-    fprintf(fp, "          <cntper>%s</cntper>\n", fgdc->ptcontac->cntper);
-    fprintf(fp, "          <cntorg>%s</cntorg>\n", fgdc->ptcontac->cntorg);
-    fprintf(fp, "        </cntperp>\n");
-    if (fgdc->ptcontac->cntpos && strlen(fgdc->ptcontac->cntpos) > 1)
-      fprintf(fp, "        <cntpos>%s</cntpos>\n", fgdc->ptcontac->cntpos);
-    fprintf(fp, "        <cntaddr>\n");
-    fprintf(fp, "          <addrtype>%s</addrtype>\n", 
-	    fgdc->ptcontac->addrtype);
-    fprintf(fp, "          <address>%s</address>\n", fgdc->ptcontac->address);
-    fprintf(fp, "          <city>%s</city>\n", fgdc->ptcontac->city);
-    fprintf(fp, "          <state>%s</state>\n", fgdc->ptcontac->state);
-    fprintf(fp, "          <postal>%s</postal>\n", fgdc->ptcontac->postal);
-    if (fgdc->ptcontac->country && strlen(fgdc->ptcontac->country) > 1)
-      fprintf(fp, "          <country>%s</country>\n", fgdc->ptcontac->country);
-    fprintf(fp, "        </cntaddr>\n");
-    if (fgdc->ptcontac->cntvoice && strlen(fgdc->ptcontac->cntvoice) > 1)
-      fprintf(fp, "        <cntvoice>%s</cntvoice>\n", 
-	      fgdc->ptcontac->cntvoice);
-    if (fgdc->ptcontac->cntfax && strlen(fgdc->ptcontac->cntfax) > 1)
-      fprintf(fp, "        <cntfax>%s</cntfax>\n", fgdc->ptcontac->cntfax);
-    if (fgdc->ptcontac->cntemail && strlen(fgdc->ptcontac->cntemail) > 1)
-      fprintf(fp, "        <cntemail>%s</cntemail>\n", 
-	      fgdc->ptcontac->cntemail);
-    fprintf(fp, "      </cntinfo>\n");
-    fprintf(fp, "    </ptcontac>\n");
-  }
+  fprintf(fp, "    <ptcontac>\n");
+  fprintf(fp, "      <cntinfo>\n");
+  fprintf(fp, "        <cntperp>\n");
+  fprintf(fp, "          <cntper>%s</cntper>\n", fgdc->ptcontac.cntper);
+  fprintf(fp, "          <cntorg>%s</cntorg>\n", fgdc->ptcontac.cntorg);
+  fprintf(fp, "        </cntperp>\n");
+  if (fgdc->ptcontac.cntpos && strlen(fgdc->ptcontac.cntpos) > 1)
+    fprintf(fp, "        <cntpos>%s</cntpos>\n", fgdc->ptcontac.cntpos);
+  fprintf(fp, "        <cntaddr>\n");
+  fprintf(fp, "          <addrtype>%s</addrtype>\n", 
+	  fgdc->ptcontac.addrtype);
+  fprintf(fp, "          <address>%s</address>\n", fgdc->ptcontac.address);
+  fprintf(fp, "          <city>%s</city>\n", fgdc->ptcontac.city);
+  fprintf(fp, "          <state>%s</state>\n", fgdc->ptcontac.state);
+  fprintf(fp, "          <postal>%s</postal>\n", fgdc->ptcontac.postal);
+  if (fgdc->ptcontac.country && strlen(fgdc->ptcontac.country) > 1)
+    fprintf(fp, "          <country>%s</country>\n", fgdc->ptcontac.country);
+  fprintf(fp, "        </cntaddr>\n");
+  if (fgdc->ptcontac.cntvoice && strlen(fgdc->ptcontac.cntvoice) > 1)
+    fprintf(fp, "        <cntvoice>%s</cntvoice>\n", 
+	    fgdc->ptcontac.cntvoice);
+  if (fgdc->ptcontac.cntfax && strlen(fgdc->ptcontac.cntfax) > 1)
+    fprintf(fp, "        <cntfax>%s</cntfax>\n", fgdc->ptcontac.cntfax);
+  if (fgdc->ptcontac.cntemail && strlen(fgdc->ptcontac.cntemail) > 1)
+    fprintf(fp, "        <cntemail>%s</cntemail>\n", 
+	    fgdc->ptcontac.cntemail);
+  fprintf(fp, "      </cntinfo>\n");
+  fprintf(fp, "    </ptcontac>\n");
   if (fgdc->browse) {
     fprintf(fp, "    <browse>\n");
     fprintf(fp, "      <browsen>%s</browsen>\n", fgdc->browse->browsen);
@@ -801,10 +814,22 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	fprintf(fp, "        <gridsys>\n");
 	fprintf(fp, "          <gridsysn>Universal Transverse Mercator"
 		"</gridsysn>\n");
-	fprintf(fp, "            <utm>\n");
-	fprintf(fp, "              <utmzone>%d</utmzone>\n", 
+	fprintf(fp, "          <utm>\n");
+	fprintf(fp, "            <utmzone>%d</utmzone>\n", 
 		proj->param.utm.zone);
-	fprintf(fp, "            </utm>\n");
+	fprintf(fp, "            <transmer>\n");
+	fprintf(fp, "              <sfctrmer>%.4lf</sfctrmer>\n",
+		proj->param.utm.scale_factor);
+	fprintf(fp, "              <longcm>%.4lf</longcm>\n",
+		proj->param.utm.lon0);
+	fprintf(fp, "              <latprjo>%.4lf</latprjo>\n",
+		proj->param.utm.lat0);
+	fprintf(fp, "              <feast>%.3lf</feast>\n",
+		proj->param.utm.false_easting);
+	fprintf(fp, "              <fnorth>%.3lf</fnorth>\n",
+		proj->param.utm.false_northing);
+	fprintf(fp, "            </transmer>\n");
+	fprintf(fp, "          </utm>\n");
 	fprintf(fp, "        </gridsys>\n");
       }
       else {
