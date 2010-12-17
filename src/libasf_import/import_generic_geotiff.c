@@ -17,8 +17,6 @@
 
 #include "float_image.h"
 #include "asf_tiff.h"
-#include "geo_tiffp.h"
-#include "geo_keyp.h"
 
 #include <gsl/gsl_math.h>
 
@@ -32,6 +30,9 @@
 #include "asf_nan.h"
 #include "asf_import.h"
 #include "asf_raster.h"
+#include "asf_tiff.h"
+#include "geo_tiffp.h"
+#include "geo_keyp.h"
 
 #include "projected_image_import.h"
 #include "tiff_to_float_image.h"
@@ -71,6 +72,11 @@
 #undef USHORT_MAX
 #endif
 #define USHORT_MAX  65535
+
+#ifdef MAX_RGB
+#undef MAX_RGB
+#endif
+#define MAX_RGB  255
 
 // Do not change the BAND_ID_STRING.  It will break ingest of legacy TIFFs exported with this
 // string in their citation strings.  If you are changing the citation string to have some _other_
@@ -272,8 +278,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   // Set up convenience pointers
   meta_general *mg = meta_out->general;
   meta_projection *mp = meta_out->projection;
-  meta_sar *msar = meta_out->sar;
   meta_location *ml = meta_out->location;
+  // FIXME:
+  // The following function works perfectly fine when called from asf_view.
+  // However, over here it resulted in a segmentation fault. Did not get the
+  // time to find a solution before the release. - RG
+  //meta_out->insar = populate_insar_metadata(inFileName);
 
   // Init
   mp->spheroid = UNKNOWN_SPHEROID; // meta_projection_init() 'should' initialize this, but doesn't
@@ -915,7 +925,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               datum = HUGHES_DATUM;
             }
 	    else if (read_count >=2 && 
-		     FLOAT_COMPARE_TOLERANCE(semi_minor, semi_major, FLOAT_TOLERANCE)) {
+		     FLOAT_COMPARE_TOLERANCE(semi_minor, semi_major, 
+					     FLOAT_TOLERANCE)) {
 	      mp->spheroid = SPHERE;
 	      mp->re_major = semi_major;
 	      mp->re_minor = semi_minor;
@@ -1274,23 +1285,23 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             check_projection_parameters(mp);
 	    break;
 	  case CT_Sinusoidal:
-            read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
+            read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, 
+				     &lonOrigin, 0, 1);
             if (read_count != 1) {
-              asfPrintWarning(
-                      "Unable to determine center longitude from GeoTIFF file\n"
-                  "using ProjCenterLongGeoKey\n");
+              asfPrintWarning("Unable to determine center longitude from "
+			      "GeoTIFF file\nusing ProjCenterLongGeoKey\n");
             }
-            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, 
+				     &false_easting, 0, 1);
             if (read_count != 1) {
-              asfPrintWarning(
-                      "Unable to determine false easting from GeoTIFF file\n"
-                  "using ProjFalseEastingGeoKey\n");
+              asfPrintWarning("Unable to determine false easting from GeoTIFF "
+			      "file\nusing ProjFalseEastingGeoKey\n");
             }
-            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, 
+				     &false_northing, 0, 1);
             if (read_count != 1) {
-              asfPrintWarning(
-                      "Unable to determine false northing from GeoTIFF file\n"
-                  "using ProjFalseNorthingGeoKey\n");
+              asfPrintWarning("Unable to determine false northing from GeoTIFF"
+			      " file\nusing ProjFalseNorthingGeoKey\n");
             }
 	    mp->type = SINUSOIDAL;
 	    mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
@@ -1891,24 +1902,24 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     }
     int bn;
     meta_out->stats = meta_statistics_init(num_bands);
-    meta_statistics *ms = meta_out->stats;
-    if (ms) {
+    meta_statistics *mst = meta_out->stats;
+    if (mst) {
       int ii;
       for (ii=0, bn=0; ii<num_bands; ii++) {
         if (!ignore[ii]) {
           if (band_names && band_names[bn] != NULL) {
-            strcpy(ms->band_stats[bn].band_id, band_names[bn]);
+            strcpy(mst->band_stats[bn].band_id, band_names[bn]);
           }
           else {
-            sprintf(ms->band_stats[bn].band_id, "%02d", bn + 1);
+            sprintf(mst->band_stats[bn].band_id, "%02d", bn + 1);
           }
-          ms->band_stats[bn].min = stats->band_stats[ii].min;
-          ms->band_stats[bn].max = stats->band_stats[ii].max;
-          ms->band_stats[bn].mean = stats->band_stats[ii].mean;
-          ms->band_stats[bn].rmse = meta_is_valid_double(stats->band_stats[ii].rmse) ?
+          mst->band_stats[bn].min = stats->band_stats[ii].min;
+          mst->band_stats[bn].max = stats->band_stats[ii].max;
+          mst->band_stats[bn].mean = stats->band_stats[ii].mean;
+          mst->band_stats[bn].rmse = meta_is_valid_double(stats->band_stats[ii].rmse) ?
               stats->band_stats[ii].rmse : stats->band_stats[ii].std_deviation;
-          ms->band_stats[bn].std_deviation = stats->band_stats[ii].std_deviation;
-          ms->band_stats[bn].mask = mask_value;
+          mst->band_stats[bn].std_deviation = stats->band_stats[ii].std_deviation;
+          mst->band_stats[bn].mask = mask_value;
           bn++;
         }
       }
@@ -1936,9 +1947,6 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     mg->center_longitude = (width / 2.0 - raster_tp_x) * mp->perX + tp_lon;
     mp->hem = (mg->center_latitude > 0.0) ? 'N' : 'S';
   }
-
-  if (msar)
-      msar->image_type = 'P'; // Map Projected
 
   // Set up the location block
   if (is_usgs_seamless_geotiff) {
@@ -2173,16 +2181,15 @@ void check_projection_parameters(meta_projection *mp)
             "(-90 deg to 90 deg)\n", pp->lamaz.center_lat);
       }
       break;
-
     case SINUSOIDAL:
       if (!meta_is_valid_double(pp->sin.longitude_center) ||
-           pp->sin.longitude_center < -180 || 
+	  pp->sin.longitude_center < -180 || 
 	  pp->sin.longitude_center > 180) {
-        asfPrintError("Longitude center '%.4f' outside the defined range "
-            "(-180 deg to 180 deg)\n", pp->lamaz.center_lon);
+	asfPrintError("Longitude center '%.4f' outside the defined range "
+		      "(-180 deg to 180 deg)\n", pp->lamaz.center_lon);
       }
-      break;
-
+      break;      
+      
     default:
       break;
   }
@@ -2762,7 +2769,7 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
     {
       asfPrintStatus("\nWriting binary image...\n");
     }
-    FILE *fp = FOPEN(outName, band > 0 ? "ab" : "wb");
+    FILE *fp=(FILE*)FOPEN(outName, band > 0 ? "ab" : "wb");
     if (fp == NULL) return 1;
     if (!ignore[band]) {
       for (row=0; row < omd->general->line_count; row++) {
@@ -2826,8 +2833,7 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
                   ((float*)buf)[col] = (float)(((uint32*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_INT:
-                  //((float*)buf)[col] = (float)(((long*)tif_buf)[col]);
-                  ((float*)buf)[col] = (float)(((int32*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((long*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_IEEEFP:
                   ((float*)buf)[col] = (float)(((float*)tif_buf)[col]);
@@ -3089,7 +3095,8 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
     }
   }
 
-  if (sbuf) _TIFFfree(sbuf);
+  if (sbuf)
+    _TIFFfree(sbuf);
 }
 
 void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, int band)
