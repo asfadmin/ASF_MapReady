@@ -1,6 +1,10 @@
 MapReady Version History
 
-MapReady 2.3.12-test (released 2010 October 11)
+MapReady 2.4.0-alpha (released 2010 December 17)
+New Functionality
+- Support for new formats, including NetCDF and others.
+
+MapReady 2.3.17 (released 2010 December 17)
 New Functionality
 - Generation of KML overlays
 - Support for the Equirectangular and Mercator projections.
