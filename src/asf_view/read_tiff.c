@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "asf_view.h"
+#include "asf_tiff.h"
 #include "asf_nan.h"
 #include <geokeys.h>
 #include <geo_tiffp.h>
@@ -43,12 +44,6 @@ int copy_scanline_to_float_buff(float *dest, tdata_t *tif_buf,
                                 tiff_data_config_t *data_config, int empty);
 void add_empties(const char *tiff_file, char *band_str, short *num_bands,
                  char *meta_bands, int meta_band_count, int *empty);
-static void populate_insar_metadata(meta_parameters *meta, const char *filename);
-static void get_string_by_xpath(xmlDoc *doc, const char *xpath_expr, char *receiver);
-static double get_double_by_xpath(xmlDoc *doc, const char *xpath_expr);
-static xmlNode* get_node_by_xpath(xmlDoc *doc, const char *xpath_expr);
-static xmlDocPtr get_insar_xml_tree_from_string(const char *insar_xml);
-static int get_insar_xml_from_tiff_tag(const char *tiff_name, xmlDocPtr *doc);
 
 typedef struct {
     TIFF  *tiff;              // Data file pointer
@@ -220,7 +215,7 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client, 
             meta->general->band_count = num_bands;
         }
 
-        populate_insar_metadata(meta, filename);
+        meta->insar = populate_insar_metadata(meta_name);
 
     }
     else {
@@ -1274,39 +1269,6 @@ void read_tiff_colormap(const char *tiff_file, meta_colormap *mc)
   FREE(colors);
 }
 
-static void
-get_string_by_xpath(xmlDoc *doc, const char *xpath_expr, char *receiver) {
-	strcpy(receiver, xmlXPathCastNodeToString(get_node_by_xpath(doc, xpath_expr)));
-}
-
-static double
-get_double_by_xpath(xmlDoc *doc, const char *xpath_expr) {
-	return xmlXPathCastNodeToNumber(get_node_by_xpath(doc, xpath_expr));
-}
-
-static xmlNode*
-get_node_by_xpath(xmlDoc *doc, const char *xpath_expr) {
-    xmlXPathContextPtr xpathCtx;
-    xmlXPathObjectPtr xpathObj;
-
-	/* Create xpath evaluation context */
-	xpathCtx = xmlXPathNewContext(doc);
-	if (xpathCtx == NULL) {
-		asfPrintStatus("Error: unable to create new XPath context\n");
-		return NULL;
-	}
-
-	/* Evaluate xpath expression */
-	xpathObj = xmlXPathEvalExpression(xpath_expr, xpathCtx);
-	if (xpathObj == NULL) {
-		asfPrintStatus("Error: unable to evaluate xpath expression [%s]", xpath_expr);
-		xmlXPathFreeContext(xpathCtx);
-		return NULL;
-	}
-
-	return xpathObj->nodesetval->nodeTab[0]->children;
-}
-
 static xmlXPathObjectPtr
 getnodeset(xmlDocPtr doc, xmlChar *xpath){
 	
@@ -1332,7 +1294,7 @@ getnodeset(xmlDocPtr doc, xmlChar *xpath){
   return result;
 }
 
-static int get_meta_xml_item(xmlDocPtr doc, char *parameter)
+static int get_meta_xml_item(xmlDocPtr doc, xmlChar *parameter)
 {
   int ii, found=-1;
   xmlNodeSetPtr keyNode;
@@ -1344,7 +1306,7 @@ static int get_meta_xml_item(xmlDocPtr doc, char *parameter)
     for (ii=0; ii<keyNode->nodeNr; ii++) {
       keyword = 
 	xmlNodeListGetString(doc, keyNode->nodeTab[ii]->xmlChildrenNode, 1);
-      if (strcmp_case(keyword, parameter) == 0)
+      if (strcmp_case((char *)keyword, (char *)parameter) == 0)
 	found = ii;
       xmlFree(keyword);
     }
@@ -1352,7 +1314,7 @@ static int get_meta_xml_item(xmlDocPtr doc, char *parameter)
   return found;
 }
 
-static xmlChar *get_meta_xml_units(xmlDocPtr doc, char *parameter)
+static xmlChar *get_meta_xml_units(xmlDocPtr doc, xmlChar *parameter)
 {
   xmlNodeSetPtr unitsNode;
   xmlXPathObjectPtr units;
@@ -1366,7 +1328,7 @@ static xmlChar *get_meta_xml_units(xmlDocPtr doc, char *parameter)
   return NULL;
 }
 
-static double get_meta_xml_double(xmlDocPtr doc, char *parameter)
+static double get_meta_xml_double(xmlDocPtr doc, xmlChar *parameter)
 {
   xmlNodeSetPtr valNode;
   xmlXPathObjectPtr val;
@@ -1383,7 +1345,7 @@ static double get_meta_xml_double(xmlDocPtr doc, char *parameter)
   return MAGIC_UNSET_DOUBLE;
 }
 
-static char *get_meta_xml_string(xmlDocPtr doc, char *parameter)
+static char *get_meta_xml_string(xmlDocPtr doc, xmlChar *parameter)
 {
   xmlNodeSetPtr valNode;
   xmlXPathObjectPtr val;
@@ -1392,7 +1354,8 @@ static char *get_meta_xml_string(xmlDocPtr doc, char *parameter)
   if (val && item >= 0) {
     valNode = val->nodesetval;
     return
-      xmlNodeListGetString(doc, valNode->nodeTab[item]->xmlChildrenNode, 1);
+      (char *) xmlNodeListGetString(doc, 
+				    valNode->nodeTab[item]->xmlChildrenNode, 1);
   }
   return MAGIC_UNSET_STRING;
 }
@@ -1423,7 +1386,7 @@ static int
 get_insar_xml_from_tiff_tag(const char *tiff_name, xmlDocPtr *doc)
 {
     TIFF *tiff = NULL;
-    char *insar_xml = (char *) MALLOC(sizeof(char)*2000);
+    char *insar_xml;
     
     asfPrintStatus("Checking for ASF InSAR metadata from GDAL metadata tag...");
     tiff = XTIFFOpen(tiff_name, "r");
@@ -1448,103 +1411,81 @@ get_insar_xml_from_tiff_tag(const char *tiff_name, xmlDocPtr *doc)
  * postcondition: meta->insar has a reference to a valid InSAR data structure
  *     (could be empty).
  */
-static void
-populate_insar_metadata(meta_parameters *meta, const char *filename)
+meta_insar *populate_insar_metadata(const char *filename)
 {
-    meta_insar *insar = meta_insar_init();
-    LIBXML_TEST_VERSION // Check for version/compilation/libraries
-    xmlDocPtr doc = NULL;
-    
-    if ( FALSE == get_insar_xml_from_tiff_tag(filename, &doc) ) 
-    {
-    	asfPrintStatus("Didn't find an InSAR metadata in embedded TIFF metadata.\n");
-    } else {
-      /*
-        get_string_by_xpath(doc, "/insar/processor", insar->processor);
-        get_string_by_xpath(doc, "/insar/master_image", insar->master_image);
-        get_string_by_xpath(doc, "/insar/master_acquisition_date", insar->master_acquisition_date);
-        get_string_by_xpath(doc, "/insar/slave_image", insar->slave_image);
-        get_string_by_xpath(doc, "/insar/slave_acquisition_date", insar->slave_acquisition_date);
-        insar->baseline_parallel_rate = get_double_by_xpath(doc, "/insar/baseline_parallel_rate");
-        get_string_by_xpath(doc, "/insar/baseline_parallel_rate/@units", insar->baseline_parallel_rate_units);
-        insar->baseline_critical = get_double_by_xpath(doc, "/insar/baseline_critical");
-        get_string_by_xpath(doc, "/insar/baseline_critical/@units", insar->baseline_critical_units);
-        insar->baseline_length = get_double_by_xpath(doc, "/insar/baseline_length");
-        get_string_by_xpath(doc, "/insar/baseline_length/@units", insar->baseline_length_units);
-        insar->baseline_parallel = get_double_by_xpath(doc, "/insar/baseline_parallel");
-        get_string_by_xpath(doc, "/insar/baseline_parallel/@units", insar->baseline_parallel_units);
-        insar->baseline_parallel_rate = get_double_by_xpath(doc, "/insar/baseline_parallel_rate");
-        get_string_by_xpath(doc, "/insar/baseline_parallel_rate/@units", insar->baseline_parallel_rate_units);
-        insar->baseline_perpendicular = get_double_by_xpath(doc, "/insar/baseline_perpendicular");
-        get_string_by_xpath(doc, "/insar/baseline_perpendicular/@units", insar->baseline_perpendicular_units);
-        insar->baseline_perpendicular_rate = get_double_by_xpath(doc, "/insar/baseline_perpendicular_rate");
-        get_string_by_xpath(doc, "/insar/baseline_perpendicular_rate/@units", insar->baseline_perpendicular_rate_units);
-        insar->baseline_temporal = get_double_by_xpath(doc, "/insar/baseline_temporal");
-        get_string_by_xpath(doc, "/insar/baseline_temporal/@units", insar->baseline_temporal_units);
-        insar->center_look_angle = get_double_by_xpath(doc, "/insar/center_look_angle");
-        insar->doppler = get_double_by_xpath(doc, "/insar/doppler");
-        get_string_by_xpath(doc, "/insar/doppler/@units", insar->doppler_units);
-        insar->doppler_rate = get_double_by_xpath(doc, "/insar/doppler_rate");
-        get_string_by_xpath(doc, "/insar/doppler_rate/@units", insar->doppler_rate_units);
-      */
-      strcpy(insar->processor, 
-	     get_meta_xml_string(doc, (xmlChar *)"INSAR_PROCESSOR"));
-      strcpy(insar->master_image, 
-	     get_meta_xml_string(doc, (xmlChar *)"INSAR_MASTER_IMAGE"));
-      strcpy(insar->slave_image, 
-	     get_meta_xml_string(doc, (xmlChar *)"INSAR_SLAVE_IMAGE"));
-      strcpy(insar->master_acquisition_date, 
-	     get_meta_xml_string(doc, 
-				 (xmlChar *)"INSAR_MASTER_ACQUISITION_DATE"));
-      strcpy(insar->slave_acquisition_date, 
-	     get_meta_xml_string(doc, 
-				 (xmlChar *)"INSAR_SLAVE_ACQUISITION_DATE"));
-      insar->center_look_angle = 
-	get_meta_xml_double(doc, (xmlChar *)"INSAR_CENTER_LOOK_ANGLE");
-      strcpy(insar->center_look_angle_units, 
-	     get_meta_xml_units(doc, (xmlChar *)"INSAR_CENTER_LOOK_ANGLE"));
-      insar->doppler = get_meta_xml_double(doc, (xmlChar *)"INSAR_DOPPLER");
-      strcpy(insar->doppler_units, 
-	     get_meta_xml_units(doc, (xmlChar *)"INSAR_DOPPLER"));
-      insar->doppler_rate = 
-	get_meta_xml_double(doc, (xmlChar *)"INSAR_DOPPLER_RATE");
-      strcpy(insar->doppler_rate_units, 
-	     get_meta_xml_units(doc, (xmlChar *)"INSAR_DOPPLER_RATE"));
-      insar->baseline_length = 
-	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_LENGTH");
-      strcpy(insar->baseline_length_units, 
-	     get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_LENGTH"));
-      insar->baseline_parallel = 
-	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL");
-      strcpy(insar->baseline_parallel_units, 
-	     get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL"));
-      insar->baseline_parallel_rate = 
-	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL_RATE");
-      strcpy(insar->baseline_parallel_rate_units, 
-	     get_meta_xml_units(doc, 
-				(xmlChar *)"INSAR_BASELINE_PARALLEL_RATE"));
-      insar->baseline_perpendicular = 
-	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PERPENDICULAR");
-      strcpy(insar->baseline_perpendicular_units, 
-	     get_meta_xml_units(doc, 
-				(xmlChar *)"INSAR_BASELINE_PERPENDICULAR"));
-      insar->baseline_perpendicular_rate = 
-	get_meta_xml_double(doc, 
-			    (xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE");
-      strcpy(insar->baseline_perpendicular_rate_units, 
-	     get_meta_xml_units(doc, 
-				(xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE"));
-      insar->baseline_temporal = 
-	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_TEMPORAL");
-      strcpy(insar->baseline_temporal_units, 
-	     get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_TEMPORAL"));
-      insar->baseline_critical = 
-	get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_CRITICAL");
-      strcpy(insar->baseline_critical_units, 
-	     get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_CRITICAL"));
-      meta->insar = insar;
+  meta_insar *insar = NULL;
+  //LIBXML_TEST_VERSION - Check for version/compilation/libraries
+  xmlDocPtr doc = NULL;
+  
+  if ( FALSE == get_insar_xml_from_tiff_tag(filename, &doc) ) {
+      asfPrintStatus("Didn't find an InSAR metadata in embedded TIFF metadata.\n");
+  } 
+  else {
+    insar = meta_insar_init();
+    strcpy(insar->processor, 
+	   get_meta_xml_string(doc, (xmlChar *)"INSAR_PROCESSOR"));
+    strcpy(insar->master_image, 
+	   get_meta_xml_string(doc, (xmlChar *)"INSAR_MASTER_IMAGE"));
+    strcpy(insar->slave_image, 
+	   get_meta_xml_string(doc, (xmlChar *)"INSAR_SLAVE_IMAGE"));
+    strcpy(insar->master_acquisition_date, 
+	   get_meta_xml_string(doc, 
+			       (xmlChar *)"INSAR_MASTER_ACQUISITION_DATE"));
+    strcpy(insar->slave_acquisition_date, 
+	   get_meta_xml_string(doc, 
+			       (xmlChar *)"INSAR_SLAVE_ACQUISITION_DATE"));
+    insar->center_look_angle = 
+      get_meta_xml_double(doc, (xmlChar *)"INSAR_CENTER_LOOK_ANGLE");
+    strcpy(insar->center_look_angle_units, 
+	   (char *) get_meta_xml_units(doc, 
+				       (xmlChar *)"INSAR_CENTER_LOOK_ANGLE"));
+    insar->doppler = get_meta_xml_double(doc, (xmlChar *)"INSAR_DOPPLER");
+    strcpy(insar->doppler_units, 
+	   (char *) get_meta_xml_units(doc, 
+				       (xmlChar *)"INSAR_DOPPLER"));
+    insar->doppler_rate = 
+      get_meta_xml_double(doc, (xmlChar *)"INSAR_DOPPLER_RATE");
+    strcpy(insar->doppler_rate_units, 
+	   (char *) get_meta_xml_units(doc, (xmlChar *)"INSAR_DOPPLER_RATE"));
+    insar->baseline_length = 
+      get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_LENGTH");
+    strcpy(insar->baseline_length_units, 
+	   (char *) get_meta_xml_units(doc, 
+				       (xmlChar *)"INSAR_BASELINE_LENGTH"));
+    insar->baseline_parallel = 
+      get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL");
+    strcpy(insar->baseline_parallel_units, 
+	   (char *) get_meta_xml_units(doc, 
+				       (xmlChar *)"INSAR_BASELINE_PARALLEL"));
+    insar->baseline_parallel_rate = 
+      get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL_RATE");
+    strcpy(insar->baseline_parallel_rate_units, 
+	   (char *) get_meta_xml_units(doc, 
+			       (xmlChar *)"INSAR_BASELINE_PARALLEL_RATE"));
+    insar->baseline_perpendicular = 
+      get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PERPENDICULAR");
+    strcpy(insar->baseline_perpendicular_units, 
+	   (char *) get_meta_xml_units(doc, 
+			       (xmlChar *)"INSAR_BASELINE_PERPENDICULAR"));
+    insar->baseline_perpendicular_rate = 
+      get_meta_xml_double(doc, 
+			  (xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE");
+    strcpy(insar->baseline_perpendicular_rate_units, 
+	   (char *) get_meta_xml_units(doc, 
+			  (xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE"));
+    insar->baseline_temporal = 
+      get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_TEMPORAL");
+    strcpy(insar->baseline_temporal_units, 
+	   (char *) get_meta_xml_units(doc, 
+				       (xmlChar *)"INSAR_BASELINE_TEMPORAL"));
+    insar->baseline_critical = 
+      get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_CRITICAL");
+    strcpy(insar->baseline_critical_units, 
+	   (char *) get_meta_xml_units(doc, 
+				       (xmlChar *)"INSAR_BASELINE_CRITICAL"));
       
-      xmlFreeDoc(doc);
-      xmlCleanupParser();
-    }
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+  }
+  return insar;
 }
