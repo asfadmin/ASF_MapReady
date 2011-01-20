@@ -13,6 +13,9 @@
 #include <png.h>
 #include "envi.h"
 
+#include "dateUtil.h"
+#include <time.h>
+#include "matrix.h"
 #include <asf_nan.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
@@ -21,6 +24,7 @@
 #include <float_image.h>
 #include <spheroids.h>
 #include <typlim.h>
+#include <netcdf.h>
 
 #define PGM_MAGIC_NUMBER    "P5"
 #ifdef  MAX_RGB
@@ -1025,6 +1029,10 @@ export_band_image (const char *metadata_file_name,
   struct jpeg_compress_struct cinfo;
   png_structp png_ptr;
   png_infop png_info_ptr;
+  h5_t *h5=NULL;
+  netcdf_t *netcdf=NULL;
+  float *nc = NULL;
+  float *hdf = NULL;
   int ii,jj;
   int palette_color_tiff = 0;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
@@ -1133,6 +1141,18 @@ export_band_image (const char *metadata_file_name,
       initialize_png_file_ext(output_file_name, md, &opng, &png_ptr,
 			      &png_info_ptr, rgb, 2);
     }
+    else if (format == HDF) {
+      append_ext_if_needed(output_file_name, ".h5", NULL);
+      h5 = initialize_h5_file(output_file_name, md);
+      hdf = (float *) 
+	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);
+    }
+    else if (format == NC) {
+      append_ext_if_needed(output_file_name, ".nc", NULL);
+      netcdf = (netcdf_t *) MALLOC(sizeof(netcdf_t));
+      netcdf = initialize_netcdf_file(output_file_name, md);
+      nc = (float *)
+	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);    }
     int ignored[4] = {0, 0, 0, 0};
     int red_channel=-1, green_channel=-1, blue_channel=-1;
     for (ii = 0; ii < 4; ii++) {
@@ -1621,6 +1641,10 @@ export_band_image (const char *metadata_file_name,
       finalize_jpeg_file(ojpeg, &cinfo);
     else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
       finalize_png_file(opng, png_ptr, png_info_ptr);
+    else if (format == HDF)
+      finalize_h5_file(hdf);
+    else if (format == NC)
+      finalize_netcdf_file(netcdf, md);
     else
       asfPrintError("Impossible: unexpected format %d\n", format);
 
@@ -2020,7 +2044,20 @@ export_band_image (const char *metadata_file_name,
           append_ext_if_needed (out_file, ".bin", NULL);
           initialize_polsarpro_file(out_file, md, &ofp);
         }
-
+	else if (format == HDF) {
+	  append_ext_if_needed (out_file, ".h5", NULL);
+	  h5 = initialize_h5_file(out_file, md);
+	  hdf = (float *) 
+	    MALLOC(sizeof(float)*md->general->line_count*
+		   md->general->sample_count);
+	}
+        else if (format == NC) {
+          append_ext_if_needed (out_file, ".nc", NULL);
+	  netcdf = initialize_netcdf_file(output_file_name, md);
+	  nc = (float *)
+	    MALLOC(sizeof(float)*md->general->line_count*
+		   md->general->sample_count);        
+	}
         else {
           asfPrintError("Impossible: unexpected format %d\n", format);
         }
@@ -2202,6 +2239,17 @@ export_band_image (const char *metadata_file_name,
                   ieee_lil32(float_line[sample]);
                 fwrite(float_line,4,sample_count,ofp);
               }
+	      else if (format == HDF) {
+		int sample;
+		for (sample=0; sample<sample_count; sample++)
+		  hdf[ii*sample_count+sample] = float_line[sample];
+	      }
+	      else if (format == NC) {
+		int sample;
+		for (sample=0; sample<sample_count; sample++) {
+		  nc[ii*sample_count+sample] = float_line[sample];
+		}
+	      }
               else
                 asfPrintError("Impossible: unexpected format %d\n", format);
             }
@@ -2259,6 +2307,16 @@ export_band_image (const char *metadata_file_name,
           finalize_ppm_file(opgm);
         else if (format == POLSARPRO_HDR)
           FCLOSE(ofp);
+	else if (format == HDF) {
+	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
+	  H5Dwrite(h5->var[kk], H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, 
+		   H5P_DEFAULT, hdf);
+	}
+	else if (format == NC) {
+	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
+	  nc_put_var_float(netcdf->ncid, netcdf->var_id[kk], &nc[0]);
+	  FREE(nc);
+	}
 
         FCLOSE(fp);
       }
