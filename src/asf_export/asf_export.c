@@ -17,7 +17,8 @@ following defines.
 
 #define ASF_DESCRIPTION_STRING \
 "   This program ingests ASF internal format data and exports said data to a\n"\
-"   number of graphics file formats (TIFF/GEOTIFF, JPEG, PGM, PNG and POlSARPRO).\n"\
+"   number of graphics file formats (TIFF/GEOTIFF, JPEG, PGM, PNG, POlSARPRO,\n"\
+"   HDF5 and netCDF).\n"\
 "   If the input data was geocoded and the ouput format supports geocoding,\n"\
 "   that information will be included.  Optionally, you may apply look-up tables,\n"\
 "   assign color bands (-rgb, -truecolor, -falsecolor).\n"
@@ -37,6 +38,7 @@ following defines.
 "            pgm       - Portable graymap image, with byte valued pixels\n"\
 "            png       - Portable network graphic, with byte valued pixels\n"\
 "            polsarpro - Flat binary floating point files in PolSARPro format\n"\
+"            hdf5      - HDF5 format, with floating point or byte valued pixels\n"\
 "            netcdf    - netCDF format compliant to the CF conventions\n"\
 "   NOTE: When exporting to a GeoTIFF format file, all map-projection\n"\
 "         information is included in GeoKeys as specified in the GeoTIFF\n"\
@@ -724,8 +726,11 @@ main (int argc, char *argv[])
     }
   }
   else if (bandFlag != FLAG_NOT_SET) {
-    if (strcmp(uc(command_line.band), "ALL") == 0) {
-      if (num_bands_found > 1)
+    if (strcmp_case(command_line.band, "ALL") == 0) {
+      if (multiband(command_line.format, md->general->bands, 
+		    md->general->band_count))
+	asfPrintStatus("Exporting multiband image ...\n\n");
+      else  if (num_bands_found > 1)
         asfPrintStatus("Exporting each band into individual greyscale files ...\n\n");
     }
     else if (num_bands_found == 1) {

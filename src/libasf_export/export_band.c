@@ -108,6 +108,43 @@ int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta
 char *sample_mapping2string(scale_t sample_mapping);
 void colormap_to_lut_file(meta_colormap *cm, const char *lut_file);
 
+static char *format2str(output_format_t format)
+{
+  char *str = (char *) MALLOC(sizeof(char)*256);
+
+  if (format == ENVI)
+    strcpy(str, "ENVI");
+  else if (format == ESRI)
+    strcpy(str, "ESRI");
+  else if (format == GEOTIFF)
+    strcpy(str, "GEOTIFF");
+  else if (format == TIF)
+    strcpy(str, "TIFF");
+  else if (format == JPEG)
+    strcpy(str, "JPEG");
+  else if (format == PGM)
+    strcpy(str, "PGM");
+  else if (format == PNG)
+    strcpy(str, "PNG");
+  else if (format == PNG_ALPHA)
+    strcpy(str, "PNG ALPHA");
+  else if (format == PNG_GE)
+    strcpy(str, "PNG GOOGLE EARTH");
+  else if (format == KML)
+    strcpy(str, "KML");
+  else if (format == POLSARPRO_HDR)
+    strcpy(str, "POLSARPRO with ENVI header");
+  else if (format == HDF)
+    strcpy(str, "HDF5");
+  else if (format == NC)
+    strcpy(str, "netCDF");
+  else
+    strcpy(str, MAGIC_UNSET_STRING);
+  
+  return str;
+}
+
+
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
@@ -1009,6 +1046,26 @@ void finalize_ppm_file(FILE *oppm)
   FCLOSE(oppm);
 }
 
+// Function to determine whether the output image will be a multiband but not RGB image
+int multiband(output_format_t format, char **band_name, int band_count)
+{
+  int ii, nBands=0;
+
+  if (format != HDF && format != NC)
+    return FALSE;
+
+  for (ii=0; ii<band_count; ii++) {
+    if (band_name[ii] && strlen(band_name[ii]) > 0)
+      nBands++;
+    else
+      break;
+  }
+  if (nBands > 1) 
+    return TRUE;
+  else
+    return FALSE;
+}
+
 void
 export_band_image (const char *metadata_file_name,
                    const char *image_data_file_name,
@@ -1043,6 +1100,11 @@ export_band_image (const char *metadata_file_name,
 
   if (format == PNG_GE)
     meta_write(md, output_file_name);
+
+  if (format == HDF && rgb)
+    asfPrintError("Export to a color HDF format is not supported!\n");
+  else if (format == NC && rgb)
+    asfPrintError("Export to a color netCDF format is not supported!\n");
 
   if (md->general->image_data_type != POLARIMETRIC_MATRIX &&
       md->general->image_data_type != POLARIMETRIC_DECOMPOSITION &&
@@ -1141,18 +1203,6 @@ export_band_image (const char *metadata_file_name,
       initialize_png_file_ext(output_file_name, md, &opng, &png_ptr,
 			      &png_info_ptr, rgb, 2);
     }
-    else if (format == HDF) {
-      append_ext_if_needed(output_file_name, ".h5", NULL);
-      h5 = initialize_h5_file(output_file_name, md);
-      hdf = (float *) 
-	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);
-    }
-    else if (format == NC) {
-      append_ext_if_needed(output_file_name, ".nc", NULL);
-      netcdf = (netcdf_t *) MALLOC(sizeof(netcdf_t));
-      netcdf = initialize_netcdf_file(output_file_name, md);
-      nc = (float *)
-	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);    }
     int ignored[4] = {0, 0, 0, 0};
     int red_channel=-1, green_channel=-1, blue_channel=-1;
     for (ii = 0; ii < 4; ii++) {
@@ -1579,7 +1629,7 @@ export_band_image (const char *metadata_file_name,
                                   blue_byte_line, png_ptr, png_info_ptr,
                                   sample_count);
         else
-          asfPrintError("Impossible: unexpected format %d\n", format);
+          asfPrintError("Impossible: unexpected format %s\n", format2str(format));
       }
       else if (sample_mapping == NONE) {
         // Write float->float lines if float image
@@ -1593,7 +1643,7 @@ export_band_image (const char *metadata_file_name,
           write_rgb_tiff_float2float(otif, red_float_line, green_float_line,
                                      blue_float_line, ii, sample_count);
         else
-          asfPrintError("Impossible: unexpected format %d\n", format);
+          asfPrintError("Impossible: unexpected format %s\n", format2str(format));
       }
       else {
         // Write float->byte lines if byte image
@@ -1620,7 +1670,7 @@ export_band_image (const char *metadata_file_name,
                                    sample_mapping, md->general->no_data,
                                    sample_count);
         else
-          asfPrintError("Impossible: unexpected format %d\n", format);
+          asfPrintError("Impossible: unexpected format %s\n", format2str(format));
       }
 
       asfLineMeter(ii, md->general->line_count);
@@ -1641,12 +1691,8 @@ export_band_image (const char *metadata_file_name,
       finalize_jpeg_file(ojpeg, &cinfo);
     else if (format == PNG || format == PNG_ALPHA || format == PNG_GE)
       finalize_png_file(opng, png_ptr, png_info_ptr);
-    else if (format == HDF)
-      finalize_h5_file(hdf);
-    else if (format == NC)
-      finalize_netcdf_file(netcdf, md);
     else
-      asfPrintError("Impossible: unexpected format %d\n", format);
+      asfPrintError("Impossible: unexpected format %s\n", format2str(format));
 
     if (red_stats.hist) gsl_histogram_free(red_stats.hist);
     if (red_stats.hist_pdf) gsl_histogram_pdf_free(red_stats.hist_pdf);
@@ -1662,6 +1708,74 @@ export_band_image (const char *metadata_file_name,
     char **outs = MALLOC(sizeof(char*));
     outs[0] = STRDUP(output_file_name);
     *output_names = outs;
+  }
+  else if (multiband(format, band_name, md->general->band_count)) {
+    // Multi-band image output (but no RGB)
+    // This can currently only be the case for HDF5 and netCDF data
+    hid_t h5_data;
+
+    if (format == HDF) {
+      append_ext_if_needed(output_file_name, ".h5", NULL);
+      h5 = initialize_h5_file(output_file_name, md);
+      hdf = (float *) 
+	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);
+    }
+    else if (format == NC) {
+      append_ext_if_needed(output_file_name, ".nc", NULL);
+      netcdf = initialize_netcdf_file(output_file_name, md);
+      nc = (float *)
+	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);    }
+
+    int kk, channel;
+    int band_count = md->general->band_count;
+    int sample_count = md->general->sample_count;
+    int offset = md->general->line_count;
+    FILE *fp = FOPEN(image_data_file_name, "rb");
+    float *float_line = (float *) MALLOC(sizeof(float) * sample_count);
+    for (kk=0; kk<band_count; kk++) {
+      for (ii=0; ii<md->general->line_count; ii++ ) {
+	channel = get_band_number(md->general->bands, band_count, band_name[kk]);
+	get_float_line(fp, md, ii+channel*offset, float_line);
+	if (format == HDF) {
+	  int sample;
+	  for (sample=0; sample<sample_count; sample++)
+	    hdf[ii*sample_count+sample] = float_line[sample];
+	}
+	else if (format == NC) {
+	  int sample;
+	  for (sample=0; sample<sample_count; sample++) {
+	    nc[ii*sample_count+sample] = float_line[sample];
+	  }
+	}
+	asfLineMeter(ii, md->general->line_count);
+      }
+      if (format == HDF) {
+	asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
+	char dataset[50];
+	sprintf(dataset, "/data/%s_AMPLITUDE_IMAGE", band_name[kk]);
+	h5_data = H5Dopen(h5->file, dataset, H5P_DEFAULT);
+	H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, 
+		 H5P_DEFAULT, hdf);
+	H5Dclose(h5_data);
+      }
+      else if (format == NC) {
+	asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
+	nc_put_var_float(netcdf->ncid, netcdf->var_id[kk], &nc[0]);
+      }
+    }
+
+    if (format == HDF) {
+      finalize_h5_file(h5);
+      FREE(hdf);
+    }
+    else if (format == NC) {
+      finalize_netcdf_file(netcdf, md);
+      FREE(nc);
+    }
+    else
+      asfPrintError("Impossible: unexpected format %s\n", format2str(format));
+
+    FCLOSE(fp);
   }
   else {
     // Single-band image output (one grayscale file for each available band)
@@ -2053,13 +2167,13 @@ export_band_image (const char *metadata_file_name,
 	}
         else if (format == NC) {
           append_ext_if_needed (out_file, ".nc", NULL);
-	  netcdf = initialize_netcdf_file(output_file_name, md);
+	  netcdf = initialize_netcdf_file(out_file, md);
 	  nc = (float *)
 	    MALLOC(sizeof(float)*md->general->line_count*
 		   md->general->sample_count);        
 	}
         else {
-          asfPrintError("Impossible: unexpected format %d\n", format);
+          asfPrintError("Impossible: unexpected format %s\n", format2str(format));
         }
 
         (*output_names)[*noutputs] = STRDUP(out_file);
@@ -2159,7 +2273,7 @@ export_band_image (const char *metadata_file_name,
                 write_png_byte2lut(opng, byte_line, png_ptr, png_info_ptr,
                 sample_count, lut_file);
               else
-                asfPrintError("Impossible: unexpected format %d\n", format);
+                asfPrintError("Impossible: unexpected format %s\n", format2str(format));
             }
             else {
               // Force a sample mapping of TRUNCATE for PolSARpro classifications
@@ -2198,7 +2312,7 @@ export_band_image (const char *metadata_file_name,
                   md->general->no_data, sample_count);
               }
               else
-                asfPrintError("Impossible: unexpected format %d\n", format);
+                asfPrintError("Impossible: unexpected format %s\n", format2str(format));
             }
             asfLineMeter(ii, md->general->line_count);
           }
@@ -2227,7 +2341,7 @@ export_band_image (const char *metadata_file_name,
                 write_pgm_byte2byte(opgm, byte_line, stats, sample_mapping,
                 sample_count);
               else
-                asfPrintError("Impossible: unexpected format %d\n", format);
+                asfPrintError("Impossible: unexpected format %s\n", format2str(format));
             }
             else if (sample_mapping == NONE && !is_colormap_band) {
               get_float_line(fp, md, ii+channel*offset, float_line);
@@ -2251,7 +2365,7 @@ export_band_image (const char *metadata_file_name,
 		}
 	      }
               else
-                asfPrintError("Impossible: unexpected format %d\n", format);
+                asfPrintError("Impossible: unexpected format %s\n", format2str(format));
             }
             else {
               get_float_line(fp, md, ii+channel*offset, float_line);
@@ -2285,7 +2399,7 @@ export_band_image (const char *metadata_file_name,
                 fwrite(float_line,4,sample_count,ofp);
               }
               else
-                asfPrintError("Impossible: unexpected format %d\n", format);
+                asfPrintError("Impossible: unexpected format %s\n", format2str(format));
             }
             asfLineMeter(ii, md->general->line_count);
           } // End for each line
@@ -2309,19 +2423,24 @@ export_band_image (const char *metadata_file_name,
           FCLOSE(ofp);
 	else if (format == HDF) {
 	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
-	  H5Dwrite(h5->var[kk], H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, 
+	  char dataset[50];
+	  sprintf(dataset, "/data/%s_AMPLITUDE_IMAGE", band_name[kk]);
+	  hid_t h5_data = H5Dopen(h5->file, dataset, H5P_DEFAULT);
+	  H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, 
 		   H5P_DEFAULT, hdf);
+	  H5Dclose(h5_data);
 	}
 	else if (format == NC) {
 	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
 	  nc_put_var_float(netcdf->ncid, netcdf->var_id[kk], &nc[0]);
-	  FREE(nc);
 	}
 
         FCLOSE(fp);
       }
     } // End for each band (kk is band number)
 
+    if (nc)
+      FREE(nc);
     if (free_band_names) {
       for (ii=0; ii<band_count; ++ii)
         FREE(band_name[ii]);
