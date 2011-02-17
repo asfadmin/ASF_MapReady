@@ -1018,6 +1018,12 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
           return NULL;
         }
 
+        // If user did not specify -n or -s, but did specify a
+        // standard parallel, use that to decide the default hemisphere
+        if (!specified_pole && specified_slat) {
+          pps->ps.is_north_pole = pps->ps.slat > 0;
+        }
+
         break;
       }
       else if (strcmp((*argv)[i], "lamcc") == 0)
