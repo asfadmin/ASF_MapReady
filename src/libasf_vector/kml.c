@@ -224,9 +224,24 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       else if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
         fprintf(kml_file, "%s<strong>Image data type</strong>: "
                 "POLARIMETRIC_PARAMETER <br>%s", begin, end);
-      else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
+      else if (meta->general->image_data_type == POLARIMETRIC_C2_MATRIX)
         fprintf(kml_file, "%s<strong>Image data type</strong>: "
-                "POLARIMETRIC_MATRIX <br>%s", begin, end);
+                "POLARIMETRIC_C2_MATRIX <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_C3_MATRIX <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_C4_MATRIX)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_C4_MATRIX <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_T3_MATRIX)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_T3_MATRIX <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_T4_MATRIX)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_T4_MATRIX <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_STOKES_MATRIX)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_STOKES_MATRIX <br>%s", begin, end);
       else if (meta->general->image_data_type == LUT_IMAGE)
         fprintf(kml_file, "%s<strong>Image data type</strong>: "
                 "LUT_IMAGE <br>%s", begin, end);

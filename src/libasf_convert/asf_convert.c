@@ -90,7 +90,7 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
   char dataFile[1024];
   int found_c_file = TRUE, found_l_file = TRUE, found_p_file = TRUE;
 
-  printf("isAirSAR: %s\n", inFile);
+  //printf("isAirSAR: %s\n", inFile);
 
   // Look for C-band data
   sprintf(dataFile, "%s_c.datgr", inFile);
@@ -153,8 +153,10 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
 
   // Found any of files and we are good
   if (!found_c_file && !found_l_file && !found_p_file) {
+    /*
     asfPrintWarning("Could not find any polarimetric data related to (%s).\n",
 		    inFile);
+    */
     *c = FALSE;
     *l = FALSE;
     *p = FALSE;
@@ -162,6 +164,12 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
   }
   else
     return meta;
+}
+
+int isUAVSAR(const char *input_file)
+{
+  
+  return FALSE;
 }
 
 int isASFInternal(const char *input_file)
@@ -316,7 +324,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   }
   else if (nBands == 4) {
     strcpy(meta->sar->polarization, "quad-pol");
-    meta->general->image_data_type = POLARIMETRIC_IMAGE;
+    meta->general->image_data_type = POLARIMETRIC_S2_MATRIX;
   }
 
   // Clean up
@@ -389,7 +397,7 @@ void check_return(int ret, char *msg)
 void check_input(convert_config *cfg, char *processing_step, char *input)
 {
   meta_parameters *meta;
-  char **inBandName = NULL, **inMetaName = NULL, *error;
+  char **inBandName = NULL, **inMetaName = NULL, *matrixType, *error;
   int nBands, trailer, airsar_c, airsar_l, airsar_p;
 
   if (strcmp_case(processing_step, "polarimetry") == 0) {
@@ -403,11 +411,15 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       cfg->airsar->l_pol = airsar_l;
       cfg->airsar->p_pol = airsar_p;
     }
+
+    else if (isPolsarproMatrix(input, &matrixType, &error)) { return; }
     else if (isASFInternal(input)) {
       meta = meta_read(input);
       if (meta && meta->sar) {
         if (cfg->polarimetry->pauli &&
-	    (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+	    ((meta->general->image_data_type != POLARIMETRIC_S2_MATRIX &&
+	      meta->general->image_data_type != POLARIMETRIC_C3_MATRIX &&
+	      meta->general->image_data_type != POLARIMETRIC_T3_MATRIX) ||
 	     strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
              meta->general->band_count < 8))
          asfPrintError("Pauli decomposition requires complex quad-pol data\n");
@@ -439,7 +451,9 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       }
       // Pauli decomposition only works for complex quad-pol data
       if (cfg->polarimetry->pauli &&
-	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+	  ((meta->general->image_data_type != POLARIMETRIC_S2_MATRIX &&
+	    meta->general->image_data_type != POLARIMETRIC_C3_MATRIX &&
+	    meta->general->image_data_type != POLARIMETRIC_T3_MATRIX) ||
 	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
        meta->general->band_count < 8))
         asfPrintError("Pauli decomposition requires complex quad-pol data\n");
@@ -2808,7 +2822,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	  */
 	  int is_polsarpro = 0;
 	  if (meta->general->image_data_type >  POLARIMETRIC_IMAGE &&
-	      meta->general->image_data_type <= POLARIMETRIC_MATRIX)
+	      meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX)
 	    is_polsarpro = 1;
 
           int have_embedded_colormap = 0;
@@ -2866,7 +2880,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	    // is resized for generating a thumbnail, for polsarpro
             meta_parameters *metaTmp = NULL;
             int original_band_count = 0;
-            if (is_polsarpro) {
+            if (is_polsarpro && format == POLSARPRO) {
               metaTmp = meta_read(inFile);
               original_band_count = metaTmp->general->band_count;
               if (original_band_count > 1) {
@@ -2942,7 +2956,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               else { // not a true or false color optical image
                 if (is_polsarpro &&
                     (meta->general->image_data_type >  POLARIMETRIC_IMAGE &&
-                     meta->general->image_data_type <= POLARIMETRIC_MATRIX))
+                     meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX))
 		  meta->general->band_count = 1;
 
 		char **bands = extract_band_names(meta->general->bands, 
@@ -3363,7 +3377,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         }
         if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
           // multi-band, exporting as separate greyscale files
-	  if (meta->general->image_data_type == POLARIMETRIC_MATRIX ||
+	  if ((meta->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+	       meta->general->image_data_type <= POLARIMETRIC_STOKES_MATRIX) ||
 	      meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
 	    asfPrintStatus("\nExporting %d bands as separate greyscale files "
 			   "...\n", meta->general->band_count-1);

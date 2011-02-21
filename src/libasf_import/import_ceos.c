@@ -1439,7 +1439,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     }
     else if (nBands == 4) {
       strcpy(meta->sar->polarization, "quad-pol");
-      meta->general->image_data_type = POLARIMETRIC_IMAGE;
+      meta->general->image_data_type = POLARIMETRIC_S2_MATRIX;
     }
   }
 

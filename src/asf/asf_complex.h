@@ -33,6 +33,12 @@ typedef struct {
 } complexVector;
 
 typedef struct {
+  float A;
+  float B;
+  float C;
+} floatVector;
+
+typedef struct {
     int rows, columns;
     complexFloat **coeff;
 } complexMatrix;
@@ -42,7 +48,19 @@ typedef struct {
    complexFloat hv;
    complexFloat vh;
    complexFloat vv;
-} quadPolFloat;
+} quadPolS2Float;
+
+typedef struct {
+  float c11;
+  float c12_real;
+  float c12_imag;
+  float c13_real;
+  float c13_imag;
+  float c22;
+  float c23_real;
+  float c23_imag;
+  float c33;
+} quadPolC3Float;
 
 complexFloat complex_new(float re, float im);
 complexFloat complex_new_polar(float amp, float phase);

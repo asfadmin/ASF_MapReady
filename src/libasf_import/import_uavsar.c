@@ -49,21 +49,21 @@ static int check_file(char *line, char **fileName)
 }
 
 static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type, 
-				  char ***pDataName, char ***pPolarization,
+				  char ***pDataName, char ***pElement,
 				  int **pDataType, int *nBands)
 {
   char *file = (char *) MALLOC(sizeof(char)*1024);
   int ii, slc=0, mlc=0, dat=0, grd=0, hgt=0; 
 
   char **dataName = (char **) MALLOC(6*sizeof(char *));
-  char **polarization = (char **) MALLOC(6*sizeof(char *));
+  char **element = (char **) MALLOC(6*sizeof(char *));
   int *dataType = (int *) MALLOC(6*sizeof(int));
   for (ii=0; ii<6; ii++) {
     dataName[ii] = (char *) MALLOC(sizeof(char)*512);
-    polarization[ii] = (char *) MALLOC(sizeof(char)*10);
+    element[ii] = (char *) MALLOC(sizeof(char)*10);
   }
   *pDataName = dataName;
-  *pPolarization = polarization;
+  *pElement = element;
   *pDataType = dataType;
   *nBands = 0;
 
@@ -74,7 +74,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       if (strstr(line, "slcHH   =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[slc], file);
-	  strcpy(polarization[slc], "HH");
+	  strcpy(element[slc], "HH");
 	  dataType[slc] = 1;
 	  slc++;
 	}
@@ -82,7 +82,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "slcHV   =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[slc], file);
-	  strcpy(polarization[slc], "HV");
+	  strcpy(element[slc], "HV");
 	  dataType[slc] = 1;
 	  slc++;
 	}
@@ -90,7 +90,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "slcVH   =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[slc], file);
-	  strcpy(polarization[slc], "VH");
+	  strcpy(element[slc], "VH");
 	  dataType[slc] = 1;
 	  slc++;
 	}
@@ -98,7 +98,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "slcVV   =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[slc], file);
-	  strcpy(polarization[slc], "VV");
+	  strcpy(element[slc], "VV");
 	  dataType[slc] = 1;
 	  slc++;
 	}
@@ -109,7 +109,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       if (strstr(line, "mlcHHHH =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[mlc], file);
-	  strcpy(polarization[mlc], "HHHH");
+	  strcpy(element[mlc], "C11");
 	  dataType[mlc] = 0;
 	  mlc++;
 	}
@@ -117,7 +117,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "mlcHVHV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[mlc], file);
-	  strcpy(polarization[mlc], "HVHV");
+	  strcpy(element[mlc], "C22");
 	  dataType[mlc] = 0;
 	  mlc++;
 	}
@@ -125,7 +125,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "mlcVVVV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[mlc], file);
-	  strcpy(polarization[mlc], "VVVV");
+	  strcpy(element[mlc], "C33");
 	  dataType[mlc] = 0;
 	  mlc++;
 	}
@@ -133,7 +133,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "mlcHHHV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[mlc], file);
-	  strcpy(polarization[mlc], "HHHV");
+	  strcpy(element[mlc], "C12");
 	  dataType[mlc] = 1;
 	  mlc++;
 	}
@@ -141,7 +141,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "mlcHHVV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[mlc], file);
-	  strcpy(polarization[mlc], "HHVV");
+	  strcpy(element[mlc], "C13");
 	  dataType[mlc] = 1;
 	  mlc++;
 	}
@@ -149,7 +149,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "mlcHVVV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[mlc], file);
-	  strcpy(polarization[mlc], "HVVV");
+	  strcpy(element[mlc], "C23");
 	  dataType[mlc] = 1;
 	  mlc++;
 	}
@@ -169,7 +169,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       if (strstr(line, "grdHHHH =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[grd], file);
-	  strcpy(polarization[grd], "HHHH");
+	  strcpy(element[grd], "C11");
 	  dataType[grd] = 0;
 	  grd++;
 	}
@@ -177,7 +177,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "grdHVHV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[grd], file);
-	  strcpy(polarization[grd], "HVHV");
+	  strcpy(element[grd], "C22");
 	  dataType[grd] = 0;
 	  grd++;
 	}
@@ -185,7 +185,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "grdVVVV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[grd], file);
-	  strcpy(polarization[grd], "VVVV");
+	  strcpy(element[grd], "C33");
 	  dataType[grd] = 0;
 	  grd++;
 	}
@@ -193,7 +193,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "grdHHHV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[grd], file);
-	  strcpy(polarization[grd], "HHHV");
+	  strcpy(element[grd], "C12");
 	  dataType[grd] = 1;
 	  grd++;
 	}
@@ -201,7 +201,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "grdHHVV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[grd], file);
-	  strcpy(polarization[grd], "HHVV");
+	  strcpy(element[grd], "C13");
 	  dataType[grd] = 1;
 	  grd++;
 	}
@@ -209,7 +209,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       else if (strstr(line, "grdHVVV =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[grd], file);
-	  strcpy(polarization[grd], "HVVV");
+	  strcpy(element[grd], "C23");
 	  dataType[grd] = 1;
 	  grd++;
 	}
@@ -220,7 +220,7 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       if (strstr(line, "hgt     =")) {
 	if (check_file(line, &file)) {
 	  strcpy(dataName[hgt], file);
-	  strcpy(polarization[hgt], "HHHH");
+	  strcpy(element[hgt], "HH");
 	  dataType[hgt] = 0;
 	  hgt++;
 	}
@@ -477,6 +477,14 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
   return params;
 }
 
+static int sign(char byteBuf)
+{
+  if (byteBuf < 0)
+    return -1;
+  else
+    return 1;
+}
+
 void import_uavsar(const char *inFileName, radiometry_t radiometry,
 		   const char *data_type, const char *outBaseName) {
 
@@ -501,10 +509,12 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   // mlc_mag and mlc_phase - 8 bytes per pixel derived from mlc
 
   FILE *fpIn, *fpOut;
-  int ii, kk, ll, nn, nBands, ns, *dataType;
-  float *floatAmpBuf, *floatPhaseBuf, *floatComplexBuf;
-  complexFloat cpx;
-  char **dataName, **polarization, tmp[50];
+  int ii, kk, ll, nn, nBands, ns, nl, *dataType;
+  long long offset;
+  float *floatAmp, *floatAmpBuf, *amp;
+  float *floatComplexReal, *floatComplexImag;
+  float *floatComplexBuf;
+  char **dataName, **element, tmp[50];
   char *outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+5));
   uavsar_polsar *params;
   meta_parameters *metaIn, *metaOut;
@@ -512,7 +522,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   // Single look complex data
   if (strcmp_case(data_type, "SLC") == 0 ||
       strcmp_case(data_type, "ALL") == 0) {
-    get_uavsar_file_names(inFileName, POLSAR_SLC, &dataName, &polarization,
+    get_uavsar_file_names(inFileName, POLSAR_SLC, &dataName, &element,
 			  &dataType, &nBands);
     params = 
       read_uavsar_polsar_params(inFileName, POLSAR_SLC);
@@ -532,17 +542,21 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   // Multilooked data
   if (strcmp_case(data_type, "MLC") == 0 ||
       strcmp_case(data_type, "ALL") == 0) {
-    get_uavsar_file_names(inFileName, POLSAR_MLC, &dataName, &polarization,
+    get_uavsar_file_names(inFileName, POLSAR_MLC, &dataName, &element,
 			  &dataType, &nBands);
     params = 
       read_uavsar_polsar_params(inFileName, POLSAR_MLC);
     metaIn = uavsar_polsar2meta(params);
     metaOut = uavsar_polsar2meta(params);
-    ns = metaOut->general->sample_count;
+    ns = metaIn->general->sample_count;
+    amp = (float *) MALLOC(sizeof(float)*ns);
+    floatAmp = (float *) MALLOC(sizeof(float)*ns);
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    floatPhaseBuf = (float *) MALLOC(sizeof(float)*ns);
-    floatComplexBuf = (float *) MALLOC(sizeof(float)*ns*2);
-    metaOut->general->band_count = ll = 0;
+    floatComplexReal = (float *) MALLOC(sizeof(float)*ns);
+    floatComplexImag = (float *) MALLOC(sizeof(float)*ns);
+    //floatComplexBuf = (complexFloat *) MALLOC(sizeof(complexFloat)*ns);
+    floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
+    metaOut->general->band_count = ll = 1;
     if (strcmp_case(data_type, "MLC") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
@@ -557,47 +571,44 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       fpIn = FOPEN(dataName[nn], "rb");
       if (nn == 0) {
 	fpOut = FOPEN(outName, "wb");
-	if (dataType[nn])
-	  sprintf(metaOut->general->bands, "%s-AMP,%s-PHASE", polarization[nn],
-		  polarization[nn]);
-	else
-	  sprintf(metaOut->general->bands, "%s", polarization[nn]);
+	sprintf(metaOut->general->bands, "AMP,%s", element[0]);
       }
       else {
 	fpOut = FOPEN(outName, "ab");
 	if (dataType[nn])
-	  sprintf(tmp, ",%s-AMP,%s-PHASE", polarization[nn], polarization[nn]);
+	  sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
 	else
-	  sprintf(tmp, ",%s", polarization[nn]);
+	  sprintf(tmp, ",%s", element[nn]);
 	strcat(metaOut->general->bands, tmp);
       }
       for (ii=0; ii<metaIn->general->line_count; ii++) {
 	if (dataType[nn]) {
-	  metaIn->general->sample_count = ns*2;
+	  metaIn->general->sample_count = 2*ns;
 	  get_float_line(fpIn, metaIn, ii, floatComplexBuf);
+	  for (kk=0; kk<ns; kk++) {
+	    floatComplexReal[kk] = floatComplexBuf[kk*2];
+	    floatComplexImag[kk] = floatComplexBuf[kk*2+1];
+	    ieee_big32(floatComplexReal[kk]);
+	    ieee_big32(floatComplexImag[kk]);
+	  }
+	  put_band_float_line(fpOut, metaOut, ll, ii, floatComplexReal);
+	  put_band_float_line(fpOut, metaOut, ll+1, ii, floatComplexImag);
 	}
 	else {
 	  metaIn->general->sample_count = ns;
 	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-	}
-	for (kk=0; kk<ns; kk++) {
-	  if (dataType[nn]) {
-	    ieee_big32(floatComplexBuf[kk*2]);
-	    ieee_big32(floatComplexBuf[kk*2+1]);
-	    cpx.real = floatComplexBuf[kk*2];
-	    cpx.imag = floatComplexBuf[kk*2+1];
-	    floatAmpBuf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	    floatPhaseBuf[kk] = atan2(cpx.imag, cpx.real);
+	  if (nn == 0) {
+	    for (kk=0; kk<ns; kk++) {
+	      ieee_big32(floatAmpBuf[kk]);
+	      floatAmp[kk] = sqrt(floatAmpBuf[kk]);
+	    }
 	  }
-	  else
-	    ieee_big32(floatAmpBuf[kk]);
-	}
-	if (dataType[nn]) {
+	  else {
+	    for (kk=0; kk<ns; kk++) 
+	      ieee_big32(floatAmpBuf[kk]);
+	  }
 	  put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
-	  put_band_float_line(fpOut, metaOut, ll+1, ii, floatPhaseBuf);
 	}
-	else 
-	  put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
 	asfLineMeter(ii, metaIn->general->line_count);      
       }
       if (dataType[nn])
@@ -608,8 +619,11 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       FCLOSE(fpOut);
     }
     meta_write(metaOut, outName);
+    FREE(amp);
+    FREE(floatAmp);
     FREE(floatAmpBuf);
-    FREE(floatPhaseBuf);
+    FREE(floatComplexReal);
+    FREE(floatComplexImag);
     FREE(floatComplexBuf);
     meta_free(metaIn);
     meta_free(metaOut);
@@ -618,7 +632,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   // Compressed Stokes matrix
   if (strcmp_case(data_type, "DAT") == 0 ||
       strcmp_case(data_type, "ALL") == 0) {
-    get_uavsar_file_names(inFileName, POLSAR_DAT, &dataName, &polarization,
+    get_uavsar_file_names(inFileName, POLSAR_DAT, &dataName, &element,
 			  &dataType, &nBands);
     params = 
       read_uavsar_polsar_params(inFileName, POLSAR_DAT);
@@ -628,22 +642,152 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_dat.img");
-    metaOut->general->band_count = ll = 0;
-    asfPrintStatus("\nCompress Stokes matrix:\n");
-    for (ii=0; ii<nBands; ii++)
-      printf("file: %s\n", dataName[ii]);
+    metaOut->general->band_count = 9;
+    asfPrintStatus("\nCompressed Stokes matrix:\n");
+    asfPrintStatus("Ingesting %s ...\n", dataName[0]);
+    if (radiometry == r_AMP)
+      strcpy(metaOut->general->bands,
+	     "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"\
+	     "AMP_VV,PHASE_VV");
+    else if (radiometry == r_SIGMA)
+      strcpy(metaOut->general->bands,
+	     "AMP,SIGMA-AMP-HH,SIGMA-PHASE-HH,SIGMA-AMP-HV,SIGMA-PHASE-HV,"\
+	     "SIGMA-AMP-VH,SIGMA-PHASE-VH,SIGMA-AMP-VV,SIGMA-PHASE-VV");
+    else if (radiometry == r_SIGMA_DB)
+      strcpy(metaOut->general->bands,
+	     "AMP,SIGMA_DB-AMP-HH,SIGMA_DB-PHASE-HH,SIGMA_DB-AMP-HV,"\
+	     "SIGMA_DB-PHASE-HV,SIGMA_DB-AMP-VH,SIGMA_DB-PHASE-VH,"\
+	     "SIGMA_DB-AMP-VV,SIGMA_DB-PHASE-VV");
+    int ns = metaOut->general->sample_count;
+    float total_power, ysca, amp, phase;
+    float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
+    complexFloat cpx;
+    float *power = (float *) MALLOC(sizeof(float)*ns);
+    float *shh_amp = (float *) MALLOC(sizeof(float)*ns);
+    float *shh_phase = (float *) MALLOC(sizeof(float)*ns);
+    float *shv_amp = (float *) MALLOC(sizeof(float)*ns);
+    float *shv_phase = (float *) MALLOC(sizeof(float)*ns);
+    float *svh_amp = (float *) MALLOC(sizeof(float)*ns);
+    float *svh_phase = (float *) MALLOC(sizeof(float)*ns);
+    float *svv_amp = (float *) MALLOC(sizeof(float)*ns);
+    float *svv_phase = (float *) MALLOC(sizeof(float)*ns);
+    char *byteBuf = (char *) MALLOC(sizeof(char)*10);
+    fpIn = FOPEN(dataName[0], "rb");
+    fpOut = FOPEN(outName, "wb");
+    for (ii=0; ii<metaOut->general->line_count; ii++) {
+      for (kk=0; kk<metaOut->general->sample_count; kk++) {
+	FREAD(byteBuf, sizeof(char), 10, fpIn);
+	// Scale is always 1.0 according to Bruce Chapman
+	m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	m12 = (float)byteBuf[2] * m11 / 127.0;
+	m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11;
+	m14 = sign(byteBuf[4]) * SQR((float)byteBuf[4] / 127.0) * m11;
+	m23 = sign(byteBuf[5]) * SQR((float)byteBuf[5] / 127.0) * m11;
+	m24 = sign(byteBuf[6]) * SQR((float)byteBuf[6] / 127.0) * m11;
+	m33 = (float)byteBuf[7] * m11 / 127.0;
+	m34 = (float)byteBuf[8] * m11 / 127.0;
+	m44 = (float)byteBuf[9] * m11 / 127.0;
+	m22 = 1 - m33 -m44;
+	total_power =
+	  ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	ysca = 2.0 * sqrt(total_power);
+	power[kk] = sqrt(total_power);
+	cpx.real = (float)byteBuf[2] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
+	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase = atan2(cpx.imag, cpx.real);
+	if (radiometry == r_AMP) {
+	  shh_amp[kk] = amp;
+	  shh_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA) {
+	  shh_amp[kk] = amp*amp;
+	  shh_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA_DB) {
+	  shh_amp[kk] = amp;
+	  shh_phase[kk] = phase;
+	}
+	cpx.real = (float)byteBuf[4] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[5] * ysca / 127.0;
+	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase = atan2(cpx.imag, cpx.real);
+	if (radiometry == r_AMP) {
+	  shv_amp[kk] = amp;
+	  shv_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA) {
+	  shv_amp[kk] = amp*amp;
+	  shv_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA_DB) {
+	  shv_amp[kk] = amp;
+	  shv_phase[kk] = phase;
+	}
+	cpx.real = (float)byteBuf[6] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[7] * ysca / 127.0;
+	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase = atan2(cpx.imag, cpx.real);
+	if (radiometry == r_AMP) {
+	  svh_amp[kk] = amp;
+	  svh_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA) {
+	  svh_amp[kk] = amp*amp;
+	  svh_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA_DB) {
+	  svh_amp[kk] = amp;
+	  svh_phase[kk] = phase;
+	}
+	cpx.real = (float)byteBuf[8] * ysca / 127.0;
+	cpx.imag = (float)byteBuf[9] * ysca / 127.0;
+	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase = atan2(cpx.imag, cpx.real);
+	if (radiometry == r_AMP) {
+	  svv_amp[kk] = amp;
+	  svv_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA) {
+	  svv_amp[kk] = amp*amp;
+	  svv_phase[kk] = phase;
+	}
+	else if (radiometry == r_SIGMA_DB) {
+	  svv_amp[kk] = amp;
+	  svv_phase[kk] = phase;
+	}
+      }
+      put_band_float_line(fpOut, metaOut, 0, ii, power);
+      put_band_float_line(fpOut, metaOut, 1, ii, shh_amp);
+      put_band_float_line(fpOut, metaOut, 2, ii, shh_phase);
+      put_band_float_line(fpOut, metaOut, 3, ii, shv_amp);
+      put_band_float_line(fpOut, metaOut, 4, ii, shv_phase);
+      put_band_float_line(fpOut, metaOut, 5, ii, svh_amp);
+      put_band_float_line(fpOut, metaOut, 6, ii, svh_phase);
+      put_band_float_line(fpOut, metaOut, 7, ii, svv_amp);
+      put_band_float_line(fpOut, metaOut, 8, ii, svv_phase);
+      asfLineMeter(ii, metaOut->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
     meta_write(metaOut, outName);
   }
 
   // Ground range projected data
   if (strcmp_case(data_type, "GRD") == 0 ||
       strcmp_case(data_type, "ALL") == 0) {
-    get_uavsar_file_names(inFileName, POLSAR_GRD, &dataName, &polarization,
+    get_uavsar_file_names(inFileName, POLSAR_GRD, &dataName, &element,
 			  &dataType, &nBands);
     params = 
       read_uavsar_polsar_params(inFileName, POLSAR_GRD);
     metaIn = uavsar_polsar2meta(params);
     metaOut = uavsar_polsar2meta(params);
+    ns = metaIn->general->sample_count;
+    nl = metaIn->general->line_count;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    floatComplexReal = (float *) MALLOC(sizeof(float)*ns);
+    floatComplexImag = (float *) MALLOC(sizeof(float)*ns);
+    floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
     metaOut->general->band_count = ll = 0;
     if (strcmp_case(data_type, "GRD") == 0)
       outName = appendExt(outBaseName, ".img");
@@ -652,64 +796,69 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     asfPrintStatus("\nGround range projected data:\n");
     for (nn=0; nn<nBands; nn++) {
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-      if (dataType[nn] == 0)
-	metaOut->general->band_count += 1;
-      else
+      if (dataType[nn])
 	metaOut->general->band_count += 2;
+      else
+	metaOut->general->band_count += 1;
       fpIn = FOPEN(dataName[nn], "rb");
       if (nn == 0) {
 	fpOut = FOPEN(outName, "wb");
-	if (dataType[nn])
-	  sprintf(metaOut->general->bands, "%s-AMP,%s-PHASE", polarization[nn],
-		  polarization[nn]);
-	else
-	  sprintf(metaOut->general->bands, "%s", polarization[nn]);
+	sprintf(metaOut->general->bands, "%s", element[0]);
       }
       else {
 	fpOut = FOPEN(outName, "ab");
 	if (dataType[nn])
-	  sprintf(tmp, ",%s-AMP,%s-PHASE", polarization[nn], polarization[nn]);
+	  sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
 	else
-	  sprintf(tmp, ",%s", polarization[nn]);
+	  sprintf(tmp, ",%s", element[nn]);
 	strcat(metaOut->general->bands, tmp);
       }
-      for (ii=0; ii<metaIn->general->line_count; ii++) {
-	if (dataType[nn]) {
-	  metaIn->general->sample_count = ns*2;
+      if (dataType[nn]) {
+	for (ii=0; ii<metaIn->general->line_count; ii++) {
+	  metaIn->general->sample_count = 2*ns;
 	  get_float_line(fpIn, metaIn, ii, floatComplexBuf);
+	  //FREAD(floatComplexBuf, sizeof(float), 2*ns, fpIn);
+	  for (kk=0; kk<ns; kk++) {
+	    floatComplexReal[kk] = floatComplexBuf[kk*2];
+	    floatComplexImag[kk] = floatComplexBuf[kk*2+1];
+	    ieee_big32(floatComplexReal[kk]);
+	    ieee_big32(floatComplexImag[kk]);
+	  }
+	  put_band_float_line(fpOut, metaOut, ll+0, ii, floatComplexReal);
+	  //put_band_float_line(fpOut, metaOut, ll+1, ii, floatComplexImag);
+	  /*
+	  offset = (long long)sizeof(float)*ns*(nl*ll+ii);
+	  FSEEK64(fpOut, offset, SEEK_SET);
+	  FWRITE(floatComplexReal, sizeof(float), ns, fpOut);
+	  offset += (long long)sizeof(float)*ns*nl;
+	  FSEEK64(fpOut, offset, SEEK_SET);
+	  FWRITE(floatComplexImag, sizeof(float), ns, fpOut);
+	  */
+	  asfLineMeter(ii, metaIn->general->line_count);
 	}
-	else {
+      }
+      else {
+	for (ii=0; ii<metaIn->general->line_count; ii++) {
 	  metaIn->general->sample_count = ns;
 	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-	}
-	for (kk=0; kk<ns; kk++) {
-	  if (dataType[nn]) {
-	    ieee_big32(floatComplexBuf[kk*2]);
-	    ieee_big32(floatComplexBuf[kk*2+1]);
-	    cpx.real = floatComplexBuf[kk*2];
-	    cpx.imag = floatComplexBuf[kk*2+1];
-	    floatAmpBuf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	    floatPhaseBuf[kk] = atan2(cpx.imag, cpx.real);
-	  }
-	  else
+	  for (kk=0; kk<ns; kk++)
 	    ieee_big32(floatAmpBuf[kk]);
-	}
-	if (dataType[nn]) {
 	  put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
-	  put_band_float_line(fpOut, metaOut, ll+1, ii, floatPhaseBuf);
+	  asfLineMeter(ii, metaIn->general->line_count);      
 	}
-	else 
-	  put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
-	asfLineMeter(ii, metaIn->general->line_count);      
       }
+      FCLOSE(fpIn);
+      FCLOSE(fpOut);
       if (dataType[nn])
 	ll += 2;
       else
 	ll++;
-      FCLOSE(fpIn);
-      FCLOSE(fpOut);
     }
     meta_write(metaOut, outName);
+    FREE(floatAmpBuf);
+    FREE(floatComplexReal);
+    FREE(floatComplexImag);
+    FREE(floatComplexBuf);
     meta_free(metaIn);
     meta_free(metaOut);
   }
@@ -717,12 +866,14 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   // Digital elevation model
   if (strcmp_case(data_type, "HGT") == 0 ||
       strcmp_case(data_type, "ALL") == 0) {
-    get_uavsar_file_names(inFileName, POLSAR_HGT, &dataName, &polarization,
+    get_uavsar_file_names(inFileName, POLSAR_HGT, &dataName, &element,
 			  &dataType, &nBands);
     params = 
       read_uavsar_polsar_params(inFileName, POLSAR_HGT);
     metaIn = uavsar_polsar2meta(params);
     metaOut = uavsar_polsar2meta(params);
+    ns = metaOut->general->sample_count;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
     if (strcmp_case(data_type, "HGT") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)

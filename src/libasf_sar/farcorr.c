@@ -8,7 +8,7 @@
 
 typedef struct {
    int line;
-   quadPolFloat *buf;
+   quadPolS2Float *buf;
 
    FILE *fp;
    meta_parameters *meta;
@@ -46,7 +46,7 @@ QuadPolData *qpd_new(FILE *fp, meta_parameters *meta)
   complexFloat im1 = complex_new(0,1);
   qpd->r = complex_matrix_new22(re1,im1,im1,re1);
 
-  qpd->buf = CALLOC(meta->general->sample_count, sizeof(quadPolFloat));
+  qpd->buf = CALLOC(meta->general->sample_count, sizeof(quadPolS2Float));
 
   // find all the bands that we must "pass through" without changing
   int i;
@@ -131,7 +131,7 @@ static double get_omega(QuadPolData *qpd, int line, int samp)
   assert(samp < qpd->meta->general->sample_count);
   assert(line == qpd->line);
 
-  quadPolFloat *qpf = qpd->buf + samp;
+  quadPolS2Float *qpf = qpd->buf + samp;
 
   // This is the "M" matrix
   complexMatrix *m = complex_matrix_new22(qpf->hh, qpf->hv, qpf->vh, qpf->vv);
@@ -520,7 +520,7 @@ void faraday_correct(const char *inFile, const char *outFile, double threshold,
           omega = D2R*rotation_vals[j];
         
         omega *= -1;
-        quadPolFloat *qpf = qpd->buf + j;
+        quadPolS2Float *qpf = qpd->buf + j;
         
         // This is the "M" matrix
         complexMatrix *m =
@@ -573,7 +573,7 @@ void faraday_correct(const char *inFile, const char *outFile, double threshold,
     else {
       // do not rotate -- output same as input
       for (j=0; j<ns; ++j) {
-        quadPolFloat *qpf = qpd->buf + j;
+        quadPolS2Float *qpf = qpd->buf + j;
         hh_amp[j] = complex_amp(qpf->hh);
         hh_phase[j] = complex_arg(qpf->hh);
         hv_amp[j] = complex_amp(qpf->hv);

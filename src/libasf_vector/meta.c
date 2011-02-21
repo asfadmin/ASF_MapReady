@@ -1640,8 +1640,18 @@ static int convert_meta2csv(char *inFile, FILE *fp)
         strcpy(image_data_type, "POLARIMETRIC_DECOMPOSITION");
       else if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
         strcpy(image_data_type, "POLARIMETRIC_PARAMETER");
-      else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
-        strcpy(image_data_type, "POLARIMETRIC_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_C2_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_C2_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_C3_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_C4_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_C4_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_T3_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_T3_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_T4_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_T4_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_STOKES_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_STOKES_MATRIX");
       else if (meta->general->image_data_type == LUT_IMAGE)
         strcpy(image_data_type, "LUT_IMAGE");
       else if (meta->general->image_data_type == ELEVATION)
@@ -2817,8 +2827,18 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
         strcpy(image_data_type, "POLARIMETRIC_DECOMPOSITION");
       else if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
         strcpy(image_data_type, "POLARIMETRIC_PARAMETER");
-      else if (meta->general->image_data_type == POLARIMETRIC_MATRIX)
-        strcpy(image_data_type, "POLARIMETRIC_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_C2_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_C2_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_C3_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_C4_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_C4_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_T3_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_T3_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_T4_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_T4_MATRIX");
+      else if (meta->general->image_data_type == POLARIMETRIC_STOKES_MATRIX)
+        strcpy(image_data_type, "POLARIMETRIC_STOKES_MATRIX");
       else if (meta->general->image_data_type == LUT_IMAGE)
         strcpy(image_data_type, "LUT_IMAGE");
       else if (meta->general->image_data_type == ELEVATION)

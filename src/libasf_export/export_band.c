@@ -1106,7 +1106,8 @@ export_band_image (const char *metadata_file_name,
   else if (format == NC && rgb)
     asfPrintError("Export to a color netCDF format is not supported!\n");
 
-  if (md->general->image_data_type != POLARIMETRIC_MATRIX &&
+  if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+      md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
       md->general->image_data_type != POLARIMETRIC_DECOMPOSITION &&
       format == POLSARPRO_HDR)
     append_ext_if_needed(output_file_name, ".bin", NULL);
@@ -1829,7 +1830,8 @@ export_band_image (const char *metadata_file_name,
     // the bands string, what kind of matrix we have, because we need to
     // create the appropriate subdirectory. Otherwise, PolSARPro can't handle
     // the files out of the box.
-    if (md->general->image_data_type == POLARIMETRIC_MATRIX &&
+    if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
 	md->general->band_count != 1) {
       snprintf(matrix, 3, "%s", band_name[band_count-1]);
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
@@ -1918,10 +1920,11 @@ export_band_image (const char *metadata_file_name,
         //      just the md->colormap (which sets have_look_up_table, above)
         int is_polsarpro = 
           (md->general->image_data_type == POLARIMETRIC_IMAGE || 
-          md->general->image_data_type == POLARIMETRIC_SEGMENTATION || 
-          md->general->image_data_type == POLARIMETRIC_DECOMPOSITION || 
-          md->general->image_data_type == POLARIMETRIC_PARAMETER ||
-          md->general->image_data_type == POLARIMETRIC_MATRIX) ? 1 : 0;
+	   md->general->image_data_type == POLARIMETRIC_SEGMENTATION || 
+	   md->general->image_data_type == POLARIMETRIC_DECOMPOSITION || 
+	   md->general->image_data_type == POLARIMETRIC_PARAMETER ||
+	   (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+	    md->general->image_data_type <= POLARIMETRIC_T4_MATRIX)) ? 1 : 0;
         if (
           ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
           (!md->colormap && have_look_up_table && md->general->data_type == BYTE) ||
@@ -1961,8 +1964,9 @@ export_band_image (const char *metadata_file_name,
         // band is a classification and should be written out as color ...
         // and for TIFF formats, as a palette color tiff.
         // The only exception to this rule are polarimetric matrices
-        if (md->general->image_data_type == POLARIMETRIC_MATRIX &&
-          md->general->band_count != 1) {
+        if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+	    md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
+	    md->general->band_count != 1) {
             int ll, found_band = FALSE;
             int band_count;
             if (strcmp(matrix, "T3") == 0)
@@ -2182,7 +2186,7 @@ export_band_image (const char *metadata_file_name,
         // Determine which channel to read
         int channel;
         if (md->general->image_data_type >  POLARIMETRIC_IMAGE &&
-          md->general->image_data_type <= POLARIMETRIC_MATRIX)
+	    md->general->image_data_type <= POLARIMETRIC_T4_MATRIX)
           channel = kk;
         else {
           if (md->general->band_count == 1)

@@ -414,8 +414,20 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = POLARIMETRIC_DECOMPOSITION;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_PARAMETER") )
         MGENERAL->image_data_type = POLARIMETRIC_PARAMETER;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_MATRIX") )
-        MGENERAL->image_data_type = POLARIMETRIC_MATRIX;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_C2_MATRIX") )
+        MGENERAL->image_data_type = POLARIMETRIC_C2_MATRIX;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_C3_MATRIX") )
+        MGENERAL->image_data_type = POLARIMETRIC_C3_MATRIX;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_C4_MATRIX") )
+        MGENERAL->image_data_type = POLARIMETRIC_C4_MATRIX;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_T3_MATRIX") )
+        MGENERAL->image_data_type = POLARIMETRIC_T3_MATRIX;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_T4_MATRIX") )
+        MGENERAL->image_data_type = POLARIMETRIC_T4_MATRIX;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_S2_MATRIX") )
+        MGENERAL->image_data_type = POLARIMETRIC_S2_MATRIX;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_STOKES_MATRIX") )
+        MGENERAL->image_data_type = POLARIMETRIC_STOKES_MATRIX;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "LUT_IMAGE") )
           MGENERAL->image_data_type = LUT_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ELEVATION") )
@@ -465,7 +477,8 @@ void fill_structure_field(char *field_name, void *valp)
             MGENERAL->image_data_type == POLARIMETRIC_SEGMENTATION ||
 	    MGENERAL->image_data_type == POLARIMETRIC_DECOMPOSITION ||
 	    MGENERAL->image_data_type == POLARIMETRIC_PARAMETER ||
-	    MGENERAL->image_data_type == POLARIMETRIC_MATRIX)
+	    (MGENERAL->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+	     MGENERAL->image_data_type <= POLARIMETRIC_STOKES_MATRIX))
         {
           warning_message("Unrecognized radiometry (%s).\n",VALP_AS_CHAR_POINTER);
         }

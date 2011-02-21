@@ -15,11 +15,14 @@ typedef struct {
 
    float *amp; // HH amplitude data
 
-   quadPolFloat *data_buffer;
-   quadPolFloat **lines;
+   quadPolS2Float *s2_data_buffer;
+   quadPolS2Float **s2_lines;
 
-   complexVector *pauli_buffer;
-   complexVector **pauli_lines;
+  quadPolC3Float *c3_data_buffer;
+  quadPolC3Float **c3_lines;
+
+   floatVector *pauli_buffer;
+   floatVector **pauli_lines;
 
    complexMatrix **coh_buffer;
    complexMatrix ***coh_lines;
@@ -29,6 +32,12 @@ typedef struct {
    int hv_amp_band, hv_phase_band;
    int vh_amp_band, vh_phase_band;
    int vv_amp_band, vv_phase_band;
+  int c11_band, c12_real_band, c12_imag_band;
+  int c13_real_band, c13_imag_band, c22_band;
+  int c23_real_band, c23_imag_band, c33_band;
+  int t11_band, t12_real_band, t12_imag_band;
+  int t13_real_band, t13_imag_band, t22_band;
+  int t23_real_band, t23_imag_band, t33_band;
 } PolarimetricImageRows;
 
 
@@ -40,14 +49,44 @@ typedef struct {
 //    return ret;
 //}
 
-static quadPolFloat qual_pol_zero()
+void my_randomize(void)
 {
-    quadPolFloat ret;
+  srand((unsigned) time(NULL));
+}
+
+float my_random()
+{
+  /*
+  float res;
+  res = (float) ((rand() * num) / (RAND_MAX + 1.0));
+  return (res);
+  */
+  return 2.0*M_PI*rand()/((float)(RAND_MAX) + 1.0);
+}
+
+static quadPolS2Float qual_pol_s2_zero()
+{
+    quadPolS2Float ret;
     ret.hh = complex_zero();
     ret.vh = complex_zero();
     ret.hv = complex_zero();
     ret.vv = complex_zero();
     return ret;
+}
+
+static quadPolC3Float qual_pol_c3_zero()
+{
+  quadPolC3Float ret;
+  ret.c11 = 0.0;
+  ret.c12_real = 0.0;
+  ret.c12_imag = 0.0;
+  ret.c13_real = 0.0;
+  ret.c13_imag = 0.0;
+  ret.c22 = 0.0;
+  ret.c23_real = 0.0;
+  ret.c23_imag = 0.0;
+  ret.c33 = 0.0;
+  return ret;
 }
 
 static PolarimetricImageRows *
@@ -70,19 +109,31 @@ polarimetric_image_rows_new(meta_parameters *meta, int nrows, int multi)
     int ns = meta->general->sample_count;
 
     self->amp = CALLOC(ns, sizeof(float));
-    self->data_buffer = CALLOC(nrows*ns, sizeof(quadPolFloat));
-    self->lines = CALLOC(nrows, sizeof(quadPolFloat*));
+    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+      self->s2_data_buffer = CALLOC(nrows*ns, sizeof(quadPolS2Float));
+      self->s2_lines = CALLOC(nrows, sizeof(quadPolS2Float*));
+    }
+    else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+      self->c3_data_buffer = CALLOC(nrows*ns, sizeof(quadPolC3Float));
+      self->c3_lines = CALLOC(nrows, sizeof(quadPolC3Float*));
+    }
 
     // initially, the line pointers point at their natural locations in
     // the buffer
     int i;
-    for (i=0; i<nrows; ++i)
-        self->lines[i] = &(self->data_buffer[ns*i]);
+    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+      for (i=0; i<nrows; ++i)
+	self->s2_lines[i] = &(self->s2_data_buffer[ns*i]);
+    }
+    if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+      for (i=0; i<nrows; ++i)
+	self->c3_lines[i] = &(self->c3_data_buffer[ns*i]);
+    }
 
     // these guys are the pauli basis elements we've calculated for the
     // loaded rows
-    self->pauli_buffer = CALLOC(nrows*ns, sizeof(complexVector));
-    self->pauli_lines = CALLOC(nrows, sizeof(complexVector*));
+    self->pauli_buffer = CALLOC(nrows*ns, sizeof(floatVector));
+    self->pauli_lines = CALLOC(nrows, sizeof(floatVector*));
     for (i=0; i<nrows; ++i)
         self->pauli_lines[i] = &(self->pauli_buffer[ns*i]);
 
@@ -100,6 +151,24 @@ polarimetric_image_rows_new(meta_parameters *meta, int nrows, int multi)
     self->hv_amp_band = self->hv_phase_band = -1;
     self->vh_amp_band = self->vh_phase_band = -1;
     self->vv_amp_band = self->vv_phase_band = -1;
+    self->c11_band = -1;
+    self->c12_real_band = -1;
+    self->c12_imag_band = -1;
+    self->c13_real_band = -1; 
+    self->c13_imag_band = -1;
+    self->c22_band = -1;
+    self->c23_real_band = -1;
+    self->c23_imag_band = -1;
+    self->c33_band = -1;
+    self->t11_band = -1;
+    self->t12_real_band = -1;
+    self->t12_imag_band = -1;
+    self->t13_real_band = -1;
+    self->t13_imag_band = -1;
+    self->t22_band = -1;
+    self->t23_real_band = -1;
+    self->t23_imag_band = -1;
+    self->t33_band = -1;
 
     return self;
 }
@@ -110,30 +179,68 @@ static int polarimetric_image_rows_get_bands(PolarimetricImageRows *self)
     // "extra" amplitude band needs to be the first band
     char *bands = self->meta->general->bands;
     self->amp_band = strncmp_case(bands, "AMP", 3) == 0 ? 0 : -1;
+
     // polarimetric bands
-    self->hh_amp_band = find_band(self->meta, "AMP-HH", &ok);
-    self->hh_phase_band = find_band(self->meta, "PHASE-HH", &ok);
-    self->hv_amp_band = find_band(self->meta, "AMP-HV", &ok);
-    self->hv_phase_band = find_band(self->meta, "PHASE-HV", &ok);
-    self->vh_amp_band = find_band(self->meta, "AMP-VH", &ok);
-    self->vh_phase_band = find_band(self->meta, "PHASE-VH", &ok);
-    self->vv_amp_band = find_band(self->meta, "AMP-VV", &ok);
-    self->vv_phase_band = find_band(self->meta, "PHASE-VV", &ok);
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+      self->hh_amp_band = find_band(self->meta, "AMP-HH", &ok);
+      self->hh_phase_band = find_band(self->meta, "PHASE-HH", &ok);
+      self->hv_amp_band = find_band(self->meta, "AMP-HV", &ok);
+      self->hv_phase_band = find_band(self->meta, "PHASE-HV", &ok);
+      self->vh_amp_band = find_band(self->meta, "AMP-VH", &ok);
+      self->vh_phase_band = find_band(self->meta, "PHASE-VH", &ok);
+      self->vv_amp_band = find_band(self->meta, "AMP-VV", &ok);
+      self->vv_phase_band = find_band(self->meta, "PHASE-VV", &ok);
+    }
+    else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+      self->c11_band = find_band(self->meta, "C11", &ok);
+      self->c12_real_band = find_band(self->meta, "C12_real", &ok);
+      self->c12_imag_band = find_band(self->meta, "C12_imag", &ok);
+      self->c13_real_band = find_band(self->meta, "C13_real", &ok);
+      self->c13_imag_band = find_band(self->meta, "C13_imag", &ok);
+      self->c22_band = find_band(self->meta, "C22", &ok);
+      self->c23_real_band = find_band(self->meta, "C23_real", &ok);
+      self->c23_imag_band = find_band(self->meta, "C23_imag", &ok);
+      self->c33_band = find_band(self->meta, "C33", &ok);
+    }
+    else if (self->meta->general->image_data_type == POLARIMETRIC_T3_MATRIX) {
+      self->t11_band = find_band(self->meta, "T11", &ok);
+      self->t12_real_band = find_band(self->meta, "T12_real", &ok);
+      self->t12_imag_band = find_band(self->meta, "T12_imag", &ok);
+      self->t13_real_band = find_band(self->meta, "T13_real", &ok);
+      self->t13_imag_band = find_band(self->meta, "T13_imag", &ok);
+      self->t22_band = find_band(self->meta, "T22", &ok);
+      self->t23_real_band = find_band(self->meta, "T23_real", &ok);
+      self->t23_imag_band = find_band(self->meta, "T23_imag", &ok);
+      self->t33_band = find_band(self->meta, "T33", &ok);
+    }
     return ok;
 }
 
 static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
 {
     int j, ns=self->meta->general->sample_count;
-    for (j=0; j<ns; ++j) {
-        quadPolFloat q = self->lines[n][j];
+    complexFloat cpx_a, cpx_b, cpx_c;
 
-        // HH-VV, HV+VH, HH+VV
-        self->pauli_lines[n][j] =
-          complex_vector_new(
-	    complex_sub(q.hh, q.vv),
-	    complex_add(q.hv, q.vh),
-	    complex_add(q.hh, q.vv));
+    // HH-VV, HV+VH, HH+VV
+
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+      for (j=0; j<ns; ++j) {
+        quadPolS2Float q = self->s2_lines[n][j];
+	cpx_a = complex_sub(q.hh, q.vv);
+	cpx_b = complex_add(q.hv, q.vh);
+	cpx_c = complex_add(q.hh, q.vv);
+        self->pauli_lines[n][j].A = (float) hypot(cpx_a.real, cpx_a.imag);
+        self->pauli_lines[n][j].B = (float) hypot(cpx_b.real, cpx_b.imag);
+        self->pauli_lines[n][j].C = (float) hypot(cpx_c.real, cpx_c.imag);	
+      }
+    }
+    else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+      for (j=0; j<ns; ++j) {
+	quadPolC3Float q = self->c3_lines[n][j];
+	self->pauli_lines[n][j].A = (q.c11 - 2.0*q.c13_real + q.c33) / 2.0;
+	self->pauli_lines[n][j].B = q.c22;
+	self->pauli_lines[n][j].C = (q.c11 + 2.0*q.c13_real + q.c33) / 2.0;
+      }
     }
 }
 
@@ -143,8 +250,9 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
     // [ A*B  B*B  C*B ]    B = HH - VV
     // [ A*C  B*C  C*C ]    C = 2*HV
     int j, ns=self->meta->general->sample_count;
-    for (j=0; j<ns; ++j) {
-        quadPolFloat q = self->lines[n][j];
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+      for (j=0; j<ns; ++j) {
+        quadPolS2Float q = self->s2_lines[n][j];
         complexVector v = //complex_vector_normalize(
           complex_vector_new(
             complex_add(q.hh, q.vv),
@@ -168,6 +276,7 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
 
         //complex_matrix_scale(m,1./sqrt(2.0));
         complex_matrix_scale(m,0.5);
+      }
     }
 }
 
@@ -183,13 +292,15 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   // FIRST -- slide row pointers
   int k;
   for (k=0; k<self->nrows-1; ++k) {
-    self->lines[k] = self->lines[k+1];
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+      self->s2_lines[k] = self->s2_lines[k+1];
     self->pauli_lines[k] = self->pauli_lines[k+1];
   }
   
   // the next line to load will go into the spot we just dumped
   int last = self->nrows - 1;
-  self->lines[last] = self->lines[0];
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+    self->s2_lines[last] = self->s2_lines[0];
   self->pauli_lines[last] = self->pauli_lines[0];
   
   self->current_row++;
@@ -198,40 +309,177 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   // if we have moved off the top of the image, we will need to
   // fill with zeros, instead of loading a row
   int ns = self->meta->general->sample_count;
-  float *amp_buf = MALLOC(sizeof(float)*ns);
-  float *phase_buf = MALLOC(sizeof(float)*ns);
+
+  float *amp_buf=NULL, *phase_buf=NULL;
+  float *c11=NULL, *c12_real=NULL, *c12_imag=NULL, *c13_real=NULL;
+  float *c13_imag=NULL, *c22=NULL, *c23_real=NULL, *c23_imag=NULL, *c33=NULL;
+  float *t11=NULL, *t12_real=NULL, *t12_imag=NULL, *t13_real=NULL;
+  float *t13_imag=NULL, *t22=NULL, *t23_real=NULL, *t23_imag=NULL, *t33=NULL;
+  float C11, C12_real, C12_imag, C13_real, C13_imag;
+  float C22, C23_real, C23_imag, C33;
+  float phase, phase12, phase13, phase23;
+
+  amp_buf = MALLOC(sizeof(float)*ns);
+
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    phase_buf = MALLOC(sizeof(float)*ns);
+  }
+  else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+    c11 = MALLOC(sizeof(float)*ns);
+    c12_real = MALLOC(sizeof(float)*ns);
+    c12_imag = MALLOC(sizeof(float)*ns);
+    c13_real = MALLOC(sizeof(float)*ns);
+    c13_imag = MALLOC(sizeof(float)*ns);
+    c22 = MALLOC(sizeof(float)*ns);
+    c23_real = MALLOC(sizeof(float)*ns);
+    c23_imag = MALLOC(sizeof(float)*ns);
+    c33 = MALLOC(sizeof(float)*ns);
+  }
+  else if (self->meta->general->image_data_type == POLARIMETRIC_T3_MATRIX) {
+    t11 = MALLOC(sizeof(float)*ns);
+    t12_real = MALLOC(sizeof(float)*ns);
+    t12_imag = MALLOC(sizeof(float)*ns);
+    t13_real = MALLOC(sizeof(float)*ns);
+    t13_imag = MALLOC(sizeof(float)*ns);
+    t22 = MALLOC(sizeof(float)*ns);
+    t23_real = MALLOC(sizeof(float)*ns);
+    t23_imag = MALLOC(sizeof(float)*ns);
+    t33 = MALLOC(sizeof(float)*ns);
+  }
+
 
   int row = self->current_row + (self->nrows-1)/2;
   if (row < self->meta->general->line_count) {
-    // amplutide, we only store the current row
+    // amplitude, we only store the current row
     if (self->current_row >= 0 && self->amp_band >= 0)
       get_band_float_line(fin, self->meta, self->amp_band,
                           self->current_row, self->amp);
 
     // now the SLC rows
-    get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
-    get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
-    for (k=0; k<ns; ++k)
-      self->lines[last][k].hh = complex_new_polar(sqrt(amp_buf[k]),
-                                                  phase_buf[k]);
-    
-    get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
-    get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
-    for (k=0; k<ns; ++k)
-      self->lines[last][k].hv = complex_new_polar(sqrt(amp_buf[k]),
-                                                  phase_buf[k]);
-    
-    get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
-    get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
-    for (k=0; k<ns; ++k)
-      self->lines[last][k].vh = complex_new_polar(sqrt(amp_buf[k]),
-                                                  phase_buf[k]);
-    
-    get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
-    get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
-    for (k=0; k<ns; ++k)
-      self->lines[last][k].vv = complex_new_polar(sqrt(amp_buf[k]),
-                                                  phase_buf[k]);
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+
+      get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+	self->s2_lines[last][k].hh = complex_new_polar(sqrt(amp_buf[k]),
+						       phase_buf[k]);
+      
+      get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+	self->s2_lines[last][k].hv = complex_new_polar(sqrt(amp_buf[k]),
+						       phase_buf[k]);
+      
+      get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+	self->s2_lines[last][k].vh = complex_new_polar(sqrt(amp_buf[k]),
+						       phase_buf[k]);
+      
+      get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+	self->s2_lines[last][k].vv = complex_new_polar(sqrt(amp_buf[k]),
+						       phase_buf[k]);
+    }
+    else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+ 
+      get_band_float_line(fin, self->meta, self->c11_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c11 = amp_buf[k];
+
+      get_band_float_line(fin, self->meta, self->c12_real_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c12_real = amp_buf[k];
+
+      get_band_float_line(fin, self->meta, self->c12_imag_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c12_imag = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c13_real_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c13_real = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c13_imag_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c13_imag = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c22_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c22 = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c23_real_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c23_real = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c23_imag_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c23_imag = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c33_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[last][k].c33 = amp_buf[k]; 
+
+      /*
+      for (k=0; k<ns; ++k) {
+	phase = my_random();
+	phase = 0.0;
+	self->lines[last][k].hh = 
+	  complex_new(sqrt(c11[k])*cos(phase), sqrt(c11[k])*sin(phase));
+	phase12 = phase - atan2(c12_imag[k], c12_real[k]);
+	self->lines[last][k].hv = 
+	  complex_new(sqrt(c22[k]/2.0)*cos(phase12), 
+	  	      sqrt(c22[k]/2.0)*sin(phase12));
+	//phase23 = phase - atan2(c23_imag[k], c23_real[k]);
+	self->lines[last][k].vh = 
+	  complex_new(sqrt(c22[k]/2.0)*cos(phase12), 
+	  	      sqrt(c22[k]/2.0)*sin(phase12));
+	phase13 = phase - atan2(c13_imag[k], c13_real[k]);
+	self->lines[last][k].vv = 
+	  complex_new(sqrt(c33[k])*cos(phase13), sqrt(c33[k])*sin(phase13));
+      }
+      */
+    }
+    else if (self->meta->general->image_data_type == POLARIMETRIC_T3_MATRIX) {
+ 
+      get_band_float_line(fin, self->meta, self->t11_band, row, t11);
+      get_band_float_line(fin, self->meta, self->t12_real_band, row, t12_real);
+      get_band_float_line(fin, self->meta, self->t12_imag_band, row, t12_imag);
+      get_band_float_line(fin, self->meta, self->t13_real_band, row, t13_real);
+      get_band_float_line(fin, self->meta, self->t13_imag_band, row, t13_imag);
+      get_band_float_line(fin, self->meta, self->t22_band, row, t22);
+      get_band_float_line(fin, self->meta, self->t23_real_band, row, t23_real);
+      get_band_float_line(fin, self->meta, self->t23_imag_band, row, t23_imag);
+      get_band_float_line(fin, self->meta, self->t33_band, row, t33);
+
+      /*
+      for (k=0; k<ns; ++k) {
+	C11 = (t11[k] + 2.0*t12_real[k] + t22[k])/2.0;
+	C12_real = (t13_real[k] + t23_real[k])/sqrt(2.0);
+	C12_imag = (t13_imag[k] + t23_imag[k])/sqrt(2.0);
+	C13_real = (t11[k] - t22[k])/2.0;
+	C13_imag = -t12_imag[k];
+	C22 = t33[k];
+	C23_real = (t13_real[k] - t23_real[k])/sqrt(2.0);
+	C23_imag = (-t13_imag[k] + t23_imag[k])/sqrt(2.0);
+	C33 = (t11[k] - 2.0*t12_real[k] + t22[k])/2.0;
+	phase = my_random(1.0) * 2.0 * M_PI;
+	self->lines[last][k].hh = 
+	  complex_new(sqrt(C11)*cos(phase), sqrt(C11)*sin(phase));
+	phase12 = phase - atan2(C12_imag, C12_real);
+	self->lines[last][k].hv = 
+	  complex_new(sqrt(C22/2.0)*cos(phase12), 
+	  	      sqrt(C22/2.0)*sin(phase12));
+	phase23 = phase - atan2(C23_imag, C23_real);
+	self->lines[last][k].vh = 
+	  complex_new(sqrt(C22/2.0)*cos(phase23), 
+	  	      sqrt(C22/2.0)*sin(phase23));
+	phase13 = phase - atan2(C13_imag, C13_real);
+	self->lines[last][k].vv = 
+	  complex_new(sqrt(C33)*cos(phase13), sqrt(C33)*sin(phase13));
+      }
+      */
+    }
     
     calculate_pauli_for_row(self, last);
     calculate_coherence_for_row(self, last);
@@ -239,21 +487,85 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   else {
     // window has scrolled off top of image -- fill with zeros
     for (k=0; k<self->meta->general->sample_count; ++k) {
-      self->lines[last][k] = qual_pol_zero();
-      self->pauli_lines[last][k] = complex_vector_zero();
+      if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+	self->s2_lines[last][k] = qual_pol_s2_zero();
+      else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX)
+	self->c3_lines[last][k] = qual_pol_c3_zero();
+      //self->pauli_lines[last][k] = complex_vector_zero();
+      self->pauli_lines[last][k].A = 0.0;
+      self->pauli_lines[last][k].B = 0.0;
+      self->pauli_lines[last][k].C = 0.0;
     }
   }
   
   free(amp_buf);
-  free(phase_buf);
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+    free(phase_buf);
+  if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+    free(c11);
+    free(c12_real);
+    free(c12_imag);
+    free(c13_real);
+    free(c13_imag);
+    free(c22);
+    free(c23_real);
+    free(c23_imag);
+    free(c33);
+  }
+  if (self->meta->general->image_data_type == POLARIMETRIC_T3_MATRIX) {
+    free(t11);
+    free(t12_real);
+    free(t12_imag);
+    free(t13_real);
+    free(t13_imag);
+    free(t22);
+    free(t23_real);
+    free(t23_imag);
+    free(t33);
+  }
 }
 
 static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
                                                   FILE *fin)
 {
   int i,k,ns = self->meta->general->sample_count;
-  float *amp_buf = MALLOC(sizeof(float)*ns);
-  float *phase_buf = MALLOC(sizeof(float)*ns);
+
+  float *amp_buf=NULL, *phase_buf=NULL;
+  float *c11=NULL, *c12_real=NULL, *c12_imag=NULL, *c13_real=NULL;
+  float *c13_imag=NULL, *c22=NULL, *c23_real=NULL, *c23_imag=NULL, *c33=NULL;
+  float *t11=NULL, *t12_real=NULL, *t12_imag=NULL, *t13_real=NULL;
+  float *t13_imag=NULL, *t22=NULL, *t23_real=NULL, *t23_imag=NULL, *t33=NULL;
+  float phase, phase12, phase13, phase23;
+  float C11, C12_real, C12_imag, C13_real, C13_imag;
+  float C22, C23_real, C23_imag, C33;
+
+  amp_buf = MALLOC(sizeof(float)*ns);
+
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    phase_buf = MALLOC(sizeof(float)*ns);
+  }
+  else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+    c11 = MALLOC(sizeof(float)*ns);
+    c12_real = MALLOC(sizeof(float)*ns);
+    c12_imag = MALLOC(sizeof(float)*ns);
+    c13_real = MALLOC(sizeof(float)*ns);
+    c13_imag = MALLOC(sizeof(float)*ns);
+    c22 = MALLOC(sizeof(float)*ns);
+    c23_real = MALLOC(sizeof(float)*ns);
+    c23_imag = MALLOC(sizeof(float)*ns);
+    c33 = MALLOC(sizeof(float)*ns);
+  }
+  else if (self->meta->general->image_data_type == POLARIMETRIC_T3_MATRIX) {
+    t11 = MALLOC(sizeof(float)*ns);
+    t12_real = MALLOC(sizeof(float)*ns);
+    t12_imag = MALLOC(sizeof(float)*ns);
+    t13_real = MALLOC(sizeof(float)*ns);
+    t13_imag = MALLOC(sizeof(float)*ns);
+    t22 = MALLOC(sizeof(float)*ns);
+    t23_real = MALLOC(sizeof(float)*ns);
+    t23_imag = MALLOC(sizeof(float)*ns);
+    t33 = MALLOC(sizeof(float)*ns);
+  }
 
   int amp_band = self->amp_band;
   if (amp_band < 0)
@@ -270,29 +582,140 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
       self->amp[k] += amp_buf[k];
 
     // now the SLC rows
-    get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
-    get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
-    for (k=0; k<ns; ++k)
-      self->lines[i][k].hh = complex_new_polar(sqrt(amp_buf[k]),
-                                               phase_buf[k]);
-    
-    get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
-    get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
-    for (k=0; k<ns; ++k)
-      self->lines[i][k].hv = complex_new_polar(sqrt(amp_buf[k]),
-                                               phase_buf[k]);
-    
-    get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
-    get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
-    for (k=0; k<ns; ++k)
-      self->lines[i][k].vh = complex_new_polar(sqrt(amp_buf[k]),
-                                               phase_buf[k]);
-    
-    get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
-    get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
-    for (k=0; k<ns; ++k)
-      self->lines[i][k].vv = complex_new_polar(sqrt(amp_buf[k]),
-                                               phase_buf[k]);
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+
+      get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+	self->s2_lines[i][k].hh = complex_new_polar(sqrt(amp_buf[k]),
+						    phase_buf[k]);
+      
+      get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+	self->s2_lines[i][k].hv = complex_new_polar(sqrt(amp_buf[k]),
+						    phase_buf[k]);
+      
+      get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+	self->s2_lines[i][k].vh = complex_new_polar(sqrt(amp_buf[k]),
+						    phase_buf[k]);
+      
+      get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+	self->s2_lines[i][k].vv = complex_new_polar(sqrt(amp_buf[k]),
+						    phase_buf[k]);
+    }
+    else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+ 
+      get_band_float_line(fin, self->meta, self->c11_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c11 = amp_buf[k];
+
+      get_band_float_line(fin, self->meta, self->c12_real_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c12_real = amp_buf[k];
+
+      get_band_float_line(fin, self->meta, self->c12_imag_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c12_imag = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c13_real_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c13_real = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c13_imag_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c13_imag = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c22_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c22 = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c23_real_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c23_real = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c23_imag_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c23_imag = amp_buf[k]; 
+
+      get_band_float_line(fin, self->meta, self->c33_band, row, amp_buf);
+      for (k=0; k<ns; ++k)
+	self->c3_lines[i][k].c33 = amp_buf[k]; 
+
+      /*
+      get_band_float_line(fin, self->meta, self->c11_band, row, c11);
+      get_band_float_line(fin, self->meta, self->c12_real_band, row, c12_real);
+      get_band_float_line(fin, self->meta, self->c12_imag_band, row, c12_imag);
+      get_band_float_line(fin, self->meta, self->c13_real_band, row, c13_real);
+      get_band_float_line(fin, self->meta, self->c13_imag_band, row, c13_imag);
+      get_band_float_line(fin, self->meta, self->c22_band, row, c22);
+      get_band_float_line(fin, self->meta, self->c23_real_band, row, c23_real);
+      get_band_float_line(fin, self->meta, self->c23_imag_band, row, c23_imag);
+      get_band_float_line(fin, self->meta, self->c33_band, row, c33);
+
+      for (k=0; k<ns; ++k) {
+	phase = my_random(1.0) * 2.0 * M_PI;
+	self->lines[i][k].hh = 
+	  complex_new(sqrt(c11[k])*cos(phase), sqrt(c11[k])*sin(phase));
+	phase12 = phase - atan2(c12_imag[k], c12_real[k]);
+	self->lines[i][k].hv = 
+	  complex_new(sqrt(c22[k]/2.0)*cos(phase12), 
+	  	      sqrt(c22[k]/2.0)*sin(phase12));
+	//phase23 = phase - atan2(c23_imag[k], c23_real[k]);
+	self->lines[i][k].vh = 
+	  complex_new(sqrt(c22[k]/2.0)*cos(phase12), 
+	  	      sqrt(c22[k]/2.0)*sin(phase12));
+	phase13 = phase - atan2(c13_imag[k], c13_real[k]);
+	self->lines[i][k].vv = 
+	  complex_new(sqrt(c33[k])*cos(phase13), sqrt(c33[k])*sin(phase13));
+      }
+      */
+    }
+    else if (self->meta->general->image_data_type == POLARIMETRIC_T3_MATRIX) {
+ 
+      get_band_float_line(fin, self->meta, self->t11_band, row, t11);
+      get_band_float_line(fin, self->meta, self->t12_real_band, row, t12_real);
+      get_band_float_line(fin, self->meta, self->t12_imag_band, row, t12_imag);
+      get_band_float_line(fin, self->meta, self->t13_real_band, row, t13_real);
+      get_band_float_line(fin, self->meta, self->t13_imag_band, row, t13_imag);
+      get_band_float_line(fin, self->meta, self->t22_band, row, t22);
+      get_band_float_line(fin, self->meta, self->t23_real_band, row, t23_real);
+      get_band_float_line(fin, self->meta, self->t23_imag_band, row, t23_imag);
+      get_band_float_line(fin, self->meta, self->t33_band, row, t33);
+
+      /*
+      C11 = (t11[k] + 2.0*t12_real[k] + t22[k])/2.0;
+      C12_real = (t13_real[k] + t23_real[k])/sqrt(2.0);
+      C12_imag = (t13_imag[k] + t23_imag[k])/sqrt(2.0);
+      C13_real = (t11[k] - t22[k])/2.0;
+      C13_imag = -t12_imag[k];
+      C22 = t33[k];
+      C23_real = (t13_real[k] - t23_real[k])/sqrt(2.0);
+      C23_imag = (-t13_imag[k] + t23_imag[k])/sqrt(2.0);
+      C33 = (t11[k] - 2.0*t12_real[k] + t22[k])/2.0;
+
+      for (k=0; k<ns; ++k) {
+	phase = my_random(1.0) * 2.0 * M_PI;
+	self->lines[i][k].hh = 
+	  complex_new(sqrt(C11)*cos(phase), sqrt(C11)*sin(phase));
+	phase12 = phase - atan2(C12_imag, C12_real);
+	self->lines[i][k].hv = 
+	  complex_new(sqrt(C22/2.0)*cos(phase12), 
+	  	      sqrt(C22/2.0)*sin(phase12));
+	phase23 = phase - atan2(C23_imag, C23_real);
+	self->lines[i][k].vh = 
+	  complex_new(sqrt(C22/2.0)*cos(phase23), 
+	  	      sqrt(C22/2.0)*sin(phase23));
+	phase13 = phase - atan2(C13_imag, C13_real);
+	self->lines[i][k].vv = 
+	  complex_new(sqrt(C33)*cos(phase13), sqrt(C33)*sin(phase13));
+      }
+      */
+    }
 
     calculate_pauli_for_row(self, i);
     calculate_coherence_for_row(self, i);
@@ -307,14 +730,39 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
   self->current_row += self->nrows;
 
   free(amp_buf);
-  free(phase_buf);
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+    free(phase_buf);
+  if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
+    free(c11);
+    free(c12_real);
+    free(c12_imag);
+    free(c13_real);
+    free(c13_imag);
+    free(c22);
+    free(c23_real);
+    free(c23_imag);
+    free(c33);
+  }
+  if (self->meta->general->image_data_type == POLARIMETRIC_T3_MATRIX) {
+    free(t11);
+    free(t12_real);
+    free(t12_imag);
+    free(t13_real);
+    free(t13_imag);
+    free(t22);
+    free(t23_real);
+    free(t23_imag);
+    free(t33);
+  }
 }
 
 static void polarimetric_image_rows_free(PolarimetricImageRows* self)
 {
     free(self->amp);
-    free(self->data_buffer);
-    free(self->lines);
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+      free(self->s2_data_buffer);
+      free(self->s2_lines);
+    }
     free(self->pauli_buffer);
     free(self->pauli_lines);
 
@@ -630,7 +1078,7 @@ static void do_sinclair_bands(int band1, int band2, int band3,
       for (j=0; j<ns; ++j) {
         buf[j] = 0.0;
         for (m=0; m<chunk_size; ++m)
-          buf[j] += complex_amp(img_rows->lines[m][j].hh);
+          buf[j] += complex_amp(img_rows->s2_lines[m][j].hh);
         buf[j] /= (float)chunk_size;
       }
       put_band_float_line(fout, outMeta, band1, line, buf);
@@ -639,8 +1087,8 @@ static void do_sinclair_bands(int band1, int band2, int band3,
       for (j=0; j<ns; ++j) {
         buf[j] = 0.0;
         for (m=0; m<chunk_size; ++m) {
-          complexFloat c = complex_add(img_rows->lines[m][j].hv,
-                                       img_rows->lines[m][j].vh);
+          complexFloat c = complex_add(img_rows->s2_lines[m][j].hv,
+                                       img_rows->s2_lines[m][j].vh);
           buf[j] += complex_amp(complex_scale(c, 0.5));
         }
         buf[j] /= (float)chunk_size;
@@ -651,7 +1099,7 @@ static void do_sinclair_bands(int band1, int band2, int band3,
       for (j=0; j<ns; ++j) {
         buf[j] = 0.0;
         for (m=0; m<chunk_size; ++m)
-          buf[j] += complex_amp(img_rows->lines[m][j].vv);
+          buf[j] += complex_amp(img_rows->s2_lines[m][j].vv);
         buf[j] /= (float)chunk_size;
       }
       put_band_float_line(fout, outMeta, band3, line, buf);
@@ -661,20 +1109,20 @@ static void do_sinclair_bands(int band1, int band2, int band3,
     // not multilooking -- no averaging necessary
     if (band1 >= 0) {
       for (j=0; j<ns; ++j)
-        buf[j] = complex_amp(img_rows->lines[l][j].hh);
+        buf[j] = complex_amp(img_rows->s2_lines[l][j].hh);
       put_band_float_line(fout, outMeta, band1, line, buf);
     }
     if (band2 >= 0) {
       for (j=0; j<ns; ++j) {
-        complexFloat c = complex_add(img_rows->lines[l][j].hv,
-                                     img_rows->lines[l][j].vh);
+        complexFloat c = complex_add(img_rows->s2_lines[l][j].hv,
+                                     img_rows->s2_lines[l][j].vh);
         buf[j] = complex_amp(complex_scale(c, 0.5));
       }
       put_band_float_line(fout, outMeta, band2, line, buf);
     }
     if (band3 >= 0) {
       for (j=0; j<ns; ++j)
-        buf[j] = complex_amp(img_rows->lines[l][j].vv);
+        buf[j] = complex_amp(img_rows->s2_lines[l][j].vv);
       put_band_float_line(fout, outMeta, band3, line, buf);
     }
   }
@@ -696,7 +1144,8 @@ static void do_pauli_bands(int band1, int band2, int band3,
       for (j=0; j<ns; ++j) {
         buf[j] = 0.0;
         for (m=0; m<chunk_size; ++m)
-          buf[j] += complex_amp(img_rows->pauli_lines[m][j].A);
+          buf[j] += img_rows->pauli_lines[m][j].A;
+	//buf[j] += complex_amp(img_rows->pauli_lines[m][j].A);
         buf[j] /= (float)chunk_size;
       }
       put_band_float_line(fout, outMeta, band1, line, buf);
@@ -705,7 +1154,8 @@ static void do_pauli_bands(int band1, int band2, int band3,
       for (j=0; j<ns; ++j) {
         buf[j] = 0.0;
         for (m=0; m<chunk_size; ++m)
-          buf[j] += complex_amp(img_rows->pauli_lines[m][j].B);
+          buf[j] += img_rows->pauli_lines[m][j].B;
+	//buf[j] += complex_amp(img_rows->pauli_lines[m][j].B);
         buf[j] /= (float)chunk_size;
       }
       put_band_float_line(fout, outMeta, band2, line, buf);
@@ -714,7 +1164,8 @@ static void do_pauli_bands(int band1, int band2, int band3,
       for (j=0; j<ns; ++j) {
         buf[j] = 0.0;
         for (m=0; m<chunk_size; ++m)
-          buf[j] += complex_amp(img_rows->pauli_lines[m][j].C);
+          buf[j] += img_rows->pauli_lines[m][j].C;
+	//buf[j] += complex_amp(img_rows->pauli_lines[m][j].C);
         buf[j] /= (float)chunk_size;
       }
       put_band_float_line(fout, outMeta, band3, line, buf);
@@ -724,17 +1175,20 @@ static void do_pauli_bands(int band1, int band2, int band3,
     // not multilooking -- no averaging necessary
     if (band1 >= 0) {
       for (j=0; j<ns; ++j)
-        buf[j] = complex_amp(img_rows->pauli_lines[l][j].A);
+        buf[j] = img_rows->pauli_lines[l][j].A;
+      //buf[j] = complex_amp(img_rows->pauli_lines[l][j].A);
       put_band_float_line(fout, outMeta, band1, line, buf);
     }
     if (band2 >= 0) {
       for (j=0; j<ns; ++j)
-        buf[j] = complex_amp(img_rows->pauli_lines[l][j].B);
+        buf[j] = img_rows->pauli_lines[l][j].B;
+      //buf[j] = complex_amp(img_rows->pauli_lines[l][j].B);
       put_band_float_line(fout, outMeta, band2, line, buf);
     }
     if (band3 >= 0) {
       for (j=0; j<ns; ++j)
-        buf[j] = complex_amp(img_rows->pauli_lines[l][j].C);
+        buf[j] = img_rows->pauli_lines[l][j].C;
+      //buf[j] = complex_amp(img_rows->pauli_lines[l][j].C);
       put_band_float_line(fout, outMeta, band3, line, buf);
     }
   }
@@ -1053,15 +1507,15 @@ static void do_freeman(int band1, int band2, int band3,
         hv2[j] = 0.0;
 
         for (m=0; m<chunk_size; ++m) {
-          complexFloat hh = img_rows->lines[m][j].hh;
+          complexFloat hh = img_rows->s2_lines[m][j].hh;
           hh2[j] += complex_amp_sqr(hh);
 
-          complexFloat vv = img_rows->lines[m][j].vv;
+          complexFloat vv = img_rows->s2_lines[m][j].vv;
           vv2[j] += complex_amp_sqr(vv);
 
           hhvv[j] = complex_add(hhvv[j], complex_mul(hh, complex_conj(vv)));
 
-          hv2[j] += complex_amp_sqr(img_rows->lines[m][j].hv);
+          hv2[j] += complex_amp_sqr(img_rows->s2_lines[m][j].hv);
         }
 
         hh2[j] *= sf;
@@ -1074,14 +1528,14 @@ static void do_freeman(int band1, int band2, int band3,
     else {
       // not multilooking -- no averaging necessary
       for (j=0; j<ns; ++j) {
-        complexFloat hh = img_rows->lines[l][j].hh;
+        complexFloat hh = img_rows->s2_lines[l][j].hh;
         hh2[j] = complex_amp_sqr(hh);
 
-        complexFloat vv = img_rows->lines[l][j].vv;
+        complexFloat vv = img_rows->s2_lines[l][j].vv;
         vv2[j] = complex_amp_sqr(vv);
 
         hhvv[j] = complex_mul(hh, complex_conj(vv));
-        hv2[j] = complex_amp_sqr(img_rows->lines[l][j].hv);
+        hv2[j] = complex_amp_sqr(img_rows->s2_lines[l][j].hv);
       }
     }
 
@@ -1297,6 +1751,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   char *out_img_name = appendExt(outFile, ".img");
 
   int i, j, k;
+  //my_randomize();
 
   // chunk_size represents the number of rows we keep in memory at one
   // time, centered on the row currently being processed.  This is to

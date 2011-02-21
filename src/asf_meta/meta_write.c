@@ -84,8 +84,20 @@ char *image_data_type2str(image_data_type_t image_data_type)
     strcpy(str, "POLARIMETRIC_DECOMPOSITION");
   else if (image_data_type == POLARIMETRIC_PARAMETER)
     strcpy(str, "POLARIMETRIC_PARAMETER");
-  else if (image_data_type == POLARIMETRIC_MATRIX)
-    strcpy(str, "POLARIMETRIC_MATRIX");
+  else if (image_data_type == POLARIMETRIC_S2_MATRIX)
+    strcpy(str, "POLARIMETRIC_S2_MATRIX");
+  else if (image_data_type == POLARIMETRIC_C2_MATRIX)
+    strcpy(str, "POLARIMETRIC_C2_MATRIX");
+  else if (image_data_type == POLARIMETRIC_C3_MATRIX)
+    strcpy(str, "POLARIMETRIC_C3_MATRIX");
+  else if (image_data_type == POLARIMETRIC_C4_MATRIX)
+    strcpy(str, "POLARIMETRIC_C4_MATRIX");
+  else if (image_data_type == POLARIMETRIC_T3_MATRIX)
+    strcpy(str, "POLARIMETRIC_T3_MATRIX");
+  else if (image_data_type == POLARIMETRIC_T4_MATRIX)
+    strcpy(str, "POLARIMETRIC_T4_MATRIX");
+  else if (image_data_type == POLARIMETRIC_STOKES_MATRIX)
+    strcpy(str, "POLARIMETRIC_STOKES_MATRIX");
   else if (image_data_type == LUT_IMAGE)
     strcpy(str, "LUT_IMAGE");
   else if (image_data_type == ELEVATION)

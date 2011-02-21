@@ -13,16 +13,32 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   // General block
   sprintf(meta->general->basename, "%s", params->site);
   sprintf(meta->general->sensor, "UAVSAR");
-  strcpy(meta->general->sensor_name, "SAR");
+  strcpy(meta->general->sensor_name, "PolSAR");
   strcpy(meta->general->processor, "JPL version ");
   strcat(meta->general->processor, params->processor);
-  strcpy(meta->general->mode, "PolSAR");
-    meta->general->data_type = REAL32;
-  if (params->bytes_per_pixel == 4) 
-    meta->general->band_count = 1;
-  else if (params->bytes_per_pixel == 8)
-    meta->general->band_count = 2;
-  meta->general->image_data_type = POLARIMETRIC_IMAGE;
+  if (params->type == POLSAR_SLC) {
+    strcpy(meta->general->mode, "SLC");
+    meta->general->image_data_type = POLARIMETRIC_S2_MATRIX;
+  }
+  else if (params->type == POLSAR_MLC) {
+    strcpy(meta->general->mode, "MLC");
+    meta->general->image_data_type = POLARIMETRIC_C3_MATRIX;
+  }
+  else if (params->type == POLSAR_DAT) {
+    strcpy(meta->general->mode, "DAT");
+    meta->general->image_data_type = POLARIMETRIC_STOKES_MATRIX;
+  }
+  else if (params->type == POLSAR_GRD) {
+    strcpy(meta->general->mode, "GRD");
+    meta->general->image_data_type = POLARIMETRIC_C3_MATRIX;
+  }
+  else if (params->type == POLSAR_HGT) {
+    strcpy(meta->general->mode, "HGT");
+    meta->general->image_data_type = DEM;
+  }
+  else
+    strcpy(meta->general->mode, "unknown");
+  meta->general->data_type = REAL32;
   strcpy(meta->general->acquisition_date, params->acquisition_date);
   meta->general->band_count = 1;
   meta->general->line_count = params->row_count;
@@ -39,6 +55,8 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
 
   // SAR block
   meta->sar = meta_sar_init();
+  if (params->type == POLSAR_MLC || params->type == POLSAR_GRD)
+    sprintf(meta->sar->polarization, "QUAD-POL");
   if (strcmp_case(params->projection, "SCX") == 0)
     meta->sar->image_type = 'S';
   else if (strcmp_case(params->projection, "EQA") == 0)
@@ -62,7 +80,8 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   meta->sar->line_increment = 1;
   meta->sar->sample_increment = 1;
   // no information on azimuth and range time per pixel
-  // no information on slant and time shift
+  meta->sar->time_shift = 0.0;
+  meta->sar->slant_shift = 0.0;
   meta->sar->slant_range_first_pixel = params->slant_range_first_pixel * 1000.0;
   meta->sar->wavelength = params->wavelength / 100.0;
   // no information on pulse repetition frequency
@@ -74,7 +93,7 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   meta->sar->roll = params->roll;
   meta->sar->azimuth_processing_bandwidth = params->bandwidth;
   // no chirp rate information
-  meta->sar->pulse_duration = params->pulse_length;
+  meta->sar->pulse_duration = params->pulse_length / 1000.0;
   // no information on range sampling rate
   // FIXME: check polarizations for interferometric/polarimetric data
   // FIXME: multilook flag depends on data type
@@ -99,6 +118,47 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   meta->location->lon_end_near_range = params->lon_lower_left;
   meta->location->lat_end_far_range = params->lat_lower_right;
   meta->location->lon_end_far_range = params->lon_lower_right;
-  
+
+  // Projection block
+  if (params->type == POLSAR_GRD || params->type == POLSAR_HGT) {
+    meta->projection = meta_projection_init();
+    strcpy (meta->projection->units, "meters");
+    if (params->along_track_offset >= 0.0)
+      meta->projection->hem = 'N';
+    else
+      meta->projection->hem = 'S';
+    meta->projection->re_major = meta->general->re_major;
+    meta->projection->re_minor = meta->general->re_minor;
+    meta->projection->height = 0.0;
+    meta->projection->spheroid = WGS84_SPHEROID;
+    meta->projection->datum = WGS84_DATUM;
+
+    // Convert geographic coordinates into map projected coordinates
+    double lat = params->along_track_offset;
+    double lon = params->cross_track_offset;
+    double x1, y1, z1, x2, y2, z2;
+    if (strcmp_case(params->projection, "EQA") == 0) {
+      meta->projection->type = EQUI_RECTANGULAR;
+      meta->projection->param.eqr.central_meridian = 0.0;
+      meta->projection->param.eqr.orig_latitude = 0.0;
+      meta->projection->param.eqr.false_easting = 0.0;
+      meta->projection->param.eqr.false_northing = 0.0;
+    }
+    latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x1, &y1, &z1);
+    lat += params->azimuth_pixel_spacing;
+    lon += params->range_pixel_spacing;
+    latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x2, &y2, &z2);
+    meta->projection->startX = x1;
+    meta->projection->startY = y1;
+    meta->projection->perX = fabs(x1 - x2);
+    meta->projection->perY = -fabs(y1 - y2);
+
+    meta->general->x_pixel_size = fabs(meta->projection->perX);
+    meta->general->y_pixel_size = fabs(meta->projection->perY);
+    meta->general->center_latitude = params->along_track_offset + 
+      params->azimuth_pixel_spacing * params->row_count / 2.0;
+    meta->general->center_longitude = params->cross_track_offset +
+      params->range_pixel_spacing * params->column_count / 2.0;
+  }
   return meta;
 }

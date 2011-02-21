@@ -148,7 +148,7 @@ int isAIRSAR(char *dataFile)
   value = (char *) MALLOC(sizeof(char)*25);
   header = (airsar_header *) CALLOC(1, sizeof(airsar_header));
   band_data = (char *) MALLOC(sizeof(char)*strlen(dataFile)+10);
-  //band_data = STRDUP(dataFile);
+  band_data = STRDUP(dataFile);
 
   // Try L-band
   s = strstr(band_data, "_");
@@ -1428,8 +1428,18 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     metaOut->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
   else if (strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0)
     metaOut->general->image_data_type = POLARIMETRIC_PARAMETER;
-  else if (strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") == 0)
-    metaOut->general->image_data_type = POLARIMETRIC_MATRIX;
+  else if (strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") == 0) {
+    if (strcmp_case(matrixType, "C2") == 0)
+      metaOut->general->image_data_type = POLARIMETRIC_C2_MATRIX;
+    else if (strcmp_case(matrixType, "C3") == 0)
+      metaOut->general->image_data_type = POLARIMETRIC_C3_MATRIX;
+    else if (strcmp_case(matrixType, "C4") == 0)
+      metaOut->general->image_data_type = POLARIMETRIC_C4_MATRIX;
+    else if (strcmp_case(matrixType, "T3") == 0)
+      metaOut->general->image_data_type = POLARIMETRIC_T3_MATRIX;
+    else if (strcmp_case(matrixType, "T4") == 0)
+      metaOut->general->image_data_type = POLARIMETRIC_T4_MATRIX;
+  }
   else
     metaOut->general->image_data_type = POLARIMETRIC_IMAGE;
   metaOut->general->band_count = band_count;

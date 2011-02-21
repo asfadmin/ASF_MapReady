@@ -54,7 +54,7 @@ typedef struct
   int sample;             // start sample for subset
   int width;              // width of subset
   int height;             // height of subset
-  char *image_data_type;  // image data type, e.g. POLARIMETRIC_MATRIX
+  char *image_data_type;  // image data type, e.g. POLARIMETRIC_DECOMPOSITION
   char *prc;              // precision state vector location (to be 
                           //        implemented)
   int output_db;          // TRUE if the output is db.  Only applies to
