@@ -31,6 +31,7 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   else if (params->type == POLSAR_GRD) {
     strcpy(meta->general->mode, "GRD");
     meta->general->image_data_type = POLARIMETRIC_C3_MATRIX;
+    meta->general->no_data = 0;
   }
   else if (params->type == POLSAR_HGT) {
     strcpy(meta->general->mode, "HGT");

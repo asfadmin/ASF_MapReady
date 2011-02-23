@@ -62,6 +62,18 @@ typedef struct {
   float c33;
 } quadPolC3Float;
 
+typedef struct {
+  float t11;
+  float t12_real;
+  float t12_imag;
+  float t13_real;
+  float t13_imag;
+  float t22;
+  float t23_real;
+  float t23_imag;
+  float t33;
+} quadPolT3Float;
+
 complexFloat complex_new(float re, float im);
 complexFloat complex_new_polar(float amp, float phase);
 complexFloat complex_zero(void);

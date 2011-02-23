@@ -9,6 +9,10 @@
 #include <gsl/gsl_multiroots.h>
 
 #define SQR(x) (x*x)
+#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
+#define ASF_EXPORT_FLOAT_MICRON 0.000000001
+#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
+                                (a, b, ASF_EXPORT_FLOAT_MICRON))
 
 static char *get_uavsar(char *buf, char *str)
 {
@@ -554,7 +558,6 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
     floatComplexReal = (float *) MALLOC(sizeof(float)*ns);
     floatComplexImag = (float *) MALLOC(sizeof(float)*ns);
-    //floatComplexBuf = (complexFloat *) MALLOC(sizeof(complexFloat)*ns);
     floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
     metaOut->general->band_count = ll = 1;
     if (strcmp_case(data_type, "MLC") == 0)
@@ -562,6 +565,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_mlc.img");
     asfPrintStatus("\nMultilooked data:\n");
+    fpOut = FOPEN(outName, "wb");
     for (nn=0; nn<nBands; nn++) {
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
       if (dataType[nn] == 0)
@@ -569,12 +573,9 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       else
 	metaOut->general->band_count += 2;
       fpIn = FOPEN(dataName[nn], "rb");
-      if (nn == 0) {
-	fpOut = FOPEN(outName, "wb");
+      if (nn == 0)
 	sprintf(metaOut->general->bands, "AMP,%s", element[0]);
-      }
       else {
-	fpOut = FOPEN(outName, "ab");
 	if (dataType[nn])
 	  sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
 	else
@@ -616,8 +617,8 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       else
 	ll++;
       FCLOSE(fpIn);
-      FCLOSE(fpOut);
     }
+    FCLOSE(fpOut);
     meta_write(metaOut, outName);
     FREE(amp);
     FREE(floatAmp);
@@ -784,16 +785,17 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     metaOut = uavsar_polsar2meta(params);
     ns = metaIn->general->sample_count;
     nl = metaIn->general->line_count;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    floatComplexReal = (float *) MALLOC(sizeof(float)*ns);
-    floatComplexImag = (float *) MALLOC(sizeof(float)*ns);
-    floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
+    floatAmpBuf = (float *) CALLOC(ns, sizeof(float));
+    floatComplexReal = (float *) CALLOC(ns, sizeof(float));
+    floatComplexImag = (float *) CALLOC(ns, sizeof(float));
+    floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
     metaOut->general->band_count = ll = 0;
     if (strcmp_case(data_type, "GRD") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_grd.img");
     asfPrintStatus("\nGround range projected data:\n");
+    fpOut = FOPEN(outName, "wb");
     for (nn=0; nn<nBands; nn++) {
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
       if (dataType[nn])
@@ -801,12 +803,9 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       else
 	metaOut->general->band_count += 1;
       fpIn = FOPEN(dataName[nn], "rb");
-      if (nn == 0) {
-	fpOut = FOPEN(outName, "wb");
+      if (nn == 0)
 	sprintf(metaOut->general->bands, "%s", element[0]);
-      }
       else {
-	fpOut = FOPEN(outName, "ab");
 	if (dataType[nn])
 	  sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
 	else
@@ -817,23 +816,14 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
 	for (ii=0; ii<metaIn->general->line_count; ii++) {
 	  metaIn->general->sample_count = 2*ns;
 	  get_float_line(fpIn, metaIn, ii, floatComplexBuf);
-	  //FREAD(floatComplexBuf, sizeof(float), 2*ns, fpIn);
 	  for (kk=0; kk<ns; kk++) {
 	    floatComplexReal[kk] = floatComplexBuf[kk*2];
 	    floatComplexImag[kk] = floatComplexBuf[kk*2+1];
 	    ieee_big32(floatComplexReal[kk]);
 	    ieee_big32(floatComplexImag[kk]);
 	  }
-	  put_band_float_line(fpOut, metaOut, ll+0, ii, floatComplexReal);
-	  //put_band_float_line(fpOut, metaOut, ll+1, ii, floatComplexImag);
-	  /*
-	  offset = (long long)sizeof(float)*ns*(nl*ll+ii);
-	  FSEEK64(fpOut, offset, SEEK_SET);
-	  FWRITE(floatComplexReal, sizeof(float), ns, fpOut);
-	  offset += (long long)sizeof(float)*ns*nl;
-	  FSEEK64(fpOut, offset, SEEK_SET);
-	  FWRITE(floatComplexImag, sizeof(float), ns, fpOut);
-	  */
+	  put_band_float_line(fpOut, metaOut, ll, ii, floatComplexReal);
+	  put_band_float_line(fpOut, metaOut, ll+1, ii, floatComplexImag);
 	  asfLineMeter(ii, metaIn->general->line_count);
 	}
       }
@@ -848,12 +838,12 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
 	}
       }
       FCLOSE(fpIn);
-      FCLOSE(fpOut);
       if (dataType[nn])
 	ll += 2;
       else
 	ll++;
     }
+    FCLOSE(fpOut);
     meta_write(metaOut, outName);
     FREE(floatAmpBuf);
     FREE(floatComplexReal);
