@@ -15,8 +15,8 @@
 #define REQ_VERSION 2.1
 
 // MapReady
-#define MAPREADY_VERSION_STRING "2.4.0-alpha"
-#define MAPREADY_VERSION 2.3
+#define MAPREADY_VERSION_STRING "2.4.0-test"
+#define MAPREADY_VERSION 2.4
 
 // Convert To Vector
 #define C2V_VERSION_STRING "2.3.0-dev"
