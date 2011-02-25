@@ -783,6 +783,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   unsigned long out_of_range_negative = 0;
   unsigned long out_of_range_positive = 0;
   overlap_method_t overlap=OVERLAY_OVERLAP;
+  double pixel_size_x, pixel_size_y;
 
   // FIXME: function needs to be extended to handle resampling of already
   // geocoded data.
@@ -984,6 +985,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       apply_defaults (projection_type, pp, imd, &average_height, &pixel_size);
       check_parameters (projection_type, datum, pp, imd, force_flag);
     }
+
+    // If a pixel size is defined, we assume the user wants square pixels
+    if (pixel_size > 0)
+      pixel_size_x = pixel_size_y = pixel_size;
 
     // Don't allow height correction to be applied to ALOS Prism or Avnir
     if (average_height != 0.0 && (is_alos_prism(imd) || is_alos_avnir(imd))) {
@@ -1203,16 +1208,26 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // later) times through this loop, the pixel_size will already have been
     // set to the first file's pixel size, and so we'll never go into this
     // if() block when i>0.
-    if (pixel_size < 0)
+
+    // We still assume square pixels for non-projected data
+    if (pixel_size < 0 && !input_projected)
     {
         g_assert(i==0);
-        pixel_size = MAX(imd->general->x_pixel_size, imd->general->y_pixel_size);
+        pixel_size_x = pixel_size_y = 
+	  MAX(imd->general->x_pixel_size, imd->general->y_pixel_size);
         asfPrintStatus("No pixel size specified.\n"
                        "Defaulting to larger of range or azimuth pixel size "
                        "from %smetadata: %f (%s pixel size)\n",
                        n_input_images > 1 ? "the first image's " : "",
                        pixel_size,
                        imd->general->x_pixel_size > imd->general->y_pixel_size ? "range" : "azimuth");
+    }
+    else { 
+      // This covers the odd cases of projected data such as UAVSAR GRD data
+      // that happens to have non-square pixels in the first place. We need
+      // to preserve the settings in this case.
+      pixel_size_x = imd->general->x_pixel_size;
+      pixel_size_y = imd->general->y_pixel_size;
     }
 
     // If all input metadata is byte, we will store everything as bytes,
@@ -1299,8 +1314,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // the pixel size of the input image, we should be resampling at
   // close to one-to-one (which is where resampling works and we don't
   // have to worry about pixel averaging or anything).
-  double pc_per_x = pixel_size;
-  double pc_per_y = pixel_size;
+  double pc_per_x = pixel_size_x;
+  double pc_per_y = pixel_size_y;
 
   // Maximum pixel indicies in output image.
   size_t oix_max = ceil ((max_x - min_x) / pc_per_x);
@@ -1316,7 +1331,12 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   asfPrintStatus("Size: %dx%d LxS\n", oiy_max+1, oix_max+1);
   asfPrintStatus("Center: X,Y: %.1f,%.1f   Lat,Lon: %.3f,%.3f\n",
     center_x, center_y, output_lat_0*R2D, output_lon_0*R2D);
-  asfPrintStatus("Pixel size: %.1f m\n", pixel_size);
+  if (FLOAT_EQUIVALENT(pixel_size_x, pixel_size_y))
+    asfPrintStatus("Pixel size: %.2f m\n", pixel_size);
+  else {
+    asfPrintStatus("Pixel size x: %.2f m\n", pixel_size_x);
+    asfPrintStatus("Pixel size y: %.2f m\n", pixel_size_y);
+  }
   if (average_height != 0.0)
       asfPrintStatus("Height correction: %fm.\n", average_height);
   print_proj_info(projection_type, pp, datum);
@@ -1398,8 +1418,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     background_val = 255;
   omd->general->no_data = background_val;
 
-  omd->general->x_pixel_size = pixel_size;
-  omd->general->y_pixel_size = pixel_size;
+  omd->general->x_pixel_size = pixel_size_x;
+  omd->general->y_pixel_size = pixel_size_y;
   omd->general->line_count = oiy_max + 1;
   omd->general->sample_count = oix_max + 1;
   if (omd->sar) {
@@ -1632,18 +1652,21 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // mapping, since this will mess that up.
     int do_resample = FALSE;
     if (!save_line_sample_mapping &&
-        (pixel_size/3. > imd->general->x_pixel_size &&
-         pixel_size/3. > imd->general->y_pixel_size))
+        (pixel_size_x/3. > imd->general->x_pixel_size &&
+         pixel_size_y/3. > imd->general->y_pixel_size))
     {
       // this flag is so that we can clean up the intermediate resample file
       do_resample = TRUE;
 
       // downsample to 2x the target resolution
-      double resample_ps = pixel_size / 2.;
+      double resample_psx = pixel_size_x / 2.;
+      double resample_psy = pixel_size_y / 2.;
       char *resample_file = appendToBasename(in_base_name, "_down");
 
-      asfPrintStatus("Downsampling input image to %gm.\n", resample_ps);
-      resample_to_square_pixsiz(in_base_name, resample_file, resample_ps);
+      asfPrintStatus("Downsampling input image to %gx%gm.\n", 
+		     resample_psx, resample_psy);
+      resample_to_pixsiz(in_base_name, resample_file, 
+			 resample_psx, resample_psy);
 
       // now point to new input files for the remainder of the geocoding
       FREE(input_image);
@@ -1662,13 +1685,18 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // The pixel size requested by the user better not oversample by
     // the factor of 2.  Specifying --force will skip this check
     if (!force_flag &&
-        MAX(imd->general->x_pixel_size, imd->general->y_pixel_size) > (2*pixel_size) )
-    {
-        report_func("Requested pixel size %lf is smaller than the minimum "
+        imd->general->x_pixel_size > (2*pixel_size_x) ) {
+        report_func("Requested pixel size x %lf is smaller than the minimum "
                     "implied by half \nthe input image resolution "
                     "(%le meters), this is not supported.\n",
-                    pixel_size,
-                    MAX (imd->general->x_pixel_size, imd->general->y_pixel_size));
+                    pixel_size_x, imd->general->x_pixel_size);
+    }
+    if (!force_flag &&
+	imd->general->x_pixel_size > (2*pixel_size_y) ) {
+        report_func("Requested pixel size y %lf is smaller than the minimum "
+                    "implied by half \nthe input image resolution "
+                    "(%le meters), this is not supported.\n",
+                    pixel_size_y, imd->general->y_pixel_size);
     }
 
     // Input image dimensions in pixels in x and y directions.
