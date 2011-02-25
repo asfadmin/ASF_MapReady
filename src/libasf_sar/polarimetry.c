@@ -1,12 +1,15 @@
 #include <unistd.h>
 #include "asf_sar.h"
 #include "asf_raster.h"
+#include "asf_nan.h"
 #include "asf_complex.h"
 #include <assert.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_eigen.h>
+
+#define EPS 1.E-15
 
 typedef struct {
    int current_row;
@@ -223,6 +226,7 @@ static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
 {
     int j, ns=self->meta->general->sample_count;
     complexFloat cpx_a, cpx_b, cpx_c;
+    float value;
 
     // HH-VV, HV+VH, HH+VV
 
@@ -240,9 +244,24 @@ static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
     else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
       for (j=0; j<ns; ++j) {
 	quadPolC3Float q = self->c3_lines[n][j];
-	self->pauli_lines[n][j].A = fabs(q.c11 - 2.0*q.c13_real + q.c33) / 2.0;
-	self->pauli_lines[n][j].B = fabs(q.c22);
-	self->pauli_lines[n][j].C = fabs(q.c11 + 2.0*q.c13_real + q.c33) / 2.0;
+
+	value = fabs(q.c11 - 2.0*q.c13_real + q.c33) / 2.0;
+	if (ISNAN(value)) value = EPS;
+	if (value > 0)
+	  value = 10 *log10(value);	
+	self->pauli_lines[n][j].A = value;
+
+	value = fabs(q.c22);
+	if (ISNAN(value)) value = EPS;
+	if (value > 0)
+	  value = 10 *log10(value);
+	self->pauli_lines[n][j].B = value;
+
+	value = fabs(q.c11 + 2.0*q.c13_real + q.c33) / 2.0;
+	if (ISNAN(value)) value = EPS;
+	if (value > 0)
+	  value = 10 *log10(value);
+	self->pauli_lines[n][j].C = value;
       }
     }
     else if (self->meta->general->image_data_type == POLARIMETRIC_T3_MATRIX) {
