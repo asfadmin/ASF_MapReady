@@ -1382,7 +1382,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       for (kk=0; kk<metaOut->general->sample_count; kk++) {
 	ieee_big32(floatBuf[kk]);
 	if (colormapName && strlen(colormapName) &&
-	    strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0) {
+	    strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0 &&
+	    metaOut->general->data_type == BYTE) {
 	  fValue = slope * floatBuf[kk] + offset;
 	  floatBuf[kk] = fValue;
 	}

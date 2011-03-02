@@ -539,7 +539,8 @@ void calc_minmax_median(const char *inFile, char *band, double mask,
     asfPercentMeter(((double)ii/(double)line_count));
     for (jj=0; jj<sample_count; ++jj) {
       if (!FLOAT_EQUIVALENT(data_line[jj], -9999.99) ||
-	  !FLOAT_EQUIVALENT(data_line[jj], logeps)) {
+	  !FLOAT_EQUIVALENT(data_line[jj], logeps) ||
+	  ISNAN(mask)) {
 	data[valid_pixel_count] = data_line[jj];
 	valid_pixel_count++;
       }

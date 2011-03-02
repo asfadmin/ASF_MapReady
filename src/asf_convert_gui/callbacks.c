@@ -1221,7 +1221,8 @@ void polsarpro_image_data_type_changed()
       break;
     case SELECT_POLARIMETRIC_PARAMETER:
       gtk_option_menu_set_history(GTK_OPTION_MENU(look_up_table), 0);
-      enable_widget("browse_select_colormap_optionmenu", FALSE);  
+      //enable_widget("browse_select_colormap_optionmenu", FALSE);  
+      enable_widget("browse_select_colormap_optionmenu", TRUE);  
       gtk_widget_set_sensitive(polsarpro_ancillary_file, FALSE);
       gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, FALSE);
       put_string_to_label("polsarpro_data_label", "PolSARPro Data File:");

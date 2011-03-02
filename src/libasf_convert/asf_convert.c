@@ -2954,13 +2954,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 }
               }
               else { // not a true or false color optical image
+
+		char **bands = extract_band_names(meta->general->bands, 
+						  meta->general->band_count);
                 if (is_polsarpro &&
                     (meta->general->image_data_type >  POLARIMETRIC_IMAGE &&
                      meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX))
 		  meta->general->band_count = 1;
-
-		char **bands = extract_band_names(meta->general->bands, 
-						  meta->general->band_count);
 		check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
 					      tmpFile, outFile, bands, NULL, 
 					      NULL),
@@ -3206,7 +3206,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
   output_format_t format = get_format(cfg);
   scale_t scale = get_scale(cfg);
-  int i,num_outputs;
+  int i, num_outputs, is_polsarpro = 0;
   char **output_names;
 
   // Move the .meta file out of temporary status
@@ -3218,7 +3218,9 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 
   meta_parameters *meta = meta_read(inFile);
   char lut_file[2048] = "";
-  int is_polsarpro = (strstr(meta->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+  if (meta->general->image_data_type >= POLARIMETRIC_SEGMENTATION &&
+      meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX)
+    is_polsarpro = TRUE;
   int have_embedded_colormap = 0;
   if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
     strcpy(lut_file, cfg->export->lut);

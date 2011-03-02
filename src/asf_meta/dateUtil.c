@@ -728,6 +728,8 @@ void parse_date(const char *inStr,ymd_date *date,hms_time *time)
     {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
   char buf[100];
   int i,sec;
+  if (strcmp(inStr, "???") == 0)
+    sprintf(inStr, "01-Jan-1900, 00:00:00");
 #define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
   subStr(7,4,&date->year);
   for (i=0; i<13; i++) {

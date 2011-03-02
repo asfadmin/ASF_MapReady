@@ -1825,6 +1825,25 @@ export_band_image (const char *metadata_file_name,
       free_band_names = TRUE;
     }
 
+    if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX) {
+      if (strstr(md->general->bands, "C44"))
+	sprintf(matrix, "C4");
+      else if (strstr(md->general->bands, "C33"))
+	sprintf(matrix, "C3");
+      else if (strstr(md->general->bands, "C22"))
+	sprintf(matrix, "C2");
+      else if (strstr(md->general->bands, "T44"))
+	sprintf(matrix, "T4");
+      else if (strstr(md->general->bands, "T33"))
+	sprintf(matrix, "T3");
+      else if (strstr(md->general->bands, "T22"))
+	sprintf(matrix, "T2");
+      else
+	asfPrintError("The bands do not correspond to matrix type (%s)\n",
+		      image_data_type2str(md->general->image_data_type));
+    }
+
     // If we are dealing with polarimetric matrices, the output file name
     // becomes the name of an output directory. We need to figure out from
     // the bands string, what kind of matrix we have, because we need to
@@ -1832,8 +1851,7 @@ export_band_image (const char *metadata_file_name,
     // the files out of the box.
     if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
 	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
-	md->general->band_count != 1) {
-      snprintf(matrix, 3, "%s", band_name[band_count-1]);
+	md->general->band_count != 1 && format == POLSARPRO_HDR) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -1865,12 +1883,14 @@ export_band_image (const char *metadata_file_name,
       FREE(fileName);
     }
 
+    if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
+      strcpy(decomposition, band_name[band_count-1]);
+
     // We treat polarimetric decompositions in a similar way. The output file
     // name becomes the name of an output directory again. The actual file
     // names can be extracted from the bands string.
     if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
-	md->general->band_count != 1) {
-      strcpy(decomposition, band_name[band_count-1]);
+	md->general->band_count != 1 && format == POLSARPRO_HDR) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -1925,15 +1945,18 @@ export_band_image (const char *metadata_file_name,
 	   md->general->image_data_type == POLARIMETRIC_PARAMETER ||
 	   (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
 	    md->general->image_data_type <= POLARIMETRIC_T4_MATRIX)) ? 1 : 0;
-        if (
-          ( md->colormap && strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
-          (!md->colormap && have_look_up_table && md->general->data_type == BYTE) ||
-          (!md->colormap && have_look_up_table &&
-          md->general->data_type != BYTE && sample_mapping != NONE))
-        {
-          is_colormap_band = TRUE;
-          sample_mapping = is_polsarpro ? TRUNCATE : sample_mapping;
-        }
+        if (md->general->image_data_type == POLARIMETRIC_PARAMETER &&
+	    md->colormap)
+	  is_colormap_band = TRUE;
+	else if ((md->colormap && 
+		  strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
+		 (!md->colormap && have_look_up_table && 
+		  md->general->data_type == BYTE) ||
+		 (!md->colormap && have_look_up_table &&
+		  md->general->data_type != BYTE && sample_mapping != NONE)) {
+	  is_colormap_band = TRUE;
+	  sample_mapping = is_polsarpro ? TRUNCATE : sample_mapping;
+	}
 	// skip the 'AMP' band if we have POlSARPro data and the user wants
 	// to apply a LUT
 	if (strcmp_case(band_name[kk], "AMP") == 0 && is_polsarpro  &&
@@ -2265,7 +2288,8 @@ export_band_image (const char *metadata_file_name,
         if (is_colormap_band)
         { // Apply look up table
           for (ii=0; ii<md->general->line_count; ii++ ) {
-            if (md->optical || md->general->data_type == BYTE) {
+            if ((md->optical || md->general->data_type == BYTE) &&
+		md->general->image_data_type != POLARIMETRIC_PARAMETER) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_byte2lut(otif, byte_line, ii, sample_count,
@@ -2443,8 +2467,15 @@ export_band_image (const char *metadata_file_name,
       }
     } // End for each band (kk is band number)
 
-    if (nc)
+    if (hdf) {
+      finalize_h5_file(h5);
+      FREE(hdf);
+    }
+
+    if (nc) {
+      finalize_netcdf_file(netcdf, md);
       FREE(nc);
+    }
     if (free_band_names) {
       for (ii=0; ii<band_count; ++ii)
         FREE(band_name[ii]);

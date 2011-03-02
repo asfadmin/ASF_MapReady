@@ -821,6 +821,7 @@ make_polsarpro_thumb(const char *input_metadata, const char *input_data,
   // Keep track of the average pixel values, so later we can do a 2-sigma
   // scaling (for greyscale only) - makes the thumbnail look a little nicer
   polsarpro_table_calculated = 0;
+  long long valid_pts = 0;
   for ( ii = 0 ; ii < tsy ; ii++ ) {
     get_float_line(fpIn, meta, ii*sf, line);
     for (jj = 0; jj < tsx; ++jj) {
@@ -830,18 +831,23 @@ make_polsarpro_thumb(const char *input_metadata, const char *input_data,
       fmin = fmin < fval ? fmin : fval;
       fmax = fmax > fval ? fmax : fval;
       avg += fval;
+      if (!FLOAT_EQUIVALENT(fval, 0.0))
+	valid_pts++;
     }
   }
-  avg /= (float)tsx*(float)tsy;
+  //avg /= (float)tsx*(float)tsy;
+  avg /= (float)valid_pts;
 
   // Compute the standard deviation, limiting the limits to the min/max
   // of the data since sometimes non-gaussian distributions can blow past
   // the data range when calculating upper/lower limits
   double stddev = 0.0;
   for (ii=0; ii<tsx*tsy; ++ii) {
-    stddev += ((double)fdata[ii] - avg) *((double)fdata[ii] - avg);
+    if (!FLOAT_EQUIVALENT(fdata[ii], 0.0))
+      stddev += ((double)fdata[ii] - avg) *((double)fdata[ii] - avg);
   }
-  stddev = sqrt(stddev/(tsx*tsy));
+  //stddev = sqrt(stddev/(tsx*tsy));
+  stddev = sqrt(stddev/(double)valid_pts);
   double lmin = (avg - 2*stddev) < fmin ? fmin : (avg - 2*stddev);
   double lmax = (avg + 2*stddev) > fmax ? fmax : (avg + 2*stddev);
 // min: 0.00000000000000000000000000000000000000000008968310
@@ -852,7 +858,7 @@ make_polsarpro_thumb(const char *input_metadata, const char *input_data,
 
   // Now actually scale the data, and convert to bytes.
   // Note that we need 3 values, one for each of the RGB channels.
-  if (!is_palette_color) {
+  if (!is_palette_color || lmax <= 1.0) {
     // Greyscale image (no look-up table applied)
     for (ii = 0; ii < tsx*tsy; ++ii) {
       double val = fdata[ii];

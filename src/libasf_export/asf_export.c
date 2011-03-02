@@ -87,7 +87,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       //in_meta_name = appendExt(in_base_name, ".meta");
       out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
       strcpy(out_name, output_name);
-      //if (!is_matrix)
+      if (!is_matrix)
 	append_ext_if_needed(out_name, ".jpg", ".jpeg");
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
