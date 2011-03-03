@@ -1222,7 +1222,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                        pixel_size,
                        imd->general->x_pixel_size > imd->general->y_pixel_size ? "range" : "azimuth");
     }
-    else { 
+    else if (pixel_size < 0) { 
       // This covers the odd cases of projected data such as UAVSAR GRD data
       // that happens to have non-square pixels in the first place. We need
       // to preserve the settings in this case.
