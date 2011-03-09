@@ -1892,6 +1892,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
     outMeta->sar->azimuth_time_per_pixel *= outMeta->sar->look_count;
   }
 
+  outMeta->general->image_data_type = POLARIMETRIC_IMAGE;
   meta_write(outMeta, out_meta_name);
   free(out_meta_name);
 

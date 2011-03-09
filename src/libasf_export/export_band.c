@@ -2026,9 +2026,60 @@ export_band_image (const char *metadata_file_name,
             }
             if (!found_band)
               continue;
-            sprintf(out_file, "%s%c%s", 
-              path_name, DIR_SEPARATOR, band_name[kk]);
-          }
+	    if (format == POLSARPRO_HDR) { // output goes to directory
+	      sprintf(out_file, "%s%c%s", 
+		      path_name, DIR_SEPARATOR, band_name[kk]);
+	    }
+	    else { // individual file names
+	      if (strcmp_case(md->general->sensor, "UAVSAR") == 0 &&
+		  strcmp_case(md->general->sensor_name, "POLSAR") == 0) {
+
+		char mode[5];
+		if (strcmp_case(md->general->mode, "GRD") == 0)
+		  strcpy(mode, "grd");
+		else if (strcmp_case(md->general->mode, "MLC") == 0)
+		  strcpy(mode, "mlc");
+
+		if (strcmp(mode, "grd") == 0 || strcmp(mode, "mlc") == 0) { 
+		  if (strcmp_case(band_name[kk], "C11") == 0)
+		    sprintf(out_file, "%s_%sHHHH", output_file_name, mode);
+		  else if (strcmp_case(band_name[kk], "C22") == 0)
+		    sprintf(out_file, "%s_%sHVHV", output_file_name, mode);
+		  else if (strcmp_case(band_name[kk], "C33") == 0)
+		    sprintf(out_file, "%s_%sVVVV", output_file_name, mode);
+		  else if (strcmp_case(band_name[kk], "C12_real") == 0)
+		    sprintf(out_file, "%s_%sHHHV_real", output_file_name, mode);
+		  else if (strcmp_case(band_name[kk], "C12_imag") == 0)
+		    sprintf(out_file, "%s_%sHHHV_imag", output_file_name, mode);
+		  else if (strcmp_case(band_name[kk], "C13_real") == 0)
+		    sprintf(out_file, "%s_%sHHVV_real", output_file_name, mode);
+		  else if (strcmp_case(band_name[kk], "C13_imag") == 0)
+		    sprintf(out_file, "%s_%sHHVV_imag", output_file_name, mode);
+		  else if (strcmp_case(band_name[kk], "C23_real") == 0)
+		    sprintf(out_file, "%s_%sHVVV_real", output_file_name, mode);
+		  else if (strcmp_case(band_name[kk], "C23_imag") == 0)
+		    sprintf(out_file, "%s_%sHVVV_imag", output_file_name, mode);
+		}
+		else if (strcmp(mode, "hgt") == 0)
+		  sprintf(out_file, "%s_hgt", output_file_name);
+	      }
+	    }
+	    
+	}
+        else if (md->general->image_data_type == POLARIMETRIC_STOKES_MATRIX) {
+	  if (strcmp_case(md->general->sensor, "UAVSAR") == 0 &&
+	      strcmp_case(md->general->sensor_name, "POLSAR") == 0 &&
+	      strcmp_case(md->general->mode, "DAT") == 0)
+	    sprintf(out_file, "%s_dat%s", output_file_name, band_name[kk]);
+	}
+	else if (md->general->image_data_type == DEM) {
+	  if (strcmp_case(md->general->sensor, "UAVSAR") == 0 &&
+	      strcmp_case(md->general->sensor_name, "POLSAR") == 0 &&
+	      strcmp_case(md->general->mode, "HGT") == 0) {
+	    out_file = stripExt(output_file_name);
+	    strcat(out_file, "_hgt.tif");
+	  }
+	}
         else if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
           md->general->band_count != 1) {
             int ll, found_band = FALSE;
