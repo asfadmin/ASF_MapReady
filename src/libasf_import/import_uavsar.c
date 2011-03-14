@@ -40,12 +40,12 @@ static int check_file(char *line, char **fileName)
   char *p;
   p = strchr(line, '=');
   char *file = (char *) MALLOC(sizeof(char)*255);
-  strncpy(file, p+1, 60);
+  strncpy(file, p+1, 65);
   *fileName = trim_spaces(file);
   FREE(file);
   p = strchr(line, ';');
-  int size;
-  sscanf(p+12, "%d", &size);
+  long long size;
+  sscanf(p+12, "%lld", &size);
   if (fileExists(*fileName) && fileSize(*fileName) == size)
     return TRUE;
   else
@@ -57,7 +57,9 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 				  int **pDataType, int *nBands)
 {
   char *file = (char *) MALLOC(sizeof(char)*1024);
-  int ii, slc=0, mlc=0, dat=0, grd=0, hgt=0; 
+  int ii, slc=0, mlc=0, dat=0, grd=0, hgt=0;
+  int igram=0, unw=0, cor=0, amp=0;
+  int igram_grd=0, unw_grd=0, cor_grd=0, amp_grd=0, hgt_grd=0;
 
   char **dataName = (char **) MALLOC(6*sizeof(char *));
   char **element = (char **) MALLOC(6*sizeof(char *));
@@ -230,6 +232,121 @@ static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       *nBands = hgt;
+    }
+    else if (type == INSAR_AMP) {
+      if (strstr(line, "Slant Range Amplitude of Pass 1          =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[amp], file);
+	  strcpy(element[amp], "HH");
+	  dataType[amp] = 0;
+	  amp++;
+	}
+      }
+      else if (strstr(line, "Slant Range Amplitude of Pass 2          =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[amp], file);
+	  strcpy(element[amp], "HH");
+	  dataType[amp] = 0;
+	  amp++;
+	}
+      }
+      *nBands = amp;
+    }
+    else if (type == INSAR_AMP_GRD) {
+      if (strstr(line, "Ground Range Amplitude of Pass 1         =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[amp_grd], file);
+	  strcpy(element[amp_grd], "HH");
+	  dataType[amp_grd] = 0;
+	  amp_grd++;
+	}
+      }
+      else if (strstr(line, "Ground Range Amplitude of Pass 2         =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[amp_grd], file);
+	  strcpy(element[amp_grd], "HH");
+	  dataType[amp_grd] = 0;
+	  amp_grd++;
+	}
+      }
+      *nBands = amp_grd;
+    }
+    else if (type == INSAR_INT) {
+      if (strstr(line, "Slant Range Interferogram                =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[igram], file);
+	  strcpy(element[igram], "HH");
+	  dataType[igram] = 1;
+	  igram++;
+	}
+      }
+      *nBands = igram;
+    }
+    else if (type == INSAR_INT_GRD) {
+      if (strstr(line, "Ground Range Interferogram               =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[igram_grd], file);
+	  strcpy(element[igram_grd], "HH");
+	  dataType[igram_grd] = 1;
+	  igram_grd++;
+	}
+      }
+      *nBands = igram_grd;
+    }
+    else if (type == INSAR_UNW) {
+      if (strstr(line, "Slant Range Unwrapped Phase              =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[unw], file);
+	  strcpy(element[unw], "HH");
+	  dataType[unw] = 0;
+	  unw++;	  
+	}
+      }
+      *nBands = unw;
+    }
+    else if (type == INSAR_UNW_GRD) {
+      if (strstr(line, "Ground Range Unwrapped Phase             =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[unw_grd], file);
+	  strcpy(element[unw_grd], "HH");
+	  dataType[unw_grd] = 0;
+	  unw_grd++;
+	}
+      }
+      *nBands = unw_grd;
+    }
+    else if (type == INSAR_COR) {
+      if (strstr(line, "Slant Range Correlation                  =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[cor], file);
+	  strcpy(element[cor], "HH");
+	  dataType[cor] = 0;
+	  cor++;	  
+	}
+      }
+      *nBands = cor;
+    }
+    else if (type == INSAR_COR_GRD) {
+      if (strstr(line, "Ground Range Correlation                 =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[cor_grd], file);
+	  strcpy(element[cor_grd], "HH");
+	  dataType[cor_grd] = 0;
+	  cor_grd++;
+	}
+      }
+      *nBands = cor_grd;
+    }
+    else if (type == INSAR_HGT_GRD) {
+      if (strstr(line, "DEM Used in Ground Projection            =")) {
+	if (check_file(line, &file)) {
+	  strcpy(dataName[hgt_grd], file);
+	  strcpy(element[hgt_grd], "HH");
+	  dataType[hgt_grd] = 0;
+	  hgt_grd++;
+	}
+      }
+      *nBands = hgt_grd;
     }
   }
 
@@ -481,6 +598,254 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
   return params;
 }
 
+uavsar_insar *read_uavsar_insar_params(const char *dataFile, 
+				       uavsar_type_t type)
+{
+  uavsar_insar *params = (uavsar_insar *) MALLOC(sizeof(uavsar_insar));
+  // Read annotation file
+  char line[255];
+  FILE *fp = FOPEN(dataFile, "r");
+  while (fgets(line, 255, fp)) {
+    if (strstr(line, "Site Description"))
+      strcpy(params->site, get_uavsar(line, "Site Description"));
+    if (strstr(line, "Processing Mode"))
+      strcpy(params->processing_mode, get_uavsar(line, "Processing Mode"));
+    if (type == INSAR_INT) {
+      params->type = INSAR_INT;
+      if (strstr(line, "Interferogram Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "Interferogram Bytes Per Pixel"));
+      else if (strstr(line, "Interferogram Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "Interferogram Pixel Format"));
+      else if (strstr(line, "Interferogram Units"))
+	strcpy(params->data_units, get_uavsar(line, "Interferogram Units"));
+    }
+    else if (type == INSAR_UNW) {
+      params->type = INSAR_UNW;
+      if (strstr(line, "Unwrapped Phase Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "Unwrapped Phase Bytes Per Pixel"));
+      else if (strstr(line, "Unwrapped Phase Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "Unwrapped Phase Pixel Format"));
+      else if (strstr(line, "Unwrapped Phase Units"))
+	strcpy(params->data_units, get_uavsar(line, "Unwrapped Phase Units"));
+    }
+    else if (type == INSAR_COR) {
+      params->type = INSAR_COR;
+      if (strstr(line, "Correlation Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "Correlation Bytes Per Pixel"));
+      else if (strstr(line, "Correlation Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "Correlation Pixel Format"));
+      else if (strstr(line, "Correlation Units"))
+	strcpy(params->data_units, get_uavsar(line, "Correlation Units"));
+    }
+    else if (type == INSAR_AMP) {
+      params->type = INSAR_AMP;
+      if (strstr(line, "Amplitude Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "Amplitude Bytes Per Pixel"));
+      else if (strstr(line, "Amplitude Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "Amplitude Pixel Format"));
+      else if (strstr(line, "Amplitude Units"))
+	strcpy(params->data_units, get_uavsar(line, "Amplitude Units"));
+    }
+    if (type >= INSAR_AMP && type <=INSAR_COR) {
+      if (strstr(line, "Slant Range Data Azimuth Lines"))
+	params->row_count = 
+	  atoi(get_uavsar(line, "Slant Range Data Azimuth Lines"));
+      else if (strstr(line, "Slant Range Data Range Samples"))
+	params->column_count = 
+	  atoi(get_uavsar(line, "Slant Range Data Range Samples"));
+      else if (strstr(line, "slt.set_proj"))
+	strcpy(params->projection, get_uavsar(line, "slt.set_proj"));
+      else if (strstr(line, "slt.row_addr"))
+	params->along_track_offset = atof(get_uavsar(line, "slt.row_addr"));
+      else if (strstr(line, "slt.col_addr"))
+	params->cross_track_offset = atof(get_uavsar(line, "slt.col_addr"));
+      else if (strstr(line, "Slant Range Data Azimuth Spacing"))
+	params->azimuth_pixel_spacing = 
+	  atof(get_uavsar(line, "Slant Range Data Azimuth Spacing"));
+      else if (strstr(line, "Slant Range Data Range Spacing"))
+	params->range_pixel_spacing = 
+	  atof(get_uavsar(line, "Slant Range Data Range Spacing"));
+      else if (strstr(line, "Number of Looks in Range"))
+	params->range_look_count = 
+	  atoi(get_uavsar(line, "Number of Looks in Range"));
+      else if (strstr(line, "Number of Looks in Azimuth"))
+	params->azimuth_look_count = 
+	  atoi(get_uavsar(line, "Number of Looks in Azimuth"));
+    }
+    else if (type >= INSAR_AMP_GRD && type <=INSAR_HGT_GRD) { 
+      if (strstr(line, "Ground Range Data Latitude Lines"))
+	params->row_count = 
+	  atoi(get_uavsar(line, "Ground Range Data Latitude Lines"));
+      else if (strstr(line, "Ground Range Data Longitude Samples"))
+	params->column_count = 
+	  atoi(get_uavsar(line, "Ground Range Data Longitude Samples"));
+      else if (strstr(line, "grd.set_proj"))
+	strcpy(params->projection, get_uavsar(line, "grd.set_proj"));
+      else if (strstr(line, "grd.row_addr"))
+	params->along_track_offset = atof(get_uavsar(line, "grd.row_addr"));
+      else if (strstr(line, "grd.col_addr"))
+	params->cross_track_offset = atof(get_uavsar(line, "grd.col_addr"));
+      else if (strstr(line, "Number of Looks in Range"))
+	params->range_look_count = 
+	  atoi(get_uavsar(line, "Number of Looks in Range"));
+      else if (strstr(line, "Number of Looks in Azimuth"))
+	params->azimuth_look_count = 
+	  atoi(get_uavsar(line, "Number of Looks in Azimuth"));
+    }
+    if (type == INSAR_INT_GRD) {
+      params->type = INSAR_INT_GRD;
+      if (strstr(line, "Interferogram Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "Interferogram Bytes Per Pixel"));
+      else if (strstr(line, "Interferogram Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "Interferogram Pixel Format"));
+      else if (strstr(line, "Interferogram Units"))
+	strcpy(params->data_units, get_uavsar(line, "Interferogram Units"));
+    }
+    else if (type == INSAR_UNW_GRD) {
+      params->type = INSAR_UNW_GRD;
+      if (strstr(line, "Unwrapped Phase Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "Unwrapped Phase Bytes Per Pixel"));
+      else if (strstr(line, "Unwrapped Phase Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "Unwrapped Phase Pixel Format"));
+      else if (strstr(line, "Unwrapped Phase Units"))
+	strcpy(params->data_units, get_uavsar(line, "Unwrapped Phase Units"));
+    }
+    else if (type == INSAR_COR_GRD) {
+      params->type = INSAR_COR_GRD;
+      if (strstr(line, "Correlation Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "Correlation Bytes Per Pixel"));
+      else if (strstr(line, "Correlation Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "Correlation Pixel Format"));
+      else if (strstr(line, "Correlation Units"))
+	strcpy(params->data_units, get_uavsar(line, "Correlation Units"));
+    }
+    else if (type == INSAR_AMP_GRD) {
+      params->type = INSAR_AMP_GRD;
+      if (strstr(line, "Amplitude Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "Amplitude Bytes Per Pixel"));
+      else if (strstr(line, "Amplitude Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "Amplitude Pixel Format"));
+      else if (strstr(line, "Amplitude Units"))
+	strcpy(params->data_units, get_uavsar(line, "Amplitude Units"));
+    }
+    else if (type == INSAR_HGT_GRD) {
+      params->type = INSAR_HGT_GRD;
+      if (strstr(line, "DEM Bytes Per Pixel"))
+	params->bytes_per_pixel = 
+	  atoi(get_uavsar(line, "DEM Bytes Per Pixel"));
+      else if (strstr(line, "DEM Pixel Format"))
+	strcpy(params->value_format, 
+	       get_uavsar(line, "DEM Pixel Format"));
+      else if (strstr(line, "DEM Units"))
+	strcpy(params->data_units, get_uavsar(line, "DEM Units"));
+    }
+    if (strstr(line, "set_hddr"))
+      params->header_bytes = atoi(get_uavsar(line, "set_hddr"));
+    else if (strstr(line, "set_tail"))
+      params->tail_bytes = atoi(get_uavsar(line, "set_tail"));
+    else if (strstr(line, "set_plat"))
+      params->lat_peg_point = atof(get_uavsar(line, "set_plat"));
+    else if (strstr(line, "set_plon"))
+      params->lon_peg_point = atof(get_uavsar(line, "set_plon"));
+    else if (strstr(line, "set_phdg"))
+      params->head_peg_point = atof(get_uavsar(line, "set_phdg"));
+    else if (strstr(line, "val_endi"))
+      strcpy(params->endianess, get_uavsar(line, "val_endi"));
+    else if (strstr(line, "val_mult"))
+      params->data_scale = atof(get_uavsar(line, "val_mult"));
+    else if (strstr(line, "val_addr"))
+      params->data_shift = atof(get_uavsar(line, "val_addr"));
+    else if (strstr(line, "val_minv"))
+      params->min_value = atof(get_uavsar(line, "val_minv"));
+    else if (strstr(line, "val_maxv"))
+      params->max_value = atof(get_uavsar(line, "val_maxv"));
+    else if (strstr(line, "Center Wavelength"))
+      params->wavelength = atof(get_uavsar(line, "Center Wavelength"));
+    else if (strstr(line, "Ellipsoid Semi-major Axis"))
+      params->semi_major = atof(get_uavsar(line, "Ellipsoid Semi-major Axis"));
+    else if (strstr(line, "Ellipsoid Eccentricity Squared"))
+      params->eccentricity = 
+	atof(get_uavsar(line, "Ellipsoid Eccentricity Squared"));
+    else if (strstr(line, "Look Direction"))
+      strcpy(params->look_direction, get_uavsar(line, "Look Direction"));
+    else if (strstr(line, "Range Spacing per Bin"))
+      params->range_spacing = atof(get_uavsar(line, "Range Spacing per Bin"));
+    else if (strstr(line, "Azimuth Spacing"))
+      params->azimuth_spacing = atof(get_uavsar(line, "Azimuth Spacing"));
+    else if (strstr(line, "Image Starting Range"))
+      params->slant_range_first_pixel = 
+	atof(get_uavsar(line, "Image Starting Range"));
+    else if (strstr(line, "Global Average Yaw"))
+      params->yaw = atof(get_uavsar(line, "Global Average Yaw"));
+    else if (strstr(line, "Global Average Pitch"))
+      params->pitch = atof(get_uavsar(line, "Global Average Pitch"));
+    else if (strstr(line, "Global Average Roll"))
+      params->roll = atof(get_uavsar(line, "Global Average Roll"));
+    else if (strstr(line, "Global Average Altitude"))
+      params->altitude = atof(get_uavsar(line, "Global Average Altitude"));
+    else if (strstr(line, "Global Average Terrain Height"))
+      params->terrain_height = 
+	atof(get_uavsar(line, "Global Average Terrain Height"));
+    else if (strstr(line, "Global Average Squint Angle"))
+      params->squint_angle = 
+	atof(get_uavsar(line, "Global Average Squint Angle"));
+    else if (strstr(line, "Pulse Length"))
+      params->pulse_length = atof(get_uavsar(line, "Pulse Length"));
+    else if (strstr(line, "Steering Angle (90 is Boresite)"))
+      params->steering_angle = 
+	atof(get_uavsar(line, "Steering Angle (90 is Boresite)"));
+    else if (strstr(line, "Bandwidth"))
+      params->bandwidth = atof(get_uavsar(line, "Bandwidth"));
+    else if (strstr(line, "Approximate Upper Left Latitude"))
+      params->lat_upper_left = 
+	atof(get_uavsar(line, "Approximate Upper Left Latitude"));
+    else if (strstr(line, "Approximate Upper Left Longitude"))
+	params->lon_upper_left = 
+	  atof(get_uavsar(line, "Approximate Upper Left Longitude"));
+    else if (strstr(line, "Approximate Upper Right Latitude"))
+      params->lat_upper_right = 
+	atof(get_uavsar(line, "Approximate Upper Right Latitude"));
+    else if (strstr(line, "Approximate Upper Right Longitude"))
+	params->lon_upper_right = 
+	  atof(get_uavsar(line, "Approximate Upper Right Longitude"));
+    else if (strstr(line, "Approximate Lower Left Latitude"))
+      params->lat_lower_left = 
+	atof(get_uavsar(line, "Approximate Lower Left Latitude"));
+    else if (strstr(line, "Approximate Lower Left Longitude"))
+	params->lon_lower_left = 
+	  atof(get_uavsar(line, "Approximate Lower Left Longitude"));
+    else if (strstr(line, "Approximate Lower Right Latitude"))
+      params->lat_lower_right = 
+	atof(get_uavsar(line, "Approximate Lower Right Latitude"));
+    else if (strstr(line, "Approximate Lower Right Longitude"))
+	params->lon_lower_right = 
+	  atof(get_uavsar(line, "Approximate Lower Right Longitude"));
+    else if (strstr(line, "Date of Acquisition"))
+      strcpy(params->acquisition_date, get_uavsar(line, "Date of Acquisition"));
+    else if (strstr(line, "Processor Version Number"))
+      strcpy(params->processor, get_uavsar(line, "Processor Version Number"));
+  }
+  FCLOSE(fp);
+
+  return params;
+}
+
 static int sign(char byteBuf)
 {
   if (byteBuf < 0)
@@ -512,26 +877,392 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   // slc_mag and slc_phase - 8 bytes per pixel derived from slc
   // mlc_mag and mlc_phase - 8 bytes per pixel derived from mlc
 
+  // InSAR data
+  // int - Slant range interferogram
+  // unw - Slant range unwrapped phase
+  // cor - Slant range correlation
+  // amp - Slant range amplitudes
+  // int_grd - Ground range interferogram
+  // unw_grd - Ground range unwrapped phase
+  // cor_grd - Ground range correlation
+  // amp_grd - Ground range amplitudes
+  // hgt_grd - Digital elevation model in ground projection
+
   FILE *fpIn, *fpOut;
   int ii, kk, ll, nn, nBands, ns, nl, *dataType;
   long long offset;
-  float *floatAmp, *floatAmpBuf, *amp;
+  float *floatAmp, *floatPhase, *floatAmpBuf, *amp, re, im;
   float *floatComplexReal, *floatComplexImag;
   float *floatComplexBuf;
   char **dataName, **element, tmp[50];
   char *outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+5));
-  uavsar_polsar *params;
+  uavsar_polsar *polsar_params;
+  uavsar_insar *insar_params;
   meta_parameters *metaIn, *metaOut;
 
+  // InSAR data
+  // Slant range interferogram
+  if (strcmp_case(data_type, "INT") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_INT, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_INT);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    ns = metaIn->general->sample_count;
+    nl = metaIn->general->line_count;
+    nn = 0;
+    floatAmp = (float *) CALLOC(ns, sizeof(float));
+    floatPhase = (float *) CALLOC(ns, sizeof(float));
+    floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
+    metaOut->general->band_count = 2;
+    if (strcmp_case(data_type, "INT") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_int.img");
+    asfPrintStatus("\nSlant range interferogram:\n");
+    fpOut = FOPEN(outName, "wb");
+    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+    fpIn = FOPEN(dataName[nn], "rb");
+    sprintf(metaOut->general->bands, 
+	    "%s_INTERFEROGRAM_AMP,%s_INTERFEROGRAM_PHASE", 
+	    element[nn], element[nn]);
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      metaIn->general->sample_count = 2*ns;
+      get_float_line(fpIn, metaIn, ii, floatComplexBuf);
+      for (kk=0; kk<ns; kk++) {
+	re = floatComplexBuf[kk*2];
+	im = floatComplexBuf[kk*2+1];
+	ieee_big32(re);
+	ieee_big32(im);
+	floatAmp[kk] = hypot(re,im);
+	floatPhase[kk] = atan2_check(im,re);
+      }
+      put_band_float_line(fpOut, metaOut, 0, ii, floatAmp);
+      put_band_float_line(fpOut, metaOut, 1, ii, floatPhase);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    FREE(floatAmp);
+    FREE(floatPhase);
+    FREE(floatComplexBuf);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }
+
+  // Slant range unwrapped phase
+  if (strcmp_case(data_type, "UNW") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_UNW, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_UNW);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    ns = metaOut->general->sample_count;
+    nn = 0;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    if (strcmp_case(data_type, "UNW") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_unw.img");
+    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+    fpIn = FOPEN(dataName[nn], "rb");
+    fpOut = FOPEN(outName, "wb");
+    strcpy(metaOut->general->bands, "UNWRAPPED_PHASE");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+      for (kk=0; kk<metaIn->general->sample_count; kk++)
+	ieee_big32(floatAmpBuf[kk]);
+      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }    
+
+  // Slant range correlation image
+  if (strcmp_case(data_type, "COR") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_COR, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_COR);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    ns = metaOut->general->sample_count;
+    nn = 0;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    if (strcmp_case(data_type, "COR") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_cor.img");
+    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+    fpIn = FOPEN(dataName[nn], "rb");
+    fpOut = FOPEN(outName, "wb");
+    strcpy(metaOut->general->bands, "COHERENCE");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+      for (kk=0; kk<metaIn->general->sample_count; kk++)
+	ieee_big32(floatAmpBuf[kk]);
+      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }    
+
+  // Slant range amplitude images
+  if (strcmp_case(data_type, "AMP") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_AMP, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_AMP);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    metaOut->general->band_count = 2;
+    ns = metaOut->general->sample_count;
+    nn = 0;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    if (strcmp_case(data_type, "AMP") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_amp.img");
+    fpOut = FOPEN(outName, "wb");
+    strcpy(metaOut->general->bands, "AMP1,AMP2");
+    for (nn=0; nn<nBands; nn++) {
+      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      fpIn = FOPEN(dataName[nn], "rb");
+      for (ii=0; ii<metaIn->general->line_count; ii++) {
+	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
+	ieee_big32(floatAmpBuf[kk]);
+	put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
+	asfLineMeter(ii, metaIn->general->line_count);
+      }
+      FCLOSE(fpIn);
+    }
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }    
+
+  // Ground range interferogram
+  if (strcmp_case(data_type, "INT_GRD") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_INT_GRD, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_INT_GRD);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    ns = metaIn->general->sample_count;
+    nl = metaIn->general->line_count;
+    nn = 0;
+    floatAmp = (float *) CALLOC(ns, sizeof(float));
+    floatPhase = (float *) CALLOC(ns, sizeof(float));
+    floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
+    metaOut->general->band_count = 2;
+    if (strcmp_case(data_type, "INT_GRD") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_int_grd.img");
+    asfPrintStatus("\nGround range interferogram:\n");
+    fpOut = FOPEN(outName, "wb");
+    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+    fpIn = FOPEN(dataName[nn], "rb");
+    sprintf(metaOut->general->bands, 
+	    "%s_INTERFEROGRAM_AMP,%s_INTERFEROGRAM_PHASE", 
+	    element[nn], element[nn]);
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      metaIn->general->sample_count = 2*ns;
+      get_float_line(fpIn, metaIn, ii, floatComplexBuf);
+      for (kk=0; kk<ns; kk++) {
+	re = floatComplexBuf[kk*2];
+	im = floatComplexBuf[kk*2+1];
+	ieee_big32(re);
+	ieee_big32(im);
+	floatAmp[kk] = hypot(re,im);
+	floatPhase[kk] = atan2_check(im,re);
+      }
+      put_band_float_line(fpOut, metaOut, 0, ii, floatAmp);
+      put_band_float_line(fpOut, metaOut, 1, ii, floatPhase);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    FREE(floatAmp);
+    FREE(floatPhase);
+    FREE(floatComplexBuf);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }
+
+  // Ground range unwrapped phase
+  if (strcmp_case(data_type, "UNW_GRD") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_UNW_GRD, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_UNW_GRD);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    ns = metaOut->general->sample_count;
+    nn = 0;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    if (strcmp_case(data_type, "UNW_GRD") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_unw_grd.img");
+    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+    fpIn = FOPEN(dataName[nn], "rb");
+    fpOut = FOPEN(outName, "wb");
+    strcpy(metaOut->general->bands, "UNWRAPPED_PHASE");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+      for (kk=0; kk<metaIn->general->sample_count; kk++)
+	ieee_big32(floatAmpBuf[kk]);
+      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }    
+
+  // Ground range correlation image
+  if (strcmp_case(data_type, "COR_GRD") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_COR_GRD, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_COR_GRD);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    ns = metaOut->general->sample_count;
+    nn = 0;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    if (strcmp_case(data_type, "COR_GRD") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_cor_grd.img");
+    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+    fpIn = FOPEN(dataName[nn], "rb");
+    fpOut = FOPEN(outName, "wb");
+    strcpy(metaOut->general->bands, "COHERENCE");
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+      for (kk=0; kk<metaIn->general->sample_count; kk++)
+	ieee_big32(floatAmpBuf[kk]);
+      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }    
+
+  // Ground range amplitude images
+  if (strcmp_case(data_type, "AMP_GRD") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_AMP_GRD, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_AMP_GRD);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    metaOut->general->band_count = 2;
+    ns = metaOut->general->sample_count;
+    nn = 0;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    if (strcmp_case(data_type, "AMP_GRD") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_amp_grd.img");
+    fpOut = FOPEN(outName, "wb");
+    strcpy(metaOut->general->bands, "AMP1,AMP2");
+    for (nn=0; nn<nBands; nn++) {
+      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      fpIn = FOPEN(dataName[nn], "rb");
+      for (ii=0; ii<metaIn->general->line_count; ii++) {
+	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
+	ieee_big32(floatAmpBuf[kk]);
+	put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
+	asfLineMeter(ii, metaIn->general->line_count);
+      }
+      FCLOSE(fpIn);
+    }
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }    
+
+  // Ground range digital elevation model
+  if (strcmp_case(data_type, "HGT_GRD") == 0 ||
+      strcmp_case(data_type, "ALL") == 0) {
+    get_uavsar_file_names(inFileName, INSAR_HGT_GRD, &dataName, &element,
+			  &dataType, &nBands);
+    insar_params = 
+      read_uavsar_insar_params(inFileName, INSAR_HGT_GRD);
+    metaIn = uavsar_insar2meta(insar_params);
+    metaOut = uavsar_insar2meta(insar_params);
+    ns = metaOut->general->sample_count;
+    nn = 0;
+    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    if (strcmp_case(data_type, "HGT_GRD") == 0)
+      outName = appendExt(outBaseName, ".img");
+    else if (strcmp_case(data_type, "ALL") == 0)
+      outName = appendToBasename(outBaseName, "_hgt_grd.img");
+    fpOut = FOPEN(outName, "wb");
+    strcpy(metaOut->general->bands, "HEIGHT");
+    for (nn=0; nn<nBands; nn++) {
+      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      fpIn = FOPEN(dataName[nn], "rb");
+      for (ii=0; ii<metaIn->general->line_count; ii++) {
+	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
+	ieee_big32(floatAmpBuf[kk]);
+	put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
+	asfLineMeter(ii, metaIn->general->line_count);
+      }
+      FCLOSE(fpIn);
+    }
+    FCLOSE(fpOut);
+    meta_write(metaOut, outName);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }    
+
+  FREE(outName);
+
+  // PolSAR data
   // Single look complex data
   if (strcmp_case(data_type, "SLC") == 0 ||
       strcmp_case(data_type, "ALL") == 0) {
     get_uavsar_file_names(inFileName, POLSAR_SLC, &dataName, &element,
 			  &dataType, &nBands);
-    params = 
+    polsar_params = 
       read_uavsar_polsar_params(inFileName, POLSAR_SLC);
-    metaIn = uavsar_polsar2meta(params);
-    metaOut = uavsar_polsar2meta(params);
+    metaIn = uavsar_polsar2meta(polsar_params);
+    metaOut = uavsar_polsar2meta(polsar_params);
     if (strcmp_case(data_type, "SLC") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
@@ -548,10 +1279,10 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       strcmp_case(data_type, "ALL") == 0) {
     get_uavsar_file_names(inFileName, POLSAR_MLC, &dataName, &element,
 			  &dataType, &nBands);
-    params = 
+    polsar_params = 
       read_uavsar_polsar_params(inFileName, POLSAR_MLC);
-    metaIn = uavsar_polsar2meta(params);
-    metaOut = uavsar_polsar2meta(params);
+    metaIn = uavsar_polsar2meta(polsar_params);
+    metaOut = uavsar_polsar2meta(polsar_params);
     ns = metaIn->general->sample_count;
     amp = (float *) MALLOC(sizeof(float)*ns);
     floatAmp = (float *) MALLOC(sizeof(float)*ns);
@@ -635,10 +1366,10 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       strcmp_case(data_type, "ALL") == 0) {
     get_uavsar_file_names(inFileName, POLSAR_DAT, &dataName, &element,
 			  &dataType, &nBands);
-    params = 
+    polsar_params = 
       read_uavsar_polsar_params(inFileName, POLSAR_DAT);
-    metaIn = uavsar_polsar2meta(params);
-    metaOut = uavsar_polsar2meta(params);
+    metaIn = uavsar_polsar2meta(polsar_params);
+    metaOut = uavsar_polsar2meta(polsar_params);
     if (strcmp_case(data_type, "DAT") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
@@ -779,10 +1510,10 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       strcmp_case(data_type, "ALL") == 0) {
     get_uavsar_file_names(inFileName, POLSAR_GRD, &dataName, &element,
 			  &dataType, &nBands);
-    params = 
+    polsar_params = 
       read_uavsar_polsar_params(inFileName, POLSAR_GRD);
-    metaIn = uavsar_polsar2meta(params);
-    metaOut = uavsar_polsar2meta(params);
+    metaIn = uavsar_polsar2meta(polsar_params);
+    metaOut = uavsar_polsar2meta(polsar_params);
     ns = metaIn->general->sample_count;
     nl = metaIn->general->line_count;
     floatAmpBuf = (float *) CALLOC(ns, sizeof(float));
@@ -858,10 +1589,10 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       strcmp_case(data_type, "ALL") == 0) {
     get_uavsar_file_names(inFileName, POLSAR_HGT, &dataName, &element,
 			  &dataType, &nBands);
-    params = 
+    polsar_params = 
       read_uavsar_polsar_params(inFileName, POLSAR_HGT);
-    metaIn = uavsar_polsar2meta(params);
-    metaOut = uavsar_polsar2meta(params);
+    metaIn = uavsar_polsar2meta(polsar_params);
+    metaOut = uavsar_polsar2meta(polsar_params);
     ns = metaOut->general->sample_count;
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
     if (strcmp_case(data_type, "HGT") == 0)
@@ -888,9 +1619,4 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     meta_free(metaOut);
   }    
 
-  // InSAR data
-  // We currently don't have InSAR in the archive. This is a placeholder
-  // for later.
-
-  FREE(outName);
 }

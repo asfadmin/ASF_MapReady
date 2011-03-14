@@ -81,6 +81,7 @@ typedef enum {
   GAMMA_IMAGE,
   BETA_IMAGE,
   INTERFEROGRAM,
+  UNWRAPPED_PHASE,
   COHERENCE_IMAGE,
   INSAR_STACK,
   GEOREFERENCED_IMAGE,
@@ -579,6 +580,7 @@ meta_location *meta_location_init(void);
 meta_colormap *meta_colormap_init(void);
 meta_doppler *meta_doppler_init(void);
 meta_insar *meta_insar_init(void);
+meta_uavsar *meta_uavsar_init(void);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */

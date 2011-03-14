@@ -400,6 +400,8 @@ void fill_structure_field(char *field_name, void *valp)
           MGENERAL->image_data_type = BETA_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTERFEROGRAM") )
           MGENERAL->image_data_type = INTERFEROGRAM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "UNWRAPPED_PHASE") )
+          MGENERAL->image_data_type = UNWRAPPED_PHASE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COHERENCE_IMAGE") )
         MGENERAL->image_data_type = COHERENCE_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOREFERENCED_IMAGE") )

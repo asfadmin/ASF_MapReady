@@ -70,6 +70,8 @@ char *image_data_type2str(image_data_type_t image_data_type)
     strcpy(str, "BETA_IMAGE");
   else if (image_data_type == INTERFEROGRAM)
     strcpy(str, "INTERFEROGRAM");
+  else if (image_data_type == UNWRAPPED_PHASE)
+    strcpy(str, "UNWRAPPED_PHASE");
   else if (image_data_type == COHERENCE_IMAGE)
     strcpy(str, "COHERENCE_IMAGE");
   else if (image_data_type == GEOREFERENCED_IMAGE)
