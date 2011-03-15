@@ -2163,7 +2163,7 @@ export_band_image (const char *metadata_file_name,
           append_band_ext(base_name, out_file, NULL);
         else {
           if (band_count > 1) {
-	    if (strcmp_case(band_name[kk], "INTERFEROGRAM_PHASE") == 0 &&
+	    if (strstr(band_name[kk], "INTERFEROGRAM_PHASE") &&
 		is_colormap_band)
 	      append_band_ext(base_name, out_file, "INTERFEROGRAM_RGB");
 	    else

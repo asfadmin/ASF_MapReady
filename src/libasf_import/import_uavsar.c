@@ -925,9 +925,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     fpOut = FOPEN(outName, "wb");
     asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
     fpIn = FOPEN(dataName[nn], "rb");
-    sprintf(metaOut->general->bands, 
-	    "%s_INTERFEROGRAM_AMP,%s_INTERFEROGRAM_PHASE", 
-	    element[nn], element[nn]);
+    sprintf(metaOut->general->bands, "INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
     for (ii=0; ii<metaIn->general->line_count; ii++) {
       metaIn->general->sample_count = 2*ns;
       get_float_line(fpIn, metaIn, ii, floatComplexBuf);
@@ -1082,9 +1080,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     fpOut = FOPEN(outName, "wb");
     asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
     fpIn = FOPEN(dataName[nn], "rb");
-    sprintf(metaOut->general->bands, 
-	    "%s_INTERFEROGRAM_AMP,%s_INTERFEROGRAM_PHASE", 
-	    element[nn], element[nn]);
+    sprintf(metaOut->general->bands, "INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
     for (ii=0; ii<metaIn->general->line_count; ii++) {
       metaIn->general->sample_count = 2*ns;
       get_float_line(fpIn, metaIn, ii, floatComplexBuf);
