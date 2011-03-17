@@ -201,6 +201,128 @@ void airsar_to_latlon(meta_parameters *meta,
     *lon = R2D*atan2(y, x);
 }
 
+void uavsar_to_latlon(meta_parameters *meta,
+                      double xSample, double yLine, double height,
+                      double *lat, double *lon)
+{
+    if (!meta->uavsar)
+        asfPrintError("uavsar_to_latlon() called with no uavsar block!\n");
+
+    const double a = 6378137.0;           // semi-major axis
+    const double b = 6356752.3412;          // semi-minor axis
+    const double e2 = 0.00669437999014;   // ellipticity
+    const double e12 = 0.00673949674228;  // second eccentricity
+
+    // we try to cache the matrices needed for the computation
+    // this makes sure we don't reuse the cache incorrectly (i.e., on
+    // data (=> an uavsar block) which doesn't match what we cached for)
+    static meta_uavsar *cached_uavsar_block = NULL;
+
+    // these are the cached transformation parameters
+    static matrix *m = NULL;
+    static double ra=-999, o1=-999, o2=-999, o3=-999;
+
+    if (!m)
+        m = matrix_alloc(3,3); // only needs to be done once
+
+    // if we aren't calculating with the exact same airsar block, we
+    // need to recalculate the transformation block
+    int recalc = !cached_uavsar_block ||
+        cached_uavsar_block->lat_peg_point != meta->uavsar->lat_peg_point ||
+        cached_uavsar_block->lon_peg_point != meta->uavsar->lon_peg_point ||
+        cached_uavsar_block->head_peg_point != meta->uavsar->head_peg_point;
+
+    if (recalc) {
+        // cache airsar block, so we can be sure we're not reusing
+        // the stored data incorrectly
+        if (cached_uavsar_block)
+            free(cached_uavsar_block);
+        cached_uavsar_block = meta_uavsar_init();
+        *cached_uavsar_block = *(meta->uavsar);
+
+        asfPrintStatus("Calculating uavsar transformation parameters...\n");
+
+        // now precalculate data
+        double lat_peg = meta->uavsar->lat_peg_point*D2R;
+        double lon_peg = meta->uavsar->lon_peg_point*D2R;
+        double head_peg = meta->uavsar->head_peg_point*D2R;
+        double re = a / sqrt(1-e2*sin(lat_peg)*sin(lat_peg));
+        double rn = (a*(1-e2)) / pow(1-e2*sin(lat_peg)*sin(lat_peg), 1.5);
+        ra = (re*rn) / (re*cos(head_peg)*cos(head_peg)+rn*sin(head_peg)*sin(head_peg));
+
+        matrix *m1, *m2;
+        m1 = matrix_alloc(3,3);
+        m2 = matrix_alloc(3,3);
+
+        m1->coeff[0][0] = -sin(lon_peg);
+        m1->coeff[0][1] = -sin(lat_peg)*cos(lon_peg);
+        m1->coeff[0][2] = cos(lat_peg)*cos(lon_peg);
+        m1->coeff[1][0] = cos(lon_peg);
+        m1->coeff[1][1] = -sin(lat_peg)*sin(lon_peg);
+        m1->coeff[1][2] = cos(lat_peg)*sin(lon_peg);
+        m1->coeff[2][0] = 0.0;
+        m1->coeff[2][1] = cos(lat_peg);
+        m1->coeff[2][2] = sin(lat_peg);
+
+        m2->coeff[0][0] = 0.0;
+        m2->coeff[0][1] = sin(head_peg);
+        m2->coeff[0][2] = -cos(head_peg);
+        m2->coeff[1][0] = 0.0;
+        m2->coeff[1][1] = cos(head_peg);
+        m2->coeff[1][2] = sin(head_peg);
+        m2->coeff[2][0] = 1.0;
+        m2->coeff[2][1] = 0.0;
+        m2->coeff[2][2] = 0.0;
+
+        o1 = re*cos(lat_peg)*cos(lon_peg)-ra*cos(lat_peg)*cos(lon_peg);
+        o2 = re*cos(lat_peg)*sin(lon_peg)-ra*cos(lat_peg)*sin(lon_peg);
+        o3 = re*(1-e2)*sin(lat_peg)-ra*sin(lat_peg);
+
+        matrix_mult(m,m1,m2);
+        matrix_free(m1);
+        matrix_free(m2);
+    }
+
+    // Make sure we didn't miss anything
+    assert(ra != -999 && o1 != -999 && o2 != -999 && o3 != -999);
+
+    //------------------------------------------------------------------
+    // Now the actual computation, using the cached matrix etc
+
+    // convenience aliases
+    double c0 = meta->uavsar->cross_track_offset;
+    double s0 = meta->uavsar->along_track_offset;
+    double ypix = meta->general->y_pixel_size;
+    double xpix = meta->general->x_pixel_size;
+
+    // radar coordinates
+    double c_lat = (xSample*xpix+c0)/ra;
+    double s_lon = (yLine*ypix+s0)/ra;
+
+    //height += meta->airsar->gps_altitude;
+
+    // radar coordinates in WGS84
+    double t1 = (ra+height)*cos(c_lat)*cos(s_lon);
+    double t2 = (ra+height)*cos(c_lat)*sin(s_lon);
+    double t3 = (ra+height)*sin(c_lat);
+
+    double c1 = m->coeff[0][0]*t1 + m->coeff[0][1]*t2 + m->coeff[0][2]*t3;
+    double c2 = m->coeff[1][0]*t1 + m->coeff[1][1]*t2 + m->coeff[1][2]*t3;
+    double c3 = m->coeff[2][0]*t1 + m->coeff[2][1]*t2 + m->coeff[2][2]*t3;
+
+    // shift into local Cartesian coordinates
+    double x = c1 + o1;// + 9.0;
+    double y = c2 + o2;// - 161.0;
+    double z = c3 + o3;// - 179.0;
+
+    // local Cartesian coordinates into geographic coordinates
+    double d = sqrt(x*x+y*y);
+    double theta = atan2(z*a, d*b);
+    *lat = R2D*atan2(z+e12*b*sin(theta)*sin(theta)*sin(theta),
+                     d-e2*a*cos(theta)*cos(theta)*cos(theta));
+    *lon = R2D*atan2(y, x);
+}
+
 void alos_to_latlon(meta_parameters *meta,
         double xSample, double yLine, double z,
         double *lat, double *lon, double *height)

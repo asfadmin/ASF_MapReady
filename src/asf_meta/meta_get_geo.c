@@ -95,6 +95,17 @@ int meta_get_latLon(meta_parameters *meta,
     airsar_to_latlon(meta, s, l, elev, lat, lon);
     return 0;
   }
+  else if (meta->uavsar) {
+    double l = yLine, s = xSample;
+    if (meta->sar) {
+          l = meta->general->start_line +
+                  meta->general->line_scaling * yLine;
+          s = meta->general->start_sample +
+                  meta->general->sample_scaling * xSample;
+    }
+    uavsar_to_latlon(meta, s, l, elev, lat, lon);
+    return 0;
+  }
   else if (meta->transform) {
       /* ALOS data (not projected) -- use transform block */
       double l = yLine, s = xSample;
