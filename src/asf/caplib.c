@@ -245,8 +245,8 @@ void FREE_BANDS(char **ptr)
 
 FILE *FOPEN(const char *file,const char *mode)
 {
-#if defined(win32)
-    // fopen is 64-bit ok on Cygwin -- no fopen64().
+#if defined(win32) || defined(darwin)
+    // fopen is 64-bit ok on Cygwin and darwin -- no fopen64().
     FILE *ret=fopen(file,mode);
 #else
     FILE *ret=fopen64(file,mode);
@@ -463,8 +463,8 @@ int FSEEK64(FILE *stream,long long offset,int ptrname)
 
 #if defined(irix)
     ret=fseek64(stream,offset,ptrname);
-#elif defined(cygwin)
-    // On cygwin, the fseeko function is 64-bit ready
+#elif defined(cygwin) || defined(darwin)
+    // On cygwin and darwin, the fseeko function is 64-bit ready
     ret=fseeko(stream,offset,ptrname);
 #elif defined(mingw)
     // On MinGW, use fseeko64 (Windows native)
@@ -494,7 +494,10 @@ long long FTELL64(FILE *stream)
     long long ret=-1;
     if (stream==NULL)
         programmer_error("NULL file pointer passed to FTELL64.\n");
-#if defined(irix)
+#if defined(darwin)
+    // ftell is 64-bt ready on darwin
+    ret=(long long)ftell(stream);
+#elif defined(irix)
     ret=(long long)ftell64(stream);
 #elif defined(cygwin)
      /* Although there is a man page for ftello64 on Windows cygwin,

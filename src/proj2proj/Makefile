@@ -135,7 +135,11 @@ LDLIBS = \
 	$(shell /usr/bin/pkg-config --libs gthread-2.0) \
 	-lm
 
+ifeq ($(SYS),darwin)
+LDFLAGS = -dynamic
+else
 LDFLAGS = -Wl,--export-dynamic
+endif
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 

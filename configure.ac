@@ -43,6 +43,8 @@ optFlag="-O4"
 case "${osType}:${versMajor}:${versMinor}" in
 	SunOS:*:*)
 		sys="solaris" ;;
+	Darwin:*:*)
+		sys="darwin" ;;
 	Linux:*:*)
 		sys="linux" ;;
 	CYGWIN*:*:*)

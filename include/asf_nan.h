@@ -21,14 +21,12 @@
 #endif /* NAN */
 
 /* Specify necessary headers for the isnan() function/macro */
-#if defined (linux)
-# include <math.h>
-#elif defined (win32)
+#if defined (linux) || defined(darwin) || defined (win32)
 # include <math.h>
 #else
 # include <ieeefp.h>
 # include <math.h>
-#endif /* defined (linux) */
+#endif /* defined (linux) || defined(darwin) || defined (win32) */
 
 #define ISNAN(X) (isnan(X))
 

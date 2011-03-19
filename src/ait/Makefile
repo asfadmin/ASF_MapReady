@@ -114,7 +114,11 @@ LDLIBS = $(LIBS) \
 	 $(shell /usr/bin/pkg-config --libs libglade-2.0) \
          $(shell /usr/bin/pkg-config --libs gthread-2.0)
 
+ifeq ($(SYS),darwin)
+LDFLAGS = -dynamic
+else
 LDFLAGS = -Wl,--export-dynamic
+endif
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 

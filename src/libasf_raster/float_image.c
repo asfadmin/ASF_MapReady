@@ -27,13 +27,15 @@
 #include "float_image.h"
 
 #ifndef linux
+#ifndef darwin
 #ifndef win32
 static double
 round (double arg)
 {
-  return floor (arg + 0.5);
+    return floor (arg + 0.5);
 }
 #endif // #ifndef win32
+#endif // #ifndef darwin
 #endif // #ifndef linux
 
 #include "asf_glib.h"

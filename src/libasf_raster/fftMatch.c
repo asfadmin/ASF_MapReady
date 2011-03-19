@@ -6,6 +6,8 @@
 
 #if defined(mingw) // MAXFLOAT not available on mingw
 #define MAXFLOAT 3.4028234663852886e+38
+#elif defined(darwin)
+// Include nothing, MAXFLOAT is included in math.h on darwin
 #elif !defined(cygwin) // cygwin has MAXFLOAT in math.h
 #include <values.h> // unix systems have it in values.h
 #endif

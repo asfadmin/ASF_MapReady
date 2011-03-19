@@ -323,13 +323,15 @@ get_statistics (FloatImage *si, scale_t sample_mapping, int sampling_stride,
 
 
 #ifndef linux
+#ifndef darwin
 #ifndef win32
 static double
 round (double arg)
 {
-  return floor (arg + 0.5);
+    return floor (arg + 0.5);
 }
 #endif // #ifndef win32
+#endif // #ifndef darwin
 #endif // #ifndef linux
 
 /* Create a byte value based on the floating point value and whatever scaling

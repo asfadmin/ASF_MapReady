@@ -17,13 +17,15 @@
 static const char *latlon_description = "+proj=latlong +datum=WGS84";
 
 #ifndef linux
+#ifndef darwin
 #ifndef win32
 static double
 round (double arg)
 {
-  return floor (arg + 0.5);
+    return floor (arg + 0.5);
 }
 #endif /* #ifndef win32 */
+#endif /* #ifndef darwin */
 #endif /* #ifndef linux */
 
 #ifdef linux
