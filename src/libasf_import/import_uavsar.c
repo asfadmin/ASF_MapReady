@@ -39,7 +39,7 @@ static int check_file(char *line, char **fileName)
 {
   char *p;
   p = strchr(line, '=');
-  char *file = (char *) MALLOC(sizeof(char)*255);
+  char *file = (char *) CALLOC(1, sizeof(char)*255);
   strncpy(file, p+1, 65);
   *fileName = trim_spaces(file);
   FREE(file);
@@ -551,6 +551,8 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
       params->roll = atof(get_uavsar(line, "Global Average Roll"));
     else if (strstr(line, "Global Average Altitude"))
       params->altitude = atof(get_uavsar(line, "Global Average Altitude"));
+    else if (strstr(line, "Average GPS Altitude"))
+      params->altitude = atof(get_uavsar(line, "Average GPS Altitude"));
     else if (strstr(line, "Global Average Terrain Height"))
       params->terrain_height = 
 	atof(get_uavsar(line, "Global Average Terrain Height"));
@@ -667,6 +669,11 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
 	params->along_track_offset = atof(get_uavsar(line, "slt.row_addr"));
       else if (strstr(line, "slt.col_addr"))
 	params->cross_track_offset = atof(get_uavsar(line, "slt.col_addr"));
+      else if (strstr(line, "Slant Range Data at Near Range")) {
+	params->slant_range_first_pixel = 
+	  atof(get_uavsar(line, "Slant Range Data at Near Range"));
+	params->slant_range_first_pixel /= 1000.0;
+      }
       else if (strstr(line, "Slant Range Data Azimuth Spacing"))
 	params->azimuth_pixel_spacing = 
 	  atof(get_uavsar(line, "Slant Range Data Azimuth Spacing"));
@@ -854,6 +861,21 @@ static int sign(char byteBuf)
     return 1;
 }
 
+static void check_data_type(const char *inFileName, char *type)
+{
+  char line[255];
+  FILE *fp = FOPEN(inFileName, "r");
+  while (fgets(line, 255, fp)) {
+    if (strstr(line, "Acquisition Mode"))
+      strcpy(type, get_uavsar(line, "Acquisition Mode"));
+    else if (strstr(line, "Processing Mode"))
+      strcpy(type, get_uavsar(line, "Processing Mode"));
+    if (strcmp_case(type, "RPI") == 0)
+      sprintf(type, "InSAR");
+  }
+  FCLOSE(fp);
+}
+
 void import_uavsar(const char *inFileName, radiometry_t radiometry,
 		   const char *data_type, const char *outBaseName) {
 
@@ -864,7 +886,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   // of UAVSAR whatsoever.
 
   // The data can come in a large variety of flavors (single look versus multi-
-  // look, derived magnitude and phase, etc.). I assume we can anything or
+  // look, derived magnitude and phase, etc.). I assume we can take anything or
   // nothing from this menu. The different files have different dimensions,
   // so we will need to generate several output images to accommodate that.
 
@@ -894,16 +916,20 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   float *floatAmp, *floatPhase, *floatAmpBuf, *amp, re, im;
   float *floatComplexReal, *floatComplexImag;
   float *floatComplexBuf;
-  char **dataName, **element, tmp[50];
-  char *outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+5));
+  char **dataName, **element, tmp[50], type[10];
+  char *outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
   uavsar_polsar *polsar_params;
   uavsar_insar *insar_params;
   meta_parameters *metaIn, *metaOut;
 
+  check_data_type(inFileName, type);
+  asfPrintStatus("   Data type: %s\n", type);
+
   // InSAR data
   // Slant range interferogram
   if (strcmp_case(data_type, "INT") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_INT, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -916,6 +942,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     floatAmp = (float *) CALLOC(ns, sizeof(float));
     floatPhase = (float *) CALLOC(ns, sizeof(float));
     floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     metaOut->general->band_count = 2;
     if (strcmp_case(data_type, "INT") == 0)
       outName = appendExt(outBaseName, ".img");
@@ -947,13 +974,16 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FREE(floatAmp);
     FREE(floatPhase);
     FREE(floatComplexBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(insar_params);
   }
 
   // Slant range unwrapped phase
   if (strcmp_case(data_type, "UNW") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_UNW, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -963,10 +993,12 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     ns = metaOut->general->sample_count;
     nn = 0;
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     if (strcmp_case(data_type, "UNW") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_unw.img");
+    asfPrintStatus("\nSlant range unwrapped phase:\n");
     asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
     fpIn = FOPEN(dataName[nn], "rb");
     fpOut = FOPEN(outName, "wb");
@@ -981,13 +1013,17 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FCLOSE(fpIn);
     FCLOSE(fpOut);
     meta_write(metaOut, outName);
+    FREE(floatAmpBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(insar_params);
   }    
 
   // Slant range correlation image
   if (strcmp_case(data_type, "COR") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_COR, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -997,10 +1033,12 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     ns = metaOut->general->sample_count;
     nn = 0;
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     if (strcmp_case(data_type, "COR") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_cor.img");
+    asfPrintStatus("\nSlant range correlation image:\n");
     asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
     fpIn = FOPEN(dataName[nn], "rb");
     fpOut = FOPEN(outName, "wb");
@@ -1015,13 +1053,17 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FCLOSE(fpIn);
     FCLOSE(fpOut);
     meta_write(metaOut, outName);
+    FREE(floatAmpBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(insar_params);
   }    
 
   // Slant range amplitude images
   if (strcmp_case(data_type, "AMP") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_AMP, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -1032,12 +1074,14 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     ns = metaOut->general->sample_count;
     nn = 0;
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     if (strcmp_case(data_type, "AMP") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_amp.img");
     fpOut = FOPEN(outName, "wb");
     strcpy(metaOut->general->bands, "AMP1,AMP2");
+    asfPrintStatus("\nSlant range amplitude images:\n");
     for (nn=0; nn<nBands; nn++) {
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
       fpIn = FOPEN(dataName[nn], "rb");
@@ -1052,13 +1096,17 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     }
     FCLOSE(fpOut);
     meta_write(metaOut, outName);
+    FREE(floatAmpBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(insar_params);
   }    
 
   // Ground range interferogram
   if (strcmp_case(data_type, "INT_GRD") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_INT_GRD, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -1071,6 +1119,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     floatAmp = (float *) CALLOC(ns, sizeof(float));
     floatPhase = (float *) CALLOC(ns, sizeof(float));
     floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     metaOut->general->band_count = 2;
     if (strcmp_case(data_type, "INT_GRD") == 0)
       outName = appendExt(outBaseName, ".img");
@@ -1102,13 +1151,16 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FREE(floatAmp);
     FREE(floatPhase);
     FREE(floatComplexBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(insar_params);
   }
 
   // Ground range unwrapped phase
   if (strcmp_case(data_type, "UNW_GRD") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_UNW_GRD, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -1118,10 +1170,12 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     ns = metaOut->general->sample_count;
     nn = 0;
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     if (strcmp_case(data_type, "UNW_GRD") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_unw_grd.img");
+    asfPrintStatus("\nGround range unwrapped phase:\n");
     asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
     fpIn = FOPEN(dataName[nn], "rb");
     fpOut = FOPEN(outName, "wb");
@@ -1136,13 +1190,17 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FCLOSE(fpIn);
     FCLOSE(fpOut);
     meta_write(metaOut, outName);
+    FREE(floatAmpBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(insar_params);
   }    
 
   // Ground range correlation image
   if (strcmp_case(data_type, "COR_GRD") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_COR_GRD, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -1156,6 +1214,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_cor_grd.img");
+    asfPrintStatus("\nGround range correlation image:\n");
     asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
     fpIn = FOPEN(dataName[nn], "rb");
     fpOut = FOPEN(outName, "wb");
@@ -1169,14 +1228,18 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     }
     FCLOSE(fpIn);
     FCLOSE(fpOut);
+    FREE(floatAmpBuf);
+    FREE(outName);
     meta_write(metaOut, outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(insar_params);
   }    
 
   // Ground range amplitude images
   if (strcmp_case(data_type, "AMP_GRD") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_AMP_GRD, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -1187,12 +1250,14 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     ns = metaOut->general->sample_count;
     nn = 0;
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     if (strcmp_case(data_type, "AMP_GRD") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_amp_grd.img");
     fpOut = FOPEN(outName, "wb");
     strcpy(metaOut->general->bands, "AMP1,AMP2");
+    asfPrintStatus("\nGround range amplitude images:\n");
     for (nn=0; nn<nBands; nn++) {
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
       fpIn = FOPEN(dataName[nn], "rb");
@@ -1207,13 +1272,17 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     }
     FCLOSE(fpOut);
     meta_write(metaOut, outName);
+    FREE(floatAmpBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(insar_params);
   }    
 
   // Ground range digital elevation model
   if (strcmp_case(data_type, "HGT_GRD") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "InSAR") == 0)) {
     get_uavsar_file_names(inFileName, INSAR_HGT_GRD, &dataName, &element,
 			  &dataType, &nBands);
     insar_params = 
@@ -1223,12 +1292,14 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     ns = metaOut->general->sample_count;
     nn = 0;
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     if (strcmp_case(data_type, "HGT_GRD") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
       outName = appendToBasename(outBaseName, "_hgt_grd.img");
     fpOut = FOPEN(outName, "wb");
     strcpy(metaOut->general->bands, "HEIGHT");
+    asfPrintStatus("\nGround range digital elevation model:\n");
     for (nn=0; nn<nBands; nn++) {
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
       fpIn = FOPEN(dataName[nn], "rb");
@@ -1243,16 +1314,19 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     }
     FCLOSE(fpOut);
     meta_write(metaOut, outName);
+    FREE(floatAmpBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
-  }    
-
-  FREE(outName);
+    FREE(insar_params);
+  }
 
   // PolSAR data
   // Single look complex data
   if (strcmp_case(data_type, "SLC") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "PolSAR") == 0)) {
+    asfPrintWarning("Ingest of SLC data is currently not supported!\n");
     get_uavsar_file_names(inFileName, POLSAR_SLC, &dataName, &element,
 			  &dataType, &nBands);
     polsar_params = 
@@ -1265,14 +1339,16 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
       outName = appendToBasename(outBaseName, "_slc.img");
     for (ii=0; ii<nBands; ii++)
       printf("file: %s\n", dataName[ii]);
-    meta_write(metaOut, outName);
+    //meta_write(metaOut, outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(polsar_params);
   }
 
   // Multilooked data
   if (strcmp_case(data_type, "MLC") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "PolSAR") == 0)) {
     get_uavsar_file_names(inFileName, POLSAR_MLC, &dataName, &element,
 			  &dataType, &nBands);
     polsar_params = 
@@ -1286,6 +1362,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     floatComplexReal = (float *) MALLOC(sizeof(float)*ns);
     floatComplexImag = (float *) MALLOC(sizeof(float)*ns);
     floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     metaOut->general->band_count = ll = 1;
     if (strcmp_case(data_type, "MLC") == 0)
       outName = appendExt(outBaseName, ".img");
@@ -1353,19 +1430,23 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FREE(floatComplexReal);
     FREE(floatComplexImag);
     FREE(floatComplexBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(polsar_params);
   }    
 
   // Compressed Stokes matrix
   if (strcmp_case(data_type, "DAT") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "PolSAR") == 0)) {
     get_uavsar_file_names(inFileName, POLSAR_DAT, &dataName, &element,
 			  &dataType, &nBands);
     polsar_params = 
       read_uavsar_polsar_params(inFileName, POLSAR_DAT);
     metaIn = uavsar_polsar2meta(polsar_params);
     metaOut = uavsar_polsar2meta(polsar_params);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     if (strcmp_case(data_type, "DAT") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
@@ -1498,12 +1579,26 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     }
     FCLOSE(fpIn);
     FCLOSE(fpOut);
+    FREE(power);
+    FREE(shh_amp);
+    FREE(shh_phase);
+    FREE(shv_amp);
+    FREE(shv_phase);
+    FREE(svh_amp);
+    FREE(svh_phase);
+    FREE(svv_amp);
+    FREE(svv_phase);
+    FREE(outName);
     meta_write(metaOut, outName);
+    meta_free(metaIn);
+    meta_free(metaOut);
+    FREE(polsar_params);
   }
 
   // Ground range projected data
   if (strcmp_case(data_type, "GRD") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "PolSAR") == 0)) {
     get_uavsar_file_names(inFileName, POLSAR_GRD, &dataName, &element,
 			  &dataType, &nBands);
     polsar_params = 
@@ -1516,6 +1611,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     floatComplexReal = (float *) CALLOC(ns, sizeof(float));
     floatComplexImag = (float *) CALLOC(ns, sizeof(float));
     floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     metaOut->general->band_count = ll = 0;
     if (strcmp_case(data_type, "GRD") == 0)
       outName = appendExt(outBaseName, ".img");
@@ -1576,13 +1672,16 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FREE(floatComplexReal);
     FREE(floatComplexImag);
     FREE(floatComplexBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(polsar_params);
   }
 
   // Digital elevation model
   if (strcmp_case(data_type, "HGT") == 0 ||
-      strcmp_case(data_type, "ALL") == 0) {
+      (strcmp_case(data_type, "ALL") == 0 && 
+       strcmp_case(type, "PolSAR") == 0)) {
     get_uavsar_file_names(inFileName, POLSAR_HGT, &dataName, &element,
 			  &dataType, &nBands);
     polsar_params = 
@@ -1591,6 +1690,7 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     metaOut = uavsar_polsar2meta(polsar_params);
     ns = metaOut->general->sample_count;
     floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
     if (strcmp_case(data_type, "HGT") == 0)
       outName = appendExt(outBaseName, ".img");
     else if (strcmp_case(data_type, "ALL") == 0)
@@ -1611,8 +1711,11 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FCLOSE(fpIn);
     FCLOSE(fpOut);
     meta_write(metaOut, outName);
+    FREE(floatAmpBuf);
+    FREE(outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(polsar_params);
   }    
 
 }

@@ -142,12 +142,23 @@ following defines.
 "        Do not apply the ERS2 gain correction.  (See the 'Notes' section\n"\
 "        below.)\n"\
 "   -uavsar <type>\n"\
-"        Defines what type of UAVSAR data to be ingested:\n"\
+"        Defines what type of UAVSAR data to be ingested:\n\n"\
+"        UAVSAR PolSAR data:\n"\
 "        SLC: single look complex slant range image\n"\
 "        MLC: multilook cross product slant range image\n"\
 "        DAT: compressed Stokes matrix of multilooked data\n"\
 "        GRD: ground range projected (equi-rectangular) and multilooked data\n"\
-"        HGT: DEM used for GRD\n"\
+"        HGT: DEM used for GRD\n\n"\
+"        UAVSAR InSAR data:\n"\
+"        AMP: multilooked amplitude slant range image\n"\
+"        INT: slant range interferogram\n"\
+"        UNW: unwrapped interferometric phase in slant range\n"\
+"        COR: interferometric correlation in slant range\n"\
+"        AMP_GRD: ground range projected amplitude image\n"\
+"        INT_GRD: ground range projected interferogram\n"\
+"        UNW_GRD: ground range projected unwrapped interferometric phase\n"\
+"        COR_GRD: ground range projected interferometric correlation\n"\
+"        HGT_GRD: ground range projected DEM\n"\
 "        ALL: all the above\n"\
 "   -save-intermediates\n"\
 "        Save any intermediate files which may have been created during the\n"\

@@ -242,7 +242,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   int is_jasc_palette = 0;
   if (format_type == AIRSAR && colormapName != NULL)
     asfPrintError("Colormaps not supported for AirSAR data.\n");
-  if (format_type != AIRSAR) {
+  if (format_type != AIRSAR && format_type != UAVSAR) {
     meta_parameters *meta = meta_read(outMetaName);
     if (meta->colormap) {
       if (!(colormapName != NULL && 
