@@ -3,6 +3,11 @@
 #include "uavsar.h"
 #include "asf_nan.h"
 
+#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
+#define ASF_EXPORT_FLOAT_MICRON 0.000000001
+#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
+                                (a, b, ASF_EXPORT_FLOAT_MICRON))
+
 meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
 {
   meta_parameters *meta;
@@ -58,6 +63,8 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   meta->sar = meta_sar_init();
   if (params->type == POLSAR_MLC || params->type == POLSAR_GRD)
     sprintf(meta->sar->polarization, "QUAD-POL");
+  else
+    strcpy(meta->sar->polarization, params->polarization);
   if (strcmp_case(params->projection, "SCX") == 0)
     meta->sar->image_type = 'S';
   else if (strcmp_case(params->projection, "EQA") == 0)
@@ -229,6 +236,7 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
   
   // SAR block
   meta->sar = meta_sar_init();
+  strcpy(meta->sar->polarization, params->polarization);
   if (strcmp_case(params->projection, "SCX") == 0)
     meta->sar->image_type = 'S';
   else if (strcmp_case(params->projection, "EQA") == 0)
@@ -274,17 +282,6 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
   meta->uavsar->along_track_offset = params->along_track_offset;
   meta->uavsar->cross_track_offset = params->cross_track_offset;
 
-  // Location block
-  meta->location = meta_location_init();
-  meta->location->lat_start_near_range = params->lat_upper_left;
-  meta->location->lon_start_near_range = params->lon_upper_left;
-  meta->location->lat_start_far_range = params->lat_upper_right;
-  meta->location->lon_start_far_range = params->lon_upper_right;
-  meta->location->lat_end_near_range = params->lat_lower_left;
-  meta->location->lon_end_near_range = params->lon_lower_left;
-  meta->location->lat_end_far_range = params->lat_lower_right;
-  meta->location->lon_end_far_range = params->lon_lower_right;
-
   // Projection block
   if (params->type >= INSAR_AMP_GRD && params->type <= INSAR_HGT_GRD) {
     meta->projection = meta_projection_init();
@@ -325,6 +322,52 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
       params->azimuth_pixel_spacing * params->row_count / 2.0;
     meta->general->center_longitude = params->cross_track_offset +
       params->range_pixel_spacing * params->column_count / 2.0;
+  }
+
+  // Location block
+  double lat, lon;
+  double ns = meta->general->sample_count;
+  double nl = meta->general->line_count;
+  meta->location = meta_location_init();
+  if (FLOAT_EQUIVALENT(params->lat_upper_left, 0.0) &&
+      FLOAT_EQUIVALENT(params->lon_upper_left, 0.0)) {
+    meta_get_latLon(meta, 0.0, 0.0, 0.0, &lat, &lon);
+    meta->location->lat_start_near_range = lat;
+    meta->location->lon_start_near_range = lon;
+  }
+  else {
+    meta->location->lat_start_near_range = params->lat_upper_left;
+    meta->location->lon_start_near_range = params->lon_upper_left;
+  }
+  if (FLOAT_EQUIVALENT(params->lat_upper_right, 0.0) &&
+      FLOAT_EQUIVALENT(params->lon_upper_right, 0.0)) {
+    meta_get_latLon(meta, 0.0, ns, 0.0, &lat, &lon);
+    meta->location->lat_start_far_range = lat;
+    meta->location->lon_start_far_range = lon;
+  }
+  else {
+    meta->location->lat_start_far_range = params->lat_upper_right;
+    meta->location->lon_start_far_range = params->lon_upper_right;
+  }
+  if (FLOAT_EQUIVALENT(params->lat_lower_left, 0.0) &&
+      FLOAT_EQUIVALENT(params->lon_lower_left, 0.0)) {
+    meta_get_latLon(meta, nl, 0.0, 0.0, &lat, &lon);
+    meta->location->lat_end_near_range = lat;
+    meta->location->lon_end_near_range = lon;
+  }
+  else {
+    meta->location->lat_end_near_range = params->lat_lower_left;
+    meta->location->lon_end_near_range = params->lon_lower_left;
+  }
+  if (FLOAT_EQUIVALENT(params->lat_lower_right, 0.0) &&
+      FLOAT_EQUIVALENT(params->lon_lower_right, 0.0)) {
+    meta_get_latLon(meta, nl, ns, 0.0, &lat, &lon);
+    meta->location->lat_end_far_range = lat;
+    meta->location->lon_end_far_range = lon;
+  }
+  else {
+    meta->location->lat_end_far_range = params->lat_lower_right;
+    meta->location->lon_end_far_range = params->lon_lower_right;
   }
 
   return meta;

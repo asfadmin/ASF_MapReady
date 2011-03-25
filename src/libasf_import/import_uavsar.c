@@ -367,6 +367,8 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
       strcpy(params->site, get_uavsar(line, "Site Description"));
     if (strstr(line, "Acquisition Mode"))
       strcpy(params->acquisition_mode, get_uavsar(line, "Acquisition Mode"));
+    if (strstr(line, "Polarization"))
+      strcpy(params->polarization, get_uavsar(line, "Polarization"));
     if (type == POLSAR_SLC) {
       params->type = POLSAR_SLC;
       if (strstr(line, "slc_mag.set_rows"))
@@ -570,26 +572,26 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
       params->lat_upper_left = 
 	atof(get_uavsar(line, "Approximate Upper Left Latitude"));
     else if (strstr(line, "Approximate Upper Left Longitude"))
-	params->lon_upper_left = 
-	  atof(get_uavsar(line, "Approximate Upper Left Longitude"));
+      params->lon_upper_left = 
+	atof(get_uavsar(line, "Approximate Upper Left Longitude"));
     else if (strstr(line, "Approximate Upper Right Latitude"))
       params->lat_upper_right = 
 	atof(get_uavsar(line, "Approximate Upper Right Latitude"));
     else if (strstr(line, "Approximate Upper Right Longitude"))
-	params->lon_upper_right = 
-	  atof(get_uavsar(line, "Approximate Upper Right Longitude"));
+      params->lon_upper_right = 
+	atof(get_uavsar(line, "Approximate Upper Right Longitude"));
     else if (strstr(line, "Approximate Lower Left Latitude"))
       params->lat_lower_left = 
 	atof(get_uavsar(line, "Approximate Lower Left Latitude"));
     else if (strstr(line, "Approximate Lower Left Longitude"))
-	params->lon_lower_left = 
-	  atof(get_uavsar(line, "Approximate Lower Left Longitude"));
+      params->lon_lower_left = 
+	atof(get_uavsar(line, "Approximate Lower Left Longitude"));
     else if (strstr(line, "Approximate Lower Right Latitude"))
       params->lat_lower_right = 
 	atof(get_uavsar(line, "Approximate Lower Right Latitude"));
     else if (strstr(line, "Approximate Lower Right Longitude"))
-	params->lon_lower_right = 
-	  atof(get_uavsar(line, "Approximate Lower Right Longitude"));
+      params->lon_lower_right = 
+	atof(get_uavsar(line, "Approximate Lower Right Longitude"));
     else if (strstr(line, "Date of Acquisition"))
       strcpy(params->acquisition_date, get_uavsar(line, "Date of Acquisition"));
     else if (strstr(line, "Processor Version Number"))
@@ -604,6 +606,8 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
 				       uavsar_type_t type)
 {
   uavsar_insar *params = (uavsar_insar *) MALLOC(sizeof(uavsar_insar));
+  char time1[50], time2[50], lat_str[10], lon_str[10];
+
   // Read annotation file
   char line[255];
   FILE *fp = FOPEN(dataFile, "r");
@@ -612,6 +616,8 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
       strcpy(params->site, get_uavsar(line, "Site Description"));
     if (strstr(line, "Processing Mode"))
       strcpy(params->processing_mode, get_uavsar(line, "Processing Mode"));
+    if (strstr(line, "Polarization"))
+      strcpy(params->polarization, get_uavsar(line, "Polarization"));
     if (type == INSAR_INT) {
       params->type = INSAR_INT;
       if (strstr(line, "Interferogram Bytes Per Pixel"))
@@ -700,6 +706,12 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
 	params->along_track_offset = atof(get_uavsar(line, "grd.row_addr"));
       else if (strstr(line, "grd.col_addr"))
 	params->cross_track_offset = atof(get_uavsar(line, "grd.col_addr"));
+      else if (strstr(line, "Ground Range Data Latitude Spacing"))
+	params->azimuth_pixel_spacing = 
+	  atof(get_uavsar(line, "Ground Range Data Latitude Spacing"));
+      else if (strstr(line, "Ground Range Data Longitude Spacing"))
+	params->range_pixel_spacing = 
+	  atof(get_uavsar(line, "Ground Range Data Longitude Spacing"));
       else if (strstr(line, "Number of Looks in Range"))
 	params->range_look_count = 
 	  atoi(get_uavsar(line, "Number of Looks in Range"));
@@ -806,6 +818,8 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
       params->roll = atof(get_uavsar(line, "Global Average Roll"));
     else if (strstr(line, "Global Average Altitude"))
       params->altitude = atof(get_uavsar(line, "Global Average Altitude"));
+    else if (strstr(line, "Average GPS Altitude"))
+      params->altitude = atof(get_uavsar(line, "Average GPS Altitude"));
     else if (strstr(line, "Global Average Terrain Height"))
       params->terrain_height = 
 	atof(get_uavsar(line, "Global Average Terrain Height"));
@@ -819,36 +833,72 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
 	atof(get_uavsar(line, "Steering Angle (90 is Boresite)"));
     else if (strstr(line, "Bandwidth"))
       params->bandwidth = atof(get_uavsar(line, "Bandwidth"));
-    else if (strstr(line, "Approximate Upper Left Latitude"))
-      params->lat_upper_left = 
-	atof(get_uavsar(line, "Approximate Upper Left Latitude"));
-    else if (strstr(line, "Approximate Upper Left Longitude"))
-	params->lon_upper_left = 
-	  atof(get_uavsar(line, "Approximate Upper Left Longitude"));
-    else if (strstr(line, "Approximate Upper Right Latitude"))
-      params->lat_upper_right = 
-	atof(get_uavsar(line, "Approximate Upper Right Latitude"));
-    else if (strstr(line, "Approximate Upper Right Longitude"))
-	params->lon_upper_right = 
-	  atof(get_uavsar(line, "Approximate Upper Right Longitude"));
-    else if (strstr(line, "Approximate Lower Left Latitude"))
-      params->lat_lower_left = 
-	atof(get_uavsar(line, "Approximate Lower Left Latitude"));
-    else if (strstr(line, "Approximate Lower Left Longitude"))
-	params->lon_lower_left = 
-	  atof(get_uavsar(line, "Approximate Lower Left Longitude"));
-    else if (strstr(line, "Approximate Lower Right Latitude"))
-      params->lat_lower_right = 
-	atof(get_uavsar(line, "Approximate Lower Right Latitude"));
-    else if (strstr(line, "Approximate Lower Right Longitude"))
-	params->lon_lower_right = 
-	  atof(get_uavsar(line, "Approximate Lower Right Longitude"));
-    else if (strstr(line, "Date of Acquisition"))
-      strcpy(params->acquisition_date, get_uavsar(line, "Date of Acquisition"));
+    else if (strstr(line, "Image Corner Latitude 1")) {
+      strcpy(lat_str, get_uavsar(line, "Image Corner Latitude 1"));
+      if (strcmp_case(lat_str, "N/A") == 0)
+	params->lat_upper_left = MAGIC_UNSET_DOUBLE;
+      else
+	params->lat_upper_left = atof(lat_str);
+    }
+    else if (strstr(line, "Image Corner Longitude 1")) {
+      strcpy(lon_str, get_uavsar(line, "Image Corner Longitude 1"));
+      if (strcmp_case(lon_str, "N/A") == 0)
+	params->lon_upper_left = MAGIC_UNSET_DOUBLE;
+      else
+	params->lon_upper_left = atof(lon_str);	
+    }
+    else if (strstr(line, "Image Corner Latitude 2")) {
+      strcpy(lat_str, get_uavsar(line, "Image Corner Latitude 2"));
+      if (strcmp_case(lat_str, "N/A") == 0)
+	params->lat_upper_right = MAGIC_UNSET_DOUBLE;
+      else
+	params->lat_upper_right = atof(lat_str);
+    }
+    else if (strstr(line, "Image Corner Longitude 2")) {
+      strcpy(lon_str, get_uavsar(line, "Image Corner Longitude 2"));
+      if (strcmp_case(lon_str, "N/A") == 0)
+	params->lon_upper_right = MAGIC_UNSET_DOUBLE;
+      else
+	params->lon_upper_right = atof(lon_str);
+    }
+    else if (strstr(line, "Image Corner Latitude 3")) {
+      strcpy(lat_str, get_uavsar(line, "Image Corner Latitude 3"));
+      if (strcmp_case(lat_str, "N/A") == 0)
+	params->lat_lower_left = MAGIC_UNSET_DOUBLE;
+      else
+	params->lat_lower_left = atof(lat_str);
+    }
+    else if (strstr(line, "Image Corner Longitude 3")) {
+      strcpy(lon_str, get_uavsar(line, "Image Corner Longitude 3"));
+      if (strcmp_case(lon_str, "N/A") == 0)
+	params->lon_lower_left = MAGIC_UNSET_DOUBLE;
+      else
+	params->lon_lower_left = atof(lon_str);
+    }
+    else if (strstr(line, "Image Corner Latitude 4")) {
+      strcpy(lat_str, get_uavsar(line, "Image Corner Latitude 4"));
+      if (strcmp_case(lat_str, "N/A") == 0)
+	params->lat_lower_right = MAGIC_UNSET_DOUBLE;
+      else
+	params->lat_lower_right = atof(lat_str);
+    }
+    else if (strstr(line, "Image Corner Longitude 4")) {
+      strcpy(lon_str, get_uavsar(line, "Image Corner Longitude 4"));
+      if (strcmp_case(lon_str, "N/A") == 0)
+	params->lon_lower_right = MAGIC_UNSET_DOUBLE;
+      else
+	params->lon_lower_right = atof(lon_str);
+    }
+    else if (strstr(line, "Time of Acquisition for Pass 1"))
+      strcpy(time1, get_uavsar(line, "Time of Acquisition for Pass 1"));
+    else if (strstr(line, "Time of Acquisition for Pass 2"))
+      strcpy(time2, get_uavsar(line, "Time of Acquisition for Pass 2"));
     else if (strstr(line, "Processor Version Number"))
       strcpy(params->processor, get_uavsar(line, "Processor Version Number"));
   }
   FCLOSE(fp);
+
+  sprintf(params->acquisition_date, "%s, %s", time1, time2);
 
   return params;
 }
@@ -912,7 +962,6 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
 
   FILE *fpIn, *fpOut;
   int ii, kk, ll, nn, nBands, ns, nl, *dataType;
-  long long offset;
   float *floatAmp, *floatPhase, *floatAmpBuf, *amp, re, im;
   float *floatComplexReal, *floatComplexImag;
   float *floatComplexBuf;
@@ -1228,9 +1277,9 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     }
     FCLOSE(fpIn);
     FCLOSE(fpOut);
+    meta_write(metaOut, outName);
     FREE(floatAmpBuf);
     FREE(outName);
-    meta_write(metaOut, outName);
     meta_free(metaIn);
     meta_free(metaOut);
     FREE(insar_params);
@@ -1588,10 +1637,10 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
     FREE(svh_phase);
     FREE(svv_amp);
     FREE(svv_phase);
-    FREE(outName);
     meta_write(metaOut, outName);
     meta_free(metaIn);
     meta_free(metaOut);
+    FREE(outName);
     FREE(polsar_params);
   }
 

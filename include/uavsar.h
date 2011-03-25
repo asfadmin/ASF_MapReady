@@ -26,6 +26,7 @@ typedef struct {
   uavsar_type_t type;             // UAVSAR data type
   char site[255];                 // Site description
   char acquisition_mode[25];      // Acquisition mode: PolSAR
+  char polarization[25];          // Polarization
   int row_count;                  // Number of rows [pixels]
   int column_count;               // Number of columns [pixels]
   int header_bytes;               // Header size [bytes]
@@ -82,7 +83,8 @@ typedef struct {
 typedef struct {
   uavsar_type_t type;             // UAVSAR data type
   char site[255];                 // Site description
-  char processing_mode[25];      // Processing mode: InSAR
+  char processing_mode[25];       // Processing mode: InSAR
+  char polarization[25];          // Polarization
   int row_count;                  // Number of rows [pixels]
   int column_count;               // Number of columns [pixels]
   int header_bytes;               // Header size [bytes]
