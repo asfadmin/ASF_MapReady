@@ -508,6 +508,8 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
         double lat, double lon, double height,
         double *x, double *y, double *z)
 {
+  double geoc_lat;
+
   if (proj==NULL)
     bail("NULL projection parameter structure passed to ll_to_proj!\n");
 
@@ -535,7 +537,9 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
       project_mer(&(proj->param), lat, lon, height, x, y, z, proj->datum);
       break;
     case EQUI_RECTANGULAR:
-      project_eqr(&(proj->param), lat, lon, height, x, y, z, proj->datum);
+      // Some special treatment required for PROJ4 limitation
+      geoc_lat = atan(tan(lat)/(1-ecc2(proj->re_minor,proj->re_major)));
+      project_eqr(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case SINUSOIDAL:
       project_sin(&(proj->param), lat, lon, height, x, y, x);
@@ -573,7 +577,7 @@ static void latLon2proj_imp(double lat, double lon, double elev,
   datum_type_t datum;
   spheroid_type_t spheroid;
   meta_projection *meta_proj;
-  double projZ, sphere;
+  double projZ;
 
   if (projFile)
   {
