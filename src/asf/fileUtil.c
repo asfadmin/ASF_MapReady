@@ -156,7 +156,8 @@ char *findExt(const char *name)
 	strcmp_case(ext, ".CC") == 0        || // gamma
 	strcmp_case(ext, ".SM") == 0        || // gamma
 	strcmp_case(ext, ".DIFF") == 0      || // gamma
-	strcmp_case(ext, ".XML") == 0)
+	strcmp_case(ext, ".XML") == 0       ||
+	strcmp_case(ext, ".ANN") == 0)         // UAVSAR annotation file
         return (char *) &name[ii];
     else
         return NULL;

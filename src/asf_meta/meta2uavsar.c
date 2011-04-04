@@ -61,10 +61,7 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
 
   // SAR block
   meta->sar = meta_sar_init();
-  if (params->type == POLSAR_MLC || params->type == POLSAR_GRD)
-    sprintf(meta->sar->polarization, "QUAD-POL");
-  else
-    strcpy(meta->sar->polarization, params->polarization);
+  strcpy(meta->sar->polarization, "QUAD-POL");
   if (strcmp_case(params->projection, "SCX") == 0)
     meta->sar->image_type = 'S';
   else if (strcmp_case(params->projection, "EQA") == 0)

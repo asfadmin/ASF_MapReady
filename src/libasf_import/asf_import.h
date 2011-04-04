@@ -93,7 +93,8 @@ void import_airsar(const char *inFileName, radiometry_t radiometry,
 		   const char *outBaseName);
 meta_parameters *import_airsar_meta(const char *dataName,
 				    const char *inBaseName, int force);
-void import_uavsar(const char *inFileName, radiometry_t radiometry,
+void import_uavsar(const char *inFileName, int line, int sample, int width,
+		   int height, radiometry_t radiometry,
 		   const char *data_type, const char *outBaseName);
 
 void import_gamma_isp(const char *inDataName, const char *inMetaName,

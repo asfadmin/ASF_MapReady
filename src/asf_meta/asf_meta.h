@@ -960,4 +960,7 @@ void map_distortions(meta_projection *proj, double lat, double lon,
 // Prototypes for meta_tiff.c
 meta_insar *populate_insar_metadata(const char *filename);
 
+// Prototypes for meta_check.c
+int meta_test(char *in_file, char *spec_file, report_level_t level);
+
 #endif

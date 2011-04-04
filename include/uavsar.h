@@ -64,7 +64,7 @@ typedef struct {
   double pulse_length;            // Pulse length [microseconds]
   double steering_angle;          // Steering angle (90 is boresite) [degrees]
   double bandwidth;               // Bandwidth [MHz]
-  char acquisition_date[30];      // Date of acquisition
+  char acquisition_date[50];      // Date of acquisition
   int range_look_count;           // Number of range looks
   int azimuth_look_count;         // Number of azimuth looks
   char data_units[30];            // Data units
@@ -122,7 +122,7 @@ typedef struct {
   double pulse_length;            // Pulse length [microseconds]
   double steering_angle;          // Steering angle (90 is boresite) [degrees]
   double bandwidth;               // Bandwidth [MHz]
-  char acquisition_date[30];      // Date of acquisition
+  char acquisition_date[50];      // Date of acquisition
   int range_look_count;           // Number of range looks
   int azimuth_look_count;         // Number of azimuth looks
   char data_units[30];            // Data units
@@ -144,5 +144,7 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
 					 uavsar_type_t type);
 uavsar_insar *read_insar_polsar_params(const char *dataFile,
 				       uavsar_type_t type);
+void check_data_type(const char *inFileName, char *type);
+char **get_uavsar_products(char *data_type, char *type, int *num_product);
 
 #endif

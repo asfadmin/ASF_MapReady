@@ -17,7 +17,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 */
 
 #define ASF_NAME_STRING \
-"meta_check"
+"meta_compare"
 
 #define ASF_USAGE_STRING \
 "[ -log <file> ] [ -list ] <reference metadata> <test metadata>\n"\

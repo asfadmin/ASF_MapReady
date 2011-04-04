@@ -12,13 +12,16 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS)
 
-OBJS  = meta_check.o
+OBJS  = meta_compare.o
 
-all: meta_check clean
+all: meta_compare clean
 
 meta_check: $(OBJS)
 	$(CC) $(CFLAGS) -o meta_check $(OBJS) $(LIBS) $(LDFLAGS)
 	mv meta_check$(BIN_POSTFIX) $(BINDIR)
+meta_compare: $(OBJS)
+	$(CC) $(CFLAGS) -o meta_compare $(OBJS) $(LIBS) $(LDFLAGS)
+	mv meta_compare$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core *.o *~

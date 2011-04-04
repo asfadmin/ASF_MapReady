@@ -26,6 +26,7 @@ have_gdal="no"
 have_hdfeos5="no"
 have_hdf5="no"
 have_netcdf="no"
+have_cunit="no"
 
 AC_PROG_CC
 AC_PROG_LEX
@@ -326,6 +327,18 @@ else
    NETCDF_LIBS="-lnetcdf"
 fi
 AC_SUBST(ASF_LIB_NETCDF)
+
+#### libcunit check ####
+##### --> always use our own libcunit version
+#####     no point in trying to sort out external dependencies
+have_cunit="no"
+if test "$have_cunit" = "no" ; then
+   ASF_LIB_CUNIT="${ext_lib_src_dir}/libcunit"
+   CUNIT_LIBS="\$(LIBDIR)/libcunit.a"
+else
+   CUNIT_LIBS="-lcunit"
+fi
+AC_SUBST(ASF_LIB_CUNIT)
 
 #### libglade check ####
 if test "$have_gtk" = "yes" ; then

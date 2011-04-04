@@ -773,7 +773,7 @@ int main(int argc, char *argv[])
       strcpy(baseline_file, argv[flags[f_BASELINE] + 1]);
     }
     if(flags[f_UAVSAR] != FLAG_NOT_SET) {
-      uavsar_type = (char *) MALLOC(sizeof(char)*10);
+      uavsar_type = (char *) MALLOC(sizeof(char)*100);
       strcpy(uavsar_type, argv[flags[f_UAVSAR] + 1]);
     }
 

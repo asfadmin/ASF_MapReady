@@ -14,6 +14,39 @@
 #define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
                                 (a, b, ASF_EXPORT_FLOAT_MICRON))
 
+char **get_uavsar_products(char *data_type, char *type, int *num_product)
+{  
+  char *ptr, *t_products;
+  int ii, product_count;
+
+  if (strcmp_case(type, "POLSAR") == 0) {
+    product_count = 5;
+    if (strcmp_case(data_type, "ALL") == 0)
+      sprintf(data_type, "SLC,MLC,DAT,GRD,HGT");
+    t_products = STRDUP(data_type);
+  }
+  else if (strcmp_case(type, "INSAR") == 0) {
+    product_count = 9;
+    if (strcmp_case(data_type, "ALL") == 0)
+      sprintf(data_type, "AMP,INT,UNW,COR,AMP_GRD,INT_GRD,UNW_GRD,COR_GRD,HGT_GRD");
+    t_products = STRDUP(data_type);
+  }
+
+  char **product = (char **) MALLOC(sizeof(char*) * product_count);
+  for (ii = 0; ii < product_count; ii++)
+    product[ii] = NULL;
+
+  product[0] = STRTOK_R(t_products, ",", &ptr);
+  for (ii = 0; product[ii] != NULL;) {
+    ii++;
+    product[ii] = STRTOK_R(NULL, ",", &ptr);
+  }
+
+  *num_product = ii;
+
+  return product;
+}
+
 static char *get_uavsar(char *buf, char *str)
 {
   char *p, *q, *r, *value;
@@ -367,8 +400,6 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
       strcpy(params->site, get_uavsar(line, "Site Description"));
     if (strstr(line, "Acquisition Mode"))
       strcpy(params->acquisition_mode, get_uavsar(line, "Acquisition Mode"));
-    if (strstr(line, "Polarization"))
-      strcpy(params->polarization, get_uavsar(line, "Polarization"));
     if (type == POLSAR_SLC) {
       params->type = POLSAR_SLC;
       if (strstr(line, "slc_mag.set_rows"))
@@ -421,7 +452,7 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
       else if (strstr(line, "Number of Range Looks in MLC"))
 	params->range_look_count = 
 	  atoi(get_uavsar(line, "Number of Range Looks in MLC"));
-      else if (strstr(line, "Number of Range Looks in MLC"))
+      else if (strstr(line, "Number of Azimuth Looks in MLC"))
 	params->azimuth_look_count =
 	  atoi(get_uavsar(line, "Number of Azimuth Looks in MLC"));
       else if (strstr(line, "MLC Data Units"))
@@ -618,6 +649,12 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
       strcpy(params->processing_mode, get_uavsar(line, "Processing Mode"));
     if (strstr(line, "Polarization"))
       strcpy(params->polarization, get_uavsar(line, "Polarization"));
+    if (strstr(line, "Number of Looks in Range"))
+      params->range_look_count = 
+	atoi(get_uavsar(line, "Number of Looks in Range"));
+    if (strstr(line, "Number of Looks in Azimuth"))
+      params->azimuth_look_count =
+	atoi(get_uavsar(line, "Number of Looks in Azimuth"));
     if (type == INSAR_INT) {
       params->type = INSAR_INT;
       if (strstr(line, "Interferogram Bytes Per Pixel"))
@@ -686,12 +723,6 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
       else if (strstr(line, "Slant Range Data Range Spacing"))
 	params->range_pixel_spacing = 
 	  atof(get_uavsar(line, "Slant Range Data Range Spacing"));
-      else if (strstr(line, "Number of Looks in Range"))
-	params->range_look_count = 
-	  atoi(get_uavsar(line, "Number of Looks in Range"));
-      else if (strstr(line, "Number of Looks in Azimuth"))
-	params->azimuth_look_count = 
-	  atoi(get_uavsar(line, "Number of Looks in Azimuth"));
     }
     else if (type >= INSAR_AMP_GRD && type <=INSAR_HGT_GRD) { 
       if (strstr(line, "Ground Range Data Latitude Lines"))
@@ -712,12 +743,6 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
       else if (strstr(line, "Ground Range Data Longitude Spacing"))
 	params->range_pixel_spacing = 
 	  atof(get_uavsar(line, "Ground Range Data Longitude Spacing"));
-      else if (strstr(line, "Number of Looks in Range"))
-	params->range_look_count = 
-	  atoi(get_uavsar(line, "Number of Looks in Range"));
-      else if (strstr(line, "Number of Looks in Azimuth"))
-	params->azimuth_look_count = 
-	  atoi(get_uavsar(line, "Number of Looks in Azimuth"));
     }
     if (type == INSAR_INT_GRD) {
       params->type = INSAR_INT_GRD;
@@ -911,7 +936,7 @@ static int sign(char byteBuf)
     return 1;
 }
 
-static void check_data_type(const char *inFileName, char *type)
+void check_data_type(const char *inFileName, char *type)
 {
   char line[255];
   FILE *fp = FOPEN(inFileName, "r");
@@ -920,13 +945,14 @@ static void check_data_type(const char *inFileName, char *type)
       strcpy(type, get_uavsar(line, "Acquisition Mode"));
     else if (strstr(line, "Processing Mode"))
       strcpy(type, get_uavsar(line, "Processing Mode"));
-    if (strcmp_case(type, "RPI") == 0)
+    else if (strcmp_case(type, "RPI") == 0)
       sprintf(type, "InSAR");
   }
   FCLOSE(fp);
 }
 
-void import_uavsar(const char *inFileName, radiometry_t radiometry,
+void import_uavsar(const char *inFileName, int line, int sample, int width,
+		   int height, radiometry_t radiometry,
 		   const char *data_type, const char *outBaseName) {
 
   // UAVSAR comes in two flavors: InSAR and PolSAR
@@ -961,11 +987,13 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
   // hgt_grd - Digital elevation model in ground projection
 
   FILE *fpIn, *fpOut;
-  int ii, kk, ll, nn, nBands, ns, nl, *dataType;
+  int ii, kk, ll, nn, pp, nBands, ns, nl, *dataType, product_count;
+  int multi = FALSE;
   float *floatAmp, *floatPhase, *floatAmpBuf, *amp, re, im;
   float *floatComplexReal, *floatComplexImag;
   float *floatComplexBuf;
-  char **dataName, **element, tmp[50], type[10];
+  char **dataName, **element, **product, tmp[50];
+  char *type = (char *) MALLOC(sizeof(char)*25);
   char *outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
   uavsar_polsar *polsar_params;
   uavsar_insar *insar_params;
@@ -973,798 +1001,859 @@ void import_uavsar(const char *inFileName, radiometry_t radiometry,
 
   check_data_type(inFileName, type);
   asfPrintStatus("   Data type: %s\n", type);
+  product = get_uavsar_products(data_type, type, &product_count);
+  if (product_count > 1)
+    multi = TRUE;
 
-  // InSAR data
-  // Slant range interferogram
-  if (strcmp_case(data_type, "INT") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_INT, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_INT);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    ns = metaIn->general->sample_count;
-    nl = metaIn->general->line_count;
-    nn = 0;
-    floatAmp = (float *) CALLOC(ns, sizeof(float));
-    floatPhase = (float *) CALLOC(ns, sizeof(float));
-    floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    metaOut->general->band_count = 2;
-    if (strcmp_case(data_type, "INT") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_int.img");
-    asfPrintStatus("\nSlant range interferogram:\n");
-    fpOut = FOPEN(outName, "wb");
-    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-    fpIn = FOPEN(dataName[nn], "rb");
-    sprintf(metaOut->general->bands, "INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      metaIn->general->sample_count = 2*ns;
-      get_float_line(fpIn, metaIn, ii, floatComplexBuf);
-      for (kk=0; kk<ns; kk++) {
-	re = floatComplexBuf[kk*2];
-	im = floatComplexBuf[kk*2+1];
-	ieee_big32(re);
-	ieee_big32(im);
-	floatAmp[kk] = hypot(re,im);
-	floatPhase[kk] = atan2_check(im,re);
+  for (pp = 0; pp < product_count; pp++) {
+
+    // InSAR data
+    // Ground range interferogram
+    if (strcmp_case(type, "InSAR") == 0 && 
+	strcmp_case(product[pp], "INT_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_INT_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Ground range interferogram does not exist. "
+			"Will skip the ingest.\n");
+	continue;
       }
-      put_band_float_line(fpOut, metaOut, 0, ii, floatAmp);
-      put_band_float_line(fpOut, metaOut, 1, ii, floatPhase);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmp);
-    FREE(floatPhase);
-    FREE(floatComplexBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }
-
-  // Slant range unwrapped phase
-  if (strcmp_case(data_type, "UNW") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_UNW, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_UNW);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    ns = metaOut->general->sample_count;
-    nn = 0;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    if (strcmp_case(data_type, "UNW") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_unw.img");
-    asfPrintStatus("\nSlant range unwrapped phase:\n");
-    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-    fpIn = FOPEN(dataName[nn], "rb");
-    fpOut = FOPEN(outName, "wb");
-    strcpy(metaOut->general->bands, "UNWRAPPED_PHASE");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-      for (kk=0; kk<metaIn->general->sample_count; kk++)
-	ieee_big32(floatAmpBuf[kk]);
-      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }    
-
-  // Slant range correlation image
-  if (strcmp_case(data_type, "COR") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_COR, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_COR);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    ns = metaOut->general->sample_count;
-    nn = 0;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    if (strcmp_case(data_type, "COR") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_cor.img");
-    asfPrintStatus("\nSlant range correlation image:\n");
-    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-    fpIn = FOPEN(dataName[nn], "rb");
-    fpOut = FOPEN(outName, "wb");
-    strcpy(metaOut->general->bands, "COHERENCE");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-      for (kk=0; kk<metaIn->general->sample_count; kk++)
-	ieee_big32(floatAmpBuf[kk]);
-      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }    
-
-  // Slant range amplitude images
-  if (strcmp_case(data_type, "AMP") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_AMP, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_AMP);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    metaOut->general->band_count = 2;
-    ns = metaOut->general->sample_count;
-    nn = 0;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    if (strcmp_case(data_type, "AMP") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_amp.img");
-    fpOut = FOPEN(outName, "wb");
-    strcpy(metaOut->general->bands, "AMP1,AMP2");
-    asfPrintStatus("\nSlant range amplitude images:\n");
-    for (nn=0; nn<nBands; nn++) {
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_INT_GRD);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      ns = metaIn->general->sample_count;
+      nl = metaIn->general->line_count;
+      nn = 0;
+      floatAmp = (float *) CALLOC(ns, sizeof(float));
+      floatPhase = (float *) CALLOC(ns, sizeof(float));
+      floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      metaOut->general->band_count = 2;
+      if (multi)
+	outName = appendToBasename(outBaseName, "_int_grd.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nGround range interferogram:\n");
+      fpOut = FOPEN(outName, "wb");
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
       fpIn = FOPEN(dataName[nn], "rb");
+      sprintf(metaOut->general->bands, "INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
       for (ii=0; ii<metaIn->general->line_count; ii++) {
-	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-	for (kk=0; kk<metaIn->general->sample_count; kk++)
-	ieee_big32(floatAmpBuf[kk]);
-	put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
+	metaIn->general->sample_count = 2*ns;
+	get_float_line(fpIn, metaIn, ii, floatComplexBuf);
+	for (kk=0; kk<ns; kk++) {
+	  re = floatComplexBuf[kk*2];
+	  im = floatComplexBuf[kk*2+1];
+	  ieee_big32(re);
+	  ieee_big32(im);
+	  floatAmp[kk] = hypot(re,im);
+	  floatPhase[kk] = atan2_check(im,re);
+	}
+	put_band_float_line(fpOut, metaOut, 0, ii, floatAmp);
+	put_band_float_line(fpOut, metaOut, 1, ii, floatPhase);
 	asfLineMeter(ii, metaIn->general->line_count);
       }
       FCLOSE(fpIn);
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmp);
+      FREE(floatPhase);
+      FREE(floatComplexBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
     }
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }    
-
-  // Ground range interferogram
-  if (strcmp_case(data_type, "INT_GRD") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_INT_GRD, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_INT_GRD);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    ns = metaIn->general->sample_count;
-    nl = metaIn->general->line_count;
-    nn = 0;
-    floatAmp = (float *) CALLOC(ns, sizeof(float));
-    floatPhase = (float *) CALLOC(ns, sizeof(float));
-    floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    metaOut->general->band_count = 2;
-    if (strcmp_case(data_type, "INT_GRD") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_int_grd.img");
-    asfPrintStatus("\nGround range interferogram:\n");
-    fpOut = FOPEN(outName, "wb");
-    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-    fpIn = FOPEN(dataName[nn], "rb");
-    sprintf(metaOut->general->bands, "INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      metaIn->general->sample_count = 2*ns;
-      get_float_line(fpIn, metaIn, ii, floatComplexBuf);
-      for (kk=0; kk<ns; kk++) {
-	re = floatComplexBuf[kk*2];
-	im = floatComplexBuf[kk*2+1];
-	ieee_big32(re);
-	ieee_big32(im);
-	floatAmp[kk] = hypot(re,im);
-	floatPhase[kk] = atan2_check(im,re);
+    
+    // Ground range unwrapped phase
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "UNW_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_UNW_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Ground range unwrapped phase does not exist. "
+			"Will skip the ingest.\n");
+	continue;
       }
-      put_band_float_line(fpOut, metaOut, 0, ii, floatAmp);
-      put_band_float_line(fpOut, metaOut, 1, ii, floatPhase);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmp);
-    FREE(floatPhase);
-    FREE(floatComplexBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }
-
-  // Ground range unwrapped phase
-  if (strcmp_case(data_type, "UNW_GRD") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_UNW_GRD, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_UNW_GRD);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    ns = metaOut->general->sample_count;
-    nn = 0;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    if (strcmp_case(data_type, "UNW_GRD") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_unw_grd.img");
-    asfPrintStatus("\nGround range unwrapped phase:\n");
-    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-    fpIn = FOPEN(dataName[nn], "rb");
-    fpOut = FOPEN(outName, "wb");
-    strcpy(metaOut->general->bands, "UNWRAPPED_PHASE");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-      for (kk=0; kk<metaIn->general->sample_count; kk++)
-	ieee_big32(floatAmpBuf[kk]);
-      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }    
-
-  // Ground range correlation image
-  if (strcmp_case(data_type, "COR_GRD") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_COR_GRD, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_COR_GRD);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    ns = metaOut->general->sample_count;
-    nn = 0;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    if (strcmp_case(data_type, "COR_GRD") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_cor_grd.img");
-    asfPrintStatus("\nGround range correlation image:\n");
-    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-    fpIn = FOPEN(dataName[nn], "rb");
-    fpOut = FOPEN(outName, "wb");
-    strcpy(metaOut->general->bands, "COHERENCE");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-      for (kk=0; kk<metaIn->general->sample_count; kk++)
-	ieee_big32(floatAmpBuf[kk]);
-      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }    
-
-  // Ground range amplitude images
-  if (strcmp_case(data_type, "AMP_GRD") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_AMP_GRD, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_AMP_GRD);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    metaOut->general->band_count = 2;
-    ns = metaOut->general->sample_count;
-    nn = 0;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    if (strcmp_case(data_type, "AMP_GRD") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_amp_grd.img");
-    fpOut = FOPEN(outName, "wb");
-    strcpy(metaOut->general->bands, "AMP1,AMP2");
-    asfPrintStatus("\nGround range amplitude images:\n");
-    for (nn=0; nn<nBands; nn++) {
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_UNW_GRD);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      ns = metaOut->general->sample_count;
+      nn = 0;
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_unw_grd.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nGround range unwrapped phase:\n");
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
       fpIn = FOPEN(dataName[nn], "rb");
+      fpOut = FOPEN(outName, "wb");
+      strcpy(metaOut->general->bands, "UNWRAPPED_PHASE");
       for (ii=0; ii<metaIn->general->line_count; ii++) {
 	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
 	for (kk=0; kk<metaIn->general->sample_count; kk++)
-	ieee_big32(floatAmpBuf[kk]);
-	put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
-	asfLineMeter(ii, metaIn->general->line_count);
+	  ieee_big32(floatAmpBuf[kk]);
+	put_float_line(fpOut, metaOut, ii, floatAmpBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
       }
       FCLOSE(fpIn);
-    }
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }    
-
-  // Ground range digital elevation model
-  if (strcmp_case(data_type, "HGT_GRD") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "InSAR") == 0)) {
-    get_uavsar_file_names(inFileName, INSAR_HGT_GRD, &dataName, &element,
-			  &dataType, &nBands);
-    insar_params = 
-      read_uavsar_insar_params(inFileName, INSAR_HGT_GRD);
-    metaIn = uavsar_insar2meta(insar_params);
-    metaOut = uavsar_insar2meta(insar_params);
-    ns = metaOut->general->sample_count;
-    nn = 0;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    if (strcmp_case(data_type, "HGT_GRD") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_hgt_grd.img");
-    fpOut = FOPEN(outName, "wb");
-    strcpy(metaOut->general->bands, "HEIGHT");
-    asfPrintStatus("\nGround range digital elevation model:\n");
-    for (nn=0; nn<nBands; nn++) {
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
+    }    
+    
+    // Ground range correlation image
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "COR_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_COR_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Ground range correlation image does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_COR_GRD);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      ns = metaOut->general->sample_count;
+      nn = 0;
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      if (multi)
+	outName = appendToBasename(outBaseName, "_cor_grd.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nGround range correlation image:\n");
       asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
       fpIn = FOPEN(dataName[nn], "rb");
+      fpOut = FOPEN(outName, "wb");
+      strcpy(metaOut->general->bands, "COHERENCE");
       for (ii=0; ii<metaIn->general->line_count; ii++) {
 	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
 	for (kk=0; kk<metaIn->general->sample_count; kk++)
-	ieee_big32(floatAmpBuf[kk]);
-	put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
+	  ieee_big32(floatAmpBuf[kk]);
+	put_float_line(fpOut, metaOut, ii, floatAmpBuf);
 	asfLineMeter(ii, metaIn->general->line_count);
       }
       FCLOSE(fpIn);
-    }
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(insar_params);
-  }
-
-  // PolSAR data
-  // Single look complex data
-  if (strcmp_case(data_type, "SLC") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "PolSAR") == 0)) {
-    asfPrintWarning("Ingest of SLC data is currently not supported!\n");
-    get_uavsar_file_names(inFileName, POLSAR_SLC, &dataName, &element,
-			  &dataType, &nBands);
-    polsar_params = 
-      read_uavsar_polsar_params(inFileName, POLSAR_SLC);
-    metaIn = uavsar_polsar2meta(polsar_params);
-    metaOut = uavsar_polsar2meta(polsar_params);
-    if (strcmp_case(data_type, "SLC") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_slc.img");
-    for (ii=0; ii<nBands; ii++)
-      printf("file: %s\n", dataName[ii]);
-    //meta_write(metaOut, outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(polsar_params);
-  }
-
-  // Multilooked data
-  if (strcmp_case(data_type, "MLC") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "PolSAR") == 0)) {
-    get_uavsar_file_names(inFileName, POLSAR_MLC, &dataName, &element,
-			  &dataType, &nBands);
-    polsar_params = 
-      read_uavsar_polsar_params(inFileName, POLSAR_MLC);
-    metaIn = uavsar_polsar2meta(polsar_params);
-    metaOut = uavsar_polsar2meta(polsar_params);
-    ns = metaIn->general->sample_count;
-    amp = (float *) MALLOC(sizeof(float)*ns);
-    floatAmp = (float *) MALLOC(sizeof(float)*ns);
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    floatComplexReal = (float *) MALLOC(sizeof(float)*ns);
-    floatComplexImag = (float *) MALLOC(sizeof(float)*ns);
-    floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    metaOut->general->band_count = ll = 1;
-    if (strcmp_case(data_type, "MLC") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_mlc.img");
-    asfPrintStatus("\nMultilooked data:\n");
-    fpOut = FOPEN(outName, "wb");
-    for (nn=0; nn<nBands; nn++) {
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-      if (dataType[nn] == 0)
-	metaOut->general->band_count += 1;
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
+    }    
+    
+    // Ground range amplitude images
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "AMP_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_AMP_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Ground range amplitude images does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_AMP_GRD);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      metaOut->general->band_count = 2;
+      ns = metaOut->general->sample_count;
+      nn = 0;
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_amp_grd.img");
       else
-	metaOut->general->band_count += 2;
-      fpIn = FOPEN(dataName[nn], "rb");
-      if (nn == 0)
-	sprintf(metaOut->general->bands, "AMP,%s", element[0]);
-      else {
-	if (dataType[nn])
-	  sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
-	else
-	  sprintf(tmp, ",%s", element[nn]);
-	strcat(metaOut->general->bands, tmp);
-      }
-      for (ii=0; ii<metaIn->general->line_count; ii++) {
-	if (dataType[nn]) {
-	  metaIn->general->sample_count = 2*ns;
-	  get_float_line(fpIn, metaIn, ii, floatComplexBuf);
-	  for (kk=0; kk<ns; kk++) {
-	    floatComplexReal[kk] = floatComplexBuf[kk*2];
-	    floatComplexImag[kk] = floatComplexBuf[kk*2+1];
-	    ieee_big32(floatComplexReal[kk]);
-	    ieee_big32(floatComplexImag[kk]);
-	  }
-	  put_band_float_line(fpOut, metaOut, ll, ii, floatComplexReal);
-	  put_band_float_line(fpOut, metaOut, ll+1, ii, floatComplexImag);
-	}
-	else {
-	  metaIn->general->sample_count = ns;
-	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-	  if (nn == 0) {
-	    for (kk=0; kk<ns; kk++) {
-	      ieee_big32(floatAmpBuf[kk]);
-	      floatAmp[kk] = sqrt(floatAmpBuf[kk]);
-	    }
-	  }
-	  else {
-	    for (kk=0; kk<ns; kk++) 
-	      ieee_big32(floatAmpBuf[kk]);
-	  }
-	  put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
-	}
-	asfLineMeter(ii, metaIn->general->line_count);      
-      }
-      if (dataType[nn])
-	ll += 2;
-      else
-	ll++;
-      FCLOSE(fpIn);
-    }
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(amp);
-    FREE(floatAmp);
-    FREE(floatAmpBuf);
-    FREE(floatComplexReal);
-    FREE(floatComplexImag);
-    FREE(floatComplexBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(polsar_params);
-  }    
-
-  // Compressed Stokes matrix
-  if (strcmp_case(data_type, "DAT") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "PolSAR") == 0)) {
-    get_uavsar_file_names(inFileName, POLSAR_DAT, &dataName, &element,
-			  &dataType, &nBands);
-    polsar_params = 
-      read_uavsar_polsar_params(inFileName, POLSAR_DAT);
-    metaIn = uavsar_polsar2meta(polsar_params);
-    metaOut = uavsar_polsar2meta(polsar_params);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    if (strcmp_case(data_type, "DAT") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_dat.img");
-    metaOut->general->band_count = 9;
-    asfPrintStatus("\nCompressed Stokes matrix:\n");
-    asfPrintStatus("Ingesting %s ...\n", dataName[0]);
-    if (radiometry == r_AMP)
-      strcpy(metaOut->general->bands,
-	     "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"\
-	     "AMP_VV,PHASE_VV");
-    else if (radiometry == r_SIGMA)
-      strcpy(metaOut->general->bands,
-	     "AMP,SIGMA-AMP-HH,SIGMA-PHASE-HH,SIGMA-AMP-HV,SIGMA-PHASE-HV,"\
-	     "SIGMA-AMP-VH,SIGMA-PHASE-VH,SIGMA-AMP-VV,SIGMA-PHASE-VV");
-    else if (radiometry == r_SIGMA_DB)
-      strcpy(metaOut->general->bands,
-	     "AMP,SIGMA_DB-AMP-HH,SIGMA_DB-PHASE-HH,SIGMA_DB-AMP-HV,"\
-	     "SIGMA_DB-PHASE-HV,SIGMA_DB-AMP-VH,SIGMA_DB-PHASE-VH,"\
-	     "SIGMA_DB-AMP-VV,SIGMA_DB-PHASE-VV");
-    int ns = metaOut->general->sample_count;
-    float total_power, ysca, amp, phase;
-    float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
-    complexFloat cpx;
-    float *power = (float *) MALLOC(sizeof(float)*ns);
-    float *shh_amp = (float *) MALLOC(sizeof(float)*ns);
-    float *shh_phase = (float *) MALLOC(sizeof(float)*ns);
-    float *shv_amp = (float *) MALLOC(sizeof(float)*ns);
-    float *shv_phase = (float *) MALLOC(sizeof(float)*ns);
-    float *svh_amp = (float *) MALLOC(sizeof(float)*ns);
-    float *svh_phase = (float *) MALLOC(sizeof(float)*ns);
-    float *svv_amp = (float *) MALLOC(sizeof(float)*ns);
-    float *svv_phase = (float *) MALLOC(sizeof(float)*ns);
-    char *byteBuf = (char *) MALLOC(sizeof(char)*10);
-    fpIn = FOPEN(dataName[0], "rb");
-    fpOut = FOPEN(outName, "wb");
-    for (ii=0; ii<metaOut->general->line_count; ii++) {
-      for (kk=0; kk<metaOut->general->sample_count; kk++) {
-	FREAD(byteBuf, sizeof(char), 10, fpIn);
-	// Scale is always 1.0 according to Bruce Chapman
-	m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
-	m12 = (float)byteBuf[2] * m11 / 127.0;
-	m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11;
-	m14 = sign(byteBuf[4]) * SQR((float)byteBuf[4] / 127.0) * m11;
-	m23 = sign(byteBuf[5]) * SQR((float)byteBuf[5] / 127.0) * m11;
-	m24 = sign(byteBuf[6]) * SQR((float)byteBuf[6] / 127.0) * m11;
-	m33 = (float)byteBuf[7] * m11 / 127.0;
-	m34 = (float)byteBuf[8] * m11 / 127.0;
-	m44 = (float)byteBuf[9] * m11 / 127.0;
-	m22 = 1 - m33 -m44;
-	total_power =
-	  ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
-	ysca = 2.0 * sqrt(total_power);
-	power[kk] = sqrt(total_power);
-	cpx.real = (float)byteBuf[2] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[3] * ysca / 127.0;
-	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	phase = atan2(cpx.imag, cpx.real);
-	if (radiometry == r_AMP) {
-	  shh_amp[kk] = amp;
-	  shh_phase[kk] = phase;
-	}
-	else if (radiometry == r_SIGMA) {
-	  shh_amp[kk] = amp*amp;
-	  shh_phase[kk] = phase;
-	}
-	else if (radiometry == r_SIGMA_DB) {
-	  shh_amp[kk] = amp;
-	  shh_phase[kk] = phase;
-	}
-	cpx.real = (float)byteBuf[4] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[5] * ysca / 127.0;
-	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	phase = atan2(cpx.imag, cpx.real);
-	if (radiometry == r_AMP) {
-	  shv_amp[kk] = amp;
-	  shv_phase[kk] = phase;
-	}
-	else if (radiometry == r_SIGMA) {
-	  shv_amp[kk] = amp*amp;
-	  shv_phase[kk] = phase;
-	}
-	else if (radiometry == r_SIGMA_DB) {
-	  shv_amp[kk] = amp;
-	  shv_phase[kk] = phase;
-	}
-	cpx.real = (float)byteBuf[6] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[7] * ysca / 127.0;
-	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	phase = atan2(cpx.imag, cpx.real);
-	if (radiometry == r_AMP) {
-	  svh_amp[kk] = amp;
-	  svh_phase[kk] = phase;
-	}
-	else if (radiometry == r_SIGMA) {
-	  svh_amp[kk] = amp*amp;
-	  svh_phase[kk] = phase;
-	}
-	else if (radiometry == r_SIGMA_DB) {
-	  svh_amp[kk] = amp;
-	  svh_phase[kk] = phase;
-	}
-	cpx.real = (float)byteBuf[8] * ysca / 127.0;
-	cpx.imag = (float)byteBuf[9] * ysca / 127.0;
-	amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	phase = atan2(cpx.imag, cpx.real);
-	if (radiometry == r_AMP) {
-	  svv_amp[kk] = amp;
-	  svv_phase[kk] = phase;
-	}
-	else if (radiometry == r_SIGMA) {
-	  svv_amp[kk] = amp*amp;
-	  svv_phase[kk] = phase;
-	}
-	else if (radiometry == r_SIGMA_DB) {
-	  svv_amp[kk] = amp;
-	  svv_phase[kk] = phase;
-	}
-      }
-      put_band_float_line(fpOut, metaOut, 0, ii, power);
-      put_band_float_line(fpOut, metaOut, 1, ii, shh_amp);
-      put_band_float_line(fpOut, metaOut, 2, ii, shh_phase);
-      put_band_float_line(fpOut, metaOut, 3, ii, shv_amp);
-      put_band_float_line(fpOut, metaOut, 4, ii, shv_phase);
-      put_band_float_line(fpOut, metaOut, 5, ii, svh_amp);
-      put_band_float_line(fpOut, metaOut, 6, ii, svh_phase);
-      put_band_float_line(fpOut, metaOut, 7, ii, svv_amp);
-      put_band_float_line(fpOut, metaOut, 8, ii, svv_phase);
-      asfLineMeter(ii, metaOut->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    FREE(power);
-    FREE(shh_amp);
-    FREE(shh_phase);
-    FREE(shv_amp);
-    FREE(shv_phase);
-    FREE(svh_amp);
-    FREE(svh_phase);
-    FREE(svv_amp);
-    FREE(svv_phase);
-    meta_write(metaOut, outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(outName);
-    FREE(polsar_params);
-  }
-
-  // Ground range projected data
-  if (strcmp_case(data_type, "GRD") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "PolSAR") == 0)) {
-    get_uavsar_file_names(inFileName, POLSAR_GRD, &dataName, &element,
-			  &dataType, &nBands);
-    polsar_params = 
-      read_uavsar_polsar_params(inFileName, POLSAR_GRD);
-    metaIn = uavsar_polsar2meta(polsar_params);
-    metaOut = uavsar_polsar2meta(polsar_params);
-    ns = metaIn->general->sample_count;
-    nl = metaIn->general->line_count;
-    floatAmpBuf = (float *) CALLOC(ns, sizeof(float));
-    floatComplexReal = (float *) CALLOC(ns, sizeof(float));
-    floatComplexImag = (float *) CALLOC(ns, sizeof(float));
-    floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    metaOut->general->band_count = ll = 0;
-    if (strcmp_case(data_type, "GRD") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_grd.img");
-    asfPrintStatus("\nGround range projected data:\n");
-    fpOut = FOPEN(outName, "wb");
-    for (nn=0; nn<nBands; nn++) {
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-      if (dataType[nn])
-	metaOut->general->band_count += 2;
-      else
-	metaOut->general->band_count += 1;
-      fpIn = FOPEN(dataName[nn], "rb");
-      if (nn == 0)
-	sprintf(metaOut->general->bands, "%s", element[0]);
-      else {
-	if (dataType[nn])
-	  sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
-	else
-	  sprintf(tmp, ",%s", element[nn]);
-	strcat(metaOut->general->bands, tmp);
-      }
-      if (dataType[nn]) {
+	outName = appendExt(outBaseName, ".img");
+      fpOut = FOPEN(outName, "wb");
+      strcpy(metaOut->general->bands, "AMP1,AMP2");
+      asfPrintStatus("\nGround range amplitude images:\n");
+      for (nn=0; nn<nBands; nn++) {
+	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+	fpIn = FOPEN(dataName[nn], "rb");
 	for (ii=0; ii<metaIn->general->line_count; ii++) {
-	  metaIn->general->sample_count = 2*ns;
-	  get_float_line(fpIn, metaIn, ii, floatComplexBuf);
-	  for (kk=0; kk<ns; kk++) {
-	    floatComplexReal[kk] = floatComplexBuf[kk*2];
-	    floatComplexImag[kk] = floatComplexBuf[kk*2+1];
-	    ieee_big32(floatComplexReal[kk]);
-	    ieee_big32(floatComplexImag[kk]);
-	  }
-	  put_band_float_line(fpOut, metaOut, ll, ii, floatComplexReal);
-	  put_band_float_line(fpOut, metaOut, ll+1, ii, floatComplexImag);
+	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	  for (kk=0; kk<metaIn->general->sample_count; kk++)
+	    ieee_big32(floatAmpBuf[kk]);
+	  put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
 	  asfLineMeter(ii, metaIn->general->line_count);
 	}
+	FCLOSE(fpIn);
       }
-      else {
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
+    }    
+    
+    // Ground range digital elevation model
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "HGT_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_HGT_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Ground range digital elevation model does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_HGT_GRD);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      ns = metaOut->general->sample_count;
+      nn = 0;
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_hgt_grd.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      fpOut = FOPEN(outName, "wb");
+      strcpy(metaOut->general->bands, "HEIGHT");
+      asfPrintStatus("\nGround range digital elevation model:\n");
+      for (nn=0; nn<nBands; nn++) {
+	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+	fpIn = FOPEN(dataName[nn], "rb");
 	for (ii=0; ii<metaIn->general->line_count; ii++) {
-	  metaIn->general->sample_count = ns;
 	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-	  for (kk=0; kk<ns; kk++)
+	  for (kk=0; kk<metaIn->general->sample_count; kk++)
 	    ieee_big32(floatAmpBuf[kk]);
-	  put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
-	  asfLineMeter(ii, metaIn->general->line_count);      
+	  put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
+	  asfLineMeter(ii, metaIn->general->line_count);
 	}
+	FCLOSE(fpIn);
+      }
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
+    }
+    
+    // Slant range interferogram
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "INT") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_INT, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Slant range interferogram does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_INT);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      ns = metaIn->general->sample_count;
+      nl = metaIn->general->line_count;
+      nn = 0;
+      floatAmp = (float *) CALLOC(ns, sizeof(float));
+      floatPhase = (float *) CALLOC(ns, sizeof(float));
+      floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_int.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      metaOut->general->band_count = 2;
+      if (multi)
+	outName = appendToBasename(outBaseName, "_int.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nSlant range interferogram:\n");
+      fpOut = FOPEN(outName, "wb");
+      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      fpIn = FOPEN(dataName[nn], "rb");
+      sprintf(metaOut->general->bands, "INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
+      for (ii=0; ii<metaIn->general->line_count; ii++) {
+	metaIn->general->sample_count = 2*ns;
+	get_float_line(fpIn, metaIn, ii, floatComplexBuf);
+	for (kk=0; kk<ns; kk++) {
+	  re = floatComplexBuf[kk*2];
+	  im = floatComplexBuf[kk*2+1];
+	  ieee_big32(re);
+	  ieee_big32(im);
+	  floatAmp[kk] = hypot(re,im);
+	  floatPhase[kk] = atan2_check(im,re);
+	}
+	put_band_float_line(fpOut, metaOut, 0, ii, floatAmp);
+	put_band_float_line(fpOut, metaOut, 1, ii, floatPhase);
+	asfLineMeter(ii, metaIn->general->line_count);
       }
       FCLOSE(fpIn);
-      if (dataType[nn])
-	ll += 2;
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmp);
+      FREE(floatPhase);
+      FREE(floatComplexBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
+    }
+    
+    // Slant range unwrapped phase
+    if (strcmp_case(type, "InSAR") == 0 && 
+	strcmp_case(product[pp], "UNW") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_UNW, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Slant range unwrapped phase does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_UNW);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      ns = metaOut->general->sample_count;
+      nn = 0;
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_unw.img");
       else
-	ll++;
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nSlant range unwrapped phase:\n");
+      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      fpIn = FOPEN(dataName[nn], "rb");
+      fpOut = FOPEN(outName, "wb");
+      strcpy(metaOut->general->bands, "UNWRAPPED_PHASE");
+      for (ii=0; ii<metaIn->general->line_count; ii++) {
+	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
+	  ieee_big32(floatAmpBuf[kk]);
+	put_float_line(fpOut, metaOut, ii, floatAmpBuf);
+	asfLineMeter(ii, metaIn->general->line_count);
+      }
+      FCLOSE(fpIn);
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
+    }    
+    
+    // Slant range correlation image
+    if (strcmp_case(type, "InSAR") == 0 && 
+	strcmp_case(product[pp], "COR") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_COR, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Slant range correlation image does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_COR);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      ns = metaOut->general->sample_count;
+      nn = 0;
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_cor.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nSlant range correlation image:\n");
+      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      fpIn = FOPEN(dataName[nn], "rb");
+      fpOut = FOPEN(outName, "wb");
+      strcpy(metaOut->general->bands, "COHERENCE");
+      for (ii=0; ii<metaIn->general->line_count; ii++) {
+	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
+	  ieee_big32(floatAmpBuf[kk]);
+	put_float_line(fpOut, metaOut, ii, floatAmpBuf);
+	asfLineMeter(ii, metaIn->general->line_count);
+      }
+      FCLOSE(fpIn);
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
+    }    
+    
+    // Slant range amplitude images
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "AMP") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_AMP, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Slant range amplitude images does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_AMP);
+      metaIn = uavsar_insar2meta(insar_params);
+      metaOut = uavsar_insar2meta(insar_params);
+      metaOut->general->band_count = 2;
+      ns = metaOut->general->sample_count;
+      nn = 0;
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_amp.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      fpOut = FOPEN(outName, "wb");
+      strcpy(metaOut->general->bands, "AMP1,AMP2");
+      asfPrintStatus("\nSlant range amplitude images:\n");
+      for (nn=0; nn<nBands; nn++) {
+	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+	fpIn = FOPEN(dataName[nn], "rb");
+	for (ii=0; ii<metaIn->general->line_count; ii++) {
+	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	  for (kk=0; kk<metaIn->general->sample_count; kk++)
+	    ieee_big32(floatAmpBuf[kk]);
+	  put_band_float_line(fpOut, metaOut, nn, ii, floatAmpBuf);
+	  asfLineMeter(ii, metaIn->general->line_count);
+	}
+	FCLOSE(fpIn);
+      }
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(insar_params);
+    }    
+    
+    // PolSAR data
+    // Single look complex data
+    if (strcmp_case(type, "PolSAR") == 0 &&
+	strcmp_case(product[pp], "SLC") == 0) {
+      asfPrintWarning("Ingest of SLC data is currently not supported!\n");
+      get_uavsar_file_names(inFileName, POLSAR_SLC, &dataName, &element,
+			    &dataType, &nBands);
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_SLC);
+      metaIn = uavsar_polsar2meta(polsar_params);
+      metaOut = uavsar_polsar2meta(polsar_params);
+      if (multi)
+	outName = appendToBasename(outBaseName, "_slc.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      for (ii=0; ii<nBands; ii++)
+	printf("file: %s\n", dataName[ii]);
+      //meta_write(metaOut, outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(polsar_params);
     }
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(floatComplexReal);
-    FREE(floatComplexImag);
-    FREE(floatComplexBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(polsar_params);
+    
+    // Multilooked data
+    if (strcmp_case(type, "PolSAR") == 0  &&
+	strcmp_case(product[pp], "MLC") == 0) {
+      get_uavsar_file_names(inFileName, POLSAR_MLC, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Slant range multilooked data do not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_MLC);
+      metaIn = uavsar_polsar2meta(polsar_params);
+      metaOut = uavsar_polsar2meta(polsar_params);
+      ns = metaIn->general->sample_count;
+      amp = (float *) MALLOC(sizeof(float)*ns);
+      floatAmp = (float *) MALLOC(sizeof(float)*ns);
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      floatComplexReal = (float *) MALLOC(sizeof(float)*ns);
+      floatComplexImag = (float *) MALLOC(sizeof(float)*ns);
+      floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      metaOut->general->band_count = ll = 1;
+      if (multi)
+	outName = appendToBasename(outBaseName, "_mlc.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nMultilooked data:\n");
+      fpOut = FOPEN(outName, "wb");
+      for (nn=0; nn<nBands; nn++) {
+	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+	if (dataType[nn] == 0)
+	  metaOut->general->band_count += 1;
+	else
+	  metaOut->general->band_count += 2;
+	fpIn = FOPEN(dataName[nn], "rb");
+	if (nn == 0)
+	  sprintf(metaOut->general->bands, "AMP,%s", element[0]);
+	else {
+	  if (dataType[nn])
+	    sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
+	  else
+	    sprintf(tmp, ",%s", element[nn]);
+	  strcat(metaOut->general->bands, tmp);
+	}
+	for (ii=0; ii<metaIn->general->line_count; ii++) {
+	  if (dataType[nn]) {
+	    metaIn->general->sample_count = 2*ns;
+	    get_float_line(fpIn, metaIn, ii, floatComplexBuf);
+	    for (kk=0; kk<ns; kk++) {
+	      floatComplexReal[kk] = floatComplexBuf[kk*2];
+	      floatComplexImag[kk] = floatComplexBuf[kk*2+1];
+	      ieee_big32(floatComplexReal[kk]);
+	      ieee_big32(floatComplexImag[kk]);
+	    }
+	    put_band_float_line(fpOut, metaOut, ll, ii, floatComplexReal);
+	    put_band_float_line(fpOut, metaOut, ll+1, ii, floatComplexImag);
+	  }
+	  else {
+	    metaIn->general->sample_count = ns;
+	    get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	    if (nn == 0) {
+	      for (kk=0; kk<ns; kk++) {
+		ieee_big32(floatAmpBuf[kk]);
+		floatAmp[kk] = sqrt(floatAmpBuf[kk]);
+	      }
+	    }
+	    else {
+	      for (kk=0; kk<ns; kk++) 
+		ieee_big32(floatAmpBuf[kk]);
+	    }
+	    put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
+	  }
+	  asfLineMeter(ii, metaIn->general->line_count);      
+	}
+	if (dataType[nn])
+	  ll += 2;
+	else
+	  ll++;
+	FCLOSE(fpIn);
+      }
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(amp);
+      FREE(floatAmp);
+      FREE(floatAmpBuf);
+      FREE(floatComplexReal);
+      FREE(floatComplexImag);
+      FREE(floatComplexBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(polsar_params);
+    }    
+    
+    // Compressed Stokes matrix
+    if (strcmp_case(type, "PolSAR") == 0 &&
+	strcmp_case(product[pp], "DAT") == 0) {
+      get_uavsar_file_names(inFileName, POLSAR_DAT, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Slant range Stokes matrix does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_DAT);
+      metaIn = uavsar_polsar2meta(polsar_params);
+      metaOut = uavsar_polsar2meta(polsar_params);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_dat.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      metaOut->general->band_count = 9;
+      asfPrintStatus("\nCompressed Stokes matrix:\n");
+      asfPrintStatus("Ingesting %s ...\n", dataName[0]);
+      if (radiometry == r_AMP)
+	strcpy(metaOut->general->bands,
+	       "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"	\
+	       "AMP_VV,PHASE_VV");
+      else if (radiometry == r_SIGMA)
+	strcpy(metaOut->general->bands,
+	       "AMP,SIGMA-AMP-HH,SIGMA-PHASE-HH,SIGMA-AMP-HV,SIGMA-PHASE-HV," \
+	       "SIGMA-AMP-VH,SIGMA-PHASE-VH,SIGMA-AMP-VV,SIGMA-PHASE-VV");
+      else if (radiometry == r_SIGMA_DB)
+	strcpy(metaOut->general->bands,
+	       "AMP,SIGMA_DB-AMP-HH,SIGMA_DB-PHASE-HH,SIGMA_DB-AMP-HV,"	\
+	       "SIGMA_DB-PHASE-HV,SIGMA_DB-AMP-VH,SIGMA_DB-PHASE-VH,"	\
+	       "SIGMA_DB-AMP-VV,SIGMA_DB-PHASE-VV");
+      int ns = metaOut->general->sample_count;
+      float total_power, ysca, amp, phase;
+      float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
+      complexFloat cpx;
+      float *power = (float *) MALLOC(sizeof(float)*ns);
+      float *shh_amp = (float *) MALLOC(sizeof(float)*ns);
+      float *shh_phase = (float *) MALLOC(sizeof(float)*ns);
+      float *shv_amp = (float *) MALLOC(sizeof(float)*ns);
+      float *shv_phase = (float *) MALLOC(sizeof(float)*ns);
+      float *svh_amp = (float *) MALLOC(sizeof(float)*ns);
+      float *svh_phase = (float *) MALLOC(sizeof(float)*ns);
+      float *svv_amp = (float *) MALLOC(sizeof(float)*ns);
+      float *svv_phase = (float *) MALLOC(sizeof(float)*ns);
+      char *byteBuf = (char *) MALLOC(sizeof(char)*10);
+      fpIn = FOPEN(dataName[0], "rb");
+      fpOut = FOPEN(outName, "wb");
+      for (ii=0; ii<metaOut->general->line_count; ii++) {
+	for (kk=0; kk<metaOut->general->sample_count; kk++) {
+	  FREAD(byteBuf, sizeof(char), 10, fpIn);
+	  // Scale is always 1.0 according to Bruce Chapman
+	  m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	  m12 = (float)byteBuf[2] * m11 / 127.0;
+	  m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11;
+	  m14 = sign(byteBuf[4]) * SQR((float)byteBuf[4] / 127.0) * m11;
+	  m23 = sign(byteBuf[5]) * SQR((float)byteBuf[5] / 127.0) * m11;
+	  m24 = sign(byteBuf[6]) * SQR((float)byteBuf[6] / 127.0) * m11;
+	  m33 = (float)byteBuf[7] * m11 / 127.0;
+	  m34 = (float)byteBuf[8] * m11 / 127.0;
+	  m44 = (float)byteBuf[9] * m11 / 127.0;
+	  m22 = 1 - m33 -m44;
+	  total_power =
+	    ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	  ysca = 2.0 * sqrt(total_power);
+	  power[kk] = sqrt(total_power);
+	  cpx.real = (float)byteBuf[2] * ysca / 127.0;
+	  cpx.imag = (float)byteBuf[3] * ysca / 127.0;
+	  amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	  phase = atan2(cpx.imag, cpx.real);
+	  if (radiometry == r_AMP) {
+	    shh_amp[kk] = amp;
+	    shh_phase[kk] = phase;
+	  }
+	  else if (radiometry == r_SIGMA) {
+	    shh_amp[kk] = amp*amp;
+	    shh_phase[kk] = phase;
+	  }
+	  else if (radiometry == r_SIGMA_DB) {
+	    shh_amp[kk] = amp;
+	    shh_phase[kk] = phase;
+	  }
+	  cpx.real = (float)byteBuf[4] * ysca / 127.0;
+	  cpx.imag = (float)byteBuf[5] * ysca / 127.0;
+	  amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	  phase = atan2(cpx.imag, cpx.real);
+	  if (radiometry == r_AMP) {
+	    shv_amp[kk] = amp;
+	    shv_phase[kk] = phase;
+	  }
+	  else if (radiometry == r_SIGMA) {
+	    shv_amp[kk] = amp*amp;
+	    shv_phase[kk] = phase;
+	  }
+	  else if (radiometry == r_SIGMA_DB) {
+	    shv_amp[kk] = amp;
+	    shv_phase[kk] = phase;
+	  }
+	  cpx.real = (float)byteBuf[6] * ysca / 127.0;
+	  cpx.imag = (float)byteBuf[7] * ysca / 127.0;
+	  amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	  phase = atan2(cpx.imag, cpx.real);
+	  if (radiometry == r_AMP) {
+	    svh_amp[kk] = amp;
+	    svh_phase[kk] = phase;
+	  }
+	  else if (radiometry == r_SIGMA) {
+	    svh_amp[kk] = amp*amp;
+	    svh_phase[kk] = phase;
+	  }
+	  else if (radiometry == r_SIGMA_DB) {
+	    svh_amp[kk] = amp;
+	    svh_phase[kk] = phase;
+	  }
+	  cpx.real = (float)byteBuf[8] * ysca / 127.0;
+	  cpx.imag = (float)byteBuf[9] * ysca / 127.0;
+	  amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	  phase = atan2(cpx.imag, cpx.real);
+	  if (radiometry == r_AMP) {
+	    svv_amp[kk] = amp;
+	    svv_phase[kk] = phase;
+	  }
+	  else if (radiometry == r_SIGMA) {
+	    svv_amp[kk] = amp*amp;
+	    svv_phase[kk] = phase;
+	  }
+	  else if (radiometry == r_SIGMA_DB) {
+	    svv_amp[kk] = amp;
+	    svv_phase[kk] = phase;
+	  }
+	}
+	put_band_float_line(fpOut, metaOut, 0, ii, power);
+	put_band_float_line(fpOut, metaOut, 1, ii, shh_amp);
+	put_band_float_line(fpOut, metaOut, 2, ii, shh_phase);
+	put_band_float_line(fpOut, metaOut, 3, ii, shv_amp);
+	put_band_float_line(fpOut, metaOut, 4, ii, shv_phase);
+	put_band_float_line(fpOut, metaOut, 5, ii, svh_amp);
+	put_band_float_line(fpOut, metaOut, 6, ii, svh_phase);
+	put_band_float_line(fpOut, metaOut, 7, ii, svv_amp);
+	put_band_float_line(fpOut, metaOut, 8, ii, svv_phase);
+	asfLineMeter(ii, metaOut->general->line_count);
+      }
+      FCLOSE(fpIn);
+      FCLOSE(fpOut);
+      FREE(power);
+      FREE(shh_amp);
+      FREE(shh_phase);
+      FREE(shv_amp);
+      FREE(shv_phase);
+      FREE(svh_amp);
+      FREE(svh_phase);
+      FREE(svv_amp);
+      FREE(svv_phase);
+      meta_write(metaOut, outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(outName);
+      FREE(polsar_params);
+    }
+    
+    // Ground range projected data
+    if (strcmp_case(type, "PolSAR") == 0 &&
+	strcmp_case(product[pp], "GRD") == 0) {
+      get_uavsar_file_names(inFileName, POLSAR_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Ground range projected data do not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_GRD);
+      metaIn = uavsar_polsar2meta(polsar_params);
+      metaOut = uavsar_polsar2meta(polsar_params);
+      ns = metaIn->general->sample_count;
+      nl = metaIn->general->line_count;
+      floatAmpBuf = (float *) CALLOC(ns, sizeof(float));
+      floatComplexReal = (float *) CALLOC(ns, sizeof(float));
+      floatComplexImag = (float *) CALLOC(ns, sizeof(float));
+      floatComplexBuf = (float *) CALLOC(2*ns, sizeof(float));
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      metaOut->general->band_count = ll = 0;
+      if (multi)
+	outName = appendToBasename(outBaseName, "_grd.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nGround range projected data:\n");
+      fpOut = FOPEN(outName, "wb");
+      for (nn=0; nn<nBands; nn++) {
+	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+	if (dataType[nn])
+	  metaOut->general->band_count += 2;
+	else
+	  metaOut->general->band_count += 1;
+	fpIn = FOPEN(dataName[nn], "rb");
+	if (nn == 0)
+	  sprintf(metaOut->general->bands, "%s", element[0]);
+	else {
+	  if (dataType[nn])
+	    sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
+	  else
+	    sprintf(tmp, ",%s", element[nn]);
+	  strcat(metaOut->general->bands, tmp);
+	}
+	if (dataType[nn]) {
+	  for (ii=0; ii<metaIn->general->line_count; ii++) {
+	    metaIn->general->sample_count = 2*ns;
+	    get_float_line(fpIn, metaIn, ii, floatComplexBuf);
+	    for (kk=0; kk<ns; kk++) {
+	      floatComplexReal[kk] = floatComplexBuf[kk*2];
+	      floatComplexImag[kk] = floatComplexBuf[kk*2+1];
+	      ieee_big32(floatComplexReal[kk]);
+	      ieee_big32(floatComplexImag[kk]);
+	    }
+	    put_band_float_line(fpOut, metaOut, ll, ii, floatComplexReal);
+	    put_band_float_line(fpOut, metaOut, ll+1, ii, floatComplexImag);
+	    asfLineMeter(ii, metaIn->general->line_count);
+	  }
+	}
+	else {
+	  for (ii=0; ii<metaIn->general->line_count; ii++) {
+	    metaIn->general->sample_count = ns;
+	    get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	    for (kk=0; kk<ns; kk++)
+	      ieee_big32(floatAmpBuf[kk]);
+	    put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
+	    asfLineMeter(ii, metaIn->general->line_count);      
+	  }
+	}
+	FCLOSE(fpIn);
+	if (dataType[nn])
+	  ll += 2;
+	else
+	  ll++;
+      }
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(floatComplexReal);
+      FREE(floatComplexImag);
+      FREE(floatComplexBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(polsar_params);
+    }
+    
+    // Digital elevation model
+    if (strcmp_case(type, "PolSAR") == 0 &&
+	strcmp_case(product[pp], "HGT") == 0) {
+      get_uavsar_file_names(inFileName, POLSAR_HGT, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands) {
+	asfPrintWarning("Digital elevation model does not exist. "
+			"Will skip the ingest.\n");
+	continue;
+      }
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_HGT);
+      metaIn = uavsar_polsar2meta(polsar_params);
+      metaOut = uavsar_polsar2meta(polsar_params);
+      ns = metaOut->general->sample_count;
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
+      outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
+      if (multi)
+	outName = appendToBasename(outBaseName, "_hgt.img");
+      else
+	outName = appendExt(outBaseName, ".img");
+      asfPrintStatus("\nDigital elevation model:\n");
+      nn=0;
+      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      fpIn = FOPEN(dataName[nn], "rb");
+      fpOut = FOPEN(outName, "wb");
+      strcpy(metaOut->general->bands, "HEIGHT");
+      for (ii=0; ii<metaIn->general->line_count; ii++) {
+	get_float_line(fpIn, metaIn, ii, floatAmpBuf);
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
+	  ieee_big32(floatAmpBuf[kk]);
+	put_float_line(fpOut, metaOut, ii, floatAmpBuf);
+	asfLineMeter(ii, metaIn->general->line_count);
+      }
+      FCLOSE(fpIn);
+      FCLOSE(fpOut);
+      meta_write(metaOut, outName);
+      FREE(floatAmpBuf);
+      FREE(outName);
+      meta_free(metaIn);
+      meta_free(metaOut);
+      FREE(polsar_params);
+    }    
   }
-
-  // Digital elevation model
-  if (strcmp_case(data_type, "HGT") == 0 ||
-      (strcmp_case(data_type, "ALL") == 0 && 
-       strcmp_case(type, "PolSAR") == 0)) {
-    get_uavsar_file_names(inFileName, POLSAR_HGT, &dataName, &element,
-			  &dataType, &nBands);
-    polsar_params = 
-      read_uavsar_polsar_params(inFileName, POLSAR_HGT);
-    metaIn = uavsar_polsar2meta(polsar_params);
-    metaOut = uavsar_polsar2meta(polsar_params);
-    ns = metaOut->general->sample_count;
-    floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
-    outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-    if (strcmp_case(data_type, "HGT") == 0)
-      outName = appendExt(outBaseName, ".img");
-    else if (strcmp_case(data_type, "ALL") == 0)
-      outName = appendToBasename(outBaseName, "_hgt.img");
-    asfPrintStatus("\nDigital elevation model:\n");
-    nn=0;
-    asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
-    fpIn = FOPEN(dataName[nn], "rb");
-    fpOut = FOPEN(outName, "wb");
-    strcpy(metaOut->general->bands, "HEIGHT");
-    for (ii=0; ii<metaIn->general->line_count; ii++) {
-      get_float_line(fpIn, metaIn, ii, floatAmpBuf);
-      for (kk=0; kk<metaIn->general->sample_count; kk++)
-	ieee_big32(floatAmpBuf[kk]);
-      put_float_line(fpOut, metaOut, ii, floatAmpBuf);
-      asfLineMeter(ii, metaIn->general->line_count);
-    }
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    meta_write(metaOut, outName);
-    FREE(floatAmpBuf);
-    FREE(outName);
-    meta_free(metaIn);
-    meta_free(metaOut);
-    FREE(polsar_params);
-  }    
-
+  FREE(type);
 }

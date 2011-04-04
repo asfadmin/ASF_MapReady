@@ -197,8 +197,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == UAVSAR) {
     asfPrintStatus("   Data format: UAVSAR\n");
-    import_uavsar(inBaseName, update(radiometry, db_flag), uavsar_type,
-		  outBaseName);
+    import_uavsar(inBaseName, line, sample, width, height, 
+		  update(radiometry, db_flag), uavsar_type, outBaseName);
   }
   else if (format_type == VP) {
     asfPrintStatus("   Data format: VP\n");
