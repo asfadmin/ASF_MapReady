@@ -76,12 +76,30 @@ typedef struct
 
 typedef struct
 {
-  int c_vv;               // ingest the airsar C-band interferometric data?
-  int l_vv;               // ingest the airsar L-band interferometric data?
-  int c_pol;              // ingest the airsar C-band polarimetric image?
-  int l_pol;              // ingest the airsar L-band polarimetric image?
-  int p_pol;              // ingest the airsar P-band polarimetric image?
+  int c_vv;               // ingest the AirSAR C-band interferometric data?
+  int l_vv;               // ingest the AirSAR L-band interferometric data?
+  int c_pol;              // ingest the AirSAR C-band polarimetric image?
+  int l_pol;              // ingest the AirSAR L-band polarimetric image?
+  int p_pol;              // ingest the AirSAR P-band polarimetric image?
 } s_airsar;
+
+typedef struct
+{
+  int slc;                // ingest UAVSAR PolSAR single look complex image
+  int mlc;                // ingest UAVSAR PolSAR multilook cross product
+  int dat;                // ingest UAVSAR PolSAR compressed Stokes matrix
+  int grd;                // ingest UAVSAR PolSAR ground range projected image
+  int hgt;                // ingest UAVSAR PolSAR DEM
+  int amp;                // ingest UAVSAR InSAR amplitude images (slant range)
+  int igram;              // ingest UAVSAR InSAR interferogram (slant range)
+  int unw;                // ingest UAVSAR InSAR unwrapped phase (slant range)
+  int cor;                // ingest UAVSAR InSAR correlation (slant range)
+  int amp_grd;            // ingest UAVSAR InSAR amplitude images (projected)
+  int int_grd;            // ingest UAVSAR InSAR interferogram (projected)
+  int unw_grd;            // ingest UAVSAR InSAR unwrapped phase (projected)
+  int cor_grd;            // ingest UAVSAR InSAR correlation (projected)
+  int hgt_grd;            // ingest UAVSAR InSAR DEM
+} s_uavsar;
 
 typedef struct
 {
@@ -210,7 +228,8 @@ typedef struct
   s_general *general;                  // general processing details
   s_import *import;                    // importing parameters
   s_external *external;                // external program to run
-  s_airsar *airsar;                    // airsar processing parameters
+  s_airsar *airsar;                    // AirSAR processing parameters
+  s_uavsar *uavsar;                    // UAVSAR processing parameters
   s_sar_processing *sar_processing;    // SAR processing parameters
   s_c2p *c2p;                          // complex -> polar parameters
   s_image_stats *image_stats;          // image stats parameters
@@ -254,6 +273,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM);
 int call_asf_convert(char *configFile); // FIXME: Change the name ... Now calls asf_mapready
 
 int isInSAR(const char *infile);
+int isUAVSAR(const char *infile);
 int isPolSARpro(const char * infile);
 int kml_overlay(char *inFile, char *outFile, int zip);
 int kml_overlay_ext(char *inFile, char *outFile, int reduction, 

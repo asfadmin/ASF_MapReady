@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "ceos.h"
 #include "airsar.h"
+#include "uavsar.h"
 #include "asf_meta.h"
 #include "asf_convert.h"
 #include "proj.h"
@@ -34,6 +35,30 @@ int isInSAR(const char *infile)
     if (meta->insar)
       found = TRUE;
     meta_free(meta);
+  }
+
+  return found;
+}
+
+int isUAVSAR(const char *infile)
+{
+  int found = FALSE;
+  char line[1024], *ext = NULL;
+
+  ext = findExt(infile);
+  if (!ext) {
+    char *inFile = (char *) MALLOC(sizeof(char) * strlen(infile) + 5);
+    sprintf(inFile, "%s.ann", infile);
+    int ret = isUAVSAR(inFile);
+    FREE(inFile);
+    return ret;
+  }
+  else if (strcmp_case(ext, ".ann")==0) {    
+    FILE *fp = FOPEN(infile, "r");
+    while (fgets(line, 1024, fp)) {
+      if (strstr(line, "http://uavsar.jpl.nasa.gov"))
+	found = TRUE;
+    }
   }
 
   return found;
@@ -164,12 +189,6 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
   }
   else
     return meta;
-}
-
-int isUAVSAR(const char *input_file)
-{
-  
-  return FALSE;
 }
 
 int isASFInternal(const char *input_file)
@@ -401,6 +420,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
   int nBands, trailer, airsar_c, airsar_l, airsar_p;
 
   if (strcmp_case(processing_step, "polarimetry") == 0) {
+
     meta = isAirSAR(input, &airsar_c, &airsar_l, &airsar_p);
     if (meta) {
       // For any of the polarimetric calculation we need SIGMA power scale
@@ -411,7 +431,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       cfg->airsar->l_pol = airsar_l;
       cfg->airsar->p_pol = airsar_p;
     }
-
+    else if (isUAVSAR(input)) { return; }
     else if (isPolsarproMatrix(input, &matrixType, &error)) { return; }
     else if (isASFInternal(input)) {
       meta = meta_read(input);
@@ -950,7 +970,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 {
   convert_config *cfg;
   char inFile[255], outFile[255], tmpFile[255];
-  int is_airsar=0;
+  int is_airsar = FALSE;
+  int is_uavsar = FALSE;
 
   // If requested, create a config file and exit (if the file does not exist),
   // otherwise read it
@@ -1452,24 +1473,26 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (cfg->general->import) {
 
       // Import format
-      if (strncmp(uc(cfg->import->format), "ASF", 3) != 0 &&
-          strncmp(uc(cfg->import->format), "CEOS", 4) != 0 &&
-          strncmp(uc(cfg->import->format), "STF", 3) != 0 &&
-          strncmp(uc(cfg->import->format), "AIRSAR", 6) != 0 &&
-          strncmp(uc(cfg->import->format), "BIL", 3) != 0 &&
-          strncmp(uc(cfg->import->format), "GRIDFLOAT", 9) != 0 &&
-          strncmp(uc(cfg->import->format), "GAMMA", 5) != 0 &&
-          strncmp(uc(cfg->import->format), "ROIPAC", 6) != 0 &&
-          strncmp(uc(cfg->import->format), "POLSARPRO", 9) != 0 &&
-          strncmp(uc(cfg->import->format), "TERRASAR", 8) != 0 &&
-	  strncmp(uc(cfg->import->format), "RADARSAT2", 9) != 0 &&
-	  strncmp(uc(cfg->import->format), "ALOS_MOSAIC", 11) != 0 &&
-          strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0 &&
-          strncmp(uc(cfg->import->format), "ROIPAC", 6) != 0) {
+      if (strncmp_case(cfg->import->format, "ASF", 3) != 0 &&
+          strncmp_case(cfg->import->format, "CEOS", 4) != 0 &&
+          strncmp_case(cfg->import->format, "STF", 3) != 0 &&
+          strncmp_case(cfg->import->format, "AIRSAR", 6) != 0 &&
+          strncmp_case(cfg->import->format, "BIL", 3) != 0 &&
+          strncmp_case(cfg->import->format, "GRIDFLOAT", 9) != 0 &&
+          strncmp_case(cfg->import->format, "GAMMA", 5) != 0 &&
+          strncmp_case(cfg->import->format, "ROIPAC", 6) != 0 &&
+          strncmp_case(cfg->import->format, "POLSARPRO", 9) != 0 &&
+          strncmp_case(cfg->import->format, "TERRASAR", 8) != 0 &&
+	  strncmp_case(cfg->import->format, "RADARSAT2", 9) != 0 &&
+	  strncmp_case(cfg->import->format, "ALOS_MOSAIC", 11) != 0 &&
+          strncmp_case(cfg->import->format, "GEOTIFF", 7) != 0 &&
+          strncmp_case(cfg->import->format, "ROIPAC", 6) != 0 &&
+	  strncmp_case(cfg->import->format, "UAVSAR", 6) != 0) {
         asfPrintError("Selected import format not supported\n");
       }
 
-      is_airsar = strncmp(uc(cfg->import->format), "AIRSAR", 6) == 0;
+      is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6) == 0;
+      is_uavsar = strncmp_case(cfg->import->format, "UAVSAR", 6) == 0;
 
       // Radiometry
       if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) != 0 &&
@@ -1930,6 +1953,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format_type = GAMMA;
       else if (strncmp_case(cfg->import->format, "ROIPAC", 6) == 0)
         format_type = ROIPAC;
+      else if (strncmp_case(cfg->import->format, "UAVSAR", 6) == 0)
+	format_type = UAVSAR;
       else {
         asfPrintError("Unknown Format: %s\n", cfg->import->format);
         format_type = CEOS; // actually this is not reached
@@ -1997,8 +2022,51 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             !cfg->airsar->l_vv)
           asfPrintError("No airsar products to process!\n");
       }
+      else if (is_uavsar) {
+	int ii, product_count;
+	char *type = (char *) MALLOC(sizeof(char)*25);
+	check_data_type(inFile, type);
+	char **product = get_uavsar_products(cfg->import->uavsar, type, 
+					     &product_count);
+	if (strcmp_case(type, "POLSAR") == 0) {
+	  for (ii = 0; ii < product_count; ii++) {
+	    if (strcmp_case(product[ii], "SLC") == 0)
+	      cfg->uavsar->slc = 1;
+	    if (strcmp_case(product[ii], "MLC") == 0)
+	      cfg->uavsar->mlc = 1;
+	    if (strcmp_case(product[ii], "DAT") == 0)
+	      cfg->uavsar->dat = 1;
+	    if (strcmp_case(product[ii], "GRD") == 0)
+	      cfg->uavsar->grd = 1;
+	    if (strcmp_case(product[ii], "HGT") == 0)
+	      cfg->uavsar->hgt = 1;
+	  }
+	}
+	else if (strcmp_case(type, "INSAR") == 0) {
+	  for (ii = 0; ii < product_count; ii++) {
+	    if (strcmp_case(product[ii], "AMP") == 0)
+	      cfg->uavsar->amp = 1;
+	    if (strcmp_case(product[ii], "INT") == 0)
+	      cfg->uavsar->igram = 1;
+	    if (strcmp_case(product[ii], "UNW") == 0)
+	      cfg->uavsar->unw = 1;
+	    if (strcmp_case(product[ii], "COR") == 0)
+	      cfg->uavsar->cor = 1;
+	    if (strcmp_case(product[ii], "AMP_GRD") == 0)
+	      cfg->uavsar->amp_grd = 1;
+	    if (strcmp_case(product[ii], "INT_GRD") == 0)
+	      cfg->uavsar->int_grd = 1;
+	    if (strcmp_case(product[ii], "UNW_GRD") == 0)
+	      cfg->uavsar->unw_grd = 1;
+	    if (strcmp_case(product[ii], "COR_GRD") == 0)
+	      cfg->uavsar->cor_grd = 1;
+	    if (strcmp_case(product[ii], "HGT_GRD") == 0)
+	      cfg->uavsar->hgt_grd = 1;
+	  }
+	}
+      }
 
-      if (!is_airsar) {
+      if (!is_airsar && !is_uavsar) {
         // Make sure truecolor/falsecolor are only specified for optical data
         meta_parameters *meta = meta_read(outFile);
         if (meta->optical && cfg->general->terrain_correct) {
@@ -2104,6 +2172,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (cfg->general->sar_processing) {
       if (is_airsar)
         asfPrintError("Cannot perform SAR Processing on AirSAR data.\n");
+      else if (is_uavsar)
+	asfPrintError("Cannot perform SAR Processing on UAVSAR data.\n");
 
       update_status("Running ArDop...");
 
@@ -2512,13 +2582,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "%s", cfg->general->out_name);
 
-      if (!is_airsar)
+      if (!is_airsar && !is_uavsar)
       {
         // Do normal export
         update_status("Exporting... ");
         do_export(cfg, inFile, outFile);
       }
-      else
+      else if (is_airsar)
       {
         // AirSAR export -- must export a bunch of different stuff
 
@@ -2689,6 +2759,134 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             free(in_tmp);
           }
         }
+      }
+      else if (is_uavsar) {
+	asfPrintStatus("\n   Exporting UAVSAR products ...\n");
+	if (cfg->uavsar->slc) {
+	  char *in_tmp = appendToBasename(inFile, "_slc");
+	  update_status("Exporting slant range SLC image ...");
+	  asfPrintStatus("Exporting slant range SLC image: %s -> %s_slc\n", 
+			 in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
+	  free(in_tmp);
+	}
+	if (cfg->uavsar->mlc) {
+	  char *in_tmp = appendToBasename(inFile, "_mlc");
+	  update_status("Exporting slant range multilooked image ...");
+	  asfPrintStatus("Exporting slant range multilooked image: %s -> "
+			 "%s_mlc\n", in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
+	  free(in_tmp);
+	}
+	if (cfg->uavsar->dat) {
+	  char *in_tmp = appendToBasename(inFile, "_dat");
+	  char *out_tmp = appendToBasename(outFile, "_dat");
+	  update_status("Exporting projected data ...");
+	  asfPrintStatus("Exporting projected data: %s -> %s\n", 
+			 in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
+	  free(in_tmp);
+	  free(out_tmp);
+	}
+	if (cfg->uavsar->grd) {
+	  char *in_tmp = appendToBasename(inFile, "_grd");
+	  update_status("Exporting ground range projected ...");
+	  asfPrintStatus("Exporting groun range projected: %s -> %s_grd\n", 
+			 in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
+	  free(in_tmp);
+	}
+	if (cfg->uavsar->hgt) {
+	  char *in_tmp = appendToBasename(inFile, "_hgt");
+	  char *out_tmp = appendToBasename(outFile, "_hgt");
+	  update_status("Exporting projected PolSAR DEM ...");
+	  asfPrintStatus("Exporting projected PolSAR DEM: %s -> %s_hgt\n", 
+			 in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
+	  free(in_tmp);
+	  free(out_tmp);
+	}
+	if (cfg->uavsar->amp) {
+	  char *in_tmp = appendToBasename(inFile, "_amp");
+	  update_status("Exporting slant range amplitude images ...");
+	  asfPrintStatus("Exporting slant range amplitude images: %s -> "
+			 "%s_amp\n", in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
+	  free(in_tmp);
+	}
+	if (cfg->uavsar->igram) {
+	  char *in_tmp = appendToBasename(inFile, "_int");
+	  update_status("Exporting slant range interferogram ...");
+	  asfPrintStatus("Exporting slant range interferogram: %s -> %s_int\n", 
+			 in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
+	  free(in_tmp);
+	}
+	if (cfg->uavsar->unw) {
+	  char *in_tmp = appendToBasename(inFile, "_unw");
+	  char *out_tmp = appendToBasename(outFile, "_unw");
+	  update_status("Exporting ground range projected ...");
+	  asfPrintStatus("Exporting groun range projected: %s -> %s_unw\n", 
+			 in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
+	  free(in_tmp);
+	  free(out_tmp);
+	}
+	if (cfg->uavsar->cor) {
+	  char *in_tmp = appendToBasename(inFile, "_cor");
+	  char *out_tmp = appendToBasename(outFile, "_cor");
+	  update_status("Exporting slant range correlation ...");
+	  asfPrintStatus("Exporting slant range correlation: %s -> %s_cor\n", 
+			 in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
+	  free(in_tmp);
+	}
+	if (cfg->uavsar->amp_grd) {
+	  char *in_tmp = appendToBasename(inFile, "_amp_grd");
+	  update_status("Exporting projected amplitude images ...");
+	  asfPrintStatus("Exporting projected amplitude images: %s -> "
+			 "%s_amp_grd\n", in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
+	  free(in_tmp);
+	}
+	if (cfg->uavsar->int_grd) {
+	  char *in_tmp = appendToBasename(inFile, "_int_grd");
+	  update_status("Exporting ground range projected ...");
+	  asfPrintStatus("Exporting groun range projected: %s -> %s_int\n", 
+			 in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
+	  free(in_tmp);
+	}
+	if (cfg->uavsar->unw_grd) {
+	  char *in_tmp = appendToBasename(inFile, "_unw_grd");
+	  char *out_tmp = appendToBasename(outFile, "_unw_grd");
+	  update_status("Exporting projected unwrapped phase ...");
+	  asfPrintStatus("Exporting projected unwrapped phase: %s -> %s\n", 
+			 in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
+	  free(in_tmp);
+	  free(out_tmp);
+	}
+	if (cfg->uavsar->cor_grd) {
+	  char *in_tmp = appendToBasename(inFile, "_cor_grd");
+	  char *out_tmp = appendToBasename(outFile, "_cor_grd");
+	  update_status("Exporting projected correlation image ...");
+	  asfPrintStatus("Exporting projected correlation image: %s -> %s\n", 
+			 in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
+	  free(in_tmp);
+	  free(out_tmp);
+	}
+	if (cfg->uavsar->hgt_grd) {
+	  char *in_tmp = appendToBasename(inFile, "_hgt_grd");
+	  char *out_tmp = appendToBasename(outFile, "_hgt_grd");
+	  update_status("Exporting projected InSAR DEM ...");
+	  asfPrintStatus("Exporting projected InSAR DEM: %s -> %s\n", 
+			 in_tmp, out_tmp);
+	  do_export(cfg, in_tmp, out_tmp);
+	  free(in_tmp);
+	  free(out_tmp);
+	}
       }
     }
     else {
@@ -3211,8 +3409,9 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 
   // Move the .meta file out of temporary status
   // Don't need to do this if we skipped import, we'd already have .meta
-  int is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6)==0;
-  if (cfg->general->import && !is_airsar)
+  int is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6) == 0;
+  int is_uavsar = strncmp_case(cfg->import->format, "UAVSAR", 6) == 0;
+  if (cfg->general->import && !is_airsar && !is_uavsar)
     copy_meta(cfg, inFile, outFile);
   int is_insar = isInSAR(inFile);
 

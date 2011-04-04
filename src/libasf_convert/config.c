@@ -314,6 +314,8 @@ void free_convert_config(convert_config *cfg)
         if (cfg->airsar) {
             FREE(cfg->airsar);
         }
+	if (cfg->uavsar)
+	  FREE(cfg->uavsar);
         if (cfg->sar_processing) {
             FREE(cfg->sar_processing->radiometry);
             FREE(cfg->sar_processing);
@@ -375,6 +377,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import = newStruct(s_import);
   cfg->external = newStruct(s_external);
   cfg->airsar = newStruct(s_airsar);
+  cfg->uavsar = newStruct(s_uavsar);
   cfg->sar_processing = newStruct(s_sar_processing);
   cfg->c2p = newStruct(s_c2p);
   cfg->image_stats = newStruct(s_image_stats);
@@ -459,7 +462,7 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->import->slave_metadata, "");
   cfg->import->baseline = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->import->baseline, "");
-  cfg->import->uavsar = (char *)MALLOC(sizeof(char)*10);
+  cfg->import->uavsar = (char *)MALLOC(sizeof(char)*100);
   strcpy(cfg->import->uavsar, "");
 
   cfg->external->cmd = (char *)MALLOC(sizeof(char)*1024);
@@ -469,6 +472,22 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->airsar->c_pol = 0;
   cfg->airsar->l_pol = 0;
   cfg->airsar->p_pol = 0;
+	   
+  cfg->uavsar->slc = 0;
+  cfg->uavsar->mlc = 0;
+  cfg->uavsar->dat = 0;
+  cfg->uavsar->grd = 0;
+  cfg->uavsar->hgt = 0;
+
+  cfg->uavsar->amp = 0;
+  cfg->uavsar->igram = 0;
+  cfg->uavsar->unw = 0;
+  cfg->uavsar->cor = 0;
+  cfg->uavsar->amp_grd = 0;
+  cfg->uavsar->int_grd = 0;
+  cfg->uavsar->unw_grd = 0;
+  cfg->uavsar->cor_grd = 0;
+  cfg->uavsar->hgt_grd = 0;
 
   cfg->sar_processing->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE");
@@ -647,6 +666,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->import->slave_metadata, read_str(line, "slave metadata"));
       if (strncmp(test, "baseline", 8)==0)
         strcpy(cfg->import->baseline, read_str(line, "baseline"));
+      if (strncmp(test, "uavsar", 6)==0)
+        strcpy(cfg->import->uavsar, read_str(line, "uavsar"));
 
       // External
       if (strncmp(test, "command", 7)==0)
@@ -978,6 +999,8 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->import->slave_metadata, read_str(line, "slave metadata"));
       if (strncmp(test, "baseline", 8)==0)
         strcpy(cfg->import->baseline, read_str(line, "baseline"));
+      if (strncmp(test, "uavsar", 6)==0)
+        strcpy(cfg->import->uavsar, read_str(line, "uavsar"));
       FREE(test);
     }
 
@@ -1467,6 +1490,16 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# This file contains the baseline components that describe the geometry of\n"
 	      "# the interferometric pairs.\n\n");
     fprintf(fConfig, "baseline = %s\n", cfg->import->baseline);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The UAVSAR ingest requires the definition of which "
+	      "product actually needs\n# to be imported.\n"
+	      "# PolSAR products: SLC,MLC,DAT,GRD,HGT\n"
+	      "# InSAR products: AMP,INT,UNW,COR,AMP_GRD,INT_GRD,UNW_GRD,"
+	      "COR_GRD,HGT_GRD\n"
+	      "# Several products can be ingested at the same by listed them "
+	      "comma separated.\n# By setting this parameter to 'all', all "
+	      "available products are imported.\n\n");
+    fprintf(fConfig, "uavsar = %s\n", cfg->import->uavsar);
 
     // AirSAR -- only write out if the import format is AirSAR
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {
