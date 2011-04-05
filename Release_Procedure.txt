@@ -231,6 +231,8 @@ src/adjust_bands
 src/diffimage
 src/diffmeta
 src/asf_kml_overlay
+src/asf_fgdc_meta
+src/asf_test
 
  * Run the autotar script:
 
