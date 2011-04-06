@@ -39,3 +39,4 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(666,root,root,777)
 %attr(-,root,root) /usr/local/bin
 /usr/local/share
+
