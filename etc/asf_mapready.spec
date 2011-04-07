@@ -19,7 +19,7 @@ JPEG and GeoTIFF.
 The ASF MapReady Remote Sensing Toolkit now supports the
 processing of ALOS data.
 %prep
-%setup -q -n asf_tools
+%setup -q -a1 -n asf_tools
  
 %build
 cd %{_builddir}/asf_tools
