@@ -6,7 +6,7 @@ License: BSD
 Group: Applications/Scientific
 URL: http://www.asf.alaska.edu
 Source: asf_mapready.src.tar.gz
-BuildRoot: %{_buildroot}
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Prefix: /usr/local
 
 %description
@@ -19,16 +19,19 @@ JPEG and GeoTIFF.
 The ASF MapReady Remote Sensing Toolkit now supports the
 processing of ALOS data.
 %prep
-%setup -q -a1 -n asf_tools
+echo Executing: %%prep
+%setup -q -n asf_tools
  
 %build
-cd %{_builddir}/asf_tools
+echo Executing: %%build
+#cd /asf_tools
 ./configure --prefix=$RPM_BUILD_ROOT/usr/local
 make mapready_jenkins
 
 %install
+echo Executing: %%install
 rm -rf $RPM_BUILD_ROOT
-cd %{_builddir}/asf_tools
+#cd %{_builddir}/asf_tools
 make install
 rm -rf $RPM_BUILD_ROOT/usr/local/lib
 
