@@ -58,7 +58,6 @@ MAPREADY_MODULES = \
 	src/llh2ls \
 	src/smooth \
 	src/farcorr \
-	src/convert2vector \
 	src/diffmeta \
 	src/diffimage \
 	src/sgpsdp \
@@ -67,7 +66,6 @@ MAPREADY_MODULES = \
 	src/populate_meta_field \
 	src/asf_kml_overlay \
 	src/sample_plugin \
-	src/convert2vector_gui \
 	@ASF_GUI@
 
 STP_MODULES = \
