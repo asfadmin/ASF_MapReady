@@ -24,14 +24,14 @@ echo Executing: %%prep
  
 %build
 echo Executing: %%build
-#cd /asf_tools
+cd $RPM_BUILD_DIR/asf_tools
 ./configure --prefix=$RPM_BUILD_ROOT/usr/local
 make mapready_jenkins
 
 %install
 echo Executing: %%install
 rm -rf $RPM_BUILD_ROOT
-#cd %{_builddir}/asf_tools
+cd $RPM_BUILD_DIR/asf_tools
 make install
 rm -rf $RPM_BUILD_ROOT/usr/local/lib
 
