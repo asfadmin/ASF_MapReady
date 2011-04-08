@@ -264,6 +264,8 @@ mapready_jenkins: mkdirs_for_build external_libs
 	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/mapready_manual.pdf $(S_DOCDIR)
 	cp doc/mapready-version_history.txt $(S_DOCDIR)
+	cp doc/arcgis_mask.pdf $(S_DOCDIR)
+	cp doc/dem_manual.pdf $(S_DOCDIR)
 	cp LICENSE.txt $(MAPREADY_SHAREDIR)
 	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
@@ -280,6 +282,8 @@ mapready: mkdirs_for_build external_libs
 	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/mapready_manual.pdf $(S_DOCDIR)
 	cp doc/mapready-version_history.txt $(S_DOCDIR)
+	cp doc/arcgis_mask.pdf $(S_DOCDIR)
+	cp doc/dem_manual.pdf $(S_DOCDIR)
 	cp LICENSE.txt $(MAPREADY_SHAREDIR)
 	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	$(SET_SVN_REV_H)
@@ -342,6 +346,8 @@ c2v: mkdirs_for_build external_libs
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_C2V > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(C2V_SHAREDIR) >> make_support/build_pkg.mk
+	cp doc/ConvertToVector.pdf $(S_DOCDIR)
+	cp doc/ConvertToVector-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(C2V_SHAREDIR)
 	echo $(VERSION_C2V) > $(C2V_SHAREDIR)/converttovector_version.txt
 	$(SET_SVN_REV_H)
@@ -403,6 +409,7 @@ faraday: mkdirs_for_build external_libs
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_FARADAY > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(FARADAY_SHAREDIR) >> make_support/build_pkg.mk
+	cp doc/faraday_prediction-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(FARADAY_SHAREDIR)
 	echo $(VERSION_FARADAY) > $(FARADAY_SHAREDIR)/faraday_version.txt
 	$(SET_SVN_REV_H)
@@ -436,8 +443,8 @@ install:
 	if [ -d @SHAREDIR@/asf_mapready ]; then \
 		chmod a+x "@SHAREDIR@"/proj ; \
 	fi
-	-cp -R doc/*.pdf "@SHAREDIR@/doc"
-	-cp -R doc/*.txt "@SHAREDIR@/doc"
+	-cp -R $(S_DOCDIR)/*.pdf "@SHAREDIR@/doc"
+	-cp -R $(S_DOCDIR)/*.txt "@SHAREDIR@/doc"
 	chmod -R a+r "@SHAREDIR@"
 	chmod -R ug+w "@SHAREDIR@"
 

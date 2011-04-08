@@ -150,7 +150,7 @@ DB2H = $(shell which docbook2html 2>/dev/null)
 DB2T = $(shell which docbook2txt 2>/dev/null)
 
 #default: clean doc $(OBJS)
-default: clean $(OBJS)
+default: $(OBJS)
 	$(CC) $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)/$(DEST_TARGET)
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
