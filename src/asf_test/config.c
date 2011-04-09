@@ -170,6 +170,7 @@ void free_test_config(test_config *cfg)
       FREE(cfg->general);
     }
     FREE(cfg);
+    cfg = NULL;
   }
 }
 

@@ -121,20 +121,41 @@ static int getInt(char *file, char *param, int *err)
     return ret;
 }
 
-int meta_test(char *in_file, char *spec_file, report_level_t level)
+int meta_test(char *in_file, char *spec_file)
 {
-  char filename[1024], line[1024], param[100], type[25], valid[500], *p;
+  meta_test_ext(in_file, spec_file, REPORT_LEVEL_NONE);
+}
+
+int meta_test_ext(char *in_file, char *spec_file, report_level_t level)
+{
+  char *filename = NULL, line[1024], param[100], type[25], valid[500], *p;
   char *strValue;
   int nMin, nMax, nValue, err, passed = TRUE;
   double lfMin, lfMax, lfValue;
-  sprintf(filename, "%s/meta_test/%s", get_asf_share_dir(), spec_file);
   
-  FILE *fp = fopen(filename, "r");
-  if (!fp)
-    strcat(filename, ".specs");
-  fp = fopen(filename, "r");
+  // First try to find the spec file locally
+  FILE *fp = fopen(spec_file, "r");
+  if (!fp) {
+    filename = appendExt(spec_file, ".specs");
+    fp = fopen(filename, "r");
+  }
+
+  // Second try the spec file from share directory
+  if (!fp) {
+    FREE(filename);
+    filename = (char *) MALLOC(sizeof(char)*1024);
+    sprintf(filename, "%s/meta_test/%s", get_asf_share_dir(), spec_file);
+    fp = fopen(filename, "r");
+  }
+  if (!fp) {
+    sprintf(filename, "%s/meta_test/%s.specs", 
+	    get_asf_share_dir(), spec_file);
+    fp = fopen(filename, "r");
+  }
   if (!fp)
     asfPrintError("Could not find spec file (%s)\n", spec_file);
+  if (filename)
+    FREE(filename);
 
   // FIXME: Need to implement some pre-checks.
   // For example, map projections will need special treatment. For a given

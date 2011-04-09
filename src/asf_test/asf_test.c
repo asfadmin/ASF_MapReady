@@ -28,8 +28,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_test"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-create] [-log <logFile> ] [-license] [-version] [-help]\n"\
-"                <config_file>\n"
+"   "ASF_NAME_STRING" [-create] [-unit <type>] [-log <logFile> ] [-license]\n"\
+"            [-version] [-help] <config_file>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "   This program can ingest level one CEOS and GeoTIFF format data, calibrate\n"\
@@ -50,8 +50,11 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        comments that help the user with the available settings.\n"
 
 #define ASF_OPTIONS_STRING \
-"   -create <config_file>\n"\
+"   -create\n"\
 "        Create <config_file> instead of reading it.\n"\
+"   -unit <type>\n"\
+"        Run tests based on a list of configuration files. The <type> defines\n"\
+"        the unit test type: automated or basic.\n"\
 "   -log <logFile>\n"\
 "        Set the name and location of the log file.\n"\
 "   -license\n"\
@@ -75,9 +78,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define REQUIRED_ARGS 1
 #define FLAG_NOT_SET -1
-
-// Need to be global for unit test framework
-char configFile[1024];
 
 // Print minimalistic usage info & exit
 static void print_usage(void)
@@ -119,26 +119,7 @@ static int checkForOption(char* key, int argc, char* argv[])
   return(FLAG_NOT_SET);
 }
 
-int init_suite_success(void) { return 0; }
-int init_suite_failure(void) { return -1; }
-int clean_suite_success(void) { return 0; }
-int clean_suite_failure(void) { return -1; }
-
-static void cu_metadata(void)
-{
-  char inFile[1024], specsFile[1024];
-  int ii;
-  test_config *cfg = read_test_config(configFile);
-
-  for (ii=0; ii<cfg->general->test_count; ii++) {
-    strcpy(inFile, cfg->test[ii]->file);
-    strcpy(specsFile, cfg->test[ii]->specs);
-    CU_ASSERT_TRUE(meta_test(inFile, specsFile, REPORT_LEVEL_NONE));
-  }
-  free_test_config(cfg);  
-}
-
-static void manual_metadata(void)
+static void manual_metadata(char *configFile)
 {
   char inFile[1024];
   char specsFile[1024];
@@ -155,7 +136,7 @@ static void manual_metadata(void)
     strcpy(specsFile, cfg->test[ii]->specs);
     asfPrintStatus("\n   Test[%d]: %s ...\n", ii+1, cfg->test[ii]->test);
     if (strcmp_case(cfg->test[ii]->status, "skip") != 0) {
-      if (meta_test(inFile, specsFile, REPORT_LEVEL_STATUS)) {
+      if (meta_test_ext(inFile, specsFile, REPORT_LEVEL_STATUS)) {
 	asfPrintStatus("   Test passed\n");
 	strcpy(cfg->test[ii]->status, "passed");
       }
@@ -180,19 +161,20 @@ static void manual_metadata(void)
   free_test_config(cfg);  
 }
 
-static void manual_binary(void)
+static void manual_binary(char *configFile)
 {
   asfPrintError("Manual binary tests not implemented yet!\n");  
 }
 
 int main(int argc, char *argv[])
 {
-  int createflag;
+  char configFile[1024], interface[25];
+  int createflag, unitflag;
   extern int logflag;
-  int create_f, log_f;
+  int create_f, unit_f, log_f;
 
-  createflag = FALSE;
-  create_f = FLAG_NOT_SET;
+  createflag = unitflag = FALSE;
+  create_f = unit_f = FLAG_NOT_SET;
 
   // Begin command line parsing ***********************************************
   if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
@@ -205,12 +187,14 @@ int main(int argc, char *argv[])
 
   // Check which options were provided
   create_f = checkForOption("-create", argc, argv);
+  unit_f   = checkForOption("-unit", argc, argv);
   log_f    = checkForOption("-log", argc, argv);
 
   // We need to make sure the user specified the proper number of arguments
   int needed_args = 1 + REQUIRED_ARGS;               // command & REQUIRED_ARGS
   int num_flags = 0;
   if (create_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
+  if (unit_f   != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (log_f    != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
 
   // Make sure we have the right number of args
@@ -227,11 +211,12 @@ int main(int argc, char *argv[])
   }
 
   // Make sure all options occur before the config file name argument
-  if (num_flags == 1 && (create_f > 1 || log_f > 1)) {
+  if (num_flags == 1 && (create_f > 1 || unit_f > 1 || log_f > 1)) {
     print_usage();
   }
   else if (num_flags > 1 && 
 	   (create_f >= argc - REQUIRED_ARGS - 1 ||
+	    unit_f   >= argc - REQUIRED_ARGS - 1 ||
 	    log_f    >= argc - REQUIRED_ARGS - 1)) {
     print_usage();
   }
@@ -239,6 +224,10 @@ int main(int argc, char *argv[])
   // Do the actual flagging & such for each flag
   if (create_f != FLAG_NOT_SET) {
     createflag = TRUE;
+  }
+  if (unit_f != FLAG_NOT_SET) {
+    strcpy(interface, argv[unit_f+1]);
+    unitflag = TRUE;
   }
   if (log_f != FLAG_NOT_SET) {
     strcpy(logFile, argv[log_f+1]);
@@ -256,8 +245,9 @@ int main(int argc, char *argv[])
 
   // Get test information from configuration file
   test_config *cfg;
-  char testcases[255];
+  char line[1024];
 
+  // Creating configuration files
   if (createflag && !fileExists(configFile)) {
     init_test_config(configFile);
     return(EXIT_SUCCESS);
@@ -266,94 +256,55 @@ int main(int argc, char *argv[])
     cfg = read_test_config(configFile);
     check_return(write_test_config(configFile, cfg),
 		 "Could not update configuration file");
+    free_test_config(cfg);    
     return(EXIT_SUCCESS);
   }
-  else if (!fileExists(configFile)) {
-    asfPrintStatus("Could not fin config file (%s)\n", configFile);
-    return(EXIT_FAILURE);
-  }
+  else if (!fileExists(configFile))
+    asfPrintError("Could not find config file (%s)\n", configFile);
   
-  cfg = read_test_config(configFile);
-  sprintf(testcases, "%s testcases", cfg->general->suite);
+  // Unit tests or single configuration file?
+  if (unitflag) {
 
-  if (strcmp_case(cfg->general->interface, "automated") == 0 ||
-      strcmp_case(cfg->general->interface, "basic") == 0) {
-
-    // Give a status update
-    if (strcmp_case(cfg->general->type, "metadata") == 0)
-      asfPrintStatus("Found %d metadata tests in test suite '%s'.\n", 
-		     cfg->general->test_count, cfg->general->suite);
-    else if (strcmp_case(cfg->general->type, "binary") == 0)
-      asfPrintStatus("Found %d binary data tests in test suite '%s'.\n", 
-		     cfg->general->test_count, cfg->general->suite);
-    else
-      asfPrintError("Unknown test type (%s)\n", cfg->general->type);
-
-    // Go about the unit testing
-    CU_pSuite pSuite = NULL;
-    
-    // Initialize test registry
     if (CUE_SUCCESS != CU_initialize_registry())
       return CU_get_error();
-    
-    // Add suite to registry
-    pSuite = CU_add_suite(cfg->general->suite, 
-			  init_suite_success, clean_suite_success);
-    if (NULL == pSuite) {
-      CU_cleanup_registry();
-      return CU_get_error();
+
+    int test = FALSE;
+    FILE *fpList = FOPEN(configFile, "r");
+    while(fgets(line, 1024, fpList)) {
+      if (strcmp_case(trim_spaces(line), "uavsar_metadata") == 0)
+	add_uavsar_metadata_tests();
+      test = TRUE;
     }
-    
-    // Add tests to suite
-    if (strcmp_case(cfg->general->type, "metadata") == 0) {
-      if (NULL == CU_add_test(pSuite, testcases, cu_metadata)) {
+    FCLOSE(fpList);
+
+    if (test && strcmp_case(interface, "basic") == 0) {
+      asfPrintStatus("Running tests in basic mode ...\n");
+      CU_basic_set_mode(CU_BRM_VERBOSE);
+      if (CUE_SUCCESS != CU_basic_run_tests()) {
 	CU_cleanup_registry();
 	return CU_get_error();
       }
     }
-    else if (strcmp_case(cfg->general->type, "binary") == 0) {
-      asfPrintError("Binary units tests not implemented yet!\n");
+    if (test && strcmp_case(interface, "automated") == 0) {
+      asfPrintStatus("Running tests in automated mode ...\n\n");
+      CU_set_output_filename("asf_tools");
+      CU_automated_run_tests();
+      CU_list_tests_to_file();
     }
-    
-    if (cfg->general->test_count > 0) {
-      // Run all tests
-      if (strcmp_case(cfg->general->interface, "automated") == 0) {
-	asfPrintStatus("Running tests in automatic mode ...\n\n");
-	CU_set_output_filename(cfg->general->suite);
-	CU_automated_run_tests();
-	CU_list_tests_to_file();
-      }
-      else if (strcmp_case(cfg->general->interface, "basic") == 0) {
-	asfPrintStatus("Running tests in basic mode ...\n\n");
-	CU_basic_set_mode(CU_BRM_VERBOSE);
-	CU_basic_run_tests();
-      }
-    }
-    
-    // Cleanup
     CU_cleanup_registry();
-    free_test_config(cfg);
   }
-  else if (strcmp_case(cfg->general->interface, "manual") == 0) {
+  else { // Configuration file for manual mode
+    cfg = read_test_config(configFile);
     asfPrintStatus("Running tests in manual mode ...\n\n");
 
-    char type[25];
-    strcpy(type, cfg->general->type);
-    if (strcmp_case(type, "metadata") != 0 && 
-	strcmp_case(type, "binary") != 0)
-      asfPrintError("Unknown test type (%s)\n", cfg->general->type);
-    free_test_config(cfg);
-    
     // Run metadata tests
-    if (strcmp_case(type, "metadata") == 0)
-      manual_metadata();
+    if (strcmp_case(cfg->general->type, "metadata") == 0)
+      manual_metadata(configFile);
     // Run binary tests
-    else if (strcmp_case(type, "binary") == 0)
-      manual_binary();
-  }
-  else {
-    free_test_config(cfg);    
-    asfPrintError("Unknown test interface (%s)\n", cfg->general->interface);
+    else if (strcmp_case(cfg->general->type, "binary") == 0)
+      manual_binary(configFile);
+    
+    free_test_config(cfg);
   }
 
   return(EXIT_SUCCESS);

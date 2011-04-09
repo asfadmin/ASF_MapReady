@@ -5,9 +5,15 @@ include ../../make_support/system_rules
 LIBS =  \
 	$(LIBDIR)/libcunit.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a
+	$(LIBDIR)/asf.a \
+	$(TIFF_LIBS) \
+	$(GEOTIFF_LIBS) \
+	-lm
 
-OBJS = 	asf_test.o config.o
+OBJS = 	\
+	asf_test.o \
+	config.o \
+	uavsar_test.o
 
 all: asf_test clean
 

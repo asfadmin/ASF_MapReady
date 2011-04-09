@@ -37,4 +37,7 @@ void free_test_config(test_config *cfg);
 test_config *read_test_config(char *configFile);
 int write_test_config(char *configFile, test_config *cfg);
 
+// prototypes
+int add_uavsar_metadata_tests(void);
+
 #endif
