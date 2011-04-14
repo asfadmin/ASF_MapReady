@@ -176,6 +176,9 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
   case EQUI_RECTANGULAR:
     return "[Equirectangular]";
 
+  case EQUIDISTANT:
+    return "[Equidistant]";
+
   case MERCATOR:
     return "[Mercator]";
 
@@ -262,6 +265,12 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
     fprintf(fp, "Latitude of Origin=%.10f\n", pps->eqr.orig_latitude);
     fprintf(fp, "False Easting=%.10f\n", pps->eqr.false_easting);
     fprintf(fp, "False Northing=%.10f\n", pps->eqr.false_northing);
+    fprintf(fp, "datum=%s\n", datum_toString(datum));
+    break;
+
+  case EQUIDISTANT:
+    fprintf(fp, "Central Meridian=%.10f\n", pps->eqc.central_meridian);
+    fprintf(fp, "Latitude of Origin=%.10f\n", pps->eqc.orig_latitude);
     fprintf(fp, "datum=%s\n", datum_toString(datum));
     break;
 
@@ -389,6 +398,16 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       "Latitude of Origin", &pps->eqr.orig_latitude,
       "False Easting", &pps->eqr.false_easting,
       "False Northing", &pps->eqr.false_northing,
+      NULL);
+    *datum = get_datum(fp);
+    *spheroid = get_spheroid(fp);
+  }
+  else if (strcmp_case(buf, bracketed_projection_name(EQUIDISTANT)) == 0)
+  {
+    *proj_type = EQUIDISTANT;
+    get_fields(fp,
+      "Central Meridian", &pps->eqc.central_meridian,
+      "Latitude of Origin", &pps->eqc.orig_latitude,
       NULL);
     *datum = get_datum(fp);
     *spheroid = get_spheroid(fp);
@@ -1426,6 +1445,10 @@ datum_type_t get_datum(FILE *fp)
   else if (strcmp_case(buf, bracketed_projection_name(EQUI_RECTANGULAR)) == 0)
   {
       proj_type = EQUI_RECTANGULAR;
+  }
+  else if (strcmp_case(buf, bracketed_projection_name(EQUIDISTANT)) == 0)
+  {
+      proj_type = EQUIDISTANT;
   }
   else if (strcmp_case(buf, bracketed_projection_name(MERCATOR)) == 0)
     proj_type = MERCATOR;

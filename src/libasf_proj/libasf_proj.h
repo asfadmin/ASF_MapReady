@@ -18,6 +18,7 @@ typedef enum {
   LAT_LONG_PSEUDO_PROJECTION,
   MERCATOR,
   EQUI_RECTANGULAR,
+  EQUIDISTANT,
   SINUSOIDAL,
   UNKNOWN_PROJECTION
 } projection_type_t;
@@ -134,6 +135,11 @@ typedef enum {
     double false_easting;     // False easting
     double false_northing;    // False northing
   } proj_eqr;
+  // Equidistant
+  typedef struct {
+    double orig_latitude;     // Latitude of origin
+    double central_meridian;  // Central meridian
+  } proj_eqc;
   // Sinusoidal
   typedef struct {
     double longitude_center;  // Longitude at projection center
@@ -157,6 +163,7 @@ typedef enum {
     proj_state    state;    /* State Plane                   */
     proj_mer      mer;      // Mercator
     proj_eqr      eqr;      // Equi Rectangular
+    proj_eqc      eqc;      // Equidistant
     proj_sin      sin;      // Sinusoidal
   } param_t;
 typedef param_t project_parameters_t;
@@ -543,6 +550,22 @@ int project_eqr_arr_inv(project_parameters_t *pps,
                            double **lat, double **lon, double **height,
                            long length, datum_type_t datum);
 
+// Equidistant
+int project_eqc(project_parameters_t *pps,
+		double lat, double lon, double height,
+		double *x, double *y, double *z, datum_type_t datum);
+int project_eqc_arr(project_parameters_t *pps,
+		    double *lat, double *lon, double *height,
+		    double **projected_x, double **projected_y,
+		    double **projected_z, long length, datum_type_t datum);
+int project_eqc_inv(project_parameters_t *pps,
+		    double x, double y, double z,
+		    double *lat, double *lon, double *height, datum_type_t datum);
+int project_eqc_arr_inv(project_parameters_t *pps,
+			double *x, double *y, double *z,
+			double **lat, double **lon, double **height,
+			long length, datum_type_t datum);
+
 // Sinusoidal
 // www.remotesensing.org/geotiff/proj_list/sinusoidal.html
 int project_sin(project_parameters_t *pps,
@@ -608,6 +631,7 @@ char *lamaz_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *lamcc_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *mer_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *eqr_projection_desc(project_parameters_t *pps, datum_type_t datum);
+char *eqc_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *sin_projection_desc(project_parameters_t *pps);
 
 #endif

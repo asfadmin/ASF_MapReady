@@ -392,6 +392,20 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
 
       break;
 
+    case EQUIDISTANT:
+
+      // Outside range tests
+      if (!meta_is_valid_double(pp->eqr.central_meridian) ||
+           pp->eqc.central_meridian < -180 || pp->eqc.central_meridian > 180)
+	report_func("Central meridian '%.4f' outside the defined range "
+		      "(-180 deg to 180 deg)\n", pp->eqc.central_meridian);
+      if (!meta_is_valid_double(pp->eqr.orig_latitude) ||
+           pp->eqc.orig_latitude < -90 || pp->eqc.orig_latitude > 90)
+	report_func("Latitude of origin '%.4f' outside the defined range "
+		      "(-90 deg to 90 deg)\n", pp->eqc.orig_latitude);
+
+      break;
+
     case MERCATOR:
 
       // Outside range tests

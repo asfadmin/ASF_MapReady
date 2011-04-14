@@ -38,6 +38,9 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
     case EQUI_RECTANGULAR:
       project_eqr_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
+    case EQUIDISTANT:
+      project_eqc_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
+      break;
     case SINUSOIDAL:
       project_sin_inv(&(proj->param), x, y, z, lat, lon, height);
       break;
@@ -541,6 +544,9 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
       geoc_lat = atan(tan(lat)/(1-ecc2(proj->re_minor,proj->re_major)));
       project_eqr(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
+    case EQUIDISTANT:
+      project_eqc(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
+      break;
     case SINUSOIDAL:
       project_sin(&(proj->param), lat, lon, height, x, y, x);
       break;
@@ -607,6 +613,9 @@ static void latLon2proj_imp(double lat, double lon, double elev,
 	    break;
           case EQUI_RECTANGULAR:
 	    printf("Lat/Lon to Equirectangular\n\n");
+	    break;
+          case EQUIDISTANT:
+	    printf("Lat/Lon to Equidistant\n\n");
 	    break;
           case SINUSOIDAL:
 	    printf("Lat/Lon to Sinusoidal\n\n");
@@ -799,9 +808,17 @@ void to_radians(projection_type_t pt, project_parameters_t * pps)
 
     case EQUI_RECTANGULAR:
       if (!ISNAN(pps->eqr.central_meridian))
-	pps->mer.central_meridian *= D2R;
+	pps->eqr.central_meridian *= D2R;
       if (!ISNAN(pps->eqr.orig_latitude))
-	pps->mer.orig_latitude *= D2R;
+	pps->eqr.orig_latitude *= D2R;
+
+      break;
+
+    case EQUIDISTANT:
+      if (!ISNAN(pps->eqc.central_meridian))
+	pps->eqc.central_meridian *= D2R;
+      if (!ISNAN(pps->eqc.orig_latitude))
+	pps->eqc.orig_latitude *= D2R;
 
       break;
 
@@ -882,6 +899,13 @@ void to_degrees(projection_type_t pt, project_parameters_t * pps)
 	pps->eqr.central_meridian *= R2D;
       if (!ISNAN(pps->eqr.orig_latitude))
 	pps->eqr.orig_latitude *= R2D;
+      break;
+
+    case EQUIDISTANT:
+      if (!ISNAN(pps->eqc.central_meridian))
+	pps->eqc.central_meridian *= R2D;
+      if (!ISNAN(pps->eqc.orig_latitude))
+	pps->eqc.orig_latitude *= R2D;
       break;
 
     case SINUSOIDAL:

@@ -203,7 +203,7 @@ int meta_test_ext(char *in_file, char *spec_file, report_level_t level)
 	if (strncmp_case(type, "INT", 3) == 0) {
 	  sscanf(line, "%d,%d", &nMin, &nMax);
 	  nValue = getInt(in_file, param, &err);
-	  if (err || (nValue < nMin || nValue > nMax)) {
+	  if (err || nValue < nMin || nValue > nMax) {
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
 	  }
@@ -211,7 +211,7 @@ int meta_test_ext(char *in_file, char *spec_file, report_level_t level)
 	else if (strncmp_case(type, "DOUBLE", 6) == 0) {
 	  sscanf(line, "%lf,%lf", &lfMin, &lfMax);
 	  lfValue = getDouble(in_file, param, &err);
-	  if (err || (lfValue < lfMin && lfValue > lfMax)) {
+	  if (err || lfValue < lfMin || lfValue > lfMax) {
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
 	  }

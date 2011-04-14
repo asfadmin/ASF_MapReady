@@ -123,6 +123,18 @@ char *proj_info_as_string(projection_type_t projection_type,
          (datum) ? datum_str : "\n");
       break;
 
+    case EQUIDISTANT:
+      if (datum) {
+        sprintf(datum_str, "   Datum             : %s\n\n", datum_toString(*datum));
+      }
+      sprintf(ret,
+         "Projection: Equidistant\n"
+         "   Latitude of origin: %.4f\n"
+         "   Central meridian  : %.4f\n%s",
+         pp->eqc.orig_latitude, pp->eqc.central_meridian,
+         (datum) ? datum_str : "\n");
+      break;
+
     case MERCATOR:
       if (datum) {
         sprintf(datum_str, "   Datum             : %s\n\n", datum_toString(*datum));
@@ -494,6 +506,12 @@ static void determine_projection_fns(int projection_type, project_t **project,
       if (project_arr) *project_arr = project_eqr_arr;
       if (unproject) *unproject = project_eqr_inv;
       if (unproject_arr) *unproject_arr = project_eqr_arr_inv;
+      break;
+    case EQUIDISTANT:
+      if (project) *project = project_eqc;
+      if (project_arr) *project_arr = project_eqc_arr;
+      if (unproject) *unproject = project_eqc_inv;
+      if (unproject_arr) *unproject_arr = project_eqc_arr_inv;
       break;
     case MERCATOR:
       if (project) *project = project_mer;
@@ -1219,7 +1237,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                        "Defaulting to larger of range or azimuth pixel size "
                        "from %smetadata: %f (%s pixel size)\n",
                        n_input_images > 1 ? "the first image's " : "",
-                       pixel_size,
+                       pixel_size_x,
                        imd->general->x_pixel_size > imd->general->y_pixel_size ? "range" : "azimuth");
     }
     else if (pixel_size < 0) { 
@@ -1332,7 +1350,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   asfPrintStatus("Center: X,Y: %.1f,%.1f   Lat,Lon: %.3f,%.3f\n",
     center_x, center_y, output_lat_0*R2D, output_lon_0*R2D);
   if (FLOAT_EQUIVALENT(pixel_size_x, pixel_size_y))
-    asfPrintStatus("Pixel size: %.2f m\n", pixel_size);
+    asfPrintStatus("Pixel size: %.2f m\n", pixel_size_x);
   else {
     asfPrintStatus("Pixel size x: %.2f m\n", pixel_size_x);
     asfPrintStatus("Pixel size y: %.2f m\n", pixel_size_y);

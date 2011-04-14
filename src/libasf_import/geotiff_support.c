@@ -171,6 +171,10 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
       dest->param.eqr.false_easting = src->param.eqr.false_easting;
       dest->param.eqr.false_northing = src->param.eqr.false_northing;
       break;
+    case EQUIDISTANT:
+      dest->param.eqc.orig_latitude = src->param.eqc.orig_latitude;
+      dest->param.eqc.central_meridian = src->param.eqc.central_meridian;
+      break;
     case MERCATOR:
       dest->param.mer.orig_latitude = src->param.mer.orig_latitude;
       dest->param.mer.central_meridian = src->param.mer.central_meridian;

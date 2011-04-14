@@ -131,6 +131,10 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
       verify_valid_latitude(pps->eqr.orig_latitude);
       verify_valid_longitude(pps->eqr.central_meridian);
       break;
+    case EQUIDISTANT:
+      verify_valid_latitude(pps->eqc.orig_latitude);
+      verify_valid_longitude(pps->eqc.central_meridian);
+      break;
     case MERCATOR:
       verify_valid_latitude(pps->mer.standard_parallel);
       verify_valid_latitude(pps->mer.orig_latitude);
@@ -266,6 +270,13 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
         pps->eqr.orig_latitude = 0.0;
       if (ISNAN(pps->eqr.central_meridian))
         pps->eqr.central_meridian = 0.0;
+      break;
+
+    case EQUIDISTANT:
+      if (ISNAN(pps->eqc.orig_latitude))
+        pps->eqc.orig_latitude = 0.0;
+      if (ISNAN(pps->eqc.central_meridian))
+        pps->eqc.central_meridian = 0.0;
       break;
 
     case MERCATOR:

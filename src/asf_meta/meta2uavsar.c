@@ -52,7 +52,7 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   meta->general->start_line = 0;
   meta->general->start_sample = 0;
   meta->general->x_pixel_size = params->range_pixel_spacing;
-  meta->general->y_pixel_size = params->azimuth_pixel_spacing;
+  meta->general->y_pixel_size = fabs(params->azimuth_pixel_spacing);
   meta->general->re_major = params->semi_major;
   double a = params->semi_major;
   double ecc2 = params->eccentricity;
@@ -127,7 +127,8 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   // Projection block
   if (params->type == POLSAR_GRD || params->type == POLSAR_HGT) {
     meta->projection = meta_projection_init();
-    strcpy (meta->projection->units, "meters");
+    //strcpy (meta->projection->units, "meters");
+    strcpy (meta->projection->units, "degrees");
     if (params->along_track_offset >= 0.0)
       meta->projection->hem = 'N';
     else
@@ -143,12 +144,16 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
     double lon = params->cross_track_offset;
     double x1, y1, z1, x2, y2, z2;
     if (strcmp_case(params->projection, "EQA") == 0) {
-      meta->projection->type = EQUI_RECTANGULAR;
-      meta->projection->param.eqr.central_meridian = 0.0;
-      meta->projection->param.eqr.orig_latitude = 0.0;
-      meta->projection->param.eqr.false_easting = 0.0;
-      meta->projection->param.eqr.false_northing = 0.0;
+      //meta->projection->type = EQUI_RECTANGULAR;
+      //meta->projection->param.eqr.central_meridian = 0.0;
+      //meta->projection->param.eqr.orig_latitude = 0.0;
+      //meta->projection->param.eqr.false_easting = 0.0;
+      //meta->projection->param.eqr.false_northing = 0.0;
+      meta->projection->type = EQUIDISTANT;
+      meta->projection->param.eqc.central_meridian = 0.0;
+      meta->projection->param.eqc.orig_latitude = 0.0;
     }
+    /*
     latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x1, &y1, &z1);
     lat += params->azimuth_pixel_spacing;
     lon += params->range_pixel_spacing;
@@ -157,9 +162,14 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
     meta->projection->startY = y1;
     meta->projection->perX = fabs(x1 - x2);
     meta->projection->perY = -fabs(y1 - y2);
+    */
+    meta->projection->startX = params->cross_track_offset;
+    meta->projection->startY = params->along_track_offset;
+    meta->projection->perX = params->range_pixel_spacing;
+    meta->projection->perY = params->azimuth_pixel_spacing;
 
-    meta->general->x_pixel_size = fabs(meta->projection->perX);
-    meta->general->y_pixel_size = fabs(meta->projection->perY);
+    //meta->general->x_pixel_size = fabs(meta->projection->perX);
+    //meta->general->y_pixel_size = fabs(meta->projection->perY);
     meta->general->center_latitude = params->along_track_offset + 
       params->azimuth_pixel_spacing * params->row_count / 2.0;
     meta->general->center_longitude = params->cross_track_offset +
@@ -224,7 +234,7 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
   meta->general->start_line = 0;
   meta->general->start_sample = 0;
   meta->general->x_pixel_size = params->range_pixel_spacing;
-  meta->general->y_pixel_size = params->azimuth_pixel_spacing;
+  meta->general->y_pixel_size = fabs(params->azimuth_pixel_spacing);
   meta->general->re_major = params->semi_major;
   double a = params->semi_major;
   double ecc2 = params->eccentricity;
@@ -282,7 +292,8 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
   // Projection block
   if (params->type >= INSAR_AMP_GRD && params->type <= INSAR_HGT_GRD) {
     meta->projection = meta_projection_init();
-    strcpy (meta->projection->units, "meters");
+    //strcpy (meta->projection->units, "meters");
+    strcpy (meta->projection->units, "degrees");
     if (params->along_track_offset >= 0.0)
       meta->projection->hem = 'N';
     else
@@ -298,12 +309,16 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
     double lon = params->cross_track_offset;
     double x1, y1, z1, x2, y2, z2;
     if (strcmp_case(params->projection, "EQA") == 0) {
-      meta->projection->type = EQUI_RECTANGULAR;
-      meta->projection->param.eqr.central_meridian = 0.0;
-      meta->projection->param.eqr.orig_latitude = 0.0;
-      meta->projection->param.eqr.false_easting = 0.0;
-      meta->projection->param.eqr.false_northing = 0.0;
+      //meta->projection->type = EQUI_RECTANGULAR;
+      //meta->projection->param.eqr.central_meridian = 0.0;
+      //meta->projection->param.eqr.orig_latitude = 0.0;
+      //meta->projection->param.eqr.false_easting = 0.0;
+      //meta->projection->param.eqr.false_northing = 0.0;
+      meta->projection->type = EQUIDISTANT;
+      meta->projection->param.eqc.central_meridian = 0.0;
+      meta->projection->param.eqc.orig_latitude = 0.0;
     }
+    /*
     latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x1, &y1, &z1);
     lat += params->azimuth_pixel_spacing;
     lon += params->range_pixel_spacing;
@@ -312,9 +327,14 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
     meta->projection->startY = y1;
     meta->projection->perX = fabs(x1 - x2);
     meta->projection->perY = -fabs(y1 - y2);
+    */
+    meta->projection->startX = params->cross_track_offset;
+    meta->projection->startY = params->along_track_offset;
+    meta->projection->perX = params->range_pixel_spacing;
+    meta->projection->perY = params->azimuth_pixel_spacing;
 
-    meta->general->x_pixel_size = fabs(meta->projection->perX);
-    meta->general->y_pixel_size = fabs(meta->projection->perY);
+    //meta->general->x_pixel_size = fabs(meta->projection->perX);
+    //meta->general->y_pixel_size = fabs(meta->projection->perY);
     meta->general->center_latitude = params->along_track_offset + 
       params->azimuth_pixel_spacing * params->row_count / 2.0;
     meta->general->center_longitude = params->cross_track_offset +

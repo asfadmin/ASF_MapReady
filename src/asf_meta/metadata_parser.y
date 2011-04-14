@@ -190,6 +190,8 @@ void select_current_block(char *block_name)
     { current_block = &((*( (param_t *) current_block)).mer); goto MATCHED; }
   if ( !strcmp(block_name, "eqr") )
     { current_block = &((*( (param_t *) current_block)).eqr); goto MATCHED; }
+  if ( !strcmp(block_name, "eqc") )
+    { current_block = &((*( (param_t *) current_block)).eqc); goto MATCHED; }
   if ( !strcmp(block_name, "sin") )
     { current_block = &((*( (param_t *) current_block)).sin); goto MATCHED; }
 
@@ -782,9 +784,13 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->type = EQUI_RECTANGULAR;
         map_projection_type = 1;
       }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "EQUIDISTANT") ) {
+        MPROJ->type = EQUIDISTANT;
+        map_projection_type = 1;
+      }
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "SINUSOIDAL") ) {
         MPROJ->type = SINUSOIDAL;
-        map_projection_type = 1;
+        map_projection_type = 0;
       }
       else {
         MPROJ->type = UNKNOWN_PROJECTION;
@@ -1008,6 +1014,14 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).eqr.false_easting = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "false_northing") )
       { (*MPARAM).eqr.false_northing = VALP_AS_DOUBLE; return; }
+  }
+
+  /* Fields that go in the (proj->param).eqc block.  */
+  if ( !strcmp(stack_top->block_name, "eqc")) {
+    if ( !strcmp(field_name, "central_meridian") )
+      { (*MPARAM).eqc.central_meridian = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "orig_latitude") )
+      { (*MPARAM).eqc.orig_latitude = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields that go in the (proj->param).sin block.  */

@@ -506,6 +506,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case EQUI_RECTANGULAR:
 	meta_put_string (fp, "type:", "EQUI_RECTANGULAR", "Projection Type");
 	break;
+      case EQUIDISTANT:
+	meta_put_string (fp, "type:", "EQUIDISTANT", "Projection Type");
+	break;
       case SINUSOIDAL:
 	meta_put_string (fp, "type:", "SINUSOIDAL", "Projection Type");
 	break;
@@ -518,9 +521,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double_lf(fp,"startY:",meta->projection->startY, 3,
         "Projection Coordinate at top-left, Y direction");
     if (meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
-      meta_put_double_lf(fp,"perX:",meta->projection->perX, 3,
+      meta_put_double(fp,"perX:",meta->projection->perX,
              "Projection Coordinate per pixel, X direction");
-      meta_put_double_lf(fp,"perY:",meta->projection->perY, 3,
+      meta_put_double(fp,"perY:",meta->projection->perY,
              "Projection Coordinate per pixel, Y direction");
     }
     else {
@@ -698,6 +701,16 @@ void meta_write(meta_parameters *meta, const char *file_name)
 			 meta->projection->param.eqr.false_northing, 3,
 			 "False northing [m]");
       meta_put_string(fp,"}","","End eqr");
+      break;
+    case EQUIDISTANT:
+      meta_put_string(fp,"eqc {","","Begin Equidistant projection");
+      meta_put_double_lf(fp,"central_meridian:",
+			 meta->projection->param.eqc.central_meridian, 4,
+			 "Longitude of center meridian [degrees]");
+      meta_put_double_lf(fp,"orig_latitude:",
+			 meta->projection->param.eqc.orig_latitude, 4,
+			 "Latitude of the projection origin [degrees]");
+      meta_put_string(fp,"}","","End eqc");
       break;
     case SINUSOIDAL:
       meta_put_string(fp,"sin {","","Begin Sinusoidal projection");

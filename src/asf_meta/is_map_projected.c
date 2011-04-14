@@ -27,6 +27,7 @@ int is_map_projected(meta_parameters *md)
            mp->type == LAMBERT_CONFORMAL_CONIC        ||
            mp->type == LAMBERT_AZIMUTHAL_EQUAL_AREA   ||
 	   mp->type == EQUI_RECTANGULAR ||
+	   mp->type == EQUIDISTANT ||
 	   mp->type == MERCATOR ||
 	   mp->type == SINUSOIDAL ||
            mp->type == STATE_PLANE) &&

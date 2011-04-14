@@ -95,6 +95,14 @@ void map_distortions(meta_projection *proj, double lat, double lon,
       strcat(proj_description, spheroid_desc);
     }
   }
+  else if (proj->type == EQUIDISTANT) {
+    sprintf(proj_description, "%s",
+    	    eqc_projection_desc(&(proj->param), proj->datum));
+    if (strcmp_case(spheroid_str(proj->spheroid), "unknown") != 0) {
+      sprintf(spheroid_desc, " +ellsp=%s", spheroid_str(proj->spheroid));
+      strcat(proj_description, spheroid_desc);
+    }
+  }
 
   // Initialize transformation
   projLP lp;

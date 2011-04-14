@@ -1022,6 +1022,76 @@ project_eqr_arr_inv(project_parameters_t *pps,
                   x, y, z, lat, lon, height, length);
 }
 
+// Equidistant
+char *eqc_projection_desc(project_parameters_t *pps, datum_type_t datum)
+{
+  static char eqc_projection_description[128];
+
+  /* Establish description of output projection. */
+  if (datum == WGS84_DATUM) {
+    sprintf(eqc_projection_description,
+	    "+proj=eqc +lat_ts=%f +lon_0=%f +datum=%s",
+	    pps->eqc.orig_latitude,
+	    pps->eqc.central_meridian,
+	    datum_str(datum));
+  }
+  else
+    asfPrintError("Datum (%s) not supported for Equidistant projection!\n",
+		  datum_str(datum));
+
+  return eqc_projection_description;
+}
+
+int
+project_eqc(project_parameters_t *pps,
+	    double lat, double lon, double height,
+	    double *x, double *y, double *z, datum_type_t datum)
+{
+    return project_worker_arr(eqc_projection_desc(pps, datum),
+            &lat, &lon, &height, &x, &y, &z, 1);
+}
+
+int
+project_eqc_arr(project_parameters_t *pps,
+		double *lat, double *lon, double *height,
+		double **projected_x, double **projected_y,
+		double **projected_z, long length, datum_type_t datum)
+{
+  long ii; 
+  int negative=FALSE, positive=FALSE;
+  for (ii=0; ii<length; ii++) {
+    if (lon[ii] < 0.0)
+      negative = TRUE;
+    else if (lon[ii] > 0.0)
+      positive = TRUE;
+  }
+  if (negative && positive)
+    asfPrintError("Projection problem: Image crosses the dateline.\n"
+		  "Equidistant projection does not handle this case well."
+		  "\n");
+  return project_worker_arr(eqc_projection_desc(pps, datum),
+                lat, lon, height, projected_x, projected_y, projected_z,
+                length);
+}
+
+int
+project_eqc_inv(project_parameters_t *pps, double x, double y, double z,
+		double *lat, double *lon, double *height, datum_type_t datum)
+{
+    return project_worker_arr_inv(eqc_projection_desc(pps, datum),
+                  &x, &y, &z, &lat, &lon, &height, 1);
+}
+
+int
+project_eqc_arr_inv(project_parameters_t *pps,
+		    double *x, double *y, double *z,
+		    double **lat, double **lon, double **height,
+		    long length, datum_type_t datum)
+{
+    return project_worker_arr_inv(eqc_projection_desc(pps, datum),
+                  x, y, z, lat, lon, height, length);
+}
+
 /****************************************************************************
   Albers Equal-Area Conic
 ****************************************************************************/
