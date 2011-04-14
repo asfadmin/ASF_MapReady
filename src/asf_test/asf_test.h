@@ -9,7 +9,6 @@ typedef struct
 {
   char *suite;                  // name of test suite
   char *type;                   // test type: metadata, binary
-  char *interface;              // interface: automated, basic, manual
   int short_config;             // configuration flag: 0 - short, 1 - long
   int test_count;               // number of test - for internal use only
   char *status;                 // suite test status: new, pass, fail
@@ -39,5 +38,6 @@ int write_test_config(char *configFile, test_config *cfg);
 
 // prototypes
 int add_uavsar_metadata_tests(void);
+int add_rsat1_scansar_geotiff_alaska_tests(void);
 
 #endif

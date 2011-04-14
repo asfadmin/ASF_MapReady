@@ -13,7 +13,8 @@ LIBS =  \
 OBJS = 	\
 	asf_test.o \
 	config.o \
-	uavsar_test.o
+	uavsar_test.o \
+	rsat1_test.o
 
 all: asf_test clean
 

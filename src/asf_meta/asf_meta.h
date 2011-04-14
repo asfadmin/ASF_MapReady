@@ -964,4 +964,8 @@ meta_insar *populate_insar_metadata(const char *filename);
 int meta_test(char *in_file, char *spec_file);
 int meta_test_ext(char *in_file, char *spec_file, report_level_t level);
 
+// Prototypes for geotiff_check.c
+int geotiff_test(char *in_file, char *spec_file);
+int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level);
+
 #endif

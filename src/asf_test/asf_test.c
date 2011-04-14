@@ -147,7 +147,49 @@ static void manual_metadata(char *configFile)
       }
     }
     else
-      asfPrintStatus("skipped\n");
+      asfPrintStatus("   Test skipped\n");
+  }
+  if (suite_passed) {
+    asfPrintStatus("\n   Suite passed\n\n");
+    strcpy(cfg->general->status, "passed");
+  }
+  else {
+    asfPrintStatus("\n   Suite failed\n\n");
+    strcpy(cfg->general->status, "failed");
+  }
+  write_test_config(configFile, cfg);
+  free_test_config(cfg);  
+}
+
+static void manual_geotiff(char *configFile)
+{
+  char inFile[1024];
+  char specsFile[1024];
+  int ii, suite_passed = TRUE;
+  test_config *cfg = read_test_config(configFile);
+
+  if (strcmp_case(cfg->general->status, "new") != 0)
+    asfPrintError("Can't run manual tests. Current status: '%s'\nTo run these "
+		  "tests manually, reset the general status to 'new'\n", 
+		  cfg->general->status);
+  asfPrintStatus("   Suite: %s\n", cfg->general->suite);
+  for (ii=0; ii<cfg->general->test_count; ii++) {
+    strcpy(inFile, cfg->test[ii]->file);
+    strcpy(specsFile, cfg->test[ii]->specs);
+    asfPrintStatus("\n   Test[%d]: %s ...\n", ii+1, cfg->test[ii]->test);
+    if (strcmp_case(cfg->test[ii]->status, "skip") != 0) {
+      if (geotiff_test_ext(inFile, specsFile, REPORT_LEVEL_STATUS)) {
+	asfPrintStatus("   Test passed\n");
+	strcpy(cfg->test[ii]->status, "passed");
+      }
+      else {
+	asfPrintStatus("   Test failed\n");
+	strcpy(cfg->test[ii]->status, "failed");
+	suite_passed = FALSE;
+      }
+    }
+    else
+      asfPrintStatus("   Test skipped\n");
   }
   if (suite_passed) {
     asfPrintStatus("\n   Suite passed\n\n");
@@ -273,6 +315,8 @@ int main(int argc, char *argv[])
     while(fgets(line, 1024, fpList)) {
       if (strcmp_case(trim_spaces(line), "uavsar_metadata") == 0)
 	add_uavsar_metadata_tests();
+      if (strcmp_case(trim_spaces(line), "rsat1_scansar_geotiff_alaska") == 0)
+	add_rsat1_scansar_geotiff_alaska_tests();
       test = TRUE;
     }
     FCLOSE(fpList);
@@ -300,6 +344,9 @@ int main(int argc, char *argv[])
     // Run metadata tests
     if (strcmp_case(cfg->general->type, "metadata") == 0)
       manual_metadata(configFile);
+    // Run geotiff tests
+    else if (strcmp_case(cfg->general->type, "geotiff") == 0)
+      manual_geotiff(configFile);
     // Run binary tests
     else if (strcmp_case(cfg->general->type, "binary") == 0)
       manual_binary(configFile);

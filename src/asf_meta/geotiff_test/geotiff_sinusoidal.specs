@@ -1,0 +1,16 @@
+# Parameter,Type(length),Valid(min,max or 'list')
+model_type,char(256),'Projection coordinate system'
+raster_type,char(25),'Area'
+geographic_coordinate_system,char(50),'unnamed'
+geodetic_datum,char(25),'unknown'
+geographic_prime_meridian,char(25),'Greenwhich'
+geographic_linear_units,char(25),'meters'
+geographic_angular_units,char(25),'degrees'
+geographic_ellipsoid,char(25),'unnamed'
+geographic_semimajor_axis,double,6371000,6372000
+geographic_semiminor_axis,double,'0'
+geographic_inverse_flattening,double,'0'
+projected_coordinate_system,char(50),'user defined'
+projection,char(50),'user defined'
+projection_coordinate_transformation,char(50),'Sinusoidal'
+projection_linear_units,char(25),'meters'

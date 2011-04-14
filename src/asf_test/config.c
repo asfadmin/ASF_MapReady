@@ -93,14 +93,6 @@ int init_test_config(char *configFile)
 	  "# metadata runs checks on .meta file.\n"
 	  "# binary run checks on binary data files.\n\n");
   fprintf(fConfig, "type = metadata\n\n");
-  // interface
-  fprintf(fConfig, "# This parameter defines the interface: automated, basic, "
-	  "manual\n"
-	  "# automated puts the output in an XUnit compatible XLM format\n"
-	  "# basic run the tests CUnit style in basic mode\n"\
-	  "# manual runs tests based on test statuses in this configuration "
-	  "file.\n\n");
-  fprintf(fConfig, "interface = automated\n\n");
   // short configuration
   fprintf(fConfig, "# The short configuration file flag allows the experienced "
 	  "user to\n# generate configuration files without the verbose "
@@ -165,7 +157,6 @@ void free_test_config(test_config *cfg)
       FREE(cfg->test);
       FREE(cfg->general->suite);
       FREE(cfg->general->type);
-      FREE(cfg->general->interface);
       FREE(cfg->general->status);
       FREE(cfg->general);
     }
@@ -192,8 +183,6 @@ test_config *init_fill_test_config(char *configFile)
   strcpy(cfg->general->suite, "");
   cfg->general->type = (char *) MALLOC(sizeof(char)*25);
   strcpy(cfg->general->type, "");
-  cfg->general->interface = (char *) MALLOC(sizeof(char)*25);
-  strcpy(cfg->general->interface, "");
   cfg->general->test_count = 0;
   cfg->general->status = (char *) MALLOC(sizeof(char)*25);
   strcpy(cfg->general->status, "");
@@ -238,8 +227,6 @@ test_config *read_test_config(char *configFile)
 	strcpy(cfg->general->suite, read_str(line, "suite"));
       if (strncmp(test, "type", 4) == 0)
 	strcpy(cfg->general->type, read_str(line, "type"));
-      if (strncmp(test, "interface", 9) == 0)
-	strcpy(cfg->general->interface, read_str(line, "interface"));
       if (strncmp(test, "short configuration file", 24) == 0)
 	cfg->general->short_config = 
 	  read_int(line, "short configuration file");
@@ -306,15 +293,6 @@ int write_test_config(char *configFile, test_config *cfg)
 	  "# metadata runs checks on .meta file.\n"
 	  "# binary run checks on binary data files.\n\n");
   fprintf(fConfig, "type = %s\n", cfg->general->type);
-  // interface
-  if (!shortFlag)
-    fprintf(fConfig, "\n# This parameter defines the interface: automated, basic, "
-	  "manual\n"
-	  "# automated puts the output in an XUnit compatible XLM format\n"
-	  "# basic run the tests CUnit style in basic mode\n"\
-	  "# manual runs tests based on test statuses in this configuration "
-	  "file.\n\n");
-  fprintf(fConfig, "interface = %s\n", cfg->general->interface);
   // short configuration
   if (!shortFlag)
     fprintf(fConfig, "\n# The short configuration file flag allows the experienced "

@@ -95,6 +95,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	line_header.o \
 	lzFetch.o \
 	meta_check.o \
+	geotiff_check.o \
 	meta_complex2polar.o \
 	meta_copy.o \
 	meta_create.o \
@@ -150,6 +151,7 @@ asf_meta: build_only
 		meta_project.h frame_calc.h dateUtil.h calibrate.h line_header.h\
 		envi.h doppler.h $(ASF_INCLUDE_DIR)
 	cp -R meta_test/ $(SHAREDIR)
+	cp -R geotiff_test/ $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f asf_meta.a
