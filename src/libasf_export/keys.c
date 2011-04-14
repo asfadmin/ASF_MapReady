@@ -422,8 +422,7 @@ void datum_2_string (char *datum_str, datum_type_t datum)
   }
 }
 
-void write_datum_key (GTIF *ogtif, datum_type_t datum,
-                      double re_major, double re_minor)
+void write_datum_key (GTIF *ogtif, datum_type_t datum)
 {
   short user_defined = 32767;
   //
@@ -435,33 +434,45 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
   //
 
   // If datum is recognized, then write a GCS_ datum to GeographicTypeGeoKey
-  switch (datum) {
+  switch (datum) 
+    {
     case ED50_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_ED50);
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 
+		  Datum_European_Datum_1950);
       break;
     case NAD27_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_NAD27);
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 
+		  Datum_North_American_Datum_1927);
       break;
     case NAD83_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_NAD83);
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 
+		  Datum_North_American_Datum_1983);
       break;
     case SAD69_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_SAD69);
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 
+		  Datum_South_American_Datum_1969);
       break;
     case WGS72_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_72);
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, Datum_WGS72);
       break;
     case ITRF97_DATUM:      
       GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 6655);
       break;
     case WGS84_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_84);
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, Datum_WGS84);
       break;
     case HUGHES_DATUM:
       // The GeoTIFF is absolutely correct. However, ArcGIS can't handle this
       // as of version 9.3. Erdas Imagine and ENVI seem to have the same
       // problem.
       GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 3411);      
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 6054);
 
       /*
       // So for the moment we go back to the user defined glory.
@@ -481,68 +492,55 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
     case EGM96_DATUM:
     case ETRF89_DATUM:
     case ETRS89_DATUM:
+      break;
     default:
-    {
-        // Else fit an ellipsoid to the major/minor axis and write an
-        // ellipsoid-only datum to the GeographicTypeGeoKey instead
-        // (according to the GeoTIFF standard).  This allows the GeoTIFF
-        // to be used, but attempts to minimize the error when utilizing
-        // the stored datum.  If we ever allow user-defined coordinate systems,
-        // including datum, then that case should be handled in the default:
-        // case below.
-      spheroid_type_t spheroid = axis2spheroid (re_major, re_minor);
-      switch (spheroid) {
-        case BESSEL_SPHEROID:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_Bessel1841);
-          break;
-        case CLARKE1866_SPHEROID:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_Clarke1866);
-          break;
-        case CLARKE1880_SPHEROID:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_Clarke1880);
-          break;
-        case GEM10C_SPHEROID:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_GEM10C);
-          break;
-        case GRS1980_SPHEROID:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_GRS1980);
-          break;
-        case INTERNATIONAL1924_SPHEROID:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_International1924);
-          break;
-        case INTERNATIONAL1967_SPHEROID:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_International1967);
-          break;
-        case WGS84_SPHEROID:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_WGS84);
-          break;
-        case HUGHES_SPHEROID:
-	  /*
-          // The Hughes datum (really the ellipsoid) is special ..a little recursion lets
-          // the key-writing code exist in one place (see case above) instead of repeating
-          // it here.
-          // FIXME: It is rare that the ellipsoid-fitting code would actually get called,
-          // BUT at this time the Hughes ellipsoid is only supported for polar stereo
-          // map projections.  If the ellipsoid-fitting code (here) got called and the
-          // map projection is a not a polar stereo, then it's possible that a Hughes
-          // ellipsoid (aka datum or spheroid) could be written to the GeoTIFF and we wouldn't
-          // have trapped the error ...but I think this would be so rare that I'm willing to
-          // take a chance on it rather than modify the parameters to write_datum_key()
-          // to include either a pointer to metadata or the projection type.  I prefer
-          // loose coupling...
-          write_datum_key (ogtif, HUGHES_DATUM, re_major, re_minor);
-	  */
-	  GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7058);
-          break;
-        default:
-            // Don't write anything into GeographicTypeGeoKey (including 'user-defined'
-            // since writing 'user-defined' into it would imply that several other keys
-            // are written to complete the definition, e.g. GeogGeodeticDatumGeoKey etc.
-            // It's better to leave GeographicTypeGeoKey empty)
-          asfPrintWarning ("Unsupported or unrecognized datum\n");
-          break;
-      }
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, user_defined);
+      break;
     }
+}
+
+void write_spheroid_key (GTIF *ogtif, spheroid_type_t spheroid,
+			 double re_major, double re_minor)
+{
+  short user_defined = 32767;
+  double inv_flattening = re_major / (re_major - re_minor);
+  GTIFKeySet(ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1, re_major);
+  GTIFKeySet(ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, re_minor);
+  GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1, inv_flattening);
+
+  switch (spheroid) {
+  case BESSEL_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_Bessel_1841);
+    break;
+  case CLARKE1866_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_Clarke_1866);
+    break;
+  case CLARKE1880_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
+	       Ellipse_Clarke_1880_Arc);
+    break;
+  case GEM10C_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_GEM_10C);
+    break;
+  case GRS1980_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_GRS_1980);
+    break;
+  case INTERNATIONAL1924_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
+	       Ellipse_International_1924);
+    break;
+  case INTERNATIONAL1967_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
+	       Ellipse_International_1967);
+    break;
+  case WGS84_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_WGS_84);
+    break;
+  case HUGHES_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7058);
+    break;
+  default:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, user_defined);
     break;
   }
 }

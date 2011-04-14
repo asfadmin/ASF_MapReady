@@ -494,8 +494,9 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
     GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
     GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
     GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
+    GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, Angular_Degree);
     GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
-
+    GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
     re_major = md->projection->re_major;
     re_minor = md->projection->re_minor;
   }
@@ -581,6 +582,39 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         if ( UTM_2_PCS(&pcs, md->projection->datum,
              md->projection->param.utm.zone, md->projection->hem) ) {
           GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, pcs);
+        GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+                    CT_TransverseMercator);
+	  
+	  if (meta_is_valid_double(md->projection->param.utm.false_easting)) {
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.utm.false_easting);
+	  }
+	  else {
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  }
+	  if (meta_is_valid_double(md->projection->param.utm.false_northing)) {
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.utm.false_northing);
+	  }
+	  else {
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  }
+	  if (meta_is_valid_double(md->projection->param.utm.lat0)) {
+	    GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.utm.lat0);
+	  }
+	  if (meta_is_valid_double(md->projection->param.utm.lon0)) {
+	    GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.utm.lon0);
+	  }
+	  GTIFKeySet (ogtif, ProjScaleAtNatOriginGeoKey, TYPE_DOUBLE, 1,
+		      md->projection->param.utm.scale_factor);
+
+	  write_datum_key(ogtif, md->projection->datum);
+	  write_spheroid_key(ogtif, md->projection->spheroid, re_major, 
+			     re_minor);
 
           // Write the citation
           char datum_str[256];
@@ -655,8 +689,8 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.albers.center_meridian);
         }
-        // This writes the GeographicTypeGeoKey
-        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+        write_datum_key(ogtif, md->projection->datum);
+        write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
 
         /* Set the citation key.  */
         char datum_str[256];
@@ -717,8 +751,8 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           GTIFKeySet (ogtif, ProjFalseOriginLatGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.lamcc.lat0);
         }
-        // This writes the GeographicTypeGeoKey
-        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+        write_datum_key(ogtif, md->projection->datum);
+        write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
 
         /* Set the citation key.  */
         char datum_str[256];
@@ -771,8 +805,9 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         else {
           GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
-        // This writes the GeographicTypeGeoKey
-        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+	GTIFKeySet(ogtif, ProjScaleAtNatOriginGeoKey, TYPE_DOUBLE, 1, 1.0);
+        write_datum_key(ogtif, md->projection->datum);
+        write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
 
         /* Set the citation key.  */
         char datum_str[256];
@@ -808,6 +843,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
               citation_length <= max_citation_length,
           "bad citation length");
 	  */
+	  GTIFKeySet(ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 4054);
 	  sprintf(citation, "NSIDC Sea Ice Polar Stereographic North");
         }
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
@@ -845,8 +881,8 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         else {
           GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
-        // This writes the GeographicTypeGeoKey
-        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+        write_datum_key(ogtif, md->projection->datum);
+        write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
 
         /* Set the citation key.  */
         char datum_str[256];
@@ -900,8 +936,8 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         else {
           GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
-        // This writes the GeographicTypeGeoKey
-        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+        write_datum_key(ogtif, md->projection->datum);
+        write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
 
         /* Set the citation key.  */
         char datum_str[256];
@@ -913,6 +949,45 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                       "Facility tools.", datum_str,
                   md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
         append_band_names(band_names, rgb, citation, palette_color_tiff);
+        citation_length = strlen(citation);
+        asfRequire (citation_length >= 0 &&
+            citation_length <= max_citation_length,
+                "bad citation length");
+        // The following is not needed for any but UTM (according to the standard)
+        // but it appears that everybody uses it anyway... so we'll write it
+        GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+        // The following is recommended by the standard
+        GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+        free (citation);
+      }
+        break;
+      case EQUIDISTANT:
+      {
+	GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1,
+		    md->projection->spheroid);
+        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+                    32663);
+        if (meta_is_valid_double(md->projection->param.eqc.central_meridian)) {
+          GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.eqc.central_meridian);
+        }
+        if (meta_is_valid_double(md->projection->param.eqc.orig_latitude)) {
+          GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.eqc.orig_latitude);
+	}
+        write_datum_key(ogtif, md->projection->datum);
+        write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
+
+        /* Set the citation key.  */
+        char datum_str[256];
+        datum_2_string (datum_str, md->projection->datum);
+        citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+        snprintf (citation, max_citation_length + 1,
+                  "WGS 84 / World Equidistant Cylindrical");
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
             citation_length <= max_citation_length,
@@ -952,7 +1027,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 	  double scale = (sqrt(1.0 - e2*sin(lat)*sin(lat))/cos(lat)) * 
 	    (cos(lat1)/sqrt(1.0 - e2*sin(lat1)*sin(lat1)));
 
-          GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1, scale);
+          GTIFKeySet (ogtif, ProjScaleAtNatOriginGeoKey, TYPE_DOUBLE, 1, scale);
         }
         if (meta_is_valid_double(md->projection->param.mer.false_easting)) {
           GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
@@ -968,8 +1043,8 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         else {
           GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
-        // This writes the GeographicTypeGeoKey
-        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+        write_datum_key(ogtif, md->projection->datum);
+        write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
 
         /* Set the citation key.  */
         char datum_str[256];
@@ -993,6 +1068,53 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         free (citation);
       }
         break;
+      case SINUSOIDAL:
+	{
+	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+		      user_defined_value_code);
+	  GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+		      user_defined_value_code);
+	  GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+		      CT_Sinusoidal);
+	  if (meta_is_valid_double(md->projection->param.sin.longitude_center))
+	    GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.sin.longitude_center);
+	  if (meta_is_valid_double(md->projection->param.sin.false_easting))
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.sin.false_easting);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  if (meta_is_valid_double(md->projection->param.sin.false_northing)) 
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.sin.false_northing);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+
+	  // Write spherical paramters
+	  GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
+		      user_defined_value_code);
+	  GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1,
+		      md->projection->re_major);
+	  GTIFKeySet (ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  
+	  /* Set the citation key.  */
+	  //char datum_str[256];
+	  //datum_2_string (datum_str, md->projection->datum);
+	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	  snprintf (citation, max_citation_length + 1,
+		    "Sinusoidal projected GeoTIFF using "
+		    "sphere written by Alaska Satellite "
+		    "Facility tools.");
+	  append_band_names(band_names, rgb, citation, palette_color_tiff);
+	  citation_length = strlen(citation);
+	  asfRequire (citation_length >= 0 &&
+		      citation_length <= max_citation_length,
+		      "bad citation length");
+	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+	  free (citation);
+	}
+	break;
       default:
         asfPrintWarning ("Unsupported map projection found.  TIFF file will not\n"
             "contain projection information.\n");

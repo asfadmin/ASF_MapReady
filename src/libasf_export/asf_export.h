@@ -217,8 +217,9 @@ int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem);
 void gcs_2_string (char *datum_str, short gcs);
 void pcs_2_string (char *datum_str, short pcs);
 void datum_2_string (char *datum_str, datum_type_t datum);
-void write_datum_key (GTIF *ogtif, datum_type_t datum, double re_major,
-		      double re_minor);
+void write_datum_key (GTIF *ogtif, datum_type_t datum);
+void write_spheroid_key (GTIF *ogtif, spheroid_type_t spheroid, double re_major,
+			 double re_minor);
 
 // Prototypes from write_line.c
 void write_tiff_byte2byte(TIFF *otif, unsigned char *byte_line,
