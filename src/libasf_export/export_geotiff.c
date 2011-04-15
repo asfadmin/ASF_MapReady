@@ -293,7 +293,10 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
   {
     // Write common tags for map-projected GeoTIFFs
     GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
-    GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
+    if (md->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+      GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
+    else
+      GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeGeographic);
     GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
     GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, Angular_Degree);
     GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
@@ -909,6 +912,12 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
 	  free (citation);
+	}
+	break;
+      case LAT_LONG_PSEUDO_PROJECTION:
+        {
+	  write_datum_key(ogtif, md->projection->datum);
+	  write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
 	}
 	break;
       default:

@@ -30,9 +30,9 @@ int is_map_projected(meta_parameters *md)
 	   mp->type == EQUIDISTANT ||
 	   mp->type == MERCATOR ||
 	   mp->type == SINUSOIDAL ||
-           mp->type == STATE_PLANE) &&
-           !(mp->type == SCANSAR_PROJECTION           ||
-             mp->type == LAT_LONG_PSEUDO_PROJECTION)
+           mp->type == STATE_PLANE ||
+	   mp->type == LAT_LONG_PSEUDO_PROJECTION) &&
+	  mp->type != SCANSAR_PROJECTION
          ) ? 1 : 0;
 }
 
