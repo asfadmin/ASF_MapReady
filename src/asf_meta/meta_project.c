@@ -243,8 +243,6 @@ void uavsar_to_latlon(meta_parameters *meta,
         cached_uavsar_block = meta_uavsar_init();
         *cached_uavsar_block = *(meta->uavsar);
 
-        asfPrintStatus("Calculating uavsar transformation parameters...\n");
-
         // now precalculate data
         double lat_peg = meta->uavsar->lat_peg_point*D2R;
         double lon_peg = meta->uavsar->lon_peg_point*D2R;

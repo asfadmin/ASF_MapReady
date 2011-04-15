@@ -2026,8 +2026,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
       else if (is_uavsar) {
 	int ii, product_count;
-	char *type = (char *) MALLOC(sizeof(char)*25);
-	check_data_type(inFile, type);
+	char *type = check_data_type(inFile);
 	char **product = get_uavsar_products(cfg->import->uavsar, type, 
 					     &product_count);
 	if (strcmp_case(type, "POLSAR") == 0) {

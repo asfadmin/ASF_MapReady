@@ -144,7 +144,7 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
 					 uavsar_type_t type);
 uavsar_insar *read_insar_polsar_params(const char *dataFile,
 				       uavsar_type_t type);
-void check_data_type(const char *inFileName, char *type);
+char *check_data_type(const char *inFileName);
 char **get_uavsar_products(char *data_type, char *type, int *num_product);
 
 #endif

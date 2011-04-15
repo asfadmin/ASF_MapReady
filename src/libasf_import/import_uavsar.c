@@ -16,30 +16,33 @@
 
 char **get_uavsar_products(char *data_type, char *type, int *num_product)
 {  
-  char *ptr, *t_products;
+  char *rest, *token;
   int ii, product_count;
+  char *tmp = (char *) MALLOC(sizeof(char)*60);
+  strcpy(tmp, data_type);
 
   if (strcmp_case(type, "POLSAR") == 0) {
     product_count = 5;
-    if (strcmp_case(data_type, "ALL") == 0)
-      sprintf(data_type, "SLC,MLC,DAT,GRD,HGT");
-    t_products = STRDUP(data_type);
+    if (strcmp_case(tmp, "ALL") == 0)
+      sprintf(tmp, "SLC,MLC,DAT,GRD,HGT");
   }
   else if (strcmp_case(type, "INSAR") == 0) {
     product_count = 9;
-    if (strcmp_case(data_type, "ALL") == 0)
-      sprintf(data_type, "AMP,INT,UNW,COR,AMP_GRD,INT_GRD,UNW_GRD,COR_GRD,HGT_GRD");
-    t_products = STRDUP(data_type);
+    if (strcmp_case(tmp, "ALL") == 0)
+      sprintf(tmp, "AMP,INT,UNW,COR,AMP_GRD,INT_GRD,UNW_GRD,COR_GRD,HGT_GRD");
   }
 
   char **product = (char **) MALLOC(sizeof(char*) * product_count);
-  for (ii = 0; ii < product_count; ii++)
-    product[ii] = NULL;
+  for (ii = 0; ii < product_count; ii++) {
+    product[ii] = (char *) MALLOC(sizeof(char)*10);
+    strcpy(product[ii], "");
+  }
 
-  product[0] = STRTOK_R(t_products, ",", &ptr);
-  for (ii = 0; product[ii] != NULL;) {
+  ii = 0;
+  while (token = strtok_r(tmp, ",", &rest)) {
+    strcpy(product[ii], token);
+    tmp = rest;
     ii++;
-    product[ii] = STRTOK_R(NULL, ",", &ptr);
   }
 
   *num_product = ii;
@@ -47,15 +50,15 @@ char **get_uavsar_products(char *data_type, char *type, int *num_product)
   return product;
 }
 
-static char *get_uavsar(char *buf, char *str)
+char *get_uavsar(char *buf, char *str)
 {
   char *p, *q, *r, *value;
 
-  value = (char *) CALLOC(60,sizeof(char));
+  value = (char *) MALLOC(sizeof(char)*255);
   p = strstr(buf, str);
   if (p) {
     q = strchr(p, '=');
-    strncpy(value, q+1, 60);
+    strcpy(value, q+1);
     r = strchr(value, ';');
     if (r)
       r[0] = '\0';
@@ -68,12 +71,15 @@ static char *get_uavsar(char *buf, char *str)
   return value;
 }
 
-static int check_file(char *line, char **fileName)
+int check_file(char *line, char **fileName)
 {
-  char *p;
+  char *p, *r;
   p = strchr(line, '=');
-  char *file = (char *) CALLOC(1, sizeof(char)*255);
-  strncpy(file, p+1, 65);
+  char *file = (char *) MALLOC(sizeof(char)*255);
+  strcpy(file, p+1);
+  r = strchr(file, ';');
+  if (r)
+    r[0] = '\0';
   *fileName = trim_spaces(file);
   FREE(file);
   p = strchr(line, ';');
@@ -85,15 +91,15 @@ static int check_file(char *line, char **fileName)
     return FALSE;
 }
 
-static void get_uavsar_file_names(const char *dataFile, uavsar_type_t type, 
+void get_uavsar_file_names(const char *dataFile, uavsar_type_t type, 
 				  char ***pDataName, char ***pElement,
 				  int **pDataType, int *nBands)
 {
-  char *file = (char *) MALLOC(sizeof(char)*1024);
   int ii, slc=0, mlc=0, dat=0, grd=0, hgt=0;
   int igram=0, unw=0, cor=0, amp=0;
   int igram_grd=0, unw_grd=0, cor_grd=0, amp_grd=0, hgt_grd=0;
 
+  char *file = (char *) MALLOC(sizeof(char)*1024);
   char **dataName = (char **) MALLOC(6*sizeof(char *));
   char **element = (char **) MALLOC(6*sizeof(char *));
   int *dataType = (int *) MALLOC(6*sizeof(int));
@@ -928,7 +934,7 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
   return params;
 }
 
-static int sign(char byteBuf)
+int sign(char byteBuf)
 {
   if (byteBuf < 0)
     return -1;
@@ -936,9 +942,10 @@ static int sign(char byteBuf)
     return 1;
 }
 
-void check_data_type(const char *inFileName, char *type)
+char *check_data_type(const char *inFileName)
 {
-  char line[255];
+  char line[1024];
+  char *type = (char *) MALLOC(sizeof(char)*25);
   FILE *fp = FOPEN(inFileName, "r");
   while (fgets(line, 255, fp)) {
     if (strstr(line, "Acquisition Mode"))
@@ -949,6 +956,8 @@ void check_data_type(const char *inFileName, char *type)
       sprintf(type, "InSAR");
   }
   FCLOSE(fp);
+
+  return type;
 }
 
 void import_uavsar(const char *inFileName, int line, int sample, int width,
@@ -993,13 +1002,13 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
   float *floatComplexReal, *floatComplexImag;
   float *floatComplexBuf;
   char **dataName, **element, **product, tmp[50];
-  char *type = (char *) MALLOC(sizeof(char)*25);
+  char *type;
   char *outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
   uavsar_polsar *polsar_params;
   uavsar_insar *insar_params;
   meta_parameters *metaIn, *metaOut;
 
-  check_data_type(inFileName, type);
+  type = check_data_type(inFileName);
   asfPrintStatus("   Data type: %s\n", type);
   product = get_uavsar_products(data_type, type, &product_count);
   if (product_count > 1)
@@ -1448,6 +1457,7 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
     if (strcmp_case(type, "PolSAR") == 0 &&
 	strcmp_case(product[pp], "SLC") == 0) {
       asfPrintWarning("Ingest of SLC data is currently not supported!\n");
+      /*
       get_uavsar_file_names(inFileName, POLSAR_SLC, &dataName, &element,
 			    &dataType, &nBands);
       polsar_params = 
@@ -1464,6 +1474,7 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       meta_free(metaIn);
       meta_free(metaOut);
       FREE(polsar_params);
+      */
     }
     
     // Multilooked data
@@ -1855,5 +1866,12 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       FREE(polsar_params);
     }    
   }
+  if (strcmp_case(type, "PolSAR") == 0)
+    product_count = 5;
+  else if (strcmp_case(type, "InSAR") == 0)
+    product_count = 9;
+  for (pp=0; pp<product_count; pp++)
+    FREE(product[pp]);
+  FREE(product);
   FREE(type);
 }

@@ -149,9 +149,7 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
       //meta->projection->param.eqr.orig_latitude = 0.0;
       //meta->projection->param.eqr.false_easting = 0.0;
       //meta->projection->param.eqr.false_northing = 0.0;
-      meta->projection->type = EQUIDISTANT;
-      meta->projection->param.eqc.central_meridian = 0.0;
-      meta->projection->param.eqc.orig_latitude = 0.0;
+      meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
     }
     /*
     latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x1, &y1, &z1);
@@ -314,9 +312,7 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
       //meta->projection->param.eqr.orig_latitude = 0.0;
       //meta->projection->param.eqr.false_easting = 0.0;
       //meta->projection->param.eqr.false_northing = 0.0;
-      meta->projection->type = EQUIDISTANT;
-      meta->projection->param.eqc.central_meridian = 0.0;
-      meta->projection->param.eqc.orig_latitude = 0.0;
+      meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
     }
     /*
     latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x1, &y1, &z1);
