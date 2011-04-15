@@ -54,10 +54,12 @@ int isUAVSAR(const char *infile)
     return ret;
   }
   else if (strcmp_case(ext, ".ann")==0) {    
-    FILE *fp = FOPEN(infile, "r");
-    while (fgets(line, 1024, fp)) {
-      if (strstr(line, "http://uavsar.jpl.nasa.gov"))
-	found = TRUE;
+    FILE *fp = fopen(infile, "r");
+    if (fp) {
+      while (fgets(line, 1024, fp)) {
+	if (strstr(line, "http://uavsar.jpl.nasa.gov"))
+	  found = TRUE;
+      }
     }
   }
 
