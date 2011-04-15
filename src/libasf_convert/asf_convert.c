@@ -2789,23 +2789,27 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	  free(in_tmp);
 	  free(out_tmp);
 	}
-	if (cfg->uavsar->grd) {
+	if (cfg->uavsar->grd && !cfg->general->polarimetry) {
 	  char *in_tmp = appendToBasename(inFile, "_grd");
 	  update_status("Exporting ground range projected ...");
-	  asfPrintStatus("Exporting groun range projected: %s -> %s_grd\n", 
+	  asfPrintStatus("Exporting ground range projected: %s -> %s_grd\n", 
 			 in_tmp, outFile);
 	  do_export(cfg, in_tmp, outFile);
 	  free(in_tmp);
 	}
+	if (cfg->uavsar->grd && cfg->general->polarimetry) {
+	  update_status("Exporting ground range projected ...");
+	  asfPrintStatus("Exporting ground range projected: %s -> %s\n", 
+			 inFile, outFile);
+	  do_export(cfg, inFile, outFile);
+	}
 	if (cfg->uavsar->hgt) {
 	  char *in_tmp = appendToBasename(inFile, "_hgt");
-	  char *out_tmp = appendToBasename(outFile, "_hgt");
 	  update_status("Exporting projected PolSAR DEM ...");
 	  asfPrintStatus("Exporting projected PolSAR DEM: %s -> %s_hgt\n", 
-			 in_tmp, out_tmp);
-	  do_export(cfg, in_tmp, out_tmp);
+			 in_tmp, outFile);
+	  do_export(cfg, in_tmp, outFile);
 	  free(in_tmp);
-	  free(out_tmp);
 	}
 	if (cfg->uavsar->amp) {
 	  char *in_tmp = appendToBasename(inFile, "_amp");
@@ -2852,8 +2856,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	}
 	if (cfg->uavsar->int_grd) {
 	  char *in_tmp = appendToBasename(inFile, "_int_grd");
+	  char *out_tmp = appendToBasename(outFile, "_int_grd");
 	  update_status("Exporting ground range projected ...");
-	  asfPrintStatus("Exporting groun range projected: %s -> %s_int\n", 
+	  asfPrintStatus("Exporting groun range projected: %s -> %s\n", 
 			 in_tmp, outFile);
 	  do_export(cfg, in_tmp, outFile);
 	  free(in_tmp);
