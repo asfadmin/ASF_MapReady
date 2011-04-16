@@ -54,31 +54,31 @@ void test_uavsar_insar_cor_metadata(void)
 void test_uavsar_insar_amp_grd_metadata(void)
 {
   CU_ASSERT_TRUE(meta_test("uavsar/metadata/yellowstone_amp_grd.meta", 
-			   "uavsar/metadata/uavsar_insar_slant_range_meta.specs"));
+			   "uavsar/metadata/uavsar_insar_ground_range_meta.specs"));
 }
 
 void test_uavsar_insar_int_grd_metadata(void)
 {
   CU_ASSERT_TRUE(meta_test("uavsar/metadata/yellowstone_int_grd.meta", 
-			   "uavsar/metadata/uavsar_insar_slant_range_meta.specs"));
+			   "uavsar/metadata/uavsar_insar_ground_range_meta.specs"));
 }
 
 void test_uavsar_insar_unw_grd_metadata(void)
 {
   CU_ASSERT_TRUE(meta_test("uavsar/metadata/yellowstone_unw_grd.meta", 
-			   "uavsar/metadata/uavsar_insar_slant_range_meta.specs"));
+			   "uavsar/metadata/uavsar_insar_ground_range_meta.specs"));
 }
 
 void test_uavsar_insar_cor_grd_metadata(void)
 {
   CU_ASSERT_TRUE(meta_test("uavsar/metadata/yellowstone_cor_grd.meta", 
-			   "uavsar/metadata/uavsar_insar_slant_range_meta.specs"));
+			   "uavsar/metadata/uavsar_insar_ground_range_meta.specs"));
 }
 
 void test_uavsar_insar_hgt_grd_metadata(void)
 {
   CU_ASSERT_TRUE(meta_test("uavsar/metadata/yellowstone_hgt_grd.meta", 
-			   "uavsar/metadata/uavsar_insar_slant_range_meta.specs"));
+			   "uavsar/metadata/uavsar_insar_ground_range_meta.specs"));
 }
 
 int add_uavsar_metadata_tests(void)
