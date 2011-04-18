@@ -708,8 +708,10 @@ getPath(const char *in)
   free(file);
 
   // On Windows, allow / as a separator, too, since cygwin does
-  if (dir[strlen(dir) - 1] == DIR_SEPARATOR || dir[strlen(dir) - 1] == '/')
+  if (strlen(dir) > 0) {
+    if (dir[strlen(dir) - 1] == DIR_SEPARATOR || dir[strlen(dir) - 1] == '/')
       dir[strlen(dir) - 1] = '\0';
+  }
 
   return dir;
 }
