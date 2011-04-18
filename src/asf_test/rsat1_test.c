@@ -91,8 +91,8 @@ int add_rsat1_scansar_geotiff_alaska_tests(void)
 			   test_rsat1_scansar_geotiff_alaska_ps)) ||
       (NULL == CU_add_test(pSuite, "RSAT1 ScanSAR GeoTIFF PS SSMI", 
 			   test_rsat1_scansar_geotiff_alaska_ps_ssmi)) ||
-      (NULL == CU_add_test(pSuite, "RSAT1 ScanSAR GeoTIFF Sinusoidal", 
-			   test_rsat1_scansar_geotiff_alaska_sin)) ||
+      //(NULL == CU_add_test(pSuite, "RSAT1 ScanSAR GeoTIFF Sinusoidal", 
+      //		   test_rsat1_scansar_geotiff_alaska_sin)) ||
       (NULL == CU_add_test(pSuite, "RSAT1 ScanSAR GeoTIFF UTM", 
 			   test_rsat1_scansar_geotiff_alaska_utm))) {
     CU_cleanup_registry();
