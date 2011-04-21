@@ -33,9 +33,9 @@ MAPREADY_MODULES = \
 	src/asf_gamma_import \
 	src/asf_airsar_import \
 	src/asf_polsarpro_import \
-	src/asf_test \
 	src/libasf_convert \
 	src/asf_convert \
+	src/asf_test \
 	src/refine_geolocation \
 	src/shift_geolocation \
 	src/flip \
