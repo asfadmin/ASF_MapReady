@@ -71,6 +71,7 @@
 /* These are the dummy values that meta variables get set to at initialization */
 #define MAGIC_UNSET_CHAR ('?')
 #define MAGIC_UNSET_STRING ("???")
+#define MAGIC_UNSET_SHORT (-9999)
 #define MAGIC_UNSET_INT (-999999999)
 /* For MAGIC_UNSET_DOUBLE to work, you must include asf_nan.h */
 #define MAGIC_UNSET_DOUBLE (NAN)
@@ -84,6 +85,19 @@ typedef enum {
 } report_level_t;
 
 extern report_level_t g_report_level;
+
+typedef enum {
+  BYTE=1,
+  INTEGER16,
+  INTEGER32,
+  REAL32,
+  REAL64,
+  COMPLEX_BYTE,
+  COMPLEX_INTEGER16,
+  COMPLEX_INTEGER32,
+  COMPLEX_REAL32,
+  COMPLEX_REAL64
+} data_type_t;
 
 typedef enum {
   FILE_EXISTS=1,

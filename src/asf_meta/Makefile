@@ -99,6 +99,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta_complex2polar.o \
 	meta_copy.o \
 	meta_create.o \
+	meta_geotiff.o \
 	meta_get.o\
 	meta_get_geo.o \
 	meta_get_ifm.o \

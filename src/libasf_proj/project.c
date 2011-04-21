@@ -13,6 +13,16 @@
 
 #define DEFAULT_AVERAGE_HEIGHT 0.0;
 
+// Do not change the BAND_ID_STRING.  It will break ingest of legacy TIFFs 
+// exported with this string in their citation strings.  If you are changing 
+// the citation string to have some _other_ identifying string, then use a 
+// _new_ definition rather than replace what is in this one.
+// Then, make sure that your code supports both the legacy string and the new 
+// string. Also see the export library string definitions (which MUST match 
+// these here) and for associated code that needs to reflect the changes you 
+// are making here.
+#define BAND_ID_STRING "Color Channel (Band) Contents in RGBA+ order";
+
 /* WGS84 is hard-coded on the lat/lon side for now! */
 static const char *latlon_description = "+proj=latlong +datum=WGS84";
 

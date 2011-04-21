@@ -20,6 +20,14 @@
 
 #include <jpeglib.h>
 
+typedef struct {
+  uint32 byte_width;
+  uint32 width;
+  uint32 height;
+  data_type_t data_type; // ASF data type
+  int num_bands; // Number of color elements
+} jpeg_info_t;
+
 #ifdef win32
 #undef BYTE
 #endif

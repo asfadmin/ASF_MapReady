@@ -2,6 +2,8 @@
 #define INCLUDED_PROJ_H
 
 #include <stdio.h>
+#include "asf.h"
+#include "asf_tiff.h"
 
 typedef enum {
   UNIVERSAL_TRANSVERSE_MERCATOR,
@@ -633,5 +635,13 @@ char *mer_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *eqr_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *eqc_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *sin_projection_desc(project_parameters_t *pps);
+
+int get_tiff_data_config(TIFF *tif, short *sample_format, 
+			 short *bits_per_sample, short *planar_config,
+                         data_type_t *data_type, short *num_bands,
+                         int *is_scanline_format, int *is_palette_color_tiff, 
+			 report_level_t report_level);
+int get_bands_from_citation(int *num_bands, char **band_str, int *empty, 
+			    char *citation, int num_expected);
 
 #endif

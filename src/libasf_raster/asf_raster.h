@@ -175,4 +175,62 @@ void apply_look_up_table_int(char *lutFile, int *in_buffer,
 int read_lut(char *lutFile, unsigned char *lut_buffer);
 int is_jasc_palette_lut(const char *name);
 
+// Prototypes from diffimage.c
+typedef enum {
+  UNKNOWN_GRAPHICS_TYPE=0,
+  ASF_IMG,
+  JPEG_IMG,
+  PGM_IMG,
+  PPM_IMG,
+  PBM_IMG,
+  STD_TIFF_IMG,
+  GEO_TIFF_IMG,
+  BMP_IMG,
+  GIF_IMG,
+  PNG_IMG
+} graphics_file_t;
+
+typedef struct {
+  int stats_good;
+  double min;
+  double max;
+  double mean;
+  double sdev;
+  double rmse;
+  gsl_histogram *hist;
+  gsl_histogram_pdf *hist_pdf;
+} stats_t;
+
+typedef struct {
+    stats_t i;
+    stats_t q;
+} complex_stats_t;
+
+typedef struct {
+  int psnr_good;
+  double psnr;
+} psnr_t;
+
+typedef struct {
+    psnr_t i;
+    psnr_t q;
+} complex_psnr_t;
+
+typedef struct {
+  int dxdy_good;
+  int cert_good;
+  float dx; // In whatever units the image is in
+  float dy;
+  float cert; // Certainty from fftMatch
+} shift_data_t;
+
+int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
+	      char ***bands1, char ***bands2,
+	      int *num_bands1, int *num_bands2, int *complex,
+	      stats_t **stats1, stats_t **stats2,
+	      complex_stats_t **complex_stats1, 
+	      complex_stats_t **complex_stats2,
+	      psnr_t **psnrs, complex_psnr_t **complex_psnr,
+	      shift_data_t **data_shift);
+
 #endif

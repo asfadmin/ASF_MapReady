@@ -440,6 +440,8 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = DEM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "IMAGE") )
         MGENERAL->image_data_type = IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BROWSE_IMAGE") )
+	MGENERAL->image_data_type = BROWSE_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "MASK") )
         MGENERAL->image_data_type = MASK;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIMULATED_IMAGE") )

@@ -123,7 +123,7 @@ static int getInt(char *file, char *param, int *err)
 
 int meta_test(char *in_file, char *spec_file)
 {
-  meta_test_ext(in_file, spec_file, REPORT_LEVEL_NONE);
+  return meta_test_ext(in_file, spec_file, REPORT_LEVEL_NONE);
 }
 
 int meta_test_ext(char *in_file, char *spec_file, report_level_t level)

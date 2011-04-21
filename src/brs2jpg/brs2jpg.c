@@ -74,9 +74,6 @@
 #include <asf_meta.h>
 #include <asf_license.h>
 #include <asf_contact.h>
-#include <airsar.h>
-#include <asf_import.h>
-#include <asf_export.h>
 
 // Print minimalistic usage info & exit
 void usage(const char *name)
@@ -129,12 +126,9 @@ int strmatches(const char *key, ...)
 int
 main (int argc, char *argv[])
 {
-  FILE *fp;
-  char *browseFile, *workreportFile, *outFile, *baseName, tmpDataFile[1024];
-  char tmpDir[1024], line[1024];
+  char *browseFile, *workreportFile, *outFile;
   int currArg = 1;
   int NUM_ARGS = 3;
-  meta_parameters *meta;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -176,32 +170,7 @@ main (int argc, char *argv[])
   workreportFile = argv[currArg+1];
   outFile = argv[currArg+2];
 
-  // Create temporary directory
-  baseName = get_basename(outFile);
-  strcpy(tmpDir, baseName);
-  strcat(tmpDir, "-");
-  strcat(tmpDir, time_stamp_dir());
-  create_clean_dir(tmpDir);
-
-  // Generate ASF internal file
-  meta = raw_init();
-  meta->general->image_data_type = IMAGE;
-  fp = FOPEN(workreportFile, "r");
-  while (fgets(line, 1024, fp)) {
-    if (strncmp(line, "Brs_NoOfBrowseLines", 19) == 0)
-      sscanf(line, "Brs_NoOfBrowseLines=\"%d\"", &meta->general->line_count);
-    else if (strncmp(line, "Brs_NoOfBrowsePixels", 20) == 0)
-      sscanf(line, "Brs_NoOfBrowsePixels=\"%d\"", &meta->general->sample_count);
-    else if (strncmp(line, "Brs_BrowseBitPixel=\"8\"", 22) == 0)
-      meta->general->data_type = BYTE;
-  }
-  sprintf(tmpDataFile, "%s/%s.img", tmpDir, baseName);
-  meta_write(meta, tmpDataFile);
-  fileCopy(browseFile, tmpDataFile);
-
-  // Export to JPEG and clean up
-  asf_export(JPEG, SIGMA, tmpDataFile, outFile);
-  remove_dir(tmpDir);
+  brs2jpg(browseFile, workreportFile, outFile);
 
   asfPrintStatus("\nDone.\n");
   

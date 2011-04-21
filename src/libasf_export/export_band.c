@@ -917,12 +917,13 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
                     CT_Equirectangular);
+	GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1, 0.0);
         if (meta_is_valid_double(md->projection->param.eqr.central_meridian)) {
-          GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.eqr.central_meridian);
         }
         if (meta_is_valid_double(md->projection->param.eqr.orig_latitude)) {
-          GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.eqr.orig_latitude);
         }
         if (meta_is_valid_double(md->projection->param.eqr.false_easting)) {
@@ -1253,7 +1254,8 @@ export_band_image (const char *metadata_file_name,
               "from floating point to byte using truncation is not supported.\n"
               "All values would map to black.\n");
   if (md->general->data_type == BYTE &&
-      sample_mapping != TRUNCATE && sample_mapping != NONE)
+      sample_mapping != TRUNCATE && sample_mapping != NONE &&
+      md->general->image_data_type != BROWSE_IMAGE)
   {
       asfPrintWarning("Using %s sample remapping on BYTE data will result in\n"
                       "contrast expansion.  If you do not want contrast expansion in\n"

@@ -57,20 +57,6 @@
 // Flag to write ENVI header files for all viewable images
 extern int dump_envi_header;
 
-/* general->data_type values */
-typedef enum {
-  BYTE=1,
-  INTEGER16,
-  INTEGER32,
-  REAL32,
-  REAL64,
-  COMPLEX_BYTE,
-  COMPLEX_INTEGER16,
-  COMPLEX_INTEGER32,
-  COMPLEX_REAL32,
-  COMPLEX_REAL64
-} data_type_t;
-
 typedef enum {
   RAW_IMAGE=1,
   COMPLEX_IMAGE,
@@ -101,6 +87,7 @@ typedef enum {
   ELEVATION,
   DEM,
   IMAGE,
+  BROWSE_IMAGE,
   SIMULATED_IMAGE,
   MASK,
   IMAGE_LAYER_STACK,
@@ -967,5 +954,16 @@ int meta_test_ext(char *in_file, char *spec_file, report_level_t level);
 // Prototypes for geotiff_check.c
 int geotiff_test(char *in_file, char *spec_file);
 int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level);
+
+// Prototypes for meta_geotiff.c
+void copy_proj_parms(meta_projection *dest, meta_projection *src);
+int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
+                                meta_stats *stats, int is_dem,
+                                int num_bands, int band_no,
+                                short bits_per_sample, short sample_format,
+                                short planar_config,
+                                int use_mask_value, double mask_value);
+meta_parameters *read_generic_geotiff_metadata(const char *inFileName,
+					       int *ignore, ...);
 
 #endif

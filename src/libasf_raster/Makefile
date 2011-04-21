@@ -26,11 +26,14 @@ OBJS = \
 	tile.o \
 	look_up_table.o \
 	raster_calc.o \
+	diffimage.o 
 
 LIBS :=	\
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/asf.a \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \

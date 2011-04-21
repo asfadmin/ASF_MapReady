@@ -108,6 +108,8 @@ char *image_data_type2str(image_data_type_t image_data_type)
     strcpy(str, "DEM");
   else if (image_data_type == IMAGE)
     strcpy(str, "IMAGE");
+  else if (image_data_type == BROWSE_IMAGE)
+    strcpy(str, "BROWSE_IMAGE");
   else if (image_data_type == MASK)
     strcpy(str, "MASK");
   else if (image_data_type == SIMULATED_IMAGE)

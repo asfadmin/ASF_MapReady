@@ -2,15 +2,20 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += $(GLIB_CFLAGS)
+CFLAGS += \
+	$(GLIB_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(GEOTIFF_CFLAGS)
 
 # libs for the test program
 LIBS =	$(PROJ_LIBS) \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
+	$(TIFF_LIBS) \
+	$(GEOTIFF_LIBS) \
 	-lm
 
-OBJS = project.o spheroid_axes_lengths.o datum_spheroid.o
+OBJS = project.o spheroid_axes_lengths.o datum_spheroid.o geotiff_support.o
 
 all: build_only
 	cp libasf_proj.a $(LIBDIR)

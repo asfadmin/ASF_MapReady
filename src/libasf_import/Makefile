@@ -65,7 +65,6 @@ OBJS  = \
 	find_arcgis_geotiff_aux_name.o \
 	find_geotiff_name.o \
 	frame.o \
-	geotiff_support.o \
 	arcgis_geotiff_support.o \
 	import_generic_geotiff.o \
 	import_ceos.o \

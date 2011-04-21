@@ -3,6 +3,10 @@
 #include <asf_contact.h>
 #include <asf_license.h>
 #include <asf_test.h>
+#include <ceos.h>
+#include <asf_convert.h>
+#include <proj.h>
+#include <unistd.h>
 #include "CUnit/Automated.h"
 #include "CUnit/Basic.h"
 
@@ -28,8 +32,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_test"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-create] [-unit <type>] [-log <logFile> ] [-license]\n"\
-"            [-version] [-help] <config_file>\n"
+"   "ASF_NAME_STRING" [-create] [-clean] [-unit <type>] [-log <logFile> ]\n"\
+"            [-license] [-version] [-help] <config_file>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "   This program can ingest level one CEOS and GeoTIFF format data, calibrate\n"\
@@ -107,7 +111,7 @@ static void print_help(void)
 
 /* Check to see if an option was supplied or not. If it was found, return its
    argument number. Otherwise, return FLAG_NOT_SET. STOLEN FROM ASF_IMPORT */
-static int checkForOption(char* key, int argc, char* argv[])
+int checkForOption(char* key, int argc, char* argv[])
 {
   int ii = 0;
   while(ii < argc)
@@ -118,6 +122,7 @@ static int checkForOption(char* key, int argc, char* argv[])
   }
   return(FLAG_NOT_SET);
 }
+
 
 static void manual_metadata(char *configFile)
 {
@@ -208,15 +213,186 @@ static void manual_binary(char *configFile)
   asfPrintError("Manual binary tests not implemented yet!\n");  
 }
 
+void cu_diffimage(char *testFile, char *referenceFile)
+{
+  char **bands1 = NULL, **bands2 = NULL;
+  int ii, num_bands1, num_bands2, complex;
+  stats_t *stats1 = NULL, *stats2 = NULL;
+  complex_stats_t *complex_stats1 = NULL, *complex_stats2 = NULL;
+  psnr_t *psnrs = NULL;
+  complex_psnr_t *complex_psnr = NULL;
+  shift_data_t *data_shift = NULL;
+  CU_ASSERT_FALSE(diffimage(testFile, referenceFile, NULL, NULL, 
+			    &bands1, &bands2, &num_bands1, &num_bands2, 
+			    &complex, &stats1, &stats2, 
+			    &complex_stats1, &complex_stats2, 
+			    &psnrs, &complex_psnr, &data_shift));
+
+  // We assume here that both images have the same bands
+  if (complex) {
+    for (ii=0; ii<num_bands1; ii++) {
+      if (!complex_stats1->i.stats_good) {
+	asfForcePrintStatus("Test file statistics test failed!\n");
+	asfForcePrintStatus("File name         : %s (%s) real part\n", 
+			    testFile, bands1[ii]);
+	asfForcePrintStatus("Minimum value     : %lf\n", complex_stats1->i.min);
+	asfForcePrintStatus("Maximum value     : %lf\n", complex_stats1->i.max);
+	asfForcePrintStatus("Mean value        : %lf\n", 
+			    complex_stats1->i.mean);
+	asfForcePrintStatus("Standard deviation: %lf\n\n", 
+			    complex_stats1->i.sdev);
+      }
+      CU_ASSERT_TRUE(complex_stats1->i.stats_good);
+      if (!complex_stats1->q.stats_good) {
+	asfForcePrintStatus("Test file statistics test failed!\n");
+	asfForcePrintStatus("File name         : %s (%s) imaginary part\n", 
+			    testFile, bands1[ii]);
+	asfForcePrintStatus("Minimum value     : %lf\n", complex_stats1->q.min);
+	asfForcePrintStatus("Maximum value     : %lf\n", complex_stats1->q.max);
+	asfForcePrintStatus("Mean value        : %lf\n", 
+			    complex_stats1->q.mean);
+	asfForcePrintStatus("Standard deviation: %lf\n\n", 
+			    complex_stats1->q.sdev);
+      }
+      CU_ASSERT_TRUE(complex_stats1->q.stats_good);
+      if (!complex_stats2->i.stats_good) {
+	asfForcePrintStatus("Reference file statistics test failed!\n");
+	asfForcePrintStatus("File name         : %s (%s) real part\n", 
+			    referenceFile, bands2[ii]);
+	asfForcePrintStatus("Minimum value     : %lf\n", complex_stats2->i.min);
+	asfForcePrintStatus("Maximum value     : %lf\n", complex_stats2->i.max);
+	asfForcePrintStatus("Mean value        : %lf\n", 
+			    complex_stats2->i.mean);
+	asfForcePrintStatus("Standard deviation: %lf\n\n", 
+			    complex_stats2->i.sdev);
+      }
+      CU_ASSERT_TRUE(complex_stats2->i.stats_good);
+      if (!complex_stats2->q.stats_good) {
+	asfForcePrintStatus("Reference file statistics test failed!\n");
+	asfForcePrintStatus("File name         : %s (%s) imaginary "
+			    "part\n", referenceFile, bands2[ii]);
+	asfForcePrintStatus("Minimum value     : %lf\n", complex_stats2->q.min);
+	asfForcePrintStatus("Maximum value     : %lf\n", complex_stats2->q.max);
+	asfForcePrintStatus("Mean value        : %lf\n", 
+			    complex_stats2->q.mean);
+	asfForcePrintStatus("Standard deviation: %lf\n\n", 
+			    complex_stats2->q.sdev);
+      }
+      CU_ASSERT_TRUE(complex_stats2->q.stats_good);
+      if (!complex_psnr->i.psnr_good) {
+	asfForcePrintStatus("Peak signal-to-noise ratio test failed!\n");
+	asfForcePrintStatus("PSNR (%s): %lf\n", 
+			    bands1[ii], complex_psnr->i.psnr);
+      }
+      CU_ASSERT_TRUE(complex_psnr->i.psnr_good);
+      if (!complex_psnr->q.psnr_good) {
+	asfForcePrintStatus("Peak signal-to-noise ratio test failed!\n");
+	asfForcePrintStatus("PSNR (%s): %lf\n", 
+			    bands1[ii], complex_psnr->q.psnr);
+      }
+      CU_ASSERT_TRUE(complex_psnr->q.psnr_good);
+    }
+  }
+  else {
+    for (ii=0; ii<num_bands1; ii++) {
+      if (!stats1->stats_good) {
+	asfForcePrintStatus("Test file statistics test failed!\n");
+	asfForcePrintStatus("File name         : %s (%s)\n", 
+			    testFile, bands1[ii]);
+	asfForcePrintStatus("Minimum value     : %lf\n", stats1->min);
+	asfForcePrintStatus("Maximum value     : %lf\n", stats1->max);
+	asfForcePrintStatus("Mean value        : %lf\n", stats1->mean);
+	asfForcePrintStatus("Standard deviation: %lf\n\n", stats1->sdev);
+      }
+      CU_ASSERT_TRUE(stats1->stats_good);
+      if (!stats2->stats_good) {
+	asfForcePrintStatus("Reference file statistics test failed!\n");
+	asfForcePrintStatus("File name         : %s (%s)\n", 
+			    referenceFile, bands2[ii]);
+	asfForcePrintStatus("Minimum value     : %lf\n", stats2->min);
+	asfForcePrintStatus("Maximum value     : %lf\n", stats2->max);
+	asfForcePrintStatus("Mean value        : %lf\n", stats2->mean);
+	asfForcePrintStatus("Standard deviation: %lf\n\n", stats2->sdev);
+      }
+      CU_ASSERT_TRUE(stats2->stats_good);
+      if (!psnrs->psnr_good) {
+	asfForcePrintStatus("Peak signal-to-noise ratio test failed!\n");
+	asfForcePrintStatus("PSNR (%s): %lf\n\n", bands1[ii], psnrs->psnr);
+      }
+      CU_ASSERT_TRUE(psnrs->psnr_good);
+    }
+  }
+  if (!data_shift->cert_good) {
+    asfForcePrintStatus("Geolocation certainty test failed!\n");
+    asfForcePrintStatus("Correlation certainty: %.2f\n\n", 
+			data_shift->cert*100.0);
+    CU_ASSERT_TRUE(data_shift->cert_good);
+  }
+  if (!data_shift->dxdy_good) {
+    float radial = sqrt(data_shift->dx * data_shift->dx + 
+			data_shift->dy * data_shift->dy);
+    asfForcePrintStatus("Geolocation shift test failed!\n");
+    asfForcePrintStatus("dx    : %7.3f\n", data_shift->dx);
+    asfForcePrintStatus("dy    : %7.3f\n", data_shift->dy);
+    asfForcePrintStatus("radial: %7.3f\n\n", radial);
+    CU_ASSERT_TRUE(data_shift->dxdy_good);
+  }
+  for (ii=0; ii<num_bands1; ii++)
+    FREE(bands1[ii]);
+  FREE(bands1);
+  for (ii=0; ii<num_bands2; ii++)
+    FREE(bands2[ii]);
+  FREE(bands2);
+  if (stats1)
+    FREE(stats1);
+  if (stats2)
+    FREE(stats2);
+  if (complex_stats1)
+    FREE(complex_stats1);
+  if (complex_stats1)
+    FREE(complex_stats1);
+  if (psnrs)
+    FREE(psnrs);
+  if (complex_psnr)
+    FREE(complex_psnr);
+  FREE(data_shift);
+}
+
+void cleanup_data(char *inFile)
+{
+  char line[1024];
+  FILE *fp = FOPEN(inFile, "r");
+  while(fgets(line, 1024, fp)) {
+    chomp(line);
+    remove_file(line);
+  }
+  FCLOSE(fp);
+}
+
+void cleanup_test_results(char *configFile)
+{
+  char line[1024];
+  FILE *fp = FOPEN(configFile, "r");
+  while(fgets(line, 1024, fp)) {
+    if (strcmp_case(trim_spaces(line), "uavsar_geotiff") == 0)
+      cleanup_data("uavsar/geotiff/test_results.lst");
+    if (strcmp_case(trim_spaces(line), "alos_browse") == 0)
+      cleanup_data("alos/browse/test_results.lst");
+    if (strcmp_case(trim_spaces(line), "rsat1_scansar_geotiff_alaska") == 0)
+      ;
+  }
+  FCLOSE(fp);
+}
+
 int main(int argc, char *argv[])
 {
   char configFile[1024], interface[25];
-  int createflag, unitflag;
+  int createflag, unitflag, cleanflag;
   extern int logflag;
-  int create_f, unit_f, log_f;
+  int create_f, unit_f, clean_f, log_f;
 
-  createflag = unitflag = FALSE;
-  create_f = unit_f = FLAG_NOT_SET;
+  createflag = unitflag = cleanflag = FALSE;
+  create_f = unit_f = clean_f, FLAG_NOT_SET;
 
   // Begin command line parsing ***********************************************
   if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
@@ -230,6 +406,7 @@ int main(int argc, char *argv[])
   // Check which options were provided
   create_f = checkForOption("-create", argc, argv);
   unit_f   = checkForOption("-unit", argc, argv);
+  clean_f  = checkForOption("-clean", argc, argv);
   log_f    = checkForOption("-log", argc, argv);
 
   // We need to make sure the user specified the proper number of arguments
@@ -237,6 +414,7 @@ int main(int argc, char *argv[])
   int num_flags = 0;
   if (create_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
   if (unit_f   != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
+  if (clean_f  != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
   if (log_f    != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
 
   // Make sure we have the right number of args
@@ -270,6 +448,9 @@ int main(int argc, char *argv[])
   if (unit_f != FLAG_NOT_SET) {
     strcpy(interface, argv[unit_f+1]);
     unitflag = TRUE;
+  }
+  if (clean_f != FLAG_NOT_SET) {
+    cleanflag = TRUE;
   }
   if (log_f != FLAG_NOT_SET) {
     strcpy(logFile, argv[log_f+1]);
@@ -315,8 +496,12 @@ int main(int argc, char *argv[])
     while(fgets(line, 1024, fpList)) {
       if (strcmp_case(trim_spaces(line), "uavsar_metadata") == 0)
 	add_uavsar_metadata_tests();
+      if (strcmp_case(trim_spaces(line), "uavsar_geotiff") == 0)
+	add_uavsar_geotiff_tests();
       if (strcmp_case(trim_spaces(line), "rsat1_scansar_geotiff_alaska") == 0)
 	add_rsat1_scansar_geotiff_alaska_tests();
+      if (strcmp_case(trim_spaces(line), "alos_browse") == 0)
+	add_alos_browse_tests();
       test = TRUE;
     }
     FCLOSE(fpList);
@@ -336,6 +521,8 @@ int main(int argc, char *argv[])
       CU_list_tests_to_file();
     }
     CU_cleanup_registry();
+    if (cleanflag)
+      cleanup_test_results(configFile);
   }
   else { // Configuration file for manual mode
     cfg = read_test_config(configFile);

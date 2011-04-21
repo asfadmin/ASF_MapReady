@@ -334,4 +334,7 @@ void write_pgm_float2byte(FILE *opgm, float *float_line,
 			  channel_stats_t blue_stats, scale_t sample_mapping,
 			  float no_data, int sample_count);
 
+// Prototypes from brs2jpg.c
+int brs2jpg(char *browseFile, char *workreportFile, char *outFile);
+
 #endif

@@ -4,6 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "asf.h"
+#include "asf_meta.h"
+#include "asf_convert.h"
+#include "asf_raster.h"
+#include "asf_export.h"
+#include "asf_jpeg.h"
+#include "CUnit/Automated.h"
+#include "CUnit/Basic.h"
 
 typedef struct
 {
@@ -38,6 +46,10 @@ int write_test_config(char *configFile, test_config *cfg);
 
 // prototypes
 int add_uavsar_metadata_tests(void);
+int add_uavsar_geotiff_tests(void);
 int add_rsat1_scansar_geotiff_alaska_tests(void);
+int add_alos_browse_tests(void);
+
+void cu_diffimage(char *testFile, char *referenceFile);
 
 #endif

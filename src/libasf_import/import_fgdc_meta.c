@@ -4,6 +4,7 @@
 #include "asf_import.h"
 #include "asf_raster.h"
 #include "asf_endian.h"
+#include "libasf_proj.h"
 #include "xml_util.h"
 #include "dateUtil.h"
 #include <ctype.h>

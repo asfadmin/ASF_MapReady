@@ -21,6 +21,7 @@ SOURCES := asf_export.c \
 	export_as_esri.c \
 	util.c \
 	keys.c \
+	brs2jpg.c \
 	write_line.c
 
 ###############################################################################
