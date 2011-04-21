@@ -3,6 +3,7 @@ display (print) routines.*/
 
 void print_record(FILE *fp, char *fileName, int reqrec);
 void output_record(char *fileName, char *extension, int rec, int save);
+int output_all_metadata(char *infile, char *outfile);
 char *get_record_as_string(char *fileName, int reqrec);
 
 void add(char **s, const char *format, ...);

@@ -378,6 +378,8 @@ void cleanup_test_results(char *configFile)
       cleanup_data("uavsar/geotiff/test_results.lst");
     if (strcmp_case(trim_spaces(line), "alos_browse") == 0)
       cleanup_data("alos/browse/test_results.lst");
+    if (strcmp_case(trim_spaces(line), "alos_leader") == 0)
+      cleanup_data("alos/leader/test_results.lst");
     if (strcmp_case(trim_spaces(line), "rsat1_scansar_geotiff_alaska") == 0)
       ;
   }
@@ -502,6 +504,8 @@ int main(int argc, char *argv[])
 	add_rsat1_scansar_geotiff_alaska_tests();
       if (strcmp_case(trim_spaces(line), "alos_browse") == 0)
 	add_alos_browse_tests();
+      if (strcmp_case(trim_spaces(line), "alos_leader") == 0)
+	add_alos_leader_tests();
       test = TRUE;
     }
     FCLOSE(fpList);

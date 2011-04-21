@@ -56,6 +56,68 @@ void output_record(char *fileName, char *extension, int rec, int save)
     }
 }
 
+int output_all_metadata(char *infile, char *outfile) 
+{
+  FILE *fp = FOPEN(outfile, "w");
+  char *rec = get_record_as_string(infile, 10); // .dssr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 18); // .shr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 20); // .mpdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 30); // .ppdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 40); // .atdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 44); // .ampr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 50); // .radr/.ardr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 50); // .radr/.ardr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 51); // .atdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 60); // .dqsr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 70); // .pdhr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 71); // .shdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 80); // .rasr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 120); // .ppr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 192); // .ifdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 200); // .facdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 300); // .lfdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  rec = get_record_as_string(infile, 193); // .tfdr
+  fprintf(fp, "%s", rec);
+  FREE(rec);
+  FCLOSE(fp);
+  
+  return TRUE;
+}
+
 void print_record(FILE *fp, char *fileName, int reqrec)
 {
     char *rec = get_record_as_string(fileName, reqrec);

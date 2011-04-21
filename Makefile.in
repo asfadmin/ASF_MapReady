@@ -35,7 +35,6 @@ MAPREADY_MODULES = \
 	src/asf_polsarpro_import \
 	src/libasf_convert \
 	src/asf_convert \
-	src/asf_test \
 	src/refine_geolocation \
 	src/shift_geolocation \
 	src/flip \
@@ -66,6 +65,7 @@ MAPREADY_MODULES = \
 	src/populate_meta_field \
 	src/asf_kml_overlay \
 	src/sample_plugin \
+	src/asf_test \
 	@ASF_GUI@
 
 STP_MODULES = \

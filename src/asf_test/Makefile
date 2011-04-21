@@ -24,6 +24,7 @@ LIBS =  \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_fft.a \
+	$(LIBDIR)/libasf_metadata.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
@@ -46,6 +47,7 @@ OBJS = 	\
 	uavsar_test.o \
 	rsat1_test.o \
 	alos_browse_test.o \
+	alos_leader_test.o
 
 all: asf_test clean
 

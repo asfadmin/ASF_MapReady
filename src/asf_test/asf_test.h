@@ -10,6 +10,7 @@
 #include "asf_raster.h"
 #include "asf_export.h"
 #include "asf_jpeg.h"
+#include "metadisplay.h"
 #include "CUnit/Automated.h"
 #include "CUnit/Basic.h"
 
@@ -49,6 +50,7 @@ int add_uavsar_metadata_tests(void);
 int add_uavsar_geotiff_tests(void);
 int add_rsat1_scansar_geotiff_alaska_tests(void);
 int add_alos_browse_tests(void);
+int add_alos_leader_tests(void);
 
 void cu_diffimage(char *testFile, char *referenceFile);
 
