@@ -96,7 +96,7 @@ OBJS  = \
 
 all: build_only
 	mv libasf_import.a $(LIBDIR)
-	cp asf_import.h geotiff_support.h xml_util.h fgdc_meta.h \
+	cp asf_import.h xml_util.h fgdc_meta.h \
 	$(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
