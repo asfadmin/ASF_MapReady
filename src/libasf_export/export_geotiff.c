@@ -531,18 +531,18 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                       md->projection->param.lamcc.plat2);
         }
         if (meta_is_valid_double(md->projection->param.lamcc.false_easting)) {
-          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.lamcc.false_easting);
         }
         else {
-          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+          GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
         if (meta_is_valid_double(md->projection->param.lamcc.false_northing)) {
-          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.lamcc.false_northing);
         }
         else {
-          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+          GTIFKeySet(ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
         if (meta_is_valid_double(md->projection->param.lamcc.lon0)) {
           GTIFKeySet (ogtif, ProjFalseOriginLongGeoKey, TYPE_DOUBLE, 1,
@@ -770,11 +770,11 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
                     32663);
         if (meta_is_valid_double(md->projection->param.eqc.central_meridian)) {
-          GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.eqc.central_meridian);
         }
         if (meta_is_valid_double(md->projection->param.eqc.orig_latitude)) {
-          GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.eqc.orig_latitude);
         }
         write_datum_key(ogtif, md->projection->datum);

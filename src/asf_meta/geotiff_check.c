@@ -413,7 +413,7 @@ static char *gcs2str(short gcs)
     strcpy(str, "Unspecified datum based upon the Hughes 1980 ellipsoid");
   else if (gcs == 32767)
     strcpy(str, "user defined");
-  else if (gcs == 0)
+  else if (gcs == 0 || gcs == -9999)
     strcpy(str, "unnamed");
 
   return str;
@@ -437,7 +437,7 @@ static char *geodetic_datum2str(short geodetic_datum)
     strcpy(str, "Not_specified_based_on_Hughes_1980_ellipsoid");
   else if (geodetic_datum == 32767)
     strcpy(str, "user defined");
-  else if (geodetic_datum == 0)
+  else if (geodetic_datum == 0 || geodetic_datum == -9999)
     strcpy(str, "unknown");
 
   return str;
@@ -449,8 +449,10 @@ static char *prime_meridian2str(short prime_meridian)
 
   if (prime_meridian == PM_Greenwich)
     strcpy(str, "Greenwhich");
-  else if (prime_meridian == 0)
+  else if (prime_meridian == 0 || prime_meridian == -9999)
     strcpy(str, "undefined");
+  else if (prime_meridian == 32767)
+    strcpy(str, "user-defined");
 
   return str;
 }
@@ -467,7 +469,7 @@ static char *linear_units2str(short linear_units)
 	   linear_units == Linear_Foot_Clarke ||
 	   linear_units == Linear_Foot_Indian)
     strcpy(str, "feet");
-  else if (linear_units == 0)
+  else if (linear_units == 0 || linear_units == -9999)
     strcpy(str, "undefined");
 
   return str;
@@ -485,7 +487,7 @@ static char *angular_units2str(short angular_units)
     strcpy(str, "arc minutes");
   else if (angular_units == Angular_Arc_Second)
     strcpy(str, "arc seconds");
-  else if (angular_units == 0)
+  else if (angular_units == 0 || angular_units == -9999)
     strcpy(str, "undefined");
 
   return str;
@@ -511,7 +513,7 @@ static char *ellipsoid2str(short ellipsoid)
     strcpy(str, "Hughes 1980");
   else if (ellipsoid == 32767)
     strcpy(str, "unnamed");
-  else if (ellipsoid == 0)
+  else if (ellipsoid == 0 || ellipsoid == -9999)
     strcpy(str, "undefined");
 
   return str;
@@ -556,7 +558,7 @@ static char *pcs2str(geotiff_info *ginfo)
     strcpy(str, "Hughes / NSIDC Polar Stereographic North");
   else if (pcs == 32767)
     strcpy(str, "user defined");
-  else if (pcs == 0)
+  else if (pcs == 0 || pcs == -9999)
     strcpy(str, "undefined");
     
   return str;
@@ -568,7 +570,7 @@ static char *projection2str(short projection)
 
   if (projection == 32767)
     strcpy(str, "user defined");
-  else if (projection == 0)
+  else if (projection == 0 || projection == -9999)
     strcpy(str, "undefined");
     
   return str;
@@ -600,7 +602,7 @@ static char *pct2str(short pct)
     strcpy(str, "Sinusoidal");
   else if (pct == 32767)
     strcpy(str, "user defined");
-  else if (pct == 0)
+  else if (pct == 0 || pct == -9999)
     strcpy(str, "undefined");
     
   return str;

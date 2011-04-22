@@ -37,6 +37,7 @@ typedef struct
   char *status_file;      // file in which we should dump status info
   int thumbnail;          // if true, a 48x48 jpeg thumbnail of the output
                           // image is generated in the intermediates directory
+  int testdata;           // testdata flag - for internal use only
 } s_general;
 
 typedef struct
@@ -224,6 +225,14 @@ typedef struct
 
 typedef struct
 {
+  int line;               // start line of test data subset
+  int sample;             // start sample of test data subset
+  int height;             // height of test data subset
+  int width;              // width of test data subset
+} s_testdata;
+
+typedef struct
+{
   char comment[255];                   // first line for comments
   s_general *general;                  // general processing details
   s_import *import;                    // importing parameters
@@ -240,6 +249,7 @@ typedef struct
   s_export *export;                    // exporting parameters
   s_mosaic *mosaic;                    // mosaicking parameters
   s_kml_overlay *kml_overlay;          // KML overlay parameters
+  s_testdata *testdata;                // testdata parameters
 } convert_config;
 
 meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg);

@@ -387,6 +387,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->geocoding = newStruct(s_geocoding);
   cfg->export = newStruct(s_export);
   cfg->mosaic = newStruct(s_mosaic);
+  cfg->testdata = newStruct(s_testdata);
 
   // Initialize structure
   strcpy(cfg->comment, "asf_mapready configuration file");
@@ -429,6 +430,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->tmp_dir = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->tmp_dir, "");
   cfg->general->thumbnail = 0;
+  cfg->general->testdata = 0;
 
   cfg->import->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->import->format, "CEOS");
@@ -565,6 +567,11 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->mosaic->overlap = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->mosaic->overlap, "OVERLAY");
 
+  cfg->testdata->line = 0;
+  cfg->testdata->sample = 0;
+  cfg->testdata->height = 0;
+  cfg->testdata->width = 0;
+
   // Check for a default values file
   fConfig = fopen(configFile, "r");
   if (fConfig) {
@@ -636,6 +643,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->general->suffix, read_str(line, "suffix"));
       if (strncmp(test, "thumbnail", 9)==0)
         cfg->general->thumbnail = read_int(line, "thumbnail");
+      if (strncmp(test, "testdata", 8)==0)
+	cfg->general->testdata = read_int(line, "testdata");
 
       // Import
       if (strncmp(test, "input format", 12)==0)
@@ -958,6 +967,8 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->general->suffix, read_str(line, "suffix"));
       if (strncmp(test, "thumbnail", 9)==0)
         cfg->general->thumbnail = read_int(line, "thumbnail");
+      if (strncmp(test, "testdata", 8)==0)
+	cfg->general->testdata = read_int(line, "testdata");
       FREE(test);
     }
 
@@ -1202,6 +1213,20 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->mosaic->overlap, read_str(line, "overlap"));
       FREE(test);
     }
+
+    if (strncmp(line, "[Testdata]", 10)==0) strcpy(params, "Testdata");
+    if (strncmp(params, "Testdata", 8)==0) {
+      test = read_param(line);
+      if (strncmp(test, "line", 4)==0)
+	cfg->testdata->line = read_int(line, "line");
+      if (strncmp(test, "sample", 6)==0)
+	cfg->testdata->sample = read_int(line, "sample");
+      if (strncmp(test, "height", 6)==0)
+	cfg->testdata->height = read_int(line, "height");
+      if (strncmp(test, "width", 5)==0)
+	cfg->testdata->width = read_int(line, "width");
+      FREE(test);
+    }
   }
 
   apply_default_dirs(cfg);
@@ -1381,6 +1406,9 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# be kept until processing is completed. Then the entire directory and its\n"
               "# contents will be deleted.\n\n");
     fprintf(fConfig, "tmp dir = %s\n", cfg->general->tmp_dir);
+    // Test data generation flag - for internal use only
+    if (cfg->general->testdata)
+      fprintf(fConfig, "testdata = %d\n", cfg->general->testdata);
 
     // Import
     if (cfg->general->import) {
@@ -1837,6 +1865,15 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# South America for a data set that is covering Alaska would lead to huge\n"
                 "# distortions. These checks can be overwritten by setting the force option.\n\n");
       fprintf(fConfig, "force = %i\n\n", cfg->geocoding->force);
+    }
+    // Testdata generation - for internal use only
+    // Creates a subset of probably map projected data
+    if (cfg->general->testdata) {
+      fprintf(fConfig, "\n[Testdata]\n");
+      fprintf(fConfig, "line = %d\n", cfg->testdata->line);
+      fprintf(fConfig, "sample = %d\n", cfg->testdata->sample);
+      fprintf(fConfig, "height = %d\n", cfg->testdata->height);
+      fprintf(fConfig, "width = %d\n", cfg->testdata->width);
     }
     // Export
     if (cfg->general->export) {

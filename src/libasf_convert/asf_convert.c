@@ -2550,7 +2550,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
 
       sprintf(inFile, "%s", outFile);
-      if (cfg->general->export) {
+      if (cfg->general->export || cfg->general->testdata) {
         sprintf(outFile, "%s/geocoding", cfg->general->tmp_dir);
       }
       else {
@@ -2575,6 +2575,25 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 pixel_size, NULL, inFile, outFile, background_val),
               "geocoding data file (asf_geocode)\n");
       }
+    }
+
+    if (cfg->general->testdata) {
+
+      // Set up filenames
+      sprintf(inFile, "%s", outFile);
+      if (cfg->general->export) {
+        sprintf(outFile, "%s/testdata", cfg->general->tmp_dir);
+      }
+      else {
+        sprintf(outFile, "%s%s%s",
+                cfg->general->prefix,
+                cfg->general->out_name,
+                cfg->general->suffix);
+      }
+      check_return(trim(inFile, outFile,
+			cfg->testdata->sample, cfg->testdata->line,
+			cfg->testdata->width, cfg->testdata->height),
+		   "generating test data set (trim)\n");
     }
 
     if (cfg->general->export) {

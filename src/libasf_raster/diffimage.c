@@ -1223,7 +1223,7 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
     case STD_TIFF_IMG:
     case GEO_TIFF_IMG:
       {
-        int geotiff = (type1 == GEO_TIFF_IMG) ? 1 : 0;
+        int ii, geotiff = (type1 == GEO_TIFF_IMG) ? 1 : 0;
         tiff_data_t t1, t2;
         geotiff_data_t g1, g2;
 
@@ -1232,6 +1232,25 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
         get_tiff_info_from_file(inFile2, &t2);
         get_band_names(inFile1, NULL, &band_names1, &num_names_extracted1);
         get_band_names(inFile2, NULL, &band_names2, &num_names_extracted2);
+	*num_bands1 = t1.num_bands;
+	*num_bands2 = t2.num_bands;
+	*bands1 = (char**) MALLOC(sizeof(char*)*(*num_bands1));
+	for (ii=0; ii<(*num_bands1); ii++) {
+	  (*bands1)[ii] = (char *) MALLOC(sizeof(char)*64);
+	  strcpy((*bands1)[ii], band_names1[ii]);
+	}
+	*bands2 = (char**) MALLOC(sizeof(char*)*(*num_bands2));
+	for (ii=0; ii<(*num_bands2); ii++) {
+	  (*bands2)[ii] = (char *) MALLOC(sizeof(char)*64);
+	  strcpy((*bands2)[ii], band_names2[ii]);
+	}
+	*complex = 0;
+	*stats1 = (stats_t *) MALLOC(sizeof(stats_t)*(*num_bands1));
+	*stats2 = (stats_t *) MALLOC(sizeof(stats_t)*(*num_bands2));
+	*psnrs = (psnr_t *) MALLOC(sizeof(psnr_t)*(*num_bands1));
+	*data_shift = 
+	  (shift_data_t *) MALLOC(sizeof(shift_data_t)*(*num_bands1));
+
         if (t1.data_type != t2.data_type) {
           char *s1 = data_type2str(t1.data_type);
           char *s2 = data_type2str(t2.data_type);
@@ -1293,6 +1312,10 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
 				   &inFile1_stats[band_no], 
 				   &inFile2_stats[band_no],
 				   &psnr[band_no], band_no);
+	    (*stats1)[band_no] = inFile1_stats[band_no];
+	    (*stats2)[band_no] = inFile2_stats[band_no];
+	    (*psnrs)[band_no] = psnr[band_no];
+
             int empty_band1, empty_band2;
             empty_band1 = 
 	      (FLOAT_EQUIVALENT2(inFile1_stats[band_no].mean, 0.0) &&
@@ -1318,6 +1341,7 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
               if (band_no == 0) {
                 fftShiftCheck(file1_fftFile, file2_fftFile,
                               CORR_FILE, &shifts[band_no]);
+		(*data_shift)[band_no] = shifts[band_no];
               }
               else {
                 shifts[band_no].dx = 0.0;
@@ -1344,11 +1368,14 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
         }
         else {
           // Process selected band
-          asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
+          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n",
                         inFile1, inFile2);
           calc_tiff_stats_2files(inFile1, inFile2,
                                 inFile1_stats, inFile2_stats,
                                 psnr, band);
+	  (*stats1)[band] = inFile1_stats[band];
+	  (*stats2)[band] = inFile2_stats[band];
+	  (*psnrs)[band] = psnr[band];
           int empty_band1, empty_band2;
           empty_band1 = 
 	    (FLOAT_EQUIVALENT2(inFile1_stats[band].mean, 0.0) &&
@@ -1371,6 +1398,7 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
             if (band == 0) {
               fftShiftCheck(file1_fftFile, file2_fftFile,
                             CORR_FILE, &shifts[band]);
+	      (*data_shift)[band] = shifts[band];
             }
             else {
               shifts[band].dx = 0.0;

@@ -216,7 +216,7 @@ static void manual_binary(char *configFile)
 void cu_diffimage(char *testFile, char *referenceFile)
 {
   char **bands1 = NULL, **bands2 = NULL;
-  int ii, num_bands1, num_bands2, complex;
+  int ii, num_bands1, num_bands2, complex = 0;
   stats_t *stats1 = NULL, *stats2 = NULL;
   complex_stats_t *complex_stats1 = NULL, *complex_stats2 = NULL;
   psnr_t *psnrs = NULL;
@@ -332,9 +332,9 @@ void cu_diffimage(char *testFile, char *referenceFile)
     float radial = sqrt(data_shift->dx * data_shift->dx + 
 			data_shift->dy * data_shift->dy);
     asfForcePrintStatus("Geolocation shift test failed!\n");
-    asfForcePrintStatus("dx    : %7.3f\n", data_shift->dx);
-    asfForcePrintStatus("dy    : %7.3f\n", data_shift->dy);
-    asfForcePrintStatus("radial: %7.3f\n\n", radial);
+    asfForcePrintStatus("dx    : %10.6f\n", data_shift->dx);
+    asfForcePrintStatus("dy    : %10.6f\n", data_shift->dy);
+    asfForcePrintStatus("radial: %10.6f\n\n", radial);
     CU_ASSERT_TRUE(data_shift->dxdy_good);
   }
   for (ii=0; ii<num_bands1; ii++)
@@ -380,7 +380,9 @@ void cleanup_test_results(char *configFile)
       cleanup_data("alos/browse/test_results.lst");
     if (strcmp_case(trim_spaces(line), "alos_leader") == 0)
       cleanup_data("alos/leader/test_results.lst");
-    if (strcmp_case(trim_spaces(line), "rsat1_scansar_geotiff_alaska") == 0)
+    if (strcmp_case(trim_spaces(line), "rsat1_geotiff") == 0)
+      cleanup_data("alos/leader/test_results.lst");
+    if (strcmp_case(trim_spaces(line), "rsat1_map_projections") == 0)
       ;
   }
   FCLOSE(fp);
@@ -500,8 +502,10 @@ int main(int argc, char *argv[])
 	add_uavsar_metadata_tests();
       if (strcmp_case(trim_spaces(line), "uavsar_geotiff") == 0)
 	add_uavsar_geotiff_tests();
-      if (strcmp_case(trim_spaces(line), "rsat1_scansar_geotiff_alaska") == 0)
-	add_rsat1_scansar_geotiff_alaska_tests();
+      if (strcmp_case(trim_spaces(line), "rsat1_map_projections") == 0)
+	add_rsat1_map_projections_tests();
+      if (strcmp_case(trim_spaces(line), "rsat1_geotiff") == 0)
+	add_rsat1_geotiff_tests();
       if (strcmp_case(trim_spaces(line), "alos_browse") == 0)
 	add_alos_browse_tests();
       if (strcmp_case(trim_spaces(line), "alos_leader") == 0)
