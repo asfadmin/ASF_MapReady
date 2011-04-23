@@ -213,6 +213,47 @@ static void manual_binary(char *configFile)
   asfPrintError("Manual binary tests not implemented yet!\n");  
 }
 
+void cu_difftext(char *testFile, char *referenceFile, char *exceptFile)
+{
+  char line[1024], tLine[1024], rLine[1024];
+  int ii, nExcept = 0;
+
+  // Read exceptions
+  FILE *fp = FOPEN(exceptFile, "r");
+  while(fgets(line, 1024, fp)) {
+    chomp(line);
+    nExcept++;
+  }
+  FCLOSE(fp);
+  char **exception = (char **) MALLOC(sizeof(char *)*nExcept);
+  fp = FOPEN(exceptFile, "r");
+  for (ii=0; ii<nExcept; ii++) {
+    exception[ii] = (char *) MALLOC(sizeof(char)*1024);
+    fgets(exception[ii], 1024, fp);
+  }
+  FCLOSE(fp);
+
+  // Go through both text files simultaneously
+  FILE *fpTest = FOPEN(testFile, "r");
+  FILE *fpRef = FOPEN(referenceFile, "r");
+  while (fgets(tLine, 1024, fpTest)) {
+    fgets(rLine, 1024, fpRef);
+    for (ii=0; ii<nExcept; ii++) {
+      if (strcmp_case(rLine, exception[ii]) != 0) {
+	if (strcmp_case(tLine, rLine) != 0) {
+	  asfForcePrintStatus("\ntest: %sreference: %s", tLine, rLine);
+	  CU_ASSERT_TRUE(strcmp_case(tLine, rLine) == 0);
+	}
+      }
+    }
+  }
+
+  // Clean up
+  for (ii=0; ii<nExcept; ii++)
+    FREE(exception[ii]);
+  FREE(exception);
+}
+
 void cu_diffimage(char *testFile, char *referenceFile)
 {
   char **bands1 = NULL, **bands2 = NULL;
@@ -232,61 +273,61 @@ void cu_diffimage(char *testFile, char *referenceFile)
   if (complex) {
     for (ii=0; ii<num_bands1; ii++) {
       if (!complex_stats1->i.stats_good) {
-	asfForcePrintStatus("Test file statistics test failed!\n");
+	asfForcePrintStatus("\nTest file statistics test failed!\n");
 	asfForcePrintStatus("File name         : %s (%s) real part\n", 
 			    testFile, bands1[ii]);
 	asfForcePrintStatus("Minimum value     : %lf\n", complex_stats1->i.min);
 	asfForcePrintStatus("Maximum value     : %lf\n", complex_stats1->i.max);
 	asfForcePrintStatus("Mean value        : %lf\n", 
 			    complex_stats1->i.mean);
-	asfForcePrintStatus("Standard deviation: %lf\n\n", 
+	asfForcePrintStatus("Standard deviation: %lf\n", 
 			    complex_stats1->i.sdev);
       }
       CU_ASSERT_TRUE(complex_stats1->i.stats_good);
       if (!complex_stats1->q.stats_good) {
-	asfForcePrintStatus("Test file statistics test failed!\n");
+	asfForcePrintStatus("\nTest file statistics test failed!\n");
 	asfForcePrintStatus("File name         : %s (%s) imaginary part\n", 
 			    testFile, bands1[ii]);
 	asfForcePrintStatus("Minimum value     : %lf\n", complex_stats1->q.min);
 	asfForcePrintStatus("Maximum value     : %lf\n", complex_stats1->q.max);
 	asfForcePrintStatus("Mean value        : %lf\n", 
 			    complex_stats1->q.mean);
-	asfForcePrintStatus("Standard deviation: %lf\n\n", 
+	asfForcePrintStatus("Standard deviation: %lf\n", 
 			    complex_stats1->q.sdev);
       }
       CU_ASSERT_TRUE(complex_stats1->q.stats_good);
       if (!complex_stats2->i.stats_good) {
-	asfForcePrintStatus("Reference file statistics test failed!\n");
+	asfForcePrintStatus("\nReference file statistics test failed!\n");
 	asfForcePrintStatus("File name         : %s (%s) real part\n", 
 			    referenceFile, bands2[ii]);
 	asfForcePrintStatus("Minimum value     : %lf\n", complex_stats2->i.min);
 	asfForcePrintStatus("Maximum value     : %lf\n", complex_stats2->i.max);
 	asfForcePrintStatus("Mean value        : %lf\n", 
 			    complex_stats2->i.mean);
-	asfForcePrintStatus("Standard deviation: %lf\n\n", 
+	asfForcePrintStatus("Standard deviation: %lf\n", 
 			    complex_stats2->i.sdev);
       }
       CU_ASSERT_TRUE(complex_stats2->i.stats_good);
       if (!complex_stats2->q.stats_good) {
-	asfForcePrintStatus("Reference file statistics test failed!\n");
+	asfForcePrintStatus("\nReference file statistics test failed!\n");
 	asfForcePrintStatus("File name         : %s (%s) imaginary "
 			    "part\n", referenceFile, bands2[ii]);
 	asfForcePrintStatus("Minimum value     : %lf\n", complex_stats2->q.min);
 	asfForcePrintStatus("Maximum value     : %lf\n", complex_stats2->q.max);
 	asfForcePrintStatus("Mean value        : %lf\n", 
 			    complex_stats2->q.mean);
-	asfForcePrintStatus("Standard deviation: %lf\n\n", 
+	asfForcePrintStatus("Standard deviation: %lf\n", 
 			    complex_stats2->q.sdev);
       }
       CU_ASSERT_TRUE(complex_stats2->q.stats_good);
       if (!complex_psnr->i.psnr_good) {
-	asfForcePrintStatus("Peak signal-to-noise ratio test failed!\n");
+	asfForcePrintStatus("\nPeak signal-to-noise ratio test failed!\n");
 	asfForcePrintStatus("PSNR (%s): %lf\n", 
 			    bands1[ii], complex_psnr->i.psnr);
       }
       CU_ASSERT_TRUE(complex_psnr->i.psnr_good);
       if (!complex_psnr->q.psnr_good) {
-	asfForcePrintStatus("Peak signal-to-noise ratio test failed!\n");
+	asfForcePrintStatus("\nPeak signal-to-noise ratio test failed!\n");
 	asfForcePrintStatus("PSNR (%s): %lf\n", 
 			    bands1[ii], complex_psnr->q.psnr);
       }
@@ -296,7 +337,7 @@ void cu_diffimage(char *testFile, char *referenceFile)
   else {
     for (ii=0; ii<num_bands1; ii++) {
       if (!stats1->stats_good) {
-	asfForcePrintStatus("Test file statistics test failed!\n");
+	asfForcePrintStatus("\nTest file statistics test failed!\n");
 	asfForcePrintStatus("File name         : %s (%s)\n", 
 			    testFile, bands1[ii]);
 	asfForcePrintStatus("Minimum value     : %lf\n", stats1->min);
@@ -306,35 +347,35 @@ void cu_diffimage(char *testFile, char *referenceFile)
       }
       CU_ASSERT_TRUE(stats1->stats_good);
       if (!stats2->stats_good) {
-	asfForcePrintStatus("Reference file statistics test failed!\n");
+	asfForcePrintStatus("\nReference file statistics test failed!\n");
 	asfForcePrintStatus("File name         : %s (%s)\n", 
 			    referenceFile, bands2[ii]);
 	asfForcePrintStatus("Minimum value     : %lf\n", stats2->min);
 	asfForcePrintStatus("Maximum value     : %lf\n", stats2->max);
 	asfForcePrintStatus("Mean value        : %lf\n", stats2->mean);
-	asfForcePrintStatus("Standard deviation: %lf\n\n", stats2->sdev);
+	asfForcePrintStatus("Standard deviation: %lf\n", stats2->sdev);
       }
       CU_ASSERT_TRUE(stats2->stats_good);
       if (!psnrs->psnr_good) {
-	asfForcePrintStatus("Peak signal-to-noise ratio test failed!\n");
-	asfForcePrintStatus("PSNR (%s): %lf\n\n", bands1[ii], psnrs->psnr);
+	asfForcePrintStatus("\nPeak signal-to-noise ratio test failed!\n");
+	asfForcePrintStatus("PSNR (%s): %lf\n", bands1[ii], psnrs->psnr);
       }
       CU_ASSERT_TRUE(psnrs->psnr_good);
     }
   }
   if (!data_shift->cert_good) {
-    asfForcePrintStatus("Geolocation certainty test failed!\n");
-    asfForcePrintStatus("Correlation certainty: %.2f\n\n", 
+    asfForcePrintStatus("\nGeolocation certainty test failed!\n");
+    asfForcePrintStatus("Correlation certainty: %.2f\n", 
 			data_shift->cert*100.0);
     CU_ASSERT_TRUE(data_shift->cert_good);
   }
   if (!data_shift->dxdy_good) {
     float radial = sqrt(data_shift->dx * data_shift->dx + 
 			data_shift->dy * data_shift->dy);
-    asfForcePrintStatus("Geolocation shift test failed!\n");
+    asfForcePrintStatus("\nGeolocation shift test failed!\n");
     asfForcePrintStatus("dx    : %10.6f\n", data_shift->dx);
     asfForcePrintStatus("dy    : %10.6f\n", data_shift->dy);
-    asfForcePrintStatus("radial: %10.6f\n\n", radial);
+    asfForcePrintStatus("radial: %10.6f\n", radial);
     CU_ASSERT_TRUE(data_shift->dxdy_good);
   }
   for (ii=0; ii<num_bands1; ii++)
@@ -381,9 +422,11 @@ void cleanup_test_results(char *configFile)
     if (strcmp_case(trim_spaces(line), "alos_leader") == 0)
       cleanup_data("alos/leader/test_results.lst");
     if (strcmp_case(trim_spaces(line), "rsat1_geotiff") == 0)
-      cleanup_data("alos/leader/test_results.lst");
+      cleanup_data("end2end/geotiff/test_results.lst");
     if (strcmp_case(trim_spaces(line), "rsat1_map_projections") == 0)
       ;
+    if (strcmp_case(trim_spaces(line), "rsat1_overlay") == 0)
+      cleanup_data("rsat1/overlay/test_results.lst");
   }
   FCLOSE(fp);
 }
@@ -492,6 +535,8 @@ int main(int argc, char *argv[])
   // Unit tests or single configuration file?
   if (unitflag) {
 
+    extern int quietflag;
+    quietflag = 2;
     if (CUE_SUCCESS != CU_initialize_registry())
       return CU_get_error();
 
@@ -510,6 +555,8 @@ int main(int argc, char *argv[])
 	add_alos_browse_tests();
       if (strcmp_case(trim_spaces(line), "alos_leader") == 0)
 	add_alos_leader_tests();
+      if (strcmp_case(trim_spaces(line), "rsat1_overlay") == 0)
+	add_rsat1_overlay_tests();
       test = TRUE;
     }
     FCLOSE(fpList);

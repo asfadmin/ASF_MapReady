@@ -143,10 +143,13 @@ typedef struct
   int list;                      // list of files flag
   int time;                      // time series flag
   char boundary[25];             // polygon/line
-  char height[25];               // reference: clampToGround/relativeToGround
+  char altitude[25];             // ref: clampToGround/relativeToGround/absolute
+  int height;                    // height
+  int range;                     // range
   int width;                     // width of boundary line
   char color[25];                // color of boundary line
   int short_config;              // short configuration file flag
+  char header_file[512];         // header file location - for testing only    
 } c2v_config;
 
 int init_c2v_config(char *configFile);
@@ -202,6 +205,8 @@ int isVisible(dbf_header_t *dbf, int nCols, char *header);
 char *get_column(char *line, int column);
 int get_number_columns(char *line);
 int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns);
+int read_header_config_ext(const char *format, dbf_header_t **dbf, 
+			   int *nColumns, char *header_file);
 
 // Prototypes from meta.c
 int meta2csv(char *inFile, char *outFile, int listFlag);

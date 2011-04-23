@@ -126,6 +126,14 @@ int get_number_columns(char *line)
 
 int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns)
 {
+  char header_file[1024];
+  sprintf("%s%c%s", get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
+  return read_header_config_ext(format, dbf, nColumns, header_file);
+}
+
+int read_header_config_ext(const char *format, dbf_header_t **dbf, 
+			   int *nColumns, char *header_file)
+{
   if (!format)
     return FALSE;
 
@@ -136,7 +144,7 @@ int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns)
   sprintf(format_str, "[%s]", uc(format));
 
   // Check how many parameters we have in the section
-  fp = fopen_share_file("header.lst", "r");
+  fp = FOPEN(header_file, "r");
   while (fgets(line, 255, fp)) {
     if (strncmp_case(line, format_str, strlen(format_str)-1) == 0)
       strcpy(params, format);
@@ -162,7 +170,7 @@ int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns)
   dbf_header_t *header = (dbf_header_t *) MALLOC(sizeof(dbf_header_t)*m);
   strcpy(params, "");
   strcpy(test, "");
-  fp = fopen_share_file("header.lst", "r");
+  fp = FOPEN(header_file, "r");
   while (fgets(line, 255, fp)) {
     if (strncmp_case(line, format_str, strlen(format_str)-1) == 0)
       strcpy(params, format);

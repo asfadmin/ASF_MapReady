@@ -190,10 +190,13 @@ c2v_config *init_fill_c2v_config()
   cfg->list = 0;
   cfg->time = 0;
   strcpy(cfg->boundary, "polygon");
-  strcpy(cfg->height, "clampToGround");
+  strcpy(cfg->altitude, "clampToGround");
+  cfg->height = 7000;
+  cfg->range = 400000;
   cfg->width = 5;
   strcpy(cfg->color, "ffff9900");
-  cfg->short_config = 0;  
+  cfg->short_config = 0;
+  strcpy(cfg->header_file, "");
 
   return cfg;
 }
@@ -227,6 +230,8 @@ c2v_config *read_c2v_config(char *configFile)
 	strcpy(cfg->output_format, read_str(line, "output format"));
       if (strncmp(test, "list", 4)==0) 
 	cfg->list = read_int(line, "list");
+      if (strncmp(test, "header file", 11)==0)
+	strcpy(cfg->header_file, read_str(line, "header file"));
       FREE(test);
     }
     if (strncmp(line, "[KML]", 5)==0) strcpy(params, "kml");
@@ -237,7 +242,11 @@ c2v_config *read_c2v_config(char *configFile)
       if (strncmp(test, "boundary", 8)==0)
 	strcpy(cfg->boundary, read_str(line, "boundary"));
       if (strncmp(test, "height", 6)==0)
-	strcpy(cfg->height, read_str(line, "height"));
+	cfg->height = read_int(line, "height");
+      if (strncmp(test, "range", 5)==0)
+	cfg->range = read_int(line, "range");
+      if (strncmp(test, "altitude", 8)==0)
+	strcpy(cfg->altitude, read_str(line, "altitude"));
       if (strncmp(test, "width", 5)==0)
 	cfg->width = read_int(line, "width");
       if (strncmp(test, "color", 5)==0)
@@ -309,6 +318,8 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
     fprintf(fConfig, "\n# The list flag indicates whether the input is a file (value set to 0)\n"
 	    "# or a list of files (value set to 1). The default value is 0\n\n");
   fprintf(fConfig, "list = %d\n", cfg->list);
+  if (strlen(cfg->header_file) > 0)
+    fprintf(fConfig, "header file = %s\n", cfg->header_file);
   // short configuration file flag
   if (!shortFlag)
     fprintf(fConfig, "\n# The short configuration file flag allows the experienced user to generate\n"

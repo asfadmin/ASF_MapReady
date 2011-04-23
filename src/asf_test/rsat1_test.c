@@ -1,5 +1,6 @@
 #include "asf_test.h"
 
+// GeoTIFF map projection test suite
 void test_rsat1_scansar_geotiff_alaska_albers(void)
 {
   CU_ASSERT_TRUE(geotiff_test("rsat1/map_projections/R142020282G3S001_albers.tif",
@@ -98,6 +99,7 @@ int add_rsat1_map_projections_tests(void)
   return TRUE;
 }
 
+// End-to_end GeoTIFF test suite
 void test_end2end_rsat1_geotiff_ps(void)
 {
   CU_ASSERT_FALSE(asf_convert(FALSE, "end2end/geotiff/geotiff_ps_test.cfg"));
@@ -109,7 +111,6 @@ void test_end2end_rsat1_geotiff_ps(void)
 
 void test_end2end_rsat1_geotiff_utm(void)
 {
-  quietflag = TRUE;
   CU_ASSERT_FALSE(asf_convert(FALSE, "end2end/geotiff/geotiff_utm_test.cfg"));
   CU_ASSERT_TRUE(geotiff_test("end2end/geotiff/R163749163U1S001_utm.tif",
 			      "end2end/geotiff/geotiff_universal_transverse_mercator.specs"));
@@ -133,6 +134,37 @@ int add_rsat1_geotiff_tests(void)
 			   test_end2end_rsat1_geotiff_ps)) ||
       (NULL == CU_add_test(pSuite, "RSAT1 GeoTIFF UTM", 
 			   test_end2end_rsat1_geotiff_utm))) {
+    CU_cleanup_registry();
+    return CU_get_error();
+  }
+  return TRUE;
+}
+
+// Overlay test suite
+void test_rsat1_overlay(void)
+{
+  c2v_config *cfg = read_c2v_config("rsat1/overlay/rsat1_overlay.cfg");
+  CU_ASSERT_TRUE(convert2vector(cfg));
+  FREE(cfg);
+  cu_difftext("rsat1/overlay/test_overlay.kml", 
+	      "rsat1/overlay/R163749163U1S001.kml",
+	      "rsat1/overlay/test_except.lst");
+}
+
+int add_rsat1_overlay_tests(void)
+{
+  CU_pSuite pSuite = NULL;
+  
+  // Add suite to the registry
+  pSuite = CU_add_suite("RSAT1 overlay tests", NULL, NULL);
+  if (NULL == pSuite) {
+    CU_cleanup_registry();
+    return CU_get_error();
+  }
+  
+  // Add tests to the suite
+  if ((NULL == CU_add_test(pSuite, "KML overlay generation",
+			   test_rsat1_overlay))) {
     CU_cleanup_registry();
     return CU_get_error();
   }

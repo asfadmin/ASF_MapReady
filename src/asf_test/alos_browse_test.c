@@ -2,8 +2,6 @@
 
 void test_alos_palsar_browse_binary(void)
 {
-  extern int quietflag;
-  quietflag = TRUE;
   CU_ASSERT_FALSE(brs2jpg("alos/browse/EALPSRP112490880.BRS",
 			  "alos/browse/workreport",
 			  "alos/browse/alos_browse_test.jpg"));

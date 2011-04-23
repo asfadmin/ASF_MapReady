@@ -124,8 +124,6 @@ int add_uavsar_metadata_tests(void)
 
 void test_uavsar_polsar_grd_geotiff(void)
 {
-  extern int quietflag;
-  quietflag = TRUE;
   CU_ASSERT_FALSE(asf_convert(FALSE, "uavsar/geotiff/uavsar_polsar_grd.cfg"));
   // grdHHHH
   CU_ASSERT_TRUE(geotiff_test("uavsar/geotiff/yellowstone_grdHHHH.tif",
@@ -176,8 +174,6 @@ void test_uavsar_polsar_grd_geotiff(void)
 
 void test_uavsar_polsar_hgt_geotiff(void)
 {
-  extern int quietflag;
-  quietflag = TRUE;
   CU_ASSERT_FALSE(asf_convert(FALSE, "uavsar/geotiff/uavsar_polsar_hgt.cfg"));
   CU_ASSERT_TRUE(geotiff_test("uavsar/geotiff/yellowstone_hgt.tif",
 			      "uavsar/geotiff/geotiff_geographic.specs"));
@@ -187,8 +183,6 @@ void test_uavsar_polsar_hgt_geotiff(void)
 
 void test_uavsar_polsar_pauli_geotiff(void)
 {
-  extern int quietflag;
-  quietflag = TRUE;
   CU_ASSERT_FALSE(asf_convert(FALSE, "uavsar/geotiff/uavsar_polsar_pauli.cfg"));
   CU_ASSERT_TRUE(geotiff_test("uavsar/geotiff/yellowstone_ref_pauli.tif",
 			      "uavsar/geotiff/geotiff_geographic.specs"));

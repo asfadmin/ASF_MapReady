@@ -86,6 +86,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
                            char *name, char *png_filename, char *dir,
 			   c2v_config *cfg)
 {
+  FILE *fp;
   dbf_header_t *dbf;
   int ii, kk, nCols;
   int nl = meta->general->line_count;
@@ -124,7 +125,10 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   }
 
   // Read configuration file
-  read_header_config("META", &dbf, &nCols);
+  if (cfg && strlen(cfg->header_file) > 0) 
+    read_header_config_ext("META", &dbf, &nCols, cfg->header_file);
+  else
+    read_header_config("META", &dbf, &nCols);
 
   // Print out according to configuration
   fprintf(kml_file, "<Placemark>\n");
@@ -1117,7 +1121,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
           meta->general->center_longitude);
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
           meta->general->center_latitude);
-  fprintf(kml_file, "    <range>300000</range>\n");
+  fprintf(kml_file, "    <range>%d</range>\n", cfg ? cfg->range : 400000);
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <visibility>1</visibility>\n");
   fprintf(kml_file, "  <open>1</open>\n");
@@ -1131,31 +1135,32 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
 		      cfg->boundary);
       strcpy(cfg->boundary, "POLYGON");
     }
-    if (strcmp_case(cfg->height, "RELATIVETOGROUND") != 0 &&
-        strcmp_case(cfg->height, "CLAMPTOGROUND") != 0) {
+    if (strcmp_case(cfg->altitude, "RELATIVETOGROUND") != 0 &&
+        strcmp_case(cfg->altitude, "CLAMPTOGROUND") != 0 &&
+	strcmp_case(cfg->altitude, "ABSOLUTE") != 0) {
       asfPrintWarning("Invalid height reference '%s'.\n"
    		      "Will reset the height reference to 'clampToGround'\n",
-		      cfg->height);
-      strcpy(cfg->height, "clampToGround");
+		      cfg->altitude);
+      strcpy(cfg->altitude, "clampToGround");
     }
   }
 
-  write_kml_style_keys_ext(kml_file, cfg);
   if (cfg && strcmp_case(cfg->boundary, "LINE") == 0) {
+    write_kml_style_keys_ext(kml_file, cfg);
     fprintf(kml_file, "  <LineString>\n");
-    fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", cfg->height);
+    fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", cfg->altitude);
     fprintf(kml_file, "    <extrude>1</extrude>\n");
     fprintf(kml_file, "    <tesselate>1</tesselate>\n");
   }
   else {
-    write_kml_style_keys(kml_file);
+    write_kml_style_keys_ext(kml_file, cfg);
     fprintf(kml_file, "  <Polygon>\n");
+    fprintf(kml_file, "    <extrude>%d</extrude>\n",
+	    png_filename ? 0 : 1);
     fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n", 
-            cfg ? cfg->height : "3000");
+            cfg ? cfg->altitude : "3000");
     fprintf(kml_file, "    <outerBoundaryIs>\n");
     fprintf(kml_file, "      <LinearRing>\n");
-    fprintf(kml_file, "        <extrude>%d</extrude>\n",
-	    png_filename ? 0 : 1);
   }
   fprintf(kml_file, "        <coordinates>\n");
 
@@ -1170,11 +1175,12 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     asfPrintStatus("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
   }
 
-  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
-  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LL, lat_LL);
-  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_LR, lat_LR);
-  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UR, lat_UR);
-  fprintf(kml_file, "          %.12f,%.12f,4000\n", lon_UL, lat_UL);
+  int height = cfg ? cfg->height : 7000;
+  fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UL, lat_UL, height);
+  fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_LL, lat_LL, height);
+  fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_LR, lat_LR, height);
+  fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UR, lat_UR, height);
+  fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UL, lat_UL, height);
   
   fprintf(kml_file, "        </coordinates>\n");
   if (cfg && strcmp_case(cfg->boundary, "LINE") == 0) {
