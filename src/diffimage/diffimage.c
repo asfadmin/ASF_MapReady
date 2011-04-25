@@ -70,7 +70,6 @@ int main(int argc, char **argv)
   int strictflag=0;
   int band=0;
   char msg[1024];
-  char type_str[255];
 
   fLog = NULL;
   logflag = quietflag=0;
@@ -173,8 +172,17 @@ int main(int argc, char **argv)
     asfPrintError(msg);
   }
 
-  diffimage(inFile1, inFile2, outputFile, logFile, NULL, NULL, NULL, NULL, NULL,
-	    NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  char **bands1 = NULL, **bands2 = NULL;
+  int num_bands1, num_bands2, complex = 0;
+  stats_t *stats1 = NULL, *stats2 = NULL;
+  complex_stats_t *complex_stats1 = NULL, *complex_stats2 = NULL;
+  psnr_t *psnrs = NULL;
+  complex_psnr_t *complex_psnr = NULL;
+  shift_data_t *data_shift = NULL;
+  diffimage(inFile1, inFile2, outputFile, logFile, &bands1, &bands2, 
+	    &num_bands1, &num_bands2, &complex, &stats1, &stats2, 
+	    &complex_stats1, &complex_stats2, &psnrs, &complex_psnr, 
+	    &data_shift);
 
   return (0);
 }
