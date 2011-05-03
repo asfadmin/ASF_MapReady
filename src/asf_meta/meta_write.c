@@ -518,22 +518,22 @@ void meta_write(meta_parameters *meta, const char *file_name)
         meta_put_string(fp,"type:","UNKNOWN_PROJECTION","Projection Type");
 	break;
     }
-    meta_put_double_lf(fp,"startX:",meta->projection->startX, 3,
-        "Projection Coordinate at top-left, X direction");
-    meta_put_double_lf(fp,"startY:",meta->projection->startY, 3,
-        "Projection Coordinate at top-left, Y direction");
     if (meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
-      meta_put_double(fp,"perX:",meta->projection->perX,
-             "Projection Coordinate per pixel, X direction");
-      meta_put_double(fp,"perY:",meta->projection->perY,
-             "Projection Coordinate per pixel, Y direction");
+      meta_put_double_lf(fp,"startX:",meta->projection->startX, 3,
+			 "Projection Coordinate at top-left, X direction");
+      meta_put_double_lf(fp,"startY:",meta->projection->startY, 3,
+			 "Projection Coordinate at top-left, Y direction");
     }
     else {
-      meta_put_double(fp,"perX:",meta->projection->perX,
-              "Projection Coordinate per pixel, X direction");
-      meta_put_double(fp,"perY:",meta->projection->perY,
-             "Projection Coordinate per pixel, Y direction");
+      meta_put_double_lf(fp,"startX:",meta->projection->startX, 4,
+			 "Projection Coordinate at top-left, X direction");
+      meta_put_double_lf(fp,"startY:",meta->projection->startY, 4,
+			 "Projection Coordinate at top-left, Y direction");
     }
+    meta_put_double(fp,"perX:",meta->projection->perX,
+		    "Projection Coordinate per pixel, X direction");
+    meta_put_double(fp,"perY:",meta->projection->perY,
+		    "Projection Coordinate per pixel, Y direction");
     meta_put_string(fp,"units:",meta->projection->units,
         "Units of projection [meters, seconds, degrees]");
     meta_put_char  (fp,"hem:",meta->projection->hem,
