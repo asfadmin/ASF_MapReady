@@ -5809,6 +5809,8 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
       }
       else {
         asfPrintStatus("\nNo differences found in geolocations\n\n");
+	s[band].cert_good = TRUE;
+	s[band].dxdy_good = TRUE;
       }
     }
     else {
