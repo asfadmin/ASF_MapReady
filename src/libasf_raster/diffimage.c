@@ -657,6 +657,7 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
             if (band == 0) {
               fftShiftCheck(inFile1, inFile2,
                             CORR_FILE, &shifts[band]);
+	      (*data_shift)[band] = shifts[band];
             }
             else {
               shifts[band].dx = 0.0;
