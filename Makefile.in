@@ -63,6 +63,7 @@ MAPREADY_MODULES = \
 	src/plan \
 	src/brs2jpg \
 	src/populate_meta_field \
+	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \
 	src/asf_test \
