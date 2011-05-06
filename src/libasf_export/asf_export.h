@@ -337,4 +337,7 @@ void write_pgm_float2byte(FILE *opgm, float *float_line,
 // Prototypes from brs2jpg.c
 int brs2jpg(char *browseFile, char *workreportFile, char *outFile);
 
+// Prototypes from export_band.c
+int multiband(char *format, char **band_name, int band_count);
+
 #endif

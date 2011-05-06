@@ -1179,11 +1179,12 @@ void finalize_ppm_file(FILE *oppm)
 }
 
 // Function to determine whether the output image will be a multiband but not RGB image
-int multiband(output_format_t format, char **band_name, int band_count)
+int multiband(char *format, char **band_name, int band_count)
 {
   int ii, nBands=0;
 
-  if (format != HDF && format != NC)
+  if (strcmp_case(format, "HDF5") != 0 && 
+      strcmp_case(format, "netCDF") != 0)
     return FALSE;
 
   for (ii=0; ii<band_count; ii++) {
@@ -1843,7 +1844,7 @@ export_band_image (const char *metadata_file_name,
     outs[0] = STRDUP(output_file_name);
     *output_names = outs;
   }
-  else if (multiband(format, band_name, md->general->band_count)) {
+  else if (multiband(format2str(format), band_name, md->general->band_count)) {
     // Multi-band image output (but no RGB)
     // This can currently only be the case for HDF5 and netCDF data
     hid_t h5_data;

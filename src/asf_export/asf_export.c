@@ -710,7 +710,6 @@ main (int argc, char *argv[])
     asfPrintError("Look up tables can only be applied to byte output"
           " images\n");
   }
-  meta_free(md);
 
   // Report what is going to happen
   if (rgbFlag != FLAG_NOT_SET ||
@@ -727,7 +726,8 @@ main (int argc, char *argv[])
   }
   else if (bandFlag != FLAG_NOT_SET) {
     if (strcmp_case(command_line.band, "ALL") == 0) {
-      if (multiband(command_line.format, md->general->bands, 
+      if (multiband(command_line.format, 
+		    extract_band_names(md->general->bands, md->general->band_count), 
 		    md->general->band_count))
 	asfPrintStatus("Exporting multiband image ...\n\n");
       else  if (num_bands_found > 1)
@@ -752,7 +752,7 @@ main (int argc, char *argv[])
   //If user added ".img", strip it.
   ext = findExt(in_base_name);
   if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
-
+  meta_free(md);
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
 

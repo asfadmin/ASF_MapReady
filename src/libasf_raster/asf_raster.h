@@ -116,6 +116,9 @@ calc_stats_from_file_with_formula(const char *inFile, char *bands,
                                   double mask, double *min, double *max,
                                   double *mean, double *stdDev,
                                   gsl_histogram **histogram);
+void calc_minmax_median(const char *inFile, char *band, double mask, 
+			double *min, double *max);
+
 
 /* Prototypes from kernel.c **************************************************/
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,

@@ -562,6 +562,8 @@ void meta_free(meta_parameters *meta)
     meta->airsar = NULL;
     FREE(meta->uavsar);
     meta->uavsar = NULL;
+    FREE(meta->insar);
+    meta->insar = NULL;
     if (meta->colormap) {
       FREE(meta->colormap->rgb);
       FREE(meta->colormap);
