@@ -127,7 +127,8 @@ int get_number_columns(char *line)
 int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns)
 {
   char header_file[1024];
-  sprintf("%s%c%s", get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
+  sprintf(header_file, "%s%c%s", 
+	  get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
   return read_header_config_ext(format, dbf, nColumns, header_file);
 }
 
