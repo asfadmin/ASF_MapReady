@@ -214,6 +214,26 @@ int isSTF(const char *input_file)
     return FALSE;
 }
 
+int isPolarimetricSegmentation(const char *input_file)
+{
+  meta_parameters *meta;
+  int ret = FALSE;
+
+  if (isPolSARpro(input_file)) {
+    char *error;
+    if (isPolsarproSegmentation(input_file, &error))
+      ret = TRUE; 
+  }
+  else if (isASFInternal(input_file)) {
+    meta = meta_read(input_file);
+    if (meta->general->image_data_type == POLARIMETRIC_SEGMENTATION)
+      ret = TRUE;
+    meta_free(meta);
+  }
+  else
+    return ret;
+}
+
 static void setup_tmp_dir(char *tmp_dir)
 {
   // Create temporary test directory
@@ -1712,6 +1732,16 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                         "from %s to NEAREST_NEIGHBOR.\n",
                         cfg->geocoding->resampling);
         strcpy(cfg->geocoding->resampling, "NEAREST_NEIGHBOR");
+      }
+
+      // Need to do the same when the input is a polarimetric segmentation
+      // from PolSARPro
+      if (strcmp_case(cfg->import->image_data_type, 
+		      "POLARIMETRIC_SEGMENTATION") == 0 &&
+	  strcmp_case(cfg->geocoding->resampling, "NEAREST_NEIGHBOR") != 0) {
+	asfPrintWarning("Input is a polarimetric segmentation that requires "
+			"nearest neighbor interpolation.\n");
+	strcpy(cfg->geocoding->resampling, "NEAREST_NEIGHBOR");
       }
 
       // Check that the user didn't specify an average height, and
