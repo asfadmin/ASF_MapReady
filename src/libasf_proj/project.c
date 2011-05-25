@@ -79,6 +79,7 @@ static const char * datum_str(datum_type_t datum)
     case SAD69_DATUM:
       return "SAD69";
     default:
+      return "UNKNOWN";
     case WGS84_DATUM:    /* World Geodetic System 1984 (WGS84)      */
         return "WGS84";
     }
