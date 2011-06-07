@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_import.h"
+#include "asf_endian.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -27,7 +28,7 @@ static void get_value(const char *line, char *value)
 
 void import_gridfloat(char *inBaseName, char *outBaseName)
 {
-    int i;
+    int i,j;
 
     // all three of these must be present
     char *hdr_file = appendExt(inBaseName, ".hdr");
@@ -55,6 +56,7 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
     double lat_ll = -999;
     double lon_ll = -999;
     double nodata = -9999;
+    int msbfirst = FALSE;
 
     // Read header file
     char line[1024], value[1024];
@@ -80,9 +82,14 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
             nodata = atof(value);
         } else if (matches(line, "byteorder")) {
             get_value(line, value);
-            if (strcmp(value, "LSBFIRST") != 0)
-                asfPrintError("Unsupported byte order (should be 'LSBFIRST'): %s\n",
+            if (strcmp(value, "LSBFIRST") == 0) {
+                msbfirst = FALSE;
+            } else if (strcmp(value, "MSBFIRST") == 0) {
+                msbfirst = TRUE;
+            } else {
+                asfPrintError("Unsupported byte order (should be 'LSBFIRST' or 'MSBFIRST'): %s\n",
                     value);
+            }
         }
     }
     fclose(fp);
@@ -253,6 +260,11 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
 
     for (i=0; i<nrows; ++i) {
         FREAD(floats, sizeof(float), ncols, fp);
+	if (msbfirst) {
+            for (j=0; j<ncols; ++j) {
+                big32(floats[j]);
+            }
+        }
         put_float_line(out, meta, i, floats);
         asfLineMeter(i,nrows);
     }
