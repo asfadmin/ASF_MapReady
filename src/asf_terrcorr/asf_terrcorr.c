@@ -7,7 +7,7 @@
 "          [-mask-height-cutoff <height in meters>]\n"\
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
 "          [-other-file <basename>] [-do-radiometric] [-smooth-dem-holes]\n"\
-"          [-no_matching] [-offsets <range> <azimuth>]\n"\
+"          [-no-match] [-offsets <range> <azimuth>]\n"\
 "          [-use-zero-offsets-if-match-fails]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 

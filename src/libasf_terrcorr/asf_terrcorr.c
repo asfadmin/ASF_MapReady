@@ -798,9 +798,12 @@ int match_dem(meta_parameters *metaSAR,
       x_off = range_offset;
     }
 
-    if (!no_matching)
+    if (no_matching) {
+      dx = dy = 0;
+    } else {
       asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f, dy=%f.\n",
              100*cert, dx, dy);
+    }
 
     idx = - (int)floor(dx+.5);
     idy = - (int)floor(dy+.5);
