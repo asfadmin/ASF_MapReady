@@ -92,7 +92,7 @@ all: build_only
 	mv libasf_geocode.a $(LIBDIR)
 	cp asf_geocode.h $(ASF_INCLUDE_DIR)
 	rm -rf $(SHAREDIR)/projections
-	cp -R projections/ $(SHAREDIR)
+	cp -R projections $(SHAREDIR)
 	cp WW15MGH.DAC $(SHAREDIR)
 
 build_only: $(OBJS)

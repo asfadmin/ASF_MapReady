@@ -69,7 +69,7 @@ static int parse_val(char * inbuf, char * key, double * val)
   char * p, * eq, * buf;
   int match = FALSE;
 
-  buf = g_strdup(inbuf);
+  buf = STRDUP(inbuf);
 
   p = eq = strchr(buf, '=');
   if (!eq)
@@ -81,7 +81,7 @@ static int parse_val(char * inbuf, char * key, double * val)
   while (isspace((int)(*p)))
     *p-- = '\0';
 
-  if (g_ascii_strcasecmp(buf, key) == 0)
+  if(strcasecmp(buf, key) == 0)
   {
     p = eq + 1;
     while (isspace((int)(*p)))
@@ -103,7 +103,7 @@ static int parse_val(char * inbuf, char * key, double * val)
     }
   }
 
-  g_free(buf);
+  FREE(buf);
   return match;
 }
 

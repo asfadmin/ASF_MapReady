@@ -607,9 +607,12 @@ int
 is_dir(const char *dir)
 {
   DIR *tmp = opendir(dir);
-  int ret = (tmp) ? TRUE : FALSE;
-  closedir(tmp);
-  return ret;
+  if(tmp) {
+    closedir(tmp);
+    return TRUE;
+  }
+  else
+    return FALSE;
 }
 
 // create a directory. acts like 'mkdir -p'. return 0 on success, -1 on fail.
