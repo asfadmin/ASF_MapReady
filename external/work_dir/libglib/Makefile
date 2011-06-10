@@ -14,13 +14,9 @@ GLIB_UNPACK_DIR := glib-2.4.7
 GLIB_TARFILE := $(GLIB_UNPACK_DIR).tar
 GLIB_ZIPFILE := $(GLIB_TARFILE).gz
 
-ICONV_UNPACK_DIR := libiconv-1.13.1
+ICONV_UNPACK_DIR := libiconv-1.9.1
 ICONV_TARFILE := $(ICONV_UNPACK_DIR).tar
 ICONV_ZIPFILE := $(ICONV_TARFILE).gz
-
-GETTEXT_UNPACK_DIR := gettext-0.18.1.1
-GETTEXT_TARFILE := $(GETTEXT_UNPACK_DIR).tar
-GETTEXT_ZIPFILE := $(GETTEXT_TARFILE).gz
 
 # build the gLib for the main build system to nab
 build: build_glib_stamp
@@ -42,7 +38,7 @@ build_glib_stamp:
 else
 
 # Create glib & necessary components in the proper place for retrieval
-build_glib_stamp: build_iconv_stamp build_gettext_stamp
+build_glib_stamp: build_iconv_stamp
 	gunzip --to-stdout $(GLIB_ZIPFILE) > $(GLIB_TARFILE)
 	tar xvf $(GLIB_TARFILE)
 	rm -f $(GLIB_TARFILE)
@@ -72,20 +68,7 @@ build_iconv_stamp:
 	)
 	touch $@
 
-build_gettext_stamp:
-	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip --to-stdout $(GETTEXT_ZIPFILE) > $(GETTEXT_TARFILE)
-	tar xvf $(GETTEXT_TARFILE)
-	rm -f $(GETTEXT_TARFILE)
-	(   cd $(GETTEXT_UNPACK_DIR) ; \
-	    ./configure --enable-static=yes --enable-shared=yes \
-	        --enable-relocatable --prefix=$(ROOT_DIR) ; \
-	    make ; \
-	    make install ; \
-	)
-	touch $@
 
 clean:
 	rm -rf $(GLIB_UNPACK_DIR) build_glib_stamp \
-	       $(ICONV_UNPACK_DIR) build_iconv_stamp \
-				 $(GETTEXT_UNPACK_DIR) build_gettext_stamp
+	       $(ICONV_UNPACK_DIR) build_iconv_stamp
