@@ -346,6 +346,7 @@ void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,
   static float *peaks;
   static complexFloat *bufSource, *bufTarget; 
   static complexFloat *s=NULL, *t, *product; /*Keep working arrays around */
+  static float *bufAmpSource, *bufAmpTarget;
   int srcSamples, trgSamples;
   int peakMaxX, peakMaxY, x,y,xOffset,yOffset,count;
   int xOffsetStart, yOffsetStart, xOffsetEnd, yOffsetEnd;
@@ -369,8 +370,15 @@ void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,
   metaTarget = meta_read(szImg2);
   srcSamples = metaSource->general->sample_count;
   trgSamples = metaTarget->general->sample_count;
+  int ii, ampFlag = FALSE;
+  if (metaSource->general->data_type == REAL32)
+    ampFlag = TRUE;
 
   /*Allocate working arrays if we haven't already done so.*/
+  if (ampFlag && s==NULL) {
+    bufAmpSource = (float *) MALLOC(sizeof(float)*srcSize*srcSamples);
+    bufAmpTarget = (float *) MALLOC(sizeof(float)*trgSize*trgSamples);
+  }
   if (s==NULL)
     {
       bufSource = (complexFloat *) MALLOC(sizeof(complexFloat)*srcSize*srcSamples);
@@ -384,8 +392,26 @@ void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,
   /* Open files, read lines and create subset */
   fpSource = FOPEN(szImg1, "rb");
   fpTarget = FOPEN(szImg2, "rb");
-  get_complexFloat_lines(fpSource, metaSource, y1-srcSize/2+1, srcSize, bufSource);
-  get_complexFloat_lines(fpTarget, metaTarget, y2-trgSize/2+1, trgSize, bufTarget);
+  if (ampFlag) {
+    get_float_lines(fpSource, metaSource, y1-srcSize/2+1, srcSize, 
+		    bufAmpSource);
+    for (ii=0; ii<srcSize*srcSamples; ii++) {
+      bufSource[ii].real = bufAmpSource[ii];
+      bufSource[ii].imag = 0.0;
+    }
+    get_float_lines(fpTarget, metaTarget, y2-trgSize/2+1, trgSize, 
+		    bufAmpTarget);
+    for (ii=0; ii<trgSize*trgSamples; ii++) {
+      bufTarget[ii].real = bufAmpTarget[ii];
+      bufTarget[ii].imag = 0.0;
+    }
+  }
+  else {
+    get_complexFloat_lines(fpSource, metaSource, y1-srcSize/2+1, srcSize, 
+			   bufSource);
+    get_complexFloat_lines(fpTarget, metaTarget, y2-trgSize/2+1, trgSize, 
+			   bufTarget);
+  }
   FCLOSE(fpSource);
   FCLOSE(fpTarget);
   for (y=0; y<srcSize; y++) {
