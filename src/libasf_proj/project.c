@@ -1150,6 +1150,13 @@ char * albers_projection_desc(project_parameters_t * pps,
         pps->albers.center_meridian,
             (float)INTERNATIONAL1924_SEMIMAJOR,
             (float)INTERNATIONAL1924_INV_FLATTENING);
+  } else {
+    sprintf(albers_projection_description,
+        "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f",
+        pps->albers.std_parallel1,
+        pps->albers.std_parallel2,
+        pps->albers.orig_latitude,
+        pps->albers.center_meridian);
   }
 
   return albers_projection_description;
