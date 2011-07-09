@@ -5,7 +5,6 @@
 #include "asf_raster.h"
 #include "asf_endian.h"
 #include "libasf_proj.h"
-#include "asf_geocode.h"
 
 dem_meta *dem_meta_init(void)
 {
