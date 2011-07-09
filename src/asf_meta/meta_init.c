@@ -248,6 +248,21 @@ meta_uavsar *meta_uavsar_init(void)
   return uavsar;
 }
 
+meta_dem *meta_dem_init(void)
+{
+  meta_dem *dem = (meta_dem *) MALLOC(sizeof(meta_dem));
+  strcpy(dem->source, MAGIC_UNSET_STRING);
+  strcpy(dem->format, MAGIC_UNSET_STRING);
+  strcpy(dem->tiles, MAGIC_UNSET_STRING);
+  dem->min_value = MAGIC_UNSET_DOUBLE;
+  dem->max_value = MAGIC_UNSET_DOUBLE;
+  dem->mean_value = MAGIC_UNSET_DOUBLE;
+  dem->standard_deviation = MAGIC_UNSET_DOUBLE;
+  strcpy(dem->unit_type, MAGIC_UNSET_STRING);
+  dem->no_data = MAGIC_UNSET_DOUBLE;
+  return dem;
+}
+
 /*******************************************************************************
  * meta_state_vectors_init():
  * Allocate memory for and initialize elements of a meta_state_vectors structure.
@@ -417,6 +432,7 @@ meta_parameters *raw_init(void)
   meta->colormap        = NULL;  /* Allocated upon discovery of Palette Color TIFF embedded color map */
   meta->doppler         = NULL;
   meta->insar           = NULL;
+  meta->dem             = NULL;
 
   meta->meta_version = META_VERSION;
 
@@ -564,6 +580,8 @@ void meta_free(meta_parameters *meta)
     meta->uavsar = NULL;
     FREE(meta->insar);
     meta->insar = NULL;
+    FREE(meta->dem);
+    meta->dem = NULL;
     if (meta->colormap) {
       FREE(meta->colormap->rgb);
       FREE(meta->colormap);

@@ -95,11 +95,13 @@ static int parse_val(char * inbuf, char * key, double * val)
 		}
 		ii++;
 	      }
+	      ii=0;
 	      while (ii < UNKNOWN_SPHEROID) {
 		if (strcmp_case(p, spheroid_toString(ii)) == 0) {
 		  *val = ii;
 		  match = TRUE;
 		}
+		ii++;
 	      }
 	      if (!match)
 		asfPrintWarning("Illegal value found for key '%s': %s\n",

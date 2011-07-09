@@ -285,6 +285,7 @@ typedef struct {
 
 // meta_uavsar: parameters for UAVSAR geocoding
 typedef struct {
+  char id[FIELD_STRING_MAX];  // File name
   double scale_factor;        // General scale factor
   double gps_altitude;        // GPS altitude [m]
   double lat_peg_point;       // Latitude of peg point [degrees]
@@ -293,6 +294,19 @@ typedef struct {
   double along_track_offset;  // Along-track offset S0 [m]
   double cross_track_offset;  // Cross-track offset C0 [m]
 } meta_uavsar;
+
+// meta_dem: parameters for digital elevation models
+typedef struct {
+  char source[25];             // DEM source
+  char format[25];             // DEM format
+  char tiles[25];              // DEM tiles
+  double min_value;            // minimum value
+  double max_value;            // maximum value
+  double mean_value;           // mean value
+  double standard_deviation;   // standard deviation
+  char unit_type[25];          // unit type
+  double no_data;              // no data value
+} meta_dem;
 
 /********************************************************************
  * meta_projection / proj_parameters: These describe a map projection.
@@ -506,6 +520,7 @@ typedef struct {
   meta_colormap      *colormap;        // Can be NULL
   meta_doppler       *doppler;         // Can be NULL
   meta_insar         *insar;           // Can be NULL
+  meta_dem           *dem;             // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
@@ -568,6 +583,7 @@ meta_colormap *meta_colormap_init(void);
 meta_doppler *meta_doppler_init(void);
 meta_insar *meta_insar_init(void);
 meta_uavsar *meta_uavsar_init(void);
+meta_dem *meta_dem_init(void);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */

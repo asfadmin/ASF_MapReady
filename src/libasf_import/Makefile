@@ -16,7 +16,6 @@ LIBS  = \
 	$(GLIB_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
-	$(HDFEOS5_LIBS) \
 	$(GSL_LIBS) \
 	-lz
 
@@ -81,6 +80,7 @@ OBJS  = \
 	import_terrasar.o \
 	import_polsarpro.o \
 	import_fgdc_meta.o \
+	import_dem.o \
 	import_roipac.o \
 	config_fgdc.o \
 	missing.o \
@@ -96,7 +96,7 @@ OBJS  = \
 
 all: build_only
 	mv libasf_import.a $(LIBDIR)
-	cp asf_import.h xml_util.h fgdc_meta.h \
+	cp asf_import.h xml_util.h fgdc_meta.h dem_meta.h \
 	$(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)

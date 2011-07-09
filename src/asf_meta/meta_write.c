@@ -824,6 +824,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   if (meta->uavsar) {
     meta_put_string(fp, "uavsar {", "",
             "Block containing UAVSAR parameters for geocoding");
+    meta_put_string(fp, "id:", meta->uavsar->id, "File name");
     meta_put_double(fp, "scale_factor:", meta->uavsar->scale_factor,
             "General scale factor");
     meta_put_double_lf(fp, "gps_altitude:", meta->uavsar->gps_altitude, 3,
@@ -841,6 +842,22 @@ void meta_write(meta_parameters *meta, const char *file_name)
                meta->uavsar->cross_track_offset, 4,
                "Cross-track offset C0 [m]");
     meta_put_string(fp, "}", "", "End uavsar");
+  }
+
+  // Write out DEM parameters
+  if (meta->dem) {
+    meta_put_string(fp, "dem {", "", "Block containing DEM parameters");
+    meta_put_string(fp, "source:", meta->dem->source, "DEM source");
+    meta_put_string(fp, "format:", meta->dem->format, "DEM format");
+    meta_put_string(fp, "tiles:", meta->dem->tiles, "DEM tiles");
+    meta_put_double(fp, "min_value:", meta->dem->min_value, "minimum value");
+    meta_put_double(fp, "max_value:", meta->dem->max_value, "maximum value");
+    meta_put_double(fp, "mean_value:", meta->dem->mean_value, "mean value");
+    meta_put_double(fp, "standard_deviation:", meta->dem->standard_deviation,
+		    "standard deviation");
+    meta_put_string(fp, "unit_type:", meta->dem->unit_type, "unit type");
+    meta_put_double(fp, "no_data:", meta->dem->no_data, "no data value");
+    meta_put_string(fp, "}", "", "End dem");
   }
 
   /* Write out statistics block */
@@ -1373,7 +1390,6 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
   FILE *fp = FOPEN(file_name, "w");
   int ii, kk;
   meta_general *mg = meta->general;
-  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   fprintf(fp, "<metadata>\n");
   fprintf(fp, "  <metadata_type>Alaska Satellite Facility</metadata_type>\n");
   fprintf(fp, "  <meta_version>%.2lf</meta_version>\n", meta->meta_version);
@@ -1463,10 +1479,6 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	    ms->earth_radius_pp);
     fprintf(fp, "    <satellite_height units=\"m\">%.3lf</satellite_height>\n",
 	    ms->satellite_height);
-    fprintf(fp, "    <satellite_binary_time>%s</satellite_binary_time>\n",
-	    ms->satellite_binary_time);
-    fprintf(fp, "    <satellite_clock_time>%s</satellite_clock_time>\n",
-	    ms->satellite_clock_time);
     fprintf(fp, "    <dopRangeCen units=\"Hz\">%.11g</dopRangeCen>\n", 
 	    ms->range_doppler_coefficients[0]);
     fprintf(fp, "    <dopRangeLin units=\"Hz/pixel\">%.11g</dopRangeLin>"
@@ -1635,7 +1647,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "    <perX units=\"degrees\">%.11g</perX>\n", mp->perX);
       fprintf(fp, "    <perY units=\"degrees\">%.11g</perY>\n", mp->perY);
     }
-    fprintf(fp, "    <units>%s</units>", mp->units);
+    fprintf(fp, "    <units>%s</units>\n", mp->units);
     if (mp->hem == 'N')
       fprintf(fp, "    <hemisphere>northern</hemisphere>\n");
     else if (mp->hem == 'S')
@@ -1820,6 +1832,27 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <cross_track_offset units=\"m\">%.3lf"
 	    "</cross_track_offset>\n", ma->cross_track_offset);
     fprintf(fp, "  </airsar>\n");
+  }
+
+  if (meta->uavsar) {
+    meta_uavsar *mu = meta->uavsar;
+    fprintf(fp, "  <uavsar>\n");
+    fprintf(fp, "    <id>%s</id>\n", mu->id);
+    fprintf(fp, "    <scale_factor>%.11g</scale_factor>\n", 
+	    mu->scale_factor);
+    fprintf(fp, "    <gps_altitude units=\"m\">%.3lf</gps_altitude>\n", 
+	    mu->gps_altitude);
+    fprintf(fp, "    <lat_peg_point units=\"degrees\">%.4lf</lat_peg_point>"
+	    "\n", mu->lat_peg_point);
+    fprintf(fp, "    <lon_peg_point units=\"degrees\">%.4lf</lon_peg_point>"
+	    "\n", mu->lon_peg_point);
+    fprintf(fp, "    <head_peg_point units=\"degrees\">%.4lf"
+	    "</head_peg_point>\n", mu->head_peg_point);
+    fprintf(fp, "    <along_track_offset units=\"m\">%.4lf"
+	    "</along_track_offset>\n", mu->along_track_offset);
+    fprintf(fp, "    <cross_track_offset units=\"m\">%.4lf"
+	    "</cross_track_offset>\n", mu->cross_track_offset);
+    fprintf(fp, "  </uavsar>\n");
   }
 
   if (meta->stats) {

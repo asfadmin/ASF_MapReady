@@ -128,6 +128,7 @@ void error_message(const char *err_mes, ...)
 #define MDOPPLER ( (meta_doppler *) current_block)
 #define MESTIMATE ( (tsx_doppler_t *) current_block)
 #define MINSAR ( (meta_insar *) current_block)
+#define MDEM ( (meta_dem *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -213,6 +214,13 @@ void select_current_block(char *block_name)
     if (MTL->uavsar == NULL)
        { MTL->uavsar = meta_uavsar_init();}
     current_block = MTL->uavsar;
+    goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "dem") ) {
+    if (MTL->dem == NULL)
+       { MTL->dem = meta_dem_init();}
+    current_block = MTL->dem;
     goto MATCHED;
   }
 
@@ -1117,6 +1125,8 @@ void fill_structure_field(char *field_name, void *valp)
 
   // Fields which normally go in the uavsar block of the metadata file
   if ( !strcmp(stack_top->block_name, "uavsar") ) {
+    if ( !strcmp(field_name, "id") )
+      { strcpy(MUAVSAR->id, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "scale_factor") )
       { MUAVSAR->scale_factor = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "gps_altitude") )
@@ -1131,6 +1141,28 @@ void fill_structure_field(char *field_name, void *valp)
       { MUAVSAR->along_track_offset = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "cross_track_offset") )
       { MUAVSAR->cross_track_offset = VALP_AS_DOUBLE; return; }
+  }
+
+  // Fields which normally go in the dem block of the metadata file
+  if ( !strcmp(stack_top->block_name, "dem") ) {
+    if ( !strcmp(field_name, "source") )
+      { strcpy(MDEM->source, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "format") )
+      { strcpy(MDEM->format, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "tiles") )
+      { strcpy(MDEM->tiles, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "min_value") )
+      { MDEM->min_value = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "max_value") )
+      { MDEM->max_value = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "mean_value") )
+      { MDEM->mean_value = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "standard_deviation") )
+      { MDEM->standard_deviation = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "unit_type") )
+      { strcpy(MDEM->unit_type, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "no_data") )
+      { MDEM->no_data = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */
