@@ -1,5 +1,3 @@
-#include <glib.h>
-
 #include "asf_meta.h"
 
 // sometimes we don't have this - choose a conservative value
@@ -103,9 +101,9 @@ int geocode_dem(projection_type_t projection_type,
     datum_type_t datum,
     double pixel_size,
     resample_method_t resample_method,
-    const GString *input_image,
+    const char *input_image,
     const meta_parameters *imd,
-    const GString *output_image);
+    const char *output_image);
 
 /* this allows testing failure cases without seeing a lot of error
    messages go by.  Kind of a hack I guess */

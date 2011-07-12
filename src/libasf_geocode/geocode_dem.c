@@ -6,7 +6,6 @@
 #include <string.h>
 
 // Libraries from packages outside ASF.
-#include <glib.h>
 #include <gsl/gsl_math.h>
 
 // Libraries developed at ASF.
@@ -70,9 +69,9 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 	     // projecting to pseudoprojected form).
 	     double pixel_size,
 	     resample_method_t resample_method,	// How to resample pixels.
-	     const GString *input_image, // Base name of input image.
+	     const char *input_image, // Base name of input image.
 	     const meta_parameters *imd, // Input DEM image metadata.
-	     const GString *output_image  // Base name of output image.
+	     const char *output_image  // Base name of output image.
 	     )
 {
   int return_code;		// Holds return codes from functions.
@@ -222,12 +221,12 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   //  }
 
   asfPrintStatus ("Opening input DEM image... ");
-  GString *input_data_file = g_string_new (input_image->str);
-  g_string_append (input_data_file, ".img");
+  char *input_data_file = (char *) MALLOC(sizeof(char)*(strlen(input_image)+5));
+  sprintf(input_data_file, "%s.img", input_image);
   FloatImage *iim
-    = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 0,
+    = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file, 0,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  g_string_free (input_data_file, TRUE);
+  FREE(input_data_file);
   asfPrintStatus ("done.\n\n");
 
   // Maximum pixel indicies in output image.
@@ -435,9 +434,10 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 
   // Store the output image.
   asfPrintStatus ("Storing output image... ");
-  GString *output_data_file = g_string_new (output_image->str);
-  g_string_append (output_data_file, ".img");
-  return_code = float_image_store (oim, output_data_file->str,
+  char *output_data_file = 
+    (char *) MALLOC(sizeof(char)*(strlen(output_image)+5));
+  sprintf(output_data_file, "%s.img", output_image);
+  return_code = float_image_store (oim, output_data_file,
 				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_assert (return_code == 0);
   asfPrintStatus ("done.\n\n");
@@ -446,13 +446,14 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   // start with the metadata from the input image and add the
   // geocoding parameters.
 
-  GString *input_meta_file = g_string_new (input_image->str);
-  g_string_append (input_meta_file, ".meta");
+  char *input_meta_file = (char *) MALLOC(sizeof(char)*(strlen(input_image)+6));
+  sprintf(input_meta_file, "%s.meta", input_image);
 
-  GString *output_meta_file = g_string_new (output_image->str);
-  g_string_append (output_meta_file, ".meta");
+  char *output_meta_file = 
+    (char *) MALLOC(sizeof(char)*(strlen(output_image)+6));
+  sprintf(output_meta_file, "%s.meta", output_image);
 
-  meta_parameters *omd = meta_read (input_meta_file->str);
+  meta_parameters *omd = meta_read (input_meta_file);
 
   // Adjust the metadata to correspond to the output image instead of
   // the input image.
@@ -514,13 +515,13 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   // Convert the projection parameter values back into degrees.
   to_degrees (projection_type, pp);
   omd->projection->param = *pp;
-  meta_write (omd, output_meta_file->str);
+  meta_write (omd, output_meta_file);
 
   float_image_free (oim);
-  g_string_free (output_data_file, TRUE);
+  FREE(output_data_file);
   meta_free (omd);
-  g_string_free (input_meta_file, TRUE);
-  g_string_free (output_meta_file, TRUE);
+  FREE(input_meta_file);
+  FREE(output_meta_file);
 
   return 0;
 }
