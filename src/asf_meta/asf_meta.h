@@ -162,7 +162,7 @@ typedef struct {
   char orbit_direction;      /* Ascending 'A', or descending 'D'.          */
   int frame;                 /* Frame for this image or -1 if inapplicable.*/
   int band_count;            /* Number of bands in image                   */
-  char bands[512];            // Band combination
+  char bands[1024];          // Band combination
   int line_count;            /* Number of lines in image.                  */
   int sample_count;          /* Number of samples in image.                */
   int start_line;            /* First line relative to original image.     */

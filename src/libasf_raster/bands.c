@@ -205,7 +205,7 @@ char **find_single_band(char *in_base_name, char *band, int *num_found)
     band_name = (char **) MALLOC(meta->general->band_count*sizeof(char *));
     for (ii=0; ii<meta->general->band_count; ii++)
       band_name[ii] = NULL;
-    band_name[0] = (char *) MALLOC(10*sizeof(char));
+    band_name[0] = (char *) MALLOC(20*sizeof(char));
     strcpy(band_name[0],"");
     if (strcmp(meta->general->bands, "???") != 0) {
       if (strlen(band) && strstr(meta->general->bands, band)) {

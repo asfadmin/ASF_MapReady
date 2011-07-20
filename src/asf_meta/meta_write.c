@@ -1279,7 +1279,7 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 {
   int ii;
   int malloc_flag=0;
-  char line[255];/*The line to be written to the file.*/
+  char line[1024];/*The line to be written to the file.*/
   static int depth=0;
   strcpy(line,"");
 
@@ -1853,6 +1853,22 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <cross_track_offset units=\"m\">%.4lf"
 	    "</cross_track_offset>\n", mu->cross_track_offset);
     fprintf(fp, "  </uavsar>\n");
+  }
+
+  if (meta->dem) {
+    meta_dem *md = meta->dem;
+    fprintf(fp, "  <dem>\n");
+    fprintf(fp, "    <source>%s</source>\n", md->source);
+    fprintf(fp, "    <format>%s</format>\n", md->format);
+    fprintf(fp, "    <tiles>%s</tiles>\n", md->tiles);
+    fprintf(fp, "    <min_value>%.3lf</min_value>\n", md->min_value);
+    fprintf(fp, "    <max_value>%.3lf</max_value>\n", md->max_value);
+    fprintf(fp, "    <mean_value>%.3lf</mean_value>\n", md->mean_value);
+    fprintf(fp, "    <standard_deviation>%.3lf</standard_deviation>\n", 
+            md->standard_deviation);
+    fprintf(fp, "    <unit_type>%s</unit_type>\n", md->unit_type);
+    fprintf(fp, "    <no_data>%.4lf</no_data>\n", md->no_data);
+    fprintf(fp, "  </dem>\n");
   }
 
   if (meta->stats) {

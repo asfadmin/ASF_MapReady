@@ -23,7 +23,7 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS  = $(TARGET).o
 
-all: $(TARGET) combine
+all: $(TARGET) combine layer_stack
 	-rm *.o
 
 $(TARGET): $(OBJS)
@@ -33,6 +33,10 @@ $(TARGET): $(OBJS)
 combine: combine.o
 	$(CC) $(CFLAGS) -o combine combine.o $(LIBS) $(LDFLAGS)
 	mv combine$(BIN_POSTFIX) $(BINDIR)
+
+layer_stack: layer_stack.o
+	$(CC) $(CFLAGS) -o layer_stack layer_stack.o $(LIBS) $(LDFLAGS)
+	mv layer_stack$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core *.o

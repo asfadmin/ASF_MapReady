@@ -66,7 +66,7 @@
 #define SPD_LIGHT 2.997924562e8
 
 // Maximum number of bands that are supported by the ingest.
-#define MAX_BANDS 20
+#define MAX_BANDS 50
 
 /* These are the dummy values that meta variables get set to at initialization */
 #define MAGIC_UNSET_CHAR ('?')
