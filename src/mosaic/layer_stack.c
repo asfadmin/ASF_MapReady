@@ -4,17 +4,12 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
-#include "banded_float_image.h"
-#include "dateUtil.h"
 
 #include "asf_contact.h"
 #include "asf_license.h"
 #include "asf_version.h"
 
 #define ASF_NAME_STRING "layer_stack"
-
-static const float_image_byte_order_t fibo_be =
-    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
 
 void help()
 {
@@ -24,27 +19,18 @@ void help()
 "Usage:\n"
 "    %s [-background <value>] <infile list> <outfile>\n\n"
 "Description:\n"
-"    This program mosaics the input files together, producing an output image\n"
-"    that is the union of all listed input images.  Where the input images\n"
-"    overlap, the pixel in the image listed earlier on the command-line is\n"
-"    chosen.\n\n"
+"    This program stacks the input files together, producing an output image\n"
+"    that is the intersect of all listed input images.\n\n"
 "Input:\n"
-"    At least 2 input files are required.  You may list as many input files\n"
-"    as desired, however extremely large output files will take some time to\n"
-"    process.\n\n"
+"    The tool is looking for a text file with all input file names, one file\n"
+"    name per line.\n\n"
 "    All input files must be geocoded to the same projection, with the same\n"
 "    projection parameters, and the same pixel size.\n\n"
 "Output:\n"
-"    The output file, listed first, is created by the program, and, depending\n"
-"    on the locations of the input files relative to each other, can range\n"
-"    in size from equal to the largest input image, to much larger than the\n"
-"    total size of all input images.\n\n"
+"    The output file is created as a multiband image. The band names are the\n"
+"    the file names, so that some meaning file names can be used when the ASF\n"
+"    internal file is exported.\n\n"
 "Options:\n"
-"    -preference <value>\n"
-"        Specifies a preference for the order the images are combined.\n"
-"        Valied entries are: north, south, east, west, old, new.\n"
-"        The value \"north\", for example,  means the image with the center\n"
-"        farthest to the north will be on top of the image stack.\n"
 "    -background <value> (-b)\n"
 "        Specifies a value to use for background pixels.  If not given, 0 is\n"
 "        used.\n"
@@ -54,20 +40,11 @@ void help()
 "        Print copyright and license for this software and exit.\n"
 "    -version\n"
 "        Print version and copyright and exit.\n\n"
-"Examples:\n"
-"    %s out in1 in2 in3 in4 in5 in6\n\n"
-"Limitations:\n"
-"    Theoretically, any size output image will work.  The output image will\n"
-"    be cached on disk if it is too large to fit in memory, however in this\n"
-"    situation the process will be quite slow.\n\n"
-"    All input images MUST be in the same projection, with the same projection\n"
-"    parameters, and the same pixel size.\n\n"
 "See also:\n"
 "    asf_mosaic, asf_geocode\n\n"
 "Contact:\n"
 "%s\n",
-ASF_NAME_STRING, ASF_NAME_STRING, ASF_NAME_STRING,
-ASF_CONTACT_STRING);
+ASF_NAME_STRING, ASF_NAME_STRING, ASF_CONTACT_STRING);
     print_version(ASF_NAME_STRING);
     exit(1);
 }
@@ -339,75 +316,6 @@ int compare_small_doubles(const double *a, const double *b)
     return 0;
 }
 
-static void sort_input_preference(char **infiles, int n_inputs, 
-				  char *preference)
-{
-  int ii, kk;
-  double lat[n_inputs], lon[n_inputs], sec[n_inputs], sorter[n_inputs];
-  ymd_date date;
-  hms_time time;
-  julian_date jd;
-  char **tmpfiles = (char **) MALLOC(sizeof(char *)*n_inputs);
-
-  asfPrintStatus("Sort input images for preference: %s\n\n", preference);
-
-  // Read in metadata
-  for (ii=0; ii<n_inputs; ii++) {
-    tmpfiles[ii] = (char *) MALLOC(sizeof(char)*50);
-    meta_parameters *meta = meta_read(infiles[ii]);
-    lat[ii] = meta->general->center_latitude;
-    lon[ii] = meta->general->center_longitude;
-    parse_DMYdate(meta->general->acquisition_date, &date, &time);
-    date_ymd2jd(&date, &jd);
-    sec[ii] = date2sec(&jd, &time);
-    if (strcmp_case(preference, "north") == 0 ||
-	strcmp_case(preference, "south") == 0)
-      sorter[ii] = lat[ii];
-    else if (strcmp_case(preference, "west") == 0 ||
-	     strcmp_case(preference, "east") == 0)
-      sorter[ii] = lon[ii];
-    else if (strcmp_case(preference, "old") == 0 ||
-	     strcmp_case(preference, "new") == 0)
-      sorter[ii] = sec[ii];
-    meta_free(meta);
-  }
-  
-  // Get on with the sorting business
-  if (strcmp_case(preference, "south") == 0 ||
-      strcmp_case(preference, "west") == 0 ||
-      strcmp_case(preference, "old") == 0)
-    qsort(sorter, n_inputs, sizeof(double), compare_big_doubles);
-  else
-    qsort(sorter, n_inputs, sizeof(double), compare_small_doubles);
-
-  // Apply the order to input file list
-  for (ii=0; ii<n_inputs; ii++) {
-    for (kk=0; kk<n_inputs; kk++) {
-      if ((strcmp_case(preference, "north") == 0 ||
-	   strcmp_case(preference, "south") == 0) &&
-	  sorter[ii] == lat[kk])
-	sprintf(tmpfiles[ii], "%s", infiles[kk]);
-      else if ((strcmp_case(preference, "east") == 0 ||
-		strcmp_case(preference, "west") == 0) &&
-	       sorter[ii] == lon[kk])
-	sprintf(tmpfiles[ii], "%s", infiles[kk]);
-      else if ((strcmp_case(preference, "old") == 0 ||
-		strcmp_case(preference, "new") == 0) &&
-	       sorter[ii] == sec[kk])
-	sprintf(tmpfiles[ii], "%s", infiles[kk]);
-    }
-  }
-  for (ii=0; ii<n_inputs; ii++) {
-    sprintf(infiles[ii], "%s", tmpfiles[ii]);
-    //printf("Sorted file[%d]: %s\n", ii+1, infiles[ii]);
-  }
-
-  // Clean up
-  for (ii=0; ii<n_inputs; ii++)
-    FREE(tmpfiles[ii]);
-  FREE(tmpfiles);
-}
-
 static void add_to_stack(char *out, int band, char *file,
                          int size_x, int size_y,
                          double start_x, double start_y,
@@ -505,19 +413,6 @@ int main(int argc, char *argv[])
     double background_val=0;
     extract_double_options(&argc, &argv, &background_val, "-background",
                            "--background", "-b", NULL);
-    char *preference = (char *) MALLOC(sizeof(char)*50);
-    strcpy(preference, "");
-    extract_string_options(&argc, &argv, preference, "-preference",
-			   "--preference", "-p", NULL);
-
-    if (strlen(preference) > 0 &&
-	strcmp_case(preference, "north") != 0 &&
-	strcmp_case(preference, "south") != 0 &&
-	strcmp_case(preference, "east") != 0 &&
-	strcmp_case(preference, "west") != 0 &&
-	strcmp_case(preference, "old") != 0 &&
-	strcmp_case(preference, "new") != 0)
-      asfPrintError("Can't handle this preference (%s)!\n", preference);
     
     char *infile = argv[1];
     char *outfile = argv[2];
@@ -545,9 +440,6 @@ int main(int argc, char *argv[])
 
     asfPrintStatus("Stacking %d files to produce: %s\n", n_inputs, outfile);
 
-    if (strlen(preference) > 0)
-      sort_input_preference(infiles, n_inputs, preference);
-
     asfPrintStatus("Input files:\n");
     for (i=0; i<n_inputs; ++i)
       asfPrintStatus("   %d: %s%s\n", i+1, infiles[i], i==0 ? " (reference)" : "");
@@ -565,6 +457,7 @@ int main(int argc, char *argv[])
     meta_out->projection->startY = start_y;
     meta_out->general->line_count = size_y;
     meta_out->general->sample_count = size_x;
+    meta_out->general->no_data = background_val;
     update_location_block(meta_out);
     meta_write(meta_out, outfile);
     meta_free(meta_out);
