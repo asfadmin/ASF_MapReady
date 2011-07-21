@@ -23,6 +23,7 @@ typedef enum {
 
 // Polarimetric UAVSAR header structure
 typedef struct {
+  char id[255];                   // File name
   uavsar_type_t type;             // UAVSAR data type
   char site[255];                 // Site description
   char acquisition_mode[25];      // Acquisition mode: PolSAR
@@ -81,6 +82,7 @@ typedef struct {
 
 // Interferometric UAVSAR header structure
 typedef struct {
+  char id[255];                   // File name
   uavsar_type_t type;             // UAVSAR data type
   char site[255];                 // Site description
   char processing_mode[25];       // Processing mode: InSAR

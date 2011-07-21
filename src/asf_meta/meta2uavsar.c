@@ -105,6 +105,7 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   
   // UAVSAR block
   meta->uavsar = meta_uavsar_init();
+  strcpy(meta->uavsar->id, params->id);
   meta->uavsar->scale_factor = 1.0;
   meta->uavsar->gps_altitude = params->altitude;
   meta->uavsar->lat_peg_point = params->lat_peg_point;
@@ -279,6 +280,7 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
   
   // UAVSAR block
   meta->uavsar = meta_uavsar_init();
+  strcpy(meta->uavsar->id, params->id);
   meta->uavsar->scale_factor = 1.0;
   meta->uavsar->gps_altitude = params->altitude;
   meta->uavsar->lat_peg_point = params->lat_peg_point;
