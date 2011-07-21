@@ -304,6 +304,7 @@ typedef enum {
     f_SLAVE,
     f_BASELINE,
     f_UAVSAR,
+    f_METAONLY,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -487,6 +488,7 @@ int main(int argc, char *argv[])
     flags[f_SLAVE] = checkForOption("-slave", argc, argv);
     flags[f_BASELINE] = checkForOption("-baseline", argc, argv);
     flags[f_UAVSAR] = checkForOption("-uavsar", argc, argv);
+    flags[f_METAONLY] = checkForOption("-metaonly", argc, argv);
 
     flags[f_ANCILLARY_FILE] = checkForOption("-ancillary-file", argc, argv);
     if (flags[f_ANCILLARY_FILE] == FLAG_NOT_SET)
@@ -592,6 +594,7 @@ int main(int argc, char *argv[])
 	if(flags[f_SLAVE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_BASELINE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_UAVSAR] != FLAG_NOT_SET) needed_args += 2;
+	if(flags[f_METAONLY] != FLAG_NOT_SET) needed_args += 1;
 
         /*Make sure we have enough arguments*/
         if(argc != needed_args)
@@ -979,6 +982,7 @@ int main(int argc, char *argv[])
         int amp0_flag = flags[f_AMP0] != FLAG_NOT_SET;
         int apply_ers2_gain_fix = flags[f_NO_ERS2_GAIN_FIX] == FLAG_NOT_SET;
         int save_intermediates = flags[f_SAVE_INTERMEDIATES] != FLAG_NOT_SET;
+	int metaonly = flags[f_METAONLY] != FLAG_NOT_SET;
 
         double *p_correct_y_pixel_size = NULL;
         if (do_metadata_fix)
@@ -1005,7 +1009,8 @@ int main(int argc, char *argv[])
                    width, height, save_intermediates, p_range_scale, p_azimuth_scale,
                    p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
                    ancillary_file, colormapName, slave_file, interferogram_file,
-		   coherence_file, baseline_file, uavsar_type, outBaseName);
+		   coherence_file, baseline_file, uavsar_type, metaonly,
+		   outBaseName);
     }
 
     // clean up

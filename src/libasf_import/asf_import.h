@@ -53,6 +53,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
 	       char *coherence_file, // coherence image file
 	       char *baseline_file, // baseline file
 	       char *uavsar_type, // data type for UAVSAR data
+	       int metaonly, // flat for generating XML metadata file only
                char *outBaseName // output file
                );
 
@@ -87,12 +88,15 @@ void
 import_generic_geotiff (const char *inFileName, const char *outBaseName, ...);
 
 void import_bil(char *inBaseName, char *outBaseName);
+meta_parameters *read_meta_bil(char *inBaseName);
 void import_gridfloat(char *inBaseName, char *outBaseName);
+meta_parameters *read_meta_gridfloat(char *inBaseName);
 
 void import_airsar(const char *inFileName, radiometry_t radiometry,
 		   const char *outBaseName);
 meta_parameters *import_airsar_meta(const char *dataName,
 				    const char *inBaseName, int force);
+void read_meta_airsar(char *inBaseName, char *outBaseName);
 void import_uavsar(const char *inFileName, int line, int sample, int width,
 		   int height, radiometry_t radiometry,
 		   const char *data_type, const char *outBaseName);

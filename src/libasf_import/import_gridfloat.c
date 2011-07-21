@@ -26,14 +26,13 @@ static void get_value(const char *line, char *value)
         value[strlen(value)-1]='\0';
 }
 
-void import_gridfloat(char *inBaseName, char *outBaseName)
+meta_parameters *read_meta_gridfloat_ext(char *inBaseName, char *flt_file,
+					 int *column_count, int *row_count)
 {
-    int i,j;
-
     // all three of these must be present
     char *hdr_file = appendExt(inBaseName, ".hdr");
     char *prj_file = appendExt(inBaseName, ".prj");
-    char *flt_file = appendExt(inBaseName, ".flt");
+    flt_file = appendExt(inBaseName, ".flt");
 
     if (!fileExists(flt_file) || !fileExists(hdr_file) || !fileExists(prj_file))
     {
@@ -163,11 +162,6 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
     }
     fclose(fp);
 
-    // create the metadata
-    char *meta_filename = appendExt(outBaseName, ".meta");
-
-    asfPrintStatus("Building %s ...\n", meta_filename);
-
     meta_parameters *meta = raw_init();
     meta->projection = meta_projection_init();
     meta->location = meta_location_init();
@@ -245,6 +239,37 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
     ml->lon_end_far_range = mp->startX + mp->perX * ncols;
     ml->lat_end_far_range = mp->startY + mp->perY * nrows;
 
+    free(hdr_file);
+    free(prj_file);
+
+    *column_count = ncols;
+    *row_count = nrows;
+    
+    return meta;
+}
+
+meta_parameters *read_meta_gridfloat(char *inBaseName)
+{
+  char flt_file[1024];
+  int column_count, row_count;
+  return read_meta_gridfloat_ext(inBaseName, flt_file, 
+				 &column_count, &row_count);
+}
+
+void import_gridfloat(char *inBaseName, char *outBaseName)
+{
+    int i, j;
+    int column_count, row_count;
+    char *flt_file = appendExt(inBaseName, ".flt");
+
+    // create the metadata
+    char *meta_filename = appendExt(outBaseName, ".meta");
+
+    asfPrintStatus("Building %s ...\n", meta_filename);
+
+    meta_parameters *meta = read_meta_gridfloat_ext(inBaseName, flt_file,
+						    &column_count, &row_count);
+
     meta_write(meta, meta_filename);
 
     // Now read/write the actual data.  Read as INT16, cast to
@@ -254,19 +279,19 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
 
     asfPrintStatus("Reading %s, writing %s ...\n", flt_file, data_filename);
 
-    float *floats = MALLOC(sizeof(float)*ncols);
-    fp = FOPEN(flt_file, "rb");
+    float *floats = MALLOC(sizeof(float)*column_count);
+    FILE *fp = FOPEN(flt_file, "rb");
     FILE *out = FOPEN(data_filename, "wb");
 
-    for (i=0; i<nrows; ++i) {
-        FREAD(floats, sizeof(float), ncols, fp);
-	if (msbfirst) {
-            for (j=0; j<ncols; ++j) {
+    for (i=0; i<row_count; ++i) {
+        FREAD(floats, sizeof(float), column_count, fp);
+	//if (msbfirst) {
+            for (j=0; j<column_count; ++j) {
                 big32(floats[j]);
             }
-        }
+	    //}
         put_float_line(out, meta, i, floats);
-        asfLineMeter(i,nrows);
+        asfLineMeter(i,row_count);
     }
 
     fclose(fp);
@@ -275,7 +300,5 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
     free(data_filename);
     free(floats);
 
-    free(hdr_file);
-    free(prj_file);
     free(flt_file);
 }

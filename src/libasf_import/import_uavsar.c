@@ -398,6 +398,12 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
 {
   uavsar_polsar *params = (uavsar_polsar *) MALLOC(sizeof(uavsar_polsar));
 
+  // Determine ID
+  char *dirName = (char *) MALLOC(sizeof(char)*1024);
+  char *fileName = (char *) MALLOC(sizeof(char)*1024);  
+  split_dir_and_file(dataFile, dirName, fileName);
+  sprintf(params->id, "%s", stripExt(fileName));
+
   // Read annotation file
   char line[255];
   FILE *fp = FOPEN(dataFile, "r");
@@ -644,6 +650,12 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
 {
   uavsar_insar *params = (uavsar_insar *) MALLOC(sizeof(uavsar_insar));
   char time1[50], time2[50], lat_str[10], lon_str[10];
+
+  // Determine ID
+  char *dirName = (char *) MALLOC(sizeof(char)*1024);
+  char *fileName = (char *) MALLOC(sizeof(char)*1024);  
+  split_dir_and_file(dataFile, dirName, fileName);
+  sprintf(params->id, "%s", stripExt(fileName));
 
   // Read annotation file
   char line[255];
@@ -1870,6 +1882,236 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
     product_count = 5;
   else if (strcmp_case(type, "InSAR") == 0)
     product_count = 9;
+  for (pp=0; pp<product_count; pp++)
+    FREE(product[pp]);
+  FREE(product);
+  FREE(type);
+}
+
+void read_meta_uavsar(const char *inFileName, const char *outBaseName) 
+{
+  int pp, product_count, *dataType, nBands;
+  char *type = check_data_type(inFileName);
+  char **product = get_uavsar_products("ALL", type, &product_count);
+  char **dataName, **element;
+  char *outName = (char *) MALLOC(sizeof(char)*255);
+  uavsar_polsar *polsar_params;
+  uavsar_insar *insar_params;
+  meta_parameters *meta;
+  
+  for (pp = 0; pp < product_count; pp++) {
+
+    // InSAR
+    if (strcmp_case(type, "InSAR") == 0 && 
+	strcmp_case(product[pp], "INT_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_INT_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_INT_GRD);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_int_grd.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "UNW_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_UNW_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_UNW_GRD);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_unw_grd.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "COR_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_COR_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_COR_GRD);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_cor_grd.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "AMP_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_AMP_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_AMP_GRD);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_amp_grd.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "HGT_GRD") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_HGT_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_HGT_GRD);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_hgt_grd.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "INT") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_INT, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_INT);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_int.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "InSAR") == 0 && 
+	strcmp_case(product[pp], "UNW") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_UNW, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_UNW);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_unw.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "InSAR") == 0 && 
+	strcmp_case(product[pp], "COR") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_COR, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_COR);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_cor.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "InSAR") == 0 &&
+	strcmp_case(product[pp], "AMP") == 0) {
+      get_uavsar_file_names(inFileName, INSAR_AMP, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      insar_params = 
+	read_uavsar_insar_params(inFileName, INSAR_AMP);
+      meta = uavsar_insar2meta(insar_params);
+      sprintf(outName, "%s_amp.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    // PolSAR
+    if (strcmp_case(type, "PolSAR") == 0  &&
+	strcmp_case(product[pp], "MLC") == 0) {
+      get_uavsar_file_names(inFileName, POLSAR_MLC, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_MLC);
+      meta = uavsar_polsar2meta(polsar_params);
+      sprintf(outName, "%s_mlc.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "PolSAR") == 0 &&
+	strcmp_case(product[pp], "DAT") == 0) {
+      get_uavsar_file_names(inFileName, POLSAR_DAT, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_DAT);
+      meta = uavsar_polsar2meta(polsar_params);
+      sprintf(outName, "%s_dat.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "PolSAR") == 0 &&
+	strcmp_case(product[pp], "GRD") == 0) {
+      get_uavsar_file_names(inFileName, POLSAR_GRD, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_GRD);
+      meta = uavsar_polsar2meta(polsar_params);
+      sprintf(outName, "%s_grd.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+    if (strcmp_case(type, "PolSAR") == 0 &&
+	strcmp_case(product[pp], "HGT") == 0) {
+      get_uavsar_file_names(inFileName, POLSAR_HGT, &dataName, &element,
+			    &dataType, &nBands);
+      if (!nBands)
+	continue;
+      polsar_params = 
+	read_uavsar_polsar_params(inFileName, POLSAR_HGT);
+      meta = uavsar_polsar2meta(polsar_params);
+      sprintf(outName, "%s_hgt.xml", outBaseName);
+      meta_write_xml(meta, outName);
+      FREE(outName);
+      meta_free(meta);
+      FREE(insar_params);
+      FREE(dataType);
+    }
+  }
   for (pp=0; pp<product_count; pp++)
     FREE(product[pp]);
   FREE(product);

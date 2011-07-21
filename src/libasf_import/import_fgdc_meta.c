@@ -120,8 +120,8 @@ meta_projection *gdal2meta_projection(GDALDatasetH hGdal,
   char *map_projection = NULL;
   meta_projection *proj = NULL;
   double adfGeoTransform[6];
-  map_projection = (char *) GDALGetProjectionRef(hGdal);
-  if(map_projection && strlen(map_projection) > 0) {
+  if(GDALGetProjectionRef(hGdal) != NULL) {
+    map_projection = (char *) GDALGetProjectionRef(hGdal);
     OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
     if (OSRImportFromWkt(hSRS, &map_projection) == CE_None) {
       OGRErr ogr_error;
@@ -277,7 +277,11 @@ meta_projection *gdal2meta_projection(GDALDatasetH hGdal,
       if (proj->type == LAT_LONG_PSEUDO_PROJECTION) {
 	OSRGetAngularUnits(hSRS, &units);
 	if (strcmp_case(units, "degree") == 0)
-	  sprintf(proj->units, "decimal degrees");
+	  sprintf(proj->units, "degrees");
+	if (proj->startY > 0.0)
+	  proj->hem = 'N';
+	else
+	  proj->hem = 'S';
       }
       else {
 	OSRGetLinearUnits(hSRS, &units);

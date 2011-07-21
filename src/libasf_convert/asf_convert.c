@@ -680,7 +680,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
                    NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 0,
                    NULL, NULL, NULL, FALSE, NULL, tiff_basename, ancillary_file,
-                   NULL, NULL, NULL, NULL, NULL, NULL, imported),
+                   NULL, NULL, NULL, NULL, NULL, NULL, FALSE, imported),
         status);
 
     sprintf(status, "Geocoding %s...", uc_what);
@@ -2020,6 +2020,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 			      cfg->import->coherence,
 			      cfg->import->baseline,
 			      cfg->import->uavsar,
+			      FALSE,
                               outFile),
                    "ingesting data file (asf_import)\n");
       FREE(polsarpro_colormap);

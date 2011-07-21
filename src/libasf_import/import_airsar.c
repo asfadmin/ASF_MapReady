@@ -1212,3 +1212,140 @@ static void fudge_airsar_params(meta_parameters *meta)
 
 }
 */
+
+void read_meta_airsar(char *inBaseName, char *outBaseName)
+{
+  airsar_general *general = read_airsar_general(inBaseName);
+  char *inFile = (char *) MALLOC(sizeof(char)*255);
+  char *outFile = (char *) MALLOC(sizeof(char)*255);
+  airsar_header *header;
+  meta_parameters *meta;
+  int line_offset;
+  
+  if (general->c_cross_data) {
+    sprintf(inFile, "%s_c.demi2", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("C-band DEM ...\n");
+      sprintf(outFile, "%s_c_dem.xml", outBaseName);
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = DEM;
+      strcpy(meta->general->bands, "DEM");
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }
+    sprintf(inFile, "%s_c.vvi2", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("C-band amplitude image ...\n");
+      sprintf(outFile, "%s_c_vv.xml", outBaseName);
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = AMPLITUDE_IMAGE;
+      strcpy(meta->general->bands, "AMP");
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }
+    sprintf(inFile, "%s_c.corgr", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("C-band coherence image ...\n");
+      sprintf(outFile, "%s_c_coh.xml", outBaseName);
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = COHERENCE_IMAGE;
+      strcpy(meta->general->bands, "COH");
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }
+  }
+  if (general->l_cross_data) {
+    sprintf(inFile, "%s_l.demi2", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("L-band DEM ...\n");
+      sprintf(outFile, "%s_l_dem.xml", outBaseName);
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = DEM;
+      strcpy(meta->general->bands, "DEM");
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }
+    sprintf(inFile, "%s_l.vvi2", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("L-band amplitude image ...\n");
+      sprintf(outFile, "%s_l_vv.xml", outBaseName);
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = AMPLITUDE_IMAGE;
+      strcpy(meta->general->bands, "AMP");
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }
+    sprintf(inFile, "%s_l.corgr", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("L-band coherence image ...\n");
+      sprintf(outFile, "%s_l_coh.xml", outBaseName);
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = COHERENCE_IMAGE;
+      strcpy(meta->general->bands, "COH");
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }
+  }
+  if (general->c_pol_data) {
+    sprintf(inFile, "%s_c.datgr", inBaseName);
+    if (!fileExists(inFile))
+      sprintf(inFile, "%s_c.dat", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("C-band polarimetric data set ...\n");
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = POLARIMETRIC_IMAGE;
+      meta->general->band_count = 9;
+      strcpy(meta->general->bands,
+	     "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"	\
+	     "AMP_VV,PHASE_VV");
+      sprintf(outFile, "%s_c.xml", outBaseName);
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }      
+  }
+  if (general->l_pol_data) {
+    sprintf(inFile, "%s_l.datgr", inBaseName);
+    if (!fileExists(inFile))
+      sprintf(inFile, "%s_l.dat", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("L-band polarimetric data set ...\n");
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = POLARIMETRIC_IMAGE;
+      meta->general->band_count = 9;
+      strcpy(meta->general->bands,
+	     "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"	\
+	     "AMP_VV,PHASE_VV");
+      sprintf(outFile, "%s_l.xml", outBaseName);
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }      
+  }
+  if (general->p_pol_data) {
+    sprintf(inFile, "%s_p.datgr", inBaseName);
+    if (!fileExists(inFile))
+      sprintf(inFile, "%s_p.dat", inBaseName);
+    if (fileExists(inFile)) {
+      asfPrintStatus("P-band polarimetric data set ...\n");
+      meta = import_airsar_meta(inFile, inBaseName, FALSE);
+      meta->general->data_type = REAL32;
+      meta->general->image_data_type = POLARIMETRIC_IMAGE;
+      meta->general->band_count = 9;
+      strcpy(meta->general->bands,
+	     "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"	\
+	     "AMP_VV,PHASE_VV");
+      sprintf(outFile, "%s_p.xml", outBaseName);
+      meta_write_xml(meta, outFile);
+      meta_free(meta);
+    }      
+  }
+
+  FREE(general);
+}

@@ -79,7 +79,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          char *inMetaNameOption, char *inBaseName, char *ancillary_file,
 	 char *colormapName, char *slave_file, char *interferogram_file,
 	 char *coherence_file, char *baseline_file, char *uavsar_type,
-	 char *outBaseName)
+	 int metaonly, char *outBaseName)
 {
   char outDataName[256], outMetaName[256];
 
@@ -112,6 +112,11 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   strcpy(outDataName, outBaseName);
   strcpy(outMetaName, outBaseName);
   strcat(outMetaName, TOOLS_META_EXT);
+
+  if (metaonly) {
+    create_xml_meta(inBaseName, outBaseName, format_type);
+    return 0;
+  }
 
   if ((radiometry == r_SIGMA ||
        radiometry == r_BETA  ||
@@ -338,4 +343,63 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
 
   asfPrintStatus("Import complete.\n\n");
   return 0;
+}
+
+void create_xml_meta(char *inBaseName, char *outBaseName,
+		     input_format_t format_type)
+{
+  meta_parameters *meta;
+
+  if (format_type == CEOS) {
+    asfPrintStatus("   Data format: CEOS\n\n");
+    meta = meta_read_only(inBaseName);
+    meta_write_xml(meta, outBaseName);
+  }
+  else if (format_type == STF) {
+    asfPrintStatus("   Data format: STF\n\n");
+    meta = meta_read_stf(inBaseName);
+    meta_write_xml(meta, outBaseName);
+  }
+  else if (format_type == GENERIC_GEOTIFF) {
+    asfPrintStatus("   Data format: GEOTIFF\n\n");
+    int ignore[MAX_BANDS], i;
+    for (i=0; i<MAX_BANDS; i++) 
+      ignore[i]=0;
+    meta = read_generic_geotiff_metadata(inBaseName, ignore, NULL);
+    meta_write_xml(meta, outBaseName);
+  }
+  else if (format_type == BIL) {
+    asfPrintStatus("   Data format: BIL\n\n");
+    meta = read_meta_bil(inBaseName);
+    meta_write_xml(meta, outBaseName);
+  }
+  else if (format_type == GRIDFLOAT) {
+    asfPrintStatus("   Data format: GRIDFLOAT\n\n");
+    meta = read_meta_gridfloat(inBaseName);
+    meta_write_xml(meta, outBaseName);
+  }
+  else if (format_type == AIRSAR) {
+    asfPrintStatus("   Data format: AIRSAR\n\n");
+    read_meta_airsar(inBaseName, outBaseName);
+  }
+  else if (format_type == UAVSAR) {
+    asfPrintStatus("   Data format: UAVSAR\n\n");
+    read_meta_uavsar(inBaseName, outBaseName);
+  }
+  else if (format_type == VP) {
+  }
+  else if (format_type == JAXA_L0) {
+  }
+  else if (format_type == ALOS_MOSAIC) {
+  }
+  else if (format_type == TERRASAR) {
+  }
+  else if (format_type == RADARSAT2) {
+  }
+  else if (format_type == POLSARPRO) {
+  }
+  else if (format_type == GAMMA) {
+  }
+  else if (format_type == ROIPAC) {
+  }
 }

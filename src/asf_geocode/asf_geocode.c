@@ -226,8 +226,15 @@ main (int argc, char **argv)
     ++arg_num;
   }
 
-  extract_double_options(&argc, &argv, &background_val, "--background",
-                         "-background", NULL);
+  if (!extract_double_options(&argc, &argv, &background_val, "--background",
+			      "-background", NULL)) {
+    strcpy(in_base_name, argv[arg_num]);
+    meta_parameters *meta = meta_read(in_base_name);
+    background_val = meta->general->no_data;
+    asfPrintStatus("Extracted no data value (%f) out of the metadata.\n",
+		   meta->general->no_data);
+    meta_free(meta);
+  }
   if (ISNAN(background_val)) background_val = DEFAULT_NO_DATA_VALUE;
 
   // Get non-option command line arguments.
