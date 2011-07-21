@@ -84,14 +84,6 @@ const char *datum_toString(datum_type_t datum)
       case WGS84_DATUM:    
           return "WGS84";
 
-      /* Hughes */
-      case HUGHES_DATUM:    
-          return "HUGHES";
-
-      // South American Datum 1969
-      case SAD69_DATUM:
-	  return "SAD69";
-
       // Tokyo Datum (based on Bessel 1841)
       case TOKYO_DATUM:
 	  return "TOKYO";
@@ -99,6 +91,14 @@ const char *datum_toString(datum_type_t datum)
       // JGD2000 Datum (currently used by Japan)
       case JGD2000_DATUM:
 	  return "JGD2000";
+
+      /* Hughes */
+      case HUGHES_DATUM:    
+          return "HUGHES";
+
+      // South American Datum 1969
+      case SAD69_DATUM:
+	  return "SAD69";
 
       case UNKNOWN_DATUM:
           return "UNKNOWN";
@@ -139,6 +139,12 @@ const char *spheroid_toString(spheroid_type_t spheroid)
       case INTERNATIONAL1967_SPHEROID:
           return "INTERNATIONAL1967";
 
+      case INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_SPHEROID:
+	  return "ITRF97";
+
+      case WGS66_SPHEROID:
+          return "WGS66";
+
       case WGS72_SPHEROID:
           return "WGS72";
 
@@ -148,6 +154,12 @@ const char *spheroid_toString(spheroid_type_t spheroid)
       case HUGHES_SPHEROID:
           return "HUGHES";
 	  
+      case TOKYO_SPHEROID:
+          return "TOKYO";
+
+      case JGD2000_SPHEROID:
+          return "JGD2000";
+
       case SPHERE:
 	  return "SPHERE";
 

@@ -79,6 +79,10 @@ static void print_proj_info(meta_parameters *meta)
 
     switch (meta->projection->type)
     {
+    case LAT_LONG_PSEUDO_PROJECTION:
+      asfPrintStatus(" Projection: Geographic Lat/Lon\n");
+      break;
+
     case UNIVERSAL_TRANSVERSE_MERCATOR:
         asfPrintStatus(" Projection: UTM\n   Zone: %d\n\n", pp.utm.zone);
         break;
@@ -172,6 +176,8 @@ static int proj_parms_match(meta_parameters *m1, meta_parameters *m2)
             pp1.lamaz.center_lat == pp2.lamaz.center_lat &&
             pp1.lamaz.center_lon == pp2.lamaz.center_lon;
         break;
+    case LAT_LONG_PSEUDO_PROJECTION:
+      return TRUE;
 
     default:
         return FALSE;
