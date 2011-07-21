@@ -68,6 +68,8 @@
 #define USER_DEFINED_KEY             32767
 #define BAND_NAME_LENGTH  12
 
+#define TIFFTAG_GDAL_NODATA          42113
+
 #ifdef USHORT_MAX
 #undef USHORT_MAX
 #endif
@@ -1726,7 +1728,15 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   if (!is_asf_geotiff) {
     asfPrintStatus("\nNo ASF-exported band names found in GeoTIFF citation tag.\n"
         "Band names will be assigned in numerical order.\n");
-    mg->no_data = MAGIC_UNSET_DOUBLE;
+
+    // Look for a non-standard GDAL tag that contains the no data value
+    void *data;
+    uint16 *counter;
+    int ret = TIFFGetField(input_tiff, TIFFTAG_GDAL_NODATA, &counter, &data);
+    if (ret)
+      mg->no_data = atof((char *)data);
+    else
+      mg->no_data = MAGIC_UNSET_DOUBLE;
   }
   else {
     // This is an ASF GeoTIFF so we must check to see if any bands are empty (blank)
