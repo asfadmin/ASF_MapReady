@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     }
     if (file_count > 1)
       asf_mosaic(&pps, proj_type, FALSE, RESAMPLE_BILINEAR, 0.0, datum, 
-		 pixel_size, FALSE, 0, import_files, outFile, 0.0, 
+		 spheroid, pixel_size, FALSE, 0, import_files, outFile, 0.0, 
 		 -999, 999, -999, 999, "OVERLAY", FALSE);
     else 
       asf_geocode(&pps, proj_type, FALSE, RESAMPLE_BILINEAR, 0.0, datum, 

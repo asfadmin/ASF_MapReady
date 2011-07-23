@@ -452,9 +452,11 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum)
 		  Datum_North_American_Datum_1983);
       break;
     case SAD69_DATUM:
-      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_SAD69);
+      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 4618);
+      /*
       GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 
 		  Datum_South_American_Datum_1969);
+      */
       break;
     case WGS72_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_72);
@@ -521,6 +523,9 @@ void write_spheroid_key (GTIF *ogtif, spheroid_type_t spheroid,
     break;
   case GEM10C_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_GEM_10C);
+    break;
+  case GRS1967_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7050);
     break;
   case GRS1980_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_GRS_1980);

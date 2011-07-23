@@ -742,9 +742,10 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     strcpy(overlap, "OVERLAY");
 
     return asf_mosaic(pp, projection_type, force_flag, resample_method,
-        average_height, datum, pixel_size, multiband, band_num,
-        in_base_names, out_base_name, background_val, lat_min, lat_max,
-        lon_min, lon_max, overlap, save_line_sample_mapping);
+		      average_height, datum, UNKNOWN_SPHEROID, pixel_size, 
+		      multiband, band_num, in_base_names, out_base_name, 
+		      background_val, lat_min, lat_max, lon_min, lon_max, 
+		      overlap, save_line_sample_mapping);
 }
 
 static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
@@ -790,7 +791,8 @@ static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
 
 int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                int force_flag, resample_method_t resample_method,
-               double average_height, datum_type_t datum, double pixel_size,
+               double average_height, datum_type_t datum, 
+	       spheroid_type_t spheroid, double pixel_size,
                int multiband, int band_num, char **in_base_names,
                char *out_base_name, float background_val, double lat_min,
                double lat_max, double lon_min, double lon_max,
@@ -841,7 +843,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   // Spit out a warning about products that have not been validated against ground
   // control points
-  meta_general *mg = meta->general;
   /*
   if (!strstr(mg->processor, "JAXA") && !strstr(mg->processor, "ASF")) {
     asfPrintStatus("\n\nNOTE: Non-ASF processed data detected.  Products not processed\n"
@@ -1530,12 +1531,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // to change, but for now, associate a spheroid with
   // the datum based on standard use.
 
-  // Use the input projection's spheroid if they all had the same
-  // one.
-  if (input_spheroid)
-    omd->projection->spheroid = *input_spheroid;
-  else
+  if (spheroid == UNKNOWN_SPHEROID)
     omd->projection->spheroid = datum_spheroid(datum);
+  else
+    omd->projection->spheroid = spheroid;
   omd->projection->param = *pp;
   free(input_spheroid);
   input_spheroid = NULL;

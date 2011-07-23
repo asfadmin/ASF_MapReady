@@ -230,8 +230,7 @@ int isPolarimetricSegmentation(const char *input_file)
       ret = TRUE;
     meta_free(meta);
   }
-  else
-    return ret;
+  return ret;
 }
 
 static void setup_tmp_dir(char *tmp_dir)
@@ -1311,7 +1310,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
     update_status("Mosaicking...");
     asf_mosaic(&pp, proj_type, cfg->geocoding->force, resample_method,
-           cfg->geocoding->height, datum, cfg->geocoding->pixel,
+	   cfg->geocoding->height, datum, spheroid, cfg->geocoding->pixel,
            multiband, band_num, in_base_names, outFile,
            cfg->geocoding->background,
            lat_min, lat_max, lon_min, lon_max, cfg->mosaic->overlap, FALSE);
@@ -2889,7 +2888,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	}
 	if (cfg->uavsar->cor) {
 	  char *in_tmp = appendToBasename(inFile, "_cor");
-	  char *out_tmp = appendToBasename(outFile, "_cor");
 	  update_status("Exporting slant range correlation ...");
 	  asfPrintStatus("Exporting slant range correlation: %s -> %s_cor\n", 
 			 in_tmp, outFile);
@@ -2906,7 +2904,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	}
 	if (cfg->uavsar->int_grd) {
 	  char *in_tmp = appendToBasename(inFile, "_int_grd");
-	  char *out_tmp = appendToBasename(outFile, "_int_grd");
 	  update_status("Exporting ground range projected ...");
 	  asfPrintStatus("Exporting groun range projected: %s -> %s\n", 
 			 in_tmp, outFile);

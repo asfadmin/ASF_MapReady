@@ -22,6 +22,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
                                            projection_type_t * proj_type,
                                            double *height, double *pixel_size,
                                            datum_type_t *datum,
+					   spheroid_type_t *spheroid,
                                            resample_method_t *resample_method,
                                            int *override_checks,
                                            char *band_id)
@@ -37,7 +38,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 
   /* get the projection params out of the cmd line & remove from cmd line */
   *datum = WGS84_DATUM; // Default datum
-  pps = parse_projection_options(argc, argv, proj_type, datum, 
+  pps = parse_projection_options(argc, argv, proj_type, datum, spheroid,
 				 &did_write_proj_file);
 
   if (pps)

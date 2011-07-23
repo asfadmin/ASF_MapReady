@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
 
     projection_type_t projection_type;
     datum_type_t datum;
+    spheroid_type_t spheroid;
     double pixel_size, average_height, background_val;
     resample_method_t resample_method;
     int force_flag;
@@ -123,8 +124,8 @@ int main(int argc, char *argv[])
 
     project_parameters_t *pp
       = get_geocode_options (&argc, &argv, &projection_type, &average_height,
-      &pixel_size, &datum, &resample_method,
-      &force_flag, band_id);
+			     &pixel_size, &datum, &spheroid, &resample_method,
+			     &force_flag, band_id);
 
     if (!pp)
       usage();
@@ -191,9 +192,9 @@ int main(int argc, char *argv[])
     char overlap[25]="OVERLAY";
 
     asf_mosaic(pp, projection_type, force_flag, resample_method,
-              average_height, datum, pixel_size, multiband,  band_num, files,
-              outfile, background_val, lat_min, lat_max, lon_min, lon_max,
-	       overlap, FALSE);
+	       average_height, datum, spheroid, pixel_size, multiband, 
+	       band_num, files, outfile, background_val, lat_min, lat_max, 
+	       lon_min, lon_max, overlap, FALSE);
 
     free(outfile_full);
     for (i=0; i<n_inputs; ++i)

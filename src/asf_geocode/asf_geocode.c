@@ -182,6 +182,7 @@ main (int argc, char **argv)
   double pixel_size = -1;
   // Datum to use in the target projection
   datum_type_t datum;
+  spheroid_type_t spheroid;
   // Method to use to resample images.
   resample_method_t resample_method;
   // Value to put in the region outside the image
@@ -211,8 +212,8 @@ main (int argc, char **argv)
 
   project_parameters_t *pp
     = get_geocode_options (&argc, &argv, &projection_type, &average_height,
-               &pixel_size, &datum, &resample_method,
-               &force_flag, band_id);
+			   &pixel_size, &datum, &spheroid, &resample_method,
+			   &force_flag, band_id);
 
   if (!pp) {
       print_usage();
