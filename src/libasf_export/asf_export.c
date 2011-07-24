@@ -202,6 +202,15 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       FREE(xml_meta);
       FREE(xml_output_file_name);
   }
+  else if (should_write_dem_xml_meta(md)) {
+    char *xml_meta = get_dem_xml_string(md, FALSE);
+    char *xml_output_file_name =
+      (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
+    sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
+    write_dem_xml_to_file(xml_output_file_name, xml_meta);
+    FREE(xml_meta);
+    FREE(xml_output_file_name);
+  }
 
   if (noutputs && output_names) {
     asfPrintStatus("\n\nExport complete.\nGenerated %d output file%s:\n",
@@ -236,6 +245,11 @@ should_write_insar_xml_meta(meta_parameters *md) {
 int
 should_write_insar_rgb(char *band_name) {
     return ( NULL != strstr_case(band_name, "INTERFEROGRAM_PHASE") );
+}
+
+int should_write_dem_xml_meta(meta_parameters *md)
+{
+  return (NULL != md->dem);
 }
 
 /**
@@ -369,4 +383,78 @@ write_insar_xml_to_file(char *output_file_name, char *insar_xml)
         fprintf(fp, insar_xml);
         FCLOSE(fp);
     }
+}
+
+char*
+get_dem_xml_string(meta_parameters *meta, int gdal)
+{
+  // assume upper bound of 2000 characters.
+  char *dem_xml_string = (char *) MALLOC(sizeof(char) * 2000);
+  char unit[5];
+  
+  if (strcmp_case(meta->dem->unit_type, "M") == 0)
+    strcpy(unit, "m");
+  else if (strcmp_case(meta->dem->unit_type, "FT") == 0)
+    strcpy(unit, "ft");
+  else
+    strcpy(unit, "?");
+  
+  if (gdal)
+    sprintf(dem_xml_string, 
+	    "<GDALMetadata>\n"
+	    "<Item name=\"DEM_SOURCE\" units=\"1\">%s</Item>\n"
+	    "<Item name=\"DEM_FORMAT\" units=\"1\">%s</Item>\n"
+	    "<Item name=\"DEM_TILES\" units=\"1\">%s</Item>\n"
+	    "<Item name=\"DEM_MIN_VALUE\" units=\"%s\">%.2lf</Item>\n"
+	    "<Item name=\"DEM_MAX_VALUE\" units=\"%s\">%.2lf</Item>\n"
+	    "<Item name=\"DEM_MEAN_VALUE\" units=\"%s\">%.3lf</Item>\n"
+	    "<Item name=\"DEM_STANDARD_DEVIATION\" units=\"%s\">%.3lf</Item>\n"
+	    "<Item name=\"DEM_UNIT_TYPE\" units=\"1\">%s</Item>\n"
+	    "<Item name=\"DEM_NO_DATA\" units=\"%s\">%.1lf</Item>\n"
+	    "</GDALMetadata>\n"
+	    , meta->dem->source
+	    , meta->dem->format
+	    , meta->dem->tiles
+	    , unit, meta->dem->min_value
+	    , unit, meta->dem->max_value
+	    , unit, meta->dem->mean_value
+	    , unit, meta->dem->standard_deviation
+	    , meta->dem->unit_type
+	    , unit, meta->dem->no_data);
+  else
+    sprintf(dem_xml_string, 
+	    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+	    "<dem>\n"
+	    "  <source>%s</source>\n"
+	    "  <format>%s</format>\n"
+	    "  <tiles>%s</tiles\n"
+	    "  <min_value units=\"%s\">%.2lf</min_value>\n"
+	    "  <max_value units=\"%s\">%.2lf</max_value>\n"
+	    "  <mean_value units=\"%s\">%.3lf</mean_value>\n"
+	    "  <standard_deviation units=\"%s\">%.3lf</standard_deviation>\n"
+	    "  <unit_type>%s</unit_type>\n"
+	    "  <no_data units=\"%s\">%.2lf</no_data>\n"
+	    "</dem>\n"
+	    , meta->dem->source
+	    , meta->dem->format
+	    , meta->dem->tiles
+	    , unit, meta->dem->min_value
+	    , unit, meta->dem->max_value
+	    , unit, meta->dem->mean_value
+	    , unit, meta->dem->standard_deviation
+	    , meta->dem->unit_type
+	    , unit, meta->dem->no_data);
+  
+  return dem_xml_string;
+}
+
+void
+write_dem_xml_to_file(char *output_file_name, char *dem_xml)
+{
+  asfPrintStatus("\nWriting DEM metadata (%s) ...\n", output_file_name);
+  FILE *fp = FOPEN(output_file_name, "wt");
+  if ( NULL != fp ) {
+    fprintf(fp, dem_xml);
+    FCLOSE(fp);
+  }
 }

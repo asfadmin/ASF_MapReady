@@ -453,10 +453,6 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum)
       break;
     case SAD69_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 4618);
-      /*
-      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 
-		  Datum_South_American_Datum_1969);
-      */
       break;
     case WGS72_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_72);

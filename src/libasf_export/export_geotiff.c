@@ -244,6 +244,11 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
       TIFFSetField(*otif, TIFFTAG_ASF_INSAR_METADATA, xml_meta);
       FREE(xml_meta);
   }
+  else if (should_write_dem_xml_meta(md)) {
+    char *xml_meta = get_dem_xml_string(md, TRUE);
+    TIFFSetField(*otif, TIFFTAG_ASF_DEM_METADATA, xml_meta);
+    FREE(xml_meta);
+  }
 
   *palette_color_tiff = palette_color;
 

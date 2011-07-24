@@ -372,11 +372,14 @@ void import_dem(const char *inBaseName, const char *outBaseName,
     dem->band_count = GDALGetRasterCount(hGdal);
     if (strlen(GDALGetRasterUnitType(hBand)) > 0)
       sprintf(dem->unit_type, "%s", GDALGetRasterUnitType(hBand));
+    else // assume meters
+      sprintf(dem->unit_type, "m");
         
     if (strlen(tiles) > 0)
       strcpy(dem->tiles, tiles);
     strcpy(dem->dataset, dem_files[nn]);
     meta = dem2meta(dem);
+    strcpy(meta->dem->tiles, tiles);
     meta->projection = 
       gdal2meta_projection(hGdal, dem->row_count, dem->column_count);
     double pixel_size = meta->projection->perX*D2R*meta->projection->re_minor;

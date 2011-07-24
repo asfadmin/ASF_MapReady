@@ -182,9 +182,12 @@ void initialize_png_file_ext(const char *output_file_name,
 void finalize_png_file(FILE *opng, png_structp png_ptr, png_infop info_ptr);
 int should_write_insar_xml_meta(meta_parameters *md);
 int should_write_insar_rgb(char *band_name);
+int should_write_dem_xml_meta(meta_parameters *md);
 void write_insar_rgb(output_format_t format, char *in_meta_name, char *in_data_name, char *out_name);
 void write_insar_xml_to_file(char *output_file_name, char *xml_meta);
 char* get_insar_xml_string(meta_parameters *meta, int gdal);
+void write_dem_xml_to_file(char *output_file_name, char *xml_meta);
+char* get_dem_xml_string(meta_parameters *meta, int gdal);
 
 // Prototypes from export_geotiff.c
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
