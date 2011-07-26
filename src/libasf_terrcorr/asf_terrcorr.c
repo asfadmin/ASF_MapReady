@@ -1121,6 +1121,11 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   if (!metaSAR->sar)
       asfPrintError("Invalid metadata for: %s\n"
                     "No SAR block found.\n", sarFile);
+  if (strcmp_case(metaSAR->general->sensor, "ALOS") == 0 &&
+      strcmp_case(metaSAR->general->sensor_name, "SAR") == 0) {
+    no_matching = TRUE;
+    asfPrintStatus("No DEM matching for ALOS Palsar data!\n");
+  }
 
   asfPrintStatus("Checking %s ... \n", demFile_in);
   char *demFile = build_dem(metaSAR, demFile_in, output_dir);
