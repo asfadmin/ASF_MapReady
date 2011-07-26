@@ -38,7 +38,7 @@ typedef struct
 } dem_meta;
 
 // Function prototypes
-void import_dem(const char *inBaseName, const char *outBaseName,
+void import_dem(const char *inBaseName, int list, const char *outBaseName,
 		const char *dem_type, const char *tmp_dir,
 		char ***pImportFiles, int *nFiles);
 

@@ -23,7 +23,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_dem_ingest"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-proj <projFile>] [-pixel-size <pixel size>]\n"\
+"   "ASF_NAME_STRING" [-proj <projFile>] [-pixel-size <pixel size>] [-list]\n"\
 "                [-log <logFile>] [-quiet] [-license] [-version] [-help]\n"\
 "                <inFile> <outFile> <dem type>\n"
 
@@ -46,6 +46,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Geocode the DEM(s) with this projection file\n"\
 "   -pixel-size <pixel size>\n"\
 "        Define the pixel size for the geocoding\n"\
+"   -list <file>\n"\
+"        The input file is list of (most probably zipped) DEM files.\n"\
+"        All these tiles are going to be mosaicked together.\n"\
 "   -log <logFile>\n"\
 "        Set the name and location of the log file. Default behavior is to\n"\
 "        log to tmp<processIDnumber>.log\n"\
@@ -153,7 +156,7 @@ int main(int argc, char *argv[])
   const int pid = getpid();
   extern int logflag, quietflag;
   int quiet_f;  /* log_f is a static global */
-  int proj_f, pixel_f, ii, file_count;
+  int proj_f, pixel_f, list_f, ii, file_count, list=FALSE;
   char **import_files;
   double pixel_size = -99;
 
@@ -174,6 +177,7 @@ int main(int argc, char *argv[])
   quiet_f  = checkForOption("-quiet", argc, argv);
   proj_f   = checkForOption("-proj", argc, argv);
   pixel_f  = checkForOption("-pixel-size", argc, argv);
+  list_f   = checkForOption("-list", argc, argv);
 
   // We need to make sure the user specified the proper number of arguments
   int needed_args = 3 + REQUIRED_ARGS; // command & REQUIRED_ARGS
@@ -182,6 +186,7 @@ int main(int argc, char *argv[])
   if (quiet_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
   if (proj_f != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (pixel_f != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
+  if (list_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
   
   // Make sure we have the right number of args
   if(argc != needed_args) {
@@ -209,6 +214,9 @@ int main(int argc, char *argv[])
   if (pixel_f != FLAG_NOT_SET) {
     pixel_size = atof(argv[pixel_f+1]);
   }
+  if (list_f != FLAG_NOT_SET) {
+    list = TRUE;
+  }
   if (log_f != FLAG_NOT_SET) {
     strcpy(logFile, argv[log_f+1]);
   }
@@ -231,18 +239,20 @@ int main(int argc, char *argv[])
 
   char *tmp_dir = (char *) MALLOC(sizeof(char)*512);
   char *tmpFile = (char *) MALLOC(sizeof(char)*512);
-  if (projFile || 
+  if (projFile || list ||
       (strcmp_case(type, "ASTER") == 0 &&
        strcmp_case(findExt(inFile), ".ZIP") == 0)) {
     strcpy(tmp_dir, "tmp_dem-");
     strcat(tmp_dir, time_stamp_dir());
     create_clean_dir(tmp_dir);
     sprintf(tmpFile, "%s%cimport", tmp_dir, DIR_SEPARATOR);
-    import_dem(inFile, tmpFile, type, tmp_dir, &import_files, &file_count);
+    import_dem(inFile, list, tmpFile, type, tmp_dir, 
+	       &import_files, &file_count);
   }
   else {
     strcpy(tmp_dir, "./");
-    import_dem(inFile, outFile, type, tmp_dir, &import_files, &file_count);
+    import_dem(inFile, list, outFile, type, tmp_dir, 
+	       &import_files, &file_count);
   }
   if (projFile) {
     project_parameters_t pps;

@@ -76,7 +76,7 @@ meta_parameters *dem2meta(dem_meta *dem)
   return meta;
 }
 
-static void extract_file(unzFile *file, char *szFileName, char *path)
+static void extract_file(unzFile *file, char *szFileName, const char *path)
 {
   int bytes;
   if (findExt(szFileName)) {
@@ -131,7 +131,7 @@ static int check_aster_lat_lon(char *szFileName, int *lat, int *lon)
     return FALSE;
 }
 
-static char *extract_aster_dem(char *szFileName, char *tmp_dir)
+static char *extract_aster_dem(char *szFileName, const char *tmp_dir)
 {
   unzFile *aster_file;
   char aster_dem[25];
@@ -152,8 +152,8 @@ static char *extract_aster_dem(char *szFileName, char *tmp_dir)
   return (aster_dem_file);
 }
 
-static char **read_dem(unzFile *file, int file_count, char *tmp_dir, 
-		       char *dem_type, char *tiles)
+static char **read_aster_dem(unzFile *file, int file_count, 
+			     const char *tmp_dir, char *tiles)
 {
   int ii, lat_min=90, lat_max=-90, lon_min=180, lon_max=-180, lat, lon;
   char tmp[10];
@@ -168,12 +168,31 @@ static char **read_dem(unzFile *file, int file_count, char *tmp_dir,
   // ASTER DEM comes as zip files for the individual tiles
   // The overall zip file is called 'Tiles_<time stamp>'
   // The individual ASTER naming scheme: ASTGTM_N36W122
-  if (strcmp_case(dem_type, "ASTER") == 0) {
-    cpl_unzGoToFirstFile(file);
+  cpl_unzGoToFirstFile(file);
+  cpl_unzGetCurrentFileInfo(file, &pfile_info, szFileName, 
+			    fileNameBufferSize, extraField,
+			    extraFieldBufferSize, szComment, 
+			    commentBufferSize);
+  if (check_aster_lat_lon(szFileName, &lat, &lon)) {
+    if (lat < lat_min)
+      lat_min = lat;
+    if (lat > lat_max)
+      lat_max = lat;
+    if (lon < lon_min)
+      lon_min = lon;
+    if (lon > lon_max)
+      lon_max = lon;
+  }
+  extract_file(file, szFileName, tmp_dir);
+  if (strncmp_case(szFileName, "ASTGTM", 6) == 0 &&
+      strcmp_case(findExt(szFileName), ".zip") == 0)
+    dem_files[0] = extract_aster_dem(szFileName, tmp_dir);
+  for (ii=1; ii<file_count; ii++) {
+    cpl_unzGoToNextFile(file);
     cpl_unzGetCurrentFileInfo(file, &pfile_info, szFileName, 
-			      &fileNameBufferSize, extraField,
-			      &extraFieldBufferSize, szComment, 
-			      &commentBufferSize);
+			      fileNameBufferSize, extraField,
+			      extraFieldBufferSize, szComment, 
+			      commentBufferSize);
     if (check_aster_lat_lon(szFileName, &lat, &lon)) {
       if (lat < lat_min)
 	lat_min = lat;
@@ -187,27 +206,106 @@ static char **read_dem(unzFile *file, int file_count, char *tmp_dir,
     extract_file(file, szFileName, tmp_dir);
     if (strncmp_case(szFileName, "ASTGTM", 6) == 0 &&
 	strcmp_case(findExt(szFileName), ".zip") == 0)
-      dem_files[0] = extract_aster_dem(szFileName, tmp_dir);
-    for (ii=1; ii<file_count; ii++) {
-      cpl_unzGoToNextFile(file);
-      cpl_unzGetCurrentFileInfo(file, &pfile_info, szFileName, 
-				&fileNameBufferSize, extraField,
-				&extraFieldBufferSize, szComment, 
-				&commentBufferSize);
-      if (check_aster_lat_lon(szFileName, &lat, &lon)) {
-	if (lat < lat_min)
-	  lat_min = lat;
-	if (lat > lat_max)
-	  lat_max = lat;
-	if (lon < lon_min)
-	  lon_min = lon;
-	if (lon > lon_max)
-	  lon_max = lon;
-      }
-      extract_file(file, szFileName, tmp_dir);
-      if (strncmp_case(szFileName, "ASTGTM", 6) == 0 &&
-	  strcmp_case(findExt(szFileName), ".zip") == 0)
-	dem_files[ii] = extract_aster_dem(szFileName, tmp_dir);
+      dem_files[ii] = extract_aster_dem(szFileName, tmp_dir);
+  }
+  if (lat_min >= 0)
+    sprintf(tiles, "N%d", lat_min);
+  else
+    sprintf(tiles, "S%d", abs(lat_max));
+  if (lat_max >= 0)
+    sprintf(tmp, "N%d", lat_max);
+  else
+    sprintf(tmp, "S%d", abs(lat_min));
+  strcat(tiles, tmp);
+  if (lon_min >= 0)
+    sprintf(tmp, "_E%d", lon_min);
+  else
+    sprintf(tmp, "_W%d", abs(lon_max));
+  strcat(tiles, tmp);
+  if (lon_max >= 0)
+      sprintf(tmp, "E%d", lon_max);
+  else
+    sprintf(tmp, "W%d", abs(lon_min));
+  strcat(tiles, tmp);
+
+  return (dem_files);
+}
+
+static int check_jpl_srtm_lat_lon(char *szFileName, int *lat, int *lon)
+{
+  int sign;
+
+  // Check for JPL SRTM naming scheme - S10W068.hgt
+  if ((szFileName[0] == 'N' || szFileName[0] == 'S') &&
+      (szFileName[3] == 'W' || szFileName[3] == 'E')) {  
+    char tiles[10];
+    sprintf(tiles, "%s", szFileName);
+    if (tiles[0] == 'N')
+      sign = 1;
+    else if (tiles[0] == 'S')
+      sign = -1;
+    sscanf(tiles+1, "%d", lat);
+    *lat *= sign;
+    sprintf(tiles, "%s", szFileName+3);
+    if (tiles[0] == 'W')
+      sign = -1;
+    else if (tiles[0] == 'E')
+      sign = 1;
+    sscanf(tiles+1, "%d", lon);
+    *lon *= sign;
+    return TRUE;
+  }
+  else
+    return FALSE;
+}
+
+static char **read_jpl_srtm_dem(const char *infile, const char *tmp_dir, 
+				int *file_count, char *tiles)
+{
+  int ii, lat_min=90, lat_max=-90, lon_min=180, lon_max=-180, lat, lon;
+  char tmp[10];
+  unz_file_info pfile_info;
+  char szFileName[1024], szComment[1024], extraField[1024];
+  uLong fileNameBufferSize, extraFieldBufferSize, commentBufferSize;
+
+  char *line = (char *) MALLOC(sizeof(char)*512);
+  int count = 0;
+  FILE *fpList = FOPEN(infile, "r");
+  while (fgets(line, 512, fpList)) {
+    if (strlen(line) > 0)
+      count++;
+  }
+  FCLOSE(fpList);
+  char **dem_files = (char **) MALLOC(sizeof(char *)*count);
+  fpList = FOPEN(infile, "r");
+  for (ii=0; ii<count; ii++) {
+    fgets(line, 512, fpList);
+    chomp(line);
+
+    // SRTM DEM (JPL style) comes as zip file (e.g. S10W068.hgt.zip)
+    unzFile *file = cpl_unzOpen(line);
+    cpl_unzGoToFirstFile(file);
+    //cpl_unzGoToNextFile(file);
+    cpl_unzGetCurrentFileInfo(file, &pfile_info, szFileName, 
+			      fileNameBufferSize, extraField,
+			      extraFieldBufferSize, szComment, 
+			      commentBufferSize);
+    extract_file(file, szFileName, tmp_dir);
+    cpl_unzClose(file);
+
+    dem_files[ii] = (char *) MALLOC(sizeof(char)*512);
+    //strcpy(dem_files[ii], szFileName);
+    sprintf(dem_files[ii], "%s%c%s", tmp_dir, DIR_SEPARATOR, szFileName);
+
+    if (check_jpl_srtm_lat_lon(szFileName, &lat, &lon)) {
+      if (lat < lat_min)
+	lat_min = lat;
+      if (lat > lat_max)
+	lat_max = lat;
+      if (lon < lon_min)
+	lon_min = lon;
+      if (lon > lon_max)
+	lon_max = lon;
     }
     if (lat_min >= 0)
       sprintf(tiles, "N%d", lat_min);
@@ -229,30 +327,45 @@ static char **read_dem(unzFile *file, int file_count, char *tmp_dir,
       sprintf(tmp, "W%d", abs(lon_min));
     strcat(tiles, tmp);
   }
+  FCLOSE(fpList);
+  FREE(line);  
+  *file_count = count;
 
   return (dem_files);
 }
 
-void import_dem(const char *inBaseName, const char *outBaseName,
+void import_dem(const char *inBaseName, int list, const char *outBaseName,
 		const char *dem_type, const char *tmp_dir,
 		char ***pImportFiles, int *nFiles)
 {
-  int nn, file_count, zip = FALSE;
+  int nn, file_count, zip = FALSE, jpl = FALSE;
   char **dem_files, **import_files, tiles[25]="";
 
   // DEM type
   printf("  DEM type: %s\n", uc(dem_type));
 
   // Check whether input file is zipped
-  // We currently cover the following cases: ASTER
-  if (findExt(inBaseName) && strcmp_case(findExt(inBaseName), ".ZIP") == 0) {
+  // We currently cover the following cases: ASTER, SRTM JPL
+  if (list) {
+    char *line = (char *) MALLOC(sizeof(char)*512);
+    FILE *fpList = FOPEN(inBaseName, "r");
+    while (fgets(line, 512, fpList))
+      if (strlen(line) > 0 && strstr(line, ".hgt.zip"))
+	jpl = TRUE;
+    FCLOSE(fpList);
+    if (strcmp_case(dem_type, "SRTM") == 0 && jpl)
+      dem_files = read_jpl_srtm_dem(inBaseName, tmp_dir, &file_count, tiles);
+    zip = TRUE;
+  }
+  else if (findExt(inBaseName) && 
+	   strcmp_case(findExt(inBaseName), ".ZIP") == 0) {
     unzFile *file = cpl_unzOpen(inBaseName);
     if (file) {
       unz_global_info pglobal_info;
       asfPrintStatus("Zip file: %s\n", inBaseName);
       cpl_unzGetGlobalInfo(file, &pglobal_info);
       file_count = pglobal_info.number_entry;
-      dem_files = read_dem(file, file_count, tmp_dir, dem_type, tiles);
+      dem_files = read_aster_dem(file, file_count, tmp_dir, tiles);
       cpl_unzClose(file);
       zip = TRUE;
     }

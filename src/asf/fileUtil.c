@@ -152,7 +152,6 @@ char *findExt(const char *name)
         strcmp_case(ext, ".RSC") == 0       || // roipac
 	strcmp_case(ext, ".NC") == 0        || // netCDF
 	strcmp_case(ext, ".H5") == 0        || // HDF5
-	strcmp_case(ext, ".HE5") == 0      || // HDF-EOS5
 	strcmp_case(ext, ".CC") == 0        || // gamma
 	strcmp_case(ext, ".SM") == 0        || // gamma
 	strcmp_case(ext, ".DIFF") == 0      || // gamma
@@ -160,6 +159,7 @@ char *findExt(const char *name)
 	strcmp_case(ext, ".ANN") == 0       || // UAVSAR annotation file
 	strcmp_case(ext, ".SPECS") == 0     ||
 	strcmp_case(ext, ".FLT") == 0       || // Gridfloat
+	strcmp_case(ext, ".HGT") == 0       || // SRTM JPL height
 	strcmp_case(ext, ".ZIP") == 0)
 
         return (char *) &name[ii];

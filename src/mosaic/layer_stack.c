@@ -436,6 +436,7 @@ int main(int argc, char *argv[])
       infiles[i] = (char *) MALLOC(sizeof(char)*512);
       strcpy(infiles[i], line);
     }
+    FCLOSE(fpList);
     FREE(line);
 
     asfPrintStatus("Stacking %d files to produce: %s\n", n_inputs, outfile);
