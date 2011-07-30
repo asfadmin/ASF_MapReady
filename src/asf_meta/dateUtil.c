@@ -807,3 +807,29 @@ char *fgdc_date(void)
 
   return t_stamp;  
 } 
+
+// MMM-DD-YYYY hh:mm:ss
+// 01234567890123456789
+void ursa2date(const char *inStr, ymd_date *date, hms_time *time)
+{
+  char mon[][5]= 
+    {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
+  char buf[100];
+  int i,sec;
+  if (strcmp(inStr, "???") == 0)
+    sprintf(inStr, "01-Jan-1900, 00:00:00");
+#define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+  for (i=0; i<13; i++) {
+    strncpy(buf, &inStr[0], 3);
+    buf[3] = 0;
+    if (strcmp_case(uc(buf), mon[i]) == 0)
+      date->month = i;
+  }
+  subStr(4,2,&date->day);
+  subStr(7,4,&date->year);
+  subStr(12,2,&time->hour);
+  subStr(15,2,&time->min);
+  subStr(18,2,&sec);
+  time->sec = sec;
+#undef subStr
+}

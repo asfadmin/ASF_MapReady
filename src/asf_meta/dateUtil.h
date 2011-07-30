@@ -204,5 +204,6 @@ void date_tester(void);
 int date_diff(long date1, long date2);
 
 char *fgdc_date(void);
+void ursa2date(const char *inStr, ymd_date *date, hms_time *time);
 
 #endif
