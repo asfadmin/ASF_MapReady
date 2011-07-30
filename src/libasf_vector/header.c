@@ -117,6 +117,11 @@ int get_number_columns(char *line)
   char val[256];
   int col=0;
 
+  // Check for anomalous separator at the end of the line
+  int len = strlen(line);
+  if (line[len-1] == ',')
+    line[len-1] = '\0';
+
   while (p) {
     p = my_parse_string(p, val, 256);
     ++col;

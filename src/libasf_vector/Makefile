@@ -30,6 +30,7 @@ OBJS = \
 	shape.o \
 	generic_csv.o \
 	ursa.o \
+	datapool.o \
 	high_altitude_photography.o \
 	custom.o \
 	utils.o \

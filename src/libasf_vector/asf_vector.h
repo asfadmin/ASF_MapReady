@@ -28,6 +28,7 @@ typedef enum {
   RGPS_WEATHER,
   MULTIMATCH,
   URSA,
+  DATAPOOL,
   GEOTIFF_META,
   AUIG,
   HAP,
@@ -142,6 +143,7 @@ typedef struct
   int transparency;              // transparency of the overlay
   int list;                      // list of files flag
   int time;                      // time series flag
+  int stack;                     // stacking flag
   char boundary[25];             // polygon/line
   char altitude[25];             // ref: clampToGround/relativeToGround/absolute
   int height;                    // height
@@ -297,8 +299,12 @@ void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 int multimatch2shape(char *inFile, char *outFile, int listFlag);
 
 // Prototypes from ursa.c
-int ursa2shape(char *inFile, char *outFile, int listFlag);
-int ursa2kml(char *in_file, char *out_file, int listFlag);
+int ursa2shape(char *inFile, char *outFile, int listFlag, int stack);
+int ursa2kml(char *in_file, char *out_file, int listFlag, int stack);
+
+// Prototypes from datapool.c
+int datapool2shape(char *inFile, char *outFile, int listFlag, int stack);
+int datapool2kml(char *in_file, char *out_file, int listFlag, int stack);
 
 // Prototypes from high_altitude_photography.c
 int hap2kml(char *in_file, char *out_file, int listFlag);

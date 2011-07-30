@@ -106,6 +106,10 @@ int init_c2v_config(char *configFile)
   fprintf(fConfig, "# The list flag indicates whether the input is a file (value set to 0)\n");
   fprintf(fConfig, "# or a list of files (value set to 1). The default value is 0\n\n");
   fprintf(fConfig, "list = 0\n\n");
+  // stack
+  fprintf(fConfig, "# The stacking flag indicates whether the input is a polygon stack\n");
+  fprintf(fConfig, "# The default value is 0\n\n");
+  fprintf(fConfig, "stack = 0\n\n");
   // short configuration file flag
   fprintf(fConfig, "# The short configuration file flag allows the experienced user to generate\n"
           "# configuration files without the verbose comments that explain all entries for\n"
@@ -189,6 +193,7 @@ c2v_config *init_fill_c2v_config()
   cfg->transparency = 50;
   cfg->list = 0;
   cfg->time = 0;
+  cfg->stack = 0;
   strcpy(cfg->boundary, "polygon");
   strcpy(cfg->altitude, "clampToGround");
   cfg->height = 7000;
@@ -230,6 +235,8 @@ c2v_config *read_c2v_config(char *configFile)
 	strcpy(cfg->output_format, read_str(line, "output format"));
       if (strncmp(test, "list", 4)==0) 
 	cfg->list = read_int(line, "list");
+      if (strncmp(test, "stack", 5)==0) 
+	cfg->stack = read_int(line, "stack");
       if (strncmp(test, "header file", 11)==0)
 	strcpy(cfg->header_file, read_str(line, "header file"));
       FREE(test);
@@ -318,6 +325,13 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
     fprintf(fConfig, "\n# The list flag indicates whether the input is a file (value set to 0)\n"
 	    "# or a list of files (value set to 1). The default value is 0\n\n");
   fprintf(fConfig, "list = %d\n", cfg->list);
+  // stack
+  if (!shortFlag) {
+    fprintf(fConfig, "# The stacking flag indicates whether the input is a polygon stack\n");
+    fprintf(fConfig, "# The default value is 0\n\n");
+  }
+  fprintf(fConfig, "stack = %d\n", cfg->stack);
+  // header
   if (strlen(cfg->header_file) > 0)
     fprintf(fConfig, "header file = %s\n", cfg->header_file);
   // short configuration file flag

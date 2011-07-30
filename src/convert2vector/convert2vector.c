@@ -37,6 +37,7 @@ int main(int argc, char **argv)
 {
   char informat_str[25], outformat_str[25], configFile[255];
   int listFlag=0;
+  int stackFlag=0;
   int timeFlag=0;
   int testFlag=0;
   int inputFormatFlag=0;
@@ -79,6 +80,15 @@ int main(int argc, char **argv)
              0;
   if (listFlag)
     cfg->list = TRUE;
+  stackFlag = checkForOption("-stack", argc, argv)    ?
+    checkForOption("-stack", argc, argv)  :
+    checkForOption("--stack", argc, argv)   ?
+    checkForOption("--stack", argc, argv) :
+    checkForOption("-s", argc, argv)       ?
+    checkForOption("-s", argc, argv)     :
+             0;
+  if (stackFlag)
+    cfg->stack = TRUE;
   timeFlag = checkForOption("-time", argc, argv);
   if (timeFlag)
     cfg->time = TRUE;
@@ -139,6 +149,7 @@ int main(int argc, char **argv)
     checkForOption("-o", argc, argv) ?
     getStringOption("-o", argc, argv, cfg->output_format, NULL) : 0;
   needed_args += listFlag         ? 1 : 0; // No argument
+  needed_args += stackFlag        ? 1 : 0; // No argument
   needed_args += testFlag         ? 1 : 0; // No argument
   needed_args += timeFlag         ? 1 : 0; // No argument
   needed_args += inputFormatFlag  ? 2 : 0; // w/Argument
@@ -158,6 +169,7 @@ int main(int argc, char **argv)
       exit(1);
   }
   if (listFlag         >= argc - 1  ||
+      stackFlag        >= argc - 1  ||
       timeFlag         >= argc - 1  ||
       inputFormatFlag  >= argc - 2  ||
       outputFormatFlag >= argc - 2)

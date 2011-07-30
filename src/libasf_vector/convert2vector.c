@@ -28,6 +28,8 @@ format_type_t str2format(const char *str)
     format = SHAPEFILE;
   else if (strcmp_case(str, "URSA") == 0)
     format = URSA;
+  else if (strcmp_case(str, "DATAPOOL") == 0)
+    format = DATAPOOL;
   else if (strcmp_case(str, "HAP") == 0)
     format = HAP;
   else if (strcmp_case(str, "TERRASAR") == 0)
@@ -66,6 +68,8 @@ char *format2str(format_type_t format)
     strcpy(str, "SHAPE");
   else if (format == URSA)
     strcpy(str, "URSA");
+  else if (format == DATAPOOL)
+    strcpy(str, "DATAPOOL");
   else if (format == HAP)
     strcpy(str, "HAP");
   else if (format == TERRASAR_META)
@@ -83,6 +87,7 @@ int convert2vector(c2v_config *cfg)
   strcpy(outFile_in, cfg->output_file);
   int listFlag = cfg->list;
   int timeFlag = cfg->time;
+  int stackFlag = cfg->stack;
 
   int ret = 0;
   asfPrintStatus("Converting from %s to %s:\n", inFormat_str, outFormat_str);
@@ -160,9 +165,13 @@ int convert2vector(c2v_config *cfg)
   else if (inFormat == SHAPEFILE && outFormat == KMLFILE)
     ret = shape2kml(inFile, outFile, listFlag);
   else if (inFormat == URSA && outFormat == KMLFILE)
-    ret = ursa2kml(inFile, outFile, listFlag);
+    ret = ursa2kml(inFile, outFile, listFlag, stackFlag);
   else if (inFormat == URSA && outFormat == SHAPEFILE)
-    ret = ursa2shape(inFile, outFile, listFlag);
+    ret = ursa2shape(inFile, outFile, listFlag, stackFlag);
+  else if (inFormat == DATAPOOL && outFormat == KMLFILE)
+    ret = datapool2kml(inFile, outFile, listFlag, stackFlag);
+  else if (inFormat == DATAPOOL && outFormat == SHAPEFILE)
+    ret = datapool2shape(inFile, outFile, listFlag, stackFlag);
   else if (inFormat == HAP && outFormat == KMLFILE)
     ret = hap2kml(inFile, outFile, listFlag);
   else if (inFormat == HAP && outFormat == SHAPEFILE)
