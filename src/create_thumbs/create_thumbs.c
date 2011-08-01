@@ -912,6 +912,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 		       NULL,                // coherence (gamma)
                        NULL,                // baseline (gamma)
 		       NULL,                // UAVSAR data type
+		       FALSE,               // metaonly
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -990,6 +991,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 		       NULL,                // coherence (gamma)
                        NULL,                // baseline (gamma)
 		       NULL,                // UAVSAR data type
+		       FALSE,               // metaonly
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
@@ -1056,6 +1058,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 		       NULL,                // coherence (gamma)
                        NULL,                // baseline (gamma)
 		       NULL,                // UAVSAR data type
+		       FALSE,               // metaonly
                        out_file);           /* output basename        */
             char *out_meta = appendExt(out_file, ".meta");
             meta_parameters *md = meta_read(out_meta);
