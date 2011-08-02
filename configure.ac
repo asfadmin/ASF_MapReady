@@ -190,6 +190,10 @@ if test "$have_png" = "no" ; then
 else
    PNG_LIBS="-lpng"
 fi
+if test "$sys" = "darwin" ; then
+   have_png="yes"
+   PNG_LIBS="-L/usr/X11/lib -lpng12"
+fi
 AC_SUBST(ASF_LIB_PNG)
 
 #### libgeotiff check ####
