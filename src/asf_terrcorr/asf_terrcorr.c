@@ -366,7 +366,7 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-use-zero-offsets-if-match-fails",
                             "--use-zero-offsets-if-match-fails",NULL)) {
-      if_coreg_fails_use_zero_offsets = FALSE;
+      if_coreg_fails_use_zero_offsets = TRUE;
     }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
         CHECK_ARG(1);

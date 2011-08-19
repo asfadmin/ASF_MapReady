@@ -604,6 +604,9 @@ int match_dem(meta_parameters *metaSAR,
   int idx, idy;
   const float cert_cutoff = 0.4; // is this a good cutoff !?
 
+  double saved_time_shift = metaSAR->sar->time_shift;
+  double saved_slant_shift = metaSAR->sar->slant_shift;
+
   // do-while that will repeat the dem grid generation and the fftMatch
   // of the sar & simulated sar, until the fftMatch doesn't turn up a
   // big offset.
@@ -915,7 +918,12 @@ int match_dem(meta_parameters *metaSAR,
           clean(demClipped);   FREE(demClipped);
           clean(demSimSar);    FREE(demSimSar);
           clean(demSlant);     FREE(demSlant);
-	  
+	 
+          // restore original shifts
+          metaSAR->sar->time_shift = saved_time_shift;
+          metaSAR->sar->slant_shift = saved_slant_shift;
+          meta_write(metaSAR, srFile);
+
 	  return match_dem(metaSAR, sarFile, demFile, srFile, output_dir,
 			   userMaskFile, demTrimSimSar, demTrimSlant,
 			   demGround, userMaskClipped, dem_grid_size,

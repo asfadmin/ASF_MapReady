@@ -82,7 +82,6 @@ int meta_get_latLon(meta_parameters *meta,
         *lat *= R2D;
         *lon *= R2D;
     }
-    return 0;
   }
   else if (meta->airsar) {
     double l = yLine, s = xSample;
@@ -93,7 +92,6 @@ int meta_get_latLon(meta_parameters *meta,
                   meta->general->sample_scaling * xSample;
     }
     airsar_to_latlon(meta, s, l, elev, lat, lon);
-    return 0;
   }
   else if (meta->uavsar) {
     double l = yLine, s = xSample;
@@ -116,14 +114,13 @@ int meta_get_latLon(meta_parameters *meta,
                   meta->general->sample_scaling * xSample;
       }
       alos_to_latlon(meta, s, l, elev, lat, lon, &hgt);
-      return 0;
   }
   else if (meta->sar &&
            (meta->sar->image_type=='S' || meta->sar->image_type=='G')) {
       /*Slant or ground range.  Use state vectors and doppler.*/
       double slant,doppler,time;
       meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,&doppler);
-      return meta_timeSlantDop2latLon(meta,
+      meta_timeSlantDop2latLon(meta,
               time,slant,doppler,elev,
               lat,lon);
   } 
@@ -136,7 +133,6 @@ int meta_get_latLon(meta_parameters *meta,
                   meta->general->sample_scaling * xSample;
     }
     location_to_latlon(meta, s, l, elev, lat, lon, &hgt);
-    return 0;
   }
   else { /*Bogus image type.*/
     asfPrintError(
@@ -150,6 +146,7 @@ int meta_get_latLon(meta_parameters *meta,
       meta->general ? meta->general->basename : "(null)");
     return 1; /* Not Reached */
   }
+  if (*lon < 0) *lon += 360;
   return 0;
 }
 
