@@ -224,7 +224,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
 
   // Generating a customized configuration for asf_mapready
   chdir(tmpDir);
-  quietflag = TRUE;
+  quietflag = 2;
   char configFileName[255];
   sprintf(configFileName, "asf_mapready.config");
   FILE *fp = FOPEN(configFileName, "w");
