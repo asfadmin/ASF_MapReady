@@ -20,6 +20,8 @@
 
 #define CHUNK 16384
 
+extern int statusflag;
+
 static double max2(double a, double b)
 {
   return a > b ? a : b;
@@ -224,7 +226,6 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
 
   // Generating a customized configuration for asf_mapready
   chdir(tmpDir);
-  quietflag = 2;
   char configFileName[255];
   sprintf(configFileName, "asf_mapready.config");
   FILE *fp = FOPEN(configFileName, "w");
@@ -281,9 +282,21 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   //fprintf(fp, "rgb look up table = %s\n", colormap);
   FCLOSE(fp);
 
+  // Save the asf tmp directory that we're using, we will need to
+  // restore it later.  Same for the other stuff.
+  const char *current_tmp_dir = get_asf_tmp_dir();
+  int saved_statusflag = statusflag;
+  int saved_quietflag = quietflag;
+  quietflag = 2;
+  statusflag = FALSE;
+
   // Run input file through asf_mapready
   asfPrintStatus("\n\nGenerating overlay PNG file ...\n\n");
   asf_convert(FALSE, configFileName);
+
+  // restore original tmp dir
+  set_asf_tmp_dir(current_tmp_dir);
+  current_tmp_dir = NULL;
 
   baseName = get_basename(outFile);
   sprintf(kmlFile, "%s.kml", baseName);
@@ -364,8 +377,8 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   c2v_config *cfg = read_c2v_config(configFileName);
   convert2vector(cfg);
   FREE(cfg);
-  quietflag = FALSE;
-  asfPrintStatus("\nGenerating %s ...\n", kmlFile);
+  asfPrintStatus("\nGenerated %s ...\n", kmlFile);
+  asfPrintStatus("Generated %s ...\n", pngFile);
 
   // Will revisit the zipping later
   // Could not get it to work - will go with the uncompressed KML file for now
@@ -410,6 +423,9 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   chdir(cwd);
   remove_dir(tmpDir);
   FREE(tmpDir);
+
+  statusflag = saved_statusflag;
+  quietflag = saved_quietflag;
  
   return(EXIT_SUCCESS);
 }

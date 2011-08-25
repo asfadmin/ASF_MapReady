@@ -163,6 +163,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 
       /*Compute the latitude and longitude of this location on the ground.*/
       meta_get_latLon(metaSar,(float)sar_y,(float)sar_x,elev,&lat,&lon);
+      if (lon < 0) lon += 360;
 
       /*Compute the projection coordinates of this location in the DEM.*/
       latlon_to_proj(metaDem->projection, metaSar->sar->look_direction,

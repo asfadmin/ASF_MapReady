@@ -146,7 +146,8 @@ int meta_get_latLon(meta_parameters *meta,
       meta->general ? meta->general->basename : "(null)");
     return 1; /* Not Reached */
   }
-  if (*lon < 0) *lon += 360;
+  //if (*lon < -180) *lon += 360;
+  //if (*lon > 180) *lon -= 360;
   return 0;
 }
 

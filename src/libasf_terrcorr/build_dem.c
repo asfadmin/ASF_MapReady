@@ -589,21 +589,25 @@ static void get_bounding_box_linesamp(meta_parameters *metaSAR,
     double lat, lon, line, samp;
 
     meta_get_latLon(metaSAR, 0, 0, 0, &lat, &lon);
+    if (lon < 0) lon += 360;
     meta_get_lineSamp(metaDEM, lat, lon, 0, &line, &samp);
     if (meta_is_valid_double(line) && meta_is_valid_double(samp))
         update_extents(line, samp, line_lo, line_hi, samp_lo, samp_hi);
 
     meta_get_latLon(metaSAR, 0, ns-1, 0, &lat, &lon);
+    if (lon < 0) lon += 360;
     meta_get_lineSamp(metaDEM, lat, lon, 0, &line, &samp);
     if (meta_is_valid_double(line) && meta_is_valid_double(samp))
         update_extents(line, samp, line_lo, line_hi, samp_lo, samp_hi);
 
     meta_get_latLon(metaSAR, nl-1, 0, 0, &lat, &lon);
+    if (lon < 0) lon += 360;
     meta_get_lineSamp(metaDEM, lat, lon, 0, &line, &samp);
     if (meta_is_valid_double(line) && meta_is_valid_double(samp))
         update_extents(line, samp, line_lo, line_hi, samp_lo, samp_hi);
 
     meta_get_latLon(metaSAR, nl-1, ns-1, 0, &lat, &lon);
+    if (lon < 0) lon += 360;
     meta_get_lineSamp(metaDEM, lat, lon, 0, &line, &samp);
     if (meta_is_valid_double(line) && meta_is_valid_double(samp))
         update_extents(line, samp, line_lo, line_hi, samp_lo, samp_hi);

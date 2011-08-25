@@ -3271,39 +3271,62 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (cfg->terrain_correct->save_terrcorr_dem) {
         // We know the name of the cut DEM in the temporary directory
         char *tmp;
+        int export_dem_ok = TRUE;
+
         if (cfg->terrain_correct->smooth_dem_holes)
           tmp = appendToBasename(cfg->terrain_correct->dem, "_tc_smooth_cut");
         else
           tmp = appendToBasename(cfg->terrain_correct->dem, "_cut");
         char *tmp2 = get_basename(tmp);
-        sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp2);
+        char *tmp3 = appendExt(tmp2, ".img");
+        sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp3);
         free(tmp);
         free(tmp2);
+        free(tmp3);
+        if (!fileExists(inFile)) {
+          // DEM may have been chunked...
+          tmp = appendToBasename(cfg->terrain_correct->dem, "_chunk_cut");
+          tmp2 = get_basename(tmp);
+          tmp3 = appendExt(tmp2, ".img");
+          sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp3);
+          free(tmp);
+          free(tmp2);
+          free(tmp3);
+          if (!fileExists(inFile)) {
+            asfPrintWarning("Could not find DEM chunk to export!\n");
+            export_dem_ok = FALSE;
+          }
+        }
 
-        // output name will be the SAR image's name with a "_dem" added
-        // to the basename
-        tmp = appendToBasename(cfg->general->out_name, "_dem");
-        strcpy(outFile, tmp);
-        free(tmp);
+        if (export_dem_ok) {
+          // output name will be the SAR image's name with a "_dem" added
+          // to the basename
+          tmp = appendToBasename(cfg->general->out_name, "_dem");
+          strcpy(outFile, tmp);
+          free(tmp);
 
-        //Never re-geocode the DEM -- assume user has already put it into
-        //their favored projection (since at this time we require that
-        //DEMs be geocoded for terrain correction ingest).  So, proceed
-        //directly to export.
-        if (cfg->general->export) {
+          //Never re-geocode the DEM -- assume user has already put it into
+          //their favored projection (since at this time we require that
+          //DEMs be geocoded for terrain correction ingest).  So, proceed
+          //directly to export.
+          if (cfg->general->export) {
             update_status("Exporting clipped DEM... ");
-            printf("Exporting clipped DEM: %s -> %s\n", inFile, outFile);
+            char *tmp = stripExt(inFile);
+            strcpy(inFile, tmp);
+            free(tmp);
+            asfPrintStatus("Exporting clipped DEM: %s -> %s\n", inFile, outFile);
             check_return(
                 asf_export(get_format(cfg), SIGMA, inFile, outFile),
                 "exporting clipped dem (asf_export)\n");
-        }
-        else {
+          }
+          else {
             // User requested that we save the clipped DEM, but chose not
             // to export.  So... just move the clipped DEM out of the tmp dir
             renameImgAndMeta(inFile, outFile);
-        }
+          }
 
-        save_intermediate(cfg, "Clipped DEM", outFile);
+          save_intermediate(cfg, "Clipped DEM", outFile);
+        }
     }
 
     // Process the layover/shadow mask if requested
