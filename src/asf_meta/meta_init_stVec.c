@@ -88,10 +88,12 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
        subtracting off the center line # * the time/line */
         imgSec-=ceos->dssr.sc_lin*fabs(meta->sar->azimuth_time_per_pixel);
     }
+    /*
     // Complex ALOS data have an additional 1 sec shift
     // Still under investigation: Need word from DQ on this
     if (ceos->facility==EOC && ceos->product==SLC)
       imgSec -= 1.0;
+    */
 
     /*Convert scene center # of seconds back to date/time*/
     sec2date(imgSec,&imgJD,&imgTime);
@@ -222,4 +224,65 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
         s->vecs[i].vec = st;
         s->vecs[i].time = timeStart+i*ppdr.data_int;
     }
+}
+
+void ceos_init_alos_stVec(const char *fName, ceos_description *ceos, 
+			  meta_parameters *meta)
+{
+  struct pos_data_rec ppdr;
+
+  // Read platform position record
+  get_ppdr(fName,&ppdr);
+
+  // Initialize state vector
+  int vector_count=3;
+  double data_int = meta->sar->original_line_count / 2
+    * fabs(meta->sar->azimuth_time_per_pixel);
+  while (fabs(data_int) > 15.0) {
+    data_int /= 2;
+    vector_count = vector_count*2-1;
+  }
+  meta->state_vectors = meta_state_vectors_init(vector_count);
+  meta->state_vectors->vector_count = vector_count;
+
+  // Determine image start time
+  ymd_date imgDate;
+  julian_date imgJD;
+  hms_time imgTime;
+  date_dssr2date(ceos->dssr.inp_sctim, &imgDate, &imgTime);
+  date_ymd2jd(&imgDate, &imgJD);
+  double imgSec = date2sec(&imgJD, &imgTime);
+  imgSec -= ceos->dssr.sc_lin*fabs(meta->sar->azimuth_time_per_pixel);
+  
+  sec2date(imgSec, &imgJD, &imgTime);
+  meta->state_vectors->year   = (int) imgJD.year;
+  meta->state_vectors->julDay = (int) imgJD.jd;
+  meta->state_vectors->second = date_hms2sec(&imgTime);
+
+  // Assign position and velocity for center of image
+  int n = (vector_count - 1)/2;
+  double timeStart = get_timeDelta(ceos, &ppdr, meta);
+  double time = timeStart + n*data_int;
+  stateVector st;
+  st.pos.x = ppdr.orbit_ele[0];
+  st.pos.y = ppdr.orbit_ele[1];
+  st.pos.z = ppdr.orbit_ele[2];
+  st.vel.x = ppdr.orbit_ele[3];
+  st.vel.y = ppdr.orbit_ele[4];
+  st.vel.z = ppdr.orbit_ele[5];
+  meta->state_vectors->vecs[n].vec = st;
+  meta->state_vectors->vecs[n].time = time - timeStart;
+
+  int ii;
+  double newTime;
+  for (ii=0; ii<n; ii++) {
+    newTime = time - (n - ii)*data_int;
+    meta->state_vectors->vecs[ii].time = newTime - timeStart;
+    meta->state_vectors->vecs[ii].vec = propagate(st, time, newTime);
+  }
+  for (ii=n+1; ii<vector_count; ii++) {
+    newTime = time + (vector_count - n - 1)*data_int;
+    meta->state_vectors->vecs[ii].time = newTime - timeStart;
+    meta->state_vectors->vecs[ii].vec = propagate(st, time, newTime);
+  }
 }

@@ -104,7 +104,8 @@ void ceos_init_sar_dera(ceos_description *ceos, const char *in_fName,
          meta_parameters *meta);
 int  meta_sar_to_startXY (meta_parameters *meta,
                           double *startX, double *startY);
-double spheroidDiffFromAxis (spheroid_type_t spheroid, double n_semi_major, double n_semi_minor);
+double spheroidDiffFromAxis (spheroid_type_t spheroid, double n_semi_major, 
+			     double n_semi_minor);
 
 // Importing CEOS optical data
 void ceos_init_optical(const char *in_fName,meta_parameters *meta);
@@ -118,7 +119,9 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr, struct scene_header_rec *shr,
                     struct alos_map_proj_rec *ampr);
 double get_firstTime(const char *fName);
+int is_alos_detected(meta_parameters *meta);
 double get_alos_firstTime (const char *fName);
+double get_alos_centerTime (const char *fName, int center_line);
 
 double get_chirp_rate (const char *fName);
 double get_sensor_orientation (const char *fName);
@@ -394,18 +397,21 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   }
   else if (iof) {
     require_ceos_data(in_fName, &dataName, &nBands);
-    firstTime = get_firstTime(dataName[0]);
+    if (is_alos_slc(meta))
+      firstTime = get_alos_firstTime(dataName[0]);
+    else
+      firstTime = get_firstTime(dataName[0]);
     free_ceos_names(dataName, NULL);
   }
   date_dssr2date(dssr->inp_sctim, &date, &time);
-  centerTime = date_hms2sec(&time);
+  if (is_alos_slc(meta))
+    centerTime = get_alos_centerTime(dataName[0], meta->general->line_count/2);
+  else
+    centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel =
       (centerTime - firstTime) / (meta->sar->original_line_count/2);
   //printf("firstTime: %lf, centerTime: %lf\n", firstTime, centerTime);
-  //printf("azimuth time per pixel: %f\n", meta->sar->azimuth_time_per_pixel);
-  //meta->sar->azimuth_time_per_pixel = -0.0075685327312;
-  //meta->sar->range_time_per_pixel = 1.9339617657e-07;
-
+  //printf("azimuth time per pixel: %.12f\n", meta->sar->azimuth_time_per_pixel);
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'A')
@@ -1032,114 +1038,34 @@ static double calc_swath_velocity(struct dataset_sum_rec *dssr,
   // nadir velocity calculation... see all the stuff commented out below
   return orbit_vel * er/ht;
 
-/*
-  // Commenting this out for now -- corrects away from the workreport
-  // Suspicious of the orbit_vel calculation, it would probably be better
-  // to calculate directly from the state vectors rather than using the
-  // sqrt(g*r*r/h) formula.
-
-  // Don's super-duper calculation!
-  int nl = meta->general->line_count;
-  int ns = meta->general->sample_count;
-  double R0 = er;
-  double srfp = dssr->rng_gate
-    * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
-  double slant_per = meta->general->x_pixel_size;
-  printf("srfp= %f\n", srfp);
-  printf("slant_per = %f\n", slant_per);
-  double sr = srfp + ns/2 * slant_per;
-  printf("sr = %f\n", sr);
-
-  sr = sr/1000.;
-  double sr2=sr*sr;
-  double incid =
-      dssr->incid_a[0] +
-      dssr->incid_a[1] * sr +
-      dssr->incid_a[2] * sr2 +
-      dssr->incid_a[3] * sr2 * sr +
-      dssr->incid_a[4] * sr2 * sr2 +
-      dssr->incid_a[5] * sr2 * sr2 * sr;
-
-  double tani = tan(incid);
-  double tan2i = tani*tani;
-  double h = ht-R0;
-
-  printf("R0 = %f\n", R0);
-  printf("incid = %f\n", incid*R2D);
-  printf("h = %f\n", h);
-
-  double a = 1 + tan2i;
-  double b = 2*h*tan2i - 2*R0;
-  double c = h*h*tan2i;
-
-  printf("a= %f\n", a);
-  printf("b= %f\n", b);
-  printf("c= %f\n", c);
-
-  double D = b*b - 4*a*c;
-  printf("D= %f\n", D);
-
-  if (D<0) {
-    printf("D<0 ... sorry, guys. :(\n");
-    return orbit_vel * er / ht;
-  }
-
-  double dh1 = (-b + sqrt(D))/(2*a);
-  double dh2 = (-b - sqrt(D))/(2*a);
-
-  printf("dh1 = %f\n", dh1);
-  printf("dh2 = %f\n", dh2);
-
-  double dh;
-  if (dh1>0 && dh1<h)
-    dh=dh1;
-  else if (dh2>0 && dh2<h)
-    dh=dh2;
-  else {
-    printf("no good dh to take ... sorry, guys. :(\n");
-    return orbit_vel * er / ht;
-  }
-
-  printf("dh = %f\n", dh);
-
-  double z = (h+dh)*tani;
-  printf("z = %f\n", z);
-
-  if (z>R0) {
-    printf("z is too large ... sorry, guys. :(\n");
-    return orbit_vel * er / ht;
-  }
-
-  double r = sqrt(R0*R0 - z*z);
-  printf("r = %f\n", r);
-  printf("er = %f\n", er);
-
-  double vel = orbit_vel * r/ht;
-
-  // simple scaling to get swath velocity from orbit vel
-  printf("calculated nadir velocity: %f\n", orbit_vel * er/ht);
-  printf("calculated swath velocity: %f\n", vel);
-
-  printf("azimuth time per pixel (using swath): %.10f\n",
-         meta->general->y_pixel_size / vel);
-  printf("azimuth time per pixel (using nadir): %.10f\n",
-         meta->general->y_pixel_size / (orbit_vel * er/ht));
-
-  return vel;
-*/
-
 }
 
-static void get_alos_linehdr(struct PHEADER *linehdr, const char *fName)
+int is_alos_slc(meta_parameters *meta)
+{
+  int ret = FALSE;
+  if (strcmp_case(meta->general->sensor, "ALOS") == 0 &&
+      strcmp_case(meta->general->sensor_name, "SAR") == 0 &&
+      meta->general->image_data_type == COMPLEX_IMAGE &&
+      meta->sar && meta->sar->image_type == 'S')
+    ret = TRUE;
+  
+  return ret;
+}
+
+static void get_alos_linehdr(struct PHEADER *linehdr, int line_number,
+			     const char *fName)
 {
     int length;
     char buff[25600];
     struct HEADER hdr;
 
+    long offset = firstRecordLen(fName);
     FILE *fp = FOPEN(fName, "rb");
+    FSEEK64(fp, offset, SEEK_SET);
     FREAD(&hdr, sizeof(struct HEADER), 1, fp);
     length = bigInt32(hdr.recsiz)-12;
-    FREAD(buff, length, 1, fp);
+    offset = length * line_number;
+    FSEEK64(fp, offset, SEEK_SET);
     FREAD(&hdr, sizeof(struct HEADER), 1, fp);
     FREAD(linehdr, sizeof(struct PHEADER), 1, fp);
     fclose(fp);
@@ -1164,7 +1090,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   }
 
   get_ceos_names(in_fName, basename, &dataName, &metaName, &nBands, &trailer);
-  //require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
 
   // General block
   strcpy(meta->general->processor, "JAXA");
@@ -1201,18 +1126,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 	beam = 81; // WB2 HH5scan
     }
   }
-
-  // Warning more misleading than good. Beam number does not necessarily
-  // reflect polarization. However, polarization is reported just before this
-  // based on other information.
-  /*
-  else if (beam_count > 1)
-    asfPrintWarning("Can't determine beam mode properly!\n"
-		    "Beam mode will reflect beam mode of first channel\n");
-  */
   strcpy(meta->general->mode, alos_beam_mode[beam]);
   asfPrintStatus("   Beam mode: %s\n", meta->general->mode);
-
   strncpy(buf, &dssr->product_id[11], 4);
   buf[4]=0;
   sscanf(buf, "%d", &meta->general->frame);
@@ -1221,45 +1136,9 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   else if (dssr->time_dir_lin[0] == 'D')
     meta->general->orbit_direction = 'D';
   meta->general->bit_error_rate = 0.0;
-
   meta->general->band_count = nBands;
+  ceos_init_stVec(in_fName,ceos,meta);
 
-  if (ceos->product != SGI) {
-    // calculate azimuth time per pixel from the swath velocity
-    double swath_vel = calc_swath_velocity(dssr,in_fName,meta);
-
-    if (meta->general->y_pixel_size != 0) {
-        meta->sar->azimuth_time_per_pixel =
-            meta->general->y_pixel_size / swath_vel;
-    }
-    /*
-    alos_processed_line_t *line_header;
-    julian_date jd1, jd2;
-    ymd_date ymd1, ymd2;
-    hms_time hms1, hms2;
-    line_header = read_alos_proc_line_header(dataName[0], 1);
-    double firstTime = (double) line_header->acq_msec / 1000;
-    jd1.year = line_header->acq_year;
-    jd1.jd = line_header->acq_day;
-    date_jd2ymd(&jd1, &ymd1);
-    date_sec2hms(firstTime, &hms1);
-    printf("firstTime: %lf\n", firstTime);
-    FREE(line_header);
-    line_header =
-      read_alos_proc_line_header(dataName[0], meta->general->line_count-1);
-    double lastTime = (double) line_header->acq_msec / 1000;
-    jd2.year = line_header->acq_year;
-    jd2.jd = line_header->acq_day;
-    date_jd2ymd(&jd2, &ymd2);
-    date_sec2hms(lastTime, &hms2);
-    printf("lastTime: %lf\n", lastTime);
-    FREE(line_header);
-    double diff = date_difference(&ymd1, &hms1, &ymd2, &hms2);
-    headerTime = (lastTime - firstTime) / meta->general->line_count;
-    printf("test: %.10lf\n", diff / meta->general->line_count);
-    */
-    ceos_init_stVec(in_fName,ceos,meta);
-  }
   if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'D')
@@ -1300,8 +1179,11 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->image_type = 'S';
   else if (is_geocoded)
     meta->sar->image_type = 'P';
-  else
+  else {
     meta->sar->image_type = 'R';
+    meta->sar->azimuth_time_per_pixel =
+      meta->general->x_pixel_size / mpdr->velnadir;
+  }
   meta->sar->look_count = dssr->n_azilok;
   if (ceos->product == SLC || ceos->product == RAW)
     meta->sar->deskewed = 0;
@@ -1339,95 +1221,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   }
   for (ii=0; ii<6; ++ii)
     meta->sar->incid_a[ii] = dssr->incid_a[ii];
-
-  if (ceos->product == SLC) {
-
-    // Fix the azimuth time per pixel, if we have the workreport file
-    // We seem to get better estimates of that value from workreport.
-    asfPrintStatus("\nAzimuth Time Per Pixel Calculation:\n");
-    double delta,workreport_atpp=-1;
-    if (get_alos_delta_time(in_fName, &delta)) {
-        workreport_atpp = delta / meta->sar->original_line_count;
-        asfPrintStatus("From workreport: %.10f\n", workreport_atpp);
-        asfPrintStatus("     Calculated: %.10f\n",
-                       meta->sar->azimuth_time_per_pixel);
-	//asfPrintStatus("    Line header: %.10f\n", headerTime);
-        asfPrintStatus("Using workreport value.\n\n");
-        meta->sar->azimuth_time_per_pixel = workreport_atpp;
-    }
-    else {
-      asfPrintStatus("From Workreport: (not available)\n");
-      asfPrintStatus("Calculated: %.10f\n",
-                     meta->sar->azimuth_time_per_pixel);
-      //asfPrintStatus("Line header: %.10f\n\n", headerTime);
-    }
-
-    // fix x_pixel_size & y_pixel_size values if needed
-    if (meta->general->x_pixel_size == 0) {
-        meta->general->x_pixel_size =
-            speedOfLight * meta->sar->range_time_per_pixel / 2.;
-        printf("Calculated x pixel size: %f\n", meta->general->x_pixel_size);
-    }
-
-    if (meta->general->y_pixel_size == 0) {
-        double lat, lon, x1, y1, x2, y2;
-        meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
-        latLon2UTM(lat, lon, 0, &x1, &y1);
-
-        int nl = meta->general->line_count;
-        meta_get_latLon(meta, nl-1, 0, 0, &lat, &lon);
-        latLon2UTM(lat, lon, 0, &x2, &y2);
-
-        meta->general->y_pixel_size = hypot(x1-x2, y1-y2)/(double)nl;
-
-        double swath_vel = calc_swath_velocity(dssr,dataName[0],meta);
-
-        printf("Calculated y pixel size: %f\n", meta->general->y_pixel_size);
-        printf("     Other method gives: %f\n",
-            meta->sar->azimuth_time_per_pixel * swath_vel);
-
-        if (meta->general->y_pixel_size == 0) {
-            // use value from other method...
-            meta->general->y_pixel_size =
-                meta->sar->azimuth_time_per_pixel * swath_vel;
-
-            if (meta->general->y_pixel_size == 0) {
-                // can't figure out the azimuth pixel size...
-                asfPrintWarning("Failed to determine azimuth pixel size.\n");
-            }
-        }
-    }
-  }
-
-  if (ceos->product == SGI) {
-
-    // calculate azimuth time per pixel from the swath velocity
-    double swath_vel = calc_swath_velocity(dssr,in_fName,meta);
-
-    meta->sar->azimuth_time_per_pixel =
-        meta->general->y_pixel_size / swath_vel;
-    if (meta->general->orbit_direction == 'D')
-      meta->sar->time_shift = 0.0;
-    else if (meta->general->orbit_direction == 'A')
-      meta->sar->time_shift = fabs(meta->sar->original_line_count *
-          meta->sar->azimuth_time_per_pixel);
-
-    // for comparison, calculate using the workreport file (old method)
-    // -- taking out this for now, it seems the swath velocity calculation
-    //    is working out ok...
-    // double delta;
-    double workreport_atpp=-1;
-    //if (get_alos_delta_time (in_fName, &delta))
-    //    workreport_atpp = delta / meta->sar->original_line_count;
-
-    asfPrintStatus("\nAzimuth Time Per Pixel Calculation:\n");
-    if (workreport_atpp > 0)
-        asfPrintStatus("  Using workreport: %.10f\n", workreport_atpp);
-    asfPrintStatus("        Calculated: %.10f\n\n", meta->sar->azimuth_time_per_pixel);
-
-    if (!meta->state_vectors)
-      ceos_init_stVec(in_fName,ceos,meta);
-  }
 
   // Transformation block
   if (ceos->product != SLC && ceos->product != RAW) {
@@ -1475,48 +1268,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     for (ii=0; ii<10; ++ii) {
       meta->transform->map2ls_a[ii] = facdr.a_map[ii];
       meta->transform->map2ls_b[ii] = facdr.b_map[ii];
-    }
-  }
-  else if (ceos->product == SLC) {
-    // SLC images -- no transform block
-    // See if we can get better geolocations using the workreport
-    double time_shift, slant_shift;
-    asfPrintStatus("Refining geolocation estimates using workreport...\n");
-    if (refine_slc_geolocation_from_workreport(metaName[0], basename, meta,
-                                               &time_shift, &slant_shift))
-    {
-          asfPrintStatus("SLC Geolocation refinement results:\n");
-          asfPrintStatus("  Time Shift: %f -> %f\n"
-                         "  Slant Shift: %f -> %f\n",
-                         meta->sar->time_shift,
-                         meta->sar->time_shift + time_shift,
-                         meta->sar->slant_shift,
-                         meta->sar->slant_shift + slant_shift);
-          // Figure out how much shift we had to do
-          double lat, lon, px1, py1, px2, py2;
-          meta_get_latLon(meta, meta->general->line_count/2.,
-                          meta->general->sample_count/2., 0, &lat, &lon);
-          asfPrintStatus("Before center lat/lon: %f,%f\n", lat, lon);
-          int zone = utm_zone(lon);
-          latLon2UTM_zone(lat, lon, 0, zone, &px1, &py1);
-          meta->sar->time_shift += time_shift;
-          meta->sar->slant_shift += slant_shift;
-          meta_get_latLon(meta, meta->general->line_count/2.,
-                          meta->general->sample_count/2., 0, &lat, &lon);
-          asfPrintStatus("After center lat/lon: %f,%f\n", lat, lon);
-          latLon2UTM_zone(lat, lon, 0, zone, &px2, &py2);
-          double dx = px2-px1;
-          double dy = py2-py1;
-          if (fabs(dx)<2000 && fabs(dy)<2000) {
-            asfPrintStatus("  E-W Shift: %.1fm\n", dx);
-            asfPrintStatus("  N-S Shift: %.1fm\n", dy);
-            asfPrintStatus("  Total    : %.1fm\n", hypot(dx,dy));
-          }
-          else {
-            asfPrintStatus("  E-W Shift: %.2fkm\n", dx/1000.);
-            asfPrintStatus("  N-S Shift: %.2fkm\n", dy/1000.);
-            asfPrintStatus("  Total    : %.2fkm\n", hypot(dx,dy)/1000.);
-          }
     }
   }
 
@@ -3098,6 +2849,7 @@ ceos_description *get_ceos_description_ext(const char *fName,
     else if (0==strncmp(facStr, "EOC", 3)) {
       asfReport(level, "   Data set processed by EOC\n");
       ceos->facility = EOC;
+      ceos->processor = ALOS_PROC;
       if (0==strncmp(ceos->dssr.lev_code, "1.0", 3) ||
 	  0==strncmp(prodStr, "UNPROCESSED SIGNAL DATA", 23))
         ceos->product = RAW;
@@ -3368,7 +3120,14 @@ double get_firstTime (const char *fName)
 double get_alos_firstTime (const char *fName)
 {
    struct PHEADER linehdr;
-   get_alos_linehdr(&linehdr, fName);
+   get_alos_linehdr(&linehdr, 1, fName);
+   return ((double)bigInt32(linehdr.acq_msec)/1000.0);
+}
+
+double get_alos_centerTime(const char *fName, int center_line)
+{
+   struct PHEADER linehdr;
+   get_alos_linehdr(&linehdr, center_line, fName);
    return ((double)bigInt32(linehdr.acq_msec)/1000.0);
 }
 

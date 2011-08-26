@@ -65,7 +65,8 @@ typedef struct {
     FOCUS,
     SP3,
     DPS,
-    MSSAR
+    MSSAR,
+    ALOS_PROC
   } processor;
   enum {
     unknownProduct,
