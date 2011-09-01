@@ -163,12 +163,22 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 
       /*Compute the latitude and longitude of this location on the ground.*/
       meta_get_latLon(metaSar,(float)sar_y,(float)sar_x,elev,&lat,&lon);
-      if (lon < 0) lon += 360;
 
       /*Compute the projection coordinates of this location in the DEM.*/
       latlon_to_proj(metaDem->projection, metaSar->sar->look_direction,
 		     lat*D2R, lon*D2R, elev, &demProj_x, &demProj_y,
 		     &demProj_z);
+
+      /*Lat/Lon pseudo requires some special treatment*/
+      if (metaDem->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
+        double sx = metaDem->projection->startX;
+        double dx1 = fabs(sx - demProj_x);
+        double dx2 = fabs(sx - demProj_x + 360);
+        double dx3 = fabs(sx - demProj_x - 360);
+        if (dx2 < dx1 && dx2 < dx3) demProj_x -= 360;
+        if (dx3 < dx1 && dx3 < dx2) demProj_x += 360;
+      }
+
       /*Compute the line,sample coordinates of this location in the DEM.*/
       dem_x = (demProj_x - metaDem->projection->startX) /
 	metaDem->projection->perX - metaDem->general->start_sample;

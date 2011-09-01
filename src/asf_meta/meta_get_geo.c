@@ -331,6 +331,16 @@ int meta_get_lineSamp(meta_parameters *meta,
     latlon_to_proj(mp, 'R', lat*D2R, lon*D2R, elev, &x, &y, &z);
 
     *yLine = (y - mp->startY)/mp->perY - mg->start_line;
+
+    if (meta->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
+      double sx = mp->startX;
+      double dx1 = fabs(sx - x);
+      double dx2 = fabs(sx - x + 360);
+      double dx3 = fabs(sx - x - 360);
+      if (dx2 < dx1 && dx2 < dx3) x -= 360;
+      if (dx3 < dx1 && dx3 < dx2) x += 360;
+    }
+
     *xSamp = (x - mp->startX)/mp->perX - mg->start_sample;
 
     return 0;
