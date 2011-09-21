@@ -228,6 +228,7 @@ int main(int argc, char *argv[])
   asf_convert_ext(createflag, configFileName, save_dem);
 
   // remove log file if we created it (leave it if the user asked for it)
+  FCLOSE(fLog);
   if (log_f == FLAG_NOT_SET)
     remove(logFile);
 

@@ -824,6 +824,7 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->mosaic->overlap, read_str(line, "overlap"));
       FREE(test);
     }
+    FCLOSE(fDefaults);
   }
 
   // Read in parameters
