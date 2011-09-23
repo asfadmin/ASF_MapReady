@@ -69,6 +69,18 @@ MAPREADY_MODULES = \
 	src/asf_test \
 	@ASF_GUI@
 
+MAPREADY_SOURCE = \
+	$(MAPREADY_MODULES) \
+	include \
+	doc/mapready_manual.pdf \
+	doc/mapready-version-history.txt \
+	external \
+	LICENSE.txt \
+	make_support \
+	configure \
+	READMAE_src.txt \
+	Makefile.in
+
 STP_MODULES = \
 	src/asf \
 	src/libasf_proj \
@@ -293,6 +305,13 @@ mapready: mkdirs_for_build external_libs
 	@ echo "  XXXXXXXXXXXX ASF MapReady Package Compiled! XXXXXXXXXXX"
 	@ echo ""
 
+mapready_source:
+	mkdir asf_tools
+# This is essentially a cp --parents but not all platforms have the --parents option
+	tar --exclude=.svn -cf - $(MAPREADY_SOURCE) | tar xf - -C asf_tools
+	tar -czvf mapready-src.tar.gz asf_tools
+	rm -fr asf_tools
+
 # SAR Training Processor Package
 stp: mkdirs_for_build external_libs
 	mkdir -p $(STP_SHAREDIR)
@@ -473,6 +492,7 @@ clean:
 	rm -rf share
 	rm -rf man
 	rm -f Makefile.old
+	-rm mapready*.tar.gz
 	-rm -rf $(IGNORED_INCLUDES)
 	$(foreach MODULE, $(ALL_MODULES), \
 		$(MAKE) clean -C $(MODULE) &&) true
