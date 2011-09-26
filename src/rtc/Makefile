@@ -5,6 +5,7 @@ TARGET = rtc
 CFLAGS += $(GLIBS_CFLAGS) -g
 
 LIBS  = \
+	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \

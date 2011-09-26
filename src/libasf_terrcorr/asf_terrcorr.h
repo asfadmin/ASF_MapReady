@@ -73,4 +73,8 @@ char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
 int get_dem_chunk(char *dem_in, char *dem_out, meta_parameters *metaDEM,
                   meta_parameters *metaSAR);
 
+/* Prototypes from rtc.c */
+int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
+        char *output_file);
+
 #endif
