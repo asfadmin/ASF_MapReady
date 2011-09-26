@@ -1,7 +1,7 @@
 #include "asf_view.h"
 #include <gdk/gdkkeysyms.h>
 #include "libasf_proj.h"
-#include "cr.h"
+//#include "cr.h"
 
 UserPolygon g_polys[MAX_POLYS];
 
@@ -751,7 +751,7 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
     // Add a "north" arrow if possible
     if (meta_supports_meta_get_latLon(ii->meta)) {
       add_north_arrow(pb, ii);
-      add_cr(pb, ii);
+      //add_cr(pb, ii);
     }
 
     // draw the polygon
