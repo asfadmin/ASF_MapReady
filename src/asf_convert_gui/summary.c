@@ -142,7 +142,7 @@ const char *get_summary_text()
         {
             if (s->no_matching)
             {
-                sprintf(text, "%s\n   Skip co-registration if it fails", text);
+                sprintf(text, "%s\n   Skip co-registration", text);
                 if (s->offset_x != 0.0 || s->offset_y != 0.0) {
                     sprintf(text, "%s\n     (offsets: %.2f,%.2f pixels)", text,
                             s->offset_x, s->offset_y);

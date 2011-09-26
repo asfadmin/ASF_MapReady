@@ -1,6 +1,7 @@
 #include "asf_view.h"
 #include <gdk/gdkkeysyms.h>
 #include "libasf_proj.h"
+#include "cr.h"
 
 UserPolygon g_polys[MAX_POLYS];
 
@@ -515,6 +516,39 @@ static void put_marker(GdkPixbuf *pixbuf, double line, double samp,
     }
 }
 
+int g_show_cr = TRUE;
+static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
+{
+  if (!g_show_cr)
+    return;
+
+  meta_parameters *meta = ii->meta;
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+
+  int i;
+  for (i=0; i<100; ++i) {
+    char *name = djArr[i].name;
+    if (!name) break;
+
+    double lat = djArr[i].lat;
+    double lon = djArr[i].lon;
+    double ht = djArr[i].elev;
+
+    double line, samp;
+    int bad = meta_get_lineSamp(meta, lat, lon, ht, &line, &samp);
+   
+    if (bad || line<0 || line>nl || samp<0 || samp>ns)
+      continue;
+
+    put_marker(pb, line, samp, 1, PURPLE, ii);
+
+    // convert from image coords to screen coords
+    int ix, iy;
+    ls2img(line, samp, &ix, &iy);
+  }
+}
+
 static void add_north_arrow(GdkPixbuf *pb, ImageInfo *ii)
 {
   if (!g_show_north_arrow)
@@ -715,8 +749,10 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
     }
 
     // Add a "north" arrow if possible
-    if (meta_supports_meta_get_latLon(ii->meta))
+    if (meta_supports_meta_get_latLon(ii->meta)) {
       add_north_arrow(pb, ii);
+      add_cr(pb, ii);
+    }
 
     // draw the polygon
     if (g_poly->n > 0) {

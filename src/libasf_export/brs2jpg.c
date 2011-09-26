@@ -27,6 +27,7 @@ int brs2jpg(char *browseFile, char *workreportFile, char *outFile)
     else if (strncmp(line, "Brs_BrowseBitPixel=\"8\"", 22) == 0)
       meta->general->data_type = BYTE;
   }
+  FCLOSE(fp);
   sprintf(tmpDataFile, "%s/%s.img", tmpDir, baseName);
   meta_write(meta, tmpDataFile);
   fileCopy(browseFile, tmpDataFile);
