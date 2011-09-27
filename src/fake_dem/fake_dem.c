@@ -5,7 +5,23 @@
 
 #define ASF_DESCRIPTION_STRING \
 "     This program creates an image with the same geometry as the input\n"\
-"     but with fake data as specified.\n"
+"     but with fake data as specified.\n"\
+"\n"\
+"     Valid types are:\n"\
+"           sinusoid-horizontal\n"\
+"           sinusoid-vertical\n"\
+"           sinusoid-diagonal\n"\
+"           triangle-horizontal\n"\
+"           triangle-vertical\n"\
+"           triangle-diagonal\n"\
+"\n"\
+"     The size parameter specifies the period, in pixels, of the sinusoid or\n"\
+"     triangle wave.\n"\
+"\n"\
+"     For example:\n"\
+"        fake_dem sinusoid-horizontal 200 delta_fixed my_fake_dem\n"\
+"\n"
+
 
 #include <stdio.h>
 #include <asf.h>
@@ -183,7 +199,7 @@ static void fake_it(const char *inFile, const char *outFile,
 
   for (ii=0; ii<nl; ++ii) {
     for (jj=0; jj<ns; ++jj) {
-      buf[jj] = 100*calc_val(ii, nl, jj, ns, type, size); 
+      buf[jj] = 5000*calc_val(ii, nl, jj, ns, type, size); 
     }
     put_float_line(fp, meta, ii, buf);
     asfLineMeter(ii,nl);
