@@ -237,6 +237,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   int use_gr_dem=FALSE;
+  int save_ground_dem = FALSE;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
       clean_files, do_resample, do_corner_matching,
@@ -246,7 +247,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
       update_original_metadata_with_offsets, mask_height_cutoff,
       doRadiometric, smooth_dem_holes, NULL,
       no_matching, range_offset, azimuth_offset, use_gr_dem, add_speckle,
-      if_coreg_fails_use_zero_offsets);
+      if_coreg_fails_use_zero_offsets, save_ground_dem);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
@@ -272,6 +273,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   int use_gr_dem = FALSE;
+  int save_ground_dem = FALSE;
 
   int ret =
       asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
@@ -282,7 +284,8 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        mask_height_cutoff, doRadiometric, smooth_dem_holes,
                        other_files_to_update_with_offsets,
                        no_matching, range_offset, azimuth_offset, use_gr_dem,
-                       add_speckle, if_coreg_fails_use_zero_offsets);
+                       add_speckle, if_coreg_fails_use_zero_offsets,
+		       save_ground_dem);
 
   if (ret==0)
   {
@@ -1052,7 +1055,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                      char **other_files_to_update_with_offset,
                      int no_matching, double range_offset,
                      double azimuth_offset, int use_gr_dem, int add_speckle,
-                     int if_coreg_fails_use_zero_offsets)
+                     int if_coreg_fails_use_zero_offsets, int save_ground_dem)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimSar = NULL, *demTrimSlant = NULL, *demGround = NULL;
@@ -1493,7 +1496,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
         clean(demChunk);
     clean(demTrimSlant);
     clean(demTrimSimSar);
-    clean(demGround);
+    if (!save_ground_dem)
+      clean(demGround);
     if (clean_resample_file) // false when resample file is the original image
         clean(resampleFile);
     clean(srFile);

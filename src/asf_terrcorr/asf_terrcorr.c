@@ -8,7 +8,7 @@
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
 "          [-other-file <basename>] [-do-radiometric] [-smooth-dem-holes]\n"\
 "          [-no-match] [-offsets <range> <azimuth>]\n"\
-"          [-use-zero-offsets-if-match-fails]\n"\
+"          [-use-zero-offsets-if-match-fails] [-save-ground-range-dem]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -192,6 +192,10 @@
 "          Normally, if the coregistration fails, asf_terrcorr will abort\n"\
 "          with an error.\n"\
 "\n"\
+"     -save-ground-range-dem\n"\
+"          Save the ground range DEM (for radiometric terrain correction "\
+"later).\n"\
+"\n"\
 "     -no-speckle\n"\
 "          When generating the simulated SAR image for co-registration, do\n"\
 "          not add speckle.  Generally, this will cause co-registration to\n"\
@@ -315,6 +319,7 @@ main (int argc, char *argv[])
   int use_gr_dem = FALSE;
   int add_speckle = TRUE;
   int if_coreg_fails_use_zero_offsets = FALSE;
+  int save_ground_dem = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   char *other_files[MAX_OTHER];
@@ -443,6 +448,10 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-smooth-dem-holes","--smooth-dem-holes",NULL)) {
         smooth_dem_holes = TRUE;
     }
+    else if (strmatches(key,"-save-ground-range-dem","--save-ground-range-dem",
+			NULL)) {
+      save_ground_dem = TRUE;
+    }
     else if (strmatches(key,"-help","--help",NULL)) {
         print_help(); // doesn't return
     }
@@ -481,7 +490,7 @@ main (int argc, char *argv[])
                               smooth_dem_holes, other_files,
                               no_matching, range_offset, azimuth_offset,
                               use_gr_dem, add_speckle,
-                              if_coreg_fails_use_zero_offsets);
+                              if_coreg_fails_use_zero_offsets, save_ground_dem);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])
