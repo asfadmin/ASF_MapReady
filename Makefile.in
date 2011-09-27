@@ -282,6 +282,8 @@ mapready_jenkins: mkdirs_for_build external_libs
 	cp LICENSE.txt $(MAPREADY_SHAREDIR)
 	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
+# Remove all the .svn directories from the share dir
+	rm -rf `find $(S_SHAREDIR) -name .svn`
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX ASF MapReady Package Compiled! XXXXXXXXXXX"
 	@ echo ""
