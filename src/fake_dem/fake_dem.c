@@ -163,6 +163,7 @@ static float calc_val(int ii, int nl, int jj, int ns, const char *type,
                  "  triangle-vertical\n"
                  "  triangle-diagonal\n");
   asfPrintError("Impossible: %s\n", type);
+  return 0;
 }
 
 static void fake_it(const char *inFile, const char *outFile,
