@@ -517,6 +517,7 @@ static void put_marker(GdkPixbuf *pixbuf, double line, double samp,
 }
 
 int g_show_cr = TRUE;
+/*
 static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
 {
   if (!g_show_cr)
@@ -548,6 +549,7 @@ static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
     ls2img(line, samp, &ix, &iy);
   }
 }
+*/
 
 static void add_north_arrow(GdkPixbuf *pb, ImageInfo *ii)
 {
