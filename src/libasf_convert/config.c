@@ -197,6 +197,11 @@ int init_convert_config(char *configFile)
           "# flag switched on will generate an [Terrain correction] section where you\n"
           "# can define further parameters.\n\n");
   fprintf(fConfig, "terrain correction = 0\n\n");
+  // radiometric correction flag
+  fprintf(fConfig, "# The radiometric terrain correction flag indicates whether the data\n"
+	  "# needs to be run 'rtc' (1 for running it, 0 for leaving out the radiometric terrain\n"
+          "# correction step).\n");
+  fprintf(fConfig, "radiometric terrain correction = 0\n\n");
   // geocoding flag
   fprintf(fConfig, "# The geocoding flag indicates whether the data needs to be run through\n"
           "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
@@ -384,6 +389,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->detect_cr = newStruct(s_detect_cr);
   cfg->polarimetry = newStruct(s_polarimetry);
   cfg->terrain_correct = newStruct(s_terrain_correct);
+  cfg->rtc = newStruct(s_rtc);
   cfg->geocoding = newStruct(s_geocoding);
   cfg->export = newStruct(s_export);
   cfg->mosaic = newStruct(s_mosaic);
@@ -410,6 +416,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->detect_cr = 0;
   cfg->general->polarimetry = 0;
   cfg->general->terrain_correct = 0;
+  cfg->general->rtc = 0;
   cfg->general->geocoding = 0;
   cfg->general->export = 0;
   cfg->general->mosaic = 0;
@@ -538,6 +545,11 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->azimuth_offset = 0;
   cfg->terrain_correct->use_gr_dem = 0;
   cfg->terrain_correct->if_coreg_fails_use_zero_offsets = 0;
+
+  cfg->rtc->ground_range_dem = (char *)MALLOC(sizeof(char)*1024);
+  cfg->rtc->update_mask = 0;
+  cfg->rtc->layover_mask = (char *)MALLOC(sizeof(char)*1024);
+
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj",
           get_asf_share_dir());
@@ -619,6 +631,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->polarimetry = read_int(line, "polarimetry");
       if (strncmp(test, "terrain correction", 18)==0)
         cfg->general->terrain_correct = read_int(line, "terrain correction");
+      if (strncmp(test, "radiometric terrain correction", 30)==0)
+	cfg->general->rtc = read_int(line, "radiometric terrain correction");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -864,6 +878,8 @@ convert_config *init_fill_convert_config(char *configFile)
           cfg->general->polarimetry = read_int(line, "polarimetry");
         if (strncmp(test, "terrain correction", 18)==0)
             cfg->general->terrain_correct = read_int(line, "terrain correction");
+	if (strncmp(test, "radiometric terrain correction", 30)==0)
+	  cfg->general->rtc = read_int(line, "radiometric terrain correction");
         if (strncmp(test, "geocoding", 9)==0)
             cfg->general->geocoding = read_int(line, "geocoding");
         if (strncmp(test, "export", 6)==0)
@@ -942,6 +958,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->general->detect_cr = read_int(line, "detect corner reflectors");
       if (strncmp(test, "terrain correction", 18)==0)
         cfg->general->terrain_correct = read_int(line, "terrain correction");
+      if (strncmp(test, "radiometric terrain correction", 30)==0)
+	cfg->general->rtc = read_int(line, "radiometric terrain correction");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -1348,6 +1366,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# can define further parameters.\n\n");
     }
     fprintf(fConfig, "terrain correction = %i\n", cfg->general->terrain_correct);
+    // General - Radiometric terrain correction
+    if (!shortFlag) {
+      fprintf(fConfig, "# The radiometric terrain correction flag indicates whether the data\n"
+	      "# needs to be run 'rtc' (1 for running it, 0 for leaving out the radiometric terrain\n"
+	      "# correction step).\n");
+    }
+    fprintf(fConfig, "radiometric terrain correction = %i\n", cfg->general->rtc);
     // General - Geocoding
     if (!shortFlag) {
       fprintf(fConfig, "\n# The geocoding flag indicates whether the data needs to be run through\n"

@@ -21,6 +21,7 @@ typedef struct
   int detect_cr;          // detect corner reflector flag (for internal use only)
   int polarimetry;        // polarimetry flag
   int terrain_correct;    // terrain correction flag
+  int rtc;                // radiometric terrain correction flag
   int geocoding;          // geocoding flag
   int export;             // export flag
   int mosaic;             // mosaic flag
@@ -187,6 +188,13 @@ typedef struct
 
 typedef struct
 {
+  char *ground_range_dem; // ground range dem file
+  int update_mask;        // update mask flag
+  char *layover_mask;     // layover/shadow mask file
+} s_rtc;
+
+typedef struct
+{
   char *projection;       // projection parameters file
   double pixel;           // pixel size for geocoded product
   double height;          // average height of the data
@@ -245,6 +253,7 @@ typedef struct
   s_detect_cr *detect_cr;              // corner reflector detection parameters
   s_polarimetry *polarimetry;          // polarimetric parameters
   s_terrain_correct *terrain_correct;  // terrain correction parameters
+  s_rtc *rtc;                          // radiometric terrain correction params
   s_geocoding *geocoding;              // geocoding parameters
   s_export *export;                    // exporting parameters
   s_mosaic *mosaic;                    // mosaicking parameters

@@ -229,6 +229,9 @@ typedef struct
   int no_matching;
   double offset_x, offset_y;
 
+  // radiometric terrain correction options
+  int rtc_is_checked;
+
   /* misc */
   int keep_files; // 0= keep none, 1=keep temp, 2= keep all
   int apply_metadata_fix;

@@ -1599,6 +1599,7 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "polarimetry = %d\n", polarimetry_on ? 1 : 0);
     fprintf(cf, "terrain correction = %d\n",
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
+    fprintf(cf, "radiometric terrain correction = %d\n", s->do_radiometric);
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
     fprintf(cf, "export = %d\n", s->export_is_checked);
     fprintf(cf, "intermediates = 1\n");
@@ -1756,7 +1757,10 @@ settings_to_config_file(const Settings *s,
 	    */
             fprintf(cf, "refine geolocation only = 0\n");
             fprintf(cf, "interpolate = %d\n", s->interp);
-            fprintf(cf, "do radiometric = %d\n", s->do_radiometric);
+	    // Making sure that only new radiometric terrain correction
+	    // is used from the GUI
+            // fprintf(cf, "do radiometric = %d\n", s->do_radiometric);
+            fprintf(cf, "do radiometric = 0\n");
             fprintf(cf, "save terrcorr dem = %d\n", s->generate_dem);
             fprintf(cf, "save terrcorr layover mask = %d\n",
                     s->generate_layover_mask);
@@ -2180,9 +2184,13 @@ int apply_settings_from_config_file(char *configFile)
         s.generate_layover_mask =
             cfg->terrain_correct->save_terrcorr_layover_mask;
         s.generate_dem = cfg->terrain_correct->save_terrcorr_dem;
-        s.do_radiometric = cfg->terrain_correct->do_radiometric;
+	// GUI will assume new technique is to be used
+	// s.do_radiometric = cfg->terrain_correct->do_radiometric;
         s.interp_dem_holes = cfg->terrain_correct->smooth_dem_holes;
     }
+
+    // radiometric terrain correction
+    s.rtc_is_checked = cfg->general->rtc;
 
     /* misc */
     s.keep_files = cfg->general->intermediates - 1;
