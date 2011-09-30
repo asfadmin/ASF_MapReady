@@ -25,12 +25,16 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS  = $(TARGET).o
 
-all: prog
+all: prog make_gr_dem
 	-rm *.o
 
 prog: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) $(LDFLAGS)
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
+make_gr_dem: make_gr_dem.o
+	$(CC) $(CFLAGS) -o make_gr_dem make_gr_dem.o $(LIBS) $(LDFLAGS)
+	mv make_gr_dem$(BIN_POSTFIX) $(BINDIR)
+	
 clean:
 	rm -f core $(OBJS) *.o
