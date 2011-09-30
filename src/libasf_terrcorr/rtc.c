@@ -5,16 +5,6 @@
 #include <string.h>
 #include "vector.h"
 
-static void push_next_height_line(float **localHeights, meta_parameters *meta_dem, FILE *dem_fp, int ns, int line)
-{
-  float *demLine = MALLOC(sizeof(float)*ns);
-  get_float_line(dem_fp, meta_dem, line, demLine);
-  FREE(localHeights[0]);
-  localHeights[0] = localHeights[1];
-  localHeights[1] = localHeights[2];
-  localHeights[2] = demLine;
-}
-
 static void geodetic_to_ecef(double lat, double lon, double h, Vector *v)
 {
   const double a = 6378144.0;    // GEM-06 Ellipsoid.
@@ -72,53 +62,64 @@ static Vector get_position(float **localHeights, meta_parameters *meta_in, int l
   return v;
 }
 
-static Vector * calculate_normal(meta_parameters *meta, float **localHeights, int line, int sample)
+static Vector** calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameters *meta_img, int line, FILE *dem_fp)
 {
-  double lat, lon, h;
-  Vector v1, v2, v;
-  Vector *normal;
+  int jj;
+  double lat, lon;
+  int ns = meta_img->general->sample_count;
+  float demLine[ns];
+  Vector **vectors = MALLOC(sizeof(Vector)*ns);
 
-  h = localHeights[0][sample];
-  meta_get_latLon(meta, line-1, sample, 0, &lat, &lon); 
-  geodetic_to_ecef(lat, lon, h, &v1);
+  get_float_line(dem_fp, meta_dem, line, demLine);
 
-  h = localHeights[2][sample];
-  meta_get_latLon(meta, line+1, sample, 0, &lat, &lon); 
-  geodetic_to_ecef(lat, lon, h, &v);
-  vector_subtract(&v1, &v);
+  for(jj = 0; jj < ns; ++jj) {
+    Vector *v = MALLOC(sizeof(Vector));
+    meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
+    geodetic_to_ecef(lat, lon, demLine[jj], v);
+    vectors[jj] = v;
+  }
 
-  h = localHeights[1][sample-1];
-  meta_get_latLon(meta, line, sample-1, 0, &lat, &lon); 
-  geodetic_to_ecef(lat, lon, h, &v2);
+  return vectors;
+}
 
-  h = localHeights[1][sample+1];
-  meta_get_latLon(meta, line, sample+1, 0, &lat, &lon); 
-  geodetic_to_ecef(lat, lon, h, &v);
-  vector_subtract(&v2, &v);
+static void push_next_vector_line(Vector ***localVectors, meta_parameters *meta_dem, meta_parameters *meta_img, FILE *dem_fp, int line)
+{
+  Vector **vectorsLine = calculate_vectors_for_line(meta_dem, meta_img, line, dem_fp);
+  FREE(localVectors[0]);
+  localVectors[0] = localVectors[1];
+  localVectors[1] = localVectors[2];
+  localVectors[2] = vectorsLine;
+}
 
-  normal = vector_cross(&v2, &v1);
+static Vector * calculate_normal(Vector ***localVectors, int sample)
+{
+  Vector *v1, *v2, *normal;
+
+  v1 = vector_copy(localVectors[0][sample]);
+  vector_subtract(v1, localVectors[2][sample]);
+
+  v2 = vector_copy(localVectors[1][sample-1]);
+  vector_subtract(v2, localVectors[1][sample+1]);
+
+  normal = vector_cross(v2, v1);
   vector_multiply(normal, 1./vector_magnitude(normal));
+
+  vector_free(v1);
+  vector_free(v2);
   
   return normal;
 }
 
 static float
-calculate_correction(meta_parameters *meta_in, int line, int samp, float h,
-                     Vector *satpos, Vector *n, Vector *p)
+calculate_correction(meta_parameters *meta_in, int line, int samp,
+                     Vector *satpos, Vector *n, Vector *p, Vector *p_next)
 {
   // R: vector from ground point (p) to satellite (satpos)
   Vector *R = vector_copy(satpos);
   vector_subtract(R, p);
 
-  // x: vector from p to p_next (along the ground)
-  //    so we use the next point in the image, but forced to the same height
-  double lat, lon;
-  meta_get_latLon(meta_in, line+1, samp, 0, &lat, &lon);
-  Vector p_next;
-  geodetic_to_ecef(lat, lon, h, &p_next);
-
   Vector *x = vector_copy(p);
-  vector_subtract(x, &p_next);
+  vector_subtract(x, p_next);
 
   // Rx: R cross x -- image plane normal
   Vector *Rx = vector_cross(R,x);
@@ -154,8 +155,8 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   char *outputMeta = appendExt(output_file, ".meta");
   char *maskImg = maskFlag ? appendExt(mask_file, ".img") : NULL;
   char *maskMeta = maskFlag ? appendExt(mask_file, ".meta") : NULL;
-  char *corrImg = "correction.img";
-  char *corrMeta = "correction.meta";
+  char *corrImg = "correction2.img";
+  char *corrMeta = "correction2.meta";
 
   if (!fileExists(inputImg))
     asfPrintError("Not found: %s\n", inputImg);
@@ -189,8 +190,8 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   assert(ns == dns);
   assert(nl == dnl);
 
-  float **localHeights = MALLOC(sizeof(float*)*3);
-  memset(localHeights, 0, sizeof(float*)*3);
+  Vector ***localVectors = MALLOC(sizeof(Vector**)*3);
+  memset(localVectors, 0, sizeof(Vector**)*3);
 
   FILE *fpIn = FOPEN(inputImg, "rb");
   FILE *fpOut = FOPEN(outputImg, "wb");
@@ -203,9 +204,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
   int ii, jj, kk;
   for(ii = 1; ii < 3; ++ii) {
-    float *demLine = MALLOC(sizeof(float)*dns);
-    get_float_line(dem_fp, meta_dem, ii - 1, demLine);
-    localHeights[ii] = demLine;
+    localVectors[ii] = calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp);
   }
 
   // We aren't applying the correction to the edges of the image
@@ -215,13 +214,12 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   }
 
   for(ii = 1; ii < nl - 1; ++ii) {
-    push_next_height_line(localHeights, meta_dem, dem_fp, dns, ii+1);
+    push_next_vector_line(localVectors, meta_dem, meta_in, dem_fp, ii + 1);
     corr[0] = corr[ns-1] = 1;
     Vector satpos = get_satpos(meta_in, ii);
     for(jj = 1; jj < ns - 1; ++jj) {
-      Vector * normal = calculate_normal(meta_in, localHeights, ii, jj);
-      Vector position = get_position(localHeights, meta_in, ii, jj);
-      corr[jj] = calculate_correction(meta_in, ii, jj, localHeights[1][jj], &satpos, normal, &position);
+      Vector * normal = calculate_normal(localVectors, jj);
+      corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, localVectors[1][jj], localVectors[2][jj]);
       vector_free(normal);
     }
 
@@ -245,9 +243,12 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   }
 
   for(ii = 0; ii < 3; ++ii) {
-    FREE(localHeights[ii]);
+    for(jj = 0; jj < ns; ++jj) {
+      vector_free(localVectors[ii][jj]);
+    }
+    FREE(localVectors[ii]);
   }
-  FREE(localHeights);
+  FREE(localVectors);
 
   FCLOSE(fpOut);
   FCLOSE(fpIn);
