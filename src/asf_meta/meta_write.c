@@ -200,18 +200,20 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
   meta_put_string(fp,"processor:", meta->general->processor,"Name and Version of Processor");
   strcpy(comment,"Type of samples (e.g. REAL64)");
-  meta_put_string(fp, "data_type:", data_type2str(meta->general->data_type),
-		  comment);
+  char *data_type = data_type2str(meta->general->data_type);
+  meta_put_string(fp, "data_type:", data_type, comment);
+  FREE(data_type);
   if (META_VERSION >= 1.2) {
     strcpy(comment,"Image data type (e.g. AMPLITUDE_IMAGE)");
-    meta_put_string(fp, "image_data_type:", 
-		    image_data_type2str(meta->general->image_data_type),
-		    comment);
+    data_type = image_data_type2str(meta->general->image_data_type);
+    meta_put_string(fp, "image_data_type:", data_type, comment);
+    FREE(data_type);
   }
   if (META_VERSION >= 2.5) {
     strcpy(comment,"Radiometry (e.g. SIGMA)");
-    meta_put_string(fp, "radiometry:", 
-		    radiometry2str(meta->general->radiometry),comment);
+    char *rad_str = radiometry2str(meta->general->radiometry);
+    meta_put_string(fp, "radiometry:", rad_str, comment);
+    FREE(rad_str);
   }
   meta_put_string(fp,"acquisition_date:", meta->general->acquisition_date,
       "Acquisition date of the data");
@@ -1399,11 +1401,15 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
   fprintf(fp, "    <sensor_name>%s</sensor_name>\n", mg->sensor_name);
   fprintf(fp, "    <mode>%s</mode>\n", mg->mode);
   fprintf(fp, "    <processor>%s</processor>\n", mg->processor);
-  fprintf(fp, "    <data_type>%s</data_type>\n", data_type2str(mg->data_type));
-  fprintf(fp, "    <image_data_type>%s</image_data_type>\n",
-	  image_data_type2str(mg->image_data_type));
-  fprintf(fp, "    <radiometry>%s</radiometry>\n", 
-	  radiometry2str(mg->radiometry));
+  char *data_type = data_type2str(mg->data_type);
+  fprintf(fp, "    <data_type>%s</data_type>\n", data_type);
+  FREE(data_type);
+  data_type = image_data_type2str(mg->image_data_type);
+  fprintf(fp, "    <image_data_type>%s</image_data_type>\n", data_type);
+  FREE(data_type);
+  char *rad_str = radiometry2str(mg->radiometry);
+  fprintf(fp, "    <radiometry>%s</radiometry>\n", rad_str);
+  FREE(rad_str);
   fprintf(fp, "    <acquisition_date>%s</acquisition_date>\n",
 	  mg->acquisition_date);
   fprintf(fp, "    <orbit>%d</orbit>\n", mg->orbit);
