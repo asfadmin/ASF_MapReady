@@ -69,7 +69,8 @@ main (int argc, char *argv[])
   int currArg = 1;
   int NUM_ARGS = 3;
   int pad = 0;
-
+  double tolerance = 0.5;
+  
   const int n=1024;
   char mask_filename[n];
   strcpy(mask_filename, "");
@@ -96,6 +97,10 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-pad","--pad",NULL)) {
       CHECK_ARG(1);
       pad = atoi(GET_ARG(1));
+    }
+    else if (strmatches(key,"-tolerance","--tolerance",NULL)) {
+      CHECK_ARG(1);
+      tolerance = atof(GET_ARG(1));
     }
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
       quietflag = TRUE;
@@ -129,12 +134,12 @@ main (int argc, char *argv[])
   asfPrintStatus("Output file: %s\n", out_name);
   asfPrintStatus("Padding: %d\n\n", pad);
 
-  int ok = make_gr_dem(meta, demImg, demMeta, pad, out_name);
+  int ok = make_gr_dem(meta, demImg, demMeta, pad, tolerance, out_name, 1);
 
   FREE(demImg);
   FREE(demMeta);
   meta_free(meta);
 
-  asfPrintStatus(ok ? "Done.\n" : "Failed\n");
+  asfPrintStatus(ok ? "Done.\n" : "Failed!\n");
   return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

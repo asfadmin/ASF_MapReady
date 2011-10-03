@@ -76,5 +76,8 @@ int get_dem_chunk(char *dem_in, char *dem_out, meta_parameters *metaDEM,
 /* Prototypes from rtc.c */
 int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
         char *output_file);
+int make_gr_dem(meta_parameters *meta, const char *demImg, const char *demMeta,
+                int pad, double tolerance, const char *output_name,
+                int test_mode);
 
 #endif
