@@ -665,303 +665,304 @@ static void shift_gr(struct deskew_dem_data *d, float *in, float *out)
 
 /* inSarName can be NULL, in this case doRadiometric is ignored */
 /* inMaskName can be NULL, in this case outMaskName is ignored */
-int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
-               char *inSarName, int doRadiometric, char *inMaskName,
-               char *outMaskName, int fill_holes, int fill_value,
-               int which_gr_dem)
+int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
+            char *inSarName, int doRadiometric, char *inMaskName,
+            char *outMaskName, int fill_holes, int fill_value,
+            int which_gr_dem)
 {
-        float *srDEMline,*grDEMline,*grDEMlast,*grDEMconv,
-              *inSarLine,*outLine,*maskLine;
-	FILE *inDemSlantFp,*inDemGroundFp=NULL,*inSarFp,*outFp,
-             *inMaskFp=NULL,*outMaskFp=NULL;
-	meta_parameters *metaDEMslant, *metaDEMground=NULL, *outMeta,
-                        *inSarMeta, *inMaskMeta=NULL;
-	char msg[256];
-	int ns,inSarFlag,inMaskFlag,outMaskFlag;
-	register int x,y,b;
-        struct deskew_dem_data d;
-	int band_count=1; // in case no SAR image is passed in
+  float *srDEMline, *grDEMline, *grDEMlast, *grDEMconv,
+    *inSarLine, *outLine, *maskLine;
+  FILE *inDemSlantFp, *inDemGroundFp = NULL, *inSarFp, *outFp,
+    *inMaskFp = NULL, *outMaskFp = NULL;
+  meta_parameters *metaDEMslant, *metaDEMground = NULL, *outMeta,
+    *inSarMeta, *inMaskMeta = NULL;
+  char msg[256];
+  int ns, inSarFlag, inMaskFlag, outMaskFlag;
+  register int x, y, b;
+  struct deskew_dem_data d;
+  int band_count = 1;           // in case no SAR image is passed in
 
-	inSarFlag = inSarName != NULL;
-        inMaskFlag = inMaskName != NULL;
-        outMaskFlag = outMaskName != NULL;
+  inSarFlag = inSarName != NULL;
+  inMaskFlag = inMaskName != NULL;
+  outMaskFlag = outMaskName != NULL;
 
-	inSarFp = NULL;
-	inSarMeta = NULL;
+  inSarFp = NULL;
+  inSarMeta = NULL;
 
 /*Extract metadata*/
-	metaDEMslant = meta_read(inDemSlant);
-        if (inDemGround)
-          metaDEMground = meta_read(inDemGround);
-	outMeta = meta_read(inDemSlant);
+  metaDEMslant = meta_read (inDemSlant);
+  if (inDemGround)
+    metaDEMground = meta_read (inDemGround);
+  outMeta = meta_read (inDemSlant);
 
-	if (metaDEMslant->sar->image_type=='P') {
-		asfPrintError("DEM cannot be map projected for this program "
-                              "to work!\n");
-		return FALSE;
-	}
-	if (inSarFlag) {
-	   inSarMeta = meta_read(inSarName);
-	   band_count = inSarMeta->general->band_count;
-           d.meta = inSarMeta;
-	   if (inSarMeta->sar->image_type=='P') {
-	      asfPrintError("SAR image cannot be map projected for this "
-                            "program to work!\n");
-	      return FALSE;
-	   }
-	   outMeta->general->data_type = inSarMeta->general->data_type;
-        }
-        else {
-            d.meta = NULL;
-        }
+  if (metaDEMslant->sar->image_type == 'P') {
+    asfPrintError ("DEM cannot be map projected for this program "
+                   "to work!\n");
+    return FALSE;
+  }
+  if (inSarFlag) {
+    inSarMeta = meta_read (inSarName);
+    band_count = inSarMeta->general->band_count;
+    d.meta = inSarMeta;
+    if (inSarMeta->sar->image_type == 'P') {
+      asfPrintError ("SAR image cannot be map projected for this "
+                     "program to work!\n");
+      return FALSE;
+    }
+    outMeta->general->data_type = inSarMeta->general->data_type;
+  }
+  else {
+    d.meta = NULL;
+  }
 
-        d.numLines = metaDEMslant->general->line_count;
-        d.numSamples = metaDEMslant->general->sample_count;
-        ns = d.numSamples;
-        if (metaDEMground && metaDEMground->general->sample_count != ns) {
-          asfPrintError("Slant/Ground mismatch. %d %d\n",
-                        metaDEMground->general->sample_count, ns);
-        }
+  d.numLines = metaDEMslant->general->line_count;
+  d.numSamples = metaDEMslant->general->sample_count;
+  ns = d.numSamples;
+  if (metaDEMground && metaDEMground->general->sample_count != ns) {
+    asfPrintError ("Slant/Ground mismatch. %d %d\n",
+                   metaDEMground->general->sample_count, ns);
+  }
 
 /*Allocate vectors.*/
-	d.slantGR       = (double*)MALLOC(sizeof(double)*ns);
-	d.groundSR      = (double*)MALLOC(sizeof(double)*ns);
-	d.heightShiftSR = (double*)MALLOC(sizeof(double)*ns);
-	d.heightShiftGR = (double*)MALLOC(sizeof(double)*ns);
-	d.slantRange    = (double*)MALLOC(sizeof(double)*ns);
-	d.slantRangeSqr = (double*)MALLOC(sizeof(double)*ns);
-	d.incidAng      = (double*)MALLOC(sizeof(double)*ns);
-	d.sinIncidAng   = (double*)MALLOC(sizeof(double)*ns);
-	d.cosIncidAng   = (double*)MALLOC(sizeof(double)*ns);
-        d.cosineScale   = NULL;
+  d.slantGR = (double *) MALLOC (sizeof (double) * ns);
+  d.groundSR = (double *) MALLOC (sizeof (double) * ns);
+  d.heightShiftSR = (double *) MALLOC (sizeof (double) * ns);
+  d.heightShiftGR = (double *) MALLOC (sizeof (double) * ns);
+  d.slantRange = (double *) MALLOC (sizeof (double) * ns);
+  d.slantRangeSqr = (double *) MALLOC (sizeof (double) * ns);
+  d.incidAng = (double *) MALLOC (sizeof (double) * ns);
+  d.sinIncidAng = (double *) MALLOC (sizeof (double) * ns);
+  d.cosIncidAng = (double *) MALLOC (sizeof (double) * ns);
+  d.cosineScale = NULL;
 
 /*Set up the output meta file.*/
-	d.grPixelSize = calc_ranges(&d,metaDEMslant);
-	outMeta->sar->image_type='G';
-	outMeta->general->x_pixel_size = d.grPixelSize;
+  d.grPixelSize = calc_ranges (&d, metaDEMslant);
+  outMeta->sar->image_type = 'G';
+  outMeta->general->x_pixel_size = d.grPixelSize;
 
 /* We use 0 to fill in around the edges (currently user can't configure
    this value), so set the no_data value accordingly */
-        outMeta->general->no_data = 0.0;
+  outMeta->general->no_data = 0.0;
 
 /*Open files.*/
-	inDemSlantFp = fopenImage(inDemSlant,"rb");
-        if (inDemGround)
-          inDemGroundFp = fopenImage(inDemGround, "rb");
+  inDemSlantFp = fopenImage (inDemSlant, "rb");
+  if (inDemGround)
+    inDemGroundFp = fopenImage (inDemGround, "rb");
 
-	outFp   = fopenImage(outName,"wb");
-	if (inSarFlag) {
-          inSarFp = fopenImage(inSarName,"rb");
-          outMeta->general->band_count = inSarMeta->general->band_count;
-          strcpy(outMeta->general->bands, inSarMeta->general->bands);
-        }
-        if (inMaskFlag) {
-          if (!inSarFlag)
-            asfPrintError("Cannot produce a mask without a SAR!\n");
-          inMaskMeta = meta_read(inMaskName);
+  outFp = fopenImage (outName, "wb");
+  if (inSarFlag) {
+    inSarFp = fopenImage (inSarName, "rb");
+    outMeta->general->band_count = inSarMeta->general->band_count;
+    strcpy (outMeta->general->bands, inSarMeta->general->bands);
+  }
+  if (inMaskFlag) {
+    if (!inSarFlag)
+      asfPrintError ("Cannot produce a mask without a SAR!\n");
+    inMaskMeta = meta_read (inMaskName);
 
-          meta_general *smg = inSarMeta->general;
-          meta_general *mmg = inMaskMeta->general;
-          if ((smg->line_count != mmg->line_count) ||
-              (smg->sample_count != mmg->sample_count))
-          {
-            asfPrintStatus(" SAR Image: %dx%d LxS.\n"
-                           "Mask Image: %dx%d LxS.\n",
-                           inSarMeta->general->line_count,
-                           inSarMeta->general->sample_count,
-                           inMaskMeta->general->line_count,
-                           inMaskMeta->general->sample_count);
-            
-            asfPrintError("The mask and the SAR image must be the "
-                          "same size.\n");
-          }
-        }
-        
+    meta_general *smg = inSarMeta->general;
+    meta_general *mmg = inMaskMeta->general;
+    if ((smg->line_count != mmg->line_count) ||
+        (smg->sample_count != mmg->sample_count)) {
+      asfPrintStatus (" SAR Image: %dx%d LxS.\n"
+                      "Mask Image: %dx%d LxS.\n",
+                      inSarMeta->general->line_count,
+                      inSarMeta->general->sample_count,
+                      inMaskMeta->general->line_count,
+                      inMaskMeta->general->sample_count);
+
+      asfPrintError ("The mask and the SAR image must be the "
+                     "same size.\n");
+    }
+  }
+
 /* output file's metadata is all set, now */
-	//meta_get_corner_coords(outMeta);
-	meta_write(outMeta, outName);
+  //meta_get_corner_coords(outMeta);
+  meta_write (outMeta, outName);
 
 /* Blather at user about what is going on */
-	strcpy(msg,"");
-        if (inDemGroundFp)
-          sprintf(msg,"%sDEM is in ground range.\n",msg);
-        else
-          sprintf(msg,"%sDEM is in slant range, but will be corrected.\n",msg);
+  strcpy (msg, "");
+  if (inDemGroundFp)
+    sprintf (msg, "%sDEM is in ground range.\n", msg);
+  else
+    sprintf (msg, "%sDEM is in slant range, but will be corrected.\n", msg);
 
-	if (inSarFlag)
-	  sprintf(msg,"%sCorrecting image",msg);
-	else
-	  sprintf(msg,"%sCorrecting DEM",msg);
+  if (inSarFlag)
+    sprintf (msg, "%sCorrecting image", msg);
+  else
+    sprintf (msg, "%sCorrecting DEM", msg);
 
-	if (doRadiometric)
-	  sprintf(msg,"%s geometrically and radiometrically.\n",msg);
-	else
-	  sprintf(msg,"%s geometrically.\n",msg);
+  if (doRadiometric)
+    sprintf (msg, "%s geometrically and radiometrically.\n", msg);
+  else
+    sprintf (msg, "%s geometrically.\n", msg);
 
-	asfPrintStatus(msg);
+  asfPrintStatus (msg);
 
 /*Allocate input buffers.*/
-	if (inSarFlag) {
-	   inSarLine = (float *)MALLOC(sizeof(float)*ns);
-        } else {
-	   inSarLine = NULL;
-        }
+  if (inSarFlag) {
+    inSarLine = (float *) MALLOC (sizeof (float) * ns);
+  }
+  else {
+    inSarLine = NULL;
+  }
 
-	outLine   = (float *)MALLOC(sizeof(float)*ns);
-	srDEMline = (float *)MALLOC(sizeof(float)*ns);
-        grDEMline = (float *)MALLOC(sizeof(float)*ns);
-        grDEMlast = (float *)MALLOC(sizeof(float)*ns);
-        grDEMconv = (float *)MALLOC(sizeof(float)*ns);
-        maskLine  = (float *)MALLOC(sizeof(float)*ns);
+  outLine = (float *) MALLOC (sizeof (float) * ns);
+  srDEMline = (float *) MALLOC (sizeof (float) * ns);
+  grDEMline = (float *) MALLOC (sizeof (float) * ns);
+  grDEMlast = (float *) MALLOC (sizeof (float) * ns);
+  grDEMconv = (float *) MALLOC (sizeof (float) * ns);
+  maskLine = (float *) MALLOC (sizeof (float) * ns);
 
-        n_layover = n_shadow = n_user = 0;
+  n_layover = n_shadow = n_user = 0;
 
 /*Open the mask, if we have one*/
-        if (inMaskFlag)
-            inMaskFp = fopenImage(inMaskName, "rb");
-        if (outMaskFlag)
-            outMaskFp = fopenImage(outMaskName, "wb");
+  if (inMaskFlag)
+    inMaskFp = fopenImage (inMaskName, "rb");
+  if (outMaskFlag)
+    outMaskFp = fopenImage (outMaskName, "wb");
 
 /* Make an empty mask */
-        for (x=0; x<ns; ++x)
-            maskLine[x] = 1;
+  for (x = 0; x < ns; ++x)
+    maskLine[x] = 1;
 
-        //FILE *fpdem = fopen("gr_dem.img", "wb"); // ***
-        //meta_write(metaDEMground, "gr_dem.meta"); // ***
+  //FILE *fpdem = fopen("gr_dem.img", "wb"); // ***
+  //meta_write(metaDEMground, "gr_dem.meta"); // ***
 
 /*Rectify data.*/
-	for (y=0;y<d.numLines;y++) {
+  for (y = 0; y < d.numLines; y++) {
 
-            // Always keep last two GR dem lines (for radiometric comp)
-            float *tmp=grDEMline;
-            grDEMline=grDEMlast;
-            grDEMlast=tmp;
+    // Always keep last two GR dem lines (for radiometric comp)
+    float *tmp = grDEMline;
+    grDEMline = grDEMlast;
+    grDEMlast = tmp;
 
-            // get slant range dem line, and convert dem to GR
-            // we have two versions of the GR dem line: grDEMline, grDEMconv
-            get_float_line(inDemSlantFp,metaDEMslant,y,srDEMline);
-            dem_sr2gr(&d,srDEMline,grDEMconv,ns,TRUE /* fill_holes */ );
+    // get slant range dem line, and convert dem to GR
+    // we have two versions of the GR dem line: grDEMline, grDEMconv
+    get_float_line (inDemSlantFp, metaDEMslant, y, srDEMline);
+    dem_sr2gr (&d, srDEMline, grDEMconv, ns, TRUE /* fill_holes */ );
 
-            // If we have the GR DEM, read it, otherwise use the converted one
-            if (inDemGroundFp) {
-              get_float_line(inDemGroundFp,metaDEMground,y,outLine);
-              shift_gr(&d,outLine,grDEMline);
-              //put_float_line(fpdem,metaDEMground,y,grDEMline); // ***
-            }
-            else {
-              for (x=0; x<ns; ++x)
-                grDEMline[x] = grDEMconv[x];
-            }
+    // If we have the GR DEM, read it, otherwise use the converted one
+    if (inDemGroundFp) {
+      get_float_line (inDemGroundFp, metaDEMground, y, outLine);
+      shift_gr (&d, outLine, grDEMline);
+      //put_float_line(fpdem,metaDEMground,y,grDEMline); // ***
+    }
+    else {
+      for (x = 0; x < ns; ++x)
+        grDEMline[x] = grDEMconv[x];
+    }
 
-            //put_float_line(fpdem,metaDEMground,y,grDEMconv); // ***
+    //put_float_line(fpdem,metaDEMground,y,grDEMconv); // ***
 
-            // we can use either GR DEM to do the correction... it looks like
-            // for radiometric correction the original is clearly the better
-            // choice, but for geometric correction it is harder to say.
-            // Now force caller to specify -- default is backconverted
-            float *grDEM_for_geo=grDEMconv;
-            if (which_gr_dem==BACKCONVERTED_GR_DEM)
-              grDEM_for_geo = grDEMconv;
-            else if (which_gr_dem==ORIGINAL_GR_DEM)
-              grDEM_for_geo = grDEMline;
+    // we can use either GR DEM to do the correction... it looks like
+    // for radiometric correction the original is clearly the better
+    // choice, but for geometric correction it is harder to say.
+    // Now force caller to specify -- default is backconverted
+    float *grDEM_for_geo = grDEMconv;
+    if (which_gr_dem == BACKCONVERTED_GR_DEM)
+      grDEM_for_geo = grDEMconv;
+    else if (which_gr_dem == ORIGINAL_GR_DEM)
+      grDEM_for_geo = grDEMline;
 
-            if (inMaskFlag) {
-                // Read in the next line of the mask, update the values
-                get_float_line(inMaskFp,inMaskMeta,y,maskLine);
-                for (x=0; x<ns; ++x) {
-                    if (maskLine[x]==2.0)
-                        maskLine[x] = MASK_INVALID_DATA;
-                    else if (is_masked(maskLine[x]))
-                        maskLine[x] = MASK_USER_MASK;
-                }
+    if (inMaskFlag) {
+      // Read in the next line of the mask, update the values
+      get_float_line (inMaskFp, inMaskMeta, y, maskLine);
+      for (x = 0; x < ns; ++x) {
+        if (maskLine[x] == 2.0)
+          maskLine[x] = MASK_INVALID_DATA;
+        else if (is_masked (maskLine[x]))
+          maskLine[x] = MASK_USER_MASK;
+      }
 
-                geo_compensate(&d,grDEM_for_geo,maskLine,outLine,ns,0,NULL,y);
+      geo_compensate (&d, grDEM_for_geo, maskLine, outLine, ns, 0, NULL, y);
 
-                for (x=0; x<ns; ++x)
-                    maskLine[x] = outLine[x];
-            }
+      for (x = 0; x < ns; ++x)
+        maskLine[x] = outLine[x];
+    }
 
-	    // do this line in all of the bands
-	    for (b=0; b<band_count; ++b) {
-	      if (inSarFlag) {
-                get_band_float_line(inSarFp,inSarMeta,b,y,inSarLine);
+    // do this line in all of the bands
+    for (b = 0; b < band_count; ++b) {
+      if (inSarFlag) {
+        get_band_float_line (inSarFp, inSarMeta, b, y, inSarLine);
 
-                geo_compensate(&d,grDEM_for_geo,inSarLine,outLine,
-                               ns,1,maskLine,y);
-	      }
-	      if (y>0&&doRadiometric)
-                radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                                 ns,y,doRadiometric,maskLine);
-	      
-	      // subtract away the masked region
-	      mask_float_line(ns,fill_value,outLine,
-			      maskLine,grDEMconv,&d,!fill_holes);
-	      
-	      put_band_float_line(outFp,outMeta,b,y,outLine);
-	    }
-            if (outMaskFlag)
-                put_float_line(outMaskFp,outMeta,y,maskLine);
+        geo_compensate (&d, grDEM_for_geo, inSarLine, outLine,
+                        ns, 1, maskLine, y);
+      }
+      if (y > 0 && doRadiometric)
+        radio_compensate (&d, grDEMline, grDEMlast, outLine,
+                          ns, y, doRadiometric, maskLine);
 
-            asfLineMeter(y,d.numLines);
-	}
+      // subtract away the masked region
+      mask_float_line (ns, fill_value, outLine,
+                       maskLine, grDEMconv, &d, !fill_holes);
 
-        if (inMaskFlag) {
-            FCLOSE(inMaskFp);
-            meta_free(inMaskMeta);
-        }
+      put_band_float_line (outFp, outMeta, b, y, outLine);
+    }
+    if (outMaskFlag)
+      put_float_line (outMaskFp, outMeta, y, maskLine);
 
-        //FCLOSE(fpdem); // ***
+    asfLineMeter (y, d.numLines);
+  }
+
+  if (inMaskFlag) {
+    FCLOSE (inMaskFp);
+    meta_free (inMaskMeta);
+  }
+
+  //FCLOSE(fpdem); // ***
 
 /*Write the updated mask*/
-        if (outMaskFlag) {
-            FCLOSE(outMaskFp);
+  if (outMaskFlag) {
+    FCLOSE (outMaskFp);
 
-            // the mask has just 1 band, regardless of how many input has
-            outMeta->general->band_count = 1;
-            strcpy(outMeta->general->bands, "LAYOVER_MASK");
+    // the mask has just 1 band, regardless of how many input has
+    outMeta->general->band_count = 1;
+    strcpy (outMeta->general->bands, "LAYOVER_MASK");
 
-            // mask doesn't really have a radiometry, just set amp
-            outMeta->general->radiometry = r_AMP;
+    // mask doesn't really have a radiometry, just set amp
+    outMeta->general->radiometry = r_AMP;
 
-            // write the mask's metadata, then print mask stats
-            meta_write(outMeta, outMaskName);
-            int tot=ns*d.numLines;
-            asfPrintStatus("Mask Statistics:\n"
-                   "    Layover Pixels: %9d/%d (%f%%)\n"
-                   "     Shadow Pixels: %9d/%d (%f%%)\n"
-                   "User Masked Pixels: %9d/%d (%f%%)\n",
-                   n_layover, tot, 100.*(float)n_layover/tot, 
-                   n_shadow, tot, 100.*(float)n_shadow/tot,
-                   n_user, tot, 100.*(float)n_user/tot);
-        }
+    // write the mask's metadata, then print mask stats
+    meta_write (outMeta, outMaskName);
+    int tot = ns * d.numLines;
+    asfPrintStatus ("Mask Statistics:\n"
+                    "    Layover Pixels: %9d/%d (%f%%)\n"
+                    "     Shadow Pixels: %9d/%d (%f%%)\n"
+                    "User Masked Pixels: %9d/%d (%f%%)\n",
+                    n_layover, tot, 100. * (float) n_layover / tot,
+                    n_shadow, tot, 100. * (float) n_shadow / tot,
+                    n_user, tot, 100. * (float) n_user / tot);
+  }
 
 /* Clean up & skidattle */
-	if (inSarFlag) {
-	   FREE(inSarLine);
-	   FCLOSE(inSarFp);
-	   meta_free(inSarMeta);
-	}
-	FREE(srDEMline);
-	FREE(grDEMlast);
-	FREE(grDEMline);
-        FREE(grDEMconv);
-	FREE(outLine);
-	FCLOSE(inDemSlantFp);
-        FCLOSE(inDemGroundFp);
-	FCLOSE(outFp);
-	meta_free(metaDEMslant);
-        if (metaDEMground)
-          meta_free(metaDEMground);
-	meta_free(outMeta);
-	FREE(d.slantGR);
-	FREE(d.groundSR);
-	FREE(d.heightShiftSR);
-	FREE(d.heightShiftGR);
-	FREE(d.slantRange);
-	FREE(d.slantRangeSqr);
-	FREE(d.incidAng);
-	FREE(d.sinIncidAng);
-	FREE(d.cosIncidAng);
-        if (d.cosineScale) FREE(d.cosineScale);
-	return TRUE;
+  if (inSarFlag) {
+    FREE (inSarLine);
+    FCLOSE (inSarFp);
+    meta_free (inSarMeta);
+  }
+  FREE (srDEMline);
+  FREE (grDEMlast);
+  FREE (grDEMline);
+  FREE (grDEMconv);
+  FREE (outLine);
+  FCLOSE (inDemSlantFp);
+  FCLOSE (inDemGroundFp);
+  FCLOSE (outFp);
+  meta_free (metaDEMslant);
+  if (metaDEMground)
+    meta_free (metaDEMground);
+  meta_free (outMeta);
+  FREE (d.slantGR);
+  FREE (d.groundSR);
+  FREE (d.heightShiftSR);
+  FREE (d.heightShiftGR);
+  FREE (d.slantRange);
+  FREE (d.slantRangeSqr);
+  FREE (d.incidAng);
+  FREE (d.sinIncidAng);
+  FREE (d.cosIncidAng);
+  if (d.cosineScale)
+    FREE (d.cosineScale);
+  return TRUE;
 }
