@@ -77,6 +77,8 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_sar.h"
+#include "vector.h"
+#include <string.h>
 #include <assert.h>
 
 struct deskew_dem_data {
@@ -489,22 +491,16 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     }
 }
 
-static void bad_rtc(int form)
-{
-  asfPrintError("Use of an untested radiometric terrain correction "
-                "formula: #%d.\n", form);
-}
-
 static int bad_dem_height(float height)
 {
   return height < -900 || height == badDEMht;
 }
 
+
 static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
                              float *grDEMprev,float *inout,int ns,
-                             int line, int form, float *mask)
+                             int line, float *mask, meta_parameters * meta)
 {
-  if (form==0) return;
 /*
 Here's what it looked like before optimization:
 		double dx,dy,dz,vecLen,ix,iy,iz,cosAng;
@@ -536,110 +532,54 @@ Here's what it looked like before optimization:
 		}
 
 */
-
-    // hard-coded to use formula #5 for now
-    form=5;
-
+    FILE * fp = FOPEN("correction.img", "r+b");
+    float corrections[ns];
+    memset(corrections, 1, ns);
     int x;
-    for (x=1;x<ns;x++)
-    {
+    Vector terrainNormal, R, *RX, X;
+    for (x=1;x<ns;x++) {
         // don't mess with masked pixels
         //if (mask[x]!=MASK_NORMAL)
         if (mask[x]==MASK_USER_MASK)
           continue;
         // if we have any SRTM holes, or otherwise no DEM data, don't correct
+        /*if (bad_dem_height(grDEM[x-1]) || bad_dem_height(grDEM[x+1]) ||
+            bad_dem_height(grDEMprev[x]) || bad_dem_height(grDEMnext[x]))
+          continue;
+        */
         if (bad_dem_height(grDEM[x]) || bad_dem_height(grDEMprev[x]) ||
             bad_dem_height(grDEM[x-1]))
           continue;
 
-        double dx,dy,grX,vecLen,cosAng;
-
         /* find terrain normal */
-        grX=grDEM[x];
-        dx=(grX-grDEM[x-1])/d->grPixelSize;
-        dy=(grDEMprev[x]-grX)/d->grPixelSize;
-
+        /*terrainNormal.x=(grDEM[x-1]-grDEM[x+1])/(2*grPixelSize);
+        terrainNormal.y=(grDEMnext[x]-grDEMprev[x])/(2*grPixelSize);
+        */
+        terrainNormal.x=(grDEM[x-1]-grDEM[x])/d->grPixelSize;
+        terrainNormal.y=(grDEMprev[x]-grDEM[x])/d->grPixelSize;
+        terrainNormal.z=1.0;
         /*Make the normal a unit vector.*/
-        vecLen = sqrt(dx*dx+1);
-        double dz = 1./vecLen;
+        vector_multiply(&terrainNormal, 1./vector_magnitude(&terrainNormal));
 
-        /*Take dot product of this vector and the incidence vector.*/
-        cosAng=(dx*d->sinIncidAng[x]+d->cosIncidAng[x])/vecLen;
+        // Create a unit vector to the sensor
+        R.x = -d->cosIncidAng[x];
+        R.y = 0;
+        R.z = d->sinIncidAng[x];
 
-        if (cosAng>=0) {
-            switch (form) {
-                default:
-                case 0:
-                    /* should not be in here... */
-                    asfPrintError("Bad radiometric correction formula: %d\n",
-                                  form);
-                    return;
-                case 1:
-                {
-                    /* From the old terrcorr: ftcli */
-                    double gi = meta_incid(d->meta, line, x);
-                    double li = acos(dz);
-                    double tanphie = tan(gi);
-                    inout[x] *= tan(li) / tanphie;
-                    bad_rtc(form);
-                    break;
-                }
-                case 2:
-                {
-                    /* From the old terrcorr: ftcgo */
-                    double gi = meta_incid(d->meta, line, x);
-                    double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
-                    double cosphia = 1./sqrt(dx*dx+1);
-                    double tanphie = tan(gi);
-                    double cosphi = cosAng;
-                    inout[x] *= (sinphir * cosphia) / (tanphie * cosphi);
-                    bad_rtc(form);
-                    break;
-                }
-                case 3:
-                {
-                    /* From the old terrcorr: ftcsq */
-                    double gi = meta_incid(d->meta, line, x);
-                    double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
-                    double cosphia = 1./sqrt(dx*dx+1);
-                    double tanphie = tan(gi);
-                    double cosphi = cosAng;
-                    inout[x] *= (sinphir * cosphia) / (tanphie * sqrt(cosphi));
-                    bad_rtc(form);
-                    break;
-                }
-                case 4:
-                {
-                    /* From the old terrcorr: ftcvx */
-                    double gi = meta_incid(d->meta, line, x);
-                    double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
-                    double cosphia = 1./sqrt(dx*dx+1);
-                    inout[x] *= (sinphir * cosphia) / sin(gi);
-                    bad_rtc(form);
-                    break;
-                }
-                case 5: 
-                {
-                    // Jeremy's new formula, this should be the new default,
-                    // from Kellndorfer, IEEE TGRS 1998, 1396-1411
-                    // What we really want is this:
-                    //      inout[x] *= sin(acos(cosAng))/sin(gi);
-                    // But we replace sin(acos(x)) with the pythagorean equiv
-                    inout[x] *= sqrt(1.-cosAng*cosAng)/d->sinIncidAng[x];
-                    break;
-                }
-                case 6:
-                {
-                    /* Ordinary diffuse radar reflection */
-                    /* This is the formula that was previously in deskew_dem, */
-                    /* and the old default for asf_terrcorr -do-radiometric */
-                    inout[x] *= 1.-.33*pow(cosAng,7);
-                    bad_rtc(form);
-                    break;
-                }
-            }
-        }
+        X.x = X.z = 0;
+        X.y = -1;
+
+        RX = vector_cross(&R, &X);
+        double cosphi = fabs(vector_dot(&terrainNormal, RX));
+        double correction = (cosphi / d->sinIncidAng[x]);
+        corrections[x] = correction;
+        inout[x] *= correction;
+        vector_free(RX);
     }
+    put_float_line(fp, meta, line, corrections);
+    if (line == 4) 
+      meta_write(meta, "correction.meta");
+    FCLOSE(fp);
 }
 
 static void shift_gr(struct deskew_dem_data *d, float *in, float *out)
@@ -891,7 +831,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
       }
       if (y > 0 && doRadiometric)
         radio_compensate (&d, grDEMline, grDEMlast, outLine,
-                          ns, y, doRadiometric, maskLine);
+                          ns, y, maskLine, metaDEMslant);
 
       // subtract away the masked region
       mask_float_line (ns, fill_value, outLine,
