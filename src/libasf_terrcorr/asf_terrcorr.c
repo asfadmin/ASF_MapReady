@@ -1138,6 +1138,15 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
     asfPrintStatus("No DEM matching for ALOS Palsar data!\n");
   }
 
+  // terrain correction doesn't correctly interpolate db or powerscale
+  // data when it resamples, so the user will have to calibrate after
+  // terrain correcting.
+  if (metaSAR->general->radiometry != r_AMP) {
+    asfPrintError("Amplitude data required for terrain correction.\n"
+                  "To get calibrated terrain-corrected data, run asf_calibrate\n"
+                  "after asf_terrcorr.\n");
+  }
+
   asfPrintStatus("Checking %s ... \n", demFile_in);
   char *demFile = build_dem(metaSAR, demFile_in, output_dir);
 
