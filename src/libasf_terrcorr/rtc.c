@@ -1,3 +1,4 @@
+#include <asf_raster.h>
 #include <asf_terrcorr.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -182,6 +183,20 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   meta_parameters *meta_corr = NULL;
   if (corrImg) meta_corr = meta_read(demMeta);
 
+  // Check the input radiometry
+  // Only accept amplitude and sigma
+  if (meta_in->general->radiometry != r_AMP &&
+      meta_in->general->radiometry != r_SIGMA &&
+      meta_in->general->radiometry != r_SIGMA_DB)
+    asfPrintError("Radiometric correction requires amplitude or sigma "
+		  "images!\n");
+
+  // Current assumption: The radiometric correction factor needs to be applied
+  // to sigma naught (in power scale).
+  meta_in->general->radiometry = r_SIGMA_DB;
+  char **bands = 
+    extract_band_names(meta_in->general->bands, meta_in->general->band_count);
+
   int ns = meta_in->general->sample_count;
   int nl = meta_in->general->line_count;
   int nb = meta_in->general->band_count;
@@ -207,9 +222,21 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     localVectors[ii] = calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp);
   }
 
+  double incid;
   // We aren't applying the correction to the edges of the image
   for(kk = 0; kk < nb; ++kk) {
     get_band_float_line(fpIn, meta_in, kk, 0, bufIn);
+    for (jj=0; jj<ns; ++jj) {
+      if (meta_out->general->radiometry == r_AMP) {
+	incid = meta_incid(meta_in, 0, jj);
+	bufIn[jj] = 
+	  get_cal_dn(meta_in, incid, jj, bufIn[jj], bands[kk], TRUE); 
+      }
+      else if (meta_out->general->radiometry == r_SIGMA) {
+	// output is going to be sigma dB by default
+	bufIn[jj] = 10.0 * log10(bufIn[jj]);
+      }
+    }
     put_band_float_line(fpOut, meta_out, kk, 0, bufIn);
   }
 
@@ -228,8 +255,21 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
     for (kk=0; kk<nb; ++kk) {
       get_band_float_line(fpIn, meta_in, kk, ii, bufIn);
-      for (jj=0; jj<ns; ++jj)
-        bufIn[jj] *= corr[jj];
+      for (jj=0; jj<ns; ++jj) {
+	if (meta_out->general->radiometry == r_AMP) {
+	  incid = meta_incid(meta_in, ii, jj);
+	  bufIn[jj] = 
+	    get_cal_dn(meta_in, incid, jj, bufIn[jj], bands[kk], FALSE); 
+	}
+	else if (meta_out->general->radiometry == r_SIGMA_DB) {
+	  // radiometric calibration factor needs to be applied to power scale
+	  bufIn[jj] = pow(10, bufIn[jj]/10.0);
+	}
+	if (FLOAT_EQUIVALENT(bufIn[jj], 0.0))
+	  bufIn[jj] = 0.0;
+	else
+	  bufIn[jj] = 10.0 * log10(bufIn[jj]*corr[jj]);
+      }
       put_band_float_line(fpOut, meta_out, kk, ii, bufIn);
     }
 
@@ -239,6 +279,17 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     // We aren't applying the correction to the edges of the image
   for(kk = 0; kk < nb; ++kk) {
     get_band_float_line(fpIn, meta_in, kk, nl-1, bufIn);
+    for (jj=0; jj<ns; ++jj) {
+      if (meta_out->general->radiometry == r_AMP) {
+	incid = meta_incid(meta_in, nl-1, jj);
+	bufIn[jj] = 
+	  get_cal_dn(meta_in, incid, jj, bufIn[jj], bands[kk], TRUE); 
+      }
+      else if (meta_out->general->radiometry == r_SIGMA) {
+	// output is going to be sigma dB by default
+	bufIn[jj] = 10.0 * log10(bufIn[jj]);
+      }
+    }
     put_band_float_line(fpOut, meta_out, kk, nl-1, bufIn);
   }
 
@@ -254,6 +305,29 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   FCLOSE(fpIn);
   if (fpCorr) FCLOSE(fpCorr);
 
+  // update output metadata
+  meta_out->general->image_data_type = SIGMA_IMAGE;
+  meta_out->general->radiometry = r_SIGMA_DB;
+  strcpy(meta_out->general->bands, "");
+  for (ii=0; ii<meta_out->general->band_count; ii++) {
+    if (strcmp_case(bands[ii], "HH") == 0 ||
+	strcmp_case(bands[ii], "SIGMA-HH") == 0)
+      strcpy(bands[ii], "SIGMA_DB-HH");
+    else if (strcmp_case(bands[ii], "HV") == 0 ||
+	strcmp_case(bands[ii], "SIGMA-HV") == 0)
+      strcpy(bands[ii], "SIGMA_DB-HV");    
+    else if (strcmp_case(bands[ii], "VH") == 0 ||
+	strcmp_case(bands[ii], "SIGMA-VH") == 0)
+      strcpy(bands[ii], "SIGMA_DB-VH");    
+    else if (strcmp_case(bands[ii], "VV") == 0 ||
+	strcmp_case(bands[ii], "SIGMA-VV") == 0)
+      strcpy(bands[ii], "SIGMA_DB-VV");
+    if (ii > 0)
+      strcat(meta_out->general->bands, ",");
+    strcat(meta_out->general->bands, bands[ii]);
+    FREE(bands[ii]);
+  }
+  FREE(bands);
   meta_write(meta_out, outputMeta);
 
   if (corrImg) {
@@ -279,4 +353,3 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
   return TRUE;
 }
-
