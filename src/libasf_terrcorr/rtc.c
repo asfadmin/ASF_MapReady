@@ -54,22 +54,12 @@ static Vector get_satpos(meta_parameters *meta, int line)
   return satpos;
 }
 
-static Vector get_position(float **localHeights, meta_parameters *meta_in, int line, int samp)
-{
-  double lat, lon;
-  Vector v;
-  meta_get_latLon(meta_in, line, samp, 0, &lat, &lon);
-  geodetic_to_ecef(lat, lon, localHeights[1][samp], &v);
-  return v;
-}
-
-static Vector** calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameters *meta_img, int line, FILE *dem_fp)
+static void calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameters *meta_img, int line, FILE *dem_fp, Vector **vectorLine, Vector *nextVectors)
 {
   int jj;
   double lat, lon;
   int ns = meta_img->general->sample_count;
   float demLine[ns];
-  Vector **vectors = MALLOC(sizeof(Vector)*ns);
 
   get_float_line(dem_fp, meta_dem, line, demLine);
 
@@ -77,16 +67,25 @@ static Vector** calculate_vectors_for_line(meta_parameters *meta_dem, meta_param
     Vector *v = MALLOC(sizeof(Vector));
     meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
     geodetic_to_ecef(lat, lon, demLine[jj], v);
-    vectors[jj] = v;
-  }
+    vectorLine[jj] = v;
 
-  return vectors;
+    meta_get_latLon(meta_img, line+1, jj, 0, &lat, &lon);
+    geodetic_to_ecef(lat, lon, demLine[jj], &nextVectors[jj]);
+  }
 }
 
-static void push_next_vector_line(Vector ***localVectors, meta_parameters *meta_dem, meta_parameters *meta_img, FILE *dem_fp, int line)
+static void push_next_vector_line(Vector ***localVectors, Vector *nextVectors, meta_parameters *meta_dem, meta_parameters *meta_img, FILE *dem_fp, int line)
 {
-  Vector **vectorsLine = calculate_vectors_for_line(meta_dem, meta_img, line, dem_fp);
+  int ns = meta_img->general->sample_count;
+  Vector **vectorsLine = MALLOC(sizeof(Vector*)*ns);
+  calculate_vectors_for_line(meta_dem, meta_img, line, dem_fp, vectorsLine, nextVectors);
+
+  int i;
+  for(i = 0; i < ns; i++)
+    if(localVectors[0] != NULL)
+      vector_free(localVectors[0][i]);
   FREE(localVectors[0]);
+
   localVectors[0] = localVectors[1];
   localVectors[1] = localVectors[2];
   localVectors[2] = vectorsLine;
@@ -207,6 +206,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
   Vector ***localVectors = MALLOC(sizeof(Vector**)*3);
   memset(localVectors, 0, sizeof(Vector**)*3);
+  Vector nextVectors[ns];
 
   FILE *fpIn = FOPEN(inputImg, "rb");
   FILE *fpOut = FOPEN(outputImg, "wb");
@@ -219,7 +219,8 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
   int ii, jj, kk;
   for(ii = 1; ii < 3; ++ii) {
-    localVectors[ii] = calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp);
+    localVectors[ii] = MALLOC(sizeof(Vector**)*ns);
+    calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp, localVectors[ii], nextVectors);
   }
 
   double incid;
@@ -241,12 +242,12 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   }
 
   for(ii = 1; ii < nl - 1; ++ii) {
-    push_next_vector_line(localVectors, meta_dem, meta_in, dem_fp, ii + 1);
+    push_next_vector_line(localVectors, nextVectors, meta_dem, meta_in, dem_fp, ii + 1);
     corr[0] = corr[ns-1] = 1;
     Vector satpos = get_satpos(meta_in, ii);
     for(jj = 1; jj < ns - 1; ++jj) {
       Vector * normal = calculate_normal(localVectors, jj);
-      corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, localVectors[1][jj], localVectors[2][jj]);
+      corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, localVectors[1][jj], &nextVectors[jj]);
       vector_free(normal);
     }
 
