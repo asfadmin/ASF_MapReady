@@ -1007,11 +1007,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                  "Could not update configuration file");
     asfPrintStatus("   Initialized complete configuration file\n\n");
     FCLOSE(fLog);
+    fLog = NULL;
     return(EXIT_SUCCESS);
   }
   else if (!fileExists(configFileName)) {
     asfPrintStatus("Couldn't find config file: %s\n", configFileName);
     FCLOSE(fLog);
+    fLog = NULL;
     return EXIT_FAILURE;
   }
   else {
@@ -1878,15 +1880,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // global variable-- if set, tells meta_write to also dump .hdr (ENVI) files
     dump_envi_header = cfg->general->dump_envi;
 
-    // we add a "secret" band 0 containing amplitude data, if we are
-    // generating something other than amplitude, and are going to
-    // be terrain correcting
+    int import_will_apply_radiometry = FALSE;
+    if (!cfg->general->terrain_correct && !cfg->general->polarimetry) {
+      import_will_apply_radiometry = TRUE;
+    }
+
+    // We used to add an amp0 band when import applied radiometry, but
+    // that is no longer necessary.  So, this will always be false.
+    // The feature is being left in for backward compatibility.
     int amp0_flag = FALSE;
 
     // The "saved radiometry" is the requested radiometry in the case where
-    // import will not apply the calibration parameters, because the farcorr
-    // code will be doing it -- in that case, import must use amplitude,
-    // and "saved_radiometry" will be passed in to the FR correction func.
+    // import will not apply the calibration parameters.  Note that
     radiometry_t saved_radiometry = r_AMP;
 
     // Call asf_import, if needed (=> input is not ASF Internal)
