@@ -13,11 +13,6 @@ DESCRIPTION:
 #include "float_image.h"
 #include "banded_float_image.h"
 
-#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
-#define ASF_EXPORT_FLOAT_MICRON 0.000000001
-#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
-                                (a, b, ASF_EXPORT_FLOAT_MICRON))
-
 typedef enum {
   TRUNCATE=1,
   MINMAX,

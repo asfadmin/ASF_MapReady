@@ -54,6 +54,11 @@
 /* Default value of a pixel which indicates "NO DATA" */
 #define DEFAULT_NO_DATA_VALUE 0
 
+#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
+#define ASF_EXPORT_FLOAT_MICRON 0.000000001
+#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
+                                (a, b, ASF_EXPORT_FLOAT_MICRON))
+
 // Flag to write ENVI header files for all viewable images
 extern int dump_envi_header;
 
@@ -937,6 +942,8 @@ void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db);
 float *incid_init(meta_parameters *meta);
 float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
 		 float inDn, char *bandExt, int dbFlag);
+float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
+		     float inDn, float radCorr);
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
 void quadratic_write(const quadratic_2d *c,FILE *stream);

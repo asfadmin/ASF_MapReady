@@ -810,3 +810,106 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
 
   return calValue;
 }
+
+// Determine radiometrically correction amplitude value
+float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
+		     float inDn, float radCorr)
+{
+  // Return background value unchanged
+  if (FLOAT_EQUIVALENT(inDn, 0.0))
+    return 0.0;
+
+  meta->general->radiometry = r_SIGMA;
+  double incid = meta_incid(meta, line, sample);
+  double sigma = get_cal_dn(meta, incid, sample, inDn, bandExt, FALSE);
+  double calValue, invIncAngle;
+
+  // Calculate according to the calibration data type
+  if (meta->calibration->type == asf_cal) { // ASF style data (PP and SSP)
+
+    asf_cal_params *p = meta->calibration->asf;
+    double index = (double)sample*256./(double)(p->sample_count);
+    int base = (int) index;
+    double frac = index - base;
+    double *noise = p->noise;
+
+    // Determine the noise value
+    double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+
+    // Convert (amplitude) data number to scaled, noise-removed power
+    //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+  }
+  else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
+
+    invIncAngle = 1.0;
+    asf_scansar_cal_params *p = meta->calibration->asf_scansar;
+    double look = 25.0; // FIXME: hack to get things compiled
+    double index = (look-16.3)*10.0;
+    double noiseValue;
+    double *noise = p->noise;
+
+    if (index <= 0)
+      noiseValue = noise[0];
+    else if (index >= 255)
+      noiseValue = noise[255];
+    else {
+      // Use linear interpolation on noise array
+      int base = (int)index;
+      double frac = index - base;
+      noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+    }
+
+    // Convert (amplitude) data number to scaled, noise-removed power
+    //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+  }
+  else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
+
+    esa_cal_params *p = meta->calibration->esa;
+    //scaledPower = inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incid);
+    calValue = sqrt(sigma * radCorr * p->k*sin(p->ref_incid*D2R)*sin(incid));
+  }
+  else if (meta->calibration->type == rsat_cal) { // CDPF style Radarsat data
+
+    invIncAngle = 1/tan(incid);
+
+    rsat_cal_params *p = meta->calibration->rsat;
+    double a2;
+    if (meta->calibration->rsat->focus)
+      a2 = p->lut[0];
+    else if (sample < (p->samp_inc*(p->n-1))) {
+      int i_low = sample/p->samp_inc;
+      int i_up = i_low + 1;
+      a2 = p->lut[i_low] +
+	((p->lut[i_up] - p->lut[i_low])*((sample/p->samp_inc) - i_low));
+    }
+    else
+      a2 = p->lut[p->n-1] +
+	((p->lut[p->n-1] - p->lut[p->n-2])*((sample/p->samp_inc) - p->n-1));
+    if (p->slc)
+      //scaledPower = (inDn*inDn)/(a2*a2)*invIncAngle;
+      calValue = sqrt(sigma * radCorr *a2*a2/invIncAngle);
+    else
+      //scaledPower = (inDn*inDn + p->a3)/a2*invIncAngle;
+      calValue = sqrt((sigma * radCorr *a2/invIncAngle) - p->a3);
+  }
+  else if (meta->calibration->type == alos_cal) { // ALOS data
+
+    alos_cal_params *p = meta->calibration->alos;
+    double cf;
+    if (strstr(bandExt, "HH"))
+      cf = p->cf_hh;
+    else if (strstr(bandExt, "HV"))
+      cf = p->cf_hv;
+    else if (strstr(bandExt, "VH"))
+      cf = p->cf_vh;
+    else if (strstr(bandExt, "VV"))
+      cf = p->cf_vv;
+    
+    //scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
+    calValue = sqrt(sigma * radCorr / pow(10, cf/10.0));
+  }
+
+  return calValue;
+}
