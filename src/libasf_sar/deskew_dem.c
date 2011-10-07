@@ -556,15 +556,17 @@ Here's what it looked like before optimization:
         terrainNormal.y=(grDEMnext[x]-grDEMprev[x])/(2*grPixelSize);
         */
         terrainNormal.x=(grDEM[x-1]-grDEM[x])/d->grPixelSize;
-        terrainNormal.y=(grDEMprev[x]-grDEM[x])/d->grPixelSize;
+        // Switch these because grPixelSize is negative in the y dir
+        terrainNormal.y=(grDEM[x]-grDEMprev[x])/d->grPixelSize;
         terrainNormal.z=1.0;
         /*Make the normal a unit vector.*/
         vector_multiply(&terrainNormal, 1./vector_magnitude(&terrainNormal));
 
         // Create a unit vector to the sensor
-        R.x = -d->cosIncidAng[x];
+        // Incidence angle is measured from vertical
+        R.x = -d->sinIncidAng[x];
         R.y = 0;
-        R.z = d->sinIncidAng[x];
+        R.z = d->cosIncidAng[x];
 
         X.x = X.z = 0;
         X.y = -1;
