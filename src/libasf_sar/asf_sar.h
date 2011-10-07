@@ -172,5 +172,8 @@ void faraday_correct(const char *inFile, const char *outFile, double threshold,
                      int save_intermediates, int use_single_rotation_value,
                      radiometry_t output_radiometry, int ksize);
 
+// calibrate.c
+int asf_calibrate(const char *inFile, const char *outFile, 
+		  radiometry_t radiometry, int wh_scaleFlag);
 
 #endif

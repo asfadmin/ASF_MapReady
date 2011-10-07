@@ -597,7 +597,9 @@ void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db)
 {
   create_cal_params(inSAR, meta, REPORT_LEVEL_WARNING);
   if (db)
-    meta->general->no_data = -35.0;
+    meta->general->no_data = -40.0;
+  else
+    meta->general->no_data = 0.0001;
 }
 
 // incid_init()
@@ -912,4 +914,149 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
   }
 
   return calValue;
+}
+
+float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt, 
+	      float calValue)
+{
+  double scaledPower, ampValue, invIncAngle;
+  radiometry_t radiometry = meta->general->radiometry;
+
+  if (radiometry >= r_SIGMA_DB && radiometry <= r_BETA_DB)
+    scaledPower = pow(10, calValue/10.0);
+  else if (radiometry >= r_SIGMA && radiometry <= r_BETA)
+    scaledPower = calValue;
+  else
+    asfPrintError("Conversion requires radiometric values in input image.\n"
+		  "Radiometry: %s", radiometry2str(radiometry));
+
+  // Calculate according to the calibration data type
+  if (meta->calibration->type == asf_cal) { // ASF style data (PP and SSP)
+
+    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      invIncAngle = 1.0;
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
+      invIncAngle = 1/cos(incid);
+    else if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      invIncAngle = 1/sin(incid);
+
+    asf_cal_params *p = meta->calibration->asf;
+    double index = (double)sample*256./(double)(p->sample_count);
+    int base = (int) index;
+    double frac = index - base;
+    double *noise = p->noise;
+    double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+
+    // Convert (amplitude) data number to scaled, noise-removed power
+    //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+  }
+  else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
+
+    asf_scansar_cal_params *p = meta->calibration->asf_scansar;
+
+    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      invIncAngle = 1.0;
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
+      invIncAngle = 1/cos(incid);
+    else if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      invIncAngle = 1/sin(incid);
+
+    double look = 25.0; // FIXME: hack to get things compiled
+    double index = (look-16.3)*10.0;
+    double noiseValue;
+    double *noise = p->noise;
+
+    if (index <= 0)
+      noiseValue = noise[0];
+    else if (index >= 255)
+      noiseValue = noise[255];
+    else {
+      // Use linear interpolation on noise array
+      int base = (int)index;
+      double frac = index - base;
+      noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+    }
+
+    // Convert (amplitude) data number to scaled, noise-removed power
+    //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+  }
+  else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
+
+    esa_cal_params *p = meta->calibration->esa;
+
+    if (radiometry == r_BETA || radiometry == r_BETA_DB) {
+      //scaledPower = inDn*inDn/p->k;
+      ampValue = sqrt(scaledPower*p->k);
+    }
+    else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB) 
+      //scaledPower = inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle);
+      ampValue = sqrt(scaledPower * p->k*sin(p->ref_incid*D2R)*sin(incid));
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
+      invIncAngle = 1/cos(incid);
+      //scaledPower = 
+      //inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle)/invIncAngle;
+      ampValue = 
+	sqrt(scaledPower*invIncAngle*sin(incid)*p->k/sin(p->ref_incid*D2R));
+    }
+
+  }
+  else if (meta->calibration->type == rsat_cal) { // CDPF style Radarsat data
+
+    if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      invIncAngle = 1.0;
+    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      invIncAngle = 1/tan(incid);
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
+      invIncAngle = tan(incid);
+
+    rsat_cal_params *p = meta->calibration->rsat;
+    double a2;
+    if (meta->calibration->rsat->focus)
+      a2 = p->lut[0];
+    else if (sample < (p->samp_inc*(p->n-1))) {
+      int i_low = sample/p->samp_inc;
+      int i_up = i_low + 1;
+      a2 = p->lut[i_low] +
+    ((p->lut[i_up] - p->lut[i_low])*((sample/p->samp_inc) - i_low));
+    }
+    else
+      a2 = p->lut[p->n-1] +
+    ((p->lut[p->n-1] - p->lut[p->n-2])*((sample/p->samp_inc) - p->n-1));
+    if (p->slc)
+      //scaledPower = (inDn*inDn)/(a2*a2)*invIncAngle;
+      ampValue = sqrt(scaledPower *a2*a2/invIncAngle);
+    else
+      //scaledPower = (inDn*inDn + p->a3)/a2*invIncAngle;
+      ampValue = sqrt((scaledPower *a2/invIncAngle) - p->a3);
+  }
+  else if (meta->calibration->type == alos_cal) { // ALOS data
+
+    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      invIncAngle = 1.0;
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
+      invIncAngle = 1/cos(incid);
+    else if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      invIncAngle = 1/sin(incid);
+
+    alos_cal_params *p = meta->calibration->alos;
+    double cf;
+    if (strstr(bandExt, "HH"))
+      cf = p->cf_hh;
+    else if (strstr(bandExt, "HV"))
+      cf = p->cf_hv;
+    else if (strstr(bandExt, "VH"))
+      cf = p->cf_vh;
+    else if (strstr(bandExt, "VV"))
+      cf = p->cf_vv;
+    
+    //scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
+    ampValue = sqrt(scaledPower / invIncAngle / pow(10, cf/10.0));
+  }
+  else
+    // should never get here
+    asfPrintError("Unknown calibration data type!\n");
+
+  return ampValue;
 }

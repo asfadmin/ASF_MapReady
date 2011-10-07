@@ -262,7 +262,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       "Fraction of bits which are in error");
   meta_put_int   (fp,"missing_lines:", meta->general->missing_lines,
       "Number of missing lines in data take");
-  meta_put_double(fp,"no_data:", meta->general->no_data,
+  meta_put_double_lf(fp,"no_data:", meta->general->no_data, 4,
       "Value indicating no data for a pixel");
   meta_put_string(fp,"}", "","End general");
 
@@ -1436,7 +1436,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
   fprintf(fp, "    <re_minor units=\"m\">%.3lf</re_minor>\n", mg->re_minor);
   fprintf(fp, "    <bit_error_rate>%g</bit_error_rate>\n", mg->bit_error_rate);
   fprintf(fp, "    <missing_lines>%i</missing_lines>\n", mg->missing_lines);
-  fprintf(fp, "    <no_data>%f</no_data>\n", mg->no_data);
+  fprintf(fp, "    <no_data>%.4f</no_data>\n", mg->no_data);
   fprintf(fp, "  </general>\n");
 
   if (meta->sar) {

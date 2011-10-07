@@ -944,6 +944,8 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
 		 float inDn, char *bandExt, int dbFlag);
 float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
 		     float inDn, float radCorr);
+float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt, 
+	      float calValue);
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
 void quadratic_write(const quadratic_2d *c,FILE *stream);

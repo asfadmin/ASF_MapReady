@@ -23,6 +23,7 @@ OBJS = \
 	classify.o \
 	polarimetry.o \
 	farcorr.o \
+	calibrate.o \
 	c2p.o
 
 LIBS = \
