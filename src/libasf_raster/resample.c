@@ -50,7 +50,9 @@ static float filter(      /****************************************/
     int    nl,            /* number of lines for inbuf            */
     int    ns,            /* number of samples per line for inbuf */
     int    x,             /* sample in desired line               */
-    int    nsk)           /* number of samples in kernel          */
+    int    nsk,           /* number of samples in kernel          */
+    int    nn_flag)       /* true if we should just use nearest   */
+                          /* instead of interpolating b/w points  */
 {                         /****************************************/
     float  kersum =0.0;                    /* sum of kernel       */
     int    half   =(nsk-1)/2,              /* half size kernel    */
@@ -58,30 +60,45 @@ static float filter(      /****************************************/
            total  =0,                      /* valid kernel values */
            i, j;                           /* loop counters       */
                                            /***********************/
-    for (i = 0; i < nl; i++)
-    {
-      for (j = x-half; j <= x+half; j++)
-      {
-        if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns)
-        {
-          kersum += inbuf[base];
-          total++;
-        }
-        base++;
-      }
-      base += ns;
-      base -= nsk;
+                                           
+    if (nn_flag) {
+
+      if (base>=0 && base<nl*ns)
+        return inbuf[base];
+      else if (base<0)
+        return inbuf[0];
+      else if (base>=nl*ns)
+        return inbuf[ns*nl-1];
+      asfPrintError("Not reached.\n");
+
     }
+    else {
+      for (i = 0; i < nl; i++)
+      {
+        for (j = x-half; j <= x+half; j++)
+        {
+          if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns)
+          {
+            kersum += inbuf[base];
+            total++;
+          }
+          base++;
+        }
+        base += ns;
+        base -= nsk;
+      }
 
-    if (total != 0)
-      kersum /= (float) total;
+      if (total != 0)
+        kersum /= (float) total;
 
-    return (kersum);
+      return (kersum);
+    }
 }
 
 static int
 resample_impl(const char *infile, const char *outfile,
-              double xscalfact, double yscalfact, int update_meta)
+              double xscalfact, double yscalfact, int update_meta,
+              int nn_flag)
 {
     FILE            *fpin, *fpout;  /* file pointer                   */
     float           *inbuf,         /* stripped input buffer          */
@@ -222,7 +239,7 @@ resample_impl(const char *infile, const char *outfile,
             for (j = 0; j < onp; j++)
             {
                 xi = j * xrate + xbase + 0.5;
-                outbuf[j] = filter(inbuf,n_lines,np,xi,xnsk);
+                outbuf[j] = filter(inbuf,n_lines,np,xi,xnsk,nn_flag);
 		if (metaOut->general->radiometry >= r_SIGMA_DB &&
 		    metaOut->general->radiometry <= r_GAMMA_DB) {
 		  tmp = outbuf[j];
@@ -255,13 +272,35 @@ resample_impl(const char *infile, const char *outfile,
     return(0);
 }
 
+static void 
+get_scalfact(const char *infile, double xpixsiz, double ypixsiz,
+             double *xscalfact, double *yscalfact)
+{
+  meta_parameters *metaIn = meta_read(infile);
+  
+  *xscalfact = metaIn->general->x_pixel_size/xpixsiz;
+  *yscalfact = metaIn->general->y_pixel_size/ypixsiz;
+  
+  meta_free(metaIn);  
+}
+
+
 /*********************** External methods ***********************************/
 
 // Resample- specify scale factors (in both directions)
+// This one is for backwards compatibility, use resample_ext.
 int resample(const char *infile, const char *outfile,
              double xscalfact, double yscalfact)
 {
-  return resample_impl(infile, outfile, xscalfact, yscalfact, TRUE);
+  return resample_impl(infile, outfile, xscalfact, yscalfact, TRUE, FALSE);
+}
+
+// Resample- specify scale factors (in both directions), with nearest
+//           neighbor allowed as an option
+int resample_ext(const char *infile, const char *outfile,
+                 double xscalfact, double yscalfact, int use_nn)
+{
+  return resample_impl(infile, outfile, xscalfact, yscalfact, TRUE, use_nn);
 }
 
 // Resample- specify a square pixel size
@@ -275,23 +314,26 @@ int resample_to_square_pixsiz(const char *infile, const char *outfile,
 int resample_to_pixsiz(const char *infile, const char *outfile,
                        double xpixsiz, double ypixsiz)
 {
-    meta_parameters *metaIn;
-    double xscalfact, yscalfact;
+  double xscalfact, yscalfact;
+  get_scalfact(infile, xpixsiz, ypixsiz, &xscalfact, &yscalfact);
+  
+  return resample_ext(infile, outfile, xscalfact, yscalfact, FALSE);
+}
 
-    metaIn = meta_read(infile);
-
-    xscalfact = metaIn->general->x_pixel_size/xpixsiz;
-    yscalfact = metaIn->general->y_pixel_size/ypixsiz;
-
-    meta_free(metaIn);
-
-    return resample(infile, outfile, xscalfact, yscalfact);
+// Resample- specify pixel size (in both directions), use nearest neighbor
+int resample_to_pixsiz_nn(const char *infile, const char *outfile,
+                          double xpixsiz, double ypixsiz)
+{
+  double xscalfact, yscalfact;
+  get_scalfact(infile, xpixsiz, ypixsiz, &xscalfact, &yscalfact);
+  
+  return resample_ext(infile, outfile, xscalfact, yscalfact, TRUE);
 }
 
 // Resample- specify scale factors, but don't update the metadata!
 int resample_nometa(const char *infile, const char *outfile,
                     double xscalfact, double yscalfact)
 {
-  return resample_impl(infile, outfile, xscalfact, yscalfact, FALSE);
+  return resample_impl(infile, outfile, xscalfact, yscalfact, FALSE, FALSE);
 }
 

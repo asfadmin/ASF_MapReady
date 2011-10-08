@@ -1476,7 +1476,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
           asfPrintStatus("Layover/shadow mask...\n");
           char *lsMaskFile_2 = getOutName(output_dir, lsMaskFile, "_resample");
           renameImgAndMeta(lsMaskFile, lsMaskFile_2);
-          resample_to_square_pixsiz(lsMaskFile_2, lsMaskFile, pixel_size);
+          resample_to_pixsiz_nn(lsMaskFile_2, lsMaskFile, pixel_size,
+                                pixel_size);
           clean(lsMaskFile_2);
       } else {
           resampleFile_2 = NULL;

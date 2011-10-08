@@ -130,6 +130,10 @@ int main(argc,argv)
 
     handle_common_asf_args(&argc, &argv, "resample");
 
+    int use_nn = extract_flag_options(&argc, &argv,
+                                      "-nearest_neighbor", "-nn",
+                                      "--nearest_neighbor", "--nn",
+                                      NULL);
     int is_square_pixsiz = extract_flag_options(&argc, &argv, "-square", NULL);
     int is_scaling = extract_flag_options(&argc, &argv, "-scale", NULL);
     int is_scalex = extract_double_options(&argc, &argv, &xscalfact,
@@ -223,7 +227,7 @@ int main(argc,argv)
     }
 
     // finally ready
-    resample(infile, outfile, xscalfact, yscalfact);
+    resample_ext(infile, outfile, xscalfact, yscalfact, use_nn);
     
     meta_free(metaIn);
     return(0);

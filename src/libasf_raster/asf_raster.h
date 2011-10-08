@@ -149,12 +149,16 @@ void shaded_relief(char *inFile, char *outFile, int addSpeckle, int water);
 /* Prototypes from resample.c ************************************************/
 int resample(const char *infile, const char *outfile, 
              double xscalfact, double yscalfact);
+int resample_ext(const char *infile, const char *outfile,
+                 double xscalfact, double yscalfact, int use_nn);
 int resample_nometa(const char *infile, const char *outfile,
 		    double xscalfact, double yscalfact);
 int resample_to_pixsiz(const char *infile, const char *outfile,
 		       double xpixsiz, double ypixsiz);
 int resample_to_square_pixsiz(const char *infile, const char *outfile, 
                               double pixsiz);
+int resample_to_pixsiz_nn(const char *infile, const char *outfile,
+                          double xpixsiz, double ypixsiz);
 
 /* Prototypes from smooth.c **************************************************/
 int smooth(const char *infile, const char *outfile, int kernel_size,

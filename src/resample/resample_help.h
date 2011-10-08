@@ -31,6 +31,7 @@
         "                -scalex <x scale factor> -scaley <y scale factor> |\n"\
         "                <x pixel size> <y pixel size> \n"\
         "             ]\n"\
+        "             [ -nearest_neighbor ]\n"\
         "             <infile> <outfile>\n" \
         "             [-license] [-version] [-help]"
 
@@ -91,6 +92,8 @@
     "        Creates an ouput image that is larger by the given factor, in\n"\
     "        the y direction.  You must also specify a x scale factor when\n"\
     "        using this option.  (-scalex)\n"\
+    "   -nearest_neighbor ( -nn )\n"\
+    "        Don't average pixels when interpolating, use the nearest.\n"\
     "   -license\n" \
     "        Print copyright and license for this software then exit.\n" \
     "   -version\n" \
