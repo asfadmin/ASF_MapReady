@@ -199,7 +199,7 @@ static void fake_it(const char *inFile, const char *outFile,
 
   for (ii=0; ii<nl; ++ii) {
     for (jj=0; jj<ns; ++jj) {
-      buf[jj] = 5000*calc_val(ii, nl, jj, ns, type, size); 
+      buf[jj] = 500 + 300*calc_val(ii, nl, jj, ns, type, size); 
     }
     put_float_line(fp, meta, ii, buf);
     asfLineMeter(ii,nl);
