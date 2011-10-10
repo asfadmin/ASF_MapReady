@@ -152,6 +152,21 @@ int init_convert_config(char *configFile)
                    "# directory already specified in the output file parameter, this\n"
            "# value will be ignored.\n\n");
   fprintf(fConfig, "default output dir = \n\n");
+  // project flag
+  fprintf(fConfig, "# The project flag indicates whether a project needs to be defined.\n"
+	  "# The project allows the use of naming schemes for output files.\n");
+  fprintf(fConfig, "# Running asf_mapready with the -create option and the import flag\n"
+          "# switched on will generate an [Project] section where you can define further\n"
+          "# parameters.\n\n");
+  fprintf(fConfig, "project = 0\n\n");
+  // files flag
+  fprintf(fConfig, "# The files flag indicates whether a file name list is to be added\n"
+	  "# to the configuration file. It is strictly used in combination of defining\n"
+	  "# a project.\n");
+  fprintf(fConfig, "# Running asf_mapready with the -create option and the import flag\n"
+          "# switched on will generate an [Files] section where you can define further\n"
+          "# parameters.\n\n");
+  fprintf(fConfig, "files = 0\n\n");
   // import flag
   fprintf(fConfig, "# The import flag indicates whether the data needs to be run through\n"
           "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
@@ -188,7 +203,6 @@ int init_convert_config(char *configFile)
 	  "# decompositions, or classifications can be applied. Faraday rotation correction\n"
 	  "# can also be applied to the imagery.\n\n");
   fprintf(fConfig, "polarimetry = 0\n\n");
-
   // terrain correction flag
   fprintf(fConfig, "# The terrain correction flag indicates whether the data needs to be run\n"
           "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
@@ -200,8 +214,16 @@ int init_convert_config(char *configFile)
   // radiometric correction flag
   fprintf(fConfig, "# The radiometric terrain correction flag indicates whether the data\n"
 	  "# needs to be run 'rtc' (1 for running it, 0 for leaving out the radiometric terrain\n"
-          "# correction step).\n");
+          "# correction step).\n\n");
   fprintf(fConfig, "radiometric terrain correction = 0\n\n");
+  // calibration flag
+  fprintf(fConfig, "# The calibration flag indicates whether the calibration parameters are\n"
+	  "# applied to the data through 'asf_calibrate' (1 for running it, 0 for leaving\n"
+	  "# out the calibration step.)\n");
+  fprintf(fConfig, "# Running asf_mapready with the -create option and the geocoding flag\n"
+          "# switched on will generate a [Calibration] section where you can define further\n"
+          "# parameters.\n\n");
+  fprintf(fConfig, "calibration = 0\n\n");
   // geocoding flag
   fprintf(fConfig, "# The geocoding flag indicates whether the data needs to be run through\n"
           "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
@@ -298,6 +320,19 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->general->tmp_dir);
             FREE(cfg->general);
         }
+	if (cfg->project) {
+	  FREE(cfg->project->short_name);
+	  FREE(cfg->project->long_name);
+	  FREE(cfg->project->naming_scheme);
+	  FREE(cfg->project);
+	}
+	if (cfg->files) {
+	  int ii;
+	  for (ii=0; ii<cfg->files->file_count; ii++)
+	    FREE(cfg->files->name[ii]);
+	  FREE(cfg->files->name);
+	  FREE(cfg->files);
+	}
         if (cfg->import) {
             FREE(cfg->import->format);
             FREE(cfg->import->radiometry);
@@ -343,6 +378,10 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->terrain_correct->mask);
             FREE(cfg->terrain_correct);
         }
+        if (cfg->calibrate) {
+            FREE(cfg->calibrate->radiometry);
+            FREE(cfg->calibrate);
+        }
         if (cfg->geocoding) {
             FREE(cfg->geocoding->projection);
             FREE(cfg->geocoding->datum);
@@ -379,6 +418,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(params, "");
   convert_config *cfg = newStruct(convert_config);
   cfg->general = newStruct(s_general);
+  cfg->project = newStruct(s_project);
+  cfg->files = newStruct(s_files);
   cfg->import = newStruct(s_import);
   cfg->external = newStruct(s_external);
   cfg->airsar = newStruct(s_airsar);
@@ -390,6 +431,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->polarimetry = newStruct(s_polarimetry);
   cfg->terrain_correct = newStruct(s_terrain_correct);
   cfg->rtc = newStruct(s_rtc);
+  cfg->calibrate = newStruct(s_calibrate);
   cfg->geocoding = newStruct(s_geocoding);
   cfg->export = newStruct(s_export);
   cfg->mosaic = newStruct(s_mosaic);
@@ -408,6 +450,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->general->default_in_dir, "");
   cfg->general->default_out_dir = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->general->default_out_dir, "");
+  cfg->general->project = 0;
+  cfg->general->files = 0;
   cfg->general->import = 0;
   cfg->general->external = 0;
   cfg->general->sar_processing = 0;
@@ -417,6 +461,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->polarimetry = 0;
   cfg->general->terrain_correct = 0;
   cfg->general->rtc = 0;
+  cfg->general->calibration = 0;
   cfg->general->geocoding = 0;
   cfg->general->export = 0;
   cfg->general->mosaic = 0;
@@ -438,6 +483,17 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->general->tmp_dir, "");
   cfg->general->thumbnail = 0;
   cfg->general->testdata = 0;
+
+  cfg->project->short_name = (char *)MALLOC(sizeof(char)*50);
+  strcpy(cfg->project->short_name, "");
+  cfg->project->long_name = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->project->long_name, "");
+  cfg->project->naming_scheme = 
+    (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->project->naming_scheme, "");
+
+  cfg->files->file_count = 0;
+  cfg->files->name = NULL;
 
   cfg->import->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->import->format, "CEOS");
@@ -550,6 +606,11 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->rtc->update_mask = 0;
   cfg->rtc->layover_mask = (char *)MALLOC(sizeof(char)*1024);
 
+  cfg->calibrate->radiometry = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->calibrate->radiometry, "AMPLITUDE_IMAGE");
+  cfg->calibrate->db = 0;
+  cfg->calibrate->wh_scale = 0;
+
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj",
           get_asf_share_dir());
@@ -615,6 +676,10 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
       if (strncmp(test, "default output dir", 18)==0)
         strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
+      if (strncmp(test, "project", 7)==0)
+        cfg->general->project = read_int(line, "project");
+      if (strncmp(test, "files", 5)==0)
+        cfg->general->files = read_int(line, "files");
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "external", 8)==0)
@@ -633,6 +698,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->terrain_correct = read_int(line, "terrain correction");
       if (strncmp(test, "radiometric terrain correction", 30)==0)
 	cfg->general->rtc = read_int(line, "radiometric terrain correction");
+      if (strncmp(test, "calibration", 11)==0)
+	cfg->general->calibration = read_int(line, "calibration");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -660,6 +727,14 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "testdata", 8)==0)
 	cfg->general->testdata = read_int(line, "testdata");
 
+      // Project
+      if (strncmp(test, "short name", 10)==0)
+	strcpy(cfg->project->short_name, read_str(line, "short name"));
+      if (strncmp(test, "long name", 9)==0)
+	strcpy(cfg->project->long_name, read_str(line, "long name"));
+      if (strncmp(test, "naming scheme", 13)==0)
+	strcpy(cfg->project->naming_scheme, read_str(line, "naming scheme"));
+      
       // Import
       if (strncmp(test, "input format", 12)==0)
         strcpy(cfg->import->format, read_str(line, "input format"));
@@ -862,6 +937,10 @@ convert_config *init_fill_convert_config(char *configFile)
             strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
         if (strncmp(test, "default output dir", 18)==0)
             strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
+	if (strncmp(test, "project", 7)==0)
+	  cfg->general->project = read_int(line, "project");
+	if (strncmp(test, "files", 5)==0)
+	  cfg->general->files = read_int(line, "files");
         if (strncmp(test, "import", 6)==0)
             cfg->general->import = read_int(line, "import");
         if (strncmp(test, "external", 8)==0)
@@ -880,6 +959,8 @@ convert_config *init_fill_convert_config(char *configFile)
             cfg->general->terrain_correct = read_int(line, "terrain correction");
 	if (strncmp(test, "radiometric terrain correction", 30)==0)
 	  cfg->general->rtc = read_int(line, "radiometric terrain correction");
+	if (strncmp(test, "calibration", 11)==0)
+	  cfg->general->calibration = read_int(line, "calibration");
         if (strncmp(test, "geocoding", 9)==0)
             cfg->general->geocoding = read_int(line, "geocoding");
         if (strncmp(test, "export", 6)==0)
@@ -946,6 +1027,10 @@ convert_config *read_convert_config(char *configFile)
           strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
       if (strncmp(test, "default output dir", 18)==0)
           strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
+      if (strncmp(test, "project", 7)==0)
+	cfg->general->project = read_int(line, "project");
+      if (strncmp(test, "files", 5)==0)
+	cfg->general->files = read_int(line, "files");
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "sar processing", 14)==0)
@@ -960,6 +1045,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->general->terrain_correct = read_int(line, "terrain correction");
       if (strncmp(test, "radiometric terrain correction", 30)==0)
 	cfg->general->rtc = read_int(line, "radiometric terrain correction");
+      if (strncmp(test, "calibration", 11)==0)
+	cfg->general->calibration = read_int(line, "calibration");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -989,6 +1076,35 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "testdata", 8)==0)
 	cfg->general->testdata = read_int(line, "testdata");
       FREE(test);
+    }
+
+    if (strncmp(line, "[Project]", 9)==0) strcpy(params, "Project");
+    if (strncmp(params, "Project", 7)==0) {
+      test = read_param(line);
+      if (strncmp(test, "short name", 10)==0)
+	strcpy(cfg->project->short_name, read_str(line, "short name"));
+      if (strncmp(test, "long name", 9)==0)
+	strcpy(cfg->project->long_name, read_str(line, "long name"));
+      if (strncmp(test, "naming scheme", 13)==0)
+	strcpy(cfg->project->naming_scheme, read_str(line, "naming scheme"));
+    }
+
+    if (strncmp(line, "[Files]", 7)==0) strcpy(params, "Files");
+    if (strncmp(params, "Files", 5)==0) {
+      test = read_param(line);
+      int ii;
+      if (strncmp(test, "file count", 10)==0) {
+	cfg->files->file_count = read_int(line, "file count");
+	cfg->files->name = (char **) MALLOC(sizeof(char *)*cfg->files->file_count);
+	for (ii=0; ii<cfg->files->file_count; ii++)
+	  cfg->files->name[ii] = (char *) MALLOC(sizeof(char)*512);
+      }
+      char fileName[255];
+      for (ii=0; ii<cfg->files->file_count; ii++) {
+	sprintf(fileName, "file(%d)", ii+1);
+	if (strncmp(test, fileName, strlen(fileName))==0)
+	  strcpy(cfg->files->name[ii], read_str(line, fileName));
+      }
     }
 
     if (strncmp(line, "[Import]", 8)==0) strcpy(params, "Import");
@@ -1180,6 +1296,17 @@ convert_config *read_convert_config(char *configFile)
       FREE(test);
     }
 
+    if (strncmp(line, "[Calibration]", 13)==0) strcpy(params, "Calibration");
+    if (strncmp(params, "Calibration", 11)==0) {
+      test = read_param(line);
+      if (strncmp(test, "radiometry", 10)==0)
+	strcpy(cfg->calibrate->radiometry, read_str(line, "radiometry"));
+      if (strncmp(test, "db", 2)==0)
+	cfg->calibrate->db = read_int(line, "db");
+      if (strncmp(test, "woods hole scale", 16)==0)
+	cfg->calibrate->wh_scale = read_int(line, "woods hole scale");
+    }
+
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
     if (strncmp(params, "Geocoding", 9)==0) {
       test = read_param(line);
@@ -1291,6 +1418,25 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "\n# Default directory to put files in. If there is no directory in\n"
                        "# the output file value, this directory will be appended to it.\n\n");
     fprintf(fConfig, "default output dir = %s\n", cfg->general->default_out_dir);
+    // General - Project
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The project flag indicates whether a project needs to be defined.\n"
+	      "# The project allows the use of naming schemes for output files.\n");
+      fprintf(fConfig, "# Running asf_mapready with the -create option and the import flag\n"
+	      "# switched on will generate an [Project] section where you can define further\n"
+	      "# parameters.\n\n");
+    }
+    fprintf(fConfig, "project = %d\n", cfg->general->project);
+    // General - Files
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The files flag indicates whether a file name list is to be added\n"
+	      "# to the configuration file. It is strictly used in combination of defining\n"
+	      "# a project.\n");
+      fprintf(fConfig, "# Running asf_mapready with the -create option and the import flag\n"
+	      "# switched on will generate an [Files] section where you can define further\n"
+	      "# parameters.\n\n");
+    }
+    fprintf(fConfig, "files = %d\n", cfg->general->files);
     if (!shortFlag) {
       fprintf(fConfig, "\n# The import flag indicates whether the data needs to be run through\n"
               "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
@@ -1300,6 +1446,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# switched on will generate an [Import] section where you can define further\n"
               "# parameters.\n\n");
     }
+    // General - Import
     fprintf(fConfig, "import = %i\n", cfg->general->import);
     if (!shortFlag)
       fprintf(fConfig, "\n# If you wish to run an external program on the data after import,\n"
@@ -1368,11 +1515,21 @@ int write_convert_config(char *configFile, convert_config *cfg)
     fprintf(fConfig, "terrain correction = %i\n", cfg->general->terrain_correct);
     // General - Radiometric terrain correction
     if (!shortFlag) {
-      fprintf(fConfig, "# The radiometric terrain correction flag indicates whether the data\n"
+      fprintf(fConfig, "\n# The radiometric terrain correction flag indicates whether the data\n"
 	      "# needs to be run 'rtc' (1 for running it, 0 for leaving out the radiometric terrain\n"
-	      "# correction step).\n");
+	      "# correction step).\n\n");
     }
     fprintf(fConfig, "radiometric terrain correction = %i\n", cfg->general->rtc);
+    // General - Calibration
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The calibration flag indicates whether the calibration parameters are\n"
+	      "# applied to the data through 'asf_calibrate' (1 for running it, 0 for leaving\n"
+	      "# out the calibration step.)\n");
+      fprintf(fConfig, "# Running asf_mapready with the -create option and the geocoding flag\n"
+          "# switched on will generate a [Calibration] section where you can define further\n"
+          "# parameters.\n\n");
+    }
+    fprintf(fConfig, "calibration = %d\n", cfg->general->calibration);
     // General - Geocoding
     if (!shortFlag) {
       fprintf(fConfig, "\n# The geocoding flag indicates whether the data needs to be run through\n"
@@ -1436,6 +1593,46 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (cfg->general->testdata)
       fprintf(fConfig, "testdata = %d\n", cfg->general->testdata);
 
+    // Project
+    if (cfg->general->project) {
+      fprintf(fConfig, "\n\n[Project]\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameter defines the project with a short name that is\n"
+		"# also used in the naming scheme.\n\n");
+      fprintf(fConfig, "short name = %s\n", cfg->project->short_name);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameter defines a descriptive project name.\n\n");
+      fprintf(fConfig, "long name = %s\n", cfg->project->long_name);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameter allows the definition of a naming scheme that\n"
+		"# is applied to all output names within the project.\n"
+		"# The naming scheme can contain the following:\n"
+		"# project name: <project>,\n"
+		"# date of acquisition: <date>,\n"
+		"# satellite: <sat>,\n"
+		"# beam mode: <mode>,\n"
+		"# orbit: <orbit>,\n"
+		"# frame: <frame>,\n"
+		"# file name: <file>,\n"
+		"# radiometry: <radiometry>\n\n");
+      fprintf(fConfig, "naming scheme = %s\n", cfg->project->naming_scheme);
+    }
+
+    // Files
+    if (cfg->general->files) {
+      int ii;
+      fprintf(fConfig, "\n\n[Files]\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameter indicates the number of files that are used in\n"
+		"# the project.\n\n");
+      fprintf(fConfig, "file count = %d\n", cfg->files->file_count);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameters define the name of the filename, including the\n"
+		"# index of the file, e.g. file(1).\n\n");
+      for (ii=0; ii<cfg->files->file_count; ii++)
+	fprintf(fConfig, "file(%d) = %s\n", ii+1, cfg->files->name[ii]);
+    }
+
     // Import
     if (cfg->general->import) {
       fprintf(fConfig, "\n\n[Import]\n");
@@ -1478,82 +1675,82 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# is output in decibels.  It only applies when the radiometry is sigma,\n"
                 "# gamma or beta.\n\n");
       fprintf(fConfig, "output db = %d\n", cfg->import->output_db);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# When the complex SLC flag in non-zero, single "
+		"look complex data is stored in I/Q values. Otherwise SLC data\n"
+		"# will be stored as amplitude/phase.\n\n");
+      fprintf(fConfig, "complex SLC = %d\n", cfg->import->complex_slc);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# When the multilook SLC flag in non-zero, single "
+		"look complex data that is stored as amplitude/phase is being\n"
+		"# multilooked.\n\n");
+      fprintf(fConfig, "multilook SLC = %d\n", cfg->import->multilook_slc);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The ERS2 satellite has a known gain loss problem that this program\n"
+		"# will attempt to correct (if this option is turned on) by applying a\n"
+		"# scale correction factor uniformly to all pixels in the image.  The\n"
+		"# correction is dependent on the date, and is only applied to calibrated\n"
+		"# data (i.e., everything but amplitude).  For more information, see\n"
+		"# section 4 of:\n"
+		"# <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n\n");
+      fprintf(fConfig, "apply ers2 gain fix = %d\n", cfg->import->ers2_gain_fix);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# If any input files are PolSARpro files, then it will be a single-band\n"
+		"# greyscale image containing a PolSARpro classification.  In order for the classification\n"
+		"# to be properly colored, a PolSARpro look-up table should be specified here.\n"
+		"# For a full list of available PolSARpro look-up tables, look in the ASF Tools\n"
+		"# share directory.  The available look-up tables can be found in the following\n"
+		"# path: <path>/asf_tools/share/asf_tools/mapready/look_up_tables.  In this folder,\n"
+		"# you will find files ending in \".lut\" and \".pal\".  Only the .pal files can\n"
+		"# be applied to PolSARpro files ...They originated from PolSARpro and are named\n"
+		"# according to the PolSARpro classification to which they apply.  NOTE: This field\n"
+		"# is OPTIONAL and only applies if you are processing PolSARpro files.  If not,\n"
+		"# then you may leave this field blank.  If it is blank, then any PolSARpro data\n"
+		"# that is processed will remain (non-meaningfully) greyscale.\n\n");
+      fprintf(fConfig, "polsarpro colormap = %s\n", cfg->import->polsarpro_colormap);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The image data type is only relevant for PolSARPro ingest.\n"
+		"# It determines whether the input needs to be as a matrix or a file.\n"
+		"# Current options: POLARIMETRIC_SEGMENTATION, POLARIMETRIC_DECOMPOSITION,\n"
+		"# POLARIMETRIC_PARAMETERS and POLARIMETRIC_MATRIX,\n\n");
+      fprintf(fConfig, "image data type = %s\n", cfg->import->image_data_type);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# If the name of the metadata file is not deducible from the name\n"
+		"# given for the input file, it can be specified here.  Currently, only GAMMA\n"
+		"# data needs to do this, for other types of data either the input file is\n"
+		"# the metadata, or the metadata filename follows a standard naming convention.\n"
+		"# If you have renamed your metadata file against the standard naming scheme\n"
+		"# for the data, you should rename it back rather than using this option.\n\n");
+      fprintf(fConfig, "metadata file = %s\n", cfg->import->metadata_file);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
+		"# The interferogram is stored as complex floating point values.\n\n");
+      fprintf(fConfig, "interferogram = %s\n", cfg->import->interferogram);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
+		"# The coherence image is stored in floating point values between 0 and 1.\n\n");
+      fprintf(fConfig, "coherence = %s\n", cfg->import->coherence);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
+		"# The metadata of the SLC slave image is used to define the temporal\n"
+		"# baseline.\n\n");
+      fprintf(fConfig, "slave metadata = %s\n", cfg->import->slave_metadata);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
+		"# This file contains the baseline components that describe the geometry of\n"
+		"# the interferometric pairs.\n\n");
+      fprintf(fConfig, "baseline = %s\n", cfg->import->baseline);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The UAVSAR ingest requires the definition of which "
+		"product actually needs\n# to be imported.\n"
+		"# PolSAR products: SLC,MLC,DAT,GRD,HGT\n"
+		"# InSAR products: AMP,INT,UNW,COR,AMP_GRD,INT_GRD,UNW_GRD,"
+		"COR_GRD,HGT_GRD\n"
+		"# Several products can be ingested at the same by listed them "
+		"comma separated.\n# By setting this parameter to 'all', all "
+		"available products are imported.\n\n");
+      fprintf(fConfig, "uavsar = %s\n", cfg->import->uavsar);
     }
-    if (!shortFlag)
-      fprintf(fConfig, "\n# When the complex SLC flag in non-zero, single "
-          "look complex data is stored in I/Q values. Otherwise SLC data\n"
-          "# will be stored as amplitude/phase.\n\n");
-    fprintf(fConfig, "complex SLC = %d\n", cfg->import->complex_slc);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# When the multilook SLC flag in non-zero, single "
-          "look complex data that is stored as amplitude/phase is being\n"
-          "# multilooked.\n\n");
-    fprintf(fConfig, "multilook SLC = %d\n", cfg->import->multilook_slc);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The ERS2 satellite has a known gain loss problem that this program\n"
-              "# will attempt to correct (if this option is turned on) by applying a\n"
-              "# scale correction factor uniformly to all pixels in the image.  The\n"
-              "# correction is dependent on the date, and is only applied to calibrated\n"
-              "# data (i.e., everything but amplitude).  For more information, see\n"
-              "# section 4 of:\n"
-              "# <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n\n");
-    fprintf(fConfig, "apply ers2 gain fix = %d\n", cfg->import->ers2_gain_fix);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# If any input files are PolSARpro files, then it will be a single-band\n"
-          "# greyscale image containing a PolSARpro classification.  In order for the classification\n"
-              "# to be properly colored, a PolSARpro look-up table should be specified here.\n"
-              "# For a full list of available PolSARpro look-up tables, look in the ASF Tools\n"
-              "# share directory.  The available look-up tables can be found in the following\n"
-              "# path: <path>/asf_tools/share/asf_tools/mapready/look_up_tables.  In this folder,\n"
-              "# you will find files ending in \".lut\" and \".pal\".  Only the .pal files can\n"
-              "# be applied to PolSARpro files ...They originated from PolSARpro and are named\n"
-              "# according to the PolSARpro classification to which they apply.  NOTE: This field\n"
-              "# is OPTIONAL and only applies if you are processing PolSARpro files.  If not,\n"
-              "# then you may leave this field blank.  If it is blank, then any PolSARpro data\n"
-              "# that is processed will remain (non-meaningfully) greyscale.\n\n");
-    fprintf(fConfig, "polsarpro colormap = %s\n", cfg->import->polsarpro_colormap);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The image data type is only relevant for PolSARPro ingest.\n"
-              "# It determines whether the input needs to be as a matrix or a file.\n"
-	      "# Current options: POLARIMETRIC_SEGMENTATION, POLARIMETRIC_DECOMPOSITION,\n"
-	      "# POLARIMETRIC_PARAMETERS and POLARIMETRIC_MATRIX,\n\n");
-    fprintf(fConfig, "image data type = %s\n", cfg->import->image_data_type);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# If the name of the metadata file is not deducible from the name\n"
-              "# given for the input file, it can be specified here.  Currently, only GAMMA\n"
-              "# data needs to do this, for other types of data either the input file is\n"
-              "# the metadata, or the metadata filename follows a standard naming convention.\n"
-              "# If you have renamed your metadata file against the standard naming scheme\n"
-              "# for the data, you should rename it back rather than using this option.\n\n");
-    fprintf(fConfig, "metadata file = %s\n", cfg->import->metadata_file);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
-              "# The interferogram is stored as complex floating point values.\n\n");
-    fprintf(fConfig, "interferogram = %s\n", cfg->import->interferogram);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
-              "# The coherence image is stored in floating point values between 0 and 1.\n\n");
-    fprintf(fConfig, "coherence = %s\n", cfg->import->coherence);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
-              "# The metadata of the SLC slave image is used to define the temporal\n"
-	      "# baseline.\n\n");
-    fprintf(fConfig, "slave metadata = %s\n", cfg->import->slave_metadata);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The interferometric GAMMA data consists of several data sets.\n"
-              "# This file contains the baseline components that describe the geometry of\n"
-	      "# the interferometric pairs.\n\n");
-    fprintf(fConfig, "baseline = %s\n", cfg->import->baseline);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The UAVSAR ingest requires the definition of which "
-	      "product actually needs\n# to be imported.\n"
-	      "# PolSAR products: SLC,MLC,DAT,GRD,HGT\n"
-	      "# InSAR products: AMP,INT,UNW,COR,AMP_GRD,INT_GRD,UNW_GRD,"
-	      "COR_GRD,HGT_GRD\n"
-	      "# Several products can be ingested at the same by listed them "
-	      "comma separated.\n# By setting this parameter to 'all', all "
-	      "available products are imported.\n\n");
-    fprintf(fConfig, "uavsar = %s\n", cfg->import->uavsar);
 
     // AirSAR -- only write out if the import format is AirSAR
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {
@@ -1590,7 +1787,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
 
     // External
     if (cfg->general->external) {
-      fprintf(fConfig, "\n[External]\n");
+      fprintf(fConfig, "\n\n[External]\n");
       if (!shortFlag)
         fprintf(fConfig, "\n# The following program will be run after import.  Specify the\n"
                 "# command line here, and in the place where the input and output\n"
@@ -1607,12 +1804,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# {Log} for the log filename in the command line.  This log file\n"
                 "# will be included in the MapReady processing log.  For example:\n"
                 "#     command = sr2gr -log {Log} {Input} {Output} 12.5\n\n");
-      fprintf(fConfig, "command = %s\n\n", cfg->external->cmd);
+      fprintf(fConfig, "command = %s\n", cfg->external->cmd);
     }
 
     // SAR processing
     if (cfg->general->sar_processing) {
-      fprintf(fConfig, "\n[SAR processing]\n");
+      fprintf(fConfig, "\n\n[SAR processing]\n");
       if (!shortFlag)
         fprintf(fConfig, "\n# The radiometry can be one of the following: AMPLITUDE_IMAGE,\n"
                 "# POWER_IMAGE, SIGMA_IMAGE, GAMMA_IMAGE and BETA_IMAGE.\n"
@@ -1620,26 +1817,26 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# represents the magnitude (square of the amplitude) of the SAR image.\n"
                 "# The sigma, gamma and beta image are different representations of calibrated\n"
                 "# SAR images. Their values are in power scale.\n\n");
-        fprintf(fConfig, "radiometry = %s\n\n", cfg->sar_processing->radiometry);
+        fprintf(fConfig, "radiometry = %s\n", cfg->sar_processing->radiometry);
     }
     // C2P
     if (cfg->general->c2p) {
-        fprintf(fConfig, "\n[C2P]\n");
+        fprintf(fConfig, "\n\n[C2P]\n");
         if (!shortFlag)
             fprintf(fConfig, "\n# SLC data is not multilooked, but will be if this flag\n"
                     "is set.\n\n");
-        fprintf(fConfig, "multilook = %d\n\n", cfg->c2p->multilook);
+        fprintf(fConfig, "multilook = %d\n", cfg->c2p->multilook);
     }
     // Image stats
     if (cfg->general->image_stats) {
-      fprintf(fConfig, "\n[Image stats]\n\n");
+      fprintf(fConfig, "\n\n[Image stats]\n\n");
       fprintf(fConfig, "values = %s\n", cfg->image_stats->values);
       fprintf(fConfig, "bins = %i\n", cfg->image_stats->bins);
       fprintf(fConfig, "interval = %.2lf\n", cfg->image_stats->interval);
     }
     // Detect corner reflectors
     if (cfg->general->detect_cr) {
-      fprintf(fConfig, "\n[Detect corner reflectors]\n\n");
+      fprintf(fConfig, "\n\n[Detect corner reflectors]\n\n");
       fprintf(fConfig, "corner reflector locations = %s\n", cfg->detect_cr->cr_location);
       fprintf(fConfig, "chips = %i\n", cfg->detect_cr->chips);
       fprintf(fConfig, "text = %i\n", cfg->detect_cr->text);
@@ -1647,7 +1844,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
 
     // Polarimetry
     if (cfg->general->polarimetry) {
-      fprintf(fConfig, "\n[Polarimetry]\n");
+      fprintf(fConfig, "\n\n[Polarimetry]\n");
       if (!shortFlag)
         fprintf(fConfig, "\n# If you have quad-pol SLC data available,\n"
                 "# you can use the standard Pauli decomposition to map the 4 bands to\n"
@@ -1717,12 +1914,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# If the correction angle is smaller than the threshold angle, then\n"
                 "# the correction is not applied.  Use -1 for no threshold (which means\n"
                 "# the correction is always applied).\n\n");
-      fprintf(fConfig, "farcorr threshold = %.2lf\n\n", cfg->polarimetry->farcorr_threshold);
+      fprintf(fConfig, "farcorr threshold = %.2lf\n", cfg->polarimetry->farcorr_threshold);
     }
 
     // Terrain correction
     if (cfg->general->terrain_correct) {
-      fprintf(fConfig, "\n[Terrain correction]\n");
+      fprintf(fConfig, "\n\n[Terrain correction]\n");
       if (!shortFlag)
         fprintf(fConfig, "\n# This parameter defines the output size of the terrain corrected\n"
                 "# image. If set to -99 this parameter will be ignored and the 'asf_terrcorr' will\n"
@@ -1847,9 +2044,32 @@ int write_convert_config(char *configFile, convert_config *cfg)
 	      cfg->terrain_correct->if_coreg_fails_use_zero_offsets);
     }
 
+    // Calibration
+    if (cfg->general->calibration) {
+      fprintf(fConfig, "\n\n[Calibration]\n");
+      if (!shortFlag)
+      if (!shortFlag)
+        fprintf(fConfig, "\n# The radiometry can be one of the following: AMPLITUDE_IMAGE,\n"
+                "# POWER_IMAGE, SIGMA_IMAGE, GAMMA_IMAGE and BETA_IMAGE.\n"
+                "# The amplitude image is the regularly processed SAR image. The power image\n"
+                "# represents the magnitude (square of the amplitude) of the SAR image.\n"
+                "# The sigma, gamma and beta image are different representations of calibrated\n"
+                "# SAR images. Their values are in power scale.\n\n");
+      fprintf(fConfig, "radiometry = %s\n", cfg->calibrate->radiometry);
+      if (!shortFlag)
+          fprintf(fConfig, "\n# When the output db flag is non-zero, the calibrated image\n"
+                "# is output in decibels.  It only applies when the radiometry is sigma,\n"
+                "# gamma or beta.\n\n");
+      fprintf(fConfig, "db = %d\n", cfg->calibrate->db);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameter indicates whether the data is scaled back\n"
+		"# to byte using a formula developed by Woods Hole.\n\n");
+      fprintf(fConfig, "woods hole scale = %d\n", cfg->calibrate->wh_scale);
+    }
+
     // Geocoding
     if (cfg->general->geocoding) {
-      fprintf(fConfig, "\n[Geocoding]\n");
+      fprintf(fConfig, "\n\n[Geocoding]\n");
       if (!shortFlag) {
         fprintf(fConfig, "\n# The geocoding tool currently supports five different map projections:\n"
                 "# Universal Transverse Mercator (UTM), Polar Stereographic, Albers Equal Area\n"
@@ -1857,7 +2077,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# For all these map projections a large number of projection parameter files\n"
                 "# have been predefined for various parts of the world.\n");
         fprintf(fConfig, "# The projection parameter files are located in:\n");
-    fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
+	fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
       }
       fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);
       if (!shortFlag)
@@ -1890,7 +2110,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# data. For example, applying a projection parameter file that is defined for\n"
                 "# South America for a data set that is covering Alaska would lead to huge\n"
                 "# distortions. These checks can be overwritten by setting the force option.\n\n");
-      fprintf(fConfig, "force = %i\n\n", cfg->geocoding->force);
+      fprintf(fConfig, "force = %i\n", cfg->geocoding->force);
     }
     // Testdata generation - for internal use only
     // Creates a subset of probably map projected data
@@ -1903,7 +2123,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
     }
     // Export
     if (cfg->general->export) {
-      fprintf(fConfig, "\n[Export]\n");
+      fprintf(fConfig, "\n\n[Export]\n");
       if (!shortFlag)
         fprintf(fConfig, "\n# The following format are considered valid format: ASF, TIFF, GEOTIFF\n"
                 "# JPEG, PNG, PGM and POLSARPRO.\n"

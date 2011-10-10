@@ -68,5 +68,5 @@ int asf_calibrate(const char *inFile, const char *outFile,
   FREE(bufOut);
   FREE(bands);
 
-  return TRUE;
+  return FALSE;
 }

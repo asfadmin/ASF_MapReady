@@ -13,6 +13,8 @@ typedef struct
   char *out_name;         // output file name
   char *default_in_dir;   // default input directory
   char *default_out_dir;  // default output directory
+  int project;            // project flag
+  int files;              // files flag
   int import;             // import flag
   int external;           // external program flag
   int sar_processing;     // SAR processing flag
@@ -22,6 +24,7 @@ typedef struct
   int polarimetry;        // polarimetry flag
   int terrain_correct;    // terrain correction flag
   int rtc;                // radiometric terrain correction flag
+  int calibration;        // calibration flag
   int geocoding;          // geocoding flag
   int export;             // export flag
   int mosaic;             // mosaic flag
@@ -40,6 +43,19 @@ typedef struct
                           // image is generated in the intermediates directory
   int testdata;           // testdata flag - for internal use only
 } s_general;
+
+typedef struct
+{
+  char *short_name;
+  char *long_name;
+  char *naming_scheme;
+} s_project;
+
+typedef struct
+{
+  int file_count;
+  char **name;
+} s_files;
 
 typedef struct
 {
@@ -195,6 +211,18 @@ typedef struct
 
 typedef struct
 {
+  char *radiometry;       // data type: AMPLITUDE_IMAGE,
+                          //            POWER_IMAGE,
+                          //            SIGMA_IMAGE,
+                          //            GAMMA_IMAGE,
+                          //            BETA_IMAGE
+  int db;                 // TRUE if the output is db.  Only applies to
+                          //        SIGMA, GAMMA, BETA radiometries.
+  int wh_scale;           // flag for scaling output Woods Hole style
+} s_calibrate;
+
+typedef struct
+{
   char *projection;       // projection parameters file
   double pixel;           // pixel size for geocoded product
   double height;          // average height of the data
@@ -243,6 +271,8 @@ typedef struct
 {
   char comment[255];                   // first line for comments
   s_general *general;                  // general processing details
+  s_project *project;                  // project parameters
+  s_files *files;                      // files for project processing
   s_import *import;                    // importing parameters
   s_external *external;                // external program to run
   s_airsar *airsar;                    // AirSAR processing parameters
@@ -254,6 +284,7 @@ typedef struct
   s_polarimetry *polarimetry;          // polarimetric parameters
   s_terrain_correct *terrain_correct;  // terrain correction parameters
   s_rtc *rtc;                          // radiometric terrain correction params
+  s_calibrate *calibrate;              // calibration parameters
   s_geocoding *geocoding;              // geocoding parameters
   s_export *export;                    // exporting parameters
   s_mosaic *mosaic;                    // mosaicking parameters
