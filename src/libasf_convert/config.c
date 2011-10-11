@@ -607,8 +607,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->rtc->layover_mask = (char *)MALLOC(sizeof(char)*1024);
 
   cfg->calibrate->radiometry = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->calibrate->radiometry, "AMPLITUDE_IMAGE");
-  cfg->calibrate->db = 0;
+  strcpy(cfg->calibrate->radiometry, "AMPLITUDE");
   cfg->calibrate->wh_scale = 0;
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
@@ -1301,8 +1300,6 @@ convert_config *read_convert_config(char *configFile)
       test = read_param(line);
       if (strncmp(test, "radiometry", 10)==0)
 	strcpy(cfg->calibrate->radiometry, read_str(line, "radiometry"));
-      if (strncmp(test, "db", 2)==0)
-	cfg->calibrate->db = read_int(line, "db");
       if (strncmp(test, "woods hole scale", 16)==0)
 	cfg->calibrate->wh_scale = read_int(line, "woods hole scale");
     }
@@ -1426,7 +1423,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
 	      "# switched on will generate an [Project] section where you can define further\n"
 	      "# parameters.\n\n");
     }
-    fprintf(fConfig, "project = %d\n", cfg->general->project);
+    fprintf(fConfig, "project = %i\n", cfg->general->project);
     // General - Files
     if (!shortFlag) {
       fprintf(fConfig, "\n# The files flag indicates whether a file name list is to be added\n"
@@ -1436,7 +1433,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
 	      "# switched on will generate an [Files] section where you can define further\n"
 	      "# parameters.\n\n");
     }
-    fprintf(fConfig, "files = %d\n", cfg->general->files);
+    fprintf(fConfig, "files = %i\n", cfg->general->files);
     if (!shortFlag) {
       fprintf(fConfig, "\n# The import flag indicates whether the data needs to be run through\n"
               "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
@@ -1529,7 +1526,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
           "# switched on will generate a [Calibration] section where you can define further\n"
           "# parameters.\n\n");
     }
-    fprintf(fConfig, "calibration = %d\n", cfg->general->calibration);
+    fprintf(fConfig, "calibration = %i\n", cfg->general->calibration);
     // General - Geocoding
     if (!shortFlag) {
       fprintf(fConfig, "\n# The geocoding flag indicates whether the data needs to be run through\n"
@@ -2056,11 +2053,6 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# The sigma, gamma and beta image are different representations of calibrated\n"
                 "# SAR images. Their values are in power scale.\n\n");
       fprintf(fConfig, "radiometry = %s\n", cfg->calibrate->radiometry);
-      if (!shortFlag)
-          fprintf(fConfig, "\n# When the output db flag is non-zero, the calibrated image\n"
-                "# is output in decibels.  It only applies when the radiometry is sigma,\n"
-                "# gamma or beta.\n\n");
-      fprintf(fConfig, "db = %d\n", cfg->calibrate->db);
       if (!shortFlag)
 	fprintf(fConfig, "\n# This parameter indicates whether the data is scaled back\n"
 		"# to byte using a formula developed by Woods Hole.\n\n");

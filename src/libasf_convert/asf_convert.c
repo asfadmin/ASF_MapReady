@@ -1553,26 +1553,24 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       asfPrintStatus("Adding Amplitude band, for terrain correction.\n");
     */ 
 
-    // FIXME: Temporary reassignment of parameters
     if (strncmp_case(cfg->import->radiometry, "SIGMA_IMAGE", 11) == 0 ||
 	strncmp_case(cfg->import->radiometry, "GAMMA_IMAGE", 11) == 0 ||
 	strncmp_case(cfg->import->radiometry, "BETA_IMAGE", 10) == 0) {
       cfg->general->calibration = TRUE;
-      cfg->calibrate->db = cfg->import->output_db;
       if (strncmp_case(cfg->import->radiometry, "SIGMA_IMAGE", 11) == 0) {
-	if (cfg->calibrate->db)
+	if (cfg->import->output_db)
 	  strcpy(cfg->calibrate->radiometry, "SIGMA_DB");
 	else
 	  strcpy(cfg->calibrate->radiometry, "SIGMA");
       }
       else if (strncmp_case(cfg->import->radiometry, "GAMMA_IMAGE", 11) == 0) {
-	if (cfg->calibrate->db)
+	if (cfg->import->output_db)
 	  strcpy(cfg->calibrate->radiometry, "GAMMA_DB");
 	else
 	  strcpy(cfg->calibrate->radiometry, "GAMMA");
       }
       else if (strncmp_case(cfg->import->radiometry, "BETA_IMAGE", 10) == 0) {
-	if (cfg->calibrate->db)
+	if (cfg->import->output_db)
 	  strcpy(cfg->calibrate->radiometry, "BETA_DB");
 	else
 	  strcpy(cfg->calibrate->radiometry, "BETA");
@@ -2204,12 +2202,22 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     char *dir = (char *) MALLOC(sizeof(char)*1024);
     char *file = (char *) MALLOC(sizeof(char)*1024);
     split_dir_and_file(cfg->terrain_correct->dem, dir, file);
+
+    meta_parameters *meta = meta_read(inFile);
+    char *demImg = appendExt(cfg->terrain_correct->dem, ".img");
+    char *demMeta = appendExt(cfg->terrain_correct->dem, ".meta");
+    int pad = 0;
+    double tolerance = 0.5;
+
     sprintf(cfg->rtc->ground_range_dem, "%s/%s_ground.img", 
 	    cfg->general->tmp_dir, stripExt(file));
-    if (!fileExists(cfg->rtc->ground_range_dem))
-      asfPrintError("Ground range DEM (%s) does not exist!\n",
-		    cfg->rtc->ground_range_dem);
-    
+    check_return(make_gr_dem(meta, demImg, demMeta, pad, tolerance, 
+			     cfg->rtc->ground_range_dem, FALSE),
+		 "Generating DEM in terrain corrected space (make_gr_dem)\n");
+    FREE(demImg);
+    FREE(demMeta);
+    meta_free(meta);
+
     sprintf(cfg->rtc->layover_mask, "%s/terrain_correct_mask.img", 
 	    cfg->general->tmp_dir);
     if (!fileExists(cfg->rtc->layover_mask))
@@ -2237,24 +2245,12 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     
     // Check radiometry
     radiometry_t radiometry;
-    if (strcmp_case(cfg->calibrate->radiometry, "SIGMA") == 0) {
-      if (cfg->calibrate->db)
-	radiometry = r_SIGMA_DB;
-      else
-	radiometry = r_SIGMA;
-    }
-    else if (strcmp_case(cfg->calibrate->radiometry, "BETA") == 0) {
-      if (cfg->calibrate->db)
-	radiometry = r_BETA_DB;
-      else
-	radiometry = r_BETA;
-    }
-    else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") == 0) {
-      if (cfg->calibrate->db)
-	radiometry = r_GAMMA_DB;
-      else
-	radiometry = r_GAMMA;
-    }
+    if (strcmp_case(cfg->calibrate->radiometry, "SIGMA") == 0)
+      radiometry = r_SIGMA;
+    else if (strcmp_case(cfg->calibrate->radiometry, "BETA") == 0)
+      radiometry = r_BETA;
+    else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") == 0)
+      radiometry = r_GAMMA;
     else if (strcmp_case(cfg->calibrate->radiometry, "SIGMA_DB") == 0)
       radiometry = r_SIGMA_DB;
     else if (strcmp_case(cfg->calibrate->radiometry, "BETA_DB") == 0)

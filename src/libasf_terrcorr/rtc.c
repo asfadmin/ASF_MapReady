@@ -300,5 +300,5 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   FREE(maskImg);
   FREE(maskMeta);
 
-  return TRUE;
+  return FALSE;
 }

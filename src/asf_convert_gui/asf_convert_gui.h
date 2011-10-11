@@ -232,6 +232,9 @@ typedef struct
   // radiometric terrain correction options
   int rtc_is_checked;
 
+  // calibration
+  int do_calibrate;
+
   /* misc */
   int keep_files; // 0= keep none, 1=keep temp, 2= keep all
   int apply_metadata_fix;

@@ -547,6 +547,9 @@ settings_get_from_gui()
         (ret->data_type == INPUT_TYPE_SIGMA ||
          ret->data_type == INPUT_TYPE_BETA ||
          ret->data_type == INPUT_TYPE_GAMMA);
+    ret->do_calibrate = (ret->data_type == INPUT_TYPE_SIGMA ||
+			 ret->data_type == INPUT_TYPE_BETA ||
+			 ret->data_type == INPUT_TYPE_GAMMA);
 
     // this one is set on a per-file basis
     strcpy(ret->polsarpro_colormap, "");
@@ -1007,6 +1010,18 @@ settings_get_data_type_string(const Settings *s)
     }
 
     return ret;
+}
+
+const gchar *settings_get_db_string(const Settings *s)
+{
+  const gchar *ret;  
+
+  if (s->output_db)
+    ret = "_db";
+  else
+    ret = "";
+
+  return ret;
 }
 
 int
@@ -1588,6 +1603,8 @@ settings_to_config_file(const Settings *s,
       fprintf(cf, "ancillary file = %s\n", ancillary_file);
     }
     fprintf(cf, "output file = %s\n", output_file);
+    fprintf(cf, "project = 0\n");
+    fprintf(cf, "files = 0\n");
     fprintf(cf, "import = %d\n",
         input_data_format == INPUT_FORMAT_ASF_INTERNAL ? 0 : 1);
     fprintf(cf, "external = %d\n", s->external_is_checked);
@@ -1600,6 +1617,7 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "terrain correction = %d\n",
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
     fprintf(cf, "radiometric terrain correction = %d\n", s->do_radiometric);
+    fprintf(cf, "calibration = %d\n", s->do_calibrate);
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
     fprintf(cf, "export = %d\n", s->export_is_checked);
     fprintf(cf, "intermediates = 1\n");
@@ -1801,6 +1819,13 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "\n");
     }
 
+    if (s->do_calibrate) {
+      fprintf(cf, "[Calibration]\n");
+      fprintf(cf, "radiometry = %s%s\n", 
+	      settings_get_data_type_string(s), settings_get_db_string(s));
+      fprintf(cf, "woods hole scale = 0\n\n");
+    }
+
     if (s->geocode_is_checked) {
       fprintf(cf, "[Geocoding]\n");
       fprintf(cf, "projection = %s\n", tmp_projfile);
@@ -1920,16 +1945,23 @@ int apply_settings_from_config_file(char *configFile)
     s.airsar_p_pol = cfg->airsar->p_pol;
 
     s.data_type = INPUT_TYPE_AMP;
+    s.do_calibrate = 0;
     if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0)
         s.data_type = INPUT_TYPE_AMP;
     else if (strncmp(uc(cfg->import->radiometry), "POWER_IMAGE", 11) == 0)
         s.data_type = INPUT_TYPE_POWER;
-    else if (strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) == 0)
+    else if (strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) == 0) {
         s.data_type = INPUT_TYPE_SIGMA;
-    else if (strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) == 0)
+	s.do_calibrate = 1;
+    }
+    else if (strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) == 0) {
         s.data_type = INPUT_TYPE_GAMMA;
-    else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0)
+	s.do_calibrate = 1;
+    }
+    else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0) {
         s.data_type = INPUT_TYPE_BETA;
+	s.do_calibrate = 1;
+    }
 
     s.process_to_level1 = cfg->general->sar_processing;
     s.output_db = cfg->import->output_db;
@@ -2191,6 +2223,35 @@ int apply_settings_from_config_file(char *configFile)
 
     // radiometric terrain correction
     s.rtc_is_checked = cfg->general->rtc;
+
+    // calibration
+    s.do_calibrate = cfg->general->calibration;
+    if (cfg->general->calibration) {
+      if (strncmp_case(cfg->calibrate->radiometry, "SIGMA_DB", 8) == 0) {
+        s.data_type = INPUT_TYPE_SIGMA;	
+	s.output_db = 1;
+      }
+      if (strncmp_case(cfg->calibrate->radiometry, "GAMMA_DB", 8) == 0) {
+        s.data_type = INPUT_TYPE_GAMMA;	
+	s.output_db = 1;
+      }
+      if (strncmp_case(cfg->calibrate->radiometry, "BETA_DB", 8) == 0) {
+        s.data_type = INPUT_TYPE_BETA;	
+	s.output_db = 1;
+      }
+      if (strncmp_case(cfg->calibrate->radiometry, "SIGMA", 5) == 0) {
+        s.data_type = INPUT_TYPE_SIGMA;	
+	s.output_db = 0;
+      }
+      if (strncmp_case(cfg->calibrate->radiometry, "GAMMA", 5) == 0) {
+        s.data_type = INPUT_TYPE_GAMMA;	
+	s.output_db = 0;
+      }
+      if (strncmp_case(cfg->calibrate->radiometry, "BETA", 4) == 0) {
+        s.data_type = INPUT_TYPE_BETA;	
+	s.output_db = 0;
+      }
+    }
 
     /* misc */
     s.keep_files = cfg->general->intermediates - 1;

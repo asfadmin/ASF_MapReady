@@ -216,8 +216,6 @@ typedef struct
                           //            SIGMA_IMAGE,
                           //            GAMMA_IMAGE,
                           //            BETA_IMAGE
-  int db;                 // TRUE if the output is db.  Only applies to
-                          //        SIGMA, GAMMA, BETA radiometries.
   int wh_scale;           // flag for scaling output Woods Hole style
 } s_calibrate;
 

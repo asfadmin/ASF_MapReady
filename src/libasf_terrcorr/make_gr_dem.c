@@ -335,5 +335,5 @@ int make_gr_dem(meta_parameters *meta_sar, const char *demImg, const char *demMe
   FREE(outImg);
   FREE(outMeta);
 
-  return TRUE;
+  return FALSE;
 }

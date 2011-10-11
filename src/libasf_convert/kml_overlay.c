@@ -233,6 +233,8 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   fprintf(fp, "[General]\n");
   fprintf(fp, "input file = %s%s\n", inDir, inName);
   fprintf(fp, "output file = %s\n", pngFile);
+  fprintf(fp, "project = 0\n");
+  fprintf(fp, "files = 0\n");
   if (is_polsarpro)
     fprintf(fp, "import = 1\n");
   else
