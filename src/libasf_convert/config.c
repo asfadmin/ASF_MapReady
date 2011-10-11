@@ -936,7 +936,8 @@ convert_config *init_fill_convert_config(char *configFile)
             strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
         if (strncmp(test, "default output dir", 18)==0)
             strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
-	if (strncmp(test, "project", 7)==0)
+	if (strncmp(test, "project", 7)==0 && 
+	    strncmp(test, "projection", 10)!=0)
 	  cfg->general->project = read_int(line, "project");
 	if (strncmp(test, "files", 5)==0)
 	  cfg->general->files = read_int(line, "files");
