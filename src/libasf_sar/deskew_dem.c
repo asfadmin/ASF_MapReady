@@ -497,23 +497,22 @@ static int bad_dem_height(float height)
   return height < -900 || height == badDEMht;
 }
 
-static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, float *inout,
-                             int line, float *mask, meta_parameters * meta, FILE * fp)
+static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, float *mask, float *corrections)
 {
-    float corrections[d->numSamples];
     int x;
-    for(x = 0; x < d->numSamples; ++x) {
-      corrections[x] = 1.;
-    }
     Vector terrainNormal, R, *RX, X;
-    for (x=1;x<d->numSamples;x++) {
+    for (x=1;x<d->numSamples-1;x++) {
         // don't mess with masked pixels
-        if (mask[x]==MASK_USER_MASK)
+        if (mask[x]==MASK_USER_MASK) {
+          corrections[x] = 1.;
           continue;
+        }
         // if we have any SRTM holes, or otherwise no DEM data, don't correct
         if (bad_dem_height(localDemLines[1][x-1]) || bad_dem_height(localDemLines[1][x+1]) ||
-            bad_dem_height(localDemLines[0][x]) || bad_dem_height(localDemLines[2][x]))
+            bad_dem_height(localDemLines[0][x]) || bad_dem_height(localDemLines[2][x])) {
+          corrections[x] = 1.;
           continue;
+        }
 
         /* find terrain normal */
         terrainNormal.x=(localDemLines[1][x-1]-localDemLines[1][x+1])/(2*d->grPixelSize);
@@ -534,12 +533,9 @@ static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, f
 
         RX = vector_cross(&R, &X);
         double cosphi = fabs(vector_dot(&terrainNormal, RX));
-        double correction = (cosphi / d->sinIncidAng[x]);
-        corrections[x] = correction;
-        inout[x] *= correction;
+        corrections[x] = (cosphi / d->sinIncidAng[x]);
         vector_free(RX);
     }
-    put_float_line(fp, meta, line, corrections);
 }
 
 static void shift_gr(struct deskew_dem_data *d, float *in, float *out)
@@ -604,18 +600,17 @@ static void push_dem_lines(FILE * inDemGroundFp, meta_parameters *metaDEMground,
 
   FREE(grDem_geo_out[0]);
   FREE(backconverted_dem[0]);
-
   FREE(grDem_rad_out[0]);
-  grDem_rad_out[0] = grDem_rad_out[1];
-  grDem_rad_out[1] = grDem_rad_out[2];
+
+  int x;
+  for(x = 0; x < 2; x++) {
+    grDem_rad_out[x] = grDem_rad_out[x+1];
+    grDem_geo_out[x] = grDem_geo_out[x+1];
+    backconverted_dem[x] = backconverted_dem[x+1];
+
+  }
   grDem_rad_out[2] = radDemLine;
-
-  grDem_geo_out[0] = grDem_geo_out[1];
-  grDem_geo_out[1] = grDem_geo_out[2];
   grDem_geo_out[2] = geoDemLine;
-
-  backconverted_dem[0] = backconverted_dem[1];
-  backconverted_dem[1] = backconverted_dem[2];
   backconverted_dem[2] = backconvertedDemLine;
 }
 
@@ -626,11 +621,12 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
             char *outMaskName, int fill_holes, int fill_value,
             int which_gr_dem)
 {
-  float *inSarLine, *outLine, *maskLine;
+  float *inSarLine, *corrections, *outLine, *maskLine;
   FILE *inDemSlantFp, *inDemGroundFp = NULL, *inSarFp, *outFp,
     *inMaskFp = NULL, *outMaskFp = NULL;
   meta_parameters *metaDEMslant, *metaDEMground = NULL, *outMeta,
     *inSarMeta, *inMaskMeta = NULL;
+  char **bands;
   char msg[256];
   int ns, inSarFlag, inMaskFlag, outMaskFlag;
   register int x, y, b;
@@ -665,6 +661,8 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
       return FALSE;
     }
     outMeta->general->data_type = inSarMeta->general->data_type;
+    bands = 
+      extract_band_names(inSarMeta->general->bands, inSarMeta->general->band_count);
   }
   else {
     d.meta = NULL;
@@ -761,6 +759,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     inSarLine = NULL;
   }
 
+  corrections = (float *) MALLOC(sizeof(float) * ns);
   outLine = (float *) MALLOC (sizeof (float) * ns);
   maskLine = (float *) MALLOC (sizeof (float) * ns);
   float **localRadDemLines = MALLOC(sizeof(float*)*3);
@@ -807,6 +806,11 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         maskLine[x] = outLine[x];
     }
 
+    if (y > 0 && y < d.numLines - 1 && doRadiometric) {
+      radio_compensate(&d, localRadDemLines, maskLine, corrections);
+      put_float_line(correctionfp, metaDEMslant, y, corrections);
+    }
+
     // do this line in all of the bands
     for (b = 0; b < band_count; ++b) {
       if (inSarFlag) {
@@ -814,10 +818,16 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
         geo_compensate (&d, localGeoDemLines[1], inSarLine, outLine,
                         ns, 1, maskLine, y);
+        if((y == 0 || y == d.numLines - 1) && doRadiometric) {
+          memset(outLine, 0, sizeof(float)*ns);
+        }
+        else if (y > 0 && y < d.numLines - 1 && doRadiometric) {
+          for(x = 0; x < ns; ++x) {
+            outLine[x] = get_rad_cal_dn(inSarMeta, y, x, bands[b], outLine[x], corrections[x]);
+          }
+          outLine[0] = outLine[ns-1] = 0;
+        }
       }
-      if (y > 0 && y < d.numLines - 1 && doRadiometric)
-        radio_compensate (&d, localRadDemLines, outLine,
-                          y, maskLine, metaDEMslant, correctionfp);
 
       // subtract away the masked region
       mask_float_line (ns, fill_value, outLine,
@@ -867,6 +877,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     FREE(localGeoDemLines[y]);
     FREE(localbackconvertedDemLines[y]);
   }
+  for (y = 0; y < inSarMeta->general->band_count; y++) {
+    FREE(bands[y]);
+  }
+  FREE(bands);
   FREE(localRadDemLines);
   FREE(localGeoDemLines);
   FREE(localbackconvertedDemLines);
