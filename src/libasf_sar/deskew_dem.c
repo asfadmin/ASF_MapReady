@@ -78,6 +78,7 @@ BUGS:
 #include "asf_meta.h"
 #include "asf_sar.h"
 #include "vector.h"
+#include "asf_raster.h"
 #include <string.h>
 #include <assert.h>
 
@@ -496,68 +497,28 @@ static int bad_dem_height(float height)
   return height < -900 || height == badDEMht;
 }
 
-
-static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
-                             float *grDEMprev,float *inout,int ns,
-                             int line, float *mask, meta_parameters * meta)
+static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, float *inout,
+                             int line, float *mask, meta_parameters * meta, FILE * fp)
 {
-/*
-Here's what it looked like before optimization:
-		double dx,dy,dz,vecLen,ix,iy,iz,cosAng;
-	  Find terrain normal.
-		dx=(grDEM[x-1]-grDEM[x])/grPixelSize;
-		dy=(grDEMprev[x]-grDEM[x])/grPixelSize;
-		dz=1.0;
-	  Make the normal a unit vector.
-		vecLen=1.0/sqrt(dx*dx+dy*dy+dz*dz);
-		dx*=vecLen;
-		dy*=vecLen;
-		dz*=vecLen;
-	  Find the incidence angle normal.
-	  	ix=-sin(incidAng[x]);
-	  	iy=0;
-	  	iz=cos(incidAng[x]);
-	  Take dot product of these two vectors.
-		cosAng=dx*ix+dy*iy+dz*iz;
-		if (cosAng<0)
-		{ 
-	Shadowed area.
-			inout[x]=(1&(x/10))?200:100;
-		} else {
-		Ordinary diffuse radar reflection--
-	scale by phong equation.
-			double cosScaled=pow(cosAng,10);
-			double normFact=1.0-0.99*cosScaled;
-			inout[x]*=normFact;
-		}
-
-*/
-    FILE * fp = FOPEN("correction.img", "r+b");
-    float corrections[ns];
-    memset(corrections, 1, ns);
+    float corrections[d->numSamples];
     int x;
+    for(x = 0; x < d->numSamples; ++x) {
+      corrections[x] = 1.;
+    }
     Vector terrainNormal, R, *RX, X;
-    for (x=1;x<ns;x++) {
+    for (x=1;x<d->numSamples;x++) {
         // don't mess with masked pixels
-        //if (mask[x]!=MASK_NORMAL)
         if (mask[x]==MASK_USER_MASK)
           continue;
         // if we have any SRTM holes, or otherwise no DEM data, don't correct
-        /*if (bad_dem_height(grDEM[x-1]) || bad_dem_height(grDEM[x+1]) ||
-            bad_dem_height(grDEMprev[x]) || bad_dem_height(grDEMnext[x]))
-          continue;
-        */
-        if (bad_dem_height(grDEM[x]) || bad_dem_height(grDEMprev[x]) ||
-            bad_dem_height(grDEM[x-1]))
+        if (bad_dem_height(localDemLines[1][x-1]) || bad_dem_height(localDemLines[1][x+1]) ||
+            bad_dem_height(localDemLines[0][x]) || bad_dem_height(localDemLines[2][x]))
           continue;
 
         /* find terrain normal */
-        /*terrainNormal.x=(grDEM[x-1]-grDEM[x+1])/(2*grPixelSize);
-        terrainNormal.y=(grDEMnext[x]-grDEMprev[x])/(2*grPixelSize);
-        */
-        terrainNormal.x=(grDEM[x-1]-grDEM[x])/d->grPixelSize;
+        terrainNormal.x=(localDemLines[1][x-1]-localDemLines[1][x+1])/(2*d->grPixelSize);
         // Switch these because grPixelSize is negative in the y dir
-        terrainNormal.y=(grDEM[x]-grDEMprev[x])/d->grPixelSize;
+        terrainNormal.y=(localDemLines[2][x]-localDemLines[0][x])/(2*d->grPixelSize);
         terrainNormal.z=1.0;
         /*Make the normal a unit vector.*/
         vector_multiply(&terrainNormal, 1./vector_magnitude(&terrainNormal));
@@ -579,9 +540,6 @@ Here's what it looked like before optimization:
         vector_free(RX);
     }
     put_float_line(fp, meta, line, corrections);
-    if (line == 4) 
-      meta_write(meta, "correction.meta");
-    FCLOSE(fp);
 }
 
 static void shift_gr(struct deskew_dem_data *d, float *in, float *out)
@@ -604,6 +562,62 @@ static void shift_gr(struct deskew_dem_data *d, float *in, float *out)
     }
 }
 
+static void get_dem_line(FILE * inDemGroundFp, meta_parameters *metaDEMground, FILE *inDemSlantFp,
+                         meta_parameters *metaDEMSlant, int which_gr_dem, struct deskew_dem_data *d,
+                         int line, float *tmpbuf, float *backconverted_dem, float *grDem_geo_out, float *grDem_rad_out)
+{
+  get_float_line (inDemSlantFp, metaDEMSlant, line, tmpbuf);
+  dem_sr2gr(d, tmpbuf, backconverted_dem, d->numSamples, TRUE /* fill_holes */ );
+
+  if(inDemGroundFp) {
+    get_float_line (inDemGroundFp, metaDEMground, line, tmpbuf);
+    shift_gr (d, tmpbuf, grDem_rad_out);
+  }
+  else {
+    memcpy(grDem_rad_out, backconverted_dem, sizeof(float)*d->numSamples);
+  }
+
+  if(which_gr_dem == ORIGINAL_GR_DEM) {
+    memcpy(grDem_geo_out, grDem_rad_out, sizeof(float)*d->numSamples);
+  }
+  else {
+    memcpy(grDem_geo_out, backconverted_dem, sizeof(float)*d->numSamples);
+  }
+}
+
+static void push_dem_lines(FILE * inDemGroundFp, meta_parameters *metaDEMground, FILE *inDemSlantFp,
+                         meta_parameters *metaDEMSlant, int which_gr_dem, struct deskew_dem_data *d,
+                         int line, float *tmpbuf, float **backconverted_dem, float **grDem_geo_out, float **grDem_rad_out)
+{
+  float *geoDemLine, *radDemLine, *backconvertedDemLine;
+  if(line >= d->numLines) {
+    geoDemLine = radDemLine = backconvertedDemLine = NULL;
+  }
+  else {
+    geoDemLine = MALLOC(sizeof(float)*d->numSamples);
+    radDemLine = MALLOC(sizeof(float)*d->numSamples);
+    backconvertedDemLine = MALLOC(sizeof(float)*d->numSamples);
+
+    get_dem_line(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMSlant, which_gr_dem,
+                 d, line, tmpbuf, backconvertedDemLine, geoDemLine, radDemLine);
+  }
+
+  FREE(grDem_geo_out[0]);
+  FREE(backconverted_dem[0]);
+
+  FREE(grDem_rad_out[0]);
+  grDem_rad_out[0] = grDem_rad_out[1];
+  grDem_rad_out[1] = grDem_rad_out[2];
+  grDem_rad_out[2] = radDemLine;
+
+  grDem_geo_out[0] = grDem_geo_out[1];
+  grDem_geo_out[1] = grDem_geo_out[2];
+  grDem_geo_out[2] = geoDemLine;
+
+  backconverted_dem[0] = backconverted_dem[1];
+  backconverted_dem[1] = backconverted_dem[2];
+  backconverted_dem[2] = backconvertedDemLine;
+}
 
 /* inSarName can be NULL, in this case doRadiometric is ignored */
 /* inMaskName can be NULL, in this case outMaskName is ignored */
@@ -612,8 +626,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
             char *outMaskName, int fill_holes, int fill_value,
             int which_gr_dem)
 {
-  float *srDEMline, *grDEMline, *grDEMlast, *grDEMconv,
-    *inSarLine, *outLine, *maskLine;
+  float *inSarLine, *outLine, *maskLine;
   FILE *inDemSlantFp, *inDemGroundFp = NULL, *inSarFp, *outFp,
     *inMaskFp = NULL, *outMaskFp = NULL;
   meta_parameters *metaDEMslant, *metaDEMground = NULL, *outMeta,
@@ -719,7 +732,6 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   }
 
 /* output file's metadata is all set, now */
-  //meta_get_corner_coords(outMeta);
   meta_write (outMeta, outName);
 
 /* Blather at user about what is going on */
@@ -750,11 +762,13 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   }
 
   outLine = (float *) MALLOC (sizeof (float) * ns);
-  srDEMline = (float *) MALLOC (sizeof (float) * ns);
-  grDEMline = (float *) MALLOC (sizeof (float) * ns);
-  grDEMlast = (float *) MALLOC (sizeof (float) * ns);
-  grDEMconv = (float *) MALLOC (sizeof (float) * ns);
   maskLine = (float *) MALLOC (sizeof (float) * ns);
+  float **localRadDemLines = MALLOC(sizeof(float*)*3);
+  memset(localRadDemLines, 0, sizeof(float*)*3);
+  float **localGeoDemLines = MALLOC(sizeof(float*)*3);
+  memset(localGeoDemLines, 0, sizeof(float*)*3);
+  float **localbackconvertedDemLines = MALLOC(sizeof(float*)*3);
+  memset(localbackconvertedDemLines, 0, sizeof(float*)*3);
 
   n_layover = n_shadow = n_user = 0;
 
@@ -768,44 +782,14 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   for (x = 0; x < ns; ++x)
     maskLine[x] = 1;
 
-  //FILE *fpdem = fopen("gr_dem.img", "wb"); // ***
-  //meta_write(metaDEMground, "gr_dem.meta"); // ***
+  push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
+                 &d, 0, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
 
+  FILE * correctionfp = FOPEN("correction.img", "wb");
 /*Rectify data.*/
   for (y = 0; y < d.numLines; y++) {
-
-    // Always keep last two GR dem lines (for radiometric comp)
-    float *tmp = grDEMline;
-    grDEMline = grDEMlast;
-    grDEMlast = tmp;
-
-    // get slant range dem line, and convert dem to GR
-    // we have two versions of the GR dem line: grDEMline, grDEMconv
-    get_float_line (inDemSlantFp, metaDEMslant, y, srDEMline);
-    dem_sr2gr (&d, srDEMline, grDEMconv, ns, TRUE /* fill_holes */ );
-
-    // If we have the GR DEM, read it, otherwise use the converted one
-    if (inDemGroundFp) {
-      get_float_line (inDemGroundFp, metaDEMground, y, outLine);
-      shift_gr (&d, outLine, grDEMline);
-      //put_float_line(fpdem,metaDEMground,y,grDEMline); // ***
-    }
-    else {
-      for (x = 0; x < ns; ++x)
-        grDEMline[x] = grDEMconv[x];
-    }
-
-    //put_float_line(fpdem,metaDEMground,y,grDEMconv); // ***
-
-    // we can use either GR DEM to do the correction... it looks like
-    // for radiometric correction the original is clearly the better
-    // choice, but for geometric correction it is harder to say.
-    // Now force caller to specify -- default is backconverted
-    float *grDEM_for_geo = grDEMconv;
-    if (which_gr_dem == BACKCONVERTED_GR_DEM)
-      grDEM_for_geo = grDEMconv;
-    else if (which_gr_dem == ORIGINAL_GR_DEM)
-      grDEM_for_geo = grDEMline;
+    push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
+                   &d, y+1, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
 
     if (inMaskFlag) {
       // Read in the next line of the mask, update the values
@@ -817,7 +801,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
           maskLine[x] = MASK_USER_MASK;
       }
 
-      geo_compensate (&d, grDEM_for_geo, maskLine, outLine, ns, 0, NULL, y);
+      geo_compensate (&d, localGeoDemLines[1], maskLine, outLine, ns, 0, NULL, y);
 
       for (x = 0; x < ns; ++x)
         maskLine[x] = outLine[x];
@@ -828,16 +812,16 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
       if (inSarFlag) {
         get_band_float_line (inSarFp, inSarMeta, b, y, inSarLine);
 
-        geo_compensate (&d, grDEM_for_geo, inSarLine, outLine,
+        geo_compensate (&d, localGeoDemLines[1], inSarLine, outLine,
                         ns, 1, maskLine, y);
       }
-      if (y > 0 && doRadiometric)
-        radio_compensate (&d, grDEMline, grDEMlast, outLine,
-                          ns, y, maskLine, metaDEMslant);
+      if (y > 0 && y < d.numLines - 1 && doRadiometric)
+        radio_compensate (&d, localRadDemLines, outLine,
+                          y, maskLine, metaDEMslant, correctionfp);
 
       // subtract away the masked region
       mask_float_line (ns, fill_value, outLine,
-                       maskLine, grDEMconv, &d, !fill_holes);
+                       maskLine, localbackconvertedDemLines[1], &d, !fill_holes);
 
       put_band_float_line (outFp, outMeta, b, y, outLine);
     }
@@ -846,13 +830,13 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
     asfLineMeter (y, d.numLines);
   }
+  FCLOSE(correctionfp);
+  meta_write(metaDEMslant, "correction.meta");
 
   if (inMaskFlag) {
     FCLOSE (inMaskFp);
     meta_free (inMaskMeta);
   }
-
-  //FCLOSE(fpdem); // ***
 
 /*Write the updated mask*/
   if (outMaskFlag) {
@@ -878,15 +862,20 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   }
 
 /* Clean up & skidattle */
+  for(y = 0; y < 3; ++y) {
+    FREE(localRadDemLines[y]);
+    FREE(localGeoDemLines[y]);
+    FREE(localbackconvertedDemLines[y]);
+  }
+  FREE(localRadDemLines);
+  FREE(localGeoDemLines);
+  FREE(localbackconvertedDemLines);
+
   if (inSarFlag) {
     FREE (inSarLine);
     FCLOSE (inSarFp);
     meta_free (inSarMeta);
   }
-  FREE (srDEMline);
-  FREE (grDEMlast);
-  FREE (grDEMline);
-  FREE (grDEMconv);
   FREE (outLine);
   FCLOSE (inDemSlantFp);
   FCLOSE (inDemGroundFp);
