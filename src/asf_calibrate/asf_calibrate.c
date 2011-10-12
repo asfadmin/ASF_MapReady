@@ -1,4 +1,4 @@
-#define ASF_NAME_STRING "rtc"
+#define ASF_NAME_STRING "asf_calibrate"
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-db] [-wh_scale] -sigma | -gamma | -beta <input file> <output file>\n"
@@ -139,8 +139,9 @@ main (int argc, char *argv[])
   else
     asfPrintError("Unknown radiometry (%s)\n", radio);
 
-  int ok = asf_calibrate(inFile, outFile, radiometry, wh_scaleFlag);
+  int fail = asf_calibrate(inFile, outFile, radiometry, wh_scaleFlag);
+  int ok = !fail;
 
-  asfPrintStatus(ok ? "Done.\n" : "Failed\n");
+  asfPrintStatus(ok ? "Done.\n" : "Failed.\n");
   return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

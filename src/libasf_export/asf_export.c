@@ -40,6 +40,8 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
     ((md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
       md->general->image_data_type <= POLARIMETRIC_STOKES_MATRIX) ||
      md->general->image_data_type == POLARIMETRIC_DECOMPOSITION) ? 1 : 0;
+  if (md->general->image_data_type == RGB_STACK)
+    rgb = TRUE;
 
   // Do that exporting magic!
   if ( format == ENVI ) {

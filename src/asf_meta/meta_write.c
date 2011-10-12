@@ -118,6 +118,8 @@ char *image_data_type2str(image_data_type_t image_data_type)
     strcpy(str, "IMAGE_LAYER_STACK");
   else if (image_data_type == INSAR_STACK)
     strcpy(str, "INSAR_STACK");
+  else if (image_data_type == RGB_STACK)
+    strcpy(str, "RGB_STACK");
   else if (image_data_type == MOSAIC)
     strcpy(str, "MOSAIC");
   else

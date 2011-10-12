@@ -458,6 +458,8 @@ void fill_structure_field(char *field_name, void *valp)
 	MGENERAL->image_data_type = IMAGE_LAYER_STACK;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INSAR_STACK") )
 	MGENERAL->image_data_type = INSAR_STACK;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "RGB_STACK") )
+	MGENERAL->image_data_type = RGB_STACK;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "MOSAIC") )
 	MGENERAL->image_data_type = MOSAIC;
       else {

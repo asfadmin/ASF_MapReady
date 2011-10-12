@@ -96,6 +96,7 @@ typedef enum {
   SIMULATED_IMAGE,
   MASK,
   IMAGE_LAYER_STACK,
+  RGB_STACK,
   MOSAIC
 } image_data_type_t;
 

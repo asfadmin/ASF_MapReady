@@ -3771,6 +3771,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   int is_insar = isInSAR(inFile);
 
   meta_parameters *meta = meta_read(inFile);
+  if (meta->general->image_data_type == RGB_STACK)
+    strcpy(cfg->export->rgb, meta->general->bands);
   char lut_file[2048] = "";
   if (meta->general->image_data_type >= POLARIMETRIC_SEGMENTATION &&
       meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX)
