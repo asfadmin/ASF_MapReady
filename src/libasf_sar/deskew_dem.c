@@ -502,15 +502,25 @@ static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, f
     int x;
     Vector terrainNormal, R, *RX, X;
     for (x=1;x<d->numSamples-1;x++) {
+        corrections[x] = 1.;
+
         // don't mess with masked pixels
         if (mask[x]==MASK_USER_MASK) {
-          corrections[x] = 1.;
-          continue;
+          // actually we probably should just go ahead and correct them!
+          // the user mask is to improve fft matching, probably would still
+          // want radiometric correction
+          //continue;
         }
+
+        // for now we don't treat layover/shadow any differently
+        if (mask[x]==MASK_LAYOVER || mask[x]==MASK_SHADOW) {
+	  //inout[x] = 0;
+          //continue;
+        }
+
         // if we have any SRTM holes, or otherwise no DEM data, don't correct
         if (bad_dem_height(localDemLines[1][x-1]) || bad_dem_height(localDemLines[1][x+1]) ||
             bad_dem_height(localDemLines[0][x]) || bad_dem_height(localDemLines[2][x])) {
-          corrections[x] = 1.;
           continue;
         }
 
@@ -784,8 +794,23 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
                  &d, 0, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
 
-  FILE * correctionfp = FOPEN("correction.img", "wb");
-/*Rectify data.*/
+  const char *tmpdir = get_asf_tmp_dir();
+  char *sideProductsImg = MALLOC(sizeof(char)*(strlen(tmpdir)+64));
+  sprintf(sideProductsImg, "%s/terrcorr_side_products.img", tmpdir);
+  char *sideProductsMeta = appendExt(sideProductsImg, ".meta");
+  meta_parameters *side_meta = meta_copy(metaDEMslant);
+
+  if (doRadiometric) {
+    side_meta->general->band_count  = 3;
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION");
+  } else {
+    side_meta->general->band_count  = 2;
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT");
+  }
+
+  FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");
+
+  /*Rectify data.*/
   for (y = 0; y < d.numLines; y++) {
     push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
                    &d, y+1, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
@@ -806,9 +831,21 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         maskLine[x] = outLine[x];
     }
 
-    if (y > 0 && y < d.numLines - 1 && doRadiometric) {
-      radio_compensate(&d, localRadDemLines, maskLine, corrections);
-      put_float_line(correctionfp, metaDEMslant, y, corrections);
+    for (x=0; x<ns; ++x)
+      corrections[x] = (float)(R2D*d.incidAng[x]);
+    put_band_float_line(sideProductsFp, side_meta, 0, y, corrections);
+
+    put_band_float_line(sideProductsFp, side_meta, 1, y, localGeoDemLines[1]);
+
+    if (doRadiometric) {
+      if (y > 0 && y < d.numLines - 1) {
+        radio_compensate(&d, localRadDemLines, maskLine, corrections);
+        put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
+      }
+      else {
+        memset(corrections, 1.0, sizeof(float)*ns);
+        put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
+      }
     }
 
     // do this line in all of the bands
@@ -840,8 +877,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
     asfLineMeter (y, d.numLines);
   }
-  FCLOSE(correctionfp);
-  meta_write(metaDEMslant, "correction.meta");
+  FCLOSE(sideProductsFp);
+
+  meta_write(side_meta, sideProductsMeta);
+  meta_free(side_meta);
 
   if (inMaskFlag) {
     FCLOSE (inMaskFp);
@@ -891,6 +930,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     meta_free (inSarMeta);
   }
   FREE (outLine);
+  FREE (maskLine);
   FCLOSE (inDemSlantFp);
   FCLOSE (inDemGroundFp);
   FCLOSE (outFp);
@@ -898,6 +938,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   if (metaDEMground)
     meta_free (metaDEMground);
   meta_free (outMeta);
+  FREE (corrections);
   FREE (d.slantGR);
   FREE (d.groundSR);
   FREE (d.heightShiftSR);
@@ -909,5 +950,8 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   FREE (d.cosIncidAng);
   if (d.cosineScale)
     FREE (d.cosineScale);
+  FREE(sideProductsImg);
+  FREE(sideProductsMeta);
+
   return TRUE;
 }
