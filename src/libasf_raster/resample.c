@@ -268,6 +268,7 @@ resample_impl(const char *infile, const char *outfile,
 
     FREE(imgfile);
     FREE(metafile);
+    FREE(infile_img);
 
     return(0);
 }

@@ -56,6 +56,7 @@ static poly_2d *find_poly(int degree,const double *out, const double *x,
 	matrix_solve(m);
 	for (t=0;t<nTerms;t++)
 		c->v[t]=m->coeff[t][nTerms];
+        matrix_free(m);
 	return c;
 }
 

@@ -443,9 +443,15 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     FREE(line_out);
     FREE(samp_out);
 
+    for (ii=0; ii<n; ++ii) {
+        gsl_interp_accel_free(samp_accels[ii]);
+        gsl_spline_free(samp_splines[ii]);
+        gsl_interp_accel_free(line_accels[ii]);
+        gsl_spline_free(line_splines[ii]);
+    }
+
     FREE(samp_accels);
     FREE(samp_splines);
-
     FREE(line_accels);
     FREE(line_splines);
 

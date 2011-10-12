@@ -49,6 +49,7 @@ char **extract_band_names(char *bands, int band_count)
     band_ary = NULL;
   }
 
+  FREE(t_bands);
   return band_ary;
 }
 

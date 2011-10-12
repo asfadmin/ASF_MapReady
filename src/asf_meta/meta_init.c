@@ -598,7 +598,15 @@ void meta_free(meta_parameters *meta)
     }
     FREE(meta->doppler);
     meta->doppler = NULL;
-
+    if (meta->calibration) {
+      FREE(meta->calibration->alos);
+      FREE(meta->calibration->rsat);
+      FREE(meta->calibration->esa);
+      FREE(meta->calibration->asf);
+      FREE(meta->calibration->asf_scansar);
+      FREE(meta->calibration);
+      meta->calibration = NULL;
+    }
     /*
     FREE(meta->geo);
     meta->geo = NULL;

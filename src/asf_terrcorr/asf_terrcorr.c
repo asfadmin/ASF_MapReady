@@ -141,10 +141,12 @@
 "\n"\
 "     -do-radiometric\n"\
 "          Apply radiometric terrain correction.  Radiometric terrain correction\n"\
-"          is still experimental.  Currently, this option scales values by\n"\
-"          sin(li)/sin(ellips), where li is the local incidence angle (using the\n"\
-"          DEM), and ellips is the incidence angle relative to the ellipsoid.\n"\
-"          In the future we expect to support more correction formulae.\n"\
+"          is still experimental.  Currently, this option scales values using\n"\
+"          the method described by Ulander (\"Radiometric Slope Correction of\n"\
+"          Synthetic-Aperture Radar Images\", IEEE Transactions on Geoscience and\n"\
+"          Remote Sensing, Vol 24, No 5, Sept 1996). This correction scales\n"\
+"          by cos(phi), where phi is the angle between the terrain normal, and\n"\
+"          the image plane normal.\n"\
 "\n"\
 "     -smooth-dem-holes\n"\
 "          Some DEMs have holes in them, this is particularly a problem with\n"\

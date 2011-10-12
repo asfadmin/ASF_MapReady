@@ -116,9 +116,9 @@ main (int argc, char *argv[])
     rtc_usage(argv[0]);
   }
 
-  int ok = rtc(argv[currArg], argv[currArg+1], maskFlag, mask_filename,
+  int fail = rtc(argv[currArg], argv[currArg+1], maskFlag, mask_filename,
                argv[currArg+2]);
 
-  asfPrintStatus(ok ? "Done.\n" : "Failed\n");
-  return ok ? EXIT_SUCCESS : EXIT_FAILURE;
+  asfPrintStatus(fail ? "Failed.\n" : "Done.\n");
+  return fail ? EXIT_FAILURE : EXIT_SUCCESS;
 }

@@ -1466,7 +1466,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       if (image_was_ground_range &&
           fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
       {
-          asfPrintStatus("Resampling to proper range pixel size.\n");
+          asfPrintStatus("Resampling to proper range pixel size. (%f m)\n", pixel_size);
 
           asfPrintStatus("Output image...\n");
           resampleFile_2 = getOutName(output_dir, outFile, "_resample");
@@ -1479,6 +1479,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
           resample_to_pixsiz_nn(lsMaskFile_2, lsMaskFile, pixel_size,
                                 pixel_size);
           clean(lsMaskFile_2);
+          FREE(lsMaskFile_2);
       } else {
           resampleFile_2 = NULL;
       }
