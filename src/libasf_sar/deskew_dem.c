@@ -523,12 +523,29 @@ static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, f
             bad_dem_height(localDemLines[0][x]) || bad_dem_height(localDemLines[2][x])) {
           continue;
         }
-
+#ifdef AVERAGEDNORMALS
+        Vector tmp;
+        tmp.z=1.0;
+        tmp.x=(localDemLines[1][x-1]-localDemLines[1][x])/d->grPixelSize;
+        tmp.y=(localDemLines[2][x]-localDemLines[1][x])/d->grPixelSize;
+        terrainNormal = tmp;
+        tmp.x=(localDemLines[1][x]-localDemLines[1][x+1])/d->grPixelSize;
+        tmp.y=(localDemLines[2][x]-localDemLines[1][x])/d->grPixelSize;
+        vector_add(&terrainNormal, &tmp);
+        tmp.x=(localDemLines[1][x-1]-localDemLines[1][x])/d->grPixelSize;
+        tmp.y=(localDemLines[1][x]-localDemLines[0][x])/d->grPixelSize;
+        vector_add(&terrainNormal, &tmp);
+        tmp.x=(localDemLines[1][x]-localDemLines[1][x+1])/d->grPixelSize;
+        tmp.y=(localDemLines[1][x]-localDemLines[0][x])/d->grPixelSize;
+        vector_add(&terrainNormal, &tmp);
+        vector_multiply(&terrainNormal, .25);
+#else
         /* find terrain normal */
         terrainNormal.x=(localDemLines[1][x-1]-localDemLines[1][x+1])/(2*d->grPixelSize);
         // Switch these because grPixelSize is negative in the y dir
         terrainNormal.y=(localDemLines[2][x]-localDemLines[0][x])/(2*d->grPixelSize);
         terrainNormal.z=1.0;
+#endif
         /*Make the normal a unit vector.*/
         vector_multiply(&terrainNormal, 1./vector_magnitude(&terrainNormal));
 
@@ -843,7 +860,9 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
       }
       else {
-        memset(corrections, 1.0, sizeof(float)*ns);
+        for(x = 0; x < ns; x++) {
+          corrections[x] = 1.0;
+        }
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
       }
     }
