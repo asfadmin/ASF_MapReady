@@ -229,9 +229,6 @@ typedef struct
   int no_matching;
   double offset_x, offset_y;
 
-  // radiometric terrain correction options
-  int rtc_is_checked;
-
   // calibration
   int do_calibrate;
 

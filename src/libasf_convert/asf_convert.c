@@ -2178,60 +2178,13 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     
     if (!cfg->general->export && !cfg->general->geocoding &&
-	!cfg->general->rtc) {
+	!cfg->general->calibration) {
       // if this was the last step, get the terrain corrected output
       // to the output directory -- as well as any other needed files
       renameImgAndMeta(outFile, cfg->general->out_name);
       
       // this is to get the thumbnail code all set -- it will use
       // "outFile" as the file to generate the thumbnail from
-      strcpy(outFile, cfg->general->out_name);
-    }
-  }
-  
-  if (cfg->general->rtc) {
-    update_status("Radiometric terrain correcting...\n");
-    
-    // Generate filenames
-    sprintf(inFile, "%s", outFile);
-    sprintf(outFile, "%s/radiometric_terrain_correct", cfg->general->tmp_dir);
-    
-    // Check whether ground range DEM and layover/shadow mask have
-    // actually been generated
-    //char error[255];
-    char *dir = (char *) MALLOC(sizeof(char)*1024);
-    char *file = (char *) MALLOC(sizeof(char)*1024);
-    split_dir_and_file(cfg->terrain_correct->dem, dir, file);
-
-    meta_parameters *meta = meta_read(inFile);
-    char *demImg = appendExt(cfg->terrain_correct->dem, ".img");
-    char *demMeta = appendExt(cfg->terrain_correct->dem, ".meta");
-    int pad = 0;
-    double tolerance = 0.5;
-
-    sprintf(cfg->rtc->ground_range_dem, "%s/%s_ground.img", 
-	    cfg->general->tmp_dir, stripExt(file));
-    check_return(make_gr_dem(meta, demImg, demMeta, pad, tolerance, 
-			     cfg->rtc->ground_range_dem, FALSE),
-		 "Generating DEM in terrain corrected space (make_gr_dem)\n");
-    FREE(demImg);
-    FREE(demMeta);
-    meta_free(meta);
-
-    sprintf(cfg->rtc->layover_mask, "%s/terrain_correct_mask.img", 
-	    cfg->general->tmp_dir);
-    if (!fileExists(cfg->rtc->layover_mask))
-      asfPrintError("Layover/shadow mask (%s) does not exist!\n",
-		    cfg->rtc->layover_mask);
-    
-    check_return(rtc(inFile, cfg->rtc->ground_range_dem, 
-		     cfg->rtc->update_mask, cfg->rtc->layover_mask, outFile),
-		 "Radiometrically terrain correcting data set (rtc)\n");
-    
-    // File name shuffling if needed
-    if (!cfg->general->calibration && !cfg->general->geocoding && 
-	!cfg->general->export) {
-      renameImgAndMeta(outFile, cfg->general->out_name);
       strcpy(outFile, cfg->general->out_name);
     }
   }
@@ -3323,19 +3276,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     free_ceos_names(dataName, metaName);
     FREE(basename);
   }
-
-  // No radiometric terrain correction without geometric terrain correction
-  if (cfg->general->rtc && !cfg->general->terrain_correct)
-    asfPrintError("No radiometric terrain without geometric terrain correction "
-		  "first!\n");
-
-  // Check for radiometric terrain correction (RTC) flags
-  // Make the old RTC flag in the terrain correction block is not selected
-  // at the same time as the flag for using the new RTC tool
-  if (cfg->general->rtc && 
-      cfg->general->terrain_correct && cfg->terrain_correct->do_radiometric)
-    asfPrintError("Both radiometric terrain correction flag are selected.\n"
-		  "Please choose which technique you want to use!\n");
 
   // Mosaicking
   if (cfg->general->mosaic) {
