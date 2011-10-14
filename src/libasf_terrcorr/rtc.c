@@ -182,6 +182,9 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   meta_parameters *meta_corr = NULL;
   if (corrImg) meta_corr = meta_read(demMeta);
 
+  meta_corr->general->band_count = 2;
+  strcpy(meta_corr->general->bands, "RADIOMETRIC_CORRECTION,ANGLES");
+
   // Check the input radiometry - only accept amplitude
   if (meta_in->general->radiometry != r_AMP)
     asfPrintError("Radiometric correction requires amplitude images!\n");
@@ -207,6 +210,9 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   FILE *dem_fp = FOPEN(demImg, "rb");
 
   float *corr = MALLOC(sizeof(float)*ns);
+  memset(corr, 0, sizeof(float)*ns);
+  float *angles = MALLOC(sizeof(float)*ns);
+  memset(angles, 0, sizeof(float)*ns);
   float *bufIn = MALLOC(sizeof(float)*ns);
   float *bufOut = MALLOC(sizeof(float)*ns);
 
@@ -216,13 +222,16 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp, localVectors[ii], nextVectors);
   }
 
-  double incid, sigma;
+  put_band_float_line(fpCorr, meta_corr, 0, 0, corr);
+  put_band_float_line(fpCorr, meta_corr, 1, 0, angles);
+  put_band_float_line(fpCorr, meta_corr, 0, nl - 1, corr);
+  put_band_float_line(fpCorr, meta_corr, 1, nl - 1, angles);
+
   // We aren't applying the correction to the edges of the image
   for(kk = 0; kk < nb; ++kk) {
     get_band_float_line(fpIn, meta_in, kk, 0, bufIn);
     for (jj=0; jj<ns; ++jj)
-      bufOut[jj] = 
-	get_rad_cal_dn(meta_in, 0, jj, bands[kk], bufIn[jj], corr[jj]);
+      bufOut[jj] = get_rad_cal_dn(meta_in, 0, jj, bands[kk], bufIn[jj], corr[jj]);
     put_band_float_line(fpOut, meta_out, kk, 0, bufOut);
   }
 
@@ -233,17 +242,20 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     for(jj = 1; jj < ns - 1; ++jj) {
       Vector * normal = calculate_normal(localVectors, jj);
       corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, localVectors[1][jj], &nextVectors[jj]);
+      Vector vertical;
+      vertical.x = vertical.y = 0;
+      vertical.z = 1;
+      angles[jj] = R2D * vector_dot(normal, &vertical);
       vector_free(normal);
     }
 
-    if (corrImg)
-        put_float_line(fpCorr, meta_corr, ii, corr);
+    put_band_float_line(fpCorr, meta_corr, 0, ii, corr);
+    put_band_float_line(fpCorr, meta_corr, 1, ii, angles);
 
     for (kk=0; kk<nb; ++kk) {
       get_band_float_line(fpIn, meta_in, kk, ii, bufIn);
       for (jj=0; jj<ns; ++jj)
-	bufOut[jj] = 
-	  get_rad_cal_dn(meta_in, ii, jj, bands[kk], bufIn[jj], corr[jj]);
+        bufOut[jj] = get_rad_cal_dn(meta_in, ii, jj, bands[kk], bufIn[jj], corr[jj]);
       put_band_float_line(fpOut, meta_out, kk, ii, bufOut);
     }
 
@@ -287,6 +299,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   meta_free(meta_in);
   meta_free(meta_dem);
 
+  FREE(angles);
   FREE(bufIn);
   FREE(bufOut);
   FREE(corr);
