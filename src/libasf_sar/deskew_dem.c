@@ -497,7 +497,7 @@ static int bad_dem_height(float height)
   return height < -900 || height == badDEMht;
 }
 
-static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, float *mask, float *corrections)
+static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, float *mask, float *corrections, float *angles)
 {
     int x;
     Vector terrainNormal, R, *RX, X;
@@ -548,6 +548,12 @@ static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, f
 #endif
         /*Make the normal a unit vector.*/
         vector_multiply(&terrainNormal, 1./vector_magnitude(&terrainNormal));
+
+        Vector vertical;
+        vertical.x = vertical.y = 0;
+        vertical.z = 1;
+
+        angles[x] = R2D * vector_dot(&terrainNormal, &vertical);
 
         // Create a unit vector to the sensor
         // Incidence angle is measured from vertical
@@ -786,6 +792,8 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     inSarLine = NULL;
   }
 
+  float *angles = (float *) MALLOC(sizeof(float) * ns);
+  memset(angles, 0, sizeof(float)*ns);
   corrections = (float *) MALLOC(sizeof(float) * ns);
   outLine = (float *) MALLOC (sizeof (float) * ns);
   maskLine = (float *) MALLOC (sizeof (float) * ns);
@@ -818,14 +826,17 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   meta_parameters *side_meta = meta_copy(metaDEMslant);
 
   if (doRadiometric) {
-    side_meta->general->band_count  = 3;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION");
+    side_meta->general->band_count  = 4;
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
   } else {
     side_meta->general->band_count  = 2;
     strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT");
   }
 
   FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");
+  
+  put_band_float_line(sideProductsFp, side_meta, 3, 0, angles);
+  put_band_float_line(sideProductsFp, side_meta, 3, d.numLines-1, angles);
 
   /*Rectify data.*/
   for (y = 0; y < d.numLines; y++) {
@@ -856,8 +867,9 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
     if (doRadiometric) {
       if (y > 0 && y < d.numLines - 1) {
-        radio_compensate(&d, localRadDemLines, maskLine, corrections);
+        radio_compensate(&d, localRadDemLines, maskLine, corrections, angles);
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
+        put_band_float_line(sideProductsFp, side_meta, 3, y, angles);
       }
       else {
         for(x = 0; x < ns; x++) {
@@ -939,6 +951,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     FREE(bands[y]);
   }
   FREE(bands);
+  FREE(angles);
   FREE(localRadDemLines);
   FREE(localGeoDemLines);
   FREE(localbackconvertedDemLines);
