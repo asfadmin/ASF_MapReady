@@ -73,10 +73,8 @@ int asf_calibrate(const char *inFile, const char *outFile,
   }
 
   int ii, jj, kk;
-  double *incid = (double *) MALLOC(sizeof(double)*sample_count);
   float cal_dn, cal_dn2;
-  for (ii=0; ii<sample_count; ii++)
-    incid[ii] = meta_incid(metaIn, 0, ii);
+  double incid;
   if (dualpol && wh_scaleFlag) {
     metaOut->general->image_data_type = RGB_STACK;
     for (ii=0; ii<line_count; ii++) {
@@ -86,10 +84,11 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	// Taking the remapping of other radiometries out for the moment
 	//if (inRadiometry >= r_SIGMA && inRadiometry <= r_BETA_DB)
 	//bufIn[jj] = cal2amp(metaIn, incid, jj, bands[kk], bufIn[jj]);
+	incid = meta_incid(metaIn, ii, jj);
 	cal_dn = 
-	  get_cal_dn(metaOut, incid[jj], jj, bufIn[jj], bands[0], dbFlag);
+	  get_cal_dn(metaOut, incid, jj, bufIn[jj], bands[0], dbFlag);
 	cal_dn2 = 
-	  get_cal_dn(metaOut, incid[jj], jj, bufIn2[jj], bands[1], dbFlag);
+	  get_cal_dn(metaOut, incid, jj, bufIn2[jj], bands[1], dbFlag);
 	if (FLOAT_EQUIVALENT(cal_dn, metaIn->general->no_data) ||
 	    cal_dn == cal_dn2) {
 	  bufOut[jj] = 0;
@@ -116,8 +115,9 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	  // Taking the remapping of other radiometries out for the moment
 	  //if (inRadiometry >= r_SIGMA && inRadiometry <= r_BETA_DB)
 	  //bufIn[jj] = cal2amp(metaIn, incid, jj, bands[kk], bufIn[jj]);
+	  incid = meta_incid(metaIn, ii, jj);
 	  cal_dn = 
-	    get_cal_dn(metaOut, incid[jj], jj, bufIn[jj], bands[kk], dbFlag);
+	    get_cal_dn(metaOut, incid, jj, bufIn[jj], bands[kk], dbFlag);
 	  if (wh_scaleFlag) {
 	    if (FLOAT_EQUIVALENT(cal_dn, metaIn->general->no_data))
 	      bufOut[jj] = 0;
