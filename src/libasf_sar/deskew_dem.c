@@ -611,13 +611,14 @@ calculate_correction(meta_parameters *meta_in, int line, int samp,
   // R: vector from ground point (p) to satellite (satpos)
   Vector *R = vector_copy(satpos);
   vector_subtract(R, p);
+  vector_multiply(R, 1./vector_magnitude(R));
 
   Vector *x = vector_copy(p);
   vector_subtract(x, p_next);
+  vector_multiply(x, 1./vector_magnitude(x));
 
   // Rx: R cross x -- image plane normal
   Vector *Rx = vector_cross(R,x);
-  vector_multiply(Rx, 1./vector_magnitude(Rx));
 
   // cos(phi) is the correction factor we need
   double cosphi = vector_dot(Rx,n);
@@ -900,9 +901,12 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   }
 
   FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");
-  
-  put_band_float_line(sideProductsFp, side_meta, 3, 0, angles);
-  put_band_float_line(sideProductsFp, side_meta, 3, d.numLines-1, angles);
+ 
+  if (doRadiometric) { 
+    put_band_float_line(sideProductsFp, side_meta, 3, 0, angles);
+    put_band_float_line(sideProductsFp, side_meta, 3, d.numLines-1, angles);
+  }
+
   /*Rectify data.*/
   for (y = 0; y < d.numLines; y++) {
     push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
@@ -938,7 +942,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         for(x=1; x < ns-1; ++x) {
           Vector * normal = calculate_normal(localVectors, x);
           corrections[x] = calculate_correction(inSarMeta, y, x, &satpos, normal, localVectors[1][x], &nextVectors[x]);
-          angles[x] = R2D * vector_dot(normal, &verticals[x]);
+          angles[x] = R2D * acos(vector_dot(normal, &verticals[x]));
           vector_free(normal);
         }
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
