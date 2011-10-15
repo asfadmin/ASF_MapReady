@@ -497,78 +497,139 @@ static int bad_dem_height(float height)
   return height < -900 || height == badDEMht;
 }
 
-static void radio_compensate(struct deskew_dem_data *d, float **localDemLines, float *mask, float *corrections, float *angles)
+static void geodetic_to_ecef(double lat, double lon, double h, Vector *v)
 {
-    int x;
-    Vector terrainNormal, R, *RX, X;
-    for (x=1;x<d->numSamples-1;x++) {
-        corrections[x] = 1.;
+  const double a = 6378144.0;    // GEM-06 Ellipsoid.
+  const double e = 8.1827385e-2; // GEM-06 Eccentricity
+  const double e2 = e*e;
 
-        // don't mess with masked pixels
-        if (mask[x]==MASK_USER_MASK) {
-          // actually we probably should just go ahead and correct them!
-          // the user mask is to improve fft matching, probably would still
-          // want radiometric correction
-          //continue;
-        }
+  lat *= D2R;
+  lon *= D2R;
 
-        // for now we don't treat layover/shadow any differently
-        if (mask[x]==MASK_LAYOVER || mask[x]==MASK_SHADOW) {
-	  //inout[x] = 0;
-          //continue;
-        }
+  double sin_lat = sin(lat);
+  double cos_lat = cos(lat);
 
-        // if we have any SRTM holes, or otherwise no DEM data, don't correct
-        if (bad_dem_height(localDemLines[1][x-1]) || bad_dem_height(localDemLines[1][x+1]) ||
-            bad_dem_height(localDemLines[0][x]) || bad_dem_height(localDemLines[2][x])) {
-          continue;
-        }
-#ifdef AVERAGEDNORMALS
-        Vector tmp;
-        tmp.z=1.0;
-        tmp.x=(localDemLines[1][x-1]-localDemLines[1][x])/d->grPixelSize;
-        tmp.y=(localDemLines[2][x]-localDemLines[1][x])/d->grPixelSize;
-        terrainNormal = tmp;
-        tmp.x=(localDemLines[1][x]-localDemLines[1][x+1])/d->grPixelSize;
-        tmp.y=(localDemLines[2][x]-localDemLines[1][x])/d->grPixelSize;
-        vector_add(&terrainNormal, &tmp);
-        tmp.x=(localDemLines[1][x-1]-localDemLines[1][x])/d->grPixelSize;
-        tmp.y=(localDemLines[1][x]-localDemLines[0][x])/d->grPixelSize;
-        vector_add(&terrainNormal, &tmp);
-        tmp.x=(localDemLines[1][x]-localDemLines[1][x+1])/d->grPixelSize;
-        tmp.y=(localDemLines[1][x]-localDemLines[0][x])/d->grPixelSize;
-        vector_add(&terrainNormal, &tmp);
-        vector_multiply(&terrainNormal, .25);
-#else
-        /* find terrain normal */
-        terrainNormal.x=(localDemLines[1][x-1]-localDemLines[1][x+1])/(2*d->grPixelSize);
-        // Switch these because grPixelSize is negative in the y dir
-        terrainNormal.y=(localDemLines[2][x]-localDemLines[0][x])/(2*d->grPixelSize);
-        terrainNormal.z=1.0;
-#endif
-        /*Make the normal a unit vector.*/
-        vector_multiply(&terrainNormal, 1./vector_magnitude(&terrainNormal));
+  double f = sqrt(1 - e2*sin_lat*sin_lat);
+  double af = a/f;
 
-        Vector vertical;
-        vertical.x = vertical.y = 0;
-        vertical.z = 1;
+  v->x = (af + h)*cos_lat*cos(lon);
+  v->y = (af + h)*cos_lat*sin(lon);
+  v->z = (a*(1-e2)/f + h)*sin_lat;
+}
 
-        angles[x] = R2D * vector_dot(&terrainNormal, &vertical);
+static Vector get_satpos(meta_parameters *meta, int line)
+{
+  int ns = meta->general->sample_count;
+  double t = meta_get_time(meta, line, ns/2);
 
-        // Create a unit vector to the sensor
-        // Incidence angle is measured from vertical
-        R.x = -d->sinIncidAng[x];
-        R.y = 0;
-        R.z = d->cosIncidAng[x];
-
-        X.x = X.z = 0;
-        X.y = -1;
-
-        RX = vector_cross(&R, &X);
-        double cosphi = fabs(vector_dot(&terrainNormal, RX));
-        corrections[x] = (cosphi / d->sinIncidAng[x]);
-        vector_free(RX);
+  // find the state vector closest to the specified time
+  int ii,closest_ii=0;
+  double closest_diff=9999999;
+  for (ii=0; ii<meta->state_vectors->vector_count; ++ii) {
+    double diff = fabs(meta->state_vectors->vecs[ii].time - t);
+    if (diff < closest_diff) {
+      closest_ii = ii;
+      closest_diff = diff;
     }
+  }
+
+  stateVector closest_vec = meta->state_vectors->vecs[closest_ii].vec;
+  double closest_time = meta->state_vectors->vecs[closest_ii].time;
+
+  stateVector stVec = propagate(closest_vec, closest_time, t);
+
+  Vector satpos;
+  satpos.x = stVec.pos.x;
+  satpos.y = stVec.pos.y;
+  satpos.z = stVec.pos.z;
+  return satpos;
+}
+
+static void calculate_vectors_for_line(meta_parameters *meta_img, float *demLine, int line, Vector **vectorLine, Vector *nextVectors, Vector *verticals)
+{
+  int jj;
+  double lat, lon;
+  int ns = meta_img->general->sample_count;
+
+  for(jj = 0; jj < ns; ++jj) {
+    Vector *v = MALLOC(sizeof(Vector));
+    meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
+    geodetic_to_ecef(lat, lon, demLine[jj], v);
+    vectorLine[jj] = v;
+
+    Vector v2;
+    geodetic_to_ecef(lat, lon, demLine[jj], &verticals[jj]);
+    geodetic_to_ecef(lat, lon, demLine[jj]+100, &v2);
+    vector_subtract(&verticals[jj], &v2);
+    vector_multiply(&verticals[jj], 1./vector_magnitude(&verticals[jj]));
+
+    meta_get_latLon(meta_img, line+1, jj, 0, &lat, &lon);
+    geodetic_to_ecef(lat, lon, demLine[jj], &nextVectors[jj]);
+  }
+}
+
+static void push_next_vector_line(Vector ***localVectors, Vector *nextVectors, Vector *verticals, meta_parameters *meta_img, float *demLine, int line)
+{
+  int ns = meta_img->general->sample_count;
+  Vector **vectorsLine = MALLOC(sizeof(Vector*)*ns);
+  calculate_vectors_for_line(meta_img, demLine, line, vectorsLine, nextVectors, verticals);
+
+  int i;
+  for(i = 0; i < ns; i++)
+    if(localVectors[0] != NULL)
+      vector_free(localVectors[0][i]);
+  FREE(localVectors[0]);
+
+  localVectors[0] = localVectors[1];
+  localVectors[1] = localVectors[2];
+  localVectors[2] = vectorsLine;
+}
+
+static Vector * calculate_normal(Vector ***localVectors, int sample)
+{
+  Vector *v1, *v2, *normal;
+
+  v1 = vector_copy(localVectors[0][sample]);
+  vector_subtract(v1, localVectors[2][sample]);
+
+  v2 = vector_copy(localVectors[1][sample-1]);
+  vector_subtract(v2, localVectors[1][sample+1]);
+
+  normal = vector_cross(v2, v1);
+  vector_multiply(normal, 1./vector_magnitude(normal));
+
+  vector_free(v1);
+  vector_free(v2);
+  
+  return normal;
+}
+
+static float
+calculate_correction(meta_parameters *meta_in, int line, int samp,
+                     Vector *satpos, Vector *n, Vector *p, Vector *p_next)
+{
+  // R: vector from ground point (p) to satellite (satpos)
+  Vector *R = vector_copy(satpos);
+  vector_subtract(R, p);
+
+  Vector *x = vector_copy(p);
+  vector_subtract(x, p_next);
+
+  // Rx: R cross x -- image plane normal
+  Vector *Rx = vector_cross(R,x);
+  vector_multiply(Rx, 1./vector_magnitude(Rx));
+
+  // cos(phi) is the correction factor we need
+  double cosphi = vector_dot(Rx,n);
+  if (cosphi < 0) cosphi = -cosphi;
+
+  vector_free(x);
+  vector_free(R);
+  vector_free(Rx);
+
+  // need to remove old correction factor (sin of the incidence angle)
+  double incid = meta_incid(meta_in, line, samp);
+  return cosphi / sin(incid);
 }
 
 static void shift_gr(struct deskew_dem_data *d, float *in, float *out)
@@ -640,8 +701,8 @@ static void push_dem_lines(FILE * inDemGroundFp, meta_parameters *metaDEMground,
     grDem_rad_out[x] = grDem_rad_out[x+1];
     grDem_geo_out[x] = grDem_geo_out[x+1];
     backconverted_dem[x] = backconverted_dem[x+1];
-
   }
+
   grDem_rad_out[2] = radDemLine;
   grDem_geo_out[2] = geoDemLine;
   backconverted_dem[2] = backconvertedDemLine;
@@ -654,12 +715,12 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
             char *outMaskName, int fill_holes, int fill_value,
             int which_gr_dem)
 {
-  float *inSarLine, *corrections, *outLine, *maskLine;
+  float *inSarLine, *outLine, *maskLine;
   FILE *inDemSlantFp, *inDemGroundFp = NULL, *inSarFp, *outFp,
     *inMaskFp = NULL, *outMaskFp = NULL;
   meta_parameters *metaDEMslant, *metaDEMground = NULL, *outMeta,
     *inSarMeta, *inMaskMeta = NULL;
-  char **bands;
+  char **bands = NULL;
   char msg[256];
   int ns, inSarFlag, inMaskFlag, outMaskFlag;
   register int x, y, b;
@@ -792,9 +853,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     inSarLine = NULL;
   }
 
-  float *angles = (float *) MALLOC(sizeof(float) * ns);
+  float corrections[ns];
+  float angles[ns];
   memset(angles, 0, sizeof(float)*ns);
-  corrections = (float *) MALLOC(sizeof(float) * ns);
+  Vector verticals[ns];
   outLine = (float *) MALLOC (sizeof (float) * ns);
   maskLine = (float *) MALLOC (sizeof (float) * ns);
   float **localRadDemLines = MALLOC(sizeof(float*)*3);
@@ -803,6 +865,9 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   memset(localGeoDemLines, 0, sizeof(float*)*3);
   float **localbackconvertedDemLines = MALLOC(sizeof(float*)*3);
   memset(localbackconvertedDemLines, 0, sizeof(float*)*3);
+  Vector ***localVectors = MALLOC(sizeof(Vector**)*3);
+  memset(localVectors, 0, sizeof(Vector**)*3);
+  Vector nextVectors[ns];
 
   n_layover = n_shadow = n_user = 0;
 
@@ -818,6 +883,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
   push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
                  &d, 0, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
+  push_next_vector_line(localVectors, nextVectors, verticals, inSarMeta, localRadDemLines[2], 0);
 
   const char *tmpdir = get_asf_tmp_dir();
   char *sideProductsImg = MALLOC(sizeof(char)*(strlen(tmpdir)+64));
@@ -837,11 +903,12 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   
   put_band_float_line(sideProductsFp, side_meta, 3, 0, angles);
   put_band_float_line(sideProductsFp, side_meta, 3, d.numLines-1, angles);
-
   /*Rectify data.*/
   for (y = 0; y < d.numLines; y++) {
     push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
                    &d, y+1, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
+    if(y < d.numLines - 1)
+      push_next_vector_line(localVectors, nextVectors, verticals, inSarMeta, localRadDemLines[2], y+1);
 
     if (inMaskFlag) {
       // Read in the next line of the mask, update the values
@@ -859,15 +926,21 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         maskLine[x] = outLine[x];
     }
 
-    for (x=0; x<ns; ++x)
+    for (x=0; x<ns; ++x) {
       corrections[x] = (float)(R2D*d.incidAng[x]);
+    }
     put_band_float_line(sideProductsFp, side_meta, 0, y, corrections);
-
     put_band_float_line(sideProductsFp, side_meta, 1, y, localGeoDemLines[1]);
 
     if (doRadiometric) {
       if (y > 0 && y < d.numLines - 1) {
-        radio_compensate(&d, localRadDemLines, maskLine, corrections, angles);
+        Vector satpos = get_satpos(inSarMeta, y);
+        for(x=1; x < ns-1; ++x) {
+          Vector * normal = calculate_normal(localVectors, x);
+          corrections[x] = calculate_correction(inSarMeta, y, x, &satpos, normal, localVectors[1][x], &nextVectors[x]);
+          angles[x] = R2D * vector_dot(normal, &verticals[x]);
+          vector_free(normal);
+        }
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
         put_band_float_line(sideProductsFp, side_meta, 3, y, angles);
       }
@@ -950,8 +1023,15 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   for (y = 0; y < inSarMeta->general->band_count; y++) {
     FREE(bands[y]);
   }
+
+  for(y = 0; y < 3; ++y) {
+    for(x = 0; x < ns; ++x) {
+      vector_free(localVectors[y][x]);
+    }
+    FREE(localVectors[y]);
+  }
+  FREE(localVectors);
   FREE(bands);
-  FREE(angles);
   FREE(localRadDemLines);
   FREE(localGeoDemLines);
   FREE(localbackconvertedDemLines);
@@ -970,7 +1050,6 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   if (metaDEMground)
     meta_free (metaDEMground);
   meta_free (outMeta);
-  FREE (corrections);
   FREE (d.slantGR);
   FREE (d.groundSR);
   FREE (d.heightShiftSR);
