@@ -123,13 +123,14 @@ calculate_correction(meta_parameters *meta_in, int line, int samp,
   // R: vector from ground point (p) to satellite (satpos)
   Vector *R = vector_copy(satpos);
   vector_subtract(R, p);
+  vector_multiply(R, 1./vector_magnitude(R));
 
   Vector *x = vector_copy(p);
   vector_subtract(x, p_next);
+  vector_multiply(x, 1./vector_magnitude(x));
 
   // Rx: R cross x -- image plane normal
   Vector *Rx = vector_cross(R,x);
-  vector_multiply(Rx, 1./vector_magnitude(Rx));
 
   // cos(phi) is the correction factor we need
   double cosphi = vector_dot(Rx,n);
@@ -249,7 +250,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     for(jj = 1; jj < ns - 1; ++jj) {
       Vector * normal = calculate_normal(localVectors, jj);
       corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, localVectors[1][jj], &nextVectors[jj]);
-      angles[jj] = R2D * vector_dot(normal, &verticals[jj]);
+      angles[jj] = R2D * acos(vector_dot(normal, &verticals[jj]));
       vector_free(normal);
     }
 
