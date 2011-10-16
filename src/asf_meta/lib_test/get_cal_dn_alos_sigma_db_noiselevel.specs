@@ -1,0 +1,9 @@
+# Parameter,Type(length),Value
+meta_file,char(256),'ALPSRP184561310-P1.5_UA_sigma_db.meta'
+incidence_angle,float,23.8851
+sample,int,1200
+inDn,float,400
+bandExt,char(25),'HV'
+dbFlag,int,1
+expected_value,float,-30.0
+tolerance,float,0.01

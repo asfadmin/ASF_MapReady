@@ -47,7 +47,8 @@ OBJS = 	\
 	uavsar_test.o \
 	rsat1_test.o \
 	alos_browse_test.o \
-	alos_leader_test.o
+	alos_leader_test.o \
+	alos_calibration_test.o
 
 all: asf_test clean
 

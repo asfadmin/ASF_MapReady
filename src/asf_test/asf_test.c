@@ -32,8 +32,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_test"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-create] [-clean] [-unit <type>] [-log <logFile> ]\n"\
-"            [-license] [-version] [-help] <config_file>\n"
+"   "ASF_NAME_STRING" [-create] [-clean] [-log <logFile> ] [-license]\n"\
+"            [-version] [-help] <type> <config_file>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "   This program can ingest level one CEOS and GeoTIFF format data, calibrate\n"\
@@ -45,6 +45,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   "ASF_NAME_STRING" when it is called.\n"
 
 #define ASF_REQUIRED_ARGUMENTS_STRING \
+"   <type>\n"\
+"        Run tests based on a list of configuration files. The <type> defines\n"\
+"        the unit test type: automated, basic or manual.\n"\
 "   config_file\n"\
 "        A configuration file that "ASF_NAME_STRING" uses to find which files\n"\
 "        to use for input and output, what options to use, and how the data\n"\
@@ -56,9 +59,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_OPTIONS_STRING \
 "   -create\n"\
 "        Create <config_file> instead of reading it.\n"\
-"   -unit <type>\n"\
-"        Run tests based on a list of configuration files. The <type> defines\n"\
-"        the unit test type: automated or basic.\n"\
 "   -log <logFile>\n"\
 "        Set the name and location of the log file.\n"\
 "   -license\n"\
@@ -80,7 +80,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
-#define REQUIRED_ARGS 1
+#define REQUIRED_ARGS 2
 #define FLAG_NOT_SET -1
 
 // Print minimalistic usage info & exit
@@ -211,6 +211,47 @@ static void manual_geotiff(char *configFile)
 static void manual_binary(char *configFile)
 {
   asfPrintError("Manual binary tests not implemented yet!\n");  
+}
+
+static void manual_library(char *configFile)
+{
+  char function[50], specsFile[1024];
+  int ii, suite_passed = TRUE;
+  test_config *cfg = read_test_config(configFile);
+
+  if (strcmp_case(cfg->general->status, "new") != 0)
+    asfPrintError("Can't run manual tests. Current status: '%s'\nTo run these "
+		  "tests manually, reset the general status to 'new'\n", 
+		  cfg->general->status);
+  asfPrintStatus("   Suite: %s\n", cfg->general->suite);
+  for (ii=0; ii<cfg->general->test_count; ii++) {
+    strcpy(function, cfg->test[ii]->lib->name);
+    strcpy(specsFile, cfg->test[ii]->specs);
+    asfPrintStatus("\n   Test[%d]: %s ...\n", ii+1, cfg->test[ii]->test);
+    if (strcmp_case(cfg->test[ii]->status, "skip") != 0) {
+      if (lib_test_ext(function, function, specsFile, REPORT_LEVEL_STATUS)) {
+	asfPrintStatus("   Test passed\n");
+	strcpy(cfg->test[ii]->status, "passed");
+      }
+      else {
+	asfPrintStatus("   Test failed\n");
+	strcpy(cfg->test[ii]->status, "failed");
+	suite_passed = FALSE;
+      }
+    }
+    else
+      asfPrintStatus("   Test skipped\n");
+  }
+  if (suite_passed) {
+    asfPrintStatus("\n   Suite passed\n\n");
+    strcpy(cfg->general->status, "passed");
+  }
+  else {
+    asfPrintStatus("\n   Suite failed\n\n");
+    strcpy(cfg->general->status, "failed");
+  }
+  write_test_config(configFile, cfg);
+  free_test_config(cfg);  
 }
 
 void cu_difftext(char *testFile, char *referenceFile, char *exceptFile)
@@ -436,10 +477,10 @@ int main(int argc, char *argv[])
   char configFile[1024], interface[25];
   int createflag, unitflag, cleanflag;
   extern int logflag;
-  int create_f, unit_f, clean_f, log_f;
+  int create_f, clean_f, log_f;
 
   createflag = unitflag = cleanflag = FALSE;
-  create_f = unit_f = clean_f, FLAG_NOT_SET;
+  create_f = clean_f, FLAG_NOT_SET;
 
   // Begin command line parsing ***********************************************
   if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
@@ -452,7 +493,6 @@ int main(int argc, char *argv[])
 
   // Check which options were provided
   create_f = checkForOption("-create", argc, argv);
-  unit_f   = checkForOption("-unit", argc, argv);
   clean_f  = checkForOption("-clean", argc, argv);
   log_f    = checkForOption("-log", argc, argv);
 
@@ -460,7 +500,6 @@ int main(int argc, char *argv[])
   int needed_args = 1 + REQUIRED_ARGS;               // command & REQUIRED_ARGS
   int num_flags = 0;
   if (create_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
-  if (unit_f   != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (clean_f  != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
   if (log_f    != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
 
@@ -478,12 +517,11 @@ int main(int argc, char *argv[])
   }
 
   // Make sure all options occur before the config file name argument
-  if (num_flags == 1 && (create_f > 1 || unit_f > 1 || log_f > 1)) {
+  if (num_flags == 1 && (create_f > 1 || log_f > 1)) {
     print_usage();
   }
   else if (num_flags > 1 && 
 	   (create_f >= argc - REQUIRED_ARGS - 1 ||
-	    unit_f   >= argc - REQUIRED_ARGS - 1 ||
 	    log_f    >= argc - REQUIRED_ARGS - 1)) {
     print_usage();
   }
@@ -491,10 +529,6 @@ int main(int argc, char *argv[])
   // Do the actual flagging & such for each flag
   if (create_f != FLAG_NOT_SET) {
     createflag = TRUE;
-  }
-  if (unit_f != FLAG_NOT_SET) {
-    strcpy(interface, argv[unit_f+1]);
-    unitflag = TRUE;
   }
   if (clean_f != FLAG_NOT_SET) {
     cleanflag = TRUE;
@@ -506,6 +540,7 @@ int main(int argc, char *argv[])
   }
 
   // Fetch required arguments
+  strcpy(interface, argv[argc-2]);
   strcpy(configFile, argv[argc-1]);
 
   // Report the command line
@@ -533,6 +568,10 @@ int main(int argc, char *argv[])
     asfPrintError("Could not find config file (%s)\n", configFile);
   
   // Unit tests or single configuration file?
+  if (strcmp_case(interface, "basic") == 0 || 
+      strcmp_case(interface, "automated") == 0)
+    unitflag = TRUE;
+
   if (unitflag) {
 
     extern int quietflag;
@@ -557,6 +596,8 @@ int main(int argc, char *argv[])
 	add_alos_leader_tests();
       if (strcmp_case(trim_spaces(line), "rsat1_overlay") == 0)
 	add_rsat1_overlay_tests();
+      if (strcmp_case(trim_spaces(line), "alos_calibration") == 0)
+	add_alos_calibration_tests();
       test = TRUE;
     }
     FCLOSE(fpList);
@@ -592,6 +633,9 @@ int main(int argc, char *argv[])
     // Run binary tests
     else if (strcmp_case(cfg->general->type, "binary") == 0)
       manual_binary(configFile);
+    // Run library tests
+    else if (strcmp_case(cfg->general->type, "library") == 0)
+      manual_library(configFile);
     
     free_test_config(cfg);
   }

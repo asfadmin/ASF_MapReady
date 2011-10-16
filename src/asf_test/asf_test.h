@@ -17,8 +17,25 @@
 
 typedef struct
 {
+  char *meta_file;
+  float incid;
+  int sample;
+  float inDn;
+  char *bandExt;
+  int dbFlag;
+  double value;                 
+} t_get_cal_dn;
+
+typedef struct
+{
+  char *name;                   // name of library function
+  t_get_cal_dn *get_cal_dn;     // details for get_cal_dn function
+} t_library;
+
+typedef struct
+{
   char *suite;                  // name of test suite
-  char *type;                   // test type: metadata, binary
+  char *type;                   // test type: metadata, library, binary
   int short_config;             // configuration flag: 0 - short, 1 - long
   int test_count;               // number of test - for internal use only
   char *status;                 // suite test status: new, pass, fail
@@ -29,6 +46,7 @@ typedef struct
   char *test;                   // name of test
   char *file;                   // file to be tested
   char *specs;                  // test specifications
+  t_library *lib;               // library function details
   char *status;                 // test status: new, pass, fail, skip
 } t_test;
 
@@ -54,6 +72,7 @@ int add_rsat1_geotiff_tests(void);
 int add_rsat1_overlay_tests(void);
 int add_alos_browse_tests(void);
 int add_alos_leader_tests(void);
+int add_alos_calibration_tests(void);
 
 void cu_difftext(char *testFile, char *referenceFile, char *exceptFile);
 void cu_diffimage(char *testFile, char *referenceFile);

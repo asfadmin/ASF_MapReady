@@ -59,7 +59,17 @@ static int read_int(char *line, char *param)
   return value;
 }
 
-/*
+static float read_float(char *line, char *param)
+{
+  char *tmp;
+  float value;
+
+  tmp = read_str(line, param);
+  sscanf(tmp, "%f", &value);
+
+  return value;
+}
+
 static double read_double(char *line, char *param)
 {
   char *tmp;
@@ -70,7 +80,6 @@ static double read_double(char *line, char *param)
 
   return value;
 }
-*/
 
 int init_test_config(char *configFile)
 {
@@ -89,8 +98,9 @@ int init_test_config(char *configFile)
   fprintf(fConfig, "# This parameter defines the name of the test suite\n\n");
   fprintf(fConfig, "suite = \n\n");
   // type
-  fprintf(fConfig, "# This parameter defines the test type: metadata, binary\n"
-	  "# metadata runs checks on .meta file.\n"
+  fprintf(fConfig, "# This parameter defines the test type: metadata, library, "
+	  "binary\n# metadata runs checks on .meta file.\n"
+	  "# library run on library functions.\n"
 	  "# binary run checks on binary data files.\n\n");
   fprintf(fConfig, "type = metadata\n\n");
   // short configuration
@@ -142,6 +152,16 @@ int init_test_config(char *configFile)
   return(0);
 }
 
+void free_library_function(t_library *lib)
+{
+  if (strcmp(lib->name, "get_cal_dn") == 0) {
+    FREE(lib->get_cal_dn->meta_file);
+    FREE(lib->get_cal_dn->bandExt);
+    FREE(lib->get_cal_dn);
+  }
+  FREE(lib);
+}
+
 void free_test_config(test_config *cfg)
 {
   if (cfg) {
@@ -151,6 +171,8 @@ void free_test_config(test_config *cfg)
 	FREE(cfg->test[ii]->test);
 	FREE(cfg->test[ii]->file);
 	FREE(cfg->test[ii]->specs);
+	if (strcmp_case(cfg->general->type, "library") == 0)
+	  free_library_function(cfg->test[ii]->lib);
 	FREE(cfg->test[ii]->status);
 	FREE(cfg->test[ii]);
       }
@@ -190,12 +212,22 @@ test_config *init_fill_test_config(char *configFile)
   return cfg;
 }
 
+void init_library_function(t_library *lib, char *name)
+{
+  lib->get_cal_dn = NULL;
+  if (strcmp_case(name, "get_cal_dn") == 0) {
+    lib->get_cal_dn = (t_get_cal_dn *) MALLOC(sizeof(t_get_cal_dn));
+    lib->get_cal_dn->meta_file = (char *) MALLOC(sizeof(char)*255);
+    lib->get_cal_dn->bandExt = (char *) MALLOC(sizeof(char)*25);
+  }
+}
+
 test_config *read_test_config(char *configFile)
 {
   FILE *fConfig;
   test_config *cfg = NULL;
-  char line[255], params[50];
-  char *test, *p;
+  char line[255], params[50], lib[100];
+  char *test=NULL, *p;
 
   strcpy(params, "");
   cfg = init_fill_test_config(configFile);
@@ -217,6 +249,7 @@ test_config *read_test_config(char *configFile)
 
   // Read all test cases along with the general information
   fConfig = FOPEN(configFile, "r");
+  strcpy(lib, "");
   while (fgets(line, 255, fConfig) != NULL) {
 
     if (strncmp(line, "[General]", 9) == 0) 
@@ -247,6 +280,10 @@ test_config *read_test_config(char *configFile)
       strcpy(cfg->test[num]->specs, "");
       cfg->test[num]->status = (char *) MALLOC(sizeof(char)*25);
       strcpy(cfg->test[num]->status, "");
+      if (strncmp(cfg->general->type, "library", 7) == 0) {
+	cfg->test[num]->lib = (t_library *) MALLOC(sizeof(t_library));
+	cfg->test[num]->lib->name = (char *) MALLOC(sizeof(char)*255);
+      }
       p = strchr(line, ']');
       *p = '\0';
       strcpy(cfg->test[num]->test, line+1);
@@ -259,10 +296,42 @@ test_config *read_test_config(char *configFile)
 	strcpy(cfg->test[num]->specs, read_str(line, "specs"));
       if (strncmp(test, "status", 6) == 0)
 	strcpy(cfg->test[num]->status, read_str(line, "status"));
+      if (strncmp(test, "library function", 16) == 0) {
+	strcpy(cfg->test[num]->lib->name, 
+	       read_str(line, "library function"));
+	if (strncmp(cfg->test[num]->lib->name, "get_cal_dn", 10) == 0) {
+	  init_library_function(cfg->test[num]->lib, "get_cal_dn");
+	  strcpy(lib, "get_cal_dn");
+	}
+      }
+      if (strlen(lib) > 0 && strcmp_case(lib, "get_cal_dn") == 0) {
+	if (strncmp_case(test, "meta file", 9) == 0)
+	  strcpy(cfg->test[num]->lib->get_cal_dn->meta_file, 
+		 read_str(line, "meta file"));
+	if (strncmp_case(test, "incidence angle", 15) == 0)
+	  cfg->test[num]->lib->get_cal_dn->incid = 
+	    read_int(line, "incidence angle");
+	if (strncmp_case(test, "sample", 6) == 0)
+	  cfg->test[num]->lib->get_cal_dn->sample = read_int(line, "sample");
+	if (strncmp_case(test, "inDn", 4) == 0)
+	  cfg->test[num]->lib->get_cal_dn->inDn = read_float(line, "inDn");
+	if (strncmp_case(test, "bandExt", 7) == 0)
+	  strcpy(cfg->test[num]->lib->get_cal_dn->bandExt,
+		 read_str(line, "bandExt"));
+	if (strncmp_case(test, "dbFlag", 6) == 0)
+	  cfg->test[num]->lib->get_cal_dn->dbFlag = read_int(line, "dbFlag");
+	if (strncmp(test, "expected value", 14) == 0)
+	  cfg->test[num]->lib->get_cal_dn->value = 
+	    read_double(line, "expected value");
+      }
     }
   }
 
-  FREE(test);
+  if (test)
+    FREE(test);
+  else
+    asfPrintError("Could not find manual tests in configuration file (%s).\n"
+		  "Does the configuration contains unit tests?\n", configFile);
   FCLOSE(fConfig);
 
   return cfg;
@@ -316,11 +385,19 @@ int write_test_config(char *configFile, test_config *cfg)
 	  "\n\n");
   for (ii=0; ii<cfg->general->test_count; ii++) {
     fprintf(fConfig, "\n[%s]\n", cfg->test[ii]->test);
-    // file
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameters defines the name of the file to be "
-	      "tested.\n\n");
-    fprintf(fConfig, "file = %s\n", cfg->test[ii]->file);
+    if (strcmp_case(cfg->general->type, "library") == 0) {
+      // library
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameter defines the name of the library function to be tested.\n\n");
+      fprintf(fConfig, "library function = %s\n", cfg->test[ii]->lib->name);
+    }
+    else {
+      // file
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameters defines the name of the file to be "
+		"tested.\n\n");
+      fprintf(fConfig, "file = %s\n", cfg->test[ii]->file);
+    }
     // specs
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameters defines the name of the specification "
