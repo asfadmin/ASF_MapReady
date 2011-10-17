@@ -96,5 +96,6 @@ vector_angle (Vector *self, Vector *other)
 void
 vector_free (Vector *self)
 {
-  free (self);
+  if (self)
+    free (self);
 }
