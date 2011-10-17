@@ -1025,6 +1025,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
           R.x = -d.sinIncidAng[x];
           R.y = 0;
           R.z = d.cosIncidAng[x];
+          RX = vector_cross(&R, &X);
           double cosphi = fabs(vector_dot(&terrainNormal, RX));
           corrections[x] = (cosphi / d.sinIncidAng[x]);
           angles[x] = R2D * acos(vector_dot(&terrainNormal, &vert));
