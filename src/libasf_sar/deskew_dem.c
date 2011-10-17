@@ -492,11 +492,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     }
 }
 
-static int bad_dem_height(float height)
-{
-  return height < -900 || height == badDEMht;
-}
-
 static void geodetic_to_ecef(double lat, double lon, double h, Vector *v)
 {
   const double a = 6378144.0;    // GEM-06 Ellipsoid.
@@ -716,7 +711,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
             char *outMaskName, int fill_holes, int fill_value,
             int which_gr_dem)
 {
-  float *inSarLine, *outLine, *maskLine;
+  float *inSarLine;
   FILE *inDemSlantFp, *inDemGroundFp = NULL, *inSarFp, *outFp,
     *inMaskFp = NULL, *outMaskFp = NULL;
   meta_parameters *metaDEMslant, *metaDEMground = NULL, *outMeta,
@@ -855,24 +850,34 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   }
 
   float corrections[ns];
-  float corrections2[ns];
   float angles[ns];
-  float angles2[ns];
-  memset(angles, 0, sizeof(float)*ns);
+  float maskLine[ns];
+  float outLine[ns];
   Vector verticals[ns];
-  outLine = (float *) MALLOC (sizeof (float) * ns);
-  maskLine = (float *) MALLOC (sizeof (float) * ns);
-  float **localRadDemLines = MALLOC(sizeof(float*)*3);
-  memset(localRadDemLines, 0, sizeof(float*)*3);
-  float **localGeoDemLines = MALLOC(sizeof(float*)*3);
-  memset(localGeoDemLines, 0, sizeof(float*)*3);
-  float **localbackconvertedDemLines = MALLOC(sizeof(float*)*3);
-  memset(localbackconvertedDemLines, 0, sizeof(float*)*3);
-  Vector ***localVectors = MALLOC(sizeof(Vector**)*3);
-  memset(localVectors, 0, sizeof(Vector**)*3);
+  float *localRadDemLines[3] = { NULL, NULL, NULL };
+  float *localGeoDemLines[3] = { NULL, NULL, NULL };
+  float *localbackconvertedDemLines[3] = { NULL, NULL, NULL };
+  Vector **localVectors[3] = { NULL, NULL, NULL };
   Vector nextVectors[ns];
 
   n_layover = n_shadow = n_user = 0;
+
+/* Initialize side products */
+  const char *tmpdir = get_asf_tmp_dir();
+  char *sideProductsImg = MALLOC(sizeof(char)*(strlen(tmpdir)+64));
+  sprintf(sideProductsImg, "%s/terrcorr_side_products.img", tmpdir);
+  char *sideProductsMeta = appendExt(sideProductsImg, ".meta");
+  meta_parameters *side_meta = meta_copy(metaDEMslant);
+
+  if (doRadiometric) {
+    side_meta->general->band_count  = 4;
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
+  } else {
+    side_meta->general->band_count  = 2;
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT");
+  }
+
+  FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");
 
 /*Open the mask, if we have one*/
   if (inMaskFlag)
@@ -886,36 +891,14 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
   push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
                  &d, 0, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
-  push_next_vector_line(localVectors, nextVectors, verticals, inSarMeta, localRadDemLines[2], 0);
-
-  const char *tmpdir = get_asf_tmp_dir();
-  char *sideProductsImg = MALLOC(sizeof(char)*(strlen(tmpdir)+64));
-  sprintf(sideProductsImg, "%s/terrcorr_side_products.img", tmpdir);
-  char *sideProductsMeta = appendExt(sideProductsImg, ".meta");
-  meta_parameters *side_meta = meta_copy(metaDEMslant);
-
-  if (doRadiometric) {
-    side_meta->general->band_count  = 6;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION,CORR2,ANGLES,ANGLES2");
-  } else {
-    side_meta->general->band_count  = 2;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT");
-  }
-
-  FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");
- 
-  if (doRadiometric) { 
-    put_band_float_line(sideProductsFp, side_meta, 4, 0, angles);
-    put_band_float_line(sideProductsFp, side_meta, 4, d.numLines-1, angles);
-    put_band_float_line(sideProductsFp, side_meta, 5, 0, angles);
-    put_band_float_line(sideProductsFp, side_meta, 5, d.numLines-1, angles);
-  }
+  if(doRadiometric)
+    push_next_vector_line(localVectors, nextVectors, verticals, inSarMeta, localRadDemLines[2], 0);
 
   /*Rectify data.*/
   for (y = 0; y < d.numLines; y++) {
     push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
                    &d, y+1, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
-    if(y < d.numLines - 1)
+    if(y < d.numLines - 1 && doRadiometric)
       push_next_vector_line(localVectors, nextVectors, verticals, inSarMeta, localRadDemLines[2], y+1);
 
     if (inMaskFlag) {
@@ -937,11 +920,12 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     for (x=0; x<ns; ++x) {
       corrections[x] = (float)(R2D*d.incidAng[x]);
     }
-    put_band_float_line(sideProductsFp, side_meta, 0, y, corrections);
+    put_band_float_line(sideProductsFp, side_meta, 0, y, corrections); // Record the incidence angles
     put_band_float_line(sideProductsFp, side_meta, 1, y, localGeoDemLines[1]);
 
     if (doRadiometric) {
       if (y > 0 && y < d.numLines - 1) {
+#ifndef ALTERNATIVE_NORMALS
         // method from rtc -- slow but might to be working
         Vector satpos = get_satpos(inSarMeta, y);
         for(x=1; x < ns-1; ++x) {
@@ -950,6 +934,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
           angles[x] = R2D * acos(vector_dot(normal, &verticals[x]));
           vector_free(normal);
         }
+#else
         // method we'd like to use here in deskew_dem
         Vector vert;
         vert.x = vert.y = 0;
@@ -967,22 +952,22 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
           X.y = -1;
           RX = vector_cross(&R, &X);
           double cosphi = fabs(vector_dot(&terrainNormal, RX));
-          corrections2[x] = (cosphi / d.sinIncidAng[x]);
-          angles2[x] = R2D * acos(vector_dot(&terrainNormal, &vert));
+          corrections[x] = (cosphi / d.sinIncidAng[x]);
+          angles[x] = R2D * acos(vector_dot(&terrainNormal, &vert));
           vector_free(RX);
         }
+#endif
         // now store everything
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
-        put_band_float_line(sideProductsFp, side_meta, 3, y, corrections2);
-        put_band_float_line(sideProductsFp, side_meta, 4, y, angles);
-        put_band_float_line(sideProductsFp, side_meta, 5, y, angles2);
+        put_band_float_line(sideProductsFp, side_meta, 3, y, angles);
       }
       else {
         for(x = 0; x < ns; x++) {
           corrections[x] = 1.0;
+          angles[x] = 0;
         }
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
-        put_band_float_line(sideProductsFp, side_meta, 3, y, corrections);
+        put_band_float_line(sideProductsFp, side_meta, 3, y, angles);
       }
     }
 
@@ -1054,9 +1039,11 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     FREE(localGeoDemLines[y]);
     FREE(localbackconvertedDemLines[y]);
   }
+
   for (y = 0; y < inSarMeta->general->band_count; y++) {
     FREE(bands[y]);
   }
+  FREE(bands);
 
   for(y = 0; y < 3; ++y) {
     for(x = 0; x < ns; ++x) {
@@ -1064,19 +1051,12 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     }
     FREE(localVectors[y]);
   }
-  FREE(localVectors);
-  FREE(bands);
-  FREE(localRadDemLines);
-  FREE(localGeoDemLines);
-  FREE(localbackconvertedDemLines);
 
   if (inSarFlag) {
     FREE (inSarLine);
     FCLOSE (inSarFp);
     meta_free (inSarMeta);
   }
-  FREE (outLine);
-  FREE (maskLine);
   FCLOSE (inDemSlantFp);
   FCLOSE (inDemGroundFp);
   FCLOSE (outFp);
