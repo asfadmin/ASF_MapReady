@@ -855,7 +855,9 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   }
 
   float corrections[ns];
+  float corrections2[ns];
   float angles[ns];
+  float angles2[ns];
   memset(angles, 0, sizeof(float)*ns);
   Vector verticals[ns];
   outLine = (float *) MALLOC (sizeof (float) * ns);
@@ -893,8 +895,8 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   meta_parameters *side_meta = meta_copy(metaDEMslant);
 
   if (doRadiometric) {
-    side_meta->general->band_count  = 4;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
+    side_meta->general->band_count  = 6;
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION,CORR2,ANGLES,ANGLES2");
   } else {
     side_meta->general->band_count  = 2;
     strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT");
@@ -903,8 +905,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");
  
   if (doRadiometric) { 
-    put_band_float_line(sideProductsFp, side_meta, 3, 0, angles);
-    put_band_float_line(sideProductsFp, side_meta, 3, d.numLines-1, angles);
+    put_band_float_line(sideProductsFp, side_meta, 4, 0, angles);
+    put_band_float_line(sideProductsFp, side_meta, 4, d.numLines-1, angles);
+    put_band_float_line(sideProductsFp, side_meta, 5, 0, angles);
+    put_band_float_line(sideProductsFp, side_meta, 5, d.numLines-1, angles);
   }
 
   /*Rectify data.*/
@@ -938,6 +942,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
     if (doRadiometric) {
       if (y > 0 && y < d.numLines - 1) {
+        // method from rtc -- slow but might to be working
         Vector satpos = get_satpos(inSarMeta, y);
         for(x=1; x < ns-1; ++x) {
           Vector * normal = calculate_normal(localVectors, x);
@@ -945,14 +950,39 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
           angles[x] = R2D * acos(vector_dot(normal, &verticals[x]));
           vector_free(normal);
         }
+        // method we'd like to use here in deskew_dem
+        Vector vert;
+        vert.x = vert.y = 0;
+        vert.z = 1;
+        for(x=1; x < ns-1; ++x) {          
+          Vector terrainNormal, R, *RX, X;
+          terrainNormal.x=(localGeoDemLines[1][x-1]-localGeoDemLines[1][x+1])/(2*d.grPixelSize);
+          terrainNormal.y=(localGeoDemLines[2][x]-localGeoDemLines[0][x])/(2*d.grPixelSize);
+          terrainNormal.z=1.0;
+          vector_multiply(&terrainNormal, 1./vector_magnitude(&terrainNormal));
+          R.x = -d.sinIncidAng[x];
+          R.y = 0;
+          R.z = d.cosIncidAng[x];
+          X.x = X.z = 0;
+          X.y = -1;
+          RX = vector_cross(&R, &X);
+          double cosphi = fabs(vector_dot(&terrainNormal, RX));
+          corrections2[x] = (cosphi / d.sinIncidAng[x]);
+          angles2[x] = R2D * acos(vector_dot(&terrainNormal, &vert));
+          vector_free(RX);
+        }
+        // now store everything
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
-        put_band_float_line(sideProductsFp, side_meta, 3, y, angles);
+        put_band_float_line(sideProductsFp, side_meta, 3, y, corrections2);
+        put_band_float_line(sideProductsFp, side_meta, 4, y, angles);
+        put_band_float_line(sideProductsFp, side_meta, 5, y, angles2);
       }
       else {
         for(x = 0; x < ns; x++) {
           corrections[x] = 1.0;
         }
         put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
+        put_band_float_line(sideProductsFp, side_meta, 3, y, corrections);
       }
     }
 
