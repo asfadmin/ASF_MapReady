@@ -995,7 +995,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     if (doRadiometric) {
       if (y > 0 && y < d.numLines - 1) {
 #ifndef ALTERNATIVE_NORMALS
-        // method from rtc -- slow but might to be working
+        // method from rtc
         Vector satpos = get_satpos(inSarMeta, y);
         for(x=1; x < ns-1; ++x) {
           Vector * normal = calculate_normal(localVectors, x);
@@ -1013,11 +1013,11 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         }
 #else
         // method we'd like to use here in deskew_dem
-        Vector vert;
-        vert.x = vert.y = 0;
-        vert.z = 1;
+        // FIXME: this method does not appear to work
+        Vector vert = {0, 0, 1};
+        Vector X = {0, -1, 0};
         for(x=1; x < ns-1; ++x) {          
-          Vector terrainNormal, R, *RX, X;
+          Vector terrainNormal, R, *RX;
           terrainNormal.x=(localGeoDemLines[1][x-1]-localGeoDemLines[1][x+1])/(2*d.grPixelSize);
           terrainNormal.y=(localGeoDemLines[2][x]-localGeoDemLines[0][x])/(2*d.grPixelSize);
           terrainNormal.z=1.0;
@@ -1025,9 +1025,6 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
           R.x = -d.sinIncidAng[x];
           R.y = 0;
           R.z = d.cosIncidAng[x];
-          X.x = X.z = 0;
-          X.y = -1;
-          RX = vector_cross(&R, &X);
           double cosphi = fabs(vector_dot(&terrainNormal, RX));
           corrections[x] = (cosphi / d.sinIncidAng[x]);
           angles[x] = R2D * acos(vector_dot(&terrainNormal, &vert));
@@ -1127,8 +1124,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   FREE(bands);
 
   for(y = 0; y < 3; ++y) {
-    for(x = 0; x < ns; ++x) {
-      vector_free(localVectors[y][x]);
+    if (localVectors[y]) {
+      for(x = 0; x < ns; ++x) {
+        vector_free(localVectors[y][x]);
+      }
     }
     FREE(localVectors[y]);
   }
