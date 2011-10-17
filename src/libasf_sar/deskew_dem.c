@@ -443,6 +443,15 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                 }
             }
         }
+        for (grX=3;grX<ns-3;grX++) {
+            if (mask[grX-1]==MASK_NORMAL && mask[grX]==MASK_NORMAL &&
+                mask[grX-2]==MASK_LAYOVER && mask[grX+1]==MASK_LAYOVER)
+            {
+                mask[grX-1] = MASK_LAYOVER;
+                mask[grX] = MASK_LAYOVER;
+                n_layover += 2;
+            }
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -617,7 +626,7 @@ calculate_correction(meta_parameters *meta_in, int line, int samp,
 
   // cos(phi) is the correction factor we need
   double cosphi = vector_dot(Rx,n);
-  if (cosphi < 0) cosphi = -cosphi;
+  //if (cosphi < 0) cosphi = -cosphi;
 
   vector_free(x);
   vector_free(R);
@@ -702,6 +711,66 @@ static void push_dem_lines(FILE * inDemGroundFp, meta_parameters *metaDEMground,
   grDem_rad_out[2] = radDemLine;
   grDem_geo_out[2] = geoDemLine;
   backconverted_dem[2] = backconvertedDemLine;
+}
+
+static void filter_mask(char *maskName)
+{
+  int ii, jj;
+  meta_parameters *meta = meta_read(maskName);
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  FILE *fp = fopenImage (maskName, "rb");
+  float *buf = MALLOC(sizeof(float)*ns*nl);
+  get_float_lines(fp, meta, 0, nl, buf); 
+  FCLOSE(fp);
+
+  int iter=1;
+  while (iter < 100) {
+    int num = 0;
+    for (jj=2; jj<ns-2; ++jj) {
+      for (ii=2; ii<nl-4; ++ii) {
+        if (buf[ii*ns + jj] == MASK_NORMAL &&
+            buf[(ii-1)*ns + jj] == MASK_LAYOVER &&
+            (buf[(ii+1)*ns + jj] == MASK_LAYOVER || buf[(ii+2)*ns + jj] == MASK_LAYOVER ||
+             buf[(ii+3)*ns + jj] == MASK_LAYOVER))
+        {
+          buf[ii*ns + jj] = MASK_LAYOVER;
+          ++num;
+          ++n_layover;
+        }
+      }
+    }
+    asfPrintStatus("Vertical iter %d, added: %d\n", iter, num);
+    if (num > 0) {
+      num = 0;
+      for (ii=2; ii<nl-2; ++ii) {
+        for (jj=2; jj<ns-4; ++jj) {
+          if (buf[ii*ns + jj] == MASK_NORMAL &&
+              buf[ii*ns + jj-1] == MASK_LAYOVER &&
+              (buf[ii*ns + jj+1] == MASK_LAYOVER || buf[ii*ns + jj+2] == MASK_LAYOVER ||
+               buf[ii*ns + jj+3] == MASK_LAYOVER))
+          {
+            buf[ii*ns + jj] = MASK_LAYOVER;
+            ++num;
+            ++n_layover;
+          }
+        }
+      }
+      asfPrintStatus("Horizontal iter %d, added: %d\n", iter, num);
+    }
+    if (num == 0)
+      break;
+    ++iter;
+  }
+
+  asfPrintStatus("Layover smoothing took %d interations.\n", iter);
+  asfPrintStatus("Writing filtered mask...\n");
+  fp = fopenImage(maskName, "wb");
+  for (ii=0; ii<nl; ++ii)
+    put_float_line(fp, meta, ii, buf + ii*ns);
+  FCLOSE(fp);
+  FREE(buf); 
+  meta_free(meta);
 }
 
 /* inSarName can be NULL, in this case doRadiometric is ignored */
@@ -931,6 +1000,14 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         for(x=1; x < ns-1; ++x) {
           Vector * normal = calculate_normal(localVectors, x);
           corrections[x] = calculate_correction(inSarMeta, y, x, &satpos, normal, localVectors[1][x], &nextVectors[x]);
+          // If the Ulander correction is ever negative, that is layover
+          if (corrections[x] < 0) {
+            if (maskLine[x] == MASK_NORMAL) {
+              ++n_layover;
+              maskLine[x] = MASK_LAYOVER;
+            }
+            corrections[x] *= -1;
+          }
           angles[x] = R2D * acos(vector_dot(normal, &verticals[x]));
           vector_free(normal);
         }
@@ -1023,6 +1100,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
     // write the mask's metadata, then print mask stats
     meta_write (outMeta, outMaskName);
+  
+    asfPrintStatus("Cleaning up layover/shadow mask...\n");
+    filter_mask(outMaskName);
+
     int tot = ns * d.numLines;
     asfPrintStatus ("Mask Statistics:\n"
                     "    Layover Pixels: %9d/%d (%f%%)\n"
