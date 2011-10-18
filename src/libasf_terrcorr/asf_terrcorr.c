@@ -1442,7 +1442,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       deskewDemMask = getOutName(output_dir, srFile, "_ddm");
       trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
            metaSAR->general->line_count);
-      deskew_dem(demTrimSlant, demGround, deskewDemFile, padFile, doRadiometric,
+      deskew_dem(demTrimSlant, demGround, deskewDemFile, padFile, FALSE,
                  userMaskClipped, deskewDemMask, do_interp, fill_value,
                  which_dem);
 
@@ -1473,6 +1473,9 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
           renameImgAndMeta(outFile, resampleFile_2);
           resample_to_square_pixsiz(resampleFile_2, outFile, pixel_size);
 
+          meta_free(metaSAR);
+          metaSAR = meta_read(outFile);
+          
           asfPrintStatus("Layover/shadow mask...\n");
           char *lsMaskFile_2 = getOutName(output_dir, lsMaskFile, "_resample");
           renameImgAndMeta(lsMaskFile, lsMaskFile_2);
@@ -1482,6 +1485,25 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
           FREE(lsMaskFile_2);
       } else {
           resampleFile_2 = NULL;
+      }
+
+      // Perform radiometric correction
+      if (doRadiometric) {
+
+        asfPrintStatus("Generating smoothed DEM for radiometric correction.\n");
+
+        char *grDem = getOutName(output_dir, demChunk, "_gr");
+        make_gr_dem(metaSAR, demChunk, grDem);
+
+        asfPrintStatus("Performing radiometric correction...\n");
+        char *rtcFile = getOutName(output_dir, outFile, "_before_rtc");
+        renameImgAndMeta(outFile, rtcFile);
+        rtc(rtcFile, grDem, FALSE, NULL, outFile);
+
+        asfPrintStatus("Radiometric correction complete.\n");
+
+        //clean(rtcFile);
+        //clean(grDem);
       }
   }
   else

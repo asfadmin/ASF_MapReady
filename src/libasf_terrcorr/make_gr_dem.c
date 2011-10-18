@@ -1,6 +1,7 @@
 #include <asf_terrcorr.h>
 #include <stdio.h>
 #include <assert.h>
+#include <gsl/gsl_spline.h>
 
 static float *
 read_dem(meta_parameters *meta_dem, const char *demImg)
@@ -40,7 +41,7 @@ sar_to_dem(meta_parameters *meta_sar, meta_parameters *meta_dem,
                   lat, lon);
   }
 }
-
+  
 static double
 bilinear_interp_fn(double y, double x,
                    double p00, double p10, double p01, double p11)
@@ -52,21 +53,63 @@ bilinear_interp_fn(double y, double x,
 }
 
 static float
-bilinear_interp_demData(float *demData, int nl, int ns, double l, double s)
+interp_demData(float *demData, int nl, int ns, double l, double s)
 {
   if (l<0 || l>=nl || s<0 || s>=ns) {
     return 0;
   }
-  
+
   int ix = (int)s;
   int iy = (int)l;
-  
-  float p00 = demData[ix   + ns*(iy  )];
-  float p10 = demData[ix+1 + ns*(iy  )];
-  float p01 = demData[ix   + ns*(iy+1)];
-  float p11 = demData[ix+1 + ns*(iy+1)];
 
-  return (float)bilinear_interp_fn(s-ix, l-iy, p00, p10, p01, p11);
+  int bilinear = l<2 || l>=nl-2 || s<2 || s>=ns-2;
+  //int bilinear = 1;
+  if (bilinear) {
+
+    float p00 = demData[ix   + ns*(iy  )];
+    float p10 = demData[ix+1 + ns*(iy  )];
+    float p01 = demData[ix   + ns*(iy+1)];
+    float p11 = demData[ix+1 + ns*(iy+1)];
+
+    return (float)bilinear_interp_fn(s-ix, l-iy, p00, p10, p01, p11);
+  }
+  else {
+
+    double x[4], y[4], xi[4], yi[4];
+
+    int ii;
+    for (ii=0; ii<4; ++ii) {
+      y[0] = demData[ix-1 + ns*(iy+ii-1)];
+      y[1] = demData[ix   + ns*(iy+ii-1)];
+      y[2] = demData[ix+1 + ns*(iy+ii-1)];
+      y[3] = demData[ix+2 + ns*(iy+ii-1)];
+
+      x[0] = ix - 1;
+      x[1] = ix;
+      x[2] = ix + 1;
+      x[3] = ix + 2;
+
+      gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+      gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);    
+      gsl_spline_init (spline, x, y, 4);
+      yi[ii] = gsl_spline_eval(spline, s, acc);
+      gsl_spline_free (spline);
+      gsl_interp_accel_free (acc);
+
+      xi[ii] = iy + ii - 1;
+    }
+
+    gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+    gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);    
+    gsl_spline_init (spline, xi, yi, 4);
+    double ret = gsl_spline_eval(spline, l, acc);
+    gsl_spline_free (spline);
+    gsl_interp_accel_free (acc);
+    
+    return (float)ret;
+  }
+  
+  asfPrintError("Impossible.");
 }
 
 static void check(int num, double a, double b)
@@ -174,6 +217,16 @@ find_grid_size(meta_parameters *meta_sar, meta_parameters *meta_dem,
   return sz;
 }
 
+int make_gr_dem(meta_parameters *meta_sar, const char *demBase, const char *output_name)
+{
+  char *demImg = appendExt(demBase, ".img");
+  char *demMeta = appendExt(demBase, ".meta");
+  int ret = make_gr_dem_ext(meta_sar, demImg, demMeta, 0, .1, output_name, 0);
+  FREE(demImg);
+  FREE(demMeta);
+  return ret;
+}
+
 // This is the external facing function from this file.
 // Given the geometry from a sar image (meta_sar), and a DEM (in the files
 // demImg and demMeta), we write out an image/meta pair with the specified
@@ -197,8 +250,8 @@ find_grid_size(meta_parameters *meta_sar, meta_parameters *meta_dem,
 // Return Value:
 //   return TRUE on success, FALSE on fail
 //
-int make_gr_dem(meta_parameters *meta_sar, const char *demImg, const char *demMeta,
-                int pad, double tolerance, const char *output_name, int test_mode)
+int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *demMeta,
+                    int pad, double tolerance, const char *output_name, int test_mode)
 {
   if (test_mode)
     test_interp();
@@ -241,9 +294,9 @@ int make_gr_dem(meta_parameters *meta_sar, const char *demImg, const char *demMe
 
   // finding the right grid size
   int size = find_grid_size(meta_sar, meta_dem, 512, .1*tolerance);
-  
+
   asfPrintStatus("Creating ground range image...\n");
-  
+
   float *buf = MALLOC(sizeof(float)*ns*size);
   FILE *fpOut = FOPEN(outImg, "wb");
 
@@ -259,7 +312,7 @@ int make_gr_dem(meta_parameters *meta_sar, const char *demImg, const char *demMe
   for (ii=0; ii<nl; ii += size) {
     int line_lo = ii;
     int line_hi = ii + size;
-    
+
     for (jj=0; jj<ns; jj += size) {
       double lines[4], samps[4];
       
@@ -268,7 +321,7 @@ int make_gr_dem(meta_parameters *meta_sar, const char *demImg, const char *demMe
 
       get_interp_params(meta_sar, meta_dem, line_lo, line_hi, samp_lo, samp_hi,
                         lines, samps);
-      
+
       int iii, jjj;
       for (iii=0; iii<size; ++iii) {
         for (jjj=0; jjj<size && jj+jjj<ns; ++jjj) {
@@ -283,9 +336,9 @@ int make_gr_dem(meta_parameters *meta_sar, const char *demImg, const char *demMe
           if (test_mode && iii%11==0 && jjj%13==0) {
             double real_line, real_samp; 
             sar_to_dem(meta_sar, meta_dem, ii+iii, jj+jjj, &real_line, &real_samp);
-          
+
             double err = hypot(real_line - line_out, real_samp - samp_out);
-            
+
             avg_err += err;
             if (err > max_err)
               max_err = err;
@@ -302,8 +355,7 @@ int make_gr_dem(meta_parameters *meta_sar, const char *demImg, const char *demMe
             }
             ++num_checked;
           }
-          buf[index] = bilinear_interp_demData(demData, dnl, dns,
-                                               line_out, samp_out);
+          buf[index] = interp_demData(demData, dnl, dns, line_out, samp_out);
         }
       }
     }

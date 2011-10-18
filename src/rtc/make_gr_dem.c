@@ -134,7 +134,7 @@ main (int argc, char *argv[])
   asfPrintStatus("Output file: %s\n", out_name);
   asfPrintStatus("Padding: %d\n\n", pad);
 
-  int fail = make_gr_dem(meta, demImg, demMeta, pad, tolerance, out_name, 1);
+  int fail = make_gr_dem_ext(meta, demImg, demMeta, pad, tolerance, out_name, 1);
   int ok = !fail;
 
   FREE(demImg);
