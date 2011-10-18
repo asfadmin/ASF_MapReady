@@ -1504,6 +1504,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
 
         //clean(rtcFile);
         //clean(grDem);
+        FREE(grDem);
+        FREE(rtcFile);
       }
   }
   else
