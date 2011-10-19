@@ -30,6 +30,7 @@ MAPREADY_MODULES = \
 	src/asf_geocode \
 	src/asf_terrcorr \
 	src/asf_calpol \
+	src/asf_calibrate \
 	src/asf_gamma_import \
 	src/asf_airsar_import \
 	src/asf_polsarpro_import \
