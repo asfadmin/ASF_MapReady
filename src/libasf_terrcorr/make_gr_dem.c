@@ -56,14 +56,14 @@ bilinear_interp_fn(double y, double x,
 static float
 interp_demData(float *demData, int nl, int ns, double l, double s)
 {
-  if (l<0 || l>=nl || s<0 || s>=ns) {
+  if (l<0 || l>=nl-1 || s<0 || s>=ns-1) {
     return 0;
   }
 
   int ix = (int)s;
   int iy = (int)l;
 
-  int bilinear = l<2 || l>=nl-2 || s<2 || s>=ns-2;
+  int bilinear = l<3 || l>=nl-3 || s<3 || s>=ns-3;
   //int bilinear = 1;
   if (bilinear) {
 
