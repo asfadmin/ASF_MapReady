@@ -63,7 +63,7 @@ int asf_calibrate(const char *inFile, const char *outFile,
   float *bufIn = (float *) MALLOC(sizeof(float)*sample_count);
   float *bufOut = (float *) MALLOC(sizeof(float)*sample_count);
   float *bufIn2 = NULL, *bufOut2 = NULL, *bufOut3 = NULL;
-  if (dualpol) {
+  if (dualpol && wh_scaleFlag) {
     bufIn2 = (float *) MALLOC(sizeof(float)*sample_count);
     bufOut2 = (float *) MALLOC(sizeof(float)*sample_count);
     bufOut3 = (float *) MALLOC(sizeof(float)*sample_count);
