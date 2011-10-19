@@ -148,11 +148,11 @@ calculate_correction(meta_parameters *meta_in, int line, int samp,
 int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
         char *output_file)
 {
-  asfPrintStatus("Input file: %s\n", input_file);
-  asfPrintStatus("DEM: %s\n", dem_file);
-  asfPrintStatus("Output file: %s\n", output_file);
-  asfPrintStatus("Layover/shadow mask: %s\n\n",
-                 maskFlag ? mask_file : "none");
+  //asfPrintStatus("Input file: %s\n", input_file);
+  //asfPrintStatus("DEM: %s\n", dem_file);
+  //asfPrintStatus("Output file: %s\n", output_file);
+  //asfPrintStatus("Layover/shadow mask: %s\n\n",
+  //               maskFlag ? mask_file : "none");
 
   char *inputImg = appendExt(input_file, ".img");
   char *inputMeta = appendExt(input_file, ".meta");
@@ -230,6 +230,8 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp, localVectors[ii], nextVectors, verticals);
   }
 
+  asfPrintStatus("Applying radiometric correction...\n");
+
   put_band_float_line(fpCorr, meta_corr, 0, 0, corr);
   put_band_float_line(fpCorr, meta_corr, 1, 0, angles);
   put_band_float_line(fpCorr, meta_corr, 0, nl - 1, corr);
@@ -264,7 +266,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
       put_band_float_line(fpOut, meta_out, kk, ii, bufOut);
     }
 
-    asfLineMeter(ii, nl);
+    asfLineMeter(ii+1, nl);
   }
 
     // We aren't applying the correction to the edges of the image
