@@ -50,17 +50,23 @@ static const gchar * scaling_method_string(int scaling_method)
    GtkFileSelection
 */
 static GtkWidget *save_config_widget = NULL;
+static int pending_save = FALSE;
 static GtkWidget *load_config_widget = NULL;
+static int pending_load = FALSE;
 
 // called when "cancel" clicked on the Save Settings GtkFileChooser
 static SIGNAL_CALLBACK void save_config_cancel_clicked()
 {
+  pending_save = FALSE;
   gtk_widget_hide(save_config_widget);
 }
 
 // called when "ok" clicked on the Save Settings GtkFileChooser
 static SIGNAL_CALLBACK void save_config_ok_clicked()
 {
+  if (!pending_save)
+    return;
+
   GSList *files = NULL;
 
   if (save_config_widget) {
@@ -68,6 +74,7 @@ static SIGNAL_CALLBACK void save_config_ok_clicked()
   }
 
   gtk_widget_hide(save_config_widget);
+  pending_save = FALSE;
 
   if (files) {
     char projfile[1024]="";
@@ -91,6 +98,7 @@ static void create_save_file_chooser_dialog()
 {
   GtkWidget *parent = get_widget_checked("asf_convert");
 
+  assert(save_config_widget == NULL);
   save_config_widget = gtk_file_chooser_dialog_new(
       "Save Configuration (*.cfg) File", GTK_WINDOW(parent),
       GTK_FILE_CHOOSER_ACTION_SAVE,
@@ -134,16 +142,21 @@ static void create_save_file_chooser_dialog()
 // called when "cancel" clicked on the Load Settings GtkFileChooser
 static SIGNAL_CALLBACK void load_config_cancel_clicked()
 {
+  pending_load = FALSE;
   gtk_widget_hide(load_config_widget);
 }
 
 // called when "ok" clicked on the Load Settings GtkFileChooser
 static SIGNAL_CALLBACK void load_config_ok_clicked()
 {
+  if (!pending_load)
+    return;
+
   GSList *files = gtk_file_chooser_get_filenames(
       GTK_FILE_CHOOSER(load_config_widget));
 
   gtk_widget_hide(load_config_widget);
+  pending_load = FALSE;
 
   if (files) {
     int ret;
@@ -277,6 +290,7 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
     create_save_file_chooser_dialog();
 
   gtk_widget_show(save_config_widget);
+  pending_save = TRUE;
 
 # else // #ifdef USE_GTK_FILE_CHOOSER
 
@@ -403,7 +417,6 @@ void save_config(char *cfgFile, char* projfile)
 
   // Add .cfg to config file if necessary
   char *config_file = appendExt(cfgFile, ".cfg");
-  //append_ext_if_needed(config_file, ".cfg", ".cfg");
   // Proj file will use the selected config file basename, but with a '.proj'
   // extension
   char *tmp_projfile;
@@ -464,7 +477,7 @@ void save_config(char *cfgFile, char* projfile)
     message_box(msg);
     return;
   }
-  cf = fopen(config_file, "wt");
+  cf = fopen(config_file, "w");
   if (!cf)
   {
     gchar msg[1024];
@@ -478,7 +491,7 @@ void save_config(char *cfgFile, char* projfile)
     gchar msg[1024];
 
     strcpy(projfile, tmp_projfile);
-    pf = fopen(tmp_projfile, "wt");
+    pf = fopen(tmp_projfile, "w");
     if (!pf)
     {
       g_snprintf(msg, sizeof(msg),
@@ -853,6 +866,7 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
     create_load_file_chooser_dialog();
 
   gtk_widget_show(load_config_widget);
+  pending_load = TRUE;
 
 #else // #ifdef USE_GTK_FILE_CHOOSER
 

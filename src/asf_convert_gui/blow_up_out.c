@@ -146,7 +146,7 @@ emit_fake_motion_signal (fake_motion_signal_args_t *args)
 
     if ( args->is_valid ) {
         /* We don't care about the return value of the signal we are emitting.  */
-        gboolean junk;	
+        gboolean junk=0;	
         g_signal_emit_by_name (widget, "motion-notify-event", event, &junk);
     }    
 
