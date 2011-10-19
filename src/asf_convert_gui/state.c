@@ -373,7 +373,7 @@ on_save_config_file_selection_cancel_button_clicked(GtkWidget *widget)
 //   If it is passed in, then it is used for saving projection parameters into,
 //   but if not, then the base name of the config file is used but with a .proj
 //   file extension instead.
-void save_config(char *config_file, char* projfile)
+void save_config(char *cfgFile, char* projfile)
 {
   // FIXME: The following proj and config file writing code was taken from settings.c
   // settings_to_config_file() should be refactored to take this stuff out and put
@@ -389,7 +389,7 @@ void save_config(char *config_file, char* projfile)
   char *output_basename=NULL;
   char tmp_statfile[]="";
   char tmp_dir[]="";
-  if (config_file == NULL || strlen(config_file)==0) {
+  if (cfgFile == NULL || strlen(cfgFile)==0) {
     message_box("Missing config file name");
     return;
   }
@@ -402,7 +402,8 @@ void save_config(char *config_file, char* projfile)
   //
 
   // Add .cfg to config file if necessary
-  append_ext_if_needed(config_file, ".cfg", ".cfg");
+  char *config_file = appendExt(cfgFile, ".cfg");
+  //append_ext_if_needed(config_file, ".cfg", ".cfg");
   // Proj file will use the selected config file basename, but with a '.proj'
   // extension
   char *tmp_projfile;

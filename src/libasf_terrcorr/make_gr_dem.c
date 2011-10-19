@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <gsl/gsl_spline.h>
+#include <asf_raster.h>
 
 static float *
 read_dem(meta_parameters *meta_dem, const char *demImg)
@@ -75,9 +76,9 @@ interp_demData(float *demData, int nl, int ns, double l, double s)
   }
   else {
 
-    double x[4], y[4], xi[4], yi[4];
-
+    double ret, x[4], y[4], xi[4], yi[4];
     int ii;
+
     for (ii=0; ii<4; ++ii) {
       y[0] = demData[ix-1 + ns*(iy+ii-1)];
       y[1] = demData[ix   + ns*(iy+ii-1)];
@@ -102,10 +103,10 @@ interp_demData(float *demData, int nl, int ns, double l, double s)
     gsl_interp_accel *acc = gsl_interp_accel_alloc ();
     gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);    
     gsl_spline_init (spline, xi, yi, 4);
-    double ret = gsl_spline_eval(spline, l, acc);
+    ret = gsl_spline_eval(spline, l, acc);
     gsl_spline_free (spline);
     gsl_interp_accel_free (acc);
-    
+ 
     return (float)ret;
   }
   
@@ -263,7 +264,24 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
   int dns = meta_dem->general->sample_count;
 
   char *outImg = appendExt(output_name, ".img");
-  char *outMeta = appendExt(output_name, ".meta");
+  char *output_name_tmp, *outImgTmp;
+
+  // do not do DEM smoothing if the DEM pixel size is better or close to the
+  // SAR image's pixel size.
+  int do_averaging = TRUE;
+  if (meta_dem->general->y_pixel_size - 10 < meta_sar->general->y_pixel_size)
+    do_averaging = FALSE;
+  asfPrintStatus("Averaging: %s (DEM %f, SAR: %f)\n", do_averaging ? "YES" : "NO",
+                 meta_dem->general->y_pixel_size,
+                 meta_sar->general->y_pixel_size);
+  if (do_averaging) {
+    output_name_tmp = appendStr(output_name, "_unsmoothed");
+    outImgTmp = appendExt(output_name_tmp, ".img");
+  }
+  else {
+    output_name_tmp = STRDUP(output_name);
+    outImgTmp = STRDUP(outImg);
+  }
 
   // add the padding if requested
   meta_parameters *meta_out = meta_copy(meta_sar);
@@ -298,7 +316,7 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
   asfPrintStatus("Creating ground range image...\n");
 
   float *buf = MALLOC(sizeof(float)*ns*size);
-  FILE *fpOut = FOPEN(outImg, "wb");
+  FILE *fpOut = FOPEN(outImgTmp, "wb");
 
   // these are for tracking the quality of the bilinear interp
   // not used if test_mode is false
@@ -377,15 +395,23 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
   }
 
   FCLOSE(fpOut);
-  meta_write(meta_out, outMeta);
+  meta_write(meta_out, outImgTmp);
 
   meta_free(meta_out);
   meta_free(meta_dem);
 
   FREE(buf);
   FREE(demData);
+
+  // now apply 3x3 filter
+  if (do_averaging) {
+    asfPrintStatus("Smoothing with 3x3 kernel ...\n");
+    smooth(outImgTmp, outImg, 3, EDGE_TRUNCATE);
+  }
+
   FREE(outImg);
-  FREE(outMeta);
+  FREE(outImgTmp);
+  FREE(output_name_tmp);
 
   return FALSE;
 }
