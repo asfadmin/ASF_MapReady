@@ -372,7 +372,7 @@ settings_apply_to_gui(const Settings * s)
             GtkWidget *save_dem_checkbutton;
             GtkWidget *layover_mask_checkbutton;
             GtkWidget *radiometric_checkbutton;
-            GtkWidget *tc_no_matching_checkbutton;
+            GtkWidget *tc_matching_checkbutton;
 
             tc_pixel_size_checkbutton =
                 get_widget_checked("tc_pixel_size_checkbutton");
@@ -395,12 +395,12 @@ settings_apply_to_gui(const Settings * s)
                 gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), "");
             }
 
-            tc_no_matching_checkbutton =
-                get_widget_checked("tc_no_matching_checkbutton");
+            tc_matching_checkbutton =
+                get_widget_checked("tc_matching_checkbutton");
 
             gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(tc_no_matching_checkbutton),
-                s->no_matching);
+                GTK_TOGGLE_BUTTON(tc_matching_checkbutton),
+                !s->no_matching);
 
             if (s->no_matching)
             {
@@ -798,7 +798,7 @@ settings_get_from_gui()
                     get_double_from_entry("tc_pixel_size_entry");
             }
 
-            ret->no_matching = get_checked("tc_no_matching_checkbutton");
+            ret->no_matching = !get_checked("tc_matching_checkbutton");
             if (ret->no_matching)
             {
                 ret->offset_x = get_double_from_entry("offset_x_entry");
