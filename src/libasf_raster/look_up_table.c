@@ -55,7 +55,7 @@ int is_jasc_palette_lut(const char *name)
   else {
     ret = 0;
   }
-  fclose(fp);
+  FCLOSE(fp);
 
   return ret;
 }
