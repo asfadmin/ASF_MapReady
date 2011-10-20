@@ -4,7 +4,29 @@
 "   "ASF_NAME_STRING" [-db] [-wh_scale] -sigma | -gamma | -beta <input file> <output file>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"     This program performs radiometric terrain correction.\n"
+"   This program applies the radiometric calibration parameter to an\n"\
+"   amplitude. The radiometric sigma, gamma or beta values are either\n"\
+"   in linear power scale or logarithmic dB.\n"
+
+#define ASF_INPUT_STRING \
+"   input file    The input is expected to be an amplitude image in ASF\n"\
+"                 internal format.\n"\
+"   -sigma        Switch to convert amplitude in sigma values.\n"\
+"   -gamma        Switch to convert amplitude in gamma values.\n"\
+"   -beta         Switch to convert amplitude in beta values.\n"
+
+#define ASF_OUTPUT_STRING \
+"   output file   The output will be radiometric values stored in ASF\n"\
+"                 internal format\n"
+
+#define ASF_OPTIONS_STRING \
+"   -db           Convert the linear radiometric power scale values into\n"\
+"                 logarithmic dB values.\n"\
+"   -wh_scale     Scale the output image to byte with a formula developed\n"\
+"                 at Woods Hole.\n\n"\
+"                 cal DN [byte] = (cal DN + 31) / 0.15 + 1\n\n"\
+"                 In this scheme the DN of zero is reserved for the no data\n"\
+"                 value.\n"
 
 #include <asf.h>
 #include <asf_meta.h>
@@ -33,6 +55,9 @@ static void print_help(void)
       "Tool name:\n   " ASF_NAME_STRING "\n\n"
       "Usage:\n" ASF_USAGE_STRING "\n"
       "Description:\n" ASF_DESCRIPTION_STRING "\n"
+      "Input:\n" ASF_INPUT_STRING "\n"
+      "Output:\n" ASF_OUTPUT_STRING "\n"
+      "Options:\n" ASF_OPTIONS_STRING "\n"
       "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n");
   exit(EXIT_SUCCESS);
 }

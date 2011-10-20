@@ -3605,7 +3605,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       int count;
       char tmpConfigFile[512];
-      radiometry_t radiometry;
+      radiometry_t radiometry = r_AMP;
       for (count=0; count<cfg->files->file_count; count++) {
 	asfPrintStatus("Processing %s [%d/%d] ...\n\n", 
 		       cfg->files->name[count], count+1, 
@@ -3641,8 +3641,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	    cfg->import->output_db = FALSE;
 	    radiometry = r_BETA;
 	  }
-	  else
+	  else if (strncmp_case(cfg->calibrate->radiometry, "AMPLITUDE", 9) ==0) {
+	    strcpy(cfg->import->radiometry, "AMPLITUDE_IMAGE");
 	    radiometry = r_AMP;
+	  }
 	}
 	sprintf(cfg->general->in_name, "%s", cfg->files->name[count]);
 	sprintf(cfg->general->out_name, "%s",
