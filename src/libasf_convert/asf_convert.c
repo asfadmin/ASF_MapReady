@@ -2190,7 +2190,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   }
   
   if (cfg->general->calibration) {
-    update_status("Applying calibration parameters...\n");
+    update_status("Applying calibration parameters...");
     
     // Generate filenames
     sprintf(inFile, "%s", outFile);
