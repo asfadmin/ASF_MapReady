@@ -114,6 +114,8 @@ static int eq(float a, float b, float tol)
 
 static float SR2GR(struct deskew_dem_data *d, float srX, float height)
 {
+        if (srX<0) srX=0;
+        if (srX>=d->numSamples-1) srX=d->numSamples-1;
 	double dx,srXSeaLevel=srX-height*d->heightShiftSR[(int)srX];
 	int ix;
     /*Prevent ix index (and ix+1) from leaving the bounds of allotted memory*/
@@ -293,7 +295,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 
             // Initially, all slant range points haven't been hit ==> -1
             for (i=0; i<num_hits_required_for_layover; ++i)
-                sr_hits[i*ns+grX] = -1; 
+                sr_hits[i*ns+grX] = -1;
         }
     }
 
@@ -763,7 +765,7 @@ static void filter_mask(char *maskName)
     ++iter;
   }
 
-  asfPrintStatus("Layover smoothing took %d interations.\n", iter);
+  asfPrintStatus("Layover smoothing took %d iterations.\n", iter);
   asfPrintStatus("Writing filtered mask...\n");
   fp = fopenImage(maskName, "wb");
   for (ii=0; ii<nl; ++ii)
@@ -954,10 +956,6 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   if (outMaskFlag)
     outMaskFp = fopenImage (outMaskName, "wb");
 
-/* Make an empty mask */
-  for (x = 0; x < ns; ++x)
-    maskLine[x] = 1;
-
   push_dem_lines(inDemGroundFp, metaDEMground, inDemSlantFp, metaDEMslant, which_gr_dem,
                  &d, 0, outLine, localbackconvertedDemLines, localGeoDemLines, localRadDemLines);
   if(doRadiometric)
@@ -970,6 +968,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
     if(y < d.numLines - 1 && doRadiometric)
       push_next_vector_line(localVectors, nextVectors, verticals, inSarMeta, localRadDemLines[2], y+1);
 
+    /* Make an empty mask */
+    for (x = 0; x < ns; ++x)
+      maskLine[x] = 1;
+    
     if (inMaskFlag) {
       // Read in the next line of the mask, update the values
       get_float_line (inMaskFp, inMaskMeta, y, maskLine);

@@ -33,9 +33,9 @@ void set_status_file(const char *status_file)
 
 void update_status(const char *format, ...)
 {
-  if (g_status_file && strlen(g_status_file) > 0) {
+  if (statusflag && g_status_file && strlen(g_status_file) > 0) {
     FILE *fStat = fopen(g_status_file, "w");
-    if (fStat && statusflag) {
+    if (fStat) {
       va_list ap;
       va_start(ap, format);
       vfprintf(fStat, format, ap);

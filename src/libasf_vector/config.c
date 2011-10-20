@@ -51,7 +51,7 @@ static char *read_str(char *line, char *param)
 static int read_int(char *line, char *param)
 {
   char *tmp;
-  int value;
+  int value=0;
 
   tmp = read_str(line, param);
   sscanf(tmp, "%i", &value);
@@ -62,7 +62,7 @@ static int read_int(char *line, char *param)
 static double read_double(char *line, char *param)
 {
   char *tmp;
-  double value;
+  double value=0;
 
   tmp = read_str(line, param);
   sscanf(tmp, "%lf", &value);

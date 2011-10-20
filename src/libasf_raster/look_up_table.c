@@ -45,7 +45,7 @@ int is_jasc_palette_lut(const char *name)
   }
 
   // Read the file header and find out if it is a JASC palette file
-  fp = (FILE *) fopen (lut_path, "rt");
+  fp = (FILE *) fopen (lut_path, "r");
   if (fp) {
     fgets(header, 1024, fp);
     if (!feof(fp)) fgets(s_version, 1024, fp);
@@ -55,6 +55,7 @@ int is_jasc_palette_lut(const char *name)
   else {
     ret = 0;
   }
+  fclose(fp);
 
   return ret;
 }

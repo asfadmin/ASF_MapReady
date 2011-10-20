@@ -1175,7 +1175,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     asfPrintStatus("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
   }
 
-  int height = cfg ? cfg->height : 7000;
+  int height = cfg && cfg->height > 0 ? cfg->height : 7000;
   fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UL, lat_UL, height);
   fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_LL, lat_LL, height);
   fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_LR, lat_LR, height);
