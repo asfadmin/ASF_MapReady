@@ -1436,53 +1436,45 @@ meta_insar *populate_insar_metadata(const char *filename)
 			       (xmlChar *)"INSAR_SLAVE_ACQUISITION_DATE"));
     insar->center_look_angle = 
       get_meta_xml_double(doc, (xmlChar *)"INSAR_CENTER_LOOK_ANGLE");
-    strcpy(insar->center_look_angle_units, 
-	   (char *) get_meta_xml_units(doc, 
-				       (xmlChar *)"INSAR_CENTER_LOOK_ANGLE"));
+    char *units = (char*) get_meta_xml_units(doc,
+                                     (xmlChar *)"INSAR_CENTER_LOOK_ANGLE");
+    strcpy(insar->center_look_angle_units, units ? units : "");
     insar->doppler = get_meta_xml_double(doc, (xmlChar *)"INSAR_DOPPLER");
-    strcpy(insar->doppler_units, 
-	   (char *) get_meta_xml_units(doc, 
-				       (xmlChar *)"INSAR_DOPPLER"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_DOPPLER");
+    strcpy(insar->doppler_units, units ? units : "");
     insar->doppler_rate = 
       get_meta_xml_double(doc, (xmlChar *)"INSAR_DOPPLER_RATE");
-    strcpy(insar->doppler_rate_units, 
-	   (char *) get_meta_xml_units(doc, (xmlChar *)"INSAR_DOPPLER_RATE"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_DOPPLER_RATE");
+    strcpy(insar->doppler_rate_units, units ? units : "");
     insar->baseline_length = 
       get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_LENGTH");
-    strcpy(insar->baseline_length_units, 
-	   (char *) get_meta_xml_units(doc, 
-				       (xmlChar *)"INSAR_BASELINE_LENGTH"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_LENGTH");
+    strcpy(insar->baseline_length_units, units ? units : "");
     insar->baseline_parallel = 
       get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL");
-    strcpy(insar->baseline_parallel_units, 
-	   (char *) get_meta_xml_units(doc, 
-				       (xmlChar *)"INSAR_BASELINE_PARALLEL"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL");
+    strcpy(insar->baseline_parallel_units, units ? units : "");
     insar->baseline_parallel_rate = 
       get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL_RATE");
-    strcpy(insar->baseline_parallel_rate_units, 
-	   (char *) get_meta_xml_units(doc, 
-			       (xmlChar *)"INSAR_BASELINE_PARALLEL_RATE"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_PARALLEL_RATE");
+    strcpy(insar->baseline_parallel_rate_units, units ? units : "");
     insar->baseline_perpendicular = 
       get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_PERPENDICULAR");
-    strcpy(insar->baseline_perpendicular_units, 
-	   (char *) get_meta_xml_units(doc, 
-			       (xmlChar *)"INSAR_BASELINE_PERPENDICULAR"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_PERPENDICULAR");
+    strcpy(insar->baseline_perpendicular_units, units ? units : "");
     insar->baseline_perpendicular_rate = 
       get_meta_xml_double(doc, 
 			  (xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE");
-    strcpy(insar->baseline_perpendicular_rate_units, 
-	   (char *) get_meta_xml_units(doc, 
-			  (xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_PERPENDICULAR_RATE");
+    strcpy(insar->baseline_perpendicular_rate_units, units ? units : "");
     insar->baseline_temporal = 
       get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_TEMPORAL");
-    strcpy(insar->baseline_temporal_units, 
-	   (char *) get_meta_xml_units(doc, 
-				       (xmlChar *)"INSAR_BASELINE_TEMPORAL"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_TEMPORAL");
+    strcpy(insar->baseline_temporal_units, units ? units : "");
     insar->baseline_critical = 
       get_meta_xml_double(doc, (xmlChar *)"INSAR_BASELINE_CRITICAL");
-    strcpy(insar->baseline_critical_units, 
-	   (char *) get_meta_xml_units(doc, 
-				       (xmlChar *)"INSAR_BASELINE_CRITICAL"));
+    units = (char*) get_meta_xml_units(doc, (xmlChar *)"INSAR_BASELINE_CRITICAL");
+    strcpy(insar->baseline_critical_units, units ? units : "");
       
     xmlFreeDoc(doc);
     xmlCleanupParser();
