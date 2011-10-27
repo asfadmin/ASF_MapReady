@@ -116,7 +116,11 @@ const char *get_summary_text()
             strcat(text, "\nRefine Geolocation: Yes");
 
         if (s->do_radiometric)
+        {
             strcat(text, "\n   Geometric & Radiometric correction");
+            if(s->save_incid_angles)
+                strcat(text, "\n      Saving Incidence Angles");
+        }
         else
             strcat(text, "\n   Geometric correction only");
 

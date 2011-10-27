@@ -49,6 +49,7 @@ int COMP_COL_INTERFEROGRAM;
 int COMP_COL_COHERENCE;
 int COMP_COL_SLAVE_METADATA;
 int COMP_COL_BASELINE;
+int COMP_COL_INCID_ANGLES_FILE;
 
 gboolean move_to_files_list(const gchar *data_file,
                             const gchar *ancillary_file,
@@ -547,6 +548,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     gchar *coherence_file;
     gchar *slave_metadata_file;
     gchar *baseline_file;
+    gchar *incid_angles_file;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
     gtk_tree_model_get(model, iter,
@@ -566,7 +568,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     // pull out the useful intermediates
     char *layover_mask=NULL, *clipped_dem=NULL, *simulated_sar=NULL,
       *tmp_dir=NULL, *faraday=NULL, *hist=NULL, *class_map=NULL,
-      *meta_file=NULL;
+      *meta_file=NULL, *incid_angles=NULL;
 
     int i, num_outputs=0, max_outputs=64;
     char **outs = MALLOC(sizeof(char*)*max_outputs);
@@ -585,6 +587,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
         get_intermediate(line, "Cloude-Pottier Histogram", &hist);
         get_intermediate(line, "Entropy-Alpha Class Map", &class_map);
         get_intermediate(line, "Meta", &meta_file);
+        get_intermediate(line, "Incidence Angles", &incid_angles); 
         if (get_intermediate(line, "Output", &outs[num_outputs]))
           if (num_outputs < max_outputs-1)
             ++num_outputs;
@@ -600,6 +603,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     if (!hist) hist = STRDUP("");
     if (!class_map) class_map = STRDUP("");
     if (!meta_file) meta_file = STRDUP("");
+    if (!incid_angles) incid_angles = STRDUP("");
 
     // now add to the completed files list!  Use the first listed file
     // as the output filename, since that is the one that was thumbnailed
@@ -633,6 +637,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 		       COMP_COL_COHERENCE, coherence_file,
 		       COMP_COL_SLAVE_METADATA, slave_metadata_file,
 		       COMP_COL_BASELINE, baseline_file,
+           COMP_COL_INCID_ANGLES_FILE, incid_angles_file,
                        -1);
 
     // remove from the input list
@@ -1334,7 +1339,7 @@ setup_files_list()
     COL_SLAVE_METADATA = 16;
     COL_BASELINE = 17;
 
-    completed_list_store = gtk_list_store_new(23,
+    completed_list_store = gtk_list_store_new(24,
                                               G_TYPE_STRING,    // Data file-Full path (usually hid.)
                                               G_TYPE_STRING,    // Data file - No path
                                               G_TYPE_STRING,    // Ancillary file-Full path (hid.)
@@ -1357,7 +1362,8 @@ setup_files_list()
 					      G_TYPE_STRING,    // Interferogram (hidden)
 					      G_TYPE_STRING,    // Coherence (hidden)
 					      G_TYPE_STRING,    // Slave metadata (hidden)
-					      G_TYPE_STRING);   // Baseline (hidden)
+					      G_TYPE_STRING,    // Baseline (hidden)
+                G_TYPE_STRING);   // Incidence Angles File (hidden)
 
     COMP_COL_INPUT_FILE = 0;
     COMP_COL_INPUT_FILE_SHORT = 1;
@@ -1382,6 +1388,7 @@ setup_files_list()
     COMP_COL_COHERENCE = 20;
     COMP_COL_SLAVE_METADATA = 21;
     COMP_COL_BASELINE = 22;
+    COMP_COL_INCID_ANGLES_FILE = 23;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
@@ -1878,6 +1885,16 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_BASELINE);
+
+    /* Next Column: Incidence Angles (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Incidence Angles");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_INCID_ANGLES_FILE);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list),
         GTK_TREE_MODEL(completed_list_store));

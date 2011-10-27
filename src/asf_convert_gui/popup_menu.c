@@ -456,23 +456,25 @@ completed_files_popup_handler(GtkWidget *widget, GdkEvent *event)
                 gtk_tree_model_get_iter(GTK_TREE_MODEL(completed_list_store),
                     &iter, path);
 
-                gchar *layover, *dem, *simsar, *faraday, *hist, *class_map;
+                gchar *layover, *dem, *simsar, *faraday, *hist, *class_map, *incid_angles;
                 gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
                     COMP_COL_LAYOVER_SHADOW_MASK_FILE, &layover,
                     COMP_COL_CLIPPED_DEM_FILE, &dem,
                     COMP_COL_SIMULATED_SAR_FILE, &simsar,
                     COMP_COL_FARADAY_FILE, &faraday,
                     COMP_COL_HIST_FILE, &hist,
+                    COMP_COL_INCID_ANGLES_FILE, &incid_angles,
                     COMP_COL_CLASS_MAP_FILE, &class_map, -1);
                 gtk_tree_path_free(path);
 
-                int enable[6];
+                int enable[7];
                 enable[0] = fileExists(layover);
                 enable[1] = fileExists(dem);
                 enable[2] = fileExists(simsar);
                 enable[3] = fileExists(faraday);
                 enable[4] = fileExists(hist);
                 enable[5] = fileExists(class_map);
+                enable[6] = fileExists(incid_angles);
 
                 GtkMenu *submenu = find_submenu(menu);
                 if (submenu)
@@ -487,6 +489,7 @@ completed_files_popup_handler(GtkWidget *widget, GdkEvent *event)
                 g_free(faraday);
                 g_free(hist);
                 g_free(class_map);
+                g_free(incid_angles);
             }
             else
             {
@@ -1454,6 +1457,12 @@ view_faraday(GtkWidget *widget, GdkEvent *event)
 }
 
 SIGNAL_CALLBACK gint
+view_incid_angles(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_intermediate(COMP_COL_INCID_ANGLES_FILE, "");
+}
+
+SIGNAL_CALLBACK gint
 view_hist(GtkWidget *widget, GdkEvent *event)
 {
   return handle_view_intermediate(COMP_COL_HIST_FILE, "-colormap polarimetry");
@@ -1510,6 +1519,12 @@ setup_completed_files_popup_menu()
     gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
     g_signal_connect_swapped(G_OBJECT(item), "activate",
                              G_CALLBACK(view_class_map), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Incidence Angles");
+    gtk_menu_shell_append(GTK_MENU_SHELL(view_submenu), item);
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+                             G_CALLBACK(view_incid_angles), NULL);
     gtk_widget_show(item);
 
     menu = gtk_menu_new();

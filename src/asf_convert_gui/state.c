@@ -665,6 +665,8 @@ void save_config(char *cfgFile, char* projfile)
       fprintf(cf, "refine geolocation only = 0\n");
       fprintf(cf, "interpolate = %d\n", s->interp);
       fprintf(cf, "do radiometric = %d\n", s->do_radiometric);
+      if(s->do_radiometric)
+        fprintf(cf, "save incidence angles = %d\n", s->save_incid_angles);
       fprintf(cf, "save terrcorr dem = %d\n", s->generate_dem);
       fprintf(cf, "save terrcorr layover mask = %d\n",
               s->generate_layover_mask);

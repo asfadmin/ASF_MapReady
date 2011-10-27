@@ -47,9 +47,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
                      float mask_height_cutoff, int doRadiometric,
                      int smooth_dem_holes,
                      char **other_files_to_update_with_offsets,
-		     int no_matching, double range_offset,
-		     double azimuth_offset, int use_gr_dem, int add_speckle,
-                     int if_coreg_fails_use_zero_offsets, int save_ground_dem);
+                     int no_matching, double range_offset,
+                     double azimuth_offset, int use_gr_dem, int add_speckle,
+                     int if_coreg_fails_use_zero_offsets, int save_ground_dem,
+                     int save_incid_angles);
 
 void
 clip_dem(meta_parameters *metaSAR, char *srFile, char *demFile,
@@ -75,7 +76,7 @@ int get_dem_chunk(char *dem_in, char *dem_out, meta_parameters *metaDEM,
 
 /* Prototypes from rtc.c */
 int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
-        char *output_file);
+        char *output_file, int save_incid_angles);
 int make_gr_dem(meta_parameters *meta_sar, const char *demBase, const char *output_name);
 int make_gr_dem_ext(meta_parameters *meta, const char *demImg, const char *demMeta,
                     int pad, double tolerance, const char *output_name,

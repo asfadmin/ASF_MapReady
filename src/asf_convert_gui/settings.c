@@ -372,6 +372,7 @@ settings_apply_to_gui(const Settings * s)
             GtkWidget *save_dem_checkbutton;
             GtkWidget *layover_mask_checkbutton;
             GtkWidget *radiometric_checkbutton;
+            GtkWidget *save_incid_angles_checkbutton;
             GtkWidget *tc_matching_checkbutton;
 
             tc_pixel_size_checkbutton =
@@ -438,6 +439,15 @@ settings_apply_to_gui(const Settings * s)
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(radiometric_checkbutton),
                 s->do_radiometric);
+
+            if(s->do_radiometric)
+            {
+                save_incid_angles_checkbutton = get_widget_checked("save_incid_angles_checkbutton");
+
+                gtk_toggle_button_set_active(
+                    GTK_TOGGLE_BUTTON(save_incid_angles_checkbutton),
+                    s->save_incid_angles);
+            }
 
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(interp_dem_holes_checkbutton),
@@ -816,6 +826,9 @@ settings_get_from_gui()
             ret->generate_layover_mask =
                 get_checked("layover_mask_checkbutton");
             ret->do_radiometric = get_checked("radiometric_checkbutton");
+
+            if(ret->do_radiometric)
+                ret->save_incid_angles = get_checked("save_incid_angles_checkbutton"); 
         }
         else
         {
@@ -1775,6 +1788,7 @@ settings_to_config_file(const Settings *s,
             fprintf(cf, "refine geolocation only = 0\n");
             fprintf(cf, "interpolate = %d\n", s->interp);
             fprintf(cf, "do radiometric = %d\n", s->do_radiometric);
+            fprintf(cf, "save incidence angles = %d\n", s->save_incid_angles);
             fprintf(cf, "save terrcorr dem = %d\n", s->generate_dem);
             fprintf(cf, "save terrcorr layover mask = %d\n",
                     s->generate_layover_mask);
@@ -2212,7 +2226,9 @@ int apply_settings_from_config_file(char *configFile)
         s.generate_layover_mask =
             cfg->terrain_correct->save_terrcorr_layover_mask;
         s.generate_dem = cfg->terrain_correct->save_terrcorr_dem;
-	s.do_radiometric = cfg->terrain_correct->do_radiometric;
+        s.do_radiometric = cfg->terrain_correct->do_radiometric;
+        if(s.do_radiometric)
+          s.save_incid_angles = cfg->terrain_correct->save_incid_angles;
         s.interp_dem_holes = cfg->terrain_correct->smooth_dem_holes;
     }
 

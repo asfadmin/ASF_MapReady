@@ -54,7 +54,7 @@ static Vector get_satpos(meta_parameters *meta, int line)
   return satpos;
 }
 
-static void calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameters *meta_img, int line, FILE *dem_fp, Vector **vectorLine, Vector *nextVectors, Vector *verticals)
+static void calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameters *meta_img, int line, FILE *dem_fp, Vector **vectorLine, Vector *nextVectors)
 {
   int jj;
   double lat, lon;
@@ -69,22 +69,16 @@ static void calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameter
     geodetic_to_ecef(lat, lon, demLine[jj], v);
     vectorLine[jj] = v;
 
-    Vector v2;
-    geodetic_to_ecef(lat, lon, demLine[jj], &verticals[jj]);
-    geodetic_to_ecef(lat, lon, demLine[jj]+100, &v2);
-    vector_subtract(&verticals[jj], &v2);
-    vector_multiply(&verticals[jj], 1./vector_magnitude(&verticals[jj]));
-
     meta_get_latLon(meta_img, line+1, jj, 0, &lat, &lon);
     geodetic_to_ecef(lat, lon, demLine[jj], &nextVectors[jj]);
   }
 }
 
-static void push_next_vector_line(Vector ***localVectors, Vector *nextVectors, Vector *verticals, meta_parameters *meta_dem, meta_parameters *meta_img, FILE *dem_fp, int line)
+static void push_next_vector_line(Vector ***localVectors, Vector *nextVectors, meta_parameters *meta_dem, meta_parameters *meta_img, FILE *dem_fp, int line)
 {
   int ns = meta_img->general->sample_count;
   Vector **vectorsLine = MALLOC(sizeof(Vector*)*ns);
-  calculate_vectors_for_line(meta_dem, meta_img, line, dem_fp, vectorsLine, nextVectors, verticals);
+  calculate_vectors_for_line(meta_dem, meta_img, line, dem_fp, vectorsLine, nextVectors);
 
   int i;
   for(i = 0; i < ns; i++)
@@ -118,7 +112,7 @@ static Vector * calculate_normal(Vector ***localVectors, int sample)
 
 static float
 calculate_correction(meta_parameters *meta_in, int line, int samp,
-                     Vector *satpos, Vector *n, Vector *p, Vector *p_next)
+                     Vector *satpos, Vector *n, Vector *p, Vector *p_next, float incid_angle)
 {
   // R: vector from ground point (p) to satellite (satpos)
   Vector *R = vector_copy(satpos);
@@ -141,12 +135,11 @@ calculate_correction(meta_parameters *meta_in, int line, int samp,
   vector_free(Rx);
 
   // need to remove old correction factor (sin of the incidence angle)
-  double incid = meta_incid(meta_in, line, samp);
-  return cosphi / sin(incid);
+  return cosphi / sin(incid_angle);
 }
 
 int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
-        char *output_file)
+        char *output_file, int save_incid_angles)
 {
   //asfPrintStatus("Input file: %s\n", input_file);
   //asfPrintStatus("DEM: %s\n", dem_file);
@@ -162,8 +155,9 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   char *outputMeta = appendExt(output_file, ".meta");
   char *maskImg = maskFlag ? appendExt(mask_file, ".img") : NULL;
   char *maskMeta = maskFlag ? appendExt(mask_file, ".meta") : NULL;
-  char *corrImg = "correction2.img";
-  char *corrMeta = "correction2.meta";
+  char *sideProductsImgName, *sideProductsMetaName;
+  meta_parameters *side_meta;
+  FILE *fpSide = NULL;
 
   if (!fileExists(inputImg))
     asfPrintError("Not found: %s\n", inputImg);
@@ -186,11 +180,17 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   meta_parameters *meta_out = meta_read(inputMeta);
   meta_parameters *meta_dem = meta_read(demMeta);
   if (!meta_dem) asfPrintError("Failed to read metadata: %s\n", demMeta);
-  meta_parameters *meta_corr = NULL;
-  if (corrImg) meta_corr = meta_read(demMeta);
 
-  meta_corr->general->band_count = 2;
-  strcpy(meta_corr->general->bands, "RADIOMETRIC_CORRECTION,ANGLES");
+  if(save_incid_angles) {
+    const char *tmpdir = get_asf_tmp_dir();
+    sideProductsImgName = MALLOC(sizeof(char)*(strlen(tmpdir)+strlen(output_file)+64));
+    sprintf(sideProductsImgName, "%s/incidence_angles.img", tmpdir);
+    sideProductsMetaName = appendExt(sideProductsImgName, ".meta");
+    side_meta = meta_copy(meta_in);
+    side_meta->general->band_count = 2;
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLES,RADIOMETRIC_CORRECTION");
+    fpSide = FOPEN(sideProductsImgName, "wb");
+  }
 
   // Check the input radiometry - only accept amplitude
   if (meta_in->general->radiometry != r_AMP)
@@ -206,36 +206,31 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   assert(ns == dns);
   assert(nl == dnl);
 
-  Vector ***localVectors = MALLOC(sizeof(Vector**)*3);
-  memset(localVectors, 0, sizeof(Vector**)*3);
+  Vector **localVectors[3] = { NULL, NULL, NULL };
   Vector nextVectors[ns];
-  Vector verticals[ns];
 
   FILE *fpIn = FOPEN(inputImg, "rb");
   FILE *fpOut = FOPEN(outputImg, "wb");
-  FILE *fpCorr = NULL;
-  if (corrImg) fpCorr = FOPEN(corrImg, "wb");
   FILE *dem_fp = FOPEN(demImg, "rb");
 
-  float *corr = MALLOC(sizeof(float)*ns);
+  float corr[ns];
+  float incid_angles[ns];
   memset(corr, 0, sizeof(float)*ns);
-  float *angles = MALLOC(sizeof(float)*ns);
-  memset(angles, 0, sizeof(float)*ns);
-  float *bufIn = MALLOC(sizeof(float)*ns);
-  float *bufOut = MALLOC(sizeof(float)*ns);
+  float bufIn[ns];
+  float bufOut[ns];
+
+  asfPrintStatus("Applying radiometric correction...\n");
 
   int ii, jj, kk;
   for(ii = 1; ii < 3; ++ii) {
     localVectors[ii] = MALLOC(sizeof(Vector**)*ns);
-    calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp, localVectors[ii], nextVectors, verticals);
+    calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp, localVectors[ii], nextVectors);
   }
 
-  asfPrintStatus("Applying radiometric correction...\n");
-
-  put_band_float_line(fpCorr, meta_corr, 0, 0, corr);
-  put_band_float_line(fpCorr, meta_corr, 1, 0, angles);
-  put_band_float_line(fpCorr, meta_corr, 0, nl - 1, corr);
-  put_band_float_line(fpCorr, meta_corr, 1, nl - 1, angles);
+  if(save_incid_angles) {
+    put_band_float_line(fpSide, side_meta, 1, 0, corr);
+    put_band_float_line(fpSide, side_meta, 1, nl - 1, corr);
+  }
 
   // We aren't applying the correction to the edges of the image
   for(kk = 0; kk < nb; ++kk) {
@@ -246,18 +241,21 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   }
 
   for(ii = 1; ii < nl - 1; ++ii) {
-    push_next_vector_line(localVectors, nextVectors, verticals, meta_dem, meta_in, dem_fp, ii + 1);
+    push_next_vector_line(localVectors, nextVectors, meta_dem, meta_in, dem_fp, ii + 1);
     corr[0] = corr[ns-1] = 1;
     Vector satpos = get_satpos(meta_in, ii);
+    incid_angles[0] = incid_angles[nl-1] = 0;
     for(jj = 1; jj < ns - 1; ++jj) {
+      incid_angles[jj] = meta_incid(meta_in, ii, jj);
       Vector * normal = calculate_normal(localVectors, jj);
-      corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, localVectors[1][jj], &nextVectors[jj]);
-      angles[jj] = R2D * acos(vector_dot(normal, &verticals[jj]));
+      corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, localVectors[1][jj], &nextVectors[jj], incid_angles[jj]);
       vector_free(normal);
     }
 
-    put_band_float_line(fpCorr, meta_corr, 0, ii, corr);
-    put_band_float_line(fpCorr, meta_corr, 1, ii, angles);
+    if(save_incid_angles) {
+      put_band_float_line(fpSide, side_meta, 0, ii, incid_angles);
+      put_band_float_line(fpSide, side_meta, 1, ii, corr);
+    }
 
     for (kk=0; kk<nb; ++kk) {
       get_band_float_line(fpIn, meta_in, kk, ii, bufIn);
@@ -273,8 +271,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   for(kk = 0; kk < nb; ++kk) {
     get_band_float_line(fpIn, meta_in, kk, nl-1, bufIn);
     for (jj=0; jj<ns; ++jj)
-      bufOut[jj] = 
-	get_rad_cal_dn(meta_in, nl-1, jj, bands[kk], bufIn[jj], corr[jj]);
+      bufOut[jj] = get_rad_cal_dn(meta_in, nl-1, jj, bands[kk], bufIn[jj], corr[jj]);
     put_band_float_line(fpOut, meta_out, kk, nl-1, bufIn);
   }
 
@@ -284,11 +281,10 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     }
     FREE(localVectors[ii]);
   }
-  FREE(localVectors);
 
   FCLOSE(fpOut);
   FCLOSE(fpIn);
-  if (fpCorr) FCLOSE(fpCorr);
+  if (fpSide) FCLOSE(fpSide);
 
   // update output metadata
   for (ii=0; ii<meta_out->general->band_count; ii++) {
@@ -297,19 +293,16 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   FREE(bands);
   meta_write(meta_out, outputMeta);
 
-  if (corrImg) {
-    meta_write(meta_corr, corrMeta);
-    meta_free(meta_corr);
+  if (save_incid_angles) {
+    meta_write(side_meta, sideProductsMetaName);
+    meta_free(side_meta);
+    FREE(sideProductsMetaName);
+    FREE(sideProductsImgName);
   }
 
   meta_free(meta_out);
   meta_free(meta_in);
   meta_free(meta_dem);
-
-  FREE(angles);
-  FREE(bufIn);
-  FREE(bufOut);
-  FREE(corr);
 
   FREE(inputImg);
   FREE(inputMeta);

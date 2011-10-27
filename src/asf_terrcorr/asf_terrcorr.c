@@ -9,6 +9,7 @@
 "          [-other-file <basename>] [-do-radiometric] [-smooth-dem-holes]\n"\
 "          [-no-match] [-offsets <range> <azimuth>]\n"\
 "          [-use-zero-offsets-if-match-fails] [-save-ground-range-dem]\n"\
+"          [-save-incidence-angles]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -198,6 +199,10 @@
 "          Save the ground range DEM (for radiometric terrain correction "\
 "later).\n"\
 "\n"\
+"     -save-incidence-angles\n"\
+"          During radiometric correction, create a side product containing the\n"\
+"          incidence angles from the sensor to vertical.\n"\
+"\n"\
 "     -no-speckle\n"\
 "          When generating the simulated SAR image for co-registration, do\n"\
 "          not add speckle.  Generally, this will cause co-registration to\n"\
@@ -322,6 +327,7 @@ main (int argc, char *argv[])
   int add_speckle = TRUE;
   int if_coreg_fails_use_zero_offsets = FALSE;
   int save_ground_dem = FALSE;
+  int save_incid_angles = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   char *other_files[MAX_OTHER];
@@ -454,6 +460,9 @@ main (int argc, char *argv[])
 			NULL)) {
       save_ground_dem = TRUE;
     }
+    else if (strmatches(key,"-save-incidence-angles","--save_incidence-angles",NULL)) {
+      save_incid_angles = TRUE;
+    }
     else if (strmatches(key,"-help","--help",NULL)) {
         print_help(); // doesn't return
     }
@@ -492,7 +501,8 @@ main (int argc, char *argv[])
                               smooth_dem_holes, other_files,
                               no_matching, range_offset, azimuth_offset,
                               use_gr_dem, add_speckle,
-                              if_coreg_fails_use_zero_offsets, save_ground_dem);
+                              if_coreg_fails_use_zero_offsets, save_ground_dem,
+                              save_incid_angles);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])

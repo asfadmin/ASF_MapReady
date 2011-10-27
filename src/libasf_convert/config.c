@@ -583,6 +583,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->fill_value = 0;
   cfg->terrain_correct->do_radiometric = 0;
   cfg->terrain_correct->smooth_dem_holes = 0;
+  cfg->terrain_correct->save_incid_angles = 0;
   cfg->terrain_correct->no_resampling = 0;
   cfg->terrain_correct->save_terrcorr_dem = 0;
   cfg->terrain_correct->save_terrcorr_layover_mask = 0;
@@ -1250,6 +1251,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
       if (strncmp(test, "do radiometric", 12)==0)
         cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
+      if (strncmp(test, "save incidence angles", 21)==0)
+        cfg->terrain_correct->save_incid_angles = read_int(line, "save incidence angles");
       if (strncmp(test, "smooth dem holes", 16)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
       if (strncmp(test, "no resampling", 13)==0)
@@ -1937,6 +1940,10 @@ int write_convert_config(char *configFile, convert_config *cfg)
                   "# estimated incidence angle (using the Earth-as-ellipsoid) used during\n"
                   "# processing.\n\n");
       fprintf(fConfig, "do radiometric = %d\n", cfg->terrain_correct->do_radiometric);
+      if (!shortFlag)
+          fprintf(fConfig, "\n# During radiometric correction, save a side product containing\n"
+                  "# the incidence angles from the sensor to vertical.\n\n");
+      fprintf(fConfig, "save incidence angles = %d\n", cfg->terrain_correct->do_radiometric);
       if (!shortFlag)
           fprintf(fConfig, "\n# If your DEM has a number of \"holes\" in it, this can cause streaking\n"
                   "# in the terrain corrected product.  This option will attempt to replace DEM holes\n"

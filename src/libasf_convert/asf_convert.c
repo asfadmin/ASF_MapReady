@@ -2156,7 +2156,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 				    cfg->terrain_correct->use_gr_dem,
 				    TRUE, // use_speckle
 				    cfg->terrain_correct->if_coreg_fails_use_zero_offsets,
-				    FALSE), // no ground range DEM saving
+				    FALSE,
+            cfg->terrain_correct->save_incid_angles), // no ground range DEM saving
 		   "terrain correcting data file (asf_terrcorr)\n");
     }
     
@@ -3034,6 +3035,50 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       
       save_intermediate(cfg, "Clipped DEM", outFile);
     }
+  }
+
+  // Process the incidence angles file if requested
+  if (cfg->terrain_correct->save_incid_angles) {
+    if (cfg->general->geocoding) {
+      update_status("Geocoding incidence angles...");
+      sprintf(inFile, "%s/incidence_angles",cfg->general->tmp_dir);
+      sprintf(outFile, "%s/incidence_angles_geocoded",cfg->general->tmp_dir);
+      check_return(
+		   asf_geocode_from_proj_file(
+					      cfg->geocoding->projection, cfg->geocoding->force,
+					      RESAMPLE_BILINEAR, cfg->geocoding->height,
+					      datum, cfg->geocoding->pixel, NULL, inFile, outFile,
+					      MASK_INVALID_DATA),
+		   "geocoding incidence angles (asf_geocode)\n");
+    }
+    else {
+      // no geocoding ... just prepare the 'outFile' param for export
+      sprintf(outFile, "%s/incidence_angles", cfg->general->tmp_dir);
+    }
+    
+    sprintf(inFile, "%s", outFile);
+    sprintf(outFile, "%s/incidence_angles_exported", cfg->general->tmp_dir);
+    
+    if (cfg->general->export) {
+      update_status("Exporting incidence angles...");
+
+      check_return(
+          asf_export(GEOTIFF, NONE, inFile, outFile),
+          "exporting indcidence angles (asf_export)\n");
+      sprintf(inFile, "%s_INCIDENCE_ANGLES.tif", outFile);
+      strcpy(outFile, cfg->general->out_name);
+      char *tmp = stripExt(outFile);
+      sprintf(outFile, "%s_incidence_angles.tif", tmp);
+      FREE(tmp);
+      fileRename(inFile, outFile);
+    }
+    else {
+      // no export... just move the geocoded file out of the
+      // temporary directory
+      renameImgAndMeta(inFile, outFile);
+    }
+    
+    save_intermediate(cfg, "Incidence Angles", outFile);
   }
   
   // Process the layover/shadow mask if requested
