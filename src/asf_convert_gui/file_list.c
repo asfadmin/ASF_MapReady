@@ -548,7 +548,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     gchar *coherence_file;
     gchar *slave_metadata_file;
     gchar *baseline_file;
-    gchar *incid_angles_file;
+    gchar *incid_angles_file = NULL;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
     gtk_tree_model_get(model, iter,
