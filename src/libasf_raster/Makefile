@@ -48,7 +48,7 @@ all: build_only
 	cp asf_raster.h float_image.h banded_float_image.h uint8_image.h \
 	expression.h $(ASF_INCLUDE_DIR)
 	rm -rf $(SHAREDIR)/look_up_tables
-	cp -R look_up_tables/ $(SHAREDIR)
+	cp -R look_up_tables $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f libasf_raster.a
