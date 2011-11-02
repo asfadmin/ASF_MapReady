@@ -548,7 +548,6 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     gchar *coherence_file;
     gchar *slave_metadata_file;
     gchar *baseline_file;
-    gchar *incid_angles_file = NULL;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
     gtk_tree_model_get(model, iter,
@@ -605,6 +604,10 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     if (!meta_file) meta_file = STRDUP("");
     if (!incid_angles) incid_angles = STRDUP("");
 
+    //asfPrintStatus("  LO: %s\n  CD: %s\n  SS: %s\n  TD: %s\n  FD: %s\n  CP: %s\n  EA: %s\n  ME: %s\n  IA: %s\n  OP: %S\n",
+    //		    layover_mask, clipped_dem, simulated_sar, tmp_dir, faraday, hist, class_map, meta_file, incid_angles, 
+    //		    outs[0] );
+
     // now add to the completed files list!  Use the first listed file
     // as the output filename, since that is the one that was thumbnailed
     // Exception: PolSARPro.  Here we use the second one (if we have it)
@@ -637,7 +640,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 		       COMP_COL_COHERENCE, coherence_file,
 		       COMP_COL_SLAVE_METADATA, slave_metadata_file,
 		       COMP_COL_BASELINE, baseline_file,
-           COMP_COL_INCID_ANGLES_FILE, incid_angles_file,
+           COMP_COL_INCID_ANGLES_FILE, incid_angles,
                        -1);
 
     // remove from the input list

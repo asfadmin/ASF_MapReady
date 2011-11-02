@@ -641,6 +641,8 @@ static void save_intermediate(convert_config *cfg, char *tag, char *filename)
   // the "tag" that is passed in needs to match what is looked for
   // in the GUI: asf_convert_gui/file_list.c:move_to_completed_files_list()
 
+  
+
   if (cfg->general->intermediates && g_status_file && strlen(g_status_file)>0)
   {
     if (!intermediates_file) {
@@ -3706,9 +3708,15 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   }
 
   update_status("Done");
-  free_convert_config(cfg);
-  clear_status_file();
-  reset_intermediates();
+
+  // If this function (asf_convert_ext) is called recursively, we SHOULD NOT
+  // clean up the config files, clear the status file, or reset intermediates
+  // just yet. We'll do this all later. 
+  if ( createflag == TRUE ) { 
+	clear_status_file();
+  	free_convert_config(cfg);
+  	reset_intermediates();
+  }
 
   return(EXIT_SUCCESS);
 }
