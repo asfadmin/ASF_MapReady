@@ -25,6 +25,7 @@ build_stamp:
 		CPPFLAGS="-I$(INCLUDE_DIR)" \
 		./configure --enable-float -C  \
 			--prefix=$(ROOT_DIR) \
+		--without-geos \
 		--without-libtool --without-ld-shared \
 	        --with-png=../../.. --with-jpeg=../../.. \
 		--with-libtiff=../../.. --with-geotiff=../../.. \
