@@ -1070,12 +1070,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   int is_uavsar = FALSE;
 
   convert_config *cfg = read_convert_config(configFileName);
-    /* 
-  printf("inFile: %s\n", inFile);
-  printf("outFile: %s\n", outFile);
-  printf("cfg->general->in_name: %s\n", cfg->general->in_name);
-  printf("cfg->general->out_name: %s\n", cfg->general->out_name);
-    */
   if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
     set_status_file(cfg->general->status_file);
   
@@ -1183,8 +1177,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       asfPrintError("Terrain correction of GeoTIFFs is not supported.\n");
     
     // Precision state vector file check can only be done
-    // from within asf_import
-    
+    // from within asf_import    
     
     // Dealing with single look complex data
     // Options -multilook and -complex are mutually exclusive
@@ -1531,30 +1524,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     input_format_t format_type;
     char *meta_option = NULL;
     
-    /*
-    // Radiometry
-    if (!cfg->general->sar_processing) {
-      if (strncmp_case(cfg->import->radiometry, "AMPLITUDE_IMAGE", 15) == 0)
-	radiometry = r_AMP;
-      else if (strncmp_case(cfg->import->radiometry, "POWER_IMAGE", 11) == 0)
-	radiometry = r_POWER;
-      else if (strncmp_case(cfg->import->radiometry, "SIGMA_IMAGE", 11) == 0)
-	radiometry = r_SIGMA;
-      else if (strncmp_case(cfg->import->radiometry, "GAMMA_IMAGE", 11) == 0)
-	radiometry = r_GAMMA;
-      else if (strncmp_case(cfg->import->radiometry, "BETA_IMAGE", 10) == 0)
-	radiometry = r_BETA;
-      else
-	radiometry = r_AMP;  // Default to something (silence compiler)
-    }
-
-    // See above, this is the flag that adds a "secret" AMP band
-    // for terrain correction.
-    amp0_flag = radiometry != r_AMP && cfg->general->terrain_correct;
-    if (amp0_flag)
-      asfPrintStatus("Adding Amplitude band, for terrain correction.\n");
-    */ 
-
     if (strncmp_case(cfg->import->radiometry, "SIGMA_IMAGE", 11) == 0 ||
 	strncmp_case(cfg->import->radiometry, "GAMMA_IMAGE", 11) == 0 ||
 	strncmp_case(cfg->import->radiometry, "BETA_IMAGE", 10) == 0) {
@@ -1583,32 +1552,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     if (strlen(cfg->import->lut) > 0)
       lut_flag = TRUE;
     
-    // Not required with amplitude only processing
-    /*
-    if (cfg->import->output_db)
-      db_flag = TRUE;
-    
-    // When performing Faraday Rotation, we must import amplitude.
-    // After the correction, the correct radiometry will be applied.
-    // We include the db_flag in the saved_radiometry.
-    // Note that the amp0 flag may then be adding an amplitude band,
-    // when we're asking for amplitude data (that will be calibrated later),
-    // this is ok.  Import should still add that extra band.
-    if (cfg->general->polarimetry && cfg->polarimetry &&
-	cfg->polarimetry->farcorr != FARCORR_OFF)
-      {
-        saved_radiometry = radiometry;
-        if (db_flag) {
-          if (saved_radiometry == r_SIGMA) saved_radiometry = r_SIGMA_DB;
-          if (saved_radiometry == r_BETA)  saved_radiometry = r_BETA_DB;
-          if (saved_radiometry == r_GAMMA) saved_radiometry = r_GAMMA_DB;
-        }
-	
-        // now set radiometry to amplitude, and db off.
-        radiometry = r_AMP;
-        db_flag = FALSE;
-      }
-    */
+    // Force multilooking of SLC data - for the moment
+    cfg->import->multilook_slc = TRUE;
     
     // Generate a temporary output filename
     if (cfg->general->image_stats || cfg->general->detect_cr ||

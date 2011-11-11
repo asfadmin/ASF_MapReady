@@ -1071,7 +1071,6 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   double t_offset, x_offset;
   int madssap = FALSE; // mask and dem same size and projection
   int clean_resample_file = TRUE;
-  int image_was_ground_range = TRUE;
 
   // -- debug prints, uncomment as needed
   //printf("pixel size: %f\n", pixel_size);
@@ -1354,7 +1353,6 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   } else {
     // image already in slant range - no action necessary
     srFile = STRDUP(resampleFile);
-    image_was_ground_range = FALSE;
   }
 
   if (!metaSAR->sar->deskewed) {
@@ -1467,8 +1465,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       // up with the same x pixel size that the user requested.  So we will
       // just resample to the size that was requested.  This correction is
       // not necessary if the given image was in slant range.
-      if (image_was_ground_range &&
-          fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
+
+      if (fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
       {
           asfPrintStatus("Resampling to proper range pixel size. (%f m)\n", pixel_size);
 

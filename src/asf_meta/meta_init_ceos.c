@@ -1185,7 +1185,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       meta->general->x_pixel_size / mpdr->velnadir;
   }
   meta->sar->look_count = dssr->n_azilok;
-  if (ceos->product == SLC || ceos->product == RAW)
+  if (ceos->product == RAW)
     meta->sar->deskewed = 0;
   else
     meta->sar->deskewed = 1;
