@@ -145,7 +145,7 @@
 "          is still experimental.  Currently, this option scales values using\n"\
 "          the method described by Ulander (\"Radiometric Slope Correction of\n"\
 "          Synthetic-Aperture Radar Images\", IEEE Transactions on Geoscience and\n"\
-"          Remote Sensing, Vol 24, No 5, Sept 1996). This correction scales\n"\
+"          Remote Sensing, Vol 34, No 5, Sept 1996). This correction scales\n"\
 "          by cos(phi), where phi is the angle between the terrain normal, and\n"\
 "          the image plane normal.\n"\
 "\n"\
