@@ -1552,9 +1552,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     if (strlen(cfg->import->lut) > 0)
       lut_flag = TRUE;
     
-    // Force multilooking of SLC data - for the moment
-    cfg->import->multilook_slc = TRUE;
-    
     // Generate a temporary output filename
     if (cfg->general->image_stats || cfg->general->detect_cr ||
 	cfg->general->sar_processing || cfg->general->polarimetry ||

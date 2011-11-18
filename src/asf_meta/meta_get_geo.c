@@ -108,9 +108,13 @@ int meta_get_latLon(meta_parameters *meta,
       /* ALOS data (not projected) -- use transform block */
       double l = yLine, s = xSample;
       if (meta->sar) {
-          l = meta->general->start_line +
-                  meta->general->line_scaling * yLine;
-          s = meta->general->start_sample +
+	meta->general->line_scaling = (double)
+	  meta->sar->original_line_count / meta->general->line_count;
+	meta->general->sample_scaling = (double)
+	  meta->sar->original_sample_count / meta->general->sample_count;
+	l = meta->general->start_line +
+	          meta->general->line_scaling * yLine;
+	s = meta->general->start_sample +
                   meta->general->sample_scaling * xSample;
       }
       alos_to_latlon(meta, s, l, elev, lat, lon, &hgt);

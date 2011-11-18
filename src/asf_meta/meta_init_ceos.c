@@ -1137,7 +1137,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->general->orbit_direction = 'D';
   meta->general->bit_error_rate = 0.0;
   meta->general->band_count = nBands;
-  ceos_init_stVec(in_fName,ceos,meta);
+  ceos_init_stVec(in_fName, ceos, meta);
 
   if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = 0.0;
@@ -1223,7 +1223,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->incid_a[ii] = dssr->incid_a[ii];
 
   // Transformation block
-  if (ceos->product != SLC && ceos->product != RAW) {
+  if (ceos->product != RAW) {
     struct trl_file_des_rec tfdr;
     get_tfdr((char*)in_fName, &tfdr);
     struct JAXA_FACDR facdr;
