@@ -856,6 +856,8 @@ int main(int argc, char *argv[])
       format_type = GAMMA;
     else if (strncmp_case(format_type_str, "ROIPAC", 6) == 0)
       format_type = ROIPAC;
+    else if (strncmp_case(format_type_str, "SMAP", 4) == 0)
+      format_type = SMAP;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }

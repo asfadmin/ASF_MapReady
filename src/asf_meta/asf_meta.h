@@ -32,6 +32,7 @@
 #include "asf_complex.h"
 #include "libasf_proj.h"
 #include "asf.h"
+#include "hdf5.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -115,7 +116,8 @@ typedef enum {
   RADARSAT2,
   POLSARPRO,
   GAMMA,
-  ROIPAC
+  ROIPAC,
+  SMAP
 } input_format_t;
 
 /********************************************************************

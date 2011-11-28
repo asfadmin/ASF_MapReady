@@ -132,6 +132,8 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
 meta_parameters *meta_read_roipac(const char *in, const char *sv_file);
 void import_roipac(const char *baseName, const char *outName);
 
+void import_smap(const char *inBaseName, const char *outBaseName);
+
 meta_parameters *meta_read_only(const char *in_fName);
 meta_parameters *meta_read_raw(const char *inFile);
 

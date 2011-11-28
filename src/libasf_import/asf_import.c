@@ -239,6 +239,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintStatus("   Data format: ROI_PAC\n");
     import_roipac(inBaseName, outBaseName);
   }
+  else if (format_type == SMAP) {
+    asfPrintStatus("   Data format: SMAP\n");
+    import_smap(inBaseName, outBaseName);
+  }
   // Don't recognize this data format; report & quit
   else {
     asfPrintError("Unrecognized data format: '%d'\n",format_type);

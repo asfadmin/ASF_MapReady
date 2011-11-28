@@ -82,6 +82,7 @@ OBJS  = \
 	import_fgdc_meta.o \
 	import_dem.o \
 	import_roipac.o \
+	import_smap.o \
 	config_fgdc.o \
 	missing.o \
 	projected_image_import.o \
