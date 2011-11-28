@@ -77,6 +77,14 @@ typedef struct {
   int *var_id;                  // Variable IDs
 } netcdf_t;
 
+// HDF5 pointer structure
+typedef struct {
+  hid_t file;                   // File identifier
+  hid_t space;                  // Data space identifier
+  int var_count;                // Number of variables
+  hid_t *var;                   // Variable identifiers
+} h5_t;
+
 /* Structure to hold elements of the command line.  */
 typedef struct {
   /* Output format to use.  */
