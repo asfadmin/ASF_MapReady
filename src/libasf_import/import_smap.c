@@ -341,9 +341,9 @@ void import_smap(const char *inBaseName, const char *outBaseName)
   meta = smap2meta(smap);
   meta->general->line_count = meta->sar->original_line_count = inRows;
   meta->general->sample_count = meta->sar->original_sample_count = inCols;
-  meta->general->band_count = 11;
+  meta->general->band_count = 13;
   strcpy(meta->general->bands, "HH_aft,HH_fore,HH_kp,HV_aft,HV_fore,HV_kp,"
-	 "VV_aft,VV_fore,VV_kp,grid_lat,grid_lon");
+	 "VV_aft,VV_fore,VV_kp,lat,lon,grid_lat,grid_lon");
   read_smap_pixel(meta, inDataName, meta->general->line_count/2, 
 		  meta->general->sample_count/2, &lat, &lon);
   meta->general->center_latitude = (double) lat;
@@ -392,8 +392,12 @@ void import_smap(const char *inBaseName, const char *outBaseName)
   read_smap_data("cell_sigma0_vv_aft", 6, inDataName, outDataName);
   read_smap_data("cell_sigma0_vv_fore", 7, inDataName, outDataName);
   read_smap_data("cell_kp_vv", 8, inDataName, outDataName);
-  read_smap_data("cylindrical_grid_latitude_index", 9, inDataName, outDataName);
-  read_smap_data("cylindrical_grid_longitude_index", 10, inDataName, outDataName);
+  read_smap_data("cell_lat", 9, inDataName, outDataName);
+  read_smap_data("cell_lon", 10, inDataName, outDataName);
+  read_smap_data("cylindrical_grid_latitude_index", 
+		 11, inDataName, outDataName);
+  read_smap_data("cylindrical_grid_longitude_index", 
+		 12, inDataName, outDataName);
 
   // Clean up
   FREE(smap);
