@@ -127,7 +127,9 @@ static void print_proj_info(meta_parameters *meta)
             "   Central meridian: %.4f\n\n",
             pp.lamaz.center_lat, pp.lamaz.center_lon);
         break;
-
+	
+    case LAT_LONG_PSEUDO_PROJECTION:
+      break;
     default:
         asfPrintError("Projection type not supported!\n");
         break;
@@ -179,6 +181,10 @@ static int proj_parms_match(meta_parameters *m1, meta_parameters *m2)
             pp1.lamaz.center_lat == pp2.lamaz.center_lat &&
             pp1.lamaz.center_lon == pp2.lamaz.center_lon;
         break;
+
+    case LAT_LONG_PSEUDO_PROJECTION:
+      return TRUE;
+      break;
 
     default:
         return FALSE;
