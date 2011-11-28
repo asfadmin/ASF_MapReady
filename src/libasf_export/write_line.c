@@ -21,6 +21,20 @@ void write_tiff_float2float(TIFF *otif, float *float_line, int line)
   TIFFWriteScanline (otif, float_line, line, 0);
 }
 
+void write_tiff_float2int(TIFF *otif, float *float_line, int line, 
+			  int sample_count)
+{
+  int jj;
+  unsigned short *int_line;
+
+  int_line = (unsigned short *) MALLOC(sizeof(unsigned short) * sample_count);
+
+  for (jj=0; jj<sample_count; jj++)
+    int_line[jj] = (int) float_line[jj];
+  TIFFWriteScanline (otif, int_line, line, 0);
+  FREE(int_line);
+}
+
 void write_tiff_float2byte(TIFF *otif, float *float_line,
                channel_stats_t stats, scale_t sample_mapping,
                float no_data, int line, int sample_count)

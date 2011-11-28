@@ -127,14 +127,21 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   meta_parameters *md = meta_read (metadata_file_name);
 
   int byte_image = (md->general->data_type == BYTE) ||
-                   !(sample_mapping == NONE && !md->optical && !have_look_up_table);
-  if (!byte_image) {
+    !(sample_mapping == NONE && !md->optical && !have_look_up_table);
+  int int_image = (md->general->data_type == INTEGER16 &&
+    !md->optical && !have_look_up_table);
+
+  if (!byte_image && !int_image) {
       // Float image
       asfRequire(sizeof (float) == 4,
                  "Size of the unsigned char data type on this machine is "
                  "different than expected.\n");
       sample_size = 4;
       TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
+  }
+  else if (int_image) {
+    sample_size = 2;
+    TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
   }
   else {
       // Byte image

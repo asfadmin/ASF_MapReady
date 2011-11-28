@@ -77,14 +77,6 @@ typedef struct {
   int *var_id;                  // Variable IDs
 } netcdf_t;
 
-// HDF5 pointer structure
-typedef struct {
-  hid_t file;                   // File identifier
-  hid_t space;                  // Data space identifier
-  int var_count;                // Number of variables
-  hid_t *var;                   // Variable identifiers
-} h5_t;
-
 /* Structure to hold elements of the command line.  */
 typedef struct {
   /* Output format to use.  */
@@ -229,6 +221,8 @@ void write_tiff_byte2byte(TIFF *otif, unsigned char *byte_line,
                           channel_stats_t stats, scale_t sample_mapping,
                           int sample_count, int line);
 void write_tiff_float2float(TIFF *otif, float *float_line, int line);
+void write_tiff_float2int(TIFF *otif, float *float_line, int line,
+			  int sample_count);
 void write_tiff_float2byte(TIFF *otif, float *float_line,
 			   channel_stats_t stats, scale_t sample_mapping,
 			   float no_data, int line, int sample_count);
