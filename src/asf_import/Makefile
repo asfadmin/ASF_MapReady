@@ -5,9 +5,11 @@ include ../../make_support/system_rules
 LIBS  = \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libshp.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GEOTIFF_LIBS) \
 	$(HDF5_LIBS) \

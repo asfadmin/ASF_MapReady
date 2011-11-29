@@ -22,13 +22,15 @@ void shape_polygon_init(char *inFile, int vertices)
   // Add fields to database
   if (DBFAddField(dbase, "ID", FTString, 255, 0) == -1)
     asfPrintError("Could not add ID field to database file\n");
-  for (ii=0; ii<vertices; ii++) {
-    sprintf(header, "LAT%d", ii+1);
-    if (DBFAddField(dbase, header, FTDouble, 9, 4) == -1)
-      asfPrintError("Could not add latitude field to database file\n");
-    sprintf(header, "LON%d", ii+1);
-    if (DBFAddField(dbase, header, FTDouble, 9, 4) == -1)
-      asfPrintError("Could not add longitude field to database file\n");
+  if (vertices <= 10) {
+    for (ii=0; ii<vertices; ii++) {
+      sprintf(header, "LAT%d", ii+1);
+      if (DBFAddField(dbase, header, FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add latitude field to database file\n");
+      sprintf(header, "LON%d", ii+1);
+      if (DBFAddField(dbase, header, FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add longitude field to database file\n");
+    }
   }
 
   // Close the database for initialization
@@ -171,16 +173,13 @@ int polygon2kml(char *inFile, char *outFile, int listFlag)
 }
 
 // Write polygon to shapefile
-static void polygon2shape_line(char *inFile, char *outFile, int n)
+static void polygon2shape_line(char *inFile, DBFHandle dbase, SHPHandle shape,
+			       int n)
 {
-  DBFHandle dbase;
-  SHPHandle shape;
   FILE *fp;
-  char line[1024], *p;
-  double *lat, *lon;
-  int ii=0, vertices=0, foundFormat=FALSE;
+  int vertices=0, foundFormat=FALSE;
+  char poly[5], line[1024], *p;
 
-  // Check number of vertices and format
   fp = FOPEN(inFile, "r");
   while (fgets(line, 1024, fp)) {
     if (line[0] != '#')
@@ -197,32 +196,31 @@ static void polygon2shape_line(char *inFile, char *outFile, int n)
       }
     }
   }
-  FCLOSE(fp);
-  
+  FCLOSE(fp);  
   if (!foundFormat)
     asfPrintError("Input file is not a polygon CSV file.\n"
                   "Check 'convert2vector -help' for the correct format.\n");
-  
-  // Initialize output
-  shape_polygon_init(outFile, vertices);
-  open_shape(outFile, &dbase, &shape);
 
   // Allocate memory
-  lat = (double *) MALLOC(sizeof(double)*(vertices+1));
-  lon = (double *) MALLOC(sizeof(double)*(vertices+1));
+  double *lat = (double *) MALLOC(sizeof(double)*(vertices+1));
+  double *lon = (double *) MALLOC(sizeof(double)*(vertices+1));
 
   // Write ID to shapefile
-  DBFWriteStringAttribute(dbase, n, 0, outFile);
+  sprintf(poly, "%d", n+1);
+  DBFWriteStringAttribute(dbase, n, 0, poly);
 
   // Read file again: lat/lon
+  int ii=0;
   fp = FOPEN(inFile, "r");
   while (fgets(line, 1024, fp)) {
     p = strchr(line, ',');
     if (p && line[0] != '#') {
       sscanf(p+1, "%lf,%lf", &lat[ii], &lon[ii]);
       // Write information into database file
-      DBFWriteDoubleAttribute(dbase, n, ii*2+1, lat[ii]);
-      DBFWriteDoubleAttribute(dbase, n, ii*2+2, lon[ii]);
+      if (vertices <= 10) {
+	DBFWriteDoubleAttribute(dbase, n, ii*2+1, lat[ii]);
+	DBFWriteDoubleAttribute(dbase, n, ii*2+2, lon[ii]);
+      }
       ii++;
     }
   }
@@ -240,28 +238,69 @@ static void polygon2shape_line(char *inFile, char *outFile, int n)
   // Clean up
   FREE(lat);
   FREE(lon);
-  close_shape(dbase, shape);
-  write_esri_proj_file(outFile);
 }
 
 // Convert polygon to shape
 int polygon2shape(char *inFile, char *outFile, int listFlag)
 {
   FILE *fp;
-  char *line = (char *) MALLOC(sizeof(char)*1024);
-  int n=0;
+  DBFHandle dbase;
+  SHPHandle shape;
+  char line[1024], polyFile[1024], *p;
+  int n=0, vertices=0, foundFormat=FALSE;
+
+  // Determine the number of vertices
+  // For lists take first file as a proxy
+  if (listFlag) {
+    fp = FOPEN(inFile, "r");
+    while (fgets(line, 1024, fp)) {
+      line[strlen(line)-1] = '\0';
+      strip_end_whitesp_inplace(line);
+      strcpy(polyFile, line);
+    }
+    FCLOSE(fp);
+  }
+  else
+    strcpy(polyFile, inFile);
+  fp = FOPEN(polyFile, "r");
+  while (fgets(line, 1024, fp)) {
+    if (line[0] != '#')
+      vertices++;
+    else {
+      if (strstr(line, "Format"))
+        p = strchr(line, ':');
+      if (p) {
+        p++;
+        while (isspace(*p))
+          p++;
+        if (strncmp(p, "POLYGON", 7) == 0)
+          foundFormat = TRUE;
+      }
+    }
+  }
+  FCLOSE(fp);  
+  if (!foundFormat)
+    asfPrintError("Input file is not a polygon CSV file.\n"
+                  "Check 'convert2vector -help' for the correct format.\n");
+
+  shape_polygon_init(outFile, vertices);
+  open_shape(outFile, &dbase, &shape);
 
   if (listFlag) {
     fp = FOPEN(inFile, "r");
     while (fgets(line, 1024, fp)) {
       line[strlen(line)-1] = '\0';
-      polygon2shape_line(line, outFile, n);
+      strip_end_whitesp_inplace(line);
+      polygon2shape_line(line, dbase, shape, n);
       n++;
     }
     FCLOSE(fp);
   }
   else
-    polygon2shape_line(inFile, outFile, n);
+    polygon2shape_line(inFile, dbase, shape, 0);
+
+  close_shape(dbase, shape);
+  write_esri_proj_file(outFile);
 
   return 1;
 }

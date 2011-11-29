@@ -5,6 +5,7 @@
 #include "asf_import.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
+#include "asf_vector.h"
 #include "asf_endian.h"
 #include "dateUtil.h"
 #include <ctype.h>
@@ -259,6 +260,136 @@ static void read_smap_pixel(meta_parameters *meta, char *inDataName,
   H5Fclose(file);
 }
 
+static void read_smap_outline(meta_parameters *meta, char *inDataName,
+			      int *vertex_count, float *lat, float *lon)
+{
+  hsize_t count[2], pixels[1];
+  hsize_t offset[2];
+  hid_t file, group, dataset, datatype, dataspace, memspace;
+  file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
+  group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
+  offset[0] = 0;
+  offset[1] = 0;
+  count[0] = 1;
+  count[1] = meta->general->sample_count;
+  pixels[0] = meta->general->sample_count;
+  memspace = H5Screate_simple(1, pixels, NULL);
+  int ii, kk, counts=0;
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  float *values = (float *) MALLOC(sizeof(float)*ns);
+
+  // Read latitude first
+  dataset = H5Dopen(group, "cell_lat", H5P_DEFAULT);
+  datatype = H5Dget_type(dataset);
+  dataspace = H5Dget_space(dataset);
+
+  // Read first line
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  for (ii=0; ii<ns; ii++) {
+    if (meta_is_valid_double(values[ii])) {
+      lat[counts] = values[ii];
+      counts++;
+    }
+  }
+  // Walk along right boundary
+  for (kk=1; kk<nl; kk++) {
+    offset[0] = kk;
+    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+    ii = ns - 1;
+    while (!meta_is_valid_double(values[ii]))
+      ii--;
+    lat[counts] = values[ii];
+    counts++;
+  }
+  // Read last line
+  offset[0] = nl - 1;
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  for (ii=ns-1; ii>0; ii--) {
+    if (meta_is_valid_double(values[ii])) {
+      lat[counts] = values[ii];
+      counts++;
+    }
+  }
+  // Walk along left boundary
+  for (kk=nl-1; kk>0; kk--) {
+    offset[0] = kk;
+    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+    ii = 0;
+    while (!meta_is_valid_double(values[ii]))
+      ii++;
+    lat[counts] = values[ii];
+    counts++;
+  }
+
+  H5Tclose(datatype);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+
+  // Read longitudes next
+  counts = 0;
+  dataset = H5Dopen(group, "cell_lon", H5P_DEFAULT);
+  datatype = H5Dget_type(dataset);
+  dataspace = H5Dget_space(dataset);
+  
+  // Read first line
+  offset[0] = 0;
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  for (ii=0; ii<ns; ii++) {
+    if (meta_is_valid_double(values[ii])) {
+      lon[counts] = values[ii];
+      counts++;
+    }
+  }
+  // Walk along right boundary
+  for (kk=1; kk<nl; kk++) {
+    offset[0] = kk;
+    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+    ii = ns - 1;
+    while (!meta_is_valid_double(values[ii]))
+      ii--;
+    lon[counts] = values[ii];
+    counts++;
+  }
+  // Read last line
+  offset[0] = nl - 1;
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  for (ii=ns-1; ii>0; ii--) {
+    if (meta_is_valid_double(values[ii])) {
+      lon[counts] = values[ii];
+      counts++;
+    }
+  }
+  // Walk along left boundary
+  for (kk=nl-1; kk>0; kk--) {
+    offset[0] = kk;
+    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+    ii = 0;
+    while (!meta_is_valid_double(values[ii]))
+      ii++;
+    lon[counts] = values[ii];
+    counts++;
+  }
+
+  H5Tclose(datatype);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+
+  H5Sclose(memspace);
+  H5Gclose(group);
+  H5Fclose(file);
+
+  *vertex_count = counts;
+}
+
 /*
 static int determine_output_dimension(char *inDataName, char *dataName, 
 				      int line_count, int sample_count)
@@ -380,7 +511,7 @@ void import_smap(const char *inBaseName, const char *outBaseName)
   meta->location->lon_end_far_range = (double) lon;
   
   // Read data
-  outDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName+10)));
+  outDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName+25)));
   sprintf(outDataName, "%s.img", outBaseName);
   meta_write(meta, outDataName);
   read_smap_data("cell_sigma0_hh_aft", 0, inDataName, outDataName);
@@ -399,8 +530,72 @@ void import_smap(const char *inBaseName, const char *outBaseName)
   read_smap_data("cylindrical_grid_longitude_index", 
 		 12, inDataName, outDataName);
 
+  // Generate boundary shapefile
+  asfPrintStatus("\n   Generating boundary shapefile ...\n");
+  int ii, vertex_count;
+  float *lats, *lons;
+  int ns = meta->general->sample_count;
+  int nl = meta->general->line_count;
+  lats = (float *) MALLOC(sizeof(float)*ns*nl*2);
+  lons = (float *) MALLOC(sizeof(float)*ns*nl*2);
+  read_smap_outline(meta, inDataName, &vertex_count, lats, lons);
+  FREE(inDataName);
+
+  // Check for vertices crossing the date lines
+  inDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName+25)));
+  int crosses_dateline = FALSE;
+  float diff;
+  for (ii=1; ii<vertex_count; ii++) {
+    diff = fabs(lons[ii-1] - lons[ii]);
+    if (diff > 1.0)
+      crosses_dateline = TRUE;
+  }
+  if (crosses_dateline) {
+    sprintf(inDataName, "%s_boundary1.csv", outBaseName);
+    FILE *fp = FOPEN(inDataName, "w");
+    fprintf(fp, "# Format: POLYGON\n");
+    fprintf(fp, "# ID,latitude,longitude\n");
+    for (ii=0; ii<vertex_count; ii++)
+      if (lons[ii] < 0.0)
+	fprintf(fp, "%5d,%.4f,%.4f\n", ii, lats[ii], lons[ii]);
+    FCLOSE(fp);
+    sprintf(inDataName, "%s_boundary2.csv", outBaseName);
+    fp = FOPEN(inDataName, "w");
+    fprintf(fp, "# Format: POLYGON\n");
+    fprintf(fp, "# ID,latitude,longitude\n");
+    for (ii=0; ii<vertex_count; ii++)
+      if (lons[ii] >= 0.0)
+	fprintf(fp, "%5d,%.4f,%.4f\n", ii, lats[ii], lons[ii]);
+    FCLOSE(fp);
+    sprintf(inDataName, "%s_boundary.lst", outBaseName);
+    fp = FOPEN(inDataName, "w");
+    fprintf(fp, "%s_boundary1.csv\n", outBaseName);
+    fprintf(fp, "%s_boundary2.csv\n", outBaseName);
+    FCLOSE(fp);
+    sprintf(outDataName, "%s_boundary", outBaseName);
+    polygon2shape(inDataName, outDataName, 1);
+    remove_file(inDataName);
+    sprintf(inDataName, "%s_boundary1.csv", outBaseName);
+    remove_file(inDataName);
+    sprintf(inDataName, "%s_boundary2.csv", outBaseName);
+    remove_file(inDataName);
+  }
+  else {
+    sprintf(inDataName, "%s_boundary.csv", outBaseName);
+    FILE *fp = FOPEN(inDataName, "w");
+    fprintf(fp, "# Format: POLYGON\n");
+    fprintf(fp, "# ID,latitude,longitude\n");
+    for (ii=0; ii<vertex_count; ii++)
+      fprintf(fp, "%5d,%.4f,%.4f\n", ii, lats[ii], lons[ii]);
+    FCLOSE(fp);
+    sprintf(outDataName, "%s_boundary", outBaseName);
+    polygon2shape(inDataName, outDataName, 0);
+    remove_file(inDataName);
+  }
+
   // Clean up
   FREE(smap);
+  FREE(inDataName);
   FREE(outDataName);
   H5Tclose(datatype);
   H5Dclose(dataset);
