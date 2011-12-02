@@ -32,6 +32,7 @@ OBJS = \
 	ursa.o \
 	datapool.o \
 	high_altitude_photography.o \
+	smap.o \
 	custom.o \
 	utils.o \
 	config.o
@@ -46,6 +47,7 @@ LIBS = \
 	$(LIBDIR)/libasf_import.a \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
+	$(HDF5_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
 	$(PNG_LIBS) \

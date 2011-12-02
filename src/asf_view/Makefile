@@ -71,7 +71,7 @@ LIB = \
 	-llibgthread-2.0 \
 	-lintl \
 	-liconv \
-	-lm \
+	-lm -lz \
 	-lgtk-win32-2.0 \
 	-lgobject-2.0 \
 	-llibglade-2.0 \
@@ -93,6 +93,7 @@ LIB = \
 	$(ASF_LIB)/asf.a \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
+	$(HDF5_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
 	$(PNG_LIBS) \
@@ -152,13 +153,14 @@ LDLIBS = \
 	$(PROJ_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
+	$(HDF5_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
 	$(PNG_LIBS) \
 	$(GTK_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \
 	$(shell /usr/bin/pkg-config --libs gthread-2.0) \
-	-lm
+	-lm -lz
 
 ifeq ($(SYS),darwin)
 LDFLAGS = -dynamic

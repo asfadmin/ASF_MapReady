@@ -20,6 +20,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(GEOTIFF_LIBS) \
+	$(HDF5_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \

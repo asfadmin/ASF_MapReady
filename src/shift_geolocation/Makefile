@@ -2,7 +2,7 @@ include ../../make_support/system_rules
 
 TARGET = shift_geolocation
 
-CFLAGS += $(GLIBS_CFLAGS)
+CFLAGS += $(GLIBS_CFLAGS) $(TIFF_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_terrcorr.a \
@@ -17,6 +17,7 @@ LIBS  = \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
 	$(JPEG_LIBS) \
+	$(TIFF_LIBS) \
 	-lm
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)

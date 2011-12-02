@@ -34,6 +34,10 @@ format_type_t str2format(const char *str)
     format = HAP;
   else if (strcmp_case(str, "TERRASAR") == 0)
     format = TERRASAR_META;
+  else if (strcmp_case(str, "FOOT_PRINT") == 0)
+    format = FOOT_PRINT;
+  else if (strcmp_case(str, "SMAP") == 0)
+    format = SMAP_BOUNDARY;
   else
     format = CUSTOM_FORMAT;
 
@@ -74,6 +78,10 @@ char *format2str(format_type_t format)
     strcpy(str, "HAP");
   else if (format == TERRASAR_META)
     strcpy(str, "TERRASAR");
+  else if (format == FOOT_PRINT)
+    strcpy(str, "FOOT_PRINT");
+  else if (format == SMAP_BOUNDARY)
+    strcpy(str, "SMAP");
 
   return str;
 }
@@ -176,6 +184,8 @@ int convert2vector(c2v_config *cfg)
     ret = hap2kml(inFile, outFile, listFlag);
   else if (inFormat == HAP && outFormat == SHAPEFILE)
     ret = hap2shape(inFile, outFile, listFlag);
+  else if (inFormat == SMAP_BOUNDARY && outFormat == SHAPEFILE)
+    ret = smap2shape(inFile, outFile);
   // custom conversion defined by parameter set in 'header.lst'
   else if (inFormat == CUSTOM_FORMAT && outFormat == SHAPEFILE)
     ret = custom2shape(inFile, inFormat_str, outFile, listFlag);
