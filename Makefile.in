@@ -185,7 +185,7 @@ IGNORED_INCLUDES = \
 	include/asf_complex.h \
 	include/asf_convert.h \
 	include/asf_export.h \
-	inlcude/asf_geocode.h \
+	include/asf_geocode.h \
 	include/asf_glib.h \
 	include/asf.h \
 	include/asf_import.h \
