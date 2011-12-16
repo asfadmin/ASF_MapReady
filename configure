@@ -3070,7 +3070,7 @@ versMinor=`uname -r | awk -F. '{print $2}'`
 c99="-D_ISOC99_SOURCE"
 
 ranlib="@echo do not need to run ranlib on this system on file: "
-optFlag="-O4"
+optFlag="-O3"
 case "${osType}:${versMajor}:${versMinor}" in
 	SunOS:*:*)
 		sys="solaris" ;;
@@ -4012,11 +4012,6 @@ if test "$have_png" = "no" ; then
 else
    PNG_LIBS="-lpng"
 fi
-if test "$sys" = "darwin" ; then
-   have_png="yes"
-   PNG_LIBS="-L/usr/X11/lib -lpng12"
-fi
-
 
 #### libgeotiff check ####
 #AC_CHECK_HEADER(geotiff.h,

@@ -12,7 +12,7 @@ INCLUDE_DIR := $(ROOT_DIR)/include
 ifeq ($(SYS),solaris)
 PROJ_CFLAGS := -g -O1
 else
-PROJ_CFLAGS := -O4
+PROJ_CFLAGS := -O3
 endif
 
 # These variables specify the tarball and what it unpacks into.
