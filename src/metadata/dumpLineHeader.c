@@ -1,7 +1,7 @@
 #define ASF_NAME_STRING "dumpLineHeader"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" <in_name> <template>\n"
+"   "ASF_NAME_STRING" [-line <number>] <in_name> <template>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program dumps the line header of a CEOS data file.\n\n"
@@ -10,6 +10,9 @@
 "     The input file is required, and should be a CEOS data file.\n"
 
 #define ASF_OPTIONS_STRING \
+"     -line <number>\n"\
+"          Define a particular line number to dump.\n"\
+"          Special predefined values: FIRST, CENTER, LAST\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
@@ -95,7 +98,8 @@ int strmatches(const char *key, ...)
 void dumpLineHeader(const char *inName, const char *template, int line_number)
 {
   struct HEADER hdr;
-  int offset, itype, subtype[3], rec_seq, length, format_length, bytes;
+  long offset;
+  int itype, subtype[3], rec_seq, length, format_length, bytes;
   char label[255], *line, *p, format[5], byteValue, templateFile[1024];
   unsigned char value[4];
 
@@ -106,7 +110,7 @@ void dumpLineHeader(const char *inName, const char *template, int line_number)
   offset = firstRecordLen(inName);
   FILE *fpData = FOPEN(inName, "rb");
 
-  int current_line = 0;
+  int current_line = 1;
   while (current_line < line_number) {
     
     // Read the header information
@@ -119,15 +123,15 @@ void dumpLineHeader(const char *inName, const char *template, int line_number)
     rec_seq = bigInt32(hdr.recnum);
     length = bigInt32(hdr.recsiz);
   
-    asfPrintStatus("\nHeader length: %d\n", offset);
-    asfPrintStatus("Record type: %d\n", itype);
-    asfPrintStatus("Sub-record[1]: %d\nSub-record[2]: %d\nSub_record[3]: %d\n",
-		   subtype[0], subtype[1], subtype[2]);
-    asfPrintStatus("Sequence: %d\nLength: %d\n\n", rec_seq, length);
-
-    //offset += length;
+    offset += length;
     current_line++;
   }
+
+  asfPrintStatus("\nHeader length: %d\n", offset);
+  asfPrintStatus("Record type: %d\n", itype);
+  asfPrintStatus("Sub-record[1]: %d\nSub-record[2]: %d\nSub_record[3]: %d\n",
+		 subtype[0], subtype[1], subtype[2]);
+  asfPrintStatus("Sequence: %d\nLength: %d\n\n", rec_seq, length);
 
   // Check whether template file exists in current directory.
   // Otherwise try in the share directory. After that give up.
@@ -270,7 +274,7 @@ main (int argc, char *argv[])
     if (iof->numofrec == 0)
       line = dssr->sc_lin * 2;
     else
-      line = iof->numofrec-1;
+      line = iof->numofrec;
     if (strncmp_case(lineStr, "CENTER", 6) == 0)
       line /= 2;
     FREE(iof);
