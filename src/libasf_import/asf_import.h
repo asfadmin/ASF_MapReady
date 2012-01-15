@@ -34,6 +34,8 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                               // path
                double lowerLat, // -99 means not constrained
                double upperLat, // -99 means not constrained
+	       double lowerLon,
+	       double upperLon,
                int line, // start line subset - default set to 0
                int sample, // start sample subset - default set to 0
                int width, // -99 means no subsetting
@@ -132,15 +134,13 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
 meta_parameters *meta_read_roipac(const char *in, const char *sv_file);
 void import_roipac(const char *baseName, const char *outName);
 
-void import_smap(const char *inBaseName, const char *outBaseName);
+void import_smap(const char *inBaseName, const char *outBaseName,
+		 float latUL, float lonUL, float latLR, float lonLR);
 
 meta_parameters *meta_read_only(const char *in_fName);
 meta_parameters *meta_read_raw(const char *inFile);
 
 int isGeocoded(const char *dataFile);
-int isCEOS(const char *dataFile, char **error);
-int isTerrasar(char *dataFile, char **error);
-int isRadarsat2(char *dataFile, char **error);
 int isPolsarproMatrix(char *dataFile, char **matrixType, char **error);
 int isPolsarproDecomposition(char *dataFile, char **decompositionType, 
 			     char **error);

@@ -316,6 +316,12 @@ typedef struct {
   double no_data;              // no data value
 } meta_dem;
 
+// meta_latlon: arrays with lat/lon values
+typedef struct {
+  float *lat;
+  float *lon;
+} meta_latlon;
+
 /********************************************************************
  * meta_projection / proj_parameters: These describe a map projection.
  * Projection parameter components: one for each projection.
@@ -408,6 +414,7 @@ typedef struct {
   esa_cal_params *esa;
   rsat_cal_params *rsat;
   alos_cal_params *alos;
+  tsx_cal_params *tsx;
 } meta_calibration;
 
 typedef struct {
@@ -529,6 +536,7 @@ typedef struct {
   meta_doppler       *doppler;         // Can be NULL
   meta_insar         *insar;           // Can be NULL
   meta_dem           *dem;             // Can be NULL
+  meta_latlon        *latlon;          // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
@@ -592,6 +600,7 @@ meta_doppler *meta_doppler_init(void);
 meta_insar *meta_insar_init(void);
 meta_uavsar *meta_uavsar_init(void);
 meta_dem *meta_dem_init(void);
+meta_latlon *meta_latlon_init(int line_count, int sample_count);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */
@@ -976,6 +985,11 @@ void map_distortions(meta_projection *proj, double lat, double lon,
 meta_insar *populate_insar_metadata(const char *filename);
 
 // Prototypes for meta_check.c
+int isAIRSAR(char *dataFile);
+int isCEOS(const char *dataFile, char **error);
+int isTerrasar(char *dataFile, char **error);
+int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error);
+int isRadarsat2(char *dataFile, char **error);
 int meta_test(char *in_file, char *spec_file);
 int meta_test_ext(char *in_file, char *spec_file, report_level_t level);
 
@@ -998,5 +1012,12 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                                 int use_mask_value, double mask_value);
 meta_parameters *read_generic_geotiff_metadata(const char *inFileName,
 					       int *ignore, ...);
+
+typedef struct {
+  int num;
+  int line;
+  int sample;
+  float diff;
+} latlon_pixel;
 
 #endif

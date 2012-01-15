@@ -22,6 +22,29 @@ meta_state_vectors *meta_state_vectors_init(int vector_count);
 /* Prototype from unpacked_deg */
 double unpacked_deg(double angle);
 
+static int get_band_num(char *bands, int band_count, const char *channel)
+{
+  char *t_channel, *ptr;
+  int ii;
+
+  char *t_bands = STRDUP(bands);
+  t_channel = STRTOK_R(t_bands, ",", &ptr);
+  if (t_channel != NULL && strcmp_case(t_channel, channel) == 0) {
+    FREE(t_bands);
+    return 0;
+  }
+  for (ii=1; ii<band_count; ii++) {
+    t_channel = STRTOK_R(NULL, ",", &ptr);
+    if (t_channel != NULL && strcmp_case(t_channel, channel) == 0) {
+      FREE(t_bands);
+      return ii;
+    }
+  }
+  FREE(t_bands);
+  return -1;
+}
+
+
 /***************************************************************
  * meta_read:
  * Reads a meta file and returns a meta structure filled with
@@ -64,6 +87,28 @@ meta_parameters *meta_read(const char *inName)
 
   /* Remember the name and location of the meta struct */
   //add_meta_ddr_struct(inName, meta, NULL);
+  
+  // Add latlon block if data has a data has lat/lon bands
+  // Currently only SMAP data has that kind of arrangement
+  int lat_band = 
+    get_band_num(meta->general->bands, meta->general->band_count, "LAT");
+  int lon_band =
+    get_band_num(meta->general->bands, meta->general->band_count, "LON");
+  if (strcmp_case(meta->general->sensor, "SMAP") == 0 && 
+      lat_band > 0 && lon_band > 0) {
+    char *data_name = appendExt(inName, ".img");
+    if (fileExists(data_name)) {
+      meta->latlon = meta_latlon_init(meta->general->line_count, 
+				      meta->general->sample_count);
+      FILE *fp = FOPEN(data_name, "rb");
+      get_band_float_lines(fp, meta, lat_band, 0, meta->general->line_count,
+			   meta->latlon->lat);
+      get_band_float_lines(fp, meta, lon_band, 0, meta->general->line_count,
+			   meta->latlon->lon);
+      FCLOSE(fp);
+    }
+    FREE(data_name);
+  }
 
   FREE(ddr_name);
   FREE(meta_name);

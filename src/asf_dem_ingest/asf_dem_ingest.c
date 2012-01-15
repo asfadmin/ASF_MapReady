@@ -274,6 +274,7 @@ int main(int argc, char *argv[])
 		  pixel_size, NULL, tmpFile, outFile, 0.0, FALSE);
   }
   else if (strlen(tmp_dir) > 2) {
+    /*
     char *imgFile = (char *) MALLOC(sizeof(char)*512);
     char *metaFile = (char *) MALLOC(sizeof(char)*512);
     for (ii=0; ii<file_count; ii++) {
@@ -286,6 +287,8 @@ int main(int argc, char *argv[])
     }
     FREE(imgFile);
     FREE(metaFile);
+    */
+    combine(import_files, file_count, outFile);
   }
   for (ii=0; ii<file_count; ii++)
     FREE(import_files[ii]);

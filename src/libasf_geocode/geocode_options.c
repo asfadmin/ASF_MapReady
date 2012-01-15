@@ -41,7 +41,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
   pps = parse_projection_options(argc, argv, proj_type, datum, spheroid,
 				 &did_write_proj_file);
 
-  if (pps)
+  if (pps || *proj_type == LAT_LONG_PSEUDO_PROJECTION)
   {
     /* "other" options include: 'height', 'pixel-size', 'force'
         and 'resample_method'.  */
@@ -146,6 +146,8 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
     case SINUSOIDAL:
       verify_valid_longitude(pps->sin.longitude_center);
       break;
+  case LAT_LONG_PSEUDO_PROJECTION:
+    break;
     default:
       asfPrintError("sanity_check: illegal projection type!\n");
   }
@@ -303,6 +305,9 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
       if (ISNAN(pps->sin.longitude_center))
 	pps->sin.longitude_center = 0;
       break;
+
+  case LAT_LONG_PSEUDO_PROJECTION:
+    break;
 
     default:
       asfPrintError("apply_defaults: illegal projection type!\n");

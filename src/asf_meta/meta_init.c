@@ -410,6 +410,14 @@ meta_insar *meta_insar_init(void)
   return insar;
 }
 
+meta_latlon *meta_latlon_init(int line_count, int sample_count)
+{
+  meta_latlon *latlon = (meta_latlon *) MALLOC(sizeof(meta_latlon));
+  latlon->lat = (float *) MALLOC(sizeof(float)*line_count*sample_count);
+  latlon->lon = (float *) MALLOC(sizeof(float)*line_count*sample_count);
+  return latlon;
+}
+
 /****************************************************
  * raw_init:
  * Allocate memory for a fresh meta structure and fill
@@ -433,6 +441,7 @@ meta_parameters *raw_init(void)
   meta->doppler         = NULL;
   meta->insar           = NULL;
   meta->dem             = NULL;
+  meta->latlon          = NULL;
 
   meta->meta_version = META_VERSION;
 
@@ -582,6 +591,12 @@ void meta_free(meta_parameters *meta)
     meta->insar = NULL;
     FREE(meta->dem);
     meta->dem = NULL;
+    if (meta->latlon) {
+      FREE(meta->latlon->lat);
+      FREE(meta->latlon->lon);
+      FREE(meta->latlon);
+      meta->latlon = NULL;
+    }
     if (meta->colormap) {
       FREE(meta->colormap->rgb);
       FREE(meta->colormap);

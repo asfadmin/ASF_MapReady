@@ -23,6 +23,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 all: asf_polsarpro_import

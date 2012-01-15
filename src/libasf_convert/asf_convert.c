@@ -753,9 +753,10 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
     check_return(
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
-                   NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 0,
-                   NULL, NULL, NULL, FALSE, NULL, tiff_basename, ancillary_file,
-                   NULL, NULL, NULL, NULL, NULL, NULL, FALSE, imported),
+                   NULL, what, NULL, NULL, -999, -999, -999, -999, 0, 0, 
+		   -99, -99, 0, NULL, NULL, NULL, FALSE, NULL, tiff_basename, 
+		   ancillary_file, NULL, NULL, NULL, NULL, NULL, NULL, FALSE, 
+		   imported),
         status);
 
     sprintf(status, "Geocoding %s...", uc_what);
@@ -1620,6 +1621,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 			    cfg->import->image_data_type,
 			    cfg->import->lut, cfg->import->prc,
 			    cfg->import->lat_begin, cfg->import->lat_end,
+			    -99, -99,
 			    cfg->import->line, cfg->import->sample,
 			    cfg->import->width, cfg->import->height,
 			    cfg->general->intermediates, NULL, NULL, NULL,

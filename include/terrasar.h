@@ -36,7 +36,8 @@ typedef struct {
   char imageCoordinateType[25];       // deskewed: RAW, ZERODOPPLER
   double rowSpacing;                  // azimuth_time_per_pixel
   double columnSpacing;               // range_time_per_pixel
-  double rangeTime;                   // slant_range_first_pixel [s]
+  double rangeTimeFirst;              // slant_range_first_pixel [s]
+  double rangeTimeLast;               // slant_range_last_pixel [s]
   double centerFrequency;             // wavelength
   double prf;                         // prf
   double totalProcessedAzimuthBandwidth; // azimuth_processing_bandwidth
@@ -61,6 +62,10 @@ typedef struct {
   double sceneCornerCoord3Lon;        // lon_end_near_range
   double sceneCornerCoord4Lat;        // lat_end_far_range
   double sceneCornerCoord4Lon;        // lon_end_far_range
+
+  // calibration
+  double cal_factor;                  // calibration constant in beta naught
+
 } terrasar_meta;
 
 

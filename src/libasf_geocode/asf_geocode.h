@@ -142,6 +142,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	       char *overlap, int save_line_sample_mapping);
 void sigsegv_handler (int signal_number);
 
+// Prototype from combine.c
+int combine(char **infiles, int n_inputs, char *outfile);
+
 // Prototypes from geoid.c
 float get_geoid_height(double lat, double lon);
 

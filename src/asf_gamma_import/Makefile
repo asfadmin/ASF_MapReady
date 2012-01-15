@@ -12,6 +12,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_raster.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 all: asf_gamma_import

@@ -50,7 +50,11 @@ static int is_lat_column(const char *name)
       strcmp_case(name,"Near Start Lat")==0 ||
       strcmp_case(name,"Far Start Lat")==0 ||
       strcmp_case(name,"Near End Lat")==0 ||
-      strcmp_case(name,"Far End Lat")==0)
+      strcmp_case(name,"Far End Lat")==0 ||
+      strcmp_case(name,"NSTART_LAT")==0 ||
+      strcmp_case(name,"FSTART_LAT")==0 ||
+      strcmp_case(name,"N_END_LAT")==0 ||
+      strcmp_case(name,"F_END_LAT")==0)
   {
     return TRUE;
   }
@@ -75,7 +79,11 @@ static int is_lon_column(const char *name)
       strcmp_case(name,"Near Start Lon")==0 ||
       strcmp_case(name,"Far Start Lon")==0 ||
       strcmp_case(name,"Near End Lon")==0 ||
-      strcmp_case(name,"Far End Lon")==0)
+      strcmp_case(name,"Far End Lon")==0 ||
+      strcmp_case(name,"NSTART_LON")==0 ||
+      strcmp_case(name,"FSTART_LON")==0 ||
+      strcmp_case(name,"N_END_LON")==0 ||
+      strcmp_case(name,"F_END_LON")==0)
   {
     return TRUE;
   }

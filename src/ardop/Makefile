@@ -20,6 +20,7 @@ LIBS  = \
 	$(HDF5_LIBS) \
 	$(HDFEOS5_LIBS) \
 	$(GDAL_LIBS) \
+	$(XML_LIBS) \
 	$(ZLIB_LIBS)
 
 LIBC = $(LIBS) -lm 

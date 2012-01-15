@@ -921,7 +921,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     char str[15];
     meta_put_string(fp,"calibration {","",
             "Block containing calibration information");
-    strcpy(comment,"Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS)");
+    strcpy(comment,"Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS, TSX)");
     switch (meta->calibration->type)
       {
       case unknown_cal:
@@ -1007,6 +1007,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"cf_vv:",meta->calibration->alos->cf_vv,
 		      "Calibration factor: VV");
     break;
+      case tsx_cal:
+	meta_put_string(fp,"type:","TSX",comment);
+	// scaledPower = pow(10, p->cf/10.0)*inDn*inDn*invIncAngle;
+	meta_put_double(fp,"k:",meta->calibration->tsx->k,
+			"Calibration factor");
+	break;
       }
     meta_put_string(fp,"}","","End calibration");
   }

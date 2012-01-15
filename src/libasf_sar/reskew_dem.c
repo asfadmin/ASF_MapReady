@@ -413,6 +413,7 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMslant,
           metaGR->general->y_pixel_size = grPixSize;
           metaGR->general->start_line = metaGR->general->start_sample = 0;
           metaGR->general->band_count = 1;
+	  metaGR->general->image_data_type = DEM;
           strcpy(metaGR->general->bands, "");
         }
 

@@ -24,7 +24,8 @@ typedef enum {
   asf_scansar_cal,  // SCANSAR:  a0, a1 and a2 plus noise vector
   esa_cal,          // ESA:  calibration constant K
   rsat_cal,         // RSAT: look up table approach
-  alos_cal          // ALOS: calibration coefficient CF
+  alos_cal,         // ALOS: calibration coefficient CF
+  tsx_cal           // TERRASAR-X: calibration constant K
 } cal_type;
 
 typedef struct {
@@ -60,11 +61,16 @@ typedef struct {
 } alos_cal_params;
 
 typedef struct {
+  double k;           // absolute calibration constant
+} tsx_cal_params;
+
+typedef struct {
   asf_cal_params* asf;
   asf_scansar_cal_params *asf_scansar;
   esa_cal_params* esa;
   rsat_cal_params* rsat;
   alos_cal_params* alos;
+  tsx_cal_params* tsx;
   quadratic_2d incid;
   radiometry_t radiometry;
 } cal_params;

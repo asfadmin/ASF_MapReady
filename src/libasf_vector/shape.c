@@ -121,6 +121,128 @@ void shape_init(char *inFile, format_type_t format)
     if (DBFAddField(dbase, "Speed", FTDouble, 6, 1) == -1)
       asfPrintError("Could not add 'Speed' field to database file\n");
   }
+  else if (format == GRANULE_COUNT) {
+    if (DBFAddField(dbase, "FRAMES", FTInteger, 4, 0) == -1)
+      asfPrintError("Could not add 'FRAMES' field to database file\n");
+  }
+  else if (format == GRANULE_LIST) {
+    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'STACK_ID' field to database file\n");
+    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
+      asfPrintError("Could not add 'GRANULE' field to database file\n");
+    if (DBFAddField(dbase, "FRAMES", FTInteger, 4, 0) == -1)
+      asfPrintError("Could not add 'FRAMES' field to database file\n");
+  }
+  else if (format == GRANULE_DETAILS_A3) {
+    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'STACK_ID' field to database file\n");
+    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
+      asfPrintError("Could not add 'GRANULE' field to database file\n");
+    if (DBFAddField(dbase, "SATELLITE", FTString, 5, 0) == -1)
+      asfPrintError("Could not add 'SATELLITE' field to database file\n");
+    if (DBFAddField(dbase, "BEAM_MODE", FTString, 5, 0) == -1)
+      asfPrintError("Could not add 'BEAM_MODE' field to database file\n");
+    if (DBFAddField(dbase, "OFF_NADIR", FTDouble, 5, 1) == -1)
+      asfPrintError("Could not add 'OFF_NADIR' field to database file\n");
+    if (DBFAddField(dbase, "ORBIT", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'ORBIT' field to database file\n");
+    if (DBFAddField(dbase, "FRAME", FTInteger, 4, 0) == -1)
+      asfPrintError("Could not add 'FRAME' field to database file\n");
+    if (DBFAddField(dbase, "DATE", FTString, 20, 0) == -1)
+      asfPrintError("Could not add 'DATE' field to database file\n");
+    if (DBFAddField(dbase, "NSTART_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add NSTART_LAT field to database file\n");
+    if (DBFAddField(dbase, "NSTART_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add NSTART_LON field to database file\n");
+    if (DBFAddField(dbase, "FSTART_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add FSTART_LAT field to database file\n");
+    if (DBFAddField(dbase, "FSTART_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add FSTART_LON field to database file\n");
+    if (DBFAddField(dbase, "N_END_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add N_END_LAT field to database file\n");
+    if (DBFAddField(dbase, "N_END_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add N_END_LON field to database file\n");
+    if (DBFAddField(dbase, "F_END_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add F_END_LAT field to database file\n");
+    if (DBFAddField(dbase, "F_END_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add F_END_LON field to database file\n");
+  }
+  else if (format == GRANULE_DETAILS) {
+    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'STACK_ID' field to database file\n");
+    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
+      asfPrintError("Could not add 'GRANULE' field to database file\n");
+    if (DBFAddField(dbase, "SATELLITE", FTString, 5, 0) == -1)
+      asfPrintError("Could not add 'SATELLITE' field to database file\n");
+    if (DBFAddField(dbase, "BEAM_MODE", FTString, 5, 0) == -1)
+      asfPrintError("Could not add 'BEAM_MODE' field to database file\n");
+    if (DBFAddField(dbase, "ORBIT", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'ORBIT' field to database file\n");
+    if (DBFAddField(dbase, "FRAME", FTInteger, 4, 0) == -1)
+      asfPrintError("Could not add 'FRAME' field to database file\n");
+    if (DBFAddField(dbase, "DATE", FTString, 20, 0) == -1)
+      asfPrintError("Could not add 'DATE' field to database file\n");
+    if (DBFAddField(dbase, "NSTART_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add NSTART_LAT field to database file\n");
+    if (DBFAddField(dbase, "NSTART_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add NSTART_LON field to database file\n");
+    if (DBFAddField(dbase, "FSTART_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add FSTART_LAT field to database file\n");
+    if (DBFAddField(dbase, "FSTART_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add FSTART_LON field to database file\n");
+    if (DBFAddField(dbase, "N_END_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add N_END_LAT field to database file\n");
+    if (DBFAddField(dbase, "N_END_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add N_END_LON field to database file\n");
+    if (DBFAddField(dbase, "F_END_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add F_END_LAT field to database file\n");
+    if (DBFAddField(dbase, "F_END_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add F_END_LON field to database file\n");
+  }
+  else if (format == FOOT_PRINT) {
+    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'STACK_ID' field to database file\n");
+    if (DBFAddField(dbase, "FRAME_CNT", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'FRAME_CNT' field to database file\n");
+    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
+      asfPrintError("Could not add 'GRANULE' field to database file\n");
+    if (DBFAddField(dbase, "SATELLITE", FTString, 5, 0) == -1)
+      asfPrintError("Could not add 'SATELLITE' field to database file\n");
+    if (DBFAddField(dbase, "BEAM_MODE", FTString, 5, 0) == -1)
+      asfPrintError("Could not add 'BEAM_MODE' field to database file\n");
+    if (DBFAddField(dbase, "OFF_NADIR", FTDouble, 5, 1) == -1)
+      asfPrintError("Could not add 'OFF_NADIR' field to database file\n");
+    if (DBFAddField(dbase, "ORBIT", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'ORBIT' field to database file\n");
+    if (DBFAddField(dbase, "FRAME", FTInteger, 4, 0) == -1)
+      asfPrintError("Could not add 'FRAME' field to database file\n");
+    if (DBFAddField(dbase, "DATE", FTString, 20, 0) == -1)
+      asfPrintError("Could not add 'DATE' field to database file\n");
+    if (DBFAddField(dbase, "ORBIT_DIR", FTString, 15, 0) == -1)
+      asfPrintError("Could not add 'ORBIT_DIR' field to database file\n");
+    if (DBFAddField(dbase, "PATH", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'PATH' field to database file\n");
+    if (DBFAddField(dbase, "CENTER_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add 'CENTER_LAT' field to database file\n");
+    if (DBFAddField(dbase, "CENTER_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add 'CENTER_LON' field to database file\n");
+    if (DBFAddField(dbase, "NSTART_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add NSTART_LAT field to database file\n");
+    if (DBFAddField(dbase, "NSTART_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add NSTART_LON field to database file\n");
+    if (DBFAddField(dbase, "FSTART_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add FSTART_LAT field to database file\n");
+    if (DBFAddField(dbase, "FSTART_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add FSTART_LON field to database file\n");
+    if (DBFAddField(dbase, "N_END_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add N_END_LAT field to database file\n");
+    if (DBFAddField(dbase, "N_END_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add N_END_LON field to database file\n");
+    if (DBFAddField(dbase, "F_END_LAT", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add F_END_LAT field to database file\n");
+    if (DBFAddField(dbase, "F_END_LON", FTDouble, 10, 4) == -1)
+      asfPrintError("Could not add F_END_LON field to database file\n");
+  }
 
   // Close the database for initialization
   DBFClose(dbase);

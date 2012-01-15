@@ -11,6 +11,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 all: asf_airsar_import

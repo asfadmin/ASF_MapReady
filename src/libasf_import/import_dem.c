@@ -73,6 +73,8 @@ meta_parameters *dem2meta(dem_meta *dem)
   strcpy(meta->dem->unit_type, dem->unit_type);
   meta->dem->no_data = dem->no_data;
 
+  meta->location = meta_location_init();
+
   return meta;
 }
 
@@ -145,6 +147,7 @@ static char *extract_aster_dem(char *szFileName, const char *tmp_dir)
   	  "%s%c%s_dem.tif", aster_dem, DIR_SEPARATOR, aster_dem);
   cpl_unzLocateFile(aster_file, aster_dem_file, 2);
   sprintf(aster_dem_file, "%s_dem.tif", aster_dem);
+  asfPrintStatus("Extracting %s ...\n", aster_dem_file);
   extract_file(aster_file, aster_dem_file, tmp_dir);
   cpl_unzClose(aster_file);
   sprintf(aster_dem_file, "%s%c%s_dem.tif", tmp_dir, DIR_SEPARATOR, aster_dem);
@@ -334,6 +337,126 @@ static char **read_jpl_srtm_dem(const char *infile, const char *tmp_dir,
   return (dem_files);
 }
 
+static int check_usgs_ned_lat_lon(char *szFileName, int *lat, int *lon)
+{
+  int sign;
+
+  // Check for USGS NED tiles naming scheme - n64W144
+  if ((szFileName[0] == 'N' || szFileName[0] == 'S') &&
+      (szFileName[3] == 'W' || szFileName[3] == 'E')) {  
+    char tiles[10];
+    sprintf(tiles, "%s", szFileName);
+    if (tiles[0] == 'N')
+      sign = 1;
+    else if (tiles[0] == 'S')
+      sign = -1;
+    sscanf(tiles+1, "%d", lat);
+    *lat *= sign;
+    sprintf(tiles, "%s", szFileName+3);
+    if (tiles[0] == 'W')
+      sign = -1;
+    else if (tiles[0] == 'E')
+      sign = 1;
+    sscanf(tiles+1, "%d", lon);
+    *lon *= sign;
+    return TRUE;
+  }
+  else
+    return FALSE;
+}
+
+static char **read_usgs_ned_dem(unzFile *file, int file_count, 
+				const char *tmp_dir, char *tiles)
+{
+  int ii, lat_min=90, lat_max=-90, lon_min=180, lon_max=-180, lat, lon;
+  char tmp[10];
+  unz_file_info pfile_info;
+  char szFileName[1024], szComment[1024], extraField[1024];
+  uLong fileNameBufferSize, extraFieldBufferSize, commentBufferSize;
+
+  char **dem_files = (char **) MALLOC(sizeof(char *)*file_count);
+  for (ii=0; ii<file_count; ii++)
+    dem_files[ii] = (char *) MALLOC(sizeof(char)*512);
+
+  // NED DEM come as zip files for the individual tiles
+  // The individual tile directory naming scheme: n36w122
+  cpl_unzGoToFirstFile(file);
+  cpl_unzGetCurrentFileInfo(file, &pfile_info, szFileName, 
+			    fileNameBufferSize, extraField,
+			    extraFieldBufferSize, szComment, 
+			    commentBufferSize);
+  if (check_usgs_ned_lat_lon(szFileName, &lat, &lon)) {
+    if (lat < lat_min)
+      lat_min = lat;
+    if (lat > lat_max)
+      lat_max = lat;
+    if (lon < lon_min)
+      lon_min = lon;
+    if (lon > lon_max)
+      lon_max = lon;
+  }
+  extract_file(file, szFileName, tmp_dir);
+
+  /*
+    unzFile *file = cpl_unzOpen(inBaseName);
+    if (file) {
+      unz_global_info pglobal_info;
+      asfPrintStatus("Zip file: %s\n", inBaseName);
+      cpl_unzGetGlobalInfo(file, &pglobal_info);
+      file_count = pglobal_info.number_entry;
+      dem_files = read_aster_dem(file, file_count, tmp_dir, tiles);
+      cpl_unzClose(file);
+      zip = TRUE;
+    }
+  */
+
+  if (strncmp_case(szFileName, "ASTGTM", 6) == 0 &&
+      strcmp_case(findExt(szFileName), ".zip") == 0)
+    dem_files[0] = extract_aster_dem(szFileName, tmp_dir);
+  for (ii=1; ii<file_count; ii++) {
+    cpl_unzGoToNextFile(file);
+    cpl_unzGetCurrentFileInfo(file, &pfile_info, szFileName, 
+			      fileNameBufferSize, extraField,
+			      extraFieldBufferSize, szComment, 
+			      commentBufferSize);
+    if (check_aster_lat_lon(szFileName, &lat, &lon)) {
+      if (lat < lat_min)
+	lat_min = lat;
+      if (lat > lat_max)
+	lat_max = lat;
+      if (lon < lon_min)
+	lon_min = lon;
+      if (lon > lon_max)
+	lon_max = lon;
+    }
+    extract_file(file, szFileName, tmp_dir);
+    if (strncmp_case(szFileName, "ASTGTM", 6) == 0 &&
+	strcmp_case(findExt(szFileName), ".zip") == 0)
+      dem_files[ii] = extract_aster_dem(szFileName, tmp_dir);
+  }
+  if (lat_min >= 0)
+    sprintf(tiles, "N%d", lat_min);
+  else
+    sprintf(tiles, "S%d", abs(lat_max));
+  if (lat_max >= 0)
+    sprintf(tmp, "N%d", lat_max);
+  else
+    sprintf(tmp, "S%d", abs(lat_min));
+  strcat(tiles, tmp);
+  if (lon_min >= 0)
+    sprintf(tmp, "_E%d", lon_min);
+  else
+    sprintf(tmp, "_W%d", abs(lon_max));
+  strcat(tiles, tmp);
+  if (lon_max >= 0)
+      sprintf(tmp, "E%d", lon_max);
+  else
+    sprintf(tmp, "W%d", abs(lon_min));
+  strcat(tiles, tmp);
+
+  return (dem_files);
+}
+
 void import_dem(const char *inBaseName, int list, const char *outBaseName,
 		const char *dem_type, const char *tmp_dir,
 		char ***pImportFiles, int *nFiles)
@@ -355,6 +478,8 @@ void import_dem(const char *inBaseName, int list, const char *outBaseName,
     FCLOSE(fpList);
     if (strcmp_case(dem_type, "SRTM") == 0 && jpl)
       dem_files = read_jpl_srtm_dem(inBaseName, tmp_dir, &file_count, tiles);
+    else if (strcmp_case(dem_type, "NED") == 0)
+      dem_files = read_usgs_ned_dem(inBaseName, tmp_dir, &file_count, tiles);
     zip = TRUE;
   }
   else if (findExt(inBaseName) && 

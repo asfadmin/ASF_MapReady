@@ -40,6 +40,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm 
 

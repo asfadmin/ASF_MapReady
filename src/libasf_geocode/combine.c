@@ -5,6 +5,7 @@
 #include "asf_meta.h"
 #include "asf_raster.h"
 #include "float_image.h"
+#include "asf_geocode.h"
 
 #include "asf_contact.h"
 #include "asf_license.h"
@@ -14,64 +15,6 @@
 
 static const float_image_byte_order_t fibo_be =
     FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
-
-void help()
-{
-    printf(
-"Tool name:\n"
-"    %s\n\n"
-"Usage:\n"
-"    %s <outfile> <infile1> <infile2> ... \n\n"
-"Description:\n"
-"    This program mosaics the input files together, producing an output image\n"
-"    that is the union of all listed input images.  Where the input images\n"
-"    overlap, the pixel in the image listed earlier on the command-line is\n"
-"    chosen.\n\n"
-"Input:\n"
-"    At least 2 input files are required.  You may list as many input files\n"
-"    as desired, however extremely large output files will take some time to\n"
-"    process.\n\n"
-"    All input files must be geocoded to the same projection, with the same\n"
-"    projection parameters, and the same pixel size.\n\n"
-"Output:\n"
-"    The output file, listed first, is created by the program, and, depending\n"
-"    on the locations of the input files relative to each other, can range\n"
-"    in size from equal to the largest input image, to much larger than the\n"
-"    total size of all input images.\n\n"
-"Options:\n"
-"    -help\n"
-"        Print this help information and exit.\n"
-"    -license\n"
-"        Print copyright and license for this software and exit.\n"
-"    -version\n"
-"        Print version and copyright and exit.\n\n"
-"Examples:\n"
-"    %s out in1 in2 in3 in4 in5 in6\n\n"
-"Limitations:\n"
-"    Theoretically, any size output image will work.  The output image will\n"
-"    be cached on disk if it is too large to fit in memory, however in this\n"
-"    situation the process will be quite slow.\n\n"
-"    All input images MUST be in the same projection, with the same projection\n"
-"    parameters, and the same pixel size.\n\n"
-"See also:\n"
-"    asf_geocode\n\n"
-"Contact:\n"
-"%s\n\n"
-"Version:\n"
-"    %s\n",
-ASF_NAME_STRING, ASF_NAME_STRING, ASF_NAME_STRING,
-ASF_CONTACT_STRING, CONVERT_PACKAGE_VERSION_STRING
-);
-    exit(1);
-}
-
-void usage()
-{
-    printf("Usage:\n"
-           "    %s <outfile> <infile1> <infile2> ... \n\n"
-           "At least 2 input files are required.\n", ASF_NAME_STRING);
-    exit(1);
-}
 
 static void print_proj_info(meta_parameters *meta)
 {
@@ -313,7 +256,6 @@ static void determine_extents(char **infiles, int n_inputs,
 }
 
 static void add_pixels(FloatImage *out, char *file,
-                       int size_x, int size_y,
                        double start_x, double start_y,
                        double per_x, double per_y)
 {
@@ -369,74 +311,51 @@ static void add_pixels(FloatImage *out, char *file,
     meta_free(meta);
 }
 
-int main(int argc, char *argv[])
+int combine(char **infiles, int n_inputs, char *outfile)
 {
-    handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
-    if (argc>1 && (strcmp(argv[1], "-help")==0 || strcmp(argv[1],"--help")==0))
-        help();
-    if (argc<3) usage();
+  int ret, ii, size_x, size_y;
+  double start_x, start_y;
+  double per_x, per_y;
 
-    char *outfile = argv[1];
-    char **infiles = &argv[2];
-    int n_inputs = argc - 2;
+  // Determine image parameters
+  determine_extents(infiles, n_inputs, &size_x, &size_y, &start_x, &start_y,
+		    &per_x, &per_y);
+  
+  asfPrintStatus("\nCombined image size: %dx%d LxS\n", size_y, size_x);
+  asfPrintStatus("  Start X,Y: %f,%f\n", start_x, start_y);
+  asfPrintStatus("    Per X,Y: %lg,%lg\n", per_x, per_y);
+  
+  // float_image will handle cacheing of the large output image
+  FloatImage *out = float_image_new(size_x, size_y);
+  
+  // loop over the input images, last to first, so that the files listed
+  // first have their pixels overwrite files listed later on the command line
+  for (ii=n_inputs-1; ii>=0; ii--) {
+    asfPrintStatus("\nProcessing %s... \n", infiles[ii]);
+      
+    // Add this image's pixels
+    add_pixels(out, infiles[ii], start_x, start_y, per_x, per_y);
+  }
+  
+  asfPrintStatus("Writing metadata.\n");
+  
+  meta_parameters *meta_out = meta_read(infiles[0]);
+  
+  meta_out->projection->startX = start_x;
+  meta_out->projection->startY = start_y;
+  meta_out->general->line_count = size_y;
+  meta_out->general->sample_count = size_x;
+  
+  meta_write(meta_out, outfile);
+  meta_free(meta_out);
 
-    int ret, i, size_x, size_y;
-    double start_x, start_y;
-    double per_x, per_y;
-
-    asfSplashScreen(argc, argv);
-
-    asfPrintStatus("Combining %d files to produce: %s\n", n_inputs, outfile);
-
-    asfPrintStatus("Input files:\n");
-    for (i = 0; i < n_inputs; ++i)
-        asfPrintStatus("   %d: %s%s\n", i+1, infiles[i], i==0 ? " (reference)" : "");
-
-    // determine image parameters
-    determine_extents(infiles, n_inputs, &size_x, &size_y, &start_x, &start_y,
-        &per_x, &per_y);
-
-    asfPrintStatus("\nCombined image size: %dx%d LxS\n", size_y, size_x);
-    asfPrintStatus("  Start X,Y: %f,%f\n", start_x, start_y);
-    asfPrintStatus("    Per X,Y: %.2f,%.2f\n", per_x, per_y);
-
-    // float_image will handle cacheing of the large output image
-    FloatImage *out = float_image_new(size_x, size_y);
-
-    // loop over the input images, last to first, so that the files listed
-    // first have their pixels overwrite files listed later on the command line
-    int n = argc-1;
-    do {
-        char *p = argv[n];
-        if (p && strlen(p)>0) {
-            asfPrintStatus("\nProcessing %s... \n", p);
-
-            // add this image's pixels
-            add_pixels(out, p, size_x, size_y, start_x, start_y, per_x, per_y);
-        }
-    } while (--n>1);
-
-    asfPrintStatus("Combined all images, saving result.\n");
-
-    char *outfile_full = appendExt(outfile, ".img");
-    ret = float_image_store(out, outfile_full, fibo_be);
-    if (ret!=0) asfPrintError("Error storing output image!\n");
-    float_image_free(out);
-    free(outfile_full);
-
-    // now the metadata -- use infile1's metadata as the template
-    asfPrintStatus("Writing metadata.\n");
-
-    meta_parameters *meta_out = meta_read(argv[2]);
-
-    meta_out->projection->startX = start_x;
-    meta_out->projection->startY = start_y;
-    meta_out->general->line_count = size_y;
-    meta_out->general->sample_count = size_x;
-
-    meta_write(meta_out, outfile);
-    meta_free(meta_out);
-
-    asfPrintStatus("Done.\n");
-    return 0;
+  char *outfile_full = appendExt(outfile, ".img");
+  asfPrintStatus("Saving image (%s).\n", outfile_full);
+  ret = float_image_store(out, outfile_full, fibo_be);
+  if (ret!=0) 
+    asfPrintError("Error storing output image!\n");
+  float_image_free(out);
+  free(outfile_full);
+  
+  return ret;
 }

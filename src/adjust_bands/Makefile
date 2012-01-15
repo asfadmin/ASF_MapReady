@@ -12,6 +12,7 @@ LIBS  = \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 CFLAGS += $(GLIB_CFLAGS)

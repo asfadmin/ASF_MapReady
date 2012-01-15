@@ -215,7 +215,7 @@ main (int argc, char **argv)
 			   &pixel_size, &datum, &spheroid, &resample_method,
 			   &force_flag, band_id);
 
-  if (!pp) {
+  if (!pp && projection_type != LAT_LONG_PSEUDO_PROJECTION) {
       print_usage();
   }
 

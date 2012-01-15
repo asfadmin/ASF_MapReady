@@ -92,12 +92,11 @@ OBJS  = \
 	utilities_ceos.o \
 	utilities_stf.o \
 	lut.o \
-	xml_util.o \
 	write_meta_and_img.o
 
 all: build_only
 	mv libasf_import.a $(LIBDIR)
-	cp asf_import.h xml_util.h fgdc_meta.h dem_meta.h \
+	cp asf_import.h fgdc_meta.h dem_meta.h \
 	$(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)

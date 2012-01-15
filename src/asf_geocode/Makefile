@@ -53,6 +53,7 @@ LIBS :=	\
 	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 LDLIBS := $(LIBS)

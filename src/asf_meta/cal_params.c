@@ -4,10 +4,10 @@
    calibrate.
 */
 
-
 #include "asf.h"
 #include "asf_meta.h"
 #include "ceos.h"
+#include "terrasar.h"
 #include <assert.h>
 
 /**Harcodings to fix calibration of ASF data***
@@ -215,377 +215,387 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
   int ii, kk;
   struct dataset_sum_rec dssr; // Data set summary record
   double *noise;
-  char sarName[512], *facilityStr, *processorStr;
+  char sarName[512], *facilityStr, *processorStr, *error;
+  ceos_description *ceos; 
   meta->calibration = meta_calibration_init();
 
   strcpy (sarName, inSAR);
 
-  // Check for the varioius processors
-  get_dssr(sarName, &dssr);
-  facilityStr = trim_spaces(dssr.fac_id);
-  processorStr = trim_spaces(dssr.sys_id);
+  if (isCEOS(sarName, &error)) {
+    // Check for the various processors
+    get_dssr(sarName, &dssr);
+    facilityStr = trim_spaces(dssr.fac_id);
+    processorStr = trim_spaces(dssr.sys_id);
+    
+    ceos = get_ceos_description_ext(inSAR, REPORT_LEVEL_NONE, FALSE);
 
-  ceos_description *ceos = 
-    get_ceos_description_ext(inSAR, REPORT_LEVEL_NONE, FALSE);
-
-  if (strncmp(facilityStr , "ASF"  , 3) == 0 &&
-      strncmp(processorStr, "FOCUS", 5) != 0 &&
-      ((meta->projection && meta->projection->type == SCANSAR_PROJECTION) ||
-       (meta->projection &&
-        (strcmp_case(meta->general->mode, "SWA") == 0 || strcmp_case(meta->general->mode, "SWB") == 0))
-      )
-     )
-  {
-    // ASF internal processor (PP or SSP), ScanSar data
-    asf_scansar_cal_params *asf = MALLOC(sizeof(asf_scansar_cal_params));
-    meta->calibration->type = asf_scansar_cal;
-    meta->calibration->asf_scansar = asf;
-
-    // Get values for calibration coefficients and LUT
-    struct VRADDR rdr; // Radiometric data record
-    get_raddr(sarName, &rdr);
-
-    // hardcodings for not-yet-calibrated fields
-    if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
-      asf->a0 = 1.1E4;
-      asf->a1 = 2.2E-5;
-      asf->a2 = 0.0;
-    }
-    else {
-      asf->a0 = rdr.a[0];
-      asf->a1 = rdr.a[1];
-      asf->a2 = rdr.a[2];
-    }
-
-    // Set the Noise Correction Vector to correct version
-    if (strncmp(dssr.cal_params_file,"SSPSWB010.CALPARMS",18)==0) {
-      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb010\n");
-      noise = sspswb010_noise_vec;
-    }
-    else if (strncmp(dssr.cal_params_file,"SSPSWB011.CALPARMS",18)==0) {
-      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb011\n");
-      noise = sspswb011_noise_vec;
-    }
-    else if (strncmp(dssr.cal_params_file,"SSPSWB013.CALPARMS",18)==0) {
-      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb013\n");
-      noise = sspswb013_noise_vec;
-    }
-    else if (strncmp(dssr.cal_params_file,"SSPSWB014.CALPARMS",18)==0) {
-      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb014\n");
-      noise = sspswb014_noise_vec;
-    }
-    else if (strncmp(dssr.cal_params_file,"SSPSWB015.CALPARMS",18)==0) {
-      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb015\n");
-      noise = sspswb015_noise_vec;
-    }
-    else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
-      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb016\n");
-      noise = sspswb015_noise_vec;
-      // 16 and 15 were identical antenna patterns, only metadata fields were
-      // changed, so the noise vector for 16 is the same and that for 15. JBN
-    }
-    else
-      noise = rdr.noise;
-
-    for (kk=0; kk<256; ++kk)
-      asf->noise[kk] = noise[kk];
-
-  }
-  else if (strncmp(facilityStr, "ASF", 3)== 0 &&
-           strncmp(processorStr, "FOCUS", 5) != 0)
-  {
-    // ASF internal processor (PP or SSP) (non-Scansar)
-    asf_cal_params *asf = (asf_cal_params *) MALLOC(sizeof(asf_cal_params));
-    meta->calibration->type = asf_cal;
-    meta->calibration->asf = asf;
-
-    // Get values for calibration coefficients and LUT
-    struct VRADDR rdr; // Radiometric data record
-    get_raddr(sarName, &rdr);
-
-    // hardcodings for not-yet-calibrated fields
-    if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
-      asf->a0 = 1.1E4;
-      asf->a1 = 2.2E-5;
-      asf->a2 = 0.0;
-    }
-    else {
-      asf->a0 = rdr.a[0];
-      asf->a1 = rdr.a[1];
-      asf->a2 = rdr.a[2];
-    }
-
-    if (ceos->product == SLC && ceos->sensor == ERS &&
-        meta->general->radiometry > r_AMP &&
-        meta->general->radiometry < r_POWER)
-    {
-      asfPrintStatus("Applying calibration adjustment of x1.3 for SLC data.\n");
-      asf->a1 *= 1.3;
-    }
-
-    // grab the noise vector
-    for (kk=0; kk<256; ++kk)
-      asf->noise[kk] = rdr.noise[kk];
-    asf->sample_count = meta->general->sample_count;
-  }
-  else if ((strncmp(facilityStr, "ASF", 3) == 0 &&
-        strncmp(dssr.sys_id, "FOCUS", 5) == 0) ||
-       (strncmp(facilityStr, "CDPF", 4) == 0 ||
-        strncmp(facilityStr, "RSI", 3) == 0 ||
-        ((strncmp(facilityStr, "CSTARS", 6) == 0 ||
-	  strncmp(facilityStr, "TRNS", 4) == 0) &&
-         strncmp(dssr.mission_id, "RSAT", 4) == 0))) {
-    // Radarsat style calibration
-    rsat_cal_params *rsat =
-      (rsat_cal_params *) MALLOC(sizeof(rsat_cal_params));
-    meta->calibration->type = rsat_cal;
-    meta->calibration->rsat = rsat;
-    rsat->slc = FALSE;
-    rsat->focus = FALSE;
-    if (strncmp(dssr.product_type, "SLANT RANGE COMPLEX", 19) == 0 ||
-    strncmp(dssr.product_type,
-        "SPECIAL PRODUCT(SINGL-LOOK COMP)", 32) == 0) {
-      rsat->slc = TRUE;
-    }
-    if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
-      rsat->focus = TRUE;
-
-    // Read lookup up table from radiometric data record
-    struct RSI_VRADDR radr;
-    get_rsi_raddr(sarName, &radr);
-    rsat->n = radr.n_samp;
-    //rsat->lut = (double *) MALLOC(sizeof(double) * rsat->n);
-    for (ii=0; ii<rsat->n; ii++) {
-      if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
-    rsat->lut[ii] = radr.lookup_tab[0];
-      else
-    rsat->lut[ii] = radr.lookup_tab[ii];
-    }
-    rsat->samp_inc = radr.samp_inc;
-    rsat->a3 = radr.offset;
-
-  }
-  else if (strncmp(facilityStr, "ES", 2)      == 0 ||
-           strncmp(facilityStr, "D-PAF", 5)   == 0 ||
-           strncmp(facilityStr, "I-PAF", 2)   == 0 ||
-           strncmp(facilityStr, "Beijing", 7) == 0 ||
-           (strncmp(facilityStr, "CSTARS", 6) == 0 &&
-            (strncmp(dssr.mission_id, "E", 1) == 0 ||
-             strncmp(dssr.mission_id, "J", 1) == 0))
-          )
-    {
-    // ESA style calibration
-    esa_cal_params *esa = (esa_cal_params *) MALLOC(sizeof(esa_cal_params));
-    meta->calibration->type = esa_cal;
-    meta->calibration->esa = esa;
-
-    // Read calibration coefficient and reference incidence angle
-    struct ESA_FACDR facdr;
-    get_esa_facdr(sarName, &facdr);
-    esa->k = facdr.abs_cal_const;
-    esa->ref_incid = dssr.incident_ang;
-  }
-  else if (strncmp(facilityStr, "EOC", 3) == 0) {
-    // ALOS processor
-    struct alos_rad_data_rec ardr; // ALOS Radiometric Data record
-    alos_cal_params *alos =
-      (alos_cal_params *) MALLOC(sizeof(alos_cal_params));
-    meta->calibration->type = alos_cal;
-    meta->calibration->alos = alos;
-
-    // Determine beam mode
-    int beam = dssr.ant_beam_num;
-    int beam_count = dssr.nchn;
-    if (beam >= 0 && beam <= 35 && beam_count == 2)
-      beam += 36; // actually dual-pol data (HH+HV or VV+VH)
-    else if (beam == 3 && beam_count == 4)
-      beam = 127; // actually PLR 21.5
-    else if (beam_count == 1 && dssr.product_id[3] == 'S') {
-      // some fine backwards engineering here to figure out the correct beam
-      // number - off nadir angle and processing bandwidth required
-      // don't care for the HH versus VV at the moment
-      if (dssr.off_nadir_angle < 25.0) {
-	if (dssr.bnd_rng < 20000.0)
-	  beam = 72; // WB1 HH3scan
-	else
-	  beam = 73; // WB2 HH3scan
-      }
-      else if (dssr.off_nadir_angle > 25.0 && dssr.off_nadir_angle < 26.0) {
-	if (dssr.off_nadir_angle < 25.0) {
-	  if (dssr.bnd_rng < 20000.0)
-	    beam = 76; // WB1 HH4scan
-	  else
-	    beam = 77; // WB2 HH4scan
-	}
+    if (strncmp(facilityStr , "ASF"  , 3) == 0 &&
+	strncmp(processorStr, "FOCUS", 5) != 0 &&
+	((meta->projection && meta->projection->type == SCANSAR_PROJECTION) ||
+	 (meta->projection &&
+	  (strcmp_case(meta->general->mode, "SWA") == 0 || 
+	   strcmp_case(meta->general->mode, "SWB") == 0))
+	 )
+	) {
+      // ASF internal processor (PP or SSP), ScanSar data
+      asf_scansar_cal_params *asf = MALLOC(sizeof(asf_scansar_cal_params));
+      meta->calibration->type = asf_scansar_cal;
+      meta->calibration->asf_scansar = asf;
+      
+      // Get values for calibration coefficients and LUT
+      struct VRADDR rdr; // Radiometric data record
+      get_raddr(sarName, &rdr);
+      
+      // hardcodings for not-yet-calibrated fields
+      if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
+	asf->a0 = 1.1E4;
+	asf->a1 = 2.2E-5;
+	asf->a2 = 0.0;
       }
       else {
-	if (dssr.bnd_rng < 20000.0)
-	  beam = 80; // WB1 HH5scan
+	asf->a0 = rdr.a[0];
+	asf->a1 = rdr.a[1];
+	asf->a2 = rdr.a[2];
+      }
+      
+      // Set the Noise Correction Vector to correct version
+      if (strncmp(dssr.cal_params_file,"SSPSWB010.CALPARMS",18)==0) {
+	asfPrintStatus("\n   Substituting hardcoded noise vector sspswb010\n");
+	noise = sspswb010_noise_vec;
+      }
+      else if (strncmp(dssr.cal_params_file,"SSPSWB011.CALPARMS",18)==0) {
+	asfPrintStatus("\n   Substituting hardcoded noise vector sspswb011\n");
+	noise = sspswb011_noise_vec;
+      }
+      else if (strncmp(dssr.cal_params_file,"SSPSWB013.CALPARMS",18)==0) {
+	asfPrintStatus("\n   Substituting hardcoded noise vector sspswb013\n");
+	noise = sspswb013_noise_vec;
+      }
+      else if (strncmp(dssr.cal_params_file,"SSPSWB014.CALPARMS",18)==0) {
+	asfPrintStatus("\n   Substituting hardcoded noise vector sspswb014\n");
+	noise = sspswb014_noise_vec;
+      }
+      else if (strncmp(dssr.cal_params_file,"SSPSWB015.CALPARMS",18)==0) {
+	asfPrintStatus("\n   Substituting hardcoded noise vector sspswb015\n");
+	noise = sspswb015_noise_vec;
+      }
+      else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
+	asfPrintStatus("\n   Substituting hardcoded noise vector sspswb016\n");
+	noise = sspswb015_noise_vec;
+	// 16 and 15 were identical antenna patterns, only metadata fields were
+	// changed, so the noise vector for 16 is the same and that for 15. JBN
+      }
+      else
+	noise = rdr.noise;
+      
+      for (kk=0; kk<256; ++kk)
+	asf->noise[kk] = noise[kk];
+      
+    }
+    else if (strncmp(facilityStr, "ASF", 3)== 0 &&
+	     strncmp(processorStr, "FOCUS", 5) != 0) {
+      // ASF internal processor (PP or SSP) (non-Scansar)
+      asf_cal_params *asf = (asf_cal_params *) MALLOC(sizeof(asf_cal_params));
+      meta->calibration->type = asf_cal;
+      meta->calibration->asf = asf;
+      
+      // Get values for calibration coefficients and LUT
+      struct VRADDR rdr; // Radiometric data record
+      get_raddr(sarName, &rdr);
+      
+      // hardcodings for not-yet-calibrated fields
+      if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
+	asf->a0 = 1.1E4;
+	asf->a1 = 2.2E-5;
+	asf->a2 = 0.0;
+      }
+      else {
+	asf->a0 = rdr.a[0];
+	asf->a1 = rdr.a[1];
+	asf->a2 = rdr.a[2];
+      }
+      
+      if (ceos->product == SLC && ceos->sensor == ERS &&
+	  meta->general->radiometry > r_AMP &&
+	  meta->general->radiometry < r_POWER) {
+	asfPrintStatus("Applying calibration adjustment of x1.3 for SLC data."
+		       "\n");
+	asf->a1 *= 1.3;
+      }
+      
+      // grab the noise vector
+      for (kk=0; kk<256; ++kk)
+	asf->noise[kk] = rdr.noise[kk];
+      asf->sample_count = meta->general->sample_count;
+    }
+    else if ((strncmp(facilityStr, "ASF", 3) == 0 &&
+	      strncmp(dssr.sys_id, "FOCUS", 5) == 0) ||
+	     (strncmp(facilityStr, "CDPF", 4) == 0 ||
+	      strncmp(facilityStr, "RSI", 3) == 0 ||
+	      ((strncmp(facilityStr, "CSTARS", 6) == 0 ||
+		strncmp(facilityStr, "TRNS", 4) == 0) &&
+	       strncmp(dssr.mission_id, "RSAT", 4) == 0))) {
+      // Radarsat style calibration
+      rsat_cal_params *rsat =
+	(rsat_cal_params *) MALLOC(sizeof(rsat_cal_params));
+      meta->calibration->type = rsat_cal;
+      meta->calibration->rsat = rsat;
+      rsat->slc = FALSE;
+      rsat->focus = FALSE;
+      if (strncmp(dssr.product_type, "SLANT RANGE COMPLEX", 19) == 0 ||
+	  strncmp(dssr.product_type,
+		  "SPECIAL PRODUCT(SINGL-LOOK COMP)", 32) == 0) {
+	rsat->slc = TRUE;
+      }
+      if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
+	rsat->focus = TRUE;
+      
+      // Read lookup up table from radiometric data record
+      struct RSI_VRADDR radr;
+      get_rsi_raddr(sarName, &radr);
+      rsat->n = radr.n_samp;
+      //rsat->lut = (double *) MALLOC(sizeof(double) * rsat->n);
+      for (ii=0; ii<rsat->n; ii++) {
+	if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
+	  rsat->lut[ii] = radr.lookup_tab[0];
 	else
-	  beam = 81; // WB2 HH5scan
+	  rsat->lut[ii] = radr.lookup_tab[ii];
+      }
+      rsat->samp_inc = radr.samp_inc;
+      rsat->a3 = radr.offset;
+      
+    }
+    else if (strncmp(facilityStr, "ES", 2)      == 0 ||
+	     strncmp(facilityStr, "D-PAF", 5)   == 0 ||
+	     strncmp(facilityStr, "I-PAF", 2)   == 0 ||
+	     strncmp(facilityStr, "Beijing", 7) == 0 ||
+	     (strncmp(facilityStr, "CSTARS", 6) == 0 &&
+	      (strncmp(dssr.mission_id, "E", 1) == 0 ||
+	       strncmp(dssr.mission_id, "J", 1) == 0))
+	     ) {
+      // ESA style calibration
+      esa_cal_params *esa = (esa_cal_params *) MALLOC(sizeof(esa_cal_params));
+      meta->calibration->type = esa_cal;
+      meta->calibration->esa = esa;
+      
+      // Read calibration coefficient and reference incidence angle
+      struct ESA_FACDR facdr;
+      get_esa_facdr(sarName, &facdr);
+      esa->k = facdr.abs_cal_const;
+      esa->ref_incid = dssr.incident_ang;
+    }
+    else if (strncmp(facilityStr, "EOC", 3) == 0) {
+      // ALOS processor
+      struct alos_rad_data_rec ardr; // ALOS Radiometric Data record
+      alos_cal_params *alos =
+	(alos_cal_params *) MALLOC(sizeof(alos_cal_params));
+      meta->calibration->type = alos_cal;
+      meta->calibration->alos = alos;
+      
+      // Determine beam mode
+      int beam = dssr.ant_beam_num;
+      int beam_count = dssr.nchn;
+      if (beam >= 0 && beam <= 35 && beam_count == 2)
+	beam += 36; // actually dual-pol data (HH+HV or VV+VH)
+      else if (beam == 3 && beam_count == 4)
+	beam = 127; // actually PLR 21.5
+      else if (beam_count == 1 && dssr.product_id[3] == 'S') {
+	// some fine backwards engineering here to figure out the correct beam
+	// number - off nadir angle and processing bandwidth required
+	// don't care for the HH versus VV at the moment
+	if (dssr.off_nadir_angle < 25.0) {
+	  if (dssr.bnd_rng < 20000.0)
+	    beam = 72; // WB1 HH3scan
+	  else
+	    beam = 73; // WB2 HH3scan
+	}
+	else if (dssr.off_nadir_angle > 25.0 && dssr.off_nadir_angle < 26.0) {
+	  if (dssr.off_nadir_angle < 25.0) {
+	    if (dssr.bnd_rng < 20000.0)
+	      beam = 76; // WB1 HH4scan
+	    else
+	      beam = 77; // WB2 HH4scan
+	  }
+	}
+	else {
+	  if (dssr.bnd_rng < 20000.0)
+	    beam = 80; // WB1 HH5scan
+	  else
+	    beam = 81; // WB2 HH5scan
+	}
+      }
+      
+      // Reading calibration coefficient
+      get_ardr(sarName, &ardr);
+      if (strncmp(dssr.lev_code, "1.1", 3) == 0) { // SLC
+	// HH polarization
+	if ((beam >=   0 && beam <=  17) || // FBS HH polarization
+	    (beam >=  36 && beam <=  53) || // FBD HH+HV polarization
+	    (beam >=  72 && beam <=  73) || // WB  HH3scan
+	    (beam >=  76 && beam <=  77) || // WB  HH4scan
+	    (beam >=  80 && beam <=  81) || // WB  HH5scan
+	    (beam >=  84 && beam <= 101) || // DSN HH polarization
+	    (beam >= 120 && beam <= 131))   // PLR
+	  alos->cf_hh = ardr.calibration_factor - 32;
+	else
+	  alos->cf_hh = MAGIC_UNSET_DOUBLE;
+	// HV polarization
+	if ((beam >=  36 && beam <=  53) || // FBD HH+HV polarization
+	    (beam >= 120 && beam <= 131))   // PLR
+	  alos->cf_hv = ardr.calibration_factor - 32;
+	else
+	  alos->cf_hv = MAGIC_UNSET_DOUBLE;
+	// VH polarization
+	if ((beam >=  54 && beam <=  71) || // FBD VV+VH polarization
+	    (beam >= 120 && beam <= 131))   // PLR
+	  alos->cf_vh = ardr.calibration_factor - 32;
+	else
+	  alos->cf_vh = MAGIC_UNSET_DOUBLE;
+	// VV polarization
+	if ((beam >=  18 && beam <=  35) || // FBS VV polarization
+	    (beam >=  54 && beam <=  71) || // FBD VV+VH polarization
+	    (beam >=  74 && beam <=  75) || // WB  VV3scan
+	    (beam >=  78 && beam <=  79) || // WB  VV4scan
+	    (beam >=  82 && beam <=  83) || // WB  VV5scan
+	    (beam >= 102 && beam <= 119) || // DSN VV polarization
+	    (beam >= 120 && beam <= 131))   // PLR
+	  alos->cf_vv = ardr.calibration_factor - 32;
+	else
+	  alos->cf_vv = MAGIC_UNSET_DOUBLE;
+      }
+      else if (strncmp(dssr.lev_code, "1.5", 3) == 0) { // regular detected
+	// HH polarization
+	if ((beam >=   0 && beam <=  17) || // FBS HH polarization
+	    (beam >=  36 && beam <=  53) || // FBD HH+HV polarization
+	    (beam >=  72 && beam <=  73) || // WB  HH3scan
+	    (beam >=  76 && beam <=  77) || // WB  HH4scan
+	    (beam >=  80 && beam <=  81) || // WB  HH5scan
+	    (beam >=  84 && beam <= 101) || // DSN HH polarization
+	    (beam >= 120 && beam <= 131))   // PLR
+	  alos->cf_hh = ardr.calibration_factor;
+	else
+	  alos->cf_hh = MAGIC_UNSET_DOUBLE;
+	// HV polarization
+	if ((beam >=  36 && beam <=  53) || // FBD HH+HV polarization
+	    (beam >= 120 && beam <= 131))   // PLR
+	  alos->cf_hv = ardr.calibration_factor;
+	else
+	  alos->cf_hv = MAGIC_UNSET_DOUBLE;
+	// VH polarization
+	if ((beam >=  54 && beam <=  71) || // FBD VV+VH polarization
+	    (beam >= 120 && beam <= 131))   // PLR
+	  alos->cf_vh = ardr.calibration_factor;
+	else
+	  alos->cf_vh = MAGIC_UNSET_DOUBLE;
+	// VV polarization
+	if ((beam >=  18 && beam <=  35) || // FBS VV polarization
+	    (beam >=  54 && beam <=  71) || // FBD VV+VH polarization
+	    (beam >=  74 && beam <=  75) || // WB  VV3scan
+	    (beam >=  78 && beam <=  79) || // WB  VV4scan
+	    (beam >=  82 && beam <=  83) || // WB  VV5scan
+	    (beam >= 102 && beam <= 119) || // DSN VV polarization
+	    (beam >= 120 && beam <= 131))   // PLR
+	  alos->cf_vv = ardr.calibration_factor;
+	else
+	  alos->cf_vv = MAGIC_UNSET_DOUBLE;
+      }
+      
+      // Check on processor version
+      // Prior to processor version 9.02 some calibration parameters have been
+      // determined again.
+      double version;
+      if (!get_alos_processor_version(inSAR, &version))
+	asfReport(level, "Could not find workreport file!\n"
+		  "Calibration parameters applied to the data might be "
+		  "inaccurate!\n");
+      else if (version < 9.02) {
+	char str[512];
+	
+	switch (beam)
+	  {
+	  case 0: 
+	    alos->cf_hh = -83.16; // FBS  9.9 HH
+	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    recalibration(str, level);
+	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	      alos->cf_hh -= 32;
+	    break;
+	  case 3:
+	    alos->cf_hh = -83.55; // FBS 21.5 HH
+	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    recalibration(str, level);
+	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	      alos->cf_hh -= 32;
+	    break;
+	  case 7:
+	    alos->cf_hh = -83.40; // FBS 34.3 HH
+	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    recalibration(str, level);
+	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	      alos->cf_hh -= 32;
+	    break;
+	  case 10:
+	    alos->cf_hh = -83.65; // FBS 41.5 HH
+	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    recalibration(str, level);
+	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	      alos->cf_hh -= 32;
+	    break;
+	  case 35:
+	    alos->cf_hh = -83.30; // FBS 50.8 HH
+	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    recalibration(str, level);
+	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
+	      alos->cf_hh -= 32;
+	    break;
+	  case 43:
+	    alos->cf_hh = -83.20; // FBD 34.3 HH
+	    alos->cf_hv = -80.20; // FBD 34.3 HV
+	    sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
+	    recalibration(str, level);
+	    if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
+	      alos->cf_hh -= 32;
+	      alos->cf_hv -= 32;
+	    }
+	    break;
+	  case 46:
+	    alos->cf_hh = -83.19; // FBD 41.5 HH
+	    alos->cf_hv = -80.19; // FBD 41.5 HV
+	    sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
+	    recalibration(str, level);
+	    if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
+	      alos->cf_hh -= 32;
+	      alos->cf_hv -= 32;
+	    }
+	    break;
+	  case 127:
+	    alos->cf_hh = -83.40; // PLR 21.5 HH
+	    alos->cf_hv = -83.40; // PLR 21.5 HV
+	    alos->cf_vh = -83.40; // PLR 21.5 VH
+	    alos->cf_vv = -83.40; // PLR 21.5 VV
+	    sprintf(str, "HH: %.2lf\nHV: %.2lf\nVH: %.2lf\nVV: %.2lf", 
+		    alos->cf_hh, alos->cf_hv, alos->cf_vh, alos->cf_vv);
+	    recalibration(str, level);
+	    if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
+	      alos->cf_hh -= 32;
+	      alos->cf_hv -= 32;
+	      alos->cf_vh -= 32;
+	      alos->cf_vv -= 32;
+	    }
+	    break;
+	  }
       }
     }
+  }
+  else if (isTerrasar(sarName, &error)) {
+    // TSX style calibration
+    tsx_cal_params *tsx = (tsx_cal_params *) MALLOC(sizeof(tsx_cal_params));
+    meta->calibration->type = tsx_cal;
+    meta->calibration->tsx = tsx;
 
-    // Reading calibration coefficient
-    get_ardr(sarName, &ardr);
-    if (strncmp(dssr.lev_code, "1.1", 3) == 0) { // SLC
-      // HH polarization
-      if ((beam >=   0 && beam <=  17) || // FBS HH polarization
-	  (beam >=  36 && beam <=  53) || // FBD HH+HV polarization
-	  (beam >=  72 && beam <=  73) || // WB  HH3scan
-	  (beam >=  76 && beam <=  77) || // WB  HH4scan
-	  (beam >=  80 && beam <=  81) || // WB  HH5scan
-	  (beam >=  84 && beam <= 101) || // DSN HH polarization
-	  (beam >= 120 && beam <= 131))   // PLR
-	alos->cf_hh = ardr.calibration_factor - 32;
-      else
-	alos->cf_hh = MAGIC_UNSET_DOUBLE;
-      // HV polarization
-      if ((beam >=  36 && beam <=  53) || // FBD HH+HV polarization
-	  (beam >= 120 && beam <= 131))   // PLR
-	alos->cf_hv = ardr.calibration_factor - 32;
-      else
-	alos->cf_hv = MAGIC_UNSET_DOUBLE;
-      // VH polarization
-      if ((beam >=  54 && beam <=  71) || // FBD VV+VH polarization
-	  (beam >= 120 && beam <= 131))   // PLR
-	alos->cf_vh = ardr.calibration_factor - 32;
-      else
-	alos->cf_vh = MAGIC_UNSET_DOUBLE;
-      // VV polarization
-      if ((beam >=  18 && beam <=  35) || // FBS VV polarization
-	  (beam >=  54 && beam <=  71) || // FBD VV+VH polarization
-	  (beam >=  74 && beam <=  75) || // WB  VV3scan
-	  (beam >=  78 && beam <=  79) || // WB  VV4scan
-	  (beam >=  82 && beam <=  83) || // WB  VV5scan
-	  (beam >= 102 && beam <= 119) || // DSN VV polarization
-	  (beam >= 120 && beam <= 131))   // PLR
-	alos->cf_vv = ardr.calibration_factor - 32;
-      else
-	alos->cf_vv = MAGIC_UNSET_DOUBLE;
-    }
-    else if (strncmp(dssr.lev_code, "1.5", 3) == 0) { // regular detected
-      // HH polarization
-      if ((beam >=   0 && beam <=  17) || // FBS HH polarization
-	  (beam >=  36 && beam <=  53) || // FBD HH+HV polarization
-	  (beam >=  72 && beam <=  73) || // WB  HH3scan
-	  (beam >=  76 && beam <=  77) || // WB  HH4scan
-	  (beam >=  80 && beam <=  81) || // WB  HH5scan
-	  (beam >=  84 && beam <= 101) || // DSN HH polarization
-	  (beam >= 120 && beam <= 131))   // PLR
-	alos->cf_hh = ardr.calibration_factor;
-      else
-	alos->cf_hh = MAGIC_UNSET_DOUBLE;
-      // HV polarization
-      if ((beam >=  36 && beam <=  53) || // FBD HH+HV polarization
-	  (beam >= 120 && beam <= 131))   // PLR
-	alos->cf_hv = ardr.calibration_factor;
-      else
-	alos->cf_hv = MAGIC_UNSET_DOUBLE;
-      // VH polarization
-      if ((beam >=  54 && beam <=  71) || // FBD VV+VH polarization
-	  (beam >= 120 && beam <= 131))   // PLR
-	alos->cf_vh = ardr.calibration_factor;
-      else
-	alos->cf_vh = MAGIC_UNSET_DOUBLE;
-      // VV polarization
-      if ((beam >=  18 && beam <=  35) || // FBS VV polarization
-	  (beam >=  54 && beam <=  71) || // FBD VV+VH polarization
-	  (beam >=  74 && beam <=  75) || // WB  VV3scan
-	  (beam >=  78 && beam <=  79) || // WB  VV4scan
-	  (beam >=  82 && beam <=  83) || // WB  VV5scan
-	  (beam >= 102 && beam <= 119) || // DSN VV polarization
-	  (beam >= 120 && beam <= 131))   // PLR
-	alos->cf_vv = ardr.calibration_factor;
-      else
-	alos->cf_vv = MAGIC_UNSET_DOUBLE;
-    }
-
-    // Check on processor version
-    // Prior to processor version 9.02 some calibration parameters have been
-    // determined again.
-    double version;
-    if (!get_alos_processor_version(inSAR, &version))
-      asfReport(level, "Could not find workreport file!\n"
-		"Calibration parameters applied to the data might be "
-		"inaccurate!\n");
-    else if (version < 9.02) {
-      char str[512];
-      
-      switch (beam)
-	{
-	case 0: 
-	  alos->cf_hh = -83.16; // FBS  9.9 HH
-	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str, level);
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
-	    alos->cf_hh -= 32;
-	  break;
-	case 3:
-	  alos->cf_hh = -83.55; // FBS 21.5 HH
-	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str, level);
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
-	    alos->cf_hh -= 32;
-	  break;
-	case 7:
-	  alos->cf_hh = -83.40; // FBS 34.3 HH
-	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str, level);
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
-	    alos->cf_hh -= 32;
-	  break;
-	case 10:
-	  alos->cf_hh = -83.65; // FBS 41.5 HH
-	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str, level);
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
-	    alos->cf_hh -= 32;
-	  break;
-	case 35:
-	  alos->cf_hh = -83.30; // FBS 50.8 HH
-	  sprintf(str, "HH: %.2lf\n", alos->cf_hh);
-	  recalibration(str, level);
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0)
-	    alos->cf_hh -= 32;
-	  break;
-	case 43:
-	  alos->cf_hh = -83.20; // FBD 34.3 HH
-	  alos->cf_hv = -80.20; // FBD 34.3 HV
-	  sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
-	  recalibration(str, level);
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
-	    alos->cf_hh -= 32;
-	    alos->cf_hv -= 32;
-	  }
-	  break;
-	case 46:
-	  alos->cf_hh = -83.19; // FBD 41.5 HH
-	  alos->cf_hv = -80.19; // FBD 41.5 HV
-	  sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
-	  recalibration(str, level);
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
-	    alos->cf_hh -= 32;
-	    alos->cf_hv -= 32;
-	  }
-	  break;
-	case 127:
-	  alos->cf_hh = -83.40; // PLR 21.5 HH
-	  alos->cf_hv = -83.40; // PLR 21.5 HV
-	  alos->cf_vh = -83.40; // PLR 21.5 VH
-	  alos->cf_vv = -83.40; // PLR 21.5 VV
-	  sprintf(str, "HH: %.2lf\nHV: %.2lf\nVH: %.2lf\nVV: %.2lf", 
-		  alos->cf_hh, alos->cf_hv, alos->cf_vh, alos->cf_vv);
-	  recalibration(str, level);
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
-	    alos->cf_hh -= 32;
-	    alos->cf_hv -= 32;
-	    alos->cf_vh -= 32;
-	    alos->cf_vv -= 32;
-	  }
-	  break;
-	}
-    }
+    terrasar_meta *terrasar = read_terrasar_meta(sarName);
+    tsx->k = terrasar->cal_factor; // calibration factor in beta naught
+    FREE(terrasar);
   }
   else
     // should never get here
@@ -767,7 +777,6 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
   }
   else if (meta->calibration->type == alos_cal) { // ALOS data
 
-
     if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
       invIncAngle = 1.0;
     else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
@@ -787,6 +796,18 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       cf = p->cf_vv;
     
     scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
+  }
+  else if (meta->calibration->type == tsx_cal) { // TerraSAR-X data
+
+    if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      invIncAngle = 1.0;
+    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      invIncAngle = 1/tan(incidence_angle);
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
+      invIncAngle = tan(incidence_angle);
+
+    double cf = meta->calibration->tsx->k;
+    scaledPower = cf*inDn*inDn*invIncAngle;
   }
   else
     // should never get here
@@ -911,6 +932,13 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
     
     //scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
     calValue = sqrt(sigma * radCorr / pow(10, cf/10.0));
+  }
+  else if (meta->calibration->type == tsx_cal) {
+
+    invIncAngle = 1/tan(incid);
+    double cf = meta->calibration->tsx->k;
+    //scaledPower = cf*inDn*inDn*invIncAngle;
+    calValue = sqrt(sigma * radCorr / (cf*invIncAngle));
   }
 
   return calValue;
@@ -1053,6 +1081,19 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
     
     //scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
     ampValue = sqrt(scaledPower / invIncAngle / pow(10, cf/10.0));
+  }
+  else if (meta->calibration->type == tsx_cal) { // TerraSAR-X
+
+    if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      invIncAngle = 1.0;
+    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      invIncAngle = 1/tan(incid);
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
+      invIncAngle = tan(incid);
+
+    double cf = meta->calibration->tsx->k;
+    //scaledPower = cf*inDn*inDn*invIncAngle;
+    ampValue = sqrt(scaledPower / (cf*invIncAngle));
   }
   else
     // should never get here

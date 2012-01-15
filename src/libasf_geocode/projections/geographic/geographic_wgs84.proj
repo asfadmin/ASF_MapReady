@@ -1,0 +1,5 @@
+[Geographic]
+Area = World
+Datum = WGS84
+Spheroid = WGS84
+

@@ -102,7 +102,13 @@ int meta_get_latLon(meta_parameters *meta,
                   meta->general->sample_scaling * xSample;
     }
     uavsar_to_latlon(meta, s, l, elev, lat, lon);
-    return 0;
+  }
+  else if (meta->latlon) {
+    int nLine = (int)(yLine + 0.5);
+    int nSample = (int)(xSample + 0.5);
+    int sample_count = meta->general->sample_count;
+    *lat = meta->latlon->lat[nLine*sample_count + nSample];
+    *lon = meta->latlon->lon[nLine*sample_count + nSample];
   }
   else if (meta->transform) {
       /* ALOS data (not projected) -- use transform block */
@@ -252,6 +258,43 @@ static int get_error(meta_parameters *meta,
   return 0;
 }
 
+static int get_error_ext(meta_parameters *meta,
+			 lat_lon target, double elev,
+			 double old_xSamp, double old_yLine,
+			 double xSamp, double yLine, double *error)
+{
+  lat_lon old, bound, new;
+  int err;
+  err = meta_get_latLon(meta,old_yLine,old_xSamp,elev,&old.lat,&old.lon);
+  if (err)
+    return err;
+  /*
+  printf("old: x=%.1lf; y=%.1f; lat=%.4lf, lon=%.4lf\n",
+	 old_yLine, old_xSamp, old.lat, old.lon);
+  printf("new: x=%.1lf; y=%.1lf\n", xSamp, yLine);
+  */
+  int div=2;
+  double xBound, yBound;
+  xBound = old_xSamp + (xSamp - old_xSamp)/2;
+  yBound = old_yLine + (yLine - old_yLine)/2;
+  while (xBound < 0 || xBound >= meta->general->sample_count ||
+	 yBound < 0 || yBound >= meta->general->line_count) {
+    div *= 2;
+    xBound = old_xSamp + (xSamp - old_xSamp)/div;
+    yBound = old_yLine + (yLine - old_yLine)/div;
+    if (div > 1000)
+      return 1;
+  }
+  //printf("bound: x=%.1lf, y=%.1lf, div=%d\n", xBound, yBound, div);
+  err = meta_get_latLon(meta,yBound,xBound,elev,&bound.lat,&bound.lon);
+  if (err)
+    return err;
+  new.lat = old.lat + (bound.lat - old.lat)*div;
+  new.lon = old.lon + (bound.lon - old.lon)*div;
+  *error = get_distance(new,target);
+  return 0;
+}
+
 /******************************************************************
  * meta_get_lineSamp:
  * Converts given latitude and longitude back to the original line
@@ -274,25 +317,26 @@ static int meta_get_lineSamp_imp(meta_parameters *meta,
 
   target.lat = lat;
   target.lon = lon;
+  //printf("delta: %lf, tolerance: %lf\n", DELTA, tolerance);
   while (fabs(x-x_old)+fabs(y-y_old)>DELTA*tolerance)
   {
     double cur_err, tmp, del_x, del_y, rad;
 
     err = get_error(meta,target,elev,x,y,&cur_err);
-//printf("%lf, err=%d\n", cur_err, err);
+    //printf("%lf, err=%d\n", cur_err, err);
     if (err)
       return err;
-
+    
     get_error(meta,target,elev,x+DELTA,y,&tmp);
     del_x = (tmp-cur_err)/DELTA;
-
+    
     get_error(meta,target,elev,x,y+DELTA,&tmp);
     del_y = (tmp-cur_err)/DELTA;
-
+    
     rad = fabs(del_x) + fabs(del_y);
-
-//printf("iter %d: x=%6.1f; y=%6.1f, cur_err=%.6f\n",iter,x,y,cur_err);
-
+    
+    //printf("iter %d: x=%6.1f; y=%6.1f, cur_err=%.6f\n",iter,x,y,cur_err);
+    
     x_old = x;
     y_old = y;
     dx = (fabs(del_x)/rad)*cur_err/del_x;
@@ -323,6 +367,88 @@ double meta_get_lineSamp_tolerance()
   return tolerance;
 }
 
+static int compare_diffs(const latlon_pixel *a, const latlon_pixel *b)
+{
+  if ((*a).diff  > (*b).diff)
+    return 1;
+  else if (FLOAT_EQUIVALENT((*a).diff, (*b).diff))
+    return 0;
+  else
+    return -1;
+}
+
+static int point_poly(float *vertX, float *vertY, float testX, float testY)
+{
+  int i, j, c=0;
+  for (i=0, j=3; i<4; j=i++) {
+    if (((vertY[i]>testY) != (vertY[j]>testY)) &&
+	 (testX<(vertX[j]-vertX[i])*(testY-vertY[i])/
+	  (vertY[j]-vertY[i])+vertX[i]))
+      c = !c;
+  }
+  return c;
+}
+
+static void boundary(int line, int sample, int lScale, int sScale, 
+		     meta_parameters *meta, float *lats, float *lons, 
+		     latlon_pixel *corner)
+{
+  int ns = meta->general->sample_count;
+  int nl = meta->general->line_count;
+  int minLine = line - lScale - 1;
+  int maxLine = line + lScale + 1;
+  int minSample = sample - sScale - 1;
+  int maxSample = sample + sScale + 1;
+  if (minLine < 0)
+    minLine = 0;
+  if (maxLine > nl-1)
+    maxLine = nl - 1;
+  if (minSample < 0)
+    minSample = 0;
+  if (maxSample > ns-1)
+    maxSample = ns - 1;
+  lats[0] = meta->latlon->lat[minLine*ns+minSample];
+  lons[0] = meta->latlon->lon[minLine*ns+minSample];
+  lats[1] = meta->latlon->lat[minLine*ns+maxSample];
+  lons[1] = meta->latlon->lon[minLine*ns+maxSample];
+  lats[2] = meta->latlon->lat[maxLine*ns+maxSample];
+  lons[2] = meta->latlon->lon[maxLine*ns+maxSample];
+  lats[3] = meta->latlon->lat[maxLine*ns+minSample];
+  lons[3] = meta->latlon->lon[maxLine*ns+minSample];
+  corner[0].line = minLine;
+  corner[0].sample = minSample;
+  corner[1].line = minLine;
+  corner[1].sample = maxSample;
+  corner[2].line = maxLine;
+  corner[2].sample = maxSample;
+  corner[3].line = maxLine;
+  corner[3].sample = minSample;
+}
+
+static void new_search_dims(latlon_pixel *corner, float inc, 
+			    int *newLine, int *newSample, int *scale)
+{
+  qsort(corner, 4, sizeof(latlon_pixel), compare_diffs);	
+  int dim = (int) (corner[0].diff/inc + 0.5);
+  *scale = corner[0].diff/inc/4.0;
+  if (corner[0].num == 0) {
+    *newLine = corner[0].line + dim/2;
+    *newSample = corner[0].sample + dim/2;
+  }
+  else if (corner[0].num == 1) {
+    *newLine = corner[0].line + dim/2;
+    *newSample = corner[0].sample - dim/2;
+  }
+  else if (corner[0].num == 2) {
+    *newLine = corner[0].line - dim/2;
+    *newSample = corner[0].sample - dim/2;
+  }
+  else if (corner[0].num == 3) {
+    *newLine = corner[0].line - dim/2;
+    *newSample = corner[0].sample + dim/2;
+  }
+}
+
 int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSamp)
@@ -347,6 +473,124 @@ int meta_get_lineSamp(meta_parameters *meta,
 
     *xSamp = (x - mp->startX)/mp->perX - mg->start_sample;
 
+    return 0;
+  }
+
+  if (meta->latlon) {
+    int ii, kk, lScale, sScale, foundUL, foundUR, foundLL, foundLR;
+    int converged=FALSE;
+    int minSample, maxSample, minLine, maxLine, line, sample;
+    float lats[4], lons[4], minDiff=999999, diff;
+    int ns = meta->general->sample_count;
+    int nl = meta->general->line_count;
+    float inc = meta->general->x_pixel_size / 108000.0;
+    latlon_pixel corner[4];
+    line = nl/2;
+    sample = ns/2;
+    lScale = nl/4;
+    sScale = ns/4;
+
+    while (!converged) {
+      // Upper left
+      boundary(line-lScale, sample-sScale, lScale, sScale, meta, lats, lons, 
+	       corner);
+      foundUL = point_poly(lats, lons, lat, lon);
+      if (foundUL) {
+	for (ii=0; ii<4; ii++) {
+	  corner[ii].num = ii;
+	  corner[ii].diff = fabs(lats[ii] - lat) + fabs(lons[ii] - lon);
+	}
+	new_search_dims(corner, inc, &line, &sample, &lScale);
+	sScale = lScale;
+      }
+      if (!foundUL) {
+	// Upper right
+	boundary(line-lScale, sample+sScale, lScale, sScale, meta, lats, lons, 
+		 corner);
+	foundUR = point_poly(lats, lons, lat, lon);
+	if (foundUR) {
+	  for (ii=0; ii<4; ii++) {
+	    corner[ii].num = ii;
+	    corner[ii].diff = fabs(lats[ii] - lat) + fabs(lons[ii] - lon);
+	  }
+	  new_search_dims(corner, inc, &line, &sample, &lScale);
+	  sScale = lScale;
+	}
+      }
+      if (!foundUL && !foundUR) {
+	// Lower left
+	boundary(line+lScale, sample-sScale, lScale, sScale, meta, lats, lons, 
+		 corner);
+	foundLL = point_poly(lats, lons, lat, lon);
+	if (foundLL) {
+	  for (ii=0; ii<4; ii++) {
+	    corner[ii].num = ii;
+	    corner[ii].diff = fabs(lats[ii] - lat) + fabs(lons[ii] - lon);
+	  }
+	  new_search_dims(corner, inc, &line, &sample, &lScale);
+	  sScale = lScale;
+	}
+      }
+      if (!foundUL && !foundUR && !foundLL) {
+	// Lower right
+	boundary(line+lScale, sample+sScale, lScale, sScale, meta, lats, lons, 
+		 corner);
+	foundLR = point_poly(lats, lons, lat, lon);
+	if (foundLR) {
+	  for (ii=0; ii<4; ii++) {
+	    corner[ii].num = ii;
+	    corner[ii].diff = fabs(lats[ii] - lat) + fabs(lons[ii] - lon);
+	  }
+	  new_search_dims(corner, inc, &line, &sample, &lScale);
+	  sScale = lScale;
+	}
+      }
+      if (!foundUL && !foundUR && !foundLL && !foundLR) {
+	// must be on the boundary - go expensive route
+	minDiff=9999999;
+	for (ii=0; ii<nl; ii++) {
+	  for (kk=0; kk<ns; kk++) {
+	    diff = fabs(meta->latlon->lat[ii*ns + kk] - lat) +
+	      fabs(meta->latlon->lon[ii*ns + kk] - lon);
+	    if (diff < minDiff) {
+	      minDiff = diff;
+	      *yLine = ii;
+	      *xSamp = kk;
+	    }
+	  }
+	}
+	return 0;
+      }
+      if (lScale <=2 && sScale <= 2)
+	converged = TRUE;
+    }
+
+    // Refine this approximation
+    minLine = line - 8;
+    maxLine = line + 8;
+    minSample = sample - 8;
+    maxSample = sample + 8;
+    if (minLine < 0)
+      minLine = 0;
+    if (maxLine >= nl)
+      maxLine = nl - 1;
+    if (minSample < 0)
+      minSample = 0;
+    if (maxSample >= ns)
+      maxSample = ns - 1;
+
+    minDiff=9999999;
+    for (ii=minLine; ii<maxLine; ii++) {
+      for (kk=minSample; kk<maxSample; kk++) {
+	diff = fabs(meta->latlon->lat[ii*ns + kk] - lat) +
+	  fabs(meta->latlon->lon[ii*ns + kk] - lon);
+	if (diff < minDiff) {
+	  minDiff = diff;
+	  *yLine = ii;
+	  *xSamp = kk;
+	}
+      }
+    }
     return 0;
   }
 

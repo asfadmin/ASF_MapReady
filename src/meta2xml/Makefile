@@ -8,6 +8,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	-lm
 

@@ -70,16 +70,17 @@ static int is_PolSARpro(const char *infile)
 }
 
 int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
-         int multilook_flag, int amp0_flag, input_format_t format_type,
-         char *band_id, char *data_type, char *image_data_type, char *lutName,
-         char *prcPath, double lowerLat, double upperLat,
-         int line, int sample, int width, int height, int save_intermediates,
-         double *p_range_scale, double *p_azimuth_scale,
-         double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
-         char *inMetaNameOption, char *inBaseName, char *ancillary_file,
-	 char *colormapName, char *slave_file, char *interferogram_file,
-	 char *coherence_file, char *baseline_file, char *uavsar_type,
-	 int metaonly, char *outBaseName)
+	       int multilook_flag, int amp0_flag, input_format_t format_type,
+	       char *band_id, char *data_type, char *image_data_type, 
+	       char *lutName, char *prcPath, double lowerLat, double upperLat, 
+	       double lowerLon, double upperLon, int line, int sample, 
+	       int width, int height, int save_intermediates,
+	       double *p_range_scale, double *p_azimuth_scale,
+	       double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
+	       char *inMetaNameOption, char *inBaseName, char *ancillary_file,
+	       char *colormapName, char *slave_file, char *interferogram_file,
+	       char *coherence_file, char *baseline_file, char *uavsar_type,
+	       int metaonly, char *outBaseName)
 {
   char outDataName[256], outMetaName[256];
 
@@ -123,14 +124,14 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
        radiometry == r_GAMMA ||
        radiometry == r_POWER)   &&
        !(format_type == CEOS || format_type == STF || format_type == AIRSAR ||
-	 format_type == ALOS_MOSAIC))
+	 format_type == ALOS_MOSAIC || format_type == TERRASAR))
   {
     // A power flag is on, but the input file is not CEOS or STF format
     // so it will be ignored
     asfPrintWarning("Power flags %s%s will be only accepted for the following\n"
 		    "data formats since other formats do not indicate what "
                     "type of data is in the file:\n"
-		    "CEOS, STF, AirSAR and ALOS mosaics.\n"
+		    "CEOS, TERRASAR, STF, AirSAR and ALOS mosaics.\n"
 		    "Assuming the input data is an AMPLITUDE image...\n",
                     radiometry == r_SIGMA ? "SIGMA" :
                     radiometry == r_BETA  ? "BETA"  :
@@ -241,7 +242,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == SMAP) {
     asfPrintStatus("   Data format: SMAP\n");
-    import_smap(inBaseName, outBaseName);
+    import_smap(inBaseName, outBaseName, 
+		upperLat, upperLon, lowerLat, lowerLon);
   }
   // Don't recognize this data format; report & quit
   else {

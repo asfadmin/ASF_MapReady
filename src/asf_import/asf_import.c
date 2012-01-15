@@ -22,7 +22,8 @@ following defines.
 "              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
 "              [-baseline <file>] [-line <start line subset>]\n"\
 "              [-sample <start sample subset>] [-width <subset width>]\n"\
-"              [-height <subset height>] [-uavsar <type>] [-help]\n"\
+"              [-height <subset height>] [-uavsar <type>]\n"\ 
+"              [-subset <latUL> <lonUL> <latLR> <lonLR>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -160,6 +161,9 @@ following defines.
 "        COR_GRD: ground range projected interferometric correlation\n"\
 "        HGT_GRD: ground range projected DEM\n"\
 "        ALL: all the above\n"\
+"   -subset <latUL> <lonUL> <latLR> <lonLR>\n"\
+"        Define a geographic subset with upper left and lower right corner.\n"\
+"        Only applies to SMAP data right now.\n"\
 "   -save-intermediates\n"\
 "        Save any intermediate files which may have been created during the\n"\
 "        import process.  At this time, this only applies to the ingest of \n"\
@@ -304,6 +308,7 @@ typedef enum {
     f_SLAVE,
     f_BASELINE,
     f_UAVSAR,
+    f_SUBSET,
     f_METAONLY,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
@@ -434,7 +439,7 @@ int main(int argc, char *argv[])
     char image_data_type[256]="";
     int ii;
     int flags[NUM_IMPORT_FLAGS];
-    double lowerLat=-99.0, upperLat=-99.0;
+    double lowerLat=NAN, upperLat=NAN, lowerLon=NAN, upperLon=NAN;
     int line=0, sample=0, height=-99, width=-99;
     double range_scale=NAN, azimuth_scale=NAN, correct_y_pixel_size=NAN;
     int do_resample;
@@ -488,6 +493,7 @@ int main(int argc, char *argv[])
     flags[f_SLAVE] = checkForOption("-slave", argc, argv);
     flags[f_BASELINE] = checkForOption("-baseline", argc, argv);
     flags[f_UAVSAR] = checkForOption("-uavsar", argc, argv);
+    flags[f_SUBSET] = checkForOption("-subset", argc, argv);
     flags[f_METAONLY] = checkForOption("-metaonly", argc, argv);
 
     flags[f_ANCILLARY_FILE] = checkForOption("-ancillary-file", argc, argv);
@@ -594,6 +600,8 @@ int main(int argc, char *argv[])
 	if(flags[f_SLAVE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_BASELINE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_UAVSAR] != FLAG_NOT_SET) needed_args += 2;
+	if(flags[f_SUBSET] != FLAG_NOT_SET) 
+	  needed_args += 5;
 	if(flags[f_METAONLY] != FLAG_NOT_SET) needed_args += 1;
 
         /*Make sure we have enough arguments*/
@@ -779,7 +787,13 @@ int main(int argc, char *argv[])
       uavsar_type = (char *) MALLOC(sizeof(char)*100);
       strcpy(uavsar_type, argv[flags[f_UAVSAR] + 1]);
     }
-
+    if(flags[f_SUBSET] != FLAG_NOT_SET) {
+      upperLat = strtod(argv[flags[f_SUBSET] + 1],NULL);
+      upperLon = strtod(argv[flags[f_SUBSET] + 2],NULL);
+      lowerLat = strtod(argv[flags[f_SUBSET] + 3],NULL);
+      lowerLon = strtod(argv[flags[f_SUBSET] + 4],NULL);
+    }
+    
     { /* BEGIN: Check for conflict between pixel type flags */
         char flags_used[256] = "";
         int flag_count=0;
@@ -911,6 +925,8 @@ int main(int argc, char *argv[])
       asfPrintError("For UAVSAR data the data type needs to be defined "
 		    "using the -uavsar option.\n");
     }
+    if (format_type != SMAP && flags[f_SUBSET] != FLAG_NOT_SET)
+      asfPrintError("The subset option is only valid for SMAP data!\n");
 
     if(flags[f_ANCILLARY_FILE] != FLAG_NOT_SET) {
       strcpy(ancillary_file, argv[flags[f_ANCILLARY_FILE] + 1]);
@@ -1007,9 +1023,10 @@ int main(int argc, char *argv[])
 
         asf_import(radiometry, db_flag, complex_flag, multilook_flag,
                    amp0_flag, format_type, band_id, data_type, image_data_type,
-                   lutName,prcPath, lowerLat, upperLat, line, sample,
-                   width, height, save_intermediates, p_range_scale, p_azimuth_scale,
-                   p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
+                   lutName,prcPath, lowerLat, upperLat, lowerLon, upperLon,
+		   line, sample, width, height, save_intermediates, 
+		   p_range_scale, p_azimuth_scale, p_correct_y_pixel_size, 
+		   apply_ers2_gain_fix, inMetaNameOption, inBaseName,
                    ancillary_file, colormapName, slave_file, interferogram_file,
 		   coherence_file, baseline_file, uavsar_type, metaonly,
 		   outBaseName);

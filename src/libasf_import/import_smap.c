@@ -150,6 +150,218 @@ smap_meta *read_smap_meta(const char *dataFile)
   return smap;
 }
 
+static int compare_values(const int *a, const int *b)
+{
+  int tmp = *a - *b;
+  if (tmp > 0)
+    return 1;
+  else if (tmp < 0)
+    return -1;
+  else
+    return 0;
+}
+
+static void read_smap_bounds(char *inDataName, float latUL, float lonUL,
+			     float latLR, float lonLR, int *line, int *sample,
+			     int *height, int *width)
+{
+  meta_parameters *meta = meta_read(inDataName);
+  int ns = meta->general->sample_count;
+  int nl = meta->general->line_count;
+  float *lats = (float *) MALLOC(sizeof(float)*ns*nl);
+  float *lons = (float *) MALLOC(sizeof(float)*ns*nl);
+  hid_t file, group, dataset, datatype, dataspace, memspace;
+  file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
+  group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
+  hsize_t count[2], pixels[1], offset[2];
+  offset[0] = 0;
+  offset[1] = 0;
+  count[0] = nl;
+  count[1] = ns;
+  pixels[0] = ns*nl;
+  memspace = H5Screate_simple(1, pixels, NULL);
+
+  // Latitude
+  dataset = H5Dopen(group, "cell_lat", H5P_DEFAULT);
+  datatype = H5Dget_type(dataset);
+  dataspace = H5Dget_space(dataset);
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, lats);
+  H5Tclose(datatype);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+  
+  // Longitude
+  dataset = H5Dopen(group, "cell_lon", H5P_DEFAULT);
+  datatype = H5Dget_type(dataset);
+  dataspace = H5Dget_space(dataset);
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, lons);
+  H5Tclose(datatype);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+
+  H5Sclose(memspace);
+  H5Gclose(group);
+  H5Fclose(file);
+
+  float latUR = latUL;
+  float lonUR = lonLR;
+  float latLL = latLR;
+  float lonLL = lonUL;
+  float lat, lon, diff, minUL, minUR, minLL, minLR;
+  int lines[4], samples[4];
+  minUL = minUR = minLL = minLR = 9999999;
+  // We are looking for the nearest neighbor for the moment
+  int ii, kk;
+  for (ii=0; ii<nl; ii++) {
+    for (kk=0; kk<ns; kk++) {
+      lat = lats[ii*ns+kk];
+      lon = lons[ii*ns+kk];
+      diff = fabs(lat - latUL) + fabs(lon - lonUL);
+      if (diff < minUL) {
+	minUL = diff;
+	lines[0] = ii;
+	samples[0] = kk;
+      }
+      diff = fabs(lat - latUR) + fabs(lon - lonUR);
+      if (diff < minUR) {
+	minUR = diff;
+	lines[1] = ii;
+	samples[1] = kk;
+      }
+      diff = fabs(lat - latLL) + fabs(lon - lonLL);
+      if (diff < minLL) {
+	minLL = diff;
+	lines[2] = ii;
+	samples[2] = kk;
+      }
+      diff = fabs(lat - latLR) + fabs(lon - lonLR);
+      if (diff < minLR) {
+	minLR = diff;
+	lines[3] = ii;
+	samples[3] = kk;
+      }
+    }
+  }
+  meta_free(meta);
+  qsort(lines, 4, sizeof(int), compare_values);
+  qsort(samples, 4, sizeof(int), compare_values);
+  float latSubUL = lats[lines[0]*ns+samples[0]];
+  float lonSubUL = lons[lines[0]*ns+samples[0]];
+  float latSubLR = lats[lines[3]*ns+samples[3]];
+  float lonSubLR = lons[lines[3]*ns+samples[3]];
+  if (!FLOAT_EQUIVALENT(latUL, latSubUL) || 
+      !FLOAT_EQUIVALENT(lonUL, lonSubUL) ||
+      !FLOAT_EQUIVALENT(latLR, latSubLR) ||
+      !FLOAT_EQUIVALENT(lonLR, lonSubLR)) {
+    asfPrintStatus("Subset exceeded imaged area!\nMaximum subset area:\n");
+    asfPrintStatus("Upper left - Lat: %.4lf, Lon: %.4lf\n", latSubUL, lonSubUL);
+    asfPrintStatus("Lower right - Lat: %.4lf, Lon: %.4lf\n", latSubLR, lonSubLR);
+  }
+  FREE(lats);
+  FREE(lons);
+  *line = lines[0];
+  *sample = samples[0];
+  *height = lines[3] - lines[0];
+  *width = samples[3] - samples[0];
+}
+
+static void read_smap_subset(char *dataName, int band, 
+			     char *inDataName, char *outDataName,
+			     float latUL, float lonUL, float latLR, float lonLR)
+{
+  FILE *fp;
+  meta_parameters *meta = meta_read(inDataName);
+  int line, sample, height, width;
+  read_smap_bounds(inDataName, latUL, lonUL, latLR, lonLR,
+		   &line, &sample, &height, &width);
+  hid_t file, group, dataset, dataspace, memspace;
+  file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
+  group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
+  dataset = H5Dopen(group, dataName, H5P_DEFAULT);
+  dataspace = H5Dget_space(dataset);
+  hsize_t count[2], pixels[1], offset[2];
+  int ns = meta->general->sample_count;
+  int nl = meta->general->line_count;
+  meta_get_latLon(meta, line+height/2, sample+width/2, 0.0,
+		  &meta->general->center_latitude, 
+		  &meta->general->center_longitude);
+  meta->general->sample_count = width;
+  meta->general->line_count = height;
+  meta->general->start_line = line;
+  meta->general->start_sample = sample;
+
+  // Latitude
+  offset[0] = 0;
+  offset[1] = 0;
+  count[0] = nl;
+  count[1] = ns;
+  pixels[0] = ns*nl;
+  float *lats = (float *) MALLOC(sizeof(float)*ns*nl);
+  memspace = H5Screate_simple(1, pixels, NULL);
+  dataset = H5Dopen(group, "cell_lat", H5P_DEFAULT);
+  dataspace = H5Dget_space(dataset);
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, lats);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+  
+  // Longitude
+  float *lons = (float *) MALLOC(sizeof(float)*ns*nl);
+  dataset = H5Dopen(group, "cell_lon", H5P_DEFAULT);
+  dataspace = H5Dget_space(dataset);
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, lons);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+  H5Sclose(memspace);
+  
+  // Band
+  offset[1] = sample;
+  count[0] = 1;
+  count[1] = width;
+  pixels[0] = width;
+  dataset = H5Dopen(group, dataName, H5P_DEFAULT);
+  dataspace = H5Dget_space(dataset);
+  memspace = H5Screate_simple(1, pixels, NULL);
+  float *amp = (float *) MALLOC(sizeof(float)*width);
+  if (band == 0)
+    fp = FOPEN(outDataName, "wb");
+  else
+    fp = FOPEN(outDataName, "ab");
+  asfPrintStatus("   Band: %s\n", dataName);
+  int ii, kk;
+  for (ii=line; ii<line+height; ii++) {
+    offset[0] = ii;
+    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, amp);
+    /*
+    if (strcmp_case(dataName, "cell_lat") != 0 &&
+	strcmp_case(dataName, "cell_lon") != 0) {
+      for (kk=sample; kk<sample+width; kk++) {
+	if (lats[ii*ns+kk] >= latLR && lats[ii*ns+kk] <= latUL &&
+	    lons[ii*ns+kk] >= lonUL && lons[ii*ns+kk] <= lonLR)
+	  ;
+	else
+	  amp[kk-sample] = MAGIC_UNSET_DOUBLE;
+      }
+    }
+    */
+    put_band_float_line(fp, meta, band, ii-line, amp);
+    asfLineMeter(ii-line, height);
+  }
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+  H5Sclose(memspace);
+  H5Gclose(group);
+  H5Fclose(file);
+  FCLOSE(fp);
+  FREE(amp);
+  meta_write(meta, outDataName);
+  meta_free(meta);
+}
+
 static void read_smap_data(char *dataName, int band, 
 			   char *inDataName, char *outDataName)
 {
@@ -259,50 +471,8 @@ static void read_smap_pixel(meta_parameters *meta, char *inDataName,
   H5Fclose(file);
 }
 
-/*
-static int determine_output_dimension(char *inDataName, char *dataName, 
-				      int line_count, int sample_count)
-{
-  float minValue = 9999999, maxValue = 0;
-  hid_t file, group, dataset, datatype, dataspace, memspace;
-  file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
-  group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
-  dataset = H5Dopen(group, dataName, H5P_DEFAULT);
-  datatype = H5Dget_type(dataset);
-  dataspace = H5Dget_space(dataset);
-  hsize_t count[2], line[1];
-  hssize_t offset[2];
-  offset[1] = 0;
-  count[0] = 1;
-  count[1] = sample_count;
-  line[0] = sample_count;
-  memspace = H5Screate_simple(1, line, NULL);
-  float *value = (float *) MALLOC(sizeof(float)*sample_count);
-  int ii, kk;
-  for (ii=0; ii<line_count; ii++) {
-    offset[0] = ii;
-    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, value);
-    for (kk=0; kk<sample_count; kk++) {
-      if (value[kk] < minValue)
-	minValue = value[kk];
-      else if (value[kk] > maxValue)
-	maxValue = value[kk];
-    }
-  }
-  H5Tclose(datatype);
-  H5Dclose(dataset);
-  H5Sclose(dataspace);
-  H5Sclose(memspace);
-  H5Gclose(group);
-  H5Fclose(file);
-  FREE(value);
-
-  return (int)(maxValue + 0.5);
-}
-*/
-
-void import_smap(const char *inBaseName, const char *outBaseName)
+void import_smap(const char *inBaseName, const char *outBaseName,
+		 float latUL, float lonUL, float latLR, float lonLR)
 {
   smap_meta *smap;
   meta_parameters *meta;
@@ -310,6 +480,7 @@ void import_smap(const char *inBaseName, const char *outBaseName)
   hsize_t dims[2];
   hid_t file, group, class, dataset, datatype, dataspace;
   float lat, lon;
+  int subset = FALSE;
   
   // Take care of file names
   if (!fileExists(inBaseName))
@@ -322,7 +493,11 @@ void import_smap(const char *inBaseName, const char *outBaseName)
   // Check whether the file is actually a real HDF5 data set
   if (!H5Fis_hdf5(inDataName))
     asfPrintError("File (%s) is not in HDF5 format!\n", inDataName);
-  
+
+  if (meta_is_valid_double(latUL) && meta_is_valid_double(lonUL) &&
+      meta_is_valid_double(latLR) && meta_is_valid_double(lonLR))
+    subset = TRUE;
+
   // Determine the image dimensions
   file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
   group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
@@ -348,56 +523,89 @@ void import_smap(const char *inBaseName, const char *outBaseName)
 		  meta->general->sample_count/2, &lat, &lon);
   meta->general->center_latitude = (double) lat;
   meta->general->center_longitude = (double) lon;
-  meta_write(meta, inDataName);
-
-  /*  
-  // Projection block
-  meta->projection = meta_projection_init();
-  meta->projection->perX = meta->general->x_pixel_size;
-  meta->projection->perY = -meta->general->y_pixel_size;
-  strcpy(meta->projection->units, "meters");
-  meta->projection->re_major = meta->general->re_major;
-  meta->projection->re_minor = meta->general->re_minor;
-  meta->projection->spheroid = SPHERE;
-  */  
 
   // Determine location block
   meta->location = meta_location_init();
-  read_smap_pixel(meta, inDataName, 0, 0, &lat, &lon);
-  meta->location->lat_start_near_range = (double) lat;
-  meta->location->lon_start_near_range = (double) lon;
-  read_smap_pixel(meta, inDataName, 0, meta->general->sample_count-1, 
-		  &lat, &lon);
-  meta->location->lat_start_far_range = (double) lat;
-  meta->location->lon_start_far_range = (double) lon;
-  read_smap_pixel(meta, inDataName, meta->general->line_count-1, 0, &lat, &lon);
-  meta->location->lat_end_near_range = (double) lat;
-  meta->location->lon_end_near_range = (double) lon;
-  read_smap_pixel(meta, inDataName, 
-		  meta->general->line_count-1, meta->general->sample_count-1,
-		  &lat, &lon);
-  meta->location->lat_end_far_range = (double) lat;
-  meta->location->lon_end_far_range = (double) lon;
+  if (subset) {
+    meta->location->lat_start_near_range = (double) latUL;
+    meta->location->lon_start_near_range = (double) lonUL;
+    meta->location->lat_start_far_range = (double) latUL;
+    meta->location->lon_start_far_range = (double) lonLR;
+    meta->location->lat_end_near_range = (double) latLR;
+    meta->location->lon_end_near_range = (double) lonUL;
+    meta->location->lat_end_far_range = (double) latLR;
+    meta->location->lon_end_far_range = (double) lonLR;
+  }
+  else {
+    read_smap_pixel(meta, inDataName, 0, 0, &lat, &lon);
+    meta->location->lat_start_near_range = (double) lat;
+    meta->location->lon_start_near_range = (double) lon;
+    read_smap_pixel(meta, inDataName, 0, meta->general->sample_count-1, 
+		    &lat, &lon);
+    meta->location->lat_start_far_range = (double) lat;
+    meta->location->lon_start_far_range = (double) lon;
+    read_smap_pixel(meta, inDataName, meta->general->line_count-1, 0, 
+		    &lat, &lon);
+    meta->location->lat_end_near_range = (double) lat;
+    meta->location->lon_end_near_range = (double) lon;
+    read_smap_pixel(meta, inDataName, 
+		    meta->general->line_count-1, meta->general->sample_count-1,
+		    &lat, &lon);
+    meta->location->lat_end_far_range = (double) lat;
+    meta->location->lon_end_far_range = (double) lon;
+  }
+  meta_write(meta, inDataName);
   
   // Read data
   outDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName+25)));
   sprintf(outDataName, "%s.img", outBaseName);
   meta_write(meta, outDataName);
-  read_smap_data("cell_sigma0_hh_aft", 0, inDataName, outDataName);
-  read_smap_data("cell_sigma0_hh_fore", 1, inDataName, outDataName);
-  read_smap_data("cell_kp_hh", 2, inDataName, outDataName);
-  read_smap_data("cell_sigma0_hv_aft", 3, inDataName, outDataName);
-  read_smap_data("cell_sigma0_hv_fore", 4, inDataName, outDataName);
-  read_smap_data("cell_kp_hv", 5, inDataName, outDataName);
-  read_smap_data("cell_sigma0_vv_aft", 6, inDataName, outDataName);
-  read_smap_data("cell_sigma0_vv_fore", 7, inDataName, outDataName);
-  read_smap_data("cell_kp_vv", 8, inDataName, outDataName);
-  read_smap_data("cell_lat", 9, inDataName, outDataName);
-  read_smap_data("cell_lon", 10, inDataName, outDataName);
-  read_smap_data("cylindrical_grid_latitude_index", 
-		 11, inDataName, outDataName);
-  read_smap_data("cylindrical_grid_longitude_index", 
-		 12, inDataName, outDataName);
+
+  if (subset) {
+    read_smap_subset("cell_sigma0_hh_aft", 0, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_sigma0_hh_fore", 1, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_kp_hh", 2, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_sigma0_hv_aft", 3, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_sigma0_hv_fore", 4, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_kp_hv", 5, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_sigma0_vv_aft", 6, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_sigma0_vv_fore", 7, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_kp_vv", 8, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_lat", 9, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cell_lon", 10, inDataName, outDataName,
+		     latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cylindrical_grid_latitude_index", 11, inDataName, 
+		     outDataName, latUL, lonUL, latLR, lonLR);
+    read_smap_subset("cylindrical_grid_longitude_index", 12, inDataName, 
+		     outDataName, latUL, lonUL, latLR, lonLR);
+  }
+  else {
+    read_smap_data("cell_sigma0_hh_aft", 0, inDataName, outDataName);
+    read_smap_data("cell_sigma0_hh_fore", 1, inDataName, outDataName);
+    read_smap_data("cell_kp_hh", 2, inDataName, outDataName);
+    read_smap_data("cell_sigma0_hv_aft", 3, inDataName, outDataName);
+    read_smap_data("cell_sigma0_hv_fore", 4, inDataName, outDataName);
+    read_smap_data("cell_kp_hv", 5, inDataName, outDataName);
+    read_smap_data("cell_sigma0_vv_aft", 6, inDataName, outDataName);
+    read_smap_data("cell_sigma0_vv_fore", 7, inDataName, outDataName);
+    read_smap_data("cell_kp_vv", 8, inDataName, outDataName);
+    read_smap_data("cell_lat", 9, inDataName, outDataName);
+    read_smap_data("cell_lon", 10, inDataName, outDataName);
+    read_smap_data("cylindrical_grid_latitude_index", 
+		   11, inDataName, outDataName);
+    read_smap_data("cylindrical_grid_longitude_index", 
+		   12, inDataName, outDataName);
+  }
 
   // Clean up
   FREE(smap);

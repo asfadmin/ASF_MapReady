@@ -14,6 +14,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(XML_LIBS) \
 	$(JPEG_LIBS) \
 	-lm
 

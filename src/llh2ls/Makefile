@@ -12,6 +12,7 @@ REQUIRED_LIBS = \
         $(LIBDIR)/asf.a \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS)
 

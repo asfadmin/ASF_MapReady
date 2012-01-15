@@ -583,7 +583,6 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->fill_value = 0;
   cfg->terrain_correct->do_radiometric = 0;
   cfg->terrain_correct->smooth_dem_holes = 0;
-  cfg->terrain_correct->save_incid_angles = 0;
   cfg->terrain_correct->no_resampling = 0;
   cfg->terrain_correct->save_terrcorr_dem = 0;
   cfg->terrain_correct->save_terrcorr_layover_mask = 0;
@@ -600,7 +599,7 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->calibrate->radiometry, "AMPLITUDE");
   cfg->calibrate->wh_scale = 0;
 
-  cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
+  cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*1024);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj",
           get_asf_share_dir());
   cfg->geocoding->pixel = -99;
@@ -990,7 +989,7 @@ convert_config *read_convert_config(char *configFile)
 {
   FILE *fConfig;
   convert_config *cfg=NULL;
-  char line[255], params[50];
+  char line[1024], params[50];
   char *test;
 
   strcpy(params, "");
@@ -998,7 +997,7 @@ convert_config *read_convert_config(char *configFile)
   if (cfg == NULL) check_return(1, "Creating configuration structure.\n");
   fConfig = fopen(configFile, "r");
   if (!fConfig) return NULL;
-  while (fgets(line, 255, fConfig) != NULL) {
+  while (fgets(line, 1024, fConfig) != NULL) {
 
     if (strncmp(line, "[General]", 9)==0) strcpy(params, "General");
     if (strncmp(params, "General", 7)==0) {
@@ -1251,8 +1250,6 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
       if (strncmp(test, "do radiometric", 12)==0)
         cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
-      if (strncmp(test, "save incidence angles", 21)==0)
-        cfg->terrain_correct->save_incid_angles = read_int(line, "save incidence angles");
       if (strncmp(test, "smooth dem holes", 16)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
       if (strncmp(test, "no resampling", 13)==0)
@@ -1940,10 +1937,6 @@ int write_convert_config(char *configFile, convert_config *cfg)
                   "# estimated incidence angle (using the Earth-as-ellipsoid) used during\n"
                   "# processing.\n\n");
       fprintf(fConfig, "do radiometric = %d\n", cfg->terrain_correct->do_radiometric);
-      if (!shortFlag)
-          fprintf(fConfig, "\n# During radiometric correction, save a side product containing\n"
-                  "# the incidence angles from the sensor to vertical.\n\n");
-      fprintf(fConfig, "save incidence angles = %d\n", cfg->terrain_correct->do_radiometric);
       if (!shortFlag)
           fprintf(fConfig, "\n# If your DEM has a number of \"holes\" in it, this can cause streaking\n"
                   "# in the terrain corrected product.  This option will attempt to replace DEM holes\n"

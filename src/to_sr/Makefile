@@ -13,6 +13,7 @@ REQUIRED_LIBS = \
 	$(TIFF_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS)
 

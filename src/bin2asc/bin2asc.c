@@ -41,7 +41,8 @@
 #define ASF_NAME_STRING "bin2asc"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-format <format str>] [-delimiter <character>] <in> <out>\n"
+"   "ASF_NAME_STRING" [-format <format str>] [-delimiter <character>] "\
+"[-nodata <value>]\n     <in> <out>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program converts binary data into an delimited ASCII text file.\n"
@@ -71,6 +72,7 @@
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
+#include <asf_raster.h>
 #include <asf_license.h>
 #include <asf_contact.h>
 
@@ -127,7 +129,8 @@ main (int argc, char *argv[])
 {
   char *inFile, *outFile, delimiterStr[25], format[25], formatStr[50];
   char delimiter, formatEnd[50];
-  int delimiterflag = FALSE, formatflag = FALSE;
+  float nodata;
+  int delimiterflag = FALSE, formatflag = FALSE, nodataflag = FALSE;
   int currArg = 1;
   int NUM_ARGS = 2;
 
@@ -159,6 +162,11 @@ main (int argc, char *argv[])
       CHECK_ARG(1);
       strcpy(format,GET_ARG(1));
       formatflag = TRUE;
+    }
+    else if (strmatches(key, "-nodata","--nodata","-nd",NULL)) {
+      CHECK_ARG(1);
+      nodata = atof(GET_ARG(1));
+      nodataflag = TRUE;
     }
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
       quietflag = TRUE;
@@ -212,6 +220,10 @@ main (int argc, char *argv[])
   int ii, kk;
   for (ii=0; ii<line_count; ii++) {
     get_float_line(fpIn, md, ii, float_value);
+    for (kk=0; kk<sample_count; kk++) {
+      if (nodataflag && FLOAT_EQUIVALENT(float_value[kk], nodata))
+	float_value[kk] = MAGIC_UNSET_DOUBLE;
+    }
     for (kk=0; kk<sample_count-1; kk++)
       fprintf(fpOut, formatStr, float_value[kk]);
     fprintf(fpOut, formatEnd, float_value[sample_count-1]);

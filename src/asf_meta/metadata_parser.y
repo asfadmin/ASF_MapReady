@@ -1401,6 +1401,13 @@ void fill_structure_field(char *field_name, void *valp)
 	(MCALIBRATION)->alos->cf_vv = MAGIC_UNSET_DOUBLE;
         return;
       }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "TSX") ) {
+	tsx_cal_params *tsx = (tsx_cal_params *) MALLOC(sizeof(tsx_cal_params));
+	(MCALIBRATION)->tsx = tsx;
+	(MCALIBRATION)->type = tsx_cal;
+	(MCALIBRATION)->tsx->k = MAGIC_UNSET_DOUBLE;
+	return;
+      }
     }
     // ASF calibration
     if ( !strcmp(field_name, "a(0)") && (MCALIBRATION)->type == asf_cal)
@@ -1475,6 +1482,9 @@ void fill_structure_field(char *field_name, void *valp)
 	(MCALIBRATION)->alos->cf_vh = VALP_AS_DOUBLE;
 	(MCALIBRATION)->alos->cf_vv = VALP_AS_DOUBLE; 
 	return; }
+    // TSX calibration
+    if ( !strcmp(field_name, "k") && (MCALIBRATION)->type == tsx_cal)
+      { (MCALIBRATION)->tsx->k = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in a colormap block.  */

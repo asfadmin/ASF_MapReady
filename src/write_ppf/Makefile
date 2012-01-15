@@ -10,6 +10,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 OBJS  = write_ppf.o

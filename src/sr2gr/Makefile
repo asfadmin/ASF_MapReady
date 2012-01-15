@@ -13,6 +13,7 @@ LIBS  = $(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 OBJS  = sr2gr.o help.o

@@ -451,6 +451,9 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
 
       break;
 
+  case LAT_LONG_PSEUDO_PROJECTION:
+    break;
+
     default:
       asfPrintError("Chosen projection type not supported!\n");
       break;

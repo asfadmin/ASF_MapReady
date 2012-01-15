@@ -1362,6 +1362,13 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 
         break;
       }
+      else if (strcmp((*argv)[i], "geographic") == 0) {
+	*proj_type = LAT_LONG_PSEUDO_PROJECTION;
+	*datum = WGS84_DATUM;
+	*spheroid = WGS84_SPHEROID;
+	i = 3;
+	break;
+      }
       else
       {
         asfPrintWarning("Unknown projection: %s\n", (*argv)[i]);

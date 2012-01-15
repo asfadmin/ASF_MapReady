@@ -10,6 +10,7 @@ REQUIRED_LIBS = \
         $(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(XML_LIBS) \
 	$(PROJ_LIBS) -lm
 
 CFLAGS += $(GLIB_CFLAGS)

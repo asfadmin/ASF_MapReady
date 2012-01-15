@@ -489,7 +489,8 @@ gboolean is_terrasarx(const char *infile)
     if (doc)
       strcpy(satellite, xml_get_string_value(doc, 
 	"level1Product.productInfo.missionInfo.mission"));
-    if (satellite && strncmp_case(satellite, "TSX", 3) == 0)
+    if ((satellite && strncmp_case(satellite, "TSX", 3) == 0) ||
+	(satellite && strncmp_case(satellite, "TDX", 3) == 0))
       found = TRUE;
     fclose(fp);
     xmlFreeDoc(doc);
