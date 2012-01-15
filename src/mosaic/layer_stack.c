@@ -17,23 +17,25 @@ void help()
 "Tool name:\n"
 "    %s\n\n"
 "Usage:\n"
-"    %s [-background <value>] <infile list> <outfile>\n\n"
+"    %s [-background <value>] [-extent <file>] [-output <file>] <infile list>\n\n"
 "Description:\n"
-"    This program stacks the input files together, producing an output image\n"
+"    This program stacks the input files together, producing an image stack\n"
 "    that is the intersect of all listed input images.\n\n"
 "Input:\n"
 "    The tool is looking for a text file with all input file names, one file\n"
 "    name per line.\n\n"
 "    All input files must be geocoded to the same projection, with the same\n"
 "    projection parameters, and the same pixel size.\n\n"
-"Output:\n"
-"    The output file is created as a multiband image. The band names are the\n"
-"    the file names, so that some meaning file names can be used when the ASF\n"
-"    internal file is exported.\n\n"
 "Options:\n"
 "    -background <value> (-b)\n"
 "        Specifies a value to use for background pixels.  If not given, 0 is\n"
 "        used.\n"
+"    -extent <file>\n"
+"        Specifies the file the determines the extent of the image stack.\n"
+"    -output <file>\n"
+"        The output file is created as a multiband image. The band names are\n"
+"        the file names, so that some meaning file names can be used when the\n"
+"        ASF internal file is exported.\n"
 "    -help\n"
 "        Print this help information and exit.\n"
 "    -license\n"
@@ -52,7 +54,9 @@ ASF_NAME_STRING, ASF_NAME_STRING, ASF_CONTACT_STRING);
 void usage()
 {
     printf("Usage:\n"
-    "    %s [-background <value>] <infile list> <outfile>\n\n", ASF_NAME_STRING);
+    "    %s [-background <value>] [-extent <file>] [-output <file>] "
+"<infile list> \n\n",
+	   ASF_NAME_STRING);
     exit(1);
 }
 
@@ -209,7 +213,7 @@ static void update_corners(double px, double py,
 static void determine_extents(char **infiles, int n_inputs,
                               int *size_x, int *size_y, int *n_bands,
                               double *start_x, double *start_y,
-                              double *per_x, double *per_y)
+                              double *per_x, double *per_y, int extent)
 {
     // the first input file is the "reference" -- all other metadata
     // must match the first (at least as far as projection, etc)
@@ -273,8 +277,9 @@ static void determine_extents(char **infiles, int n_inputs,
 
             double this_x0, this_y0, this_xL, this_yL;
             get_corners(meta, &this_x0, &this_y0, &this_xL, &this_yL);
-            update_corners(px, py, &x0, &y0, &xL, &yL,
-                           this_x0, this_y0, this_xL, this_yL);
+	    if (!extent)
+	      update_corners(px, py, &x0, &y0, &xL, &yL,
+			     this_x0, this_y0, this_xL, this_yL);
         }
 
         meta_free(meta);
@@ -319,7 +324,7 @@ int compare_small_doubles(const double *a, const double *b)
 static void add_to_stack(char *out, int band, char *file,
                          int size_x, int size_y,
                          double start_x, double start_y,
-                         double per_x, double per_y)
+                         double per_x, double per_y, int multiband)
 {
     meta_parameters *metaIn = meta_read(file);
     meta_parameters *metaOut = meta_read(out);
@@ -344,7 +349,7 @@ static void add_to_stack(char *out, int band, char *file,
     FILE *fpIn = FOPEN(file, "rb");
     FILE *fpOut;
     char *metaFile = appendExt(out, ".meta");
-    if (band > 0) {
+    if (band > 0 || !multiband) {
       fpOut = FOPEN(out, "ab");
       sprintf(base, ",%s", get_basename(file));
       strcat(metaOut->general->bands, base);
@@ -354,14 +359,20 @@ static void add_to_stack(char *out, int band, char *file,
       sprintf(base, "%s", get_basename(file));
       strcpy(metaOut->general->bands, base);
     }
-    metaOut->general->band_count = band + 1;
+    if (multiband)
+      metaOut->general->band_count = band + 1;
+    else
+      metaOut->general->band_count = 1;
     meta_write(metaOut, metaFile);
     float *line = MALLOC(sizeof(float)*size_x);
 
     int y;
     for (y=start_line; y<start_line+size_y; ++y) {
       get_partial_float_line(fpIn, metaIn, y, start_sample, size_x, line);
-      put_band_float_line(fpOut, metaOut, band, y-start_line, line); 
+      if (multiband) 
+	put_band_float_line(fpOut, metaOut, band, y-start_line, line); 
+      else
+	put_float_line(fpOut, metaOut, y-start_line, line); 
       asfLineMeter(y, start_line+size_y);
     }
 
@@ -405,6 +416,10 @@ void update_location_block(meta_parameters *meta)
 
 int main(int argc, char *argv[])
 {
+  int extentFlag = FALSE, multiband = FALSE;
+  char *extent = (char *) MALLOC(sizeof(char)*1024);
+  char *outfile = (char *) MALLOC(sizeof(char)*1024);
+  
     handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
     if (argc>1 && (strcmp(argv[1], "-help")==0 || strcmp(argv[1],"--help")==0))
         help();
@@ -413,11 +428,16 @@ int main(int argc, char *argv[])
     double background_val=0;
     extract_double_options(&argc, &argv, &background_val, "-background",
                            "--background", "-b", NULL);
+    if (extract_string_options(&argc, &argv, extent, "-extent", "--extent", 
+			       NULL))
+      extentFlag = TRUE;
+    if (extract_string_options(&argc, &argv, outfile, "-output", "--output",
+			       NULL))
+      multiband = TRUE;
     
     char *infile = argv[1];
-    char *outfile = argv[2];
 
-    int i, size_x, size_y, n_inputs=0, n_bands;
+    int i, size_x, size_y, n_inputs=0, start=0, n_bands;
     double start_x, start_y;
     double per_x, per_y;
 
@@ -428,9 +448,17 @@ int main(int argc, char *argv[])
       if (strlen(line) > 0)
         n_inputs++;
     FCLOSE(fpList);
+    if (extentFlag) {
+      n_inputs++;
+      start = 1;
+    }
     char **infiles = (char **) MALLOC(sizeof(char *)*n_inputs);
+    if (extentFlag) {
+      infiles[0] = (char *) MALLOC(sizeof(char)*512);
+      strcpy(infiles[0], extent);
+    }
     fpList = FOPEN(infile, "r");
-    for (i=0; i<n_inputs; i++) {
+    for (i=start; i<n_inputs; i++) {
       fgets(line, 512, fpList);
       chomp(line);
       infiles[i] = (char *) MALLOC(sizeof(char)*512);
@@ -439,42 +467,56 @@ int main(int argc, char *argv[])
     FCLOSE(fpList);
     FREE(line);
 
-    asfPrintStatus("Stacking %d files to produce: %s\n", n_inputs, outfile);
+    if (multiband)
+      asfPrintStatus("Stacking %d files to produce: %s\n", n_inputs, outfile);
+    else
+      asfPrintStatus("Putting %d files in image stack\n", n_inputs);
 
     asfPrintStatus("Input files:\n");
-    for (i=0; i<n_inputs; ++i)
+    for (i=start; i<n_inputs; ++i)
       asfPrintStatus("   %d: %s%s\n", i+1, infiles[i], i==0 ? " (reference)" : "");
 
     determine_extents(infiles, n_inputs, &size_x, &size_y, &n_bands,
-		      &start_x, &start_y, &per_x, &per_y);
+		      &start_x, &start_y, &per_x, &per_y, extentFlag);
 
     asfPrintStatus("\nStacked image size: %dx%d LxS\n", size_y, size_x);
     asfPrintStatus("  Start X,Y: %f,%f\n", start_x, start_y);
     asfPrintStatus("    Per X,Y: %.2f,%.2f\n", per_x, per_y);
 
     meta_parameters *meta_out = meta_read(infiles[0]);
-    meta_out->general->image_data_type = IMAGE_LAYER_STACK;
+    if (multiband)
+      meta_out->general->image_data_type = IMAGE_LAYER_STACK;
     meta_out->projection->startX = start_x;
     meta_out->projection->startY = start_y;
     meta_out->general->line_count = size_y;
     meta_out->general->sample_count = size_x;
     meta_out->general->no_data = background_val;
     update_location_block(meta_out);
-    meta_write(meta_out, outfile);
-    meta_free(meta_out);
 
-    char *outfile_full = appendExt(outfile, ".img");
+    //char *outfile_full = appendExt(outfile, ".img");
+    char *outfile_full = (char *) MALLOC(sizeof(char)*1024);
 
-    for (i=0; i<n_inputs; i++) {
-      asfPrintStatus("\nProcessing band %d (%s) ... \n", i+1, infiles[i]);
-      add_to_stack(outfile_full, i, infiles[i], size_x, size_y, 
-                   start_x, start_y, per_x, per_y);
+    if (multiband) {
+      sprintf(outfile_full, "%s.img", stripExt(outfile));
+      meta_write(meta_out, outfile_full);
     }
+    for (i=start; i<n_inputs; i++) {
+      asfPrintStatus("\nProcessing band %d (%s) ... \n", i, infiles[i]);
+      if (!multiband) {
+	sprintf(outfile_full, "%s_stack.img", stripExt(infiles[i]));
+	meta_write(meta_out, outfile_full);
+      }
+      add_to_stack(outfile_full, i, infiles[i], size_x, size_y, 
+                   start_x, start_y, per_x, per_y, multiband);
+    }
+    meta_free(meta_out);
 
     FREE(outfile_full);
     for (i=0; i<n_inputs; i++)
       FREE(infiles[i]);
     FREE(infiles);
+    FREE(extent);
+    FREE(outfile);
 
     asfPrintStatus("Done.\n");
     return 0;
