@@ -8,6 +8,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(PROJ_LIBS) \
         $(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 OBJS = main.o geolocate.o

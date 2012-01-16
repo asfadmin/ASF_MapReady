@@ -11,9 +11,10 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_vector.a \
- 	$(LIBDIR)/libshp.a \
+	$(LIBDIR)/libshp.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 OBJS= reskew_dem.o

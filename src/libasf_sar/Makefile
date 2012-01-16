@@ -31,6 +31,7 @@ LIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libshp.a \
 	$(LDFLAGS) \
 	$(GSL_LIBS) \

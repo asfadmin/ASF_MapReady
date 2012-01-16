@@ -29,11 +29,13 @@ LIBS = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(HDF5_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
 	$(LIBDIR)/asf_fft.a \
+	-lz
 
 all: asf_check_geolocation
 	-rm *.o

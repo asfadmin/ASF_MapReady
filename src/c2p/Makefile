@@ -13,6 +13,7 @@ LIBS  = \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 CFLAGS += \

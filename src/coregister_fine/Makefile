@@ -12,6 +12,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_fft.a \
+	$(XML_LIBS) \
 	-lm
 
 OBJS  = fft_corr.o \

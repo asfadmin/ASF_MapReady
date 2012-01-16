@@ -16,7 +16,8 @@ LIBS = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
-	$(LIBDIR)/asf_fft.a
+	$(LIBDIR)/asf_fft.a \
+	$(XML_LIBS)
 
 all: shaded_relief
 	-rm *.o

@@ -10,6 +10,7 @@ LIBS  = $(LIBDIR)/asf_concat.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/asf.a \
+	$(XML_LIBS) \
 	-lm
 
 OBJS  = concatm.o \

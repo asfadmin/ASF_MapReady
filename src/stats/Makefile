@@ -9,6 +9,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(XML_LIBS) \
 	-lm
 
 CFLAGS += \

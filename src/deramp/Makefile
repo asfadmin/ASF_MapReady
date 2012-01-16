@@ -10,6 +10,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/asf.a \
+	$(XML_LIBS) \
 	-lm 
 OBJS = deramp.o 
         

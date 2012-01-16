@@ -14,6 +14,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 OBJS = corner_coords.o

@@ -9,7 +9,8 @@ CFLAGS += \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(TIFF_CFLAGS) \
-	$(JPEG_CFLAGS)
+	$(JPEG_CFLAGS) \
+	$(XML_LIBS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_geocode.a \

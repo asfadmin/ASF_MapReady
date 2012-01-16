@@ -8,6 +8,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	-lm
 OBJS = mfd.o 
 

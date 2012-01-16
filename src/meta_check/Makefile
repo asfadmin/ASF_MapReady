@@ -10,7 +10,8 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(XML_LIBS)
 
 OBJS  = meta_compare.o
 

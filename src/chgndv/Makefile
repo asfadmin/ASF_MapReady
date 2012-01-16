@@ -9,7 +9,8 @@ LIBS = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
-	$(PROJ_LIBS)
+	$(PROJ_LIBS) \
+	$(XML_LIBS)
 
 OBJS =	$(TARGET).o
 

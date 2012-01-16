@@ -894,6 +894,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* prcPath                */
                        -99,                 /* lowerLat               */
                        -99,                 /* upperLat               */
+		       -99,                 // lowerLon
+		       -99,                 // upperLon
                        0,                   /* start line subset      */
                        0,                   /* start sample subset    */
                        -99,                 /* width of subset        */
@@ -973,6 +975,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* prcPath                */
                        -99,                 /* lowerLat               */
                        -99,                 /* upperLat               */
+		       -99,                 // lowerLon
+		       -99,                 // upperLon
                        0,                   /* start line subset      */
                        0,                   /* start sample subset    */
                        -99,                 /* width of subset        */
@@ -1040,6 +1044,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* prcPath                */
                        -99,                 /* lowerLat               */
                        -99,                 /* upperLat               */
+		       -99,                 // lowerLon
+		       -99,                 // upperLon
                        0,                   /* start line subset      */
                        0,                   /* start sample subset    */
                        -99,                 /* width of subset        */

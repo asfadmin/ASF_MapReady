@@ -10,6 +10,7 @@ LIBS  = $(LIBDIR)/libasf_insar.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 CFLAGS += \

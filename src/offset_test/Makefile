@@ -15,6 +15,7 @@ LIBS  = \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_fft.a \
+	$(XML_LIBS) \
 	-lm
 
 OBJS  = offset_test.o \

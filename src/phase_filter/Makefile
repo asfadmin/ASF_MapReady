@@ -11,7 +11,8 @@ LIBS  = $(LIBDIR)/asf_fft.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/asf.a
+	$(LIBDIR)/asf.a \
+	$(XML_LIBS)
 LIBC = $(LIBS) -lm 
 
 OBJLIB =  filter.o blend.o

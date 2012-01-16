@@ -20,6 +20,7 @@ LIBS =  \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(GEOTIFF_LIBS) \
+	$(HDF5_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
@@ -28,7 +29,7 @@ LIBS =  \
 	$(GLIB_LIBS) \
 	$(XML_LIBS) \
 	$(LDFLAGS) \
-	-lm
+	-lz -lm
 
 OBJLIB = 	\
 	baseline2vector.o \

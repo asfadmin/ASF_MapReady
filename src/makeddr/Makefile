@@ -8,7 +8,8 @@ LIBS  = \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
-	$(PROJ_LIBS)
+	$(PROJ_LIBS) \
+	$(XML_LIBS)
 
 makeddr: makeddr.c
 	$(CC) $(CFLAGS) -o makeddr makeddr.c $(LIBS) $(LDFLAGS) -lm

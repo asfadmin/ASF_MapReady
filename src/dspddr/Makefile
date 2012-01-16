@@ -9,6 +9,7 @@ LIBS =  \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 OBJS = dspddr.o \

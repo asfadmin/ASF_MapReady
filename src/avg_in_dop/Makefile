@@ -24,8 +24,8 @@ LIBS  = \
 	$(GEOTIFF_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
-	$(HDFEOS5_LIBS) \
 	$(GLIB_LIBS) \
+	$(XML_LIBS) \
 	-lz
 
 OBJS  = avg_in_dop.o

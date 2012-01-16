@@ -9,6 +9,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/asf.a \
+	$(XML_LIBS) \
 	-lm
 
 OBJS  = meta_util.o \
