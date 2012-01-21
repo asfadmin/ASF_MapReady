@@ -71,7 +71,7 @@ char *get_uavsar(char *buf, char *str)
   return value;
 }
 
-int check_file(char *line, char **fileName)
+int check_file(const char *path, char *line, char **fileName)
 {
   char *p, *r;
   p = strchr(line, '=');
@@ -80,8 +80,12 @@ int check_file(char *line, char **fileName)
   r = strchr(file, ';');
   if (r)
     r[0] = '\0';
-  *fileName = trim_spaces(file);
+  *fileName = MALLOC(sizeof(char)*(strlen(path) + strlen(file)));
+  strcpy(*fileName, path);
+  char *trimmed_file = trim_spaces(file);
+  strcat(*fileName, trimmed_file);
   FREE(file);
+  FREE(trimmed_file);
   p = strchr(line, ';');
   long long size;
   sscanf(p+12, "%lld", &size);
@@ -112,12 +116,14 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
   *pDataType = dataType;
   *nBands = 0;
 
+  char *path = get_dirname(dataFile);
+
   char line[255];
   FILE *fp = FOPEN(dataFile, "r");
   while (fgets(line, 255, fp)) {
     if (type == POLSAR_SLC) {
       if (strstr(line, "slcHH   =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[slc], file);
 	  strcpy(element[slc], "HH");
 	  dataType[slc] = 1;
@@ -125,7 +131,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "slcHV   =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[slc], file);
 	  strcpy(element[slc], "HV");
 	  dataType[slc] = 1;
@@ -133,7 +139,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "slcVH   =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[slc], file);
 	  strcpy(element[slc], "VH");
 	  dataType[slc] = 1;
@@ -141,7 +147,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "slcVV   =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[slc], file);
 	  strcpy(element[slc], "VV");
 	  dataType[slc] = 1;
@@ -152,7 +158,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == POLSAR_MLC) {
       if (strstr(line, "mlcHHHH =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[mlc], file);
 	  strcpy(element[mlc], "C11");
 	  dataType[mlc] = 0;
@@ -160,7 +166,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "mlcHVHV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[mlc], file);
 	  strcpy(element[mlc], "C22");
 	  dataType[mlc] = 0;
@@ -168,7 +174,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "mlcVVVV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[mlc], file);
 	  strcpy(element[mlc], "C33");
 	  dataType[mlc] = 0;
@@ -176,7 +182,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "mlcHHHV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[mlc], file);
 	  strcpy(element[mlc], "C12");
 	  dataType[mlc] = 1;
@@ -184,7 +190,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "mlcHHVV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[mlc], file);
 	  strcpy(element[mlc], "C13");
 	  dataType[mlc] = 1;
@@ -192,7 +198,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "mlcHVVV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[mlc], file);
 	  strcpy(element[mlc], "C23");
 	  dataType[mlc] = 1;
@@ -203,7 +209,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == POLSAR_DAT) {
       if (strstr(line, "dat     =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[dat], file);
 	  dat++;
 	}
@@ -212,7 +218,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == POLSAR_GRD) {
       if (strstr(line, "grdHHHH =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[grd], file);
 	  strcpy(element[grd], "C11");
 	  dataType[grd] = 0;
@@ -220,7 +226,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "grdHVHV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[grd], file);
 	  strcpy(element[grd], "C22");
 	  dataType[grd] = 0;
@@ -228,7 +234,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "grdVVVV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[grd], file);
 	  strcpy(element[grd], "C33");
 	  dataType[grd] = 0;
@@ -236,7 +242,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "grdHHHV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[grd], file);
 	  strcpy(element[grd], "C12");
 	  dataType[grd] = 1;
@@ -244,7 +250,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "grdHHVV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[grd], file);
 	  strcpy(element[grd], "C13");
 	  dataType[grd] = 1;
@@ -252,7 +258,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "grdHVVV =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[grd], file);
 	  strcpy(element[grd], "C23");
 	  dataType[grd] = 1;
@@ -263,7 +269,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == POLSAR_HGT) {
       if (strstr(line, "hgt     =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[hgt], file);
 	  strcpy(element[hgt], "HH");
 	  dataType[hgt] = 0;
@@ -274,7 +280,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_AMP) {
       if (strstr(line, "Slant Range Amplitude of Pass 1          =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[amp], file);
 	  strcpy(element[amp], "HH");
 	  dataType[amp] = 0;
@@ -282,7 +288,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "Slant Range Amplitude of Pass 2          =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[amp], file);
 	  strcpy(element[amp], "HH");
 	  dataType[amp] = 0;
@@ -293,7 +299,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_AMP_GRD) {
       if (strstr(line, "Ground Range Amplitude of Pass 1         =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[amp_grd], file);
 	  strcpy(element[amp_grd], "HH");
 	  dataType[amp_grd] = 0;
@@ -301,7 +307,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 	}
       }
       else if (strstr(line, "Ground Range Amplitude of Pass 2         =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[amp_grd], file);
 	  strcpy(element[amp_grd], "HH");
 	  dataType[amp_grd] = 0;
@@ -312,7 +318,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_INT) {
       if (strstr(line, "Slant Range Interferogram                =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[igram], file);
 	  strcpy(element[igram], "HH");
 	  dataType[igram] = 1;
@@ -323,7 +329,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_INT_GRD) {
       if (strstr(line, "Ground Range Interferogram               =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[igram_grd], file);
 	  strcpy(element[igram_grd], "HH");
 	  dataType[igram_grd] = 1;
@@ -334,7 +340,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_UNW) {
       if (strstr(line, "Slant Range Unwrapped Phase              =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[unw], file);
 	  strcpy(element[unw], "HH");
 	  dataType[unw] = 0;
@@ -345,7 +351,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_UNW_GRD) {
       if (strstr(line, "Ground Range Unwrapped Phase             =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[unw_grd], file);
 	  strcpy(element[unw_grd], "HH");
 	  dataType[unw_grd] = 0;
@@ -356,7 +362,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_COR) {
       if (strstr(line, "Slant Range Correlation                  =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[cor], file);
 	  strcpy(element[cor], "HH");
 	  dataType[cor] = 0;
@@ -367,7 +373,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_COR_GRD) {
       if (strstr(line, "Ground Range Correlation                 =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[cor_grd], file);
 	  strcpy(element[cor_grd], "HH");
 	  dataType[cor_grd] = 0;
@@ -378,7 +384,7 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
     }
     else if (type == INSAR_HGT_GRD) {
       if (strstr(line, "DEM Used in Ground Projection            =")) {
-	if (check_file(line, &file)) {
+	if (check_file(path, line, &file)) {
 	  strcpy(dataName[hgt_grd], file);
 	  strcpy(element[hgt_grd], "HH");
 	  dataType[hgt_grd] = 0;
@@ -1057,7 +1063,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	outName = appendExt(outBaseName, ".img");
       asfPrintStatus("\nGround range interferogram:\n");
       fpOut = FOPEN(outName, "wb");
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      char *filename = get_filename(dataName[nn]);
+      asfPrintStatus("Ingesting %s ...\n", filename);
+      FREE(filename);
       fpIn = FOPEN(dataName[nn], "rb");
       sprintf(metaOut->general->bands, "INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
       for (ii=0; ii<metaIn->general->line_count; ii++) {
@@ -1110,7 +1118,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       else
 	outName = appendExt(outBaseName, ".img");
       asfPrintStatus("\nGround range unwrapped phase:\n");
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      char *filename = get_filename(dataName[nn]);
+      asfPrintStatus("Ingesting %s ...\n", filename);
+      FREE(filename);
       fpIn = FOPEN(dataName[nn], "rb");
       fpOut = FOPEN(outName, "wb");
       strcpy(metaOut->general->bands, "UNWRAPPED_PHASE");
@@ -1153,7 +1163,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       else
 	outName = appendExt(outBaseName, ".img");
       asfPrintStatus("\nGround range correlation image:\n");
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      char *filename = get_filename(dataName[nn]);
+      asfPrintStatus("Ingesting %s ...\n", filename);
+      FREE(filename);
       fpIn = FOPEN(dataName[nn], "rb");
       fpOut = FOPEN(outName, "wb");
       strcpy(metaOut->general->bands, "COHERENCE");
@@ -1201,7 +1213,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       strcpy(metaOut->general->bands, "AMP1,AMP2");
       asfPrintStatus("\nGround range amplitude images:\n");
       for (nn=0; nn<nBands; nn++) {
-	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+        char *filename = get_filename(dataName[nn]);
+        asfPrintStatus("Ingesting %s ...\n", filename);
+        FREE(filename);
 	fpIn = FOPEN(dataName[nn], "rb");
 	for (ii=0; ii<metaIn->general->line_count; ii++) {
 	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
@@ -1247,7 +1261,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       strcpy(metaOut->general->bands, "HEIGHT");
       asfPrintStatus("\nGround range digital elevation model:\n");
       for (nn=0; nn<nBands; nn++) {
-	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+        char *filename = get_filename(dataName[nn]);
+        asfPrintStatus("Ingesting %s ...\n", filename);
+        FREE(filename);
 	fpIn = FOPEN(dataName[nn], "rb");
 	for (ii=0; ii<metaIn->general->line_count; ii++) {
 	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
@@ -1299,7 +1315,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	outName = appendExt(outBaseName, ".img");
       asfPrintStatus("\nSlant range interferogram:\n");
       fpOut = FOPEN(outName, "wb");
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      char *filename = get_filename(dataName[nn]);
+      asfPrintStatus("Ingesting %s ...\n", filename);
+      FREE(filename);
       fpIn = FOPEN(dataName[nn], "rb");
       sprintf(metaOut->general->bands, "INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
       for (ii=0; ii<metaIn->general->line_count; ii++) {
@@ -1352,7 +1370,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       else
 	outName = appendExt(outBaseName, ".img");
       asfPrintStatus("\nSlant range unwrapped phase:\n");
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      char *filename = get_filename(dataName[nn]);
+      asfPrintStatus("Ingesting %s ...\n", filename);
+      FREE(filename);
       fpIn = FOPEN(dataName[nn], "rb");
       fpOut = FOPEN(outName, "wb");
       strcpy(metaOut->general->bands, "UNWRAPPED_PHASE");
@@ -1396,7 +1416,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       else
 	outName = appendExt(outBaseName, ".img");
       asfPrintStatus("\nSlant range correlation image:\n");
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      char *filename = get_filename(dataName[nn]);
+      asfPrintStatus("Ingesting %s ...\n", filename);
+      FREE(filename);
       fpIn = FOPEN(dataName[nn], "rb");
       fpOut = FOPEN(outName, "wb");
       strcpy(metaOut->general->bands, "COHERENCE");
@@ -1444,7 +1466,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       strcpy(metaOut->general->bands, "AMP1,AMP2");
       asfPrintStatus("\nSlant range amplitude images:\n");
       for (nn=0; nn<nBands; nn++) {
-	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+        char *filename = get_filename(dataName[nn]);
+        asfPrintStatus("Ingesting %s ...\n", filename);
+        FREE(filename);
 	fpIn = FOPEN(dataName[nn], "rb");
 	for (ii=0; ii<metaIn->general->line_count; ii++) {
 	  get_float_line(fpIn, metaIn, ii, floatAmpBuf);
@@ -1519,7 +1543,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       asfPrintStatus("\nMultilooked data:\n");
       fpOut = FOPEN(outName, "wb");
       for (nn=0; nn<nBands; nn++) {
-	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+        char *filename = get_filename(dataName[nn]);
+        asfPrintStatus("Ingesting %s ...\n", filename);
+        FREE(filename);
 	if (dataType[nn] == 0)
 	  metaOut->general->band_count += 1;
 	else
@@ -1605,7 +1631,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	outName = appendExt(outBaseName, ".img");
       metaOut->general->band_count = 9;
       asfPrintStatus("\nCompressed Stokes matrix:\n");
-      asfPrintStatus("Ingesting %s ...\n", dataName[0]);
+      char *filename = get_filename(dataName[0]);
+      asfPrintStatus("Ingesting %s ...\n", filename);
+      FREE(filename);
       if (radiometry == r_AMP)
 	strcpy(metaOut->general->bands,
 	       "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"	\
@@ -1776,7 +1804,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       asfPrintStatus("\nGround range projected data:\n");
       fpOut = FOPEN(outName, "wb");
       for (nn=0; nn<nBands; nn++) {
-	asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+        char *filename = get_filename(dataName[nn]);
+        asfPrintStatus("Ingesting %s ...\n", filename);
+        FREE(filename);
 	if (dataType[nn])
 	  metaOut->general->band_count += 2;
 	else
@@ -1857,7 +1887,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	outName = appendExt(outBaseName, ".img");
       asfPrintStatus("\nDigital elevation model:\n");
       nn=0;
-      asfPrintStatus("Ingesting %s ...\n", dataName[nn]);
+      char *filename = get_filename(dataName[nn]);
+      asfPrintStatus("Ingesting %s ...\n", filename);
+      FREE(filename);
       fpIn = FOPEN(dataName[nn], "rb");
       fpOut = FOPEN(outName, "wb");
       strcpy(metaOut->general->bands, "HEIGHT");
