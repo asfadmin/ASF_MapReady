@@ -80,7 +80,7 @@ int check_file(const char *path, char *line, char **fileName)
   r = strchr(file, ';');
   if (r)
     r[0] = '\0';
-  *fileName = MALLOC(sizeof(char)*(strlen(path) + strlen(file)));
+  *fileName = MALLOC(sizeof(char)*(strlen(path) + strlen(file) + 32));
   strcpy(*fileName, path);
   char *trimmed_file = trim_spaces(file);
   strcat(*fileName, trimmed_file);
