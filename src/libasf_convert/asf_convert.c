@@ -2922,7 +2922,9 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   }
   
   // Process the clipped DEM if requested
-  if (cfg->terrain_correct->save_terrcorr_dem) {
+  if (cfg->general->terrain_correct &&
+      cfg->terrain_correct &&
+      cfg->terrain_correct->save_terrcorr_dem) {
     // We know the name of the cut DEM in the temporary directory
     char *tmp;
     int export_dem_ok = TRUE;
@@ -2984,7 +2986,9 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   }
 
   // Process the incidence angles file if requested
-  if (cfg->terrain_correct->save_incid_angles) {
+  if (cfg->general->terrain_correct &&
+      cfg->terrain_correct &&
+      cfg->terrain_correct->save_incid_angles) {
     if (cfg->general->geocoding) {
       update_status("Geocoding incidence angles...");
       sprintf(inFile, "%s/incidence_angles",cfg->general->tmp_dir);
