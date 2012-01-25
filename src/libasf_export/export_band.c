@@ -240,7 +240,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   TIFFSetField(*otif, TIFFTAG_IMAGEWIDTH, md->general->sample_count);
   TIFFSetField(*otif, TIFFTAG_IMAGELENGTH, md->general->line_count);
   TIFFSetField(*otif, TIFFTAG_BITSPERSAMPLE, sample_size * 8);
-  TIFFSetField(*otif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+  TIFFSetField(*otif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
   if  (
        (!have_look_up_table && rgb           )  ||
        ( have_look_up_table && !palette_color)
