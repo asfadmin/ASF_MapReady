@@ -2222,8 +2222,9 @@ export_band_image (const char *metadata_file_name,
 	  if (strcmp_case(md->general->sensor, "UAVSAR") == 0 &&
 	      strcmp_case(md->general->sensor_name, "POLSAR") == 0 &&
 	      strcmp_case(md->general->mode, "HGT") == 0) {
-	    out_file = stripExt(output_file_name);
-	    strcat(out_file, "_hgt.tif");
+	    char *tmp = stripExt(output_file_name);
+            sprintf(out_file, "%s_hgt.tif", tmp);
+            FREE(tmp);
 	  }
 	}
         else if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
