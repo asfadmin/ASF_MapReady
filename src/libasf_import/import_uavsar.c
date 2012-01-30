@@ -71,6 +71,48 @@ char *get_uavsar(char *buf, char *str)
   return value;
 }
 
+int parse_annotation_line(char *line, char *key, char *value)
+{
+  char *ks = line, *ke = line, *vs = line, *ve = line, *b = line;
+
+  while(isspace(*b)) ks = ++b; // Move forward past the whitespace to the beginning of the key
+
+  if(*b == ';' || *b == '\0') {
+    // This line has nothing interesting, return nothing
+    *key = *value = '\0';
+    return 1;
+  }
+
+  while(*b != '(' && *b != '\0' && *b != '=') ++b; // Advance to a delimiter; either an equals sign, a '(' (to denote the beginning of the unit specification) or the end of the line
+  
+  if(*b == '\0') return -1; // Unexpected end-of-line
+
+  ke = b - 1;
+  while(isspace(*ke)) --ke; // Back up until we hit the end of the key
+
+  while(*b != '\0' && *b != '=') b++; // Advance to the equals sign
+
+  if(*b == '\0') return -2; // Unexpected end-of-line
+
+  b++;
+  while(isspace(*b) && *b != '\0') b++; // Move forward past the whitespace to the beginning of the value
+
+  if(*b == '\0') return -3; // Unexpected end-of-line
+
+  vs = b++;
+  while(*b != ';' && *b != '\0') ++b; // Move forward to the end of the line or the beginning of a comment
+
+  ve = b - 1;
+  while(isspace(*ve)) --ve; // Back up until we hit the end of the key
+
+  strncpy(key, ks, ke - ks + 1);
+  key[ke-ks+1] = '\0';
+  strncpy(value, vs, ve - vs + 1);
+  value[ve-vs+1] = '\0';
+
+  return 1;
+}
+
 int check_file(const char *path, char *line, char **fileName)
 {
   char *p, *r;
@@ -651,299 +693,267 @@ uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
   return params;
 }
 
-uavsar_insar *read_uavsar_insar_params(const char *dataFile, 
-				       uavsar_type_t type)
+uavsar_insar *
+read_uavsar_insar_params(const char *dataFile, uavsar_type_t type)
 {
   uavsar_insar *params = (uavsar_insar *) MALLOC(sizeof(uavsar_insar));
   char time1[50], time2[50], lat_str[10], lon_str[10];
 
   // Determine ID
-  char *dirName = (char *) MALLOC(sizeof(char)*1024);
-  char *fileName = (char *) MALLOC(sizeof(char)*1024);  
+  char *dirName = (char *) MALLOC(sizeof(char) * 1024);
+  char *fileName = (char *) MALLOC(sizeof(char) * 1024);
   split_dir_and_file(dataFile, dirName, fileName);
   sprintf(params->id, "%s", stripExt(fileName));
 
   // Read annotation file
-  char line[255];
+  char line[255], key[255], value[255];
   FILE *fp = FOPEN(dataFile, "r");
   while (fgets(line, 255, fp)) {
-    if (strstr(line, "Site Description"))
-      strcpy(params->site, get_uavsar(line, "Site Description"));
-    if (strstr(line, "Processing Mode"))
-      strcpy(params->processing_mode, get_uavsar(line, "Processing Mode"));
-    if (strstr(line, "Polarization"))
-      strcpy(params->polarization, get_uavsar(line, "Polarization"));
-    if (strstr(line, "Number of Looks in Range"))
-      params->range_look_count = 
-	atoi(get_uavsar(line, "Number of Looks in Range"));
-    if (strstr(line, "Number of Looks in Azimuth"))
-      params->azimuth_look_count =
-	atoi(get_uavsar(line, "Number of Looks in Azimuth"));
+    int ret = parse_annotation_line(line, key, value);
+    printf("Key is: %s\t\tValue is: %s\n", key, value);
+    if (!strcmp(key, "Site Description"))
+      strcpy(params->site, value);
+    if (!strcmp(key, "Processing Mode"))
+      strcpy(params->processing_mode, value);
+    if (!strcmp(key, "Polarization"))
+      strcpy(params->polarization, value);
+    if (!strcmp(key, "Number of Looks in Range"))
+      params->range_look_count = atoi(value);
+    if (!strcmp(key, "Number of Looks in Azimuth"))
+      params->azimuth_look_count = atoi(value);
     if (type == INSAR_INT) {
       params->type = INSAR_INT;
-      if (strstr(line, "Interferogram Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "Interferogram Bytes Per Pixel"));
-      else if (strstr(line, "Interferogram Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "Interferogram Pixel Format"));
-      else if (strstr(line, "Interferogram Units"))
-	strcpy(params->data_units, get_uavsar(line, "Interferogram Units"));
+      if (!strcmp(key, "Interferogram Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "Interferogram Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "Interferogram Units"))
+        strcpy(params->data_units, value);
     }
     else if (type == INSAR_UNW) {
       params->type = INSAR_UNW;
-      if (strstr(line, "Unwrapped Phase Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "Unwrapped Phase Bytes Per Pixel"));
-      else if (strstr(line, "Unwrapped Phase Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "Unwrapped Phase Pixel Format"));
-      else if (strstr(line, "Unwrapped Phase Units"))
-	strcpy(params->data_units, get_uavsar(line, "Unwrapped Phase Units"));
+      if (!strcmp(key, "Unwrapped Phase Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "Unwrapped Phase Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "Unwrapped Phase Units"))
+        strcpy(params->data_units, value);
     }
     else if (type == INSAR_COR) {
       params->type = INSAR_COR;
-      if (strstr(line, "Correlation Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "Correlation Bytes Per Pixel"));
-      else if (strstr(line, "Correlation Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "Correlation Pixel Format"));
-      else if (strstr(line, "Correlation Units"))
-	strcpy(params->data_units, get_uavsar(line, "Correlation Units"));
+      if (!strcmp(key, "Correlation Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "Correlation Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "Correlation Units"))
+        strcpy(params->data_units, value);
     }
     else if (type == INSAR_AMP) {
       params->type = INSAR_AMP;
-      if (strstr(line, "Amplitude Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "Amplitude Bytes Per Pixel"));
-      else if (strstr(line, "Amplitude Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "Amplitude Pixel Format"));
-      else if (strstr(line, "Amplitude Units"))
-	strcpy(params->data_units, get_uavsar(line, "Amplitude Units"));
+      if (!strcmp(key, "Amplitude Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "Amplitude Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "Amplitude Units"))
+        strcpy(params->data_units, value);
     }
-    if (type >= INSAR_AMP && type <=INSAR_COR) {
-      if (strstr(line, "Slant Range Data Azimuth Lines"))
-	params->row_count = 
-	  atoi(get_uavsar(line, "Slant Range Data Azimuth Lines"));
-      else if (strstr(line, "Slant Range Data Range Samples"))
-	params->column_count = 
-	  atoi(get_uavsar(line, "Slant Range Data Range Samples"));
-      else if (strstr(line, "slt.set_proj"))
-	strcpy(params->projection, get_uavsar(line, "slt.set_proj"));
-      else if (strstr(line, "slt.row_addr"))
-	params->along_track_offset = atof(get_uavsar(line, "slt.row_addr"));
-      else if (strstr(line, "slt.col_addr"))
-	params->cross_track_offset = atof(get_uavsar(line, "slt.col_addr"));
-      else if (strstr(line, "Slant Range Data at Near Range")) {
-	params->slant_range_first_pixel = 
-	  atof(get_uavsar(line, "Slant Range Data at Near Range"));
-	params->slant_range_first_pixel /= 1000.0;
+    if (type >= INSAR_AMP && type <= INSAR_COR) {
+      if (!strcmp(key, "Slant Range Data Azimuth Lines"))
+        params->row_count = atoi(value);
+      else if (!strcmp(key, "Slant Range Data Range Samples"))
+        params->column_count = atoi(value);
+      else if (!strcmp(key, "slt.set_proj"))
+        strcpy(params->projection, value);
+      else if (!strcmp(key, "slt.row_addr"))
+        params->along_track_offset = atof(value);
+      else if (!strcmp(key, "slt.col_addr"))
+        params->cross_track_offset = atof(value);
+      else if (!strcmp(key, "Slant Range Data at Near Range")) {
+        params->slant_range_first_pixel = atof(value);
+        params->slant_range_first_pixel /= 1000.0;
       }
-      else if (strstr(line, "Slant Range Data Azimuth Spacing"))
-	params->azimuth_pixel_spacing = 
-	  atof(get_uavsar(line, "Slant Range Data Azimuth Spacing"));
-      else if (strstr(line, "Slant Range Data Range Spacing"))
-	params->range_pixel_spacing = 
-	  atof(get_uavsar(line, "Slant Range Data Range Spacing"));
+      else if (!strcmp(key, "Slant Range Data Azimuth Spacing"))
+        params->azimuth_pixel_spacing = atof(value);
+      else if (!strcmp(key, "Slant Range Data Range Spacing"))
+        params->range_pixel_spacing = atof(value);
     }
-    else if (type >= INSAR_AMP_GRD && type <=INSAR_HGT_GRD) { 
-      if (strstr(line, "Ground Range Data Latitude Lines"))
-	params->row_count = 
-	  atoi(get_uavsar(line, "Ground Range Data Latitude Lines"));
-      else if (strstr(line, "Ground Range Data Longitude Samples"))
-	params->column_count = 
-	  atoi(get_uavsar(line, "Ground Range Data Longitude Samples"));
-      else if (strstr(line, "grd.set_proj"))
-	strcpy(params->projection, get_uavsar(line, "grd.set_proj"));
-      else if (strstr(line, "grd.row_addr"))
-	params->along_track_offset = atof(get_uavsar(line, "grd.row_addr"));
-      else if (strstr(line, "grd.col_addr"))
-	params->cross_track_offset = atof(get_uavsar(line, "grd.col_addr"));
-      else if (strstr(line, "Ground Range Data Latitude Spacing"))
-	params->azimuth_pixel_spacing = 
-	  atof(get_uavsar(line, "Ground Range Data Latitude Spacing"));
-      else if (strstr(line, "Ground Range Data Longitude Spacing"))
-	params->range_pixel_spacing = 
-	  atof(get_uavsar(line, "Ground Range Data Longitude Spacing"));
+    else if (type >= INSAR_AMP_GRD && type <= INSAR_HGT_GRD) {
+      if (!strcmp(key, "Ground Range Data Latitude Lines"))
+        params->row_count = atoi(value);
+      else if (!strcmp(key, "Ground Range Data Longitude Samples"))
+        params->column_count = atoi(value);
+      else if (!strcmp(key, "grd.set_proj"))
+        strcpy(params->projection, value);
+      else if (!strcmp(key, "grd.row_addr"))
+        params->along_track_offset = atof(value);
+      else if (!strcmp(key, "grd.col_addr"))
+        params->cross_track_offset = atof(value);
+      else if (!strcmp(key, "Ground Range Data Latitude Spacing"))
+        params->azimuth_pixel_spacing = atof(value);
+      else if (!strcmp(key, "Ground Range Data Longitude Spacing"))
+        params->range_pixel_spacing = atof(value);
     }
     if (type == INSAR_INT_GRD) {
       params->type = INSAR_INT_GRD;
-      if (strstr(line, "Interferogram Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "Interferogram Bytes Per Pixel"));
-      else if (strstr(line, "Interferogram Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "Interferogram Pixel Format"));
-      else if (strstr(line, "Interferogram Units"))
-	strcpy(params->data_units, get_uavsar(line, "Interferogram Units"));
+      if (!strcmp(key, "Interferogram Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "Interferogram Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "Interferogram Units"))
+        strcpy(params->data_units, value);
     }
     else if (type == INSAR_UNW_GRD) {
       params->type = INSAR_UNW_GRD;
-      if (strstr(line, "Unwrapped Phase Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "Unwrapped Phase Bytes Per Pixel"));
-      else if (strstr(line, "Unwrapped Phase Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "Unwrapped Phase Pixel Format"));
-      else if (strstr(line, "Unwrapped Phase Units"))
-	strcpy(params->data_units, get_uavsar(line, "Unwrapped Phase Units"));
+      if (!strcmp(key, "Unwrapped Phase Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "Unwrapped Phase Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "Unwrapped Phase Units"))
+        strcpy(params->data_units, value);
     }
     else if (type == INSAR_COR_GRD) {
       params->type = INSAR_COR_GRD;
-      if (strstr(line, "Correlation Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "Correlation Bytes Per Pixel"));
-      else if (strstr(line, "Correlation Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "Correlation Pixel Format"));
-      else if (strstr(line, "Correlation Units"))
-	strcpy(params->data_units, get_uavsar(line, "Correlation Units"));
+      if (!strcmp(key, "Correlation Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "Correlation Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "Correlation Units"))
+        strcpy(params->data_units, value);
     }
     else if (type == INSAR_AMP_GRD) {
       params->type = INSAR_AMP_GRD;
-      if (strstr(line, "Amplitude Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "Amplitude Bytes Per Pixel"));
-      else if (strstr(line, "Amplitude Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "Amplitude Pixel Format"));
-      else if (strstr(line, "Amplitude Units"))
-	strcpy(params->data_units, get_uavsar(line, "Amplitude Units"));
+      if (!strcmp(key, "Amplitude Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "Amplitude Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "Amplitude Units"))
+        strcpy(params->data_units, value);
     }
     else if (type == INSAR_HGT_GRD) {
       params->type = INSAR_HGT_GRD;
-      if (strstr(line, "DEM Bytes Per Pixel"))
-	params->bytes_per_pixel = 
-	  atoi(get_uavsar(line, "DEM Bytes Per Pixel"));
-      else if (strstr(line, "DEM Pixel Format"))
-	strcpy(params->value_format, 
-	       get_uavsar(line, "DEM Pixel Format"));
-      else if (strstr(line, "DEM Units"))
-	strcpy(params->data_units, get_uavsar(line, "DEM Units"));
+      if (!strcmp(key, "DEM Bytes Per Pixel"))
+        params->bytes_per_pixel = atoi(value);
+      else if (!strcmp(key, "DEM Pixel Format"))
+        strcpy(params->value_format, value);
+      else if (!strcmp(key, "DEM Units"))
+        strcpy(params->data_units, value);
     }
-    if (strstr(line, "set_hddr"))
-      params->header_bytes = atoi(get_uavsar(line, "set_hddr"));
-    else if (strstr(line, "set_tail"))
-      params->tail_bytes = atoi(get_uavsar(line, "set_tail"));
-    else if (strstr(line, "set_plat"))
-      params->lat_peg_point = atof(get_uavsar(line, "set_plat"));
-    else if (strstr(line, "set_plon"))
-      params->lon_peg_point = atof(get_uavsar(line, "set_plon"));
-    else if (strstr(line, "set_phdg"))
-      params->head_peg_point = atof(get_uavsar(line, "set_phdg"));
-    else if (strstr(line, "val_endi"))
-      strcpy(params->endianess, get_uavsar(line, "val_endi"));
-    else if (strstr(line, "val_mult"))
-      params->data_scale = atof(get_uavsar(line, "val_mult"));
-    else if (strstr(line, "val_addr"))
-      params->data_shift = atof(get_uavsar(line, "val_addr"));
-    else if (strstr(line, "val_minv"))
-      params->min_value = atof(get_uavsar(line, "val_minv"));
-    else if (strstr(line, "val_maxv"))
-      params->max_value = atof(get_uavsar(line, "val_maxv"));
-    else if (strstr(line, "Center Wavelength"))
-      params->wavelength = atof(get_uavsar(line, "Center Wavelength"));
-    else if (strstr(line, "Ellipsoid Semi-major Axis"))
-      params->semi_major = atof(get_uavsar(line, "Ellipsoid Semi-major Axis"));
-    else if (strstr(line, "Ellipsoid Eccentricity Squared"))
-      params->eccentricity = 
-	atof(get_uavsar(line, "Ellipsoid Eccentricity Squared"));
-    else if (strstr(line, "Look Direction"))
-      strcpy(params->look_direction, get_uavsar(line, "Look Direction"));
-    else if (strstr(line, "Range Spacing per Bin"))
-      params->range_spacing = atof(get_uavsar(line, "Range Spacing per Bin"));
-    else if (strstr(line, "Azimuth Spacing"))
-      params->azimuth_spacing = atof(get_uavsar(line, "Azimuth Spacing"));
-    else if (strstr(line, "Image Starting Range"))
-      params->slant_range_first_pixel = 
-	atof(get_uavsar(line, "Image Starting Range"));
-    else if (strstr(line, "Global Average Yaw"))
-      params->yaw = atof(get_uavsar(line, "Global Average Yaw"));
-    else if (strstr(line, "Global Average Pitch"))
-      params->pitch = atof(get_uavsar(line, "Global Average Pitch"));
-    else if (strstr(line, "Global Average Roll"))
-      params->roll = atof(get_uavsar(line, "Global Average Roll"));
-    else if (strstr(line, "Global Average Altitude"))
-      params->altitude = atof(get_uavsar(line, "Global Average Altitude"));
-    else if (strstr(line, "Average GPS Altitude"))
-      params->altitude = atof(get_uavsar(line, "Average GPS Altitude"));
-    else if (strstr(line, "Global Average Terrain Height"))
-      params->terrain_height = 
-	atof(get_uavsar(line, "Global Average Terrain Height"));
-    else if (strstr(line, "Global Average Squint Angle"))
-      params->squint_angle = 
-	atof(get_uavsar(line, "Global Average Squint Angle"));
-    else if (strstr(line, "Pulse Length"))
-      params->pulse_length = atof(get_uavsar(line, "Pulse Length"));
-    else if (strstr(line, "Steering Angle (90 is Boresite)"))
-      params->steering_angle = 
-	atof(get_uavsar(line, "Steering Angle (90 is Boresite)"));
-    else if (strstr(line, "Bandwidth"))
-      params->bandwidth = atof(get_uavsar(line, "Bandwidth"));
-    else if (strstr(line, "Image Corner Latitude 1")) {
-      strcpy(lat_str, get_uavsar(line, "Image Corner Latitude 1"));
+    if (!strcmp(key, "set_hddr"))
+      params->header_bytes = atoi(value);
+    else if (!strcmp(key, "set_tail"))
+      params->tail_bytes = atoi(value);
+    else if (!strcmp(key, "set_plat"))
+      params->lat_peg_point = atof(value);
+    else if (!strcmp(key, "set_plon"))
+      params->lon_peg_point = atof(value);
+    else if (!strcmp(key, "set_phdg"))
+      params->head_peg_point = atof(value);
+    else if (!strcmp(key, "val_endi"))
+      strcpy(params->endianess, value);
+    else if (!strcmp(key, "val_mult"))
+      params->data_scale = atof(value);
+    else if (!strcmp(key, "val_addr"))
+      params->data_shift = atof(value);
+    else if (!strcmp(key, "val_minv"))
+      params->min_value = atof(value);
+    else if (!strcmp(key, "val_maxv"))
+      params->max_value = atof(value);
+    else if (!strcmp(key, "Center Wavelength"))
+      params->wavelength = atof(value);
+    else if (!strcmp(key, "Ellipsoid Semi-major Axis"))
+      params->semi_major = atof(value);
+    else if (!strcmp(key, "Ellipsoid Eccentricity Squared"))
+      params->eccentricity = atof(value);
+    else if (!strcmp(key, "Look Direction"))
+      strcpy(params->look_direction, value);
+    else if (!strcmp(key, "Range Spacing per Bin"))
+      params->range_spacing = atof(value);
+    else if (!strcmp(key, "Azimuth Spacing"))
+      params->azimuth_spacing = atof(value);
+    else if (!strcmp(key, "Image Starting Range"))
+      params->slant_range_first_pixel = atof(value);
+    else if (!strcmp(key, "Global Average Yaw"))
+      params->yaw = atof(value);
+    else if (!strcmp(key, "Global Average Pitch"))
+      params->pitch = atof(value);
+    else if (!strcmp(key, "Global Average Roll"))
+      params->roll = atof(value);
+    else if (!strcmp(key, "Global Average Altitude"))
+      params->altitude = atof(value);
+    else if (!strcmp(key, "Average GPS Altitude"))
+      params->altitude = atof(value);
+    else if (!strcmp(key, "Global Average Terrain Height"))
+      params->terrain_height = atof(value);
+    else if (!strcmp(key, "Global Average Squint Angle"))
+      params->squint_angle = atof(value);
+    else if (!strcmp(key, "Pulse Length"))
+      params->pulse_length = atof(value);
+    else if (!strcmp(key, "Steering Angle (90 is Boresite)"))
+      params->steering_angle = atof(value);
+    else if (!strcmp(key, "Bandwidth"))
+      params->bandwidth = atof(value);
+    else if (!strcmp(key, "Image Corner Latitude 1")) {
+      strcpy(lat_str, value);
       if (strcmp_case(lat_str, "N/A") == 0)
-	params->lat_upper_left = MAGIC_UNSET_DOUBLE;
+        params->lat_upper_left = MAGIC_UNSET_DOUBLE;
       else
-	params->lat_upper_left = atof(lat_str);
+        params->lat_upper_left = atof(lat_str);
     }
-    else if (strstr(line, "Image Corner Longitude 1")) {
-      strcpy(lon_str, get_uavsar(line, "Image Corner Longitude 1"));
+    else if (!strcmp(key, "Image Corner Longitude 1")) {
+      strcpy(lon_str, value);
       if (strcmp_case(lon_str, "N/A") == 0)
-	params->lon_upper_left = MAGIC_UNSET_DOUBLE;
+        params->lon_upper_left = MAGIC_UNSET_DOUBLE;
       else
-	params->lon_upper_left = atof(lon_str);	
+        params->lon_upper_left = atof(lon_str);
     }
-    else if (strstr(line, "Image Corner Latitude 2")) {
-      strcpy(lat_str, get_uavsar(line, "Image Corner Latitude 2"));
+    else if (!strcmp(key, "Image Corner Latitude 2")) {
+      strcpy(lat_str, value);
       if (strcmp_case(lat_str, "N/A") == 0)
-	params->lat_upper_right = MAGIC_UNSET_DOUBLE;
+        params->lat_upper_right = MAGIC_UNSET_DOUBLE;
       else
-	params->lat_upper_right = atof(lat_str);
+        params->lat_upper_right = atof(lat_str);
     }
-    else if (strstr(line, "Image Corner Longitude 2")) {
-      strcpy(lon_str, get_uavsar(line, "Image Corner Longitude 2"));
+    else if (!strcmp(key, "Image Corner Longitude 2")) {
+      strcpy(lon_str, value);
       if (strcmp_case(lon_str, "N/A") == 0)
-	params->lon_upper_right = MAGIC_UNSET_DOUBLE;
+        params->lon_upper_right = MAGIC_UNSET_DOUBLE;
       else
-	params->lon_upper_right = atof(lon_str);
+        params->lon_upper_right = atof(lon_str);
     }
-    else if (strstr(line, "Image Corner Latitude 3")) {
-      strcpy(lat_str, get_uavsar(line, "Image Corner Latitude 3"));
+    else if (!strcmp(key, "Image Corner Latitude 3")) {
+      strcpy(lat_str, value);
       if (strcmp_case(lat_str, "N/A") == 0)
-	params->lat_lower_left = MAGIC_UNSET_DOUBLE;
+        params->lat_lower_left = MAGIC_UNSET_DOUBLE;
       else
-	params->lat_lower_left = atof(lat_str);
+        params->lat_lower_left = atof(lat_str);
     }
-    else if (strstr(line, "Image Corner Longitude 3")) {
-      strcpy(lon_str, get_uavsar(line, "Image Corner Longitude 3"));
+    else if (!strcmp(key, "Image Corner Longitude 3")) {
+      strcpy(lon_str, value);
       if (strcmp_case(lon_str, "N/A") == 0)
-	params->lon_lower_left = MAGIC_UNSET_DOUBLE;
+        params->lon_lower_left = MAGIC_UNSET_DOUBLE;
       else
-	params->lon_lower_left = atof(lon_str);
+        params->lon_lower_left = atof(lon_str);
     }
-    else if (strstr(line, "Image Corner Latitude 4")) {
-      strcpy(lat_str, get_uavsar(line, "Image Corner Latitude 4"));
+    else if (!strcmp(key, "Image Corner Latitude 4")) {
+      strcpy(lat_str, value);
       if (strcmp_case(lat_str, "N/A") == 0)
-	params->lat_lower_right = MAGIC_UNSET_DOUBLE;
+        params->lat_lower_right = MAGIC_UNSET_DOUBLE;
       else
-	params->lat_lower_right = atof(lat_str);
+        params->lat_lower_right = atof(lat_str);
     }
-    else if (strstr(line, "Image Corner Longitude 4")) {
-      strcpy(lon_str, get_uavsar(line, "Image Corner Longitude 4"));
+    else if (!strcmp(key, "Image Corner Longitude 4")) {
+      strcpy(lon_str, value);
       if (strcmp_case(lon_str, "N/A") == 0)
-	params->lon_lower_right = MAGIC_UNSET_DOUBLE;
+        params->lon_lower_right = MAGIC_UNSET_DOUBLE;
       else
-	params->lon_lower_right = atof(lon_str);
+        params->lon_lower_right = atof(lon_str);
     }
-    else if (strstr(line, "Time of Acquisition for Pass 1"))
-      strcpy(time1, get_uavsar(line, "Time of Acquisition for Pass 1"));
-    else if (strstr(line, "Time of Acquisition for Pass 2"))
-      strcpy(time2, get_uavsar(line, "Time of Acquisition for Pass 2"));
-    else if (strstr(line, "Processor Version Number"))
-      strcpy(params->processor, get_uavsar(line, "Processor Version Number"));
+    else if (!strcmp(key, "Time of Acquisition for Pass 1"))
+      strcpy(time1, value);
+    else if (!strcmp(key, "Time of Acquisition for Pass 2"))
+      strcpy(time2, value);
+    else if (!strcmp(key, "Processor Version Number"))
+      strcpy(params->processor, value);
   }
   FCLOSE(fp);
 
