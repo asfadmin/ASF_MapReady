@@ -64,19 +64,19 @@ int parse_annotation_line(char *line, char *key, char *value)
 
   while(*b != '(' && *b != '\0' && *b != '=') ++b; // Advance to a delimiter; either an equals sign, a '(' (to denote the beginning of the unit specification) or the end of the line
   
-  if(*b == '\0') return -1; // Unexpected end-of-line
+  if(*b == '\0') return 0; // Unexpected end-of-line
 
   ke = b - 1;
   while(isspace(*ke)) --ke; // Back up until we hit the end of the key
 
   while(*b != '\0' && *b != '=') b++; // Advance to the equals sign
 
-  if(*b == '\0') return -2; // Unexpected end-of-line
+  if(*b == '\0') return 0; // Unexpected end-of-line
 
   b++;
   while(isspace(*b) && *b != '\0') b++; // Move forward past the whitespace to the beginning of the value
 
-  if(*b == '\0') return -3; // Unexpected end-of-line
+  if(*b == '\0') return 0; // Unexpected end-of-line
 
   vs = b++;
   while(*b != ';' && *b != '\0') ++b; // Move forward to the end of the line or the beginning of a comment
@@ -116,21 +116,22 @@ int check_file(const char *path, char *line, char **fileName)
     return FALSE;
 }
 
-void get_uavsar_file_names(const char *dataFile, uavsar_type_t type, 
-				  char ***pDataName, char ***pElement,
-				  int **pDataType, int *nBands)
+void
+get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
+                      char ***pDataName, char ***pElement,
+                      int **pDataType, int *nBands)
 {
-  int ii, slc=0, mlc=0, dat=0, grd=0, hgt=0;
-  int igram=0, unw=0, cor=0, amp=0;
-  int igram_grd=0, unw_grd=0, cor_grd=0, amp_grd=0, hgt_grd=0;
+  int ii, slc = 0, mlc = 0, dat = 0, grd = 0, hgt = 0;
+  int igram = 0, unw = 0, cor = 0, amp = 0;
+  int igram_grd = 0, unw_grd = 0, cor_grd = 0, amp_grd = 0, hgt_grd = 0;
 
-  char *file = (char *) MALLOC(sizeof(char)*1024);
-  char **dataName = (char **) MALLOC(6*sizeof(char *));
-  char **element = (char **) MALLOC(6*sizeof(char *));
-  int *dataType = (int *) MALLOC(6*sizeof(int));
-  for (ii=0; ii<6; ii++) {
-    dataName[ii] = (char *) MALLOC(sizeof(char)*512);
-    element[ii] = (char *) MALLOC(sizeof(char)*10);
+  char *file = (char *) MALLOC(sizeof(char) * 1024);
+  char **dataName = (char **) MALLOC(6 * sizeof(char *));
+  char **element = (char **) MALLOC(6 * sizeof(char *));
+  int *dataType = (int *) MALLOC(6 * sizeof(int));
+  for (ii = 0; ii < 6; ii++) {
+    dataName[ii] = (char *) MALLOC(sizeof(char) * 512);
+    element[ii] = (char *) MALLOC(sizeof(char) * 10);
   }
   *pDataName = dataName;
   *pElement = element;
@@ -139,278 +140,284 @@ void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 
   char *path = get_dirname(dataFile);
 
-  char line[255];
+  char line[255], key[255], value[255];
   FILE *fp = FOPEN(dataFile, "r");
   while (fgets(line, 255, fp)) {
+    if(!parse_annotation_line(line, key, value)) {
+      asfPrintWarning("Unable to parse line in annotation file: %s", line);
+      continue;
+    }
+    if (!strcmp(key, ""))
+      continue;
     if (type == POLSAR_SLC) {
-      if (strstr(line, "slcHH   =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[slc], file);
-	  strcpy(element[slc], "HH");
-	  dataType[slc] = 1;
-	  slc++;
-	}
+      if (!strcmp(key, "slcHH")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[slc], file);
+          strcpy(element[slc], "HH");
+          dataType[slc] = 1;
+          slc++;
+        }
       }
-      else if (strstr(line, "slcHV   =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[slc], file);
-	  strcpy(element[slc], "HV");
-	  dataType[slc] = 1;
-	  slc++;
-	}
+      else if (!strcmp(key, "slcHV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[slc], file);
+          strcpy(element[slc], "HV");
+          dataType[slc] = 1;
+          slc++;
+        }
       }
-      else if (strstr(line, "slcVH   =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[slc], file);
-	  strcpy(element[slc], "VH");
-	  dataType[slc] = 1;
-	  slc++;
-	}
+      else if (!strcmp(key, "slcVH")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[slc], file);
+          strcpy(element[slc], "VH");
+          dataType[slc] = 1;
+          slc++;
+        }
       }
-      else if (strstr(line, "slcVV   =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[slc], file);
-	  strcpy(element[slc], "VV");
-	  dataType[slc] = 1;
-	  slc++;
-	}
+      else if (!strcmp(key, "slcVV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[slc], file);
+          strcpy(element[slc], "VV");
+          dataType[slc] = 1;
+          slc++;
+        }
       }
       *nBands = slc;
     }
     else if (type == POLSAR_MLC) {
-      if (strstr(line, "mlcHHHH =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[mlc], file);
-	  strcpy(element[mlc], "C11");
-	  dataType[mlc] = 0;
-	  mlc++;
-	}
+      if (!strcmp(key, "mlcHHHH")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[mlc], file);
+          strcpy(element[mlc], "C11");
+          dataType[mlc] = 0;
+          mlc++;
+        }
       }
-      else if (strstr(line, "mlcHVHV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[mlc], file);
-	  strcpy(element[mlc], "C22");
-	  dataType[mlc] = 0;
-	  mlc++;
-	}
+      else if (!strcmp(key, "mlcHVHV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[mlc], file);
+          strcpy(element[mlc], "C22");
+          dataType[mlc] = 0;
+          mlc++;
+        }
       }
-      else if (strstr(line, "mlcVVVV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[mlc], file);
-	  strcpy(element[mlc], "C33");
-	  dataType[mlc] = 0;
-	  mlc++;
-	}
+      else if (!strcmp(key, "mlcVVVV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[mlc], file);
+          strcpy(element[mlc], "C33");
+          dataType[mlc] = 0;
+          mlc++;
+        }
       }
-      else if (strstr(line, "mlcHHHV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[mlc], file);
-	  strcpy(element[mlc], "C12");
-	  dataType[mlc] = 1;
-	  mlc++;
-	}
+      else if (!strcmp(key, "mlcHHHV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[mlc], file);
+          strcpy(element[mlc], "C12");
+          dataType[mlc] = 1;
+          mlc++;
+        }
       }
-      else if (strstr(line, "mlcHHVV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[mlc], file);
-	  strcpy(element[mlc], "C13");
-	  dataType[mlc] = 1;
-	  mlc++;
-	}
+      else if (!strcmp(key, "mlcHHVV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[mlc], file);
+          strcpy(element[mlc], "C13");
+          dataType[mlc] = 1;
+          mlc++;
+        }
       }
-      else if (strstr(line, "mlcHVVV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[mlc], file);
-	  strcpy(element[mlc], "C23");
-	  dataType[mlc] = 1;
-	  mlc++;
-	}
+      else if (!strcmp(key, "mlcHVVV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[mlc], file);
+          strcpy(element[mlc], "C23");
+          dataType[mlc] = 1;
+          mlc++;
+        }
       }
       *nBands = mlc;
     }
     else if (type == POLSAR_DAT) {
-      if (strstr(line, "dat     =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[dat], file);
-	  dat++;
-	}
+      if (!strcmp(key, "dat")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[dat], file);
+          dat++;
+        }
       }
       *nBands = dat;
     }
     else if (type == POLSAR_GRD) {
-      if (strstr(line, "grdHHHH =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[grd], file);
-	  strcpy(element[grd], "C11");
-	  dataType[grd] = 0;
-	  grd++;
-	}
+      if (!strcmp(key, "grdHHHH")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[grd], file);
+          strcpy(element[grd], "C11");
+          dataType[grd] = 0;
+          grd++;
+        }
       }
-      else if (strstr(line, "grdHVHV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[grd], file);
-	  strcpy(element[grd], "C22");
-	  dataType[grd] = 0;
-	  grd++;
-	}
+      else if (!strcmp(key, "grdHVHV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[grd], file);
+          strcpy(element[grd], "C22");
+          dataType[grd] = 0;
+          grd++;
+        }
       }
-      else if (strstr(line, "grdVVVV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[grd], file);
-	  strcpy(element[grd], "C33");
-	  dataType[grd] = 0;
-	  grd++;
-	}
+      else if (!strcmp(key, "grdVVVV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[grd], file);
+          strcpy(element[grd], "C33");
+          dataType[grd] = 0;
+          grd++;
+        }
       }
-      else if (strstr(line, "grdHHHV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[grd], file);
-	  strcpy(element[grd], "C12");
-	  dataType[grd] = 1;
-	  grd++;
-	}
+      else if (!strcmp(key, "grdHHHV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[grd], file);
+          strcpy(element[grd], "C12");
+          dataType[grd] = 1;
+          grd++;
+        }
       }
-      else if (strstr(line, "grdHHVV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[grd], file);
-	  strcpy(element[grd], "C13");
-	  dataType[grd] = 1;
-	  grd++;
-	}
+      else if (!strcmp(key, "grdHHVV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[grd], file);
+          strcpy(element[grd], "C13");
+          dataType[grd] = 1;
+          grd++;
+        }
       }
-      else if (strstr(line, "grdHVVV =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[grd], file);
-	  strcpy(element[grd], "C23");
-	  dataType[grd] = 1;
-	  grd++;
-	}
+      else if (!strcmp(key, "grdHVVV")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[grd], file);
+          strcpy(element[grd], "C23");
+          dataType[grd] = 1;
+          grd++;
+        }
       }
       *nBands = grd;
     }
     else if (type == POLSAR_HGT) {
-      if (strstr(line, "hgt     =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[hgt], file);
-	  strcpy(element[hgt], "HH");
-	  dataType[hgt] = 0;
-	  hgt++;
-	}
+      if (!strcmp(key, "hgt")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[hgt], file);
+          strcpy(element[hgt], "HH");
+          dataType[hgt] = 0;
+          hgt++;
+        }
       }
       *nBands = hgt;
     }
     else if (type == INSAR_AMP) {
-      if (strstr(line, "Slant Range Amplitude of Pass 1          =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[amp], file);
-	  strcpy(element[amp], "HH");
-	  dataType[amp] = 0;
-	  amp++;
-	}
+      if (!strcmp(key, "Slant Range Amplitude of Pass 1")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[amp], file);
+          strcpy(element[amp], "HH");
+          dataType[amp] = 0;
+          amp++;
+        }
       }
-      else if (strstr(line, "Slant Range Amplitude of Pass 2          =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[amp], file);
-	  strcpy(element[amp], "HH");
-	  dataType[amp] = 0;
-	  amp++;
-	}
+      else if (!strcmp(key, "Slant Range Amplitude of Pass 2")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[amp], file);
+          strcpy(element[amp], "HH");
+          dataType[amp] = 0;
+          amp++;
+        }
       }
       *nBands = amp;
     }
     else if (type == INSAR_AMP_GRD) {
-      if (strstr(line, "Ground Range Amplitude of Pass 1         =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[amp_grd], file);
-	  strcpy(element[amp_grd], "HH");
-	  dataType[amp_grd] = 0;
-	  amp_grd++;
-	}
+      if (!strcmp(key, "Ground Range Amplitude of Pass 1")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[amp_grd], file);
+          strcpy(element[amp_grd], "HH");
+          dataType[amp_grd] = 0;
+          amp_grd++;
+        }
       }
-      else if (strstr(line, "Ground Range Amplitude of Pass 2         =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[amp_grd], file);
-	  strcpy(element[amp_grd], "HH");
-	  dataType[amp_grd] = 0;
-	  amp_grd++;
-	}
+      else if (!strcmp(key, "Ground Range Amplitude of Pass 2")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[amp_grd], file);
+          strcpy(element[amp_grd], "HH");
+          dataType[amp_grd] = 0;
+          amp_grd++;
+        }
       }
       *nBands = amp_grd;
     }
     else if (type == INSAR_INT) {
-      if (strstr(line, "Slant Range Interferogram                =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[igram], file);
-	  strcpy(element[igram], "HH");
-	  dataType[igram] = 1;
-	  igram++;
-	}
+      if (!strcmp(key, "Slant Range Interferogram")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[igram], file);
+          strcpy(element[igram], "HH");
+          dataType[igram] = 1;
+          igram++;
+        }
       }
       *nBands = igram;
     }
     else if (type == INSAR_INT_GRD) {
-      if (strstr(line, "Ground Range Interferogram               =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[igram_grd], file);
-	  strcpy(element[igram_grd], "HH");
-	  dataType[igram_grd] = 1;
-	  igram_grd++;
-	}
+      if (!strcmp(key, "Ground Range Interferogram")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[igram_grd], file);
+          strcpy(element[igram_grd], "HH");
+          dataType[igram_grd] = 1;
+          igram_grd++;
+        }
       }
       *nBands = igram_grd;
     }
     else if (type == INSAR_UNW) {
-      if (strstr(line, "Slant Range Unwrapped Phase              =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[unw], file);
-	  strcpy(element[unw], "HH");
-	  dataType[unw] = 0;
-	  unw++;	  
-	}
+      if (!strcmp(key, "Slant Range Unwrapped Phase")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[unw], file);
+          strcpy(element[unw], "HH");
+          dataType[unw] = 0;
+          unw++;
+        }
       }
       *nBands = unw;
     }
     else if (type == INSAR_UNW_GRD) {
-      if (strstr(line, "Ground Range Unwrapped Phase             =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[unw_grd], file);
-	  strcpy(element[unw_grd], "HH");
-	  dataType[unw_grd] = 0;
-	  unw_grd++;
-	}
+      if (!strcmp(key, "Ground Range Unwrapped Phase")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[unw_grd], file);
+          strcpy(element[unw_grd], "HH");
+          dataType[unw_grd] = 0;
+          unw_grd++;
+        }
       }
       *nBands = unw_grd;
     }
     else if (type == INSAR_COR) {
-      if (strstr(line, "Slant Range Correlation                  =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[cor], file);
-	  strcpy(element[cor], "HH");
-	  dataType[cor] = 0;
-	  cor++;	  
-	}
+      if (!strcmp(key, "Slant Range Correlation")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[cor], file);
+          strcpy(element[cor], "HH");
+          dataType[cor] = 0;
+          cor++;
+        }
       }
       *nBands = cor;
     }
     else if (type == INSAR_COR_GRD) {
-      if (strstr(line, "Ground Range Correlation                 =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[cor_grd], file);
-	  strcpy(element[cor_grd], "HH");
-	  dataType[cor_grd] = 0;
-	  cor_grd++;
-	}
+      if (!strcmp(key, "Ground Range Correlation")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[cor_grd], file);
+          strcpy(element[cor_grd], "HH");
+          dataType[cor_grd] = 0;
+          cor_grd++;
+        }
       }
       *nBands = cor_grd;
     }
     else if (type == INSAR_HGT_GRD) {
-      if (strstr(line, "DEM Used in Ground Projection            =")) {
-	if (check_file(path, line, &file)) {
-	  strcpy(dataName[hgt_grd], file);
-	  strcpy(element[hgt_grd], "HH");
-	  dataType[hgt_grd] = 0;
-	  hgt_grd++;
-	}
+      if (!strcmp(key, "DEM Used in Ground Projection")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[hgt_grd], file);
+          strcpy(element[hgt_grd], "HH");
+          dataType[hgt_grd] = 0;
+          hgt_grd++;
+        }
       }
       *nBands = hgt_grd;
     }
@@ -435,7 +442,10 @@ read_uavsar_polsar_params(const char *dataFile, uavsar_type_t type)
   char line[255], key[255], value[255];
   FILE *fp = FOPEN(dataFile, "r");
   while (fgets(line, 255, fp)) {
-    parse_annotation_line(line, key, value);
+    if(!parse_annotation_line(line, key, value)) {
+      asfPrintWarning("Unable to parse line in annotation file: %s", line);
+      continue;
+    }
     if (!strcmp(key, ""))
       continue;
     if (!strcmp(key, "Site Description"))
@@ -622,7 +632,7 @@ read_uavsar_polsar_params(const char *dataFile, uavsar_type_t type)
       params->squint_angle = atof(value);
     else if (!strcmp(key, "Pulse Length"))
       params->pulse_length = atof(value);
-    else if (!strcmp(key, "Steering Angle (90 is Boresite)"))
+    else if (!strcmp(key, "Steering Angle"))
       params->steering_angle = atof(value);
     else if (!strcmp(key, "Bandwidth"))
       params->bandwidth = atof(value);
@@ -656,7 +666,7 @@ uavsar_insar *
 read_uavsar_insar_params(const char *dataFile, uavsar_type_t type)
 {
   uavsar_insar *params = (uavsar_insar *) MALLOC(sizeof(uavsar_insar));
-  char time1[50], time2[50], lat_str[10], lon_str[10];
+  char time1[50], time2[50];
 
   // Determine ID
   char *dirName = (char *) MALLOC(sizeof(char) * 1024);
@@ -668,7 +678,10 @@ read_uavsar_insar_params(const char *dataFile, uavsar_type_t type)
   char line[255], key[255], value[255];
   FILE *fp = FOPEN(dataFile, "r");
   while (fgets(line, 255, fp)) {
-    parse_annotation_line(line, key, value);
+    if(!parse_annotation_line(line, key, value)) {
+      asfPrintWarning("Unable to parse line in annotation file: %s", line);
+      continue;
+    }
     if(!strcmp(key, ""))
       continue;
     if (!strcmp(key, "Site Description"))
@@ -848,65 +861,57 @@ read_uavsar_insar_params(const char *dataFile, uavsar_type_t type)
       params->squint_angle = atof(value);
     else if (!strcmp(key, "Pulse Length"))
       params->pulse_length = atof(value);
-    else if (!strcmp(key, "Steering Angle (90 is Boresite)"))
+    else if (!strcmp(key, "Steering Angle"))
       params->steering_angle = atof(value);
     else if (!strcmp(key, "Bandwidth"))
       params->bandwidth = atof(value);
-    else if (!strcmp(key, "Image Corner Latitude 1")) {
-      strcpy(lat_str, value);
-      if (strcmp_case(lat_str, "N/A") == 0)
+    else if (!strcmp(key, "Approximate Upper Left Latitude")) {
+      if (strcmp_case(value, "N/A") == 0)
         params->lat_upper_left = MAGIC_UNSET_DOUBLE;
       else
-        params->lat_upper_left = atof(lat_str);
+        params->lat_upper_left = atof(value);
     }
-    else if (!strcmp(key, "Image Corner Longitude 1")) {
-      strcpy(lon_str, value);
-      if (strcmp_case(lon_str, "N/A") == 0)
+    else if (!strcmp(key, "Approximate Upper Left Longitude")) {
+      if (strcmp_case(value, "N/A") == 0)
         params->lon_upper_left = MAGIC_UNSET_DOUBLE;
       else
-        params->lon_upper_left = atof(lon_str);
+        params->lon_upper_left = atof(value);
     }
-    else if (!strcmp(key, "Image Corner Latitude 2")) {
-      strcpy(lat_str, value);
-      if (strcmp_case(lat_str, "N/A") == 0)
+    else if (!strcmp(key, "Approximate Upper Right Latitude")) {
+      if (strcmp_case(value, "N/A") == 0)
         params->lat_upper_right = MAGIC_UNSET_DOUBLE;
       else
-        params->lat_upper_right = atof(lat_str);
+        params->lat_upper_right = atof(value);
     }
-    else if (!strcmp(key, "Image Corner Longitude 2")) {
-      strcpy(lon_str, value);
-      if (strcmp_case(lon_str, "N/A") == 0)
+    else if (!strcmp(key, "Approximate Upper Right Longitude")) {
+      if (strcmp_case(value, "N/A") == 0)
         params->lon_upper_right = MAGIC_UNSET_DOUBLE;
       else
-        params->lon_upper_right = atof(lon_str);
+        params->lon_upper_right = atof(value);
     }
-    else if (!strcmp(key, "Image Corner Latitude 3")) {
-      strcpy(lat_str, value);
-      if (strcmp_case(lat_str, "N/A") == 0)
+    else if (!strcmp(key, "Approximate Lower Left Latitude")) {
+      if (strcmp_case(value, "N/A") == 0)
         params->lat_lower_left = MAGIC_UNSET_DOUBLE;
       else
-        params->lat_lower_left = atof(lat_str);
+        params->lat_lower_left = atof(value);
     }
-    else if (!strcmp(key, "Image Corner Longitude 3")) {
-      strcpy(lon_str, value);
-      if (strcmp_case(lon_str, "N/A") == 0)
+    else if (!strcmp(key, "Approximate Lower Left Longitude")) {
+      if (strcmp_case(value, "N/A") == 0)
         params->lon_lower_left = MAGIC_UNSET_DOUBLE;
       else
-        params->lon_lower_left = atof(lon_str);
+        params->lon_lower_left = atof(value);
     }
-    else if (!strcmp(key, "Image Corner Latitude 4")) {
-      strcpy(lat_str, value);
-      if (strcmp_case(lat_str, "N/A") == 0)
+    else if (!strcmp(key, "Approximate Lower Right Latitude")) {
+      if (strcmp_case(value, "N/A") == 0)
         params->lat_lower_right = MAGIC_UNSET_DOUBLE;
       else
-        params->lat_lower_right = atof(lat_str);
+        params->lat_lower_right = atof(value);
     }
-    else if (!strcmp(key, "Image Corner Longitude 4")) {
-      strcpy(lon_str, value);
-      if (strcmp_case(lon_str, "N/A") == 0)
+    else if (!strcmp(key, "Approximate Lower Right Longitude")) {
+      if (strcmp_case(value, "N/A") == 0)
         params->lon_lower_right = MAGIC_UNSET_DOUBLE;
       else
-        params->lon_lower_right = atof(lon_str);
+        params->lon_lower_right = atof(value);
     }
     else if (!strcmp(key, "Time of Acquisition for Pass 1"))
       strcpy(time1, value);
@@ -936,7 +941,10 @@ char *check_data_type(const char *inFileName)
   char *type = (char *) MALLOC(sizeof(char)*25);
   FILE *fp = FOPEN(inFileName, "r");
   while (fgets(line, 255, fp)) {
-    parse_annotation_line(line, key, value);
+    if(!parse_annotation_line(line, key, value)) {
+      asfPrintWarning("Unable to parse line in annotation file: %s", line);
+      continue;
+    }
     if (!strcmp(key, ""))
       continue;
     if (!strcmp(key, "Acquisition Mode"))

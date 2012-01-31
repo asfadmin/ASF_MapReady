@@ -340,38 +340,15 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
   }
 
   // Location block
-  double lat, lon;
-  double ns = meta->general->sample_count;
-  double nl = meta->general->line_count;
   meta->location = meta_location_init();
-  if (meta->sar->image_type == 'S') {
-    meta_get_latLon(meta, 0.0, 0.0, 0.0, &lat, &lon);
-    meta->location->lat_start_near_range = lat;
-    meta->location->lon_start_near_range = lon;
-    meta_get_latLon(meta, 0.0, ns, 0.0, &lat, &lon);
-    meta->location->lat_start_far_range = lat;
-    meta->location->lon_start_far_range = lon;
-    meta_get_latLon(meta, nl, 0.0, 0.0, &lat, &lon);
-    meta->location->lat_end_near_range = lat;
-    meta->location->lon_end_near_range = lon;
-    meta_get_latLon(meta, nl, ns, 0.0, &lat, &lon);
-    meta->location->lat_end_far_range = lat;
-    meta->location->lon_end_far_range = lon;
-  }
-  else if (meta->sar->image_type = 'P') {
-    meta->location->lat_start_near_range = params->along_track_offset;
-    meta->location->lon_start_near_range = params->cross_track_offset;
-    meta->location->lat_start_far_range = params->along_track_offset;
-    meta->location->lon_start_far_range = 
-      params->cross_track_offset + params->range_pixel_spacing*ns;
-    meta->location->lat_end_near_range = 
-      params->along_track_offset + params->azimuth_pixel_spacing*nl;
-    meta->location->lon_end_near_range = params->cross_track_offset;
-    meta->location->lat_end_far_range = 
-      params->along_track_offset + params->azimuth_pixel_spacing*nl;
-    meta->location->lon_end_far_range = 
-      params->cross_track_offset + params->range_pixel_spacing*ns;
-  }
+  meta->location->lat_start_near_range = params->lat_upper_left;
+  meta->location->lon_start_near_range = params->lon_upper_left;
+  meta->location->lat_start_far_range = params->lat_upper_right;
+  meta->location->lon_start_far_range = params->lon_upper_right;
+  meta->location->lat_end_near_range = params->lat_lower_left;
+  meta->location->lon_end_near_range = params->lon_lower_left;
+  meta->location->lat_end_far_range = params->lat_lower_right;
+  meta->location->lon_end_far_range = params->lon_lower_right;
 
   return meta;
 }
