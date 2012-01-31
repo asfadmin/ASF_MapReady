@@ -8,15 +8,25 @@
 // pointer to the loaded XML file's internal struct
 GladeXML *glade_xml;
 
-ImageInfo image_info[2];
+ImageInfo image_info[5];
 ImageInfo *curr=NULL;
 int n_images_loaded=1;
+int current_image_info_index=0;
 
 // various values
 double zoom;
 double center_samp, center_line;
 double crosshair_line, crosshair_samp;
 int g_saved_line_count;
+
+// these are used when the command line option "-generic" is given
+// (trying to read in a generic binary file)
+int generic_specified;
+int generic_bin_width, generic_bin_height, generic_bin_datatype;
+
+/************************************************************************
+ * End of globals
+ */
 
 char *find_in_share(const char * filename)
 {
@@ -98,6 +108,7 @@ main(int argc, char **argv)
     if (detect_flag_options(argc, argv, "-help", "--help", NULL))
       help();
 
+
     char band[512], lut[512];
     strcpy(band, "");
 
@@ -107,6 +118,31 @@ main(int argc, char **argv)
         "-colormap", "--colormap", NULL);
     int planner_mode = extract_flag_options(&argc, &argv,
         "-plan", "--plan", NULL);
+    generic_specified = extract_flag_options(&argc, &argv,
+        "-generic", "--generic", NULL);
+    if (generic_specified) {
+       char type[512];
+       if (!extract_int_options(&argc, &argv, &generic_bin_width,
+                "-width", "--width", "-cols", "--cols", NULL) ||
+           !extract_int_options(&argc, &argv, &generic_bin_height,
+                "-height", "--height", "-rows", "--rows", NULL) ||
+           !extract_string_options(&argc, &argv, type,
+                "-type", "--type", NULL)) {
+         asfPrintError("When reading generic data, specify the size and "
+            "data type.  (--width, --height, --type).");
+       }
+       if (strcmp_case(type, "BYTE") == 0 ||
+           strcmp_case(type, "INT8") == 0) {
+         generic_bin_datatype = BYTE;
+       }
+       else if (strcmp_case(type, "FLOAT") == 0 ||
+                strcmp_case(type, "REAL32") == 0) {
+         generic_bin_datatype = REAL32;
+       }
+       else {
+         asfPrintError("Unknown generic data type: %s\n", type);
+       }
+    }
     if (planner_mode) {
       if (detect_flag_options(argc, argv, "-calibrate-reference", NULL)) {
         calibrate_planner_reference();
@@ -122,16 +158,28 @@ main(int argc, char **argv)
     // set up image array
     curr = &image_info[0];
     curr->data_name = curr->meta_name = NULL;
+    int ii;
 
     if (argc < 2) {
         curr->filename = STRDUP(find_in_share("startup.jpg"));
     }
     else {
-        if (argc > 3)
-          asfPrintWarning("Extraneous command-line arguments ignored.\n");
-        if (argc > 2)
-          image_info[1].filename = STRDUP(argv[2]);
-        curr->filename = STRDUP(argv[1]);
+        n_images_loaded = 0;
+	for (ii=1; ii<argc; ++ii) {
+           if (strlen(argv[ii]) > 0) {
+               image_info[n_images_loaded].filename = STRDUP(argv[ii]);
+               ++n_images_loaded;
+           }
+        }    
+    }
+
+    if (n_images_loaded == 1) {
+        asfPrintStatus("Loading 1 image: %s\n", image_info[0].filename);
+    }
+    else {
+        asfPrintStatus("Loading %d images:\n", n_images_loaded);
+        for (ii=0; ii<n_images_loaded; ++ii)
+            asfPrintStatus("%d: %s\n", ii+1, image_info[ii].filename);
     }
 
     // we could call load_file() here, but don't because this way we can
@@ -155,6 +203,10 @@ main(int argc, char **argv)
     if (fileExists(embedded_tiff_lut_file)) remove(embedded_tiff_lut_file);
     if (fileExists(embedded_asf_colormap_file)) remove(embedded_asf_colormap_file);
 
+    for (ii=n_images_loaded-1; ii>=0; --ii)
+    {
+       curr = &image_info[ii];
+
     // strip off any trailing "."
     if (curr->filename[strlen(curr->filename)-1] == '.')
         curr->filename[strlen(curr->filename)-1] = '\0';
@@ -171,48 +223,53 @@ main(int argc, char **argv)
     // much nicer.  When loading an image within the GUI, we don't need
     // to do get_thumbnail_data() as a separate step.
     ThumbnailData *thumbnail_data = get_thumbnail_data(curr);
-    gtk_init(&argc, &argv);
 
-    gchar *glade_xml_file = (gchar *)find_in_share("asf_view.glade");
-    printf("Found asf_view.glade: %s\n", glade_xml_file);
-    glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
-    free(glade_xml_file);
+    // first time through the loop only, set up GTK
+    if (ii == n_images_loaded-1) {
+        gtk_init(&argc, &argv);
 
-    // set up window title, etc
-    set_title(band_specified, band);
-    set_button_images();
+        gchar *glade_xml_file = (gchar *)find_in_share("asf_view.glade");
+        printf("Found asf_view.glade: %s\n", glade_xml_file);
+        glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
+        free(glade_xml_file);
 
-    // set up the acquisition planner, if we are in that mode
-    if (planner_mode) {
-      setup_planner();
+        // set up window title, etc
+        set_title(band_specified, band);
+        set_button_images();
 
-      // getting rid of the info section makes more room for the found
-      // acquisitions, and isn't really necessary in the planner
-      show_widget("info_hbox", FALSE);
+        // set up the acquisition planner, if we are in that mode
+        if (planner_mode) {
+          setup_planner();
+
+          // getting rid of the info section makes more room for the found
+          // acquisitions, and isn't really necessary in the planner
+          show_widget("info_hbox", FALSE);
+        }
+
+        // populate the look up table list, and apply the default
+        // look-up-table, if there is one.  In this case, we will need to
+        // apply it retroactively to the thumbnail data we already loaded
+        // (In new.c, this kludge isn't required - we load/apply in the
+        // same pass -- here it is required because we pre-load the thumbnail)
+        populate_lut_combo();
+        if (check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut)) {
+            GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+            gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
+            set_current_index(get_tiff_lut_index());
+        }
+        else if (is_colormap_ASF_file(curr->filename)) {
+         /*
+            lut_specified = 1;
+            strcpy(lut, EMBEDDED_ASF_COLORMAP_LUT);
+            GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+            gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_asf_lut_index());
+            set_current_index(get_asf_lut_index());
+            check_lut();
+            apply_lut_to_data(thumbnail_data);
+         */
+        }
     }
 
-    // populate the look up table list, and apply the default
-    // look-up-table, if there is one.  In this case, we will need to
-    // apply it retroactively to the thumbnail data we already loaded
-    // (In new.c, this kludge isn't required - we load/apply in the
-    // same pass -- here it is required because we pre-load the thumbnail)
-    populate_lut_combo();
-    if (check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut)) {
-        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
-        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
-        set_current_index(get_tiff_lut_index());
-    }
-    else if (is_colormap_ASF_file(curr->filename)) {
-      /*
-        lut_specified = 1;
-        strcpy(lut, EMBEDDED_ASF_COLORMAP_LUT);
-        GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
-        gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_asf_lut_index());
-        set_current_index(get_asf_lut_index());
-        check_lut();
-        apply_lut_to_data(thumbnail_data);
-      */
-    }
     if (curr->meta && curr->meta->general)  {
         if (set_lut_based_on_image_type(curr->meta->general->image_data_type))
         {
@@ -238,6 +295,11 @@ main(int argc, char **argv)
     disable_meta_button_if_necessary();
     if (lut_specified)
       select_lut(lut);
+    }
+
+    if (n_images_loaded>0)
+        asfPrintStatus("Currently displaying %d: %s\n",
+                       current_image_info_index, curr->filename);
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();

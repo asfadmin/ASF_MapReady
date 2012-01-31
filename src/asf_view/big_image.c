@@ -1199,6 +1199,17 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         }
         update_pixel_info(ii);
     }
+    else if (event->keyval == GDK_f || event->keyval == GDK_F) {
+        current_image_info_index = (current_image_info_index + 1) % n_images_loaded;
+        ii = curr = &image_info[current_image_info_index];
+        asfPrintStatus("Switching to: %s\n", curr->filename);
+
+        fill_small_force_reload(ii);
+        update_pixel_info(ii);
+        fill_meta_info();
+        fill_stats(curr);
+        setup_bands_tab(curr->meta);
+    }
     else if (event->keyval == GDK_n || event->keyval == GDK_N) {
         g_show_north_arrow = !g_show_north_arrow;
     }

@@ -17,6 +17,7 @@ SRCS = asf_view.c \
 	read_terrasar.c \
 	read_roipac.c \
 	read_envi.c \
+	read_generic.c \
 	big_image.c \
 	meta.c \
 	stats.c \

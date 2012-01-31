@@ -70,7 +70,20 @@ int read_file(const char *filename, const char *band, int multilook,
 
     // If you are considering adding support for another data type,
     // see the comments in read_template.c
-    if (try_asf(filename, try_extensions)) {
+    if (generic_specified) {
+        if (handle_generic_file(filename, &err)) {
+            if (meta) meta_free(meta);
+            meta = read_generic_meta(filename);
+            open_generic_data(filename, meta, client);
+            strcpy(meta_name, filename);
+            strcpy(data_name, filename);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    }
+    else if (try_asf(filename, try_extensions)) {
         if (handle_asf_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
             meta = read_asf_meta(meta_name);

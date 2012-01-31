@@ -221,6 +221,12 @@ meta_parameters* open_envi(const char *meta_name, const char *data_name,
                            const char *band_str,
 			   ClientInterface *client);
 
+// read_generic.c
+int handle_generic_file(const char *filename, char **err);
+meta_parameters *read_generic_meta(const char *filename);
+int open_generic_data(const char *filename,
+                      meta_parameters *meta, ClientInterface *client);
+
 /* big_image.c */
 GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair);
 void fill_big(ImageInfo *ii);
@@ -367,11 +373,14 @@ typedef struct {
 
 extern GladeXML *glade_xml;
 
-// Can hold two images at once... later.
-extern ImageInfo image_info[2];
+// Can hold five images
+#define MAX_IMAGES 5
+extern ImageInfo image_info[MAX_IMAGES];
 // "curr" always points to the currently being displayed image info
 // which, currently, is always image_info[0].
 extern ImageInfo *curr;
+extern int current_image_info_index;
+extern int n_images_loaded;
 
 // these globals all relate to the current viewing settings
 #define MAX_POLYS 50
@@ -399,5 +408,9 @@ extern int ignore_grey_value;
 extern int ignore_red_value;
 extern int ignore_green_value;
 extern int ignore_blue_value;
+
+// if using generic binary
+extern int generic_specified;
+extern int generic_bin_width, generic_bin_height, generic_bin_datatype;
 
 #endif
