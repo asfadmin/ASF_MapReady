@@ -155,6 +155,17 @@ int read_file(const char *filename, const char *band, int multilook,
             return FALSE;
         }
     }
+    else if (try_uavsar(filename, try_extensions)) {
+        if (handle_uavsar_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
+            meta = read_uavsar_meta(meta_name, data_name);
+            open_uavsar_data(data_name, multilook, meta, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    }
     else if (try_roipac(filename)) {
         if (handle_roipac_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
