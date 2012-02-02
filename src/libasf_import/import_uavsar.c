@@ -13,6 +13,7 @@
 #define ASF_EXPORT_FLOAT_MICRON 0.000000001
 #define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
                                 (a, b, ASF_EXPORT_FLOAT_MICRON))
+#define MAX_LINE 512
 
 char **get_uavsar_products(char *data_type, char *type, int *num_product)
 {  
@@ -140,9 +141,9 @@ get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
 
   char *path = get_dirname(dataFile);
 
-  char line[255], key[255], value[255];
+  char line[MAX_LINE], key[MAX_LINE], value[MAX_LINE];
   FILE *fp = FOPEN(dataFile, "r");
-  while (fgets(line, 255, fp)) {
+  while (fgets(line, MAX_LINE, fp)) {
     if(!parse_annotation_line(line, key, value)) {
       asfPrintWarning("Unable to parse line in annotation file: %s", line);
       continue;
@@ -439,9 +440,9 @@ read_uavsar_polsar_params(const char *dataFile, uavsar_type_t type)
   sprintf(params->id, "%s", stripExt(fileName));
 
   // Read annotation file
-  char line[255], key[255], value[255];
+  char line[MAX_LINE], key[MAX_LINE], value[MAX_LINE];
   FILE *fp = FOPEN(dataFile, "r");
-  while (fgets(line, 255, fp)) {
+  while (fgets(line, MAX_LINE, fp)) {
     if(!parse_annotation_line(line, key, value)) {
       asfPrintWarning("Unable to parse line in annotation file: %s", line);
       continue;
@@ -675,9 +676,9 @@ read_uavsar_insar_params(const char *dataFile, uavsar_type_t type)
   sprintf(params->id, "%s", stripExt(fileName));
 
   // Read annotation file
-  char line[255], key[255], value[255];
+  char line[MAX_LINE], key[MAX_LINE], value[MAX_LINE];
   FILE *fp = FOPEN(dataFile, "r");
-  while (fgets(line, 255, fp)) {
+  while (fgets(line, MAX_LINE, fp)) {
     if(!parse_annotation_line(line, key, value)) {
       asfPrintWarning("Unable to parse line in annotation file: %s", line);
       continue;
@@ -937,10 +938,10 @@ int sign(char byteBuf)
 
 char *check_data_type(const char *inFileName)
 {
-  char line[1024], key[255], value[255];
+  char line[MAX_LINE], key[MAX_LINE], value[MAX_LINE];
   char *type = (char *) MALLOC(sizeof(char)*25);
   FILE *fp = FOPEN(inFileName, "r");
-  while (fgets(line, 255, fp)) {
+  while (fgets(line, MAX_LINE, fp)) {
     if(!parse_annotation_line(line, key, value)) {
       asfPrintWarning("Unable to parse line in annotation file: %s", line);
       continue;
