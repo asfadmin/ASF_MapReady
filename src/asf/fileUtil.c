@@ -157,6 +157,9 @@ char *findExt(const char *name)
 	strcmp_case(ext, ".DIFF") == 0      || // gamma
 	strcmp_case(ext, ".XML") == 0       ||
 	strcmp_case(ext, ".ANN") == 0       || // UAVSAR annotation file
+	strcmp_case(ext, ".GRD") == 0       || 
+	strcmp_case(ext, ".MLC") == 0       || 
+	strcmp_case(ext, ".DAT") == 0       || 
 	strcmp_case(ext, ".SPECS") == 0     ||
 	strcmp_case(ext, ".FLT") == 0       || // Gridfloat
 	strcmp_case(ext, ".HGT") == 0       || // SRTM JPL height
