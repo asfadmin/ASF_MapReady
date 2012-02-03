@@ -15,7 +15,7 @@
                                 (a, b, ASF_EXPORT_FLOAT_MICRON))
 #define MAX_LINE 512
 
-char **get_uavsar_products(char *data_type, char *type, int *num_product)
+char **get_uavsar_products(const char *data_type, char *type, int *num_product)
 {  
   char *rest, *token;
   int ii, product_count;
@@ -40,7 +40,7 @@ char **get_uavsar_products(char *data_type, char *type, int *num_product)
   }
 
   ii = 0;
-  while (token = strtok_r(tmp, ",", &rest)) {
+  while ((token = strtok_r(tmp, ",", &rest))) {
     strcpy(product[ii], token);
     tmp = rest;
     ii++;
@@ -996,7 +996,7 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
   // hgt_grd - Digital elevation model in ground projection
 
   FILE *fpIn, *fpOut;
-  int ii, kk, ll, nn, pp, nBands, ns, nl, *dataType, product_count;
+  int ii, kk, ll, nn, pp, nBands, ns, *dataType, product_count;
   int multi = FALSE;
   float *floatAmp, *floatPhase, *floatAmpBuf, *amp, re, im;
   float *floatComplexReal, *floatComplexImag;
@@ -1032,7 +1032,6 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       metaIn = uavsar_insar2meta(insar_params);
       metaOut = uavsar_insar2meta(insar_params);
       ns = metaIn->general->sample_count;
-      nl = metaIn->general->line_count;
       nn = 0;
       floatAmp = (float *) CALLOC(ns, sizeof(float));
       floatPhase = (float *) CALLOC(ns, sizeof(float));
@@ -1280,7 +1279,6 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       metaIn = uavsar_insar2meta(insar_params);
       metaOut = uavsar_insar2meta(insar_params);
       ns = metaIn->general->sample_count;
-      nl = metaIn->general->line_count;
       nn = 0;
       floatAmp = (float *) CALLOC(ns, sizeof(float));
       floatPhase = (float *) CALLOC(ns, sizeof(float));
@@ -1631,7 +1629,6 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	       "SIGMA_DB-AMP-VV,SIGMA_DB-PHASE-VV");
       int ns = metaOut->general->sample_count;
       float total_power, ysca, amp, phase;
-      float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
       complexFloat cpx;
       float *power = (float *) MALLOC(sizeof(float)*ns);
       float *shh_amp = (float *) MALLOC(sizeof(float)*ns);
@@ -1648,17 +1645,18 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       for (ii=0; ii<metaOut->general->line_count; ii++) {
 	for (kk=0; kk<metaOut->general->sample_count; kk++) {
 	  FREAD(byteBuf, sizeof(char), 10, fpIn);
+          //float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
 	  // Scale is always 1.0 according to Bruce Chapman
-	  m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
-	  m12 = (float)byteBuf[2] * m11 / 127.0;
-	  m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11;
-	  m14 = sign(byteBuf[4]) * SQR((float)byteBuf[4] / 127.0) * m11;
-	  m23 = sign(byteBuf[5]) * SQR((float)byteBuf[5] / 127.0) * m11;
-	  m24 = sign(byteBuf[6]) * SQR((float)byteBuf[6] / 127.0) * m11;
-	  m33 = (float)byteBuf[7] * m11 / 127.0;
-	  m34 = (float)byteBuf[8] * m11 / 127.0;
-	  m44 = (float)byteBuf[9] * m11 / 127.0;
-	  m22 = 1 - m33 -m44;
+	  //m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+	  //m12 = (float)byteBuf[2] * m11 / 127.0;
+	  //m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11;
+	  //m14 = sign(byteBuf[4]) * SQR((float)byteBuf[4] / 127.0) * m11;
+	  //m23 = sign(byteBuf[5]) * SQR((float)byteBuf[5] / 127.0) * m11;
+	  //m24 = sign(byteBuf[6]) * SQR((float)byteBuf[6] / 127.0) * m11;
+	  //m33 = (float)byteBuf[7] * m11 / 127.0;
+	  //m34 = (float)byteBuf[8] * m11 / 127.0;
+	  //m44 = (float)byteBuf[9] * m11 / 127.0;
+	  //m22 = 1 - m33 -m44;
 	  total_power =
 	    ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
 	  ysca = 2.0 * sqrt(total_power);
@@ -1772,7 +1770,6 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       metaIn = uavsar_polsar2meta(polsar_params);
       metaOut = uavsar_polsar2meta(polsar_params);
       ns = metaIn->general->sample_count;
-      nl = metaIn->general->line_count;
       floatAmpBuf = (float *) CALLOC(ns, sizeof(float));
       floatComplexReal = (float *) CALLOC(ns, sizeof(float));
       floatComplexImag = (float *) CALLOC(ns, sizeof(float));
