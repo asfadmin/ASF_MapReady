@@ -419,6 +419,7 @@ extern int ignore_blue_value;
 
 // if using generic binary
 extern int generic_specified;
-extern int generic_bin_width, generic_bin_height, generic_bin_datatype;
+extern int generic_bin_width, generic_bin_height, generic_bin_datatype,
+           generic_bin_byteswap;
 
 #endif

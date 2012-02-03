@@ -2,8 +2,9 @@
 #include "uavsar.h"
 
 typedef struct {
-    FILE *fp;    // data file pointer
-    int ml;      // multilook flag
+    FILE *fp;       // data file pointer
+    int ml;         // multilook flag
+    int is_complex; // true if data is real/imag pairs
 } ReadUavsarClientInfo;
 
 static char * find_uavsar_annotation_file(const char *data_file_name)
@@ -213,6 +214,7 @@ static void get_uavsar_lines(ReadUavsarClientInfo *info, meta_parameters *meta,
         }
         free(tmp);
 
+        // restore the fudged value
         meta->general->line_count = lc;
     }
     else {
@@ -233,7 +235,6 @@ int read_uavsar_client(int row_start, int n_rows_to_get,
     if (meta->general->data_type == BYTE) {
         unsigned char *dest = (unsigned char*)dest_void;
         if (data_type==GREYSCALE_BYTE) {
-            // reading byte data directly into the byte cache
             FSEEK64(info->fp, ns*row_start, SEEK_SET);
             FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
         }
@@ -243,8 +244,6 @@ int read_uavsar_client(int row_start, int n_rows_to_get,
     } else {
         float *dest = (float*)dest_void;
         if (data_type==GREYSCALE_FLOAT) {
-            // this is the normal case, just reading in a strip of lines
-            // from the file directly into the floating point cache
             get_uavsar_lines(info, meta, row_start, n_rows_to_get, dest);
         } else {
             assert(FALSE);

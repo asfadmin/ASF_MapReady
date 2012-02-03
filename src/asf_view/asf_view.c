@@ -23,6 +23,7 @@ int g_saved_line_count;
 // (trying to read in a generic binary file)
 int generic_specified;
 int generic_bin_width, generic_bin_height, generic_bin_datatype;
+int generic_bin_byteswap=0;
 
 /************************************************************************
  * End of globals
@@ -125,22 +126,30 @@ main(int argc, char **argv)
        if (!extract_int_options(&argc, &argv, &generic_bin_width,
                 "-width", "--width", "-cols", "--cols", NULL) ||
            !extract_int_options(&argc, &argv, &generic_bin_height,
-                "-height", "--height", "-rows", "--rows", NULL) ||
-           !extract_string_options(&argc, &argv, type,
-                "-type", "--type", NULL)) {
-         asfPrintError("When reading generic data, specify the size and "
-            "data type.  (--width, --height, --type).");
+                "-height", "--height", "-rows", "--rows", NULL)) {
+         asfPrintError("When reading generic data, specify the size "
+            "(--width, --height).\n");
        }
-       if (strcmp_case(type, "BYTE") == 0 ||
-           strcmp_case(type, "INT8") == 0) {
-         generic_bin_datatype = BYTE;
-       }
-       else if (strcmp_case(type, "FLOAT") == 0 ||
-                strcmp_case(type, "REAL32") == 0) {
+       generic_bin_byteswap =
+         extract_flag_options(&argc, &argv,
+                              "--byteswap", "-byteswap", NULL);
+       if (extract_string_options(&argc, &argv, type,
+                "-type", "--type", NULL))
+       {
+         if (strcmp_case(type, "BYTE") == 0 ||
+             strcmp_case(type, "INT8") == 0) {
+           generic_bin_datatype = BYTE;
+         }
+         else if (strcmp_case(type, "FLOAT") == 0 ||
+                  strcmp_case(type, "REAL32") == 0) {
+           generic_bin_datatype = REAL32;
+         }
+         else {
+           asfPrintError("Unknown generic data type: %s\n", type);
+         }
+       } else {
+         asfPrintStatus("Generic binary: assuming REAL32 data.\n");
          generic_bin_datatype = REAL32;
-       }
-       else {
-         asfPrintError("Unknown generic data type: %s\n", type);
        }
     }
     if (planner_mode) {

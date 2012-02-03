@@ -2,6 +2,7 @@
 
 typedef struct {
     FILE *fp;    // data file pointer
+    int byteswap;
 } ReadGenericClientInfo;
 
 int handle_generic_file(const char *filename, char **err)
@@ -31,12 +32,22 @@ static void get_generic_line(ReadGenericClientInfo *info, meta_parameters *meta,
                              int row, float *buf)
 {
     get_float_line(info->fp, meta, row, buf);
+    if (info->byteswap) {
+        int i;
+        for (i=0; i<meta->general->sample_count; ++i)
+            ieee_big32(buf[i]);
+    }
 }
 
 static void get_generic_lines(ReadGenericClientInfo *info, meta_parameters *meta,
                               int row, int n, float *buf)
 {
     get_float_lines(info->fp, meta, row, n, buf);
+    if (info->byteswap) {
+        int i;
+        for (i=0; i<n*meta->general->sample_count; ++i)
+            ieee_big32(buf[i]);
+    }
 }
 
 int read_generic_client(int row_start, int n_rows_to_get,
@@ -138,6 +149,8 @@ int open_generic_data(const char *filename,
             filename, strerror(errno));
         return FALSE;
     }
+
+    info->byteswap = generic_bin_byteswap;
 
     client->read_client_info = info;
     client->read_fn = read_generic_client;

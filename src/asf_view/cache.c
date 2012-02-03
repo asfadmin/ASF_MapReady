@@ -40,8 +40,8 @@ round (double arg)
 
 #include "asf_glib.h"
 
-// at 64MB tiles, this is 1GB
-static const int MAX_TILES = 16;
+// at 64MB tiles, this is ~1.5GB
+static const int MAX_TILES = 24;
 
 // quit blathering?
 int quiet = FALSE;
