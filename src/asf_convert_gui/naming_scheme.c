@@ -257,12 +257,10 @@ static void apply_naming_scheme(const NamingScheme * new,
     gboolean valid;
     GtkTreeIter iter;
     Settings * user_settings;
-    gchar * ext;
 
     assert(list_store);
 
     user_settings = settings_get_from_gui();
-    ext = (gchar *) settings_get_output_format_extension(user_settings);
 
     valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
     while (valid)

@@ -74,8 +74,6 @@ const char * geocode_options_string(const Settings * settings)
         gboolean enable_latitude_of_origin = FALSE;
         gboolean enable_first_standard_parallel = FALSE;
         gboolean enable_second_standard_parallel = FALSE;
-        gboolean enable_false_northing = FALSE;
-        gboolean enable_false_easting = FALSE;
         gboolean enable_pole_switch = FALSE;
 
         switch (settings->projection)
@@ -92,11 +90,7 @@ const char * geocode_options_string(const Settings * settings)
                 entry_has_text("central_meridian_entry");
             enable_first_standard_parallel =
                 entry_has_text("first_standard_parallel_entry");
-            enable_false_northing =
-                entry_has_text("false_northing_entry");
-            enable_false_easting =
-                entry_has_text("false_easting_entry");
-      enable_pole_switch = TRUE;
+            enable_pole_switch = TRUE;
             break;
 
         case PROJ_LAMCC:
@@ -109,10 +103,6 @@ const char * geocode_options_string(const Settings * settings)
                 entry_has_text("central_meridian_entry");
             enable_latitude_of_origin =
                 entry_has_text("latitude_of_origin_entry");
-            enable_false_northing =
-                entry_has_text("false_northing_entry");
-            enable_false_easting =
-                entry_has_text("false_easting_entry");
             break;
 
         case PROJ_LAMAZ:
@@ -121,10 +111,6 @@ const char * geocode_options_string(const Settings * settings)
                 entry_has_text("central_meridian_entry");
             enable_latitude_of_origin =
                 entry_has_text("latitude_of_origin_entry");
-            enable_false_northing =
-                entry_has_text("false_northing_entry");
-            enable_false_easting =
-                entry_has_text("false_easting_entry");
             break;
 
         case PROJ_ALBERS:
@@ -137,10 +123,6 @@ const char * geocode_options_string(const Settings * settings)
                 entry_has_text("central_meridian_entry");
             enable_latitude_of_origin =
                 entry_has_text("latitude_of_origin_entry");
-            enable_false_northing =
-                entry_has_text("false_northing_entry");
-            enable_false_easting =
-                entry_has_text("false_easting_entry");
             break;
         case PROJ_MER:
 	  strcpy(ret, "--projection mer");
@@ -150,10 +132,6 @@ const char * geocode_options_string(const Settings * settings)
 	    entry_has_text("central_meridian_entry");
 	  enable_latitude_of_origin =
 	    entry_has_text("latitude_of_origin_entry");
-	  enable_false_northing =
-	    entry_has_text("false_northing_entry");
-	  enable_false_easting =
-	    entry_has_text("false_easting_entry");
 	  break;
 	case PROJ_EQR:
 	  strcpy(ret, "--projection eqr");
@@ -161,10 +139,6 @@ const char * geocode_options_string(const Settings * settings)
 	    entry_has_text("central_meridian_entry");
 	  enable_latitude_of_origin =
 	    entry_has_text("latitude_of_origin_entry");
-	  enable_false_northing =
-	    entry_has_text("false_northing_entry");
-	  enable_false_easting =
-	    entry_has_text("false_easting_entry");
 	  break;
 	}
 
@@ -901,7 +875,6 @@ on_projection_option_menu_changed(GtkWidget * widget)
   GtkWidget * second_standard_parallel_entry;
   GtkWidget * false_northing_entry;
   GtkWidget * false_easting_entry;
-  GtkWidget *spheroid_entry;
 
   gboolean geocode_projection_is_checked;
 
@@ -931,9 +904,6 @@ on_projection_option_menu_changed(GtkWidget * widget)
 
   false_easting_entry =
       get_widget_checked("false_easting_entry");
-
-  spheroid_entry = 
-    get_widget_checked("spheroid_entry");
 
   if (geocode_projection_is_checked)
   {

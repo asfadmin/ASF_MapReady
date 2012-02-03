@@ -296,9 +296,6 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     for (ii = 0; ii < tsx*tsy; ++ii) {
-        float max_red,   min_red;
-        float max_green, min_green;
-        float max_blue,  min_blue;
         float rval;
         float gval;
         float bval;
@@ -308,8 +305,6 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
             rval = fdata[0][ii];
             gval = fdata[0][ii];
             bval = fdata[0][ii];
-            min_red = min_green = min_blue = min[0];
-            max_red = max_green = max_blue = max[0];
         }
         else if (num_bands >= 3) {
             // If we have 3 or more bands, use the first 3 to make a color
@@ -318,30 +313,7 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
             rval = fdata[0][ii];
             gval = fdata[1][ii];
             bval = fdata[2][ii];
-            min_red   = min[0];
-            max_red   = max[0];
-            min_green = min[1];
-            max_green = max[1];
-            min_blue  = min[2];
-            max_blue  = max[2];
         }
-/*
-        guchar ruval, guval, buval;
-        ruval = (rval < min_red)   ? 0   :
-                (rval > max_red)   ? 255 :
-                (guchar) round(((rval - min_red) / (max_red - min_red)) * 255);
-        guval = (gval < min_green) ? 0   :
-                (gval > max_green) ? 255 :
-                (guchar) round(((gval - min_green) / (max_green - min_green)) * 255);
-        buval = (bval < min_blue)  ? 0   :
-                (bval > max_blue)  ? 255 :
-                (guchar) round(((bval - min_blue) / (max_blue - min_blue)) * 255);
-
-        int n = 3*ii;
-        data[n]   = ruval;
-        data[n+1] = guval;
-        data[n+2] = buval;
-*/
         int n = 3*ii;
         data[n]   = rval;
         data[n+1] = gval;
@@ -670,19 +642,19 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
       }
     }
     else {
-      float max_red,   min_red;
-      float max_green, min_green;
-      float max_blue,  min_blue;
+      //float max_red,   min_red;
+      //float max_green, min_green;
+      //float max_blue,  min_blue;
       float rval;
       float gval;
       float bval;
 
-      min_red   = min[0];
-      max_red   = max[0];
-      min_green = min[1];
-      max_green = max[1];
-      min_blue  = min[2];
-      max_blue  = max[2];
+      //min_red   = min[0];
+      //max_red   = max[0];
+      //min_green = min[1];
+      //max_green = max[1];
+      //min_blue  = min[2];
+      //max_blue  = max[2];
 
       for (ii = 0; ii < tsx*tsy; ii++) {
         rval = fdata[0][ii];
@@ -691,6 +663,7 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
 /*
         // UNCOMMENT OUT THIS SECTION, AND COMMENT OUT THE NEXT 4 LINES IF YOU
         // THINK CONTRAST EXPANSION WOULD LOOK NICER ...I VOTE NO ;*0
+        // ALSO UNCOMMENT VARS & INITIALIZATION ABOVE
         guchar ruval, guval, buval;
         ruval = (rval < min_red)   ? 0   :
                 (rval > max_red)   ? 255 :

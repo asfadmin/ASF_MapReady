@@ -51,8 +51,7 @@ settings_apply_to_gui(const Settings * s)
         *external_checkbutton,
         *output_format_combobox,
         *output_bytes_checkbutton,
-        *scaling_method_combobox,
-        *apply_metadata_fix_checkbutton;
+        *scaling_method_combobox;
 
     input_data_type_combobox =
         get_widget_checked("input_data_type_combobox");
@@ -65,9 +64,6 @@ settings_apply_to_gui(const Settings * s)
 
     output_format_combobox =
         get_widget_checked("output_format_combobox");
-
-    apply_metadata_fix_checkbutton =
-        get_widget_checked("apply_metadata_fix_checkbutton");
 
     set_combo_box_item(input_data_type_combobox, s->data_type);
 
@@ -529,7 +525,6 @@ settings_get_from_gui()
 {
     GtkWidget
         *input_data_type_combobox,
-        *process_to_level1_checkbutton,
         *output_format_combobox,
         *scaling_method_combobox;
 
@@ -540,9 +535,6 @@ settings_get_from_gui()
 
     output_format_combobox =
         get_widget_checked("output_format_combobox");
-
-    process_to_level1_checkbutton =
-        get_widget_checked("process_to_level1_checkbutton");
 
     ret->data_type = get_combo_box_item(input_data_type_combobox);
     ret->output_format = get_combo_box_item(output_format_combobox);
@@ -776,16 +768,12 @@ settings_get_from_gui()
 
     if (get_checked("dem_checkbutton"))
     {
-        GtkWidget *rb_terrcorr, *rb_refine_geolocation;
-        GtkWidget *rb_auto_water_mask, *rb_mask_file;
+        GtkWidget *rb_terrcorr;
         GtkWidget *dem_entry;
         GtkWidget *tc_pixel_size_checkbutton;
 
         rb_terrcorr =
             get_widget_checked("rb_terrcorr");
-        rb_refine_geolocation =
-            get_widget_checked("rb_refine_geolocation");
-
         ret->terrcorr_is_checked =
             gtk_toggle_button_get_active(
                 GTK_TOGGLE_BUTTON(rb_terrcorr));
@@ -840,11 +828,6 @@ settings_get_from_gui()
         }
 
         ret->interp_dem_holes = get_checked("interp_dem_holes_checkbutton");
-
-        rb_auto_water_mask =
-            get_widget_checked("rb_auto_water_mask");
-        rb_mask_file =
-            get_widget_checked("rb_mask_file");
 
         if (get_checked("mask_checkbutton"))
         {

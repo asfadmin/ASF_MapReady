@@ -356,7 +356,6 @@ on_output_directory_selection_ok_button_clicked(GtkWidget *widget)
     GtkWidget *output_directory_selection_dialog;
     gchar **selections;
     gchar **current;
-    int i, n;
 
     output_directory_selection_dialog =
         get_widget_checked("output_directory_selection");
@@ -365,7 +364,6 @@ on_output_directory_selection_ok_button_clicked(GtkWidget *widget)
         GTK_FILE_SELECTION(output_directory_selection_dialog));
 
     current = selections;
-    i = n = 0;
 
     while (*current)
     {

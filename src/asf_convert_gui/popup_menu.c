@@ -646,13 +646,10 @@ get_iter_to_first_selected_row(GtkWidget *files_list,
 {
     GList * selected_rows;
     GtkTreeModel *model;
-    GtkTreeSelection *selection;
     gboolean found;
 
-    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(store);
 
-    //selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
     selected_rows = get_selected_rows(files_list, store);
     if (selected_rows)
     {
@@ -777,7 +774,6 @@ handle_process()
     GtkWidget *files_list;
     GtkTreeIter iter;
     GtkTreeModel * model;
-    GtkTreeSelection * selection;
     GList * selected_rows, * i;
     GList * refs;
     gboolean confirm_needed = FALSE;
@@ -788,10 +784,7 @@ handle_process()
     }
 
     files_list = get_widget_checked("files_list");
-    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(list_store);
-
-    //selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
     selected_rows = get_selected_rows(files_list, list_store);
 
     if (!selected_rows)
@@ -1043,21 +1036,17 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 {
     GtkWidget *files_list;
     GtkTreeModel * model;
-    GtkTreeSelection *selection;
     GList * selected_rows, * i;
     GList * refs;
     //FILE *kml_file = NULL;
     char kml_filename[256];
-    int pid;//, first = TRUE;
     gchar *ge;
     char *output_dir = NULL;
     //int n_ok = 0;
     //int n_bad = 0;
 
     files_list = get_widget_checked(widget_name);
-    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(store);
-    //selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
     selected_rows = get_selected_rows(files_list, store);
 
     refs = NULL;
@@ -1083,7 +1072,6 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     }
 
     i = refs;
-    pid = getpid();
     
     GtkTreePath * path;
     GtkTreeIter iter;
@@ -1181,16 +1169,12 @@ handle_reprocess()
 {
     GtkWidget *completed_files_list;
     GtkTreeModel * model;
-    GtkTreeSelection *selection;
     GList * selected_rows, * i;
     GList * refs;
 
     completed_files_list = get_widget_checked("completed_files_list");
-    selection = gtk_tree_view_get_selection(
-        GTK_TREE_VIEW(completed_files_list));
     model = GTK_TREE_MODEL(completed_list_store);
 
-    //selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
     selected_rows = get_selected_rows(completed_files_list,
                                       completed_list_store);
 
