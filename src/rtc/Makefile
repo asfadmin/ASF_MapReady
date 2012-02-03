@@ -7,11 +7,13 @@ CFLAGS += $(GLIBS_CFLAGS) -g
 LIBS  = \
 	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
@@ -25,7 +27,7 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS  = $(TARGET).o
 
-all: prog make_gr_dem
+all: prog make_gr_dem uavsar_rtc
 	-rm *.o
 
 prog: $(OBJS)
@@ -35,6 +37,10 @@ prog: $(OBJS)
 make_gr_dem: make_gr_dem.o
 	$(CC) $(CFLAGS) -o make_gr_dem make_gr_dem.o $(LIBS) $(LDFLAGS)
 	mv make_gr_dem$(BIN_POSTFIX) $(BINDIR)
+
+uavsar_rtc: uavsar_rtc.o
+	$(CC) $(CFLAGS) -o uavsar_rtc uavsar_rtc.o $(LIBS) $(LDFLAGS)
+	mv uavsar_rtc$(BIN_POSTFIX) $(BINDIR)
 	
 clean:
 	rm -f core $(OBJS) *.o

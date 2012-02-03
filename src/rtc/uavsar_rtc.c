@@ -1,11 +1,11 @@
-#define ASF_NAME_STRING "rtc"
+#define ASF_NAME_STRING "uavsar_rtc"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" <input file> <dem file> [-layover_mask <mask file>]\n"\
-"                     <output file>\n"
+"   "ASF_NAME_STRING" <input file> <correction file> <annotation file> <output file>n"
 
 #define ASF_DESCRIPTION_STRING \
-"     This program performs radiometric terrain correction.\n"
+"     This program performs radiometric terrain correction on UAVSAR data,\n"\
+"     given a correction file that has been previously generated.\n"
 
 #include <stdio.h>
 #include <asf.h>
@@ -67,12 +67,7 @@ int
 main (int argc, char *argv[])
 {
   int currArg = 1;
-  int NUM_ARGS = 3;
-  int maskFlag = FALSE;
-
-  const int n=1024;
-  char mask_filename[n];
-  strcpy(mask_filename, "");
+  int NUM_ARGS = 4;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -87,14 +82,9 @@ main (int argc, char *argv[])
     if (strmatches(key,"-help","--help",NULL)) {
         print_help(); // doesn't return
     }
-    else if (strmatches(key,"-mask","--mask",NULL)) {
-      CHECK_ARG(1);
-      strncpy_safe(mask_filename,GET_ARG(1),n);
-      maskFlag = TRUE;
-    }
     else if (strmatches(key,"-log","--log",NULL)) {
       CHECK_ARG(1);
-      strncpy_safe(logFile,GET_ARG(1),n);
+      strncpy_safe(logFile,GET_ARG(1),256);
       fLog = FOPEN(logFile, "a");
       logflag = TRUE;
     }
@@ -116,8 +106,8 @@ main (int argc, char *argv[])
     rtc_usage(argv[0]);
   }
 
-  int fail = rtc(argv[currArg], argv[currArg+1], maskFlag, mask_filename,
-               argv[currArg+2], FALSE);
+  int fail = uavsar_rtc(argv[currArg], argv[currArg+1], argv[currArg+2],
+                        argv[currArg+3]);
 
   asfPrintStatus(fail ? "Failed.\n" : "Done.\n");
   return fail ? EXIT_FAILURE : EXIT_SUCCESS;
