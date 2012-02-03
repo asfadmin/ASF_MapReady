@@ -141,9 +141,9 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
     meta->projection->datum = WGS84_DATUM;
 
     // Convert geographic coordinates into map projected coordinates
-    double lat = params->along_track_offset;
-    double lon = params->cross_track_offset;
-    double x1, y1, z1, x2, y2, z2;
+    //double lat = params->along_track_offset;
+    //double lon = params->cross_track_offset;
+    //double x1, y1, z1, x2, y2, z2;
     if (strcmp_case(params->projection, "EQA") == 0) {
       //meta->projection->type = EQUI_RECTANGULAR;
       //meta->projection->param.eqr.central_meridian = 0.0;
@@ -305,9 +305,9 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
     meta->projection->datum = WGS84_DATUM;
 
     // Convert geographic coordinates into map projected coordinates
-    double lat = params->along_track_offset;
-    double lon = params->cross_track_offset;
-    double x1, y1, z1, x2, y2, z2;
+    //double lat = params->along_track_offset;
+    //double lon = params->cross_track_offset;
+    //double x1, y1, z1, x2, y2, z2;
     if (strcmp_case(params->projection, "EQA") == 0) {
       //meta->projection->type = EQUI_RECTANGULAR;
       //meta->projection->param.eqr.central_meridian = 0.0;
