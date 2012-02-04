@@ -35,8 +35,7 @@ int try_uavsar(const char *filename, int try_extensions)
     char *ext = findExt(filename);
 
     if (ext && strlen(ext) > 0) {
-        if (strcmp_case(ext, ".dat") == 0 ||
-            strcmp_case(ext, ".grd") == 0 ||
+        if (strcmp_case(ext, ".grd") == 0 ||
             strcmp_case(ext, ".hgt") == 0 ||
             strcmp_case(ext, ".mlc") == 0)
         {
@@ -57,8 +56,7 @@ int handle_uavsar_file(const char *filename, char *meta_name, char *data_name,
     char *ext = findExt(filename);
     int has_ext = ext && strlen(ext) > 0;
     int has_uavsar_ext = has_ext &&
-        (strcmp_case(ext,".dat")==0 ||
-         strcmp_case(ext,".grd")==0 ||
+        (strcmp_case(ext,".grd")==0 ||
          strcmp_case(ext,".mlc")==0 ||
          strcmp_case(ext,".hgt")==0);
 
@@ -123,8 +121,6 @@ meta_parameters *read_uavsar_meta(const char *meta_name, const char *data_name)
     polsar_params = read_uavsar_polsar_params(meta_name, POLSAR_MLC);
   else if (strcmp_case(ext, ".grd") == 0)
     polsar_params = read_uavsar_polsar_params(meta_name, POLSAR_GRD);
-  else if (strcmp_case(ext, ".dat") == 0)
-    polsar_params = read_uavsar_polsar_params(meta_name, POLSAR_DAT);
   else if (strcmp_case(ext, ".hgt") == 0)
     polsar_params = read_uavsar_polsar_params(meta_name, POLSAR_HGT);
   else
@@ -164,13 +160,27 @@ static void get_uavsar_line(ReadUavsarClientInfo *info, meta_parameters *meta,
             buf[j] /= nlooks;
         free(tmp);
 
+        // restore fudged value
         meta->general->line_count = lc;
     }
     else {
         // no multilooking case
-        get_float_line(info->fp, meta, row, buf);
-        for (j=0; j<ns; ++j)
-            ieee_big32(buf[j]);
+        if (info->is_complex) {
+            complexFloat *cf_buf = MALLOC(sizeof(complexFloat)*ns);
+            get_complexFloat_line(info->fp, meta, row, cf_buf);
+            for (j=0; j<ns; ++j) {
+                ieee_big32(cf_buf[j].real);
+                ieee_big32(cf_buf[j].imag);
+                buf[j] = hypot(cf_buf[j].real, cf_buf[j].imag);
+                //buf[j] = atan2_check(cf_buf[j].imag, cf_buf[j].real);
+            }
+            FREE(cf_buf);
+        }
+        else {
+            get_float_line(info->fp, meta, row, buf);
+            for (j=0; j<ns; ++j)
+                ieee_big32(buf[j]);
+        }
     }
 }
 
@@ -219,9 +229,22 @@ static void get_uavsar_lines(ReadUavsarClientInfo *info, meta_parameters *meta,
     }
     else {
         // no multilooking case
-        get_float_lines(info->fp, meta, row, n, buf);
-        for (j=0; j<n*ns; ++j)
-            ieee_big32(buf[j]);
+        if (info->is_complex) {
+            complexFloat *cf_buf = MALLOC(sizeof(complexFloat)*ns*n);
+            get_complexFloat_lines(info->fp, meta, row, n, cf_buf);
+            for (j=0; j<n*ns; ++j) {
+                ieee_big32(cf_buf[j].real);
+                ieee_big32(cf_buf[j].imag);
+                buf[j] = hypot(cf_buf[j].real, cf_buf[j].imag);
+                //buf[j] = atan2_check(cf_buf[j].imag, cf_buf[j].real);
+            }
+            FREE(cf_buf);
+        }
+        else {
+            get_float_lines(info->fp, meta, row, n, buf);
+            for (j=0; j<n*ns; ++j)
+                ieee_big32(buf[j]);
+        }
     }
 }
 
@@ -310,6 +333,26 @@ int open_uavsar_data(const char *filename, int multilook,
 {
     ReadUavsarClientInfo *info = MALLOC(sizeof(ReadUavsarClientInfo));
     info->ml = multilook;
+
+    char *ext = findExt(filename);
+    if (strcmp_case(ext, ".grd") == 0 ||
+        strcmp_case(ext, ".mlc") == 0)
+    {
+        // UAVSAR .grd/.mlc files are real for HHHH, HVHV, and VVVV
+        info->is_complex = strstr(filename, "HHHV_") != NULL ||
+                           strstr(filename, "HHVV_") != NULL ||
+                           strstr(filename, "HVVV_") != NULL;
+    }
+    else if (strcmp_case(ext, ".hgt") == 0) {
+        // UAVSAR .hgt files are real
+        info->is_complex = FALSE;
+    }
+
+    asfPrintStatus("Reading UAVSAR data as %s\n",
+                   info->is_complex ? "complex" : "real");
+
+    if (info->is_complex)
+        meta->general->data_type = COMPLEX_REAL32;
 
     info->fp = fopen(filename, "rb");
     if (!info->fp) {
