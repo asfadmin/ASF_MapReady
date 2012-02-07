@@ -10,6 +10,7 @@ UserPolygon *g_poly;
 int which_poly=0;
 
 int g_show_north_arrow = FALSE;
+int g_lhs_visible = TRUE;
 
 // current sizes of the large image.
 // keep half the size around, we need that during the redraw, which
@@ -623,88 +624,156 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
       background_blue = 138;
     }
 
-    int mm = 0;
-    for (i=0; i<bih; ++i) {
-        for (j=0; j<biw; ++j) {
-            double l, s;
-            img2ls(j,i,&l,&s);
+    if (!mask) {
+        int mm = 0;
+        for (i=0; i<bih; ++i) {
+            for (j=0; j<biw; ++j) {
+                double l, s;
+                img2ls(j,i,&l,&s);
 
-            unsigned char r, g, b;
+                unsigned char r, g, b;
 
-            if (l<0 || l>=ii->nl || s<0 || s>=ii->ns) {
-                r = background_red;
-                g = background_green;
-                b = background_blue;
-            }
-            else {
-                // here we have some averaging, that will make the
-                // images look a bit smoother when zoomed out
-                if (zoom<2) {
-                    // one-to-one (or thereabouts) view -- no averaging
-                    cached_image_get_rgb(ii->data_ci, (int)floor(l),
-                        (int)floor(s), &r, &g, &b);
-                }
-                else if (zoom<3) {
-                    // 2x view -- average 4 pixels to produce 1.
-                    int l2 = (int)floor(l);
-                    int s2 = (int)floor(s);
-                    unsigned char r1,r2,r3,r4,g1,g2,g3,g4,b1,b2,b3,b4;
-                    cached_image_get_rgb(ii->data_ci, l2,   s2,   &r1,&g1,&b1);
-                    cached_image_get_rgb(ii->data_ci, l2+1, s2,   &r2,&g2,&b2);
-                    cached_image_get_rgb(ii->data_ci, l2,   s2+1, &r3,&g3,&b3);
-                    cached_image_get_rgb(ii->data_ci, l2+1, s2+1, &r4,&g4,&b4);
-                    r=(r1+r2+r3+r4)/4;
-                    g=(g1+g2+g3+g4)/4;
-                    b=(b1+b2+b3+b4)/4;
-                }
-                else if (zoom<4) {
-                    // 3x view -- average 9 pixels to produce 1.
-                    int l2 = (int)floor(l);
-                    int s2 = (int)floor(s);
-                    int rt=0, gt=0, bt=0;
-                    for (m=0; m<3; ++m) {
-                        for (n=0; n<3; ++n) {
-                            cached_image_get_rgb(ii->data_ci, l2+m, s2+n,
-                                                 &r, &g, &b);
-                            rt += (int)r;
-                            gt += (int)g;
-                            bt += (int)b;
-                        }
-                    }
-                    r = (unsigned char) (rt/9);
-                    g = (unsigned char) (gt/9);
-                    b = (unsigned char) (bt/9);
+                if (l<0 || l>=ii->nl || s<0 || s>=ii->ns) {
+                    r = background_red;
+                    g = background_green;
+                    b = background_blue;
                 }
                 else {
-                    // 4x or greater view -- average 9 pixels to produce 1.
-                    int l2 = (int)floor(l);
-                    int s2 = (int)floor(s);
-                    int fac = (int)floor(zoom/3);
-                    int rt=0, gt=0, bt=0;
-                    for (m=0; m<3; ++m) {
-                        for (n=0; n<3; ++n) {
-                            cached_image_get_rgb(ii->data_ci,
-                                                 l2+m*fac, s2+n*fac,
-                                                 &r, &g, &b);
-                            rt += (int)r;
-                            gt += (int)g;
-                            bt += (int)b;
-                        }
+                    // here we have some averaging, that will make the
+                    // images look a bit smoother when zoomed out
+                    if (zoom<2) {
+                        // one-to-one (or thereabouts) view -- no averaging
+                        cached_image_get_rgb(ii->data_ci, (int)floor(l),
+                            (int)floor(s), &r, &g, &b);
                     }
-                    r = (unsigned char) (rt/9);
-                    g = (unsigned char) (gt/9);
-                    b = (unsigned char) (bt/9);
+                    else if (zoom<3) {
+                        // 2x view -- average 4 pixels to produce 1.
+                        int l2 = (int)floor(l);
+                        int s2 = (int)floor(s);
+                        unsigned char r1,r2,r3,r4,g1,g2,g3,g4,b1,b2,b3,b4;
+                        cached_image_get_rgb(ii->data_ci, l2,   s2,   &r1,&g1,&b1);
+                        cached_image_get_rgb(ii->data_ci, l2+1, s2,   &r2,&g2,&b2);
+                        cached_image_get_rgb(ii->data_ci, l2,   s2+1, &r3,&g3,&b3);
+                        cached_image_get_rgb(ii->data_ci, l2+1, s2+1, &r4,&g4,&b4);
+                        r=(r1+r2+r3+r4)/4;
+                        g=(g1+g2+g3+g4)/4;
+                        b=(b1+b2+b3+b4)/4;
+                    }
+                    else if (zoom<4) {
+                        // 3x view -- average 9 pixels to produce 1.
+                        int l2 = (int)floor(l);
+                        int s2 = (int)floor(s);
+                        int rt=0, gt=0, bt=0;
+                        for (m=0; m<3; ++m) {
+                            for (n=0; n<3; ++n) {
+                                cached_image_get_rgb(ii->data_ci, l2+m, s2+n,
+                                                    &r, &g, &b);
+                                rt += (int)r;
+                                gt += (int)g;
+                                bt += (int)b;
+                            }
+                        }
+                        r = (unsigned char) (rt/9);
+                        g = (unsigned char) (gt/9);
+                        b = (unsigned char) (bt/9);
+                    }
+                    else {
+                        // 4x or greater view -- average 9 pixels to produce 1.
+                        int l2 = (int)floor(l);
+                        int s2 = (int)floor(s);
+                        int fac = (int)floor(zoom/3);
+                        int rt=0, gt=0, bt=0;
+                        for (m=0; m<3; ++m) {
+                            for (n=0; n<3; ++n) {
+                                cached_image_get_rgb(ii->data_ci,
+                                                    l2+m*fac, s2+n*fac,
+                                                    &r, &g, &b);
+                                rt += (int)r;
+                                gt += (int)g;
+                                bt += (int)b;
+                            }
+                        }
+                        r = (unsigned char) (rt/9);
+                        g = (unsigned char) (gt/9);
+                        b = (unsigned char) (bt/9);
+                    }
                 }
-            }
 
-            int p = 3*mm;
-            bdata[p] = r;
-            bdata[p+1] = g;
-            bdata[p+2] = b;
-            ++mm;
+                int p = 3*mm;
+                bdata[p] = r;
+                bdata[p+1] = g;
+                bdata[p+2] = b;
+                ++mm;
+            }
         }
     }
-
+    else { // mask applied
+        // this code is largely the same as above except we need to
+        // check for ignored values before populating a pixel
+        int mm = 0;
+        for (i=0; i<bih; ++i) {
+            for (j=0; j<biw; ++j) {
+                double l, s;
+                img2ls(j,i,&l,&s);
+                
+                unsigned char r, g, b;
+                
+                if (l<0 || l>=ii->nl || s<0 || s>=ii->ns) {
+                    r = background_red;
+                    g = background_green;
+                    b = background_blue;
+                }
+                else {
+                    // here we have some averaging, that will make the
+                    // images look a bit smoother when zoomed out
+                    if (zoom<2) {
+                        // one-to-one (or thereabouts) view -- no averaging
+                        get_rgb_with_masking(ii, mask, (int)floor(l), (int)floor(s),
+                                             &r, &g, &b);
+                    }
+                    else if (zoom<3) {
+                        // 2x view -- average 4 pixels to produce 1.
+                        int l2 = (int)floor(l);
+                        int s2 = (int)floor(s);
+                        unsigned char r1,r2,r3,r4,g1,g2,g3,g4,b1,b2,b3,b4;
+                        get_rgb_with_masking(ii, mask, l2,   s2,   &r1,&g1,&b1);
+                        get_rgb_with_masking(ii, mask, l2+1, s2,   &r2,&g2,&b2);
+                        get_rgb_with_masking(ii, mask, l2,   s2+1, &r3,&g3,&b3);
+                        get_rgb_with_masking(ii, mask, l2+1, s2+1, &r4,&g4,&b4);
+                        r=(r1+r2+r3+r4)/4;
+                        g=(g1+g2+g3+g4)/4;
+                        b=(b1+b2+b3+b4)/4;
+                    }
+                    else {
+                        // 3x or greater view -- average 9 pixels to produce 1.
+                        int l2 = (int)floor(l);
+                        int s2 = (int)floor(s);
+                        int fac = (int)floor(zoom/3);
+                        int rt=0, gt=0, bt=0;
+                        for (m=0; m<3; ++m) {
+                            for (n=0; n<3; ++n) {
+                                get_rgb_with_masking(ii, mask,
+                                                     l2+m*fac, s2+n*fac,
+                                                     &r, &g, &b);
+                                rt += (int)r;
+                                gt += (int)g;
+                                bt += (int)b;
+                            }
+                        }
+                        r = (unsigned char) (rt/9);
+                        g = (unsigned char) (gt/9);
+                        b = (unsigned char) (bt/9);
+                    }
+                }
+                
+                int p = 3*mm;
+                bdata[p] = r;
+                bdata[p+1] = g;
+                bdata[p+2] = b;
+                ++mm;
+            }
+        }
+    }
     // Create the pixbuf
     GdkPixbuf *pb =
         gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE, 
@@ -1208,7 +1277,12 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         update_pixel_info(ii);
         fill_meta_info();
         fill_stats(curr);
+        set_title(FALSE, NULL);
         setup_bands_tab(curr->meta);
+    }
+    else if (event->keyval == GDK_h || event->keyval == GDK_H) {
+        g_lhs_visible = !g_lhs_visible;
+        show_widget("vbox_lhs", g_lhs_visible);
     }
     else if (event->keyval == GDK_n || event->keyval == GDK_N) {
         g_show_north_arrow = !g_show_north_arrow;

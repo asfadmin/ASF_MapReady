@@ -278,6 +278,9 @@ int calc_rgb_scaled_pixel_value(ImageStatsRGB *stats, float val);
 void clear_stats(ImageInfo *ii);
 void update_map_settings(ImageInfo *ii);
 void set_mapping_defaults(ImageInfo *ii);
+void get_rgb_with_masking(ImageInfo *ii, ImageInfo *mask,
+         int l, int s, unsigned char *r, unsigned char *g, unsigned char *b);
+int apply_mask(int v, unsigned char *r, unsigned char *g, unsigned char *b);
 
 /* google.c */
 char *find_in_path(char * file);
@@ -385,8 +388,8 @@ extern GladeXML *glade_xml;
 #define MAX_IMAGES 5
 extern ImageInfo image_info[MAX_IMAGES];
 // "curr" always points to the currently being displayed image info
-// which, currently, is always image_info[0].
 extern ImageInfo *curr;
+extern ImageInfo *mask;
 extern int current_image_info_index;
 extern int n_images_loaded;
 

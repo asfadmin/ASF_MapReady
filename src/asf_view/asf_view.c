@@ -8,8 +8,10 @@
 // pointer to the loaded XML file's internal struct
 GladeXML *glade_xml;
 
-ImageInfo image_info[5];
+ImageInfo image_info[MAX_IMAGES];
 ImageInfo *curr=NULL;
+ImageInfo mask_info;
+ImageInfo *mask=NULL;
 int n_images_loaded=1;
 int current_image_info_index=0;
 
@@ -109,16 +111,19 @@ main(int argc, char **argv)
     if (detect_flag_options(argc, argv, "-help", "--help", NULL))
       help();
 
+    char band[512], lut[512], mask_file_name[512];
 
-    char band[512], lut[512];
     strcpy(band, "");
+    strcpy(mask_file_name, "");
 
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);
     int lut_specified = extract_string_options(&argc, &argv, lut,
-        "-colormap", "--colormap", NULL);
+        "-colormap", "--colormap", "-lut", "--lut", NULL);
     int planner_mode = extract_flag_options(&argc, &argv,
         "-plan", "--plan", NULL);
+    int mask_specified = extract_string_options(&argc, &argv, mask_file_name,
+        "-mask", "--mask", "--layover-mask", "--layover-mask", NULL);
     generic_specified = extract_flag_options(&argc, &argv,
         "-generic", "--generic", NULL);
     if (generic_specified) {
@@ -152,6 +157,7 @@ main(int argc, char **argv)
          generic_bin_datatype = REAL32;
        }
     }
+
     if (planner_mode) {
       if (detect_flag_options(argc, argv, "-calibrate-reference", NULL)) {
         calibrate_planner_reference();
@@ -182,6 +188,7 @@ main(int argc, char **argv)
         }    
     }
 
+
     if (n_images_loaded == 1) {
         asfPrintStatus("Loading 1 image: %s\n", image_info[0].filename);
     }
@@ -190,6 +197,9 @@ main(int argc, char **argv)
         for (ii=0; ii<n_images_loaded; ++ii)
             asfPrintStatus("%d: %s\n", ii+1, image_info[ii].filename);
     }
+
+    if (mask_specified)
+        asfPrintStatus("Mask: %s\n", mask_file_name);
 
     // we could call load_file() here, but don't because this way we can
     // interleave the call to gtk_init() with some of the loading code --
@@ -212,98 +222,117 @@ main(int argc, char **argv)
     if (fileExists(embedded_tiff_lut_file)) remove(embedded_tiff_lut_file);
     if (fileExists(embedded_asf_colormap_file)) remove(embedded_asf_colormap_file);
 
+    if (mask_specified) {
+        curr = mask = &mask_info;
+        mask->filename = STRDUP(mask_file_name);
+
+        if (mask->filename[strlen(mask->filename)-1] == '.')
+            mask->filename[strlen(mask->filename)-1] = '\0';
+        
+        read_file(mask->filename, NULL, FALSE, TRUE);
+        //set_lut("layover_mask");
+    }
+    
+    // load the image we're going to actually show last
     for (ii=n_images_loaded-1; ii>=0; --ii)
     {
-       curr = &image_info[ii];
-
-    // strip off any trailing "."
-    if (curr->filename[strlen(curr->filename)-1] == '.')
-        curr->filename[strlen(curr->filename)-1] = '\0';
-
-    read_file(curr->filename, band_specified ? band : NULL, FALSE, TRUE);
-    check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut);
-    if (lut_specified)
-      set_lut(lut);
-
-    assert(curr->data_name);
-    assert(curr->meta_name);
-
-    // we load the thumbnail data before bringing up the window, looks
-    // much nicer.  When loading an image within the GUI, we don't need
-    // to do get_thumbnail_data() as a separate step.
-    ThumbnailData *thumbnail_data = get_thumbnail_data(curr);
-
-    // first time through the loop only, set up GTK
-    if (ii == n_images_loaded-1) {
-        gtk_init(&argc, &argv);
-
-        gchar *glade_xml_file = (gchar *)find_in_share("asf_view.glade");
-        printf("Found asf_view.glade: %s\n", glade_xml_file);
-        glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
-        free(glade_xml_file);
-
-        // set up window title, etc
-        set_title(band_specified, band);
-        set_button_images();
-
-        // set up the acquisition planner, if we are in that mode
-        if (planner_mode) {
-          setup_planner();
-
-          // getting rid of the info section makes more room for the found
-          // acquisitions, and isn't really necessary in the planner
-          show_widget("info_hbox", FALSE);
+        curr = &image_info[ii];
+        
+        // strip off any trailing "."
+        if (curr->filename[strlen(curr->filename)-1] == '.')
+            curr->filename[strlen(curr->filename)-1] = '\0';
+        
+        read_file(curr->filename, band_specified ? band : NULL, FALSE, TRUE);
+        check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut);
+        if (lut_specified)
+            set_lut(lut);
+        
+        assert(curr->data_name);
+        assert(curr->meta_name);
+        
+        // we load the thumbnail data before bringing up the window, looks
+        // much nicer.  When loading an image within the GUI, we don't need
+        // to do get_thumbnail_data() as a separate step.
+        ThumbnailData *thumbnail_data = get_thumbnail_data(curr);
+        
+        // first time through the loop only, set up GTK
+        if (ii == n_images_loaded-1) {
+            gtk_init(&argc, &argv);
+            
+            gchar *glade_xml_file = (gchar *)find_in_share("asf_view.glade");
+            printf("Found asf_view.glade: %s\n", glade_xml_file);
+            glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
+            free(glade_xml_file);
+            
+            // set up window title, etc
+            set_button_images();
+            
+            // set up the acquisition planner, if we are in that mode
+            if (planner_mode) {
+                setup_planner();
+                
+                // getting rid of the info section makes more room for the found
+                // acquisitions, and isn't really necessary in the planner
+                show_widget("info_hbox", FALSE);
+            }
+            
+            // populate the look up table list, and apply the default
+            // look-up-table, if there is one.  In this case, we will need to
+            // apply it retroactively to the thumbnail data we already loaded
+            // (In new.c, this kludge isn't required - we load/apply in the
+            // same pass -- here it is required because we pre-load the thumbnail)
+            populate_lut_combo();
+            if (check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut)) {
+                GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+                gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
+                set_current_index(get_tiff_lut_index());
+            }
+            else if (is_colormap_ASF_file(curr->filename)) {
+                /*
+                * lut_specified = 1;
+                * strcpy(lut, EMBEDDED_ASF_COLORMAP_LUT);
+                * GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+                * gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_asf_lut_index());
+                * set_current_index(get_asf_lut_index());
+                * check_lut();
+                * apply_lut_to_data(thumbnail_data);
+                */
+            }
+        }
+        else if (ii == 0) {
+            set_title(band_specified, band);
         }
 
-        // populate the look up table list, and apply the default
-        // look-up-table, if there is one.  In this case, we will need to
-        // apply it retroactively to the thumbnail data we already loaded
-        // (In new.c, this kludge isn't required - we load/apply in the
-        // same pass -- here it is required because we pre-load the thumbnail)
-        populate_lut_combo();
-        if (check_for_embedded_tiff_lut(curr->filename, &lut_specified, lut)) {
-            GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
-            gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_tiff_lut_index());
-            set_current_index(get_tiff_lut_index());
+        if (curr->meta && curr->meta->general)  {
+            if (set_lut_based_on_image_type(curr->meta->general->image_data_type))
+            {
+                check_lut();
+                // data we loaded needs to be lutted
+                apply_lut_to_data(thumbnail_data);
+            }
         }
-        else if (is_colormap_ASF_file(curr->filename)) {
-         /*
-            lut_specified = 1;
-            strcpy(lut, EMBEDDED_ASF_COLORMAP_LUT);
-            GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
-            gtk_option_menu_set_history(GTK_OPTION_MENU(option_menu), get_asf_lut_index());
-            set_current_index(get_asf_lut_index());
-            check_lut();
-            apply_lut_to_data(thumbnail_data);
-         */
-        }
+        
+        // load the metadata & image data, other setup
+        setup_gdk_window_ids();
+        setup_small_image_size();
+        fill_small_have_data(thumbnail_data, curr);
+        fill_big(curr);
+        update_pixel_info(curr);
+        update_zoom();
+        set_font();
+        fill_meta_info();
+        update_map_settings(curr);
+        fill_stats(curr);
+        set_mapping_defaults(curr);
+        setup_bands_tab(curr->meta);
+        disable_meta_button_if_necessary();
+        if (lut_specified)
+            select_lut(lut);
     }
 
-    if (curr->meta && curr->meta->general)  {
-        if (set_lut_based_on_image_type(curr->meta->general->image_data_type))
-        {
-            check_lut();
-            // data we loaded needs to be lutted
-            apply_lut_to_data(thumbnail_data);
-        }
-    }
-
-    // load the metadata & image data, other setup
-    setup_gdk_window_ids();
-    setup_small_image_size();
-    fill_small_have_data(thumbnail_data, curr);
-    fill_big(curr);
-    update_pixel_info(curr);
-    update_zoom();
-    set_font();
-    fill_meta_info();
-    update_map_settings(curr);
-    fill_stats(curr);
-    set_mapping_defaults(curr);
-    setup_bands_tab(curr->meta);
-    disable_meta_button_if_necessary();
-    if (lut_specified)
-      select_lut(lut);
+    if (n_images_loaded>0)
+        asfPrintStatus("Currently displaying %d: %s\n",
+                       current_image_info_index, curr->filename);
     }
 
     if (n_images_loaded>0)

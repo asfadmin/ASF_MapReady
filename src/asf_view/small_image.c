@@ -92,6 +92,23 @@ ThumbnailData *get_thumbnail_data(ImageInfo *ii)
     // this will also calculate the image statistics (estimates)
     unsigned char *data = generate_thumbnail_data(ii, tsx, tsy);
 
+    // now add the mask if we have one
+    if (mask) {
+        int i, j;
+        unsigned char r, g, b;
+        for (i=0; i<tsy; ++i) {
+            for (j=0; j<tsx; ++j) {
+                int f = (int)cached_image_get_pixel(mask->data_ci, i*sf, j*sf);
+                if (apply_mask(f, &r, &g, &b)) {
+                    assert(3*(i*tsx+j)+2 < 3*tsx*tsy);
+                    data[3*(i*tsx+j)] = r;
+                    data[3*(i*tsx+j)+1] = g;
+                    data[3*(i*tsx+j)+2] = b;
+                }
+            }
+        }
+    }
+
     ThumbnailData *ret = MALLOC(sizeof(ThumbnailData));
     ret->size_x = tsx;
     ret->size_y = tsy;

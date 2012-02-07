@@ -857,6 +857,50 @@ int calc_rgb_scaled_pixel_value(ImageStatsRGB *stats, float val)
         return (int) round(((val-stats->map_min)/(stats->map_max-stats->map_min))*255);
 }
 
+int apply_mask(int v, unsigned char *r, unsigned char *g, unsigned char *b)
+{
+    int mask_was_applied = TRUE;
+    // right now this is hard-coded for the layover/shadow lut
+    // FIXME: after the lut stuff is put into the ImageInfo structure,
+    // this code should consult mask->lut to apply the mask
+    switch (v) {
+        case 2:
+            *r = *g = 0;
+            *b = 153;
+            break;
+        case 3:
+            *r = 255;
+            *g = 64;
+            *b = 0;
+            break;
+        case 4:
+            *r = 0;
+            *g = 153;
+            *b = 32;
+            break;
+        case 5:
+            *r = *g = *b = 64;
+            break;
+        default:
+            // not masked, no action
+            mask_was_applied = FALSE;
+            break;
+    }
+    return mask_was_applied;
+}
+
+void
+get_rgb_with_masking(ImageInfo *ii, ImageInfo *mask,
+                     int l, int s,
+                     unsigned char *r, unsigned char *g, unsigned char *b)
+{
+    int f = (int)cached_image_get_pixel(mask->data_ci, l, s);
+    if (!apply_mask(f, r, g, b)) {
+        // not masked, show the regular image's pixel value
+        cached_image_get_rgb(ii->data_ci, l, s, r, g, b);
+    }
+}
+
 static void fill_stats_label(ImageInfo *ii)
 {
     char s[1024];
