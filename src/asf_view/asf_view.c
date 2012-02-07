@@ -330,14 +330,10 @@ main(int argc, char **argv)
             select_lut(lut);
     }
 
-    if (n_images_loaded>0)
+    if (n_images_loaded>0) {
         asfPrintStatus("Currently displaying %d: %s\n",
                        current_image_info_index, curr->filename);
     }
-
-    if (n_images_loaded>0)
-        asfPrintStatus("Currently displaying %d: %s\n",
-                       current_image_info_index, curr->filename);
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
