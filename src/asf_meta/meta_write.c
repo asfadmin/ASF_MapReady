@@ -522,18 +522,10 @@ void meta_write(meta_parameters *meta, const char *file_name)
         meta_put_string(fp,"type:","UNKNOWN_PROJECTION","Projection Type");
 	break;
     }
-    if (meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
-      meta_put_double_lf(fp,"startX:",meta->projection->startX, 3,
-			 "Projection Coordinate at top-left, X direction");
-      meta_put_double_lf(fp,"startY:",meta->projection->startY, 3,
-			 "Projection Coordinate at top-left, Y direction");
-    }
-    else {
-      meta_put_double_lf(fp,"startX:",meta->projection->startX, 4,
-			 "Projection Coordinate at top-left, X direction");
-      meta_put_double_lf(fp,"startY:",meta->projection->startY, 4,
-			 "Projection Coordinate at top-left, Y direction");
-    }
+    meta_put_double_lf(fp,"startX:",meta->projection->startX, 8,
+                       	  "Projection Coordinate at top-left, X direction");
+    meta_put_double_lf(fp,"startY:",meta->projection->startY, 8,
+                          "Projection Coordinate at top-left, Y direction");
     meta_put_double(fp,"perX:",meta->projection->perX,
 		    "Projection Coordinate per pixel, X direction");
     meta_put_double(fp,"perY:",meta->projection->perY,
@@ -1648,15 +1640,15 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     else if (mp->type == UNKNOWN_PROJECTION)
       fprintf(fp, "    <type>UNKNOWN_PROJECTION</type>\n");
     if (mp->type != LAT_LONG_PSEUDO_PROJECTION) {
-      fprintf(fp, "    <startX units=\"m\">%.3lf</startX>\n", mp->startX);
-      fprintf(fp, "    <startY units=\"m\">%.3lf</startY>\n", mp->startY);
-      fprintf(fp, "    <perX units=\"m\">%.3lf</perX>\n", mp->perX);
-      fprintf(fp, "    <perY units=\"m\">%.3lf</perY>\n", mp->perY);
+      fprintf(fp, "    <startX units=\"m\">%.8lf</startX>\n", mp->startX);
+      fprintf(fp, "    <startY units=\"m\">%.8lf</startY>\n", mp->startY);
+      fprintf(fp, "    <perX units=\"m\">%.8lf</perX>\n", mp->perX);
+      fprintf(fp, "    <perY units=\"m\">%.8lf</perY>\n", mp->perY);
     }
     else {
-      fprintf(fp, "    <startX units=\"degrees\">%.4lf</startX>\n", 
+      fprintf(fp, "    <startX units=\"degrees\">%.8lf</startX>\n", 
 	      mp->startX);
-      fprintf(fp, "    <startY units=\"degrees\">%.4lf</startY>\n", 
+      fprintf(fp, "    <startY units=\"degrees\">%.8lf</startY>\n", 
 	      mp->startY);
       fprintf(fp, "    <perX units=\"degrees\">%.11g</perX>\n", mp->perX);
       fprintf(fp, "    <perY units=\"degrees\">%.11g</perY>\n", mp->perY);
