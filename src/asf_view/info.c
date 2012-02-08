@@ -191,7 +191,7 @@ void update_pixel_info(ImageInfo *ii)
     if (meta_supports_meta_get_latLon(meta))
     {
         meta_get_latLon(meta, y, x, 0, &lat, &lon);
-        sprintf(&buf[strlen(buf)], "Lat: %.4f, Lon: %.4f (deg)\n", lat, lon);
+        sprintf(&buf[strlen(buf)], "Lat: %.5f, Lon: %.5f (deg)\n", lat, lon);
 
         //double px, py;
         //latLon2UTM(lat,lon,0,&px,&py);
