@@ -594,6 +594,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->azimuth_offset = 0;
   cfg->terrain_correct->use_gr_dem = 0;
   cfg->terrain_correct->if_coreg_fails_use_zero_offsets = 0;
+  cfg->terrain_correct->save_incid_angles = 0;
 
   cfg->calibrate->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->calibrate->radiometry, "AMPLITUDE");

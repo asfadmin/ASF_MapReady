@@ -2988,8 +2988,11 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   // Process the incidence angles file if requested
   if (cfg->general->terrain_correct &&
       cfg->terrain_correct &&
-      cfg->terrain_correct->save_incid_angles) {
+      cfg->terrain_correct->do_radiometric &&
+      cfg->terrain_correct->save_incid_angles)
+  {
     if (cfg->general->geocoding) {
+      asfPrintStatus("Geocoding incidence angles...");
       update_status("Geocoding incidence angles...");
       sprintf(inFile, "%s/incidence_angles",cfg->general->tmp_dir);
       sprintf(outFile, "%s/incidence_angles_geocoded",cfg->general->tmp_dir);
