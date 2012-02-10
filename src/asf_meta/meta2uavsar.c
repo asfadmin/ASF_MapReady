@@ -166,8 +166,8 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
     // UAVSAR lat/lon projected data appears to be calculated from the center of
     // the pixel at (-1,-1), instead of the upper-left of pixel (0,0).  Thus we
     // have to add in a half-pixel shift.
-    meta->projection->startX = params->cross_track_offset - .5*params->range_pixel_spacing;
-    meta->projection->startY = params->along_track_offset - .5*params->azimuth_pixel_spacing;
+    meta->projection->startX = params->cross_track_offset + .5*params->range_pixel_spacing;
+    meta->projection->startY = params->along_track_offset + .5*params->azimuth_pixel_spacing;
     meta->projection->perX = params->range_pixel_spacing;
     meta->projection->perY = params->azimuth_pixel_spacing;
 
