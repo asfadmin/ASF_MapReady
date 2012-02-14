@@ -38,21 +38,21 @@ char *sprn_ardr(struct alos_rad_data_rec *dr)
  add(&ret, "Transmission distortion matrix imag(2,2): %lf\n", 
      dr->delta_trans_imag[3] );
  add(&ret, "Reception distortion matrix real(1,1)   : %lf\n", 
-     dr->delta_trans_real[0] );
+     dr->delta_receive_real[0] );
  add(&ret, "Reception distortion matrix imag(1,1)   : %lf\n", 
-     dr->delta_trans_imag[0] );
+     dr->delta_receive_imag[0] );
  add(&ret, "Reception distortion matrix real(1,2)   : %lf\n", 
-     dr->delta_trans_real[1] );
+     dr->delta_receive_real[1] );
  add(&ret, "Reception distortion matrix imag(1,2)   : %lf\n", 
-     dr->delta_trans_imag[1] );
+     dr->delta_receive_imag[1] );
  add(&ret, "Reception distortion matrix real(2,1)   : %lf\n", 
-     dr->delta_trans_real[2] );
+     dr->delta_receive_real[2] );
  add(&ret, "Reception distortion matrix imag(2,1)   : %lf\n", 
-     dr->delta_trans_imag[2] );
+     dr->delta_receive_imag[2] );
  add(&ret, "Reception distortion matrix real(2,2)   : %lf\n", 
-     dr->delta_trans_real[3] );
+     dr->delta_receive_real[3] );
  add(&ret, "Reception distortion matrix imag(2,2)   : %lf\n", 
-     dr->delta_trans_imag[3] );
+     dr->delta_receive_imag[3] );
  add(&ret, "*********** end of Radiometric Data record ******************\n\n");
  return ret;
 }
