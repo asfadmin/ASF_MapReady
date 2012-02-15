@@ -2693,12 +2693,12 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       char *basename = get_basename(cfg->general->out_name);
       
       if (cfg->general->intermediates) {
-	sprintf(outFile, "%s/%s_thumb.png",
-		cfg->general->tmp_dir, basename);
-	sprintf(tmpFile, "%s/%s_thumb",
-		cfg->general->tmp_dir, basename);
-	sprintf(overlayFile, "%s/%s_overlay",
-		cfg->general->tmp_dir, basename);
+	sprintf(outFile, "%s%c%s_thumb.png",
+		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
+	sprintf(tmpFile, "%s%c%s_thumb",
+		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
+	sprintf(overlayFile, "%s%c%s_overlay",
+		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
       } else {
 	char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
 	strcpy(tmpFile, tmp);
