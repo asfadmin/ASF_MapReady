@@ -2600,8 +2600,11 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     // result of geocoding is the final output file, since we are
     // not exporting
     char *imgFile = appendExt(outFile, ".img");
+    char *metaFile = appendExt(outFile, ".meta");
     save_intermediate(cfg, "Output", imgFile);
+    save_intermediate(cfg, "Meta", metaFile);
     free(imgFile);
+    free(metaFile);
   }
   
   //---------------------------------------------------------------------
