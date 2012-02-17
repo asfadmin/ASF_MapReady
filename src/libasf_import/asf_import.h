@@ -54,6 +54,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
 	       char *interferogram_file, // interferogram file
 	       char *coherence_file, // coherence image file
 	       char *baseline_file, // baseline file
+	       int complex_gamm_file, // TRUE for complex GAMMA file
 	       char *uavsar_type, // data type for UAVSAR data
 	       int metaonly, // flat for generating XML metadata file only
                char *outBaseName // output file
@@ -130,7 +131,7 @@ void apply_polsarpro_palette_to_metadata(const char *lut_basename,
                                          meta_parameters *imd);
 void import_gamma(char *dataName, char *metaName, char *slaveName,
                   char *igramName, char *cohName, char *baselineName, 
-		  char *outBaseName);
+		  int complex_gamma, char *outBaseName);
 meta_parameters *meta_read_roipac(const char *in, const char *sv_file);
 void import_roipac(const char *baseName, const char *outName);
 

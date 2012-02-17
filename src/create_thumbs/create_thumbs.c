@@ -913,6 +913,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 		       NULL,                // interferogram (gamma)
 		       NULL,                // coherence (gamma)
                        NULL,                // baseline (gamma)
+		       FALSE,               // complex gamma
 		       NULL,                // UAVSAR data type
 		       FALSE,               // metaonly
                        out_file);           /* output basename        */
@@ -994,6 +995,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 		       NULL,                // interferogram (gamma)
 		       NULL,                // coherence (gamma)
                        NULL,                // baseline (gamma)
+		       FALSE,               // complex gamma
 		       NULL,                // UAVSAR data type
 		       FALSE,               // metaonly
                        out_file);           /* output basename        */
@@ -1063,6 +1065,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 		       NULL,                // interferogram (gamma)
 		       NULL,                // coherence (gamma)
                        NULL,                // baseline (gamma)
+		       FALSE,               // complex gamma
 		       NULL,                // UAVSAR data type
 		       FALSE,               // metaonly
                        out_file);           /* output basename        */

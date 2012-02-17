@@ -751,6 +751,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->import->slave_metadata, read_str(line, "slave metadata"));
       if (strncmp(test, "baseline", 8)==0)
         strcpy(cfg->import->baseline, read_str(line, "baseline"));
+      if (strncmp(test, "complex gamma", 13)==0)
+        cfg->import->complex_gamma = read_int(line, "complex gamma");
       if (strncmp(test, "uavsar", 6)==0)
         strcpy(cfg->import->uavsar, read_str(line, "uavsar"));
 
@@ -1715,6 +1717,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"# This file contains the baseline components that describe the geometry of\n"
 		"# the interferometric pairs.\n\n");
       fprintf(fConfig, "baseline = %s\n", cfg->import->baseline);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The interferometric GAMMA data can be stored in complex form.\n"\
+		"# This flag is providing generic support for any complex GAMMA file,\n"\
+		"# regardless what nature the data is.\n\n");
+      fprintf(fConfig, "complex gamma = %d\n", cfg->import->complex_gamma);
       if (!shortFlag)
 	fprintf(fConfig, "\n# The UAVSAR ingest requires the definition of which "
 		"product actually needs\n# to be imported.\n"

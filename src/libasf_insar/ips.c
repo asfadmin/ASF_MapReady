@@ -125,18 +125,18 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   if (check_status(cfg->ingest->status)) {
 
     check_return(asf_import(radiometry, db_flag, complex_flag, multilook_flag,
-                amp0_flag, in_format, NULL, NULL, NULL, NULL,
-                cfg->ingest->prc_master, cfg->general->lat_begin,
-		cfg->general->lat_end, 0, 0, -999, -999, -999, -999, 0,
-		NULL, NULL, NULL, TRUE, NULL, "master", "", NULL, 
-		NULL, NULL, NULL, NULL, NULL, FALSE, "a"),
+			    amp0_flag, in_format, NULL, NULL, NULL, NULL,
+			    cfg->ingest->prc_master, cfg->general->lat_begin,
+			    cfg->general->lat_end, 0, 0, -999, -999, -999, -999, 0,
+			    NULL, NULL, NULL, TRUE, NULL, "master", "", NULL, 
+			    NULL, NULL, NULL, NULL, FALSE, NULL, FALSE, "a"),
          "ingesting master image (asf_import)");
     check_return(asf_import(radiometry, db_flag, complex_flag, multilook_flag,
-                amp0_flag, in_format, NULL, NULL, NULL, NULL,
-                cfg->ingest->prc_slave, cfg->general->lat_begin,
-		cfg->general->lat_end, 0, 0, -999, -999, -999, -999, 0,
-		NULL, NULL, NULL, TRUE, NULL, "slave", "", NULL, 
-		NULL, NULL, NULL, NULL, NULL, FALSE, "b"),
+			    amp0_flag, in_format, NULL, NULL, NULL, NULL,
+			    cfg->ingest->prc_slave, cfg->general->lat_begin,
+			    cfg->general->lat_end, 0, 0, -999, -999, -999, -999, 0,
+			    NULL, NULL, NULL, TRUE, NULL, "slave", "", NULL, 
+			    NULL, NULL, NULL, NULL, FALSE, NULL, FALSE, "b"),
          "ingesting slave image (asf_import)");
 
     // Setting patches and offsets for processing level zero data

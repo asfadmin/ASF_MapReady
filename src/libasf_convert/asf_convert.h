@@ -87,6 +87,7 @@ typedef struct
   char *coherence;        // coherence file
   char *slave_metadata;   // metadata of the slave image
   char *baseline;         // baseline file
+  int complex_gamma;      // flag for commplex GAMMA files
   char *uavsar;           // UAVSAR data type
 
 } s_import;

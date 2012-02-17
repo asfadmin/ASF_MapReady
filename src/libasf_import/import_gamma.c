@@ -673,7 +673,7 @@ gamma_msp *gamma_msp_init()
 
 void import_gamma(char *dataName, char *metaName, char *slaveName,
                   char *igramName, char *cohName, char *baselineName, 
-		  char *outBaseName)
+		  int complexGammaFlag, char *outBaseName)
 {
   meta_parameters *metaIn, *metaOut;
   FILE *fpIn, *fpOut;
@@ -688,7 +688,10 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
 
   // Check the existence of files
   if (!fileExists(dataName)) {
-    sprintf(tmp, "Missing amplitude image file (%s)\n", dataName);
+    if (complexGammaFlag)
+      sprintf(tmp, "Missing complex image file (%s)\n", dataName);
+    else
+      sprintf(tmp, "Missing amplitude image file (%s)\n", dataName);
     strcat(reason, tmp);
     status = FALSE;
   }
@@ -711,8 +714,14 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
   char *line = (char *) MALLOC(sizeof(char)*1024);
   fgets(line, 1024, fpIn);
   if (strstr(line, "ISP")) {
-    metaIn = meta_read_gamma_isp(metaName, "FLOAT", "INSAR_STACK");
-    metaOut = meta_read_gamma_isp(metaName, "FLOAT", "INSAR_STACK");
+    if (complexGammaFlag) {
+      metaIn = meta_read_gamma_isp(metaName, "FLOAT", "COMPLEX_IMAGE");
+      metaOut = meta_read_gamma_isp(metaName, "FLOAT", "COMPLEX_IMAGE");
+    }
+    else {
+      metaIn = meta_read_gamma_isp(metaName, "FLOAT", "INSAR_STACK");
+      metaOut = meta_read_gamma_isp(metaName, "FLOAT", "INSAR_STACK");
+    }
   }
   else if (strstr(line, "MSP")) {
     metaIn = meta_read_gamma_msp(metaName, "FLOAT", "AMPLITUDE");
@@ -731,32 +740,11 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
   int line_count = metaOut->general->line_count;
   int current_band = 0;
 
-  // The first band is always going to be the amplitude image. Otherwise
-  // we can't guarantee terrain correction and such.
-  floatBuf = (float *) MALLOC(sizeof(float)*sample_count);
-  outFile = appendExt(outBaseName, ".img");
-  fpIn = FOPEN(dataName, "rb");
-  fpOut = FOPEN(outFile, "wb");
-  asfPrintStatus("Writing amplitude image ...\n");
-  for (ii=0; ii<line_count; ii++) {
-    get_float_line(fpIn, metaIn, ii, floatBuf);
-    for (kk=0; kk<sample_count; kk++) {
-      amp = sqrt(floatBuf[kk]);
-      floatBuf[kk] = amp;
-    }
-    put_band_float_line(fpOut, metaOut, current_band, ii, floatBuf);
-    asfLineMeter(ii, line_count);
-  }
-  FCLOSE(fpIn);
-  FREE(floatBuf);
-  strcpy(metaOut->general->bands, "AMP");
-  
-  // Lets add an interferogram. This is a little trickier, since it comes
-  // in complex form, and we need to store it a two bands
-  if (igramName && strlen(igramName) > 0) {
-    fpIn = FOPEN(igramName, "rb");
-    current_band += 2;
-    asfPrintStatus("\nWriting interferogram ...\n");
+  if (complexGammaFlag) {
+    fpIn = FOPEN(dataName, "rb");
+    fpOut = FOPEN(outFile, "wb");
+    metaOut->general->band_count = 2;
+    asfPrintStatus("\nWriting complex image...\n");
     floatCpxBuf = 
       (complexFloat *) MALLOC(sizeof(complexFloat)*sample_count);
     floatAmpBuf = (float *) MALLOC(sizeof(float)*sample_count);
@@ -774,35 +762,91 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
 	else
 	  floatAmpBuf[kk] = floatPhaseBuf[kk] = 0.0;
       }
-      put_band_float_line(fpOut, metaOut, current_band, ii, floatAmpBuf);
-      put_band_float_line(fpOut, metaOut, current_band+1, ii, floatPhaseBuf);
+      put_band_float_line(fpOut, metaOut, 0, ii, floatAmpBuf);
+      put_band_float_line(fpOut, metaOut, 1, ii, floatPhaseBuf);
       asfLineMeter(ii, line_count);
     }
     FCLOSE(fpIn);
     FREE(floatCpxBuf);
     FREE(floatAmpBuf);
     FREE(floatPhaseBuf);
-    strcat(metaOut->general->bands, ",INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
+    strcpy(metaOut->general->bands, "AMP,PHASE");
+    FCLOSE(fpOut);
   }
-
-  // Lets add a coherence image. This is the simple case, because it
-  // comes as floating point.
-  if (cohName && strlen(cohName) > 0) {
-    fpIn = FOPEN(cohName, "rb");
-    current_band++;
-    asfPrintStatus("\nWriting coherence image ...\n");
+  else {
+    // The first band is always going to be the amplitude image. Otherwise
+    // we can't guarantee terrain correction and such.
     floatBuf = (float *) MALLOC(sizeof(float)*sample_count);
-    metaIn->general->data_type = REAL32;
+    outFile = appendExt(outBaseName, ".img");
+    fpIn = FOPEN(dataName, "rb");
+    fpOut = FOPEN(outFile, "wb");
+    asfPrintStatus("Writing amplitude image ...\n");
     for (ii=0; ii<line_count; ii++) {
       get_float_line(fpIn, metaIn, ii, floatBuf);
+      for (kk=0; kk<sample_count; kk++) {
+	amp = sqrt(floatBuf[kk]);
+	floatBuf[kk] = amp;
+      }
       put_band_float_line(fpOut, metaOut, current_band, ii, floatBuf);
       asfLineMeter(ii, line_count);
     }
     FCLOSE(fpIn);
     FREE(floatBuf);
-    strcat(metaOut->general->bands, ",COHERENCE");
+    strcpy(metaOut->general->bands, "AMP");
+    
+    // Lets add an interferogram. This is a little trickier, since it comes
+    // in complex form, and we need to store it a two bands
+    if (igramName && strlen(igramName) > 0) {
+      fpIn = FOPEN(igramName, "rb");
+      current_band += 2;
+      asfPrintStatus("\nWriting interferogram ...\n");
+      floatCpxBuf = 
+	(complexFloat *) MALLOC(sizeof(complexFloat)*sample_count);
+      floatAmpBuf = (float *) MALLOC(sizeof(float)*sample_count);
+      floatPhaseBuf = (float *) MALLOC(sizeof(float)*sample_count);
+      metaIn->general->data_type = COMPLEX_REAL32;
+      for (ii=0; ii<line_count; ii++) {
+	get_complexFloat_line(fpIn, metaIn, ii, floatCpxBuf);
+	for (kk=0; kk<sample_count; kk++) {
+	  float re = floatCpxBuf[kk].real;
+	  float im = floatCpxBuf[kk].imag;
+	  if (re != 0.0 || im != 0.0) {
+	    floatAmpBuf[kk] = sqrt(re*re + im*im);
+	    floatPhaseBuf[kk] = atan2(im, re);
+	  } 
+	  else
+	    floatAmpBuf[kk] = floatPhaseBuf[kk] = 0.0;
+	}
+	put_band_float_line(fpOut, metaOut, current_band, ii, floatAmpBuf);
+	put_band_float_line(fpOut, metaOut, current_band+1, ii, floatPhaseBuf);
+	asfLineMeter(ii, line_count);
+      }
+      FCLOSE(fpIn);
+      FREE(floatCpxBuf);
+      FREE(floatAmpBuf);
+      FREE(floatPhaseBuf);
+      strcat(metaOut->general->bands, ",INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
+    }
+    
+    // Lets add a coherence image. This is the simple case, because it
+    // comes as floating point.
+    if (cohName && strlen(cohName) > 0) {
+      fpIn = FOPEN(cohName, "rb");
+      current_band++;
+      asfPrintStatus("\nWriting coherence image ...\n");
+      floatBuf = (float *) MALLOC(sizeof(float)*sample_count);
+      metaIn->general->data_type = REAL32;
+      for (ii=0; ii<line_count; ii++) {
+	get_float_line(fpIn, metaIn, ii, floatBuf);
+	put_band_float_line(fpOut, metaOut, current_band, ii, floatBuf);
+	asfLineMeter(ii, line_count);
+      }
+      FCLOSE(fpIn);
+      FREE(floatBuf);
+      strcat(metaOut->general->bands, ",COHERENCE");
+    }
+    FCLOSE(fpOut);
   }
-  FCLOSE(fpOut);
 
   // Add the InSAR block
   if (slaveName && strlen(slaveName) > 0 && 

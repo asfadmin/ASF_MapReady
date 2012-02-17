@@ -20,7 +20,7 @@ following defines.
 "              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-complex] [-metadata <file>]\n"\
 "              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
-"              [-baseline <file>] [-line <start line subset>]\n"\
+"              [-baseline <file>] [-complex_gamma <file>] [-line <start line subset>]\n"\
 "              [-sample <start sample subset>] [-width <subset width>]\n"\
 "              [-height <subset height>] [-uavsar <type>]\n"\ 
 "              [-subset <latUL> <lonUL> <latLR> <lonLR>] [-help]\n"\
@@ -110,6 +110,10 @@ following defines.
 "   -baseline <file>\n"\
 "        Provides baseline information of the interferometric pair.\n"\
 "        Requires the format to be 'gamma' or 'roipac'.\n"\
+"   -complex_gamma <file>\n"\
+"        Flag that allows the ingest of a complex GAMMA file that is stored in a\n"\
+"        two-band image.\n"\
+"        Requires the format to be 'gamma'.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then import the band identified by 'band_id' (only).  If 'all' is\n"\
@@ -307,6 +311,7 @@ typedef enum {
     f_COHERENCE,
     f_SLAVE,
     f_BASELINE,
+    f_COMPLEX_GAMMA,
     f_UAVSAR,
     f_SUBSET,
     f_METAONLY,
@@ -430,6 +435,7 @@ int main(int argc, char *argv[])
     char *coherence_file=NULL;
     char *slave_file=NULL;
     char *baseline_file=NULL;
+    int complex_gamma_file=FALSE;
     char *uavsar_type=NULL;
     char *prcPath=NULL;
     char format_type_str[256]="";
@@ -492,6 +498,7 @@ int main(int argc, char *argv[])
     flags[f_COHERENCE] = checkForOption("-coherence", argc, argv);
     flags[f_SLAVE] = checkForOption("-slave", argc, argv);
     flags[f_BASELINE] = checkForOption("-baseline", argc, argv);
+    flags[f_COMPLEX_GAMMA] = checkForOption("-complex_gamma", argc, argv);
     flags[f_UAVSAR] = checkForOption("-uavsar", argc, argv);
     flags[f_SUBSET] = checkForOption("-subset", argc, argv);
     flags[f_METAONLY] = checkForOption("-metaonly", argc, argv);
@@ -599,6 +606,7 @@ int main(int argc, char *argv[])
 	if(flags[f_COHERENCE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_SLAVE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_BASELINE] != FLAG_NOT_SET) needed_args += 2;
+	if(flags[f_COMPLEX_GAMMA] != FLAG_NOT_SET) needed_args += 1;
 	if(flags[f_UAVSAR] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_SUBSET] != FLAG_NOT_SET) 
 	  needed_args += 5;
@@ -680,22 +688,27 @@ int main(int argc, char *argv[])
             || flags[f_COLORMAP] >= argc-REQUIRED_ARGS)
         print_usage();
     if(flags[f_INTERFEROGRAM] != FLAG_NOT_SET)
-      /*Make sure the field following -colormap isn't another option*/
+      /*Make sure the field following -interferogram isn't another option*/
       if(   argv[flags[f_INTERFEROGRAM]+1][0] == '-'
             || flags[f_INTERFEROGRAM] >= argc-REQUIRED_ARGS)
         print_usage();
     if(flags[f_COHERENCE] != FLAG_NOT_SET)
-      /*Make sure the field following -colormap isn't another option*/
+      /*Make sure the field following -coherence isn't another option*/
       if(   argv[flags[f_COHERENCE]+1][0] == '-'
             || flags[f_COHERENCE] >= argc-REQUIRED_ARGS)
         print_usage();
     if(flags[f_SLAVE] != FLAG_NOT_SET)
-      /*Make sure the field following -colormap isn't another option*/
+      /*Make sure the field following -slave isn't another option*/
       if(   argv[flags[f_SLAVE]+1][0] == '-'
             || flags[f_SLAVE] >= argc-REQUIRED_ARGS)
         print_usage();
     if(flags[f_BASELINE] != FLAG_NOT_SET)
-      /*Make sure the field following -colormap isn't another option*/
+      /*Make sure the field following -baseline isn't another option*/
+      if(   argv[flags[f_BASELINE]+1][0] == '-'
+            || flags[f_BASELINE] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_COMPLEX_GAMMA] != FLAG_NOT_SET)
+      /*Make sure the field following -complex_gamma isn't another option*/
       if(   argv[flags[f_BASELINE]+1][0] == '-'
             || flags[f_BASELINE] >= argc-REQUIRED_ARGS)
         print_usage();
@@ -782,6 +795,9 @@ int main(int argc, char *argv[])
     if(flags[f_BASELINE] != FLAG_NOT_SET) {
       baseline_file = (char *) MALLOC(sizeof(char)*1024);
       strcpy(baseline_file, argv[flags[f_BASELINE] + 1]);
+    }
+    if(flags[f_COMPLEX_GAMMA] != FLAG_NOT_SET) {
+      complex_gamma_file = TRUE;
     }
     if(flags[f_UAVSAR] != FLAG_NOT_SET) {
       uavsar_type = (char *) MALLOC(sizeof(char)*100);
@@ -911,6 +927,11 @@ int main(int argc, char *argv[])
       asfPrintError("Use of the -baseline option requires the ingest of "
 		    "interferometric data.\n");
     }
+    if (flags[f_COMPLEX_GAMMA] != FLAG_NOT_SET && format_type != GAMMA) {
+      // complex GAMMA data require GAMMA format to be useful
+      asfPrintError("Use of the -complex_gamma option requires the ingest of "
+		    "GAMMA data.\n");
+    }
     if ((format_type == GAMMA || format_type == ROIPAC) &&
 	flags[f_SLAVE] != FLAG_NOT_SET && flags[f_BASELINE] == FLAG_NOT_SET) {
       asfPrintError("Use of the -slave option is only valid when the "
@@ -1028,8 +1049,8 @@ int main(int argc, char *argv[])
 		   p_range_scale, p_azimuth_scale, p_correct_y_pixel_size, 
 		   apply_ers2_gain_fix, inMetaNameOption, inBaseName,
                    ancillary_file, colormapName, slave_file, interferogram_file,
-		   coherence_file, baseline_file, uavsar_type, metaonly,
-		   outBaseName);
+		   coherence_file, baseline_file, complex_gamma_file, 
+		   uavsar_type, metaonly, outBaseName);
     }
 
     // clean up
