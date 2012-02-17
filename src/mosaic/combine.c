@@ -489,7 +489,7 @@ void update_location_block(meta_parameters *meta)
 		    "Not updating location block!\n");
   else
     asfPrintWarning("Location block is updated based on the projection "
-		    "information.\nThis might no reflect the actual corner "
+		    "information.\nThis might not reflect the actual corner "
 		    "coordinates as it could\ninclude background values.\n");
   
   double startX = meta->projection->startX;
