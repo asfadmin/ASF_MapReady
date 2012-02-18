@@ -2727,6 +2727,7 @@
 
 								      <child>
 									<widget class="GtkVBox" id="vbox84">
+									  <property name="visible">True</property>
 									  <property name="homogeneous">False</property>
 									  <property name="spacing">0</property>
 
@@ -2739,7 +2740,7 @@
 									      <child>
 										<widget class="GtkLabel" id="label155">
 										  <property name="visible">True</property>
-										  <property name="label" translatable="yes">Offset in Range: </property>
+										  <property name="label" translatable="yes">  Offset in Range: </property>
 										  <property name="use_underline">False</property>
 										  <property name="use_markup">False</property>
 										  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -2763,14 +2764,14 @@
 
 									      <child>
 										<widget class="GtkEntry" id="offset_x_entry">
-										  <property name="width_request">80</property>
+										  <property name="width_request">40</property>
 										  <property name="visible">True</property>
 										  <property name="tooltip" translatable="yes">Range offset to use for the co-registration.  Usually you will leave this blank even if you do want to skip co-registration, unless you've measured it.</property>
 										  <property name="can_focus">True</property>
 										  <property name="editable">True</property>
 										  <property name="visibility">True</property>
 										  <property name="max_length">0</property>
-										  <property name="text" translatable="yes"></property>
+										  <property name="text" translatable="yes">0</property>
 										  <property name="has_frame">True</property>
 										  <property name="invisible_char">●</property>
 										  <property name="activates_default">False</property>
@@ -2810,14 +2811,14 @@
 
 									      <child>
 										<widget class="GtkEntry" id="offset_y_entry">
-										  <property name="width_request">80</property>
+										  <property name="width_request">40</property>
 										  <property name="visible">True</property>
 										  <property name="tooltip" translatable="yes">Azimuth offset to use for the co-registration.  Usually you will leave this blank even if you do want to skip co-registration, unless you've measured it.</property>
 										  <property name="can_focus">True</property>
 										  <property name="editable">True</property>
 										  <property name="visibility">True</property>
 										  <property name="max_length">0</property>
-										  <property name="text" translatable="yes"></property>
+										  <property name="text" translatable="yes">0</property>
 										  <property name="has_frame">True</property>
 										  <property name="invisible_char">●</property>
 										  <property name="activates_default">False</property>

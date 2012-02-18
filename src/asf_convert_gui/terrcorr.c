@@ -105,7 +105,7 @@ void terrcorr_options_changed()
       hbox_tc_matching = get_widget_checked("hbox_tc_matching");
 
       gtk_widget_set_sensitive(hbox_tc_pixel_size, tc_pixel_size_is_checked);
-      gtk_widget_set_sensitive(hbox_tc_matching, tc_matching_is_checked);
+      gtk_widget_set_sensitive(hbox_tc_matching, !tc_matching_is_checked);
       gtk_widget_set_sensitive(mask_entry, mask_file_is_checked);
       //gtk_widget_set_sensitive(hbox_terrcorr_items, terrcorr_is_checked);
       gtk_widget_set_sensitive(rb_auto_water_mask, mask_is_checked);

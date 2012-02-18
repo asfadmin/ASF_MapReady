@@ -1776,20 +1776,15 @@ settings_to_config_file(const Settings *s,
             fprintf(cf, "save terrcorr layover mask = %d\n",
                     s->generate_layover_mask);
 
-            // for now, we don't support specifying offsets via the GUI
-            if (s->no_matching) {
-                fprintf(cf, "no matching = 1\n");
-            }
             // for now, the "no matching" checkbutton will be "skip matching"
-            // if it fails
-            //if (s->no_matching) {
-            //  fprintf(cf, "no matching = 1\n");
-            //  fprintf(cf, "range offset = %f\n", s->offset_x);
-            //  fprintf(cf, "azimuth offset = %f\n", s->offset_y);
-            //}
-            //else {
-            //  fprintf(cf, "no matching = 0\n");
-            //}
+            if (s->no_matching) {
+              fprintf(cf, "no matching = 1\n");
+              fprintf(cf, "range offset = %f\n", s->offset_x);
+              fprintf(cf, "azimuth offset = %f\n", s->offset_y);
+            }
+            else {
+              fprintf(cf, "no matching = 0\n");
+            }
 
             // "Skip coregistration if it fails" not supported via GUI
             //fprintf(cf, "use zero offsets if match fails = %d\n",
