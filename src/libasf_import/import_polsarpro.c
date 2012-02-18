@@ -447,7 +447,7 @@ int isPolsarproDecomposition(char *dataFile, char **decompositionType,
   return decomposition;
 }
 
-int isPolsarproSegmentation(char *dataFile, char **error)
+int isPolsarproSegmentation(const char *dataFile, char **error)
 {
   int segmentation = TRUE;
   char *message = NULL, dirName[1024], fileName[1024], headerFile[1024];

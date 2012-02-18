@@ -145,7 +145,7 @@ int isGeocoded(const char *dataFile);
 int isPolsarproMatrix(char *dataFile, char **matrixType, char **error);
 int isPolsarproDecomposition(char *dataFile, char **decompositionType, 
 			     char **error);
-int isPolsarproSegmentation(char *dataFile, char **error);
+int isPolsarproSegmentation(const char *dataFile, char **error);
 int isPolsarproParameter(char *dataFile, char **error);
 
 #endif
