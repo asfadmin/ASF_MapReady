@@ -199,7 +199,7 @@ static char *check_for_error(gchar * txt)
 static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
                           const gchar *out_full, int is_PolSARpro)
 {
-    if (use_thumbnails)
+    if (g_show_thumbnail_columns && use_thumbnails)
     {
         // changed this to always do scaling, no reason not to really
         // since it is pretty quick

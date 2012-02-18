@@ -433,6 +433,7 @@ gboolean have_ancillary_files_in_list();
 gboolean have_meta_files_in_list();
 gchar * get_ancillary_file_from_input_list(const gchar *);
 gchar * get_meta_file_from_input_list(const gchar *);
+void show_thumbnail_columns();
 
 /* help.c */
 char * escapify(const char * s);
@@ -575,4 +576,6 @@ extern NamingScheme * current_naming_scheme;
 
 /* are thumbnails supported ? */
 extern gboolean use_thumbnails;
+extern int g_show_thumbnail_columns;
+
 #endif

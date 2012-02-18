@@ -40,6 +40,13 @@ show_full_path_names_checkbutton_toggled()
 }
 
 void
+show_thumbnails_checkbutton_toggled()
+{
+    g_show_thumbnail_columns = !g_show_thumbnail_columns;
+    show_thumbnail_columns();
+}
+
+void
 show_execute_button(gboolean show)
 {
     GtkWidget *execute_button = get_widget_checked("execute_button");
@@ -587,6 +594,12 @@ SIGNAL_CALLBACK void
 on_show_full_path_names_checkbutton_toggled(GtkWidget *widget)
 {
   show_full_path_names_checkbutton_toggled();
+}
+
+SIGNAL_CALLBACK void
+on_show_thumbnails_checkbutton_toggled(GtkWidget *widget)
+{
+  show_thumbnails_checkbutton_toggled();
 }
 
 void

@@ -35,6 +35,8 @@ static gboolean
 in_input_thumbnail (GtkWidget *widget, GdkEventMotion *event)
 {
     g_assert (GTK_IS_TREE_VIEW (widget));
+    if (!g_show_thumbnail_columns)
+        return FALSE;
 
     gboolean result = FALSE;	/* Result to be returned. */
 

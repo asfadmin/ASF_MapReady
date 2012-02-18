@@ -1626,13 +1626,14 @@ settings_to_config_file(const Settings *s,
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
     fprintf(cf, "thumbnail = %d\n",
+            g_show_thumbnail_columns &&
             (input_data_format == INPUT_FORMAT_CEOS_LEVEL1  ||
              input_data_format == INPUT_FORMAT_AIRSAR       ||
              input_data_format == INPUT_FORMAT_ASF_INTERNAL ||
              input_data_format == INPUT_FORMAT_GAMMA        ||
              input_data_format == INPUT_FORMAT_TERRASARX    ||
 	     input_data_format == INPUT_FORMAT_RADARSAT2    ||
-             input_data_format == INPUT_FORMAT_POLSARPRO) ? 1 : 0);
+             input_data_format == INPUT_FORMAT_POLSARPRO));
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");

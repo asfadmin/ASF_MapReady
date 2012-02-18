@@ -51,6 +51,8 @@ int COMP_COL_SLAVE_METADATA;
 int COMP_COL_BASELINE;
 int COMP_COL_INCID_ANGLES_FILE;
 
+int g_show_thumbnail_columns = TRUE;
+
 gboolean move_to_files_list(const gchar *data_file,
                             const gchar *ancillary_file,
                             const gchar *meta_file,
@@ -346,29 +348,35 @@ static void set_input_image_thumbnail(GtkTreeIter *iter,
                                       gchar *ancillary_file,
                                       const char *lut_basename)
 {
-    GdkPixbuf *pb = make_input_image_thumbnail_pixbuf (
-      metadata_file, data_file, lut_basename, THUMB_SIZE);
-
-    if (pb) {
-        gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
-    }
-    else {
-        // failed to generate a thumbnail from the data file -- if this is
-        // gamma data, this failure is to be expected, we'll generate one
-        // from the ancillary (CEOS) data
-        if (strlen(ancillary_file) > 0) {
-          pb = make_input_image_thumbnail_pixbuf (
-            ancillary_file, ancillary_file, lut_basename, THUMB_SIZE);
-
-          if (pb)
-            gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
-        }
+    if (g_show_thumbnail_columns) {
+	GdkPixbuf *pb = make_input_image_thumbnail_pixbuf (
+	metadata_file, data_file, lut_basename, THUMB_SIZE);
+	
+	if (pb) {
+		gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
+	}
+	else {
+		// failed to generate a thumbnail from the data file -- if this is
+		// gamma data, this failure is to be expected, we'll generate one
+		// from the ancillary (CEOS) data
+		if (strlen(ancillary_file) > 0) {
+		pb = make_input_image_thumbnail_pixbuf (
+		ancillary_file, ancillary_file, lut_basename, THUMB_SIZE);
+	
+		if (pb)
+		gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
+		}
+	}
     }
 }
 
 static void
 do_thumbnail (const gchar *file)
 {
+    // quit if not showing thumbnails
+    if (!g_show_thumbnail_columns)
+        return;
+
     gchar *metadata_file = meta_file_name (file);
     gchar *data_file = data_file_name (file);
 
@@ -2038,4 +2046,27 @@ gchar * get_meta_file_from_input_list(const gchar *file_name)
   }
 
   return meta_file;
+}
+
+void show_thumbnail_columns()
+{
+  GtkTreeView *in_files_view;
+  GtkTreeView *completed_files_view;
+  GtkTreeViewColumn *col;
+  GtkWidget *in_files;
+  GtkWidget *completed_files;
+
+  // Get tree views
+  in_files = get_widget_checked("files_list");
+  in_files_view = GTK_TREE_VIEW(in_files);
+
+  completed_files = get_widget_checked("completed_files_list");
+  completed_files_view = GTK_TREE_VIEW(completed_files);
+
+  // Set thumbnails column visibility according to the global var
+  col = gtk_tree_view_get_column(in_files_view, COL_INPUT_THUMBNAIL);
+  gtk_tree_view_column_set_visible(col, g_show_thumbnail_columns);
+
+  col = gtk_tree_view_get_column(completed_files_view, COMP_COL_OUTPUT_THUMBNAIL);
+  gtk_tree_view_column_set_visible(col, g_show_thumbnail_columns);
 }
