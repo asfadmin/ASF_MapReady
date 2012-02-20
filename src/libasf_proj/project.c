@@ -1103,6 +1103,62 @@ project_eqc_arr_inv(project_parameters_t *pps,
                   x, y, z, lat, lon, height, length);
 }
 
+// EASE grid - Global
+char *ease_global_projection_desc(project_parameters_t *pps)
+{
+  static char ease_global_projection_description[128];
+
+  /* Establish description of output projection. */
+  sprintf(ease_global_projection_description,
+	  "+proj=cea +lon_0=%f +lat_ts=%f +x_0=%f +y_0=%f +a=%f +b=%f +units=m",
+	  pps->cea.central_meridian,
+	  pps->cea.standard_parallel,
+	  pps->cea.false_easting,
+	  pps->cea.false_northing,
+	  pps->cea.sphere,
+	  pps->cea.sphere);
+
+  return ease_global_projection_description;
+}
+
+int
+project_ease_global(project_parameters_t *pps,
+		    double lat, double lon, double height,
+		    double *x, double *y, double *z)
+{
+  return project_worker_arr(ease_global_projection_desc(pps),
+			    &lat, &lon, &height, &x, &y, &z, 1);
+}
+
+int
+project_ease_global_arr(project_parameters_t *pps,
+			double *lat, double *lon, double *height,
+			double **projected_x, double **projected_y,
+			double **projected_z, long length)
+{
+  return project_worker_arr(ease_global_projection_desc(pps),
+			    lat, lon, height, projected_x, projected_y, 
+			    projected_z, length);
+}
+
+int
+project_ease_global_inv(project_parameters_t *pps, double x, double y, double z,
+		double *lat, double *lon, double *height)
+{
+  return project_worker_arr_inv(ease_global_projection_desc(pps),
+				&x, &y, &z, &lat, &lon, &height, 1);
+}
+
+int
+project_ease_global_arr_inv(project_parameters_t *pps,
+			    double *x, double *y, double *z,
+			    double **lat, double **lon, double **height,
+			    long length)
+{
+  return project_worker_arr_inv(ease_global_projection_desc(pps),
+				x, y, z, lat, lon, height, length);
+}
+
 /****************************************************************************
   Albers Equal-Area Conic
 ****************************************************************************/

@@ -3568,7 +3568,8 @@ datum_type_t spheroid_datum (spheroid_type_t spheroid)
   datum_type_t datum = WGS84_DATUM;
 
   switch(spheroid) {
-    case SPHERE:
+    case SINUSOIDAL_SPHERE:
+    case AUTHALIC_SPHERE:
       datum = UNKNOWN_DATUM;
       break;
     case CLARKE1866_SPHEROID:

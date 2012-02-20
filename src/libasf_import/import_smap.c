@@ -212,7 +212,6 @@ static void read_smap_bounds(char *inDataName, float latUL, float lonUL,
   float lat, lon, diff, minUL, minUR, minLL, minLR;
   int lines[4], samples[4];
   minUL = minUR = minLL = minLR = 9999999;
-  // We are looking for the nearest neighbor for the moment
   int ii, kk;
   for (ii=0; ii<nl; ii++) {
     for (kk=0; kk<ns; kk++) {
@@ -557,7 +556,7 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   meta_write(meta, inDataName);
   
   // Read data
-  outDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName+25)));
+  outDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+25));
   sprintf(outDataName, "%s.img", outBaseName);
   meta_write(meta, outDataName);
 

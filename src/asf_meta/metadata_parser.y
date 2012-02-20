@@ -177,10 +177,8 @@ void select_current_block(char *block_name)
     { current_block = &((*( (param_t *) current_block)).lamaz); goto MATCHED; }
   if ( !strcmp(block_name, "lamcc") )
     { current_block = &((*( (param_t *) current_block)).lamcc); goto MATCHED; }
-  if ( !strcmp(block_name, "albers") ){
-    current_block = &((*( (param_t *) current_block)).albers);
-    goto MATCHED;
-  }
+  if ( !strcmp(block_name, "albers") )
+    { current_block = &((*( (param_t *) current_block)).albers); goto MATCHED; }
   if ( !strcmp(block_name, "ps") )
     { current_block = &((*( (param_t *) current_block)).ps); goto MATCHED; }
   if ( !strcmp(block_name, "utm") )
@@ -195,6 +193,8 @@ void select_current_block(char *block_name)
     { current_block = &((*( (param_t *) current_block)).eqc); goto MATCHED; }
   if ( !strcmp(block_name, "sin") )
     { current_block = &((*( (param_t *) current_block)).sin); goto MATCHED; }
+  if ( !strcmp(block_name, "cea") )
+    { current_block = &((*( (param_t *) current_block)).cea); goto MATCHED; }
 
   if ( !strcmp(block_name, "transform") ) {
     if (MTL->transform == NULL)
@@ -804,6 +804,18 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->type = SINUSOIDAL;
         map_projection_type = 0;
       }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "EASE_GRID_GLOBAL") ) {
+	MPROJ->type = EASE_GRID_GLOBAL;
+	map_projection_type = 0;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "EASE_GRID_NORTH") ) {
+	MPROJ->type = EASE_GRID_NORTH;
+	map_projection_type = 0;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "EASE_GRID_SOUTH") ) {
+	MPROJ->type = EASE_GRID_SOUTH;
+	map_projection_type = 0;
+      }
       else {
         MPROJ->type = UNKNOWN_PROJECTION;
         // Only complain if the image is truly map projected
@@ -852,8 +864,10 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->spheroid = WGS84_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "HUGHES") )
         MPROJ->spheroid = HUGHES_SPHEROID;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SPHERE") )
-        MPROJ->spheroid = SPHERE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SINUSOIDAL_SPHERE") )
+        MPROJ->spheroid = SINUSOIDAL_SPHERE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "AUTHALIC_SPHERE") )
+	MPROJ->spheroid = AUTHALIC_SPHERE;
       else {
         MPROJ->spheroid = UNKNOWN_SPHEROID;
         // Only complain if the image is truly map projected
@@ -935,6 +949,7 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields that go in the (proj->param).lamaz block.  */
   /* Check for both lamcc and lambert for backwards compatibility */
+  // Could also be EASE polar grids - fill in just in case
   if ( !strcmp(stack_top->block_name, "lamaz")) {
     if ( !strcmp(field_name, "center_lon") )
       { (*MPARAM).lamaz.center_lon = VALP_AS_DOUBLE; return; }
@@ -1044,6 +1059,18 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).sin.false_easting = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "false_northing") )
       { (*MPARAM).sin.false_northing = VALP_AS_DOUBLE; return; }
+  }
+
+  // Fields that go in the (proj->param).cea block
+  if ( !strcmp(stack_top->block_name, "cea")) {
+    if ( !strcmp(field_name, "standard_parallel") )
+      { (*MPARAM).cea.standard_parallel = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "central_meridian") )
+      { (*MPARAM).cea.central_meridian = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).cea.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).cea.false_northing = VALP_AS_DOUBLE; return; }
   }
 
   /* Note that the projection-specific param data block associated

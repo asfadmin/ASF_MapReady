@@ -664,8 +664,12 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         break;
       case ALBERS_EQUAL_AREA:
       {
-        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
-                    user_defined_value_code);
+	int pcs;
+	if (albers_2_pcs(md->projection, &pcs))
+	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, pcs);
+	else
+	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+		      user_defined_value_code);
         GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
@@ -1107,11 +1111,8 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
 
 	  // Write spherical paramters
-	  GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
-		      user_defined_value_code);
-	  GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1,
-		      md->projection->re_major);
-	  GTIFKeySet (ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  write_spheroid_key(ogtif, md->projection->spheroid, re_major, 
+			     re_minor);
 	  
 	  /* Set the citation key.  */
 	  //char datum_str[256];
@@ -1126,6 +1127,126 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 	  asfRequire (citation_length >= 0 &&
 		      citation_length <= max_citation_length,
 		      "bad citation length");
+	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+	  free (citation);
+	}
+	break;
+      case EASE_GRID_GLOBAL:
+	{
+	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 3410);
+	  GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 28);
+	  GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 6053);
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 4053);
+	  if (meta_is_valid_double(md->projection->param.cea.standard_parallel)) {
+	    GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.cea.standard_parallel);
+	  }
+	  if (meta_is_valid_double(md->projection->param.cea.central_meridian)) {
+	    // The following is where ArcGIS looks for the center meridian
+	    GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+	    		md->projection->param.cea.central_meridian);
+	    // The following is where the center meridian _should_ be stored
+	    GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+	    		md->projection->param.cea.central_meridian);
+        }
+	  if (meta_is_valid_double(md->projection->param.cea.false_easting))
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.cea.false_easting);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  if (meta_is_valid_double(md->projection->param.cea.false_northing)) 
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.cea.false_northing);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+
+	  // Write spherical parameters
+	  write_spheroid_key(ogtif, md->projection->spheroid, re_major, 
+			     re_minor);
+	  
+	  // Set the citation key
+	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	  snprintf (citation, max_citation_length + 1, 
+		    "NSIDC EASE-Grid Global");
+	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+	  free (citation);
+	}
+	break;
+      case EASE_GRID_NORTH:
+	{
+	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 3408);
+	  GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 
+		      CT_LambertAzimEqualArea);
+	  GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 6053);
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 4053);
+	  if (meta_is_valid_double(md->projection->param.lamaz.center_lat)) {
+	    GTIFKeySet (ogtif, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamaz.center_lat);
+	  }
+	  if (meta_is_valid_double(md->projection->param.lamaz.center_lon)) {
+	    GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+	    		md->projection->param.lamaz.center_lon);
+        }
+	  if (meta_is_valid_double(md->projection->param.lamaz.false_easting))
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.lamaz.false_easting);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  if (meta_is_valid_double(md->projection->param.lamaz.false_northing)) 
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.lamaz.false_northing);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+
+	  // Write spherical parameters
+	  write_spheroid_key(ogtif, md->projection->spheroid, re_major, 
+			     re_minor);
+	  
+	  // Set the citation key
+	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	  snprintf (citation, max_citation_length + 1, 
+		    "NSIDC EASE-Grid North");
+	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+	  free (citation);
+	}
+	break;
+      case EASE_GRID_SOUTH:
+	{
+	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 3409);
+	  GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 
+		      CT_LambertAzimEqualArea);
+	  GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 6053);
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 4053);
+	  if (meta_is_valid_double(md->projection->param.lamaz.center_lat)) {
+	    GTIFKeySet (ogtif, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamaz.center_lat);
+	  }
+	  if (meta_is_valid_double(md->projection->param.lamaz.center_lon)) {
+	    GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+	    		md->projection->param.lamaz.center_lon);
+	  }
+	  if (meta_is_valid_double(md->projection->param.lamaz.false_easting))
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.lamaz.false_easting);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	  if (meta_is_valid_double(md->projection->param.lamaz.false_northing)) 
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+			md->projection->param.lamaz.false_northing);
+	  else
+	    GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+
+	  // Write spherical parameters
+	  write_spheroid_key(ogtif, md->projection->spheroid, re_major, 
+			     re_minor);
+	  
+	  // Set the citation key
+	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	  snprintf (citation, max_citation_length + 1, 
+		    "NSIDC EASE-Grid South");
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
 	  free (citation);

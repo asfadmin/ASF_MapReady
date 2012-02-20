@@ -324,6 +324,52 @@ int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem)
   return supportedUTM;
 }
 
+static int check_albers_params(meta_projection *mp, 
+			       project_parameters_t *pps)
+{
+  int ret = FALSE;
+  if (FLOAT_EQUIVALENT(mp->param.albers.std_parallel1, 
+		       pps->albers.std_parallel1) &&
+      FLOAT_EQUIVALENT(mp->param.albers.std_parallel2, 
+		       pps->albers.std_parallel2) &&
+      FLOAT_EQUIVALENT(mp->param.albers.center_meridian, 
+		       pps->albers.center_meridian) &&
+      FLOAT_EQUIVALENT(mp->param.albers.orig_latitude, 
+		       pps->albers.orig_latitude) &&
+      FLOAT_EQUIVALENT(mp->param.albers.false_easting, 
+		       pps->albers.false_easting) &&
+      FLOAT_EQUIVALENT(mp->param.albers.false_northing, 
+		       pps->albers.false_northing))
+    ret = TRUE;
+
+  return ret;
+}
+
+int albers_2_pcs(meta_projection *mp, short *pcs)
+{
+  project_parameters_t *pps = 
+    (project_parameters_t *) MALLOC(sizeof(project_parameters_t));
+  projection_type_t proj_type;
+  datum_type_t datum;
+  spheroid_type_t spheroid;
+  int supported = FALSE;
+
+  if (mp->type != ALBERS_EQUAL_AREA)
+    asfPrintError("Tried to assign an Albers projection code to GeoTIFF file,\n"
+		  "but found %s projection information", 
+		  proj2str(mp->type));
+
+  read_proj_file("albers_equal_area_conic_alaska.proj", 
+		 pps, &proj_type, &datum, &spheroid);
+  if (check_albers_params(mp, pps)) {
+    *pcs = 3338;
+    supported = TRUE;
+  }
+   
+  FREE(pps);
+  return supported;
+}
+
 void gcs_2_string (char *datum_str, short gcs)
 {
   switch (gcs) {
@@ -539,6 +585,9 @@ void write_spheroid_key (GTIF *ogtif, spheroid_type_t spheroid,
     break;
   case HUGHES_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7058);
+    break;
+  case AUTHALIC_SPHERE:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7057);
     break;
   default:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, user_defined);

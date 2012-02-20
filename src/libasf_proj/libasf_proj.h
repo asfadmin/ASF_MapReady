@@ -22,6 +22,9 @@ typedef enum {
   EQUI_RECTANGULAR,
   EQUIDISTANT,
   SINUSOIDAL,
+  EASE_GRID_NORTH,
+  EASE_GRID_SOUTH,
+  EASE_GRID_GLOBAL,
   UNKNOWN_PROJECTION
 } projection_type_t;
 
@@ -42,7 +45,8 @@ typedef enum {
   HUGHES_SPHEROID,
   TOKYO_SPHEROID,
   JGD2000_SPHEROID,
-  SPHERE,
+  SINUSOIDAL_SPHERE,
+  AUTHALIC_SPHERE,
   UNKNOWN_SPHEROID
 } spheroid_type_t;
 
@@ -149,7 +153,14 @@ typedef enum {
     double false_northing;    // False northing
     double sphere;            // Spherical radius
   } proj_sin;
-
+  // Cylindrical Equal Area - used by global EASE grid
+  typedef struct {
+    double standard_parallel; // Standard parallel
+    double central_meridian;  // Central meridian
+    double false_easting;     // False easting
+    double false_northing;    // False northing
+    double sphere;            // Spherical radius
+  } proj_cea;
  
 /* For lat long pseudo projected images, no additional parameters are
    required, so they don't have their own structure type.  */
@@ -167,6 +178,7 @@ typedef enum {
     proj_eqr      eqr;      // Equi Rectangular
     proj_eqc      eqc;      // Equidistant
     proj_sin      sin;      // Sinusoidal
+    proj_cea      cea;      // Cylindrical Equal Area - EASE grids
   } param_t;
 typedef param_t project_parameters_t;
 
@@ -200,6 +212,7 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor);
 /* String identifying the datum */
 const char *datum_toString(datum_type_t);
 const char *spheroid_toString(spheroid_type_t spheroid);
+char *proj2str(projection_type_t type);
 datum_type_t getDatum(char datum_str);
 
 /**************************************************************************
@@ -584,6 +597,22 @@ int project_sin_arr_inv(project_parameters_t *pps,
 			double **lat, double **lon, double **height,
 			long length);
 
+// EASE grid - Global
+// www.remotesensing.org/geotiff/proj_list/cylindrical_equal_area.html
+int project_ease_global(project_parameters_t *pps,
+			double lat, double lon, double height,
+			double *x, double *y, double *z);
+int project_ease_global_arr(project_parameters_t *pps,
+			    double *lat, double *lon, double *height,
+			    double **projected_x, double **projected_y,
+			    double **projected_z, long length);
+int project_ease_global_inv(project_parameters_t *pps, double x, double y, 
+			    double z, double *lat, double *lon, double *height);
+int project_ease_global__arr_inv(project_parameters_t *pps,
+				 double *x, double *y, double *z,
+				 double **lat, double **lon, double **height,
+				 long length);
+
 /******************************************************************************
   Pseudo Projection
 
@@ -635,6 +664,7 @@ char *mer_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *eqr_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *eqc_projection_desc(project_parameters_t *pps, datum_type_t datum);
 char *sin_projection_desc(project_parameters_t *pps);
+char *ease_global_projection_desc(project_parameters_t *pps);
 
 int get_tiff_data_config(TIFF *tif, short *sample_format, 
 			 short *bits_per_sample, short *planar_config,

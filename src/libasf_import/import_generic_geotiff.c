@@ -926,14 +926,6 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             {
               datum = HUGHES_DATUM;
             }
-	    else if (read_count >=2 && 
-		     FLOAT_COMPARE_TOLERANCE(semi_minor, semi_major, 
-					     FLOAT_TOLERANCE)) {
-	      mp->spheroid = SPHERE;
-	      mp->re_major = semi_major;
-	      mp->re_minor = semi_minor;
-	      datum = UNKNOWN_DATUM;
-	    }
             else {
               datum = UNKNOWN_DATUM;
             }
@@ -942,7 +934,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             datum = UNKNOWN_DATUM;
           }
         }
-        if (datum == UNKNOWN_DATUM && mp->spheroid != SPHERE) {
+        if (datum == UNKNOWN_DATUM) {
           asfPrintWarning("Unable to determine datum type from GeoTIFF file\n"
                         "Defaulting to WGS-84 ...This may result in projection errors\n");
           datum = WGS84_DATUM;

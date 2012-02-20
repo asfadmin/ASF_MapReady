@@ -1666,10 +1666,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   // Special attention to Sinusoidal map projection
   if (projection_type == SINUSOIDAL) {
-    omd->projection->spheroid = SPHERE;
+    omd->projection->spheroid = SINUSOIDAL_SPHERE;
     omd->projection->datum = UNKNOWN_DATUM;
     omd->projection->re_major = pp->sin.sphere;
-    omd->projection->re_minor = 0.0;
+    omd->projection->re_minor = pp->sin.sphere;
   }
 
   // Adjust bands and band_count for the case where the user

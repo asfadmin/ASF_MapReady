@@ -217,6 +217,7 @@ double spheroid_diff_from_axis (spheroid_type_t spheroid,
                                 double n_semi_major, double n_semi_minor);
 spheroid_type_t axis2spheroid (double re_major, double re_minor);
 int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem);
+int albers_2_pcs(meta_projection *mp, short *pcs);
 void gcs_2_string (char *datum_str, short gcs);
 void pcs_2_string (char *datum_str, short pcs);
 void datum_2_string (char *datum_str, datum_type_t datum);

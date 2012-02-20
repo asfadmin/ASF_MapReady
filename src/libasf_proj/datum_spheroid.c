@@ -160,8 +160,11 @@ const char *spheroid_toString(spheroid_type_t spheroid)
       case JGD2000_SPHEROID:
           return "JGD2000";
 
-      case SPHERE:
-	  return "SPHERE";
+      case SINUSOIDAL_SPHERE:
+	  return "SINUSOIDAL_SPHERE";
+
+      case AUTHALIC_SPHERE:
+	return "AUTHALIC_SPHERE";
 
       default:
           return MAGIC_UNSET_STRING;

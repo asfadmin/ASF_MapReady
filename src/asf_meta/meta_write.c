@@ -154,6 +154,45 @@ char *radiometry2str(radiometry_t radiometry)
   return str;
 }
 
+char *proj2str(projection_type_t type)
+{
+  char *str = (char *) MALLOC(sizeof(char)*256);
+  if (type == UNIVERSAL_TRANSVERSE_MERCATOR)
+    strcpy(str, "UNIVERSAL_TRANSVERSE_MERCATOR");
+  else if (type == POLAR_STEREOGRAPHIC)
+    strcpy(str, "POLAR_STEREOGRAPHIC");
+  else if (type == ALBERS_EQUAL_AREA)
+    strcpy(str, "ALBERS_EQUAL_AREA");
+  else if (type == LAMBERT_CONFORMAL_CONIC)
+    strcpy(str, "LAMBERT_CONFORMAL_CONIC");
+  else if (type == LAMBERT_AZIMUTHAL_EQUAL_AREA)
+    strcpy(str, "LAMBERT_AZIMUTHAL_EQUAL_AREA");
+  else if (type == STATE_PLANE)
+    strcpy(str, "STATE_PLANE");
+  else if (type == SCANSAR_PROJECTION)
+    strcpy(str, "SCANSAR_PROJECTION");
+  else if (type == LAT_LONG_PSEUDO_PROJECTION)
+    strcpy(str, "LAT_LONG_PSEUDO_PROJECTION");
+  else if (type == MERCATOR)
+    strcpy(str, "MERCATOR");
+  else if (type == EQUI_RECTANGULAR)
+    strcpy(str, "EQUI_RECTANGULAR");
+  else if (type == EQUIDISTANT)
+    strcpy(str, "EQUIDISTANT");
+  else if (type == SINUSOIDAL)
+    strcpy(str, "SINUSOIDAL");
+  else if (type == EASE_GRID_NORTH)
+    strcpy(str, "EASE_GRID_NORTH");
+  else if (type == EASE_GRID_SOUTH)
+    strcpy(str, "EASE_GRID_SOUTH");
+  else if (type == EASE_GRID_GLOBAL)
+    strcpy(str, "EASE_GRID_GLOBAL");
+  else if (type == UNKNOWN_PROJECTION)
+    strcpy(str, "UNKNOWN_PROJECTION");
+
+  return str;
+}
+
 /* Given a meta_parameters structure pointer and a file name, write a
    metadata file for that structure.  */
 void meta_write(meta_parameters *meta, const char *file_name)
@@ -480,48 +519,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
 //       && meta->projection ) {
   if (meta->projection) {
     meta_put_string(fp,"projection {","","Map Projection parameters");
-    switch (meta->projection->type) {
-      case UNIVERSAL_TRANSVERSE_MERCATOR:
-  meta_put_string(fp,"type:","UNIVERSAL_TRANSVERSE_MERCATOR","Projection Type");
-  break;
-      case POLAR_STEREOGRAPHIC:
-  meta_put_string(fp,"type:","POLAR_STEREOGRAPHIC","Projection Type");
-        break;
-      case ALBERS_EQUAL_AREA:
-  meta_put_string(fp,"type:","ALBERS_EQUAL_AREA","Projection Type");
-  break;
-      case LAMBERT_CONFORMAL_CONIC:
-  meta_put_string(fp,"type:","LAMBERT_CONFORMAL_CONIC","Projection Type");
-  break;
-      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-  meta_put_string(fp,"type:","LAMBERT_AZIMUTHAL_EQUAL_AREA","Projection Type");
-  break;
-      case STATE_PLANE:
-  meta_put_string(fp,"type:","STATE_PLANE","Projection Type");
-  break;
-      case SCANSAR_PROJECTION:
-  meta_put_string(fp,"type:","SCANSAR_PROJECTION","Projection Type");
-  break;
-      case LAT_LONG_PSEUDO_PROJECTION:
-  meta_put_string (fp, "type:", "LAT_LONG_PSEUDO_PROJECTION",
-       "Projection Type");
-  break;
-      case MERCATOR:
-	meta_put_string (fp, "type:", "MERCATOR", "Projection Type");
-	break;
-      case EQUI_RECTANGULAR:
-	meta_put_string (fp, "type:", "EQUI_RECTANGULAR", "Projection Type");
-	break;
-      case EQUIDISTANT:
-	meta_put_string (fp, "type:", "EQUIDISTANT", "Projection Type");
-	break;
-      case SINUSOIDAL:
-	meta_put_string (fp, "type:", "SINUSOIDAL", "Projection Type");
-	break;
-      case UNKNOWN_PROJECTION:
-        meta_put_string(fp,"type:","UNKNOWN_PROJECTION","Projection Type");
-	break;
-    }
+    strcpy(comment,"Projection Type");
+    char *proj_str = proj2str(meta->projection->type);
+    meta_put_string(fp, "type:", proj_str, comment);
     meta_put_double_lf(fp,"startX:",meta->projection->startX, 8,
                        	  "Projection Coordinate at top-left, X direction");
     meta_put_double_lf(fp,"startY:",meta->projection->startY, 8,
@@ -722,6 +722,39 @@ void meta_write(meta_parameters *meta, const char *file_name)
 			 meta->projection->param.sin.false_northing, 3,
 			 "False northing [m]");
       meta_put_string(fp,"}","","End sin");
+      break;
+    case EASE_GRID_GLOBAL:
+      meta_put_string(fp,"cea {","","Begin Cylindrical Equal Area projection");
+      meta_put_double_lf(fp,"stanard_parallel:",
+			 meta->projection->param.cea.standard_parallel, 4,
+			 "Standard parallel [degrees]");
+      meta_put_double_lf(fp,"central_meridian:",
+			 meta->projection->param.cea.central_meridian, 4,
+			 "Longitude of central meridian [degrees]");
+      meta_put_double_lf(fp,"false_easting:",
+			 meta->projection->param.cea.false_easting, 3,
+			 "False easting [m]");
+      meta_put_double_lf(fp,"false_northing:",
+			 meta->projection->param.cea.false_northing, 3,
+			 "False northing [m]");
+      meta_put_string(fp,"}","","End cea");
+      break;
+    case EASE_GRID_NORTH:
+    case EASE_GRID_SOUTH:
+      meta_put_string(fp,"lamaz {","","Begin Lambert Azimuthal Equal Area projection");
+      meta_put_double_lf(fp,"center_lat:",
+			 meta->projection->param.lamaz.center_lat, 4,
+			 "Latitude at center of projection");
+      meta_put_double_lf(fp,"center_lon:",
+			 meta->projection->param.lamaz.center_lon, 4,
+			 "Longitude at center of projection");
+      meta_put_double_lf(fp,"false_easting:",
+			 meta->projection->param.lamaz.false_easting, 3,
+			 "False easting [m]");
+      meta_put_double_lf(fp,"false_northing:",
+			 meta->projection->param.lamaz.false_northing, 3,
+			 "False northing [m]");
+      meta_put_string(fp,"}","","End lamaz");
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
     case UNKNOWN_PROJECTION:
