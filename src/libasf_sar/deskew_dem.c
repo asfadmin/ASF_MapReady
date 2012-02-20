@@ -277,7 +277,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 {
     int i,grX;
     int valid_data_yet=0;
-    const int num_hits_required_for_layover=2;
+    const int num_hits_required_for_layover=3;
     int *sr_hits=NULL;
     float max_height=grDEM[0];
     double last_good_height = 0;
@@ -287,14 +287,14 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     if (mask) {
         // The "sr_hits" tracks points in ground range that map to the same
         // point in slant range, for the purposes of detecting layover
-        sr_hits=(int*)MALLOC(sizeof(int)*ns*num_hits_required_for_layover);
+        sr_hits=(int*)MALLOC(sizeof(int)*ns*(num_hits_required_for_layover-1));
 
         for (grX=0; grX<ns; ++grX) {
             if (mask[grX] != MASK_USER_MASK && mask[grX] != MASK_INVALID_DATA)
                 mask[grX] = MASK_NORMAL;
 
             // Initially, all slant range points haven't been hit ==> -1
-            for (i=0; i<num_hits_required_for_layover; ++i)
+            for (i=0; i<num_hits_required_for_layover-1; ++i)
                 sr_hits[i*ns+grX] = -1;
         }
     }
@@ -341,7 +341,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     //--------------------------------------------------------
                     // Layover 
                     int is_layover = TRUE; // until we learn otherwise
-                    for (i=0; i<num_hits_required_for_layover; ++i) {
+                    for (i=0; i<num_hits_required_for_layover-1; ++i) {
                         if (sr_hits[i*ns+x] == -1) {
                             // i'th time we hit this pixel, save the grX that
                             // led us here for later
@@ -352,7 +352,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     }
                     if (is_layover) {
                         // mask all pixels that landed here (at x) as layover
-                        for (i=0; i<num_hits_required_for_layover; ++i) {
+                        for (i=0; i<num_hits_required_for_layover-1; ++i) {
                             if (mask[sr_hits[i*ns+x]] == MASK_NORMAL) {
                                 ++n_layover;
                                 mask[sr_hits[i*ns+x]] = MASK_LAYOVER;
@@ -727,10 +727,13 @@ static void filter_mask(char *maskName)
   FCLOSE(fp);
 
   int iter=1;
+  int total=0, orig=0;
   while (iter < 100) {
     int num = 0;
     for (jj=2; jj<ns-2; ++jj) {
       for (ii=2; ii<nl-4; ++ii) {
+        if (iter == 1 && buf[ii*ns + jj] == MASK_LAYOVER)
+          ++orig;
         if (buf[ii*ns + jj] == MASK_NORMAL &&
             buf[(ii-1)*ns + jj] == MASK_LAYOVER &&
             (buf[(ii+1)*ns + jj] == MASK_LAYOVER || buf[(ii+2)*ns + jj] == MASK_LAYOVER ||
@@ -742,7 +745,8 @@ static void filter_mask(char *maskName)
         }
       }
     }
-    asfPrintStatus("Vertical iter %d, added: %d\n", iter, num);
+    total += num;
+    //asfPrintStatus("Vertical iter %d, added: %d\n", iter, num);
     if (num > 0) {
       num = 0;
       for (ii=2; ii<nl-2; ++ii) {
@@ -758,7 +762,8 @@ static void filter_mask(char *maskName)
           }
         }
       }
-      asfPrintStatus("Horizontal iter %d, added: %d\n", iter, num);
+      //asfPrintStatus("Horizontal iter %d, added: %d\n", iter, num);
+      total += num;
     }
     if (num == 0)
       break;
@@ -766,6 +771,9 @@ static void filter_mask(char *maskName)
   }
 
   asfPrintStatus("Layover smoothing took %d iterations.\n", iter);
+  asfPrintStatus("After smoothing, layover mask is %.1f%% larger\n",
+                 100.*total/(double)orig);
+
   asfPrintStatus("Writing filtered mask...\n");
   fp = fopenImage(maskName, "wb");
   for (ii=0; ii<nl; ++ii)
