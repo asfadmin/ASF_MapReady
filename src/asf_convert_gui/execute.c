@@ -563,7 +563,8 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 {
     gchar *in_file, *out_full, *ancillary_file, *meta_file,
       *status, *polsarpro_aux_info, *interferogram_file,
-      *coherence_file, *slave_metadata_file, *baseline_file;
+      *coherence_file, *slave_metadata_file, *baseline_file,
+      *uavsar_type;
     int pid, isPolSARPro = FALSE;
 
     pid = getpid();
@@ -579,6 +580,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 		       COL_COHERENCE, &coherence_file,
 		       COL_SLAVE_METADATA, &slave_metadata_file,
 		       COL_BASELINE, &baseline_file,
+           COL_UAVSAR_TYPE, &uavsar_type,
 		       -1);
 
     int image_data_type = extract_image_data_type(polsarpro_aux_info);
@@ -627,7 +629,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
                                     out_full, output_dir,
                                     tmp_dir, polsarpro_aux_info,
 				    interferogram_file, coherence_file,
-				    slave_metadata_file, baseline_file);
+				    slave_metadata_file, baseline_file, uavsar_type);
         if (!config_file) {
             err_string = "Error creating configuration file.";
             gtk_list_store_set(list_store, iter, COL_STATUS, err_string, -1);

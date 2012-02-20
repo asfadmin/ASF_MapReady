@@ -1,4 +1,5 @@
 #include "asf_convert_gui.h"
+#include "uavsar.h"
 
 static void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
 {
@@ -347,6 +348,17 @@ GtkWidget *get_widget_checked(const char *widget_name)
     return w;
 }
 
+GList *get_widgets_prefix_checked(const char *prefix)
+{
+  GList *list = glade_xml_get_widget_prefix(glade_xml, prefix);
+  if(list == NULL) {
+    asfPrintError("get_widgets_prefix_checked() failed: "
+        "Failed to locate widgets with prefix '%s'\n", prefix);
+  }
+
+  return list;
+}
+
 void enable_widget(const char *widget_name, int enable)
 {
     GtkWidget *w = get_widget_checked(widget_name);
@@ -580,6 +592,32 @@ gboolean is_alos_mosaic(const char *infile)
   }
 
   return found; 
+}
+
+gboolean is_uavsar_polsar(const char *infile)
+{
+  gboolean FOUND = FALSE;
+  if(!strcmp_case(findExt(infile), ".ann")) {
+    char *type = check_data_type(infile);
+    if(!strcmp_case(type, "PolSAR"))
+      FOUND = TRUE;
+    FREE(type);
+  }
+
+  return FOUND;
+}
+
+gboolean is_uavsar_insar(const char *infile)
+{
+  gboolean FOUND = FALSE;
+  if(!strcmp_case(findExt(infile), ".ann")) {
+    char *type = check_data_type(infile);
+    if(!strcmp_case(type, "InSAR"))
+      FOUND = TRUE;
+    FREE(type);
+  }
+
+  return FOUND;
 }
 
 char *extract_lut_name(const char *polsarpro_aux_info)

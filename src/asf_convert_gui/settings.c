@@ -1366,6 +1366,12 @@ static int get_input_data_format(const char *infile)
   else if (is_alos_mosaic(infile)) {
     return INPUT_FORMAT_ALOS_MOSAIC;
   }
+  else if (is_uavsar_polsar(infile)) {
+    return INPUT_FORMAT_UAVSAR_POLSAR;
+  }
+  else if (is_uavsar_insar(infile)) {
+    return INPUT_FORMAT_UAVSAR_INSAR;
+  }
   else {
     // catch-all...
     return INPUT_FORMAT_CEOS_LEVEL1;
@@ -1418,6 +1424,14 @@ get_input_data_format_string(int input_data_format)
       case INPUT_FORMAT_ROIPAC:
         format_arg_to_import = "roipac";
         break;
+
+      case INPUT_FORMAT_UAVSAR_POLSAR:
+        format_arg_to_import = "uavsar";
+        break;
+
+      case INPUT_FORMAT_UAVSAR_INSAR:
+        format_arg_to_import = "uavsar";
+        break;
     }
 
     return format_arg_to_import;
@@ -1435,7 +1449,8 @@ settings_to_config_file(const Settings *s,
 			const gchar *interferogram,
 			const gchar *coherence,
 			const gchar *slave_metadata,
-			const gchar *baseline)
+			const gchar *baseline,
+      const gchar *uavsar_type)
 {
     char *tmp_projfile = NULL;
     char *tmp_cfgfile;
@@ -1468,6 +1483,8 @@ settings_to_config_file(const Settings *s,
     int prepension = has_prepension(input_file);
     if (prepension > 0)
         sprintf(input_basename, "%s/%s", path, base+prepension);
+    else if (uavsar_type && strlen(uavsar_type) > 0)
+        strncpy(input_basename, input_file, sizeof(char)*(strlen(base)+strlen(path)+32));
     else
         sprintf(input_basename, "%s/%s", path, base);
 
@@ -1659,6 +1676,10 @@ settings_to_config_file(const Settings *s,
     if (input_data_format != INPUT_FORMAT_CEOS_LEVEL1 &&
         input_data_format != INPUT_FORMAT_ASF_INTERNAL)
         fprintf(cf, "dump envi header = 0\n");
+
+    if(uavsar_type && strlen(uavsar_type) > 0) {
+      fprintf(cf, "uavsar = %s\n", uavsar_type);
+    }
 
     // the "multilook SLC" option is ignored on non-SLC data
     // we multilook on import if we are going to be geocoding,
@@ -2265,22 +2286,22 @@ int apply_settings_from_config_file(char *configFile)
       if (ext_type == CEOS_LED)
       {
         // alos -- pass in metadata name
-        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
+        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
       }
       else if (is_polsarpro(cfg->general->in_name)) {
         // PolSARpro -- pass in the data name
-        add_to_files_list_iter(cfg->general->in_name, NULL, NULL, "None", NULL, NULL, NULL, NULL, &iter);
+        add_to_files_list_iter(cfg->general->in_name, NULL, NULL, "None", NULL, NULL, NULL, NULL, NULL, &iter);
       }
       else
       {
         // regular ceos -- determine data file name
         int nBands;
 
-        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
+        add_to_files_list_iter(metaName[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
         get_ceos_data_name(cfg->general->in_name, baseName, &dataNames, &nBands);
         assert(nBands == 1);
 
-        add_to_files_list_iter(dataNames[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
+        add_to_files_list_iter(dataNames[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
       }
 
       free_ceos_names(dataNames, metaName);

@@ -2,6 +2,7 @@
 // "add_file_with_ancillary_format_combobox" widget in the .glade file
 #define ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO 0
 #define ADD_FILE_WITH_ANCILLARY_FORMAT_GAMMA 1
+#define ADD_FILE_WITH_ANCILLARY_FORMAT_UAVSAR 2 
 
 #ifdef win32
 
@@ -24,14 +25,15 @@
 // "Browse..." button
 #define FORMAT_CEOS 0
 #define FORMAT_AIRSAR 1
-#define FORMAT_POLSARPRO 2
-#define FORMAT_GAMMA 3
-#define FORMAT_ROIPAC 4
-#define FORMAT_TERRASARX 5
-#define FORMAT_RADARSAT2 6
-#define FORMAT_ALOS_MOSAIC 7
-#define FORMAT_GEOTIFF 8
-#define FORMAT_ASF_INTERNAL 9
+#define FORMAT_UAVSAR 2
+#define FORMAT_POLSARPRO 3
+#define FORMAT_GAMMA 4
+#define FORMAT_ROIPAC 5
+#define FORMAT_TERRASARX 6
+#define FORMAT_RADARSAT2 7
+#define FORMAT_ALOS_MOSAIC 8
+#define FORMAT_GEOTIFF 9
+#define FORMAT_ASF_INTERNAL 10
 
 #ifdef USE_GTK_FILE_CHOOSER
 static GtkWidget *browse_widget = NULL;
@@ -285,25 +287,31 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
   // open the "add with ancillary" if needed, otherwise we'll use the
   // normal 'open file' dialog
-  if (sel==FORMAT_GAMMA || sel==FORMAT_POLSARPRO) {
+  if (sel==FORMAT_GAMMA || sel==FORMAT_POLSARPRO || sel==FORMAT_UAVSAR) {
     show_widget("hbox_polsarpro", sel==FORMAT_POLSARPRO);
     show_widget("hbox_gamma", sel==FORMAT_GAMMA);
+    show_widget("vbox_uavsar", sel==FORMAT_UAVSAR);
     switch (sel) {
       case FORMAT_GAMMA:
         put_string_to_label("add_with_ancillary_format_label", "GAMMA");
-	show_widget("hbox_gamma_description", TRUE);
-	gtk_widget_set_sensitive(ok_button, TRUE);	
+        show_widget("hbox_gamma_description", TRUE);
+        gtk_widget_set_sensitive(ok_button, TRUE);	
+        break;
+      case FORMAT_UAVSAR:
+        put_string_to_label("add_with_ancillary_format_label", "UAVSAR");
+        show_widget("hbox_gamma_description", FALSE);
+        gtk_widget_set_sensitive(ok_button, TRUE);	
         break;
       case FORMAT_POLSARPRO:
         put_string_to_label("add_with_ancillary_format_label", "PolSARPro");
-	show_widget("hbox_gamma_description", FALSE);
+        show_widget("hbox_gamma_description", FALSE);
         gtk_widget_show(browse_select_colormap_optionmenu);
         gtk_widget_show(browse_select_colormap_label);
         gtk_widget_show(browse_select_image_data_type_optionmenu);
         gtk_widget_show(browse_select_image_data_type_label);
-	gtk_widget_set_sensitive(ok_button, FALSE);	
-	init_image_data_type_combobox();
-	polsarpro_image_data_type_changed();
+        gtk_widget_set_sensitive(ok_button, FALSE);	
+        init_image_data_type_combobox();
+        polsarpro_image_data_type_changed();
         break;
       default:
         put_string_to_label("add_with_ancillary_format_label", "Unknown");
@@ -433,7 +441,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
 #ifdef USE_GTK_FILE_CHOOSER
 
-    if (browse_widget)
+    if (GTK_IS_WIDGET(browse_widget))
       gtk_widget_destroy(browse_widget);
     create_file_chooser_dialog(sel);
 
@@ -560,6 +568,7 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 #define XML_FILT 512
 #define MOSAIC_FILT 1024
 #define DIR_FILT 2048
+#define ANN_FILT 4096
 
 #ifndef win32
 static void do_browse_ok_clicked(gpointer button)
@@ -784,18 +793,23 @@ static void do_browse(const char *title, const char *entry_to_populate,
       gtk_file_filter_add_pattern(mosaic_filt, "*HDR");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), mosaic_filt);
     }
+    if (filts & ANN_FILT) {
+      GtkFileFilter *ann_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(ann_filt, "UAVSAR Annotation File");
+      gtk_file_filter_add_pattern(ann_filt, "*.ann");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), ann_filt);
+    }
     if (filts & DIR_FILT) {
       GtkFileFilter *dir_filt = gtk_file_filter_new();
       gtk_file_filter_set_name(dir_filt, "PolSARPro matrix directory");
       gtk_file_filter_add_pattern(dir_filt, "*.");
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), dir_filt);
     }
-    else {
-      GtkFileFilter *all_filt = gtk_file_filter_new();
-      gtk_file_filter_set_name(all_filt, "All Files (*.*)");
-      gtk_file_filter_add_pattern(all_filt, "*");
-      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), all_filt);
-    }
+
+    GtkFileFilter *all_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+    gtk_file_filter_add_pattern(all_filt, "*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), all_filt);
 
     // do not allow multi-select
     gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(browse_widget),
@@ -823,6 +837,11 @@ void clear_entries()
   put_string_to_entry("add_file_with_ancillary_polsarpro_image_entry", "");
   put_string_to_entry("add_file_with_ancillary_polsarpro_ceos_entry", "");
   put_string_to_label("add_with_ancillary_error_label", "");
+  put_string_to_entry("add_file_with_ancillary_uavsar_annotation_file_entry", "");
+  GList *l, *uavsar_proc_types = get_widgets_prefix_checked("uavsar_proc_type_");
+  for(l = uavsar_proc_types; l; l = l->next)
+    gtk_toggle_button_set_active(l->data, FALSE);
+  g_list_free(uavsar_proc_types);
 }
 
 SIGNAL_CALLBACK void
@@ -896,61 +915,69 @@ on_add_file_with_ancillary_polsarpro_ceos_browse_button_clicked(GtkWidget *w)
 }
 
 SIGNAL_CALLBACK void
-on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
+on_add_file_with_ancillary_uavsar_annotation_file_browse_button_clicked(GtkWidget *w)
+{
+  do_browse("Add UAVSAR Annotation File",
+            "add_file_with_ancillary_uavsar_annotation_file_entry", ANN_FILT);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_ok_button_clicked(GtkWidget * w)
 {
   const char *type = get_string_from_label("add_with_ancillary_format_label");
-  int sel=-1;
-  if (strcmp_case(type, "GAMMA")==0)
+  int sel = -1;
+  if (strcmp_case(type, "GAMMA") == 0)
     sel = ADD_FILE_WITH_ANCILLARY_FORMAT_GAMMA;
-  else if (strcmp_case(type, "PolSARPro")==0)
+  else if (strcmp_case(type, "PolSARPro") == 0)
     sel = ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO;
+  else if (strcmp_case(type, "UAVSAR") == 0)
+    sel = ADD_FILE_WITH_ANCILLARY_FORMAT_UAVSAR;
   GtkTreeIter iter;
-  int ok=TRUE;
-  char *dataFile=NULL, *data=NULL, *ceos=NULL;
-  char *aux_info="";
+  int ok = TRUE;
+  char *dataFile = NULL, *data = NULL, *ceos = NULL;
+  char *aux_info = "";
 
   switch (sel) {
-    case ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO:
+  case ADD_FILE_WITH_ANCILLARY_FORMAT_POLSARPRO:
     {
       GtkWidget *ok_button =
-	get_widget_checked("add_file_with_ancillary_ok_button");
+        get_widget_checked("add_file_with_ancillary_ok_button");
       gtk_widget_set_sensitive(ok_button, FALSE);
-      dataFile =
-        get_string_from_entry("add_file_with_ancillary_polsarpro_image_entry");
+      dataFile = get_string_from_entry("add_file_with_ancillary_polsarpro_image_entry");
       char *matrixType, *error, *decompositionType, *derror;
       char *serror, *perror;
-      int is_polsarpro_matrix = 
-	isPolsarproMatrix(dataFile, &matrixType, &error);
+      int is_polsarpro_matrix =
+        isPolsarproMatrix(dataFile, &matrixType, &error);
       int is_polsarpro_decomposition =
-	isPolsarproDecomposition(dataFile, &decompositionType, &derror);
+        isPolsarproDecomposition(dataFile, &decompositionType, &derror);
       int is_polsarpro_segmentation =
-	isPolsarproSegmentation(dataFile, &serror);
-      int is_polsarpro_parameter =
-	isPolsarproParameter(dataFile, &perror);
+        isPolsarproSegmentation(dataFile, &serror);
+      int is_polsarpro_parameter = isPolsarproParameter(dataFile, &perror);
       if (is_polsarpro_matrix && !is_polsarpro_decomposition &&
-	  !is_polsarpro_segmentation && !is_polsarpro_parameter) {
-	data = (char *) MALLOC(sizeof(char)*(strlen(dataFile) + 15));
-	if (!is_dir(dataFile)) {
-	  char *tmp = (char *) MALLOC(sizeof(char)*(strlen(dataFile)+1));
-	  tmp = get_dirname(dataFile);
-	  dataFile[strlen(tmp)-1] = '\0';
-	  FREE(tmp);
-	}
-	if (strcmp(matrixType, "T3") == 0 || strcmp(matrixType, "T4") == 0)
-	  sprintf(data, "%s/T11.bin", dataFile);
-	else if (strcmp(matrixType, "C2") == 0 || 
-		 strcmp(matrixType, "C3") == 0 ||
-		 strcmp(matrixType, "C4") == 0)
-	  sprintf(data, "%s/C11.bin", dataFile);
+          !is_polsarpro_segmentation && !is_polsarpro_parameter) {
+        data = (char *) MALLOC(sizeof(char) * (strlen(dataFile) + 15));
+        if (!is_dir(dataFile)) {
+          char *tmp = (char *) MALLOC(sizeof(char) * (strlen(dataFile) + 1));
+          tmp = get_dirname(dataFile);
+          dataFile[strlen(tmp) - 1] = '\0';
+          FREE(tmp);
+        }
+        if (strcmp(matrixType, "T3") == 0 || strcmp(matrixType, "T4") == 0)
+          sprintf(data, "%s/T11.bin", dataFile);
+        else if (strcmp(matrixType, "C2") == 0 ||
+                 strcmp(matrixType, "C3") == 0 ||
+                 strcmp(matrixType, "C4") == 0)
+          sprintf(data, "%s/C11.bin", dataFile);
       }
       else
-	data = STRDUP(dataFile);
+        data = STRDUP(dataFile);
       free(matrixType);
       int is_geocoded = isGeocoded(data);
       if (!is_geocoded)
-	ceos = get_string_from_entry(
-	  "add_file_with_ancillary_polsarpro_ceos_entry");
-      if (!is_geocoded && (strlen(ceos)==0 || strlen(data)==0)) {
+        ceos =
+          get_string_from_entry
+          ("add_file_with_ancillary_polsarpro_ceos_entry");
+      if (!is_geocoded && (strlen(ceos) == 0 || strlen(data) == 0)) {
         put_string_to_label("add_with_ancillary_error_label",
                             "Please choose all required files!");
         return;
@@ -958,81 +985,102 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget *w)
       else {
         GtkWidget *browse_option_menu =
           get_widget_checked("browse_select_colormap_optionmenu");
-        GtkWidget *menu = gtk_option_menu_get_menu(
-          GTK_OPTION_MENU(browse_option_menu));
+        GtkWidget *menu =
+          gtk_option_menu_get_menu(GTK_OPTION_MENU(browse_option_menu));
         GtkWidget *selected_item = gtk_menu_get_active(GTK_MENU(menu));
-	GtkWidget *combo = 
-	  get_widget_checked("browse_select_image_data_type_optionmenu");
-	int image_data_type = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
-	char *lut_basename = g_object_get_data(G_OBJECT(selected_item), "file");
-	aux_info = encode_polsarpro_aux_info(image_data_type, lut_basename);
+        GtkWidget *combo =
+          get_widget_checked("browse_select_image_data_type_optionmenu");
+        int image_data_type = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
+        char *lut_basename =
+          g_object_get_data(G_OBJECT(selected_item), "file");
+        aux_info = encode_polsarpro_aux_info(image_data_type, lut_basename);
         put_string_to_label("add_with_ancillary_error_label", "");
-        ok = add_to_files_list_iter(data, ceos, NULL, aux_info, 
-				    NULL, NULL, NULL, NULL, &iter);
+        ok = add_to_files_list_iter(data, ceos, NULL, aux_info, NULL,
+                                    NULL, NULL, NULL, NULL, &iter);
 
         free(aux_info);
       }
       break;
     }
 
-    case ADD_FILE_WITH_ANCILLARY_FORMAT_GAMMA:
+  case ADD_FILE_WITH_ANCILLARY_FORMAT_GAMMA:
     {
       GtkWidget *ok_button =
-	get_widget_checked("add_file_with_ancillary_ok_button");
+        get_widget_checked("add_file_with_ancillary_ok_button");
       gtk_widget_set_sensitive(ok_button, TRUE);
-      data = get_string_from_entry("add_file_with_ancillary_gamma_data_entry");
+      data =
+        get_string_from_entry("add_file_with_ancillary_gamma_data_entry");
       char *meta =
         get_string_from_entry("add_file_with_ancillary_gamma_metadata_entry");
-      if (strlen(data)==0 || strlen(meta)==0) {
+      if (strlen(data) == 0 || strlen(meta) == 0) {
         put_string_to_label("add_with_ancillary_error_label",
                             "Please choose all required files!");
         return;
       }
       else {
         put_string_to_label("add_with_ancillary_error_label", "");
-	char *interferogram, *coherence, *slave_metadata, *baseline;
-	interferogram =
-	  get_string_from_entry("add_file_with_ancillary_gamma_igram_entry");
-	coherence =
-	  get_string_from_entry("add_file_with_ancillary_gamma_coh_entry");
-	slave_metadata =
-	  get_string_from_entry("add_file_with_ancillary_gamma_slave_entry");
-	baseline =
-	  get_string_from_entry("add_file_with_ancillary_gamma_baseline_entry");
-	if (strlen(interferogram) == 0) {
-	  FREE(interferogram);
-	  interferogram = NULL;
-	}
-	if (strlen(coherence) == 0) {
-	  FREE(coherence);
-	  coherence = NULL;
-	}
-	if (strlen(slave_metadata) == 0) {
-	  FREE(slave_metadata);
-	  slave_metadata = NULL;
-	}
-	if (strlen(baseline) == 0) {
-	  FREE(baseline);
-	  baseline = NULL;
-	}
-        ok = add_to_files_list_iter(data, ceos, meta, aux_info, 
-				    interferogram, coherence, 
-				    slave_metadata, baseline, &iter);
+        char *interferogram, *coherence, *slave_metadata, *baseline;
+        interferogram = get_string_from_entry("add_file_with_ancillary_gamma_igram_entry");
+        coherence = get_string_from_entry("add_file_with_ancillary_gamma_coh_entry");
+        slave_metadata = get_string_from_entry("add_file_with_ancillary_gamma_slave_entry");
+        baseline = get_string_from_entry("add_file_with_ancillary_gamma_baseline_entry");
+        if (strlen(interferogram) == 0) {
+          FREE(interferogram);
+          interferogram = NULL;
+        }
+        if (strlen(coherence) == 0) {
+          FREE(coherence);
+          coherence = NULL;
+        }
+        if (strlen(slave_metadata) == 0) {
+          FREE(slave_metadata);
+          slave_metadata = NULL;
+        }
+        if (strlen(baseline) == 0) {
+          FREE(baseline);
+          baseline = NULL;
+        }
+        ok = add_to_files_list_iter(data, ceos, meta, aux_info, NULL,
+                                    interferogram, coherence,
+                                    slave_metadata, baseline, &iter);
       }
       break;
     }
-  }
 
+    case ADD_FILE_WITH_ANCILLARY_FORMAT_UAVSAR:
+    {
+      GtkWidget *ok_button =
+        get_widget_checked("add_file_with_ancillary_ok_button");
+      gtk_widget_set_sensitive(ok_button, TRUE);
+
+      GtkWidget *ann_file_entry = get_widget_checked("add_file_with_ancillary_uavsar_annotation_file_entry");
+      const gchar *annotation_file = gtk_entry_get_text(GTK_ENTRY(ann_file_entry));
+
+      GList *l, *uavsar_proc_types = get_widgets_prefix_checked("uavsar_proc_type_");
+      for(l = uavsar_proc_types; l; l = l->next) {
+        gpointer proc_type_check_button = l->data;
+        if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(proc_type_check_button))) {
+          const gchar *name = gtk_widget_get_name(GTK_WIDGET(proc_type_check_button));
+          ok = add_to_files_list_iter(annotation_file, NULL, NULL, NULL, name + strlen("uavsar_proc_types_") - 1,
+              NULL, NULL, NULL, NULL, &iter);
+          if(!ok)
+            break;
+        }
+      }
+      g_list_free(uavsar_proc_types);
+    }
+    break;
+  }
   if (!ok) {
     if (data) {
-      char *msg = MALLOC(sizeof(char)*(strlen(data)+128));
+      char *msg = MALLOC(sizeof(char) * (strlen(data) + 128));
       sprintf(msg, "Unrecognized file:\n  %s\n\n"
               "The file may be of a type not supported by MapReady.\n", data);
       message_box(msg);
       free(msg);
     }
     else {
-      char *msg = MALLOC(sizeof(char)*256);
+      char *msg = MALLOC(sizeof(char) * 256);
       sprintf(msg, "Unrecognized file!\n\n"
               "The file may be of a type not supported by MapReady.\n");
       message_box(msg);

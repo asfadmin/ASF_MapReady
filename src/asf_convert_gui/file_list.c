@@ -25,6 +25,7 @@ int COL_INTERFEROGRAM;
 int COL_COHERENCE;
 int COL_SLAVE_METADATA;
 int COL_BASELINE;
+int COL_UAVSAR_TYPE;
 
 int COMP_COL_INPUT_FILE;
 int COMP_COL_INPUT_FILE_SHORT;
@@ -278,6 +279,10 @@ static char *file_is_valid(const gchar * file)
     if (ext && strcmp_case(ext, ".rsc")==0)
       return STRDUP(file);
 
+    // check for uavsar
+    if(ext && strcmp_case(ext, ".ann")==0)
+      return STRDUP(file);
+
     // check for ALOS mosaics - might have an extension (or not)
     // so we check for a little more
     if (endsWith(file, "_HDR.txt") || endsWith(file, "_HDR")) {
@@ -444,7 +449,7 @@ do_thumbnail (const gchar *file)
 
 #endif
 
-static char *build_band_list(const char *file)
+static char *build_band_list(const char *file, const gchar * uavsar_type)
 {
     // this only applies to ALOS data -- other types we'll just return "-"
     int pre = has_prepension(file);
@@ -515,7 +520,7 @@ gboolean
 add_to_files_list(const gchar * data_file)
 {
     GtkTreeIter iter;
-    gboolean ret = add_to_files_list_iter(data_file, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
+    gboolean ret = add_to_files_list_iter(data_file, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
     return ret;
 }
 
@@ -813,7 +818,7 @@ gboolean move_to_files_list(const gchar *data_file,
 	baseline_file && strlen(baseline_file))))
   {
     ret = add_to_files_list_iter(data_file, ancillary_file,
-                                 meta_file, polsarpro_aux_info,
+                                 meta_file, polsarpro_aux_info, NULL,
 				 interferogram_file, coherence_file,
 				 slave_metadata_file, baseline_file,
                                  &iter);
@@ -824,25 +829,25 @@ gboolean move_to_files_list(const gchar *data_file,
   {
     ret = add_to_files_list_iter(data_file, ancillary_file,
                                  meta_file, polsarpro_aux_info,
-				 NULL, NULL, NULL, NULL, &iter);
+				 NULL, NULL, NULL, NULL, NULL, &iter);
   }
   else if (meta_file && strlen(meta_file) &&
            data_file && strlen(data_file))
   {
     ret = add_to_files_list_iter(data_file, NULL, meta_file, 
-                                 polsarpro_aux_info, NULL, NULL, NULL, NULL,
+                                 polsarpro_aux_info, NULL, NULL, NULL, NULL, NULL,
 				 &iter);
   }
   else if (ancillary_file && strlen(ancillary_file) &&
            data_file      && strlen(data_file))
   {
     ret = add_to_files_list_iter(data_file, ancillary_file, NULL,
-                                 polsarpro_aux_info, NULL, NULL, NULL, NULL,
+                                 polsarpro_aux_info, NULL, NULL, NULL, NULL, NULL,
 				 &iter);
   }
   else if (data_file && strlen(data_file)) {
     ret = add_to_files_list_iter(data_file, NULL, NULL,
-                                 polsarpro_aux_info, NULL, NULL, NULL, NULL,
+                                 polsarpro_aux_info, NULL, NULL, NULL, NULL, NULL,
 				 &iter);
   }
   else {
@@ -853,229 +858,234 @@ gboolean move_to_files_list(const gchar *data_file,
 }
 
 gboolean
-add_to_files_list_iter(const gchar *input_file_in,
-                       const gchar *ancillary_file_in,
-                       const gchar *meta_file_in,
-                       const gchar *polsarpro_aux_info,
-		       const gchar *interferogram_file,
-		       const gchar *coherence_file,
-		       const gchar *slave_metadata_file,
-		       const gchar *baseline_file,
-                       GtkTreeIter *iter_p)
+add_to_files_list_iter(const gchar * input_file_in,
+                       const gchar * ancillary_file_in,
+                       const gchar * meta_file_in,
+                       const gchar * polsarpro_aux_info,
+                       const gchar * uavsar_type,
+                       const gchar * interferogram_file,
+                       const gchar * coherence_file,
+                       const gchar * slave_metadata_file,
+                       const gchar * baseline_file, GtkTreeIter * iter_p)
 {
-    char *input_file = file_is_valid(input_file_in);
-    if (!input_file && meta_file_in && strlen(meta_file_in) > 0) {
-      // gamma data -- file_is_valid() returns false for gamma...
-      input_file = STRDUP(input_file_in);
+  char *input_file = file_is_valid(input_file_in);
+  if (!input_file && meta_file_in && strlen(meta_file_in) > 0) {
+    // gamma data -- file_is_valid() returns false for gamma...
+    input_file = STRDUP(input_file_in);
+  }
+  char *ancillary_file_valid = NULL;
+  int valid = input_file != NULL;
+
+  // NOTE: When a file is added to the input list for the first time,
+  // the ancillary_file_in will be NULL or zero length.  When a file is
+  // moved from the completed files back to the list of input files, then
+  // ancillary_file will be valid and will have a full
+  // path/filename in it (see move_to_files_list() and add_to_files_list() )
+  if (valid && ancillary_file_in != NULL && strlen(ancillary_file_in) > 0) {
+    ancillary_file_valid = file_is_valid(ancillary_file_in);
+  }
+
+  if (valid) {
+    /* If this file is already in the list, ignore it */
+    GtkTreeIter iter;
+    int found = FALSE;
+    gboolean more_items =
+      gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+    while (more_items) {
+      gchar *input_file_in_list;
+      gchar *igram_file_in_list;
+      gchar *coh_file_in_list;
+      gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                         COL_INPUT_FILE, &input_file_in_list, -1);
+      gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                         COL_INTERFEROGRAM, &igram_file_in_list, -1);
+      gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                         COL_COHERENCE, &coh_file_in_list, -1);
+      if (interferogram_file &&
+          strcmp(interferogram_file, igram_file_in_list) == 0)
+        found = TRUE;
+      else if(uavsar_type)
+        found = FALSE;
+      else if (coherence_file &&
+               strcmp(coherence_file, coh_file_in_list) == 0)
+        found = TRUE;
+      else if (!interferogram_file && !coherence_file &&
+               strcmp(input_file, input_file_in_list) == 0)
+        found = TRUE;
+      g_free(input_file_in_list);
+      if (found)
+        break;
+      more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store),
+                                            &iter);
     }
-    char *ancillary_file_valid = NULL;
-    int valid = input_file != NULL;
 
-    // NOTE: When a file is added to the input list for the first time,
-    // the ancillary_file_in will be NULL or zero length.  When a file is
-    // moved from the completed files back to the list of input files, then
-    // ancillary_file will be valid and will have a full
-    // path/filename in it (see move_to_files_list() and add_to_files_list() )
-    if (valid &&
-        ancillary_file_in != NULL &&
-        strlen(ancillary_file_in) > 0)
-    {
-      ancillary_file_valid = file_is_valid(ancillary_file_in);
+    if (found) {
+      asfPrintStatus("File '%s' is already in the list, skipping.\n",
+                     input_file_in);
     }
+    else {
+      /* not already in list -- add it */
 
-    if (valid)
-    {
-        /* If this file is already in the list, ignore it */
-        GtkTreeIter iter;
-        int found = FALSE;
-        gboolean more_items =
-          gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
-        while (more_items) {
-          gchar *input_file_in_list;
-	  gchar *igram_file_in_list;
-	  gchar *coh_file_in_list;
-          gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-                             COL_INPUT_FILE, &input_file_in_list, -1);
-          gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-                             COL_INTERFEROGRAM, &igram_file_in_list, -1);
-          gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-                             COL_COHERENCE, &coh_file_in_list, -1);
-	  if (interferogram_file && 
-	      strcmp(interferogram_file, igram_file_in_list) == 0)
-	    found = TRUE;
-	  else if (coherence_file &&
-		   strcmp(coherence_file, coh_file_in_list) == 0)
-	    found = TRUE;
-          else if (!interferogram_file && !coherence_file &&
-		   strcmp(input_file, input_file_in_list) == 0)
-            found = TRUE;
-          g_free(input_file_in_list);
-          if (found)
-            break;
-          more_items = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store),
-                                                 &iter);
-        }
+      // Build list of bands
+      char *bands = build_band_list(input_file, uavsar_type);
 
-        if (found) {
-          asfPrintStatus("File '%s' is already in the list, skipping.\n",
-                         input_file_in);
+      // Populate the input file fields
+      // (full path version and filename-only version)
+      gchar *base = g_path_get_basename(input_file);
+      GString * basename;
+      if(uavsar_type != NULL) {
+        basename = g_string_new("");
+        g_string_printf(basename, "(%s) %s", uavsar_type, base);
+      }
+      else {
+        basename = g_string_new(base);
+      }
+      g_free(base);
+      gchar *ancillary_basename, *ancillary_fullname;
+      if (ancillary_file_valid != NULL) {
+        ancillary_basename = g_path_get_basename(ancillary_file_in);
+        ancillary_fullname = g_strdup(ancillary_file_in);
+      }
+      else {
+        ancillary_basename = g_strdup("");
+        ancillary_fullname = g_strdup("");
+      }
+      gchar *meta_basename, *meta_fullname;
+      if (meta_file_in != NULL) {
+        meta_basename = g_path_get_basename(meta_file_in);
+        meta_fullname = g_strdup(meta_file_in);
+      }
+      else {
+        meta_basename = g_strdup("");
+        meta_fullname = g_strdup("");
+      }
+      char *aux_files, *aux_files_short;
+      if (meta_file_in != NULL && ancillary_file_valid != NULL) {
+        int len = strlen(meta_fullname) + strlen(ancillary_fullname) + 32;
+        aux_files = MALLOC(sizeof(char) * len);
+        sprintf(aux_files, "CEOS: %s\nMetadata: %s",
+                ancillary_fullname, meta_fullname);
+        len = strlen(meta_basename) + strlen(ancillary_basename) + 32;
+        aux_files_short = MALLOC(sizeof(char) * len);
+        sprintf(aux_files_short, "CEOS: %s\nMetadata: %s",
+                ancillary_basename, meta_basename);
+      }
+      else if (meta_file_in != NULL) {
+        aux_files = STRDUP(meta_fullname);
+        aux_files_short = STRDUP(meta_basename);
+      }
+      else if (ancillary_file_valid != NULL) {
+        aux_files = STRDUP(ancillary_fullname);
+        aux_files_short = STRDUP(ancillary_basename);
+      }
+      else {
+        aux_files = STRDUP("");
+        aux_files_short = STRDUP("");
+      }
+
+      gchar *polsarpro_display;
+      if (polsarpro_aux_info && strlen(polsarpro_aux_info) > 0) {
+        char *p = strchr(polsarpro_aux_info, ';');
+        if (p) {
+          polsarpro_display =
+            g_malloc(sizeof(gchar) * strlen(polsarpro_aux_info) + 64);
+          int is_classification = polsarpro_aux_info[0] == '0';
+          int is_colormapped = strcmp_case(p + 1, "none") != 0;
+          const char *c = is_classification ? " (Segmentation)" : "";
+          if (!is_colormapped && !is_classification) {
+            strcpy(polsarpro_display, "-");
+          }
+          else if (!is_colormapped) {
+            sprintf(polsarpro_display, "Greyscale%s", c);
+          }
+          else {
+            sprintf(polsarpro_display, "%s%s", p + 1, c);
+          }
         }
         else {
-          /* not already in list -- add it */
-
-          // Build list of bands
-          char *bands = build_band_list(input_file);
-
-          // Populate the input file fields
-          // (full path version and filename-only version)
-          gchar *basename = g_path_get_basename(input_file);
-          gchar *ancillary_basename, *ancillary_fullname;
-          if (ancillary_file_valid != NULL) {
-            ancillary_basename = g_path_get_basename(ancillary_file_in);
-            ancillary_fullname = g_strdup(ancillary_file_in);
-          }
-          else {
-            ancillary_basename = g_strdup("");
-            ancillary_fullname = g_strdup("");
-          }
-          gchar *meta_basename, *meta_fullname;
-          if (meta_file_in != NULL) {
-            meta_basename = g_path_get_basename(meta_file_in);
-            meta_fullname = g_strdup(meta_file_in);
-          }
-          else {
-            meta_basename = g_strdup("");
-            meta_fullname = g_strdup("");
-          }
-          char *aux_files, *aux_files_short;
-          if (meta_file_in != NULL && ancillary_file_valid != NULL) {
-            int len = strlen(meta_fullname)+strlen(ancillary_fullname)+32;
-            aux_files = MALLOC(sizeof(char)*len);
-            sprintf(aux_files, "CEOS: %s\nMetadata: %s",
-                    ancillary_fullname, meta_fullname);
-            len = strlen(meta_basename)+strlen(ancillary_basename)+32;
-            aux_files_short = MALLOC(sizeof(char)*len);
-            sprintf(aux_files_short, "CEOS: %s\nMetadata: %s",
-                    ancillary_basename, meta_basename);
-          }
-          else if (meta_file_in != NULL) {
-            aux_files = STRDUP(meta_fullname);
-            aux_files_short = STRDUP(meta_basename);
-          }
-          else if (ancillary_file_valid != NULL) {
-            aux_files = STRDUP(ancillary_fullname);
-            aux_files_short = STRDUP(ancillary_basename);
-          }
-          else {
-            aux_files = STRDUP("");
-            aux_files_short = STRDUP("");
-          }
-
-          gchar *polsarpro_display;
-          if (polsarpro_aux_info && strlen(polsarpro_aux_info)>0) {
-            char *p = strchr(polsarpro_aux_info, ';');
-            if (p) {
-              polsarpro_display =
-                g_malloc(sizeof(gchar)*strlen(polsarpro_aux_info)+64);
-              int is_classification = polsarpro_aux_info[0]=='0';
-              int is_colormapped = strcmp_case(p+1, "none")!=0;
-              const char *c = is_classification ? " (Segmentation)" : "";
-              if (!is_colormapped && !is_classification) {
-                strcpy(polsarpro_display, "-");
-              }
-              else if (!is_colormapped) {
-                sprintf(polsarpro_display, "Greyscale%s", c);
-              }
-              else {
-                sprintf(polsarpro_display, "%s%s", p+1, c);
-              }
-            }
-            else {
-              printf("Invalid PolSARPro aux info found.\n");
-              polsarpro_display = g_strdup("");
-            }
-          }
-          else {
-            polsarpro_display = g_strdup("");
-          }
-
-          // ready to add to the list
-          gtk_list_store_append(list_store, iter_p);
-          gtk_list_store_set(list_store, iter_p,
-                             COL_INPUT_FILE, input_file,
-                             COL_INPUT_FILE_SHORT, basename,
-                             COL_ANCILLARY_FILE, ancillary_fullname,
-                             COL_METADATA_FILE, meta_fullname,
-                             COL_ALL_AUX_FILES, aux_files,
-                             COL_ALL_AUX_FILES_SHORT, aux_files_short,
-                             COL_BAND_LIST, bands,
-                             COL_POLSARPRO_INFO, polsarpro_aux_info,
-                             COL_POLSARPRO_DISPLAY, polsarpro_display,
-			     COL_INTERFEROGRAM, interferogram_file,
-			     COL_COHERENCE, coherence_file,
-			     COL_SLAVE_METADATA, slave_metadata_file,
-			     COL_BASELINE, baseline_file,
-                             COL_STATUS, "-",
-                             COL_LOG, "Has not been processed yet.",
-                             -1);
-
-          g_free(basename);
-          g_free(ancillary_basename);
-          g_free(meta_basename);
-          g_free(ancillary_fullname);
-          g_free(meta_fullname);
-          g_free(polsarpro_display);
-	  /*
-	  g_free(interferogram_file);
-	  g_free(coherence_file);
-	  g_free(slave_metadata_file);
-	  g_free(baseline_file);
-	  */
-	  
-          free(aux_files);
-          free(aux_files_short);
-
-          // Determine output file name
-          gchar * out_name_full;
-	  if (interferogram_file && strlen(interferogram_file) > 0)
-	    out_name_full = 
-	      determine_default_output_file_name(interferogram_file);
-	  else if (coherence_file && strlen(coherence_file) > 0)
-	    out_name_full = 
-	      determine_default_output_file_name(coherence_file);
-	  else
-	    out_name_full = determine_default_output_file_name(input_file);
-          set_output_name(iter_p, out_name_full);
-          g_free(out_name_full);
-          FREE(bands);
-
-          // Add the file to the thumbnail queue
-          queue_thumbnail(input_file);
-
-          // Update the visible/invisible widgets in the input section,
-          // to reflect what kind of data we have
-          input_data_formats_changed();
-
-          // Hide/show the ancillary files column
-          refresh_file_names();
-
-          /* Select the file automatically if this is the first
-             file that was added (this makes the toolbar buttons
-             immediately useful)                                 */
-          if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store),
-                                                  NULL))
-          {
-            GtkWidget *files_list = get_widget_checked("files_list");
-            GtkTreeSelection *selection =
-              gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
-            gtk_tree_selection_select_all(selection);
-          }
+          printf("Invalid PolSARPro aux info found.\n");
+          polsarpro_display = g_strdup("");
         }
+      }
+      else {
+        polsarpro_display = g_strdup("");
+      }
 
-        free(input_file);
+      // ready to add to the list
+      gtk_list_store_append(list_store, iter_p);
+      gtk_list_store_set(list_store, iter_p,
+                         COL_INPUT_FILE, input_file,
+                         COL_INPUT_FILE_SHORT, basename->str,
+                         COL_ANCILLARY_FILE, ancillary_fullname,
+                         COL_METADATA_FILE, meta_fullname,
+                         COL_ALL_AUX_FILES, aux_files,
+                         COL_ALL_AUX_FILES_SHORT, aux_files_short,
+                         COL_BAND_LIST, bands,
+                         COL_POLSARPRO_INFO, polsarpro_aux_info,
+                         COL_POLSARPRO_DISPLAY, polsarpro_display,
+                         COL_INTERFEROGRAM, interferogram_file,
+                         COL_COHERENCE, coherence_file,
+                         COL_SLAVE_METADATA, slave_metadata_file,
+                         COL_BASELINE, baseline_file,
+                         COL_UAVSAR_TYPE, uavsar_type,
+                         COL_STATUS, "-",
+                         COL_LOG, "Has not been processed yet.", -1);
+
+      g_string_free(basename, TRUE);
+      g_free(ancillary_basename);
+      g_free(meta_basename);
+      g_free(ancillary_fullname);
+      g_free(meta_fullname);
+      g_free(polsarpro_display);
+      /*
+         g_free(interferogram_file);
+         g_free(coherence_file);
+         g_free(slave_metadata_file);
+         g_free(baseline_file);
+       */
+
+      free(aux_files);
+      free(aux_files_short);
+
+      // Determine output file name
+      gchar *out_name_full;
+      if (interferogram_file && strlen(interferogram_file) > 0)
+        out_name_full =
+          determine_default_output_file_name(interferogram_file);
+      else if (coherence_file && strlen(coherence_file) > 0)
+        out_name_full = determine_default_output_file_name(coherence_file);
+      else
+        out_name_full = determine_default_output_file_name(input_file);
+      set_output_name(iter_p, out_name_full);
+      g_free(out_name_full);
+      FREE(bands);
+
+      // Add the file to the thumbnail queue
+      queue_thumbnail(input_file);
+
+      // Update the visible/invisible widgets in the input section,
+      // to reflect what kind of data we have
+      input_data_formats_changed();
+
+      // Hide/show the ancillary files column
+      refresh_file_names();
+
+      /* Select the file automatically if this is the first
+         file that was added (this makes the toolbar buttons
+         immediately useful)                                 */
+      if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store),
+                                              NULL)) {
+        GtkWidget *files_list = get_widget_checked("files_list");
+        GtkTreeSelection *selection =
+          gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+        gtk_tree_selection_select_all(selection);
+      }
     }
 
-    return valid;
+    free(input_file);
+  }
+
+  return valid;
 }
 
 void
@@ -1311,7 +1321,7 @@ setup_files_list()
     GtkTreeViewColumn *col;
     GtkCellRenderer *renderer;
 
-    list_store = gtk_list_store_new(18,
+    list_store = gtk_list_store_new(19,
                                     G_TYPE_STRING,    // Input file - Full path (usually hidden)
                                     G_TYPE_STRING,    // Input file - No path
                                     G_TYPE_STRING,    // Ancillary file - Full path (usually hidden)
@@ -1329,7 +1339,8 @@ setup_files_list()
 				    G_TYPE_STRING,    // Interferogram (hidden)
 				    G_TYPE_STRING,    // Coherence image (hidden)
 				    G_TYPE_STRING,    // Slave metadata (hidden)
-				    G_TYPE_STRING);   // Baseline (hidden)
+				    G_TYPE_STRING,    // Baseline (hidden)
+                                    G_TYPE_STRING);   // UAVSAR Type (hidden)
 
     COL_INPUT_FILE = 0;
     COL_INPUT_FILE_SHORT = 1;
@@ -1349,6 +1360,7 @@ setup_files_list()
     COL_COHERENCE = 15;
     COL_SLAVE_METADATA = 16;
     COL_BASELINE = 17;
+    COL_UAVSAR_TYPE = 18;
 
     completed_list_store = gtk_list_store_new(24,
                                               G_TYPE_STRING,    // Data file-Full path (usually hid.)
@@ -1644,6 +1656,17 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COL_BASELINE);
+
+    /* Next Column: UAVSAR Type (always hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "UAVSAR Type");
+    gtk_tree_view_column_set_resizable(col, FALSE);
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COL_UAVSAR_TYPE);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(files_list),
         GTK_TREE_MODEL(list_store));

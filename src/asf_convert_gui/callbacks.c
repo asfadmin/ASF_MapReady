@@ -1401,3 +1401,12 @@ on_add_file_with_ancillary_polsarpro_ceos_entry_changed(GtkWidget *widget)
   if (polsarpro_geocoding_check() && polsarpro_data_check())
     gtk_widget_set_sensitive(ok_button, TRUE);
 }
+
+SIGNAL_CALLBACK void
+on_uavsar_polsar_all_checkbutton_toggled(GtkWidget *widget)
+{
+  GtkWidget *all_button = get_widget_checked("uavsar_polsar_all");
+  gboolean toggled = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(all_button));
+  GtkWidget *uavsar_slc = get_widget_checked("uavsar_slc");
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(uavsar_slc), toggled);
+}

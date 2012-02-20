@@ -59,7 +59,9 @@ enum InputFormat
     INPUT_FORMAT_RADARSAT2 = 8,
     INPUT_FORMAT_GAMMA = 9,
     INPUT_FORMAT_ROIPAC = 10,
-    INPUT_FORMAT_ALOS_MOSAIC = 11
+    INPUT_FORMAT_ALOS_MOSAIC = 11,
+    INPUT_FORMAT_UAVSAR_POLSAR = 12,
+    INPUT_FORMAT_UAVSAR_INSAR = 13,
 };
 
 enum InputType
@@ -266,6 +268,7 @@ extern int COL_INTERFEROGRAM;
 extern int COL_COHERENCE;
 extern int COL_SLAVE_METADATA;
 extern int COL_BASELINE;
+extern int COL_UAVSAR_TYPE;
 
 extern int COMP_COL_INPUT_FILE;
 extern int COMP_COL_INPUT_FILE_SHORT;
@@ -336,7 +339,8 @@ char *settings_to_config_file(const Settings *s,
 			      const gchar *interferogram,
 			      const gchar *coherence,
 			      const gchar *slave_metadata,
-			      const gchar *baseline);
+			      const gchar *baseline,
+            const gchar *uavsar_type);
 int apply_settings_from_config_file(char *configFile);
 void default_to_keep_temp(void);
 
@@ -375,6 +379,7 @@ gchar *meta_file_name(const gchar *);
 gchar *data_file_name(const gchar *);
 char *getPath(const char *);
 GtkWidget *get_widget_checked(const char *widget_name);
+GList *get_widgets_prefix_checked(const char *prefix);
 void set_combo_box_item_checked(const char *, gint);
 void rgb_combo_box_setup();
 void rb_select(const char *, gboolean);
@@ -398,6 +403,8 @@ gboolean is_terrasarx(const char *infile);
 gboolean is_radarsat2(const char *infile);
 gboolean is_roipac(const char *infile);
 gboolean is_alos_mosaic(const char *infile);
+gboolean is_uavsar_polsar(const char *infile);
+gboolean is_uavsar_insar(const char *infile);
 char *extract_lut_name(const char *polsarpro_aux_info);
 int extract_image_data_type(const char *polsarpro_aux_info);
 char *encode_polsarpro_aux_info(int image_data_type_flag, char *lut_basename);
@@ -418,7 +425,7 @@ void populate_files_list(int, char **);
 void refresh_file_names();
 gboolean add_to_files_list(const gchar *);
 gboolean add_to_files_list_iter(const gchar *, const gchar *, const gchar *, const gchar *, 
-				const gchar *, const gchar *, const gchar *, const gchar *, GtkTreeIter *);
+				const gchar *, const gchar *, const gchar *, const gchar *, const gchar *, GtkTreeIter *);
 gboolean add_to_ancillary_files_list(const gchar *);
 void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);
