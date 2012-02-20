@@ -940,6 +940,8 @@ char *check_data_type(const char *inFileName)
 {
   char line[MAX_LINE], key[MAX_LINE], value[MAX_LINE];
   char *type = (char *) MALLOC(sizeof(char)*25);
+  strcpy(type, "");
+
   FILE *fp = FOPEN(inFileName, "r");
   while (fgets(line, MAX_LINE, fp)) {
     if(!parse_annotation_line(line, key, value)) {
@@ -952,10 +954,13 @@ char *check_data_type(const char *inFileName)
       strcpy(type, value);
     else if (!strcmp(key, "Processing Mode"))
       strcpy(type, value);
-    else if (strcmp_case(type, "RPI") == 0)
+    if (strcmp_case(type, "RPI") == 0)
       sprintf(type, "InSAR");
   }
   FCLOSE(fp);
+
+  if (strlen(type) == 0)
+    asfPrintError("Failed to detect type of UAVSAR data in %s\n", inFileName);
 
   return type;
 }

@@ -383,7 +383,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
          strcmp_case(meta->general->sensor_name, "PRISM") == 0) {
       int band_number;
       band_number = get_alos_band_number(inBandName[ii]);
-      if (band_number<9)
+      if (band_number<10)
     sprintf(bandExt, "0%d", band_number);
       else
     sprintf(bandExt, "%d", band_number);
@@ -755,7 +755,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
                    NULL, what, NULL, NULL, -999, -999, -999, -999, 0, 0, 
 		   -99, -99, 0, NULL, NULL, NULL, FALSE, NULL, tiff_basename, 
-		   ancillary_file, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+		   ancillary_file, NULL, NULL, NULL, NULL, NULL, FALSE, NULL,
 		   FALSE, imported),
         status);
 
@@ -1004,8 +1004,38 @@ static int check_airsar(char *outFile, char *suffix)
   return ret;
 }
 
-static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile,
-			     int *amp0_flag)
+static datum_type_t str_to_datum(const char *datum_str)
+{
+  datum_type_t datum;
+  if (strncmp_case(datum_str, "WGS84", 5) == 0) {
+    datum = WGS84_DATUM;
+  }
+  else if (strncmp_case(datum_str, "NAD27", 5) == 0) {
+    datum = NAD27_DATUM;
+  }
+  else if (strncmp_case(datum_str, "NAD83", 5) == 0) {
+    datum = NAD83_DATUM;
+  }
+  else if (strncmp_case(datum_str, "HUGHES", 6) == 0 ) {
+    datum = HUGHES_DATUM;
+  }
+  else if (strncmp_case(datum_str, "ITRF97", 6) == 0) {
+    datum = ITRF97_DATUM;
+  }
+  else if (strncmp_case(datum_str, "ED50", 4) == 0) {
+    datum = ED50_DATUM;
+  }
+  else if (strncmp_case(datum_str, "SAD69", 5) == 0) {
+    datum = SAD69_DATUM;
+  }
+  else {
+    datum = UNKNOWN_DATUM;
+  }
+
+  return datum;
+}
+
+static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile)
 {
   char tmpFile[1024];
 
@@ -1023,9 +1053,6 @@ static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile,
       // update the RGB Bands to Red=HH, Green=HV, Blue=VV
       strcpy(cfg->export->rgb, "SIGMA-HH,SIGMA-HV,SIGMA-VV");
       strcpy(outFile, inFile);
-
-      // turn off the amp0_flag -- we don't need it in this case
-      *amp0_flag = FALSE;
     }
     meta_free(meta);
   }
@@ -1064,31 +1091,8 @@ static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile,
 static scale_t get_scale(convert_config *cfg);
 static void do_export(convert_config *cfg, char *inFile, char *outFile);
 
-static int asf_convert_file(char *configFileName, int saveDEM)
+static int check_config(const char *configFileName, convert_config *cfg)
 {
-  char inFile[512], outFile[512], tmpFile[512];
-  int is_airsar = FALSE;
-  int is_uavsar = FALSE;
-
-  convert_config *cfg = read_convert_config(configFileName);
-  if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
-    set_status_file(cfg->general->status_file);
-  
-  update_status("Processing...");
-  
-  // these are so we can tell how long processing took
-  ymd_date start_date;
-  hms_time start_time;
-  get_current_date(&start_date, &start_time);
-  
-  char tmp[64];
-  date_printTime(&start_time,0,':',tmp);
-  asfPrintStatus("Starting at: %s\n", tmp);
-  
-  create_and_set_tmp_dir(cfg->general->in_name, cfg->general->out_name,
-			 cfg->general->tmp_dir);
-  save_intermediate(cfg, "Temp Dir", cfg->general->tmp_dir);
-  
   // Check that input name isn't the same as the output name
   // (This can happen with CEOS Level 0-- both use .raw)
   if (strcmp_case(cfg->import->format, "CEOS") == 0 &&
@@ -1147,10 +1151,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	strncmp_case(cfg->import->format, "UAVSAR", 6) != 0) {
       asfPrintError("Selected import format not supported\n");
     }
-    
-    is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6) == 0;
-    is_uavsar = strncmp_case(cfg->import->format, "UAVSAR", 6) == 0;
-    
+        
     // Radiometry
     if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) != 0 &&
 	strncmp(uc(cfg->import->radiometry), "POWER_IMAGE", 11) != 0 &&
@@ -1167,10 +1168,12 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       }
     }
     
-    // When importing AirSAR data, don't allow terrain correction
-    if (is_airsar && cfg->general->terrain_correct) {
-      asfPrintError("Terrain correction of AirSAR data is not supported.\n");
-    }
+    // When importing AirSAR or UAVSAR data, don't allow terrain correction
+    if (cfg->general->terrain_correct &&
+        (strncmp_case(cfg->import->format, "AIRSAR", 6) == 0 ||
+         strncmp_case(cfg->import->format, "UAVSAR", 6) == 0))
+      asfPrintError("Terrain correction of %s data is not supported.\n",
+                    cfg->import->format);
     
     // When importing a GeoTIFF, don't allow terrain correction.
     if (strncmp(uc(cfg->import->format), "GEOTIFF", 7) == 0 &&
@@ -1185,9 +1188,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     if (cfg->import->complex_slc && cfg->import->multilook_slc)
         asfPrintError("Only single look complex data stored as "
                       "amplitude and phase can be multilooked.\n");
-    
-    // Get input file name ready
-    strcpy(inFile, cfg->general->in_name);
     
     // Can skip import if the input is already asf internal.
     if (strncmp(uc(cfg->import->format), "ASF", 3) == 0) {
@@ -1221,6 +1221,11 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   // Check whether everything in the [SAR processing] block is reasonable
   if (cfg->general->sar_processing) {
     
+    if (strncmp_case(cfg->import->format, "AIRSAR", 6) == 0)
+      asfPrintError("Cannot perform SAR Processing on AirSAR data.\n");
+    else if (strncmp_case(cfg->import->format, "UAVSAR", 6) == 0)
+      asfPrintError("Cannot perform SAR Processing on UAVSAR data.\n");
+
     // ADDED FOR 3.0 -- DO NOT SUPPORT L0 PROCESSING!
     // We actually think this is working in many cases, but it hasn't
     // been fully tested yet for all satellites/beams.
@@ -1487,41 +1492,25 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   // Check input
   if (cfg->general->polarimetry)
     check_input(cfg, "polarimetry", cfg->general->in_name);
-  
-  //---------------------------------------------------------------
-  // Let's finally get to work
-  if (strlen(cfg->general->out_name) == 0) {
-    sprintf(cfg->general->out_name, "%s", cfg->general->in_name);
-  }
-  sprintf(outFile, "%s", cfg->general->out_name);
-  
-  // global variable-- if set, tells meta_write to also dump .hdr (ENVI) files
-  dump_envi_header = cfg->general->dump_envi;
-  
-  int import_will_apply_radiometry = FALSE;
-  if (!cfg->general->terrain_correct && !cfg->general->polarimetry) {
-    import_will_apply_radiometry = TRUE;
-  }
-  
-  // We used to add an amp0 band when import applied radiometry, but
-  // that is no longer necessary.  So, this will always be false.
-  // The feature is being left in for backward compatibility.
-  int amp0_flag = FALSE;
-  
-  // The "saved radiometry" is the requested radiometry in the case where
-  // import will not apply the calibration parameters.  Note that
-  radiometry_t saved_radiometry = r_AMP;
-  
+
+  // If we got here, all checks passed
+  return TRUE;
+}
+
+char ***do_import(convert_config *cfg)
+{
+  char **imported_files;
+  char **suffixes;
+
+  char *outFile = MALLOC(sizeof(char)*(strlen(cfg->general->in_name) + 256));
+  strcpy(outFile, "");
+
   // Call asf_import, if needed (=> input is not ASF Internal)
   if (cfg->general->import) {
-    
-    update_status("Importing...");
-    
     // Force radiometry to be amplitude for processing until the calibration
     // section.
     radiometry_t radiometry = r_AMP;
     int db_flag = FALSE;
-    int lut_flag = FALSE;
     input_format_t format_type;
     char *meta_option = NULL;
     
@@ -1549,10 +1538,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       }
     }
     
-    // LUT
-    if (strlen(cfg->import->lut) > 0)
-      lut_flag = TRUE;
-    
     // Generate a temporary output filename
     if (cfg->general->image_stats || cfg->general->detect_cr ||
 	cfg->general->sar_processing || cfg->general->polarimetry ||
@@ -1563,7 +1548,10 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     else {
       sprintf(outFile, "%s", cfg->general->out_name);
     }
-    
+
+    int is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6) == 0;
+    int is_uavsar = strncmp_case(cfg->import->format, "UAVSAR", 6) == 0;
+
     // Input Format Type
     char *polsarpro_colormap = NULL;
     //printf("\n\nINPUT FORMAT IS: %s\n\n", uc(cfg->import->format));
@@ -1614,7 +1602,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     check_return(asf_import(radiometry, db_flag,
 			    cfg->import->complex_slc,
 			    cfg->import->multilook_slc,
-			    amp0_flag,
+			    FALSE, // amp0_flag -- no longer used by asf_mapready
 			    format_type,
 			    NULL,
 			    NULL,
@@ -1644,7 +1632,19 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     // For AirSAR data, let's see what we actually got.
     // Not all products are always present - update settings to
     // disable processing of products not present
+
     if (is_airsar) {
+
+      int ii,max=5;
+      imported_files = (char**)MALLOC(sizeof(char*)*max);
+      suffixes = (char**)MALLOC(sizeof(char*)*max);
+      for (ii=0; ii<max; ++ii) {
+        imported_files[ii] = NULL;
+        suffixes[ii] = NULL;
+      }
+
+      ii=0;
+
       if (cfg->airsar->l_pol && !check_airsar(outFile, "_l")) {
 	asfPrintStatus("No L-band polarimetric AirSAR product.\n");
 	cfg->airsar->l_pol = 0;
@@ -1670,14 +1670,60 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	  !cfg->airsar->c_pol && !cfg->airsar->c_vv &&
 	  !cfg->airsar->l_vv)
 	asfPrintError("No airsar products to process!\n");
+
+      if (cfg->airsar->l_pol) {
+        suffixes[ii] = STRDUP("_l");
+        imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+        ++ii;
+      }
+      if (cfg->airsar->p_pol) {
+        suffixes[ii] = STRDUP("_p");
+        imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+        ++ii;
+      }
+      if (cfg->airsar->c_pol) {
+        suffixes[ii] = STRDUP("_c");
+        imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+        ++ii;
+      }
+      if (cfg->airsar->c_vv) {
+        suffixes[ii] = STRDUP("_c_vv");
+        imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+        ++ii;
+      }
+      if (cfg->airsar->l_vv) {
+        suffixes[ii] = STRDUP("_l_vv");
+        imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+        ++ii;
+      }
+
+      asfPrintStatus("Found %d AIRSAR file%s to process.\n", ii,
+                     ii==1 ? "" : "s");
     }
     else if (is_uavsar) {
+
       int ii, product_count;
-      char *type = check_data_type(inFile);
+      char *type = check_data_type(cfg->general->in_name);
       char **product = get_uavsar_products(cfg->import->uavsar, type, 
 					   &product_count);
+
+      // the +1 is necessary, since we have one extra slot for NULL
+      imported_files = MALLOC(sizeof(char*)*(product_count+1));
+      imported_files[product_count] = NULL;
+
+      // uavsar files don't need the suffix, export does some special
+      // translation for them on output
+      suffixes = MALLOC(sizeof(char*)*(product_count+1));
+      suffixes[product_count] = NULL;
+
       if (strcmp_case(type, "POLSAR") == 0) {
 	for (ii = 0; ii < product_count; ii++) {
+          suffixes[ii] = NULL;
+          imported_files[ii] = MALLOC(sizeof(char)*(strlen(outFile) + 64));
+          if (product_count > 1)
+            sprintf(imported_files[ii], "%s_%s", outFile, lc(product[ii]));
+          else
+            strcpy(imported_files[ii], outFile);
 	  if (strcmp_case(product[ii], "SLC") == 0)
 	    cfg->uavsar->slc = 1;
 	  if (strcmp_case(product[ii], "MLC") == 0)
@@ -1692,6 +1738,12 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       }
       else if (strcmp_case(type, "INSAR") == 0) {
 	for (ii = 0; ii < product_count; ii++) {
+          suffixes[ii] = NULL;
+          imported_files[ii] = MALLOC(sizeof(char)*(strlen(outFile) + 64));
+          if (product_count > 1)
+            sprintf(imported_files[ii], "%s_%s", outFile, lc(product[ii]));
+          else
+            strcpy(imported_files[ii], outFile);
 	  if (strcmp_case(product[ii], "AMP") == 0)
 	    cfg->uavsar->amp = 1;
 	  if (strcmp_case(product[ii], "INT") == 0)
@@ -1712,8 +1764,19 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	    cfg->uavsar->hgt_grd = 1;
 	}
       }
+      else {
+        asfPrintError("Impossible UAVSAR type: %s\n", type);
+      }
     }
-    
+    else {
+      // only one import file for all non-Airsar, non-uavsar data
+      imported_files = (char**)MALLOC(sizeof(char*)*2);
+      suffixes = (char**)MALLOC(sizeof(char*)*1);
+      imported_files[0] = STRDUP(outFile);
+      imported_files[1] = NULL;
+      suffixes[0] = NULL;
+    }
+
     if (!is_airsar && !is_uavsar) {
       // Make sure truecolor/falsecolor are only specified for optical data
       meta_parameters *meta = meta_read(outFile);
@@ -1721,7 +1784,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	asfPrintError("Terrain correction cannot be applied to optical images (...and\n"
 		      "orthorectification is not yet supported.)\n");
       }
-      if (!meta->optical && (truecolor || falsecolor)) {
+      if (!meta->optical && (cfg->export->truecolor || cfg->export->falsecolor)) {
 	asfPrintError("Cannot select True Color or False Color output "
 		      "with non-optical data\n");
       }
@@ -1743,14 +1806,39 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   else {
     // skipping import ==> "outFile" (what import should have produced)
     // is really just the original input file (already ASF Internal)
-    strcpy(outFile, cfg->general->in_name);
+    imported_files = MALLOC(sizeof(char*)*2);
+    suffixes = (char**)MALLOC(sizeof(char*)*1);
+    imported_files[0] = STRDUP(cfg->general->in_name);
+    imported_files[1] = NULL;
+    suffixes[0] = NULL;
   }
-  
+
+  FREE(outFile);
+
+  //returning a pointer to two string lists:
+  // (1) list of imported files
+  // (2) list of suffixes that need to be added to the final output file
+  char ***ret = MALLOC(sizeof(char**)*2);
+
+  ret[0] = imported_files;
+  ret[1] = suffixes;
+
+  return ret;
+}
+
+static char *do_processing(convert_config *cfg, const char *inFile_in, int saveDEM)
+{
+  char *inFile = MALLOC(sizeof(char)*(strlen(inFile_in) + 256));
+  strcpy(inFile, inFile_in);
+
+  char *outFile = MALLOC(sizeof(char)*(strlen(inFile) + 256));
+  char *tmpFile = MALLOC(sizeof(char)*(strlen(inFile) + 256));
+  strcpy(outFile, inFile);
+
   if (cfg->general->external) {
     
     update_status("Running external program...");
     
-    strcpy(inFile, outFile);
     sprintf(outFile, "%s/external", cfg->general->tmp_dir);
     
     char *quoted_inFile = MALLOC(sizeof(char)*(strlen(inFile)+8));
@@ -1799,15 +1887,20 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 		    "  %s\n", cmd, metaFile);
     
     // if external program created a log file, eat it into our own
-    if (has_log && tmpLogFile) {
+    if (has_log && tmpLogFile && fileExists(tmpLogFile)) {
       asfPrintToLogOnly("\nAttempting to import external log file.\n"
 			"File: %s\n---- Begin external log\n", tmpLogFile);
       FILE *lf = fopen(tmpLogFile, "r");
-      char line[1024];
-      while (fgets(line, 1023, lf) != NULL) {
-	asfPrintToLogOnly("%s", line);
+      if (lf) {
+        char line[1024];
+        while (fgets(line, 1023, lf) != NULL) {
+	  asfPrintToLogOnly("%s", line);
+        }
+        fclose(lf);
       }
-      fclose(lf);
+      else {
+        asfPrintToLogOnly("Could not open log file: %s\n", strerror(errno));
+      }
       asfPrintToLogOnly("---- End external log\n\n");
     }
     
@@ -1818,11 +1911,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   }
   
   if (cfg->general->sar_processing) {
-    if (is_airsar)
-      asfPrintError("Cannot perform SAR Processing on AirSAR data.\n");
-    else if (is_uavsar)
-      asfPrintError("Cannot perform SAR Processing on UAVSAR data.\n");
-    
     update_status("Running ArDop...");
     
     // Check whether the input file is a raw image.
@@ -1980,8 +2068,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       + cfg->polarimetry->k_means_wishart_ext;
     int doing_far = cfg->polarimetry->farcorr;
     
-    amp0_flag = cfg->general->terrain_correct;
-    
     if (doing_far) {
       update_status("Applying Faraday rotation correction ...");
       
@@ -1998,10 +2084,9 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       
       int keep_flag = cfg->general->intermediates;
       int single_angle_flag = (FARCORR_MEAN == cfg->polarimetry->farcorr);
-      radiometry_t rad = saved_radiometry;
       asfPrintStatus("\nApplying Faraday Rotation correction.\n");
       faraday_correct(inFile, outFile, cfg->polarimetry->farcorr_threshold,
-		      keep_flag, single_angle_flag, rad, 599);
+		      keep_flag, single_angle_flag, r_AMP, 599);
       asfPrintStatus("Done.\n\n");
       
       sprintf(tmpFile, "%s/import_farrot.img", cfg->general->tmp_dir);
@@ -2022,27 +2107,27 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       else {
 	sprintf(outFile, "%s", cfg->general->out_name);
       }
-      
+      /*
       if (is_airsar) {
 	char tmpIn[1024], tmpOut[1024];
 	if (cfg->airsar->c_pol) {
 	  sprintf(tmpIn, "%s_c", inFile);
 	  sprintf(tmpOut, "%s_c", outFile);
-	  calc_polarimetry(cfg, tmpIn, tmpOut, &amp0_flag);
+	  calc_polarimetry(cfg, tmpIn, tmpOut);
 	}
 	if (cfg->airsar->l_pol) {
 	  sprintf(tmpIn, "%s_l", inFile);
 	  sprintf(tmpOut, "%s_l", outFile);
-	  calc_polarimetry(cfg, tmpIn, tmpOut, &amp0_flag);
+	  calc_polarimetry(cfg, tmpIn, tmpOut);
 	}
 	if (cfg->airsar->p_pol) {
 	  sprintf(tmpIn, "%s_p", inFile);
 	  sprintf(tmpOut, "%s_p", outFile);
-	  calc_polarimetry(cfg, tmpIn, tmpOut, &amp0_flag);
+	  calc_polarimetry(cfg, tmpIn, tmpOut);
 	}
       }
-      else
-	calc_polarimetry(cfg, inFile, outFile, &amp0_flag);
+      else */
+	calc_polarimetry(cfg, inFile, outFile);
     }
   }
   
@@ -2116,15 +2201,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     sprintf(tmpFile, "%s/import_slant.img", cfg->general->tmp_dir);
     save_intermediate(cfg, "Imported Slant Range", tmpFile);
     free(dem_basename);
-    
-    
-    // If we added a "secret" AMP band to the beginning of the
-    // file, we can remove it now
-    if (amp0_flag) {
-      asfPrintStatus("\nRemoving added amplitude band...\n");
-      remove_band(outFile, 0, cfg->general->intermediates);
-    }
-    
+
     if (!cfg->general->export && !cfg->general->geocoding &&
 	!cfg->general->calibration) {
       // if this was the last step, get the terrain corrected output
@@ -2172,8 +2249,15 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
   }
 
-  datum_type_t datum = WGS84_DATUM;
-  
+  datum_type_t datum = str_to_datum(cfg->geocoding->datum);
+  if (datum == UNKNOWN_DATUM) {
+    asfPrintWarning("Unrecognized, missing, or unsupported datum found in configuration\n"
+                    "file (%s).  Defaulting to WGS-84 unless reading parameters from a\n"
+		    "projection definition (*.proj) file.  The proj file settings will\n"
+		    "override all else.\n", uc(cfg->geocoding->datum));
+    datum = WGS84_DATUM;
+  }
+
   if (cfg->general->geocoding) {
     update_status("Geocoding...");
     int force_flag = cfg->geocoding->force;
@@ -2194,34 +2278,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       }
     
     // Datum
-    if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
-      datum = WGS84_DATUM;
-    }
-    else if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0) {
-      datum = NAD27_DATUM;
-    }
-    else if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
-      datum = NAD83_DATUM;
-    }
-    else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0 ) {
-      datum = HUGHES_DATUM;
-    }
-    else if (strncmp_case(cfg->geocoding->datum, "ITRF97", 6) == 0) {
-      datum = ITRF97_DATUM;
-    }
-    else if (strncmp_case(cfg->geocoding->datum, "ED50", 4) == 0) {
-      datum = ED50_DATUM;
-    }
-    else if (strncmp_case(cfg->geocoding->datum, "SAD69", 5) == 0) {
-      datum = SAD69_DATUM;
-    }
-    else {
-      datum = WGS84_DATUM;
-      asfPrintWarning("Unrecognized, missing, or unsupported datum found in configuration\n"
-		      "file (%s).  Defaulting to WGS-84 unless reading parameters from a\n"
-		      "projection definition (*.proj) file.  The proj file settings will\n"
-		      "override all else.\n", uc(cfg->geocoding->datum));
-    }
     
     // Resampling method
     if (strncmp(uc(cfg->geocoding->resampling), "NEAREST_NEIGHBOR", 16) == 0) {
@@ -2246,6 +2302,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     
     // Pass in command line
+/*
     if (is_airsar) {
       // airsar -- geocode only what was asked for
       check_return(geocode_airsar(cfg, cfg->geocoding->projection,
@@ -2253,13 +2310,13 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 				  NULL, inFile, outFile, background_val),
 		   "geocoding airsar (asf_geocode)\n");
       
-    } else {
+    } else { */
       // normal geocoding
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
 					      force_flag, resample_method, average_height, datum,
 					      pixel_size, NULL, inFile, outFile, background_val),
 		   "geocoding data file (asf_geocode)\n");
-    }
+    //}
   }
   
   if (cfg->general->testdata) {
@@ -2280,322 +2337,17 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 		      cfg->testdata->width, cfg->testdata->height),
 		 "generating test data set (trim)\n");
   }
-  
+
+  char *save_before_export = STRDUP(outFile);
+
   if (cfg->general->export) {
-    
     // Set up filenames
-    sprintf(inFile, "%s", outFile);
-    sprintf(outFile, "%s", cfg->general->out_name);
-    
-    if (!is_airsar && !is_uavsar)
-      {
-        // Do normal export
-        update_status("Exporting... ");
-        do_export(cfg, inFile, outFile);
-      }
-    else if (is_airsar)
-      {
-        // AirSAR export -- must export a bunch of different stuff
-	
-        // do multi-band stuff first
-        asfPrintStatus("\n   Exporting AirSAR products...\n");
-        if (cfg->airsar->c_pol) {
-          char *in_tmp = appendToBasename(inFile, "_c");
-          char *out_tmp = appendToBasename(outFile, "_c");
-	  
-	  update_status("Exporting polarimetric C-band...");
-	  asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
-	  do_export(cfg, in_tmp, out_tmp);
-          free(in_tmp); free(out_tmp);
-        }
-        else {
-          asfPrintStatus("Skipping export of AirSAR C-band data.\n");
-        }
-        if (cfg->airsar->l_pol) {
-          char *in_tmp = appendToBasename(inFile, "_l");
-          char *out_tmp = appendToBasename(outFile, "_l");
-	  
-	  update_status("Exporting polarimetric L-band...");
-	  asfPrintStatus("Exporting L-band: %s -> %s\n", in_tmp, out_tmp);
-	  do_export(cfg, in_tmp, out_tmp);
-          free(in_tmp); free(out_tmp);
-        }
-        else {
-          asfPrintStatus("Skipping export of AirSAR L-band data.\n");
-        }
-	
-        if (cfg->airsar->p_pol) {
-          char *in_tmp = appendToBasename(inFile, "_p");
-          char *out_tmp = appendToBasename(outFile, "_p");
-	  
-	  update_status("Exporting polarimetric P-band...");
-	  asfPrintStatus("Exporting P-band: %s -> %s\n", in_tmp, out_tmp);
-	  do_export(cfg, in_tmp, out_tmp);
-          free(in_tmp); free(out_tmp);
-        }
-        else {
-          asfPrintStatus("Skipping export of AirSAR P-band data.\n");
-        }
-	
-        // those were two multi-band images -- the rest are single.
-        // so they must be export as greyscale, no matter what the user
-        // actually asked for... temporarily reset the convert_config
-        char *rgb = STRDUP(cfg->export->rgb);
-        strcpy(cfg->export->rgb, "");
-	
-        if (cfg->airsar->c_vv) {
-          char *in_tmp = appendToBasename(inFile, "_c_vv.img");
-          char *out_tmp = appendToBasename(outFile, "_c_vv");
-	  
-      if (fileExists(in_tmp)) {
-        update_status("Exporting C-band...");
-        asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
-        do_export(cfg, in_tmp, out_tmp);
-      }
-          free(in_tmp); free(out_tmp);
-	  
-          in_tmp = appendToBasename(inFile, "_c_dem.img");
-          out_tmp = appendToBasename(outFile, "_c_dem");
-	  
-	  if (fileExists(in_tmp)) {
-	    update_status("Exporting C-band DEM...");
-	    asfPrintStatus("Exporting C-band DEM: %s -> %s\n",
-			   in_tmp, out_tmp);
-	    do_export(cfg, in_tmp, out_tmp);
-	  }
-          free(in_tmp); free(out_tmp);
-	  
-          in_tmp = appendToBasename(inFile, "_c_coh.img");
-          out_tmp = appendToBasename(outFile, "_c_coh");
-	  
-	  if (fileExists(in_tmp)) {
-	    update_status("Exporting C-band coherence...");
-	    asfPrintStatus("Exporting C-band coherence: %s -> %s\n",
-			   in_tmp, out_tmp);
-	    do_export(cfg, in_tmp, out_tmp);
-	  }
-          free(in_tmp); free(out_tmp);
-        }
-        else {
-          asfPrintStatus("Skipping export of AirSAR C-band interferometric "
-                         "data.\n");
-        }
-	
-        if (cfg->airsar->l_vv) {
-          char *in_tmp = appendToBasename(inFile, "_l_vv.img");
-          char *out_tmp = appendToBasename(outFile, "_l_vv");
-	  
-	  if (fileExists(in_tmp)) {
-	    update_status("Exporting L-band...");
-	    asfPrintStatus("Exporting L-band: %s -> %s\n", in_tmp, out_tmp);
-	    do_export(cfg, in_tmp, out_tmp);
-	  }
-          free(in_tmp); free(out_tmp);
-	  
-          in_tmp = appendToBasename(inFile, "_l_dem.img");
-          out_tmp = appendToBasename(outFile, "_l_dem");
-	  
-	  if (fileExists(in_tmp)) {
-	    update_status("Exporting L-band DEM...");
-	    asfPrintStatus("Exporting L-band DEM: %s -> %s\n",
-			   in_tmp, out_tmp);
-	    do_export(cfg, in_tmp, out_tmp);
-	  }
-          free(in_tmp); free(out_tmp);
-	  
-          in_tmp = appendToBasename(inFile, "_l_coh.img");
-          out_tmp = appendToBasename(outFile, "_l_coh");
-	  
-	  if (fileExists(in_tmp)) {
-	    update_status("Exporting L-band coherence...");
-	    asfPrintStatus("Exporting L-band coherence: %s -> %s\n",
-			   in_tmp, out_tmp);
-	    do_export(cfg, in_tmp, out_tmp);
-	  }
-	  free(in_tmp); free(out_tmp);
-        }
-        else {
-          asfPrintStatus("Skipping export of AirSAR L-band interferometric "
-                         "data.\n");
-        }
-	
-        // now put back the user's rgb settings
-        strcpy(cfg->export->rgb, rgb);
-        free(rgb);
-	
-        // airsar metadata...
-        if (cfg->general->import) {
-          // export c/l_vv band's metadata as the "official" metadata
-          char *in_tmp=NULL;
-          if (cfg->airsar->c_vv) {
-            in_tmp = appendToBasename(inFile, "_c_vv");
-          } else if (cfg->airsar->l_vv) {
-            in_tmp = appendToBasename(inFile, "_l_vv");
-          } else {
-            // .meta should already be there, even if user did not request
-            // it, because asf_import imports everything anyway
-            // ==> however, it will be called "import_c_vv"
-            char *dir = get_dirname(inFile);
-            in_tmp = MALLOC(sizeof(char)*(strlen(dir)+32));
-	    
-            if (strlen(dir) > 0)
-              sprintf(in_tmp, "%simport_c_vv.meta", dir);
-            else
-              strcpy(in_tmp, "import_c_vv.meta");
-	    
-            if (!fileExists(in_tmp)) {
-              // try "import_l_vv", data may not have contained c-band
-              // interferometric data...
-              if (strlen(dir) > 0)
-                sprintf(in_tmp, "%simport_l_vv.meta", dir);
-              else
-                strcpy(in_tmp, "import_l_vv.meta");
-	      
-              if (!fileExists(in_tmp)) {
-                // this is bad - we can't produce an output metadata file!
-                asfPrintWarning("Failed to generate an output metadata file!\n");
-                free(in_tmp);
-                in_tmp = NULL;
-              }
-            }
-          }
-          if (in_tmp) {
-            copy_meta(cfg, in_tmp, outFile);
-            free(in_tmp);
-          }
-        }
-      }
-    else if (is_uavsar) {
-      asfPrintStatus("\n   Exporting UAVSAR products ...\n");
-      if (cfg->uavsar->slc) {
-	char *in_tmp = appendToBasename(inFile, "_slc");
-	update_status("Exporting slant range SLC image ...");
-	asfPrintStatus("Exporting slant range SLC image: %s -> %s_slc\n", 
-		       in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->mlc) {
-	char *in_tmp = appendToBasename(inFile, "_mlc");
-	update_status("Exporting slant range multilooked image ...");
-	asfPrintStatus("Exporting slant range multilooked image: %s -> "
-		       "%s_mlc\n", in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->dat) {
-	char *in_tmp = appendToBasename(inFile, "_dat");
-	char *out_tmp = appendToBasename(outFile, "_dat");
-	update_status("Exporting projected data ...");
-	asfPrintStatus("Exporting projected data: %s -> %s\n", 
-		       in_tmp, out_tmp);
-	do_export(cfg, in_tmp, out_tmp);
-	free(in_tmp);
-	free(out_tmp);
-      }
-      if (cfg->uavsar->grd && !cfg->general->polarimetry) {
-	char *in_tmp = appendToBasename(inFile, "_grd");
-	update_status("Exporting ground range projected ...");
-	asfPrintStatus("Exporting ground range projected: %s -> %s_grd\n", 
-		       in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->grd && cfg->general->polarimetry) {
-	update_status("Exporting ground range projected ...");
-	asfPrintStatus("Exporting ground range projected: %s -> %s\n", 
-		       inFile, outFile);
-	do_export(cfg, inFile, outFile);
-      }
-      if (cfg->uavsar->hgt) {
-	char *in_tmp = appendToBasename(inFile, "_hgt");
-	update_status("Exporting projected PolSAR DEM ...");
-	asfPrintStatus("Exporting projected PolSAR DEM: %s -> %s_hgt\n", 
-		       in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->amp) {
-	char *in_tmp = appendToBasename(inFile, "_amp");
-	update_status("Exporting slant range amplitude images ...");
-	asfPrintStatus("Exporting slant range amplitude images: %s -> "
-		       "%s_amp\n", in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->igram) {
-	char *in_tmp = appendToBasename(inFile, "_int");
-	update_status("Exporting slant range interferogram ...");
-	asfPrintStatus("Exporting slant range interferogram: %s -> %s_int\n", 
-		       in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->unw) {
-	char *in_tmp = appendToBasename(inFile, "_unw");
-	char *out_tmp = appendToBasename(outFile, "_unw");
-	update_status("Exporting ground range projected ...");
-	asfPrintStatus("Exporting groun range projected: %s -> %s_unw\n", 
-		       in_tmp, out_tmp);
-	do_export(cfg, in_tmp, out_tmp);
-	free(in_tmp);
-	free(out_tmp);
-      }
-      if (cfg->uavsar->cor) {
-	char *in_tmp = appendToBasename(inFile, "_cor");
-	update_status("Exporting slant range correlation ...");
-	asfPrintStatus("Exporting slant range correlation: %s -> %s_cor\n", 
-		       in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->amp_grd) {
-	char *in_tmp = appendToBasename(inFile, "_amp_grd");
-	update_status("Exporting projected amplitude images ...");
-	asfPrintStatus("Exporting projected amplitude images: %s -> "
-		       "%s_amp_grd\n", in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->int_grd) {
-	char *in_tmp = appendToBasename(inFile, "_int_grd");
-	update_status("Exporting ground range projected ...");
-	asfPrintStatus("Exporting groun range projected: %s -> %s\n", 
-		       in_tmp, outFile);
-	do_export(cfg, in_tmp, outFile);
-	free(in_tmp);
-      }
-      if (cfg->uavsar->unw_grd) {
-	char *in_tmp = appendToBasename(inFile, "_unw_grd");
-	char *out_tmp = appendToBasename(outFile, "_unw_grd");
-	update_status("Exporting projected unwrapped phase ...");
-	asfPrintStatus("Exporting projected unwrapped phase: %s -> %s\n", 
-		       in_tmp, out_tmp);
-	do_export(cfg, in_tmp, out_tmp);
-	free(in_tmp);
-	free(out_tmp);
-      }
-      if (cfg->uavsar->cor_grd) {
-	char *in_tmp = appendToBasename(inFile, "_cor_grd");
-	char *out_tmp = appendToBasename(outFile, "_cor_grd");
-	update_status("Exporting projected correlation image ...");
-	asfPrintStatus("Exporting projected correlation image: %s -> %s\n", 
-		       in_tmp, out_tmp);
-	do_export(cfg, in_tmp, out_tmp);
-	free(in_tmp);
-	free(out_tmp);
-      }
-      if (cfg->uavsar->hgt_grd) {
-	char *in_tmp = appendToBasename(inFile, "_hgt_grd");
-	char *out_tmp = appendToBasename(outFile, "_hgt_grd");
-	update_status("Exporting projected InSAR DEM ...");
-	asfPrintStatus("Exporting projected InSAR DEM: %s -> %s\n", 
-		       in_tmp, out_tmp);
-	do_export(cfg, in_tmp, out_tmp);
-	free(in_tmp);
-	free(out_tmp);
-      }
-    }
+    strcpy(inFile, outFile);
+    strcpy(outFile, cfg->general->out_name);
+
+    update_status("Exporting...");
+    asfPrintStatus("Exporting... (%s) -> (%s)\n",inFile,outFile);
+    do_export(cfg, inFile, outFile);
   }
   else {
     // result of geocoding is the final output file, since we are
@@ -2607,14 +2359,124 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     free(imgFile);
     free(metaFile);
   }
+
+  FREE(outFile);
+  FREE(tmpFile);
+
+  return save_before_export;
+}
+
+static int asf_convert_file(char *configFileName, int saveDEM)
+{
+  char inFile[512], outFile[512];
+
+  convert_config *cfg = read_convert_config(configFileName);
+  if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
+    set_status_file(cfg->general->status_file);
   
+  update_status("Processing...");
+  
+  // these are so we can tell how long processing took
+  ymd_date start_date;
+  hms_time start_time;
+  get_current_date(&start_date, &start_time);
+  
+  char tmp[64];
+  date_printTime(&start_time,0,':',tmp);
+  asfPrintStatus("Starting at: %s\n", tmp);
+  
+  create_and_set_tmp_dir(cfg->general->in_name, cfg->general->out_name,
+			 cfg->general->tmp_dir);
+  save_intermediate(cfg, "Temp Dir", cfg->general->tmp_dir);
+
+  if (!check_config(configFileName, cfg))
+    return 0;
+
+  //---------------------------------------------------------------
+  // Let's get to work
+  if (strlen(cfg->general->out_name) == 0) {
+    sprintf(cfg->general->out_name, "%s", cfg->general->in_name);
+  }
+  sprintf(outFile, "%s", cfg->general->out_name);
+
+  // global variable-- if set, tells meta_write to also dump .hdr (ENVI) files
+  dump_envi_header = cfg->general->dump_envi;
+
+  char *first_pre_export = NULL;
+
+  // Let's import some files!
+  update_status("Importing...");
+
+  // import returns two lists of strings
+  char ***lists = do_import(cfg);
+
+  // This is the list of files that we get after doing the import.
+  // Each of them will have to be processed
+  char **imported_files = lists[0];
+
+  // This is the list of suffixes that have to be added to the final
+  // output file (i.e., user gave "blah.tif" we must create "blah_suffix.tif"
+  char **suffixes = lists[1];
+
+  // Report/count what we got
+  int ii, num_imported_files = 0;
+  char **current = imported_files;
+  while (*current) {
+    asfPrintStatus("Imported file: %s\n", *current);
+    ++current;
+    ++num_imported_files;
+  }
+  asfPrintStatus("%d imported file%s to process.\n", num_imported_files,
+                 num_imported_files == 1 ? "" : "s");
+
+  // Now process them all
+  char *original_output_filename = STRDUP(cfg->general->out_name);
+  for (ii=0; ii<num_imported_files; ++ii) {
+    asfPrintStatus("Processing: %s\n", imported_files[ii]);
+
+    // set up the output filename with the right suffix so no files
+    // are overwritten by the different outputs
+    if (suffixes && suffixes[ii] && strlen(suffixes[ii]) > 0) {
+      asfPrintStatus("Output file suffix: %s\n", suffixes[ii]); 
+      
+      char *tmp = appendToBasename(original_output_filename, suffixes[ii]);
+      strcpy(cfg->general->out_name, tmp);
+      FREE(tmp);
+    }
+    else {
+      strcpy(cfg->general->out_name, original_output_filename);
+    } 
+
+    char *result = do_processing(cfg, imported_files[ii], saveDEM);
+    asfPrintStatus("Result: %s\n", result);
+
+    // save the output (pre-export, so it is ASF internal) if it is the
+    // first one, we will use it for the thumbnail etc
+    if (ii==0)
+      first_pre_export = result;
+    else
+      FREE(result);
+  }
+
+  FREE(imported_files);
+  FREE(suffixes);
+  FREE(lists);
+  FREE(original_output_filename);
+
+  if (num_imported_files > 1)
+    asfPrintStatus("All import files processed.\n");
+
+  strcpy(outFile, first_pre_export);
+
   //---------------------------------------------------------------------
   // At this point the processing of the SAR image is done.
   // We'll now do some of the extra stuff the user may have asked for.
+  strcpy(inFile, outFile);
   
   // Generate a small thumbnail if requested.
   if (cfg->general->thumbnail) {
     asfPrintStatus("Generating Thumbnail image...\n");
+    asfPrintStatus("Generating thumbnail from: %s\n", first_pre_export);
     
     output_format_t format = PNG;
     
@@ -2635,7 +2497,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     if (!cfg->general->export)
       sprintf(inFile, "%s", outFile);
     
-    if (is_airsar) {
+    /* if (is_airsar) {
       int found=FALSE;
       if (cfg->airsar->c_vv) {
 	char *tmp = appendToBasename(inFile, "_c_vv");
@@ -2686,7 +2548,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	strcpy(inFile, "");
 	asfPrintWarning("No thumbnail available.\n");
       }
-    }
+    } */
     
     if (strlen(inFile) > 0) {
       // Calculate pixel size for generating right size thumbnail
@@ -2734,7 +2596,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	  meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX)
 	is_polsarpro = 1;
       
-      int have_embedded_colormap = 0;
       if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
 	strcpy(lut_file, cfg->export->lut);
       }
@@ -2749,7 +2610,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	       meta->colormap->look_up_table && strlen(meta->colormap->look_up_table) > 0)
 	{
 	  strcpy(lut_file, meta->colormap->look_up_table);
-	  have_embedded_colormap = 0;
 	}
       if (strlen(cfg->export->lut) > 0 ||
 	  (is_polsarpro && strlen(lut_file) > 0))
@@ -2789,7 +2649,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	// is resized for generating a thumbnail, for polsarpro
 	meta_parameters *metaTmp = NULL;
 	int original_band_count = 0;
-	if (is_polsarpro && format == POLSARPRO) {
+	if (is_polsarpro && format == (int)POLSARPRO) {
 	  metaTmp = meta_read(inFile);
 	  original_band_count = metaTmp->general->band_count;
 	  if (original_band_count > 1) {
@@ -2825,8 +2685,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	  }
 	}
 	else { // no rgb bands selected
-	  int true_color = cfg->export->truecolor == 0 ? 0 : 1;
-	  int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
+	  int true_color = cfg->export->truecolor;
+	  int false_color = cfg->export->falsecolor;
 	  if (meta->optical && (true_color || false_color))
 	    {
 	      if (meta->optical && (true_color || false_color)) {
@@ -2989,6 +2849,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
   }
 
+  datum_type_t datum = str_to_datum(cfg->geocoding->datum);
+
   // Process the incidence angles file if requested
   if (cfg->general->terrain_correct &&
       cfg->terrain_correct &&
@@ -3148,6 +3010,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   asfPrintStatus("\nSuccessful completion!\n\n");
 
   free_convert_config(cfg);
+
+  FREE(first_pre_export);
 
   return TRUE;
 }
@@ -3705,8 +3569,8 @@ static scale_t get_scale(convert_config *cfg)
 
 static void do_export(convert_config *cfg, char *inFile, char *outFile)
 {
-  int true_color = cfg->export->truecolor == 0 ? 0 : 1;
-  int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
+  int true_color = cfg->export->truecolor;
+  int false_color = cfg->export->falsecolor;
   output_format_t format = get_format(cfg);
   scale_t scale = get_scale(cfg);
   int i, num_outputs, is_polsarpro = 0;
@@ -3727,7 +3591,6 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   if (meta->general->image_data_type >= POLARIMETRIC_SEGMENTATION &&
       meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX)
     is_polsarpro = TRUE;
-  int have_embedded_colormap = 0;
   if (cfg->export && cfg->export->lut && strlen(cfg->export->lut) > 0) {
     strcpy(lut_file, cfg->export->lut);
   }
@@ -3742,7 +3605,6 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
            meta->colormap->look_up_table && strlen(meta->colormap->look_up_table) > 0)
   {
     strcpy(lut_file, meta->colormap->look_up_table);
-    have_embedded_colormap = 0;
   }
   if (strlen(cfg->export->lut) > 0 ||
       ((is_polsarpro || is_insar) && strlen(lut_file) > 0))
