@@ -144,8 +144,9 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   //asfPrintStatus("Input file: %s\n", input_file);
   //asfPrintStatus("DEM: %s\n", dem_file);
   //asfPrintStatus("Output file: %s\n", output_file);
-  //asfPrintStatus("Layover/shadow mask: %s\n\n",
+  //asfPrintStatus("Layover/shadow mask: %s\n",
   //               maskFlag ? mask_file : "none");
+  //asfPrintStatus("Save incid angles: %s\n\n", save_incid_angles ? "Yes" : "No");
 
   char *inputImg = appendExt(input_file, ".img");
   char *inputMeta = appendExt(input_file, ".meta");

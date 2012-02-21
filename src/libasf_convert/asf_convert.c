@@ -1566,7 +1566,7 @@ char ***do_import(convert_config *cfg)
       imported_files[product_count] = NULL;
 
       // uavsar files don't need the suffix, export does some special
-      // translation for them on output
+      // translation for them on output, so we will set all of these to NULL
       suffixes = MALLOC(sizeof(char*)*(product_count+1));
       suffixes[product_count] = NULL;
 
@@ -1574,6 +1574,7 @@ char ***do_import(convert_config *cfg)
 	for (ii = 0; ii < product_count; ii++) {
           suffixes[ii] = NULL;
           imported_files[ii] = MALLOC(sizeof(char)*(strlen(outFile) + 64));
+          
           if (product_count > 1)
             sprintf(imported_files[ii], "%s_%s", outFile, lc(product[ii]));
           else
@@ -1595,10 +1596,12 @@ char ***do_import(convert_config *cfg)
 	for (ii = 0; ii < product_count; ii++) {
           suffixes[ii] = NULL;
           imported_files[ii] = MALLOC(sizeof(char)*(strlen(outFile) + 64));
+
           if (product_count > 1)
             sprintf(imported_files[ii], "%s_%s", outFile, lc(product[ii]));
           else
             strcpy(imported_files[ii], outFile);
+
 	  if (strcmp_case(product[ii], "AMP") == 0)
 	    cfg->uavsar->amp = 1;
 	  if (strcmp_case(product[ii], "INT") == 0)
@@ -1673,6 +1676,8 @@ char ***do_import(convert_config *cfg)
   //returning a pointer to two string lists:
   // (1) list of imported files
   // (2) list of suffixes that need to be added to the final output file
+  //these lists must be the same length, though the suffix entries can be NULL
+  //to indicate that that particular file doesn't have a suffix
   char ***ret = MALLOC(sizeof(char**)*2);
 
   ret[0] = imported_files;

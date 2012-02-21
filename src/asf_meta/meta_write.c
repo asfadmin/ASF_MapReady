@@ -958,11 +958,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double(fp,"a(0):",meta->calibration->asf->a0,
             "Calibration coefficient");
     meta_put_double(fp,"a(1):",meta->calibration->asf->a1,
-            "Calibration coefficient)");
+            "Calibration coefficient");
     meta_put_double(fp,"a(2):",meta->calibration->asf->a2,
             "Calibration coefficient");
     meta_put_int(fp,"sample_count:",meta->calibration->asf->sample_count,
-             "Number of samples in the image");
+             "Number of samples per line");
     for (ii=0; ii<256; ii++) {
       sprintf(str, "noise(%d):", ii);
       meta_put_double(fp,str,meta->calibration->asf->noise[ii],
