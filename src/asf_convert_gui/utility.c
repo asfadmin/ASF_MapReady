@@ -597,7 +597,8 @@ gboolean is_alos_mosaic(const char *infile)
 gboolean is_uavsar_polsar(const char *infile)
 {
   gboolean FOUND = FALSE;
-  if(!strcmp_case(findExt(infile), ".ann")) {
+  char *ext = findExt(infile);
+  if(ext != NULL && !strcmp_case(ext, ".ann")) {
     char *type = check_data_type(infile);
     if(!strcmp_case(type, "PolSAR"))
       FOUND = TRUE;
@@ -610,7 +611,8 @@ gboolean is_uavsar_polsar(const char *infile)
 gboolean is_uavsar_insar(const char *infile)
 {
   gboolean FOUND = FALSE;
-  if(!strcmp_case(findExt(infile), ".ann")) {
+  char *ext = findExt(infile);
+  if(ext != NULL && !strcmp_case(ext, ".ann")) {
     char *type = check_data_type(infile);
     if(!strcmp_case(type, "InSAR"))
       FOUND = TRUE;
