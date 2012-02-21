@@ -1465,7 +1465,7 @@ char ***do_import(convert_config *cfg)
 
     if (is_airsar) {
 
-      int ii,max=5;
+      int ii,max=10;
       imported_files = (char**)MALLOC(sizeof(char*)*max);
       suffixes = (char**)MALLOC(sizeof(char*)*max);
       for (ii=0; ii<max; ++ii) {
@@ -1524,11 +1524,31 @@ char ***do_import(convert_config *cfg)
         suffixes[ii] = STRDUP("_c_vv");
         imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
         ++ii;
+        if (check_airsar(outFile, "_c_dem")) {
+          suffixes[ii] = STRDUP("_c_dem");
+          imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+          ++ii;
+        }
+        if (check_airsar(outFile, "_c_coh")) {
+          suffixes[ii] = STRDUP("_c_coh");
+          imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+          ++ii;
+        }
       }
       if (cfg->airsar->l_vv) {
         suffixes[ii] = STRDUP("_l_vv");
         imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
         ++ii;
+        if (check_airsar(outFile, "_l_dem")) {
+          suffixes[ii] = STRDUP("_l_dem");
+          imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+          ++ii;
+        }
+        if (check_airsar(outFile, "_l_coh")) {
+          suffixes[ii] = STRDUP("_l_coh");
+          imported_files[ii] = appendToBasename(outFile, suffixes[ii]);
+          ++ii;
+        }
       }
 
       asfPrintStatus("Found %d AIRSAR file%s to process.\n", ii,
