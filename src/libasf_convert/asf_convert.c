@@ -49,6 +49,14 @@ static char *get_scheme(char *line, int col, char separator)
   return ret;
 }
 
+static int imgFileExists(const char *basename)
+{
+   char *imgFile = appendExt(basename, ".img");
+   int ret = fileExists(imgFile);
+   FREE(imgFile);
+   return ret;
+}
+
 static char *get_out_name(char *inFile, char *project, radiometry_t radiometry,
 			  char *naming_scheme)
 {
@@ -814,180 +822,6 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     return STRDUP(geocoded);
 }
 
-static int check_peg_point(const char *inFile)
-{
-  meta_parameters *meta;
-
-  meta = meta_read(inFile);
-  if (FLOAT_COMPARE(meta->airsar->lat_peg_point, 0.0) &&
-      FLOAT_COMPARE(meta->airsar->lon_peg_point, 0.0) &&
-      FLOAT_COMPARE(meta->airsar->head_peg_point, 0.0))
-    asfPrintError("No valid peg point information available.\n"
-		  "Can't geocode this AirSAR data.\n");
-  meta_free(meta);
-
-  return TRUE;
-}
-
-static int geocode_airsar(convert_config *cfg, const char *projection_file,
-                          int force_flag, resample_method_t resample_method,
-                          double average_height, datum_type_t datum, double pixel_size,
-                          char *band_id, char *inFile, char *outFile,
-                          float background_val)
-{
-    asfPrintStatus("\n   Geocoding AirSAR products...\n");
-    if (cfg->airsar->c_vv)
-    {
-        char *in_tmp = appendToBasename(inFile, "_c_dem.img");
-        char *out_tmp = appendToBasename(outFile, "_c_dem");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding C-band DEM...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-		   force_flag, resample_method, average_height, datum,
-		   pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding dem (asf_geocode)\n");
-    }
-        free(in_tmp); free(out_tmp);
-
-        in_tmp = appendToBasename(inFile, "_c_coh.img");
-        out_tmp = appendToBasename(outFile, "_c_coh");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding C-band coherence...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                   force_flag, resample_method, average_height, datum,
-                   pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding coherence (asf_geocode)\n");
-    }
-    free(in_tmp); free(out_tmp);
-
-        in_tmp = appendToBasename(inFile, "_c_vv.img");
-        out_tmp = appendToBasename(outFile, "_c_vv");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding C-band data...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-		   force_flag, resample_method, average_height, datum,
-                   pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding C-band (asf_geocode)\n");
-    }
-    free(in_tmp); free(out_tmp);
-    }
-    else {
-        asfPrintStatus("Skipping geocoding of AirSAR C-band "
-                       "interferometric data.\n");
-    }
-
-    if (cfg->airsar->l_vv)
-    {
-        char *in_tmp = appendToBasename(inFile, "_l_dem.img");
-        char *out_tmp = appendToBasename(outFile, "_l_dem");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding L-band DEM...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                   force_flag, resample_method, average_height, datum,
-                   pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding dem (asf_geocode)\n");
-    }
-    free(in_tmp); free(out_tmp);
-
-        in_tmp = appendToBasename(inFile, "_l_coh.img");
-        out_tmp = appendToBasename(outFile, "_l_coh");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding L-band coherence...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                  force_flag, resample_method, average_height, datum,
-                  pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding coherence (asf_geocode)\n");
-    }
-    free(in_tmp); free(out_tmp);
-
-        in_tmp = appendToBasename(inFile, "_l_vv.img");
-        out_tmp = appendToBasename(outFile, "_l_vv");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding L-band data...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-		   force_flag, resample_method, average_height, datum,
-                   pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding C-band (asf_geocode)\n");
-    }
-    free(in_tmp); free(out_tmp);
-    }
-    else {
-        asfPrintStatus("Skipping geocoding of AirSAR L-band "
-                       "interferometric data.\n");
-    }
-
-    if (cfg->airsar->p_pol) {
-        char *in_tmp = appendToBasename(inFile, "_p.img");
-        char *out_tmp = appendToBasename(outFile, "_p");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding Polarimetric P-band...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-		   force_flag, resample_method, average_height, datum,
-		   pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding P-band (asf_geocode)\n");
-    }
-    free(in_tmp); free(out_tmp);
-    }
-    else {
-        asfPrintStatus("Skipping geocoding of AirSAR Polarimetric "
-                       "P-band image.\n");
-    }
-
-    if (cfg->airsar->l_pol) {
-        char *in_tmp = appendToBasename(inFile, "_l.img");
-        char *out_tmp = appendToBasename(outFile, "_l");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding Polarimetric L-band...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                   force_flag, resample_method, average_height, datum,
-                   pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding L-band (asf_geocode)\n");
-    }
-    free(in_tmp); free(out_tmp);
-    }
-    else {
-        asfPrintStatus("Skipping geocoding of AirSAR Polarimetric "
-                       "L-band image.\n");
-    }
-
-    if (cfg->airsar->c_pol) {
-        char *in_tmp = appendToBasename(inFile, "_c.img");
-        char *out_tmp = appendToBasename(outFile, "_c");
-
-    if (fileExists(in_tmp) && check_peg_point(in_tmp)) {
-      update_status("Geocoding Polarimetric C-band...");
-      asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                   force_flag, resample_method, average_height, datum,
-                   pixel_size, NULL, in_tmp, out_tmp, background_val),
-               "geocoding C-band (asf_geocode)\n");
-    }
-    free(in_tmp); free(out_tmp);
-    }
-    else {
-        asfPrintStatus("Skipping geocoding of AirSAR Polarimetric "
-                       "C-band image.\n");
-    }
-
-    return 0; // success
-}
-
 static int check_airsar(char *outFile, char *suffix)
 {
   char *base = appendToBasename(outFile, suffix);
@@ -1549,9 +1383,6 @@ char ***do_import(convert_config *cfg)
       sprintf(outFile, "%s", cfg->general->out_name);
     }
 
-    int is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6) == 0;
-    int is_uavsar = strncmp_case(cfg->import->format, "UAVSAR", 6) == 0;
-
     // Input Format Type
     char *polsarpro_colormap = NULL;
     //printf("\n\nINPUT FORMAT IS: %s\n\n", uc(cfg->import->format));
@@ -1628,10 +1459,9 @@ char ***do_import(convert_config *cfg)
 			    outFile),
 		 "ingesting data file (asf_import)\n");
     FREE(polsarpro_colormap);
-    
-    // For AirSAR data, let's see what we actually got.
-    // Not all products are always present - update settings to
-    // disable processing of products not present
+
+    int is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6) == 0;
+    int is_uavsar = strncmp_case(cfg->import->format, "UAVSAR", 6) == 0;
 
     if (is_airsar) {
 
@@ -1644,6 +1474,10 @@ char ***do_import(convert_config *cfg)
       }
 
       ii=0;
+
+      // For AirSAR data, let's see what we actually got.
+      // Not all products are always present - update settings to
+      // disable processing of products not present
 
       if (cfg->airsar->l_pol && !check_airsar(outFile, "_l")) {
 	asfPrintStatus("No L-band polarimetric AirSAR product.\n");
@@ -1724,6 +1558,7 @@ char ***do_import(convert_config *cfg)
             sprintf(imported_files[ii], "%s_%s", outFile, lc(product[ii]));
           else
             strcpy(imported_files[ii], outFile);
+
 	  if (strcmp_case(product[ii], "SLC") == 0)
 	    cfg->uavsar->slc = 1;
 	  if (strcmp_case(product[ii], "MLC") == 0)
@@ -2107,27 +1942,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       else {
 	sprintf(outFile, "%s", cfg->general->out_name);
       }
-      /*
-      if (is_airsar) {
-	char tmpIn[1024], tmpOut[1024];
-	if (cfg->airsar->c_pol) {
-	  sprintf(tmpIn, "%s_c", inFile);
-	  sprintf(tmpOut, "%s_c", outFile);
-	  calc_polarimetry(cfg, tmpIn, tmpOut);
-	}
-	if (cfg->airsar->l_pol) {
-	  sprintf(tmpIn, "%s_l", inFile);
-	  sprintf(tmpOut, "%s_l", outFile);
-	  calc_polarimetry(cfg, tmpIn, tmpOut);
-	}
-	if (cfg->airsar->p_pol) {
-	  sprintf(tmpIn, "%s_p", inFile);
-	  sprintf(tmpOut, "%s_p", outFile);
-	  calc_polarimetry(cfg, tmpIn, tmpOut);
-	}
-      }
-      else */
-	calc_polarimetry(cfg, inFile, outFile);
+
+      calc_polarimetry(cfg, inFile, outFile);
     }
   }
   
@@ -2302,21 +2118,10 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     }
     
     // Pass in command line
-/*
-    if (is_airsar) {
-      // airsar -- geocode only what was asked for
-      check_return(geocode_airsar(cfg, cfg->geocoding->projection,
-				  force_flag, resample_method, average_height, datum, pixel_size,
-				  NULL, inFile, outFile, background_val),
-		   "geocoding airsar (asf_geocode)\n");
-      
-    } else { */
-      // normal geocoding
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-					      force_flag, resample_method, average_height, datum,
-					      pixel_size, NULL, inFile, outFile, background_val),
+    check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                                            force_flag, resample_method, average_height, datum,
+					    pixel_size, NULL, inFile, outFile, background_val),
 		   "geocoding data file (asf_geocode)\n");
-    //}
   }
   
   if (cfg->general->testdata) {
@@ -2419,7 +2224,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   char **suffixes = lists[1];
 
   // Report/count what we got
-  int ii, num_imported_files = 0;
+  int ii, num_imported_files = 0, num_processed_files = 0;
   char **current = imported_files;
   while (*current) {
     asfPrintStatus("Imported file: %s\n", *current);
@@ -2433,6 +2238,14 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   char *original_output_filename = STRDUP(cfg->general->out_name);
   for (ii=0; ii<num_imported_files; ++ii) {
     asfPrintStatus("Processing: %s\n", imported_files[ii]);
+
+    // If the file does not exist, just skip it, do not error out.
+    // sometimes certain types are not supported
+    if (!imgFileExists(imported_files[ii])) {
+      asfPrintStatus("Does not exist: %s\n", imported_files[ii]);
+      asfPrintStatus("Skipping.\n");
+      continue;
+    }
 
     // set up the output filename with the right suffix so no files
     // are overwritten by the different outputs
@@ -2452,19 +2265,29 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 
     // save the output (pre-export, so it is ASF internal) if it is the
     // first one, we will use it for the thumbnail etc
-    if (ii==0)
+    if (!first_pre_export)
       first_pre_export = result;
     else
       FREE(result);
+
+    ++num_processed_files;
   }
+
+  if (!first_pre_export)
+    asfPrintError("No files successfully processed.\n");
 
   FREE(imported_files);
   FREE(suffixes);
   FREE(lists);
   FREE(original_output_filename);
 
-  if (num_imported_files > 1)
-    asfPrintStatus("All import files processed.\n");
+  if (num_imported_files > 1) {
+    asfPrintStatus("%d/%d imported files were processed.\n",
+                   num_processed_files, num_imported_files);
+
+    if (num_imported_files == num_processed_files)
+      asfPrintStatus("All import files processed.\n");
+  }
 
   strcpy(outFile, first_pre_export);
 
@@ -2496,59 +2319,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     
     if (!cfg->general->export)
       sprintf(inFile, "%s", outFile);
-    
-    /* if (is_airsar) {
-      int found=FALSE;
-      if (cfg->airsar->c_vv) {
-	char *tmp = appendToBasename(inFile, "_c_vv");
-	char *tmp_img = appendExt(tmp, ".img");
-	if (fileExists(tmp_img)) {
-	  found=TRUE;
-	  strcpy(inFile, tmp);
-	}
-	free(tmp); free(tmp_img);
-      }
-      if (!found && cfg->airsar->l_vv) {
-	char *tmp = appendToBasename(inFile, "_l_vv");
-	char *tmp_img = appendExt(tmp, ".img");
-	if (fileExists(tmp_img)) {
-	  found=TRUE;
-	  strcpy(inFile, tmp);
-	}
-	free(tmp); free(tmp_img);
-      }
-      if (!found && cfg->airsar->c_pol) {
-	char *tmp = appendToBasename(inFile, "_c");
-	char *tmp_img = appendExt(tmp, ".img");
-	if (fileExists(tmp_img)) {
-	  found=TRUE;
-	  strcpy(inFile, tmp);
-	}
-	free(tmp); free(tmp_img);
-      }
-      if (!found && cfg->airsar->l_pol) {
-	char *tmp = appendToBasename(inFile, "_l");
-	char *tmp_img = appendExt(tmp, ".img");
-	if (fileExists(tmp_img)) {
-	  found=TRUE;
-	  strcpy(inFile, tmp);
-	}
-	free(tmp); free(tmp_img);
-      }
-      if (!found && cfg->airsar->p_pol) {
-	char *tmp = appendToBasename(inFile, "_p");
-	char *tmp_img = appendExt(tmp, ".img");
-	if (fileExists(tmp_img)) {
-	  found=TRUE;
-	  strcpy(inFile, tmp);
-	}
-	free(tmp); free(tmp_img);
-      }
-      if (!found) {
-	strcpy(inFile, "");
-	asfPrintWarning("No thumbnail available.\n");
-      }
-    } */
     
     if (strlen(inFile) > 0) {
       // Calculate pixel size for generating right size thumbnail
