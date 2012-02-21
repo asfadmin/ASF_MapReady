@@ -258,10 +258,10 @@ SIGNAL_CALLBACK void browse_cancel_clicked()
 SIGNAL_CALLBACK void browse_ok_clicked()
 {
   const char *folder =
-      gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(browse_widget));
+      gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(browse_widget));
   if (folder) {
     GtkWidget *entry_new_output_directory =
-        get_widget_checked("entry_new_output_directory");      
+        get_widget_checked("entry_new_output_directory");
     gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), folder);
   }
   gtk_widget_hide(browse_widget);
@@ -334,8 +334,10 @@ on_browse_output_directory_button_clicked(GtkWidget *widget)
         get_widget_checked("entry_new_output_directory");
     const char *dir = gtk_entry_get_text(
         GTK_ENTRY(entry_new_output_directory));
-    gtk_file_chooser_set_current_folder(
-        GTK_FILE_CHOOSER(browse_widget), dir);
+    if (strlen(dir) > 0) {
+        gtk_file_chooser_set_current_folder(
+            GTK_FILE_CHOOSER(browse_widget), dir);
+    }
 
     gtk_widget_show(browse_widget);
 #endif
