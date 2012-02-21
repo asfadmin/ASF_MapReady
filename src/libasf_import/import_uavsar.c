@@ -77,13 +77,17 @@ int parse_annotation_line(char *line, char *key, char *value)
   b++;
   while(isspace(*b) && *b != '\0') b++; // Move forward past the whitespace to the beginning of the value
 
-  if(*b == '\0') return 0; // Unexpected end-of-line
+  if(*b == '\0') {
+    // This key has no value
+    vs=ve=b;  
+  }
+  else {
+    vs = b++;
+    while(*b != ';' && *b != '\0') ++b; // Move forward to the end of the line or the beginning of a comment
 
-  vs = b++;
-  while(*b != ';' && *b != '\0') ++b; // Move forward to the end of the line or the beginning of a comment
-
-  ve = b - 1;
-  while(isspace(*ve)) --ve; // Back up until we hit the end of the key
+    ve = b - 1;
+    while(isspace(*ve)) --ve; // Back up until we hit the end of the key
+  }
 
   strncpy(key, ks, ke - ks + 1);
   key[ke-ks+1] = '\0';
