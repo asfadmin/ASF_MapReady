@@ -278,6 +278,7 @@ static void load_file_banded_imp(const char *file, const char *band,
     if (curr->filename) {
       old_file = STRDUP(curr->filename);
       free(curr->filename);
+      curr->filename = NULL;
     }
 
     reset_globals(reset_location);
@@ -413,8 +414,17 @@ static void load_file_banded_imp(const char *file, const char *band,
       FREE(old_file);
     }
     else {
-      FREE(curr->filename);
-      curr->filename = old_file;
+      // file failed to load, re-load the old one
+
+      // this is to prevent trying to re-load the old file again & again,
+      // if for some reason that fails
+      if (strcmp(curr->filename, old_file) == 0) {
+          // if this does happen, just quit
+          asfPrintError("Failed to load %s.\n", curr->filename);
+      }
+
+      asfPrintStatus("Failed to load %s.  Re-loading %s.\n", curr->filename, old_file);
+      load_file_banded_imp(old_file, band, reset_location, multilook);
 
       if (reset_location) {
         center_samp = (double)(curr->ns)/2.;
