@@ -2350,7 +2350,7 @@ export_band_image (const char *metadata_file_name,
 	      strcmp_case(md->general->sensor_name, "POLSAR") == 0 &&
 	      strcmp_case(md->general->mode, "HGT") == 0) {
 	    char *tmp = stripExt(output_file_name);
-            sprintf(out_file, "%s_hgt.tif", tmp);
+            sprintf(out_file, "%s_hgt", tmp);
             FREE(tmp);
 	  }
 	}
