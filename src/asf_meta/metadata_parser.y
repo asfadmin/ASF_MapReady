@@ -366,7 +366,7 @@ void fill_structure_field(char *field_name, void *valp)
       { strcpy(MGENERAL->processor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "data_type") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "BYTE") )
-        MGENERAL->data_type = BYTE;
+        MGENERAL->data_type = ASF_BYTE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER16") )
         MGENERAL->data_type = INTEGER16;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER32") )
