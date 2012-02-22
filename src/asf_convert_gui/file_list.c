@@ -6,6 +6,8 @@
 #include "ceos_thumbnail.h"
 #include "asf.h"
 #include "get_ceos_names.h"
+#include "asf_import.h"
+#include "uavsar.h"
 
 int COL_INPUT_FILE;
 int COL_INPUT_FILE_SHORT;
@@ -51,6 +53,7 @@ int COMP_COL_COHERENCE;
 int COMP_COL_SLAVE_METADATA;
 int COMP_COL_BASELINE;
 int COMP_COL_INCID_ANGLES_FILE;
+int COMP_COL_UAVSAR_TYPE;
 
 int g_show_thumbnail_columns = TRUE;
 
@@ -61,7 +64,8 @@ gboolean move_to_files_list(const gchar *data_file,
 			    const gchar *interferogram_file,
 			    const gchar *coherence_file,
 			    const gchar *slave_metadata_file,
-			    const gchar *baseline_file);
+			    const gchar *baseline_file,
+          const gchar *uavsar_type);
 
 /* Returns true if any of the input files in the input files list */
 /* are the type that need an ancillary file, i.e. gamma and polsarpro */
@@ -510,6 +514,72 @@ static char *build_band_list(const char *file, const gchar * uavsar_type)
 
         return ret;
     }
+    else if(uavsar_type) {
+      if(!strcmp(uavsar_type, "INT_GRD") || !strcmp(uavsar_type, "INT"))
+        return STRDUP("INTERFEROGRAM_AMP,INTERFEROGRAM_PHASE");
+      else if(!strcmp(uavsar_type, "COR_GRD") || !strcmp(uavsar_type, "COR"))
+        return STRDUP("COHERENCE");
+      else if(!strcmp(uavsar_type, "AMP_GRD") || !strcmp(uavsar_type, "AMP"))
+        return STRDUP("AMP1,AMP2");
+      else if(!strcmp(uavsar_type, "HGT_GRD") || !strcmp(uavsar_type, "HGT"))
+        return STRDUP("HEIGHT");
+      else if(!strcmp(uavsar_type, "UNW_GRD") || !strcmp(uavsar_type, "UNW"))
+        return STRDUP("UNWRAPPED_PHASE");
+      else if(!strcmp(uavsar_type, "GRD")) {
+        char **dataName, **element, *cBands;
+        int *dataType, nBands, i;
+        GString *bands = g_string_new("");
+        get_uavsar_file_names(file, POLSAR_GRD, &dataName, &element, &dataType, &nBands);
+        for(i = 0; i < nBands; i++) {
+          if(!strcmp(element[i], "C11"))
+            g_string_append(bands, "HHHH,");
+          else if(!strcmp(element[i], "C22"))
+            g_string_append(bands, "HVHV,");
+          else if(!strcmp(element[i], "C33"))
+            g_string_append(bands, "VVVV,");
+          else if(!strcmp(element[i], "C12"))
+            g_string_append(bands, "HHHV,");
+          else if(!strcmp(element[i], "C13"))
+            g_string_append(bands, "HHVV,");
+          else if(!strcmp(element[i], "C23"))
+            g_string_append(bands, "HVVV,");
+        }
+        FREE(dataName);
+        FREE(element);
+        g_string_erase(bands, bands->len, 1); //Remove trailing comma
+        cBands = bands->str;
+        g_string_free(bands, FALSE);
+        return cBands;
+      }
+      else if(!strcmp(uavsar_type, "MLC")) {
+        char **dataName, **element, *cBands;
+        int *dataType, nBands, i;
+        GString *bands = g_string_new("");
+        get_uavsar_file_names(file, POLSAR_MLC, &dataName, &element, &dataType, &nBands);
+        for(i = 0; i < nBands; i++) {
+          if(!strcmp(element[i], "C11"))
+            g_string_append(bands, "HHHH,");
+          else if(!strcmp(element[i], "C22"))
+            g_string_append(bands, "HVHV,");
+          else if(!strcmp(element[i], "C33"))
+            g_string_append(bands, "VVVV,");
+          else if(!strcmp(element[i], "C12"))
+            g_string_append(bands, "HHHV,");
+          else if(!strcmp(element[i], "C13"))
+            g_string_append(bands, "HHVV,");
+          else if(!strcmp(element[i], "C23"))
+            g_string_append(bands, "HVVV,");
+        }
+        FREE(dataName);
+        FREE(element);
+        g_string_erase(bands, bands->len, 1); //Remove trailing comma
+        cBands = bands->str;
+        g_string_free(bands, FALSE);
+        return cBands;
+      }
+      else
+        return STRDUP("-");
+    }
     else
     {
         return STRDUP("-");
@@ -561,6 +631,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     gchar *coherence_file;
     gchar *slave_metadata_file;
     gchar *baseline_file;
+    gchar *uavsar_type;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
     gtk_tree_model_get(model, iter,
@@ -575,6 +646,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 		       COL_COHERENCE, &coherence_file,
 		       COL_SLAVE_METADATA, &slave_metadata_file,
 		       COL_BASELINE, &baseline_file,
+           COL_UAVSAR_TYPE, &uavsar_type,
                        -1);
 
     // pull out the useful intermediates
@@ -649,11 +721,12 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_CLASS_MAP_FILE, class_map,
                        COMP_COL_METADATA_FILE, meta_file,
                        COMP_COL_POLSARPRO_INFO, polsarpro_aux_info,
-		       COMP_COL_INTERFEROGRAM, interferogram_file,
-		       COMP_COL_COHERENCE, coherence_file,
-		       COMP_COL_SLAVE_METADATA, slave_metadata_file,
-		       COMP_COL_BASELINE, baseline_file,
-           COMP_COL_INCID_ANGLES_FILE, incid_angles,
+                       COMP_COL_INTERFEROGRAM, interferogram_file,
+                       COMP_COL_COHERENCE, coherence_file,
+                       COMP_COL_SLAVE_METADATA, slave_metadata_file,
+                       COMP_COL_BASELINE, baseline_file,
+                       COMP_COL_INCID_ANGLES_FILE, incid_angles,
+                       COMP_COL_UAVSAR_TYPE, uavsar_type,
                        -1);
 
     // remove from the input list
@@ -698,6 +771,7 @@ move_from_completed_files_list(GtkTreeIter *iter)
     gchar *coherence_file;
     gchar *slave_metadata_file;
     gchar *baseline_file;
+    gchar *uavsar_type;
 
     GtkTreeModel *model = GTK_TREE_MODEL(completed_list_store);
     gtk_tree_model_get(model, iter,
@@ -706,10 +780,11 @@ move_from_completed_files_list(GtkTreeIter *iter)
                        COMP_COL_ORIGINAL_METADATA_FILE, &meta_file,
                        COMP_COL_TMP_DIR, &tmp_dir,
                        COMP_COL_POLSARPRO_INFO, &polsarpro_aux_info,
-		       COMP_COL_INTERFEROGRAM, &interferogram_file,
-		       COMP_COL_COHERENCE, &coherence_file,
-		       COMP_COL_SLAVE_METADATA, &slave_metadata_file,
-		       COMP_COL_BASELINE, &baseline_file,
+                       COMP_COL_INTERFEROGRAM, &interferogram_file,
+                       COMP_COL_COHERENCE, &coherence_file,
+                       COMP_COL_SLAVE_METADATA, &slave_metadata_file,
+                       COMP_COL_BASELINE, &baseline_file,
+                       COMP_COL_UAVSAR_TYPE, &uavsar_type,
                        -1);
 
     if (get_checked("rb_keep_temp") && tmp_dir && strlen(tmp_dir) > 0) {
@@ -719,7 +794,7 @@ move_from_completed_files_list(GtkTreeIter *iter)
 
     move_to_files_list(input_file, ancillary_file, meta_file,
                        polsarpro_aux_info, interferogram_file, coherence_file,
-		       slave_metadata_file, baseline_file);
+		       slave_metadata_file, baseline_file, uavsar_type);
 
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
 
@@ -802,10 +877,11 @@ gboolean move_to_files_list(const gchar *data_file,
                             const gchar *ancillary_file,
                             const gchar *meta_file,
                             const gchar *polsarpro_aux_info,
-			    const gchar *interferogram_file,
-			    const gchar *coherence_file,
-			    const gchar *slave_metadata_file,
-			    const gchar *baseline_file)
+                            const gchar *interferogram_file,
+                            const gchar *coherence_file,
+                            const gchar *slave_metadata_file,
+                            const gchar *baseline_file,
+                            const gchar *uavsar_type)
 {
   GtkTreeIter iter;
   gboolean ret;
@@ -844,6 +920,11 @@ gboolean move_to_files_list(const gchar *data_file,
     ret = add_to_files_list_iter(data_file, ancillary_file, NULL,
                                  polsarpro_aux_info, NULL, NULL, NULL, NULL, NULL,
 				 &iter);
+  }
+  else if (data_file && strlen(data_file) &&
+           uavsar_type && strlen(uavsar_type)) {
+    ret = add_to_files_list_iter(data_file, NULL, NULL, NULL,
+                                 uavsar_type, NULL, NULL, NULL, NULL, &iter);
   }
   else if (data_file && strlen(data_file)) {
     ret = add_to_files_list_iter(data_file, NULL, NULL,
@@ -1362,7 +1443,7 @@ setup_files_list()
     COL_BASELINE = 17;
     COL_UAVSAR_TYPE = 18;
 
-    completed_list_store = gtk_list_store_new(24,
+    completed_list_store = gtk_list_store_new(25,
                                               G_TYPE_STRING,    // Data file-Full path (usually hid.)
                                               G_TYPE_STRING,    // Data file - No path
                                               G_TYPE_STRING,    // Ancillary file-Full path (hid.)
@@ -1386,7 +1467,8 @@ setup_files_list()
 					      G_TYPE_STRING,    // Coherence (hidden)
 					      G_TYPE_STRING,    // Slave metadata (hidden)
 					      G_TYPE_STRING,    // Baseline (hidden)
-                G_TYPE_STRING);   // Incidence Angles File (hidden)
+                G_TYPE_STRING,    // Incidence Angles File (hidden)
+                G_TYPE_STRING);   // UAVSAR Type (hidden)
 
     COMP_COL_INPUT_FILE = 0;
     COMP_COL_INPUT_FILE_SHORT = 1;
@@ -1412,6 +1494,7 @@ setup_files_list()
     COMP_COL_SLAVE_METADATA = 21;
     COMP_COL_BASELINE = 22;
     COMP_COL_INCID_ANGLES_FILE = 23;
+    COMP_COL_UAVSAR_TYPE = 24;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
@@ -1929,6 +2012,16 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_INCID_ANGLES_FILE);
+
+    /* Next Column: Incidence Angles (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "UAVSAR Type");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_UAVSAR_TYPE);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list),
         GTK_TREE_MODEL(completed_list_store));

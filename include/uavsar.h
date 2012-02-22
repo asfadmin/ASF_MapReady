@@ -148,5 +148,8 @@ uavsar_insar *read_insar_polsar_params(const char *dataFile,
 				       uavsar_type_t type);
 char *check_data_type(const char *inFileName);
 char **get_uavsar_products(const char *data_type, char *type, int *num_product);
+void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
+                           char ***pDataName, char ***pElement,
+                           int **pDataType, int *nBands);
 
 #endif
