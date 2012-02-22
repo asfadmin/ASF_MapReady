@@ -299,7 +299,7 @@ main(int argc, char **argv)
                 */
             }
         }
-        else if (ii == 0) {
+        if (ii == 0) {
             set_title(band_specified, band);
         }
 
