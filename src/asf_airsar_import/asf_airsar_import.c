@@ -171,7 +171,7 @@ static void ingest_insar_data(char *inFile, char *inBaseName, char *band,
   if (size == 2)
     metaIn->general->data_type = INTEGER16;
   else if (size == 1)
-    metaIn->general->data_type = BYTE;
+    metaIn->general->data_type = ASF_BYTE;
   floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
   for (ii=0; ii<line_count; ii++) {
     get_float_line(fpIn, metaIn, ii+line_offset, floatBuf);
@@ -284,7 +284,7 @@ void asf_airsar_import(char *inFile, char *outFile, int insar, int polar)
     if (dem || amp)
       metaIn->general->data_type = INTEGER16;
     else 
-      metaIn->general->data_type = BYTE;
+      metaIn->general->data_type = ASF_BYTE;
 
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);

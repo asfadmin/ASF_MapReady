@@ -24,10 +24,10 @@
 #ifdef win32
 #  include <pango/pango.h>
 
-#  define BYTE __byte
+/*#  define BYTE __byte*/
 #    include "asf_meta.h"
 #    include <asf_import.h>
-#  undef BYTE
+/*#  undef BYTE*/
 #  include <Windows.h>
 #  include <process.h>
 #  undef DIR_SEPARATOR

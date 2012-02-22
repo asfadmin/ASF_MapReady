@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   meta_parameters *metaOut = meta_read(inFile);
   int nl = metaIn->general->line_count;
   int ns = metaIn->general->sample_count;
-  metaOut->general->data_type = BYTE;
+  metaOut->general->data_type = ASF_BYTE;
   meta_write(metaOut, outFile);
 
   // Replace image with grid

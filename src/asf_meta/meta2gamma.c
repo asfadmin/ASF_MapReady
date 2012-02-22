@@ -30,7 +30,7 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
   else if (strncmp_case(gamma->image_format, "SHORT", 8) == 0)
     meta->general->data_type = INTEGER16;
   else if (strncmp_case(gamma->image_format, "BYTE", 8) == 0)
-    meta->general->data_type = BYTE;
+    meta->general->data_type = ASF_BYTE;
   if (strcmp(gamma->image_data_type, "UNKNOWN") == 0) {
     switch(meta->general->data_type) 
       {
@@ -421,7 +421,7 @@ meta_parameters* gamma_msp2meta(gamma_msp *gamma)
   else if (strncmp(uc(gamma->image_format), "SHORT", 8) == 0)
     meta->general->data_type = INTEGER16;
   else if (strncmp(uc(gamma->image_format), "BYTE", 8) == 0)
-    meta->general->data_type = BYTE;
+    meta->general->data_type = ASF_BYTE;
   if (strcmp(gamma->image_data_type, "UNKNOWN") == 0) {
     switch(meta->general->data_type) 
       {

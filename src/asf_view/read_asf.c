@@ -193,7 +193,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
 
-    if (meta->general->data_type == BYTE) {
+    if (meta->general->data_type == ASF_BYTE) {
         unsigned char *dest = (unsigned char*)dest_void;
         if (data_type==GREYSCALE_BYTE) {
             // reading byte data directly into the byte cache
@@ -319,7 +319,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
     // temporary storage
     float *buf = MALLOC(sizeof(float)*ns);
 
-    if (meta->general->data_type == BYTE) {
+    if (meta->general->data_type == ASF_BYTE) {
         // BYTE case -- data file contains bytes.
         unsigned char *dest = (unsigned char*)dest_void;
         if (data_type == GREYSCALE_BYTE) {
@@ -566,7 +566,7 @@ int open_asf_data(const char *filename, const char *band, int multilook,
     client->thumb_fn = get_asf_thumbnail_data;
     client->free_fn = free_asf_client_info;
 
-    if (meta->general->data_type == BYTE)
+    if (meta->general->data_type == ASF_BYTE)
         client->data_type = info->is_rgb ? RGB_BYTE : GREYSCALE_BYTE;
     else
         client->data_type = info->is_rgb ? RGB_FLOAT : GREYSCALE_FLOAT;

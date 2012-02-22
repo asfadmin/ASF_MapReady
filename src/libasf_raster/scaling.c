@@ -25,7 +25,7 @@ void floats_to_bytes_from_file(const char *inFile, const char *outFile,
   byte_data = floats_to_bytes (float_data, pixel_count, mask, scaling);
   for (ii=0; ii<pixel_count; ii++)
     float_data[ii] = (float) byte_data[ii];
-  meta->general->data_type = BYTE;
+  meta->general->data_type = ASF_BYTE;
   meta_write(meta, outFile);
   fp = FOPEN(outFile, "wb");
   put_float_lines(fp, meta, offset, meta->general->line_count, float_data);

@@ -757,7 +757,7 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
     }
   }
 
-  if (data_type == BYTE)
+  if (data_type == ASF_BYTE)
     client->data_type = info->is_rgb ? RGB_BYTE : GREYSCALE_BYTE;
   else
     client->data_type = info->is_rgb ? RGB_FLOAT : GREYSCALE_FLOAT;

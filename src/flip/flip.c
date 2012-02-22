@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
   FloatImage *finput = NULL;
   UInt8Image *binput = NULL;
-  if (imd->optical || imd->general->data_type == BYTE) {
+  if (imd->optical || imd->general->data_type == ASF_BYTE) {
     binput = uint8_image_new_from_file(imd->general->sample_count,
                                        imd->general->line_count,
                                        input_data_name, 0);
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
                                        FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   }
 
-  if (imd->optical || imd->general->data_type == BYTE) {
+  if (imd->optical || imd->general->data_type == ASF_BYTE) {
     if (horz)
       uint8_image_flip_x(binput);
 

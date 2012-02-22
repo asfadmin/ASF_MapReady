@@ -1,9 +1,9 @@
 #if defined(win32)
 
-#define BYTE __byte
+/*#define BYTE __byte*/
 #define POINT __point
 #include "asf_meta.h"
-#undef BYTE
+/*#undef BYTE*/
 
 #include <windows.h>
 #include <process.h>

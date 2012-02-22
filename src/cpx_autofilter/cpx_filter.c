@@ -151,7 +151,7 @@ int main(int argc,char **argv)
   inMeta = meta_read(inName);
   if (inMeta->general->data_type < COMPLEX_BYTE) {
    switch (inMeta->general->data_type) {
-     case BYTE:      inMeta->general->data_type=COMPLEX_BYTE;      break;
+     case ASF_BYTE:      inMeta->general->data_type=COMPLEX_BYTE;      break;
      case INTEGER16: inMeta->general->data_type=COMPLEX_INTEGER16; break;
      case INTEGER32: inMeta->general->data_type=COMPLEX_INTEGER32; break;
      case REAL32:    inMeta->general->data_type=COMPLEX_REAL32;    break;

@@ -23,7 +23,7 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	ddr->nbands = 1;
 /* Data type; int */
 	switch (meta->general->data_type) {
-	  case BYTE:           ddr->dtype = DTYPE_BYTE;    break;
+	  case ASF_BYTE:           ddr->dtype = DTYPE_BYTE;    break;
 	  case INTEGER16:      ddr->dtype = DTYPE_SHORT;   break;
 	  case INTEGER32:      ddr->dtype = DTYPE_LONG;    break;
 	  case REAL32:         ddr->dtype = DTYPE_FLOAT;   break;

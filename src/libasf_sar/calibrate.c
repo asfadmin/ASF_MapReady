@@ -46,7 +46,7 @@ int asf_calibrate(const char *inFile, const char *outFile,
   else if (outRadiometry == r_GAMMA || outRadiometry == r_GAMMA_DB)
     metaOut->general->image_data_type = GAMMA_IMAGE;
   if (wh_scaleFlag)
-    metaOut->general->data_type = BYTE;
+    metaOut->general->data_type = ASF_BYTE;
 
   char *input = appendExt(inFile, ".img");
   char *output = appendExt(outFile, ".img");

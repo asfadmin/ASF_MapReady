@@ -33,7 +33,7 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
     meta_parameters *outDemMeta = meta_read(inDemFile);
 
     // out metadata will differ from in only in the data type
-    outDemMeta->general->data_type = BYTE;
+    outDemMeta->general->data_type = ASF_BYTE;
 
     int x_size = inDemMeta->general->sample_count;
     int y_size = inDemMeta->general->line_count;

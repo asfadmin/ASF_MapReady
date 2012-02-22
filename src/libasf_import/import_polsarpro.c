@@ -1024,7 +1024,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       calc_minmax_polsarpro(polsarName, &min, &max);
       slope = 255 / (max-min);
       offset = -slope * min;
-      metaOut->general->data_type = BYTE;
+      metaOut->general->data_type = ASF_BYTE;
     }
   }
   floatBuf = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
@@ -1082,7 +1082,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 	ieee_big32(floatBuf[kk]);
 	if (colormapName && strlen(colormapName) &&
 	    strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0 &&
-	    metaOut->general->data_type == BYTE) {
+	    metaOut->general->data_type == ASF_BYTE) {
 	  fValue = slope * floatBuf[kk] + offset;
 	  floatBuf[kk] = fValue;
 	}

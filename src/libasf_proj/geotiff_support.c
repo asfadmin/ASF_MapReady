@@ -335,7 +335,7 @@ int get_tiff_data_config(TIFF *tif, short *sample_format,
       {
         switch (bitsPerSample) {
           case 8:
-            *data_type = BYTE;
+            *data_type = ASF_BYTE;
             break;
           case 16:
             *data_type = INTEGER32;
@@ -375,7 +375,7 @@ int get_tiff_data_config(TIFF *tif, short *sample_format,
         switch (bitsPerSample) {
           case 8:
               // Most likely unsigned 8-bit byte
-            *data_type = BYTE;
+            *data_type = ASF_BYTE;
             break;
           case 16:
               // Most likely 16-bit integer

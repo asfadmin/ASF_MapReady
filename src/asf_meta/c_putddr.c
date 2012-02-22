@@ -174,7 +174,7 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
                     {strcpy(mds_meta->projection->units, mds_ddr->proj_units);}
             switch ( mds_ddr->dtype ) {
               case 0: /* DTYPE_BYTE */
-              case DTYPE_BYTE:  mds_meta->general->data_type = BYTE;      break;
+              case DTYPE_BYTE:  mds_meta->general->data_type = ASF_BYTE;      break;
               case DTYPE_SHORT: mds_meta->general->data_type = INTEGER16; break;
               case DTYPE_LONG:  mds_meta->general->data_type = INTEGER32; break;
               case DTYPE_FLOAT: mds_meta->general->data_type = REAL32;    break;

@@ -1353,9 +1353,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // If all input metadata is byte, we will store everything as bytes,
     // in order to save memory.  (But the math will use floating point.)
-    if (imd->general->data_type != BYTE || resample_method == RESAMPLE_BICUBIC)
+    if (imd->general->data_type != ASF_BYTE || resample_method == RESAMPLE_BICUBIC)
         process_as_byte = FALSE;
-    if (imd->general->data_type == BYTE && resample_method == RESAMPLE_BICUBIC) {
+    if (imd->general->data_type == ASF_BYTE && resample_method == RESAMPLE_BICUBIC) {
       asfPrintWarning(
           "Using the BICUBIC resampling method for geocoding BYTE (typically optical)\n"
           "data may result in out-of-range values, e.g. less than 0 or higher than 255.\n"
@@ -1553,9 +1553,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   // Update no data value
   if (!meta_is_valid_double(background_val)) background_val = 0;
-  if ((process_as_byte || omd->general->data_type==BYTE) && background_val<0)
+  if ((process_as_byte || omd->general->data_type==ASF_BYTE) && background_val<0)
     background_val = 0;
-  if ((process_as_byte || omd->general->data_type==BYTE) && background_val>255)
+  if ((process_as_byte || omd->general->data_type==ASF_BYTE) && background_val>255)
     background_val = 255;
   omd->general->no_data = background_val;
 
@@ -2531,11 +2531,11 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 		      float_image_sample(iim, input_x_pixel, input_y_pixel,
 					 float_image_sample_method);		
 		  
-		  if (omd->general->data_type == BYTE && value < 0.0) {
+		  if (omd->general->data_type == ASF_BYTE && value < 0.0) {
 		    value = 0.0;
 		    out_of_range_negative++;
 		  }
-		  if (omd->general->data_type == BYTE && value > 255.0) {
+		  if (omd->general->data_type == ASF_BYTE && value > 255.0) {
 		    value = 255.0;
 		    out_of_range_positive++;
 		  }
@@ -2791,7 +2791,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
 
   if (resample_method == BICUBIC &&
-      omd->general->data_type == BYTE &&
+      omd->general->data_type == ASF_BYTE &&
       (out_of_range_negative || out_of_range_positive))
   {
     float num_pixels = (float)(omd->general->line_count * omd->general->sample_count);

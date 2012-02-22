@@ -167,7 +167,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
 
-  int byte_image = (md->general->data_type == BYTE) ||
+  int byte_image = (md->general->data_type == ASF_BYTE) ||
     !(sample_mapping == NONE && !md->optical && !have_look_up_table);
   int int_image = (md->general->data_type == INTEGER16 &&
     !md->optical && !have_look_up_table);
@@ -1387,7 +1387,7 @@ export_band_image (const char *metadata_file_name,
               "Downsampling a Sigma, Beta, or Gamma type image (power or dB)\n"
               "from floating point to byte using truncation is not supported.\n"
               "All values would map to black.\n");
-  if (md->general->data_type == BYTE &&
+  if (md->general->data_type == ASF_BYTE &&
       sample_mapping != TRUNCATE && sample_mapping != NONE &&
       md->general->image_data_type != BROWSE_IMAGE)
   {
@@ -1701,7 +1701,7 @@ export_band_image (const char *metadata_file_name,
     int offset = md->general->line_count;
 
     // Allocate some memory
-    if (md->optical || md->general->data_type == BYTE) {
+    if (md->optical || md->general->data_type == ASF_BYTE) {
       if (ignored[red_channel])
         red_byte_line = (unsigned char *) CALLOC(sample_count, sizeof(char));
       else
@@ -1860,7 +1860,7 @@ export_band_image (const char *metadata_file_name,
     }
 
     for (ii=0; ii<md->general->line_count; ii++) {
-      if (md->optical || md->general->data_type == BYTE) {
+      if (md->optical || md->general->data_type == ASF_BYTE) {
         // Optical images come as byte in the first place
         if (!ignored[red_channel])
           get_byte_line(fp, md, ii+red_channel*offset, red_byte_line);
@@ -2218,9 +2218,9 @@ export_band_image (const char *metadata_file_name,
 	else if ((md->colormap && 
 		  strcmp_case(band_name[kk], md->colormap->band_id)==0) ||
 		 (!md->colormap && have_look_up_table && 
-		  md->general->data_type == BYTE) ||
+		  md->general->data_type == ASF_BYTE) ||
 		 (!md->colormap && have_look_up_table &&
-		  md->general->data_type != BYTE && sample_mapping != NONE)) {
+		  md->general->data_type != ASF_BYTE && sample_mapping != NONE)) {
 	  is_colormap_band = TRUE;
 	  sample_mapping = is_polsarpro ? TRUNCATE : sample_mapping;
 	}
@@ -2613,7 +2613,7 @@ export_band_image (const char *metadata_file_name,
         if (is_colormap_band)
         { // Apply look up table
           for (ii=0; ii<md->general->line_count; ii++ ) {
-            if ((md->optical || md->general->data_type == BYTE) &&
+            if ((md->optical || md->general->data_type == ASF_BYTE) &&
 		md->general->image_data_type != POLARIMETRIC_PARAMETER) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
               if (format == TIF || format == GEOTIFF)
@@ -2673,7 +2673,7 @@ export_band_image (const char *metadata_file_name,
         else {
           // Regular old single band image (no look up table applied)
           for (ii=0; ii<md->general->line_count; ii++ ) {
-            if (md->optical || md->general->data_type == BYTE) {
+            if (md->optical || md->general->data_type == ASF_BYTE) {
               get_byte_line(fp, md, ii+channel*offset, byte_line);
               if (format == TIF || format == GEOTIFF)
                 write_tiff_byte2byte(otif, byte_line, stats, sample_mapping,

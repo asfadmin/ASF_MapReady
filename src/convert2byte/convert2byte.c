@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 
 /* Get metadata */
 	inMeta = meta_read(inMetaFileName);
-	if (inMeta->general->data_type==BYTE) {
+	if (inMeta->general->data_type==ASF_BYTE) {
 		printf("Data type is already byte... Exiting.\n");
 		if (logflag) {
 			fprintf(fLog,"Data type is already byte... Exiting.\n");
@@ -273,7 +273,7 @@ int main(int argc, char **argv)
 
 /* Prepare output meta data for processing & writing */
 	outMeta = meta_copy(inMeta);
-	outMeta->general->data_type = BYTE;
+	outMeta->general->data_type = ASF_BYTE;
 
 /* Figure multilooking parameters if necessary */
 	if (multilook_flag) {

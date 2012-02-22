@@ -704,7 +704,7 @@ main (int argc, char *argv[])
   if ( !is_polsarpro                       &&
        lutFlag != FLAG_NOT_SET             &&
        command_line.sample_mapping == NONE &&
-       md->general->data_type != BYTE      &&
+       md->general->data_type != ASF_BYTE      &&
        md->general->band_count == 1)
   {
     asfPrintError("Look up tables can only be applied to byte output"
@@ -806,7 +806,7 @@ main (int argc, char *argv[])
      we refuse to deal with it.  */
   /*
   md = meta_read (command_line.in_meta_name);
-  asfRequire (   md->general->data_type == BYTE
+  asfRequire (   md->general->data_type == ASF_BYTE
               || md->general->data_type == INTEGER16
               || md->general->data_type == INTEGER32
               || md->general->data_type == REAL32

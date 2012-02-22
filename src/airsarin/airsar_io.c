@@ -43,7 +43,7 @@ void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,meta_parameters *meta
 
     FSEEK(fp, headerBytes+y*lineBytes, 0);
     FREAD(buf, 1, linelen, fp);
-    if (meta->general->data_type == BYTE)
+    if (meta->general->data_type == ASF_BYTE)
 	for( i = 0; i < ns; i++ )
 		dest[i]=buf[i];
 

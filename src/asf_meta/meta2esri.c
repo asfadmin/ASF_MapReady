@@ -34,7 +34,7 @@ esri_header* meta2esri(meta_parameters *meta)
   esri->nbands = meta->general->band_count;
   switch (meta->general->data_type) 
     {
-    case BYTE: esri->nbits = 8; break;
+    case ASF_BYTE: esri->nbits = 8; break;
     case INTEGER16: esri->nbits = 16; break;
     case INTEGER32: esri->nbits = 32; break;
     case REAL32: sprintf(pbuf, "REAL32"); break;
@@ -71,7 +71,7 @@ meta_parameters* esri2meta(esri_header  *esri)
 
   switch (esri->nbits)
     {
-    case 8: meta->general->data_type = BYTE; break;
+    case 8: meta->general->data_type = ASF_BYTE; break;
     case 16: meta->general->data_type = INTEGER16; break;
     case 32: meta->general->data_type = INTEGER32; break;
     default:

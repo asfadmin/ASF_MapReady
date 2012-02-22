@@ -184,7 +184,7 @@ meta_parameters* open_pgm(const char *data_name, ClientInterface *client)
     meta->general->sample_count = width;
     meta->general->band_count = 1;
     strcpy(meta->general->bands, "");
-    meta->general->data_type = BYTE;
+    meta->general->data_type = ASF_BYTE;
 
     return meta;
 }

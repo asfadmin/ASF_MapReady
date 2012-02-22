@@ -468,7 +468,7 @@ meta_parameters *open_airsar(const char *data_name, const char *meta_name,
     }
 
     if (info->airsar_data_type == AIRSAR_COHERENCE)
-      meta->general->data_type = BYTE;
+      meta->general->data_type = ASF_BYTE;
     else if (info->airsar_data_type == AIRSAR_POLARIMETRIC) {
       meta->general->data_type = REAL32;
       meta->general->image_data_type = POLARIMETRIC_IMAGE;

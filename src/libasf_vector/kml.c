@@ -166,7 +166,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "%s<strong>Processor</strong>: %s <br>%s",
               begin, meta->general->processor, end);
     else if (strncmp(dbf[ii].header, "meta.general.data_type", 22) == 0) {
-      if (meta->general->data_type == BYTE)
+      if (meta->general->data_type == ASF_BYTE)
         fprintf(kml_file, "%s<strong>Data type</strong>: BYTE <br>%s",
                 begin, end);
       else if (meta->general->data_type == INTEGER16)

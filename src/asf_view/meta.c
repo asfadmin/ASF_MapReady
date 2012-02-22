@@ -55,7 +55,7 @@ char *br(const char *s)
 static const char *get_data_type_str(data_type_t data_type)
 {
   switch (data_type) {
-    case BYTE:
+    case ASF_BYTE:
       return "Byte";
     case INTEGER16:
       return "Integer16";

@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
   {
     readAirSARLine(fpIn, ibuff, hb, lb, y, meta);
     
-    if( meta->general->data_type == BYTE) {
+    if( meta->general->data_type == ASF_BYTE) {
       for (x = 0; x< ns; x++)
 	obuff_char[x]=(unsigned char)ibuff[x];
       FWRITE(obuff_char, ns, 1, fpOut);

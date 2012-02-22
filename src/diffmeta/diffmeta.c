@@ -881,7 +881,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
 
   // FIXME: Add a verify_enum() function and let it use a hook to a
   // function that tells if the value is a valid member or not.
-  if (mg2->data_type != BYTE              &&
+  if (mg2->data_type != ASF_BYTE              &&
       mg2->data_type != INTEGER16         &&
       mg2->data_type != INTEGER32         &&
       mg2->data_type != REAL32            &&

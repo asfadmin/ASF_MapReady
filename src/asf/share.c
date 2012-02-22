@@ -14,9 +14,9 @@ static char * s_bin_dir_win = 0;
 /* to something else during the processing of that header, leaving BYTE */
 /* defined in windef.h alone (that's the one we want)                   */
 
-#define BYTE __byte
+/*#define BYTE __byte*/
 #include "asf.h"
-#undef BYTE
+/*#undef BYTE*/
 #include <windows.h>
 
 static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\"TOOL_SUITE_NAME"\\";

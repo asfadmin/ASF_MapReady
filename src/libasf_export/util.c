@@ -17,7 +17,7 @@ get_sample_size (meta_parameters *metadata)
 {
   size_t sample_size;
   switch ( metadata->general->data_type ) {
-  case BYTE:
+  case ASF_BYTE:
     sample_size = sizeof (int8_t);
     break;
   case INTEGER16:

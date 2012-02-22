@@ -24,10 +24,10 @@
 #if defined(win32)
 #include <pango/pango.h>
 
-#define BYTE __byte
+/*#define BYTE __byte*/
 #include "asf.h"
 #include "metadisplay.h"
-#undef BYTE
+/*#undef BYTE*/
 #include <windows.h>
 #undef DIR_SEPARATOR
 

@@ -11,10 +11,10 @@
 /* to something else during the processing of that header, leaving BYTE */
 /* defined in windef.h alone (that's the one we want)                   */
 
-#define BYTE __byte
+/*#define BYTE __byte*/
 #include "asf.h"
 #include "asf_meta.h"
-#undef BYTE
+/*#undef BYTE*/
 #include <windows.h>
 #undef DIR_SEPARATOR
 #endif

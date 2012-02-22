@@ -310,7 +310,7 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       }
       if (data_type != INTEGER16) {
 	strcat(error_message, "Problem with data type. Was looking INTEGER16,");
-	if (data_type == BYTE)
+	if (data_type == ASF_BYTE)
 	  strcat(error_message, " found BYTE instead!\n");
 	else if (data_type == INTEGER32)
 	  strcat(error_message, " found INTEGER32 instead!\n");

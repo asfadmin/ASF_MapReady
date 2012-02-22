@@ -971,7 +971,7 @@ static void dump_class_map(const char *base_filename, int wide)
   meta_parameters *m = raw_init();
   m->general->line_count = height;
   m->general->sample_count = width;
-  m->general->data_type = BYTE;
+  m->general->data_type = ASF_BYTE;
   m->general->image_data_type = IMAGE;
   strcpy(m->general->basename, filename);
 

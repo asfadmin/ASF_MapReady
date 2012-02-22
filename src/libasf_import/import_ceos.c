@@ -1346,7 +1346,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Take care of optical data settings
   if (meta->optical) {
-    meta->general->data_type = BYTE;
+    meta->general->data_type = ASF_BYTE;
     if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
       asfPrintWarning("Cannot apply SIGMA, GAMMA or BETA radiometry "
                       "to optical data.\n"
@@ -1463,7 +1463,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Allocate memory for input buffers
   switch (data_type) {
-    case BYTE:
+    case ASF_BYTE:
       byte_buf = (unsigned char *) CALLOC(ns, sizeof(unsigned char));
       tmp_byte_buf = (unsigned char *) CALLOC(ns, sizeof(unsigned char));
       asfPrintStatus("   Data type: BYTE\n");
@@ -1517,7 +1517,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Allocate memory for output buffers
   switch (data_type) {
-    case BYTE:
+    case ASF_BYTE:
         amp_float_buf = (float *) CALLOC(ns*lc, sizeof(float));
         break;
     case INTEGER16:
@@ -1636,7 +1636,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           case COMPLEX_REAL32:
             FREAD(cpx_float_buf+2*ll*ns, sizeof(float), 2*ns, fpIn);
             break;
-          case BYTE:
+          case ASF_BYTE:
           case INTEGER16:
           case INTEGER32:
           case REAL32:
@@ -1683,7 +1683,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                 tmp_double_buf[ll*ns*2 + kk*2+1] = cpx_double_buf[ll*ns*2 + kk*2+1];
               }
               break;
-            case BYTE:
+            case ASF_BYTE:
             case INTEGER16:
             case INTEGER32:
             case REAL32:
@@ -1697,7 +1697,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           cpx.real = cpx.imag = 0.0;
           switch (data_type)
           {
-            case BYTE:
+            case ASF_BYTE:
             case INTEGER16:
             case INTEGER32:
             case REAL32:
@@ -1914,7 +1914,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         case REAL32:
             FREAD(float_buf, sizeof(float), ns, fpIn);
             break;
-        case BYTE:
+        case ASF_BYTE:
             FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
             break;
         case INTEGER16:
@@ -1945,7 +1945,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                     tmp_float_buf[kk] = float_buf[kk];
                 }
                 break;
-            case BYTE:
+            case ASF_BYTE:
                 if (flip) {
                     tmp_byte_buf[kk] = byte_buf[kk];
                 }
@@ -1992,7 +1992,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                 if (incidence_angle < incid_table[mm]) {
                     break;
                 }
-                if (data_type == BYTE) {
+                if (data_type == ASF_BYTE) {
                     if (flip) {
                         byte_buf[kk] = tmp_byte_buf[ns-kk-1];
                     }
@@ -2017,7 +2017,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         }
         else {
             switch (data_type) {
-                case BYTE:
+                case ASF_BYTE:
                     if (flip) {
                         byte_buf[kk] = tmp_byte_buf[ns-kk-1];
                     }

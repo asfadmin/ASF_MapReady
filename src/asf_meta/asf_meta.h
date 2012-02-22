@@ -132,7 +132,7 @@ typedef struct {
   data_type_t data_type;            /* Type of samples (e.g. "REAL4").     */
 /*  Possible values for data_type:                                         *
  *   META STRING          WHAT IT IS                 DATA TYPE             *
- *    BYTE                1 byte                   = unsigned char         *
+ *    ASF_BYTE                1 byte                   = unsigned char         *
  *    INTEGER16           2 byte integer           = short int             *
  *    INTEGER32           4 byte integer           = int                   *
  *    REAL32              4 byte floating point    = float                 *

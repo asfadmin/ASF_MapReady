@@ -8,7 +8,7 @@ DESCRIPTION:
         prints them in tabular form to stdout.
 
 NOTE:
-        A uint8 (below) is a libtiff BYTE, a uint32 is a libtiff LONG,
+        A uint8 (below) is a libtiff ASF_BYTE, a uint32 is a libtiff LONG,
         and a uint32 is a libtiff LONG
 
 PROGRAM HISTORY:

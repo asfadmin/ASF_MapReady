@@ -564,7 +564,7 @@ int generate_ceos_thumbnail(const char *input_data, int size)
         met = STRDUP(input_metadata);
     }
 
-    if (imd->general->data_type != BYTE &&
+    if (imd->general->data_type != ASF_BYTE &&
         imd->general->data_type != INTEGER16) 
 // Turning off support for these guys for now.
 //        imd->general->data_type != INTEGER32 &&
@@ -634,7 +634,7 @@ int generate_ceos_thumbnail(const char *input_data, int size)
             for (jj = 0; jj < imd->general->sample_count; ++jj)
                 big16(line[jj]);
         }
-        else if (imd->general->data_type == BYTE)
+        else if (imd->general->data_type == ASF_BYTE)
         {
             FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
                   fpIn);

@@ -67,7 +67,7 @@ int clip(char *inFile, char *maskFile, char *outFile)
 
   // Check whether mask file looks legitimate. The only indication that we
   // have is that it should be BYTE and have one band.
-  if (metaMask->general->data_type != BYTE)
+  if (metaMask->general->data_type != ASF_BYTE)
     asfPrintStatus("Mask image does not have data type 'BYTE'!\n");
   if (metaMask->general->band_count != 1)
     asfPrintStatus("Mask image should have only one band!\n");

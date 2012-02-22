@@ -2128,7 +2128,7 @@ float get_maxval(data_type_t data_type)
 
   // Only non-complex types with 32 bits or less are supported
   switch (data_type) {
-  case BYTE:
+  case ASF_BYTE:
     ret = pow(2, sizeof(unsigned char) * 8.0) - 1;
     break;
   case COMPLEX_BYTE:
@@ -2246,7 +2246,7 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
     // FIXME: Rather than use data_type, use the baseline range to develop 
     // a suitable PSNR tolerance
     switch (data_type) {
-      case BYTE:
+      case ASF_BYTE:
         psnr_tol = BYTE_PSNR_TOL;
         break;
       case INTEGER16:
@@ -4015,7 +4015,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
       ihdr->data_type=0; // UNKNOWN TYPE
       break;
     case 8:
-      ihdr->data_type=BYTE;
+      ihdr->data_type=ASF_BYTE;
       break;
     case 16:
       ihdr->data_type=INTEGER16;
@@ -4715,7 +4715,7 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm,
   // the PPM/PGM file's image data
   if ((float)pow(20, 32) > pgm->max_val) {
     pgm->bit_depth = 8;
-    pgm->data_type = BYTE;
+    pgm->data_type = ASF_BYTE;
   }
   else if ((float)pow(2, 16) > pgm->max_val) {
     pgm->bit_depth = 16;
@@ -4918,7 +4918,7 @@ int ppm_pgm_image_band_statistics_from_file(char *inFile, char *outfile,
       pgm.max_val <= 0 ||
       pgm.img_offset < 0 ||
       pgm.bit_depth != 8 ||
-      pgm.data_type != BYTE ||
+      pgm.data_type != ASF_BYTE ||
       pgm.num_bands <= 0) {
     *stats_exist = 0;
     return 1;
@@ -5044,7 +5044,7 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2,
       pgm1.max_val <= 0 ||
       pgm1.img_offset < 0 ||
       pgm1.bit_depth != 8 ||
-      pgm1.data_type != BYTE ||
+      pgm1.data_type != ASF_BYTE ||
       pgm1.num_bands <= 0) {
     sprintf(msg, "Cannot read PPM/PNG file header in file1\n  %s\n", inFile1);
     if (outputFP) fprintf(outputFP, msg); else fprintf(stderr, msg);
@@ -5060,7 +5060,7 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2,
       pgm2.max_val <= 0 ||
       pgm2.img_offset < 0 ||
       pgm2.bit_depth != 8 ||
-      pgm2.data_type != BYTE ||
+      pgm2.data_type != ASF_BYTE ||
       pgm2.num_bands <= 0) {
     sprintf(msg, "Cannot read PPM/PNG file header in file2\n  %s\n", inFile2);
     if (outputFP) fprintf(outputFP, msg); else fprintf(stderr, msg);
@@ -5258,7 +5258,7 @@ GLOBAL(void) get_jpeg_info_hdr_from_file(char *inFile, jpeg_info_t *jpg,
   jpg->width = cinfo.image_width;
   jpg->byte_width = cinfo.image_width * cinfo.num_components;
   jpg->height = cinfo.image_height;
-  jpg->data_type = BYTE;
+  jpg->data_type = ASF_BYTE;
   jpg->num_bands = cinfo.num_components;
 
   // Finish up
@@ -5285,7 +5285,7 @@ GLOBAL(void) jpeg_image_band_statistics_from_file(char *inFile, char *outfile,
   get_jpeg_info_hdr_from_file(inFile, &jpg, outfile);
   if (jpg.width <= 0 ||
       jpg.height <= 0 ||
-      jpg.data_type != BYTE ||
+      jpg.data_type != ASF_BYTE ||
       jpg.num_bands <= 0) {
     *stats_exist = 0;
     return;
@@ -5476,7 +5476,7 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2,
   get_jpeg_info_hdr_from_file(inFile1, &jpg1, outfile);
   if (jpg1.width <= 0 ||
       jpg1.height <= 0 ||
-      jpg1.data_type != BYTE ||
+      jpg1.data_type != ASF_BYTE ||
       jpg1.num_bands <= 0) {
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
@@ -5485,7 +5485,7 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2,
   get_jpeg_info_hdr_from_file(inFile2, &jpg2, outfile);
   if (jpg2.width <= 0 ||
       jpg2.height <= 0 ||
-      jpg2.data_type != BYTE ||
+      jpg2.data_type != ASF_BYTE ||
       jpg2.num_bands <= 0) {
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
@@ -5857,7 +5857,7 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
   get_jpeg_info_hdr_from_file(inFile, &jpg, outfile);
   if (jpg.width <= 0 ||
       jpg.height <= 0 ||
-      jpg.data_type != BYTE ||
+      jpg.data_type != ASF_BYTE ||
       jpg.num_bands <= 0) {
     sprintf(msg,"Invalid JPEG found...Aborting\n");
     if (outfile && strlen(outfile) > 0) 
@@ -6002,7 +6002,7 @@ void export_ppm_pgm_to_asf_img(char *inFile, char *outfile,
       pgm.max_val <= 0 ||
       pgm.img_offset < 0 ||
       pgm.bit_depth != 8 ||
-      pgm.data_type != BYTE ||
+      pgm.data_type != ASF_BYTE ||
       pgm.num_bands <= 0)
   {
     sprintf(msg,"Invalid PPM/PGM file found...Aborting\n");
@@ -6536,7 +6536,7 @@ void diff_check_complex_stats(char *outputFile, char *inFile1, char *inFile2,
       // a suitable PSNR tolerance
       switch (data_type) 
 	{
-	case BYTE:
+	case ASF_BYTE:
 	case COMPLEX_BYTE:
 	  psnr_tol = BYTE_PSNR_TOL;
 	  break;

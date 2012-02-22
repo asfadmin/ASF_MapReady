@@ -25,7 +25,7 @@ int brs2jpg(char *browseFile, char *workreportFile, char *outFile)
     else if (strncmp(line, "Brs_NoOfBrowsePixels", 20) == 0)
       sscanf(line, "Brs_NoOfBrowsePixels=\"%d\"", &meta->general->sample_count);
     else if (strncmp(line, "Brs_BrowseBitPixel=\"8\"", 22) == 0)
-      meta->general->data_type = BYTE;
+      meta->general->data_type = ASF_BYTE;
   }
   FCLOSE(fp);
   sprintf(tmpDataFile, "%s/%s.img", tmpDir, baseName);

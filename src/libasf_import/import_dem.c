@@ -592,7 +592,7 @@ void import_dem(const char *inBaseName, int list, const char *outBaseName,
 
     // Apparently GDAL does not know anything about complex_byte
     if (dataType == GDT_Byte)
-      dem->data_type = BYTE;
+      dem->data_type = ASF_BYTE;
     else if (dataType == GDT_UInt16 || dataType == GDT_Int16)
       dem->data_type = INTEGER16;
     else if (dataType == GDT_UInt32 || dataType == GDT_Int32)

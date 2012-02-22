@@ -400,7 +400,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     meta_parameters *imd = silent_meta_create(inMetaName[0]);
     ns = imd->general->sample_count;
 
-    if (imd->general->data_type != BYTE &&
+    if (imd->general->data_type != ASF_BYTE &&
         imd->general->data_type != INTEGER16 &&
         imd->general->data_type != COMPLEX_BYTE &&
         imd->general->data_type != COMPLEX_INTEGER16 &&
@@ -417,7 +417,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
                         "Suggestion: Use asf_import (or asf_import -amplitude for SLC L1.1\n"
                         "products), resample, then asf_export to create thumbnails or browse\n"
                         "images. \n",
-                        (imd->general->data_type == BYTE)              ? "BYTE"              :
+                        (imd->general->data_type == ASF_BYTE)              ? "BYTE"              :
                         (imd->general->data_type == INTEGER16)         ? "INTEGER16"         :
                         (imd->general->data_type == INTEGER32)         ? "INTEGER32"         :
                         (imd->general->data_type == REAL32)            ? "REAL32"            :
@@ -583,7 +583,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 	    line[jj] = (float) shorts[jj];
           }
         }
-        else if (imd->general->data_type == BYTE)
+        else if (imd->general->data_type == ASF_BYTE)
         {
           FREAD(bytes, sizeof(unsigned char), ns, fpIn);
           for (jj = 0; jj < imd->general->sample_count; ++jj) {

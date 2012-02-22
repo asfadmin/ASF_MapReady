@@ -97,7 +97,7 @@ main(int argc, char *argv[])
 //  printf(" created memory buffer \n");
   in = fopenImage(infile, "rb");
   out = fopenImage(outfile, "wb");
-  outMeta->general->data_type = BYTE;
+  outMeta->general->data_type = ASF_BYTE;
   //TODO better argument conversion
   // now work out what operation we are doing
   arga = atof(argv[4]);

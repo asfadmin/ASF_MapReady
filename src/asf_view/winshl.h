@@ -2,12 +2,12 @@
 #define INCL_WINSHL_H
 
 #ifdef win32
-#define BYTE __byte
+/*#define BYTE __byte*/
 #define POINT __point
 #include <windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
-#undef BYTE
+/*#undef BYTE*/
 #undef POINT
 #endif
 

@@ -153,7 +153,7 @@ int asf_phase_unwrap(char *algorithm, char *interferogram, char *metaFile,
 		 "reramping unwrapped phase (deramp)");
 
     meta_parameters *m2 = meta_read("unwrap_phase.meta");
-    m2->general->data_type = BYTE;
+    m2->general->data_type = ASF_BYTE;
     meta_write(m2, "unwrap_dem_mask.meta");
     meta_free(m2);
 

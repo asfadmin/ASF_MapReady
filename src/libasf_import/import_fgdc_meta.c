@@ -410,7 +410,7 @@ fgdc_meta *get_fgdc_meta(const char *dataFile)
 
   // Apparently GDAL does not know anything about complex_byte
   if ((dataType == GDT_Unknown || dataType == GDT_Byte) && isCEOS) {
-    if (meta->general->data_type == BYTE)
+    if (meta->general->data_type == ASF_BYTE)
       strcpy(fgdc->cvaltype, "unsigned eight bit integer");
     if (meta->general->data_type == INTEGER16)
       strcpy(fgdc->cvaltype, "unsigned sixteen bit integer");

@@ -3,9 +3,9 @@
 
 #ifdef win32
 
-#define BYTE __byte
+/*#define BYTE __byte*/
 #include "asf_convert_gui.h"
-#undef BYTE
+/*#undef BYTE*/
 
 #include <windows.h>
 #include <shlobj.h>

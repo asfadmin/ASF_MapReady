@@ -22,7 +22,7 @@ char *data_type2str(data_type_t data_type)
 {
   char *str = (char *) MALLOC(sizeof(char)*256);
 
-  if (data_type == BYTE)
+  if (data_type == ASF_BYTE)
     strcpy(str, "BYTE");
   else if (data_type == INTEGER16)
     strcpy(str, "INTEGER16");

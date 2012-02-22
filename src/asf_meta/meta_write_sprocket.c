@@ -78,7 +78,7 @@ void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
   fprintf(fp,"%s = \"%lf\"\n",EARTH_RADIUS_AT_IMAGE_CENTER, earth_radius);
   fprintf(fp,"%s = \"%lf\"\n",EARTH_RADIUS_AT_IMAGE_NARIR, earth_radius);
   fprintf(fp,"%s = \"%lf\"\n",PLATFORM_ALITITUDE, sat_height);
-  if (   meta->general->data_type>=BYTE
+  if (   meta->general->data_type>=ASF_BYTE
       && meta->general->data_type<=REAL64)
     strcpy(temp, STANDARD_FORMAT);
   else if (   meta->general->data_type>=COMPLEX_BYTE

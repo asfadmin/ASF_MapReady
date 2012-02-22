@@ -2,7 +2,7 @@
 #define ASF_JPEG_H
 
 #ifdef win32
-#define BYTE __byte
+/*#define BYTE __byte*/
 #endif
 
 #include "asf.h"
@@ -29,7 +29,7 @@ typedef struct {
 } jpeg_info_t;
 
 #ifdef win32
-#undef BYTE
+/*#undef BYTE*/
 #endif
 
 #ifndef MIN_DIMENSION

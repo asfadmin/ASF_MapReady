@@ -617,7 +617,7 @@ stat_parameters calc_hist(stat_parameters stats, char *sar_name, int band, meta_
   /* Initialize the histogram array */
   for (ii=0; ii<256; ii++) stats.histogram[ii] = 0;
 
-  if (meta->general->data_type != BYTE) {
+  if (meta->general->data_type != ASF_BYTE) {
     /* Set slope and offset, to map pixels to [0..255].
      * byte = slope * in + offset
      * 0    = slope * min + offset
@@ -636,7 +636,7 @@ stat_parameters calc_hist(stat_parameters stats, char *sar_name, int band, meta_
     if (!quietflag) asfPercentMeter((float)(line-start_line-band_offset)/(float)(window_height-start_line));
     get_float_line(fp, meta, line, data_line);
     for (sample=start_sample; sample<start_sample+window_width; sample++) {
-      int bin = (meta->general->data_type == BYTE)
+      int bin = (meta->general->data_type == ASF_BYTE)
         ? (int)data_line[sample]
         : (int)(stats.slope*data_line[sample]+stats.offset);
       if (bin < 0) bin = 0;

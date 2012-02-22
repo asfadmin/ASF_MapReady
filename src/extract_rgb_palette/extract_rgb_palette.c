@@ -270,7 +270,7 @@ float get_maxval(data_type_t data_type)
 
   // Only non-complex types with 32 bits or less are supported
   switch (data_type) {
-    case BYTE:
+    case ASF_BYTE:
       ret = powf(2, sizeof(unsigned char)) - 1.0;
       break;
     case INTEGER16:
@@ -296,7 +296,7 @@ char *data_type2str(data_type_t data_type)
   char *retstr = (char*)CALLOC(64, sizeof(char));
 
   switch (data_type) {
-    case BYTE:
+    case ASF_BYTE:
       strcpy(retstr, "BYTE");
       break;
     case INTEGER16:

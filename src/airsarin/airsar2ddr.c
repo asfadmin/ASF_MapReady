@@ -194,7 +194,7 @@ void airsar2meta(char* airsarname, meta_parameters *meta)
 
     /* data type of pixels (unsigned char, short int, float)*/
     strcpy(dtype, get_airsar(airsarname, "FIRST", "DATA TYPE"));
-    if(!strcmp(dtype, "BYTE")) meta->general->data_type = BYTE;
+    if(!strcmp(dtype, "BYTE")) meta->general->data_type = ASF_BYTE;
     else if(!strcmp(dtype, "INTEGER*2")) meta->general->data_type = INTEGER16;
     else if(!strcmp(dtype, "INTEGER*4")) meta->general->data_type = INTEGER32;
     else if(!strcmp(dtype, "REAL*4")) meta->general->data_type = REAL32;

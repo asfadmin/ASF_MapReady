@@ -1,8 +1,8 @@
 #ifdef win32
 
-#define BYTE __byte
+/*#define BYTE __byte*/
 #include "req.h"
-#undef BYTE
+/*#undef BYTE*/
 
 #include <windows.h>
 #include <shlobj.h>

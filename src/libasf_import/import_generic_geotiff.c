@@ -1392,7 +1392,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   /*****************************************************/
 
   asfPrintStatus("\nLoading input TIFF/GeoTIFF file into %d-banded %s image structure...\n\n",
-                 num_bands, (data_type == BYTE) ? "8-bit byte" :
+                 num_bands, (data_type == ASF_BYTE) ? "8-bit byte" :
                             (data_type == INTEGER16) ? "16-bit integer" :
                             (data_type == INTEGER32) ? "32-bit integer" :
                             (data_type == REAL32)    ? "32-bit float"   : "unknown(?)");
@@ -1738,7 +1738,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     if (num_found_bands < 1) {
       asfPrintStatus("\nGathering image statistics (per available band)...\n");
       switch(meta_out->general->data_type) {
-        case BYTE:
+        case ASF_BYTE:
         case INTEGER16:
         case INTEGER32:
           mask_value = UINT8_IMAGE_DEFAULT_MASK;

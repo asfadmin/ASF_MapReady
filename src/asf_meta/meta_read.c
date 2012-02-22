@@ -381,7 +381,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
       {strcpy(meta->projection->units, ddr.proj_units);}
     switch ( ddr.dtype ) {
         case 0: /* BYTE */
-        case DTYPE_BYTE:    general->data_type = BYTE;      break;
+        case DTYPE_BYTE:    general->data_type = ASF_BYTE;      break;
         case DTYPE_SHORT:   general->data_type = INTEGER16; break;
         case DTYPE_LONG:    general->data_type = INTEGER32; break;
         case DTYPE_FLOAT:   general->data_type = REAL32;    break;
@@ -442,7 +442,7 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta)
   meta->general->start_sample = ddr->master_sample - 1;
   switch (ddr->dtype) {
     case 0:/*Equivalent to DTYPE_BYTE*/
-    case DTYPE_BYTE:    meta->general->data_type = BYTE;      break;
+    case DTYPE_BYTE:    meta->general->data_type = ASF_BYTE;      break;
     case DTYPE_SHORT:   meta->general->data_type = INTEGER16; break;
     case DTYPE_LONG:    meta->general->data_type = INTEGER32; break;
     case DTYPE_FLOAT:   meta->general->data_type = REAL32;    break;

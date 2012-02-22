@@ -653,7 +653,7 @@ int terrasar2csv(char *inFile, char *outFile, int listFlag)
     else if (strcmp(dbf[ii].header, "meta.general.data_type") == 0 &&
              dbf[ii].visible) {
       char data_type[25];
-      if (meta->general->data_type == BYTE)
+      if (meta->general->data_type == ASF_BYTE)
         strcpy(data_type, "BYTE");
       else if (meta->general->data_type == INTEGER16)
         strcpy(data_type, "INTEGER16");
@@ -1775,7 +1775,7 @@ static int convert_terrasar2shape(char *inFile, DBFHandle dbase,
     else if (strncmp(dbf[ii].header, "meta.general.data_type", 22) == 0 &&
              dbf[ii].visible) {
       char data_type[25];
-      if (meta->general->data_type == BYTE)
+      if (meta->general->data_type == ASF_BYTE)
         strcpy(data_type, "BYTE");
       else if (meta->general->data_type == INTEGER16)
         strcpy(data_type, "INTEGER16");

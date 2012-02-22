@@ -114,7 +114,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 
   // Assign data type
   nc_type datatype;
-  if (mg->data_type == BYTE)
+  if (mg->data_type == ASF_BYTE)
     datatype = NC_CHAR;
   else if (mg->data_type == REAL32)
     datatype = NC_FLOAT;

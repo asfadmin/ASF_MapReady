@@ -259,7 +259,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     meta_parameters *meta = meta_read(outMetaName);
     if (meta->colormap) {
       if (!(colormapName != NULL && 
-            (meta->general->data_type == BYTE || is_PolSARpro(inBaseName)))) {
+            (meta->general->data_type == ASF_BYTE || is_PolSARpro(inBaseName)))) {
         // Ooops.  Tried to apply a colormap to the wrong type of data
         asfPrintWarning(
           "Color map specified with the -colormap option (%s) not\n"

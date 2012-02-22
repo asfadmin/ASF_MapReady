@@ -26,9 +26,9 @@
 
 #if defined(win32)
 #include <pango/pango.h>
-#define BYTE __byte
+/*#define BYTE __byte*/
 #include "asf.h"
-#undef BYTE
+/*#undef BYTE*/
 #include <Windows.h>
 #undef DIR_SEPARATOR
 #else /* #if defined(win32) */

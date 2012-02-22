@@ -430,7 +430,7 @@ static int save_as_asf(ImageInfo *ii,
     // which we can make bytes.
     data_type_t data_type = REAL32;
     if (what_to_save == SCALED_PIXEL_VALUE)
-      data_type = BYTE;
+      data_type = ASF_BYTE;
 
     meta_parameters *out_meta =
       build_metadata(meta, out_file, nl, ns, line_min, samp_min, data_type,

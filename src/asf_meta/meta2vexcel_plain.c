@@ -25,7 +25,7 @@ meta_parameters* vp2meta(vexcel_plain *vp)
   strcpy(meta->general->mode, vp->sensor.beam[0].beam_name);
   strcpy(meta->general->processor, vp->gli_product.processor_name);
   if (vp->gli_product.image_desc.bytes_per_pixel == 1)
-    meta->general->data_type = BYTE;
+    meta->general->data_type = ASF_BYTE;
   else if (vp->gli_product.image_desc.bytes_per_pixel == 2)
     meta->general->data_type = INTEGER16;
   else if (vp->gli_product.image_desc.bytes_per_pixel == 4)

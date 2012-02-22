@@ -14,7 +14,7 @@ typedef struct {
 static const char *data_type_as_str(data_type_t data_type)
 {
     switch (data_type) {
-      case BYTE:              return "BYTE";
+      case ASF_BYTE:              return "BYTE";
       case INTEGER16:         return "INTEGER16";
       case INTEGER32:         return "INTEGER32";
       case REAL32:            return "REAL32";
@@ -149,7 +149,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
         }
         free(shorts);
     }
-    else if (meta->general->data_type == BYTE)
+    else if (meta->general->data_type == ASF_BYTE)
     {
         unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns);
         for (ii=0; ii<n_rows_to_get; ++ii) {
@@ -262,7 +262,7 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
         }
         free(shorts);
     }
-    else if (meta->general->data_type == BYTE)
+    else if (meta->general->data_type == ASF_BYTE)
     {
         unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns);
         for (ii=0; ii<thumb_size_y; ++ii) {

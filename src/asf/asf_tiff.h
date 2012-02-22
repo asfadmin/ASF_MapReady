@@ -2,7 +2,7 @@
 #define ASF_TIFF_H
 
 #ifdef win32
-#define BYTE __byte
+/*#define BYTE __byte*/
 #define POINT __point
 #endif
 
@@ -19,7 +19,7 @@
 #define N(a)  (sizeof (a) / sizeof (a[0]))
 
 #ifdef win32
-#undef BYTE
+/*#undef BYTE*/
 #undef POINT
 #endif
 

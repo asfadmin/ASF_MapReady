@@ -255,7 +255,7 @@ int read_uavsar_client(int row_start, int n_rows_to_get,
     ReadUavsarClientInfo *info = (ReadUavsarClientInfo*) read_client_info;
     int ns = meta->general->sample_count;
 
-    if (meta->general->data_type == BYTE) {
+    if (meta->general->data_type == ASF_BYTE) {
         unsigned char *dest = (unsigned char*)dest_void;
         if (data_type==GREYSCALE_BYTE) {
             FSEEK64(info->fp, ns*row_start, SEEK_SET);
@@ -290,7 +290,7 @@ int get_uavsar_thumbnail_data(int thumb_size_x, int thumb_size_y,
     // temporary storage
     float *buf = MALLOC(sizeof(float)*ns);
 
-    if (meta->general->data_type == BYTE) {
+    if (meta->general->data_type == ASF_BYTE) {
         unsigned char *dest = (unsigned char*)dest_void;
         if (data_type == GREYSCALE_BYTE) {
             for (i=0; i<thumb_size_y; ++i) {
@@ -366,7 +366,7 @@ int open_uavsar_data(const char *filename, int multilook,
     client->thumb_fn = get_uavsar_thumbnail_data;
     client->free_fn = free_uavsar_client_info;
 
-    if (meta->general->data_type == BYTE)
+    if (meta->general->data_type == ASF_BYTE)
         client->data_type = GREYSCALE_BYTE;
     else
         client->data_type = GREYSCALE_FLOAT;

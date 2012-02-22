@@ -153,7 +153,7 @@ int main(int argc, char **argv)
 	if (diff_file_name)
 	{
 		diff_meta = meta_read(in_file_name1);
-		if (diff_meta->general->data_type == BYTE) {
+		if (diff_meta->general->data_type == ASF_BYTE) {
 			diff_meta->general->data_type = INTEGER16;
 		}
 		diff_fp = fopenImage(diff_file_name,"wb");

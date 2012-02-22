@@ -2,9 +2,9 @@
 
 #if defined(win32)
 
-#define BYTE __byte
+/*#define BYTE __byte*/
 #include "asf_meta.h"
-#undef BYTE
+/*#undef BYTE*/
 
 #include <windows.h>
 

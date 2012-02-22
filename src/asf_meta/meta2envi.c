@@ -204,7 +204,7 @@ int datatype2envi(int data_type)
 {
   switch (data_type) 
   {
-    case BYTE: return 1;
+    case ASF_BYTE: return 1;
     case INTEGER16: return 2;
     case INTEGER32: return 3;
     case REAL32: return 4;
@@ -405,7 +405,7 @@ meta_parameters* envi2meta(envi_header *envi)
 
   switch (envi->data_type)
     {
-    case 1: meta->general->data_type = BYTE; break;
+    case 1: meta->general->data_type = ASF_BYTE; break;
     case 2: meta->general->data_type = INTEGER16; break;
     case 3: meta->general->data_type = INTEGER32; break;
     case 4: meta->general->data_type = REAL32; break;

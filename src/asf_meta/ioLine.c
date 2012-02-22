@@ -15,7 +15,7 @@ int data_type2sample_size(int data_type)
 {
   /* Determine sample size.  */
   switch (data_type) {
-    case BYTE:      return sizeof(unsigned char);
+    case ASF_BYTE:      return sizeof(unsigned char);
     case INTEGER16: return sizeof(short int);
     case INTEGER32: return sizeof(int);
     case REAL32:    return sizeof(float);
@@ -114,7 +114,7 @@ int get_data_lines(FILE *file, meta_parameters *meta,
       for ( ii=0; ii<samples_gotten; ii++ ) {
         ieee_big32(((float*)temp_buffer)[ii]);
         switch (dest_data_type) {
-         case BYTE:((unsigned char*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case ASF_BYTE:((unsigned char*)dest)[ii] = ((float*)temp_buffer)[ii];break;
          case INTEGER16:((short int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
          case INTEGER32:((int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
          case REAL32:((float*)dest)[ii] = ((float*)temp_buffer)[ii];break;
@@ -134,10 +134,10 @@ int get_data_lines(FILE *file, meta_parameters *meta,
         }
       }
       break;
-    case BYTE:
+    case ASF_BYTE:
       for ( ii=0; ii<samples_gotten; ii++ ) {
         switch (dest_data_type) {
-         case BYTE:((unsigned char*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case ASF_BYTE:((unsigned char*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
          case INTEGER16:((short int*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
          case INTEGER32:((int*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
          case REAL32:((float*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
@@ -149,7 +149,7 @@ int get_data_lines(FILE *file, meta_parameters *meta,
       for ( ii=0; ii<samples_gotten; ii++ ) {
         big16(((short int *)temp_buffer)[ii]);
         switch (dest_data_type) {
-         case BYTE:((unsigned char*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case ASF_BYTE:((unsigned char*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
          case INTEGER16:((short int*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
          case INTEGER32:((int*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
          case REAL32:((float*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
@@ -161,7 +161,7 @@ int get_data_lines(FILE *file, meta_parameters *meta,
       for ( ii=0; ii<samples_gotten; ii++ ) {
         big32(((int *)temp_buffer)[ii]);
         switch (dest_data_type) {
-         case BYTE:((unsigned char*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case ASF_BYTE:((unsigned char*)dest)[ii] = ((int*)temp_buffer)[ii];break;
          case INTEGER16:((short int*)dest)[ii] = ((int*)temp_buffer)[ii];break;
          case INTEGER32:((int*)dest)[ii] = ((int*)temp_buffer)[ii];break;
          case REAL32:((float*)dest)[ii] = ((int*)temp_buffer)[ii];break;
@@ -173,7 +173,7 @@ int get_data_lines(FILE *file, meta_parameters *meta,
       for ( ii=0; ii<samples_gotten; ii++ ) {
         ieee_big64(((double*)temp_buffer)[ii]);
         switch (dest_data_type) {
-         case BYTE:((unsigned char*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case ASF_BYTE:((unsigned char*)dest)[ii] = ((double*)temp_buffer)[ii];break;
          case INTEGER16:((short int*)dest)[ii] = ((double*)temp_buffer)[ii];break;
          case INTEGER32:((int*)dest)[ii] = ((double*)temp_buffer)[ii];break;
          case REAL32:((float*)dest)[ii] = ((double*)temp_buffer)[ii];break;
@@ -237,7 +237,7 @@ int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number,
         unsigned char *dest)
 {
   return get_data_lines(file, meta, line_number, 1,
-      sample_number, num_samples_to_get, dest, BYTE);
+      sample_number, num_samples_to_get, dest, ASF_BYTE);
 }
 
 int get_partial_byte_lines(FILE *file, meta_parameters *meta, int line_number,
@@ -245,7 +245,7 @@ int get_partial_byte_lines(FILE *file, meta_parameters *meta, int line_number,
          int num_samples_to_get, unsigned char *dest)
 {
   return get_data_lines(file, meta, line_number, num_lines_to_get,
-      sample_number, num_samples_to_get, dest, BYTE);
+      sample_number, num_samples_to_get, dest, ASF_BYTE);
 }
 
 
@@ -253,14 +253,14 @@ int get_byte_line(FILE *file, meta_parameters *meta, int line_number,
                   unsigned char *dest)
 {
   return get_data_lines(file, meta, line_number, 1,
-      0, meta->general->sample_count, dest, BYTE);
+      0, meta->general->sample_count, dest, ASF_BYTE);
 }
 
 int get_byte_lines(FILE *file, meta_parameters *meta, int line_number,
                    int num_lines_to_get, unsigned char *dest)
 {
   return get_data_lines(file, meta, line_number, num_lines_to_get,
-      0, meta->general->sample_count, dest, BYTE);
+      0, meta->general->sample_count, dest, ASF_BYTE);
 }
 
 
@@ -399,7 +399,7 @@ static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
   // Write out all optical data as byte image.
   // They don't have a larger dynamic range than that.
   if (meta->optical)
-    data_type = BYTE;
+    data_type = ASF_BYTE;
 
   /* Determine sample size.  */
   sample_size = data_type2sample_size(data_type);
@@ -427,7 +427,7 @@ static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
     case REAL32:
       for ( ii=0; ii<num_samples_to_put; ii++ ) {
         switch (source_data_type) {
-         case BYTE:((float*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case ASF_BYTE:((float*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
          case INTEGER16:((float*)out_buffer)[ii] = ((short int*)source)[ii];break;
          case INTEGER32:((float*)out_buffer)[ii] = ((int*)source)[ii];break;
          case REAL32:((float*)out_buffer)[ii] = ((float*)source)[ii];break;
@@ -448,10 +448,10 @@ static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
         ieee_big32( ((float*)out_buffer)[ii] );
       }
       break;
-    case BYTE:
+    case ASF_BYTE:
       for ( ii=0; ii<num_samples_to_put; ii++ ) {
         switch (source_data_type) {
-         case BYTE:((unsigned char*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case ASF_BYTE:((unsigned char*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
          case INTEGER16:((unsigned char*)out_buffer)[ii] = ((short int*)source)[ii];break;
          case INTEGER32:((unsigned char*)out_buffer)[ii] = ((int*)source)[ii];break;
          case REAL32:((unsigned char*)out_buffer)[ii] = ((float*)source)[ii];break;
@@ -462,7 +462,7 @@ static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
     case INTEGER16:
       for ( ii=0; ii<num_samples_to_put; ii++ ) {
         switch (source_data_type) {
-         case BYTE:((short int*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case ASF_BYTE:((short int*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
          case INTEGER16:((short int*)out_buffer)[ii] = ((short int*)source)[ii];break;
          case INTEGER32:((short int*)out_buffer)[ii] = ((int*)source)[ii];break;
          case REAL32:((short int*)out_buffer)[ii] = ((float*)source)[ii];break;
@@ -474,7 +474,7 @@ static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
     case INTEGER32:
       for ( ii=0; ii<num_samples_to_put; ii++ ) {
         switch (source_data_type) {
-         case BYTE:((int*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case ASF_BYTE:((int*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
          case INTEGER16:((int*)out_buffer)[ii] = ((short int*)source)[ii];break;
          case INTEGER32:((int*)out_buffer)[ii] = ((int*)source)[ii];break;
          case REAL32:((int*)out_buffer)[ii] = ((float*)source)[ii];break;
@@ -486,7 +486,7 @@ static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
     case REAL64:
       for ( ii=0; ii<num_samples_to_put; ii++ ) {
         switch (source_data_type) {
-         case BYTE:((double*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case ASF_BYTE:((double*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
          case INTEGER16:((double*)out_buffer)[ii] = ((short int*)source)[ii];break;
          case INTEGER32:((double*)out_buffer)[ii] = ((int*)source)[ii];break;
          case REAL32:((double*)out_buffer)[ii] = ((float*)source)[ii];break;

@@ -1358,7 +1358,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return make_complex_thumb(imd, met, data_name,
                                   max_thumbnail_dimension);
     }
-    else if (imd->general->data_type != BYTE &&
+    else if (imd->general->data_type != ASF_BYTE &&
              imd->general->data_type != INTEGER16)
 // Turning off support for these guys for now.
 //        imd->general->data_type != INTEGER32 &&
@@ -1441,7 +1441,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
           for (jj = 0; jj < imd->general->sample_count; ++jj)
             big16(line[jj]);
         }
-        else if (imd->general->data_type == BYTE)
+        else if (imd->general->data_type == ASF_BYTE)
         {
           FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
                 fpIn);

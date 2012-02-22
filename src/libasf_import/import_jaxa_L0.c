@@ -166,7 +166,7 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         strcpy(mg->mode, "1.0"); // Might need to be "1A".  FIXME: Need to put radiometric and geometric correction
                                  // coefficients into the metadata
         strcpy(mg->processor, "JAXA");
-        mg->data_type = BYTE;
+        mg->data_type = ASF_BYTE;
         mg->image_data_type = AMPLITUDE_IMAGE; // FIXME: Should this be RAW for Level 0 _optical_ data?
         mg->radiometry = r_AMP;
         strcpy(mg->acquisition_date, "dd-mmm-yy"); // FIXME: Get the acquisition date out of the metadata!

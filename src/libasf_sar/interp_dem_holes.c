@@ -251,7 +251,7 @@ void interp_dem_holes_float_image_rick(meta_parameters *meta,
       asfPrintStatus("   [0 = No Data, 255 = Valid Data]\n");
 
       data_type_t saved_dt = meta->general->data_type;
-      meta->general->data_type=BYTE;
+      meta->general->data_type=ASF_BYTE;
 
       FILE *ofp = fopenImage("good_data_mask.img", "wb");
       float *line = MALLOC(sizeof(float)*ns);

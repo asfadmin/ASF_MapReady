@@ -322,7 +322,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
     case 6:  meta->general->data_type = COMPLEX_BYTE;      break;
     case 7:  meta->general->data_type = COMPLEX_INTEGER16; break;
     case 9:  meta->general->data_type = COMPLEX_REAL32;    break;
-    default: meta->general->data_type = BYTE;              break;
+    default: meta->general->data_type = ASF_BYTE;              break;
     }
   if (ceos->facility == BEIJING)
     date_dssr2time(dssr->inp_sctim, &date, &time);
@@ -2118,7 +2118,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   if (substr[3] == 'G' && (substr[5] == 'U' || substr[5] == 'P'))
     ceos_init_proj(meta, NULL, NULL, &(ceos->shr), ampr);
 
-  meta->general->data_type = BYTE;
+  meta->general->data_type = ASF_BYTE;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
   if (ceos->shr.sc_time[0] == ' ') {
     date_shr2date_stamp(ceos->shr.acq_date, meta->general->acquisition_date);

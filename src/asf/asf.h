@@ -87,7 +87,7 @@ typedef enum {
 extern report_level_t g_report_level;
 
 typedef enum {
-  BYTE=1,
+  ASF_BYTE=1,
   INTEGER16,
   INTEGER32,
   REAL32,

@@ -143,7 +143,7 @@ main(int argc, char **argv)
        {
          if (strcmp_case(type, "BYTE") == 0 ||
              strcmp_case(type, "INT8") == 0) {
-           generic_bin_datatype = BYTE;
+           generic_bin_datatype = ASF_BYTE;
          }
          else if (strcmp_case(type, "FLOAT") == 0 ||
                   strcmp_case(type, "REAL32") == 0) {

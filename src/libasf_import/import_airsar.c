@@ -642,7 +642,7 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
     header = read_airsar_header(inFile);
     line_offset = header->first_data_offset / metaIn->general->sample_count;
     metaIn->general->line_count = metaOut->general->line_count + line_offset;
-    metaIn->general->data_type = BYTE;
+    metaIn->general->data_type = ASF_BYTE;
     metaOut->general->data_type = REAL32;
     floatBuf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
     fpIn = FOPEN(inFile, "rb");

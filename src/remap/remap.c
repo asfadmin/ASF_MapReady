@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 	  outDDR.dtype=outPixelType;
 	  switch (outPixelType) {
 	  case 1:
-	    meta->general->data_type = BYTE;
+	    meta->general->data_type = ASF_BYTE;
 	    break;
 	  case 2:
 	    meta->general->data_type = INTEGER16;
