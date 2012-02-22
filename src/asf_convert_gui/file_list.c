@@ -157,10 +157,10 @@ int has_prepension(const gchar * data_file_name)
 }
 
 static gchar *
-determine_default_output_file_name(const gchar * data_file_name)
+determine_default_output_file_name(const gchar * data_file_name, const gchar *uavsar_type)
 {
     return determine_default_output_file_name_schemed(data_file_name,
-                                                      current_naming_scheme);
+                                                      current_naming_scheme, uavsar_type);
 }
 
 gboolean is_meta_file(const gchar * data_file)
@@ -1051,11 +1051,11 @@ add_to_files_list_iter(const gchar * input_file_in,
       gchar *out_name_full;
       if (interferogram_file && strlen(interferogram_file) > 0)
         out_name_full =
-          determine_default_output_file_name(interferogram_file);
+          determine_default_output_file_name(interferogram_file, uavsar_type);
       else if (coherence_file && strlen(coherence_file) > 0)
-        out_name_full = determine_default_output_file_name(coherence_file);
+        out_name_full = determine_default_output_file_name(coherence_file, uavsar_type);
       else
-        out_name_full = determine_default_output_file_name(input_file);
+        out_name_full = determine_default_output_file_name(input_file, uavsar_type);
       set_output_name(iter_p, out_name_full);
       g_free(out_name_full);
       FREE(bands);

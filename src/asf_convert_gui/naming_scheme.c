@@ -268,20 +268,22 @@ static void apply_naming_scheme(const NamingScheme * new,
         gchar * current_output_name;
         gchar * input_file_name;
         gchar * old_output_name;
+        gchar * uavsar_type;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
 			   COL_INPUT_FILE, &input_file_name,
+         COL_UAVSAR_TYPE, &uavsar_type,
 			   COL_OUTPUT_FILE, &current_output_name, -1);
 
         old_output_name =
-            determine_default_output_file_name_schemed(input_file_name, old);
+            determine_default_output_file_name_schemed(input_file_name, old, uavsar_type);
 
         if (strcmp(current_output_name, old_output_name) == 0)
         {
             /* Matches what was produced by the old naming scheme --
                generate new name based on the new naming scheme */
             gchar *new_output_name =
-              determine_default_output_file_name_schemed(input_file_name, new);
+              determine_default_output_file_name_schemed(input_file_name, new, uavsar_type);
 
             set_output_name(&iter, new_output_name);
 
@@ -295,6 +297,7 @@ static void apply_naming_scheme(const NamingScheme * new,
         g_free(input_file_name);
         g_free(current_output_name);
         g_free(old_output_name);
+        g_free(uavsar_type);
 
         valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
@@ -409,7 +412,8 @@ on_dialog_cons_key_press_event(GtkWidget * widget, GdkEventKey * event,
 
 gchar *
 determine_default_output_file_name_schemed(const gchar *data_file_name,
-                                           const NamingScheme *scheme)
+                                           const NamingScheme *scheme,
+                                           const gchar *uavsar_type)
 {
     Settings * user_settings;
     const gchar * ext;
@@ -421,7 +425,7 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     gchar * p;
     gchar * input_file_name;
     gchar * polsarpro_aux_info;
-    gchar * uavsar_type;
+    gchar * uavsar_type_col;
     GtkTreeIter iter;
 
     gboolean valid;
@@ -430,9 +434,13 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     while (valid) {
       gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
 			 COL_INPUT_FILE, &input_file_name,
-       COL_UAVSAR_TYPE, &uavsar_type,
+       COL_UAVSAR_TYPE, &uavsar_type_col,
 			 COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
-      if (strcmp(data_file_name, input_file_name) == 0)
+      if(uavsar_type && strlen(uavsar_type)) {
+        if(strcmp(uavsar_type, uavsar_type_col) == 0 && strcmp(data_file_name, input_file_name) == 0)
+          break;
+      }
+      else if(strcmp(data_file_name, input_file_name) == 0)
         break;
 
       valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
@@ -458,8 +466,8 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
 
         filename = g_path_get_basename(basename);
 
-        if(uavsar_type && strlen(uavsar_type)) {
-          gchar *type_lower = g_utf8_strdown(uavsar_type, strlen(uavsar_type));
+        if(uavsar_type_col && strlen(uavsar_type_col)) {
+          gchar *type_lower = g_utf8_strdown(uavsar_type_col, strlen(uavsar_type_col));
           gchar *gfilename = g_strconcat(filename, "_", type_lower, NULL);
           strcpy(filename, gfilename);
           g_free(type_lower);
@@ -497,7 +505,7 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     g_free(path);
     g_free(input_file_name);
     g_free(polsarpro_aux_info);
-    g_free(uavsar_type);
+    g_free(uavsar_type_col);
 
     user_settings = settings_get_from_gui();
     ext = settings_get_output_format_extension(user_settings);

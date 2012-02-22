@@ -9084,6 +9084,7 @@ uso@asf.alaska.edu</property>
                       <property name="has_frame">True</property>
                       <property name="invisible_char">&#x25CF;</property>
                       <property name="activates_default">False</property>
+                      <signal name="changed" handler="on_add_file_with_ancillary_uavsar_annotation_file_entry_changed" />
                     </widget>
                     <packing>
                       <property name="left_attach">1</property>
@@ -9126,12 +9127,15 @@ uso@asf.alaska.edu</property>
                   <property name="label">UAVSAR POLSAR Processing Types</property>
                   <property name="label_xalign">0</property>
                   <property name="label_yalign">0.5</property>
+                  <property name="sensitive">FALSE</property>
                   <property name="shadow_type">GTK_SHADOW_ETCHED_IN</property>
                   <child>
-                    <widget class="GtkHBox" id="uavsar_polsar_select_hbox">
+                    <widget class="GtkTable" id="uavsar_polsar_select_table">
                       <property name="visible">True</property>
-                      <property name="homogeneous">False</property>
-                      <property name="spacing">20</property>
+                      <property name="homogeneous">TRUE</property>
+                      <property name="n_rows">1</property>
+                      <property name="n_columns">6</property>
+                      <property name="column_spacing">20</property>
                       <child>
                         <widget class="GtkCheckButton" id="uavsar_polsar_all_proc_types">
                           <property name="border_width">1</property>
@@ -9147,28 +9151,12 @@ uso@asf.alaska.edu</property>
                           <signal name="toggled" handler="on_uavsar_polsar_all_checkbutton_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
-                          <property name="padding">0</property>
-                          <property name="expand">False</property>
-                          <property name="fill">False</property>
-                        </packing>
-                      </child>
-                      <child>
-                        <widget class="GtkCheckButton" id="uavsar_proc_type_SLC">
-                          <property name="border_width">1</property>
-                          <property name="visible">True</property>
-                          <property name="can_focus">True</property>
-                          <property name="label" translatable="yes">SLC</property>
-                          <property name="use_underline">True</property>
-                          <property name="relief">GTK_RELIEF_NORMAL</property>
-                          <property name="focus_on_click">True</property>
-                          <property name="active">False</property>
-                          <property name="inconsistent">False</property>
-                          <property name="draw_indicator">True</property>
-                        </widget>
-                        <packing>
-                          <property name="padding">0</property>
-                          <property name="expand">False</property>
-                          <property name="fill">False</property>
+                          <property name="left_attach">0</property>
+                          <property name="right_attach">1</property>
+                          <property name="top_attach">0</property>
+                          <property name="bottom_attach">1</property>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9183,11 +9171,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_polsar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
-                          <property name="padding">0</property>
-                          <property name="expand">False</property>
-                          <property name="fill">False</property>
+                          <property name="left_attach">1</property>
+                          <property name="right_attach">2</property>
+                          <property name="top_attach">0</property>
+                          <property name="bottom_attach">1</property>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9202,11 +9194,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_polsar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
-                          <property name="padding">0</property>
-                          <property name="expand">False</property>
-                          <property name="fill">False</property>
+                          <property name="left_attach">2</property>
+                          <property name="right_attach">3</property>
+                          <property name="top_attach">0</property>
+                          <property name="bottom_attach">1</property>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9221,11 +9217,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_polsar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
-                          <property name="padding">0</property>
-                          <property name="expand">False</property>
-                          <property name="fill">False</property>
+                          <property name="left_attach">3</property>
+                          <property name="right_attach">4</property>
+                          <property name="top_attach">0</property>
+                          <property name="bottom_attach">1</property>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9240,11 +9240,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_polsar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
-                          <property name="padding">0</property>
-                          <property name="expand">False</property>
-                          <property name="fill">False</property>
+                          <property name="left_attach">4</property>
+                          <property name="right_attach">5</property>
+                          <property name="top_attach">0</property>
+                          <property name="bottom_attach">1</property>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                     </widget>
@@ -9262,6 +9266,7 @@ uso@asf.alaska.edu</property>
                   <property name="visible">True</property>
                   <property name="label">UAVSAR InSAR Processing Types</property>
                   <property name="label_xalign">0</property>
+                  <property name="sensitive">FALSE</property>
                   <property name="label_yalign">0.5</property>
                   <property name="shadow_type">GTK_SHADOW_ETCHED_IN</property>
                   <child>
@@ -9269,7 +9274,7 @@ uso@asf.alaska.edu</property>
                       <property name="visible">True</property>
                       <property name="n_rows">2</property>
                       <property name="n_columns">6</property>
-                      <property name="homogeneous">False</property>
+                      <property name="homogeneous">TRUE</property>
                       <property name="row_spacing">2</property>
                       <property name="column_spacing">20</property>
                       <child>
@@ -9284,14 +9289,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_all_checkbutton_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">0</property>
                           <property name="right_attach">1</property>
                           <property name="top_attach">0</property>
                           <property name="bottom_attach">1</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9306,14 +9312,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">1</property>
                           <property name="right_attach">2</property>
                           <property name="top_attach">0</property>
                           <property name="bottom_attach">1</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9328,14 +9335,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">2</property>
                           <property name="right_attach">3</property>
                           <property name="top_attach">0</property>
                           <property name="bottom_attach">1</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9350,14 +9358,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">3</property>
                           <property name="right_attach">4</property>
                           <property name="top_attach">0</property>
                           <property name="bottom_attach">1</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9372,14 +9381,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">4</property>
                           <property name="right_attach">5</property>
                           <property name="top_attach">0</property>
                           <property name="bottom_attach">1</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9387,21 +9397,22 @@ uso@asf.alaska.edu</property>
                           <property name="border_width">1</property>
                           <property name="visible">True</property>
                           <property name="can_focus">True</property>
-                          <property name="label" translatable="yes">AMP_GRD</property>
+                          <property name="label" translatable="yes">AMP__GRD</property>
                           <property name="use_underline">True</property>
                           <property name="relief">GTK_RELIEF_NORMAL</property>
                           <property name="focus_on_click">True</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">1</property>
                           <property name="right_attach">2</property>
                           <property name="top_attach">1</property>
                           <property name="bottom_attach">2</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9416,14 +9427,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">2</property>
                           <property name="right_attach">3</property>
                           <property name="top_attach">1</property>
                           <property name="bottom_attach">2</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9438,14 +9450,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">3</property>
                           <property name="right_attach">4</property>
                           <property name="top_attach">1</property>
                           <property name="bottom_attach">2</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9460,14 +9473,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">4</property>
                           <property name="right_attach">5</property>
                           <property name="top_attach">1</property>
                           <property name="bottom_attach">2</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                       <child>
@@ -9482,14 +9496,15 @@ uso@asf.alaska.edu</property>
                           <property name="active">False</property>
                           <property name="inconsistent">False</property>
                           <property name="draw_indicator">True</property>
+                          <signal name="toggled" handler="on_uavsar_insar_type_toggled" last_modification_time="Wed, 26 Jan 2005 04:29:52 GMT" />
                         </widget>
                         <packing>
                           <property name="left_attach">5</property>
                           <property name="right_attach">6</property>
                           <property name="top_attach">1</property>
                           <property name="bottom_attach">2</property>
-                          <property name="x_options">fill</property>
-                          <property name="y_options"/>
+                          <property name="y_padding">5</property>
+                          <property name="x_padding">5</property>
                         </packing>
                       </child>
                     </widget>

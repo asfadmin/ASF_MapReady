@@ -466,7 +466,8 @@ gchar *naming_scheme_apply(const NamingScheme *, const gchar *);
 gboolean naming_schemes_equal(const NamingScheme *, const NamingScheme *);
 NamingScheme *naming_scheme_copy(const NamingScheme *);
 gchar * determine_default_output_file_name_schemed(const gchar *,
-                                                   const NamingScheme *scheme);
+                                                   const NamingScheme *scheme,
+                                                   const gchar *uavsar_type);
 
 /* metadata.c */
 gchar *build_asf_metadata_filename(gchar * name);

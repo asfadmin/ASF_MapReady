@@ -1405,8 +1405,93 @@ on_add_file_with_ancillary_polsarpro_ceos_entry_changed(GtkWidget *widget)
 SIGNAL_CALLBACK void
 on_uavsar_polsar_all_checkbutton_toggled(GtkWidget *widget)
 {
-  GtkWidget *all_button = get_widget_checked("uavsar_polsar_all");
-  gboolean toggled = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(all_button));
-  GtkWidget *uavsar_slc = get_widget_checked("uavsar_slc");
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(uavsar_slc), toggled);
+  GtkWidget *all_button = get_widget_checked("uavsar_polsar_all_proc_types");
+  GtkWidget *polsar_table = get_widget_checked("uavsar_polsar_select_table");
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(all_button))) {
+    GList *l, *table_children = gtk_container_get_children(GTK_CONTAINER(polsar_table));
+    for(l = table_children; l; l = l->next) {
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), TRUE);
+    }
+    g_list_free(table_children);
+  }
+}
+
+SIGNAL_CALLBACK void
+on_uavsar_insar_all_checkbutton_toggled(GtkWidget *widget)
+{
+  GtkWidget *all_button = get_widget_checked("uavsar_insar_all_proc_types");
+  GtkWidget *polsar_table = get_widget_checked("uavsar_insar_select_table");
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(all_button))) {
+    GList *l, *table_children = gtk_container_get_children(GTK_CONTAINER(polsar_table));
+    for(l = table_children; l; l = l->next) {
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), TRUE);
+    }
+    g_list_free(table_children);
+  }
+}
+
+SIGNAL_CALLBACK void
+on_uavsar_polsar_type_toggled(GtkWidget *widget)
+{
+  if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget))) {
+    GtkWidget *all_button = get_widget_checked("uavsar_polsar_all_proc_types");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(all_button), FALSE);
+  }
+
+  GtkWidget *ok_button = get_widget_checked("add_file_with_ancillary_ok_button");
+  gtk_widget_set_sensitive(ok_button, FALSE);
+  GList *l, *uavsar_types_checkboxes = get_widgets_prefix_checked("uavsar_proc_type");
+  for(l = uavsar_types_checkboxes; l; l = l->next)
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(l->data))) {
+      gtk_widget_set_sensitive(ok_button, TRUE);
+      break;
+    }
+
+  g_list_free(uavsar_types_checkboxes);
+}
+
+SIGNAL_CALLBACK void
+on_uavsar_insar_type_toggled(GtkWidget *widget)
+{
+  if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget))) {
+    GtkWidget *all_button = get_widget_checked("uavsar_insar_all_proc_types");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(all_button), FALSE);
+  }
+
+  GtkWidget *ok_button = get_widget_checked("add_file_with_ancillary_ok_button");
+  gtk_widget_set_sensitive(ok_button, FALSE);
+  GList *l, *uavsar_types_checkboxes = get_widgets_prefix_checked("uavsar_proc_type");
+  for(l = uavsar_types_checkboxes; l; l = l->next)
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(l->data))) {
+      gtk_widget_set_sensitive(ok_button, TRUE);
+      break;
+    }
+
+  g_list_free(uavsar_types_checkboxes);
+}
+
+SIGNAL_CALLBACK void
+on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *entry)
+{
+  const gchar *filename = gtk_entry_get_text(GTK_ENTRY(entry));
+  GtkWidget *polsar_frame = get_widget_checked("uavsar_polsar_select_frame");
+  GtkWidget *insar_frame = get_widget_checked("uavsar_insar_select_frame");
+
+  GList *l, *uavsar_types_checkboxes = get_widgets_prefix_checked("uavsar_proc_type");
+  uavsar_types_checkboxes = g_list_append(uavsar_types_checkboxes, get_widget_checked("uavsar_polsar_all_proc_types"));
+  uavsar_types_checkboxes = g_list_append(uavsar_types_checkboxes, get_widget_checked("uavsar_insar_all_proc_types"));
+  for(l = uavsar_types_checkboxes; l; l = l->next)
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), FALSE);
+  g_list_free(uavsar_types_checkboxes);
+
+  gtk_widget_set_sensitive(polsar_frame, FALSE);
+  gtk_widget_set_sensitive(insar_frame, FALSE);
+  if(fileExists(filename)) {
+    if(is_uavsar_polsar(filename)) {
+      gtk_widget_set_sensitive(polsar_frame, TRUE);
+    }
+    else if(is_uavsar_insar(filename)) {
+      gtk_widget_set_sensitive(insar_frame, TRUE);
+    }
+  }
 }

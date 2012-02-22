@@ -281,6 +281,10 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
       get_widget_checked("browse_select_colormap_optionmenu");
   GtkWidget *browse_select_image_data_type_label =
       get_widget_checked("browse_select_colormap_label");
+  GtkWindow *ancillary_dialog =
+      GTK_WINDOW(get_widget_checked("add_file_with_ancillary_dialog"));
+  GtkWindow *main_window =
+      GTK_WINDOW(get_widget_checked("asf_convert"));
   int sel = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
   GtkWidget *ok_button =
     get_widget_checked("add_file_with_ancillary_ok_button");
@@ -300,7 +304,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
       case FORMAT_UAVSAR:
         put_string_to_label("add_with_ancillary_format_label", "UAVSAR");
         show_widget("hbox_gamma_description", FALSE);
-        gtk_widget_set_sensitive(ok_button, TRUE);	
+        gtk_widget_set_sensitive(ok_button, FALSE);	
         break;
       case FORMAT_POLSARPRO:
         put_string_to_label("add_with_ancillary_format_label", "PolSARPro");
@@ -317,7 +321,8 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         put_string_to_label("add_with_ancillary_format_label", "Unknown");
         break;
     }
-    show_widget("add_file_with_ancillary_dialog", TRUE);
+    gtk_window_set_transient_for(ancillary_dialog, main_window);
+    gtk_widget_show(GTK_WIDGET(ancillary_dialog));
     return;
   }
 
