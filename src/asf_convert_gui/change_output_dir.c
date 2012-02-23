@@ -268,9 +268,9 @@ static void create_browse_file_chooser_dialog()
 
   browse_widget = gtk_file_chooser_dialog_new(
       "Change Output Directory", GTK_WINDOW(parent),
-      GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER,
+      GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,  //Cancel button
-      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,    //Save button
+      GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,      //OK button
       NULL);
 
   // we need to extract the buttons, so we can connect them to our
@@ -292,7 +292,6 @@ static void create_browse_file_chooser_dialog()
                    G_CALLBACK(browse_cancel_clicked), NULL);
   g_signal_connect(browse_widget, "delete_event",
                    G_CALLBACK(browse_cancel_clicked), NULL);
-
 
   gtk_window_set_modal(GTK_WINDOW(browse_widget), TRUE);
   gtk_window_set_destroy_with_parent(GTK_WINDOW(browse_widget), TRUE);
@@ -328,7 +327,7 @@ on_browse_output_directory_button_clicked(GtkWidget *widget)
         get_widget_checked("entry_new_output_directory");
     const char *dir = gtk_entry_get_text(
         GTK_ENTRY(entry_new_output_directory));
-    if (strlen(dir) > 0) {
+    if (dir && strlen(dir) > 0) {
         gtk_file_chooser_set_current_folder(
             GTK_FILE_CHOOSER(browse_widget), dir);
     }
