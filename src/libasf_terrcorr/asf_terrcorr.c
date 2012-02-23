@@ -1096,6 +1096,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   //printf("add speckle: %d\n", add_speckle);
   //printf("if coreg fails use zero offsets: %d\n",
   //       if_coreg_fails_use_zero_offsets);
+  //printf("save_ground_dem: %d\n", save_ground_dem);
+  //printf("save_incid_angles: %d\n", save_incid_angles);
 
   // Which DEM should we use during terrain correction -- the original
   // ground range DEM (new method), or the backconverted one (old method)?

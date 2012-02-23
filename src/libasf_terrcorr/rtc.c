@@ -261,6 +261,8 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     }
 
     if(save_incid_angles) {
+      for (jj=0; jj<ns; ++jj)
+        incid_angles[jj] *= R2D;
       put_band_float_line(fpSide, side_meta, 0, ii, incid_angles);
       put_band_float_line(fpSide, side_meta, 1, ii, corr);
     }

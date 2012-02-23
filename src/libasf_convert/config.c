@@ -859,6 +859,9 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "use zero offsets if match fails", 31)==0)
         cfg->terrain_correct->if_coreg_fails_use_zero_offsets =
 	  read_int(line, "use zero offsets if match fails");
+      if (strncmp(test, "save incidence angles", 21)==0)
+        cfg->terrain_correct->save_incid_angles =
+	  read_int(line, "save incidence angles");
 
       // Geocoding
       if (strncmp(test, "projection", 10)==0)
@@ -1279,6 +1282,9 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "use zero offsets if match fails", 31)==0)
         cfg->terrain_correct->if_coreg_fails_use_zero_offsets =
 	  read_int(line, "use zero offsets if match fails");
+      if (strncmp(test, "save incidence angles", 21)==0)
+        cfg->terrain_correct->save_incid_angles =
+	  read_int(line, "save incidence angles");
       FREE(test);
     }
 
@@ -2024,6 +2030,15 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"# will abort with an error if the coregistration fails.\n\n");
       fprintf(fConfig, "use zero offsets if match fails = %d\n",
 	      cfg->terrain_correct->if_coreg_fails_use_zero_offsets);
+
+      if (!shortFlag)
+        fprintf(fConfig, "\n# Turning this on saves an intermediate product with the\n"
+                "# incidence angles and correction factors determined during radiometric\n"
+                "# terrain correction.  Use this option only when radiometric\n"
+                "# correction is turned on\n\n");
+      fprintf(fConfig, "save incidence angles = %d\n",
+	      cfg->terrain_correct->save_incid_angles);
+
     }
 
     // Calibration
