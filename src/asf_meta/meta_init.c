@@ -207,6 +207,7 @@ meta_calibration *meta_calibration_init(void)
   cal->esa = NULL;
   cal->rsat = NULL;
   cal->alos = NULL;
+  cal->tsx = NULL;
 
   return cal;
 }
@@ -619,6 +620,7 @@ void meta_free(meta_parameters *meta)
       FREE(meta->calibration->esa);
       FREE(meta->calibration->asf);
       FREE(meta->calibration->asf_scansar);
+      FREE(meta->calibration->tsx);
       FREE(meta->calibration);
       meta->calibration = NULL;
     }

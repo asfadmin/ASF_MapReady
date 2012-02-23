@@ -75,6 +75,54 @@ meta_parameters *meta_copy(meta_parameters *src)
   } else
     ret->thermal = NULL;
 
+  if (src->uavsar) {
+    if (!ret->uavsar) ret->uavsar = meta_uavsar_init();
+    memcpy(ret->uavsar, src->uavsar, sizeof(meta_uavsar));
+  } else
+    ret->uavsar = NULL;
+
+  if (src->insar) {
+    if (!ret->insar) ret->insar = meta_insar_init();
+    memcpy(ret->insar, src->insar, sizeof(meta_insar));
+  } else
+    ret->insar = NULL;
+
+  if (src->dem) {
+    if (!ret->dem) ret->dem = meta_dem_init();
+    memcpy(ret->dem, src->dem, sizeof(meta_dem));
+  } else
+    ret->dem = NULL;
+
+  if (src->calibration) {
+    if (!ret->calibration) ret->calibration = meta_calibration_init();
+    memcpy(ret->calibration, src->calibration, sizeof(meta_calibration));
+    if(src->calibration->asf) {
+      ret->calibration->asf = (asf_cal_params *) MALLOC(sizeof(asf_cal_params));
+      memcpy(ret->calibration->asf, src->calibration->asf, sizeof(asf_cal_params));
+    }
+    if(src->calibration->asf_scansar) {
+      ret->calibration->asf_scansar = (asf_scansar_cal_params *) MALLOC(sizeof(asf_scansar_cal_params));
+      memcpy(ret->calibration->asf_scansar, src->calibration->asf_scansar, sizeof(asf_scansar_cal_params));
+    }
+    if(src->calibration->esa) {
+      ret->calibration->esa = (esa_cal_params *) MALLOC(sizeof(esa_cal_params));
+      memcpy(ret->calibration->esa, src->calibration->esa, sizeof(esa_cal_params));
+    }
+    if(src->calibration->rsat) {
+      ret->calibration->rsat = (rsat_cal_params *) MALLOC(sizeof(rsat_cal_params));
+      memcpy(ret->calibration->rsat, src->calibration->rsat, sizeof(rsat_cal_params));
+    }
+    if(src->calibration->alos) {
+      ret->calibration->alos = (alos_cal_params *) MALLOC(sizeof(alos_cal_params));
+      memcpy(ret->calibration->alos, src->calibration->alos, sizeof(alos_cal_params));
+    }
+    if(src->calibration->tsx) {
+      ret->calibration->tsx = (tsx_cal_params *) MALLOC(sizeof(tsx_cal_params));
+      memcpy(ret->calibration->tsx, src->calibration->tsx, sizeof(tsx_cal_params));
+    }
+  } else
+    ret->calibration = NULL;
+
   if (src->colormap) {
     // free default created one, if there
     if (ret->colormap) {
