@@ -329,8 +329,8 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
     meta->projection->perX = fabs(x1 - x2);
     meta->projection->perY = -fabs(y1 - y2);
     */
-    meta->projection->startX = params->cross_track_offset;
-    meta->projection->startY = params->along_track_offset;
+    meta->projection->startX = params->cross_track_offset - .5*params->range_pixel_spacing;
+    meta->projection->startY = params->along_track_offset - .5*params->azimuth_pixel_spacing;
     meta->projection->perX = params->range_pixel_spacing;
     meta->projection->perY = params->azimuth_pixel_spacing;
 
