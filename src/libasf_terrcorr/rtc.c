@@ -178,7 +178,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   asfPrintStatus("Reading metadata...\n");
   meta_parameters *meta_in = meta_read(inputMeta);
   if (!meta_in) asfPrintError("Failed to read metadata: %s\n", inputMeta);
-  meta_parameters *meta_out = meta_read(inputMeta);
+  meta_parameters *meta_out = meta_copy(meta_in);
   meta_parameters *meta_dem = meta_read(demMeta);
   if (!meta_dem) asfPrintError("Failed to read metadata: %s\n", demMeta);
 
@@ -204,8 +204,10 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   int nb = meta_in->general->band_count;
   int dns = meta_dem->general->sample_count;
   int dnl = meta_dem->general->line_count;
-  assert(ns == dns);
-  assert(nl == dnl);
+  if (nl != dnl || ns != dns) {
+    asfPrintError("Image size (%dx%d LxS) does not match DEM (%dx%d)!\n",
+                   nl, ns, dnl, dns);
+  }
 
   Vector **localVectors[3] = { NULL, NULL, NULL };
   Vector nextVectors[ns];
@@ -216,7 +218,6 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
   float corr[ns];
   float incid_angles[ns];
-  memset(corr, 0, sizeof(float)*ns);
   float bufIn[ns];
   float bufOut[ns];
 
@@ -229,6 +230,12 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   }
 
   if(save_incid_angles) {
+    for (jj=0; jj<ns; ++jj) {
+      incid_angles[jj] = 0;
+      corr[jj] = 1;
+    }
+    put_band_float_line(fpSide, side_meta, 0, 0, incid_angles);
+    put_band_float_line(fpSide, side_meta, 0, nl - 1, incid_angles);
     put_band_float_line(fpSide, side_meta, 1, 0, corr);
     put_band_float_line(fpSide, side_meta, 1, nl - 1, corr);
   }
