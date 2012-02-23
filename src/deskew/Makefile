@@ -8,11 +8,12 @@ LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
         $(LIBDIR)/asf.a \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
-	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS) \
+	$(ZLIB_LIBS) \
 	-lm
 
 CFLAGS += $(GLIB_CFLAGS)

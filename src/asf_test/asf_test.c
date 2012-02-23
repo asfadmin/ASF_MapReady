@@ -474,7 +474,8 @@ void cleanup_test_results(char *configFile)
 
 int main(int argc, char *argv[])
 {
-  char configFile[1024], interface[25];
+  char configFile[1024];
+  char Interface[25];
   int createflag, unitflag, cleanflag;
   extern int logflag;
   int create_f, clean_f, log_f;
@@ -540,7 +541,7 @@ int main(int argc, char *argv[])
   }
 
   // Fetch required arguments
-  strcpy(interface, argv[argc-2]);
+  strcpy(Interface, argv[argc-2]);
   strcpy(configFile, argv[argc-1]);
 
   // Report the command line
@@ -568,8 +569,8 @@ int main(int argc, char *argv[])
     asfPrintError("Could not find config file (%s)\n", configFile);
   
   // Unit tests or single configuration file?
-  if (strcmp_case(interface, "basic") == 0 || 
-      strcmp_case(interface, "automated") == 0)
+  if (strcmp_case(Interface, "basic") == 0 || 
+      strcmp_case(Interface, "automated") == 0)
     unitflag = TRUE;
 
   if (unitflag) {
@@ -602,7 +603,7 @@ int main(int argc, char *argv[])
     }
     FCLOSE(fpList);
 
-    if (test && strcmp_case(interface, "basic") == 0) {
+    if (test && strcmp_case(Interface, "basic") == 0) {
       asfPrintStatus("Running tests in basic mode ...\n");
       CU_basic_set_mode(CU_BRM_VERBOSE);
       if (CUE_SUCCESS != CU_basic_run_tests()) {
@@ -610,7 +611,7 @@ int main(int argc, char *argv[])
 	return CU_get_error();
       }
     }
-    if (test && strcmp_case(interface, "automated") == 0) {
+    if (test && strcmp_case(Interface, "automated") == 0) {
       asfPrintStatus("Running tests in automated mode ...\n\n");
       CU_set_output_filename("asf_tools");
       CU_automated_run_tests();

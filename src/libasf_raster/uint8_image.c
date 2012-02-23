@@ -21,9 +21,10 @@
 #include <gsl/gsl_histogram.h>
 #include <gsl/gsl_math.h>
 
-#include "asf_jpeg.h"
 #include "uint8_image.h"
 #include "asf.h"
+#include "asf_tiff.h"
+#include "asf_jpeg.h"
 
 #ifndef linux
 #ifndef darwin

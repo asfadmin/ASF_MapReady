@@ -33,7 +33,8 @@ CFLAGS += \
 	$(PNG_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(GSL_CFLAGS)
+	$(GSL_CFLAGS) \
+	$(XML_CFLAGS)
 
 
 LIBS  = \
@@ -50,9 +51,9 @@ LIBS  = \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
-	$(XML_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
 	$(HDFEOS5_LIBS) \

@@ -26,13 +26,13 @@ LIBS  = \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
 	$(HDFEOS5_LIBS) \
 	$(GSL_LIBS) \
 	$(ZLIB_LIBS) \
-	$(XML_LIBS) \
 	-lm
 
 all: brs2jpg

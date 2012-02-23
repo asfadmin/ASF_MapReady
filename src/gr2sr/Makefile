@@ -14,6 +14,8 @@ REQUIRED_LIBS = \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(XML_LIBS) \
+	$(GLIB_LIBS) \
+	$(ZLIB_LIBS) \
 	-lm
 
 CEDAR_LIBS = $(LIBDIR)/asf_las.a

@@ -21,12 +21,12 @@ LIBS  = \
 	$(LIBDIR)/asf_fft.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
 	$(GEOTIFF_LIBS) \
-	$(XML_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
 	$(HDFEOS5_LIBS) \

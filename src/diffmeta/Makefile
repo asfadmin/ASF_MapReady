@@ -41,6 +41,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(XML_LIBS) \
+	$(GLIB_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm 
 

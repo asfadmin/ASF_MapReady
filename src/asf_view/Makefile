@@ -72,7 +72,6 @@ LIB = \
 	-L$(GTK_LIB)/libglade \
 	-llibgthread-2.0 \
 	-lintl \
-	-liconv \
 	-lm -lz \
 	-lgtk-win32-2.0 \
 	-lgobject-2.0 \
@@ -93,16 +92,16 @@ LIB = \
 	$(ASF_LIB)/asf_meta.a \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/asf.a \
+	$(XML_LIBS) \
+	-liconv \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(HDF5_LIBS) \
 	$(JPEG_LIBS) \
-	$(XML_LIBS) \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(ZLIB_LIBS) \
-	$(XML_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
 

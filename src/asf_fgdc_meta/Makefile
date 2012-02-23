@@ -13,18 +13,26 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libgdal.a \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(PROJ_LIBS) \
         $(TIFF_LIBS) \
         $(JPEG_LIBS) \
         $(PNG_LIBS) \
         $(GEOTIFF_LIBS) \
-	$(XML_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
-	$(HDFEOS5_LIBS) \
-	$(ZLIB_LIBS) \
-	-ldl
+	$(HDFEOS5_LIBS)
+
+ifeq ($(SYS),win32)
+
+LIBS +=	$(ZLIB_LIBS)
+
+else
+
+LIBS +=	-ldl
+
+endif
 
 OBJS  = asf_fgdc_meta.o
 

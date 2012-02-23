@@ -1,3 +1,7 @@
+#ifdef win32
+#define LIBXML_STATIC
+#endif
+
 #include "asf.h"
 #include "asf_view.h"
 #include "asf_tiff.h"

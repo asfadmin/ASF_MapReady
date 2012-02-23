@@ -1,3 +1,7 @@
+#ifdef win32
+#define LIBXML_STATIC
+#endif
+
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 

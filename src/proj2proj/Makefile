@@ -9,8 +9,9 @@ REQUIRED_LIBS = \
 	$(LIBDIR)/libasf_proj.a \
         $(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
-	$(GLIB_LIBS) \
 	$(XML_LIBS) \
+	$(GLIB_LIBS) \
+	$(ZLIB_LIBS) \
 	$(PROJ_LIBS) -lm
 
 CFLAGS += $(GLIB_CFLAGS)
@@ -54,7 +55,6 @@ LIB = \
 	-L$(GTK_LIB)/libglade \
 	-llibgthread-2.0 \
 	-lintl \
-	-liconv \
 	-lm \
 	-lgtk-win32-2.0 \
 	-lgobject-2.0 \
@@ -79,6 +79,8 @@ LIB = \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/asf.a \
 	$(ASF_LIB)/asf_fft.a \
+	$(XML_LIBS) \
+	-liconv \
 	$(GSL_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \

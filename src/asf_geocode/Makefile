@@ -52,8 +52,9 @@ LIBS :=	\
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
-	$(GLIB_LIBS) \
 	$(XML_LIBS) \
+	$(GLIB_LIBS) \
+	$(ZLIB_LIBS) \
 	-lm
 
 LDLIBS := $(LIBS)

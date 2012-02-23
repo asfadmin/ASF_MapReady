@@ -15,12 +15,12 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
 	$(HDFEOS5_LIBS) \
 	$(GDAL_LIBS) \
-	$(XML_LIBS) \
 	$(ZLIB_LIBS)
 
 LIBC = $(LIBS) -lm 

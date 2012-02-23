@@ -20,7 +20,7 @@ build_stamp:
 	tar xvf $(TARFILE)
 	rm -f $(TARFILE)
 	(   cd $(UNPACK_DIR) ; \
-	    ./configure --prefix=$(ROOT_DIR) ; \
+	    ./configure --prefix=$(ROOT_DIR) --without-threads ; \
 	    make ; \
 	    make install ; \
 	)

@@ -9,14 +9,7 @@ static char * s_argv0 = 0;
 
 static char * s_bin_dir_win = 0;
 
-/* ugly hack here... windef.h and asf_meta.h both define a BYTE symbol. */
-/* since we don't use the BYTE from asf_meta.h here, we'll #define BYTE */
-/* to something else during the processing of that header, leaving BYTE */
-/* defined in windef.h alone (that's the one we want)                   */
-
-/*#define BYTE __byte*/
 #include "asf.h"
-/*#undef BYTE*/
 #include <windows.h>
 
 static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\"TOOL_SUITE_NAME"\\";

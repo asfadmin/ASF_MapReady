@@ -322,7 +322,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
     case 6:  meta->general->data_type = COMPLEX_BYTE;      break;
     case 7:  meta->general->data_type = COMPLEX_INTEGER16; break;
     case 9:  meta->general->data_type = COMPLEX_REAL32;    break;
-    default: meta->general->data_type = ASF_BYTE;              break;
+    default: meta->general->data_type = ASF_BYTE;          break;
     }
   if (ceos->facility == BEIJING)
     date_dssr2time(dssr->inp_sctim, &date, &time);

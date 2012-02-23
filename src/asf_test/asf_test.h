@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "asf_jpeg.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_vector.h"
 #include "asf_convert.h"
 #include "asf_raster.h"
 #include "asf_export.h"
-#include "asf_jpeg.h"
 #include "metadisplay.h"
 #include "CUnit/Automated.h"
 #include "CUnit/Basic.h"

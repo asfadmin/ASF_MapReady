@@ -1,17 +1,11 @@
 #include <ctype.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "asf_convert_gui.h"
+
 #ifdef win32
-
-/*#define BYTE __byte*/
-#include "asf_convert_gui.h"
-/*#undef BYTE*/
-
 #include <windows.h>
-#include <shlobj.h>
-
-#else
-#include "asf_convert_gui.h"
+//#include <shlobj.h>
 #endif
 
 static void

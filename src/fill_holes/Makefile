@@ -12,12 +12,13 @@ REQUIRED_LIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
         $(LIBDIR)/asf.a \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
-	$(XML_LIBS) \
 	$(PROJ_LIBS) \
 	$(TIFF_LIBS) \
-	$(JPEG_LIBS)
+	$(JPEG_LIBS) \
+	$(ZLIB_LIBS)
 
 CFLAGS += \
 	$(GLIB_CFLAGS) \

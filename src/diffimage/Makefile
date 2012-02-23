@@ -50,9 +50,9 @@ LIBS  = \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
-	$(XML_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm
 

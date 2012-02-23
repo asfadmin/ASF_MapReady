@@ -40,7 +40,7 @@ char **get_uavsar_products(const char *data_type, char *type, int *num_product)
   }
 
   ii = 0;
-  while ((token = strtok_r(tmp, ",", &rest))) {
+  while ((token = STRTOK_R(tmp, ",", &rest))) {
     strcpy(product[ii], token);
     tmp = rest;
     ii++;

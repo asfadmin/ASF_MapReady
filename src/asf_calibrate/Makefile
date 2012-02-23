@@ -17,6 +17,8 @@ LIBS =  \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
+	$(GLIB_LIBS) \
+	$(ZLIB_LIBS) \
 	-lm
 
 OBJS = 	\

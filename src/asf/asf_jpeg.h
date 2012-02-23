@@ -1,10 +1,6 @@
 #ifndef ASF_JPEG_H
 #define ASF_JPEG_H
 
-#ifdef win32
-/*#define BYTE __byte*/
-#endif
-
 #include "asf.h"
 #include "asf_tiff.h" // for "boolean"
 
@@ -18,7 +14,15 @@
 #endif
 #endif
 
+#ifdef win32
+#define INT32 __int32
+#endif
+
 #include <jpeglib.h>
+
+#ifdef win32
+#undef INT32
+#endif
 
 typedef struct {
   uint32 byte_width;
@@ -27,10 +31,6 @@ typedef struct {
   data_type_t data_type; // ASF data type
   int num_bands; // Number of color elements
 } jpeg_info_t;
-
-#ifdef win32
-/*#undef BYTE*/
-#endif
 
 #ifndef MIN_DIMENSION
 #define MIN_DIMENSION (16)

@@ -35,7 +35,6 @@ LIB = \
 	-L$(GTK_LIB)/libglade \
 	-llibgthread-2.0 \
 	-lintl \
-	-liconv \
 	-lm \
 	-lgtk-win32-2.0 \
 	-lgobject-2.0 \
@@ -50,8 +49,11 @@ LIB = \
 	$(ASF_LIB)/libasf_raster.a \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/asf.a \
+	$(XML_LIBS) \
+	-liconv \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(ZLIB_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
 

@@ -10,6 +10,8 @@ LIBS  = \
 	$(GSL_LIBS) \
 	$(XML_LIBS) \
 	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
+	$(ZLIB_LIBS) \
 	-lm
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS)

@@ -11,7 +11,7 @@ typedef struct {
   data_type_t data_type;
 } gamma_meta;
 
-typedef struct {int year, month, day, hour, minute; double seconds;} DATE;
+typedef struct {int year, month, day, hour, minute; double seconds;} GAMMA_DATE;
 typedef struct {int hour, minute; double seconds;} TIME;
 typedef struct {double x,y,z;} POS;           // x,y,z position vector [m]
 typedef struct {double vx,vy,vz;} VEL;        // vx,vy,vz velocity vector [m/s]
@@ -23,7 +23,7 @@ typedef struct {
   char title[FIELD_STRING_MAX];            // Title, usually "Platform name nnnnn", nnnnn is orbit no.
   int orbit;                               // Extracted from title, 'nnnnn'
   char sensor[FIELD_STRING_MAX];           // Name of sensor (RADARSAT, SRL-1, SRL-2, ERS-1, ERS-2, JERS-1, ...)
-  DATE acquisition;                        // Acquisition date - YYYY MM DD hh mm ss.ttt UTC
+  GAMMA_DATE acquisition;                  // Acquisition date - YYYY MM DD hh mm ss.ttt UTC
   double start_time;                       // Start time, UTC seconds since start of day [s]
   double center_time;                      // Center time, UTC seconds since start of day [s]
   double end_time;                         // End time, UTC seconds since start of day [s]
@@ -110,7 +110,7 @@ typedef struct {
 typedef struct {
   char title[FIELD_STRING_MAX];           // Title
   int orbit;                              // Orbit number
-  DATE acquisition;                       // Acquisition date - 2007 1 15
+  GAMMA_DATE acquisition;                 // Acquisition date - 2007 1 15
   TIME raw_data_start_time;               // Hrs, mins, seconds - 7 26 38.548176
   char band[FIELD_STRING_MAX];            // Polarization or channel; HH, HV, VH, VV, CH1, CH2 etc
   char image_data_type[FIELD_STRING_MAX]; // Image data type: AMPLITUDE_IMAGE etc.

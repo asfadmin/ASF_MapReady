@@ -2,3 +2,4 @@
    filled in) meta_parameters structure, and fills in values from
    file_name.  Dies internally on parse error.  */
 void parse_metadata(meta_parameters *dest, char *file_name);
+

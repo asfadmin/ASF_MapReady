@@ -36,6 +36,7 @@ LIB = \
 	-L$(GTK_LIB)/gtk-2.0 \
 	-L$(GTK_LIB)/pango \
 	-L$(GTK_LIB)/libglade \
+	$(XML_LIBS) \
 	-llibgthread-2.0 \
 	-lintl \
 	-liconv \
@@ -68,7 +69,6 @@ LIB = \
 	$(PNG_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
-	$(XML_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
 	$(HDFEOS5_LIBS) \

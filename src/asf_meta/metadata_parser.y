@@ -7,8 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DOUBLE __double
 #include "asf.h"
+
 #include "asf_meta.h"
+#undef DOUBLE
 #include "caplib.h"
 #include "lex_yacc.h"
 

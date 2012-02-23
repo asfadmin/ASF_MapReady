@@ -16,12 +16,12 @@ LIBS  = \
 	$(SHAPELIB_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(HDF5_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
-	$(XML_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm
 

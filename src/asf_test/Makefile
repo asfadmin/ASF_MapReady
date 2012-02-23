@@ -39,7 +39,8 @@ LIBS =  \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
 	$(SHAPELIB_LIBS) \
-	-lm -lz
+	$(ZLIB_LIBS) \
+	-lm
 
 OBJS = 	\
 	asf_test.o \

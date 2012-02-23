@@ -10,11 +10,12 @@ REQUIRED_LIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
         $(LIBDIR)/asf.a \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
-	$(XML_LIBS) \
 	$(PROJ_LIBS) \
-	$(JPEG_LIBS)
+	$(JPEG_LIBS) \
+	$(ZLIB_LIBS)
 
 CEDAR_LIBS = $(LIBDIR)/asf_las.a
 LIBS = \

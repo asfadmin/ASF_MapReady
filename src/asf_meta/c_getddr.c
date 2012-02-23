@@ -53,9 +53,9 @@ ALGORITHM
 
 ALGORITHM REFERENCES	none
 *******************************************************************************/
+#include "las.h"
 #include "asf.h"
 #include "asf_meta.h"
-#include "las.h"
 #include "sysdef.h"
 
 /* PROTOTYPE from meta_init.c */
