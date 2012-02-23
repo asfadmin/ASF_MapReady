@@ -686,7 +686,11 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       invIncAngle = 1/sin(incidence_angle);
 
     asf_cal_params *p = meta->calibration->asf;
-    double index = (double)sample*256./(double)(p->sample_count);
+    double scaling = (double)meta->sar->original_sample_count/meta->general->sample_count;
+    int orig_sample = meta->general->start_sample + scaling*sample;
+    double index = (double)orig_sample*256./(double)(p->sample_count);
+    if (index < 0) index = 0;
+    if (index > p->sample_count-2) index = p->sample_count-2;
     int base = (int) index;
     double frac = index - base;
     double *noise = p->noise;
@@ -851,7 +855,11 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
   if (meta->calibration->type == asf_cal) { // ASF style data (PP and SSP)
 
     asf_cal_params *p = meta->calibration->asf;
-    double index = (double)sample*256./(double)(p->sample_count);
+    double scaling = (double)meta->sar->original_sample_count/meta->general->sample_count;
+    int orig_sample = meta->general->start_sample + scaling*sample;
+    double index = (double)orig_sample*256./(double)(p->sample_count);
+    if (index < 0) index = 0;
+    if (index > p->sample_count-2) index = p->sample_count-2;
     int base = (int) index;
     double frac = index - base;
     double *noise = p->noise;
