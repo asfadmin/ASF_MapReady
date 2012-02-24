@@ -62,10 +62,10 @@ asfSystem(const char *format, ...)
       return -1;
   }
 
-  WaitForSingleObject(pi.hProcess, INFINITE);
+  //WaitForSingleObject(pi.hProcess, INFINITE);
 
-  CloseHandle(processInfo.hProcess);
-  CloseHandle(processInfo.hThread);
+  //CloseHandle(processInfo.hProcess);
+  //CloseHandle(processInfo.hThread);
 
   return 0;
 
