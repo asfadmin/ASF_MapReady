@@ -888,6 +888,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   overlap_method_t overlap=OVERLAY_OVERLAP;
   double pixel_size_x, pixel_size_y;
 
+  if (pixel_size == 0.0)
+    asfPrintError("Pixel size is 0.0\n");
+
   // FIXME: function needs to be extended to handle resampling of already
   // geocoded data.
   if (strcmp(uc(overlap_method), "MINIMUM") == 0) {

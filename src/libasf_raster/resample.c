@@ -137,6 +137,12 @@ resample_impl(const char *infile, const char *outfile,
 
     onp = (int) (np * xscalfact);
     onl = (int) (nl * yscalfact);
+    if (onp == 0 || onl == 0) {
+      asfPrintError("Invalid resample: %dx%d -> %dx%d\n"
+                    "Scale factors where: %f (y) %f (x)\n",
+                    nl,np,onl,onp,yscalfact,xscalfact);
+    }
+
     xbase = 1.0 / (2.0 * xscalfact) - 0.5;
     xrate = 1.0 / xscalfact;
     xhalf = (xnsk-1)/2;

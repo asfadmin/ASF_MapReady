@@ -1161,7 +1161,11 @@ static int check_config(const char *configFileName, convert_config *cfg)
   if (cfg->general->geocoding) {
     
     // Projection file existence check
-    if (!fileExists(cfg->geocoding->projection)) {
+    if (strcmp_case(cfg->geocoding->projection, "geographic") != 0 &&
+        strcmp_case(cfg->geocoding->projection, "latlon") != 0 &&
+        strcmp_case(cfg->geocoding->projection, "utm") != 0 &&
+        !fileExists(cfg->geocoding->projection))
+    {
       asfPrintError("Projection parameter file '%s' does not exist\n",
 		    cfg->geocoding->projection);
     }
@@ -2439,7 +2443,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	// calculate the reduced pixel sizes
 	out_x_pixel_size = meta->general->x_pixel_size*in_side_length/512.;
 	out_y_pixel_size = meta->general->y_pixel_size*in_side_length/512.;
-	
+
 	// make sure that only the first band of a multi-band image
 	// is resized for generating a thumbnail, for polsarpro
 	meta_parameters *metaTmp = NULL;

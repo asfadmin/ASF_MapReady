@@ -255,16 +255,22 @@ const char *get_summary_text()
                 text, s->lat0, s->lon0,
                 s->plat1, s->plat2);
             break;
+        case PROJ_GEO:
+            sprintf(text, "%sGeographic (Lat/Lon)\n", text);
+            break;
         }
 
         if (s->specified_height)
             sprintf(text, "%s   Height: %.2f\n", text, s->height);
 
-        if (s->specified_pixel_size)
+        if (s->specified_pixel_size) {
             sprintf(text, "%s   Pixel Size: %.2f m\n", text, s->pixel_size);
+        }
 
-        sprintf(text, "%s   Datum: %s%s\n", text, datum_string(s->datum),
-                s->datum == DATUM_HUGHES ? " Reference Spheroid" : "");
+        if (s->projection != PROJ_GEO) {
+            sprintf(text, "%s   Datum: %s%s\n", text, datum_string(s->datum),
+                    s->datum == DATUM_HUGHES ? " Reference Spheroid" : "");
+        }
 
         sprintf(text, "%s   Resampling Method: %s\n", text,
             resample_method_string(s->resample_method));

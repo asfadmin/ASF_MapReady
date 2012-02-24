@@ -764,6 +764,11 @@ settings_get_from_gui()
             gtk_option_menu_get_history(GTK_OPTION_MENU(resample_option_menu));
 
         ret->geocode_force = get_checked("force_checkbutton");
+
+        if (ret->projection == PROJ_GEO) {
+          ret->specified_height = FALSE;
+          ret->datum = DATUM_WGS84;  // isn't really a datum with this
+        }
     }
 
     if (get_checked("dem_checkbutton"))
@@ -1491,7 +1496,7 @@ settings_to_config_file(const Settings *s,
     FREE(base);
     g_free(path);
 
-    if (s->geocode_is_checked) {
+    if (s->geocode_is_checked && s->projection != PROJ_GEO) {
 
       tmp_projfile =
           MALLOC(sizeof(char)*(9 + strlen(output_basename) + strlen(tmp_dir)));
@@ -1838,7 +1843,10 @@ settings_to_config_file(const Settings *s,
 
     if (s->geocode_is_checked) {
       fprintf(cf, "[Geocoding]\n");
-      fprintf(cf, "projection = %s\n", tmp_projfile);
+      if (s->projection == PROJ_GEO)
+        fprintf(cf, "projection = geographic\n");
+      else
+        fprintf(cf, "projection = %s\n", tmp_projfile);
       if (s->specified_pixel_size)
         fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
       if (s->specified_height)

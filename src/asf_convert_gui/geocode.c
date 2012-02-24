@@ -124,6 +124,10 @@ const char * geocode_options_string(const Settings * settings)
             enable_latitude_of_origin =
                 entry_has_text("latitude_of_origin_entry");
             break;
+        case PROJ_GEO:
+            strcpy(ret, "--projection geographic");
+            break;
+
         case PROJ_MER:
 	  strcpy(ret, "--projection mer");
 	  enable_first_standard_parallel = 
@@ -231,6 +235,9 @@ void geocode_options_changed()
     GtkWidget * average_height_checkbutton;
     GtkWidget * pixel_size_checkbutton;
 
+    GtkWidget * geocode_pixel_size_label;
+    const char *geocode_pixel_size_label_text = " meters";
+
     GtkWidget * hbox_average_height;
     GtkWidget * hbox_pixel_size;
 
@@ -254,6 +261,7 @@ void geocode_options_changed()
     gboolean enable_projection_option_menu = FALSE;
     gboolean enable_predefined_projection_option_menu = FALSE;
 
+    gboolean geographic_is_selected = FALSE;
     gboolean enable_table_utm_projection_options = TRUE;
 
     gboolean enable_utm_zone = FALSE;
@@ -294,6 +302,9 @@ void geocode_options_changed()
     pixel_size_checkbutton =
         get_widget_checked("pixel_size_checkbutton");
 
+    geocode_pixel_size_label =
+        get_widget_checked("geocode_pixel_size_label");
+
     projection_option_menu =
         get_widget_checked("projection_option_menu");
 
@@ -330,6 +341,9 @@ void geocode_options_changed()
     projection =
         gtk_option_menu_get_history(GTK_OPTION_MENU(projection_option_menu));
 
+    geographic_is_selected =
+        projection == PROJ_GEO;
+
     enable_table_utm_projection_options =
         projection == PROJ_UTM;
 
@@ -352,7 +366,16 @@ void geocode_options_changed()
         enable_predefined_projection_option_menu = TRUE;
         enable_datum_hbox = TRUE;
 
-        if (predefined_projection_is_selected)
+        if (geographic_is_selected)
+        {
+            // everything is disabled except resample method, pixel size
+            enable_datum_hbox = FALSE;
+            enable_predefined_projection_option_menu = FALSE;
+            // Commenting this out, we will specify pixel size in meters for
+            // all projections, even lat/lon pseudo
+            //geocode_pixel_size_label_text = " degrees";
+        }
+        else if (predefined_projection_is_selected)
         {
             /* all widgets remain disabled -- load settings from file */
             project_parameters_t * pps =
@@ -573,14 +596,15 @@ void geocode_options_changed()
         enable_force_checkbutton = TRUE;
 
         // turn off the average height checkbutton if terrain correction
-        // is selected
+        // is selected, or geographic project is selected
         GtkWidget * dem_checkbutton = get_widget_checked("dem_checkbutton");
         GtkWidget * rb_terrcorr = get_widget_checked("rb_terrcorr");
 
-        if (gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(dem_checkbutton)) &&
-            gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(rb_terrcorr)))
+        if (geographic_is_selected ||
+                (gtk_toggle_button_get_active(
+                     GTK_TOGGLE_BUTTON(dem_checkbutton)) &&
+                 gtk_toggle_button_get_active(
+                     GTK_TOGGLE_BUTTON(rb_terrcorr))))
         {
             enable_average_height_checkbutton = FALSE;
             average_height_is_checked = FALSE;
@@ -702,6 +726,9 @@ void geocode_options_changed()
     gtk_widget_set_sensitive(pixel_size_checkbutton,
         enable_pixel_size_checkbutton);
 
+    gtk_label_set_text(GTK_LABEL(geocode_pixel_size_label),
+        geocode_pixel_size_label_text);
+
     gtk_widget_set_sensitive(hbox_pixel_size,
         enable_pixel_size_entry);
 
@@ -750,6 +777,14 @@ on_lambert_azimuthal_equal_area_activate(GtkWidget * widget)
 
 SIGNAL_CALLBACK void
 on_polar_stereographic_activate(GtkWidget * widget)
+{
+    GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
+    gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_geographic_activate(GtkWidget * widget)
 {
     GtkWidget *spheroid_entry = get_widget_checked("spheroid_entry");
     gtk_entry_set_text(GTK_ENTRY(spheroid_entry), "");

@@ -298,6 +298,23 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
   int ret = TRUE;
   datum_type_t datum_orig = *datum;
 
+  if (strcmp_case(file, "geographic") == 0 || strcmp_case(file, "latlon") == 0) {
+    *proj_type = LAT_LONG_PSEUDO_PROJECTION;
+    *datum = WGS84_DATUM;
+    *spheroid = WGS84_SPHEROID;
+    return TRUE;
+  }
+
+  // allow just putting "UTM" in there to indicate utm for whatever zone is
+  // applicable
+  if (strcmp_case(file, "utm") == 0) {
+    *proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+    *datum = WGS84_DATUM;
+    *spheroid = WGS84_SPHEROID;
+    pps->utm.zone = MAGIC_UNSET_INT;
+    return TRUE;
+  }
+
   fp = fopen_proj_file(file, "r");
   if (!fp)
   {
@@ -1362,7 +1379,8 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 
         break;
       }
-      else if (strcmp((*argv)[i], "geographic") == 0) {
+      else if (strcmp((*argv)[i], "geographic") == 0 ||
+               strcmp((*argv)[i], "latlon") == 0) {
 	*proj_type = LAT_LONG_PSEUDO_PROJECTION;
 	*datum = WGS84_DATUM;
 	*spheroid = WGS84_SPHEROID;
