@@ -70,7 +70,8 @@ int asf_frame_calc(char *sensor, float latitude, char orbit_direction)
   int i=1, frame=-1;
   float diff=99;
 
-  if (strncmp(sensor, "ERS", 3)==0 || strncmp(sensor, "JERS", 4)==0) {
+  if (strncmp(sensor, "ERS", 3)==0 || strncmp(sensor, "RSAT", 4)==0 ||
+      strncmp(sensor, "JERS", 4)==0) {
     if (orbit_direction == 'D') {
       i = 225;
       while (fabs(ers_frame[i]-latitude) < diff) {

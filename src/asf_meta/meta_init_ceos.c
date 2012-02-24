@@ -522,9 +522,9 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
       }
     }
     strcpy(meta->general->mode, beamname);
-    strncpy(buf, &dssr->product_id[7], 3);
-    buf[3]=0;
-    meta->general->frame = atoi(buf);
+    meta->general->frame =
+      asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
+                     meta->general->orbit_direction);
     if (dssr->rng_samp_rate < 20.0) /* split finebeam from the rest */
       meta->sar->look_count = 4; /* ST1-ST7, WD1-WD3, EL1, EH1-EH6 */
     else
