@@ -74,6 +74,7 @@ main (int argc, char *argv[])
 {
   char *leader_file_list, *output_file, file[255];
   struct dataset_sum_rec *dssr;
+  struct att_data_rec *atdr;
   struct VFDRECV *facdr;
   int currArg = 1;
   int NUM_ARGS = 2;
@@ -115,7 +116,9 @@ main (int argc, char *argv[])
   FILE *fpOut = FOPEN(output_file, "w");
   fprintf(fpOut, "Leader_file, Yaw, Doppler_range, Doppler_azimuth\n");
   dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+  atdr = (struct att_data_rec *) MALLOC(sizeof(struct att_data_rec));
   facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
+  double yaw;
   while (fgets(file, 1024, fpIn)) {
     file[strlen(file)-1] = '\0';
     if (get_dssr(file, dssr) < 0) {
@@ -123,17 +126,26 @@ main (int argc, char *argv[])
 		      " record\n", file);
       continue;
     }
+    if (get_atdr(file, atdr) < 0) {
+      asfPrintWarning("Leader file (%s) does not contain attitude data record",
+		      "\n", file);
+      continue;
+    }
     if (get_asf_facdr(file, facdr) < 0) {
       asfPrintWarning("Leader file (%s) does not contain facility related data"
 		      " record\n", file);
       continue;
     }
+    yaw = facdr->scyaw;
+    if (FLOAT_EQUIVALENT(yaw, 0.0))
+      yaw = atdr->data->yaw;
     fprintf(fpOut, "%s, %.4lf, %.3lf, %.3lf\n", 
-	    file, facdr->scyaw, dssr->crt_dopcen[0], dssr->alt_dopcen[0]);
+	    file, yaw, dssr->crt_dopcen[0], dssr->alt_dopcen[0]);
   }
   FCLOSE(fpIn);
   FCLOSE(fpOut);
   FREE(dssr);
+  FREE(atdr);
   FREE(facdr);
   
   asfPrintStatus("Done.\n");
