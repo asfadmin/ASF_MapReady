@@ -33,9 +33,9 @@ char *sprn_atdr(struct att_data_rec* a)
    add(&ret, "\n PITCH DATA QUAL FLAG\t\t%d",d->pitch_flag);
    add(&ret, "\n ROLL DATA QUAL FLAG\t\t%d",d->roll_flag);
    add(&ret, "\n YAW DATA QUAL FLAG\t\t%d",d->yaw_flag);
-   add(&ret, "\n PITCH\t\t\t\t%14.6f",d->pitch);
-   add(&ret, "\n ROLL\t\t\t\t%14.6f",d->roll);
-   add(&ret, "\n YAW\t\t\t\t%14.6f",d->yaw);
+   add(&ret, "\n PITCH ERROR\t\t\t%14.6f",d->pitch);
+   add(&ret, "\n ROLL ERROR\t\t\t%14.6f",d->roll);
+   add(&ret, "\n YAW ERROR\t\t\t%14.6f",d->yaw);
    add(&ret, "\n PITCH RATE QUAL FLAG\t\t%d",d->pitch_rate_flag);
    add(&ret, "\n ROLL RATE QUAL FLAG\t\t%d",d->roll_rate_flag);
    add(&ret, "\n YAW RATE QUAL FLAG\t\t%d",d->yaw_rate_flag);
