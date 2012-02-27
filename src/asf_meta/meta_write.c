@@ -285,10 +285,19 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double(fp,"sample_scaling:", meta->general->sample_scaling,
                     "Scale factor relative to original image, x");
   }
-  meta_put_double(fp,"x_pixel_size:", meta->general->x_pixel_size,
-      "Range pixel size [m]");
-  meta_put_double(fp,"y_pixel_size:", meta->general->y_pixel_size,
-      "Azimuth pixel size [m]");
+  if (meta->projection && 
+      meta->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
+    meta_put_double(fp,"x_pixel_size:", meta->general->x_pixel_size,
+		    "Range pixel size [degrees]");
+    meta_put_double(fp,"y_pixel_size:", meta->general->y_pixel_size,
+		    "Azimuth pixel size [degrees]");
+  }
+  else {
+    meta_put_double(fp,"x_pixel_size:", meta->general->x_pixel_size,
+		    "Range pixel size [m]");
+    meta_put_double(fp,"y_pixel_size:", meta->general->y_pixel_size,
+		    "Azimuth pixel size [m]");
+  }
   meta_put_double_lf(fp,"center_latitude:",
              meta->general->center_latitude, 4,
              "Approximate image center latitude");
