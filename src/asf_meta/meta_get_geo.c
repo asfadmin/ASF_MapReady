@@ -349,6 +349,10 @@ static int meta_get_lineSamp_imp(meta_parameters *meta,
       return 1;
   }
   //printf("  %d iterations\n",iter);
+  if (!meta_is_valid_double(x) || !meta_is_valid_double(y)) {
+    //printf("  %d iterations: nan\n",iter);
+    return 1;
+  }
 
   *yLine=y-DELTA/2;
   *xSamp=x-DELTA/2;

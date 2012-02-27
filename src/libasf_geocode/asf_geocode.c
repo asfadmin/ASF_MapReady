@@ -482,7 +482,13 @@ reverse_map_x (struct data_to_fit *dtf, double x, double y)
     last_y_rmx = y;
   }
 
-  return gsl_spline_eval (crnt_rmx, x, crnt_accel_rmx);
+  double ret = gsl_spline_eval (crnt_rmx, x, crnt_accel_rmx);
+
+  if (!meta_is_valid_double(ret)) {
+    asfPrintError("reverse_map_x invalid at L,S: %f,%f: %f\n", y,x,ret);
+  }
+
+  return ret;
 }
 
 // This routine is analagous to reverse_map_x, including the same
@@ -538,7 +544,13 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
     last_y_rmy = y;
   }
 
-  return gsl_spline_eval (crnt_rmy, x, crnt_accel_rmy);
+  double ret = gsl_spline_eval (crnt_rmy, x, crnt_accel_rmy);
+
+  if (!meta_is_valid_double(ret)) {
+    asfPrintError("reverse_map_y invalid at L,S %f,%f: %f\n", y, x, ret);
+  }
+
+  return ret;
 }
 
 static void determine_projection_fns(int projection_type, project_t **project,
@@ -2049,9 +2061,13 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	    // Details of the error should have already been printed.
 	    asfPrintError ("Projection Error!\n");
 	  }
-	  
+	  else if ( !meta_is_valid_double(lat) || !meta_is_valid_double(lon)) {
+	    asfPrintError ("unproject nan: %d,%d: %f, %f -> %f, %f\n",
+                           ii, jj, cxproj, cyproj, lat, lon);
+          } 
 	  lat *= R2D;
 	  lon *= R2D;
+          //printf("%d,%d: %f %f -> %f %f\n", ii, jj, cxproj, cyproj, lat, lon); 
 
 	  // here we have some kludgery to handle crossing the meridian
 	  if (fabs(lon-lon_0) > 300) {
@@ -2067,13 +2083,18 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	    ret = project_input (ipp, D2R*lat, D2R*lon, average_height,
 				 &ipcx, &ipcy, &ipcz, imd->projection->datum);
 	    if ( ret == 0 ) {
-	      g_assert_not_reached ();
+	      asfPrintError ("Projection Error!\n");
 	    }
+	    else if ( !meta_is_valid_double(ipcx) || !meta_is_valid_double(ipcy)) {
+	      asfPrintError ("project nan: %d,%d: %f, %f -> %f, %f\n",
+                             ii, jj, lat, lon, ipcx, ipcy);
+            } 
 	    g_assert (ret);
 	    // Find the input image pixel indicies corresponding to input
 	    // projection coordinates.
 	    x_pix = (ipcx - ipb->startX) / ipb->perX;
 	    y_pix = (ipcy - ipb->startY) / ipb->perY;
+            //printf("%d,%d: %f %f -> %f %f\n", ii, jj, lat, lon, x_pix, y_pix); 
 	  }
 	  else {
 	    ret = meta_get_lineSamp (imd, lat, lon, average_height,
@@ -2084,6 +2105,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 			    "latitude and longitude\n"
 			    "Lat: %f, Lon: %f\n", lat, lon);
 	    }
+	    else if ( !meta_is_valid_double(x_pix) || !meta_is_valid_double(y_pix)) {
+	      asfPrintError ("meta_get_lineSamp nan: %d,%d: %f, %f -> %f, %f\n",
+                             ii, jj, lat, lon, x_pix, y_pix);
+            } 
 	  }
 	  
 	  g_assert(current_mapping < mapping_count);
@@ -2091,7 +2116,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	  dtf.y_proj[current_mapping] = cyproj;
 	  dtf.x_pix[current_mapping] = x_pix;
 	  dtf.y_pix[current_mapping] = y_pix;
-	  
+
 	  if ( ii % sparse_grid_sample_stride == 0 &&
 	       jj % sparse_grid_sample_stride == 0 ) {
 	    g_assert(current_sparse_mapping < sparse_mapping_count);
@@ -2133,6 +2158,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	  double x_error = xpfm - dtf.x_pix[ii];
 	  double y_error = ypfm - dtf.y_pix[ii];
 	  double error_distance = sqrt (x_error*x_error + y_error*y_error);
+
 	  float_image_set_pixel (error_map, ii % grid_size, ii / grid_size,
 				 error_distance);
 	  gsl_vector_set (model_x_errors, ii, x_error);
