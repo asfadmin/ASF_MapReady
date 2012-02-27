@@ -612,6 +612,31 @@ int match_dem(meta_parameters *metaSAR,
   double saved_time_shift = metaSAR->sar->time_shift;
   double saved_slant_shift = metaSAR->sar->slant_shift;
 
+  if (no_matching) {
+    // User supplied the offsets, not calculated
+    asfPrintStatus("No matching of DEM and SAR image!\n");
+    asfPrintStatus("Applying range offset: %lf (meters)\n", range_offset);
+    asfPrintStatus("Applying azimuth offset: %lf (meters)\n", azimuth_offset);
+    if (range_offset != 0.0 || azimuth_offset != 0.0) {
+      range_offset /= metaSAR->general->x_pixel_size;
+      azimuth_offset /= metaSAR->general->y_pixel_size;
+      asfPrintStatus("         range offset: %lf (pixels)\n", range_offset);
+      asfPrintStatus("         azimuth offset: %lf (pixels)\n", azimuth_offset);
+      asfPrintStatus("Adjusting metadata to account for offsets...\n");
+      refine_offset(range_offset, azimuth_offset, metaSAR, &t_off, &x_off);
+      asfPrintStatus("  Time Shift: %f -> %f (change: %f) seconds\n"
+                     "  Slant Shift: %f -> %f (change %f) meters\n",
+                     metaSAR->sar->time_shift,
+                     metaSAR->sar->time_shift + t_off, t_off,
+                     metaSAR->sar->slant_shift,
+                     metaSAR->sar->slant_shift + x_off, x_off);
+      metaSAR->sar->time_shift += t_off;
+      metaSAR->sar->slant_shift += x_off;
+      asfPrintStatus("Updating metadata of this file: %s\n", srFile);
+      meta_write(metaSAR, srFile);
+    }
+  }
+
   // do-while that will repeat the dem grid generation and the fftMatch
   // of the sar & simulated sar, until the fftMatch doesn't turn up a
   // big offset.
@@ -796,21 +821,12 @@ int match_dem(meta_parameters *metaSAR,
       // This is the normal case -- no user mask, regular matching
       // Match the real and simulated SAR image to determine the offset.
       fftMatchQ(srFile, demTrimSimSar, &dx, &dy, &cert);
-    }
-    else {
-      // User supplied the offsets, not calculated
-      asfPrintStatus("No matching of DEM and SAR image!\n");
-      asfPrintStatus("Applying range offset: %lf\n", range_offset);
-      asfPrintStatus("Applying azimuth offset: %lf\n", azimuth_offset);
-      t_off = azimuth_offset;
-      x_off = range_offset;
-    }
-
-    if (no_matching) {
-      dx = dy = 0;
-    } else {
       asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f, dy=%f.\n",
              100*cert, dx, dy);
+    }
+    else {
+      // no_matching and no user mask
+      asfPrintStatus("Skipped co-registration.\n");
     }
 
     idx = - (int)floor(dx+.5);
@@ -849,12 +865,12 @@ int match_dem(meta_parameters *metaSAR,
           // that we found
           asfPrintStatus("Adjusting metadata to account for offsets...\n");
           refine_offset(dx, dy, metaSAR, &t_off, &x_off);
-          asfPrintStatus("  Time Shift: %f -> %f\n"
-                         "  Slant Shift: %f -> %f\n",
+          asfPrintStatus("  Time Shift: %f -> %f (change: %f) seconds\n"
+                         "  Slant Shift: %f -> %f (change %f) meters\n",
                          metaSAR->sar->time_shift,
-                         metaSAR->sar->time_shift + t_off,
+                         metaSAR->sar->time_shift + t_off, t_off,
                          metaSAR->sar->slant_shift,
-                         metaSAR->sar->slant_shift + x_off);
+                         metaSAR->sar->slant_shift + x_off, x_off);
           metaSAR->sar->time_shift += t_off;
           metaSAR->sar->slant_shift += x_off;
           meta_write(metaSAR, srFile);
