@@ -17,7 +17,8 @@ void help()
 "Tool name:\n"
 "    %s\n\n"
 "Usage:\n"
-"    %s [-background <value>] [-extent <file>] [-output <file>] <infile list>\n\n"
+"    %s [-background <value>] [-no_blackfill] [-extent <file>]\n"
+"                [-output <file>] <infile list>\n\n"
 "Description:\n"
 "    This program stacks the input files together, producing an image stack\n"
 "    that is the intersect of all listed input images.\n\n"
@@ -54,8 +55,8 @@ ASF_NAME_STRING, ASF_NAME_STRING, ASF_CONTACT_STRING);
 void usage()
 {
     printf("Usage:\n"
-    "    %s [-background <value>] [-extent <file>] [-output <file>] "
-"<infile list> \n\n",
+	   "    %s [-background <value>] [-no_blackfill] [-extent <file>]\n"
+	   "                [-output <file>] <infile list> \n\n",
 	   ASF_NAME_STRING);
     exit(1);
 }
@@ -165,6 +166,72 @@ static int proj_parms_match(meta_parameters *m1, meta_parameters *m2)
     }
 }
 
+static void get_inner_extents(char *file,
+                              double *x0, double *y0,
+                              double *xL, double *yL)
+{
+  int ii, kk;
+  FILE *fp = FOPEN(file, "rb");
+  meta_parameters *meta = meta_read(file);
+  int line_count = meta->general->line_count;
+  int sample_count = meta->general->sample_count;
+  int startX = sample_count - 1;
+  int endX = 0;
+  int startY = -99;
+  int endY = -99;
+  int startLine = -99;
+  int startSample = -99;
+  int endLine = 0;
+  int endSample = 0;
+
+  float *buf = (float *) MALLOC(sizeof(float)*sample_count);
+  for (ii=0; ii<line_count; ii++) {
+    get_float_line(fp, meta, ii, buf);
+
+    int left = 0;
+    int right = sample_count - 1;
+    while (FLOAT_EQUIVALENT(buf[left], 0.0) && left < sample_count - 1) 
+      left++;
+    while (FLOAT_EQUIVALENT(buf[right], 0.0) && right > 0)
+      right--;
+    if (left < startX) {
+      startX = left;
+      startLine = ii;
+    }
+    if (right > endX) {
+      endX = right;
+      endLine = ii;
+    }
+
+    int all_zero = TRUE;
+    for (kk=0; kk<sample_count; kk++) {
+      if (!FLOAT_EQUIVALENT(buf[kk], 0.0)) {
+        all_zero = FALSE;
+        break;
+      }
+    }
+    if (!all_zero) {
+      if (startY < 0) {
+        startY = ii;
+        endSample = kk;
+      }
+      startSample = kk;
+      endY = ii;
+    }
+  }
+  FCLOSE(fp);
+  FREE(buf);
+
+  *x0 = meta->projection->startX + startSample*meta->projection->perX;
+  *y0 = meta->projection->startY + startLine*meta->projection->perY;
+  *xL = meta->projection->startX + 
+    (endSample - startSample)*meta->projection->perX;
+  *yL = meta->projection->startY + 
+    (endLine - startLine)*meta->projection->perY;
+
+  meta_free(meta);
+}
+
 static void get_corners(meta_parameters *meta,
                         double *x0, double *y0,
                         double *xL, double *yL)
@@ -213,7 +280,8 @@ static void update_corners(double px, double py,
 static void determine_extents(char **infiles, int n_inputs,
                               int *size_x, int *size_y, int *n_bands,
                               double *start_x, double *start_y,
-                              double *per_x, double *per_y, int extent)
+                              double *per_x, double *per_y, int extent,
+                              int no_blackfill)
 {
     // the first input file is the "reference" -- all other metadata
     // must match the first (at least as far as projection, etc)
@@ -237,7 +305,10 @@ static void determine_extents(char **infiles, int n_inputs,
 
     // these don't have to be matched, we will update as we go along
     double x0, y0, xL, yL;
-    get_corners(meta0, &x0, &y0, &xL, &yL);
+    if (no_blackfill)
+      get_inner_extents(infiles[0], &x0, &y0, &xL, &yL);
+    else
+      get_corners(meta0, &x0, &y0, &xL, &yL);
 
     projection_type_t proj_type = meta0->projection->type;
 
@@ -276,7 +347,10 @@ static void determine_extents(char **infiles, int n_inputs,
                 meta->general->line_count, meta->general->sample_count);
 
             double this_x0, this_y0, this_xL, this_yL;
-            get_corners(meta, &this_x0, &this_y0, &this_xL, &this_yL);
+            if (no_blackfill)
+              get_inner_extents(file, &this_x0, &this_y0, &this_xL, &this_yL);
+            else
+              get_corners(meta, &this_x0, &this_y0, &this_xL, &this_yL);
 	    if (!extent)
 	      update_corners(px, py, &x0, &y0, &xL, &yL,
 			     this_x0, this_y0, this_xL, this_yL);
@@ -349,7 +423,7 @@ static void add_to_stack(char *out, int band, char *file,
     FILE *fpIn = FOPEN(file, "rb");
     FILE *fpOut;
     char *metaFile = appendExt(out, ".meta");
-    if (band > 0 || !multiband) {
+    if (band > 0 && multiband) {
       fpOut = FOPEN(out, "ab");
       sprintf(base, ",%s", get_basename(file));
       strcat(metaOut->general->bands, base);
@@ -423,7 +497,7 @@ int main(int argc, char *argv[])
     handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
     if (argc>1 && (strcmp(argv[1], "-help")==0 || strcmp(argv[1],"--help")==0))
         help();
-    if (argc<3) usage();
+    if (argc<2) usage();
 
     double background_val=0;
     extract_double_options(&argc, &argv, &background_val, "-background",
@@ -434,6 +508,9 @@ int main(int argc, char *argv[])
     if (extract_string_options(&argc, &argv, outfile, "-output", "--output",
 			       NULL))
       multiband = TRUE;
+    int no_blackfill = 
+      extract_flag_options(&argc, &argv, "-no_blackfill", "--no_blackfill",
+                          NULL);
     
     char *infile = argv[1];
 
@@ -477,7 +554,8 @@ int main(int argc, char *argv[])
       asfPrintStatus("   %d: %s%s\n", i+1, infiles[i], i==0 ? " (reference)" : "");
 
     determine_extents(infiles, n_inputs, &size_x, &size_y, &n_bands,
-		      &start_x, &start_y, &per_x, &per_y, extentFlag);
+		      &start_x, &start_y, &per_x, &per_y, extentFlag,
+                      no_blackfill);
 
     asfPrintStatus("\nStacked image size: %dx%d LxS\n", size_y, size_x);
     asfPrintStatus("  Start X,Y: %f,%f\n", start_x, start_y);
@@ -493,7 +571,6 @@ int main(int argc, char *argv[])
     meta_out->general->no_data = background_val;
     update_location_block(meta_out);
 
-    //char *outfile_full = appendExt(outfile, ".img");
     char *outfile_full = (char *) MALLOC(sizeof(char)*1024);
 
     if (multiband) {
