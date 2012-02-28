@@ -137,7 +137,7 @@ static void get_uavsar_line(ReadUavsarClientInfo *info, meta_parameters *meta,
     int j,ns=meta->general->sample_count;
     if (info->ml) {
         assert(meta->sar);
-        int k,nlooks = meta->sar->look_count;
+        int k,nlooks = meta->sar->azimuth_look_count;
         row *= nlooks;
 
         // we fudged the line count in the metadata for the
@@ -192,7 +192,7 @@ static void get_uavsar_lines(ReadUavsarClientInfo *info, meta_parameters *meta,
     if (info->ml) {
         assert(meta->sar);
         int i,k;
-        int nlooks = meta->sar->look_count;
+        int nlooks = meta->sar->azimuth_look_count;
         row *= nlooks;
 
         // we fudged the line count in the metadata for the

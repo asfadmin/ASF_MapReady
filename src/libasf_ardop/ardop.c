@@ -161,7 +161,8 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
 
 /*Copy fields from ARDOP_PARAMS struct to meta_parameters struct.*/
     meta->sar->image_type              = 'S';        /*Slant range image*/
-    meta->sar->look_count              = params.nlooks;
+    meta->sar->azimuth_look_count      = params.nlooks;
+    meta->sar->range_look_count        = 1;
     meta->sar->deskewed                = params.deskew;
     meta->sar->range_time_per_pixel    = 1.0/params.fs;
     meta->sar->azimuth_time_per_pixel  = 1.0/params.prf;

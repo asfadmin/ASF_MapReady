@@ -128,7 +128,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
 
     int skip = 1;
     if (info->multilook) {
-      skip = meta->sar->look_count;
+      skip = meta->sar->azimuth_look_count;
       row_start *= skip;
     }
 
@@ -239,7 +239,7 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
     //assert(sf==ns / thumb_size_x);
 
     if (info->multilook)
-      sf *= meta->sar->look_count;
+      sf *= meta->sar->azimuth_look_count;
 
     if (meta->general->data_type == INTEGER16)
     {

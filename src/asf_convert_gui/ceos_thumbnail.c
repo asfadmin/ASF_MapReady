@@ -923,7 +923,7 @@ make_complex_thumb(meta_parameters* imd,
     int larger_dim = 512;
     int ns = imd->general->sample_count;
     int nl = imd->general->line_count;
-    int lc = imd->sar->look_count;
+    int lc = imd->sar->azimuth_look_count;
     int ii, kk;
 
     // Vertical and horizontal scale factors required to meet the

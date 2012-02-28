@@ -1077,9 +1077,14 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                 "SAR", "look_direction",
                 1, &failed);
 
-    verify_int(precheck_err_msgs, msar2->look_count,
+    verify_int(precheck_err_msgs, msar2->azimuth_look_count,
                DM_MIN_LOOK_COUNT, DM_MAX_LOOK_COUNT,
-               "SAR", "look_count",
+               "SAR", "azimuth_look_count",
+               1, &failed);
+
+    verify_int(precheck_err_msgs, msar2->range_look_count,
+               DM_MIN_LOOK_COUNT, DM_MAX_LOOK_COUNT,
+               "SAR", "range_look_count",
                1, &failed);
 
     verify_int(precheck_err_msgs, msar2->deskewed,
@@ -2075,8 +2080,10 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                     msar1->image_type, msar2->image_type, &failed);
     compare_meta_char(compare_err_msgs, "SAR", "look_direction",
                     msar1->look_direction, msar2->look_direction, &failed);
-    compare_meta_int(compare_err_msgs, "SAR", "look_count",
-                    msar1->look_count, msar2->look_count, &failed);
+    compare_meta_int(compare_err_msgs, "SAR", "azimuth_look_count",
+                    msar1->azimuth_look_count, msar2->azimuth_look_count, &failed);
+    compare_meta_int(compare_err_msgs, "SAR", "range_look_count",
+                    msar1->range_look_count, msar2->range_look_count, &failed);
     compare_meta_int(compare_err_msgs, "SAR", "deskewed",
                     msar1->deskewed, msar2->deskewed, &failed);
     compare_meta_int(compare_err_msgs, "SAR", "original_line_count",

@@ -112,7 +112,7 @@ static void get_asf_line(ReadAsfClientInfo *info, meta_parameters *meta,
     // wrapper for get_float_line() that multilooks if needed
     if (info->ml) {
         assert(meta->sar);
-        int k,j,nlooks = meta->sar->look_count;
+        int k,j,nlooks = meta->sar->azimuth_look_count;
         row *= nlooks;
 
         // we fudged the line count in the metadata for the
@@ -148,7 +148,7 @@ static void get_asf_lines(ReadAsfClientInfo *info, meta_parameters *meta,
     if (info->ml) {
         assert(meta->sar);
         int i,j,k;
-        int nlooks = meta->sar->look_count;
+        int nlooks = meta->sar->azimuth_look_count;
         int ns = meta->general->sample_count;
         row *= nlooks;
 

@@ -218,9 +218,10 @@ int read_file(const char *filename, const char *band, int multilook,
     g_saved_line_count = meta->general->line_count;
     if (multilook && meta->sar) {
         // change the stored metadata!
-        meta->general->line_count /= meta->sar->look_count;
-        meta->sar->azimuth_time_per_pixel *= meta->sar->look_count;
-        meta->general->y_pixel_size *= meta->sar->look_count;
+        meta->general->line_count /= meta->sar->azimuth_look_count;
+        meta->sar->azimuth_time_per_pixel *= meta->sar->azimuth_look_count;
+        meta->general->y_pixel_size *= meta->sar->azimuth_look_count;
+	meta->general->x_pixel_size *= meta->sar->range_look_count;
     }
 
     // set up the ImageInfo for this image

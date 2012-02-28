@@ -279,11 +279,12 @@ int main(int argc, char **argv)
 	if (multilook_flag) {
 	    if (defaultLookStep_flag) {
 		/* We don't want to multilook any image twice */
-		if (inMeta->sar->line_increment==inMeta->sar->look_count) {
+		if (inMeta->sar->line_increment == 
+		    inMeta->sar->azimuth_look_count) {
 		    stepLine = stepSample = lookLine = lookSample = 1;
 		}
 		else {
-		    if (inMeta->sar->look_count == MAGIC_UNSET_INT) {
+		    if (inMeta->sar->azimuth_look_count == MAGIC_UNSET_INT) {
 			printf( "Bad look_count value in %s. Unable to determine multilooking values.\n"
 				"You can use the -look option to set the number of looks yourself. Exiting.\n" ,
 				inMetaFileName);
@@ -298,9 +299,10 @@ int main(int argc, char **argv)
 			}
 			exit(EXIT_FAILURE);
 		    }
-		    else
-			stepLine = inMeta->sar->look_count;
-		    stepSample = 1;
+		    else {
+			stepLine = inMeta->sar->azimuth_look_count;
+			stepSample = inMeta->sar->range_look_count;
+		    }
 		    lookLine = WINDOW_SIZE_MULTIPLIER * stepLine;
 		    lookSample = WINDOW_SIZE_MULTIPLIER * stepSample;
 		}

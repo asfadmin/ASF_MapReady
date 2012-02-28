@@ -197,12 +197,12 @@ int main(int argc, char *argv[])
 
   /* Figure multilooking values if necessary */
   if (!stepFlag) {
-    stepLine = inMeta1->sar->look_count;
-    stepSample = 1;
+    stepLine = inMeta1->sar->azimuth_look_count;
+    stepSample = inMeta1->sar->range_look_count;
   }
   if (!lookFlag) {
     lookLine = WINDOW_SIZE * stepLine;
-    lookSample = WINDOW_SIZE;
+    lookSample = WINDOW_SIZE * stepSample;
   }
 
   /*  Create & write output meta file */

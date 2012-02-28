@@ -170,7 +170,8 @@ int parse_cla(int argc,char *argv[],struct ARDOP_PARAMS *g,meta_parameters **met
     
   /*Copy fields from ARDOP_PARAMS struct to meta_parameters struct.*/
   meta->sar->image_type              = 'S';          /*Slant range image*/
-  meta->sar->look_count              = g->nlooks;
+  meta->sar->azimuth_look_count      = g->nlooks;
+  meta->sar->range_look_count        = 1;
   meta->sar->deskewed                = g->deskew;
   meta->sar->range_time_per_pixel    = 1.0/g->fs;
   meta->sar->azimuth_time_per_pixel  = 1.0/g->prf;

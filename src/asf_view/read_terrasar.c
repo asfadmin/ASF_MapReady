@@ -97,7 +97,7 @@ int read_terrasar_client(int row_start, int n_rows_to_get,
   int ii, jj, ns = meta->general->sample_count;
   int skip = 1;
   if (info->multilook) {
-    skip = meta->sar->look_count;
+    skip = meta->sar->azimuth_look_count;
     row_start *= skip;
   }
   // Read in the image
@@ -126,7 +126,7 @@ int get_terrasar_thumbnail_data(int thumb_size_x, int thumb_size_y,
   int sf = meta->general->line_count / thumb_size_y;
   
   if (info->multilook)
-    sf *= meta->sar->look_count;
+    sf *= meta->sar->azimuth_look_count;
   
   float *dest = (float*)dest_void;
 

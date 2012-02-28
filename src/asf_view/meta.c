@@ -194,7 +194,7 @@ void fill_meta_info()
           "Satellite Height: %.0f m\n"
           "    (Above Earth: %.0f m)\n\n",
             meta->sar->look_direction,
-            meta->sar->look_count,
+            meta->sar->azimuth_look_count,
             meta->sar->deskewed ? "Yes" : "No",
             meta->sar->range_time_per_pixel,
             meta->sar->azimuth_time_per_pixel,

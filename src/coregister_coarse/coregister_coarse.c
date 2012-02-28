@@ -163,7 +163,7 @@ int main(int argc, char **argv)
 		printErr("   ERROR: Unable to either find or open metaFile.\n");
 	}
 	else {
-		multiLook = meta->sar->look_count;
+		multiLook = meta->sar->azimuth_look_count;
 	}
 	meta_free(meta);
 
