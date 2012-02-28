@@ -9135,7 +9135,7 @@ uso@asf.alaska.edu</property>
                 <widget class="GtkFrame" id="uavsar_polsar_select_frame">
                   <property name="border_width">4</property>
                   <property name="visible">True</property>
-                  <property name="label">UAVSAR POLSAR Processing Types</property>
+                  <property name="label">UAVSAR POLSAR Product Types</property>
                   <property name="label_xalign">0</property>
                   <property name="label_yalign">0.5</property>
                   <property name="sensitive">FALSE</property>
@@ -9275,7 +9275,7 @@ uso@asf.alaska.edu</property>
                 <widget class="GtkFrame" id="uavsar_insar_select_frame">
                   <property name="border_width">4</property>
                   <property name="visible">True</property>
-                  <property name="label">UAVSAR InSAR Processing Types</property>
+                  <property name="label">UAVSAR InSAR Product Types</property>
                   <property name="label_xalign">0</property>
                   <property name="sensitive">FALSE</property>
                   <property name="label_yalign">0.5</property>

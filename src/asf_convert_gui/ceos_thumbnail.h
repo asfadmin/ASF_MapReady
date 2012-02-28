@@ -9,4 +9,5 @@ GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    char *input_data,
                                    const char *lut_basename,
+                                   gchar *uavsar_type,
                                    size_t max_thumbnail_dimension);

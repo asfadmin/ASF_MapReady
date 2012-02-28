@@ -18,7 +18,7 @@ void update_polsarpro_input_file_thumbnails()
                        COL_INPUT_FILE, &input_file,
                        -1);
     if (input_file && is_polsarpro(input_file)) {
-      add_thumbnail(input_file);
+      add_thumbnail(&iter);
     }
     g_free(input_file);
     more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
@@ -158,6 +158,12 @@ input_data_formats_changed()
         enable_polarimetry = TRUE;
         if (!strstr(formats, "ASF Internal"))
           strcat(formats, "ASF Internal, ");
+      }
+      else if (is_uavsar_polsar(file) || is_uavsar_insar(file)) {
+        enable_polarimetry = TRUE;
+        enable_terrain_correction = TRUE;
+        if(!strstr(formats, "UAVSAR"))
+          strcat(formats, "UAVSAR, ");
       }
       else if (is_airsar(file)) {
         show_airsar_checkbuttons = TRUE;

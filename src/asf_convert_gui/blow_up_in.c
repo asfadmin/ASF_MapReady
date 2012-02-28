@@ -213,15 +213,16 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     GtkTreeIter iter;
     gtk_tree_model_get_iter (GTK_TREE_MODEL (list_store), &iter, path);
 
-    char *file, *ancillary_file, *polsarpro_aux_info;
+    char *file, *ancillary_file, *polsarpro_aux_info, *uavsar_type;
     gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
                         COL_INPUT_FILE, &file,
                         COL_ANCILLARY_FILE, &ancillary_file,
+                        COL_UAVSAR_TYPE, &uavsar_type,
                         COL_POLSARPRO_INFO, &polsarpro_aux_info,
                         -1);
 
     char *metadata_file = meta_file_name (file);
-    char *data_file = data_file_name (file);
+    char *data_file = data_file_name (file, uavsar_type);
     char *lut_basename = extract_lut_name(polsarpro_aux_info);
 
     if (is_polsarpro(file)) {
@@ -240,12 +241,12 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
 
     GdkPixbuf *popup_image_pixbuf
       = make_input_image_thumbnail_pixbuf (metadata_file, data_file, lut_basename,
-                                           THUMB_SIZE_BIG);
+                                           uavsar_type, THUMB_SIZE_BIG);
 
     if (!popup_image_pixbuf && strlen(ancillary_file) > 0)
     {
         popup_image_pixbuf = make_input_image_thumbnail_pixbuf (
-          ancillary_file, ancillary_file, lut_basename, THUMB_SIZE_BIG);          
+          ancillary_file, ancillary_file, lut_basename, uavsar_type, THUMB_SIZE_BIG);          
     }
 
     g_free(file);

@@ -2543,6 +2543,15 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 		  meta->general->image_data_type == POLARIMETRIC_IMAGE)
 		sprintf(banded_name, "%s/%s_thumb_%s.png",
 			cfg->general->tmp_dir, basename, bands[1]);
+        else if (!strcmp(meta->general->sensor, "UAVSAR")) {
+          char *band_name = translate_uavsar_band_names(bands[0]);
+          char *p, *mode = STRDUP(meta->general->mode);
+          for ( p = mode; *p; ++p) *p = tolower(*p);
+          sprintf(banded_name, "%s/%s_thumb_%s%s.png",
+              cfg->general->tmp_dir, basename, mode, band_name);
+          FREE(band_name);
+          FREE(mode);
+        }
 	      else
 		sprintf(banded_name, "%s/%s_thumb_%s.png",
 			cfg->general->tmp_dir, basename, bands[0]);
@@ -2554,6 +2563,15 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 		  meta->general->image_data_type == POLARIMETRIC_IMAGE)
 		sprintf(banded_name, "%s_thumb_%s.png",
 			cfg->general->out_name, bands[1]);
+        else if (!strcmp(meta->general->sensor, "UAVSAR")) {
+          char *band_name = translate_uavsar_band_names(bands[0]);
+          char *p, *mode = STRDUP(meta->general->mode);
+          for ( p = mode; *p; ++p) *p = tolower(*p);
+          sprintf(banded_name, "%s_thumb_%s%s.png",
+              cfg->general->out_name, mode, band_name);
+          FREE(band_name);
+          FREE(mode);
+        }
 	      else
 		sprintf(banded_name, "%s_thumb_%s.png",
 			cfg->general->out_name, bands[0]);

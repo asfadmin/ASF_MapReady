@@ -302,6 +302,7 @@ GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    char *input_data,
                                    const char *lut_basename,
+                                   gchar *uavsar_type,
                                    size_t max_thumbnail_dimension);
 
 /* settings.c */
@@ -378,7 +379,7 @@ void set_combo_box_item(GtkWidget *, gint);
 gint get_combo_box_item(GtkWidget *);
 void message_box(const gchar *);
 gchar *meta_file_name(const gchar *);
-gchar *data_file_name(const gchar *);
+gchar *data_file_name(const gchar *, const gchar *);
 char *getPath(const char *);
 GtkWidget *get_widget_checked(const char *widget_name);
 GList *get_widgets_prefix_checked(const char *prefix);
@@ -432,7 +433,7 @@ gboolean add_to_ancillary_files_list(const gchar *);
 void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);
 gboolean is_meta_file(const gchar *);
-void add_thumbnail(const gchar *);
+void add_thumbnail(GtkTreeIter *);
 void show_queued_thumbnails();
 int has_prepension(const gchar *);
 void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *,

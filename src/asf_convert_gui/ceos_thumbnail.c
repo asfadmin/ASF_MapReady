@@ -9,6 +9,7 @@
 #include <float_image.h>
 #include <asf_raster.h>
 #include <envi.h>
+#include <sys/stat.h>
 #include <math.h>
 
 #include "ceos_thumbnail.h"
@@ -18,6 +19,7 @@
 #include "asf_endian.h"
 #include "tiff_util.h"
 #include "radarsat2.h"
+#include "uavsar.h"
 
 // Prototypes
 int get_geotiff_float_line(TIFF *fpIn, meta_parameters *meta, long row, int band, float *line);
@@ -338,8 +340,8 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
     // scaling method, much nicer than what we did above
 
     // Must ensure we scale the same in each direction
-    double scale_y = tsy / max_thumbnail_dimension;
-    double scale_x = tsx / max_thumbnail_dimension;
+    double scale_y = (double)tsy / max_thumbnail_dimension;
+    double scale_x = (double)tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
     if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
@@ -489,8 +491,8 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
     // scaling method, much nicer than what we did above
 
     // Must ensure we scale the same in each direction
-    double scale_y = tsy / max_thumbnail_dimension;
-    double scale_x = tsx / max_thumbnail_dimension;
+    double scale_y = (double)tsy / max_thumbnail_dimension;
+    double scale_x = (double)tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
     if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
@@ -714,8 +716,8 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     // scaling method, much nicer than what we did above
 
     // Must ensure we scale the same in each direction
-    double scale_y = tsy / max_thumbnail_dimension;
-    double scale_x = tsx / max_thumbnail_dimension;
+    double scale_y = (double)tsy / max_thumbnail_dimension;
+    double scale_x = (double)tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
     if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
@@ -880,8 +882,8 @@ make_polsarpro_thumb(const char *input_metadata, const char *input_data,
     // scaling method, much nicer than what we did above
 
     // Must ensure we scale the same in each direction
-  double scale_y = tsy / max_thumbnail_dimension;
-  double scale_x = tsx / max_thumbnail_dimension;
+  double scale_y = (double)tsy / max_thumbnail_dimension;
+  double scale_x = (double)tsx / max_thumbnail_dimension;
   double scale = scale_y > scale_x ? scale_y : scale_x;
   if (scale == 0) scale = 1;
   int x_dim = tsx / scale;
@@ -1142,8 +1144,8 @@ make_complex_thumb(meta_parameters* imd,
     // scaling method, much nicer than what we did above
 
     // Must ensure we scale the same in each direction
-    double scale_y = tsy / max_thumbnail_dimension;
-    double scale_x = tsx / max_thumbnail_dimension;
+    double scale_y = (double)tsy / max_thumbnail_dimension;
+    double scale_x = (double)tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
     if (scale == 0) scale = 1;
     int x_dim = tsx / scale;
@@ -1279,9 +1281,134 @@ make_radarsat2_thumb(const char *input_metadata, const char *input_data,
 }
 
 GdkPixbuf *
+make_uavsar_thumb(meta_parameters *meta, const char *input_data,
+    size_t max_thumbnail_dimension)
+{
+  struct stat statbuf;
+  FILE *fp = FOPEN(input_data, "rb");
+  if(!fp) return NULL;
+
+  if(stat(input_data, &statbuf) == -1)
+    return NULL;
+
+  int is_complex = statbuf.st_size == meta->general->sample_count * meta->general->line_count * sizeof(float) * 2;
+    
+  // use a larger dimension at first, for our crude scaling.  We will
+  // use a better scaling method later, from GdbPixbuf
+  int larger_dim = 1024;
+
+  // Vertical and horizontal scale factors required to meet the
+  // max_thumbnail_dimension part of the interface contract.
+  int vsf = ceil (meta->general->line_count / larger_dim);
+  int hsf = ceil (meta->general->sample_count / larger_dim);
+  // Overall scale factor to use is the greater of vsf and hsf.
+  int sf = (hsf > vsf ? hsf : vsf);
+
+  // Thumbnail image sizes.
+  size_t tsx = meta->general->sample_count / sf;
+  size_t tsy = meta->general->line_count / sf;
+
+  if(is_complex)
+    meta->general->sample_count *= 2;
+
+  guchar *data = g_new(guchar, 3*tsx*tsy);
+  float *fdata = g_new(float, tsx*tsy);
+
+  // Form the thumbnail image by grabbing individual pixels.
+  size_t ii, jj;
+  float *line = g_new (float, meta->general->sample_count);
+
+  // Keep track of the average pixel value, so later we can do a 2-sigma
+  // scaling - makes the thumbnail look a little nicer and more like what
+  // they'd get if they did the default jpeg export.
+  double avg = 0.0;
+  for ( ii = 0 ; ii < tsy ; ii++ ) {
+      FSEEK64(fp, ii*sf*sizeof(float)*meta->general->sample_count, SEEK_SET);
+      FREAD(line, sizeof(float), meta->general->sample_count, fp);
+
+      for (jj = 0; jj < tsx; ++jj) {
+          if(is_complex) {
+            ieee_lil32(line[jj*sf*2]);
+            fdata[jj + ii*tsx] = line[jj*sf*2];
+          }
+          else {
+            ieee_lil32(line[jj*sf]);
+            fdata[jj + ii*tsx] = line[jj*sf];
+          }
+          avg += line[jj*sf]/(tsx*tsy);
+      }
+  }
+  g_free (line);
+  FCLOSE(fp);
+
+  // Compute the std devation
+  double stddev = 0.0;
+  for (ii = 0; ii < tsx*tsy; ++ii)
+      stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
+  stddev = sqrt(stddev / (tsx*tsy));
+
+  // Set the limits of the scaling - 2-sigma on either side of the mean
+  double lmin = avg - 2*stddev;
+  double lmax = avg + 2*stddev;
+
+  // Now actually scale the data, and convert to bytes.
+  // Note that we need 3 values, one for each of the RGB channels.
+  for (ii = 0; ii < tsx*tsy; ++ii) {
+      float val = fdata[ii];
+      guchar uval;
+      if (val < lmin)
+          uval = 0;
+      else if (val > lmax)
+          uval = 255;
+      else
+          uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
+
+      int n = 3*ii;
+      data[n] = uval;
+      data[n+1] = uval;
+      data[n+2] = uval;
+  }
+
+  g_free(fdata);
+
+  // Create the pixbuf
+  GdkPixbuf *pb =
+      gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
+                               8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
+
+  if (!pb) {
+      printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
+      meta_free(meta);
+      g_free(data);
+      return NULL;
+  }
+
+  // Scale down to the size we actually want, using the built-in Gdk
+  // scaling method, much nicer than what we did above
+
+  // Must ensure we scale the same in each direction
+  double scale_y = (double)tsy / max_thumbnail_dimension;
+  double scale_x = (double)tsx / max_thumbnail_dimension;
+  double scale = scale_y > scale_x ? scale_y : scale_x;
+  if (scale == 0) scale = 1;
+  int x_dim = tsx / scale;
+  int y_dim = tsy / scale;
+
+  GdkPixbuf *pb_s =
+      gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
+  gdk_pixbuf_unref(pb);
+
+  if (!pb_s)
+      printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
+
+  return pb_s;
+}
+
+GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    char *input_data,
                                    const char *lut_basename,
+                                   gchar *uavsar_type,
                                    size_t max_thumbnail_dimension)
 {
     /* This can happen if we don't get around to drawing the thumbnail
@@ -1299,6 +1426,25 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     // no point in a thumbnail of Level 0 data
     if (ext && strcmp_case(ext, ".raw") == 0)
         return NULL;
+
+    if(is_uavsar_polsar(input_metadata)) {
+      if(!strcmp(uavsar_type, "DAT"))
+        return NULL;
+      uavsar_polsar *params = read_uavsar_polsar_params(input_metadata, uavsar_type_name_to_enum(uavsar_type));
+      meta_parameters *meta = uavsar_polsar2meta(params);
+      GdkPixbuf * buf = make_uavsar_thumb(meta, input_data, max_thumbnail_dimension);
+      FREE(params);
+      meta_free(meta);
+      return buf;
+    }
+    else if(is_uavsar_insar(input_metadata)) {
+      uavsar_insar *params = read_uavsar_insar_params(input_metadata, uavsar_type_name_to_enum(uavsar_type));
+      meta_parameters *meta = uavsar_insar2meta(params);
+      GdkPixbuf * buf = make_uavsar_thumb(meta, input_data, max_thumbnail_dimension);
+      FREE(params);
+      meta_free(meta);
+      return buf;
+    }
 
     // split some cases into their own funcs
     if (is_asf_internal(input_data))
@@ -1565,8 +1711,8 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     // scaling method, much nicer than what we did above
 
     // Must ensure we scale the same in each direction
-    double scale_y = tsy / max_thumbnail_dimension;
-    double scale_x = tsx / max_thumbnail_dimension;
+    double scale_y = (double)tsy / max_thumbnail_dimension;
+    double scale_x = (double)tsx / max_thumbnail_dimension;
     double scale = scale_y > scale_x ? scale_y : scale_x;
     if (scale == 0) scale = 1;
     int x_dim = tsx / scale;

@@ -2137,3 +2137,95 @@ void read_meta_uavsar(const char *inFileName, const char *outBaseName)
   FREE(product);
   FREE(type);
 }
+
+uavsar_type_t uavsar_type_name_to_enum(const char *type_name)
+{
+  if(!strcmp_case(type_name, "SLC")) {
+    return POLSAR_SLC;
+  }
+  else if(!strcmp_case(type_name, "MLC")) {
+    return POLSAR_MLC;
+  }
+  else if(!strcmp_case(type_name, "DAT")) {
+    return POLSAR_DAT;
+  }
+  else if(!strcmp_case(type_name, "GRD")) {
+    return POLSAR_GRD;
+  }
+  else if(!strcmp_case(type_name, "HGT")) {
+    return POLSAR_HGT;
+  }
+  else if(!strcmp_case(type_name, "AMP")) {
+    return INSAR_AMP;
+  }
+  else if(!strcmp_case(type_name, "INT")) {
+    return INSAR_INT;
+  }
+  else if(!strcmp_case(type_name, "UNW")) {
+    return INSAR_UNW;
+  }
+  else if(!strcmp_case(type_name, "COR")) {
+    return INSAR_COR;
+  }
+  else if(!strcmp_case(type_name, "AMP_GRD")) {
+    return INSAR_AMP_GRD;
+  }
+  else if(!strcmp_case(type_name, "INT_GRD")) {
+    return INSAR_INT_GRD;
+  }
+  else if(!strcmp_case(type_name, "UNW_GRD")) {
+    return INSAR_UNW_GRD;
+  }
+  else if(!strcmp_case(type_name, "COR_GRD")) {
+    return INSAR_COR_GRD;
+  }
+  else if(!strcmp_case(type_name, "HGT_GRD")) {
+    return INSAR_HGT_GRD;
+  }
+  else {
+    asfPrintError("uavsar_type_name_to_enum() Failure: No such uavsar type name: %s", type_name);
+  }
+}
+
+const char *translate_uavsar_band_names(char *band)
+{
+  if(!strcmp(band, "C11"))
+    return STRDUP("HHHH");
+  else if(!strcmp(band, "C22"))
+    return STRDUP("HVHV");
+  else if(!strcmp(band, "C33"))
+    return STRDUP("VVVV");
+  else if(!strcmp(band, "C12_real"))
+    return STRDUP("HHHV_real");
+  else if(!strcmp(band, "C12_imag"))
+    return STRDUP("HHHV_imag");
+  else if(!strcmp(band, "C13_real"))
+    return STRDUP("HHVV_real");
+  else if(!strcmp(band, "C13_imag"))
+    return STRDUP("HHVV_imag");
+  else if(!strcmp(band, "C23_real"))
+    return STRDUP("HVVV_real");
+  else if(!strcmp(band, "C23_imag"))
+    return STRDUP("HVVV_imag");
+  else if(!strcmp(band, "HHHH"))
+    return STRDUP("C11");
+  else if(!strcmp(band, "HVHV"))
+    return STRDUP("C22");
+  else if(!strcmp(band, "VVVV"))
+    return STRDUP("C33");
+  else if(!strcmp(band, "HHHV_real"))
+    return STRDUP("C12_real");
+  else if(!strcmp(band, "HHHV_imag"))
+    return STRDUP("C12_imag");
+  else if(!strcmp(band, "HHVV_real"))
+    return STRDUP("C13_real");
+  else if(!strcmp(band, "HHVV_imag"))
+    return STRDUP("C13_imag");
+  else if(!strcmp(band, "HVVV_real"))
+    return STRDUP("C23_real");
+  else if(!strcmp(band, "HVVV_imag"))
+    return STRDUP("C23_imag");
+  else {
+    asfPrintError("translate_uavsar_band_names() Failed: No such uavsar band name: %s", band);
+  }
+}

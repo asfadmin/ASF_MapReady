@@ -1653,6 +1653,8 @@ settings_to_config_file(const Settings *s,
              input_data_format == INPUT_FORMAT_AIRSAR       ||
              input_data_format == INPUT_FORMAT_ASF_INTERNAL ||
              input_data_format == INPUT_FORMAT_GAMMA        ||
+             input_data_format == INPUT_FORMAT_UAVSAR_POLSAR ||
+             input_data_format == INPUT_FORMAT_UAVSAR_INSAR ||
              input_data_format == INPUT_FORMAT_TERRASARX    ||
 	     input_data_format == INPUT_FORMAT_RADARSAT2    ||
              input_data_format == INPUT_FORMAT_POLSARPRO));

@@ -351,104 +351,90 @@ static char *file_is_valid(const gchar * file)
 
 #ifdef THUMBNAILS
 
-static void set_input_image_thumbnail(GtkTreeIter *iter,
-                                      const gchar *metadata_file,
-                                      gchar *data_file,
-                                      gchar *ancillary_file,
-                                      const char *lut_basename)
+static void
+set_input_image_thumbnail(GtkTreeIter * iter,
+                          const gchar * metadata_file,
+                          gchar * data_file,
+                          gchar * ancillary_file, const char *lut_basename, gchar *uavsar_type)
 {
     if (g_show_thumbnail_columns) {
-	GdkPixbuf *pb = make_input_image_thumbnail_pixbuf (
-	metadata_file, data_file, lut_basename, THUMB_SIZE);
-	
-	if (pb) {
-		gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
-	}
-	else {
-		// failed to generate a thumbnail from the data file -- if this is
-		// gamma data, this failure is to be expected, we'll generate one
-		// from the ancillary (CEOS) data
-		if (strlen(ancillary_file) > 0) {
-		pb = make_input_image_thumbnail_pixbuf (
-		ancillary_file, ancillary_file, lut_basename, THUMB_SIZE);
-	
-		if (pb)
-		gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
-		}
-	}
+        GdkPixbuf *pb =
+            make_input_image_thumbnail_pixbuf(metadata_file, data_file,
+                                              lut_basename, uavsar_type, THUMB_SIZE);
+
+        if (pb) {
+            gtk_list_store_set(list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
+        }
+        else {
+            // failed to generate a thumbnail from the data file -- if this is
+            // gamma data, this failure is to be expected, we'll generate one
+            // from the ancillary (CEOS) data
+            if (strlen(ancillary_file) > 0) {
+                pb = make_input_image_thumbnail_pixbuf(ancillary_file,
+                                                       ancillary_file,
+                                                       lut_basename,
+                                                       NULL,
+                                                       THUMB_SIZE);
+
+                if (pb)
+                    gtk_list_store_set(list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
+            }
+        }
     }
 }
 
 static void
-do_thumbnail (const gchar *file)
+do_thumbnail (GtkTreeRowReference * ref)
 {
     // quit if not showing thumbnails
     if (!g_show_thumbnail_columns)
         return;
 
-    gchar *metadata_file = meta_file_name (file);
-    gchar *data_file = data_file_name (file);
+    GtkTreePath *path = gtk_tree_row_reference_get_path(ref);
+    GtkTreeIter iter;
+    // If the RowReference we were given wasn't valid then the data file
+    // must have been removed from the list before we got a chance to draw
+    // it's thumbnail.
+    if(gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path)) {
+        gchar *input_file;
+        gchar *ancillary_file;
+        gchar *polsarpro_aux_info;
+        gchar *uavsar_type;
+        gtk_tree_model_get(GTK_TREE_MODEL (list_store), &iter,
+                            COL_INPUT_FILE, &input_file,
+                            COL_ANCILLARY_FILE, &ancillary_file,
+                            COL_UAVSAR_TYPE, &uavsar_type,
+                            COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
+        gchar *metadata_file = meta_file_name(input_file);
+        gchar *data_file = data_file_name(input_file, uavsar_type);
 
-    // Forcing of CEOS thumbnails when available
-    if (is_polsarpro(data_file)) {
-      if(strlen(metadata_file) > 0) {
-        g_free(data_file);
-        data_file = g_strdup(metadata_file);
-      }
-      else {
-	g_free(metadata_file);
-	metadata_file = (gchar*)g_malloc(sizeof(gchar)*(strlen(data_file) + 5));
-	sprintf(metadata_file, "%s%s", data_file, ".hdr");
-      }
-      if (!fileExists(metadata_file)) strcpy(metadata_file, "");
-    }
-
-        /* Find the element of the list store having the file name we are
-           trying to add a thumbnail of.  */
-        GtkTreeIter iter;
-        gboolean valid;
-        /* Get the first iter in the list */
-        valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (list_store),
-                                               &iter);
-        while ( valid ) {
-            /* Walk through the list, reading each row */
-            gchar *input_file;
-            gchar *ancillary_file;
-            gchar *polsarpro_aux_info;
-            gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
-                                COL_INPUT_FILE, &input_file,
-                                COL_ANCILLARY_FILE, &ancillary_file,
-                                COL_POLSARPRO_INFO, &polsarpro_aux_info,
-                                -1);
-            if ( (metadata_file && strcmp (metadata_file, input_file) == 0) ||
-                 (data_file && strcmp (data_file, input_file) == 0) ||
-                 (file && strcmp (file, input_file) == 0) )
-            {
-                /* We found it, so load the thumbnail.  */
-                char *lut_basename = extract_lut_name(polsarpro_aux_info);
-                set_input_image_thumbnail (&iter, metadata_file, data_file,
-                                           ancillary_file, lut_basename);
-                g_free (metadata_file);
-		g_free (data_file);
-                g_free (input_file);
-                g_free (ancillary_file);
-                FREE(lut_basename);
-                return;
+        // Forcing of CEOS thumbnails when available
+        if (is_polsarpro(data_file)) {
+            if (strlen(metadata_file) > 0) {
+                g_free(data_file);
+                data_file = g_strdup(metadata_file);
             }
-
-            g_free (input_file);
-            g_free (ancillary_file);
-
-            valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store),
-                                              &iter);
+            else {
+                g_free(metadata_file);
+                metadata_file = (gchar *) g_malloc(sizeof (gchar) *
+                                    (strlen (data_file) + 5));
+                sprintf(metadata_file, "%s%s", data_file, ".hdr");
+            }
+            if (!fileExists (metadata_file))
+                strcpy (metadata_file, "");
         }
 
-    /* The data file must have gotten removed from the list before we
-    got a chance to draw it's thumbnail.  Oh well.  */
+        char *lut_basename = extract_lut_name (polsarpro_aux_info);
+        set_input_image_thumbnail(&iter, metadata_file, data_file,
+                                   ancillary_file, lut_basename, uavsar_type);
+        g_free(input_file);
+        g_free(ancillary_file);
+        FREE(lut_basename);
+        g_free(metadata_file);
+        g_free(data_file);
+    }
 
-        g_free (metadata_file);
-	g_free (data_file);
-    //}
+    gtk_tree_path_free(path);
 }
 
 #endif
@@ -642,11 +628,11 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COL_ANCILLARY_FILE, &ancillary_file,
                        COL_METADATA_FILE, &original_metadata_file,
                        COL_POLSARPRO_INFO, &polsarpro_aux_info,
-		       COL_INTERFEROGRAM, &interferogram_file,
-		       COL_COHERENCE, &coherence_file,
-		       COL_SLAVE_METADATA, &slave_metadata_file,
-		       COL_BASELINE, &baseline_file,
-           COL_UAVSAR_TYPE, &uavsar_type,
+                       COL_INTERFEROGRAM, &interferogram_file,
+                       COL_COHERENCE, &coherence_file,
+                       COL_SLAVE_METADATA, &slave_metadata_file,
+                       COL_BASELINE, &baseline_file,
+                       COL_UAVSAR_TYPE, &uavsar_type,
                        -1);
 
     // pull out the useful intermediates
@@ -829,13 +815,14 @@ move_from_completed_files_list(GtkTreeIter *iter)
 // changing on us (sort of as if we were doing threading).
 
 #define QUEUE_SIZE 255
-static char *thumb_files[QUEUE_SIZE];
-static void queue_thumbnail(const gchar * data_file)
+static GtkTreeRowReference *thumb_row_refs[QUEUE_SIZE];
+static void
+queue_thumbnail (GtkTreeRowReference * ref)
 {
     int i;
     for (i = 0; i < QUEUE_SIZE; ++i) {
-        if (!thumb_files[i]) {
-            thumb_files[i] = g_strdup(data_file);
+        if (!thumb_row_refs[i]) {
+            thumb_row_refs[i] = ref;
             break;
         }
     }
@@ -843,31 +830,37 @@ static void queue_thumbnail(const gchar * data_file)
 
 // This is just an externally available wrapper for
 // queue_thumbnail() (necessary in file_selection.c)
-void add_thumbnail(const gchar *data_file)
+void
+add_thumbnail (GtkTreeIter * iter)
 {
-  queue_thumbnail(data_file);
+    GtkTreePath *path =
+        gtk_tree_model_get_path (GTK_TREE_MODEL (list_store), iter);
+    GtkTreeRowReference *ref =
+        gtk_tree_row_reference_new (GTK_TREE_MODEL (list_store), path);
+    queue_thumbnail (ref);
+    gtk_tree_path_free (path);
 }
 
 void
-show_queued_thumbnails()
+show_queued_thumbnails ()
 {
     int i;
     for (i = 0; i < QUEUE_SIZE; ++i) {
-      if (thumb_files[i]) {
+        if (thumb_row_refs[i]) {
             // do a gtk main loop iteration
-            while (gtk_events_pending())
-                gtk_main_iteration();
+            while (gtk_events_pending ())
+                gtk_main_iteration ();
 
             // must check files[i]!=NULL again, since gtk_main_iteration could
             // have processed a "Browse..." event and thus already processed
             // this item.  The alternative would be to move the above while()
             // loop below the statements below, however that makes the app feel
             // a little less responsive.
-            if (thumb_files[i]) {
-              do_thumbnail(thumb_files[i]);
+            if (thumb_row_refs[i]) {
+                do_thumbnail (thumb_row_refs[i]);
 
-              g_free(thumb_files[i]);
-              thumb_files[i] = NULL;
+                gtk_tree_row_reference_free (thumb_row_refs[i]);
+                thumb_row_refs[i] = NULL;
             }
         }
     }
@@ -1142,7 +1135,7 @@ add_to_files_list_iter(const gchar * input_file_in,
       FREE(bands);
 
       // Add the file to the thumbnail queue
-      queue_thumbnail(input_file);
+      add_thumbnail(iter_p);
 
       // Update the visible/invisible widgets in the input section,
       // to reflect what kind of data we have

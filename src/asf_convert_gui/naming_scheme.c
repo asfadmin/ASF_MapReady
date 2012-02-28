@@ -437,7 +437,7 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
        COL_UAVSAR_TYPE, &uavsar_type_col,
 			 COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
       if(uavsar_type && strlen(uavsar_type)) {
-        if(strcmp(uavsar_type, uavsar_type_col) == 0 && strcmp(data_file_name, input_file_name) == 0)
+        if(uavsar_type_col && strcmp(uavsar_type, uavsar_type_col) == 0 && strcmp(data_file_name, input_file_name) == 0)
           break;
       }
       else if(strcmp(data_file_name, input_file_name) == 0)

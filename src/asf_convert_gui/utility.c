@@ -179,6 +179,10 @@ meta_file_name(const gchar * file_name)
     return ret;
   }
 
+  // uavsar
+  else if (ext && strcmp_case(ext, ".ann")==0)
+    return g_strdup(file_name);
+
   // airsar
   else if (ext && strcmp_case(ext, ".airsar")==0) {
     return g_strdup(file_name);
@@ -223,8 +227,13 @@ meta_file_name(const gchar * file_name)
   return ret;
 }
 
+static int cstring_cmp(const void *a, const void *b)
+{
+  return strcmp(*(const char **)a, *(const char **)b);
+}
+
 gchar *
-data_file_name(const gchar * file_name)
+data_file_name(const gchar * file_name, const gchar *uavsar_type)
 {
   // first, handle ASF Internal
   char *ext = findExt(file_name);
@@ -241,6 +250,24 @@ data_file_name(const gchar * file_name)
   // PolSARpro
   else if (ext && strcmp_case(ext, ".bin")==0) {
     return g_strdup(file_name);
+  }
+
+  // uavsar
+  else if (uavsar_type && strlen(uavsar_type) && ext && strcmp_case(ext, ".ann")==0) {
+    uavsar_type_t uavtype = uavsar_type_name_to_enum(uavsar_type);
+    char **dataName, **element;
+    int *dataType, nBands, i;
+    get_uavsar_file_names(file_name, uavtype, &dataName, &element, &dataType, &nBands);
+    if(nBands) {
+      qsort(dataName, nBands, sizeof(char *), cstring_cmp);
+      gchar *ret = g_strdup(dataName[0]);
+      for(i = 0; i < nBands; i++) {
+        FREE(dataName[i]);
+        FREE(element[i]);
+      }
+      FREE(dataType);
+      return ret;
+    }
   }
 
   // airsar

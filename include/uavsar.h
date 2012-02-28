@@ -144,10 +144,12 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params);
 meta_parameters* uavsar_insar2meta(uavsar_insar *params);
 uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
 					 uavsar_type_t type);
-uavsar_insar *read_insar_polsar_params(const char *dataFile,
+uavsar_insar *read_uavsar_insar_params(const char *dataFile,
 				       uavsar_type_t type);
 char *check_data_type(const char *inFileName);
 char **get_uavsar_products(const char *data_type, char *type, int *num_product);
+uavsar_type_t uavsar_type_name_to_enum(const char *type_name);
+const char *translate_uavsar_band_names(char *band);
 void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
                            char ***pDataName, char ***pElement,
                            int **pDataType, int *nBands);
