@@ -32,7 +32,7 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
   ncols  = meta->general->sample_count;
   sl     = meta->general->start_line;
   ss     = meta->general->start_sample;
-  yScale = meta->sar->look_count;
+  yScale = meta->sar->azimuth_look_count;
   xScale = meta->sar->sample_increment;
   
   // Write metadata files for temporary slant range images

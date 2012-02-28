@@ -44,7 +44,7 @@ void c2p_ext(const char *inDataName, const char *inMetaName,
     int nl = in_meta->general->line_count;
     int ns = in_meta->general->sample_count;
     // process 1 line at a time when not multilooking, otherwise grab nlooks
-    int nlooks = multilook ? in_meta->sar->look_count : 1;
+    int nlooks = multilook ? in_meta->sar->azimuth_look_count : 1;
 
     if (nlooks == 1 && multilook) {
         asfPrintStatus("Not multilooking, look_count is 1.\n");

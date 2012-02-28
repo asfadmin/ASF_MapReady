@@ -330,7 +330,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
   coniIO_double(coni,"ifm.","er:",&sar->earth_radius,"Local earth radius [m]");
   coniIO_double(coni,"ifm.","ht:",&sar->satellite_height,"Satellite height, from center of earth [m]");
   if (meta->meta_version>0.6)
-    coniIO_int(coni,"ifm.","nLooks:",&sar->look_count,           "Number of looks to take from SLC");
+    coniIO_int(coni,"ifm.","nLooks:",&sar->azimuth_look_count,           "Number of looks to take from SLC");
   coniIO_int(coni,"ifm.","orig_lines:",    &sar->original_line_count,  "Number of lines in original image");
   coniIO_int(coni,"ifm.","orig_samples:",  &sar->original_sample_count,"Number of samples in original image");
   coniIO_structClose(coni,"end ifm\n");
@@ -587,7 +587,7 @@ void meta_new2old(meta_parameters *meta)
  */
   meta->ifm->ht            = meta->sar->satellite_height;
   meta->ifm->er            = meta->sar->earth_radius;
-  meta->ifm->nLooks        = meta->sar->look_count;
+  meta->ifm->nLooks        = meta->sar->azimuth_look_count;
   meta->ifm->orig_nLines   = meta->sar->original_line_count;
   meta->ifm->orig_nSamples = meta->sar->original_sample_count;
 

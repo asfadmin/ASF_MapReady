@@ -719,8 +719,12 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
       sprintf(str, "left");
     nc_meta_str(meta_id, "sar_look_direction", "SAR satellite look direction", 
 		NULL, str);
-    nc_meta_int(meta_id, "sar_look_count", "number of looks to take from SLC", 
-		NULL, &ms->look_count);
+    nc_meta_int(meta_id, "sar_azimuth_look_count", 
+		"number of looks in azimuth direction", 
+		NULL, &ms->azimuth_look_count);
+    nc_meta_int(meta_id, "sar_range_look_count", 
+		"number of looks in range direction", 
+		NULL, &ms->range_look_count);
     nc_meta_int(meta_id, "sar_multilook", "multilooking flag", NULL, 
 		&ms->multilook);
     nc_meta_int(meta_id, "sar_deskewed", "zero doppler deskew flag", NULL, 

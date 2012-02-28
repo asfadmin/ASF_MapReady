@@ -1758,7 +1758,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   int multi = FALSE;
   if (inMeta->sar && inMeta->sar->multilook==0) {
     multi = TRUE;
-    chunk_size = inMeta->sar->look_count;
+    chunk_size = inMeta->sar->azimuth_look_count;
   }
 
   // aliases
@@ -1888,8 +1888,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   if (multi) {
     outMeta->sar->multilook = 1;
     outMeta->general->line_count = onl;
-    outMeta->general->y_pixel_size *= outMeta->sar->look_count;
-    outMeta->sar->azimuth_time_per_pixel *= outMeta->sar->look_count;
+    outMeta->general->y_pixel_size *= outMeta->sar->azimuth_look_count;
+    outMeta->general->x_pixel_size *= outMeta->sar->range_look_count;
+    outMeta->sar->azimuth_time_per_pixel *= outMeta->sar->azimuth_look_count;
   }
 
   outMeta->general->image_data_type = POLARIMETRIC_IMAGE;

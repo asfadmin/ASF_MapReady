@@ -27,11 +27,11 @@ meta_parameters* smap2meta(smap_meta *smap)
   meta->general->radiometry = r_SIGMA_DB;
   sscanf(smap->range_beginning_date, "%4d-%2d-%2d", 
 	 &imgStartDate.year, &imgStartDate.month, &imgStartDate.day);
-  sscanf(smap->range_beginning_time, "%2d:%2d:%fZ",
+  sscanf(smap->range_beginning_time, "%2d:%2d:%lfZ",
 	 &imgStartTime.hour, &imgStartTime.min, &imgStartTime.sec);
   sscanf(smap->range_ending_date, "%4d-%2d-%2d", 
 	 &imgStopDate.year, &imgStopDate.month, &imgStopDate.day);
-  sscanf(smap->range_ending_time, "%2d:%2d:%fZ",
+  sscanf(smap->range_ending_time, "%2d:%2d:%lfZ",
 	 &imgStopTime.hour, &imgStopTime.min, &imgStopTime.sec);
   average_ymdTimes(&imgStartDate, &imgStopDate, &imgStartTime, &imgStopTime,
 		   &date, &time);
@@ -56,7 +56,7 @@ meta_parameters* smap2meta(smap_meta *smap)
   meta->sar = meta_sar_init();
   meta->sar->image_type = 'P'; // geographic but nevertheless
   meta->sar->look_direction = 'R';
-  meta->sar->look_count = 1; // Number of looks?
+  // No constant look count information - rotating antenna
   meta->sar->deskewed = 1; // assumption
   meta->sar->line_increment = 1;
   meta->sar->sample_increment = 1;

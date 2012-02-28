@@ -127,11 +127,12 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
     meta->sar->look_direction = 'R';
   else
     meta->sar->look_direction = 'L';
-  meta->sar->look_count = gamma->azimuth_looks / gamma->range_looks;
-  if (gamma->azimuth_looks == gamma->range_looks)
-    meta->sar->multilook = 0;
-  else
+  meta->sar->azimuth_look_count = gamma->azimuth_looks;
+  meta->sar->range_look_count = gamma->range_looks;
+  if (gamma->azimuth_looks > 1 || gamma->range_looks > 1)
     meta->sar->multilook = 1;
+  else
+    meta->sar->multilook = 0;
   meta->sar->deskewed = gamma->azimuth_deskew;
   meta->sar->original_line_count = meta->general->line_count;
   meta->sar->original_sample_count = meta->general->sample_count;
@@ -505,7 +506,8 @@ meta_parameters* gamma_msp2meta(gamma_msp *gamma)
   meta->sar = meta_sar_init();
   meta->sar->image_type = MAGIC_UNSET_CHAR;
   meta->sar->look_direction = MAGIC_UNSET_CHAR;
-  meta->sar->look_count = gamma->azimuth_looks;
+  meta->sar->azimuth_look_count = gamma->azimuth_looks;
+  meta->sar->range_look_count = gamma->range_looks;
   meta->sar->deskewed = gamma->azimuth_deskew;
   meta->sar->original_line_count = gamma->offset_to_first_echo_to_process + gamma->echoes_to_process;
   meta->sar->original_sample_count = gamma->range_offset + gamma->raw_range_samples;

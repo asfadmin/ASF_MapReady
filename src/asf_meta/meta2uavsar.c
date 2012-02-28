@@ -71,12 +71,14 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   else if (strcmp_case(params->look_direction, "Right") == 0)
     meta->sar->look_direction = 'R';
   if (params->type == POLSAR_SLC) {
-    meta->sar->look_count = 1;
+    meta->sar->azimuth_look_count = 1;
+    meta->sar->range_look_count = 1;
     meta->sar->multilook = 0;
   }
   else {
     // FIXME: Update once range look count is introduced to metadata structure
-    meta->sar->look_count = params->azimuth_look_count;
+    meta->sar->azimuth_look_count = params->azimuth_look_count;
+    meta->sar->range_look_count = params->range_look_count;
     meta->sar->multilook = 1;
   }
   meta->sar->deskewed = 1;
@@ -128,7 +130,7 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   // Projection block
   if (params->type == POLSAR_GRD || params->type == POLSAR_HGT) {
     meta->projection = meta_projection_init();
-    //strcpy (meta->projection->units, "meters");
+    meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
     strcpy (meta->projection->units, "degrees");
     if (params->along_track_offset >= 0.0)
       meta->projection->hem = 'N';
@@ -140,38 +142,16 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
     meta->projection->spheroid = WGS84_SPHEROID;
     meta->projection->datum = WGS84_DATUM;
 
-    // Convert geographic coordinates into map projected coordinates
-    //double lat = params->along_track_offset;
-    //double lon = params->cross_track_offset;
-    //double x1, y1, z1, x2, y2, z2;
-    if (strcmp_case(params->projection, "EQA") == 0) {
-      //meta->projection->type = EQUI_RECTANGULAR;
-      //meta->projection->param.eqr.central_meridian = 0.0;
-      //meta->projection->param.eqr.orig_latitude = 0.0;
-      //meta->projection->param.eqr.false_easting = 0.0;
-      //meta->projection->param.eqr.false_northing = 0.0;
-      meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
-    }
-    /*
-    latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x1, &y1, &z1);
-    lat += params->azimuth_pixel_spacing;
-    lon += params->range_pixel_spacing;
-    latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x2, &y2, &z2);
-    meta->projection->startX = x1;
-    meta->projection->startY = y1;
-    meta->projection->perX = fabs(x1 - x2);
-    meta->projection->perY = -fabs(y1 - y2);
-    */
-
+    // Coordinate reference: Point
     // UAVSAR lat/lon projected data is calculated from center
     // pixel.  Thus we have to add in a half-pixel shift.
-    meta->projection->startX = params->cross_track_offset - .5*params->range_pixel_spacing;
-    meta->projection->startY = params->along_track_offset - .5*params->azimuth_pixel_spacing;
+    meta->projection->startX = 
+      params->cross_track_offset - params->range_pixel_spacing / 2.0;
+    meta->projection->startY = 
+      params->along_track_offset - params->azimuth_pixel_spacing / 2.0;
     meta->projection->perX = params->range_pixel_spacing;
     meta->projection->perY = params->azimuth_pixel_spacing;
 
-    //meta->general->x_pixel_size = fabs(meta->projection->perX);
-    //meta->general->y_pixel_size = fabs(meta->projection->perY);
     meta->general->center_latitude = params->along_track_offset + 
       params->azimuth_pixel_spacing * params->row_count / 2.0;
     meta->general->center_longitude = params->cross_track_offset +
@@ -254,8 +234,8 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
     meta->sar->look_direction = 'L';
   else if (strcmp_case(params->look_direction, "Right") == 0)
     meta->sar->look_direction = 'R';
-  // FIXME: Update once range look count is introduced to metadata structure
-  meta->sar->look_count = params->azimuth_look_count;
+  meta->sar->azimuth_look_count = params->azimuth_look_count;
+  meta->sar->range_look_count = params->range_look_count;
   meta->sar->multilook = 1;
   meta->sar->deskewed = 1;
   meta->sar->original_line_count = params->row_count;
@@ -295,7 +275,7 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
   // Projection block
   if (params->type >= INSAR_AMP_GRD && params->type <= INSAR_HGT_GRD) {
     meta->projection = meta_projection_init();
-    //strcpy (meta->projection->units, "meters");
+    meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
     strcpy (meta->projection->units, "degrees");
     if (params->along_track_offset >= 0.0)
       meta->projection->hem = 'N';
@@ -307,35 +287,17 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params)
     meta->projection->spheroid = WGS84_SPHEROID;
     meta->projection->datum = WGS84_DATUM;
 
-    // Convert geographic coordinates into map projected coordinates
-    //double lat = params->along_track_offset;
-    //double lon = params->cross_track_offset;
-    //double x1, y1, z1, x2, y2, z2;
-    if (strcmp_case(params->projection, "EQA") == 0) {
-      //meta->projection->type = EQUI_RECTANGULAR;
-      //meta->projection->param.eqr.central_meridian = 0.0;
-      //meta->projection->param.eqr.orig_latitude = 0.0;
-      //meta->projection->param.eqr.false_easting = 0.0;
-      //meta->projection->param.eqr.false_northing = 0.0;
-      meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
-    }
-    /*
-    latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x1, &y1, &z1);
-    lat += params->azimuth_pixel_spacing;
-    lon += params->range_pixel_spacing;
-    latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x2, &y2, &z2);
-    meta->projection->startX = x1;
-    meta->projection->startY = y1;
-    meta->projection->perX = fabs(x1 - x2);
-    meta->projection->perY = -fabs(y1 - y2);
-    */
-    meta->projection->startX = params->cross_track_offset - .5*params->range_pixel_spacing;
-    meta->projection->startY = params->along_track_offset - .5*params->azimuth_pixel_spacing;
+    // FIXME: Check that the following is correct - needs some data
+    // Coordinate reference: Point
+    // UAVSAR lat/lon projected data is calculated from center
+    // pixel.  Thus we have to add in a half-pixel shift.
+    meta->projection->startX = 
+      params->cross_track_offset - params->range_pixel_spacing / 2.0;
+    meta->projection->startY = 
+      params->along_track_offset - params->azimuth_pixel_spacing / 2.0;
     meta->projection->perX = params->range_pixel_spacing;
     meta->projection->perY = params->azimuth_pixel_spacing;
 
-    //meta->general->x_pixel_size = fabs(meta->projection->perX);
-    //meta->general->y_pixel_size = fabs(meta->projection->perY);
     meta->general->center_latitude = params->along_track_offset + 
       params->azimuth_pixel_spacing * params->row_count / 2.0;
     meta->general->center_longitude = params->cross_track_offset +

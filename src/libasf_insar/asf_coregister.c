@@ -20,7 +20,7 @@ int coregister_coarse(char *masterFile, char *slaveFile,
   // Determine whether multilooking is required
   create_name(metaFile, masterFile, "_amp.meta");
   meta = meta_read(metaFile);
-  multiLook = meta->sar->look_count;
+  multiLook = meta->sar->azimuth_look_count;
   meta_free(meta);
 
   // Determine offset

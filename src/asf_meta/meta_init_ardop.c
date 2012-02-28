@@ -34,7 +34,7 @@ void ardop_init(const char *fName,meta_parameters *meta)
     read_params(inputFileName,&g);
 
 /*Now sift these ARDOP globals into SAR parameters.*/
-    meta->sar->look_count              = g.nlooks;
+    meta->sar->azimuth_look_count      = g.nlooks;
     meta->sar->deskewed                = g.deskew;
     meta->sar->range_time_per_pixel    = 1.0/g.fs;
     meta->sar->azimuth_time_per_pixel  = 1.0/g.prf;

@@ -37,7 +37,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 3.3
+#define META_VERSION 3.4
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -197,7 +197,8 @@ typedef struct {
      'R'-> Georeferenced */
   char image_type;
   char look_direction;            /* 'L'-> Left Looking; 'R'-> Right Looking*/
-  int look_count;                 /* Number of looks to take from SLC.      */
+  int azimuth_look_count;         // Number of looks in azimuth direction
+  int range_look_count;           // Number of looks in range directioni
   int deskewed;                   /* True if image moved to zero doppler.   */
   int original_line_count;        /* Number of lines in original image      */
   int original_sample_count;      /* Number of samples in original image    */
@@ -775,7 +776,7 @@ void readComplexSubset(char *fileName, int width, int height, int posX, int posY
            complexFloat *subset);
 
 /* From pp_corrected_vals.c */
-void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
+void pp_get_corrected_vals(const char *sarName, double *corrected_earth_radius,
                            double *corrected_azimuth_time_per_pixel);
 
 /* From xpix_ypix.c */

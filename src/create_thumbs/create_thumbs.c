@@ -510,7 +510,8 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         }
 
         // Complex data need to be multilooked
-        nLooks = (imd->general->data_type >= COMPLEX_BYTE) ? imd->sar->look_count : nLooks;
+        nLooks = (imd->general->data_type >= COMPLEX_BYTE) ? 
+	  imd->sar->azimuth_look_count : nLooks;
 
         // Vertical and horizontal scale factors required to meet the
         // max_thumbnail_dimension part of the interface contract.
@@ -1717,7 +1718,8 @@ long optimize_na_valid(struct INPUT_ARDOP_PARAMS *params_in) {
 
     /*Copy fields from ARDOP_PARAMS struct to meta_parameters struct.*/
     meta->sar->image_type              = 'S';        /*Slant range image*/
-    meta->sar->look_count              = params.nlooks;
+    meta->sar->azimuth_look_count      = params.nlooks;
+    meta->sar->range_look_count        = 1;
     meta->sar->deskewed                = params.deskew;
     meta->sar->range_time_per_pixel    = 1.0/params.fs;
     meta->sar->azimuth_time_per_pixel  = 1.0/params.prf;

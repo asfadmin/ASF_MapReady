@@ -858,9 +858,14 @@ int terrasar2csv(char *inFile, char *outFile, int listFlag)
         sprintf(str, "%c,", meta->sar->look_direction);
         strcat(line, str);
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.look_count") == 0 &&
+      else if (strcmp(dbf[ii].header, "meta.sar.azimuth_look_count") == 0 &&
                dbf[ii].visible) {
-        sprintf(str, "%d,", meta->sar->look_count);
+        sprintf(str, "%d,", meta->sar->azimuth_look_count);
+        strcat(line, str);
+      }
+      else if (strcmp(dbf[ii].header, "meta.sar.range_look_count") == 0 &&
+               dbf[ii].visible) {
+        sprintf(str, "%d,", meta->sar->range_look_count);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.sar.deskewed") == 0 &&
@@ -1674,7 +1679,7 @@ int terrasar2kml(char *inFile, char *outFile, int listFlag)
     while (fgets(line, 1024, fpIn)) {
       strip_end_whitesp_inplace(line);
       asfPrintStatus("File: %s\n\n", line);
-      terrasar = terrasar2meta(line);
+      terrasar = read_terrasar_meta(line);
       meta = terrasar2meta(terrasar);
       kml_entry(fpOut, meta, meta->general->basename);
       meta_free(meta);
@@ -1989,9 +1994,15 @@ static int convert_terrasar2shape(char *inFile, DBFHandle dbase,
         DBFWriteStringAttribute(dbase, n, field, str);
         field++;
       }
-      else if (strncmp(dbf[ii].header, "meta.sar.look_count", 19) == 0 &&
-               dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, n, field, meta->sar->look_count);
+      else if (strncmp(dbf[ii].header, "meta.sar.azimuth_look_count", 27) == 0 
+	       && dbf[ii].visible) {
+        DBFWriteIntegerAttribute(dbase, n, field, 
+				 meta->sar->azimuth_look_count);
+        field++;
+      }
+      else if (strncmp(dbf[ii].header, "meta.sar.range_look_count", 25) == 0 
+	       && dbf[ii].visible) {
+        DBFWriteIntegerAttribute(dbase, n, field, meta->sar->range_look_count);
         field++;
       }
       else if (strncmp(dbf[ii].header, "meta.sar.deskewed", 17) == 0 &&

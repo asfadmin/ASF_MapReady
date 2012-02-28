@@ -1799,9 +1799,14 @@ static int convert_meta2csv(char *inFile, FILE *fp)
         sprintf(str, "%c,", meta->sar->look_direction);
         strcat(line, str);
       }
-      else if (strcmp(dbf[ii].header, "meta.sar.look_count") == 0 &&
+      else if (strcmp(dbf[ii].header, "meta.sar.azimuth_look_count") == 0 &&
                dbf[ii].visible) {
-        sprintf(str, "%d,", meta->sar->look_count);
+        sprintf(str, "%d,", meta->sar->azimuth_look_count);
+        strcat(line, str);
+      }
+      else if (strcmp(dbf[ii].header, "meta.sar.range_look_count") == 0 &&
+               dbf[ii].visible) {
+        sprintf(str, "%d,", meta->sar->range_look_count);
         strcat(line, str);
       }
       else if (strcmp(dbf[ii].header, "meta.sar.deskewed") == 0 &&
@@ -2995,9 +3000,16 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
         DBFWriteStringAttribute(dbase, n, field, str);
         field++;
       }
-      else if (strncmp(dbf[ii].header, "meta.sar.look_count", 19) == 0 &&
-               dbf[ii].visible) {
-        DBFWriteIntegerAttribute(dbase, n, field, meta->sar->look_count);
+      else if (strncmp(dbf[ii].header, "meta.sar.azimuth_look_count", 27) == 0 
+	       && dbf[ii].visible) {
+        DBFWriteIntegerAttribute(dbase, n, field, 
+				 meta->sar->azimuth_look_count);
+        field++;
+      }
+      else if (strncmp(dbf[ii].header, "meta.sar.range_look_count", 25) == 0 
+	       && dbf[ii].visible) {
+        DBFWriteIntegerAttribute(dbase, n, field, 
+				 meta->sar->range_look_count);
         field++;
       }
       else if (strncmp(dbf[ii].header, "meta.sar.deskewed", 17) == 0 &&

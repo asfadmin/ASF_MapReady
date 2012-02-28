@@ -416,8 +416,8 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
     meta->sar->look_direction = 'L';
   else if (strcmp_case(terrasar->lookDirection, "RIGHT") == 0)
     meta->sar->look_direction = 'R';
-  meta->sar->look_count = terrasar->azimuthLooks;
-  // TO BE ADDED: terrasar->rangeLooks
+  meta->sar->azimuth_look_count = terrasar->azimuthLooks;
+  meta->sar->range_look_count = terrasar->rangeLooks;
   if (strcmp_case(terrasar->imageCoordinateType, "ZERODOPPLER") == 0)
     meta->sar->deskewed = 1;
   meta->sar->original_line_count = meta->general->line_count;

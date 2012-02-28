@@ -766,8 +766,11 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
       strcpy(str_attr, "left");
     h5_value_str(h5_file, group, "sar_look_direction", str_attr,
 		 "SAR satellite look direction", NULL);
-    h5_value_int(h5_file, group, "sar_look_count", ms->look_count,
-		 "number of looks to take from SLC", NULL);
+    h5_value_int(h5_file, group, "sar_azimuth_look_count", 
+		 ms->azimuth_look_count,
+		 "number of looks in azimuth direction", NULL);
+    h5_value_int(h5_file, group, "sar_range_look_count", ms->range_look_count,
+		 "number of looks in range direction", NULL);
     h5_value_int(h5_file, group, "sar_multilook", ms->multilook,
 		 "multilooking flag", NULL);
     h5_value_int(h5_file, group, "sar_deskewed", ms->deskewed,

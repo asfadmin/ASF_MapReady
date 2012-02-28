@@ -222,7 +222,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     }
 
     meta = meta_read("a_amp");
-    cfg->igram_coh->looks = meta->sar->look_count;
+    cfg->igram_coh->looks = meta->sar->azimuth_look_count;
     meta_free(meta);
 
     check_return(asf_igram_coh(cfg->igram_coh->looks*3, 3,

@@ -86,7 +86,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
                            char *name, char *png_filename, char *dir,
 			   c2v_config *cfg)
 {
-  FILE *fp;
   dbf_header_t *dbf;
   int ii, kk, nCols;
   int nl = meta->general->line_count;
@@ -373,9 +372,12 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       else if (strncmp(dbf[ii].header, "meta.sar.look_direction", 23) == 0)
         fprintf(kml_file, "%s<strong>Look direction</strong>: %c <br>%s",
                 begin, meta->sar->look_direction, end);
-      else if (strncmp(dbf[ii].header, "meta.sar.look_count", 19) == 0)
-        fprintf(kml_file, "%s<strong>Look count</strong>: %d <br>%s",
-                begin, meta->sar->look_count, end);
+      else if (strncmp(dbf[ii].header, "meta.sar.azimuth_look_count", 27) == 0)
+        fprintf(kml_file, "%s<strong>Azimuth look count</strong>: %d <br>%s",
+                begin, meta->sar->azimuth_look_count, end);
+      else if (strncmp(dbf[ii].header, "meta.sar.range_look_count", 25) == 0)
+        fprintf(kml_file, "%s<strong>Range look count</strong>: %d <br>%s",
+                begin, meta->sar->range_look_count, end);
       else if (strncmp(dbf[ii].header, "meta.sar.deskewed", 17) == 0)
         fprintf(kml_file, "%s<strong>Deskewed</strong>: %d <br>%s",
                 begin, meta->sar->deskewed, end);

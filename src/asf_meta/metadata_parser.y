@@ -631,7 +631,12 @@ void fill_structure_field(char *field_name, void *valp)
       return;
     }
     if ( !strcmp(field_name, "look_count") )
-      { MSAR->look_count = VALP_AS_INT; return; }
+      { MSAR->azimuth_look_count = VALP_AS_INT; 
+	MSAR->range_look_count = 1; return; }
+    if ( !strcmp(field_name, "azimuth_look_count") )
+      { MSAR->azimuth_look_count = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "range_look_count") )
+      { MSAR->range_look_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "multilook") )
       { MSAR->multilook = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "deskewed") )

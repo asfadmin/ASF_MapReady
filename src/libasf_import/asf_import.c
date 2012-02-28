@@ -69,6 +69,9 @@ static int is_PolSARpro(const char *infile)
   return ret;
 }
 
+void create_xml_meta(char *inBaseName, char *outBaseName,
+		     input_format_t format_type);
+
 int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
 	       int multilook_flag, int amp0_flag, input_format_t format_type,
 	       char *band_id, char *data_type, char *image_data_type, 

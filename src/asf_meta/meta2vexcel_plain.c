@@ -69,7 +69,8 @@ meta_parameters* vp2meta(vexcel_plain *vp)
     meta->sar->look_direction = 'R';
   else
     meta->sar->look_direction = 'L';
-  meta->sar->look_count = vp->gli_product.azimuth_looks;
+  meta->sar->azimuth_look_count = vp->gli_product.azimuth_looks;
+  meta->sar->range_look_count = vp->gli_product.range_looks;
   meta->sar->deskewed = vp->gli_product.skew_flag;
   meta->sar->original_line_count = meta->general->line_count;
   meta->sar->original_sample_count = meta->general->sample_count;

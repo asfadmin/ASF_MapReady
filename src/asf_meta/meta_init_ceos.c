@@ -119,9 +119,10 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr, struct scene_header_rec *shr,
                     struct alos_map_proj_rec *ampr);
 double get_firstTime(const char *fName);
+int is_alos_slc(meta_parameters *meta);
 int is_alos_detected(meta_parameters *meta);
-double get_alos_firstTime (const char *fName);
-double get_alos_centerTime (const char *fName, int center_line);
+double get_alos_firstTime (char *fName);
+double get_alos_centerTime (char *fName, int center_line);
 
 double get_chirp_rate (const char *fName);
 double get_sensor_orientation (const char *fName);
@@ -249,7 +250,7 @@ void ceos_init_sar_ext(ceos_description *ceos, const char *in_fName,
     ceos_init_sar_westfreugh(ceos, in_fName, meta);
   else if (ceos->facility == DERA)
     ceos_init_sar_dera(ceos, in_fName, meta);
-  else if (ceos->facility = KACST)
+  else if (ceos->facility == KACST)
     ceos_init_sar_rsi(ceos, in_fName, meta);
   else if (ceos->facility == unknownFacility)
     asfPrintError("Unknown CEOS facility! Data cannot be imported "
@@ -465,7 +466,7 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
   struct VFDRECV *asf_facdr=NULL;
   struct VMPDREC *mpdr=NULL;
   int ii;
-  char beamname[32], buf[50];
+  char beamname[32];
 
   dssr = &ceos->dssr;
   asf_facdr=(struct VFDRECV*)MALLOC(sizeof(struct VFDRECV));
@@ -479,7 +480,8 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
     meta->general->frame =
       asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
                      meta->general->orbit_direction);
-    meta->sar->look_count = 5;
+    meta->sar->azimuth_look_count = 5;
+    meta->sar->range_look_count = 1;
     sprintf(meta->sar->polarization, "VV");
   }
   else if (strncmp(dssr->mission_id, "ERS-2", 5) == 0) {
@@ -488,7 +490,8 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
     meta->general->frame =
       asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
                      meta->general->orbit_direction);
-    meta->sar->look_count = 5;
+    meta->sar->azimuth_look_count = 5;
+    meta->sar->range_look_count = 1;
     sprintf(meta->sar->polarization, "VV");
   }
   else if (strncmp(dssr->mission_id, "JERS-1", 6) == 0) {
@@ -497,7 +500,8 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
     meta->general->frame =
       asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
                      meta->general->orbit_direction);
-    meta->sar->look_count = 3;
+    meta->sar->azimuth_look_count = 3;
+    meta->sar->range_look_count = 1;
     sprintf(meta->sar->polarization, "HH");
   }
   else if (strncmp(dssr->mission_id, "RSAT", 4) == 0) {
@@ -525,10 +529,14 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
     meta->general->frame =
       asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
                      meta->general->orbit_direction);
-    if (dssr->rng_samp_rate < 20.0) /* split finebeam from the rest */
-      meta->sar->look_count = 4; /* ST1-ST7, WD1-WD3, EL1, EH1-EH6 */
-    else
-      meta->sar->look_count = 1; /* FN1-FN5 */
+    if (dssr->rng_samp_rate < 20.0) { /* split finebeam from the rest */
+      meta->sar->azimuth_look_count = 4; /* ST1-ST7, WD1-WD3, EL1, EH1-EH6 */
+      meta->sar->range_look_count = 1;
+    }
+    else {
+      meta->sar->azimuth_look_count = 1; /* FN1-FN5 */
+      meta->sar->range_look_count = 1;
+    }
     sprintf(meta->sar->polarization, "HH");
   }
   meta->general->bit_error_rate = asf_facdr->biterrrt;
@@ -712,7 +720,8 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta->general->frame =
       asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
                      meta->general->orbit_direction);
-    meta->sar->look_count = 5;
+    meta->sar->azimuth_look_count = 5;
+    meta->sar->range_look_count = 1;
     sprintf(meta->sar->polarization, "VV");
   }
   else if (strncmp(dssr->mission_id, "ERS2", 4) == 0) {
@@ -721,7 +730,8 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta->general->frame =
       asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
                      meta->general->orbit_direction);
-    meta->sar->look_count = 5;
+    meta->sar->azimuth_look_count = 5;
+    meta->sar->range_look_count = 1;
     sprintf(meta->sar->polarization, "VV");
   }
   else if (strncmp(dssr->mission_id, "JERS1", 5) == 0 ||
@@ -732,22 +742,27 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta->general->frame =
       asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
                      meta->general->orbit_direction);
-    meta->sar->look_count = 3;
+    meta->sar->azimuth_look_count = 3;
+    meta->sar->range_look_count = 1;
     sprintf(meta->sar->polarization, "HH");
   }
   else if (ceos->satellite == RSAT) {
     if (dssr->rng_samp_rate < 20.0) { /* split finebeam from the rest */
-      meta->sar->look_count = 4; /* ST1-ST7, WD1-WD3, EL1, EH1-EH6 */
+      meta->sar->azimuth_look_count = 4; /* ST1-ST7, WD1-WD3, EL1, EH1-EH6 */
+      meta->sar->range_look_count = 1;
     }
     else {
-      meta->sar->look_count = 1; /* FN1-FN5 */
+      meta->sar->azimuth_look_count = 1; /* FN1-FN5 */
+      meta->sar->range_look_count = 1;
     }
     if (ceos->product == SSG) {
         if (dssr->n_azilok <= 0) {
-            meta->sar->look_count = 1;
+	  meta->sar->azimuth_look_count = 1;
+	  meta->sar->range_look_count = 1;
         }
         else {
-            meta->sar->look_count = dssr->n_azilok;
+	  meta->sar->azimuth_look_count = dssr->n_azilok;
+	  meta->sar->range_look_count = 1;
         }
     }
     else if (ceos->product == SCANSAR || ceos->product == SCN) {
@@ -808,7 +823,8 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   }
   if (ceos->product == SLC || ceos->product == RAW) {
     meta->sar->image_type = 'S';
-    meta->sar->look_count = 1;
+    meta->sar->azimuth_look_count = 1;
+    meta->sar->range_look_count = 1;
   }
   else if (ceos->product == SGF || ceos->product == SGX ||
        ceos->product == PRI) {
@@ -921,7 +937,8 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     strcpy(meta->general->mode, "STD");
     if (ceos->product == RAW)
       strcpy(meta->general->bands, "VV");
-    meta->sar->look_count = 5;
+    meta->sar->azimuth_look_count = 5;
+    meta->sar->range_look_count = 1;
     strcpy(meta->sar->polarization, "VV");
   }
   strncpy(buf, &dssr->scene_des[18], 5);
@@ -998,6 +1015,7 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     ceos_init_location_block(meta);
 }
 
+/*
 static double calc_swath_velocity(struct dataset_sum_rec *dssr,
                                   const char *in_fName, meta_parameters *meta)
 {
@@ -1039,6 +1057,7 @@ static double calc_swath_velocity(struct dataset_sum_rec *dssr,
   return orbit_vel * er/ht;
 
 }
+*/
 
 int is_alos_slc(meta_parameters *meta)
 {
@@ -1053,10 +1072,9 @@ int is_alos_slc(meta_parameters *meta)
 }
 
 static void get_alos_linehdr(struct PHEADER *linehdr, int line_number,
-			     const char *fName)
+			     char *fName)
 {
     int length;
-    char buff[25600];
     struct HEADER hdr;
 
     long offset = firstRecordLen(fName);
@@ -1184,7 +1202,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->azimuth_time_per_pixel =
       meta->general->x_pixel_size / mpdr->velnadir;
   }
-  meta->sar->look_count = dssr->n_azilok;
+  meta->sar->azimuth_look_count = dssr->n_azilok;
+  meta->sar->range_look_count = 1;
   if (ceos->product == RAW)
     meta->sar->deskewed = 0;
   else
@@ -1446,15 +1465,18 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   // SAR block
   if (ceos->product == RAW) {
     meta->sar->image_type = 'S';
-    meta->sar->look_count = 1;
+    meta->sar->azimuth_look_count = 1;
+    meta->sar->range_look_count = 1;
   }
   if (ceos->product == SGF || ceos->product == SGX) {
     meta->sar->image_type = 'G';
-    meta->sar->look_count = 1;
+    meta->sar->azimuth_look_count = 1;
+    meta->sar->range_look_count = 1;
   }
   else if (ceos->product == SCN) {
     meta->sar->image_type = 'P';
-    meta->sar->look_count = 4;
+    meta->sar->azimuth_look_count = 4;
+    meta->sar->range_look_count = 1;
   }
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_gate
@@ -1568,7 +1590,8 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
     strcpy(meta->general->mode, "STD");
     if (ceos->product == RAW)
       strcpy(meta->general->bands, "VV");
-    meta->sar->look_count = 5;
+    meta->sar->azimuth_look_count = 5;
+    meta->sar->range_look_count = 1;
     strcpy(meta->sar->polarization, "VV");
   }
   strncpy(buf, &dssr->scene_des[18], 5);
@@ -1637,7 +1660,8 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
     strcpy(meta->general->mode, "STD");
     if (ceos->product == RAW)
       strcpy(meta->general->bands, "VV");
-    meta->sar->look_count = 5;
+    meta->sar->azimuth_look_count = 5;
+    meta->sar->range_look_count = 1;
     strcpy(meta->sar->polarization, "VV");
   }
   strncpy(buf, &dssr->scene_des[18], 5);
@@ -1708,7 +1732,8 @@ void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
     strcpy(meta->general->mode, "STD");
     if (ceos->product == RAW)
       strcpy(meta->general->bands, "VV");
-    meta->sar->look_count = 5;
+    meta->sar->azimuth_look_count = 5;
+    meta->sar->range_look_count = 1;
     strcpy(meta->sar->polarization, "VV");
   }
   strncpy(buf, &dssr->scene_des[18], 5);
@@ -1809,17 +1834,20 @@ void ceos_init_sar_tromso(ceos_description *ceos, const char *in_fName,
   if (ceos->product == RAW) {
     meta->general->image_data_type = RAW_IMAGE;
     meta->sar->image_type = 'S';
-    meta->sar->look_count = 1;
+    meta->sar->azimuth_look_count = 1;
+    meta->sar->range_look_count = 1;
   }
   else if (ceos->product == SNA) {
     meta->sar->image_type = 'P';
-    meta->sar->look_count = 4;
+    meta->sar->azimuth_look_count = 4;
+    meta->sar->range_look_count = 1;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
     strcpy(meta->general->mode, "SNA");
   }
   else if (ceos->product == SCANSAR_SNB) {
     meta->sar->image_type = 'P';
-    meta->sar->look_count = 4;
+    meta->sar->azimuth_look_count = 4;
+    meta->sar->range_look_count = 1;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
     strcpy(meta->general->mode, "SNB");
   }
@@ -1917,7 +1945,8 @@ void ceos_init_sar_westfreugh(ceos_description *ceos, const char *in_fName,
   // SAR block
   if (ceos->product == SCANSAR_SNB) {
     meta->sar->image_type = 'P';
-    meta->sar->look_count = 4;
+    meta->sar->azimuth_look_count = 4;
+    meta->sar->range_look_count = 1;
     ceos_init_scansar(in_fName, meta, dssr, NULL, NULL);
     strcpy(meta->general->mode, "SNB");
   }
@@ -2011,7 +2040,8 @@ void ceos_init_sar_dera(ceos_description *ceos, const char *in_fName,
   // SAR block
   if (ceos->product == PRI) {
     meta->sar->image_type = 'G';
-    meta->sar->look_count = 4;
+    meta->sar->azimuth_look_count = 4;
+    meta->sar->range_look_count = 1;
     strcpy(meta->general->mode, "PRI");
   }
   meta->sar->range_doppler_coefficients[0] = ppr->dopcen_est[0].dopcen_coef[0];
@@ -3117,14 +3147,14 @@ double get_firstTime (const char *fName)
 
 // Function extracts the acquisition time of the first line
 // out of the ALOS line header
-double get_alos_firstTime (const char *fName)
+double get_alos_firstTime (char *fName)
 {
    struct PHEADER linehdr;
    get_alos_linehdr(&linehdr, 1, fName);
    return ((double)bigInt32(linehdr.acq_msec)/1000.0);
 }
 
-double get_alos_centerTime(const char *fName, int center_line)
+double get_alos_centerTime(char *fName, int center_line)
 {
    struct PHEADER linehdr;
    get_alos_linehdr(&linehdr, center_line, fName);
@@ -3625,23 +3655,28 @@ void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
       if (D == '6' && E == '0' && dssr.nchn == 1) {
           // high-rez mode, single polarization
           asfPrintStatus("   High-resolution, single-pol (look count = 2)\n");
-          meta->sar->look_count = 2;
+          meta->sar->azimuth_look_count = 2;
+	  meta->sar->range_look_count = 1;
       } else if (D == '6' && E == '0' && dssr.nchn == 2) {
           // high-rez mode, dual polarization
           asfPrintStatus("   High-resolution, dual-pol (look count = 4)\n");
-          meta->sar->look_count = 4;
+          meta->sar->azimuth_look_count = 4;
+	  meta->sar->range_look_count = 1;
       } else if (D == '6' && E == '1') {
           // wide observation mode
           asfPrintStatus("   Wide observation data (look count = 8)\n");
-          meta->sar->look_count = 8;
+          meta->sar->azimuth_look_count = 8;
+	  meta->sar->range_look_count = 1;
       } else if (D == '6' && E == '2') {
           // polarimetry mode
           asfPrintStatus("   Polarimetric data (look count = 7)\n");
-          meta->sar->look_count = 7;
+          meta->sar->azimuth_look_count = 7;
+	  meta->sar->range_look_count = 1;
       } else if (D == '6' && E == '3') {
           // direct downlink mode
           asfPrintStatus("   Direct downlink data (look count = 4)\n");
-          meta->sar->look_count = 4;
+          meta->sar->azimuth_look_count = 4;
+	  meta->sar->range_look_count = 1;
       } else {
         // We have the following kludge for now ... but we should never get
         // here.  perhaps an asfPrintError would be better.
@@ -3650,14 +3685,14 @@ void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
         int pix_ratio = (int)floor(0.5 + meta->general->x_pixel_size /
                                         meta->general->y_pixel_size);
         if (pix_ratio == 2 || pix_ratio == 4 || pix_ratio == 8) {
-            meta->sar->look_count = pix_ratio;
+            meta->sar->azimuth_look_count = pix_ratio;
             asfPrintStatus("   Estimated look count: %d\n", pix_ratio);
         } else {
             asfPrintStatus("   Couldn't figure out look count.  Leaving as %d.\n",
-                meta->sar->look_count);
+                meta->sar->azimuth_look_count);
         }
       }
-      if (meta->sar->look_count > 1)
+      if (meta->sar->azimuth_look_count > 1 || meta->sar->range_look_count > 1)
           meta->sar->multilook = 0;
   }
 }

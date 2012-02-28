@@ -324,9 +324,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_char  (fp,"image_type:", meta->sar->image_type,
         "[S=slant range; G=ground range; P=map projected; R=georeferenced]");
     meta_put_char  (fp,"look_direction:",meta->sar->look_direction,
-        "SAR Satellite look direction [R=right; L=left]");
-    meta_put_int   (fp,"look_count:",meta->sar->look_count,
-        "Number of looks to take from SLC");
+        "SAR Satellite look direction [R=right; L=left]");    
+    meta_put_int   (fp,"azimuth_look_count:",meta->sar->azimuth_look_count,
+        "Number of looks in azimuth direction");
+    meta_put_int   (fp,"range_look_count:",meta->sar->range_look_count,
+        "Number of looks in range direction");
     meta_put_int   (fp,"multilook:",meta->sar->multilook,
         "Image multilooked? [1=yes; 0=no]");
     meta_put_int   (fp,"deskewed:",meta->sar->deskewed,
@@ -1497,7 +1499,10 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "    <look_direction>right</look_direction>\n");
     else if (ms->look_direction == 'L')
       fprintf(fp, "    <look_direction>left</look_direction>\n");
-    fprintf(fp, "    <look_count>%d</look_count>\n", ms->look_count);
+    fprintf(fp, "    <azimuth_look_count>%d</azimuth_look_count>\n", 
+	    ms->azimuth_look_count);
+    fprintf(fp, "    <range_look_count>%d</range_look_count>\n",
+	    ms->range_look_count);
     fprintf(fp, "    <multilook>%d</multilook>\n", ms->multilook);
     fprintf(fp, "    <deskewed>%d</deskewed>\n", ms->deskewed);
     fprintf(fp, "    <original_line_count>%d</original_line_count>\n",

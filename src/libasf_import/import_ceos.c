@@ -1361,7 +1361,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
   if (meta->sar) {
-    lc = nLooks = meta->sar->look_count;
+    lc = nLooks = meta->sar->azimuth_look_count;
   }
   else {
     lc = nLooks = 1;

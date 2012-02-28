@@ -135,7 +135,8 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
 
   meta->sar->image_type              = 'S';          /*Slant range product*/
   meta->sar->look_direction          = s->lookDir;
-  meta->sar->look_count              = s->nLooks;
+  meta->sar->azimuth_look_count      = s->nLooks;
+  meta->sar->range_look_count        = 1;
   meta->sar->deskewed                = 0;           /*Not doppler deskewed*/
   meta->sar->range_time_per_pixel    = 1.0/s->fs;
   meta->sar->azimuth_time_per_pixel  = 1.0/s->prf;
