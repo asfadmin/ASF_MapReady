@@ -256,6 +256,7 @@ AC_CHECK_LIB([xml2],[xmlParseFile],have_xml2="yes",have_xml2="no")
 if test "$sys" = "win32" ; then
   have_xml2="yes"
   XML2_LIBS="-L$(GTKWIN32_DIR)/lib -lxml2"
+  XML2_CFLAGS="-I/include/libxml2"
 else
   if test "$have_xml2" = "no" ; then
    ASF_LIB_XML2="${ext_lib_src_dir}/libxml2"
