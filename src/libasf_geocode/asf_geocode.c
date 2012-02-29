@@ -1294,7 +1294,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         }
         g_assert (current_edge_point == edge_point_count);
 	
-	if (!input_projected && projection_type != LAT_LONG_PSEUDO_PROJECTION) {
+	if (projection_type != LAT_LONG_PSEUDO_PROJECTION) {
 	  // Pointers to arrays of projected coordinates to be filled in.
 	  // The projection function will allocate this memory itself.
 	  double *x = NULL, *y = NULL;
