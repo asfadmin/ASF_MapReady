@@ -278,7 +278,7 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
     fprintf(fp, "Longitude center=%.10f\n", pps->eqr.orig_latitude);
     fprintf(fp, "False Easting=%.10f\n", pps->eqr.false_easting);
     fprintf(fp, "False Northing=%.10f\n", pps->eqr.false_northing);
-    fprintf(fp, "datum=%.3lf\n", datum_toString(datum));
+    fprintf(fp, "datum=%s\n", datum_toString(datum));
     break;
 
   default:

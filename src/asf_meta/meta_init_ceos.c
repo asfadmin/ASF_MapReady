@@ -411,7 +411,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
     centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel =
       (centerTime - firstTime) / (meta->sar->original_line_count/2);
-  //printf("firstTime: %lf, centerTime: %lf\n", firstTime, centerTime);
+  //printf("firstTime: %f, centerTime: %f\n", firstTime, centerTime);
   //printf("azimuth time per pixel: %.12f\n", meta->sar->azimuth_time_per_pixel);
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
@@ -3134,13 +3134,13 @@ double get_firstTime (const char *fName)
    FCLOSE(fp);
 
    FREE(buff);
-   //printf("lat 1: %.4lf, lon 1: %.4lf\n",
+   //printf("lat 1: %.4f, lon 1: %.4f\n",
    //   (double)bigInt32((unsigned char *)&(linehdr.lat_first)),
    //   (double)bigInt32((unsigned char *)&(linehdr.long_first)));
-   //printf("lat 2: %.4lf, lon 2: %.4lf\n",
+   //printf("lat 2: %.4f, lon 2: %.4f\n",
    //   (double)bigInt32((unsigned char *)&(linehdr.lat_last)),
    //   (double)bigInt32((unsigned char *)&(linehdr.long_last)));
-   //printf("Time: %lf\n",
+   //printf("Time: %f\n",
    //   (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0);
    return (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0;
 }
@@ -3259,9 +3259,9 @@ double get_sensor_orientation (const char *fName)
    FCLOSE(fp);
 
    FREE(buff);
-   printf("roll: %lf\n", (double)bigInt16(linehdr.roll));
-   printf("yaw: %lf\n", (double)bigInt16(linehdr.yaw));
-   printf("pitch: %lf\n", (double)bigInt16(linehdr.pitch));
+   printf("roll: %f\n", (double)bigInt16(linehdr.roll));
+   printf("yaw: %f\n", (double)bigInt16(linehdr.yaw));
+   printf("pitch: %f\n", (double)bigInt16(linehdr.pitch));
    return (double)bigInt16(linehdr.yaw);
 }
 

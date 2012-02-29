@@ -827,14 +827,14 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    sscanf(line, "%lf", &lfValid);
 	  }
 	  if (singleValue && !FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
 	  }
 	  else if (!singleValue && (lfValue < lfMin || lfValue > lfMax)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, min: %lf, "
-				"max: %lf\n", param, lfValue, lfMin, lfMax);
+	    asfForcePrintStatus("\n   Param: %s, value: %f, min: %f, "
+				"max: %f\n", param, lfValue, lfMin, lfMax);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
 	  }
@@ -863,7 +863,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    strcmp_case(param, "projection_false_easting") == 0 ||
 	    strcmp_case(param, "projection_false_northing") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -884,7 +884,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    strcmp_case(param, "projection_false_easting") == 0 ||
 	    strcmp_case(param, "projection_false_northing") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -905,7 +905,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    strcmp_case(param, "projection_false_easting") == 0 ||
 	    strcmp_case(param, "projection_false_northing") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -925,7 +925,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    strcmp_case(param, "projection_false_easting") == 0 ||
 	    strcmp_case(param, "projection_false_northing") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -944,7 +944,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    strcmp_case(param, "projection_false_easting") == 0 ||
 	    strcmp_case(param, "projection_false_northing") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -964,7 +964,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    strcmp_case(param, "projection_false_easting") == 0 ||
 	    strcmp_case(param, "projection_false_northing") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -981,7 +981,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	if (strcmp_case(param, "projection_center_latitude") == 0 ||
 	    strcmp_case(param, "projection_center_longitude") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -1000,7 +1000,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    strcmp_case(param, "projection_false_easting") == 0 ||
 	    strcmp_case(param, "projection_false_northing") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -1018,7 +1018,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
 	    strcmp_case(param, "projection_false_easting") == 0 ||
 	    strcmp_case(param, "projection_false_northing") == 0) {
 	  if (!FLOAT_EQUIVALENT(lfValue, lfValid)) {
-	    asfForcePrintStatus("\n   Param: %s, value: %lf, valid: %lf\n",
+	    asfForcePrintStatus("\n   Param: %s, value: %f, valid: %f\n",
 			   param, lfValue, lfValid);
 	    asfReport(level, "   %s failed\n", param);
 	    passed = FALSE;
@@ -1131,21 +1131,21 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
   }
   if (!FLOAT_EQUIVALENT(ginfo1->geog_semimajor_axis, 
 			ginfo2->geog_semimajor_axis)) {
-    asfForcePrintStatus("semimajor axis - value(%s): %lf, value(%s): %lf\n",
+    asfForcePrintStatus("semimajor axis - value(%s): %f, value(%s): %f\n",
 			in_file1, ginfo1->geog_semimajor_axis, 
 			in_file2, ginfo2->geog_semimajor_axis);
     passed = FALSE;
   }
   if (!FLOAT_EQUIVALENT(ginfo1->geog_semiminor_axis, 
 			ginfo2->geog_semiminor_axis)) {
-    asfForcePrintStatus("semiminor axis - value(%s): %lf, value(%s): %lf\n",
+    asfForcePrintStatus("semiminor axis - value(%s): %f, value(%s): %f\n",
 			in_file1, ginfo1->geog_semiminor_axis, 
 			in_file2, ginfo2->geog_semiminor_axis);
     passed = FALSE;
   }
   if (!FLOAT_EQUIVALENT(ginfo1->geog_inverse_flattening,
 			ginfo2->geog_inverse_flattening)) {
-    asfForcePrintStatus("inverse flattening - value(%s): %lf, value(%s): %lf\n",
+    asfForcePrintStatus("inverse flattening - value(%s): %f, value(%s): %f\n",
 			in_file1, ginfo1->geog_inverse_flattening, 
 			in_file2, ginfo2->geog_inverse_flattening);
     passed = FALSE;
@@ -1180,25 +1180,25 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
     }
   }
   if (!FLOAT_EQUIVALENT(ginfo1->tie_point[3], ginfo2->tie_point[3])) {
-    asfForcePrintStatus("startX - value(%s): %lf, value(%s): %lf\n",
+    asfForcePrintStatus("startX - value(%s): %f, value(%s): %f\n",
 			in_file1, ginfo1->tie_point[3], 
 			in_file2, ginfo2->tie_point[3]);
     passed = FALSE;
   }
   if (!FLOAT_EQUIVALENT(ginfo1->tie_point[4], ginfo2->tie_point[4])) {
-    asfForcePrintStatus("startY - value(%s): %lf, value(%s): %lf\n",
+    asfForcePrintStatus("startY - value(%s): %f, value(%s): %f\n",
 			in_file1, ginfo1->tie_point[4], 
 			in_file2, ginfo2->tie_point[4]);
     passed = FALSE;
   }
   if (!FLOAT_EQUIVALENT(ginfo1->pixel_scale[0], ginfo2->pixel_scale[0])) {
-    asfForcePrintStatus("perX - value(%s): %lf, value(%s): %lf\n",
+    asfForcePrintStatus("perX - value(%s): %f, value(%s): %f\n",
 			in_file1, fabs(ginfo1->pixel_scale[0]), 
 			in_file2, fabs(ginfo2->pixel_scale[0]));
     passed = FALSE;
   }
   if (!FLOAT_EQUIVALENT(ginfo1->pixel_scale[1], ginfo2->pixel_scale[1])) {
-    asfForcePrintStatus("perX - value(%s): %lf, value(%s): %lf\n",
+    asfForcePrintStatus("perX - value(%s): %f, value(%s): %f\n",
 			in_file1, -(fabs(ginfo1->pixel_scale[1])), 
 			in_file2, -(fabs(ginfo2->pixel_scale[1])));
     passed = FALSE;
@@ -1218,40 +1218,40 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       
       if (!FLOAT_EQUIVALENT(ginfo1->proj_latitude_of_origin,
 			    ginfo2->proj_latitude_of_origin)) {
-	asfForcePrintStatus("projection latitude of origin - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection latitude of origin - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_latitude_of_origin, 
 			    in_file2, ginfo2->proj_latitude_of_origin);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_central_meridian,
 			    ginfo2->proj_central_meridian)) {
-	asfForcePrintStatus("projection central meridian - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection central meridian - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_central_meridian, 
 			    in_file2, ginfo2->proj_central_meridian);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_scale_at_origin,
 			    ginfo2->proj_scale_at_origin)) {
-	asfForcePrintStatus("projection scale at origin - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection scale at origin - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_scale_at_origin, 
 			    in_file2, ginfo2->proj_scale_at_origin);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_easting,
 			    ginfo2->proj_false_easting)) {
-	asfForcePrintStatus("projection false easting - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false easting - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_easting, 
 			    in_file2, ginfo2->proj_false_easting);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_northing,
 			    ginfo2->proj_false_northing)) {
-	asfForcePrintStatus("projection false northing - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false northing - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_northing, 
 			    in_file2, ginfo2->proj_false_northing);
 	passed = FALSE;
@@ -1264,7 +1264,7 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       if (!FLOAT_EQUIVALENT(ginfo1->proj_first_standard_parallel,
 			    ginfo2->proj_first_standard_parallel)) {
 	asfForcePrintStatus("projection first standard parallel - "
-			    "value(%s): %lf, value(%s): %lf\n",
+			    "value(%s): %f, value(%s): %f\n",
 			    in_file1, ginfo1->proj_first_standard_parallel, 
 			    in_file2, ginfo2->proj_first_standard_parallel);
 	passed = FALSE;
@@ -1272,39 +1272,39 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       if (!FLOAT_EQUIVALENT(ginfo1->proj_second_standard_parallel,
 			    ginfo2->proj_second_standard_parallel)) {
 	asfForcePrintStatus("projection second standard parallel - "
-			    "value(%s): %lf, value(%s): %lf\n",
+			    "value(%s): %f, value(%s): %f\n",
 			    in_file1, ginfo1->proj_second_standard_parallel, 
 			    in_file2, ginfo2->proj_second_standard_parallel);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_latitude_of_origin,
 			    ginfo2->proj_latitude_of_origin)) {
-	asfForcePrintStatus("projection latitude of origin - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection latitude of origin - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_latitude_of_origin, 
 			    in_file2, ginfo2->proj_latitude_of_origin);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_central_meridian,
 			    ginfo2->proj_central_meridian)) {
-	asfForcePrintStatus("projection central meridian - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection central meridian - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_central_meridian, 
 			    in_file2, ginfo2->proj_central_meridian);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_easting,
 			    ginfo2->proj_false_easting)) {
-	asfForcePrintStatus("projection false easting - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false easting - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_easting, 
 			    in_file2, ginfo2->proj_false_easting);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_northing,
 			    ginfo2->proj_false_northing)) {
-	asfForcePrintStatus("projection false northing - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false northing - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_northing, 
 			    in_file2, ginfo2->proj_false_northing);
 	passed = FALSE;
@@ -1317,7 +1317,7 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       if (!FLOAT_EQUIVALENT(ginfo1->proj_first_standard_parallel,
 			    ginfo2->proj_first_standard_parallel)) {
 	asfForcePrintStatus("projection first standard parallel - "
-			    "value(%s): %lf, value(%s): %lf\n",
+			    "value(%s): %f, value(%s): %f\n",
 			    in_file1, ginfo1->proj_first_standard_parallel, 
 			    in_file2, ginfo2->proj_first_standard_parallel);
 	passed = FALSE;
@@ -1325,39 +1325,39 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       if (!FLOAT_EQUIVALENT(ginfo1->proj_second_standard_parallel,
 			    ginfo2->proj_second_standard_parallel)) {
 	asfForcePrintStatus("projection second standard parallel - "
-			    "value(%s): %lf, value(%s): %lf\n",
+			    "value(%s): %f, value(%s): %f\n",
 			    in_file1, ginfo1->proj_second_standard_parallel, 
 			    in_file2, ginfo2->proj_second_standard_parallel);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_latitude_of_origin,
 			    ginfo2->proj_latitude_of_origin)) {
-	asfForcePrintStatus("projection latitude of origin - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection latitude of origin - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_latitude_of_origin, 
 			    in_file2, ginfo2->proj_latitude_of_origin);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_central_meridian,
 			    ginfo2->proj_central_meridian)) {
-	asfForcePrintStatus("projection central meridian - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection central meridian - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_central_meridian, 
 			    in_file2, ginfo2->proj_central_meridian);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_easting,
 			    ginfo2->proj_false_easting)) {
-	asfForcePrintStatus("projection false easting - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false easting - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_easting, 
 			    in_file2, ginfo2->proj_false_easting);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_northing,
 			    ginfo2->proj_false_northing)) {
-	asfForcePrintStatus("projection false northing - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false northing - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_northing, 
 			    in_file2, ginfo2->proj_false_northing);
 	passed = FALSE;
@@ -1369,40 +1369,40 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       
       if (!FLOAT_EQUIVALENT(ginfo1->proj_latitude_of_origin,
 			    ginfo2->proj_latitude_of_origin)) {
-	asfForcePrintStatus("projection latitude of origin - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection latitude of origin - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_latitude_of_origin, 
 			    in_file2, ginfo2->proj_latitude_of_origin);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_central_meridian,
 			    ginfo2->proj_central_meridian)) {
-	asfForcePrintStatus("projection central meridian - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection central meridian - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_central_meridian, 
 			    in_file2, ginfo2->proj_central_meridian);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_scale_at_origin,
 			    ginfo2->proj_scale_at_origin)) {
-	asfForcePrintStatus("projection scale at origin - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection scale at origin - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_scale_at_origin, 
 			    in_file2, ginfo2->proj_scale_at_origin);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_easting,
 			    ginfo2->proj_false_easting)) {
-	asfForcePrintStatus("projection false easting - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false easting - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_easting, 
 			    in_file2, ginfo2->proj_false_easting);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_northing,
 			    ginfo2->proj_false_northing)) {
-	asfForcePrintStatus("projection false northing - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false northing - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_northing, 
 			    in_file2, ginfo2->proj_false_northing);
 	passed = FALSE;
@@ -1414,32 +1414,32 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       
       if (!FLOAT_EQUIVALENT(ginfo1->proj_center_latitude,
 			    ginfo2->proj_center_latitude)) {
-	asfForcePrintStatus("projection center latitude - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection center latitude - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_center_latitude, 
 			    in_file2, ginfo2->proj_center_latitude);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_center_longitude,
 			    ginfo2->proj_center_longitude)) {
-	asfForcePrintStatus("projection center longitude - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection center longitude - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_center_longitude, 
 			    in_file2, ginfo2->proj_center_longitude);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_easting,
 			    ginfo2->proj_false_easting)) {
-	asfForcePrintStatus("projection false easting - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false easting - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_easting, 
 			    in_file2, ginfo2->proj_false_easting);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_northing,
 			    ginfo2->proj_false_northing)) {
-	asfForcePrintStatus("projection false northing - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false northing - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_northing, 
 			    in_file2, ginfo2->proj_false_northing);
 	passed = FALSE;
@@ -1452,39 +1452,39 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       if (!FLOAT_EQUIVALENT(ginfo1->proj_first_standard_parallel,
 			    ginfo2->proj_first_standard_parallel)) {
 	asfForcePrintStatus("projection first standard parallel - "
-			    "value(%s): %lf, value(%s): %lf\n",
+			    "value(%s): %f, value(%s): %f\n",
 			    in_file1, ginfo1->proj_first_standard_parallel, 
 			    in_file2, ginfo2->proj_first_standard_parallel);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_center_latitude,
 			    ginfo2->proj_center_latitude)) {
-	asfForcePrintStatus("projection center latitude - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection center latitude - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_center_latitude, 
 			    in_file2, ginfo2->proj_center_latitude);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_center_longitude,
 			    ginfo2->proj_center_longitude)) {
-	asfForcePrintStatus("projection center longitude - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection center longitude - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_center_longitude, 
 			    in_file2, ginfo2->proj_center_longitude);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_easting,
 			    ginfo2->proj_false_easting)) {
-	asfForcePrintStatus("projection false easting - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false easting - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_easting, 
 			    in_file2, ginfo2->proj_false_easting);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_northing,
 			    ginfo2->proj_false_northing)) {
-	asfForcePrintStatus("projection false northing - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false northing - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_northing, 
 			    in_file2, ginfo2->proj_false_northing);
 	passed = FALSE;
@@ -1496,16 +1496,16 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       
       if (!FLOAT_EQUIVALENT(ginfo1->proj_center_latitude,
 			    ginfo2->proj_center_latitude)) {
-	asfForcePrintStatus("projection center latitude - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection center latitude - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_center_latitude, 
 			    in_file2, ginfo2->proj_center_latitude);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_center_longitude,
 			    ginfo2->proj_center_longitude)) {
-	asfForcePrintStatus("projection center longitude - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection center longitude - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_center_longitude, 
 			    in_file2, ginfo2->proj_center_longitude);
 	passed = FALSE;
@@ -1517,32 +1517,32 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       
       if (!FLOAT_EQUIVALENT(ginfo1->proj_latitude_of_origin,
 			    ginfo2->proj_latitude_of_origin)) {
-	asfForcePrintStatus("projection latitude of origin - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection latitude of origin - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_latitude_of_origin, 
 			    in_file2, ginfo2->proj_latitude_of_origin);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_central_meridian,
 			    ginfo2->proj_central_meridian)) {
-	asfForcePrintStatus("projection central meridian - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection central meridian - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_central_meridian, 
 			    in_file2, ginfo2->proj_central_meridian);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_easting,
 			    ginfo2->proj_false_easting)) {
-	asfForcePrintStatus("projection false easting - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false easting - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_easting, 
 			    in_file2, ginfo2->proj_false_easting);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_northing,
 			    ginfo2->proj_false_northing)) {
-	asfForcePrintStatus("projection false northing - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false northing - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_northing, 
 			    in_file2, ginfo2->proj_false_northing);
 	passed = FALSE;
@@ -1554,24 +1554,24 @@ int geotiff_compare(char *in_file1, char *in_file2, report_level_t level)
       
       if (!FLOAT_EQUIVALENT(ginfo1->proj_center_longitude,
 			    ginfo2->proj_center_longitude)) {
-	asfForcePrintStatus("projection center longitude - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection center longitude - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_center_longitude, 
 			    in_file2, ginfo2->proj_center_longitude);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_easting,
 			    ginfo2->proj_false_easting)) {
-	asfForcePrintStatus("projection false easting - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false easting - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_easting, 
 			    in_file2, ginfo2->proj_false_easting);
 	passed = FALSE;
       }
       if (!FLOAT_EQUIVALENT(ginfo1->proj_false_northing,
 			    ginfo2->proj_false_northing)) {
-	asfForcePrintStatus("projection false northing - value(%s): %lf, "
-			    "value(%s): %lf\n",
+	asfForcePrintStatus("projection false northing - value(%s): %f, "
+			    "value(%s): %f\n",
 			    in_file1, ginfo1->proj_false_northing, 
 			    in_file2, ginfo2->proj_false_northing);
 	passed = FALSE;

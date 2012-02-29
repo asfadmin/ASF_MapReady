@@ -386,7 +386,7 @@ meta_parameters* terrasar2meta(terrasar_meta *terrasar)
     meta->general->image_data_type = AMPLITUDE_IMAGE;
   meta->general->radiometry = r_AMP;
   date_terrasar2date(terrasar->azimuthTimeUTC, &date, &time);
-  sprintf(meta->general->acquisition_date, "%02d-%s-%4d %02d:%02d:%02.0lf",
+  sprintf(meta->general->acquisition_date, "%02d-%s-%4d %02d:%02d:%02.0f",
 	  date.day, mon[date.month], date.year, time.hour, time.min, time.sec);
   meta->general->orbit = terrasar->absOrbit;
   if (strcmp_case(terrasar->orbitDirection, "ASCENDING") == 0)

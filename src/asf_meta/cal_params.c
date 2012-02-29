@@ -515,35 +515,35 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	  {
 	  case 0: 
 	    alos->cf_hh = -83.16; // FBS  9.9 HH
-	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    sprintf(str, "HH: %.2f\n", alos->cf_hh);
 	    recalibration(str, level);
 	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
 	      alos->cf_hh -= 32;
 	    break;
 	  case 3:
 	    alos->cf_hh = -83.55; // FBS 21.5 HH
-	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    sprintf(str, "HH: %.2f\n", alos->cf_hh);
 	    recalibration(str, level);
 	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
 	      alos->cf_hh -= 32;
 	    break;
 	  case 7:
 	    alos->cf_hh = -83.40; // FBS 34.3 HH
-	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    sprintf(str, "HH: %.2f\n", alos->cf_hh);
 	    recalibration(str, level);
 	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
 	      alos->cf_hh -= 32;
 	    break;
 	  case 10:
 	    alos->cf_hh = -83.65; // FBS 41.5 HH
-	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    sprintf(str, "HH: %.2f\n", alos->cf_hh);
 	    recalibration(str, level);
 	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
 	      alos->cf_hh -= 32;
 	    break;
 	  case 35:
 	    alos->cf_hh = -83.30; // FBS 50.8 HH
-	    sprintf(str, "HH: %.2lf\n", alos->cf_hh);
+	    sprintf(str, "HH: %.2f\n", alos->cf_hh);
 	    recalibration(str, level);
 	    if (strncmp(dssr.lev_code, "1.1", 3) == 0)
 	      alos->cf_hh -= 32;
@@ -551,7 +551,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	  case 43:
 	    alos->cf_hh = -83.20; // FBD 34.3 HH
 	    alos->cf_hv = -80.20; // FBD 34.3 HV
-	    sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
+	    sprintf(str, "HH: %.2f\nHV: %.2f\n", alos->cf_hh, alos->cf_hv);
 	    recalibration(str, level);
 	    if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
 	      alos->cf_hh -= 32;
@@ -561,7 +561,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	  case 46:
 	    alos->cf_hh = -83.19; // FBD 41.5 HH
 	    alos->cf_hv = -80.19; // FBD 41.5 HV
-	    sprintf(str, "HH: %.2lf\nHV: %.2lf\n", alos->cf_hh, alos->cf_hv);
+	    sprintf(str, "HH: %.2f\nHV: %.2f\n", alos->cf_hh, alos->cf_hv);
 	    recalibration(str, level);
 	    if (strncmp(dssr.lev_code, "1.1", 3) == 0) {
 	      alos->cf_hh -= 32;
@@ -573,7 +573,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	    alos->cf_hv = -83.40; // PLR 21.5 HV
 	    alos->cf_vh = -83.40; // PLR 21.5 VH
 	    alos->cf_vv = -83.40; // PLR 21.5 VV
-	    sprintf(str, "HH: %.2lf\nHV: %.2lf\nVH: %.2lf\nVV: %.2lf", 
+	    sprintf(str, "HH: %.2f\nHV: %.2f\nVH: %.2f\nVV: %.2f", 
 		    alos->cf_hh, alos->cf_hv, alos->cf_vh, alos->cf_vv);
 	    recalibration(str, level);
 	    if (strncmp(dssr.lev_code, "1.1", 3) == 0) {

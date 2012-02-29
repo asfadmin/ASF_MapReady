@@ -31,7 +31,7 @@ meta_parameters* radarsat2meta(radarsat2_meta *radarsat2)
   //  meta->general->image_data_type = AMPLITUDE_IMAGE;
   meta->general->radiometry = r_AMP;
   date_terrasar2date(radarsat2->zeroDopplerAzimuthTime, &date, &time);
-  sprintf(meta->general->acquisition_date, "%02d-%s-%4d %02d:%02d:%02.0lf",
+  sprintf(meta->general->acquisition_date, "%02d-%s-%4d %02d:%02d:%02.0f",
 	  date.day, mon[date.month], date.year, time.hour, time.min, time.sec);
   //meta->general->orbit = radarsat2->absOrbit;
   if (strcmp_case(radarsat2->passDirection, "ASCENDING") == 0)

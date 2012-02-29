@@ -35,7 +35,7 @@ meta_parameters* smap2meta(smap_meta *smap)
 	 &imgStopTime.hour, &imgStopTime.min, &imgStopTime.sec);
   average_ymdTimes(&imgStartDate, &imgStopDate, &imgStartTime, &imgStopTime,
 		   &date, &time);
-  sprintf(meta->general->acquisition_date, "%02d-%s-%4d %02d:%02d:%02.0lf",
+  sprintf(meta->general->acquisition_date, "%02d-%s-%4d %02d:%02d:%02.0f",
 	  date.day, mon[date.month], date.year, time.hour, time.min, time.sec);
   meta->general->orbit = smap->start_orbit_number;
   if (strcmp_case(smap->orbit_direction, "ASCENDING") == 0)

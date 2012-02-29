@@ -26,7 +26,7 @@ meta_parameters* airsar2meta(airsar_header *header,
   }
   // FIXME: various data types - InSAR vs. polarimetric
   date_sec2hms(params->acquisition_seconds, &hms);
-  sprintf(meta->general->acquisition_date, "%s %d:%d:%.3lf",
+  sprintf(meta->general->acquisition_date, "%s %d:%d:%.3f",
       params->acquisition_date, hms.hour, hms.min, hms.sec);
   meta->general->orbit = params->cct_id; // close enough
   // no frame number

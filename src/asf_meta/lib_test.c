@@ -186,7 +186,7 @@ static float get_spec_float_param(char *spec_file, char *parameter)
 	// value
 	if (p) {
 	  sprintf(line, "%s", p+1);
-	  sscanf(line, "%f", &fValue);
+	  sscanf(line, "%lf", &fValue);
 	}
       }
     }

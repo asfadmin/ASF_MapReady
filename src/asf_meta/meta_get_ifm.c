@@ -107,7 +107,7 @@ double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 		          + stVec.pos.y * stVec.pos.y
 			  + stVec.pos.z * stVec.pos.z);
         	lat = asin(stVec.pos.z/ht);
-		//printf("lat: %.4lf\n", lat*R2D);
+		//printf("lat: %.4f\n", lat*R2D);
         	earth_rad = (re*rp)
 		        / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
 	}

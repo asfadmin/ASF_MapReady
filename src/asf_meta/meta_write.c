@@ -1420,7 +1420,7 @@ void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
   if (meta_is_valid_double(value))
   {
     char format[15];
-    sprintf(format, "%%-16.%ilf", decimals);
+    sprintf(format, "%%-16.%if", decimals);
     snprintf(param,99,format,value);
     strtok(param," ");/*remove all trailing spaces */
     if (is_empty(param)) { strcpy(param,"nan"); }
@@ -1438,7 +1438,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
   meta_general *mg = meta->general;
   fprintf(fp, "<metadata>\n");
   fprintf(fp, "  <metadata_type>Alaska Satellite Facility</metadata_type>\n");
-  fprintf(fp, "  <meta_version>%.2lf</meta_version>\n", meta->meta_version);
+  fprintf(fp, "  <meta_version>%.2f</meta_version>\n", meta->meta_version);
   fprintf(fp, "  <general>\n");
   fprintf(fp, "    <name>%s</name>\n", mg->basename);
   fprintf(fp, "    <sensor>%s</sensor>\n", mg->sensor);
@@ -1472,12 +1472,12 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	  mg->x_pixel_size);
   fprintf(fp, "    <y_pixel_size units=\"m\">%.11g</y_pixel_size>\n", 
 	  mg->y_pixel_size);
-  fprintf(fp, "    <center_latitude units=\"degrees\">%.4lf</center_latitude>"
+  fprintf(fp, "    <center_latitude units=\"degrees\">%.4f</center_latitude>"
 	  "\n", mg->center_latitude);
-  fprintf(fp, "    <center_longitude units=\"degrees\">%.4lf"
+  fprintf(fp, "    <center_longitude units=\"degrees\">%.4f"
 	  "</center_longitude>\n", mg->center_longitude);
-  fprintf(fp, "    <re_major units=\"m\">%.3lf</re_major>\n", mg->re_major);
-  fprintf(fp, "    <re_minor units=\"m\">%.3lf</re_minor>\n", mg->re_minor);
+  fprintf(fp, "    <re_major units=\"m\">%.3f</re_major>\n", mg->re_major);
+  fprintf(fp, "    <re_minor units=\"m\">%.3f</re_minor>\n", mg->re_minor);
   fprintf(fp, "    <bit_error_rate>%g</bit_error_rate>\n", mg->bit_error_rate);
   fprintf(fp, "    <missing_lines>%i</missing_lines>\n", mg->missing_lines);
   fprintf(fp, "    <no_data>%.4f</no_data>\n", mg->no_data);
@@ -1517,7 +1517,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	    "</range_time_per_pixel>\n", ms->range_time_per_pixel);
     fprintf(fp, "    <azimuth_time_per_pixel units=\"s\">%.11g"
 	    "</azimuth_time_per_pixel>\n", ms->azimuth_time_per_pixel);
-    fprintf(fp, "    <slant_range_first_pixel units=\"m\">%.3lf"
+    fprintf(fp, "    <slant_range_first_pixel units=\"m\">%.3f"
 	    "</slant_range_first_pixel>\n", ms->slant_range_first_pixel);
     fprintf(fp, "    <slant_shift units=\"m\">%.11g</slant_shift>\n",
 	    ms->slant_shift);
@@ -1526,11 +1526,11 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <wavelength units=\"m\">%.11g</wavelength>\n", 
 	    ms->wavelength);
     fprintf(fp, "    <prf units=\"Hz\">%.11g</prf>\n", ms->prf);
-    fprintf(fp, "    <earth_radius units=\"m\">%.3lf</earth_radius>\n", 
+    fprintf(fp, "    <earth_radius units=\"m\">%.3f</earth_radius>\n", 
 	    ms->earth_radius);
-    fprintf(fp, "    <earth_radius_pp units=\"m\">%.3lf</earth_radius_pp>\n",
+    fprintf(fp, "    <earth_radius_pp units=\"m\">%.3f</earth_radius_pp>\n",
 	    ms->earth_radius_pp);
-    fprintf(fp, "    <satellite_height units=\"m\">%.3lf</satellite_height>\n",
+    fprintf(fp, "    <satellite_height units=\"m\">%.3f</satellite_height>\n",
 	    ms->satellite_height);
     fprintf(fp, "    <dopRangeCen units=\"Hz\">%.11g</dopRangeCen>\n", 
 	    ms->range_doppler_coefficients[0]);
@@ -1544,9 +1544,9 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	    ms->azimuth_doppler_coefficients[1]);
     fprintf(fp, "    <dopAzQuad units=\"Hz/(pixel^2)\">%.11g</dopAzQuad>\n",
 	    ms->azimuth_doppler_coefficients[2]);
-    fprintf(fp, "    <pitch units=\"degrees\">%.4lf</pitch>\n", ms->pitch);
-    fprintf(fp, "    <roll units=\"degrees\">%.4lf</roll>\n", ms->roll);
-    fprintf(fp, "    <yaw units=\"degrees\">%.4lf</yaw>\n", ms->yaw);
+    fprintf(fp, "    <pitch units=\"degrees\">%.4f</pitch>\n", ms->pitch);
+    fprintf(fp, "    <roll units=\"degrees\">%.4f</roll>\n", ms->roll);
+    fprintf(fp, "    <yaw units=\"degrees\">%.4f</yaw>\n", ms->yaw);
     fprintf(fp, "    <azimuth_bandwidth units=\"Hz\">%.11g"
 	    "</azimuth_bandwidth>\n", ms->azimuth_processing_bandwidth);
     fprintf(fp, "    <chirp_rate units=\"Hz/sec\">%.11g</chirp_rate>\n", 
@@ -1568,7 +1568,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "    <type>TSX</type>\n");
       fprintf(fp, "    <year>%d</year>\n", md->tsx->year);
       fprintf(fp, "    <julDay>%d</julDay>\n", md->tsx->julDay);
-      fprintf(fp, "    <second>%lf</second>\n", md->tsx->second);
+      fprintf(fp, "    <second>%f</second>\n", md->tsx->second);
       fprintf(fp, "    <doppler_count>%d</doppler_count>\n", 
 	      md->tsx->doppler_count);
       for (ii=0; ii<md->tsx->doppler_count; ii++) {
@@ -1612,7 +1612,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp,"  <optical>\n");
     fprintf(fp,"    <pointing_direction>%s</pointing_direction>\n",
 	    mo->pointing_direction);
-    fprintf(fp,"    <off_nadir_angle units=\"degrees\">%.4lf</off_nadir_angle>"
+    fprintf(fp,"    <off_nadir_angle units=\"degrees\">%.4f</off_nadir_angle>"
 	    "\n", mo->off_nadir_angle);
     if (strcmp_case(mo->correction_level, "N") == 0)
       fprintf(fp,"    <correction_level>uncorrected</correction_level>\n");
@@ -1622,11 +1622,11 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "   <correction_level>geocoded</correction_level>\n");
     else if (strcmp_case(mo->correction_level, "D") == 0)
       fprintf(fp, "   <correction_level>DEM corrected</correction_level>\n");
-    fprintf(fp, "    <cloud_percentage units=\"percent\">%.1lf"
+    fprintf(fp, "    <cloud_percentage units=\"percent\">%.1f"
 	    "</cloud_percentage>\n", mo->cloud_percentage);
-    fprintf(fp, "    <sun_azimuth_angle units=\"degrees\">%.4lf"
+    fprintf(fp, "    <sun_azimuth_angle units=\"degrees\">%.4f"
 	    "</sun_azimuth_angle>\n", mo->sun_azimuth_angle);
-    fprintf(fp, "    <sun_elevation_angle units=\"degrees\">%.4lf"
+    fprintf(fp, "    <sun_elevation_angle units=\"degrees\">%.4f"
 	    "</sun_elevation_angle>\n", mo->sun_elevation_angle);
     fprintf(fp,"  </optical>\n");
   }
@@ -1642,17 +1642,17 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "    <vector num=\"%d\">\n", ii+1);
       fprintf(fp, "      <time units=\"s\">%.11g</time>\n", 
 	      mo->vecs[ii].time);
-      fprintf(fp, "      <posX units=\"m\">%.3lf</posX>\n",
+      fprintf(fp, "      <posX units=\"m\">%.3f</posX>\n",
 	      mo->vecs[ii].vec.pos.x);
-      fprintf(fp, "      <posY units=\"m\">%.3lf</posY>\n",
+      fprintf(fp, "      <posY units=\"m\">%.3f</posY>\n",
 	      mo->vecs[ii].vec.pos.y);
-      fprintf(fp, "      <posZ units=\"m\">%.3lf</posZ>\n",
+      fprintf(fp, "      <posZ units=\"m\">%.3f</posZ>\n",
 	      mo->vecs[ii].vec.pos.z);
-      fprintf(fp, "      <velX units=\"m/s\">%.3lf</velX>\n",
+      fprintf(fp, "      <velX units=\"m/s\">%.3f</velX>\n",
 	      mo->vecs[ii].vec.vel.x);
-      fprintf(fp, "      <velY units=\"m/s\">%.3lf</velY>\n",
+      fprintf(fp, "      <velY units=\"m/s\">%.3f</velY>\n",
 	      mo->vecs[ii].vec.vel.y);
-      fprintf(fp, "      <velZ units=\"m/s\">%.3lf</velZ>\n",
+      fprintf(fp, "      <velZ units=\"m/s\">%.3f</velZ>\n",
 	      mo->vecs[ii].vec.vel.z);
       fprintf(fp, "    </vector>\n");
     }
@@ -1687,15 +1687,15 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     else if (mp->type == UNKNOWN_PROJECTION)
       fprintf(fp, "    <type>UNKNOWN_PROJECTION</type>\n");
     if (mp->type != LAT_LONG_PSEUDO_PROJECTION) {
-      fprintf(fp, "    <startX units=\"m\">%.8lf</startX>\n", mp->startX);
-      fprintf(fp, "    <startY units=\"m\">%.8lf</startY>\n", mp->startY);
-      fprintf(fp, "    <perX units=\"m\">%.8lf</perX>\n", mp->perX);
-      fprintf(fp, "    <perY units=\"m\">%.8lf</perY>\n", mp->perY);
+      fprintf(fp, "    <startX units=\"m\">%.8f</startX>\n", mp->startX);
+      fprintf(fp, "    <startY units=\"m\">%.8f</startY>\n", mp->startY);
+      fprintf(fp, "    <perX units=\"m\">%.8f</perX>\n", mp->perX);
+      fprintf(fp, "    <perY units=\"m\">%.8f</perY>\n", mp->perY);
     }
     else {
-      fprintf(fp, "    <startX units=\"degrees\">%.8lf</startX>\n", 
+      fprintf(fp, "    <startX units=\"degrees\">%.8f</startX>\n", 
 	      mp->startX);
-      fprintf(fp, "    <startY units=\"degrees\">%.8lf</startY>\n", 
+      fprintf(fp, "    <startY units=\"degrees\">%.8f</startY>\n", 
 	      mp->startY);
       fprintf(fp, "    <perX units=\"degrees\">%.11g</perX>\n", mp->perX);
       fprintf(fp, "    <perY units=\"degrees\">%.11g</perY>\n", mp->perY);
@@ -1707,64 +1707,64 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "    <hemisphere>southern</hemisphere>\n");
     fprintf(fp, "    <spheroid>%s</spheroid>\n", 
 	    spheroid_toString(mp->spheroid));
-    fprintf(fp, "    <re_major units=\"m\">%.3lf</re_major>\n", mp->re_major);
-    fprintf(fp, "    <re_minor units=\"m\">%.3lf</re_minor>\n", mp->re_minor);
+    fprintf(fp, "    <re_major units=\"m\">%.3f</re_major>\n", mp->re_major);
+    fprintf(fp, "    <re_minor units=\"m\">%.3f</re_minor>\n", mp->re_minor);
     fprintf(fp, "    <datum>%s</datum>\n",
 	    datum_toString(meta->projection->datum));
-    fprintf(fp, "    <height units=\"m\">%.3lf</height>\n", mp->height);
+    fprintf(fp, "    <height units=\"m\">%.3f</height>\n", mp->height);
     if (mp->type == SCANSAR_PROJECTION) {
       fprintf(fp, "    <scansar_projection>\n");
-      fprintf(fp, "      <rlocal units=\"m\">%.3lf</rlocal>\n", 
+      fprintf(fp, "      <rlocal units=\"m\">%.3f</rlocal>\n", 
 	      mp->param.atct.rlocal);
-      fprintf(fp, "      <alpha1 units=\"degrees\">%.4lf</alpha1>\n", 
+      fprintf(fp, "      <alpha1 units=\"degrees\">%.4f</alpha1>\n", 
 	      mp->param.atct.alpha1);
-      fprintf(fp, "      <alpha2 units=\"degrees\">%.4lf</alpha2>\n",
+      fprintf(fp, "      <alpha2 units=\"degrees\">%.4f</alpha2>\n",
 	      mp->param.atct.alpha2);
-      fprintf(fp, "      <alpha3 units=\"degrees\">%.4lf</alpha3>\n",
+      fprintf(fp, "      <alpha3 units=\"degrees\">%.4f</alpha3>\n",
 	      mp->param.atct.alpha3);
       fprintf(fp, "    </scansar_projection>\n");
     }
     else if (mp->type == ALBERS_EQUAL_AREA) {
       fprintf(fp, "    <albers_conical_equal_area>\n");
-      fprintf(fp, "      <std_parallel1 units=\"degrees\">%.4lf"
+      fprintf(fp, "      <std_parallel1 units=\"degrees\">%.4f"
 	      "</std_parallel1>\n", mp->param.albers.std_parallel1);
-      fprintf(fp, "      <std_parallel2 units=\"degrees\">%.4lf"
+      fprintf(fp, "      <std_parallel2 units=\"degrees\">%.4f"
 	      "</std_parallel2>\n", mp->param.albers.std_parallel2);
-      fprintf(fp, "      <center_meridian units=\"degrees\">%.4lf"
+      fprintf(fp, "      <center_meridian units=\"degrees\">%.4f"
 	      "</center_meridian>\n", mp->param.albers.center_meridian);
-      fprintf(fp, "      <orig_latitude units=\"degrees\">%.4lf"
+      fprintf(fp, "      <orig_latitude units=\"degrees\">%.4f"
 	      "</orig_latitude>\n", mp->param.albers.orig_latitude);
-      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+      fprintf(fp, "      <false_easting units=\"m\">%.3f</false_easting>\n",
 	      mp->param.albers.false_easting);
-      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+      fprintf(fp, "      <false_northing units=\"m\">%.3f</false_northing>\n",
 	      mp->param.albers.false_northing);
       fprintf(fp,"    </albers_conical_equal_area>\n");
     }
     else if (mp->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
       fprintf(fp, "    <lambert_azimuthal_equal_area>\n");
-      fprintf(fp, "      <center_lat units=\"degrees\">%.4lf</center_lat>\n",
+      fprintf(fp, "      <center_lat units=\"degrees\">%.4f</center_lat>\n",
 	      mp->param.lamaz.center_lat);
-      fprintf(fp, "      <center_lon units=\"degrees\">%.4lf</center_lon>\n",
+      fprintf(fp, "      <center_lon units=\"degrees\">%.4f</center_lon>\n",
 	      mp->param.lamaz.center_lon);
-      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+      fprintf(fp, "      <false_easting units=\"m\">%.3f</false_easting>\n",
 	      mp->param.lamaz.false_easting);
-      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+      fprintf(fp, "      <false_northing units=\"m\">%.3f</false_northing>\n",
 	      mp->param.lamaz.false_northing);
       fprintf(fp, "    </lambert_azimuthal_equal_area>\n");
     }
     else if (mp->type == LAMBERT_CONFORMAL_CONIC) {
       fprintf(fp, "    <lambert_conformal_conic>\n");
-      fprintf(fp, "      <plat1 units=\"degrees\">%.4lf</plat1>\n",
+      fprintf(fp, "      <plat1 units=\"degrees\">%.4f</plat1>\n",
 	      mp->param.lamcc.plat1);
-      fprintf(fp, "      <plat2 units=\"degrees\">%.4lf</plat2>\n",
+      fprintf(fp, "      <plat2 units=\"degrees\">%.4f</plat2>\n",
 	      mp->param.lamcc.plat2);
-      fprintf(fp, "      <lat0 units=\"degrees\">%.4lf</lat0>\n",
+      fprintf(fp, "      <lat0 units=\"degrees\">%.4f</lat0>\n",
 	      mp->param.lamcc.lat0);
-      fprintf(fp, "      <lon0 units=\"degrees\">%.4lf</lon0>\n",
+      fprintf(fp, "      <lon0 units=\"degrees\">%.4f</lon0>\n",
 	      mp->param.lamcc.lon0);
-      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+      fprintf(fp, "      <false_easting units=\"m\">%.3f</false_easting>\n",
 	      mp->param.lamcc.false_easting);
-      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+      fprintf(fp, "      <false_northing units=\"m\">%.3f</false_northing>\n",
 	      mp->param.lamcc.false_northing);
       fprintf(fp, "      <scale_factor>%.11g</scale_factor>\n",
 	      mp->param.lamcc.scale_factor);
@@ -1772,26 +1772,26 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     }
     else if (mp->type == POLAR_STEREOGRAPHIC) {
       fprintf(fp, "    <polar_stereographic>\n");
-      fprintf(fp, "      <slat units=\"degrees\">%.4lf</slat>\n",
+      fprintf(fp, "      <slat units=\"degrees\">%.4f</slat>\n",
 	      mp->param.ps.slat);
-      fprintf(fp, "      <slon units=\"degrees\">%.4lf</slon>\n",
+      fprintf(fp, "      <slon units=\"degrees\">%.4f</slon>\n",
 	      mp->param.ps.slon);
-      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+      fprintf(fp, "      <false_easting units=\"m\">%.3f</false_easting>\n",
 	      mp->param.ps.false_easting);
-      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+      fprintf(fp, "      <false_northing units=\"m\">%.3f</false_northing>\n",
 	      mp->param.ps.false_northing);
       fprintf(fp, "    </polar_stereographic>\n");
     }
     else if (mp->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
       fprintf(fp, "    <universal_transverse_mercator>\n");
       fprintf(fp, "      <zone>%d</zone>\n", mp->param.utm.zone);
-      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+      fprintf(fp, "      <false_easting units=\"m\">%.3f</false_easting>\n",
 	      mp->param.utm.false_easting);
-      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+      fprintf(fp, "      <false_northing units=\"m\">%.3f</false_northing>\n",
 	      mp->param.utm.false_northing);
-      fprintf(fp, "      <latitude units=\"degrees\">%.4lf</latitude>\n",
+      fprintf(fp, "      <latitude units=\"degrees\">%.4f</latitude>\n",
 	      mp->param.utm.lat0);
-      fprintf(fp, "      <longitude units=\"degrees\">%.4lf</longitude>\n",
+      fprintf(fp, "      <longitude units=\"degrees\">%.4f</longitude>\n",
 	      mp->param.utm.lon0);
       fprintf(fp, "      <scale_factor>%.11g</scale_factor>\n", 
 	      mp->param.utm.scale_factor);
@@ -1804,27 +1804,27 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     }
     else if (mp->type == MERCATOR) {
       fprintf(fp, "    <mercator>\n");
-      fprintf(fp, "      <standard_parallel units=\"degrees\">%.4lf"
+      fprintf(fp, "      <standard_parallel units=\"degrees\">%.4f"
 	      "</standard_parallel>\n", mp->param.mer.standard_parallel);
-      fprintf(fp, "      <central_meridian units=\"degrees\">%.4lf"
+      fprintf(fp, "      <central_meridian units=\"degrees\">%.4f"
 	      "</central_meridian>\n", mp->param.mer.central_meridian);
-      fprintf(fp, "      <orig_latitude units=\"degress\">%.4lf"
+      fprintf(fp, "      <orig_latitude units=\"degress\">%.4f"
 	      "</orig_latitude>\n", mp->param.mer.orig_latitude);
-      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+      fprintf(fp, "      <false_easting units=\"m\">%.3f</false_easting>\n",
 	      mp->param.mer.false_easting);
-      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+      fprintf(fp, "      <false_northing units=\"m\">%.3f</false_northing>\n",
 	      mp->param.mer.false_northing);
       fprintf(fp, "    </mercator>\n");
     }
     else if (mp->type == EQUI_RECTANGULAR) {
       fprintf(fp, "    <equi_rectangular>\n");
-      fprintf(fp, "      <central_meridian units=\"degrees\">%.4lf"
+      fprintf(fp, "      <central_meridian units=\"degrees\">%.4f"
 	      "</central_meridian>\n", mp->param.eqr.central_meridian);
-      fprintf(fp, "      <orig_latitude units=\"degrees\">%.4lf"
+      fprintf(fp, "      <orig_latitude units=\"degrees\">%.4f"
 	      "</orig_latitude>\n", mp->param.eqr.orig_latitude);
-      fprintf(fp, "      <false_easting units=\"m\">%.3lf</false_easting>\n",
+      fprintf(fp, "      <false_easting units=\"m\">%.3f</false_easting>\n",
 	      mp->param.eqr.false_easting);
-      fprintf(fp, "      <false_northing units=\"m\">%.3lf</false_northing>\n",
+      fprintf(fp, "      <false_northing units=\"m\">%.3f</false_northing>\n",
 	      mp->param.eqr.false_northing);
       fprintf(fp, "    </equi_rectangular>\n");
     }
@@ -1853,9 +1853,9 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     for (ii=0; ii<mt->parameter_count; ii++)
       fprintf(fp, "    <j coeeficient=\"%d\">%.11g</j>\n", ii, mt->l[ii]);
     if (mt->parameter_count == 25) {
-      fprintf(fp, "    <origin_lat units=\"degrees\">%.4lf</origin_lat>\n", 
+      fprintf(fp, "    <origin_lat units=\"degrees\">%.4f</origin_lat>\n", 
 	      mt->origin_lat);
-      fprintf(fp, "    <origin_lon units=\"degrees\">%.4lf</origin_lon>\n", 
+      fprintf(fp, "    <origin_lon units=\"degrees\">%.4f</origin_lon>\n", 
 	      mt->origin_lon);
     }
     for (ii=0; ii<10; ++ii)
@@ -1872,17 +1872,17 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "  <airsar>\n");
     fprintf(fp, "    <scale_factor>%.11g</scale_factor>\n", 
 	    ma->scale_factor);
-    fprintf(fp, "    <gps_altitude units=\"m\">%.3lf</gps_altitude>\n", 
+    fprintf(fp, "    <gps_altitude units=\"m\">%.3f</gps_altitude>\n", 
 	    ma->gps_altitude);
-    fprintf(fp, "    <lat_peg_point units=\"degrees\">%.4lf</lat_peg_point>"
+    fprintf(fp, "    <lat_peg_point units=\"degrees\">%.4f</lat_peg_point>"
 	    "\n", ma->lat_peg_point);
-    fprintf(fp, "    <lon_peg_point units=\"degrees\">%.4lf</lon_peg_point>"
+    fprintf(fp, "    <lon_peg_point units=\"degrees\">%.4f</lon_peg_point>"
 	    "\n", ma->lon_peg_point);
-    fprintf(fp, "    <head_peg_point units=\"degrees\">%.4lf"
+    fprintf(fp, "    <head_peg_point units=\"degrees\">%.4f"
 	    "</head_peg_point>\n", ma->head_peg_point);
-    fprintf(fp, "    <along_track_offset units=\"m\">%.3lf"
+    fprintf(fp, "    <along_track_offset units=\"m\">%.3f"
 	    "</along_track_offset>\n", ma->along_track_offset);
-    fprintf(fp, "    <cross_track_offset units=\"m\">%.3lf"
+    fprintf(fp, "    <cross_track_offset units=\"m\">%.3f"
 	    "</cross_track_offset>\n", ma->cross_track_offset);
     fprintf(fp, "  </airsar>\n");
   }
@@ -1893,17 +1893,17 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <id>%s</id>\n", mu->id);
     fprintf(fp, "    <scale_factor>%.11g</scale_factor>\n", 
 	    mu->scale_factor);
-    fprintf(fp, "    <gps_altitude units=\"m\">%.3lf</gps_altitude>\n", 
+    fprintf(fp, "    <gps_altitude units=\"m\">%.3f</gps_altitude>\n", 
 	    mu->gps_altitude);
-    fprintf(fp, "    <lat_peg_point units=\"degrees\">%.4lf</lat_peg_point>"
+    fprintf(fp, "    <lat_peg_point units=\"degrees\">%.4f</lat_peg_point>"
 	    "\n", mu->lat_peg_point);
-    fprintf(fp, "    <lon_peg_point units=\"degrees\">%.4lf</lon_peg_point>"
+    fprintf(fp, "    <lon_peg_point units=\"degrees\">%.4f</lon_peg_point>"
 	    "\n", mu->lon_peg_point);
-    fprintf(fp, "    <head_peg_point units=\"degrees\">%.4lf"
+    fprintf(fp, "    <head_peg_point units=\"degrees\">%.4f"
 	    "</head_peg_point>\n", mu->head_peg_point);
-    fprintf(fp, "    <along_track_offset units=\"m\">%.4lf"
+    fprintf(fp, "    <along_track_offset units=\"m\">%.4f"
 	    "</along_track_offset>\n", mu->along_track_offset);
-    fprintf(fp, "    <cross_track_offset units=\"m\">%.4lf"
+    fprintf(fp, "    <cross_track_offset units=\"m\">%.4f"
 	    "</cross_track_offset>\n", mu->cross_track_offset);
     fprintf(fp, "  </uavsar>\n");
   }
@@ -1914,13 +1914,13 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <source>%s</source>\n", md->source);
     fprintf(fp, "    <format>%s</format>\n", md->format);
     fprintf(fp, "    <tiles>%s</tiles>\n", md->tiles);
-    fprintf(fp, "    <min_value>%.3lf</min_value>\n", md->min_value);
-    fprintf(fp, "    <max_value>%.3lf</max_value>\n", md->max_value);
-    fprintf(fp, "    <mean_value>%.3lf</mean_value>\n", md->mean_value);
-    fprintf(fp, "    <standard_deviation>%.3lf</standard_deviation>\n", 
+    fprintf(fp, "    <min_value>%.3f</min_value>\n", md->min_value);
+    fprintf(fp, "    <max_value>%.3f</max_value>\n", md->max_value);
+    fprintf(fp, "    <mean_value>%.3f</mean_value>\n", md->mean_value);
+    fprintf(fp, "    <standard_deviation>%.3f</standard_deviation>\n", 
             md->standard_deviation);
     fprintf(fp, "    <unit_type>%s</unit_type>\n", md->unit_type);
-    fprintf(fp, "    <no_data>%.4lf</no_data>\n", md->no_data);
+    fprintf(fp, "    <no_data>%.4f</no_data>\n", md->no_data);
     fprintf(fp, "  </dem>\n");
   }
 
@@ -1946,21 +1946,21 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
   if (meta->location) {
     meta_location *ml = meta->location;
     fprintf(fp, "  <location>\n");
-    fprintf(fp, "    <lat_start_near_range>%.4lf</lat_start_near_range>\n",
+    fprintf(fp, "    <lat_start_near_range>%.4f</lat_start_near_range>\n",
 	    ml->lat_start_near_range);
-    fprintf(fp, "    <lon_start_near_range>%.4lf</lon_start_near_range>\n",
+    fprintf(fp, "    <lon_start_near_range>%.4f</lon_start_near_range>\n",
 	    ml->lon_start_near_range);
-    fprintf(fp, "    <lat_start_far_range>%.4lf</lat_start_far_range>\n",
+    fprintf(fp, "    <lat_start_far_range>%.4f</lat_start_far_range>\n",
 	    ml->lat_start_far_range);
-    fprintf(fp, "    <lon_start_far_range>%.4lf</lon_start_far_range>\n",
+    fprintf(fp, "    <lon_start_far_range>%.4f</lon_start_far_range>\n",
 	    ml->lon_start_far_range);
-    fprintf(fp, "    <lat_end_near_range>%.4lf</lat_end_near_range>\n",
+    fprintf(fp, "    <lat_end_near_range>%.4f</lat_end_near_range>\n",
 	    ml->lat_end_near_range);
-    fprintf(fp, "    <lon_end_near_range>%.4lf</lon_end_near_range>\n",
+    fprintf(fp, "    <lon_end_near_range>%.4f</lon_end_near_range>\n",
 	    ml->lon_end_near_range);
-    fprintf(fp, "    <lat_end_far_range>%.4lf</lat_end_far_range>\n",
+    fprintf(fp, "    <lat_end_far_range>%.4f</lat_end_far_range>\n",
 	    ml->lat_end_far_range);
-    fprintf(fp, "    <lon_end_far_range>%.4lf</lon_end_far_range>\n",
+    fprintf(fp, "    <lon_end_far_range>%.4f</lon_end_far_range>\n",
 	    ml->lon_end_far_range);
     fprintf(fp, "  </location>\n");
   }
@@ -2043,25 +2043,25 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	    mi->master_acquisition_date);
     fprintf(fp, "    <slave_acquisition_date>%s</slave_acquisition_date>\n",
 	    mi->slave_acquisition_date);
-    fprintf(fp, "    <center_look_angle units=\"degrees\">%.4lf"
+    fprintf(fp, "    <center_look_angle units=\"degrees\">%.4f"
 	    "</center_look_angle>\n", mi->center_look_angle);
     fprintf(fp, "    <doppler units=\"Hz\">%.11g</doppler>\n", mi->doppler);
     fprintf(fp, "    <doppler_rate units=\"Hz/m\">%.11g</doppler_rate>\n",
 	    mi->doppler_rate);
-    fprintf(fp, "    <baseline_length units=\"m\">%.1lf</baseline_length>\n", 
+    fprintf(fp, "    <baseline_length units=\"m\">%.1f</baseline_length>\n", 
 	    mi->baseline_length);
-    fprintf(fp, "    <baseline_parallel units=\"m\">%.1lf</baseline_parallel>"
+    fprintf(fp, "    <baseline_parallel units=\"m\">%.1f</baseline_parallel>"
 	    "\n", mi->baseline_parallel);
     fprintf(fp, "    <baseline_parallel_rate units=\"m/s\">%.11g"
 	    "</baseline_parallel_rate>\n", mi->baseline_parallel_rate);
-    fprintf(fp, "    <baseline_perpendicular units=\"m\">%.1lf"
+    fprintf(fp, "    <baseline_perpendicular units=\"m\">%.1f"
 	    "</baseline_perpendicular>\n", mi->baseline_perpendicular);
     fprintf(fp, "    <baseline_perpendicular_rate units=\"m/s\">%.11g"
 	    "</baseline_perpendicular_rate>\n", 
 	    mi->baseline_perpendicular_rate);
     fprintf(fp, "    <baseline_temporal units=\"days\">%d</baseline_temporal>"
 	    "\n", mi->baseline_temporal);
-    fprintf(fp, "    <baseline_critical units=\"m\">%.1lf</baseline_critical>"
+    fprintf(fp, "    <baseline_critical units=\"m\">%.1f</baseline_critical>"
 	    "\n", mi->baseline_critical);
     fprintf(fp, "  </insar>\n");
   }

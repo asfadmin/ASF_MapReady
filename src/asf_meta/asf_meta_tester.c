@@ -129,9 +129,9 @@ START_TEST(test_lamcc) /* Lambert conformal conic */
   sprintf(error_string,"meta->geo->proj->param.lamcc.lat0 is %-16.11g, should be 72.123",meta->geo->proj->param.lamcc.lat0);
   fail_unless(UNIT_TESTS_FLOAT_COMPARE(meta->geo->proj->param.lamcc.lat0,72.123),error_string);
   
-  sprintf(error_string,"meta->projection->param.lamcc.lon0 is %lf; should be -158.123",meta->projection->param.lamcc.lon0);
+  sprintf(error_string,"meta->projection->param.lamcc.lon0 is %f; should be -158.123",meta->projection->param.lamcc.lon0);
   fail_unless(UNIT_TESTS_FLOAT_COMPARE(meta->projection->param.lamcc.lon0,-158.123),error_string);
-  sprintf(error_string,"meta->geo->proj->param.lamcc.lon0 is %lf; should be -158.123",meta->geo->proj->param.lamcc.lon0);
+  sprintf(error_string,"meta->geo->proj->param.lamcc.lon0 is %f; should be -158.123",meta->geo->proj->param.lamcc.lon0);
   fail_unless(UNIT_TESTS_FLOAT_COMPARE(meta->geo->proj->param.lamcc.lon0,-158.123),error_string);
   meta_free(meta);
 }
@@ -262,7 +262,7 @@ printf("\nNOT PERFORMING TEST_META_CREATE_NEW_FORMAT()!!\n");
    fail_unless(meta->general->orbit == 22590,err_msg);
   sprintf(err_msg,"meta->general->orbit_direction = '%c'; not read correctly, should be 'D'",meta->general->orbit_direction);
    fail_unless(meta->general->orbit_direction == 'D',err_msg);
-  sprintf(err_msg,"meta->sar->prf = %lf; not read correctly, should be 1679.9023438",meta->sar->prf);
+  sprintf(err_msg,"meta->sar->prf = %f; not read correctly, should be 1679.9023438",meta->sar->prf);
    fail_unless(meta->sar->prf == 1679.9023438,err_msg);
   meta_write(meta, "test_output/CEOS_E12259029000X008.meta");
   meta_free(meta);

@@ -269,9 +269,9 @@ static int get_error_ext(meta_parameters *meta,
   if (err)
     return err;
   /*
-  printf("old: x=%.1lf; y=%.1f; lat=%.4lf, lon=%.4lf\n",
+  printf("old: x=%.1f; y=%.1f; lat=%.4f, lon=%.4f\n",
 	 old_yLine, old_xSamp, old.lat, old.lon);
-  printf("new: x=%.1lf; y=%.1lf\n", xSamp, yLine);
+  printf("new: x=%.1f; y=%.1f\n", xSamp, yLine);
   */
   int div=2;
   double xBound, yBound;
@@ -285,7 +285,7 @@ static int get_error_ext(meta_parameters *meta,
     if (div > 1000)
       return 1;
   }
-  //printf("bound: x=%.1lf, y=%.1lf, div=%d\n", xBound, yBound, div);
+  //printf("bound: x=%.1f, y=%.1f, div=%d\n", xBound, yBound, div);
   err = meta_get_latLon(meta,yBound,xBound,elev,&bound.lat,&bound.lon);
   if (err)
     return err;
@@ -317,13 +317,13 @@ static int meta_get_lineSamp_imp(meta_parameters *meta,
 
   target.lat = lat;
   target.lon = lon;
-  //printf("delta: %lf, tolerance: %lf\n", DELTA, tolerance);
+  //printf("delta: %f, tolerance: %f\n", DELTA, tolerance);
   while (fabs(x-x_old)+fabs(y-y_old)>DELTA*tolerance)
   {
     double cur_err, tmp, del_x, del_y, rad;
 
     err = get_error(meta,target,elev,x,y,&cur_err);
-    //printf("%lf, err=%d\n", cur_err, err);
+    //printf("%f, err=%d\n", cur_err, err);
     if (err)
       return err;
     
@@ -631,10 +631,10 @@ int meta_get_lineSamp(meta_parameters *meta,
         assert(pc==25 || pc==10 || pc==4);
       
         if (meta->transform->parameter_count == 25) {
-          //printf("before - lat: %.4lf, lon: %.4lf\n", lat, lon);
+          //printf("before - lat: %.4f, lon: %.4f\n", lat, lon);
           lat -= meta->transform->origin_lat;
           lon -= meta->transform->origin_lon;
-          //printf("after - lat: %.4lf, lon: %.4lf\n", lat, lon);
+          //printf("after - lat: %.4f, lon: %.4f\n", lat, lon);
         }
         // If a valid transform block was found, use it...
         double lat2 = lat  * lat;

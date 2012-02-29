@@ -48,7 +48,7 @@ void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
   fprintf(fp,"%s = \"%s\"\n",PROCESSING_DATE, MAGIC_UNSET_STRING);
   fprintf(fp,"%s = \"%s\"\n",PLATFORM, meta->general->sensor);
   fprintf(fp,"%s = \"%s\"\n",BEAM_MODE, meta->general->mode);
-  fprintf(fp,"%s = \"%lf\"\n",FREQUENCY, meta->sar->wavelength);
+  fprintf(fp,"%s = \"%f\"\n",FREQUENCY, meta->sar->wavelength);
   switch (meta->general->sensor[0]) {
     case 'E': strcpy(temp,"VV"); break;
     case 'R': strcpy(temp,"HH"); break;
@@ -56,9 +56,9 @@ void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
     default: strcpy(temp, MAGIC_UNSET_STRING);
   }
   fprintf(fp,"%s = \"%s\"\n",POLARIZATION, temp);
-  fprintf(fp,"%s = \"%lf\"\n",TRACK_ANGLE,
+  fprintf(fp,"%s = \"%f\"\n",TRACK_ANGLE,
           (dssr) ? dssr->plat_head_scene : MAGIC_UNSET_DOUBLE);
-  fprintf(fp,"%s = \"%lf\"\n",CLOCK_ANGLE,
+  fprintf(fp,"%s = \"%f\"\n",CLOCK_ANGLE,
           (dssr) ? dssr->clock_ang : MAGIC_UNSET_DOUBLE);
   switch (meta->sar->image_type) {
     case 'S': strcpy(temp,"SLANT"); break;
@@ -69,15 +69,15 @@ void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
   fprintf(fp,"%s = \"%s\"\n",PROJECTION, temp);
   fprintf(fp,"%s = \"%d\"\n",NUMBER_OF_PIXELS, meta->general->sample_count);
   fprintf(fp,"%s = \"%d\"\n",NUMBER_OF_LINES, meta->general->line_count);
-  fprintf(fp,"%s = \"%lf\"\n",RNG_PIXEL_SPACING, meta->general->x_pixel_size);
-  fprintf(fp,"%s = \"%lf\"\n",AZ_PIXEL_SPACING, meta->general->y_pixel_size);
+  fprintf(fp,"%s = \"%f\"\n",RNG_PIXEL_SPACING, meta->general->x_pixel_size);
+  fprintf(fp,"%s = \"%f\"\n",AZ_PIXEL_SPACING, meta->general->y_pixel_size);
   fprintf(fp,"%s = \"%s\"\n",CENTER_GMT,
           (dssr) ? dssr->inp_sctim : MAGIC_UNSET_STRING);
-  fprintf(fp,"%s = \"%lf\"\n",SLANT_RANGE_TO_FIRST_PIXEL,
+  fprintf(fp,"%s = \"%f\"\n",SLANT_RANGE_TO_FIRST_PIXEL,
           meta->sar->slant_range_first_pixel/1000.0);
-  fprintf(fp,"%s = \"%lf\"\n",EARTH_RADIUS_AT_IMAGE_CENTER, earth_radius);
-  fprintf(fp,"%s = \"%lf\"\n",EARTH_RADIUS_AT_IMAGE_NARIR, earth_radius);
-  fprintf(fp,"%s = \"%lf\"\n",PLATFORM_ALITITUDE, sat_height);
+  fprintf(fp,"%s = \"%f\"\n",EARTH_RADIUS_AT_IMAGE_CENTER, earth_radius);
+  fprintf(fp,"%s = \"%f\"\n",EARTH_RADIUS_AT_IMAGE_NARIR, earth_radius);
+  fprintf(fp,"%s = \"%f\"\n",PLATFORM_ALITITUDE, sat_height);
   if (   meta->general->data_type>=ASF_BYTE
       && meta->general->data_type<=REAL64)
     strcpy(temp, STANDARD_FORMAT);
@@ -89,20 +89,20 @@ void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
   fprintf(fp,"%s = \"%s\"\n",IMAGE_FORMAT, temp);
 
   meta_get_latLon(meta, 0.0, numSamples, 0.0, &lat, &lon);
-  fprintf(fp,"%s = \"%lf\"\n",TOP_RIGHT_CORNER_LAT, lat);
-  fprintf(fp,"%s = \"%lf\"\n",TOP_RIGHT_CORNER_LONG, lon);
+  fprintf(fp,"%s = \"%f\"\n",TOP_RIGHT_CORNER_LAT, lat);
+  fprintf(fp,"%s = \"%f\"\n",TOP_RIGHT_CORNER_LONG, lon);
   meta_get_latLon(meta, 0.0, 0.0, 0.0, &lat, &lon);
-  fprintf(fp,"%s = \"%lf\"\n",TOP_LEFT_CORNER_LAT, lat);
-  fprintf(fp,"%s = \"%lf\"\n",TOP_LEFT_CORNER_LONG, lon);
+  fprintf(fp,"%s = \"%f\"\n",TOP_LEFT_CORNER_LAT, lat);
+  fprintf(fp,"%s = \"%f\"\n",TOP_LEFT_CORNER_LONG, lon);
   meta_get_latLon(meta, numLines, numSamples, 0.0, &lat, &lon);
-  fprintf(fp,"%s = \"%lf\"\n",BOTTOM_RIGHT_CORNER_LAT, lat);
-  fprintf(fp,"%s = \"%lf\"\n",BOTTOM_RIGHT_CORNER_LONG, lon);
+  fprintf(fp,"%s = \"%f\"\n",BOTTOM_RIGHT_CORNER_LAT, lat);
+  fprintf(fp,"%s = \"%f\"\n",BOTTOM_RIGHT_CORNER_LONG, lon);
   meta_get_latLon(meta, numLines, 0.0, 0.0, &lat, &lon);
-  fprintf(fp,"%s = \"%lf\"\n",BOTTOM_LEFT_CORNER_LAT, lat);
-  fprintf(fp,"%s = \"%lf\"\n",BOTTOM_LEFT_CORNER_LONG, lon);
+  fprintf(fp,"%s = \"%f\"\n",BOTTOM_LEFT_CORNER_LAT, lat);
+  fprintf(fp,"%s = \"%f\"\n",BOTTOM_LEFT_CORNER_LONG, lon);
 
-  fprintf(fp,"%s = \"%lf\"\n",ELLIPS_MAJ_AXIS, meta->general->re_major/1000.0);
-  fprintf(fp,"%s = \"%lf\"\n",ELLIPS_MIN_AXIS, meta->general->re_minor/1000.0);
+  fprintf(fp,"%s = \"%f\"\n",ELLIPS_MAJ_AXIS, meta->general->re_major/1000.0);
+  fprintf(fp,"%s = \"%f\"\n",ELLIPS_MIN_AXIS, meta->general->re_minor/1000.0);
   fprintf(fp,"%s = \"%d\"\n",REVOLUTION, meta->general->orbit);
   switch (meta->general->orbit_direction) {
     case 'A': strcpy(temp,"ASCENDING"); break;
@@ -110,12 +110,12 @@ void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
     default: strcpy(temp, MAGIC_UNSET_STRING);
   }
   fprintf(fp,"%s = \"%s\"\n",FLIGHT_DIRECTION, temp);
-  fprintf(fp,"%s = \"%lf\"\n",PRF, meta->sar->prf);
-  fprintf(fp,"%s = \"%lf\"\n",DOPPLER_POLY_A0,
+  fprintf(fp,"%s = \"%f\"\n",PRF, meta->sar->prf);
+  fprintf(fp,"%s = \"%f\"\n",DOPPLER_POLY_A0,
           meta->sar->range_doppler_coefficients[0]);
-  fprintf(fp,"%s = \"%lf\"\n",DOPPLER_POLY_A1,
+  fprintf(fp,"%s = \"%f\"\n",DOPPLER_POLY_A1,
           meta->sar->range_doppler_coefficients[1]);
-  fprintf(fp,"%s = \"%lf\" \n",DOPPLER_POLY_A2,
+  fprintf(fp,"%s = \"%f\" \n",DOPPLER_POLY_A2,
           meta->sar->range_doppler_coefficients[2]);
 
   /* Vexcel "Unique" metadata keys */
