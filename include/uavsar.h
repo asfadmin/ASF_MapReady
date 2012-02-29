@@ -149,7 +149,6 @@ uavsar_insar *read_uavsar_insar_params(const char *dataFile,
 char *check_data_type(const char *inFileName);
 char **get_uavsar_products(const char *data_type, char *type, int *num_product);
 uavsar_type_t uavsar_type_name_to_enum(const char *type_name);
-const char *translate_uavsar_band_names(char *band);
 void get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
                            char ***pDataName, char ***pElement,
                            int **pDataType, int *nBands);

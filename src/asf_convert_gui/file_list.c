@@ -390,12 +390,12 @@ do_thumbnail (GtkTreeRowReference * ref)
     if (!g_show_thumbnail_columns)
         return;
 
-    GtkTreePath *path = gtk_tree_row_reference_get_path(ref);
+    GtkTreePath *path;
     GtkTreeIter iter;
     // If the RowReference we were given wasn't valid then the data file
     // must have been removed from the list before we got a chance to draw
     // it's thumbnail.
-    if(gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path)) {
+    if((path = gtk_tree_row_reference_get_path(ref)) && gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path)) {
         gchar *input_file;
         gchar *ancillary_file;
         gchar *polsarpro_aux_info;
@@ -434,7 +434,8 @@ do_thumbnail (GtkTreeRowReference * ref)
         g_free(data_file);
     }
 
-    gtk_tree_path_free(path);
+    if(path)
+      gtk_tree_path_free(path);
 }
 
 #endif

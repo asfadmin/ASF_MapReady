@@ -2486,107 +2486,92 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	else { // no rgb bands selected
 	  int true_color = cfg->export->truecolor;
 	  int false_color = cfg->export->falsecolor;
-	  if (meta->optical && (true_color || false_color))
-	    {
-	      if (meta->optical && (true_color || false_color)) {
-		// Multi-band optical data, exporting as true or
-		// false color single file
-		char **bands = extract_band_names(meta->general->bands,
-						  meta->general->band_count);
-		if (meta->general->band_count >= 4 && bands != NULL) {
-		  // The imported file IS a multiband file with enough bands,
-		  // but the extract bands need to be ordered correctly
-		  if (true_color) {
-		    strcpy(bands[0], "03");
-		    strcpy(bands[1], "02");
-		    strcpy(bands[2], "01");
-		    strcpy(bands[3], "");
-		  }
-		  else {
-		    strcpy(bands[0], "04");
-		    strcpy(bands[1], "03");
-		    strcpy(bands[2], "02");
-		    strcpy(bands[3], "");
-		  }
-		  check_return(
-			       asf_export_bands(format, NONE, TRUE,
-						true_color, false_color, NULL,
-						tmpFile, outFile, bands, NULL, NULL),
-			       "exporting thumbnail (asf_export), color banded.\n");
-		    // No zipping for the moment
-		  kml_overlay(tmpFile, overlayFile, FALSE);
-		  for (i=0; i<meta->general->band_count; ++i)
-		    FREE (bands[i]);
-		  FREE(bands);
-		}
-	      }
-	    }
-	  else { // not a true or false color optical image
-	    
-	    char **bands = extract_band_names(meta->general->bands, 
-					      meta->general->band_count);
-	    if (is_polsarpro &&
-		(meta->general->image_data_type >  POLARIMETRIC_IMAGE &&
-		 meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX))
-	      meta->general->band_count = 1;
-	    check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
-					  tmpFile, outFile, bands, NULL, 
-					  NULL),
-			 "exporting thumbnail data file (asf_export)\n");
-	    // No zipping for the moment
-	    kml_overlay(tmpFile, overlayFile, FALSE);
-	    // strip off the band name at the end!
-	    char *banded_name =
-	      MALLOC(sizeof(char)*(strlen(outFile)+32));
-	    if (cfg->general->intermediates) {
-	      if (is_polsarpro &&
-		  meta->general->image_data_type == POLARIMETRIC_IMAGE)
-		sprintf(banded_name, "%s/%s_thumb_%s.png",
-			cfg->general->tmp_dir, basename, bands[1]);
-        else if (!strcmp(meta->general->sensor, "UAVSAR")) {
-          char *band_name = translate_uavsar_band_names(bands[0]);
-          char *p, *mode = STRDUP(meta->general->mode);
-          for ( p = mode; *p; ++p) *p = tolower(*p);
-          sprintf(banded_name, "%s/%s_thumb_%s%s.png",
-              cfg->general->tmp_dir, basename, mode, band_name);
-          FREE(band_name);
-          FREE(mode);
+    if (meta->optical && (true_color || false_color)) {
+      if (meta->optical && (true_color || false_color)) {
+        // Multi-band optical data, exporting as true or
+        // false color single file
+        char **bands = extract_band_names(meta->general->bands,
+                                          meta->general->band_count);
+        if (meta->general->band_count >= 4 && bands != NULL) {
+          // The imported file IS a multiband file with enough bands,
+          // but the extract bands need to be ordered correctly
+          if (true_color) {
+            strcpy(bands[0], "03");
+            strcpy(bands[1], "02");
+            strcpy(bands[2], "01");
+            strcpy(bands[3], "");
+          }
+          else {
+            strcpy(bands[0], "04");
+            strcpy(bands[1], "03");
+            strcpy(bands[2], "02");
+            strcpy(bands[3], "");
+          }
+          check_return(asf_export_bands(format, NONE, TRUE,
+                                        true_color, false_color, NULL,
+                                        tmpFile, outFile, bands, NULL, NULL),
+                       "exporting thumbnail (asf_export), color banded.\n");
+          // No zipping for the moment
+          kml_overlay(tmpFile, overlayFile, FALSE);
+          for (i = 0; i < meta->general->band_count; ++i)
+            FREE(bands[i]);
+          FREE(bands);
         }
-	      else
-		sprintf(banded_name, "%s/%s_thumb_%s.png",
-			cfg->general->tmp_dir, basename, bands[0]);
-	      sprintf(outFile, "%s/%s_thumb.png",
-		      cfg->general->tmp_dir, basename);
-	    }
-	    else {
-	      if (is_polsarpro &&
-		  meta->general->image_data_type == POLARIMETRIC_IMAGE)
-		sprintf(banded_name, "%s_thumb_%s.png",
-			cfg->general->out_name, bands[1]);
-        else if (!strcmp(meta->general->sensor, "UAVSAR")) {
-          char *band_name = translate_uavsar_band_names(bands[0]);
-          char *p, *mode = STRDUP(meta->general->mode);
-          for ( p = mode; *p; ++p) *p = tolower(*p);
-          sprintf(banded_name, "%s_thumb_%s%s.png",
-              cfg->general->out_name, mode, band_name);
-          FREE(band_name);
-          FREE(mode);
-        }
-	      else
-		sprintf(banded_name, "%s_thumb_%s.png",
-			cfg->general->out_name, bands[0]);
-	      char *tmp = appendToBasename(cfg->general->out_name,
-					   "_thumb");
-	      strcpy(outFile, tmp);
-	      strcat(outFile, ".png");
-	      free(tmp);
-	    }
-	    fileRename(banded_name, outFile);
-	    FREE(banded_name);
-	    for (i=0; i<meta->general->band_count; i++)
-	      FREE(bands[i]);
-	    FREE(bands);
-	  }
+      }
+    }
+    else {                          // not a true or false color optical image
+
+      char **bands = extract_band_names(meta->general->bands,
+                                        meta->general->band_count);
+      if (is_polsarpro &&
+          (meta->general->image_data_type > POLARIMETRIC_IMAGE &&
+           meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX))
+        meta->general->band_count = 1;
+      int noutputs;
+      char **outputs;
+      check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
+                                    tmpFile, outFile, bands, &noutputs,
+                                    &outputs),
+                   "exporting thumbnail data file (asf_export)\n");
+      // No zipping for the moment
+      kml_overlay(tmpFile, overlayFile, FALSE);
+      // strip off the band name at the end!
+      char *banded_name = MALLOC(sizeof(char) * (strlen(outFile) + 32));
+      if (cfg->general->intermediates) {
+        if (is_polsarpro && meta->general->image_data_type == POLARIMETRIC_IMAGE)
+          sprintf(banded_name, "%s/%s_thumb_%s.png",
+                  cfg->general->tmp_dir, basename, bands[1]);
+        else if (!strcmp(meta->general->sensor, "UAVSAR"))
+          strcpy(banded_name, outputs[0]);
+        else
+          sprintf(banded_name, "%s/%s_thumb_%s.png",
+                  cfg->general->tmp_dir, basename, bands[0]);
+        sprintf(outFile, "%s/%s_thumb.png", cfg->general->tmp_dir, basename);
+      }
+      else {
+        if (is_polsarpro && meta->general->image_data_type == POLARIMETRIC_IMAGE)
+          sprintf(banded_name, "%s_thumb_%s.png", cfg->general->out_name,
+                  bands[1]);
+        else if (!strcmp(meta->general->sensor, "UAVSAR"))
+          strcpy(banded_name, outputs[0]);
+        else
+          sprintf(banded_name, "%s_thumb_%s.png", cfg->general->out_name,
+                  bands[0]);
+        char *tmp = appendToBasename(cfg->general->out_name,
+                                     "_thumb");
+        strcpy(outFile, tmp);
+        strcat(outFile, ".png");
+        free(tmp);
+      }
+      fileRename(banded_name, outFile);
+      FREE(banded_name);
+      for (i = 0; i < meta->general->band_count; i++)
+        FREE(bands[i]);
+      FREE(bands);
+      for (i = 0; i < noutputs; i++)
+        FREE(outputs[i]);
+      FREE(outputs);
+    }
 	}
 	
 	// in case we had changed the metadata, let's restore things

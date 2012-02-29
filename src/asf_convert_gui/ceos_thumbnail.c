@@ -1295,7 +1295,7 @@ make_uavsar_thumb(meta_parameters *meta, const char *input_data,
     
   // use a larger dimension at first, for our crude scaling.  We will
   // use a better scaling method later, from GdbPixbuf
-  int larger_dim = 1024;
+  int larger_dim = 768;
 
   // Vertical and horizontal scale factors required to meet the
   // max_thumbnail_dimension part of the interface contract.

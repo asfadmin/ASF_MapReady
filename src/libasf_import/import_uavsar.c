@@ -1007,7 +1007,7 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
   FILE *fpIn, *fpOut;
   int ii, kk, ll, nn, pp, nBands, ns, *dataType, product_count;
   int multi = FALSE;
-  float *floatAmp, *floatPhase, *floatAmpBuf, *amp, re, im;
+  float *floatAmp, *floatPhase, *floatAmpBuf, re, im;
   float *floatComplexReal, *floatComplexImag;
   float *floatComplexBuf;
   char **dataName, **element, **product, tmp[50];
@@ -1517,14 +1517,13 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       metaIn = uavsar_polsar2meta(polsar_params);
       metaOut = uavsar_polsar2meta(polsar_params);
       ns = metaIn->general->sample_count;
-      amp = (float *) MALLOC(sizeof(float)*ns);
       floatAmp = (float *) MALLOC(sizeof(float)*ns);
       floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
       floatComplexReal = (float *) MALLOC(sizeof(float)*ns);
       floatComplexImag = (float *) MALLOC(sizeof(float)*ns);
       floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
       outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
-      metaOut->general->band_count = ll = 1;
+      metaOut->general->band_count = ll = 0;
       if (multi)
 	outName = appendToBasename(outBaseName, "_mlc.img");
       else
@@ -1541,7 +1540,7 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	  metaOut->general->band_count += 2;
 	fpIn = FOPEN(dataName[nn], "rb");
 	if (nn == 0)
-	  sprintf(metaOut->general->bands, "AMP,%s", element[0]);
+	  sprintf(metaOut->general->bands, "%s", element[0]);
 	else {
 	  if (dataType[nn])
 	    sprintf(tmp, ",%s_real,%s_imag", element[nn], element[nn]);
@@ -1587,7 +1586,6 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       }
       FCLOSE(fpOut);
       meta_write(metaOut, outName);
-      FREE(amp);
       FREE(floatAmp);
       FREE(floatAmpBuf);
       FREE(floatComplexReal);
@@ -2187,45 +2185,3 @@ uavsar_type_t uavsar_type_name_to_enum(const char *type_name)
   }
 }
 
-const char *translate_uavsar_band_names(char *band)
-{
-  if(!strcmp(band, "C11"))
-    return STRDUP("HHHH");
-  else if(!strcmp(band, "C22"))
-    return STRDUP("HVHV");
-  else if(!strcmp(band, "C33"))
-    return STRDUP("VVVV");
-  else if(!strcmp(band, "C12_real"))
-    return STRDUP("HHHV_real");
-  else if(!strcmp(band, "C12_imag"))
-    return STRDUP("HHHV_imag");
-  else if(!strcmp(band, "C13_real"))
-    return STRDUP("HHVV_real");
-  else if(!strcmp(band, "C13_imag"))
-    return STRDUP("HHVV_imag");
-  else if(!strcmp(band, "C23_real"))
-    return STRDUP("HVVV_real");
-  else if(!strcmp(band, "C23_imag"))
-    return STRDUP("HVVV_imag");
-  else if(!strcmp(band, "HHHH"))
-    return STRDUP("C11");
-  else if(!strcmp(band, "HVHV"))
-    return STRDUP("C22");
-  else if(!strcmp(band, "VVVV"))
-    return STRDUP("C33");
-  else if(!strcmp(band, "HHHV_real"))
-    return STRDUP("C12_real");
-  else if(!strcmp(band, "HHHV_imag"))
-    return STRDUP("C12_imag");
-  else if(!strcmp(band, "HHVV_real"))
-    return STRDUP("C13_real");
-  else if(!strcmp(band, "HHVV_imag"))
-    return STRDUP("C13_imag");
-  else if(!strcmp(band, "HVVV_real"))
-    return STRDUP("C23_real");
-  else if(!strcmp(band, "HVVV_imag"))
-    return STRDUP("C23_imag");
-  else {
-    asfPrintError("translate_uavsar_band_names() Failed: No such uavsar band name: %s", band);
-  }
-}
