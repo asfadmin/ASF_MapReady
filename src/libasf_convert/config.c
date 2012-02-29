@@ -1999,12 +1999,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
       if (!shortFlag)
         fprintf(fConfig, "\n# This parameter sets the offset in range direction in case the simulated\n"
         "# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
-                "# image.  The offset is specified in pixels.\n\n");
+                "# image.  The offset is specified in meters.\n\n");
       fprintf(fConfig, "range offset = %f\n", cfg->terrain_correct->range_offset);
       if (!shortFlag)
         fprintf(fConfig, "\n# This parameter sets the offset in azimuth direction in case the simulated\n"
         "# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
-                "# image.  The offset is specified in pixels.\n\n");
+                "# image.  The offset is specified in meters.\n\n");
       fprintf(fConfig, "azimuth offset = %f\n", cfg->terrain_correct->azimuth_offset);
       if (!shortFlag)
         fprintf(fConfig, "\n# The DEM that is provided to asf_terrcorr is generally in ground range,\n"
