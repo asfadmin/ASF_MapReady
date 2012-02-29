@@ -8,6 +8,22 @@
 #include <windows.h>
 #endif
 
+static int asfSystem_imp(int wait, const char *cmd);
+
+#ifdef win32
+int
+asfSystem_NoWait(const char *format, ...)
+{
+  va_list ap;
+  char cmd[4096];
+
+  va_start(ap, format);
+  vsnprintf(cmd, 4095, format, ap);
+
+  asfSystem_imp(FALSE, cmd);
+}
+#endif
+
 int
 asfSystem(const char *format, ...)
 {
@@ -17,6 +33,12 @@ asfSystem(const char *format, ...)
   va_start(ap, format);
   vsnprintf(cmd, 4095, format, ap);
 
+  asfSystem_imp(TRUE, cmd);
+}
+
+static int
+asfSystem_imp(int wait, const char *cmd)
+{
   //printf("Running system command: %s\n", cmd);
 
 #ifdef win32
@@ -62,10 +84,13 @@ asfSystem(const char *format, ...)
       return -1;
   }
 
-  //WaitForSingleObject(pi.hProcess, INFINITE);
+  if (wait) {
 
-  //CloseHandle(processInfo.hProcess);
-  //CloseHandle(processInfo.hThread);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+  }
 
   return 0;
 

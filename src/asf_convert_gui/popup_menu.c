@@ -1131,7 +1131,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     if (fileExists(kml_filename))
     {
 #ifdef win32
-        asfSystem("\"%s\" \"%s\"", ge, kml_filename);
+        asfSystem_NoWait("\"%s\" \"%s\"", ge, kml_filename);
 #else
         int pid = fork();
         if (pid == 0) {

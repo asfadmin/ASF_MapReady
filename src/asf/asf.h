@@ -314,6 +314,13 @@ int share_file_exists(const char *filename);
 int asfSystem(const char *format, ...);
 
 /***************************************************************************
+ * This version of asfSystem() does not block, Windows only -- Linux
+ * will use fork() instead                                                */
+#ifdef win32
+int asfSystem_NoWait(const char *format, ...);
+#endif
+
+/***************************************************************************
  * Get the location of the temporary directory (this is where log files,
  * etc should be put).  The application is in charge of setting this!     */
 void set_asf_tmp_dir(const char *tmp_dir);
