@@ -20,27 +20,27 @@ void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp)
   fprintf(fp, "<strong>Source image</strong>: %s<br>\n", cell.sourceImage);
   fprintf(fp, "<strong>Target image</strong>: %s<br>\n", cell.targetImage);
   fprintf(fp, "<strong>Stream</strong>: %s<br>\n", cell.stream);
-  fprintf(fp, "<strong>Area</strong>: %.1lf<br>\n", cell.area);
-  fprintf(fp, "<strong>Multi-year ice</strong>: %.3lf<br>\n",
+  fprintf(fp, "<strong>Area</strong>: %.1f<br>\n", cell.area);
+  fprintf(fp, "<strong>Multi-year ice</strong>: %.3f<br>\n",
       cell.multi_year_ice);
-  fprintf(fp, "<strong>Open water</strong>: %.3lf<br>\n", cell.open_water);
-  fprintf(fp, "<strong>Incidence angle</strong>: %.4lf<br>\n",
+  fprintf(fp, "<strong>Open water</strong>: %.3f<br>\n", cell.open_water);
+  fprintf(fp, "<strong>Incidence angle</strong>: %.4f<br>\n",
       cell.incidence_angle);
-  fprintf(fp, "<strong>Cell x</strong>: %.3lf<br>\n", cell.cell_x);
-  fprintf(fp, "<strong>Cell y</strong>: %.3lf<br>\n", cell.cell_y);
-  fprintf(fp, "<strong>dudx</strong>: %.4lf<br>\n", cell.dudx);
-  fprintf(fp, "<strong>dudy</strong>: %.4lf<br>\n", cell.dudy);
-  fprintf(fp, "<strong>dvdx</strong>: %.4lf<br>\n", cell.dvdx);
-  fprintf(fp, "<strong>dvdy</strong>: %.4lf<br>\n", cell.dvdy);
-  fprintf(fp, "<strong>dtp</strong>: %.4lf<br>\n", cell.dtp);
-  fprintf(fp, "<strong>temperature</strong>: %.1lf<br>\n", cell.temperature);
-  fprintf(fp, "<strong>u wind</strong>: %.3lf<br>\n", cell.u_wind);
-  fprintf(fp, "<strong>v wind</strong>: %.3lf<br>\n", cell.v_wind);
+  fprintf(fp, "<strong>Cell x</strong>: %.3f<br>\n", cell.cell_x);
+  fprintf(fp, "<strong>Cell y</strong>: %.3f<br>\n", cell.cell_y);
+  fprintf(fp, "<strong>dudx</strong>: %.4f<br>\n", cell.dudx);
+  fprintf(fp, "<strong>dudy</strong>: %.4f<br>\n", cell.dudy);
+  fprintf(fp, "<strong>dvdx</strong>: %.4f<br>\n", cell.dvdx);
+  fprintf(fp, "<strong>dvdy</strong>: %.4f<br>\n", cell.dvdy);
+  fprintf(fp, "<strong>dtp</strong>: %.4f<br>\n", cell.dtp);
+  fprintf(fp, "<strong>temperature</strong>: %.1f<br>\n", cell.temperature);
+  fprintf(fp, "<strong>u wind</strong>: %.3f<br>\n", cell.u_wind);
+  fprintf(fp, "<strong>v wind</strong>: %.3f<br>\n", cell.v_wind);
   fprintf(fp, "]]></description>\n");
   fprintf(fp, "<name>%ld</name>\n", cell.cell_id);
   fprintf(fp, "<LookAt>\n");
-  fprintf(fp, "<longitude>%.4lf</longitude>\n", lon[0]);
-  fprintf(fp, "<latitude>%.4lf</latitude>\n", lat[0]);
+  fprintf(fp, "<longitude>%.4f</longitude>\n", lon[0]);
+  fprintf(fp, "<latitude>%.4f</latitude>\n", lat[0]);
   fprintf(fp, "<range>400000</range>\n");
   fprintf(fp, "<heading>-90</heading>\n");
   fprintf(fp, "</LookAt>\n");
@@ -73,9 +73,9 @@ void rgps_grid2kml(grid_attr_t grid, FILE *fp)
   fprintf(fp, "<description><![CDATA[\n");
   fprintf(fp, "<strong>Grid ID</strong>: %ld<br>\n", grid.grid_id);
   fprintf(fp, "<strong>Date</strong>: %s<br>\n", grid.date);
-  fprintf(fp, "<strong>Day of the year</strong>: %.4lf<br>\n", grid.day);
-  fprintf(fp, "<strong>Grid x</strong>: %.3lf<br>\n", grid.grid_x);
-  fprintf(fp, "<strong>Grid y</strong>: %.3lf<br>\n", grid.grid_y);
+  fprintf(fp, "<strong>Day of the year</strong>: %.4f<br>\n", grid.day);
+  fprintf(fp, "<strong>Grid x</strong>: %.3f<br>\n", grid.grid_x);
+  fprintf(fp, "<strong>Grid y</strong>: %.3f<br>\n", grid.grid_y);
   fprintf(fp, "<strong>Source image</strong>: %s<br>\n", grid.sourceImage);
   fprintf(fp, "<strong>Target image</strong>: %s<br>\n", grid.targetImage);
   fprintf(fp, "<strong>Stream</strong>: %s<br>\n", grid.stream);

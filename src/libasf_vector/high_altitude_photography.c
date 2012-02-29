@@ -118,10 +118,10 @@ static void add_to_kml(FILE *fp, hap_t *hap, dbf_header_t *dbf, int nCols)
 	    "height=\"256\"><br><br>\n", hap->thumbnail);
   if (hap->download) {
     fprintf(fp, "<strong>Download data:</strong><br>\n");
-    fprintf(fp, "<strong><a href=\"%s\">TIFF format (%.1lf MB)</a></strong>"
+    fprintf(fp, "<strong><a href=\"%s\">TIFF format (%.1f MB)</a></strong>"
 	    "<br>", hap->download, hap->size);
     if (hap->download2)
-      fprintf(fp, "<strong><a href=\"%s\">JPEG format (%.1lf MB)</a></strong>"
+      fprintf(fp, "<strong><a href=\"%s\">JPEG format (%.1f MB)</a></strong>"
 	      "<br>", hap->download2, hap->size2);
   }
   if (hap->thumbnail)

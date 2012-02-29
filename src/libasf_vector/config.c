@@ -375,19 +375,19 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
   // north
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the northern boundary of the overlay.\n\n");
-  fprintf(fConfig, "north = %.4lf\n", cfg->north);  
+  fprintf(fConfig, "north = %.4f\n", cfg->north);  
   // south
   if (!shortFlag)  
     fprintf(fConfig, "\n# This parameter defines the southern boundary of the overlay.\n\n");
-  fprintf(fConfig, "south = %.4lf\n", cfg->south);  
+  fprintf(fConfig, "south = %.4f\n", cfg->south);  
   // east
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the eastern boundary of the overlay.\n\n");
-  fprintf(fConfig, "east = %.4lf\n", cfg->east);  
+  fprintf(fConfig, "east = %.4f\n", cfg->east);  
   // west
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the western boundary of the overlay.\n\n");
-  fprintf(fConfig, "west = %.4lf\n", cfg->west);  
+  fprintf(fConfig, "west = %.4f\n", cfg->west);  
   // transparency
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the transparency of the overlay (0 to 100).\n\n");

@@ -729,8 +729,8 @@ void import_roipac(const char *basename_in, const char *outFile)
 
 /*-----------------------------------------------------------------*/
 
-#define STATE_VECTOR_FORMAT "%lf %lf %lf %lf %lf %lf %lf"
-#define OUTPUT_FORMAT "%lf %lf %lf %lf %lf %lf"
+#define STATE_VECTOR_FORMAT "%f %f %f %f %f %f %f"
+#define OUTPUT_FORMAT "%f %f %f %f %f %f"
 
 
 /*-----------------------------------------------------------------*/

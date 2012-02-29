@@ -187,7 +187,7 @@ void find_closest_prc_rec(char *prc_file, ymd_date *seekDate, hms_time *seekTime
 
   if (diff1 < diff2) {
     *offset_time = -1.0*diff1;
-    asfPrintStatus("   Closest state vector to requested time (offset = %lf):\n",
+    asfPrintStatus("   Closest state vector to requested time (offset = %f):\n",
                    *offset_time);
     display_prc_rec_mod(rec1,header->tdtutc);
     vec->pos.x = rec1->xsat / 1000.0;
@@ -199,7 +199,7 @@ void find_closest_prc_rec(char *prc_file, ymd_date *seekDate, hms_time *seekTime
   }
   else {
     *offset_time = diff2;
-    asfPrintStatus("   Closest state vector to requested time (offset = %lf):\n",
+    asfPrintStatus("   Closest state vector to requested time (offset = %f):\n",
                    *offset_time);
     display_prc_rec_mod(rec2,header->tdtutc);
     vec->pos.x = rec2->xsat / 1000.0;
@@ -326,17 +326,17 @@ void display_prc_rec_mod(PRC_REC *tmp, float tdtutc_offset)
 
 
   dtmp = tmp->xsat / 1000.0;
-  asfPrintStatus("   X-Coordinate          : %lf\n",dtmp);
+  asfPrintStatus("   X-Coordinate          : %f\n",dtmp);
   dtmp = tmp->ysat / 1000.0;
-  asfPrintStatus("   Y-Coordinate          : %lf\n",dtmp);
+  asfPrintStatus("   Y-Coordinate          : %f\n",dtmp);
   dtmp = tmp->zsat / 1000.0;
-  asfPrintStatus("   Z-Coordinate          : %lf\n",dtmp);
+  asfPrintStatus("   Z-Coordinate          : %f\n",dtmp);
   dtmp = tmp->xdsat / 1000000.0;
-  asfPrintStatus("   X-Velocity            : %lf\n",dtmp);
+  asfPrintStatus("   X-Velocity            : %f\n",dtmp);
   dtmp = tmp->ydsat / 1000000.0;
-  asfPrintStatus("   Y-Velocity            : %lf\n",dtmp);
+  asfPrintStatus("   Y-Velocity            : %f\n",dtmp);
   dtmp = tmp->zdsat / 1000000.0;
-  asfPrintStatus("   Z-Velocity            : %lf\n",dtmp);
+  asfPrintStatus("   Z-Velocity            : %f\n",dtmp);
 }
 
 void prc_date_time(PRC_REC *tmp,float tdtutc_offset, ymd_date *date, hms_time *time)

@@ -988,7 +988,7 @@ int write_config(char *configFile, dem_config *cfg)
   if (!shortFlag)
     fprintf(fConfig, "\n# Maximum pixel offset allowed during matching with reference\n"
 	    "# DEM.\n\n");
-  fprintf(fConfig, "max = %.1lf\n", cfg->offset_match->max);
+  fprintf(fConfig, "max = %.1f\n", cfg->offset_match->max);
   if (!shortFlag)
     fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
             "# The status 'new' indicates that this processing step has not been\n"
@@ -1134,7 +1134,7 @@ int write_config(char *configFile, dem_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter defines the pixel spacing for the geocoded\n"
 	      "# products.\n\n");
-    fprintf(fConfig, "pixel spacing = %.1lf\n", cfg->geocode->pixel_spacing);
+    fprintf(fConfig, "pixel spacing = %.1f\n", cfg->geocode->pixel_spacing);
     if (!shortFlag)
       fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
               "# The status 'new' indicates that this processing step has not been\n"

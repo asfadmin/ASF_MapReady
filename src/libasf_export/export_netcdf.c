@@ -149,7 +149,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 
   // Define projection
   char *str = (char *) MALLOC(sizeof(char)*1024);
-  double lfValue;
+  double fValue;
   if (projected) {
     nc_def_var(ncid, "projection", NC_CHAR, 0, 0, &var_id);
     if (mp->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
@@ -176,19 +176,19 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
       nc_put_att_text(ncid, var_id, "units", strlen(str), str); 
       nc_put_att_double(ncid, var_id, "grid_boundary_top_projected_y",
 			NC_DOUBLE, 1, &mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       nc_put_att_double(ncid, var_id, "grid_boundary_bottom_projected_y",
-			NC_DOUBLE, 1, &lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+			NC_DOUBLE, 1, &fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       nc_put_att_double(ncid, var_id, "grid_boundary_right_projected_x",
-			NC_DOUBLE, 1, &lfValue);
+			NC_DOUBLE, 1, &fValue);
       nc_put_att_double(ncid, var_id, "grid_boundary_left_projected_x",
 			NC_DOUBLE, 1, &mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"%s_UTM_Zone_%d%c\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.1lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",%.1lf],PARAMETER[\"False_Northing\",%.1lf],PARAMETER[\"Central_Meridian\",%.1lf],PARAMETER[\"Scale_Factor\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.1lf],UNIT[\"Meter\",1]]",
+      sprintf(spatial_ref, "PROJCS[\"%s_UTM_Zone_%d%c\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.1f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],PARAMETER[\"Central_Meridian\",%.1f],PARAMETER[\"Scale_Factor\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1]]",
 	      spheroid, mp->param.utm.zone, mp->hem, spheroid, datum, 
 	      spheroid, mp->re_major, flat, mp->param.utm.false_easting, 
 	      mp->param.utm.false_northing, mp->param.utm.lon0, 
@@ -204,7 +204,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 			&mp->re_major);
       nc_put_att_double(ncid, var_id, "semiminor_radius", NC_DOUBLE, 1, 
 			&mp->re_minor);
-      sprintf(str, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       nc_put_att_text(ncid, var_id, "GeoTransform", strlen(str), str);
     }
@@ -212,11 +212,11 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 
       strcpy(str, "polar_stereographic");
       nc_put_att_text(ncid, var_id, "grid_mapping_name", strlen(str), str);
-      lfValue = 90.0;
+      fValue = 90.0;
       nc_put_att_double(ncid, var_id, "straight_vertical_longitude_from_pole", 
 			NC_DOUBLE, 1, &mp->param.ps.slon);
       nc_put_att_double(ncid, var_id, "longitude_of_central_meridian",
-			NC_DOUBLE, 1, &lfValue);
+			NC_DOUBLE, 1, &fValue);
       nc_put_att_double(ncid, var_id, "standard_parallel",
 			NC_DOUBLE, 1, &mp->param.ps.slat);
       nc_put_att_double(ncid, var_id, "false_easting", NC_DOUBLE, 1, 
@@ -233,32 +233,32 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
       nc_put_att_text(ncid, var_id, "units", strlen(str), str); 
       nc_put_att_double(ncid, var_id, "grid_boundary_top_projected_y",
 			NC_DOUBLE, 1, &mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       nc_put_att_double(ncid, var_id, "grid_boundary_bottom_projected_y",
-			NC_DOUBLE, 1, &lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+			NC_DOUBLE, 1, &fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       nc_put_att_double(ncid, var_id, "grid_boundary_right_projected_x",
-			NC_DOUBLE, 1, &lfValue);
+			NC_DOUBLE, 1, &fValue);
       nc_put_att_double(ncid, var_id, "grid_boundary_left_projected_x",
 			NC_DOUBLE, 1, &mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"Stereographic_North_Pole\",GEOGCS[\"unnamed ellipse\",DATUM[\"D_unknown\",SPHEROID[\"Unknown\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0002247191011236]],PROJECTION[\"Stereographic_North_Pole\"],PARAMETER[\"standard_parallel_1\",%.4lf],PARAMETER[\"central_meridian\",%.4lf],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",%.3lf],PARAMETER[\"false_northing\",%.3lf],UNIT[\"Meter\",1,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"3411\"]]",
+      sprintf(spatial_ref, "PROJCS[\"Stereographic_North_Pole\",GEOGCS[\"unnamed ellipse\",DATUM[\"D_unknown\",SPHEROID[\"Unknown\",%.3f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0002247191011236]],PROJECTION[\"Stereographic_North_Pole\"],PARAMETER[\"standard_parallel_1\",%.4f],PARAMETER[\"central_meridian\",%.4f],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",%.3f],PARAMETER[\"false_northing\",%.3f],UNIT[\"Meter\",1,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"3411\"]]",
 	      mp->re_major, flat, mp->param.ps.slat, mp->param.ps.slon,
 	      mp->param.ps.false_easting, mp->param.ps.false_northing);
       nc_put_att_text(ncid, var_id, "spatial_ref", strlen(spatial_ref), 
 		      spatial_ref);
       if (mp->param.ps.is_north_pole)
-	sprintf(str, "+proj=stere +lat_0=90.0000 +lat_ts=%.4lf "
-		"+lon_0=%.4lf +k=1 +x_0=%.3lf +y_0=%.3lf +a=%.3lf +b=%.3lf "
+	sprintf(str, "+proj=stere +lat_0=90.0000 +lat_ts=%.4f "
+		"+lon_0=%.4f +k=1 +x_0=%.3f +y_0=%.3f +a=%.3f +b=%.3f "
 		"+units=m +no_defs", mp->param.ps.slat, mp->param.ps.slon,
 		mp->param.ps.false_easting, mp->param.ps.false_northing,
 		mp->re_major, mp->re_minor);
       else
-	sprintf(str, "+proj=stere +lat_0=-90.0000 +lat_ts=%.4lf "
-		"+lon_0=%.4lf +k=1 +x_0=%.3lf +y_0=%.3lf +a=%.3lf +b=%.3lf "
+	sprintf(str, "+proj=stere +lat_0=-90.0000 +lat_ts=%.4f "
+		"+lon_0=%.4f +k=1 +x_0=%.3f +y_0=%.3f +a=%.3f +b=%.3f "
 		"+units=m +no_defs", mp->param.ps.slat, mp->param.ps.slon,
 		mp->param.ps.false_easting, mp->param.ps.false_northing,
 		mp->re_major, mp->re_minor);
@@ -271,7 +271,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 			&mp->re_major);
       nc_put_att_double(ncid, var_id, "semiminor_radius", NC_DOUBLE, 1, 
 			&mp->re_minor);
-      sprintf(str, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       nc_put_att_text(ncid, var_id, "GeoTransform", strlen(str), str);
     }
@@ -279,7 +279,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 
       strcpy(str, "albers_conical_equal_area");
       nc_put_att_text(ncid, var_id, "grid_mapping_name", strlen(str), str);
-      lfValue = 90.0;
+      fValue = 90.0;
       nc_put_att_double(ncid, var_id, "standard_parallel_1", 
 			NC_DOUBLE, 1, &mp->param.albers.std_parallel1);
       nc_put_att_double(ncid, var_id, "standard_parallel_2",
@@ -302,27 +302,27 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
       nc_put_att_text(ncid, var_id, "units", strlen(str), str); 
       nc_put_att_double(ncid, var_id, "grid_boundary_top_projected_y",
 			NC_DOUBLE, 1, &mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       nc_put_att_double(ncid, var_id, "grid_boundary_bottom_projected_y",
-			NC_DOUBLE, 1, &lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+			NC_DOUBLE, 1, &fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       nc_put_att_double(ncid, var_id, "grid_boundary_right_projected_x",
-			NC_DOUBLE, 1, &lfValue);
+			NC_DOUBLE, 1, &fValue);
       nc_put_att_double(ncid, var_id, "grid_boundary_left_projected_x",
 			NC_DOUBLE, 1, &mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"Albers_Equal_Area_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Standard_Parallel_1\",%.4lf],PARAMETER[\"Standard_Parallel_2\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+      sprintf(spatial_ref, "PROJCS[\"Albers_Equal_Area_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",%.3f],PARAMETER[\"False_Northing\",%.3f],PARAMETER[\"Central_Meridian\",%.4f],PARAMETER[\"Standard_Parallel_1\",%.4f],PARAMETER[\"Standard_Parallel_2\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.4f],UNIT[\"Meter\",1]]",
 	      datum, datum, spheroid, mp->re_major, flat, 
 	      mp->param.albers.false_easting, mp->param.albers.false_northing,
 	      mp->param.albers.center_meridian, mp->param.albers.std_parallel1,
 	      mp->param.albers.std_parallel2, mp->param.albers.orig_latitude);
       nc_put_att_text(ncid, var_id, "spatial_ref", strlen(spatial_ref), 
 		      spatial_ref);
-      sprintf(str, "+proj=aea +lat_1=%.4lf +lat_2=%.4lf +lat_0=%.4lf "
-	      "+lon_0=%.4lf +x_0=%.3lf +y_0=%.3lf", 
+      sprintf(str, "+proj=aea +lat_1=%.4f +lat_2=%.4f +lat_0=%.4f "
+	      "+lon_0=%.4f +x_0=%.3f +y_0=%.3f", 
 	      mp->param.albers.std_parallel1, mp->param.albers.std_parallel2, 
 	      mp->param.albers.orig_latitude, mp->param.albers.center_meridian,
 	      mp->param.albers.false_easting, mp->param.albers.false_northing);
@@ -335,7 +335,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 			&mp->re_major);
       nc_put_att_double(ncid, var_id, "semiminor_radius", NC_DOUBLE, 1, 
 			&mp->re_minor);
-      sprintf(str, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       nc_put_att_text(ncid, var_id, "GeoTransform", strlen(str), str);
     }
@@ -343,7 +343,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 
       strcpy(str, "lambert_conformal_conic");
       nc_put_att_text(ncid, var_id, "grid_mapping_name", strlen(str), str);
-      lfValue = 90.0;
+      fValue = 90.0;
       nc_put_att_double(ncid, var_id, "standard_parallel_1", 
 			NC_DOUBLE, 1, &mp->param.lamcc.plat1);
       nc_put_att_double(ncid, var_id, "standard_parallel_2",
@@ -366,27 +366,27 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
       nc_put_att_text(ncid, var_id, "units", strlen(str), str); 
       nc_put_att_double(ncid, var_id, "grid_boundary_top_projected_y",
 			NC_DOUBLE, 1, &mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       nc_put_att_double(ncid, var_id, "grid_boundary_bottom_projected_y",
-			NC_DOUBLE, 1, &lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+			NC_DOUBLE, 1, &fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       nc_put_att_double(ncid, var_id, "grid_boundary_right_projected_x",
-			NC_DOUBLE, 1, &lfValue);
+			NC_DOUBLE, 1, &fValue);
       nc_put_att_double(ncid, var_id, "grid_boundary_left_projected_x",
 			NC_DOUBLE, 1, &mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"Lambert_Conformal_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Standard_Parallel_1\",%.4lf],PARAMETER[\"Standard_Parallel_2\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+      sprintf(spatial_ref, "PROJCS[\"Lambert_Conformal_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3f],PARAMETER[\"False_Northing\",%.3f],PARAMETER[\"Central_Meridian\",%.4f],PARAMETER[\"Standard_Parallel_1\",%.4f],PARAMETER[\"Standard_Parallel_2\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.4f],UNIT[\"Meter\",1]]",
 	      datum, datum, spheroid, mp->re_major, flat, 
 	      mp->param.lamcc.false_easting, mp->param.lamcc.false_northing,
 	      mp->param.lamcc.lon0, mp->param.lamcc.plat1,
 	      mp->param.lamcc.plat2, mp->param.lamcc.lat0);
       nc_put_att_text(ncid, var_id, "spatial_ref", strlen(spatial_ref), 
 		      spatial_ref);
-      sprintf(str, "+proj=lcc +lat_1=%.4lf +lat_2=%.4lf +lat_0=%.4lf "
-	      "+lon_0=%.4lf +x_0=%.3lf +y_0=%.3lf", 
+      sprintf(str, "+proj=lcc +lat_1=%.4f +lat_2=%.4f +lat_0=%.4f "
+	      "+lon_0=%.4f +x_0=%.3f +y_0=%.3f", 
 	      mp->param.lamcc.plat1, mp->param.lamcc.plat2,
 	      mp->param.lamcc.lat0, mp->param.lamcc.lon0,
 	      mp->param.lamcc.false_easting, mp->param.lamcc.false_northing);
@@ -395,7 +395,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 			&mp->re_major);
       nc_put_att_double(ncid, var_id, "semiminor_radius", NC_DOUBLE, 1, 
 			&mp->re_minor);
-      sprintf(str, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       nc_put_att_text(ncid, var_id, "GeoTransform", strlen(str), str);
     }
@@ -421,26 +421,26 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
       nc_put_att_text(ncid, var_id, "units", strlen(str), str); 
       nc_put_att_double(ncid, var_id, "grid_boundary_top_projected_y",
 			NC_DOUBLE, 1, &mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       nc_put_att_double(ncid, var_id, "grid_boundary_bottom_projected_y",
-			NC_DOUBLE, 1, &lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+			NC_DOUBLE, 1, &fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       nc_put_att_double(ncid, var_id, "grid_boundary_right_projected_x",
-			NC_DOUBLE, 1, &lfValue);
+			NC_DOUBLE, 1, &fValue);
       nc_put_att_double(ncid, var_id, "grid_boundary_left_projected_x",
 			NC_DOUBLE, 1, &mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"Lambert_Azimuthal_Equal_Area\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+      sprintf(spatial_ref, "PROJCS[\"Lambert_Azimuthal_Equal_Area\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3f],PARAMETER[\"False_Northing\",%.3f],PARAMETER[\"Central_Meridian\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.4f],UNIT[\"Meter\",1]]",
 	      datum, datum, spheroid, mp->re_major, flat, 
 	      mp->param.lamaz.false_easting, mp->param.lamaz.false_northing,
 	      mp->param.lamaz.center_lon, mp->param.lamaz.center_lat);
       nc_put_att_text(ncid, var_id, "spatial_ref", strlen(spatial_ref), 
 		      spatial_ref);
-      sprintf(str, "+proj=laea +lat_0=%.4lf +lon_0=%.4lf +x_0=%.3lf "
-	      "+y_0=%.3lf", 
+      sprintf(str, "+proj=laea +lat_0=%.4f +lon_0=%.4f +x_0=%.3f "
+	      "+y_0=%.3f", 
 	      mp->param.lamaz.center_lat, mp->param.lamaz.center_lon,
 	      mp->param.lamaz.false_easting, mp->param.lamaz.false_northing);
       nc_put_att_text(ncid, var_id, "proj4text", strlen(str), str);
@@ -448,7 +448,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 			&mp->re_major);
       nc_put_att_double(ncid, var_id, "semiminor_radius", NC_DOUBLE, 1, 
 			&mp->re_minor);
-      sprintf(str, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       nc_put_att_text(ncid, var_id, "GeoTransform", strlen(str), str);
     }
@@ -473,8 +473,8 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
     nc_def_var(ncid, str, datatype, 3, dims_bands, &var_id);
     netcdf->var_id[ii] = var_id;
     nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
-    lfValue = -999.0;
-    nc_put_att_double(ncid, var_id, "FillValue", NC_DOUBLE, 1, &lfValue);
+    fValue = -999.0;
+    nc_put_att_double(ncid, var_id, "FillValue", NC_DOUBLE, 1, &fValue);
     sprintf(str, "%s", mg->sensor);
     if (mg->image_data_type < 9)
       strcat(str, " radar backscatter");
@@ -543,8 +543,8 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
   valid_range[1] = 180.0;
   nc_put_att_double(ncid, var_id, "valid_range", NC_DOUBLE, 2, valid_range);
   FREE(valid_range);
-  lfValue = -999.0;
-  nc_put_att_double(ncid, var_id, "FillValue", NC_DOUBLE, 1, &lfValue);
+  fValue = -999.0;
+  nc_put_att_double(ncid, var_id, "FillValue", NC_DOUBLE, 1, &fValue);
 
   // Latitude
   ii++;
@@ -569,8 +569,8 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
   valid_range[1] = 90.0;
   nc_put_att_double(ncid, var_id, "valid_range", NC_DOUBLE, 2, valid_range);
   FREE(valid_range);
-  lfValue = -999.0;
-  nc_put_att_double(ncid, var_id, "FillValue", NC_DOUBLE, 1, &lfValue);
+  fValue = -999.0;
+  nc_put_att_double(ncid, var_id, "FillValue", NC_DOUBLE, 1, &fValue);
 
   if (projected) {
 

@@ -643,7 +643,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
         asfPrintError("Unsupported or unknown datum found in GeoTIFF file.\n");
       }
       char msg[256];
-      sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", DEFAULT_UTM_SCALE_FACTOR);
+      sprintf(msg,"UTM scale factor defaulting to %0.4f\n", DEFAULT_UTM_SCALE_FACTOR);
       asfPrintStatus(msg);
       mp->param.utm.scale_factor = DEFAULT_UTM_SCALE_FACTOR;
     }
@@ -815,7 +815,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             }
         }
         char msg[256];
-        sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", DEFAULT_UTM_SCALE_FACTOR);
+        sprintf(msg,"UTM scale factor defaulting to %0.4f\n", DEFAULT_UTM_SCALE_FACTOR);
         asfPrintStatus(msg);
         mp->param.utm.scale_factor = DEFAULT_UTM_SCALE_FACTOR;
       }
@@ -974,7 +974,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               scale_factor = DEFAULT_UTM_SCALE_FACTOR;
 
               char msg[256];
-              sprintf(msg,"UTM scale factor defaulting to %0.4lf ...OK for a UTM\n", scale_factor);
+              sprintf(msg,"UTM scale factor defaulting to %0.4f ...OK for a UTM\n", scale_factor);
               asfPrintStatus(msg);
             }
             mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
@@ -1077,7 +1077,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
 
               char msg[256];
               sprintf(msg,
-                      "Lambert Conformal Conic scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
+                      "Lambert Conformal Conic scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4f\n",
                       scale_factor);
               asfPrintWarning(msg);
             }
@@ -1587,8 +1587,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     mg->x_pixel_size = base_x_pixel_scale;
     mg->y_pixel_size = base_y_pixel_scale;
     asfPrintWarning("Units converted from feet to meters by adjusting the pixel size.\n"
-		    "Azimuth pixel size changed from %.3lf ft to %.3lf m.\n"
-		    "Range pixel size changed from %.3lf ft to %.3lf m.\n", 
+		    "Azimuth pixel size changed from %.3f ft to %.3f m.\n"
+		    "Range pixel size changed from %.3f ft to %.3f m.\n", 
 		    pixel_scale[0], base_x_pixel_scale, pixel_scale[1], base_y_pixel_scale);
   }
   else {
@@ -1603,7 +1603,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   // default size derived solely from the input pixel size
   if (fabs(mg->x_pixel_size - mg->y_pixel_size) > 0.0001) {
     char msg[256];
-    sprintf(msg, "Pixel size is (x,y): (%lf, %lf)\n", mg->x_pixel_size, mg->y_pixel_size);
+    sprintf(msg, "Pixel size is (x,y): (%f, %f)\n", mg->x_pixel_size, mg->y_pixel_size);
     asfPrintStatus(msg);
     asfPrintWarning("Found non-square pixels: x versus y pixel size differs\n"
         "by more than 0.0001 <units>\n");

@@ -853,8 +853,8 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           snprintf (citation, max_citation_length + 1,
                     "Polar stereographic projected GeoTIFF using Hughes "
                     "ellipsoid written by Alaska Satellite Facility "
-                    "tools, Natural Origin Latitude %lf, Straight Vertical "
-                    "Pole %lf.", md->projection->param.ps.slat,
+                    "tools, Natural Origin Latitude %f, Straight Vertical "
+                    "Pole %f.", md->projection->param.ps.slat,
                     md->projection->param.ps.slon);
           append_band_names(band_names, rgb, citation, palette_color_tiff);
           citation_length = strlen(citation);

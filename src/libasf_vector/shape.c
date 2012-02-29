@@ -463,43 +463,43 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
     switch (spheroid)
       {
       case BESSEL_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"BESSEL\",%.0lf,%.9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"BESSEL\",%.0f,%.9f]]",
 		semimajor, inv_flattening);
 	break;
       case CLARKE1866_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"CLARKE_1866\",%.0lf,%.9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"CLARKE_1866\",%.0f,%.9f]]",
 		semimajor, inv_flattening);
 	break;
       case GEM6_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"GEM6\",%.0lf,%.9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"GEM6\",%.0f,%.9f]]",
 		semimajor, inv_flattening);
 	break;
       case GEM10C_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"GEM10C\",%.0lf,%.9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"GEM10C\",%.0f,%.9f]]",
 		semimajor, inv_flattening);	\
 	break;
       case GRS1980_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"GRS_1980\",%.0lf,%.9lf]]", 
+	sprintf(spheroidStr, "SPHEROID[\"GRS_1980\",%.0f,%.9f]]", 
 		semimajor, inv_flattening);
 	break;
       case INTERNATIONAL1924_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"International_1924\",%.0lf,%.9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"International_1924\",%.0f,%.9f]]",
 		semimajor, inv_flattening);
 	break;
       case INTERNATIONAL1967_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"International_1967\",%.0lf,%.9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"International_1967\",%.0f,%.9f]]",
 		semimajor, inv_flattening);
 	break;
       case WGS72_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"WGS_1972\",%.0lf,%.9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"WGS_1972\",%.0f,%.9f]]",
 		semimajor, inv_flattening);
 	break;
       case WGS84_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"WGS_1984\",%.0lf,%.9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"WGS_1984\",%.0f,%.9f]]",
 		semimajor, inv_flattening);
 	break;
       case HUGHES_SPHEROID:
-	sprintf(spheroidStr, "SPHEROID[\"HUGHES\",%.0lf,%9lf]]",
+	sprintf(spheroidStr, "SPHEROID[\"HUGHES\",%.0f,%9f]]",
 		semimajor, inv_flattening);
 	break;
       }
@@ -513,9 +513,9 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
       case UNIVERSAL_TRANSVERSE_MERCATOR:
 	sprintf(projcsStr, "PROJCS[\"Universal_Transverse_Mercator\"");
 	sprintf(projStr, "PROJECTION[\"Transverse_Mercator\"],PARAMETER[\""
-		"False_Easting\",%.1lf],PARAMETER[\"False_Northing\",%.1lf],"
-		"PARAMETER[\"Central_Meridian\",%.1lf],PARAMETER["
-		"\"Scale_Factor\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.1lf],"
+		"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
+		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
+		"\"Scale_Factor\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.1f],"
 		"UNIT[\"Meter\",1.0]",
 		pps.utm.false_easting, pps.utm.false_northing, 
 		pps.utm.lon0, pps.utm.scale_factor, pps.utm.lat0);
@@ -527,9 +527,9 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
 	  pps.ps.false_northing = 0.0;
 	sprintf(projcsStr, "PROJCS[\"Polar_Stereographic\"");
 	sprintf(projStr, "PROJECTION[\"Stereographic\"],PARAMETER["
-		"\"False_Easting\",%.1lf],PARAMETER[\"False_Northing\",%.1lf],"
-		"PARAMETER[\"Central_Meridian\",%.1lf],PARAMETER["
-		"\"Scale_Factor\",1.0],PARAMETER[\"Latitude_Of_Origin\",%.1lf],"
+		"\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
+		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
+		"\"Scale_Factor\",1.0],PARAMETER[\"Latitude_Of_Origin\",%.1f],"
 		"UNIT[\"Meter\",1.0]",
 		pps.ps.false_easting, pps.ps.false_northing, pps.ps.slat, 
 		pps.ps.slon);
@@ -537,10 +537,10 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
       case ALBERS_EQUAL_AREA:
 	sprintf(projcsStr, "PROJCS[\"Albers_Equal_Area_Conic\"");
 	sprintf(projStr, "PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\","
-		"%.1lf],PARAMETER[\"False_Northing\",%.1lf],PARAMETER["
-		"\"Central_Meridian\",%.1lf],PARAMETER[\"Standard_Parallel_1\","
-		"%.1lf],PARAMETER[\"Standard_Parallel_2\",%.1lf],PARAMETER["
-		"\"Latitude_Of_Origin\",%.1lf],UNIT[\"Meter\",1.0]",
+		"%.1f],PARAMETER[\"False_Northing\",%.1f],PARAMETER["
+		"\"Central_Meridian\",%.1f],PARAMETER[\"Standard_Parallel_1\","
+		"%.1f],PARAMETER[\"Standard_Parallel_2\",%.1f],PARAMETER["
+		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
 		pps.albers.false_easting, pps.albers.false_northing, 
 		pps.albers.center_meridian, pps.albers.std_parallel1, 
 		pps.albers.std_parallel2, pps.albers.orig_latitude);
@@ -548,20 +548,20 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
       case LAMBERT_AZIMUTHAL_EQUAL_AREA:
 	sprintf(projcsStr, "PROJCS[\"Lambert_Azimuthal_Equal_Area\"");
 	sprintf(projStr, "PROJECTION[\"\"],PARAMETER[\"False_Easting\","
-		"%.1lf],PARAMETER[\"False_Northing\",%.1lf],PARAMETER["
-		"\"Central_Meridian\",%.1lf],PARAMETER["
-		"\"Latitude_Of_Origin\",%.1lf],UNIT[\"Meter\",1.0]",
+		"%.1f],PARAMETER[\"False_Northing\",%.1f],PARAMETER["
+		"\"Central_Meridian\",%.1f],PARAMETER["
+		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
 		pps.lamaz.false_easting, pps.lamaz.false_northing, 
 		pps.lamaz.center_lat, pps.lamaz.center_lon);
 	break;
       case LAMBERT_CONFORMAL_CONIC:
 	sprintf(projcsStr, "PROJCS[\"Lambert_Conformal_Conic\"");
 	sprintf(projStr, "PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER["
-		"\"False_Easting\",%.1lf],PARAMETER[\"False_Northing\",%.1lf],"
-		"PARAMETER[\"Central_Meridian\",%.1lf],PARAMETER["
-		"\"Standard_Parallel_1\",%.1lf],PARAMETER["
-		"\"Standard_Parallel_2\",%.1lf],PARAMETER["
-		"\"Latitude_Of_Origin\",%.1lf],UNIT[\"Meter\",1.0]",
+		"\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
+		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
+		"\"Standard_Parallel_1\",%.1f],PARAMETER["
+		"\"Standard_Parallel_2\",%.1f],PARAMETER["
+		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
 		pps.lamcc.false_easting, pps.lamcc.false_northing, 
 		pps.lamcc.lon0, pps.lamcc.plat1, pps.lamcc.plat2, 
 		pps.lamcc.lat0);
@@ -856,7 +856,7 @@ static void write_dbase_field_to_kml(DBFHandle dbase, int record,
       break;
     case FTDouble:
       fValue = DBFReadDoubleAttribute(dbase, record, field);
-      sprintf(str, "<strong>%%s</strong>: %%%d.%dlf <br>\n",
+      sprintf(str, "<strong>%%s</strong>: %%%d.%df <br>\n",
           nWidth, nDecimals);
       fprintf(fp, str, fieldName, fValue);
       break;
@@ -887,7 +887,7 @@ static void write_name_field_to_kml(DBFHandle dbase, int record, FILE *fp)
       break;
     case FTDouble:
       fValue = DBFReadDoubleAttribute(dbase, record, 0);
-      sprintf(str, "<name>%%%d.%dlf</name>\n", nWidth, nDecimals);
+      sprintf(str, "<name>%%%d.%df</name>\n", nWidth, nDecimals);
       fprintf(fp, str, fValue);
       break;
     case FTLogical:
@@ -1003,7 +1003,7 @@ int shape2kml(char *inFile, char *outFile, int listFlag)
       fprintf(fp, "</LookAt>\n");
       if (pointType == SHPT_POINT) {
 	fprintf(fp, "<Point>\n");
-	fprintf(fp, "<coordinates>%.12lf,%.12lf,4000</coordinates>",
+	fprintf(fp, "<coordinates>%.12f,%.12f,4000</coordinates>",
 		lon[0], lat[0]);
 	fprintf(fp, "</Point>\n");
       }
@@ -1022,7 +1022,7 @@ int shape2kml(char *inFile, char *outFile, int listFlag)
       }
       else if (pointType == SHPT_POINTZ) {
 	fprintf(fp, "<Point>\n");
-	fprintf(fp, "<coordinates>%.6lf,%.6lf,%.3lf</coordinates>",
+	fprintf(fp, "<coordinates>%.6f,%.6f,%.3f</coordinates>",
 		lon[0], lat[0], height[0]);
 	fprintf(fp, "</Point>\n");
       }

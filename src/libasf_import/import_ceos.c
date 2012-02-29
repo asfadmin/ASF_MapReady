@@ -386,7 +386,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
         }
 
         asfPrintStatus("Resampling with scale factors: "
-                   "%lf range, %lf azimuth.\n",
+                   "%f range, %f azimuth.\n",
                    range_scale, azimuth_scale);
 
         resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
@@ -471,7 +471,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
     }
 
     asfPrintStatus("Resampling with scale factors: "
-                   "%lf range, %lf azimuth.\n",
+                   "%f range, %f azimuth.\n",
                    range_scale, azimuth_scale);
 
     resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
@@ -613,8 +613,8 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   meta_write(meta, outMetaName);
 
   if (isPP(meta)) {
-    asfPrintStatus("PP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
-    asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n",
+    asfPrintStatus("PP Earth Radius: %.3f\n", meta->sar->earth_radius_pp);
+    asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3f\n",
        meta->sar->earth_radius);
   }
   meta_free(meta);
@@ -697,8 +697,8 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
     ((4.0 * meta->sar->range_sampling_rate) *
      meta->general->sample_count / meta->sar->original_sample_count);
   ons = (int) ((srL - sr0)/sr_inc + 0.5);
-  printf("slant range first: %.3lf, slant range last: %.3lf\n", sr0, srL);
-  printf("slant range pixel size: %.3lf, number of output samples: %d\n",
+  printf("slant range first: %.3f, slant range last: %.3f\n", sr0, srL);
+  printf("slant range pixel size: %.3f, number of output samples: %d\n",
      sr_inc, ons);
 
   lower = (int *) MALLOC(sizeof(int) * MAX_IMG_SIZE);
@@ -2183,8 +2183,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   /* for debugging
      if (isPP(meta))
      {
-     asfPrintStatus("PP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
-     asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n",
+     asfPrintStatus("PP Earth Radius: %.3f\n", meta->sar->earth_radius_pp);
+     asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3f\n",
      meta->sar->earth_radius);
      }
   */

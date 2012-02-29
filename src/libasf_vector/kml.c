@@ -1113,7 +1113,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     ymd_date date;
     hms_time time;
     parse_DMYdate(meta->general->acquisition_date, &date, &time);
-    fprintf(kml_file, "  <TimeStamp><when>%d-%02d-%02dT%02d:%02d:%.0lf"
+    fprintf(kml_file, "  <TimeStamp><when>%d-%02d-%02dT%02d:%02d:%.0f"
 	    "</when></TimeStamp>\n",
 	    date.year, date.month, date.day, time.hour, time.min, time.sec);
   }
@@ -1169,12 +1169,12 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   double h = 0.0;
   double clat = meta->general->center_latitude;
   double clon = meta->general->center_longitude;
-  asfPrintStatus("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
+  asfPrintStatus("1) Estimated center lat, lon:  %f, %f\n", clat, clon);
   if (strcmp_case(meta->general->sensor_name, "AVNIR") == 0 &&
       strcmp_case(meta->general->mode, "1A") != 0 &&
       strcmp_case(meta->general->mode, "1B1") != 0) {
     meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
-    asfPrintStatus("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
+    asfPrintStatus("2) Calculated center lat, lon: %f, %f\n", clat, clon);
   }
 
   int height = cfg && cfg->height > 0 ? cfg->height : 7000;

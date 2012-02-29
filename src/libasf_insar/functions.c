@@ -66,7 +66,7 @@ int fit_plane(char *inFile, char *outFile, double fraction)
         char options[255]="", command[255];
         int ret;
 
-	sprintf(options, "-log %s -k %.1lf", logFile, fraction);
+	sprintf(options, "-log %s -k %.1f", logFile, fraction);
         sprintf(command, "fit_plane %s %s %s", options, inFile, outFile);
 
         printf("\nCommand line: %s\n", command);
@@ -149,7 +149,7 @@ int phase_filter(char *inFile, double strength, char *outFile)
   int ret;
   
   sprintf(options, "-log %s", logFile);
-  sprintf(command, "phase_filter %s %s %.1lf %s", 
+  sprintf(command, "phase_filter %s %s %.1f %s", 
 	  options, inFile, strength, outFile);
   
   printf("\nCommand line: %s\n", command);

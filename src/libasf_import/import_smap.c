@@ -255,8 +255,8 @@ static void read_smap_bounds(char *inDataName, float latUL, float lonUL,
       !FLOAT_EQUIVALENT(latLR, latSubLR) ||
       !FLOAT_EQUIVALENT(lonLR, lonSubLR)) {
     asfPrintStatus("Subset exceeded imaged area!\nMaximum subset area:\n");
-    asfPrintStatus("Upper left - Lat: %.4lf, Lon: %.4lf\n", latSubUL, lonSubUL);
-    asfPrintStatus("Lower right - Lat: %.4lf, Lon: %.4lf\n", latSubLR, lonSubLR);
+    asfPrintStatus("Upper left - Lat: %.4f, Lon: %.4f\n", latSubUL, lonSubUL);
+    asfPrintStatus("Lower right - Lat: %.4f, Lon: %.4f\n", latSubLR, lonSubLR);
   }
   FREE(lats);
   FREE(lons);

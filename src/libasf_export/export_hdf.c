@@ -143,7 +143,7 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
   int ii, kk, complex=FALSE, projected=FALSE;
   char *spatial_ref=NULL, *datum=NULL, *spheroid=NULL;
   char dataset[50], group[50], band[5], str_attr[50], tmp[50];
-  double lfValue;
+  double fValue;
 
   // Convenience variables
   meta_general *mg = md->general;
@@ -217,19 +217,19 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
       h5_att_str(h5_proj, h5_string, "units", "meters"); 
       h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
 		    mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
-		    lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+		    fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
-		    lfValue);
+		    fValue);
       h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
 		    mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"%s_UTM_Zone_%d%c\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.1lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",%.1lf],PARAMETER[\"False_Northing\",%.1lf],PARAMETER[\"Central_Meridian\",%.1lf],PARAMETER[\"Scale_Factor\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.1lf],UNIT[\"Meter\",1]]",
+      sprintf(spatial_ref, "PROJCS[\"%s_UTM_Zone_%d%c\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.1f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],PARAMETER[\"Central_Meridian\",%.1f],PARAMETER[\"Scale_Factor\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1]]",
 	      spheroid, mp->param.utm.zone, mp->hem, spheroid, datum, 
 	      spheroid, mp->re_major, flat, mp->param.utm.false_easting, 
 	      mp->param.utm.false_northing, mp->param.utm.lon0, 
@@ -242,7 +242,7 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
       h5_att_int(h5_proj, h5_string, "zone", mp->param.utm.zone);
       h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
       h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
-      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str_attr, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
@@ -265,36 +265,36 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
       h5_att_str(h5_proj, h5_string, "units", "meters");
       h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
 		    mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
-		    lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+		    fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
-		    lfValue);
+		    fValue);
       h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
 		    mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"Stereographic_North_Pole\",GEOGCS[\"unnamed ellipse\",DATUM[\"D_unknown\",SPHEROID[\"Unknown\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0002247191011236]],PROJECTION[\"Stereographic_North_Pole\"],PARAMETER[\"standard_parallel_1\",%.4lf],PARAMETER[\"central_meridian\",%.4lf],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",%.1lf],PARAMETER[\"false_northing\",%.1lf],UNIT[\"Meter\",1, AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"3411\"]]",
+      sprintf(spatial_ref, "PROJCS[\"Stereographic_North_Pole\",GEOGCS[\"unnamed ellipse\",DATUM[\"D_unknown\",SPHEROID[\"Unknown\",%.3f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0002247191011236]],PROJECTION[\"Stereographic_North_Pole\"],PARAMETER[\"standard_parallel_1\",%.4f],PARAMETER[\"central_meridian\",%.4f],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",%.1f],PARAMETER[\"false_northing\",%.1f],UNIT[\"Meter\",1, AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"3411\"]]",
 	      mp->re_major, flat, mp->param.ps.slat, mp->param.ps.slon,
 	      mp->param.ps.false_easting, mp->param.ps.false_northing);
       h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
       if (mp->param.ps.is_north_pole)
-	sprintf(str_attr, "+proj=stere +lat_0=90.0000 +lat_ts=%.4lf "
-		"+lon_0=%.4lf +k=1 +x_0=%.3lf +y_0=%.3lf +a=%.3lf +b=%.3lf "
+	sprintf(str_attr, "+proj=stere +lat_0=90.0000 +lat_ts=%.4f "
+		"+lon_0=%.4f +k=1 +x_0=%.3f +y_0=%.3f +a=%.3f +b=%.3f "
 		"+units=m +no_defs", mp->param.ps.slat, mp->param.ps.slon,
 		mp->param.ps.false_easting, mp->param.ps.false_northing,
 		mp->re_major, mp->re_minor);
       else
-	sprintf(str_attr, "+proj=stere +lat_0=-90.0000 +lat_ts=%.4lf "
-		"+lon_0=%.4lf +k=1 +x_0=%.3lf +y_0=%.3lf +a=%.3lf +b=%.3lf "
+	sprintf(str_attr, "+proj=stere +lat_0=-90.0000 +lat_ts=%.4f "
+		"+lon_0=%.4f +k=1 +x_0=%.3f +y_0=%.3f +a=%.3f +b=%.3f "
 		"+units=m +no_defs", mp->param.ps.slat, mp->param.ps.slon,
 		mp->param.ps.false_easting, mp->param.ps.false_northing,
 		mp->re_major, mp->re_minor);
       h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
       h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
       h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
-      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str_attr, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
@@ -319,33 +319,33 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
       h5_att_str(h5_proj, h5_string, "units", "meters");
       h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
 		    mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
-		    lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+		    fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
-		    lfValue);
+		    fValue);
       h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
 		    mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"Albers_Equal_Area_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Standard_Parallel_1\",%.4lf],PARAMETER[\"Standard_Parallel_2\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+      sprintf(spatial_ref, "PROJCS[\"Albers_Equal_Area_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",%.3f],PARAMETER[\"False_Northing\",%.3f],PARAMETER[\"Central_Meridian\",%.4f],PARAMETER[\"Standard_Parallel_1\",%.4f],PARAMETER[\"Standard_Parallel_2\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.4f],UNIT[\"Meter\",1]]",
 	      datum, datum, spheroid, mp->re_major, flat, 
 	      mp->param.albers.false_easting, mp->param.albers.false_northing,
 	      mp->param.albers.center_meridian, mp->param.albers.std_parallel1,
 	      mp->param.albers.std_parallel2, mp->param.albers.orig_latitude);
       h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
-      sprintf(str_attr, "+proj=aea +lat_1=%.4lf +lat_2=%.4lf +lat_0=%.4lf "
-	      "+lon_0=%.4lf +x_0=%.3lf +y_0=%.3lf", 
+      sprintf(str_attr, "+proj=aea +lat_1=%.4f +lat_2=%.4f +lat_0=%.4f "
+	      "+lon_0=%.4f +x_0=%.3f +y_0=%.3f", 
 	      mp->param.albers.std_parallel1, mp->param.albers.std_parallel2,
 	      mp->param.albers.orig_latitude, mp->param.albers.center_meridian,
 	      mp->param.albers.false_easting, mp->param.albers.false_northing);
       h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
       h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
       h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
-      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str_attr, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
@@ -370,33 +370,33 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
       h5_att_str(h5_proj, h5_string, "units", "meters");
       h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
 		    mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
-		    lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+		    fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
-		    lfValue);
+		    fValue);
       h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
 		    mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"Lambert_Conformal_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Standard_Parallel_1\",%.4lf],PARAMETER[\"Standard_Parallel_2\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+      sprintf(spatial_ref, "PROJCS[\"Lambert_Conformal_Conic\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3f],PARAMETER[\"False_Northing\",%.3f],PARAMETER[\"Central_Meridian\",%.4f],PARAMETER[\"Standard_Parallel_1\",%.4f],PARAMETER[\"Standard_Parallel_2\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.4f],UNIT[\"Meter\",1]]",
 	      datum, datum, spheroid, mp->re_major, flat, 
 	      mp->param.lamcc.false_easting, mp->param.lamcc.false_northing,
 	      mp->param.lamcc.lon0, mp->param.lamcc.plat1,
 	      mp->param.lamcc.plat2, mp->param.lamcc.lat0);
       h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
-      sprintf(str_attr, "+proj=lcc +lat_1=%.4lf +lat_2=%.4lf +lat_0=%.4lf "
-	      "+lon_0=%.4lf +x_0=%.3lf +y_0=%.3lf", 
+      sprintf(str_attr, "+proj=lcc +lat_1=%.4f +lat_2=%.4f +lat_0=%.4f "
+	      "+lon_0=%.4f +x_0=%.3f +y_0=%.3f", 
 	      mp->param.lamcc.plat1, mp->param.lamcc.plat2,
 	      mp->param.lamcc.lat0, mp->param.lamcc.lon0,
 	      mp->param.lamcc.false_easting, mp->param.lamcc.false_northing);
       h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
       h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
       h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
-      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str_attr, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }
@@ -417,31 +417,31 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
       h5_att_str(h5_proj, h5_string, "units", "meters");
       h5_att_double(h5_proj, h5_string, "grid_boundary_top_projected_y",
 		    mp->startY);
-      lfValue = mp->startY + mg->line_count * mp->perY;
+      fValue = mp->startY + mg->line_count * mp->perY;
       h5_att_double(h5_proj, h5_string, "grid_boundary_bottom_projected_y",
-		    lfValue);
-      lfValue = mp->startX + mg->sample_count * mp->perX;
+		    fValue);
+      fValue = mp->startX + mg->sample_count * mp->perX;
       h5_att_double(h5_proj, h5_string, "grid_boundary_right_projected_x",
-		    lfValue);
+		    fValue);
       h5_att_double(h5_proj, h5_string, "grid_boundary_left_projected_x",
 		    mp->startX);
       spatial_ref = (char *) MALLOC(sizeof(char)*1024);
       datum = (char *) datum_toString(mp->datum);
       spheroid = (char *) spheroid_toString(mp->spheroid);
       double flat = mp->re_major/(mp->re_major - mp->re_minor);
-      sprintf(spatial_ref, "PROJCS[\"Lambert_Azimuthal_Equal_Area\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3lf,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3lf],PARAMETER[\"False_Northing\",%.3lf],PARAMETER[\"Central_Meridian\",%.4lf],PARAMETER[\"Latitude_Of_Origin\",%.4lf],UNIT[\"Meter\",1]]",
+      sprintf(spatial_ref, "PROJCS[\"Lambert_Azimuthal_Equal_Area\",GEOGCS[\"GCS_%s\",DATUM[\"D_%s\",SPHEROID[\"%s\",%.3f,%-16.11g]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199432955]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",%.3f],PARAMETER[\"False_Northing\",%.3f],PARAMETER[\"Central_Meridian\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.4f],UNIT[\"Meter\",1]]",
 	      datum, datum, spheroid, mp->re_major, flat, 
 	      mp->param.lamaz.false_easting, mp->param.lamaz.false_northing,
 	      mp->param.lamaz.center_lon, mp->param.lamaz.center_lat);
       h5_att_str(h5_proj, h5_string, "spatial_ref", spatial_ref);
-      sprintf(str_attr, "+proj=laea +lat_0=%.4lf +lon_0=%.4lf +x_0=%.3lf "
-	      "+y_0=%.3lf", 
+      sprintf(str_attr, "+proj=laea +lat_0=%.4f +lon_0=%.4f +x_0=%.3f "
+	      "+y_0=%.3f", 
 	      mp->param.lamaz.center_lat, mp->param.lamaz.center_lon,
 	      mp->param.lamaz.false_easting, mp->param.lamaz.false_northing);
       h5_att_str(h5_proj, h5_string, "proj4text", str_attr);
       h5_att_double(h5_proj, h5_string, "semimajor_radius", mp->re_major);
       h5_att_double(h5_proj, h5_string, "semiminor_radius", mp->re_minor);
-      sprintf(str_attr, "%.6lf %.6lf 0 %.6lf 0 %.6lf", mp->startX, mp->perX, 
+      sprintf(str_attr, "%.6f %.6f 0 %.6f 0 %.6f", mp->startX, mp->perX, 
 	      mp->startY, mp->perY); 
       h5_att_str(h5_proj, h5_string, "GeoTransform", str_attr);
     }

@@ -106,37 +106,37 @@ static void add_to_kml(FILE *fp, datapool_type_t *datapool, dbf_header_t *dbf,
       fprintf(fp, "%s<strong>End Time</strong>: %s <br>%s",
 	      begin, datapool->end_time, end);
     else if (strcmp(dbf[ii].header, "Center_Lat") == 0)
-      fprintf(fp, "%s<strong>Center Lat</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Center Lat</strong>: %.4f <br>%s",
 	      begin, datapool->center_lat, end);
     else if (strcmp(dbf[ii].header, "Center_Lon") == 0)
-      fprintf(fp, "%s<strong>Center Lon</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Center Lon</strong>: %.4f <br>%s",
 	      begin, datapool->center_lon, end);
     else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0)
-      fprintf(fp, "%s<strong>Near Start Lat</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Near Start Lat</strong>: %.4f <br>%s",
 	      begin, datapool->near_start_lat, end);
     else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0)
-      fprintf(fp, "%s<strong>Near Start Lon</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Near Start Lon</strong>: %.4f <br>%s",
 	      begin, datapool->near_start_lon, end);
     else if (strcmp(dbf[ii].header, "Far_Start_Lat") == 0)
-      fprintf(fp, "%s<strong>Far Start Lat</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Far Start Lat</strong>: %.4f <br>%s",
 	      begin, datapool->far_start_lat, end);
     else if (strcmp(dbf[ii].header, "Far_Start_Lon") == 0)
-      fprintf(fp, "%s<strong>Far Start Lon</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Far Start Lon</strong>: %.4f <br>%s",
 	      begin, datapool->far_start_lon, end);
     else if (strcmp(dbf[ii].header, "Near_End_Lat") == 0)
-      fprintf(fp, "%s<strong>Near End Lat</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Near End Lat</strong>: %.4f <br>%s",
 	      begin, datapool->near_end_lat, end);
     else if (strcmp(dbf[ii].header, "Near_End_Lon") == 0)
-      fprintf(fp, "%s<strong>Near End Lon</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Near End Lon</strong>: %.4f <br>%s",
 	      begin, datapool->near_end_lon, end);
     else if (strcmp(dbf[ii].header, "Far_End_Lat") == 0)
-      fprintf(fp, "%s<strong>Far End Lat</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Far End Lat</strong>: %.4f <br>%s",
 	      begin, datapool->far_end_lat, end);
     else if (strcmp(dbf[ii].header, "Far_End_Lon") == 0)
-      fprintf(fp, "%s<strong>Far End Lon</strong>: %.4lf <br>%s",
+      fprintf(fp, "%s<strong>Far End Lon</strong>: %.4f <br>%s",
 	      begin, datapool->far_end_lon, end);
     else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0)
-      fprintf(fp, "%s<strong>Faraday Rotation</strong>: %.1lf <br>%s",
+      fprintf(fp, "%s<strong>Faraday Rotation</strong>: %.1f <br>%s",
 	      begin, datapool->faraday_rotation, end);
     else if (strcmp(dbf[ii].header, "Orbit_Direction") == 0)
       fprintf(fp, "%s<strong>Orbit Direction</strong>: %s <br>%s",
@@ -145,10 +145,10 @@ static void add_to_kml(FILE *fp, datapool_type_t *datapool, dbf_header_t *dbf,
       fprintf(fp, "%s<strong>URL</strong>: %s <br>%s",
 	      begin, datapool->url, end);
     else if (strcmp(dbf[ii].header, "Size") == 0)
-      fprintf(fp, "%s<strong>Size (MB)</strong>: %.2lf <br>%s",
+      fprintf(fp, "%s<strong>Size (MB)</strong>: %.2f <br>%s",
 	      begin, datapool->size, end);
     else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0)
-      fprintf(fp, "%s<strong>Off Nadir Angle</strong>: %.1lf <br>%s",
+      fprintf(fp, "%s<strong>Off Nadir Angle</strong>: %.1f <br>%s",
 	      begin, datapool->off_nadir_angle, end);
   }
   fprintf(fp, "</td></tr></table>\n");
@@ -198,7 +198,7 @@ static void open_stack(FILE *fp, datapool_type_t *datapool)
   fprintf(fp, "<strong>Sensor</strong>: %s <br>\n", datapool->sensor);
   fprintf(fp, "<strong>Beam mode</strong>: %s <br>\n", datapool->beam_mode);
   fprintf(fp, "<strong>Frame Number</strong>: %d <br>\n", datapool->frame_number);
-  fprintf(fp, "<strong>Off Nadir Angle</strong>: %.1lf <br><br>\n", 
+  fprintf(fp, "<strong>Off Nadir Angle</strong>: %.1f <br><br>\n", 
 	  datapool->off_nadir_angle);
   fprintf(fp, "<table border=\"1\" cellpadding=\"5\"><tr>\n");
   fprintf(fp, "<td><strong>Granule Name</strong></td>");
@@ -260,7 +260,7 @@ static void add_to_stack_kml(FILE *fp, datapool_type_t *datapool, int nCols)
 	 &endTime.hour, &endTime.min, &endTime.sec);
   average_ymdTimes(&startDate, &endDate, &startTime, &endTime, 
 		   &centerDate, &centerTime);
-  fprintf(fp, "<td>%02d-%s-%d %02d:%02d:%02.0lf</td></tr>\n",
+  fprintf(fp, "<td>%02d-%s-%d %02d:%02d:%02.0f</td></tr>\n",
 	  centerDate.day, mon[centerDate.month], centerDate.year,
 	  centerTime.hour, centerTime.min, centerTime.sec);
 }

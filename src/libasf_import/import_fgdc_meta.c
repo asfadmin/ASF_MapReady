@@ -394,10 +394,10 @@ fgdc_meta *get_fgdc_meta(const char *dataFile)
       end_time.sec += 0.5;
       sub_time(half_time, &start_date, &start_time);
       start_time.sec += 0.5;
-      sprintf(fgdc->start_time, "%04d-%02d-%02d %02d:%02d:%02.0lf",
+      sprintf(fgdc->start_time, "%04d-%02d-%02d %02d:%02d:%02.0f",
 	      start_date.year, start_date.month, start_date.day,
 	      start_time.hour, start_time.min, start_time.sec);
-      sprintf(fgdc->end_time, "%04d-%02d-%02d %02d:%02d:%02.0lf",
+      sprintf(fgdc->end_time, "%04d-%02d-%02d %02d:%02d:%02.0f",
 	      end_date.year, end_date.month, end_date.day,
 	      end_time.hour, end_time.min, end_time.sec);
     }
@@ -566,10 +566,10 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
   fprintf(fp, "    </status>\n");
   fprintf(fp, "    <spdom>\n");
   fprintf(fp, "      <bounding>\n");
-  fprintf(fp, "        <westbc>%.4lf</westbc>\n", fgdc->westbc);
-  fprintf(fp, "        <eastbc>%.4lf</eastbc>\n", fgdc->eastbc);
-  fprintf(fp, "        <northbc>%.4lf</northbc>\n", fgdc->northbc);
-  fprintf(fp, "        <southbc>%.4lf</southbc>\n", fgdc->southbc);
+  fprintf(fp, "        <westbc>%.4f</westbc>\n", fgdc->westbc);
+  fprintf(fp, "        <eastbc>%.4f</eastbc>\n", fgdc->eastbc);
+  fprintf(fp, "        <northbc>%.4f</northbc>\n", fgdc->northbc);
+  fprintf(fp, "        <southbc>%.4f</southbc>\n", fgdc->southbc);
   fprintf(fp, "      </bounding>\n");
   fprintf(fp, "    </spdom>\n");
   fprintf(fp, "    <proclevl>\n");
@@ -808,8 +808,8 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
     fprintf(fp, "    <horizsys>\n");
     if (proj->type == LAT_LONG_PSEUDO_PROJECTION) {
       fprintf(fp, "      <geograph>\n");
-      fprintf(fp, "        <latres>%.6lf</latres>\n", fabs(proj->perY));
-      fprintf(fp, "        <longres>%.6lf</longres>\n", fabs(proj->perX));
+      fprintf(fp, "        <latres>%.6f</latres>\n", fabs(proj->perY));
+      fprintf(fp, "        <longres>%.6f</longres>\n", fabs(proj->perX));
       fprintf(fp, "        <geogunit>%s</geogunit>\n", proj->units);
       fprintf(fp, "      </geograph>\n");
     }
@@ -823,15 +823,15 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	fprintf(fp, "            <utmzone>%d</utmzone>\n", 
 		proj->param.utm.zone);
 	fprintf(fp, "            <transmer>\n");
-	fprintf(fp, "              <sfctrmer>%.4lf</sfctrmer>\n",
+	fprintf(fp, "              <sfctrmer>%.4f</sfctrmer>\n",
 		proj->param.utm.scale_factor);
-	fprintf(fp, "              <longcm>%.4lf</longcm>\n",
+	fprintf(fp, "              <longcm>%.4f</longcm>\n",
 		proj->param.utm.lon0);
-	fprintf(fp, "              <latprjo>%.4lf</latprjo>\n",
+	fprintf(fp, "              <latprjo>%.4f</latprjo>\n",
 		proj->param.utm.lat0);
-	fprintf(fp, "              <feast>%.3lf</feast>\n",
+	fprintf(fp, "              <feast>%.3f</feast>\n",
 		proj->param.utm.false_easting);
-	fprintf(fp, "              <fnorth>%.3lf</fnorth>\n",
+	fprintf(fp, "              <fnorth>%.3f</fnorth>\n",
 		proj->param.utm.false_northing);
 	fprintf(fp, "            </transmer>\n");
 	fprintf(fp, "          </utm>\n");
@@ -843,30 +843,30 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	  fprintf(fp, "          <mapprojn>Albers Conic Equal Area"
 		  "</mapprojn>\n");
 	  fprintf(fp, "          <albers>\n");
-	  fprintf(fp, "            <stdparll>%.4lf</stdparll>\n", 
+	  fprintf(fp, "            <stdparll>%.4f</stdparll>\n", 
 		  proj->param.albers.std_parallel1);
-	  fprintf(fp, "            <stdparll>%.4lf</stdparll>\n",
+	  fprintf(fp, "            <stdparll>%.4f</stdparll>\n",
 		  proj->param.albers.std_parallel2);
-	  fprintf(fp, "            <longcm>%.4lf</longcm>\n",
+	  fprintf(fp, "            <longcm>%.4f</longcm>\n",
 		  proj->param.albers.center_meridian);
-	  fprintf(fp, "            <latprjo>%.4lf</latprjo>\n",
+	  fprintf(fp, "            <latprjo>%.4f</latprjo>\n",
 		  proj->param.albers.orig_latitude);
-	  fprintf(fp, "            <feast>%.3lf</feast>\n",
+	  fprintf(fp, "            <feast>%.3f</feast>\n",
 		  proj->param.albers.false_easting);
-	  fprintf(fp, "            <fnorth>%.3lf</fnorth>\n",
+	  fprintf(fp, "            <fnorth>%.3f</fnorth>\n",
 		  proj->param.albers.false_northing);
 	  fprintf(fp, "          </albers>\n");
 	}
 	else if (proj->type == EQUI_RECTANGULAR) {
 	  fprintf(fp, "          <mapprojn>Equirectangular</mapprojn>\n");
 	  fprintf(fp, "          <equirect>\n");
-	  fprintf(fp, "            <latprjo>%.4lf</latprjo>\n",
+	  fprintf(fp, "            <latprjo>%.4f</latprjo>\n",
 		  proj->param.eqr.orig_latitude);
-	  fprintf(fp, "            <longcm>%.4lf</longcm>\n",
+	  fprintf(fp, "            <longcm>%.4f</longcm>\n",
 		  proj->param.eqr.central_meridian);
-	  fprintf(fp, "            <feast>%.3lf</feast>\n",
+	  fprintf(fp, "            <feast>%.3f</feast>\n",
 		  proj->param.eqr.false_easting);
-	  fprintf(fp, "            <fnorth>%.3lf</fnorth>\n",
+	  fprintf(fp, "            <fnorth>%.3f</fnorth>\n",
 		  proj->param.eqr.false_northing);
 	  fprintf(fp, "          </equirect>\n");
 	}
@@ -874,13 +874,13 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	  fprintf(fp, "          <mapprojn>Lambert Azimuthal Equal Area"
 		  "</mapprojn>\n");
 	  fprintf(fp, "          <lamberta>\n");
-	  fprintf(fp, "            <latprjo>%.4lf</latprjo>\n",
+	  fprintf(fp, "            <latprjo>%.4f</latprjo>\n",
 		  proj->param.lamaz.center_lat);
-	  fprintf(fp, "            <longcm>%.4lf</longcm>\n",
+	  fprintf(fp, "            <longcm>%.4f</longcm>\n",
 		  proj->param.lamaz.center_lon);
-	  fprintf(fp, "            <feast>%.3lf</feast>\n",
+	  fprintf(fp, "            <feast>%.3f</feast>\n",
 		  proj->param.lamaz.false_easting);
-	  fprintf(fp, "            <fnorth>%.3lf</fnorth>\n",
+	  fprintf(fp, "            <fnorth>%.3f</fnorth>\n",
 		  proj->param.lamaz.false_northing);
 	  fprintf(fp, "          </lamberta>\n");
 	}
@@ -888,43 +888,43 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
 	  fprintf(fp, "          <mapprojn>Lambert Conformal Conic"
 		  "</mapprojn>\n");
 	  fprintf(fp, "          <lambertc>\n");
-	  fprintf(fp, "            <stdparll>%.4lf</stdparll>\n", 
+	  fprintf(fp, "            <stdparll>%.4f</stdparll>\n", 
 		  proj->param.lamcc.plat1);
-	  fprintf(fp, "            <stdparll>%.4lf</stdparll>\n",
+	  fprintf(fp, "            <stdparll>%.4f</stdparll>\n",
 		  proj->param.lamcc.plat2);
-	  fprintf(fp, "            <latprjo>%.4lf</latprjo>\n",
+	  fprintf(fp, "            <latprjo>%.4f</latprjo>\n",
 		  proj->param.lamcc.lat0);
-	  fprintf(fp, "            <longcm>%.4lf</longcm>\n",
+	  fprintf(fp, "            <longcm>%.4f</longcm>\n",
 		  proj->param.lamcc.lon0);
-	  fprintf(fp, "            <feast>%.3lf</feast>\n",
+	  fprintf(fp, "            <feast>%.3f</feast>\n",
 		  proj->param.lamcc.false_easting);
-	  fprintf(fp, "            <fnorth>%.3lf</fnorth>\n",
+	  fprintf(fp, "            <fnorth>%.3f</fnorth>\n",
 		  proj->param.lamcc.false_northing);
 	  fprintf(fp, "          </lambertc>\n");
 	}
 	else if (proj->type == MERCATOR) {
 	  fprintf(fp, "          <mapprojn>Mercator</mapprojn>\n");
 	  fprintf(fp, "          <mercator>\n");
-	  fprintf(fp, "            <longcm>%.4lf</longcm>\n",
+	  fprintf(fp, "            <longcm>%.4f</longcm>\n",
 		  proj->param.mer.central_meridian);
-	  fprintf(fp, "            <sfprjorg>%.4lf</sfprjorg>\n",
+	  fprintf(fp, "            <sfprjorg>%.4f</sfprjorg>\n",
 		  proj->param.mer.scale_factor);
-	  fprintf(fp, "            <feast>%.3lf</feast>\n",
+	  fprintf(fp, "            <feast>%.3f</feast>\n",
 		  proj->param.mer.false_easting);
-	  fprintf(fp, "            <fnorth>%.3lf</fnorth>\n",
+	  fprintf(fp, "            <fnorth>%.3f</fnorth>\n",
 		  proj->param.mer.false_northing);
 	  fprintf(fp, "          </mercator>\n");
 	}
 	else if (proj->type == POLAR_STEREOGRAPHIC) {
 	  fprintf(fp, "          <mapprojn>Polar Stereographic</mapprojn>\n");
 	  fprintf(fp, "          <polarst>\n");
-	  fprintf(fp, "            <longcm>%.4lf</longcm>\n",
+	  fprintf(fp, "            <longcm>%.4f</longcm>\n",
 		  proj->param.ps.slon);
-	  fprintf(fp, "            <stdparll>%.4lf</stdparll>\n",
+	  fprintf(fp, "            <stdparll>%.4f</stdparll>\n",
 		  proj->param.ps.slat);
-	  fprintf(fp, "            <feast>%.3lf</feast>\n",
+	  fprintf(fp, "            <feast>%.3f</feast>\n",
 		  proj->param.ps.false_easting);
-	  fprintf(fp, "            <fnorth>%.3lf</fnorth>\n",
+	  fprintf(fp, "            <fnorth>%.3f</fnorth>\n",
 		  proj->param.ps.false_northing);
 	  fprintf(fp, "          </polarst>\n");
 	}
@@ -935,8 +935,8 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
       fprintf(fp, "        <planci>\n");
       fprintf(fp, "          <plance>%s</plance>\n", fgdc->plance);
       fprintf(fp, "          <coordrep>\n");
-      fprintf(fp, "            <absres>%.3lf</absres>\n", fabs(proj->perX));
-      fprintf(fp, "            <ordres>%.3lf</ordres>\n", fabs(proj->perY));
+      fprintf(fp, "            <absres>%.3f</absres>\n", fabs(proj->perX));
+      fprintf(fp, "            <ordres>%.3f</ordres>\n", fabs(proj->perY));
       fprintf(fp, "          </coordrep>\n");
       fprintf(fp, "          <plandu>%s</plandu>\n", proj->units);
       fprintf(fp, "        </planci>\n");
@@ -1008,9 +1008,9 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
     else
       fprintf(fp, "        <ellips>Unknown ellipsoid</ellips>\n");
 
-    fprintf(fp, "        <semiaxis>%.3lf</semiaxis>\n", proj->re_major);
+    fprintf(fp, "        <semiaxis>%.3f</semiaxis>\n", proj->re_major);
     double denflat = proj->re_major / (proj->re_major - proj->re_minor);
-    fprintf(fp, "        <denflat>%.6lf</denflat>\n", denflat);
+    fprintf(fp, "        <denflat>%.6f</denflat>\n", denflat);
     fprintf(fp, "      </geodetic>\n");
     fprintf(fp, "    </horizsys>\n");
 
@@ -1027,20 +1027,20 @@ void write_fgdc_meta(fgdc_meta *fgdc, const char *outFile)
     fprintf(fp, "      <georecra>\n");
     fprintf(fp, "        <pixlreso>\n");
     fprintf(fp, "          <coordrep>\n");
-    fprintf(fp, "            <absres>%.3lf</absres>\n", fabs(proj->perX));
-    fprintf(fp, "            <ordres>%.3lf</ordres>\n", fabs(proj->perY));
+    fprintf(fp, "            <absres>%.3f</absres>\n", fabs(proj->perX));
+    fprintf(fp, "            <ordres>%.3f</ordres>\n", fabs(proj->perY));
     fprintf(fp, "          </coordrep>\n");
     fprintf(fp, "          <plandu>%s</plandu>\n", proj->units);
     fprintf(fp, "        </pixlreso>\n");
     fprintf(fp, "        <gridinit>\n");
-    fprintf(fp, "          <grinitx>%.3lf</grinitx>\n", proj->startX);
-    fprintf(fp, "          <grinity>%.3lf</grinity>\n", proj->startY);
+    fprintf(fp, "          <grinitx>%.3f</grinitx>\n", proj->startX);
+    fprintf(fp, "          <grinity>%.3f</grinity>\n", proj->startY);
     fprintf(fp, "        </gridinit>\n");
     fprintf(fp, "        <gridori>\n");
-    fprintf(fp, "          <rowdeltx>%.4lf</rowdeltx>\n", fabs(proj->perX));
-    fprintf(fp, "          <rowdelty>%.4lf</rowdelty>\n", fabs(proj->perY));
-    fprintf(fp, "          <coldeltx>%.4lf</coldeltx>\n", fabs(proj->perX));
-    fprintf(fp, "          <coldelty>%.4lf</coldelty>\n", fabs(proj->perY));
+    fprintf(fp, "          <rowdeltx>%.4f</rowdeltx>\n", fabs(proj->perX));
+    fprintf(fp, "          <rowdelty>%.4f</rowdelty>\n", fabs(proj->perY));
+    fprintf(fp, "          <coldeltx>%.4f</coldeltx>\n", fabs(proj->perX));
+    fprintf(fp, "          <coldelty>%.4f</coldelty>\n", fabs(proj->perY));
     fprintf(fp, "        </gridori>\n");
     fprintf(fp, "        <ptpos>%s</ptpos>\n", fgdc->ptpos);
     fprintf(fp, "        <storord>%s</storord>\n", fgdc->storord);

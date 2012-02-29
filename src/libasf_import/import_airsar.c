@@ -500,38 +500,38 @@ meta_parameters *import_airsar_meta(const char *dataName,
       double lat, lon;
       double yLine, xSamp;
       meta_get_lineSamp(ret, 37.7697, -122.5218, 0.0, &yLine, &xSamp);
-      printf("center: line: %.3lf, sample: %.3lf\n", yLine, xSamp);
+      printf("center: line: %.3f, sample: %.3f\n", yLine, xSamp);
       meta_get_latLon(ret, 0, 0, 0.0, &lat, &lon);
-      printf("start near - lat: %.4lf, lon: %.4lf\n", lat, lon);
+      printf("start near - lat: %.4f, lon: %.4f\n", lat, lon);
       meta_get_lineSamp(ret, ret->location->lat_start_near_range,
 			ret->location->lon_start_near_range, 0.0, 
 			&yLine, &xSamp);
-      printf("start near - line: %.3lf, sample: %.3lf, lat: %.4lf, lon: %.4lf\n"
+      printf("start near - line: %.3f, sample: %.3f, lat: %.4f, lon: %.4f\n"
 	     ,yLine, xSamp, ret->location->lat_start_near_range,
 	     ret->location->lon_start_near_range);
       meta_get_latLon(ret, 0, ret->general->sample_count, 0.0, &lat, &lon);
-      printf("start far - lat: %.4lf, lon: %.4lf\n", lat, lon);
+      printf("start far - lat: %.4f, lon: %.4f\n", lat, lon);
       meta_get_lineSamp(ret, ret->location->lat_start_far_range,
 			ret->location->lon_start_far_range, 0.0, 
 			&yLine, &xSamp);
-      printf("start far - line: %.3lf, sample: %.3lf, lat: %.4lf, lon: %.4lf\n",
+      printf("start far - line: %.3f, sample: %.3f, lat: %.4f, lon: %.4f\n",
 	     yLine, xSamp, ret->location->lat_start_far_range,
 	     ret->location->lon_start_far_range);
       meta_get_latLon(ret, ret->general->line_count, 0, 0.0, &lat, &lon);
-      printf("end near - lat: %.4lf, lon: %.4lf\n", lat, lon);
+      printf("end near - lat: %.4f, lon: %.4f\n", lat, lon);
       meta_get_lineSamp(ret, ret->location->lat_end_near_range,
 			ret->location->lon_end_near_range, 0.0, 
 			&yLine, &xSamp);
-      printf("end near - line: %.3lf, sample: %.3lf, lat: %.4lf, lon: %.4lf\n", 
+      printf("end near - line: %.3f, sample: %.3f, lat: %.4f, lon: %.4f\n", 
 	     yLine, xSamp, ret->location->lat_end_near_range,
 	     ret->location->lon_end_near_range);
       meta_get_latLon(ret, ret->general->line_count, 
 		      ret->general->sample_count, 0.0, &lat, &lon);
-      printf("end far - lat: %.4lf, lon: %.4lf\n", lat, lon);
+      printf("end far - lat: %.4f, lon: %.4f\n", lat, lon);
       meta_get_lineSamp(ret, ret->location->lat_end_far_range,
 			ret->location->lon_end_far_range, 0.0, 
 			&yLine, &xSamp);
-      printf("end far - line: %.3lf, sample: %.3lf, lat: %.4lf, lon: %.4lf\n", 
+      printf("end far - line: %.3f, sample: %.3f, lat: %.4f, lon: %.4f\n", 
 	     yLine, xSamp, ret->location->lat_end_far_range,
 	     ret->location->lon_end_far_range);
 
