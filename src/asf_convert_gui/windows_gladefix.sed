@@ -1,0 +1,11 @@
+/name="single_line_mode"/ d
+/name="angle"/ d
+/name="ellipsize"/ d
+/name="width_chars"/ d
+/name="focus_on_map"/ d
+/name="urgency_hint"/ d
+/name="add_tearoffs"/ d
+/name="focus_on_click"/ d
+/name="has_frame"/ d
+/name="hover_selection"/ d
+/name="hover_expand"/ d
