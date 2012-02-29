@@ -289,7 +289,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   const char *current_tmp_dir = get_asf_tmp_dir();
   int saved_statusflag = statusflag;
   int saved_quietflag = quietflag;
-  quietflag = 2;
+  //quietflag = 2;
   statusflag = FALSE;
 
   // Run input file through asf_mapready
@@ -420,10 +420,10 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   FREE(outDir);
   FREE(inName);
   FREE(inDir);
-  remove_file(metaFile);
+  //remove_file(metaFile);
 
   chdir(cwd);
-  remove_dir(tmpDir);
+  //remove_dir(tmpDir);
   FREE(tmpDir);
 
   statusflag = saved_statusflag;
