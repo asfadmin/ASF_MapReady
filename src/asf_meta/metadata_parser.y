@@ -1443,6 +1443,21 @@ void fill_structure_field(char *field_name, void *valp)
 	(MCALIBRATION)->tsx->k = MAGIC_UNSET_DOUBLE;
 	return;
       }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "UAVSAR") ) {
+	uavsar_cal_params *uavsar =
+	  (uavsar_cal_params *) MALLOC(sizeof(uavsar_cal_params));
+	(MCALIBRATION)->uavsar = uavsar;
+	(MCALIBRATION)->type = uavsar_cal;
+	(MCALIBRATION)->uavsar->semi_major = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->uavsar->slant_range_first_pixel = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->uavsar->range_spacing = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->uavsar->azimuth_spacing = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->uavsar->pitch = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->uavsar->steering_angle = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->uavsar->altitude = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->uavsar->terrain_height = MAGIC_UNSET_DOUBLE;	
+	return;
+      }
     }
     // ASF calibration
     if ( !strcmp(field_name, "a(0)") && (MCALIBRATION)->type == asf_cal)
@@ -1520,6 +1535,30 @@ void fill_structure_field(char *field_name, void *valp)
     // TSX calibration
     if ( !strcmp(field_name, "k") && (MCALIBRATION)->type == tsx_cal)
       { (MCALIBRATION)->tsx->k = VALP_AS_DOUBLE; return; }
+    // UAVSAR calibration
+    if ( !strcmp(field_name, "semi_major") && 
+	 (MCALIBRATION)->type == uavsar_cal) 
+      { (MCALIBRATION)->uavsar->semi_major = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "slant_range_first_pixel") &&
+	 (MCALIBRATION)->type == uavsar_cal)
+      { (MCALIBRATION)->uavsar->slant_range_first_pixel = VALP_AS_DOUBLE; 
+	return; }
+    if ( !strcmp(field_name, "range_spacing") &&
+	 (MCALIBRATION)->type == uavsar_cal)
+      { (MCALIBRATION)->uavsar->range_spacing = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "azimuth_spacing") &&
+	 (MCALIBRATION)->type == uavsar_cal)
+      { (MCALIBRATION)->uavsar->azimuth_spacing = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "pitch") && (MCALIBRATION)->type == uavsar_cal)
+      { (MCALIBRATION)->uavsar->pitch = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "steering_angle") &&
+	 (MCALIBRATION)->type == uavsar_cal)
+      { (MCALIBRATION)->uavsar->steering_angle = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "altitude") && (MCALIBRATION)->type == uavsar_cal)
+      { (MCALIBRATION)->uavsar->altitude = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "terrain_height") &&
+	 (MCALIBRATION)->type == uavsar_cal)
+      { (MCALIBRATION)->uavsar->terrain_height = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in a colormap block.  */

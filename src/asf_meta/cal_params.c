@@ -587,6 +587,41 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
       }
     }
   }
+  else if (isUAVSAR(sarName, &error)) {
+    // UAVSAR parameters for calibration
+    uavsar_cal_params *uavsar_params = 
+      (uavsar_cal_params *) MALLOC(sizeof(uavsar_cal_params));
+    meta->calibration->type = uavsar_cal;
+    meta->calibration->uavsar = uavsar_params;
+    uavsar_type_t type = POLSAR_MLC;
+
+    /*
+    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+      type = POLSAR_SLC;
+    else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX &&
+	     !meta->projection)
+      type = POLSAR_MLC;
+    else if (meta->general->image_data_type == POLARIMETRIC_STOKES_MATRIX)
+      type = POLSAR_DAT;
+    else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX &&
+	     meta->projection)
+      type = POLSAR_GRD;
+    else if (meta->general->image_data_type == DEM)
+      type == POLSAR_HGT;
+    */
+  
+    uavsar_polsar *uavsar = read_uavsar_polsar_params(sarName, type);
+    uavsar_params->semi_major = uavsar->semi_major;
+    uavsar_params->slant_range_first_pixel = 
+      uavsar->slant_range_first_pixel*1000.0;
+    uavsar_params->range_spacing = uavsar->range_spacing;
+    uavsar_params->azimuth_spacing = uavsar->azimuth_spacing;
+    uavsar_params->pitch = uavsar->pitch;
+    uavsar_params->steering_angle = uavsar->steering_angle;
+    uavsar_params->altitude = uavsar->altitude;
+    uavsar_params->terrain_height = uavsar->terrain_height;
+    FREE(uavsar);
+  }
   else if (isTerrasar(sarName, &error)) {
     // TSX style calibration
     tsx_cal_params *tsx = (tsx_cal_params *) MALLOC(sizeof(tsx_cal_params));

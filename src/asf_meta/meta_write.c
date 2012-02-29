@@ -957,7 +957,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     char str[15];
     meta_put_string(fp,"calibration {","",
             "Block containing calibration information");
-    strcpy(comment,"Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS, TSX)");
+    strcpy(comment,"Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS, TSX, UAVSAR)");
     switch (meta->calibration->type)
       {
       case unknown_cal:
@@ -1049,7 +1049,31 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	meta_put_double(fp,"k:",meta->calibration->tsx->k,
 			"Calibration factor");
 	break;
-      }
+      case uavsar_cal:
+	meta_put_string(fp,"type:","UAVSAR",comment);
+	meta_put_double(fp,"semi_major:",meta->calibration->uavsar->semi_major,
+			"Ellipsoid semi-major axis [m]");
+	meta_put_double(fp, "slant_range_first_pixel:",
+			meta->calibration->uavsar->slant_range_first_pixel,
+			"Image starting range [m]");
+	meta_put_double(fp, "range_spacing:",
+			meta->calibration->uavsar->range_spacing,
+			"Range spacing per bin [m]");
+	meta_put_double(fp, "azimuth_spacing:",
+			meta->calibration->uavsar->azimuth_spacing,
+			"Azimuth spacing [m]");
+	meta_put_double(fp, "pitch:",meta->calibration->uavsar->pitch,
+			"Global average pitch [degrees]");
+	meta_put_double(fp, "steering_angle:",
+			meta->calibration->uavsar->steering_angle,
+			"Global average electronic steering angle [degrees]");
+	meta_put_double(fp, "altitude:",meta->calibration->uavsar->altitude,
+			"Global average altitude [m]");
+	meta_put_double(fp, "terrain_height:",
+			meta->calibration->uavsar->terrain_height,
+			"Global average terrain height [m]");
+    }
+
     meta_put_string(fp,"}","","End calibration");
   }
 
@@ -2018,6 +2042,26 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       if (!ISNAN(mc->alos->cf_vv))
 	fprintf(fp, "    <cf_vv>%.11g</cf_vv>\n", mc->alos->cf_vv);
     }
+    else if (mc->type == uavsar_cal) {
+      fprintf(fp, "    <type>UAVSAR</type>\n");
+      fprintf(fp, "    <semi_major units=\"m\">%.3f</semi_major>\n", 
+	      mc->uavsar->semi_major);
+      fprintf(fp, "    <slant_range_first_pixel units=\"m\">%.3f"
+	      "</slant_range_first_pixel>\n", 
+	      mc->uavsar->slant_range_first_pixel);
+      fprintf(fp, "    <range_spacing units=\"m\">%.6f</range_spacing>\n", 
+	      mc->uavsar->range_spacing);
+      fprintf(fp, "    <azimuth_spacing units=\"m\">%.6f</azimuth_spacing>\n",
+	      mc->uavsar->azimuth_spacing);
+      fprintf(fp, "    <pitch units=\"degrees\">%.6f</pitch>\n", 
+	      mc->uavsar->pitch);
+      fprintf(fp, "    <steering_angle units=\"degrees\">%.6f</steering_angle>"
+	      "\n", mc->uavsar->steering_angle);
+      fprintf(fp, "    <altitude units=\"m\">%.3f</altitude>\n", 
+	      mc->uavsar->altitude);
+      fprintf(fp, "    <terrain_height units=\"m\">%.3f</terrain_height>\n",
+	      mc->uavsar->terrain_height);
+    }
     fprintf(fp, "  </calibration>\n");
   }
 
@@ -2050,8 +2094,8 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	    mi->doppler_rate);
     fprintf(fp, "    <baseline_length units=\"m\">%.1f</baseline_length>\n", 
 	    mi->baseline_length);
-    fprintf(fp, "    <baseline_parallel units=\"m\">%.1f</baseline_parallel>"
-	    "\n", mi->baseline_parallel);
+    fprintf(fp, "    <baseline_parallel units=\"m\">%.1f</baseline_parallel>\n",
+	    mi->baseline_parallel);
     fprintf(fp, "    <baseline_parallel_rate units=\"m/s\">%.11g"
 	    "</baseline_parallel_rate>\n", mi->baseline_parallel_rate);
     fprintf(fp, "    <baseline_perpendicular units=\"m\">%.1f"

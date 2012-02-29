@@ -316,6 +316,33 @@ int isRadarsat2(char *dataFile, char **error)
   return found;
 }
 
+int isUAVSAR(char *dataFile, char **error)
+{
+  char dataType[25];
+  int found = FALSE;
+  // Let's first check for an .ann extension
+  char *ext = findExt(dataFile);
+
+  // If it has the correct extension, investigate it further
+  if (ext && strcmp_case(ext, ".ann") == 0) {
+
+    // We have the most generic annotation file ever, with no indication what
+    // kind of data we are supposed to have. It just list everything that was
+    // originally produced.
+    // The only identifier for even UAVSAR, I could find, was the URL.
+    char line[512];
+    FILE *fp;
+    fp = fopen(dataFile, "r");
+    while (fgets(line, 512, fp)) {
+      if (strstr(line, "uavsar.jpl.nasa.gov"))
+	found = TRUE;
+    }
+    fclose(fp);
+  }
+
+  return found;
+}
+
 // Literally a copy of the lzFetch function. However, had to be done since
 // the original functionality, written for Vexcel par files, indexed location
 // blocks. This does not work with the location block in the metadata file.

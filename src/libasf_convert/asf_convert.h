@@ -315,7 +315,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM);
 int call_asf_convert(char *configFile); // FIXME: Change the name ... Now calls asf_mapready
 
 int isInSAR(const char *infile);
-int isUAVSAR(const char *infile);
+int is_uavsar(const char *infile);
 int isPolSARpro(const char * infile);
 int kml_overlay(char *inFile, char *outFile, int zip);
 int kml_overlay_ext(char *inFile, char *outFile, int reduction, 

@@ -122,7 +122,7 @@ int isInSAR(const char *infile)
   return found;
 }
 
-int isUAVSAR(const char *infile)
+int is_uavsar(const char *infile)
 {
   int found = FALSE;
   char line[1024], *ext = NULL;
@@ -131,7 +131,7 @@ int isUAVSAR(const char *infile)
   if (!ext) {
     char *inFile = (char *) MALLOC(sizeof(char) * strlen(infile) + 5);
     sprintf(inFile, "%s.ann", infile);
-    int ret = isUAVSAR(inFile);
+    int ret = is_uavsar(inFile);
     FREE(inFile);
     return ret;
   }
@@ -534,7 +534,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       cfg->airsar->l_pol = airsar_l;
       cfg->airsar->p_pol = airsar_p;
     }
-    else if (isUAVSAR(input)) { return; }
+    else if (is_uavsar(input)) { return; }
     else if (isPolsarproMatrix(input, &matrixType, &error)) { return; }
     else if (isASFInternal(input)) {
       meta = meta_read(input);

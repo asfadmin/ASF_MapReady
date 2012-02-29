@@ -33,6 +33,7 @@
 #include "libasf_proj.h"
 #include "asf.h"
 #include "hdf5.h"
+#include "uavsar.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -416,6 +417,7 @@ typedef struct {
   rsat_cal_params *rsat;
   alos_cal_params *alos;
   tsx_cal_params *tsx;
+  uavsar_cal_params *uavsar;
 } meta_calibration;
 
 typedef struct {
@@ -991,6 +993,7 @@ int isCEOS(const char *dataFile, char **error);
 int isTerrasar(char *dataFile, char **error);
 int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error);
 int isRadarsat2(char *dataFile, char **error);
+int isUAVSAR(char *dataFile, char **error);
 int meta_test(char *in_file, char *spec_file);
 int meta_test_ext(char *in_file, char *spec_file, report_level_t level);
 
@@ -1020,5 +1023,9 @@ typedef struct {
   int sample;
   float diff;
 } latlon_pixel;
+
+// Prototypes for meta2uavsar.c
+meta_parameters* uavsar_polsar2meta(uavsar_polsar *params);
+meta_parameters* uavsar_insar2meta(uavsar_insar *params);
 
 #endif

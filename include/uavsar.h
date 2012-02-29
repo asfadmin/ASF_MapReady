@@ -1,7 +1,7 @@
 #ifndef __UAVSAR_H__
 #define __UAVSAR_H__
 
-#include "asf_meta.h"
+#define MAX_LINE 512
 
 // UAVSAR data types
 typedef enum {
@@ -140,8 +140,6 @@ typedef struct {
 } uavsar_insar;
 
 // Function prototypes
-meta_parameters* uavsar_polsar2meta(uavsar_polsar *params);
-meta_parameters* uavsar_insar2meta(uavsar_insar *params);
 uavsar_polsar *read_uavsar_polsar_params(const char *dataFile,
 					 uavsar_type_t type);
 uavsar_insar *read_uavsar_insar_params(const char *dataFile,

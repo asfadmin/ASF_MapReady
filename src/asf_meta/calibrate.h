@@ -25,7 +25,8 @@ typedef enum {
   esa_cal,          // ESA:  calibration constant K
   rsat_cal,         // RSAT: look up table approach
   alos_cal,         // ALOS: calibration coefficient CF
-  tsx_cal           // TERRASAR-X: calibration constant K
+  tsx_cal,          // TERRASAR-X: calibration constant K
+  uavsar_cal        // UAVSAR: parameters for calibration calculation
 } cal_type;
 
 typedef struct {
@@ -65,12 +66,24 @@ typedef struct {
 } tsx_cal_params;
 
 typedef struct {
+  double semi_major;              // ellipsoid semi-major axis
+  double slant_range_first_pixel; // image starting range
+  double range_spacing;           // range spacing per bin
+  double azimuth_spacing;         // azimuth spacing
+  double pitch;                   // global average pitch
+  double steering_angle;          // global average electronic steering angle
+  double altitude;                // global average altitude
+  double terrain_height;          // global average terrain height
+} uavsar_cal_params;
+
+typedef struct {
   asf_cal_params* asf;
   asf_scansar_cal_params *asf_scansar;
   esa_cal_params* esa;
   rsat_cal_params* rsat;
   alos_cal_params* alos;
   tsx_cal_params* tsx;
+  uavsar_cal_params *uavsar;
   quadratic_2d incid;
   radiometry_t radiometry;
 } cal_params;

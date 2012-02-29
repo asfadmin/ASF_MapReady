@@ -120,6 +120,12 @@ meta_parameters *meta_copy(meta_parameters *src)
       ret->calibration->tsx = (tsx_cal_params *) MALLOC(sizeof(tsx_cal_params));
       memcpy(ret->calibration->tsx, src->calibration->tsx, sizeof(tsx_cal_params));
     }
+    if(src->calibration->uavsar) {
+      ret->calibration->uavsar = 
+	(uavsar_cal_params *) MALLOC(sizeof(uavsar_cal_params));
+      memcpy(ret->calibration->uavsar, src->calibration->uavsar,
+	     sizeof(uavsar_cal_params));
+    }
   } else
     ret->calibration = NULL;
 
