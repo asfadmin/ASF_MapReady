@@ -1820,7 +1820,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "\n\n[Image stats]\n\n");
       fprintf(fConfig, "values = %s\n", cfg->image_stats->values);
       fprintf(fConfig, "bins = %i\n", cfg->image_stats->bins);
-      fprintf(fConfig, "interval = %.2lf\n", cfg->image_stats->interval);
+      fprintf(fConfig, "interval = %.2f\n", cfg->image_stats->interval);
     }
     // Detect corner reflectors
     if (cfg->general->detect_cr) {
@@ -1902,7 +1902,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# If the correction angle is smaller than the threshold angle, then\n"
                 "# the correction is not applied.  Use -1 for no threshold (which means\n"
                 "# the correction is always applied).\n\n");
-      fprintf(fConfig, "farcorr threshold = %.2lf\n", cfg->polarimetry->farcorr_threshold);
+      fprintf(fConfig, "farcorr threshold = %.2f\n", cfg->polarimetry->farcorr_threshold);
     }
 
     // Terrain correction
@@ -1913,7 +1913,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# image. If set to -99 this parameter will be ignored and the 'asf_terrcorr' will\n"
                 "# deal with the issues that might occur when using different pixel spacings in\n"
                 "# the SAR image and the reference DEM\n\n");
-      fprintf(fConfig, "pixel spacing = %.2lf\n", cfg->terrain_correct->pixel);
+      fprintf(fConfig, "pixel spacing = %.2f\n", cfg->terrain_correct->pixel);
       if (!shortFlag)
         fprintf(fConfig, "\n# The heights of the reference DEM are used to correct the SAR image\n"
                 "# for terrain effects. The quality and resolution of the reference DEM determines\n"
@@ -2000,12 +2000,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# This parameter sets the offset in range direction in case the simulated\n"
         "# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
                 "# image.  The offset is specified in pixels.\n\n");
-      fprintf(fConfig, "range offset = %lf\n", cfg->terrain_correct->range_offset);
+      fprintf(fConfig, "range offset = %f\n", cfg->terrain_correct->range_offset);
       if (!shortFlag)
         fprintf(fConfig, "\n# This parameter sets the offset in azimuth direction in case the simulated\n"
         "# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
                 "# image.  The offset is specified in pixels.\n\n");
-      fprintf(fConfig, "azimuth offset = %lf\n", cfg->terrain_correct->azimuth_offset);
+      fprintf(fConfig, "azimuth offset = %f\n", cfg->terrain_correct->azimuth_offset);
       if (!shortFlag)
         fprintf(fConfig, "\n# The DEM that is provided to asf_terrcorr is generally in ground range,\n"
                 "# and is converted to slant range as part of the coregistration procedure.\n"

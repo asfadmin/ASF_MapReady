@@ -189,16 +189,16 @@ char *sprn_dssr(struct dataset_sum_rec *ds, int era)
       add(&ret, "\nStop line calibration (bottom)\t%d", ds->stop_cal_bottom);
       add(&ret, "\nPRF switching indicator\t%d", ds->prf_switch);
       add(&ret, "\nLine locator of PRF switching\t%d", ds->line_prf_switch);
-      add(&ret, "\nBeam center direction\t%8.3lf", ds->beam_center_dir);
+      add(&ret, "\nBeam center direction\t%8.3f", ds->beam_center_dir);
       add(&ret, "\nYaw steering mode flag\t%d", ds->yaw_steering);
-      add(&ret, "\nNominal offnadir angle\t%16.7lf", ds->off_nadir_angle);
+      add(&ret, "\nNominal offnadir angle\t%16.7f", ds->off_nadir_angle);
       add(&ret, "\nAntenna beam number\t%d", ds->ant_beam_num);
-      add(&ret, "\nIncidence angle constant (a0)\t%20.13lf", ds->incid_a[0]);
-      add(&ret, "\nIncidence angle constant (a1)\t%20.13lf", ds->incid_a[1]);
-      add(&ret, "\nIncidence angle constant (a2)\t%20.13lf", ds->incid_a[2]);
-      add(&ret, "\nIncidence angle constant (a3)\t%20.13lf", ds->incid_a[3]);
-      add(&ret, "\nIncidence angle constant (a4)\t%20.13lf", ds->incid_a[4]);
-      add(&ret, "\nIncidence angle constant (a5)\t%20.13lf", ds->incid_a[5]);
+      add(&ret, "\nIncidence angle constant (a0)\t%20.13f", ds->incid_a[0]);
+      add(&ret, "\nIncidence angle constant (a1)\t%20.13f", ds->incid_a[1]);
+      add(&ret, "\nIncidence angle constant (a2)\t%20.13f", ds->incid_a[2]);
+      add(&ret, "\nIncidence angle constant (a3)\t%20.13f", ds->incid_a[3]);
+      add(&ret, "\nIncidence angle constant (a4)\t%20.13f", ds->incid_a[4]);
+      add(&ret, "\nIncidence angle constant (a5)\t%20.13f", ds->incid_a[5]);
     }
   add(&ret, "\n*********** end of Dataset Summary  record ********************\n");
   return ret;

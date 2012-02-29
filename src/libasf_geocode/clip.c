@@ -143,7 +143,7 @@ int clip(char *inFile, char *maskFile, char *outFile)
       (endLine-startLine) * (endSample-startSample) * 100.0 / (ns*nl);
     printf("startLine: %i, startSample: %i\n", startLine, startSample);
     printf("endLine: %i, endSample: %i\n", endLine, endSample);
-    printf("Converage: %.1lf %%\n", coverage);
+    printf("Converage: %.1f %%\n", coverage);
 
     // Fail when there is no overlap
     if (startLine > metaIn->general->line_count || endLine < 0 ||

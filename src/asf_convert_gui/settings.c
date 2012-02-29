@@ -1788,14 +1788,14 @@ settings_to_config_file(const Settings *s,
         // items specific to either terrain correction or refine geolocation
         if (s->terrcorr_is_checked) {
             if (s->specified_tc_pixel_size)
-                fprintf(cf, "pixel spacing = %.2lf\n", s->tc_pixel_size);
+                fprintf(cf, "pixel spacing = %.2f\n", s->tc_pixel_size);
 	    // Apparently applying the geocoding pixel size caused some
 	    // issues with some of InSAR products. Will comment out the
 	    // automatic assignment of the pixel size defined in geocoding
 	    // section to the terrain correction.
 	    /*
             else if (s->specified_pixel_size) // geocode pixel size
-                fprintf(cf, "pixel spacing = %.2lf\n", s->pixel_size);
+                fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
 	    */
             fprintf(cf, "refine geolocation only = 0\n");
             fprintf(cf, "interpolate = %d\n", s->interp);

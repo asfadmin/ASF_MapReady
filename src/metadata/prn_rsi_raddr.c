@@ -34,7 +34,7 @@ char *sprn_rsi_raddr(struct RSI_VRADDR *dr)
    add(&ret, "%15.3f",dr->lookup_tab[i+2]);
    add(&ret, "%15.3f\n",dr->lookup_tab[i+3]);
  }
- add(&ret, "Thermal noise reference level (dB)      : %lf\n", dr->noise_scale);
+ add(&ret, "Thermal noise reference level (dB)      : %f\n", dr->noise_scale);
  add(&ret, "Scaling offset                          : %e\n", dr->offset);
  add(&ret, "Calibration constant                    : %e\n", dr->calib_const);
  add(&ret, "*********** end of Radiometric Data record ******************\n\n");

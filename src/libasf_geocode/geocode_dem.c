@@ -202,7 +202,7 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   if ( GSL_MIN(imd->general->x_pixel_size,
 	       imd->general->y_pixel_size) > pixel_size ) {
     asfPrintWarning
-      ("Requested pixel size %lf is smaller then the input image resolution "
+      ("Requested pixel size %f is smaller then the input image resolution "
        "(%le meters).\n", pixel_size,
        GSL_MIN (imd->general->x_pixel_size, imd->general->y_pixel_size));
   }
@@ -214,7 +214,7 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   //  if (!force_flag && GSL_MIN(imd->general->x_pixel_size,
   //	       imd->general->y_pixel_size) > (2*pixel_size) ) {
   //    report_func
-  //      ("Requested pixel size %lf is smaller then the minimum implied by half \n"
+  //      ("Requested pixel size %f is smaller then the minimum implied by half \n"
   //       "the input image resolution (%le meters), this is not supported.\n",
   //       pixel_size, GSL_MIN (imd->general->x_pixel_size,
   //			    imd->general->y_pixel_size));

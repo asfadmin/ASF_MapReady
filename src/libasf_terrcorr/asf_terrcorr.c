@@ -192,10 +192,10 @@ fftMatch_atCorners(char *output_dir, char *sar, char *dem, const int size)
   fftMatchQ(chopped_sar, chopped_dem, &dx_ll, &dy_ll, &cert);
   asfPrintStatus("LL: %14.10f %14.10f %14.10f\n", dx_ll, dy_ll, cert);
 
-  asfPrintStatus("Range shift: %14.10lf top\n", (double)(dx_ul-dx_ur));
-  asfPrintStatus("             %14.10lf bottom\n", (double)(dx_ll-dx_lr));
-  asfPrintStatus("   Az shift: %14.10lf left\n", (double)(dy_ul-dy_ll));
-  asfPrintStatus("             %14.10lf right\n\n", (double)(dy_ur-dy_lr));
+  asfPrintStatus("Range shift: %14.10f top\n", (double)(dx_ul-dx_ur));
+  asfPrintStatus("             %14.10f bottom\n", (double)(dx_ll-dx_lr));
+  asfPrintStatus("   Az shift: %14.10f left\n", (double)(dy_ul-dy_ll));
+  asfPrintStatus("             %14.10f right\n\n", (double)(dy_ur-dy_lr));
 
   nl = meta_sar->general->line_count;
   ns = meta_sar->general->sample_count;
@@ -203,8 +203,8 @@ fftMatch_atCorners(char *output_dir, char *sar, char *dem, const int size)
   rsf = 1 - (fabs((double)(dx_ul-dx_ur)) + fabs((double)(dx_ll-dx_lr)))/ns/2;
   asf = 1 - (fabs((double)(dy_ul-dy_ll)) + fabs((double)(dy_ur-dy_lr)))/nl/2;
 
-  asfPrintStatus("Suggested scale factors: %14.10lf range\n", rsf);
-  asfPrintStatus("                         %14.10lf azimuth\n\n", asf);
+  asfPrintStatus("Suggested scale factors: %14.10f range\n", rsf);
+  asfPrintStatus("                         %14.10f azimuth\n\n", asf);
 
   meta_free(meta_sar);
 
@@ -615,13 +615,13 @@ int match_dem(meta_parameters *metaSAR,
   if (no_matching) {
     // User supplied the offsets, not calculated
     asfPrintStatus("No matching of DEM and SAR image!\n");
-    asfPrintStatus("Applying range offset: %lf (meters)\n", range_offset);
-    asfPrintStatus("Applying azimuth offset: %lf (meters)\n", azimuth_offset);
+    asfPrintStatus("Applying range offset: %f (meters)\n", range_offset);
+    asfPrintStatus("Applying azimuth offset: %f (meters)\n", azimuth_offset);
     if (range_offset != 0.0 || azimuth_offset != 0.0) {
       range_offset /= metaSAR->general->x_pixel_size;
       azimuth_offset /= metaSAR->general->y_pixel_size;
-      asfPrintStatus("         range offset: %lf (pixels)\n", range_offset);
-      asfPrintStatus("         azimuth offset: %lf (pixels)\n", azimuth_offset);
+      asfPrintStatus("         range offset: %f (pixels)\n", range_offset);
+      asfPrintStatus("         azimuth offset: %f (pixels)\n", azimuth_offset);
       asfPrintStatus("Adjusting metadata to account for offsets...\n");
       refine_offset(range_offset, azimuth_offset, metaSAR, &t_off, &x_off);
       asfPrintStatus("  Time Shift: %f -> %f (change: %f) seconds\n"

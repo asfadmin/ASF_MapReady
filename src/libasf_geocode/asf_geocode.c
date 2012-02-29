@@ -1792,7 +1792,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
           imd->general->y_pixel_size) > pixel_size )
     {
         asfPrintWarning
-        ("Requested pixel size %lf is smaller than the input image resolution "
+        ("Requested pixel size %f is smaller than the input image resolution "
         "(%0.1f meters).\n", pixel_size,
         MAX (imd->general->x_pixel_size, imd->general->y_pixel_size));
     }
@@ -1845,14 +1845,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     if (projection_type != LAT_LONG_PSEUDO_PROJECTION) {
       if (!force_flag &&
 	  imd->general->x_pixel_size > (2*pixel_size_x) ) {
-        report_func("Requested pixel size x %lf is smaller than the minimum "
+        report_func("Requested pixel size x %f is smaller than the minimum "
                     "implied by half \nthe input image resolution "
                     "(%le meters), this is not supported.\n",
                     pixel_size_x, imd->general->x_pixel_size);
       }
       if (!force_flag &&
 	  imd->general->x_pixel_size > (2*pixel_size_y) ) {
-        report_func("Requested pixel size y %lf is smaller than the minimum "
+        report_func("Requested pixel size y %f is smaller than the minimum "
                     "implied by half \nthe input image resolution "
                     "(%le meters), this is not supported.\n",
                     pixel_size_y, imd->general->y_pixel_size);

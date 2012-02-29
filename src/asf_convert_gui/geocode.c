@@ -198,7 +198,7 @@ static const gchar * double_to_string(double value)
     if (ISNAN(value))
         return "";
 
-    snprintf(buf, sizeof(buf), "%lf", value);
+    snprintf(buf, sizeof(buf), "%f", value);
     return buf;
 }
 

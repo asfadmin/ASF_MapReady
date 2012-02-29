@@ -12,10 +12,10 @@ char *sprn_jaxa_facdr(struct JAXA_FACDR *fd, int length)
   add(&ret, "\n******** begin of Facility Related Data (JAXA) record *********\n");
   add(&ret, "\n FACDR sequence number\t\t%d", fd->seqence_number);
   for (ii=0; ii<10; ii++)
-    add(&ret, "\n Map to line/sample coefficients: a[%d]\t\t%20.10lf", 
+    add(&ret, "\n Map to line/sample coefficients: a[%d]\t\t%20.10f", 
 	ii, fd->a_map[ii]);
   for (ii=0; ii<10; ii++)
-    add(&ret, "\n Map to line/sample coefficients: b[%d]\t\t%20.10lf", 
+    add(&ret, "\n Map to line/sample coefficients: b[%d]\t\t%20.10f", 
 	ii, fd->b_map[ii]);
   add(&ret, "\n Calibration data indicator\t\t%d", fd->cal_data_indicator);
   add(&ret, "\n Start line of calibration at upper image\t\t%d", 
@@ -39,16 +39,16 @@ char *sprn_jaxa_facdr(struct JAXA_FACDR *fd, int length)
     for (ii=0; ii<25; ii++)
       add(&ret, "\n Line/sample to lat/lon coefficients: b[%d]\t\t%g", 
 	  ii, fd->b[ii]);
-    add(&ret, "\n Origin pixel (P0)\t\t%20.10lf", fd->origin_pixel);
-    add(&ret, "\n Origin line (L0)\t\t%20.10lf", fd->origin_line);
+    add(&ret, "\n Origin pixel (P0)\t\t%20.10f", fd->origin_pixel);
+    add(&ret, "\n Origin line (L0)\t\t%20.10f", fd->origin_line);
     for (ii=0; ii<25; ii++)
       add(&ret, "\n Lat/lon to line/sample coefficients: c[%d]\t\t%g", 
 	  ii, fd->c[ii]);
     for (ii=0; ii<25; ii++)
       add(&ret, "\n Lat/lon to line/sample coefficients: d[%d]\t\t%g", 
 	  ii, fd->d[ii]);
-    add(&ret, "\n Origin latitude [degrees]\t\t%20.10lf", fd->origin_lat);
-    add(&ret, "\n Origin longitude [degrees]\t\t%20.10lf", fd->origin_lon);
+    add(&ret, "\n Origin latitude [degrees]\t\t%20.10f", fd->origin_lat);
+    add(&ret, "\n Origin longitude [degrees]\t\t%20.10f", fd->origin_lon);
   }
 
   add(&ret, "\n******** end of Facility Related Data (JAXA) record ***********\n");

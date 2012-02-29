@@ -225,10 +225,10 @@ void update_pixel_info(ImageInfo *ii)
 	meta->projection->type != SCANSAR_PROJECTION) {
       distortion_t d;
       map_distortions(meta->projection, lat*D2R, lon*D2R, &d);
-      sprintf(&buf[strlen(buf)], "Meridian scale factor: %.6lf\n", d.h);
-      sprintf(&buf[strlen(buf)], "Parallel scale factor: %.6lf\n", d.k);
-      sprintf(&buf[strlen(buf)], "Areal scale factor: %.6lf\n", d.s);
-      sprintf(&buf[strlen(buf)], "Angular distortion: %.4lf (deg)\n", d.omega);
+      sprintf(&buf[strlen(buf)], "Meridian scale factor: %.6f\n", d.h);
+      sprintf(&buf[strlen(buf)], "Parallel scale factor: %.6f\n", d.k);
+      sprintf(&buf[strlen(buf)], "Areal scale factor: %.6f\n", d.s);
+      sprintf(&buf[strlen(buf)], "Angular distortion: %.4f (deg)\n", d.omega);
     }
 
     if (g_poly->n > 0) {

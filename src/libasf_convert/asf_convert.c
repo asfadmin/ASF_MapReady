@@ -3024,7 +3024,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           fprintf(fDef, "faraday correction = %d\n", cfg->polarimetry->farcorr);
         }
         if (cfg->general->terrain_correct) {
-          fprintf(fDef, "pixel spacing = %lf\n", cfg->terrain_correct->pixel);
+          fprintf(fDef, "pixel spacing = %f\n", cfg->terrain_correct->pixel);
           fprintf(fDef, "digital elevation model = %s\n",
                   cfg->terrain_correct->dem);
           fprintf(fDef, "mask = %s\n", cfg->terrain_correct->mask);

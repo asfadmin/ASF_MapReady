@@ -265,7 +265,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   fprintf(fp, "[Geocoding]\n");
   fprintf(fp, "projection = %s/projections/equi_rectangular/"
 	  "equi_rectangular_world.proj\n", get_asf_share_dir());
-  fprintf(fp, "pixel spacing = %.9lf\n", pixel_size);
+  fprintf(fp, "pixel spacing = %.9f\n", pixel_size);
   fprintf(fp, "force = 1\n\n");
   fprintf(fp, "[Export]\n");
   fprintf(fp, "format = PNG_GE\n");
@@ -368,10 +368,10 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
     fprintf(fp, "overlay = %s_INTERFEROGRAM_RGB.png\n", baseName);
   else
     fprintf(fp, "overlay = %s\n", pngFile);
-  fprintf(fp, "north = %.4lf\n", north);
-  fprintf(fp, "south = %.4lf\n", south);
-  fprintf(fp, "east = %.4lf\n", east);
-  fprintf(fp, "west = %.4lf\n", west);
+  fprintf(fp, "north = %.4f\n", north);
+  fprintf(fp, "south = %.4f\n", south);
+  fprintf(fp, "east = %.4f\n", east);
+  fprintf(fp, "west = %.4f\n", west);
   fprintf(fp, "transparency = %d\n", transparency);
   FCLOSE(fp);
 

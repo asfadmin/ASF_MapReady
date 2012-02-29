@@ -597,7 +597,7 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
 
   if (do_resample) {
     asfPrintStatus("Resampling with scale factors: "
-		   "%lf range, %lf azimuth.\n",
+		   "%f range, %f azimuth.\n",
 		   range_scale, azimuth_scale);
 
     resample(unscaleBaseName, outFile, range_scale, azimuth_scale);
@@ -626,7 +626,7 @@ static void ingest_radarsat2_polsar_amp(char *inFile, char *outFile,
  
   if (do_resample) {
     asfPrintStatus("Resampling with scale factors: "
-		   "%lf range, %lf azimuth.\n",
+		   "%f range, %f azimuth.\n",
 		   range_scale, azimuth_scale);
 
     resample(unscaleBaseName, outFile, range_scale, azimuth_scale);
@@ -655,7 +655,7 @@ static void ingest_terrasar_polsar_amp(char *inFile, char *outFile,
  
   if (do_resample) {
     asfPrintStatus("Resampling with scale factors: "
-		   "%lf range, %lf azimuth.\n",
+		   "%f range, %f azimuth.\n",
 		   range_scale, azimuth_scale);
 
     resample(unscaleBaseName, outFile, range_scale, azimuth_scale);

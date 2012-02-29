@@ -132,16 +132,16 @@ void fill_meta_info()
                   "Master acquisition date: %s\n"
                   "Slave image: %s\n"
                   "Slave acquisition date: %s\n"
-                  "Center look angle: %.4lf %s\n"
-                  "Doppler: %.4lf %s\n"
-                  "Doppler Rate: %.8lf %s\n"
-                  "Baseline Length: %.1lf %s\n"
-                  "Baseline Parallel: %.1lf %s\n"
-                  "Baseline Parallel Rate: %.8lf %s\n"
+                  "Center look angle: %.4f %s\n"
+                  "Doppler: %.4f %s\n"
+                  "Doppler Rate: %.8f %s\n"
+                  "Baseline Length: %.1f %s\n"
+                  "Baseline Parallel: %.1f %s\n"
+                  "Baseline Parallel Rate: %.8f %s\n"
                   "Baseline Perpendicular: %.1f %s\n"
                   "Baseline Perpendicular Rate: %.8f %s\n"
                   "Baseline Temporal: %d %s\n"
-                  "Baseline Critical: %.1lf %s\n", 
+                  "Baseline Critical: %.1f %s\n", 
                   meta->insar->processor,
                   meta->insar->master_image,
                   meta->insar->master_acquisition_date,

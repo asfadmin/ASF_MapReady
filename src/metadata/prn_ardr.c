@@ -19,39 +19,39 @@ char *sprn_ardr(struct alos_rad_data_rec *dr)
  add(&ret, "\n********** begin of Radiometric Data record (ALOS) *************\n\n");
  add(&ret, "Radiometric Data Record Sequence Number : %i\n", dr->sequence_num );
  add(&ret, "Number of radiometric data fields       : %i\n", dr->number_rec );
- add(&ret, "Calibration factor                      : %lf\n", 
+ add(&ret, "Calibration factor                      : %f\n", 
      dr->calibration_factor );
- add(&ret, "Transmission distortion matrix real(1,1): %lf\n", 
+ add(&ret, "Transmission distortion matrix real(1,1): %f\n", 
      dr->delta_trans_real[0] );
- add(&ret, "Transmission distortion matrix imag(1,1): %lf\n", 
+ add(&ret, "Transmission distortion matrix imag(1,1): %f\n", 
      dr->delta_trans_imag[0] );
- add(&ret, "Transmission distortion matrix real(1,2): %lf\n", 
+ add(&ret, "Transmission distortion matrix real(1,2): %f\n", 
      dr->delta_trans_real[1] );
- add(&ret, "Transmission distortion matrix imag(1,2): %lf\n", 
+ add(&ret, "Transmission distortion matrix imag(1,2): %f\n", 
      dr->delta_trans_imag[1] );
- add(&ret, "Transmission distortion matrix real(2,1): %lf\n", 
+ add(&ret, "Transmission distortion matrix real(2,1): %f\n", 
      dr->delta_trans_real[2] );
- add(&ret, "Transmission distortion matrix imag(2,1): %lf\n", 
+ add(&ret, "Transmission distortion matrix imag(2,1): %f\n", 
      dr->delta_trans_imag[2] );
- add(&ret, "Transmission distortion matrix real(2,2): %lf\n", 
+ add(&ret, "Transmission distortion matrix real(2,2): %f\n", 
      dr->delta_trans_real[3] );
- add(&ret, "Transmission distortion matrix imag(2,2): %lf\n", 
+ add(&ret, "Transmission distortion matrix imag(2,2): %f\n", 
      dr->delta_trans_imag[3] );
- add(&ret, "Reception distortion matrix real(1,1)   : %lf\n", 
+ add(&ret, "Reception distortion matrix real(1,1)   : %f\n", 
      dr->delta_receive_real[0] );
- add(&ret, "Reception distortion matrix imag(1,1)   : %lf\n", 
+ add(&ret, "Reception distortion matrix imag(1,1)   : %f\n", 
      dr->delta_receive_imag[0] );
- add(&ret, "Reception distortion matrix real(1,2)   : %lf\n", 
+ add(&ret, "Reception distortion matrix real(1,2)   : %f\n", 
      dr->delta_receive_real[1] );
- add(&ret, "Reception distortion matrix imag(1,2)   : %lf\n", 
+ add(&ret, "Reception distortion matrix imag(1,2)   : %f\n", 
      dr->delta_receive_imag[1] );
- add(&ret, "Reception distortion matrix real(2,1)   : %lf\n", 
+ add(&ret, "Reception distortion matrix real(2,1)   : %f\n", 
      dr->delta_receive_real[2] );
- add(&ret, "Reception distortion matrix imag(2,1)   : %lf\n", 
+ add(&ret, "Reception distortion matrix imag(2,1)   : %f\n", 
      dr->delta_receive_imag[2] );
- add(&ret, "Reception distortion matrix real(2,2)   : %lf\n", 
+ add(&ret, "Reception distortion matrix real(2,2)   : %f\n", 
      dr->delta_receive_real[3] );
- add(&ret, "Reception distortion matrix imag(2,2)   : %lf\n", 
+ add(&ret, "Reception distortion matrix imag(2,2)   : %f\n", 
      dr->delta_receive_imag[3] );
  add(&ret, "*********** end of Radiometric Data record ******************\n\n");
  return ret;
