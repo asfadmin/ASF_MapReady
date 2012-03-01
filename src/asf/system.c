@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include "asf.h"
 
 #ifdef win32
 #include <windows.h>
