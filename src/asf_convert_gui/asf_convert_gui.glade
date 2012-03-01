@@ -3327,16 +3327,6 @@
 							</widget>
 						      </child>
 
-						      <child>
-							<widget class="GtkMenuItem" id="geographic">
-							  <property name="visible">True</property>
-							  <property name="label" translatable="yes">Geographic (Lat/Lon)</property>
-							  <property name="use_underline">True</property>
-							  <signal name="activate" handler="on_geographic_activate" last_modification_time="Sat, 07 May 2005 03:01:20 GMT"/>
-							</widget>
-						      </child>
-
-
 						    </widget>
 						  </child>
 						</widget>
