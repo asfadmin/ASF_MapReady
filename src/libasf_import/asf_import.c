@@ -105,9 +105,9 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   printf("sample: %d\n", sample);
   printf("width: %d\n", width);
   printf("height: %d\n", height);
-  printf("p_range_scale: %lf\n", &p_range_scale);
-  printf("p_azimuth_scale: %lf\n", &p_azimuth_scale);
-  printf("p_correct_y_pixel_size: %lf\n", &p_correct_y_pixel_size);
+  printf("p_range_scale: %f\n", &p_range_scale);
+  printf("p_azimuth_scale: %f\n", &p_azimuth_scale);
+  printf("p_correct_y_pixel_size: %f\n", &p_correct_y_pixel_size);
   printf("apply_ers2_gain_fix: %d\n", apply_ers2_gain_fix);
   printf("inMetaNameOption: %s\n", inMetaNameOption);
   printf("inBaseName: %s\n", inBaseName);
