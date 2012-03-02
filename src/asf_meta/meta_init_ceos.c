@@ -1195,8 +1195,11 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   // SAR block
   if (ceos->product == SLC || ceos->product == RAW)
     meta->sar->image_type = 'S';
-  else if (is_geocoded)
+  else if (is_geocoded) {
     meta->sar->image_type = 'P';
+    meta->sar->azimuth_time_per_pixel =
+      meta->general->x_pixel_size / mpdr->velnadir;
+  }
   else {
     meta->sar->image_type = 'R';
     meta->sar->azimuth_time_per_pixel =
