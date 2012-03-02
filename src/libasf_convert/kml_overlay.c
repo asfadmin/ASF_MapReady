@@ -134,7 +134,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
 		    int transparency, char *colormap, char *rgb, 
 		    char *polsarpro, char *band, int zip)
 {
-  meta_parameters *meta;
+  meta_parameters *meta=NULL;
   double pixel_size;
   int is_insar = isInSAR(inFile);
   if (is_insar)
@@ -170,7 +170,6 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
       pixel_size = meta->projection->perX;
       if (meta->general->line_count > 1024)
 	pixel_size *= reduction;
-      meta_free(meta);
       FREE(envi);
     }
 
@@ -201,8 +200,13 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
     pixel_size = meta->general->x_pixel_size;
     if (meta->general->line_count > 1024)
       pixel_size *= reduction;
-    meta_free(meta);
   }
+
+  // ensure meters
+  if (meta->projection && strcmp(meta->projection->units, "degrees") == 0) {
+    pixel_size *= 108000;
+  }
+  meta_free(meta);
 
   // Generate input names
   char *inName = (char *) MALLOC(sizeof(char)*(strlen(inFile)+1));

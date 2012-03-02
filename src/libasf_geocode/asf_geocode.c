@@ -1792,12 +1792,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     meta_parameters *imd = meta_read (input_meta_data);
     meta_pixel_sizes_same_units(imd, projection_type);
 
-    // Convert any "degrees" pixel sizes to meters, unless output is also degrees
-    {
-      imd->general->x_pixel_size*=108000;
-      imd->general->y_pixel_size*=108000;
-    }
-
     // 400m correction for ScanSAR (again -- we reloaded the metadata &
     // reset the average height)
     double height_correction = 0;

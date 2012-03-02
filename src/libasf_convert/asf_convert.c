@@ -2439,10 +2439,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	in_side_length =
 	  (meta->general->line_count > meta->general->sample_count) ?
 	  meta->general->line_count : meta->general->sample_count;
-	
-	// calculate the reduced pixel sizes
-	out_x_pixel_size = meta->general->x_pixel_size*in_side_length/512.;
-	out_y_pixel_size = meta->general->y_pixel_size*in_side_length/512.;
 
 	// make sure that only the first band of a multi-band image
 	// is resized for generating a thumbnail, for polsarpro
@@ -2461,9 +2457,9 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	  }
 	}
 	
-	check_return(
-		     resample_to_pixsiz(inFile, tmpFile, out_x_pixel_size,
-					out_y_pixel_size),
+	check_return(resample(inFile, tmpFile,
+                              512./(double)meta->general->sample_count,
+                              512./(double)meta->general->line_count),
 		     "resampling data to thumbnail size (resample)\n");
 	
 	if (strlen(cfg->export->rgb) > 0) {
