@@ -206,6 +206,17 @@ char *proj_info_as_string(projection_type_t projection_type,
   return ret;
 }
 
+static void meta_pixel_sizes_same_units(meta_parameters *imd, projection_type_t target_projection)
+{
+    if (imd->projection && strcmp(imd->projection->units, "degrees") == 0 &&
+        target_projection != LAT_LONG_PSEUDO_PROJECTION)
+    {
+      imd->general->x_pixel_size *= 108000;
+      imd->general->y_pixel_size *= 108000;
+      strcpy(imd->projection->units, "meters");
+    }
+}
+
 static void print_proj_info(projection_type_t projection_type,
                             project_parameters_t *pp, datum_type_t datum)
 {
@@ -899,6 +910,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   unsigned long out_of_range_positive = 0;
   overlap_method_t overlap=OVERLAY_OVERLAP;
   double pixel_size_x, pixel_size_y;
+  int input_is_latlon = FALSE;
 
   if (pixel_size == 0.0)
     asfPrintError("Pixel size is 0.0\n");
@@ -938,6 +950,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   int ref_input=0;
   int n_bands=1;
   meta_parameters *meta = meta_read(in_base_names[0]);
+  meta_pixel_sizes_same_units(meta, projection_type);
 
   // Spit out a warning about products that have not been validated against ground
   // control points
@@ -1053,6 +1066,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // Input metadata.
     meta_parameters *imd = meta_read (input_meta_data);
+    meta_pixel_sizes_same_units(imd, projection_type);
+
+    input_is_latlon = imd->projection &&
+                      strcmp(imd->projection->units, "degrees") == 0;
 
     if (imd->general->data_type > REAL64) {
       asfPrintError("Geocoding of complex data not supported.\n");
@@ -1339,6 +1356,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         g_free (lats);
     }
 
+    // Convert any "degrees" pixel sizes to meters
+    meta_pixel_sizes_same_units(imd, projection_type);
+
     // If the input pixel size is -1, that means the user didn't specify one.
     // So, we will use the FIRST input file's pixel size.  The second (and
     // later) times through this loop, the pixel_size will already have been
@@ -1358,10 +1378,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                        pixel_size_x,
                        imd->general->x_pixel_size > imd->general->y_pixel_size ? "range" : "azimuth");
     }
-    else if (pixel_size < 0) { 
-      // This covers the odd cases of projected data such as UAVSAR GRD data
-      // that happens to have non-square pixels in the first place. We need
-      // to preserve the settings in this case.
+    else if (pixel_size < 0) {
       pixel_size_x = imd->general->x_pixel_size;
       pixel_size_y = imd->general->y_pixel_size;
     }
@@ -1455,11 +1472,12 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // the pixel size of the input image, we should be resampling at
   // close to one-to-one (which is where resampling works and we don't
   // have to worry about pixel averaging or anything).
-  if (projection_type == LAT_LONG_PSEUDO_PROJECTION) {
+  if (projection_type == LAT_LONG_PSEUDO_PROJECTION && !input_is_latlon) {
     // Conversion in decimal degrees - 30 m = 1 arcsec
     pixel_size_x /= 108000.0;
     pixel_size_y /= 108000.0;
   }
+
   double pc_per_x = pixel_size_x;
   double pc_per_y = pixel_size_y;
 
@@ -1772,6 +1790,13 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // Input metadata.
     meta_parameters *imd = meta_read (input_meta_data);
+    meta_pixel_sizes_same_units(imd, projection_type);
+
+    // Convert any "degrees" pixel sizes to meters, unless output is also degrees
+    {
+      imd->general->x_pixel_size*=108000;
+      imd->general->y_pixel_size*=108000;
+    }
 
     // 400m correction for ScanSAR (again -- we reloaded the metadata &
     // reset the average height)
@@ -1835,6 +1860,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       // re-read metadata
       meta_free(imd);
       imd = meta_read(input_meta_data);
+      meta_pixel_sizes_same_units(imd, projection_type);
 
       FREE(resample_file);
     }
@@ -1842,7 +1868,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // The pixel size requested by the user better not oversample by
     // the factor of 2.  Specifying --force will skip this check
     // Only apply for metric projections (no geographic)
-    if (projection_type != LAT_LONG_PSEUDO_PROJECTION) {
+    int input_is_latlon = imd->projection &&
+                          imd->projection->type == LAT_LONG_PSEUDO_PROJECTION;
+    int output_is_latlon = projection_type == LAT_LONG_PSEUDO_PROJECTION;
+    if (!input_is_latlon && !output_is_latlon) {
       if (!force_flag &&
 	  imd->general->x_pixel_size > (2*pixel_size_x) ) {
         report_func("Requested pixel size x %f is smaller than the minimum "

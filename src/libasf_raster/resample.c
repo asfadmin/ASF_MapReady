@@ -284,7 +284,15 @@ get_scalfact(const char *infile, double xpixsiz, double ypixsiz,
              double *xscalfact, double *yscalfact)
 {
   meta_parameters *metaIn = meta_read(infile);
-  
+ 
+  // ensure pixel sizes are in the same units -- argument is always in meters
+  // but the metadata might not be.  If the metadata has degrees, then we convert
+  // using the standard kludge
+  if (metaIn->projection && strcmp(metaIn->projection->units, "degrees") == 0) {
+    xpixsiz /= 108000;
+    ypixsiz /= 108000;
+  }
+ 
   *xscalfact = metaIn->general->x_pixel_size/xpixsiz;
   *yscalfact = metaIn->general->y_pixel_size/ypixsiz;
   
