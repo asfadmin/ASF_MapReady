@@ -519,7 +519,9 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                   (model_type == ModelTypeGeocentric) ? "ModelTypeGeocentric" :
                   (model_type == ModelTypeProjected)  ? "ModelTypeProjected"  : "Unknown");
   asfPrintStatus ("Input GeoTIFF key GTRasterTypeGeoKey is %s\n",
-                  (raster_type == RasterPixelIsArea)  ? "RasterPixelIsArea" : "(Unsupported type)");
+                  (raster_type == RasterPixelIsArea)  ? "RasterPixelIsArea" : 
+		  (raster_type == RasterPixelIsPoint) ? "RasterPixelIsPoint":
+		  "(Unsupported type)");
   if (map_projected_geotiff) {
       asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
                       (linear_units == Linear_Meter)                  ? "Linear_Meter"                  :
@@ -587,6 +589,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     }
     mp->perX = fabs(pixel_scale[0]);
     mp->perY = -(fabs(pixel_scale[1]));
+    // Special treatment for RasterPixelIsPoint data
+    // Those need a shift by half a pixel
+    if (raster_type == RasterPixelIsPoint) {
+      mp->startX -= mp->perX / 2.0;
+      mp->startY -= fabs(mp->perY) / 2.0;
+    }
     mp->height = 0.0;
     if (linear_units == Linear_Meter) {
       strcpy(mp->units, "meters");
@@ -3391,9 +3399,11 @@ void classify_geotiff(GTIF *input_gtif,
                 "or geogaphic (lat/long)\n");
     }
     r = GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, raster_type, 0, 0);
+    /*
     if (r && *raster_type != RasterPixelIsArea) {
         asfPrintWarning("GeoTIFFs with 'point' type raster pixels are unsupported (so far.)\nContinuing, however geolocations may be off by up to a pixel.\n");
     }
+    */
     if (m && *model_type == ModelTypeProjected) {
         l = GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, linear_units, 0, 1);
     }
@@ -3569,13 +3579,14 @@ void classify_geotiff(GTIF *input_gtif,
             // Pixel unit type is missing ...let's take a guess.  Model type and raster type are
             // known and valid for their types
             if (*model_type == ModelTypeProjected) {
+	      /*
                 if (*raster_type != RasterPixelIsArea) {
                     asfPrintError("Map projected GeoTIFFs with pixels that represent something\n"
                             "other than area (meters etc) are not supported.\n");
                 }
+	      */
                 // Looks like a valid map projection.  Guess linear meters for the units
-                asfPrintWarning("Missing linear units in GeoTIFF.  The GeoTIFF is map-projected and\n"
-                        "pixels represent area.  Guessing linear meters for the units and attempting\n"
+                asfPrintWarning("Missing linear units in GeoTIFF.  Guessing linear meters for the units and attempting\n"
                         "to continue...\n");
                 *linear_units = Linear_Meter;
                 *angular_units = -1;
