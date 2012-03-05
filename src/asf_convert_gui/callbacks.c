@@ -115,6 +115,7 @@ input_data_formats_changed()
     gboolean show_airsar_checkbuttons;
     gboolean enable_terrain_correction;
     gboolean enable_polarimetry;
+    gboolean enable_faraday_correction;
 
     // go through the input files list to see what kinds of data we have
     // initially, everything that is conditionally enabled is set to
@@ -126,6 +127,7 @@ input_data_formats_changed()
     show_airsar_checkbuttons = FALSE;
     enable_terrain_correction = FALSE;
     enable_polarimetry = FALSE;
+    enable_faraday_correction = FALSE;
     char formats[512];
     strcpy(formats, "");
 
@@ -145,6 +147,7 @@ input_data_formats_changed()
         show_data_type_combobox = TRUE;
         enable_terrain_correction = TRUE;
         enable_polarimetry = TRUE;
+        enable_faraday_correction = TRUE;
         if (!strstr(formats, "PolSARpro"))
           strcat(formats, "PolSARpro, ");
       }
@@ -156,6 +159,7 @@ input_data_formats_changed()
       else if (is_asf_internal(file)) {
         enable_terrain_correction = TRUE;
         enable_polarimetry = TRUE;
+        enable_faraday_correction = TRUE;
         if (!strstr(formats, "ASF Internal"))
           strcat(formats, "ASF Internal, ");
       }
@@ -195,6 +199,7 @@ input_data_formats_changed()
         show_data_type_combobox = TRUE;
         enable_terrain_correction = TRUE;
         enable_polarimetry = TRUE;
+        enable_faraday_correction = TRUE;
         if (!strstr(formats, "CEOS L1"))
           strcat(formats, "CEOS L1, ");
       }
@@ -312,6 +317,14 @@ input_data_formats_changed()
         gtk_toggle_button_set_active(
             GTK_TOGGLE_BUTTON(polarimetry_checkbutton), FALSE);
     gtk_widget_set_sensitive(polarimetry_checkbutton, enable_polarimetry);
+
+    GtkWidget *faraday_correction_checkbutton =
+        get_widget_checked("farcorr_checkbutton");
+    if (!enable_faraday_correction)
+        gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(faraday_correction_checkbutton), FALSE);
+    gtk_widget_set_sensitive(faraday_correction_checkbutton, enable_faraday_correction);
+
     polarimetry_settings_changed();
 }
 
