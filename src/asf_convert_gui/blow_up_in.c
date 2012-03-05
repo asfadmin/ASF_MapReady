@@ -164,51 +164,6 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     g_assert (GTK_IS_TREE_VIEW (widget));
     g_assert (!GTK_WIDGET_NO_WINDOW (widget));
 
-    /* We want to center the popup over the original thumbnail.  Since
-    we know the original thumbnail is square, the clipbox corresponds
-    to the region, so we can just get the clipbox of the thumbnail
-    and take the center of that as the center of our popum image.  */
-    GdkRectangle tn_rec;
-    gdk_region_get_clipbox (tr, &tn_rec);
-
-    /* Size of popup image to use, in pixels on a side.  */
-    const gint popup_size = THUMB_SIZE_BIG;
-
-    gint tree_view_x, tree_view_y;
-    gdk_window_get_origin (widget->window, &tree_view_x, &tree_view_y);
-
-    GdkWindowAttr nwa;
-    nwa.event_mask = GDK_ALL_EVENTS_MASK;
-
-    // popup must take into account any horizontal scrolling
-    // that has taken place in the tree view
-    GtkScrolledWindow *s =
-       GTK_SCROLLED_WINDOW(get_widget_checked("scrolledwindow_in"));
-    GtkAdjustment *adj = gtk_scrolled_window_get_hadjustment(s);
-    gint h_adj = (gint)(.5 + gtk_adjustment_get_value(adj));
-
-    // FIXME: when the pointer is over the popup itself,
-    // maybe_clear_popup_image doesn't notice that we are still over the
-    // thumbnail below and so clears things!  FIXME: I don't understand
-    // why this code puts the popup image top left corner only halfway
-    // down the thumbnail edge.  It looks fine this way actually, but as
-    // I understand this code it should put popup top left at thumbnail
-    // bottom right.
-    nwa.x = tree_view_x + tn_rec.x + tn_rec.width - h_adj;
-    nwa.y = tree_view_y + tn_rec.y + tn_rec.height;
-    nwa.width = popup_size;
-    nwa.height = popup_size;
-    nwa.wclass = GDK_INPUT_OUTPUT;
-    nwa.window_type = GDK_WINDOW_CHILD;
-    nwa.override_redirect = TRUE;
-
-    GdkWindow *root_window
-        = gdk_screen_get_root_window (gdk_screen_get_default ());
-
-    GdkWindow *popup_image_window
-        = gdk_window_new (root_window, &nwa,
-        GDK_WA_X | GDK_WA_Y | GDK_WA_NOREDIR);
-
     /* Iterator for the data in the current row of the list.  */
     GtkTreeIter iter;
     gtk_tree_model_get_iter (GTK_TREE_MODEL (list_store), &iter, path);
@@ -258,6 +213,47 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
 
     if (popup_image_pixbuf)
     {
+      /* We want to center the popup over the original thumbnail.  Since
+      we know the original thumbnail is square, the clipbox corresponds
+      to the region, so we can just get the clipbox of the thumbnail
+      and take the center of that as the center of our popum image.  */
+      GdkRectangle tn_rec;
+      gdk_region_get_clipbox (tr, &tn_rec);
+
+      gint tree_view_x, tree_view_y;
+      gdk_window_get_origin (widget->window, &tree_view_x, &tree_view_y);
+
+      GdkWindowAttr nwa;
+      nwa.event_mask = GDK_ALL_EVENTS_MASK;
+
+      // popup must take into account any horizontal scrolling
+      // that has taken place in the tree view
+      GtkScrolledWindow *s =
+         GTK_SCROLLED_WINDOW(get_widget_checked("scrolledwindow_in"));
+      GtkAdjustment *adj = gtk_scrolled_window_get_hadjustment(s);
+      gint h_adj = (gint)(.5 + gtk_adjustment_get_value(adj));
+
+      // FIXME: when the pointer is over the popup itself,
+      // maybe_clear_popup_image doesn't notice that we are still over the
+      // thumbnail below and so clears things!  FIXME: I don't understand
+      // why this code puts the popup image top left corner only halfway
+      // down the thumbnail edge.  It looks fine this way actually, but as
+      // I understand this code it should put popup top left at thumbnail
+      // bottom right.
+      nwa.x = tree_view_x + tn_rec.x + tn_rec.width - h_adj;
+      nwa.y = tree_view_y + tn_rec.y + tn_rec.height;
+      nwa.width = gdk_pixbuf_get_width(popup_image_pixbuf);
+      nwa.height = gdk_pixbuf_get_height(popup_image_pixbuf);
+      nwa.wclass = GDK_INPUT_OUTPUT;
+      nwa.window_type = GDK_WINDOW_CHILD;
+      nwa.override_redirect = TRUE;
+
+      GdkWindow *root_window
+          = gdk_screen_get_root_window (gdk_screen_get_default ());
+
+      GdkWindow *popup_image_window
+          = gdk_window_new (root_window, &nwa,
+          GDK_WA_X | GDK_WA_Y | GDK_WA_NOREDIR);
         gdk_window_show (popup_image_window);
 
         /* Magic number understood by gdk_draw_pixbuf to mean "use pixbuf
