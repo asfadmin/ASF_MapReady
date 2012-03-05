@@ -1634,7 +1634,8 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "polarimetry = %d\n", polarimetry_on ? 1 : 0);
     fprintf(cf, "terrain correction = %d\n",
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
-    fprintf(cf, "calibration = %d\n", s->do_calibrate);
+    if(input_data_format != INPUT_FORMAT_UAVSAR_POLSAR && input_data_format != INPUT_FORMAT_UAVSAR_INSAR)
+      fprintf(cf, "calibration = %d\n", s->do_calibrate);
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
     fprintf(cf, "export = %d\n", s->export_is_checked);
     fprintf(cf, "intermediates = 1\n");
