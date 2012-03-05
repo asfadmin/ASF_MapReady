@@ -229,11 +229,12 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     calculate_vectors_for_line(meta_in, meta_dem, ii - 1, dem_fp, localVectors[ii], nextVectors);
   }
 
+  for (jj=0; jj<ns; ++jj) {
+    incid_angles[jj] = 0;
+    corr[jj] = 1;
+  }
+
   if(save_incid_angles) {
-    for (jj=0; jj<ns; ++jj) {
-      incid_angles[jj] = 0;
-      corr[jj] = 1;
-    }
     put_band_float_line(fpSide, side_meta, 0, 0, incid_angles);
     put_band_float_line(fpSide, side_meta, 0, nl - 1, incid_angles);
     put_band_float_line(fpSide, side_meta, 1, 0, corr);
