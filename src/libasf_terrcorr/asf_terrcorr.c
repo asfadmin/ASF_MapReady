@@ -605,8 +605,8 @@ int match_dem(meta_parameters *metaSAR,
   double t_off, x_off;
   int redo_clipping;
   int demHeight;
-  float dx, dy, cert=0;
-  int idx, idy;
+  float dx=0, dy=0, cert=0;
+  int idx=0, idy=0;
   const float cert_cutoff = 0.4; // is this a good cutoff !?
 
   double saved_time_shift = metaSAR->sar->time_shift;
