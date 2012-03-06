@@ -224,10 +224,8 @@ static void get_inner_extents(char *file,
 
   *x0 = meta->projection->startX + startSample*meta->projection->perX;
   *y0 = meta->projection->startY + startLine*meta->projection->perY;
-  *xL = meta->projection->startX + 
-    (endSample - startSample)*meta->projection->perX;
-  *yL = meta->projection->startY + 
-    (endLine - startLine)*meta->projection->perY;
+  *xL = meta->projection->startX + endSample*meta->projection->perX;
+  *yL = meta->projection->startY + endLine*meta->projection->perY;
 
   meta_free(meta);
 }
