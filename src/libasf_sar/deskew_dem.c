@@ -193,6 +193,7 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
     double saved_ER=er;
     double er2her2,phi,phiAtSeaLevel,slantRng;
     int ns = meta->general->sample_count;
+    int nl = meta->general->line_count;
 
     meta_get_slants(meta,&slantFirst,&slantPer);
     slantFirst+=slantPer*meta->general->start_sample+1;
@@ -207,11 +208,28 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 	/*Precompute slant range for SR pixel x.*/
         d->slantRange[x]=slantFirst+x*slantPer;
         d->slantRangeSqr[x]=d->slantRange[x]*d->slantRange[x];
-	/*Compute incidence angle for SR pixel x.*/
+    }
+
+    /*Compute incidence angle for SR pixel x.*/
+    //Use the ALOS polynomial if we have it
+    if (meta_uses_incid_polynomial(meta))
+    {
+      for (x=0;x<ns;x++) {
+        d->incidAng[x]=meta_incid(meta, nl/2., x);
+      }
+    }
+    else
+    {
+      for (x=0;x<ns;x++) {
         d->incidAng[x]=M_PI-acos((d->slantRangeSqr[x]+er2her2)/
                                  (2.0*er*d->slantRange[x]));
-        d->sinIncidAng[x]=sin(d->incidAng[x]);
-        d->cosIncidAng[x]=cos(d->incidAng[x]);
+      }
+    }
+
+    for (x=0; x<ns; x++)
+    {
+      d->sinIncidAng[x]=sin(d->incidAng[x]);
+      d->cosIncidAng[x]=cos(d->incidAng[x]);
     }
     
     d->maxPhi=acos((satHt*satHt+er*er-d->slantRangeSqr[ns-1])/(2.0*satHt*er));

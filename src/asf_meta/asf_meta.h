@@ -644,6 +644,7 @@ stateVector meta_get_stVec(meta_parameters *sar,double time_arg);
 /*Return the incidence angle: this is the angle measured
   by the target between straight up and the satellite.
   Returns radians.*/
+int meta_uses_incid_polynomial(meta_parameters *meta);
 double meta_incid(meta_parameters *sar,double y,double x);
 
 /*Return the look angle: this is the angle measured

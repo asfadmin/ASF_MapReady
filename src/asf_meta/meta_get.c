@@ -236,6 +236,19 @@ stateVector meta_get_stVec(meta_parameters *meta,double time)
     return ret;
 }
 
+int meta_uses_incid_polynomial(meta_parameters *meta)
+{
+  return strcmp_case(meta->general->sensor, "ALOS") == 0 &&
+      strcmp_case(meta->general->sensor_name, "SAR") == 0 &&
+      meta_is_valid_double(meta->sar->incid_a[0]) &&
+      meta->sar->incid_a[0] != 0 &&
+      meta->sar->incid_a[1] != 0 &&
+      meta->sar->incid_a[2] != 0 &&
+      meta->sar->incid_a[3] != 0 &&
+      meta->sar->incid_a[4] != 0 &&
+      meta->sar->incid_a[5] != 0;
+}
+
 /* Calculation calls */
 /**********************************************************
  * meta_incid:  Returns the incidence angle
@@ -251,15 +264,7 @@ double meta_incid(meta_parameters *meta,double y,double x)
   double sr = meta_get_slant(meta,y,x);
 
   // Use the incidence angle polynomial if it is available and non-zero.
-  if (strcmp_case(meta->general->sensor, "ALOS") == 0 &&
-      strcmp_case(meta->general->sensor_name, "SAR") == 0 &&
-      meta_is_valid_double(meta->sar->incid_a[0]) &&
-      meta->sar->incid_a[0] != 0 &&
-      meta->sar->incid_a[1] != 0 &&
-      meta->sar->incid_a[2] != 0 &&
-      meta->sar->incid_a[3] != 0 &&
-      meta->sar->incid_a[4] != 0 &&
-      meta->sar->incid_a[5] != 0) {
+  if (meta_uses_incid_polynomial(meta)) {
     double R = sr/1000.;
     double R2=R*R;
     return
