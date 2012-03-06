@@ -114,10 +114,6 @@ int meta_get_latLon(meta_parameters *meta,
       /* ALOS data (not projected) -- use transform block */
       double l = yLine, s = xSample;
       if (meta->sar) {
-	meta->general->line_scaling = (double)
-	  meta->sar->original_line_count / meta->general->line_count;
-	meta->general->sample_scaling = (double)
-	  meta->sar->original_sample_count / meta->general->sample_count;
 	l = meta->general->start_line +
 	          meta->general->line_scaling * yLine;
 	s = meta->general->start_sample +
@@ -699,15 +695,10 @@ int meta_get_lineSamp(meta_parameters *meta,
         
         // result is in the original line/sample count units,
         // adjust in case we have scaled
-        if (meta->sar && (
-            (meta->sar->original_line_count != meta->general->line_count) ||
-            (meta->sar->original_sample_count != meta->general->sample_count)))
-        {
-          *yLine *= (double)meta->general->line_count/
-            (double)meta->sar->original_line_count;
-          *xSamp *= (double)meta->general->sample_count/
-            (double)meta->sar->original_sample_count;
-        }
+        *yLine -= meta->general->start_line;
+        *xSamp -= meta->general->start_sample;
+        *yLine /= meta->general->line_scaling;
+        *xSamp /= meta->general->sample_scaling;
         
         return 0;
       }
