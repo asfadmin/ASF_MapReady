@@ -595,6 +595,7 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   }
   else
     strcpy(meta->general->mode, "unknown");
+  meta->general->radiometry = r_GAMMA;
   meta->general->data_type = REAL32;
   strcpy(meta->general->acquisition_date, params->acquisition_date);
   meta->general->band_count = 1;
