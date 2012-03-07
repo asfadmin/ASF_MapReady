@@ -1074,19 +1074,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       char *filename = get_filename(dataName[0]);
       asfPrintStatus("Ingesting %s ...\n", filename);
       FREE(filename);
-      if (radiometry == r_AMP)
-	strcpy(metaOut->general->bands,
-	       "AMP,AMP_HH,PHASE_HH,AMP_HV,PHASE_HV,AMP_VH,PHASE_VH,"	\
-	       "AMP_VV,PHASE_VV");
-      else if (radiometry == r_SIGMA)
-	strcpy(metaOut->general->bands,
-	       "AMP,SIGMA-AMP-HH,SIGMA-PHASE-HH,SIGMA-AMP-HV,SIGMA-PHASE-HV," \
-	       "SIGMA-AMP-VH,SIGMA-PHASE-VH,SIGMA-AMP-VV,SIGMA-PHASE-VV");
-      else if (radiometry == r_SIGMA_DB)
-	strcpy(metaOut->general->bands,
-	       "AMP,SIGMA_DB-AMP-HH,SIGMA_DB-PHASE-HH,SIGMA_DB-AMP-HV,"	\
-	       "SIGMA_DB-PHASE-HV,SIGMA_DB-AMP-VH,SIGMA_DB-PHASE-VH,"	\
-	       "SIGMA_DB-AMP-VV,SIGMA_DB-PHASE-VV");
+      strcpy(metaOut->general->bands,
+	     "AMP,GAMMA-AMP-HH,GAMMA-PHASE-HH,GAMMA-AMP-HV,GAMMA-PHASE-HV,"
+	     "GAMMA-AMP-VH,GAMMA-PHASE-VH,GAMMA-AMP-VV,GAMMA-PHASE-VV");
       int ns = metaOut->general->sample_count;
       float total_power, ysca, amp, phase;
       complexFloat cpx;
@@ -1125,66 +1115,26 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	  cpx.imag = (float)byteBuf[3] * ysca / 127.0;
 	  amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
 	  phase = atan2(cpx.imag, cpx.real);
-	  if (radiometry == r_AMP) {
-	    shh_amp[kk] = amp;
-	    shh_phase[kk] = phase;
-	  }
-	  else if (radiometry == r_SIGMA) {
-	    shh_amp[kk] = amp*amp;
-	    shh_phase[kk] = phase;
-	  }
-	  else if (radiometry == r_SIGMA_DB) {
-	    shh_amp[kk] = amp;
-	    shh_phase[kk] = phase;
-	  }
+	  shh_amp[kk] = amp*amp;
+	  shh_phase[kk] = phase;
 	  cpx.real = (float)byteBuf[4] * ysca / 127.0;
 	  cpx.imag = (float)byteBuf[5] * ysca / 127.0;
 	  amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
 	  phase = atan2(cpx.imag, cpx.real);
-	  if (radiometry == r_AMP) {
-	    shv_amp[kk] = amp;
-	    shv_phase[kk] = phase;
-	  }
-	  else if (radiometry == r_SIGMA) {
-	    shv_amp[kk] = amp*amp;
-	    shv_phase[kk] = phase;
-	  }
-	  else if (radiometry == r_SIGMA_DB) {
-	    shv_amp[kk] = amp;
-	    shv_phase[kk] = phase;
-	  }
+	  shv_amp[kk] = amp*amp;
+	  shv_phase[kk] = phase;
 	  cpx.real = (float)byteBuf[6] * ysca / 127.0;
 	  cpx.imag = (float)byteBuf[7] * ysca / 127.0;
 	  amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
 	  phase = atan2(cpx.imag, cpx.real);
-	  if (radiometry == r_AMP) {
-	    svh_amp[kk] = amp;
-	    svh_phase[kk] = phase;
-	  }
-	  else if (radiometry == r_SIGMA) {
-	    svh_amp[kk] = amp*amp;
-	    svh_phase[kk] = phase;
-	  }
-	  else if (radiometry == r_SIGMA_DB) {
-	    svh_amp[kk] = amp;
-	    svh_phase[kk] = phase;
-	  }
+	  svh_amp[kk] = amp*amp;
+	  svh_phase[kk] = phase;
 	  cpx.real = (float)byteBuf[8] * ysca / 127.0;
 	  cpx.imag = (float)byteBuf[9] * ysca / 127.0;
 	  amp = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
 	  phase = atan2(cpx.imag, cpx.real);
-	  if (radiometry == r_AMP) {
-	    svv_amp[kk] = amp;
-	    svv_phase[kk] = phase;
-	  }
-	  else if (radiometry == r_SIGMA) {
-	    svv_amp[kk] = amp*amp;
-	    svv_phase[kk] = phase;
-	  }
-	  else if (radiometry == r_SIGMA_DB) {
-	    svv_amp[kk] = amp;
-	    svv_phase[kk] = phase;
-	  }
+	  svv_amp[kk] = amp*amp;
+	  svv_phase[kk] = phase;
 	}
 	put_band_float_line(fpOut, metaOut, 0, ii, power);
 	put_band_float_line(fpOut, metaOut, 1, ii, shh_amp);
