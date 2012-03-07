@@ -1201,8 +1201,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
     if (!meta->transform)
       meta->transform = meta_transform_init();
-    if (tfdr.facdr_len[10] < 5000 || 
-	strncmp_case(meta->general->mode, "WB", 2) == 0) {
+    if (mpdr && (tfdr.facdr_len[10] < 5000 || 
+	strncmp_case(meta->general->mode, "WB", 2) == 0)) {
       meta->transform->parameter_count = 4;
       meta->transform->x[0] = mpdr->a11;
       meta->transform->x[1] = mpdr->a12;
