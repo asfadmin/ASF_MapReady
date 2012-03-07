@@ -148,7 +148,7 @@ const char *get_summary_text()
             {
                 sprintf(text, "%s\n   Skip co-registration", text);
                 if (s->offset_x != 0.0 || s->offset_y != 0.0) {
-                    sprintf(text, "%s\n     (offsets: %.2f,%.2f pixels)", text,
+                    sprintf(text, "%s\n     (offsets: %.2f,%.2f m)", text,
                             s->offset_x, s->offset_y);
                 }
             }
