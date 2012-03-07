@@ -1090,6 +1090,8 @@ void fill_structure_field(char *field_name, void *valp)
   if ( !strcmp(stack_top->block_name, "transform") ) {
     int ii;
     char coeff[15];
+    if ( !strcmp(field_name, "type") )
+      { strcpy(MTRANSFORM->type, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "parameter_count") )
       { MTRANSFORM->parameter_count = VALP_AS_INT; return; }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {

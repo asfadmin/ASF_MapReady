@@ -789,6 +789,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
     char coeff[15];
     meta_put_string(fp,"transform {","",
         "Block containing ALOS coordinate transformation parameters");
+    meta_put_string(fp,"type:",meta->transform->type,
+		    "Type: slant or ground (depending on geometry)");
     meta_put_int(fp,"parameter_count:",meta->transform->parameter_count,
      "Number of transformation parameters");
     for (ii=0; ii<meta->transform->parameter_count; ii++) {

@@ -1201,6 +1201,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
     if (!meta->transform)
       meta->transform = meta_transform_init();
+    if (ceos->product == SLC)
+      strcpy(meta->transform->type, "slant");
+    else
+      strcpy(meta->transform->type, "ground");
     if (mpdr && (tfdr.facdr_len[10] < 5000 || 
 	strncmp_case(meta->general->mode, "WB", 2) == 0)) {
       meta->transform->parameter_count = 4;

@@ -262,6 +262,7 @@ typedef struct {
 
 // meta_transform: parameters for coordinate transformations
 typedef struct {
+  char type[10];          // Type: slant, ground (depending on geometry)
   int parameter_count;    // Number of parameters
   double x[25];           // Transform coeffs for x (ls to lon)
   double y[25];           // Transform coeffs for y (ls to lat)
