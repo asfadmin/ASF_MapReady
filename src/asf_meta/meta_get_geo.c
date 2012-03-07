@@ -187,7 +187,14 @@ void meta_get_timeSlantDop(meta_parameters *meta,
   assert (meta->projection == NULL
     || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
-  if (meta->sar->image_type=='S'||meta->sar->image_type=='G')
+  if (meta->transform)
+  {
+    double lat,lon;
+    meta_get_latLon(meta,yLine,xSample,0.0,&lat,&lon);
+    latLon2timeSlant(meta,lat,lon,time,slant,dop);
+  }
+  // just for testing
+  else if (meta->sar->image_type=='S'||meta->sar->image_type=='G')
   { /*Slant or ground range.  These are easy.*/
     *slant = meta_get_slant(meta,yLine,xSample);
     *time  = meta_get_time(meta,yLine,xSample);

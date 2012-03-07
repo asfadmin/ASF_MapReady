@@ -1578,6 +1578,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           meta->general->y_pixel_size *= nLooks;
           meta->sar->azimuth_time_per_pixel *= nLooks;
           meta->sar->multilook = 1;
+	  if (strcmp_case(meta->general->sensor, "ALOS") == 0)
+	    meta->general->line_scaling = nLooks;
       }
   }
 

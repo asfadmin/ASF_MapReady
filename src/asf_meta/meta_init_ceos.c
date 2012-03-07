@@ -1192,58 +1192,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
         is_geocoded = FALSE;
   }
 
-  // SAR block
-  if (ceos->product == SLC || ceos->product == RAW)
-    meta->sar->image_type = 'S';
-  else if (is_geocoded) {
-    meta->sar->image_type = 'P';
-    meta->sar->azimuth_time_per_pixel =
-      meta->general->x_pixel_size / mpdr->velnadir;
-  }
-  else {
-    meta->sar->image_type = 'R';
-    meta->sar->azimuth_time_per_pixel =
-      meta->general->x_pixel_size / mpdr->velnadir;
-  }
-  meta->sar->azimuth_look_count = dssr->n_azilok;
-  meta->sar->range_look_count = 1;
-  if (ceos->product == RAW)
-    meta->sar->deskewed = 0;
-  else
-    meta->sar->deskewed = 1;
-  meta->sar->slant_range_first_pixel = dssr->rng_gate
-    * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
-  meta->sar->slant_shift = 0;
-  meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
-  meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
-  meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
-  if (mpdr) {
-    meta->sar->satellite_height = mpdr->distplat + mpdr->altplat;
-  }
-  else {
-    meta->sar->satellite_height =
-        meta_get_sat_height(meta,
-                            meta->general->line_count/2,
-                            meta->general->sample_count/2);
-  }
-  if (ceos->product == SLC || ceos->product == RAW) {
-    meta->sar->earth_radius =
-      meta_get_earth_radius(meta,
-          meta->general->line_count/2,
-          meta->general->sample_count/2);
-    meta->sar->satellite_height =
-      meta_get_sat_height(meta,
-        meta->general->line_count/2,
-        meta->general->sample_count/2);
-  }
-  else {
-    meta->sar->earth_radius = mpdr->distplat;
-    if (dataName && strlen(*dataName))
-      meta->sar->chirp_rate = get_chirp_rate(dataName[0]);
-  }
-  for (ii=0; ii<6; ++ii)
-    meta->sar->incid_a[ii] = dssr->incid_a[ii];
-
   // Transformation block
   if (ceos->product != RAW) {
     struct trl_file_des_rec tfdr;
@@ -1292,6 +1240,65 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       meta->transform->map2ls_b[ii] = facdr.b_map[ii];
     }
   }
+
+  // SAR block
+  if (ceos->product == SLC || ceos->product == RAW)
+    meta->sar->image_type = 'S';
+  else if (is_geocoded) {
+    meta->sar->image_type = 'P';
+    meta->sar->azimuth_time_per_pixel =
+      meta->general->x_pixel_size / mpdr->velnadir;
+  }
+  else {
+    meta->sar->image_type = 'R';
+    meta->sar->azimuth_time_per_pixel =
+      meta->general->x_pixel_size / mpdr->velnadir;
+  }
+  meta->sar->azimuth_look_count = dssr->n_azilok;
+  meta->sar->range_look_count = 1;
+  if (ceos->product == RAW)
+    meta->sar->deskewed = 0;
+  else
+    meta->sar->deskewed = 1;
+  if (ceos->product == SLC) {
+    double time, slant;
+    meta_get_timeSlantDop(meta, 0, 0, &time, &slant, NULL);
+    meta->sar->slant_range_first_pixel = slant;
+    printf("slant_range_first_pixel: %.3f\n", slant);
+  }
+  else
+    meta->sar->slant_range_first_pixel = dssr->rng_gate
+      * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
+  meta->sar->slant_shift = 0;
+  meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
+  meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
+  meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
+  if (mpdr) {
+    meta->sar->satellite_height = mpdr->distplat + mpdr->altplat;
+  }
+  else {
+    meta->sar->satellite_height =
+        meta_get_sat_height(meta,
+                            meta->general->line_count/2,
+                            meta->general->sample_count/2);
+  }
+  if (ceos->product == SLC || ceos->product == RAW) {
+    meta->sar->earth_radius =
+      meta_get_earth_radius(meta,
+          meta->general->line_count/2,
+          meta->general->sample_count/2);
+    meta->sar->satellite_height =
+      meta_get_sat_height(meta,
+        meta->general->line_count/2,
+        meta->general->sample_count/2);
+  }
+  else {
+    meta->sar->earth_radius = mpdr->distplat;
+    if (dataName && strlen(*dataName))
+      meta->sar->chirp_rate = get_chirp_rate(dataName[0]);
+  }
+  for (ii=0; ii<6; ++ii)
+    meta->sar->incid_a[ii] = dssr->incid_a[ii];
 
   // Initialize map projection for projected images
   if (meta->sar->image_type=='P' && mpdr)
