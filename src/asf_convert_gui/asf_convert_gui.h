@@ -331,6 +331,22 @@ void settings_delete(Settings *);
 void settings_update_dem(Settings *s, const char *output_path);
 void settings_delete_dem_and_mask(Settings *s);
 void settings_update_mask(Settings *s, const char *output_path);
+char *settings_to_config_string(const Settings *s,
+	const gchar *input_file, 
+	const gchar *ancillary_file,
+	const gchar *meta_file, 
+	const gchar *output_full,
+	const gchar *output_path, 
+	const gchar *tmp_dir,
+	const gchar *polsarpro_aux_info,\
+	const gchar *interferogram,
+	const gchar *coherence,
+	const gchar *slave_metadata,
+	const gchar *baseline,
+      const gchar *uavsar_type,
+      const gchar *statfile,
+      const gchar *projfile);
+char *settings_to_proj_string(const Settings *s);
 char *settings_to_config_file(const Settings *s,
 			      const gchar *input_file, 
 			      const gchar *ancillary_file,

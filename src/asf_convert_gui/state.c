@@ -17,32 +17,6 @@
 // Protos
 void save_config(char *file, char* projfile);
 
-// Functions
-static int
-settings_get_input_data_format_allows_latitude(const Settings *s)
-{
-    return -1; /*s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 ||*/
-      //s->input_data_format == INPUT_FORMAT_STF;
-}
-
-static const gchar * scaling_method_string(int scaling_method)
-{
-  switch (scaling_method)
-  {
-    default:
-    case SCALING_METHOD_SIGMA:
-      return "sigma";
-
-    case SCALING_METHOD_MINMAX:
-      return "minmax";
-
-    case SCALING_METHOD_TRUNCATE:
-      return "truncate";
-
-    case SCALING_METHOD_HISTOGRAM_EQUALIZE:
-      return "histogram_equalize";
-  }
-}
 //#undef USE_GTK_FILE_CHOOSER
 #ifdef USE_GTK_FILE_CHOOSER
 
@@ -389,20 +363,11 @@ on_save_config_file_selection_cancel_button_clicked(GtkWidget *widget)
 //   file extension instead.
 void save_config(char *cfgFile, char* projfile)
 {
-  // FIXME: The following proj and config file writing code was taken from settings.c
-  // settings_to_config_file() should be refactored to take this stuff out and put
-  // it into a couple of separate functions ...which we'd also use here.  But because
-  // settings_to_config_file() is designed to only write temporary files, it doesn't
-  // work well for when a user is saving to a permanent file...
   FILE *cf, *pf;
   Settings * s;
-  char input_file[]="";
   char *input_basename=NULL;
-  char output_full[]="";
   char *output_file=NULL;
   char *output_basename=NULL;
-  char tmp_statfile[]="";
-  char tmp_dir[]="";
   if (cfgFile == NULL || strlen(cfgFile)==0) {
     message_box("Missing config file name");
     return;
@@ -432,42 +397,6 @@ void save_config(char *cfgFile, char* projfile)
   }
   FREE(cfg_base);
   g_free(cfg_path);
-
-  if (strlen(output_full)) {
-    if (s->export_is_checked) {
-      output_file = STRDUP(output_full);
-    } else {
-      output_file = stripExt(output_full);
-    }
-
-    output_basename = get_basename(output_file);
-  }
-  else {
-    output_basename = (char*)MALLOC(sizeof(char)*1);
-    strcpy(output_basename, "");
-    output_file=(char*)MALLOC(sizeof(char)*1);
-    strcpy(output_file, "");
-  }
-
-  if (strlen(input_file)) {
-    char *base = get_filename(input_file);
-    char *path = g_path_get_dirname(input_file);
-    input_basename = (char*)MALLOC(sizeof(char)*(strlen(base)+strlen(path)+2));
-
-      // handle prepensions in the input filename
-    int prepension = has_prepension(input_file);
-    if (prepension > 0)
-      sprintf(input_basename, "%s%c%s", path, DIR_SEPARATOR, base+prepension);
-    else
-      sprintf(input_basename, "%s%c%s", path, DIR_SEPARATOR, base);
-
-    FREE(base);
-    g_free(path);
-  }
-  else {
-    input_basename = (char*)MALLOC(sizeof(char)*1);
-    strcpy(input_basename, "");
-  }
 
   // Write the config and proj files using the same base name but different extensions
   if (!s) {
@@ -500,240 +429,21 @@ void save_config(char *cfgFile, char* projfile)
       return;
     }
 
-    switch (s->projection)
-    {
-      case PROJ_UTM:
-        fprintf(pf, "[Universal Transverse Mercator]\n");
-        fprintf(pf, "Zone=%d\n", s->zone != 0 ? s->zone : 0);
-        fprintf(pf, "Datum=%s\n", datum_string(s->datum));
-        break;
-
-      case PROJ_PS:
-        // FIXME: Write spheroid/ellipsoid/ellipsoid-only datum to the PS proj file
-        // We are not using the 'spheroid' field yet, e.g. when asf_convert uses the -rpf
-        // option with a polar stereographic projection proj file, but hopefully we
-        // will... mostly this is important just for the Hughes ellipsoid
-        fprintf(pf, "[Polar Stereographic]\n");
-        fprintf(pf, "First Standard Parallel=%.10f\n", s->plat1);
-        fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-        fprintf(pf, "Area=%s\n", (s->lat0 > 0.0 || s->plat1 > 0.0) ? "North" : "South");
-        if (s->datum == HUGHES_DATUM)
-            fprintf(pf, "Spheroid=Hughes\n");
-        else
-            fprintf(pf, "Datum=%s\n", datum_string(s->datum));
-
-        break;
-
-      case PROJ_ALBERS:
-        fprintf(pf, "[Albers Conical Equal Area]\n");
-        fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
-        fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
-        fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-        fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
-        fprintf(pf, "Datum=%s\n", datum_string(s->datum));
-	fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
-        break;
-
-      case PROJ_LAMAZ:
-        fprintf(pf, "[Lambert Azimuthal Equal Area]\n");
-        fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-        fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
-        fprintf(pf, "Datum=%s\n", datum_string(s->datum));
-	fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
-        break;
-
-      case PROJ_LAMCC:
-        fprintf(pf, "[Lambert Conformal Conic]\n");
-        fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
-        fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
-        fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-        fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
-        fprintf(pf, "Datum=%s\n", datum_string(s->datum));
-	fprintf(pf, "Spheroid=%s\n", spheroid_string(s->spheroid));
-        break;
-
-      default:
-        g_snprintf(msg, sizeof(msg),
-                   "Unrecognized projection type found!  Projection parameters will not be saved.");
-        message_box(msg);
-        break;
-    }
+    char *proj_str = settings_to_proj_string(s);
+    fprintf(pf, proj_str);
     fclose(pf);
+    free(proj_str);
   }
 
-  fprintf(cf, "Temporary config file, generated by the ASF MapReady Tool\n");
-  fprintf(cf, "File was generated on: %s\n\n", date_time_stamp());
-
-  fprintf(cf, "[General]\n");
-  fprintf(cf, "input file = %s\n", input_basename);
-  fprintf(cf, "output file = %s\n", output_file);
-  // fprintf(cf, "ancillary file = %s\n", s->ancillary_file);
-  fprintf(cf, "import = 1\n");
-  fprintf(cf, "external = %d\n", s->external_is_checked);
-  fprintf(cf, "sar processing = %d\n", s->process_to_level1);
-// fprintf(cf, "image stats=0\n");
-// fprintf(cf, "detect corner reflectors = 0\n");
-  int polarimetry_on =
-    s->polarimetric_decomp_setting != POLARIMETRY_NONE || s->do_farcorr;
-  fprintf(cf, "polarimetry = %d\n", polarimetry_on ? 1 : 0);
-  fprintf(cf, "terrain correction = %d\n",
-          s->terrcorr_is_checked || s->refine_geolocation_is_checked);
-  fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
-  fprintf(cf, "export = %d\n", s->export_is_checked);
-// fprintf(cf, "default values =\n");
-  // kludge on the intermediates -- we store our value +1, so that the
-  // command-line tool always saves intermediates.
-  fprintf(cf, "intermediates = %d\n", s->keep_files+1);
-  fprintf(cf, "status file = %s\n", tmp_statfile);
-  fprintf(cf, "short configuration file = 0\n");
-  FILE *fpDefs = fopen_share_file("asf_mapready/asf_mapready.defaults", "rt");
-  if (fpDefs) {
-    fprintf(cf, "default values = %s/%s\n", get_asf_share_dir(),
-            "asf_mapready/asf_mapready.defaults");
-    FCLOSE(fpDefs);
-  }
-  fprintf(cf, "tmp dir = %s\n", tmp_dir);
-//    fprintf(cf, "thumbnail = %d\n",
-//            s->output_format == OUTPUT_FORMAT_GEOTIFF ? 1 : 0);
-  fprintf(cf, "thumbnail = 1\n");
-  fprintf(cf, "\n");
-
-  fprintf(cf, "[Import]\n");
-  fprintf(cf, "format = CEOS (1)\n");
-
-  fprintf(cf, "radiometry = %s_image\n", settings_get_data_type_string(s));
-// fprintf(cf, "look up table = \n");
-  if (settings_get_input_data_format_allows_latitude(s) > 0) {
-    fprintf(cf, "lat begin = %.2f\n", s->latitude_low);
-    fprintf(cf, "lat end = %.2f\n", s->latitude_hi);
-  }
-// fprintf(cf, "precise =\n");
-  fprintf(cf, "output db = %d\n", s->output_db);
-  fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
-  fprintf(cf, "polsarpro colormap = %s\n", s->polsarpro_colormap);
-  fprintf(cf, "\n");
-
-  if (s->external_is_checked) {
-    fprintf(cf, "[External]\n");
-    fprintf(cf, "# external selected = %d\n", s->external_selected);
-    fprintf(cf, "# external params = %s\n", get_external_parameters_as_csv());
-    fprintf(cf, "command = %s\n", s->cmd);
-    fprintf(cf, "\n");
-  }
-
-  if (s->process_to_level1) {
-    fprintf(cf, "[SAR processing]\n");
-    fprintf(cf, "radiometry = %s_image\n",
-            settings_get_data_type_string(s));
-    fprintf(cf, "\n");
-  }
-
-  if (polarimetry_on) {
-    fprintf(cf, "[Polarimetry]\n");
-    fprintf(cf, "pauli = %d\n",
-            s->polarimetric_decomp_setting==POLARIMETRY_PAULI?1:0);
-    fprintf(cf, "sinclair = %d\n",
-            s->polarimetric_decomp_setting==POLARIMETRY_SINCLAIR?1:0);
-    fprintf(cf, "cloude pottier = %d\n",
-            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE8?1:0);
-    fprintf(cf, "extended cloude pottier = %d\n",
-            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE16?1:0);
-    fprintf(cf, "entropy anisotropy alpha = %d\n",
-            s->polarimetric_decomp_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
-    fprintf(cf, "freeman durden = %d\n",
-            s->polarimetric_decomp_setting==POLARIMETRY_FREEMAN_DURDEN?1:0);
-
-    int farcorr_code = FARCORR_OFF;
-    if (s->do_farcorr)
-      farcorr_code = s->farcorr_global_avg ? FARCORR_MEAN : FARCORR_SMOOTH;
-    fprintf(cf, "faraday correction = %d\n", farcorr_code);
-    fprintf(cf, "farcorr threshold = %f\n", s->farcorr_threshold);
-    fprintf(cf, "\n");
-  }
-
-  if (s->terrcorr_is_checked || s->refine_geolocation_is_checked) {
-    // Terrain correction section
-    fprintf(cf, "[Terrain correction]\n");
-    fprintf(cf, "digital elevation model = %s\n", s->dem_file);
-
-    // items specific to either terrain correction or refine geolocation
-    if (s->terrcorr_is_checked) {
-      if (s->specified_tc_pixel_size)
-        fprintf(cf, "pixel spacing = %.2f\n", s->tc_pixel_size);
-      else if (s->specified_pixel_size) // geocode pixel size
-        fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
-      fprintf(cf, "refine geolocation only = 0\n");
-      fprintf(cf, "interpolate = %d\n", s->interp);
-      fprintf(cf, "do radiometric = %d\n", s->do_radiometric);
-      if(s->do_radiometric)
-        fprintf(cf, "save incidence angles = %d\n", s->save_incid_angles);
-      fprintf(cf, "save terrcorr dem = %d\n", s->generate_dem);
-      fprintf(cf, "save terrcorr layover mask = %d\n",
-              s->generate_layover_mask);
-    } else if (s->refine_geolocation_is_checked) {
-      fprintf(cf, "refine geolocation only = 1\n");
-    }
-
-    // terrain correction continued... stuff that applies to both
-    fprintf(cf, "auto mask water = %d\n", s->auto_water_mask_is_checked);
-    if (s->mask_file_is_checked) {
-      fprintf(cf, "mask = %s\n", s->mask_file);
-    }
-    fprintf(cf, "smooth dem holes = %d\n", s->interp_dem_holes);
-    fprintf(cf, "fill value = -1\n");
-    fprintf(cf, "\n");
-  }
-
-  if (s->geocode_is_checked) {
-    fprintf(cf, "[Geocoding]\n");
-    fprintf(cf, "projection = %s\n", tmp_projfile);
-    if (s->specified_pixel_size)
-      fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
-    if (s->specified_height)
-      fprintf(cf, "height = %.2f\n", s->height);
-    // As of v1.1.x of MapReady, no longer write datum to
-    // config file (only to proj file above)
-    //fprintf(cf, "datum = %s\n", datum_string(s->datum));
-    fprintf(cf, "resampling = %s\n",
-            resample_method_string(s->resample_method));
-    fprintf(cf, "force = %d\n", s->geocode_force);
-    fprintf(cf, "\n");
-  }
-
-  if (s->export_is_checked) {
-    fprintf(cf, "[Export]\n");
-    fprintf(cf, "format = %s\n", settings_get_output_format_string(s));
-    if (s->output_bytes && !s->truecolor_is_checked &&
-        !s->falsecolor_is_checked)
-    {
-      fprintf(cf, "byte conversion = %s\n",
-              scaling_method_string(s->scaling_method));
-    } else {
-      fprintf(cf, "byte conversion = none\n");
-    }
-    if (s->export_bands)
-    {
-      if (!s->truecolor_is_checked && !s->falsecolor_is_checked)
-      {
-        const char *r = strlen(s->red)   > 0 ? s->red   : "ignore";
-        const char *g = strlen(s->green) > 0 ? s->green : "ignore";
-        const char *b = strlen(s->blue)  > 0 ? s->blue  : "ignore";
-        fprintf(cf, "rgb banding = %s,%s,%s\n", r, g, b);
-      }
-      else {
-        fprintf(cf, "rgb banding = \n");
-      }
-      fprintf(cf, "truecolor = %d\n", s->truecolor_is_checked ? 1 : 0);
-      fprintf(cf, "falsecolor = %d\n", s->falsecolor_is_checked ? 1 : 0);
-    }
-    fprintf(cf, "\n");
-  }
+  char *cfg_str = settings_to_config_string(s, "", "",
+                      "", "", "", "", "", "", "", "", "", "", "", projfile);
+  fprintf(cf, cfg_str);
+  fclose(cf);
 
   FREE(tmp_projfile);
   FREE(output_basename);
   FREE(input_basename);
   FREE(output_file);
-  fclose(cf);
   settings_delete(s);
 }
 
