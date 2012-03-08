@@ -353,12 +353,12 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->general->x_pixel_size     = dssr->pixel_spacing;
   meta->general->y_pixel_size     = dssr->line_spacing;
   if (dssr->pixel_spacing == 0.0 && strncmp(dssr->beam1, "EL1", 3)==0) {
-    asfPrintWarning("No range pixel size specified for EL1, using 30m\n");
-    meta->general->x_pixel_size = 30;
+    asfPrintWarning("No range pixel size specified for EL1, using 12.5m\n");
+    meta->general->x_pixel_size = 12.5;
   }
   if (dssr->line_spacing == 0.0 && strncmp(dssr->beam1, "EL1", 3)==0) {
-    asfPrintWarning("No azimuth pixel size specified for EL1, using 30m\n");
-    meta->general->y_pixel_size = 30;
+    asfPrintWarning("No azimuth pixel size specified for EL1, using 12.5m\n");
+    meta->general->y_pixel_size = 12.5;
   }
   meta->general->center_latitude  = dssr->pro_lat;
   meta->general->center_longitude = dssr->pro_long;
