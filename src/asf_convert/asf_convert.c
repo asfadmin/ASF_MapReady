@@ -24,7 +24,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_mapready"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-create]  [-log <logFile>] [-quiet] [-license]\n"\
+"   "ASF_NAME_STRING" [-create] [-input <inFile>] [-output <outFile>]\n"\
+"                [-tmpdir <dir>] [-log <logFile>] [-quiet] [-license]\n"\
 "                [-version] [-help]\n"\
 "                <config_file>\n"
 
@@ -44,11 +45,22 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        should be processed. It is either read or created based on whether or\n"\
 "        not the -create option is specified (see below).\n"\
 "        NOTE: When a new configuration file is created, it is filled with\n"\
-"        comments that help the user with the available settings.\n"
+"        comments that help the user with the available settings.\n\n"\
+"        Alternatively, a settings file can be used as long as the input and\n"\
+"        output file are defined using the appropriate options.\n"
 
 #define ASF_OPTIONS_STRING \
 "   -create <config_file>\n"\
 "        Create <config_file> instead of reading it.\n"\
+"   -input <inFile>\n"\
+"        Overwrites the input file name in a configuration file or\n"\
+"        defines the input file name for a settings file.\n"\
+"   -output <outFile>\n"\
+"        Overwrites the output file name in a configuration file or\n"\
+"        defines the output file name for a settings file.\n"\
+"   -tmpdir <dir>\n"\
+"        Overwrite the temporary directory in a configuration file or\n"\
+"        defines the temporary directory for a settings file.\n"\
 "   -log <logFile>\n"\
 "        Set the name and location of the log file. Default behavior is to\n"\
 "        log to tmp<processIDnumber>.log\n"\
@@ -139,14 +151,17 @@ static int checkForOption(char* key, int argc, char* argv[])
 
 int main(int argc, char *argv[])
 {
-  char configFileName[255];
+  char configFileName[255], *tmpConfigFile=NULL;
+  char *inFile=NULL, *outFile=NULL, *tmpDir=NULL;
   const int pid = getpid();
   int createflag;
   extern int logflag, quietflag;
   int create_f, quiet_f;  /* log_f is a static global */
+  int input_f, output_f, tmpdir_f;
 
   createflag = logflag = quietflag = FALSE;
   create_f = log_f = quiet_f = FLAG_NOT_SET;
+  input_f = output_f = tmpdir_f = FLAG_NOT_SET;
 
   // Begin command line parsing ***********************************************
   if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
@@ -164,6 +179,9 @@ int main(int argc, char *argv[])
   create_f = checkForOption("-create", argc, argv);
   log_f    = checkForOption("-log", argc, argv);
   quiet_f  = checkForOption("-quiet", argc, argv);
+  input_f  = checkForOption("-input", argc, argv);
+  output_f = checkForOption("-output", argc, argv);
+  tmpdir_f = checkForOption("-tmpdir", argc, argv);
 
   // We need to make sure the user specified the proper number of arguments
   int needed_args = 1 + REQUIRED_ARGS;               // command & REQUIRED_ARGS
@@ -171,6 +189,9 @@ int main(int argc, char *argv[])
   if (create_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
   if (log_f    != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (quiet_f  != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
+  if (input_f  != FLAG_NOT_SET) {needed_args += 2; num_flags++;}
+  if (output_f != FLAG_NOT_SET) {needed_args += 2; num_flags++;}
+  if (tmpdir_f != FLAG_NOT_SET) {needed_args += 2; num_flags++;}
 
   // Make sure we have the right number of args
   if(argc != needed_args) {
@@ -188,6 +209,9 @@ int main(int argc, char *argv[])
   // Make sure all options occur before the config file name argument
   if (num_flags == 1 &&
       (create_f > 1 ||
+       input_f  > 1 ||
+       output_f > 1 ||
+       tmpdir_f > 1 ||
        log_f    > 1 ||
        quiet_f  > 1))
   {
@@ -195,6 +219,9 @@ int main(int argc, char *argv[])
   }
   else if (num_flags > 1 &&
            (create_f >= argc - REQUIRED_ARGS - 1 ||
+	    input_f  >= argc - REQUIRED_ARGS - 1 ||
+	    output_f >= argc - REQUIRED_ARGS - 1 ||
+	    tmpdir_f >= argc - REQUIRED_ARGS - 1 ||
             log_f    >= argc - REQUIRED_ARGS - 1 ||
             quiet_f  >= argc - REQUIRED_ARGS - 1))
   {
@@ -212,6 +239,18 @@ int main(int argc, char *argv[])
     // default behavior: log to tmp<pid>.log
     sprintf(logFile, "tmp%i.log", pid);
   }
+  if (input_f != FLAG_NOT_SET) {
+    inFile = (char *) MALLOC(sizeof(char)*512);
+    strcpy(inFile, argv[input_f+1]);
+  }
+  if (output_f != FLAG_NOT_SET) {
+    outFile = (char *) MALLOC(sizeof(char)*512);
+    strcpy(outFile, argv[output_f+1]);
+  }
+  if (input_f != FLAG_NOT_SET) {
+    tmpDir = (char *) MALLOC(sizeof(char)*512);
+    strcpy(tmpDir, argv[tmpdir_f+1]);
+  }
   logflag = TRUE;
   fLog = FOPEN(logFile, "a");
   // Set old school quiet flag (for use in our libraries)
@@ -220,17 +259,46 @@ int main(int argc, char *argv[])
   // Fetch required arguments
   strcpy(configFileName, argv[argc-1]);
 
+  // Update configuration file (if needed)
+  if (inFile || outFile || tmpDir) {
+    tmpConfigFile = (char *) MALLOC(sizeof(char)*25);
+    sprintf(tmpConfigFile, "tmp%i.cfg", pid);
+    convert_config *cfg = read_convert_config(configFileName);
+    cfg->general->short_config = TRUE;
+    if (inFile)
+      strcpy(cfg->general->in_name, inFile);
+    if (outFile)
+      strcpy(cfg->general->out_name, outFile);
+    if (tmpDir)
+      strcpy(cfg->general->tmp_dir, tmpDir);
+    write_convert_config(tmpConfigFile, cfg);
+  }
+
   // Report the command line
   asfSplashScreen(argc, argv);
 
   // End command line parsing *************************************************
 
-  asf_convert_ext(createflag, configFileName, save_dem);
+  if (tmpConfigFile)
+    asf_convert_ext(createflag, tmpConfigFile, save_dem);
+  else
+    asf_convert_ext(createflag, configFileName, save_dem);
 
   // remove log file if we created it (leave it if the user asked for it)
   FCLOSE(fLog);
   if (log_f == FLAG_NOT_SET)
     remove(logFile);
+
+  if (tmpConfigFile) {
+    remove_file(tmpConfigFile);
+    FREE(tmpConfigFile);
+  }
+  if (inFile)
+    FREE(inFile);
+  if (outFile)
+    FREE(outFile);
+  if (tmpDir)
+    FREE(tmpDir);
 
   return(EXIT_SUCCESS);
 }
