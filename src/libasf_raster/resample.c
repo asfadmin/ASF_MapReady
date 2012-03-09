@@ -203,9 +203,7 @@ resample_impl(const char *infile, const char *outfile,
       // sample values.  (They are applied before/after the perX/Y
       // is applied.)
       else if (!metaOut->transform && !metaOut->airsar) {        
-        printf("start_sample is changing! from %d\n", metaOut->general->start_sample);
         metaOut->general->start_sample *= xscalfact;
-        printf("                            to %d\n", metaOut->general->start_sample);
         metaOut->general->start_line *= yscalfact;
       }
     }
