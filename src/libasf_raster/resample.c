@@ -139,7 +139,7 @@ resample_impl(const char *infile, const char *outfile,
     onl = (int) (nl * yscalfact);
     if (onp == 0 || onl == 0) {
       asfPrintError("Invalid resample: %dx%d -> %dx%d\n"
-                    "Scale factors where: %f (y) %f (x)\n",
+                    "Scale factors were: %f (y) %f (x)\n",
                     nl,np,onl,onp,yscalfact,xscalfact);
     }
 
@@ -203,7 +203,9 @@ resample_impl(const char *infile, const char *outfile,
       // sample values.  (They are applied before/after the perX/Y
       // is applied.)
       else if (!metaOut->transform && !metaOut->airsar) {        
+        printf("start_sample is changing! from %d\n", metaOut->general->start_sample);
         metaOut->general->start_sample *= xscalfact;
+        printf("                            to %d\n", metaOut->general->start_sample);
         metaOut->general->start_line *= yscalfact;
       }
     }

@@ -44,14 +44,18 @@ int trim(char *infile, char *outfile,
         metaOut->sar->sample_increment = 1;
     metaOut->general->start_line += startY *
         metaOut->sar->line_increment * metaOut->general->line_scaling;
+    printf("start sample is changing! (trim) from %d (%f %f %f)\n", metaOut->general->start_sample, (double)startX, (double)metaOut->sar->sample_increment, (double)metaOut->general->sample_scaling);
     metaOut->general->start_sample += startX *
          metaOut->sar->sample_increment * metaOut->general->sample_scaling;
+    printf("                                   to %d\n", metaOut->general->start_sample);
   }
   else {
     metaOut->general->start_line +=
         startY * metaOut->general->line_scaling;
+    printf("start sample is changing! (trim) from %d\n", metaOut->general->start_sample);
     metaOut->general->start_sample +=
         startX * metaOut->general->sample_scaling;
+    printf("                                   to %d\n", metaOut->general->start_sample);
   }
 
   /* Some sort of conditional on the validity of the corner coordinates would 
