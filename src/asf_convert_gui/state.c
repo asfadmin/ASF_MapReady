@@ -430,14 +430,14 @@ void save_config(char *cfgFile, char* projfile)
     }
 
     char *proj_str = settings_to_proj_string(s);
-    fprintf(pf, proj_str);
+    fprintf(pf, "%s", proj_str);
     fclose(pf);
     free(proj_str);
   }
 
   char *cfg_str = settings_to_config_string(s, "", "",
                       "", "", "", "", "", "", "", "", "", "", "", projfile);
-  fprintf(cf, cfg_str);
+  fprintf(cf, "%s", cfg_str);
   fclose(cf);
 
   FREE(tmp_projfile);

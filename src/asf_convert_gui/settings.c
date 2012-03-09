@@ -1982,19 +1982,18 @@ settings_to_config_file(const Settings *s,
         output_file = stripExt(output_full);
     }
 
-    char *tmp_projfile = "";
+    char *output_basename = get_basename(output_file);
+    char *tmp_projfile =
+      MALLOC(sizeof(char)*(9 + strlen(output_basename) + strlen(tmp_dir)));
+    tmp_projfile[0] = '\0';
     if (s->geocode_is_checked && s->projection != PROJ_GEO) {
-
-      char *output_basename = get_basename(output_file);
-      tmp_projfile =
-          MALLOC(sizeof(char)*(9 + strlen(output_basename) + strlen(tmp_dir)));
       sprintf(tmp_projfile, "%s/%s.proj", tmp_dir, output_basename);
 
       FILE * pf = fopen(tmp_projfile, "wt");
       if (!pf) return NULL; /* FIXME, need better error handling here */
 
       char *proj_str = settings_to_proj_string(s);
-      fprintf(pf, proj_str);
+      fprintf(pf, "%s", proj_str);
       fclose(pf);
       free(proj_str);
     }
@@ -2016,13 +2015,13 @@ settings_to_config_file(const Settings *s,
                         slave_metadata, baseline, uavsar_type, tmp_statfile,
                         tmp_projfile);
 
-    fprintf(cf, cfg_str);
+    fprintf(cf, "%s", cfg_str);
     fclose(cf);
     free(tmp_statfile);
-    if (tmp_projfile)
-      free(tmp_projfile);
+    free(tmp_projfile);
     free(output_file);
     free(cfg_str);
+    free(output_basename);
     return tmp_cfgfile;
 }
 
