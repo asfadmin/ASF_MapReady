@@ -1163,7 +1163,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->general->orbit_direction = 'D';
   meta->general->bit_error_rate = 0.0;
   meta->general->band_count = nBands;
-  ceos_init_stVec(in_fName, ceos, meta);
 
   if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = 0.0;
@@ -1272,11 +1271,12 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->deskewed = 0;
   else
     meta->sar->deskewed = 1;
+  ceos_init_stVec(in_fName, ceos, meta);
   if (ceos->product == SLC) {
     double time, slant;
     meta_get_timeSlantDop(meta, 0, 0, &time, &slant, NULL);
     meta->sar->slant_range_first_pixel = slant;
-    printf("slant_range_first_pixel: %.3f\n", slant);
+    //printf("slant_range_first_pixel: %.3f\n", slant);
   }
   else
     meta->sar->slant_range_first_pixel = dssr->rng_gate
