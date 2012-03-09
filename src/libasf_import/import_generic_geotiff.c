@@ -1503,9 +1503,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   float base_x_pixel_scale = pixel_scale[0];
   float base_y_pixel_scale = pixel_scale[1];
   if (is_usgs_seamless_geotiff) {
-    int x_pixel_size_meters = MAGIC_UNSET_INT;
-    int y_pixel_size_meters = MAGIC_UNSET_INT;
-    // Convert angular units to decimal degrees if necessary
+      // Convert angular units to decimal degrees if necessary
       switch(angular_units) {
           case Angular_Arc_Second:
               base_x_pixel_scale *= ARCSECONDS2DEGREES;
@@ -1516,73 +1514,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               break;
       }
 
-      // Convert decimal degrees to (approximate) pixel resolution in meters
-      // (per STRM & DTED standards)
-      //  30m = 1 arcsec = 0.0002777777 degrees,
-      //  60m = 2 arcsec = 0.0005555555 degrees,
-      //  90m = 3 arcsec = 0.0008333333 degrees,
-      // 180m = 6 arcsec = 0.0016666667 degrees,
-      if (FLOAT_COMPARE_TOLERANCE(base_x_pixel_scale, 0.0002777, 0.000001)) {
-          x_pixel_size_meters = 30.0;
-      }
-      else if (FLOAT_COMPARE_TOLERANCE(base_x_pixel_scale, 0.0005555, 0.000001)) {
-          x_pixel_size_meters = 60.0;
-      }
-      else if (FLOAT_COMPARE_TOLERANCE(base_x_pixel_scale, 0.0008333, 0.000001)) {
-          x_pixel_size_meters = 90.0;
-      }
-      else if (FLOAT_COMPARE_TOLERANCE(base_x_pixel_scale, 0.0016667, 0.000001)) {
-          x_pixel_size_meters = 180.0;
-      }
-      else {
-          // If not a standard size, then hack-calc it...
-          //
-          // We are supposed to put {x,y}_pixel_size in meters, so we need to convert
-          // the pixel scale in degrees to meters ...and we don't have platform position
-          // or height information!
-          //
-          // So, we are cheating a bit here, forcing the result to be to the nearest
-          // 10m.  This is ok since USGS DEMs are in 30, 60, or 90 meters.  And if this
-          // cheat is wrong ...it should still be ok since the one where accuracy is
-          // important is the value in the projection block, this one is used by geocode
-          // when deciding how large the pixels should be in the output.
-          x_pixel_size_meters = 10*(int)(11131.95 * pixel_scale[0] + .5);
-              // Sanity check on the pixel size cheat...
-          if (x_pixel_size_meters != 30 &&
-              x_pixel_size_meters != 60 &&
-              x_pixel_size_meters != 90 &&
-              x_pixel_size_meters != 180)
-          {
-              asfPrintWarning("Unexpected x pixel size: %dm.\n"
-                      "USGS Seamless/NED/DTED data should be 30, 60, 90, or 180m\n", x_pixel_size_meters);
-          }
-      }
-      if (FLOAT_COMPARE_TOLERANCE(base_y_pixel_scale, 0.0002777, 0.000001)) {
-          y_pixel_size_meters = 30.0;
-      }
-      else if (FLOAT_COMPARE_TOLERANCE(base_y_pixel_scale, 0.0005555, 0.000001)) {
-          y_pixel_size_meters = 60.0;
-      }
-      else if (FLOAT_COMPARE_TOLERANCE(base_y_pixel_scale, 0.0008333, 0.000001)) {
-          y_pixel_size_meters = 90.0;
-      }
-      else if (FLOAT_COMPARE_TOLERANCE(base_y_pixel_scale, 0.0016667, 0.000001)) {
-          y_pixel_size_meters = 180.0;
-      }
-      else {
-          y_pixel_size_meters = 10*(int)(11131.95 * pixel_scale[1] + .5);
-          if (y_pixel_size_meters != 30 &&
-              y_pixel_size_meters != 60 &&
-              y_pixel_size_meters != 90 &&
-              y_pixel_size_meters != 180)
-          {
-              asfPrintWarning("Unexpected y pixel size: %dm.\n"
-                      "USGS Seamless/NED/DTED data should be 30, 60, 90, or 180m\n", y_pixel_size_meters);
-          }
-      }
-
-      mg->x_pixel_size = x_pixel_size_meters;
-      mg->y_pixel_size = y_pixel_size_meters;
+      mg->x_pixel_size = base_x_pixel_scale;
+      mg->y_pixel_size = base_y_pixel_scale;
   }
   else if (linear_units == Linear_Foot ||
 	   linear_units == Linear_Foot_US_Survey ||
