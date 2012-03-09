@@ -2632,14 +2632,14 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       //DEMs be geocoded for terrain correction ingest).  So, proceed
       //directly to export.
       if (cfg->general->export) {
-	update_status("Exporting clipped DEM... ");
-	char *tmp = stripExt(inFile);
-	strcpy(inFile, tmp);
-	free(tmp);
-	asfPrintStatus("Exporting clipped DEM: %s -> %s\n", inFile, outFile);
-	check_return(
-		     asf_export(get_format(cfg), SIGMA, inFile, outFile),
-		     "exporting clipped dem (asf_export)\n");
+        update_status("Exporting clipped DEM... ");
+        char *tmp = stripExt(inFile);
+        strcpy(inFile, tmp);
+        free(tmp);
+        asfPrintStatus("Exporting clipped DEM: %s -> %s\n", inFile, outFile);
+        check_return(
+          asf_export(get_format(cfg), get_scale(cfg), inFile, outFile),
+          "exporting clipped dem (asf_export)\n");
       }
       else {
 	// User requested that we save the clipped DEM, but chose not
