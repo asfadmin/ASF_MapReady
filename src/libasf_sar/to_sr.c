@@ -246,9 +246,13 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     int n = 120;
 
     asfPrintStatus("Creating %dx%d mapping grid...\n", n, n);
-
-    double time_grid_incr = ((double)(onl))/((double)(n)) * time_incr;
-    double slant_grid_incr = ((double)(ons))/((double)(n)) * slant_incr;
+ 
+    // changed how these are calculated, so that the spline will cover
+    // the entire value range
+    double time_grid_incr = fabs(time_end - time_start) / (double)(n-1);
+    if (time_incr < 0) time_grid_incr = -time_grid_incr;
+    double slant_grid_incr = fabs(slant_end - slant_start) / (double)(n-1);
+    if (slant_incr < 0) slant_grid_incr = -slant_grid_incr;    
 
     // allocating memory for the splines, and the arrays to generate them
     gsl_interp_accel **samp_accels = MALLOC(sizeof(gsl_interp_accel *) * n);
@@ -278,6 +282,8 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
                 time_in[ii] = time_end - ii*time_grid_incr;
 
             ts2ls(inMeta, time_in[ii], slant, &line_out[ii], &samp_out[ii]);
+            //printf("time: %f, slant: %f ==> line: %f, samp %f\n",
+            //       time_in[ii], slant, line_out[ii], samp_out[ii]);
         }
 
         samp_accels[jj] = gsl_interp_accel_alloc();
