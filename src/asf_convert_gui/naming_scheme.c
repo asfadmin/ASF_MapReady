@@ -469,7 +469,8 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
         if(uavsar_type_col && strlen(uavsar_type_col)) {
           gchar *type_lower = g_utf8_strdown(uavsar_type_col, strlen(uavsar_type_col));
           gchar *gfilename = g_strconcat(filename, "_", type_lower, NULL);
-          strcpy(filename, gfilename);
+          g_free(filename);
+          filename = g_strdup(gfilename);
           g_free(type_lower);
           g_free(gfilename);
         }
