@@ -531,6 +531,11 @@ static char *build_band_list(const char *file, const gchar * uavsar_type)
           else if(!strcmp(element[i], "C23"))
             g_string_append(bands, "HVVV,");
         }
+        for(i = 0; i < nBands; i++) {
+          FREE(dataName[i]);
+          FREE(element[i]);
+        }
+        FREE(dataType);
         FREE(dataName);
         FREE(element);
         g_string_erase(bands, bands->len-1, 1); //Remove trailing comma

@@ -1429,7 +1429,8 @@ on_uavsar_polsar_all_checkbutton_toggled(GtkWidget *widget)
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(all_button))) {
     GList *l, *table_children = gtk_container_get_children(GTK_CONTAINER(polsar_table));
     for(l = table_children; l; l = l->next) {
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), TRUE);
+      if(gtk_widget_get_sensitive(l->data))
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), TRUE);
     }
     g_list_free(table_children);
   }
@@ -1443,7 +1444,8 @@ on_uavsar_insar_all_checkbutton_toggled(GtkWidget *widget)
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(all_button))) {
     GList *l, *table_children = gtk_container_get_children(GTK_CONTAINER(polsar_table));
     for(l = table_children; l; l = l->next) {
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), TRUE);
+      if(gtk_widget_get_sensitive(l->data))
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), TRUE);
     }
     g_list_free(table_children);
   }
@@ -1489,6 +1491,11 @@ on_uavsar_insar_type_toggled(GtkWidget *widget)
   g_list_free(uavsar_types_checkboxes);
 }
 
+/* When a user selects a valid uavsar annotation file, check to see if it is POLSAR or InSAR 
+ * and enable the appropriate set of options. Furthermore, check to see what types of data
+ * are available for the scene (i.e. MLC, GRD, DAT) and only enable those options
+ * that we have data for.
+ */
 SIGNAL_CALLBACK void
 on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *entry)
 {
@@ -1497,6 +1504,8 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
   GtkWidget *insar_frame = get_widget_checked("uavsar_insar_select_frame");
 
   GList *l, *uavsar_types_checkboxes = get_widgets_prefix_checked("uavsar_proc_type");
+  for(l = uavsar_types_checkboxes; l; l = l->next)
+    gtk_widget_set_sensitive(l->data, FALSE);
   uavsar_types_checkboxes = g_list_append(uavsar_types_checkboxes, get_widget_checked("uavsar_polsar_all_proc_types"));
   uavsar_types_checkboxes = g_list_append(uavsar_types_checkboxes, get_widget_checked("uavsar_insar_all_proc_types"));
   for(l = uavsar_types_checkboxes; l; l = l->next)
@@ -1508,9 +1517,49 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
   if(fileExists(filename)) {
     if(is_uavsar_polsar(filename)) {
       gtk_widget_set_sensitive(polsar_frame, TRUE);
+
+      char *types[4] = {"MLC", "HGT", "GRD", "DAT"};
+      char **dataName, **element;
+      int *dataType, nBands, i, j;
+      for(i = 0; i < 4; i++) {
+        get_uavsar_file_names(filename, uavsar_type_name_to_enum(types[i]), &dataName, &element, &dataType, &nBands);
+        if(nBands) {
+          GString *checkbutton_name = g_string_new(types[i]);
+          g_string_prepend(checkbutton_name, "uavsar_proc_type_");
+          GtkWidget *checkbutton = get_widget_checked(checkbutton_name->str);
+          gtk_widget_set_sensitive(checkbutton, TRUE);
+          for(j = 0; j < nBands; j++) {
+            FREE(dataName[j]);
+            FREE(element[j]);
+          }
+          FREE(dataType);
+          FREE(dataName);
+          FREE(element);
+        }
+      }
     }
     else if(is_uavsar_insar(filename)) {
       gtk_widget_set_sensitive(insar_frame, TRUE);
+
+      char *types[9] = {"AMP", "AMP_GRD", "INT", "INT_GRD", "UNW", "UNW_GRD", "COR", "COR_GRD", "HGT_GRD"};
+      char **dataName, **element;
+      int *dataType, nBands, i, j;
+      for(i = 0; i < 9; i++) {
+        get_uavsar_file_names(filename, uavsar_type_name_to_enum(types[i]), &dataName, &element, &dataType, &nBands);
+        if(nBands) {
+          GString *checkbutton_name = g_string_new(types[i]);
+          g_string_prepend(checkbutton_name, "uavsar_proc_type_");
+          GtkWidget *checkbutton = get_widget_checked(checkbutton_name->str);
+          gtk_widget_set_sensitive(checkbutton, TRUE);
+          for(j = 0; j < nBands; j++) {
+            FREE(dataName[j]);
+            FREE(element[j]);
+          }
+          FREE(dataType);
+          FREE(dataName);
+          FREE(element);
+        }
+      }
     }
   }
 }

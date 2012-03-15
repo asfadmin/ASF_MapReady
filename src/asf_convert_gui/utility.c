@@ -266,6 +266,8 @@ data_file_name(const gchar * file_name, const gchar *uavsar_type)
         FREE(element[i]);
       }
       FREE(dataType);
+      FREE(dataName);
+      FREE(element);
       return ret;
     }
   }

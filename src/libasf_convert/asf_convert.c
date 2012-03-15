@@ -534,7 +534,20 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       cfg->airsar->l_pol = airsar_l;
       cfg->airsar->p_pol = airsar_p;
     }
-    else if (is_uavsar(input)) { return; }
+    else if(is_uavsar(input)) {
+      if(cfg->polarimetry->sinclair ||
+          cfg->polarimetry->cloude_pottier ||
+          cfg->polarimetry->cloude_pottier_ext ||
+          cfg->polarimetry->cloude_pottier_nc ||
+          cfg->polarimetry->k_means_wishart ||
+          cfg->polarimetry->k_means_wishart_ext ||
+          cfg->polarimetry->lee_preserving ||
+          cfg->polarimetry->freeman_durden)
+        asfPrintError("Only the pauli polarimetric decomposition is supported for UAVSAR data at this time\n");
+      if(cfg->polarimetry->farcorr || cfg->polarimetry->farcorr_threshold)
+        asfPrintError("Faraday rotation correction of UAVSAR data is not supported at this time\n");
+      return;
+    }
     else if (isPolsarproMatrix(input, &matrixType, &error)) { return; }
     else if (isASFInternal(input)) {
       meta = meta_read(input);
