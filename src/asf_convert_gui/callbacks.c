@@ -115,6 +115,12 @@ input_data_formats_changed()
     gboolean show_airsar_checkbuttons;
     gboolean enable_terrain_correction;
     gboolean enable_polarimetry;
+    gboolean enable_polarimetry_pauli;
+    gboolean enable_polarimetry_sinclair;
+    gboolean enable_polarimetry_cloude8;
+    gboolean enable_polarimetry_cloude16;
+    gboolean enable_polarimetry_noclassify;
+    gboolean enable_polarimetry_freeman;
     gboolean enable_faraday_correction;
 
     // go through the input files list to see what kinds of data we have
@@ -127,6 +133,12 @@ input_data_formats_changed()
     show_airsar_checkbuttons = FALSE;
     enable_terrain_correction = FALSE;
     enable_polarimetry = FALSE;
+    enable_polarimetry_pauli = FALSE;
+    enable_polarimetry_sinclair = FALSE;
+    enable_polarimetry_cloude8 = FALSE;
+    enable_polarimetry_cloude16 = FALSE;
+    enable_polarimetry_noclassify = FALSE;
+    enable_polarimetry_freeman = FALSE;
     enable_faraday_correction = FALSE;
     char formats[512];
     strcpy(formats, "");
@@ -134,6 +146,14 @@ input_data_formats_changed()
     int valid,num=0;
     GtkTreeIter iter;
     valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+    if(!valid) {
+      enable_polarimetry_pauli = TRUE;
+      enable_polarimetry_sinclair = TRUE;
+      enable_polarimetry_cloude8 = TRUE;
+      enable_polarimetry_cloude16 = TRUE;
+      enable_polarimetry_noclassify = TRUE;
+      enable_polarimetry_freeman = TRUE;
+    }
     while (valid) {
       ++num;
 
@@ -147,6 +167,12 @@ input_data_formats_changed()
         show_data_type_combobox = TRUE;
         enable_terrain_correction = TRUE;
         enable_polarimetry = TRUE;
+        enable_polarimetry_pauli = TRUE;
+        enable_polarimetry_sinclair = TRUE;
+        enable_polarimetry_cloude8 = TRUE;
+        enable_polarimetry_cloude16 = TRUE;
+        enable_polarimetry_noclassify = TRUE;
+        enable_polarimetry_freeman = TRUE;
         enable_faraday_correction = TRUE;
         if (!strstr(formats, "PolSARpro"))
           strcat(formats, "PolSARpro, ");
@@ -159,12 +185,19 @@ input_data_formats_changed()
       else if (is_asf_internal(file)) {
         enable_terrain_correction = TRUE;
         enable_polarimetry = TRUE;
+        enable_polarimetry_pauli = TRUE;
+        enable_polarimetry_sinclair = TRUE;
+        enable_polarimetry_cloude8 = TRUE;
+        enable_polarimetry_cloude16 = TRUE;
+        enable_polarimetry_noclassify = TRUE;
+        enable_polarimetry_freeman = TRUE;
         enable_faraday_correction = TRUE;
         if (!strstr(formats, "ASF Internal"))
           strcat(formats, "ASF Internal, ");
       }
       else if (is_uavsar_polsar(file) || is_uavsar_insar(file)) {
         enable_polarimetry = TRUE;
+        enable_polarimetry_pauli = TRUE;
         enable_terrain_correction = TRUE;
         if(!strstr(formats, "UAVSAR"))
           strcat(formats, "UAVSAR, ");
@@ -199,6 +232,12 @@ input_data_formats_changed()
         show_data_type_combobox = TRUE;
         enable_terrain_correction = TRUE;
         enable_polarimetry = TRUE;
+        enable_polarimetry_pauli = TRUE;
+        enable_polarimetry_sinclair = TRUE;
+        enable_polarimetry_cloude8 = TRUE;
+        enable_polarimetry_cloude16 = TRUE;
+        enable_polarimetry_noclassify = TRUE;
+        enable_polarimetry_freeman = TRUE;
         enable_faraday_correction = TRUE;
         if (!strstr(formats, "CEOS L1"))
           strcat(formats, "CEOS L1, ");
@@ -317,6 +356,12 @@ input_data_formats_changed()
         gtk_toggle_button_set_active(
             GTK_TOGGLE_BUTTON(polarimetry_checkbutton), FALSE);
     gtk_widget_set_sensitive(polarimetry_checkbutton, enable_polarimetry);
+    gtk_widget_set_sensitive(get_widget_checked("rb_pauli"), enable_polarimetry_pauli);
+    gtk_widget_set_sensitive(get_widget_checked("rb_sinclair"), enable_polarimetry_sinclair);
+    gtk_widget_set_sensitive(get_widget_checked("rb_cloude8"), enable_polarimetry_cloude8);
+    gtk_widget_set_sensitive(get_widget_checked("rb_cloude16"), enable_polarimetry_cloude16);
+    gtk_widget_set_sensitive(get_widget_checked("rb_cloude_noclassify"), enable_polarimetry_noclassify);
+    gtk_widget_set_sensitive(get_widget_checked("rb_freeman_durden"), enable_polarimetry_freeman);
 
     GtkWidget *faraday_correction_checkbutton =
         get_widget_checked("farcorr_checkbutton");
