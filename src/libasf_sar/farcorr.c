@@ -233,6 +233,9 @@ void faraday_correct(const char *inFile, const char *outFile, double threshold,
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
 
+  if(!strcmp(inMeta->general->sensor, "UAVSAR"))
+    asfPrintError("Faraday rotation correction of UAVSAR data is not supported at this time\n");
+
   meta_parameters *dbgMeta = NULL;
   if (debug)
     dbgMeta = meta_read(meta_name);
