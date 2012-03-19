@@ -51,6 +51,10 @@ const char *get_cal_band_name(meta_parameters *meta, char *base)
         break;
     }
 
-    sprintf(rad_name, "%s%s", rad, base);
+    if(!strcmp(meta->general->sensor, "UAVSAR"))
+      // UAVSAR band names do not have the radiometry encoded in them
+      strncpy(rad_name, base, 32);
+    else
+      sprintf(rad_name, "%s%s", rad, base);
     return rad_name;
 }
