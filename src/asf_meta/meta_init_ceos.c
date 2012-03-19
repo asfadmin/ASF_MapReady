@@ -1128,28 +1128,28 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     beam += 36; // actually dual-pol data (HH+HV or VV+VH)
   else if (beam == 3 && beam_count == 4)
     beam = 127; // actually PLR 21.5
-  else if (beam_count == 1 && ceos->dssr.product_id[3] == 'S') {
+  else if (beam_count == 1 && ceos->dssr.product_id[5] == 'S') {
     if (ceos->dssr.off_nadir_angle < 25.0) {
       if (ceos->dssr.bnd_rng < 20000.0)
-	beam = 72; // WB1 HH3scan
+        beam = 72; // WB1 HH3scan
       else
-	beam = 73; // WB2 HH3scan
+        beam = 73; // WB2 HH3scan
     }
     else if (ceos->dssr.off_nadir_angle > 25.0 && 
-	     ceos->dssr.off_nadir_angle < 26.0) {
+       ceos->dssr.off_nadir_angle < 26.0) {
       if (ceos->dssr.off_nadir_angle < 25.0) {
-	if (ceos->dssr.bnd_rng < 20000.0)
-	  beam = 76; // WB1 HH4scan
-	else
-	  beam = 77; // WB2 HH4scan
+        if (ceos->dssr.bnd_rng < 20000.0)
+          beam = 76; // WB1 HH4scan
+        else
+          beam = 77; // WB2 HH4scan
       }
     }
     else if (ceos->dssr.off_nadir_angle > 27.0 &&
-	     ceos->dssr.off_nadir_angle < 28.0) {
+       ceos->dssr.off_nadir_angle < 28.0) {
       if (ceos->dssr.bnd_rng < 20000.0)
-	beam = 80; // WB1 HH5scan
+        beam = 80; // WB1 HH5scan
       else
-	beam = 81; // WB2 HH5scan
+        beam = 81; // WB2 HH5scan
     }
   }
   strcpy(meta->general->mode, alos_beam_mode[beam]);
