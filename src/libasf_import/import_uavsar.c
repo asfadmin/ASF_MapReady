@@ -1,7 +1,6 @@
 #include "uavsar.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
-#include <ctype.h>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>

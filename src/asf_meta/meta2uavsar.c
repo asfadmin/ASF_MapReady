@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include "asf_meta.h"
 #include "dateUtil.h"
 #include "uavsar.h"
