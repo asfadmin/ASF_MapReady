@@ -1429,7 +1429,7 @@ on_uavsar_polsar_all_checkbutton_toggled(GtkWidget *widget)
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(all_button))) {
     GList *l, *table_children = gtk_container_get_children(GTK_CONTAINER(polsar_table));
     for(l = table_children; l; l = l->next) {
-      if(gtk_widget_get_sensitive(l->data))
+      if(GTK_WIDGET_SENSITIVE(l->data))
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), TRUE);
     }
     g_list_free(table_children);
@@ -1444,7 +1444,7 @@ on_uavsar_insar_all_checkbutton_toggled(GtkWidget *widget)
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(all_button))) {
     GList *l, *table_children = gtk_container_get_children(GTK_CONTAINER(polsar_table));
     for(l = table_children; l; l = l->next) {
-      if(gtk_widget_get_sensitive(l->data))
+      if(GTK_WIDGET_SENSITIVE(l->data))
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), TRUE);
     }
     g_list_free(table_children);
@@ -1508,8 +1508,10 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
     gtk_widget_set_sensitive(l->data, FALSE);
   uavsar_types_checkboxes = g_list_append(uavsar_types_checkboxes, get_widget_checked("uavsar_polsar_all_proc_types"));
   uavsar_types_checkboxes = g_list_append(uavsar_types_checkboxes, get_widget_checked("uavsar_insar_all_proc_types"));
-  for(l = uavsar_types_checkboxes; l; l = l->next)
+  for(l = uavsar_types_checkboxes; l; l = l->next) {
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(l->data), FALSE);
+    gtk_widget_set_sensitive(l->data, FALSE);
+  }
   g_list_free(uavsar_types_checkboxes);
 
   gtk_widget_set_sensitive(polsar_frame, FALSE);
@@ -1528,6 +1530,7 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
           g_string_prepend(checkbutton_name, "uavsar_proc_type_");
           GtkWidget *checkbutton = get_widget_checked(checkbutton_name->str);
           gtk_widget_set_sensitive(checkbutton, TRUE);
+          gtk_widget_set_sensitive(get_widget_checked("uavsar_polsar_all_proc_types"), TRUE);
           for(j = 0; j < nBands; j++) {
             FREE(dataName[j]);
             FREE(element[j]);
@@ -1550,6 +1553,7 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
           GString *checkbutton_name = g_string_new(types[i]);
           g_string_prepend(checkbutton_name, "uavsar_proc_type_");
           GtkWidget *checkbutton = get_widget_checked(checkbutton_name->str);
+          gtk_widget_set_sensitive(get_widget_checked("uavsar_insar_all_proc_types"), TRUE);
           gtk_widget_set_sensitive(checkbutton, TRUE);
           for(j = 0; j < nBands; j++) {
             FREE(dataName[j]);
