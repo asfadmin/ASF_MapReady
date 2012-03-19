@@ -1738,6 +1738,12 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
+
+  if(!strcmp(inMeta->general->sensor, "UAVSAR") && (entropy_band >= 0 || anisotropy_band >= 0 ||
+      alpha_band >= 0 || sinclair_1_band >= 0 || sinclair_2_band >= 0 || sinclair_3_band >= 0 ||
+      freeman_1_band >= 0 || freeman_2_band >= 0 || freeman_3_band >= 0 || classFile))
+    asfPrintError("Only the pauli polarimetric decomposition is supported for UAVSAR data at this time\n");
+
   meta_parameters *outMeta = meta_read(meta_name);
 
   char *in_img_name = appendExt(inFile, ".img");
