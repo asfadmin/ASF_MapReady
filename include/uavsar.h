@@ -10,6 +10,7 @@ typedef enum {
   POLSAR_DAT,
   POLSAR_GRD,
   POLSAR_HGT,
+  POLSAR_KMZ,
   INSAR_AMP,
   INSAR_INT,
   INSAR_UNW,
@@ -18,7 +19,12 @@ typedef enum {
   INSAR_INT_GRD,
   INSAR_UNW_GRD,
   INSAR_COR_GRD,
-  INSAR_HGT_GRD
+  INSAR_HGT_GRD,
+  INSAR_AMP_GRD_KMZ,
+  INSAR_INT_GRD_KMZ,
+  INSAR_UNW_GRD_KMZ,
+  INSAR_COR_GRD_KMZ,
+  INSAR_HGT_GRD_KMZ,
 } uavsar_type_t;
 
 // Polarimetric UAVSAR header structure

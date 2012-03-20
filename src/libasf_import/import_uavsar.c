@@ -77,9 +77,10 @@ get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
                       char ***pDataName, char ***pElement,
                       int **pDataType, int *nBands)
 {
-  int ii, slc = 0, mlc = 0, dat = 0, grd = 0, hgt = 0;
+  int ii, slc = 0, mlc = 0, dat = 0, grd = 0, hgt = 0, kmz = 0;
   int igram = 0, unw = 0, cor = 0, amp = 0;
   int igram_grd = 0, unw_grd = 0, cor_grd = 0, amp_grd = 0, hgt_grd = 0;
+  int igram_grd_kmz = 0, unw_grd_kmz = 0, cor_grd_kmz = 0, amp_grd_kmz = 0, hgt_grd_kmz = 0;
 
   char *file = (char *) MALLOC(sizeof(char) * 1024);
   char **dataName = (char **) MALLOC(6 * sizeof(char *));
@@ -262,6 +263,17 @@ get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
       }
       *nBands = hgt;
     }
+    else if (type == POLSAR_KMZ) {
+      if (!strcmp(key, "kmz")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[kmz], file);
+          strcpy(element[kmz], "HH");
+          dataType[kmz] = 1;
+          kmz++;
+        }
+      }
+      *nBands = kmz;
+    }
     else if (type == INSAR_AMP) {
       if (!strcmp(key, "Slant Range Amplitude of Pass 1")) {
         if (check_file(path, line, &file)) {
@@ -376,6 +388,69 @@ get_uavsar_file_names(const char *dataFile, uavsar_type_t type,
         }
       }
       *nBands = hgt_grd;
+    }
+    else if (type == INSAR_AMP_GRD_KMZ) {
+      if (!strcmp(key, "KMZ of Ground Range Amplitude of Pass 1")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[amp_grd_kmz], file);
+          strcpy(element[amp_grd_kmz], "HH");
+          dataType[amp_grd_kmz] = 0;
+          amp_grd_kmz++;
+        }
+      }
+      else if (!strcmp(key, "KMZ of Ground Range Amplitude of Pass 2")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[amp_grd_kmz], file);
+          strcpy(element[amp_grd_kmz], "HH");
+          dataType[amp_grd_kmz] = 0;
+          amp_grd_kmz++;
+        }
+      }
+      *nBands = amp_grd_kmz;
+    }
+    else if (type == INSAR_INT_GRD_KMZ) {
+      if (!strcmp(key, "KMZ of Ground Range Interferogram")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[igram_grd_kmz], file);
+          strcpy(element[igram_grd_kmz], "HH");
+          dataType[igram_grd_kmz] = 1;
+          igram_grd_kmz++;
+        }
+      }
+      *nBands = igram_grd_kmz;
+    }
+    else if (type == INSAR_UNW_GRD_KMZ) {
+      if (!strcmp(key, "KMZ of Ground Range Unwrapped Phase")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[unw_grd_kmz], file);
+          strcpy(element[unw_grd_kmz], "HH");
+          dataType[unw_grd_kmz] = 1;
+          unw_grd_kmz++;
+        }
+      }
+      *nBands = unw_grd_kmz;
+    }
+    else if (type == INSAR_COR_GRD_KMZ) {
+      if (!strcmp(key, "KMZ of Ground Range Correlation")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[cor_grd_kmz], file);
+          strcpy(element[cor_grd_kmz], "HH");
+          dataType[cor_grd_kmz] = 0;
+          cor_grd_kmz++;
+        }
+      }
+      *nBands = cor_grd_kmz;
+    }
+    else if (type == INSAR_HGT_GRD_KMZ) {
+      if (!strcmp(key, "KMZ of DEM Used in Ground Projection")) {
+        if (check_file(path, line, &file)) {
+          strcpy(dataName[hgt_grd_kmz], file);
+          strcpy(element[hgt_grd_kmz], "HH");
+          dataType[hgt_grd_kmz] = 0;
+          hgt_grd_kmz++;
+        }
+      }
+      *nBands = hgt_grd_kmz;
     }
   }
 
@@ -1556,6 +1631,9 @@ uavsar_type_t uavsar_type_name_to_enum(const char *type_name)
   else if(!strcmp_case(type_name, "HGT")) {
     return POLSAR_HGT;
   }
+  else if(!strcmp_case(type_name, "KMZ")) {
+    return POLSAR_KMZ;
+  }
   else if(!strcmp_case(type_name, "AMP")) {
     return INSAR_AMP;
   }
@@ -1582,6 +1660,21 @@ uavsar_type_t uavsar_type_name_to_enum(const char *type_name)
   }
   else if(!strcmp_case(type_name, "HGT_GRD")) {
     return INSAR_HGT_GRD;
+  }
+  else if(!strcmp_case(type_name, "AMP_GRD_KMZ")) {
+    return INSAR_AMP_GRD_KMZ;
+  }
+  else if(!strcmp_case(type_name, "INT_GRD_KMZ")) {
+    return INSAR_INT_GRD_KMZ;
+  }
+  else if(!strcmp_case(type_name, "UNW_GRD_KMZ")) {
+    return INSAR_UNW_GRD_KMZ;
+  }
+  else if(!strcmp_case(type_name, "COR_GRD_KMZ")) {
+    return INSAR_COR_GRD_KMZ;
+  }
+  else if(!strcmp_case(type_name, "HGT_GRD_KMZ")) {
+    return INSAR_HGT_GRD_KMZ;
   }
   else {
     asfPrintError("uavsar_type_name_to_enum() Failure: No such uavsar type name: %s", type_name);

@@ -1046,6 +1046,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     //FILE *kml_file = NULL;
     char kml_filename[256];
     char *output_dir = NULL;
+    gchar *uavsar_type;
     //int n_ok = 0;
     //int n_bad = 0;
 
@@ -1097,6 +1098,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 			 COMP_COL_OUTPUT_FILE, &out_name,
 			 COMP_COL_OUTPUT_THUMBNAIL_BIG, &pb,
 			 COMP_COL_TMP_DIR, &tmp_dir,
+       COMP_COL_UAVSAR_TYPE, &uavsar_type,
 			 -1);
       
       metadata_name = build_asf_metadata_filename(out_name);
@@ -1105,17 +1107,48 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
       gtk_tree_model_get(model, &iter,
 			 COL_INPUT_FILE, &input_name,
 			 COL_OUTPUT_FILE, &out_name,
+       COL_UAVSAR_TYPE, &uavsar_type,
 			 -1);
       
       metadata_name = meta_file_name(input_name);
     }
-    
-    char *base_output_name = get_basename(out_name);
-    sprintf(kml_filename, "%s/%s_overlay.kml", tmp_dir, base_output_name);
-    free(base_output_name);
-    g_free(metadata_name);
-    g_free(input_name);
-    g_free(out_name);
+
+    /* JPL provides a KMZ with every UAVSAR scene. Use that for display in Google Earth
+     * if it is available */
+    if(uavsar_type && strlen(uavsar_type)) {
+      char **dataName, **element;
+      int *dataType, nBands, i;
+      gchar *type_name;
+      if(is_uavsar_polsar(input_name))
+        type_name = g_strdup("KMZ");
+      else {
+        if(!strstr(uavsar_type, "GRD"))
+          type_name = g_strconcat(uavsar_type, "_GRD_KMZ", NULL);
+        else
+          type_name = g_strconcat(uavsar_type, "_KMZ", NULL);
+      }
+
+      get_uavsar_file_names(input_name, uavsar_type_name_to_enum(type_name), &dataName, &element, &dataType, &nBands);
+      if(nBands)
+        g_strlcpy(kml_filename, dataName[0], 256);
+
+      for(i = 0; i < nBands; i++) {
+        FREE(dataName[i]);
+        FREE(element[i]);
+      }
+      FREE(dataType);
+      FREE(dataName);
+      FREE(element);
+      g_free(type_name);
+    }
+    else {
+      char *base_output_name = get_basename(out_name);
+      sprintf(kml_filename, "%s/%s_overlay.kml", tmp_dir, base_output_name);
+      free(base_output_name);
+      g_free(metadata_name);
+      g_free(input_name);
+      g_free(out_name);
+    }
 
 #ifdef win32
     gchar *ge;
