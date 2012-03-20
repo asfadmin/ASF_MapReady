@@ -16,6 +16,11 @@
 #include "asf_convert_gui.h"
 #include <asf.h>
 
+#ifdef __APPLE__
+#include <CoreServices/CoreServices.h>
+#include <ApplicationServices/ApplicationServices.h>
+#endif
+
 #define POINT __tmp_point
 #include <asf_vector.h>
 #undef POINT
@@ -1132,6 +1137,17 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     {
 #ifdef win32
         asfSystem_NoWait("\"%s\" \"%s\"", ge, kml_filename);
+#elif defined __APPLE__
+        FSRef f;
+        OSStatus os_status = FSPathMakeRef((const UInt8 *)kml_filename, &f, NULL);
+        if(os_status == noErr) {
+          os_status = LSOpenFSRef(&f, NULL);
+          if(os_status != noErr)
+            asfPrintStatus("Failed to open %s\n", kml_filename);
+        }
+        else {
+          asfPrintStatus("Failed to open %s\n", kml_filename);
+        }
 #else
         int pid = fork();
         if (pid == 0) {

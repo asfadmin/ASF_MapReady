@@ -139,7 +139,7 @@ LDLIBS = \
 	-lm -lz
 
 ifeq ($(SYS),darwin)
-LDFLAGS = -dynamic
+LDFLAGS = -dynamic -framework Carbon 
 else
 LDFLAGS = -Wl,--export-dynamic
 endif
