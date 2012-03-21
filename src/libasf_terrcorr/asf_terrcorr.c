@@ -1152,13 +1152,22 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   if (!metaSAR->sar)
       asfPrintError("Invalid metadata for: %s\n"
                     "No SAR block found.\n", sarFile);
-/* We are removing this for now -- matching for everyone!!!!
+/* We are removing this for now -- matching for everyone ...
   if (strcmp_case(metaSAR->general->sensor, "ALOS") == 0 &&
       strcmp_case(metaSAR->general->sensor_name, "SAR") == 0) {
     no_matching = TRUE;
     asfPrintStatus("No DEM matching for ALOS Palsar data!\n");
   }
 */
+/*  .... except Palsar L1.1 */
+  if (strcmp_case(metaSAR->general->sensor, "ALOS") == 0 &&
+      strcmp_case(metaSAR->general->sensor_name, "SAR") == 0 &&
+      metaSAR->sar && metaSAR->sar->image_type == 'S' &&
+      metaSAR->transform && strcmp(metaSAR->transform->type, "slant") == 0 &&
+      strstr(metaSAR->general->basename, "1.1") != NULL) {
+    no_matching = TRUE;
+    asfPrintStatus("No DEM matching for ALOS Palsar L1.1 data!\n");
+  }
   // terrain correction doesn't correctly interpolate db or powerscale
   // data when it resamples, so the user will have to calibrate after
   // terrain correcting.

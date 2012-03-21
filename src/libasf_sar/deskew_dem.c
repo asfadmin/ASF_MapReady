@@ -877,8 +877,12 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
 /*Set up the output meta file.*/
   d.grPixelSize = calc_ranges (&d, metaDEMslant);
-  outMeta->sar->image_type = 'G';
+  if (outMeta->transform && outMeta->sar->image_type == 'S') {
+    outMeta->transform->target_pixel_size = d.grPixelSize;
+    outMeta->general->sample_scaling = 1;
+  }
   outMeta->general->x_pixel_size = d.grPixelSize;
+  outMeta->sar->image_type = 'G';
 
 /* We use 0 to fill in around the edges (currently user can't configure
    this value), so set the no_data value accordingly */

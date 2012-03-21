@@ -158,7 +158,8 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 					/ in_meta->general->y_pixel_size;
 	out_meta->sar->line_increment   = 1.0;
         out_meta->sar->sample_increment = 1.0;
-	
+        if (out_meta->transform)
+          out_meta->transform->target_pixel_size = grPixSize;	
 	/*Create ground/slant and azimuth conversion vectors*/
 	out_meta->sar->image_type       = 'G'; 
 	out_meta->general->x_pixel_size = grPixSize;
@@ -176,6 +177,8 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 			out_nl = ii;
 	
 	out_meta->general->line_count   = out_nl;
+        out_meta->general->line_scaling *= (double)in_nl/(double)out_nl;
+        out_meta->general->sample_scaling = 1;
 	out_meta->general->sample_count = out_np;
 	if (out_meta->projection) {
 		out_meta->projection->perX = grPixSize;

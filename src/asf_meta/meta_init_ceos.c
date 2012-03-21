@@ -1393,6 +1393,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     }
   }
 
+  if (meta->transform) {
+    meta->transform->source_pixel_size = meta->general->x_pixel_size;
+  }
+
   set_alos_look_count(meta, metaName[0]);
 
   // Clean up

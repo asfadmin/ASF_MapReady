@@ -1092,6 +1092,10 @@ void fill_structure_field(char *field_name, void *valp)
     char coeff[15];
     if ( !strcmp(field_name, "type") )
       { strcpy(MTRANSFORM->type, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "source pixel size") )
+      { MTRANSFORM->source_pixel_size = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "target pixel size") )
+      { MTRANSFORM->target_pixel_size = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "parameter_count") )
       { MTRANSFORM->parameter_count = VALP_AS_INT; return; }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {

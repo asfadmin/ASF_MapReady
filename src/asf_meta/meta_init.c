@@ -185,6 +185,8 @@ meta_transform *meta_transform_init(void)
   int ii;
 
   meta_transform *map = (meta_transform *) MALLOC(sizeof(meta_transform));
+  map->source_pixel_size = MAGIC_UNSET_DOUBLE;
+  map->target_pixel_size = MAGIC_UNSET_DOUBLE;
   map->parameter_count = MAGIC_UNSET_INT;
   for (ii=0; ii<10; ii++) {
     map->x[ii] = MAGIC_UNSET_DOUBLE;

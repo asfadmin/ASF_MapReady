@@ -791,6 +791,10 @@ void meta_write(meta_parameters *meta, const char *file_name)
         "Block containing ALOS coordinate transformation parameters");
     meta_put_string(fp,"type:",meta->transform->type,
 		    "Type: slant or ground (depending on geometry)");
+    meta_put_double(fp,"source pixel size:", meta->transform->source_pixel_size,
+          "Original pixel size of the l/s to lat/lon mapping");
+    meta_put_double(fp,"target pixel size:", meta->transform->target_pixel_size,
+          "New pixel size of the l/s to lat/lon mapping");
     meta_put_int(fp,"parameter_count:",meta->transform->parameter_count,
      "Number of transformation parameters");
     for (ii=0; ii<meta->transform->parameter_count; ii++) {

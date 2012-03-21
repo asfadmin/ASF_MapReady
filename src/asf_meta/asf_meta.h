@@ -263,6 +263,8 @@ typedef struct {
 // meta_transform: parameters for coordinate transformations
 typedef struct {
   char type[10];          // Type: slant, ground (depending on geometry)
+  double source_pixel_size; // Original pixel size of the l/s -> lat/lon map
+  double target_pixel_size; // New pixel size, after mapping to ground range
   int parameter_count;    // Number of parameters
   double x[25];           // Transform coeffs for x (ls to lon)
   double y[25];           // Transform coeffs for y (ls to lat)

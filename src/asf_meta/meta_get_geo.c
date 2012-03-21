@@ -56,6 +56,31 @@ void meta_get_orig(void *fake_ddr, int y, int x,int *yOrig,int *xOrig)
   *yOrig=(y)*ddr->line_inc + (ddr->master_line-1);
 }
 
+static double map_sr2gr(meta_parameters *meta, double l, double s)
+{
+    double ht = meta_get_sat_height(meta, l, s);
+    double srfp = meta_get_slant(meta, l, 0);
+    double er = meta_get_earth_radius(meta, l, s);
+    double x = 1. + (ht - er)/er;
+    double y0 = srfp / er;
+    double grfp = er * acos((1. + x*x - y0*y0)/(2.*x));
+    double srcp = srfp + s*meta->transform->source_pixel_size;
+    double y1 = srcp/er;
+    double grcp = er*acos((1. + x*x - y1*y1)/(2.*x));
+    return (grcp - grfp)/meta->transform->target_pixel_size;
+}
+
+static double map_gr2sr(meta_parameters *meta, double l, double s)
+{
+    double ht = meta_get_sat_height(meta, l, s);
+    double er = meta_get_earth_radius(meta, l, s);
+    double srfp = meta_get_slant(meta, l, 0);
+    double grfp = er * acos((ht*ht+er*er-srfp*srfp)/(2.*ht*er));
+    double grcp = grfp + s * meta->transform->target_pixel_size;
+    double srcp = sqrt(ht*ht+er*er-2.*ht*er*cos(grcp/er));
+    return (srcp - srfp)/meta->transform->source_pixel_size;
+}
+
 /*******************************************************************
  * meta_get_latLon:
  * Converts given line and sample to geodetic latitude and longitude.
@@ -114,12 +139,31 @@ int meta_get_latLon(meta_parameters *meta,
       /* ALOS data (not projected) -- use transform block */
       double l = yLine, s = xSample;
       if (meta->sar) {
-	l = meta->general->start_line +
-	          meta->general->line_scaling * yLine;
 	s = meta->general->start_sample +
-                  meta->general->sample_scaling * xSample;
+                  meta->general->sample_scaling * s;
+	l = meta->general->start_line +
+	          meta->general->line_scaling * l;
+      }
+      if (meta->sar && meta->sar->image_type == 'G' &&
+          strcmp_case(meta->transform->type, "slant") == 0)
+      {
+        // map s (sample) value from Ground to Slant
+        double new_s = map_gr2sr(meta, l, s);
+        //printf("meta_get_latLon -- mapped gr to sr: %f -> %f\n", s, new_s);
+        s = new_s;
+      }
+      else if (meta->sar && meta->sar->image_type == 'S' &&
+               strcmp_case(meta->transform->type, "ground") == 0)
+      {
+        // not implemented, don't think we need this?
+        asfPrintError("meta_get_latLon: ground transform block "
+                      "with a slant range image.\n");
+        double new_s = map_sr2gr(meta, l, s);
+        //printf("meta_get_latLon -- mapped sr to gr: %f -> %f\n", s, new_s);
+        s = new_s;
       }
       alos_to_latlon(meta, s, l, elev, lat, lon, &hgt);
+      //printf("alos_to_latlon: %f, %f ==> %f, %f\n", l, s, *lat, *lon);
   }
   else if (meta->sar &&
            (meta->sar->image_type=='S' || meta->sar->image_type=='G')) {
@@ -624,6 +668,14 @@ int meta_get_lineSamp(meta_parameters *meta,
       }
     }
 
+    if (meta->sar && meta->sar->image_type == 'G' &&
+        strcmp_case(meta->transform->type, "slant") == 0 &&
+        meta->transform->use_reverse_transform) {
+      asfPrintStatus("PALSAR -- Slant range transform, but image is ground "
+                     "range.\n          Using iterative reverse transform.\n");
+      meta->transform->use_reverse_transform = FALSE;
+    }
+
     if (meta->transform->use_reverse_transform) {
       double *a = get_a_coeffs(meta); // Usually meta->transform->map2ls_a;
       double *b = get_b_coeffs(meta); // Usually meta->transform->map2ls_b;
@@ -699,7 +751,27 @@ int meta_get_lineSamp(meta_parameters *meta,
           *xSamp -= 1;
           *yLine -= 1;
         }
-        
+       
+        if (meta->sar && meta->sar->image_type == 'G' &&
+            strcmp_case(meta->transform->type, "slant") == 0)
+        {
+            // map slant range value *xSamp to ground range
+            double new_samp = map_gr2sr(meta, *yLine, *xSamp);
+            //printf("meta_get_lineSamp -- mapped sr to gr: %f -> %f\n",
+            //       *xSamp, new_samp);
+            *xSamp = new_samp;
+
+        } else if (meta->sar && meta->sar->image_type == 'S' &&
+            strcmp_case(meta->transform->type, "ground") == 0)
+        {
+            // don't think we need this?
+            asfPrintError("meta_get_lineSamp: ground transform block "
+                          "with a slant range image!\n");
+            double new_samp = map_sr2gr(meta, *yLine, *xSamp);
+            //printf("meta_get_lineSamp -- mapped gr to sr: %f -> %f\n",
+            //       *xSamp, new_samp);
+            *xSamp = new_samp;
+        } 
         // result is in the original line/sample count units,
         // adjust in case we have scaled
         *yLine -= meta->general->start_line;
