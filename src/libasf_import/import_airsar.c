@@ -37,7 +37,7 @@ airsar_header *read_airsar_header(const char *dataFile)
   FILE *fp;
   char buf[4400], *value;
   double version;
-printf("\n\ndataFile: %s\n\n", dataFile);
+
   // Allocate memory and file handling
   value = (char *) MALLOC(sizeof(char)*25);
   header = (airsar_header *) CALLOC(1, sizeof(airsar_header));
