@@ -1274,7 +1274,6 @@ handle_reprocess()
 
     input_data_formats_changed();
     refresh_file_names();
-    show_queued_thumbnails();
 
     return TRUE;
 }

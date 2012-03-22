@@ -23,8 +23,6 @@ void update_polsarpro_input_file_thumbnails()
     g_free(input_file);
     more_items = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
-
-  show_queued_thumbnails();
 }
 
 void

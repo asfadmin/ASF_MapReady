@@ -349,97 +349,6 @@ static char *file_is_valid(const gchar * file)
     }
 }
 
-#ifdef THUMBNAILS
-
-static void
-set_input_image_thumbnail(GtkTreeIter * iter,
-                          const gchar * metadata_file,
-                          gchar * data_file,
-                          gchar * ancillary_file, const char *lut_basename, gchar *uavsar_type)
-{
-    if (g_show_thumbnail_columns) {
-        GdkPixbuf *pb =
-            make_input_image_thumbnail_pixbuf(metadata_file, data_file,
-                                              lut_basename, uavsar_type, THUMB_SIZE);
-
-        if (pb) {
-            gtk_list_store_set(list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
-        }
-        else {
-            // failed to generate a thumbnail from the data file -- if this is
-            // gamma data, this failure is to be expected, we'll generate one
-            // from the ancillary (CEOS) data
-            if (strlen(ancillary_file) > 0) {
-                pb = make_input_image_thumbnail_pixbuf(ancillary_file,
-                                                       ancillary_file,
-                                                       lut_basename,
-                                                       NULL,
-                                                       THUMB_SIZE);
-
-                if (pb)
-                    gtk_list_store_set(list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
-            }
-        }
-    }
-}
-
-static void
-do_thumbnail (GtkTreeRowReference * ref)
-{
-    // quit if not showing thumbnails
-    if (!g_show_thumbnail_columns)
-        return;
-
-    GtkTreePath *path;
-    GtkTreeIter iter;
-    // If the RowReference we were given wasn't valid then the data file
-    // must have been removed from the list before we got a chance to draw
-    // it's thumbnail.
-    if((path = gtk_tree_row_reference_get_path(ref)) && gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path)) {
-        gchar *input_file;
-        gchar *ancillary_file;
-        gchar *polsarpro_aux_info;
-        gchar *uavsar_type;
-        gtk_tree_model_get(GTK_TREE_MODEL (list_store), &iter,
-                            COL_INPUT_FILE, &input_file,
-                            COL_ANCILLARY_FILE, &ancillary_file,
-                            COL_UAVSAR_TYPE, &uavsar_type,
-                            COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
-        gchar *metadata_file = meta_file_name(input_file);
-        gchar *data_file = data_file_name(input_file, uavsar_type);
-
-        // Forcing of CEOS thumbnails when available
-        if (is_polsarpro(data_file)) {
-            if (strlen(metadata_file) > 0) {
-                g_free(data_file);
-                data_file = g_strdup(metadata_file);
-            }
-            else {
-                g_free(metadata_file);
-                metadata_file = (gchar *) g_malloc(sizeof (gchar) *
-                                    (strlen (data_file) + 5));
-                sprintf(metadata_file, "%s%s", data_file, ".hdr");
-            }
-            if (!fileExists (metadata_file))
-                strcpy (metadata_file, "");
-        }
-
-        char *lut_basename = extract_lut_name (polsarpro_aux_info);
-        set_input_image_thumbnail(&iter, metadata_file, data_file,
-                                   ancillary_file, lut_basename, uavsar_type);
-        g_free(input_file);
-        g_free(ancillary_file);
-        FREE(lut_basename);
-        g_free(metadata_file);
-        g_free(data_file);
-    }
-
-    if(path)
-      gtk_tree_path_free(path);
-}
-
-#endif
-
 static char *build_band_list(const char *file, const gchar * uavsar_type)
 {
     // this only applies to ALOS data -- other types we'll just return "-"
@@ -803,73 +712,126 @@ move_from_completed_files_list(GtkTreeIter *iter)
     */
 }
 
-// The thumbnailing works like this: When a user adds a file, or a bunch of
-// files, the file names are added immediately to the list, and each data
-// file name is added to this global thumbnailing queue.  (It isn't really
-// a queue, it is just an array of char* pointers.)  After all the files have
-// been added to the list, and queue_thumbnail has been called for each one,
-// we call show_queued_thumbnails(), which runs through the list of saved
-// names, and populates the thumbnails for each.  So it appears as though
-// we are still threading but everything occurs sequentially.  The only
-// tricky thing is that show_queued_thumbnails periodically processes the
-// gtk events, to keep the app from seeming unresponsive.  This isn't a
-// problem, except that one possible event is removing files that were
-// added, another is adding even more files, which will queue up more
-// thumbnails, which means show_queued_thumbnails can recurse.  This isn't
-// really a problem if we keep in mind that the gtk_main_iteration() call
-// in show_queued_thumbnails() can result in the thumb_files[] array
-// changing on us (sort of as if we were doing threading).
-
-#define QUEUE_SIZE 255
-static GtkTreeRowReference *thumb_row_refs[QUEUE_SIZE];
-static void
-queue_thumbnail (GtkTreeRowReference * ref)
+gboolean set_input_thumbnail(GArray * pb_and_ref)
 {
-    int i;
-    for (i = 0; i < QUEUE_SIZE; ++i) {
-        if (!thumb_row_refs[i]) {
-            thumb_row_refs[i] = ref;
-            break;
-        }
-    }
+    GtkTreePath *path;
+    GtkTreeIter iter;
+    // If the RowReference we were given wasn't valid then the data file
+    // must have been removed from the list before we got a chance to draw
+    // it's thumbnail.
+    GdkPixbuf *pb = g_array_index(pb_and_ref, GdkPixbuf*, 0);
+    GtkTreeRowReference *ref = g_array_index(pb_and_ref, GtkTreeRowReference*, 1);
+
+    if((path = gtk_tree_row_reference_get_path(ref)) && gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path))
+      gtk_list_store_set(list_store, &iter, COL_INPUT_THUMBNAIL, pb, -1);
+
+    if(path)
+      gtk_tree_path_free(path);
+
+    gtk_tree_row_reference_free(ref);
+    g_array_free(pb_and_ref, 0);
+
+    return FALSE;
 }
 
-// This is just an externally available wrapper for
-// queue_thumbnail() (necessary in file_selection.c)
+#ifdef THUMBNAILS
+
+static void
+do_thumbnail (GtkTreeRowReference * ref)
+{
+    // quit if not showing thumbnails
+    if (!g_show_thumbnail_columns)
+        return;
+
+    GtkTreePath *path;
+    GtkTreeIter iter;
+    GdkPixbuf *pb;
+    // If the RowReference we were given wasn't valid then the data file
+    // must have been removed from the list before we got a chance to draw
+    // it's thumbnail.
+    if((path = gtk_tree_row_reference_get_path(ref)) && gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path)) {
+        gchar *input_file;
+        gchar *ancillary_file;
+        gchar *polsarpro_aux_info;
+        gchar *uavsar_type;
+        gtk_tree_model_get(GTK_TREE_MODEL (list_store), &iter,
+                            COL_INPUT_FILE, &input_file,
+                            COL_ANCILLARY_FILE, &ancillary_file,
+                            COL_UAVSAR_TYPE, &uavsar_type,
+                            COL_POLSARPRO_INFO, &polsarpro_aux_info, -1);
+        gchar *metadata_file = meta_file_name(input_file);
+        gchar *data_file = data_file_name(input_file, uavsar_type);
+
+        // Forcing of CEOS thumbnails when available
+        if (is_polsarpro(data_file)) {
+            if (strlen(metadata_file) > 0) {
+                g_free(data_file);
+                data_file = g_strdup(metadata_file);
+            }
+            else {
+                g_free(metadata_file);
+                metadata_file = (gchar *) g_malloc(sizeof (gchar) *
+                                    (strlen (data_file) + 5));
+                sprintf(metadata_file, "%s%s", data_file, ".hdr");
+            }
+            if (!fileExists (metadata_file))
+                strcpy (metadata_file, "");
+        }
+
+        char *lut_basename = extract_lut_name (polsarpro_aux_info);
+
+        pb = make_input_image_thumbnail_pixbuf(metadata_file, data_file,
+                                               lut_basename, uavsar_type, THUMB_SIZE);
+
+        if (!pb) {
+            // failed to generate a thumbnail from the data file -- if this is
+            // gamma data, this failure is to be expected, we'll generate one
+            // from the ancillary (CEOS) data
+            if (strlen(ancillary_file) > 0)
+                pb = make_input_image_thumbnail_pixbuf(ancillary_file,
+                                                       ancillary_file,
+                                                       lut_basename,
+                                                       NULL,
+                                                       THUMB_SIZE);
+        }
+
+        g_free(input_file);
+        g_free(ancillary_file);
+        FREE(lut_basename);
+        g_free(metadata_file);
+        g_free(data_file);
+    }
+
+    if(path)
+      gtk_tree_path_free(path);
+
+    // Pass the resulting GdkPixbuf back to the main thread.
+    // Normally I would use GDK_THREADS_ENTER/GDK_THREADS_LEAVE to update the GUI
+    // from the worker thread, but GDK locking is not supported on the Win32 backend.
+    // So, pass the result back to the main thread using an idle function.
+    GArray *pb_and_ref = g_array_new(FALSE, FALSE, sizeof(void *));
+    g_array_append_val(pb_and_ref, pb);
+    g_array_append_val(pb_and_ref, ref);
+    g_idle_add((GSourceFunc) set_input_thumbnail, pb_and_ref);
+}
+
+#endif
+
 void
 add_thumbnail (GtkTreeIter * iter)
 {
+#ifdef THUMBNAILS
     GtkTreePath *path =
         gtk_tree_model_get_path (GTK_TREE_MODEL (list_store), iter);
     GtkTreeRowReference *ref =
         gtk_tree_row_reference_new (GTK_TREE_MODEL (list_store), path);
-    queue_thumbnail (ref);
     gtk_tree_path_free (path);
-}
-
-void
-show_queued_thumbnails ()
-{
-    int i;
-    for (i = 0; i < QUEUE_SIZE; ++i) {
-        if (thumb_row_refs[i]) {
-            // do a gtk main loop iteration
-            while (gtk_events_pending ())
-                gtk_main_iteration ();
-
-            // must check files[i]!=NULL again, since gtk_main_iteration could
-            // have processed a "Browse..." event and thus already processed
-            // this item.  The alternative would be to move the above while()
-            // loop below the statements below, however that makes the app feel
-            // a little less responsive.
-            if (thumb_row_refs[i]) {
-                do_thumbnail (thumb_row_refs[i]);
-
-                gtk_tree_row_reference_free (thumb_row_refs[i]);
-                thumb_row_refs[i] = NULL;
-            }
-        }
+    GError *err = NULL;
+    GThread *Thread;
+    if((Thread = g_thread_create((GThreadFunc)do_thumbnail, ref, FALSE, &err)) == NULL) {
+      asfPrintStatus("Failed to create thumbnail generation thread: %s\n", err->message);
     }
+#endif
 }
 
 gboolean move_to_files_list(const gchar *data_file,
@@ -1391,8 +1353,6 @@ populate_files_list(int argc, char *argv[])
         else
             add_to_files_list(argv[i]);
     }
-
-    show_queued_thumbnails();
 }
 
 void

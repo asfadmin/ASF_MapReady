@@ -101,8 +101,6 @@ static SIGNAL_CALLBACK void ok_clicked()
         }
         while(iter);
         g_slist_free(files);
-
-        show_queued_thumbnails();
     }
 }
 
@@ -438,7 +436,6 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     }
 
     free(dir);
-    show_queued_thumbnails();
 
 #else // #ifdef win32
 
@@ -555,8 +552,6 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 
     g_strfreev(selections);
     gtk_widget_hide(file_selection_dialog);
-
-  show_queued_thumbnails();
 }
 
 // These specify which file filters are available when the user clicks
@@ -1095,8 +1090,6 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget * w)
   else {
     show_widget("add_file_with_ancillary_dialog", FALSE);
     clear_entries();
-
-    show_queued_thumbnails();
   }
 }
 

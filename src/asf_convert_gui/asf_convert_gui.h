@@ -450,7 +450,6 @@ void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);
 gboolean is_meta_file(const gchar *);
 void add_thumbnail(GtkTreeIter *);
-void show_queued_thumbnails();
 int has_prepension(const gchar *);
 void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *,
                                   const char *);
