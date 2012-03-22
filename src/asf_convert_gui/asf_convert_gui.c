@@ -172,8 +172,6 @@ main(int argc, char **argv)
     /* allow FOPEN, FREAD, FWRITE to fail without aborting */
     caplib_behavior_on_error = BEHAVIOR_ON_ERROR_CONTINUE;
 
-    g_thread_init(NULL);
-
     /* add version number to window title, request a default size */
     char gtitle [256];
     sprintf (gtitle, "ASF MapReady: Version %s",
