@@ -1258,12 +1258,12 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   else if (is_geocoded) {
     meta->sar->image_type = 'P';
     meta->sar->azimuth_time_per_pixel =
-      meta->general->x_pixel_size / mpdr->velnadir;
+      meta->general->y_pixel_size / mpdr->velnadir;
   }
   else {
     meta->sar->image_type = 'R';
     meta->sar->azimuth_time_per_pixel =
-      meta->general->x_pixel_size / mpdr->velnadir;
+      meta->general->y_pixel_size / mpdr->velnadir;
   }
   meta->sar->azimuth_look_count = dssr->n_azilok;
   meta->sar->range_look_count = 1;
