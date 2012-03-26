@@ -446,7 +446,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   }
   else if (nBands == 4) {
     strcpy(meta->sar->polarization, "quad-pol");
-    meta->general->image_data_type = POLARIMETRIC_S2_MATRIX;
+    meta->general->image_data_type = POLARIMETRIC_IMAGE;
   }
 
   // Clean up

@@ -115,7 +115,8 @@ polarimetric_image_rows_new(meta_parameters *meta, int nrows, int multi)
     int ns = meta->general->sample_count;
 
     self->amp = CALLOC(ns, sizeof(float));
-    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+        meta->general->image_data_type == POLARIMETRIC_IMAGE) { 
       self->s2_data_buffer = CALLOC(nrows*ns, sizeof(quadPolS2Float));
       self->s2_lines = CALLOC(nrows, sizeof(quadPolS2Float*));
     }
@@ -127,7 +128,8 @@ polarimetric_image_rows_new(meta_parameters *meta, int nrows, int multi)
     // initially, the line pointers point at their natural locations in
     // the buffer
     int i;
-    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+        meta->general->image_data_type == POLARIMETRIC_IMAGE) { 
       for (i=0; i<nrows; ++i)
 	self->s2_lines[i] = &(self->s2_data_buffer[ns*i]);
     }
@@ -187,7 +189,8 @@ static int polarimetric_image_rows_get_bands(PolarimetricImageRows *self)
     self->amp_band = strncmp_case(bands, "AMP", 3) == 0 ? 0 : -1;
 
     // polarimetric bands
-    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+        self->meta->general->image_data_type == POLARIMETRIC_IMAGE) {
       self->hh_amp_band = find_band(self->meta, "AMP-HH", &ok);
       self->hh_phase_band = find_band(self->meta, "PHASE-HH", &ok);
       self->hv_amp_band = find_band(self->meta, "AMP-HV", &ok);
@@ -230,7 +233,8 @@ static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
 
     // HH-VV, HV+VH, HH+VV
 
-    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX || 
+        self->meta->general->image_data_type == POLARIMETRIC_IMAGE) {
       for (j=0; j<ns; ++j) {
         quadPolS2Float q = self->s2_lines[n][j];
 	cpx_a = complex_sub(q.hh, q.vv);
@@ -280,7 +284,8 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
     // [ A*B  B*B  C*B ]    B = HH - VV
     // [ A*C  B*C  C*C ]    C = 2*HV
     int j, ns=self->meta->general->sample_count;
-    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+        self->meta->general->image_data_type == POLARIMETRIC_IMAGE) {
       for (j=0; j<ns; ++j) {
         quadPolS2Float q = self->s2_lines[n][j];
         complexVector v = //complex_vector_normalize(
@@ -322,7 +327,8 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   // FIRST -- slide row pointers
   int k;
   for (k=0; k<self->nrows-1; ++k) {
-    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+        self->meta->general->image_data_type == POLARIMETRIC_IMAGE)
       self->s2_lines[k] = self->s2_lines[k+1];
     else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX)
       self->c3_lines[k] = self->c3_lines[k+1];
@@ -333,7 +339,8 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   
   // the next line to load will go into the spot we just dumped
   int last = self->nrows - 1;
-  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+      self->meta->general->image_data_type == POLARIMETRIC_IMAGE)
     self->s2_lines[last] = self->s2_lines[0];
   else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX)
     self->c3_lines[last] = self->c3_lines[0];
@@ -359,7 +366,8 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
 
   amp_buf = MALLOC(sizeof(float)*ns);
 
-  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+      self->meta->general->image_data_type == POLARIMETRIC_IMAGE) {
     phase_buf = MALLOC(sizeof(float)*ns);
   }
   else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
@@ -394,7 +402,8 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
                           self->current_row, self->amp);
 
     // now the SLC rows
-    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX || 
+        self->meta->general->image_data_type == POLARIMETRIC_IMAGE) {
 
       get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
       get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
@@ -503,7 +512,8 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   else {
     // window has scrolled off top of image -- fill with zeros
     for (k=0; k<self->meta->general->sample_count; ++k) {
-      if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+      if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+          self->meta->general->image_data_type == POLARIMETRIC_IMAGE)
 	self->s2_lines[last][k] = qual_pol_s2_zero();
       else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX)
 	self->c3_lines[last][k] = qual_pol_c3_zero();
@@ -516,7 +526,8 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   }
   
   free(amp_buf);
-  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+      self->meta->general->image_data_type == POLARIMETRIC_IMAGE)
     free(phase_buf);
   if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
     free(c11);
@@ -558,7 +569,8 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
 
   amp_buf = MALLOC(sizeof(float)*ns);
 
-  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+      self->meta->general->image_data_type == POLARIMETRIC_IMAGE) {
     phase_buf = MALLOC(sizeof(float)*ns);
   }
   else if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
@@ -599,7 +611,8 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
       self->amp[k] += amp_buf[k];
 
     // now the SLC rows
-    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+        self->meta->general->image_data_type == POLARIMETRIC_IMAGE) {
 
       get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
       get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
@@ -715,7 +728,8 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
   self->current_row += self->nrows;
 
   free(amp_buf);
-  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
+  if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX || 
+      self->meta->general->image_data_type == POLARIMETRIC_IMAGE)
     free(phase_buf);
   if (self->meta->general->image_data_type == POLARIMETRIC_C3_MATRIX) {
     free(c11);
@@ -744,7 +758,8 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
 static void polarimetric_image_rows_free(PolarimetricImageRows* self)
 {
     free(self->amp);
-    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX) {
+    if (self->meta->general->image_data_type == POLARIMETRIC_S2_MATRIX ||
+        self->meta->general->image_data_type == POLARIMETRIC_IMAGE) {
       free(self->s2_data_buffer);
       free(self->s2_lines);
     }
