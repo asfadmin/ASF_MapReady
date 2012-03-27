@@ -2352,7 +2352,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     if (scale == NONE) scale = SIGMA;
     
     meta_parameters *meta;
-    double in_side_length, out_x_pixel_size, out_y_pixel_size;
+    double scale_factor;
     char *tmpFile, *overlayFile;
     int i,n;
     
@@ -2448,10 +2448,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	  FREE(bands);
 	}
       else {
-	// non-LUT case
-	in_side_length =
-	  (meta->general->line_count > meta->general->sample_count) ?
-	  meta->general->line_count : meta->general->sample_count;
+  scale_factor = meta->general->line_count > meta->general->sample_count ? 
+    512./meta->general->line_count : 512./meta->general->sample_count;
 
 	// make sure that only the first band of a multi-band image
 	// is resized for generating a thumbnail, for polsarpro
@@ -2470,9 +2468,9 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	  }
 	}
 	
-	check_return(resample(inFile, tmpFile,
-                              512./(double)meta->general->sample_count,
-                              512./(double)meta->general->line_count),
+	check_return(
+		     resample(inFile, tmpFile, scale_factor,
+					scale_factor),
 		     "resampling data to thumbnail size (resample)\n");
 	
 	if (strlen(cfg->export->rgb) > 0) {
