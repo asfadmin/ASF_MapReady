@@ -319,14 +319,17 @@ project_lat_long_pseudo_inv_arr(project_parameters_t *pps, double *x, double *y,
   long ii;
   *lat = (double *) MALLOC(sizeof(double) * length);
   *lon = (double *) MALLOC(sizeof(double) * length);
-  *height = (double *) MALLOC(sizeof(double) * length);
+  if (height)
+    *height = (double *) MALLOC(sizeof(double) * length);
   double *plat = *lat;
   double *plon = *lon;
-  double *pheight = *height;
+  double *pheight = NULL;
+  if (height)
+    pheight = *height;
   for (ii=0; ii<length; ii++) {
     plat[ii] = y[ii] * D2R;
     plon[ii] = x[ii] * D2R;
-    if (height[ii])
+    if (height)
       pheight[ii] = z[ii];
   }
   return TRUE;
@@ -601,11 +604,11 @@ static void determine_projection_fns(int projection_type, project_t **project,
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
       if (project) *project = project_lat_long_pseudo;
-      if (project_arr) *project_arr = NULL; // shouldn't need this
-      // if (project_arr) *project_arr = project_lat_long_pseudo_arr;
+      //if (project_arr) *project_arr = NULL; // shouldn't need this
+      if (project_arr) *project_arr = project_lat_long_pseudo_arr;
       if (unproject) *unproject = project_lat_long_pseudo_inv;
-      if (unproject_arr) *unproject_arr = NULL; // or this
-      // if (unproject_arr) *unproject_arr = project_lat_long_pseudo_inv_arr;
+      //if (unproject_arr) *unproject_arr = NULL; // or this
+      if (unproject_arr) *unproject_arr = project_lat_long_pseudo_inv_arr;
       break;
     case EQUI_RECTANGULAR:
       if (project) *project = project_eqr;
