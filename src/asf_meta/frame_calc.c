@@ -68,25 +68,30 @@ float ers_frame[901] =
 int asf_frame_calc(char *sensor, float latitude, char orbit_direction)
 {
   int i=1, frame=-1;
-  float diff=99;
+  double min_diff = 999;
 
   if (strncmp(sensor, "ERS", 3)==0 || strncmp(sensor, "RSAT", 4)==0 ||
       strncmp(sensor, "JERS", 4)==0) {
     if (orbit_direction == 'D') {
-      i = 225;
-      while (fabs(ers_frame[i]-latitude) < diff) {
-        diff = fabs(ers_frame[i]-latitude);
-        frame = i;
-        i++;
+      for (i = 225; i <= 674; ++i) {
+        if (fabs(ers_frame[i] - latitude) < min_diff) {
+          min_diff = fabs(ers_frame[i] - latitude);
+          frame = i;
+        }
       }
     }
     else {
-      i = 1;
-      while (fabs(ers_frame[i]-latitude) < diff) {
-        diff = fabs(ers_frame[i]-latitude);
-        frame = i;
-        if (i < 225) i++;
-        else i=675;
+      for (i=1; i<=225; ++i) {
+        if (fabs(ers_frame[i] - latitude) < min_diff) {
+          min_diff = fabs(ers_frame[i] - latitude);
+          frame = i;
+        }
+      }
+      for (i=675; i<=900; ++i) {
+        if (fabs(ers_frame[i] - latitude) < min_diff) {
+          min_diff = fabs(ers_frame[i] - latitude);
+          frame = i;
+        }
       }
     } 
   }
