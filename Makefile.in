@@ -73,12 +73,12 @@ MAPREADY_SOURCE = \
 	$(MAPREADY_MODULES) \
 	include \
 	doc/mapready_manual.pdf \
-	doc/mapready-version-history.txt \
+	doc/mapready-version_history.txt \
 	external \
 	LICENSE.txt \
 	make_support \
 	configure \
-	READMAE_src.txt \
+	README_src.txt \
 	Makefile.in
 
 STP_MODULES = \
