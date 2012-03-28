@@ -42,7 +42,6 @@ MAPREADY_MODULES = \
 	src/write_ppf \
 	src/analyze_yaw \
 	src/adjust_bands \
-	src/asf_fgdc_meta \
 	src/fftMatch \
 	src/trim \
 	src/sr2gr \
