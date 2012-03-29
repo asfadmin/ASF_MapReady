@@ -121,32 +121,23 @@ int endsWith(const char *str, const char *tail)
 }
 
 // Reimplementation of strtok_r for Windows, mingw does not have it
-char *STRTOK_R(char *str1, const char *str2, char **str3)
+char *STRTOK_R(char *s, const char *delimiters, char **lasts)
 {
 #ifdef win32
-  char *ret;
-
-  if (!str1)
-    str1 = *str3;
-
-  while (*str1 && strchr(str2, *str1))
-    ++str1;
-  if (*str1 == '\0')
-    return NULL;
-
-  ret = str1;
-
-  while (*str1 && !strchr(str2, *str1))
-    ++str1;
-
-  if (*str1)
-    *str1++ = '\0';
-
-  *str3 = str1;
-
-  return ret;
+    char *sbegin, *send;
+    sbegin = s ? s : *lasts;
+    sbegin += strspn(sbegin, delimiters);
+    if (*sbegin == '\0') {
+        *lasts = "";
+        return NULL;
+    }
+    send = sbegin + strcspn(sbegin, delimiters);
+    if (*send != '\0')
+        *send++ = '\0';
+    *lasts = send;
+    return sbegin;
 #else
-  return strtok_r(str1, str2, str3);
+  return strtok_r(s, delimiters, lasts);
 #endif
 }
 
