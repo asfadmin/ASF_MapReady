@@ -2,7 +2,7 @@
 #define ASF_JPEG_H
 
 #include "asf.h"
-#include "asf_tiff.h" // for "boolean"
+#include "asf_tiff.h" // for "uint32"
 
 #ifdef HAVE_STDLIB_H
 #undef HAVE_STDLIB_H
@@ -16,6 +16,8 @@
 
 #ifdef win32
 #define INT32 __int32
+typedef int boolean;
+#define HAVE_BOOLEAN
 #endif
 
 #include <jpeglib.h>
