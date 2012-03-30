@@ -7,7 +7,7 @@ LIB_DIR := $(ROOT_DIR)/lib
 INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the GSL tarball and what it unpacks into.
-UNPACK_DIR := gsl-1.13
+UNPACK_DIR := gsl-1.15
 TARFILE := $(UNPACK_DIR).tar
 ZIPFILE := $(TARFILE).gz
 
