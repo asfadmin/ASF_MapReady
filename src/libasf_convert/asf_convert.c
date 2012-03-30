@@ -555,6 +555,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
         if (cfg->polarimetry->pauli &&
 	    ((meta->general->image_data_type != POLARIMETRIC_S2_MATRIX &&
 	      meta->general->image_data_type != POLARIMETRIC_C3_MATRIX &&
+        meta->general->image_data_type != POLARIMETRIC_IMAGE &&
 	      meta->general->image_data_type != POLARIMETRIC_T3_MATRIX) ||
 	     strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
              meta->general->band_count < 8))
@@ -589,6 +590,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       if (cfg->polarimetry->pauli &&
 	  ((meta->general->image_data_type != POLARIMETRIC_S2_MATRIX &&
 	    meta->general->image_data_type != POLARIMETRIC_C3_MATRIX &&
+      meta->general->image_data_type != POLARIMETRIC_IMAGE &&
 	    meta->general->image_data_type != POLARIMETRIC_T3_MATRIX) ||
 	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
        meta->general->band_count < 8))
