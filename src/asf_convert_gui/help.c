@@ -4,6 +4,10 @@
 #include "asf.h"
 #include <gdk/gdkkeysyms.h>
 
+#ifdef win32
+#include <windows.h>
+#endif
+
 static const int max_line_len = 2048;
 
 // defined in src/asf/share.c
@@ -32,70 +36,22 @@ char * escapify(const char * s)
     return ret;
 }
 
-#ifdef win32
-static void help_viewer_thread(GString *hh, gpointer user_data)
-{
-    asfSystem(hh->str);
-    g_string_free(hh, TRUE);
-}
-#endif
-
 SIGNAL_CALLBACK void
 on_help_button_clicked(GtkWidget *widget)
 {
 #ifdef win32
-    char hh[1024];
+    char pdf_dir[1024], pdf_file[128], pdf_viewer[1024];
+    snprintf(pdf_dir, 1023, "%s/doc/", get_asf_share_dir());
+    strcpy(pdf_file, "mapready_manual.pdf");
+    //printf("pdf: %s/%s\n", pdf_dir, pdf_file);
 
-    // First method, get location of help viewer from the standard registry location
-    get_string_from_registry_ex("SOFTWARE\\Classes\\chm.file\\shell\\open\\command", "", hh);
+    FindExecutable((LPCTSTR)pdf_file, (LPCTSTR)pdf_dir, (LPTSTR)pdf_viewer);
+    printf("Found PDF Viewer: %s\n", pdf_viewer);
 
-    if (strlen(hh) > 0) {
-        char *p = strstr(hh, "%1");
-        if (p) *p = '\0';
-
-        char * escaped_share_dir = escapify(get_asf_share_dir());
-        strcat(hh, escaped_share_dir);
-        strcat(hh, "/mapready.chm");
-        FREE(escaped_share_dir);
-    }
-
-    // Failed to find location of hh.exe through registry... try the system directory
-    char *sr = getenv("SYSTEMROOT");
-    if (strlen(sr) > 0) {
-        int i, j = 0;
-        for (i = 0; i < strlen(sr); ++i) {
-            switch(sr[i]) {
-                case '\\': hh[j] = '\\'; hh[j+1] = '\\'; ++j; break;
-                default:   hh[j] = sr[i]; break;
-            }
-            ++j;
-        }
-        hh[j] = '\0';
-        strcat(hh, "/hh.exe ");
-        char * escaped_share_dir = escapify(get_asf_share_dir());
-        strcat(hh, escaped_share_dir);
-        strcat(hh, "/mapready.chm");
-        FREE(escaped_share_dir);
-    }
-
-    if (strlen(hh)>0) {
-        static GThreadPool *ttp = NULL;
-        GError *err = NULL;
-
-        if (!ttp)
-        {
-            if (!g_thread_supported ()) g_thread_init (NULL);
-            ttp = g_thread_pool_new ((GFunc)help_viewer_thread, NULL,
-                                     4, TRUE, &err);
-            g_assert(!err);
-        }
-
-        g_thread_pool_push (ttp, g_string_new (hh), &err);
-        g_assert(!err);
-    }
-    else {
-        // Failed, give up.
-        message_box("Couldn't find the help viewer!");
+    if (strlen(pdf_viewer)) {
+      asfSystem_NoWait("\"%s\" \"%s/%s\"", pdf_viewer, pdf_dir, pdf_file);
+    } else {
+      message_box("Couldn't find path to a PDF Viewer!");
     }
 #else
     GtkWidget *help_dialog;
