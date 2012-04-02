@@ -611,7 +611,7 @@ gboolean is_alos_mosaic(const char *infile)
     FILE *fp;
     char line[512];
     fp = fopen(headerFile, "r");
-    while (fgets(line, 1024, fp)) {
+    while (fgets(line, 512, fp)) {
       if (strstr(line, "SIGMA-SAR-MOSAIC")) {
 	found = TRUE;
 	break;
