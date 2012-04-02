@@ -1087,6 +1087,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   double t_offset, x_offset;
   int madssap = FALSE; // mask and dem same size and projection
   int clean_resample_file = TRUE;
+  int is_Palsar_L11 = FALSE;
 
   // -- debug prints, uncomment as needed
   //printf("pixel size: %f\n", pixel_size);
@@ -1167,6 +1168,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       strstr(metaSAR->general->basename, "1.1") != NULL) {
     no_matching = TRUE;
     asfPrintStatus("No DEM matching for ALOS Palsar L1.1 data!\n");
+    is_Palsar_L11 = TRUE;
   }
   // terrain correction doesn't correctly interpolate db or powerscale
   // data when it resamples, so the user will have to calibrate after
@@ -1476,24 +1478,33 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                  which_dem);
 
       // After deskew_dem, there will likely be zeros on the left & right edges
-      // of the image, we trim those off before finishing up.
-      int startx, endx;
-      trim_zeros(deskewDemFile, outFile, &startx, &endx);
-      trim(deskewDemMask, lsMaskFile, startx, 0, endx,
-           metaSAR->general->line_count);
+      // of the image, we trim those off before finishing up.  Skip this for
+      // Palsar L1.1, as the geolocation of that kind of data won't survive
+      // the trimming & subsequent resampling
+      if (!is_Palsar_L11) {
+          int startx, endx;
+          trim_zeros(deskewDemFile, outFile, &startx, &endx);
+          trim(deskewDemMask, lsMaskFile, startx, 0, endx,
+               metaSAR->general->line_count);
+
+          meta_free(metaSAR);
+          metaSAR = meta_read(outFile);
+      }
+      else {
+          copyImgAndMeta(deskewDemFile, outFile);
+          copyImgAndMeta(deskewDemMask, lsMaskFile);
+      }
+
       clean(padFile);
       clean(deskewDemFile);
       clean(deskewDemMask);
-
-      meta_free(metaSAR);
-      metaSAR = meta_read(outFile);
 
       // Because of the PP earth radius sr->gr fix, we may not have ended
       // up with the same x pixel size that the user requested.  So we will
       // just resample to the size that was requested.  This correction is
       // not necessary if the given image was in slant range.
 
-      if (fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
+      if (!is_Palsar_L11 && fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
       {
           asfPrintStatus("Resampling to proper range pixel size. (%f m)\n", pixel_size);
 
