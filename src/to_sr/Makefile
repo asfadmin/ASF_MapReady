@@ -16,7 +16,8 @@ REQUIRED_LIBS = \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS) \
-	$(ZLIB_LIBS)
+	$(ZLIB_LIBS) \
+	-lm
 
 CEDAR_LIBS = $(LIBDIR)/asf_las.a
 LIBS = \

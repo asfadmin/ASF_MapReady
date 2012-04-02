@@ -18,7 +18,8 @@ REQUIRED_LIBS = \
 	$(PROJ_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
-	$(ZLIB_LIBS)
+	$(ZLIB_LIBS) \
+	-lm
 
 CFLAGS += \
 	$(GLIB_CFLAGS) \
