@@ -16,7 +16,7 @@
 
 #ifdef win32
 #define INT32 __int32
-typedef int boolean;
+typedef unsigned char boolean;
 #define HAVE_BOOLEAN
 #endif
 
