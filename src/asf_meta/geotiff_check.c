@@ -1029,6 +1029,7 @@ int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level)
   }
   finalize_geotiff_info(ginfo);
 
+  fclose(fp);
   return passed;
 }
 

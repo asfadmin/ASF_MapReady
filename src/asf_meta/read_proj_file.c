@@ -62,9 +62,11 @@ static int parse_val(char * inbuf, char * key, double * val)
   buf = static_strdup(inbuf);
   
   p = eq = strchr(buf, '=');
-  if (!eq)
+  if (!eq) {
+    free(buf);
     return FALSE;
-  
+  }
+ 
   *eq = '\0';
   --p;
   
@@ -227,6 +229,7 @@ FILE *fopen_proj_file(const char *file, const char *mode)
 
         if (strlen(share_dir)+strlen(dp->d_name)+2 > sizeof(filename)) {
             asfPrintWarning("fopen_proj_file> buffersize exceeded.\n");
+            closedir(dfd);
             return NULL;
         }
 

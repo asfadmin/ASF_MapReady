@@ -299,7 +299,7 @@ uavsar_insar *
 read_uavsar_insar_params(const char *dataFile, uavsar_type_t type)
 {
   uavsar_insar *params = (uavsar_insar *) MALLOC(sizeof(uavsar_insar));
-  char time1[50], time2[50];
+  char time1[50]="", time2[50]="";
 
   // Determine ID
   char *dirName = (char *) MALLOC(sizeof(char) * 1024);

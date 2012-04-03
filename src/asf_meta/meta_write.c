@@ -406,7 +406,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   // Doppler parameter block - version 3.1
   if (meta->doppler) {
     int ii, kk;
-    char str[15];
+    char str[32];
     meta_put_string(fp,"doppler {","","Begin list of Doppler parameters");
     strcpy(comment,"Doppler type (TSX)");
     switch (meta->doppler->type)
