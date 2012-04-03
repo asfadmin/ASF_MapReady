@@ -656,256 +656,258 @@ convert_config *init_fill_convert_config(char *configFile)
   // Read default values file if there is one
   if (strcmp(cfg->general->defaults, "") != 0) {
     if (!fileExists(cfg->general->defaults))
-      check_return(1, "Default values file does not exist\n");
-    fDefaults = FOPEN(cfg->general->defaults, "r");
-    while (fgets(line, LINE_LEN, fDefaults) != NULL) {
-      test = read_param(line);
-      // General
-      if (strncmp(test, "default input dir", 17)==0)
-        strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
-      if (strncmp(test, "default output dir", 18)==0)
-        strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
-      if (strncmp(test, "project", 7)==0)
-        cfg->general->project = read_int(line, "project");
-      if (strncmp(test, "files", 5)==0)
-        cfg->general->files = read_int(line, "files");
-      if (strncmp(test, "import", 6)==0)
-        cfg->general->import = read_int(line, "import");
-      if (strncmp(test, "external", 8)==0)
-        cfg->general->external = read_int(line, "external");
-      if (strncmp(test, "sar processing", 14)==0)
-        cfg->general->sar_processing = read_int(line, "sar processing");
-      if (strncmp(test, "c2p", 3)==0)
-        cfg->general->c2p = read_int(line, "c2p");
-      if (strncmp(test, "image stats", 11)==0)
-        cfg->general->image_stats = read_int(line, "image stats");
-      if (strncmp(test, "detect corner reflectors", 24)==0)
-        cfg->general->detect_cr = read_int(line, "detect corner reflectors");
-      if (strncmp(test, "polarimetry", 11)==0)
-        cfg->general->polarimetry = read_int(line, "polarimetry");
-      if (strncmp(test, "terrain correction", 18)==0)
-        cfg->general->terrain_correct = read_int(line, "terrain correction");
-      if (strncmp(test, "calibration", 11)==0)
-	cfg->general->calibration = read_int(line, "calibration");
-      if (strncmp(test, "geocoding", 9)==0)
-        cfg->general->geocoding = read_int(line, "geocoding");
-      if (strncmp(test, "export", 6)==0)
-        cfg->general->export = read_int(line, "export");
-      if (strncmp(test, "mosaic", 6)==0)
-        cfg->general->mosaic = read_int(line, "mosaic");
-      if (strncmp(test, "intermediates", 13)==0)
-        cfg->general->intermediates = read_int(line, "intermediates");
-      if (strncmp(test, "quiet", 5)==0)
-        cfg->general->quiet = read_int(line, "quiet");
-      if (strncmp(test, "short configuration file", 24)==0)
-        cfg->general->short_config = read_int(line, "short configuration file");
-      if (strncmp(test, "dump envi header", 16)==0)
-        cfg->general->dump_envi = read_int(line, "dump envi header");
-      if (strncmp(test, "tmp dir", 7)==0)
-        strcpy(cfg->general->tmp_dir, read_str(line, "tmp dir"));
-      if (strncmp(test, "status file", 11)==0)
-        strcpy(cfg->general->status_file, read_str(line, "status file"));
-      if (strncmp(test, "prefix", 6)==0)
-        strcpy(cfg->general->prefix, read_str(line, "prefix"));
-      if (strncmp(test, "suffix", 6)==0)
-        strcpy(cfg->general->suffix, read_str(line, "suffix"));
-      if (strncmp(test, "thumbnail", 9)==0)
-        cfg->general->thumbnail = read_int(line, "thumbnail");
-      if (strncmp(test, "testdata", 8)==0)
-	cfg->general->testdata = read_int(line, "testdata");
+      asfPrintWarning("Default values file does not exist: %s\n", cfg->general->defaults);
+    else {
+      fDefaults = FOPEN(cfg->general->defaults, "r");
+      while (fgets(line, LINE_LEN, fDefaults) != NULL) {
+        test = read_param(line);
+        // General
+        if (strncmp(test, "default input dir", 17)==0)
+          strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
+        if (strncmp(test, "default output dir", 18)==0)
+          strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
+        if (strncmp(test, "project", 7)==0)
+          cfg->general->project = read_int(line, "project");
+        if (strncmp(test, "files", 5)==0)
+          cfg->general->files = read_int(line, "files");
+        if (strncmp(test, "import", 6)==0)
+          cfg->general->import = read_int(line, "import");
+        if (strncmp(test, "external", 8)==0)
+          cfg->general->external = read_int(line, "external");
+        if (strncmp(test, "sar processing", 14)==0)
+          cfg->general->sar_processing = read_int(line, "sar processing");
+        if (strncmp(test, "c2p", 3)==0)
+          cfg->general->c2p = read_int(line, "c2p");
+        if (strncmp(test, "image stats", 11)==0)
+          cfg->general->image_stats = read_int(line, "image stats");
+        if (strncmp(test, "detect corner reflectors", 24)==0)
+          cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+        if (strncmp(test, "polarimetry", 11)==0)
+          cfg->general->polarimetry = read_int(line, "polarimetry");
+        if (strncmp(test, "terrain correction", 18)==0)
+          cfg->general->terrain_correct = read_int(line, "terrain correction");
+        if (strncmp(test, "calibration", 11)==0)
+    cfg->general->calibration = read_int(line, "calibration");
+        if (strncmp(test, "geocoding", 9)==0)
+          cfg->general->geocoding = read_int(line, "geocoding");
+        if (strncmp(test, "export", 6)==0)
+          cfg->general->export = read_int(line, "export");
+        if (strncmp(test, "mosaic", 6)==0)
+          cfg->general->mosaic = read_int(line, "mosaic");
+        if (strncmp(test, "intermediates", 13)==0)
+          cfg->general->intermediates = read_int(line, "intermediates");
+        if (strncmp(test, "quiet", 5)==0)
+          cfg->general->quiet = read_int(line, "quiet");
+        if (strncmp(test, "short configuration file", 24)==0)
+          cfg->general->short_config = read_int(line, "short configuration file");
+        if (strncmp(test, "dump envi header", 16)==0)
+          cfg->general->dump_envi = read_int(line, "dump envi header");
+        if (strncmp(test, "tmp dir", 7)==0)
+          strcpy(cfg->general->tmp_dir, read_str(line, "tmp dir"));
+        if (strncmp(test, "status file", 11)==0)
+          strcpy(cfg->general->status_file, read_str(line, "status file"));
+        if (strncmp(test, "prefix", 6)==0)
+          strcpy(cfg->general->prefix, read_str(line, "prefix"));
+        if (strncmp(test, "suffix", 6)==0)
+          strcpy(cfg->general->suffix, read_str(line, "suffix"));
+        if (strncmp(test, "thumbnail", 9)==0)
+          cfg->general->thumbnail = read_int(line, "thumbnail");
+        if (strncmp(test, "testdata", 8)==0)
+    cfg->general->testdata = read_int(line, "testdata");
 
-      // Project
-      if (strncmp(test, "short name", 10)==0)
-	strcpy(cfg->project->short_name, read_str(line, "short name"));
-      if (strncmp(test, "long name", 9)==0)
-	strcpy(cfg->project->long_name, read_str(line, "long name"));
-      if (strncmp(test, "naming scheme", 13)==0)
-	strcpy(cfg->project->naming_scheme, read_str(line, "naming scheme"));
-      
-      // Import
-      if (strncmp(test, "input format", 12)==0)
-        strcpy(cfg->import->format, read_str(line, "input format"));
-      if (strncmp(test, "radiometry", 10)==0)
-        strcpy(cfg->import->radiometry, read_str(line, "radiometry"));
-      if (strncmp(test, "look up table", 13)==0)
-        strcpy(cfg->import->lut, read_str(line, "look up table"));
-      if (strncmp(test, "output db", 9)==0)
-        cfg->import->output_db = read_int(line, "output db");
-      if (strncmp(test, "complex SLC", 11)==0)
-        cfg->import->complex_slc = read_int(line, "complex SLC");
-      if (strncmp(test, "multilook SLC", 13)==0)
-        cfg->import->multilook_slc = read_int(line, "multilook SLC");
-      if (strncmp(test, "apply ers2 gain fix", 19)==0)
-        cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
-      if (strncmp(test, "polsarpro colormap", 18)==0)
-        strcpy(cfg->import->format, read_str(line, "polsarpro colormap"));
-      if (strncmp(test, "image data type", 15)==0)
-        strcpy(cfg->import->image_data_type, read_str(line, "image data type"));
-      if (strncmp(test, "metadata file", 13)==0)
-        strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
-      if (strncmp(test, "interferogram", 13)==0)
-        strcpy(cfg->import->interferogram, read_str(line, "interferogram"));
-      if (strncmp(test, "coherence", 9)==0)
-        strcpy(cfg->import->coherence, read_str(line, "coherence"));
-      if (strncmp(test, "slave metadata", 14)==0)
-        strcpy(cfg->import->slave_metadata, read_str(line, "slave metadata"));
-      if (strncmp(test, "baseline", 8)==0)
-        strcpy(cfg->import->baseline, read_str(line, "baseline"));
-      if (strncmp(test, "complex gamma", 13)==0)
-        cfg->import->complex_gamma = read_int(line, "complex gamma");
-      if (strncmp(test, "uavsar", 6)==0)
-        strcpy(cfg->import->uavsar, read_str(line, "uavsar"));
+        // Project
+        if (strncmp(test, "short name", 10)==0)
+    strcpy(cfg->project->short_name, read_str(line, "short name"));
+        if (strncmp(test, "long name", 9)==0)
+    strcpy(cfg->project->long_name, read_str(line, "long name"));
+        if (strncmp(test, "naming scheme", 13)==0)
+    strcpy(cfg->project->naming_scheme, read_str(line, "naming scheme"));
+        
+        // Import
+        if (strncmp(test, "input format", 12)==0)
+          strcpy(cfg->import->format, read_str(line, "input format"));
+        if (strncmp(test, "radiometry", 10)==0)
+          strcpy(cfg->import->radiometry, read_str(line, "radiometry"));
+        if (strncmp(test, "look up table", 13)==0)
+          strcpy(cfg->import->lut, read_str(line, "look up table"));
+        if (strncmp(test, "output db", 9)==0)
+          cfg->import->output_db = read_int(line, "output db");
+        if (strncmp(test, "complex SLC", 11)==0)
+          cfg->import->complex_slc = read_int(line, "complex SLC");
+        if (strncmp(test, "multilook SLC", 13)==0)
+          cfg->import->multilook_slc = read_int(line, "multilook SLC");
+        if (strncmp(test, "apply ers2 gain fix", 19)==0)
+          cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
+        if (strncmp(test, "polsarpro colormap", 18)==0)
+          strcpy(cfg->import->format, read_str(line, "polsarpro colormap"));
+        if (strncmp(test, "image data type", 15)==0)
+          strcpy(cfg->import->image_data_type, read_str(line, "image data type"));
+        if (strncmp(test, "metadata file", 13)==0)
+          strcpy(cfg->import->metadata_file, read_str(line, "metadata file"));
+        if (strncmp(test, "interferogram", 13)==0)
+          strcpy(cfg->import->interferogram, read_str(line, "interferogram"));
+        if (strncmp(test, "coherence", 9)==0)
+          strcpy(cfg->import->coherence, read_str(line, "coherence"));
+        if (strncmp(test, "slave metadata", 14)==0)
+          strcpy(cfg->import->slave_metadata, read_str(line, "slave metadata"));
+        if (strncmp(test, "baseline", 8)==0)
+          strcpy(cfg->import->baseline, read_str(line, "baseline"));
+        if (strncmp(test, "complex gamma", 13)==0)
+          cfg->import->complex_gamma = read_int(line, "complex gamma");
+        if (strncmp(test, "uavsar", 6)==0)
+          strcpy(cfg->import->uavsar, read_str(line, "uavsar"));
 
-      // External
-      if (strncmp(test, "command", 7)==0)
-        strcpy(cfg->external->cmd, read_str(line, "command"));
+        // External
+        if (strncmp(test, "command", 7)==0)
+          strcpy(cfg->external->cmd, read_str(line, "command"));
 
-      // AirSAR
-      if (strncmp(test, "airsar c interferometric", 24)==0)
-        cfg->airsar->c_vv = read_int(line, "airsar c interferometric");
-      if (strncmp(test, "airsar l interferometric", 24)==0)
-        cfg->airsar->l_vv = read_int(line, "airsar l interferometric");
-      if (strncmp(test, "airsar c polarimetric", 21)==0)
-        cfg->airsar->c_pol = read_int(line, "airsar c polarimetric");
-      if (strncmp(test, "airsar l polarimetric", 21)==0)
-        cfg->airsar->l_pol = read_int(line, "airsar l polarimetric");
-      if (strncmp(test, "airsar p polarimetric", 21)==0)
-        cfg->airsar->p_pol = read_int(line, "airsar p polarimetric");
+        // AirSAR
+        if (strncmp(test, "airsar c interferometric", 24)==0)
+          cfg->airsar->c_vv = read_int(line, "airsar c interferometric");
+        if (strncmp(test, "airsar l interferometric", 24)==0)
+          cfg->airsar->l_vv = read_int(line, "airsar l interferometric");
+        if (strncmp(test, "airsar c polarimetric", 21)==0)
+          cfg->airsar->c_pol = read_int(line, "airsar c polarimetric");
+        if (strncmp(test, "airsar l polarimetric", 21)==0)
+          cfg->airsar->l_pol = read_int(line, "airsar l polarimetric");
+        if (strncmp(test, "airsar p polarimetric", 21)==0)
+          cfg->airsar->p_pol = read_int(line, "airsar p polarimetric");
 
-      // SAR processing
-      if (strncmp(test, "radiometry", 10)==0)
-        strcpy(cfg->sar_processing->radiometry, read_str(line, "radiometry"));
+        // SAR processing
+        if (strncmp(test, "radiometry", 10)==0)
+          strcpy(cfg->sar_processing->radiometry, read_str(line, "radiometry"));
 
-      // C2P
-      if (strncmp(test, "multilook", 9)==0)
-        cfg->c2p->multilook = read_int(line, "multilook");
+        // C2P
+        if (strncmp(test, "multilook", 9)==0)
+          cfg->c2p->multilook = read_int(line, "multilook");
 
-      // Image stats
-      if (strncmp(test, "stats values", 12)==0)
-        strcpy(cfg->image_stats->values, read_str(line, "stats values"));
+        // Image stats
+        if (strncmp(test, "stats values", 12)==0)
+          strcpy(cfg->image_stats->values, read_str(line, "stats values"));
 
-      // Detect corner reflectors
-      if (strncmp(test, "detect corner reflectors", 24)==0)
-        cfg->general->detect_cr = read_int(line, "detect corner reflectors");
-      if (strncmp(test, "corner reflector locations", 26)==0)
-        strcpy(cfg->detect_cr->cr_location,
-               read_str(line, "corner reflector locations"));
+        // Detect corner reflectors
+        if (strncmp(test, "detect corner reflectors", 24)==0)
+          cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+        if (strncmp(test, "corner reflector locations", 26)==0)
+          strcpy(cfg->detect_cr->cr_location,
+                 read_str(line, "corner reflector locations"));
 
-      // Polarimetry
-      if (strncmp(test, "pauli", 5)==0)
-        cfg->polarimetry->pauli = read_int(line, "pauli");
-      if (strncmp(test, "sinclair", 8)==0)
-        cfg->polarimetry->sinclair = read_int(line, "sinclair");
-      if (strncmp(test, "cloude pottier", 14)==0)
-        cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
-      if (strncmp(test, "extended cloude pottier", 23)==0)
-        cfg->polarimetry->cloude_pottier_ext =
-          read_int(line, "extended cloude pottier");
-      if (strncmp(test, "entropy anisotropy alpha", 24)==0)
-        cfg->polarimetry->cloude_pottier_nc =
-          read_int(line, "entropy anisotropy alpha");
-      if (strncmp(test, "freeman durden", 14)==0)
-        cfg->polarimetry->freeman_durden = read_int(line, "freeman durden");
-      if (strncmp(test, "k-means wishart", 15)==0)
-        cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
-      if (strncmp(test, "k-means wishart ext", 19)==0)
-        cfg->polarimetry->k_means_wishart_ext =
-          read_int(line, "k-means wishart ext");
-      if (strncmp(test, "faraday correction", 18)==0)
-        cfg->polarimetry->farcorr = read_int(line, "faraday correction");
-      if (strncmp(test, "farcorr threshold", 17)==0)
-        cfg->polarimetry->farcorr_threshold =
-          read_double(line, "farcorr threshold");
+        // Polarimetry
+        if (strncmp(test, "pauli", 5)==0)
+          cfg->polarimetry->pauli = read_int(line, "pauli");
+        if (strncmp(test, "sinclair", 8)==0)
+          cfg->polarimetry->sinclair = read_int(line, "sinclair");
+        if (strncmp(test, "cloude pottier", 14)==0)
+          cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
+        if (strncmp(test, "extended cloude pottier", 23)==0)
+          cfg->polarimetry->cloude_pottier_ext =
+            read_int(line, "extended cloude pottier");
+        if (strncmp(test, "entropy anisotropy alpha", 24)==0)
+          cfg->polarimetry->cloude_pottier_nc =
+            read_int(line, "entropy anisotropy alpha");
+        if (strncmp(test, "freeman durden", 14)==0)
+          cfg->polarimetry->freeman_durden = read_int(line, "freeman durden");
+        if (strncmp(test, "k-means wishart", 15)==0)
+          cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
+        if (strncmp(test, "k-means wishart ext", 19)==0)
+          cfg->polarimetry->k_means_wishart_ext =
+            read_int(line, "k-means wishart ext");
+        if (strncmp(test, "faraday correction", 18)==0)
+          cfg->polarimetry->farcorr = read_int(line, "faraday correction");
+        if (strncmp(test, "farcorr threshold", 17)==0)
+          cfg->polarimetry->farcorr_threshold =
+            read_double(line, "farcorr threshold");
 
-      // Terrain correction
-      if (strncmp(test, "pixel spacing", 13)==0)
-        cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
-      if (strncmp(test, "digital elevation model", 23)==0)
-        strcpy(cfg->terrain_correct->dem,
-               read_str(line, "digital elevation model"));
-      if (strncmp(test, "mask", 4)==0)
-        strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
-      if (strncmp(test, "auto mask water", 15)==0)
-        cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
-      if (strncmp(test, "water height cutoff", 19)==0)
-        cfg->terrain_correct->water_height_cutoff = read_double(line, "water height cutoff");
-      if (strncmp(test, "fill value", 8)==0)
-        cfg->terrain_correct->fill_value = read_int(line, "fill value");
-      if (strncmp(test, "do radiometric", 12)==0)
-        cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
-      if (strncmp(test, "smooth dem holes", 16)==0)
-        cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
-      if (strncmp(test, "no resampling", 13)==0)
-        cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
-      if (strncmp(test, "save terrcorr dem", 17)==0)
-        cfg->terrain_correct->save_terrcorr_dem =
-            read_int(line, "save terrcorr dem");
-      if (strncmp(test, "save terrcorr layover mask", 26)==0)
-        cfg->terrain_correct->save_terrcorr_layover_mask =
-            read_int(line, "save terrcorr layover mask");
-      if (strncmp(test, "refine geolocation only", 23)==0)
-        cfg->terrain_correct->refine_geolocation_only =
-          read_int(line, "refine_geolocation_only");
-      if (strncmp(test, "interpolate", 11)==0)
-        cfg->terrain_correct->interp = read_int(line, "interpolate");
-      if (strncmp(test, "no matching", 11)==0)
-        cfg->terrain_correct->no_matching = read_int(line, "no matching");
-      if (strncmp(test, "range offset", 12)==0)
-        cfg->terrain_correct->range_offset = read_double(line, "range offset");
-      if (strncmp(test, "azimuth offset", 14)==0)
-        cfg->terrain_correct->azimuth_offset = read_double(line, "azimuth offset");
-      if (strncmp(test, "use gr dem", 10)==0)
-        cfg->terrain_correct->use_gr_dem = read_int(line, "use gr dem");
-      if (strncmp(test, "use zero offsets if match fails", 31)==0)
-        cfg->terrain_correct->if_coreg_fails_use_zero_offsets =
-	  read_int(line, "use zero offsets if match fails");
-      if (strncmp(test, "save incidence angles", 21)==0)
-        cfg->terrain_correct->save_incid_angles =
-	  read_int(line, "save incidence angles");
+        // Terrain correction
+        if (strncmp(test, "pixel spacing", 13)==0)
+          cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
+        if (strncmp(test, "digital elevation model", 23)==0)
+          strcpy(cfg->terrain_correct->dem,
+                 read_str(line, "digital elevation model"));
+        if (strncmp(test, "mask", 4)==0)
+          strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
+        if (strncmp(test, "auto mask water", 15)==0)
+          cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
+        if (strncmp(test, "water height cutoff", 19)==0)
+          cfg->terrain_correct->water_height_cutoff = read_double(line, "water height cutoff");
+        if (strncmp(test, "fill value", 8)==0)
+          cfg->terrain_correct->fill_value = read_int(line, "fill value");
+        if (strncmp(test, "do radiometric", 12)==0)
+          cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
+        if (strncmp(test, "smooth dem holes", 16)==0)
+          cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
+        if (strncmp(test, "no resampling", 13)==0)
+          cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
+        if (strncmp(test, "save terrcorr dem", 17)==0)
+          cfg->terrain_correct->save_terrcorr_dem =
+              read_int(line, "save terrcorr dem");
+        if (strncmp(test, "save terrcorr layover mask", 26)==0)
+          cfg->terrain_correct->save_terrcorr_layover_mask =
+              read_int(line, "save terrcorr layover mask");
+        if (strncmp(test, "refine geolocation only", 23)==0)
+          cfg->terrain_correct->refine_geolocation_only =
+            read_int(line, "refine_geolocation_only");
+        if (strncmp(test, "interpolate", 11)==0)
+          cfg->terrain_correct->interp = read_int(line, "interpolate");
+        if (strncmp(test, "no matching", 11)==0)
+          cfg->terrain_correct->no_matching = read_int(line, "no matching");
+        if (strncmp(test, "range offset", 12)==0)
+          cfg->terrain_correct->range_offset = read_double(line, "range offset");
+        if (strncmp(test, "azimuth offset", 14)==0)
+          cfg->terrain_correct->azimuth_offset = read_double(line, "azimuth offset");
+        if (strncmp(test, "use gr dem", 10)==0)
+          cfg->terrain_correct->use_gr_dem = read_int(line, "use gr dem");
+        if (strncmp(test, "use zero offsets if match fails", 31)==0)
+          cfg->terrain_correct->if_coreg_fails_use_zero_offsets =
+      read_int(line, "use zero offsets if match fails");
+        if (strncmp(test, "save incidence angles", 21)==0)
+          cfg->terrain_correct->save_incid_angles =
+      read_int(line, "save incidence angles");
 
-      // Geocoding
-      if (strncmp(test, "projection", 10)==0)
-        strcpy(cfg->geocoding->projection, read_str(line, "projection"));
-      if (strncmp(test, "pixel spacing", 13)==0)
-        cfg->geocoding->pixel = read_double(line, "pixel spacing");
-      if (strncmp(test, "height", 6)==0)
-        cfg->geocoding->height = read_double(line, "height");
-      if (strncmp(test, "datum", 5)==0)
-        strcpy(cfg->geocoding->datum, read_str(line, "datum"));
-      if (strncmp(test, "spheroid", 8)==0) {
-	if (!cfg->geocoding->spheroid)
-	  cfg->geocoding->spheroid = (char *) MALLOC(sizeof(char)*255);
-        strcpy(cfg->geocoding->spheroid, read_str(line, "spheroid"));	
+        // Geocoding
+        if (strncmp(test, "projection", 10)==0)
+          strcpy(cfg->geocoding->projection, read_str(line, "projection"));
+        if (strncmp(test, "pixel spacing", 13)==0)
+          cfg->geocoding->pixel = read_double(line, "pixel spacing");
+        if (strncmp(test, "height", 6)==0)
+          cfg->geocoding->height = read_double(line, "height");
+        if (strncmp(test, "datum", 5)==0)
+          strcpy(cfg->geocoding->datum, read_str(line, "datum"));
+        if (strncmp(test, "spheroid", 8)==0) {
+    if (!cfg->geocoding->spheroid)
+      cfg->geocoding->spheroid = (char *) MALLOC(sizeof(char)*255);
+          strcpy(cfg->geocoding->spheroid, read_str(line, "spheroid"));	
+        }
+        if (strncmp(test, "resampling", 10)==0)
+          strcpy(cfg->geocoding->resampling, read_str(line, "resampling"));
+        if (strncmp(test, "background", 10)==0)
+          cfg->geocoding->background = read_int(line, "background");
+        if (strncmp(test, "force", 5)==0)
+          cfg->geocoding->force = read_int(line, "force");
+
+        // Export
+        if (strncmp(test, "output format", 13)==0)
+          strcpy(cfg->export->format, read_str(line, "output format"));
+        if (strncmp(test, "byte conversion", 15)==0)
+          strcpy(cfg->export->byte, read_str(line, "byte conversion"));
+        if (strncmp(test, "rgb look up table", 17)==0)
+          strcpy(cfg->export->lut, read_str(line, "rgb look up table"));
+        if (strncmp(test, "rgb banding", 11)==0)
+          strcpy(cfg->export->rgb, read_str(line, "rgb banding"));
+        if (strncmp(test, "truecolor", 9)==0)
+          cfg->export->truecolor = read_int(line, "truecolor");
+        if (strncmp(test, "falsecolor", 9)==0)
+          cfg->export->falsecolor = read_int(line, "falsecolor");
+        if (strncmp(test, "band", 4)==0)
+          strcpy(cfg->export->band, read_str(line, "band"));
+
+        // Mosaic
+        if (strncmp(test, "overlap", 7)==0)
+          strcpy(cfg->mosaic->overlap, read_str(line, "overlap"));
+        FREE(test);
       }
-      if (strncmp(test, "resampling", 10)==0)
-        strcpy(cfg->geocoding->resampling, read_str(line, "resampling"));
-      if (strncmp(test, "background", 10)==0)
-        cfg->geocoding->background = read_int(line, "background");
-      if (strncmp(test, "force", 5)==0)
-        cfg->geocoding->force = read_int(line, "force");
-
-      // Export
-      if (strncmp(test, "output format", 13)==0)
-        strcpy(cfg->export->format, read_str(line, "output format"));
-      if (strncmp(test, "byte conversion", 15)==0)
-        strcpy(cfg->export->byte, read_str(line, "byte conversion"));
-      if (strncmp(test, "rgb look up table", 17)==0)
-        strcpy(cfg->export->lut, read_str(line, "rgb look up table"));
-      if (strncmp(test, "rgb banding", 11)==0)
-        strcpy(cfg->export->rgb, read_str(line, "rgb banding"));
-      if (strncmp(test, "truecolor", 9)==0)
-        cfg->export->truecolor = read_int(line, "truecolor");
-      if (strncmp(test, "falsecolor", 9)==0)
-        cfg->export->falsecolor = read_int(line, "falsecolor");
-      if (strncmp(test, "band", 4)==0)
-        strcpy(cfg->export->band, read_str(line, "band"));
-
-      // Mosaic
-      if (strncmp(test, "overlap", 7)==0)
-        strcpy(cfg->mosaic->overlap, read_str(line, "overlap"));
-      FREE(test);
+      FCLOSE(fDefaults);
     }
-    FCLOSE(fDefaults);
   }
 
   // Read in parameters
