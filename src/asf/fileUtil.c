@@ -48,7 +48,7 @@ int numFiles(const char *path)
 {
   struct stat statbuf;
   struct dirent *dp;
-  DIR *dir;
+  DIR *dir = NULL;
   int fileCount = 0;
 
   if (path && strlen(path) > 0) {
@@ -74,6 +74,7 @@ int numFiles(const char *path)
     }
   }
 
+  closedir(dir);
   return fileCount;
 }
 
@@ -687,6 +688,7 @@ static void dirwalk(const char *dir, int (*fcn)(const char*))
     if (strlen(dir)+strlen(dp->d_name)+2 > sizeof(name)) {
       asfPrintWarning("dirwalk: name %s/%s exceeds buffersize.\n",
                       dir, dp->d_name);
+      closedir(dfd);
       return; // error
     }
     else {
