@@ -35,7 +35,7 @@ int main (int argc, char *argv[])
   char helpme;
   char infile[256];
   char errmsg[256];
-  TIFFHeader tiff_hdr;
+  TIFFHeaderClassic tiff_hdr;
   uint8 magic[2];
   uint16 endian;
   uint16 curIFDnum;
@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
   /*                                                                */
   fp = fopen(infile, "r");
   asfRequire(fp != NULL, "\nERROR: Error opening input TIFF file.\n\n");
-  fread(&tiff_hdr, sizeof(TIFFHeader), 1, fp);
+  fread(&tiff_hdr, sizeof(TIFFHeaderClassic), 1, fp);
   fclose(fp);
 
   endian = (tiff_hdr.tiff_magic == TIFF_BIGENDIAN) ? TIFF_BIGENDIAN :
