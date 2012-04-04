@@ -1486,14 +1486,14 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
           trim_zeros(deskewDemFile, outFile, &startx, &endx);
           trim(deskewDemMask, lsMaskFile, startx, 0, endx,
                metaSAR->general->line_count);
-
-          meta_free(metaSAR);
-          metaSAR = meta_read(outFile);
       }
       else {
           copyImgAndMeta(deskewDemFile, outFile);
           copyImgAndMeta(deskewDemMask, lsMaskFile);
       }
+
+      meta_free(metaSAR);
+      metaSAR = meta_read(outFile);
 
       clean(padFile);
       clean(deskewDemFile);
