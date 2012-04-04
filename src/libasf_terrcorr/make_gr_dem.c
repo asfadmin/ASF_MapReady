@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <gsl/gsl_spline.h>
 #include <asf_raster.h>
+#include "float_image.h"
 
 static float *
 read_dem(meta_parameters *meta_dem, const char *demImg)
@@ -51,6 +52,69 @@ bilinear_interp_fn(double y, double x,
   double y1 = 1-y;
 
   return p00*x1*y1 + p10*x*y1 + p01*x1*y + p11*x*y;
+}
+
+static float
+interp_dem(FloatImage *dem, double l, double s)
+{
+  int nl = dem->size_y;
+  int ns = dem->size_x;
+
+  if (l<0 || l>=nl-1 || s<0 || s>=ns-1) {
+    return 0;
+  }
+
+  int ix = (int)s;
+  int iy = (int)l;
+
+  int bilinear = l<3 || l>=nl-3 || s<3 || s>=ns-3;
+  //int bilinear = 1;
+  if (bilinear) {
+
+    float p00 = float_image_get_pixel(dem, ix, iy);
+    float p10 = float_image_get_pixel(dem, ix+1, iy);
+    float p01 = float_image_get_pixel(dem, ix, iy+1);
+    float p11 = float_image_get_pixel(dem, ix+1, iy+1);
+
+    return (float)bilinear_interp_fn(s-ix, l-iy, p00, p10, p01, p11);
+  }
+  else {
+
+    double ret, x[4], y[4], xi[4], yi[4];
+    int ii;
+
+    for (ii=0; ii<4; ++ii) {
+      y[0] = float_image_get_pixel(dem, ix-1, iy+ii-1);
+      y[1] = float_image_get_pixel(dem, ix,   iy+ii-1);
+      y[2] = float_image_get_pixel(dem, ix+1, iy+ii-1);
+      y[3] = float_image_get_pixel(dem, ix+2, iy+ii-1);
+
+      x[0] = ix - 1;
+      x[1] = ix;
+      x[2] = ix + 1;
+      x[3] = ix + 2;
+
+      gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+      gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);
+      gsl_spline_init (spline, x, y, 4);
+      yi[ii] = gsl_spline_eval(spline, s, acc);
+      gsl_spline_free (spline);
+      gsl_interp_accel_free (acc);
+
+      xi[ii] = iy + ii - 1;
+    }
+
+    gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+    gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);
+    gsl_spline_init (spline, xi, yi, 4);
+    ret = gsl_spline_eval(spline, l, acc);
+    gsl_spline_free (spline);
+    gsl_interp_accel_free (acc);
+
+    return (float)ret;
+  }
+
+  asfPrintError("Impossible.");
 }
 
 static float
@@ -259,9 +323,24 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
   
   asfPrintStatus("Reading DEM...\n");
   meta_parameters *meta_dem = meta_read(demMeta);
-  float *demData = read_dem(meta_dem, demImg);
+  float *demData = NULL;
+  FloatImage *fi_dem = NULL;
+
   int dnl = meta_dem->general->line_count;
   int dns = meta_dem->general->sample_count;
+
+  if (0)
+    demData = read_dem(meta_dem, demImg);
+  else
+    fi_dem = float_image_new_from_file(dns, dnl, demImg, 0,
+                 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+
+  if (demData)
+    asfPrintStatus("Old method: reading entire DEM.\n");
+  if (fi_dem)
+    asfPrintStatus("New method: float image\n");
+  if (demData && fi_dem)
+    asfPrintError("Impossible.\n");
 
   char *outImg = appendExt(output_name, ".img");
   char *output_name_tmp, *outImgTmp;
@@ -373,7 +452,12 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
             }
             ++num_checked;
           }
-          buf[index] = interp_demData(demData, dnl, dns, line_out, samp_out);
+          if (demData)
+            buf[index] = interp_demData(demData, dnl, dns, line_out, samp_out);
+          else if (fi_dem)
+            buf[index] = interp_dem(fi_dem, line_out, samp_out);
+          else
+            asfPrintError("Oops.\n");
         }
       }
     }
@@ -402,6 +486,8 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
 
   FREE(buf);
   FREE(demData);
+  if (fi_dem)
+    float_image_free(fi_dem);
 
   // now apply 3x3 filter
   if (do_averaging) {
