@@ -156,9 +156,16 @@ void set_mapping_defaults(ImageInfo *ii)
     }
   }
 
-  set_checked("rb_red_truncate", TRUE);
-  set_checked("rb_green_truncate", TRUE);
-  set_checked("rb_blue_truncate", TRUE);
+  if(ii->data_ci->data_type == RGB_FLOAT) {
+    set_checked("rb_red_2sigma", TRUE);
+    set_checked("rb_green_2sigma", TRUE);
+    set_checked("rb_blue_2sigma", TRUE);
+  }
+  else {
+    set_checked("rb_red_truncate", TRUE);
+    set_checked("rb_green_truncate", TRUE);
+    set_checked("rb_blue_truncate", TRUE);
+  }
 
   update_map_settings(ii);
 }
@@ -274,9 +281,21 @@ static void set_mapping(ImageInfo *ii, int from_gui)
       set_mapping_rgb(&ii->stats_b, "blue");
     }
     else {
-      set_mapping_defaults_rgb(&ii->stats_r);
-      set_mapping_defaults_rgb(&ii->stats_g);
-      set_mapping_defaults_rgb(&ii->stats_b);
+      if(ii->data_ci->data_type == RGB_FLOAT) {
+        // Default to 2sigma byte conversion when dealing with RGB_FLOAT images
+        ii->stats_r.truncate = ii->stats_g.truncate = ii->stats_b.truncate = FALSE;
+        ii->stats_r.map_min = ii->stats_r.avg - 2*ii->stats_r.stddev;
+        ii->stats_r.map_max = ii->stats_r.avg + 2*ii->stats_r.stddev;
+        ii->stats_g.map_min = ii->stats_g.avg - 2*ii->stats_g.stddev;
+        ii->stats_g.map_max = ii->stats_g.avg + 2*ii->stats_g.stddev;
+        ii->stats_b.map_min = ii->stats_b.avg - 2*ii->stats_b.stddev;
+        ii->stats_b.map_max = ii->stats_b.avg + 2*ii->stats_b.stddev;
+      }
+      else {
+        set_mapping_defaults_rgb(&ii->stats_r);
+        set_mapping_defaults_rgb(&ii->stats_g);
+        set_mapping_defaults_rgb(&ii->stats_b);
+      }
     }
   }
 }
