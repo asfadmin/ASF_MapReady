@@ -74,6 +74,8 @@ MAPREADY_SOURCE = \
 	include \
 	doc/mapready_manual.pdf \
 	doc/mapready-version_history.txt \
+	doc/arcgis_mask.pdf \
+	doc/dem_manual.pdf \
 	external \
 	LICENSE.txt \
 	make_support \
