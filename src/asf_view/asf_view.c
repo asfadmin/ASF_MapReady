@@ -20,6 +20,8 @@ double zoom;
 double center_samp, center_line;
 double crosshair_line, crosshair_samp;
 int g_saved_line_count;
+double pt_lat[MAX_PTS], pt_lon[MAX_PTS];
+int pt_specified;
 
 // these are used when the command line option "-generic" is given
 // (trying to read in a generic binary file)
@@ -105,6 +107,50 @@ static void help()
   exit(EXIT_FAILURE);
 }
 
+static void read_pts()
+{
+    int jj,ii=0;
+    if (pt_specified)
+      ++ii;
+
+    for (jj=ii; jj<MAX_PTS; ++jj) {
+      pt_lat[jj] = pt_lon[jj] = -999;
+    }
+
+    if (fileExists("asf_view.points")) {
+      FILE *fp = fopen("asf_view.points", "r");
+      if (fp) {
+        char buf[512];
+
+        while (!feof(fp)) {
+          if (fgets(buf, sizeof(buf), fp)) {
+          double lat, lon;
+          int n = sscanf(buf, "%lf %lf", &lat, &lon); 
+          if (n != 2)
+            n = sscanf(buf, "%lf,%lf", &lat, &lon); 
+          if (n == 2) {
+            pt_specified = TRUE;
+            pt_lat[ii] = lat;
+            pt_lon[ii] = lon;
+            ++ii;
+          }
+          }
+
+          if (ii >= MAX_PTS)
+            break;
+        }
+        fclose(fp);
+      }
+    }
+
+    jj=0;
+    while (pt_lat[jj] != -999) {
+      printf("Point: %f, %f\n", pt_lat[jj], pt_lon[jj]);
+       ++jj;
+    }
+}
+
+
 int
 main(int argc, char **argv)
 {
@@ -124,6 +170,12 @@ main(int argc, char **argv)
         "-plan", "--plan", NULL);
     int mask_specified = extract_string_options(&argc, &argv, mask_file_name,
         "-mask", "--mask", "--layover-mask", "--layover-mask", NULL);
+
+    int plat = extract_double_options(&argc, &argv, &pt_lat[0], "-plat", NULL);
+    int plon = extract_double_options(&argc, &argv, &pt_lon[0], "-plon", NULL);
+    pt_specified = plat && plon;
+    read_pts();
+
     generic_specified = extract_flag_options(&argc, &argv,
         "-generic", "--generic", NULL);
     if (generic_specified) {

@@ -1387,7 +1387,7 @@ int polsarpro_geocoding_check()
 	get_widget_checked("add_file_with_ancillary_polsarpro_ceos_entry");
       GtkWidget *polsarpro_ancillary_browse_button = 
 	get_widget_checked("add_file_with_ancillary_polsarpro_ceos_browse_button");
-      if (!meta->projection) {
+      if (meta && !meta->projection) {
 	gtk_widget_set_sensitive(polsarpro_ancillary_file, TRUE);
 	gtk_widget_set_sensitive(polsarpro_ancillary_browse_button, TRUE);
 	gtk_widget_set_sensitive(ok_button, FALSE);

@@ -425,4 +425,8 @@ extern int generic_specified;
 extern int generic_bin_width, generic_bin_height, generic_bin_datatype,
            generic_bin_byteswap;
 
+#define MAX_PTS 50
+extern int pt_specified;
+extern double pt_lat[MAX_PTS], pt_lon[MAX_PTS];
+
 #endif

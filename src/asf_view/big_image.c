@@ -516,9 +516,9 @@ static void put_marker(GdkPixbuf *pixbuf, double line, double samp,
         break;
     }
 }
-
-int g_show_cr = TRUE;
 /*
+int g_show_cr = TRUE;
+
 static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
 {
   if (!g_show_cr)
@@ -536,6 +536,7 @@ static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
     double lat = djArr[i].lat;
     double lon = djArr[i].lon;
     double ht = djArr[i].elev;
+    ht=0;
 
     double line, samp;
     int bad = meta_get_lineSamp(meta, lat, lon, ht, &line, &samp);
@@ -552,6 +553,28 @@ static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
 }
 */
 
+static void add_pts(GdkPixbuf *pb, ImageInfo *ii)
+{
+  if (!pt_specified)
+    return;
+
+  meta_parameters *meta = ii->meta;
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+
+  double line, samp;
+  int jj;
+  while (pt_lat[jj] != -999) {
+    int bad = meta_get_lineSamp(meta, pt_lat[jj], pt_lon[jj], 0, &line, &samp);
+   
+    if (bad || line<0 || line>nl || samp<0 || samp>ns)
+      continue;
+  
+    put_marker(pb, line, samp, 1, PURPLE, ii);
+    ++jj;
+  }
+}
+   
 static void add_north_arrow(GdkPixbuf *pb, ImageInfo *ii)
 {
   if (!g_show_north_arrow)
@@ -823,6 +846,7 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
     if (meta_supports_meta_get_latLon(ii->meta)) {
       add_north_arrow(pb, ii);
       //add_cr(pb, ii);
+      add_pts(pb, ii);
     }
 
     // draw the polygon
@@ -1269,9 +1293,58 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         update_pixel_info(ii);
     }
     else if (event->keyval == GDK_f || event->keyval == GDK_F) {
+        double lat=0, lon=0; //, x, y;
+        meta_parameters *old_meta = meta_copy(curr->meta);
+
+        //int zone;
+        //if (meta_supports_meta_get_latLon(old_meta)) {
+          //meta_get_latLon(old_meta, center_line, center_samp, 0,
+          //                &lat, &lon);
+          //zone = utm_zone(lon);
+          //latLon2UTM_zone(lat, lon, 0, zone, &x, &y);
+          //printf("Old center: %f %f %f %f\n", lat, lon, x, y);
+        //}
+
         current_image_info_index = (current_image_info_index + 1) % n_images_loaded;
         ii = curr = &image_info[current_image_info_index];
         asfPrintStatus("Switching to: %s\n", curr->filename);
+
+        // update crosshair and any polygon info
+        if (meta_supports_meta_get_latLon(old_meta) &&
+            meta_supports_meta_get_latLon(curr->meta))
+        {
+            meta_get_latLon(old_meta, crosshair_line, crosshair_samp, 0,
+                            &lat, &lon);
+            meta_get_lineSamp(curr->meta, lat, lon, 0,
+                              &crosshair_line, &crosshair_samp);
+
+            int i;
+            for (i=0; i<g_poly->n; ++i) {
+                meta_get_latLon(old_meta, g_poly->line[i], g_poly->samp[i], 0,
+                                &lat, &lon);
+                meta_get_lineSamp(curr->meta, lat, lon, 0,
+                                  &g_poly->line[i], &g_poly->samp[i]);
+            }
+        }
+
+        // move cursor to same lat,lon
+        if (meta_supports_meta_get_latLon(curr->meta)) {
+          double line, samp;
+          meta_get_latLon(old_meta, center_line, center_samp, 0,
+                          &lat, &lon);
+          int bad = meta_get_lineSamp(curr->meta, lat, lon, 0, &line, &samp);
+          int nl = curr->meta->general->line_count;
+          int ns = curr->meta->general->sample_count;
+          if (!bad && line>0 && line<nl && samp>0 && samp<ns) {
+            center_line = line;
+            center_samp = samp;
+            //meta_get_latLon(curr->meta, center_line, center_samp, 0,
+            //                &lat, &lon);
+            //latLon2UTM_zone(lat, lon, 0, zone, &x, &y);
+            //printf("New center: %f %f %f %f\n", lat, lon, x, y);
+          }
+        }
+        meta_free(old_meta);
 
         fill_small_force_reload(ii);
         update_pixel_info(ii);

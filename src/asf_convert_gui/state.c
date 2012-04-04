@@ -426,6 +426,7 @@ void save_config(char *cfgFile, char* projfile)
       g_snprintf(msg, sizeof(msg),
                  "Couldn't open projection parameters save file: %s", strerror(errno));
       message_box(msg);
+      fclose(cf);
       return;
     }
 

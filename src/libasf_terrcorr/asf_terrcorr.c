@@ -430,16 +430,16 @@ static int dem_and_slant_to_kml(char *file1,
                                 char *file2,
                                 char *outfile)
 {
-  FILE *kf = fopen(outfile, "w");
-  if (!kf) return FALSE;
-
   meta_parameters *meta1 = meta_read(file1);
+  if (!meta1) return FALSE;
   meta_parameters *meta2 = meta_read(file2);
+  if (!meta2) return FALSE;
 
   char *base1 = get_basename(file1);
   char *base2 = get_basename(file2);
 
-  if (!meta1 || !meta2) return FALSE;
+  FILE *kf = fopen(outfile, "w");
+  if (!kf) return FALSE;
 
   int qf_saved=quietflag;
   quietflag=TRUE;

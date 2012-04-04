@@ -280,6 +280,7 @@ static void process_dir(const char *dir, int top, int recursive,
     if (strlen(dir)+strlen(dp->d_name)+2 > sizeof(name)) {
       asfPrintWarning("dirwalk: name %s/%s exceeds buffersize.\n",
                       dir, dp->d_name);
+      closedir(dfd);
       return; // error
     }
     else {

@@ -139,9 +139,12 @@ int is_uavsar(const char *infile)
     FILE *fp = fopen(infile, "r");
     if (fp) {
       while (fgets(line, 1024, fp)) {
-	if (strstr(line, "http://uavsar.jpl.nasa.gov"))
+	if (strstr(line, "http://uavsar.jpl.nasa.gov")) {
 	  found = TRUE;
+          break;
+        }
       }
+      fclose(fp);
     }
   }
 

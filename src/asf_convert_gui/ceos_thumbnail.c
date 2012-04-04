@@ -349,7 +349,7 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
 
     GdkPixbuf *pb_s =
             gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-    gdk_pixbuf_unref(pb);
+    g_object_unref(pb);
 
     if (!pb_s) {
         asfPrintWarning("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
@@ -500,7 +500,7 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
 
     GdkPixbuf *pb_s =
         gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-    gdk_pixbuf_unref(pb);
+    g_object_unref(pb);
 
     if (!pb_s)
         printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
@@ -725,7 +725,7 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
 
     GdkPixbuf *pb_s =
         gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-    gdk_pixbuf_unref(pb);
+    g_object_unref(pb);
 
     if (!pb_s)
         asfPrintStatus("\nFailed to allocate scaled thumbnail pixbuf: %s\n\n", input_data);
@@ -891,7 +891,7 @@ make_polsarpro_thumb(const char *input_metadata, const char *input_data,
 
   GdkPixbuf *pb_s =
       gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_unref(pb);
+  g_object_unref(pb);
 
   if (!pb_s)
     asfPrintStatus("\nFailed to allocate scaled thumbnail pixbuf: %s\n\n", input_data);
@@ -1153,7 +1153,7 @@ make_complex_thumb(meta_parameters* imd,
 
     GdkPixbuf *pb_s =
         gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-    gdk_pixbuf_unref(pb);
+    g_object_unref(pb);
 
     if (!pb_s) {
         printf("Failed to allocate scaled thumbnail pixbuf: %s\n", data_name);
@@ -1207,7 +1207,7 @@ make_terrasarx_thumb(const char *input_metadata, const char *input_data,
 
   GdkPixbuf *pb_s =
     gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_unref(pb);
+  g_object_unref(pb);
 
   if (!pb_s)
     printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
@@ -1271,7 +1271,7 @@ make_radarsat2_thumb(const char *input_metadata, const char *input_data,
 
   GdkPixbuf *pb_s =
     gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_unref(pb);
+  g_object_unref(pb);
 
   if (!pb_s)
     printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
@@ -1396,7 +1396,7 @@ make_uavsar_thumb(meta_parameters *meta, const char *input_data,
 
   GdkPixbuf *pb_s =
       gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_unref(pb);
+  g_object_unref(pb);
 
   if (!pb_s)
       printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
@@ -1720,7 +1720,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 
     GdkPixbuf *pb_s =
         gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
-    gdk_pixbuf_unref(pb);
+    g_object_unref(pb);
 
     if (!pb_s) {
         printf("Failed to allocate scaled thumbnail pixbuf: %s\n", data_name);

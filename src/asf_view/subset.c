@@ -530,18 +530,6 @@ static int save_as_csv(ImageInfo *ii,
 {
     int i,j;
 
-    FILE *outFp = fopen(out_file, "w");
-    if (!outFp) {
-        // failed to open the output file!
-        char errbuf[1024];
-        snprintf(errbuf, 1024, "Failed to open %s: %s", out_file,
-            strerror(errno));
-        message_box(errbuf);
-        strcat(errbuf, "\n");
-        printf("%s", errbuf);
-        return FALSE; // failure
-    }
-
     assert (g_poly->n > 0);
     assert (crosshair_line > 0 && crosshair_samp > 0);
 
@@ -558,6 +546,18 @@ static int save_as_csv(ImageInfo *ii,
              "\nRegion is too large (%dx%d) to export as CSV (500x500 max)\n\n",
              nl, ns);
         message_box(errbuf);
+        printf("%s", errbuf);
+        return FALSE; // failure
+    }
+
+    FILE *outFp = fopen(out_file, "w");
+    if (!outFp) {
+        // failed to open the output file!
+        char errbuf[1024];
+        snprintf(errbuf, 1024, "Failed to open %s: %s", out_file,
+            strerror(errno));
+        message_box(errbuf);
+        strcat(errbuf, "\n");
         printf("%s", errbuf);
         return FALSE; // failure
     }
