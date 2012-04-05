@@ -1258,8 +1258,11 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
         meta->transform->x[ii] = facdr.a[ii];
         sanity_check(meta->transform->x[ii]);
         meta->transform->y[ii] = facdr.b[ii];
+        sanity_check(meta->transform->y[ii]);
         meta->transform->l[ii] = facdr.c[ii];
+        sanity_check(meta->transform->l[ii]);
         meta->transform->s[ii] = facdr.d[ii];
+        sanity_check(meta->transform->s[ii]);
       }
       meta->transform->origin_lat = facdr.origin_lat;
       meta->transform->origin_lon = facdr.origin_lon;
