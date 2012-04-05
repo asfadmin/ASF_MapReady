@@ -2183,103 +2183,108 @@ int apply_settings_from_config_file(char *configFile)
     s.false_easting = s.false_northing = 0;
 
     if (s.geocode_is_checked) {
-        project_parameters_t pps;
-        projection_type_t type;
-	datum_type_t datum;
-	spheroid_type_t spheroid;
-        read_proj_file(cfg->geocoding->projection, 
-		       &pps, &type, &datum, &spheroid);
-	printf("read_proj_file - datum: %s, spheroid: %s\n",
-	       datum_toString(datum), spheroid_toString(spheroid));
-
-        if (type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-            s.projection = PROJ_UTM;
-            s.zone = pps.utm.zone;
-        } else if (type == POLAR_STEREOGRAPHIC) {
-            s.projection = PROJ_PS;
-            s.lat0 = pps.ps.slat;
-            s.lon0 = pps.ps.slon;
-        } else if (type == ALBERS_EQUAL_AREA) {
-            s.projection = PROJ_ALBERS;
-            s.plat1 = pps.albers.std_parallel1;
-            s.plat2 = pps.albers.std_parallel2;
-            s.lat0 = pps.albers.orig_latitude;
-            s.lon0 = pps.albers.center_meridian;
-        } else if (type == LAMBERT_CONFORMAL_CONIC) {
-            s.projection = PROJ_LAMCC;
-            s.plat1 = pps.lamcc.plat1;
-            s.plat2 = pps.lamcc.plat2;
-            s.lat0 = pps.lamcc.lat0;
-            s.lon0 = pps.lamcc.lon0;
-        } else if (type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
-            s.projection = PROJ_LAMAZ;
-            s.lat0 = pps.lamaz.center_lat;
-            s.lon0 = pps.lamaz.center_lon;
-        } else if (type == MERCATOR) {
-	  s.projection = PROJ_MER;
-	  s.lat0 = pps.mer.orig_latitude;
-	  s.lon0 = pps.mer.central_meridian;
-	  s.plat1 = pps.mer.standard_parallel;
-	} else if (type == EQUI_RECTANGULAR) {
-	  s.projection = PROJ_EQR;
-	  s.lat0 = pps.eqr.orig_latitude;
-	  s.lon0 = pps.eqr.central_meridian;
-	}
-
-        s.specified_height = cfg->geocoding->height != -99 &&
-            cfg->geocoding->height != 0;
-        s.height = cfg->geocoding->height;
-        s.specified_pixel_size = cfg->geocoding->pixel > 0;
-        s.pixel_size = cfg->geocoding->pixel;
-        s.geocode_force = cfg->geocoding->force;
-
-        // GET DATUM
-        s.datum = DATUM_WGS84;
-        if (datum == WGS84_DATUM) {
-          s.datum = DATUM_WGS84;
+        if(!fileExists(cfg->geocoding->projection)) {
+            asfPrintWarning("The projection file %s does not exist.\nNot populating geocode settings.\n", cfg->geocoding->projection);
         }
-        else if (datum == NAD27_DATUM) {
-          s.datum = DATUM_NAD27;
-        }
-        else if (datum == NAD83_DATUM) {
-          s.datum = DATUM_NAD83;
-        }
-        else if (datum == HUGHES_DATUM) {
-          s.datum = DATUM_HUGHES;
-        }
-	else if (datum == ITRF97_DATUM) {
-	  s.datum = DATUM_ITRF97;
-	}
-	else if (datum == ED50_DATUM) {
-	  s.datum = DATUM_ED50;
-	}
-	else if (datum == SAD69_DATUM) {
-	  s.datum = DATUM_SAD69;
-	}
+        else {
+            project_parameters_t pps;
+            projection_type_t type = UNKNOWN_PROJECTION;
+            datum_type_t datum = UNKNOWN_DATUM;
+            spheroid_type_t spheroid = UNKNOWN_SPHEROID;
+            read_proj_file(cfg->geocoding->projection, 
+                &pps, &type, &datum, &spheroid);
+            printf("read_proj_file - datum: %s, spheroid: %s\n",
+            datum_toString(datum), spheroid_toString(spheroid));
 
-	if (spheroid == WGS84_SPHEROID) {
-	  s.spheroid = SPHEROID_WGS84;
-	}
-	else if (spheroid == HUGHES_SPHEROID) {
-	  s.spheroid = SPHEROID_HUGHES;
-	}
-	else if (spheroid == GRS1967_SPHEROID) {
-	  s.spheroid = SPHEROID_GRS1967;
-	}
-	else if (spheroid == GRS1980_SPHEROID) {
-	  s.spheroid = SPHEROID_GRS1980;
-	}
-	else if (spheroid == INTERNATIONAL1924_SPHEROID) {
-	  s.spheroid = SPHEROID_INTERNATIONAL1924;
-	}
+            if (type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+                s.projection = PROJ_UTM;
+                s.zone = pps.utm.zone;
+            } else if (type == POLAR_STEREOGRAPHIC) {
+                s.projection = PROJ_PS;
+                s.lat0 = pps.ps.slat;
+                s.lon0 = pps.ps.slon;
+            } else if (type == ALBERS_EQUAL_AREA) {
+                s.projection = PROJ_ALBERS;
+                s.plat1 = pps.albers.std_parallel1;
+                s.plat2 = pps.albers.std_parallel2;
+                s.lat0 = pps.albers.orig_latitude;
+                s.lon0 = pps.albers.center_meridian;
+            } else if (type == LAMBERT_CONFORMAL_CONIC) {
+                s.projection = PROJ_LAMCC;
+                s.plat1 = pps.lamcc.plat1;
+                s.plat2 = pps.lamcc.plat2;
+                s.lat0 = pps.lamcc.lat0;
+                s.lon0 = pps.lamcc.lon0;
+            } else if (type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
+                s.projection = PROJ_LAMAZ;
+                s.lat0 = pps.lamaz.center_lat;
+                s.lon0 = pps.lamaz.center_lon;
+            } else if (type == MERCATOR) {
+              s.projection = PROJ_MER;
+              s.lat0 = pps.mer.orig_latitude;
+              s.lon0 = pps.mer.central_meridian;
+              s.plat1 = pps.mer.standard_parallel;
+            } else if (type == EQUI_RECTANGULAR) {
+              s.projection = PROJ_EQR;
+              s.lat0 = pps.eqr.orig_latitude;
+              s.lon0 = pps.eqr.central_meridian;
+            }
 
-        s.resample_method = RESAMPLE_BILINEAR;
-        if (strncmp(uc(cfg->geocoding->resampling),"NEAREST_NEIGHBOR",16) == 0)
-            s.resample_method = RESAMPLE_NEAREST_NEIGHBOR;
-        if (strncmp(uc(cfg->geocoding->resampling),"BILINEAR", 8) == 0)
+            s.specified_height = cfg->geocoding->height != -99 &&
+                cfg->geocoding->height != 0;
+            s.height = cfg->geocoding->height;
+            s.specified_pixel_size = cfg->geocoding->pixel > 0;
+            s.pixel_size = cfg->geocoding->pixel;
+            s.geocode_force = cfg->geocoding->force;
+
+            // GET DATUM
+            s.datum = DATUM_WGS84;
+            if (datum == WGS84_DATUM) {
+              s.datum = DATUM_WGS84;
+            }
+            else if (datum == NAD27_DATUM) {
+              s.datum = DATUM_NAD27;
+            }
+            else if (datum == NAD83_DATUM) {
+              s.datum = DATUM_NAD83;
+            }
+            else if (datum == HUGHES_DATUM) {
+              s.datum = DATUM_HUGHES;
+            }
+            else if (datum == ITRF97_DATUM) {
+              s.datum = DATUM_ITRF97;
+            }
+            else if (datum == ED50_DATUM) {
+              s.datum = DATUM_ED50;
+            }
+            else if (datum == SAD69_DATUM) {
+              s.datum = DATUM_SAD69;
+            }
+
+            if (spheroid == WGS84_SPHEROID) {
+              s.spheroid = SPHEROID_WGS84;
+            }
+            else if (spheroid == HUGHES_SPHEROID) {
+              s.spheroid = SPHEROID_HUGHES;
+            }
+            else if (spheroid == GRS1967_SPHEROID) {
+              s.spheroid = SPHEROID_GRS1967;
+            }
+            else if (spheroid == GRS1980_SPHEROID) {
+              s.spheroid = SPHEROID_GRS1980;
+            }
+            else if (spheroid == INTERNATIONAL1924_SPHEROID) {
+              s.spheroid = SPHEROID_INTERNATIONAL1924;
+            }
+
             s.resample_method = RESAMPLE_BILINEAR;
-        if (strncmp(uc(cfg->geocoding->resampling),"BICUBIC", 7) == 0)
-            s.resample_method = RESAMPLE_BICUBIC;
+            if (strncmp(uc(cfg->geocoding->resampling),"NEAREST_NEIGHBOR",16) == 0)
+                s.resample_method = RESAMPLE_NEAREST_NEIGHBOR;
+            if (strncmp(uc(cfg->geocoding->resampling),"BILINEAR", 8) == 0)
+                s.resample_method = RESAMPLE_BILINEAR;
+            if (strncmp(uc(cfg->geocoding->resampling),"BICUBIC", 7) == 0)
+                s.resample_method = RESAMPLE_BICUBIC;
+        }
     }
 
     /* terrcorr options */
