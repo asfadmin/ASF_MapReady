@@ -1097,6 +1097,26 @@ static void get_alos_linehdr(struct PHEADER *linehdr, int line_number,
     fclose(fp);
 }
 
+static void sanity_check(double param_value)
+{
+  int bad = TRUE;
+  if (!meta_is_valid_double(param_value)) {
+    asfPrintWarning("Bad transform block value found: NaN\n");
+  }
+  else if (param_value > 1e100) {
+    asfPrintWarning("Bad transform block value found: %f\n", param_value);
+  }
+  else {
+    bad = FALSE;
+  }
+
+  if (bad) // probably this should be an error
+    asfPrintWarning(
+      "This looks like Palsar data that was processed with and old version\n"
+      "of the JAXA ALOS processor.  Get this data again from ASF or other\n"
+      "data provider.  As it is, the data will exhibit poor geolocation.\n");
+}
+
 // Only deal with ALOS data
 void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
            meta_parameters *meta)
@@ -1235,10 +1255,11 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     else {
       meta->transform->parameter_count = 25;
       for (ii=0; ii<25; ii++) {
-    meta->transform->x[ii] = facdr.a[ii];
-    meta->transform->y[ii] = facdr.b[ii];
-    meta->transform->l[ii] = facdr.c[ii];
-    meta->transform->s[ii] = facdr.d[ii];
+        meta->transform->x[ii] = facdr.a[ii];
+        sanity_check(meta->transform->x[ii]);
+        meta->transform->y[ii] = facdr.b[ii];
+        meta->transform->l[ii] = facdr.c[ii];
+        meta->transform->s[ii] = facdr.d[ii];
       }
       meta->transform->origin_lat = facdr.origin_lat;
       meta->transform->origin_lon = facdr.origin_lon;

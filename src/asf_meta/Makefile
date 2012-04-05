@@ -157,9 +157,9 @@ asf_meta: build_only
 	cp asf_meta.h get_ceos_names.h get_stf_names.h gamma.h meta_init_stVec.h \
 		meta_project.h frame_calc.h dateUtil.h calibrate.h line_header.h\
 		envi.h doppler.h xml_util.h $(ASF_INCLUDE_DIR)
-	cp -R lib_test $(SHAREDIR)
-	cp -R meta_test $(SHAREDIR)
-	cp -R geotiff_test $(SHAREDIR)
+	-cp -R lib_test $(SHAREDIR)
+	-cp -R meta_test $(SHAREDIR)
+	-cp -R geotiff_test $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f asf_meta.a
