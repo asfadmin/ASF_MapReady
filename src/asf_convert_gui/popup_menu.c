@@ -1042,7 +1042,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     GList * selected_rows, * i;
     GList * refs;
     //FILE *kml_file = NULL;
-    char kml_filename[256];
+    char kml_filename[1024];
     char *output_dir = NULL;
     gchar *uavsar_type;
     //int n_ok = 0;
@@ -1139,9 +1139,60 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
       FREE(element);
       g_free(type_name);
     }
+    else if (!strstr(widget_name, "completed")) {
+      // file has not been processed yet, we must generate a kml file
+      char *kml_tmp = appendExt(out_name, ".kml");
+      if (strlen(kml_tmp) >= sizeof(kml_filename)) {
+        message_box("File name too long to generate KML overlay.");
+      }
+      else {
+        char *dirname = get_dirname(kml_tmp);
+        if (strlen(dirname) == 0) {
+          char *currdir = g_get_current_dir();
+          dirname = escapify(currdir);
+          sprintf(kml_filename, "%s/%s", dirname, kml_tmp);
+        }
+        else {
+          sprintf(kml_filename, kml_tmp);
+        }
+        free(dirname);
+
+        meta_parameters *meta = meta_read(metadata_name);
+        if (meta && meta->general &&
+            meta_is_valid_double(meta->general->center_latitude) &&
+            meta_is_valid_double(meta->general->center_longitude))
+        {
+          FILE *kf = fopen(kml_filename, "w");
+          if (!kf) {
+            message_box("Could not open KML file");
+          }
+          else {
+            // Here is where we actually generate the KML file
+            kml_header(kf);
+
+            char *basename = get_basename(kml_tmp);
+            kml_entry(kf, meta, basename);
+
+            kml_footer(kf);
+
+            fclose(kf);
+            free(basename);
+          }
+        }
+        else {
+          message_box("This file does not support KML overlays.");
+        }
+        meta_free(meta);
+      }
+
+      free(kml_tmp);
+    }
     else {
       char *base_output_name = get_basename(out_name);
-      sprintf(kml_filename, "%s/%s_overlay.kml", tmp_dir, base_output_name);
+      if (tmp_dir && strlen(tmp_dir) > 0)
+        sprintf(kml_filename, "%s/%s_overlay.kml", tmp_dir, base_output_name);
+      else
+        sprintf(kml_filename, "%s_overlay.kml", base_output_name);
       free(base_output_name);
       g_free(metadata_name);
       g_free(input_name);
@@ -1154,7 +1205,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     FindExecutable((LPCTSTR)kml_filename, (LPCTSTR)output_dir, 
                    (LPTSTR)ge_path);
     ge = STRDUP(escapify(ge_path));
-    printf("Path to google earth: %s\n", ge);
+    printf("Path to Google Earth: %s\n", ge);
 #elif !defined __APPLE__
     gchar *ge;
     ge = find_in_path("googleearth");
@@ -1167,6 +1218,8 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 
     if (fileExists(kml_filename))
     {
+        asfPrintStatus("Opening with Google Earth: %s\n", kml_filename);
+
 #ifdef win32
         asfSystem_NoWait("\"%s\" \"%s\"", ge, kml_filename);
 #elif defined __APPLE__
@@ -1187,6 +1240,10 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 	  exit(EXIT_SUCCESS);
         }
 #endif
+    }
+    else {
+        asfPrintWarning("Could not find KML overlay file: %s\n",
+                        kml_filename);
     }
 
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
