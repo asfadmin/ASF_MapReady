@@ -1148,9 +1148,11 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
       else {
         char *dirname = get_dirname(kml_tmp);
         if (strlen(dirname) == 0) {
+          free(dirname);
           char *currdir = g_get_current_dir();
           dirname = escapify(currdir);
           sprintf(kml_filename, "%s/%s", dirname, kml_tmp);
+          // no need to free() result of g_get_current_dir()
         }
         else {
           sprintf(kml_filename, kml_tmp);
@@ -1182,7 +1184,8 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
         else {
           message_box("This file does not support KML overlays.");
         }
-        meta_free(meta);
+        if (meta)
+          meta_free(meta);
       }
 
       free(kml_tmp);
