@@ -1155,7 +1155,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
           // no need to free() result of g_get_current_dir()
         }
         else {
-          sprintf(kml_filename, kml_tmp);
+          sprintf(kml_filename, "%s", kml_tmp);
         }
         free(dirname);
 
