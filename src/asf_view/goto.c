@@ -87,8 +87,19 @@ static int latlon_getls(double *line, double *samp)
   if (meta->projection || (meta->sar&&meta->state_vectors) ||
       meta->transform || meta->airsar)
   {
-    double lat = get_double_from_entry("go_to_lat_entry");
-    double lon = get_double_from_entry("go_to_lon_entry");
+    double lat, lon;
+    char *lat_str = get_string_from_entry("go_to_lat_entry");
+    if (strchr(lat_str, ',') == NULL) {
+      lat = get_double_from_entry("go_to_lat_entry");
+      lon = get_double_from_entry("go_to_lon_entry");
+    }
+    else {
+      char *latlon = STRDUP(lat_str);
+      char *comma = strchr(latlon, ',');
+      *comma = '\0';
+      lat = atof(latlon); 
+      lon = atof(comma+1); // points to character after comma, longitude
+    }
 
     if (lat < -90 || lat > 90) { 
       asfPrintWarning("Illegal latitude value: %f\n", lat);
