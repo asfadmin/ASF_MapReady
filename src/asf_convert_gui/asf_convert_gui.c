@@ -225,6 +225,9 @@ main(int argc, char **argv)
     widget = get_widget_checked("latitude_hi_entry");
     gtk_widget_hide(widget);
 
+    // For now, do not allow manual offsets
+    show_widget("hbox_tc_matching", FALSE);
+
     // This option is deprecated -- we always apply the fix now
     // and don't give the user the option of turning it off.  Probably
     // we can just delete all code associated with it, but for now we
