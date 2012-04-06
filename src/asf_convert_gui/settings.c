@@ -1758,6 +1758,9 @@ settings_to_config_string(const Settings *s,
         if (s->mask_file_is_checked) {
             sprintf(ret, "%smask = %s\n", ret, s->mask_file);
         }
+        if (s->auto_water_mask_is_checked || s->mask_file_is_checked) {
+            sprintf(ret, "%sfill value = -1\n", ret);
+        }
         sprintf(ret, "%ssmooth dem holes = %d\n", ret, s->interp_dem_holes);
         sprintf(ret, "%s\n", ret);
     }
