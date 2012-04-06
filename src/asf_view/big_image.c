@@ -1,7 +1,7 @@
 #include "asf_view.h"
 #include <gdk/gdkkeysyms.h>
 #include "libasf_proj.h"
-#include "cr.h"
+//#include "cr.h"
 
 UserPolygon g_polys[MAX_POLYS];
 
@@ -519,6 +519,7 @@ static void put_marker(GdkPixbuf *pixbuf, double line, double samp,
 
 int g_show_cr = TRUE;
 
+/*
 static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
 {
   if (!g_show_cr)
@@ -551,6 +552,7 @@ static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
     ls2img(line, samp, &ix, &iy);
   }
 }
+*/
 
 static void add_pts(GdkPixbuf *pb, ImageInfo *ii)
 {
@@ -844,7 +846,7 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
     // Add a "north" arrow if possible
     if (meta_supports_meta_get_latLon(ii->meta)) {
       add_north_arrow(pb, ii);
-      add_cr(pb, ii);
+      //add_cr(pb, ii);
       add_pts(pb, ii);
     }
 
