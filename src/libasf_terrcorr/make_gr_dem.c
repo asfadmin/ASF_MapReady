@@ -332,8 +332,7 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
   if (0)
     demData = read_dem(meta_dem, demImg);
   else
-    fi_dem = float_image_new_from_file(dns, dnl, demImg, 0,
-                 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+    fi_dem = float_image_new_from_metadata(meta_dem, demImg);
 
   if (demData)
     asfPrintStatus("Old method: reading entire DEM.\n");
