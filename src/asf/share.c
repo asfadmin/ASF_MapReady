@@ -513,7 +513,8 @@ int share_file_exists(const char *filename)
 const char *get_asf_share_dir_with_argv0(const char *argv0)
 {
     // strip off the executable, leaving just the path info
-    char *argv0_path = get_dirname(argv0);
+    char *argv0_real_path = realpath(argv0, NULL);
+    char *argv0_path = get_dirname(argv0_real_path);
 
     if (!s_argv0)
         s_argv0 = STRDUP(argv0_path);
@@ -532,7 +533,7 @@ const char *get_asf_share_dir_with_argv0(const char *argv0)
         if (share) {
             if (argv0_path && strlen(argv0_path) > 0) {
                 // a copy for us to change "whatever/bin" to "whatever/share/asf_tools"
-                char *buf = MALLOC(sizeof(char)*(strlen(argv0_path) + strlen(share) + 5));
+                char *buf = MALLOC(sizeof(char)*(strlen(argv0_path) + strlen(share) + strlen(TOOL_SUITE_SHARE_DIR) + 5));
                 strcpy(buf, argv0_path);
 
                 // only try this if the binary location ends with 'bin'
@@ -540,6 +541,8 @@ const char *get_asf_share_dir_with_argv0(const char *argv0)
                     // strip off "bin" - add "share/asf_tools"
                     *(buf + strlen(buf) - 4) = '\0';
                     strcat(buf, share);
+                    strcat(buf, "/");
+                    strcat(buf, TOOL_SUITE_SHARE_DIR);
                     if (check_for_known_file_in_share_dir(buf)) {
                         // this is the one!
                         s_share_dir = STRDUP(buf);
@@ -552,6 +555,7 @@ const char *get_asf_share_dir_with_argv0(const char *argv0)
 #endif
 
     FREE(argv0_path);
+    FREE(argv0_real_path);
     return get_asf_share_dir();
 }
 
