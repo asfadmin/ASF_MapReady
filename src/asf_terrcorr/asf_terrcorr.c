@@ -137,8 +137,6 @@
 "          With this option, instead of filling the masked regions (specified\n"\
 "          with -mask-file) with a constant fill value, the masked pixels will\n"\
 "          be filled with pixel values from the original SAR image.\n\n"\
-"          This may not work particularly well when the masked regions have high\n"\
-"          elevation.\n"\
 "\n"\
 "     -do-radiometric\n"\
 "          Apply radiometric terrain correction.  Radiometric terrain correction\n"\
