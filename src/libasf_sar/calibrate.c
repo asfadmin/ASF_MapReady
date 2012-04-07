@@ -39,12 +39,14 @@ int asf_calibrate(const char *inFile, const char *outFile,
     metaOut->general->no_data = -40.0;
     dbFlag = TRUE;
   }
-  if (outRadiometry == r_SIGMA || outRadiometry == r_SIGMA_DB)
-    metaOut->general->image_data_type = SIGMA_IMAGE;
-  else if (outRadiometry == r_BETA || outRadiometry == r_BETA_DB)
-    metaOut->general->image_data_type = BETA_IMAGE;
-  else if (outRadiometry == r_GAMMA || outRadiometry == r_GAMMA_DB)
-    metaOut->general->image_data_type = GAMMA_IMAGE;
+  if (metaIn->general->image_data_type != POLARIMETRIC_IMAGE) {
+    if (outRadiometry == r_SIGMA || outRadiometry == r_SIGMA_DB)
+      metaOut->general->image_data_type = SIGMA_IMAGE;
+    else if (outRadiometry == r_BETA || outRadiometry == r_BETA_DB)
+      metaOut->general->image_data_type = BETA_IMAGE;
+    else if (outRadiometry == r_GAMMA || outRadiometry == r_GAMMA_DB)
+      metaOut->general->image_data_type = GAMMA_IMAGE;
+  }
   if (wh_scaleFlag)
     metaOut->general->data_type = ASF_BYTE;
 
@@ -118,17 +120,29 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	  incid = meta_incid(metaIn, ii, jj);
 	  cal_dn = 
 	    get_cal_dn(metaOut, incid, jj, bufIn[jj], bands[kk], dbFlag);
-	  if (wh_scaleFlag) {
-	    if (FLOAT_EQUIVALENT(cal_dn, metaIn->general->no_data))
-	      bufOut[jj] = 0;
+	  if (strstr(bands[kk], "PHASE") != NULL) {
+	    if (wh_scaleFlag) {
+	      if (FLOAT_EQUIVALENT(cal_dn, metaIn->general->no_data))
+		bufOut[jj] = 0;
+	      else
+		bufOut[jj] = (cal_dn + 31) / 0.15 + 1.5;
+	    }
 	    else
-	      bufOut[jj] = (cal_dn + 31) / 0.15 + 1.5;
+	      bufOut[jj] = cal_dn;
 	  }
 	  else
-	    bufOut[jj] = cal_dn;
+	    bufOut[jj] = bufIn[jj];
 	}
 	put_band_float_line(fpOut, metaOut, kk, ii, bufOut);
 	asfLineMeter(ii, line_count);
+      }
+      if (kk==0)
+	sprintf(metaOut->general->bands, "%s-%s", 
+		radiometry2str(outRadiometry), bands[kk]);
+      else {
+	char tmp[255];
+	sprintf(tmp, ",%s-%s", radiometry2str(outRadiometry), bands[kk]);
+	strcat(metaOut->general->bands, tmp);
       }
       FREE(bands[kk]);
     }

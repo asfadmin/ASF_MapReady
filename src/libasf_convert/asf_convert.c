@@ -1940,14 +1940,9 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
   
   if (cfg->general->polarimetry) {
     
-    int doing_pol = cfg->polarimetry->pauli
-      + cfg->polarimetry->sinclair
-      + cfg->polarimetry->cloude_pottier
-      + cfg->polarimetry->cloude_pottier_ext
-      + cfg->polarimetry->cloude_pottier_nc
-      + cfg->polarimetry->freeman_durden
-      + cfg->polarimetry->k_means_wishart
-      + cfg->polarimetry->k_means_wishart_ext;
+    // Here only the faraday rotation correction is applied. Any other
+    // polarimetric processing is done after terrain correction and calibration.
+
     int doing_far = cfg->polarimetry->farcorr;
     
     if (doing_far) {
@@ -1973,25 +1968,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       
       sprintf(tmpFile, "%s/import_farrot.img", cfg->general->tmp_dir);
       save_intermediate(cfg, "Faraday", tmpFile);
-    }
-    
-    if (doing_pol) {
-      update_status("Polarimetric processing ...");
-      
-      // Pass in command line for polarimetry
-      sprintf(inFile, "%s", outFile);
-      if (cfg->general->terrain_correct ||
-	  cfg->general->geocoding ||
-	  cfg->general->export)
-        {
-          sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
-        }
-      else {
-	sprintf(outFile, "%s", cfg->general->out_name);
-      }
-
-      calc_polarimetry(cfg, inFile, outFile);
-    }
+    }    
   }
   
   if (cfg->general->terrain_correct) {
@@ -2109,6 +2086,39 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     if (!cfg->general->geocoding && !cfg->general->export) {
       renameImgAndMeta(outFile, cfg->general->out_name);
       strcpy(outFile, cfg->general->out_name);
+    }
+  }
+
+  if (cfg->general->polarimetry) {
+
+    // Since a potential radiometric terrain correction needs to be done on the
+    // original amplitude data, any polarimetric processing that uses data
+    // derived from amplitude and phase needs to happen afterwards.
+
+    int doing_pol = cfg->polarimetry->pauli
+      + cfg->polarimetry->sinclair
+      + cfg->polarimetry->cloude_pottier
+      + cfg->polarimetry->cloude_pottier_ext
+      + cfg->polarimetry->cloude_pottier_nc
+      + cfg->polarimetry->freeman_durden
+      + cfg->polarimetry->k_means_wishart
+      + cfg->polarimetry->k_means_wishart_ext;
+
+    if (doing_pol) {
+      update_status("Polarimetric processing ...");
+      
+      // Pass in command line for polarimetry
+      sprintf(inFile, "%s", outFile);
+      if (cfg->general->geocoding ||
+	  cfg->general->export)
+        {
+          sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
+        }
+      else {
+	sprintf(outFile, "%s", cfg->general->out_name);
+      }
+
+      calc_polarimetry(cfg, inFile, outFile);
     }
   }
 
