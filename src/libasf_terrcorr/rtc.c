@@ -242,6 +242,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   }
 
   // We aren't applying the correction to the edges of the image
+  // (corr[jj] == 1 for the whole row)
   for(kk = 0; kk < nb; ++kk) {
     get_band_float_line(fpIn, meta_in, kk, 0, bufIn);
     for (jj=0; jj<ns; ++jj)
@@ -254,6 +255,8 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     corr[0] = corr[ns-1] = 1;
     Vector satpos = get_satpos(meta_in, ii);
     incid_angles[0] = incid_angles[nl-1] = 0;
+
+    // calculate the Ulander correction for this line
     for(jj = 1; jj < ns - 1; ++jj) {
       incid_angles[jj] = meta_incid(meta_in, ii, jj);
       Vector * normal = calculate_normal(localVectors, jj);
@@ -261,6 +264,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
       vector_free(normal);
     }
 
+    // saving some intermediate products if requested
     if(save_incid_angles) {
       for (jj=0; jj<ns; ++jj)
         incid_angles[jj] *= R2D;
@@ -268,17 +272,30 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
       put_band_float_line(fpSide, side_meta, 1, ii, corr);
     }
 
+    // correct all the bands with the calculated scale factor
     for (kk=0; kk<nb; ++kk) {
       get_band_float_line(fpIn, meta_in, kk, ii, bufIn);
-      for (jj=0; jj<ns; ++jj)
-        bufOut[jj] = get_rad_cal_dn(meta_in, ii, jj, bands[kk], bufIn[jj], corr[jj]);
+
+      // we never apply the correction to phase
+      if (strstr(bands[kk], "PHASE") != NULL) {
+        for (jj=0; jj<ns; ++jj)
+          bufOut[jj] = bufIn[jj];
+      }
+      // amplitude, or complex I or Q -- apply the radiometric correction
+      else {
+        for (jj=0; jj<ns; ++jj)
+          bufOut[jj] = get_rad_cal_dn(meta_in, ii, jj, bands[kk], bufIn[jj], corr[jj]);
+      }
+
+      // write out the corrected line
       put_band_float_line(fpOut, meta_out, kk, ii, bufOut);
     }
 
     asfLineMeter(ii+1, nl);
   }
 
-    // We aren't applying the correction to the edges of the image
+  // bottom line of the image, here we are cheating and reusing the previous
+  // line's correction factors
   for(kk = 0; kk < nb; ++kk) {
     get_band_float_line(fpIn, meta_in, kk, nl-1, bufIn);
     for (jj=0; jj<ns; ++jj)
