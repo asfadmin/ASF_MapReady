@@ -9,8 +9,7 @@ CFLAGS += \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(TIFF_CFLAGS) \
-	$(JPEG_CFLAGS) \
-	$(XML_LIBS)
+	$(JPEG_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_geocode.a \
@@ -24,7 +23,8 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(TIFF_LIBS) \
-	$(JPEG_LIBS)
+	$(JPEG_LIBS) \
+	$(XML_LIBS)
 
 OBJS  = detect_cr.o \
 	utilities.o
