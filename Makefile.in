@@ -448,7 +448,8 @@ oldtools: mkdirs_for_build
 	$(MAKE) --makefile=Makefile.old
 
 # make everything!
-all: mapready oldtools req ap stp c2v jpl create_thumbs data_qc
+#all: mapready oldtools req ap stp c2v jpl create_thumbs data_qc
+all: mapready
 
 # This should install any & all package(s) that have been built
 install: 
