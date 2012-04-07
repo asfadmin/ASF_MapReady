@@ -512,8 +512,15 @@ int share_file_exists(const char *filename)
 
 const char *get_asf_share_dir_with_argv0(const char *argv0)
 {
-    // strip off the executable, leaving just the path info
+    // handle use of "./mapready" etc
     char *argv0_real_path = realpath(argv0, NULL);
+    if (!argv0_real_path) {
+        // probably user did not specify a path when running MapReady
+        // so, can use the normal method for finding the share dir
+        return get_asf_share_dir();
+    }
+
+    // strip off the executable, leaving just the path info
     char *argv0_path = get_dirname(argv0_real_path);
 
     if (!s_argv0)
