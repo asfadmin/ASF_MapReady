@@ -17,7 +17,8 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(FFT_LIBS) \
-	$(XML_LIBS)
+	$(XML_LIBS) \
+	-lm
 
 OBJS  = pta.o \
 	fftw.o \
