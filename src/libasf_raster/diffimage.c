@@ -4750,7 +4750,7 @@ void get_band_names(char *inFile, FILE *outputFP,
   graphicsFileType_toStr(type, type_str);
   if (type == ASF_IMG) {
     // Grab band names from the metadata
-    meta_parameters *md;
+    meta_parameters *md=NULL;
     int band_count=1;
     char *f, *c;
     char inFile_meta[1024];
