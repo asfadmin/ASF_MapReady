@@ -1174,6 +1174,15 @@ static int check_config(const char *configFileName, convert_config *cfg)
       }
     }
   }
+
+  // Check whether radiometric terrain correction is selected for PolSARPro
+  // data. Refer to the manual for further explanation why this does not work.
+  if (cfg->general->terrain_correct && cfg->terrain_correct->do_radiometric &&
+      strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0)
+    asfPrintError("Radiometric terrain correction of PolSARPro data is not "
+		  "supported.\nFor more information on alternative processing "
+		  "flow based on\nradiometric terrain correction of CEOS "
+		  "quad-pol data\nplease refer to the ASF MapReady manual.\n");
   
   // Check whether everything in the [Geocoding] block is reasonable
   if (cfg->general->geocoding) {
