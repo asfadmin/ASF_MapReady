@@ -2209,7 +2209,7 @@ int kml2polygon(char *inFile, char *outFile, int listFlag)
 {
   int ii, vertices, found_format = FALSE;
   float lat, lon;
-  char *p, str[10], format[10];
+  char *p, str[256], format[10];
 
   // Read input file
   FILE *fpIn = FOPEN(inFile, "r");
