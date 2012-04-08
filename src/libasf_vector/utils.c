@@ -382,6 +382,7 @@ int isgeotiff(char *inFile)
             if (gtif) GTIFFree(gtif);
             if (tiff) XTIFFClose(tiff);
         }
+        fclose(fp);
     }
 
     return isGeotiff;

@@ -333,7 +333,7 @@ void write_esri_proj_file(char *inFile)
 void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
 {
   FILE *fpIn, *fpOut;
-  char projcsStr[100], geogcsStr[200], projStr[250], datumStr[150];
+  char projcsStr[100], geogcsStr[200], projStr[500], datumStr[150];
   char spheroidStr[100], esri_prj_file_name[255];
   char **error;
 

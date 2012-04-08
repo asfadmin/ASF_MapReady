@@ -1619,7 +1619,7 @@ static int convert_meta2csv(char *inFile, FILE *fp)
     }
     else if (strcmp(dbf[ii].header, "meta.general.image_data_type") == 0 &&
              dbf[ii].visible) {
-      char image_data_type[25];
+      char image_data_type[128];
       if (meta->general->image_data_type == RAW_IMAGE)
         strcpy(image_data_type, "RAW_IMAGE");
       else if (meta->general->image_data_type == COMPLEX_IMAGE)
@@ -2811,7 +2811,7 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
     }
     else if (strncmp(dbf[ii].header, "meta.general.image_data_type", 27) == 0 
 	     && dbf[ii].visible) {
-      char image_data_type[25];
+      char image_data_type[128];
       if (meta->general->image_data_type == RAW_IMAGE)
         strcpy(image_data_type, "RAW_IMAGE");
       else if (meta->general->image_data_type == COMPLEX_IMAGE)
