@@ -109,6 +109,7 @@ static int checkMatrixFile(char *type, char *path, char *file, char *reference,
 	    type, file, matrix);
     ret = FALSE;
   }
+  FREE(file_name);
   *error = message;
   return ret;
 }
@@ -1117,6 +1118,9 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   FREE(envi);
   if (metaOut->sar)
     metaOut->sar->multilook = multilook;
+  for (ii=0; ii<band_count; ++ii)
+    FREE(bands[ii]);
+  FREE(bands);
 
   // Update image data type
   if (strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0) {
