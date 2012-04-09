@@ -10053,7 +10053,7 @@ uso@asf.alaska.edu</property>
 					  <child>
 					    <widget class="GtkEntry" id="add_file_with_ancillary_polsarpro_image_entry">
 					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">The name of the PolSARPro data file</property>
+					      <property name="tooltip" translatable="yes">The name of the PolSARPro data file (in the case of multiple files, such as with a PolSARPro matrix, choose any one of the data files)</property>
 					      <property name="can_focus">True</property>
 					      <property name="editable">True</property>
 					      <property name="visibility">True</property>
