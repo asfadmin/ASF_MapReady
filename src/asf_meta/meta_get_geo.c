@@ -147,8 +147,6 @@ int meta_get_latLon(meta_parameters *meta,
       if (meta->sar && meta->sar->image_type == 'G' &&
           strcmp_case(meta->transform->type, "slant") == 0)
       {
-	if (meta->sar->multilook)
-	  l *= meta->sar->azimuth_look_count;
         // map s (sample) value from Ground to Slant
         double new_s = map_gr2sr(meta, l, s);
         //printf("meta_get_latLon -- mapped gr to sr: %f -> %f\n", s, new_s);
@@ -160,8 +158,6 @@ int meta_get_latLon(meta_parameters *meta,
         // not implemented, don't think we need this?
         asfPrintError("meta_get_latLon: ground transform block "
                       "with a slant range image.\n");
-	if (meta->sar->multilook)
-	  l *= meta->sar->azimuth_look_count;
         double new_s = map_sr2gr(meta, l, s);
         //printf("meta_get_latLon -- mapped sr to gr: %f -> %f\n", s, new_s);
         s = new_s;
