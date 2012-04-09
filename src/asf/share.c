@@ -512,6 +512,10 @@ int share_file_exists(const char *filename)
 
 const char *get_asf_share_dir_with_argv0(const char *argv0)
 {
+#ifdef win32
+    // "realpath" not available on Windows
+    char *argv0_real_path = STRDUP(argv0);
+#else
     // handle use of "./mapready" etc
     char *argv0_real_path = realpath(argv0, NULL);
     if (!argv0_real_path) {
@@ -519,6 +523,7 @@ const char *get_asf_share_dir_with_argv0(const char *argv0)
         // so, can use the normal method for finding the share dir
         return get_asf_share_dir();
     }
+#endif
 
     // strip off the executable, leaving just the path info
     char *argv0_path = get_dirname(argv0_real_path);
