@@ -81,8 +81,8 @@ int isAIRSAR(char *dataFile)
   // Allocate memory and file handling
   value = (char *) MALLOC(sizeof(char)*25);
   header = (airsar_header *) CALLOC(1, sizeof(airsar_header));
-  band_data = (char *) MALLOC(sizeof(char)*strlen(dataFile)+10);
-  band_data = STRDUP(dataFile);
+  band_data = (char *) MALLOC(sizeof(char)*(strlen(dataFile)+32));
+  strcpy(band_data, dataFile);
 
   // Try L-band
   s = strstr(band_data, "_");
