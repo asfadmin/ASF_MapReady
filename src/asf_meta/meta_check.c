@@ -91,6 +91,7 @@ int isAIRSAR(char *dataFile)
     strcat(s, "_l.dat");
   }
   //if (fileExists(band_data)) {
+    strcpy(buf, "");
     fp = fopen(band_data, "r");
     if (fp != NULL && fgets(buf, 4400, fp) == NULL)
       asfPrintError("Could not read general header\n");
@@ -108,6 +109,7 @@ int isAIRSAR(char *dataFile)
     strcat(s, "_c.dat");
   }
   //if (fileExists(band_data)) {
+    strcpy(buf, "");
     fp = fopen(band_data, "r");
     if (fp != NULL && fgets(buf, 4400, fp) == NULL)
       asfPrintError("Could not read general header\n");
@@ -125,6 +127,7 @@ int isAIRSAR(char *dataFile)
     strcat(s, "_p.dat");
   }
   //if (fileExists(band_data)) {
+    strcpy(buf, "");
     fp = fopen(band_data, "r");
     if (fp != NULL && fgets(buf, 4400, fp) == NULL)
       asfPrintError("Could not read general header\n");
