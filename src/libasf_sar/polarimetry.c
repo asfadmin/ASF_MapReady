@@ -1909,6 +1909,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   if (multi) {
     outMeta->sar->multilook = 1;
     outMeta->general->line_count = onl;
+    outMeta->general->line_scaling *= outMeta->sar->azimuth_look_count;
     outMeta->general->y_pixel_size *= outMeta->sar->azimuth_look_count;
     outMeta->general->x_pixel_size *= outMeta->sar->range_look_count;
     outMeta->sar->azimuth_time_per_pixel *= outMeta->sar->azimuth_look_count;
