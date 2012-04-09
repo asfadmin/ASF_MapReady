@@ -3603,11 +3603,22 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 	  else
 	    asfPrintStatus("\nExporting %d bands as separate greyscale files "
 			   "...\n", meta->general->band_count);
-          check_return(asf_export_bands(format, scale, FALSE,
-                                        0, 0, NULL,
-                                        inFile, outFile, NULL,
-                                        &num_outputs, &output_names),
-                       "exporting data file (asf_export), greyscale bands.\n");
+	  char **bands = extract_band_names(meta->general->bands, 
+					    meta->general->band_count);
+	  if (format == GEOTIFF)
+	    check_return(asf_export_bands(format, scale, FALSE,
+					  0, 0, NULL,
+					  inFile, outFile, bands,
+					  &num_outputs, &output_names),
+			 "exporting data file (asf_export), greyscale bands.\n");
+	  else
+	    check_return(asf_export_bands(format, scale, FALSE,
+					  0, 0, NULL,
+					  inFile, outFile, NULL,
+					  &num_outputs, &output_names),
+			 "exporting data file (asf_export), greyscale bands.\n");
+          FREE(*bands);
+          FREE(bands);
         }
         else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
           // multi-band, exporting single band in one greyscale file
