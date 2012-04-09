@@ -217,18 +217,18 @@ static void strip_end_whitesp(char *s)
 
 // output of double values is left aligned and leaves plenty white space
 // as times - get rid of it
+static char lf_buf[32];
 char *lf(double value)
 {
-    char *value_str = (char *) MALLOC(sizeof(char)*20);
     if (meta_is_valid_double(value)) {
-        sprintf(value_str, "%-16.11g", value);
-        strip_end_whitesp(value_str);
+        sprintf(lf_buf, "%-16.11g", value);
+        strip_end_whitesp(lf_buf);
     }
     else {
         // For NaN, just leave the value blank 
-        strcpy(value_str, "");
+        strcpy(lf_buf, "");
     }
-    return value_str;
+    return lf_buf;
 }
 
 static void add_to_kml(FILE *fp, auig_type_t *auig, dbf_header_t *dbf,

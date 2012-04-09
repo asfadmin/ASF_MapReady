@@ -533,6 +533,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     strcpy(comment,"Projection Type");
     char *proj_str = proj2str(meta->projection->type);
     meta_put_string(fp, "type:", proj_str, comment);
+    free(proj_str);
     meta_put_double_lf(fp,"startX:",meta->projection->startX, 8,
                        	  "Projection Coordinate at top-left, X direction");
     meta_put_double_lf(fp,"startY:",meta->projection->startY, 8,

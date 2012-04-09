@@ -108,42 +108,40 @@ int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta
 char *sample_mapping2string(scale_t sample_mapping);
 void colormap_to_lut_file(meta_colormap *cm, const char *lut_file);
 
+static char format2str_buf[256];
 static char *format2str(output_format_t format)
 {
-  char *str = (char *) MALLOC(sizeof(char)*256);
-
   if (format == ENVI)
-    strcpy(str, "ENVI");
+    strcpy(format2str_buf, "ENVI");
   else if (format == ESRI)
-    strcpy(str, "ESRI");
+    strcpy(format2str_buf, "ESRI");
   else if (format == GEOTIFF)
-    strcpy(str, "GEOTIFF");
+    strcpy(format2str_buf, "GEOTIFF");
   else if (format == TIF)
-    strcpy(str, "TIFF");
+    strcpy(format2str_buf, "TIFF");
   else if (format == JPEG)
-    strcpy(str, "JPEG");
+    strcpy(format2str_buf, "JPEG");
   else if (format == PGM)
-    strcpy(str, "PGM");
+    strcpy(format2str_buf, "PGM");
   else if (format == PNG)
-    strcpy(str, "PNG");
+    strcpy(format2str_buf, "PNG");
   else if (format == PNG_ALPHA)
-    strcpy(str, "PNG ALPHA");
+    strcpy(format2str_buf, "PNG ALPHA");
   else if (format == PNG_GE)
-    strcpy(str, "PNG GOOGLE EARTH");
+    strcpy(format2str_buf, "PNG GOOGLE EARTH");
   else if (format == KML)
-    strcpy(str, "KML");
+    strcpy(format2str_buf, "KML");
   else if (format == POLSARPRO_HDR)
-    strcpy(str, "POLSARPRO with ENVI header");
+    strcpy(format2str_buf, "POLSARPRO with ENVI header");
   else if (format == HDF)
-    strcpy(str, "HDF5");
+    strcpy(format2str_buf, "HDF5");
   else if (format == NC)
-    strcpy(str, "netCDF");
+    strcpy(format2str_buf, "netCDF");
   else
-    strcpy(str, MAGIC_UNSET_STRING);
-  
-  return str;
+    strcpy(format2str_buf, MAGIC_UNSET_STRING);
+ 
+  return format2str_buf;
 }
-
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
@@ -2050,8 +2048,6 @@ export_band_image (const char *metadata_file_name,
     int free_band_names=FALSE;
     int band_count = md->general->band_count;
     char base_name[255];
-    char *bands = (char *) MALLOC(sizeof(char)*1024);
-    strcpy(bands, md->general->bands);
     strcpy(base_name, output_file_name);
     char *matrix = (char *) MALLOC(sizeof(char)*5);
     char *decomposition = (char *) MALLOC(sizeof(char)*25);
@@ -2540,7 +2536,7 @@ export_band_image (const char *metadata_file_name,
           if (md->general->band_count == 1)
             channel = 0;
           else
-            channel = get_band_number(bands, band_count, band_name[kk]);
+            channel = get_band_number(md->general->bands, band_count, band_name[kk]);
           asfRequire(channel >= 0 && channel <= MAX_BANDS,
             "Band number out of range\n");
         }

@@ -215,7 +215,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
   int ii, kk;
   struct dataset_sum_rec dssr; // Data set summary record
   double *noise;
-  char sarName[512], *facilityStr, *processorStr, *error;
+  char sarName[512], *error;
   ceos_description *ceos; 
   meta->calibration = meta_calibration_init();
 
@@ -224,8 +224,8 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
   if (isCEOS(sarName, &error)) {
     // Check for the various processors
     get_dssr(sarName, &dssr);
-    facilityStr = trim_spaces(dssr.fac_id);
-    processorStr = trim_spaces(dssr.sys_id);
+    char *facilityStr = trim_spaces(dssr.fac_id);
+    char *processorStr = trim_spaces(dssr.sys_id);
     
     ceos = get_ceos_description_ext(inSAR, REPORT_LEVEL_NONE, FALSE);
 
@@ -586,6 +586,9 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	  }
       }
     }
+    FREE(processorStr);
+    FREE(facilityStr);
+    FREE(ceos);
   }
   else if (isUAVSAR(sarName, &error)) {
     // UAVSAR parameters for calibration

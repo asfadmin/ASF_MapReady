@@ -139,7 +139,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                int multiband, int band_num, char **in_base_names,
                char *out_base_name, float background_val, double lat_min,
                double lat_max, double lon_min, double lon_max,
-	       char *overlap, int save_line_sample_mapping);
+	       const char *overlap, int save_line_sample_mapping);
 void sigsegv_handler (int signal_number);
 
 // Prototype from combine.c

@@ -146,7 +146,6 @@ int read_header_config_ext(const char *format, dbf_header_t **dbf,
   FILE *fp;
   char line[255], params[255], format_str[255], type[25];
   int m=0, n=0, ii, found_format=FALSE;;
-  char *test = new_blank_str();
   sprintf(format_str, "[%s]", uc(format));
 
   // Check how many parameters we have in the section
@@ -159,10 +158,13 @@ int read_header_config_ext(const char *format, dbf_header_t **dbf,
       char *str = strchr(line, '=');
       if (str) 
 	m++;
-      test = read_param(line);
+      char *test = read_param(line);
       if (test[0] == '[' && strncmp(test, format_str, 
-				    strlen(format_str)-1) != 0)
+				    strlen(format_str)-1) != 0) {
+        free(test);
 	break;
+      }
+      free(test);
     }
   }
   FCLOSE(fp);
@@ -175,14 +177,14 @@ int read_header_config_ext(const char *format, dbf_header_t **dbf,
   // Fill the header information
   dbf_header_t *header = (dbf_header_t *) MALLOC(sizeof(dbf_header_t)*m);
   strcpy(params, "");
-  strcpy(test, "");
   fp = FOPEN(header_file, "r");
   while (fgets(line, 255, fp)) {
     if (strncmp_case(line, format_str, strlen(format_str)-1) == 0)
       strcpy(params, format);
     if (strcmp_case(params, format) == 0) {
       found_format = TRUE;
-      test = read_param(line);
+      char *test = read_param(line);
+      char *test_orig = test;
       char *str = strchr(line, '=');
       if (str) {
 	read_str(type, line, test);
@@ -210,8 +212,11 @@ int read_header_config_ext(const char *format, dbf_header_t **dbf,
 	n++;
       }
       if (test[0] == '[' && strncmp(test, format_str, 
-				    strlen(format_str)-1) != 0)
+				    strlen(format_str)-1) != 0) {
+        free(test_orig);
         break;
+      }
+      free(test_orig);
     }  
   }
   FCLOSE(fp);

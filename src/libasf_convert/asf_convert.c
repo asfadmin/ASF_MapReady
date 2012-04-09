@@ -118,7 +118,7 @@ int isInSAR(const char *infile)
       found = TRUE;
     meta_free(meta);
   }
-
+  free(meta_name);
   return found;
 }
 
@@ -2233,6 +2233,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 
   FREE(outFile);
   FREE(tmpFile);
+  FREE(inFile);
 
   return save_before_export;
 }
@@ -2342,6 +2343,11 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   if (!first_pre_export)
     asfPrintError("No files successfully processed.\n");
 
+  for (ii=0; ii<num_imported_files; ++ii) {
+    FREE(suffixes[ii]);
+    FREE(imported_files[ii]);
+  }
+
   FREE(imported_files);
   FREE(suffixes);
   FREE(lists);
@@ -2377,11 +2383,10 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     
     meta_parameters *meta;
     double scale_factor;
-    char *tmpFile, *overlayFile;
     int i,n;
     
-    tmpFile = (char *) MALLOC(sizeof(char)*512);
-    overlayFile = (char *) MALLOC(sizeof(char)*512);
+    char tmpFile[1024];
+    char overlayFile[1024];
     
     if (!cfg->general->export)
       sprintf(inFile, "%s", outFile);
@@ -2393,7 +2398,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       // Put the thumbnail in the intermediates directory, if it is
       // being kept, otherwise in the output directory.
       char *basename = get_basename(cfg->general->out_name);
-      
+ 
       if (cfg->general->intermediates) {
 	sprintf(outFile, "%s%c%s_thumb.png",
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
@@ -2984,6 +2989,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
     free_ceos_names(dataName, metaName);
     FREE(basename);
+    FREE(ceos);
   }
 
   // Mosaicking
@@ -3376,10 +3382,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   // just yet. We'll do this all later. 
   if ( createflag == TRUE ) { 
 	clear_status_file();
-  	free_convert_config(cfg);
   	reset_intermediates();
   }
-
+  free_convert_config(cfg);
   return(EXIT_SUCCESS);
 }
 

@@ -192,6 +192,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     else {
       import_generic_geotiff (inGeotiffName->str, outBaseName, NULL);
     }
+    g_string_free(inGeotiffName,TRUE);
   }
   else if (format_type == BIL) {
     asfPrintStatus("   Data format: BIL\n");

@@ -306,7 +306,9 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   strcpy(fac,dssr->fac_id); strtok(fac," "); // Remove spaces from field
   strcpy(sys,dssr->sys_id); strtok(sys," "); // Remove spaces from field
   strcpy(ver,dssr->ver_id); strtok(ver," "); // Remove spaces from field
-  sprintf(meta->general->processor, "%s/%s/%s", trim_spaces(fac), sys, ver);
+  char *trimmed_fac = trim_spaces(fac);
+  sprintf(meta->general->processor, "%s/%s/%s", trimmed_fac, sys, ver);
+  free(trimmed_fac);
   // FOCUS data header is erroneous, hence the if statement
   if (iof) {
     if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2;
@@ -2710,7 +2712,7 @@ ceos_description *get_ceos_description_ext(const char *fName,
   struct IOF_VFDR *iof=NULL;
   int sar_image, dataSize;;
   char *versPtr,*satStr;
-  char *sensorStr,*prodStr,*procStr, *facStr;
+  char *sensorStr,*prodStr,*procStr;
   ceos_description *ceos = (ceos_description *)MALLOC(sizeof(ceos_description));
   memset(ceos, 0, sizeof(ceos_description));
 
@@ -2784,7 +2786,7 @@ ceos_description *get_ceos_description_ext(const char *fName,
     /*Set other fields to unknown (to be filled out by other init routines)*/
     procStr = ceos->dssr.sys_id;
     prodStr = ceos->dssr.product_type;
-    facStr = trim_spaces(ceos->dssr.fac_id);
+    char *facStr = trim_spaces(ceos->dssr.fac_id);
     ceos->processor = unknownProcessor;
     ceos->product = unknownProduct;
 
@@ -3069,6 +3071,7 @@ ceos_description *get_ceos_description_ext(const char *fName,
 	ceos->product = unknownProduct;
       }
     }
+    FREE(facStr);
   }
   else {
     // else not a SAR image...

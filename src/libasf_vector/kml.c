@@ -1216,6 +1216,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     
     fprintf(kml_file, "</GroundOverlay>\n");
   }
+  free(dbf);
 }
 
 void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, char *name,

@@ -495,7 +495,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
   }
 
   free_ceos_names(inBandName, inMetaName);
-
+  free(ceos);
 }
 
 void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,

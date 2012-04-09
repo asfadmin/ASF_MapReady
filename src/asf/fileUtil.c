@@ -657,6 +657,7 @@ create_dir(const char *dir)
     }
   } while (keep_going);
 
+  FREE(dir_tmp);
   return ret;
 }
 

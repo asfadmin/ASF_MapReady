@@ -351,6 +351,7 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
     *stdDev = sqrt(*stdDev/(pixel_count - 1));
 
     FREE(data);
+    meta_free(meta);
 
     *histogram = hist;
 }

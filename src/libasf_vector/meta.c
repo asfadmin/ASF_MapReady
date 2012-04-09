@@ -2693,6 +2693,7 @@ int meta2kml(char *inFile, char *outFile, format_type_t inFormat,
     meta_free(meta);
   }
 
+  FREE(line);
   return 1;
 }
 

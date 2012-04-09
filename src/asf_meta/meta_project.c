@@ -740,6 +740,8 @@ void EQR2latLon(double projX, double projY, double *lat, double *lon)
 
   *lat *= R2D;
   *lon *= R2D;
+
+  free(meta_proj);
 }
 
 void to_radians(projection_type_t pt, project_parameters_t * pps)

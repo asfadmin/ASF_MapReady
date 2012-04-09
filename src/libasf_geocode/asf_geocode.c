@@ -828,6 +828,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
 
   meta_free(imd);
   FREE(bands);
+  FREE(input_meta_data);
 
   return ret;
 }
@@ -846,9 +847,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 
     double lat_min = -999, lon_min = -999;
     double lat_max = 999, lon_max = 999;
-    char *overlap;
-    overlap = MALLOC(sizeof(char)*25);
-    strcpy(overlap, "OVERLAY");
+    const char *overlap = "OVERLAY";
 
     return asf_mosaic(pp, projection_type, force_flag, resample_method,
 		      average_height, datum, UNKNOWN_SPHEROID, pixel_size, 
@@ -905,7 +904,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                int multiband, int band_num, char **in_base_names,
                char *out_base_name, float background_val, double lat_min,
                double lat_max, double lon_min, double lon_max,
-               char *overlap_method, int save_line_sample_mapping)
+               const char *overlap_method, int save_line_sample_mapping)
 {
   int i,ret;
   int process_as_byte=TRUE;
