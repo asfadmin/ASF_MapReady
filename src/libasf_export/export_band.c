@@ -1358,6 +1358,9 @@ export_band_image (const char *metadata_file_name,
   int palette_color_tiff = 0;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
   char *lut_file = NULL;
+  int no_bands = TRUE;
+  if (band_name)
+    no_bands = FALSE;
 
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
@@ -2115,7 +2118,7 @@ export_band_image (const char *metadata_file_name,
     if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
 	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
 	md->general->band_count != 1 && 
-	(format == POLSARPRO_HDR || format == GEOTIFF)) {
+	(format == POLSARPRO_HDR || (!no_bands && format == GEOTIFF))) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -2129,7 +2132,7 @@ export_band_image (const char *metadata_file_name,
 	sprintf(path_name, "%s%c%s%c%s", 
 		dirName, DIR_SEPARATOR, fileName, DIR_SEPARATOR, matrix);
       if (is_dir(path_name))
-	asfPrintError("Output directory (%s) already exists.\n", path_name);
+	asfPrintStatus("Output directory (%s) already exists.\n", path_name);
       else if(create_dir(path_name) == -1)
 	asfPrintError("Can't generate output directory (%s).\n", path_name);
       char *configFile = 
@@ -2291,7 +2294,7 @@ export_band_image (const char *metadata_file_name,
             if (!found_band)
               continue;
 	    if (format == POLSARPRO_HDR ||
-		format == GEOTIFF) { // output goes to directory
+		(!no_bands && format == GEOTIFF)) { // output goes to directory
 	      sprintf(out_file, "%s%c%s", 
 		      path_name, DIR_SEPARATOR, band_name[kk]);
 	    }

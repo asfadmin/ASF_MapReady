@@ -3605,7 +3605,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 			   "...\n", meta->general->band_count);
 	  char **bands = extract_band_names(meta->general->bands, 
 					    meta->general->band_count);
-	  if (format == GEOTIFF)
+	  if (strcmp_case(cfg->import->format, "POLSARPRO") == 0 &&
+	      format == GEOTIFF)
 	    check_return(asf_export_bands(format, scale, FALSE,
 					  0, 0, NULL,
 					  inFile, outFile, bands,
