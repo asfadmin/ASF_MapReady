@@ -437,6 +437,22 @@ struct data_to_fit {
   // Value of y for which current interpolator works.
   static double last_y_rmy;
 
+static double gsl_spline_eval_wrap(gsl_spline *s, double x, gsl_interp_accel *a)
+{
+  double x_orig = x;
+  int len = s->size;
+  if (x < s->x[0] || x > s->x[len-1]) {
+    if (x < s->x[0]) x = s->x[0];
+    if (x > s->x[len-1]) x = s->x[len-1];
+    if (fabs(x_orig - x) > .001) {
+      asfPrintWarning("Attempt to extrapolate with spline: %.10f (%.10f, %.10f)\n",
+                      x_orig, s->x[0], s->x[len-1]);
+    }
+  }
+
+  return gsl_spline_eval(s, x, a);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // Reverse map from projection coordinates x, y to input pixel
@@ -489,14 +505,14 @@ reverse_map_x (struct data_to_fit *dtf, double x, double y)
     double *crnt_points = g_new (double, sgs);
     size_t ii;
     for ( ii = 0 ; ii < sgs ; ii++ ) {
-      crnt_points[ii] = gsl_spline_eval (y_spline_rmx[ii], y, y_accel_rmx[ii]);
+      crnt_points[ii] = gsl_spline_eval_wrap (y_spline_rmx[ii], y, y_accel_rmx[ii]);
     }
     gsl_spline_init (crnt_rmx, xprojs, crnt_points, sgs);
     g_free (crnt_points);
     last_y_rmx = y;
   }
 
-  double ret = gsl_spline_eval (crnt_rmx, x, crnt_accel_rmx);
+  double ret = gsl_spline_eval_wrap (crnt_rmx, x, crnt_accel_rmx);
 
   if (!meta_is_valid_double(ret)) {
     asfPrintError("reverse_map_x invalid at L,S: %f,%f: %f\n", y,x,ret);
@@ -551,14 +567,14 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
     double *crnt_points = g_new (double, sgs);
     size_t ii;
     for ( ii = 0 ; ii < sgs ; ii++ ) {
-      crnt_points[ii] = gsl_spline_eval (y_spline_rmy[ii], y, y_accel_rmy[ii]);
+      crnt_points[ii] = gsl_spline_eval_wrap (y_spline_rmy[ii], y, y_accel_rmy[ii]);
     }
     gsl_spline_init (crnt_rmy, xprojs, crnt_points, sgs);
     g_free (crnt_points);
     last_y_rmy = y;
   }
 
-  double ret = gsl_spline_eval (crnt_rmy, x, crnt_accel_rmy);
+  double ret = gsl_spline_eval_wrap (crnt_rmy, x, crnt_accel_rmy);
 
   if (!meta_is_valid_double(ret)) {
     asfPrintError("reverse_map_y invalid at L,S %f,%f: %f\n", y, x, ret);
