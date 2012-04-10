@@ -20,6 +20,7 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
+void set_tiff_warning_handler();
 void read_tiff_colormap(const char *tiff_file, meta_colormap *mc);
 int read_tiff_rgb_scanline (TIFF *tiff, tiff_format_t format, tiff_data_config_t *data_config,
                             uint32 row, uint32 scanlineSize, int sample_count,
@@ -175,6 +176,8 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client, 
     int is_scanline_format; // False if tiled or strips > 1 TIFF file format
     int is_palette_color_tiff;
     data_type_t data_type;
+
+    set_tiff_warning_handler();
 
     tiff = XTIFFOpen(meta_name, "r");
     if (tiff) {
@@ -575,6 +578,7 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
 
   // ensure any custom tags are installed & recognized by libtiff
   _XTIFFInitialize();
+  set_tiff_warning_handler();
 
   info->tiff = XTIFFOpen(data_name, "r");
   info->gtif = GTIFNew(info->tiff);
@@ -1485,3 +1489,18 @@ meta_insar *populate_insar_metadata(const char *filename)
   }
   return insar;
 }
+
+void
+ASF_TIFF_WarningHandler(const char* module, const char* fmt, va_list ap)
+{
+    char buf[4096];
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    asfPrintWarning("%s: %s\n", module, buf);
+    return;
+}
+
+void set_tiff_warning_handler()
+{
+    TIFFSetWarningHandler(ASF_TIFF_WarningHandler);
+}
+

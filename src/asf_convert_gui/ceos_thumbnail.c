@@ -123,6 +123,7 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
     else
       meta = read_generic_geotiff_metadata(input_metadata, ignore, NULL);
 
+    set_tiff_warning_handler();
     fpIn = XTIFFOpen(input_data, "rb");
     if (!fpIn) {
         meta_free(meta);

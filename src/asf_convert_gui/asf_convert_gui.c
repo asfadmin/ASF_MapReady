@@ -5,6 +5,7 @@
 #include "asf_version.h"
 #include "asf_geocode.h"
 #include "asf_raster.h"
+#include "tiff_util.h"
 
 // FIXME: This is from license.c ...need to either move it into a header or write
 // a function that just returns the string (without a trailing \n)
@@ -118,6 +119,7 @@ main(int argc, char **argv)
     gtk_init(&argc, &argv);
     set_font();
     get_asf_share_dir_with_argv0(argv[0]);
+    set_tiff_warning_handler();
 
     asfPrintStatus("\nASF MapReady:\n");
     const char *share_dir = get_asf_share_dir();

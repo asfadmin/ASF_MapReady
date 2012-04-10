@@ -411,3 +411,18 @@ static int ReadScanline_from_ContiguousRGB_TIFF(TIFF *tiff, uint32 row, uint32 s
 
   return TRUE;
 }
+
+void
+ASF_TIFF_WarningHandler(const char* module, const char* fmt, va_list ap)
+{
+    char buf[4096];
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    asfPrintWarning("%s: %s\n", module, buf);
+    return;
+}
+
+void set_tiff_warning_handler()
+{
+    TIFFSetWarningHandler(ASF_TIFF_WarningHandler);
+}
+
