@@ -1214,7 +1214,14 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     ge = find_in_path("googleearth");
     if (!ge)
     {
-       message_box("Couldn't find googleearth!  Is it installed?");
+       message_box("Google Earth was not found in your PATH!\n\n"
+                   "If it is not installed, you will need to download and install it.\n"
+                   "Then edit your PATH so that it includes the location of the\n"
+                   "Google Earth executable.\n\n"
+                   "For example, if you use the BASH shell, add something like the\n"
+                   "following to your ~/.bashrc.  (Change the path to google earth\n"
+                   "to match where it is installed on your system):\n\n"
+                   "export PATH=$PATH:/usr/local/bin");
        return FALSE;
     }
 #endif
