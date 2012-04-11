@@ -1298,20 +1298,11 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         double lat=0, lon=0; //, x, y;
         meta_parameters *old_meta = meta_copy(curr->meta);
 
-        //int zone;
-        //if (meta_supports_meta_get_latLon(old_meta)) {
-          //meta_get_latLon(old_meta, center_line, center_samp, 0,
-          //                &lat, &lon);
-          //zone = utm_zone(lon);
-          //latLon2UTM_zone(lat, lon, 0, zone, &x, &y);
-          //printf("Old center: %f %f %f %f\n", lat, lon, x, y);
-        //}
-
         current_image_info_index = (current_image_info_index + 1) % n_images_loaded;
         ii = curr = &image_info[current_image_info_index];
         asfPrintStatus("Switching to: %s\n", curr->filename);
 
-        // update crosshair and any polygon info
+        // update crosshair and any polygon info, if possible
         if (meta_supports_meta_get_latLon(old_meta) &&
             meta_supports_meta_get_latLon(curr->meta))
         {
@@ -1327,25 +1318,20 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
                 meta_get_lineSamp(curr->meta, lat, lon, 0,
                                   &g_poly->line[i], &g_poly->samp[i]);
             }
-        }
 
-        // move cursor to same lat,lon
-        if (meta_supports_meta_get_latLon(curr->meta)) {
-          double line, samp;
-          meta_get_latLon(old_meta, center_line, center_samp, 0,
-                          &lat, &lon);
-          int bad = meta_get_lineSamp(curr->meta, lat, lon, 0, &line, &samp);
-          int nl = curr->meta->general->line_count;
-          int ns = curr->meta->general->sample_count;
-          if (!bad && line>0 && line<nl && samp>0 && samp<ns) {
-            center_line = line;
-            center_samp = samp;
-            //meta_get_latLon(curr->meta, center_line, center_samp, 0,
-            //                &lat, &lon);
-            //latLon2UTM_zone(lat, lon, 0, zone, &x, &y);
-            //printf("New center: %f %f %f %f\n", lat, lon, x, y);
+            // move cursor to same lat,lon
+            double line, samp;
+            meta_get_latLon(old_meta, center_line, center_samp, 0,
+                            &lat, &lon);
+            int bad = meta_get_lineSamp(curr->meta, lat, lon, 0, &line, &samp);
+            int nl = curr->meta->general->line_count;
+            int ns = curr->meta->general->sample_count;
+            if (!bad && line>0 && line<nl && samp>0 && samp<ns) {
+                center_line = line;
+                center_samp = samp;
           }
         }
+
         meta_free(old_meta);
 
         fill_small_force_reload(ii);
