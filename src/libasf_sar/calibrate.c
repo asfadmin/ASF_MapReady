@@ -117,10 +117,10 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	  // Taking the remapping of other radiometries out for the moment
 	  //if (inRadiometry >= r_SIGMA && inRadiometry <= r_BETA_DB)
 	  //bufIn[jj] = cal2amp(metaIn, incid, jj, bands[kk], bufIn[jj]);
-	  incid = meta_incid(metaIn, ii, jj);
-	  cal_dn = 
-	    get_cal_dn(metaOut, incid, jj, bufIn[jj], bands[kk], dbFlag);
-	  if (strstr(bands[kk], "PHASE") != NULL) {
+	  if (strstr(bands[kk], "PHASE") == NULL) {
+	    incid = meta_incid(metaIn, ii, jj);
+	    cal_dn = 
+	      get_cal_dn(metaOut, incid, jj, bufIn[jj], bands[kk], dbFlag);
 	    if (wh_scaleFlag) {
 	      if (FLOAT_EQUIVALENT(cal_dn, metaIn->general->no_data))
 		bufOut[jj] = 0;
@@ -130,7 +130,7 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	    else
 	      bufOut[jj] = cal_dn;
 	  }
-	  else
+	  else // PHASE band, do nothing
 	    bufOut[jj] = bufIn[jj];
 	}
 	put_band_float_line(fpOut, metaOut, kk, ii, bufOut);
