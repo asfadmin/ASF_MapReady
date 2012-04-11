@@ -2584,9 +2584,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
           sprintf(banded_name, "%s/%s_thumb_%s.png",
                   cfg->general->tmp_dir, basename, bands[1]);
         else if (!strcmp(meta->general->sensor, "UAVSAR")) {
-          if(!strcmp(meta->general->mode, "DAT"))
-            strcpy(banded_name, outputs[8]);
-          else
             strcpy(banded_name, outputs[0]);
         }
         else
