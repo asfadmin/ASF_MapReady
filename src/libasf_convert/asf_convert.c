@@ -2650,7 +2650,10 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     free(tmp3);
     if (!fileExists(inFile)) {
       // DEM may have been chunked...
-      tmp = appendToBasename(cfg->terrain_correct->dem, "_chunk_cut");
+      if (cfg->terrain_correct->smooth_dem_holes)
+        tmp = appendToBasename(cfg->terrain_correct->dem, "_tc_smooth_chunk_cut");
+      else
+        tmp = appendToBasename(cfg->terrain_correct->dem, "_chunk_cut");
       tmp2 = get_basename(tmp);
       tmp3 = appendExt(tmp2, ".img");
       sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp3);
