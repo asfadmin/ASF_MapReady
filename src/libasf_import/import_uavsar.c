@@ -1,4 +1,5 @@
 #include "uavsar.h"
+#include "airsar.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
 
@@ -1164,8 +1165,17 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       float *svv_amp = (float *) MALLOC(sizeof(float)*ns);
       float *svv_phase = (float *) MALLOC(sizeof(float)*ns);
       char *byteBuf = (char *) MALLOC(sizeof(char)*10);
+
+      /* DAT files start with an airsar header that mostly contains metadata we
+       * already have from the annotation file. So find the start offset of the image
+       * data from the header and skip the rest of the header
+       */
+      airsar_header *header = read_airsar_header(dataName[0]);
       fpIn = FOPEN(dataName[0], "rb");
       fpOut = FOPEN(outName, "wb");
+      FSEEK(fpIn, header->first_data_offset, SEEK_SET);
+      FREE(header);
+
       for (ii=0; ii<metaOut->general->line_count; ii++) {
 	for (kk=0; kk<metaOut->general->sample_count; kk++) {
 	  FREAD(byteBuf, sizeof(char), 10, fpIn);
