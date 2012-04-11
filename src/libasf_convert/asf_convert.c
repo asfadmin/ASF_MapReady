@@ -547,7 +547,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
           cfg->polarimetry->lee_preserving ||
           cfg->polarimetry->freeman_durden)
         asfPrintError("Only the pauli polarimetric decomposition is supported for UAVSAR data at this time\n");
-      if(cfg->polarimetry->farcorr || cfg->polarimetry->farcorr_threshold)
+      if(cfg->polarimetry->farcorr)
         asfPrintError("Faraday rotation correction of UAVSAR data is not supported at this time\n");
       return;
     }
