@@ -111,6 +111,15 @@ static void set_defaults(ImageInfo *ii)
     // default filename
     char *basename = get_basename(ii->filename);
     char *def = appendStr(basename, "_aoi");
+    if (strncmp_case(def, "LED-", 4) == 0 ||
+        strncmp_case(def, "IMG-", 4) == 0 ||
+        strncmp_case(def, "TRL-", 4) == 0 ||
+        strncmp_case(def, "VOL-", 4) == 0)
+    {
+        char *tmp = STRDUP(def+4);
+        free(def);
+        def = tmp;
+    }
     free(basename);
     put_string_to_entry("filename_entry", def);
     free(def);
