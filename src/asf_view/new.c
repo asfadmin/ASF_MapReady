@@ -244,7 +244,7 @@ void set_title(int band_specified, const char *band_in)
         } else {
             strcpy(band, "");
         }
-        if (strlen(band) > 0)
+        if (strlen(band) > 0 && strcmp(band, MAGIC_UNSET_STRING) != 0)
             sprintf(&title[strlen(title)], " (%s)", band);
     }
     free(basename);
