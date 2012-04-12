@@ -10,6 +10,10 @@ int asf_calibrate(const char *inFile, const char *outFile,
   meta_parameters *metaIn = meta_read(inFile);
   meta_parameters *metaOut = meta_read(inFile);
 
+  if (!metaIn->calibrate) {
+    asfPrintError("This data cannot be calibrated, missing calibration block.\n");
+  }
+
   // Check for valid output radiometry
   if (outRadiometry == r_AMP || outRadiometry == r_POWER)
     asfPrintError("Invalid radiometry (%s) passed into calibration function!\n",
@@ -21,7 +25,8 @@ int asf_calibrate(const char *inFile, const char *outFile,
 
   // This can only work if the image is in some SAR geometry
   if (metaIn->projection && metaIn->projection->type != SCANSAR_PROJECTION)
-    asfPrintError("Can't apply calibration factors to map projected images\n");
+    asfPrintError("Can't apply calibration factors to map projected images\n"
+                  "(Amplitude or Power only)\n");
 
   radiometry_t inRadiometry = metaIn->general->radiometry;
   asfPrintStatus("Calibrating %s image to %s image\n\n", 
