@@ -2063,7 +2063,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     }
   }
   
-  if (cfg->general->calibration) {
+  if (cfg->general->calibration && !cfg->general->polarimetry) {
     update_status("Applying calibration parameters...");
     
     // Generate filenames
