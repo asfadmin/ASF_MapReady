@@ -1005,8 +1005,12 @@ void polarimetry_settings_changed()
       GtkWidget *farcorr_vbox = get_widget_checked("farcorr_vbox");
       gtk_widget_set_sensitive(farcorr_vbox, farcorr_checked);
 
-      input_data_type_combobox_changed();
     }
+    else {
+      set_checked("polarimetric_decomp_checkbutton", FALSE);
+    }
+
+    input_data_type_combobox_changed();
 
     rgb_settings_changed();
 }
