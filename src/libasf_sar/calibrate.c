@@ -10,7 +10,7 @@ int asf_calibrate(const char *inFile, const char *outFile,
   meta_parameters *metaIn = meta_read(inFile);
   meta_parameters *metaOut = meta_read(inFile);
 
-  if (!metaIn->calibrate) {
+  if (!metaIn->calibration) {
     asfPrintError("This data cannot be calibrated, missing calibration block.\n");
   }
 
