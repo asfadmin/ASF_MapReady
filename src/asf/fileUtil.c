@@ -635,6 +635,14 @@ create_dir(const char *dir)
   int mode =   S_IRUSR | S_IWUSR | S_IXUSR
              | S_IRGRP | S_IWGRP | S_IXGRP
              | S_IROTH | S_IWOTH | S_IXOTH;
+#else
+   // Windows path length limit: 260 chars
+   // This is supposed to be defined as MAX_PATH (which is 260)
+   // However it looks like the actual limit is 247... not sure why
+   if (strlen(dir) >= 247) {
+      asfPrintWarning("Path too long:\n%s\n", dir);
+      return -1;
+   }
 #endif
 
   ptr1 = strcpy(dir_tmp, dir);
@@ -652,6 +660,10 @@ create_dir(const char *dir)
 #else
     ret = mkdir(dir_tmp, mode);
 #endif
+    if (ret != 0 && errno != EEXIST) {
+      asfPrintWarning("create_dir failed to create: %s\nErr: %d %s\n",
+                      dir_tmp, errno, strerror(errno));
+    }
     if (keep_going) {
       *ptr2 = DIR_SEPARATOR;
     }
