@@ -526,6 +526,15 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
   int nBands, trailer, airsar_c, airsar_l, airsar_p;
 
   if (strcmp_case(processing_step, "polarimetry") == 0) {
+    // All of these require complex quad-pol data
+    int requires_cpx = cfg->polarimetry->pauli ||
+          cfg->polarimetry->cloude_pottier ||
+          cfg->polarimetry->cloude_pottier_ext ||
+          cfg->polarimetry->cloude_pottier_nc ||
+          cfg->polarimetry->k_means_wishart ||
+          cfg->polarimetry->k_means_wishart_ext ||
+          cfg->polarimetry->lee_preserving ||
+          cfg->polarimetry->freeman_durden;
 
     meta = isAirSAR(input, &airsar_c, &airsar_l, &airsar_p);
     if (meta) {
@@ -558,7 +567,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
     else if (isASFInternal(input)) {
       meta = meta_read(input);
       if (meta && meta->sar) {
-        if (cfg->polarimetry->pauli &&
+        if (requires_cpx &&
 	    ((meta->general->image_data_type != POLARIMETRIC_S2_MATRIX &&
 	      meta->general->image_data_type != POLARIMETRIC_C3_MATRIX &&
         meta->general->image_data_type != POLARIMETRIC_IMAGE &&
@@ -593,14 +602,19 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
 	meta = meta_read_cfg(inMetaName[0], cfg);
       }
       // Pauli decomposition only works for complex quad-pol data
-      if (cfg->polarimetry->pauli &&
-	  ((meta->general->image_data_type != POLARIMETRIC_S2_MATRIX &&
+      if (requires_cpx &&
+	  ( 
+           (meta->general->image_data_type != POLARIMETRIC_S2_MATRIX &&
 	    meta->general->image_data_type != POLARIMETRIC_C3_MATRIX &&
-      meta->general->image_data_type != POLARIMETRIC_IMAGE &&
-	    meta->general->image_data_type != POLARIMETRIC_T3_MATRIX) ||
-	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
-       meta->general->band_count < 8))
-        asfPrintError("Pauli decomposition requires complex quad-pol data\n");
+            meta->general->image_data_type != POLARIMETRIC_IMAGE &&
+	    meta->general->image_data_type != POLARIMETRIC_T3_MATRIX)
+          ||
+	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0
+          ||
+           meta->general->band_count < 8
+          )
+         )
+           asfPrintError("The polarimetric decomposition requires complex quad-pol data\n");
       // Sinclair decomposition ought to work on complex and detected
       // quad-pol data
       if (cfg->polarimetry->sinclair &&
@@ -906,7 +920,7 @@ static void calc_polarimetry(convert_config *cfg, char *inFile, char *outFile)
     else {
       // here, we don't need to do any processing -- we just need to
       // update the RGB Bands to Red=HH, Green=HV, Blue=VV
-      strcpy(cfg->export->rgb, "SIGMA-HH,SIGMA-HV,SIGMA-VV");
+      strcpy(cfg->export->rgb, "HH,HV,VV");
       strcpy(outFile, inFile);
     }
     meta_free(meta);
