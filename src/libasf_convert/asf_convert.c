@@ -549,6 +549,9 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
         asfPrintError("Only the pauli polarimetric decomposition is supported for UAVSAR data at this time\n");
       if(cfg->polarimetry->farcorr)
         asfPrintError("Faraday rotation correction of UAVSAR data is not supported at this time\n");
+      if(cfg->polarimetry->pauli &&
+          (strstr(cfg->import->uavsar, "HGT") != NULL || strstr(cfg->import->uavsar, "hgt") != NULL))
+        asfPrintError("Pauli decomposition cannot be performed on the UAVSAR .hgt file.\n");
       return;
     }
     else if (isPolsarproMatrix(input, &matrixType, &error)) { return; }
