@@ -2302,36 +2302,42 @@ export_band_image (const char *metadata_file_name,
 	      if (strcmp_case(md->general->sensor, "UAVSAR") == 0 &&
 		  strcmp_case(md->general->sensor_name, "POLSAR") == 0) {
 
-		char mode[5];
+		char mode[10];
 		if (strcmp_case(md->general->mode, "GRD") == 0)
-		  strcpy(mode, "grd");
+		  strcpy(mode, "_grd");
 		else if (strcmp_case(md->general->mode, "MLC") == 0)
-		  strcpy(mode, "mlc");
+		  strcpy(mode, "_mlc");
 
                 char *outBase = stripExt(output_file_name);
 
-		if (strcmp(mode, "grd") == 0 || strcmp(mode, "mlc") == 0) { 
+		if (strcmp(mode, "_grd") == 0 || strcmp(mode, "_mlc") == 0) { 
+                  if (endsWith(outBase, mode))
+                    strcpy(mode, "");
 		  if (strcmp_case(band_name[kk], "C11") == 0)
-		    sprintf(out_file, "%s_%sHHHH", outBase, mode);
+		    sprintf(out_file, "%s%sHHHH", outBase, mode);
 		  else if (strcmp_case(band_name[kk], "C22") == 0)
-		    sprintf(out_file, "%s_%sHVHV", outBase, mode);
+		    sprintf(out_file, "%s%sHVHV", outBase, mode);
 		  else if (strcmp_case(band_name[kk], "C33") == 0)
-		    sprintf(out_file, "%s_%sVVVV", outBase, mode);
+		    sprintf(out_file, "%s%sVVVV", outBase, mode);
 		  else if (strcmp_case(band_name[kk], "C12_real") == 0)
-		    sprintf(out_file, "%s_%sHHHV_real", outBase, mode);
+		    sprintf(out_file, "%s%sHHHV_real", outBase, mode);
 		  else if (strcmp_case(band_name[kk], "C12_imag") == 0)
-		    sprintf(out_file, "%s_%sHHHV_imag", outBase, mode);
+		    sprintf(out_file, "%s%sHHHV_imag", outBase, mode);
 		  else if (strcmp_case(band_name[kk], "C13_real") == 0)
-		    sprintf(out_file, "%s_%sHHVV_real", outBase, mode);
+		    sprintf(out_file, "%s%sHHVV_real", outBase, mode);
 		  else if (strcmp_case(band_name[kk], "C13_imag") == 0)
-		    sprintf(out_file, "%s_%sHHVV_imag", outBase, mode);
+		    sprintf(out_file, "%s%sHHVV_imag", outBase, mode);
 		  else if (strcmp_case(band_name[kk], "C23_real") == 0)
-		    sprintf(out_file, "%s_%sHVVV_real", outBase, mode);
+		    sprintf(out_file, "%s%sHVVV_real", outBase, mode);
 		  else if (strcmp_case(band_name[kk], "C23_imag") == 0)
-		    sprintf(out_file, "%s_%sHVVV_imag", outBase, mode);
+		    sprintf(out_file, "%s%sHVVV_imag", outBase, mode);
 		}
-		else if (strcmp(mode, "hgt") == 0)
-		  sprintf(out_file, "%s_hgt", outBase);
+		else if (strcmp(mode, "_hgt") == 0) {
+                  if (endsWith(outBase, mode))
+                    strcpy(out_file, outBase);
+                  else
+		    sprintf(out_file, "%s_hgt", outBase);
+                }
                 FREE(outBase);
 	      }
 	    }
@@ -2342,7 +2348,10 @@ export_band_image (const char *metadata_file_name,
 	      strcmp_case(md->general->sensor_name, "POLSAR") == 0 &&
 	      strcmp_case(md->general->mode, "DAT") == 0) {
 	    char *tmp = stripExt(output_file_name);
-	    sprintf(out_file, "%s_dat%s", tmp, band_name[kk]);
+            if(strcmp_case(tmp + strlen(tmp) - 3, "DAT") != 0)
+              sprintf(out_file, "%s_dat%s", tmp, band_name[kk]);
+            else
+	      sprintf(out_file, "%s%s", tmp, band_name[kk]);
             FREE(tmp);
           }
 	}
@@ -2351,9 +2360,11 @@ export_band_image (const char *metadata_file_name,
 	      strcmp_case(md->general->sensor_name, "POLSAR") == 0 &&
 	      strcmp_case(md->general->mode, "HGT") == 0) {
 	    char *tmp = stripExt(output_file_name);
-      if(strcmp_case(tmp + strlen(tmp) - 3, "HGT") != 0)
-        sprintf(out_file, "%s_hgt", tmp);
-      FREE(tmp);
+            if(strcmp_case(tmp + strlen(tmp) - 3, "HGT") != 0)
+              sprintf(out_file, "%s_hgt", tmp);
+            else
+              strcpy(out_file, tmp);
+            FREE(tmp);
 	  }
 	}
         else if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
