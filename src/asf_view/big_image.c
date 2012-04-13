@@ -564,7 +564,7 @@ static void add_pts(GdkPixbuf *pb, ImageInfo *ii)
   int ns = meta->general->sample_count;
 
   double line, samp;
-  int jj;
+  int jj=0;
   while (pt_lat[jj] != -999) {
     int bad = meta_get_lineSamp(meta, pt_lat[jj], pt_lon[jj], 0, &line, &samp);
    
