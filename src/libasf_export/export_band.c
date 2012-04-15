@@ -67,6 +67,7 @@ static char *c4_matrix[16] = {"C11.bin","C12_real.bin","C12_imag.bin",
 			      "C23_imag.bin","C24_real.bin","C24_imag.bin",
 			      "C33.bin","C34_real.bin","C34_imag.bin",
 			      "C44.bin"};
+
 static char *freeman2_decomposition[2] = 
   {"Freeman2_Ground.bin","Freeman2_Vol.bin"};
 static char *freeman3_decomposition[3] = 
@@ -1358,9 +1359,6 @@ export_band_image (const char *metadata_file_name,
   int palette_color_tiff = 0;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
   char *lut_file = NULL;
-  int no_bands = TRUE;
-  if (band_name)
-    no_bands = FALSE;
 
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
@@ -1472,17 +1470,11 @@ export_band_image (const char *metadata_file_name,
       initialize_png_file_ext(output_file_name, md, &opng, &png_ptr,
 			      &png_info_ptr, rgb, 2);
     }
-    int ignored[4] = {0, 0, 0, 0};
+    int *ignored = (int *) MALLOC(sizeof(int)*md->general->band_count);
     int red_channel=-1, green_channel=-1, blue_channel=-1;
-    for (ii = 0; ii < 4; ii++) {
-        if (ii < md->general->band_count) {
-            ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
-        }
-        else {
-            // Ignore bands that exceed band count
-            ignored[ii] = 1;
-        }
-    }
+    for (ii = 0; ii < md->general->band_count; ii++)
+      ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
+
     red_channel = get_band_number(md->general->bands,
                                   md->general->band_count,
                                   band_name[0]);
@@ -2118,7 +2110,7 @@ export_band_image (const char *metadata_file_name,
     if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
 	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
 	md->general->band_count != 1 && 
-	(format == POLSARPRO_HDR || (!no_bands && format == GEOTIFF))) {
+	(format == POLSARPRO_HDR || format == GEOTIFF)) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -2157,7 +2149,8 @@ export_band_image (const char *metadata_file_name,
     // name becomes the name of an output directory again. The actual file
     // names can be extracted from the bands string.
     if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
-	md->general->band_count != 1 && format == POLSARPRO_HDR) {
+	md->general->band_count != 1 && 
+	(format == POLSARPRO_HDR || format == GEOTIFF)) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -2171,7 +2164,7 @@ export_band_image (const char *metadata_file_name,
 	sprintf(path_name, "%s%c%s", 
 		dirName, DIR_SEPARATOR, fileName);
       if (is_dir(path_name))
-	asfPrintError("Output directory (%s) already exists.\n", path_name);
+	asfPrintStatus("Output directory (%s) already exists.\n", path_name);
       else if(create_dir(path_name) == -1)
 	asfPrintError("Can't generate output directory (%s).\n", path_name);
       char *configFile = 
@@ -2206,8 +2199,7 @@ export_band_image (const char *metadata_file_name,
         //      here to avoid thinking we've got -lut when it was really
         //      just the md->colormap (which sets have_look_up_table, above)
         int is_polsarpro = 
-          (md->general->image_data_type == POLARIMETRIC_IMAGE || 
-	   md->general->image_data_type == POLARIMETRIC_SEGMENTATION || 
+          (md->general->image_data_type == POLARIMETRIC_SEGMENTATION || 
 	   md->general->image_data_type == POLARIMETRIC_DECOMPOSITION || 
 	   md->general->image_data_type == POLARIMETRIC_PARAMETER ||
 	   (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
@@ -2294,7 +2286,7 @@ export_band_image (const char *metadata_file_name,
             if (!found_band)
               continue;
 	    if (format == POLSARPRO_HDR ||
-		(!no_bands && format == GEOTIFF)) { // output goes to directory
+		(is_polsarpro && format == GEOTIFF)) { // output goes to directory
 	      sprintf(out_file, "%s%c%s", 
 		      path_name, DIR_SEPARATOR, band_name[kk]);
 	    }

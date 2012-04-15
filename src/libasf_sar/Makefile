@@ -40,6 +40,7 @@ LIBS = \
 all: build_only
 	cp libasf_sar.a $(LIBDIR)
 	cp asf_sar.h poly.h $(ASF_INCLUDE_DIR)
+	cp polarimetry.cfg $(SHAREDIR)
 	mkdir -p $(SHAREDIR)/classifications
 	cp cloude8.cla cloude16.cla $(SHAREDIR)/classifications
 	mkdir -p $(SHAREDIR)/look_up_tables

@@ -25,6 +25,377 @@
 #define FLOAT_COMPARE(a, b) (abs((a) - (b)) \
 			     < UNIT_TESTS_MICRON ? 1 : 0)
 
+static char *t3_matrix[9] = {"T11.bin","T12_real.bin","T12_imag.bin",
+			     "T13_real.bin","T13_imag.bin","T22.bin",
+			     "T23_real.bin","T23_imag.bin","T33.bin"};
+static char *t4_matrix[16] = {"T11.bin","T12_real.bin","T12_imag.bin",
+			      "T13_real.bin","T13_imag.bin","T14_real.bin",
+			      "T14_imag.bin","T22.bin","T23_real.bin",
+			      "T23_imag.bin","T24_real.bin","T24_imag.bin",
+			      "T33.bin","T34_real.bin","T34_imag.bin",
+			      "T44.bin"};
+static char *c2_matrix[4] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			     "C22.bin"};
+static char *c3_matrix[9] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			     "C13_real.bin","C13_imag.bin","C22.bin",
+			     "C23_real.bin","C23_imag.bin","C33.bin"};
+static char *c4_matrix[16] = {"C11.bin","C12_real.bin","C12_imag.bin",
+			      "C13_real.bin","C13_imag.bin","C14_real.bin",
+			      "C14_imag.bin","C22.bin","C23_real.bin",
+			      "C23_imag.bin","C24_real.bin","C24_imag.bin",
+			      "C33.bin","C34_real.bin","C34_imag.bin",
+			      "C44.bin"};
+
+static char *freeman2_decomposition[2] = 
+  {"Freeman2_Ground","Freeman2_Vol"};
+static char *freeman3_decomposition[3] = 
+  {"Freeman_Dbl","Freeman_Odd","Freeman_Vol"};
+static char *vanZyl3_decomposition[3] = 
+  {"VanZyl3_Dbl","VanZyl3_Odd","VanZyl3_Vol"};
+static char *yamaguchi3_decomposition[3] = 
+  {"Yamaguchi3_Dbl","Yamaguchi3_Odd","Yamaguchi3_Vol"};
+static char *yamaguchi4_decomposition[4] = 
+  {"Yamaguchi4_Dbl","Yamaguchi4_Hlx","Yamaguchi4_Odd", "Yamaguchi4_Vol"};
+static char *krogager_decomposition[3] = 
+  {"Krogager_Kd","Krogager_Kh","Krogager_Ks"};
+static char *touzi1_decomposition[3] = 
+  {"TSVM_alpha_s1","TSVM_alpha_s2","TSVM_alpha_s3"};
+static char *touzi2_decomposition[3] = 
+  {"TSVM_phi_s1","TSVM_phi_s2","TSVM_phi_s3"};
+static char *touzi3_decomposition[3] = 
+  {"TSVM_tau_m1","TSVM_tau_m2","TSVM_tau_m3"};
+static char *touzi4_decomposition[3] = 
+  {"TSVM_psi1","TSVM_psi2","TSVM_psi3"};
+static char *touzi5_decomposition[4] = 
+  {"TSVM_alpha_s","TSVM_phi_s","TSVM_tau_m","TSVM_psi"};
+
+static char *find_decomposition(meta_parameters *meta)
+{
+  int ii, kk;
+  char decomposition[25]="";
+  char **bands = extract_band_names(meta->general->bands, 
+				    meta->general->band_count);
+
+  // Freeman2
+  int found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<2; kk++)
+      if (strcmp_case(freeman2_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 2) {
+    FREE(bands);
+    strcpy(decomposition, "Freeman2");
+  }
+
+  // Freeman3
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<3; kk++)
+      if (strcmp_case(freeman3_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 3) {
+    FREE(bands);
+    strcpy(decomposition, "Freeman3");
+  }
+
+  // vanZyl3
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<3; kk++)
+      if (strcmp_case(vanZyl3_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 3) {
+    FREE(bands);
+    strcpy(decomposition, "VanZyl3");
+  }
+
+  // Yamaguchi3
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<3; kk++)
+      if (strcmp_case(yamaguchi3_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 3) {
+    FREE(bands);
+    strcpy(decomposition, "Yamaguchi3");
+  }
+
+  // Yamaguchi4
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<4; kk++)
+      if (strcmp_case(yamaguchi4_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 4) {
+    FREE(bands);
+    strcpy(decomposition, "Yamaguchi4");
+  }
+
+  // Krogager
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<3; kk++)
+      if (strcmp_case(krogager_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 3) {
+    FREE(bands);
+    strcpy(decomposition, "Krogager");
+  }
+
+  // Touzi1
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<3; kk++)
+      if (strcmp_case(touzi1_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 3) {
+    FREE(bands);
+    strcpy(decomposition, "Touzi1");
+  }
+
+  // Touzi2
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<3; kk++)
+      if (strcmp_case(touzi2_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 3) {
+    FREE(bands);
+    strcpy(decomposition, "Touzi2");
+  }
+
+  // Touzi3
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<3; kk++)
+      if (strcmp_case(touzi3_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 3) {
+    FREE(bands);
+    strcpy(decomposition, "Touzi3");
+  }
+
+  // Touzi4
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<3; kk++)
+      if (strcmp_case(touzi4_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 3) {
+    FREE(bands);
+    strcpy(decomposition, "Touzi4");
+  }
+  
+  // Touzi5
+  found_bands = 0;
+  for (ii=0; ii<meta->general->band_count; ii++)
+    for (kk=0; kk<4; kk++)
+      if (strcmp_case(touzi5_decomposition[kk], bands[ii]) == 0)
+	found_bands++;
+  if (found_bands == 4) {
+    FREE(bands);
+    strcpy(decomposition, "Touzi5");
+  }
+
+  return decomposition;
+}
+
+static int strindex(char s[], char t[])
+{
+  int i, j, k;
+
+  for (i=0; s[i]!='\0'; i++) {
+    for (j=i, k=0; t[k]!='\0' && s[j]==t[k]; j++, k++)
+      ;
+    if (k>0 && t[k]=='\0')
+      return i;
+  }
+  return -1;
+}
+
+static char *read_param(char *line)
+{
+  int i, k;
+  char *value=(char *)CALLOC(256, sizeof(char));
+
+  strcpy(value, "");
+  i=strindex(line, "]");
+  k=strindex(line, "=");
+  if (i>0) strncpy(value, line, i+1);
+  if (k>0) strncpy(value, line, k);
+  return value;
+}
+
+static char *read_str(char *line, char *param)
+{
+  static char value[255];
+  char *p = strchr(line, '=');
+
+  // skip past the '=' sign, and eat up any whitespace
+  ++p;
+  while (isspace(*p))
+      ++p;
+
+  strcpy(value, p);
+
+  // eat up trailing whitespace, too
+  p = value + strlen(value) - 1;
+  while (isspace(*p))
+      *p-- = '\0';
+
+  return value;
+}
+
+void read_polarimetry_config(char *configFile, char *decomposition,
+			     char **pRed, char **pGreen, char **pBlue)
+{
+  char line[128], params[25];
+  char *test;
+  char *red = (char *) MALLOC(sizeof(char)*25);
+  char *green = (char *) MALLOC(sizeof(char)*25);
+  char *blue = (char *) MALLOC(sizeof(char)*25);
+
+  FILE *fConfig = fopen(configFile, "r");
+  if (fConfig) {
+    while (fgets(line, 128, fConfig) != NULL) {
+      if (strncmp(line, "[Freeman3]", 10)==0) 
+	strcpy(params, "freeman3");
+      if (strcmp(params, "freeman3")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[VanZyl3]", 9)==0) 
+	strcpy(params, "vanzyl3");
+      if (strcmp(params, "vanzyl3")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[Yamaguchi3]", 12)==0) 
+	strcpy(params, "yamaguchi3");
+      if (strcmp(params, "yamaguchi3")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[Yamaguchi4]", 12)==0) 
+	strcpy(params, "yamaguchi4");
+      if (strcmp(params, "yamaguchi4")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[Krogager]", 10)==0) 
+	strcpy(params, "krogager");
+      if (strcmp(params, "krogager")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[Touzi1]", 8)==0) 
+	strcpy(params, "touzi1");
+      if (strcmp(params, "touzi1")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[Touzi2]", 8)==0) 
+	strcpy(params, "touzi2");
+      if (strcmp(params, "touzi2")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[Touzi3]", 8)==0) 
+	strcpy(params, "touzi3");
+      if (strcmp(params, "touzi3")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[Touzi4]", 8)==0) 
+	strcpy(params, "touzi4");
+      if (strcmp(params, "touzi4")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+      if (strncmp(line, "[Touzi5]", 8)==0) 
+	strcpy(params, "touzi5");
+      if (strcmp(params, "touzi5")==0 &&
+	  strcmp_case(params, decomposition) == 0) {
+        test = read_param(line);
+        if (strncmp(test, "red", 3)==0)
+	  strcpy(red, read_str(line, "red"));
+        if (strncmp(test, "green", 5)==0)
+	  strcpy(green, read_str(line, "green"));
+        if (strncmp(test, "blue", 4)==0)
+	  strcpy(blue, read_str(line, "blue"));
+        FREE(test);
+      }
+    }
+    FCLOSE(fConfig);
+  }
+  *pRed = red;
+  *pGreen = green;
+  *pBlue = blue;
+}
+
 static int get_scheme_count(char *line, char separator)
 {
   char *p = line;
@@ -2577,18 +2948,24 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     else {                          // not a true or false color optical image
 
-      char **bands = extract_band_names(meta->general->bands,
-                                        meta->general->band_count);
       if (is_polsarpro &&
           (meta->general->image_data_type > POLARIMETRIC_IMAGE &&
-           meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX))
+           meta->general->image_data_type <= POLARIMETRIC_T4_MATRIX)) {
+	meta_free(meta);
+	meta = meta_read(tmpFile);
+	meta->general->image_data_type = BROWSE_IMAGE;
         meta->general->band_count = 1;
+	meta_write(meta, tmpFile);
+      }
+      char **bands = extract_band_names(meta->general->bands,
+                                        meta->general->band_count);
       int noutputs;
       char **outputs;
       check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
-                                    tmpFile, outFile, bands, &noutputs,
-                                    &outputs),
-                   "exporting thumbnail data file (asf_export)\n");
+				    tmpFile, outFile, bands, &noutputs,
+				    &outputs),
+		   "exporting thumbnail data file (asf_export)\n");
+
       // No zipping for the moment
       if(strcmp(meta->general->sensor, "UAVSAR") == 0)
         asfPrintStatus("Skipping KML Overlay Generation for UAVSAR\n");
@@ -3637,6 +4014,49 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 			 "exporting data file (asf_export), greyscale bands.\n");
           FREE(*bands);
           FREE(bands);
+
+	  // Exporting polarimetric decompositions into an RGB file as well
+	  if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
+	      format != POLSARPRO_HDR) {
+	    char decomposition[25], configFile[512], decompFile[512];
+	    char *red, *green, *blue;
+	    sprintf(decomposition, "%s", find_decomposition(meta));
+	    sprintf(configFile, "%s%cpolarimetry.cfg", 
+		    get_asf_share_dir(), DIR_SEPARATOR);
+	    read_polarimetry_config(configFile, decomposition, 
+				    &red, &green, &blue);
+	    char **bands = extract_band_names(meta->general->bands, 
+					      meta->general->band_count);
+	    strcpy(bands[0], red);
+	    strcpy(bands[1], green);
+	    strcpy(bands[2], blue);
+	    if (meta->general->band_count > 3)
+	      strcpy(bands[3], "");
+	    if (meta->general->band_count > 4)
+	      strcpy(bands[4], "");
+	    asfPrintStatus("\nExporting decomposition into single color file:\n"
+			   "Red band  : %s\n"
+			   "Green band: %s\n"
+			   "Blue band : %s\n\n",
+			   red, green, blue);
+	    sprintf(decompFile, "%s%c%s_RGB", 
+		    outFile, DIR_SEPARATOR, decomposition);
+	    meta_parameters *md = meta_read(inFile);
+	    md->general->image_data_type = RGB_STACK;
+	    meta_write(md, inFile);
+	    meta_free(md);
+	    check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+					  inFile, decompFile, bands, 
+					  &num_outputs, &output_names),
+			 "export data file (asf_export), polarimetric decomposition.\n");
+	    md = meta_read(inFile);
+	    md->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
+	    meta_write(md, inFile);
+	    meta_free(md);
+
+	    FREE(*bands);
+	    FREE(bands);
+	  }
         }
         else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
           // multi-band, exporting single band in one greyscale file
