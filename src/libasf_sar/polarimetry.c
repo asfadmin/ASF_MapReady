@@ -1579,6 +1579,15 @@ static void do_freeman(int band1, int band2, int band3,
       Ps[j] = 10*log10(Ps[j]*Ps[j]);
       Pd[j] = 10*log10(Pd[j]*Pd[j]);
       Pv[j] = 10*log10(Pv[j]*Pv[j]);
+
+      // take care of blackfill
+      if (FLOAT_EQUIVALENT(hh2[j], 0.0001) &&
+	  FLOAT_EQUIVALENT(vv2[j], 0.0001) &&
+	  FLOAT_EQUIVALENT(hv2[j], 0.0001)) {
+	Ps[j] = 0.0;
+	Pd[j] = 0.0;
+	Pv[j] = 0.0;
+      }
     }
 
     free(hh2);
