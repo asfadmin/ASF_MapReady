@@ -2360,9 +2360,11 @@ int apply_settings_from_config_file(char *configFile)
 
     settings_apply_to_gui(&s);
 
-    if (cfg->general->in_name && strlen(cfg->general->in_name) > 0) {
+    if (cfg->general->in_name && strlen(cfg->general->in_name) > 0
+         && fileExists(cfg->general->in_name)) {
       /* Files from the config file */
       GtkTreeIter iter;
+      int added_ok = TRUE;
 
       /* The config file contains the basename -- we must pass the actual
        * data file name (CEOS), or leader file name (ALOS) to add_to_files_list
@@ -2391,13 +2393,20 @@ int apply_settings_from_config_file(char *configFile)
 
         add_to_files_list_iter(metaName[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
         get_ceos_data_name(cfg->general->in_name, baseName, &dataNames, &nBands);
-        assert(nBands == 1);
-
-        add_to_files_list_iter(dataNames[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &iter);
+        if (nBands != 1) {
+           asfPrintWarning("Unexpected number of bands (%d) in input file: %s\n",
+                           nBands, cfg->general->in_name);
+           added_ok = FALSE;
+        } else {
+           add_to_files_list_iter(dataNames[0], NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                  &iter);
+        }
       }
 
       free_ceos_names(dataNames, metaName);
-      set_output_name(&iter, cfg->general->out_name);
+
+      if (added_ok)
+          set_output_name(&iter, cfg->general->out_name);
 
       FREE(baseName);
     }
