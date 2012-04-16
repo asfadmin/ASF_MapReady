@@ -1371,11 +1371,13 @@ export_band_image (const char *metadata_file_name,
   else if (format == NC && rgb)
     asfPrintError("Export to a color netCDF format is not supported!\n");
 
+  /*
   if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
       md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
       md->general->image_data_type != POLARIMETRIC_DECOMPOSITION &&
       format == POLSARPRO_HDR)
     append_ext_if_needed(output_file_name, ".bin", NULL);
+  */
 
   asfRequire( !(look_up_table_name == NULL &&
                 sample_mapping == TRUNCATE &&

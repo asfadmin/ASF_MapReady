@@ -1369,7 +1369,7 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		    "file appears to be Level 0:\n  %s\n", RAW_file);
     free(RAW_file); free(LDR_file);
   }
-  
+
   // Check whether everything in the [Import] block is reasonable
   if (cfg->general->import) {
     
@@ -1566,7 +1566,8 @@ static int check_config(const char *configFileName, convert_config *cfg)
   // Check whether radiometric terrain correction is selected for PolSARPro
   // data. Refer to the manual for further explanation why this does not work.
   if (cfg->general->terrain_correct && cfg->terrain_correct->do_radiometric &&
-      strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0)
+      strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0 &&
+      !is_dir(cfg->general->in_name))
     asfPrintError("Radiometric terrain correction of PolSARPro data is not "
 		  "supported.\nFor more information on alternative processing "
 		  "flow based on\nradiometric terrain correction of CEOS "
@@ -1706,6 +1707,14 @@ static int check_config(const char *configFileName, convert_config *cfg)
 	strncmp_case(cfg->import->format, "POLSARPRO", 9) != 0)
       asfPrintError("Export format 'POLSARPRO' requires the same format "
 		    "as input format!\n");
+
+    // Check whether PolSARPro input is actually a matrix when 
+    // the output format is PolSARPro
+    if (strncmp_case(cfg->export->format, "POLSARPRO", 9) == 0 &&
+	strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0 &&
+	!is_dir(cfg->general->in_name))
+      asfPrintError("Only polarimetric matrices can be exported to 'POLSARPRO'"
+		    "as output format!\n");
     
     // If RGB Banding option is "ignore,ignore,ignore" then the
     // user has probably been using the gui, and didn't pick
