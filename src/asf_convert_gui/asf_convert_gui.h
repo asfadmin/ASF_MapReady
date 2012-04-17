@@ -191,9 +191,9 @@ typedef struct
   int falsecolor_is_checked;
   int user_defined_is_checked;
   int export_bands;
-  char red[10];
-  char green[10];
-  char blue[10];
+  char red[32];
+  char green[32];
+  char blue[32];
 
   /* geocode */
   int geocode_is_checked;
