@@ -655,14 +655,16 @@ create_dir(const char *dir)
     else {
       keep_going = FALSE;
     }
+    if (strlen(dir_tmp) > 0) {
 #ifdef mingw
-    ret = mkdir(dir_tmp);
+      ret = mkdir(dir_tmp);
 #else
-    ret = mkdir(dir_tmp, mode);
+      ret = mkdir(dir_tmp, mode);
 #endif
-    if (ret != 0 && errno != EEXIST) {
-      asfPrintWarning("create_dir failed to create: %s\nErr: %d %s\n",
-                      dir_tmp, errno, strerror(errno));
+      if (ret != 0 && errno != EEXIST) {
+        asfPrintWarning("create_dir failed to create: %s\nErr: %d %s\n",
+                        dir_tmp, errno, strerror(errno));
+      }
     }
     if (keep_going) {
       *ptr2 = DIR_SEPARATOR;

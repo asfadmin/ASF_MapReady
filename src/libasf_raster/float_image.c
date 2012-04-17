@@ -1782,11 +1782,11 @@ float_image_sample (FloatImage *self, float x, float y,
       // Set up the spline that runs in the y direction.
       for ( ii = 0 ; ii < ss ; ii++ ) {
         y_spline_indicies[ii] = floor (y) - 1 + ii;
-        y_spline_values[ii] = gsl_spline_eval (xss[ii], x, xias[ii]);
+        y_spline_values[ii] = gsl_spline_eval_check (xss[ii], x, xias[ii]);
       }
       gsl_spline_init (ys, y_spline_indicies, y_spline_values, ss);
 
-      return (float) gsl_spline_eval (ys, y, yia);
+      return (float) gsl_spline_eval_check (ys, y, yia);
     }
     break;
   default:

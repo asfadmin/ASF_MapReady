@@ -97,7 +97,7 @@ interp_dem(FloatImage *dem, double l, double s)
       gsl_interp_accel *acc = gsl_interp_accel_alloc ();
       gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);
       gsl_spline_init (spline, x, y, 4);
-      yi[ii] = gsl_spline_eval(spline, s, acc);
+      yi[ii] = gsl_spline_eval_check(spline, s, acc);
       gsl_spline_free (spline);
       gsl_interp_accel_free (acc);
 
@@ -107,7 +107,7 @@ interp_dem(FloatImage *dem, double l, double s)
     gsl_interp_accel *acc = gsl_interp_accel_alloc ();
     gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);
     gsl_spline_init (spline, xi, yi, 4);
-    ret = gsl_spline_eval(spline, l, acc);
+    ret = gsl_spline_eval_check(spline, l, acc);
     gsl_spline_free (spline);
     gsl_interp_accel_free (acc);
 
@@ -157,7 +157,7 @@ interp_demData(float *demData, int nl, int ns, double l, double s)
       gsl_interp_accel *acc = gsl_interp_accel_alloc ();
       gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);    
       gsl_spline_init (spline, x, y, 4);
-      yi[ii] = gsl_spline_eval(spline, s, acc);
+      yi[ii] = gsl_spline_eval_check(spline, s, acc);
       gsl_spline_free (spline);
       gsl_interp_accel_free (acc);
 
@@ -167,7 +167,7 @@ interp_demData(float *demData, int nl, int ns, double l, double s)
     gsl_interp_accel *acc = gsl_interp_accel_alloc ();
     gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, 4);    
     gsl_spline_init (spline, xi, yi, 4);
-    ret = gsl_spline_eval(spline, l, acc);
+    ret = gsl_spline_eval_check(spline, l, acc);
     gsl_spline_free (spline);
     gsl_interp_accel_free (acc);
  

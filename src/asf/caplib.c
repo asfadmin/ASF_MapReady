@@ -505,7 +505,7 @@ long long FTELL64(FILE *stream)
     ret=(long long)ftello(stream);
 #elif defined(mingw)
     /* MinGW points to the Microsoft ftello64 */
-    ret = ftello64(stream);
+    ret = (long long)ftello64(stream);
 #else
     ret=ftello64(stream);
 #endif

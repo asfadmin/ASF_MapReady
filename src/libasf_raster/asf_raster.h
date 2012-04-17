@@ -12,6 +12,7 @@ DESCRIPTION:
 #include "asf_meta.h"
 #include "float_image.h"
 #include "banded_float_image.h"
+#include <gsl/gsl_spline.h>
 
 typedef enum {
   TRUNCATE=1,
@@ -234,5 +235,8 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
 	      complex_stats_t **complex_stats2,
 	      psnr_t **psnrs, complex_psnr_t **complex_psnr,
 	      shift_data_t **data_shift);
+
+// wrapper for gsl_spline_eval that does bounds-checking
+double gsl_spline_eval_check(gsl_spline *s, double x, gsl_interp_accel *a);
 
 #endif

@@ -26,7 +26,8 @@ OBJS = \
 	tile.o \
 	look_up_table.o \
 	raster_calc.o \
-	diffimage.o 
+	diffimage.o  \
+	spline_eval.o
 
 LIBS :=	\
 	$(LIBDIR)/asf_meta.a \

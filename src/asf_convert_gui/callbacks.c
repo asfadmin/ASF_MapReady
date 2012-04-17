@@ -1585,6 +1585,7 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
           FREE(dataType);
           FREE(dataName);
           FREE(element);
+          g_string_free(checkbutton_name, TRUE);
         }
       }
     }
@@ -1609,6 +1610,7 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
           FREE(dataType);
           FREE(dataName);
           FREE(element);
+          g_string_free(checkbutton_name, TRUE);
         }
       }
     }

@@ -2286,8 +2286,10 @@ export_band_image (const char *metadata_file_name,
                 strlen(band_name[kk])) == 0)
                 found_band = TRUE;
             }
-            if (!found_band)
+            if (!found_band) {
+              FREE(out_file);
               continue;
+            }
 	    if (format == POLSARPRO_HDR ||
 		(is_polsarpro && format == GEOTIFF &&
 		 strcmp_case(md->general->sensor, "UAVSAR") != 0)) { 
@@ -2436,8 +2438,10 @@ export_band_image (const char *metadata_file_name,
                 strlen(band_name[kk])) == 0)
                 found_band = TRUE;
             }
-            if (!found_band)
+            if (!found_band) {
+              free(out_file);
               continue;
+            }
             sprintf(out_file, "%s%c%s", 
               path_name, DIR_SEPARATOR, band_name[kk]);
 

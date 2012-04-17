@@ -386,9 +386,9 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
             for (jj=0; jj<n; ++jj) {
                 slant_in[jj] = slant_start + jj * slant_grid_incr;
                 //printf("time: %f slant: %f\n", time, slant_in[jj]);
-                samp_out[jj] = gsl_spline_eval(samp_splines[jj], time,
+                samp_out[jj] = gsl_spline_eval_check(samp_splines[jj], time,
                                                samp_accels[jj]);
-                line_out[jj] = gsl_spline_eval(line_splines[jj], time,
+                line_out[jj] = gsl_spline_eval_check(line_splines[jj], time,
                                                line_accels[jj]);
                 //printf("samp_out: %f line_out: %f\n", samp_out[jj], line_out[jj]);
             }
@@ -399,8 +399,8 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
             // use the splines to produce output pixels
             for (jj=0; jj<ons; ++jj) {
                 double slant = slant_start + jj * slant_incr;
-                double samp = gsl_spline_eval(samp_spline, slant, samp_accel);
-                double line = gsl_spline_eval(line_spline, slant, line_accel);
+                double samp = gsl_spline_eval_check(samp_spline, slant, samp_accel);
+                double line = gsl_spline_eval_check(line_spline, slant, line_accel);
 
                 // check the spline every so often (halfway between grid points)
                 // only do this on band #1 (the reference band)

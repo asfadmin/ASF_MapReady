@@ -1727,11 +1727,11 @@ uint8_image_sample (UInt8Image *self, double x, double y,
       // Set up the spline that runs in the y direction.
       for ( ii = 0 ; ii < ss ; ii++ ) {
         y_spline_indicies[ii] = floor (y) - 1 + ii;
-        y_spline_values[ii] = gsl_spline_eval (xss[ii], x, xias[ii]);
+        y_spline_values[ii] = gsl_spline_eval_check (xss[ii], x, xias[ii]);
       }
       gsl_spline_init (ys, y_spline_indicies, y_spline_values, ss);
 
-      double ret_val = gsl_spline_eval (ys, y, yia);
+      double ret_val = gsl_spline_eval_check (ys, y, yia);
 // NOTE... NOTE... BICUBIC resample returns negative values if the byte values are
 // too close to zero and the spline fit goes negative in the neighborhood of the pixel
 /*
