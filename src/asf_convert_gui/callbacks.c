@@ -1194,7 +1194,6 @@ void input_data_type_combobox_changed()
             gtk_widget_set_sensitive(checkbutton_db, FALSE);
         }
         else {
-            set_checked("checkbutton_db", db_was_checked);
             gtk_widget_set_sensitive(checkbutton_db, TRUE);
         }
     }

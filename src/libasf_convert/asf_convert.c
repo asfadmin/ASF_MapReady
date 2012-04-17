@@ -1400,7 +1400,15 @@ static int check_config(const char *configFileName, convert_config *cfg)
 	strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) != 0) {
       asfPrintError("Selected radiometry not supported\n");
     }
-    
+   
+    // UAVSAR data is already calibrated as GAMMA
+    if (cfg->general->calibration &&
+        strncmp_case(cfg->import->format, "UAVSAR", 6) == 0)
+    {
+        asfPrintStatus("UAVSAR data is already calibrated as GAMMA.\n");
+        cfg->general->calibration = FALSE;
+    }
+
     // Look up table file existence check
     if (strlen(cfg->import->lut) > 0) {
       if (!fileExists(cfg->import->lut)) {

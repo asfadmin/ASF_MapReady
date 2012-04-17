@@ -44,6 +44,16 @@ const char *get_summary_text()
       dbstr = " (dB)";
 
     char *fmts = STRDUP(get_string_from_label("input_formats_label"));
+
+    if (strcmp(fmts, "Input data format: UAVSAR") == 0) {
+       if (strcmp(type, "Gamma") != 0) {
+         type = "Gamma (UAVSAR data will be Gamma)";
+       } else {
+         type = "Gamma";
+       }
+       dbstr = "";
+    }
+
     char *p = strchr(fmts, ':');
     if (strchr(fmts, ',')!=NULL)
       strcpy(text, "Formats: ");
