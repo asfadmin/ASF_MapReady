@@ -1708,14 +1708,6 @@ static int check_config(const char *configFileName, convert_config *cfg)
       asfPrintError("Export format 'POLSARPRO' requires the same format "
 		    "as input format!\n");
 
-    // Check whether PolSARPro input is actually a matrix when 
-    // the output format is PolSARPro
-    if (strncmp_case(cfg->export->format, "POLSARPRO", 9) == 0 &&
-	strncmp_case(cfg->import->format, "POLSARPRO", 9) == 0 &&
-	!is_dir(cfg->general->in_name))
-      asfPrintError("Only polarimetric matrices can be exported to 'POLSARPRO'"
-		    "as output format!\n");
-    
     // If RGB Banding option is "ignore,ignore,ignore" then the
     // user has probably been using the gui, and didn't pick
     // anything for any of the RGB channels.
