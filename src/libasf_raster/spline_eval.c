@@ -6,13 +6,13 @@ double gsl_spline_eval_check(gsl_spline *s, double x, gsl_interp_accel *a)
   int len = s->size;
   if (x < s->x[0] || x > s->x[len-1]) {
     if (x < s->x[0]) {
-       asfPrintStatus("Spline extrapolation: %.12f < %.12f\n",
-                      x, s->x[0]);
+       //asfPrintStatus("Spline extrapolation: %.12f < %.12f\n",
+       //               x, s->x[0]);
        x = s->x[0];
     }
     else if (x > s->x[len-1]) {
-       asfPrintStatus("Spline extrapolation: %.12f > %.12f\n",
-                      x, s->x[len-1]);
+       //asfPrintStatus("Spline extrapolation: %.12f > %.12f\n",
+       //               x, s->x[len-1]);
        x = s->x[len-1];
     }
     if (fabs(x_orig - x) > .001) {
