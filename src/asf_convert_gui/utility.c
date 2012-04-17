@@ -33,9 +33,9 @@ void setup_band_comboboxes()
     set_combobox_items_user_defined("green_combo");
     set_combobox_items_user_defined("blue_combo");
 
-    set_combobox_entry_maxlen("red_combo", 8);
-    set_combobox_entry_maxlen("green_combo", 8);
-    set_combobox_entry_maxlen("blue_combo", 8);
+    set_combobox_entry_maxlen("red_combo", 20);
+    set_combobox_entry_maxlen("green_combo", 20);
+    set_combobox_entry_maxlen("blue_combo", 20);
 }
 
 void
