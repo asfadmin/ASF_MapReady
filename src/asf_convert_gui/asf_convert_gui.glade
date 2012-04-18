@@ -2945,7 +2945,7 @@
 								      <child>
 									<widget class="GtkCheckButton" id="tc_pixel_size_checkbutton">
 									  <property name="visible">True</property>
-									  <property name="tooltip" translatable="yes">This is different than the pixel size specified on the Geocode tab, in that there you are specifying the size of the final output, but here you're looking for a good pixel size to maximize the success of the terrain correction calculations.  A pixel size of half that of the DEM is common.</property>
+									  <property name="tooltip" translatable="yes">This is different than the pixel size specified on the Geocode tab, in that there you are specifying the size of the final output, but here you're looking for a good pixel size to maximize the success of the terrain correction calculations.  This pixel size is in slant range.  A pixel size of half that of the DEM is common.</property>
 									  <property name="can_focus">True</property>
 									  <property name="label" translatable="yes">Specify Pixel Size:  </property>
 									  <property name="use_underline">True</property>
