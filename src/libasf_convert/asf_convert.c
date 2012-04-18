@@ -4023,6 +4023,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 	  // Exporting polarimetric decompositions into an RGB file as well
 	  if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
 	      format != POLSARPRO_HDR) {
+            int i;
 	    char decomposition[25], configFile[512], decompFile[512];
 	    char *red, *green, *blue;
 	    sprintf(decomposition, "%s", find_decomposition(meta));
@@ -4030,8 +4031,9 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 		    get_asf_share_dir(), DIR_SEPARATOR);
 	    read_polarimetry_config(configFile, decomposition, 
 				    &red, &green, &blue);
-	    char **bands = extract_band_names(meta->general->bands, 
-					      meta->general->band_count);
+            char **bands = MALLOC(sizeof(char*)*meta->general->band_count);
+            for (i=0; i<meta->general->band_count; i++)
+              bands[i] = MALLOC(sizeof(char)*32);
 	    strcpy(bands[0], red);
 	    strcpy(bands[1], green);
 	    strcpy(bands[2], blue);
@@ -4059,8 +4061,9 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 	    meta_write(md, inFile);
 	    meta_free(md);
 
-	    FREE(*bands);
-	    FREE(bands);
+            for (i=0; i<meta->general->band_count; i++)
+              FREE(bands[i]);
+            FREE(bands);
 	  }
         }
         else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
