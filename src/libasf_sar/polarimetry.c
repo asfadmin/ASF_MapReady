@@ -1878,7 +1878,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       else if (entropy_band == i)
           strcat(bands, "Entropy,");
       else if (anisotropy_band == i)
-          strcat(bands, "Anisotro,"); // abbreviated version, agrees with GUI
+          strcat(bands, "Anisotropy,");
       else if (alpha_band == i)
           strcat(bands, "Alpha,");
       else if (freeman_1_band == i)
