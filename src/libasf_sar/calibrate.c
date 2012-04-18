@@ -124,7 +124,7 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	  //bufIn[jj] = cal2amp(metaIn, incid, jj, bands[kk], bufIn[jj]);
 	  if (strstr(bands[kk], "PHASE") == NULL) {
 	    incid = meta_incid(metaIn, ii, jj);
-	    cal_dn = 
+	    cal_dn =
 	      get_cal_dn(metaOut, incid, jj, bufIn[jj], bands[kk], dbFlag);
 	    if (wh_scaleFlag) {
 	      if (FLOAT_EQUIVALENT(cal_dn, metaIn->general->no_data))
@@ -149,7 +149,6 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	sprintf(tmp, ",%s-%s", radiometry2str(outRadiometry), bands[kk]);
 	strcat(metaOut->general->bands, tmp);
       }
-      FREE(bands[kk]);
     }
   }
   meta_write(metaOut, outFile);
@@ -162,9 +161,13 @@ int asf_calibrate(const char *inFile, const char *outFile,
     FREE(bufOut2);
     FREE(bufOut3);
   }
+  for (kk=0; kk<band_count; ++kk)
+    FREE(bands[kk]);
   FREE(bands);
-  FCLOSE(input);
-  FCLOSE(output);
+  FCLOSE(fpIn);
+  FCLOSE(fpOut);
+  FREE(input);
+  FREE(output);
 
   return FALSE;
 }
