@@ -72,7 +72,9 @@ static char *touzi5_decomposition[4] =
 static char *find_decomposition(meta_parameters *meta)
 {
   int ii, kk;
-  char decomposition[25]="";
+  char *decomposition = MALLOC(sizeof(char)*25);
+  strcpy(decomposition, "");
+
   char **bands = extract_band_names(meta->general->bands, 
 				    meta->general->band_count);
 
@@ -83,7 +85,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(freeman2_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 2) {
-    FREE(bands);
     strcpy(decomposition, "Freeman2");
   }
 
@@ -94,7 +95,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(freeman3_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 3) {
-    FREE(bands);
     strcpy(decomposition, "Freeman3");
   }
 
@@ -105,7 +105,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(vanZyl3_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 3) {
-    FREE(bands);
     strcpy(decomposition, "VanZyl3");
   }
 
@@ -116,7 +115,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(yamaguchi3_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 3) {
-    FREE(bands);
     strcpy(decomposition, "Yamaguchi3");
   }
 
@@ -127,7 +125,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(yamaguchi4_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 4) {
-    FREE(bands);
     strcpy(decomposition, "Yamaguchi4");
   }
 
@@ -138,7 +135,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(krogager_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 3) {
-    FREE(bands);
     strcpy(decomposition, "Krogager");
   }
 
@@ -149,7 +145,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(touzi1_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 3) {
-    FREE(bands);
     strcpy(decomposition, "Touzi1");
   }
 
@@ -160,7 +155,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(touzi2_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 3) {
-    FREE(bands);
     strcpy(decomposition, "Touzi2");
   }
 
@@ -171,7 +165,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(touzi3_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 3) {
-    FREE(bands);
     strcpy(decomposition, "Touzi3");
   }
 
@@ -182,7 +175,6 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(touzi4_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 3) {
-    FREE(bands);
     strcpy(decomposition, "Touzi4");
   }
   
@@ -193,9 +185,12 @@ static char *find_decomposition(meta_parameters *meta)
       if (strcmp_case(touzi5_decomposition[kk], bands[ii]) == 0)
 	found_bands++;
   if (found_bands == 4) {
-    FREE(bands);
     strcpy(decomposition, "Touzi5");
   }
+
+  for (kk=0; kk<meta->general->band_count; ++kk)
+    FREE(bands[kk]);
+  FREE(bands);
 
   return decomposition;
 }
