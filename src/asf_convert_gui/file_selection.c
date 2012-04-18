@@ -944,7 +944,7 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget * w)
         get_widget_checked("add_file_with_ancillary_ok_button");
       gtk_widget_set_sensitive(ok_button, FALSE);
       dataFile = get_string_from_entry("add_file_with_ancillary_polsarpro_image_entry");
-      char *matrixType, *error, *decompositionType, *derror;
+      char *matrixType=NULL, *error, *decompositionType, *derror;
       char *serror, *perror;
       int is_polsarpro_matrix =
         isPolsarproMatrix(dataFile, &matrixType, &error);
@@ -971,7 +971,7 @@ on_add_file_with_ancillary_ok_button_clicked(GtkWidget * w)
       }
       else
         data = STRDUP(dataFile);
-      free(matrixType);
+      FREE(matrixType);
       int is_geocoded = isGeocoded(data);
       if (!is_geocoded)
         ceos =
