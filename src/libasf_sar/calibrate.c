@@ -181,12 +181,11 @@ int asf_logscale(const char *inFile, const char *outFile)
   int line_count = meta->general->line_count;
   float *bufIn = (float *) MALLOC(sizeof(float)*sample_count);
   float *bufOut = (float *) MALLOC(sizeof(float)*sample_count);
-  if (!fileExists(inFile))
-    strcat(inFile, ".img");
-  char *outName = appendExt(outFile, ".img");
   
-  FILE *fpIn = FOPEN(inFile, "rb");
-  FILE *fpOut = FOPEN(outName, "wb");
+  char *input = appendExt(inFile, ".img");
+  char *output = appendExt(outFile, ".img");
+  FILE *fpIn = FOPEN(input, "rb");
+  FILE *fpOut = FOPEN(output, "wb");
   for (kk=0; kk<band_count; kk++) {
     for (ii=0; ii<line_count; ii++) {
       get_band_float_line(fpIn, meta, kk, ii, bufIn);
@@ -197,13 +196,17 @@ int asf_logscale(const char *inFile, const char *outFile)
 	  bufOut[jj] = 10.0 * log10(bufIn[jj]);
       }
       put_band_float_line(fpOut, meta, kk, ii, bufOut);
+      asfLineMeter(ii, line_count);
     }
   }
   meta_write(meta, outFile);
   meta_free(meta);
+  FCLOSE(fpIn);
+  FCLOSE(fpOut);
   FREE(bufIn);
   FREE(bufOut);
-  FREE(outName);
+  FREE(input);
+  FREE(output);
 
   return FALSE;
 }
