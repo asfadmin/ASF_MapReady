@@ -2118,6 +2118,13 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
   char *tmpFile = MALLOC(sizeof(char)*(strlen(inFile) + 256));
   strcpy(outFile, inFile);
 
+  // check for UAVSAR
+  int uavsar = FALSE;
+  meta_parameters *meta = meta_read(inFile_in);
+  if (strcmp_case(meta->general->sensor, "UAVSAR") == 0)
+    uavsar = TRUE;
+  meta_free(meta);
+
   if (cfg->general->external) {
     
     update_status("Running external program...");
@@ -2457,7 +2464,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
   
   if ((cfg->general->calibration && !cfg->general->polarimetry) ||
       cfg->polarimetry->freeman_durden ||
-      cfg->polarimetry->pauli ||
+      (cfg->polarimetry->pauli && !uavsar) ||
       cfg->polarimetry->cloude_pottier ||
       cfg->polarimetry->cloude_pottier_ext ||
       cfg->polarimetry->cloude_pottier_nc) {
