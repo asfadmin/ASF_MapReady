@@ -549,7 +549,8 @@ void fileRename(const char *src, const char *dst)
 {
     // FIXME
     // asfSystem("mv %s %s", src, dst);
-    unlink(dst);
+    if (fileExists(src) && fileExists(dst))
+      unlink(dst);
     rename(src, dst);
 }
 
