@@ -2456,7 +2456,11 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
   }
   
   if ((cfg->general->calibration && !cfg->general->polarimetry) ||
-      cfg->polarimetry->freeman_durden) {
+      cfg->polarimetry->freeman_durden ||
+      cfg->polarimetry->pauli ||
+      cfg->polarimetry->cloude_pottier ||
+      cfg->polarimetry->cloude_pottier_ext ||
+      cfg->polarimetry->cloude_pottier_nc) {
     update_status("Applying calibration parameters...");
     
     // Generate filenames
