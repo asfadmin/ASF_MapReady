@@ -1365,12 +1365,6 @@ static int check_config(const char *configFileName, convert_config *cfg)
     free(RAW_file); free(LDR_file);
   }
 
-  // Check for PolSARPro matrix processing
-  if (strcmp_case(cfg->import->format, "POLSARPRO") == 0 &&
-      strcmp_case(cfg->import->radiometry, "AMPLITUDE_IMAGE") != 0)
-    asfPrintError("No changes in radiometry allowed when processing PolSARPro "
-		  "matrices\n");
-
   // Check whether everything in the [Import] block is reasonable
   if (cfg->general->import) {
     
