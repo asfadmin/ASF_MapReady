@@ -710,8 +710,13 @@ float *incid_init(meta_parameters *meta)
 float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
                  float inDn, char *bandExt, int dbFlag)
 {
-  double scaledPower, calValue, invIncAngle;
+  double scaledPower=0, calValue=0, invIncAngle=1;
   radiometry_t radiometry = meta->general->radiometry;
+
+  if (!meta->calibration) {
+    asfPrintWarning("Called get_cal_dn with no calibration block!\n");
+    return 0;
+  }
 
   // Calculate according to the calibration data type
   if (meta->calibration->type == asf_cal) { // ASF style data (PP and SSP)
@@ -836,7 +841,9 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       cf = p->cf_vh;
     else if (strstr(bandExt, "VV"))
       cf = p->cf_vv;
-    
+    else
+      cf = p->cf_hh;
+ 
     scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
   }
   else if (meta->calibration->type == tsx_cal) { // TerraSAR-X data
@@ -887,7 +894,7 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
   meta->general->radiometry = r_SIGMA;
   double incid = meta_incid(meta, line, sample);
   double sigma = get_cal_dn(meta, incid, sample, inDn, bandExt, FALSE);
-  double calValue, invIncAngle;
+  double calValue=0, invIncAngle=1;
 
   // Calculate according to the calibration data type
   if (meta->calibration->type == asf_cal) { // ASF style data (PP and SSP)
@@ -975,7 +982,9 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
       cf = p->cf_vh;
     else if (strstr(bandExt, "VV"))
       cf = p->cf_vv;
-    
+    else
+      cf = p->cf_hh;
+ 
     //scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
     calValue = sqrt(sigma * radCorr / pow(10, cf/10.0));
   }
@@ -993,7 +1002,7 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
 float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt, 
 	      float calValue)
 {
-  double scaledPower, ampValue, invIncAngle;
+  double scaledPower=0, ampValue=0, invIncAngle=1;
   radiometry_t radiometry = meta->general->radiometry;
 
   if (radiometry >= r_SIGMA_DB && radiometry <= r_BETA_DB)
@@ -1124,7 +1133,9 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
       cf = p->cf_vh;
     else if (strstr(bandExt, "VV"))
       cf = p->cf_vv;
-    
+    else
+      cf = p->cf_hh;
+ 
     //scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
     ampValue = sqrt(scaledPower / invIncAngle / pow(10, cf/10.0));
   }
