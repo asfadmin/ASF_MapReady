@@ -26,6 +26,30 @@ EXAMPLE 2:  Install ASF tools to a folder "local" in your home directory:
     make
     make install
 
+#########################################################################
+Prerequisites:
+
+The ASF Tools depend on a number of libraries that you'll need to have
+installed on your system. In the list below, some of the listed packages
+will have additional dependencies that your package management system
+should automatically pull in.
+
+These are names on Ubuntu systems.  On CentOS, a few of the names are
+different.  On other systems, the packages may have different names.
+
+  * bulid-essential
+  * gcc
+  * gcc-c++
+  * pkgconfig
+  * bison
+  * flex
+  * libgtk2.0-dev (gtk2-devel on CentOS)
+  * libglade2-dev (libglade2-devel on CentOS)
+  * gettext
+  * zlib1g-dev
+  * libgsl0-dev
+  * libgsl0ldb
+
 
 #########################################################################
 INTRODUCTION:
