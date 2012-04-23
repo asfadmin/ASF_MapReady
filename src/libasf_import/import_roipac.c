@@ -101,7 +101,7 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
     else if (strcmp_case(field, "PLATFORM")==0)
       strcpy(meta->general->sensor, value);
     else if (strcmp_case(field, "BEAM")==0)
-      strcpy(meta->general->mode, value);
+      strcpy(meta->general->mode, "InSAR");
     // calculate this from the state vectors instead, if we can
     else if (sv_file == NULL && strcmp_case(field, "HEIGHT_TOP")==0)
       meta->sar->satellite_height = atof(value);
@@ -729,7 +729,7 @@ void import_roipac(const char *basename_in, const char *outFile)
 
 /*-----------------------------------------------------------------*/
 
-#define STATE_VECTOR_FORMAT "%f %f %f %f %f %f %f"
+#define STATE_VECTOR_FORMAT "%lf %lf %lf %lf %lf %lf %lf"
 #define OUTPUT_FORMAT "%f %f %f %f %f %f"
 
 
