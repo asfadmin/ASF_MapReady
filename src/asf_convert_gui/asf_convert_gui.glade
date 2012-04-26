@@ -882,14 +882,6 @@
 								</widget>
 							      </child>
 
-							      <child>
-								<widget class="GtkMenuItem" id="power">
-								  <property name="visible">True</property>
-								  <property name="label" translatable="yes">Power</property>
-								  <property name="use_underline">True</property>
-								  <signal name="activate" handler="on_input_data_type_power_activate" last_modification_time="Thu, 30 Mar 2006 07:18:25 GMT"/>
-								</widget>
-							      </child>
 							    </widget>
 							  </child>
 							</widget>
