@@ -156,7 +156,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
 
       // Top left zone
       double lat;
-      if (meta->location)
+      if (meta->location && meta_is_valid_double(meta->location->lon_start_near_range))
           lon = meta->location->lon_start_near_range;
       else
           meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
@@ -165,7 +165,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       if (zone > max_zone) max_zone = zone;
 
       // Top right zone
-      if (meta->location)
+      if (meta->location && meta_is_valid_double(meta->location->lon_start_far_range))
           lon = meta->location->lon_start_far_range;
       else
           meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0,
@@ -175,7 +175,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       if (zone > max_zone) max_zone = zone;
 
       // Bottom left zone
-      if (meta->location)
+      if (meta->location && meta_is_valid_double(meta->location->lon_end_near_range))
           lon = meta->location->lon_end_near_range;
       else
           meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0,
@@ -185,7 +185,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       if (zone > max_zone) max_zone = zone;
 
       // Bottom right zone
-      if (meta->location)
+      if (meta->location && meta_is_valid_double(meta->location->lon_end_far_range))
           lon = meta->location->lon_end_far_range;
       else
           meta_get_latLon(meta, meta->general->line_count - 1,
