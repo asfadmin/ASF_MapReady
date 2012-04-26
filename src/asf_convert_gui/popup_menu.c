@@ -1001,10 +1001,12 @@ handle_view_input()
     {
         gchar * in_name;
         gchar * polsarpro_aux_info;
+        gchar * uavsar_type;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                            COL_INPUT_FILE, &in_name,
                            COL_POLSARPRO_INFO, &polsarpro_aux_info,
+                           COL_UAVSAR_TYPE, &uavsar_type,
                            -1);
 
         if (polsarpro_aux_info && strlen(polsarpro_aux_info)>0) {
@@ -1020,11 +1022,56 @@ handle_view_input()
           if (lut_name)
             free(lut_name);
         }
+        else if (uavsar_type && strlen(uavsar_type)) {
+          // for UAVSAR, open up the HHHH file for MLC and GRD
+          if (strcmp_case(uavsar_type, "HGT") == 0)
+          {
+            char *name = appendExt(in_name, lc(uavsar_type));
+            show_image_with_asf_view(name);
+            FREE(name);
+          }
+          else if (strcmp_case(uavsar_type, "MLC") == 0 ||
+                   strcmp_case(uavsar_type, "GRD") == 0)
+          {
+            FILE *fp = fopen(in_name, "r");
+            char *file_to_view = NULL;
+            if (fp) {
+              char line[1024], key[1024], value[1024];
+              while (fgets(line, 1024, fp)) {
+                if (!parse_annotation_line(line, key, value)) {
+                  asfPrintWarning("Unable to parse line in annotation file: %s\n", line);
+                  continue;
+                }
+                if (strcmp(key, "") == 0)
+                  continue;
+                if ((strcmp(key, "mlcHHHH") == 0 && strcmp_case(uavsar_type, "MLC") == 0) ||
+                    (strcmp(key, "grdHHHH") == 0 && strcmp_case(uavsar_type, "GRD") == 0))
+                {
+                  file_to_view = STRDUP(value);
+                  break;
+                }
+              }
+              fclose(fp);
+            }
+            if (file_to_view) {
+              show_image_with_asf_view(file_to_view);
+              FREE(file_to_view);
+            }
+          }
+          else if (strcmp_case(uavsar_type, "DAT") == 0) {
+            asfPrintWarning("Viewing of UAVSAR .DAT files not supportd.\n");
+            message_box("Viewing of UAVSAR .DAT files is not supported.\n");
+          }
+          else {
+            asfPrintWarning("Unknown UAVSAR type: %s\n", uavsar_type);
+          }
+        }
         else
           show_image_with_asf_view(in_name);
 
         g_free(in_name);
         g_free(polsarpro_aux_info);
+        g_free(uavsar_type);
     }
     else
     {
