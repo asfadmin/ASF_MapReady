@@ -1029,6 +1029,7 @@ typedef struct {
 } latlon_pixel;
 
 // Prototypes for meta2uavsar.c
+int parse_annotation_line(char *line, char *key, char *value);
 meta_parameters* uavsar_polsar2meta(uavsar_polsar *params);
 meta_parameters* uavsar_insar2meta(uavsar_insar *params);
 

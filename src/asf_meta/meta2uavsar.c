@@ -710,6 +710,10 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
     meta->general->center_longitude = params->cross_track_offset +
       params->range_pixel_spacing * params->column_count / 2.0;
   }
+  else {
+    meta_get_latLon(meta, meta->general->line_count/2, meta->general->sample_count/2, 0,
+                    &meta->general->center_latitude, &meta->general->center_longitude);
+  }
 
   return meta;
 }
