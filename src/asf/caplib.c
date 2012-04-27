@@ -313,17 +313,22 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
     if (ret < nitems)
     {
         if (feof(stream)) {
-            sprintf(error_message,
+           
+            if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT) {
+              sprintf(error_message,
                 "*****  ERROR!  Read past end of file! *******\n"
                 "* \n"
                 "*    This program tried to read %d bytes past\n"
                 "* the end of file stream %p.  You might want to\n"
                 "* check any image-size related parameters you passed\n"
-                "* to the program.\n",
+                "* to the program.\n"
+                "**    Program terminating... Attempted read past end of file.\n",
                 (int)(size*nitems),stream);
-
-            if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
-                strcat(error_message, "**    Program terminating... Attempted read past end of file.\n");
+            } else {
+              sprintf(error_message,
+                "Warning: Read past end of file (%d bytes on file stream %p)\n",
+                (int)(size*nitems),stream);
+            }
 
             fprintf(stderr,"%s",error_message);
             if (fLog!=NULL)
@@ -333,6 +338,8 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
                 exit(204);
             else
                 return ret;
+
+            // not reached
             fprintf(stderr, "%s",error_message);
             exit(204);
         }
