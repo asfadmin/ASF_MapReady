@@ -225,7 +225,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
     //  amp0_flag = FALSE;
     //}
     //else {
-      ++nBandsOut;
+      nBandsOut = 1;
     //}
   }
 
@@ -1115,7 +1115,7 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
   else
     strcpy(radiometryStr, "");
 
-  if (band==1 && (nBandsOut == nBands+1) && radiometry==r_AMP) {
+  if (band==1 && nBandsOut==1 && radiometry==r_AMP) {
     // This is the "-amp0" case
     sprintf(bandStr, "AMP");
   }
