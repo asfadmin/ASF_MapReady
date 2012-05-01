@@ -293,8 +293,8 @@ void uavsar_to_latlon(meta_parameters *meta,
     // convenience aliases
     double c0 = meta->uavsar->cross_track_offset;
     double s0 = meta->uavsar->along_track_offset;
-    double ypix = meta->general->y_pixel_size;
-    double xpix = meta->general->x_pixel_size;
+    double ypix = meta->general->y_pixel_size/meta->general->line_scaling;
+    double xpix = meta->general->x_pixel_size/meta->general->sample_scaling;
 
     // radar coordinates
     double c_lat = (xSample*xpix+c0)/ra;
