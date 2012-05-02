@@ -162,17 +162,6 @@ Once "configure" completes, you should see something like this:
 
 The ASF tools Makefile is now fully prepared.
 
-To build the tools, type 'make'.
-To install the tools, type 'make install'.
-
-The tools will be installed in this location:
-  /usr/local
-
-########### Build system is now configured  ############
-
-You should see whatever you put in as the installation directory above.
-
-
 2.  COMPILE THE SOFTWARE
 
 To compile, type "make":
