@@ -69,43 +69,27 @@ exit the shell and log back in (or open a new terminal window, etc)
 ##############################################################################
 DOCUMENTATION:
 
-All of our newer tools feature built-in documentation.  Just use the tool name,
-followed by the '-help' flag, like for example this:
+The MapReady manual is in the 'doc' subdirectory.  It is a .PDF file, and
+can be read with any pdf viewer.  It is 'mapready_manual.pdf'.
+
+All of the command-line tools feature built-in documentation.  Just use
+the tool name, followed by the '-help' flag, for example:
 
      asf_import -help
 
-
-In the case a 'man' directory is present, you will need to add the asf_tools/man 
-directory to your MANPATH environment variable. For example, if you installed 
-the ASF Tools in your home directory, the MANPATH variable should have 
-<your_home_directory>/asf_tools/man added to it. The exact way you do this 
-depends on which UNIX shell you're using:
-
-sh/ksh/bash-- add these lines to your ~/.profile or ~/.bashrc file
-        MANPATH=/user1/yourName/asf_tools/man:$MANPATH
-        export MANPATH
-
-(sh/tcsh-- add this line to your ~/.cshrc file
-        setenv MANPATH /user1/yourName/asf_tools/man:$MANPATH
-
-As above (in INSTALLATION), you will need to restart your environment by
-logging out/in or closing the terminal window and opening a new one etc.
-
-If the above worked, you should be able to type:
-        man <tool_name>
-and get a few pages of information about each tool you've downloaded.
-
-
+The command-line tools are all described briefly in the MapReady manual,
+the complete documentation for each tool is available with -help.
 ##############################################################################
 OTHER HELP:
 
 1. Our web page at http://www.asf.alaska.edu has all the ASF software we offer, 
 tutorials, further contacts, and more.
 
-2. In the <your_directory>/asf_tools/doc directory, you will find manuals for
+2. There are also extensive tutorials available at the ASF website,
+describing how to perform some common use cases involving MapReady and
+other ASF Tools.
+
+3. In the <your_directory>/asf_tools/doc directory, you will find manuals for
 the tools that you have installed, i.e. Convert2Vector, MapReady, the SAR
-Training Processor, etcetera.  In addition, depending on which software package
-you downloaded, you will also find help documents describing how to create
-a (water) mask with ArcGIS tools and a how-to on using digital elevation maps
-(DEMs) for terrain correction (removal of SAR geometry effects).
+Training Processor, etcetera. 
 
