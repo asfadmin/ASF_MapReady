@@ -26,6 +26,8 @@
 #include "asf_jpeg.h"
 #include "float_image.h"
 
+double gsl_spline_eval_check(gsl_spline *, double, gsl_interp_accel *);
+
 #ifndef linux
 #ifndef darwin
 #ifndef win32
