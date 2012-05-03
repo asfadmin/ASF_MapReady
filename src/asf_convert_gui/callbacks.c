@@ -1546,8 +1546,6 @@ SIGNAL_CALLBACK void
 on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *entry)
 {
   const gchar *filename = gtk_entry_get_text(GTK_ENTRY(entry));
-  GtkWidget *polsar_frame = get_widget_checked("uavsar_polsar_select_frame");
-  GtkWidget *insar_frame = get_widget_checked("uavsar_insar_select_frame");
 
   GList *l, *uavsar_types_checkboxes = get_widgets_prefix_checked("uavsar_proc_type");
   for(l = uavsar_types_checkboxes; l; l = l->next)
@@ -1560,11 +1558,11 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
   }
   g_list_free(uavsar_types_checkboxes);
 
-  gtk_widget_set_sensitive(polsar_frame, FALSE);
-  gtk_widget_set_sensitive(insar_frame, FALSE);
+  enable_widget("uavsar_polsar_select_frame", FALSE);
+  enable_widget("uavsar_insar_select_frame", FALSE);
   if(fileExists(filename)) {
     if(is_uavsar_polsar(filename)) {
-      gtk_widget_set_sensitive(polsar_frame, TRUE);
+      enable_widget("uavsar_polsar_select_frame", TRUE);
 
       char *types[4] = {"MLC", "HGT", "GRD", "DAT"};
       char **dataName, **element;
@@ -1574,9 +1572,8 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
         if(nBands) {
           GString *checkbutton_name = g_string_new(types[i]);
           g_string_prepend(checkbutton_name, "uavsar_proc_type_");
-          GtkWidget *checkbutton = get_widget_checked(checkbutton_name->str);
-          gtk_widget_set_sensitive(checkbutton, TRUE);
-          gtk_widget_set_sensitive(get_widget_checked("uavsar_polsar_all_proc_types"), TRUE);
+          enable_widget(checkbutton_name->str, TRUE);
+          enable_widget("uavsar_polsar_all_proc_types", TRUE);
           for(j = 0; j < nBands; j++) {
             FREE(dataName[j]);
             FREE(element[j]);
@@ -1589,7 +1586,7 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
       }
     }
     else if(is_uavsar_insar(filename)) {
-      gtk_widget_set_sensitive(insar_frame, TRUE);
+      enable_widget("uavsar_insar_select_frame", TRUE);
 
       char *types[9] = {"AMP", "AMP_GRD", "INT", "INT_GRD", "UNW", "UNW_GRD", "COR", "COR_GRD", "HGT_GRD"};
       char **dataName, **element;
@@ -1599,9 +1596,8 @@ on_add_file_with_ancillary_uavsar_annotation_file_entry_changed(GtkEditable *ent
         if(nBands) {
           GString *checkbutton_name = g_string_new(types[i]);
           g_string_prepend(checkbutton_name, "uavsar_proc_type_");
-          GtkWidget *checkbutton = get_widget_checked(checkbutton_name->str);
-          gtk_widget_set_sensitive(get_widget_checked("uavsar_insar_all_proc_types"), TRUE);
-          gtk_widget_set_sensitive(checkbutton, TRUE);
+          enable_widget(checkbutton_name->str, TRUE);
+          enable_widget("uavsar_insar_all_proc_types", TRUE);
           for(j = 0; j < nBands; j++) {
             FREE(dataName[j]);
             FREE(element[j]);
