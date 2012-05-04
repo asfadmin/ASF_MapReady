@@ -64,10 +64,13 @@ int check_file(const char *path, char *line, char **fileName)
   strcat(*fileName, trimmed_file);
   FREE(file);
   FREE(trimmed_file);
-  p = strchr(line, ';');
-  long long size;
-  sscanf(p+12, "%lld", &size);
-  if (fileExists(*fileName) && fileSize(*fileName) == size)
+  //  Removing size check-- will confuse user if they have file with
+  //  the wrong size, better to let them process and have it fail with
+  //  "read past end of file" error.
+  //p = strchr(line, ';');
+  //long long size;
+  //sscanf(p+12, "%lld", &size);
+  if (fileExists(*fileName)) // && fileSize(*fileName) == size)
     return TRUE;
   else
     return FALSE;
