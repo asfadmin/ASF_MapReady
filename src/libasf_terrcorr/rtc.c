@@ -6,6 +6,46 @@
 #include <string.h>
 #include "vector.h"
 
+static char *matrix[32] = 
+  {"T11","T12_real","T12_imag","T13_real","T13_imag","T14_real","T14_imag",
+   "T22","T23_real","T23_imag","T24_real","T24_imag","T33","T34_real",
+   "T34_imag","T44","C11","C12_real","C12_imag","C13_real","C13_imag",
+   "C14_real","C14_imag","C22","C23_real","C23_imag","C24_real","C24_imag",
+   "C33","C34_real","C34_imag","C44"};
+
+static char *decomposition[31] = 
+  {"Freeman2_Ground","Freeman2_Vol","Freeman_Dbl","Freeman_Odd","Freeman_Vol",
+   "VanZyl3_Dbl","VanZyl3_Odd","VanZyl3_Vol","Yamaguchi3_Dbl","Yamaguchi3_Odd",
+   "Yamaguchi3_Vol","Yamaguchi4_Dbl","Yamaguchi4_Hlx","Yamaguchi4_Odd",
+   "Yamaguchi4_Vol","Krogager_Kd","Krogager_Kh","Krogager_Ks","TSVM_alpha_s1",
+   "TSVM_alpha_s2","TSVM_alpha_s3","TSVM_phi_s1","TSVM_phi_s2","TSVM_phi_s3",
+   "TSVM_tau_m1","TSVM_tau_m2","TSVM_tau_m3","TSVM_psi1","TSVM_psi2",
+   "TSVM_psi3","TSVM_alpha_s","TSVM_phi_s","TSVM_tau_m","TSVM_psi"};
+
+static int isMatrixElement(char *bandExt)
+{
+  int ii, found=FALSE;
+
+  for (ii=0; ii<32; ii++) {
+    if (strcmp_case(matrix[ii], bandExt) == 0)
+      found = TRUE;
+  }
+  
+  return found;
+}
+
+static int isDecomposition(char *bandExt)
+{
+  int ii, found=FALSE;
+
+  for (ii=0; ii<31; ii++) {
+    if (strcmp_case(decomposition[ii], bandExt) == 0)
+      found = TRUE;
+  }
+  
+  return found;
+}
+
 static void geodetic_to_ecef(double lat, double lon, double h, Vector *v)
 {
   const double a = 6378144.0;    // GEM-06 Ellipsoid.
@@ -245,13 +285,25 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   // (corr[jj] == 1 for the whole row)
   for(kk = 0; kk < nb; ++kk) {
     get_band_float_line(fpIn, meta_in, kk, 0, bufIn);
-    for (jj=0; jj<ns; ++jj)
-      bufOut[jj] = get_rad_cal_dn(meta_in, 0, jj, bands[kk], bufIn[jj], corr[jj]);
+    if (strstr(bands[kk], "PHASE") != NULL) {
+      for (jj=0; jj<ns; ++jj)
+	bufOut[jj] = bufIn[jj];
+    }
+    else if (isMatrixElement(bands[kk]) || isDecomposition(bands[kk])) {
+      for (jj=0; jj<ns; ++jj)
+	bufOut[jj] = bufIn[jj]*corr[jj];
+    }
+    else {
+      for (jj=0; jj<ns; ++jj)
+	bufOut[jj] = 
+	  get_rad_cal_dn(meta_in, 0, jj, bands[kk], bufIn[jj], corr[jj]);
+    }
     put_band_float_line(fpOut, meta_out, kk, 0, bufOut);
   }
 
   for(ii = 1; ii < nl - 1; ++ii) {
-    push_next_vector_line(localVectors, nextVectors, meta_dem, meta_in, dem_fp, ii + 1);
+    push_next_vector_line(localVectors, nextVectors, meta_dem, meta_in, dem_fp,
+			  ii + 1);
     corr[0] = corr[ns-1] = 1;
     Vector satpos = get_satpos(meta_in, ii);
     incid_angles[0] = incid_angles[nl-1] = 0;
@@ -260,7 +312,9 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     for(jj = 1; jj < ns - 1; ++jj) {
       incid_angles[jj] = meta_incid(meta_in, ii, jj);
       Vector * normal = calculate_normal(localVectors, jj);
-      corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, localVectors[1][jj], &nextVectors[jj], incid_angles[jj]);
+      corr[jj] = calculate_correction(meta_in, ii, jj, &satpos, normal, 
+				      localVectors[1][jj], &nextVectors[jj], 
+				      incid_angles[jj]);
       vector_free(normal);
     }
 
@@ -281,10 +335,16 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
         for (jj=0; jj<ns; ++jj)
           bufOut[jj] = bufIn[jj];
       }
+      // correct matrix element without applying calibration parameters
+      else if (isMatrixElement(bands[kk]) || isDecomposition(bands[kk])) {
+	for (jj=0; jj<ns; ++jj)
+	  bufOut[jj] = bufIn[jj]*corr[jj];
+      }
       // amplitude, or complex I or Q -- apply the radiometric correction
       else {
         for (jj=0; jj<ns; ++jj)
-          bufOut[jj] = get_rad_cal_dn(meta_in, ii, jj, bands[kk], bufIn[jj], corr[jj]);
+          bufOut[jj] = 
+	    get_rad_cal_dn(meta_in, ii, jj, bands[kk], bufIn[jj], corr[jj]);
       }
 
       // write out the corrected line
@@ -298,8 +358,19 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   // line's correction factors
   for(kk = 0; kk < nb; ++kk) {
     get_band_float_line(fpIn, meta_in, kk, nl-1, bufIn);
-    for (jj=0; jj<ns; ++jj)
-      bufOut[jj] = get_rad_cal_dn(meta_in, nl-1, jj, bands[kk], bufIn[jj], corr[jj]);
+    if (strstr(bands[kk], "PHASE") != NULL) {
+      for (jj=0; jj<ns; ++jj)
+	bufOut[jj] = bufIn[jj];
+    }
+    else if (isMatrixElement(bands[kk]) || isDecomposition(bands[kk])) {
+      for (jj=0; jj<ns; ++jj)
+	bufOut[jj] = bufIn[jj]*corr[jj];
+    }
+    else {
+      for (jj=0; jj<ns; ++jj)
+	bufOut[jj] = 
+	  get_rad_cal_dn(meta_in, nl-1, jj, bands[kk], bufIn[jj], corr[jj]);
+    }
     put_band_float_line(fpOut, meta_out, kk, nl-1, bufIn);
   }
 

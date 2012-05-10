@@ -16,6 +16,7 @@ SOURCES := asf_export.c \
 	export_band.c \
 	export_netcdf.c \
 	export_hdf.c \
+	export_polsarpro.c \
 	export_as_envi.c \
 	export_as_esri.c \
 	util.c \

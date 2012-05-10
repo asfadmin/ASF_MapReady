@@ -161,33 +161,21 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                         &nouts, &outs);
   }
   else if ( format == POLSARPRO_HDR ) {
-      //in_data_name = appendExt(in_base_name, ".img");
-      //in_meta_name = appendExt(in_base_name, ".meta");
-      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
-      strcpy(out_name, output_name);
-      export_band_image(in_meta_name, in_data_name, out_name,
-			NONE, band_name, rgb,
-			true_color, false_color,
-			look_up_table_name, POLSARPRO_HDR,
-			&nouts, &outs);
+    out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+    strcpy(out_name, output_name);
+    export_polsarpro(in_meta_name, in_data_name, out_name, &nouts, &outs);
   }
   else if ( format == HDF ) {
-      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
-      strcpy(out_name, output_name);
-      export_band_image(in_meta_name, in_data_name, out_name,
-			NONE, band_name, rgb,
-			true_color, false_color,
-			look_up_table_name, HDF,
-			&nouts, &outs);
+    out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+    strcpy(out_name, output_name);
+    export_hdf(in_meta_name, in_data_name, out_name, band_name, 
+	       &nouts, &outs);
   }
   else if ( format == NC ) {
-      out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
-      strcpy(out_name, output_name);
-      export_band_image(in_meta_name, in_data_name, out_name,
-			NONE, band_name, rgb,
-			true_color, false_color,
-			look_up_table_name, NC,
-			&nouts, &outs);
+    out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
+    strcpy(out_name, output_name);
+    export_netcdf(in_meta_name, in_data_name, out_name, band_name,
+		  &nouts, &outs);
   }
 
   if (should_write_insar_rgb(md->general->bands)) {

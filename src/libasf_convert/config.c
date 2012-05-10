@@ -597,7 +597,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->save_incid_angles = 0;
 
   cfg->calibrate->radiometry = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->calibrate->radiometry, "AMPLITUDE");
+  strcpy(cfg->calibrate->radiometry, "AMPLITUDE_IMAGE");
   cfg->calibrate->wh_scale = 0;
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*1024);

@@ -24,7 +24,6 @@
 #include <float_image.h>
 #include <spheroids.h>
 #include <typlim.h>
-#include <hdf5.h>
 #include <netcdf.h>
 
 #define RES 16
@@ -457,19 +456,19 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
   // Define variables and data attributes
   char **band_name = extract_band_names(meta->general->bands, band_count);
   int dims_bands[3];
-  dims_bands[0] = dim_time_id;
+  dims_bands[2] = dim_time_id;
   if (projected) {
-    dims_bands[1] = dim_ygrid_id;
-    dims_bands[2] = dim_xgrid_id;
+    dims_bands[0] = dim_ygrid_id;
+    dims_bands[1] = dim_xgrid_id;
   }
   else {
-    dims_bands[1] = dim_lon_id;
-    dims_bands[2] = dim_lat_id;
+    dims_bands[0] = dim_lon_id;
+    dims_bands[1] = dim_lat_id;
   }
 
   for (ii=0; ii<band_count; ii++) {
     
-    sprintf(str, "%s_AMPLITUDE_IMAGE", band_name[ii]);
+    sprintf(str, "%s", band_name[ii]);
     nc_def_var(ncid, str, datatype, 3, dims_bands, &var_id);
     netcdf->var_id[ii] = var_id;
     nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
@@ -576,8 +575,8 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 
     // ygrid
     ii++;
-    int dims_ygrid[1] = { dim_ygrid_id };
-    nc_def_var(ncid, "ygrid", NC_FLOAT, 1, dims_ygrid, &var_id);
+    int dims_ygrid[2] = { dim_ygrid_id, dim_xgrid_id };
+    nc_def_var(ncid, "ygrid", NC_FLOAT, 2, dims_ygrid, &var_id);
     netcdf->var_id[ii] = var_id;
     nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
     strcpy(str, "projection_y_coordinates");
@@ -591,8 +590,8 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
 
     // xgrid
     ii++;
-    int dims_xgrid[1] = { dim_xgrid_id };
-    nc_def_var(ncid, "xgrid", NC_FLOAT, 1, dims_xgrid, &var_id);
+    int dims_xgrid[2] = { dim_ygrid_id, dim_xgrid_id };
+    nc_def_var(ncid, "xgrid", NC_FLOAT, 2, dims_xgrid, &var_id);
     netcdf->var_id[ii] = var_id;
     nc_def_var_deflate(ncid, var_id, 0, 1, 6);    
     strcpy(str, "projection_x_coordinates");
@@ -972,4 +971,44 @@ void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md)
     asfPrintError("Could not close netCDF file (%s).\n", nc_strerror(status));
   FREE(netcdf->var_id);
   FREE(netcdf);
+}
+
+void export_netcdf(const char *metadata_file_name, 
+		   const char *image_data_file_name,
+		   char *output_file_name, char **band_name,
+		   int *noutputs,char ***output_names)
+{
+  int ii, jj, kk, channel;
+
+  meta_parameters *md = meta_read (metadata_file_name); 
+  append_ext_if_needed(output_file_name, ".nc", NULL);
+  netcdf_t *netcdf = initialize_netcdf_file(output_file_name, md);
+  int band_count = md->general->band_count;
+  int sample_count = md->general->sample_count;
+  int line_count = md->general->line_count;
+  float *nc = (float *) MALLOC(sizeof(float)*line_count*sample_count);
+  FILE *fp = FOPEN(image_data_file_name, "rb");
+  float *float_line = (float *) MALLOC(sizeof(float)*sample_count);
+
+  for (kk=0; kk<band_count; kk++) {
+    for (ii=0; ii<line_count; ii++ ) {
+      channel = get_band_number(md->general->bands, band_count, band_name[kk]);
+      get_float_line(fp, md, ii+channel*line_count, float_line);
+      for (jj=0; jj<sample_count; jj++)
+	nc[ii*sample_count+jj] = float_line[jj];
+      asfLineMeter(ii, md->general->line_count);
+    }
+    asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
+    nc_put_var_float(netcdf->ncid, netcdf->var_id[kk], &nc[0]);
+  }
+
+  finalize_netcdf_file(netcdf, md);
+  FREE(nc);
+  FREE(float_line);
+  meta_free(md);
+
+  *noutputs = 1;
+  char **outs = MALLOC(sizeof(char*));
+  outs[0] = STRDUP(output_file_name);
+  *output_names = outs;  
 }

@@ -207,10 +207,26 @@ int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta
 netcdf_t *initialize_netcdf_file(const char *output_file, 
 				 meta_parameters *meta);
 void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md);
+void export_netcdf(const char *metadata_file_name, 
+		   const char *image_data_file_name,
+		   char *output_file_name, char **band_name,
+		   int *noutputs,char ***output_names);
 
 // Prototypes from export_hdf.c
 h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md);
 void finalize_h5_file(h5_t *hdf);
+void export_hdf(const char *metadata_file_name, 
+		const char *image_data_file_name,
+		char *output_file_name, char **band_name,
+		int *noutputs,char ***output_names);
+
+// Prototypes from export_polsarpro.c
+void initialize_polsarpro_file(const char *output_file_name,
+			       meta_parameters *meta, FILE **fpOut);
+void export_polsarpro(const char *metadata_file_name,
+		      const char *image_data_file_name,
+		      char *output_file_name,
+		      int *noutputs, char ***output_names);
 
 // Prototypes from key.c
 double spheroid_diff_from_axis (spheroid_type_t spheroid,

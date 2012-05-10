@@ -142,7 +142,7 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
   hid_t h5_array, h5_string, h5_time, h5_lat, h5_lon, h5_xgrid, h5_ygrid;
   int ii, kk, complex=FALSE, projected=FALSE;
   char *spatial_ref=NULL, *datum=NULL, *spheroid=NULL;
-  char dataset[50], group[50], band[5], str_attr[50], tmp[50];
+  char dataset[50], group[50], str_attr[50], tmp[50];
   double fValue;
 
   // Convenience variables
@@ -450,9 +450,7 @@ h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md)
   for (ii=0; ii<band_count; ii++) {
 
     // Create data set
-    strncpy(band, band_name[ii], 2);
-    band[2] = '\0';
-    sprintf(dataset, "/data/%s_AMPLITUDE_IMAGE", band);
+    sprintf(dataset, "/data/%s", band_name[ii]);
     h5_data = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
 			H5P_DEFAULT, h5_plist, H5P_DEFAULT);
     h5->var[ii] = h5_data;
@@ -884,4 +882,48 @@ void finalize_h5_file(h5_t *hdf)
   // Clean up
   FREE(hdf->var);
   FREE(hdf);
+}
+
+void export_hdf(const char *metadata_file_name, 
+		const char *image_data_file_name,
+		char *output_file_name, char **band_name,
+		int *noutputs,char ***output_names)
+{
+  int ii, jj, kk, channel;
+
+  meta_parameters *md = meta_read (metadata_file_name); 
+  append_ext_if_needed(output_file_name, ".h5", NULL);
+  h5_t *h5 = initialize_h5_file(output_file_name, md);
+  int band_count = md->general->band_count;
+  int sample_count = md->general->sample_count;
+  int line_count = md->general->line_count;
+  float *hdf = (float *) MALLOC(sizeof(float)*line_count*sample_count);
+  FILE *fp = FOPEN(image_data_file_name, "rb");
+  float *float_line = (float *) MALLOC(sizeof(float)*sample_count);
+
+  for (kk=0; kk<band_count; kk++) {
+    for (ii=0; ii<line_count; ii++ ) {
+      channel = get_band_number(md->general->bands, band_count, band_name[kk]);
+      get_float_line(fp, md, ii+channel*line_count, float_line);
+      for (jj=0; jj<sample_count; jj++)
+	hdf[ii*sample_count+jj] = float_line[jj];
+      asfLineMeter(ii, line_count);
+    }
+    asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
+    char dataset[50];
+    sprintf(dataset, "/data/%s", band_name[kk]);
+    hid_t h5_data = H5Dopen(h5->file, dataset, H5P_DEFAULT);
+    H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, hdf);
+    H5Dclose(h5_data);
+  }
+
+  finalize_h5_file(h5);
+  FREE(hdf);
+  FREE(float_line);
+  meta_free(md);
+
+  *noutputs = 1;
+  char **outs = MALLOC(sizeof(char*));
+  outs[0] = STRDUP(output_file_name);
+  *output_names = outs;  
 }

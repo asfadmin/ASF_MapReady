@@ -24,7 +24,6 @@
 #include <float_image.h>
 #include <spheroids.h>
 #include <typlim.h>
-#include <netcdf.h>
 
 #define PGM_MAGIC_NUMBER    "P5"
 #ifdef  MAX_RGB
@@ -134,10 +133,6 @@ static char *format2str(output_format_t format)
     strcpy(format2str_buf, "KML");
   else if (format == POLSARPRO_HDR)
     strcpy(format2str_buf, "POLSARPRO with ENVI header");
-  else if (format == HDF)
-    strcpy(format2str_buf, "HDF5");
-  else if (format == NC)
-    strcpy(format2str_buf, "netCDF");
   else
     strcpy(format2str_buf, MAGIC_UNSET_STRING);
  
@@ -434,29 +429,6 @@ void initialize_pgm_file(const char *output_file_name,
   fprintf (*opgm, "%ld\n", (long int) meta->general->line_count);
   fprintf (*opgm, "%d\n", max_color_value);
 
-  return;
-}
-
-void initialize_polsarpro_file(const char *output_file_name,
-			       meta_parameters *meta, FILE **ofp)
-{
-  *ofp = FOPEN(output_file_name, "wb");
-  
-  char *output_header_file_name = 
-    (char *) MALLOC(sizeof(char) * strlen(output_file_name) + 5);
-  sprintf(output_header_file_name, "%s.hdr", output_file_name);
-  char *band_name = get_filename(output_file_name);
-  envi_header *envi = meta2envi(meta);
-  envi->bands = 1;
-  char *band = stripExt(band_name);
-  strcpy(envi->band_name, band_name);
-  envi->byte_order = 0; // PolSARPro data is little endian by default
-  write_envi_header(output_header_file_name, output_file_name, meta, envi);
-  FREE(output_header_file_name);
-  FREE(band_name);
-  FREE(band);
-  FREE(envi);
-  
   return;
 }
 
@@ -1351,10 +1323,6 @@ export_band_image (const char *metadata_file_name,
   struct jpeg_compress_struct cinfo;
   png_structp png_ptr;
   png_infop png_info_ptr;
-  h5_t *h5=NULL;
-  netcdf_t *netcdf=NULL;
-  float *nc = NULL;
-  float *hdf = NULL;
   int ii,jj;
   int palette_color_tiff = 0;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
@@ -1365,19 +1333,6 @@ export_band_image (const char *metadata_file_name,
 
   if (format == PNG_GE)
     meta_write(md, output_file_name);
-
-  if (format == HDF && rgb)
-    asfPrintError("Export to a color HDF format is not supported!\n");
-  else if (format == NC && rgb)
-    asfPrintError("Export to a color netCDF format is not supported!\n");
-
-  /*
-  if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
-      md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
-      md->general->image_data_type != POLARIMETRIC_DECOMPOSITION &&
-      format == POLSARPRO_HDR)
-    append_ext_if_needed(output_file_name, ".bin", NULL);
-  */
 
   asfRequire( !(look_up_table_name == NULL &&
                 sample_mapping == TRUNCATE &&
@@ -1972,74 +1927,6 @@ export_band_image (const char *metadata_file_name,
     outs[0] = STRDUP(output_file_name);
     *output_names = outs;
   }
-  else if (multiband(format2str(format), band_name, md->general->band_count)) {
-    // Multi-band image output (but no RGB)
-    // This can currently only be the case for HDF5 and netCDF data
-    hid_t h5_data;
-
-    if (format == HDF) {
-      append_ext_if_needed(output_file_name, ".h5", NULL);
-      h5 = initialize_h5_file(output_file_name, md);
-      hdf = (float *) 
-	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);
-    }
-    else if (format == NC) {
-      append_ext_if_needed(output_file_name, ".nc", NULL);
-      netcdf = initialize_netcdf_file(output_file_name, md);
-      nc = (float *)
-	MALLOC(sizeof(float)*md->general->line_count*md->general->sample_count);    }
-
-    int kk, channel;
-    int band_count = md->general->band_count;
-    int sample_count = md->general->sample_count;
-    int offset = md->general->line_count;
-    FILE *fp = FOPEN(image_data_file_name, "rb");
-    float *float_line = (float *) MALLOC(sizeof(float) * sample_count);
-    for (kk=0; kk<band_count; kk++) {
-      for (ii=0; ii<md->general->line_count; ii++ ) {
-	channel = get_band_number(md->general->bands, band_count, band_name[kk]);
-	get_float_line(fp, md, ii+channel*offset, float_line);
-	if (format == HDF) {
-	  int sample;
-	  for (sample=0; sample<sample_count; sample++)
-	    hdf[ii*sample_count+sample] = float_line[sample];
-	}
-	else if (format == NC) {
-	  int sample;
-	  for (sample=0; sample<sample_count; sample++) {
-	    nc[ii*sample_count+sample] = float_line[sample];
-	  }
-	}
-	asfLineMeter(ii, md->general->line_count);
-      }
-      if (format == HDF) {
-	asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
-	char dataset[50];
-	sprintf(dataset, "/data/%s_AMPLITUDE_IMAGE", band_name[kk]);
-	h5_data = H5Dopen(h5->file, dataset, H5P_DEFAULT);
-	H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, 
-		 H5P_DEFAULT, hdf);
-	H5Dclose(h5_data);
-      }
-      else if (format == NC) {
-	asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
-	nc_put_var_float(netcdf->ncid, netcdf->var_id[kk], &nc[0]);
-      }
-    }
-
-    if (format == HDF) {
-      finalize_h5_file(h5);
-      FREE(hdf);
-    }
-    else if (format == NC) {
-      finalize_netcdf_file(netcdf, md);
-      FREE(nc);
-    }
-    else
-      asfPrintError("Impossible: unexpected format %s\n", format2str(format));
-
-    FCLOSE(fp);
-  }
   else {
     // Single-band image output (one grayscale file for each available band)
     int free_band_names=FALSE;
@@ -2113,7 +2000,8 @@ export_band_image (const char *metadata_file_name,
 	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
 	md->general->band_count != 1 && 
 	strcmp_case(md->general->sensor, "UAVSAR") != 0 &&
-	(format == POLSARPRO_HDR || format == GEOTIFF)) {
+	(format == POLSARPRO_HDR || format == GEOTIFF ||
+	 format == TIF || format == JPEG || format == PNG)) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -2153,7 +2041,8 @@ export_band_image (const char *metadata_file_name,
     // names can be extracted from the bands string.
     if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
 	md->general->band_count != 1 && 
-	(format == POLSARPRO_HDR || format == GEOTIFF)) {
+	(format == POLSARPRO_HDR || format == GEOTIFF ||
+	 format == TIF || format == JPEG || format == PNG)) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -2524,20 +2413,6 @@ export_band_image (const char *metadata_file_name,
           append_ext_if_needed (out_file, ".bin", NULL);
           initialize_polsarpro_file(out_file, md, &ofp);
         }
-	else if (format == HDF) {
-	  append_ext_if_needed (out_file, ".h5", NULL);
-	  h5 = initialize_h5_file(out_file, md);
-	  hdf = (float *) 
-	    MALLOC(sizeof(float)*md->general->line_count*
-		   md->general->sample_count);
-	}
-        else if (format == NC) {
-          append_ext_if_needed (out_file, ".nc", NULL);
-	  netcdf = initialize_netcdf_file(out_file, md);
-	  nc = (float *)
-	    MALLOC(sizeof(float)*md->general->line_count*
-		   md->general->sample_count);        
-	}
         else {
           asfPrintError("Impossible: unexpected format %s\n", format2str(format));
         }
@@ -2725,17 +2600,6 @@ export_band_image (const char *metadata_file_name,
                   ieee_lil32(float_line[sample]);
                 fwrite(float_line,4,sample_count,ofp);
               }
-	      else if (format == HDF) {
-		int sample;
-		for (sample=0; sample<sample_count; sample++)
-		  hdf[ii*sample_count+sample] = float_line[sample];
-	      }
-	      else if (format == NC) {
-		int sample;
-		for (sample=0; sample<sample_count; sample++) {
-		  nc[ii*sample_count+sample] = float_line[sample];
-		}
-	      }
               else
                 asfPrintError("Impossible: unexpected format %s\n", format2str(format));
             }
@@ -2793,33 +2657,11 @@ export_band_image (const char *metadata_file_name,
           finalize_ppm_file(opgm);
         else if (format == POLSARPRO_HDR)
           FCLOSE(ofp);
-	else if (format == HDF) {
-	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
-	  char dataset[50];
-	  sprintf(dataset, "/data/%s_AMPLITUDE_IMAGE", band_name[kk]);
-	  hid_t h5_data = H5Dopen(h5->file, dataset, H5P_DEFAULT);
-	  H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, 
-		   H5P_DEFAULT, hdf);
-	  H5Dclose(h5_data);
-	}
-	else if (format == NC) {
-	  asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
-	  nc_put_var_float(netcdf->ncid, netcdf->var_id[kk], &nc[0]);
-	}
 
         FCLOSE(fp);
       }
     } // End for each band (kk is band number)
 
-    if (hdf) {
-      finalize_h5_file(h5);
-      FREE(hdf);
-    }
-
-    if (nc) {
-      finalize_netcdf_file(netcdf, md);
-      FREE(nc);
-    }
     if (free_band_names) {
       for (ii=0; ii<band_count; ++ii)
         FREE(band_name[ii]);

@@ -1365,6 +1365,13 @@ static int check_config(const char *configFileName, convert_config *cfg)
     free(RAW_file); free(LDR_file);
   }
 
+  // Check for PolSARPro matrix processing
+  if (strcmp_case(cfg->import->format, "POLSARPRO") == 0 &&
+      cfg->general->calibration &&
+      strncmp_case(cfg->calibrate->radiometry, "AMPLITUDE", 9) != 0)
+    asfPrintError("No changes in radiometry allowed when processing PolSARPro "
+		  "matrices\n");
+
   // Check whether everything in the [Import] block is reasonable
   if (cfg->general->import) {
     
@@ -1566,6 +1573,7 @@ static int check_config(const char *configFileName, convert_config *cfg)
     }
   }
 
+  /*
   // Check whether radiometric terrain correction is selected for PolSARPro
   // data. Refer to the manual for further explanation why this does not work.
   if (cfg->general->terrain_correct && cfg->terrain_correct->do_radiometric &&
@@ -1575,7 +1583,8 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		  "supported.\nFor more information on alternative processing "
 		  "flow based on\nradiometric terrain correction of CEOS "
 		  "quad-pol data\nplease refer to the ASF MapReady manual.\n");
-  
+  */
+
   // Check whether everything in the [Geocoding] block is reasonable
   if (cfg->general->geocoding) {
     
