@@ -1711,7 +1711,12 @@ static int check_config(const char *configFileName, convert_config *cfg)
 	asfPrintError("Selected scaling method (%s) not supported\n",
 		      cfg->export->byte);
       }
-    }
+      // Force polarimetric results with colormap to byte mapping
+      if (strcmp_case(cfg->import->image_data_type, 
+		      "POLARIMETRIC_PARAMETER") == 0 &&
+	  strlen(cfg->import->polsarpro_colormap) > 0)
+	strcpy(cfg->export->byte, "SIGMA"); 
+   }
     
     // Only allow PolSARPro as export format if we are actually dealing
     // with PolSARPro data as input as well
