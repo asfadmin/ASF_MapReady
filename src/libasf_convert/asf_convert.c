@@ -3139,7 +3139,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 					      cfg->geocoding->projection, cfg->geocoding->force,
 					      RESAMPLE_BILINEAR, cfg->geocoding->height,
 					      datum, cfg->geocoding->pixel, NULL, inFile, outFile,
-					      MASK_INVALID_DATA),
+					      0.0),
 		   "geocoding incidence angles (asf_geocode)\n");
     }
     else {
@@ -3147,21 +3147,40 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       sprintf(outFile, "%s/incidence_angles", cfg->general->tmp_dir);
     }
     
-    sprintf(inFile, "%s", outFile);
-    sprintf(outFile, "%s/incidence_angles_exported", cfg->general->tmp_dir);
+    if (is_dir(cfg->general->out_name)) {
+      char *tmp = 
+	(char *) MALLOC(sizeof(char)*(strlen(cfg->general->tmp_dir)+20));
+      sprintf(tmp, "%s%cimport.meta", cfg->general->tmp_dir, DIR_SEPARATOR);
+      meta_parameters *meta = meta_read(tmp);
+      free(tmp);
+      sprintf(inFile, "%s", outFile);
+      if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
+	sprintf(outFile, "%s%c%s_incidence_angle", cfg->general->out_name,
+		DIR_SEPARATOR, find_decomposition(meta));
+      else
+	sprintf(outFile, "%s%cincidence_angle", cfg->general->out_name,
+		DIR_SEPARATOR);      
+      meta_free(meta);
+    }
+    else {
+      sprintf(inFile, "%s", outFile);
+      char *tmp = appendToBasename(cfg->general->out_name, "_incidence_angle");
+      strcpy(outFile, tmp);
+      free(tmp);
+    }
     
     if (cfg->general->export) {
       update_status("Exporting incidence angles...");
 
-      check_return(
-          asf_export(GEOTIFF, NONE, inFile, outFile),
-          "exporting indcidence angles (asf_export)\n");
-      sprintf(inFile, "%s_INCIDENCE_ANGLES.tif", outFile);
-      strcpy(outFile, cfg->general->out_name);
-      char *tmp = stripExt(outFile);
-      sprintf(outFile, "%s_incidence_angles.tif", tmp);
-      FREE(tmp);
-      fileRename(inFile, outFile);
+      char **band = (char **) MALLOC(sizeof(char *)*2);
+      band[0] = (char *) MALLOC(sizeof(char)*25);
+      band[1] = NULL;
+      strcpy(band[0], "INCIDENCE_ANGLES");
+      check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL,
+				    inFile, outFile, band, NULL, NULL),
+		   "exporting indcidence angles (asf_export)\n");
+      FREE(band[0]);
+      FREE(band);
     }
     else {
       // no export... just move the geocoded file out of the
@@ -3191,10 +3210,27 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       sprintf(outFile, "%s/terrain_correct_mask", cfg->general->tmp_dir);
     }
     
-    sprintf(inFile, "%s", outFile);
-    char *tmp = appendToBasename(cfg->general->out_name, "_layover_mask");
-    strcpy(outFile, tmp);
-    free(tmp);
+    if (is_dir(cfg->general->out_name)) {
+      char *tmp = 
+	(char *) MALLOC(sizeof(char)*(strlen(cfg->general->tmp_dir)+20));
+      sprintf(tmp, "%s%cimport.meta", cfg->general->tmp_dir, DIR_SEPARATOR);
+      meta_parameters *meta = meta_read(tmp);
+      free(tmp);
+      sprintf(inFile, "%s", outFile);
+      if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
+	sprintf(outFile, "%s%c%s_layover_mask", cfg->general->out_name,
+		DIR_SEPARATOR, find_decomposition(meta));
+      else
+	sprintf(outFile, "%s%clayover_mask", cfg->general->out_name,
+		DIR_SEPARATOR);
+      meta_free(meta);
+    }
+    else {
+      sprintf(inFile, "%s", outFile);
+      char *tmp = appendToBasename(cfg->general->out_name, "_layover_mask");
+      strcpy(outFile, tmp);
+      free(tmp);
+    }
     
     if (cfg->general->export) {
       update_status("Exporting layover mask...");
@@ -3208,7 +3244,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       //            bands[1] = NULL;
       
       check_return(
-		   asf_export_bands(get_format(cfg), TRUNCATE, 1, 0, 0,
+		   asf_export_bands(GEOTIFF, TRUNCATE, 1, 0, 0,
 				    "layover_mask.lut", inFile, outFile, bands,
 				    NULL, NULL),
 		   "exporting layover mask (asf_export)\n");
