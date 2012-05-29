@@ -1549,6 +1549,20 @@ static int check_config(const char *configFileName, convert_config *cfg)
       asfPrintError("Reference DEM file '%s' does not exist\n",
 		    cfg->terrain_correct->dem);
     }
+
+    // Look for polarimetric data.
+    // Polarimetric segmentations and parameters can't be radiometrically
+    // corrected.
+    if (strcmp_case(cfg->import->image_data_type, 
+		    "POLARIMETRIC_SEGMENTATION") == 0 &&
+	cfg->terrain_correct->do_radiometric)
+      asfPrintError("Polarimetric segmentations can't be radiometrically "
+		    "terrain corrected!\n");
+    if (strcmp_case(cfg->import->image_data_type, 
+		    "POLARIMETRIC_PARAMETER") == 0 && 
+	cfg->terrain_correct->do_radiometric)
+      asfPrintError("Polarimetric paramters can't be radiometrically "
+		    "terrain corrected!\n");
     
     // Check for pixel size smaller than threshold ???
     
