@@ -1972,6 +1972,11 @@ export_band_image (const char *metadata_file_name,
       free_band_names = TRUE;
     }
 
+    if (strcmp_case(band_name[0], "INCIDENCE_ANGLES") == 0)
+      md->general->image_data_type = INCIDENCE_ANGLE;
+    else if (strcmp_case(band_name[0], "LAYOVER_MASK") == 0)
+      md->general->image_data_type = LAYOVER_MASK;
+      
     if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
 	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX) {
       if (strstr(md->general->bands, "C44"))
@@ -2339,7 +2344,9 @@ export_band_image (const char *metadata_file_name,
           md->general->image_data_type == POLARIMETRIC_PARAMETER)
           append_band_ext(base_name, out_file, NULL);
         else {
-          if (band_count > 1) {
+          if ((md->general->image_data_type != INCIDENCE_ANGLE ||
+	       md->general->image_data_type != LAYOVER_MASK) &&
+	      band_count > 1) {
 	    if (strstr(band_name[kk], "INTERFEROGRAM_PHASE") &&
 		is_colormap_band)
 	      append_band_ext(base_name, out_file, "INTERFEROGRAM_RGB");
