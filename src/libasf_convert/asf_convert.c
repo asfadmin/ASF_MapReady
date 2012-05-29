@@ -3165,6 +3165,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       char *tmp = 
 	(char *) MALLOC(sizeof(char)*(strlen(cfg->general->tmp_dir)+20));
       sprintf(tmp, "%s%cimport.meta", cfg->general->tmp_dir, DIR_SEPARATOR);
+      if (!fileExists(tmp))
+	asfPrintError("Can't save incidence angle map!\n");
       meta_parameters *meta = meta_read(tmp);
       free(tmp);
       sprintf(inFile, "%s", outFile);
