@@ -241,14 +241,15 @@ static char *read_str(char *line, char *param)
   return value;
 }
 
-void read_polarimetry_config(char *configFile, char *decomposition,
-			     char **pRed, char **pGreen, char **pBlue)
+int read_polarimetry_config(char *configFile, char *decomposition,
+			    char **pRed, char **pGreen, char **pBlue)
 {
   char line[128], params[25];
   char *test;
   char *red = (char *) MALLOC(sizeof(char)*25);
   char *green = (char *) MALLOC(sizeof(char)*25);
   char *blue = (char *) MALLOC(sizeof(char)*25);
+  int found = FALSE;
 
   FILE *fConfig = fopen(configFile, "r");
   if (fConfig) {
@@ -265,6 +266,7 @@ void read_polarimetry_config(char *configFile, char *decomposition,
         if (strncmp(test, "blue", 4)==0)
 	  strcpy(blue, read_str(line, "blue"));
         FREE(test);
+	found = TRUE;
       }
       if (strncmp(line, "[VanZyl3]", 9)==0) 
 	strcpy(params, "vanzyl3");
@@ -278,6 +280,7 @@ void read_polarimetry_config(char *configFile, char *decomposition,
         if (strncmp(test, "blue", 4)==0)
 	  strcpy(blue, read_str(line, "blue"));
         FREE(test);
+	found = TRUE;
       }
       if (strncmp(line, "[Yamaguchi3]", 12)==0) 
 	strcpy(params, "yamaguchi3");
@@ -291,6 +294,7 @@ void read_polarimetry_config(char *configFile, char *decomposition,
         if (strncmp(test, "blue", 4)==0)
 	  strcpy(blue, read_str(line, "blue"));
         FREE(test);
+	found = TRUE;
       }
       if (strncmp(line, "[Yamaguchi4]", 12)==0) 
 	strcpy(params, "yamaguchi4");
@@ -304,6 +308,7 @@ void read_polarimetry_config(char *configFile, char *decomposition,
         if (strncmp(test, "blue", 4)==0)
 	  strcpy(blue, read_str(line, "blue"));
         FREE(test);
+	found = TRUE;
       }
       if (strncmp(line, "[Krogager]", 10)==0) 
 	strcpy(params, "krogager");
@@ -317,71 +322,7 @@ void read_polarimetry_config(char *configFile, char *decomposition,
         if (strncmp(test, "blue", 4)==0)
 	  strcpy(blue, read_str(line, "blue"));
         FREE(test);
-      }
-      if (strncmp(line, "[Touzi1]", 8)==0) 
-	strcpy(params, "touzi1");
-      if (strcmp(params, "touzi1")==0 &&
-	  strcmp_case(params, decomposition) == 0) {
-        test = read_param(line);
-        if (strncmp(test, "red", 3)==0)
-	  strcpy(red, read_str(line, "red"));
-        if (strncmp(test, "green", 5)==0)
-	  strcpy(green, read_str(line, "green"));
-        if (strncmp(test, "blue", 4)==0)
-	  strcpy(blue, read_str(line, "blue"));
-        FREE(test);
-      }
-      if (strncmp(line, "[Touzi2]", 8)==0) 
-	strcpy(params, "touzi2");
-      if (strcmp(params, "touzi2")==0 &&
-	  strcmp_case(params, decomposition) == 0) {
-        test = read_param(line);
-        if (strncmp(test, "red", 3)==0)
-	  strcpy(red, read_str(line, "red"));
-        if (strncmp(test, "green", 5)==0)
-	  strcpy(green, read_str(line, "green"));
-        if (strncmp(test, "blue", 4)==0)
-	  strcpy(blue, read_str(line, "blue"));
-        FREE(test);
-      }
-      if (strncmp(line, "[Touzi3]", 8)==0) 
-	strcpy(params, "touzi3");
-      if (strcmp(params, "touzi3")==0 &&
-	  strcmp_case(params, decomposition) == 0) {
-        test = read_param(line);
-        if (strncmp(test, "red", 3)==0)
-	  strcpy(red, read_str(line, "red"));
-        if (strncmp(test, "green", 5)==0)
-	  strcpy(green, read_str(line, "green"));
-        if (strncmp(test, "blue", 4)==0)
-	  strcpy(blue, read_str(line, "blue"));
-        FREE(test);
-      }
-      if (strncmp(line, "[Touzi4]", 8)==0) 
-	strcpy(params, "touzi4");
-      if (strcmp(params, "touzi4")==0 &&
-	  strcmp_case(params, decomposition) == 0) {
-        test = read_param(line);
-        if (strncmp(test, "red", 3)==0)
-	  strcpy(red, read_str(line, "red"));
-        if (strncmp(test, "green", 5)==0)
-	  strcpy(green, read_str(line, "green"));
-        if (strncmp(test, "blue", 4)==0)
-	  strcpy(blue, read_str(line, "blue"));
-        FREE(test);
-      }
-      if (strncmp(line, "[Touzi5]", 8)==0) 
-	strcpy(params, "touzi5");
-      if (strcmp(params, "touzi5")==0 &&
-	  strcmp_case(params, decomposition) == 0) {
-        test = read_param(line);
-        if (strncmp(test, "red", 3)==0)
-	  strcpy(red, read_str(line, "red"));
-        if (strncmp(test, "green", 5)==0)
-	  strcpy(green, read_str(line, "green"));
-        if (strncmp(test, "blue", 4)==0)
-	  strcpy(blue, read_str(line, "blue"));
-        FREE(test);
+	found = TRUE;
       }
     }
     FCLOSE(fConfig);
@@ -389,6 +330,8 @@ void read_polarimetry_config(char *configFile, char *decomposition,
   *pRed = red;
   *pGreen = green;
   *pBlue = blue;
+  
+  return found;
 }
 
 static int get_scheme_count(char *line, char separator)
@@ -4092,47 +4035,51 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 	  // Exporting polarimetric decompositions into an RGB file as well
 	  if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
 	      format != POLSARPRO_HDR) {
-            int i;
+            int i, found = FALSE;
 	    char decomposition[25], configFile[512], decompFile[512];
 	    char *red, *green, *blue;
 	    sprintf(decomposition, "%s", find_decomposition(meta));
 	    sprintf(configFile, "%s%cpolarimetry.cfg", 
 		    get_asf_share_dir(), DIR_SEPARATOR);
-	    read_polarimetry_config(configFile, decomposition, 
-				    &red, &green, &blue);
-            char **bands = MALLOC(sizeof(char*)*meta->general->band_count);
-            for (i=0; i<meta->general->band_count; i++)
-              bands[i] = MALLOC(sizeof(char)*32);
-	    strcpy(bands[0], red);
-	    strcpy(bands[1], green);
-	    strcpy(bands[2], blue);
-	    if (meta->general->band_count > 3)
-	      strcpy(bands[3], "");
-	    if (meta->general->band_count > 4)
-	      strcpy(bands[4], "");
-	    asfPrintStatus("\nExporting decomposition into single color file:\n"
-			   "Red band  : %s\n"
-			   "Green band: %s\n"
-			   "Blue band : %s\n\n",
-			   red, green, blue);
-	    sprintf(decompFile, "%s%c%s_RGB", 
-		    outFile, DIR_SEPARATOR, decomposition);
-	    meta_parameters *md = meta_read(inFile);
-	    md->general->image_data_type = RGB_STACK;
-	    meta_write(md, inFile);
-	    meta_free(md);
-	    check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
-					  inFile, decompFile, bands, 
-					  &num_outputs, &output_names),
-			 "export data file (asf_export), polarimetric decomposition.\n");
-	    md = meta_read(inFile);
-	    md->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
-	    meta_write(md, inFile);
-	    meta_free(md);
-
-            for (i=0; i<meta->general->band_count; i++)
-              FREE(bands[i]);
-            FREE(bands);
+	    found = read_polarimetry_config(configFile, decomposition, 
+					    &red, &green, &blue);
+	    // Only write RGB version if you find information about it in the
+	    // configuration file.
+	    if (found) {
+	      char **bands = MALLOC(sizeof(char*)*meta->general->band_count);
+	      for (i=0; i<meta->general->band_count; i++)
+		bands[i] = MALLOC(sizeof(char)*32);
+	      strcpy(bands[0], red);
+	      strcpy(bands[1], green);
+	      strcpy(bands[2], blue);
+	      if (meta->general->band_count > 3)
+		strcpy(bands[3], "");
+	      if (meta->general->band_count > 4)
+		strcpy(bands[4], "");
+	      asfPrintStatus("\nExporting decomposition into single color file:\n"
+			     "Red band  : %s\n"
+			     "Green band: %s\n"
+			     "Blue band : %s\n\n",
+			     red, green, blue);
+	      sprintf(decompFile, "%s%c%s_RGB", 
+		      outFile, DIR_SEPARATOR, decomposition);
+	      meta_parameters *md = meta_read(inFile);
+	      md->general->image_data_type = RGB_STACK;
+	      meta_write(md, inFile);
+	      meta_free(md);
+	      check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+					    inFile, decompFile, bands, 
+					    &num_outputs, &output_names),
+			   "export data file (asf_export), polarimetric decomposition.\n");
+	      md = meta_read(inFile);
+	      md->general->image_data_type = POLARIMETRIC_DECOMPOSITION;
+	      meta_write(md, inFile);
+	      meta_free(md);
+	      
+	      for (i=0; i<meta->general->band_count; i++)
+		FREE(bands[i]);
+	      FREE(bands);
+	    }
 	  }
         }
         else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
