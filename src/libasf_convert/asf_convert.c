@@ -3253,23 +3253,15 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       
       meta_parameters *meta = meta_read(inFile);
       
-      char **bands = extract_band_names(meta->general->bands,
-					meta->general->band_count);
-      //            char *bands[2];
-      //            bands[0] = meta->general->bands;
-      //            bands[1] = NULL;
+      char *bands[2];
+      bands[0] = meta->general->bands;
+      bands[1] = NULL;
       
       check_return(
 		   asf_export_bands(GEOTIFF, TRUNCATE, 1, 0, 0,
 				    "layover_mask.lut", inFile, outFile, bands,
 				    NULL, NULL),
 		   "exporting layover mask (asf_export)\n");
-      
-      int i;
-      for (i=0; i<meta->general->band_count; i++) {
-	FREE(bands[i]);
-      }
-      FREE(bands);
       meta_free(meta);
     }
     else {
