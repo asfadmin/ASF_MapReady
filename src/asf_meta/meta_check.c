@@ -246,7 +246,7 @@ int isRadarsat2(char *dataFile, char **error)
   // If it has the correct extension, investigate it further
   // Might sound a little harsh but avoids some XML parser warning otherwise.
   if (ext && strcmp_case(ext, ".xml") == 0) {
-    int ii, band_count;
+    int ii, band_count = 0;
     char tmp[256], *path = NULL, *message = NULL, *inDataName = NULL;
     char polarizations[20];
     char *satellite = (char *) MALLOC(sizeof(char)*25);
