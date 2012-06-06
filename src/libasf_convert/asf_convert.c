@@ -1504,7 +1504,7 @@ static int check_config(const char *configFileName, convert_config *cfg)
     if (strcmp_case(cfg->import->image_data_type, 
 		    "POLARIMETRIC_PARAMETER") == 0 && 
 	cfg->terrain_correct->do_radiometric)
-      asfPrintError("Polarimetric paramters can't be radiometrically "
+      asfPrintError("Polarimetric parameters can't be radiometrically "
 		    "terrain corrected!\n");
     
     // Check for pixel size smaller than threshold ???
