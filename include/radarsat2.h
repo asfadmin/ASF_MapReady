@@ -9,7 +9,7 @@ typedef struct {
   char filename[1025];           // basename
   char satellite[20];            // satellite
   char sensor[20];               // sensor_name
-  char beamModeMnemonic[5];      // beam mode
+  char beamModeMnemonic[10];     // beam mode
   char acquisitionType[25];      // type of data acquisition
   char productType[25];          // product_type: SLC, SGF, SGX, SGC, SSG, SPG
   char dataType[25];             // data_type: COMPLEX
