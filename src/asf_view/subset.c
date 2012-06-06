@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include "asf_view.h"
 
 #define FORMAT_ASF_INTERNAL 1
 #define FORMAT_CSV 2
@@ -12,7 +13,6 @@
 #define DOPPLER 6
 #define LAT_LON_2_BAND 7
 
-#include "asf_view.h"
 
 static int get_format()
 {
