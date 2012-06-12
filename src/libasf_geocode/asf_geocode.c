@@ -1484,8 +1484,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   double pc_per_y = pixel_size_y;
 
   // Maximum pixel indicies in output image.
-  size_t oix_max = ceil ((max_x - min_x) / pc_per_x);
-  size_t oiy_max = ceil ((max_y - min_y) / pc_per_y);
+  size_t oix_max = 1 + floor ((max_x - min_x) / pc_per_x);
+  size_t oiy_max = 1 + floor ((max_y - min_y) / pc_per_y);
 
   // Lat/Lon of the center of the output image
   double output_lat_0, output_lon_0, z;
@@ -1494,7 +1494,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     &output_lon_0, &z, datum);
 
   asfPrintStatus("Output Image Information:\n");
-  asfPrintStatus("Size: %dx%d LxS\n", oiy_max+1, oix_max+1);
+  asfPrintStatus("Size: %dx%d LxS\n", oiy_max, oix_max);
   asfPrintStatus("Center: X,Y: %.1f,%.1f   Lat,Lon: %.4f,%.4f\n",
     center_x, center_y, output_lat_0*R2D, output_lon_0*R2D);
   if (projection_type == LAT_LONG_PSEUDO_PROJECTION) {
@@ -1596,8 +1596,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   omd->general->x_pixel_size = pixel_size_x;
   omd->general->y_pixel_size = pixel_size_y;
-  omd->general->line_count = oiy_max + 1;
-  omd->general->sample_count = oix_max + 1;
+  omd->general->line_count = oiy_max;
+  omd->general->sample_count = oix_max;
   if (omd->sar) {
       omd->sar->image_type = 'P';
       // It doesn't make sense to update these, we're just keeping them
@@ -1727,8 +1727,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   //--------------------------------------------------------------------------
   // Now working on generating the output images
 
-  double *projX = MALLOC(sizeof(double)*(oix_max+1));
-  double *projY = MALLOC(sizeof(double)*(oix_max+1)); // Is this a mistake?  Use oiy_max instead?
+  double *projX = MALLOC(sizeof(double)*oix_max);
+  double *projY = MALLOC(sizeof(double)*oix_max);
 
   // When mosaicing -- use banded_float_image to store the output, write
   //                   it out after processing all inputs
@@ -1744,35 +1744,35 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   int output_by_line = n_input_images == 1;
 
   if (n_input_images > 1) {
-    output_bfi = banded_float_image_new(n_bands, oix_max+1, oiy_max+1);
+    output_bfi = banded_float_image_new(n_bands, oix_max, oiy_max);
     if (!output_bfi) {
         asfPrintError("Cannot create new %d-banded float image of size %d samples by %d lines\n"
                       "Image size too large?\n",
-                      oix_max+1, oiy_max+1);
+                      oix_max, oiy_max);
     }
     if (overlap == AVG_OVERLAP) {
         // Unsupported as of yet ...this code should never be reached
         asfPrintError("Overlap method 'AVERAGE' not yet supported...\n");
-        tbi = uint8_image_new(oix_max+1, oiy_max+1);
+        tbi = uint8_image_new(oix_max, oiy_max);
         if (!tbi) {
             asfPrintError("Cannot create new unit8 image of size %d samples by %d lines\n",
                           "Image size too large?\n",
-                          oix_max+1, oiy_max+1);
+                          oix_max, oiy_max);
         }
     }
     else if (overlap == NEAR_RANGE_OVERLAP) {
         // Unsupported as of yet ...this code should never be reached
         asfPrintError("Overlap method 'NEAR RANGE' not yet supported...\n");
-        tfi = float_image_new(oix_max+1, oiy_max+1);
+        tfi = float_image_new(oix_max, oiy_max);
         if (!tfi) {
             asfPrintError("Cannot create new float image of size %d samples by %d lines\n",
                           "Image size too large?\n",
-                          oix_max+1, oiy_max+1);
+                          oix_max, oiy_max);
         }
     }
   }
   else {
-    output_line = MALLOC(sizeof(float)*(oix_max+1));
+    output_line = MALLOC(sizeof(float)*oix_max);
   }
 
   // loop over the input images
@@ -2031,7 +2031,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       asfPrintStatus ("Performing analytical projection of a spatially "
 		      "distributed\nsubset of input image pixels...\n");
       fflush (stdout);
-      double x_range_size = max_x - min_x, y_range_size = max_y - min_y;
+      double x_range_size = pixel_size_x * oix_max;
+      double y_range_size = pixel_size_y * oiy_max;
       // This grid size seems to work pretty well in general for our
       // products (good accuracy everywhere, decent speed).
       size_t grid_size = 131;
@@ -2227,6 +2228,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
           report_func("Largest error was larger than maximum allowed! "
 		      "%f > %f\n", largest_error, max_allowable_error);
         }
+        asfPrintStatus ("Grid size %d\n", grid_size);
         asfPrintStatus ("For the differences between spline model values and "
 			"projected values\nfor the analytically projected "
 			"control points:\n");
@@ -2461,8 +2463,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	    FREE(sample_filename);
 	    FREE(sample_metaname);
 	    
-	    line_out = MALLOC(sizeof(float)*(oix_max+1));
-	    samp_out = MALLOC(sizeof(float)*(oix_max+1));
+	    line_out = MALLOC(sizeof(float)*oix_max);
+	    samp_out = MALLOC(sizeof(float)*oix_max);
 	    
 	    // prevent doing the line/sample file again
 	    save_line_sample_mapping = FALSE;
@@ -2497,20 +2499,19 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	  
 	  // Set the pixels of the output image.
 	  size_t oix, oiy;    // Output image pixel indicies.
-	  for (oiy = 0 ; oiy <= oiy_max ; oiy++) {
+	  for (oiy = 0 ; oiy < oiy_max ; oiy++) {
 	    
-	    asfLineMeter(oiy, oiy_max + 1 );
+	    asfLineMeter(oiy, oiy_max);
 	    
 	    int oix_first_valid = -1;
 	    int oix_last_valid = -1;
 	    
-	    for ( oix = 0 ; oix <= oix_max ; oix++ ) {
+	    for ( oix = 0 ; oix < oix_max ; oix++ ) {
+
 	      // Projection coordinates for the center of this pixel.
-	      double oix_pc = ((double) oix/oix_max) * (max_x-min_x) + min_x;
-	      // We want projection coordinates to increase as we move from
-	      // the bottom of the image to the top, so that north ends up up.
-	      double oiy_pc = (1.0-(double)oiy/oiy_max) * (max_y-min_y) + min_y;
-	      
+              double oix_pc = omd->projection->startX + oix * omd->projection->perX;
+              double oiy_pc = omd->projection->startY + oiy * omd->projection->perY;
+
 	      projX[oix] = oix_pc;
 	      projY[oix] = oiy_pc;
 	      
@@ -2519,7 +2520,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	      // interpolate between pixel values.
 	      double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
 	      double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
-	      
+  
 	      if (line_out) {
                 if (input_y_pixel < 0 || input_x_pixel < 0)
 		  line_out[oix] = 0;
@@ -2866,3 +2867,53 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   asfPrintStatus("Geocoding complete.\n\n");
   return 0;
 }
+
+int geoid_adjust(const char *input_filename, const char *output_filename)
+{
+  char *input_img = appendExt(input_filename, ".img");
+  char *input_meta = appendExt(input_filename, ".meta");
+
+  char *output_img = appendExt(output_filename, ".img");
+  char *output_meta = appendExt(output_filename, ".meta");
+
+  if (!fileExists(input_img))
+    asfPrintError("File not found: %s\n", input_img);
+  if (!fileExists(input_meta))
+    asfPrintError("File not found: %s\n", input_meta);
+
+  meta_parameters *meta = meta_read(input_meta);
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  int ii, jj;
+
+  FILE *fpIn = FOPEN(input_img, "rb");
+  FILE *fpOut = FOPEN(output_img, "wb");
+  float *buf = MALLOC(sizeof(float)*ns);
+
+  for (ii=0; ii<nl; ++ii) {
+    get_float_line(fpIn, meta, ii, buf);
+    for (jj=0; jj<ns; ++jj) {
+      double lat, lon;
+      meta_get_latLon(meta, ii, jj, 0, &lat, &lon);
+      buf[jj] += get_geoid_height(lat,lon);
+    }
+    put_float_line(fpOut, meta, ii, buf);
+    asfLineMeter(ii,nl);
+  }
+
+  meta_write(meta, output_meta);
+  meta_free(meta);
+
+  FCLOSE(fpIn);
+  FCLOSE(fpOut);
+
+  FREE(buf);
+  FREE(input_img);
+  FREE(input_meta);
+  FREE(output_img);
+  FREE(output_meta);
+
+  // success
+  return 0;
+}
+
