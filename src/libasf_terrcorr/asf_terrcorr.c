@@ -1499,6 +1499,10 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       clean(deskewDemFile);
       clean(deskewDemMask);
 
+/*    
+      Taking this out.  No need to degrade the image.  User may not get
+      pixel size that was asked for, though.
+
       // Because of the PP earth radius sr->gr fix, we may not have ended
       // up with the same x pixel size that the user requested.  So we will
       // just resample to the size that was requested.  This correction is
@@ -1506,7 +1510,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
 
       if (!is_Palsar_L11 && fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
       {
-          asfPrintStatus("Resampling to proper range pixel size. (%f m)\n", pixel_size);
+          asfPrintStatus("Resampling to proper range pixel size. (%f m)\n",
+                         pixel_size);
 
           asfPrintStatus("Output image...\n");
           resampleFile_2 = getOutName(output_dir, outFile, "_resample");
@@ -1526,7 +1531,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       } else {
           resampleFile_2 = NULL;
       }
-
+*/
       // Perform radiometric correction
       if (doRadiometric) {
 

@@ -1722,7 +1722,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     omd->general->band_count = 1;
   }
 
-  meta_write (omd, output_meta_data);
 
   //--------------------------------------------------------------------------
   // Now working on generating the output images
@@ -2860,7 +2859,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         out_of_range_positive, pct_too_positive);
   }
 
+  omd->projection->startY -= omd->projection->perY;
+  meta_write (omd, output_meta_data);
   meta_free (omd);
+
   free(output_meta_data);
   free(output_image);
 
@@ -2890,16 +2892,22 @@ int geoid_adjust(const char *input_filename, const char *output_filename)
   FILE *fpOut = FOPEN(output_img, "wb");
   float *buf = MALLOC(sizeof(float)*ns);
 
+  double avg = 0.0;
   for (ii=0; ii<nl; ++ii) {
     get_float_line(fpIn, meta, ii, buf);
     for (jj=0; jj<ns; ++jj) {
       double lat, lon;
       meta_get_latLon(meta, ii, jj, 0, &lat, &lon);
-      buf[jj] += get_geoid_height(lat,lon);
+      float ht = get_geoid_height(lat,lon);
+      buf[jj] += ht;
+      avg += ht;
     }
     put_float_line(fpOut, meta, ii, buf);
     asfLineMeter(ii,nl);
   }
+
+  avg /= (double)(nl*ns);
+  asfPrintStatus("Average correction: %f\n", avg);
 
   meta_write(meta, output_meta);
   meta_free(meta);
