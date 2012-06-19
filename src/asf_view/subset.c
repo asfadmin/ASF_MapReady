@@ -5,7 +5,7 @@
 #define FORMAT_CSV 2
 
 #define PIXEL_VALUE 0
-#define INCIDENCE_ANGLE 1
+#define INCIDENCE_ANGLES 1
 #define LOOK_ANGLE 2
 #define SLANT_RANGE 3
 #define SCALED_PIXEL_VALUE 4
@@ -35,7 +35,7 @@ static int get_what_to_save()
     // these defined values...
     switch (what) {
         case 0: return PIXEL_VALUE;
-        case 1: return INCIDENCE_ANGLE;
+        case 1: return INCIDENCE_ANGLES;
         case 2: return LOOK_ANGLE;
         case 3: return SLANT_RANGE;
         case 4: return TIME;

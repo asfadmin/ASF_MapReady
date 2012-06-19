@@ -1153,6 +1153,19 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   if (!metaSAR->sar)
       asfPrintError("Invalid metadata for: %s\n"
                     "No SAR block found.\n", sarFile);
+
+  // Look for polarimetric data.
+  // Polarimetric segmentations and parameters can't be radiometrically
+  // corrected.
+  if (metaSAR->general->image_data_type == POLARIMETRIC_SEGMENTATION && 
+      doRadiometric)
+    asfPrintError("Polarimetric segmentations can't be radiometrically "
+		  "terrain corrected!\n");
+  if (metaSAR->general->image_data_type == POLARIMETRIC_PARAMETER && 
+      doRadiometric)
+    asfPrintError("Polarimetric parameters can't be radiometrically "
+		  "terrain corrected!\n");    
+
 /* We are removing this for now -- matching for everyone ...
   if (strcmp_case(metaSAR->general->sensor, "ALOS") == 0 &&
       strcmp_case(metaSAR->general->sensor_name, "SAR") == 0) {

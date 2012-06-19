@@ -1452,10 +1452,7 @@ int polsarpro_data_check()
 SIGNAL_CALLBACK void
 on_add_file_with_ancillary_polsarpro_image_entry_changed(GtkWidget *widget)
 {
-  GtkWidget *ok_button =
-    get_widget_checked("add_file_with_ancillary_ok_button");
-  if (polsarpro_geocoding_check() && polsarpro_data_check())
-    gtk_widget_set_sensitive(ok_button, TRUE);
+  polsarpro_geocoding_check();
 }
 	
 SIGNAL_CALLBACK void
