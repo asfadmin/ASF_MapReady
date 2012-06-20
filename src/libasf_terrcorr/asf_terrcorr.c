@@ -1087,6 +1087,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   double t_offset, x_offset;
   int madssap = FALSE; // mask and dem same size and projection
   int clean_resample_file = TRUE;
+  int clean_sr_file = TRUE;
   int is_Palsar_L11 = FALSE;
 
   // We now do not allow user to specify pixel sizes for terrain
@@ -1405,6 +1406,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   } else {
     // image already in slant range - no action necessary
     srFile = STRDUP(resampleFile);
+    if (!clean_resample_file)
+      clean_sr_file = FALSE;
   }
 
   if (!metaSAR->sar->deskewed) {
@@ -1603,8 +1606,9 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
     if (!save_ground_dem)
       clean(demGround);
     if (clean_resample_file) // false when resample file is the original image
-        clean(resampleFile);
-    clean(srFile);
+      clean(resampleFile);
+    if (clean_sr_file)
+      clean(srFile);
     clean(resampleFile_2);
     clean(userMaskClipped);
 
