@@ -1089,6 +1089,16 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   int clean_resample_file = TRUE;
   int is_Palsar_L11 = FALSE;
 
+  // We now do not allow user to specify pixel sizes for terrain
+  // correction, we'll pick what we think is the best (oversample
+  // the DEM to match pixel size found in the image)
+  if (pixel_size > 0) {
+    asfPrintWarning("Specified pixel size of %f is ignored.\n",
+                    pixel_size);
+  }
+  pixel_size = -99;
+  do_resample = FALSE;
+
   // -- debug prints, uncomment as needed
   //printf("pixel size: %f\n", pixel_size);
   //printf("clean_files: %d\n", clean_files);
