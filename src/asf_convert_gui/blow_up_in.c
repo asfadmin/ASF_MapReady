@@ -38,6 +38,11 @@ in_input_thumbnail (GtkWidget *widget, GdkEventMotion *event)
     if (!g_show_thumbnail_columns)
         return FALSE;
 
+#ifdef darwin
+    // this is not working on OSX yet
+    return FALSE;
+#endif
+
     gboolean result = FALSE;	/* Result to be returned. */
 
     GtkTreePath *tp = thumbnail_path (widget, event);
