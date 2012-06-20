@@ -1,6 +1,6 @@
 include ../../make_support/system_rules
 
-CFLAGS += $(GLIBS_CFLAGS)
+CFLAGS += -Wall -Werror $(GLIBS_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_terrcorr.a \
