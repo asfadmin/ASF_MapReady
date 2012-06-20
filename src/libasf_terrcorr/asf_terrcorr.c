@@ -1523,8 +1523,9 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       clean(deskewDemMask);
 
 /*    
-      Taking this out.  No need to degrade the image.  User may not get
-      pixel size that was asked for, though.
+      Taking this out.  No need to degrade the image, now that we don't allow
+      the user to specify a pixel size it should not be needed any longer,
+      either
 
       // Because of the PP earth radius sr->gr fix, we may not have ended
       // up with the same x pixel size that the user requested.  So we will
