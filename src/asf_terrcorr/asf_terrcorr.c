@@ -9,7 +9,8 @@
 "          [-other-file <basename>] [-do-radiometric] [-smooth-dem-holes]\n"\
 "          [-no-match] [-offsets <range> <azimuth>]\n"\
 "          [-use-zero-offsets-if-match-fails] [-save-ground-range-dem]\n"\
-"          [-save-incidence-angles]\n"\
+"          [-save-incidence-angles] [-use-nearest-neighbor]\n"\
+"          [-use-bilinear]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -209,6 +210,13 @@
 "          product).  So, processing will stop after generating the simulated\n"\
 "          SAR image.\n"\
 "\n"\
+"     -use-nearest-neighbor\n"\
+"     -use-bilinear\n"\
+"          Specifies the interpolation method when performing geometric\n"\
+"          terrain correction.  Using nearest neighbor preserves much\n"\
+"          of the original radiometric charactaristics, using bilinear\n"\
+"          results in a smoother image.  Default is bilinear.\n"\
+"\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
@@ -326,6 +334,7 @@ main (int argc, char *argv[])
   int if_coreg_fails_use_zero_offsets = FALSE;
   int save_ground_dem = FALSE;
   int save_incid_angles = FALSE;
+  int use_nearest_neighbor = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   char *other_files[MAX_OTHER];
@@ -458,8 +467,11 @@ main (int argc, char *argv[])
 			NULL)) {
       save_ground_dem = TRUE;
     }
-    else if (strmatches(key,"-save-incidence-angles","--save_incidence-angles",NULL)) {
-      save_incid_angles = TRUE;
+    else if (strmatches(key,"-use-nearest-neighbor","--use-nearest-neighbor",NULL)) {
+      use_nearest_neighbor = TRUE;
+    }
+    else if (strmatches(key,"-use-bilinear","--use-bilinear",NULL)) {
+      use_nearest_neighbor = FALSE;
     }
     else if (strmatches(key,"-help","--help",NULL)) {
         print_help(); // doesn't return
@@ -500,7 +512,7 @@ main (int argc, char *argv[])
                               no_matching, range_offset, azimuth_offset,
                               use_gr_dem, add_speckle,
                               if_coreg_fails_use_zero_offsets, save_ground_dem,
-                              save_incid_angles);
+                              save_incid_angles, use_nearest_neighbor);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])

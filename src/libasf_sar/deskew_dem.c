@@ -806,7 +806,7 @@ static void filter_mask(char *maskName)
 int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
             char *inSarName, int doRadiometric, char *inMaskName,
             char *outMaskName, int fill_holes, int fill_value,
-            int which_gr_dem)
+            int which_gr_dem, int use_nearest_neighbor)
 {
   float *inSarLine;
   FILE *inDemSlantFp, *inDemGroundFp = NULL, *inSarFp, *outFp,
@@ -1084,7 +1084,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         get_band_float_line (inSarFp, inSarMeta, b, y, inSarLine);
 
         geo_compensate (&d, localGeoDemLines[1], inSarLine, outLine,
-                        ns, 1, maskLine, y);
+                        ns, !use_nearest_neighbor, maskLine, y);
         if((y == 0 || y == d.numLines - 1) && doRadiometric) {
           memset(outLine, 0, sizeof(float)*ns);
         }

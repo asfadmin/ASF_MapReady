@@ -202,6 +202,7 @@ typedef struct
                      // FALSE, use the backconverted slant-range DEM (default).
   int if_coreg_fails_use_zero_offsets; // If TRUE, if coreg fails redo with
                      // no_matching turned on
+  int use_nearest_neighbor; // Resampling method during geometric correction
 } s_terrain_correct;
 
 typedef struct

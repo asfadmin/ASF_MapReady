@@ -239,6 +239,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int use_gr_dem=FALSE;
   int save_ground_dem = FALSE;
   int save_incid_angles = FALSE;
+  int use_nearest_neighbor = FALSE;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
       clean_files, do_resample, do_corner_matching,
@@ -248,7 +249,8 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
       update_original_metadata_with_offsets, mask_height_cutoff,
       doRadiometric, smooth_dem_holes, NULL,
       no_matching, range_offset, azimuth_offset, use_gr_dem, add_speckle,
-      if_coreg_fails_use_zero_offsets, save_ground_dem, save_incid_angles);
+      if_coreg_fails_use_zero_offsets, save_ground_dem, save_incid_angles,
+      use_nearest_neighbor);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
@@ -276,6 +278,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int use_gr_dem = FALSE;
   int save_ground_dem = FALSE;
   int save_incid_angles = FALSE;
+  int use_nearest_neighbor = FALSE;
 
   int ret =
       asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
@@ -287,7 +290,8 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        other_files_to_update_with_offsets,
                        no_matching, range_offset, azimuth_offset, use_gr_dem,
                        add_speckle, if_coreg_fails_use_zero_offsets,
-                       save_ground_dem, save_incid_angles);
+                       save_ground_dem, save_incid_angles,
+                       use_nearest_neighbor);
 
   if (ret==0)
   {
@@ -1074,7 +1078,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                      int no_matching, double range_offset,
                      double azimuth_offset, int use_gr_dem, int add_speckle,
                      int if_coreg_fails_use_zero_offsets, int save_ground_dem,
-                     int save_incid_angles)
+                     int save_incid_angles, int use_nearest_neighbor)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimSar = NULL, *demTrimSlant = NULL, *demGround = NULL;
@@ -1087,7 +1091,18 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   double t_offset, x_offset;
   int madssap = FALSE; // mask and dem same size and projection
   int clean_resample_file = TRUE;
+  int clean_sr_file = TRUE;
   int is_Palsar_L11 = FALSE;
+
+  // We now do not allow user to specify pixel sizes for terrain
+  // correction, we'll pick what we think is the best (oversample
+  // the DEM to match pixel size found in the image)
+  if (pixel_size > 0) {
+    asfPrintWarning("Specified pixel size of %f is ignored.\n",
+                    pixel_size);
+  }
+  pixel_size = -99;
+  do_resample = FALSE;
 
   // -- debug prints, uncomment as needed
   //printf("pixel size: %f\n", pixel_size);
@@ -1395,6 +1410,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   } else {
     // image already in slant range - no action necessary
     srFile = STRDUP(resampleFile);
+    if (!clean_resample_file)
+      clean_sr_file = FALSE;
   }
 
   if (!metaSAR->sar->deskewed) {
@@ -1488,7 +1505,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
            metaSAR->general->line_count);
       deskew_dem(demTrimSlant, demGround, deskewDemFile, padFile, FALSE,
                  userMaskClipped, deskewDemMask, do_interp, fill_value,
-                 which_dem);
+                 which_dem, use_nearest_neighbor);
 
       // After deskew_dem, there will likely be zeros on the left & right edges
       // of the image, we trim those off before finishing up.  Skip this for
@@ -1512,6 +1529,11 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       clean(deskewDemFile);
       clean(deskewDemMask);
 
+/*    
+      Taking this out.  No need to degrade the image, now that we don't allow
+      the user to specify a pixel size it should not be needed any longer,
+      either
+
       // Because of the PP earth radius sr->gr fix, we may not have ended
       // up with the same x pixel size that the user requested.  So we will
       // just resample to the size that was requested.  This correction is
@@ -1519,7 +1541,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
 
       if (!is_Palsar_L11 && fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
       {
-          asfPrintStatus("Resampling to proper range pixel size. (%f m)\n", pixel_size);
+          asfPrintStatus("Resampling to proper range pixel size. (%f m)\n",
+                         pixel_size);
 
           asfPrintStatus("Output image...\n");
           resampleFile_2 = getOutName(output_dir, outFile, "_resample");
@@ -1539,7 +1562,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       } else {
           resampleFile_2 = NULL;
       }
-
+*/
       // Perform radiometric correction
       if (doRadiometric) {
 
@@ -1587,8 +1610,9 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
     if (!save_ground_dem)
       clean(demGround);
     if (clean_resample_file) // false when resample file is the original image
-        clean(resampleFile);
-    clean(srFile);
+      clean(resampleFile);
+    if (clean_sr_file)
+      clean(srFile);
     clean(resampleFile_2);
     clean(userMaskClipped);
 

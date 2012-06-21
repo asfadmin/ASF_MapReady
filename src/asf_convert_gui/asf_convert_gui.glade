@@ -2930,7 +2930,7 @@
 
 								  <child>
 								    <widget class="GtkHBox" id="hbox45">
-								      <property name="visible">True</property>
+								      <property name="visible">False</property>
 								      <property name="homogeneous">False</property>
 								      <property name="spacing">0</property>
 

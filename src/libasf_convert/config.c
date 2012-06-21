@@ -595,6 +595,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->use_gr_dem = 0;
   cfg->terrain_correct->if_coreg_fails_use_zero_offsets = 0;
   cfg->terrain_correct->save_incid_angles = 0;
+  cfg->terrain_correct->use_nearest_neighbor = 0;
 
   cfg->calibrate->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->calibrate->radiometry, "AMPLITUDE_IMAGE");
@@ -863,6 +864,9 @@ convert_config *init_fill_convert_config(char *configFile)
         if (strncmp(test, "save incidence angles", 21)==0)
           cfg->terrain_correct->save_incid_angles =
       read_int(line, "save incidence angles");
+        if (strncmp(test, "use nearest neighbor", 20)==0)
+          cfg->terrain_correct->use_nearest_neighbor =
+      read_int(line, "use nearest neighbor");
 
         // Geocoding
         if (strncmp(test, "projection", 10)==0)
@@ -1287,6 +1291,9 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "save incidence angles", 21)==0)
         cfg->terrain_correct->save_incid_angles =
 	  read_int(line, "save incidence angles");
+      if (strncmp(test, "use nearest neighbor", 20)==0)
+        cfg->terrain_correct->use_nearest_neighbor =
+	  read_int(line, "use nearest neighbor");
       FREE(test);
     }
 
@@ -2040,6 +2047,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# correction is turned on\n\n");
       fprintf(fConfig, "save incidence angles = %d\n",
 	      cfg->terrain_correct->save_incid_angles);
+     if (!shortFlag)
+        fprintf(fConfig, "\n# Turning this on will use nearest neighbor resampling\n"
+                "# during geometric terrain correction.  Normally bilinear interpolation\n"
+                "# is used.\n\n");
+      fprintf(fConfig, "use nearest neighbor = %d\n",
+              cfg->terrain_correct->use_nearest_neighbor);
 
     }
 
