@@ -69,7 +69,7 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMslant,
 int deskew_dem(char *inDemSlant, char *inDemGround, char *outName,
                char *inSarName, int doRadiometric, char *inMaskName,
                char *outMaskName, int fill_holes, int fill_value,
-               int which_gr_dem);
+               int which_gr_dem, int use_nearest_neighbor);
 
 /* Prototypes from create_dem_grid.c */
 int create_dem_grid(const char *demName, const char *sarName,

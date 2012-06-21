@@ -2408,7 +2408,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 				    TRUE, // use_speckle
 				    cfg->terrain_correct->if_coreg_fails_use_zero_offsets,
 				    FALSE,
-            cfg->terrain_correct->save_incid_angles), // no ground range DEM saving
+            cfg->terrain_correct->save_incid_angles,// no ground range DEM saving
+                                    cfg->terrain_correct->use_nearest_neighbor), 
 		   "terrain correcting data file (asf_terrcorr)\n");
     }
     
