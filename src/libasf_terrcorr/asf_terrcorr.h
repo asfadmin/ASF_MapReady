@@ -50,7 +50,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
                      int no_matching, double range_offset,
                      double azimuth_offset, int use_gr_dem, int add_speckle,
                      int if_coreg_fails_use_zero_offsets, int save_ground_dem,
-                     int save_incid_angles);
+                     int save_incid_angles, int use_nearest_neighbor);
 
 void
 clip_dem(meta_parameters *metaSAR, char *srFile, char *demFile,

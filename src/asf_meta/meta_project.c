@@ -578,8 +578,8 @@ static void latLon2proj_imp(double lat, double lon, double elev,
 {
   project_parameters_t pps;
   projection_type_t proj_type;
-  datum_type_t datum;
-  spheroid_type_t spheroid;
+  datum_type_t datum = WGS84_DATUM;
+  spheroid_type_t spheroid = WGS84_SPHEROID;
   meta_projection *meta_proj;
   double projZ;
 

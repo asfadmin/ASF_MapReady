@@ -1338,7 +1338,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     short geographic_type;
     read_count
         = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geographic_type, 0, 1);
-    asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
+    //asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
     datum = UNKNOWN_DATUM;
     switch ( geographic_type ) {
       case GCS_WGS_84:
@@ -1351,7 +1351,9 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
         datum = NAD83_DATUM;
         break;
       default:
-        asfPrintError ("Unsupported GeographicTypeGeoKey value in GeoTIFF file");
+        asfPrintWarning ("Unsupported GeographicTypeGeoKey value in GeoTIFF file");
+        datum = WGS84_DATUM;
+        break;
         break;
     }
     spheroid_type_t spheroid = datum_spheroid (datum);

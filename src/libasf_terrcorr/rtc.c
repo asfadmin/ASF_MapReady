@@ -13,7 +13,7 @@ static char *matrix[32] =
    "C14_real","C14_imag","C22","C23_real","C23_imag","C24_real","C24_imag",
    "C33","C34_real","C34_imag","C44"};
 
-static char *decomposition[31] = 
+static char *decomposition[35] = 
   {"Freeman2_Ground","Freeman2_Vol","Freeman_Dbl","Freeman_Odd","Freeman_Vol",
    "VanZyl3_Dbl","VanZyl3_Odd","VanZyl3_Vol","Yamaguchi3_Dbl","Yamaguchi3_Odd",
    "Yamaguchi3_Vol","Yamaguchi4_Dbl","Yamaguchi4_Hlx","Yamaguchi4_Odd",

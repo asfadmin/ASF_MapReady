@@ -195,7 +195,7 @@ void update_pixel_info(ImageInfo *ii)
 
         //double px, py;
         //latLon2UTM(lat,lon,0,&px,&py);
-        //printf("%7.2f %7.2f --> %13.2f %13.2f\n", lat, lon, px, py);
+        //printf("%14.7f %14.7f --> %13.2f %13.2f\n", lat, lon, px, py);
     }
 
     // skip projection coords if not projected, or lat/long pseudo (since
