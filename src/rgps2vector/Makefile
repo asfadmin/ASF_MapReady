@@ -13,6 +13,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(HDF5_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
