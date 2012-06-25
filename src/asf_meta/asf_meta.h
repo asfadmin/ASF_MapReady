@@ -852,7 +852,9 @@ int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
     const complexFloat *source);
 int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
     int num_lines_to_put, const complexFloat *source);
-
+int put_band_complexFloat_line(FILE *file, meta_parameters *meta, 
+			       int band_number, int line_number, 
+			       const float *source);
 int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number,
         int sample_number, int num_samples_to_get,
         unsigned char *dest);

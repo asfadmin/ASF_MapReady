@@ -17,10 +17,11 @@ following defines.
 "              [-no-ers2-gain-fix] [-image-data-type <type>] [-lut <file>]\n"\
 "              [-lat <lower> <upper>] [-prc] [-log <logFile>]\n"\
 "              [-quiet] [-real-quiet] [-license] [-version] [-multilook]\n"\
+"              [-azimuth-look-count <looks>] [-range-look-count <looks>]\n"\
 "              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-complex] [-metadata <file>]\n"\
 "              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
-"              [-baseline <file>] [-complex_gamma <file>] [-line <start line subset>]\n"\
+"              [-baseline <file>] [-cpx_gamma <file>] [-line <start line subset>]\n"\
 "              [-sample <start sample subset>] [-width <subset width>]\n"\
 "              [-height <subset height>] [-uavsar <type>]\n"\ 
 "              [-subset <latUL> <lonUL> <latLR> <lonLR>] [-help]\n"\
@@ -64,7 +65,13 @@ following defines.
 "        Create a complex image (I+Q) (only for single look complex data).\n"\
 "   -multilook\n"\
 "        Create a multilooked image when ingesting single look complex data\n"\
-"        into a two-banded image with amplitude and phase\n"\
+"        into a one-banded amplitude image\n"\
+"   -azimuth-look-count\n"\
+"        Defines the number of looks in azimuth to take while multilooking.\n"\
+"        Requires that -multilook flag is set at the same time.\n"\
+"   -range-look-count\n"\
+"        Defines the number of looks in range to take while multilooking.\n"\
+"        Requires that -multilook flag is set at the same time.\n"\
 "   -db  Output calibrated image in decibels. This can only be used with\n"\
 "        -sigma, -beta, or -gamma. When performing statistics on the imagery\n"\
 "        it is highly recommended that the image is left in power scale\n"\
@@ -110,7 +117,7 @@ following defines.
 "   -baseline <file>\n"\
 "        Provides baseline information of the interferometric pair.\n"\
 "        Requires the format to be 'gamma' or 'roipac'.\n"\
-"   -complex_gamma <file>\n"\
+"   -cpx_gamma <file>\n"\
 "        Flag that allows the ingest of a complex GAMMA file that is stored in a\n"\
 "        two-band image.\n"\
 "        Requires the format to be 'gamma'.\n"\
@@ -281,6 +288,8 @@ typedef enum {
     f_POWER,
     f_COMPLEX,
     f_MULTILOOK,
+    f_AZIMUTH_LOOKS,
+    f_RANGE_LOOKS,
     f_AMP0,
     f_DB,
     f_SPROCKET,
@@ -311,7 +320,7 @@ typedef enum {
     f_COHERENCE,
     f_SLAVE,
     f_BASELINE,
-    f_COMPLEX_GAMMA,
+    f_CPX_GAMMA,
     f_UAVSAR,
     f_SUBSET,
     f_METAONLY,
@@ -447,6 +456,7 @@ int main(int argc, char *argv[])
     int flags[NUM_IMPORT_FLAGS];
     double lowerLat=NAN, upperLat=NAN, lowerLon=NAN, upperLon=NAN;
     int line=0, sample=0, height=-99, width=-99;
+    int azimuth_look_count=-1, range_look_count=-1;
     double range_scale=NAN, azimuth_scale=NAN, correct_y_pixel_size=NAN;
     int do_resample;
     int do_metadata_fix;
@@ -470,8 +480,11 @@ int main(int argc, char *argv[])
     flags[f_BETA] = checkForOption("-beta", argc, argv);
     flags[f_GAMMA] = checkForOption("-gamma", argc, argv);
     flags[f_POWER] = checkForOption("-power", argc, argv);
+    flags[f_CPX_GAMMA] = checkForOption("-cpx_gamma", argc, argv);
     flags[f_COMPLEX] = checkForOption("-complex", argc, argv);
     flags[f_MULTILOOK] = checkForOption("-multilook", argc, argv);
+    flags[f_AZIMUTH_LOOKS] = checkForOption("-azimuth-look-count", argc, argv);
+    flags[f_RANGE_LOOKS] = checkForOption("-range-look-count", argc, argv);
     flags[f_AMP0] = checkForOption("-amp0", argc, argv);
     flags[f_DB] = checkForOption("-db", argc, argv);
     flags[f_SPROCKET] = checkForOption("-sprocket", argc, argv);
@@ -498,7 +511,6 @@ int main(int argc, char *argv[])
     flags[f_COHERENCE] = checkForOption("-coherence", argc, argv);
     flags[f_SLAVE] = checkForOption("-slave", argc, argv);
     flags[f_BASELINE] = checkForOption("-baseline", argc, argv);
-    flags[f_COMPLEX_GAMMA] = checkForOption("-complex_gamma", argc, argv);
     flags[f_UAVSAR] = checkForOption("-uavsar", argc, argv);
     flags[f_SUBSET] = checkForOption("-subset", argc, argv);
     flags[f_METAONLY] = checkForOption("-metaonly", argc, argv);
@@ -566,6 +578,12 @@ int main(int argc, char *argv[])
         print_usage();
     }
 
+    if ((flags[f_AZIMUTH_LOOKS] != FLAG_NOT_SET ||
+	 flags[f_RANGE_LOOKS] != FLAG_NOT_SET) &&
+	flags[f_MULTILOOK] == FLAG_NOT_SET)
+      asfPrintStatus("You cannot specify azimuth look counts or range look "
+		     "counts\nwithout selecting the -multilook option!\n");
+
     { /*We need to make sure the user specified the proper number of arguments*/
         int needed_args = 1 + REQUIRED_ARGS;    /*command + REQUIRED_ARGS*/
         if(flags[f_AMP] != FLAG_NOT_SET)      needed_args += 1;/*option*/
@@ -575,6 +593,8 @@ int main(int argc, char *argv[])
         if(flags[f_POWER] != FLAG_NOT_SET)    needed_args += 1;/*option*/
         if(flags[f_COMPLEX] != FLAG_NOT_SET)  needed_args += 1;/*option*/
         if(flags[f_MULTILOOK] != FLAG_NOT_SET) needed_args += 1;/*option*/
+	if(flags[f_AZIMUTH_LOOKS] != FLAG_NOT_SET) needed_args += 2;
+	if(flags[f_RANGE_LOOKS] != FLAG_NOT_SET) needed_args += 2;
         if(flags[f_AMP0] != FLAG_NOT_SET)     needed_args += 1;/*option*/
         if(flags[f_DB] != FLAG_NOT_SET)       needed_args += 1;/*option*/
         if(flags[f_SPROCKET] != FLAG_NOT_SET) needed_args += 1;/*option*/
@@ -606,7 +626,7 @@ int main(int argc, char *argv[])
 	if(flags[f_COHERENCE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_SLAVE] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_BASELINE] != FLAG_NOT_SET) needed_args += 2;
-	if(flags[f_COMPLEX_GAMMA] != FLAG_NOT_SET) needed_args += 1;
+	if(flags[f_CPX_GAMMA] != FLAG_NOT_SET) needed_args += 1;
 	if(flags[f_UAVSAR] != FLAG_NOT_SET) needed_args += 2;
 	if(flags[f_SUBSET] != FLAG_NOT_SET) 
 	  needed_args += 5;
@@ -707,7 +727,7 @@ int main(int argc, char *argv[])
       if(   argv[flags[f_BASELINE]+1][0] == '-'
             || flags[f_BASELINE] >= argc-REQUIRED_ARGS)
         print_usage();
-    if(flags[f_COMPLEX_GAMMA] != FLAG_NOT_SET)
+    if(flags[f_CPX_GAMMA] != FLAG_NOT_SET)
       /*Make sure the field following -complex_gamma isn't another option*/
       if(   argv[flags[f_BASELINE]+1][0] == '-'
             || flags[f_BASELINE] >= argc-REQUIRED_ARGS)
@@ -716,6 +736,14 @@ int main(int argc, char *argv[])
       /*Make sure the field following -colormap isn't another option*/
       if(   argv[flags[f_UAVSAR]+1][0] == '-'
             || flags[f_UAVSAR] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_AZIMUTH_LOOKS] != FLAG_NOT_SET)
+      if(   argv[flags[f_AZIMUTH_LOOKS]+1][0] == '-'
+            || flags[f_AZIMUTH_LOOKS] >= argc-REQUIRED_ARGS)
+        print_usage();
+    if(flags[f_RANGE_LOOKS] != FLAG_NOT_SET)
+      if(   argv[flags[f_RANGE_LOOKS]+1][0] == '-'
+            || flags[f_RANGE_LOOKS] >= argc-REQUIRED_ARGS)
         print_usage();
 
     /* Be sure to open log ASAP */
@@ -762,6 +790,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    if(flags[f_AZIMUTH_LOOKS] != FLAG_NOT_SET)
+      azimuth_look_count = atoi(argv[flags[f_AZIMUTH_LOOKS]+1]);
+    if(flags[f_RANGE_LOOKS] != FLAG_NOT_SET)
+      range_look_count = atoi(argv[flags[f_RANGE_LOOKS]+1]);
     if(flags[f_LINE] != FLAG_NOT_SET)
       line = atoi(argv[flags[f_LINE]+1]);
     if(flags[f_SAMPLE] != FLAG_NOT_SET)
@@ -796,7 +828,7 @@ int main(int argc, char *argv[])
       baseline_file = (char *) MALLOC(sizeof(char)*1024);
       strcpy(baseline_file, argv[flags[f_BASELINE] + 1]);
     }
-    if(flags[f_COMPLEX_GAMMA] != FLAG_NOT_SET) {
+    if(flags[f_CPX_GAMMA] != FLAG_NOT_SET) {
       complex_gamma_file = TRUE;
     }
     if(flags[f_UAVSAR] != FLAG_NOT_SET) {
@@ -927,9 +959,9 @@ int main(int argc, char *argv[])
       asfPrintError("Use of the -baseline option requires the ingest of "
 		    "interferometric data.\n");
     }
-    if (flags[f_COMPLEX_GAMMA] != FLAG_NOT_SET && format_type != GAMMA) {
+    if (flags[f_CPX_GAMMA] != FLAG_NOT_SET && format_type != GAMMA) {
       // complex GAMMA data require GAMMA format to be useful
-      asfPrintError("Use of the -complex_gamma option requires the ingest of "
+      asfPrintError("Use of the -cpx_gamma option requires the ingest of "
 		    "GAMMA data.\n");
     }
     if ((format_type == GAMMA || format_type == ROIPAC) &&
@@ -1043,6 +1075,7 @@ int main(int argc, char *argv[])
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
 
         asf_import(radiometry, db_flag, complex_flag, multilook_flag,
+		   azimuth_look_count, range_look_count,
                    amp0_flag, format_type, band_id, data_type, image_data_type,
                    lutName,prcPath, lowerLat, upperLat, lowerLon, upperLon,
 		   line, sample, width, height, save_intermediates, 

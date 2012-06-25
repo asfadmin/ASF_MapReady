@@ -79,6 +79,8 @@ typedef struct
   int complex_slc;        // flag to save complex data as I/Q
                           // otherwise SLC data as stored as amp/phase
   int multilook_slc;      // flag to multilook single look complex data
+  int azimuth_look_count; // number of azimuth looks for multilooking
+  int range_look_count;   // number of range looks for multilooking
   int ers2_gain_fix;      // flag to apply ers2 gain correction
   char *polsarpro_colormap; // colormap (.pal) to apply to PolSARpro classifications
   char *metadata_file;    // Name of a (non-ASF) metadata file (if it can't

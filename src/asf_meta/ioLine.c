@@ -619,6 +619,14 @@ int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
   return put_data_lines(file, meta, 0, line_number, 1, source, COMPLEX_REAL32);
 }
 
+int put_band_complexFloat_line(FILE *file, meta_parameters *meta, 
+			       int band_number, int line_number, 
+			       const float *source)
+{
+  return put_data_lines(file, meta, band_number, line_number, 1, source, 
+			COMPLEX_REAL32);
+}
+
 /*******************************************************************************
  * Write num_lines_to_put lines of data via put_data_lines from a floating point
  * array to a file in the data type specified in the meta struct. Returns the

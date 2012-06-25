@@ -1103,12 +1103,12 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     update_status(status);
 
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
-    check_return(
-        asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
-                   NULL, what, NULL, NULL, -999, -999, -999, -999, 0, 0, 
-		   -99, -99, 0, NULL, NULL, NULL, FALSE, NULL, tiff_basename, 
-		   ancillary_file, NULL, NULL, NULL, NULL, NULL, FALSE, NULL,
-		   FALSE, imported),
+    check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, -1, -1, FALSE, 
+			    GENERIC_GEOTIFF, NULL, NULL, what, NULL, NULL, 
+			    -999, -999, -999, -999, 0, 0, -99, -99, 0, NULL, 
+			    NULL, NULL, FALSE, NULL, tiff_basename, 
+			    ancillary_file, NULL, NULL, NULL, NULL, NULL, 
+			    FALSE, NULL, FALSE, imported),
         status);
 
     sprintf(status, "Geocoding %s...", uc_what);
@@ -1769,8 +1769,8 @@ char ***do_import(convert_config *cfg)
     // Generate a temporary output filename
     if (cfg->general->image_stats || cfg->general->detect_cr ||
 	cfg->general->sar_processing || cfg->general->polarimetry ||
-	cfg->general->terrain_correct || cfg->general->geocoding ||
-	cfg->general->export) {
+	cfg->general->terrain_correct || cfg->general->calibration ||
+	cfg->general->geocoding || cfg->general->export) {
       sprintf(outFile, "%s/import", cfg->general->tmp_dir);
     }
     else {
@@ -1827,7 +1827,9 @@ char ***do_import(convert_config *cfg)
     check_return(asf_import(radiometry, db_flag,
 			    cfg->import->complex_slc,
 			    cfg->import->multilook_slc,
-			    FALSE, // amp0_flag -- no longer used by asf_mapready
+			    cfg->import->azimuth_look_count,
+			    cfg->import->range_look_count,
+			    FALSE, // amp0_flag - no longer used by asf_mapready
 			    format_type,
 			    NULL,
 			    NULL,
@@ -2182,7 +2184,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       sprintf(inFile, "%s", outFile);
       if (cfg->general->image_stats || cfg->general->detect_cr ||
 	  cfg->general->polarimetry || cfg->general->terrain_correct ||
-	  cfg->general->geocoding || cfg->general->export) {
+	  cfg->general->calibration || cfg->general->geocoding || 
+	  cfg->general->export) {
 	sprintf(outFile, "%s/sar_processing", cfg->general->tmp_dir);
       }
       else {
@@ -2251,7 +2254,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     
     sprintf(inFile, "%s", outFile);
     if (cfg->general->polarimetry || cfg->general->terrain_correct ||
-	cfg->general->geocoding || cfg->general->export)
+	cfg->general->calibration || cfg->general->geocoding || 
+	cfg->general->export)
       {
 	sprintf(outFile, "%s/c2p", cfg->general->tmp_dir);
       }
@@ -2280,7 +2284,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     // Pass in command line
     sprintf(inFile, "%s", outFile);
     if (cfg->general->polarimetry || cfg->general->terrain_correct ||
-	cfg->general->geocoding || cfg->general->export)
+	cfg->general->calibration || cfg->general->geocoding || 
+	cfg->general->export)
       {
         sprintf(outFile, "%s/image_stats", cfg->general->tmp_dir);
       }
@@ -2304,8 +2309,9 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     
     // Pass in command line
     sprintf(inFile, "%s", outFile);
-    if (cfg->general->polarimetry || cfg->general->polarimetry ||
-	cfg->general->geocoding || cfg->general->export) {
+    if (cfg->general->polarimetry || cfg->general->terrain_correct ||
+	cfg->general->calibration || cfg->general->geocoding || 
+	cfg->general->export) {
       sprintf(outFile, "%s/detect_cr", cfg->general->tmp_dir);
     }
     else {
@@ -2329,8 +2335,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       
       // Pass in command line for faraday correction
       sprintf(inFile, "%s", outFile);
-      if (cfg->general->terrain_correct || cfg->general->geocoding ||
-	  cfg->general->export)
+      if (cfg->general->terrain_correct || cfg->general->calibration ||
+	  cfg->general->geocoding || cfg->general->export)
         {
           sprintf(outFile, "%s/faraday_correction", cfg->general->tmp_dir);
         }
@@ -2373,7 +2379,11 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     
     // Generate filenames
     sprintf(inFile, "%s", outFile);
-    sprintf(outFile, "%s/terrain_correct", cfg->general->tmp_dir);
+    if (cfg->general->calibration || cfg->general->polarimetry ||
+	cfg->general->geocoding || cfg->general->export)
+      sprintf(outFile, "%s/terrain_correct", cfg->general->tmp_dir);
+    else
+      sprintf(outFile, "%s", cfg->general->out_name);
     
     // Call asf_terrcorr!  Or refine_geolocation!
     if (cfg->terrain_correct->refine_geolocation_only) {
@@ -2443,7 +2453,10 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     
     // Generate filenames
     sprintf(inFile, "%s", outFile);
-    sprintf(outFile, "%s/calibrate", cfg->general->tmp_dir);
+    if (cfg->general->geocoding || cfg->general->export)
+      sprintf(outFile, "%s/calibrate", cfg->general->tmp_dir);
+    else
+      sprintf(outFile, "%s", cfg->general->out_name);
     
     // Check radiometry
     radiometry_t radiometry;
@@ -2466,11 +2479,6 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 			       cfg->calibrate->wh_scale),
 		 "Applying calibration parameters (asf_calibrate)\n");
 
-    // File name shuffling if needed
-    if (!cfg->general->geocoding && !cfg->general->export) {
-      renameImgAndMeta(outFile, cfg->general->out_name);
-      strcpy(outFile, cfg->general->out_name);
-    }
   }
 
   if (cfg->general->polarimetry) {
