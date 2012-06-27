@@ -32,8 +32,18 @@ BUGS:
 #include "prc_stvecs.h"
 #include "dateUtil.h"
 #include "asf_meta.h"
+#include "asf_endian.h"
 #include <sys/stat.h>
 #include <dirent.h>
+
+#ifdef MIN
+#  undef MIN
+#endif
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#ifdef MAX
+#  undef MAX
+#endif
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 void prc_date_time(PRC_REC *,float,ymd_date *,hms_time *);
 void find_closest_prc_rec(char *file, ymd_date *seekDate, hms_time *seekTime,
@@ -470,4 +480,176 @@ void display_prc_id(DSIDP *tmp)
   asfPrintStatus("Product Id            : %s\n",tmp->prodid);
   asfPrintStatus("Data Type             : %s\n",tmp->dattyp);
   asfPrintStatus("Spare                 : %s\n",tmp->spare);
+}
+
+// Code ported from Delft getorb Fortran code
+// http://www.deos.tudelft.nl/ers/precorbs/tools/getorb_pack.shtml
+static void geocentric_latlon(doris_prc_polar inVec, doris_prc_polar *outVec)
+{
+  double ae = 6378137.000;
+  double finv = 298.257;
+  double flat = 1.0/finv;
+  double ffact = flat*(flat - 2.0);
+  double lat = inVec.lat*D2R;
+  double lats = atan((ffact + 1)*tan(lat));
+  double rs = ae*(1.0 - flat)/sqrt(1.0 + ffact*cos(lats)*cos(lats));
+  double height = inVec.height;
+  double r = sqrt(height*height + rs*rs + 2.0*height*rs*cos(lat - lats));
+  double latc = lats + sin(height*sin(lat - lats)/r);
+  outVec->time = inVec.time;
+  outVec->lat = latc*R2D;
+  outVec->lon = inVec.lon;
+  outVec->height = r;
+}
+
+static void polar2cartesian(doris_prc_polar stVec, doris_prc_cartesian *vec)
+{
+  double lat = stVec.lat*D2R;
+  double lon = stVec.lon*D2R;
+  double radius = stVec.height;
+  vec->time = stVec.time;
+  vec->x = radius*cos(lat)*cos(lon);
+  vec->y = radius*cos(lat)*sin(lon);
+  vec->z = radius*sin(lat);
+}
+
+static void interpolate_prc_vectors(doris_prc_polar *stVec, double time,
+				    int start, int stop, 
+				    doris_prc_cartesian *outVec)
+{
+  int t1 = stVec[start].time;
+  int tn = stVec[stop].time;
+  double trel = (double)(time-t1)/(double)(tn-t1)*8.0 + 1.0;
+  int itrel = MAX(0, MIN((int)(trel + 0.5) - 4, 0));
+  double x = trel - itrel;
+  double teller = (x-1)*(x-2)*(x-3)*(x-4)*(x-5)*(x-6)*(x-7)*(x-8)*(x-9);
+  int kx;
+  doris_prc_cartesian vec;
+  if (FLOAT_EQUIVALENT(teller, 0.0)) {
+    kx = start + (int)(x + 0.5) - 1;
+    doris_prc_polar polarVec;
+    geocentric_latlon(stVec[kx], &polarVec);
+    polar2cartesian(polarVec, &vec);
+  }
+  else {
+    doris_prc_cartesian cartVec;
+    outVec->time = 0.0;
+    outVec->x = 0.0;
+    outVec->y = 0.0;
+    outVec->z = 0.0;
+    int noemer[9] = {40320, -5040, 1440, -720, 576, -720, 1440, -5040, 40320};
+    for (kx=0; kx<9; kx++) {
+      doris_prc_polar polarVec;
+      geocentric_latlon(stVec[start+kx], &polarVec);
+      polar2cartesian(polarVec, &cartVec);
+      double coeff = teller/noemer[kx]/(x-kx-1);
+      outVec->time = outVec->time + coeff*cartVec.time;
+      outVec->x = outVec->x + coeff*cartVec.x;
+      outVec->y = outVec->y + coeff*cartVec.y;
+      outVec->z = outVec->z + coeff*cartVec.z;
+    }
+  }
+}
+
+int update_state_vectors(char *outBaseName, char *odrFile)
+{
+  if (!fileExists(odrFile))
+    asfPrintError("Precision state vector file (%s) does not exist!\n", 
+		  odrFile);
+  FILE *fpIn = FOPEN(odrFile, "rb");  
+
+  // Check for new version of ODR file: xODR
+  char spec[5];
+  FREAD(&spec, 1, 4, fpIn); spec[4] = '\0';
+  if (strcmp_case(spec, "xODR") != 0)
+    asfPrintError("Unsupported precision state vector file (%s) type\n", 
+		  odrFile);
+  asfPrintStatus("\nUpdate orbit information with precision state vectors\n\n");
+
+  // Determine image center time for reference
+  meta_parameters *meta = meta_read(outBaseName);
+  julian_date jd;
+  jd.year = meta->state_vectors->year;
+  jd.jd = meta->state_vectors->julDay;
+  double ref_secs = meta->state_vectors->second;
+  double ref_time = date2seconds(&jd, ref_secs);
+  int stVec_count = meta->state_vectors->vector_count;
+  ref_time += meta->state_vectors->vecs[stVec_count/2].time;
+
+  // Initialize structure for updated state vector structure
+  meta_state_vectors *prcVec = meta_state_vectors_init(9);
+  int year = meta->state_vectors->year;
+  prcVec->year = year;
+  int julDay = meta->state_vectors->julDay;
+  prcVec->julDay = julDay;
+  double second = meta->state_vectors->second;
+  prcVec->second = second;
+  prcVec->vector_count = 9;
+
+  // Read header information
+  char satellite[9];
+  int begin, repeat_cycle, arc, nRecords, version;
+  FREAD(&satellite, 1, 8, fpIn); satellite[8] = '\0';
+  FREAD(&begin, 1, 4, fpIn); ieee_big32(begin);
+  FREAD(&repeat_cycle, 1, 4, fpIn); ieee_big32(repeat_cycle);
+  FREAD(&arc, 1, 4, fpIn); ieee_big32(arc);
+  FREAD(&nRecords, 1, 4, fpIn); ieee_big32(nRecords);
+  FREAD(&version, 1, 4, fpIn); ieee_big32(version);
+
+  // Read state vectors
+  doris_prc_polar *stVec = 
+    (doris_prc_polar *) MALLOC(sizeof(doris_prc_polar)*nRecords);
+  int ii, kk, closest, time, nLat, nLon, nHeight;
+  double diff = DAY2SEC*100;
+  for (ii=0; ii<nRecords; ii++) {
+    FREAD(&time, 1, 4, fpIn); ieee_big32(time);
+    FREAD(&nLat, 1, 4, fpIn); ieee_big32(nLat);
+    FREAD(&nLon, 1, 4, fpIn); ieee_big32(nLon);
+    FREAD(&nHeight, 1, 4, fpIn); ieee_big32(nHeight);
+    stVec[ii].time = time;
+    stVec[ii].lat = (double)nLat/10000000.0; 
+    stVec[ii].lon = (double)nLon/10000000.0;
+    stVec[ii].height = (double)nHeight/1000.0;
+    if (fabs((double)time - ref_time) < diff) {
+      closest = ii;
+      diff = fabs(time - ref_time);
+    }
+  }
+  FCLOSE(fpIn);
+
+  // Generating state vectors in earth-fixed coordinates
+  doris_prc_polar polarVec;
+  doris_prc_cartesian cartVec, velOne, velTwo;
+  ref_time = date2seconds(&jd, ref_secs);
+  for (ii=closest-4; ii<=closest+4; ii++) {
+    geocentric_latlon(stVec[ii], &polarVec);
+    polar2cartesian(polarVec, &cartVec);
+
+    // Approximate state vector velocity according to getorb FAQs
+    // (http://www.deos.tudelft.nl/ers/precorbs/faq.shtml#004001):
+    // XYZvel(t) = XYZpos(t + 0.5sec) - XYZpos(t - 0.5sec)
+    // Approximating velocities is fine since we will use an interpolation
+    // scheme later that does not require these.
+    interpolate_prc_vectors(stVec, cartVec.time-0.5, closest-4, closest+4, 
+			    &velOne);
+    interpolate_prc_vectors(stVec, cartVec.time+0.5, closest-4, closest+4, 
+			    &velTwo);
+
+    // Fill in the orbit information into metadata state vector structure
+    kk = ii - closest + 4;
+    prcVec->vecs[kk].time = cartVec.time - ref_time;
+    prcVec->vecs[kk].vec.pos.x = cartVec.x;
+    prcVec->vecs[kk].vec.pos.y = cartVec.y;
+    prcVec->vecs[kk].vec.pos.z = cartVec.z;
+    prcVec->vecs[kk].vec.vel.x = velTwo.x - velOne.x;
+    prcVec->vecs[kk].vec.vel.y = velTwo.y - velOne.y;
+    prcVec->vecs[kk].vec.vel.z = velTwo.z - velOne.z;
+  }
+  FREE(meta->state_vectors);
+  meta->state_vectors = prcVec;
+  meta_write(meta, outBaseName);
+  meta_free(meta);
+  FREE(stVec);
+
+  return TRUE;
 }
