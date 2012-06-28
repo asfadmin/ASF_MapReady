@@ -524,12 +524,11 @@ static void interpolate_prc_vectors(doris_prc_polar *stVec, double time,
   double x = trel - itrel;
   double teller = (x-1)*(x-2)*(x-3)*(x-4)*(x-5)*(x-6)*(x-7)*(x-8)*(x-9);
   int kx;
-  doris_prc_cartesian vec;
   if (FLOAT_EQUIVALENT(teller, 0.0)) {
     kx = start + (int)(x + 0.5) - 1;
     doris_prc_polar polarVec;
     geocentric_latlon(stVec[kx], &polarVec);
-    polar2cartesian(polarVec, &vec);
+    polar2cartesian(polarVec, &outVec);
   }
   else {
     doris_prc_cartesian cartVec;
