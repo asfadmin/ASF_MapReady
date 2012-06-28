@@ -1003,17 +1003,6 @@ int isTerrasar(char *dataFile, char **error);
 int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error);
 int isRadarsat2(char *dataFile, char **error);
 int isUAVSAR(char *dataFile, char **error);
-int meta_test(char *in_file, char *spec_file);
-int meta_test_ext(char *in_file, char *spec_file, report_level_t level);
-
-// Prototypes for geotiff_check.c
-int geotiff_test(char *in_file, char *spec_file);
-int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level);
-
-// Prototypes from lib_test.c
-int lib_test(char *lib_func, char *path, char *spec_file);
-int lib_test_ext(char *lib_func, char *path, char *spec_file, 
-		 report_level_t level);
 
 // Prototypes for meta_geotiff.c
 void copy_proj_parms(meta_projection *dest, meta_projection *src);

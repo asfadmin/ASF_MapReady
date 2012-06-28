@@ -99,8 +99,6 @@ OBJS =  $(LEX_YACC_OBJS) \
 	lzFetch.o \
 	xml_util.o \
 	meta_check.o \
-	geotiff_check.o \
-	lib_test.o \
 	meta_complex2polar.o \
 	meta_copy.o \
 	meta_create.o \
