@@ -645,6 +645,7 @@ double meta_get_dop(meta_parameters *sar,double yLine, double xSample);
 
 /*Return fixed-earth state vector for the given time.*/
 stateVector meta_get_stVec(meta_parameters *sar,double time_arg);
+stateVector meta_interp_stVec(meta_parameters *meta,double time);
 
 /*Return the incidence angle: this is the angle measured
   by the target between straight up and the satellite.

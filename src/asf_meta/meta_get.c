@@ -25,6 +25,15 @@ PROGRAM HISTORY:
 # define SQR(x) ((x)*(x))
 #endif
 
+#ifdef MIN
+#  undef MIN
+#endif
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#ifdef MAX
+#  undef MAX
+#endif
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+
 /*General Calls:*/
 
 /*********************************************************
@@ -324,4 +333,64 @@ double look_from_incid(double incid,double er,double ht)
 {
   double sr=slant_from_incid(incid,er,ht);
   return acos((SQR(sr) + SQR(ht) - SQR(er)) / (2.0*sr*ht));
+}
+
+// Code ported from Delft getorb Fortran code
+// http://www.deos.tudelft.nl/ers/precorbs/tools/getorb_pack.shtml
+static stateVector interpolate_prc_vector_position(meta_state_vectors *stVec, 
+						   double time)
+{
+  stateVector outVec;
+
+  if (stVec->vector_count != 9)
+    asfPrintError("This function needs nine state vectors.\n"
+		  "It should not have been called with this metadata.\n");
+  double t1 = stVec->vecs[0].time;
+  double tn = stVec->vecs[8].time;
+  double trel = (time-t1)/(tn-t1)*8.0 + 1.0;
+  int itrel = MAX(0, MIN((int)(trel + 0.5) - 4, 0));
+  double x = trel - itrel;
+  double teller = (x-1)*(x-2)*(x-3)*(x-4)*(x-5)*(x-6)*(x-7)*(x-8)*(x-9);
+  int kx;
+  if (FLOAT_EQUIVALENT(teller, 0.0)) {
+    kx = (int)(x + 0.5) - 1;
+    outVec.pos.x = stVec->vecs[kx].vec.pos.x;
+    outVec.pos.y = stVec->vecs[kx].vec.pos.y;
+    outVec.pos.z = stVec->vecs[kx].vec.pos.z;
+  }
+  else {
+    outVec.pos.x = 0.0;
+    outVec.pos.y = 0.0;
+    outVec.pos.z = 0.0;
+    int noemer[9] = {40320, -5040, 1440, -720, 576, -720, 1440, -5040, 40320};
+    for (kx=0; kx<9; kx++) {
+      double coeff = teller/noemer[kx]/(x-kx-1);
+      outVec.pos.x = outVec.pos.x + coeff*stVec->vecs[kx].vec.pos.x;
+      outVec.pos.y = outVec.pos.y + coeff*stVec->vecs[kx].vec.pos.y;
+      outVec.pos.z = outVec.pos.z + coeff*stVec->vecs[kx].vec.pos.z;
+    }
+  }
+
+  return outVec;
+}
+
+stateVector meta_interp_stVec(meta_parameters *meta,double time)
+{
+  stateVector velOne, velTwo, outVec;
+
+  if (meta->state_vectors->vector_count != 9)
+    asfPrintError("This function needs nine state vectors.\n"
+		  "It should not have been called with this metadata.\n");
+
+  // Determine the position of the state vector
+  outVec = interpolate_prc_vector_position(meta->state_vectors, time);
+
+  // Determine the velocity of the state vector
+  velOne = interpolate_prc_vector_position(meta->state_vectors, time-0.5);
+  velTwo = interpolate_prc_vector_position(meta->state_vectors, time+0.5);
+  outVec.vel.x = velTwo.pos.x - velOne.pos.x;
+  outVec.vel.y = velTwo.pos.y - velOne.pos.y;
+  outVec.vel.z = velTwo.pos.z - velOne.pos.z;
+
+  return outVec;
 }
