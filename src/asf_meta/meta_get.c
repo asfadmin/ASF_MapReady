@@ -233,15 +233,23 @@ stateVector meta_get_stVec(meta_parameters *meta,double time)
             (meta->state_vectors->vector_count != 1) ? "s" : "");
         exit(EXIT_FAILURE);
     }
-    stVecNo=0;
-    while (stVecNo < meta->state_vectors->vector_count - 2
-        && meta->state_vectors->vecs[stVecNo+1].time<time)
-        stVecNo++;
-    interp_stVec(&meta->state_vectors->vecs[stVecNo].vec,
-             meta->state_vectors->vecs[stVecNo].time,
-            &meta->state_vectors->vecs[stVecNo+1].vec,
-             meta->state_vectors->vecs[stVecNo+1].time,
-            &ret,time);
+    if (meta->state_vectors->vector_count == 9) {
+      // Use 8th order Legendre interpolation scheme
+      ret = meta_interp_stVec(meta, time);
+    }
+    else {
+      // Use standard interpolation scheme
+      stVecNo=0;
+      while (stVecNo < meta->state_vectors->vector_count - 2
+	     && meta->state_vectors->vecs[stVecNo+1].time<time)
+	stVecNo++;
+      interp_stVec(&meta->state_vectors->vecs[stVecNo].vec,
+		   meta->state_vectors->vecs[stVecNo].time,
+		   &meta->state_vectors->vecs[stVecNo+1].vec,
+		   meta->state_vectors->vecs[stVecNo+1].time,
+		   &ret,time);
+    }
+    
     return ret;
 }
 
