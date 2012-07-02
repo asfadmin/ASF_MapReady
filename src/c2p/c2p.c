@@ -78,9 +78,7 @@ int main (int argc, char *argv[])
 
 /* cla parsing */
   handle_common_asf_args(&argc, &argv, "c2p");
-  int multilook = extract_flag_options(&argc, &argv, "-ml", "-multilook", NULL);
-  int multiband = extract_flag_options(&argc, &argv, "-mb", "-multiband", NULL);
-  
+
 /* After extracting the optional flags, should have 2 args left */
   if (argc != 3)
       usage(argv[0]);
@@ -102,7 +100,7 @@ int main (int argc, char *argv[])
     asfPrintError("Metadata file (%s) does not exist.\n", inMetaName);
 
 /* Do it! */
-  c2p_ext(inDataName, inMetaName, argv[2], multilook, multiband);
+  c2p_ext(inDataName, inMetaName, argv[2], FALSE, FALSE);
   
   if (logflag)
       FCLOSE(fLog);
@@ -115,7 +113,7 @@ void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-ml] [-mb] <in> <out>\n",name);
+	"   %s <in> <out>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
 	"   <in>  The input file, assumed to be complex data.\n"
@@ -123,17 +121,7 @@ void usage(char *name)
     "          if necessary.\n"
 	"   <out> The base file name for the output;\n"
 	"          Writes out files named <out>_amp.img and\n"
-    "          <out>_phase.img, and metadata for each.\n"
-    "          When the -mb flag (multiband) is present,\n"
-    "          the output is <out>.img, a 2-band file with\n"
-    "          the amplitude in band 0, phase in band 1.\n\n"
-    "OPTIONAL ARGUMENTS:\n"
-    "   -ml   The data is multilooked as it is converted to\n"
-    "          polar.  The amplitude values are computed by\n"
-    "          first calculating the power, then multilooking,\n"
-    "          and finally square-rooting to obtain the\n"
-    "          amplitude.\n"
-    "   -mb   Output a single 2-band file.\n\n");
+    "          <out>_phase.img, and metadata for each.\n\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   Converts a complex image file to polar image files (amp + phase)\n");
