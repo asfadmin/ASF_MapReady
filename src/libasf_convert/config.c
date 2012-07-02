@@ -507,6 +507,8 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->output_db = 0;
   cfg->import->complex_slc = 0;
   cfg->import->multilook_slc = 0;
+  cfg->import->azimuth_look_count = -1;
+  cfg->import->range_look_count = -1;
   cfg->import->ers2_gain_fix = TRUE;
   cfg->import->polsarpro_colormap = (char *)MALLOC(sizeof(char)*256);
   strcpy(cfg->import->polsarpro_colormap, "");
@@ -688,7 +690,7 @@ convert_config *init_fill_convert_config(char *configFile)
         if (strncmp(test, "terrain correction", 18)==0)
           cfg->general->terrain_correct = read_int(line, "terrain correction");
         if (strncmp(test, "calibration", 11)==0)
-    cfg->general->calibration = read_int(line, "calibration");
+	  cfg->general->calibration = read_int(line, "calibration");
         if (strncmp(test, "geocoding", 9)==0)
           cfg->general->geocoding = read_int(line, "geocoding");
         if (strncmp(test, "export", 6)==0)
@@ -714,15 +716,15 @@ convert_config *init_fill_convert_config(char *configFile)
         if (strncmp(test, "thumbnail", 9)==0)
           cfg->general->thumbnail = read_int(line, "thumbnail");
         if (strncmp(test, "testdata", 8)==0)
-    cfg->general->testdata = read_int(line, "testdata");
+	  cfg->general->testdata = read_int(line, "testdata");
 
         // Project
         if (strncmp(test, "short name", 10)==0)
-    strcpy(cfg->project->short_name, read_str(line, "short name"));
+	  strcpy(cfg->project->short_name, read_str(line, "short name"));
         if (strncmp(test, "long name", 9)==0)
-    strcpy(cfg->project->long_name, read_str(line, "long name"));
+	  strcpy(cfg->project->long_name, read_str(line, "long name"));
         if (strncmp(test, "naming scheme", 13)==0)
-    strcpy(cfg->project->naming_scheme, read_str(line, "naming scheme"));
+	  strcpy(cfg->project->naming_scheme, read_str(line, "naming scheme"));
         
         // Import
         if (strncmp(test, "input format", 12)==0)
@@ -737,6 +739,10 @@ convert_config *init_fill_convert_config(char *configFile)
           cfg->import->complex_slc = read_int(line, "complex SLC");
         if (strncmp(test, "multilook SLC", 13)==0)
           cfg->import->multilook_slc = read_int(line, "multilook SLC");
+	if (strncmp(test, "azimuth look count", 18)==0)
+	  cfg->import->azimuth_look_count = read_int(line, "azimuth look count");
+	if (strncmp(test, "range look count", 16)==0)
+	  cfg->import->range_look_count = read_int(line, "range look count");
         if (strncmp(test, "apply ers2 gain fix", 19)==0)
           cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
         if (strncmp(test, "polsarpro colormap", 18)==0)
@@ -860,13 +866,13 @@ convert_config *init_fill_convert_config(char *configFile)
           cfg->terrain_correct->use_gr_dem = read_int(line, "use gr dem");
         if (strncmp(test, "use zero offsets if match fails", 31)==0)
           cfg->terrain_correct->if_coreg_fails_use_zero_offsets =
-      read_int(line, "use zero offsets if match fails");
+	    read_int(line, "use zero offsets if match fails");
         if (strncmp(test, "save incidence angles", 21)==0)
           cfg->terrain_correct->save_incid_angles =
-      read_int(line, "save incidence angles");
+	    read_int(line, "save incidence angles");
         if (strncmp(test, "use nearest neighbor", 20)==0)
           cfg->terrain_correct->use_nearest_neighbor =
-      read_int(line, "use nearest neighbor");
+            read_int(line, "use nearest neighbor");
 
         // Geocoding
         if (strncmp(test, "projection", 10)==0)
@@ -878,8 +884,8 @@ convert_config *init_fill_convert_config(char *configFile)
         if (strncmp(test, "datum", 5)==0)
           strcpy(cfg->geocoding->datum, read_str(line, "datum"));
         if (strncmp(test, "spheroid", 8)==0) {
-    if (!cfg->geocoding->spheroid)
-      cfg->geocoding->spheroid = (char *) MALLOC(sizeof(char)*255);
+	  if (!cfg->geocoding->spheroid)
+	    cfg->geocoding->spheroid = (char *) MALLOC(sizeof(char)*255);
           strcpy(cfg->geocoding->spheroid, read_str(line, "spheroid"));	
         }
         if (strncmp(test, "resampling", 10)==0)
@@ -1123,6 +1129,10 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->complex_slc = read_int(line, "complex SLC");
       if (strncmp(test, "multilook SLC", 13)==0)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
+      if (strncmp(test, "azimuth look count", 18)==0)
+	cfg->import->azimuth_look_count = read_int(line, "azimuth look count");
+      if (strncmp(test, "range look count", 16)==0)
+	  cfg->import->range_look_count = read_int(line, "range look count");
       if (strncmp(test, "apply ers2 gain fix", 19)==0)
         cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
       if (strncmp(test, "polsarpro colormap", 18)==0)
@@ -1677,6 +1687,14 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"look complex data that is stored as amplitude/phase is being\n"
 		"# multilooked.\n\n");
       fprintf(fConfig, "multilook SLC = %d\n", cfg->import->multilook_slc);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# Defines the number of looks in azimuth to take while multilooking.\n"
+		"# Requires that -multilook flag is set at the same time.\n\n");
+      fprintf(fConfig, "azimuth look count = %d\n", cfg->import->azimuth_look_count);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# Defines the number of looks in range to take while multilooking.\n"
+		"# Requires that -multilook flag is set at the same time.\n\n");
+      fprintf(fConfig, "range look count = %d\n", cfg->import->range_look_count);
       if (!shortFlag)
 	fprintf(fConfig, "\n# The ERS2 satellite has a known gain loss problem that this program\n"
 		"# will attempt to correct (if this option is turned on) by applying a\n"

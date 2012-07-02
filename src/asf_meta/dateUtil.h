@@ -46,6 +46,12 @@ double date2sec(julian_date *date,hms_time *time);
  --------------------------------------------------------*/
 void sec2date(double secs,julian_date *date,hms_time *time);
 
+// Compute the date from seconds since midnight, Jan 1, 1985
+void seconds2date(double seconds, ymd_date *date, hms_time *time);
+
+// Compute corresponding seconds from midnight, Jan 1, 1985.
+double date2seconds(julian_date *date, double sec);
+
 /*Get Julian Date (in fractional days since "creation"):
  ------------------------------------------------------*/
 double date_getJD(ymd_date *in);

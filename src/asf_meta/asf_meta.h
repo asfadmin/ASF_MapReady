@@ -645,6 +645,7 @@ double meta_get_dop(meta_parameters *sar,double yLine, double xSample);
 
 /*Return fixed-earth state vector for the given time.*/
 stateVector meta_get_stVec(meta_parameters *sar,double time_arg);
+stateVector meta_interp_stVec(meta_parameters *meta,double time);
 
 /*Return the incidence angle: this is the angle measured
   by the target between straight up and the satellite.
@@ -852,7 +853,9 @@ int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
     const complexFloat *source);
 int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
     int num_lines_to_put, const complexFloat *source);
-
+int put_band_complexFloat_line(FILE *file, meta_parameters *meta, 
+			       int band_number, int line_number, 
+			       const float *source);
 int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number,
         int sample_number, int num_samples_to_get,
         unsigned char *dest);
@@ -1000,17 +1003,6 @@ int isTerrasar(char *dataFile, char **error);
 int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error);
 int isRadarsat2(char *dataFile, char **error);
 int isUAVSAR(char *dataFile, char **error);
-int meta_test(char *in_file, char *spec_file);
-int meta_test_ext(char *in_file, char *spec_file, report_level_t level);
-
-// Prototypes for geotiff_check.c
-int geotiff_test(char *in_file, char *spec_file);
-int geotiff_test_ext(char *in_file, char *spec_file, report_level_t level);
-
-// Prototypes from lib_test.c
-int lib_test(char *lib_func, char *path, char *spec_file);
-int lib_test_ext(char *lib_func, char *path, char *spec_file, 
-		 report_level_t level);
 
 // Prototypes for meta_geotiff.c
 void copy_proj_parms(meta_projection *dest, meta_projection *src);

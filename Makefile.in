@@ -66,7 +66,6 @@ MAPREADY_MODULES = \
 	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \
-	src/asf_test \
 	@ASF_GUI@
 
 MAPREADY_SOURCE = \

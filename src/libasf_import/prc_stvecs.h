@@ -45,6 +45,8 @@ typedef struct {
 } PRC_REC;
 
 
+
+
 DSIDP *fetch_prc_id(char *file);
 STATE *fetch_prc_header(char *file); 
 PRC_REC *fetch_prc_rec(char *file, int recnum);
@@ -52,3 +54,20 @@ void display_prc_rec(PRC_REC *tmp);
 void display_prc_header(STATE *tmp);
 void display_prc_id(DSIDP *tmp);
 void display_prc_rec_mod(PRC_REC *tmp, float tdtutc_offset);
+
+// Delft orbit information
+typedef struct {
+  double time;
+  double lat; 
+  double lon;
+  double height;
+} doris_prc_polar;
+
+typedef struct {
+  double time;
+  double x;
+  double y;
+  double z;
+} doris_prc_cartesian;
+
+int update_state_vectors(char *outBaseName, char *odrFile);

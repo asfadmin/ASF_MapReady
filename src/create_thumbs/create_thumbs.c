@@ -886,6 +886,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* db_flag                */
                        0,                   /* complex_flag           */
                        0,                   /* multilook_flag         */
+		       -1,                  // azimuth look count
+		       -1,                  // range look count
                        0,                   /* amp0_flag              */
                        STF,                 /* format                 */
                        NULL,                /* band_id                */
@@ -968,6 +970,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* db_flag                */
                        0,                   /* complex_flag           */
                        0,                   /* multilook_flag         */
+		       -1,                  // azimuth look count
+                       -1,                  // range look count
                        0,                   /* amp0_flag              */
                        CEOS,                /* format                 */
                        NULL,                /* band_id                */
@@ -1038,6 +1042,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* db_flag                */
                        0,                   /* complex_flag           */
                        0,                   /* multilook_flag         */
+		       -1,                  // azimuth look count
+		       -1,                  // range look count
                        0,                   /* amp0_flag              */
                        JAXA_L0,             /* format                 */
                        NULL,                /* band_id                */

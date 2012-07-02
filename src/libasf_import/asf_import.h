@@ -20,6 +20,8 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                int complex_flag, // TRUE if ingested SLC should in I/Q
                int multilook_flag, // TRUE is SLC should be multilooked while
                                    // being ingested.
+	       int azimuth_look_count,
+	       int range_look_count,
                int amp0_flag,      // TRUE if we should generate a band 0
                                    // with amplitude data, with the rest
                                    // starting at band 1
@@ -78,10 +80,10 @@ void create_sprocket_layers(const char *asfName, const char *importName);
 void import_ceos(char *inBaseName, char *outBaseName,
                  char *band_id, char *lutName, double *p_range_scale,
                  double *p_azimuth_scale, double *p_correct_y_pixel_size,
-         int line, int sample, int width, int height,
+		 int line, int sample, int width, int height,
                  char *inMetaNameOption, radiometry_t radiometry, int db_flag,
-                 int complex_flag, int multilook_flag, int amp0_flag,
-                 int apply_ers2_gain_fix);
+                 int complex_flag, int multilook_flag, int azimuth_look_count,
+		 int range_look_count, int amp0_flag, int apply_ers2_gain_fix);
 void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
                 char *inMetaNameOption, int lat_constrained, double lowerLat,
                 double upperLat, char *prcPath);

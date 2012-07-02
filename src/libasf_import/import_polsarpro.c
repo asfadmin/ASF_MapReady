@@ -988,7 +988,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       asfPrintStatus("   Ingesting CEOS data ...\n");
       import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale,
 		  p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
-		  FALSE, FALSE, TRUE, FALSE);
+		  FALSE, FALSE, -1, -1, TRUE, FALSE);
     }
     else if (is_airsar) {
       asfPrintStatus("   Ingesting AirSAR data ...\n");
