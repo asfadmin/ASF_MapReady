@@ -51,7 +51,7 @@ void usage(char *name)
 {
   printf("\n"
 	 "Usage:\n"
-	 "   %s [-log <logFile>] [-image] [-chip-size <pixels] [-gis] <file>\n",
+	 "   %s [-log <logFile>] [-image] [-chip-size <pixels>] [-gis <chip count>] <file>\n",
 	 name);
   printf("\n"
 	 "Required arguments:\n"
@@ -63,9 +63,10 @@ void usage(char *name)
 	 "   -chip-size <pixels>\n"
 	 "       Set the chip size for the calculation.\nBy default the "
 	 "       is determined for a chip to cover 500 x 500 m area.\n"
-	 "   -gis\n"
+	 "   -gis <chip count>\n"
 	 "       The output is additionally stored in a shape file to analyze\n"
-	 "       the result spatially.\n");
+	 "       the result spatially. The number of chips determine how many\n"
+	 "       estimates are stored. To store all estimates choose 'all'\n");
   printf("\n"
 	 "Description:\n"
 	 "   %s determines the number of looks from an image.\n",
@@ -105,7 +106,7 @@ int main(int argc, char **argv)
   logflag = FALSE;
   int imageFlag = FALSE;
   int chipSize = MAGIC_UNSET_INT;
-  int gisFlag = FALSE; 
+  char *gis = NULL; 
 
   // Parse command line args
   while (currArg < (argc-NUM_ARGS)) {
@@ -121,8 +122,11 @@ int main(int argc, char **argv)
       CHECK_ARG(1);
       chipSize = strtod(GET_ARG(1), NULL);
     }
-    else if (strmatches(key, "-gis", "--gis", NULL))
-      gisFlag = TRUE;
+    else if (strmatches(key, "-gis", "--gis", NULL)) {
+      CHECK_ARG(1);
+      gis = (char *) MALLOC(sizeof(char)*10);
+      strcpy(gis, GET_ARG(1));
+    }
     else {
       printf("\n   ***Invalid option:  %s\n\n",
 	     argv[currArg-1]);
@@ -138,7 +142,9 @@ int main(int argc, char **argv)
 
   asfSplashScreen(argc, argv);
 
-  calc_number_looks(inFile, imageFlag, chipSize, gisFlag);
+  calc_number_looks(inFile, imageFlag, chipSize, gis);
+
+  FREE(gis);
 
   return FALSE;
 }

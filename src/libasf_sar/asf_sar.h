@@ -178,6 +178,6 @@ int asf_calibrate(const char *inFile, const char *outFile,
 int asf_logscale(const char *inFile, const char *outFile);
 
 // calc_number_looks.c
-int calc_number_looks(char *inFile, int imageFlag, int chipSize, int gisFlag);
+int calc_number_looks(char *inFile, int imageFlag, int chipSize, char *gis);
 
 #endif

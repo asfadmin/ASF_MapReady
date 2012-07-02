@@ -1,6 +1,22 @@
 #include "asf_sar.h"
 #include "asf_raster.h"
 #include "shapefil.h"
+#include "gsl/gsl_sort.h"
+
+#define MIN_VALUE 0.001
+#define MAX_STDEV 1.0
+#define MAX_RANGE 5.0
+
+typedef struct {
+  int row;
+  int col;
+  double min;
+  double max;
+  double mean;
+  double stdDev;
+  double nLooks;
+  int valid;
+} chip_stats;
 
 static void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
 {
@@ -104,7 +120,46 @@ static void shape_looks_init(char *inFile)
   return;
 }
 
-int calc_number_looks(char *inFile, int imageFlag, int chipSize, int gisFlag)
+static void write_chip(DBFHandle dbase, SHPHandle shape, meta_parameters *meta,
+		       int chipSize, long nChip, chip_stats stats)
+{
+  double lat[5], lon[5];
+  int ii = stats.row;
+  int kk = stats.col;
+
+  // Determine corner coordinates of chip
+  meta_get_latLon(meta, ii, kk, 0.0, &lat[0], &lon[0]);
+  meta_get_latLon(meta, ii, kk+chipSize, 0.0, &lat[1], &lon[1]);
+  meta_get_latLon(meta, ii+chipSize, kk+chipSize, 0.0, &lat[2], &lon[2]);
+  meta_get_latLon(meta, ii+chipSize, kk, 0.0, &lat[3], &lon[3]);
+  lat[4] = lat[0];
+  lon[4] = lon[0];
+  
+  // Write information into database file
+  DBFWriteDoubleAttribute(dbase, nChip, 0, stats.min);
+  DBFWriteDoubleAttribute(dbase, nChip, 1, stats.max);
+  DBFWriteDoubleAttribute(dbase, nChip, 2, stats.mean);
+  DBFWriteDoubleAttribute(dbase, nChip, 3, stats.stdDev);
+  DBFWriteDoubleAttribute(dbase, nChip, 4, stats.nLooks);
+  DBFWriteDoubleAttribute(dbase, nChip, 5, lat[0]);
+  DBFWriteDoubleAttribute(dbase, nChip, 6, lon[0]);
+  DBFWriteDoubleAttribute(dbase, nChip, 7, lat[1]);
+  DBFWriteDoubleAttribute(dbase, nChip, 8, lon[1]);
+  DBFWriteDoubleAttribute(dbase, nChip, 9, lat[2]);
+  DBFWriteDoubleAttribute(dbase, nChip, 10, lon[2]);
+  DBFWriteDoubleAttribute(dbase, nChip, 11, lat[3]);
+  DBFWriteDoubleAttribute(dbase, nChip, 12, lon[3]);
+  
+  // Write shape object
+  SHPObject *shapeObject=NULL;
+  shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
+  if (shapeObject == NULL)
+    asfPrintError("Could not create shape object (%d)\n", nChip);
+  SHPWriteObject(shape, -1, shapeObject);
+  SHPDestroyObject(shapeObject);
+}
+
+int calc_number_looks(char *inFile, int imageFlag, int chipSize, char *gis)
 {
   // Check for metadata file first
   char dataFile[1024], metaFile[1024], statsFile[1024];
@@ -141,97 +196,93 @@ int calc_number_looks(char *inFile, int imageFlag, int chipSize, int gisFlag)
   DBFHandle dbase;
   SHPHandle shape;
   char gisFile[1024];
-  double lat[5], lon[5];
-  long nChip = 0;
-  if (gisFlag) {
-    create_name(gisFile, inFile, ".shp");
+  long n = 0;
+  create_name(gisFile, inFile, ".shp");
+  if (gis) {
     shape_looks_init(gisFile);
     open_shape(gisFile, &dbase, &shape);
   }
 
   // Calculate stats for each chip
-  double min, max, mean, stdDev, nLooks, test;
-  double tMin, tMax, tMean, tStdDev;
   FILE *fpIn = FOPEN(dataFile, "rb");
   FILE *fpOut = FOPEN(statsFile, "w");
   fprintf(fpOut, "min, max, mean, stdDev, nLooks\n");
   int ii, kk;
+  long nChips = (line_count/chipSize)*(sample_count/chipSize);
+  size_t *p = (size_t *) MALLOC(sizeof(size_t)*nChips);
+  chip_stats *stats = (chip_stats *) MALLOC(sizeof(chip_stats)*nChips);
+  double *nLooks = (double *) MALLOC(sizeof(double)*nChips);
   if (imageFlag) {
     get_float_lines(fpIn, meta, 0, line_count, data);
-    calc_stats(data, size, 0.0, &min, &max, &mean, &stdDev);
-    nLooks = mean*mean/(stdDev*stdDev);
-    fprintf(fpOut, "%.3f, %.3f, %.6f, %.6f, %.6f\n", 
-	    min, max, mean, stdDev, nLooks);
+    calc_stats(data, size, 0.0, &stats[n].min, &stats[n].max, 
+	       &stats[n].mean, &stats[n].stdDev);
+    nLooks[n] = stats[n].mean*stats[n].mean/(stats[n].stdDev*stats[n].stdDev);
+    stats[n].nLooks = nLooks[n];
+    fprintf(fpOut, "%.6f, %.6f, %.6f, %.6f, %.6f\n", stats[n].min, stats[n].max,
+	    stats[n].mean, stats[n].stdDev, stats[n].nLooks);
   }
   else {
+    int nCount;
     for (ii=0; ii<line_count; ii+=chipSize) {
-      test = 99999;
       if (ii+chipSize >= line_count)
 	continue;
       for (kk=0; kk<sample_count; kk+=chipSize) {
-	if (kk+chipSize >= sample_count) {
-	  fprintf(fpOut, "%.3f, %.3f, %.6f, %.6f, %.6f\n", 
-		  tMin, tMax, tMean, tStdDev, nLooks);
+	if (kk+chipSize >= sample_count)
 	  continue;
-	}
 	get_partial_float_lines(fpIn, meta, ii, chipSize, kk, chipSize, data);
-	calc_stats(data, size, 0.0, &min, &max, &mean, &stdDev);
-	if (gisFlag) {
-	  // Determine corner coordinates of chip
-	  meta_get_latLon(meta, ii, kk, 0.0, &lat[0], &lon[0]);
-	  meta_get_latLon(meta, ii, kk+chipSize, 0.0, &lat[1], &lon[1]);
-	  meta_get_latLon(meta, ii+chipSize, kk+chipSize, 0.0, &lat[2], &lon[2]);
-	  meta_get_latLon(meta, ii+chipSize, kk, 0.0, &lat[3], &lon[3]);
-	  lat[4] = lat[0];
-	  lon[4] = lon[0];
-
-	  // Write information into database file
-	  DBFWriteDoubleAttribute(dbase, nChip, 0, min);
-	  DBFWriteDoubleAttribute(dbase, nChip, 1, max);
-	  DBFWriteDoubleAttribute(dbase, nChip, 2, mean);
-	  DBFWriteDoubleAttribute(dbase, nChip, 3, stdDev);
-	  DBFWriteDoubleAttribute(dbase, nChip, 4, nLooks);
-	  DBFWriteDoubleAttribute(dbase, nChip, 5, lat[0]);
-	  DBFWriteDoubleAttribute(dbase, nChip, 6, lon[0]);
-	  DBFWriteDoubleAttribute(dbase, nChip, 7, lat[1]);
-	  DBFWriteDoubleAttribute(dbase, nChip, 8, lon[1]);
-	  DBFWriteDoubleAttribute(dbase, nChip, 9, lat[2]);
-	  DBFWriteDoubleAttribute(dbase, nChip, 10, lon[2]);
-	  DBFWriteDoubleAttribute(dbase, nChip, 11, lat[3]);
-	  DBFWriteDoubleAttribute(dbase, nChip, 12, lon[3]);
-	  
-	  // Write shape object
-	  SHPObject *shapeObject=NULL;
-	  shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
-	  if (shapeObject == NULL)
-	    asfPrintError("Could not create shape object (%d)\n", nChip);
-	  SHPWriteObject(shape, -1, shapeObject);
-	  SHPDestroyObject(shapeObject);
-	  nChip++;
+	calc_stats(data, size, 0.0, &stats[n].min, &stats[n].max, 
+		   &stats[n].mean, &stats[n].stdDev);
+	nLooks[n] = 
+	  stats[n].mean*stats[n].mean/(stats[n].stdDev*stats[n].stdDev);
+	stats[n].nLooks = nLooks[n];
+	stats[n].row = ii;
+	stats[n].col = kk;
+	stats[n].valid = FALSE;
+	if (stats[n].min > MIN_VALUE && stats[n].stdDev < MAX_STDEV && 
+	    (stats[n].max - stats[n].min) < MAX_RANGE) {
+	  stats[n].valid = TRUE;
+	  fprintf(fpOut, "%.6f, %.6f, %.6f, %.6f, %.6f\n", 
+		  stats[n].min, stats[n].max, stats[n].mean, stats[n].stdDev, 
+		  stats[n].nLooks);
 	}
-	if (mean > 0.01) {
-	  if ((stdDev/mean) < test) {
-	    test = stdDev/mean;
-	    tMin = min;
-	    tMax = max;
-	    tMean = mean;
-	    tStdDev = stdDev;
-	    nLooks = mean*mean/(stdDev*stdDev);
-	  }
+	n++;
+      }
+    }
+    if (gis) {
+      if (strcmp_case(gis, "all") == 0)
+	nCount = n;
+      else
+	nCount = atoi(gis);
+    }
+    gsl_sort_index (p, nLooks, 1, n);
+    if (gis) {
+      n = 0;
+      for (ii=nChips; ii>0; ii--) {
+	if (stats[p[ii]].valid) {
+	  write_chip(dbase, shape, meta, chipSize, n, stats[p[ii]]);
+	  n++;
 	}
+	if (n == nCount)
+	  break;
       }
     }
   }
   FCLOSE(fpIn);
   FCLOSE(fpOut);
-  meta_free(meta);
   FREE(data);
   if (!imageFlag)
     asfPrintStatus("chip size: %d\n", chipSize);
-  if (gisFlag) {
+  else
+    asfPrintStatus("number of looks: %.6f\n", stats[0].nLooks);
+  if (gis) {
     close_shape(dbase, shape);
     write_esri_proj_file(gisFile);
   }
+  meta_free(meta);
+
+  FREE(p);
+  FREE(stats);
+  FREE(nLooks);
 
   return TRUE;
 }
