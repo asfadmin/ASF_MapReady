@@ -73,7 +73,8 @@ void create_xml_meta(char *inBaseName, char *outBaseName,
 		     input_format_t format_type);
 
 int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
-	       int multilook_flag, int amp0_flag, input_format_t format_type,
+	       int multilook_flag, int azimuth_look_count, int range_look_count,
+	       int amp0_flag, input_format_t format_type,
 	       char *band_id, char *data_type, char *image_data_type, 
 	       char *lutName, char *prcPath, double lowerLat, double upperLat, 
 	       double lowerLon, double upperLon, int line, int sample, 
@@ -150,8 +151,13 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     import_ceos(inBaseName, outBaseName, band_id, lutName,
                 p_range_scale, p_azimuth_scale, p_correct_y_pixel_size,
                 line, sample, width, height, inMetaNameOption, radiometry,
-                db_flag, complex_flag, multilook_flag, amp0_flag,
-                apply_ers2_gain_fix);
+                db_flag, complex_flag, multilook_flag, azimuth_look_count,
+		range_look_count, amp0_flag, apply_ers2_gain_fix);
+    // Replace the restituted state vectors that comes with the image data with
+    // precision state vectors from Delft
+    if (prcPath != NULL && strlen(prcPath) > 0) {
+      update_state_vectors(outBaseName, prcPath);
+    }
   }
   // Ingest Vexcel Sky Telemetry Format (STF) data
   else if (format_type == STF) {

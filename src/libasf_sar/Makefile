@@ -24,6 +24,7 @@ OBJS = \
 	polarimetry.o \
 	farcorr.o \
 	calibrate.o \
+	calc_number_looks.o \
 	c2p.o
 
 LIBS = \

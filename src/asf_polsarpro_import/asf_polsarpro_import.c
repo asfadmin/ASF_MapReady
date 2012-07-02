@@ -289,7 +289,7 @@ void asf_polsarpro_import(char *ceosName, input_format_t format,
     asfPrintStatus("Ingesting CEOS data ...\n");
     import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale,
 		p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
-		FALSE, FALSE, TRUE, FALSE);
+		FALSE, FALSE, -1, -1, TRUE, FALSE);
   }
   else if (format == AIRSAR) {
     asfPrintStatus("Ingesting AirSAR data ...\n");

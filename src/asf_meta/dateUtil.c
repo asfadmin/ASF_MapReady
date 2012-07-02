@@ -82,6 +82,32 @@ void sec2date(double secs,julian_date *date,hms_time *time)
     date_sec2hms(secs,time);
 }
 
+// Compute date corresponding to seconds since midnight, Jan 1, 1985.
+void seconds2date(double seconds, ymd_date *date, hms_time *time)
+{
+  julian_date jd;
+  int year = 1985;
+  double secs = seconds;
+  while (secs >= date_getDaysInYear(year)*DAY2SEC)
+    secs -= date_getDaysInYear(year++)*DAY2SEC;
+  jd.year = year;
+  jd.jd = 1 + (int)(secs/DAY2SEC);
+  secs -= (jd.jd - 1)*DAY2SEC;
+  date_sec2hms(secs, time);
+  date_jd2ymd(&jd, date);
+}
+
+// Compute corresponding seconds from midnight, Jan 1, 1985.
+double date2seconds(julian_date *date, double sec)
+{
+  double ret = sec;
+  int year;
+  for (year=1985; year<date->year; year++)
+    ret += date_getDaysInYear(year)*DAY2SEC;
+  ret += (date->jd-1)*DAY2SEC;
+  return ret;
+}
+
 
 /*Get Julian Day (since Jan. 1, 4712 BC) given Gregorian Year, Month, and day.
 Uses an interesting algorithm from the NASDA Downlink Reference document,
