@@ -11,6 +11,13 @@ UNPACK_DIR := gdal-1.6.3
 TARFILE := $(UNPACK_DIR).tar
 ZIPFILE := $(TARFILE).gz
 
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+WITH_LIB := internal
+else
+WITH_LIB := ../../..
+endif
+
 build: build_stamp
 
 # Create the library & necessary components in the proper place for retrieval
@@ -27,8 +34,8 @@ build_stamp:
 			--prefix=$(ROOT_DIR) \
 		--without-geos \
 		--without-libtool --without-ld-shared \
-	        --with-png=../../.. --with-jpeg=../../.. \
-		--with-libtiff=../../.. --with-geotiff=../../.. \
+	  --with-png=$(WITH_LIB) --with-jpeg=$(WITH_LIB) \
+		--with-libtiff=$(WITH_LIB) --with-geotiff=$(WITH_LIB) \
 		--with-libz=internal --with-gif=internal \
 		--without-oci --without-curl --without-jasper; \
 		make ; \

@@ -5,9 +5,14 @@
 ROOT_DIR := $(shell cd ../.. ; pwd)
 LIB_DIR := $(ROOT_DIR)/lib
 INCLUDE_DIR := $(ROOT_DIR)/include
+UNAME := $(shell uname)
 
 # These variables specify the tiff tarball and what it unpacks into.
+ifeq ($(UNAME), Darwin)
+UNPACK_DIR := tiff-3.7.4
+else
 UNPACK_DIR := tiff-4.0.1
+endif
 TARFILE := $(UNPACK_DIR).tar
 ZIPFILE := $(TARFILE).gz
 
