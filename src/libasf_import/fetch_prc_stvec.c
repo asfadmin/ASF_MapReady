@@ -552,6 +552,8 @@ static void interpolate_prc_vectors(doris_prc_polar *stVec, double time,
 
 int update_state_vectors(char *outBaseName, char *odrFile)
 {
+  int ret = FALSE;
+
   if (!fileExists(odrFile))
     asfPrintError("Precision state vector file (%s) does not exist!\n", 
 		  odrFile);
@@ -563,7 +565,6 @@ int update_state_vectors(char *outBaseName, char *odrFile)
   if (strcmp_case(spec, "xODR") != 0)
     asfPrintError("Unsupported precision state vector file (%s) type\n", 
 		  odrFile);
-  asfPrintStatus("\nUpdate orbit information with precision state vectors\n\n");
 
   // Determine image center time for reference
   meta_parameters *meta = meta_read(outBaseName);
@@ -598,7 +599,7 @@ int update_state_vectors(char *outBaseName, char *odrFile)
   // Read state vectors
   doris_prc_polar *stVec = 
     (doris_prc_polar *) MALLOC(sizeof(doris_prc_polar)*nRecords);
-  int ii, kk, closest, time, nLat, nLon, nHeight;
+  int ii, kk, closest = 0, time, nLat, nLon, nHeight;
   double diff = DAY2SEC*100;
   for (ii=0; ii<nRecords; ii++) {
     FREAD(&time, 1, 4, fpIn); ieee_big32(time);
@@ -615,40 +616,49 @@ int update_state_vectors(char *outBaseName, char *odrFile)
     }
   }
   FCLOSE(fpIn);
+  if (closest > 0) {
+    asfPrintStatus("\nUpdate orbit information with precision state vectors"
+		   "\n\n");
+    ret = TRUE;
 
-  // Generating state vectors in earth-fixed coordinates
-  doris_prc_polar polarVec;
-  doris_prc_cartesian cartVec, velOne, velTwo;
-  ref_time = date2seconds(&jd, ref_secs);
-  for (ii=closest-4; ii<=closest+4; ii++) {
-    geocentric_latlon(stVec[ii], &polarVec);
-    polar2cartesian(polarVec, &cartVec);
-
-    // Approximate state vector velocity according to getorb FAQs
-    // (http://www.deos.tudelft.nl/ers/precorbs/faq.shtml#004001):
-    // XYZvel(t) = XYZpos(t + 0.5sec) - XYZpos(t - 0.5sec)
-    // Approximating velocities is fine since we will use an interpolation
-    // scheme later that does not require these.
-    interpolate_prc_vectors(stVec, cartVec.time-0.5, closest-4, closest+4, 
-			    &velOne);
-    interpolate_prc_vectors(stVec, cartVec.time+0.5, closest-4, closest+4, 
-			    &velTwo);
-
-    // Fill in the orbit information into metadata state vector structure
-    kk = ii - closest + 4;
-    prcVec->vecs[kk].time = cartVec.time - ref_time;
-    prcVec->vecs[kk].vec.pos.x = cartVec.x;
-    prcVec->vecs[kk].vec.pos.y = cartVec.y;
-    prcVec->vecs[kk].vec.pos.z = cartVec.z;
-    prcVec->vecs[kk].vec.vel.x = velTwo.x - velOne.x;
-    prcVec->vecs[kk].vec.vel.y = velTwo.y - velOne.y;
-    prcVec->vecs[kk].vec.vel.z = velTwo.z - velOne.z;
+    // Generating state vectors in earth-fixed coordinates
+    doris_prc_polar polarVec;
+    doris_prc_cartesian cartVec, velOne, velTwo;
+    ref_time = date2seconds(&jd, ref_secs);
+    for (ii=closest-4; ii<=closest+4; ii++) {
+      geocentric_latlon(stVec[ii], &polarVec);
+      polar2cartesian(polarVec, &cartVec);
+      
+      // Approximate state vector velocity according to getorb FAQs
+      // (http://www.deos.tudelft.nl/ers/precorbs/faq.shtml#004001):
+      // XYZvel(t) = XYZpos(t + 0.5sec) - XYZpos(t - 0.5sec)
+      // Approximating velocities is fine since we will use an interpolation
+      // scheme later that does not require these.
+      interpolate_prc_vectors(stVec, cartVec.time-0.5, closest-4, closest+4, 
+			      &velOne);
+      interpolate_prc_vectors(stVec, cartVec.time+0.5, closest-4, closest+4, 
+			      &velTwo);
+      
+      // Fill in the orbit information into metadata state vector structure
+      kk = ii - closest + 4;
+      prcVec->vecs[kk].time = cartVec.time - ref_time;
+      prcVec->vecs[kk].vec.pos.x = cartVec.x;
+      prcVec->vecs[kk].vec.pos.y = cartVec.y;
+      prcVec->vecs[kk].vec.pos.z = cartVec.z;
+      prcVec->vecs[kk].vec.vel.x = velTwo.x - velOne.x;
+      prcVec->vecs[kk].vec.vel.y = velTwo.y - velOne.y;
+      prcVec->vecs[kk].vec.vel.z = velTwo.z - velOne.z;
+    }
+    FREE(meta->state_vectors);
+    meta->state_vectors = prcVec;
+    meta_write(meta, outBaseName);
+    meta_free(meta);
+    FREE(stVec);
   }
-  FREE(meta->state_vectors);
-  meta->state_vectors = prcVec;
-  meta_write(meta, outBaseName);
-  meta_free(meta);
-  FREE(stVec);
+  else
+    asfPrintStatus("\nCould not update orbit information with precision state"
+		   " vectors\nOrbit information not available in orbit file "
+		   "(%s).\n\n", odrFile);
 
-  return TRUE;
+  return ret;
 }

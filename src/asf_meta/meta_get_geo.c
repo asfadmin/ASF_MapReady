@@ -740,10 +740,18 @@ int meta_get_lineSamp(meta_parameters *meta,
           double incid = meta_incid(meta, *yLine, *xSamp);
           
           // shift LEFT in ascending images, RIGHT in descending
-          if (meta->general->orbit_direction=='A')
-            *xSamp -= elev*tan(PI/2-incid)/meta->general->x_pixel_size;
-          else
-            *xSamp += elev*tan(PI/2-incid)/meta->general->x_pixel_size;
+          if (meta->general->orbit_direction=='A') {
+	    if (meta->sar->image_type == 'S')
+	      *xSamp -= elev*sin(PI/2-incid)/meta->general->x_pixel_size;
+	    else
+	      *xSamp -= elev*tan(PI/2-incid)/meta->general->x_pixel_size;
+	  }
+          else {
+	    if (meta->sar->image_type == 'S')
+	      *xSamp += elev*sin(PI/2-incid)/meta->general->x_pixel_size;
+	    else
+	      *xSamp += elev*tan(PI/2-incid)/meta->general->x_pixel_size;
+	  }
         }
         
         // we use 0-based indexing, whereas these functions are 1-based.
