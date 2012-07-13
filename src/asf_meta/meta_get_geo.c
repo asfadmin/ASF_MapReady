@@ -737,20 +737,25 @@ int meta_get_lineSamp(meta_parameters *meta,
         if (elev != 0.0) {
           // note that we don't need to worry about an expensive meta_incid()
           // call, since for Palsar it is calculated from the transform block
-          double incid = meta_incid(meta, *yLine, *xSamp);
+	  int rangeLooks = meta->general->sample_scaling;
+          double incid = meta_incid(meta, *yLine, *xSamp/rangeLooks);
           
           // shift LEFT in ascending images, RIGHT in descending
           if (meta->general->orbit_direction=='A') {
 	    if (meta->sar->image_type == 'S')
-	      *xSamp -= elev*sin(PI/2-incid)/meta->general->x_pixel_size;
+	      *xSamp -= 
+		elev*sin(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
 	    else
-	      *xSamp -= elev*tan(PI/2-incid)/meta->general->x_pixel_size;
+	      *xSamp -= 
+		elev*tan(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
 	  }
           else {
 	    if (meta->sar->image_type == 'S')
-	      *xSamp += elev*sin(PI/2-incid)/meta->general->x_pixel_size;
+	      *xSamp += 
+		elev*sin(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
 	    else
-	      *xSamp += elev*tan(PI/2-incid)/meta->general->x_pixel_size;
+	      *xSamp += 
+		elev*tan(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
 	  }
         }
         
