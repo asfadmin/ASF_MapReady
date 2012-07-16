@@ -103,6 +103,8 @@ void calc_stats_from_file(const char *inFile, char *band, double mask, double *m
 			  gsl_histogram **histogram);
 void calc_stats(float *data, long long pixel_count, double mask, double *min,
 		double *max, double *mean, double *stdDev);
+void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
+		    double *min, double *max, double *mean, double *stdDev);
 void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
 		    double mask, double *min, double *max, double *mean,
 		    double *stdDev);
