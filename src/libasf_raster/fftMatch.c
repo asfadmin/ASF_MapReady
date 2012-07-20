@@ -3,6 +3,7 @@
 #include <math.h>
 #include "fft.h"
 #include "fft2d.h"
+#include "asf_raster.h"
 
 #if defined(mingw) // MAXFLOAT not available on mingw
 #define MAXFLOAT 3.4028234663852886e+38
@@ -234,6 +235,131 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   rifft2d(out,mY,mX);
 
   FREE(in1);/*Note: in2 shouldn't be freed, because we return it.*/
+}
+
+static int mini(int a, int b)
+{
+  return a<b ? a : b;
+}
+
+static int fftMatchBF(char *file1, char *file2, float *dx, float *dy, float *cert, double tol)
+{
+  int qf_saved = quietflag;
+  quietflag = TRUE;
+  int ok = FALSE;
+
+  float dx1=0, dx2=0, dy1=0, dy2=0, cert1=0, cert2=0;
+  fftMatch(file1, file2, NULL, &dx1, &dy1, &cert1);
+  if (!meta_is_valid_double(dx1) || !meta_is_valid_double(dy1) || cert1<tol) {
+    *dx = *dy = *cert = 0;
+  }
+  else {
+    fftMatch(file2, file1, NULL, &dx2, &dy2, &cert2);
+    if (!meta_is_valid_double(dx2) || !meta_is_valid_double(dy2) || cert2<tol) {
+      *dx = *dy = *cert = 0;
+    }
+    else if (fabs(dx1 + dx2) > .5 || fabs(dy1 + dy2) > .5) {
+      *dx = *dy = *cert = 0;
+    }
+    else {
+      *dx = (dx1 - dx2) * 0.5;
+      *dy = (dy1 - dy2) * 0.5;
+      *cert = cert1 < cert2 ? cert1 : cert2; 
+      ok = TRUE;
+    }
+  }
+
+  quietflag = qf_saved;
+  //asfPrintStatus("Result %s:\n"
+  //               "dx1=%8.2f dy1=%8.2f cert=%f\n"
+  //               "dx2=%8.2f dy2=%8.2f cert=%f\n", ok?"Yes":"No", dx1, dy1, cert1, dx2, dy2, cert2);
+
+  return ok; 
+}
+
+int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
+          float *avgLocX, float *avgLocY, float *certainty)
+{
+  meta_parameters *meta1 = meta_read(inFile1);
+  meta_parameters *meta2 = meta_read(inFile2);
+
+  int nl = mini(meta1->general->line_count, meta2->general->line_count);
+  int ns = mini(meta2->general->sample_count, meta2->general->sample_count);
+
+  const int size = 512;
+  const int overlap = 256;
+  const double tol = .33;
+
+  long long lsz = (long long)size;
+  char *chip1 = appendToBasename(inFile1, "_chip");
+  char *chip2 = appendToBasename(inFile2, "_chip");
+  FILE *fp = NULL;
+  if (gridFile)
+    fp = FOPEN(gridFile, "w");
+
+  int num_x = (nl - size) / (size - overlap);
+  int num_y = (ns - size) / (size - overlap);
+ 
+  float *x_matches = MALLOC(sizeof(float)*num_x*num_y);
+  float *y_matches = MALLOC(sizeof(float)*num_x*num_y);
+
+  int ii, jj, kk=0;
+  for (ii=0; ii<num_y; ++ii) {
+    int tile_y = ii*(size - overlap);
+    if (tile_y + size > nl) {
+      if (ii != num_y - 1)
+        asfPrintError("Bad tile_y: %d %d %d %d %d\n", ii, num_y, tile_y, size, nl);
+      tile_y = nl - size;
+    }
+    for (jj=0; jj<num_x; ++jj) {
+      int tile_x = jj*(size - overlap);
+      if (tile_x + size > ns) {
+        if (jj != num_x - 1)
+          asfPrintError("Bad tile_x: %d %d %d %d %d\n", jj, num_x, tile_x, size, ns);
+        tile_x = ns - size;
+      }
+      //asfPrintStatus("Matching tile starting at (L,S) (%d,%d)\n", tile_y, tile_x);
+      trim(inFile1, chip1, (long long)tile_x, (long long)tile_y, lsz, lsz);
+      trim(inFile2, chip2, (long long)tile_x, (long long)tile_y, lsz, lsz);
+      float dx, dy, cert;
+      int ok = fftMatchBF(chip1, chip2, &dx, &dy, &cert, tol);
+      if (ok && cert>tol) {
+        //asfPrintStatus("Result: dx=%f, dy=%f, cert=%f\n", dx, dy, cert);
+        if (fp)
+          fprintf(fp, "%5d %5d %14.5f %14.5f\n", tile_y, tile_x, dx, dy);
+        x_matches[kk] = dx;
+        y_matches[kk] = dy;
+        ++kk;
+      }
+      else {
+        //asfPrintStatus("*** BAD *** Result:  dx=%f, dy=%f, cert=%f\n", dx, dy, cert);
+      }
+      //printf("%4.1f ", dx);
+    }
+    //printf("\n");
+  }
+
+  *avgLocX = 0;
+  *avgLocY = 0;
+  for (ii=0; ii<kk; ++ii) {
+    *avgLocX += x_matches[ii];
+    *avgLocY += y_matches[ii];
+  }
+
+  *avgLocX /= (float)kk;
+  *avgLocY /= (float)kk;
+  *certainty = (float)kk / (float)(num_x * num_y);
+
+  //asfPrintStatus("Final Result: dx=%f, dy=%f, cert=%f\n", *avgLocX, *avgLocY, *certainty);
+
+  FREE(chip1);
+  FREE(chip2);
+  meta_free(meta1);
+  meta_free(meta2);
+  FCLOSE(fp);
+  FREE(x_matches);
+  FREE(y_matches);
+  return (0);
 }
 
 int fftMatch(char *inFile1, char *inFile2, char *corrFile,

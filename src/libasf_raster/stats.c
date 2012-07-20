@@ -14,7 +14,13 @@
    image. A mask value can be defined that is excluded from this calculation.
    If no mask value is supposed to be used, pass the mask value as NAN. */
 void calc_stats(float *data, long long pixel_count, double mask, double *min,
-        double *max, double *mean, double *stdDev)
+		double *max, double *mean, double *stdDev)
+{
+  return calc_stats_ext(data, pixel_count, mask, TRUE, min, max, mean, stdDev);
+}
+
+void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
+		    double *min, double *max, double *mean, double *stdDev)
 {
     long long ii, pix;
 
@@ -25,8 +31,10 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
     *stdDev = 0.0;
     pix = 0;
 
-    asfPrintStatus("\nFinding min, max, and mean...\n");
+    if (report)
+      asfPrintStatus("\nFinding min, max, and mean...\n");
     for (ii=0; ii<pixel_count; ii++) {
+      if (report)
         asfPercentMeter(((double)ii/(double)pixel_count));
         if (!ISNAN(mask)) {
             if (data[ii] < *min && !FLOAT_EQUIVALENT(data[ii], mask))
@@ -45,11 +53,14 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
             ++pix;
         }
     }
-    asfPercentMeter(1.0);
+    if (report)
+      asfPercentMeter(1.0);
     *mean /= pix;
 
-    asfPrintStatus("\nCalculating standard deviation...\n");
+    if (report)
+      asfPrintStatus("\nCalculating standard deviation...\n");
     for (ii=0; ii<pixel_count; ii++) {
+      if (report)
         asfPercentMeter(((double)ii/(double)pixel_count));
         if (!ISNAN(mask)) {
             if (!FLOAT_EQUIVALENT(data[ii], mask))
@@ -59,7 +70,8 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
             *stdDev += (data[ii] - *mean) * (data[ii] - *mean);
     }
     *stdDev = sqrt(*stdDev/(pix - 1));
-    asfPercentMeter(1.0);
+    if (report)
+      asfPercentMeter(1.0);
 
     return;
 }
