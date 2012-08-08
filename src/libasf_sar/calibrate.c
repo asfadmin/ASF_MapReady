@@ -36,6 +36,13 @@ int asf_calibrate(const char *inFile, const char *outFile,
   if (metaIn->general->radiometry != r_AMP)
     asfPrintError("Currently only AMPLITUDE as radiometry is supported!\n");
 
+  // No noise removal anymore - so issue a warning
+  if (strcmp_case(metaIn->general->sensor, "ERS1") == 0 ||
+      strcmp_case(metaIn->general->sensor, "ERS2") == 0 ||
+      strcmp_case(metaIn->general->sensor, "JERS1") == 0 ||
+      strcmp_case(metaIn->general->sensor, "RSAT-1") == 0)
+    asfPrintWarning("The noise floor removal is not applied to the data!\n");
+
   metaOut->general->radiometry = outRadiometry;
   int dbFlag = FALSE;
   if (outRadiometry >= r_SIGMA && outRadiometry <= r_GAMMA)
