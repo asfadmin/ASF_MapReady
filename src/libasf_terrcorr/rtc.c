@@ -196,8 +196,8 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   char *outputMeta = appendExt(output_file, ".meta");
   char *maskImg = maskFlag ? appendExt(mask_file, ".img") : NULL;
   char *maskMeta = maskFlag ? appendExt(mask_file, ".meta") : NULL;
-  char *sideProductsImgName, *sideProductsMetaName;
-  meta_parameters *side_meta;
+  char *sideProductsImgName=NULL, *sideProductsMetaName=NULL;
+  meta_parameters *side_meta=NULL;
   FILE *fpSide = NULL;
 
   if (!fileExists(inputImg))
