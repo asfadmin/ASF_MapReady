@@ -1073,7 +1073,7 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
     else if (complex_flag)
       asfPrintStatus("   Output data type: single look complex\n");
     else if (multilook_flag)
-      asfPrintStatus("   Output data type: multilooked complex (2-band)\n");
+      asfPrintStatus("   Output data type: multilooked amplitude\n");
     else
       asfPrintStatus("   Output data type: single look complex (2-band)\n");
   }
@@ -1403,6 +1403,15 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     create_cal_params_ext(inMetaName, meta, FALSE);
   else if (radiometry >= r_SIGMA_DB && radiometry <= r_GAMMA_DB && meta->sar)
     create_cal_params_ext(inMetaName, meta, TRUE);    
+  if (strcmp_case(meta->general->sensor, "ERS1") == 0 ||
+      strcmp_case(meta->general->sensor, "ERS2") == 0 ||
+      strcmp_case(meta->general->sensor, "JERS1") == 0 ||
+      strcmp_case(meta->general->sensor, "RSAT-1") == 0)
+    asfPrintWarning("The noise floor removal is not applied to the data!\n");
+
+  // Making sure that multilook flag is set appropriately
+  if (data_type >= COMPLEX_BYTE && !complex_flag)
+    multilook_flag = TRUE;
 
   // Give user status on input and output data type
   status_data_type(meta, data_type, radiometry, complex_flag, multilook_flag);

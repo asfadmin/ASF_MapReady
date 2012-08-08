@@ -647,7 +647,7 @@ void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db)
   if (db)
     meta->general->no_data = -40.0;
   else
-    meta->general->no_data = 0.0001;
+    meta->general->no_data = 0.0;
 }
 
 // incid_init()
@@ -742,9 +742,11 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
 
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
-    // Convert (amplitude) data number to scaled, noise-removed power
-    scaledPower =
-      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    // Convert (amplitude) data number to scaled
+    // Removed the noise floor removal
+    //scaledPower =
+    //(p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    scaledPower = (p->a1*inDn*inDn + p->a2)*invIncAngle;
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
 
@@ -774,9 +776,11 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
     }
 
-    // Convert (amplitude) data number to scaled, noise-removed power
-    scaledPower =
-      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    // Convert (amplitude) data number to scaled
+    // Remove the noise floor removal
+    //scaledPower =
+    //  (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    scaledPower = (p->a1*inDn*inDn + p->a2)*invIncAngle;
   }
   else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
 
@@ -912,9 +916,11 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
     // Determine the noise value
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
-    // Convert (amplitude) data number to scaled, noise-removed power
+    // Convert (amplitude) data number to scaled
+    // No removal of noise floor anymore
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1);
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
 
@@ -936,9 +942,11 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
       noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
     }
 
-    // Convert (amplitude) data number to scaled, noise-removed power
+    // Convert (amplitude) data number to scaled
+    // No removal of noise floor anymore
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1);
   }
   else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
 
@@ -1030,9 +1038,11 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
     double *noise = p->noise;
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
-    // Convert (amplitude) data number to scaled, noise-removed power
+    // Convert (amplitude) data number to scaled
+    // No noise floor removal anymore
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    //ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1);
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
 
@@ -1063,7 +1073,8 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
 
     // Convert (amplitude) data number to scaled, noise-removed power
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    //ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1);
   }
   else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
 

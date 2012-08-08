@@ -180,4 +180,7 @@ int asf_logscale(const char *inFile, const char *outFile);
 // calc_number_looks.c
 int calc_number_looks(char *inFile, int imageFlag, int chipSize, char *gis);
 
+// point_target_analysis.c
+int point_target_analysis(char *inFile, char *crFile, char *ptaFile);
+
 #endif
