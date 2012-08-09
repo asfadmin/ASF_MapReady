@@ -6,8 +6,8 @@ via two image files, which give the horizontal and
 vertical offsets. 
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "Matrix2D.h"
-#include "las.h"
 #include "remap.h"
 #include "quadratic.h"
 
@@ -29,19 +29,20 @@ typedef struct {
 } warpMapRec;
 
 /* Prototypes */
-void read_image(char *fName,struct DDR *ddr,float *dest);
+void read_image(char *fName,meta_parameters *meta,float *dest);
 mappingFunction warp_createMap(char *fName);
 void warp_freeMap(mappingFunction map);
 void warp_doMap(const warpMapRec *map,fPoint in,fPoint *out);
 
 
 /*Read the given LAS image into the given pre-allocated buffer*/
-void read_image(char *fName,struct DDR *ddr,float *dest)
+void read_image(char *fName,meta_parameters *meta,float *dest)
 {
 	int lineNo;
-	FILE *fp=FOPEN(fName,"rb");
-	for (lineNo=0;lineNo<ddr->nl;lineNo++)
-		getFloatLine_mb(fp,ddr,lineNo,0,&dest[ddr->ns*lineNo]);
+	char *hName=appendExt(fName,".img");
+	FILE *fp=FOPEN(hName,"rb");
+	for (lineNo=0;lineNo<meta->general->line_count;lineNo++)
+		get_float_line(fp,meta,lineNo,&dest[meta->general->sample_count*lineNo]);
 	FCLOSE(fp);
 }
 
@@ -49,8 +50,8 @@ mappingFunction warp_createMap(char *fName)
 {
 	/*Set offset file names*/
 	char *hName=appendExt(fName,".horiz"),*vName=appendExt(fName,".vert");
-	struct DDR ddr;/*Offset file DDR*/
-
+	meta_parameters *meta = meta_read(hName);
+	
 	/*Allocate mapping structure to return*/
 	warpMapRec *w=(warpMapRec *)MALLOC(sizeof(warpMapRec));
 	mappingFunction ret=(mappingFunction)w;
@@ -58,15 +59,14 @@ mappingFunction warp_createMap(char *fName)
 	ret->doMap=(mappingFunc)warp_doMap;
 	
 	/*Set parameters*/
-	c_getddr(hName,&ddr);
-	w->width=ddr.ns;
-	w->height=ddr.nl;
+	w->width=meta->general->sample_count;
+	w->height=meta->general->line_count;
 	
 	/*Open & ingest offset images*/
-	w->horiz=(float *)MALLOC(sizeof(float)*ddr.ns*ddr.nl);
-	read_image(hName,&ddr,w->horiz);
-	w->vert=(float *)MALLOC(sizeof(float)*ddr.ns*ddr.nl);
-	read_image(vName,&ddr,w->vert);
+	w->horiz=(float *)MALLOC(sizeof(float)*meta->general->sample_count*meta->general->line_count);
+	read_image(hName,meta,w->horiz);
+	w->vert=(float *)MALLOC(sizeof(float)*meta->general->sample_count*meta->general->line_count);
+	read_image(vName,meta,w->vert);
 	
 	return ret;
 }
@@ -76,8 +76,10 @@ void warp_freeMap(mappingFunction map)
 	warpMapRec *w=(warpMapRec *)map;
 	FREE(w->horiz);w->horiz=NULL;
 	FREE(w->vert);w->vert=NULL;
+	/* TAL - this gave a double free error 
 	FREE(w);
-}
+	*/
+}	
 
 /***************
 doMap:
