@@ -160,15 +160,15 @@ int main(int argc,char **argv)
 	sample_count = meta->general->sample_count;
 	meta->general->line_count = (int) ceil(line_count/((float) REMAP_CHIP));
 	meta->general->sample_count = (int) ceil(sample_count/((float) REMAP_CHIP));
-	meta_write(meta, appendExt(outName,"_horiz"));
-	meta_write(meta, appendExt(outName,"_vert"));
+	meta_write(meta, appendExt(outName,"horiz"));
+	meta_write(meta, appendExt(outName,"vert"));
 	line_count = meta->general->line_count;
 	sample_count = meta->general->sample_count;
 	
 	printf("Output warping images will be %d lines by %d samples\n",
 	       line_count, sample_count);
-	outH=FOPEN(appendExt(outName,"_horiz.img"),"wb");
-	outV=FOPEN(appendExt(outName,"_vert.img"),"wb");
+	outH=FOPEN(appendExt(outName,"horiz.img"),"wb");
+	outV=FOPEN(appendExt(outName,"vert.img"),"wb");
 	
 	bufH=(float *)MALLOC(sizeof(float)*sample_count);
 	bufV=(float *)MALLOC(sizeof(float)*sample_count);
