@@ -870,6 +870,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
   // since it messes up the statistics
   // We set all values lower than the noise floor (0.001 is the equivalent
   // to -30 dB) to the mininum value of 0.001, removing outliers.
+  /*
   if (scaledPower > 0.001 && inDn > 0.0) {
     if (dbFlag)
       calValue = 10.0 * log10(scaledPower);
@@ -883,7 +884,15 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       calValue = 0.001;
   }
   else calValue = meta->general->no_data;
+  */
 
+  // Now that the noise floor is not removed anymore, we don't need to look for
+  // outlier in form of negative values anymore. 
+  if (dbFlag)
+    calValue = 10.0 * log10(scaledPower);
+  else
+    calValue = scaledPower;
+  
   return calValue;
 }
 

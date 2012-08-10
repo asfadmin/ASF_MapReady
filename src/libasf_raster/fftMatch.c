@@ -284,7 +284,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   meta_parameters *meta2 = meta_read(inFile2);
 
   int nl = mini(meta1->general->line_count, meta2->general->line_count);
-  int ns = mini(meta2->general->sample_count, meta2->general->sample_count);
+  int ns = mini(meta1->general->sample_count, meta2->general->sample_count);
 
   const int size = 512;
   const int overlap = 256;
@@ -294,7 +294,8 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   char *chip1 = appendToBasename(inFile1, "_chip");
   char *chip2 = appendToBasename(inFile2, "_chip");
   FILE *fp = NULL;
-  if (gridFile)
+  
+  if (gridFile) 
     fp = FOPEN(gridFile, "w");
 
   int num_x = (nl - size) / (size - overlap);
@@ -326,7 +327,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
       if (ok && cert>tol) {
         //asfPrintStatus("Result: dx=%f, dy=%f, cert=%f\n", dx, dy, cert);
         if (fp)
-          fprintf(fp, "%5d %5d %14.5f %14.5f\n", tile_y, tile_x, dx, dy);
+          fprintf(fp, "%5d %5d %14.5f %14.5f %14.5f\n", tile_x, tile_y, tile_x+dx, tile_y+dy, cert);
         x_matches[kk] = dx;
         y_matches[kk] = dy;
         ++kk;
