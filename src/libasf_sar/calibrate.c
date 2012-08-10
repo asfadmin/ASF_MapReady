@@ -46,7 +46,7 @@ int asf_calibrate(const char *inFile, const char *outFile,
   metaOut->general->radiometry = outRadiometry;
   int dbFlag = FALSE;
   if (outRadiometry >= r_SIGMA && outRadiometry <= r_GAMMA)
-    metaOut->general->no_data = 0.0001;
+    metaOut->general->no_data = 0.0;
   if (outRadiometry >= r_SIGMA_DB && outRadiometry <= r_GAMMA_DB) {
     metaOut->general->no_data = -40.0;
     dbFlag = TRUE;
