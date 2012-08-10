@@ -6,11 +6,13 @@ use strict;
 use warnings;
 
 my $usage = q~Usage:
-  bulk.pl [--odr=[<odr_index>|auto] <script> <source dir> <dest dir> <dem>
+  bulk.pl [--odr=[<odr_index>|auto] [--dry-run] <script> <source dir> <dest dir> <dem>
 ~;
 
 my $odrf;
-GetOptions("odr=s" => \$odrf);
+my $testf;
+GetOptions( "odr=s" => \$odrf,
+            "dry-run" => \$testf);
 
 #optional args have already been pulled out above
 if(scalar(@ARGV) != 4) { print $usage; exit; }
@@ -26,7 +28,7 @@ $odir =~ s/\/$//;
 open(LOG, ">>$odir/log.txt") or die "Could not open log file";
 
 LOG("ASF Tools info:");
-LOG(`which asf_mapready`);
+LOG(`which asf_mapready` or die "asf_tools not available! Unable to continue.");
 LOG(`asf_mapready --version`);
 
 LOG("Input dir: $idir");
@@ -68,11 +70,15 @@ foreach (@infiles) {
   my $cmd = "$script $meta.L $base $dem" . (defined($odr)?" $odr":"");
   LOG("Command: $cmd");
   
-  open my $cmd_fh, "$cmd |";
-  while (<$cmd_fh>) {
-    LOG("  $_");
+  unless($testf) {
+    open my $cmd_fh, "$cmd |";
+    while (<$cmd_fh>) {
+      LOG("  $_");
+    }
+    close($cmd_fh);
+  } else {
+    LOG("  Dry-run only, skipping");
   }
-  close($cmd_fh);
 
   LOG("$base complete", "");
 }
