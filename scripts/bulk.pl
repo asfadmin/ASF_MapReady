@@ -45,6 +45,8 @@ if($odrf and $odrf !~ /auto/i) {
   close(ODR);
 }
 
+LOG("Setup complete, processing data", "");
+
 # done with prep, get the list of files to process
 my @infiles;
 foreach(`ls $idir`) {
@@ -57,12 +59,13 @@ foreach (@infiles) {
   /([^\/]+)$/;
   my $meta = $1;
   my $base = get_basename($meta);
+  LOG("Processing $base");
   my $odr;
   if($odrf) {
     $odr = get_odr($base); #automatically chooses between a supplied index or auto determination of odr
     LOG(defined($odr)?("Using ODR $odr"):("No ODR found!"));
   }
-  my $cmd = "$script $_ $base $dem" . (defined($odr)?" $odr":"");
+  my $cmd = "$script $meta.L $base $dem" . (defined($odr)?" $odr":"");
   LOG("Command: $cmd");
   
   open my $cmd_fh, "$cmd |";
@@ -70,6 +73,8 @@ foreach (@infiles) {
     LOG("  $_");
   }
   close($cmd_fh);
+
+  LOG("$base complete", "");
 }
 
 close(LOG);
@@ -102,9 +107,13 @@ sub get_odr {
       my $center = $1;
       open(ARCLIST, "$arclist/arclist") or die "Could not open arclist: $!";
       while(<ARCLIST>) { #scan the arclist file for the odr we want
-        my @line = split /\s+/;
-        if($line[1] <= $center and $line[4] >= $center) {
-          return "$arclist/" . $line[0] . ".ODR";
+        if(/^(\d+)\s+(\d+)\s+[\d\:]+\s\-\s+(\d+)\s+[\d\:]+/) {
+          my $odr = $1;
+          my $start = $2;
+          my $stop = $3;
+          if($start <= $center and $stop >= $center) {
+            return "$arclist/$odr.ODR";
+          }
         }
       }
       close(ARCLIST);
