@@ -124,8 +124,42 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
   // and write them to the SAR parameters structures
   ceos_read_stVecs(fName, ceos, meta);
 
+  // For ALOS Palsar orbits only
+  // Don't propagate but select nine state vectors around the center for the
+  // higher order interpolation scheme
+  if (ceos->processor == ALOS_PROC) {
+
+    // Determine closest state vector
+    int ii, min;
+    double diff = 99999999;
+    for (ii=0; ii<meta->state_vectors->vector_count; ii++) {
+      if (fabs(meta->state_vectors->vecs[ii].time) < diff) {
+	diff = fabs(meta->state_vectors->vecs[ii].time);
+	min = ii;
+      }
+    }
+
+    // Populate a new state vector 
+    ymd_date img_ymd;
+    julian_date img_jd;
+    hms_time img_time;
+    img_jd.year = meta->state_vectors->year;
+    img_jd.jd   = meta->state_vectors->julDay;
+    date_sec2hms(meta->state_vectors->second,&img_time);
+    date_jd2ymd(&img_jd, &img_ymd);
+    add_time(ii*60, &img_ymd, &img_time);
+    date_ymd2jd(&img_ymd, &img_jd);
+    meta_state_vectors *new_st = meta_state_vectors_init(9);
+    new_st->year   = img_jd.year;
+    new_st->julDay = img_jd.jd;
+    new_st->second = date_hms2sec(&img_time);
+    for (ii=0; ii<9; ii++)
+      new_st->vecs[ii] = meta->state_vectors->vecs[ii+min-4];
+    FREE(meta->state_vectors);
+    meta->state_vectors = new_st;
+  }
   // Propagate three state vectors for regular frames
-  if (ceos->processor != PREC && ceos->processor != unknownProcessor) {
+  else if (ceos->processor != PREC && ceos->processor != unknownProcessor) {
       int vector_count=3;
       double data_int = meta->sar->original_line_count / 2
                   * fabs(meta->sar->azimuth_time_per_pixel);
