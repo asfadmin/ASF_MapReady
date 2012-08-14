@@ -929,7 +929,8 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
     // No removal of noise floor anymore
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
     //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
-    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1);
+    //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1);
+    calValue = sqrt((sigma - p->a2)/p->a1) * radCorr;
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
 
@@ -1003,7 +1004,8 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
       cf = p->cf_hh;
  
     //scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
-    calValue = sqrt(sigma * radCorr / pow(10, cf/10.0));
+    //calValue = sqrt(sigma * radCorr / pow(10, cf/10.0));
+    calValue = sqrt(sigma / pow(10, cf/10.0)) * radCorr;
   }
   else if (meta->calibration->type == tsx_cal) {
 
