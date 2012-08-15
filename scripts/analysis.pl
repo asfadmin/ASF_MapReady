@@ -6,7 +6,6 @@ use warnings;
 use Getopt::Long qw(:config pass_through);
 use XML::Simple;
 use List::MoreUtils qw(uniq);
-use GD::Graph::linespoints;
 use Data::Dumper;
 
 my $usage = q~Usage:
@@ -25,6 +24,10 @@ foreach(sort(uniq(@files))) {
   push(@$tree, new XML::Simple->XMLin($_));
 }
 
+if(scalar(@$tree) <= 0) {
+  exit;
+}
+
 # grab the info we want
 my @data;
 my $total_error = 0;
@@ -32,15 +35,23 @@ foreach my $report (@$tree) {
   $report->{DatasetInformation}->{Filename} =~ /^(\w+)/;
   my $granule = $1;
   my $ascdesc = $report->{DatasetInformation}->{OrbitDir};
-  foreach my $ref (@{$report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults}}) {
-    my $ref_name = $ref->{ReflectorNumber};
-    my $ref_xpos = $ref->{ImagePosition_X_ofPointTarget};
-    my $ref_ypos = $ref->{ImagePosition_Y_ofPointTarget};
-    my $ref_xoff = $ref->{GeolocationOffsetIn_X_Meter};
-    my $ref_yoff = $ref->{GeolocationOffsetIn_Y_Meter};
-    my $ref_error = sprintf("%.5f", sqrt($ref_xoff**2 + $ref_yoff**2));
-    $total_error += $ref_error;
-    push(@data, [$granule, $ascdesc, $ref_name, $ref_xpos, $ref_ypos, $ref_xoff, $ref_yoff, $ref_error]);
+  if($report->{PointTargetAnalysisReport} and $report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults}) {
+    my @reflectors;
+    if(ref($report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults}) eq 'ARRAY') {
+      @reflectors = @{$report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults}};
+    } else {
+      @reflectors = ($report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults});
+    }
+    foreach my $ref (@reflectors) {
+      my $ref_name = $ref->{ReflectorNumber};
+      my $ref_xpos = $ref->{ImagePosition_X_ofPointTarget};
+      my $ref_ypos = $ref->{ImagePosition_Y_ofPointTarget};
+      my $ref_xoff = $ref->{GeolocationOffsetIn_X_Meter};
+      my $ref_yoff = $ref->{GeolocationOffsetIn_Y_Meter};
+      my $ref_error = sprintf("%.5f", sqrt($ref_xoff**2 + $ref_yoff**2));
+      $total_error += $ref_error;
+      push(@data, [$granule, $ascdesc, $ref_name, $ref_xpos, $ref_ypos, $ref_xoff, $ref_yoff, $ref_error]);
+    }
   }
 }
 my $count = scalar(@data);
