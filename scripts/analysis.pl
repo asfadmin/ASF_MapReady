@@ -9,8 +9,11 @@ use List::MoreUtils qw(uniq);
 use Data::Dumper;
 
 my $usage = q~Usage:
-  analysis.pl <xml file> [...]
+  analysis.pl [--out=<file>] <xml file> [...]
 ~;
+
+my $outfile;
+GetOptions("out=s" => \$outfile);
 
 if(scalar(@ARGV) < 1) { print $usage; exit; }
 
@@ -66,11 +69,20 @@ unless(scalar(@data) <= 1) {
 }
 
 # spit out some csv
+my $csv = '';
 my $header = ["Scene Name", "Orbit Direction", "Corner Reflector", "X Pos", "Y Pos", "X Offset", "Y Offset", "Total Error"];
 my @footer = (['', '', '', '', '', '', 'Average Error', sprintf("%.5f", $avg_error)],
               ['', '', '', '', '', '', 'Standard Deviation', sprintf("%.5f", $std_dev)]);
 foreach my $row ($header, @data, @footer) {
-  print join(',', map({"\"$_\""} @$row)) . "\n";
+  $csv .= join(',', map({"\"$_\""} @$row)) . "\n";
+}
+
+if($outfile) {
+  open(OUT, ">$outfile");
+  print OUT $csv;
+  close(OUT);
+} else {
+  print $csv;
 }
 
 exit;
