@@ -6,10 +6,11 @@ use warnings;
 use Getopt::Long qw(:config pass_through);
 use XML::Simple;
 use List::MoreUtils qw(uniq);
+use GD::Graph::linespoints;
 use Data::Dumper;
 
 my $usage = q~Usage:
-  defranz.pl <xml file> [...]
+  analysis.pl <xml file> [...]
 ~;
 
 if(scalar(@ARGV) < 1) { print $usage; exit; }
