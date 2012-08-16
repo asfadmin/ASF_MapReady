@@ -22,6 +22,17 @@ GetOptions( "out=s" => \$outfile,
 
 if(scalar(@ARGV) < 1 and !@include) { print $usage; exit; }
 
+if($outfile and $outfile !~ /\.csv$/) {
+  $outfile .= ".csv";
+}
+if($plotfile and $plotfile !~ /\.html$/) {
+  if($plotfile =~ /\.htm$/) {
+    $plotfile .= "l";
+  } else {
+    $plotfile .= ".html";
+  }
+}
+
 # read in all the xml files
 my $tree = [];
 my @files;
