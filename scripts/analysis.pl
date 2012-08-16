@@ -13,7 +13,9 @@ my $usage = q~Usage:
 ~;
 
 my $outfile;
-GetOptions("out=s" => \$outfile);
+my $plotfile;
+GetOptions( "out=s" => \$outfile,
+            "plot=s" => \$plotfile);
 
 if(scalar(@ARGV) < 1) { print $usage; exit; }
 
@@ -70,19 +72,68 @@ unless(scalar(@data) <= 1) {
 
 # spit out some csv
 my $csv = '';
-my $header = ["Scene Name", "Orbit Direction", "Corner Reflector", "X Pos", "Y Pos", "X Offset", "Y Offset", "Total Error"];
+my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "X Pos", "Y Pos", "X Offset", "Y Offset", "Total Error"]);
 my @footer = (['', '', '', '', '', '', 'Average Error', sprintf("%.5f", $avg_error)],
               ['', '', '', '', '', '', 'Standard Deviation', sprintf("%.5f", $std_dev)]);
-foreach my $row ($header, @data, @footer) {
-  $csv .= join(',', map({"\"$_\""} @$row)) . "\n";
+foreach my $row (@header, @data, @footer) {
+  $csv .= join(',', @$row) . "\n";
+#  $csv .= join(',', map({"\"$_\""} @$row)) . "\n";
 }
+
+
 
 if($outfile) {
   open(OUT, ">$outfile");
   print OUT $csv;
   close(OUT);
-} else {
+}
+
+if($plotfile) {
+  open(PLOT_OUT, ">$plotfile");
+  print PLOT_OUT get_plot_html(@data);
+  close(PLOT_OUT);
+}
+
+if(!$outfile and !$plotfile) {
   print $csv;
 }
 
 exit;
+
+sub get_plot_html {
+  my @data = @_;
+  
+  my $template = q~
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([/***plot_data***/]);
+
+        var options = {
+          title: 'Something About Offsets Or Whatever',
+          hAxis: {title: 'X Offset'},
+          vAxis: {title: 'Y Offset'},
+          legend: 'none',
+          maximize: 1
+        };
+
+        var chart = new google.visualization.ScatterChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_div" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>
+~;
+  
+  my $js_array_rows = '';
+  $js_array_rows = join(',', map({'[' . join(',', @$_[5..6]) . ']'} @data));
+  $template =~ s/\/\*\*\*plot_data\*\*\*\//$js_array_rows/;
+  return $template;
+}
