@@ -6,18 +6,21 @@ use warnings;
 use Getopt::Long qw(:config pass_through);
 use XML::Simple;
 use List::MoreUtils qw(uniq);
+use Text::CSV;
 use Data::Dumper;
 
 my $usage = q~Usage:
-  analysis.pl [--out=<file>] <xml file> [...]
+  analysis.pl [--out=<csv file>] [--plot=<html file>] [--include=<csv files>] <xml files> [...]
 ~;
 
 my $outfile;
 my $plotfile;
+my @include;
 GetOptions( "out=s" => \$outfile,
-            "plot=s" => \$plotfile);
+            "plot=s" => \$plotfile,
+            "include=s" => \@include);
 
-if(scalar(@ARGV) < 1) { print $usage; exit; }
+if(scalar(@ARGV) < 1 and !@include) { print $usage; exit; }
 
 # read in all the xml files
 my $tree = [];
@@ -29,11 +32,7 @@ foreach(sort(uniq(@files))) {
   push(@$tree, new XML::Simple->XMLin($_));
 }
 
-if(scalar(@$tree) <= 0) {
-  exit;
-}
-
-# grab the info we want
+# grab the info we want from the xml files
 my @data;
 my $total_error = 0;
 foreach my $report (@$tree) {
@@ -59,6 +58,28 @@ foreach my $report (@$tree) {
     }
   }
 }
+
+# grab any extra csv data
+foreach(@include) {
+  foreach(glob) {
+    my $csv = Text::CSV->new();
+    open (CSV, "<", $_) or die $!;
+    while (<CSV>) {
+        if ($csv->parse($_)) {
+            my @columns = $csv->fields();
+            if($columns[0] !~ /^Scene/ and $columns[0] !~ /^\s*$/) { # ignore headers and footers
+              push @data, [@columns];
+            }
+        } else {
+            my $err = $csv->error_input;
+            print "Failed to parse line: $err";
+        }
+    }
+    close CSV;
+  }
+}
+
+# do some extra calculations
 my $count = scalar(@data);
 my $avg_error = $total_error / $count;
 my $std_dev = 0;
@@ -99,6 +120,12 @@ if(!$outfile and !$plotfile) {
 }
 
 exit;
+
+sub ingest_csv {
+  my $file = shift;
+  my @data;
+  return @data;
+}
 
 sub get_plot_html {
   my @data = @_;
