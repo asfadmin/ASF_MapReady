@@ -59,6 +59,7 @@ MAPREADY_MODULES = \
 	src/farcorr \
 	src/diffmeta \
 	src/diffimage \
+	src/geoid_adjust \
 	src/sgpsdp \
 	src/plan \
 	src/brs2jpg \
