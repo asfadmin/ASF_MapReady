@@ -117,7 +117,8 @@ my @footer = (
   ['RMSE', '', '', '', '', '', '', '', '', '', '', '',
     sqrt(mean(map($_->[12], @data))),
     sqrt(mean(map($_->[13], @data))),
-    sqrt(sum(map($_->[12] ** 2 + $_->[13] ** 2, @data)) / scalar(@data))]);
+    sqrt(sum(map($_->[12] ** 2 + $_->[13] ** 2, @data)) / scalar(@data))],
+  ['CE95', '', '', '', '', '', '', '', '', '', '', '', '', '', sqrt(3)*sqrt(sum(map($_->[12] ** 2 + $_->[13] ** 2, @data)) / scalar(@data))]);
 foreach my $row (@header, @data, @footer) {
   $csv .= join(',', @$row) . "\n";
 }
