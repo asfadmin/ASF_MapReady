@@ -5,6 +5,7 @@ use warnings;
 
 use Getopt::Long qw(:config pass_through);
 use XML::Simple;
+use List::Util qw(max sum);
 use List::MoreUtils qw(uniq);
 use Text::CSV;
 use Data::Dumper;
@@ -49,7 +50,6 @@ my $total_error = 0;
 foreach my $report (@$tree) {
   $report->{DatasetInformation}->{Filename} =~ /^(\w+)/;
   my $granule = $1;
-  my $ascdesc = $report->{DatasetInformation}->{OrbitDir};
   if($report->{PointTargetAnalysisReport} and $report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults}) {
     my @reflectors;
     if(ref($report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults}) eq 'ARRAY') {
@@ -58,14 +58,26 @@ foreach my $report (@$tree) {
       @reflectors = ($report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults});
     }
     foreach my $ref (@reflectors) {
-      my $ref_name = $ref->{ReflectorNumber};
-      my $ref_xpos = $ref->{ImagePosition_X_ofPointTarget};
-      my $ref_ypos = $ref->{ImagePosition_Y_ofPointTarget};
       my $ref_xoff = $ref->{GeolocationOffsetIn_X_Meter};
       my $ref_yoff = $ref->{GeolocationOffsetIn_Y_Meter};
       my $ref_error = sprintf("%.5f", sqrt($ref_xoff**2 + $ref_yoff**2));
       $total_error += $ref_error;
-      push(@data, [$granule, $ascdesc, $ref_name, $ref_xpos, $ref_ypos, $ref_xoff, $ref_yoff, $ref_error]);
+      push(@data, [
+        $granule,
+        $report->{DatasetInformation}->{OrbitDir},
+        $ref->{ReflectorNumber},
+        max($report->{DatasetInformation}->{RngPxSize}, $report->{DatasetInformation}->{AzPxSize}),
+        $ref->{Resolution_X_from_Neg3db_Width_Meter},
+        $ref->{PSLR_X_left_dB},
+        $ref->{PSLR_X_right_dB},
+        $ref->{Resolution_Y_from_Neg3db_Width_Meter},
+        $ref->{PSLR_Y_left_dB},
+        $ref->{PSLR_Y_right_dB},
+        $ref->{ImagePosition_X_ofPointTarget},
+        $ref->{ImagePosition_Y_ofPointTarget},
+        $ref_xoff,
+        $ref_yoff,
+        $ref_error]);
     }
   }
 }
@@ -92,27 +104,17 @@ foreach(@include) {
 
 # do some extra calculations
 my $count = scalar(@data);
-my $avg_error = $total_error / $count;
-my $std_dev = 0;
-unless(scalar(@data) <= 1) {
-  my $sqtotal = 0;
-  foreach(@data) {
-    $sqtotal += ($avg_error - $_->[7]) ** 2;
-  }
-  $std_dev = sqrt($sqtotal / $count);
-}
+my $avg_error = mean(map($_->[14], @data));
+my $std_dev = std_dev(map($_->[14], @data));
 
 # spit out some csv
 my $csv = '';
-my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "X Pos", "Y Pos", "X Offset", "Y Offset", "Total Error"]);
-my @footer = (['', '', '', '', '', '', 'Average Error', sprintf("%.5f", $avg_error)],
-              ['', '', '', '', '', '', 'Standard Deviation', sprintf("%.5f", $std_dev)]);
+my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution_X_from_Neg3db_Width_Meter", "PSLR_X_left_dB", "PSLR_X_right_dB", "Resolution_Y_from_Neg3db_Width_Meter", "PSLR_Y_left_dB" ,"PSLR_Y_right_dB", "X Pos", "Y Pos", "X Offset", "Y Offset", "Total Error"]);
+my @footer = (['Average', '', '', '', mean(map($_->[4], @data)), mean(map($_->[5], @data)), mean(map($_->[6], @data)), mean(map($_->[7], @data)), mean(map($_->[8], @data)), mean(map($_->[9], @data)), '', '', '', '', mean(map($_->[14], @data))],
+              ['Standard Deviation', '', '', '', std_dev(map($_->[4], @data)), std_dev(map($_->[5], @data)), std_dev(map($_->[6], @data)), std_dev(map($_->[7], @data)), std_dev(map($_->[8], @data)), std_dev(map($_->[9], @data)), '', '', '', '', std_dev(map($_->[14], @data))]);
 foreach my $row (@header, @data, @footer) {
   $csv .= join(',', @$row) . "\n";
-#  $csv .= join(',', map({"\"$_\""} @$row)) . "\n";
 }
-
-
 
 if($outfile) {
   open(OUT, ">$outfile");
@@ -131,6 +133,20 @@ if(!$outfile and !$plotfile) {
 }
 
 exit;
+
+
+sub mean {
+  return sum(@_) / @_;
+}
+
+sub std_dev {
+  my $mean = mean(@_);
+  my $sqtotal = 0;
+  foreach(@_) {
+    $sqtotal += ($mean - $_) ** 2;
+  }
+  return sqrt($sqtotal / scalar(@_));
+}
 
 sub ingest_csv {
   my $file = shift;
