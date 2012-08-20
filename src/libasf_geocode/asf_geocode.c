@@ -2893,20 +2893,26 @@ int geoid_adjust(const char *input_filename, const char *output_filename)
   float *buf = MALLOC(sizeof(float)*ns);
 
   double avg = 0.0;
+  int num=0;
+
   for (ii=0; ii<nl; ++ii) {
     get_float_line(fpIn, meta, ii, buf);
     for (jj=0; jj<ns; ++jj) {
       double lat, lon;
       meta_get_latLon(meta, ii, jj, 0, &lat, &lon);
-      float ht = get_geoid_height(lat,lon);
-      buf[jj] += ht;
-      avg += ht;
+      if (buf[jj] > -900 && buf[jj] != meta->general->no_data)
+      {
+        float ht = get_geoid_height(lat,lon);
+        buf[jj] += ht;
+        avg += ht;
+        ++num;
+      } 
     }
     put_float_line(fpOut, meta, ii, buf);
     asfLineMeter(ii,nl);
   }
 
-  avg /= (double)(nl*ns);
+  avg /= (double)(num);
   asfPrintStatus("Average correction: %f\n", avg);
 
   meta_write(meta, output_meta);
