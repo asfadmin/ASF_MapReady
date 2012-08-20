@@ -75,6 +75,8 @@ foreach my $report (@$tree) {
         $ref->{PSLR_Y_right_dB},
         $ref->{ImagePosition_X_ofPointTarget},
         $ref->{ImagePosition_Y_ofPointTarget},
+        $ref_xoff * $report->{DatasetInformation}->{RngPxSize},
+        $ref_yoff * $report->{DatasetInformation}->{AzPxSize},
         $ref_xoff,
         $ref_yoff,
         $ref_error]);
@@ -90,7 +92,7 @@ foreach(@include) {
     while (<CSV>) {
         if ($csv->parse($_)) {
             my @columns = $csv->fields();
-            if($columns[0] !~ /^Scene/ and $columns[0] !~ /^\s*$/) { # ignore headers and footers
+            if($columns[0] !~ /^(Scene Name|Average|Standard Deviation|RMSE|CE95)/i and $columns[0] !~ /^\s*$/) { # ignore headers and footers
               push @data, [@columns];
             }
         } else {
@@ -104,21 +106,27 @@ foreach(@include) {
 
 # spit out some csv
 my $csv = '';
-my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution_X_from_Neg3db_Width_Meter", "PSLR_X_left_dB", "PSLR_X_right_dB", "Resolution_Y_from_Neg3db_Width_Meter", "PSLR_Y_left_dB" ,"PSLR_Y_right_dB", "X Pos", "Y Pos", "X Offset", "Y Offset", "Total Error"]);
+my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution_X_from_Neg3db_Width_Meter", "PSLR_X_left_dB", "PSLR_X_right_dB", "Resolution_Y_from_Neg3db_Width_Meter", "PSLR_Y_left_dB" ,"PSLR_Y_right_dB", "X Pos", "Y Pos", "X Offset Pixels", "Y Offset Pixels", "X Offset Meters", "Y Offset Meters", "Total Error Meters"]);
 my @footer = (
   ['Average', '', '', '',
     mean(map($_->[4], @data)), mean(map($_->[5], @data)), mean(map($_->[6], @data)),
     mean(map($_->[7], @data)), mean(map($_->[8], @data)), mean(map($_->[9], @data)),
-    '', '', '', '', mean(map($_->[14], @data))],
+    '', '',
+    mean(map($_->[12], @data)), mean(map($_->[13], @data)),
+    mean(map($_->[14], @data)), mean(map($_->[15], @data)),
+    mean(map($_->[16], @data))],
   ['Standard Deviation', '', '', '',
     std_dev(map($_->[4], @data)), std_dev(map($_->[5], @data)), std_dev(map($_->[6], @data)),
     std_dev(map($_->[7], @data)), std_dev(map($_->[8], @data)), std_dev(map($_->[9], @data)),
-    '', '', '', '', std_dev(map($_->[14], @data))],
+    '', '',
+    std_dev(map($_->[12], @data)), std_dev(map($_->[13], @data)),
+    std_dev(map($_->[14], @data)), std_dev(map($_->[15], @data)),
+    std_dev(map($_->[16], @data))],
   ['RMSE', '', '', '', '', '', '', '', '', '', '', '',
-    sqrt(mean(map($_->[12], @data))),
-    sqrt(mean(map($_->[13], @data))),
-    sqrt(sum(map($_->[12] ** 2 + $_->[13] ** 2, @data)) / scalar(@data))],
-  ['CE95', '', '', '', '', '', '', '', '', '', '', '', '', '', sqrt(3)*sqrt(sum(map($_->[12] ** 2 + $_->[13] ** 2, @data)) / scalar(@data))]);
+    sqrt(mean(map($_->[12] ** 2, @data))), sqrt(mean(map($_->[13] ** 2, @data))),
+    sqrt(mean(map($_->[14] ** 2, @data))), sqrt(mean(map($_->[15] ** 2, @data))),
+    sqrt(mean(map($_->[16] ** 2, @data)))],
+  ['CE95', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', sqrt(3)*sqrt(mean(map($_->[16] ** 2, @data)))]);
 foreach my $row (@header, @data, @footer) {
   $csv .= join(',', @$row) . "\n";
 }
@@ -194,7 +202,7 @@ sub get_plot_html {
 ~;
   
   my $js_array_rows = '';
-  $js_array_rows = join(',', map({'[' . join(',', @$_[5..6]) . ']'} @data));
+  $js_array_rows = join(',', map({'[' . join(',', @$_) . ']'} @data));
   $template =~ s/\/\*\*\*plot_data\*\*\*\//$js_array_rows/;
   return $template;
 }
