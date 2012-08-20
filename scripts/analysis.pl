@@ -102,16 +102,22 @@ foreach(@include) {
   }
 }
 
-# do some extra calculations
-my $count = scalar(@data);
-my $avg_error = mean(map($_->[14], @data));
-my $std_dev = std_dev(map($_->[14], @data));
-
 # spit out some csv
 my $csv = '';
 my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution_X_from_Neg3db_Width_Meter", "PSLR_X_left_dB", "PSLR_X_right_dB", "Resolution_Y_from_Neg3db_Width_Meter", "PSLR_Y_left_dB" ,"PSLR_Y_right_dB", "X Pos", "Y Pos", "X Offset", "Y Offset", "Total Error"]);
-my @footer = (['Average', '', '', '', mean(map($_->[4], @data)), mean(map($_->[5], @data)), mean(map($_->[6], @data)), mean(map($_->[7], @data)), mean(map($_->[8], @data)), mean(map($_->[9], @data)), '', '', '', '', mean(map($_->[14], @data))],
-              ['Standard Deviation', '', '', '', std_dev(map($_->[4], @data)), std_dev(map($_->[5], @data)), std_dev(map($_->[6], @data)), std_dev(map($_->[7], @data)), std_dev(map($_->[8], @data)), std_dev(map($_->[9], @data)), '', '', '', '', std_dev(map($_->[14], @data))]);
+my @footer = (
+  ['Average', '', '', '',
+    mean(map($_->[4], @data)), mean(map($_->[5], @data)), mean(map($_->[6], @data)),
+    mean(map($_->[7], @data)), mean(map($_->[8], @data)), mean(map($_->[9], @data)),
+    '', '', '', '', mean(map($_->[14], @data))],
+  ['Standard Deviation', '', '', '',
+    std_dev(map($_->[4], @data)), std_dev(map($_->[5], @data)), std_dev(map($_->[6], @data)),
+    std_dev(map($_->[7], @data)), std_dev(map($_->[8], @data)), std_dev(map($_->[9], @data)),
+    '', '', '', '', std_dev(map($_->[14], @data))],
+  ['RMSE', '', '', '', '', '', '', '', '', '', '', '',
+    sqrt(sum(map($_->[12], @data)) / scalar(@data)),
+    sqrt(sum(map($_->[13], @data)) / scalar(@data)),
+    sqrt(sum(map($_->[12] ** 2 + $_->[13] ** 2, @data)) / scalar(@data))]);
 foreach my $row (@header, @data, @footer) {
   $csv .= join(',', @$row) . "\n";
 }
