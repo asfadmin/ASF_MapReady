@@ -115,8 +115,8 @@ my @footer = (
     std_dev(map($_->[7], @data)), std_dev(map($_->[8], @data)), std_dev(map($_->[9], @data)),
     '', '', '', '', std_dev(map($_->[14], @data))],
   ['RMSE', '', '', '', '', '', '', '', '', '', '', '',
-    sqrt(sum(map($_->[12], @data)) / scalar(@data)),
-    sqrt(sum(map($_->[13], @data)) / scalar(@data)),
+    sqrt(mean(map($_->[12], @data))),
+    sqrt(mean(map($_->[13], @data))),
     sqrt(sum(map($_->[12] ** 2 + $_->[13] ** 2, @data)) / scalar(@data))]);
 foreach my $row (@header, @data, @footer) {
   $csv .= join(',', @$row) . "\n";
