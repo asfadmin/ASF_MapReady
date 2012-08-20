@@ -182,6 +182,15 @@ sub get_plot_html {
       google.load("visualization", "1.0", {packages:['corechart', 'table']});
       google.setOnLoadCallback(drawCharts);
       
+      function getScatterPlotLabel(dataTable, rowNum) {
+        var granule = dataTable.getValue(rowNum, 0);
+        var ascdesc = dataTable.getValue(rowNum, 1);
+        var reflector = dataTable.getValue(rowNum, 2);
+        var offset_x = dataTable.getValue(rowNum, 14);
+        var offset_y = dataTable.getValue(rowNum, 15);
+        return(granule + "\n" + ascdesc + "\nReflector: " + reflector + "\nX Offset: " + offset_x + "m\nY Offset: " + offset_y + "m");
+      }
+      
       function drawCharts() {
         // build a data table with our data
         var data = google.visualization.arrayToDataTable(raw_data);
@@ -215,15 +224,6 @@ sub get_plot_html {
         desc_view.setRows(desc_view.getFilteredRows([{column: 1, minValue: "DESCENDING", maxValue: "DESCENDING"}]));
         desc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Label'}]);
         
-        function getScatterPlotLabel(dataTable, rowNum) {
-          var granule = dataTable.getValue(rowNum, 0);
-          var ascdesc = dataTable.getValue(rowNum, 1);
-          var reflector = dataTable.getValue(rowNum, 2);
-          var offset_x = dataTable.getValue(rowNum, 14);
-          var offset_y = dataTable.getValue(rowNum, 15);
-          return(granule + "\n" + ascdesc + "\nReflector: " + reflector + "\nX Offset: " + offset_x + "m\nY Offset: " + offset_y + "m");
-        }
-        
         var ascdesc_table = new google.visualization.data.join(asc_view, desc_view, 'full', [[0,0]], [1,2], [1,2]);
         ascdesc_table.setColumnLabel(1, 'Ascending');
         ascdesc_table.setColumnProperty(2, 'role', 'tooltip');
@@ -239,7 +239,7 @@ sub get_plot_html {
         };
         var ascdesc_plot = new google.visualization.ScatterChart(document.getElementById('ascdesc_plot'));
         ascdesc_plot.draw(ascdesc_table, ascdesc_options);
-        
+        /*
         // set up the reflector-grouped plot
         var reflector_view = new google.visualization.DataView(data);
         reflector_view.setColumns([14, 15]);
@@ -265,13 +265,14 @@ sub get_plot_html {
         };
         var granule_plot = new google.visualization.ScatterChart(document.getElementById('granule_plot'));
         granule_plot.draw(granule_view, granule_options);
+        */
       }
     </script>
   </head>
   <body>
     <div id="ascdesc_plot" style="width: 900px; height: 500px;"></div>
-    <div id="reflector_plot" style="width: 900px; height: 500px;"></div>
-    <div id="granule_plot" style="width: 900px; height: 500px;"></div>
+    <!--<div id="reflector_plot" style="width: 900px; height: 500px;"></div>
+    <div id="granule_plot" style="width: 900px; height: 500px;"></div>-->
     <div id="spreadsheet"></div>
   </body>
 </html>
