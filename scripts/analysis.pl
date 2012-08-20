@@ -209,15 +209,26 @@ sub get_plot_html {
         // set up the asc/desc-grouped plots
         var asc_view = new google.visualization.DataView(data);
         asc_view.setRows(asc_view.getFilteredRows([{column: 1, minValue: "ASCENDING", maxValue: "ASCENDING"}]));
-        asc_view.setColumns([14, 15, {}]);
+        asc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Label'}]);
         
         var desc_view = new google.visualization.DataView(data);
         desc_view.setRows(desc_view.getFilteredRows([{column: 1, minValue: "DESCENDING", maxValue: "DESCENDING"}]));
-        desc_view.setColumns([14, 15]);
+        desc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Label'}]);
         
-        var ascdesc_table = new google.visualization.data.join(asc_view, desc_view, 'full', [[0,0]], [1], [1]);
+        function getScatterPlotLabel(dataTable, rowNum) {
+          var granule = dataTable.getValue(rowNum, 0);
+          var ascdesc = dataTable.getValue(rowNum, 1);
+          var reflector = dataTable.getValue(rowNum, 2);
+          var offset_x = dataTable.getValue(rowNum, 14);
+          var offset_y = dataTable.getValue(rowNum, 15);
+          return(granule + "\n" + ascdesc + "\nReflector: " + reflector + "\nX Offset: " + offset_x + "m\nY Offset: " + offset_y + "m");
+        }
+        
+        var ascdesc_table = new google.visualization.data.join(asc_view, desc_view, 'full', [[0,0]], [1,2], [1,2]);
         ascdesc_table.setColumnLabel(1, 'Ascending');
-        ascdesc_table.setColumnLabel(2, 'Descending');
+        ascdesc_table.setColumnProperty(2, 'role', 'tooltip');
+        ascdesc_table.setColumnLabel(3, 'Descending');
+        ascdesc_table.setColumnProperty(4, 'role', 'tooltip');
         
         var ascdesc_options = {
           title: 'Geolocation Offsets Grouped by Orbit Direction',
