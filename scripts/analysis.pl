@@ -50,6 +50,9 @@ my $total_error = 0;
 foreach my $report (@$tree) {
   $report->{DatasetInformation}->{Filename} =~ /^(\w+)/;
   my $granule = $1;
+  if($granule =~ /^(.*)(_SIGMA)$/) {
+    $granule = $1; #uuurrrggghhh
+  }
   if($report->{PointTargetAnalysisReport} and $report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults}) {
     my @reflectors;
     if(ref($report->{PointTargetAnalysisReport}->{CornerReflectorPTAResults}) eq 'ARRAY') {
@@ -106,7 +109,7 @@ foreach(@include) {
 
 # spit out some csv
 my $csv = '';
-my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution_X_from_Neg3db_Width_Meter", "PSLR_X_left_dB", "PSLR_X_right_dB", "Resolution_Y_from_Neg3db_Width_Meter", "PSLR_Y_left_dB" ,"PSLR_Y_right_dB", "X Pos", "Y Pos", "X Offset Pixels", "Y Offset Pixels", "X Offset Meters", "Y Offset Meters", "Total Error Meters"]);
+my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution X from -3db Width (Meters)", "PSLR X left dB", "PSLR X right dB", "Resolution Y from -3db Width (Meters)", "PSLR Y left dB" ,"PSLR Y right dB", "X Pos", "Y Pos", "X Offset (Pixels)", "Y Offset (Pixels)", "X Offset (Meters)", "Y Offset (Meters)", "Total Error (Meters)"]);
 my @footer = (
   ['Average', '', '', '',
     mean(map($_->[4], @data)), mean(map($_->[5], @data)), mean(map($_->[6], @data)),
@@ -139,7 +142,7 @@ if($outfile) {
 
 if($plotfile) {
   open(PLOT_OUT, ">$plotfile");
-  print PLOT_OUT get_plot_html(@data);
+  print PLOT_OUT get_plot_html(@header, @data);
   close(PLOT_OUT);
 }
 
@@ -170,39 +173,101 @@ sub ingest_csv {
 }
 
 sub get_plot_html {
-  my @data = @_;
-  
-  my $template = q~
-<html>
+  my $template = q~<html>
   <head>
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
-      google.load("visualization", "1", {packages:["corechart"]});
-      google.setOnLoadCallback(drawChart);
-      function drawChart() {
-        var data = google.visualization.arrayToDataTable([/***plot_data***/]);
-
-        var options = {
-          title: 'Something About Offsets Or Whatever',
-          hAxis: {title: 'X Offset'},
-          vAxis: {title: 'Y Offset'},
-          legend: 'none',
+      var raw_data = [/***plot_data***/];
+      
+      google.load("visualization", "1.0", {packages:['corechart', 'table']});
+      google.setOnLoadCallback(drawCharts);
+      
+      function drawCharts() {
+        // build a data table with our data
+        var data = google.visualization.arrayToDataTable(raw_data);
+        var formatter = new google.visualization.NumberFormat({fractionDigits: 5});
+        formatter.format(data, 4);
+        formatter.format(data, 5);
+        formatter.format(data, 6);
+        formatter.format(data, 7);
+        formatter.format(data, 8);
+        formatter.format(data, 9);
+        formatter.format(data, 12);
+        formatter.format(data, 13);
+        formatter.format(data, 14);
+        formatter.format(data, 15);
+        formatter.format(data, 16);
+        
+        // set up the spreadsheet
+        var spreadsheet = new google.visualization.Table(document.getElementById('spreadsheet'));
+        spreadsheet.draw(data, null);
+        
+        // set up a view for labels
+        var labels = new google.visualization.DataView(data);
+        
+        
+        // set up the asc/desc-grouped plots
+        var asc_view = new google.visualization.DataView(data);
+        asc_view.setRows(asc_view.getFilteredRows([{column: 1, minValue: "ASCENDING", maxValue: "ASCENDING"}]));
+        asc_view.setColumns([14, 15, {}]);
+        
+        var desc_view = new google.visualization.DataView(data);
+        desc_view.setRows(desc_view.getFilteredRows([{column: 1, minValue: "DESCENDING", maxValue: "DESCENDING"}]));
+        desc_view.setColumns([14, 15]);
+        
+        var ascdesc_table = new google.visualization.data.join(asc_view, desc_view, 'full', [[0,0]], [1], [1]);
+        ascdesc_table.setColumnLabel(1, 'Ascending');
+        ascdesc_table.setColumnLabel(2, 'Descending');
+        
+        var ascdesc_options = {
+          title: 'Geolocation Offsets Grouped by Orbit Direction',
+          hAxis: {title: 'X Offset (meters)'},
+          vAxis: {title: 'Y Offset (meters)'},
+          legend: {position: 'right'},
           maximize: 1
         };
-
-        var chart = new google.visualization.ScatterChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
+        var ascdesc_plot = new google.visualization.ScatterChart(document.getElementById('ascdesc_plot'));
+        ascdesc_plot.draw(ascdesc_table, ascdesc_options);
+        
+        // set up the reflector-grouped plot
+        var reflector_view = new google.visualization.DataView(data);
+        reflector_view.setColumns([14, 15]);
+        var reflector_options = {
+          title: 'Geolocation Offsets Grouped by Reflector',
+          hAxis: {title: 'X Offset (meters)'},
+          vAxis: {title: 'Y Offset (meters)'},
+          legend: {position: 'right'},
+          maximize: 1
+        };
+        var reflector_plot = new google.visualization.ScatterChart(document.getElementById('reflector_plot'));
+        reflector_plot.draw(reflector_view, reflector_options);
+        
+        // set up the granule-grouped plot
+        var granule_view = new google.visualization.DataView(data);
+        granule_view.setColumns([14, 15]);
+        var granule_options = {
+          title: 'Geolocation Offsets Grouped by Granule',
+          hAxis: {title: 'X Offset (meters)'},
+          vAxis: {title: 'Y Offset (meters)'},
+          legend: {position: 'right'},
+          maximize: 1
+        };
+        var granule_plot = new google.visualization.ScatterChart(document.getElementById('granule_plot'));
+        granule_plot.draw(granule_view, granule_options);
       }
     </script>
   </head>
   <body>
-    <div id="chart_div" style="width: 900px; height: 500px;"></div>
+    <div id="ascdesc_plot" style="width: 900px; height: 500px;"></div>
+    <div id="reflector_plot" style="width: 900px; height: 500px;"></div>
+    <div id="granule_plot" style="width: 900px; height: 500px;"></div>
+    <div id="spreadsheet"></div>
   </body>
 </html>
 ~;
   
   my $js_array_rows = '';
-  $js_array_rows = join(',', map({'[' . join(',', @$_) . ']'} @data));
+  $js_array_rows = join(',', map({'[' . join(',', map({$_ =~ /[a-z]/i ? "\"$_\"" : $_} @$_)) . ']'} @_));
   $template =~ s/\/\*\*\*plot_data\*\*\*\//$js_array_rows/;
   return $template;
 }
