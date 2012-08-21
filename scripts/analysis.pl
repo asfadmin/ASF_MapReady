@@ -109,7 +109,7 @@ foreach(@include) {
 
 # spit out some csv
 my $csv = '';
-my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution X from -3db Width (Meters)", "PSLR X left dB", "PSLR X right dB", "Resolution Y from -3db Width (Meters)", "PSLR Y left dB" ,"PSLR Y right dB", "X Pos", "Y Pos", "X Offset (Pixels)", "Y Offset (Pixels)", "X Offset (Meters)", "Y Offset (Meters)", "Total Error (Meters)"]);
+my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution X from -3db Width (meters)", "PSLR X left dB", "PSLR X right dB", "Resolution Y from -3db Width (meters)", "PSLR Y left dB" ,"PSLR Y right dB", "X Pos (pixels)", "Y Pos (pixels)", "X Offset (pixels)", "Y Offset (pixels)", "X Offset (meters)", "Y Offset (meters)", "Total Error (meters)"]);
 my @footer = (
   ['Average', '', '', '',
     mean(map($_->[4], @data)), mean(map($_->[5], @data)), mean(map($_->[6], @data)),
@@ -186,9 +186,13 @@ sub get_plot_html {
         var granule = dataTable.getValue(rowNum, 0);
         var ascdesc = dataTable.getValue(rowNum, 1);
         var reflector = dataTable.getValue(rowNum, 2);
-        var offset_x = dataTable.getValue(rowNum, 14);
-        var offset_y = dataTable.getValue(rowNum, 15);
-        return(granule + "\n" + ascdesc + "\nReflector: " + reflector + "\nX Offset: " + offset_x + "m\nY Offset: " + offset_y + "m");
+        var moffset_x = dataTable.getValue(rowNum, 14);
+        var moffset_y = dataTable.getValue(rowNum, 15);
+        var poffset_x = dataTable.getValue(rowNum, 12);
+        var poffset_y = dataTable.getValue(rowNum, 13);
+        return(granule + "\n" + ascdesc + "\nReflector: " + reflector +
+          "\nX Error: " + moffset_x + "m\nY Error: " + moffset_y +
+          "m\nX Error: " + poffset_x + "px\nY Error: " + poffset_y + "px");
       }
       
       function drawCharts() {
@@ -209,7 +213,7 @@ sub get_plot_html {
         
         // set up the spreadsheet
         var spreadsheet = new google.visualization.Table(document.getElementById('spreadsheet'));
-        spreadsheet.draw(data, null);
+        spreadsheet.draw(data);
         
         // set up a view for labels
         var labels = new google.visualization.DataView(data);
@@ -218,33 +222,34 @@ sub get_plot_html {
         // set up the asc/desc-grouped plots
         var asc_view = new google.visualization.DataView(data);
         asc_view.setRows(asc_view.getFilteredRows([{column: 1, minValue: "ASCENDING", maxValue: "ASCENDING"}]));
-        asc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Label'}]);
+        asc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         
         var desc_view = new google.visualization.DataView(data);
         desc_view.setRows(desc_view.getFilteredRows([{column: 1, minValue: "DESCENDING", maxValue: "DESCENDING"}]));
-        desc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Label'}]);
+        desc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         
         var ascdesc_table = new google.visualization.data.join(asc_view, desc_view, 'full', [[0,0]], [1,2], [1,2]);
         ascdesc_table.setColumnLabel(1, 'Ascending');
-        ascdesc_table.setColumnProperty(2, 'role', 'tooltip');
+//        ascdesc_table.setColumnProperty(2, 'role', 'tooltip');
         ascdesc_table.setColumnLabel(3, 'Descending');
-        ascdesc_table.setColumnProperty(4, 'role', 'tooltip');
+//        ascdesc_table.setColumnProperty(4, 'role', 'tooltip');
         
         var ascdesc_options = {
-          title: 'Geolocation Offsets Grouped by Orbit Direction',
-          hAxis: {title: 'X Offset (meters)'},
-          vAxis: {title: 'Y Offset (meters)'},
+          title: 'Geolocation Error Grouped by Orbit Direction',
+          hAxis: {title: 'X Error (meters)'},
+          vAxis: {title: 'Y Error (meters)'},
           legend: {position: 'right'},
           maximize: 1
         };
         var ascdesc_plot = new google.visualization.ScatterChart(document.getElementById('ascdesc_plot'));
         ascdesc_plot.draw(ascdesc_table, ascdesc_options);
+        
         /*
         // set up the reflector-grouped plot
         var reflector_view = new google.visualization.DataView(data);
         reflector_view.setColumns([14, 15]);
         var reflector_options = {
-          title: 'Geolocation Offsets Grouped by Reflector',
+          title: 'Geolocation Error Grouped by Reflector',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
           legend: {position: 'right'},
@@ -257,15 +262,63 @@ sub get_plot_html {
         var granule_view = new google.visualization.DataView(data);
         granule_view.setColumns([14, 15]);
         var granule_options = {
-          title: 'Geolocation Offsets Grouped by Granule',
-          hAxis: {title: 'X Offset (meters)'},
-          vAxis: {title: 'Y Offset (meters)'},
+          title: 'Geolocation Error Grouped by Granule',
+          hAxis: {title: 'X Error (meters)'},
+          vAxis: {title: 'Y Error (meters)'},
           legend: {position: 'right'},
           maximize: 1
         };
         var granule_plot = new google.visualization.ScatterChart(document.getElementById('granule_plot'));
         granule_plot.draw(granule_view, granule_options);
         */
+        
+        var xx_view = new google.visualization.DataView(data);
+        xx_view.setColumns([12, 10, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        var xx_options = {
+          title: 'X Error vs. X Position',
+          hAxis: {title: 'X Error (pixels)'},
+          vAxis: {title: 'X Position (pixels)'},
+          legend: 'none',
+          maximize: 1
+        };
+        var xx_plot = new google.visualization.ScatterChart(document.getElementById('xx_plot'));
+        xx_plot.draw(xx_view, xx_options);
+        
+        var xy_view = new google.visualization.DataView(data);
+        xy_view.setColumns([12, 11, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        var xy_options = {
+          title: 'X Error vs. Y Position',
+          hAxis: {title: 'X Error (pixels)'},
+          vAxis: {title: 'Y Position (pixels)'},
+          legend: 'none',
+          maximize: 1
+        };
+        var xy_plot = new google.visualization.ScatterChart(document.getElementById('xy_plot'));
+        xy_plot.draw(xy_view, xy_options);
+        
+        var yx_view = new google.visualization.DataView(data);
+        yx_view.setColumns([13, 10, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        var yx_options = {
+          title: 'Y Error vs. X Position',
+          hAxis: {title: 'Y Error (pixels)'},
+          vAxis: {title: 'X Position (pixels)'},
+          legend: 'none',
+          maximize: 1
+        };
+        var yx_plot = new google.visualization.ScatterChart(document.getElementById('yx_plot'));
+        yx_plot.draw(yx_view, yx_options);
+        
+        var yy_view = new google.visualization.DataView(data);
+        yy_view.setColumns([13, 11, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        var yy_options = {
+          title: 'Y Error vs. Y Position',
+          hAxis: {title: 'Y Error (pixels)'},
+          vAxis: {title: 'Y Position (pixels)'},
+          legend: 'none',
+          maximize: 1
+        };
+        var yy_plot = new google.visualization.ScatterChart(document.getElementById('yy_plot'));
+        yy_plot.draw(yy_view, yy_options);
       }
     </script>
   </head>
@@ -273,6 +326,10 @@ sub get_plot_html {
     <div id="ascdesc_plot" style="width: 900px; height: 500px;"></div>
     <!--<div id="reflector_plot" style="width: 900px; height: 500px;"></div>
     <div id="granule_plot" style="width: 900px; height: 500px;"></div>-->
+    <div id="xx_plot" style="width: 900px; height: 500px;"></div>
+    <div id="xy_plot" style="width: 900px; height: 500px;"></div>
+    <div id="yx_plot" style="width: 900px; height: 500px;"></div>
+    <div id="yy_plot" style="width: 900px; height: 500px;"></div>
     <div id="spreadsheet"></div>
   </body>
 </html>
