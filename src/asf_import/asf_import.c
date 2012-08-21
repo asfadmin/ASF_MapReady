@@ -1104,10 +1104,9 @@ int main(int argc, char *argv[])
 
     /* If the user didn't ask for a log file then we can nuke the one that
        we've been keeping since we've finished everything  */
-    if (logflag) {
-        fclose (fLog);
+    fclose (fLog);
+    if(flags[f_LOG] == FLAG_NOT_SET)
         remove(logFile);
-    }
 
     exit(EXIT_SUCCESS);
 }
