@@ -177,8 +177,6 @@ sub get_plot_html {
   <head>
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
-      var raw_data = [/***plot_data***/];
-      
       google.load("visualization", "1.0", {packages:['corechart', 'table']});
       google.setOnLoadCallback(drawCharts);
       
@@ -197,7 +195,7 @@ sub get_plot_html {
       
       function drawCharts() {
         // build a data table with our data
-        var data = google.visualization.arrayToDataTable(raw_data);
+        var data = google.visualization.arrayToDataTable([/***plot_data***/]);
         var formatter = new google.visualization.NumberFormat({fractionDigits: 5});
         formatter.format(data, 4);
         formatter.format(data, 5);
@@ -220,19 +218,32 @@ sub get_plot_html {
         
         
         // set up the asc/desc-grouped plots
-        var asc_view = new google.visualization.DataView(data);
-        asc_view.setRows(asc_view.getFilteredRows([{column: 1, minValue: "ASCENDING", maxValue: "ASCENDING"}]));
-        asc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
-        
-        var desc_view = new google.visualization.DataView(data);
-        desc_view.setRows(desc_view.getFilteredRows([{column: 1, minValue: "DESCENDING", maxValue: "DESCENDING"}]));
-        desc_view.setColumns([14, 15, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
-        
-        var ascdesc_table = new google.visualization.data.join(asc_view, desc_view, 'full', [[0,0]], [1,2], [1,2]);
-        ascdesc_table.setColumnLabel(1, 'Ascending');
-//        ascdesc_table.setColumnProperty(2, 'role', 'tooltip');
-        ascdesc_table.setColumnLabel(3, 'Descending');
-//        ascdesc_table.setColumnProperty(4, 'role', 'tooltip');
+        function asc_y_offset(dataTable, rowNum) {
+          if(dataTable.getValue(rowNum, 1) == 'ASCENDING')
+            return dataTable.getValue(rowNum, 15);
+          return null;
+        }
+        function desc_y_offset(dataTable, rowNum) {
+          if(dataTable.getValue(rowNum, 1) == 'DESCENDING')
+            return dataTable.getValue(rowNum, 15);
+          return null;
+        }
+        function asc_tooltip(dataTable, rowNum) {
+          if(dataTable.getValue(rowNum, 1) == 'ASCENDING')
+            return getScatterPlotLabel(dataTable, rowNum);
+          return null;
+        }
+        function desc_tooltip(dataTable, rowNum) {
+          if(dataTable.getValue(rowNum, 1) == 'DESCENDING')
+            return getScatterPlotLabel(dataTable, rowNum);
+          return null;
+        }
+        var ascdesc_view = new google.visualization.DataView(data);
+        ascdesc_view.setColumns([14,
+          {calc:asc_y_offset, type:'number', label:'Ascending'},
+          {calc:asc_tooltip, type:'string', label:'Tooltip', role:'tooltip'},
+          {calc:desc_y_offset, type:'number', label:'Descending'},
+          {calc:desc_tooltip, type:'string', label:'Tooltip', role:'tooltip'}]);
         
         var ascdesc_options = {
           title: 'Geolocation Error Grouped by Orbit Direction',
@@ -242,7 +253,7 @@ sub get_plot_html {
           maximize: 1
         };
         var ascdesc_plot = new google.visualization.ScatterChart(document.getElementById('ascdesc_plot'));
-        ascdesc_plot.draw(ascdesc_table, ascdesc_options);
+        ascdesc_plot.draw(ascdesc_view, ascdesc_options);
         
         /*
         // set up the reflector-grouped plot
@@ -272,8 +283,11 @@ sub get_plot_html {
         granule_plot.draw(granule_view, granule_options);
         */
         
+        // set up the xx/xy/yx/yy error/position plots
+        
         var xx_view = new google.visualization.DataView(data);
-        xx_view.setColumns([12, 10, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        xx_view.setColumns([12, 10,
+          {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         var xx_options = {
           title: 'X Error vs. X Position',
           hAxis: {title: 'X Error (pixels)'},
@@ -319,6 +333,56 @@ sub get_plot_html {
         };
         var yy_plot = new google.visualization.ScatterChart(document.getElementById('yy_plot'));
         yy_plot.draw(yy_view, yy_options);
+        
+        // set up some event handlers for synchronized selections
+        google.visualization.events.addListener(ascdesc_plot, 'select', function() {
+          var sel = ascdesc_plot.getSelection();
+          xx_plot.setSelection(sel);
+          xy_plot.setSelection(sel);
+          yx_plot.setSelection(sel);
+          yy_plot.setSelection(sel);
+          spreadsheet.setSelection(sel);
+        });
+        google.visualization.events.addListener(xx_plot, 'select', function() {
+          var sel = xx_plot.getSelection();
+          ascdesc_plot.setSelection(sel);
+          xy_plot.setSelection(sel);
+          yx_plot.setSelection(sel);
+          yy_plot.setSelection(sel);
+          spreadsheet.setSelection(sel);
+        });
+        google.visualization.events.addListener(xy_plot, 'select', function() {
+          var sel = xy_plot.getSelection();
+          ascdesc_plot.setSelection(sel);
+          xx_plot.setSelection(sel);
+          yx_plot.setSelection(sel);
+          yy_plot.setSelection(sel);
+          spreadsheet.setSelection(sel);
+        });
+        google.visualization.events.addListener(yx_plot, 'select', function() {
+          var sel = yx_plot.getSelection();
+          ascdesc_plot.setSelection(sel);
+          xx_plot.setSelection(sel);
+          xy_plot.setSelection(sel);
+          yy_plot.setSelection(sel);
+          spreadsheet.setSelection(sel);
+        });
+        google.visualization.events.addListener(yy_plot, 'select', function() {
+          var sel = yy_plot.getSelection();
+          ascdesc_plot.setSelection(sel);
+          xx_plot.setSelection(sel);
+          xy_plot.setSelection(sel);
+          yx_plot.setSelection(sel);
+          spreadsheet.setSelection(sel);
+        });
+        google.visualization.events.addListener(spreadsheet, 'select', function() {
+          var sel = spreadsheet.getSelection();
+          ascdesc_plot.setSelection(sel);
+          xx_plot.setSelection(sel);
+          xy_plot.setSelection(sel);
+          yx_plot.setSelection(sel);
+          yy_plot.setSelection(sel);
+        });
       }
     </script>
   </head>
