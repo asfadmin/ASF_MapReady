@@ -11,7 +11,7 @@ use Text::CSV;
 use Data::Dumper;
 
 my $usage = q~USAGE:
-  analysis.pl [--out=<csv file>] [--plot=<html file>] [--include=<csv files>]
+  analysis.pl [--help] [--out=<csv file>] [--plot=<html file>] [--include=<csv files>]
     [--title=<title>] <xml files> [...]
 ~;
 
