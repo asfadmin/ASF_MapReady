@@ -10,16 +10,23 @@ use List::MoreUtils qw(uniq);
 use Text::CSV;
 use Data::Dumper;
 
-my $usage = q~Usage:
+my $usage = q~USAGE:
   analysis.pl [--out=<csv file>] [--plot=<html file>] [--include=<csv files>] <xml files> [...]
 ~;
 
 my $outfile;
 my $plotfile;
 my @include;
+my $helpf;
 GetOptions( "out=s" => \$outfile,
             "plot=s" => \$plotfile,
-            "include=s" => \@include);
+            "include=s" => \@include,
+            "help" => \$helpf);
+
+if($helpf) {
+  print get_help_text();
+  exit;
+}
 
 if(scalar(@ARGV) < 1 and !@include) { print $usage; exit; }
 
@@ -109,7 +116,7 @@ foreach(@include) {
 
 # spit out some csv
 my $csv = '';
-my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution X from -3db Width (meters)", "PSLR X left dB", "PSLR X right dB", "Resolution Y from -3db Width (meters)", "PSLR Y left dB" ,"PSLR Y right dB", "X Pos (pixels)", "Y Pos (pixels)", "X Offset (pixels)", "Y Offset (pixels)", "X Offset (meters)", "Y Offset (meters)", "Total Error (meters)"]);
+my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution X from -3db Width (meters)", "PSLR X left dB", "PSLR X right dB", "Resolution Y from -3db Width (meters)", "PSLR Y left dB" ,"PSLR Y right dB", "X Pos (pixels)", "Y Pos (pixels)", "X Offset (pixels)", "Y Offset (pixels)", "X Offset (meters)", "Y Offset (meters)", "Total Offset (meters)"]);
 my @footer = (
   ['Average', '', '', '',
     mean(map($_->[4], @data)), mean(map($_->[5], @data)), mean(map($_->[6], @data)),
@@ -125,7 +132,7 @@ my @footer = (
     std_dev(map($_->[12], @data)), std_dev(map($_->[13], @data)),
     std_dev(map($_->[14], @data)), std_dev(map($_->[15], @data)),
     std_dev(map($_->[16], @data))],
-  ['RMSE', '', '', '', '', '', '', '', '', '', '', '',
+  ['RMS', '', '', '', '', '', '', '', '', '', '', '',
     sqrt(mean(map($_->[12] ** 2, @data))), sqrt(mean(map($_->[13] ** 2, @data))),
     sqrt(mean(map($_->[14] ** 2, @data))), sqrt(mean(map($_->[15] ** 2, @data))),
     sqrt(mean(map($_->[14] ** 2 + $_->[15] ** 2, @data)))],
@@ -189,8 +196,8 @@ sub get_plot_html {
         var poffset_x = dataTable.getValue(rowNum, 12);
         var poffset_y = dataTable.getValue(rowNum, 13);
         return(granule + "\n" + ascdesc + "\nReflector: " + reflector +
-          "\nX Error: " + moffset_x + "m\nY Error: " + moffset_y +
-          "m\nX Error: " + poffset_x + "px\nY Error: " + poffset_y + "px");
+          "\nX Offset: " + moffset_x + "m\nY Offset: " + moffset_y +
+          "m\nX Offset: " + poffset_x + "px\nY Offset: " + poffset_y + "px");
       }
       
       function drawCharts() {
@@ -246,9 +253,9 @@ sub get_plot_html {
           {calc:desc_tooltip, type:'string', label:'Tooltip', role:'tooltip'}]);
         
         var ascdesc_options = {
-          title: 'Geolocation Error Grouped by Orbit Direction',
-          hAxis: {title: 'X Error (meters)'},
-          vAxis: {title: 'Y Error (meters)'},
+          title: 'Geolocation Offset Grouped by Orbit Direction',
+          hAxis: {title: 'X Offset (meters)'},
+          vAxis: {title: 'Y Offset (meters)'},
           legend: {position: 'right'},
           maximize: 1
         };
@@ -260,7 +267,7 @@ sub get_plot_html {
         var reflector_view = new google.visualization.DataView(data);
         reflector_view.setColumns([14, 15]);
         var reflector_options = {
-          title: 'Geolocation Error Grouped by Reflector',
+          title: 'Geolocation Offset Grouped by Reflector',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
           legend: {position: 'right'},
@@ -273,9 +280,9 @@ sub get_plot_html {
         var granule_view = new google.visualization.DataView(data);
         granule_view.setColumns([14, 15]);
         var granule_options = {
-          title: 'Geolocation Error Grouped by Granule',
-          hAxis: {title: 'X Error (meters)'},
-          vAxis: {title: 'Y Error (meters)'},
+          title: 'Geolocation Offset Grouped by Granule',
+          hAxis: {title: 'X Offset (meters)'},
+          vAxis: {title: 'Y Offset (meters)'},
           legend: {position: 'right'},
           maximize: 1
         };
@@ -286,12 +293,12 @@ sub get_plot_html {
         // set up the xx/xy/yx/yy error/position plots
         
         var xx_view = new google.visualization.DataView(data);
-        xx_view.setColumns([12, 10,
+        xx_view.setColumns([10, 12,
           {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         var xx_options = {
-          title: 'X Error vs. X Position',
-          hAxis: {title: 'X Error (pixels)'},
-          vAxis: {title: 'X Position (pixels)'},
+          title: 'X Offset vs. X Position',
+          hAxis: {title: 'X Position (pixels)'},
+          vAxis: {title: 'X Offset (pixels)'},
           legend: 'none',
           maximize: 1
         };
@@ -299,11 +306,11 @@ sub get_plot_html {
         xx_plot.draw(xx_view, xx_options);
         
         var xy_view = new google.visualization.DataView(data);
-        xy_view.setColumns([12, 11, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        xy_view.setColumns([11, 12, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         var xy_options = {
-          title: 'X Error vs. Y Position',
-          hAxis: {title: 'X Error (pixels)'},
-          vAxis: {title: 'Y Position (pixels)'},
+          title: 'X Offset vs. Y Position',
+          hAxis: {title: 'Y Position (pixels)'},
+          vAxis: {title: 'X Offset (pixels)'},
           legend: 'none',
           maximize: 1
         };
@@ -311,11 +318,11 @@ sub get_plot_html {
         xy_plot.draw(xy_view, xy_options);
         
         var yx_view = new google.visualization.DataView(data);
-        yx_view.setColumns([13, 10, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        yx_view.setColumns([10, 13, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         var yx_options = {
-          title: 'Y Error vs. X Position',
-          hAxis: {title: 'Y Error (pixels)'},
-          vAxis: {title: 'X Position (pixels)'},
+          title: 'Y Offset vs. X Position',
+          hAxis: {title: 'X Position (pixels)'},
+          vAxis: {title: 'Y Offset (pixels)'},
           legend: 'none',
           maximize: 1
         };
@@ -323,11 +330,11 @@ sub get_plot_html {
         yx_plot.draw(yx_view, yx_options);
         
         var yy_view = new google.visualization.DataView(data);
-        yy_view.setColumns([13, 11, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        yy_view.setColumns([11, 13, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         var yy_options = {
-          title: 'Y Error vs. Y Position',
-          hAxis: {title: 'Y Error (pixels)'},
-          vAxis: {title: 'Y Position (pixels)'},
+          title: 'Y Offset vs. Y Position',
+          hAxis: {title: 'Y Position (pixels)'},
+          vAxis: {title: 'Y Offset (pixels)'},
           legend: 'none',
           maximize: 1
         };
@@ -403,4 +410,80 @@ sub get_plot_html {
   $js_array_rows = join(',', map({'[' . join(',', map({$_ =~ /[a-z]/i ? "\"$_\"" : $_} @$_)) . ']'} @_));
   $template =~ s/\/\*\*\*plot_data\*\*\*\//$js_array_rows/;
   return $template;
+}
+
+sub get_help_text {
+return $usage . q~
+
+SUMMARY:
+  This script is designed to automatically produce a consolidated set of results
+    from a number of xml files as produced by Franz's ENVI/IDL tools. The output
+    is a csv file and/or an html file. The only required argument is a list of
+    xml files (see below for exceptions). Any number of xml files can be
+    specified, and may include the usual shell wildcards such as *. Additional
+    options are described below. The order of any arguments or options is
+    irrelevant.
+
+
+OPTIONS:
+    --help                Optional: displays this help text. Ignores all other
+                            options and arguments.
+    --out=<csv file>      Optional: this option specifies the output csv file.
+                            The specified file, if it already exists, will be
+                            over-written with the new csv data. If neither this
+                            option nor --plot is specified, the csv data will be
+                            written to std out.
+    --plot=<html file>    Optional: this option specifies the output html file.
+                            The specified file, if it already exists, will be
+                            over-written with the new html data. If neither this
+                            option nor --out is specified, the csv data will be
+                            written to std out.
+    --include=<csv files> Optional: this option specifies any number of
+                            additional csv files to be included in the final
+                            output. The included csv files must be of the same
+                            format as those produced by this script. This option
+                            exists to allow separate runs of this script to be
+                            consolidated into one single result set. This option
+                            may be specified multiple times, and supports the
+                            usual shell wildcards such as *. If this option is
+                            specified, the usually-required xml files become
+                            optional.
+
+
+EXAMPLES:
+  analysis.pl --help
+    Display this help text and exit.
+
+  analysis.pl ./data1.xml ./data2.xml ./morefiles/*.xml
+    Process data1.xml, data2.xml, and all .xml files in morefiles/, output csv
+    to standard out
+
+  analysis.pl *.xml --out=out.csv
+    Process all .xml files in the current directory to the csv file out.csv
+
+  analysis.pl *.xml --plot=out.html
+    Process all .xml files in the current directory to the html file out.html
+
+  analysis.pl *.xml --plot=out.html --include=run1.csv --include=run2.csv *.xml
+    Process all .xml files in the current directory to the html file out.html,
+    including the previously-generated csv files run1.csv and run2.csv
+
+  analysis.pl *.xml --plot=out.html --out=out.csv
+    Process all .xml files in the current directory to the csv file out.csv
+    as well as to the html file out.html
+
+
+REQUIREMENTS:
+  This script makes use of a few CPAN modules which may or may not be installed
+  by default. If you see an error about a module not being found in @INC or
+  similar, be sure all of the following modules are installed:
+    Getopt::Long
+    XML::Simple
+    List::Util
+    List::MoreUtils
+    Text::CSV
+    Data::Dumper
+
+
+~;
 }
