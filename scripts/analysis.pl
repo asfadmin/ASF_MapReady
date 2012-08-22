@@ -11,16 +11,19 @@ use Text::CSV;
 use Data::Dumper;
 
 my $usage = q~USAGE:
-  analysis.pl [--out=<csv file>] [--plot=<html file>] [--include=<csv files>] <xml files> [...]
+  analysis.pl [--out=<csv file>] [--plot=<html file>] [--include=<csv files>]
+    [--title=<title>] <xml files> [...]
 ~;
 
 my $outfile;
 my $plotfile;
 my @include;
+my $title = "";
 my $helpf;
 GetOptions( "out=s" => \$outfile,
             "plot=s" => \$plotfile,
             "include=s" => \@include,
+            "title=s" => \$title,
             "help" => \$helpf);
 
 if($helpf) {
@@ -149,7 +152,7 @@ if($outfile) {
 
 if($plotfile) {
   open(PLOT_OUT, ">$plotfile");
-  print PLOT_OUT get_plot_html(@header, @data);
+  print PLOT_OUT get_plot_html($title, @header, @data);
   close(PLOT_OUT);
 }
 
@@ -180,8 +183,10 @@ sub ingest_csv {
 }
 
 sub get_plot_html {
+  my $title = shift;
   my $template = q~<html>
   <head>
+    <title>/***title***/</title>
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
       google.load("visualization", "1.0", {packages:['corechart', 'table']});
@@ -216,13 +221,51 @@ sub get_plot_html {
         formatter.format(data, 15);
         formatter.format(data, 16);
         
+        // gather some metadata and display it
+        var ref_count = data.getDistinctValues(2).length;
+        var granules = data.getDistinctValues(0);
+        var gran_count = granules.length;
+        var data_type = 'SAR Data';
+        if(window.document.title.length > 0) {
+          data_type = window.document.title;
+        } else {
+          var temp = new google.visualization.DataView(data);
+          temp.setColumns([{calc: function(dataTable, rowNum) {
+            return(dataTable.getValue(rowNum, 0)[0]);
+          }, type: 'string'}]);
+          var gran_types = temp.getDistinctValues(0);
+          if(gran_types.length == 1) {
+            switch(gran_types[0]) {
+              case 'A':
+                data_type = 'ALOS Data';
+                break;
+              case 'R':
+                data_type = 'Radarsat Data';
+                break;
+              case 'E':
+                data_type = 'ERS Data';
+                break;
+              case 'J':
+                data_type = 'JERS Data';
+                break;
+            }
+          } else if(gran_types.length > 1) {
+            var legacy = true;
+            for(t in gran_types) {
+              if(!gran_types[t].match(/[REJ]/))
+                legacy = false;
+            }
+            if(legacy)
+              data_type = 'Legacy Data';
+          }
+          window.document.title = data_type;
+        }
+        document.getElementById('header').innerHTML = data_type;
+        document.getElementById('subheader').innerHTML = gran_count + " scenes, " + ref_count + " reflectors";
+        
         // set up the spreadsheet
         var spreadsheet = new google.visualization.Table(document.getElementById('spreadsheet'));
         spreadsheet.draw(data);
-        
-        // set up a view for labels
-        var labels = new google.visualization.DataView(data);
-        
         
         // set up the asc/desc-grouped plots
         function asc_y_offset(dataTable, rowNum) {
@@ -344,6 +387,8 @@ sub get_plot_html {
     </script>
   </head>
   <body>
+    <h1 id="header"></h1>
+    <h2 id="subheader"></h2>
     <div id="ascdesc_plot" style="width: 900px; height: 500px;"></div>
     <!--<div id="reflector_plot" style="width: 900px; height: 500px;"></div>
     <div id="granule_plot" style="width: 900px; height: 500px;"></div>-->
@@ -359,6 +404,7 @@ sub get_plot_html {
   my $js_array_rows = '';
   $js_array_rows = join(',', map({'[' . join(',', map({$_ =~ /[a-z]/i ? "\"$_\"" : $_} @$_)) . ']'} @_));
   $template =~ s/\/\*\*\*plot_data\*\*\*\//$js_array_rows/;
+  $template =~ s/\/\*\*\*title\*\*\*\//$title/;
   return $template;
 }
 
@@ -398,6 +444,15 @@ OPTIONS:
                             usual shell wildcards such as *. If this option is
                             specified, the usually-required xml files become
                             optional.
+    --title=<title>       Optional: this option specifies the title that will be
+                            displays at the top of the html page produced using
+                            the --plot option, as well as in the window title.
+                            If your title includes spaces, be sure to use
+                            quotation marks or the arguments will become con-
+                            fused. The first and last quotation marks will
+                            not be included in the actual title, so if you
+                            actually want them to appear, use double-marks
+                            (i.e. ""title"" or ''title'')
 
 
 EXAMPLES:
@@ -421,6 +476,8 @@ EXAMPLES:
   analysis.pl *.xml --plot=out.html --out=out.csv
     Process all .xml files in the current directory to the csv file out.csv
     as well as to the html file out.html
+
+  analysis.pl *.xml --plot=out.html --title="Legacy FFT Matching (Whole Image)"
 
 
 REQUIREMENTS:
