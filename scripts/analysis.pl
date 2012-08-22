@@ -340,56 +340,6 @@ sub get_plot_html {
         };
         var yy_plot = new google.visualization.ScatterChart(document.getElementById('yy_plot'));
         yy_plot.draw(yy_view, yy_options);
-        
-        // set up some event handlers for synchronized selections
-        google.visualization.events.addListener(ascdesc_plot, 'select', function() {
-          var sel = ascdesc_plot.getSelection();
-          xx_plot.setSelection(sel);
-          xy_plot.setSelection(sel);
-          yx_plot.setSelection(sel);
-          yy_plot.setSelection(sel);
-          spreadsheet.setSelection(sel);
-        });
-        google.visualization.events.addListener(xx_plot, 'select', function() {
-          var sel = xx_plot.getSelection();
-          ascdesc_plot.setSelection(sel);
-          xy_plot.setSelection(sel);
-          yx_plot.setSelection(sel);
-          yy_plot.setSelection(sel);
-          spreadsheet.setSelection(sel);
-        });
-        google.visualization.events.addListener(xy_plot, 'select', function() {
-          var sel = xy_plot.getSelection();
-          ascdesc_plot.setSelection(sel);
-          xx_plot.setSelection(sel);
-          yx_plot.setSelection(sel);
-          yy_plot.setSelection(sel);
-          spreadsheet.setSelection(sel);
-        });
-        google.visualization.events.addListener(yx_plot, 'select', function() {
-          var sel = yx_plot.getSelection();
-          ascdesc_plot.setSelection(sel);
-          xx_plot.setSelection(sel);
-          xy_plot.setSelection(sel);
-          yy_plot.setSelection(sel);
-          spreadsheet.setSelection(sel);
-        });
-        google.visualization.events.addListener(yy_plot, 'select', function() {
-          var sel = yy_plot.getSelection();
-          ascdesc_plot.setSelection(sel);
-          xx_plot.setSelection(sel);
-          xy_plot.setSelection(sel);
-          yx_plot.setSelection(sel);
-          spreadsheet.setSelection(sel);
-        });
-        google.visualization.events.addListener(spreadsheet, 'select', function() {
-          var sel = spreadsheet.getSelection();
-          ascdesc_plot.setSelection(sel);
-          xx_plot.setSelection(sel);
-          xy_plot.setSelection(sel);
-          yx_plot.setSelection(sel);
-          yy_plot.setSelection(sel);
-        });
       }
     </script>
   </head>
