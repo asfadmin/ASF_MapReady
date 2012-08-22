@@ -109,8 +109,17 @@ static void calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameter
     geodetic_to_ecef(lat, lon, demLine[jj], v);
     vectorLine[jj] = v;
 
-    meta_get_latLon(meta_img, line+1, jj, 0, &lat, &lon);
-    geodetic_to_ecef(lat, lon, demLine[jj], &nextVectors[jj]);
+    //meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
+    //geodetic_to_ecef(lat, lon, demLine[jj], &nextVectors[jj]);
+    Vector p_this, p_next;
+    meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
+    geodetic_to_ecef(lat, lon, 0, &p_next);
+    meta_get_latLon(meta_img, line-1, jj, 0, &lat, &lon);
+    geodetic_to_ecef(lat, lon, 0, &p_this);
+    Vector *x = vector_copy(&p_this);
+    vector_subtract(x, &p_next);
+    nextVectors[jj] = *x;
+    vector_free(x); 
   }
 }
 
@@ -154,13 +163,18 @@ static float
 calculate_correction(meta_parameters *meta_in, int line, int samp,
                      Vector *satpos, Vector *n, Vector *p, Vector *p_next, float incid_angle)
 {
+
   // R: vector from ground point (p) to satellite (satpos)
+  //Vector *R = vector_copy(satpos);
+  //vector_subtract(R, p);
   Vector *R = vector_copy(satpos);
   vector_subtract(R, p);
   vector_multiply(R, 1./vector_magnitude(R));
 
-  Vector *x = vector_copy(p);
-  vector_subtract(x, p_next);
+  //Vector *x = vector_copy(p);
+  //vector_subtract(x, p_next);
+  //vector_multiply(x, 1./vector_magnitude(x));
+  Vector *x = vector_copy(p_next);
   vector_multiply(x, 1./vector_magnitude(x));
 
   // Rx: R cross x -- image plane normal
@@ -324,14 +338,14 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
     // saving some intermediate products if requested
     if(save_incid_angles) {
+      float *tmp_buf = MALLOC(sizeof(float)*ns);
       for (jj=0; jj<ns; ++jj)
-        corr[jj] *= sin(incid_angles[jj]);
-      put_band_float_line(fpSide, side_meta, 1, ii, corr);
+        tmp_buf[jj] = incid_angles[jj] * R2D;
+      put_band_float_line(fpSide, side_meta, 0, ii, tmp_buf);
       for (jj=0; jj<ns; ++jj)
-        incid_angles[jj] *= R2D;
-      put_band_float_line(fpSide, side_meta, 0, ii, incid_angles);
-      for (jj=0; jj<ns; ++jj)
-        corr[jj] /= sin(incid_angles[jj]);
+        tmp_buf[jj] = corr[jj] * sin(incid_angles[jj]);
+      put_band_float_line(fpSide, side_meta, 1, ii, tmp_buf);
+      FREE(tmp_buf);
     }
 
     // correct all the bands with the calculated scale factor
