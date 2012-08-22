@@ -85,8 +85,8 @@ foreach my $report (@$tree) {
         $ref->{PSLR_Y_right_dB},
         $ref->{ImagePosition_X_ofPointTarget},
         $ref->{ImagePosition_Y_ofPointTarget},
-        $ref_xoff * $report->{DatasetInformation}->{RngPxSize},
-        $ref_yoff * $report->{DatasetInformation}->{AzPxSize},
+        $ref_xoff / $report->{DatasetInformation}->{RngPxSize},
+        $ref_yoff / $report->{DatasetInformation}->{AzPxSize},
         $ref_xoff,
         $ref_yoff,
         $ref_error]);
