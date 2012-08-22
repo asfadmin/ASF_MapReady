@@ -196,7 +196,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   char *outputMeta = appendExt(output_file, ".meta");
   char *maskImg = maskFlag ? appendExt(mask_file, ".img") : NULL;
   char *maskMeta = maskFlag ? appendExt(mask_file, ".meta") : NULL;
-  char *sideProductsImgName=NULL, *sideProductsMetaName=NULL;
+  char *sideProductsMetaName=NULL;
   meta_parameters *side_meta=NULL;
   FILE *fpSide = NULL;
 
@@ -224,13 +224,14 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
   if(save_incid_angles) {
     const char *tmpdir = get_asf_tmp_dir();
-    sideProductsImgName = MALLOC(sizeof(char)*(strlen(tmpdir)+strlen(output_file)+64));
-    sprintf(sideProductsImgName, "%s/incidence_angles.img", tmpdir);
+    char *sideProductsImgName = MALLOC(sizeof(char)*(strlen(tmpdir)+strlen(output_file)+64));
+    sprintf(sideProductsImgName, "%s/terrcorr_side_products.img", tmpdir);
     sideProductsMetaName = appendExt(sideProductsImgName, ".meta");
     side_meta = meta_copy(meta_in);
     side_meta->general->band_count = 2;
     strcpy(side_meta->general->bands, "INCIDENCE_ANGLES,RADIOMETRIC_CORRECTION");
     fpSide = FOPEN(sideProductsImgName, "wb");
+    FREE(sideProductsImgName);
   }
 
   // Check the input radiometry - only accept amplitude
@@ -321,9 +322,13 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     // saving some intermediate products if requested
     if(save_incid_angles) {
       for (jj=0; jj<ns; ++jj)
+        corr[jj] *= sin(incid_angles[jj]);
+      put_band_float_line(fpSide, side_meta, 1, ii, corr);
+      for (jj=0; jj<ns; ++jj)
         incid_angles[jj] *= R2D;
       put_band_float_line(fpSide, side_meta, 0, ii, incid_angles);
-      put_band_float_line(fpSide, side_meta, 1, ii, corr);
+      for (jj=0; jj<ns; ++jj)
+        corr[jj] /= sin(incid_angles[jj]);
     }
 
     // correct all the bands with the calculated scale factor
@@ -396,7 +401,6 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     meta_write(side_meta, sideProductsMetaName);
     meta_free(side_meta);
     FREE(sideProductsMetaName);
-    FREE(sideProductsImgName);
   }
 
   meta_free(meta_out);

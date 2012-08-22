@@ -554,6 +554,8 @@ static void add_cr(GdkPixbuf *pb, ImageInfo *ii)
 }
 */
 
+static int g_current_pt_index = -1;
+
 static void add_pts(GdkPixbuf *pb, ImageInfo *ii)
 {
   if (!pt_specified)
@@ -1416,11 +1418,43 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         update_pixel_info(ii);
     }
 */
-#ifdef HAVE_DELTA_CR
     else if (event->keyval == GDK_p || event->keyval == GDK_P) {
-        add_delta_shapes(ii->meta);
+        meta_parameters *meta = curr->meta;
+        if (pt_specified &&
+             (meta->projection || (meta->sar&&meta->state_vectors) ||
+              meta->transform || meta->airsar))
+        {
+          int nl = meta->general->line_count;
+          int ns = meta->general->sample_count;
+
+          g_current_pt_index++;
+          if (g_current_pt_index >= MAX_PTS || pt_lat[g_current_pt_index] == -999)
+            g_current_pt_index = 0;
+
+          double lat = pt_lat[g_current_pt_index];
+          double lon = pt_lon[g_current_pt_index];
+          double line, samp;
+
+          int bad = meta_get_lineSamp(curr->meta, lat, lon, 0, &line, &samp);
+          if (!bad) {
+            if (line < 0 || line > nl || samp < 0 || samp > ns) {
+              printf("Outside image: %f %f\n", lat, lon);
+            } else {
+              if (pt_name[g_current_pt_index] && strlen(pt_name[g_current_pt_index]) > 0)
+                printf("Moving to %s: %f,%f\n", pt_name[g_current_pt_index], lat, lon);
+              else
+                printf("Moving to %f,%f\n", lat, lon);
+              center_line = crosshair_line = line;
+              center_samp = crosshair_samp = samp;
+
+              update_pixel_info(curr);
+              fill_small(curr);
+            }
+          } else {
+            printf("Bad: %f %f\n", lat, lon);
+          }
+        }
     }
-#endif
     else {
         // arrow key event (or a key we don't handle)
         // moves the crosshair (or ctrl-click crosshair) the specified
