@@ -222,7 +222,6 @@ sub get_plot_html {
         formatter.format(data, 16);
         
         // gather some metadata and display it
-        var ref_count = data.getDistinctValues(2).length;
         var granules = data.getDistinctValues(0);
         var gran_count = granules.length;
         var data_type = 'SAR Data';
@@ -261,7 +260,7 @@ sub get_plot_html {
           window.document.title = data_type;
         }
         document.getElementById('header').innerHTML = data_type;
-        document.getElementById('subheader').innerHTML = gran_count + " scenes, " + ref_count + " reflectors";
+        document.getElementById('subheader').innerHTML = data.getNumberOfRows() + " reflectors found in " + gran_count + " scenes";
         
         // set up the spreadsheet
         var spreadsheet = new google.visualization.Table(document.getElementById('spreadsheet'));
