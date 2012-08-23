@@ -287,7 +287,7 @@ sub get_plot_html {
         
         // set up the asc/desc-grouped plots
         var ascdesc_options = {
-          title: 'Geolocation Offset Grouped by Orbit Direction',
+          title: 'Geolocation Offsets Grouped by Orbit Direction',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
           legend: {position: 'right', textStyle: {fontSize: 14}},
@@ -299,7 +299,7 @@ sub get_plot_html {
         
         // set up the reflector-grouped plot
         var reflector_options = {
-          title: 'Geolocation Offset Grouped by Corner Reflector',
+          title: 'Geolocation Offsets Grouped by Corner Reflector',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
           legend: {position: 'right', textStyle: {fontSize: 10}},
@@ -310,7 +310,7 @@ sub get_plot_html {
         
         // set up the granule-grouped plot
         var granule_options = {
-          title: 'Geolocation Offset Grouped by Granule',
+          title: 'Geolocation Offsets Grouped by Granule',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
           legend: {position: 'right', textStyle: {fontSize: 10}},
