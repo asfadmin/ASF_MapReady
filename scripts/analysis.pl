@@ -192,6 +192,7 @@ sub get_plot_html {
       google.load("visualization", "1.0", {packages:['corechart', 'table']});
       google.setOnLoadCallback(drawCharts);
       
+      // function to derive the standard label for a scatterplot point
       function getScatterPlotLabel(dataTable, rowNum) {
         var granule = dataTable.getValue(rowNum, 0);
         var ascdesc = dataTable.getValue(rowNum, 1);
@@ -203,6 +204,24 @@ sub get_plot_html {
         return(granule + "\n" + ascdesc + "\nReflector: " + reflector +
           "\nX Offset: " + moffset_x + "m\nY Offset: " + moffset_y +
           "m\nX Offset: " + poffset_x + "px\nY Offset: " + poffset_y + "px");
+      }
+      
+      // function to convert data to multiple columns based on unique entries in a column
+      function unique_to_columns(dataTable, colID) {
+        var groups = dataTable.getDistinctValues(colID);
+        var newTable = new google.visualization.DataView(dataTable);
+        newTable.setColumns([14]);
+        var allcols = [];
+        for(var g in groups) {
+          var t = new google.visualization.DataView(dataTable);
+          t.setRows(t.getFilteredRows([{column: colID, value: groups[g]}]));
+          t.setColumns([14, 15, {calc: getScatterPlotLabel, type: 'string', role: 'tooltip', label: 'tooltip'}]);
+          var tempTable = google.visualization.data.join(newTable, t, 'full', [[0, 0]], allcols, [1, 2]);
+          tempTable.setColumnLabel(tempTable.getNumberOfColumns() - 2, groups[g]);
+          newTable = tempTable;
+          allcols.push(allcols.length + 1, allcols.length + 2);
+        }
+        return(newTable);
       }
       
       function drawCharts() {
@@ -267,33 +286,6 @@ sub get_plot_html {
         spreadsheet.draw(data);
         
         // set up the asc/desc-grouped plots
-        function asc_y_offset(dataTable, rowNum) {
-          if(dataTable.getValue(rowNum, 1) == 'ASCENDING')
-            return dataTable.getValue(rowNum, 15);
-          return null;
-        }
-        function desc_y_offset(dataTable, rowNum) {
-          if(dataTable.getValue(rowNum, 1) == 'DESCENDING')
-            return dataTable.getValue(rowNum, 15);
-          return null;
-        }
-        function asc_tooltip(dataTable, rowNum) {
-          if(dataTable.getValue(rowNum, 1) == 'ASCENDING')
-            return getScatterPlotLabel(dataTable, rowNum);
-          return null;
-        }
-        function desc_tooltip(dataTable, rowNum) {
-          if(dataTable.getValue(rowNum, 1) == 'DESCENDING')
-            return getScatterPlotLabel(dataTable, rowNum);
-          return null;
-        }
-        var ascdesc_view = new google.visualization.DataView(data);
-        ascdesc_view.setColumns([14,
-          {calc:asc_y_offset, type:'number', label:'Ascending'},
-          {calc:asc_tooltip, type:'string', label:'Tooltip', role:'tooltip'},
-          {calc:desc_y_offset, type:'number', label:'Descending'},
-          {calc:desc_tooltip, type:'string', label:'Tooltip', role:'tooltip'}]);
-        
         var ascdesc_options = {
           title: 'Geolocation Offset Grouped by Orbit Direction',
           hAxis: {title: 'X Offset (meters)'},
@@ -302,25 +294,21 @@ sub get_plot_html {
           maximize: 1
         };
         var ascdesc_plot = new google.visualization.ScatterChart(document.getElementById('ascdesc_plot'));
-        ascdesc_plot.draw(ascdesc_view, ascdesc_options);
+        ascdesc_plot.draw(unique_to_columns(data, 1), ascdesc_options);
         
-        /*
+        
         // set up the reflector-grouped plot
-        var reflector_view = new google.visualization.DataView(data);
-        reflector_view.setColumns([14, 15]);
         var reflector_options = {
-          title: 'Geolocation Offset Grouped by Reflector',
+          title: 'Geolocation Offset Grouped by Corner Reflector',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
           legend: {position: 'right'},
           maximize: 1
         };
         var reflector_plot = new google.visualization.ScatterChart(document.getElementById('reflector_plot'));
-        reflector_plot.draw(reflector_view, reflector_options);
+        reflector_plot.draw(unique_to_columns(data, 2), reflector_options);
         
         // set up the granule-grouped plot
-        var granule_view = new google.visualization.DataView(data);
-        granule_view.setColumns([14, 15]);
         var granule_options = {
           title: 'Geolocation Offset Grouped by Granule',
           hAxis: {title: 'X Offset (meters)'},
@@ -329,8 +317,7 @@ sub get_plot_html {
           maximize: 1
         };
         var granule_plot = new google.visualization.ScatterChart(document.getElementById('granule_plot'));
-        granule_plot.draw(granule_view, granule_options);
-        */
+        granule_plot.draw(unique_to_columns(data, 0), granule_options);
         
         // set up the xx/xy/yx/yy error/position plots
         
@@ -389,8 +376,8 @@ sub get_plot_html {
     <h1 id="header"></h1>
     <h2 id="subheader"></h2>
     <div id="ascdesc_plot" style="width: 900px; height: 500px;"></div>
-    <!--<div id="reflector_plot" style="width: 900px; height: 500px;"></div>
-    <div id="granule_plot" style="width: 900px; height: 500px;"></div>-->
+    <div id="reflector_plot" style="width: 900px; height: 500px;"></div>
+    <div id="granule_plot" style="width: 900px; height: 500px;"></div>
     <div id="xx_plot" style="width: 900px; height: 500px;"></div>
     <div id="xy_plot" style="width: 900px; height: 500px;"></div>
     <div id="yx_plot" style="width: 900px; height: 500px;"></div>
