@@ -192,6 +192,43 @@ sub get_plot_html {
       google.load("visualization", "1.0", {packages:['corechart', 'table']});
       google.setOnLoadCallback(drawCharts);
       
+      var ascdesc_table;
+      var reflector_table;
+      var granule_table;
+      var xx_view;
+      var xy_view;
+      var yx_view;
+      var yy_view;
+      var ascdesc_options;
+      var reflector_options;
+      var granule_options;
+      var xx_options;
+      var xy_options;
+      var yx_options;
+      var yy_options;
+      
+      var plotWindowDataTable;
+      var plotWindowOptions;
+      
+      // function to create a new window with just a single plot
+      function plotToWindow(dataTable, options) {
+        console.log(dataTable);
+        plotWindowDataTable = dataTable;
+        plotWindowOptions = options;
+        plotWindow = window.open('','plotWindow',
+          'width=910,height=500,menubar=0,toolbar=0,status=0,scrollbars=1,resizable=1');
+        plotWindow.document.writeln(
+          "<html><head><script type='text/javascript' src='https://www.google.com/jsapi'><\/script><script>" +
+          "google.load('visualization', '1.0', {packages:['corechart']});" +
+          "google.setOnLoadCallback(drawCharts);" +
+          "function drawCharts() {" +
+          "  var plot = new google.visualization.ScatterChart(document.getElementById('plot'));" +
+          "  plot.draw(opener.plotWindowDataTable, opener.plotWindowOptions);" +
+          "}" +
+          "<\/script></head><body><div id='plot' style='width: 900px; height: 500px;'></div></body></html>");
+        plotWindow.document.close();
+      }
+      
       // function to derive the standard label for a scatterplot point
       function getScatterPlotLabel(dataTable, rowNum) {
         var granule = dataTable.getValue(rowNum, 0);
@@ -207,7 +244,7 @@ sub get_plot_html {
       }
       
       // function to convert data to multiple columns based on unique entries in a column
-      function unique_to_columns(dataTable, colID) {
+      function uniqueToColumns(dataTable, colID) {
         var groups = dataTable.getDistinctValues(colID);
         var newTable = new google.visualization.DataView(dataTable);
         newTable.setColumns([14]);
@@ -286,7 +323,7 @@ sub get_plot_html {
         spreadsheet.draw(data);
         
         // set up the asc/desc-grouped plots
-        var ascdesc_options = {
+        ascdesc_options = {
           title: 'Geolocation Offsets Grouped by Orbit Direction',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
@@ -294,11 +331,12 @@ sub get_plot_html {
           maximize: 1
         };
         var ascdesc_plot = new google.visualization.ScatterChart(document.getElementById('ascdesc_plot'));
-        ascdesc_plot.draw(unique_to_columns(data, 1), ascdesc_options);
+        ascdesc_table = uniqueToColumns(data, 1);
+        ascdesc_plot.draw(ascdesc_table, ascdesc_options);
         
         
         // set up the reflector-grouped plot
-        var reflector_options = {
+        reflector_options = {
           title: 'Geolocation Offsets Grouped by Corner Reflector',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
@@ -306,10 +344,11 @@ sub get_plot_html {
           maximize: 1
         };
         var reflector_plot = new google.visualization.ScatterChart(document.getElementById('reflector_plot'));
-        reflector_plot.draw(unique_to_columns(data, 2), reflector_options);
+        reflector_table = uniqueToColumns(data, 2);
+        reflector_plot.draw(reflector_table, reflector_options);
         
         // set up the granule-grouped plot
-        var granule_options = {
+        granule_options = {
           title: 'Geolocation Offsets Grouped by Granule',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
@@ -317,14 +356,15 @@ sub get_plot_html {
           maximize: 1
         };
         var granule_plot = new google.visualization.ScatterChart(document.getElementById('granule_plot'));
-        granule_plot.draw(unique_to_columns(data, 0), granule_options);
+        granule_table = uniqueToColumns(data, 0);
+        granule_plot.draw(granule_table, granule_options);
         
         // set up the xx/xy/yx/yy error/position plots
         
-        var xx_view = new google.visualization.DataView(data);
+        xx_view = new google.visualization.DataView(data);
         xx_view.setColumns([10, 12,
           {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
-        var xx_options = {
+        xx_options = {
           title: 'X Offset vs. X Position',
           hAxis: {title: 'X Position (pixels)'},
           vAxis: {title: 'X Offset (pixels)'},
@@ -334,9 +374,9 @@ sub get_plot_html {
         var xx_plot = new google.visualization.ScatterChart(document.getElementById('xx_plot'));
         xx_plot.draw(xx_view, xx_options);
         
-        var xy_view = new google.visualization.DataView(data);
+        xy_view = new google.visualization.DataView(data);
         xy_view.setColumns([11, 12, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
-        var xy_options = {
+        xy_options = {
           title: 'X Offset vs. Y Position',
           hAxis: {title: 'Y Position (pixels)'},
           vAxis: {title: 'X Offset (pixels)'},
@@ -346,9 +386,9 @@ sub get_plot_html {
         var xy_plot = new google.visualization.ScatterChart(document.getElementById('xy_plot'));
         xy_plot.draw(xy_view, xy_options);
         
-        var yx_view = new google.visualization.DataView(data);
+        yx_view = new google.visualization.DataView(data);
         yx_view.setColumns([10, 13, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
-        var yx_options = {
+        yx_options = {
           title: 'Y Offset vs. X Position',
           hAxis: {title: 'X Position (pixels)'},
           vAxis: {title: 'Y Offset (pixels)'},
@@ -358,9 +398,9 @@ sub get_plot_html {
         var yx_plot = new google.visualization.ScatterChart(document.getElementById('yx_plot'));
         yx_plot.draw(yx_view, yx_options);
         
-        var yy_view = new google.visualization.DataView(data);
+        yy_view = new google.visualization.DataView(data);
         yy_view.setColumns([11, 13, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
-        var yy_options = {
+        yy_options = {
           title: 'Y Offset vs. Y Position',
           hAxis: {title: 'Y Position (pixels)'},
           vAxis: {title: 'Y Offset (pixels)'},
@@ -375,13 +415,21 @@ sub get_plot_html {
   <body>
     <h1 id="header"></h1>
     <h2 id="subheader"></h2>
-    <div id="ascdesc_plot" style="width: 900px; height: 500px;"></div>
-    <div id="reflector_plot" style="width: 900px; height: 500px;"></div>
-    <div id="granule_plot" style="width: 900px; height: 500px;"></div>
-    <div id="xx_plot" style="width: 900px; height: 500px;"></div>
-    <div id="xy_plot" style="width: 900px; height: 500px;"></div>
-    <div id="yx_plot" style="width: 900px; height: 500px;"></div>
-    <div id="yy_plot" style="width: 900px; height: 500px;"></div>
+    <div style="border: 1px solid #808080; width: 900px;"><div id="ascdesc_plot" style="width: 900px; height: 500px;"></div>
+    <input type="button" onclick="plotToWindow(ascdesc_table, ascdesc_options)" value="Open in New Window"/></div><br />
+    <div style="border: 1px solid #808080; width: 900px;"><div id="reflector_plot" style="width: 900px; height: 500px;"></div>
+    <input type="button" onclick="plotToWindow(reflector_table, reflector_options)" value="Open in New Window"/></div><br />
+    <div style="border: 1px solid #808080; width: 900px;"><div id="granule_plot" style="width: 900px; height: 500px;"></div>
+    <input type="button" onclick="plotToWindow(granule_table, granule_options)" value="Open in New Window"/></div><br />
+    <div style="border: 1px solid #808080; width: 900px;"><div id="xx_plot" style="width: 900px; height: 500px;"></div>
+    <input type="button" onclick="plotToWindow(xx_view, xx_options)" value="Open in New Window"/></div><br />
+    <div style="border: 1px solid #808080; width: 900px;"><div id="xy_plot" style="width: 900px; height: 500px;"></div>
+    <input type="button" onclick="plotToWindow(xy_view, xy_options)" value="Open in New Window"/></div><br />
+    <div style="border: 1px solid #808080; width: 900px;"><div id="yx_plot" style="width: 900px; height: 500px;"></div>
+    <input type="button" onclick="plotToWindow(yx_view, yx_options)" value="Open in New Window"/></div><br />
+    <div style="border: 1px solid #808080; width: 900px;"><div id="yy_plot" style="width: 900px; height: 500px;"></div>
+    <input type="button" onclick="plotToWindow(yy_view, yy_options)" value="Open in New Window"/></div><br />
+    <br /><br />
     <div id="spreadsheet"></div>
   </body>
 </html>
