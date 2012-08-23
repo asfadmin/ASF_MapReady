@@ -139,7 +139,7 @@ my @footer = (
     sqrt(mean(map($_->[12] ** 2, @data))), sqrt(mean(map($_->[13] ** 2, @data))),
     sqrt(mean(map($_->[14] ** 2, @data))), sqrt(mean(map($_->[15] ** 2, @data))),
     sqrt(mean(map($_->[14] ** 2 + $_->[15] ** 2, @data)))],
-  ['CE95', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 1.7305 * sqrt(mean(map($_->[14] ** 2 + $_->[15] ** 2, @data)))]);
+  ['CE95', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 1.7308 * sqrt(mean(map($_->[14] ** 2 + $_->[15] ** 2, @data)))]);
 foreach my $row (@header, @data, @footer) {
   $csv .= join(',', @$row) . "\n";
 }
