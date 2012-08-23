@@ -290,7 +290,7 @@ sub get_plot_html {
           title: 'Geolocation Offset Grouped by Orbit Direction',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
-          legend: {position: 'right'},
+          legend: {position: 'right', textStyle: {fontSize: 14}},
           maximize: 1
         };
         var ascdesc_plot = new google.visualization.ScatterChart(document.getElementById('ascdesc_plot'));
@@ -302,7 +302,7 @@ sub get_plot_html {
           title: 'Geolocation Offset Grouped by Corner Reflector',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
-          legend: {position: 'right'},
+          legend: {position: 'right', textStyle: {fontSize: 10}},
           maximize: 1
         };
         var reflector_plot = new google.visualization.ScatterChart(document.getElementById('reflector_plot'));
@@ -313,7 +313,7 @@ sub get_plot_html {
           title: 'Geolocation Offset Grouped by Granule',
           hAxis: {title: 'X Offset (meters)'},
           vAxis: {title: 'Y Offset (meters)'},
-          legend: {position: 'right'},
+          legend: {position: 'right', textStyle: {fontSize: 10}},
           maximize: 1
         };
         var granule_plot = new google.visualization.ScatterChart(document.getElementById('granule_plot'));
