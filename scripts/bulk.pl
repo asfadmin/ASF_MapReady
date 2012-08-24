@@ -117,7 +117,7 @@ sub get_odr {
           my $odr = $1;
           my $start = $2;
           my $stop = $3;
-          if($start <= $center and $stop >= $center) {
+          if($start < $center and $stop > $center) {
             return "$arclist/$odr.ODR";
           }
         }
