@@ -67,7 +67,7 @@ foreach (@infiles) {
     $odr = get_odr($base); #automatically chooses between a supplied index or auto determination of odr
     LOG(defined($odr)?("Using ODR $odr"):("No ODR found!"));
   }
-  my $cmd = "$script $meta.L $base $dem" . (defined($odr)?" $odr":"");
+  my $cmd = "$script $meta $base $dem" . (defined($odr)?" $odr":"");
   LOG("Command: $cmd");
   
   unless($testf) {
