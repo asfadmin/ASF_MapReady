@@ -408,6 +408,7 @@ extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;
 
 extern int g_saved_line_count;
+extern int g_startup;
 
 // keeps track of whether or not the arrow keys should affect the
 // crosshair or the ctrl-crosshair
