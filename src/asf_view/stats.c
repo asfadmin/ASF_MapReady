@@ -363,7 +363,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         float *fdata = CALLOC(sizeof(float), tsx*tsy);
 
         load_thumbnail_data(ii->data_ci, tsx, tsy, fdata);
-        set_ignores(ii, glade_xml!=NULL);
+        set_ignores(ii, !g_startup);
 
         // split out the case where we have no ignore value --
         // should be quite a bit faster...
@@ -432,7 +432,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
 
         //printf("Avg, StdDev: %f, %f\n", stats->avg, stats->stddev);
 
-        set_mapping(ii, glade_xml!=NULL);
+        set_mapping(ii, !g_startup);
 
         // Now actually scale the data, and convert to bytes.
         // Note that we need 3 values, one for each of the RGB channels.
@@ -496,7 +496,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         // we will calculate the stats on this subset
         unsigned char *rgbdata = CALLOC(sizeof(unsigned char), tsx*tsy*3);
         load_thumbnail_data(ii->data_ci, tsx, tsy, (void*)rgbdata);
-        set_ignores(ii, glade_xml!=NULL);
+        set_ignores(ii, !g_startup);
 
         ImageStatsRGB *stats_r = &ii->stats_r;
         ImageStatsRGB *stats_g = &ii->stats_g;
@@ -577,7 +577,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         stats_g->stddev = sqrt(stats_g->stddev / (double)ng);
         stats_b->stddev = sqrt(stats_b->stddev / (double)nb);
 
-        set_mapping(ii, glade_xml!=NULL);
+        set_mapping(ii, !g_startup);
 
         // clear out the stats for the greyscale image - we'll just use
         // the histogram
@@ -636,7 +636,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         // then copy it over to the 3-band buffer we're supposed to return
         unsigned char *gsdata = MALLOC(sizeof(unsigned char)*tsx*tsy);
         load_thumbnail_data(ii->data_ci, tsx, tsy, (void*)gsdata);
-        set_ignores(ii, glade_xml!=NULL);
+        set_ignores(ii, !g_startup);
 
         stats->act_max = 0;
         stats->act_min = 255;
@@ -663,7 +663,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         }
         stats->stddev = sqrt(stats->stddev / (double)(tsx*tsy));
 
-        set_mapping(ii, glade_xml!=NULL);
+        set_mapping(ii, !g_startup);
 
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
@@ -694,7 +694,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         // we will calculate the stats on this subset
         float *fdata = MALLOC(sizeof(float)*tsx*tsy*3);
         load_thumbnail_data(ii->data_ci, tsx, tsy, fdata);
-        set_ignores(ii, glade_xml!=NULL);
+        set_ignores(ii, !g_startup);
 
         ImageStatsRGB *stats_r = &ii->stats_r;
         ImageStatsRGB *stats_g = &ii->stats_g;
@@ -775,7 +775,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         stats_g->stddev = sqrt(stats_g->stddev / (double)ng);
         stats_b->stddev = sqrt(stats_b->stddev / (double)nb);
 
-        set_mapping(ii, glade_xml!=NULL);
+        set_mapping(ii, !g_startup);
 
         // clear out the stats for the greyscale image - we'll just use
         // the histogram

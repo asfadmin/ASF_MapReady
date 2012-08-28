@@ -20,6 +20,7 @@ double zoom;
 double center_samp, center_line;
 double crosshair_line, crosshair_samp;
 int g_saved_line_count;
+int g_startup=1;
 char *pt_name[MAX_PTS];
 double pt_lat[MAX_PTS], pt_lon[MAX_PTS];
 int pt_specified;
@@ -411,6 +412,7 @@ main(int argc, char **argv)
                        current_image_info_index, curr->filename);
     }
 
+    g_startup=FALSE;
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
 
