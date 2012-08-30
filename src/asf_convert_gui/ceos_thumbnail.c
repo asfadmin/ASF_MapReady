@@ -1429,7 +1429,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return NULL;
 
     if(is_uavsar_polsar(input_metadata)) {
-      if(!strcmp(uavsar_type, "DAT"))
+      if(uavsar_type == NULL || !strcmp(uavsar_type, "DAT"))
         return NULL;
       uavsar_polsar *params = read_uavsar_polsar_params(input_metadata, uavsar_type_name_to_enum(uavsar_type));
       meta_parameters *meta = uavsar_polsar2meta(params);

@@ -663,6 +663,38 @@ static void ingest_terrasar_polsar_amp(char *inFile, char *outFile,
   }
 }
 
+static void ingest_uavsar_polsar_amp(char *inFile, char *outFile,
+				     char *data_type,
+				     double *p_range_scale, 
+				     double *p_azimuth_scale)
+{
+  int do_resample = FALSE;
+  double azimuth_scale, range_scale;
+  char unscaleBaseName[1024];
+
+  if (p_azimuth_scale && p_range_scale) {
+    range_scale = *p_range_scale;
+    azimuth_scale = *p_azimuth_scale;
+    do_resample = TRUE;
+  }
+  if (do_resample) {
+    sprintf(unscaleBaseName, "%s_unscale", outFile);
+    import_uavsar_ext(inFile, -99, -99, -99, -99, r_AMP, TRUE, data_type, 
+		      unscaleBaseName);
+  }
+  else
+    import_uavsar_ext(inFile, -99, -99, -99, -99, r_AMP, TRUE, data_type, 
+		      outFile);
+ 
+  if (do_resample) {
+    asfPrintStatus("Resampling with scale factors: "
+		   "%f range, %f azimuth.\n",
+		   range_scale, azimuth_scale);
+
+    resample(unscaleBaseName, outFile, range_scale, azimuth_scale);
+  }
+}
+
 void import_polsarpro(char *s, char *ceosName, char *colormapName,
                       char *image_data_type, int db_flag, char *outBaseName)
 {
@@ -939,16 +971,19 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   if (!metaIn->projection) {
     // Determine if the ancillary file is CEOS or AIRSAR
     if (ceosName == NULL || strlen(ceosName) <= 0)
-      asfPrintError("Please add CEOS or AIRSAR ancillary files to the "
-		    "PolSARpro\ninput files as appropriate\n");
+      asfPrintError("Please add ancillary files to the PolSARpro input files "
+		    "as appropriate\n");
 
     int is_airsar = FALSE, is_ceos = FALSE;
     int is_radarsat2 = FALSE, is_terrasar = FALSE;
+    int is_uavsar = FALSE;
+    char uavsar_type[5];
 
     is_airsar = isAIRSAR(ceosName);
     is_ceos = isCEOS(ceosName, &error);
     is_radarsat2 = isRadarsat2(ceosName, &error);
     is_terrasar = isTerrasar_ext(ceosName, TRUE, &error);
+    is_uavsar = isUAVSAR(ceosName, &error);
     
     if (is_ceos)
       metaOut = meta_read(ceosName);
@@ -968,8 +1003,32 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       metaOut = terrasar2meta(terrasar);
       FREE(terrasar);
     }
+    else if (is_uavsar) {
+      // Need to check out the dimensions
+      // Our only chance to work out whether the data is MLC or GRD
+      strcpy(uavsar_type, "???");
+      uavsar_polsar *polsar_params = 
+	read_uavsar_polsar_params(ceosName, POLSAR_MLC);
+      metaOut = uavsar_polsar2meta(polsar_params);
+      // Some slack for non-exact multiples
+      if (line_count % metaOut->general->line_count < 5 &&
+	  sample_count % metaOut->general->sample_count < 5)
+	strcpy(uavsar_type, "MLC");
+      else {
+	FREE(polsar_params);
+	meta_free(metaOut);
+	polsar_params = read_uavsar_polsar_params(ceosName, POLSAR_GRD);
+	metaOut = uavsar_polsar2meta(polsar_params);
+	// Some slack for non-exact multiples
+	if (line_count % metaOut->general->line_count < 5 &&
+	    sample_count % metaOut->general->sample_count < 5)
+	  strcpy(uavsar_type, "GRD");
+      }
+      FREE(polsar_params);
+      
+    }
     else
-      asfPrintError("Ancillary file is not CEOS or AIRSAR format (required):"
+      asfPrintError("Ancillary file is in an unsupported format (required):"
 		    "\n%s\n", ceosName);
     
     if (line_count != metaOut->general->line_count ||
@@ -1003,7 +1062,21 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     else if (is_terrasar) {
       asfPrintStatus("   Ingesting TerraSAR-X data ...\n");
       ingest_terrasar_polsar_amp(ceosName, outBaseName,
-				p_range_scale, p_azimuth_scale);
+				 p_range_scale, p_azimuth_scale);
+    }
+    else if (is_uavsar) {
+      if (strcmp_case(uavsar_type, "MLC") == 0) {
+	asfPrintStatus("   Ingesting UAVSAR MLC data ...\n");
+	ingest_uavsar_polsar_amp(ceosName, outBaseName, uavsar_type,
+				 p_range_scale, p_azimuth_scale);
+      }
+      else if (strcmp_case(uavsar_type, "GRD") == 0) {
+	asfPrintStatus("   Ingesting UAVSAR GRD data ...\n");
+	ingest_uavsar_polsar_amp(ceosName, outBaseName, uavsar_type,
+				 p_range_scale, p_azimuth_scale);
+      }
+      else
+	asfPrintError("Unsupported UAVSAR data type!\n");
     }
 
     // Read the PolSAR Pro data into the layer stack
