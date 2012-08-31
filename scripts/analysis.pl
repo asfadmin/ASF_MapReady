@@ -65,7 +65,6 @@ foreach my $report (@$tree) {
     $granule_full =~ /^IMG-\w\w-(\w+)/;
     $granule = $1;
   }
-  printf ("granule: $granule\n");
   if($granule =~ /^(.*)(_SIGMA)$/) {
     $granule = $1; #uuurrrggghhh
   }
@@ -85,7 +84,8 @@ foreach my $report (@$tree) {
         $granule,
         $report->{DatasetInformation}->{OrbitDir},
         $ref->{ReflectorNumber},
-        max($report->{DatasetInformation}->{RngPxSize}, $report->{DatasetInformation}->{AzPxSize}),
+        $report->{DatasetInformation}->{RngPxSize},
+        $report->{DatasetInformation}->{AzPxSize},
         $ref->{Resolution_X_from_Neg3db_Width_Meter},
         $ref->{PSLR_X_left_dB},
         $ref->{PSLR_X_right_dB},
@@ -125,27 +125,27 @@ foreach(@include) {
 
 # spit out some csv
 my $csv = '';
-my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "Resolution", "Resolution X from -3db Width (meters)", "PSLR X left dB", "PSLR X right dB", "Resolution Y from -3db Width (meters)", "PSLR Y left dB" ,"PSLR Y right dB", "X Pos (pixels)", "Y Pos (pixels)", "X Offset (pixels)", "Y Offset (pixels)", "X Offset (meters)", "Y Offset (meters)", "Total Offset (meters)"]);
+my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "RngPxSize", "AzPxSize", "Resolution X from -3db Width (meters)", "PSLR X left dB", "PSLR X right dB", "Resolution Y from -3db Width (meters)", "PSLR Y left dB" ,"PSLR Y right dB", "X Pos (pixels)", "Y Pos (pixels)", "X Offset (pixels)", "Y Offset (pixels)", "X Offset (meters)", "Y Offset (meters)", "Total Offset (meters)"]);
 my @footer = (
-  ['Average', '', '', '',
-    mean(map($_->[4], @data)), mean(map($_->[5], @data)), mean(map($_->[6], @data)),
-    mean(map($_->[7], @data)), mean(map($_->[8], @data)), mean(map($_->[9], @data)),
+  ['Average', '', '', '', '',
+    mean(map($_->[5], @data)), mean(map($_->[6], @data)), mean(map($_->[7], @data)),
+    mean(map($_->[8], @data)), mean(map($_->[9], @data)), mean(map($_->[10], @data)),
     '', '',
-    mean(map($_->[12], @data)), mean(map($_->[13], @data)),
-    mean(map($_->[14], @data)), mean(map($_->[15], @data)),
-    mean(map($_->[16], @data))],
-  ['Standard Deviation', '', '', '',
-    std_dev(map($_->[4], @data)), std_dev(map($_->[5], @data)), std_dev(map($_->[6], @data)),
-    std_dev(map($_->[7], @data)), std_dev(map($_->[8], @data)), std_dev(map($_->[9], @data)),
+    mean(map($_->[13], @data)), mean(map($_->[14], @data)),
+    mean(map($_->[15], @data)), mean(map($_->[16], @data)),
+    mean(map($_->[17], @data))],
+  ['Standard Deviation', '', '', '', '',
+    std_dev(map($_->[5], @data)), std_dev(map($_->[6], @data)), std_dev(map($_->[7], @data)),
+    std_dev(map($_->[8], @data)), std_dev(map($_->[9], @data)), std_dev(map($_->[10], @data)),
     '', '',
-    std_dev(map($_->[12], @data)), std_dev(map($_->[13], @data)),
-    std_dev(map($_->[14], @data)), std_dev(map($_->[15], @data)),
-    std_dev(map($_->[16], @data))],
-  ['RMS', '', '', '', '', '', '', '', '', '', '', '',
-    sqrt(mean(map($_->[12] ** 2, @data))), sqrt(mean(map($_->[13] ** 2, @data))),
-    sqrt(mean(map($_->[14] ** 2, @data))), sqrt(mean(map($_->[15] ** 2, @data))),
-    sqrt(mean(map($_->[14] ** 2 + $_->[15] ** 2, @data)))],
-  ['CE95', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 1.7308 * sqrt(mean(map($_->[14] ** 2 + $_->[15] ** 2, @data)))]);
+    std_dev(map($_->[13], @data)), std_dev(map($_->[14], @data)),
+    std_dev(map($_->[15], @data)), std_dev(map($_->[16], @data)),
+    std_dev(map($_->[17], @data))],
+  ['RMS', '', '', '', '', '', '', '', '', '', '', '', '',
+    sqrt(mean(map($_->[13] ** 2, @data))), sqrt(mean(map($_->[14] ** 2, @data))),
+    sqrt(mean(map($_->[15] ** 2, @data))), sqrt(mean(map($_->[16] ** 2, @data))),
+    sqrt(mean(map($_->[15] ** 2 + $_->[16] ** 2, @data)))],
+  ['CE95', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 1.7308 * sqrt(mean(map($_->[15] ** 2 + $_->[16] ** 2, @data)))]);
 foreach my $row (@header, @data, @footer) {
   $csv .= join(',', @$row) . "\n";
 }
