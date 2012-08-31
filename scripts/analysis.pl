@@ -240,10 +240,10 @@ sub get_plot_html {
         var granule = dataTable.getValue(rowNum, 0);
         var ascdesc = dataTable.getValue(rowNum, 1);
         var reflector = dataTable.getValue(rowNum, 2);
-        var moffset_x = dataTable.getValue(rowNum, 14);
-        var moffset_y = dataTable.getValue(rowNum, 15);
-        var poffset_x = dataTable.getValue(rowNum, 12);
-        var poffset_y = dataTable.getValue(rowNum, 13);
+        var moffset_x = dataTable.getValue(rowNum, 15);
+        var moffset_y = dataTable.getValue(rowNum, 16);
+        var poffset_x = dataTable.getValue(rowNum, 13);
+        var poffset_y = dataTable.getValue(rowNum, 14);
         return(granule + "\n" + ascdesc + "\nReflector: " + reflector +
           "\nX Offset: " + moffset_x + "m\nY Offset: " + moffset_y +
           "m\nX Offset: " + poffset_x + "px\nY Offset: " + poffset_y + "px");
@@ -258,7 +258,7 @@ sub get_plot_html {
         for(var g in groups) {
           var t = new google.visualization.DataView(dataTable);
           t.setRows(t.getFilteredRows([{column: colID, value: groups[g]}]));
-          t.setColumns([14, 15, {calc: getScatterPlotLabel, type: 'string', role: 'tooltip', label: 'tooltip'}]);
+          t.setColumns([15, 16, {calc: getScatterPlotLabel, type: 'string', role: 'tooltip', label: 'tooltip'}]);
           var tempTable = google.visualization.data.join(newTable, t, 'full', [[0, 0]], allcols, [1, 2]);
           tempTable.setColumnLabel(tempTable.getNumberOfColumns() - 2, groups[g]);
           newTable = tempTable;
@@ -277,11 +277,12 @@ sub get_plot_html {
         formatter.format(data, 7);
         formatter.format(data, 8);
         formatter.format(data, 9);
-        formatter.format(data, 12);
+        formatter.format(data, 10);
         formatter.format(data, 13);
         formatter.format(data, 14);
         formatter.format(data, 15);
         formatter.format(data, 16);
+        formatter.format(data, 17);
         
         // gather some metadata and display it
         var granules = data.getDistinctValues(0);
@@ -368,7 +369,7 @@ sub get_plot_html {
         // set up the xx/xy/yx/yy error/position plots
         
         xx_view = new google.visualization.DataView(data);
-        xx_view.setColumns([10, 12,
+        xx_view.setColumns([11, 13,
           {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         xx_options = {
           title: 'X Offset vs. X Position',
@@ -381,7 +382,7 @@ sub get_plot_html {
         xx_plot.draw(xx_view, xx_options);
         
         xy_view = new google.visualization.DataView(data);
-        xy_view.setColumns([11, 12, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        xy_view.setColumns([12, 13, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         xy_options = {
           title: 'X Offset vs. Y Position',
           hAxis: {title: 'Y Position (pixels)'},
@@ -393,7 +394,7 @@ sub get_plot_html {
         xy_plot.draw(xy_view, xy_options);
         
         yx_view = new google.visualization.DataView(data);
-        yx_view.setColumns([10, 13, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        yx_view.setColumns([11, 14, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         yx_options = {
           title: 'Y Offset vs. X Position',
           hAxis: {title: 'X Position (pixels)'},
@@ -405,7 +406,7 @@ sub get_plot_html {
         yx_plot.draw(yx_view, yx_options);
         
         yy_view = new google.visualization.DataView(data);
-        yy_view.setColumns([11, 13, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
+        yy_view.setColumns([12, 14, {calc:getScatterPlotLabel, type:'string', label:'Tooltip', role:'tooltip'}]);
         yy_options = {
           title: 'Y Offset vs. Y Position',
           hAxis: {title: 'Y Position (pixels)'},
