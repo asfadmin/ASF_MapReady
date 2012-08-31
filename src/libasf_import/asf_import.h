@@ -105,6 +105,9 @@ void read_meta_airsar(char *inBaseName, char *outBaseName);
 void import_uavsar(const char *inFileName, int line, int sample, int width,
 		   int height, radiometry_t radiometry,
 		   const char *data_type, const char *outBaseName);
+void import_uavsar_ext(const char *inFileName, int line, int sample, int width,
+		       int height, radiometry_t radiometry, int firstBandOnly,
+		       const char *data_type, const char *outBaseName);
 
 void import_gamma_isp(const char *inDataName, const char *inMetaName,
               const char *data_type, const char *image_data_type,

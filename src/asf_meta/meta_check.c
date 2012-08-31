@@ -147,7 +147,7 @@ int isAIRSAR(char *dataFile)
 
 int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error)
 {
-  int found = TRUE;
+  int found = FALSE;
   // Let's first check for an .xml extension
   char *ext = findExt(dataFile);
 
@@ -171,6 +171,7 @@ int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error)
 	  (strncmp_case(satellite, "TSX", 3) == 0 ||
 	   strncmp_case(satellite, "TDX", 3) == 0)) {
 
+	found = TRUE;
 	if (checkPolarimetry) {
 	  strcpy(imageDataType, xml_get_string_value(doc, 
 	     "level1Product.productInfo.imageDataInfo.imageDataType"));
@@ -216,8 +217,6 @@ int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error)
 	  }	
 	}
       }
-      else
-	found = FALSE;
     }
     fclose(fp);
     xmlFreeDoc(doc);
@@ -239,7 +238,7 @@ int isTerrasar(char *dataFile, char **error)
 int isRadarsat2(char *dataFile, char **error)
 {
   char dataType[25];
-  int found = TRUE;
+  int found = FALSE;
   // Let's first check for an .xml extension
   char *ext = findExt(dataFile);
 
@@ -261,6 +260,7 @@ int isRadarsat2(char *dataFile, char **error)
       if (satellite &&
 	  strcmp_case(satellite, "RADARSAT-2") == 0) {
 	
+	found = TRUE;
 	strcpy(dataType, xml_get_string_value(doc, 
           "product.imageAttributes.rasterAttributes.dataType"));	
 	if (strcmp_case(dataType, "COMPLEX") != 0) {
@@ -308,8 +308,6 @@ int isRadarsat2(char *dataFile, char **error)
 	  }
 	}
       }
-      else
-	found = FALSE;
     }
     fclose(fp);
     xmlFreeDoc(doc);

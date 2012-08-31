@@ -230,6 +230,13 @@ static void create_file_chooser_dialog(int selected)
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), airsar_filt);
     }
 
+    if (selected==FORMAT_UAVSAR) {
+      GtkFileFilter *uavsar_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(uavsar_filt, "UAVSAR Annotation Files (*.ann)");
+      gtk_file_filter_add_pattern(uavsar_filt, "*.ann");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), uavsar_filt);
+    }
+
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
     gtk_file_filter_add_pattern(all_filt, "*");
@@ -358,6 +365,12 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
       case FORMAT_AIRSAR:
         of.lpstrFilter =
             "AirSAR Files (*.airsar)\0*.airsar\0"
+            "All Files\0*\0";
+        break;
+
+      case FORMAT_UAVSAR:
+        of.lpstrFilter =
+            "UAVSAR Files (*.ann)\0*.ann\0"
             "All Files\0*\0";
         break;
 

@@ -1437,12 +1437,13 @@ int polsarpro_data_check()
   int is_ceos = isCEOS(inFile, &error);
   int is_terrasar = isTerrasar(inFile, &error);
   int is_radarsat2 = isRadarsat2(inFile, &error);
-  if (is_ceos || is_terrasar || is_radarsat2)
+  int is_uavsar = isUAVSAR(inFile, &error);
+  if (is_ceos || is_terrasar || is_radarsat2 || is_uavsar)
     ret = TRUE;
   else {
     put_string_to_label("add_with_ancillary_error_label",
-			"Could not find any complex CEOS, TerraSAR-X or "
-			"Radarsat-2 data");
+			"Could not find any complex CEOS, TerraSAR-X, "
+			"Radarsat-2 or UAVSAR data");
     gtk_widget_set_sensitive(ok_button, FALSE);
   }
  
