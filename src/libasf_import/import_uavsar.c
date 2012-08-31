@@ -502,6 +502,13 @@ char *check_data_type(const char *inFileName)
 void import_uavsar(const char *inFileName, int line, int sample, int width,
 		   int height, radiometry_t radiometry,
 		   const char *data_type, const char *outBaseName) {
+  import_uavsar_ext(inFileName, line, sample, width, height, radiometry,
+		    FALSE, data_type, outBaseName);
+}
+
+void import_uavsar_ext(const char *inFileName, int line, int sample, int width,
+		       int height, radiometry_t radiometry, int firstBandOnly,
+		       const char *data_type, const char *outBaseName) {
 
   // UAVSAR comes in two flavors: InSAR and PolSAR
   // Things look similar to AirSAR data, just organized a little different.
@@ -1042,6 +1049,8 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 			"Will skip the ingest.\n");
 	continue;
       }
+      if (firstBandOnly)
+	nBands = 1;
       polsar_params = 
 	read_uavsar_polsar_params(inFileName, POLSAR_MLC);
       metaIn = uavsar_polsar2meta(polsar_params);
@@ -1069,7 +1078,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	else
 	  metaOut->general->band_count += 2;
 	fpIn = FOPEN(dataName[nn], "rb");
-	if (nn == 0)
+	if (firstBandOnly)
+	  strcpy(metaOut->general->bands, "AMP");
+	else if (nn == 0)
 	  sprintf(metaOut->general->bands, "%s", element[0]);
 	else {
 	  if (dataType[nn])
@@ -1262,6 +1273,8 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 			"Will skip the ingest.\n");
 	continue;
       }
+      if (firstBandOnly)
+	nBands = 1;
       polsar_params = 
 	read_uavsar_polsar_params(inFileName, POLSAR_GRD);
       metaIn = uavsar_polsar2meta(polsar_params);
@@ -1288,7 +1301,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	else
 	  metaOut->general->band_count += 1;
 	fpIn = FOPEN(dataName[nn], "rb");
-	if (nn == 0)
+	if (firstBandOnly)
+	  strcpy(metaOut->general->bands, "AMP");
+	else if (nn == 0)
 	  sprintf(metaOut->general->bands, "%s", element[0]);
 	else {
 	  if (dataType[nn])
