@@ -58,8 +58,14 @@ foreach(sort(uniq(@files))) {
 my @data;
 my $total_error = 0;
 foreach my $report (@$tree) {
-  $report->{DatasetInformation}->{Filename} =~ /^(\w+)/;
+  my $granule_full = $report->{DatasetInformation}->{Filename};
+  $granule_full =~ /^(\w+)/;
   my $granule = $1;
+  if ($granule eq "IMG") {
+    $granule_full =~ /^IMG-\w\w-(\w+)/;
+    $granule = $1;
+  }
+  printf ("granule: $granule\n");
   if($granule =~ /^(.*)(_SIGMA)$/) {
     $granule = $1; #uuurrrggghhh
   }
