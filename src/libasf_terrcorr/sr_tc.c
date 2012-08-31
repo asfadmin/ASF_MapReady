@@ -341,7 +341,7 @@ void sr_tc(const char *demBase, const char *sarBase, const char *outputBase)
             //val = get_rad_cal_dn(meta_sar, l, s, bands[0], val, c);
             val *= cos((double)c) / sin(incid);
             float_image_set_pixel(fiCorr, s, l, c*R2D);
-            val = 10.0*log10((double)val);
+            //val = 10.0*log10((double)val);
           }
           float_image_set_pixel(fiOut, s, l, val);
         }
