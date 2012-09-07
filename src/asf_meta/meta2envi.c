@@ -89,6 +89,8 @@ envi_header* read_envi(char *envi_name)
     // check for UTM case - does not have projection key
     if (strstr(line, "UTM"))
       projection_key = 3;
+    if (strstr(line, "Geographic Lat/Lon"))
+      projection_key = 1;
     sprintf(map_info, "%s", map_info_ptr+1);
       }
     }
@@ -122,6 +124,15 @@ envi_header* read_envi(char *envi_name)
 
   switch(projection_key)
     {
+    case 1:
+      sprintf(envi->projection, "Geographic Lat/Lon");
+      sscanf(map_info, "%i, %i, %lf, %lf, %lf, %lf, %lf, %lf",
+	     &envi->ref_pixel_x, &envi->ref_pixel_y, &envi->pixel_easting,
+	     &envi->pixel_northing, &envi->proj_dist_x, &envi->proj_dist_y);
+      envi->pixel_size_x = fabs(envi->proj_dist_x);
+      envi->pixel_size_y = fabs(envi->proj_dist_y);
+      sprintf(envi->datum, "%s", get_str_element(map_info, 7));
+      break;
     case 3:
       sprintf(envi->projection, "UTM");
       sscanf(map_info, "%i, %i, %lf, %lf, %lf, %lf, %i",
@@ -278,14 +289,19 @@ envi_header* meta2envi(meta_parameters *meta)
     sprintf(envi->sensor_type, "SIR-C");
   else if (strncmp(meta->general->sensor, "AIRSAR", 6)==0)
     sprintf(envi->sensor_type, "AIRSAR");
+  else if (strncmp(meta->general->sensor, "UAVSAR", 6)==0)
+    sprintf(envi->sensor_type, "UAVSAR");
   else if (strncmp(meta->general->sensor, "ALOS", 4)==0)
     sprintf(envi->sensor_type, "ALOS");
   // All the data we generate now is big_endian by default
   envi->byte_order = 1;
-  if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+  if (meta->projection)
   {
     switch (meta->projection->type)
       {
+      case LAT_LONG_PSEUDO_PROJECTION:
+	sprintf(envi->projection, "Geographic Lat/Lon");
+	break;
       case UNIVERSAL_TRANSVERSE_MERCATOR: 
 	sprintf(envi->projection, "UTM"); 
 	envi->projection_zone = meta->projection->param.utm.zone;
@@ -324,7 +340,6 @@ envi_header* meta2envi(meta_parameters *meta)
       case STATE_PLANE: 
       case SCANSAR_PROJECTION: 
 	break;
-      case LAT_LONG_PSEUDO_PROJECTION:
       case MERCATOR:
       case UNKNOWN_PROJECTION:
 	// I haven't tested this at all.
@@ -561,6 +576,13 @@ void write_envi_header(const char *headerFile, const char *dataFile,
   if (meta->projection) {
     switch (meta->projection->type)
       {
+      case LAT_LONG_PSEUDO_PROJECTION:
+	fprintf(fp, 
+		"map_info = {%s, %d, %d, %.5f, %.5f, %f, %f, %s, units=Degrees}\n", 
+		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
+		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
+		envi->proj_dist_y, datum_str);
+	break;
       case UNIVERSAL_TRANSVERSE_MERCATOR:
 	fprintf(fp, 
 		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %i, %s, %s}\n", 
@@ -628,7 +650,6 @@ void write_envi_header(const char *headerFile, const char *dataFile,
 	break;
       case STATE_PLANE:
       case SCANSAR_PROJECTION: 
-      case LAT_LONG_PSEUDO_PROJECTION:
       case MERCATOR:
       case EQUI_RECTANGULAR:
       case UNKNOWN_PROJECTION:
