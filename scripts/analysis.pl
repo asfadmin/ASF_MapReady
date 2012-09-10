@@ -123,6 +123,9 @@ foreach(@include) {
   }
 }
 
+# numeric values in the csv have leading whitespace, strip it
+@data = map({[map({/^\s+(.*)$/ ? $1 : $_} @$_)]} @data);
+
 # spit out some csv
 my $csv = '';
 my @header = (["Scene Name", "Orbit Direction", "Corner Reflector", "RngPxSize", "AzPxSize", "Resolution X from -3db Width (meters)", "PSLR X left dB", "PSLR X right dB", "Resolution Y from -3db Width (meters)", "PSLR Y left dB" ,"PSLR Y right dB", "X Pos (pixels)", "Y Pos (pixels)", "X Offset (pixels)", "Y Offset (pixels)", "X Offset (meters)", "Y Offset (meters)", "Total Offset (meters)"]);
@@ -443,7 +446,7 @@ sub get_plot_html {
 ~;
   
   my $js_array_rows = '';
-  $js_array_rows = join(',', map({'[' . join(',', map({$_ =~ /[a-z]/i ? "\"$_\"" : $_} @$_)) . ']'} @_));
+  $js_array_rows = join(',', map({'[' . join(',', map({$_ =~ /^[-e\.\d]+$/ ? $_: "\"$_\""} @$_)) . ']'} @_));
   $template =~ s/\/\*\*\*plot_data\*\*\*\//$js_array_rows/;
   $template =~ s/\/\*\*\*title\*\*\*\//$title/;
   return $template;
