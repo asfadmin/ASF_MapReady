@@ -1476,8 +1476,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // have to worry about pixel averaging or anything).
   if (projection_type == LAT_LONG_PSEUDO_PROJECTION && !input_is_latlon) {
     // Conversion in decimal degrees - 30 m = 1 arcsec
-    pixel_size_x /= 108000.0;
-    pixel_size_y /= 108000.0;
+    // pixel_size_x /= 108000.0;
+    // pixel_size_y /= 108000.0;
   }
 
   double pc_per_x = pixel_size_x;
