@@ -149,8 +149,7 @@ void generate_mapready_config_file(char *configFile, meta_parameters *meta)
 	    "units=Degrees}\n", gen->start_line+1, gen->start_sample+1,
 	    proj->startX, proj->startY, fabs(proj->perX), fabs(proj->perY),
 	    datum2envi(proj->datum));
-  if (proj->type != UNIVERSAL_TRANSVERSE_MERCATOR &&
-      proj->type != LAT_LONG_PSEUDO_PROJECTION)
+  if (proj->type != UNIVERSAL_TRANSVERSE_MERCATOR)
     fprintf(fpConfig, "---------\nProjInfo\nprojection info = {");
   if (proj->type == POLAR_STEREOGRAPHIC)
     fprintf(fpConfig, "31, %.3f, %.3f, %.4f, %.4f, 0.0, 0.0, %s, Polar "
@@ -172,7 +171,8 @@ void generate_mapready_config_file(char *configFile, meta_parameters *meta)
 	    lamaz.center_lat, lamaz.center_lon, lamaz.false_easting,
 	    lamaz.false_northing, datum2envi(proj->datum));
   else if (proj->type == LAT_LONG_PSEUDO_PROJECTION)
-    fprintf(fpConfig, "1, Geographic}\n");
+    fprintf(fpConfig, "1, %.3f, %.3f, 0.0, 0.0, %s}\n", proj->re_major,
+	    proj->re_minor, datum2envi(proj->datum));
   fprintf(fpConfig, "---------\nWaveUnit\nwavelength units = meters\n");
   fprintf(fpConfig, "---------\nMapProj\n");
   if (proj->type == UNIVERSAL_TRANSVERSE_MERCATOR) {

@@ -132,6 +132,8 @@ envi_header* read_envi(char *envi_name)
       envi->pixel_size_x = fabs(envi->proj_dist_x);
       envi->pixel_size_y = fabs(envi->proj_dist_y);
       sprintf(envi->datum, "%s", get_str_element(map_info, 7));
+      sscanf(proj_info, "%lf, %lf, 0.0, 0.0, %s}",
+	     &envi->semimajor_axis, &envi->semiminor_axis, bla);
       break;
     case 3:
       sprintf(envi->projection, "UTM");
@@ -486,6 +488,8 @@ meta_parameters* envi2meta(envi_header *envi)
       meta->projection->param.lamaz.false_easting = envi->false_easting;
       meta->projection->param.lamaz.false_northing = envi->false_northing;
     }
+    else if (strncmp(envi->projection, "Geographic Lat/Lon", 18)==0)
+      meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
     else {
       sprintf(errbuf,"\n   ERROR: Unsupported projection type\n\n");
       printErr(errbuf);
@@ -582,6 +586,9 @@ void write_envi_header(const char *headerFile, const char *dataFile,
 		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
 		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 		envi->proj_dist_y, datum_str);
+	fprintf(fp, 
+		"projection info = {1, %.3f, %.3f, 0.0, 0.0, %s}\n", 
+		envi->semimajor_axis, envi->semiminor_axis, datum_str);
 	break;
       case UNIVERSAL_TRANSVERSE_MERCATOR:
 	fprintf(fp, 

@@ -1714,14 +1714,14 @@ settings_to_config_string(const Settings *s,
         // items specific to either terrain correction or refine geolocation
         if (s->terrcorr_is_checked) {
             if (s->specified_tc_pixel_size)
-                sprintf(ret, "%spixel spacing = %.2f\n", ret, s->tc_pixel_size);
+                sprintf(ret, "%spixel spacing = %f\n", ret, s->tc_pixel_size);
 	    // Apparently applying the geocoding pixel size caused some
 	    // issues with some of InSAR products. Will comment out the
 	    // automatic assignment of the pixel size defined in geocoding
 	    // section to the terrain correction.
 	    /*
             else if (s->specified_pixel_size) // geocode pixel size
-                sprintf(ret, "%spixel spacing = %.2f\n", ret, s->pixel_size);
+                sprintf(ret, "%spixel spacing = %f\n", ret, s->pixel_size);
 	    */
             sprintf(ret, "%srefine geolocation only = 0\n", ret);
             sprintf(ret, "%sinterpolate = %d\n", ret, s->interp);
@@ -1785,7 +1785,7 @@ settings_to_config_string(const Settings *s,
       else
         sprintf(ret, "%sprojection = %s\n", ret, projfile);
       if (s->specified_pixel_size)
-        sprintf(ret, "%spixel spacing = %.2f\n", ret, s->pixel_size);
+        sprintf(ret, "%spixel spacing = %f\n", ret, s->pixel_size);
       if (s->specified_height)
         sprintf(ret, "%sheight = %.2f\n", ret, s->height);
       // The user-selected datum is written to the temporary proj file above,

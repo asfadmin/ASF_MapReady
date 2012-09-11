@@ -2011,7 +2011,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# image. If set to -99 this parameter will be ignored and the 'asf_terrcorr' will\n"
                 "# deal with the issues that might occur when using different pixel spacings in\n"
                 "# the SAR image and the reference DEM\n\n");
-      fprintf(fConfig, "pixel spacing = %.2f\n", cfg->terrain_correct->pixel);
+      fprintf(fConfig, "pixel spacing = %f\n", cfg->terrain_correct->pixel);
       if (!shortFlag)
         fprintf(fConfig, "\n# The heights of the reference DEM are used to correct the SAR image\n"
                 "# for terrain effects. The quality and resolution of the reference DEM determines\n"
@@ -2179,7 +2179,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       if (!shortFlag)
         fprintf(fConfig, "\n# The pixel spacing determines the pixel size used for the resulting\n"
                 "# geocoded image and, therefore, the size of the output image.\n\n");
-      fprintf(fConfig, "pixel spacing = %.2f\n", cfg->geocoding->pixel);
+      fprintf(fConfig, "pixel spacing = %f\n", cfg->geocoding->pixel);
       if  (!shortFlag)
         fprintf(fConfig, "\n# An average height can be defined for the image that is taken into\n"
                 "#  account and adjusted for during the geocoding process.\n\n");
