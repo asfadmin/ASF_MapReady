@@ -211,7 +211,7 @@ void update_pixel_info(ImageInfo *ii)
             projX, projY);
     }
 
-    if (meta->state_vectors && meta->sar) {
+    if (!meta->projection && meta->state_vectors && meta->sar) {
         double s,t;
         meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
         sprintf(&buf[strlen(buf)],
