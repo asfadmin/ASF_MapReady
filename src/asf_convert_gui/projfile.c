@@ -11,6 +11,7 @@ static GtkWidget * lamcc_menu = NULL;
 static GtkWidget * lamaz_menu = NULL;
 static GtkWidget * mer_menu = NULL;
 static GtkWidget * eqr_menu = NULL;
+static GtkWidget * geo_menu = NULL;
 
 
 static char * projection_directory(int projection)
@@ -45,6 +46,10 @@ static char * projection_directory(int projection)
 
     case PROJ_EQR:
       location = "equi_rectangular";
+      break;
+
+    case PROJ_GEO:
+      location = "geographic";
       break;
     }
 
@@ -108,6 +113,9 @@ static const char * projection_file_prefix(int projection)
 
     case PROJ_EQR:
       return "equi_rectangular_";
+
+    case PROJ_GEO:
+      return "geographic_";
     }
 }
 
@@ -236,6 +244,7 @@ void release_predefined_projections()
         g_object_unref(albers_menu);
 	g_object_unref(mer_menu);
 	g_object_unref(eqr_menu);
+	g_object_unref(geo_menu);
     }
 }
 
@@ -272,6 +281,9 @@ void set_predefined_projections(int projection)
 	eqr_menu =
 	  populate_predefined_projections(PROJ_EQR);
 
+	geo_menu =
+	  populate_predefined_projections(PROJ_GEO);
+
         g_object_ref(utm_menu);
         g_object_ref(ps_menu);
         g_object_ref(lamcc_menu);
@@ -279,6 +291,7 @@ void set_predefined_projections(int projection)
         g_object_ref(albers_menu);
 	g_object_ref(mer_menu);
 	g_object_ref(eqr_menu);
+	g_object_ref(geo_menu);
     }
 
     predefined_projection_option_menu =
@@ -313,6 +326,10 @@ void set_predefined_projections(int projection)
 
     case PROJ_EQR:
       menu = eqr_menu;
+      break;
+
+    case PROJ_GEO:
+      menu = geo_menu;
       break;
     }
 

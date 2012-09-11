@@ -15,6 +15,7 @@ all: build_only
 	mkdir -p $(SHAREDIR)/asf_mapready
 	cp batch.config $(SHAREDIR)/asf_mapready
 	cp asf_mapready.defaults $(SHAREDIR)/asf_mapready
+	cp mapready_settings.cfg $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f libasf_convert.a

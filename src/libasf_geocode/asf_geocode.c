@@ -1368,7 +1368,13 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // if() block when i>0.
 
     // We still assume square pixels for non-projected data
-    if (pixel_size < 0 && !input_projected)
+    // Deal with special case of geographic coordinates
+    if (pixel_size < 0 && projection_type == LAT_LONG_PSEUDO_PROJECTION &&
+	(!imd->projection || 
+	 imd->projection->type != LAT_LONG_PSEUDO_PROJECTION))
+      pixel_size_x = pixel_size_y = 
+	MAX(imd->general->x_pixel_size, imd->general->y_pixel_size)/ 108000.0;
+    else if (pixel_size < 0 && !input_projected)
     {
         g_assert(i==0);
         pixel_size_x = pixel_size_y = 
@@ -1476,8 +1482,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // have to worry about pixel averaging or anything).
   if (projection_type == LAT_LONG_PSEUDO_PROJECTION && !input_is_latlon) {
     // Conversion in decimal degrees - 30 m = 1 arcsec
-    pixel_size_x /= 108000.0;
-    pixel_size_y /= 108000.0;
+    // pixel_size_x /= 108000.0;
+    // pixel_size_y /= 108000.0;
   }
 
   double pc_per_x = pixel_size_x;
@@ -1828,6 +1834,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // We do not do this if we have been asked to save the line/sample
     // mapping, since this will mess that up.
     int do_resample = FALSE;
+
+    // Geographic coordinates need to be converted to meters for pixel size
+    // comparison
+    if (imd->projection && 
+	imd->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
+      imd->general->x_pixel_size *= 108000.0;
+      imd->general->y_pixel_size *= 108000.0;
+    }
     if (!save_line_sample_mapping &&
         (pixel_size_x/3. > imd->general->x_pixel_size &&
          pixel_size_y/3. > imd->general->y_pixel_size))

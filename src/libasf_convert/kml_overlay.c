@@ -203,9 +203,8 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   }
 
   // ensure meters
-  if (meta->projection && strcmp(meta->projection->units, "degrees") == 0) {
+  if (meta->projection && meta->projection->type == LAT_LONG_PSEUDO_PROJECTION)
     pixel_size *= 108000;
-  }
   meta_free(meta);
 
   // Generate input names

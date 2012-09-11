@@ -227,11 +227,12 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
         {
             if (scaling_required) {
                 pb = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
-                                              THUMB_SIZE, THUMB_SIZE,
-                                              &err);
-                pb_big = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
-                                              THUMB_SIZE_BIG, THUMB_SIZE_BIG,
-                                              &err_big);
+						      THUMB_SIZE, THUMB_SIZE,
+						      &err);
+		pb_big = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
+							  THUMB_SIZE_BIG, 
+							  THUMB_SIZE_BIG,
+							  &err_big);
             }
             else {
                 pb_big = gdk_pixbuf_new_from_file(thumbnail_name, &err);
@@ -251,18 +252,20 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
                                        pb_big, -1);
                 }
                 else
-                {
+		  /*{
                     g_warning("Error loading image '%s': %s\n",
                               thumbnail_name, err_big->message);
                     g_error_free(err_big);
-                }
+		    }*/
+		  asfPrintWarning("Could not display thumbnail!\n");
             }
             else
-            {
+	      /*{
                 g_warning("Error loading image '%s': %s\n",
                           thumbnail_name, err->message);
                 g_error_free(err);
-            }
+		}*/
+	      asfPrintWarning("Could not display thumbnail!\n");
         }
 
         free(thumbnail_name);

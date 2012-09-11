@@ -373,7 +373,7 @@ void geocode_options_changed()
             enable_predefined_projection_option_menu = FALSE;
             // Commenting this out, we will specify pixel size in meters for
             // all projections, even lat/lon pseudo
-            //geocode_pixel_size_label_text = " degrees";
+            geocode_pixel_size_label_text = " degrees";
         }
         else if (predefined_projection_is_selected)
         {

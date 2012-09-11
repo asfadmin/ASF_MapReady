@@ -81,6 +81,114 @@ void generate_config_file(char *configFile, int line_count, int sample_count)
   FCLOSE(fpConfig);
 }
 
+static char *datum2envi(datum_type_t datum)
+{
+  char *datumStr = (char *) MALLOC(sizeof(char)*128);
+  switch (datum) {
+  case NAD27_DATUM:
+    strcpy(datumStr, "North America 1927");
+    break;
+  case NAD83_DATUM:
+    strcpy(datumStr, "North America 1983");
+    break;
+  case ED50_DATUM:
+    strcpy(datumStr, "European 1950");
+    break;
+  case WGS72_DATUM:
+    strcpy(datumStr, "WGS-72");
+    break;
+  case WGS84_DATUM:
+    strcpy(datumStr, "WGS-84");
+    break;
+  }
+  return datumStr;
+}
+
+void generate_mapready_config_file(char *configFile, meta_parameters *meta)
+{
+  meta_general *gen = meta->general;
+  meta_projection *proj = meta->projection;
+  proj_ps ps = proj->param.ps;
+  proj_albers albers = proj->param.albers;
+  proj_lamaz lamaz = proj->param.lamaz;
+  proj_lamcc lamcc = proj->param.lamcc;
+  FILE *fpConfig = FOPEN(configFile, "w");
+  fprintf(fpConfig, "Sensor\n%s\n", meta->general->sensor);
+  fprintf(fpConfig, "---------\nMapInfo\nmap info = {");
+  if (proj->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+    fprintf(fpConfig, "UTM, %d, %d, %.3f, %.3f, %.3f, %.3f, %d, ",
+	    gen->start_line+1, gen->start_sample+1, proj->startX, proj->startY, 
+	    fabs(proj->perX), fabs(proj->perY), proj->param.utm.zone);
+    if (proj->hem == 'N')
+      fprintf(fpConfig, "North, %s}\n", datum2envi(proj->datum));
+    else
+      fprintf(fpConfig, "South, %s}\n", datum2envi(proj->datum));
+  }
+  else if (proj->type == POLAR_STEREOGRAPHIC)
+    fprintf(fpConfig, "Polar Stereographic, %d, %d, %.3f, %.3f, %.3f, %.3f, "
+	    "%s}\n", gen->start_line+1, gen->start_sample+1, proj->startX, 
+	    proj->startY, fabs(proj->perX), fabs(proj->perY), 
+	    datum2envi(proj->datum));
+  else if (proj->type == ALBERS_EQUAL_AREA)
+    fprintf(fpConfig, "Albers Conical Equal Area, %d, %d, %.3f, %.3f, %.3f, "
+	    "%.3f, %s}\n", gen->start_line+1, gen->start_sample+1, proj->startX,
+	    proj->startY, fabs(proj->perX), fabs(proj->perY), 
+	    datum2envi(proj->datum));
+  else if (proj->type == LAMBERT_CONFORMAL_CONIC)
+    fprintf(fpConfig, "Lambert Conformal Conic, %d, %d, %.3f, %.3f, %.3f, %.3f,"
+	    " %s}\n", gen->start_line+1, gen->start_sample+1, proj->startX,
+	    proj->startY, fabs(proj->perX), fabs(proj->perY),
+	    datum2envi(proj->datum));
+  else if (proj->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)
+    fprintf(fpConfig, "Lambert Azimuthal Equal Area, %d, %d, %.3f, %.3f, %.3f, "
+	    "%.3f, %s}\n", gen->start_line+1, gen->start_sample+1, proj->startX,
+	    proj->startY, fabs(proj->perX), fabs(proj->perY), 
+	    datum2envi(proj->datum));
+  else if (proj->type == LAT_LONG_PSEUDO_PROJECTION)
+    fprintf(fpConfig, "Geographic Lat/Lon, %d, %d, %.5f, %.5f, %f, %f, %s, "
+	    "units=Degrees}\n", gen->start_line+1, gen->start_sample+1,
+	    proj->startX, proj->startY, fabs(proj->perX), fabs(proj->perY),
+	    datum2envi(proj->datum));
+  if (proj->type != UNIVERSAL_TRANSVERSE_MERCATOR)
+    fprintf(fpConfig, "---------\nProjInfo\nprojection info = {");
+  if (proj->type == POLAR_STEREOGRAPHIC)
+    fprintf(fpConfig, "31, %.3f, %.3f, %.4f, %.4f, 0.0, 0.0, %s, Polar "
+	    "Stereographic}\n", proj->re_major, proj->re_minor, 
+	    ps.slat, ps.slon, datum2envi(proj->datum));
+  else if (proj->type == ALBERS_EQUAL_AREA)
+    fprintf(fpConfig, "9, %.3f, %.3f, %.4f, %.4f, 0.0, 0.0, %.4f, %.4f, %s, "
+	    "Albers Conical Equal Area}\n", proj->re_major, proj->re_minor, 
+	    albers.orig_latitude, albers.center_meridian, albers.std_parallel1,
+	    albers.std_parallel2, datum2envi(proj->datum));
+  else if (proj->type == LAMBERT_CONFORMAL_CONIC)
+    fprintf(fpConfig, "4, %.3f, %.3f, %.4f, %.4f, %.1f, %.1f, %.4f, %.4f, %s, "
+	    "Lambert Conformal Conic}\n", proj->re_major, proj->re_minor,
+	    lamcc.lat0, lamcc.lon0, lamcc.false_easting, lamcc.false_northing,
+	    lamcc.plat1, lamcc.plat2, datum2envi(proj->datum));
+  else if (proj->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)
+    fprintf(fpConfig, "11, %.3f, %.3f, %.4f, %.4f, %.1f, %.1f, %s, Lambert "
+	    "Azimuthal Equal Area}\n", proj->re_major, proj->re_minor,
+	    lamaz.center_lat, lamaz.center_lon, lamaz.false_easting,
+	    lamaz.false_northing, datum2envi(proj->datum));
+  else if (proj->type == LAT_LONG_PSEUDO_PROJECTION)
+    fprintf(fpConfig, "1, %.3f, %.3f, 0.0, 0.0, %s}\n", proj->re_major,
+	    proj->re_minor, datum2envi(proj->datum));
+  fprintf(fpConfig, "---------\nWaveUnit\nwavelength units = meters\n");
+  fprintf(fpConfig, "---------\nMapProj\n");
+  if (proj->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+    fprintf(fpConfig, "UTM\n");
+    fprintf(fpConfig, "%f\n%f\n%f\n%f\n%d", proj->startX, proj->startY,
+	    fabs(proj->perX), fabs(proj->perY),proj->param.utm.zone);
+    if (proj->hem == 'N')
+      fprintf(fpConfig, "North,\n");
+    else
+      fprintf(fpConfig, "South,\n");
+  }
+  else
+    fprintf(fpConfig, "NO UTM\n");
+  FCLOSE(fpConfig);
+}
+
 void export_polsarpro(const char *metadata_file_name,
 		      const char *image_data_file_name,
 		      char *output_file_name, 
@@ -148,6 +256,14 @@ void export_polsarpro(const char *metadata_file_name,
     sprintf(configFile, "%s%cconfig.txt", path_name, DIR_SEPARATOR);
     generate_config_file(configFile, line_count, sample_count);
     FREE(configFile);
+    if (md->projection) {
+      char *mapreadyConfig = 
+	(char *) MALLOC(sizeof(char)*(strlen(path_name)+25));
+      sprintf(mapreadyConfig, "%s%cconfig_mapready.txt", 
+	      path_name, DIR_SEPARATOR);
+      generate_mapready_config_file(mapreadyConfig, md);
+      FREE(mapreadyConfig);
+    }
     FREE(path);
     FREE(dirName);
     FREE(fileName);
