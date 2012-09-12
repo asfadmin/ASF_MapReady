@@ -2873,7 +2873,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         out_of_range_positive, pct_too_positive);
   }
 
-  omd->projection->startY -= omd->projection->perY;
   meta_write (omd, output_meta_data);
   meta_free (omd);
 
