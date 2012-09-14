@@ -355,39 +355,39 @@ static int remove_outliers(offset_point_t *matches, int len)
   return rmx+rmy;
 }
 
-static void print_matches(offset_point_t *matches, int num_x, int num_y)
+static void print_matches(offset_point_t *matches, int num_x, int num_y, FILE *fp)
 {
-  int ii, jj,kk=0, len = num_x*num_y, n=0;
+  int ii, jj,kk=0,n=0;
   double avg = 0;
 
-  printf("=== X Offsets ===\n");
+  fprintf(fp, "=== X Offsets ===\n");
   for (ii=0; ii<num_y; ++ii) {
     for (jj=0; jj<num_x; ++jj) {
       if (matches[kk].valid) {
-        printf("%5.2f ", matches[kk].x_offset);
+        fprintf(fp, "%5.2f ", matches[kk].x_offset);
         avg += hypot(matches[kk].x_offset, matches[kk].y_offset);
         ++n;
       }
       else
-        printf("  --  ");
+        fprintf(fp, "  --  ");
       ++kk;
     }
-    printf("\n");
+    fprintf(fp, "\n");
   }
   avg /= (double)n;
   kk=0;
-  printf("=== Y Offsets ===\n");
+  fprintf(fp, "=== Y Offsets ===\n");
   for (ii=0; ii<num_y; ++ii) {
     for (jj=0; jj<num_x; ++jj) {
       if (matches[kk].valid)
-        printf("%5.2f ", matches[kk].y_offset); 
+        fprintf(fp, "%5.2f ", matches[kk].y_offset); 
       else
-        printf("  --  ");
+        fprintf(fp, "  --  ");
       ++kk;
     }
-    printf("\n");
+    fprintf(fp, "\n");
   }
-  printf("Average: %f\n", avg);
+  fprintf(fp, "Average: %f\n", avg);
 }
 
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
@@ -455,7 +455,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
     //printf("\n");
   }
 
-  print_matches(matches, num_x, num_y);
+  print_matches(matches, num_x, num_y, stdout);
 
   int removed;
   do {
@@ -463,7 +463,15 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   }
   while (removed > 0);
 
-  print_matches(matches, num_x, num_y);
+  char *base = get_basename(meta1->general->basename);
+  char *name = appendExt(base, ".offsets.txt");
+  FILE *offset_fp = FOPEN(name,"w");
+  print_matches(matches, num_x, num_y, stdout);
+  print_matches(matches, num_x, num_y, offset_fp);
+  asfPrintStatus("Offsets written to: %s\n", name);
+  FCLOSE(offset_fp);
+  FREE(name);
+  FREE(base);
 
   int valid_points = 0;
   for (ii=0; ii<len; ++ii) {

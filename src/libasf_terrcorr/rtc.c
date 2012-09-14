@@ -48,9 +48,11 @@ static int isDecomposition(char *bandExt)
 
 static void geodetic_to_ecef(double lat, double lon, double h, Vector *v)
 {
-  const double a = 6378144.0;    // GEM-06 Ellipsoid.
-  const double e = 8.1827385e-2; // GEM-06 Eccentricity
-  const double e2 = e*e;
+  //const double a = 6378144.0;    // GEM-06 Ellipsoid.
+  //const double e = 8.1827385e-2; // GEM-06 Eccentricity
+  const double a = 6378137.0000;
+  const double e2 = 6.69437999014e-3;
+  //const double e2 = e*e;
 
   lat *= D2R;
   lon *= D2R;
@@ -58,12 +60,12 @@ static void geodetic_to_ecef(double lat, double lon, double h, Vector *v)
   double sin_lat = sin(lat);
   double cos_lat = cos(lat);
 
-  double f = sqrt(1 - e2*sin_lat*sin_lat);
+  double f = sqrt(1. - e2*sin_lat*sin_lat);
   double af = a/f;
 
   v->x = (af + h)*cos_lat*cos(lon);
   v->y = (af + h)*cos_lat*sin(lon);
-  v->z = (a*(1-e2)/f + h)*sin_lat;
+  v->z = (af*(1.-e2) + h)*sin_lat;
 }
 
 static Vector get_satpos(meta_parameters *meta, int line)
@@ -108,18 +110,6 @@ static void calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameter
     meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
     geodetic_to_ecef(lat, lon, demLine[jj], v);
     vectorLine[jj] = v;
-
-    //meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
-    //geodetic_to_ecef(lat, lon, demLine[jj], &nextVectors[jj]);
-    Vector p_this, p_next;
-    meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
-    geodetic_to_ecef(lat, lon, 0, &p_next);
-    meta_get_latLon(meta_img, line-1, jj, 0, &lat, &lon);
-    geodetic_to_ecef(lat, lon, 0, &p_this);
-    Vector *x = vector_copy(&p_this);
-    vector_subtract(x, &p_next);
-    nextVectors[jj] = *x;
-    vector_free(x); 
   }
 }
 
@@ -155,7 +145,16 @@ static Vector * calculate_normal(Vector ***localVectors, int sample)
 
   vector_free(v1);
   vector_free(v2);
-  
+ /*
+  v1 = vector_copy(localVectors[1][sample]);
+  v2 = vector_copy(localVectors[1][sample]);
+  vector_subtract(v1, localVectors[2][sample]);
+  vector_subtract(v2, localVectors[1][sample+1]);
+  normal = vector_cross(v1, v2);
+  vector_multiply(normal, 1./vector_magnitude(normal));
+  vector_free(v1);
+  vector_free(v2);
+ */
   return normal;
 }
 
@@ -165,16 +164,11 @@ calculate_correction(meta_parameters *meta_in, int line, int samp,
 {
 
   // R: vector from ground point (p) to satellite (satpos)
-  //Vector *R = vector_copy(satpos);
-  //vector_subtract(R, p);
   Vector *R = vector_copy(satpos);
   vector_subtract(R, p);
   vector_multiply(R, 1./vector_magnitude(R));
 
-  //Vector *x = vector_copy(p);
-  //vector_subtract(x, p_next);
-  //vector_multiply(x, 1./vector_magnitude(x));
-  Vector *x = vector_copy(p_next);
+  Vector *x = vector_cross(p,R);
   vector_multiply(x, 1./vector_magnitude(x));
 
   // Rx: R cross x -- image plane normal
