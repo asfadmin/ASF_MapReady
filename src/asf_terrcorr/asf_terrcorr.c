@@ -333,7 +333,7 @@ main (int argc, char *argv[])
   int add_speckle = TRUE;
   int if_coreg_fails_use_zero_offsets = FALSE;
   int save_ground_dem = FALSE;
-  int save_incid_angles = FALSE;
+  int save_incid_angles = TRUE;
   int use_nearest_neighbor = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
