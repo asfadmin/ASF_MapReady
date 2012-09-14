@@ -12,7 +12,7 @@ use Data::Dumper;
 
 my $usage = q~USAGE:
   analysis.pl [--help] [--out=<csv file>] [--plot=<html file>] [--include=<csv files>]
-    [--title=<title>] <xml files> [...]
+    [--title=<title>] [--degrees] [--meters] <xml files> [...]
 ~;
 
 my $outfile;
@@ -20,15 +20,36 @@ my $plotfile;
 my @include;
 my $title = "";
 my $helpf;
+my $degreesf=0;
+my $metersf=0;
 GetOptions( "out=s" => \$outfile,
             "plot=s" => \$plotfile,
             "include=s" => \@include,
             "title=s" => \$title,
+            "degrees" => \$degreesf,
+            "meters" => \$metersf,
             "help" => \$helpf);
 
 if($helpf) {
   print get_help_text();
   exit;
+}
+
+if($degreesf && $metersf) {
+  print "Can't use both --degrees and --meters\n";
+  exit;
+}
+if(!$degreesf && !$metersf) {
+  $metersf = 1;
+}
+print "Length unit: Meters\n" if ($metersf);
+print "Length unit: Degrees\n" if ($degreesf);
+
+my $xscal = 1;
+my $yscal = 1;
+if ($degreesf) { # values valid for Delta
+  $xscal = 48916;
+  $yscal = 111444;
 }
 
 if(scalar(@ARGV) < 1 and !@include) { print $usage; exit; }
@@ -78,6 +99,12 @@ foreach my $report (@$tree) {
     foreach my $ref (@reflectors) {
       my $ref_xoff = $ref->{GeolocationOffsetIn_X_Meter};
       my $ref_yoff = $ref->{GeolocationOffsetIn_Y_Meter};
+      $ref_xoff *= $xscal; # values valid for Delta
+      $ref_yoff *= $yscal;
+      $ref->{Resolution_X_from_Neg3db_Width_Meter} *= $xscal;
+      $ref->{Resolution_Y_from_Neg3db_Width_Meter} *= $yscal;
+      $report->{DatasetInformation}->{RngPxSize} *= $xscal;
+      $report->{DatasetInformation}->{AzPxSize} *= $yscal;
       my $ref_error = sprintf("%.5f", sqrt($ref_xoff**2 + $ref_yoff**2));
       $total_error += $ref_error;
       push(@data, [
