@@ -129,7 +129,9 @@ static void print_proj_info(meta_parameters *meta)
         break;
 	
     case LAT_LONG_PSEUDO_PROJECTION:
-      break;
+        asfPrintStatus(" Projection: Geographic\n");
+        break;
+
     default:
         asfPrintError("Projection type not supported!\n");
         break;
