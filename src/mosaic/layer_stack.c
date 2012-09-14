@@ -61,6 +61,11 @@ void usage()
     exit(1);
 }
 
+static int double_eq(double a, double b)
+{
+    return fabs(a-b) < .0000001;
+}
+
 static void print_proj_info(meta_parameters *meta)
 {
     project_parameters_t pp = meta->projection->param;
@@ -107,6 +112,10 @@ static void print_proj_info(meta_parameters *meta)
             "   Latitude of origin: %.4f\n"
             "   Central meridian: %.4f\n\n",
             pp.lamaz.center_lat, pp.lamaz.center_lon);
+        break;
+
+    case LAT_LONG_PSEUDO_PROJECTION:
+        asfPrintStatus(" Projection: Geographic\n");
         break;
 
     default:
@@ -159,6 +168,10 @@ static int proj_parms_match(meta_parameters *m1, meta_parameters *m2)
         return
             pp1.lamaz.center_lat == pp2.lamaz.center_lat &&
             pp1.lamaz.center_lon == pp2.lamaz.center_lon;
+        break;
+
+    case LAT_LONG_PSEUDO_PROJECTION:
+        return TRUE;
         break;
 
     default:
@@ -324,10 +337,14 @@ static void determine_extents(char **infiles, int n_inputs,
             why = "Couldn't read metadata";
         else if (!meta->projection)
             why = "Image is not geocoded";
-        else if (meta->projection->perX != px)
+        else if (!double_eq(meta->projection->perX, px)) {
+            asfPrintStatus("X pixel sizes: %f %f\n", meta->projection->perX, px);
             why = "X pixel size doesn't match reference image";
-        else if (meta->projection->perY != py)
+        }
+        else if (!double_eq(meta->projection->perY, py)) {
+            asfPrintStatus("Y pixel sizes: %f %f\n", meta->projection->perY, py);
             why = "Y pixel size doesn't match reference image";
+        }
         else if (meta->projection->type != proj_type)
             why = "Image is in a different projection";
         else if (!proj_parms_match(meta0, meta))
