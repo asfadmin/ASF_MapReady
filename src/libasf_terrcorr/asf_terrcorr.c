@@ -101,8 +101,10 @@ fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
   //quietflag = 0;
   
   strcpy(match_file,"fft_match.txt");
-  //fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
   fftMatch(file1, file2, match_file, dx, dy, cert);
+  //asfPrintStatus("Regular matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
+  //fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
+  //asfPrintStatus("   Grid matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
 
   if (!meta_is_valid_double(*dx) || !meta_is_valid_double(*dy) || cert==0) {
       // bad match the first way, sometimes we can get a good match by
