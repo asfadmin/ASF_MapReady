@@ -569,12 +569,12 @@ static void add_pts(GdkPixbuf *pb, ImageInfo *ii)
   int jj=0;
   while (pt_lat[jj] != -999) {
     int bad = meta_get_lineSamp(meta, pt_lat[jj], pt_lon[jj], 0, &line, &samp);
+    ++jj;
    
     if (bad || line<0 || line>nl || samp<0 || samp>ns)
       continue;
   
     put_marker(pb, line, samp, 1, PURPLE, ii);
-    ++jj;
   }
 }
    
