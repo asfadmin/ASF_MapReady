@@ -830,7 +830,7 @@ void check_return(int ret, char *msg)
 
 void check_input(convert_config *cfg, char *processing_step, char *input)
 {
-  meta_parameters *meta;
+  meta_parameters *meta=NULL;
   char **inBandName = NULL, **inMetaName = NULL, *matrixType, *error;
   int nBands, trailer, airsar_c, airsar_l, airsar_p;
 
@@ -934,7 +934,28 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
     else {
       asfPrintError("Polarimetry requires SAR data.\n");
     }
+    
   }
+  else if (strcmp_case(processing_step, "terrain_correction") == 0) {
+
+    meta = meta_read(input);
+
+    // Check for amplitude data - no other radiometry should make it passed here
+    if (meta->general->radiometry != r_AMP) {
+      // Error out for UAVSAR MLC specifically
+      if (strcmp_case(meta->general->sensor, "UAVSAR") == 0 &&
+	  strcmp_case(meta->general->sensor_name, "PolSAR") == 0 &&
+	  strcmp_case(meta->general->mode, "MLC") == 0)
+	asfPrintError("UAVSAR MLC can't be terrain corrected. "
+		      "Use the UAVSAR GRD data instead.\n"); 
+      // Error out for the rest as well
+      else
+	asfPrintError("Data need to be in amplitude radiometry at this stage "
+		      "in order to be terrain corrected.\n");
+    }
+  }
+  if (meta)
+    meta_free(meta);
 }
 
 // If a temporary directory has not been specified, create one using the time
@@ -1500,6 +1521,11 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		    "POLARIMETRIC_SEGMENTATION") == 0 &&
 	cfg->terrain_correct->do_radiometric)
       asfPrintError("Polarimetric segmentations can't be radiometrically "
+		    "terrain corrected!\n");
+    if (strcmp_case(cfg->import->image_data_type,
+		    "POLARIMETRIC_DECOMPOSITION") == 0 &&
+	cfg->terrain_correct->do_radiometric)
+      asfPrintError("Polarimetric decompositions can't be radiometrically "
 		    "terrain corrected!\n");
     if (strcmp_case(cfg->import->image_data_type, 
 		    "POLARIMETRIC_PARAMETER") == 0 && 
@@ -2358,6 +2384,9 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
   
   if (cfg->general->terrain_correct) {
     
+    // Check whether the input can be terrain corrected
+    check_input(cfg, "terrain_correction", outFile);
+
     // If the DEM is a GeoTIFF, we need to import it, and geocode it.
     if (has_tiff_ext(cfg->terrain_correct->dem)) {
       char * converted_dem =
