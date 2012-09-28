@@ -422,6 +422,7 @@ typedef struct {
   rsat_cal_params *rsat;
   alos_cal_params *alos;
   tsx_cal_params *tsx;
+  r2_cal_params *r2;
   uavsar_cal_params *uavsar;
 } meta_calibration;
 
