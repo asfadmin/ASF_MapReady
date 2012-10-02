@@ -8,6 +8,7 @@
 #include "asf_meta.h"
 #include "ceos.h"
 #include "terrasar.h"
+#include "radarsat2.h"
 #include <assert.h>
 
 /**Harcodings to fix calibration of ASF data***
@@ -635,6 +636,26 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
     tsx->k = terrasar->cal_factor; // calibration factor in beta naught
     FREE(terrasar);
   }
+  else if (isRadarsat2(sarName, &error)) {
+    // Radarsat2 style calibration
+    r2_cal_params *r2 = (r2_cal_params *) MALLOC(sizeof(r2_cal_params));
+    meta->calibration->type = r2_cal;
+    meta->calibration->r2 = r2;
+
+    radarsat2_meta *radarsat2 = read_radarsat2_meta(sarName);
+    r2->num_elements = radarsat2->numberOfSamplesPerLine;
+    for (ii=0; ii<r2->num_elements; ii++) {
+      r2->a_beta[ii] = radarsat2->gains_beta[ii];
+      r2->a_gamma[ii] = radarsat2->gains_gamma[ii];
+      r2->a_sigma[ii] = radarsat2->gains_sigma[ii];
+    }
+    r2->b = radarsat2->offset;
+    if (meta->general->image_data_type == COMPLEX_IMAGE)
+      r2->slc = TRUE;
+    else
+      r2->slc = FALSE;
+    FREE(radarsat2);
+  }
   else
     // should never get here
     asfPrintWarning("Unknown calibration parameter scheme!\n");
@@ -862,6 +883,23 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
     double cf = meta->calibration->tsx->k;
     scaledPower = cf*inDn*inDn*invIncAngle;
   }
+  else if (meta->calibration->type == r2_cal) { // Radarsat-2 data
+    
+    if (sample > meta->calibration->r2->num_elements)
+      asfPrintError("Calibration not defined for sample (%d)!\n", sample);
+    double a;
+    if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      a = meta->calibration->r2->a_beta[sample];
+    else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      a = meta->calibration->r2->a_sigma[sample];
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
+      a = meta->calibration->r2->a_gamma[sample];
+
+    if (meta->calibration->r2->slc)
+      scaledPower = inDn*inDn/(a*a);
+    else
+      scaledPower = (inDn*inDn + meta->calibration->r2->b)/a;
+  }
   else
     // should never get here
     asfPrintError("Unknown calibration data type!\n");
@@ -1013,6 +1051,18 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
     double cf = meta->calibration->tsx->k;
     //scaledPower = cf*inDn*inDn*invIncAngle;
     calValue = sqrt(sigma * radCorr / (cf*invIncAngle));
+  }
+  else if (meta->calibration->type == r2_cal) {
+
+    r2_cal_params *p = meta->calibration->r2;
+    if (meta->calibration->r2->slc) {
+      //scaledPower = inDn*inDn/(a*a);
+      calValue = sqrt(sigma * radCorr) * p->a_sigma[sample];
+    }
+    else {
+      //scaledPower = (inDn*inDn + meta->calibration->r2->b)/a;
+      calValue = sqrt((sigma * radCorr *p->a_sigma[sample]) - p->b);
+    }
   }
 
   return calValue;

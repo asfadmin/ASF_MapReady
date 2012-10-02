@@ -177,7 +177,7 @@ void generate_mapready_config_file(char *configFile, meta_parameters *meta)
   fprintf(fpConfig, "---------\nMapProj\n");
   if (proj->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
     fprintf(fpConfig, "UTM\n");
-    fprintf(fpConfig, "%f\n%f\n%f\n%f\n%d", proj->startX, proj->startY,
+    fprintf(fpConfig, "%f\n%f\n%f\n%f\n%d\n", proj->startX, proj->startY,
 	    fabs(proj->perX), fabs(proj->perY),proj->param.utm.zone);
     if (proj->hem == 'N')
       fprintf(fpConfig, "North,\n");

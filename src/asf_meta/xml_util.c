@@ -5,7 +5,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#define MAX_LEN 256
+#define MAX_LEN 100000
 static char buf[MAX_LEN];
 
 static xmlNode *findNode(xmlDoc *doc, xmlNode *node, char *name, int desired)
@@ -68,10 +68,10 @@ int xml_get_element_exists(xmlDoc *doc, char *str)
 const char *xml_get_string_value(xmlDoc *doc, char *format, ...)
 {
   va_list ap;
-  char str[4096];
+  char str[100000];
 
   va_start(ap, format);
-  vsnprintf(str, 4095, format, ap);
+  vsnprintf(str, 99999, format, ap);
   va_end(ap);
 
   int i,n;

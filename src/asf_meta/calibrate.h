@@ -26,6 +26,7 @@ typedef enum {
   rsat_cal,         // RSAT: look up table approach
   alos_cal,         // ALOS: calibration coefficient CF
   tsx_cal,          // TERRASAR-X: calibration constant K
+  r2_cal,           // RADARSAT-2: range dependent gain
   uavsar_cal        // UAVSAR: parameters for calibration calculation
 } cal_type;
 
@@ -66,6 +67,15 @@ typedef struct {
 } tsx_cal_params;
 
 typedef struct {
+  int num_elements;     // number of samples
+  double a_beta[8192];  // range gain coefficients for beta
+  double a_gamma[8192]; // range gain coefficients for gamma
+  double a_sigma[8192]; // range gain coefficients for sigma
+  double b;             // constant offset
+  int slc;
+} r2_cal_params;
+
+typedef struct {
   double semi_major;              // ellipsoid semi-major axis
   double slant_range_first_pixel; // image starting range
   double range_spacing;           // range spacing per bin
@@ -83,6 +93,7 @@ typedef struct {
   rsat_cal_params* rsat;
   alos_cal_params* alos;
   tsx_cal_params* tsx;
+  r2_cal_params* r2;
   uavsar_cal_params *uavsar;
   quadratic_2d incid;
   radiometry_t radiometry;
