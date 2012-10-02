@@ -1449,6 +1449,19 @@ void fill_structure_field(char *field_name, void *valp)
 	(MCALIBRATION)->tsx->k = MAGIC_UNSET_DOUBLE;
 	return;
       }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "RSAT2") ) {
+	r2_cal_params *r2 = (r2_cal_params *) MALLOC(sizeof(r2_cal_params));
+	(MCALIBRATION)->r2 = r2;
+	(MCALIBRATION)->type = r2_cal;
+	(MCALIBRATION)->r2->num_elements = MAGIC_UNSET_INT;
+        for (ii=0; ii<8192; ii++) {
+	  (MCALIBRATION)->r2->a_beta[ii] = 0.0;
+	  (MCALIBRATION)->r2->a_gamma[ii] = 0.0;
+	  (MCALIBRATION)->r2->a_sigma[ii] = 0.0;
+        }
+	(MCALIBRATION)->r2->b = MAGIC_UNSET_DOUBLE;
+	(MCALIBRATION)->r2->slc = MAGIC_UNSET_INT;
+      }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "UAVSAR") ) {
 	uavsar_cal_params *uavsar =
 	  (uavsar_cal_params *) MALLOC(sizeof(uavsar_cal_params));
@@ -1541,6 +1554,31 @@ void fill_structure_field(char *field_name, void *valp)
     // TSX calibration
     if ( !strcmp(field_name, "k") && (MCALIBRATION)->type == tsx_cal)
       { (MCALIBRATION)->tsx->k = VALP_AS_DOUBLE; return; }
+    // RADARSAT-2 calibration
+    if ( !strcmp(field_name, "num_elements") && (MCALIBRATION)->type == r2_cal)
+      { (MCALIBRATION)->r2->num_elements = VALP_AS_INT; return; }
+    if ( !strncmp(field_name, "gain", 4) && (MCALIBRATION)->type == r2_cal)
+    {
+      char val[256], val2[256];
+      for (ii=0; ii<(MCALIBRATION)->r2->num_elements; ii++) {
+	sprintf(val, "gain(%03d)", ii);
+	sprintf(val2, "gain(%d)", ii);
+	if ( !strcmp(field_name, val) || !strcmp(field_name, val2) ) {
+	  double beta, gamma, sigma;
+	  char vals[256];
+	  strcpy(vals, VALP_AS_CHAR_POINTER);
+	  sscanf(vals, "%lf %lf %lf", &beta, &gamma, &sigma);
+	  (MCALIBRATION)->r2->a_beta[ii] = beta;
+	  (MCALIBRATION)->r2->a_gamma[ii] = gamma;
+	  (MCALIBRATION)->r2->a_sigma[ii] = sigma;
+	}
+      }
+    }
+    if ( !strcmp(field_name, "b") && (MCALIBRATION)->type == r2_cal)
+      { (MCALIBRATION)->r2->b = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "slc") && (MCALIBRATION)->type == r2_cal)
+      { (MCALIBRATION)->r2->slc = VALP_AS_INT; return; }
+
     // UAVSAR calibration
     if ( !strcmp(field_name, "semi_major") && 
 	 (MCALIBRATION)->type == uavsar_cal) 
