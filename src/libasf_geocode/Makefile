@@ -17,7 +17,8 @@ SOURCES := geocode_options.c \
            check_parameters.c \
 	   clip.c \
            asf_geocode.c \
-	   geoid.c
+	   geoid.c \
+	   geoid_adjust.c
 
 ###############################################################################
 #
