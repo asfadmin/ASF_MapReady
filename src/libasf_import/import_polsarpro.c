@@ -1045,6 +1045,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     // user wants to terrain correct. Will need to get the metadata anyway
     if (is_ceos) {
       asfPrintStatus("   Ingesting CEOS data ...\n");
+      *p_azimuth_scale *= metaOut->sar->azimuth_look_count;
       import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale,
 		  p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
 		  FALSE, FALSE, -1, -1, TRUE, FALSE);

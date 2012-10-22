@@ -62,6 +62,12 @@ typedef struct {
   double sceneCornerCoord3Lon;        // lon_end_near_range
   double sceneCornerCoord4Lat;        // lat_end_far_range
   double sceneCornerCoord4Lon;        // lon_end_far_range
+
+  // calibration block
+  double offset;                      // constant offset B
+  double *gains_beta;                 // range dependent gain list A (beta)
+  double *gains_gamma;                // range dependent gain list A (gamma)
+  double *gains_sigma;                // range dependent gain list A (sigma)
 } radarsat2_meta;
 
 
