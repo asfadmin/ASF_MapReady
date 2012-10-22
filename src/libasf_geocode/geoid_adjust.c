@@ -130,13 +130,19 @@ int geoid_adjust(const char *input_filename, const char *output_filename)
   FILE *fpOut = FOPEN(output_img, "wb");
   float *buf;
 
-  // mode: 0=slow but accurate, 1=fast but interped
-  int mode = 1;
+  // Two ways we can do this:
+  //   1) call meta_get_latLon at every point
+  //   2) call meta_get_latLon at certain points and interpolate between
+  // We will use the first when we have a lat/lon image, and the second for
+  // everything else.
+  int latlon_image = meta->projection &&
+                     meta->projection->type == LAT_LONG_PSEUDO_PROJECTION;
 
   double avg = 0.0;
   int num=0;
 
-  if (mode==0) {
+  if (latlon_image) {
+    asfPrintStatus("Lat/Lon image, not using mapping interpolation.\n");
     buf = MALLOC(sizeof(float)*ns);
     for (ii=0; ii<nl; ++ii) {
       get_float_line(fpIn, meta, ii, buf);
@@ -156,6 +162,7 @@ int geoid_adjust(const char *input_filename, const char *output_filename)
     }
   }
   else {
+    asfPrintStatus("Not a Lat/Lon image, using mapping interpolation.\n");
     double tol = .0001;
     int size = find_grid_size(meta, 512, .1*tol);
 
