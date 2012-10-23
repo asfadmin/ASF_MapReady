@@ -2394,6 +2394,14 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       strcpy(cfg->terrain_correct->dem, converted_dem);
       free(converted_dem);
     }
+
+    // If the DEM requires Geoid correction, do that now
+    if (cfg->terrain_correct->geoid_adjust) {
+      char *geoid_adjusted = appendToBasename(cfg->terrain_correct->dem, "_ell");
+      geoid_adjust(cfg->terrain_correct->dem, geoid_adjusted);
+      strcpy(cfg->terrain_correct->dem, geoid_adjusted);
+      free(geoid_adjusted);
+    }
     
     // If the Mask is a GeoTIFF, we need to import it, and geocode it.
     if (cfg->terrain_correct->mask &&

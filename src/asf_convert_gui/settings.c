@@ -342,6 +342,7 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *rb_refine_geolocation;
         GtkWidget *mask_checkbutton;
         GtkWidget *interp_dem_holes_checkbutton;
+        GtkWidget *geoid_adjust_checkbutton;
 
         dem_checkbutton = get_widget_checked("dem_checkbutton");
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton), TRUE);
@@ -350,6 +351,8 @@ settings_apply_to_gui(const Settings * s)
         gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
         interp_dem_holes_checkbutton =
             get_widget_checked("interp_dem_holes_checkbutton");
+        geoid_adjust_checkbutton =
+            get_widget_checked("geoid_adjust_checkbutton");
 
         rb_terrcorr =
             get_widget_checked("rb_terrcorr");
@@ -448,6 +451,9 @@ settings_apply_to_gui(const Settings * s)
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(interp_dem_holes_checkbutton),
                 s->interp_dem_holes);
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(geoid_adjust_checkbutton),
+                s->geoid_adjust);
         }
 
 
@@ -833,6 +839,7 @@ settings_get_from_gui()
         }
 
         ret->interp_dem_holes = get_checked("interp_dem_holes_checkbutton");
+        ret->geoid_adjust = get_checked("geoid_adjust_checkbutton");
 
         if (get_checked("mask_checkbutton"))
         {
@@ -1762,6 +1769,7 @@ settings_to_config_string(const Settings *s,
             sprintf(ret, "%sfill value = -1\n", ret);
         }
         sprintf(ret, "%ssmooth dem holes = %d\n", ret, s->interp_dem_holes);
+        sprintf(ret, "%sgeoid adjust = %d\n", ret, s->geoid_adjust);
         sprintf(ret, "%s\n", ret);
     }
 
@@ -2322,6 +2330,7 @@ int apply_settings_from_config_file(char *configFile)
         if(s.do_radiometric)
           s.save_incid_angles = cfg->terrain_correct->save_incid_angles;
         s.interp_dem_holes = cfg->terrain_correct->smooth_dem_holes;
+        s.geoid_adjust = cfg->terrain_correct->geoid_adjust;
     }
 
     // calibration
