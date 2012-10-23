@@ -1324,6 +1324,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   // Otherwise, the quality of the resulting terrain corrected SAR image
   // suffers. We put in a threshold of twice the resolution of the SAR
   // image. The -no-resample option overrides this default behavior.
+  // NOTE that currently do_resample is forced to FALSE, effectively
+  // disabling this behavior.
   if (do_resample &&
       (force_resample || demRes > 2 * sarRes || pixel_size > 0))
   {
