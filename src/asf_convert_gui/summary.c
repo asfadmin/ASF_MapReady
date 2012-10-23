@@ -152,6 +152,9 @@ const char *get_summary_text()
         if (s->interp_dem_holes)
             strcat(text, "\n   Fill DEM Holes: Yes");
 
+        strcat(text, "\n   Geoid Correction: ");
+        strcat(text, s->geoid_adjust ? "Yes" : "No");
+
         if (s->terrcorr_is_checked)
         {
             if (s->no_matching)

@@ -195,6 +195,7 @@ typedef struct
   int save_incid_angles;  // Save a side product containing the image's incidence
                           // angles during radiometric correction
   int smooth_dem_holes;   // If TRUE, try to smooth over holes in the DEM
+  int geoid_adjust;       // If TRUE, DEM values relative to geoid => adjust
   int no_resampling;      // If TRUE, SAR image is not downsampled to match DEM
   int no_matching;        // If TRUE, SAR image and simulated SAR image are
                           // not matched

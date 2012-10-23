@@ -611,6 +611,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->fill_value = 0;
   cfg->terrain_correct->do_radiometric = 0;
   cfg->terrain_correct->smooth_dem_holes = 0;
+  cfg->terrain_correct->geoid_adjust = 0;
   cfg->terrain_correct->no_resampling = 0;
   cfg->terrain_correct->save_terrcorr_dem = 0;
   cfg->terrain_correct->save_terrcorr_layover_mask = 0;
@@ -867,6 +868,8 @@ convert_config *init_fill_convert_config(char *configFile)
           cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
         if (strncmp(test, "smooth dem holes", 16)==0)
           cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
+        if (strncmp(test, "geoid adjust", 12)==0)
+          cfg->terrain_correct->geoid_adjust = read_int(line, "geoid adjust");
         if (strncmp(test, "no resampling", 13)==0)
           cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
         if (strncmp(test, "save terrcorr dem", 17)==0)
@@ -1345,6 +1348,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
       if (strncmp(test, "smooth dem holes", 16)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
+      if (strncmp(test, "geoid adjust", 12)==0)
+        cfg->terrain_correct->geoid_adjust = read_int(line, "geoid adjust");
       if (strncmp(test, "no resampling", 13)==0)
         cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
       if (strncmp(test, "save terrcorr dem", 17)==0)
@@ -2054,6 +2059,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
                   "# in the terrain corrected product.  This option will attempt to replace DEM holes\n"
                   "# with interpolated values.\n\n");
       fprintf(fConfig, "smooth dem holes = %d\n", cfg->terrain_correct->smooth_dem_holes);
+      if (!shortFlag)
+          fprintf(fConfig, "\n# Terrain correction requires that the DEM heights be relative to the Earth\n"
+                  "# ellipsoid, however most DEMs have heights relative to the Earth geoid.  Turn this\n"
+                  "# option on to perform the correction on the DEM values prior to terrain correction.\n\n");
+      fprintf(fConfig, "geoid adjust = %d\n", cfg->terrain_correct->geoid_adjust);
       if (!shortFlag)
           fprintf(fConfig, "\n# If the DEM has a pixel size that is significantly larger (a factor\n"
                   "# of 2) than the SAR image, by default the SAR image is downsampled\n"
