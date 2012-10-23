@@ -230,6 +230,7 @@ typedef struct
   int do_radiometric;
   int save_incid_angles;
   int interp_dem_holes;
+  int geoid_adjust;
   int no_matching;
   double offset_x, offset_y;
 

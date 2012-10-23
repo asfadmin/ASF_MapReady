@@ -141,6 +141,10 @@ int geoid_adjust(const char *input_filename, const char *output_filename)
   double avg = 0.0;
   int num=0;
 
+  asfPrintStatus("Performing geoid correction.\n");
+  asfPrintStatus(" Input file: %s\n", input_filename);
+  asfPrintStatus(" Output file: %s\n", output_filename);
+
   if (latlon_image) {
     asfPrintStatus("Lat/Lon image, not using mapping interpolation.\n");
     buf = MALLOC(sizeof(float)*ns);
@@ -181,7 +185,7 @@ int geoid_adjust(const char *input_filename, const char *output_filename)
       int line_lo = ii;
       int line_hi = ii + size;
 
-      if (ii+size >= ns)
+      if (ii+size >= nl)
         size = nl-ii;
 
       get_float_lines(fpIn, meta, ii, size, buf);
