@@ -1550,7 +1550,7 @@ settings_to_config_string(const Settings *s,
     sprintf(ret, "%spolarimetry = %d\n", ret, polarimetry_on ? 1 : 0);
     sprintf(ret, "%sterrain correction = %d\n", ret,
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
-    if(input_data_format != INPUT_FORMAT_UAVSAR_POLSAR && input_data_format != INPUT_FORMAT_UAVSAR_INSAR)
+    if(input_data_format != INPUT_FORMAT_UAVSAR_INSAR)
       sprintf(ret, "%scalibration = %d\n", ret, s->do_calibrate);
     sprintf(ret, "%sgeocoding = %d\n", ret, s->geocode_is_checked);
     sprintf(ret, "%sexport = %d\n", ret, s->export_is_checked);
