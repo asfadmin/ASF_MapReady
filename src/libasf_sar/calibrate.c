@@ -24,7 +24,9 @@ int asf_calibrate(const char *inFile, const char *outFile,
     outRadiometry += 3;
 
   // This can only work if the image is in some SAR geometry
-  if (metaIn->projection && metaIn->projection->type != SCANSAR_PROJECTION)
+  // Exception: UAVSAR comes in gamma radiometry - dB could be applied to this
+  if (metaIn->projection && metaIn->projection->type != SCANSAR_PROJECTION &&
+      strcmp_case(metaIn->general->sensor, "UAVSAR") != 0)
     asfPrintError("Can't apply calibration factors to map projected images\n"
                   "(Amplitude or Power only)\n");
 
@@ -33,7 +35,15 @@ int asf_calibrate(const char *inFile, const char *outFile,
 		 radiometry2str(inRadiometry), radiometry2str(outRadiometry));
   // FIXME: This function should be able to remap between different
   //        radiometry projections.
-  if (metaIn->general->radiometry != r_AMP)
+  if (metaIn->general->radiometry == r_GAMMA && 
+      strcmp(metaIn->general->sensor, "UAVSAR") == 0) {
+    if (outRadiometry == r_GAMMA_DB)
+      ;
+    else
+      asfPrintError("Currently no radiometry remapping of UAVSAR data "
+		    "supported!\n");
+  }
+  else if (metaIn->general->radiometry != r_AMP)
     asfPrintError("Currently only AMPLITUDE as radiometry is supported!\n");
 
   // No noise removal anymore - so issue a warning

@@ -275,13 +275,18 @@ double meta_incid(meta_parameters *meta,double y,double x)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  assert (meta->projection == NULL
-      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
+  if (strcmp_case(meta->general->sensor, "UAVSAR") == 0)
+    // placeholder for incidence angle information, most likely coming from
+    // a band in the image file
+    return 0.0;
+  else
+    assert (meta->projection == NULL || 
+	    meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
   double sr = meta_get_slant(meta,y,x);
 
-  // Use the incidence angle polynomial if it is available and non-zero.
   if (meta_uses_incid_polynomial(meta)) {
+    // Use the incidence angle polynomial if it is available and non-zero.
     double R = sr/1000.;
     double R2=R*R;
     return

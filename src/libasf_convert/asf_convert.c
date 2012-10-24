@@ -1371,8 +1371,12 @@ static int check_config(const char *configFileName, convert_config *cfg)
     if (cfg->general->calibration &&
         strncmp_case(cfg->import->format, "UAVSAR", 6) == 0)
     {
-        asfPrintStatus("UAVSAR data is already calibrated as GAMMA.\n");
-        cfg->general->calibration = FALSE;
+      if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") != 0 &&
+	  strcmp_case(cfg->calibrate->radiometry, "GAMMA_DB") != 0)
+	asfPrintError("Radiometry (%s) is currently not supported for UAVSAR "
+		      "data!\n", cfg->calibrate->radiometry);
+      else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") == 0)
+	cfg->general->calibration = FALSE;
     }
 
     // Look up table file existence check
