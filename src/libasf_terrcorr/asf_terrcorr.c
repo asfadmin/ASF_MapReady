@@ -1135,6 +1135,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   //       if_coreg_fails_use_zero_offsets);
   //printf("save_ground_dem: %d\n", save_ground_dem);
   //printf("save_incid_angles: %d\n", save_incid_angles);
+  //printf("use_nearest_neighbor: %d\n", use_nearest_neighbor);
 
   // Which DEM should we use during terrain correction -- the original
   // ground range DEM (new method), or the backconverted one (old method)?
@@ -1146,6 +1147,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
     which_dem = BACKCONVERTED_GR_DEM;
 
   asfPrintStatus("Starting terrain correction pre-processing.\n");
+  asfPrintStatus("Interplation method: %s\n",
+                 use_nearest_neighbor ? "Nearest Neighbor" : "Bilinear");
 
   // strip any extension given to us in the input/output files
   char *sarFile = stripExt(sarFile_in);
