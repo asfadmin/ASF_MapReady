@@ -635,7 +635,8 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
       r2->a_sigma[ii] = radarsat2->gains_sigma[ii];
     }
     r2->b = radarsat2->offset;
-    if (meta->general->image_data_type == COMPLEX_IMAGE)
+    if (meta->general->image_data_type == COMPLEX_IMAGE ||
+	meta->general->image_data_type == POLARIMETRIC_IMAGE)
       r2->slc = TRUE;
     else
       r2->slc = FALSE;

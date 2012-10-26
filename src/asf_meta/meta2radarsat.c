@@ -146,6 +146,10 @@ radarsat2_meta *read_radarsat2_meta(const char *dataFile)
 
   if (!fileExists(dataFile))
     asfPrintError("Metadata file (%s) does not exist!\n", dataFile);
+  char *path = (char *) MALLOC(sizeof(char)*512);
+  char *file = (char *) MALLOC(sizeof(char)*128);
+  split_dir_and_file(dataFile, path, file);
+
   xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
   if (!doc)
     asfPrintError("Could not parse file %s\n", dataFile);
@@ -447,7 +451,10 @@ radarsat2_meta *read_radarsat2_meta(const char *dataFile)
 	    ii);
     strcpy(attribute, xml_get_string_attribute(doc, str));
     sprintf(str, "product.imageAttributes.lookupTable[%d]", ii);
-    strcpy(fileName, xml_get_string_value(doc, str));
+    if (strlen(path) > 0)
+      sprintf(fileName, "%s%s", path, xml_get_string_value(doc, str));
+    else
+      strcpy(fileName, xml_get_string_value(doc, str));
     if (strcmp_case(attribute, "Beta Nought") == 0)
       radarsat2->gains_beta = read_radarsat2_lut(fileName, sample_count);
     else if (strcmp_case(attribute, "Sigma Nought") == 0)
@@ -549,7 +556,12 @@ meta_parameters* radarsat2meta(radarsat2_meta *radarsat2)
   // FIXME: chirp_rate ???
   meta->sar->pulse_duration = radarsat2->pulseLength;
   meta->sar->range_sampling_rate = radarsat2->adcSamplingRate;
-  strcpy(meta->sar->polarization, radarsat2->polarizations);
+  if (strcmp_case(radarsat2->polarizations, "HH,VV,HV,VH") == 0) {
+    meta->general->image_data_type = POLARIMETRIC_IMAGE;
+    strcpy(meta->sar->polarization, "quad-pol");
+  }
+  else
+    strcpy(meta->sar->polarization, radarsat2->polarizations);
   if (strcmp_case(radarsat2->dataType, "COMPLEX") == 0)
     meta->sar->multilook = FALSE;
   // FIXME: pitch, roll, yaw ???

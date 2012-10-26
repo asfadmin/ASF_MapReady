@@ -242,6 +242,13 @@ int isRadarsat2(char *dataFile, char **error)
   // Let's first check for an .xml extension
   char *ext = findExt(dataFile);
 
+  // Append extension in case we don't find it
+  if (ext == NULL) {
+    strcat(dataFile, ".xml");
+    ext = (char *) MALLOC(sizeof(char)*10);
+    strcpy(ext, ".xml");
+  }
+
   // If it has the correct extension, investigate it further
   // Might sound a little harsh but avoids some XML parser warning otherwise.
   if (ext && strcmp_case(ext, ".xml") == 0) {
