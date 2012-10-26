@@ -19,6 +19,8 @@
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_CENTER</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <signal name="destroy" handler="on_asf_convert_destroy" last_modification_time="Fri, 06 Aug 2004 02:44:12 GMT"/>
 
   <child>
@@ -65,6 +67,7 @@
 			      <property name="tooltip" translatable="yes">Show the settings section</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			      <signal name="clicked" handler="on_settings_button_collapsed_clicked" last_modification_time="Tue, 06 Nov 2007 04:11:25 GMT"/>
 
 			      <child>
@@ -99,6 +102,10 @@
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -138,6 +145,7 @@
 				      <property name="tooltip" translatable="yes">Hide the settings section</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="clicked" handler="on_settings_button_expanded_clicked" last_modification_time="Tue, 06 Nov 2007 04:13:49 GMT"/>
 
 				      <child>
@@ -202,6 +210,10 @@
 					      <property name="yalign">0.519999980927</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="padding">12</property>
@@ -227,6 +239,7 @@
 						  <property name="label" translatable="yes">Export to a Graphics File Format</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -251,6 +264,7 @@
 						  <property name="label" translatable="yes">Geocode to a Map Projection</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -275,6 +289,7 @@
 						  <property name="label" translatable="yes">Terrain Correct (with Digital Elevation Model)</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -300,6 +315,7 @@
 						  <property name="label" translatable="yes">Polarimetry (only for quad-pol SLC data)</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">False</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -324,6 +340,7 @@
 						  <property name="label" translatable="yes">Run External Program</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -349,6 +366,7 @@
 						  <property name="label" translatable="yes">Import Data (required...)</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">False</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -384,6 +402,10 @@
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="padding">0</property>
@@ -429,6 +451,7 @@
 							  <property name="label" translatable="yes">Keep no intermediate files</property>
 							  <property name="use_underline">True</property>
 							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
 							  <property name="active">False</property>
 							  <property name="inconsistent">False</property>
 							  <property name="draw_indicator">True</property>
@@ -451,6 +474,7 @@
 							  <property name="label" translatable="yes">Temporarily keep intermediate files</property>
 							  <property name="use_underline">True</property>
 							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
 							  <property name="active">True</property>
 							  <property name="inconsistent">False</property>
 							  <property name="draw_indicator">True</property>
@@ -474,6 +498,7 @@
 							  <property name="label" translatable="yes">Keep intermediates</property>
 							  <property name="use_underline">True</property>
 							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
 							  <property name="active">False</property>
 							  <property name="inconsistent">False</property>
 							  <property name="draw_indicator">True</property>
@@ -519,6 +544,10 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -535,6 +564,7 @@
 						  <property name="label" translatable="yes">Show full path names</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -573,6 +603,10 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -590,6 +624,7 @@
 						  <property name="label" translatable="yes">Generate and show thumbnails</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -638,6 +673,10 @@
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -657,6 +696,7 @@
 					      <property name="label" translatable="yes"> About _MapReady... </property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_about_button_clicked" last_modification_time="Wed, 14 Nov 2007 05:40:21 GMT"/>
 					      <accelerator key="m" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
 					    </widget>
@@ -727,6 +767,10 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="type">tab</property>
@@ -780,6 +824,10 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
+							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							  <property name="width_chars">-1</property>
+							  <property name="single_line_mode">False</property>
+							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">2</property>
@@ -858,6 +906,7 @@
 						      <property name="tooltip" translatable="yes">Output calibrated image in decibels. This can only be used if Sigma, Beta, or Gamma radiometry is selected from the drop-down list.</property>
 						      <property name="can_focus">True</property>
 						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
 						      <property name="active">False</property>
 						      <property name="inconsistent">False</property>
 						      <property name="draw_indicator">True</property>
@@ -910,6 +959,10 @@
 								  <property name="yalign">0.5</property>
 								  <property name="xpad">0</property>
 								  <property name="ypad">0</property>
+								  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+								  <property name="width_chars">-1</property>
+								  <property name="single_line_mode">False</property>
+								  <property name="angle">0</property>
 								</widget>
 								<packing>
 								  <property name="padding">0</property>
@@ -945,6 +998,7 @@
 						  <property name="label" translatable="yes">C-band interferometric</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -967,6 +1021,7 @@
 						  <property name="label" translatable="yes">C-band polarimetric</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -989,6 +1044,7 @@
 						  <property name="label" translatable="yes">L-band polarimetric</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -1011,6 +1067,7 @@
 						  <property name="label" translatable="yes">P-band polarimetric</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -1043,6 +1100,7 @@
 						      <property name="label" translatable="yes">Latitude restriction (STF only):</property>
 						      <property name="use_underline">True</property>
 						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
 						      <property name="active">False</property>
 						      <property name="inconsistent">False</property>
 						      <property name="draw_indicator">True</property>
@@ -1071,6 +1129,10 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
+						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						      <property name="width_chars">-1</property>
+						      <property name="single_line_mode">False</property>
+						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="left_attach">1</property>
@@ -1092,6 +1154,7 @@
 						      <property name="visibility">True</property>
 						      <property name="max_length">0</property>
 						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
 						      <property name="invisible_char">*</property>
 						      <property name="activates_default">False</property>
 						      <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:31:10 GMT"/>
@@ -1120,6 +1183,10 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
+						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						      <property name="width_chars">-1</property>
+						      <property name="single_line_mode">False</property>
+						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="left_attach">1</property>
@@ -1141,6 +1208,7 @@
 						      <property name="visibility">True</property>
 						      <property name="max_length">0</property>
 						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
 						      <property name="invisible_char">*</property>
 						      <property name="activates_default">False</property>
 						      <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:31:25 GMT"/>
@@ -1168,6 +1236,10 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
+						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						      <property name="width_chars">-1</property>
+						      <property name="single_line_mode">False</property>
+						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="left_attach">0</property>
@@ -1197,6 +1269,7 @@
 						  <property name="label" translatable="yes">Apply ERS2 Gain Correction to ERS2 data</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -1224,6 +1297,10 @@
 						  <property name="yalign">1</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="left_attach">1</property>
@@ -1242,6 +1319,7 @@
 						  <property name="label" translatable="yes">Apply Azimuth Pixel Size Metadata Fix</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -1263,6 +1341,7 @@
 						  <property name="label" translatable="yes">Process to Level 1</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -1291,6 +1370,10 @@
 						  <property name="yalign">0.019999999553</property>
 						  <property name="xpad">2</property>
 						  <property name="ypad">2</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="left_attach">0</property>
@@ -1309,6 +1392,7 @@
 						  <property name="label" translatable="yes">L-band interferometric</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -1358,6 +1442,10 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="type">tab</property>
@@ -1401,6 +1489,10 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">2</property>
 						      <property name="ypad">2</property>
+						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						      <property name="width_chars">-1</property>
+						      <property name="single_line_mode">False</property>
+						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -1450,6 +1542,10 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">4</property>
 						      <property name="ypad">4</property>
+						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						      <property name="width_chars">-1</property>
+						      <property name="single_line_mode">False</property>
+						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">12</property>
@@ -1525,6 +1621,10 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="type">tab</property>
@@ -1559,6 +1659,7 @@
 						  <property name="label" translatable="yes">Perform a Polarimetric Decomposition</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -1590,6 +1691,10 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
+						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						      <property name="width_chars">-1</property>
+						      <property name="single_line_mode">False</property>
+						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -1618,6 +1723,7 @@
 							      <property name="label" translatable="yes">Pauli Decomposition  </property>
 							      <property name="use_underline">True</property>
 							      <property name="relief">GTK_RELIEF_NORMAL</property>
+							      <property name="focus_on_click">True</property>
 							      <property name="active">False</property>
 							      <property name="inconsistent">False</property>
 							      <property name="draw_indicator">True</property>
@@ -1643,6 +1749,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -1672,6 +1782,7 @@
 							      <property name="label" translatable="yes">Sinclair Decomposition  </property>
 							      <property name="use_underline">True</property>
 							      <property name="relief">GTK_RELIEF_NORMAL</property>
+							      <property name="focus_on_click">True</property>
 							      <property name="active">False</property>
 							      <property name="inconsistent">False</property>
 							      <property name="draw_indicator">True</property>
@@ -1698,6 +1809,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -1721,6 +1836,7 @@
 							  <property name="label" translatable="yes">Cloude-Pottier (classification with 8 categories)</property>
 							  <property name="use_underline">True</property>
 							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
 							  <property name="active">False</property>
 							  <property name="inconsistent">False</property>
 							  <property name="draw_indicator">True</property>
@@ -1742,6 +1858,7 @@
 							  <property name="label" translatable="yes">Cloude-Pottier (classification with 16 categories)</property>
 							  <property name="use_underline">True</property>
 							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
 							  <property name="active">False</property>
 							  <property name="inconsistent">False</property>
 							  <property name="draw_indicator">True</property>
@@ -1763,6 +1880,7 @@
 							  <property name="label" translatable="yes">Entropy, Anisotropy, Alpha (C-P without classification)</property>
 							  <property name="use_underline">True</property>
 							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
 							  <property name="active">False</property>
 							  <property name="inconsistent">False</property>
 							  <property name="draw_indicator">True</property>
@@ -1790,6 +1908,7 @@
 							      <property name="label" translatable="yes">Freeman-Durden  </property>
 							      <property name="use_underline">True</property>
 							      <property name="relief">GTK_RELIEF_NORMAL</property>
+							      <property name="focus_on_click">True</property>
 							      <property name="active">False</property>
 							      <property name="inconsistent">False</property>
 							      <property name="draw_indicator">True</property>
@@ -1816,6 +1935,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -1858,6 +1981,10 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -1874,6 +2001,7 @@
 						  <property name="label" translatable="yes">Perform Faraday Rotation Correction</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -1905,6 +2033,10 @@
 						      <property name="yalign">0.5</property>
 						      <property name="xpad">0</property>
 						      <property name="ypad">0</property>
+						      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						      <property name="width_chars">-1</property>
+						      <property name="single_line_mode">False</property>
+						      <property name="angle">0</property>
 						    </widget>
 						    <packing>
 						      <property name="padding">0</property>
@@ -1927,6 +2059,7 @@
 							  <property name="label" translatable="yes">Use local average rotation angles</property>
 							  <property name="use_underline">True</property>
 							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
 							  <property name="active">False</property>
 							  <property name="inconsistent">False</property>
 							  <property name="draw_indicator">True</property>
@@ -1947,6 +2080,7 @@
 							  <property name="label" translatable="yes">Use global average rotation angle</property>
 							  <property name="use_underline">True</property>
 							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
 							  <property name="active">False</property>
 							  <property name="inconsistent">False</property>
 							  <property name="draw_indicator">True</property>
@@ -1979,6 +2113,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -1997,6 +2135,7 @@
 							      <property name="visibility">True</property>
 							      <property name="max_length">5</property>
 							      <property name="text" translatable="yes"></property>
+							      <property name="has_frame">True</property>
 							      <property name="invisible_char">*</property>
 							      <property name="activates_default">False</property>
 							      <signal name="changed" handler="update_summary" last_modification_time="Tue, 09 Sep 2008 02:22:18 GMT"/>
@@ -2021,6 +2160,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -2083,6 +2226,10 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="type">tab</property>
@@ -2151,6 +2298,10 @@
 								      <property name="yalign">0.5</property>
 								      <property name="xpad">0</property>
 								      <property name="ypad">0</property>
+								      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+								      <property name="width_chars">-1</property>
+								      <property name="single_line_mode">False</property>
+								      <property name="angle">0</property>
 								    </widget>
 								    <packing>
 								      <property name="padding">2</property>
@@ -2169,6 +2320,7 @@
 								      <property name="visibility">True</property>
 								      <property name="max_length">0</property>
 								      <property name="text" translatable="yes"></property>
+								      <property name="has_frame">True</property>
 								      <property name="invisible_char">*</property>
 								      <property name="activates_default">False</property>
 								      <signal name="changed" handler="update_summary" last_modification_time="Thu, 27 Apr 2006 10:03:07 GMT"/>
@@ -2185,6 +2337,7 @@
 								      <property name="visible">True</property>
 								      <property name="can_focus">True</property>
 								      <property name="relief">GTK_RELIEF_NORMAL</property>
+								      <property name="focus_on_click">True</property>
 								      <signal name="clicked" handler="on_dem_browse_button_clicked" last_modification_time="Thu, 27 Apr 2006 09:52:03 GMT"/>
 
 								      <child>
@@ -2218,6 +2371,10 @@
 										  <property name="yalign">0.5</property>
 										  <property name="xpad">0</property>
 										  <property name="ypad">0</property>
+										  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+										  <property name="width_chars">-1</property>
+										  <property name="single_line_mode">False</property>
+										  <property name="angle">0</property>
 										</widget>
 										<packing>
 										  <property name="padding">0</property>
@@ -2257,6 +2414,7 @@
 							      <property name="tooltip" translatable="yes">Look at the DEM with ASF View</property>
 							      <property name="can_focus">True</property>
 							      <property name="relief">GTK_RELIEF_NORMAL</property>
+							      <property name="focus_on_click">True</property>
 							      <signal name="clicked" handler="on_view_dem_button_clicked" last_modification_time="Sat, 25 Oct 2008 02:40:49 GMT"/>
 
 							      <child>
@@ -2304,6 +2462,7 @@
 								  <property name="label" translatable="yes">Fill DEM holes with interpolated values</property>
 								  <property name="use_underline">True</property>
 								  <property name="relief">GTK_RELIEF_NORMAL</property>
+								  <property name="focus_on_click">True</property>
 								  <property name="active">False</property>
 								  <property name="inconsistent">False</property>
 								  <property name="draw_indicator">True</property>
@@ -2324,6 +2483,7 @@
 								  <property name="label" translatable="yes">Apply geoid correction</property>
 								  <property name="use_underline">True</property>
 								  <property name="relief">GTK_RELIEF_NORMAL</property>
+								  <property name="focus_on_click">True</property>
 								  <property name="active">True</property>
 								  <property name="inconsistent">False</property>
 								  <property name="draw_indicator">True</property>
@@ -2351,6 +2511,7 @@
 							      <property name="label" translatable="yes">Refine Geolocation Only</property>
 							      <property name="use_underline">True</property>
 							      <property name="relief">GTK_RELIEF_NORMAL</property>
+							      <property name="focus_on_click">True</property>
 							      <property name="active">False</property>
 							      <property name="inconsistent">False</property>
 							      <property name="draw_indicator">True</property>
@@ -2371,6 +2532,7 @@
 							      <property name="label" translatable="yes">Apply Terrain Correction</property>
 							      <property name="use_underline">True</property>
 							      <property name="relief">GTK_RELIEF_NORMAL</property>
+							      <property name="focus_on_click">True</property>
 							      <property name="active">True</property>
 							      <property name="inconsistent">False</property>
 							      <property name="draw_indicator">True</property>
@@ -2410,6 +2572,7 @@
 									  <property name="label" translatable="yes">Apply a user mask</property>
 									  <property name="use_underline">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <property name="active">False</property>
 									  <property name="inconsistent">False</property>
 									  <property name="draw_indicator">True</property>
@@ -2435,6 +2598,10 @@
 									  <property name="yalign">0.5</property>
 									  <property name="xpad">0</property>
 									  <property name="ypad">0</property>
+									  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+									  <property name="width_chars">-1</property>
+									  <property name="single_line_mode">False</property>
+									  <property name="angle">0</property>
 									</widget>
 									<packing>
 									  <property name="padding">0</property>
@@ -2451,6 +2618,7 @@
 									  <property name="label" translatable="yes">Automatically Mask   </property>
 									  <property name="use_underline">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <property name="active">False</property>
 									  <property name="inconsistent">False</property>
 									  <property name="draw_indicator">True</property>
@@ -2471,6 +2639,7 @@
 									  <property name="label" translatable="yes">Mask from File</property>
 									  <property name="use_underline">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <property name="active">False</property>
 									  <property name="inconsistent">False</property>
 									  <property name="draw_indicator">True</property>
@@ -2511,6 +2680,10 @@
 									  <property name="yalign">0.5</property>
 									  <property name="xpad">0</property>
 									  <property name="ypad">0</property>
+									  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+									  <property name="width_chars">-1</property>
+									  <property name="single_line_mode">False</property>
+									  <property name="angle">0</property>
 									</widget>
 									<packing>
 									  <property name="padding">0</property>
@@ -2529,6 +2702,7 @@
 									  <property name="visibility">True</property>
 									  <property name="max_length">0</property>
 									  <property name="text" translatable="yes"></property>
+									  <property name="has_frame">True</property>
 									  <property name="invisible_char">*</property>
 									  <property name="activates_default">False</property>
 									  <signal name="changed" handler="update_summary" last_modification_time="Thu, 27 Apr 2006 10:03:07 GMT"/>
@@ -2545,6 +2719,7 @@
 									  <property name="visible">True</property>
 									  <property name="can_focus">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <signal name="clicked" handler="on_mask_browse_button_clicked" last_modification_time="Tue, 19 Sep 2006 06:55:11 GMT"/>
 
 									  <child>
@@ -2578,6 +2753,10 @@
 										      <property name="yalign">0.5</property>
 										      <property name="xpad">0</property>
 										      <property name="ypad">0</property>
+										      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+										      <property name="width_chars">-1</property>
+										      <property name="single_line_mode">False</property>
+										      <property name="angle">0</property>
 										    </widget>
 										    <packing>
 										      <property name="padding">0</property>
@@ -2618,6 +2797,7 @@
 									  <property name="label" translatable="yes">Perform co-registration (FFT Matching)</property>
 									  <property name="use_underline">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <property name="active">True</property>
 									  <property name="inconsistent">False</property>
 									  <property name="draw_indicator">True</property>
@@ -2655,6 +2835,10 @@
 										  <property name="yalign">0.5</property>
 										  <property name="xpad">0</property>
 										  <property name="ypad">0</property>
+										  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+										  <property name="width_chars">-1</property>
+										  <property name="single_line_mode">False</property>
+										  <property name="angle">0</property>
 										</widget>
 										<packing>
 										  <property name="padding">0</property>
@@ -2673,6 +2857,7 @@
 										  <property name="visibility">True</property>
 										  <property name="max_length">0</property>
 										  <property name="text" translatable="yes">0</property>
+										  <property name="has_frame">True</property>
 										  <property name="invisible_char">●</property>
 										  <property name="activates_default">False</property>
 										  <signal name="changed" handler="update_summary" last_modification_time="Thu, 26 Feb 2009 11:13:27 GMT"/>
@@ -2697,6 +2882,10 @@
 										  <property name="yalign">0.5</property>
 										  <property name="xpad">0</property>
 										  <property name="ypad">0</property>
+										  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+										  <property name="width_chars">-1</property>
+										  <property name="single_line_mode">False</property>
+										  <property name="angle">0</property>
 										</widget>
 										<packing>
 										  <property name="padding">0</property>
@@ -2715,6 +2904,7 @@
 										  <property name="visibility">True</property>
 										  <property name="max_length">0</property>
 										  <property name="text" translatable="yes">0</property>
+										  <property name="has_frame">True</property>
 										  <property name="invisible_char">●</property>
 										  <property name="activates_default">False</property>
 										  <signal name="changed" handler="update_summary" last_modification_time="Thu, 26 Feb 2009 11:13:41 GMT"/>
@@ -2739,6 +2929,10 @@
 										  <property name="yalign">0.5</property>
 										  <property name="xpad">0</property>
 										  <property name="ypad">0</property>
+										  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+										  <property name="width_chars">-1</property>
+										  <property name="single_line_mode">False</property>
+										  <property name="angle">0</property>
 										</widget>
 										<packing>
 										  <property name="padding">0</property>
@@ -2781,6 +2975,7 @@
 									  <property name="label" translatable="yes">Specify Pixel Size:  </property>
 									  <property name="use_underline">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <property name="active">False</property>
 									  <property name="inconsistent">False</property>
 									  <property name="draw_indicator">True</property>
@@ -2815,6 +3010,7 @@
 										  <property name="visibility">True</property>
 										  <property name="max_length">8</property>
 										  <property name="text" translatable="yes"></property>
+										  <property name="has_frame">True</property>
 										  <property name="invisible_char">*</property>
 										  <property name="activates_default">False</property>
 										  <signal name="changed" handler="update_summary" last_modification_time="Thu, 09 Mar 2006 03:48:51 GMT"/>
@@ -2839,6 +3035,10 @@
 										  <property name="yalign">0.5</property>
 										  <property name="xpad">0</property>
 										  <property name="ypad">0</property>
+										  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+										  <property name="width_chars">-1</property>
+										  <property name="single_line_mode">False</property>
+										  <property name="angle">0</property>
 										</widget>
 										<packing>
 										  <property name="padding">0</property>
@@ -2876,6 +3076,7 @@
 								      <property name="label" translatable="yes">Also apply radiometric Terrain Correction</property>
 								      <property name="use_underline">True</property>
 								      <property name="relief">GTK_RELIEF_NORMAL</property>
+								      <property name="focus_on_click">True</property>
 								      <property name="active">False</property>
 								      <property name="inconsistent">False</property>
 								      <property name="draw_indicator">True</property>
@@ -2896,6 +3097,7 @@
 								      <property name="label" translatable="yes">Save Incidence Angles</property>
 								      <property name="use_underline">True</property>
 								      <property name="relief">GTK_RELIEF_NORMAL</property>
+								      <property name="focus_on_click">True</property>
 								      <property name="active">False</property>
 								      <property name="inconsistent">False</property>
 								      <property name="draw_indicator">True</property>
@@ -2916,6 +3118,7 @@
 								      <property name="label" translatable="yes">Interpolate Layover/Shadow Regions</property>
 								      <property name="use_underline">True</property>
 								      <property name="relief">GTK_RELIEF_NORMAL</property>
+								      <property name="focus_on_click">True</property>
 								      <property name="active">True</property>
 								      <property name="inconsistent">False</property>
 								      <property name="draw_indicator">True</property>
@@ -2936,6 +3139,7 @@
 								      <property name="label" translatable="yes">Save Layover/Shadow Mask</property>
 								      <property name="use_underline">True</property>
 								      <property name="relief">GTK_RELIEF_NORMAL</property>
+								      <property name="focus_on_click">True</property>
 								      <property name="active">False</property>
 								      <property name="inconsistent">False</property>
 								      <property name="draw_indicator">True</property>
@@ -2956,6 +3160,7 @@
 								      <property name="label" translatable="yes">Save Clipped DEM</property>
 								      <property name="use_underline">True</property>
 								      <property name="relief">GTK_RELIEF_NORMAL</property>
+								      <property name="focus_on_click">True</property>
 								      <property name="active">False</property>
 								      <property name="inconsistent">False</property>
 								      <property name="draw_indicator">True</property>
@@ -3036,6 +3241,10 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="type">tab</property>
@@ -3075,6 +3284,10 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -3170,6 +3383,10 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -3264,6 +3481,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="left_attach">0</property>
@@ -3289,6 +3510,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="left_attach">0</property>
@@ -3314,6 +3539,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="left_attach">0</property>
@@ -3339,6 +3568,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="left_attach">0</property>
@@ -3364,6 +3597,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="left_attach">0</property>
@@ -3389,6 +3626,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="left_attach">0</property>
@@ -3409,6 +3650,7 @@
 							      <property name="visibility">True</property>
 							      <property name="max_length">0</property>
 							      <property name="text" translatable="yes"></property>
+							      <property name="has_frame">True</property>
 							      <property name="invisible_char">*</property>
 							      <property name="activates_default">False</property>
 							      <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:25:43 GMT"/>
@@ -3432,6 +3674,7 @@
 							      <property name="visibility">True</property>
 							      <property name="max_length">0</property>
 							      <property name="text" translatable="yes"></property>
+							      <property name="has_frame">True</property>
 							      <property name="invisible_char">*</property>
 							      <property name="activates_default">False</property>
 							      <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:27:22 GMT"/>
@@ -3455,6 +3698,7 @@
 							      <property name="visibility">True</property>
 							      <property name="max_length">0</property>
 							      <property name="text" translatable="yes"></property>
+							      <property name="has_frame">True</property>
 							      <property name="invisible_char">*</property>
 							      <property name="activates_default">False</property>
 							      <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:27:42 GMT"/>
@@ -3478,6 +3722,7 @@
 							      <property name="visibility">True</property>
 							      <property name="max_length">0</property>
 							      <property name="text" translatable="yes"></property>
+							      <property name="has_frame">True</property>
 							      <property name="invisible_char">*</property>
 							      <property name="activates_default">False</property>
 							      <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:27:59 GMT"/>
@@ -3501,6 +3746,7 @@
 							      <property name="visibility">True</property>
 							      <property name="max_length">0</property>
 							      <property name="text" translatable="yes"></property>
+							      <property name="has_frame">True</property>
 							      <property name="invisible_char">*</property>
 							      <property name="activates_default">False</property>
 							      <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:28:11 GMT"/>
@@ -3524,6 +3770,7 @@
 							      <property name="visibility">True</property>
 							      <property name="max_length">0</property>
 							      <property name="text" translatable="yes"></property>
+							      <property name="has_frame">True</property>
 							      <property name="invisible_char">*</property>
 							      <property name="activates_default">False</property>
 							      <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:28:35 GMT"/>
@@ -3570,6 +3817,10 @@
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="left_attach">0</property>
@@ -3591,6 +3842,7 @@
 							      <property name="visibility">True</property>
 							      <property name="max_length">0</property>
 							      <property name="text" translatable="yes"></property>
+							      <property name="has_frame">True</property>
 							      <property name="invisible_char">*</property>
 							      <property name="activates_default">False</property>
 							      <signal name="changed" handler="update_summary" last_modification_time="Fri, 21 Jan 2005 04:04:36 GMT"/>
@@ -3627,6 +3879,7 @@
 						      <property name="label" translatable="yes">Ignore projection errors</property>
 						      <property name="use_underline">True</property>
 						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
 						      <property name="active">False</property>
 						      <property name="inconsistent">False</property>
 						      <property name="draw_indicator">True</property>
@@ -3660,6 +3913,7 @@
 						      <property name="label" translatable="yes">Specify Height</property>
 						      <property name="use_underline">True</property>
 						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
 						      <property name="active">False</property>
 						      <property name="inconsistent">False</property>
 						      <property name="draw_indicator">True</property>
@@ -3692,6 +3946,10 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
+							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							  <property name="width_chars">-1</property>
+							  <property name="single_line_mode">False</property>
+							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -3710,6 +3968,7 @@
 							  <property name="visibility">True</property>
 							  <property name="max_length">12</property>
 							  <property name="text" translatable="yes"></property>
+							  <property name="has_frame">True</property>
 							  <property name="invisible_char">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Thu, 04 Nov 2004 08:28:50 GMT"/>
@@ -3734,6 +3993,10 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
+							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							  <property name="width_chars">-1</property>
+							  <property name="single_line_mode">False</property>
+							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -3757,6 +4020,7 @@
 						      <property name="label" translatable="yes">Specify Pixel Size</property>
 						      <property name="use_underline">True</property>
 						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
 						      <property name="active">False</property>
 						      <property name="inconsistent">False</property>
 						      <property name="draw_indicator">True</property>
@@ -3789,6 +4053,10 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
+							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							  <property name="width_chars">-1</property>
+							  <property name="single_line_mode">False</property>
+							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -3807,6 +4075,7 @@
 							  <property name="visibility">True</property>
 							  <property name="max_length">0</property>
 							  <property name="text" translatable="yes"></property>
+							  <property name="has_frame">True</property>
 							  <property name="invisible_char">*</property>
 							  <property name="activates_default">False</property>
 							  <signal name="changed" handler="update_summary" last_modification_time="Thu, 09 Mar 2006 03:48:51 GMT"/>
@@ -3831,6 +4100,10 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
+							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							  <property name="width_chars">-1</property>
+							  <property name="single_line_mode">False</property>
+							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -3866,6 +4139,10 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
+							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							  <property name="width_chars">-1</property>
+							  <property name="single_line_mode">False</property>
+							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -3983,6 +4260,10 @@
 							  <property name="yalign">0.5</property>
 							  <property name="xpad">0</property>
 							  <property name="ypad">0</property>
+							  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							  <property name="width_chars">-1</property>
+							  <property name="single_line_mode">False</property>
+							  <property name="angle">0</property>
 							</widget>
 							<packing>
 							  <property name="padding">0</property>
@@ -4051,6 +4332,7 @@
 						      <property name="visibility">True</property>
 						      <property name="max_length">0</property>
 						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
 						      <property name="invisible_char">●</property>
 						      <property name="activates_default">False</property>
 						    </widget>
@@ -4101,6 +4383,10 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="type">tab</property>
@@ -4137,6 +4423,10 @@
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="padding">4</property>
@@ -4233,6 +4523,7 @@
 					  <property name="label" translatable="yes">Output data in byte format (instead of floating point)</property>
 					  <property name="use_underline">True</property>
 					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
@@ -4264,6 +4555,10 @@
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="padding">0</property>
@@ -4339,6 +4634,7 @@
 					  <property name="label" translatable="yes">Export All Bands as Separate Images</property>
 					  <property name="use_underline">True</property>
 					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
@@ -4358,6 +4654,7 @@
 					  <property name="label" translatable="yes">Export RGB Image according to Polarimetric selection</property>
 					  <property name="use_underline">True</property>
 					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
@@ -4379,6 +4676,7 @@
 					  <property name="label" translatable="yes">Export Multiple Bands in a Single RGB Image</property>
 					  <property name="use_underline">True</property>
 					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
@@ -4441,6 +4739,10 @@
 								  <property name="yalign">0.5</property>
 								  <property name="xpad">0</property>
 								  <property name="ypad">0</property>
+								  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+								  <property name="width_chars">-1</property>
+								  <property name="single_line_mode">False</property>
+								  <property name="angle">0</property>
 								</widget>
 								<packing>
 								  <property name="padding">0</property>
@@ -4469,6 +4771,7 @@
 									  <property name="label" translatable="yes">User Defined          </property>
 									  <property name="use_underline">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <property name="active">True</property>
 									  <property name="inconsistent">False</property>
 									  <property name="draw_indicator">True</property>
@@ -4490,6 +4793,7 @@
 									  <property name="label" translatable="yes">True Color</property>
 									  <property name="use_underline">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <property name="active">False</property>
 									  <property name="inconsistent">False</property>
 									  <property name="draw_indicator">True</property>
@@ -4512,6 +4816,7 @@
 									  <property name="label" translatable="yes">False Color</property>
 									  <property name="use_underline">True</property>
 									  <property name="relief">GTK_RELIEF_NORMAL</property>
+									  <property name="focus_on_click">True</property>
 									  <property name="active">False</property>
 									  <property name="inconsistent">False</property>
 									  <property name="draw_indicator">True</property>
@@ -4565,6 +4870,10 @@
 								  <property name="yalign">0.5</property>
 								  <property name="xpad">0</property>
 								  <property name="ypad">0</property>
+								  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+								  <property name="width_chars">-1</property>
+								  <property name="single_line_mode">False</property>
+								  <property name="angle">0</property>
 								</widget>
 								<packing>
 								  <property name="padding">0</property>
@@ -4595,6 +4904,10 @@
 								      <property name="yalign">0.5</property>
 								      <property name="xpad">0</property>
 								      <property name="ypad">0</property>
+								      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+								      <property name="width_chars">-1</property>
+								      <property name="single_line_mode">False</property>
+								      <property name="angle">0</property>
 								    </widget>
 								    <packing>
 								      <property name="left_attach">0</property>
@@ -4619,6 +4932,10 @@
 								      <property name="yalign">0.5</property>
 								      <property name="xpad">0</property>
 								      <property name="ypad">0</property>
+								      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+								      <property name="width_chars">-1</property>
+								      <property name="single_line_mode">False</property>
+								      <property name="angle">0</property>
 								    </widget>
 								    <packing>
 								      <property name="left_attach">0</property>
@@ -4643,6 +4960,10 @@
 								      <property name="yalign">0.5</property>
 								      <property name="xpad">0</property>
 								      <property name="ypad">0</property>
+								      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+								      <property name="width_chars">-1</property>
+								      <property name="single_line_mode">False</property>
+								      <property name="angle">0</property>
 								    </widget>
 								    <packing>
 								      <property name="left_attach">0</property>
@@ -4659,6 +4980,9 @@
 								      <property name="width_request">100</property>
 								      <property name="visible">True</property>
 								      <property name="items" translatable="yes">-</property>
+								      <property name="add_tearoffs">False</property>
+								      <property name="has_frame">True</property>
+								      <property name="focus_on_click">True</property>
 								      <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 12:46:04 GMT"/>
 								    </widget>
 								    <packing>
@@ -4675,6 +4999,9 @@
 								      <property name="width_request">100</property>
 								      <property name="visible">True</property>
 								      <property name="items" translatable="yes">-</property>
+								      <property name="add_tearoffs">False</property>
+								      <property name="has_frame">True</property>
+								      <property name="focus_on_click">True</property>
 								      <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 12:45:40 GMT"/>
 								    </widget>
 								    <packing>
@@ -4692,6 +5019,9 @@
 								      <property name="width_request">100</property>
 								      <property name="visible">True</property>
 								      <property name="items" translatable="yes">-</property>
+								      <property name="add_tearoffs">False</property>
+								      <property name="has_frame">True</property>
+								      <property name="focus_on_click">True</property>
 								      <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 12:45:51 GMT"/>
 								    </widget>
 								    <packing>
@@ -4772,6 +5102,10 @@
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="type">tab</property>
@@ -4813,6 +5147,10 @@
 					  <property name="yalign">0</property>
 					  <property name="xpad">15</property>
 					  <property name="ypad">5</property>
+					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					  <property name="width_chars">-1</property>
+					  <property name="single_line_mode">False</property>
+					  <property name="angle">0</property>
 					</widget>
 				      </child>
 
@@ -4829,6 +5167,10 @@
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
+					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					  <property name="width_chars">-1</property>
+					  <property name="single_line_mode">False</property>
+					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="type">label_item</property>
@@ -4861,6 +5203,10 @@
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
+					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					  <property name="width_chars">-1</property>
+					  <property name="single_line_mode">False</property>
+					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="padding">0</property>
@@ -4877,6 +5223,7 @@
 					  <property name="label" translatable="yes">  S_ave Settings </property>
 					  <property name="use_underline">True</property>
 					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
 					  <signal name="clicked" handler="on_save_button_clicked" last_modification_time="Wed, 18 Aug 2004 05:02:53 GMT"/>
 					  <accelerator key="a" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
 					</widget>
@@ -4895,6 +5242,7 @@
 					  <property name="label" translatable="yes">  _Load  Settings </property>
 					  <property name="use_underline">True</property>
 					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
 					  <signal name="clicked" handler="on_load_button_clicked" last_modification_time="Wed, 18 Aug 2004 05:08:53 GMT"/>
 					  <accelerator key="l" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
 					</widget>
@@ -4918,6 +5266,10 @@
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
+					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					  <property name="width_chars">-1</property>
+					  <property name="single_line_mode">False</property>
+					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="padding">0</property>
@@ -4960,6 +5312,7 @@
 			      <property name="tooltip" translatable="yes">Show the input files section</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			      <signal name="clicked" handler="on_files_button_collapsed_clicked" last_modification_time="Tue, 06 Nov 2007 04:34:22 GMT"/>
 
 			      <child>
@@ -4994,6 +5347,10 @@
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -5039,6 +5396,7 @@
 					  <property name="tooltip" translatable="yes">Hide the input files section</property>
 					  <property name="can_focus">True</property>
 					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
 					  <signal name="clicked" handler="on_files_button_expanded_clicked" last_modification_time="Tue, 06 Nov 2007 04:35:32 GMT"/>
 
 					  <child>
@@ -5101,6 +5459,10 @@
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5124,6 +5486,8 @@ ALOS mosaic
 GeoTIFF
 ASF Internal
 </property>
+						  <property name="add_tearoffs">False</property>
+						  <property name="focus_on_click">True</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5146,6 +5510,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5162,6 +5530,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Browse and select datasets to process.  A dataset consists of a metadata (leader) file, and one or more data files.  You can select any of these files to add them, but you must have both.  (For Palsar SLC data, you should also have the &quot;workreport&quot; file.)</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_browse_input_files_button_clicked" last_modification_time="Fri, 06 Aug 2004 03:24:33 GMT"/>
 						  <accelerator key="b" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
 
@@ -5212,6 +5581,10 @@ ASF Internal
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -5244,6 +5617,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5266,6 +5643,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5280,6 +5661,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Remove selected datasets from process (Input Files) list</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_remove_button_clicked" last_modification_time="Sat, 13 May 2006 07:14:10 GMT"/>
 
 						  <child>
@@ -5307,6 +5689,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Process selected dataset(s)</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_process_button_clicked" last_modification_time="Sat, 13 May 2006 07:14:16 GMT"/>
 
 						  <child>
@@ -5334,6 +5717,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Rename output file for selected dataset</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_rename_button_clicked" last_modification_time="Sat, 13 May 2006 07:14:20 GMT"/>
 
 						  <child>
@@ -5361,6 +5745,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">View MapReady processing log file</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_view_log_button_clicked" last_modification_time="Sat, 10 Feb 2007 05:22:24 GMT"/>
 
 						  <child>
@@ -5388,6 +5773,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Display CEOS Metadata for selected dataset</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_display_ceos_button_clicked" last_modification_time="Sat, 13 May 2006 07:14:29 GMT"/>
 
 						  <child>
@@ -5415,6 +5801,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">View selected input file dataset (opens viewer)</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_view_input_button_clicked" last_modification_time="Wed, 11 Jul 2007 07:05:47 GMT"/>
 
 						  <child>
@@ -5442,6 +5829,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Display geographic area of selected dataset in Google Earth(tm)</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_google_earth_button_clicked" last_modification_time="Sat, 12 May 2007 01:16:20 GMT"/>
 
 						  <child>
@@ -5480,6 +5868,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5501,6 +5893,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5522,6 +5918,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5536,6 +5936,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Select a different output folder</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_change_output_directory_button_clicked" last_modification_time="Fri, 27 Aug 2004 06:46:23 GMT"/>
 						  <accelerator key="d" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
 
@@ -5586,6 +5987,10 @@ ASF Internal
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -5613,6 +6018,7 @@ ASF Internal
 						  <property name="label" translatable="yes">Add _Output File Prefix or Suffix</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_button_change_output_naming_scheme_clicked" last_modification_time="Sat, 28 Aug 2004 06:09:42 GMT"/>
 						  <accelerator key="o" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
 						</widget>
@@ -5650,6 +6056,8 @@ ASF Internal
 						  <property name="reorderable">False</property>
 						  <property name="enable_search">False</property>
 						  <property name="fixed_height_mode">False</property>
+						  <property name="hover_selection">False</property>
+						  <property name="hover_expand">False</property>
 						</widget>
 					      </child>
 					    </widget>
@@ -5675,6 +6083,10 @@ ASF Internal
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
+					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					  <property name="width_chars">-1</property>
+					  <property name="single_line_mode">False</property>
+					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="type">label_item</property>
@@ -5721,6 +6133,7 @@ ASF Internal
 			      <property name="tooltip" translatable="yes">Show the completed files section</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
 			      <signal name="clicked" handler="on_completed_files_button_collapsed_clicked" last_modification_time="Tue, 06 Nov 2007 04:37:21 GMT"/>
 
 			      <child>
@@ -5755,6 +6168,10 @@ ASF Internal
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -5799,6 +6216,7 @@ ASF Internal
 					  <property name="tooltip" translatable="yes">Hide the completed files section</property>
 					  <property name="can_focus">True</property>
 					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
 					  <signal name="clicked" handler="on_completed_files_button_expanded_clicked" last_modification_time="Tue, 06 Nov 2007 04:36:49 GMT"/>
 
 					  <child>
@@ -5863,6 +6281,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -5877,6 +6299,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Remove selected dataset(s) from Completed Files list</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_remove_completed_button_clicked" last_modification_time="Sat, 10 Feb 2007 06:53:06 GMT"/>
 
 						  <child>
@@ -5904,6 +6327,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Move selected dataset to Input Files list for reprocessing</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_reprocess_button_clicked" last_modification_time="Sat, 10 Feb 2007 05:30:39 GMT"/>
 
 						  <child>
@@ -5931,6 +6355,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">View MapReady processing log file</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_view_log_button2_clicked" last_modification_time="Sat, 10 Feb 2007 05:22:41 GMT"/>
 
 						  <child>
@@ -5958,6 +6383,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Display ASF Metadata for selected dataset</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_display_asf_button_clicked" last_modification_time="Sat, 13 May 2006 07:14:34 GMT"/>
 
 						  <child>
@@ -5985,6 +6411,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">View selected output image file(s)</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_view_output_button_clicked" last_modification_time="Sat, 13 May 2006 07:14:38 GMT"/>
 
 						  <child>
@@ -6012,6 +6439,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Display geographic area of selected dataset in Google Earth(tm) (including overlaid image if UTM map-projected)</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_completed_files_google_earth_button_clicked" last_modification_time="Sat, 12 May 2007 01:16:08 GMT"/>
 
 						  <child>
@@ -6046,6 +6474,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6067,6 +6499,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6081,6 +6517,7 @@ ASF Internal
 						  <property name="tooltip" translatable="yes">Remove all entries from the Completed Files list</property>
 						  <property name="can_focus">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <signal name="clicked" handler="on_clear_button_clicked" last_modification_time="Sat, 10 Feb 2007 05:43:00 GMT"/>
 
 						  <child>
@@ -6130,6 +6567,10 @@ ASF Internal
 							      <property name="yalign">0.5</property>
 							      <property name="xpad">0</property>
 							      <property name="ypad">0</property>
+							      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+							      <property name="width_chars">-1</property>
+							      <property name="single_line_mode">False</property>
+							      <property name="angle">0</property>
 							    </widget>
 							    <packing>
 							      <property name="padding">0</property>
@@ -6175,6 +6616,8 @@ ASF Internal
 						  <property name="reorderable">False</property>
 						  <property name="enable_search">False</property>
 						  <property name="fixed_height_mode">False</property>
+						  <property name="hover_selection">False</property>
+						  <property name="hover_expand">False</property>
 						</widget>
 					      </child>
 					    </widget>
@@ -6200,6 +6643,10 @@ ASF Internal
 					  <property name="yalign">0.5</property>
 					  <property name="xpad">0</property>
 					  <property name="ypad">0</property>
+					  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					  <property name="width_chars">-1</property>
+					  <property name="single_line_mode">False</property>
+					  <property name="angle">0</property>
 					</widget>
 					<packing>
 					  <property name="type">label_item</property>
@@ -6275,6 +6722,7 @@ ASF Internal
 				      <property name="tooltip" translatable="yes">Process all datasets in the Input Files list</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="clicked" handler="on_execute_button_clicked" last_modification_time="Thu, 12 Aug 2004 04:28:47 GMT"/>
 				      <accelerator key="p" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
 
@@ -6325,6 +6773,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6357,6 +6809,10 @@ ASF Internal
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -6372,6 +6828,7 @@ ASF Internal
 				      <property name="tooltip" translatable="yes">Halt processing</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="clicked" handler="on_stop_button_clicked" last_modification_time="Thu, 12 Aug 2004 04:28:54 GMT"/>
 				      <accelerator key="s" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
 
@@ -6422,6 +6879,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6480,6 +6941,10 @@ ASF Internal
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -6501,6 +6966,10 @@ ASF Internal
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
 				      <property name="ypad">0</property>
+				      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				      <property name="width_chars">-1</property>
+				      <property name="single_line_mode">False</property>
+				      <property name="angle">0</property>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -6516,6 +6985,7 @@ ASF Internal
 				      <property name="tooltip" translatable="yes">Display help information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
 				      <signal name="clicked" handler="on_help_button_clicked" last_modification_time="Tue, 17 Aug 2004 06:04:51 GMT"/>
 
 				      <child>
@@ -6565,6 +7035,10 @@ ASF Internal
 						  <property name="yalign">0.5</property>
 						  <property name="xpad">0</property>
 						  <property name="ypad">0</property>
+						  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+						  <property name="width_chars">-1</property>
+						  <property name="single_line_mode">False</property>
+						  <property name="angle">0</property>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -6642,6 +7116,8 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_input_file_selection_delete_event" last_modification_time="Tue, 17 Aug 2004 07:33:49 GMT"/>
   <signal name="destroy_event" handler="on_input_file_selection_destroy_event" last_modification_time="Tue, 17 Aug 2004 07:33:54 GMT"/>
@@ -6653,6 +7129,7 @@ ASF Internal
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_input_file_selection_cancel_button_clicked" last_modification_time="Thu, 12 Aug 2004 08:02:35 GMT"/>
     </widget>
   </child>
@@ -6663,6 +7140,7 @@ ASF Internal
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_input_file_selection_ok_button_clicked" last_modification_time="Thu, 12 Aug 2004 08:02:15 GMT"/>
     </widget>
   </child>
@@ -6682,6 +7160,8 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="destroy" handler="on_change_output_name_dialog_destroy" last_modification_time="Tue, 17 Aug 2004 07:16:32 GMT"/>
   <signal name="delete_event" handler="on_change_output_name_dialog_delete_event" last_modification_time="Tue, 17 Aug 2004 07:16:42 GMT"/>
@@ -6707,6 +7187,7 @@ ASF Internal
 	      <property name="label">gtk-cancel</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-6</property>
 	      <signal name="clicked" handler="on_change_output_name_button_cancel_clicked" last_modification_time="Tue, 17 Aug 2004 03:39:40 GMT"/>
 	    </widget>
@@ -6720,6 +7201,7 @@ ASF Internal
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	      <signal name="clicked" handler="on_change_output_name_button_ok_clicked" last_modification_time="Tue, 17 Aug 2004 03:39:26 GMT"/>
 	    </widget>
@@ -6756,6 +7238,10 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">0</property>
@@ -6780,6 +7266,10 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">0</property>
@@ -6804,6 +7294,10 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -6823,6 +7317,7 @@ ASF Internal
 	      <property name="visibility">True</property>
 	      <property name="max_length">48</property>
 	      <property name="text" translatable="yes"></property>
+	      <property name="has_frame">True</property>
 	      <property name="invisible_char">*</property>
 	      <property name="activates_default">False</property>
 	    </widget>
@@ -6861,6 +7356,8 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="destroy_event" handler="on_help_dialog_destroy_event" last_modification_time="Tue, 17 Aug 2004 07:02:50 GMT"/>
   <signal name="delete_event" handler="on_help_dialog_delete_event" last_modification_time="Tue, 17 Aug 2004 07:02:59 GMT"/>
@@ -6886,6 +7383,7 @@ ASF Internal
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	      <signal name="clicked" handler="on_help_dialog_ok_button_clicked" last_modification_time="Tue, 17 Aug 2004 06:09:50 GMT"/>
 	    </widget>
@@ -6919,6 +7417,10 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>
@@ -6988,6 +7490,8 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="destroy" handler="on_change_output_directory_dialog_destroy" last_modification_time="Fri, 27 Aug 2004 06:34:29 GMT"/>
   <signal name="destroy_event" handler="on_change_output_directory_dialog_destroy_event" last_modification_time="Fri, 27 Aug 2004 06:34:39 GMT"/>
@@ -7014,6 +7518,7 @@ ASF Internal
 	      <property name="label">gtk-cancel</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-6</property>
 	      <signal name="clicked" handler="on_change_output_directory_button_cancel_clicked" last_modification_time="Fri, 27 Aug 2004 06:36:32 GMT"/>
 	    </widget>
@@ -7027,6 +7532,7 @@ ASF Internal
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	      <signal name="clicked" handler="on_change_output_directory_button_ok_clicked" last_modification_time="Fri, 27 Aug 2004 06:36:10 GMT"/>
 	    </widget>
@@ -7063,6 +7569,10 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">0</property>
@@ -7087,6 +7597,10 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">0</property>
@@ -7107,6 +7621,7 @@ ASF Internal
 	      <property name="visibility">True</property>
 	      <property name="max_length">128</property>
 	      <property name="text" translatable="yes"></property>
+	      <property name="has_frame">True</property>
 	      <property name="invisible_char">*</property>
 	      <property name="activates_default">False</property>
 	    </widget>
@@ -7132,6 +7647,10 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -7155,6 +7674,10 @@ ASF Internal
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">2</property>
@@ -7173,6 +7696,7 @@ ASF Internal
 	      <property name="label" translatable="yes">Browse... </property>
 	      <property name="use_underline">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <signal name="clicked" handler="on_browse_output_directory_button_clicked" last_modification_time="Wed, 17 May 2006 02:40:58 GMT"/>
 	    </widget>
 	    <packing>
@@ -7210,6 +7734,8 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="delete_event" handler="on_dialog_cons_delete_event" last_modification_time="Sat, 28 Aug 2004 07:06:02 GMT"/>
   <signal name="destroy_event" handler="on_dialog_cons_destroy_event" last_modification_time="Sat, 28 Aug 2004 07:06:08 GMT"/>
@@ -7235,6 +7761,7 @@ ASF Internal
 	      <property name="label">gtk-cancel</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-6</property>
 	      <signal name="clicked" handler="on_dialog_cons_button_cancel_clicked" last_modification_time="Sat, 28 Aug 2004 07:09:13 GMT"/>
 	    </widget>
@@ -7248,6 +7775,7 @@ ASF Internal
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	      <signal name="clicked" handler="on_dialog_cons_button_ok_clicked" last_modification_time="Sat, 28 Aug 2004 07:09:20 GMT"/>
 	    </widget>
@@ -7290,6 +7818,10 @@ ASF Internal
 		  <property name="yalign">0.5</property>
 		  <property name="xpad">0</property>
 		  <property name="ypad">0</property>
+		  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+		  <property name="width_chars">-1</property>
+		  <property name="single_line_mode">False</property>
+		  <property name="angle">0</property>
 		</widget>
 		<packing>
 		  <property name="left_attach">0</property>
@@ -7314,6 +7846,10 @@ ASF Internal
 		  <property name="yalign">0.5</property>
 		  <property name="xpad">0</property>
 		  <property name="ypad">0</property>
+		  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+		  <property name="width_chars">-1</property>
+		  <property name="single_line_mode">False</property>
+		  <property name="angle">0</property>
 		</widget>
 		<packing>
 		  <property name="left_attach">0</property>
@@ -7333,6 +7869,7 @@ ASF Internal
 		  <property name="visibility">True</property>
 		  <property name="max_length">32</property>
 		  <property name="text" translatable="yes"></property>
+		  <property name="has_frame">True</property>
 		  <property name="invisible_char">*</property>
 		  <property name="activates_default">False</property>
 		</widget>
@@ -7354,6 +7891,7 @@ ASF Internal
 		  <property name="visibility">True</property>
 		  <property name="max_length">32</property>
 		  <property name="text" translatable="yes"></property>
+		  <property name="has_frame">True</property>
 		  <property name="invisible_char">*</property>
 		  <property name="activates_default">False</property>
 		</widget>
@@ -7385,6 +7923,7 @@ ASF Internal
 		  <property name="label" translatable="yes">Advanced &gt;&gt;</property>
 		  <property name="use_underline">True</property>
 		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <property name="focus_on_click">True</property>
 		  <signal name="clicked" handler="on_dialog_cons_button_advanced_clicked" last_modification_time="Sat, 28 Aug 2004 07:09:31 GMT"/>
 		</widget>
 		<packing>
@@ -7421,6 +7960,10 @@ ASF Internal
 		  <property name="yalign">0.5</property>
 		  <property name="xpad">0</property>
 		  <property name="ypad">8</property>
+		  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+		  <property name="width_chars">-1</property>
+		  <property name="single_line_mode">False</property>
+		  <property name="angle">0</property>
 		</widget>
 		<packing>
 		  <property name="padding">0</property>
@@ -7452,6 +7995,10 @@ ASF Internal
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
+		      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+		      <property name="width_chars">-1</property>
+		      <property name="single_line_mode">False</property>
+		      <property name="angle">0</property>
 		    </widget>
 		    <packing>
 		      <property name="left_attach">0</property>
@@ -7471,6 +8018,7 @@ ASF Internal
 		      <property name="visibility">True</property>
 		      <property name="max_length">64</property>
 		      <property name="text" translatable="yes"></property>
+		      <property name="has_frame">True</property>
 		      <property name="invisible_char">*</property>
 		      <property name="activates_default">False</property>
 		    </widget>
@@ -7521,6 +8069,8 @@ ASF Internal
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
 
   <child internal-child="vbox">
@@ -7542,6 +8092,7 @@ ASF Internal
 	      <property name="label">gtk-cancel</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-6</property>
 	    </widget>
 	  </child>
@@ -7554,6 +8105,7 @@ ASF Internal
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	    </widget>
 	  </child>
@@ -7582,6 +8134,10 @@ If you proceed, they will be overwritten.</property>
 	  <property name="yalign">0.5</property>
 	  <property name="xpad">0</property>
 	  <property name="ypad">0</property>
+	  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	  <property name="width_chars">-1</property>
+	  <property name="single_line_mode">False</property>
+	  <property name="angle">0</property>
 	</widget>
 	<packing>
 	  <property name="padding">0</property>
@@ -7609,6 +8165,8 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="delete_event" handler="on_metadata_dialog_delete_event" last_modification_time="Tue, 28 Sep 2004 08:27:50 GMT"/>
   <signal name="destroy_event" handler="on_metadata_dialog_destroy_event" last_modification_time="Tue, 28 Sep 2004 08:28:01 GMT"/>
@@ -7634,6 +8192,7 @@ If you proceed, they will be overwritten.</property>
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	      <signal name="clicked" handler="on_metadata_dialog_ok_button_clicked" last_modification_time="Tue, 28 Sep 2004 08:29:18 GMT"/>
 	    </widget>
@@ -7666,6 +8225,10 @@ If you proceed, they will be overwritten.</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>
@@ -7737,6 +8300,8 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_dem_file_selection_delete_event" last_modification_time="Thu, 27 Apr 2006 09:47:29 GMT"/>
   <signal name="destroy_event" handler="on_dem_file_selection_destroy_event" last_modification_time="Thu, 27 Apr 2006 09:47:43 GMT"/>
@@ -7748,6 +8313,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_dem_file_selection_cancel_button_clicked" last_modification_time="Thu, 27 Apr 2006 09:49:30 GMT"/>
     </widget>
   </child>
@@ -7758,6 +8324,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_dem_file_selection_ok_button_clicked" last_modification_time="Thu, 27 Apr 2006 09:49:05 GMT"/>
     </widget>
   </child>
@@ -7777,6 +8344,8 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_output_directory_selection_delete_event" last_modification_time="Wed, 17 May 2006 02:45:05 GMT"/>
   <signal name="destroy_event" handler="on_output_directory_selection_destroy_event" last_modification_time="Wed, 17 May 2006 02:45:11 GMT"/>
@@ -7788,6 +8357,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_output_directory_selection_cancel_button_clicked" last_modification_time="Wed, 17 May 2006 02:44:31 GMT"/>
     </widget>
   </child>
@@ -7798,6 +8368,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_output_directory_selection_ok_button_clicked" last_modification_time="Wed, 17 May 2006 02:43:45 GMT"/>
     </widget>
   </child>
@@ -7817,6 +8388,8 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_mask_file_selection_delete_event" last_modification_time="Tue, 19 Sep 2006 06:57:55 GMT"/>
   <signal name="destroy_event" handler="on_mask_file_selection_destroy_event" last_modification_time="Tue, 19 Sep 2006 06:58:01 GMT"/>
@@ -7828,6 +8401,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_mask_file_selection_cancel_button_clicked" last_modification_time="Tue, 19 Sep 2006 06:59:56 GMT"/>
     </widget>
   </child>
@@ -7838,6 +8412,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_mask_file_selection_ok_button_clicked" last_modification_time="Tue, 19 Sep 2006 06:59:31 GMT"/>
     </widget>
   </child>
@@ -7858,6 +8433,8 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="delete_event" handler="on_log_dialog_delete_event" last_modification_time="Sat, 10 Feb 2007 03:30:27 GMT"/>
   <signal name="destroy_event" handler="on_log_dialog_destroy_event" last_modification_time="Sat, 10 Feb 2007 03:30:35 GMT"/>
@@ -7883,6 +8460,7 @@ If you proceed, they will be overwritten.</property>
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	      <signal name="clicked" handler="on_log_dialog_ok_button_clicked" last_modification_time="Sat, 10 Feb 2007 03:29:01 GMT"/>
 	    </widget>
@@ -7915,6 +8493,10 @@ If you proceed, they will be overwritten.</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>
@@ -7985,6 +8567,8 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_save_config_file_selection_delete_event" last_modification_time="Wed, 21 Mar 2007 06:26:17 GMT"/>
   <signal name="destroy_event" handler="on_save_config_file_selection_destroy_event" last_modification_time="Wed, 21 Mar 2007 06:26:28 GMT"/>
@@ -7996,6 +8580,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_save_config_file_selection_cancel_button_clicked" last_modification_time="Wed, 21 Mar 2007 06:27:24 GMT"/>
     </widget>
   </child>
@@ -8006,6 +8591,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_save_config_file_selection_ok_button_clicked" last_modification_time="Wed, 21 Mar 2007 06:27:45 GMT"/>
     </widget>
   </child>
@@ -8027,6 +8613,8 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="show_fileops">True</property>
   <signal name="delete_event" handler="on_load_config_file_selection_delete_event" last_modification_time="Thu, 22 Mar 2007 05:17:12 GMT"/>
   <signal name="destroy_event" handler="on_load_config_file_selection_destroy_event" last_modification_time="Thu, 22 Mar 2007 05:17:19 GMT"/>
@@ -8038,6 +8626,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_load_config_file_selection_cancel_button_clicked" last_modification_time="Thu, 22 Mar 2007 05:19:13 GMT"/>
     </widget>
   </child>
@@ -8048,6 +8637,7 @@ If you proceed, they will be overwritten.</property>
       <property name="can_default">True</property>
       <property name="can_focus">True</property>
       <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
       <signal name="clicked" handler="on_load_config_file_selection_ok_button_clicked" last_modification_time="Thu, 22 Mar 2007 05:19:29 GMT"/>
     </widget>
   </child>
@@ -8066,6 +8656,8 @@ If you proceed, they will be overwritten.</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_CENTER</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="close" handler="on_about_dialog_close" last_modification_time="Wed, 14 Nov 2007 06:53:10 GMT"/>
   <signal name="delete_event" handler="on_about_dialog_delete_event" last_modification_time="Wed, 14 Nov 2007 06:53:35 GMT"/>
@@ -8092,6 +8684,7 @@ If you proceed, they will be overwritten.</property>
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	      <signal name="clicked" handler="on_about_dialog_ok_button_clicked" last_modification_time="Wed, 14 Nov 2007 06:51:37 GMT"/>
 	    </widget>
@@ -8128,6 +8721,10 @@ All rights reserved.</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">9</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -8171,6 +8768,10 @@ All rights reserved.</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -8204,6 +8805,10 @@ uso@asf.alaska.edu</property>
 	      <property name="yalign">0.5</property>
 	      <property name="xpad">0</property>
 	      <property name="ypad">0</property>
+	      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+	      <property name="width_chars">-1</property>
+	      <property name="single_line_mode">False</property>
+	      <property name="angle">0</property>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
@@ -8239,6 +8844,8 @@ uso@asf.alaska.edu</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_CENTER</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
   <property name="has_separator">True</property>
   <signal name="delete_event" handler="on_add_file_with_ancillary_dialog_delete_event" last_modification_time="Thu, 02 Apr 2009 02:14:14 GMT"/>
   <signal name="destroy_event" handler="on_add_file_with_ancillary_dialog_delete_event" last_modification_time="Thu, 02 Apr 2009 02:14:25 GMT"/>
@@ -8263,6 +8870,7 @@ uso@asf.alaska.edu</property>
 	      <property name="label">gtk-cancel</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-6</property>
 	      <signal name="clicked" handler="on_add_file_with_ancillary_cancel_button_clicked" last_modification_time="Thu, 02 Apr 2009 01:56:53 GMT"/>
 	    </widget>
@@ -8276,6 +8884,7 @@ uso@asf.alaska.edu</property>
 	      <property name="label">gtk-ok</property>
 	      <property name="use_stock">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
 	      <property name="response_id">-5</property>
 	      <signal name="clicked" handler="on_add_file_with_ancillary_ok_button_clicked" last_modification_time="Thu, 02 Apr 2009 01:56:29 GMT"/>
 	    </widget>
@@ -8320,6 +8929,10 @@ uso@asf.alaska.edu</property>
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
+		      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+		      <property name="width_chars">-1</property>
+		      <property name="single_line_mode">False</property>
+		      <property name="angle">0</property>
 		    </widget>
 		    <packing>
 		      <property name="padding">0</property>
@@ -8371,6 +8984,10 @@ uso@asf.alaska.edu</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">5</property>
+				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				  <property name="width_chars">-1</property>
+				  <property name="single_line_mode">False</property>
+				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="padding">0</property>
@@ -8392,6 +9009,10 @@ uso@asf.alaska.edu</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
+				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+				  <property name="width_chars">-1</property>
+				  <property name="single_line_mode">False</property>
+				  <property name="angle">0</property>
 				</widget>
 				<packing>
 				  <property name="padding">0</property>
@@ -8420,6 +9041,10 @@ uso@asf.alaska.edu</property>
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -8469,6 +9094,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -8489,6 +9118,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">●</property>
 					      <property name="activates_default">False</property>
 					      <signal name="changed" handler="on_add_file_with_ancillary_uavsar_annotation_file_entry_changed"/>
@@ -8509,6 +9139,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_uavsar_annotation_file_browse_button_clicked" last_modification_time="Thu, 02 Apr 2009 01:49:48 GMT"/>
 					    </widget>
 					    <packing>
@@ -8554,6 +9185,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">All Types</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8577,6 +9209,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">MLC</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8600,6 +9233,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">GRD</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8623,6 +9257,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">DAT</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8646,6 +9281,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">HGT</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8676,6 +9312,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="type">label_item</property>
@@ -8715,6 +9355,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">All Types</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8738,6 +9379,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">AMP</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8761,6 +9403,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">INT</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8784,6 +9427,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">UNW</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8807,6 +9451,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">COR</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8830,6 +9475,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">AMP__GRD</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8853,6 +9499,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">INT__GRD</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8876,6 +9523,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">UNW__GRD</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8899,6 +9547,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">COR__GRD</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8922,6 +9571,7 @@ uso@asf.alaska.edu</property>
 						  <property name="label" translatable="yes">HGT__GRD</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
@@ -8952,6 +9602,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="type">label_item</property>
@@ -9001,6 +9655,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9021,6 +9679,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">●</property>
 					      <property name="activates_default">False</property>
 					    </widget>
@@ -9040,6 +9699,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_data_browse_button_clicked" last_modification_time="Thu, 02 Apr 2009 01:49:48 GMT"/>
 					    </widget>
 					    <packing>
@@ -9066,6 +9726,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9086,6 +9750,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">●</property>
 					      <property name="activates_default">False</property>
 					    </widget>
@@ -9105,6 +9770,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_metadata_browse_button_clicked" last_modification_time="Thu, 02 Apr 2009 01:49:57 GMT"/>
 					    </widget>
 					    <packing>
@@ -9131,6 +9797,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9151,6 +9821,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">●</property>
 					      <property name="activates_default">False</property>
 					    </widget>
@@ -9170,6 +9841,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_igram_browse_button_clicked" last_modification_time="Wed, 25 Aug 2010 22:20:28 GMT"/>
 					    </widget>
 					    <packing>
@@ -9196,6 +9868,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9215,6 +9891,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">•</property>
 					      <property name="activates_default">False</property>
 					    </widget>
@@ -9234,6 +9911,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_coh_browse_button_clicked" last_modification_time="Wed, 25 Aug 2010 22:20:58 GMT"/>
 					    </widget>
 					    <packing>
@@ -9260,6 +9938,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9279,6 +9961,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">•</property>
 					      <property name="activates_default">False</property>
 					    </widget>
@@ -9298,6 +9981,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_slave_browse_button_clicked" last_modification_time="Wed, 25 Aug 2010 22:21:18 GMT"/>
 					    </widget>
 					    <packing>
@@ -9324,6 +10008,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9343,6 +10031,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">•</property>
 					      <property name="activates_default">False</property>
 					    </widget>
@@ -9362,6 +10051,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_gamma_baseline_browse_button_clicked" last_modification_time="Wed, 25 Aug 2010 22:21:34 GMT"/>
 					    </widget>
 					    <packing>
@@ -9417,6 +10107,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9442,6 +10136,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9462,6 +10160,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">●</property>
 					      <property name="activates_default">False</property>
 					      <signal name="changed" handler="on_add_file_with_ancillary_polsarpro_image_entry_changed" last_modification_time="Thu, 27 Aug 2009 04:33:11 GMT"/>
@@ -9484,6 +10183,7 @@ uso@asf.alaska.edu</property>
 					      <property name="visibility">True</property>
 					      <property name="max_length">0</property>
 					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
 					      <property name="invisible_char">●</property>
 					      <property name="activates_default">False</property>
 					      <signal name="changed" handler="on_add_file_with_ancillary_polsarpro_ceos_entry_changed" last_modification_time="Thu, 03 Sep 2009 08:18:28 GMT"/>
@@ -9504,6 +10204,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_polsarpro_image_browse_button_clicked" last_modification_time="Thu, 02 Apr 2009 01:48:43 GMT"/>
 					    </widget>
 					    <packing>
@@ -9523,6 +10224,7 @@ uso@asf.alaska.edu</property>
 					      <property name="label" translatable="yes">Browse...</property>
 					      <property name="use_underline">True</property>
 					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="clicked" handler="on_add_file_with_ancillary_polsarpro_ceos_browse_button_clicked" last_modification_time="Thu, 02 Apr 2009 01:48:57 GMT"/>
 					    </widget>
 					    <packing>
@@ -9549,6 +10251,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9595,6 +10301,10 @@ uso@asf.alaska.edu</property>
 					      <property name="yalign">0.5</property>
 					      <property name="xpad">0</property>
 					      <property name="ypad">0</property>
+					      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+					      <property name="width_chars">-1</property>
+					      <property name="single_line_mode">False</property>
+					      <property name="angle">0</property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">0</property>
@@ -9613,6 +10323,8 @@ uso@asf.alaska.edu</property>
 Polarimetric decomposition
 Polarimetric parameter
 Polarimetric matrix</property>
+					      <property name="add_tearoffs">False</property>
+					      <property name="focus_on_click">True</property>
 					      <signal name="changed" handler="on_browse_select_image_data_type_optionmenu_changed" last_modification_time="Thu, 27 Aug 2009 03:03:09 GMT"/>
 					    </widget>
 					    <packing>
@@ -9686,6 +10398,10 @@ Polarimetric matrix</property>
 			  <property name="yalign">0.5</property>
 			  <property name="xpad">0</property>
 			  <property name="ypad">0</property>
+			  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			  <property name="width_chars">-1</property>
+			  <property name="single_line_mode">False</property>
+			  <property name="angle">0</property>
 			</widget>
 			<packing>
 			  <property name="padding">0</property>
@@ -9713,6 +10429,10 @@ Polarimetric matrix</property>
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -9734,6 +10454,10 @@ Polarimetric matrix</property>
 			      <property name="yalign">0</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">5</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -9762,6 +10486,10 @@ Polarimetric matrix</property>
 			  <property name="yalign">0.5</property>
 			  <property name="xpad">0</property>
 			  <property name="ypad">0</property>
+			  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			  <property name="width_chars">-1</property>
+			  <property name="single_line_mode">False</property>
+			  <property name="angle">0</property>
 			</widget>
 			<packing>
 			  <property name="padding">0</property>
@@ -9789,6 +10517,10 @@ Polarimetric matrix</property>
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -9814,6 +10546,10 @@ The metadata of the slave image and the baseline file are needed to pass along I
 			      <property name="yalign">0.5</property>
 			      <property name="xpad">0</property>
 			      <property name="ypad">0</property>
+			      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			      <property name="width_chars">-1</property>
+			      <property name="single_line_mode">False</property>
+			      <property name="angle">0</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
