@@ -297,6 +297,10 @@ void import_radarsat2(const char *inBaseName, radiometry_t radiometry,
 	  tmp[sample] = amp[sample];
 	for (sample=0; sample<sample_count; sample++)
 	  amp[sample] = tmp[sample_count-sample-1];
+	for (sample=0; sample<sample_count; sample++)
+	  tmp[sample] = phase[sample];
+	for (sample=0; sample<sample_count; sample++)
+	  phase[sample] = tmp[sample_count-sample-1];
       }
 	  
       put_band_float_line(fp, meta, band*2, (int)row, amp);

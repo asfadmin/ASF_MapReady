@@ -10,6 +10,7 @@
 #include "asf_contact.h"
 #include "asf_sar.h"
 #include "asf_terrcorr.h"
+#include "radarsat2.h"
 #include "asf_geocode.h"
 #include "asf_nan.h"
 #include "ardop_defs.h"
@@ -895,6 +896,11 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       if (meta) meta_free(meta);
       return;
     }
+    else if (isRadarsat2(input, &error)) {
+      radarsat2_meta *radarsat2 = read_radarsat2_meta(input);
+      meta = radarsat2meta(radarsat2);
+      FREE(radarsat2);
+    }
     else if (isCEOS(input, &error)) {
       require_ceos_pair(input, &inBandName, &inMetaName,
             &nBands, &trailer);
@@ -905,7 +911,8 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       meta = meta_create(inMetaName[0]);
     }
     if (meta->sar) {
-      if (strcmp_case(meta->general->sensor, "AIRSAR") != 0) {
+      if (strcmp_case(meta->general->sensor, "AIRSAR") != 0 &&
+	  strcmp_case(meta->general->sensor, "RADARSAT-2") != 0) {
 	meta_free(meta);
 	// re-read meta with additional info
 	meta = meta_read_cfg(inMetaName[0], cfg);
@@ -1371,8 +1378,15 @@ static int check_config(const char *configFileName, convert_config *cfg)
     if (cfg->general->calibration &&
         strncmp_case(cfg->import->format, "UAVSAR", 6) == 0)
     {
-        asfPrintStatus("UAVSAR data is already calibrated as GAMMA.\n");
-        cfg->general->calibration = FALSE;
+      if (strcmp_case(cfg->import->uavsar, "DAT") == 0)
+	asfPrintError("Calibration of UAVSAR Stokes matrix data not supported"
+		      "!\n");
+      else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") != 0 &&
+	  strcmp_case(cfg->calibrate->radiometry, "GAMMA_DB") != 0)
+	asfPrintError("Radiometry (%s) is currently not supported for UAVSAR "
+		      "data!\n", cfg->calibrate->radiometry);
+      else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") == 0)
+	cfg->general->calibration = FALSE;
     }
 
     // Look up table file existence check

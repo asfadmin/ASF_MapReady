@@ -599,21 +599,6 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
     meta->calibration->uavsar = uavsar_params;
     uavsar_type_t type = POLSAR_MLC;
 
-    /*
-    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
-      type = POLSAR_SLC;
-    else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX &&
-	     !meta->projection)
-      type = POLSAR_MLC;
-    else if (meta->general->image_data_type == POLARIMETRIC_STOKES_MATRIX)
-      type = POLSAR_DAT;
-    else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX &&
-	     meta->projection)
-      type = POLSAR_GRD;
-    else if (meta->general->image_data_type == DEM)
-      type == POLSAR_HGT;
-    */
-  
     uavsar_polsar *uavsar = read_uavsar_polsar_params(sarName, type);
     uavsar_params->semi_major = uavsar->semi_major;
     uavsar_params->slant_range_first_pixel = 
@@ -650,7 +635,8 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
       r2->a_sigma[ii] = radarsat2->gains_sigma[ii];
     }
     r2->b = radarsat2->offset;
-    if (meta->general->image_data_type == COMPLEX_IMAGE)
+    if (meta->general->image_data_type == COMPLEX_IMAGE ||
+	meta->general->image_data_type == POLARIMETRIC_IMAGE)
       r2->slc = TRUE;
     else
       r2->slc = FALSE;
@@ -899,6 +885,15 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       scaledPower = inDn*inDn/(a*a);
     else
       scaledPower = (inDn*inDn + meta->calibration->r2->b)/a;
+  }
+  else if (meta->calibration->type == uavsar_cal) {
+    if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      asfPrintError("Calibration currently does not support BETA values!\n");
+    else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      asfPrintError("Calibration currently does not support SIGMA values!\n");
+    else
+      // Values are already stored as "linear power"
+      scaledPower = inDn;
   }
   else
     // should never get here
