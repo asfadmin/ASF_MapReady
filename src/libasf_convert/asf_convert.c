@@ -10,6 +10,7 @@
 #include "asf_contact.h"
 #include "asf_sar.h"
 #include "asf_terrcorr.h"
+#include "radarsat2.h"
 #include "asf_geocode.h"
 #include "asf_nan.h"
 #include "ardop_defs.h"
@@ -895,6 +896,11 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       if (meta) meta_free(meta);
       return;
     }
+    else if (isRadarsat2(input, &error)) {
+      radarsat2_meta *radarsat2 = read_radarsat2_meta(input);
+      meta = radarsat2meta(radarsat2);
+      FREE(radarsat2);
+    }
     else if (isCEOS(input, &error)) {
       require_ceos_pair(input, &inBandName, &inMetaName,
             &nBands, &trailer);
@@ -905,7 +911,8 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       meta = meta_create(inMetaName[0]);
     }
     if (meta->sar) {
-      if (strcmp_case(meta->general->sensor, "AIRSAR") != 0) {
+      if (strcmp_case(meta->general->sensor, "AIRSAR") != 0 &&
+	  strcmp_case(meta->general->sensor, "RADARSAT-2") != 0) {
 	meta_free(meta);
 	// re-read meta with additional info
 	meta = meta_read_cfg(inMetaName[0], cfg);

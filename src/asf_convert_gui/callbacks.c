@@ -213,6 +213,13 @@ input_data_formats_changed()
       else if (is_radarsat2(file)) {
         if (!strstr(formats, "Radarsat-2"))
           strcat(formats, "Radarsat-2, ");
+        enable_polarimetry = TRUE;
+        enable_polarimetry_pauli = TRUE;
+        enable_polarimetry_sinclair = TRUE;
+        enable_polarimetry_cloude8 = TRUE;
+        enable_polarimetry_cloude16 = TRUE;
+        enable_polarimetry_noclassify = TRUE;
+        enable_polarimetry_freeman = TRUE;
         enable_terrain_correction = TRUE;
       }
       else if (is_roipac(file)) {
