@@ -749,6 +749,13 @@ void clear_completed_tmp_dirs()
               asfPrintStatus("Removing: %s\n", tmp_dir);
               remove_dir(tmp_dir);
             }
+            else {
+              gchar *file;
+              gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
+                                 COMP_COL_INPUT_FILE, &file, -1);
+              asfPrintStatus("Warning: tmp_dir for %s was invalid.\n", file);
+              g_free(file);
+            }
 
             g_free(tmp_dir);
             valid = gtk_tree_model_iter_next(
