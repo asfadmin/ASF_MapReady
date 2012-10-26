@@ -1862,7 +1862,27 @@ char ***do_import(convert_config *cfg)
     // meta option (needed for GAMMA) -- leave NULL if not specified
     if (strlen(cfg->import->metadata_file) > 0)
       meta_option = cfg->import->metadata_file;
-    
+
+    // Pass along appropriate precision state vectors
+    // Only applies to ERS-1/2 data, so we are looking for CEOS data here
+    char *prc = NULL;
+    if (format_type == CEOS) {
+      meta_parameters *meta = meta_read(cfg->general->in_name);
+      if (strcmp_case(meta->general->sensor, "ERS-1") == 0 &&
+	  strlen(cfg->import->prc_e1) > 0) {
+	prc = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(prc, "%s%c%s", 
+		cfg->import->prc_e1, DIR_SEPARATOR, cfg->import->prc);
+      }
+      if (strcmp_case(meta->general->sensor, "ERS-2") == 0 &&
+	  strlen(cfg->import->prc_e2) > 0) {
+	prc = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(prc, "%s%c%s", 
+		cfg->import->prc_e2, DIR_SEPARATOR, cfg->import->prc);
+      }	
+      meta_free(meta);
+    }
+
     // Call asf_import!
     check_return(asf_import(radiometry, db_flag,
 			    cfg->import->complex_slc,
@@ -1874,7 +1894,7 @@ char ***do_import(convert_config *cfg)
 			    NULL,
 			    NULL,
 			    cfg->import->image_data_type,
-			    cfg->import->lut, cfg->import->prc,
+			    cfg->import->lut, prc,
 			    cfg->import->lat_begin, cfg->import->lat_end,
 			    -99, -99,
 			    cfg->import->line, cfg->import->sample,
