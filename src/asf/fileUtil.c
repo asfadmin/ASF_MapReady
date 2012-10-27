@@ -760,6 +760,9 @@ int remove_file(const char *file)
       asfPrintWarning("Could not remove directory '%s': %s\n",
                       file, strerror(errno));
     }
+    if (is_dir(file)) {
+      asfPrintWarning("Failed to remove directory '%s'\n");
+    }
     return ret;
   }
   else if (fileExists(file)) {
