@@ -946,7 +946,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
   else if (strcmp_case(processing_step, "terrain_correction") == 0) {
 
     meta = meta_read(input);
-
+      
     // Check for amplitude data - no other radiometry should make it passed here
     if (meta->general->radiometry != r_AMP) {
       // Error out for UAVSAR MLC specifically
@@ -1595,7 +1595,45 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		    cfg->geocoding->projection);
     }
     
-    // Check for pixel size smaller than threshold ???
+    // Check whether the input can be terrain corrected
+    // Apply a default value if the user has not chosen one
+    if (cfg->geocoding->pixel < 0.0) {
+      
+      char *error = (char *) MALLOC(sizeof(char)*512);
+      // Check for airborne data: AirSAR, UAVSAR - 5 m
+      if (isAIRSAR(cfg->general->in_name))
+	cfg->geocoding->pixel = 5.0;
+      else if (isUAVSAR(cfg->general->in_name, &error))
+	cfg->geocoding->pixel = 5.0;
+      else if (isCEOS(cfg->general->in_name, &error)) {
+	meta_parameters *meta = meta_read(cfg->general->in_name);
+	// Check for ScanSAR data: RSAT-1 - 100 m
+	if (strcmp_case(meta->general->sensor, "RSAT-1") == 0 &&
+	    (strcmp_case(meta->general->mode, "SNA") == 0 ||
+	     strcmp_case(meta->general->mode, "SNB") == 0 ||
+	     strcmp_case(meta->general->mode, "SWA") == 0 ||
+	     strcmp_case(meta->general->mode, "SWB") == 0))
+	  cfg->geocoding->pixel = 100.0;
+	// Anything else - 12.5 m
+	else
+	  cfg->geocoding->pixel = 12.5;
+	meta_free(meta);
+      }
+      // Anything else - 12.5 m
+      else
+	cfg->geocoding->pixel = 12.5;
+
+      if (strcmp_case(cfg->geocoding->projection, "geographic") == 0 ||
+	  strcmp_case(cfg->geocoding->projection, "latlon") == 0) {
+	cfg->geocoding->pixel /= 108000.0;
+	asfPrintStatus("   No pixel size for geocoding selected. Choosing a "
+		       "default value of %g degrees.\n", cfg->geocoding->pixel);
+      }
+      else
+	asfPrintStatus("   No pixel size for geocoding selected. Choosing a "
+		       "default value of %g meters.\n", cfg->geocoding->pixel);
+      FREE(error);
+    }
     
     // Datum
     if (meta_is_valid_string(cfg->geocoding->datum)          &&
@@ -2596,6 +2634,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
   }
 
   if (cfg->general->geocoding) {
+
     update_status("Geocoding...");
     int force_flag = cfg->geocoding->force;
     resample_method_t resample_method = RESAMPLE_BILINEAR;
