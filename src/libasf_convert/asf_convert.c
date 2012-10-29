@@ -946,7 +946,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
   else if (strcmp_case(processing_step, "terrain_correction") == 0) {
 
     meta = meta_read(input);
-
+      
     // Check for amplitude data - no other radiometry should make it passed here
     if (meta->general->radiometry != r_AMP) {
       // Error out for UAVSAR MLC specifically
@@ -1595,7 +1595,45 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		    cfg->geocoding->projection);
     }
     
-    // Check for pixel size smaller than threshold ???
+    // Check whether the input can be terrain corrected
+    // Apply a default value if the user has not chosen one
+    if (cfg->geocoding->pixel < 0.0) {
+      
+      char *error = (char *) MALLOC(sizeof(char)*512);
+      // Check for airborne data: AirSAR, UAVSAR - 5 m
+      if (isAIRSAR(cfg->general->in_name))
+	cfg->geocoding->pixel = 5.0;
+      else if (isUAVSAR(cfg->general->in_name, &error))
+	cfg->geocoding->pixel = 5.0;
+      else if (isCEOS(cfg->general->in_name, &error)) {
+	meta_parameters *meta = meta_read(cfg->general->in_name);
+	// Check for ScanSAR data: RSAT-1 - 100 m
+	if (strcmp_case(meta->general->sensor, "RSAT-1") == 0 &&
+	    (strcmp_case(meta->general->mode, "SNA") == 0 ||
+	     strcmp_case(meta->general->mode, "SNB") == 0 ||
+	     strcmp_case(meta->general->mode, "SWA") == 0 ||
+	     strcmp_case(meta->general->mode, "SWB") == 0))
+	  cfg->geocoding->pixel = 100.0;
+	// Anything else - 12.5 m
+	else
+	  cfg->geocoding->pixel = 12.5;
+	meta_free(meta);
+      }
+      // Anything else - 12.5 m
+      else
+	cfg->geocoding->pixel = 12.5;
+
+      if (strcmp_case(cfg->geocoding->projection, "geographic") == 0 ||
+	  strcmp_case(cfg->geocoding->projection, "latlon") == 0) {
+	cfg->geocoding->pixel /= 108000.0;
+	asfPrintStatus("   No pixel size for geocoding selected. Choosing a "
+		       "default value of %g degrees.\n", cfg->geocoding->pixel);
+      }
+      else
+	asfPrintStatus("   No pixel size for geocoding selected. Choosing a "
+		       "default value of %g meters.\n", cfg->geocoding->pixel);
+      FREE(error);
+    }
     
     // Datum
     if (meta_is_valid_string(cfg->geocoding->datum)          &&
@@ -1862,7 +1900,27 @@ char ***do_import(convert_config *cfg)
     // meta option (needed for GAMMA) -- leave NULL if not specified
     if (strlen(cfg->import->metadata_file) > 0)
       meta_option = cfg->import->metadata_file;
-    
+
+    // Pass along appropriate precision state vectors
+    // Only applies to ERS-1/2 data, so we are looking for CEOS data here
+    char *prc = NULL;
+    if (format_type == CEOS) {
+      meta_parameters *meta = meta_read(cfg->general->in_name);
+      if (strcmp_case(meta->general->sensor, "ERS-1") == 0 &&
+	  strlen(cfg->import->prc_e1) > 0) {
+	prc = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(prc, "%s%c%s", 
+		cfg->import->prc_e1, DIR_SEPARATOR, cfg->import->prc);
+      }
+      if (strcmp_case(meta->general->sensor, "ERS-2") == 0 &&
+	  strlen(cfg->import->prc_e2) > 0) {
+	prc = (char *) MALLOC(sizeof(char)*1024);
+	sprintf(prc, "%s%c%s", 
+		cfg->import->prc_e2, DIR_SEPARATOR, cfg->import->prc);
+      }	
+      meta_free(meta);
+    }
+
     // Call asf_import!
     check_return(asf_import(radiometry, db_flag,
 			    cfg->import->complex_slc,
@@ -1874,7 +1932,7 @@ char ***do_import(convert_config *cfg)
 			    NULL,
 			    NULL,
 			    cfg->import->image_data_type,
-			    cfg->import->lut, cfg->import->prc,
+			    cfg->import->lut, prc,
 			    cfg->import->lat_begin, cfg->import->lat_end,
 			    -99, -99,
 			    cfg->import->line, cfg->import->sample,
@@ -2576,6 +2634,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
   }
 
   if (cfg->general->geocoding) {
+
     update_status("Geocoding...");
     int force_flag = cfg->geocoding->force;
     resample_method_t resample_method = RESAMPLE_BILINEAR;

@@ -72,8 +72,9 @@ typedef struct
   int width;              // width of subset
   int height;             // height of subset
   char *image_data_type;  // image data type, e.g. POLARIMETRIC_DECOMPOSITION
-  char *prc;              // precision state vector location (to be 
-                          //        implemented)
+  char *prc;              // precision state vector file
+  char *prc_e1;           // precision state vector location: ERS-1
+  char *prc_e2;           // precision state vector location: ERS-2
   int output_db;          // TRUE if the output is db.  Only applies to
                           //        SIGMA, GAMMA, BETA radiometries.
   int complex_slc;        // flag to save complex data as I/Q

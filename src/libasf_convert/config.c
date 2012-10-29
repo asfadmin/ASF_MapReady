@@ -359,7 +359,9 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->import->radiometry);
             FREE(cfg->import->lut);
 	    FREE(cfg->import->image_data_type);
-            FREE(cfg->import->prc);
+	    FREE(cfg->import->prc);
+            FREE(cfg->import->prc_e1);
+            FREE(cfg->import->prc_e2);
 	    FREE(cfg->import->polsarpro_colormap);
 	    FREE(cfg->import->metadata_file);
 	    FREE(cfg->import->interferogram);
@@ -528,8 +530,12 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->sample = 0;
   cfg->import->width = -99;
   cfg->import->height = -99;
-  cfg->import->prc = (char *)MALLOC(sizeof(char)*1024);
+  cfg->import->prc = (char *)MALLOC(sizeof(char)*128);
   strcpy(cfg->import->prc, "");
+  cfg->import->prc_e1 = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->import->prc_e1, "");
+  cfg->import->prc_e2 = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->import->prc_e2, "");
   cfg->import->output_db = 0;
   cfg->import->complex_slc = 0;
   cfg->import->multilook_slc = 0;
@@ -958,10 +964,15 @@ convert_config *init_fill_convert_config(char *configFile)
 	strcpy(params, "import");
       if (strncmp(params, "import", 6) == 0) {
 	test = read_param(line);
-	if (strncmp(test, "precise orbits", 14) == 0) {
-	  strcpy(cfg->import->prc, read_str(line, "precise orbits"));
-	  if (strcmp_case(cfg->import->prc, "<ENTER DIRECTORY NAME>") == 0)
-	    strcpy(cfg->import->prc, "");
+	if (strncmp(test, "precise orbits ERS-1", 20) == 0) {
+	  strcpy(cfg->import->prc_e1, read_str(line, "precise orbits ERS-1"));
+	  if (strcmp_case(cfg->import->prc_e1, "<ENTER DIRECTORY NAME>") == 0)
+	    strcpy(cfg->import->prc_e1, "");
+	}
+	if (strncmp(test, "precise orbits ERS-2", 20) == 0) {
+	  strcpy(cfg->import->prc_e2, read_str(line, "precise orbits ERS-2"));
+	  if (strcmp_case(cfg->import->prc_e2, "<ENTER DIRECTORY NAME>") == 0)
+	    strcpy(cfg->import->prc_e2, "");
 	}
 	FREE(test);
       }
@@ -1195,8 +1206,12 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->lat_begin = read_double(line, "lat begin");
       if (strncmp(test, "lat end", 7)==0)
         cfg->import->lat_end = read_double(line, "lat end");
-      if (strncmp(test, "precise", 7)==0)
-        strcpy(cfg->import->prc, read_str(line, "precise"));
+      if (strncmp(test, "precise file", 12)==0)
+        strcpy(cfg->import->prc, read_str(line, "precise file"));
+      if (strncmp(test, "precise ERS-1", 13)==0)
+        strcpy(cfg->import->prc_e1, read_str(line, "precise ERS-1"));
+      if (strncmp(test, "precise ERS-2", 13)==0)
+        strcpy(cfg->import->prc_e2, read_str(line, "precise ERS-2"));
       if (strncmp(test, "output db", 9)==0)
         cfg->import->output_db = read_int(line, "output db");
       if (strncmp(test, "complex SLC", 11)==0)
@@ -1747,7 +1762,9 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# of ERS precision state vector from DLR as a replacement of the restituted\n"
                 "# state vectors that are provided from the European Space Agency. The parameter\n"
                 "# required here defines the location of the precision state vectors.\n\n");
-      fprintf(fConfig, "precise = %s\n", cfg->import->prc);
+      fprintf(fConfig, "precise file = %s\n", cfg->import->prc);
+      fprintf(fConfig, "precise ERS-1 = %s\n", cfg->import->prc_e1);
+      fprintf(fConfig, "precise ERS-2 = %s\n", cfg->import->prc_e2);
       if (!shortFlag)
           fprintf(fConfig, "\n# When the output db flag is non-zero, the calibrated image\n"
                 "# is output in decibels.  It only applies when the radiometry is sigma,\n"
