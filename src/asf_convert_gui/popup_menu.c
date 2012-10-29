@@ -1141,6 +1141,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     gchar * input_name=NULL;
     gchar * out_name=NULL;
     gchar * tmp_dir=NULL;
+    gchar * overlay_file=NULL;
     gchar * metadata_name=NULL;
     GdkPixbuf *pb = NULL;
     //meta_parameters *meta;
@@ -1155,6 +1156,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 			 COMP_COL_OUTPUT_FILE, &out_name,
 			 COMP_COL_OUTPUT_THUMBNAIL_BIG, &pb,
 			 COMP_COL_TMP_DIR, &tmp_dir,
+			 COMP_COL_KML_FILE, &overlay_file,
        COMP_COL_UAVSAR_TYPE, &uavsar_type,
 			 -1);
       
@@ -1250,16 +1252,24 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
       free(kml_tmp);
     }
     else {
-      char *base_output_name = get_basename(out_name);
-      if (tmp_dir && strlen(tmp_dir) > 0)
-        sprintf(kml_filename, "%s/%s_overlay.kml", tmp_dir, base_output_name);
-      else
-        sprintf(kml_filename, "%s_overlay.kml", base_output_name);
-      free(base_output_name);
+      if (overlay_file && strlen(overlay_file) > 0) {
+        strcpy(kml_filename, overlay_file);
+      }
+      else {
+        char *base_output_name = get_basename(out_name);
+        if (tmp_dir && strlen(tmp_dir) > 0)
+          sprintf(kml_filename, "%s/%s_overlay.kml", tmp_dir, base_output_name);
+        else
+          sprintf(kml_filename, "%s_overlay.kml", base_output_name);
+        free(base_output_name);
+      }
       g_free(metadata_name);
       g_free(input_name);
       g_free(out_name);
     }
+
+    g_free(overlay_file);
+    g_free(tmp_dir);
 
 #ifdef win32
     gchar *ge;
