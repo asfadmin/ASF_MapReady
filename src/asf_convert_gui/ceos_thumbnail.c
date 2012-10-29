@@ -1227,8 +1227,8 @@ make_radarsat2_thumb(const char *input_metadata, const char *input_data,
   char *path = get_dirname(input_metadata);
   if (strlen(path)>0) {
     strcpy(browse_file, path);
-    if (browse_file[strlen(browse_file)-1] != '/')
-      strcat(browse_file, "/");
+    if (browse_file[strlen(browse_file)-1] != DIR_SEPARATOR)
+      browse_file[strlen(browse_file)-1] = DIR_SEPARATOR;
   }
   else
     strcpy(browse_file, "");
