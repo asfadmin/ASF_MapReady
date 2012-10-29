@@ -54,6 +54,7 @@ int COMP_COL_SLAVE_METADATA;
 int COMP_COL_BASELINE;
 int COMP_COL_INCID_ANGLES_FILE;
 int COMP_COL_UAVSAR_TYPE;
+int COMP_COL_KML_FILE;
 
 int g_show_thumbnail_columns = TRUE;
 
@@ -553,7 +554,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     // pull out the useful intermediates
     char *layover_mask=NULL, *clipped_dem=NULL, *simulated_sar=NULL,
       *tmp_dir=NULL, *faraday=NULL, *hist=NULL, *class_map=NULL,
-      *meta_file=NULL, *incid_angles=NULL;
+      *meta_file=NULL, *incid_angles=NULL, *overlay_file=NULL;
 
     int i, num_outputs=0, max_outputs=64;
     char **outs = MALLOC(sizeof(char*)*max_outputs);
@@ -573,6 +574,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
         get_intermediate(line, "Entropy-Alpha Class Map", &class_map);
         get_intermediate(line, "Meta", &meta_file);
         get_intermediate(line, "Incidence Angles", &incid_angles); 
+        get_intermediate(line, "KML File", &overlay_file); 
         if (get_intermediate(line, "Output", &outs[num_outputs]))
           if (num_outputs < max_outputs-1)
             ++num_outputs;
@@ -589,6 +591,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     if (!class_map) class_map = STRDUP("");
     if (!meta_file) meta_file = STRDUP("");
     if (!incid_angles) incid_angles = STRDUP("");
+    if (!overlay_file) overlay_file = STRDUP("");
 
     //asfPrintStatus("  LO: %s\n  CD: %s\n  SS: %s\n  TD: %s\n  FD: %s\n  CP: %s\n  EA: %s\n  ME: %s\n  IA: %s\n  OP: %S\n",
     //		    layover_mask, clipped_dem, simulated_sar, tmp_dir, faraday, hist, class_map, meta_file, incid_angles, 
@@ -628,6 +631,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                        COMP_COL_BASELINE, baseline_file,
                        COMP_COL_INCID_ANGLES_FILE, incid_angles,
                        COMP_COL_UAVSAR_TYPE, uavsar_type,
+                       COMP_COL_KML_FILE, overlay_file,
                        -1);
 
     // remove from the input list
@@ -641,6 +645,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
     free(hist);
     free(class_map);
     free(meta_file);
+    free(overlay_file);
 
     for (i=0; i<num_outputs; ++i)
       FREE(outs[i]);
@@ -1402,7 +1407,7 @@ setup_files_list()
     COL_BASELINE = 17;
     COL_UAVSAR_TYPE = 18;
 
-    completed_list_store = gtk_list_store_new(25,
+    completed_list_store = gtk_list_store_new(26,
                                               G_TYPE_STRING,    // Data file-Full path (usually hid.)
                                               G_TYPE_STRING,    // Data file - No path
                                               G_TYPE_STRING,    // Ancillary file-Full path (hid.)
@@ -1427,7 +1432,8 @@ setup_files_list()
 					      G_TYPE_STRING,    // Slave metadata (hidden)
 					      G_TYPE_STRING,    // Baseline (hidden)
                 G_TYPE_STRING,    // Incidence Angles File (hidden)
-                G_TYPE_STRING);   // UAVSAR Type (hidden)
+                G_TYPE_STRING,   // UAVSAR Type (hidden)
+                G_TYPE_STRING);    // KML File (hidden)
 
     COMP_COL_INPUT_FILE = 0;
     COMP_COL_INPUT_FILE_SHORT = 1;
@@ -1454,6 +1460,7 @@ setup_files_list()
     COMP_COL_BASELINE = 22;
     COMP_COL_INCID_ANGLES_FILE = 23;
     COMP_COL_UAVSAR_TYPE = 24;
+    COMP_COL_KML_FILE = 25;
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");
@@ -1982,6 +1989,15 @@ setup_files_list()
     gtk_tree_view_column_add_attribute(col, renderer, "text",
                                        COMP_COL_UAVSAR_TYPE);
 
+    /* Next Column: KML Overlay filename (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Ovelray File");
+    gtk_tree_view_column_set_visible(col, TRUE); // FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_KML_FILE);
     gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list),
         GTK_TREE_MODEL(completed_list_store));
 

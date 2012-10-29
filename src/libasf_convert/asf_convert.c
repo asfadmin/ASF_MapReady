@@ -3010,6 +3010,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
           asfPrintStatus("Skipping KML Overlay Generation for UAVSAR\n");
         else
 	        kml_overlay(tmpFile, overlayFile, FALSE);
+                save_intermediate(cfg, "KML File", overlayFile);
 	      for (i=0; i<n; ++i)
 		FREE(bands[i]);
 	      FREE(bands);
@@ -3046,6 +3047,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
                        "exporting thumbnail (asf_export), color banded.\n");
           // No zipping for the moment
           kml_overlay(tmpFile, overlayFile, FALSE);
+          save_intermediate(cfg, "KML File", overlayFile);
           for (i = 0; i < meta->general->band_count; ++i)
             FREE(bands[i]);
           FREE(bands);
@@ -3075,8 +3077,10 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       // No zipping for the moment
       if(strcmp(meta->general->sensor, "UAVSAR") == 0)
         asfPrintStatus("Skipping KML Overlay Generation for UAVSAR\n");
-      else
+      else {
         kml_overlay(tmpFile, overlayFile, FALSE);
+        save_intermediate(cfg, "KML File", overlayFile);
+      }
       // strip off the band name at the end!
       char *banded_name = MALLOC(sizeof(char) * (strlen(outFile) + 32));
       if (cfg->general->intermediates) {
