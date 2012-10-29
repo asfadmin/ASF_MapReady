@@ -614,7 +614,9 @@ handle_remove_imp(const char *widget_name, GtkListStore *store)
         path = gtk_tree_row_reference_get_path(ref);
         gtk_tree_model_get_iter(model, &iter, path);
 
-        if (get_checked("rb_keep_temp")) {
+        if (strstr(widget_name, "completed") != NULL &&
+            get_checked("rb_keep_temp"))
+        {
             gchar *tmp_dir;
             gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
                                COMP_COL_TMP_DIR, &tmp_dir, -1);
