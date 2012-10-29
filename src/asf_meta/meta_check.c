@@ -243,7 +243,7 @@ int isRadarsat2(char *dataFile, char **error)
   char *ext = findExt(dataFile);
 
   // Append extension in case we don't find it
-  if (ext == NULL) {
+  if (!fileExists(dataFile) && ext == NULL) {
     strcat(dataFile, ".xml");
     ext = (char *) MALLOC(sizeof(char)*10);
     strcpy(ext, ".xml");
@@ -251,7 +251,7 @@ int isRadarsat2(char *dataFile, char **error)
 
   // If it has the correct extension, investigate it further
   // Might sound a little harsh but avoids some XML parser warning otherwise.
-  if (ext && strcmp_case(ext, ".xml") == 0) {
+  if (fileExists(dataFile) && ext && strcmp_case(ext, ".xml") == 0) {
     int ii, band_count = 0;
     char tmp[256], *path = NULL, *message = NULL, *inDataName = NULL;
     char polarizations[20];
@@ -316,9 +316,11 @@ int isRadarsat2(char *dataFile, char **error)
 	}
       }
     }
-    fclose(fp);
-    xmlFreeDoc(doc);
-    xmlCleanupParser();
+    if (fp) {
+      fclose(fp);
+      xmlFreeDoc(doc);
+      xmlCleanupParser();
+    }
   }    
 
   return found;
