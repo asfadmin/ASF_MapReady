@@ -1991,8 +1991,8 @@ setup_files_list()
 
     /* Next Column: KML Overlay filename (hidden) */
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Ovelray File");
-    gtk_tree_view_column_set_visible(col, TRUE); // FALSE);
+    gtk_tree_view_column_set_title(col, "Overlay File");
+    gtk_tree_view_column_set_visible(col, FALSE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
     renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
