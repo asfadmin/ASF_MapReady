@@ -651,11 +651,23 @@ static void do_browse(const char *title, const char *entry_to_populate,
 	"ROI_PAC Files\0*.rsc\0"
         "All Files\0*\0";
     }
+    else if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT)) {
+      of.lpstrFilter =
+        "CEOS Level 1 Files\0*.L;LED-*\0"
+        "RSAT/ERS CEOS L1\0*.L\0"
+        "ALOS Leader Files\0LED-*\0"
+	"TerraSAR-X/Radarsat-2\0*.xml\0"
+        "All Files\0*\0";
+    }
     else if (filts == BIN_FILT) {
       of.lpstrFilter =
         "PolSARPro Files\0*.bin\0"
         "All Files\0*\0";
     }
+    else if (filts == ANN_FILT) {
+      of.lpstrFilter =
+        "UAVSAR Annotation File\0*.ann\0"
+        "All Files\0*\0";
     else {
       of.lpstrFilter = "All Files\0*\0";
     }
