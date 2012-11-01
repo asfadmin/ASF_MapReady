@@ -220,6 +220,8 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
       float re, im, value;
       for ( ii = 0 ; ii < tsy ; ii++ ) {
 	ret = get_geotiff_float_line(fpIn, meta, (int)(ii*sf), 0, line[0]);
+	if (!ret) break;
+
 	ret = get_geotiff_float_line(fpIn, meta, (int)(ii*sf), 1, line[1]);
 	if (!ret) break;
 
@@ -282,6 +284,7 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
     XTIFFClose(fpIn);
     if (!ret) {
         g_free(fdata);
+        g_free(data);
         return NULL;
     }
 
@@ -941,18 +944,12 @@ make_complex_thumb(meta_parameters* imd,
     int tsx = ns / sf;
     int tsy = nl / lc / sf;
 
-    float *fdata = MALLOC(sizeof(float)*tsx*tsy); // raw data, prior to scaling
-    guchar *ucdata = g_new(guchar, 3*tsx*tsy);    // RGB data, after scaling
-
     // These are the input arrays, directly from the file (complex)
     // only one of these is actually allocated, depends on input data type
     unsigned char *chars=NULL;
     short *shorts=NULL;
     unsigned int *ints=NULL;
     float *floats=NULL;
-
-    // This is the array of multilooked & converted to amplitude
-    float *amp_line=MALLOC(sizeof(float)*ns);
 
     // allocate the right input array
     switch (imd->general->data_type) {
@@ -971,8 +968,15 @@ make_complex_thumb(meta_parameters* imd,
       default:
         asfPrintWarning("Invalid data type for complex thumbnail: %d\n",
                         imd->general->data_type);
+        fclose(fpIn);
         return NULL;
     }
+
+    float *fdata = MALLOC(sizeof(float)*tsx*tsy); // raw data, prior to scaling
+    guchar *ucdata = g_new(guchar, 3*tsx*tsy);    // RGB data, after scaling
+
+    // This is the array of multilooked & converted to amplitude
+    float *amp_line=MALLOC(sizeof(float)*ns);
 
     // now read in "look_count" lines at a time, skipping ahead in the file
     // according to our thumbnail downsizing.  however, the multilooking is
