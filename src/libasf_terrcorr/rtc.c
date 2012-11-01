@@ -159,6 +159,18 @@ static Vector * calculate_normal(Vector ***localVectors, int sample)
 }
 
 static float
+calculate_local_incidence(Vector *n, Vector *p)
+                          
+{
+  // local incidence is acos(dot(terrain_normal, ellipsoidal_normal))
+  // terrain normal is n, ellipsoidal normal is p
+  // terrain normal is normalized, p is not -- pn is the normalized p
+  Vector *pn = vector_copy(p);
+  vector_multiply(pn, 1./vector_magnitude(pn));
+  return acos(vector_dot(n,pn)) * R2D;
+}
+
+static float
 calculate_correction(meta_parameters *meta_in, int line, int samp,
                      Vector *satpos, Vector *n, Vector *p, Vector *p_next, float incid_angle)
 {
@@ -239,8 +251,9 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     sprintf(sideProductsImgName, "%s/terrcorr_side_products.img", tmpdir);
     sideProductsMetaName = appendExt(sideProductsImgName, ".meta");
     side_meta = meta_copy(meta_in);
-    side_meta->general->band_count = 2;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLES,RADIOMETRIC_CORRECTION");
+    side_meta->general->band_count = 4;
+    strcpy(side_meta->general->bands,
+           "INCIDENCE_ANGLE_LOCAL,INCIDENCE_ANGLE_ELLIPSOID,RADIOMETRIC_CORRECTION,COS_PHI");
     fpSide = FOPEN(sideProductsImgName, "wb");
     FREE(sideProductsImgName);
   }
@@ -289,8 +302,13 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   if(save_incid_angles) {
     put_band_float_line(fpSide, side_meta, 0, 0, incid_angles);
     put_band_float_line(fpSide, side_meta, 0, nl - 1, incid_angles);
-    put_band_float_line(fpSide, side_meta, 1, 0, corr);
-    put_band_float_line(fpSide, side_meta, 1, nl - 1, corr);
+    put_band_float_line(fpSide, side_meta, 1, 0, incid_angles);
+    put_band_float_line(fpSide, side_meta, 1, nl - 1, incid_angles);
+    put_band_float_line(fpSide, side_meta, 2, 0, corr);
+    put_band_float_line(fpSide, side_meta, 2, nl - 1, corr);
+    // put zeros in for cos(phi) around the edges, not correct though
+    put_band_float_line(fpSide, side_meta, 3, 0, incid_angles);
+    put_band_float_line(fpSide, side_meta, 3, nl - 1, incid_angles);
   }
 
   // We aren't applying the correction to the edges of the image
@@ -336,9 +354,13 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
       for (jj=0; jj<ns; ++jj)
         tmp_buf[jj] = incid_angles[jj] * R2D;
       put_band_float_line(fpSide, side_meta, 0, ii, tmp_buf);
+      put_band_float_line(fpSide, side_meta, 2, ii, corr);
       for (jj=0; jj<ns; ++jj)
         tmp_buf[jj] = corr[jj] * sin(incid_angles[jj]);
-      put_band_float_line(fpSide, side_meta, 1, ii, tmp_buf);
+      put_band_float_line(fpSide, side_meta, 3, ii, tmp_buf);
+      for (jj=0; jj<ns; ++jj)
+        tmp_buf[jj] = calculate_local_incidence(normal,
+				      localVectors[1][jj]);
       FREE(tmp_buf);
     }
 
