@@ -745,12 +745,13 @@ static void filter_mask(char *maskName)
   int iter=1;
   int total=0, orig=0;
   while (iter < 100) {
-    
+   
+    int num_image; 
     for (ii=0; ii<nl-5; ++ii) {
 
       get_float_lines(fp, meta, ii, 5, buf);
 
-      int num = 0;
+      int num_line = 0;
       int l = 2;         // this is the line we are working on, in the buffer
 
       for (jj=2; jj<ns-2; ++jj) {
@@ -766,19 +767,19 @@ static void filter_mask(char *maskName)
           if (
                (buf[(l-1)*ns + jj] == MASK_LAYOVER &&
                  (buf[(l+1)*ns + jj] == MASK_LAYOVER ||
-                  buf[(l+2)*ns + jj] == MASL_LAYOVER))
+                  buf[(l+2)*ns + jj] == MASK_LAYOVER))
              ||
                (buf[(l+1)*ns + jj] == MASK_LAYOVER &&
                  (buf[(l-1)*ns + jj] == MASK_LAYOVER ||
-                  buf[(l-2)*ns + jj] == MASL_LAYOVER))
+                  buf[(l-2)*ns + jj] == MASK_LAYOVER))
              ||
                (buf[l*ns + jj-1] == MASK_LAYOVER &&
                  (buf[l*ns + jj+1] == MASK_LAYOVER ||
-                  buf[l*ns + jj+2] == MASL_LAYOVER))
+                  buf[l*ns + jj+2] == MASK_LAYOVER))
              ||
                (buf[l*ns + jj+1] == MASK_LAYOVER &&
                  (buf[l*ns + jj-1] == MASK_LAYOVER ||
-                  buf[l*ns + jj-2] == MASL_LAYOVER))
+                  buf[l*ns + jj-2] == MASK_LAYOVER))
              )
             add = TRUE;
 
@@ -796,19 +797,19 @@ static void filter_mask(char *maskName)
 
           if (add) {
             buf[l*ns + jj] = MASK_LAYOVER;
-            ++num;
+            ++num_line;
             ++n_layover;
           }
         }
       }
        
-      total += num;
-
-      if (num>0)
-        put_float_lines(fp, meta, ii+2, buf + 2*ns);
+      if (num_line>0)
+        put_float_line(fp, meta, ii+2, buf + 2*ns);
+      num_image += num_line;
     }
-    if (num == 0)
+    if (num_image == 0)
       break;
+    total += num_image;
     ++iter;
   }
   FCLOSE(fp);
