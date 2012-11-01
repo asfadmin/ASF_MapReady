@@ -358,9 +358,12 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
       for (jj=0; jj<ns; ++jj)
         tmp_buf[jj] = corr[jj] * sin(incid_angles[jj]);
       put_band_float_line(fpSide, side_meta, 3, ii, tmp_buf);
-      for (jj=0; jj<ns; ++jj)
+      for (jj=0; jj<ns; ++jj) {
+        Vector * normal = calculate_normal(localVectors, jj);
         tmp_buf[jj] = calculate_local_incidence(normal,
 				      localVectors[1][jj]);
+      }
+      put_band_float_line(fpSide, side_meta, 1, ii, tmp_buf);
       FREE(tmp_buf);
     }
 
