@@ -746,7 +746,7 @@ static void filter_mask(char *maskName)
   int total=0, orig=0;
   while (iter < 100) {
    
-    int num_image; 
+    int num_image=0; 
     for (ii=0; ii<nl-5; ++ii) {
 
       get_float_lines(fp, meta, ii, 5, buf);
@@ -819,10 +819,6 @@ static void filter_mask(char *maskName)
                  100.*total/(double)orig);
 
   asfPrintStatus("Writing filtered mask...\n");
-  fp = fopenImage(maskName, "wb");
-  for (ii=0; ii<nl; ++ii)
-    put_float_line(fp, meta, ii, buf + ii*ns);
-  FCLOSE(fp);
   FREE(buf); 
   meta_free(meta);
 }
