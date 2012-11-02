@@ -1040,6 +1040,12 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       if (!FLOAT_EQUIVALENT(azimuth_scale, range_scale))
 	multilook = TRUE;
     }
+    else {
+      azimuth_scale = range_scale = 1.0;
+      p_azimuth_scale = &azimuth_scale;
+      p_range_scale = &range_scale;
+      multilook = FALSE;
+    }
 
     // Ingest the data to generate an amplitude image (in case the
     // user wants to terrain correct. Will need to get the metadata anyway
