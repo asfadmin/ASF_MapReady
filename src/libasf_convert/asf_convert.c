@@ -947,19 +947,17 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
 
     meta = meta_read(input);
       
-    // Check for amplitude data - no other radiometry should make it passed here
-    if (meta->general->radiometry != r_AMP) {
-      // Error out for UAVSAR MLC specifically
-      if (strcmp_case(meta->general->sensor, "UAVSAR") == 0 &&
-	  strcmp_case(meta->general->sensor_name, "PolSAR") == 0 &&
-	  strcmp_case(meta->general->mode, "MLC") == 0)
-	asfPrintError("UAVSAR MLC can't be terrain corrected. "
-		      "Use the UAVSAR GRD data instead.\n"); 
-      // Error out for the rest as well
-      else
-	asfPrintError("Data need to be in amplitude radiometry at this stage "
-		      "in order to be terrain corrected.\n");
-    }
+    // Error out for UAVSAR MLC specifically
+    // We don't have enough metadata to terrain correct at this moment
+    if (strcmp_case(meta->general->sensor, "UAVSAR") == 0 &&
+	strcmp_case(meta->general->sensor_name, "PolSAR") == 0 &&
+	strcmp_case(meta->general->mode, "MLC") == 0)
+      asfPrintError("UAVSAR MLC can't be terrain corrected. "
+		    "Use the UAVSAR GRD data instead.\n"); 
+    // Error out for the rest as well
+    else if (meta->general->radiometry != r_AMP)
+      asfPrintError("Data need to be in amplitude radiometry at this stage "
+		    "in order to be terrain corrected.\n");
   }
   if (meta)
     meta_free(meta);
@@ -1555,8 +1553,6 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		    "terrain corrected product, the matrix files should be "
 		    "radiometrically terrain corrected prior to generating a "
 		    "polarimetric parameter.\n");
-    
-    // Check for pixel size smaller than threshold ???
     
     // specified a mask and asked for an auto-mask
     int have_mask = cfg->terrain_correct->mask &&
