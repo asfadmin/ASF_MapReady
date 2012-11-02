@@ -1605,9 +1605,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
       if (multilook_flag) {
 	meta->general->line_count = 
-	  (int)((float)nl / (float)nAzimuthLooks + 0.5);
+	  (int)((float)nl / (float)nAzimuthLooks + .99);
 	meta->general->sample_count =
-	  (int)((float)ns / (float)nRangeLooks + 0.5);
+	  (int)((float)ns / (float)nRangeLooks + .99);
 	meta->general->y_pixel_size *= nAzimuthLooks;
 	meta->general->x_pixel_size *= nRangeLooks;
 	meta->sar->azimuth_time_per_pixel *= nAzimuthLooks;
