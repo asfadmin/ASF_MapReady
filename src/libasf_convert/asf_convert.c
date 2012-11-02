@@ -1535,17 +1535,26 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		    "POLARIMETRIC_SEGMENTATION") == 0 &&
 	cfg->terrain_correct->do_radiometric)
       asfPrintError("Polarimetric segmentations can't be radiometrically "
-		    "terrain corrected!\n");
+		    "terrain corrected!\nIn order to produce a radiometrically "
+		    "terrain corrected product, the matrix files should be "
+		    "radiometrically terrain corrected prior to generating a "
+		    "polarimetric segmentation.\n");
     if (strcmp_case(cfg->import->image_data_type,
 		    "POLARIMETRIC_DECOMPOSITION") == 0 &&
 	cfg->terrain_correct->do_radiometric)
       asfPrintError("Polarimetric decompositions can't be radiometrically "
-		    "terrain corrected!\n");
+		    "terrain corrected!\nIn order to produce a radiometrically "
+		    "terrain corrected product, the matrix files should be "
+		    "radiometrically terrain corrected prior to generating a "
+		    "polarimetric decomposition.\n");
     if (strcmp_case(cfg->import->image_data_type, 
 		    "POLARIMETRIC_PARAMETER") == 0 && 
 	cfg->terrain_correct->do_radiometric)
       asfPrintError("Polarimetric parameters can't be radiometrically "
-		    "terrain corrected!\n");
+		    "terrain corrected!\nIn order to produce a radiometrically "
+		    "terrain corrected product, the matrix files should be "
+		    "radiometrically terrain corrected prior to generating a "
+		    "polarimetric parameter.\n");
     
     // Check for pixel size smaller than threshold ???
     
