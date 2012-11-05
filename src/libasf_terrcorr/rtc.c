@@ -159,12 +159,15 @@ static Vector * calculate_normal(Vector ***localVectors, int sample)
 }
 
 static float
-calculate_local_incidence(Vector *n, Vector *p)
+calculate_local_incidence(Vector *n, Vector *satpos, Vector *p)
                           
 {
-  Vector *pn = vector_copy(p);
-  vector_multiply(pn, -1./vector_magnitude(pn));
-  return acos(vector_dot(n,pn)) * R2D;
+  // R: vector from ground point (p) to satellite (satpos)
+  Vector *R = vector_copy(satpos);
+  vector_subtract(R, p);
+  vector_multiply(R, -1./vector_magnitude(R));
+
+  return acos(vector_dot(n,R)) * R2D;
 }
 
 static float
@@ -357,7 +360,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
       put_band_float_line(fpSide, side_meta, 3, ii, tmp_buf);
       for (jj=1; jj<ns-1; ++jj) {
         Vector * normal = calculate_normal(localVectors, jj);
-        tmp_buf[jj] = calculate_local_incidence(normal,
+        tmp_buf[jj] = calculate_local_incidence(normal, &satpos,
 				      localVectors[1][jj]);
       }
       tmp_buf[jj] = tmp_buf[jj-1] = 0;
