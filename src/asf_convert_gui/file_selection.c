@@ -668,7 +668,7 @@ static void do_browse(const char *title, const char *entry_to_populate,
       of.lpstrFilter =
         "UAVSAR Annotation File\0*.ann\0"
         "All Files\0*\0";
-    else {
+    } else {
       of.lpstrFilter = "All Files\0*\0";
     }
 
