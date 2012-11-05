@@ -414,10 +414,8 @@ static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
   }
   if ((line_number+num_lines_to_put) >
       meta->general->line_count * meta->general->band_count)
-  {
-    num_samples_to_put = (meta->general->line_count - line_number)
-                          * sample_count;
-  }
+    asfPrintError("Trying to write %d line(s) beyond line %d in band %d!\n", 
+		  num_lines_to_put, line_number, meta->general->band_count);
 
   FSEEK64(file, (long long)sample_size*sample_count*line_number, SEEK_SET);
   out_buffer = MALLOC( sample_size * sample_count * num_lines_to_put );
