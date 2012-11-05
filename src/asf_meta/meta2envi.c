@@ -582,7 +582,7 @@ void write_envi_header(const char *headerFile, const char *dataFile,
       {
       case LAT_LONG_PSEUDO_PROJECTION:
 	fprintf(fp, 
-		"map_info = {%s, %d, %d, %.5f, %.5f, %f, %f, %s, units=Degrees}\n", 
+		"map info = {%s, %d, %d, %.5f, %.5f, %f, %f, %s, units=Degrees}\n", 
 		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
 		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 		envi->proj_dist_y, datum_str);

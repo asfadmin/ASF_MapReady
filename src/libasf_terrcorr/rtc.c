@@ -248,7 +248,8 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   if(save_incid_angles) {
     const char *tmpdir = get_asf_tmp_dir();
     char *sideProductsImgName = MALLOC(sizeof(char)*(strlen(tmpdir)+strlen(output_file)+64));
-    sprintf(sideProductsImgName, "%s/terrcorr_side_products.img", tmpdir);
+    sprintf(sideProductsImgName, "%s%cterrcorr_side_products.img", 
+	    tmpdir, DIR_SEPARATOR);
     sideProductsMetaName = appendExt(sideProductsImgName, ".meta");
     side_meta = meta_copy(meta_in);
     side_meta->general->band_count = 4;

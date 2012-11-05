@@ -1605,9 +1605,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
       if (multilook_flag) {
 	meta->general->line_count = 
-	  (int)((float)nl / (float)nAzimuthLooks + 0.5);
+	  (int)((float)nl / (float)nAzimuthLooks);
 	meta->general->sample_count =
-	  (int)((float)ns / (float)nRangeLooks + 0.5);
+	  (int)((float)ns / (float)nRangeLooks);
 	meta->general->y_pixel_size *= nAzimuthLooks;
 	meta->general->x_pixel_size *= nRangeLooks;
 	meta->sar->azimuth_time_per_pixel *= nAzimuthLooks;
@@ -1648,7 +1648,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     // Go through complex imagery in chunks
     for (ii = 0; ii < nl; ii += nAzimuthLooks) {
       alc = nAzimuthLooks;
-      if (ii + alc > nl) {
+      if (ii + alc >= nl) {
+        if (multilook_flag)
+          break;
         alc = nl - ii;
       }
 
