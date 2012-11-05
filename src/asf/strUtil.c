@@ -35,6 +35,8 @@ int strcmp_case(const char *s1, const char *s2)
     const char *p1 = s1;
     const char *p2 = s2;
 
+    if (s1 == NULL || s2 == NULL)
+      return -1;
     while (toupper(*p1)==toupper(*p2++))
         if (*p1++ == '\0') return 0;
     return (toupper(*p1) - toupper(*--p2));
