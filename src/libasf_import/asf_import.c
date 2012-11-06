@@ -154,11 +154,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
                 line, sample, width, height, inMetaNameOption, radiometry,
                 db_flag, complex_flag, multilook_flag, azimuth_look_count,
 		range_look_count, amp0_flag, apply_ers2_gain_fix);
+
     // Replace the restituted state vectors that comes with the image data with
     // precision state vectors from Delft
-    if (prcPath != NULL && strlen(prcPath) > 0) {
-      update_state_vectors(outBaseName, prcPath);
-    }
+    update_state_vectors(outBaseName, prcPath);
   }
   // Ingest Vexcel Sky Telemetry Format (STF) data
   else if (format_type == STF) {
