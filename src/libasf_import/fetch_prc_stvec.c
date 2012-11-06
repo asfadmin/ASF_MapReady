@@ -766,6 +766,9 @@ int update_state_vectors(char *outBaseName, char *file)
     odrFile = findInArcList(meta->general->acquisition_date, file);
   else if (!fileExists(file))
     asfPrintError("Not found: %s\n", file);
+  else
+    // assume file is just a regular ODR file
+    odrFile = STRDUP(file);
 
   if (!odrFile || !fileExists(odrFile))
     asfPrintError("Precision state vector file (%s) does not exist!\n", 
