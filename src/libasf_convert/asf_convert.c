@@ -3247,7 +3247,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       sprintf(outFile, "%s%cincidence_angles", 
 	      cfg->general->tmp_dir, DIR_SEPARATOR);
     }
-    
+   
+    char *incFile = ""; 
     if (is_dir(cfg->general->out_name)) {
       char *tmp = 
 	(char *) MALLOC(sizeof(char)*(strlen(cfg->general->tmp_dir)+20));
@@ -3264,34 +3265,30 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	sprintf(outFile, "%s%cincidence_angle", cfg->general->out_name,
 		DIR_SEPARATOR);      
       meta_free(meta);
+      incFile = STRDUP(outFile);
     }
     else {
       sprintf(inFile, "%s", outFile);
-      char *tmp = appendToBasename(cfg->general->out_name, "_incidence_angle");
-      strcpy(outFile, tmp);
-      free(tmp);
+      // just use the out_name, and rely on the band name appending done
+      // by export to get unique filenames for each side product
+      strcpy(outFile, cfg->general->out_name);
+      incFile = appendToBasename(outFile, "_INCIDENCE_ANGLE_ELLIPSOID");
     }
     
     if (cfg->general->export) {
-      update_status("Exporting incidence angles...");
-
-      char **band = (char **) MALLOC(sizeof(char *)*2);
-      band[0] = (char *) MALLOC(sizeof(char)*25);
-      band[1] = NULL;
-      strcpy(band[0], "INCIDENCE_ANGLES");
+      update_status("Exporting terrain correction side products...");
       check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL,
-				    inFile, outFile, band, NULL, NULL),
-		   "exporting indcidence angles (asf_export)\n");
-      FREE(band[0]);
-      FREE(band);
+				    inFile, outFile, NULL, NULL, NULL),
+		   "exporting terrain correction side products (asf_export)\n");
     }
     else {
       // no export... just move the geocoded file out of the
       // temporary directory
       renameImgAndMeta(inFile, outFile);
     }
-    
-    save_intermediate(cfg, "Incidence Angles", outFile);
+   
+    save_intermediate(cfg, "Incidence Angles", incFile);
+    FREE(incFile);
   }
   
   // Process the layover/shadow mask if requested

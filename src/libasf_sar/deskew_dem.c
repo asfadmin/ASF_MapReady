@@ -994,10 +994,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
   if (doRadiometric) {
     side_meta->general->band_count  = 4;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
   } else {
     side_meta->general->band_count  = 2;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT");
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT");
   }
 
   FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");
