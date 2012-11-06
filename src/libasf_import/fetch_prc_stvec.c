@@ -35,6 +35,7 @@ BUGS:
 #include "asf_endian.h"
 #include <sys/stat.h>
 #include <dirent.h>
+#include <ctype.h>
 
 #ifdef MIN
 #  undef MIN
@@ -90,7 +91,7 @@ void find_prc_file(char *prc_path,int requested_date, int orbit, char *prc_file)
   struct stat buf;
   DIR    *dirp;
   struct dirent *dent;
-  int    tmpRequest;
+  //int    tmpRequest;
   int    minDiff = 1000000;
   char   saveName[256];
 
@@ -111,16 +112,16 @@ void find_prc_file(char *prc_path,int requested_date, int orbit, char *prc_file)
     exit(1);
   }
 
-  tmpRequest = requested_date - ((requested_date/1000000)*1000000);
+  //tmpRequest = requested_date - ((requested_date/1000000)*1000000);
 
   while ((dent=readdir(dirp)) != 0) {
     char tmpName[256];
-    int tmpDate;
+    //int tmpDate;
     int tmpOrbit;
 
     strcpy(tmpName,dent->d_name);
     if (strncmp(tmpName,"PRC_",4)==0) {
-      tmpDate = atoi(&(tmpName[4]));
+      //tmpDate = atoi(&(tmpName[4]));
       tmpOrbit = atoi(&(tmpName[11]));
 
       /* Calculation by orbit number */
@@ -550,13 +551,232 @@ static void interpolate_prc_vectors(doris_prc_polar *stVec, double time,
   }
 }
 
-int update_state_vectors(char *outBaseName, char *odrFile)
+static char *read_str(char *line, char *param)
+{
+  static char value[255];
+  char *p = strchr(line, '=');
+
+  // skip past the '=' sign, and eat up any whitespace
+  ++p;
+  while (isspace(*p))
+      ++p;
+
+  strncpy_safe(value, p, 250);
+
+  // eat up trailing whitespace, too
+  p = value + strlen(value) - 1;
+  while (isspace(*p))
+      *p-- = '\0';
+
+  return value;
+}
+static char *find_in_share(const char * filename)
+{
+    char * ret = (char *) MALLOC(sizeof(char) *
+        (strlen(get_asf_share_dir()) + strlen(filename) + 5));
+    sprintf(ret, "%s%c%s", get_asf_share_dir(), DIR_SEPARATOR, filename);
+    if (fileExists(ret))
+      return ret;
+    else {
+      FREE(ret);
+      return NULL;
+    }
+}
+
+static char *get_arclist_from_settings(char *sensor)
+{
+  if (strcmp_case(sensor, "ERS-1") == 0 ||
+      strcmp_case(sensor, "ERS-2") == 0)
+  {
+    char *settings_file = find_in_share("mapready_settings.cfg");
+    if (!settings_file) {
+      asfPrintWarning("Could not find mapready_settings.cfg");
+      return NULL;
+    }
+    char match_str[256];
+    char *arclist = NULL;
+    sprintf(match_str, "precise orbits %s", sensor);
+    FILE *fSettings = FOPEN(settings_file, "r");
+    if (fSettings) {
+      char line[1024];
+      while (fgets(line, 1024, fSettings) != NULL) {
+        if (strncmp(line, match_str, strlen(match_str)) == 0) {
+          arclist = read_str(line, match_str);          
+          if (strcmp_case(arclist, "<location of arclist file>") == 0)
+            strcpy(arclist, "");
+          break;
+        }
+     }
+     FCLOSE(fSettings);
+     if (!arclist || strlen(arclist) == 0) {
+       // not an error, user probably does not have precision state vectors
+       asfPrintStatus("No precise orbits found in mapready_settings.cfg for %s\n",
+                      sensor);
+     }
+     FREE(settings_file);
+     return arclist;     
+   }
+   else {
+     asfPrintError("Could not open mapready_settings.cfg");
+     return NULL;
+   }
+  }
+  else {
+    asfPrintError("Internal error, bad sensor: %s\n", sensor);
+    return NULL;
+  }
+  // not reached
+  return NULL;
+}
+
+static int isArcList(const char *sensor, const char *file)
+{
+  if (!file)
+    return FALSE;
+  if (!strstr(file, "arclist"))
+    return FALSE;
+  if (!fileExists(file))
+    return FALSE;
+
+  FILE *fp = FOPEN(file, "r");
+  if (!fp)
+    return FALSE;
+
+  char line[1024];
+  if (fgets(line, 1024, fp) == NULL) {
+    FCLOSE(fp);
+    return FALSE;
+  }
+ 
+  FCLOSE(fp);
+  if (!strstr(line, sensor))
+    return FALSE;
+
+  return TRUE;
+}
+
+static int arclist_time_fudge(int six_digit_time)
+{
+  // time is of the form "960621" -- 1996, June 21
+  // convert to "19960621"
+  int year = six_digit_time / 10000;
+  if (year > 50)
+    year += 1900;
+  else
+    year += 2000;
+  return year * 10000 + six_digit_time % 10000;
+}
+
+static char *findInArcList(char *acquisition_time, char *arclist)
+{
+  char line[1024];
+  char *odr = NULL;
+
+  // ODR files will be in the same directory as arclist
+  char *dir = get_dirname(arclist);
+
+  FILE *fp = FOPEN(arclist, "r");
+  if (!fp) {
+    asfPrintError("Failed to open: %s\n", arclist);
+  }
+
+  ymd_date ymd;
+  hms_time hms;
+
+  parse_DMYdate(acquisition_time, &ymd, &hms);
+
+  // YYYYMMDD as an integer
+  int scene_time = ymd.year * 10000 + ymd.month * 100 + ymd.day;
+
+  while (fgets(line, 1024, fp) != NULL) {
+    if (isdigit(line[0])) {
+      int arc, start, end, junk, n;
+      n = sscanf(line, "%d  %d %d:%d - %d %d:%d",
+                 &arc, &start, &junk, &junk, &end, &junk, &junk);
+      start = arclist_time_fudge(start);
+      end = arclist_time_fudge(end);
+      if (n == 7) {
+        if (scene_time > start && scene_time < end) {
+          odr = MALLOC(sizeof(char)*(strlen(dir)+64));
+          sprintf(odr, "%sODR.%03d", dir, arc);
+          break;
+        }        
+      }
+    }
+  }
+
+  FCLOSE(fp);
+
+  if (!odr)
+    odr = STRDUP("");
+
+  FREE(dir);
+  return odr;
+}
+
+int update_state_vectors(char *outBaseName, char *file)
 {
   int ret = FALSE;
+  char *odrFile = NULL;
+  meta_parameters *meta = meta_read(outBaseName);
 
-  if (!fileExists(odrFile))
+  const char *sensor = meta->general->sensor;
+  if (strcmp_case(sensor, "E1") == 0 ||
+      strcmp_case(sensor, "ERS1") == 0)
+  {
+    sensor = "ERS-1";
+  }
+  if (strcmp_case(sensor, "E2") == 0 ||
+      strcmp_case(sensor, "ERS2") == 0)
+  {
+    sensor = "ERS-2";
+  }
+
+  if (strcmp_case(sensor, "ERS-1") != 0 &&
+      strcmp_case(sensor, "ERS-2") != 0) 
+  {
+    // not ERS data
+    meta_free(meta);
+    return ret;
+  }
+
+  asfPrintStatus("\nChecking for %s precision state vectors...\n",
+                 sensor);
+
+  if (!file || strlen(file) == 0) {
+    file = get_arclist_from_settings(sensor);    
+  }
+  if (!file || strlen(file) == 0) {
+    return ret;
+  }
+
+  if (is_dir(file)) {
+    char *arclist = MALLOC(sizeof(char)*(strlen(file) + 128));
+    if (file[strlen(file)-1] == DIR_SEPARATOR)
+      sprintf(arclist, "%sarclist", file);
+    else
+      sprintf(arclist, "%s%carclist", file, DIR_SEPARATOR);
+    if (isArcList(sensor, arclist))
+      odrFile = findInArcList(meta->general->acquisition_date, arclist);
+    else
+      asfPrintError("No arclist file found in %s\n", file);
+    FREE(arclist);
+  }
+  else if (isArcList(sensor, file))
+    odrFile = findInArcList(meta->general->acquisition_date, file);
+  else if (!fileExists(file))
+    asfPrintError("Not found: %s\n", file);
+  else
+    // assume file is just a regular ODR file
+    odrFile = STRDUP(file);
+
+  if (!odrFile || !fileExists(odrFile))
     asfPrintError("Precision state vector file (%s) does not exist!\n", 
-		  odrFile);
+		  odrFile ? odrFile : "null");
+
+  asfPrintStatus("Refining %s orbits using ODR file: %s\n",
+                 sensor, odrFile);
+
   FILE *fpIn = FOPEN(odrFile, "rb");  
 
   // Check for new version of ODR file: xODR
@@ -567,7 +787,6 @@ int update_state_vectors(char *outBaseName, char *odrFile)
 		  odrFile);
 
   // Determine image center time for reference
-  meta_parameters *meta = meta_read(outBaseName);
   julian_date jd;
   jd.year = meta->state_vectors->year;
   jd.jd = meta->state_vectors->julDay;
@@ -617,8 +836,7 @@ int update_state_vectors(char *outBaseName, char *odrFile)
   }
   FCLOSE(fpIn);
   if (closest > 0) {
-    asfPrintStatus("\nUpdate orbit information with precision state vectors"
-		   "\n\n");
+    asfPrintStatus("Updating orbit information with precision state vectors.\n\n");
     ret = TRUE;
 
     // Generating state vectors in earth-fixed coordinates
