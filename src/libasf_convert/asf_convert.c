@@ -3229,7 +3229,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	      cfg->general->tmp_dir, DIR_SEPARATOR);
     }
    
-    char *incFile = ""; 
     if (is_dir(cfg->general->out_name)) {
       char *tmp = 
 	(char *) MALLOC(sizeof(char)*(strlen(cfg->general->tmp_dir)+20));
@@ -3240,36 +3239,51 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       free(tmp);
       sprintf(inFile, "%s", outFile);
       if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
-	sprintf(outFile, "%s%c%s_incidence_angle", cfg->general->out_name,
+	sprintf(outFile, "%s%c%s_terrcorr_side_products", cfg->general->out_name,
 		DIR_SEPARATOR, find_decomposition(meta));
       else
-	sprintf(outFile, "%s%cincidence_angle", cfg->general->out_name,
-		DIR_SEPARATOR);      
+	sprintf(outFile, "%s%cterrsorr_side_products", cfg->general->out_name,
+		DIR_SEPARATOR);
       meta_free(meta);
-      incFile = STRDUP(outFile);
     }
     else {
       sprintf(inFile, "%s", outFile);
       // just use the out_name, and rely on the band name appending done
       // by export to get unique filenames for each side product
       strcpy(outFile, cfg->general->out_name);
-      incFile = appendToBasename(outFile, "_INCIDENCE_ANGLE_ELLIPSOID");
     }
     
     if (cfg->general->export) {
       update_status("Exporting terrain correction side products...");
+      char *outTif = appendExt(outFile, ".tif");
+
       check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL,
-				    inFile, outFile, NULL, NULL, NULL),
+				    inFile, outTif, NULL, NULL, NULL),
 		   "exporting terrain correction side products (asf_export)\n");
+
+      char *intFile = appendToBasename(outTif, "_INCIDENCE_ANGLE_ELLIPSOID");
+      save_intermediate(cfg, "Incidence Angles", intFile);
+      FREE(intFile);
+
+      intFile = appendToBasename(outTif, "_INCIDENCE_ANGLE_LOCAL");
+      save_intermediate(cfg, "Local Incidence Angles", intFile);
+      FREE(intFile);
+
+      intFile = appendToBasename(outTif, "_RADIOMETRIC_CORRECTION");
+      save_intermediate(cfg, "Radiometric Correction", intFile);
+      FREE(intFile);
+
+      intFile = appendToBasename(outTif, "_COS_PHI");
+      save_intermediate(cfg, "Cos Phi", intFile);
+      FREE(intFile);
+      FREE(outTif);
     }
     else {
       // no export... just move the geocoded file out of the
-      // temporary directory
+      // temporary directory, no intermediates
       renameImgAndMeta(inFile, outFile);
     }
    
-    save_intermediate(cfg, "Incidence Angles", incFile);
-    FREE(incFile);
   }
   
   // Process the layover/shadow mask if requested
