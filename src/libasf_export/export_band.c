@@ -2206,23 +2206,32 @@ export_band_image (const char *metadata_file_name,
 		if (strcmp(mode, "_grd") == 0 || strcmp(mode, "_mlc") == 0) { 
                   if (endsWith(outBase, mode))
                     strcpy(mode, "");
-		  if (strcmp_case(band_name[kk], "C11") == 0)
+		  if (strcmp_case(band_name[kk], "C11") == 0 ||
+		      strcmp_case(band_name[kk], "T11") == 0)
 		    sprintf(out_file, "%s%sHHHH", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C22") == 0)
+		  else if (strcmp_case(band_name[kk], "C22") == 0 ||
+			   strcmp_case(band_name[kk], "T22") == 0)
 		    sprintf(out_file, "%s%sHVHV", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C33") == 0)
+		  else if (strcmp_case(band_name[kk], "C33") == 0 ||
+			   strcmp_case(band_name[kk], "T33") == 0)
 		    sprintf(out_file, "%s%sVVVV", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C12_real") == 0)
+		  else if (strcmp_case(band_name[kk], "C12_real") == 0 ||
+			   strcmp_case(band_name[kk], "T12_real") == 0)
 		    sprintf(out_file, "%s%sHHHV_real", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C12_imag") == 0)
+		  else if (strcmp_case(band_name[kk], "C12_imag") == 0 ||
+			   strcmp_case(band_name[kk], "T12_imag") == 0)
 		    sprintf(out_file, "%s%sHHHV_imag", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C13_real") == 0)
+		  else if (strcmp_case(band_name[kk], "C13_real") == 0 ||
+			   strcmp_case(band_name[kk], "T13_real") == 0)
 		    sprintf(out_file, "%s%sHHVV_real", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C13_imag") == 0)
+		  else if (strcmp_case(band_name[kk], "C13_imag") == 0 ||
+			   strcmp_case(band_name[kk], "T13_imag") == 0)
 		    sprintf(out_file, "%s%sHHVV_imag", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C23_real") == 0)
+		  else if (strcmp_case(band_name[kk], "C23_real") == 0 ||
+			   strcmp_case(band_name[kk], "T23_real") == 0)
 		    sprintf(out_file, "%s%sHVVV_real", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C23_imag") == 0)
+		  else if (strcmp_case(band_name[kk], "C23_imag") == 0 ||
+			   strcmp_case(band_name[kk], "T23_imag") == 0)
 		    sprintf(out_file, "%s%sHVVV_imag", outBase, mode);
 		}
 		else if (strcmp(mode, "_hgt") == 0) {
