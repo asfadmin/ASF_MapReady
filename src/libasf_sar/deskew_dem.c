@@ -814,9 +814,13 @@ static void filter_mask(char *maskName)
   }
   FCLOSE(fp);
 
-  asfPrintStatus("Layover smoothing took %d iterations.\n", iter);
-  asfPrintStatus("After smoothing, layover mask is %.1f%% larger\n",
-                 100.*total/(double)orig);
+  if (orig == 0) {
+    asfPrintStatus("Layover smoothing took %d iterations.\n", iter);
+    asfPrintStatus("After smoothing, layover mask is %.1f%% larger\n",
+                   100.*total/(double)orig);
+  }
+  else
+    asfPrintStatus("No layover in this image.\n");
 
   asfPrintStatus("Writing filtered mask...\n");
   FREE(buf); 
