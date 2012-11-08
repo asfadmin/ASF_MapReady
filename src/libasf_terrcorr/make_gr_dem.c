@@ -493,7 +493,11 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
       }
     }
 
-    put_float_lines(fpOut, meta_out, ii, size, buf);
+    int nlines = size;
+    if (ii+size > nl)
+      nlines = nl-ii;
+
+    put_float_lines(fpOut, meta_out, ii, nlines, buf);
     asfPrintStatus("Completed %.1f%%  \r", 100.*ii/(double)nl);
   }
   asfPrintStatus("Completed 100%%   \n");
