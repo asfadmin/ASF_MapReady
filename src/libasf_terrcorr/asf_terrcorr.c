@@ -634,7 +634,7 @@ int match_dem(meta_parameters *metaSAR,
       asfPrintStatus("Adjusting metadata to account for offsets...\n");
       refine_offset(range_offset, azimuth_offset, metaSAR, &t_off, &x_off);
       asfPrintStatus("  Time Shift: %f -> %f (change: %f) seconds\n"
-                     "  Slant Shift: %f -> %f (change %f) meters\n",
+                     "  Slant Shift: %f -> %f (change: %f) meters\n",
                      metaSAR->sar->time_shift,
                      metaSAR->sar->time_shift + t_off, t_off,
                      metaSAR->sar->slant_shift,
@@ -875,7 +875,7 @@ int match_dem(meta_parameters *metaSAR,
           asfPrintStatus("Adjusting metadata to account for offsets...\n");
           refine_offset(dx, dy, metaSAR, &t_off, &x_off);
           asfPrintStatus("  Time Shift: %f -> %f (change: %f) seconds\n"
-                         "  Slant Shift: %f -> %f (change %f) meters\n",
+                         "  Slant Shift: %f -> %f (change: %f) meters\n",
                          metaSAR->sar->time_shift,
                          metaSAR->sar->time_shift + t_off, t_off,
                          metaSAR->sar->slant_shift,

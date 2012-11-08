@@ -814,9 +814,13 @@ static void filter_mask(char *maskName)
   }
   FCLOSE(fp);
 
-  asfPrintStatus("Layover smoothing took %d iterations.\n", iter);
-  asfPrintStatus("After smoothing, layover mask is %.1f%% larger\n",
-                 100.*total/(double)orig);
+  if (orig == 0) {
+    asfPrintStatus("Layover smoothing took %d iterations.\n", iter);
+    asfPrintStatus("After smoothing, layover mask is %.1f%% larger\n",
+                   100.*total/(double)orig);
+  }
+  else
+    asfPrintStatus("No layover in this image.\n");
 
   asfPrintStatus("Writing filtered mask...\n");
   FREE(buf); 
@@ -994,10 +998,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
   if (doRadiometric) {
     side_meta->general->band_count  = 4;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
   } else {
     side_meta->general->band_count  = 2;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT");
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT");
   }
 
   FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");
