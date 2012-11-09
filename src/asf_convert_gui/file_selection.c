@@ -659,6 +659,16 @@ static void do_browse(const char *title, const char *entry_to_populate,
 	"TerraSAR-X/Radarsat-2\0*.xml\0"
         "All Files\0*\0";
     }
+    else if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT | ANN_FILT )) {
+      of.lpstrFilter =
+        "All Metadata Files\0*.L;LED-*;*.xml;*.ann\0"
+        "CEOS Level 1 Files\0*.L;LED-*\0"
+        "RSAT/ERS CEOS L1\0*.L\0"
+        "ALOS Leader Files\0LED-*\0"
+	"TerraSAR-X/Radarsat-2\0*.xml\0"
+	"UAVSAR Annotation File\0*.ann\0"
+        "All Files\0*\0";
+    }
     else if (filts == BIN_FILT) {
       of.lpstrFilter =
         "PolSARPro Files\0*.bin\0"
@@ -936,7 +946,7 @@ SIGNAL_CALLBACK void
 on_add_file_with_ancillary_polsarpro_ceos_browse_button_clicked(GtkWidget *w)
 {
   do_browse("Add CEOS File", "add_file_with_ancillary_polsarpro_ceos_entry",
-            L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT);
+            L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT | ANN_FILT );
 }
 
 SIGNAL_CALLBACK void
