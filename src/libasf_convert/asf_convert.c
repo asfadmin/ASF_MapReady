@@ -2872,7 +2872,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     // in which case we will use SIGMA.
     scale_t scale = get_scale(cfg);
     if (scale == NONE) scale = SIGMA;
-    
+ 
     meta_parameters *meta;
     double scale_factor;
     int i,n;
