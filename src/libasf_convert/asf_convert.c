@@ -1379,10 +1379,14 @@ static int check_config(const char *configFileName, convert_config *cfg)
       if (strcmp_case(cfg->import->uavsar, "DAT") == 0)
 	asfPrintError("Calibration of UAVSAR Stokes matrix data not supported"
 		      "!\n");
-      else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") != 0 &&
+      // Could be actually fixed correctly with incidence angle information
+      // Let it slide for the moment - it's close enough
+      /*
+	else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") != 0 &&
 	  strcmp_case(cfg->calibrate->radiometry, "GAMMA_DB") != 0)
 	asfPrintError("Radiometry (%s) is currently not supported for UAVSAR "
 		      "data!\n", cfg->calibrate->radiometry);
+      */
       else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") == 0)
 	cfg->general->calibration = FALSE;
     }
