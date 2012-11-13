@@ -826,11 +826,22 @@ add_thumbnail (GtkTreeIter * iter)
     GtkTreeRowReference *ref =
         gtk_tree_row_reference_new (GTK_TREE_MODEL (list_store), path);
     gtk_tree_path_free (path);
-    GError *err = NULL;
-    GThread *Thread;
-    if((Thread = g_thread_create((GThreadFunc)do_thumbnail, ref, FALSE, &err)) == NULL) {
-      asfPrintStatus("Failed to create thumbnail generation thread: %s\n", err->message);
+    gchar *input_file;
+    gtk_tree_model_get(GTK_TREE_MODEL (list_store), iter,
+                       COL_INPUT_FILE, &input_file, -1);
+    if (is_asf_internal(input_file)) {
+        // ASF Internal thumbnails must be done synchronously, because the meta_read
+        // code is not thread-safe.
+        do_thumbnail(ref);
     }
+    else {
+        GError *err = NULL;
+        GThread *Thread;
+        if((Thread = g_thread_create((GThreadFunc)do_thumbnail, ref, FALSE, &err)) == NULL) {
+          asfPrintStatus("Failed to create thumbnail generation thread: %s\n", err->message);
+        }
+    }
+    g_free(input_file);
 #endif
 }
 
