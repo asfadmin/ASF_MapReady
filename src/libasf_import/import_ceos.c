@@ -1648,7 +1648,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     // Go through complex imagery in chunks
     for (ii = 0; ii < nl; ii += nAzimuthLooks) {
       alc = nAzimuthLooks;
-      if (ii + alc >= nl) {
+      if (ii + alc > nl) {
         if (multilook_flag)
           break;
         alc = nl - ii;
