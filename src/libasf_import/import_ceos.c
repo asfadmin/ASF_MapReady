@@ -1128,9 +1128,12 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
   {
     if (!complex_flag) {
       if (strlen(bandExt) == 0)
-	sprintf(bandStr, "%sAMP-%s", radiometryStr, meta->sar->polarization);
+	sprintf(bandStr, "%sAMP-%s,%sPHASE-%s", radiometryStr, 
+		meta->sar->polarization, radiometryStr, 
+		meta->sar->polarization);
       else
-	sprintf(bandStr, "%sAMP-%s", radiometryStr, bandExt);
+	sprintf(bandStr, "%sAMP-%s,%sPHASE-%s", radiometryStr, bandExt,
+		radiometryStr, bandExt);
     }
     else {
       if (strlen(bandExt) == 0)
@@ -1426,7 +1429,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     }
     else if (data_type >= COMPLEX_BYTE) {
       meta->general->data_type = REAL32;
-      meta->general->band_count = import_single_band ? 1 : band;
+      meta->general->band_count = import_single_band ? 2 : band*2;
     }
     else {
       meta->general->data_type = REAL32;
@@ -1886,7 +1889,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 	}
       }
       
-      int out_band = import_single_band ? 0 : band - 1;
+      int out_band = import_single_band ? 0 : (band - 1) * 2;
 
       if (apply_ers2_gain_fix_flag && strcmp(meta->general->sensor,"ERS2") == 0)
       {
@@ -1919,7 +1922,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 	  out++;
 	}
 	else {
-	  put_band_float_line(fpOut, meta, out_band, out, amp_float_buf);
+	  put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
+	  put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
 	  out++;
 	}
       }
