@@ -167,7 +167,11 @@ calculate_local_incidence(Vector *n, Vector *satpos, Vector *p)
   vector_subtract(R, p);
   vector_multiply(R, -1./vector_magnitude(R));
 
-  return acos(vector_dot(n,R)) * R2D;
+  double local_incidence = acos(vector_dot(n,R)) * R2D;
+
+  vector_free(R);
+
+  return local_incidence;
 }
 
 static float
@@ -363,6 +367,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
         Vector * normal = calculate_normal(localVectors, jj);
         tmp_buf[jj] = calculate_local_incidence(normal, &satpos,
 				      localVectors[1][jj]);
+        vector_free(normal);
       }
       tmp_buf[jj] = tmp_buf[jj-1] = 0;
       put_band_float_line(fpSide, side_meta, 1, ii, tmp_buf);
