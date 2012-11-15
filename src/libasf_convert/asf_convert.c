@@ -1612,7 +1612,7 @@ static int check_config(const char *configFileName, convert_config *cfg)
     // Apply a default value if the user has not chosen one
     if (cfg->geocoding->pixel < 0.0) {
       
-      char *error = (char *) MALLOC(sizeof(char)*512);
+      char *error = NULL;
       // Check for airborne data: AirSAR, UAVSAR - 5 m
       if (isAIRSAR(cfg->general->in_name))
 	cfg->geocoding->pixel = 5.0;
