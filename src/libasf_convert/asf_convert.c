@@ -590,12 +590,16 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
 
 int isASFInternal(const char *input_file)
 {
-  char *meta_file = appendExt(input_file, ".meta");
+  char *inFile = STRDUP(input_file);
+  char *meta_file = appendExt(inFile, ".meta");
   if (fileExists(meta_file)) {
-    char *img_file = appendExt(input_file, ".img");
-    if (fileExists(img_file))
+    char *img_file = appendExt(inFile, ".img");
+    if (fileExists(img_file)) {
+      FREE(inFile);
       return TRUE;
+    }
   }
+  FREE(inFile);
   return FALSE;
 }
 
@@ -3174,11 +3178,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     
     if (export_dem_ok) {
-      // output name will be the SAR image's name with a "_dem" added
-      // to the basename
-      tmp = appendToBasename(cfg->general->out_name, "_dem");
-      strcpy(outFile, tmp);
-      free(tmp);
+      sprintf(outFile, "%s%cdem", cfg->general->out_name, DIR_SEPARATOR);
       
       //Never re-geocode the DEM -- assume user has already put it into
       //their favored projection (since at this time we require that
