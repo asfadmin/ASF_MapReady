@@ -3184,8 +3184,17 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     
     if (export_dem_ok) {
-      sprintf(outFile, "%s%cdem", cfg->general->out_name, DIR_SEPARATOR);
-      
+      // output name will be the SAR image's name with a "_dem" added
+      // to the basename
+      if (is_dir(cfg->general->out_name)) {
+        sprintf(outFile, "%s%cdem", cfg->general->out_name, DIR_SEPARATOR);
+      }
+      else {
+        tmp = appendToBasename(cfg->general->out_name, "_dem");
+        strcpy(outFile, tmp);
+        free(tmp);
+      }
+
       //Never re-geocode the DEM -- assume user has already put it into
       //their favored projection (since at this time we require that
       //DEMs be geocoded for terrain correction ingest).  So, proceed
