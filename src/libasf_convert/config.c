@@ -1379,6 +1379,7 @@ convert_config *read_convert_config(char *configFile)
 	strcpy(cfg->calibrate->radiometry, read_str(line, "radiometry"));
       if (strncmp(test, "woods hole scale", 16)==0)
 	cfg->calibrate->wh_scale = read_int(line, "woods hole scale");
+      FREE(test);
     }
 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
