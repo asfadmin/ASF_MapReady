@@ -209,6 +209,12 @@ envi_header* read_envi(char *envi_name)
       printErr(errbuf);
       break;
     }
+  if (strlen(envi->hemisphere) == 0) {
+    if (envi->center_lat > 0.0)
+      strcpy(envi->hemisphere, "North");
+    else
+      strcpy(envi->hemisphere, "South");
+  }
   
   return envi;
 }
@@ -378,6 +384,9 @@ envi_header* meta2envi(meta_parameters *meta)
       case WGS84_DATUM:
         strcpy(envi->datum, "WGS-84");
         break;
+      case HUGHES_DATUM:
+	strcpy(envi->datum, "Hughes");
+	break;
       default:
         // Keep quiet for now, this would get annoying
         // printf("Datum %s not supported by ENVI, using WGS84\n");
@@ -460,6 +469,7 @@ meta_parameters* envi2meta(envi_header *envi)
       meta->projection->type = POLAR_STEREOGRAPHIC;
       meta->projection->param.ps.slat = envi->center_lat;
       meta->projection->param.ps.slon = envi->center_lon;
+      meta->projection->param.ps.is_north_pole = (envi->center_lat > 0) ? 1 : 0;
       meta->projection->param.ps.false_easting = envi->false_easting;
       meta->projection->param.ps.false_northing = envi->false_northing;
     }
@@ -512,6 +522,8 @@ meta_parameters* envi2meta(envi_header *envi)
       meta->projection->datum = WGS72_DATUM;
     else if (strcmp(envi->datum, "WGS-84") == 0)
       meta->projection->datum = WGS84_DATUM;
+    else if (strcmp(envi->datum, "Hughes") == 0)
+      meta->projection->datum = HUGHES_DATUM;
     meta->projection->spheroid = datum_spheroid(meta->projection->datum);
     meta->projection->re_major = envi->semimajor_axis;
     meta->projection->re_minor = envi->semiminor_axis;
@@ -536,10 +548,12 @@ meta_parameters* envi2meta(envi_header *envi)
 		   &center_lat, &center_lon, &height);
     meta->general->center_latitude = center_lat * R2D;
     meta->general->center_longitude = center_lon * R2D;
-    if (center_lat > 0.0)
-      meta->projection->hem = 'N';
-    else
-      meta->projection->hem = 'S';
+    if (meta->projection->hem == MAGIC_UNSET_CHAR) {
+      if (center_lat > 0.0)
+	meta->projection->hem = 'N';
+      else
+	meta->projection->hem = 'S';
+    }
   }
   if (meta->sar)
     meta->sar->wavelength = envi->wavelength;
