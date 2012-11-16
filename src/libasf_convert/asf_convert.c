@@ -590,17 +590,19 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
 
 int isASFInternal(const char *input_file)
 {
+  int ret=FALSE;
   char *inFile = STRDUP(input_file);
   char *meta_file = appendExt(inFile, ".meta");
   if (fileExists(meta_file)) {
     char *img_file = appendExt(inFile, ".img");
     if (fileExists(img_file)) {
-      FREE(inFile);
-      return TRUE;
+      ret = TRUE;
     }
+    FREE(img_file);
   }
+  FREE(meta_file);
   FREE(inFile);
-  return FALSE;
+  return ret;
 }
 
 int isSTF(const char *input_file)
@@ -771,7 +773,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   FREE(tmpDir);
   FREE(outMetaName);
   FREE(bandExt);
-
+  free_ceos_names(inBandName, inMetaName);
   return meta;
 }
 
@@ -877,7 +879,10 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
         asfPrintError("Pauli decomposition cannot be performed on the UAVSAR .hgt file.\n");
       return;
     }
-    else if (isPolsarproMatrix(input, &matrixType, &error)) { return; }
+    else if (isPolsarproMatrix(input, &matrixType, &error)) {
+      FREE(error);
+      return;
+    }
     else if (isASFInternal(input)) {
       meta = meta_read(input);
       if (meta && meta->sar) {
@@ -965,6 +970,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
   }
   if (meta)
     meta_free(meta);
+  free_ceos_names(inBandName, inMetaName);
 }
 
 // If a temporary directory has not been specified, create one using the time
@@ -1612,7 +1618,7 @@ static int check_config(const char *configFileName, convert_config *cfg)
     // Apply a default value if the user has not chosen one
     if (cfg->geocoding->pixel < 0.0) {
       
-      char *error = (char *) MALLOC(sizeof(char)*512);
+      char *error = NULL;
       // Check for airborne data: AirSAR, UAVSAR - 5 m
       if (isAIRSAR(cfg->general->in_name))
 	cfg->geocoding->pixel = 5.0;
@@ -2904,16 +2910,18 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
 	sprintf(tmpFile, "%s%c%s_thumb",
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
-	sprintf(overlayFile, "%s%c%s_overlay",
+	sprintf(overlayFile, "%s%c%s_overlay.kml",
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
-      } else {
+      }
+      else {
 	char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
 	strcpy(tmpFile, tmp);
 	strcpy(outFile, tmp);
 	strcat(outFile, ".png");
 	tmp = appendToBasename(cfg->general->out_name, "_overlay");
-	strcpy(overlayFile, tmp);
-	free(tmp);
+        char *tmp2 = appendExt(tmp, ".kml");
+	strcpy(overlayFile, tmp2);
+	free(tmp); free(tmp2);
       }
       
       // outFile is the thumbnail file and the following needs to also look for
@@ -3178,8 +3186,17 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     
     if (export_dem_ok) {
-      sprintf(outFile, "%s%cdem", cfg->general->out_name, DIR_SEPARATOR);
-      
+      // output name will be the SAR image's name with a "_dem" added
+      // to the basename
+      if (is_dir(cfg->general->out_name)) {
+        sprintf(outFile, "%s%cdem", cfg->general->out_name, DIR_SEPARATOR);
+      }
+      else {
+        tmp = appendToBasename(cfg->general->out_name, "_dem");
+        strcpy(outFile, tmp);
+        free(tmp);
+      }
+
       //Never re-geocode the DEM -- assume user has already put it into
       //their favored projection (since at this time we require that
       //DEMs be geocoded for terrain correction ingest).  So, proceed
