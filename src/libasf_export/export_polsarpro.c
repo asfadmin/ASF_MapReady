@@ -100,6 +100,9 @@ static char *datum2envi(datum_type_t datum)
   case WGS84_DATUM:
     strcpy(datumStr, "WGS-84");
     break;
+  case HUGHES_DATUM:
+    strcpy(datumStr, "Hughes");
+    break;
   }
   return datumStr;
 }
