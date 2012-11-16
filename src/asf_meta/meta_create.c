@@ -33,6 +33,9 @@ meta_parameters *meta_create(const char *fName)
 	if (require_ceos_metadata(fName,&junk,&junk2) != NO_CEOS_METADATA) {
 		ceos_init(fName, meta, REPORT_LEVEL_STATUS);
 		success=TRUE;
+		FREE(junk[0]);
+		FREE(junk[1]);
+		FREE(junk);
 	}
 	if (extExists(fName,".in")) {
 		ardop_init(fName,meta);

@@ -2684,6 +2684,7 @@ export_band_image (const char *metadata_file_name,
           FCLOSE(ofp);
 
         FCLOSE(fp);
+        FREE(out_file);
       }
     } // End for each band (kk is band number)
 
@@ -2695,7 +2696,6 @@ export_band_image (const char *metadata_file_name,
     FREE(path_name);
     FREE(matrix);
     FREE(decomposition);
-    FREE(out_file);
   }
 
   if (lut_file && strstr(lut_file, "tmp_lut_file.lut") && fileExists(lut_file)) {

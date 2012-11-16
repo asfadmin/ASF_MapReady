@@ -207,9 +207,7 @@ int isPolsarproMatrix(char *dataFile, char **matrixType, char **error)
     matrix = TRUE;
   }
   else {
-    char *message = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(message, "Matrix does not exist.");
-    *error = message;
+    *error = STRDUP("Matrix does not exist.");
   }
 
   *matrixType = directory;

@@ -590,17 +590,19 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
 
 int isASFInternal(const char *input_file)
 {
+  int ret=FALSE;
   char *inFile = STRDUP(input_file);
   char *meta_file = appendExt(inFile, ".meta");
   if (fileExists(meta_file)) {
     char *img_file = appendExt(inFile, ".img");
     if (fileExists(img_file)) {
-      FREE(inFile);
-      return TRUE;
+      ret = TRUE;
     }
+    FREE(img_file);
   }
+  FREE(meta_file);
   FREE(inFile);
-  return FALSE;
+  return ret;
 }
 
 int isSTF(const char *input_file)
@@ -771,7 +773,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   FREE(tmpDir);
   FREE(outMetaName);
   FREE(bandExt);
-
+  free_ceos_names(inBandName, inMetaName);
   return meta;
 }
 
@@ -877,7 +879,10 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
         asfPrintError("Pauli decomposition cannot be performed on the UAVSAR .hgt file.\n");
       return;
     }
-    else if (isPolsarproMatrix(input, &matrixType, &error)) { return; }
+    else if (isPolsarproMatrix(input, &matrixType, &error)) {
+      FREE(error);
+      return;
+    }
     else if (isASFInternal(input)) {
       meta = meta_read(input);
       if (meta && meta->sar) {
@@ -965,6 +970,7 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
   }
   if (meta)
     meta_free(meta);
+  free_ceos_names(inBandName, inMetaName);
 }
 
 // If a temporary directory has not been specified, create one using the time

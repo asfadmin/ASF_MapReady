@@ -43,7 +43,7 @@ int isCEOS(const char *dataFile, char **error)
   *error = message;
   FREE(dirName);
   FREE(fileName);
-
+  free_ceos_names(inBandName, inMetaName);
   return ret;
 }
 
@@ -243,15 +243,15 @@ int isRadarsat2(char *dataFile, char **error)
 {
   char dataType[25];
   int found = FALSE;
-  char *inFile = STRDUP(dataFile);
+  char *inFile = MALLOC(sizeof(char)*(strlen(dataFile)+16));
+  strcpy(inFile, dataFile);
   // Let's first check for an .xml extension
   char *ext = findExt(inFile);
 
   // Append extension in case we don't find it
   if (!fileExists(inFile) && ext == NULL) {
     strcat(inFile, ".xml");
-    ext = (char *) MALLOC(sizeof(char)*10);
-    strcpy(ext, ".xml");
+    ext = findExt(inFile);
   }
 
   // If it has the correct extension, investigate it further
