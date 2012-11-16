@@ -260,10 +260,6 @@ main(int argc, char **argv)
                 "<i>Remote Sensing Toolkit</i>\n"
                 "ver. %s",
                 MAPREADY_VERSION_STRING);
-    if (strlen(SVN_REV)>0)
-        sprintf(gtitle, "%s (build %s)", gtitle, SVN_REV);
-    else
-        strcat(gtitle, " (custom build)");
 
     pango_parse_markup(str, -1, 0, &attrs, &text, NULL, NULL);
     gtk_label_set_attributes(GTK_LABEL(widget), attrs);

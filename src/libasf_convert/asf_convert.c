@@ -2910,16 +2910,18 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
 	sprintf(tmpFile, "%s%c%s_thumb",
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
-	sprintf(overlayFile, "%s%c%s_overlay",
+	sprintf(overlayFile, "%s%c%s_overlay.kml",
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
-      } else {
+      }
+      else {
 	char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
 	strcpy(tmpFile, tmp);
 	strcpy(outFile, tmp);
 	strcat(outFile, ".png");
 	tmp = appendToBasename(cfg->general->out_name, "_overlay");
-	strcpy(overlayFile, tmp);
-	free(tmp);
+        char *tmp2 = appendExt(tmp, ".kml");
+	strcpy(overlayFile, tmp2);
+	free(tmp); free(tmp2);
       }
       
       // outFile is the thumbnail file and the following needs to also look for
