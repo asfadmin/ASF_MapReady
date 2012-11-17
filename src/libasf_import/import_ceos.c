@@ -1118,13 +1118,11 @@ void assign_band_names(meta_parameters *meta, char *outMetaName,
   else
     strcpy(radiometryStr, "");
 
-  /*
   if (band==1 && nBandsOut==1 && radiometry==r_AMP) {
     // This is the "-amp0" case
     sprintf(bandStr, "AMP");
   }
-  */
-  if (meta->general->image_data_type == COMPLEX_IMAGE)
+  else if (meta->general->image_data_type == COMPLEX_IMAGE)
   {
     if (!complex_flag) {
       if (strlen(bandExt) == 0)
@@ -1429,7 +1427,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     }
     else if (data_type >= COMPLEX_BYTE) {
       meta->general->data_type = REAL32;
-      meta->general->band_count = import_single_band ? 2 : band*2;
+      if (strcmp_case(bandExt, "AMP") == 0)
+	meta->general->band_count = 1;
+      else
+	meta->general->band_count = import_single_band ? 2 : band*2;
     }
     else {
       meta->general->data_type = REAL32;
@@ -1923,7 +1924,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 	}
 	else {
 	  put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
-	  put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
+	  if (!(amp0_flag && out_band==0))
+	    put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
 	  out++;
 	}
       }
