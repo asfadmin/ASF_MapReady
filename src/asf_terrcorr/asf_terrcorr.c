@@ -111,7 +111,8 @@
 "          confining the correlation to areas that you expect to provide good\n"\
 "          matches.\n\n"\
 "          The mask file should be 0 in the unmasked regions, and positive in\n"\
-"          the masked regions.\n\n"\
+"          the masked regions.  In other words, the mask should contain non-zero\n"\
+"          values in the area of interest.\n\n"\
 "          By default, the output image is left blank (filled with zeros) in the\n"\
 "          regions that are masked.  You may override this behavior using the\n"\
 "          -fill or -no-fill options, below.\n\n"\
