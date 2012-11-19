@@ -3230,7 +3230,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       cfg->terrain_correct->save_incid_angles)
   {
     if (cfg->general->geocoding) {
-      asfPrintStatus("Geocoding incidence angles...");
+      asfPrintStatus("Geocoding incidence angles...\n");
       update_status("Geocoding incidence angles...");
       sprintf(inFile, "%s%cterrcorr_side_products", 
 	      cfg->general->tmp_dir, DIR_SEPARATOR);
@@ -3276,6 +3276,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     
     if (cfg->general->export) {
       update_status("Exporting terrain correction side products...");
+      asfPrintStatus("Exporting terrain correction side products...\n");
       char *outTif = appendExt(outFile, ".tif");
 
       check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL,
@@ -3311,6 +3312,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   if (cfg->terrain_correct->save_terrcorr_layover_mask) {
     if (cfg->general->geocoding) {
       update_status("Geocoding layover mask...");
+      asfPrintStatus("Geocoding layover mask...\n");
       sprintf(inFile, "%s%cterrain_correct_mask",
 	      cfg->general->tmp_dir, DIR_SEPARATOR);
       sprintf(outFile, "%s%clayover_mask_geocoded",
