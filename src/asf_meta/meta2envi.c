@@ -43,6 +43,7 @@ envi_header* read_envi(char *envi_name)
 
   // Allocate memory for ESRI header structure
   envi = (envi_header *)MALLOC(sizeof(envi_header));
+  strcpy(envi->hemisphere, "");
   envi->band_name = NULL;
 
   // Read .hdr and fill meta structures
@@ -134,6 +135,7 @@ envi_header* read_envi(char *envi_name)
       sprintf(envi->datum, "%s", get_str_element(map_info, 7));
       sscanf(proj_info, "%lf, %lf, 0.0, 0.0, %s}",
 	     &envi->semimajor_axis, &envi->semiminor_axis, bla);
+      envi->center_lat = 0.0; // not used
       break;
     case 3:
       sprintf(envi->projection, "UTM");
@@ -146,6 +148,7 @@ envi_header* read_envi(char *envi_name)
       envi->pixel_size_y = fabs(envi->proj_dist_y);
       sprintf(envi->hemisphere, "%s", get_str_element(map_info, 8));
       sprintf(envi->datum, "%s", get_str_element(map_info, 9));
+      envi->center_lat = 0.0; // not used
       break;
     case 4:
       sprintf(envi->projection, "Lambert Conformal Conic");

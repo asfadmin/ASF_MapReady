@@ -202,6 +202,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
           if (max_dn <= MAX_RGB) {
               sample_size = 1;
               map_size = 1 << (sample_size * 8); // 2^bits_per_sample;
+              _TIFFfree(colors);
               max_dn = lut_to_tiff_palette(&colors, map_size, look_up_table_name);
               palette_color = 1;
           }
@@ -256,6 +257,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
       green = colors +   map_size;
       blue  = colors + 2*map_size;
       TIFFSetField(*otif, TIFFTAG_COLORMAP, red, green, blue);
+      _TIFFfree(colors);
   }
   else {
     // Else assume grayscale with minimum value (usually zero) means 'black'
@@ -2818,6 +2820,7 @@ int lut_to_tiff_palette(unsigned short **colors, int map_size, char *look_up_tab
         (*colors)[i + 2*map_size] = (unsigned short) ((b/(float)MAX_RGB)*(float)USHORT_MAX + 0.5);
     }
 
+    FREE(lut);
     return max_lut_dn;
 }
 
