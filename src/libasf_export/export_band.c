@@ -2007,8 +2007,7 @@ export_band_image (const char *metadata_file_name,
     if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
 	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
 	md->general->band_count != 1 && 
-	(format == POLSARPRO_HDR || format == GEOTIFF ||
-	 format == TIF || format == JPEG || format == PNG)) {
+	format == POLSARPRO_HDR) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -2209,41 +2208,77 @@ export_band_image (const char *metadata_file_name,
                   if (endsWith(outBase, mode))
                     strcpy(mode, "");
 		  if (strcmp_case(band_name[kk], "C11") == 0 ||
-		      strcmp_case(band_name[kk], "T11") == 0)
-		    sprintf(out_file, "%s%c%s%c%sHHHH", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		      strcmp_case(band_name[kk], "T11") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sHHHH", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_HHHH", outBase);
+		  }
 		  else if (strcmp_case(band_name[kk], "C22") == 0 ||
-			   strcmp_case(band_name[kk], "T22") == 0)
-		    sprintf(out_file, "%s%c%s%c%sHVHV", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+			   strcmp_case(band_name[kk], "T22") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sHVHV", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_HVHV", outBase);
+		  }
 		  else if (strcmp_case(band_name[kk], "C33") == 0 ||
-			   strcmp_case(band_name[kk], "T33") == 0)
-		    sprintf(out_file, "%s%c%s%c%sVVVV", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+			   strcmp_case(band_name[kk], "T33") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sVVVV", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_VVVV", outBase);
+		  }
 		  else if (strcmp_case(band_name[kk], "C12_real") == 0 ||
-			   strcmp_case(band_name[kk], "T12_real") == 0)
-		    sprintf(out_file, "%s%c%s%c%sHHHV_real", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+			   strcmp_case(band_name[kk], "T12_real") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sHHHV_real", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_HHHV_real", outBase);
+		  }
 		  else if (strcmp_case(band_name[kk], "C12_imag") == 0 ||
-			   strcmp_case(band_name[kk], "T12_imag") == 0)
-		    sprintf(out_file, "%s%c%s%c%sHHHV_imag", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+			   strcmp_case(band_name[kk], "T12_imag") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sHHHV_imag", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_HHHV_imag", outBase);
+		  }
 		  else if (strcmp_case(band_name[kk], "C13_real") == 0 ||
-			   strcmp_case(band_name[kk], "T13_real") == 0)
-		    sprintf(out_file, "%s%c%s%c%sHHVV_real", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+			   strcmp_case(band_name[kk], "T13_real") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sHHVV_real", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_HHVV_real", outBase);
+		  }
 		  else if (strcmp_case(band_name[kk], "C13_imag") == 0 ||
-			   strcmp_case(band_name[kk], "T13_imag") == 0)
-		    sprintf(out_file, "%s%c%s%c%sHHVV_imag", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+			   strcmp_case(band_name[kk], "T13_imag") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sHHVV_imag", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_HHVV_imag", outBase);
+		  }
 		  else if (strcmp_case(band_name[kk], "C23_real") == 0 ||
-			   strcmp_case(band_name[kk], "T23_real") == 0)
-		    sprintf(out_file, "%s%c%s%c%sHVVV_real", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+			   strcmp_case(band_name[kk], "T23_real") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sHVVV_real", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_HVVV_real", outBase);
+		  }
 		  else if (strcmp_case(band_name[kk], "C23_imag") == 0 ||
-			   strcmp_case(band_name[kk], "T23_imag") == 0)
-		    sprintf(out_file, "%s%c%s%c%sHVVV_imag", outBase, 
-			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+			   strcmp_case(band_name[kk], "T23_imag") == 0) {
+		    if (format == POLSARPRO_HDR)
+		      sprintf(out_file, "%s%c%s%c%sHVVV_imag", outBase, 
+			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		    else
+		      sprintf(out_file, "%s_HVVV_image", outBase);
+		  }
 		}
 		else if (strcmp(mode, "_hgt") == 0) {
                   if (endsWith(outBase, mode))
