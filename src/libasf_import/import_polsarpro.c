@@ -1085,11 +1085,15 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     }
 
     // Read the PolSAR Pro data into the layer stack
+    if (metOut)
+      meta_free(metOut);
     metaOut = meta_read(outBaseName);
     if (!is_polsarpro_matrix && !is_polsarpro_decomposition)
       strcat(metaOut->general->bands, ",POLSARPRO");
   }
   else {
+    if (metOut)
+      meta_free(metOut);
     metaOut = envi2meta(envi);
     metaOut->general->band_count = band_count;
     if (strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0 ||
