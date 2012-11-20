@@ -147,6 +147,16 @@ meta_parameters* open_pgm(const char *data_name, ClientInterface *client)
       return NULL;
     }
 
+    // Windows will have an extra byte due to "\r\n" instead of "\n"
+    // after the magic characters
+    if (magic[2] == '\r') {
+      FREAD(magic, sizeof(unsigned char), 1, info->fp);
+      if (magic[0] != '\n') {
+        // should not happen -- reset to just after we read the first 3
+        FSEEK(info->fp, 3, SEEK_SET);
+      }
+    }
+
     // skip any "comment" lines
     // rest of the line (or, the next two lines) contains "width height"
     char line[255];
