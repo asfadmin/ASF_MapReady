@@ -424,12 +424,17 @@ void initialize_pgm_file(const char *output_file_name,
 {
   const int max_color_value = 255;
 
-  *opgm = FOPEN (output_file_name, "w");
+  *opgm = FOPEN (output_file_name, "wb");
 
-  fprintf (*opgm, "%s\n", PGM_MAGIC_NUMBER);
-  fprintf (*opgm, "%ld\n", (long int) meta->general->sample_count);
-  fprintf (*opgm, "%ld\n", (long int) meta->general->line_count);
-  fprintf (*opgm, "%d\n", max_color_value);
+  unsigned char out[256];
+  sprintf (out, "%s\n%ld\n%ld\n%d\n",
+           PGM_MAGIC_NUMBER,
+           (long int) meta->general->sample_count,
+           (long int) meta->general->line_count,
+           max_color_value);
+  int len = strlen(out);
+
+  FWRITE(out, sizeof(unsigned char), len, *opgm);
 
   return;
 }

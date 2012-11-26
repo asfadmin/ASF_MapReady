@@ -259,6 +259,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     side_meta->general->band_count = 4;
     strcpy(side_meta->general->bands,
            "INCIDENCE_ANGLE_ELLIPSOID,INCIDENCE_ANGLE_LOCAL,RADIOMETRIC_CORRECTION,COS_PHI");
+    side_meta->general->image_data_type = IMAGE;
     fpSide = FOPEN(sideProductsImgName, "wb");
     FREE(sideProductsImgName);
   }

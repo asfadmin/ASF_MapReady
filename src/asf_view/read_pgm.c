@@ -171,17 +171,28 @@ meta_parameters* open_pgm(const char *data_name, ClientInterface *client)
       if (marker != 255) {
         printf("Suspicious: %d != 255\n", marker);
       }
-    } else if (n == 2 || n == 1) {
+    }
+    else if (n == 2 || n == 1) {
       if (n == 1) {
         fgets(line, 255, info->fp);
         sscanf(line, "%d\n", &height);
       }
+
       // read "255b" ('b' could be newline or just a space)
       FREAD(line, sizeof(unsigned char), 4, info->fp);
       if (line[0] != '2' || line[1] != '5' || line[2] != '5' ||
           !isspace(line[3])) {
         printf("Suspicious: '%c%c%c%c' != '255 '\n",
                line[0], line[1], line[2], line[3]);
+      }
+
+      // For .pgm files generated on Windows, need to read one more byte
+      if (line[3] == '\r') {
+        FREAD(line, sizeof(unsigned char), 1, info->fp);
+        if (line[0] != '\n') {
+          // should not happen -- reset to just after we read the first 3
+          FSEEK(info->fp, -1, SEEK_CUR);
+        }
       }
     } else {
       printf("Did not find start of data marker...\n");
