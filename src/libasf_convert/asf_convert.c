@@ -3263,7 +3263,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	sprintf(outFile, "%s%c%s_terrcorr_side_products", cfg->general->out_name,
 		DIR_SEPARATOR, find_decomposition(meta));
       else
-	sprintf(outFile, "%s%cterrsorr_side_products", cfg->general->out_name,
+	sprintf(outFile, "%s%cterrcorr_side_products", cfg->general->out_name,
 		DIR_SEPARATOR);
       meta_free(meta);
     }

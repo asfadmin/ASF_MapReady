@@ -96,12 +96,12 @@ static void
 fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
 {
   int qf_saved = quietflag;
-  char match_file[256];
   quietflag = 1;
   //quietflag = 0;
   
-  strcpy(match_file,"fft_match.txt");
-  fftMatch(file1, file2, match_file, dx, dy, cert);
+  //char match_file[256];
+  //strcpy(match_file,"fft_match.txt");
+  fftMatch(file1, file2, NULL, dx, dy, cert);
   //asfPrintStatus("Regular matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
   //fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
   //asfPrintStatus("   Grid matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
