@@ -2282,7 +2282,7 @@ export_band_image (const char *metadata_file_name,
 		      sprintf(out_file, "%s%c%s%c%sHVVV_imag", outBase, 
 			      DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
 		    else
-		      sprintf(out_file, "%s_HVVV_image", outBase);
+		      sprintf(out_file, "%s_HVVV_imag", outBase);
 		  }
 		}
 		else if (strcmp(mode, "_hgt") == 0) {
