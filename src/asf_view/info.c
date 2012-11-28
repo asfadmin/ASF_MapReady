@@ -11,6 +11,7 @@ int meta_supports_meta_get_latLon(meta_parameters *meta)
   if (meta->projection || 
       (meta->sar&&meta->state_vectors) ||
       meta->airsar ||
+      meta->uavsar ||
       meta->transform) {
     return TRUE;
   } 
