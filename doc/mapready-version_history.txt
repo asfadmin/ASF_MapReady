@@ -1,5 +1,14 @@
 MapReady Version History
 
+MapReady 3.1.17 (released 2012 November 30)
+- Enhanced support for ingest and terrain correction of PolSARPro data
+- Fixes in geolocation of Palsar L1.1 (SLC) data
+- Support use of ERS 1/2 precision state vectors
+- Added ability to account for the geoid during terrain correction
+- No longer support pixel size specification for terrain correction,
+  software will choose appropriate size.
+- Enhanced support for UAVSAR, TerraSAR-X and Radarsat-2 data
+
 MapReady 3.0.4 (released 2012 May 4)
 - Support for UAVSAR data
 - New radiometric correction method (Ulander)
