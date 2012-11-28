@@ -2011,8 +2011,7 @@ export_band_image (const char *metadata_file_name,
     // the files out of the box.
     if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
 	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
-	md->general->band_count != 1 && 
-	format == POLSARPRO_HDR) {
+	md->general->band_count != 1) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
@@ -2190,9 +2189,8 @@ export_band_image (const char *metadata_file_name,
               FREE(out_file);
               continue;
             }
-	    if (format == POLSARPRO_HDR ||
-		(is_polsarpro && format == GEOTIFF &&
-		 strcmp_case(md->general->sensor, "UAVSAR") != 0)) { 
+	    if (is_polsarpro && 
+		strcmp_case(md->general->sensor, "UAVSAR") != 0) { 
 	      // output goes to directory
 	      sprintf(out_file, "%s%c%s", 
 		      path_name, DIR_SEPARATOR, band_name[kk]);
