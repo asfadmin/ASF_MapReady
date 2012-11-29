@@ -995,7 +995,6 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     char uavsar_type[5];
 
     is_airsar = isAIRSAR(ceosName);
-
     is_ceos = isCEOS(ceosName, &error);
     FREE(error); error = NULL;
 
