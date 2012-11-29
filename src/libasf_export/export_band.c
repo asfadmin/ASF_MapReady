@@ -2018,12 +2018,15 @@ export_band_image (const char *metadata_file_name,
       char *path = get_dirname(output_file_name);
       if (strlen(dirName) <= 0) {
 	path = g_get_current_dir();
+	output_file_name = stripExt(output_file_name);
 	sprintf(path_name, "%s%c%s%c%s", 
 		path, DIR_SEPARATOR, output_file_name, DIR_SEPARATOR, matrix);
       }
-      else
+      else {
+	fileName = stripExt(fileName);
 	sprintf(path_name, "%s%c%s%c%s", 
 		dirName, DIR_SEPARATOR, fileName, DIR_SEPARATOR, matrix);
+      }
       if (is_dir(path_name))
 	asfPrintStatus("Output directory (%s) already exists.\n", path_name);
       else if(create_dir(path_name) == -1)
