@@ -242,6 +242,7 @@ int isTerrasar(char *dataFile, char **error)
 int isRadarsat2(char *dataFile, char **error)
 {
   char dataType[25];
+  char *message = NULL;
   int found = FALSE;
   char *inFile = MALLOC(sizeof(char)*(strlen(dataFile)+16));
   strcpy(inFile, dataFile);
@@ -258,23 +259,22 @@ int isRadarsat2(char *dataFile, char **error)
   // Might sound a little harsh but avoids some XML parser warning otherwise.
   if (fileExists(inFile) && ext && strcmp_case(ext, ".xml") == 0) {
     int ii, band_count = 0;
-    char tmp[256], *path = NULL, *message = NULL, *inDataName = NULL;
-    char polarizations[20];
-    char *satellite = (char *) MALLOC(sizeof(char)*25);
+    char tmp[256], *path = NULL, *inDataName = NULL;
+    char polarizations[25], satellite[25];
     FILE *fp;
     fp = fopen(inFile, "r");
     xmlDoc *doc = xmlReadFile(inFile, NULL, 0);
     if (doc) {
-      strcpy(satellite, 
-	     xml_get_string_value(doc, "product.sourceAttributes.satellite"));
+      strncpy_safe(satellite, 
+	           xml_get_string_value(doc, "product.sourceAttributes.satellite"), 20);
       
       // only care about Radarsat-2 data
       if (satellite &&
 	  strcmp_case(satellite, "RADARSAT-2") == 0) {
 	
 	found = TRUE;
-	strcpy(dataType, xml_get_string_value(doc, 
-          "product.imageAttributes.rasterAttributes.dataType"));	
+	strncpy_safe(dataType, xml_get_string_value(doc, 
+          "product.imageAttributes.rasterAttributes.dataType"), 20);
 	if (strcmp_case(dataType, "COMPLEX") != 0) {
 	  if (!message)
 	    message = (char *) MALLOC(sizeof(char)*1024);
@@ -286,9 +286,9 @@ int isRadarsat2(char *dataFile, char **error)
 	
 	// path from the xml (metadata) file
 	path = get_dirname(inFile);
-	inDataName = (char *) MALLOC(sizeof(char)*(strlen(path)+100));
-	strcpy(polarizations, xml_get_string_value(doc, 
-	  "product.sourceAttributes.radarParameters.polarizations"));
+	inDataName = (char *) MALLOC(sizeof(char)*(strlen(path)+512));
+	strncpy_safe(polarizations, xml_get_string_value(doc, 
+	  "product.sourceAttributes.radarParameters.polarizations"),20);
 	for (ii=0; ii<strlen(polarizations)-1; ii++)
 	  if (polarizations[ii] == ' ')
 	  polarizations[ii] = ',';
@@ -328,6 +328,9 @@ int isRadarsat2(char *dataFile, char **error)
     }
   }    
   FREE(inFile);
+
+  if (!found && message)
+    *error = message;
 
   return found;
 }

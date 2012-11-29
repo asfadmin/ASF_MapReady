@@ -996,11 +996,16 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 
     is_airsar = isAIRSAR(ceosName);
     is_ceos = isCEOS(ceosName, &error);
+    FREE(error); error = NULL;
+
     is_radarsat2 = isRadarsat2(ceosName, &error);
+    FREE(error); error = NULL;
+
     is_terrasar = isTerrasar_ext(ceosName, TRUE, &error);
+    FREE(error); error = NULL;
+
     is_uavsar = isUAVSAR(ceosName, &error);
-    FREE(error);
-    error = NULL;
+    FREE(error); error = NULL;
     
     if (is_ceos)
       metaOut = meta_read(ceosName);
@@ -1175,10 +1180,10 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     // Do the ingest...
     for (ii=0; ii<metaOut->general->line_count; ii++) {
       if (flip_vertical)
-	get_float_line(fpIn, metaIn, metaOut->general->line_count-ii-1, 
+	get_float_line(fpIn, metaOut, metaOut->general->line_count-ii-1, 
 		       floatBuf);
       else
-	get_float_line(fpIn, metaIn, ii, floatBuf);
+	get_float_line(fpIn, metaOut, ii, floatBuf);
       int kk;
       for (kk=0; kk<metaOut->general->sample_count; kk++) {
 	ieee_big32(floatBuf[kk]);
