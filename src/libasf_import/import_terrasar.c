@@ -208,7 +208,7 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
 	asfv, aslv, rsfv, rslv);
       */
       
-      meta->general->line_count = aslv - asfv + 1;
+      meta->general->line_count = aslv - asfv;
       meta->general->sample_count = rslv - rsfv + 1;
       amp = (float *) MALLOC(sizeof(float)*(rslv-rsfv+1));
       phase = (float *) MALLOC(sizeof(float)*(rslv-rsfv+1));
@@ -224,13 +224,13 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
 	  amp[kk-rsfv] = sqrt(re*re + im*im);
 	  phase[kk-rsfv] = atan2(im, re);
 	}
-    int line_out = ll-3;
-    if (meta->general->orbit_direction == 'A')
-      line_out = meta->general->line_count - (ll-3 + 1);
+        int line_out = ll-3;
+        if (meta->general->orbit_direction == 'A')
+          line_out = meta->general->line_count - (ll-3);
 	put_band_float_line(fpOut, meta, ii*2, line_out, amp);
 	if (!ampOnly)
 	  put_band_float_line(fpOut, meta, ii*2+1, line_out, phase);
-	asfLineMeter(ll, azimuth_samples);
+        asfLineMeter(ll, azimuth_samples);
       }
       meta_write(meta, outDataName);
       FREE(path);
