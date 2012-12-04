@@ -2,6 +2,7 @@ Please note that this document is outdated, builds are now done
 via Jenkins - jenkins.asf.alaska.edu
 
 TEST CHANGE
+TEST CHANGE #2
 
 The User Tool Development Group's Release Procedure Instructions:
 =================================================================
