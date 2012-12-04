@@ -1,6 +1,8 @@
 Please note that this document is outdated, builds are now done
 via Jenkins - jenkins.asf.alaska.edu
 
+TEST CHANGE
+
 The User Tool Development Group's Release Procedure Instructions:
 =================================================================
 
