@@ -77,10 +77,9 @@ int isAIRSAR(char *dataFile)
   int P_airsar = 0;
   char buf[4400], *value, *band_data, *s;
   double version;
-  char *inFile = STRDUP(dataFile);
-
   if (is_dir(dataFile))
     return FALSE;
+  char *inFile = STRDUP(dataFile);
 
   // Allocate memory and file handling
   value = (char *) MALLOC(sizeof(char)*25);
