@@ -79,6 +79,9 @@ int isAIRSAR(char *dataFile)
   double version;
   char *inFile = STRDUP(dataFile);
 
+  if (is_dir(dataFile))
+    return FALSE;
+
   // Allocate memory and file handling
   value = (char *) MALLOC(sizeof(char)*25);
   header = (airsar_header *) CALLOC(1, sizeof(airsar_header));
@@ -86,7 +89,7 @@ int isAIRSAR(char *dataFile)
   strcpy(band_data, inFile);
 
   // Try L-band
-  s = strstr(band_data, "_");
+  s = strrchr(band_data, '_');
   if (s) {
     *s = '\0';
     strcat(s, "_l.dat");
@@ -104,7 +107,7 @@ int isAIRSAR(char *dataFile)
   L_airsar = FALSE;*/
 
   // Try C-band
-  s = strstr(band_data, "_");
+  s = strrchr(band_data, '_');
   if (s) {
     *s = '\0';
     strcat(s, "_c.dat");
@@ -122,7 +125,7 @@ int isAIRSAR(char *dataFile)
   C_airsar = FALSE;*/
 
     // Try P-band
-  s = strstr(band_data, "_");
+  s = strrchr(band_data, '_');
   if (s) {
     *s = '\0';
     strcat(s, "_p.dat");
