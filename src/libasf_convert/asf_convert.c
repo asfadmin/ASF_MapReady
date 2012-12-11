@@ -4021,11 +4021,15 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
            strlen(cfg->import->polsarpro_colormap) > 0)
   {
     strcpy(lut_file, cfg->import->polsarpro_colormap);
+    if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
+      scale = MINMAX;
   }
   else if (is_polsarpro && meta->colormap &&
            meta->colormap->look_up_table && strlen(meta->colormap->look_up_table) > 0)
   {
     strcpy(lut_file, meta->colormap->look_up_table);
+    if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
+      scale = MINMAX;
   }
   if (strlen(cfg->export->lut) > 0 ||
       ((is_polsarpro || is_insar) && strlen(lut_file) > 0))
