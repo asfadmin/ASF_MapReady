@@ -1023,6 +1023,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     else if (is_terrasar) {
       terrasar_meta *terrasar = read_terrasar_meta(ceosName);
       metaOut = terrasar2meta(terrasar);
+      if (metaOut->general->orbit_direction == 'A')
+        flip_vertical = TRUE;
       FREE(terrasar);
     }
     else if (is_uavsar) {
@@ -1134,9 +1136,13 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       metaOut->general->data_type = ASF_BYTE;
     }
   }
-  floatBuf = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
+
+  // add some padding, since the sizes could be off by 1 due to roundoff
+  int len = metaOut->general->sample_count > metaIn->general->sample_count ?
+            metaOut->general->sample_count : metaIn->general->sample_count;
+  floatBuf = (float *) MALLOC(sizeof(float)*len);
   if (flip_horizontal)
-    tmp = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
+    tmp = (float *) MALLOC(sizeof(float)*len);
 
   for (band=0; band<band_count; band++) {
     if (band == 0 && metaIn->projection)
@@ -1178,14 +1184,16 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     fpIn = FOPEN(polsarName, "rb");
 
     // Do the ingest...
-    for (ii=0; ii<metaOut->general->line_count; ii++) {
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      int kk;
+      for (kk=0; kk<len; kk++)
+        floatBuf[kk] = 0.0;
       if (flip_vertical)
-	get_float_line(fpIn, metaIn, metaOut->general->line_count-ii-1, 
+	get_float_line(fpIn, metaIn, metaIn->general->line_count-ii-1, 
 		       floatBuf);
       else
 	get_float_line(fpIn, metaIn, ii, floatBuf);
-      int kk;
-      for (kk=0; kk<metaOut->general->sample_count; kk++) {
+      for (kk=0; kk<metaIn->general->sample_count; kk++) {
 	ieee_big32(floatBuf[kk]);
 	if (colormapName && strlen(colormapName) &&
 	    strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0 &&
@@ -1201,13 +1209,14 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 	} 
       }
       if (flip_horizontal) {
-	for (kk=0; kk<metaOut->general->sample_count; kk++)
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
 	  tmp[kk] = floatBuf[kk];
-	for (kk=0; kk<metaOut->general->sample_count; kk++)
-	  floatBuf[kk] = tmp[metaOut->general->sample_count-kk-1];
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
+	  floatBuf[kk] = tmp[metaIn->general->sample_count-kk-1];
       }
-      put_float_line(fpOut, metaOut, ii, floatBuf);
-      asfLineMeter(ii, metaOut->general->line_count);
+      if (ii < metaOut->general->line_count) 
+        put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
     }
 
     // If there is a colormap associated with the file, then add it to the 
