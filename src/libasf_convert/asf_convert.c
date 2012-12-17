@@ -2978,6 +2978,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	  //            bands[0] = meta->general->bands;
 	  //            bands[1] = NULL;
 	  
+	  if (is_polsarpro)
+	    scale = MINMAX;
 	  check_return(
 		       asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0,
 					lut_file, inFile, outFile, bands,
