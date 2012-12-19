@@ -208,7 +208,7 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
 	asfv, aslv, rsfv, rslv);
       */
       
-      meta->general->line_count = aslv - asfv + 1;
+      meta->general->line_count = aslv - asfv;
       meta->general->sample_count = rslv - rsfv + 1;
       amp = (float *) MALLOC(sizeof(float)*(rslv-rsfv+1));
       phase = (float *) MALLOC(sizeof(float)*(rslv-rsfv+1));
@@ -236,7 +236,8 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       FREE(path);
       FREE(inDataName);
       FCLOSE(fpIn);
-      FCLOSE(fpOut);
+      if (ii==numberOfLayers-1)
+        FCLOSE(fpOut);
       FREE(amp);
       FREE(phase);
     }    
