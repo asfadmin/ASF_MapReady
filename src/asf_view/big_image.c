@@ -20,36 +20,91 @@ static int big_img_height=800;
 static int big_img_width2=400;
 static int big_img_height2=400;
 
-int get_big_image_width()
+int get_big_image_width_full()
 {
     return big_img_width;
 }
 
-int get_big_image_height()
+int get_big_image_height_full()
 {
     return big_img_height;
 }
 
-int get_big_image_width2()
+int get_big_image_width2_full()
 {
     return big_img_width2;
 }
 
-int get_big_image_height2()
+int get_big_image_height2_full()
 {
     return big_img_height2;
 }
+
+// This is for the subimage display, when the user is showing
+// several images panelled together.  Each panel should be
+// the same size, the following functions return those sizes
+// subimages can be 1, 2 or 4.
+int subimages = 1;
+
+int get_big_image_width_sub()
+{
+    switch (subimages) {
+        default:
+        case 1:
+            return big_img_width;
+        case 2:
+        case 4:
+            return big_img_width/2;
+    }
+}
+
+int get_big_image_height_sub()
+{
+    switch (subimages) {
+        default:
+        case 1:
+        case 2:
+            return big_img_height;
+        case 4:
+            return big_img_height/2;
+    }
+}
+
+int get_big_image_width2_sub()
+{
+    switch (subimages) {
+        default:
+        case 1:
+            return big_img_width2;
+        case 2:
+        case 4:
+            return big_img_width2/2;
+    }
+}
+
+int get_big_image_height2_sub()
+{
+    switch (subimages) {
+        default:
+        case 1:
+        case 2:
+            return big_img_height2;
+        case 4:
+            return big_img_height2/2;
+    }
+}
+
 
 SIGNAL_CALLBACK void on_big_image_resize(GtkWidget *w, 
     GtkAllocation *alloc, gpointer user_data)
 {
     // User resized!
     // Recalculate the width/height and half-width/half-height values
-    // This if statement just prevents doing the redraw if the user didn't
+    // The first if statement just prevents doing the redraw if the user didn't
     // actually resize (i.e., just grabbed the edge but didn't drag it).
-    // (It also is useful to stop an infinate cascade-of-resizes that GTK
+    // It also is useful to stop an infinite cascade-of-resizes that GTK
     // sometimes seems to get stuck in -- the "fill_small/big" will
-    // occasionally trigger a resize that runs after this method completes)
+    // occasionally trigger a resize that runs after this method completes.
     if (big_img_width != alloc->width || big_img_height != alloc->height)
     {
         big_img_width = alloc->width;
@@ -73,15 +128,15 @@ static void ls2img(double line, double samp, int *x, int *y)
 {
     // convert from line/sample coordinates (SAR image coordinates)
     // to screen coordinates
-    *x = (samp - (double)center_samp)/zoom + get_big_image_width2();
-    *y = (line - (double)center_line)/zoom + get_big_image_height2();
+    *x = (samp - (double)center_samp)/zoom + get_big_image_width2_sub();
+    *y = (line - (double)center_line)/zoom + get_big_image_height2_sub();
 }
 
 void img2ls(int x, int y, double *line, double *samp)
 {
     // convert from screen coordinates to line/sample coordinates
-    *line = ((double)y - get_big_image_height2())*zoom + (double)center_line;
-    *samp = ((double)x - get_big_image_width2())*zoom + (double)center_samp;
+    *line = ((double)y - get_big_image_height2_sub())*zoom + (double)center_line;
+    *samp = ((double)x - get_big_image_width2_sub())*zoom + (double)center_samp;
 }
 
 static void destroy_pb_data(guchar *pixels, gpointer data)
@@ -585,7 +640,7 @@ static void add_north_arrow(GdkPixbuf *pb, ImageInfo *ii)
 
   // arrow location: bottom right corner
   int ax = 20;
-  int ay = get_big_image_height() - 20;
+  int ay = get_big_image_height_full() - 20;
   double arrow_line, arrow_samp, lat, lon;
   img2ls(ax,ay,&arrow_line,&arrow_samp);
   meta_get_latLon(ii->meta,arrow_line,arrow_samp,0,&lat,&lon);
@@ -635,8 +690,8 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
 
     int i, j, k, m, n;
     int nchan = 3; // RGB for now, don't support RGBA yet
-    int biw = get_big_image_width();
-    int bih = get_big_image_height();
+    int biw = get_big_image_width_sub();
+    int bih = get_big_image_height_sub();
     unsigned char *bdata = MALLOC(sizeof(unsigned char)*biw*bih*nchan);
     int background_red=0, background_blue=0, background_green=0;
 
@@ -899,8 +954,61 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
 
 void fill_big(ImageInfo *ii)
 {
-    // never show the crosshair for the planner -- not needed any longer
-    GdkPixbuf *pb = make_big_image(ii, !planner_is_active());
+    GdkPixbuf *pb = NULL;
+    if (subimages == 1) {
+        // never show the crosshair for the planner -- not needed any longer
+        pb = make_big_image(ii, !planner_is_active());
+    }
+    else if (subimages == 2) {
+        int next_image_info_index = (current_image_info_index + 1) % n_images_loaded;
+        ImageInfo *ii1 = &image_info[next_image_info_index];
+
+        GdkPixbuf *pb1 = make_big_image(ii, !planner_is_active());
+        GdkPixbuf *pb2 = make_big_image(ii1, !planner_is_active());
+
+        int w = get_big_image_width_sub();
+        int h = get_big_image_height_sub();
+        int biw = get_big_image_width_full();
+        int bih = get_big_image_height_full();
+
+        pb = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, biw, bih);
+        gdk_pixbuf_copy_area(pb1, 0, 0, w, h, pb, 0, 0);
+        gdk_pixbuf_copy_area(pb2, 0, 0, w, h, pb, w, 0);
+
+        g_object_unref(pb1);
+        g_object_unref(pb2);
+    }
+    else if (subimages == 4) {
+        int ind1 = (current_image_info_index + 1) % n_images_loaded;
+        int ind2 = (current_image_info_index + 2) % n_images_loaded;
+        int ind3 = (current_image_info_index + 3) % n_images_loaded;
+
+        ImageInfo *ii1 = &image_info[ind1];
+        ImageInfo *ii2 = &image_info[ind2];
+        ImageInfo *ii3 = &image_info[ind3];
+
+        GdkPixbuf *pb0 = make_big_image(ii, !planner_is_active());
+        GdkPixbuf *pb1 = make_big_image(ii1, !planner_is_active());
+        GdkPixbuf *pb2 = make_big_image(ii2, !planner_is_active());
+        GdkPixbuf *pb3 = make_big_image(ii3, !planner_is_active());
+
+        int w = get_big_image_width_sub();
+        int h = get_big_image_height_sub();
+        int biw = get_big_image_width_full();
+        int bih = get_big_image_height_full();
+
+        pb = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, biw, bih);
+        gdk_pixbuf_copy_area(pb0, 0, 0, w, h, pb, 0, 0);
+        gdk_pixbuf_copy_area(pb1, 0, 0, w, h, pb, w, 0);
+        gdk_pixbuf_copy_area(pb2, 0, 0, w, h, pb, 0, h);
+        gdk_pixbuf_copy_area(pb3, 0, 0, w, h, pb, w, h);
+
+        g_object_unref(pb0);
+        g_object_unref(pb1);
+        g_object_unref(pb2);
+        g_object_unref(pb3);
+    }
+
     GtkWidget *img = get_widget_checked("big_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
     //g_object_unref(pb);
@@ -931,12 +1039,28 @@ int last_was_crosshair = TRUE;
 
 void big_clicked(GdkEventButton *event)
 {
+    int x = (int)event->x;
+    int y = (int)event->y;
+
+    // if user clicked in one of the other sub-windows, pretend it
+    // was in the upper-left one
+    if (subimages == 2) {
+        if (x > get_big_image_width_sub())
+            x -= get_big_image_width_sub();
+    }
+    else if (subimages == 4) {
+        if (x > get_big_image_width_sub())
+            x -= get_big_image_width_sub();
+        if (y > get_big_image_height_sub())
+            y -= get_big_image_height_sub();
+    }
+
     if (event->button == 1) {
         // ctrl-left-click: measure distance
         if (((int)event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK) {
             if (g_poly->n < MAX_POLY_LEN) {
                 double l, s;
-                img2ls((int)event->x, (int)event->y, &l, &s);
+                img2ls(x, y, &l, &s);
                 g_poly->line[g_poly->n] = l;
                 g_poly->samp[g_poly->n] = s;
                 ++g_poly->n;
@@ -952,12 +1076,11 @@ void big_clicked(GdkEventButton *event)
         else {
           if (planner_is_active()) {
             double l, s;
-            img2ls((int)event->x, (int)event->y, &l, &s);
+            img2ls(x, y, &l, &s);
             planner_click((int)(l+.5),(int)(s+.5));
           }
           else {
-            img2ls((int)event->x, (int)event->y,
-                   &crosshair_line, &crosshair_samp);
+            img2ls(x, y, &crosshair_line, &crosshair_samp);
             last_was_crosshair = TRUE;
           }
         }
@@ -965,7 +1088,7 @@ void big_clicked(GdkEventButton *event)
         fill_big(curr);
     } else if (event->button == 3) {
         // right-click: re-center
-        img2ls((int)event->x, (int)event->y, &center_line, &center_samp);
+        img2ls(x, y, &center_line, &center_samp);
         fill_small(curr);
         fill_big(curr);
     }
@@ -1155,14 +1278,14 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         // Page Down or Minus: Zoom OUT
         zoom_out(ii);
     }
-    else if (event->keyval == GDK_Home) {
+    else if (event->keyval == GDK_Home || event->keyval == GDK_equal) {
         // Home: Revert to the normal zoom level
         zoom_default(ii);
     }
-    else if (event->keyval == GDK_End) {
+    else if (event->keyval == GDK_End || event->keyval == GDK_0) {
         // End: Fit image to window
-        int h = get_big_image_height();
-        int w = get_big_image_width();
+        int h = get_big_image_height_sub();
+        int w = get_big_image_width_sub();
 
         // choose the larger of the horiz/vert zoom
         double z1 = (double)(ii->nl)/(double)h;
@@ -1295,6 +1418,21 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
             crosshair_samp=samp_max;
         }
         update_pixel_info(ii);
+    }
+    else if (event->keyval == GDK_1) {
+        if (subimages != 1) {
+            subimages = 1;
+        }
+    }
+    else if (event->keyval == GDK_2) {
+        if (subimages != 2) {
+            subimages = 2;
+        }
+    }
+    else if (event->keyval == GDK_4) {
+        if (subimages != 4) {
+            subimages = 4;
+        }
     }
     else if (event->keyval == GDK_f || event->keyval == GDK_F) {
         double lat=0, lon=0; //, x, y;
