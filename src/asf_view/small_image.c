@@ -12,8 +12,8 @@ static void put_bounding_box(GdkPixbuf *pixbuf, ImageInfo *ii)
 {
     int i, width, height, rowstride, n_channels;
     guchar *pixels, *p;
-    const int bb_width = get_big_image_width();
-    const int bb_height = get_big_image_height();
+    const int bb_width = get_big_image_width_sub();
+    const int bb_height = get_big_image_height_sub();
     int ns = ii->ns;
     int nl = ii->nl;
 
