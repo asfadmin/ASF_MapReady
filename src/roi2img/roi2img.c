@@ -110,7 +110,10 @@ double C = 299792458.0;
 
 main(int argc, char *argv[]) 
 {
-  FILE *fpin, *fpout;
+  int meta_only = extract_flag_options(&argc, &argv, "-meta_only", "--meta_only",
+                                       "-meta-only", "--meta-only", "-m", NULL);
+
+  FILE *fpin=NULL, *fpout=NULL;
   
   float ibuff[CPX_PIX*2*LD];
   float obuff[CPX_PIX/LA];
@@ -120,7 +123,8 @@ main(int argc, char *argv[])
   int nl;
   int i,j,k,line;
   double t;
-  char infile[256], outfile[256], roifile[256], hdrfile[256];
+  char infile[256], outfile[256];
+  char roifile[256], hdrfile[256];
   
   ymd_date date;
   hms_time time;
@@ -138,11 +142,12 @@ main(int argc, char *argv[])
     printf("\base_file_name\tinput ROI slc file; output ASF .img and .ddr\n");
     exit(1);
   }
-  
+ 
   strcpy(infile,argv[1]);
   strcat(infile,".slc");
   strcpy(outfile,argv[1]);
   strcat(outfile,".img");
+
   strcpy(roifile,argv[1]);
   strcat(roifile,".roi.in");
   strcpy(hdrfile,argv[1]);
@@ -156,35 +161,42 @@ main(int argc, char *argv[])
   read_hdrfile(hdrfile);
   
   /* Open the input slc file and output img file*/
-  fpin = fopen(infile,"rb");
-  if (fpin==NULL) {printf("ERROR: Unable to open input file %s\n",infile); exit(1);}
-  fpout = fopen(outfile,"wb");
 
-  /* Take the complex looks from the slc file to create the img file */
-  printf("Taking complex looks from file %s to create %s\n",infile,outfile);
-  for (line=0; line < nl; line+=LD) {
-    if (line%2560==0) printf("\t%i\n",line);
-    fread(ibuff,sizeof(float),CPX_PIX*2*LD,fpin);
+  if (!meta_only) {
+    fpin = fopen(infile,"rb");
+    if (fpin==NULL) {printf("ERROR: Unable to open input file %s\n",infile); exit(1);}
+    fpout = fopen(outfile,"wb");
+    if (fpout==NULL) {printf("ERROR: Unable to open output file %s\n",outfile); exit(1);}
 
-    /* take looks down */
-    for (j=0; j<ns; j++) {
-      b[j] = 0;
-      for (i=0; i<LD; i++)
-        b[j] = b[j] + (ibuff[(2*j)+(i*CPX_PIX*2)]*ibuff[2*j+(i*CPX_PIX*2)]) 
-		    + (ibuff[(2*j+1)+(i*CPX_PIX*2)]*ibuff[(2*j+1)+(i*CPX_PIX*2)]);    
-    }
+    /* Take the complex looks from the slc file to create the img file */
+    printf("Taking complex looks from file %s to create %s\n",infile,outfile);
+    for (line=0; line < nl; line+=LD) {
+      if (line%2560==0) printf("\t%i\n",line);
+      fread(ibuff,sizeof(float),CPX_PIX*2*LD,fpin);
+
+      /* take looks down */
+      for (j=0; j<ns; j++) {
+        b[j] = 0;
+        for (i=0; i<LD; i++)
+          b[j] = b[j] + (ibuff[(2*j)+(i*CPX_PIX*2)]*ibuff[2*j+(i*CPX_PIX*2)]) 
+                      + (ibuff[(2*j+1)+(i*CPX_PIX*2)]*ibuff[(2*j+1)+(i*CPX_PIX*2)]);    
+      }
     
-    /* take looks across */
-    for (j=0; j<CPX_PIX/LA; j++) {
-      c[j] = 0;
-      for (k=0;k<LA;k++)
-        c[j] = c[j] + b[j*LA+k];
-      c[j] = sqrt(c[j]);
+      /* take looks across */ 
+      for (j=0; j<CPX_PIX/LA; j++) {
+        c[j] = 0;
+        for (k=0;k<LA;k++)
+          c[j] = c[j] + b[j*LA+k];
+        c[j] = sqrt(c[j]);
+      }
+      byteswap(c,CPX_PIX/LA);
+      fwrite(c,sizeof(float),CPX_PIX/LA,fpout);
     }
-    byteswap(c,CPX_PIX/LA);
-    fwrite(c,sizeof(float),CPX_PIX/LA,fpout);
+
+    fclose(fpin);
+    fclose(fpout);
   }
-  
+
   printf("Propagating state vectors to requested time...\n");
   create_input_tle_file(s_date,s_time,"tle1.txt");
   propagate_state_vector("tle1.txt"); 
