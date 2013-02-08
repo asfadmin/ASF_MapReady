@@ -202,6 +202,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
           if (max_dn <= MAX_RGB) {
               sample_size = 1;
               map_size = 1 << (sample_size * 8); // 2^bits_per_sample;
+              _TIFFfree(colors);
               max_dn = lut_to_tiff_palette(&colors, map_size, look_up_table_name);
               palette_color = 1;
           }
@@ -256,6 +257,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
       green = colors +   map_size;
       blue  = colors + 2*map_size;
       TIFFSetField(*otif, TIFFTAG_COLORMAP, red, green, blue);
+      _TIFFfree(colors);
   }
   else {
     // Else assume grayscale with minimum value (usually zero) means 'black'
@@ -422,12 +424,17 @@ void initialize_pgm_file(const char *output_file_name,
 {
   const int max_color_value = 255;
 
-  *opgm = FOPEN (output_file_name, "w");
+  *opgm = FOPEN (output_file_name, "wb");
 
-  fprintf (*opgm, "%s\n", PGM_MAGIC_NUMBER);
-  fprintf (*opgm, "%ld\n", (long int) meta->general->sample_count);
-  fprintf (*opgm, "%ld\n", (long int) meta->general->line_count);
-  fprintf (*opgm, "%d\n", max_color_value);
+  unsigned char out[256];
+  sprintf (out, "%s\n%ld\n%ld\n%d\n",
+           PGM_MAGIC_NUMBER,
+           (long int) meta->general->sample_count,
+           (long int) meta->general->line_count,
+           max_color_value);
+  int len = strlen(out);
+
+  FWRITE(out, sizeof(unsigned char), len, *opgm);
 
   return;
 }
@@ -833,6 +840,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
               citation_length <= max_citation_length,
           "bad citation length");
 	  */
+	  GTIFKeySet(ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 3411);
 	  GTIFKeySet(ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 4054);
 	  sprintf(citation, "NSIDC Sea Ice Polar Stereographic North");
         }
@@ -2003,22 +2011,22 @@ export_band_image (const char *metadata_file_name,
     // the files out of the box.
     if (md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
 	md->general->image_data_type <= POLARIMETRIC_T4_MATRIX &&
-	md->general->band_count != 1 && 
-	strcmp_case(md->general->sensor, "UAVSAR") != 0 &&
-	(format == POLSARPRO_HDR || format == GEOTIFF ||
-	 format == TIF || format == JPEG || format == PNG)) {
+	md->general->band_count != 1) {
       char *dirName = (char *) MALLOC(sizeof(char)*1024);
       char *fileName = (char *) MALLOC(sizeof(char)*1024);
       split_dir_and_file(output_file_name, dirName, fileName);
       char *path = get_dirname(output_file_name);
       if (strlen(dirName) <= 0) {
 	path = g_get_current_dir();
+	output_file_name = stripExt(output_file_name);
 	sprintf(path_name, "%s%c%s%c%s", 
 		path, DIR_SEPARATOR, output_file_name, DIR_SEPARATOR, matrix);
       }
-      else
+      else {
+	fileName = stripExt(fileName);
 	sprintf(path_name, "%s%c%s%c%s", 
 		dirName, DIR_SEPARATOR, fileName, DIR_SEPARATOR, matrix);
+      }
       if (is_dir(path_name))
 	asfPrintStatus("Output directory (%s) already exists.\n", path_name);
       else if(create_dir(path_name) == -1)
@@ -2184,9 +2192,8 @@ export_band_image (const char *metadata_file_name,
               FREE(out_file);
               continue;
             }
-	    if (format == POLSARPRO_HDR ||
-		(is_polsarpro && format == GEOTIFF &&
-		 strcmp_case(md->general->sensor, "UAVSAR") != 0)) { 
+	    if (is_polsarpro && 
+		strcmp_case(md->general->sensor, "UAVSAR") != 0) { 
 	      // output goes to directory
 	      sprintf(out_file, "%s%c%s", 
 		      path_name, DIR_SEPARATOR, band_name[kk]);
@@ -2197,33 +2204,51 @@ export_band_image (const char *metadata_file_name,
 
 		char mode[10];
 		if (strcmp_case(md->general->mode, "GRD") == 0)
-		  strcpy(mode, "_grd");
+		  strcpy(mode, "grd");
 		else if (strcmp_case(md->general->mode, "MLC") == 0)
-		  strcpy(mode, "_mlc");
+		  strcpy(mode, "mlc");
 
                 char *outBase = stripExt(output_file_name);
 
-		if (strcmp(mode, "_grd") == 0 || strcmp(mode, "_mlc") == 0) { 
+		if (strcmp(mode, "grd") == 0 || strcmp(mode, "mlc") == 0) { 
                   if (endsWith(outBase, mode))
                     strcpy(mode, "");
-		  if (strcmp_case(band_name[kk], "C11") == 0)
-		    sprintf(out_file, "%s%sHHHH", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C22") == 0)
-		    sprintf(out_file, "%s%sHVHV", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C33") == 0)
-		    sprintf(out_file, "%s%sVVVV", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C12_real") == 0)
-		    sprintf(out_file, "%s%sHHHV_real", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C12_imag") == 0)
-		    sprintf(out_file, "%s%sHHHV_imag", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C13_real") == 0)
-		    sprintf(out_file, "%s%sHHVV_real", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C13_imag") == 0)
-		    sprintf(out_file, "%s%sHHVV_imag", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C23_real") == 0)
-		    sprintf(out_file, "%s%sHVVV_real", outBase, mode);
-		  else if (strcmp_case(band_name[kk], "C23_imag") == 0)
-		    sprintf(out_file, "%s%sHVVV_imag", outBase, mode);
+		  if (strcmp_case(band_name[kk], "C11") == 0 ||
+		      strcmp_case(band_name[kk], "T11") == 0)
+		    sprintf(out_file, "%s%c%s%c%sHHHH", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		  else if (strcmp_case(band_name[kk], "C22") == 0 ||
+			   strcmp_case(band_name[kk], "T22") == 0)
+		    sprintf(out_file, "%s%c%s%c%sHVHV", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		  else if (strcmp_case(band_name[kk], "C33") == 0 ||
+			   strcmp_case(band_name[kk], "T33") == 0)
+		    sprintf(out_file, "%s%c%s%c%sVVVV", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		  else if (strcmp_case(band_name[kk], "C12_real") == 0 ||
+			   strcmp_case(band_name[kk], "T12_real") == 0)
+		    sprintf(out_file, "%s%c%s%c%sHHHV_real", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		  else if (strcmp_case(band_name[kk], "C12_imag") == 0 ||
+			   strcmp_case(band_name[kk], "T12_imag") == 0)
+		    sprintf(out_file, "%s%c%s%c%sHHHV_imag", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		  else if (strcmp_case(band_name[kk], "C13_real") == 0 ||
+			   strcmp_case(band_name[kk], "T13_real") == 0)
+		    sprintf(out_file, "%s%c%s%c%sHHVV_real", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		  else if (strcmp_case(band_name[kk], "C13_imag") == 0 ||
+			   strcmp_case(band_name[kk], "T13_imag") == 0)
+		    sprintf(out_file, "%s%c%s%c%sHHVV_imag", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		  else if (strcmp_case(band_name[kk], "C23_real") == 0 ||
+			   strcmp_case(band_name[kk], "T23_real") == 0)
+		    sprintf(out_file, "%s%c%s%c%sHVVV_real", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
+		  else if (strcmp_case(band_name[kk], "C23_imag") == 0 ||
+			   strcmp_case(band_name[kk], "T23_imag") == 0)
+		    sprintf(out_file, "%s%c%s%c%sHVVV_imag", outBase, 
+			    DIR_SEPARATOR, matrix, DIR_SEPARATOR, mode);
 		}
 		else if (strcmp(mode, "_hgt") == 0) {
                   if (endsWith(outBase, mode))
@@ -2666,6 +2691,7 @@ export_band_image (const char *metadata_file_name,
           FCLOSE(ofp);
 
         FCLOSE(fp);
+        FREE(out_file);
       }
     } // End for each band (kk is band number)
 
@@ -2677,7 +2703,6 @@ export_band_image (const char *metadata_file_name,
     FREE(path_name);
     FREE(matrix);
     FREE(decomposition);
-    FREE(out_file);
   }
 
   if (lut_file && strstr(lut_file, "tmp_lut_file.lut") && fileExists(lut_file)) {
@@ -2800,6 +2825,7 @@ int lut_to_tiff_palette(unsigned short **colors, int map_size, char *look_up_tab
         (*colors)[i + 2*map_size] = (unsigned short) ((b/(float)MAX_RGB)*(float)USHORT_MAX + 0.5);
     }
 
+    FREE(lut);
     return max_lut_dn;
 }
 

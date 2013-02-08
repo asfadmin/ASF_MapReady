@@ -43,7 +43,7 @@ int isCEOS(const char *dataFile, char **error)
   *error = message;
   FREE(dirName);
   FREE(fileName);
-
+  free_ceos_names(inBandName, inMetaName);
   return ret;
 }
 
@@ -77,15 +77,18 @@ int isAIRSAR(char *dataFile)
   int P_airsar = 0;
   char buf[4400], *value, *band_data, *s;
   double version;
+  if (is_dir(dataFile))
+    return FALSE;
+  char *inFile = STRDUP(dataFile);
 
   // Allocate memory and file handling
   value = (char *) MALLOC(sizeof(char)*25);
   header = (airsar_header *) CALLOC(1, sizeof(airsar_header));
-  band_data = (char *) MALLOC(sizeof(char)*(strlen(dataFile)+32));
-  strcpy(band_data, dataFile);
+  band_data = (char *) MALLOC(sizeof(char)*(strlen(inFile)+32));
+  strcpy(band_data, inFile);
 
   // Try L-band
-  s = strstr(band_data, "_");
+  s = strrchr(band_data, '_');
   if (s) {
     *s = '\0';
     strcat(s, "_l.dat");
@@ -103,7 +106,7 @@ int isAIRSAR(char *dataFile)
   L_airsar = FALSE;*/
 
   // Try C-band
-  s = strstr(band_data, "_");
+  s = strrchr(band_data, '_');
   if (s) {
     *s = '\0';
     strcat(s, "_c.dat");
@@ -121,7 +124,7 @@ int isAIRSAR(char *dataFile)
   C_airsar = FALSE;*/
 
     // Try P-band
-  s = strstr(band_data, "_");
+  s = strrchr(band_data, '_');
   if (s) {
     *s = '\0';
     strcat(s, "_p.dat");
@@ -141,6 +144,7 @@ int isAIRSAR(char *dataFile)
   FREE(value);
   FREE(header);
   FREE(band_data);
+  FREE(inFile);
 
   return (L_airsar || C_airsar || P_airsar);
 }
@@ -148,8 +152,9 @@ int isAIRSAR(char *dataFile)
 int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error)
 {
   int found = FALSE;
+  char *inFile = STRDUP(dataFile);
   // Let's first check for an .xml extension
-  char *ext = findExt(dataFile);
+  char *ext = findExt(inFile);
 
   // If it has the correct extension, investigate it further
   // Might sound a little harsh but avoids some XML parser warning otherwise.
@@ -160,8 +165,8 @@ int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error)
     int ii, numberOfLayers;
     satellite = (char *) MALLOC(sizeof(char)*25);
     FILE *fp;
-    fp = fopen(dataFile, "r");
-    xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
+    fp = fopen(inFile, "r");
+    xmlDoc *doc = xmlReadFile(inFile, NULL, 0);
     if (doc) {
       strcpy(satellite, xml_get_string_value(doc, 
         "level1Product.productInfo.missionInfo.mission"));
@@ -186,7 +191,7 @@ int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error)
 	}
 
 	// path from the xml (metadata) file
-	path = get_dirname(dataFile);
+	path = get_dirname(inFile);
 	inDataName = (char *) MALLOC(sizeof(char)*(strlen(path)+100));
 	numberOfLayers = xml_get_int_value(doc, 
 	  "level1Product.productInfo.imageDataInfo.numberOfLayers");
@@ -225,6 +230,7 @@ int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error)
       FREE(path);
     if (inDataName)
       FREE(inDataName);
+    FREE(inFile);
   }
 
   return found;
@@ -238,38 +244,39 @@ int isTerrasar(char *dataFile, char **error)
 int isRadarsat2(char *dataFile, char **error)
 {
   char dataType[25];
+  char *message = NULL;
   int found = FALSE;
+  char *inFile = MALLOC(sizeof(char)*(strlen(dataFile)+16));
+  strcpy(inFile, dataFile);
   // Let's first check for an .xml extension
-  char *ext = findExt(dataFile);
+  char *ext = findExt(inFile);
 
   // Append extension in case we don't find it
-  if (ext == NULL) {
-    strcat(dataFile, ".xml");
-    ext = (char *) MALLOC(sizeof(char)*10);
-    strcpy(ext, ".xml");
+  if (!fileExists(inFile) && ext == NULL) {
+    strcat(inFile, ".xml");
+    ext = findExt(inFile);
   }
 
   // If it has the correct extension, investigate it further
   // Might sound a little harsh but avoids some XML parser warning otherwise.
-  if (ext && strcmp_case(ext, ".xml") == 0) {
+  if (fileExists(inFile) && ext && strcmp_case(ext, ".xml") == 0) {
     int ii, band_count = 0;
-    char tmp[256], *path = NULL, *message = NULL, *inDataName = NULL;
-    char polarizations[20];
-    char *satellite = (char *) MALLOC(sizeof(char)*25);
+    char tmp[256], *path = NULL, *inDataName = NULL;
+    char polarizations[25], satellite[25];
     FILE *fp;
-    fp = fopen(dataFile, "r");
-    xmlDoc *doc = xmlReadFile(dataFile, NULL, 0);
+    fp = fopen(inFile, "r");
+    xmlDoc *doc = xmlReadFile(inFile, NULL, 0);
     if (doc) {
-      strcpy(satellite, 
-	     xml_get_string_value(doc, "product.sourceAttributes.satellite"));
+      strncpy_safe(satellite, 
+	           xml_get_string_value(doc, "product.sourceAttributes.satellite"), 20);
       
       // only care about Radarsat-2 data
       if (satellite &&
 	  strcmp_case(satellite, "RADARSAT-2") == 0) {
 	
 	found = TRUE;
-	strcpy(dataType, xml_get_string_value(doc, 
-          "product.imageAttributes.rasterAttributes.dataType"));	
+	strncpy_safe(dataType, xml_get_string_value(doc, 
+          "product.imageAttributes.rasterAttributes.dataType"), 20);
 	if (strcmp_case(dataType, "COMPLEX") != 0) {
 	  if (!message)
 	    message = (char *) MALLOC(sizeof(char)*1024);
@@ -280,10 +287,10 @@ int isRadarsat2(char *dataFile, char **error)
 	}
 	
 	// path from the xml (metadata) file
-	path = get_dirname(dataFile);
-	inDataName = (char *) MALLOC(sizeof(char)*(strlen(path)+100));
-	strcpy(polarizations, xml_get_string_value(doc, 
-	  "product.sourceAttributes.radarParameters.polarizations"));
+	path = get_dirname(inFile);
+	inDataName = (char *) MALLOC(sizeof(char)*(strlen(path)+512));
+	strncpy_safe(polarizations, xml_get_string_value(doc, 
+	  "product.sourceAttributes.radarParameters.polarizations"),20);
 	for (ii=0; ii<strlen(polarizations)-1; ii++)
 	  if (polarizations[ii] == ' ')
 	  polarizations[ii] = ',';
@@ -316,10 +323,16 @@ int isRadarsat2(char *dataFile, char **error)
 	}
       }
     }
-    fclose(fp);
-    xmlFreeDoc(doc);
-    xmlCleanupParser();
+    if (fp) {
+      fclose(fp);
+      xmlFreeDoc(doc);
+      xmlCleanupParser();
+    }
   }    
+  FREE(inFile);
+
+  if (!found && message)
+    *error = message;
 
   return found;
 }
@@ -328,8 +341,9 @@ int isUAVSAR(char *dataFile, char **error)
 {
   char dataType[25];
   int found = FALSE;
+  char *inFile = STRDUP(dataFile);
   // Let's first check for an .ann extension
-  char *ext = findExt(dataFile);
+  char *ext = findExt(inFile);
 
   // If it has the correct extension, investigate it further
   if (ext && strcmp_case(ext, ".ann") == 0) {
@@ -340,13 +354,14 @@ int isUAVSAR(char *dataFile, char **error)
     // The only identifier for even UAVSAR, I could find, was the URL.
     char line[512];
     FILE *fp;
-    fp = fopen(dataFile, "r");
+    fp = fopen(inFile, "r");
     while (fgets(line, 512, fp)) {
       if (strstr(line, "uavsar.jpl.nasa.gov"))
 	found = TRUE;
     }
     fclose(fp);
   }
+  FREE(inFile);
 
   return found;
 }

@@ -59,10 +59,6 @@ meta_parameters *meta_read(const char *inName)
   char **junk=NULL;
   int junk2, ii;
 
-  junk = (char **) MALLOC(2*sizeof(char *));
-  for (ii=0; ii<2; ii++)
-    junk[ii] = (char *) MALLOC(512*sizeof(char));
-
   /* Read file with appropriate reader for version.  */
   if ( !fileExists(meta_name) && fileExists(ddr_name)) {
 

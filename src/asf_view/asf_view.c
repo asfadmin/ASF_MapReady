@@ -120,7 +120,7 @@ static void read_pts(const char *pts_file)
       pt_name[jj] = NULL;
     }
 
-    if (!pts_file)
+    if (!pts_file || strlen(pts_file)==0)
       pts_file = "asf_view.points";
 
     if (fileExists(pts_file)) {
@@ -183,6 +183,7 @@ main(int argc, char **argv)
 
     strcpy(band, "");
     strcpy(mask_file_name, "");
+    strcpy(pts_file, "");
 
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);

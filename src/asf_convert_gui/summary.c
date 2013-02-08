@@ -166,14 +166,9 @@ const char *get_summary_text()
                 }
             }
 
-            if (s->specified_tc_pixel_size)
+            if (s->specified_pixel_size)
             {
-                sprintf(text, "%s\n   Pixel Size: %.2f m", text,
-                        s->tc_pixel_size);
-            }
-            else if (s->specified_pixel_size)
-            {
-                sprintf(text, "%s\n   Pixel Size: %.2f m (from geocode)",
+                sprintf(text, "%s\n   Pixel Size: %.2f m",
                         text, s->pixel_size);
             }
                     

@@ -607,9 +607,10 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   meta->general->x_pixel_size = params->range_pixel_spacing;
   meta->general->y_pixel_size = fabs(params->azimuth_pixel_spacing);
   meta->general->re_major = params->semi_major;
-  double a = params->semi_major;
+  double re = params->semi_major;
   double ecc2 = params->eccentricity;
-  meta->general->re_minor = sqrt((1-ecc2)*a*a);
+  double rp = sqrt((1-ecc2)*re*re);
+  meta->general->re_minor = rp;
   // no information on bit error rate, missing lines and no data
 
   // SAR block
@@ -645,7 +646,10 @@ meta_parameters* uavsar_polsar2meta(uavsar_polsar *params)
   meta->sar->slant_range_first_pixel = params->slant_range_first_pixel * 1000.0;
   meta->sar->wavelength = params->wavelength / 100.0;
   // no information on pulse repetition frequency
-  // no information on earth radius and satellite height
+  double tan_lat = params->lat_peg_point*D2R;
+  meta->sar->earth_radius = rp*sqrt(1 + tan_lat*tan_lat) /
+    sqrt(rp*rp/(re*re) + tan_lat*tan_lat);
+  // no information on satellite height
   // no time information
   // no Doppler information
   meta->sar->yaw = params->yaw;

@@ -292,6 +292,7 @@ extern int COMP_COL_CLASS_MAP_FILE;
 extern int COMP_COL_METADATA_FILE;
 extern int COMP_COL_INCID_ANGLES_FILE;
 extern int COMP_COL_UAVSAR_TYPE;
+extern int COMP_COL_KML_FILE;
 
 /********************************** Prototypes ******************************/
 

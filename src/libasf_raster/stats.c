@@ -322,12 +322,14 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
         get_float_line(fp, meta, ii + offset, data);
 
         for (jj=0; jj<meta->general->sample_count; ++jj) {
+          if (meta_is_valid_double(data[jj])) {
             if (ISNAN(mask) || !FLOAT_EQUIVALENT(data[jj], mask)) {
                 if (data[jj] < *min) *min = data[jj];
                 if (data[jj] > *max) *max = data[jj];
                 *mean += data[jj];
                 ++pixel_count;
             }
+          }
         }
     }
     asfPercentMeter(1.0);
@@ -352,10 +354,12 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
         get_float_line(fp, meta, ii + offset, data);
 
         for (jj=0; jj<meta->general->sample_count; ++jj) {
+          if (meta_is_valid_double(data[jj])) {
             if (ISNAN(mask) || !FLOAT_EQUIVALENT(data[jj], mask)) {
                 *stdDev += (data[jj] - *mean) * (data[jj] - *mean);
                 gsl_histogram_increment (hist, data[jj]);
             }
+          }
         }
     }
     asfPercentMeter(1.0);

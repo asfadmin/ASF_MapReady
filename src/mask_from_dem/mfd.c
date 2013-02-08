@@ -137,7 +137,7 @@ main(int argc, char *argv[])
   
   // now process the image
   
-  for (line=0; line <= y_size ; line++) 
+  for (line=0; line < y_size ; line++) 
   	{
 	   blockSize = get_float_line(in,inMeta,line,floatbuffer);
 	   printf(".");

@@ -207,9 +207,7 @@ int isPolsarproMatrix(char *dataFile, char **matrixType, char **error)
     matrix = TRUE;
   }
   else {
-    char *message = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(message, "Matrix does not exist.");
-    *error = message;
+    *error = STRDUP("Matrix does not exist.");
   }
 
   *matrixType = directory;
@@ -438,9 +436,7 @@ int isPolsarproDecomposition(char *dataFile, char **decompositionType,
     decomposition = TRUE;
   }
   else {
-    char *message = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(message, "Decomposition file does not exist.");
-    *error = message;
+    *error = STRDUP("Decomposition file does not exist.");
   }
 
   *decompositionType = decompositionStr;
@@ -706,7 +702,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   double azimuth_scale, range_scale, min, max, slope, offset;
   char enviName[1024], outName[1024], bandStr[50];
   char dirName[1024], fileName[1024];
-  char *matrixType, *decompositionType, *error;
+  char *matrixType, *decompositionType, *error=NULL;
   int ii, multilook = FALSE, matrix = FALSE;
   int flip_horizontal = FALSE;
   int flip_vertical = FALSE;
@@ -732,19 +728,38 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   if (error && 
       strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0)
     asfPrintError("%s\n", error);
+  if (error) {
+    FREE(error);
+    error = NULL;
+  }
+
   int is_polsarpro_decomposition =
     isPolsarproDecomposition(polsarName, &decompositionType, &error);
   if (error && 
       strcmp_case(image_data_type, "POLARIMETRIC_DECOMPOSITION") == 0)
     asfPrintError("%s\n", error);
+  if (error) {
+    FREE(error);
+    error = NULL;
+  }
+
   isPolsarproParameter(polsarName, &error);
   if (error && 
       strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0)
     asfPrintError("%s\n", error);
+  if (error) {
+    FREE(error);
+    error = NULL;
+  }
+
   int is_polsarpro_matrix = 
     matrix ? isPolsarproMatrix(polsarName, &matrixType, &error) : 0;
   if (error && strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") == 0)
     asfPrintError("%s\n", error);
+  if (error) {
+    FREE(error);
+    error = NULL;
+  }
   if (is_polsarpro_matrix) {
     // Need to get the metadata information from the first element of the 
     // matrix
@@ -981,9 +996,16 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 
     is_airsar = isAIRSAR(ceosName);
     is_ceos = isCEOS(ceosName, &error);
+    FREE(error); error = NULL;
+
     is_radarsat2 = isRadarsat2(ceosName, &error);
+    FREE(error); error = NULL;
+
     is_terrasar = isTerrasar_ext(ceosName, TRUE, &error);
+    FREE(error); error = NULL;
+
     is_uavsar = isUAVSAR(ceosName, &error);
+    FREE(error); error = NULL;
     
     if (is_ceos)
       metaOut = meta_read(ceosName);
@@ -1040,6 +1062,12 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       if (!FLOAT_EQUIVALENT(azimuth_scale, range_scale))
 	multilook = TRUE;
     }
+    else {
+      azimuth_scale = range_scale = 1.0;
+      p_azimuth_scale = &azimuth_scale;
+      p_range_scale = &range_scale;
+      multilook = FALSE;
+    }
 
     // Ingest the data to generate an amplitude image (in case the
     // user wants to terrain correct. Will need to get the metadata anyway
@@ -1081,11 +1109,15 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     }
 
     // Read the PolSAR Pro data into the layer stack
+    if (metaOut)
+      meta_free(metaOut);
     metaOut = meta_read(outBaseName);
     if (!is_polsarpro_matrix && !is_polsarpro_decomposition)
       strcat(metaOut->general->bands, ",POLSARPRO");
   }
   else {
+    if (metaOut)
+      meta_free(metaOut);
     metaOut = envi2meta(envi);
     metaOut->general->band_count = band_count;
     if (strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0 ||
@@ -1189,6 +1221,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   }
   //FCLOSE(fpOut);
   FREE(floatBuf);
+  if (envi->band_name)
+    FREE(envi->band_name);
   FREE(envi);
   if (metaOut->sar)
     metaOut->sar->multilook = multilook;

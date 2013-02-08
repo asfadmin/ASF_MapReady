@@ -181,7 +181,7 @@ int read_envi_client(int row_start, int n_rows_to_get,
   if (data_type == GREYSCALE_FLOAT) {
     get_float_lines(info->fp, meta, row_start, n_rows_to_get, dest);
     if (!info->big_endian)
-      for ( ii = row_start; ii < n_rows_to_get; ii++ )
+      for ( ii = 0; ii < n_rows_to_get; ii++ )
 	for (jj = 0 ; jj < ns; jj++ )
 	  ieee_big32(dest[ii*ns + jj]);
   }

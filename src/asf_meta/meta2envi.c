@@ -42,7 +42,7 @@ envi_header* read_envi(char *envi_name)
   int projection_key=-1;
 
   // Allocate memory for ESRI header structure
-  envi = (envi_header *)MALLOC(sizeof(envi_header));
+  envi = (envi_header *)CALLOC(1,sizeof(envi_header));
   envi->band_name = NULL;
 
   // Read .hdr and fill meta structures
@@ -108,7 +108,6 @@ envi_header* read_envi(char *envi_name)
     sprintf(envi->wavelength_units, "%s", value);
     }
     else if (strncmp(key, "band", 4)==0) {
-      envi->band_name = (char *) MALLOC(sizeof(char)*255);
       fgets(line, 255, fp);
       envi->band_name = trim_spaces(line);
       int len = (int) strlen(envi->band_name);
@@ -209,6 +208,12 @@ envi_header* read_envi(char *envi_name)
       printErr(errbuf);
       break;
     }
+  if (strlen(envi->hemisphere) == 0) {
+    if (envi->center_lat > 0.0)
+      strcpy(envi->hemisphere, "North");
+    else
+      strcpy(envi->hemisphere, "South");
+  }
   
   return envi;
 }
@@ -378,6 +383,9 @@ envi_header* meta2envi(meta_parameters *meta)
       case WGS84_DATUM:
         strcpy(envi->datum, "WGS-84");
         break;
+      case HUGHES_DATUM:
+	strcpy(envi->datum, "Hughes");
+	break;
       default:
         // Keep quiet for now, this would get annoying
         // printf("Datum %s not supported by ENVI, using WGS84\n");
@@ -460,6 +468,7 @@ meta_parameters* envi2meta(envi_header *envi)
       meta->projection->type = POLAR_STEREOGRAPHIC;
       meta->projection->param.ps.slat = envi->center_lat;
       meta->projection->param.ps.slon = envi->center_lon;
+      meta->projection->param.ps.is_north_pole = (envi->center_lat > 0) ? 1 : 0;
       meta->projection->param.ps.false_easting = envi->false_easting;
       meta->projection->param.ps.false_northing = envi->false_northing;
     }
@@ -512,6 +521,8 @@ meta_parameters* envi2meta(envi_header *envi)
       meta->projection->datum = WGS72_DATUM;
     else if (strcmp(envi->datum, "WGS-84") == 0)
       meta->projection->datum = WGS84_DATUM;
+    else if (strcmp(envi->datum, "Hughes") == 0)
+      meta->projection->datum = HUGHES_DATUM;
     meta->projection->spheroid = datum_spheroid(meta->projection->datum);
     meta->projection->re_major = envi->semimajor_axis;
     meta->projection->re_minor = envi->semiminor_axis;
@@ -536,10 +547,12 @@ meta_parameters* envi2meta(envi_header *envi)
 		   &center_lat, &center_lon, &height);
     meta->general->center_latitude = center_lat * R2D;
     meta->general->center_longitude = center_lon * R2D;
-    if (center_lat > 0.0)
-      meta->projection->hem = 'N';
-    else
-      meta->projection->hem = 'S';
+    if (meta->projection->hem == MAGIC_UNSET_CHAR) {
+      if (center_lat > 0.0)
+	meta->projection->hem = 'N';
+      else
+	meta->projection->hem = 'S';
+    }
   }
   if (meta->sar)
     meta->sar->wavelength = envi->wavelength;
@@ -582,7 +595,7 @@ void write_envi_header(const char *headerFile, const char *dataFile,
       {
       case LAT_LONG_PSEUDO_PROJECTION:
 	fprintf(fp, 
-		"map_info = {%s, %d, %d, %.5f, %.5f, %f, %f, %s, units=Degrees}\n", 
+		"map info = {%s, %d, %d, %.5f, %.5f, %f, %f, %s, units=Degrees}\n", 
 		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
 		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 		envi->proj_dist_y, datum_str);

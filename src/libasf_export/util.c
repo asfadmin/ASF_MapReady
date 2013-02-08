@@ -348,8 +348,8 @@ pixel_float2byte(float paf, scale_t sample_mapping,
   double slope, offset;
 
   // This case is easy -- always map the "no data" value to 0.
-  if (paf == no_data_value)
-      return 0;
+  if (FLOAT_EQUIVALENT(paf, no_data_value))
+    return 0;
 
   switch ( sample_mapping ) {
   case TRUNCATE:

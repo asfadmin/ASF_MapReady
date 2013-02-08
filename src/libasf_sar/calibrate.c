@@ -158,14 +158,16 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	put_band_float_line(fpOut, metaOut, kk, ii, bufOut);
 	asfLineMeter(ii, line_count);
       }
+      char *radiometry = radiometry2str(outRadiometry);
       if (kk==0)
 	sprintf(metaOut->general->bands, "%s-%s", 
-		radiometry2str(outRadiometry), bands[kk]);
+		radiometry, bands[kk]);
       else {
 	char tmp[255];
-	sprintf(tmp, ",%s-%s", radiometry2str(outRadiometry), bands[kk]);
+	sprintf(tmp, ",%s-%s", radiometry, bands[kk]);
 	strcat(metaOut->general->bands, tmp);
       }
+      free(radiometry);
     }
   }
   meta_write(metaOut, outFile);

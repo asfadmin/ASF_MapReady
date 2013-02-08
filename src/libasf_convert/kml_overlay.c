@@ -408,12 +408,14 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
       asfPrintStatus("Generating %s ...\n", pngFile);
     for (ii=0; ii<band_count; ii++) {
       //if (zip) {
+/*
       sprintf(pngFile, "%s_%s.png", baseName, bands[ii]);
       if (band && strlen(band) && strcmp_case(band, bands[ii]) == 0)
 	asfPrintStatus("Generating %s ...\n", pngFile);
       else
 	remove_file(pngFile);
 	//}
+*/
       FREE(bands[ii]);
     }
   }

@@ -179,7 +179,7 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
       (*num_found)++;
     }
   }
-
+  meta_free(meta);
   return rgb;
 }
 
