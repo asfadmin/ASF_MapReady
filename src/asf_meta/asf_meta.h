@@ -38,7 +38,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 3.4
+#define META_VERSION 3.5
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -131,6 +131,7 @@ typedef struct {
   char sensor[FIELD_STRING_MAX];    /* Name of sensor - satellite really   */
   char sensor_name[FIELD_STRING_MAX]; // Name of the sensor
   char mode[MODE_FIELD_STRING_MAX]; /* Mode of imaging sensor.             */
+  char receiving_station[MODE_FIELD_STRING_MAX];
   char processor[FIELD_STRING_MAX]; /* Name and version of SAR processor.  */
   data_type_t data_type;            /* Type of samples (e.g. "REAL4").     */
 /*  Possible values for data_type:                                         *
@@ -234,6 +235,7 @@ typedef struct {
   double roll;                         // version 2.7
   double yaw;                          // version 2.7
   double incid_a[6];      // Transform coeffs for incid angle (sr to incid ang)
+  double heading_angle;
 } meta_sar;
 
 
