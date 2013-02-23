@@ -2,6 +2,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include "asf_iso_meta.h"
+#include "asf_nan.h"
 
 static void dateTime2str(iso_dateTime timeUTC, char *str)
 {
@@ -12,11 +13,11 @@ static void dateTime2str(iso_dateTime timeUTC, char *str)
   int min = timeUTC.min;
   double sec = timeUTC.second;
 
-  // UTC time stamp: 2008-03-13T22:19:55.140975Z
+  // UTC time stamp: 2008-03-13T22:19:55.140975
   if (year < 0 || month < 0 || day < 0 || hour < 0 || min < 0 || sec < 0.0)
-    strcpy(str, MAGIC_UNSET_STRING);
+    strcpy(str, "1900-01-01T00:00:00.000000");
   else
-    sprintf(str, "%4d-%02d-%02dT%02d:%02d:%02.6fZ", 
+    sprintf(str, "%4d-%02d-%02dT%02d:%02d:%09.6f", 
 	    year, month, day, hour, min, sec);
 }
 
@@ -37,42 +38,60 @@ static xmlChar *ldStr(long number)
 static xmlChar *fStr(float number)
 {
   char *str = (char *) MALLOC(sizeof(char)*30);
-  sprintf(str, "%g", number);
+  if (ISNAN(number))
+    strcpy(str, "NaN");
+  else
+    sprintf(str, "%g", number);
   return BAD_CAST str;
 }
 
 static xmlChar *f3Str(float number)
 {
   char *str = (char *) MALLOC(sizeof(char)*30);
-  sprintf(str, "%.3f", number);
+  if (ISNAN(number))
+    strcpy(str, "NaN");
+  else
+    sprintf(str, "%.3f", number);
   return BAD_CAST str;
 }
 
 static xmlChar *f5Str(float number)
 {
   char *str = (char *) MALLOC(sizeof(char)*30);
-  sprintf(str, "%.5f", number);
+  if (ISNAN(number))
+    strcpy(str, "NaN");
+  else
+    sprintf(str, "%.5f", number);
   return BAD_CAST str;
 }
 
 static xmlChar *lfStr(double number)
 {
   char *str = (char *) MALLOC(sizeof(char)*30);
-  sprintf(str, "%g", number);
+  if (ISNAN(number))
+    strcpy(str, "NaN");
+  else
+    sprintf(str, "%g", number);
   return BAD_CAST str;
 }
 
 static xmlChar *lf3Str(double number)
 {
   char *str = (char *) MALLOC(sizeof(char)*30);
-  sprintf(str, "%.3f", number);
+  if (ISNAN(number))
+    strcpy(str, "NaN");
+  else
+    sprintf(str, "%.3f", number);
   return BAD_CAST str;
 }
 
 static xmlChar *lf5Str(double number)
 {
   char *str = (char *) MALLOC(sizeof(char)*30);
-  sprintf(str, "%.5f", number);
+  if (ISNAN(number))
+    strcpy(str, "NaN");
+  else
+    sprintf(str, "%.5f", number);
   return BAD_CAST str;
 }
 
@@ -80,9 +99,9 @@ static xmlChar *bStr(int number)
 {
   char *str = (char *) MALLOC(sizeof(char)*10);
   if (number == 1)
-    strcpy(str, "TRUE");
+    strcpy(str, "true");
   else if (number == 0)
-    strcpy(str, "FALSE");
+    strcpy(str, "false");
   return BAD_CAST str;
 }
 
@@ -321,7 +340,7 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     strcpy(str, "SPOTLIGHT");
   else if (info->imageMode == UNDEF_IMAGE_MODE)
     strcpy(str, "UNDEFINED");
-  xmlNewChild(parent, NULL, BAD_CAST "imageMode", BAD_CAST str);
+  xmlNewChild(parent, NULL, BAD_CAST "imagingMode", BAD_CAST str);
   if (info->lookDirection == RIGHT_LOOK)
     strcpy(str, "RIGHT");
   else if (info->lookDirection == LEFT_LOOK)
@@ -355,9 +374,6 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNewChild(parent, NULL, BAD_CAST "elevationBeamConfiguration", 
 	      BAD_CAST info->elevationBeamConfiguration);
   node = xmlNewChild(parent, NULL, BAD_CAST "imagingModeSpecificInfo", NULL);
-  
-  info->imageMode = STANDARD_BEAM;
-  
   if (info->imageMode == FINE_BEAM ||
       info->imageMode == STANDARD_BEAM ||
       info->imageMode == STRIPMAP_IMAGE) {
@@ -476,6 +492,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     strcpy(str, "GEOTIFF");
   else if (info->imageDataFormat == HDF5_DATA_FORMAT)
     strcpy(str, "HDF5");
+  else if (info->imageDataFormat == COSAR_DATA_FORMAT)
+    strcpy(str, "COSAR");
   else if (info->imageDataFormat == UNDEF_DATA_FORMAT)
     strcpy(str, "UNDEFINED");
   xmlNewChild(parent, NULL, BAD_CAST "imageDataFormat", BAD_CAST str);
@@ -855,11 +873,11 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		       f3Str(spec->sceneCenterCoordNorthing));
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
     if (spec->imageResamplingMethod == NEAREST_NEIGHBOR_RESAMPLE)
-      strcpy(str, "NEAREST_NEIGHBOR");
+      strcpy(str, "NEAREST NEIGHBOR");
     else if (spec->imageResamplingMethod == BILINEAR_RESAMPLE)
       strcpy(str, "BILINEAR");
     else if (spec->imageResamplingMethod == CUBIC_CONVOLUTION_RESAMPLE)
-      strcpy(str, "CUBIC_CONVOLUTION");
+      strcpy(str, "CUBIC CONVOLUTION");
     else if (spec->imageResamplingMethod == UNDEF_RESAMPLE)
       strcpy(str, "UNDEFINED");
     xmlNewChild(node, NULL, BAD_CAST "imageResamplingMethod", BAD_CAST str);
@@ -956,9 +974,9 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
   }
   if (setup->imagingMode == FINE_BEAM)
-    strcpy(str, "FINE_BEAM");
+    strcpy(str, "FINE BEAM");
   else if (setup->imagingMode == STANDARD_BEAM)
-    strcpy(str, "STANDARD_BEAM");
+    strcpy(str, "STANDARD BEAM");
   else if (setup->imagingMode == STRIPMAP_IMAGE)
     strcpy(str, "STRIPMAP");
   else if (setup->imagingMode == SCANSAR_IMAGE)
@@ -994,7 +1012,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     strcpy(str, "VV");
   else if (setup->polLayer == UNDEF_POL_LAYER)
     strcpy(str, "UNDEFINED");
-  xmlNewChild(node, NULL, BAD_CAST "polLayer", BAD_CAST str);
+  node2 = xmlNewChild(node, NULL, BAD_CAST "polList", NULL);
+  xmlNewChild(node2, NULL, BAD_CAST "polLayer", BAD_CAST str);
   xmlNewChild(node, NULL, BAD_CAST "elevationBeamConfiguration", 
 	      BAD_CAST setup->elevationBeamConfiguration);
   if (setup->productVariant == SLC_PRODUCT)
@@ -1239,7 +1258,7 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   parent = xmlNewChild(section, NULL, BAD_CAST "orbit", NULL);
   node = xmlNewChild(parent, NULL, BAD_CAST "orbitHeader", NULL);
   if (platform->sensor == PREDICTED_SENSOR)
-    strcpy(str, "PREDICTED");
+    strcpy(str, "PREDICTED SENSOR");
   else if (platform->sensor == SINGLE_GPS)
     strcpy(str, "SINGLE GPS");
   else if (platform->sensor == DIFFERENTIAL_GPS)
@@ -1265,7 +1284,7 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNewChild(node, NULL, BAD_CAST "firstStateTimeUTC", BAD_CAST str);
   dateTime2str(platform->lastStateTimeUTC, str);
   xmlNewChild(node, NULL, BAD_CAST "lastStateTimeUTC", BAD_CAST str);
-  xmlNewChild(node, NULL, BAD_CAST "stateVectorRefTime",
+  xmlNewChild(node, NULL, BAD_CAST "stateVectorRefFrame",
 	      BAD_CAST platform->stateVectorRefFrame);
   unit = xmlNewChild(node, NULL, BAD_CAST "stateVectorTimeSpacing",
 		     lfStr(platform->stateVectorTimeSpacing));

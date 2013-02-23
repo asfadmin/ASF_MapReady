@@ -16,13 +16,13 @@ static void str2dateTime(char *timeStr, iso_dateTime *dateTime)
     dateTime->second = MAGIC_UNSET_DOUBLE;
   }
   else 
-    // UTC time stamp: 2008-03-13T22:19:55.140975Z
-    sscanf(timeStr, "%d-%d-%dT%d:%d:%lfZ",
+    // UTC time stamp: 2008-03-13T22:19:55.140975
+    sscanf(timeStr, "%d-%d-%dT%d:%d:%lf",
 	   &dateTime->year, &dateTime->month, &dateTime->day, 
 	   &dateTime->hour, &dateTime->min, &dateTime->second);
 }
 
-static void validateXML(const char *xmlFile, const char *schemaFile)
+void validateXML(const char *xmlFile, const char *schemaFile)
 {
   if (!fileExists(xmlFile))
     asfPrintError("Metadata file (%s) does not exist!\n", xmlFile);
@@ -73,6 +73,9 @@ static void validateXML(const char *xmlFile, const char *schemaFile)
   xmlFreeDoc(schemaDoc);
   if (!isValid)
     asfPrintError("Metadata file (%s) does not validate\n", xmlFile);
+  else
+    asfPrintStatus("Metadata file (%s) validates with schema (%s)\n",
+		   xmlFile, schemaFile);
 }
 
 iso_meta *iso_meta_read(const char *xmlFile)
@@ -291,7 +294,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
   strcpy(info->sensor, xml_get_string_value(doc,
     "level1Product.productInfo.acquisitionInfo.sensor"));
   strcpy(str, xml_get_string_value(doc,
-    "level1Product.productInfo.acquisitionInfo.imageMode"));
+    "level1Product.productInfo.acquisitionInfo.imagingMode"));
   if (strcmp_case(str, "FINE BEAM") == 0)
     info->imageMode = FINE_BEAM;
   else if (strcmp_case(str, "STANDARD BEAM") == 0)
@@ -720,9 +723,9 @@ iso_meta *iso_meta_read(const char *xmlFile)
   */
   strcpy(str, xml_get_string_value(doc, 
     "level1Product.setup.orderInfo.orderedScene.imagingMode"));
-  if (strcmp_case(str, "FINE_BEAM") == 0)
+  if (strcmp_case(str, "FINE BEAM") == 0)
     setup->imagingMode = FINE_BEAM;
-  else if (strcmp_case(str, "STANDARD_BEAM") == 0)
+  else if (strcmp_case(str, "STANDARD BEAM") == 0)
     setup->imagingMode = STANDARD_BEAM;
   else if (strcmp_case(str, "STRIPMAP") == 0)
     setup->imagingMode = STRIPMAP_IMAGE;
@@ -751,7 +754,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
   else if (strcmp_case(str, "UNDEFINED") == 0)
     setup->polarizationMode = UNDEF_POL_MODE;
   strcpy(str, xml_get_string_value(doc, 
-    "level1Product.setup.orderInfo.orderedScene.polLayer"));
+    "level1Product.setup.orderInfo.orderedScene.polList.polLayer"));
   if (strcmp_case(str, "HH") == 0)
     setup->polLayer = HH_POL;
   else if (strcmp_case(str, "HV") == 0)
@@ -1023,7 +1026,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
 
   strcpy(str, xml_get_string_value(doc, 
     "level1Product.platform.orbit.orbitHeader.sensor"));
-  if (strcmp_case(str, "PREDICTED") == 0)
+  if (strcmp_case(str, "PREDICTED SENSOR") == 0)
     platform->sensor = PREDICTED_SENSOR;
   else if (strcmp_case(str, "SINGLE GPS") == 0)
     platform->sensor = SINGLE_GPS;
@@ -1054,7 +1057,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
     "level1Product.platform.orbit.orbitHeader.lastStateTimeUTC"));
   str2dateTime(str, &platform->lastStateTimeUTC);
   strcpy(platform->stateVectorRefFrame, xml_get_string_value(doc, 
-    "level1Product.platform.orbit.orbitHeader.stateVectorRefTime"));
+    "level1Product.platform.orbit.orbitHeader.stateVectorRefFrame"));
   platform->stateVectorTimeSpacing = xml_get_double_value(doc, 
     "level1Product.platform.orbit.orbitHeader.stateVectorTimeSpacing");
   platform->stateVec = 

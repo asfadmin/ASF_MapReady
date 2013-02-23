@@ -135,7 +135,8 @@ iso_meta *meta2iso(meta_parameters *meta)
   iso_productInfo *info = (iso_productInfo *) iso->productInfo;
 
   strcpy(info->logicalProductID, "not applicable");
-  strcpy(info->receivingStation, meta->general->receiving_station);
+  //strcpy(info->receivingStation, meta->general->receiving_station);
+  strcpy(info->receivingStation, MAGIC_UNSET_STRING);
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     strcpy(info->level0ProcessingFacility, "ASF");
     strcpy(info->level1ProcessingFacility, "ASF");
@@ -569,7 +570,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     // need to get this information from somewhere else
     quality->rawDataQuality[ii].numGaps = 1;
     quality->rawDataQuality[ii].gap = (iso_gap *) MALLOC(sizeof(iso_gap));
-    quality->rawDataQuality[ii].gap[0].start = MAGIC_UNSET_INT;
+    quality->rawDataQuality[ii].gap[0].start = 0;
     quality->rawDataQuality[ii].gap[0].length = MAGIC_UNSET_INT;
     quality->rawDataQuality[ii].gap[0].fill = RANDOM_FILL;
     quality->rawDataQuality[ii].gapSignificanceFlag = FALSE;

@@ -213,8 +213,6 @@ void export_netcdf(const char *metadata_file_name,
 		   int *noutputs,char ***output_names);
 
 // Prototypes from export_hdf.c
-h5_t *initialize_h5_file(const char *output_file_name, meta_parameters *md);
-void finalize_h5_file(h5_t *hdf);
 void export_hdf(const char *metadata_file_name, 
 		const char *image_data_file_name,
 		char *output_file_name, char **band_name,
