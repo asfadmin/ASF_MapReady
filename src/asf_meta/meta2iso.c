@@ -1,5 +1,6 @@
 #include "asf_meta.h"
 #include "asf_iso_meta.h"
+#include "asf_nan.h"
 #include <stdio.h>
 #include <time.h>
 #include "dateUtil.h"
@@ -41,6 +42,22 @@ static double rangeTime(meta_parameters *meta, int sample)
   return (meta_get_slant(meta, 0.0, (double) sample) / SPD_LIGHT);
 }
 
+static void dateTime2str(iso_dateTime timeUTC, char *str)
+{
+  char mon[][5]=
+    {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
+
+  int year = timeUTC.year;
+  int month = timeUTC.month;
+  int day = timeUTC.day;
+  int hour = timeUTC.hour;
+  int min = timeUTC.min;
+  double sec = timeUTC.second;
+
+  sprintf(str, "%02d-%s-%4d %02d:%02d:%02.0f", 
+	    day, mon[month], year, hour, min, sec);
+}
+
 iso_meta *meta2iso(meta_parameters *meta)
 {
   int ii, kk, numAnnotations, numLayers, numAuxRasterFiles;
@@ -66,14 +83,21 @@ iso_meta *meta2iso(meta_parameters *meta)
     polLayer[0] = HH_POL;
     beamID = (char **) MALLOC(sizeof(char *));
     beamID[0] = (char *) MALLOC(sizeof(char)*20);
-    strcpy(beamID[0], "STD");
+    strcpy(beamID[0], meta->general->sensor_name);
   }
 
   iso_meta *iso = iso_meta_init();
-
-  // General Header
   iso_generalHeader *header = iso->generalHeader;
-  
+  iso_productComponents *comps = iso->productComponents;
+  iso_productInfo *info = iso->productInfo;
+  iso_productSpecific *spec = iso->productSpecific;
+  iso_setup *setup = iso->setup;
+  iso_processing *proc = iso->processing;
+  iso_instrument *inst = iso->instrument;
+  iso_platform *platform = iso->platform;
+  iso_productQuality *quality = iso->productQuality;
+
+  // General Header  
   strcpy(header->itemName, "LEVEL 1 PRODUCT");
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)  
     strcpy(header->mission, "SEASAT");
@@ -86,8 +110,6 @@ iso_meta *meta2iso(meta_parameters *meta)
   strcpy(header->revision, "OPERATIONAL");
 
   // Product Components
-  iso_productComponents *comps = iso->productComponents;
-
   comps->numAnnotations = numAnnotations;
   comps->numLayers = numLayers;
   comps->numAuxRasterFiles = numAuxRasterFiles;
@@ -97,43 +119,40 @@ iso_meta *meta2iso(meta_parameters *meta)
     comps->annotation[ii].type = MAIN_TYPE;
     strcpy(comps->annotation[ii].file.host, ".");
     strcpy(comps->annotation[ii].file.path, ".");
-    strcpy(comps->annotation[ii].file.name, "(file basename).xml");
+    sprintf(comps->annotation[ii].file.name, "%s.xml", meta->general->basename);
     comps->annotation[ii].file.size = -1;
   }
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     // only one HDF5 file that contains everything
     comps->imageData = (iso_filesPol *) MALLOC(sizeof(iso_filesPol));
     comps->imageData[0].polLayer = HH_POL;
-    comps->imageData[0].beamID = (char *) MALLOC(sizeof(char)*20);
-    strcpy(comps->imageData[0].beamID, "STD");
+    strcpy(comps->imageData[0].beamID, meta->general->sensor_name);
     strcpy(comps->imageData[0].file.host, ".");
     strcpy(comps->imageData[0].file.path, ".");
-    strcpy(comps->imageData[0].file.name, "(file basename).h5");
+    sprintf(comps->imageData[0].file.name, "%s.h5", meta->general->basename);
     // comps->imageData[0].file.size: calculated after being generated
   }
   comps->quicklooks = 
     (iso_filesPol *) MALLOC(sizeof(iso_filesPol)*numLayers);
   for (ii=0; ii<numLayers; ii++) {
     comps->quicklooks[ii].polLayer = polLayer[ii];
-    comps->quicklooks[ii].beamID = (char *) MALLOC(sizeof(char)*20);
     strcpy(comps->quicklooks[ii].beamID, beamID[ii]);
     strcpy(comps->quicklooks[ii].file.host, ".");
     strcpy(comps->quicklooks[ii].file.path, ".");
-    strcpy(comps->quicklooks[ii].file.name, "(file basename)_(beam)_ql.tif");
+    sprintf(comps->quicklooks[ii].file.name, "%s_%s_ql.tif", 
+	    meta->general->basename, beamID[ii]);
     // comps->quicklooks[ii].file.size: calculated after being generated
   }
   strcpy(comps->browseImage.host, ".");
   strcpy(comps->browseImage.path, ".");
-  strcpy(comps->browseImage.name, "(file basename)_browse.jpg");
+  sprintf(comps->browseImage.name, "%s_browse.jpg", meta->general->basename);
   // comps->browseImage.size: calculated after being generated
   strcpy(comps->mapPlot.host, ".");
   strcpy(comps->mapPlot.path, ".");
-  strcpy(comps->mapPlot.name, "(file basename)_plot.(ext)");
+  sprintf(comps->mapPlot.name, "%s_plot.kml", meta->general->basename);
   // comps->mapPlat.size: calculated after being generated
 
   // Product Info
-  iso_productInfo *info = (iso_productInfo *) iso->productInfo;
-
   strcpy(info->logicalProductID, "not applicable");
   //strcpy(info->receivingStation, meta->general->receiving_station);
   strcpy(info->receivingStation, MAGIC_UNSET_STRING);
@@ -165,7 +184,10 @@ iso_meta *meta2iso(meta_parameters *meta)
   strncpy(info->sensor, meta->general->sensor_name, 20);
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)   
     info->imageMode = STANDARD_BEAM;
-  info->lookDirection = RIGHT_LOOK;
+  if (meta->sar->look_direction == 'R')
+    info->lookDirection = RIGHT_LOOK;
+  else if (meta->sar->look_direction == 'L')
+    info->lookDirection = LEFT_LOOK;
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     info->polarizationMode = SINGLE_POL;
     info->polLayer = (iso_polLayer_t *) MALLOC(sizeof(iso_polLayer_t));
@@ -196,25 +218,51 @@ iso_meta *meta2iso(meta_parameters *meta)
   info->mapProjection = UNDEF_MAP;
   info->resolutionVariant = UNDEF_RES;
   info->radiometricCorrection = NOTCALIBRATED;
+  // FIXME: needs to updated when calibration is done
   strcpy(info->pixelValueID, "RADAR BRIGHTNESS");
   if (meta->general->data_type >= COMPLEX_BYTE)
     info->imageDataType = COMPLEX_DATA_TYPE;
   else
     info->imageDataType = DETECTED_DATA_TYPE;
-  info->imageDataFormat = HDF5_DATA_FORMAT;
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)   
-    info->numberOfLayers = 1;
-  info->imageDataDepth = 32;
+    info->imageDataFormat = HDF5_DATA_FORMAT;
+  info->numberOfLayers = meta->general->band_count;
+  if (meta->general->data_type == ASF_BYTE ||
+      meta->general->data_type == COMPLEX_BYTE)
+    info->imageDataDepth = 8;
+  else if (meta->general->data_type == INTEGER16 ||
+	   meta->general->data_type == COMPLEX_INTEGER16)
+    info->imageDataDepth = 16;
+  else if (meta->general->data_type == REAL32 ||
+	   meta->general->data_type == INTEGER32 ||
+	   meta->general->data_type == COMPLEX_REAL32 ||
+	   meta->general->data_type == COMPLEX_INTEGER32)
+    info->imageDataDepth = 32;
+  else if (meta->general->data_type == REAL64 ||
+	   meta->general->data_type == COMPLEX_REAL64)
+    info->imageDataDepth = 64;
   info->imageStorageOrder = ROWBYROW;
   strcpy(info->rowContent, "RANGELINES");
   strcpy(info->columnContent, "AZIMUTHLINES");
   info->numberOfRows = meta->general->line_count;
   info->numberOfColumns = meta->general->sample_count;
+  info->startRow = meta->general->start_line;
+  info->startColumn = meta->general->start_sample;
+  info->rowScaling = meta->general->line_scaling;
+  info->columnScaling = meta->general->sample_scaling;
   info->rowSpacing = (float) meta->sar->azimuth_time_per_pixel;
   info->columnSpacing = (float) meta->sar->range_time_per_pixel;
-  // FIXME: calculate groundRangeResolution for slant range
-  info->groundRangeResolution = MAGIC_UNSET_DOUBLE;
-  info->azimuthResolution = meta->general->x_pixel_size;
+  if (meta->sar->image_type == 'S') {
+    spec->slantRangeResolution = meta->general->x_pixel_size;
+    // FIXME: calculate groundRangeResolution for slant range
+    info->groundRangeResolution = meta->general->x_pixel_size;
+  }
+  if (meta->sar->image_type == 'G') {
+    // FIXME: calculate slantRangeResolution for ground range
+    spec->slantRangeResolution = meta->general->x_pixel_size;
+    info->groundRangeResolution = meta->general->x_pixel_size;
+  }
+  info->azimuthResolution = meta->general->y_pixel_size;
   info->azimuthLooks = (float) meta->sar->azimuth_look_count;
   info->rangeLooks = (float) meta->sar->range_look_count;
   // FIXME: naming convention for sceneID
@@ -223,18 +271,15 @@ iso_meta *meta2iso(meta_parameters *meta)
   dateTimeStamp(meta, line_count, &info->stopTimeUTC);
   info->rangeTimeFirstPixel = rangeTime(meta, 0);
   info->rangeTimeLastPixel = rangeTime(meta, sample_count);
-  // FIXME: calculate scene extents
-  info->sceneAzimuthExtent = MAGIC_UNSET_DOUBLE;
-  info->sceneRangeExtent = MAGIC_UNSET_DOUBLE;
+  info->sceneAzimuthExtent = line_count * meta->general->y_pixel_size;
+  info->sceneRangeExtent = sample_count * meta->general->x_pixel_size;
   int *x = (int *) MALLOC(sizeof(int)*4);
   int *y = (int *) MALLOC(sizeof(int)*4);
   double lat, lon;
   y[0] = meta->general->line_count / 2;
-  info->sceneCenterCoord.refRow = (int *) MALLOC(sizeof(int));
-  *info->sceneCenterCoord.refRow = y[0];
+  info->sceneCenterCoord.refRow = y[0];
   x[0] = meta->general->sample_count / 2;
-  info->sceneCenterCoord.refColumn = (int *) MALLOC(sizeof(int));
-  *info->sceneCenterCoord.refColumn = x[0];
+  info->sceneCenterCoord.refColumn = x[0];
   if (meta->general->center_latitude == MAGIC_UNSET_DOUBLE ||
       meta->general->center_longitude == MAGIC_UNSET_DOUBLE) {
     info->sceneCenterCoord.lat = meta->general->center_latitude;
@@ -247,17 +292,18 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
   dateTimeStamp(meta, y[0], &info->sceneCenterCoord.azimuthTimeUTC);
   info->sceneCenterCoord.rangeTime = rangeTime(meta, x[0]);
-  info->sceneCenterCoord.incidenceAngle = meta_incid(meta, y[0], x[0])*R2D;
+  if (ISNAN(meta->sar->incid_a[0]))
+    info->sceneCenterCoord.incidenceAngle = meta_incid(meta, y[0], x[0])*R2D;
+  else
+    info->sceneCenterCoord.incidenceAngle = meta->sar->incid_a[0];
   info->sceneAverageHeight = MAGIC_UNSET_DOUBLE;
   x[0] = 0; y[0] = 0;
   x[1] = meta->general->sample_count; y[1] = 0;
   x[2] = 0; y[2] = meta->general->line_count;
   x[3] = meta->general->sample_count; y[3] = meta->general->line_count;
   for (ii=0; ii<4; ii++) {
-    info->sceneCornerCoord[ii].refRow = (int *) MALLOC(sizeof(int));
-    *info->sceneCornerCoord[ii].refRow = y[ii];
-    info->sceneCornerCoord[ii].refColumn = (int *) MALLOC(sizeof(int));
-    *info->sceneCornerCoord[ii].refColumn = x[ii];
+    info->sceneCornerCoord[ii].refRow = y[ii];
+    info->sceneCornerCoord[ii].refColumn = x[ii];
     meta_get_latLon(meta, (double) y[ii], (double) x[ii], 0.0, &lat, &lon);
     info->sceneCornerCoord[ii].lat = (float) lat;
     info->sceneCornerCoord[ii].lon = (float) lon;
@@ -266,6 +312,11 @@ iso_meta *meta2iso(meta_parameters *meta)
     info->sceneCornerCoord[ii].incidenceAngle = 
       meta_incid(meta, (double) y[ii], (double) x[ii])*R2D;
   }
+  info->yaw = meta->sar->yaw;
+  info->pitch = meta->sar->pitch;
+  info->roll = meta->sar->roll;
+  info->earthRadius = meta->sar->earth_radius;
+  info->satelliteHeight = meta->sar->satellite_height;
   info->headingAngle = meta->sar->heading_angle;
   strcpy(info->quicklooks.imageDataFormat,"TIFF");
   info->quicklooks.imageDataDepth = 16; // assumption
@@ -280,15 +331,14 @@ iso_meta *meta2iso(meta_parameters *meta)
   strcpy(info->mapPlotFormat, "KML"); // assumption
 
   // Product Specific
-  iso_productSpecific *spec = iso->productSpecific;
-
   spec->commonPRF = meta->sar->prf;
   spec->commonRSF = meta->sar->range_sampling_rate;
-  spec->slantRangeResolution = MAGIC_UNSET_DOUBLE;
-  spec->projectedSpacingAzimuth = MAGIC_UNSET_DOUBLE;
-  spec->projectedSpacingGroundNearRange = MAGIC_UNSET_DOUBLE;
-  spec->projectedSpacingGroundFarRange = MAGIC_UNSET_DOUBLE;
-  spec->projectedSpacingSlantRange = MAGIC_UNSET_DOUBLE;
+  // FIXME: calculate properly for different geometry
+  spec->slantRangeResolution = meta->general->x_pixel_size;
+  spec->projectedSpacingAzimuth = meta->general->y_pixel_size;
+  spec->projectedSpacingGroundNearRange = meta->general->x_pixel_size;
+  spec->projectedSpacingGroundFarRange = meta->general->x_pixel_size;
+  spec->projectedSpacingSlantRange = meta->sar->slant_range_first_pixel;
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     spec->imageCoordinateType = RAW_COORD;
     spec->imageDataStartWith = EARLYAZNEARRG; // assumption
@@ -368,8 +418,6 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
 
   // Setup
-  iso_setup *setup = iso->setup;
-
   strcpy(setup->orderType, "???");
   strcpy(setup->processingPriority, "NOMINAL");
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)
@@ -409,14 +457,18 @@ iso_meta *meta2iso(meta_parameters *meta)
     setup->processingStep = (iso_procStep *) MALLOC(sizeof(iso_procStep));
     strcpy(setup->processingStep[0].softwareID, "prep_raw");
     strcpy(setup->processingStep[0].softwareVersion, "1.0");
-    setup->processingStep[0].algorithm = (char *) MALLOC(sizeof(char)*255);
+    setup->processingStep[0].algorithm = (char *) MALLOC(sizeof(char)*1024);
     strcpy(setup->processingStep[0].algorithm, 
 	   "optional information about algorithm");
+    setup->processingStep[0].processingTimeUTC.year = MAGIC_UNSET_INT;
+    setup->processingStep[0].processingTimeUTC.month = MAGIC_UNSET_INT;
+    setup->processingStep[0].processingTimeUTC.day = MAGIC_UNSET_INT;
+    setup->processingStep[0].processingTimeUTC.hour = MAGIC_UNSET_INT;
+    setup->processingStep[0].processingTimeUTC.min = MAGIC_UNSET_INT;
+    setup->processingStep[0].processingTimeUTC.second = MAGIC_UNSET_DOUBLE;
   }
 
   // Processing
-  iso_processing *proc = iso->processing;
-
   strcpy(proc->dopplerBasebandEstimationMethod, "azimuth cross correlation");
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)
     proc->dopplerCentroidCoordinateType = RAW_COORD;
@@ -444,28 +496,28 @@ iso_meta *meta2iso(meta_parameters *meta)
   proc->processingParameter = 
     (iso_processingParameter *) MALLOC(sizeof(iso_processingParameter));
   proc->processingParameter[0].processingInfoCoordinateType = RAW_COORD;
-  proc->processingParameter[0].rangeLooks = meta->sar->range_look_count;
-  proc->processingParameter[0].azimuthLooks = meta->sar->azimuth_look_count;
+  proc->processingParameter[0].rangeLooks = (float) meta->sar->range_look_count;
+  proc->processingParameter[0].azimuthLooks = 
+    (float) meta->sar->azimuth_look_count;
   proc->processingParameter[0].rangeLookBandwidth = 0;
   proc->processingParameter[0].azimuthLookBandwidth =
     meta->sar->azimuth_processing_bandwidth;
   proc->processingParameter[0].totalProcessedRangeBandwidth = 0;
   proc->processingParameter[0].totalProcessedAzimuthBandwidth =
     meta->sar->azimuth_processing_bandwidth;
+  proc->processingParameter[0].chirpRate = meta->sar->chirp_rate;
+  proc->processingParameter[0].pulseDuration = meta->sar->pulse_duration;
   // rangeCompression ???
   // FIXME: check all the flags
   proc->chirpReplicaUsedFlag = TRUE;
   proc->geometricDopplerUsedFlag = FALSE;
   proc->azimuthPatternCorrectedFlag = FALSE;
   proc->elevationPatternCorrectedFlag = FALSE;
-  if (meta->sar->image_type == 'S') {  
+  if (meta->sar->image_type == 'S')
     proc->detectedFlag = FALSE;
-    proc->multiLookedFlag = FALSE;
-  }
-  else if (meta->sar->image_type == 'G') {  
+  else if (meta->sar->image_type == 'G')
     proc->detectedFlag = TRUE;
-    proc->multiLookedFlag = TRUE;
-  }
+  proc->multiLookedFlag = meta->sar->multilook;
   proc->polarimetricProcessedFlag = FALSE;
   proc->terrainCorrectedFlag = FALSE;
   proc->layoverShadowMaskGeneratedFlag = FALSE;
@@ -473,8 +525,6 @@ iso_meta *meta2iso(meta_parameters *meta)
   proc->nominalProcessingPerformedFlag = TRUE;
 
   // Instrument
-  iso_instrument *inst = iso->instrument;
-
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)
     inst->instrumentInfoCoordinateType = RAW_COORD;
   inst->centerFrequency = SPD_LIGHT / meta->sar->wavelength;
@@ -520,8 +570,6 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
 
   // Platform
-  iso_platform *platform = iso->platform;
-
   platform->sensor = PREDICTED_SENSOR;
   platform->accuracy = TLE;
   strcpy(platform->stateVectorRefFrame, "WGS84");
@@ -559,13 +607,10 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
 
   // Product Quality
-  iso_productQuality *quality = iso->productQuality;
-
   quality->rawDataQuality = 
     (iso_rawDataQuality *) MALLOC(sizeof(iso_rawDataQuality)*numLayers);  
   for (ii=0; ii<numLayers; ii++) {
     quality->rawDataQuality[ii].polLayer = polLayer[ii];
-    quality->rawDataQuality[0].beamID = (char *) MALLOC(sizeof(char)*20);
     strcpy(quality->rawDataQuality[0].beamID, beamID[ii]);
     // need to get this information from somewhere else
     quality->rawDataQuality[ii].numGaps = 1;
@@ -585,13 +630,15 @@ iso_meta *meta2iso(meta_parameters *meta)
     (iso_imageDataQuality *) MALLOC(sizeof(iso_imageDataQuality)*numLayers);  
   for (ii=0; ii<numLayers; ii++) {
     quality->imageDataQuality[ii].polLayer = polLayer[ii];
-    quality->imageDataQuality[0].beamID = (char *) MALLOC(sizeof(char)*20);
     strcpy(quality->imageDataQuality[0].beamID, beamID[ii]);
     // need to get this information from somewhere else
     quality->imageDataQuality[ii].min = MAGIC_UNSET_DOUBLE;
     quality->imageDataQuality[ii].max = MAGIC_UNSET_DOUBLE;
     quality->imageDataQuality[ii].mean = MAGIC_UNSET_DOUBLE;
     quality->imageDataQuality[ii].stdDev = MAGIC_UNSET_DOUBLE;
+    quality->imageDataQuality[ii].missingLines = meta->general->missing_lines;
+    quality->imageDataQuality[ii].bitErrorRate = meta->general->bit_error_rate;
+    quality->imageDataQuality[ii].noData = (double) meta->general->no_data;
   }
   quality->gapDefinition = MAGIC_UNSET_INT;
   // These limits need to be defined per satellite
@@ -605,4 +652,246 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
 
   return iso;
+}
+
+static char *polLayer2str(iso_polLayer_t pol)
+{
+  char *str = (char *) MALLOC(sizeof(char)*20);
+  
+  if (pol == HH_POL)
+    strcpy(str, "HH");
+  else if (pol == HV_POL)
+    strcpy(str, "HV");
+  else if (pol == VH_POL)
+    strcpy(str, "VH");
+  else if (pol == VV_POL)
+    strcpy(str, "VV");
+  else if (pol == UNDEF_POL_LAYER)
+    strcpy(str, "UNDEFINED");
+
+  return str;
+}
+
+meta_parameters *iso2meta(iso_meta *iso)
+{
+  int ii, kk;
+  meta_parameters *meta = raw_init();
+  char str[30];
+
+  // Convenience pointers
+  iso_generalHeader *header = iso->generalHeader;
+  iso_productComponents *comps = iso->productComponents;
+  iso_productInfo *info = iso->productInfo;
+  iso_productSpecific *spec = iso->productSpecific;
+  iso_setup *setup = iso->setup;
+  iso_processing *proc = iso->processing;
+  iso_instrument *inst = iso->instrument;
+  iso_platform *platform = iso->platform;
+  iso_productQuality *quality = iso->productQuality;
+
+  meta->meta_version = 3.5;
+
+  // General block
+  for (ii=0; ii<comps->numAnnotations; ii++)
+    if (comps->annotation[ii].type == MAIN_TYPE)
+      strncpy(meta->general->basename, comps->annotation[ii].file.name, 256);
+  strcpy(meta->general->sensor, header->mission);
+  strcpy(meta->general->sensor_name, info->sensor);
+  strcpy(meta->general->mode, info->elevationBeamConfiguration);
+  strcpy(meta->general->receiving_station, info->receivingStation);
+  strcpy(meta->general->processor, header->generationSystem);
+  if (info->imageDataType == DETECTED_DATA_TYPE &&
+      info->imageDataDepth == 8)
+    meta->general->data_type = ASF_BYTE;
+  else if (info->imageDataType == DETECTED_DATA_TYPE &&
+	   info->imageDataDepth == 16)
+    meta->general->data_type = INTEGER16;
+  else if (info->imageDataType == DETECTED_DATA_TYPE &&
+	   info->imageDataDepth == 32)
+    // assumption here is that we are not dealing with INTERGER32
+    meta->general->data_type = REAL32;
+  else if (info->imageDataType == DETECTED_DATA_TYPE &&
+	   info->imageDataDepth == 64)
+    meta->general->data_type = REAL64;
+  else if (info->imageDataType == COMPLEX_DATA_TYPE &&
+	   info->imageDataDepth == 8)
+    meta->general->data_type = COMPLEX_BYTE;
+  else if (info->imageDataType == COMPLEX_DATA_TYPE &&
+	   info->imageDataDepth == 16)
+    meta->general->data_type = COMPLEX_INTEGER16;
+  else if (info->imageDataType == COMPLEX_DATA_TYPE &&
+	   info->imageDataDepth == 32)
+    // assumption here is that we are not dealing with COMPLEX_INTEGER32
+    meta->general->data_type = COMPLEX_REAL32;
+  else if (info->imageDataType == COMPLEX_DATA_TYPE &&
+	   info->imageDataDepth == 64)
+    meta->general->data_type = COMPLEX_REAL64;
+  if (info->imageDataType == RAW_DATA_TYPE)
+    meta->general->image_data_type = RAW_IMAGE;
+  else if (info->imageDataType == COMPLEX_DATA_TYPE)
+    meta->general->image_data_type = COMPLEX_IMAGE;
+  else if (info->imageDataType == DETECTED_DATA_TYPE)
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
+  // more detailed mapping of imageDataType will probably need pixelValueID 
+  // context
+  if (strcmp_case(info->pixelValueID, "RADAR BRIGHTNESS") == 0)
+    meta->general->radiometry = r_AMP;
+  // dealing with any form of calibration not implemented yet
+  dateTime2str(info->sceneCenterCoord.azimuthTimeUTC,
+	       meta->general->acquisition_date);
+  meta->general->orbit = info->absOrbit;
+  if (info->orbitDirection == ASCENDING)  
+    meta->general->orbit_direction = 'A';
+  else if (info->orbitDirection == DESCENDING)
+    meta->general->orbit_direction = 'D';
+  meta->general->frame = setup->frameID;
+  meta->general->band_count = comps->numLayers;
+  strcpy(meta->general->bands, polLayer2str(comps->imageData[0].polLayer));
+  for (ii=1; ii<comps->numLayers; ii++) {
+    sprintf(str, ", %s", polLayer2str(comps->imageData[ii].polLayer));
+    strcat(meta->general->bands, str);
+  }
+  int line_count = meta->general->line_count = info->numberOfRows;
+  int sample_count = meta->general->sample_count = info->numberOfColumns;
+  meta->general->start_line = info->startRow;
+  meta->general->start_sample = info->startColumn;
+  meta->general->x_pixel_size = info->groundRangeResolution;
+  meta->general->y_pixel_size = info->azimuthResolution;
+  meta->general->center_latitude = info->sceneCenterCoord.lat;
+  meta->general->center_longitude = info->sceneCenterCoord.lon;
+  spheroid_type_t spheroid = WGS84_SPHEROID; // FIXME: needs to know reference
+  spheroid_axes_lengths(spheroid,
+			&meta->general->re_major, &meta->general->re_minor);
+  meta->general->bit_error_rate = quality->imageDataQuality[0].bitErrorRate;
+  meta->general->missing_lines = quality->imageDataQuality[0].missingLines;
+  meta->general->no_data = (float) quality->imageDataQuality[0].noData;
+
+  // SAR block
+  meta->sar = meta_sar_init();
+  if (info->projection == SLANTRANGE_PROJ)
+    meta->sar->image_type = 'S';
+  else if (info->projection == GROUNDRANGE_PROJ)
+    meta->sar->image_type = 'G';
+  else if (info->projection == MAP_PROJ)
+    meta->sar->image_type = 'P';
+  if (setup->lookDirection == RIGHT_LOOK)
+    meta->sar->look_direction = 'R';
+  else if (setup->lookDirection == LEFT_LOOK)
+    meta->sar->look_direction = 'L';
+  meta->sar->azimuth_look_count = info->azimuthLooks;
+  meta->sar->range_look_count = info->rangeLooks;
+  if (spec->imageCoordinateType == RAW_COORD)
+    meta->sar->deskewed = FALSE;
+  else if (spec->imageCoordinateType == ZERODOPPLER)
+    meta->sar->deskewed = TRUE;
+  meta->general->line_scaling = info->rowScaling;  
+  meta->general->sample_scaling = info->columnScaling;
+  meta->sar->range_time_per_pixel = info->columnSpacing;
+  meta->sar->azimuth_time_per_pixel = info->rowSpacing;
+  meta->sar->slant_shift = 0.0;
+  meta->sar->time_shift = 0.0;
+  meta->sar->slant_range_first_pixel = info->rangeTimeFirstPixel * SPD_LIGHT;
+  meta->sar->wavelength = SPD_LIGHT / inst->centerFrequency;
+  meta->sar->prf = spec->commonPRF;
+  meta->sar->earth_radius = info->earthRadius;
+  meta->sar->satellite_height = info->satelliteHeight;
+  // meta->sar->satellite_binary_time;
+  // meta->sar->satellite_clock_time;
+  for (ii=0; ii<=proc->doppler[0].polynomialDegree; ii++)
+    meta->sar->range_doppler_coefficients[ii] = 
+      proc->doppler[0].coefficient[ii];
+  meta->sar->azimuth_doppler_coefficients[0] = proc->doppler[0].coefficient[0];
+  // meta->sar->chirp_rate
+  // meta->sar->pulse_duration
+  meta->sar->range_sampling_rate = spec->commonRSF;
+  if (info->polarizationMode == SINGLE_POL)
+    strcpy(meta->sar->polarization, "SINGLE");
+  else if (info->polarizationMode == DUAL_POL)
+    strcpy(meta->sar->polarization, "DUAL");
+  else if (info->polarizationMode == QUAD_POL)
+    strcpy(meta->sar->polarization, "QUAD");
+  meta->sar->multilook = proc->multiLookedFlag;
+  meta->sar->pitch = info->pitch;
+  meta->sar->roll = info->roll;
+  meta->sar->yaw = info->yaw;
+  meta->sar->incid_a[0] = info->sceneCenterCoord.incidenceAngle;
+  meta->sar->heading_angle = info->headingAngle;
+  meta->sar->chirp_rate = proc->processingParameter[0].chirpRate;
+  meta->sar->pulse_duration = proc->processingParameter[0].pulseDuration;
+
+  // meta->projection
+  // meta->transform
+  // meta->airsar
+  // meta->uavsar
+  // meta->statistics
+
+  int numVectors = platform->numStateVectors;
+  meta->state_vectors = meta_state_vectors_init(numVectors);
+  meta->state_vectors->vector_count = numVectors;
+  ymd_date ymdStart, ymdSV;
+  julian_date jd;
+  hms_time hmsStart, hmsSV;
+  ymdStart.year = info->startTimeUTC.year;
+  ymdStart.month = info->startTimeUTC.month;
+  ymdStart.day = info->startTimeUTC.day;
+  hmsStart.hour = info->startTimeUTC.hour;
+  hmsStart.min = info->startTimeUTC.min;
+  hmsStart.sec = info->startTimeUTC.second;
+  meta->state_vectors->year = info->startTimeUTC.year;
+  date_ymd2jd(&ymdStart, &jd);
+  meta->state_vectors->julDay = jd.jd;
+  meta->state_vectors->second = date_hms2sec(&hmsStart);
+  for (ii=0; ii<numVectors; ii++) {
+    ymdSV.year = platform->stateVec[ii].timeUTC.year;
+    ymdSV.month = platform->stateVec[ii].timeUTC.month;
+    ymdSV.day = platform->stateVec[ii].timeUTC.day;
+    hmsSV.hour = platform->stateVec[ii].timeUTC.hour;
+    hmsSV.min = platform->stateVec[ii].timeUTC.min;
+    hmsSV.sec = platform->stateVec[ii].timeUTC.second;
+    meta->state_vectors->vecs[ii].time = 
+      time_difference(&ymdSV, &hmsSV, &ymdStart, &hmsStart);
+    meta->state_vectors->vecs[ii].vec.pos.x = platform->stateVec[ii].posX;
+    meta->state_vectors->vecs[ii].vec.pos.y = platform->stateVec[ii].posY;
+    meta->state_vectors->vecs[ii].vec.pos.z = platform->stateVec[ii].posZ;
+    meta->state_vectors->vecs[ii].vec.vel.x = platform->stateVec[ii].velX;
+    meta->state_vectors->vecs[ii].vec.vel.y = platform->stateVec[ii].velY;
+    meta->state_vectors->vecs[ii].vec.vel.z = platform->stateVec[ii].velZ;
+  }
+  /*
+  // few calculations need state vectors
+  meta->sar->earth_radius = 
+    meta_get_earth_radius(meta, line_count/2, sample_count/2);
+  // meta->sar->earth_radius_pp
+  meta->sar->satellite_height =
+    meta_get_sat_height(meta, meta->general->line_count/2,
+			meta->general->sample_count/2);
+  meta->sar->incid_a[0] = meta_incid(meta, line_count/2, sample_count/2)*R2D;
+  */
+
+  // Location block
+  meta->location = meta_location_init();
+  for (ii=0; ii<4; ii++) {
+    if (info->sceneCornerCoord[ii].refRow == 0 &&
+	info->sceneCornerCoord[ii].refColumn == 0) {
+      meta->location->lat_start_near_range = info->sceneCornerCoord[ii].lat;
+      meta->location->lon_start_near_range = info->sceneCornerCoord[ii].lon;
+    }
+    else if (info->sceneCornerCoord[ii].refRow == 0 &&
+	     info->sceneCornerCoord[ii].refColumn == sample_count) {
+      meta->location->lat_start_far_range = info->sceneCornerCoord[ii].lat;
+      meta->location->lon_start_far_range = info->sceneCornerCoord[ii].lon;
+    }
+    else if (info->sceneCornerCoord[ii].refRow == line_count &&
+	     info->sceneCornerCoord[ii].refColumn == 0) {
+      meta->location->lat_end_near_range = info->sceneCornerCoord[ii].lat;
+      meta->location->lon_end_near_range = info->sceneCornerCoord[ii].lon;
+    }
+    else if (info->sceneCornerCoord[ii].refRow == line_count &&
+	     info->sceneCornerCoord[ii].refColumn == sample_count) {
+      meta->location->lat_end_far_range = info->sceneCornerCoord[ii].lat;
+      meta->location->lon_end_far_range = info->sceneCornerCoord[ii].lon;
+    }
+  }
+
+  return meta;
 }

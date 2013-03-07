@@ -120,7 +120,8 @@ typedef enum {
   POLSARPRO,
   GAMMA,
   ROIPAC,
-  SMAP
+  SMAP,
+  GRIDDED_RGPS
 } input_format_t;
 
 /********************************************************************

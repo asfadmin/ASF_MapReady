@@ -84,7 +84,7 @@ iso_productInfo *iso_productInfo_init(void)
   strcpy(info->elevationBeamConfiguration, MAGIC_UNSET_STRING);
   strcpy(info->azimuthBeamID, MAGIC_UNSET_STRING);
   info->numberOfBeams = MAGIC_UNSET_INT;
-  info->beamID = NULL;
+  info->beamID = MAGIC_UNSET_STRING;
   info->numberOfBursts = MAGIC_UNSET_INT;
   info->numberOfAzimuthBeams = MAGIC_UNSET_INT;
   strcpy(info->azimuthBeamIDFirst, MAGIC_UNSET_STRING);
@@ -111,6 +111,10 @@ iso_productInfo *iso_productInfo_init(void)
   strcpy(info->columnContent, MAGIC_UNSET_STRING);
   info->numberOfRows = MAGIC_UNSET_INT;
   info->numberOfColumns = MAGIC_UNSET_INT;
+  info->startRow = 0;
+  info->startColumn = 0;
+  info->rowScaling = 1;
+  info->columnScaling = 1;
   info->rowSpacing = MAGIC_UNSET_DOUBLE;
   info->columnSpacing = MAGIC_UNSET_DOUBLE;
   info->groundRangeResolution = MAGIC_UNSET_DOUBLE;
@@ -140,8 +144,8 @@ iso_productInfo *iso_productInfo_init(void)
   info->rangeTimeLastPixel = MAGIC_UNSET_DOUBLE;
   info->sceneAzimuthExtent = MAGIC_UNSET_DOUBLE;
   info->sceneRangeExtent = MAGIC_UNSET_DOUBLE;
-  info->sceneCenterCoord.refRow = NULL;
-  info->sceneCenterCoord.refColumn = NULL;
+  info->sceneCenterCoord.refRow = MAGIC_UNSET_INT;
+  info->sceneCenterCoord.refColumn = MAGIC_UNSET_INT;
   info->sceneCenterCoord.lat = MAGIC_UNSET_DOUBLE;
   info->sceneCenterCoord.lon = MAGIC_UNSET_DOUBLE;
   info->sceneCenterCoord.azimuthTimeUTC.year = 1900;
@@ -154,8 +158,8 @@ iso_productInfo *iso_productInfo_init(void)
   info->sceneCenterCoord.incidenceAngle = MAGIC_UNSET_DOUBLE;
   info->sceneAverageHeight = MAGIC_UNSET_DOUBLE;
   for (ii=0; ii<4; ii++) {
-    info->sceneCornerCoord[ii].refRow = NULL;
-    info->sceneCornerCoord[ii].refColumn = NULL;
+    info->sceneCornerCoord[ii].refRow = MAGIC_UNSET_INT;
+    info->sceneCornerCoord[ii].refColumn = MAGIC_UNSET_INT;
     info->sceneCornerCoord[ii].lat = MAGIC_UNSET_DOUBLE;
     info->sceneCornerCoord[ii].lon = MAGIC_UNSET_DOUBLE;
     info->sceneCornerCoord[ii].azimuthTimeUTC.year = 1900;
@@ -167,7 +171,12 @@ iso_productInfo *iso_productInfo_init(void)
     info->sceneCornerCoord[ii].rangeTime = MAGIC_UNSET_DOUBLE;
     info->sceneCornerCoord[ii].incidenceAngle = MAGIC_UNSET_DOUBLE;
   }
+  info->yaw = MAGIC_UNSET_DOUBLE;
+  info->pitch = MAGIC_UNSET_DOUBLE;
+  info->roll = MAGIC_UNSET_DOUBLE;
   info->headingAngle = MAGIC_UNSET_DOUBLE;
+  info->earthRadius = MAGIC_UNSET_DOUBLE;
+  info->satelliteHeight = MAGIC_UNSET_DOUBLE;
 
   // previewInfo
   strcpy(info->quicklooks.imageDataFormat, MAGIC_UNSET_STRING);
@@ -392,7 +401,7 @@ iso_productQuality *iso_productQuality_init(void)
     (iso_productQuality *) MALLOC(sizeof(iso_productQuality));
 
   quality->rawDataQuality = NULL;
-  quality-> dopplerAmbiguityNotZeroFlag = FALSE;
+  quality->dopplerAmbiguityNotZeroFlag = FALSE;
   quality->dopplerOutsideLimitsFlag = FALSE;
   quality->geolocationQualityLowFlag = FALSE;
   quality->imageDataQuality = NULL;
@@ -466,16 +475,6 @@ void iso_meta_free(iso_meta *iso)
 	for (ii=0; ii<iso->productInfo->numberOfBeams; ii++)
 	  FREE(iso->productInfo->beamID[ii]);
 	FREE(iso->productInfo->beamID);
-      }
-      if (iso->productInfo->sceneCenterCoord.refRow)
-	FREE(iso->productInfo->sceneCenterCoord.refRow);
-      if (iso->productInfo->sceneCenterCoord.refColumn)
-	FREE(iso->productInfo->sceneCenterCoord.refColumn);
-      for (ii=0; ii<4; ii++) {
-	if (iso->productInfo->sceneCornerCoord[ii].refRow)
-	  FREE(iso->productInfo->sceneCornerCoord[ii].refRow);
-	if (iso->productInfo->sceneCornerCoord[ii].refColumn)
-	  FREE(iso->productInfo->sceneCornerCoord[ii].refColumn);
       }
       if (iso->productInfo->compositeQLPolLayerCode)
 	FREE(iso->productInfo->compositeQLPolLayerCode);

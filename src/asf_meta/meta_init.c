@@ -88,8 +88,8 @@ meta_sar *meta_sar_init(void)
   sar->multilook = TRUE;
   sar->original_line_count = MAGIC_UNSET_INT;
   sar->original_sample_count = MAGIC_UNSET_INT;
-  sar->line_increment = MAGIC_UNSET_DOUBLE;
-  sar->sample_increment = MAGIC_UNSET_DOUBLE;
+  sar->line_increment = 1;
+  sar->sample_increment = 1;
   sar->range_time_per_pixel = MAGIC_UNSET_DOUBLE;
   sar->azimuth_time_per_pixel = MAGIC_UNSET_DOUBLE;
   sar->slant_shift = MAGIC_UNSET_DOUBLE;

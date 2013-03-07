@@ -21,94 +21,23 @@ static void dateTime2str(iso_dateTime timeUTC, char *str)
 	    year, month, day, hour, min, sec);
 }
 
-static xmlChar *iStr(int number)
+void double2str(double value, int decimals, char *str)
 {
-  char *str = (char *) MALLOC(sizeof(char)*30);
-  sprintf(str, "%i", number);
-  return BAD_CAST str;
-}
-
-static xmlChar *ldStr(long number)
-{
-  char *str = (char *) MALLOC(sizeof(char)*30);
-  sprintf(str, "%ld", number);
-  return BAD_CAST str;
-}
-
-static xmlChar *fStr(float number)
-{
-  char *str = (char *) MALLOC(sizeof(char)*30);
-  if (ISNAN(number))
+  if (ISNAN(value))
     strcpy(str, "NaN");
-  else
-    sprintf(str, "%g", number);
-  return BAD_CAST str;
-}
-
-static xmlChar *f3Str(float number)
-{
-  char *str = (char *) MALLOC(sizeof(char)*30);
-  if (ISNAN(number))
-    strcpy(str, "NaN");
-  else
-    sprintf(str, "%.3f", number);
-  return BAD_CAST str;
-}
-
-static xmlChar *f5Str(float number)
-{
-  char *str = (char *) MALLOC(sizeof(char)*30);
-  if (ISNAN(number))
-    strcpy(str, "NaN");
-  else
-    sprintf(str, "%.5f", number);
-  return BAD_CAST str;
-}
-
-static xmlChar *lfStr(double number)
-{
-  char *str = (char *) MALLOC(sizeof(char)*30);
-  if (ISNAN(number))
-    strcpy(str, "NaN");
-  else
-    sprintf(str, "%g", number);
-  return BAD_CAST str;
-}
-
-static xmlChar *lf3Str(double number)
-{
-  char *str = (char *) MALLOC(sizeof(char)*30);
-  if (ISNAN(number))
-    strcpy(str, "NaN");
-  else
-    sprintf(str, "%.3f", number);
-  return BAD_CAST str;
-}
-
-static xmlChar *lf5Str(double number)
-{
-  char *str = (char *) MALLOC(sizeof(char)*30);
-  if (ISNAN(number))
-    strcpy(str, "NaN");
-  else
-    sprintf(str, "%.5f", number);
-  return BAD_CAST str;
-}
-
-static xmlChar *bStr(int number)
-{
-  char *str = (char *) MALLOC(sizeof(char)*10);
-  if (number == 1)
-    strcpy(str, "true");
-  else if (number == 0)
-    strcpy(str, "false");
-  return BAD_CAST str;
+  else if (decimals == 0)
+    sprintf(str, "%g", value);
+  else {
+    char format[10];
+    sprintf(format, "%%.%dlf", decimals);
+    sprintf(str, format, value);
+  }
 }
 
 void iso_meta_write(iso_meta *iso, const char *outFile)
 {
   unsigned long ii, kk;
-  char str[30];
+  char *str;
   
   // Set up 
   xmlDoc *doc = xmlNewDoc(BAD_CAST "1.0");
@@ -116,13 +45,15 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNs *ns = xmlNewNs(root, 
 		       BAD_CAST "http://www.w3.org/2001/XMLSchema-instance",
 		       BAD_CAST "xsi");
-  xmlNewNsProp(root, ns, BAD_CAST "noNamespaceSchemaLocation",
-	       BAD_CAST "iso_meta.xsd");
+  //xmlNewNsProp(root, ns, BAD_CAST "noNamespaceSchemaLocation",
+  //	       BAD_CAST "iso_meta.xsd");
+  xmlNewNsProp(root, ns, BAD_CAST "schemaLocation", BAD_CAST "iso_meta.xsd");
   xmlDocSetRootElement(doc, root);
   
   // Generate the tree from iso structure
   xmlNodePtr unit, node3, node2, node, parent, section;
-  
+  str = (char *) MALLOC(sizeof(char)*1024);
+
   // General Header
   iso_generalHeader *header = iso->generalHeader;
   section = xmlNewChild(root, NULL, BAD_CAST "generalHeader", NULL);
@@ -173,14 +104,15 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		  BAD_CAST comps->annotation[ii].file.path);
       xmlNewChild(node, NULL, BAD_CAST "filename", 
 		  BAD_CAST comps->annotation[ii].file.name);
-      xmlNewChild(parent, NULL, BAD_CAST "size", 
-		  ldStr(comps->annotation[ii].file.size));
+      sprintf(str, "%ld", comps->annotation[ii].file.size);
+      xmlNewChild(parent, NULL, BAD_CAST "size", BAD_CAST str);
     }
   }
   if (comps->imageData) {
     for (ii=0; ii<comps->numLayers; ii++) {
       parent = xmlNewChild(section, NULL, BAD_CAST "imageData", NULL);
-      xmlNewProp(parent, BAD_CAST "layerIndex", ldStr(ii+1));
+      sprintf(str, "%ld", ii+1);
+      xmlNewProp(parent, BAD_CAST "layerIndex", BAD_CAST str);
       if (comps->imageData[ii].polLayer == HH_POL)
 	strcpy(str, "HH");
       else if (comps->imageData[ii].polLayer == HV_POL)
@@ -200,8 +132,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		  BAD_CAST comps->imageData[ii].file.path);
       xmlNewChild(node2, NULL, BAD_CAST "filename",
 		  BAD_CAST comps->imageData[ii].file.name);
-      xmlNewChild(node, NULL, BAD_CAST "size", 
-		  ldStr(comps->imageData[ii].file.size));
+      sprintf(str, "%ld", comps->imageData[ii].file.size);
+      xmlNewChild(node, NULL, BAD_CAST "size", BAD_CAST str);
     }
   }
   if (comps->auxRasterFiles) {
@@ -210,7 +142,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   if (comps->quicklooks) {
     for (ii=0; ii<comps->numLayers; ii++) {
       parent = xmlNewChild(section, NULL, BAD_CAST "quicklooks", NULL);
-      xmlNewProp(parent, BAD_CAST "layerIndex", ldStr(ii+1));
+      sprintf(str, "%ld", ii+1);
+      xmlNewProp(parent, BAD_CAST "layerIndex", BAD_CAST str);
       if (comps->quicklooks[ii].polLayer == HH_POL)
 	strcpy(str, "HH");
       else if (comps->quicklooks[ii].polLayer == HV_POL)
@@ -230,8 +163,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		  BAD_CAST comps->quicklooks[ii].file.path);
       xmlNewChild(node2, NULL, BAD_CAST "filename",
 		  BAD_CAST comps->quicklooks[ii].file.name);
-      xmlNewChild(node, NULL, BAD_CAST "size", 
-		  ldStr(comps->quicklooks[ii].file.size));
+      sprintf(str, "%ld", comps->quicklooks[ii].file.size);
+      xmlNewChild(node, NULL, BAD_CAST "size", BAD_CAST str);
     }
   }
 
@@ -259,7 +192,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNewChild(node, NULL, BAD_CAST "path", BAD_CAST comps->browseImage.path);
   xmlNewChild(node, NULL, BAD_CAST "filename", 
 	      BAD_CAST comps->browseImage.name);
-  xmlNewChild(parent, NULL, BAD_CAST "size", ldStr(comps->browseImage.size));
+  sprintf(str, "%ld", comps->browseImage.size);
+  xmlNewChild(parent, NULL, BAD_CAST "size", BAD_CAST str);
   parent = xmlNewChild(section, NULL, BAD_CAST "mapPlot", NULL);
   node = xmlNewChild(parent, NULL, BAD_CAST "file", NULL);
   parent = node;
@@ -267,7 +201,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNewChild(node, NULL, BAD_CAST "host", BAD_CAST comps->mapPlot.host);
   xmlNewChild(node, NULL, BAD_CAST "path", BAD_CAST comps->mapPlot.path);
   xmlNewChild(node, NULL, BAD_CAST "filename", BAD_CAST comps->mapPlot.name);
-  xmlNewChild(parent, NULL, BAD_CAST "size", ldStr(comps->mapPlot.size));
+  sprintf(str, "%ld", comps->mapPlot.size);
+  xmlNewChild(parent, NULL, BAD_CAST "size", BAD_CAST str);
   
   // Product Info
   iso_productInfo *info = iso->productInfo;
@@ -312,12 +247,16 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   
   parent = xmlNewChild(section, NULL, BAD_CAST "missionInfo", NULL);
   xmlNewChild(parent, NULL, BAD_CAST "mission", BAD_CAST info->mission);
-  xmlNewChild(parent, NULL, BAD_CAST "orbitPhase", iStr(info->orbitPhase));
-  xmlNewChild(parent, NULL, BAD_CAST "orbitCycle", iStr(info->orbitCycle));
-  xmlNewChild(parent, NULL, BAD_CAST "absOrbit", iStr(info->absOrbit));
-  xmlNewChild(parent, NULL, BAD_CAST "relOrbit", iStr(info->relOrbit));
-  xmlNewChild(parent, NULL, BAD_CAST "numOrbitsInCycle", 
-	      iStr(info->numOrbitsInCycle));
+  sprintf(str, "%d", info->orbitPhase);
+  xmlNewChild(parent, NULL, BAD_CAST "orbitPhase", BAD_CAST str);
+  sprintf(str, "%d", info->orbitCycle);
+  xmlNewChild(parent, NULL, BAD_CAST "orbitCycle", BAD_CAST str);
+  sprintf(str, "%d", info->absOrbit);
+  xmlNewChild(parent, NULL, BAD_CAST "absOrbit", BAD_CAST str);
+  sprintf(str, "%d", info->relOrbit);
+  xmlNewChild(parent, NULL, BAD_CAST "relOrbit", BAD_CAST str);
+  sprintf(str, "%d", info->numOrbitsInCycle);
+  xmlNewChild(parent, NULL, BAD_CAST "numOrbitsInCycle", BAD_CAST str);
   if (info->orbitDirection == ASCENDING)
     strcpy(str, "ASCENDING");
   else if (info->orbitDirection == DESCENDING)
@@ -388,29 +327,31 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   }
   else if (info->imageMode == SCANSAR_IMAGE) {
     parent = xmlNewChild(node, NULL, BAD_CAST "scanSAR", NULL);
-    xmlNewChild(parent, NULL, BAD_CAST "numberOfBeams", 
-		iStr(info->numberOfBeams));
+    sprintf(str, "%d", info->numberOfBeams);
+    xmlNewChild(parent, NULL, BAD_CAST "numberOfBeams", BAD_CAST str);
     xmlNodePtr beams = xmlNewChild(parent, NULL, BAD_CAST "beamList", NULL);
     for (ii=0; ii<info->numberOfBeams; ii++)
       xmlNewChild(beams, NULL, BAD_CAST "beamID", BAD_CAST info->beamID[ii]);
     xmlNewChild(parent, NULL, BAD_CAST "azimuthBeamID", 
 		BAD_CAST info->azimuthBeamID);
-    xmlNewChild(parent, NULL, BAD_CAST "numberOfBursts", 
-		iStr(info->numberOfBursts));
+    sprintf(str, "%d", info->numberOfBursts);
+    xmlNewChild(parent, NULL, BAD_CAST "numberOfBursts", BAD_CAST str);
   }
   else if (info->imageMode == SPOTLIGHT_IMAGE) {
     parent = xmlNewChild(node, NULL, BAD_CAST "spotLight", NULL);
-    xmlNewChild(parent, NULL, BAD_CAST "numberOfAzimuthBeams", 
-		iStr(info->numberOfAzimuthBeams));
+    sprintf(str, "%d", info->numberOfAzimuthBeams);
+    xmlNewChild(parent, NULL, BAD_CAST "numberOfAzimuthBeams", BAD_CAST str);
     xmlNewChild(parent, NULL, BAD_CAST "azimuthBeamIDFirst", 
 		BAD_CAST info->azimuthBeamIDFirst);
     xmlNewChild(parent, NULL, BAD_CAST "azimuthBeamIDLast", 
 		BAD_CAST info->azimuthBeamIDLast);
+    double2str(info->azimuthSteeringAngleFirst, 5, str);
     unit = xmlNewChild(parent, NULL, BAD_CAST "azimuthSteeringAngleFirst",
-		       fStr(info->azimuthSteeringAngleFirst));
+		       BAD_CAST str);
     xmlNewProp(node, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(info->azimuthSteeringAngleLast, 5, str);
     unit = xmlNewChild(parent, NULL, BAD_CAST "azimuthSteeringAngleLast",
-		       fStr(info->azimuthSteeringAngleLast));
+		       BAD_CAST str);
     xmlNewProp(node, BAD_CAST "units", BAD_CAST "degrees");
   }
   
@@ -497,10 +438,10 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   else if (info->imageDataFormat == UNDEF_DATA_FORMAT)
     strcpy(str, "UNDEFINED");
   xmlNewChild(parent, NULL, BAD_CAST "imageDataFormat", BAD_CAST str);
-  xmlNewChild(parent, NULL, BAD_CAST "numberOfLayers", 
-	      iStr(info->numberOfLayers));
-  xmlNewChild(parent, NULL, BAD_CAST "imageDataDepth", 
-	      iStr(info->imageDataDepth));
+  sprintf(str, "%d", info->numberOfLayers);
+  xmlNewChild(parent, NULL, BAD_CAST "numberOfLayers", BAD_CAST str);
+  sprintf(str, "%d", info->imageDataDepth);
+  xmlNewChild(parent, NULL, BAD_CAST "imageDataDepth", BAD_CAST str);
   if (info->imageStorageOrder == ROWBYROW)
     strcpy(str, "ROWBYROW");
   else if (info->imageStorageOrder == COLBYCOL)
@@ -512,29 +453,41 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNewChild(parent, NULL, BAD_CAST "columnContent", 
 	      BAD_CAST info->columnContent);
   node = xmlNewChild(parent, NULL, BAD_CAST "imageRaster", NULL);
-  xmlNewChild(node, NULL, BAD_CAST "numberOfRows", iStr(info->numberOfRows));
-  xmlNewChild(node, NULL, BAD_CAST "numberOfColumns", 
-	      iStr(info->numberOfColumns));
-  unit = xmlNewChild(node, NULL, BAD_CAST "rowSpacing", 
-		     fStr(info->rowSpacing));
+  sprintf(str, "%d", info->numberOfRows);
+  xmlNewChild(node, NULL, BAD_CAST "numberOfRows", BAD_CAST str);
+  sprintf(str, "%d", info->numberOfColumns);
+  xmlNewChild(node, NULL, BAD_CAST "numberOfColumns", BAD_CAST str);
+  sprintf(str, "%d", info->startRow);
+  xmlNewChild(node, NULL, BAD_CAST "startRow", BAD_CAST str);
+  sprintf(str, "%d", info->startColumn);
+  xmlNewChild(node, NULL, BAD_CAST "startColumn", BAD_CAST str);
+  double2str(info->rowScaling, 0, str);
+  xmlNewChild(node, NULL, BAD_CAST "rowScaling", BAD_CAST str);
+  double2str(info->columnScaling, 0, str);
+  xmlNewChild(node, NULL, BAD_CAST "columnScaling", BAD_CAST str);
+  double2str(info->rowSpacing, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "rowSpacing", BAD_CAST str);
   if (info->projection == MAP_PROJ)
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");  
   else
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "s");
-  unit = xmlNewChild(node, NULL, BAD_CAST "columnSpacing", 
-		     fStr(info->columnSpacing));
+  double2str(info->columnSpacing, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "columnSpacing", BAD_CAST str);
   if (info->projection == MAP_PROJ)
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");  
   else
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "s");
+  double2str(info->groundRangeResolution, 0, str);
   unit = xmlNewChild(node, NULL, BAD_CAST "groundRangeResolution", 
-		     lfStr(info->groundRangeResolution));
+		     BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-  unit = xmlNewChild(node, NULL, BAD_CAST "azimuthResolution",
-		     lfStr(info->azimuthResolution));
+  double2str(info->azimuthResolution, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "azimuthResolution", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-  xmlNewChild(node, NULL, BAD_CAST "azimuthLooks", fStr(info->azimuthLooks));
-  xmlNewChild(node, NULL, BAD_CAST "rangeLooks", fStr(info->rangeLooks));
+  double2str(info->azimuthLooks, 0, str);
+  xmlNewChild(node, NULL, BAD_CAST "azimuthLooks", BAD_CAST str);
+  double2str(info->rangeLooks, 0, str);
+  xmlNewChild(node, NULL, BAD_CAST "rangeLooks", BAD_CAST str);
   
   parent = xmlNewChild(section, NULL, BAD_CAST "sceneInfo", NULL);
   xmlNewChild(parent, NULL, BAD_CAST "sceneID",  BAD_CAST info->sceneID);
@@ -559,91 +512,102 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "s");
   */
   node = xmlNewChild(parent, NULL, BAD_CAST "rangeTime", NULL);
-  unit = xmlNewChild(node, NULL, BAD_CAST "firstPixel", 
-		     lfStr(info->rangeTimeFirstPixel));
+  double2str(info->rangeTimeFirstPixel, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "firstPixel", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "s");
-  unit = xmlNewChild(node, NULL, BAD_CAST "lastPixel", 
-		     lfStr(info->rangeTimeLastPixel));
+  double2str(info->rangeTimeLastPixel, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "lastPixel", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "s");
-  unit = xmlNewChild(parent, NULL, BAD_CAST "sceneAzimuthExtent",
-		     lf3Str(info->sceneAzimuthExtent));
+  double2str(info->sceneAzimuthExtent, 3, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "sceneAzimuthExtent", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-  unit = xmlNewChild(parent, NULL, BAD_CAST "sceneRangeExtent", 
-		     lf3Str(info->sceneRangeExtent));
+  double2str(info->sceneRangeExtent, 3, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "sceneRangeExtent", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
   node = xmlNewChild(parent, NULL, BAD_CAST "sceneCenterCoord", NULL);
-  if (info->sceneCenterCoord.refRow)
-    xmlNewChild(node, NULL, BAD_CAST "refRow", 
-		iStr(*info->sceneCenterCoord.refRow));
-  if (info->sceneCenterCoord.refColumn)
-    xmlNewChild(node, NULL, BAD_CAST "refColumn", 
-		iStr(*info->sceneCenterCoord.refColumn));
-  unit = xmlNewChild(node, NULL, BAD_CAST "lat", 
-		     f5Str(info->sceneCenterCoord.lat));
+  sprintf(str, "%i", info->sceneCenterCoord.refRow);
+  xmlNewChild(node, NULL, BAD_CAST "refRow", BAD_CAST str);
+  sprintf(str, "%i", info->sceneCenterCoord.refColumn);
+  xmlNewChild(node, NULL, BAD_CAST "refColumn", BAD_CAST str);
+  double2str(info->sceneCenterCoord.lat, 5, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "lat", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-  unit = xmlNewChild(node, NULL, BAD_CAST "lon", 
-		     f5Str(info->sceneCenterCoord.lon));
+  double2str(info->sceneCenterCoord.lon, 5, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "lon", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
   dateTime2str(info->sceneCenterCoord.azimuthTimeUTC, str);
   xmlNewChild(node, NULL, BAD_CAST "azimuthTimeUTC", BAD_CAST str);
-  unit = xmlNewChild(node, NULL, BAD_CAST "rangeTime", 
-		     lfStr(info->sceneCenterCoord.rangeTime));
+  double2str(info->sceneCenterCoord.rangeTime, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "rangeTime", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "s");
-  unit = xmlNewChild(node, NULL, BAD_CAST "incidenceAngle",
-		     lf5Str(info->sceneCenterCoord.incidenceAngle));
+  double2str(info->sceneCenterCoord.incidenceAngle, 5, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "incidenceAngle", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-  unit = xmlNewChild(parent, NULL, BAD_CAST "sceneAverageHeight",
-		     lf3Str(info->sceneAverageHeight));
+  double2str(info->sceneAverageHeight, 3, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "sceneAverageHeight", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
   for (ii=0; ii<4; ii++) {
     node = xmlNewChild(parent, NULL, BAD_CAST "sceneCornerCoord", NULL);
-    if (info->sceneCornerCoord[ii].refRow)
-      xmlNewChild(node, NULL, BAD_CAST "refRow", 
-		  iStr(*info->sceneCornerCoord[ii].refRow));
-    if (info->sceneCornerCoord[ii].refColumn)
-      xmlNewChild(node, NULL, BAD_CAST "refColumn",
-		  iStr(*info->sceneCornerCoord[ii].refColumn));
-    unit = xmlNewChild(node, NULL, BAD_CAST "lat", 
-		       f5Str(info->sceneCornerCoord[ii].lat));
+    sprintf(str, "%i", info->sceneCornerCoord[ii].refRow);
+    xmlNewChild(node, NULL, BAD_CAST "refRow", BAD_CAST str);
+    sprintf(str, "%i", info->sceneCornerCoord[ii].refColumn);
+    xmlNewChild(node, NULL, BAD_CAST "refColumn",BAD_CAST str);
+    double2str(info->sceneCornerCoord[ii].lat, 5, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "lat", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-    unit = xmlNewChild(node, NULL, BAD_CAST "lon", 
-		       f5Str(info->sceneCornerCoord[ii].lon));
+    double2str(info->sceneCornerCoord[ii].lon, 5, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "lon", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
     dateTime2str(info->sceneCornerCoord[ii].azimuthTimeUTC, str);
     xmlNewChild(node, NULL, BAD_CAST "azimuthTimeUTC", BAD_CAST str);
-    unit = xmlNewChild(node, NULL, BAD_CAST "rangeTime", 
-		       lfStr(info->sceneCornerCoord[ii].rangeTime));
+    double2str(info->sceneCornerCoord[ii].rangeTime, 0, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "rangeTime", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "s");
-    unit = xmlNewChild(node, NULL, BAD_CAST "incidenceAngle",
-		       lf5Str(info->sceneCornerCoord[ii].incidenceAngle));
+    double2str(info->sceneCornerCoord[ii].incidenceAngle, 5, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "incidenceAngle", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
   }
-  unit = xmlNewChild(parent, NULL, BAD_CAST "headingAngle", 
-		     f5Str(info->headingAngle));
+  double2str(info->yaw, 5, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "yaw", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+  double2str(info->pitch, 5, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "pitch", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+  double2str(info->roll, 5, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "roll", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+  double2str(info->headingAngle, 5, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "headingAngle", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+  double2str(info->earthRadius, 3, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "earthRadius", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
+  double2str(info->satelliteHeight, 3, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "satelliteHeight", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
   
   parent = xmlNewChild(section, NULL, BAD_CAST "previewInfo", NULL);
   node = xmlNewChild(parent, NULL, BAD_CAST "quicklooks", NULL);
   xmlNewChild(node, NULL, BAD_CAST "imageDataFormat", 
 	      BAD_CAST info->quicklooks.imageDataFormat);
-  xmlNewChild(node, NULL, BAD_CAST "imageDataDepth", 
-	      iStr(info->quicklooks.imageDataDepth));
+  sprintf(str, "%d", info->quicklooks.imageDataDepth);
+  xmlNewChild(node, NULL, BAD_CAST "imageDataDepth", BAD_CAST str);
   node2 = xmlNewChild(node, NULL, BAD_CAST "imageRaster", NULL);
-  xmlNewChild(node2, NULL, BAD_CAST "numberOfRows", 
-	      iStr(info->quicklooks.numberOfRows));
-  xmlNewChild(node2, NULL, BAD_CAST "numberOfColumns", 
-	      iStr(info->quicklooks.numberOfColumns));
-  unit = xmlNewChild(node2, NULL, BAD_CAST "columnBlockLength",
-		     fStr(info->quicklooks.columnBlockLength));
+  sprintf(str, "%d", info->quicklooks.numberOfRows);
+  xmlNewChild(node2, NULL, BAD_CAST "numberOfRows", BAD_CAST str);
+  sprintf(str, "%d", info->quicklooks.numberOfColumns);
+  xmlNewChild(node2, NULL, BAD_CAST "numberOfColumns", BAD_CAST str);
+  double2str(info->quicklooks.columnBlockLength, 0, str);
+  unit = xmlNewChild(node2, NULL, BAD_CAST "columnBlockLength", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "pixels");
-  unit = xmlNewChild(node2, NULL, BAD_CAST "rowBlockLength",
-		     fStr(info->quicklooks.rowBlockLength));
+  double2str(info->quicklooks.rowBlockLength, 0, str);
+  unit = xmlNewChild(node2, NULL, BAD_CAST "rowBlockLength", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "pixels");
-  unit = xmlNewChild(node2, NULL, BAD_CAST "rowSpacing", 
-		     fStr(info->quicklooks.rowSpacing));
+  double2str(info->quicklooks.rowSpacing, 0, str);
+  unit = xmlNewChild(node2, NULL, BAD_CAST "rowSpacing", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-  unit = xmlNewChild(node2, NULL, BAD_CAST "columnSpacing",
-		     fStr(info->quicklooks.columnSpacing));
+  double2str(info->quicklooks.columnSpacing, 0, str);
+  unit = xmlNewChild(node2, NULL, BAD_CAST "columnSpacing", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
   /*
     node = xmlNewChild(parent, NULL, BAD_CAST "compositeQuicklook", NULL);
@@ -667,8 +631,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   node = xmlNewChild(parent, NULL, BAD_CAST "browseImage", NULL);
   xmlNewChild(node, NULL, BAD_CAST "imageDataFormat", 
 	      BAD_CAST info->browseImageDataFormat);
-  xmlNewChild(node, NULL, BAD_CAST "imageDataDepth", 
-	      iStr(info->browseImageDataDepth));
+  sprintf(str, "%d", info->browseImageDataDepth);
+  xmlNewChild(node, NULL, BAD_CAST "imageDataDepth", BAD_CAST str);
   xmlNewChild(parent, NULL, BAD_CAST "mapPlotFormat", 
 	      BAD_CAST info->mapPlotFormat);
   
@@ -676,27 +640,29 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   iso_productSpecific *spec = iso->productSpecific;
   section = xmlNewChild(root, NULL, BAD_CAST "productSpecific", NULL);
   parent = xmlNewChild(section, NULL, BAD_CAST "complexImageInfo", NULL);
-  unit = xmlNewChild(parent, NULL, BAD_CAST "commonPRF", 
-		     lfStr(spec->commonPRF));
+  double2str(spec->commonPRF, 0, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "commonPRF", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
-  unit = xmlNewChild(parent, NULL, BAD_CAST "commonRSF", 
-		     lfStr(spec->commonRSF));
+  double2str(spec->commonRSF, 0, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "commonRSF", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
+  double2str(spec->slantRangeResolution, 0, str);
   unit = xmlNewChild(parent, NULL, BAD_CAST "slantRangeResolution", 
-		     lfStr(spec->slantRangeResolution));
+		     BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
+  double2str(spec->projectedSpacingAzimuth, 0, str);
   unit = xmlNewChild(parent, NULL, BAD_CAST "projectedSpacingAzimuth",
-		     fStr(spec->projectedSpacingAzimuth));
+		     BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
   node = xmlNewChild(parent, NULL, BAD_CAST "projectedSpacingRange", NULL);
-  unit = xmlNewChild(node, NULL, BAD_CAST "groundNear", 
-		     f3Str(spec->projectedSpacingGroundNearRange));
+  double2str(spec->projectedSpacingGroundNearRange, 3, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "groundNear", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-  unit = xmlNewChild(node, NULL, BAD_CAST "groundFar",
-		     fStr(spec->projectedSpacingGroundFarRange));
+  double2str(spec->projectedSpacingGroundFarRange, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "groundFar", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-  unit = xmlNewChild(node, NULL, BAD_CAST "slantRange",
-		     fStr(spec->projectedSpacingSlantRange));
+  double2str(spec->projectedSpacingSlantRange, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "slantRange", BAD_CAST str);
   if (spec->imageCoordinateType == RAW_COORD)
     strcpy(str, "RAW");
   else if (spec->imageCoordinateType == ZERODOPPLER)
@@ -735,142 +701,164 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		BAD_CAST spec->projectionID);
     xmlNewChild(node, NULL, BAD_CAST "zoneID", BAD_CAST spec->zoneID);
     node2 = xmlNewChild(node, NULL, BAD_CAST "projectionCenter", NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "latitude", 
-		       f5Str(spec->projectionCenterLatitude));
+    double2str(spec->projectionCenterLatitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "latitude", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "longitude",
-		       f5Str(spec->projectionCenterLongitude));
+    double2str(spec->projectionCenterLongitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "longitude", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
     node2 = xmlNewChild(node, NULL, BAD_CAST "mapOrigin", NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "easting",  
-		       f3Str(spec->mapOriginEasting));
+    double2str(spec->mapOriginEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "easting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "northing", 
-		       f3Str(spec->mapOriginNorthing));
+    double2str(spec->mapOriginNorthing, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "northing", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    xmlNewChild(node, NULL, BAD_CAST "scaleFactor", fStr(spec->scaleFactor));
+    double2str(spec->scaleFactor, 0, str);
+    xmlNewChild(node, NULL, BAD_CAST "scaleFactor", BAD_CAST str);
     node  = xmlNewChild(parent, NULL, BAD_CAST "geoParameter", NULL);
     node2 = xmlNewChild(node, NULL, BAD_CAST "pixelSpacing", NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "easting", 
-		       fStr(spec->pixelSpacingEasting));
+    double2str(spec->pixelSpacingEasting, 0, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "easting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "northing", 
-		       fStr(spec->pixelSpacingNorthing));
+    double2str(spec->pixelSpacingNorthing, 0, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "northing", BAD_CAST str);
     node2 = xmlNewChild(node, NULL, BAD_CAST "frameCoordsGeographic", NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftLatitude",
-		       f5Str(spec->frameCoordsGeographic.upperLeftLatitude));
+    double2str(spec->frameCoordsGeographic.upperLeftLatitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftLatitude", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftLongitude",
-		       f5Str(spec->frameCoordsGeographic.upperLeftLongitude));
+    double2str(spec->frameCoordsGeographic.upperLeftLongitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftLongitude", 
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightLatitude",
-		       f5Str(spec->frameCoordsGeographic.upperRightLatitude));
+    double2str(spec->frameCoordsGeographic.upperRightLatitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightLatitude", 
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->frameCoordsGeographic.upperRightLongitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightLongitude",
-		       f5Str(spec->frameCoordsGeographic.upperRightLongitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftLatitude",
-		       f5Str(spec->frameCoordsGeographic.lowerLeftLatitude));
+    double2str(spec->frameCoordsGeographic.lowerLeftLatitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftLatitude", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->frameCoordsGeographic.lowerLeftLongitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftLongitude",
-		       f5Str(spec->frameCoordsGeographic.lowerLeftLongitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->frameCoordsGeographic.lowerRightLatitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightLatitude",
-		       f5Str(spec->frameCoordsGeographic.lowerRightLatitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->frameCoordsGeographic.lowerRightLongitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightLongitude",
-		       f5Str(spec->frameCoordsGeographic.lowerRightLongitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
     node2 = xmlNewChild(node, NULL, BAD_CAST "frameCoordsCartographic", NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftEasting",
-		       f3Str(spec->frameCoordsCartographic.upperLeftEasting));
+    double2str(spec->frameCoordsCartographic.upperLeftEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftEasting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftNorthing",
-		       f3Str(spec->frameCoordsCartographic.upperLeftNorthing));
+    double2str(spec->frameCoordsCartographic.upperLeftNorthing, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftNorthing", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightEasting",
-		       f3Str(spec->frameCoordsCartographic.upperRightEasting));
+    double2str(spec->frameCoordsCartographic.upperRightEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightEasting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
+    double2str(spec->frameCoordsCartographic.upperRightNorthing, 3, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightNorthing",
-		       f3Str(spec->frameCoordsCartographic.upperRightNorthing));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
+    double2str(spec->frameCoordsCartographic.lowerRightEasting, 3, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightEasting",
-		       f3Str(spec->frameCoordsCartographic.lowerRightEasting));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
+    double2str(spec->frameCoordsCartographic.lowerRightNorthing, 3, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightNorthing",
-		       f3Str(spec->frameCoordsCartographic.lowerRightNorthing));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftEasting",
-		       f3Str(spec->frameCoordsCartographic.lowerLeftEasting));
+    double2str(spec->frameCoordsCartographic.lowerLeftEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftEasting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftNorthing",
-		       f3Str(spec->frameCoordsCartographic.lowerLeftNorthing));
+    double2str(spec->frameCoordsCartographic.lowerLeftNorthing, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftNorthing", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
     node2 = xmlNewChild(node, NULL, BAD_CAST "sceneCoordsGeographic", NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftLatitude",
-		       f5Str(spec->sceneCoordsGeographic.upperLeftLatitude));
+    double2str(spec->sceneCoordsGeographic.upperLeftLatitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftLatitude", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->sceneCoordsGeographic.upperLeftLongitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftLongitude",
-		       f5Str(spec->sceneCoordsGeographic.upperLeftLongitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->sceneCoordsGeographic.upperRightLatitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightLatitude",
-		       f5Str(spec->sceneCoordsGeographic.upperRightLatitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->sceneCoordsGeographic.upperRightLongitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightLongitude",
-		       f5Str(spec->sceneCoordsGeographic.upperRightLongitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftLatitude",
-		       f5Str(spec->sceneCoordsGeographic.lowerLeftLatitude));
+    double2str(spec->sceneCoordsGeographic.lowerLeftLatitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftLatitude", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->sceneCoordsGeographic.lowerLeftLongitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftLongitude",
-		       f5Str(spec->sceneCoordsGeographic.lowerLeftLongitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->sceneCoordsGeographic.lowerRightLatitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightLatitude",
-		       f5Str(spec->sceneCoordsGeographic.lowerRightLatitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightLongitude",
-		       f5Str(spec->sceneCoordsGeographic.lowerRightLongitude));
+    double2str(spec->sceneCoordsGeographic.lowerRightLongitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightLongitude", 
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
     node2 = xmlNewChild(node, NULL, BAD_CAST "sceneCoordsCartographic", NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftEasting",
-		       f3Str(spec->sceneCoordsCartographic.upperLeftEasting));
+    double2str(spec->sceneCoordsCartographic.upperLeftEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftEasting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftNorthing",
-		       f3Str(spec->sceneCoordsCartographic.upperLeftNorthing));
+    double2str(spec->sceneCoordsCartographic.upperLeftNorthing, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperLeftNorthing", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightEasting",
-		       f3Str(spec->sceneCoordsCartographic.upperRightEasting));
+    double2str(spec->sceneCoordsCartographic.upperRightEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightEasting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightNorthing",
-		       f3Str(spec->sceneCoordsCartographic.upperRightNorthing));
+    double2str(spec->sceneCoordsCartographic.upperRightNorthing, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "upperRightNorthing", 
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightEasting",
-		       f3Str(spec->sceneCoordsCartographic.lowerRightEasting));
+    double2str(spec->sceneCoordsCartographic.lowerRightEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightEasting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightNorthing",
-		       f3Str(spec->sceneCoordsCartographic.lowerRightNorthing)); 
+    double2str(spec->sceneCoordsCartographic.lowerRightNorthing, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerRightNorthing", 
+		       BAD_CAST str); 
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftEasting",
-		       f3Str(spec->sceneCoordsCartographic.lowerLeftEasting));
+    double2str(spec->sceneCoordsCartographic.lowerLeftEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftEasting", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftNorthing",
-		       f3Str(spec->sceneCoordsCartographic.lowerLeftNorthing));
+    double2str(spec->sceneCoordsCartographic.lowerLeftNorthing, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lowerLeftNorthing", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
     node2 = xmlNewChild(node, NULL, BAD_CAST "sceneCenterCoordsGeographic", 
 			NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "centerCoordLatitude",
-		       f5Str(spec->sceneCenterCoordLatitude));
+    double2str(spec->sceneCenterCoordLatitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "centerCoordLatitude", 
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
+    double2str(spec->sceneCenterCoordLongitude, 5, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "centerCoordLongitude",
-		       f5Str(spec->sceneCenterCoordLongitude));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
     node2 = xmlNewChild(node, NULL, BAD_CAST "sceneCenterCoordsCartograhic", 
 			NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "centerCoordEasting",
-		       f3Str(spec->sceneCenterCoordEasting));
+    double2str(spec->sceneCenterCoordEasting, 3, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "centerCoordEasting", 
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
+    double2str(spec->sceneCenterCoordNorthing, 3, str);
     unit = xmlNewChild(node2, NULL, BAD_CAST "centerCoordNorthing",
-		       f3Str(spec->sceneCenterCoordNorthing));
+		       BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
     if (spec->imageResamplingMethod == NEAREST_NEIGHBOR_RESAMPLE)
       strcpy(str, "NEAREST NEIGHBOR");
@@ -885,14 +873,14 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
       node = xmlNewChild(parent, NULL, BAD_CAST "elevationData", NULL);
       xmlNewChild(node, NULL, BAD_CAST "dataSource", 
 		  BAD_CAST spec->elevationDataSource);
-      unit = xmlNewChild(node, NULL, BAD_CAST "minimumHeight", 
-			 f3Str(spec->elevationMinimumHeight));
+      double2str(spec->elevationMinimumHeight, 3, str);
+      unit = xmlNewChild(node, NULL, BAD_CAST "minimumHeight", BAD_CAST str);
       xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-      unit = xmlNewChild(node, NULL, BAD_CAST "meanHeight",
-			 f5Str(spec->elevationMeanHeight));
+      double2str(spec->elevationMeanHeight, 3, str);
+      unit = xmlNewChild(node, NULL, BAD_CAST "meanHeight", BAD_CAST str);
       xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-      unit = xmlNewChild(node, NULL, BAD_CAST "maximumHeight",
-			 f3Str(spec->elevationMaximumHeight));
+      double2str(spec->elevationMaximumHeight, 3, str);
+      unit = xmlNewChild(node, NULL, BAD_CAST "maximumHeight", BAD_CAST str);
       xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
     }
     if (spec->incidenceAngleMaskDescriptionFlag) {
@@ -911,18 +899,18 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
       else if (spec->incidenceAngleImageDataFormat == UNDEF_DATA_FORMAT)
 	strcpy(str, "UNDEFINED");
       xmlNewChild(node, NULL, BAD_CAST "imageDataFormat", BAD_CAST str);
-      xmlNewChild(node, NULL, BAD_CAST "imageDataDepth", 
-		  iStr(spec->incidenceAngleImageDataDepth));
+      sprintf(str, "%d", spec->incidenceAngleImageDataDepth);
+      xmlNewChild(node, NULL, BAD_CAST "imageDataDepth", BAD_CAST str);
       node2 = xmlNewChild(node, NULL, BAD_CAST "imageRaster", NULL);
-      xmlNewChild(node2, NULL, BAD_CAST "numberOfRows",
-		  iStr(spec->incidenceAngleNumberOfRows));
-      xmlNewChild(node2, NULL, BAD_CAST "numberOfColumns",
-		  iStr(spec->incidenceAngleNumberOfColumns));
-      unit = xmlNewChild(node2, NULL, BAD_CAST "rowSpacing",
-			 fStr(spec->incidenceAngleRowSpacing));
+      sprintf(str, "%d", spec->incidenceAngleNumberOfRows);
+      xmlNewChild(node2, NULL, BAD_CAST "numberOfRows", BAD_CAST str);
+      sprintf(str, "%d", spec->incidenceAngleNumberOfColumns);
+      xmlNewChild(node2, NULL, BAD_CAST "numberOfColumns", BAD_CAST str);
+      double2str(spec->incidenceAngleRowSpacing, 0, str);
+      unit = xmlNewChild(node2, NULL, BAD_CAST "rowSpacing", BAD_CAST str);
       xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-      unit = xmlNewChild(node2, NULL, BAD_CAST "columnSpacing",
-			 fStr(spec->incidenceAngleColumnSpacing));
+      double2str(spec->incidenceAngleColumnSpacing, 0, str);
+      unit = xmlNewChild(node2, NULL, BAD_CAST "columnSpacing", BAD_CAST str);
       xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
     }
   }
@@ -955,8 +943,10 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     strcpy(str, "UNDEFINED");
   xmlNewChild(parent, NULL, BAD_CAST "sceneSpecification", BAD_CAST str);
   node = xmlNewChild(parent, NULL, BAD_CAST "orderedScene", NULL);
-  if (setup->sceneSpecification == FRAME_SPEC)
-    xmlNewChild(node, NULL, BAD_CAST "frameID", iStr(setup->frameID));
+  if (setup->sceneSpecification == FRAME_SPEC) {
+    sprintf(str, "%d", setup->frameID);
+    xmlNewChild(node, NULL, BAD_CAST "frameID", BAD_CAST str);
+  }
   else if (setup->sceneSpecification == TIME_SPEC) {
     node2 = xmlNewChild(node, NULL, BAD_CAST "sceneExtent", NULL);
     dateTime2str(setup->sceneStartTimeUTC, str);
@@ -966,11 +956,11 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   }
   else if (setup->sceneSpecification == CENTERCOORDS_SPEC) {
     node2 = xmlNewChild(node, NULL, BAD_CAST "sceneCenterCoord", NULL);
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lat", 
-		       f5Str(setup->sceneCenterLatitude));
+    double2str(setup->sceneCenterLatitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lat", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
-    unit = xmlNewChild(node2, NULL, BAD_CAST "lon", 
-		       f5Str(setup->sceneCenterLongitude));
+    double2str(setup->sceneCenterLongitude, 5, str);
+    unit = xmlNewChild(node2, NULL, BAD_CAST "lon", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "degrees");
   }
   if (setup->imagingMode == FINE_BEAM)
@@ -1071,6 +1061,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		  BAD_CAST setup->processingStep[ii].softwareID);
       xmlNewChild(node, NULL, BAD_CAST "softwareVersion",
 		  BAD_CAST setup->processingStep[ii].softwareVersion);
+      dateTime2str(setup->processingStep[ii].processingTimeUTC, str);
+      xmlNewChild(node, NULL, BAD_CAST "processingTimeUTC", BAD_CAST str);  
       if (setup->processingStep[ii].algorithm)
 	xmlNewChild(node, NULL, BAD_CAST "algorithm", 
 		    BAD_CAST setup->processingStep[ii].algorithm);
@@ -1094,7 +1086,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   if (proc->doppler) {
     for (ii=0; ii<comps->numLayers; ii++) {
       node = xmlNewChild(parent, NULL, BAD_CAST "dopplerCentroid", NULL);
-      xmlNewProp(node, BAD_CAST "layerIndex", ldStr(ii+1));
+      sprintf(str, "%ld", ii+1);
+      xmlNewProp(node, BAD_CAST "layerIndex", BAD_CAST str);
       if (proc->doppler[ii].polLayer == HH_POL)
 	strcpy(str, "HH");
       else if (proc->doppler[ii].polLayer == HV_POL)
@@ -1106,24 +1099,26 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
       else if (proc->doppler[ii].polLayer == UNDEF_POL_LAYER)
 	strcpy(str, "UNDEFINED");
       xmlNewChild(node, NULL, BAD_CAST "polLayer", BAD_CAST str);
-      xmlNewChild(node, NULL, BAD_CAST "numberOfBlocks",
-		  iStr(proc->doppler[ii].numberOfBlocks));
-      xmlNewChild(node, NULL, BAD_CAST "numberOfRejectedBlocks",
-		  iStr(proc->doppler[ii].numberOfRejectedBlocks));
-      xmlNewChild(node, NULL, BAD_CAST "numberOfDopplerRecords",
-		  iStr(proc->doppler[ii].numberOfDopperRecords));
+      sprintf(str, "%d", proc->doppler[ii].numberOfBlocks);
+      xmlNewChild(node, NULL, BAD_CAST "numberOfBlocks", BAD_CAST str);
+      sprintf(str, "%d", proc->doppler[ii].numberOfRejectedBlocks);
+      xmlNewChild(node, NULL, BAD_CAST "numberOfRejectedBlocks", BAD_CAST str);
+      sprintf(str, "%d", proc->doppler[ii].numberOfDopperRecords);
+      xmlNewChild(node, NULL, BAD_CAST "numberOfDopplerRecords", BAD_CAST str);
       node2 = xmlNewChild(node, NULL, BAD_CAST "dopplerEstimate", NULL);
       dateTime2str(proc->doppler[ii].timeUTC, str);
       xmlNewChild(node2, NULL, BAD_CAST "timeUTC", BAD_CAST str);
-      xmlNewChild(node2, NULL, BAD_CAST "dopplerAtMidRange",
-		  lfStr(proc->doppler[ii].dopplerAtMidRange));
+      double2str(proc->doppler[ii].dopplerAtMidRange, 0, str);
+      xmlNewChild(node2, NULL, BAD_CAST "dopplerAtMidRange", BAD_CAST str);
       int degree = proc->doppler[ii].polynomialDegree;
-      xmlNewChild(node2, NULL, BAD_CAST "polynomialDegree", iStr(degree));
+      sprintf(str, "%d", degree);
+      xmlNewChild(node2, NULL, BAD_CAST "polynomialDegree", BAD_CAST str);
       node3 = xmlNewChild(node2, NULL, BAD_CAST "basebandDoppler", NULL);
       for (kk=0; kk<=degree; kk++) {
-	unit = xmlNewChild(node3, NULL, BAD_CAST "coefficient", 
-			   lfStr(proc->doppler[ii].coefficient[kk]));
-	xmlNewProp(unit, "exponent", ldStr(kk));
+	double2str(proc->doppler[ii].coefficient[kk], 0, str);
+	unit = xmlNewChild(node3, NULL, BAD_CAST "coefficient", BAD_CAST str);
+	sprintf(str, "%ld", kk);
+	xmlNewProp(unit, BAD_CAST "exponent", BAD_CAST str);
       }
     }
   }
@@ -1136,45 +1131,94 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     strcpy(str, "UNDEFINED");
   xmlNewChild(parent, NULL, BAD_CAST "processingInfoCoordinateType", 
 	      BAD_CAST str);
-  xmlNewChild(parent, NULL, BAD_CAST "rangeLooks",
-	      fStr(proc->processingParameter[0].rangeLooks));
-  xmlNewChild(parent, NULL, BAD_CAST "azimuthLooks",
-	      fStr(proc->processingParameter[0].azimuthLooks));
-  unit = xmlNewChild(parent, NULL, BAD_CAST "rangeLookBandwidth",
-		     lfStr(proc->processingParameter[0].rangeLookBandwidth));
+  double2str(proc->processingParameter[0].rangeLooks, 0, str);
+  xmlNewChild(parent, NULL, BAD_CAST "rangeLooks", BAD_CAST str);
+  double2str(proc->processingParameter[0].azimuthLooks, 0, str);
+  xmlNewChild(parent, NULL, BAD_CAST "azimuthLooks", BAD_CAST str);
+  double2str(proc->processingParameter[0].rangeLookBandwidth, 0, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "rangeLookBandwidth", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
-  unit = xmlNewChild(parent, NULL, BAD_CAST "azimuthLookBandwidth",
-		     lfStr(proc->processingParameter[0].azimuthLookBandwidth));
+  double2str(proc->processingParameter[0].azimuthLookBandwidth, 0, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "azimuthLookBandwidth", 
+		     BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
+  double2str(proc->processingParameter[0].totalProcessedRangeBandwidth, 0, str);
   unit = xmlNewChild(parent, NULL, BAD_CAST "totalProcessedRangeBandwidth",
-		     lfStr(proc->processingParameter[0].totalProcessedRangeBandwidth));
+		     BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
+  double2str(proc->processingParameter[0].totalProcessedAzimuthBandwidth, 0, 
+	     str);
   unit = xmlNewChild(parent, NULL, BAD_CAST "totalProcessedAzimuthBandwidth",
-		     lfStr(proc->processingParameter[0].totalProcessedAzimuthBandwidth));
+		     BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
-  // rangeCompression ???
+  double2str(proc->processingParameter[0].chirpRate, 0, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "chirpRate", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz/sec");
+  double2str(proc->processingParameter[0].pulseDuration, 0, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "pulseDuration", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
 
-  parent = xmlNewChild(section, NULL, BAD_CAST "processingFlags", NULL);  
-  xmlNewChild(parent, NULL, BAD_CAST "chirpReplicaUsedFlag",
-	      bStr(proc->chirpReplicaUsedFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "geometricDopplerUsedFlag",
-	      bStr(proc->geometricDopplerUsedFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "azimuthPatternCorrectedFlag",
-	      bStr(proc->azimuthPatternCorrectedFlag));
+
+  parent = xmlNewChild(section, NULL, BAD_CAST "processingFlags", NULL);
+  if (proc->chirpReplicaUsedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "chirpReplicaUsedFlag", BAD_CAST str);
+  if (proc->geometricDopplerUsedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "geometricDopplerUsedFlag", BAD_CAST str);
+  if (proc->azimuthPatternCorrectedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "azimuthPatternCorrectedFlag", 
+	      BAD_CAST str);
+  if (proc->elevationPatternCorrectedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
   xmlNewChild(parent, NULL, BAD_CAST "elevationPatternCorrectedFlag",
-	      bStr(proc->elevationPatternCorrectedFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "detectedFlag", bStr(proc->detectedFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "multiLookedFlag", 
-	      bStr(proc->multiLookedFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "polarimetricProcessedFlag",
-	      bStr(proc->polarimetricProcessedFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "terrainCorrectedFlag",
-	      bStr(proc->terrainCorrectedFlag));
+	      BAD_CAST str);
+  if (proc->detectedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "detectedFlag", BAD_CAST str);
+  if (proc->multiLookedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "multiLookedFlag", BAD_CAST str);
+  if (proc->polarimetricProcessedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "polarimetricProcessedFlag", BAD_CAST str);
+  if (proc->terrainCorrectedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "terrainCorrectedFlag", BAD_CAST str);
+  if (proc->layoverShadowMaskGeneratedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
   xmlNewChild(parent, NULL, BAD_CAST "layoverShadowMaskGeneratedFlag",
-	      bStr(proc->layoverShadowMaskGeneratedFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "geocodedFlag", bStr(proc->geocodedFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "nominalProcessingPerformedFlag",
-	      bStr(proc->nominalProcessingPerformedFlag));
+	      BAD_CAST str);
+  if (proc->geocodedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "geocodedFlag", BAD_CAST str);
+  if (proc->nominalProcessingPerformedFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "nominalProcessingPerformedFlag", 
+	      BAD_CAST str);
 
   // Instrument
   iso_instrument *inst = iso->instrument;
@@ -1188,8 +1232,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNewChild(section, NULL, BAD_CAST "instrumentInfoCoordinateType", 
 	      BAD_CAST str);
   parent = xmlNewChild(section, NULL, BAD_CAST "radarParameters", NULL);
-  unit = xmlNewChild(parent, NULL, BAD_CAST "centerFrequency",
-		     lfStr(inst->centerFrequency));
+  double2str(inst->centerFrequency, 0, str);
+  unit = xmlNewChild(parent, NULL, BAD_CAST "centerFrequency", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
   parent = xmlNewChild(section, NULL, BAD_CAST "settings", NULL);
   if (inst->settings) {
@@ -1207,42 +1251,47 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
       xmlNewChild(parent, NULL, BAD_CAST "polLayer", BAD_CAST str);
       xmlNewChild(parent, NULL, BAD_CAST "beamID", 
 		  BAD_CAST inst->settings[ii].beamID);
-      unit = xmlNewChild(parent, NULL, BAD_CAST "rxBandwidth",
-			 lfStr(inst->settings[ii].rxBandwidth));
+      double2str(inst->settings[ii].rxBandwidth, 0, str);
+      unit = xmlNewChild(parent, NULL, BAD_CAST "rxBandwidth", BAD_CAST str);
       xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
-      unit = xmlNewChild(parent, NULL, BAD_CAST "RSF", 
-		       lfStr(inst->settings[ii].rsf));
+      double2str(inst->settings[ii].rsf, 0, str);
+      unit = xmlNewChild(parent, NULL, BAD_CAST "RSF", BAD_CAST str);
       
       inst->settings[ii].numberOfPRFChanges = 0;
       inst->settings[ii].numberOfEchoWindowPositionChanges = 0;
       inst->settings[ii].numberOfEchoWindowLengthChanges = 0;
       inst->settings[ii].numberOfSettingRecords = 1;
       
-      xmlNewChild(parent, NULL, BAD_CAST "numberOfPRFChanges",
-		  iStr(inst->settings[ii].numberOfPRFChanges));
+      sprintf(str, "%d", inst->settings[ii].numberOfPRFChanges);
+      xmlNewChild(parent, NULL, BAD_CAST "numberOfPRFChanges", BAD_CAST str);
+      sprintf(str, "%d", inst->settings[ii].numberOfEchoWindowPositionChanges);
       xmlNewChild(parent, NULL, BAD_CAST "numberOfEchoWindowPositionChanges",
-		  iStr(inst->settings[ii].numberOfEchoWindowPositionChanges));
+		  BAD_CAST str);
+      sprintf(str, "%d", inst->settings[ii].numberOfEchoWindowLengthChanges);
       xmlNewChild(parent, NULL, BAD_CAST "numberOfEchoWindowLengthChanges",
-		  iStr(inst->settings[ii].numberOfEchoWindowLengthChanges));
-      xmlNewChild(parent, NULL, BAD_CAST "numberOfSettingRecords",
-		  iStr(inst->settings[ii].numberOfSettingRecords));
+		  BAD_CAST str);
+      sprintf(str, "%d", inst->settings[ii].numberOfSettingRecords);
+      xmlNewChild(parent, NULL, BAD_CAST "numberOfSettingRecords", 
+		  BAD_CAST str);
       node = xmlNewChild(parent, NULL, BAD_CAST "settingRecords", NULL);
       iso_settingRecord *rec = inst->settings[ii].settingRecord;
       for (kk=0; kk<inst->settings[ii].numberOfSettingRecords; kk++) {
 	node2 = xmlNewChild(node, NULL, BAD_CAST "dataSegment", NULL);
-	xmlNewProp(node2, BAD_CAST "segmentID", ldStr(kk+1));
+	sprintf(str, "%ld", kk+1);
+	xmlNewProp(node2, BAD_CAST "segmentID", BAD_CAST str);
 	dateTime2str(rec[kk].startTimeUTC, str);
 	xmlNewChild(node2, NULL, BAD_CAST "startTimeUTC", BAD_CAST str);
 	dateTime2str(rec[kk].stopTimeUTC, str);
 	xmlNewChild(node2, NULL, BAD_CAST "stopTimeUTC", BAD_CAST str);
-	xmlNewChild(node2, NULL, BAD_CAST "numberOfRows", 
-		    iStr(rec[kk].numberOfRows));
-	unit = xmlNewChild(node, NULL, BAD_CAST "PRF", lfStr(rec[kk].prf));
+	sprintf(str, "%d", rec[kk].numberOfRows);
+	xmlNewChild(node2, NULL, BAD_CAST "numberOfRows", BAD_CAST str);
+	double2str(rec[kk].prf,0, str);
+	unit = xmlNewChild(node, NULL, BAD_CAST "PRF", BAD_CAST str);
 	xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
-	xmlNewChild(node, NULL, BAD_CAST "echoWindowPosition", 
-		    lfStr(rec[kk].echoWindowPosition));
-	xmlNewChild(node, NULL, BAD_CAST "echoWindowLength",
-		    lfStr(rec[kk].echoWindowLength));
+	double2str(rec[kk].echoWindowPosition, 0, str); 
+	xmlNewChild(node, NULL, BAD_CAST "echoWindowPosition", BAD_CAST str);
+	double2str(rec[kk].echoWindowLength, 0, str); 
+	xmlNewChild(node, NULL, BAD_CAST "echoWindowLength", BAD_CAST str);
 	xmlNewChild(node, NULL, BAD_CAST "pulseType", 
 		    BAD_CAST rec[kk].pulseType);
       }
@@ -1278,16 +1327,17 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     strcpy(str, "UNDEFINED");
   xmlNewChild(node, NULL, BAD_CAST "accuracy", BAD_CAST str);
 
-  xmlNewChild(node, NULL, BAD_CAST "numStateVectors", 
-	      iStr(platform->numStateVectors));
+  sprintf(str, "%ld", platform->numStateVectors);
+  xmlNewChild(node, NULL, BAD_CAST "numStateVectors", BAD_CAST str);
   dateTime2str(platform->firstStateTimeUTC, str);
   xmlNewChild(node, NULL, BAD_CAST "firstStateTimeUTC", BAD_CAST str);
   dateTime2str(platform->lastStateTimeUTC, str);
   xmlNewChild(node, NULL, BAD_CAST "lastStateTimeUTC", BAD_CAST str);
   xmlNewChild(node, NULL, BAD_CAST "stateVectorRefFrame",
 	      BAD_CAST platform->stateVectorRefFrame);
-  unit = xmlNewChild(node, NULL, BAD_CAST "stateVectorTimeSpacing",
-		     lfStr(platform->stateVectorTimeSpacing));
+  double2str(platform->stateVectorTimeSpacing, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "stateVectorTimeSpacing", 
+		     BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "s");
   char num[5];
   for (ii=0; ii<platform->numStateVectors; ii++) {
@@ -1296,23 +1346,23 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
     xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
     dateTime2str(platform->stateVec[ii].timeUTC, str);
     xmlNewChild(node, NULL, BAD_CAST "timeUTC", BAD_CAST str);
-    unit = xmlNewChild(node, NULL, BAD_CAST "posX", 
-		       lf3Str(platform->stateVec[ii].posX));
+    double2str(platform->stateVec[ii].posX, 3, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "posX", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node, NULL, BAD_CAST "posY", 
-		       lf3Str(platform->stateVec[ii].posY));
+    double2str(platform->stateVec[ii].posY, 3, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "posY", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node, NULL, BAD_CAST "posZ", 
-		       lf3Str(platform->stateVec[ii].posZ));
+    double2str(platform->stateVec[ii].posZ, 3, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "posZ", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-    unit = xmlNewChild(node, NULL, BAD_CAST "velX", 
-		       lf3Str(platform->stateVec[ii].velX));
+    double2str(platform->stateVec[ii].velX, 3, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "velX", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m/s");
-    unit = xmlNewChild(node, NULL, BAD_CAST "velY", 
-		       lf3Str(platform->stateVec[ii].velY));
+    double2str(platform->stateVec[ii].velY, 3, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "velY", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m/s");
-    unit = xmlNewChild(node, NULL, BAD_CAST "velZ", 
-		       lf3Str(platform->stateVec[ii].velZ));
+    double2str(platform->stateVec[ii].velZ, 3, str);
+    unit = xmlNewChild(node, NULL, BAD_CAST "velZ", BAD_CAST str);
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m/s");
   }
 
@@ -1338,15 +1388,16 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 	xmlNewChild(parent, NULL, BAD_CAST "beamID", 
 		    BAD_CAST quality->rawDataQuality[ii].beamID);
       numGaps = quality->rawDataQuality[ii].numGaps;
-      xmlNewChild(parent, NULL, BAD_CAST "numGaps", iStr(numGaps));
+      sprintf(str, "%d", numGaps);
+      xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST str);
       for (kk=0; kk<numGaps; kk++) {
 	node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
 	sprintf(num, "%ld", kk+1);
 	xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
-	xmlNewChild(node, NULL, BAD_CAST "start", 
-		    ldStr(quality->rawDataQuality[ii].gap[kk].start));
-	xmlNewChild(node, NULL, BAD_CAST "length",
-		    iStr(quality->rawDataQuality[ii].gap[kk].length));
+	sprintf(str, "%ld", quality->rawDataQuality[ii].gap[kk].start);
+	xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
+	sprintf(str, "%d", quality->rawDataQuality[ii].gap[kk].length);
+	xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
 	if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
 	  strcpy(str, "RANDOM");
 	else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
@@ -1355,24 +1406,49 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 	  strcpy(str, "UNDEFINED");
 	xmlNewChild(node, NULL, BAD_CAST "fill", BAD_CAST str);
       }
-      xmlNewChild(parent, NULL, BAD_CAST "gapSignificanceFlag",
-		  bStr(quality->rawDataQuality[ii].gapSignificanceFlag));
+      if (quality->rawDataQuality[ii].gapSignificanceFlag)
+	strcpy(str, "true");
+      else
+	strcpy(str, "false");
+      xmlNewChild(parent, NULL, BAD_CAST "gapSignificanceFlag", BAD_CAST str);
+      if (quality->rawDataQuality[ii].missingLinesSignificanceFlag)
+	strcpy(str, "true");
+      else
+	strcpy(str, "false");
       xmlNewChild(parent, NULL, BAD_CAST "missingLinesSignificanceFlag",
-		  bStr(quality->rawDataQuality[ii].missingLinesSignificanceFlag));
-      xmlNewChild(parent, NULL, BAD_CAST "bitErrorSignificanceFlag",
-		  bStr(quality->rawDataQuality[ii].bitErrorSignificanceFlag));
+		  BAD_CAST str);
+      if (quality->rawDataQuality[ii].bitErrorSignificanceFlag)
+	strcpy(str, "true");
+      else
+	strcpy(str, "false");
+      xmlNewChild(parent, NULL, BAD_CAST "bitErrorSignificanceFlag", 
+		  BAD_CAST str);
+      if (quality->rawDataQuality[ii].timeReconstructionSignificanceFlag)
+	strcpy(str, "true");
+      else
+	strcpy(str, "false");
       xmlNewChild(parent, NULL, BAD_CAST "timeReconstructionSignificanceFlag",
-		  bStr(quality->rawDataQuality[ii].timeReconstructionSignificanceFlag));    
+		  BAD_CAST str);
     }
   }
   parent = xmlNewChild(section, NULL, BAD_CAST "processingParameterQuality", 
 		       NULL);
-  xmlNewChild(parent, NULL, BAD_CAST "dopplerAmbiguityNotZeroFlag",
-	      bStr(quality->dopplerAmbiguityNotZeroFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "dopplerOutsideLimitsFlag",
-	      bStr(quality->dopplerOutsideLimitsFlag));
-  xmlNewChild(parent, NULL, BAD_CAST "geolocationQualityLowFlag",
-	      bStr(quality->geolocationQualityLowFlag));
+  if (quality->dopplerAmbiguityNotZeroFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "dopplerAmbiguityNotZeroFlag", 
+	      BAD_CAST str);
+  if (quality->dopplerOutsideLimitsFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "dopplerOutsideLimitsFlag", BAD_CAST str);
+  if (quality->geolocationQualityLowFlag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
+  xmlNewChild(parent, NULL, BAD_CAST "geolocationQualityLowFlag", BAD_CAST str);
   if (quality->imageDataQuality) {
     for (ii=0; ii<info->numberOfLayers; ii++) {
       parent = xmlNewChild(section, NULL, BAD_CAST "imageDataQuality", NULL);
@@ -1393,34 +1469,42 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 	xmlNewChild(parent, NULL, BAD_CAST "beamID", 
 		    BAD_CAST quality->imageDataQuality[ii].beamID);
       node = xmlNewChild(parent, NULL, BAD_CAST "imageDataStatistics", NULL);
-      xmlNewChild(node, NULL, BAD_CAST "min", 
-		  lfStr(quality->imageDataQuality[ii].min));
-      xmlNewChild(node, NULL, BAD_CAST "max", 
-		  lfStr(quality->imageDataQuality[ii].max));
-      xmlNewChild(node, NULL, BAD_CAST "mean", 
-		  lfStr(quality->imageDataQuality[ii].mean));
-      xmlNewChild(node, NULL, BAD_CAST "standardDeviation", 
-		  lfStr(quality->imageDataQuality[ii].stdDev));
+      double2str(quality->imageDataQuality[ii].min, 0, str); 
+      xmlNewChild(node, NULL, BAD_CAST "min", BAD_CAST str);
+      double2str(quality->imageDataQuality[ii].max, 0, str); 
+      xmlNewChild(node, NULL, BAD_CAST "max", BAD_CAST str);
+      double2str(quality->imageDataQuality[ii].mean, 0, str); 
+      xmlNewChild(node, NULL, BAD_CAST "mean", BAD_CAST str);
+      double2str(quality->imageDataQuality[ii].stdDev, 0, str);
+      xmlNewChild(node, NULL, BAD_CAST "standardDeviation", BAD_CAST str);
+      sprintf(str, "%d", quality->imageDataQuality[ii].missingLines);
+      xmlNewChild(node, NULL, BAD_CAST "missingLines", BAD_CAST str);
+      double2str(quality->imageDataQuality[ii].bitErrorRate, 0, str);
+      xmlNewChild(node, NULL, BAD_CAST "bitErrorRate", BAD_CAST str);
+      double2str(quality->imageDataQuality[ii].noData, 0, str);
+      xmlNewChild(node, NULL, BAD_CAST "noData", BAD_CAST str);
     }
   }
   parent = xmlNewChild(section, NULL, BAD_CAST "limits", NULL);
   node = xmlNewChild(parent, NULL, BAD_CAST "rawData", NULL);
-  xmlNewChild(node, NULL, BAD_CAST "gapDefinition", 
-	      iStr(quality->gapDefinition));
-  xmlNewChild(node, NULL, BAD_CAST "gapPercentageLimit", 
-	      fStr(quality->gapPercentageLimit));
-  xmlNewChild(node, NULL, BAD_CAST "missingLinePercentageLimit",
-	      fStr(quality->missingLinePercentageLimit));
-  xmlNewChild(node, NULL, BAD_CAST "bitErrorLimit", 
-	      fStr(quality->bitErrorLimit));
+  sprintf(str, "%d", quality->gapDefinition);
+  xmlNewChild(node, NULL, BAD_CAST "gapDefinition", BAD_CAST str);
+  double2str(quality->gapPercentageLimit, 0, str);
+  xmlNewChild(node, NULL, BAD_CAST "gapPercentageLimit", BAD_CAST str);
+  double2str(quality->missingLinePercentageLimit, 0, str);
+  xmlNewChild(node, NULL, BAD_CAST "missingLinePercentageLimit", BAD_CAST str);
+  double2str(quality->bitErrorLimit, 0, str);
+  xmlNewChild(node, NULL, BAD_CAST "bitErrorLimit", BAD_CAST str);
+  double2str(quality->timeReconstructionPercentageLimit, 0, str);
   xmlNewChild(node, NULL, BAD_CAST "timeReconstructionPercentageLimit",
-	      fStr(quality->timeReconstructionPercentageLimit));
+	      BAD_CAST str);
   node = xmlNewChild(parent, NULL, BAD_CAST "processing", NULL);
-  unit = xmlNewChild(node, NULL, BAD_CAST "dopplerCentroidLimit", 
-		     fStr(quality->dopplerCentroidLimit));
+  double2str(quality->dopplerCentroidLimit, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "dopplerCentroidLimit", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "Hz");
-  unit = xmlNewChild(node, NULL, BAD_CAST "geolocationQualityLimit",
-		     fStr(quality->geolocationQualityLimit));
+  double2str(quality->geolocationQualityLimit, 0, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "geolocationQualityLimit", 
+		     BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "arcsec");
 
   quality->instrumentStateRemark = (char *) MALLOC(sizeof(char)*1024);
@@ -1436,4 +1520,5 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   // Clean up
   xmlFreeDoc(doc);
   xmlCleanupParser();
+  FREE(str);
 }

@@ -198,15 +198,15 @@ typedef struct {
 
 typedef struct {
   iso_polLayer_t polLayer;
-  char *beamID;
+  char beamID[20];
   iso_file file;
 } iso_filesPol;
 
 typedef struct {
-  int *refRow;
-  int *refColumn;
-  float lat;
-  float lon;
+  int refRow;
+  int refColumn;
+  double lat;
+  double lon;
   iso_dateTime azimuthTimeUTC;
   double rangeTime;
   double incidenceAngle;
@@ -217,10 +217,10 @@ typedef struct {
   int imageDataDepth;
   int numberOfRows;
   int numberOfColumns;
-  float columnBlockLength;
-  float rowBlockLength;
-  float rowSpacing;
-  float columnSpacing;
+  double columnBlockLength;
+  double rowBlockLength;
+  double rowSpacing;
+  double columnSpacing;
 } iso_imageRaster;
 
 typedef struct {
@@ -229,14 +229,14 @@ typedef struct {
 } iso_polColor;
 
 typedef struct {
-  float upperLeftLatitude;
-  float upperLeftLongitude;
-  float upperRightLatitude;
-  float upperRightLongitude;
-  float lowerLeftLatitude;
-  float lowerLeftLongitude;
-  float lowerRightLatitude;
-  float lowerRightLongitude;
+  double upperLeftLatitude;
+  double upperLeftLongitude;
+  double upperRightLatitude;
+  double upperRightLongitude;
+  double lowerLeftLatitude;
+  double lowerLeftLongitude;
+  double lowerRightLatitude;
+  double lowerRightLongitude;
 } iso_geoCoord;
 
 typedef struct {
@@ -253,6 +253,7 @@ typedef struct {
 typedef struct {
   char softwareID[128];
   char softwareVersion[128];
+  iso_dateTime processingTimeUTC;
   char *algorithm;
 } iso_procStep;
 
@@ -307,7 +308,8 @@ typedef struct {
   double azimuthLookBandwidth;
   double totalProcessedRangeBandwidth;
   double totalProcessedAzimuthBandwidth;
-  // rangeCompression ???
+  double chirpRate;
+  double pulseDuration;
 } iso_processingParameter;  
 
 typedef struct {
@@ -318,7 +320,7 @@ typedef struct {
 
 typedef struct {
   iso_polLayer_t polLayer;
-  char *beamID;
+  char beamID[20];
   int numGaps;
   iso_gap *gap;
   int gapSignificanceFlag;
@@ -330,11 +332,14 @@ typedef struct {
 
 typedef struct {
   iso_polLayer_t polLayer;
-  char *beamID;
+  char beamID[20];
   double min;
   double max;
   double mean;
-  double stdDev;  
+  double stdDev;
+  int missingLines;
+  double bitErrorRate;
+  double noData;
 } iso_imageDataQuality;
 
 // main structures
@@ -396,8 +401,8 @@ typedef struct {
   int numberOfAzimuthBeams;        // spotLight
   char azimuthBeamIDFirst[20];     // spotLight
   char azimuthBeamIDLast[20];      // spotLight
-  float azimuthSteeringAngleFirst; // spotLight
-  float azimuthSteeringAngleLast;  // spotLight
+  double azimuthSteeringAngleFirst; // spotLight
+  double azimuthSteeringAngleLast;  // spotLight
   // productVariantInfo
   char productType[128];
   iso_product_t productVariant;
@@ -416,22 +421,24 @@ typedef struct {
   char columnContent[20];
   int numberOfRows;
   int numberOfColumns;
-  float rowSpacing;
-  float columnSpacing;
-  double x_pixel_size;             // metadata compatibility
-  double y_pixel_size;             // metadata compatibility
+  int startRow;
+  int startColumn;
+  double rowScaling;
+  double columnScaling;
+  double rowSpacing;
+  double columnSpacing;
   double groundRangeResolution;
   double azimuthResolution;
-  float azimuthLooks;
-  float rangeLooks;
+  double azimuthLooks;
+  double rangeLooks;
   // sceneInfo
   char sceneID[1024];
   iso_dateTime startTimeUTC;
   long startTimeGPS;
-  float startTimeGPSFraction;
+  double startTimeGPSFraction;
   iso_dateTime stopTimeUTC;
   long stopTimeGPS;
-  float stopTimeGPSFraction;
+  double stopTimeGPSFraction;
   double rangeTimeFirstPixel;
   double rangeTimeLastPixel;
   double sceneAzimuthExtent;
@@ -439,7 +446,12 @@ typedef struct {
   iso_sceneCoord sceneCenterCoord;
   double sceneAverageHeight;
   iso_sceneCoord sceneCornerCoord[4];
-  float headingAngle;
+  double yaw;
+  double pitch;
+  double roll;
+  double earthRadius;
+  double satelliteHeight;
+  double headingAngle;
   // previewInfo
   iso_imageRaster quicklooks;
   char compositeQLImageDataFormat[255];
@@ -455,10 +467,10 @@ typedef struct {
   double commonPRF;
   double commonRSF;
   double slantRangeResolution;
-  float projectedSpacingAzimuth;
-  float projectedSpacingGroundNearRange;
-  float projectedSpacingGroundFarRange;
-  float projectedSpacingSlantRange;
+  double projectedSpacingAzimuth;
+  double projectedSpacingGroundNearRange;
+  double projectedSpacingGroundFarRange;
+  double projectedSpacingSlantRange;
   iso_imageCoord_t imageCoordinateType;
   iso_dataStart_t imageDataStartWith;
   iso_dataStart_t quicklookDataStartWith;
@@ -468,29 +480,29 @@ typedef struct {
   char geodeticDatumID[20];
   char projectionID[50];
   char zoneID[20];
-  float projectionCenterLatitude;
-  float projectionCenterLongitude;
-  float mapOriginEasting;
-  float mapOriginNorthing;
-  float scaleFactor;
+  double projectionCenterLatitude;
+  double projectionCenterLongitude;
+  double mapOriginEasting;
+  double mapOriginNorthing;
+  double scaleFactor;
   // geoParameter
-  float pixelSpacingEasting;
-  float pixelSpacingNorthing;
+  double pixelSpacingEasting;
+  double pixelSpacingNorthing;
   iso_geoCoord frameCoordsGeographic;
   iso_mapCoord frameCoordsCartographic;
   iso_geoCoord sceneCoordsGeographic;
   iso_mapCoord sceneCoordsCartographic;
-  float sceneCenterCoordLatitude;
-  float sceneCenterCoordLongitude;
+  double sceneCenterCoordLatitude;
+  double sceneCenterCoordLongitude;
   double sceneCenterCoordEasting;
   double sceneCenterCoordNorthing;
   iso_resample_t imageResamplingMethod;
   // elevationData
   int elevationDataFlag; // elevation data included?
   char elevationDataSource[50];
-  float elevationMinimumHeight;
-  float elevationMeanHeight;
-  float elevationMaximumHeight;
+  double elevationMinimumHeight;
+  double elevationMeanHeight;
+  double elevationMaximumHeight;
   // incidenceAngleMaskDescription
   int incidenceAngleMaskDescriptionFlag; // incidence angle mask included?
   char incidenceAnglePixelValueID[128];
@@ -498,8 +510,8 @@ typedef struct {
   int incidenceAngleImageDataDepth;
   int incidenceAngleNumberOfRows;
   int incidenceAngleNumberOfColumns;
-  float incidenceAngleRowSpacing;
-  float incidenceAngleColumnSpacing;
+  double incidenceAngleRowSpacing;
+  double incidenceAngleColumnSpacing;
 } iso_productSpecific;
 
 typedef struct {
@@ -510,8 +522,8 @@ typedef struct {
   int frameID;
   iso_dateTime sceneStartTimeUTC;
   iso_dateTime sceneStopTimeUTC;
-  float sceneCenterLatitude;
-  float sceneCenterLongitude;
+  double sceneCenterLatitude;
+  double sceneCenterLongitude;
   iso_imageMode_t imagingMode;
   iso_lookDir_t lookDirection;
   iso_polMode_t polarizationMode;
@@ -578,12 +590,12 @@ typedef struct {
   int geolocationQualityLowFlag;
   iso_imageDataQuality *imageDataQuality;
   int gapDefinition;
-  float gapPercentageLimit;
-  float missingLinePercentageLimit;
-  float bitErrorLimit;
-  float timeReconstructionPercentageLimit;
-  float dopplerCentroidLimit;
-  float geolocationQualityLimit;
+  double gapPercentageLimit;
+  double missingLinePercentageLimit;
+  double bitErrorLimit;
+  double timeReconstructionPercentageLimit;
+  double dopplerCentroidLimit;
+  double geolocationQualityLimit;
   char *instrumentStateRemark;
 } iso_productQuality;
 
@@ -626,5 +638,6 @@ void iso_meta_free(iso_meta *iso);
 iso_meta *iso_meta_read(const char *xmlName);
 void iso_meta_write(iso_meta *iso, const char *outName);
 iso_meta *meta2iso(meta_parameters *meta);
+meta_parameters *iso2meta(iso_meta *iso);
 
 #endif

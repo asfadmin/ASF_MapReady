@@ -1439,10 +1439,10 @@ void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
   {
     sprintf(param,"%-16.11g",value);
     strtok(param," ");/*remove all trailing spaces */
-    if (is_empty(param)) { strcpy(param,"nan"); }
+    if (is_empty(param)) { strcpy(param,"NaN"); }
   }
   else {
-    strcpy(param,"nan");
+    strcpy(param,"NaN");
   }
   meta_put_string(meta_file,name,param,comment);
 }

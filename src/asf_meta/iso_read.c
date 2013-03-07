@@ -461,6 +461,14 @@ iso_meta *iso_meta_read(const char *xmlFile)
     "level1Product.productInfo.imageDataInfo.imageRaster.numberOfRows");
   info->numberOfColumns = xml_get_int_value(doc,
     "level1Product.productInfo.imageDataInfo.imageRaster.numberOfColumns");
+  info->startRow = xml_get_int_value(doc,
+    "level1Product.productInfo.imageDataInfo.imageRaster.startRow");
+  info->startColumn = xml_get_int_value(doc,
+    "level1Product.productInfo.imageDataInfo.imageRaster.startColumn");
+  info->rowScaling = xml_get_double_value(doc,
+    "level1Product.productInfo.imageDataInfo.imageRaster.rowScaling");
+  info->columnScaling = xml_get_double_value(doc,
+    "level1Product.productInfo.imageDataInfo.imageRaster.columnScaling");
   info->rowSpacing = xml_get_double_value(doc,
     "level1Product.productInfo.imageDataInfo.imageRaster.rowSpacing");
   info->columnSpacing = xml_get_double_value(doc,
@@ -490,11 +498,9 @@ iso_meta *iso_meta_read(const char *xmlFile)
     "level1Product.productInfo.sceneInfo.sceneAzimuthExtent");
   info->sceneRangeExtent = xml_get_double_value(doc,
     "level1Product.productInfo.sceneInfo.sceneRangeExtent");
-  info->sceneCenterCoord.refRow = (int *) MALLOC(sizeof(int));
-  *info->sceneCenterCoord.refRow = xml_get_int_value(doc,
+  info->sceneCenterCoord.refRow = xml_get_int_value(doc,
     "level1Product.productInfo.sceneInfo.sceneCenterCoord.refRow");
-  info->sceneCenterCoord.refColumn = (int *) MALLOC(sizeof(int));
-  *info->sceneCenterCoord.refColumn = xml_get_int_value(doc,
+  info->sceneCenterCoord.refColumn = xml_get_int_value(doc,
     "level1Product.productInfo.sceneInfo.sceneCenterCoord.refColumn");
   info->sceneCenterCoord.lat = xml_get_double_value(doc,
     "level1Product.productInfo.sceneInfo.sceneCenterCoord.lat");
@@ -510,12 +516,10 @@ iso_meta *iso_meta_read(const char *xmlFile)
   info->sceneAverageHeight = xml_get_double_value(doc,
     "level1Product.productInfo.sceneInfo.sceneAverageHeight");
   for (ii=0; ii<4; ii++) {
-    info->sceneCornerCoord[ii].refRow = (int *) MALLOC(sizeof(int));
-    info->sceneCornerCoord[ii].refColumn = (int *) MALLOC(sizeof(int));
     sprintf(str, "level1Product.productInfo.sceneInfo.sceneCornerCoord[%d].refRow", ii);
-    *info->sceneCornerCoord[ii].refRow = xml_get_int_value(doc, str);
+    info->sceneCornerCoord[ii].refRow = xml_get_int_value(doc, str);
     sprintf(str, "level1Product.productInfo.sceneInfo.sceneCornerCoord[%d].refColumn", ii);
-    *info->sceneCornerCoord[ii].refColumn = xml_get_int_value(doc, str);
+    info->sceneCornerCoord[ii].refColumn = xml_get_int_value(doc, str);
     sprintf(str, "level1Product.productInfo.sceneInfo.sceneCornerCoord[%d].lat", ii);
     info->sceneCornerCoord[ii].lat = xml_get_double_value(doc, str);
     sprintf(str, "level1Product.productInfo.sceneInfo.sceneCornerCoord[%d].lon", ii);
@@ -528,6 +532,16 @@ iso_meta *iso_meta_read(const char *xmlFile)
     sprintf(str, "level1Product.productInfo.sceneInfo.sceneCornerCoord[%d].incidenceAngle", ii);
     info->sceneCornerCoord[ii].incidenceAngle = xml_get_double_value(doc, str);
   }
+  info->yaw = xml_get_double_value(doc, 
+    "level1Product.productInfo.sceneInfo.yaw");
+  info->pitch = xml_get_double_value(doc, 
+    "level1Product.productInfo.sceneInfo.pitch");
+  info->roll = xml_get_double_value(doc, 
+    "level1Product.productInfo.sceneInfo.roll");
+  info->earthRadius = xml_get_double_value(doc, 
+    "level1Product.productInfo.sceneInfo.earthRadius");
+  info->satelliteHeight = xml_get_double_value(doc, 
+    "level1Product.productInfo.sceneInfo.satelliteHeight");
   info->headingAngle = xml_get_double_value(doc,
     "level1Product.productInfo.sceneInfo.headingAngle");
 
@@ -568,7 +582,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
   spec->commonRSF = xml_get_double_value(doc,
     "level1Product.productSpecific.complexImageInfo.commonRSF");
   spec->slantRangeResolution = xml_get_double_value(doc,
-    "level1Product.productSpecific.complexImageInfo.rangeResolution");
+    "level1Product.productSpecific.complexImageInfo.slantRangeResolution");
   spec->projectedSpacingAzimuth = xml_get_double_value(doc,
     "level1Product.productSpecific.complexImageInfo.projectedSpacingAzimuth");
   spec->projectedSpacingGroundNearRange = xml_get_double_value(doc,
@@ -819,13 +833,17 @@ iso_meta *iso_meta_read(const char *xmlFile)
   setup->processingStep = 
     (iso_procStep *) MALLOC(sizeof(iso_procStep)*setup->numProcessingSteps);
   for (ii=0; ii<setup->numProcessingSteps; ii++) {
-    sprintf(str, "level1Product.setup.processingSteps[%d].software.softwareID", ii);
+    sprintf(str, 
+	    "level1Product.setup.processingSteps[%d].software.softwareID", ii);
     strcpy(setup->processingStep[ii].softwareID, 
 	   xml_get_string_value(doc, str));
-    sprintf(str, "level1Product.setup.processingSteps[%d].software.softwareVersion", ii);
+    sprintf(str, 
+	    "level1Product.setup.processingSteps[%d].software.softwareVersion",
+	    ii);
     strcpy(setup->processingStep[ii].softwareVersion, 
 	   xml_get_string_value(doc, str));
-    sprintf(element, "level1Product.setup.processingSteps[%d].software.algorithm", ii);
+    sprintf(element, 
+	    "level1Product.setup.processingSteps[%d].software.algorithm", ii);
     strcpy(str, xml_get_string_value(doc, element));
     if (strcmp(str, MAGIC_UNSET_STRING) != 0) {
       setup->processingStep[ii].algorithm = (char *) MALLOC(sizeof(char)*255);
@@ -833,6 +851,11 @@ iso_meta *iso_meta_read(const char *xmlFile)
     }
     else
       setup->processingStep[ii].algorithm = NULL;
+    sprintf(element, 
+	    "level1Product.setup.processingSteps[%d].software.processingTimeUTC",
+	    ii);
+    strcpy(str, xml_get_string_value(doc, element));
+    str2dateTime(str, &setup->processingStep[ii].processingTimeUTC);
   }
 
   // processing
@@ -908,6 +931,10 @@ iso_meta *iso_meta_read(const char *xmlFile)
   proc->processingParameter[0].totalProcessedAzimuthBandwidth = 
     xml_get_double_value(doc, 
     "level1Product.processing.processingParameter.totalProcessedAzimuthBandwidth");
+  proc->processingParameter[0].chirpRate = xml_get_double_value(doc, 
+    "level1Product.processing.processingParameter.chirpRate");
+  proc->processingParameter[0].pulseDuration = xml_get_double_value(doc, 
+    "level1Product.processing.processingParameter.pulseDuration");
   strcpy(str, xml_get_string_value(doc,
     "level1Product.processing.processingFlags.chirpReplicaUsedFlag"));
   if (strcmp_case(str, "TRUE") == 0)
@@ -1105,13 +1132,8 @@ iso_meta *iso_meta_read(const char *xmlFile)
     else if (strcmp_case(str, "UNDEFINED") == 0)
       quality->rawDataQuality[ii].polLayer = UNDEF_POL_LAYER;
     sprintf(element, "level1Product.productQuality.rawDataQuality[%d].beamID", ii);
-    strcpy(str, xml_get_string_value(doc, element));
-    if (strcmp(str, MAGIC_UNSET_STRING) != 0) {
-      quality->rawDataQuality[ii].beamID = (char *) MALLOC(sizeof(char)*20);
-      strcpy(quality->rawDataQuality[ii].beamID, str);
-    }
-    else
-      quality->rawDataQuality[ii].beamID = NULL;
+    strcpy(quality->rawDataQuality[ii].beamID, 
+	   xml_get_string_value(doc, element));
     sprintf(element, "level1Product.productQuality.rawDataQuality[%d].numGaps", ii);
     quality->rawDataQuality[ii].numGaps = xml_get_int_value(doc, element);
     int numGaps = quality->rawDataQuality[ii].numGaps;
@@ -1189,13 +1211,8 @@ iso_meta *iso_meta_read(const char *xmlFile)
     else if (strcmp_case(str, "UNDEFINED") == 0)
       quality->imageDataQuality[ii].polLayer = UNDEF_POL_LAYER;
     sprintf(element, "level1Product.productQuality.imageDataQuality[%d].beamID", ii);
-    strcpy(str, xml_get_string_value(doc, element));
-    if (strcmp(str, MAGIC_UNSET_STRING) != 0) {
-      quality->imageDataQuality[ii].beamID = (char *) MALLOC(sizeof(char)*20);
-      strcpy(quality->imageDataQuality[ii].beamID, str);
-    }
-    else
-      quality->imageDataQuality[ii].beamID = NULL;
+    strcpy(quality->imageDataQuality[ii].beamID, 
+	   xml_get_string_value(doc, element));
     sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.min", ii);
     quality->imageDataQuality[ii].min = xml_get_double_value(doc, element);    
     sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.max", ii);
@@ -1204,6 +1221,14 @@ iso_meta *iso_meta_read(const char *xmlFile)
     quality->imageDataQuality[ii].mean = xml_get_double_value(doc, element);    
     sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.standardDeviation", ii);
     quality->imageDataQuality[ii].stdDev = xml_get_double_value(doc, element);
+    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.missingLines", ii);
+    quality->imageDataQuality[ii].missingLines = 
+      xml_get_int_value(doc, element);
+    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.bitErrorRate", ii);
+    quality->imageDataQuality[ii].bitErrorRate = 
+      xml_get_double_value(doc, element);
+    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.noData", ii);
+    quality->imageDataQuality[ii].noData = xml_get_double_value(doc, element);
   }
   quality->gapDefinition = xml_get_int_value(doc, 
     "level1Product.productQuality.limits.rawData.gapDefinition");

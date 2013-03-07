@@ -1187,7 +1187,8 @@ static char *orbitAcc2str(iso_orbitAcc_t orbit)
   return str;
 }
 
-static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
+static h5_t *initialize_h5_file_iso(const char *output_file_name, 
+				    iso_meta *iso)
 {
   hid_t h5_file, h5_datagroup, h5_metagroup, h5_data, h5_proj;
   hid_t h5_array, h5_time, h5_lat, h5_lon, h5_xgrid, h5_ygrid;
@@ -1198,28 +1199,27 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   char **str_array;
   int *int_array;
   long *long_array;
-  float *float_array;
   double *double_array;
   
   // Convenience pointers
-  iso_generalHeader *gh = iso->generalHeader;
-  iso_productComponents *pc = iso->productComponents;
-  iso_productInfo *pi = iso->productInfo;
-  iso_productSpecific *ps = iso->productSpecific;
+  iso_generalHeader *header = iso->generalHeader;
+  iso_productComponents *comps = iso->productComponents;
+  iso_productInfo *info = iso->productInfo;
+  iso_productSpecific *spec = iso->productSpecific;
   iso_setup *set = iso->setup;
   iso_processing *pro = iso->processing;
-  iso_instrument *in = iso->instrument;
-  iso_platform *pl = iso->platform;
-  iso_productQuality *pq = iso->productQuality;
+  iso_instrument *inst = iso->instrument;
+  iso_platform *platform = iso->platform;
+  iso_productQuality *quality = iso->productQuality;
   
   // Initialize the HDF pointer structure
   h5_t *h5 = (h5_t *) MALLOC(sizeof(h5_t));
-  int band_count = pi->numberOfLayers;
+  int band_count = info->numberOfLayers;
   h5->var_count = band_count;
   h5->var = (hid_t *) MALLOC(sizeof(hid_t)*h5->var_count);
   
   // Check for complex data
-  if (pi->imageDataType == COMPLEX_DATA_TYPE)
+  if (info->imageDataType == COMPLEX_DATA_TYPE)
     complex = TRUE;
   
   // Create new HDF5 file
@@ -1228,8 +1228,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   h5->file = h5_file;
   
   // Create data space
-  int samples = pi->numberOfColumns;
-  int lines = pi->numberOfRows;
+  int samples = info->numberOfColumns;
+  int lines = info->numberOfRows;
   hsize_t dims[2] = { lines, samples };
   hsize_t cdims[2] = { 100, samples };
   h5_array = H5Screate_simple(2, dims, NULL);
@@ -1247,13 +1247,13 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   for (ii=0; ii<band_count; ii++) {
     
     // Create data set
-    sprintf(dataset, "/data/%s", polLayer2str(pi->polLayer[ii]));
+    sprintf(dataset, "/data/%s", polLayer2str(info->polLayer[ii]));
     h5_data = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
 			H5P_DEFAULT, h5_plist, H5P_DEFAULT);
     h5->var[ii] = h5_data;
     
     // Add attributes (from CF convention)
-    h5_att_str(h5_data, "long_name", pi->pixelValueID);
+    h5_att_str(h5_data, "long_name", info->pixelValueID);
     h5_att_str(h5_data, "cell_methods", "area: backscatter value");
     h5_att_str(h5_data, "units", "1");
     h5_att_str(h5_data, "units_description",
@@ -1275,7 +1275,7 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   // Extra bands - Time
   asfPrintStatus("Storing band 'time' ...\n");  
   float serial_date = 
-    seconds_from_isotime(&pi->sceneCenterCoord.azimuthTimeUTC);
+    seconds_from_isotime(&info->sceneCenterCoord.azimuthTimeUTC);
   strcpy(dataset, "/data/time");
   hid_t h5_string = H5Screate(H5S_SCALAR);
   h5_time = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_string,
@@ -1289,13 +1289,11 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   h5_att_str(h5_time, "long_name", "serial date");
   H5Dclose(h5_time);
   
-  // FIXME: Reading metadata from .meta file for now
-  // Need a mapping function iso2meta
-  meta_parameters *md = meta_read("seasat.meta");
-  
+  meta_parameters *md = iso2meta(iso);
+
   // Extra bands - Longitude
-  int nl = pi->numberOfRows;
-  int ns = pi->numberOfColumns;
+  int nl = info->numberOfRows;
+  int ns = info->numberOfColumns;
   long pixel_count = nl*ns;
   double *value = (double *) MALLOC(sizeof(double)*MAX_PTS);
   double *l = (double *) MALLOC(sizeof(double)*MAX_PTS);
@@ -1371,7 +1369,7 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   q.A = first_value;
   for (ii=0; ii<nl; ii++) {
     for (kk=0; kk<ns; kk++) {
-      if (pi->orbitDirection == ASCENDING)
+      if (info->orbitDirection == ASCENDING)
 	lats[(nl-ii-1)*ns+kk] = (float)
 	  (q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
 	   q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
@@ -1443,15 +1441,15 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   // Adding global attributes
   hid_t h5_global = H5Gopen(h5_file, "/", H5P_DEFAULT);
   h5_att_str(h5_global, "institution", "Alaska Satellite Facility");
-  sprintf(str_attr, "%s %s %s image", pi->mission, pi->sensor, 
-	  imagingMode2str(pi->imageMode));
+  sprintf(str_attr, "%s %s %s image", info->mission, info->sensor, 
+	  imagingMode2str(info->imageMode));
   h5_att_str(h5_global, "title", str_attr); 
-  if (pi->imageDataType == DETECTED_DATA_TYPE ||
-      pi->imageDataType == COMPLEX_DATA_TYPE)
+  if (info->imageDataType == DETECTED_DATA_TYPE ||
+      info->imageDataType == COMPLEX_DATA_TYPE)
     strcpy(str_attr, "SAR backcatter image");
   h5_att_str(h5_global, "source", str_attr);
-  h5_att_str(h5_global, "original_file", pi->productType);
-  h5_att_str(h5_global, "comment", pi->copyrightInfo); 
+  h5_att_str(h5_global, "original_file", info->productType);
+  h5_att_str(h5_global, "comment", info->copyrightInfo); 
   h5_att_str(h5_global, "reference",
 	     "Documentation available at: www.asf.alaska.edu");
   time_t t;
@@ -1474,37 +1472,38 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   // General Header
   strcpy(group, "/metadata/generalHeader");
   h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_att_str(h5_section, "file", pc->annotation[0].file.name);
+  h5_att_str(h5_section, "file", comps->annotation[0].file.name);
   h5_att_str(h5_section, "fileVersion", "1.0");
   h5_att_str(h5_section, "status", "PRELIMINARY");
   h5_att_str(h5_section, "long_name", 
 	     "ground segment general header structure");
-  h5_value_str(h5_file, group, "itemName", gh->itemName,
+  h5_value_str(h5_file, group, "itemName", header->itemName,
 	       "contains the name of the exchanged product", NULL);
-  h5_value_str(h5_file, group, "mission", gh->mission, 
+  h5_value_str(h5_file, group, "mission", header->mission, 
 	       "indicates the mission, for which the product is provided", 
 	       NULL);
-  h5_value_str(h5_file, group, "source", gh->source,
+  h5_value_str(h5_file, group, "source", header->source,
 	       "specifies the sensor, source or originator for the provided product", 
 	       NULL);
-  h5_value_str(h5_file, group, "destination", gh->destination,
+  h5_value_str(h5_file, group, "destination", header->destination,
 	       "specifies the destination to which provided the product goes", 
 	       NULL);
-  h5_value_str(h5_file, group, "generationSystem", gh->generationSystem,
+  h5_value_str(h5_file, group, "generationSystem", header->generationSystem,
 	       "specifies the system which generated the product", NULL);
-  dateTime2str(gh->generationTime, str);
+  dateTime2str(header->generationTime, str);
   h5_value_str(h5_file, group, "generationTime", str, 
 	       "reports UTC time at which the product was generated", NULL);
-  if (gh->referenceDocument)
-    h5_value_str(h5_file, group, "referenceDocument", gh->referenceDocument,
-		 ">specifies the reference document, in which the product is specified with respect to contents and format", 
+  if (header->referenceDocument)
+    h5_value_str(h5_file, group, "referenceDocument", 
+		 header->referenceDocument,
+		 "specifies the reference document, in which the product is specified with respect to contents and format", 
 		 NULL);
-  if (gh->revision)
-    h5_value_str(h5_file, group, "revision", gh->revision,
+  if (header->revision)
+    h5_value_str(h5_file, group, "revision", header->revision,
 		 "handle to distinguish between project phases (e.g. testing, commissioning phase, operating)", 
 		 NULL);
-  if (gh->revisionComment)
-    h5_value_str(h5_file, group, "revisionComment", gh->revisionComment,
+  if (header->revisionComment)
+    h5_value_str(h5_file, group, "revisionComment", header->revisionComment,
 		 "remark field for a narrative description of the revision field", 
 		 NULL);
   H5Gclose(h5_section);
@@ -1515,64 +1514,68 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
 			 H5P_DEFAULT);
   h5_att_str(h5_section, "long_name",
 	     "lists and points to the product components");
-  if (pc->annotation) {
+  if (comps->annotation) {
     strcpy(level1, "/metadata/productComponents/annotation");
     h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
 			  H5P_DEFAULT);
     h5_att_str(h5_level1, "long_name", "pointer to the annoation file(s)");
     
-    str_array = (char **) MALLOC(sizeof(char *)*pc->numAnnotations);
-    for (ii=0; ii<pc->numAnnotations; ii++)
+    str_array = (char **) MALLOC(sizeof(char *)*comps->numAnnotations);
+    for (ii=0; ii<comps->numAnnotations; ii++)
       str_array[ii] = (char *) MALLOC(sizeof(char)*1024);
-    long_array = (long *) MALLOC(sizeof(long)*pc->numAnnotations);
+    long_array = (long *) MALLOC(sizeof(long)*comps->numAnnotations);
     
-    for (ii=0; ii<pc->numAnnotations; ii++) {
-      if (pc->annotation[ii].type == MAIN_TYPE)
+    for (ii=0; ii<comps->numAnnotations; ii++) {
+      if (comps->annotation[ii].type == MAIN_TYPE)
 	strcpy(str_array[ii], "MAIN");
-      else if (pc->annotation[ii].type == GEOREF_TYPE)
+      else if (comps->annotation[ii].type == GEOREF_TYPE)
 	strcpy(str_array[ii], "GEOREF");
-      else if (pc->annotation[ii].type == GEOCODE_TYPE)
+      else if (comps->annotation[ii].type == GEOCODE_TYPE)
 	strcpy(str_array[ii], "GEOCODE");
-      else if (pc->annotation[ii].type == OTHER_TYPE)
+      else if (comps->annotation[ii].type == OTHER_TYPE)
 	strcpy(str_array[ii], "OTHER");
-      else if (pc->annotation[ii].type == UNDEF_TYPE)
+      else if (comps->annotation[ii].type == UNDEF_TYPE)
 	strcpy(str_array[ii], "UNDEFINED");
     }
-    h5_value_str_array(h5_file, level1, "type", str_array, pc->numAnnotations,
-		       "annotation file type", NULL);
+    h5_value_str_array(h5_file, level1, "type", str_array, 
+		       comps->numAnnotations, "annotation file type", NULL);
     strcpy(level2, "/metadata/productComponents/annotation/file");
     h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
 			  H5P_DEFAULT);
     strcpy(level3, "/metadata/productComponents/annotation/file/location");
     h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
 			  H5P_DEFAULT);
-    for (ii=0; ii<pc->numAnnotations; ii++)
-      strcpy(str_array[ii], pc->annotation[ii].file.host);
-    h5_value_str_array(h5_file, level3, "host", str_array, pc->numAnnotations,
-		       "host where the file is located; default to: .", NULL);
-    for (ii=0; ii<pc->numAnnotations; ii++)
-      strcpy(str_array[ii], pc->annotation[ii].file.path);
-    h5_value_str_array(h5_file, level3, "path", str_array, pc->numAnnotations,
-		       "path where the file is located; default to: .", NULL);
-    for (ii=0; ii<pc->numAnnotations; ii++)
-      strcpy(str_array[ii], pc->annotation[ii].file.name);
+    for (ii=0; ii<comps->numAnnotations; ii++)
+      strcpy(str_array[ii], comps->annotation[ii].file.host);
+    h5_value_str_array(h5_file, level3, "host", str_array, 
+		       comps->numAnnotations,
+		       "host where the file is located; default to: .", 
+		       NULL);
+    for (ii=0; ii<comps->numAnnotations; ii++)
+      strcpy(str_array[ii], comps->annotation[ii].file.path);
+    h5_value_str_array(h5_file, level3, "path", str_array, 
+		       comps->numAnnotations,
+		       "path where the file is located; default to: .", 
+		       NULL);
+    for (ii=0; ii<comps->numAnnotations; ii++)
+      strcpy(str_array[ii], comps->annotation[ii].file.name);
     h5_value_str_array(h5_file, level3, "filename", str_array, 
-		       pc->numAnnotations, "name of the file", NULL);
+		       comps->numAnnotations, "name of the file", NULL);
     H5Gclose(h5_level3);
-    for (ii=0; ii<pc->numAnnotations; ii++)
-      long_array[ii] = pc->annotation[ii].file.size;
-    h5_value_long_array(h5_file, level2, "size", long_array, pc->numAnnotations,
-			"size of the file", "bytes");
+    for (ii=0; ii<comps->numAnnotations; ii++)
+      long_array[ii] = comps->annotation[ii].file.size;
+    h5_value_long_array(h5_file, level2, "size", long_array, 
+			comps->numAnnotations, "size of the file", "bytes");
     H5Gclose(h5_level2);
     H5Gclose(h5_level1);
-    for (ii=0; ii<pc->numAnnotations; ii++)
+    for (ii=0; ii<comps->numAnnotations; ii++)
       FREE(str_array[ii]);
     FREE(str_array);
     FREE(long_array);
   }
   
-  if (pc->imageData) {
-    for (ii=0; ii<pc->numLayers; ii++) {
+  if (comps->imageData) {
+    for (ii=0; ii<comps->numLayers; ii++) {
       strcpy(level1, "/metadata/productComponents/imageData");
       h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
@@ -1580,7 +1583,7 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
       h5_att_str(h5_level1, "long_name", 
 		 "containing one or more polarimetric channels in separate binary data matrices");
       h5_value_str(h5_file, level1, "polLayer", 
-		   polLayer2str(pc->imageData[ii].polLayer),
+		   polLayer2str(comps->imageData[ii].polLayer),
 		   "pointer to product components", NULL);
       sprintf(level2, "/metadata/productComponents/imageData/file");
       h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
@@ -1588,22 +1591,22 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
       sprintf(level3, "/metadata/productComponents/imageData/file/location");
       h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
-      h5_value_str(h5_file, level3, "host", pc->imageData[ii].file.host,
+      h5_value_str(h5_file, level3, "host", comps->imageData[ii].file.host,
 		   "host where the file is located; default to: .", NULL);
-      h5_value_str(h5_file, level3, "path", pc->imageData[ii].file.path,
+      h5_value_str(h5_file, level3, "path", comps->imageData[ii].file.path,
 		   "path where the file is located; default to: .", NULL);
-      h5_value_str(h5_file, level3, "filename", pc->imageData[ii].file.name, 
-		   "name of the file", NULL);
+      h5_value_str(h5_file, level3, "filename", 
+		   comps->imageData[ii].file.name, "name of the file", NULL);
       H5Gclose(h5_level3);
-      h5_value_long(h5_file, level2, "size", pc->imageData[ii].file.size,
+      h5_value_long(h5_file, level2, "size", comps->imageData[ii].file.size,
 		    "size of the file", "bytes");
       H5Gclose(h5_level2);
       H5Gclose(h5_level1);
     }
   }
   
-  if (pc->quicklooks) {
-    for (ii=0; ii<pc->numLayers; ii++) {
+  if (comps->quicklooks) {
+    for (ii=0; ii<comps->numLayers; ii++) {
       strcpy(level1, "/metadata/productComponents/quicklooks");
       h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
@@ -1611,7 +1614,7 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
       h5_att_str(h5_level1, "long_name", 
 		 "rescaled images for each image layer");
       h5_value_str(h5_file, level1, "polLayer", 
-		   polLayer2str(pc->quicklooks[ii].polLayer),
+		   polLayer2str(comps->quicklooks[ii].polLayer),
 		   "pointer to product components", NULL);
       strcpy(level2, "/metadata/productComponents/quicklooks/file");
       h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
@@ -1619,14 +1622,15 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
       strcpy(level3, "/metadata/productComponents/quicklooks/file/location");
       h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
-      h5_value_str(h5_file, level3, "host", pc->quicklooks[ii].file.host,
+      h5_value_str(h5_file, level3, "host", comps->quicklooks[ii].file.host,
 		   "host where the file is located; default to: .", NULL);
-      h5_value_str(h5_file, level3, "path", pc->quicklooks[ii].file.path,
+      h5_value_str(h5_file, level3, "path", comps->quicklooks[ii].file.path,
 		   "path where the file is located; default to: .", NULL);
-      h5_value_str(h5_file, level3, "filename", pc->quicklooks[ii].file.name,
-		   "name of the file", NULL);
+      h5_value_str(h5_file, level3, "filename", 
+		   comps->quicklooks[ii].file.name, "name of the file", 
+		   NULL);
       H5Gclose(h5_level3);
-      h5_value_long(h5_file, level2, "size", pc->quicklooks[ii].file.size,
+      h5_value_long(h5_file, level2, "size", comps->quicklooks[ii].file.size,
 		    "size of the file", "bytes");
       H5Gclose(h5_level2);
       H5Gclose(h5_level1);
@@ -1640,14 +1644,14 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   strcpy(level3, "/metadata/productComponents/browseImage/file/location");
   h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_str(h5_file, level3, "host", pc->browseImage.host, 
+  h5_value_str(h5_file, level3, "host", comps->browseImage.host, 
 	       "host where the file is located; default to: .", NULL);
-  h5_value_str(h5_file, level3, "path", pc->browseImage.path, 
+  h5_value_str(h5_file, level3, "path", comps->browseImage.path, 
 	       "path where the file is located; default to: .", NULL);
-  h5_value_str(h5_file, level3, "filename", pc->browseImage.name, 
+  h5_value_str(h5_file, level3, "filename", comps->browseImage.name, 
 	       "name of the file", NULL);
   H5Gclose(h5_level3);
-  h5_value_long(h5_file, level2, "size", pc->browseImage.size, 
+  h5_value_long(h5_file, level2, "size", comps->browseImage.size, 
 		"size of the file", "bytes");
   H5Gclose(h5_level2);
   H5Gclose(h5_level1);
@@ -1660,14 +1664,14 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   strcpy(level3, "/metadata/productComponents/mapPlot/file/location");
   h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_str(h5_file, level3, "host", pc->mapPlot.host, 
+  h5_value_str(h5_file, level3, "host", comps->mapPlot.host, 
 	       "host where the file is located; default to: .", NULL);
-  h5_value_str(h5_file, level3, "path", pc->mapPlot.path, 
+  h5_value_str(h5_file, level3, "path", comps->mapPlot.path, 
 	       "path where the file is located; default to: .", NULL);
-  h5_value_str(h5_file, level3, "filename", pc->mapPlot.name, 
+  h5_value_str(h5_file, level3, "filename", comps->mapPlot.name, 
 	       "name of the file", NULL);
   H5Gclose(h5_level3);
-  h5_value_long(h5_file, level2, "size", pc->mapPlot.size, 
+  h5_value_long(h5_file, level2, "size", comps->mapPlot.size, 
 		"size of the file", "bytes");
   H5Gclose(h5_level2);
   H5Gclose(h5_level1);
@@ -1683,159 +1687,167 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   h5_att_str(h5_level1, "long_name",
 	     "key parameters of the product generation and delivery");
-  h5_value_str(h5_file, level1, "logicalProductID", pi->logicalProductID,
+  h5_value_str(h5_file, level1, "logicalProductID", info->logicalProductID,
 	       "logical ID", NULL);
-  h5_value_str(h5_file, level1, "receivingStation", pi->receivingStation,
+  h5_value_str(h5_file, level1, "receivingStation", info->receivingStation,
 	       "receiving ground station", NULL);
   h5_value_str(h5_file, level1, "level0ProcessingFacility", 
-	       pi->level0ProcessingFacility, 
+	       info->level0ProcessingFacility, 
 	       "facility processing the level zero data", NULL);
   h5_value_str(h5_file, level1, "level1ProcessingFacility",
-	       pi->level1ProcessingFacility, 
+	       info->level1ProcessingFacility, 
 	       "facility processing the level one data", NULL);
-  if (pi->groundOperationsType == OPERATIONAL)
+  if (info->groundOperationsType == OPERATIONAL)
     strcpy(str, "OPERATIONAL");
-  else if (pi->groundOperationsType == PREOPERATIONAL)
+  else if (info->groundOperationsType == PREOPERATIONAL)
     strcpy(str, "PRE-OPERATIONAL");
-  else if (pi->groundOperationsType == INSTRUMENT)
+  else if (info->groundOperationsType == INSTRUMENT)
     strcpy(str, "INSTRUMENT");
-  else if (pi->groundOperationsType == TEST_OPS)
+  else if (info->groundOperationsType == TEST_OPS)
     strcpy(str, "TEST");
-  else if (pi->groundOperationsType == UNDEF_OPS)
+  else if (info->groundOperationsType == UNDEF_OPS)
     strcpy(str, "UNDEFINED");
   h5_value_str(h5_file, level1, "groundOperationsType", str,
 	       "OPERATIONAL, PRE-OPERATIONAL, INSTRUMENT or TEST", NULL);
-  h5_value_str(h5_file, level1, "deliveryInfo", pi->deliveryInfo, 
+  h5_value_str(h5_file, level1, "deliveryInfo", info->deliveryInfo, 
 	       "delivery information", NULL);
-  h5_value_str(h5_file, level1, "copyrightInfo", pi->copyrightInfo, 
+  h5_value_str(h5_file, level1, "copyrightInfo", info->copyrightInfo, 
 	       "general copyright remark", NULL);
   strcpy(level2, "/metadata/productInfo/generationInfo/qualityInfo");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  if (pi->qualityInspection == AUTO_APPROVED)
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+H5P_DEFAULT);
+  if (info->qualityInspection == AUTO_APPROVED)
     strcpy(str, "AUTO APPROVED");
-  else if (pi->qualityInspection == OPERATOR_APPROVED)
+  else if (info->qualityInspection == OPERATOR_APPROVED)
     strcpy(str, "OPERATOR APPROVED");
-  else if (pi->qualityInspection == NOT_APPROVED)
+  else if (info->qualityInspection == NOT_APPROVED)
     strcpy(str, "NOT APPROVED");
-  else if (pi->qualityInspection == UNDEF_QUALITY)
+  else if (info->qualityInspection == UNDEF_QUALITY)
     strcpy(str, "UNDEFINED");
   h5_value_str(h5_file, level2, "qualityInspection", str, 
-	       "AUTO APPROVED, OPERATOR APPROVED, NOT APPROVED or UNDEFINED", 
+	       "AUTO APPROVED, OPERATOR APPROVED, NOT APPROVED or UNDEFINED",
 	       NULL);
   H5Gclose(h5_level2);
-  if (pi->qualityRemark)
-    h5_value_str(h5_file, level1, "qualityRemark", pi->qualityRemark, 
+  if (info->qualityRemark)
+    h5_value_str(h5_file, level1, "qualityRemark", info->qualityRemark, 
 		 "Additional information on quality", NULL);
   H5Gclose(h5_level1);
   
   strcpy(level1, "/metadata/productInfo/missionInfo");
   h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   h5_att_str(h5_level1, "long_name", "mission and orbit parameters");
-  h5_value_str(h5_file, level1, "mission", pi->mission, "mission abbreviation",
-	       NULL);
-  h5_value_int(h5_file, level1, "orbitPhase", pi->orbitPhase,
+  h5_value_str(h5_file, level1, "mission", info->mission, 
+	       "mission abbreviation", NULL);
+  h5_value_int(h5_file, level1, "orbitPhase", info->orbitPhase,
 	       "orbit phase: 1 prelaunch phase, 0 launch phase, 1 nominal orbit", NULL);
-  h5_value_int(h5_file, level1, "orbitCycle", pi->orbitCycle, "cycle number", 
-	       NULL);
-  h5_value_int(h5_file, level1, "absOrbit", pi->absOrbit,
+  h5_value_int(h5_file, level1, "orbitCycle", info->orbitCycle, 
+	       "cycle number", NULL);
+  h5_value_int(h5_file, level1, "absOrbit", info->absOrbit,
 	       "absolute orbit number at the start of the scene", NULL);
-  h5_value_int(h5_file, level1, "relOrbit", pi->relOrbit, "relative orbit", 
-	       NULL);
-  h5_value_int(h5_file, level1, "numOrbitsInCycle", pi->numOrbitsInCycle,
+  h5_value_int(h5_file, level1, "relOrbit", info->relOrbit, 
+	       "relative orbit", NULL);
+  h5_value_int(h5_file, level1, "numOrbitsInCycle", info->numOrbitsInCycle,
 	       "nominal number of orbits per cycle", NULL);
-  if (pi->orbitDirection == ASCENDING)
+  if (info->orbitDirection == ASCENDING)
     strcpy(str, "ASCENDING");
-  else if (pi->orbitDirection == DESCENDING)
+  else if (info->orbitDirection == DESCENDING)
     strcpy(str, "DESCENDING");
-  else if (pi->orbitDirection == UNDEF_ORBIT)
+  else if (info->orbitDirection == UNDEF_ORBIT)
     strcpy(str, "UNDEFINED");
   h5_value_str(h5_file, level1, "orbitDirection", str, 
 	       "ASCENDING or DESCENDING", NULL);
   H5Gclose(h5_level1);
   
   sprintf(level1, "/metadata/productInfo/acquisitionInfo");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_att_str(h5_level1, "long_name",
 	     "SAR sensor configuration and instrument modes during acquisition");
-  h5_value_str(h5_file, level1, "sensor", pi->sensor, "sensor identifier: SAR",
-	       NULL);
-  h5_value_str(h5_file, level1, "imagingMode", imagingMode2str(pi->imageMode), 
+  h5_value_str(h5_file, level1, "sensor", info->sensor, 
+	       "sensor identifier: SAR", NULL);
+  h5_value_str(h5_file, level1, "imagingMode", 
+	       imagingMode2str(info->imageMode), 
 	       "FINE BEAM, STANDARD BEAM, STRIPMAP, SCANSAR or SPOTLIGHT", 
 	       NULL);
-  h5_value_str(h5_file, level1, "lookDirection", lookDir2str(pi->lookDirection),
+  h5_value_str(h5_file, level1, "lookDirection", 
+	       lookDir2str(info->lookDirection),
 	       "LEFT or RIGHT", NULL);
   h5_value_str(h5_file, level1, "polarizationMode", 
-	       polMode2str(pi->polarizationMode), "SINGLE, DUAL or QUAD", NULL);
+	       polMode2str(info->polarizationMode), "SINGLE, DUAL or QUAD", 
+	       NULL);
   strcpy(level2, "/metadata/productInfo/acquisitionInfo/polarizationList");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  str_array = (char **) MALLOC(sizeof(char *)*pc->numLayers);
-  for (ii=0; ii<pc->numLayers; ii++)
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  str_array = (char **) MALLOC(sizeof(char *)*comps->numLayers);
+  for (ii=0; ii<comps->numLayers; ii++)
     str_array[ii] = (char *) MALLOC(sizeof(char)*1024);
-  for (ii=0; ii<pc->numLayers; ii++) 
-    strcpy(str_array[ii], polLayer2str(pi->polLayer[ii]));
-  h5_value_str_array(h5_file, level2, "polLayer", str_array, pc->numLayers, 
-		     "HH, HV, VH or VV", NULL);
-  for (ii=0; ii<pc->numLayers; ii++)
+  for (ii=0; ii<comps->numLayers; ii++) 
+    strcpy(str_array[ii], polLayer2str(info->polLayer[ii]));
+  h5_value_str_array(h5_file, level2, "polLayer", str_array, 
+		     comps->numLayers, "HH, HV, VH or VV", NULL);
+  for (ii=0; ii<comps->numLayers; ii++)
     FREE(str_array[ii]);
   FREE(str_array);
   H5Gclose(h5_level2);  
   h5_value_str(h5_file, level1, "elevationBeamConfiguration", 
-	       pi->elevationBeamConfiguration, 
+	       info->elevationBeamConfiguration, 
 	       "beam identification as taken from the order file", NULL);
   strcpy(level2, "/metadata/productInfo/acquisitionInfo/imagingModeSpecificInfo");
   h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
 			H5P_DEFAULT);
-  if (pi->imageMode == FINE_BEAM ||
-      pi->imageMode == STANDARD_BEAM ||
-      pi->imageMode == STRIPMAP_IMAGE) {
-    if (pi->imageMode == FINE_BEAM)
+  if (info->imageMode == FINE_BEAM ||
+      info->imageMode == STANDARD_BEAM ||
+      info->imageMode == STRIPMAP_IMAGE) {
+    if (info->imageMode == FINE_BEAM)
       strcpy(level3, "/metadata/productInfo/acquisitionInfo/imagingModeSpecificInfo/fineBeam");
-    else if (pi->imageMode == STANDARD_BEAM)
+    else if (info->imageMode == STANDARD_BEAM)
       strcpy(level3, "/metadata/productInfo/acquisitionInfo/imagingModeSpecificInfo/standardBeam");
-    else if (pi->imageMode == STRIPMAP_IMAGE)
+    else if (info->imageMode == STRIPMAP_IMAGE)
       strcpy(level3, "/metadata/productInfo/acquisitionInfo/imagingModeSpecificInfo/stripMap");
     h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
 			  H5P_DEFAULT);
-    h5_value_str(h5_file, level3, "azimuthBeamID", pi->azimuthBeamID, 
+    h5_value_str(h5_file, level3, "azimuthBeamID", info->azimuthBeamID, 
 		 "azimuth beam ID", NULL);
   }
-  else if (pi->imageMode == SCANSAR_IMAGE) {
+  else if (info->imageMode == SCANSAR_IMAGE) {
     strcpy(level3, "/metadata/productInfo/acquisitionInfo/imagingModeSpecificInfo/scanSAR");
     h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
 			  H5P_DEFAULT);
-    h5_value_int(h5_file, level3, "numberOfBeams", pi->numberOfBeams,
+    h5_value_int(h5_file, level3, "numberOfBeams", info->numberOfBeams,
 		 "number of beams", NULL);
     strcpy(level4, "/metadata/productInfo/acquisitionInfo/imagingModeSpecificInfo/scanSAR/beamList");
     h5_level4 = H5Gcreate(h5_file, level4, H5P_DEFAULT, H5P_DEFAULT,
 			  H5P_DEFAULT);
-    for (ii=0; ii<pi->numberOfBeams; ii++)
-      strcpy(str_array[ii], pi->beamID[ii]);
-    h5_value_str_array(h5_file, level4, "beamID", str_array, pi->numberOfBeams,
-		       "beam ID", NULL);
+    for (ii=0; ii<info->numberOfBeams; ii++)
+      strcpy(str_array[ii], info->beamID[ii]);
+    h5_value_str_array(h5_file, level4, "beamID", str_array, 
+		       info->numberOfBeams, "beam ID", NULL);
     H5Gclose(h5_level4);
-    h5_value_str(h5_file, level1, "azimuthBeamID", pi->azimuthBeamID,
+    h5_value_str(h5_file, level1, "azimuthBeamID", info->azimuthBeamID,
 		 "azimuth beam ID", NULL);
-    h5_value_int(h5_file, level1, "numberOfBursts", pi->numberOfBursts,
+    h5_value_int(h5_file, level1, "numberOfBursts", info->numberOfBursts,
 		 "number of bursts", NULL);
     H5Gclose(h5_level3);
   }
-  else if (pi->imageMode == SPOTLIGHT_IMAGE) {
+  else if (info->imageMode == SPOTLIGHT_IMAGE) {
     strcpy(level3, "/metadata/productInfo/acquisitionInfo/imagingModeSpecificInfo/spotLight");
     h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
 			  H5P_DEFAULT);
     h5_value_int(h5_file, level1, "numberOfAzimuthBeams", 
-		 pi->numberOfAzimuthBeams, "number of azimuth beams", NULL);
+		 info->numberOfAzimuthBeams, "number of azimuth beams", 
+		 NULL);
     h5_value_str(h5_file, level1, "azimuthBeamIDFirst", 
-		 pi->azimuthBeamIDFirst, 
+		 info->azimuthBeamIDFirst, 
 		 "azimuth beam ID of first azimuth pattern used", NULL);
     h5_value_str(h5_file, level1, "azimuthBeamIDLast", 
-		 pi->azimuthBeamIDLast, 
+		 info->azimuthBeamIDLast, 
 		 "azimuth beam ID of last azimuth pattern used", NULL);
-    h5_value_float(h5_file, level1, "azimuthSteeringAngleFirst",
-		   pi->azimuthSteeringAngleFirst, 
-		   "azimuth steering angle of first azimuth beam", "degrees");
-    h5_value_float(h5_file, level1, "azimuthSteeringAngleLast",
-		   pi->azimuthSteeringAngleLast, 
+    h5_value_double(h5_file, level1, "azimuthSteeringAngleFirst",
+		   info->azimuthSteeringAngleFirst, 
+		   "azimuth steering angle of first azimuth beam", 
+		    "degrees");
+    h5_value_double(h5_file, level1, "azimuthSteeringAngleLast",
+		   info->azimuthSteeringAngleLast, 
 		   "azimuth steering angle of last azimuth beam", "degrees");
     H5Gclose(h5_level3);    
   }
@@ -1843,213 +1855,243 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   H5Gclose(h5_level1);
   
   strcpy(level1, "/metadata/productInfo/productVariantInfo");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_att_str(h5_level1, "long_name", "product variant description");
-  h5_value_str(h5_file, level1, "productType", pi->productType,
+  h5_value_str(h5_file, level1, "productType", info->productType,
 	       "mnemonic", NULL);
   h5_value_str(h5_file, level1, "productVariant", 
-	       product2str(pi->productVariant), 
+	       product2str(info->productVariant), 
 	       "SLC, STD, TC, RTC, GEO, SSC, MGD, GEC or EEC", NULL);
-  h5_value_str(h5_file, level1, "projection", projection2str(pi->projection), 
+  h5_value_str(h5_file, level1, "projection", 
+	       projection2str(info->projection), 
 	       "GROUNDRANGE, SLANTRANGE or MAP", NULL);
-  if (pi->projection == MAP_PROJ) {
-    if (pi->mapProjection == UTM_PROJ)
+  if (info->projection == MAP_PROJ) {
+    if (info->mapProjection == UTM_PROJ)
       strcpy(str, "UTM");
-    else if (pi->mapProjection == PS_PROJ)
+    else if (info->mapProjection == PS_PROJ)
       strcpy(str, "POLARSTEREOGRAPHIC");
-    else if (pi->mapProjection == GEOG_PROJ)
+    else if (info->mapProjection == GEOG_PROJ)
       strcpy(str, "GEOGRAPHIC");
-    else if (pi->mapProjection == UNDEF_MAP)
+    else if (info->mapProjection == UNDEF_MAP)
       strcpy(str, "UNDEFINED");
     h5_value_str(h5_file, level1, "mapProjection", str, 
-		 "for geocoding only: UTM, POLARSTEREOGRAPHIC or GEOGRAPHIC", 
+		 "for geocoding only: UTM, POLARSTEREOGRAPHIC or GEOGRAPHIC",
 		 NULL);
   }
   h5_value_str(h5_file, level1, "resolutionVariant", 
-	       resolution2str(pi->resolutionVariant), "SE or RE", NULL);
-  if (pi->radiometricCorrection == CALIBRATED)
+	       resolution2str(info->resolutionVariant), "SE or RE", NULL);
+  if (info->radiometricCorrection == CALIBRATED)
     strcpy(str, "CALIBRATED");
-  else if (pi->radiometricCorrection == RELCALIBRATED)
+  else if (info->radiometricCorrection == RELCALIBRATED)
     strcpy(str, "RELATIVE CALIBRATED");
-  else if (pi->radiometricCorrection == NOTCALIBRATED)
+  else if (info->radiometricCorrection == NOTCALIBRATED)
     strcpy(str, "NOT CALIBRATED");
-  else if (pi->radiometricCorrection == UNDEF_CAL)
+  else if (info->radiometricCorrection == UNDEF_CAL)
     strcpy(str, "UNDEFINED");
   h5_value_str(h5_file, level1, "radiometricCorrection", str, 
 	       "CALIBRATED, RELATIVE CALIBRATED or NOT CALIBRATED", NULL);
   H5Gclose(h5_level1);
   
   strcpy(level1, "/metadata/productInfo/imageDataInfo");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_att_str(h5_level1, "long_name", "image layer format");
-  h5_value_str(h5_file, level1, "pixelValueID", pi->pixelValueID,
+  h5_value_str(h5_file, level1, "pixelValueID", info->pixelValueID,
 	       "complex amplitude and phase, radar brightness (beta nought), sigma nought", NULL);
-  if (pi->imageDataType == DETECTED_DATA_TYPE)
+  if (info->imageDataType == DETECTED_DATA_TYPE)
     strcpy(str, "DETECTED");
-  else if (pi->imageDataType == COMPLEX_DATA_TYPE)
+  else if (info->imageDataType == COMPLEX_DATA_TYPE)
     strcpy(str, "COMPLEX");
-  else if (pi->imageDataType == RAW_DATA_TYPE)
+  else if (info->imageDataType == RAW_DATA_TYPE)
     strcpy(str, "RAW");
-  else if (pi->imageDataType == UNDEF_DATA_TYPE)
+  else if (info->imageDataType == UNDEF_DATA_TYPE)
     strcpy(str, "UNDEFINED");
   h5_value_str(h5_file, level1, "imageDataType", str, 
 	       "DETECTED, COMPLEX or RAW", NULL);
-  if (pi->imageDataFormat == CEOS_DATA_FORMAT)
+  if (info->imageDataFormat == CEOS_DATA_FORMAT)
     strcpy(str, "CEOS");
-  else if (pi->imageDataFormat == GEOTIFF_DATA_FORMAT)
+  else if (info->imageDataFormat == GEOTIFF_DATA_FORMAT)
     strcpy(str, "GEOTIFF");
-  else if (pi->imageDataFormat == HDF5_DATA_FORMAT)
+  else if (info->imageDataFormat == HDF5_DATA_FORMAT)
     strcpy(str, "HDF5");
-  else if (pi->imageDataFormat == COSAR_DATA_FORMAT)
+  else if (info->imageDataFormat == COSAR_DATA_FORMAT)
     strcpy(str, "COSAR");
-  else if (pi->imageDataFormat == UNDEF_DATA_FORMAT)
+  else if (info->imageDataFormat == UNDEF_DATA_FORMAT)
     strcpy(str, "UNDEFINED");
   h5_value_str(h5_file, level1, "imageDataFormat", str, 
 	       "CEOS, GEOTIFF, HDF5 or COSAR", NULL);
-  h5_value_int(h5_file, level1, "numberOfLayers", pi->numberOfLayers, 
+  h5_value_int(h5_file, level1, "numberOfLayers", info->numberOfLayers, 
 	       "number of polarizations + elevation beams", NULL);
-  h5_value_int(h5_file, level1, "imageDataDepth", pi->imageDataDepth, 
+  h5_value_int(h5_file, level1, "imageDataDepth", info->imageDataDepth, 
 	       "bits per pixel", NULL);
-  if (pi->imageStorageOrder == ROWBYROW)
+  if (info->imageStorageOrder == ROWBYROW)
     strcpy(str, "ROWBYROW");
-  else if (pi->imageStorageOrder == COLBYCOL)
+  else if (info->imageStorageOrder == COLBYCOL)
     strcpy(str, "COLBYCOL");
-  else if (pi->imageStorageOrder == UNDEF_STORE)
+  else if (info->imageStorageOrder == UNDEF_STORE)
     strcpy(str, "UNDEFINED");
-  h5_value_str(h5_file, level1, "imageStoreOrder", str, "ROWBYROW or COLBYCOL",
-	       NULL);
-  h5_value_str(h5_file, level1, "rowContent", pi->rowContent, 
+  h5_value_str(h5_file, level1, "imageStoreOrder", str, 
+	       "ROWBYROW or COLBYCOL", NULL);
+  h5_value_str(h5_file, level1, "rowContent", info->rowContent, 
 	       "rangelines, northing (for geocoded products), x", NULL);
-  h5_value_str(h5_file, level1, "columnContent", pi->columnContent, 
+  h5_value_str(h5_file, level1, "columnContent", info->columnContent, 
 	       "azimuth, y", NULL);
   strcpy(level2, "/metadata/productInfo/imageDataInfo/imageRaster");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_int(h5_file, level2, "numberOfRows", pi->numberOfRows, 
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_int(h5_file, level2, "numberOfRows", info->numberOfRows, 
 	       "line count", NULL);
-  h5_value_int(h5_file, level2, "numberOfColumns", pi->numberOfColumns, 
+  h5_value_int(h5_file, level2, "numberOfColumns", info->numberOfColumns, 
 	       "sample count", NULL);
-  if (pi->projection == MAP_PROJ)
-    h5_value_float(h5_file, level2, "rowSpacing", pi->rowSpacing, 
+  h5_value_int(h5_file, level2, "startRow", info->startRow, 
+	       "start row of a subset", NULL);
+  h5_value_int(h5_file, level2, "startColumn", info->startColumn, 
+	       "start column of a subset", NULL);
+  h5_value_double(h5_file, level2, "rowScaling", info->rowScaling, 
+		  "row scaling factor, in case the image has been resampled", 
+		  NULL);
+  h5_value_double(h5_file, level2, "columnScaling", info->columnScaling, 
+		  "column scaling factor, in case the image has been resampled",
+		  NULL);
+  if (info->projection == MAP_PROJ)
+    h5_value_double(h5_file, level2, "rowSpacing", info->rowSpacing, 
 		   "spacing of samples within a row from common raster [s or m]", "m");  
   else
-    h5_value_float(h5_file, level2, "rowSpacing", pi->rowSpacing,
+    h5_value_double(h5_file, level2, "rowSpacing", info->rowSpacing,
 		   "spacing of samples within a row from common raster [s or m]", "s");
-  if (pi->projection == MAP_PROJ)
-    h5_value_float(h5_file, level2, "columnSpacing", pi->columnSpacing, 
+  if (info->projection == MAP_PROJ)
+    h5_value_double(h5_file, level2, "columnSpacing", info->columnSpacing, 
 		   "spacing within a column [s or m]", "m");
   else
-    h5_value_float(h5_file, level2, "columnSpacing", pi->columnSpacing, 
+    h5_value_double(h5_file, level2, "columnSpacing", info->columnSpacing, 
 		   "spacing within a column [s or m]", "s");
   h5_value_double(h5_file, level2, "groundRangeResolution", 
-		  pi->groundRangeResolution, 
+		  info->groundRangeResolution, 
 		  "nominal worst case (at near range) [m]", "m");
   h5_value_double(h5_file, level2, "azimuthResolution",
-		  pi->azimuthResolution, "nominal [m]", "m");
-  h5_value_double(h5_file, level2, "azimuthLooks", pi->azimuthLooks, 
+		  info->azimuthResolution, "nominal [m]", "m");
+  h5_value_double(h5_file, level2, "azimuthLooks", info->azimuthLooks, 
 		  "effective number of looks", NULL);
-  h5_value_double(h5_file, level2, "rangeLooks", pi->rangeLooks, 
+  h5_value_double(h5_file, level2, "rangeLooks", info->rangeLooks, 
 		  "number of range looks", NULL);
   H5Gclose(h5_level2);
   H5Gclose(h5_level1);
   
   strcpy(level1, "/metadata/productInfo/sceneInfo");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_att_str(h5_level1, "long_time", "time and scene location information");
-  h5_value_str(h5_file, level1, "sceneID",  pi->sceneID, 
+  h5_value_str(h5_file, level1, "sceneID",  info->sceneID, 
 	       "orbit + time information", NULL);
   strcpy(level2, "/metadata/productInfo/sceneInfo/start");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dateTime2str(pi->startTimeUTC, str);
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  dateTime2str(info->startTimeUTC, str);
   h5_value_str(h5_file, level2, "timeUTC", str, "time stamp in UTC", NULL);
   H5Gclose(h5_level2);
   strcpy(level2, "/metadata/productInfo/sceneInfo/stop");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dateTime2str(pi->stopTimeUTC, str);
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  dateTime2str(info->stopTimeUTC, str);
   h5_value_str(h5_file, level2, "timeUTC", str, "time stamp in UTC", NULL);
   H5Gclose(h5_level2);
   strcpy(level2, "/metadata/productInfo/sceneInfo/rangeTime");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_double(h5_file, level2, "firstPixel", pi->rangeTimeFirstPixel,
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_double(h5_file, level2, "firstPixel", info->rangeTimeFirstPixel,
 		  "minimum range time of entire scene [s]", "s");
-  h5_value_double(h5_file, level2, "lastPixel", pi->rangeTimeLastPixel,
+  h5_value_double(h5_file, level2, "lastPixel", info->rangeTimeLastPixel,
 		  "maximum range time of entire scene [s]", "s");
   H5Gclose(h5_level2);
   h5_value_double(h5_file, level1, "sceneAzimuthExtent",
-		  pi->sceneAzimuthExtent, 
+		  info->sceneAzimuthExtent, 
 		  "(approximate and at mid-range) in [m]", "m");
   h5_value_double(h5_file, level1, "sceneRangeExtent", 
-		  pi->sceneRangeExtent, "(approximate and at mid-range) in [m]",
+		  info->sceneRangeExtent, "(approximate and at mid-range) in [m]",
 		  "m");
   strcpy(level2, "/metadata/productInfo/sceneInfo/sceneCenterCoord");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  if (pi->sceneCenterCoord.refRow)
-    h5_value_int(h5_file, level2, "refRow", *pi->sceneCenterCoord.refRow,
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  if (info->sceneCenterCoord.refRow)
+    h5_value_int(h5_file, level2, "refRow", info->sceneCenterCoord.refRow,
 		 "position in image row", NULL);
-  if (pi->sceneCenterCoord.refColumn)
-    h5_value_int(h5_file, level2, "refColumn", *pi->sceneCenterCoord.refColumn,
+  if (info->sceneCenterCoord.refColumn)
+    h5_value_int(h5_file, level2, "refColumn", 
+		 info->sceneCenterCoord.refColumn,
 		 "position in image column", NULL);
-  h5_value_float(h5_file, level2, "lat", pi->sceneCenterCoord.lat,
+  h5_value_double(h5_file, level2, "lat", info->sceneCenterCoord.lat,
 		 "geographical latitude [degrees]", "degrees");
-  h5_value_float(h5_file, level2, "lon", pi->sceneCenterCoord.lon,
+  h5_value_double(h5_file, level2, "lon", info->sceneCenterCoord.lon,
 		 "geographical longitude [degrees]", "degrees");
-  dateTime2str(pi->sceneCenterCoord.azimuthTimeUTC, str);
+  dateTime2str(info->sceneCenterCoord.azimuthTimeUTC, str);
   h5_value_str(h5_file, level2, "azimuthTimeUTC", str, 
 	       "time stamp at UTC for coordinate", NULL);
-  h5_value_double(h5_file, level2, "rangeTime", pi->sceneCenterCoord.rangeTime,
-		  "range time [s]", "s");
+  h5_value_double(h5_file, level2, "rangeTime", 
+		  info->sceneCenterCoord.rangeTime, "range time [s]", "s");
   h5_value_double(h5_file, level2, "incidenceAngle",
-		  pi->sceneCenterCoord.incidenceAngle, 
+		  info->sceneCenterCoord.incidenceAngle, 
 		  "incidence angle [degrees]", "degrees");
   H5Gclose(h5_level2);
-  h5_value_double(h5_file, level1, "sceneAverageHeight", pi->sceneAverageHeight,
+  h5_value_double(h5_file, level1, "sceneAverageHeight", 
+		  info->sceneAverageHeight,
 		  "with respect to reference frame [m]", "m");
   
   int_array = (int *) MALLOC(sizeof(int)*4);
-  float_array = (float *) MALLOC(sizeof(float)*4);
   double_array = (double *) MALLOC(sizeof(double)*4);
   str_array = (char **) MALLOC(sizeof(char *)*4);
   for (ii=0; ii<4; ii++)
     str_array[ii] = (char *) MALLOC(sizeof(char)*30);
   
   strcpy(level2, "/metadata/productInfo/sceneInfo/sceneCornerCoord");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  if (pi->sceneCornerCoord[ii].refRow) {
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  if (info->sceneCornerCoord[ii].refRow) {
     for (ii=0; ii<4; ii++) 
-      int_array[ii] = *pi->sceneCornerCoord[ii].refRow;
+      int_array[ii] = info->sceneCornerCoord[ii].refRow;
     h5_value_int_array(h5_file, level2, "refRow", int_array, 4, 
 		       "position in image row", NULL);
   }
-  if (pi->sceneCornerCoord[ii].refColumn) {
+  if (info->sceneCornerCoord[ii].refColumn) {
     for (ii=0; ii<4; ii++)
-      int_array[ii] = *pi->sceneCornerCoord[ii].refColumn;
+      int_array[ii] = info->sceneCornerCoord[ii].refColumn;
     h5_value_int_array(h5_file, level2, "refColumn", int_array, 4, 
 		       "position in image column", NULL);
   }
   for (ii=0; ii<4; ii++)
-    float_array[ii] = pi->sceneCornerCoord[ii].lat;
-  h5_value_float_array(h5_file, level2, "lat", float_array, 4,
+    double_array[ii] = info->sceneCornerCoord[ii].lat;
+  h5_value_double_array(h5_file, level2, "lat", double_array, 4,
 		       "geographical latitude [degrees]", "degrees");
   for (ii=0; ii<4; ii++)
-    float_array[ii] = pi->sceneCornerCoord[ii].lon;
-  h5_value_float_array(h5_file, level2, "lon", float_array, 4,
+    double_array[ii] = info->sceneCornerCoord[ii].lon;
+  h5_value_double_array(h5_file, level2, "lon", double_array, 4,
 		       "geographical longitude [degrees]", "degrees");
   for (ii=0; ii<4; ii++)
-    dateTime2str(pi->sceneCornerCoord[ii].azimuthTimeUTC, str_array[ii]);
+    dateTime2str(info->sceneCornerCoord[ii].azimuthTimeUTC, str_array[ii]);
   h5_value_str_array(h5_file, level2, "azimuthTimeUTC", str_array, 4,
 		     "time stamp at UTC for coordinate", NULL);
   for (ii=0; ii<4; ii++)
-    double_array[ii] = pi->sceneCornerCoord[ii].rangeTime;
+    double_array[ii] = info->sceneCornerCoord[ii].rangeTime;
   h5_value_double_array(h5_file, level2, "rangeTime", double_array, 4,
 			"range time [s]", "s");
   for (ii=0; ii<4; ii++)
-    double_array[ii] = pi->sceneCornerCoord[ii].incidenceAngle;
+    double_array[ii] = info->sceneCornerCoord[ii].incidenceAngle;
   h5_value_double_array(h5_file, level2, "incidenceAngle", double_array, 4,
 			"incidence angle [degrees]", "degrees");
   H5Gclose(h5_level2);
-  h5_value_float(h5_file, level1, "headingAngle", pi->headingAngle,
+  h5_value_double(h5_file, level1, "yaw", info->yaw,
+		 "yaw angle of the satellite [degrees]", "degrees");
+  h5_value_double(h5_file, level1, "pitch", info->pitch,
+		 "pitch angle of the satellite [degrees]", "degrees");
+  h5_value_double(h5_file, level1, "roll", info->roll,
+		 "roll angle of the satellite [degrees]", "degrees");
+  h5_value_double(h5_file, level1, "headingAngle", info->headingAngle,
 		 "rotation of azimuth heading clockwise with respect to north [degrees]", "degrees");
+  h5_value_double(h5_file, level1, "earthRadius", info->earthRadius,
+		 "earth radius at the scene center [m]", "m");
+  h5_value_double(h5_file, level1, "satelliteHeight", info->satelliteHeight,
+		 "satellite height at the scene center from earth center [m]", "m");
   FREE(int_array);
-  FREE(float_array);
   FREE(double_array);
   for (ii=0; ii<4; ii++)
     FREE(str_array[ii]);
@@ -2057,82 +2099,92 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   H5Gclose(h5_level1);
   
   strcpy(level1, "/metadata/productInfo/previewInfo");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_att_str(h5_level1, "long_name", "quicklook information"); 
   strcpy(level2, "/metadata/productInfo/previewInfo/quicklooks");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_value_str(h5_file, level2, "imageDataFormat", 
-	       pi->quicklooks.imageDataFormat, 
+	       info->quicklooks.imageDataFormat, 
 	       "image data format (TIFF greyscale)", NULL);
   h5_value_int(h5_file, level2, "imageDataDepth", 
-	       pi->quicklooks.imageDataDepth, "image data depth (16 bit)", 
+	       info->quicklooks.imageDataDepth, "image data depth (16 bit)", 
 	       NULL);
   strcpy(level3, "/metadata/productInfo/previewInfo/quicklooks/imageRaster");
-  h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_int(h5_file, level3, "numberOfRows", pi->quicklooks.numberOfRows,
-	       "line count", NULL);
+  h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_int(h5_file, level3, "numberOfRows", 
+	       info->quicklooks.numberOfRows, "line count", NULL);
   h5_value_int(h5_file, level3, "numberOfColumns", 
-	       pi->quicklooks.numberOfColumns, "sample count", NULL);
-  h5_value_float(h5_file, level3, "columnBlockLength",
-		 pi->quicklooks.columnBlockLength, "resampling factor [pixels]",
-		 "pixels");
-  h5_value_float(h5_file, level3, "rowBlockLength",
-		 pi->quicklooks.rowBlockLength, "resampling factor [pixels]", 
-		 "pixels");
-  h5_value_float(h5_file, level3, "rowSpacing", pi->quicklooks.rowSpacing,
+	       info->quicklooks.numberOfColumns, "sample count", NULL);
+  h5_value_double(h5_file, level3, "columnBlockLength",
+		  info->quicklooks.columnBlockLength, 
+		  "resampling factor [pixels]", "pixels");
+  h5_value_double(h5_file, level3, "rowBlockLength",
+		  info->quicklooks.rowBlockLength, 
+		  "resampling factor [pixels]", "pixels");
+  h5_value_double(h5_file, level3, "rowSpacing", info->quicklooks.rowSpacing,
 		 "spacing of samples within row from common raster [s or m]", 
 		 "m");
-  h5_value_float(h5_file, level3, "columnSpacing", pi->quicklooks.columnSpacing,
+  h5_value_double(h5_file, level3, "columnSpacing", 
+		  info->quicklooks.columnSpacing,
 		 "spacing within a column [s or m]", "m");
   H5Gclose(h5_level2);
   strcpy(level2, "/metadata/productInfo/previewInfo/browseImage");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_str(h5_file, level2, "imageDataFormat", pi->browseImageDataFormat,
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_str(h5_file, level2, "imageDataFormat", 
+	       info->browseImageDataFormat,
 	       "image data format (TIFF or JPEG)", NULL);
-  h5_value_int(h5_file, level2, "imageDataDepth", pi->browseImageDataDepth,
+  h5_value_int(h5_file, level2, "imageDataDepth", info->browseImageDataDepth,
 	       "image data depth (24 bit)", NULL);
   H5Gclose(h5_level2);
-  h5_value_str(h5_file, level1, "mapPlotFormat", pi->mapPlotFormat,
+  h5_value_str(h5_file, level1, "mapPlotFormat", info->mapPlotFormat,
 	       "map plot format (PNG, GIF or KML)", NULL);
   H5Gclose(h5_level1);
   H5Gclose(h5_section);
   
   // Product Specific
   strcpy(group, "/metadata/productSpecific");
-  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
+			 H5P_DEFAULT);
   h5_att_str(h5_section, "long_name", "specific information for product");
   strcpy(level1, "/metadata/productSpecific/complexImageInfo");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_double(h5_file, level1, "commonPRF", ps->commonPRF, 
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_double(h5_file, level1, "commonPRF", spec->commonPRF, 
 		  "intermediate \"output PRF\" used during processing [Hz]", 
 		  "Hz");
-  h5_value_double(h5_file, level1, "commonRSF", ps->commonRSF, 
+  h5_value_double(h5_file, level1, "commonRSF", spec->commonRSF, 
 		  "range sampling frequency [Hz]", "Hz");
   h5_value_double(h5_file, level1, "slantRangeResolution", 
-		  ps->slantRangeResolution, "slant range resolution [m]", "m");
-  h5_value_float(h5_file, level1, "projectedSpacingAzimuth",
-		 ps->projectedSpacingAzimuth, 
+		  spec->slantRangeResolution, "slant range resolution [m]", 
+		  "m");
+  h5_value_double(h5_file, level1, "projectedSpacingAzimuth",
+		 spec->projectedSpacingAzimuth, 
 		 "nominal projected pixel spacing on ground at scene center [m]", "m");
   strcpy(level2, "/metadata/productSpecific/complexImageInfo/projectedSpacingRange");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_float(h5_file, level2, "groundNear", 
-		 ps->projectedSpacingGroundNearRange, "ground near range [m]", 
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_double(h5_file, level2, "groundNear", 
+		  spec->projectedSpacingGroundNearRange, 
+		  "ground near range [m]", "m");
+  h5_value_double(h5_file, level2, "groundFar",
+		 spec->projectedSpacingGroundFarRange, "ground far range [m]", 
 		 "m");
-  h5_value_float(h5_file, level2, "groundFar",
-		 ps->projectedSpacingGroundFarRange, "ground far range [m]", 
-		 "m");
-  h5_value_float(h5_file, level2, "slantRange",
-		 ps->projectedSpacingSlantRange, "slant range [m]", "m");
+  h5_value_double(h5_file, level2, "slantRange",
+		 spec->projectedSpacingSlantRange, "slant range [m]", "m");
   H5Gclose(h5_level2);
   h5_value_str(h5_file, level1, "imageCoordinateType", 
-	       imageCoord2str(ps->imageCoordinateType), "RAW or ZERODOPPLER", 
-	       NULL);
+	       imageCoord2str(spec->imageCoordinateType), 
+	       "RAW or ZERODOPPLER", NULL);
   h5_value_str(h5_file, level1, "imageDataStartWith", 
-	       dataStart2str(ps->imageDataStartWith), 
+	       dataStart2str(spec->imageDataStartWith), 
 	       "EARLYAZNEARRG, EARLYAZFARRG, LATEAZNEARRG or LATEAZFARRG", 
 	       NULL);
   h5_value_str(h5_file, level1, "quicklookDataStartWith", 
-	       dataStart2str(ps->quicklookDataStartWith), 
+	       dataStart2str(spec->quicklookDataStartWith), 
 	       "EARLYAZNEARRG, EARLYAZFARRG, LATEAZNEARRG or LATEAZFARRG", 
 	       NULL);
   
@@ -2141,14 +2193,17 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   
   // Setup
   strcpy(group, "/metadata/setup");
-  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
+			 H5P_DEFAULT);
   h5_att_str(h5_section, "long_name",
 	     "screening and processing chain setup and control parameters etc. used");
   strcpy(level1, "/metadata/setup/orderInfo");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_value_str(h5_file, level1, "orderType", set->orderType, 
 	       "order type (e.g. L1B-SAR)", NULL);
-  h5_value_str(h5_file, level1, "processingPriority", set->processingPriority,
+  h5_value_str(h5_file, level1, "processingPriority", 
+	       set->processingPriority,
 	       "processing priority (e.g. NRT)", NULL);
   h5_value_str(h5_file, level1, "orbitAccuracy", 
 	       orbitAcc2str(set->orbitAccuracy), 
@@ -2164,7 +2219,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   h5_value_str(h5_file, level1, "sceneSpecification", str, 
 	       "FRAME, TIME or CENTERCOORDS", NULL);
   strcpy(level2, "/metadata/setup/orderInfo/orderedScene");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   if (set->sceneSpecification == FRAME_SPEC)
     h5_value_int(h5_file, level2, "frameID", set->frameID, "frame number", 
 		 NULL);
@@ -2184,10 +2240,12 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
     strcpy(level3, "/metadata/setup/orderInfo/orderedScene/sceneCenterCoord");
     h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
 			  H5P_DEFAULT);
-    h5_value_float(h5_file, level3, "lat", set->sceneCenterLatitude, 
-		   "scene geographical center latitude [degrees]", "degrees");
-    h5_value_float(h5_file, level3, "lon", set->sceneCenterLongitude,
-		   "scene geographical center longitude [degrees]", "degrees");
+    h5_value_double(h5_file, level3, "lat", set->sceneCenterLatitude, 
+		   "scene geographical center latitude [degrees]", 
+		    "degrees");
+    h5_value_double(h5_file, level3, "lon", set->sceneCenterLongitude,
+		   "scene geographical center longitude [degrees]", 
+		    "degrees");
     H5Gclose(h5_level2);
   }
   h5_value_str(h5_file, level2, "imagingMode", 
@@ -2200,15 +2258,16 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
 	       polMode2str(set->polarizationMode), 
 	       "SINGLE, DUAL or QUAD", NULL);
   strcpy(level3, "/metadata/setup/orderInfo/orderedScene/polList");
-  h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  str_array = (char **) MALLOC(sizeof(char *)*pc->numLayers);
-  for (ii=0; ii<pc->numLayers; ii++)
+  h5_level3 = H5Gcreate(h5_file, level3, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  str_array = (char **) MALLOC(sizeof(char *)*comps->numLayers);
+  for (ii=0; ii<comps->numLayers; ii++)
     str_array[ii] = (char *) MALLOC(sizeof(char)*1024);
-  for (ii=0; ii<pc->numLayers; ii++) 
-    strcpy(str_array[ii], polLayer2str(pi->polLayer[ii]));
-  h5_value_str_array(h5_file, level3, "polLayer", str_array, pc->numLayers, 
-		     "HH, HV, VH or VV", NULL);
-  for (ii=0; ii<pc->numLayers; ii++)
+  for (ii=0; ii<comps->numLayers; ii++) 
+    strcpy(str_array[ii], polLayer2str(info->polLayer[ii]));
+  h5_value_str_array(h5_file, level3, "polLayer", str_array, 
+		     comps->numLayers, "HH, HV, VH or VV", NULL);
+  for (ii=0; ii<comps->numLayers; ii++)
     FREE(str_array[ii]);
   FREE(str_array);
   H5Gclose(h5_level3);  
@@ -2219,12 +2278,14 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
 	       "SLC, STD, TC, RTC, GEO, SSC, MGD, GEC or EEC", NULL);
   h5_value_str(h5_file, level2, "resolutionVariant", 
 	       resolution2str(set->resolutionVariant), "SE or RE", NULL);
-  h5_value_str(h5_file, level1, "projection", projection2str(set->projection), 
+  h5_value_str(h5_file, level1, "projection", 
+	       projection2str(set->projection), 
 	       "GROUNDRANGE, SLANTRANGE or MAP", NULL);
   H5Gclose(h5_level2);
   H5Gclose(h5_level1);
   strcpy(level1, "/metadata/setup/inputData");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_value_str(h5_file, level1, "logicalDataTakeID", set->logicalDataTakeID,
 	       "logical datatake ID", NULL);
   h5_value_str(h5_file, level1, "level0ProductID", set->level0ProductID,
@@ -2240,8 +2301,9 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
     strcpy(level2, "/metadata/setup/processingSteps/software");
     h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
 			  H5P_DEFAULT);
-    h5_att_str(h5_level2, "long_name", "major components of processing chain");
-    str_array = (char **) MALLOC(sizeof(char *)*pc->numLayers);
+    h5_att_str(h5_level2, "long_name", 
+	       "major components of processing chain");
+    str_array = (char **) MALLOC(sizeof(char *)*comps->numLayers);
     for (ii=0; ii<set->numProcessingSteps; ii++)
       str_array[ii] = (char *) MALLOC(sizeof(char)*1024);
     for (ii=0; ii<set->numProcessingSteps; ii++) 
@@ -2252,6 +2314,10 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
       strcpy(str_array[ii], set->processingStep[ii].softwareVersion);
     h5_value_str_array(h5_file, level2, "softwareVersion", str_array,
 		       set->numProcessingSteps, "version number", NULL);
+    for (ii=0; ii<set->numProcessingSteps; ii++)
+      dateTime2str(set->processingStep[ii].processingTimeUTC, str_array[ii]);
+    h5_value_str_array(h5_file, level2, "processingTimeUTC", str_array,
+		       set->numProcessingSteps, "processing time in UTC", NULL);
     int algorithmFlag = FALSE;
     for (ii=0; ii<set->numProcessingSteps; ii++)    
       if (set->processingStep[ii].algorithm)
@@ -2275,11 +2341,13 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   
   // Processing
   strcpy(group, "/metadata/processing");
-  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
+			 H5P_DEFAULT);
   h5_att_str(h5_section, "long_name", 
 	     "processor and product configuration parameters");
   strcpy(level1, "/metadata/processing/doppler");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_value_str(h5_file, level1, "dopplerBasebandEstimationMethod",
 	       pro->dopplerBasebandEstimationMethod, 
 	       "azimuth cross correlation", NULL);
@@ -2296,7 +2364,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
 		   polLayer2str(pro->doppler[ii].polLayer), 
 		   "HH, HV, VH or VV", NULL);
       h5_value_int(h5_file, level2, "numberOfBlocks", 
-		   pro->doppler[ii].numberOfBlocks, "number of blocks", NULL);
+		   pro->doppler[ii].numberOfBlocks, "number of blocks", 
+		   NULL);
       h5_value_int(h5_file, level2, "numberOfRejectedBlocks", 
 		   pro->doppler[ii].numberOfRejectedBlocks,
 		   "number of rejected blocks", NULL);
@@ -2330,17 +2399,19 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   }
   H5Gclose(h5_level1);
   strcpy(level1, "/metadata/processing/processingParameter");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_att_str(h5_level1, "long_name", "range and azimuth processing parameters");
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_att_str(h5_level1, "long_name", 
+	     "range and azimuth processing parameters");
   h5_value_str(h5_file, level1, "processingInfoCoordinateType", 
 	       imageCoord2str(pro->processingParameter[0].processingInfoCoordinateType), 
 	       "RAW or ZERODOPPLER", NULL);
-  h5_value_float(h5_file, level1, "rangeLooks",
-		 pro->processingParameter[0].rangeLooks, 
-		 "number of range looks", NULL);
-  h5_value_float(h5_file, level1, "azimuthLooks",
-		 pro->processingParameter[0].azimuthLooks, 
-		 "number of azimuth looks", NULL);
+  h5_value_double(h5_file, level1, "rangeLooks",
+		  pro->processingParameter[0].rangeLooks, 
+		  "number of range looks", NULL);
+  h5_value_double(h5_file, level1, "azimuthLooks",
+		  pro->processingParameter[0].azimuthLooks, 
+		  "number of azimuth looks", NULL);
   h5_value_double(h5_file, level1, "rangeLookBandwidth",
 		  pro->processingParameter[0].rangeLookBandwidth, 
 		  "range look bandwidth [Hz]", "Hz");
@@ -2353,20 +2424,30 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   h5_value_double(h5_file, level1, "totalProcessedAzimuthBandwidth",
 		  pro->processingParameter[0].totalProcessedAzimuthBandwidth,
 		  "total processed azimuth bandwidth [Hz]", "Hz");
+  h5_value_double(h5_file, level1, "chirpRate",
+		  pro->processingParameter[0].chirpRate, 
+		  "chirp rate [Hz/sec]", "Hz/sec");
+  h5_value_double(h5_file, level1, "pulseDuration",
+		  pro->processingParameter[0].pulseDuration, 
+		  "pulse duration [Hz]", "Hz");
   H5Gclose(h5_level1);
   
   strcpy(level1, "/metadata/processing/processingFlags");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_att_str(h5_level1, "long_name", 
 	     "flags indicating which processing steps have been performed");
   h5_value_boolean(h5_file, level1, "chirpReplicaUsedFlag",
-		   pro->chirpReplicaUsedFlag, "reconstructed chirp used", NULL);
+		   pro->chirpReplicaUsedFlag, "reconstructed chirp used", 
+		   NULL);
   h5_value_boolean(h5_file, level1, "geometricDopplerUsedFlag",
 		   pro->geometricDopplerUsedFlag, 
-		   "geometric Doppler centroid estimate has been used", NULL);
+		   "geometric Doppler centroid estimate has been used", 
+		   NULL);
   h5_value_boolean(h5_file, level1, "azimuthPatternCorrectedFlag",
 		   pro->azimuthPatternCorrectedFlag, 
-		   "stripmap azimuth antenna pattern correction applied", NULL);
+		   "stripmap azimuth antenna pattern correction applied", 
+		   NULL);
   h5_value_boolean(h5_file, level1, "elevationPatternCorrectedFlag",
 		   pro->elevationPatternCorrectedFlag, 
 		   "antenna elevation pattern correction applied", NULL);
@@ -2378,8 +2459,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
 		   pro->polarimetricProcessedFlag, 
 		   "polarimetric processing performed", NULL);
   h5_value_boolean(h5_file, level1, "terrainCorrectedFlag",
-		   pro->terrainCorrectedFlag, "terrain correction performed", 
-		   NULL);
+		   pro->terrainCorrectedFlag, 
+		   "terrain correction performed", NULL);
   h5_value_boolean(h5_file, level1, "layoverShadowMaskGeneratedFlag",
 		   pro->layoverShadowMaskGeneratedFlag, 
 		   "layover/shadow mask generated", NULL);
@@ -2393,55 +2474,57 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   
   // Instrument
   strcpy(group, "/metadata/instrument");
-  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
+			 H5P_DEFAULT);
   h5_att_str(h5_section, "long_name", 
 	     "sensor specific parameters at the time of the data acquisition");
   h5_value_str(h5_file, group, "instrumentInfoCoordinateType", 
-	       imageCoord2str(in->instrumentInfoCoordinateType), 
+	       imageCoord2str(inst->instrumentInfoCoordinateType), 
 	       "RAW or ZERODOPPLER", NULL);
   strcpy(level1, "/metadata/instrument/radarParameters");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_double(h5_file, level1, "centerFrequency", in->centerFrequency,
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_double(h5_file, level1, "centerFrequency", inst->centerFrequency,
 		  "center frequency [Hz]", "Hz");
   H5Gclose(h5_level1);
-  if (in->settings) {
-    for (ii=0; ii<pc->numLayers; ii++) {
+  if (inst->settings) {
+    for (ii=0; ii<comps->numLayers; ii++) {
       strcpy(level1, "/metadata/instrument/settings");
       h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
       h5_value_str(h5_file, level1, "polLayer", 
-		   polLayer2str(in->settings[ii].polLayer), "HH, HV, VH or VV",
-		   NULL);
-      h5_value_str(h5_file, level1, "beamID", in->settings[ii].beamID,
+		   polLayer2str(inst->settings[ii].polLayer), 
+		   "HH, HV, VH or VV", NULL);
+      h5_value_str(h5_file, level1, "beamID", inst->settings[ii].beamID,
 		   "beam identifier", NULL);
       h5_value_double(h5_file, level1, "rxBandwidth", 
-		      in->settings[ii].rxBandwidth, "range bandwidth [Hz]", 
+		      inst->settings[ii].rxBandwidth, "range bandwidth [Hz]", 
 		      "Hz");
-      h5_value_double(h5_file, level1, "RSF", in->settings[ii].rsf,
+      h5_value_double(h5_file, level1, "RSF", inst->settings[ii].rsf,
 		      "range sampling frequency [Hz]", "Hz");
       
-      in->settings[ii].numberOfPRFChanges = 0;
-      in->settings[ii].numberOfEchoWindowPositionChanges = 0;
-      in->settings[ii].numberOfEchoWindowLengthChanges = 0;
-      in->settings[ii].numberOfSettingRecords = 1;
+      inst->settings[ii].numberOfPRFChanges = 0;
+      inst->settings[ii].numberOfEchoWindowPositionChanges = 0;
+      inst->settings[ii].numberOfEchoWindowLengthChanges = 0;
+      inst->settings[ii].numberOfSettingRecords = 1;
       
       h5_value_int(h5_file, level1, "numberOfPRFChanges", 
-		   in->settings[ii].numberOfPRFChanges, "number of PRF changes",
-		   NULL);
+		   inst->settings[ii].numberOfPRFChanges, 
+		   "number of PRF changes", NULL);
       h5_value_int(h5_file, level1, "numberOfEchoWindowPositionChanges",
-		   in->settings[ii].numberOfEchoWindowPositionChanges, 
+		   inst->settings[ii].numberOfEchoWindowPositionChanges, 
 		   "number of echo window position changes", NULL);
       h5_value_int(h5_file, level1, "numberOfEchoWindowLengthChanges",
-		   in->settings[ii].numberOfEchoWindowLengthChanges,
+		   inst->settings[ii].numberOfEchoWindowLengthChanges,
 		   "number of echo window length changes", NULL);
       h5_value_int(h5_file, level1, "numberOfSettingRecords",
-		   in->settings[ii].numberOfSettingRecords, 
+		   inst->settings[ii].numberOfSettingRecords, 
 		   "number of setting records", NULL);
       strcpy(level2, "/metadata/instrument/settings/settingRecords");
       h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
-      iso_settingRecord *rec = in->settings[ii].settingRecord;
-      int numRecords = in->settings[ii].numberOfSettingRecords;
+      iso_settingRecord *rec = inst->settings[ii].settingRecord;
+      int numRecords = inst->settings[ii].numberOfSettingRecords;
       int_array = (int *) MALLOC(sizeof(int)*numRecords);
       double_array = (double *) MALLOC(sizeof(double)*numRecords);
       str_array = (char **) MALLOC(sizeof(char *)*numRecords);
@@ -2452,29 +2535,32 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
 			    H5P_DEFAULT);
       for (kk=0; kk<numRecords; kk++) 
 	dateTime2str(rec[kk].startTimeUTC, str_array[kk]);
-      h5_value_str_array(h5_file, level3, "startTimeUTC", str_array, numRecords,
-			 "start time stamp in UTC", NULL);
+      h5_value_str_array(h5_file, level3, "startTimeUTC", str_array, 
+			 numRecords, "start time stamp in UTC", NULL);
       for (kk=0; kk<numRecords; kk++)
 	dateTime2str(rec[kk].stopTimeUTC, str_array[kk]);
-      h5_value_str_array(h5_file, level3, "stopTimeUTC", str_array, numRecords,
-			 "stop time stamp in UTC", NULL);
+      h5_value_str_array(h5_file, level3, "stopTimeUTC", str_array, 
+			 numRecords, "stop time stamp in UTC", NULL);
       for (kk=0; kk<numRecords; kk++)
 	int_array[kk] = rec[kk].numberOfRows;
-      h5_value_int_array(h5_file, level3, "numberOfRows", int_array, numRecords,
-			 "line count", NULL);
+      h5_value_int_array(h5_file, level3, "numberOfRows", int_array, 
+			 numRecords, "line count", NULL);
       H5Gclose(h5_level3);
       for (kk=0; kk<numRecords; kk++)
 	double_array[kk] = rec[kk].prf;
-      h5_value_double_array(h5_file, level2, "PRF", double_array, numRecords, 
-			    "pulse repetition frequency [Hz]", "Hz");
+      h5_value_double_array(h5_file, level2, "PRF", double_array, 
+			    numRecords, "pulse repetition frequency [Hz]", 
+			    "Hz");
       for (kk=0; kk<numRecords; kk++)
 	double_array[kk] = rec[kk].echoWindowPosition;
-      h5_value_double_array(h5_file, level2, "echoWindowPosition", double_array,
-			    numRecords, "sampling window start time", NULL);
+      h5_value_double_array(h5_file, level2, "echoWindowPosition", 
+			    double_array, numRecords, 
+			    "sampling window start time", NULL);
       for (kk=0; kk<numRecords; kk++)
 	double_array[kk] = rec[kk].echoWindowLength;
-      h5_value_double_array(h5_file, level2, "echoWindowLength", double_array,
-			    numRecords, "number of samples", NULL);
+      h5_value_double_array(h5_file, level2, "echoWindowLength", 
+			    double_array, numRecords, "number of samples", 
+			    NULL);
       for (kk=0; kk<numRecords; kk++)
 	strcpy(str_array[kk], rec[kk].pulseType); 
       h5_value_str_array(h5_file, level2, "pulseType", str_array, numRecords,
@@ -2492,71 +2578,78 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
   
   // Platform
   strcpy(group, "/metadata/platform");
-  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_att_str(h5_section, "long_name", "state vectors and geometric layout of the platform");
+  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
+			 H5P_DEFAULT);
+  h5_att_str(h5_section, "long_name", 
+	     "state vectors and geometric layout of the platform");
   strcpy(level1, "/metadata/platform/orbit");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   strcpy(level2, "/metadata/platform/orbit/orbitHeader");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  if (pl->sensor == PREDICTED_SENSOR)
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  if (platform->sensor == PREDICTED_SENSOR)
     strcpy(str, "PREDICTED SENSOR");
-  else if (pl->sensor == SINGLE_GPS)
+  else if (platform->sensor == SINGLE_GPS)
     strcpy(str, "SINGLE GPS");
-  else if (pl->sensor == DIFFERENTIAL_GPS)
+  else if (platform->sensor == DIFFERENTIAL_GPS)
     strcpy(str, "DIFFERENTIAL GPS");
-  else if (pl->sensor == UNDEF_ORBIT_SENSOR)
+  else if (platform->sensor == UNDEF_ORBIT_SENSOR)
     strcpy(str, "UNDEFINED");
   h5_value_str(h5_file, level2, "sensor", str, 
 	       "PREDICTED SENSOR, SINGLE GPS or DIFFERENTIAL GPS", NULL);
-  h5_value_str(h5_file, level2, "accuracy", orbitAcc2str(pl->accuracy), 
+  h5_value_str(h5_file, level2, "accuracy", 
+	       orbitAcc2str(platform->accuracy), 
 	       "PREDICTED, RESTITUTED, PRECISE or TLE", NULL);
-  h5_value_int(h5_file, level2, "numStateVectors", pl->numStateVectors,
+  h5_value_int(h5_file, level2, "numStateVectors", platform->numStateVectors,
 	       "number of state vectors", NULL);
-  dateTime2str(pl->firstStateTimeUTC, str);
+  dateTime2str(platform->firstStateTimeUTC, str);
   h5_value_str(h5_file, level2, "firstStateTimeUTC", str,
 	       "UTC time of first state vector", NULL);
-  dateTime2str(pl->lastStateTimeUTC, str);
+  dateTime2str(platform->lastStateTimeUTC, str);
   h5_value_str(h5_file, level2, "lastStateTimeUTC", str,
 	       "UTC time of last state vector", NULL);
-  h5_value_str(h5_file, level2, "stateVectorRefFrame", pl->stateVectorRefFrame,
+  h5_value_str(h5_file, level2, "stateVectorRefFrame", 
+	       platform->stateVectorRefFrame,
 	       "state vector reference frame", NULL);
   h5_value_double(h5_file, level2, "stateVectorTimeSpacing", 
-		  pl->stateVectorTimeSpacing, "state vector time spacing [s]", 
-		  "s");
+		  platform->stateVectorTimeSpacing, 
+		  "state vector time spacing [s]", "s");
   H5Gclose(h5_level2);
   strcpy(level2, "/metadata/platform/orbit/stateVec");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  int numVectors = pl->numStateVectors;
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  int numVectors = platform->numStateVectors;
   double_array = (double *) MALLOC(sizeof(double)*numVectors);
   str_array = (char **) MALLOC(sizeof(char *)*numVectors);
   for (kk=0; kk<numVectors; kk++)
     str_array[kk] = (char *) MALLOC(sizeof(char)*50);
   for (ii=0; ii<numVectors; ii++)
-    dateTime2str(pl->stateVec[ii].timeUTC, str_array[ii]);
+    dateTime2str(platform->stateVec[ii].timeUTC, str_array[ii]);
   h5_value_str_array(h5_file, level2, "timeUTC", str_array, numVectors,
 		     "UTC time of state vector", NULL);
   for (ii=0; ii<numVectors; ii++)
-    double_array[ii] = pl->stateVec[ii].posX;
+    double_array[ii] = platform->stateVec[ii].posX;
   h5_value_double_array(h5_file, level2, "posX", double_array, numVectors,
 			"ECR coordinate position in x [m]", "m");
   for (ii=0; ii<numVectors; ii++)
-    double_array[ii] = pl->stateVec[ii].posY;
+    double_array[ii] = platform->stateVec[ii].posY;
   h5_value_double_array(h5_file, level2, "posY", double_array, numVectors,
 			"ECR coordinate position in y [m]", "m");
   for (ii=0; ii<numVectors; ii++)
-    double_array[ii] = pl->stateVec[ii].posZ;
+    double_array[ii] = platform->stateVec[ii].posZ;
   h5_value_double_array(h5_file, level2, "posZ", double_array, numVectors,
 			"ECR coordinate position in z [m]", "m");
   for (ii=0; ii<numVectors; ii++)
-    double_array[ii] = pl->stateVec[ii].velX;
+    double_array[ii] = platform->stateVec[ii].velX;
   h5_value_double_array(h5_file, level2, "velX", double_array, numVectors,
 			"ECR coordinate velocity in x [m/s]", "m/s");
   for (ii=0; ii<numVectors; ii++)
-    double_array[ii] = pl->stateVec[ii].velY;
+    double_array[ii] = platform->stateVec[ii].velY;
   h5_value_double_array(h5_file, level2, "velY", double_array, numVectors,
 			"ECR coordinate velocity in y [m/s]", "m/s");
   for (ii=0; ii<numVectors; ii++)
-    double_array[ii] = pl->stateVec[ii].velZ;
+    double_array[ii] = platform->stateVec[ii].velZ;
   h5_value_double_array(h5_file, level2, "velZ", double_array, numVectors,
 			"ECR coordinate velocity in z [m/s]", "m/s");
   FREE(double_array);
@@ -2569,25 +2662,27 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
 
   // Product Quality
   strcpy(group, "/metadata/productQuality");
-  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_section = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
+			 H5P_DEFAULT);
   h5_att_str(h5_section, "long_name", "summarizes image and data quality");
   int numGaps;
-  if (pq->rawDataQuality) {
-    for (ii=0; ii<pi->numberOfLayers; ii++) {
+  if (quality->rawDataQuality) {
+    for (ii=0; ii<info->numberOfLayers; ii++) {
       strcpy(level1, "/metadata/productQuality/rawDataQuality");
       h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
       h5_att_str(h5_level1, "long_name", 
 		 "assessment of raw data quality (per layer)");
       h5_value_str(h5_file, level1, "polLayer", 
-		   polLayer2str(pq->rawDataQuality[ii].polLayer),
+		   polLayer2str(quality->rawDataQuality[ii].polLayer),
 		   "HH, HV, VH or VV", NULL);
-      if (pq->rawDataQuality[ii].beamID)
-	h5_value_str(h5_file, level1, "beamID", pq->rawDataQuality[ii].beamID,
+      if (quality->rawDataQuality[ii].beamID)
+	h5_value_str(h5_file, level1, "beamID", 
+		     quality->rawDataQuality[ii].beamID,
 		     "beam identifier", NULL);
-      numGaps = pq->rawDataQuality[ii].numGaps;
-      h5_value_int(h5_file, level1, "numGaps", numGaps, "number of data gaps", 
-		   NULL);
+      numGaps = quality->rawDataQuality[ii].numGaps;
+      h5_value_int(h5_file, level1, "numGaps", numGaps, 
+		   "number of data gaps", NULL);
       strcpy(level2, "/metadata/productQuality/rawDataQuality/gap");
       h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
@@ -2598,19 +2693,19 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
       for (kk=0; kk<numGaps; kk++)
 	str_array[kk] = (char *) MALLOC(sizeof(char)*30);
       for (kk=0; kk<numGaps; kk++)
-	long_array[kk] = pq->rawDataQuality[ii].gap[kk].start;
+	long_array[kk] = quality->rawDataQuality[ii].gap[kk].start;
       h5_value_long_array(h5_file, level2, "start", long_array, numGaps,
 			  "start line of data gap", NULL);
       for (kk=0; kk<numGaps; kk++)
-	int_array[kk] = pq->rawDataQuality[ii].gap[kk].length;
+	int_array[kk] = quality->rawDataQuality[ii].gap[kk].length;
       h5_value_int_array(h5_file, level2, "length", int_array, numGaps,
 			 "number of lines forming data gap", NULL);
       for (kk=0; kk<numGaps; kk++) {
-	if (pq->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
+	if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
 	  strcpy(str_array[kk], "RANDOM");
-	else if (pq->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
+	else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
 	  strcpy(str_array[kk], "ZERO");
-	else if (pq->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
+	else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
 	  strcpy(str_array[kk], "UNDEFINED");
       }
       h5_value_str_array(h5_file, level2, "fill", str_array, numGaps,
@@ -2622,97 +2717,114 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name, iso_meta *iso)
 	FREE(str_array[kk]);
       FREE(str_array);
       h5_value_boolean(h5_file, level1, "gapSignificanceFlag",
-		       pq->rawDataQuality[ii].gapSignificanceFlag,
+		       quality->rawDataQuality[ii].gapSignificanceFlag,
 		       "gaps above the tolerance level?", NULL);
       h5_value_boolean(h5_file, level1, "missingLinesSignificanceFlag",
-		       pq->rawDataQuality[ii].missingLinesSignificanceFlag,
+		       quality->rawDataQuality[ii].missingLinesSignificanceFlag,
 		       "missing lines outside tolerance level?", NULL);
       h5_value_boolean(h5_file, level1, "bitErrorSignificanceFlag",
-		       pq->rawDataQuality[ii].bitErrorSignificanceFlag,
+		       quality->rawDataQuality[ii].bitErrorSignificanceFlag,
 		       "bit error outside tolerance limits?", NULL);
       h5_value_boolean(h5_file, level1, "timeReconstructionSignificanceFlag",
-		       pq->rawDataQuality[ii].timeReconstructionSignificanceFlag,
+		       quality->rawDataQuality[ii].timeReconstructionSignificanceFlag,
 		       "time reconstruction outside tolerance limits?", NULL);
       H5Gclose(h5_level1);
     }
   }
   strcpy(level1, "/metadata/productQuality/processingParameterQuality");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   h5_att_str(h5_level1, "long_name", "quality of processing parameters");
   h5_value_boolean(h5_file, level1, "dopplerAmbiguityNotZeroFlag",
-		   pq->dopplerAmbiguityNotZeroFlag,
+		   quality->dopplerAmbiguityNotZeroFlag,
 		   "Doppler ambiguities?", NULL);
   h5_value_boolean(h5_file, level1, "dopplerOutsideLimitsFlag",
-		   pq->dopplerOutsideLimitsFlag,
+		   quality->dopplerOutsideLimitsFlag,
 		   "Doppler outside tolerance limits?", NULL);
   h5_value_boolean(h5_file, level1, "geolocationQualityLowFlag",
-		   pq->geolocationQualityLowFlag,
+		   quality->geolocationQualityLowFlag,
 		   "orbit/attitude/DEM/Doppler quality problems?", NULL);
-  if (pq->imageDataQuality) {
-    for (ii=0; ii<pi->numberOfLayers; ii++) {
+  if (quality->imageDataQuality) {
+    for (ii=0; ii<info->numberOfLayers; ii++) {
       strcpy(level1, "/metadata/productQuality/imageDataQuality");
       h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
       h5_att_int(h5_level1, "layerIndex", ii+1);
       h5_value_str(h5_file, level1, "polLayer", 
-		   polLayer2str(pq->imageDataQuality[ii].polLayer),
+		   polLayer2str(quality->imageDataQuality[ii].polLayer),
 		   "HH, HV, VH or VV", NULL);
-      if (pq->imageDataQuality[ii].beamID)
+      if (quality->imageDataQuality[ii].beamID)
 	h5_value_str(h5_file, level1, "beamID", 
-		     pq->imageDataQuality[ii].beamID,
+		     quality->imageDataQuality[ii].beamID,
 		     "beam identifier", NULL);
       strcpy(level2, "/metadata/productQuality/imageDataQuality/imageDataStatistics");
       h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
       h5_att_str(h5_level2, "long_name", "image data statistics");
-      h5_value_double(h5_file, level2, "min", pq->imageDataQuality[ii].min,
-		      "minimum value", NULL);
-      h5_value_double(h5_file, level2, "max", pq->imageDataQuality[ii].max,
-		      "maximum value", NULL);
-      h5_value_double(h5_file, level2, "mean", pq->imageDataQuality[ii].mean, 
+      h5_value_double(h5_file, level2, "min", 
+		      quality->imageDataQuality[ii].min, "minimum value", 
+		      NULL);
+      h5_value_double(h5_file, level2, "max", 
+		      quality->imageDataQuality[ii].max, "maximum value", 
+		      NULL);
+      h5_value_double(h5_file, level2, "mean", 
+		      quality->imageDataQuality[ii].mean, 
 		      "mean value", NULL);
       h5_value_double(h5_file, level2, "standardDeviation", 
-		      pq->imageDataQuality[ii].stdDev, "standard deviation", 
+		      quality->imageDataQuality[ii].stdDev, 
+		      "standard deviation", NULL);
+      h5_value_int(h5_file, level2, "missingLines", 
+		   quality->imageDataQuality[ii].missingLines, 
+		   "missing lines", NULL);
+      h5_value_double(h5_file, level2, "bitErrorRate", 
+		      quality->imageDataQuality[ii].bitErrorRate, 
+		      "bit error rate", NULL);
+      h5_value_double(h5_file, level2, "noData", 
+		      quality->imageDataQuality[ii].noData, "no data value", 
 		      NULL);
       H5Gclose(h5_level2);
       H5Gclose(h5_level1);
     }
   }
   strcpy(level1, "/metadata/productQuality/limits");
-  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_level1 = H5Gcreate(h5_file, level1, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
   strcpy(level2, "/metadata/productQuality/limits/raw");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_int(h5_file, level2, "gapDefinition", pq->gapDefinition,
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_int(h5_file, level2, "gapDefinition", quality->gapDefinition,
 	       "number of consecutive missing lines considered a gap", NULL);
-  h5_value_float(h5_file, level2, "gapPercentageLimit", pq->gapPercentageLimit, 
+  h5_value_double(h5_file, level2, "gapPercentageLimit", 
+		  quality->gapPercentageLimit, 
 		 "percentage of gaps considered significant", NULL);
-  h5_value_float(h5_file, level2, "missingLinePercentageLimit",
-		 pq->missingLinePercentageLimit, 
+  h5_value_double(h5_file, level2, "missingLinePercentageLimit",
+		 quality->missingLinePercentageLimit, 
 		 "percentage of missing lines considered significant", NULL);
-  h5_value_float(h5_file, level2, "bitErrorLimit", 
-		 pq->bitErrorLimit, 
+  h5_value_double(h5_file, level2, "bitErrorLimit", 
+		 quality->bitErrorLimit, 
 		 "bit error rate considered significant", NULL);
-  h5_value_float(h5_file, level2, "timeReconstructionPercentageLimit",
-		 pq->timeReconstructionPercentageLimit, 
+  h5_value_double(h5_file, level2, "timeReconstructionPercentageLimit",
+		 quality->timeReconstructionPercentageLimit, 
 		 "percentage of time reconstruction considered significant", 
 		 NULL);
   H5Gclose(h5_level2);
   strcpy(level2, "/metadata/productQuality/limits/processing");
-  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_value_float(h5_file, level2, "dopplerCentroidLimit", 
-		 pq->dopplerCentroidLimit, "Doppler value limit [Hz]", "Hz");
-  h5_value_float(h5_file, level2, "geolocationQualityLimit",
-		 pq->geolocationQualityLimit,
-		 "minimum posting required for accurate geolocation [arcsec]", 
-		 "arcsec");
+  h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			H5P_DEFAULT);
+  h5_value_double(h5_file, level2, "dopplerCentroidLimit", 
+		 quality->dopplerCentroidLimit, "Doppler value limit [Hz]", 
+		  "Hz");
+  h5_value_double(h5_file, level2, "geolocationQualityLimit",
+		 quality->geolocationQualityLimit,
+		 "minimum posting required for accurate geolocation [arcsec]", "arcsec");
   H5Gclose(h5_level2);
   H5Gclose(h5_level1);
-  pq->instrumentStateRemark = (char *) MALLOC(sizeof(char)*1024);
-  strcpy(pq->instrumentStateRemark, MAGIC_UNSET_STRING);
-  if (pq->instrumentStateRemark)
+  quality->instrumentStateRemark = (char *) MALLOC(sizeof(char)*1024);
+  strcpy(quality->instrumentStateRemark, MAGIC_UNSET_STRING);
+  if (quality->instrumentStateRemark)
     h5_value_str(h5_file, group, "instrumentStateRemark", 
-		 pq->instrumentStateRemark, "steering or antenna problems", 
-		 NULL);
+		 quality->instrumentStateRemark, 
+		 "steering or antenna problems", NULL);
   H5Gclose(h5_section);
 
   H5Gclose(h5_metagroup);
