@@ -17,7 +17,7 @@ static void str2dateTime(char *timeStr, iso_dateTime *dateTime)
   }
   else 
     // UTC time stamp: 2008-03-13T22:19:55.140975
-    sscanf(timeStr, "%d-%d-%dT%d:%d:%lf",
+    sscanf(timeStr, "%d-%d-%dT%d:%d:%lfZ",
 	   &dateTime->year, &dateTime->month, &dateTime->day, 
 	   &dateTime->hour, &dateTime->min, &dateTime->second);
 }
@@ -437,7 +437,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
     info->imageDataFormat = CEOS_DATA_FORMAT;
   else if (strcmp_case(str, "GEOTIFF") == 0)
     info->imageDataFormat = GEOTIFF_DATA_FORMAT;
-  else if (strcmp_case(str, "HDF5") == 0)
+  else if (strncmp_case(str, "HDF5", 4) == 0)
     info->imageDataFormat = HDF5_DATA_FORMAT;
   else if (strcmp_case(str, "UNDEFINED") == 0)
     info->imageDataFormat = UNDEF_DATA_FORMAT;
@@ -843,19 +843,32 @@ iso_meta *iso_meta_read(const char *xmlFile)
     strcpy(setup->processingStep[ii].softwareVersion, 
 	   xml_get_string_value(doc, str));
     sprintf(element, 
+	    "level1Product.setup.processingSteps[%d].software.description", ii);
+    strcpy(setup->processingStep[ii].description, 
+	   xml_get_string_value(doc, element));
+    sprintf(element, 
 	    "level1Product.setup.processingSteps[%d].software.algorithm", ii);
-    strcpy(str, xml_get_string_value(doc, element));
-    if (strcmp(str, MAGIC_UNSET_STRING) != 0) {
-      setup->processingStep[ii].algorithm = (char *) MALLOC(sizeof(char)*255);
-      strncpy(setup->processingStep[ii].algorithm, str, 255);
-    }
-    else
-      setup->processingStep[ii].algorithm = NULL;
+    strcpy(setup->processingStep[ii].algorithm, 
+	   xml_get_string_value(doc, element));
     sprintf(element, 
 	    "level1Product.setup.processingSteps[%d].software.processingTimeUTC",
 	    ii);
     strcpy(str, xml_get_string_value(doc, element));
     str2dateTime(str, &setup->processingStep[ii].processingTimeUTC);
+    sprintf(element,
+	    "level1Product.setup.processingSteps[%d].software.processingLevel",
+	    ii);
+    strcpy(str, xml_get_string_value(doc, element));
+    if (strcmp_case(str, "PRE-PROCESSING") == 0)
+      setup->processingStep[ii].processingLevel = PRE_PROCESSING;
+    else if (strcmp_case(str, "LEVEL ZERO") == 0)
+      setup->processingStep[ii].processingLevel = LEVEL_ZERO;
+    else if (strcmp_case(str, "LEVEL ONE") == 0)
+      setup->processingStep[ii].processingLevel = LEVEL_ONE;
+    else if (strcmp_case(str, "LEVEL TWO") == 0)
+      setup->processingStep[ii].processingLevel = LEVEL_TWO;
+    else if (strcmp_case(str, "UNDEFINED") == 0)
+      setup->processingStep[ii].processingLevel = UNDEF_PROC_LEVEL;
   }
 
   // processing
@@ -1213,11 +1226,11 @@ iso_meta *iso_meta_read(const char *xmlFile)
     sprintf(element, "level1Product.productQuality.imageDataQuality[%d].beamID", ii);
     strcpy(quality->imageDataQuality[ii].beamID, 
 	   xml_get_string_value(doc, element));
-    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.min", ii);
+    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.minValue", ii);
     quality->imageDataQuality[ii].min = xml_get_double_value(doc, element);    
-    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.max", ii);
+    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.maxValue", ii);
     quality->imageDataQuality[ii].max = xml_get_double_value(doc, element);    
-    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.mean", ii);
+    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.meanValue", ii);
     quality->imageDataQuality[ii].mean = xml_get_double_value(doc, element);    
     sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.standardDeviation", ii);
     quality->imageDataQuality[ii].stdDev = xml_get_double_value(doc, element);
@@ -1227,7 +1240,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
     sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.bitErrorRate", ii);
     quality->imageDataQuality[ii].bitErrorRate = 
       xml_get_double_value(doc, element);
-    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.noData", ii);
+    sprintf(element, "level1Product.productQuality.imageDataQuality[%d].imageDataStatistics.noDataValue", ii);
     quality->imageDataQuality[ii].noData = xml_get_double_value(doc, element);
   }
   quality->gapDefinition = xml_get_int_value(doc, 

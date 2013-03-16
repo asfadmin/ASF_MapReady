@@ -457,9 +457,10 @@ iso_meta *meta2iso(meta_parameters *meta)
     setup->processingStep = (iso_procStep *) MALLOC(sizeof(iso_procStep));
     strcpy(setup->processingStep[0].softwareID, "prep_raw");
     strcpy(setup->processingStep[0].softwareVersion, "1.0");
-    setup->processingStep[0].algorithm = (char *) MALLOC(sizeof(char)*1024);
+    strcpy(setup->processingStep[0].description, "pre-processing of raw data");
     strcpy(setup->processingStep[0].algorithm, 
 	   "optional information about algorithm");
+    setup->processingStep[0].processingLevel = PRE_PROCESSING;
     setup->processingStep[0].processingTimeUTC.year = MAGIC_UNSET_INT;
     setup->processingStep[0].processingTimeUTC.month = MAGIC_UNSET_INT;
     setup->processingStep[0].processingTimeUTC.day = MAGIC_UNSET_INT;

@@ -203,6 +203,15 @@
       <xs:enumeration value="UNDEFINED"/>
     </xs:restriction>
   </xs:simpleType>
+  <xs:simpleType name="processingLevel">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="PRE-PROCESSING"/>
+      <xs:enumeration value="LEVEL_ZERO"/>
+      <xs:enumeration value="LEVEL_ONE"/>
+      <xs:enumeration value="LEVEL_TWO"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
   <xs:complexType name="referenceType">
     <xs:choice>
       <xs:element name="frameID" type="xs:integer">
@@ -1540,11 +1549,21 @@
 		              <xs:documentation>processing time in UTC</xs:documentation>
 		            </xs:annotation>
 		          </xs:element>
+                          <xs:element name="description" type="string255">
+                            <xs:annotation>
+                              <xs:documentation>one line description of software</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
 			  <xs:element name="algorithm" type="string1024">
 			    <xs:annotation>
 			      <xs:documentation>main algorithm</xs:documentation>
 			    </xs:annotation>
 			  </xs:element>
+                          <xs:element name="processingLevel" type="processingLevel">
+                            <xs:annotation>
+                              <xs:documentation>PRE-PROCESSING, LEVEL ZERO, LEVEL ONE, LEVEL TWO</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
 			</xs:sequence>
                         <xs:attribute name="step" type="xs:integer"/>
 		      </xs:complexType>
@@ -2260,7 +2279,7 @@
                               <xs:documentation>bit error rate</xs:documentation>
                             </xs:annotation>
                           </xs:element>
-                          <xs:element name="noData" type="xs:double">
+                          <xs:element name="noDataValue" type="xs:double">
                             <xs:annotation>
                               <xs:documentation>no data value</xs:documentation>
                             </xs:annotation>

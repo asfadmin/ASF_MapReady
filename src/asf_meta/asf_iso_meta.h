@@ -175,6 +175,14 @@ typedef enum {
   UNDEF_FILL
 } iso_fill_t;
 
+typedef enum {
+  PRE_PROCESSING=1,
+  LEVEL_ZERO,
+  LEVEL_ONE,
+  LEVEL_TWO,
+  UNDEF_PROC_LEVEL
+} iso_procLevel_t;
+
 typedef struct {
   int year;
   int month;
@@ -254,7 +262,9 @@ typedef struct {
   char softwareID[128];
   char softwareVersion[128];
   iso_dateTime processingTimeUTC;
-  char *algorithm;
+  char description[256];
+  char algorithm[1024];
+  iso_procLevel_t processingLevel;
 } iso_procStep;
 
 typedef struct {
@@ -637,6 +647,9 @@ void iso_meta_free(iso_meta *iso);
 // Other functions
 iso_meta *iso_meta_read(const char *xmlName);
 void iso_meta_write(iso_meta *iso, const char *outName);
+void iso_ext_meta_write(iso_meta *iso, const char *outName, 
+			const char *fileIdentifier, 
+			const char *iso_meta_configFile);
 iso_meta *meta2iso(meta_parameters *meta);
 meta_parameters *iso2meta(iso_meta *iso);
 

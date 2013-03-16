@@ -3,6 +3,20 @@
 #include <libxml/tree.h>
 #include "asf_iso_meta.h"
 #include "asf_nan.h"
+#include "xml_util.h"
+
+static void date2str(iso_dateTime dateUTC, char *str)
+{
+  int year = dateUTC.year;
+  int month = dateUTC.month;
+  int day = dateUTC.day;
+  
+  // UTC date stamp: 2008-03-13
+  if (year < 0 || month < 0 || day < 0)
+    strcpy(str, "1900-01-01");
+  else
+    sprintf(str, "%4d-%02d-%02d", year, month, day);
+}
 
 static void dateTime2str(iso_dateTime timeUTC, char *str)
 {
@@ -15,10 +29,18 @@ static void dateTime2str(iso_dateTime timeUTC, char *str)
 
   // UTC time stamp: 2008-03-13T22:19:55.140975
   if (year < 0 || month < 0 || day < 0 || hour < 0 || min < 0 || sec < 0.0)
-    strcpy(str, "1900-01-01T00:00:00.000000");
+    strcpy(str, "1900-01-01T00:00:00.000000Z");
   else
-    sprintf(str, "%4d-%02d-%02dT%02d:%02d:%09.6f", 
+    sprintf(str, "%4d-%02d-%02dT%02d:%02d:%09.6fZ", 
 	    year, month, day, hour, min, sec);
+}
+
+void boolean2str(int flag, char *str)
+{
+  if (flag)
+    strcpy(str, "true");
+  else
+    strcpy(str, "false");
 }
 
 void double2str(double value, int decimals, char *str)
@@ -45,9 +67,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNs *ns = xmlNewNs(root, 
 		       BAD_CAST "http://www.w3.org/2001/XMLSchema-instance",
 		       BAD_CAST "xsi");
-  //xmlNewNsProp(root, ns, BAD_CAST "noNamespaceSchemaLocation",
-  //	       BAD_CAST "iso_meta.xsd");
-  xmlNewNsProp(root, ns, BAD_CAST "schemaLocation", BAD_CAST "iso_meta.xsd");
+  xmlNewNsProp(root, ns, BAD_CAST "noNamespaceSchemaLocation",
+  	       BAD_CAST "iso_meta.xsd");
   xmlDocSetRootElement(doc, root);
   
   // Generate the tree from iso structure
@@ -432,7 +453,8 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   else if (info->imageDataFormat == GEOTIFF_DATA_FORMAT)
     strcpy(str, "GEOTIFF");
   else if (info->imageDataFormat == HDF5_DATA_FORMAT)
-    strcpy(str, "HDF5");
+    sprintf(str, "HDF5 (version %d.%d.%d)", 
+	    H5_VERS_MAJOR, H5_VERS_MINOR, H5_VERS_RELEASE);
   else if (info->imageDataFormat == COSAR_DATA_FORMAT)
     strcpy(str, "COSAR");
   else if (info->imageDataFormat == UNDEF_DATA_FORMAT)
@@ -1063,9 +1085,25 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		  BAD_CAST setup->processingStep[ii].softwareVersion);
       dateTime2str(setup->processingStep[ii].processingTimeUTC, str);
       xmlNewChild(node, NULL, BAD_CAST "processingTimeUTC", BAD_CAST str);  
-      if (setup->processingStep[ii].algorithm)
-	xmlNewChild(node, NULL, BAD_CAST "algorithm", 
-		    BAD_CAST setup->processingStep[ii].algorithm);
+      xmlNewChild(node, NULL, BAD_CAST "description", 
+		  BAD_CAST setup->processingStep[ii].description);
+      xmlNewChild(node, NULL, BAD_CAST "algorithm", 
+		  BAD_CAST setup->processingStep[ii].algorithm);
+      if (setup->processingStep[ii].processingLevel == PRE_PROCESSING)
+	xmlNewChild(node, NULL, BAD_CAST "processingLevel",
+		    BAD_CAST "PRE-PROCESSING");
+      else if (setup->processingStep[ii].processingLevel == LEVEL_ZERO)
+	xmlNewChild(node, NULL, BAD_CAST "processingLevel",
+		    BAD_CAST "LEVEL ZERO");
+      else if (setup->processingStep[ii].processingLevel == LEVEL_ONE)
+	xmlNewChild(node, NULL, BAD_CAST "processingLevel",
+		    BAD_CAST "LEVEL ONE");
+      else if (setup->processingStep[ii].processingLevel == LEVEL_TWO)
+	xmlNewChild(node, NULL, BAD_CAST "processingLevel",
+		    BAD_CAST "LEVEL TWO");
+      else if (setup->processingStep[ii].processingLevel == UNDEF_PROC_LEVEL)
+	xmlNewChild(node, NULL, BAD_CAST "processingLevel",
+		    BAD_CAST "UNDEFINED");
     }
   }
   
@@ -1160,63 +1198,30 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 
 
   parent = xmlNewChild(section, NULL, BAD_CAST "processingFlags", NULL);
-  if (proc->chirpReplicaUsedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->chirpReplicaUsedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "chirpReplicaUsedFlag", BAD_CAST str);
-  if (proc->geometricDopplerUsedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->geometricDopplerUsedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "geometricDopplerUsedFlag", BAD_CAST str);
-  if (proc->azimuthPatternCorrectedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->azimuthPatternCorrectedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "azimuthPatternCorrectedFlag", 
 	      BAD_CAST str);
-  if (proc->elevationPatternCorrectedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->elevationPatternCorrectedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "elevationPatternCorrectedFlag",
 	      BAD_CAST str);
-  if (proc->detectedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->detectedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "detectedFlag", BAD_CAST str);
-  if (proc->multiLookedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->multiLookedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "multiLookedFlag", BAD_CAST str);
-  if (proc->polarimetricProcessedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->polarimetricProcessedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "polarimetricProcessedFlag", BAD_CAST str);
-  if (proc->terrainCorrectedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->terrainCorrectedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "terrainCorrectedFlag", BAD_CAST str);
-  if (proc->layoverShadowMaskGeneratedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->layoverShadowMaskGeneratedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "layoverShadowMaskGeneratedFlag",
 	      BAD_CAST str);
-  if (proc->geocodedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->geocodedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "geocodedFlag", BAD_CAST str);
-  if (proc->nominalProcessingPerformedFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(proc->nominalProcessingPerformedFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "nominalProcessingPerformedFlag", 
 	      BAD_CAST str);
 
@@ -1406,48 +1411,28 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 	  strcpy(str, "UNDEFINED");
 	xmlNewChild(node, NULL, BAD_CAST "fill", BAD_CAST str);
       }
-      if (quality->rawDataQuality[ii].gapSignificanceFlag)
-	strcpy(str, "true");
-      else
-	strcpy(str, "false");
+      boolean2str(quality->rawDataQuality[ii].gapSignificanceFlag, str);
       xmlNewChild(parent, NULL, BAD_CAST "gapSignificanceFlag", BAD_CAST str);
-      if (quality->rawDataQuality[ii].missingLinesSignificanceFlag)
-	strcpy(str, "true");
-      else
-	strcpy(str, "false");
+      boolean2str(quality->rawDataQuality[ii].missingLinesSignificanceFlag, 
+		  str);
       xmlNewChild(parent, NULL, BAD_CAST "missingLinesSignificanceFlag",
 		  BAD_CAST str);
-      if (quality->rawDataQuality[ii].bitErrorSignificanceFlag)
-	strcpy(str, "true");
-      else
-	strcpy(str, "false");
+      boolean2str(quality->rawDataQuality[ii].bitErrorSignificanceFlag, str);
       xmlNewChild(parent, NULL, BAD_CAST "bitErrorSignificanceFlag", 
 		  BAD_CAST str);
-      if (quality->rawDataQuality[ii].timeReconstructionSignificanceFlag)
-	strcpy(str, "true");
-      else
-	strcpy(str, "false");
+      boolean2str(quality->rawDataQuality[ii].timeReconstructionSignificanceFlag, str);
       xmlNewChild(parent, NULL, BAD_CAST "timeReconstructionSignificanceFlag",
 		  BAD_CAST str);
     }
   }
   parent = xmlNewChild(section, NULL, BAD_CAST "processingParameterQuality", 
 		       NULL);
-  if (quality->dopplerAmbiguityNotZeroFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(quality->dopplerAmbiguityNotZeroFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "dopplerAmbiguityNotZeroFlag", 
 	      BAD_CAST str);
-  if (quality->dopplerOutsideLimitsFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(quality->dopplerOutsideLimitsFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "dopplerOutsideLimitsFlag", BAD_CAST str);
-  if (quality->geolocationQualityLowFlag)
-    strcpy(str, "true");
-  else
-    strcpy(str, "false");
+  boolean2str(quality->geolocationQualityLowFlag, str);
   xmlNewChild(parent, NULL, BAD_CAST "geolocationQualityLowFlag", BAD_CAST str);
   if (quality->imageDataQuality) {
     for (ii=0; ii<info->numberOfLayers; ii++) {
@@ -1470,11 +1455,11 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		    BAD_CAST quality->imageDataQuality[ii].beamID);
       node = xmlNewChild(parent, NULL, BAD_CAST "imageDataStatistics", NULL);
       double2str(quality->imageDataQuality[ii].min, 0, str); 
-      xmlNewChild(node, NULL, BAD_CAST "min", BAD_CAST str);
+      xmlNewChild(node, NULL, BAD_CAST "minValue", BAD_CAST str);
       double2str(quality->imageDataQuality[ii].max, 0, str); 
-      xmlNewChild(node, NULL, BAD_CAST "max", BAD_CAST str);
+      xmlNewChild(node, NULL, BAD_CAST "maxValue", BAD_CAST str);
       double2str(quality->imageDataQuality[ii].mean, 0, str); 
-      xmlNewChild(node, NULL, BAD_CAST "mean", BAD_CAST str);
+      xmlNewChild(node, NULL, BAD_CAST "meanValue", BAD_CAST str);
       double2str(quality->imageDataQuality[ii].stdDev, 0, str);
       xmlNewChild(node, NULL, BAD_CAST "standardDeviation", BAD_CAST str);
       sprintf(str, "%d", quality->imageDataQuality[ii].missingLines);
@@ -1482,7 +1467,7 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
       double2str(quality->imageDataQuality[ii].bitErrorRate, 0, str);
       xmlNewChild(node, NULL, BAD_CAST "bitErrorRate", BAD_CAST str);
       double2str(quality->imageDataQuality[ii].noData, 0, str);
-      xmlNewChild(node, NULL, BAD_CAST "noData", BAD_CAST str);
+      xmlNewChild(node, NULL, BAD_CAST "noDataValue", BAD_CAST str);
     }
   }
   parent = xmlNewChild(section, NULL, BAD_CAST "limits", NULL);
@@ -1521,4 +1506,1397 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlFreeDoc(doc);
   xmlCleanupParser();
   FREE(str);
+}
+
+void cornerCoords2boundingBox(iso_sceneCoord corner[4], 
+			      double *westLon, double *eastLon,
+			      double *southLat, double *northLat)
+{
+  int ii;
+  double lat, lon, minLat=90, maxLat=-90, minLon=180, maxLon=-180;
+  for (ii=0; ii<4; ii++) {
+    lat = corner[ii].lat;
+    lon = corner[ii].lon;
+    if (lat > maxLat)
+      maxLat = lat;
+    if (lat < minLat)
+      minLat = lat;
+    if (lon > maxLon)
+      maxLon = lon;
+    if (lon < minLon)
+      minLon = lon;
+  }
+  *westLon = minLon;
+  *eastLon = maxLon;
+  *southLat = minLat;
+  *northLat = maxLat;
+}
+
+void iso_ext_meta_write(iso_meta *iso, const char *outFile, 
+			const char *fileIdentifier, 
+			const char *iso_meta_configFile)
+{
+  char *str = (char *) MALLOC(sizeof(char)*1024);
+  int ii;
+ 
+  // Check ISO metadata configuration file
+  if (!fileExists(iso_meta_configFile))
+    asfPrintError("ISO metadata configuration file (%s) does not exist!\n", 
+		  iso_meta_configFile);
+  xmlDoc *config = xmlReadFile(iso_meta_configFile, NULL, 0);
+  if (!config)
+    asfPrintError("Could not parse ISO metadata configuration file (%s)\n", 
+		  iso_meta_configFile);  
+  
+  // Convenience pointers
+  iso_generalHeader *header = iso->generalHeader;
+  iso_productComponents *comps = iso->productComponents;
+  iso_productInfo *info = iso->productInfo;
+  iso_setup *setup = iso->setup;
+  iso_productQuality *quality = iso->productQuality;
+  iso_processing *proc = iso->processing;
+  iso_instrument *inst = iso->instrument;
+  
+  // Set up 
+  xmlDoc *doc = xmlNewDoc(BAD_CAST "1.0");
+  xmlNs *gmd = xmlNewNs(NULL, BAD_CAST "http://www.isotc211.org/2005/gmd", 
+			BAD_CAST "gmd");
+  xmlNode *root = xmlNewNode(gmd, BAD_CAST "DS_Series");
+  xmlNs *xsi = xmlNewNs(root, 
+			BAD_CAST "http://www.w3.org/2001/XMLSchema-instance",
+			BAD_CAST "xsi");
+  //xmlNewNsProp(root, ns, BAD_CAST "noNamespaceSchemaLocation",
+  //	       BAD_CAST "iso_meta.xsd");
+  xmlNs *mgl = xmlNewNs(root, 
+			BAD_CAST "http://www.isotc211.org/2005/mgl/1.0/2013", 
+			BAD_CAST "mgl"); 
+  gmd = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gmd", 
+		 BAD_CAST "gmd");
+  xmlNs *gco = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gco", 
+			BAD_CAST "gco"); 
+  xmlNs *srv = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/srv", 
+			BAD_CAST "srv");
+  xmlNs *xs = xmlNewNs(root, BAD_CAST "http://www.w3.org/2001/XMLSchema", 
+		       BAD_CAST "xs");
+  xmlNs *gsr = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gsr", 
+			BAD_CAST "gsr");
+  xmlNs *gss = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gss", 
+			BAD_CAST "gss");
+  xmlNs *gts = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gts", 
+			BAD_CAST "gts");
+  xmlNs *gmx = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gmx", 
+			BAD_CAST "gmx");
+  xmlNs *eos = xmlNewNs(root, BAD_CAST "http://earthdata.nasa.gov/schema/eos", 
+			BAD_CAST "eos"); 
+  xmlNs *echo = xmlNewNs(root, 
+			 BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operatations",
+			 BAD_CAST "echo");
+  xmlNs *xlink = xmlNewNs(root, BAD_CAST "http://www.w3.org/1999/xlink", 
+			  BAD_CAST "xlink"); 
+  xmlNs *gml = xmlNewNs(root, BAD_CAST "http://www.opengis.net/gml/3.2", 
+			BAD_CAST "gml"); 
+  xmlNs *gmi = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gmi", 
+			BAD_CAST "gmi");
+  xmlDocSetRootElement(doc, root);
+  
+  xmlNodePtr parent, section, node, node2, node3, node4, node5, node6, node7;
+  xmlNodePtr node8, node9, node10, node11, node12, node13, node14, node15;
+  xmlNodePtr node16, node17;
+  xmlNodePtr composedOf = xmlNewChild(root, gmd, BAD_CAST "composedOf", NULL);
+  xmlNodePtr ds_dataSet = 
+    xmlNewChild(composedOf, gmd, BAD_CAST "DS_DataSet", NULL);
+  xmlNodePtr has = xmlNewChild(ds_dataSet, gmd, BAD_CAST "has", NULL);
+  xmlNodePtr mi_metadata = xmlNewChild(has, gmi, BAD_CAST "MI_Metadata", NULL);
+  
+  // fileIdentifier
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "fileIdentifier", NULL);
+  xmlNewChild(parent, gco, BAD_CAST "CharacterString", BAD_CAST fileIdentifier);
+  
+  // language
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "language", NULL);
+  xmlNewChild(parent, gco, BAD_CAST "CharacterString", BAD_CAST "eng");
+  
+  // characterSet
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "characterSet", NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "MD_CharacterSetCode", 
+			BAD_CAST "utf8");
+  xmlNewProp(section, BAD_CAST "codeList", 
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode");
+  xmlNewProp(section, BAD_CAST "codeListValue", BAD_CAST "utf8");
+  
+  // hierarchyLevel
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "hierarchyLevel", NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "MD_ScopeCode", 
+			BAD_CAST "dataset");
+  xmlNewProp(section, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode");
+  xmlNewProp(section, BAD_CAST "codeListValue", BAD_CAST "dataset");
+  
+  // contact
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "contact", NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "CI_ResponsibleParty", NULL);
+  node = xmlNewChild(section, gmd, BAD_CAST "organizationName", NULL);
+  sprintf(str, "%s", xml_get_string_value(config, 
+    "MI_Metadata.contact.CI_ResponsibleParty.organisationName"));  
+  xmlNewChild(node, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node = xmlNewChild(section, gmd, BAD_CAST "contactInfo", NULL);
+  xmlNewProp(node, BAD_CAST "id", BAD_CAST "ASFContactInfo");
+  node2 = xmlNewChild(node, gmd, BAD_CAST "CI_Contact", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "phone", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "CI_Telephone", NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "voice", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.contactInfo.CI_Contact.phone.CI_Telephone.voice"));
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "facsimile", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.contactInfo.CI_Contact.phone.CI_Telephone.facsimile"));
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "address", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "CI_Address", NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "deliveryPoint", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.contactInfo.CI_Contact.address.CI_Address.deliveryPoint"));
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "city", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.contactInfo.CI_Contact.address.CI_Address.city"));
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "administrativeArea", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.contactInfo.CI_Contact.address.CI_Address.administrativeArea"));
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "postalCode", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.contactInfo.CI_Contact.address.CI_Address.postalCode"));
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "country", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.contactInfo.CI_Contact.address.CI_Address.country"));
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "electroicMailAddress", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.contactInfo.CI_Contact.address.CI_Address.electronicMailAddress"));
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node = xmlNewChild(section, gmd, BAD_CAST "role", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.role.CI_RoleCode"));
+  node2 = xmlNewChild(node, gco, BAD_CAST "CI_RoleCode", BAD_CAST str);
+  sprintf(str, "%s", xml_get_string_attribute(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.role.CI_RoleCode.codeList"));
+  xmlNewProp(node2, BAD_CAST "codeList", BAD_CAST str);
+  sprintf(str, "%s", xml_get_string_attribute(config,
+    "MI_Metadata.contact.CI_ResponsibleParty.role.CI_RoleCode.codeListValue"));
+  xmlNewProp(node2, BAD_CAST "codeListValue", BAD_CAST str);
+
+  // dateStamp
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "dateStamp", NULL);
+  dateTime2str(header->generationTime, str);
+  xmlNewChild(parent, gco, BAD_CAST "DateTime", BAD_CAST str);
+  
+  // metadataStandardName
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "metadataStandardName", NULL);
+  xmlNewChild(parent, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ISO 19115-2 Geographic information — Metadata — Part 2: Extensions for imagery and gridded data");
+
+  // metadataStandardVersion
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "metadataStandardVersion",
+		       NULL);
+  xmlNewChild(parent, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ISO 19115-2:2009-02-15");
+  
+  // spatialRepresentationInfo
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "spatialRepresentationInfo",
+		       NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "MD_GridSpatialRepresentation", 
+			NULL);
+
+  // spatialRepresentationInfo - numberOfDimensions
+  node = xmlNewChild(section, gmd, BAD_CAST "numberOfDimensions", NULL);
+  xmlNewChild(node, gco, BAD_CAST "Integer", BAD_CAST "2");
+
+  // spatialRepresentationInfo - axisDimensionProperties (track)
+  node = xmlNewChild(section, gmd, BAD_CAST "axisDimensionProperties", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_Dimension", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "dimensionName", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "MD_DimensionNameTypeCode",
+		      BAD_CAST "track");
+  xmlNewProp(node4, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_DimensionNameTypeCode");
+  xmlNewProp(node4, BAD_CAST "codeListValue", BAD_CAST "track");
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "dimensionSize", NULL);
+  sprintf(str, "%d", info->numberOfRows);
+  xmlNewChild(node3, gco, BAD_CAST "Integer", BAD_CAST str);
+
+  // spatialRepresentationInfo - axisDimensionProperties (crossTrack)
+  node = xmlNewChild(section, gmd, BAD_CAST "axisDimensionProperties", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_Dimension", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "dimensionName", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "MD_DimensionNameTypeCode",
+		      BAD_CAST "crossTrack");
+  xmlNewProp(node4, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_DimensionNameTypeCode");
+  xmlNewProp(node4, BAD_CAST "codeListValue", BAD_CAST "crossTrack");
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "dimensionSize", NULL);
+  sprintf(str, "%d", info->numberOfColumns);
+  xmlNewChild(node3, gco, BAD_CAST "Integer", BAD_CAST str);
+
+  // spatialRepresentationInfo - cellGeometry
+  node = xmlNewChild(section, gmd, BAD_CAST "cellGeometry", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_CellGeometryCode", 
+		      BAD_CAST "area");
+  xmlNewProp(node2, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CellGeometryCode");
+  xmlNewProp(node2, BAD_CAST "codeListValue", BAD_CAST "area");
+
+  // spatialRepresentationInfo - transformationParameterAvailability
+  node = xmlNewChild(section, gmd, 
+		     BAD_CAST "transformationParameterAvailability", NULL);
+  xmlNewChild(node, gco, BAD_CAST "Boolean", BAD_CAST "false");
+  
+  // identificationInfo
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "identificationInfo", NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "MD_DataIdentification", NULL);
+
+  // identificationInfo - citation
+  node = xmlNewChild(section, gmd, BAD_CAST "citation", NULL); // mandatory
+
+  // identificationInfo - abstract
+  node = xmlNewChild(section, gmd, BAD_CAST "abstract", NULL); // mandatory
+
+  // identificationInfo - status
+  node = xmlNewChild(section, gmd, BAD_CAST "status", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.identificationInfo.MD_DataIdentification.status.MD_ProgressCode"));
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_ProgressCode", BAD_CAST str);
+  sprintf(str, "%s", xml_get_string_attribute(config,
+    "MI_Metadata.identificationInfo.MD_DataIdentification.status.MD_ProgressCode.codeList"));
+  xmlNewProp(node2, BAD_CAST "codeList", BAD_CAST str);
+  sprintf(str, "%s", xml_get_string_attribute(config,
+    "MI_Metadata.identificationInfo.MD_DataIdentification.status.MD_ProgressCode.codeListValue"));
+  xmlNewProp(node2, BAD_CAST "codeListValue", BAD_CAST str);
+
+  // identificationInfo - browseImage
+  node = xmlNewChild(section, gmd, BAD_CAST "graphicOverview", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_BrowseGraphic", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "fileName", NULL);
+  if (strlen(comps->browseImage.host) > 1 && 
+      strlen(comps->browseImage.path) > 1)
+    sprintf(str, "%s%c%s%c%s", comps->browseImage.host, DIR_SEPARATOR,
+	    comps->browseImage.path, DIR_SEPARATOR, comps->browseImage.name);
+  else if (strlen(comps->browseImage.path) > 1)
+    sprintf(str, "%s%c%s", comps->browseImage.path, DIR_SEPARATOR,
+	    comps->browseImage.name);
+  else
+    sprintf(str, "%s", comps->browseImage.name);
+  xmlNewChild(node3, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "fileType", NULL);
+  xmlNewChild(node3, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST info->browseImageDataFormat);
+
+  // identificationInfo - resourceConstraints
+  node = xmlNewChild(section, gmd, BAD_CAST "resourceConstraints", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_LegalConstraints", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.identificationInfo.MD_DataIdentification.resourceConstraints.MD_LegalConstraints.useLimitation"));
+  xmlNewChild(node2, gmd, BAD_CAST "useLimitation", BAD_CAST str);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "accessConstraints", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "MD_RestrictionCode", 
+		      BAD_CAST "copyright");
+  xmlNewProp(node4, BAD_CAST "codeList", 
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode");
+  xmlNewProp(node4, BAD_CAST "CodeListValue", BAD_CAST "copyright");
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "useConstraints", NULL);
+  xmlNewProp(node4, BAD_CAST "codeList", 
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode");
+  xmlNewProp(node4, BAD_CAST "CodeListValue", BAD_CAST "copyright");
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_SecurityConstraints", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.identificationInfo.MD_DataIdentification.resourceConstraints.MD_SecurityConstraints.useLimitation"));
+  xmlNewChild(node2, gmd, BAD_CAST "useLimitation", BAD_CAST str);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "classification", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "MD_ClassificationCode", 
+		      BAD_CAST "unclassified");
+  xmlNewProp(node4, BAD_CAST "codeList", 
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ClassificationCode");
+  xmlNewProp(node4, BAD_CAST "CodeListValue", BAD_CAST "unclassified");  
+
+  // identificationInfo - aggregationInfo (annotation file)
+  if (comps->annotation) {
+    for (ii=0; ii<comps->numAnnotations; ii++) {
+      node = xmlNewChild(section, gmd, BAD_CAST "aggregationInfo", NULL);
+      node2 = xmlNewChild(node, gmd, BAD_CAST "MD_AggregateInformation", NULL);
+      node3 = xmlNewChild(node2, gmd, BAD_CAST "aggregateDataSetName", NULL);
+      node4 = xmlNewChild(node3, gmd, BAD_CAST "CI_Citation", NULL);
+      if (strlen(comps->annotation[ii].file.host) > 1 && 
+	  strlen(comps->annotation[ii].file.path) > 1)
+	sprintf(str, "%s%c%s%c%s", comps->annotation[ii].file.host, 
+		DIR_SEPARATOR, comps->annotation[ii].file.path, 
+		DIR_SEPARATOR, comps->annotation[ii].file.name);
+      else if (strlen(comps->annotation[ii].file.path) > 1)
+	sprintf(str, "%s%c%s", comps->annotation[ii].file.path, 
+		DIR_SEPARATOR, comps->annotation[ii].file.name);
+      else
+	sprintf(str, "%s", comps->annotation[ii].file.name);
+      node5 = xmlNewChild(node4, gmd, BAD_CAST "title", NULL);
+      xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+      xmlNewChild(node4, gmd, BAD_CAST "date", NULL);
+      node3 = xmlNewChild(node2, gmd, BAD_CAST "associationType", NULL);
+      node4 = xmlNewChild(node3, gmd, BAD_CAST "DS_AssociationTypeCode",
+			  BAD_CAST "crossReference");
+      xmlNewProp(node4, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode");
+      xmlNewProp(node4, BAD_CAST "codeListValue", BAD_CAST "crossReference");
+    }
+  }
+
+  // identificationInfo - aggregationInfo (image data file)
+  if (comps->imageData) {
+    for (ii=0; ii<comps->numLayers; ii++) {
+      node = xmlNewChild(section, gmd, BAD_CAST "aggregationInfo", NULL);
+      node2 = xmlNewChild(node, gmd, BAD_CAST "MD_AggregateInformation", NULL);
+      node3 = xmlNewChild(node2, gmd, BAD_CAST "aggregateDataSetName", NULL);
+      node4 = xmlNewChild(node3, gmd, BAD_CAST "CI_Citation", NULL);
+      if (strlen(comps->imageData[ii].file.host) > 1 && 
+	  strlen(comps->imageData[ii].file.path) > 1)
+	sprintf(str, "%s%c%s%c%s", comps->imageData[ii].file.host, 
+		DIR_SEPARATOR, comps->imageData[ii].file.path, DIR_SEPARATOR, 
+		comps->imageData[ii].file.name);
+      else if (strlen(comps->imageData[ii].file.path) > 1)
+	sprintf(str, "%s%c%s", comps->imageData[ii].file.path, DIR_SEPARATOR,
+		comps->imageData[ii].file.name);
+      else
+	sprintf(str, "%s", comps->imageData[ii].file.name);
+      node5 = xmlNewChild(node4, gmd, BAD_CAST "title", NULL);
+      xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+      xmlNewChild(node4, gmd, BAD_CAST "date", NULL);
+      node3 = xmlNewChild(node2, gmd, BAD_CAST "associationType", NULL);
+      node4 = xmlNewChild(node3, gmd, BAD_CAST "DS_AssociationTypeCode",
+			  BAD_CAST "crossReference");
+      xmlNewProp(node4, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode");
+      xmlNewProp(node4, BAD_CAST "codeListValue", BAD_CAST "crossReference");
+    }
+  }
+
+  // identificationInfo - aggregationInfo (quicklooks)
+  if (comps->quicklooks) {
+    for (ii=0; ii<comps->numLayers; ii++) {
+      node = xmlNewChild(section, gmd, BAD_CAST "aggregationInfo", NULL);
+      node2 = xmlNewChild(node, gmd, BAD_CAST "MD_AggregateInformation", NULL);
+      node3 = xmlNewChild(node2, gmd, BAD_CAST "aggregateDataSetName", NULL);
+      node4 = xmlNewChild(node3, gmd, BAD_CAST "CI_Citation", NULL);
+      if (strlen(comps->quicklooks[ii].file.host) > 1 && 
+	  strlen(comps->quicklooks[ii].file.path) > 1)
+	sprintf(str, "%s%c%s%c%s", comps->quicklooks[ii].file.host, 
+		DIR_SEPARATOR, comps->quicklooks[ii].file.path, DIR_SEPARATOR, 
+		comps->quicklooks[ii].file.name);
+      else if (strlen(comps->quicklooks[ii].file.path) > 1)
+	sprintf(str, "%s%c%s", comps->quicklooks[ii].file.path, DIR_SEPARATOR,
+		comps->quicklooks[ii].file.name);
+      else
+	sprintf(str, "%s", comps->quicklooks[ii].file.name);
+      node5 = xmlNewChild(node4, gmd, BAD_CAST "title", NULL);
+      xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+      xmlNewChild(node4, gmd, BAD_CAST "date", NULL);
+      node3 = xmlNewChild(node2, gmd, BAD_CAST "associationType", NULL);
+      node4 = xmlNewChild(node3, gmd, BAD_CAST "DS_AssociationTypeCode",
+			  BAD_CAST "crossReference");
+      xmlNewProp(node4, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode");
+      xmlNewProp(node4, BAD_CAST "codeListValue", BAD_CAST "crossReference");
+    }
+  }
+
+  // identificationInfo - aggregationInfo (map plot file)
+  node = xmlNewChild(section, gmd, BAD_CAST "aggregationInfo", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_AggregateInformation", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "aggregateDataSetName", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "CI_Citation", NULL);
+  if (strlen(comps->mapPlot.host) > 1 && strlen(comps->mapPlot.path) > 1)
+    sprintf(str, "%s%c%s%c%s", comps->imageData[ii].file.host, DIR_SEPARATOR, 
+	    comps->mapPlot.path, DIR_SEPARATOR, comps->mapPlot.name);
+  else if (strlen(comps->mapPlot.path) > 1)
+    sprintf(str, "%s%c%s", comps->mapPlot.path, DIR_SEPARATOR, 
+	    comps->mapPlot.name);
+  else
+    sprintf(str, "%s", comps->mapPlot.name);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  xmlNewChild(node4, gmd, BAD_CAST "date", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "associationType", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DS_AssociationTypeCode",
+		      BAD_CAST "crossReference");
+  xmlNewProp(node4, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DS_AssociationTypeCode");
+  xmlNewProp(node4, BAD_CAST "codeListValue", BAD_CAST "crossReference");
+  
+  // identificationInfo - spatialRepresentationType
+  node = xmlNewChild(section, gmd, BAD_CAST "spatialRepresentationType", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_SpatialRepresentationTypeCode", 
+		      BAD_CAST "grid");
+  xmlNewProp(node2, BAD_CAST "codeList", 
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_SpatialRepresentationTypeCode");
+  xmlNewProp(node2, BAD_CAST "codeListValue", BAD_CAST "grid");
+
+  // identificationInfo - spatialResolution
+  node = xmlNewChild(section, gmd, BAD_CAST "spatialResolution", NULL);
+  sprintf(str, "%.3lf", info->groundRangeResolution);
+  node2 = xmlNewChild(node, gco, BAD_CAST "Distance", BAD_CAST str);
+  xmlNewProp(node2, BAD_CAST "uom", BAD_CAST "meter");
+  xmlNewProp(node2, BAD_CAST "dimension", BAD_CAST "range");
+  sprintf(str, "%.3lf", info->azimuthResolution);
+  node2 = xmlNewChild(node, gco, BAD_CAST "Distance", BAD_CAST str);
+  xmlNewProp(node2, BAD_CAST "uom", BAD_CAST "meter");
+  xmlNewProp(node2, BAD_CAST "dimension", BAD_CAST "azimuth");
+
+  // identificationInfo - language
+  node = xmlNewChild(section, gmd, BAD_CAST "language", NULL);
+  xmlNewChild(node, gco, BAD_CAST "CharacterString", BAD_CAST "eng");
+
+  // identificationInfo - characterSet
+  node = xmlNewChild(section, gmd, BAD_CAST "characterSet", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_CharacterSetCode", 
+		      BAD_CAST "utf8");
+  xmlNewProp(node2, BAD_CAST "codeList", 
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode");
+  xmlNewProp(node2, BAD_CAST "codeListValue", BAD_CAST "utf8");
+
+  // identificationInfo - topicCategory
+  node = xmlNewChild(section, gmd, BAD_CAST "topicCategory", NULL);
+  xmlNewChild(node, gmd, BAD_CAST "MD_TopicCategoryCode", 
+	      BAD_CAST "geoscientificInformation");
+
+  // identificationInfo - environmentDescription
+  node = xmlNewChild(section, gmd, BAD_CAST "environmentDescription", NULL);
+  xmlNewChild(node, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Data product generated in HDF5 format with ISO 19115 conformat metadata.");
+
+  // identificationInfo - extent
+  node = xmlNewChild(section, gmd, BAD_CAST "extent", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "description", NULL);
+  xmlNewChild(node2, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "geographic and temporal extent of data frame");
+  node2 = xmlNewChild(node, gmd, BAD_CAST "geographicElement", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "EX_BoundingPolygon", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "extentTypeCode", NULL);
+  xmlNewChild(node4, gco, BAD_CAST "Boolean", BAD_CAST "true");
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "polygon", NULL);
+  xmlNewProp(node4, BAD_CAST "srsDimension", BAD_CAST "2");
+  xmlNewProp(node4, BAD_CAST "srsName", BAD_CAST "EPSG:4326");
+  node5 = xmlNewChild(node4, gml, BAD_CAST "exterior", NULL);
+  sprintf(str, "%.5lf,%.5lf %.5lf,%.5lf %.5lf,%.5lf %.5lf,%.5lf",
+	  info->sceneCornerCoord[0].lon, info->sceneCornerCoord[0].lat,
+	  info->sceneCornerCoord[1].lon, info->sceneCornerCoord[1].lat,
+	  info->sceneCornerCoord[2].lon, info->sceneCornerCoord[2].lat,
+	  info->sceneCornerCoord[3].lon, info->sceneCornerCoord[3].lat);
+  node6 = xmlNewChild(node5, gml, BAD_CAST "posList", BAD_CAST str);
+  xmlNewProp(node6, BAD_CAST "dimension", BAD_CAST "2");
+  node2 = xmlNewChild(node, gmd, BAD_CAST "temporalElement", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "EX_TemporalExtent", NULL);
+  xmlNewProp(node3, BAD_CAST "id", BAD_CAST "frameTemporalExtent");
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "extent", NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "TimePeriod", NULL);
+  dateTime2str(info->startTimeUTC, str);
+  xmlNewChild(node5, gml, BAD_CAST "begin", BAD_CAST str);
+  dateTime2str(info->stopTimeUTC, str);
+  xmlNewChild(node5, gml, BAD_CAST "end", BAD_CAST str);
+
+  // contentInfo
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "contentInfo", NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "MD_CoverageDescription", NULL);
+  node = xmlNewChild(section, gmd, BAD_CAST "attributeDescription", NULL);
+  xmlNewChild(node, gco, BAD_CAST "recordType", BAD_CAST "radar brightness");
+  node = xmlNewChild(section, gmd, BAD_CAST "contentType", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_CoverageContentTypeCode", 
+		      BAD_CAST "image");
+  xmlNewProp(node2, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CoverageContentTypeCode");
+  xmlNewProp(node2, BAD_CAST "codeListValue", BAD_CAST "image");
+  for (ii=0; ii<info->numberOfLayers; ii++) {
+    node = xmlNewChild(section, gmd, BAD_CAST "dimension", NULL);
+    node2 = xmlNewChild(node, gmd, BAD_CAST "MI_Band", NULL); 
+    double2str(quality->imageDataQuality[ii].max, 0, str); 
+    xmlNewChild(node2, gmd, BAD_CAST "maxValue", BAD_CAST str);
+    double2str(quality->imageDataQuality[ii].min, 0, str); 
+    xmlNewChild(node2, gmd, BAD_CAST "minValue", BAD_CAST str);
+    sprintf(str, "%d", info->imageDataDepth);
+    xmlNewChild(node2, gmd, BAD_CAST "bitsPerValue", BAD_CAST str);
+    double2str(quality->imageDataQuality[ii].mean, 0, str); 
+    xmlNewChild(node2, gmd, BAD_CAST "meanValue", BAD_CAST str);
+    double2str(quality->imageDataQuality[ii].stdDev, 0, str);
+    xmlNewChild(node2, gmd, BAD_CAST "standardDeviation", BAD_CAST str);    
+    if (quality->imageDataQuality[ii].polLayer == HH_POL) {
+      node3 = xmlNewChild(node2, gmi, BAD_CAST "transmittedPolarisation",
+			  BAD_CAST "horizontal");
+      xmlNewProp(node3, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_PolsarizationOrientationCode");
+      xmlNewProp(node3, BAD_CAST "codeListValue", BAD_CAST "horizontal");
+      node3 = xmlNewChild(node2, gmi, BAD_CAST "detectedPolarisation",
+			  BAD_CAST "horizontal");
+      xmlNewProp(node3, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_PolsarizationOrientationCode");
+      xmlNewProp(node3, BAD_CAST "codeListValue", BAD_CAST "horizontal");
+    }
+    else if (quality->imageDataQuality[ii].polLayer == HV_POL) {
+      node3 = xmlNewChild(node2, gmi, BAD_CAST "transmittedPolarisation",
+			  BAD_CAST "horizontal");
+      xmlNewProp(node3, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_PolsarizationOrientationCode");
+      xmlNewProp(node3, BAD_CAST "codeListValue", BAD_CAST "horizontal");
+      node3 = xmlNewChild(node2, gmi, BAD_CAST "detectedPolarisation",
+			  BAD_CAST "vertical");
+      xmlNewProp(node3, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_PolsarizationOrientationCode");
+      xmlNewProp(node3, BAD_CAST "codeListValue", BAD_CAST "vertical");
+    }
+    else if (quality->imageDataQuality[ii].polLayer == VH_POL) {
+      node3 = xmlNewChild(node2, gmi, BAD_CAST "transmittedPolarisation",
+			  BAD_CAST "vertical");
+      xmlNewProp(node3, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_PolsarizationOrientationCode");
+      xmlNewProp(node3, BAD_CAST "codeListValue", BAD_CAST "vertical");
+      node3 = xmlNewChild(node2, gmi, BAD_CAST "detectedPolarisation",
+			  BAD_CAST "horizontal");
+      xmlNewProp(node3, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_PolsarizationOrientationCode");
+      xmlNewProp(node3, BAD_CAST "codeListValue", BAD_CAST "horizontal");
+    }
+    else if (quality->imageDataQuality[ii].polLayer == VV_POL) {
+      node3 = xmlNewChild(node2, gmi, BAD_CAST "transmittedPolarisation",
+			  BAD_CAST "vertical");
+      xmlNewProp(node3, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_PolsarizationOrientationCode");
+      xmlNewProp(node3, BAD_CAST "codeListValue", BAD_CAST "vertical");
+      node3 = xmlNewChild(node2, gmi, BAD_CAST "detectedPolarisation",
+			  BAD_CAST "vertical");
+      xmlNewProp(node3, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_PolsarizationOrientationCode");
+      xmlNewProp(node3, BAD_CAST "codeListValue", BAD_CAST "vertical");
+    }
+    node3 = xmlNewChild(node2, eos, BAD_CAST "otherPropertyType", NULL);
+    node4 = xmlNewChild(node3, gco, BAD_CAST "RecordType", 
+			BAD_CAST "Echo Characterstic");
+    xmlNewProp(node4, BAD_CAST "xlink:href", BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operations/Collection.xsd#xpointer(//element[@name='Characteristic'])");
+    node3 = xmlNewChild(node2, eos, BAD_CAST "otherPropertyValue", NULL);
+    node4 = xmlNewChild(node3, gco, BAD_CAST "Record", NULL);
+    node5 = xmlNewChild(node4, echo, BAD_CAST "listOfCharacteristics", NULL);
+    
+    // contentInfo - extra parameters (missingLines)
+    node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+    xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "missingLines");
+    xmlNewChild(node6, echo, BAD_CAST "Description", BAD_CAST "missing lines");
+    xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "int");
+    xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+    sprintf(str, "%d", quality->imageDataQuality[ii].missingLines);
+    xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+    
+    // contentInfo - extra parameters (bitErrorRate)
+    node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+    xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "bitErrorRate");
+    xmlNewChild(node6, echo, BAD_CAST "Description", BAD_CAST "bit error rate");
+    xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "double");
+    xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+    double2str(quality->imageDataQuality[ii].bitErrorRate, 0, str);
+    xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+    
+    // contentInfo - extra parameters (noDataValue)
+    node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+    xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "noDataValue");
+    xmlNewChild(node6, echo, BAD_CAST "Description", BAD_CAST "no data value");
+    xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "double");
+    xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+    double2str(quality->imageDataQuality[ii].noData, 0, str);
+    xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+  }
+
+  // distributionInfo
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "distributionInfo", NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "MD_Distribution", NULL);
+
+  // distributionInfo - distributionFormat
+  node = xmlNewChild(section, gmd, BAD_CAST "distributionFormat", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_Format", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "name", NULL);
+  xmlNewChild(node3, gco, BAD_CAST "CharacterString", BAD_CAST "HDF5");
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "version", NULL);
+  sprintf(str, "%d.%d.%d", H5_VERS_MAJOR, H5_VERS_MINOR, H5_VERS_RELEASE);
+  xmlNewChild(node3, gco, BAD_CAST "CharacterString", BAD_CAST str);
+
+  // distributionInfo - distributor
+  node = xmlNewChild(section, gmd, BAD_CAST "distributor", NULL);
+  xmlNewChild(node, gmd, BAD_CAST "distributorContact", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "CI_ResponsibleParty", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "organizationName", NULL);
+  sprintf(str, "%s", xml_get_string_value(config, 
+    "MI_Metadata.distributionInfo.MD_Distribution.distributorContact.CI_ResponsibleParty.organisationName"));  
+  xmlNewChild(node3, gco, BAD_CAST "CharacterString", BAD_CAST str);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "contactInfo", NULL);
+  xmlNewProp(node3, BAD_CAST "xlink:href", BAD_CAST "#ASFContactInfo");
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "role", NULL);
+  sprintf(str, "%s", xml_get_string_value(config,
+    "MI_Metadata.distributionInfo.MD_Distribution.distributorContact.CI_ResponsibleParty.role.CI_RoleCode"));
+  node4 = xmlNewChild(node3, gco, BAD_CAST "CI_RoleCode", BAD_CAST str);
+  sprintf(str, "%s", xml_get_string_attribute(config,
+    "MI_Metadata.distributionInfo.MD_Distribution.distributorContact.CI_ResponsibleParty.role.CI_RoleCode.codeList"));
+  xmlNewProp(node4, BAD_CAST "codeList", BAD_CAST str);
+  sprintf(str, "%s", xml_get_string_attribute(config,
+    "MI_Metadata.distributionInfo.MD_Distribution.distributorContact.CI_ResponsibleParty.role.CI_RoleCode.codeListValue"));
+  xmlNewProp(node4, BAD_CAST "codeListValue", BAD_CAST str);
+
+  // dataQualityInfo
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "dataQualityInfo", NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "DQ_DataQuality", NULL);
+
+  // dataQualityInfo - scope
+  node = xmlNewChild(section, gmd, BAD_CAST "scope", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "DQ_SCOPE", NULL);
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "level", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "MD_ScopeCope", BAD_CAST "dataset");
+  xmlNewProp(node4, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode");
+  xmlNewProp(node4, BAD_CAST "codeListValue", BAD_CAST "dataset");
+
+  // dataQualityInfo - overall quality inspection
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "report", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DQ_CompletenessOmission",
+		      NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "measureDescription", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "overall quality inspection");
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "result", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "DQ_ConformanceResult", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "specification", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_Citation", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ASF Seasat Data Quality document");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "date", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Date", NULL);
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "date", NULL);
+  xmlNewChild(node11, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "dateType", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_DateTypeCode", 
+		       BAD_CAST "publication");
+  xmlNewProp(node12, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+  xmlNewProp(node12, BAD_CAST "codeListValue", BAD_CAST "publication");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "edition", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "version 1.0");
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "explanation", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "Data passes the overall quality criteria");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "pass", NULL);
+  if (info->qualityInspection == AUTO_APPROVED ||
+      info->qualityInspection == OPERATOR_APPROVED)
+    boolean2str(TRUE, str);
+  else
+    boolean2str(FALSE, str);
+  xmlNewChild(node7, gco, BAD_CAST "Boolean", BAD_CAST str);
+
+  // dataQualityInfo - gap significance flag
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "report", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DQ_QuantitativeAttributeAccuracy",
+		      NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "measureDescription", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "gap signficance flag");
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "result", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "DQ_ConformanceResult", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "specification", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_Citation", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ASF Seasat Data Quality document");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "date", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Date", NULL);
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "date", NULL);
+  xmlNewChild(node11, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "dateType", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_DateTypeCode", 
+		       BAD_CAST "publication");
+  xmlNewProp(node12, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+  xmlNewProp(node12, BAD_CAST "codeListValue", BAD_CAST "publication");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "edition", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "version 1.0");
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "explanation", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Data beyond gap tolerance level");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "pass", NULL);
+  boolean2str(quality->rawDataQuality[ii].gapSignificanceFlag, str);
+  xmlNewChild(node7, gco, BAD_CAST "Boolean", BAD_CAST str);
+
+  // dataQualityInfo - missing lines significance flag
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "report", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DQ_QuantitativeAttributeAccuracy",
+		      NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "measureDescription", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "missing lines signficance flag");
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "result", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "DQ_ConformanceResult", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "specification", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_Citation", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ASF Seasat Data Quality document");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "date", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Date", NULL);
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "date", NULL);
+  xmlNewChild(node11, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "dateType", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_DateTypeCode", 
+		       BAD_CAST "publication");
+  xmlNewProp(node12, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+  xmlNewProp(node12, BAD_CAST "codeListValue", BAD_CAST "publication");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "edition", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "version 1.0");
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "explanation", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Data beyond missing lines tolerance level");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "pass", NULL);
+  boolean2str(quality->rawDataQuality[ii].missingLinesSignificanceFlag, str);
+  xmlNewChild(node7, gco, BAD_CAST "Boolean", BAD_CAST str);
+
+  // dataQualityInfo - bit error significance flag
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "report", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DQ_QuantitativeAttributeAccuracy",
+		      NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "measureDescription", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "bit error signficance flag");
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "result", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "DQ_ConformanceResult", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "specification", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_Citation", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ASF Seasat Data Quality document");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "date", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Date", NULL);
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "date", NULL);
+  xmlNewChild(node11, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "dateType", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_DateTypeCode", 
+		       BAD_CAST "publication");
+  xmlNewProp(node12, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+  xmlNewProp(node12, BAD_CAST "codeListValue", BAD_CAST "publication");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "edition", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "version 1.0");
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "explanation", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Data beyond bit error tolerance level");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "pass", NULL);
+  boolean2str(quality->rawDataQuality[ii].bitErrorSignificanceFlag, str);
+  xmlNewChild(node7, gco, BAD_CAST "Boolean", BAD_CAST str);
+
+  // dataQualityInfo - time reconstruction significance flag
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "report", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DQ_QuantitativeAttributeAccuracy",
+		      NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "measureDescription", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "time reconstruction signficance flag");
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "result", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "DQ_ConformanceResult", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "specification", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_Citation", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ASF Seasat Data Quality document");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "date", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Date", NULL);
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "date", NULL);
+  xmlNewChild(node11, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "dateType", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_DateTypeCode", 
+		       BAD_CAST "publication");
+  xmlNewProp(node12, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+  xmlNewProp(node12, BAD_CAST "codeListValue", BAD_CAST "publication");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "edition", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "version 1.0");
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "explanation", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Data beyond time reconstruction tolerance level");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "pass", NULL);
+  boolean2str(quality->rawDataQuality[ii].timeReconstructionSignificanceFlag, 
+	      str);
+  xmlNewChild(node7, gco, BAD_CAST "Boolean", BAD_CAST str);
+
+  // dataQualityInfo - Doppler ambiguity not zero flag
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "report", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DQ_QuantitativeAttributeAccuracy",
+		      NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "measureDescription", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Doppler ambiguity not zero flag");
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "result", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "DQ_ConformanceResult", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "specification", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_Citation", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ASF Seasat Data Quality document");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "date", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Date", NULL);
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "date", NULL);
+  xmlNewChild(node11, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "dateType", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_DateTypeCode", 
+		       BAD_CAST "publication");
+  xmlNewProp(node12, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+  xmlNewProp(node12, BAD_CAST "codeListValue", BAD_CAST "publication");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "edition", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "version 1.0");
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "explanation", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Data has Doppler ambiguities");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "pass", NULL);
+  boolean2str(quality->dopplerAmbiguityNotZeroFlag, str);
+  xmlNewChild(node7, gco, BAD_CAST "Boolean", BAD_CAST str);
+
+  // dataQualityInfo - Doppler outside limits flag
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "report", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DQ_QuantitativeAttributeAccuracy",
+		      NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "measureDescription", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Doppler outside limits flag");
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "result", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "DQ_ConformanceResult", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "specification", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_Citation", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ASF Seasat Data Quality document");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "date", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Date", NULL);
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "date", NULL);
+  xmlNewChild(node11, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "dateType", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_DateTypeCode", 
+		       BAD_CAST "publication");
+  xmlNewProp(node12, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+  xmlNewProp(node12, BAD_CAST "codeListValue", BAD_CAST "publication");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "edition", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "version 1.0");
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "explanation", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "Doppler outside tolerance level");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "pass", NULL);
+  boolean2str(quality->dopplerOutsideLimitsFlag, str);
+  xmlNewChild(node7, gco, BAD_CAST "Boolean", BAD_CAST str);
+
+  // dataQualityInfo - geolocation quality low flag
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "report", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "DQ_QuantitativeAttributeAccuracy",
+		      NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "measureDescription", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "geolocation quality low flag");
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "result", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "DQ_ConformanceResult", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "specification", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_Citation", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "title", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString",
+	      BAD_CAST "ASF Seasat Data Quality document");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "date", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Date", NULL);
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "date", NULL);
+  xmlNewChild(node11, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "dateType", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_DateTypeCode", 
+		       BAD_CAST "publication");
+  xmlNewProp(node12, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+  xmlNewProp(node12, BAD_CAST "codeListValue", BAD_CAST "publication");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "edition", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "version 1.0");
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "explanation", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "orbit/attitude/DEM/Doppler quality problems");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "pass", NULL);
+  boolean2str(quality->geolocationQualityLowFlag, str);
+  xmlNewChild(node7, gco, BAD_CAST "Boolean", BAD_CAST str);
+
+  node3 = xmlNewChild(node2, gmd, BAD_CAST "lineage", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "LI_Lineage", NULL);
+
+  // dataQualityInfo - level 0 processing
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "processStep", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "LE_ProcessStep", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "description", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString",	
+	      BAD_CAST "Level0Processing");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "processor", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_ResponsibleParty", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "organizationName", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST info->level0ProcessingFacility);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "role", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Role", BAD_CAST "processor");
+  xmlNewProp(node10, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_Role");
+  xmlNewProp(node10, BAD_CAST "codeListValue", BAD_CAST "processor");
+  node7 = xmlNewChild(node6, gmi, BAD_CAST "processingInformation", NULL);
+  node8 = xmlNewChild(node7, eos, BAD_CAST "EOS_Processing", NULL);
+  node9 = xmlNewChild(node8, gmi, BAD_CAST "identifier", NULL);
+
+  node9 = xmlNewChild(node8, eos, BAD_CAST "otherPropertyType", NULL);
+  node10 = xmlNewChild(node9, gco, BAD_CAST "RecordType", 
+		       BAD_CAST "Echo Characteristic");
+  xmlNewProp(node10, BAD_CAST "xlink:href", BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operations/Collection.xsd#xpointer(//element[@name='Characteristic'])");
+  node9 = xmlNewChild(node8, eos, BAD_CAST "otherPropertyValue", NULL);
+  node10 = xmlNewChild(node9, gco, BAD_CAST "Record", NULL);
+  node11 = xmlNewChild(node10, echo, BAD_CAST "ListOfCharacteristics", NULL);
+
+  // dataQualityInfo - level 0 processing (chirpReplicaUsedFlag)
+  node12 = xmlNewChild(node11, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node12, echo, BAD_CAST "Name", BAD_CAST "chirpReplicaUsedFlag");
+  xmlNewChild(node12, echo, BAD_CAST "Description", 
+	      BAD_CAST "reconstructed chirp used");
+  xmlNewChild(node12, echo, BAD_CAST "DataType", BAD_CAST "boolean");
+  xmlNewChild(node12, echo, BAD_CAST "Unit", NULL);
+  boolean2str(proc->chirpReplicaUsedFlag, str);
+  xmlNewChild(node12, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // dataQualityInfo - level 0 processing (geometricDopplerUsedFlag)
+  node12 = xmlNewChild(node11, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node12, echo, BAD_CAST "Name", 
+	      BAD_CAST "geometricDopplerUsedFlag");
+  xmlNewChild(node12, echo, BAD_CAST "Description", 
+	      BAD_CAST "geometric Doppler centroid estimate has been used");
+  xmlNewChild(node12, echo, BAD_CAST "DataType", BAD_CAST "boolean");
+  xmlNewChild(node12, echo, BAD_CAST "Unit", NULL);
+  boolean2str(proc->geometricDopplerUsedFlag, str);
+  xmlNewChild(node12, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // dataQualityInfo - level 0 processing (azimuthPatternCorrectedFlag)
+  node12 = xmlNewChild(node11, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node12, echo, BAD_CAST "Name", 
+	      BAD_CAST "azimuthPatternCorrectedFlag");
+  xmlNewChild(node12, echo, BAD_CAST "Description", 
+	      BAD_CAST "stripmap azimuth antenna pattern correction applied");
+  xmlNewChild(node12, echo, BAD_CAST "DataType", BAD_CAST "boolean");
+  xmlNewChild(node12, echo, BAD_CAST "Unit", NULL);
+  boolean2str(proc->azimuthPatternCorrectedFlag, str);
+  xmlNewChild(node12, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // dataQualityInfo - level 0 processing (elevationPatternCorrectedFlag)
+  node12 = xmlNewChild(node11, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node12, echo, BAD_CAST "Name", 
+	      BAD_CAST "elevationPatternCorrectedFlag");
+  xmlNewChild(node12, echo, BAD_CAST "Description",
+	      BAD_CAST "antenna elevation pattern correction applied");
+  xmlNewChild(node12, echo, BAD_CAST "DataType", BAD_CAST "boolean");
+  xmlNewChild(node12, echo, BAD_CAST "Unit", NULL);
+  boolean2str(proc->elevationPatternCorrectedFlag, str);
+  xmlNewChild(node12, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // dataQualityInfo - level 0 processing steps
+  for (ii=0; ii<setup->numProcessingSteps; ii++) {
+    if (setup->processingStep[ii].processingLevel == PRE_PROCESSING ||
+	setup->processingStep[ii].processingLevel == LEVEL_ZERO) {
+      node7 = xmlNewChild(node6, gmd, BAD_CAST "processingInformation", NULL);
+      node8 = xmlNewChild(node7, eos, BAD_CAST "EOS_Processing", NULL);
+      node9 = xmlNewChild(node8, gmi, BAD_CAST "identifier", NULL);
+      node10 = xmlNewChild(node9, gmd, BAD_CAST "MD_Identifier", NULL);
+      node11 = xmlNewChild(node10, gmd, BAD_CAST "code", NULL);
+      xmlNewChild(node11, gco, BAD_CAST "CharacterString", 
+		  BAD_CAST setup->processingStep[ii].softwareID);
+      node9 = xmlNewChild(node8, gmi, BAD_CAST "procedureDescription", NULL);
+      xmlNewChild(node9, gco, BAD_CAST "CharacterString", 
+		  BAD_CAST setup->processingStep[ii].description);
+      node9 = xmlNewChild(node8, gmi, BAD_CAST "algorithm", NULL);
+      node10 = xmlNewChild(node9, eos, BAD_CAST "EOS_Algorithm", NULL);
+      node11 = xmlNewChild(node10, gmi, BAD_CAST "citation", NULL);
+      node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_Citation", NULL);
+      node13 = xmlNewChild(node12, gmd, BAD_CAST "title", NULL);
+      xmlNewChild(node13, gco, BAD_CAST "CharacterString",
+		  BAD_CAST setup->processingStep[ii].algorithm);
+      node13 = xmlNewChild(node12, gmd, BAD_CAST "date", NULL);
+      node14 = xmlNewChild(node13, gmd, BAD_CAST "CI_Date", NULL);
+      node15 = xmlNewChild(node14, gmd, BAD_CAST "date", NULL);
+      xmlNewChild(node15, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+      node15 = xmlNewChild(node14, gmd, BAD_CAST "dateType", NULL);
+      node16 = xmlNewChild(node15, gmd, BAD_CAST "CI_DateTypeCode", 
+			   BAD_CAST "publication");
+      xmlNewProp(node16, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+      xmlNewProp(node16, BAD_CAST "codeListValue", BAD_CAST "publication");
+      node13 = xmlNewChild(node12, gmd, BAD_CAST "edition", NULL);
+      xmlNewChild(node13, gco, BAD_CAST "CharacterString",
+		  BAD_CAST setup->processingStep[ii].softwareVersion);
+    }
+  }
+
+  // dataQualityInfo - level 1 processing
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "processStep", NULL);
+  node6 = xmlNewChild(node5, gmd, BAD_CAST "LE_ProcessStep", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "description", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString",	
+	      BAD_CAST "Level1Processing");
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "processor", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "CI_ResponsibleParty", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "organizationName", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST info->level1ProcessingFacility);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "role", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "CI_Role", BAD_CAST "processor");
+  xmlNewProp(node10, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_Role");
+  xmlNewProp(node10, BAD_CAST "codeListValue", BAD_CAST "processor");
+  node7 = xmlNewChild(node6, gmi, BAD_CAST "processingInformation", NULL);
+  node8 = xmlNewChild(node7, eos, BAD_CAST "EOS_Processing", NULL);
+  node9 = xmlNewChild(node8, gmi, BAD_CAST "identifier", NULL);
+
+  node9 = xmlNewChild(node8, eos, BAD_CAST "otherPropertyType", NULL);
+  node10 = xmlNewChild(node9, gco, BAD_CAST "RecordType", 
+		       BAD_CAST "Echo Characteristic");
+  xmlNewProp(node10, BAD_CAST "xlink:href", BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operations/Collection.xsd#xpointer(//element[@name='Characteristic'])");
+  node9 = xmlNewChild(node8, eos, BAD_CAST "otherPropertyValue", NULL);
+  node10 = xmlNewChild(node9, gco, BAD_CAST "Record", NULL);
+  node11 = xmlNewChild(node10, echo, BAD_CAST "ListOfCharacterstics", NULL);
+
+  // dataQualityInfo - level 1 processing (detectedFlag)
+  node12 = xmlNewChild(node11, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node12, echo, BAD_CAST "Name", BAD_CAST "detectedFlag");
+  xmlNewChild(node12, echo, BAD_CAST "Description", 
+	      BAD_CAST "detection performed");
+  xmlNewChild(node12, echo, BAD_CAST "DataType", BAD_CAST "boolean");
+  xmlNewChild(node12, echo, BAD_CAST "Unit", NULL);
+  boolean2str(proc->detectedFlag, str);
+  xmlNewChild(node12, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // dataQualityInfo - level 1 processing (multiLookedFlag)
+  node12 = xmlNewChild(node11, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node12, echo, BAD_CAST "Name", BAD_CAST "multiLookedFlag");
+  xmlNewChild(node12, echo, BAD_CAST "Description", 
+	      BAD_CAST "multilooking performed");
+  xmlNewChild(node12, echo, BAD_CAST "DataType", BAD_CAST "boolean");
+  xmlNewChild(node12, echo, BAD_CAST "Unit", NULL);
+  boolean2str(proc->multiLookedFlag, str);
+  xmlNewChild(node12, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // dataQualityInfo - level 1 processing (nominalProcessingPerformedFlag)
+  node12 = xmlNewChild(node11, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node12, echo, BAD_CAST "Name", 
+	      BAD_CAST "nominalProcessingPerformedFlag");
+  xmlNewChild(node12, echo, BAD_CAST "Description",
+	      BAD_CAST "nominal processing steps used");
+  xmlNewChild(node12, echo, BAD_CAST "DataType", BAD_CAST "boolean");
+  xmlNewChild(node12, echo, BAD_CAST "Unit", NULL);
+  boolean2str(proc->nominalProcessingPerformedFlag, str);
+  xmlNewChild(node12, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // dataQualityInfo - level 1 processing steps
+  for (ii=0; ii<setup->numProcessingSteps; ii++) {
+    if (setup->processingStep[ii].processingLevel == LEVEL_ONE) {
+      node7 = xmlNewChild(node6, gmd, BAD_CAST "processingInformation", NULL);
+      node8 = xmlNewChild(node7, eos, BAD_CAST "EOS_Processing", NULL);
+      node9 = xmlNewChild(node8, gmi, BAD_CAST "identifier", NULL);
+      node10 = xmlNewChild(node9, gmd, BAD_CAST "MD_Identifier", NULL);
+      node11 = xmlNewChild(node10, gmd, BAD_CAST "code", NULL);
+      xmlNewChild(node11, gco, BAD_CAST "CharacterString", 
+		  BAD_CAST setup->processingStep[ii].softwareID);
+      node9 = xmlNewChild(node8, gmi, BAD_CAST "procedureDescription", NULL);
+      xmlNewChild(node9, gco, BAD_CAST "CharacterString", 
+		  BAD_CAST setup->processingStep[ii].description);
+      node9 = xmlNewChild(node8, gmi, BAD_CAST "algorithm", NULL);
+      node10 = xmlNewChild(node9, eos, BAD_CAST "EOS_Algorithm", NULL);
+      node11 = xmlNewChild(node10, gmi, BAD_CAST "citation", NULL);
+      node12 = xmlNewChild(node11, gmd, BAD_CAST "CI_Citation", NULL);
+      node13 = xmlNewChild(node12, gmd, BAD_CAST "title", NULL);
+      xmlNewChild(node13, gco, BAD_CAST "CharacterString",
+		  BAD_CAST setup->processingStep[ii].algorithm);
+      node13 = xmlNewChild(node12, gmd, BAD_CAST "date", NULL);
+      node14 = xmlNewChild(node13, gmd, BAD_CAST "CI_Date", NULL);
+      node15 = xmlNewChild(node14, gmd, BAD_CAST "date", NULL);
+      xmlNewChild(node15, gco, BAD_CAST "Date", BAD_CAST "2013-07-01");
+      node15 = xmlNewChild(node14, gmd, BAD_CAST "dateType", NULL);
+      node16 = xmlNewChild(node15, gmd, BAD_CAST "CI_DateTypeCode", 
+			   BAD_CAST "publication");
+      xmlNewProp(node16, BAD_CAST "codeList",
+		 BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode");
+      xmlNewProp(node16, BAD_CAST "codeListValue", BAD_CAST "publication");
+      node13 = xmlNewChild(node12, gmd, BAD_CAST "edition", NULL);
+      xmlNewChild(node13, gco, BAD_CAST "CharacterString",
+		  BAD_CAST setup->processingStep[ii].softwareVersion);
+    }
+  }
+
+  // dataQualityInfo - source
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "source", NULL);
+  node6 = xmlNewChild(node5, gmi, BAD_CAST "LE_Source", NULL);
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "description", NULL);
+  xmlNewChild(node7, gco, BAD_CAST "CharacterString", BAD_CAST header->source);
+  
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "sourceExtent", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "EX_Extent", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "description", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "geographic and temporal extent of data frame");
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "geographicElement", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "extentTypeCode", NULL);
+  xmlNewChild(node10, gco, BAD_CAST "Boolean", BAD_CAST "true");
+  double westLon, eastLon, southLat, northLat;
+  cornerCoords2boundingBox(info->sceneCornerCoord, 
+			   &westLon, &eastLon, &southLat, &northLat);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "westBoundLongitude", NULL);
+  sprintf(str, "%.5lf", westLon);
+  xmlNewChild(node10, gco, BAD_CAST "Decimal", BAD_CAST str);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "eastBoundLongitude", NULL);
+  sprintf(str, "%.5lf", eastLon);
+  xmlNewChild(node10, gco, BAD_CAST "Decimal", BAD_CAST str);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "southBoundLatitude", NULL);
+  sprintf(str, "%.5lf", southLat);
+  xmlNewChild(node10, gco, BAD_CAST "Decimal", BAD_CAST str);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "northBoundLatitude", NULL);
+  sprintf(str, "%.5lf", northLat);
+  xmlNewChild(node10, gco, BAD_CAST "Decimal", BAD_CAST str);
+
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "temporalElement", NULL);
+  node10 = xmlNewChild(node9, gmd, BAD_CAST "EX_TemporalExtent", NULL);
+  xmlNewProp(node10, BAD_CAST "id", BAD_CAST "frameTemporalExtent");
+  node11 = xmlNewChild(node10, gmd, BAD_CAST "extent", NULL);
+  node12 = xmlNewChild(node11, gmd, BAD_CAST "TimePeriod", NULL);
+  dateTime2str(info->startTimeUTC, str);
+  xmlNewChild(node12, gml, BAD_CAST "begin", BAD_CAST str);
+  dateTime2str(info->stopTimeUTC, str);
+  xmlNewChild(node12, gml, BAD_CAST "end", BAD_CAST str);
+
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "processedLevel", NULL);
+  node8 = xmlNewChild(node7, gmd, BAD_CAST "MD_Identifier", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "code", NULL);
+  xmlNewChild(node9, gco, BAD_CAST "CharacterString", BAD_CAST "level one");
+  
+  node7 = xmlNewChild(node6, gmd, BAD_CAST "resolution", NULL);
+  node8 = xmlNewChild(node7, gmi, BAD_CAST "LE_NominalResolution", NULL);
+  node9 = xmlNewChild(node8, gmd, BAD_CAST "groundResolution", NULL);
+  sprintf(str, "%.3lf", info->groundRangeResolution);
+  node10 = xmlNewChild(node9, gco, BAD_CAST "Distance", BAD_CAST str);
+  xmlNewProp(node10, BAD_CAST "uom", BAD_CAST "meter");
+  xmlNewProp(node10, BAD_CAST "dimension", BAD_CAST "range");
+  sprintf(str, "%.3lf", info->azimuthResolution);
+  node10 = xmlNewChild(node9, gco, BAD_CAST "Distance", BAD_CAST str);
+  xmlNewProp(node10, BAD_CAST "uom", BAD_CAST "meter");
+  xmlNewProp(node10, BAD_CAST "dimension", BAD_CAST "azimuth");
+
+  // metadataConstraints
+  parent = xmlNewChild(mi_metadata, gmd, BAD_CAST "metadataConstraints", NULL);
+  section = xmlNewChild(parent, gmd, BAD_CAST "MD_LegalConstraints", NULL);
+  node = xmlNewChild(section, gmd, BAD_CAST "accessConstraints", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_RestrictionCode",
+		      BAD_CAST "copyright");
+  xmlNewProp(node2, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode");
+  xmlNewProp(node2, BAD_CAST "codeListValue", BAD_CAST "copyright");
+  node = xmlNewChild(section, gmd, BAD_CAST "useConstraints", NULL);
+  node2 = xmlNewChild(node, gmd, BAD_CAST "MD_RestrictionCode",
+		      BAD_CAST "copyright");
+  xmlNewProp(node2, BAD_CAST "codeList",
+	     BAD_CAST "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode");
+  xmlNewProp(node2, BAD_CAST "codeListValue", BAD_CAST "copyright");
+
+  // acquisitionInformation
+  parent = xmlNewChild(mi_metadata, gmi, BAD_CAST "acquisitionInformation", 
+		       NULL);  
+  section = xmlNewChild(parent, eos, BAD_CAST "EOS_AcquisitionInformation", 
+			NULL);
+
+  // acquisitionInformation - platform
+  node = xmlNewChild(section, gmi, BAD_CAST "platform", NULL);
+  node2 = xmlNewChild(node, eos, BAD_CAST "EOS_Platform", NULL);
+  node3 = xmlNewChild(node2, gmi, BAD_CAST "identifier", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "MD_Identifier", NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "code", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST header->mission);
+  node3 = xmlNewChild(node2, gmi, BAD_CAST "description", NULL);
+  node3 = xmlNewChild(node2, gmi, BAD_CAST "instrument", NULL);
+  xmlNewProp(node3, BAD_CAST "xlink:href", BAD_CAST "#sarInstrument");
+  node3 = xmlNewChild(node2, eos, BAD_CAST "otherPropertyType", NULL);
+  node4 = xmlNewChild(node3, gco, BAD_CAST "RecordType", 
+		      BAD_CAST "Echo Characterstic");
+  xmlNewProp(node4, BAD_CAST "xlink:href", BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operations/Collection.xsd#xpointer(//element[@name='Characteristic'])");
+  node3 = xmlNewChild(node2, eos, BAD_CAST "otherPropertyValue", NULL);
+  node4 = xmlNewChild(node3, gco, BAD_CAST "Record", NULL);
+  node5 = xmlNewChild(node4, echo, BAD_CAST "listOfCharacteristics", NULL);
+
+  // acquisitionInformation - platform (orbitPhase)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "orbitPhase");
+  xmlNewChild(node6, echo, BAD_CAST "Description",
+	      BAD_CAST "orbit phase: 1 prelaunch phase, 0 launch phase, 1 nominal orbit");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "int");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  sprintf(str, "%d", info->orbitPhase);
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - platform (orbitCycle)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "orbitCycle");
+  xmlNewChild(node6, echo, BAD_CAST "Description", BAD_CAST "cycle number");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "int");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  sprintf(str, "%d", info->orbitCycle);
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - platform (absOrbit)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "absOrbit");
+  xmlNewChild(node6, echo, BAD_CAST "Description", 
+	      BAD_CAST "absolute orbit number at the start of the scene");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "int");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  sprintf(str, "%d", info->absOrbit);
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - platform (relOrbit)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "relOrbit");
+  xmlNewChild(node6, echo, BAD_CAST "Description", BAD_CAST "relative orbit");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "int");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  sprintf(str, "%d", info->relOrbit);
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - platform (numOrbitsInCycle)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "numOrbitsInCycle");
+  xmlNewChild(node6, echo, BAD_CAST "Description", 
+	      BAD_CAST "nominal number of orbits per cycle");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "int");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  sprintf(str, "%d", info->numOrbitsInCycle);
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - platform (orbitDirection)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "orbitDirection");
+  xmlNewChild(node6, echo, BAD_CAST "Description", 
+	      BAD_CAST "ASCENDING or DESCENDING");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "string");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  if (info->orbitDirection == ASCENDING)
+    strcpy(str, "ASCENDING");
+  else if (info->orbitDirection == DESCENDING)
+    strcpy(str, "DESCENDING");
+  else if (info->orbitDirection == UNDEF_ORBIT)
+    strcpy(str, "UNDEFINED");
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - instrument
+  node = xmlNewChild(section, gmi, BAD_CAST "instrument", NULL);
+  node2 = xmlNewChild(node, eos, BAD_CAST "EOS_Instrument", NULL);
+  xmlNewProp(node2, BAD_CAST "id", BAD_CAST "sarInstrument");
+  node3 = xmlNewChild(node2, gmi, BAD_CAST "identifier", NULL);
+  node4 = xmlNewChild(node3, gmd, BAD_CAST "MD_Identifier", NULL);
+  node5 = xmlNewChild(node4, gmd, BAD_CAST "code", NULL);
+  xmlNewChild(node5, gco, BAD_CAST "CharacterString", BAD_CAST info->sensor);
+  node3 = xmlNewChild(node2, gmi, BAD_CAST "type", NULL);
+  xmlNewChild(node3, gco, BAD_CAST "CharacterString", 
+	      BAD_CAST "C-band Synthetic Aperture Radar");
+  node3 = xmlNewChild(node2, eos, BAD_CAST "otherPropertyType", NULL);
+  node4 = xmlNewChild(node3, gco, BAD_CAST "RecordType", 
+		      BAD_CAST "Echo Characteristic");
+  xmlNewProp(node4, BAD_CAST "xlink:href", BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operations/Collection.xsd#xpointer(//element[@name='Characteristic'])");
+  node3 = xmlNewChild(node2, eos, BAD_CAST "otherPropertyValue", NULL);
+  node4 = xmlNewChild(node3, gco, BAD_CAST "Record", NULL);
+  node5 = xmlNewChild(node4, echo, BAD_CAST "ListOfCharacteristics", NULL);
+
+  // acquisitionInformation - instrument (imageMode)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "imagingMode");
+  xmlNewChild(node6, echo, BAD_CAST "Description", 
+	      BAD_CAST "FINE BEAM, STANDARD BEAM, STRIPMAP, SCANSAR or SPOTLIGHT");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "string");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  if (info->imageMode == FINE_BEAM)
+    strcpy(str, "FINE BEAM");
+  else if (info->imageMode == STANDARD_BEAM)
+    strcpy(str, "STANDARD BEAM");
+  else if (info->imageMode == STRIPMAP_IMAGE)
+    strcpy(str, "STRIPMAP");
+  else if (info->imageMode == SCANSAR_IMAGE)
+    strcpy(str, "SCANSAR");
+  else if (info->imageMode == SPOTLIGHT_IMAGE)
+    strcpy(str, "SPOTLIGHT");
+  else if (info->imageMode == UNDEF_IMAGE_MODE)
+    strcpy(str, "UNDEFINED");
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - instrument (lookDirection)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "lookDirection");
+  xmlNewChild(node6, echo, BAD_CAST "Description", BAD_CAST "LEFT or RIGHT");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "string");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  if (info->lookDirection == RIGHT_LOOK)
+    strcpy(str, "RIGHT");
+  else if (info->lookDirection == LEFT_LOOK)
+    strcpy(str, "LEFT");
+  else if (info->lookDirection == UNDEF_LOOK)
+    strcpy(str, "UNDEFINED");
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - instrument (polarizationMode)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "polarizationMode");
+  xmlNewChild(node6, echo, BAD_CAST "Description", 
+	      BAD_CAST "SINGLE, DUAL or QUAD");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "string");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  if (info->polarizationMode == SINGLE_POL)
+    strcpy(str, "SINGLE");
+  else if (info->polarizationMode == DUAL_POL)
+    strcpy(str, "DUAL");
+  else if (info->polarizationMode == QUAD_POL)
+    strcpy(str, "QUAD");
+  else if (info->polarizationMode == UNDEF_POL_MODE)
+    strcpy(str, "UNDEFINED");
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST str);
+
+  // acquisitionInformation - instrument (elevationBeamConfiguration)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", 
+	      BAD_CAST "elevationBeamConfiguration");
+  xmlNewChild(node6, echo, BAD_CAST "Description",
+	      BAD_CAST "beam identification as taken from the order file");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "string");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Value", 
+	      BAD_CAST info->elevationBeamConfiguration);
+
+  // acquisitionInformation - instrument (azimuthBeamID)
+  node6 = xmlNewChild(node5, echo, BAD_CAST "Characteristic", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Name", BAD_CAST "azimuthBeamID");
+  xmlNewChild(node6, echo, BAD_CAST "Description", BAD_CAST "azimuth beam ID");
+  xmlNewChild(node6, echo, BAD_CAST "DataType", BAD_CAST "string");
+  xmlNewChild(node6, echo, BAD_CAST "Unit", NULL);
+  xmlNewChild(node6, echo, BAD_CAST "Value", BAD_CAST info->azimuthBeamID);
+
+  // acquisitionInformation - position
+  node = xmlNewChild(section, gmi, BAD_CAST "position", NULL);
+
+  // Save tree to file
+  xmlSaveFormatFileEnc(outFile, doc, "UTF-8", 1);
+  
+  // Clean up
+  xmlFreeDoc(doc);
+  xmlCleanupParser();
 }

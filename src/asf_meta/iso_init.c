@@ -486,12 +486,8 @@ void iso_meta_free(iso_meta *iso)
       iso->productSpecific = NULL;
     }
     if (iso->setup) {
-      if (iso->setup->numProcessingSteps > 0) {
-	for (ii=0; ii<iso->setup->numProcessingSteps; ii++)
-	  if (iso->setup->processingStep[ii].algorithm)
-	    FREE(iso->setup->processingStep[ii].algorithm);
+      if (iso->setup->numProcessingSteps > 0)
 	FREE(iso->setup->processingStep);
-      }
       FREE(iso->setup);
       iso->setup = NULL;
     }
