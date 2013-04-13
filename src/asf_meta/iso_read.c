@@ -533,11 +533,11 @@ iso_meta *iso_meta_read(const char *xmlFile)
     info->sceneCornerCoord[ii].incidenceAngle = xml_get_double_value(doc, str);
   }
   info->yaw = xml_get_double_value(doc, 
-    "level1Product.productInfo.sceneInfo.yaw");
+    "level1Product.productInfo.sceneInfo.yawAngle");
   info->pitch = xml_get_double_value(doc, 
-    "level1Product.productInfo.sceneInfo.pitch");
+    "level1Product.productInfo.sceneInfo.pitchAngle");
   info->roll = xml_get_double_value(doc, 
-    "level1Product.productInfo.sceneInfo.roll");
+    "level1Product.productInfo.sceneInfo.rollAngle");
   info->earthRadius = xml_get_double_value(doc, 
     "level1Product.productInfo.sceneInfo.earthRadius");
   info->satelliteHeight = xml_get_double_value(doc, 

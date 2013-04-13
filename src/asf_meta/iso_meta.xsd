@@ -57,6 +57,15 @@
       <xs:maxInclusive value="180"/>
     </xs:restriction>
   </xs:simpleType>
+  <xs:simpleType name="dataFormat">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="CEOS"/>
+      <xs:enumeration value="GEOTIFF"/>
+      <xs:enumeration value="HDF5"/>
+      <xs:enumeration value="COSAR"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
   <xs:element name="lon">
     <xs:annotation>
       <xs:documentation>geographical longitude [degrees]</xs:documentation>
@@ -773,18 +782,16 @@
                       </xs:simpleType>
                     </xs:element>
                     <xs:element name="imageDataFormat">
-                      <xs:annotation>
-                        <xs:documentation>CEOS, GEOTIFF, HDF5 or COSAR</xs:documentation>
-                      </xs:annotation>
-                      <xs:simpleType>
-                        <xs:restriction base="xs:string">
-                          <xs:enumeration value="CEOS"/>
-                          <xs:enumeration value="GEOTIFF"/>
-                          <xs:enumeration value="HDF5"/>
-                          <xs:enumeration value="COSAR"/>
-                          <xs:enumeration value="UNDEFINED"/>
-                        </xs:restriction>
-                      </xs:simpleType>
+                      <xs:complexType>
+                        <xs:annotation>
+                          <xs:documentation>CEOS, GEOTIFF, HDF5 or COSAR</xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleContent>
+                          <xs:extension base="dataFormat">
+                            <xs:attribute name="version" type="xs:string" />
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
                     </xs:element>
                     <xs:element name="numberOfLayers" type="xs:integer">
                       <xs:annotation>
@@ -815,7 +822,7 @@
                     </xs:element>
                     <xs:element name="columnContent" type="string20">
                       <xs:annotation>
-                        <xs:documentation>azimuth, y</xs:documentation>
+                        <xs:documentation>azimuthlines, easting (for geocoded products), y</xs:documentation>
                       </xs:annotation>
                     </xs:element>
                     <xs:element name="imageRaster">
@@ -989,7 +996,7 @@
                     </xs:element>
                     <xs:element name="sceneAzimuthExtent">
                       <xs:annotation>
-                        <xs:documentation>(approximate and at mid-range) in [m]</xs:documentation>
+                        <xs:documentation>(approximate and at mid-range) scene extent in azimuth [m]</xs:documentation>
                       </xs:annotation>
                       <xs:complexType>
                         <xs:simpleContent>
@@ -1001,7 +1008,7 @@
                     </xs:element>
                     <xs:element name="sceneRangeExtent">
                       <xs:annotation>
-                        <xs:documentation>(approximately and at mid-range [m]</xs:documentation>
+                        <xs:documentation>(approximately and at mid-range) scene extent in range [m]</xs:documentation>
                       </xs:annotation>
                       <xs:complexType>
                         <xs:simpleContent>
@@ -1019,12 +1026,12 @@
 			  <xs:sequence>
 			    <xs:element name="refRow" type="xs:integer">
 			      <xs:annotation>
-			        <xs:documentation>position in image row</xs:documentation>
+			        <xs:documentation>position in image: row</xs:documentation>
 			      </xs:annotation>
 			    </xs:element>
 			    <xs:element name="refColumn" type="xs:integer">
 			      <xs:annotation>
-			        <xs:documentation>position in image column</xs:documentation>
+			        <xs:documentation>position in image: column</xs:documentation>
 			      </xs:annotation>
 			    </xs:element>
 			    <xs:element ref="lat"/>
@@ -1063,7 +1070,7 @@
                     </xs:element>
                     <xs:element name="sceneAverageHeight">
                       <xs:annotation>
-                        <xs:documentation>with respect to reference frame [m]</xs:documentation>
+                        <xs:documentation>scene average height with respect to reference frame [m]</xs:documentation>
                       </xs:annotation>
                       <xs:complexType>
                         <xs:simpleContent>
@@ -1123,9 +1130,9 @@
 			</xs:sequence>
 		      </xs:complexType>
                     </xs:element>
-		    <xs:element name="yaw">
+		    <xs:element name="yawAngle">
 		      <xs:annotation>
-		        <xs:documentation>yaw angle of the satellite [degrees]</xs:documentation>
+		        <xs:documentation>yaw angle of the instrument [degrees]</xs:documentation>
 		      </xs:annotation>
                       <xs:complexType>
                         <xs:simpleContent>
@@ -1135,9 +1142,9 @@
                         </xs:simpleContent>
                       </xs:complexType>
 		    </xs:element>
-		    <xs:element name="pitch">
+		    <xs:element name="pitchAngle">
 		      <xs:annotation>
-		        <xs:documentation>pitch angle of the satellite [degrees]</xs:documentation>
+		        <xs:documentation>pitch angle of the instrument [degrees]</xs:documentation>
 		      </xs:annotation>
                       <xs:complexType>
                         <xs:simpleContent>
@@ -1147,9 +1154,9 @@
                         </xs:simpleContent>
                       </xs:complexType>
 		    </xs:element>
-		    <xs:element name="roll">
+		    <xs:element name="rollAngle">
 		      <xs:annotation>
-		        <xs:documentation>roll angle of the satellite [degrees]</xs:documentation>
+		        <xs:documentation>roll angle of the instrument [degrees]</xs:documentation>
 		      </xs:annotation>
                       <xs:complexType>
                         <xs:simpleContent>
@@ -1232,7 +1239,7 @@
 				</xs:element>
 				<xs:element name="columnBlockLength">
 				  <xs:annotation>
-				    <xs:documentation>resampling factor [pixels]</xs:documentation>
+				    <xs:documentation>resampling factor in range [pixels]</xs:documentation>
 				  </xs:annotation>
                                   <xs:complexType>
                                     <xs:simpleContent>
@@ -1244,7 +1251,7 @@
 				</xs:element>
 				<xs:element name="rowBlockLength">
 				  <xs:annotation>
-				    <xs:documentation>resampling factor [pixels]</xs:documentation>
+				    <xs:documentation>resampling factor in azimuth [pixels]</xs:documentation>
 				  </xs:annotation>
                                   <xs:complexType>
                                     <xs:simpleContent>
@@ -1585,7 +1592,7 @@
                   <xs:sequence>
                     <xs:element name="dopplerBasebandEstimationMethod" type="string255">
                       <xs:annotation>
-                        <xs:documentation>azimuth cross correlation</xs:documentation>
+                        <xs:documentation>Doppler baseband estimation method</xs:documentation>
                       </xs:annotation>
                     </xs:element>
                     <xs:element name="dopplerCentroidCoordinateType" type="coordinateType">
@@ -1736,12 +1743,12 @@
 		    </xs:element>
 		    <xs:element name="chirpRate">
 		      <xs:annotation>
-		        <xs:documentation>chirp rate [Hz/sec]</xs:documentation>
+		        <xs:documentation>chirp rate [Hz/s]</xs:documentation>
 		      </xs:annotation>
                       <xs:complexType>
                         <xs:simpleContent>
                           <xs:extension base="xs:double">
-                            <xs:attribute name="units" type="xs:string" fixed="Hz/sec"/>
+                            <xs:attribute name="units" type="xs:string" fixed="Hz/s"/>
                           </xs:extension>
                         </xs:simpleContent>
                       </xs:complexType>
@@ -2249,17 +2256,17 @@
                           <xs:annotation>
                             <xs:documentation>image data statistics</xs:documentation>
                           </xs:annotation>
-                          <xs:element name="min" type="xs:double">
+                          <xs:element name="minValue" type="xs:double">
                             <xs:annotation>
                               <xs:documentation>minimum value</xs:documentation>
                             </xs:annotation>
                           </xs:element>
-                          <xs:element name="max" type="xs:double">
+                          <xs:element name="maxValue" type="xs:double">
                             <xs:annotation>
                               <xs:documentation>maximum value</xs:documentation>
                             </xs:annotation>
                           </xs:element>
-                          <xs:element name="mean" type="xs:double">
+                          <xs:element name="meanValue" type="xs:double">
                             <xs:annotation>
                               <xs:documentation>mean value</xs:documentation>
                             </xs:annotation>
