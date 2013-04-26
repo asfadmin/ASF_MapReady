@@ -129,12 +129,11 @@ void usage(char *name)
 {
   printf("\n"
 	 "USAGE:\n"
-	 "   %s [ -log <logFile> ] <measures> <csv> <grid>\n",name);
+	 "   %s [ -log <logFile> ] <measures> <csv>\n",name);
   printf("\n"
 	 "REQUIRED ARGUMENTS:\n"
 	 "   measures   MEaSUReS data file\n"
-	 "   csv        data dump\n"
-	 "   grid       initial grid location\n");
+	 "   csv        data dump\n");
   printf("\n"
 	 "DESCRIPTION:\n"
 	 "   %s converts an RGPS MEaSUReS file into a csv file.\n",

@@ -1,4 +1,4 @@
-# Makefile for measures2xml
+# Makefile for measures2csv
 # Author Rudi Gens
 
 include ../../make_support/system_rules
