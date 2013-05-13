@@ -101,7 +101,14 @@ typedef enum {
   MASK,
   IMAGE_LAYER_STACK,
   RGB_STACK,
-  MOSAIC
+  MOSAIC,
+  ICE_AGE,
+  ICE_THICKNESS,
+  BACKSCATTER_HISTOGRAM,
+  MULTIYEAR_ICE_FRACTION,
+  DIVERGENCE,
+  VORTICITY,
+  SHEAR
 } image_data_type_t;
 
 typedef enum {
