@@ -123,11 +123,20 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	meta_parameters *in_meta;
 	meta_parameters *out_meta;
 
+       printf("Entering sr2gr_pixsiz\n");
+       printf("\tinfile %s\n",infile);
+       printf("\toutfile %s\n",outfile);
+       printf("\tgrPixSize %f\n",grPixSize);
+
+
+
         create_name (infile_name, infile, ".img");
         create_name (outfile_name, outfile, ".img");
 
         create_name (inmeta_name, infile, ".meta");
         create_name (outmeta_name, outfile, ".meta");
+
+	printf("Creating sr2gr with pixsize %f\n",grPixSize);
 
 	in_meta  = meta_read(inmeta_name);
 	out_meta = meta_copy(in_meta);
@@ -228,7 +237,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
             
             for (ii=0; ii<out_np; ii++)
             {
-              int val00,val01,val10,val11,tmp1,tmp2;
+              float val00,val01,val10,val11,tmp1,tmp2;
               val00 = ibuf1[lower[ii]];
               val01 = ibuf1[upper[ii]];
               val10 = ibuf2[lower[ii]];
