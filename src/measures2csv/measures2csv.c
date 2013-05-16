@@ -770,7 +770,7 @@ int main(int argc, char **argv)
 	    fprintf(fpOut2, "%.6f, ", obs[kk].cell_area);
 	    fprintf(fpOut2, "%.6f, %.6f, ", 
 		    (obs[kk].far_fyr*0.001), (obs[kk].far_my*0.001));
-	    fprintf(fpOut2, "%d, %.6f", ll+1, (thick_far[ll]*0.001));
+	    fprintf(fpOut2, "%d, %.6f\n", ll+1, (thick_far[ll]*0.001));
 	  }
 	  FREE(thick_far);
 	}
@@ -783,12 +783,11 @@ int main(int argc, char **argv)
 	    fprintf(fpOut3, "%.6f, ", obs[kk].cell_area);
 	    fprintf(fpOut3, "%.6f, %.6f, ", 
 		    (obs[kk].far_fyr*0.001), (obs[kk].far_my*0.001));
-	    fprintf(fpOut3, "%d, ", ll+1);
 	    fprintf(fpOut3, "%.6f, %.6f, ", 
 		   ridge[ll].r_ridge_ar, ridge[ll].i_ridge_ar);
 	    fprintf(fpOut3, "%.6f, %.6f, ", 
 		   ridge[ll].r_ridge_tr, ridge[ll].i_ridge_tr);
-	    fprintf(fpOut3, "%d, ", ridge[ll].ridge_far);
+	    fprintf(fpOut3, "%.6f, ", (ridge[ll].ridge_far*0.001));
 	    fprintf(fpOut3, "%.6f, %.6f, ", 
 		    ridge[ll].r_ridge_fdd, ridge[ll].i_ridge_fdd);
 	    fprintf(fpOut3, "%d\n", ridge[ll].ridge_flag);
