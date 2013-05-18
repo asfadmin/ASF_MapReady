@@ -321,7 +321,7 @@ int main(int argc, char **argv)
   band_count += shrFlag;
 
   // Define bands
-  band_t *band = (band_t *) MALLOC(sizeof(band_t)*(band_count+6));
+  band_t *band = (band_t *) MALLOC(sizeof(band_t)*(band_count+7));
   
   // RGPS MEaSUREs products
   for (ii=0; ii<band_count; ii++) {
@@ -440,7 +440,7 @@ int main(int argc, char **argv)
   strcpy(band[band_count+1].coordinates, "");
   strcpy(band[band_count+1].grid_mapping, "");
   strcpy(band[band_count+1].long_name, "serial date");
-  strcpy(band[band_count+1].references, "start and end time of 3-day average");
+  strcpy(band[band_count+1].references, "center time of 3-day average");
   strcpy(band[band_count+1].standard_name, "time");
   strcpy(band[band_count+1].units, "seconds since 1995-01-01T00:00:00Z");
   strcpy(band[band_count+1].units_description, "");
@@ -450,78 +450,78 @@ int main(int argc, char **argv)
   band[band_count+1].valid_range[1] = MAGIC_UNSET_DOUBLE;
   band[band_count+1].time_count = nFiles/band_count;
   band[band_count+1].cat_count = 1;
-  band[band_count+1].dim_count = 2;
+  band[band_count+1].dim_count = 1;
   band[band_count+1].datatype = NC_FLOAT;
 
-  // Longitude
-  strcpy(band[band_count+2].name, "longitude");
+  // Time bounds
+  strcpy(band[band_count+2].name, "time_bnds");
   strcpy(band[band_count+2].axis, "");
   strcpy(band[band_count+2].cell_methods, "");
   strcpy(band[band_count+2].coordinates, "");
   strcpy(band[band_count+2].grid_mapping, "");
-  strcpy(band[band_count+2].long_name, "longitude");
-  strcpy(band[band_count+2].references, "");
-  strcpy(band[band_count+2].standard_name, "longitude");
-  strcpy(band[band_count+2].units, "degrees_east");
+  strcpy(band[band_count+2].long_name, "serial date");
+  strcpy(band[band_count+2].references, "start and end time of 3-day average");
+  strcpy(band[band_count+2].standard_name, "time");
+  strcpy(band[band_count+2].units, "seconds since 1995-01-01T00:00:00Z");
   strcpy(band[band_count+2].units_description, "");
   strcpy(band[band_count+2].bounds, "");
-  band[band_count+2].fill_value = -999.0;
-  band[band_count+2].valid_range[0] = -180.0;
-  band[band_count+2].valid_range[1] = 180.0;
-  band[band_count+2].time_count = 1;
+  band[band_count+2].fill_value = 0.0;
+  band[band_count+2].valid_range[0] = MAGIC_UNSET_DOUBLE;
+  band[band_count+2].valid_range[1] = MAGIC_UNSET_DOUBLE;
+  band[band_count+2].time_count = nFiles/band_count;
   band[band_count+2].cat_count = 1;
   band[band_count+2].dim_count = 2;
   band[band_count+2].datatype = NC_FLOAT;
 
-  // Latitude
-  strcpy(band[band_count+3].name, "latitude");
+  // Longitude
+  strcpy(band[band_count+3].name, "longitude");
   strcpy(band[band_count+3].axis, "");
   strcpy(band[band_count+3].cell_methods, "");
   strcpy(band[band_count+3].coordinates, "");
   strcpy(band[band_count+3].grid_mapping, "");
-  strcpy(band[band_count+3].long_name, "latitude");
+  strcpy(band[band_count+3].long_name, "longitude");
   strcpy(band[band_count+3].references, "");
-  strcpy(band[band_count+3].standard_name, "latitude");
-  strcpy(band[band_count+3].units, "degrees_north");
+  strcpy(band[band_count+3].standard_name, "longitude");
+  strcpy(band[band_count+3].units, "degrees_east");
   strcpy(band[band_count+3].units_description, "");
   strcpy(band[band_count+3].bounds, "");
   band[band_count+3].fill_value = -999.0;
-  band[band_count+3].valid_range[0] = -90.0;
-  band[band_count+3].valid_range[1] = 90.0;
+  band[band_count+3].valid_range[0] = -180.0;
+  band[band_count+3].valid_range[1] = 180.0;
   band[band_count+3].time_count = 1;
   band[band_count+3].cat_count = 1;
   band[band_count+3].dim_count = 2;
   band[band_count+3].datatype = NC_FLOAT;
 
-  // XGrid
-  strcpy(band[band_count+4].name, "xgrid");
-  strcpy(band[band_count+4].axis, "X");
+  // Latitude
+  strcpy(band[band_count+4].name, "latitude");
+  strcpy(band[band_count+4].axis, "");
   strcpy(band[band_count+4].cell_methods, "");
   strcpy(band[band_count+4].coordinates, "");
   strcpy(band[band_count+4].grid_mapping, "");
-  strcpy(band[band_count+4].long_name, "projection_grid_x_centers");
+  strcpy(band[band_count+4].long_name, "latitude");
   strcpy(band[band_count+4].references, "");
-  strcpy(band[band_count+4].standard_name, "projection_x_coordinates");
-  strcpy(band[band_count+4].units, "meters");
+  strcpy(band[band_count+4].standard_name, "latitude");
+  strcpy(band[band_count+4].units, "degrees_north");
   strcpy(band[band_count+4].units_description, "");
   strcpy(band[band_count+4].bounds, "");
-  band[band_count+4].fill_value = MAGIC_UNSET_DOUBLE;
-  band[band_count+4].valid_range[0] = MAGIC_UNSET_DOUBLE;
-  band[band_count+4].valid_range[1] = MAGIC_UNSET_DOUBLE;
+  band[band_count+4].fill_value = -999.0;
+  band[band_count+4].valid_range[0] = -90.0;
+  band[band_count+4].valid_range[1] = 90.0;
   band[band_count+4].time_count = 1;
   band[band_count+4].cat_count = 1;
   band[band_count+4].dim_count = 2;
   band[band_count+4].datatype = NC_FLOAT;
 
-  // YGrid
-  strcpy(band[band_count+5].name, "ygrid");
-  strcpy(band[band_count+5].axis, "Y");
+  // XGrid
+  strcpy(band[band_count+5].name, "xgrid");
+  strcpy(band[band_count+5].axis, "X");
   strcpy(band[band_count+5].cell_methods, "");
   strcpy(band[band_count+5].coordinates, "");
   strcpy(band[band_count+5].grid_mapping, "");
-  strcpy(band[band_count+5].long_name, "projection_grid_y_centers");
+  strcpy(band[band_count+5].long_name, "projection_grid_x_centers");
   strcpy(band[band_count+5].references, "");
-  strcpy(band[band_count+5].standard_name, "projection_y_coordinates");
+  strcpy(band[band_count+5].standard_name, "projection_x_coordinates");
   strcpy(band[band_count+5].units, "meters");
   strcpy(band[band_count+5].units_description, "");
   strcpy(band[band_count+5].bounds, "");
@@ -533,8 +533,28 @@ int main(int argc, char **argv)
   band[band_count+5].dim_count = 2;
   band[band_count+5].datatype = NC_FLOAT;
 
+  // YGrid
+  strcpy(band[band_count+6].name, "ygrid");
+  strcpy(band[band_count+6].axis, "Y");
+  strcpy(band[band_count+6].cell_methods, "");
+  strcpy(band[band_count+6].coordinates, "");
+  strcpy(band[band_count+6].grid_mapping, "");
+  strcpy(band[band_count+6].long_name, "projection_grid_y_centers");
+  strcpy(band[band_count+6].references, "");
+  strcpy(band[band_count+6].standard_name, "projection_y_coordinates");
+  strcpy(band[band_count+6].units, "meters");
+  strcpy(band[band_count+6].units_description, "");
+  strcpy(band[band_count+6].bounds, "");
+  band[band_count+6].fill_value = MAGIC_UNSET_DOUBLE;
+  band[band_count+6].valid_range[0] = MAGIC_UNSET_DOUBLE;
+  band[band_count+6].valid_range[1] = MAGIC_UNSET_DOUBLE;
+  band[band_count+6].time_count = 1;
+  band[band_count+6].cat_count = 1;
+  band[band_count+6].dim_count = 2;
+  band[band_count+6].datatype = NC_FLOAT;
+
   // Export to netCDF
-  export_netcdf_list(listOutFile, band, band_count+6, outFile);
+  export_netcdf_list(listOutFile, band, band_count+7, outFile);
 
   // Clean up
   FREE(inFile);

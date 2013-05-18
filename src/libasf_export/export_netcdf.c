@@ -454,15 +454,18 @@ netcdf_t *initialize_netcdf_file(const char *output_file, band_t *band,
   }
 
   // Define dimensions
-  status = nc_def_dim(ncid, "longitude", sample_count, &dim_width_id);
+  status = nc_def_dim(ncid, "lon", sample_count, &dim_width_id);
   if (status != NC_NOERR)
     asfPrintError("Problem with 'longitude' dimension definition\n");
-  status = nc_def_dim(ncid, "latitude", line_count, &dim_height_id);
+  status = nc_def_dim(ncid, "lat", line_count, &dim_height_id);
   if (status != NC_NOERR)
     asfPrintError("Problem with 'latitude' dimension definition\n");
   status = nc_def_dim(ncid, "time", file_count, &dim_time_id);
   if (status != NC_NOERR)
     asfPrintError("Problem with 'time' dimension definition\n");
+  status = nc_def_dim(ncid, "nv", 2, &dim_bounds_id);
+  if (status != NC_NOERR)
+    asfPrintError("Problem with 'nv' dimension definition\n");
   if (dim_count == 4) {
     if (strcmp_case(band[0].name, "backscatter_histogram") == 0)
       status = nc_def_dim(ncid, "histogram_bin", band[0].cat_count, 
@@ -482,6 +485,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file, band_t *band,
   int dim_2d[2] = { dim_height_id, dim_width_id };
   int dim_3d[3] = { dim_time_id, dim_height_id, dim_width_id };
   int dim_4d[4] = { dim_time_id, dim_depth_id, dim_height_id, dim_width_id };
+  int dim_time_2d[2] = { dim_time_id, dim_bounds_id };
   for (ii=0; ii<band_count; ii++) {
     if (band[ii].dim_count == 1) {
       status = 
@@ -491,25 +495,15 @@ netcdf_t *initialize_netcdf_file(const char *output_file, band_t *band,
 		      band[ii].name);
     }
     else if (band[ii].dim_count == 2) {
-      if (strcmp_case(band[ii].name, "time") == 0) { 
-	status = nc_def_dim(ncid, "time_bnds", 2, &dim_bounds_id);
-	if (status != NC_NOERR)
-	  asfPrintError("Problem with 'bounds' dimension definition\n");
-	status = 
-	  nc_def_var(ncid, "time", band[ii].datatype, 1, dim_1d, &var_id);
-	if (status != NC_NOERR)
-	  asfPrintError("Problem with '%s' (1-dimensional) variable "
-			"definition\n", band[ii].name);
-	int dim_time_2d[2] = { dim_time_id, dim_bounds_id };
+      if (strcmp_case(band[ii].name, "time_bnds") == 0)
 	status = nc_def_var(ncid, "time_bnds", band[ii].datatype, 2, 
 			    dim_time_2d, &var_id);
-      }
       else
 	status = nc_def_var(ncid, band[ii].name, band[ii].datatype, 2, dim_2d, 
 			    &var_id);
       if (status != NC_NOERR)
-	asfPrintError("Problem with '%s' (2-dimensional) variable definition\n",
-		      band[ii].name);
+	asfPrintError("Problem with '%s' (2-dimensional) variable definition"
+		      "\n", band[ii].name);
     }
     else if (band[ii].dim_count == 3) {
       status = 
@@ -897,6 +891,7 @@ void finalize_netcdf_file(int ncid, float *time, float *bounds,
 
   // Extra bands - time bounds (optional)
   if (bounds) {
+    asfPrintStatus("Storing band 'time bounds' ...\n");
     status = nc_inq_varid(ncid, "time_bnds", &var_id);
     if (status != NC_NOERR)
       asfPrintError("Problem with looking up 'time_bnds' variable ID\n");
@@ -1354,7 +1349,7 @@ void export_netcdf_list(const char *input_file_list, band_t *band,
   // Check for bounds
   int bounds_flag = FALSE;
   for (ii=0; ii<band_count; ii++) {
-    if (strcmp_case(band[ii].bounds, "time_bnds") == 0)
+    if (strcmp_case(band[ii].name, "time_bnds") == 0)
       bounds_flag = TRUE;
   }
 
