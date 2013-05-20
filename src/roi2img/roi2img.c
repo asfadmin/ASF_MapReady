@@ -1,5 +1,6 @@
 /******************************************************************************
-NAME:  convert a roi slc file into an ASF img file.
+NAME:  Convert a roi slc file into an ASF img file.
+
 
 SYNOPSIS:
 
@@ -38,7 +39,7 @@ BUGS:
 #define LA      1
 #define LD	4
 #define PRI	0.00060725
-#define USE_TLES 0
+#define USE_TLES 1
 
 typedef struct {
         int      major_cnt;
@@ -93,6 +94,7 @@ hms_time   	s_time;			// start time of this segment
 double 		time_offset;		// value from the clock drift
 
 /* Subroutines */
+void give_usage(int argc, char *argv[]);
 int get_values(FILE *fp,SEASAT_header_ext *s);	// read values from a header file
 int read_hdrfile(char *infile);			// read correct values from header file
 int read_roi_infile(char *infile);		// read the ROI input file values
@@ -105,8 +107,6 @@ int get_3double_vals(FILE *fp, double *num1, double *num2, double *num3);
 int get_double_val(FILE *fp, double *num);
 int get_2int_vals(FILE *fp,int *num1,int *num2);
 int get_int_val(FILE *fp, int *num);
-
-
 
 double r_awgs84 = 6378137.0;
 double r_e2wgs84 = 0.00669437999015;
@@ -121,12 +121,12 @@ main(int argc, char *argv[])
   float b[CPX_PIX];
   float c[CPX_PIX/LA];
 
-  int nl;
+  int cla,nl;
   int i,j,k,line;
   int olines, osamps;
   int oline, osamp;
   double t;
-  char infile[256], outfile[256], roifile[256], hdrfile[256];
+  char basefile[256], infile[256], outfile[256], roifile[256], hdrfile[256];
   
   ymd_date date;
   hms_time time;
@@ -138,29 +138,42 @@ main(int argc, char *argv[])
   char	 dir;			// orbit direction - A or D
   double x, y, z;		// state vector positions at start of segment
   double xdot, ydot, zdot;	// state vector veloctiy at start of segment
-
-  if (argc!=2 && argc!=3) {
-    printf("Usage: %s <base_file_name> [roi.in file]\n",argv[0]);
-    printf("\tbase_file_name\tinput ROI slc file; output ASF .img and .ddr\n");
-    printf("\troi.in file\tOptional roi.in file name\n");
-    exit(1);
-  }
+  int    META_ONLY = 0;		// only create meta file, no img file
+  int	 SEPARATE_ROI_FILE = 0; // CLA roi file given?
   
-  strcpy(infile,argv[1]);
+  if (argc<2 || argc>5) { give_usage(argc,argv); exit(1); }
+
+  while ((cla=getopt(argc,argv,"mr:")) != -1)
+    switch(cla) {
+      case 'm':
+        META_ONLY = 1;
+	printf("Using meta only option\n");
+	break;
+      case 'r':
+	strcpy(roifile,optarg);
+	SEPARATE_ROI_FILE = 1;
+	break;
+      case '?':
+        printf("Unknown option %s\n",optarg);
+	return(1);
+      default:
+        give_usage(argc,argv);
+	exit(1);
+    } 
+
+  strcpy(basefile,argv[optind]);
+  strcpy(infile,basefile);
   strcat(infile,".slc");
-  strcpy(outfile,argv[1]);
+  strcpy(outfile,basefile);
   strcat(outfile,".img");
-  strcpy(hdrfile,argv[1]);
+  strcpy(hdrfile,basefile);
   strcat(hdrfile,".hdr");
 
-  /* if no separate roi.in file is specified, use the main name
-     otherwise, use the seceond CLA as the roi.in file name */
-  if (argc == 2) {
-    strcpy(roifile,argv[1]);
+  /* if no separate roi.in file is specified, use the main name */
+  if (SEPARATE_ROI_FILE == 0) {
+    strcpy(roifile,basefile);
     strcat(roifile,".roi.in");
-  } else {
-    strcpy(roifile,argv[2]);
-  } 
+  }
 
   /* Read parameters from the ROI.in file */
   read_roi_infile(roifile);
@@ -232,48 +245,57 @@ if (USE_TLES == 1) {
 }
 
   if (zdot > 0.0) dir = 'A'; else dir = 'D';
-  
+
   /* set up output image parameters */
   olines = nl / LD;
   osamps = ns / LA;
-  obuff = (float **) malloc (sizeof(float *)*olines);
-  for (i=0; i<olines; i++) obuff[i] = (float *) malloc (sizeof(float)*osamps);
+
+  if (META_ONLY==0) { 
+    obuff = (float **) malloc (sizeof(float *)*olines);
+    for (i=0; i<olines; i++) obuff[i] = (float *) malloc (sizeof(float)*osamps);
   
-  /* Open the input slc file and output img file*/
-  fpin = fopen(infile,"rb");
-  if (fpin==NULL) {printf("ERROR: Unable to open input file %s\n",infile); exit(1);}
-  fpout = fopen(outfile,"wb");
+    /* Open the input slc file and output img file*/
+    fpin = fopen(infile,"rb");
+    if (fpin==NULL) {printf("ERROR: Unable to open input file %s\n",infile); exit(1);}
+    fpout = fopen(outfile,"wb");
 
-  /* Take the complex looks from the slc file to create the img file */
-  printf("Taking complex looks from file %s to create %s\n",infile,outfile);
-  oline = 0;
-  for (line=0; line < nl; line+=LD) {
-    if (line%2560==0) printf("\t%i\n",line);
-    fread(ibuff,sizeof(float),ns*2*LD,fpin);
+    /* Take the complex looks from the slc file to create the img file */
+    printf("Taking complex looks from file %s to create %s\n",infile,outfile);
+    oline = 0;
+    for (line=0; line < nl; line+=LD) {
+      if (line%2560==0) printf("\t%i\n",line);
+      fread(ibuff,sizeof(float),ns*2*LD,fpin);
 
-    /* take looks down */
-    for (j=0; j<ns; j++) {
-      b[j] = 0;
-      for (i=0; i<LD; i++)
-        b[j] = b[j] + (ibuff[(2*j)+(i*ns*2)]*ibuff[2*j+(i*ns*2)]) 
-		    + (ibuff[(2*j+1)+(i*ns*2)]*ibuff[(2*j+1)+(i*ns*2)]);    
-    }
+      /* take looks down */
+      for (j=0; j<ns; j++) {
+        b[j] = 0;
+        for (i=0; i<LD; i++)
+          b[j] = b[j] + (ibuff[(2*j)+(i*ns*2)]*ibuff[2*j+(i*ns*2)]) 
+  		      + (ibuff[(2*j+1)+(i*ns*2)]*ibuff[(2*j+1)+(i*ns*2)]);    
+      }
     
-    /* take looks across */
-    for (j=0; j<ns/LA; j++) {
-      c[j] = 0;
-      for (k=0;k<LA;k++)
-        c[j] = c[j] + b[j*LA+k];
-      c[j] = sqrt(c[j]);
+      /* take looks across */
+      for (j=0; j<ns/LA; j++) {
+        c[j] = 0;
+        for (k=0;k<LA;k++)
+          c[j] = c[j] + b[j*LA+k];
+        c[j] = sqrt(c[j]);
+      }
+      byteswap(c,ns/LA);
+      for (j=0; j<osamps; j++) obuff[oline][j] = c[j];
+      oline++;
     }
-    byteswap(c,ns/LA);
-    for (j=0; j<osamps; j++) obuff[oline][j] = c[j];
-    oline++;
-  }
 
-  /* if image is ascending, write out in reverse order */
-  if (dir=='A') { for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); }
-  else { for (j=0; j<olines; j++) fwrite(obuff[j],sizeof(float),osamps,fpout); }
+    /* if image is ascending, write out in reverse order */
+    if (dir=='A') { for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); }
+    else { for (j=0; j<olines; j++) fwrite(obuff[j],sizeof(float),osamps,fpout); }
+ 
+ 
+    fclose(fpout);
+    fclose(fpin);
+    free(obuff);
+    
+  }  /* END IF META_ONLY */   
 
   /* Create the meta file */
   printf("Initializing the meta structure\n");
@@ -332,7 +354,7 @@ if (USE_TLES == 1) {
     
   printf("Filling in meta->general parameters\n");
   
-  strcpy(meta->general->basename,argv[1]);
+  strcpy(meta->general->basename,basefile);
   strcpy(meta->general->sensor,"SEASAT");
   strcpy(meta->general->sensor_name,"SAR");
   strcpy(meta->general->mode,"STD");
@@ -391,8 +413,7 @@ if (USE_TLES == 1) {
   if (dir=='A') meta->sar->azimuth_time_per_pixel *= -1;
   
 //  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
-//  meta->sar->time_shift = 0.18;				// emperical value from a single delta scene
-
+//  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
 
   meta->sar->slant_shift = 0.0;
   
@@ -405,14 +426,12 @@ if (USE_TLES == 1) {
   meta->sar->slant_range_first_pixel = srf;
   meta->sar->wavelength = wavelength;
   meta->sar->prf = prf;
-  
-  meta->sar->earth_radius = RE_nadir;			// This really should be the radius at the center of the image
-  							// and not the radius at the nadir point...  how to fix this???
+  meta->sar->earth_radius = meta_get_earth_radius(meta,	meta->general->line_count/2.0, meta->general->sample_count/2.0);
   meta->sar->satellite_height = Rsc;
-  meta->sar->range_doppler_coefficients[0] = dop1;
-  meta->sar->range_doppler_coefficients[1] = dop2;
-  meta->sar->range_doppler_coefficients[2] = dop3;
-  meta->sar->azimuth_doppler_coefficients[0] = dop1;
+  meta->sar->range_doppler_coefficients[0] = dop1*prf;
+  meta->sar->range_doppler_coefficients[1] = dop2*prf;
+  meta->sar->range_doppler_coefficients[2] = dop3*prf;
+  meta->sar->azimuth_doppler_coefficients[0] = dop1*prf;
   meta->sar->azimuth_doppler_coefficients[1] = 0;
   meta->sar->azimuth_doppler_coefficients[2] = 0;
   
@@ -420,7 +439,7 @@ if (USE_TLES == 1) {
   
   meta->sar->chirp_rate = chirp_slope;
   meta->sar->pulse_duration = pulse_duration;
-  meta->sar->range_sampling_rate = 1/fs;
+  meta->sar->range_sampling_rate = fs;
   strcpy(meta->sar->polarization,"HH");
   meta->sar->multilook = 1;
   meta->sar->pitch = 0;
@@ -431,19 +450,19 @@ if (USE_TLES == 1) {
   printf("Creating the meta->location block\n");
   if (!meta->location) meta->location = meta_location_init();
   meta_get_corner_coords(meta);
-
   meta_get_latLon(meta,meta->general->line_count/2,meta->general->sample_count/2,0,
-  			&meta->general->center_latitude,
-			&meta->general->center_longitude);
+  		  &meta->general->center_latitude, &meta->general->center_longitude);
 
   printf("Writing out the meta file\n");
-  meta_write(meta, argv[1]);
+  meta_write(meta, basefile);
 
-  char grfilename[256];
-  strcpy(grfilename,argv[1]);
-  strcat(grfilename,"G12");
-  float grPixSiz = 12.5;
-  sr2gr_pixsiz(argv[1], grfilename, grPixSiz);
+  if (META_ONLY == 0) {
+    char grfilename[256];
+    strcpy(grfilename,basefile);
+    strcat(grfilename,"G12");
+    float grPixSiz = 12.5;
+    sr2gr_pixsiz(basefile, grfilename, grPixSiz);
+  }
 
   exit(0);
 }
@@ -636,6 +655,14 @@ int get_string_val(FILE *fp, char *str)
   return(1);
 }
 
+void give_usage(int argc, char *argv[])
+{
+    printf("Usage: %s [-m][-r roi.in_file] <base_file_name>\n",argv[0]);
+    printf("\tbase_file_name\tinput ROI slc file; output ASF .img and .ddr\n");
+    printf("\t-m            \tmeta only option - only create meta file\n");
+    printf("\t-r roi.in_file\toptional roi.in file name\n");
+    exit(1);
+}
 
 
 

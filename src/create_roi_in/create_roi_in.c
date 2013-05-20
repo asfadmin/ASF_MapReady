@@ -278,9 +278,7 @@ main(int argc, char *argv[])
     dwp_line[i] = 0;
   }
 
-  // prf = 1647;
-
-  prf = 1646.76821737341; // determined emperically from the data sets
+  prf = 1647;
 
   /* set start year, day, second 
   -------------------------------------------------*/
