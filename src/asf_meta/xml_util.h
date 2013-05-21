@@ -16,3 +16,5 @@ const char *xml_get_string_attribute(xmlDoc *doc, char *format, ...);
 double xml_get_double_attribute(xmlDoc *doc, char *format, ...);
 int xml_get_int_attribute(xmlDoc *doc, char *format, ...);
 long xml_get_long_attribute(xmlDoc *doc, char *format, ...);
+
+int xml_get_children_count(xmlDoc *doc, char *format, ...);

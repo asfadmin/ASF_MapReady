@@ -284,6 +284,61 @@ long xml_get_long_attribute(xmlDoc *doc, char *format, ...)
     return MAGIC_UNSET_INT;
 }
 
+int xml_get_children_count(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[100000];
+  int count;
+  
+  va_start(ap, format);
+  vsnprintf(str, 99999, format, ap);
+  va_end(ap);
+
+  int i,n;
+  char **arr;
+  int found = TRUE;
+
+  split_into_array(str, '.', &n, &arr);
+
+  xmlNode *cur = xmlDocGetRootElement(doc);
+
+  // first item much match the name of the root
+  if (strcmp(arr[0], (char*)cur->name)!=0) {
+    // root node doesn't match -- return empty string
+    strcpy(buf, "");
+  }
+  else {
+    // subsequent items specify the search path through the xml tree
+    for (i=1; i<n; ++i) {
+      char *elem;
+      int k;
+      extract_array_specifier(arr[i], &elem, &k);
+
+      xmlNode *next = findNode(doc, cur, elem, k);
+      if (!next) {
+        // not found -- return NULL
+        found = FALSE;
+        strcpy(buf, "");
+        FREE(elem);
+        break;
+      }
+      
+      FREE(elem);
+      cur = next;
+    }
+  }
+
+  if (found) {
+    assert(cur != NULL);
+    count = xmlChildElementCount(cur);
+  }
+
+  free_char_array(&arr, n);
+
+  return count;
+}
+
+
 // Whole bunch of test code... 
 
 static int n_ok=0;
