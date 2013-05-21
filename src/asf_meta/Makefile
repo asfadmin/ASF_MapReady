@@ -94,6 +94,9 @@ OBJS =  $(LEX_YACC_OBJS) \
 	heading.o \
 	interp_stVec.o \
 	ioLine.o \
+	iso_init.o \
+	iso_write.o \
+	iso_read.o \
 	latLon2timeSlant.o \
 	line_header.o \
 	lzFetch.o \
@@ -124,6 +127,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta2terrasar.o \
 	meta2uavsar.o \
 	meta2smap.o \
+	meta2iso.o \
 	meta_read.o \
 	meta_write.o \
 	orbital_state_vector.o \
@@ -154,7 +158,7 @@ asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
 	cp asf_meta.h get_ceos_names.h get_stf_names.h gamma.h meta_init_stVec.h \
 		meta_project.h frame_calc.h dateUtil.h calibrate.h line_header.h\
-		envi.h doppler.h xml_util.h $(ASF_INCLUDE_DIR)
+		envi.h doppler.h xml_util.h asf_iso_meta.h $(ASF_INCLUDE_DIR)
 	-cp -R lib_test $(SHAREDIR)
 	-cp -R meta_test $(SHAREDIR)
 	-cp -R geotiff_test $(SHAREDIR)
