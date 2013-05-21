@@ -646,10 +646,11 @@ void iso_meta_free(iso_meta *iso);
 
 // Other functions
 iso_meta *iso_meta_read(const char *xmlName);
-void iso_meta_write(iso_meta *iso, const char *outName);
+void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outName);
 void iso_ext_meta_write(iso_meta *iso, const char *outName, 
 			const char *fileIdentifier, 
-			const char *iso_meta_configFile);
+			const char *iso_meta_configFile,
+			const char *gapFile);
 iso_meta *meta2iso(meta_parameters *meta);
 meta_parameters *iso2meta(iso_meta *iso);
 

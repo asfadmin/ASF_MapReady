@@ -1,0 +1,65 @@
+<MI_Metadata>
+    <contact>
+        <CI_ResponsibleParty>
+            <organisationName>Alaska Satellite Facility</organisationName>
+            <contactInfo id="ASFContactInfo">
+                <CI_Contact>
+                    <phone>
+                        <CI_Telephone>
+                            <voice>907-474-6166</voice>
+                            <facsimile>907-474-2665</facsimile>
+                        </CI_Telephone>
+                    </phone>
+                    <address>
+                        <CI_Address>
+                            <deliveryPoint>903 Koyukuk Dr.</deliveryPoint>
+                            <city>Fairbanks</city>
+                            <administrativeArea>AK</administrativeArea>
+                            <postalCode>99775-7320</postalCode>
+                            <country>USA</country>
+                            <electronicMailAddress>uso@asf.alaska.edu</electronicMailAddress>
+                        </CI_Address>
+                    </address>
+                </CI_Contact>
+            </contactInfo>
+            <role>
+                <CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</CI_RoleCode>
+            </role>
+        </CI_ResponsibleParty>
+    </contact>
+    <identificationInfo>
+        <MD_DataIdentification>
+            <citation></citation>
+            <abstract></abstract>
+            <status>
+                <MD_ProgressCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode" codeListValue="onGoing">onGoing</MD_ProgressCode>
+            </status>
+            <resourceConstraints>
+                <MD_LegalConstraints>
+                    <useLimitation>
+                    Access constraints disclaimer
+                    Use constraints disclaimer
+                    Copyright NASA (1978)
+                    </useLimitation>
+               </MD_LegalConstraints>
+                <MD_SecurityConstraints>
+                    <useLimitation>
+                    Classification disclaimer
+                    </useLimitation>
+                </MD_SecurityConstraints>
+           </resourceConstraints>
+        </MD_DataIdentification>
+    </identificationInfo>
+    <distributionInfo>
+        <MD_Distribution>
+            <distributorContact>
+                <CI_ResponsibleParty>
+                    <organisationName>Alaska Satellite Facility</organisationName>
+                    <role>
+                        <CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="distributor">distributor</CI_RoleCode>
+                    </role>
+                </CI_ResponsibleParty>
+            </distributorContact>
+        </MD_Distribution>
+    </distributionInfo>
+</MI_Metadata>

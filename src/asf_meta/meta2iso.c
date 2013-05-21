@@ -613,6 +613,8 @@ iso_meta *meta2iso(meta_parameters *meta)
   for (ii=0; ii<numLayers; ii++) {
     quality->rawDataQuality[ii].polLayer = polLayer[ii];
     strcpy(quality->rawDataQuality[0].beamID, beamID[ii]);
+
+    /* Information is now passed as gap file into iso_meta_write
     // need to get this information from somewhere else
     quality->rawDataQuality[ii].numGaps = 1;
     quality->rawDataQuality[ii].gap = (iso_gap *) MALLOC(sizeof(iso_gap));
@@ -623,6 +625,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     quality->rawDataQuality[ii].missingLinesSignificanceFlag = FALSE;
     quality->rawDataQuality[ii].bitErrorSignificanceFlag = FALSE;
     quality->rawDataQuality[ii].timeReconstructionSignificanceFlag = FALSE;
+    */
   }
   quality->dopplerAmbiguityNotZeroFlag = FALSE;
   quality->dopplerOutsideLimitsFlag = FALSE;

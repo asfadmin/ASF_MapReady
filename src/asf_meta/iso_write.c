@@ -56,7 +56,7 @@ void double2str(double value, int decimals, char *str)
   }
 }
 
-void iso_meta_write(iso_meta *iso, const char *outFile)
+void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
 {
   unsigned long ii, kk;
   char *str;
@@ -1395,6 +1395,9 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 		    BAD_CAST quality->rawDataQuality[ii].beamID);
       numGaps = quality->rawDataQuality[ii].numGaps;
       sprintf(str, "%d", numGaps);
+
+      // FIXME: The gap information now should come out of the gap file
+
       xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST str);
       for (kk=0; kk<numGaps; kk++) {
 	node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
@@ -1535,7 +1538,8 @@ void cornerCoords2boundingBox(iso_sceneCoord corner[4],
 
 void iso_ext_meta_write(iso_meta *iso, const char *outFile, 
 			const char *fileIdentifier, 
-			const char *iso_meta_configFile)
+			const char *iso_meta_configFile,
+			const char *gapFile)
 {
   char *str = (char *) MALLOC(sizeof(char)*1024);
   int ii;
