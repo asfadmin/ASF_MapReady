@@ -165,6 +165,8 @@ void tokenize(const std::string& str, std::vector<std::string>& tokens)
     }
 }
 
+extern "C" {
+
 void propagate_state_vector(const char* infile)
 {
     std::ifstream file;
@@ -279,4 +281,5 @@ void propagate_state_vector(const char* infile)
     file.close();
 
     return;
+}
 }

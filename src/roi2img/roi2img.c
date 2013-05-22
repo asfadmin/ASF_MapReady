@@ -39,7 +39,6 @@ BUGS:
 #define LA      1
 #define LD	4
 #define PRI	0.00060725
-#define USE_TLES 1
 
 typedef struct {
         int      major_cnt;
@@ -140,10 +139,11 @@ main(int argc, char *argv[])
   double xdot, ydot, zdot;	// state vector veloctiy at start of segment
   int    META_ONLY = 0;		// only create meta file, no img file
   int	 SEPARATE_ROI_FILE = 0; // CLA roi file given?
-  
-  if (argc<2 || argc>5) { give_usage(argc,argv); exit(1); }
+  int    USE_TLES = 1;		// TLE/state vector switch
+    
+  if (argc<2 || argc>6) { give_usage(argc,argv); exit(1); }
 
-  while ((cla=getopt(argc,argv,"mr:")) != -1)
+  while ((cla=getopt(argc,argv,"mvr:")) != -1)
     switch(cla) {
       case 'm':
         META_ONLY = 1;
@@ -152,6 +152,9 @@ main(int argc, char *argv[])
       case 'r':
 	strcpy(roifile,optarg);
 	SEPARATE_ROI_FILE = 1;
+	break;
+      case 'v':
+        USE_TLES = 0;
 	break;
       case '?':
         printf("Unknown option %s\n",optarg);
@@ -657,10 +660,11 @@ int get_string_val(FILE *fp, char *str)
 
 void give_usage(int argc, char *argv[])
 {
-    printf("Usage: %s [-m][-r roi.in_file] <base_file_name>\n",argv[0]);
+    printf("Usage: %s [-m][-r roi.in_file][-v] <base_file_name>\n",argv[0]);
     printf("\tbase_file_name\tinput ROI slc file; output ASF .img and .ddr\n");
     printf("\t-m            \tmeta only option - only create meta file\n");
     printf("\t-r roi.in_file\toptional roi.in file name\n");
+    printf("\t-v            \tUse state vectors instead of TLEs\n");
     exit(1);
 }
 

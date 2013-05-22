@@ -22,8 +22,8 @@ OBJS = create_roi_in.o \
 	spectra.o \
 	fix_vectors.o \
 	get_peg.o \
-	runtest.o \
-	tle_code.o
+	tle_code.o \
+	runtest.o
 
 all: create_roi_in
 

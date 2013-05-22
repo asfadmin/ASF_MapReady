@@ -2,13 +2,14 @@
 NAME: create_roi_in - creates a ROI.in file from seasat HDR and state vectors
 		      previously created by the ASF SEASAT PREP code.
 
-SYNOPSIS: create_roi_in [-s <start_line> -e <end_line>] [-d #] <infile>
+SYNOPSIS: create_roi_in [-s <start_line> -e <end_line>][-d #][-v] <infile>
 
 DESCRIPTION:
 
 	<infile> 			base name, assume that <infile>.dat and <infile>.hdr exist.
 	[-s <start_line> -e <end_line>]	optional start/end line to process
 	[-d #]   			offset to calculated doppler, default zero
+	[-v]				use state vectors instead of TLEs.
 
 	- Read hdr file to get the start time and number of lines in the data segment
 		- calculate the number of patches to process
@@ -144,6 +145,7 @@ void roi_put_int(FILE *roi_file,int value,char *comment);
 void roi_put2_int(FILE *roi_file,int val1, int val2,char *comment);
 void roi_put_char(FILE *roi_file,char value,char *comment);
 void roi_put_double_lf(FILE *roi_file,double value,int decimals,char *comment);
+void roi_put4_double(FILE *roi_file,double val1, double val2, double val3, double val4, char *comment);
 
 
 #define GOOD_SAMPLES  5300
@@ -151,7 +153,6 @@ void roi_put_double_lf(FILE *roi_file,double value,int decimals,char *comment);
 #define MAX_DWP_SHIFTS   20
 #define DIGITIZATION_SHIFT 432
 #define MAX_CALTONES  20
-#define USE_TLES 0
 
 double r_awgs84 = 6378137.0;
 double r_e2wgs84 = 0.00669437999015;
@@ -166,6 +167,7 @@ main(int argc, char *argv[])
   int err, nl, patches, prf;
   int from;
   double x,y,z,xdot,ydot,zdot,vel;
+  double t;
   double srf, time_length;
   double height, earthrad;
   double schvel[3], schacc[3];
@@ -201,16 +203,17 @@ main(int argc, char *argv[])
   int c;
   int dop_shift;
   int ESA_FRAME = 0;
+  int USE_TLES = 1;
   int actual_lines, actual_samps;
 
-  if (argc!=2 && argc != 4 && argc != 6 && argc != 8) { give_usage(argv,argc); exit(1); }
+  if (argc < 2 || argc > 9) { give_usage(argv,argc); exit(1); }
   
   opterr = 0;
   start_line = 1;
   end_line = -99;
   dop_shift = 0;  
   
-  while ((c=getopt(argc,argv,"s:e:d:f:")) != -1)
+  while ((c=getopt(argc,argv,"s:e:d:f:v")) != -1)
     switch(c) {
       case 's':
         if (start_line != 1) {
@@ -240,6 +243,9 @@ main(int argc, char *argv[])
 	start_line = atoi(optarg);
 	ESA_FRAME = 1;
 	break;
+      case 'v':
+        USE_TLES = 0;
+	break;
       case '?':
         printf("Unknown option %s\n",optarg);
 	return(1);
@@ -263,7 +269,7 @@ main(int argc, char *argv[])
   if (ESA_FRAME==1) {
     printf("Using ESA frame sizes, starting processing at line %i\n",start_line);
     actual_lines = 8312;
-    actual_samps = 6018;
+    actual_samps = 6840;
   } else {
     printf("Processing from Line %i to ",start_line);
     if (end_line == -99) printf("end of file\n");
@@ -437,6 +443,14 @@ if (USE_TLES == 1) {
   remove("tle1.txt");  
   remove("propagated_state_vector.txt");
 
+  printf("Reading first state vector\n");
+  FILE *fpvec = fopen("fixed_state_vector.txt","r");
+  if (fscanf(fpvec,"%lf %lf %lf %lf %lf %lf %lf\n",&t,&x,&y,&z,&xdot,&ydot,&zdot)!=7) 
+    { printf("ERROR: Unable to find state vector in fixed_state_vector.txt file\n"); exit(1); }
+  fclose(fpvec);
+  strcpy(vecfile,"fixed_state_vector.txt");
+//  remove("fixed_state_vector.txt");
+
 } else {
 
   int cnt;
@@ -498,21 +512,22 @@ if (USE_TLES == 1) {
     vec = propagate(last_vec,thisSec,start_sec+time_offset);
   }
   fclose(fpo);
-}
 
-/* Find the correct state vector for this data segment 
------------------------------------------------------*/
+  /* Find the correct state vector for this data segment 
+  -----------------------------------------------------*/
   {
     FILE *fpvec;
     fpvec = fopen(vecfile,"r");
     int which = (int) (time_from_start+0.5);
     int i;
-    double t;
     for (i=0; i<=which; i++)
       if (fscanf(fpvec,"%lf %lf %lf %lf %lf %lf %lf\n",&t,&x,&y,&z,&xdot,&ydot,&zdot)!=7) 
         { printf("ERROR: Unable to find state vector #%i in fixed_state_vector.txt file\n",which); exit(1); }
     fclose(fpvec);
   }
+
+}
+
 
 /* Get the peg information needed for ROI
  ---------------------------------------*/
@@ -800,16 +815,17 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
 
 void give_usage(char *argv[], int argc)  
 {
-    printf("Usage: %s [-s <start_line> -e <end_line>] [-d dop] [-f start_line] <infile_base_name> \n\n",argv[0]);
-    printf("<infile_base_name>\tFile to create ROI .in file from. (assumes .dat and .hdr exist)\n");
-    printf("[-s sl -e el]     \tSet start and end lines to process [default - all lines]\n");
-    printf("[-d dop]          \tSet doppler offset to use [default 0]\n");
-    printf("[-f start_line]    \tCreate ESA sized frame starting from start_line:\n");
-    printf("                  \t\tParameter\tDefault\t  Framed\n");
-    printf("                  \t\t-----------------------------------------\n");
-    printf("                  \t\tPatches  \t<Calc>\t  3\n");
-    printf("                  \t\tNA Valid \t11800\t  8312\n");
-    printf("                  \t\tRange Samps\t6840\t  6018\n");
+    printf("Usage: %s [-s <start_line> -e <end_line>] [-d dop] [-f start_line] [-v] <infile_base_name> \n\n",argv[0]);
+    printf("\t<infile_base_name>\tFile to create ROI .in file from. (assumes .dat and .hdr exist)\n");
+    printf("\t-s sl -e el       \tSet start and end lines to process [default - all lines]\n");
+    printf("\t-d dop            \tSet doppler offset to use [default 0]\n");
+    printf("\t-v                \tUse state vectors instead of TLEs\n");
+    printf("\t-f start_line     \tCreate ESA sized frame starting from start_line:\n");
+    printf("\t                  \t\tParameter\tDefault\t  Framed\n");
+    printf("\t                  \t\t-----------------------------------------\n");
+    printf("\t                  \t\tPatches  \t<Calc>\t  3\n");
+    printf("\t                  \t\tNA Valid \t11800\t  8312\n");
+    printf("\t                  \t\tRange Samps\t6840\t  6018\n");
     printf("\n\n");
 }
 
