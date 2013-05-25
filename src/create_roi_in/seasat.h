@@ -147,6 +147,30 @@ typedef struct {
 	unsigned char     local_delay_bit;
 }  SEASAT_header;
 
+typedef struct {
+        int      major_cnt;
+	long int  major_sync_loc;
+	int     lsd_year;
+	int     station_code;
+	long int msec;
+	int      day_of_year;
+	int      clock_drift;  
+	int     no_scan_indicator_bit;
+	int     bits_per_sample;
+	int     mfr_lock_bit;
+	int     prf_rate_code;
+	int     delay;
+	int     scu_bit;
+	int     sdf_bit;
+	int     adc_bit;
+	int     time_gate_bit;
+	int     local_prf_bit;
+	int     auto_prf_bit;
+	int     prf_lock_bit;
+	int     local_delay_bit;
+}  SEASAT_header_ext;
+
+
 int find_sync(FILE *fp);
 int find_sync_no_advance(FILE *fp, int *be);
 int find_unaligned_sync_no_advance(FILE *fp, int *be);

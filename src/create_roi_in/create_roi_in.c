@@ -108,29 +108,6 @@ BUGS:
 #include <asf_meta.h>
 #include "seasat.h"
 
-typedef struct {
-        int      major_cnt;
-	long int  major_sync_loc;
-	int     lsd_year;
-	int     station_code;
-	long int msec;
-	int      day_of_year;
-	int      clock_drift;  
-	int     no_scan_indicator_bit;
-	int     bits_per_sample;
-	int     mfr_lock_bit;
-	int     prf_rate_code;
-	int     delay;
-	int     scu_bit;
-	int     sdf_bit;
-	int     adc_bit;
-	int     time_gate_bit;
-	int     local_prf_bit;
-	int     auto_prf_bit;
-	int     prf_lock_bit;
-	int     local_delay_bit;
-}  SEASAT_header_ext;
-
 int get_values(FILE *fp,SEASAT_header_ext *s);
 int get_int_value(FILE *fp, const char token[], int *val, int from);
 void estdop(FILE *fp, int sl, int nl, double *fd, double *fdd, double *fddd, double *iqmean);
@@ -138,7 +115,7 @@ void get_peg_info(double start_time, int nl, int prf, char *vecfile,
                   double *schvel, double *schacc, double *height, double *earthrad);
 void spectra(FILE *fp,int sl, int nl,double iqmean,int *ocnt,double *ocal);
 void give_usage(char *argv[], int argc);
-int get_line_for_node(char *basefile, int node);
+int get_line_for_node(meta_parameters *meta, int node, int nl);
 
 void roi_put_string(FILE *roi_file,char *value,char *comment);
 void roi_put_double(FILE *roi_file,double value,char *comment);
@@ -165,7 +142,7 @@ double C = 299792458.0;
 main(int argc, char *argv[])
 {
   FILE *fpdat, *fphdr, *fproi, *fpstarthdr;
-  char infile[256], outfile[256], hdrfile[256], starthdrfile[256], dwpfile[256];
+  char infile[256], outfile[256], hdrfile[256], starthdrfile[256], dwpfile[256], metafile[256];
   char basefile[256];
   char vecfile[256];
   int err, nl, patches, prf;
@@ -179,6 +156,7 @@ main(int argc, char *argv[])
   double iqmean;
   SEASAT_header_ext *hdr;
   SEASAT_header_ext *hdr1;
+  meta_parameters *meta;
 
   double   start_sec,  current_sec, end_sec;
   double   time_from_start;
@@ -273,7 +251,7 @@ main(int argc, char *argv[])
   strcpy(infile,basefile); strcat(infile,".dat");
   strcpy(hdrfile,basefile); strcat(hdrfile,".hdr");
   
-  if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",hdrfile); exit(1);}
+  
   hdr = (SEASAT_header_ext *) malloc(sizeof(SEASAT_header_ext));
   hdr1 = (SEASAT_header_ext *) malloc(sizeof(SEASAT_header_ext));  
   
@@ -281,12 +259,26 @@ main(int argc, char *argv[])
   printf(" CREATING ROI.IN FILE FROM DATA %s\n",hdrfile);
   printf("============================================================================\n");
 
+  if (ESA_FRAME==1) {
+    /* read the swath meta file */
+    strcat(strcpy(metafile,basefile),".meta");
+    meta = meta_read(metafile);
+
+    /* get total lines in this file */  
+    if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",tmpfile); exit(1);}
+    val = get_values(fphdr, hdr); nl = 0;
+    while (val==20) { nl++; val = get_values(fphdr, hdr); }  
+    fclose(fphdr);
+    if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",hdrfile); exit(1);}
+  }
+
   if (MAKE_FRAME==1) {
     printf("Using ESA frame sizes, starting processing at line %i\n",start_line);
     actual_lines = 8312;
     actual_samps = 6840;
   } else if (ESA_FRAME==1) {
-    start_line = get_line_for_node(basefile,node);
+    printf("Trying to find start_line for node %i\n",node);
+    start_line = get_line_for_node(meta,node,nl);
     printf("Creating ESA frame at node %i, starting processing at line %i\n",node,start_line);
     actual_lines = 8312;
     actual_samps = 6840;

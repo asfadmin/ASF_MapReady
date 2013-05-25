@@ -505,7 +505,7 @@ if (USE_TLES == 1) {
       err = system(tmpstr);
       if (err) {printf("Error returned from resample\n"); exit(1);}
       
-      sprintf(tmpfile,"%sQCFULL",cropfile);
+      sprintf(tmpfile,"%s_QCFULL",cropfile);
       sprintf(tmpstr,"asf_export -format jpeg %s_small %s\n",cropfile,tmpfile);
       err = system(tmpstr);
       if (err) {printf("Error returned from asf_export\n"); exit(1);}
@@ -517,7 +517,7 @@ if (USE_TLES == 1) {
       remove(tmpstr);
 
       /* create the subsampled QC image */
-      sprintf(tmpfile,"%sQCSUB",cropfile);
+      sprintf(tmpfile,"%s_QCSUB",cropfile);
       trim(cropfile,tmpfile,(long long)3500,(long long)3500,(long long)1000,(long long)1000);
 
       sprintf(tmpstr,"asf_export -format jpeg %s %s\n",tmpfile,tmpfile);

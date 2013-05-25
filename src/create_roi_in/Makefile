@@ -24,7 +24,7 @@ OBJS = create_roi_in.o \
 	get_peg.o \
 	tle_code.o \
 	runtest.o \
-	get_line_for_frame.o
+	esa_nodes.o
 
 all: create_roi_in
 
@@ -35,10 +35,9 @@ create_roi_in: $(OBJS)
 	c++ $(CFLAGS) $(LFLAGS) -o create_roi_in $(OBJS) $(LIBS) $(LDFLAGS) $(INCLUDES)
 	mv create_roi_in $(BINDIR)
 
-create_base_images: get_line_for_frame.o create_base_images.o
-	cc $(CFLAGS) $(LFLAGS) -o create_base_images get_line_for_frame.o create_base_images.o $(LIBS) $(LDFLAGS) $(INCLUDES)
+create_base_images: esa_nodes.o create_base_images.o
+	cc $(CFLAGS) $(LFLAGS) -o create_base_images esa_nodes.o create_base_images.o $(LIBS) $(LDFLAGS) $(INCLUDES)
 	mv create_base_images $(BINDIR)
-	
 
 clean:
 	rm -f $(OBJS)
