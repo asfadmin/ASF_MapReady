@@ -251,7 +251,6 @@ main(int argc, char *argv[])
   strcpy(infile,basefile); strcat(infile,".dat");
   strcpy(hdrfile,basefile); strcat(hdrfile,".hdr");
   
-  
   hdr = (SEASAT_header_ext *) malloc(sizeof(SEASAT_header_ext));
   hdr1 = (SEASAT_header_ext *) malloc(sizeof(SEASAT_header_ext));  
   
@@ -269,8 +268,9 @@ main(int argc, char *argv[])
     val = get_values(fphdr, hdr); nl = 0;
     while (val==20) { nl++; val = get_values(fphdr, hdr); }  
     fclose(fphdr);
-    if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",hdrfile); exit(1);}
   }
+
+  if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",hdrfile); exit(1);}
 
   if (MAKE_FRAME==1) {
     printf("Using ESA frame sizes, starting processing at line %i\n",start_line);
