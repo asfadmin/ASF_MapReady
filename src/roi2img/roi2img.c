@@ -1,10 +1,14 @@
 /******************************************************************************
 NAME:  Convert a roi slc file into an ASF img file.
 
-
-SYNOPSIS:
+SYNOPSIS:  roi2img [-m][-r roi.in_file][-v][-E node] <base_file_name>
 
 DESCRIPTION:
+
+	-m 		only create the meta file
+	-r <file>	use the given ROI file for parameters
+	-v		use state vectors instead of TLEs
+	-E <node>	create output file names using ESA node & orbit
 
 EXTERNAL ASSOCIATES:
     NAME:               USAGE:
@@ -125,7 +129,8 @@ main(int argc, char *argv[])
   int olines, osamps;
   int oline, osamp;
   double t;
-  char basefile[256], infile[256], outfile[256], roifile[256], hdrfile[256];
+  char basefile[256], infile[256], outbasefile[256], outfile[256], roifile[256];
+  char *hdrfile;
   
   ymd_date date;
   hms_time time;
@@ -140,10 +145,12 @@ main(int argc, char *argv[])
   int    META_ONLY = 0;		// only create meta file, no img file
   int	 SEPARATE_ROI_FILE = 0; // CLA roi file given?
   int    USE_TLES = 1;		// TLE/state vector switch
+  int    ESA_FRAME = 0;		// switch to control output file names
+  int    node = 0;
     
   if (argc<2 || argc>6) { give_usage(argc,argv); exit(1); }
 
-  while ((cla=getopt(argc,argv,"mvr:")) != -1)
+  while ((cla=getopt(argc,argv,"mvE:r:")) != -1)
     switch(cla) {
       case 'm':
         META_ONLY = 1;
@@ -153,12 +160,17 @@ main(int argc, char *argv[])
 	strcpy(roifile,optarg);
 	SEPARATE_ROI_FILE = 1;
 	break;
+      case 'E':
+        ESA_FRAME = 1;
+	node = atoi(optarg);
+	break;
       case 'v':
         USE_TLES = 0;
 	break;
       case '?':
+        give_usage(argc,argv);
         printf("Unknown option %s\n",optarg);
-	return(1);
+	exit(1);
       default:
         give_usage(argc,argv);
 	exit(1);
@@ -167,10 +179,6 @@ main(int argc, char *argv[])
   strcpy(basefile,argv[optind]);
   strcpy(infile,basefile);
   strcat(infile,".slc");
-  strcpy(outfile,basefile);
-  strcat(outfile,".img");
-  strcpy(hdrfile,basefile);
-  strcat(hdrfile,".hdr");
 
   /* if no separate roi.in file is specified, use the main name */
   if (SEPARATE_ROI_FILE == 0) {
@@ -181,6 +189,8 @@ main(int argc, char *argv[])
   /* Read parameters from the ROI.in file */
   read_roi_infile(roifile);
   nl = npatches * patch_size;
+  hdrfile = get_basename(datfilename);
+  strcat(hdrfile,".hdr");
   
   /* Read the start time for this image from the hdr file */
   read_hdrfile(hdrfile);
@@ -253,53 +263,6 @@ if (USE_TLES == 1) {
   olines = nl / LD;
   osamps = ns / LA;
 
-  if (META_ONLY==0) { 
-    obuff = (float **) malloc (sizeof(float *)*olines);
-    for (i=0; i<olines; i++) obuff[i] = (float *) malloc (sizeof(float)*osamps);
-  
-    /* Open the input slc file and output img file*/
-    fpin = fopen(infile,"rb");
-    if (fpin==NULL) {printf("ERROR: Unable to open input file %s\n",infile); exit(1);}
-    fpout = fopen(outfile,"wb");
-
-    /* Take the complex looks from the slc file to create the img file */
-    printf("Taking complex looks from file %s to create %s\n",infile,outfile);
-    oline = 0;
-    for (line=0; line < nl; line+=LD) {
-      if (line%2560==0) printf("\t%i\n",line);
-      fread(ibuff,sizeof(float),ns*2*LD,fpin);
-
-      /* take looks down */
-      for (j=0; j<ns; j++) {
-        b[j] = 0;
-        for (i=0; i<LD; i++)
-          b[j] = b[j] + (ibuff[(2*j)+(i*ns*2)]*ibuff[2*j+(i*ns*2)]) 
-  		      + (ibuff[(2*j+1)+(i*ns*2)]*ibuff[(2*j+1)+(i*ns*2)]);    
-      }
-    
-      /* take looks across */
-      for (j=0; j<ns/LA; j++) {
-        c[j] = 0;
-        for (k=0;k<LA;k++)
-          c[j] = c[j] + b[j*LA+k];
-        c[j] = sqrt(c[j]);
-      }
-      byteswap(c,ns/LA);
-      for (j=0; j<osamps; j++) obuff[oline][j] = c[j];
-      oline++;
-    }
-
-    /* if image is ascending, write out in reverse order */
-    if (dir=='A') { for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); }
-    else { for (j=0; j<olines; j++) fwrite(obuff[j],sizeof(float),osamps,fpout); }
- 
- 
-    fclose(fpout);
-    fclose(fpin);
-    free(obuff);
-    
-  }  /* END IF META_ONLY */   
-
   /* Create the meta file */
   printf("Initializing the meta structure\n");
   meta = raw_init();
@@ -357,7 +320,6 @@ if (USE_TLES == 1) {
     
   printf("Filling in meta->general parameters\n");
   
-  strcpy(meta->general->basename,basefile);
   strcpy(meta->general->sensor,"SEASAT");
   strcpy(meta->general->sensor_name,"SAR");
   strcpy(meta->general->mode,"STD");
@@ -369,7 +331,7 @@ if (USE_TLES == 1) {
           date.day, mon[date.month], date.year, s_time.hour, s_time.min, s_time.sec);
   meta->general->orbit = time2rev(s_date,s_time);
   meta->general->orbit_direction = dir;
-//  meta->general->frame = ????
+  if (ESA_FRAME == 1) meta->general->frame = node;
   meta->general->band_count = 1;
   strcpy(meta->general->bands,"HH");
   meta->general->line_count = nl/LD;
@@ -384,7 +346,6 @@ if (USE_TLES == 1) {
   double swath_vel = orbit_vel * RE_nadir / Rsc;
   
   meta->general->y_pixel_size = (swath_vel * PRI) * LD;    // TAL - Check the sc_vel...
-  
   meta->general->re_major = r_awgs84;
   meta->general->re_minor = r_awgs84 * sqrt(1-r_e2wgs84);
   
@@ -393,7 +354,7 @@ if (USE_TLES == 1) {
 //  meta->general->no_data = ???
 
       
-  /*Need a SAR block*/
+  /*Create the SAR metadata block*/
   
   printf("Creating the meta->sar block\n");
   if (!meta->sar) meta->sar = meta_sar_init();
@@ -456,15 +417,128 @@ if (USE_TLES == 1) {
   meta_get_latLon(meta,meta->general->line_count/2,meta->general->sample_count/2,0,
   		  &meta->general->center_latitude, &meta->general->center_longitude);
 
+  if (ESA_FRAME==0) {
+    strcpy(outbasefile,basefile);
+  } else {
+    sprintf(outbasefile,"SS_%.5i_SLANT_F%.4i",meta->general->orbit,meta->general->frame);
+  }
+
+  strcpy(outfile,outbasefile);
+  strcat(outfile,".img");
+  strcpy(meta->general->basename,outbasefile);
+
+  if (META_ONLY==0) { 
+    obuff = (float **) malloc (sizeof(float *)*olines);
+    for (i=0; i<olines; i++) obuff[i] = (float *) malloc (sizeof(float)*osamps);
+  
+    /* Open the input slc file and output img file*/
+    fpin = fopen(infile,"rb");
+    if (fpin==NULL) {printf("ERROR: Unable to open input file %s\n",infile); exit(1);}
+    fpout = fopen(outfile,"wb");
+
+    /* Take the complex looks from the slc file to create the img file */
+    printf("Taking complex looks from file %s to create %s\n",infile,outfile);
+    oline = 0;
+    for (line=0; line < nl; line+=LD) {
+      if (line%2560==0) printf("\t%i\n",line);
+      fread(ibuff,sizeof(float),ns*2*LD,fpin);
+
+      /* take looks down */
+      for (j=0; j<ns; j++) {
+        b[j] = 0;
+        for (i=0; i<LD; i++)
+          b[j] = b[j] + (ibuff[(2*j)+(i*ns*2)]*ibuff[2*j+(i*ns*2)]) 
+  		      + (ibuff[(2*j+1)+(i*ns*2)]*ibuff[(2*j+1)+(i*ns*2)]);    
+      }
+    
+      /* take looks across */
+      for (j=0; j<ns/LA; j++) {
+        c[j] = 0;
+        for (k=0;k<LA;k++)
+          c[j] = c[j] + b[j*LA+k];
+        c[j] = sqrt(c[j]);
+      }
+      byteswap(c,ns/LA);
+      for (j=0; j<osamps; j++) obuff[oline][j] = c[j];
+      oline++;
+    }
+
+    /* if image is ascending, write out in reverse order */
+    if (dir=='A') { for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); }
+    else { for (j=0; j<olines; j++) fwrite(obuff[j],sizeof(float),osamps,fpout); }
+ 
+ 
+    fclose(fpout);
+    fclose(fpin);
+    free(obuff);
+    
+  }  /* END IF META_ONLY */   
+
   printf("Writing out the meta file\n");
-  meta_write(meta, basefile);
+  meta_write(meta, outbasefile);
 
   if (META_ONLY == 0) {
     char grfilename[256];
-    strcpy(grfilename,basefile);
-    strcat(grfilename,"G12");
     float grPixSiz = 12.5;
-    sr2gr_pixsiz(basefile, grfilename, grPixSiz);
+    int err = 0;
+    if (ESA_FRAME == 1) {
+      char tmpstr[256];
+      char cropfile[256];
+      char tmpfile[256];
+      
+      /* create the ground range image */
+      sprintf(grfilename,"temp_%.5i_STD_F%.4i",meta->general->orbit,meta->general->frame);
+      sr2gr_pixsiz(outbasefile, grfilename, grPixSiz);
+      
+      /* crop the image to exact size */
+      sprintf(cropfile,"SS_%.5i_STD_F%.4i",meta->general->orbit,meta->general->frame);
+      trim(grfilename,cropfile,(long long)0,(long long)0,(long long)8000,(long long)8000);
+      
+      /* remove the non-cropped ground range image */
+      strcat(strcpy(tmpstr,grfilename),".img");
+      remove(tmpstr);
+      strcat(strcpy(tmpstr,grfilename),".meta");
+      remove(tmpstr);
+      
+      /* create the dowsized QC image */
+      sprintf(tmpstr,"resample -scale 0.125 %s %s_small\n",cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from resample\n"); exit(1);}
+      
+      sprintf(tmpfile,"%s_QCFULL",cropfile);
+      sprintf(tmpstr,"asf_export -format jpeg %s_small %s\n",cropfile,tmpfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from asf_export\n"); exit(1);}
+      
+      /* remove the small .img file */
+      strcat(strcpy(tmpstr,cropfile),"_small.img");
+      remove(tmpstr);
+      strcat(strcpy(tmpstr,cropfile),"_small.meta");
+      remove(tmpstr);
+
+      /* create the subsampled QC image */
+      sprintf(tmpfile,"%s_QCSUB",cropfile);
+      trim(cropfile,tmpfile,(long long)3500,(long long)3500,(long long)1000,(long long)1000);
+
+      sprintf(tmpstr,"asf_export -format jpeg %s %s\n",tmpfile,tmpfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from asf_export\n"); exit(1);}
+
+      /* remove the subsampled QC .img file */
+      strcat(strcpy(tmpstr,tmpfile),".img");
+      remove(tmpstr);
+      strcat(strcpy(tmpstr,tmpfile),".meta");
+      remove(tmpstr);
+
+      /* rename the ROI.in file to match the new file name */
+      sprintf(tmpfile,"%s.roi.in",cropfile);
+      rename(roifile,tmpfile);
+
+    } else {
+      strcpy(grfilename,basefile);
+      strcat(grfilename,"G12");
+      sr2gr_pixsiz(basefile, grfilename, grPixSiz);
+    } 
   }
 
   exit(0);
@@ -483,9 +557,9 @@ int read_roi_infile(char *infile)
   int  i;
   						// DESCRIPTION							VALUE
   						// ----------------------------------------------------------	-----------------------------------------------
-  get_string_val(fp,ctmp);			// First input data file					<infile>.dat				               
+  get_string_val(fp,datfilename);		// First input data file					<infile>.dat				               
   get_string_val(fp,ctmp);			// Second input data file  				        /dev/null
-  get_string_val(fp,datfilename);		// Output data file						<infile>.slc
+  get_string_val(fp,ctmp);	        	// Output data file						<infile>.slc
   get_string_val(fp,ctmp);			// Output amplitudes file					/dev/null
   get_string_val(fp,ctmp);			// 8lk output file						8lk
   get_int_val(fp,&itmp);	 		// debug flag							0
@@ -660,13 +734,11 @@ int get_string_val(FILE *fp, char *str)
 
 void give_usage(int argc, char *argv[])
 {
-    printf("Usage: %s [-m][-r roi.in_file][-v] <base_file_name>\n",argv[0]);
+    printf("Usage: %s [-m][-r roi.in_file][-v][-E node] <base_file_name>\n",argv[0]);
     printf("\tbase_file_name\tinput ROI slc file; output ASF .img and .ddr\n");
     printf("\t-m            \tmeta only option - only create meta file\n");
     printf("\t-r roi.in_file\toptional roi.in file name\n");
     printf("\t-v            \tUse state vectors instead of TLEs\n");
-    exit(1);
+    printf("\t-E node       \tCreate output file names using ESA node & orbit\n");
+    printf("\n");
 }
-
-
-

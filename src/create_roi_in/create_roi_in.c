@@ -2,7 +2,7 @@
 NAME: create_roi_in - creates a ROI.in file from seasat HDR and state vectors
 		      previously created by the ASF SEASAT PREP code.
 
-SYNOPSIS: create_roi_in [-s <start_line> -e <end_line>][-d #][-v] <infile>
+SYNOPSIS: create_roi_in [-s <start_line> -e <end_line>] [-d dop] [-f start_line] [-v] [-E ESA_Node] <infile_base_name> 
 
 DESCRIPTION:
 
@@ -10,6 +10,9 @@ DESCRIPTION:
 	[-s <start_line> -e <end_line>]	optional start/end line to process
 	[-d #]   			offset to calculated doppler, default zero
 	[-v]				use state vectors instead of TLEs.
+	[-f start_line]			make an ESA SIZED frame starting from start_line
+	[-E ESA_Node]			make an ESA sized frame centered at the specified node
+
 
 	- Read hdr file to get the start time and number of lines in the data segment
 		- calculate the number of patches to process
@@ -105,29 +108,6 @@ BUGS:
 #include <asf_meta.h>
 #include "seasat.h"
 
-typedef struct {
-        int      major_cnt;
-	long int  major_sync_loc;
-	int     lsd_year;
-	int     station_code;
-	long int msec;
-	int      day_of_year;
-	int      clock_drift;  
-	int     no_scan_indicator_bit;
-	int     bits_per_sample;
-	int     mfr_lock_bit;
-	int     prf_rate_code;
-	int     delay;
-	int     scu_bit;
-	int     sdf_bit;
-	int     adc_bit;
-	int     time_gate_bit;
-	int     local_prf_bit;
-	int     auto_prf_bit;
-	int     prf_lock_bit;
-	int     local_delay_bit;
-}  SEASAT_header_ext;
-
 int get_values(FILE *fp,SEASAT_header_ext *s);
 int get_int_value(FILE *fp, const char token[], int *val, int from);
 void estdop(FILE *fp, int sl, int nl, double *fd, double *fdd, double *fddd, double *iqmean);
@@ -135,6 +115,7 @@ void get_peg_info(double start_time, int nl, int prf, char *vecfile,
                   double *schvel, double *schacc, double *height, double *earthrad);
 void spectra(FILE *fp,int sl, int nl,double iqmean,int *ocnt,double *ocal);
 void give_usage(char *argv[], int argc);
+int get_line_for_node(meta_parameters *meta, int node, int nl);
 
 void roi_put_string(FILE *roi_file,char *value,char *comment);
 void roi_put_double(FILE *roi_file,double value,char *comment);
@@ -161,7 +142,7 @@ double C = 299792458.0;
 main(int argc, char *argv[])
 {
   FILE *fpdat, *fphdr, *fproi, *fpstarthdr;
-  char infile[256], outfile[256], hdrfile[256], starthdrfile[256], dwpfile[256];
+  char infile[256], outfile[256], hdrfile[256], starthdrfile[256], dwpfile[256], metafile[256];
   char basefile[256];
   char vecfile[256];
   int err, nl, patches, prf;
@@ -175,6 +156,7 @@ main(int argc, char *argv[])
   double iqmean;
   SEASAT_header_ext *hdr;
   SEASAT_header_ext *hdr1;
+  meta_parameters *meta;
 
   double   start_sec,  current_sec, end_sec;
   double   time_from_start;
@@ -202,7 +184,9 @@ main(int argc, char *argv[])
   int i, start_line, end_line;
   int c;
   int dop_shift;
+  int node = -1;
   int ESA_FRAME = 0;
+  int MAKE_FRAME = 0;
   int USE_TLES = 1;
   int actual_lines, actual_samps;
 
@@ -213,7 +197,7 @@ main(int argc, char *argv[])
   end_line = -99;
   dop_shift = 0;  
   
-  while ((c=getopt(argc,argv,"s:e:d:f:v")) != -1)
+  while ((c=getopt(argc,argv,"s:e:d:f:E:v")) != -1)
     switch(c) {
       case 's':
         if (start_line != 1) {
@@ -235,14 +219,23 @@ main(int argc, char *argv[])
         dop_shift = atoi(optarg);
 	break;
       case 'f':
-        if (start_line != 1 || end_line != -99) {
+        if (start_line != 1 || end_line != -99 || ESA_FRAME == 1) {
 	  give_usage(argv,argc);
 	  printf("\nERROR: Can only use one of -s/-e or -f options; aborting\n");
 	  exit(1);
 	}
 	start_line = atoi(optarg);
-	ESA_FRAME = 1;
+	MAKE_FRAME = 1;
 	break;
+      case 'E':
+        if (start_line != 1 || end_line != -99 || MAKE_FRAME == 1) {
+	  give_usage(argv,argc);
+	  printf("\nERROR: Can only use one of -E, -s/-e, or -f options; aborting\n");
+	  exit(1);
+	}
+	node = atoi(optarg);
+	ESA_FRAME = 1;
+	break;	
       case 'v':
         USE_TLES = 0;
 	break;
@@ -258,7 +251,6 @@ main(int argc, char *argv[])
   strcpy(infile,basefile); strcat(infile,".dat");
   strcpy(hdrfile,basefile); strcat(hdrfile,".hdr");
   
-  if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",hdrfile); exit(1);}
   hdr = (SEASAT_header_ext *) malloc(sizeof(SEASAT_header_ext));
   hdr1 = (SEASAT_header_ext *) malloc(sizeof(SEASAT_header_ext));  
   
@@ -267,7 +259,27 @@ main(int argc, char *argv[])
   printf("============================================================================\n");
 
   if (ESA_FRAME==1) {
+    /* read the swath meta file */
+    strcat(strcpy(metafile,basefile),".meta");
+    meta = meta_read(metafile);
+
+    /* get total lines in this file */  
+    if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",tmpfile); exit(1);}
+    val = get_values(fphdr, hdr); nl = 0;
+    while (val==20) { nl++; val = get_values(fphdr, hdr); }  
+    fclose(fphdr);
+  }
+
+  if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",hdrfile); exit(1);}
+
+  if (MAKE_FRAME==1) {
     printf("Using ESA frame sizes, starting processing at line %i\n",start_line);
+    actual_lines = 8312;
+    actual_samps = 6840;
+  } else if (ESA_FRAME==1) {
+    printf("Trying to find start_line for node %i\n",node);
+    start_line = get_line_for_node(meta,node,nl);
+    printf("Creating ESA frame at node %i, starting processing at line %i\n",node,start_line);
     actual_lines = 8312;
     actual_samps = 6840;
   } else {
@@ -316,7 +328,7 @@ main(int argc, char *argv[])
   
   /* seek to the last line the user requested or else the end of file
    -------------------------------------------------------------------*/
-  if (end_line == -99 && ESA_FRAME == 0) {  /* read to the end of the file */
+  if (end_line == -99 && ESA_FRAME == 0 && MAKE_FRAME == 0) {  /* read to the end of the file */
     which=0; nl = start_line-1;
     while (val==20) {
       nl++;
@@ -348,9 +360,9 @@ main(int argc, char *argv[])
       end_sec  = (double) hdr1->msec / 1000.0;
     }
   } else {  
-    if (ESA_FRAME == 0) { 		/* read to end_line that was given by user */
+    if (ESA_FRAME == 0 && MAKE_FRAME == 0) { 	/* read to end_line that was given by user */
       nl = end_line-start_line+1;
-    } else { 				/* read to end of ESA frame length         */
+    } else { 					/* read to end of ESA frame length         */
       nl = 24936; 
       end_line = start_line+nl-1;
     }      
@@ -375,7 +387,9 @@ main(int argc, char *argv[])
 
   /* If we have at least one DWP change, need to create the DWP file */
   if (dwp_cnt > 1)  {  
-    if (start_line != 1) {  /* we are processing a piece of the swath, add starting line to ROI.in file name */
+    if (ESA_FRAME==1) { 
+      sprintf(dwpfile,"%s_node%.4i.dwp",basefile,node);
+    } else if (start_line != 1) {  /* processing a piece of the swath, add starting line to ROI.in file name */
       sprintf(dwpfile,"%s_line%i.dwp",basefile,start_line);
     } else {
       strcpy(dwpfile,basefile); strcat(dwpfile,".dwp");
@@ -586,7 +600,9 @@ if (USE_TLES == 1) {
 /*=================================================================================
    NOW, ACTUALLY CREATE THE OUTPUT ROI FILE
  =================================================================================*/
-  if (start_line != 1) {  /* we are processing a piece of the swath, add starting line to ROI.in file name */
+  if (ESA_FRAME==1) { 
+    sprintf(outfile,"%s_node%.4i.roi.in",basefile,node);
+  } else if (start_line != 1) {  /* processing a piece of the swath, add starting line to ROI.in file name */
     sprintf(outfile,"%s_line%i.roi.in",basefile,start_line);
   } else {
     strcpy(outfile,basefile); 
@@ -594,7 +610,12 @@ if (USE_TLES == 1) {
   }
  
   if ((fproi=fopen(outfile,"w"))==NULL) {printf("Error opening output file %s\n",outfile); exit(1);}
-  strcpy(outfile,basefile); strcat(outfile,".slc");
+  
+  if (ESA_FRAME==1) {
+    sprintf(outfile,"%s_node%.4i.slc",basefile,node);
+  } else {
+    strcpy(outfile,basefile); strcat(outfile,".slc");
+  }
 
   printf("============================================================================\n");
   printf(" EMITTING FILE HEADER FILE NOW\n");
@@ -798,6 +819,8 @@ if (USE_TLES == 1) {
   printf("============================================================================\n");
   printf(" CREATE_ROI_IN PROGRAM COMPLETED\n");
   printf("============================================================================\n\n\n");
+  
+  exit(0);
 }
 
 int get_values(FILE *fp,SEASAT_header_ext *s)
@@ -815,17 +838,18 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
 
 void give_usage(char *argv[], int argc)  
 {
-    printf("Usage: %s [-s <start_line> -e <end_line>] [-d dop] [-f start_line] [-v] <infile_base_name> \n\n",argv[0]);
+    printf("Usage: %s [-s <start_line> -e <end_line>] [-d dop] [-f start_line] [-v] [-E ESA_Node] <infile_base_name> \n\n",argv[0]);
     printf("\t<infile_base_name>\tFile to create ROI .in file from. (assumes .dat and .hdr exist)\n");
     printf("\t-s sl -e el       \tSet start and end lines to process [default - all lines]\n");
     printf("\t-d dop            \tSet doppler offset to use [default 0]\n");
     printf("\t-v                \tUse state vectors instead of TLEs\n");
+    printf("\t-E ESA_Node       \tCreate ESA sized frame at specified node number\n"); 
     printf("\t-f start_line     \tCreate ESA sized frame starting from start_line:\n");
-    printf("\t                  \t\tParameter\tDefault\t  Framed\n");
+    printf("\t                  \t\tParameter  \tDefault\t Framed\n");
     printf("\t                  \t\t-----------------------------------------\n");
-    printf("\t                  \t\tPatches  \t<Calc>\t  3\n");
-    printf("\t                  \t\tNA Valid \t11800\t  8312\n");
-    printf("\t                  \t\tRange Samps\t6840\t  6018\n");
+    printf("\t                  \t\tPatches    \t<Calc> \t 3\n");
+    printf("\t                  \t\tNA Valid   \t11800  \t 8312\n");
+    printf("\t                  \t\tRange Samps\t5300   \t 6840\n");
     printf("\n\n");
 }
 
