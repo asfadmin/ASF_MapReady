@@ -1050,7 +1050,7 @@ static int stp_exec(stp_params_t *stp_params)
     asfPrintStatus("Importing Level 0 data...\n");
     import_ceos(stp_params->input_file, img_file, NULL, NULL, NULL,
                 NULL, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
-                FALSE, FALSE, FALSE, TRUE);
+                FALSE, FALSE, -1, -1, FALSE, TRUE);
     asfPrintStatus("Import complete.\n");
   }
   else if (stp_params->status == STATUS_STF_INSTEAD) {

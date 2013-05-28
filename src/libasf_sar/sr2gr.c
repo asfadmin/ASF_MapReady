@@ -123,11 +123,20 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	meta_parameters *in_meta;
 	meta_parameters *out_meta;
 
+       printf("Entering sr2gr_pixsiz\n");
+       printf("\tinfile %s\n",infile);
+       printf("\toutfile %s\n",outfile);
+       printf("\tgrPixSize %f\n",grPixSize);
+
+
+
         create_name (infile_name, infile, ".img");
         create_name (outfile_name, outfile, ".img");
 
         create_name (inmeta_name, infile, ".meta");
         create_name (outmeta_name, outfile, ".meta");
+
+	printf("Creating sr2gr with pixsize %f\n",grPixSize);
 
 	in_meta  = meta_read(inmeta_name);
 	out_meta = meta_copy(in_meta);
@@ -185,6 +194,43 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 		out_meta->projection->perY = grPixSize;
 	}
 
+        if (out_meta->sar){
+          // Update the doppler
+          // In going from slant to ground, and potentially changing the width,
+          // we will likely change the shape of the doppler polynomial.  So, solve
+          // for the coefficients of the new polynomial.  Ignore the constant term
+          //   v1 = d1*x1 + d2*x1*x1   <-- d1,d2 doppler coefs
+          //   v2 = d1*x2 + d2*x2*x2   <-- x1,x2 are image center and right
+          // New poly:
+          //   v1 = a*y1 + b*y1*y1     <-- a,b new doppler coefs
+          //   v2 = a*y2 + b*y2*y2     <-- y1,y2 are image center and right in new geom
+          // Solving for b:
+          //   b = (v1*y2 - v2*y1)/(y2*y1^2 - y1*y2^2)
+          // Then a:
+          //   a = (v1 - b*y1*y1)/y1
+          double is1 = in_np/2; // Input sample 1 ( x1 in the above )
+          double is2 = in_np-1; // Input sample 2 ( x2 in the above )
+
+          double os1 = out_np/2;// Output sample 1 ( y1 in the above )
+          double os2 = out_np-1;// Output sample 2 ( y2 in the above
+
+          double d1 = out_meta->sar->range_doppler_coefficients[1];
+          double d2 = out_meta->sar->range_doppler_coefficients[2];
+
+          double v1 = d1*is1 + d2*is1*is1;
+          double v2 = d1*is2 + d2*is2*is2;
+
+          double b = (v1*os2 - v2*os1)/(os1*os1*os2 - os2*os2*os1);
+          double a = (v1 - b*os1*os1)/os1;
+
+          // These should agree
+          //printf("%f %f\n", v1, v2);
+          //printf("%f %f\n", a*os1 + b*os1*os1, a*os2 + b*os2*os2);
+
+          out_meta->sar->range_doppler_coefficients[1] = a;
+          out_meta->sar->range_doppler_coefficients[2] = b;
+        }
+
 	meta_write(out_meta,outmeta_name);
 	
 	fpi = fopenImage(infile_name,"rb");
@@ -228,7 +274,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
             
             for (ii=0; ii<out_np; ii++)
             {
-              int val00,val01,val10,val11,tmp1,tmp2;
+              float val00,val01,val10,val11,tmp1,tmp2;
               val00 = ibuf1[lower[ii]];
               val01 = ibuf1[upper[ii]];
               val10 = ibuf2[lower[ii]];

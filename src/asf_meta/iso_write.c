@@ -1394,27 +1394,80 @@ void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
 	xmlNewChild(parent, NULL, BAD_CAST "beamID", 
 		    BAD_CAST quality->rawDataQuality[ii].beamID);
       numGaps = quality->rawDataQuality[ii].numGaps;
-      sprintf(str, "%d", numGaps);
 
-      // FIXME: The gap information now should come out of the gap file
-
-      xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST str);
-      for (kk=0; kk<numGaps; kk++) {
-	node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
-	sprintf(num, "%ld", kk+1);
-	xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
-	sprintf(str, "%ld", quality->rawDataQuality[ii].gap[kk].start);
-	xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
-	sprintf(str, "%d", quality->rawDataQuality[ii].gap[kk].length);
-	xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
-	if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
-	  strcpy(str, "RANDOM");
-	else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
-	  strcpy(str, "ZERO");
-	else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
-	  strcpy(str, "UNDEFINED");
-	xmlNewChild(node, NULL, BAD_CAST "fill", BAD_CAST str);
+      // gap information already in the metadata
+      if (numGaps > 0) {
+        sprintf(str, "%d", numGaps);
+        xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST str);
+        for (kk=0; kk<numGaps; kk++) {
+  	  node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
+ 	  sprintf(num, "%ld", kk+1);
+	  xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
+	  sprintf(str, "%ld", quality->rawDataQuality[ii].gap[kk].start);
+	  xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
+	  sprintf(str, "%d", quality->rawDataQuality[ii].gap[kk].length);
+	  xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
+	  if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
+	    strcpy(str, "RANDOM");
+	  else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
+	    strcpy(str, "ZERO");
+	  else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
+	    strcpy(str, "UNDEFINED");
+	  xmlNewChild(node, NULL, BAD_CAST "fill", BAD_CAST str);
+        }
       }
+
+      // gap information from SEASAT processing .dis file
+      else if (gapFile && ii==0 && numGaps == 0) {
+        if (!fileExists(gapFile)) {
+          printf("Gaps file not found: %s\n", gapFile);
+          xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST "0");
+        }
+        else {
+          FILE *fp = fopen(gapFile, "r");
+          if (!fp) {
+            printf("Gaps file could not be opened: %s\n", gapFile);
+            xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST "0");
+          }
+          else {
+            printf("Found gaps file: %s\n", gapFile);
+            numGaps = 0;
+            char str[1024];
+            int lines[100], gaps[100];
+            fgets(str, 1024, fp);
+            while (fgets(str, 1024, fp) && numGaps < 100) {
+              int line, gap;
+              if (sscanf(str, "%d\t%d\n", &line, &gap) == 2) {
+                lines[numGaps] = line;
+                gaps[numGaps] = gap;
+                ++numGaps;
+              }
+            }
+            fclose(fp);
+            printf("Found %d gaps in file: %s\n", numGaps, gapFile);
+        
+            sprintf(str, "%d", numGaps);
+            xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST str);
+
+            for (kk=0; kk<numGaps; ++kk) {
+  	      node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
+   	      sprintf(num, "%ld", kk+1);
+	      xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
+	      sprintf(str, "%ld", lines[kk]);
+	      xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
+	      sprintf(str, "%d", gaps[kk]);
+	      xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
+	      xmlNewChild(node, NULL, BAD_CAST "fill", BAD_CAST "RANDOM");
+            }
+          }
+        }
+      }
+      
+      // no gap information
+      else {
+        xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST "0");
+      }
+
       boolean2str(quality->rawDataQuality[ii].gapSignificanceFlag, str);
       xmlNewChild(parent, NULL, BAD_CAST "gapSignificanceFlag", BAD_CAST str);
       boolean2str(quality->rawDataQuality[ii].missingLinesSignificanceFlag, 
