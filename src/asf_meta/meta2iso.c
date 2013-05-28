@@ -145,11 +145,11 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
   strcpy(comps->browseImage.host, ".");
   strcpy(comps->browseImage.path, ".");
-  sprintf(comps->browseImage.name, "%s_browse.jpg", meta->general->basename);
+  sprintf(comps->browseImage.name, "%s.jpg", meta->general->basename);
   // comps->browseImage.size: calculated after being generated
   strcpy(comps->mapPlot.host, ".");
   strcpy(comps->mapPlot.path, ".");
-  sprintf(comps->mapPlot.name, "%s_plot.kml", meta->general->basename);
+  sprintf(comps->mapPlot.name, "%s.kml", meta->general->basename);
   // comps->mapPlat.size: calculated after being generated
 
   // Product Info
@@ -613,6 +613,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   for (ii=0; ii<numLayers; ii++) {
     quality->rawDataQuality[ii].polLayer = polLayer[ii];
     strcpy(quality->rawDataQuality[0].beamID, beamID[ii]);
+    quality->rawDataQuality[ii].numGaps = 0;
 
     /* Information is now passed as gap file into iso_meta_write
     // need to get this information from somewhere else
