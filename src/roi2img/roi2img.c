@@ -1,5 +1,6 @@
 /******************************************************************************
-NAME:  convert a roi slc file into an ASF img file.
+NAME:  Convert a roi slc file into an ASF img file.
+
 
 SYNOPSIS:
 
@@ -92,10 +93,12 @@ hms_time   	s_time;			// start time of this segment
 double 		time_offset;		// value from the clock drift
 
 /* Subroutines */
+void give_usage(int argc, char *argv[]);
 int get_values(FILE *fp,SEASAT_header_ext *s);	// read values from a header file
 int read_hdrfile(char *infile);			// read correct values from header file
 int read_roi_infile(char *infile);		// read the ROI input file values
 void byteswap(void *buf,int len);		// just what it says
+int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 
 /* Subroutines to read values from files - used by read_roi_infile */
 int get_string_val(FILE *fp, char *str);
@@ -110,21 +113,19 @@ double C = 299792458.0;
 
 main(int argc, char *argv[]) 
 {
-  int meta_only = extract_flag_options(&argc, &argv, "-meta_only", "--meta_only",
-                                       "-meta-only", "--meta-only", "-m", NULL);
-
-  FILE *fpin=NULL, *fpout=NULL;
+  FILE *fpin, *fpout;
   
   float ibuff[CPX_PIX*2*LD];
-  float obuff[CPX_PIX/LA];
+  float **obuff;
   float b[CPX_PIX];
   float c[CPX_PIX/LA];
-  
-  int nl;
+
+  int cla,nl;
   int i,j,k,line;
+  int olines, osamps;
+  int oline, osamp;
   double t;
-  char infile[256], outfile[256];
-  char roifile[256], hdrfile[256];
+  char basefile[256], infile[256], outfile[256], roifile[256], hdrfile[256];
   
   ymd_date date;
   hms_time time;
@@ -136,80 +137,169 @@ main(int argc, char *argv[])
   char	 dir;			// orbit direction - A or D
   double x, y, z;		// state vector positions at start of segment
   double xdot, ydot, zdot;	// state vector veloctiy at start of segment
+  int    META_ONLY = 0;		// only create meta file, no img file
+  int	 SEPARATE_ROI_FILE = 0; // CLA roi file given?
+  int    USE_TLES = 1;		// TLE/state vector switch
+    
+  if (argc<2 || argc>6) { give_usage(argc,argv); exit(1); }
 
-  if (argc!=2) {
-    printf("Usage: %s <base_file_name>\n",argv[0]);
-    printf("\base_file_name\tinput ROI slc file; output ASF .img and .ddr\n");
-    exit(1);
-  }
- 
-  strcpy(infile,argv[1]);
+  while ((cla=getopt(argc,argv,"mvr:")) != -1)
+    switch(cla) {
+      case 'm':
+        META_ONLY = 1;
+	printf("Using meta only option\n");
+	break;
+      case 'r':
+	strcpy(roifile,optarg);
+	SEPARATE_ROI_FILE = 1;
+	break;
+      case 'v':
+        USE_TLES = 0;
+	break;
+      case '?':
+        printf("Unknown option %s\n",optarg);
+	return(1);
+      default:
+        give_usage(argc,argv);
+	exit(1);
+    } 
+
+  strcpy(basefile,argv[optind]);
+  strcpy(infile,basefile);
   strcat(infile,".slc");
-  strcpy(outfile,argv[1]);
+  strcpy(outfile,basefile);
   strcat(outfile,".img");
-
-  strcpy(roifile,argv[1]);
-  strcat(roifile,".roi.in");
-  strcpy(hdrfile,argv[1]);
+  strcpy(hdrfile,basefile);
   strcat(hdrfile,".hdr");
-  
+
+  /* if no separate roi.in file is specified, use the main name */
+  if (SEPARATE_ROI_FILE == 0) {
+    strcpy(roifile,basefile);
+    strcat(roifile,".roi.in");
+  }
+
   /* Read parameters from the ROI.in file */
   read_roi_infile(roifile);
   nl = npatches * patch_size;
   
-  /* Read parameters from the hdr file */
+  /* Read the start time for this image from the hdr file */
   read_hdrfile(hdrfile);
   
-  /* Open the input slc file and output img file*/
+if (USE_TLES == 1) {
+    /* get the correct state vector */
+    printf("Propagating state vectors to requested time...\n");
+    create_input_tle_file(s_date,s_time,"tle1.txt");
+    propagate_state_vector("tle1.txt"); 
+    printf("\n\nConverting state vectors from ECI to ECEF\n");
+    fix_state_vectors(s_date.year,s_date.jd,s_time.hour,s_time.min,s_time.sec);
+    remove("tle1.txt");
+    remove("propagated_state_vector.txt");
 
-  if (!meta_only) {
+    printf("Reading first state vector\n");
+    FILE *fpvec = fopen("fixed_state_vector.txt","r");
+    if (fscanf(fpvec,"%lf %lf %lf %lf %lf %lf %lf\n",&t,&x,&y,&z,&xdot,&ydot,&zdot)!=7) 
+      { printf("ERROR: Unable to find state vector in fixed_state_vector.txt file\n"); exit(1); }
+    fclose(fpvec);
+    remove("fixed_state_vector.txt");
+
+} else {
+
+  int cnt;
+  int year, month, day, hour, min;
+  double sec, thisSec;
+  FILE *fpvec, *fpo;
+  char tmp[256];
+  
+  sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
+  fpvec = fopen(tmp,"r");
+  if (fpvec == NULL) {printf("Unable to open state vector file for day %i\n",start_date); exit(1); }
+
+  cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+  thisSec = (double) ((hour*60+min)*60)+sec;
+
+  /* seek to the correct second of the day for the START of this file 
+   -----------------------------------------------------------------*/
+  while (cnt == 12 && start_sec > (thisSec+1.0)) {
+      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+      thisSec = (double) ((hour*60+min)*60)+sec;
+  }
+  printf("Found closest second %lf\n",thisSec);
+  
+  /* need to create a state vector file the start of this image
+   ------------------------------------------------------------*/
+  stateVector vec, last_vec;
+  
+  last_vec.pos.x = x;
+  last_vec.pos.y = y;
+  last_vec.pos.z = z;
+  last_vec.vel.x = xdot;
+  last_vec.vel.y = ydot;
+  last_vec.vel.z = zdot;
+  
+  vec = propagate(last_vec,thisSec,start_sec);
+
+  x = vec.pos.x;
+  y = vec.pos.y;
+  z = vec.pos.z;
+  xdot = vec.vel.x;
+  ydot = vec.vel.y;
+  zdot = vec.vel.z;
+  
+}
+
+  if (zdot > 0.0) dir = 'A'; else dir = 'D';
+
+  /* set up output image parameters */
+  olines = nl / LD;
+  osamps = ns / LA;
+
+  if (META_ONLY==0) { 
+    obuff = (float **) malloc (sizeof(float *)*olines);
+    for (i=0; i<olines; i++) obuff[i] = (float *) malloc (sizeof(float)*osamps);
+  
+    /* Open the input slc file and output img file*/
     fpin = fopen(infile,"rb");
     if (fpin==NULL) {printf("ERROR: Unable to open input file %s\n",infile); exit(1);}
     fpout = fopen(outfile,"wb");
-    if (fpout==NULL) {printf("ERROR: Unable to open output file %s\n",outfile); exit(1);}
 
     /* Take the complex looks from the slc file to create the img file */
     printf("Taking complex looks from file %s to create %s\n",infile,outfile);
+    oline = 0;
     for (line=0; line < nl; line+=LD) {
       if (line%2560==0) printf("\t%i\n",line);
-      fread(ibuff,sizeof(float),CPX_PIX*2*LD,fpin);
+      fread(ibuff,sizeof(float),ns*2*LD,fpin);
 
       /* take looks down */
       for (j=0; j<ns; j++) {
         b[j] = 0;
         for (i=0; i<LD; i++)
-          b[j] = b[j] + (ibuff[(2*j)+(i*CPX_PIX*2)]*ibuff[2*j+(i*CPX_PIX*2)]) 
-                      + (ibuff[(2*j+1)+(i*CPX_PIX*2)]*ibuff[(2*j+1)+(i*CPX_PIX*2)]);    
+          b[j] = b[j] + (ibuff[(2*j)+(i*ns*2)]*ibuff[2*j+(i*ns*2)]) 
+  		      + (ibuff[(2*j+1)+(i*ns*2)]*ibuff[(2*j+1)+(i*ns*2)]);    
       }
     
-      /* take looks across */ 
-      for (j=0; j<CPX_PIX/LA; j++) {
+      /* take looks across */
+      for (j=0; j<ns/LA; j++) {
         c[j] = 0;
         for (k=0;k<LA;k++)
           c[j] = c[j] + b[j*LA+k];
         c[j] = sqrt(c[j]);
       }
-      byteswap(c,CPX_PIX/LA);
-      fwrite(c,sizeof(float),CPX_PIX/LA,fpout);
+      byteswap(c,ns/LA);
+      for (j=0; j<osamps; j++) obuff[oline][j] = c[j];
+      oline++;
     }
 
-    fclose(fpin);
+    /* if image is ascending, write out in reverse order */
+    if (dir=='A') { for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); }
+    else { for (j=0; j<olines; j++) fwrite(obuff[j],sizeof(float),osamps,fpout); }
+ 
+ 
     fclose(fpout);
-  }
+    fclose(fpin);
+    free(obuff);
+    
+  }  /* END IF META_ONLY */   
 
-  printf("Propagating state vectors to requested time...\n");
-  create_input_tle_file(s_date,s_time,"tle1.txt");
-  propagate_state_vector("tle1.txt"); 
-  printf("\n\nConverting state vectors from ECI to ECEF\n");
-  fix_state_vectors(s_date.year,s_date.jd,s_time.hour,s_time.min,s_time.sec);
-
-  printf("Reading first state vector\n");
-  FILE *fpvec = fopen("fixed_state_vector.txt","r");
-  if (fscanf(fpvec,"%lf %lf %lf %lf %lf %lf %lf\n",&t,&x,&y,&z,&xdot,&ydot,&zdot)!=7) 
-    { printf("ERROR: Unable to find state vector in fixed_state_vector.txt file\n"); exit(1); }
-  if (zdot > 0.0) dir = 'A'; else dir = 'D';
-  fclose(fpvec);
-  
   /* Create the meta file */
   printf("Initializing the meta structure\n");
   meta = raw_init();
@@ -267,7 +357,7 @@ main(int argc, char *argv[])
     
   printf("Filling in meta->general parameters\n");
   
-  strcpy(meta->general->basename,argv[1]);
+  strcpy(meta->general->basename,basefile);
   strcpy(meta->general->sensor,"SEASAT");
   strcpy(meta->general->sensor_name,"SAR");
   strcpy(meta->general->mode,"STD");
@@ -294,9 +384,6 @@ main(int argc, char *argv[])
   double swath_vel = orbit_vel * RE_nadir / Rsc;
   
   meta->general->y_pixel_size = (swath_vel * PRI) * LD;    // TAL - Check the sc_vel...
-  
-//  meta->general->center_latitude = ???
-//  meta->general->center_longitude = ???
   
   meta->general->re_major = r_awgs84;
   meta->general->re_minor = r_awgs84 * sqrt(1-r_e2wgs84);
@@ -326,21 +413,28 @@ main(int argc, char *argv[])
   // Second try is this one	 meta->sar->azimuth_time_per_pixel = (destSec - imgSec) / (meta->sar->original_line_count/2);
   
   meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size / swath_vel;
+  if (dir=='A') meta->sar->azimuth_time_per_pixel *= -1;
   
-  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
-  meta->sar->time_shift = 0.18;				// emperical value from a single delta scene
-  meta->sar->time_shift = 0;
+//  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
+//  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
+
+  meta->sar->slant_shift = 0.0;
+  
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->general->line_count *
+         meta->sar->azimuth_time_per_pixel);
+
   meta->sar->slant_range_first_pixel = srf;
   meta->sar->wavelength = wavelength;
   meta->sar->prf = prf;
-  
-  meta->sar->earth_radius = RE_nadir;			// This really should be the radius at the center of the image
-  							// and not the radius at the nadir point...  how to fix this???
+  meta->sar->earth_radius = meta_get_earth_radius(meta,	meta->general->line_count/2.0, meta->general->sample_count/2.0);
   meta->sar->satellite_height = Rsc;
-  meta->sar->range_doppler_coefficients[0] = dop1;
-  meta->sar->range_doppler_coefficients[1] = dop2;
-  meta->sar->range_doppler_coefficients[2] = dop3;
-  meta->sar->azimuth_doppler_coefficients[0] = dop1;
+  meta->sar->range_doppler_coefficients[0] = dop1*prf;
+  meta->sar->range_doppler_coefficients[1] = dop2*prf;
+  meta->sar->range_doppler_coefficients[2] = dop3*prf;
+  meta->sar->azimuth_doppler_coefficients[0] = dop1*prf;
   meta->sar->azimuth_doppler_coefficients[1] = 0;
   meta->sar->azimuth_doppler_coefficients[2] = 0;
   
@@ -348,7 +442,7 @@ main(int argc, char *argv[])
   
   meta->sar->chirp_rate = chirp_slope;
   meta->sar->pulse_duration = pulse_duration;
-  meta->sar->range_sampling_rate = 1/fs;
+  meta->sar->range_sampling_rate = fs;
   strcpy(meta->sar->polarization,"HH");
   meta->sar->multilook = 1;
   meta->sar->pitch = 0;
@@ -356,9 +450,22 @@ main(int argc, char *argv[])
   meta->sar->yaw = 0;
 ///  meta->sar->incid_a[0-5] = ???
 
-  printf("Writing out the meta file\n");
+  printf("Creating the meta->location block\n");
+  if (!meta->location) meta->location = meta_location_init();
+  meta_get_corner_coords(meta);
+  meta_get_latLon(meta,meta->general->line_count/2,meta->general->sample_count/2,0,
+  		  &meta->general->center_latitude, &meta->general->center_longitude);
 
-  meta_write(meta, argv[1]);
+  printf("Writing out the meta file\n");
+  meta_write(meta, basefile);
+
+  if (META_ONLY == 0) {
+    char grfilename[256];
+    strcpy(grfilename,basefile);
+    strcat(grfilename,"G12");
+    float grPixSiz = 12.5;
+    sr2gr_pixsiz(basefile, grfilename, grPixSiz);
+  }
 
   exit(0);
 }
@@ -445,9 +552,6 @@ int read_hdrfile(char *infile)
   
   int val, i;
   double dtmp, t, t1;
-  double x1, y1, z1;
-  double xdot1, ydot1, zdot1;
-
   
   if (fp==NULL) {printf("ERROR: can't open %s header file\n",infile); return(1); }
   hdr = (SEASAT_header_ext *) malloc(sizeof(SEASAT_header_ext));
@@ -457,8 +561,8 @@ int read_hdrfile(char *infile)
     if (val!=20) {printf("ERROR: unable to read to specified start line in header file\n"); exit(1);}
   }
 
-  time_offset = hdr->clock_drift / 1000.0 ;
-  // time_offset = 0.0;
+  // time_offset = hdr->clock_drift / 1000.0 ;
+  time_offset = 0.0;
 
   start_year = 1970 + hdr->lsd_year;
   start_date = hdr->day_of_year;
@@ -468,9 +572,8 @@ int read_hdrfile(char *infile)
 
   s_date.year = 1970 + hdr->lsd_year;
   s_date.jd   = hdr->day_of_year;
-  dtmp = (double) hdr->msec / 1000.0; //  + time_offset;
+  dtmp = (double) hdr->msec / 1000.0 + time_offset;
   date_sec2hms(dtmp,&s_time);
-  
 }
 
 int get_values(FILE *fp,SEASAT_header_ext *s)
@@ -510,9 +613,9 @@ int get_int_val(FILE *fp, int *num)
 {
   char tmp[256];
   fgets(tmp,255,fp);
-  printf("read int %s: ",tmp);
+  // printf("read int %s: ",tmp);
   sscanf(tmp,"%i",num);
-  printf("got value %i\n",*num);
+  // printf("got value %i\n",*num);
   return(1);
 }
 
@@ -520,9 +623,9 @@ int get_2int_vals(FILE *fp,int *num1,int *num2)
 {
   char tmp[256];
   fgets(tmp,255,fp);
-  printf("read 2 ints %s: ",tmp);
+  // printf("read 2 ints %s: ",tmp);
   sscanf(tmp,"%i %i",num1,num2);
-  printf("got values %i %i\n",*num1,*num2);
+  // printf("got values %i %i\n",*num1,*num2);
   return(1);
 }
 
@@ -530,9 +633,9 @@ int get_double_val(FILE *fp, double *num)
 {
   char tmp[256];
   fgets(tmp,255,fp);
-  printf("read double %s: ",tmp);
+  // printf("read double %s: ",tmp);
   sscanf(tmp,"%lf",num);
-  printf("got value %lf\n",*num);
+  // printf("got value %lf\n",*num);
   return(1);
 }
 
@@ -540,9 +643,9 @@ int get_3double_vals(FILE *fp, double *num1, double *num2, double *num3)
 {
   char tmp[256];
   fgets(tmp,255,fp);
-  printf("read 3 doubles %s: ",tmp);
+  // printf("read 3 doubles %s: ",tmp);
   sscanf(tmp,"%lf %lf %lf",num1,num2,num3);
-  printf("got values %lf %lf %lf\n",*num1,*num2,*num3);
+  // printf("got values %lf %lf %lf\n",*num1,*num2,*num3);
   return(1);
 }
 
@@ -551,10 +654,19 @@ int get_string_val(FILE *fp, char *str)
   char tmp[256];
   fgets(tmp,255,fp);
   sscanf(tmp,"%s",str);
-  printf("read string %s\n",str);
+  // printf("read string %s\n",str);
   return(1);
 }
 
+void give_usage(int argc, char *argv[])
+{
+    printf("Usage: %s [-m][-r roi.in_file][-v] <base_file_name>\n",argv[0]);
+    printf("\tbase_file_name\tinput ROI slc file; output ASF .img and .ddr\n");
+    printf("\t-m            \tmeta only option - only create meta file\n");
+    printf("\t-r roi.in_file\toptional roi.in file name\n");
+    printf("\t-v            \tUse state vectors instead of TLEs\n");
+    exit(1);
+}
 
 
 
