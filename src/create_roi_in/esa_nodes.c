@@ -50,7 +50,6 @@ int get_node_for_line(meta_parameters *meta, int line, int nl)
   int    closest_node;
   double closest_lat;
   double max_diff;
-  double plat_min, plat_max, plon_min, plon_max;
   double lat;
   double time;
   int    ASC;
@@ -62,7 +61,7 @@ int get_node_for_line(meta_parameters *meta, int line, int nl)
   meta_get_latLon(meta,line,CENTER_SAMPLE,0,&test_lat,&test_lon);
   time = meta_get_time(meta,line,CENTER_SAMPLE);
   stateVector vec = meta_get_stVec(meta,time);
-  if (vec.pos.z >= 0) ASC = 1;
+  if (vec.vel.z >= 0) ASC = 1;
   else ASC = 0;
   max_diff = 180;
 
@@ -99,23 +98,18 @@ int get_line_for_node(meta_parameters *meta, int node, int nl)
   int    closest_line;
   double closest_lat;
   double max_diff;
-  double plat_min, plat_max, plon_min, plon_max;
   double lat;
   int    line;
   double time;
   int    ASC;
 
-  meta_get_bounding_box(meta, &plat_min, &plat_max, &plon_min, &plon_max);
-
   lat = get_lat_from_node(node);
-  if (lat < plat_min || lat > plat_max) return(-1);
-  
   max_diff = 180;
   for (line = 0; line < meta->general->line_count; line++)  {
       meta_get_latLon(meta,line,CENTER_SAMPLE,0,&test_lat, &test_lon);
       time = meta_get_time(meta,line,CENTER_SAMPLE);
       stateVector vec = meta_get_stVec(meta,time);
-      if (vec.pos.z >= 0) ASC = 1;
+      if (vec.vel.z >= 0) ASC = 1;
       else ASC = 0;
       
       if (ASC == 1 && node >= 1800) continue;  // nodes >= 1800 are descending
@@ -133,7 +127,7 @@ int get_line_for_node(meta_parameters *meta, int node, int nl)
   else line = nl-closest_line-HALF_ESA_FRAME;
 
   printf("\tfound line %i for node %i\n",line,node);
-
+  fflush(NULL);
   return(line);
 }
 
