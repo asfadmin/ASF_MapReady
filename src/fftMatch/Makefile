@@ -21,12 +21,16 @@ LIBS =	\
 
 CFLAGS += $(PROJ_CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
 
-all: fftMatch clean
+all: fftMatch fftMatchGrid clean
 
 fftMatch: $(OBJLIB)
 	$(CC) $(CFLAGS) -o fftMatch fftMatch.c $(LIBS) $(LDFLAGS)
 	mv fftMatch$(BIN_POSTFIX) $(BINDIR)
 	cp fftMatch.man ../../man/cat1/fftMatch.1
+
+fftMatchGrid: $(OBJLIB)
+	$(CC) $(CFLAGS) -o fftMatchGrid fftMatchGrid.c $(LIBS) $(LDFLAGS)
+	mv fftMatchGrid$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f *.o

@@ -534,9 +534,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
     char *proj_str = proj2str(meta->projection->type);
     meta_put_string(fp, "type:", proj_str, comment);
     free(proj_str);
-    meta_put_double_lf(fp,"startX:",meta->projection->startX, 8,
+    meta_put_double_lf(fp,"startX:",meta->projection->startX, 6,
                        	  "Projection Coordinate at top-left, X direction");
-    meta_put_double_lf(fp,"startY:",meta->projection->startY, 8,
+    meta_put_double_lf(fp,"startY:",meta->projection->startY, 6,
                           "Projection Coordinate at top-left, Y direction");
     meta_put_double(fp,"perX:",meta->projection->perX,
 		    "Projection Coordinate per pixel, X direction");
@@ -961,10 +961,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
   // Write out calibration block - version 2.8
   if (meta->calibration) {
     int ii;
-    char str[15];
+    char str[15], gain[15], coeffs[50];
+
     meta_put_string(fp,"calibration {","",
             "Block containing calibration information");
-    strcpy(comment,"Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS, TSX, UAVSAR)");
+    strcpy(comment,"Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS, TSX, RSAT2, UAVSAR)");
     switch (meta->calibration->type)
       {
       case unknown_cal:
@@ -1079,6 +1080,24 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	meta_put_double(fp, "terrain_height:",
 			meta->calibration->uavsar->terrain_height,
 			"Global average terrain height [m]");
+	break;
+      case r2_cal:
+	meta_put_string(fp,"type:","RSAT2",comment);
+	meta_put_int(fp,"num_elements:",meta->calibration->r2->num_elements,
+		     "Number of gain coefficients");
+	for (ii=0; ii<meta->calibration->r2->num_elements; ii++) {
+	  sprintf(gain, "gain(%d):", ii);
+	  sprintf(coeffs, "%f %f %f", 
+		  meta->calibration->r2->a_beta[ii],
+		  meta->calibration->r2->a_gamma[ii],
+		  meta->calibration->r2->a_sigma[ii]);
+	  meta_put_string(fp, gain, coeffs, 
+			  "Gain coefficient A: beta, gamma, sigma");
+	}
+	meta_put_double(fp,"offset:",meta->calibration->r2->b,
+			"Constant offset B");
+	meta_put_double(fp,"slc:",meta->calibration->r2->slc,"Data SLC?");
+	break;
     }
 
     meta_put_string(fp,"}","","End calibration");
@@ -1420,10 +1439,10 @@ void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
   {
     sprintf(param,"%-16.11g",value);
     strtok(param," ");/*remove all trailing spaces */
-    if (is_empty(param)) { strcpy(param,"nan"); }
+    if (is_empty(param)) { strcpy(param,"NaN"); }
   }
   else {
-    strcpy(param,"nan");
+    strcpy(param,"NaN");
   }
   meta_put_string(meta_file,name,param,comment);
 }

@@ -24,7 +24,9 @@ int asf_calibrate(const char *inFile, const char *outFile,
     outRadiometry += 3;
 
   // This can only work if the image is in some SAR geometry
-  if (metaIn->projection && metaIn->projection->type != SCANSAR_PROJECTION)
+  // Exception: UAVSAR comes in gamma radiometry - dB could be applied to this
+  if (metaIn->projection && metaIn->projection->type != SCANSAR_PROJECTION &&
+      strcmp_case(metaIn->general->sensor, "UAVSAR") != 0)
     asfPrintError("Can't apply calibration factors to map projected images\n"
                   "(Amplitude or Power only)\n");
 
@@ -33,13 +35,28 @@ int asf_calibrate(const char *inFile, const char *outFile,
 		 radiometry2str(inRadiometry), radiometry2str(outRadiometry));
   // FIXME: This function should be able to remap between different
   //        radiometry projections.
-  if (metaIn->general->radiometry != r_AMP)
+  if (metaIn->general->radiometry == r_GAMMA && 
+      strcmp(metaIn->general->sensor, "UAVSAR") == 0) {
+    if (outRadiometry == r_GAMMA_DB)
+      ;
+    else
+      asfPrintError("Currently no radiometry remapping of UAVSAR data "
+		    "supported!\n");
+  }
+  else if (metaIn->general->radiometry != r_AMP)
     asfPrintError("Currently only AMPLITUDE as radiometry is supported!\n");
+
+  // No noise removal anymore - so issue a warning
+  if (strcmp_case(metaIn->general->sensor, "ERS1") == 0 ||
+      strcmp_case(metaIn->general->sensor, "ERS2") == 0 ||
+      strcmp_case(metaIn->general->sensor, "JERS1") == 0 ||
+      strcmp_case(metaIn->general->sensor, "RSAT-1") == 0)
+    asfPrintWarning("The noise floor removal is not applied to the data!\n");
 
   metaOut->general->radiometry = outRadiometry;
   int dbFlag = FALSE;
   if (outRadiometry >= r_SIGMA && outRadiometry <= r_GAMMA)
-    metaOut->general->no_data = 0.0001;
+    metaOut->general->no_data = 0.0;
   if (outRadiometry >= r_SIGMA_DB && outRadiometry <= r_GAMMA_DB) {
     metaOut->general->no_data = -40.0;
     dbFlag = TRUE;
@@ -141,14 +158,16 @@ int asf_calibrate(const char *inFile, const char *outFile,
 	put_band_float_line(fpOut, metaOut, kk, ii, bufOut);
 	asfLineMeter(ii, line_count);
       }
+      char *radiometry = radiometry2str(outRadiometry);
       if (kk==0)
 	sprintf(metaOut->general->bands, "%s-%s", 
-		radiometry2str(outRadiometry), bands[kk]);
+		radiometry, bands[kk]);
       else {
 	char tmp[255];
-	sprintf(tmp, ",%s-%s", radiometry2str(outRadiometry), bands[kk]);
+	sprintf(tmp, ",%s-%s", radiometry, bands[kk]);
 	strcat(metaOut->general->bands, tmp);
       }
+      free(radiometry);
     }
   }
   meta_write(metaOut, outFile);

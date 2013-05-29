@@ -48,9 +48,11 @@ static int isDecomposition(char *bandExt)
 
 static void geodetic_to_ecef(double lat, double lon, double h, Vector *v)
 {
-  const double a = 6378144.0;    // GEM-06 Ellipsoid.
-  const double e = 8.1827385e-2; // GEM-06 Eccentricity
-  const double e2 = e*e;
+  //const double a = 6378144.0;    // GEM-06 Ellipsoid.
+  //const double e = 8.1827385e-2; // GEM-06 Eccentricity
+  const double a = 6378137.0000;
+  const double e2 = 6.69437999014e-3;
+  //const double e2 = e*e;
 
   lat *= D2R;
   lon *= D2R;
@@ -58,12 +60,12 @@ static void geodetic_to_ecef(double lat, double lon, double h, Vector *v)
   double sin_lat = sin(lat);
   double cos_lat = cos(lat);
 
-  double f = sqrt(1 - e2*sin_lat*sin_lat);
+  double f = sqrt(1. - e2*sin_lat*sin_lat);
   double af = a/f;
 
   v->x = (af + h)*cos_lat*cos(lon);
   v->y = (af + h)*cos_lat*sin(lon);
-  v->z = (a*(1-e2)/f + h)*sin_lat;
+  v->z = (af*(1.-e2) + h)*sin_lat;
 }
 
 static Vector get_satpos(meta_parameters *meta, int line)
@@ -108,9 +110,6 @@ static void calculate_vectors_for_line(meta_parameters *meta_dem, meta_parameter
     meta_get_latLon(meta_img, line, jj, 0, &lat, &lon);
     geodetic_to_ecef(lat, lon, demLine[jj], v);
     vectorLine[jj] = v;
-
-    meta_get_latLon(meta_img, line+1, jj, 0, &lat, &lon);
-    geodetic_to_ecef(lat, lon, demLine[jj], &nextVectors[jj]);
   }
 }
 
@@ -146,21 +145,46 @@ static Vector * calculate_normal(Vector ***localVectors, int sample)
 
   vector_free(v1);
   vector_free(v2);
-  
+ /*
+  v1 = vector_copy(localVectors[1][sample]);
+  v2 = vector_copy(localVectors[1][sample]);
+  vector_subtract(v1, localVectors[2][sample]);
+  vector_subtract(v2, localVectors[1][sample+1]);
+  normal = vector_cross(v1, v2);
+  vector_multiply(normal, 1./vector_magnitude(normal));
+  vector_free(v1);
+  vector_free(v2);
+ */
   return normal;
+}
+
+static float
+calculate_local_incidence(Vector *n, Vector *satpos, Vector *p)
+                          
+{
+  // R: vector from ground point (p) to satellite (satpos)
+  Vector *R = vector_copy(satpos);
+  vector_subtract(R, p);
+  vector_multiply(R, -1./vector_magnitude(R));
+
+  double local_incidence = acos(vector_dot(n,R)) * R2D;
+
+  vector_free(R);
+
+  return local_incidence;
 }
 
 static float
 calculate_correction(meta_parameters *meta_in, int line, int samp,
                      Vector *satpos, Vector *n, Vector *p, Vector *p_next, float incid_angle)
 {
+
   // R: vector from ground point (p) to satellite (satpos)
   Vector *R = vector_copy(satpos);
   vector_subtract(R, p);
   vector_multiply(R, 1./vector_magnitude(R));
 
-  Vector *x = vector_copy(p);
-  vector_subtract(x, p_next);
+  Vector *x = vector_cross(p,R);
   vector_multiply(x, 1./vector_magnitude(x));
 
   // Rx: R cross x -- image plane normal
@@ -181,12 +205,15 @@ calculate_correction(meta_parameters *meta_in, int line, int samp,
 int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
         char *output_file, int save_incid_angles)
 {
+  // always save these for now
+  save_incid_angles = TRUE;
+
   //asfPrintStatus("Input file: %s\n", input_file);
   //asfPrintStatus("DEM: %s\n", dem_file);
   //asfPrintStatus("Output file: %s\n", output_file);
   //asfPrintStatus("Layover/shadow mask: %s\n",
   //               maskFlag ? mask_file : "none");
-  //asfPrintStatus("Save incid angles: %s\n\n", save_incid_angles ? "Yes" : "No");
+  asfPrintStatus("Save incid angles: %s\n\n", save_incid_angles ? "Yes" : "No");
 
   char *inputImg = appendExt(input_file, ".img");
   char *inputMeta = appendExt(input_file, ".meta");
@@ -196,7 +223,7 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   char *outputMeta = appendExt(output_file, ".meta");
   char *maskImg = maskFlag ? appendExt(mask_file, ".img") : NULL;
   char *maskMeta = maskFlag ? appendExt(mask_file, ".meta") : NULL;
-  char *sideProductsImgName=NULL, *sideProductsMetaName=NULL;
+  char *sideProductsMetaName=NULL;
   meta_parameters *side_meta=NULL;
   FILE *fpSide = NULL;
 
@@ -224,13 +251,17 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
   if(save_incid_angles) {
     const char *tmpdir = get_asf_tmp_dir();
-    sideProductsImgName = MALLOC(sizeof(char)*(strlen(tmpdir)+strlen(output_file)+64));
-    sprintf(sideProductsImgName, "%s/incidence_angles.img", tmpdir);
+    char *sideProductsImgName = MALLOC(sizeof(char)*(strlen(tmpdir)+strlen(output_file)+64));
+    sprintf(sideProductsImgName, "%s%cterrcorr_side_products.img", 
+	    tmpdir, DIR_SEPARATOR);
     sideProductsMetaName = appendExt(sideProductsImgName, ".meta");
     side_meta = meta_copy(meta_in);
-    side_meta->general->band_count = 2;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLES,RADIOMETRIC_CORRECTION");
+    side_meta->general->band_count = 4;
+    strcpy(side_meta->general->bands,
+           "INCIDENCE_ANGLE_ELLIPSOID,INCIDENCE_ANGLE_LOCAL,RADIOMETRIC_CORRECTION,COS_PHI");
+    side_meta->general->image_data_type = IMAGE;
     fpSide = FOPEN(sideProductsImgName, "wb");
+    FREE(sideProductsImgName);
   }
 
   // Check the input radiometry - only accept amplitude
@@ -277,8 +308,13 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
   if(save_incid_angles) {
     put_band_float_line(fpSide, side_meta, 0, 0, incid_angles);
     put_band_float_line(fpSide, side_meta, 0, nl - 1, incid_angles);
-    put_band_float_line(fpSide, side_meta, 1, 0, corr);
-    put_band_float_line(fpSide, side_meta, 1, nl - 1, corr);
+    put_band_float_line(fpSide, side_meta, 1, 0, incid_angles);
+    put_band_float_line(fpSide, side_meta, 1, nl - 1, incid_angles);
+    put_band_float_line(fpSide, side_meta, 2, 0, corr);
+    put_band_float_line(fpSide, side_meta, 2, nl - 1, corr);
+    // put zeros in for cos(phi) around the edges, not correct though
+    put_band_float_line(fpSide, side_meta, 3, 0, incid_angles);
+    put_band_float_line(fpSide, side_meta, 3, nl - 1, incid_angles);
   }
 
   // We aren't applying the correction to the edges of the image
@@ -320,10 +356,23 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
 
     // saving some intermediate products if requested
     if(save_incid_angles) {
+      float *tmp_buf = MALLOC(sizeof(float)*ns);
       for (jj=0; jj<ns; ++jj)
-        incid_angles[jj] *= R2D;
-      put_band_float_line(fpSide, side_meta, 0, ii, incid_angles);
-      put_band_float_line(fpSide, side_meta, 1, ii, corr);
+        tmp_buf[jj] = incid_angles[jj] * R2D;
+      put_band_float_line(fpSide, side_meta, 0, ii, tmp_buf);
+      put_band_float_line(fpSide, side_meta, 2, ii, corr);
+      for (jj=0; jj<ns; ++jj)
+        tmp_buf[jj] = corr[jj] * sin(incid_angles[jj]);
+      put_band_float_line(fpSide, side_meta, 3, ii, tmp_buf);
+      for (jj=1; jj<ns-1; ++jj) {
+        Vector * normal = calculate_normal(localVectors, jj);
+        tmp_buf[jj] = calculate_local_incidence(normal, &satpos,
+				      localVectors[1][jj]);
+        vector_free(normal);
+      }
+      tmp_buf[jj] = tmp_buf[jj-1] = 0;
+      put_band_float_line(fpSide, side_meta, 1, ii, tmp_buf);
+      FREE(tmp_buf);
     }
 
     // correct all the bands with the calculated scale factor
@@ -396,7 +445,6 @@ int rtc(char *input_file, char *dem_file, int maskFlag, char *mask_file,
     meta_write(side_meta, sideProductsMetaName);
     meta_free(side_meta);
     FREE(sideProductsMetaName);
-    FREE(sideProductsImgName);
   }
 
   meta_free(meta_out);

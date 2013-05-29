@@ -1368,7 +1368,13 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // if() block when i>0.
 
     // We still assume square pixels for non-projected data
-    if (pixel_size < 0 && !input_projected)
+    // Deal with special case of geographic coordinates
+    if (pixel_size < 0 && projection_type == LAT_LONG_PSEUDO_PROJECTION &&
+	(!imd->projection || 
+	 imd->projection->type != LAT_LONG_PSEUDO_PROJECTION))
+      pixel_size_x = pixel_size_y = 
+	MAX(imd->general->x_pixel_size, imd->general->y_pixel_size)/ 108000.0;
+    else if (pixel_size < 0 && !input_projected)
     {
         g_assert(i==0);
         pixel_size_x = pixel_size_y = 
@@ -1476,8 +1482,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // have to worry about pixel averaging or anything).
   if (projection_type == LAT_LONG_PSEUDO_PROJECTION && !input_is_latlon) {
     // Conversion in decimal degrees - 30 m = 1 arcsec
-    pixel_size_x /= 108000.0;
-    pixel_size_y /= 108000.0;
+    // pixel_size_x /= 108000.0;
+    // pixel_size_y /= 108000.0;
   }
 
   double pc_per_x = pixel_size_x;
@@ -1828,6 +1834,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // We do not do this if we have been asked to save the line/sample
     // mapping, since this will mess that up.
     int do_resample = FALSE;
+
+    // Geographic coordinates need to be converted to meters for pixel size
+    // comparison
+    if (imd->projection && 
+	imd->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
+      imd->general->x_pixel_size *= 108000.0;
+      imd->general->y_pixel_size *= 108000.0;
+    }
     if (!save_line_sample_mapping &&
         (pixel_size_x/3. > imd->general->x_pixel_size &&
          pixel_size_y/3. > imd->general->y_pixel_size))
@@ -2859,7 +2873,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         out_of_range_positive, pct_too_positive);
   }
 
-  omd->projection->startY -= omd->projection->perY;
   meta_write (omd, output_meta_data);
   meta_free (omd);
 
@@ -2867,61 +2880,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   free(output_image);
 
   asfPrintStatus("Geocoding complete.\n\n");
-  return 0;
-}
-
-int geoid_adjust(const char *input_filename, const char *output_filename)
-{
-  char *input_img = appendExt(input_filename, ".img");
-  char *input_meta = appendExt(input_filename, ".meta");
-
-  char *output_img = appendExt(output_filename, ".img");
-  char *output_meta = appendExt(output_filename, ".meta");
-
-  if (!fileExists(input_img))
-    asfPrintError("File not found: %s\n", input_img);
-  if (!fileExists(input_meta))
-    asfPrintError("File not found: %s\n", input_meta);
-
-  meta_parameters *meta = meta_read(input_meta);
-  int nl = meta->general->line_count;
-  int ns = meta->general->sample_count;
-  int ii, jj;
-
-  FILE *fpIn = FOPEN(input_img, "rb");
-  FILE *fpOut = FOPEN(output_img, "wb");
-  float *buf = MALLOC(sizeof(float)*ns);
-
-  double avg = 0.0;
-  for (ii=0; ii<nl; ++ii) {
-    get_float_line(fpIn, meta, ii, buf);
-    for (jj=0; jj<ns; ++jj) {
-      double lat, lon;
-      meta_get_latLon(meta, ii, jj, 0, &lat, &lon);
-      float ht = get_geoid_height(lat,lon);
-      buf[jj] += ht;
-      avg += ht;
-    }
-    put_float_line(fpOut, meta, ii, buf);
-    asfLineMeter(ii,nl);
-  }
-
-  avg /= (double)(nl*ns);
-  asfPrintStatus("Average correction: %f\n", avg);
-
-  meta_write(meta, output_meta);
-  meta_free(meta);
-
-  FCLOSE(fpIn);
-  FCLOSE(fpOut);
-
-  FREE(buf);
-  FREE(input_img);
-  FREE(input_meta);
-  FREE(output_img);
-  FREE(output_meta);
-
-  // success
   return 0;
 }
 

@@ -267,6 +267,13 @@ void reset_globals(int reset_location)
         g_poly = &g_polys[0];
     }
 
+    if (glade_xml != NULL) {
+      set_checked("rb_gs_2sigma", TRUE);
+      set_checked("rb_red_2sigma", TRUE);
+      set_checked("rb_green_2sigma", TRUE);
+      set_checked("rb_blue_2sigma", TRUE);
+    }
+   
     //data_ci = NULL;
     //meta = NULL;
 }

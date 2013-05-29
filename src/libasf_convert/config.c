@@ -121,8 +121,31 @@ static double read_double(char *line, char *param)
 
 int init_convert_config(char *configFile)
 {
+  // Read MapReady settings file
+  char line[1024], params[25], *test;
+  char settingsFile[1024], default_in_dir[1024];
+  sprintf(settingsFile, "%s%cmapready_settings.cfg", 
+	  get_asf_share_dir(), DIR_SEPARATOR);
+  FILE *fSettings = FOPEN(settingsFile, "r");
+  if (fSettings) {
+    while (fgets(line, 1024, fSettings) != NULL) {
+      if (strncmp(line, "[General]", 9) == 0)
+	strcpy(params, "general");
+      if (strncmp(params, "general", 7) == 0) {
+	test = read_param(line);
+	if (strncmp(test, "data directory", 14) == 0) {
+	  strcpy(default_in_dir, read_str(line, "data directory"));
+	  if (strcmp_case(default_in_dir, "<ENTER DIRECTORY NAME>") == 0)
+	    strcpy(default_in_dir, "");
+	}
+	FREE(test);
+      }    
+    }
+  }
+  FCLOSE(fSettings);  
+    
+  // Fill in configuration file
   FILE *fConfig;
-
   if ( fileExists(configFile) ) {
     asfPrintError("Cannot create file, %s, because it already exists.\n",
                   configFile);
@@ -139,7 +162,10 @@ int init_convert_config(char *configFile)
   fprintf(fConfig, "# Directory where to look for the input file(s). If there is a\n"
                    "# directory already specified in the input file parameter, this\n"
                    "# value will be ignored.\n\n");
-  fprintf(fConfig, "default input dir = \n\n");
+  if (strlen(default_in_dir) > 0)
+    fprintf(fConfig, "default input dir = %s\n\n", default_in_dir);
+  else
+    fprintf(fConfig, "default input dir = \n\n");
   // ancillary file
   fprintf(fConfig, "# This parameter looks for the basename of the ancillary file for\n");
   fprintf(fConfig, "# PolSARpro or GAMMA ingest.\n\n");
@@ -333,7 +359,7 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->import->radiometry);
             FREE(cfg->import->lut);
 	    FREE(cfg->import->image_data_type);
-            FREE(cfg->import->prc);
+	    FREE(cfg->import->prc);
 	    FREE(cfg->import->polsarpro_colormap);
 	    FREE(cfg->import->metadata_file);
 	    FREE(cfg->import->interferogram);
@@ -502,7 +528,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->sample = 0;
   cfg->import->width = -99;
   cfg->import->height = -99;
-  cfg->import->prc = (char *)MALLOC(sizeof(char)*25);
+  cfg->import->prc = (char *)MALLOC(sizeof(char)*1024);
   strcpy(cfg->import->prc, "");
   cfg->import->output_db = 0;
   cfg->import->complex_slc = 0;
@@ -585,6 +611,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->fill_value = 0;
   cfg->terrain_correct->do_radiometric = 0;
   cfg->terrain_correct->smooth_dem_holes = 0;
+  cfg->terrain_correct->geoid_adjust = 0;
   cfg->terrain_correct->no_resampling = 0;
   cfg->terrain_correct->save_terrcorr_dem = 0;
   cfg->terrain_correct->save_terrcorr_layover_mask = 0;
@@ -665,8 +692,6 @@ convert_config *init_fill_convert_config(char *configFile)
       while (fgets(line, LINE_LEN, fDefaults) != NULL) {
         test = read_param(line);
         // General
-        if (strncmp(test, "default input dir", 17)==0)
-          strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
         if (strncmp(test, "default output dir", 18)==0)
           strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
         if (strncmp(test, "project", 7)==0)
@@ -843,6 +868,8 @@ convert_config *init_fill_convert_config(char *configFile)
           cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
         if (strncmp(test, "smooth dem holes", 16)==0)
           cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
+        if (strncmp(test, "geoid adjust", 12)==0)
+          cfg->terrain_correct->geoid_adjust = read_int(line, "geoid adjust");
         if (strncmp(test, "no resampling", 13)==0)
           cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
         if (strncmp(test, "save terrcorr dem", 17)==0)
@@ -920,6 +947,42 @@ convert_config *init_fill_convert_config(char *configFile)
     }
   }
 
+  // Read MapReady settings file
+  char settingsFile[1024];
+  sprintf(settingsFile, "%s%cmapready_settings.cfg", 
+	  get_asf_share_dir(), DIR_SEPARATOR);
+  FILE *fSettings = FOPEN(settingsFile, "r");
+  if (fSettings) {
+    while (fgets(line, 1024, fSettings) != NULL) {
+      if (strncmp(line, "[Terrain correction]", 20) == 0)
+	strcpy(params, "terrain correction");
+      if (strncmp(params, "terrain correction", 18) == 0) {
+	test = read_param(line);
+	if (strncmp(test, "water height cutoff", 19) == 0)
+	  cfg->terrain_correct->water_height_cutoff = 
+	    read_double(line, "water height cutoff");
+	if (strncmp(test, "user mask fill value", 20) == 0)
+	  cfg->terrain_correct->fill_value = 
+	    read_int(line, "user mask file value");
+	if (strncmp(test, "no resampling", 13) == 0)
+	  cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
+	if (strncmp(test, "use nearest neighbor", 20) == 0)
+	  cfg->terrain_correct->use_nearest_neighbor = 
+	    read_int(line, "use nearest neighbor");
+	FREE(test);
+      }
+      if (strncmp(line, "[Geocoding]", 11) == 0)
+	strcpy(params, "geocoding");
+      if (strncmp(params, "geocoding", 9) == 0) {
+	test = read_param(line);
+	if (strncmp(test, "background", 10) == 0)
+	  cfg->geocoding->background = read_double(line, "background");
+	FREE(test);
+      }
+    }
+  }
+  FCLOSE(fSettings);  
+    
   // Read in parameters
   fConfig = fopen(configFile, "r");
   if (fConfig) {
@@ -1121,8 +1184,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->lat_begin = read_double(line, "lat begin");
       if (strncmp(test, "lat end", 7)==0)
         cfg->import->lat_end = read_double(line, "lat end");
-      if (strncmp(test, "precise", 7)==0)
-        strcpy(cfg->import->prc, read_str(line, "precise"));
+      if (strncmp(test, "precise file", 12)==0)
+        strcpy(cfg->import->prc, read_str(line, "precise file"));
       if (strncmp(test, "output db", 9)==0)
         cfg->import->output_db = read_int(line, "output db");
       if (strncmp(test, "complex SLC", 11)==0)
@@ -1274,6 +1337,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
       if (strncmp(test, "smooth dem holes", 16)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
+      if (strncmp(test, "geoid adjust", 12)==0)
+        cfg->terrain_correct->geoid_adjust = read_int(line, "geoid adjust");
       if (strncmp(test, "no resampling", 13)==0)
         cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
       if (strncmp(test, "save terrcorr dem", 17)==0)
@@ -1314,6 +1379,7 @@ convert_config *read_convert_config(char *configFile)
 	strcpy(cfg->calibrate->radiometry, read_str(line, "radiometry"));
       if (strncmp(test, "woods hole scale", 16)==0)
 	cfg->calibrate->wh_scale = read_int(line, "woods hole scale");
+      FREE(test);
     }
 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
@@ -1335,7 +1401,7 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "resampling", 10)==0)
         strcpy(cfg->geocoding->resampling, read_str(line, "resampling"));
       if (strncmp(test, "background", 10)==0)
-        cfg->geocoding->background = read_int(line, "background");
+        cfg->geocoding->background = read_double(line, "background");
       if (strncmp(test, "force", 5)==0)
         cfg->geocoding->force = read_int(line, "force");
       FREE(test);
@@ -1671,7 +1737,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# of ERS precision state vector from DLR as a replacement of the restituted\n"
                 "# state vectors that are provided from the European Space Agency. The parameter\n"
                 "# required here defines the location of the precision state vectors.\n\n");
-      fprintf(fConfig, "precise = %s\n", cfg->import->prc);
+      fprintf(fConfig, "precise file = %s\n", cfg->import->prc);
       if (!shortFlag)
           fprintf(fConfig, "\n# When the output db flag is non-zero, the calibrated image\n"
                 "# is output in decibels.  It only applies when the radiometry is sigma,\n"
@@ -1940,7 +2006,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# image. If set to -99 this parameter will be ignored and the 'asf_terrcorr' will\n"
                 "# deal with the issues that might occur when using different pixel spacings in\n"
                 "# the SAR image and the reference DEM\n\n");
-      fprintf(fConfig, "pixel spacing = %.2f\n", cfg->terrain_correct->pixel);
+      fprintf(fConfig, "pixel spacing = %f\n", cfg->terrain_correct->pixel);
       if (!shortFlag)
         fprintf(fConfig, "\n# The heights of the reference DEM are used to correct the SAR image\n"
                 "# for terrain effects. The quality and resolution of the reference DEM determines\n"
@@ -1983,6 +2049,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
                   "# in the terrain corrected product.  This option will attempt to replace DEM holes\n"
                   "# with interpolated values.\n\n");
       fprintf(fConfig, "smooth dem holes = %d\n", cfg->terrain_correct->smooth_dem_holes);
+      if (!shortFlag)
+          fprintf(fConfig, "\n# Terrain correction requires that the DEM heights be relative to the Earth\n"
+                  "# ellipsoid, however most DEMs have heights relative to the Earth geoid.  Turn this\n"
+                  "# option on to perform the correction on the DEM values prior to terrain correction.\n\n");
+      fprintf(fConfig, "geoid adjust = %d\n", cfg->terrain_correct->geoid_adjust);
       if (!shortFlag)
           fprintf(fConfig, "\n# If the DEM has a pixel size that is significantly larger (a factor\n"
                   "# of 2) than the SAR image, by default the SAR image is downsampled\n"
@@ -2108,7 +2179,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       if (!shortFlag)
         fprintf(fConfig, "\n# The pixel spacing determines the pixel size used for the resulting\n"
                 "# geocoded image and, therefore, the size of the output image.\n\n");
-      fprintf(fConfig, "pixel spacing = %.2f\n", cfg->geocoding->pixel);
+      fprintf(fConfig, "pixel spacing = %f\n", cfg->geocoding->pixel);
       if  (!shortFlag)
         fprintf(fConfig, "\n# An average height can be defined for the image that is taken into\n"
                 "#  account and adjusted for during the geocoding process.\n\n");

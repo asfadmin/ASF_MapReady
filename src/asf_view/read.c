@@ -84,11 +84,15 @@ int read_file(const char *filename, const char *band, int multilook,
         }
     }
     else if (try_asf(filename, try_extensions)) {
+        int ok = FALSE;
         if (handle_asf_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
             meta = read_asf_meta(meta_name);
-            open_asf_data(data_name, band, multilook, meta, client);
-        } else {
+            ok = open_asf_data(data_name, band, multilook, meta, client);
+            if (!ok)
+                err = STRDUP("Failed to open ASF Internal file.\n");
+        }
+        if (!ok) {
             err_func(err);
             free(err);
             return FALSE;
@@ -171,6 +175,17 @@ int read_file(const char *filename, const char *band, int multilook,
             if (meta) meta_free(meta);
             meta = open_roipac(data_name, band, data_name, meta_name,
                                multilook, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    }
+    else if (try_ras(filename)) {
+        if (handle_ras_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
+            meta = open_ras(data_name, band, data_name, meta_name,
+                            multilook, client);
         } else {
             err_func(err);
             free(err);

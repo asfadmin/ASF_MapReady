@@ -152,6 +152,9 @@ const char *get_summary_text()
         if (s->interp_dem_holes)
             strcat(text, "\n   Fill DEM Holes: Yes");
 
+        strcat(text, "\n   Geoid Correction: ");
+        strcat(text, s->geoid_adjust ? "Yes" : "No");
+
         if (s->terrcorr_is_checked)
         {
             if (s->no_matching)
@@ -163,14 +166,9 @@ const char *get_summary_text()
                 }
             }
 
-            if (s->specified_tc_pixel_size)
+            if (s->specified_pixel_size)
             {
-                sprintf(text, "%s\n   Pixel Size: %.2f m", text,
-                        s->tc_pixel_size);
-            }
-            else if (s->specified_pixel_size)
-            {
-                sprintf(text, "%s\n   Pixel Size: %.2f m (from geocode)",
+                sprintf(text, "%s\n   Pixel Size: %.2f m",
                         text, s->pixel_size);
             }
                     
@@ -224,6 +222,7 @@ const char *get_summary_text()
 
     if (s->geocode_is_checked)
     {
+        int is_degrees = FALSE;
         switch (s->projection)
         {
         case PROJ_UTM:
@@ -267,6 +266,7 @@ const char *get_summary_text()
             break;
         case PROJ_GEO:
             sprintf(text, "%sGeographic (Lat/Lon)\n", text);
+            is_degrees = TRUE;
             break;
         }
 
@@ -274,7 +274,8 @@ const char *get_summary_text()
             sprintf(text, "%s   Height: %.2f\n", text, s->height);
 
         if (s->specified_pixel_size) {
-            sprintf(text, "%s   Pixel Size: %.2f m\n", text, s->pixel_size);
+            sprintf(text, "%s   Pixel Size: %g %s\n", text, s->pixel_size,
+                    is_degrees ? "deg" : "m");
         }
 
         if (s->projection != PROJ_GEO) {

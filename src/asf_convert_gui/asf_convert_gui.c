@@ -110,6 +110,18 @@ void populate_polsarpro_classification_optionmenu()
   gtk_widget_show(browse_option_menu);
 }
 
+void log_filter(const gchar *log_domain, GLogLevelFlags log_level,
+                const gchar *message, gpointer user_data)
+{
+  if (strstr(message, "BitBlt failed: The handle is invalid")) {
+    // ignore this error - known bug in Gdk.
+    // happens when the screen saver activates while user is hovering over a thumbnail
+    return;
+  }
+
+  g_log_default_handler(log_domain, log_level, message, user_data);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -248,10 +260,6 @@ main(int argc, char **argv)
                 "<i>Remote Sensing Toolkit</i>\n"
                 "ver. %s",
                 MAPREADY_VERSION_STRING);
-    if (strlen(SVN_REV)>0)
-        sprintf(gtitle, "%s (build %s)", gtitle, SVN_REV);
-    else
-        strcat(gtitle, " (custom build)");
 
     pango_parse_markup(str, -1, 0, &attrs, &text, NULL, NULL);
     gtk_label_set_attributes(GTK_LABEL(widget), attrs);
@@ -331,6 +339,11 @@ main(int argc, char **argv)
 
     /* set up the rgb stuff on the export tab */
     rgb_combo_box_setup();
+
+    /* our error message logger */
+    g_log_set_handler(NULL,
+                      G_LOG_LEVEL_WARNING | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+                      log_filter, NULL);
 
     /* enters the main GTK loop */
     gtk_main ();

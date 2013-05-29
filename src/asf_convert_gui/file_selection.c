@@ -230,6 +230,13 @@ static void create_file_chooser_dialog(int selected)
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), airsar_filt);
     }
 
+    if (selected==FORMAT_UAVSAR) {
+      GtkFileFilter *uavsar_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(uavsar_filt, "UAVSAR Annotation Files (*.ann)");
+      gtk_file_filter_add_pattern(uavsar_filt, "*.ann");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), uavsar_filt);
+    }
+
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
     gtk_file_filter_add_pattern(all_filt, "*");
@@ -358,6 +365,12 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
       case FORMAT_AIRSAR:
         of.lpstrFilter =
             "AirSAR Files (*.airsar)\0*.airsar\0"
+            "All Files\0*\0";
+        break;
+
+      case FORMAT_UAVSAR:
+        of.lpstrFilter =
+            "UAVSAR Files (*.ann)\0*.ann\0"
             "All Files\0*\0";
         break;
 
@@ -638,12 +651,34 @@ static void do_browse(const char *title, const char *entry_to_populate,
 	"ROI_PAC Files\0*.rsc\0"
         "All Files\0*\0";
     }
+    else if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT)) {
+      of.lpstrFilter =
+        "CEOS Level 1 Files\0*.L;LED-*\0"
+        "RSAT/ERS CEOS L1\0*.L\0"
+        "ALOS Leader Files\0LED-*\0"
+	"TerraSAR-X/Radarsat-2\0*.xml\0"
+        "All Files\0*\0";
+    }
+    else if (filts == (L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT | ANN_FILT )) {
+      of.lpstrFilter =
+        "All Metadata Files\0*.L;LED-*;*.xml;*.ann\0"
+        "CEOS Level 1 Files\0*.L;LED-*\0"
+        "RSAT/ERS CEOS L1\0*.L\0"
+        "ALOS Leader Files\0LED-*\0"
+	"TerraSAR-X/Radarsat-2\0*.xml\0"
+	"UAVSAR Annotation File\0*.ann\0"
+        "All Files\0*\0";
+    }
     else if (filts == BIN_FILT) {
       of.lpstrFilter =
         "PolSARPro Files\0*.bin\0"
         "All Files\0*\0";
     }
-    else {
+    else if (filts == ANN_FILT) {
+      of.lpstrFilter =
+        "UAVSAR Annotation File\0*.ann\0"
+        "All Files\0*\0";
+    } else {
       of.lpstrFilter = "All Files\0*\0";
     }
 
@@ -911,7 +946,7 @@ SIGNAL_CALLBACK void
 on_add_file_with_ancillary_polsarpro_ceos_browse_button_clicked(GtkWidget *w)
 {
   do_browse("Add CEOS File", "add_file_with_ancillary_polsarpro_ceos_entry",
-            L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT);
+            L_FILT | LED_FILT | ALL_CEOS_LEADER_FILT | XML_FILT | ANN_FILT );
 }
 
 SIGNAL_CALLBACK void

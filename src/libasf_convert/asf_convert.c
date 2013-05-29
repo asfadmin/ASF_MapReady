@@ -10,6 +10,7 @@
 #include "asf_contact.h"
 #include "asf_sar.h"
 #include "asf_terrcorr.h"
+#include "radarsat2.h"
 #include "asf_geocode.h"
 #include "asf_nan.h"
 #include "ardop_defs.h"
@@ -589,13 +590,19 @@ meta_parameters *isAirSAR(const char *inFile, int *c, int *l, int *p)
 
 int isASFInternal(const char *input_file)
 {
-  char *meta_file = appendExt(input_file, ".meta");
+  int ret=FALSE;
+  char *inFile = STRDUP(input_file);
+  char *meta_file = appendExt(inFile, ".meta");
   if (fileExists(meta_file)) {
-    char *img_file = appendExt(input_file, ".img");
-    if (fileExists(img_file))
-      return TRUE;
+    char *img_file = appendExt(inFile, ".img");
+    if (fileExists(img_file)) {
+      ret = TRUE;
+    }
+    FREE(img_file);
   }
-  return FALSE;
+  FREE(meta_file);
+  FREE(inFile);
+  return ret;
 }
 
 int isSTF(const char *input_file)
@@ -766,7 +773,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   FREE(tmpDir);
   FREE(outMetaName);
   FREE(bandExt);
-
+  free_ceos_names(inBandName, inMetaName);
   return meta;
 }
 
@@ -830,7 +837,7 @@ void check_return(int ret, char *msg)
 
 void check_input(convert_config *cfg, char *processing_step, char *input)
 {
-  meta_parameters *meta;
+  meta_parameters *meta=NULL;
   char **inBandName = NULL, **inMetaName = NULL, *matrixType, *error;
   int nBands, trailer, airsar_c, airsar_l, airsar_p;
 
@@ -872,7 +879,10 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
         asfPrintError("Pauli decomposition cannot be performed on the UAVSAR .hgt file.\n");
       return;
     }
-    else if (isPolsarproMatrix(input, &matrixType, &error)) { return; }
+    else if (isPolsarproMatrix(input, &matrixType, &error)) {
+      FREE(error);
+      return;
+    }
     else if (isASFInternal(input)) {
       meta = meta_read(input);
       if (meta && meta->sar) {
@@ -895,6 +905,11 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       if (meta) meta_free(meta);
       return;
     }
+    else if (isRadarsat2(input, &error)) {
+      radarsat2_meta *radarsat2 = read_radarsat2_meta(input);
+      meta = radarsat2meta(radarsat2);
+      FREE(radarsat2);
+    }
     else if (isCEOS(input, &error)) {
       require_ceos_pair(input, &inBandName, &inMetaName,
             &nBands, &trailer);
@@ -905,7 +920,8 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       meta = meta_create(inMetaName[0]);
     }
     if (meta->sar) {
-      if (strcmp_case(meta->general->sensor, "AIRSAR") != 0) {
+      if (strcmp_case(meta->general->sensor, "AIRSAR") != 0 &&
+	  strcmp_case(meta->general->sensor, "RADARSAT-2") != 0) {
 	meta_free(meta);
 	// re-read meta with additional info
 	meta = meta_read_cfg(inMetaName[0], cfg);
@@ -934,7 +950,27 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
     else {
       asfPrintError("Polarimetry requires SAR data.\n");
     }
+    
   }
+  else if (strcmp_case(processing_step, "terrain_correction") == 0) {
+
+    meta = meta_read(input);
+      
+    // Error out for UAVSAR MLC specifically
+    // We don't have enough metadata to terrain correct at this moment
+    if (strcmp_case(meta->general->sensor, "UAVSAR") == 0 &&
+	strcmp_case(meta->general->sensor_name, "PolSAR") == 0 &&
+	strcmp_case(meta->general->mode, "MLC") == 0)
+      asfPrintError("UAVSAR MLC can't be terrain corrected. "
+		    "Use the UAVSAR GRD data instead.\n"); 
+    // Error out for the rest as well
+    else if (meta->general->radiometry != r_AMP)
+      asfPrintError("Data need to be in amplitude radiometry at this stage "
+		    "in order to be terrain corrected.\n");
+  }
+  if (meta)
+    meta_free(meta);
+  free_ceos_names(inBandName, inMetaName);
 }
 
 // If a temporary directory has not been specified, create one using the time
@@ -1350,8 +1386,19 @@ static int check_config(const char *configFileName, convert_config *cfg)
     if (cfg->general->calibration &&
         strncmp_case(cfg->import->format, "UAVSAR", 6) == 0)
     {
-        asfPrintStatus("UAVSAR data is already calibrated as GAMMA.\n");
-        cfg->general->calibration = FALSE;
+      if (strcmp_case(cfg->import->uavsar, "DAT") == 0)
+	asfPrintError("Calibration of UAVSAR Stokes matrix data not supported"
+		      "!\n");
+      // Could be actually fixed correctly with incidence angle information
+      // Let it slide for the moment - it's close enough
+      /*
+	else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") != 0 &&
+	  strcmp_case(cfg->calibrate->radiometry, "GAMMA_DB") != 0)
+	asfPrintError("Radiometry (%s) is currently not supported for UAVSAR "
+		      "data!\n", cfg->calibrate->radiometry);
+      */
+      else if (strcmp_case(cfg->calibrate->radiometry, "GAMMA") == 0)
+	cfg->general->calibration = FALSE;
     }
 
     // Look up table file existence check
@@ -1500,14 +1547,26 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		    "POLARIMETRIC_SEGMENTATION") == 0 &&
 	cfg->terrain_correct->do_radiometric)
       asfPrintError("Polarimetric segmentations can't be radiometrically "
-		    "terrain corrected!\n");
+		    "terrain corrected!\nIn order to produce a radiometrically "
+		    "terrain corrected product, the matrix files should be "
+		    "radiometrically terrain corrected prior to generating a "
+		    "polarimetric segmentation.\n");
+    if (strcmp_case(cfg->import->image_data_type,
+		    "POLARIMETRIC_DECOMPOSITION") == 0 &&
+	cfg->terrain_correct->do_radiometric)
+      asfPrintError("Polarimetric decompositions can't be radiometrically "
+		    "terrain corrected!\nIn order to produce a radiometrically "
+		    "terrain corrected product, the matrix files should be "
+		    "radiometrically terrain corrected prior to generating a "
+		    "polarimetric decomposition.\n");
     if (strcmp_case(cfg->import->image_data_type, 
 		    "POLARIMETRIC_PARAMETER") == 0 && 
 	cfg->terrain_correct->do_radiometric)
       asfPrintError("Polarimetric parameters can't be radiometrically "
-		    "terrain corrected!\n");
-    
-    // Check for pixel size smaller than threshold ???
+		    "terrain corrected!\nIn order to produce a radiometrically "
+		    "terrain corrected product, the matrix files should be "
+		    "radiometrically terrain corrected prior to generating a "
+		    "polarimetric parameter.\n");
     
     // specified a mask and asked for an auto-mask
     int have_mask = cfg->terrain_correct->mask &&
@@ -1555,7 +1614,50 @@ static int check_config(const char *configFileName, convert_config *cfg)
 		    cfg->geocoding->projection);
     }
     
-    // Check for pixel size smaller than threshold ???
+    // Check whether the input can be terrain corrected
+    // Apply a default value if the user has not chosen one
+    if (cfg->geocoding->pixel < 0.0) {
+      
+      char *error = NULL;
+      // Check for airborne data: AirSAR, UAVSAR - 5 m
+      if (isAIRSAR(cfg->general->in_name))
+	cfg->geocoding->pixel = 5.0;
+      else if (isUAVSAR(cfg->general->in_name, &error))
+	cfg->geocoding->pixel = 5.0;
+      else if (isCEOS(cfg->general->in_name, &error)) {
+	meta_parameters *meta = meta_read(cfg->general->in_name);
+	// Check for ScanSAR data:
+        //    RSAT-1    - 100 m
+        //    Palsar WB - 100 m 
+	if (strcmp_case(meta->general->sensor, "RSAT-1") == 0 &&
+	    (strcmp_case(meta->general->mode, "SNA") == 0 ||
+	     strcmp_case(meta->general->mode, "SNB") == 0 ||
+	     strcmp_case(meta->general->mode, "SWA") == 0 ||
+	     strcmp_case(meta->general->mode, "SWB") == 0)) 
+	  cfg->geocoding->pixel = 100.0;
+        else if (strcmp_case(meta->general->sensor, "ALOS") == 0 &&
+                 strncmp_case(meta->general->mode, "WB", 2) == 0)
+          cfg->geocoding->pixel = 100.0;
+	// Anything else - 12.5 m
+	else
+	  cfg->geocoding->pixel = 12.5;
+	meta_free(meta);
+      }
+      // Anything else - 12.5 m
+      else
+	cfg->geocoding->pixel = 12.5;
+
+      if (strcmp_case(cfg->geocoding->projection, "geographic") == 0 ||
+	  strcmp_case(cfg->geocoding->projection, "latlon") == 0) {
+	cfg->geocoding->pixel /= 108000.0;
+	asfPrintStatus("   No pixel size for geocoding selected. Choosing a "
+		       "default value of %g degrees.\n", cfg->geocoding->pixel);
+      }
+      else
+	asfPrintStatus("   No pixel size for geocoding selected. Choosing a "
+		       "default value of %g meters.\n", cfg->geocoding->pixel);
+      FREE(error);
+    }
     
     // Datum
     if (meta_is_valid_string(cfg->geocoding->datum)          &&
@@ -1822,7 +1924,7 @@ char ***do_import(convert_config *cfg)
     // meta option (needed for GAMMA) -- leave NULL if not specified
     if (strlen(cfg->import->metadata_file) > 0)
       meta_option = cfg->import->metadata_file;
-    
+
     // Call asf_import!
     check_return(asf_import(radiometry, db_flag,
 			    cfg->import->complex_slc,
@@ -1834,7 +1936,8 @@ char ***do_import(convert_config *cfg)
 			    NULL,
 			    NULL,
 			    cfg->import->image_data_type,
-			    cfg->import->lut, cfg->import->prc,
+			    cfg->import->lut,
+                            cfg->import->prc,
 			    cfg->import->lat_begin, cfg->import->lat_end,
 			    -99, -99,
 			    cfg->import->line, cfg->import->sample,
@@ -2186,7 +2289,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 	  cfg->general->polarimetry || cfg->general->terrain_correct ||
 	  cfg->general->calibration || cfg->general->geocoding || 
 	  cfg->general->export) {
-	sprintf(outFile, "%s/sar_processing", cfg->general->tmp_dir);
+	sprintf(outFile, "%s%csar_processing", 
+		cfg->general->tmp_dir, DIR_SEPARATOR);
       }
       else {
 	sprintf(outFile, "%s", cfg->general->out_name);
@@ -2214,15 +2318,20 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       ardop(params_in);
       
       if (strcmp_case(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE") == 0)
-	sprintf(outFile, "%s/sar_processing_amp", cfg->general->tmp_dir);
+	sprintf(outFile, "%s%csar_processing_amp", 
+		cfg->general->tmp_dir, DIR_SEPARATOR);
       else if (strcmp_case(cfg->sar_processing->radiometry, "POWER_IMAGE") == 0)
-	sprintf(outFile, "%s/sar_processing_power", cfg->general->tmp_dir);
+	sprintf(outFile, "%s%csar_processing_power", 
+		cfg->general->tmp_dir, DIR_SEPARATOR);
       else if (strcmp_case(cfg->sar_processing->radiometry, "SIGMA_IMAGE") == 0)
-	sprintf(outFile, "%s/sar_processing_sigma", cfg->general->tmp_dir);
+	sprintf(outFile, "%s%csar_processing_sigma", 
+		cfg->general->tmp_dir, DIR_SEPARATOR);
       else if (strcmp_case(cfg->sar_processing->radiometry, "GAMMA_IMAGE") == 0)
-	sprintf(outFile, "%s/sar_processing_gamma", cfg->general->tmp_dir);
+	sprintf(outFile, "%s%csar_processing_gamma", 
+		cfg->general->tmp_dir, DIR_SEPARATOR);
       else if (strcmp_case(cfg->sar_processing->radiometry, "BETA_IMAGE") == 0)
-	sprintf(outFile, "%s/sar_processing_beta", cfg->general->tmp_dir);
+	sprintf(outFile, "%s%csar_processing_beta", 
+		cfg->general->tmp_dir, DIR_SEPARATOR);
       else
 	asfPrintError("Unexpected radiometry: %s\n",
 		      cfg->sar_processing->radiometry);
@@ -2257,7 +2366,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 	cfg->general->calibration || cfg->general->geocoding || 
 	cfg->general->export)
       {
-	sprintf(outFile, "%s/c2p", cfg->general->tmp_dir);
+	sprintf(outFile, "%s%cc2p", cfg->general->tmp_dir, DIR_SEPARATOR);
       }
     else
       {
@@ -2287,7 +2396,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 	cfg->general->calibration || cfg->general->geocoding || 
 	cfg->general->export)
       {
-        sprintf(outFile, "%s/image_stats", cfg->general->tmp_dir);
+        sprintf(outFile, "%s%cimage_stats", 
+		cfg->general->tmp_dir, DIR_SEPARATOR);
       }
     else {
       sprintf(outFile, "%s", cfg->general->out_name);
@@ -2312,7 +2422,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     if (cfg->general->polarimetry || cfg->general->terrain_correct ||
 	cfg->general->calibration || cfg->general->geocoding || 
 	cfg->general->export) {
-      sprintf(outFile, "%s/detect_cr", cfg->general->tmp_dir);
+      sprintf(outFile, "%s%cdetect_cr", cfg->general->tmp_dir, DIR_SEPARATOR);
     }
     else {
       sprintf(outFile, "%s", cfg->general->out_name);
@@ -2338,7 +2448,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       if (cfg->general->terrain_correct || cfg->general->calibration ||
 	  cfg->general->geocoding || cfg->general->export)
         {
-          sprintf(outFile, "%s/faraday_correction", cfg->general->tmp_dir);
+          sprintf(outFile, "%s%cfaraday_correction", 
+		  cfg->general->tmp_dir, DIR_SEPARATOR);
         }
       else {
 	sprintf(outFile, "%s", cfg->general->out_name);
@@ -2351,19 +2462,31 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 		      keep_flag, single_angle_flag, r_AMP, 599);
       asfPrintStatus("Done.\n\n");
       
-      sprintf(tmpFile, "%s/import_farrot.img", cfg->general->tmp_dir);
+      sprintf(tmpFile, "%s%cimport_farrot.img", 
+	      cfg->general->tmp_dir, DIR_SEPARATOR);
       save_intermediate(cfg, "Faraday", tmpFile);
     }    
   }
   
   if (cfg->general->terrain_correct) {
     
+    // Check whether the input can be terrain corrected
+    check_input(cfg, "terrain_correction", outFile);
+
     // If the DEM is a GeoTIFF, we need to import it, and geocode it.
     if (has_tiff_ext(cfg->terrain_correct->dem)) {
       char * converted_dem =
 	convert_tiff(cfg->terrain_correct->dem, "dem", cfg, saveDEM);
       strcpy(cfg->terrain_correct->dem, converted_dem);
       free(converted_dem);
+    }
+
+    // If the DEM requires Geoid correction, do that now
+    if (cfg->terrain_correct->geoid_adjust) {
+      char *geoid_adjusted = appendToBasename(cfg->terrain_correct->dem, "_ell");
+      geoid_adjust(cfg->terrain_correct->dem, geoid_adjusted);
+      strcpy(cfg->terrain_correct->dem, geoid_adjusted);
+      free(geoid_adjusted);
     }
     
     // If the Mask is a GeoTIFF, we need to import it, and geocode it.
@@ -2381,7 +2504,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     sprintf(inFile, "%s", outFile);
     if (cfg->general->calibration || cfg->general->polarimetry ||
 	cfg->general->geocoding || cfg->general->export)
-      sprintf(outFile, "%s/terrain_correct", cfg->general->tmp_dir);
+      sprintf(outFile, "%s%cterrain_correct", 
+	      cfg->general->tmp_dir, DIR_SEPARATOR);
     else
       sprintf(outFile, "%s", cfg->general->out_name);
     
@@ -2425,10 +2549,11 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     
     // save the simulated sar image intermediate
     char *dem_basename = get_basename(cfg->terrain_correct->dem);
-    sprintf(tmpFile, "%s/%s_sim_sar.img", cfg->general->tmp_dir,
+    sprintf(tmpFile, "%s%c%s_sim_sar.img", cfg->general->tmp_dir, DIR_SEPARATOR,
 	    dem_basename);
     save_intermediate(cfg, "Simulated SAR", tmpFile);
-    sprintf(tmpFile, "%s/import_slant.img", cfg->general->tmp_dir);
+    sprintf(tmpFile, "%s%cimport_slant.img", 
+	    cfg->general->tmp_dir, DIR_SEPARATOR);
     save_intermediate(cfg, "Imported Slant Range", tmpFile);
     free(dem_basename);
 
@@ -2455,7 +2580,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     // Generate filenames
     sprintf(inFile, "%s", outFile);
     if (cfg->general->geocoding || cfg->general->export)
-      sprintf(outFile, "%s/calibrate", cfg->general->tmp_dir);
+      sprintf(outFile, "%s%ccalibrate", cfg->general->tmp_dir, DIR_SEPARATOR);
     else
       sprintf(outFile, "%s", cfg->general->out_name);
     
@@ -2505,7 +2630,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       if (cfg->general->geocoding ||
 	  cfg->general->export)
         {
-          sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
+          sprintf(outFile, "%s%cpolarimetry", 
+		  cfg->general->tmp_dir, DIR_SEPARATOR);
         }
       else {
 	sprintf(outFile, "%s", cfg->general->out_name);
@@ -2525,6 +2651,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
   }
 
   if (cfg->general->geocoding) {
+
     update_status("Geocoding...");
     int force_flag = cfg->geocoding->force;
     resample_method_t resample_method = RESAMPLE_BILINEAR;
@@ -2558,7 +2685,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     
     sprintf(inFile, "%s", outFile);
     if (cfg->general->export || cfg->general->testdata) {
-      sprintf(outFile, "%s/geocoding", cfg->general->tmp_dir);
+      sprintf(outFile, "%s%cgeocoding", cfg->general->tmp_dir, DIR_SEPARATOR);
     }
     else {
       sprintf(outFile, "%s%s%s",
@@ -2579,7 +2706,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     // Set up filenames
     sprintf(inFile, "%s", outFile);
     if (cfg->general->export) {
-      sprintf(outFile, "%s/testdata", cfg->general->tmp_dir);
+      sprintf(outFile, "%s%ctestdata", cfg->general->tmp_dir, DIR_SEPARATOR);
     }
     else {
       sprintf(outFile, "%s%s%s",
@@ -2764,7 +2891,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     // in which case we will use SIGMA.
     scale_t scale = get_scale(cfg);
     if (scale == NONE) scale = SIGMA;
-    
+ 
     meta_parameters *meta;
     double scale_factor;
     int i,n;
@@ -2788,16 +2915,18 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
 	sprintf(tmpFile, "%s%c%s_thumb",
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
-	sprintf(overlayFile, "%s%c%s_overlay",
+	sprintf(overlayFile, "%s%c%s_overlay.kml",
 		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
-      } else {
+      }
+      else {
 	char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
 	strcpy(tmpFile, tmp);
 	strcpy(outFile, tmp);
 	strcat(outFile, ".png");
 	tmp = appendToBasename(cfg->general->out_name, "_overlay");
-	strcpy(overlayFile, tmp);
-	free(tmp);
+        char *tmp2 = appendExt(tmp, ".kml");
+	strcpy(overlayFile, tmp2);
+	free(tmp); free(tmp2);
       }
       
       // outFile is the thumbnail file and the following needs to also look for
@@ -2849,6 +2978,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	  //            bands[0] = meta->general->bands;
 	  //            bands[1] = NULL;
 	  
+	  if (is_polsarpro)
+	    scale = MINMAX;
 	  check_return(
 		       asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0,
 					lut_file, inFile, outFile, bands,
@@ -2900,6 +3031,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
           asfPrintStatus("Skipping KML Overlay Generation for UAVSAR\n");
         else
 	        kml_overlay(tmpFile, overlayFile, FALSE);
+                save_intermediate(cfg, "KML File", overlayFile);
 	      for (i=0; i<n; ++i)
 		FREE(bands[i]);
 	      FREE(bands);
@@ -2936,6 +3068,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
                        "exporting thumbnail (asf_export), color banded.\n");
           // No zipping for the moment
           kml_overlay(tmpFile, overlayFile, FALSE);
+          save_intermediate(cfg, "KML File", overlayFile);
           for (i = 0; i < meta->general->band_count; ++i)
             FREE(bands[i]);
           FREE(bands);
@@ -2965,21 +3098,24 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       // No zipping for the moment
       if(strcmp(meta->general->sensor, "UAVSAR") == 0)
         asfPrintStatus("Skipping KML Overlay Generation for UAVSAR\n");
-      else
+      else {
         kml_overlay(tmpFile, overlayFile, FALSE);
+        save_intermediate(cfg, "KML File", overlayFile);
+      }
       // strip off the band name at the end!
       char *banded_name = MALLOC(sizeof(char) * (strlen(outFile) + 32));
       if (cfg->general->intermediates) {
         if (is_polsarpro && meta->general->image_data_type == POLARIMETRIC_IMAGE)
-          sprintf(banded_name, "%s/%s_thumb_%s.png",
-                  cfg->general->tmp_dir, basename, bands[1]);
+          sprintf(banded_name, "%s%c%s_thumb_%s.png",
+                  cfg->general->tmp_dir, DIR_SEPARATOR, basename, bands[1]);
         else if (!strcmp(meta->general->sensor, "UAVSAR")) {
             strcpy(banded_name, outputs[0]);
         }
         else
-          sprintf(banded_name, "%s/%s_thumb_%s.png",
-                  cfg->general->tmp_dir, basename, bands[0]);
-        sprintf(outFile, "%s/%s_thumb.png", cfg->general->tmp_dir, basename);
+          sprintf(banded_name, "%s%c%s_thumb_%s.png",
+                  cfg->general->tmp_dir, DIR_SEPARATOR, basename, bands[0]);
+        sprintf(outFile, "%s%c%s_thumb.png", 
+		cfg->general->tmp_dir, DIR_SEPARATOR, basename);
       }
       else {
         if (is_polsarpro && meta->general->image_data_type == POLARIMETRIC_IMAGE)
@@ -3034,7 +3170,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       tmp = appendToBasename(cfg->terrain_correct->dem, "_cut");
     char *tmp2 = get_basename(tmp);
     char *tmp3 = appendExt(tmp2, ".img");
-    sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp3);
+    sprintf(inFile, "%s%c%s", cfg->general->tmp_dir, DIR_SEPARATOR, tmp3);
     free(tmp);
     free(tmp2);
     free(tmp3);
@@ -3046,7 +3182,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
         tmp = appendToBasename(cfg->terrain_correct->dem, "_chunk_cut");
       tmp2 = get_basename(tmp);
       tmp3 = appendExt(tmp2, ".img");
-      sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp3);
+      sprintf(inFile, "%s%c%s", cfg->general->tmp_dir, DIR_SEPARATOR, tmp3);
       free(tmp);
       free(tmp2);
       free(tmp3);
@@ -3059,10 +3195,15 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     if (export_dem_ok) {
       // output name will be the SAR image's name with a "_dem" added
       // to the basename
-      tmp = appendToBasename(cfg->general->out_name, "_dem");
-      strcpy(outFile, tmp);
-      free(tmp);
-      
+      if (is_dir(cfg->general->out_name)) {
+        sprintf(outFile, "%s%cdem", cfg->general->out_name, DIR_SEPARATOR);
+      }
+      else {
+        tmp = appendToBasename(cfg->general->out_name, "_dem");
+        strcpy(outFile, tmp);
+        free(tmp);
+      }
+
       //Never re-geocode the DEM -- assume user has already put it into
       //their favored projection (since at this time we require that
       //DEMs be geocoded for terrain correction ingest).  So, proceed
@@ -3096,10 +3237,12 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       cfg->terrain_correct->save_incid_angles)
   {
     if (cfg->general->geocoding) {
-      asfPrintStatus("Geocoding incidence angles...");
+      asfPrintStatus("Geocoding incidence angles...\n");
       update_status("Geocoding incidence angles...");
-      sprintf(inFile, "%s/incidence_angles",cfg->general->tmp_dir);
-      sprintf(outFile, "%s/incidence_angles_geocoded",cfg->general->tmp_dir);
+      sprintf(inFile, "%s%cterrcorr_side_products", 
+	      cfg->general->tmp_dir, DIR_SEPARATOR);
+      sprintf(outFile, "%s%c_geocoded",
+	      cfg->general->tmp_dir, DIR_SEPARATOR);
       check_return(
 		   asf_geocode_from_proj_file(
 					      cfg->geocoding->projection, cfg->geocoding->force,
@@ -3110,9 +3253,10 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     else {
       // no geocoding ... just prepare the 'outFile' param for export
-      sprintf(outFile, "%s/incidence_angles", cfg->general->tmp_dir);
+      sprintf(outFile, "%s%cincidence_angles", 
+	      cfg->general->tmp_dir, DIR_SEPARATOR);
     }
-    
+   
     if (is_dir(cfg->general->out_name)) {
       char *tmp = 
 	(char *) MALLOC(sizeof(char)*(strlen(cfg->general->tmp_dir)+20));
@@ -3123,48 +3267,63 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       free(tmp);
       sprintf(inFile, "%s", outFile);
       if (meta->general->image_data_type == POLARIMETRIC_DECOMPOSITION)
-	sprintf(outFile, "%s%c%s_incidence_angle", cfg->general->out_name,
+	sprintf(outFile, "%s%c%s_terrcorr_side_products", cfg->general->out_name,
 		DIR_SEPARATOR, find_decomposition(meta));
       else
-	sprintf(outFile, "%s%cincidence_angle", cfg->general->out_name,
-		DIR_SEPARATOR);      
+	sprintf(outFile, "%s%cterrcorr_side_products", cfg->general->out_name,
+		DIR_SEPARATOR);
       meta_free(meta);
     }
     else {
       sprintf(inFile, "%s", outFile);
-      char *tmp = appendToBasename(cfg->general->out_name, "_incidence_angle");
-      strcpy(outFile, tmp);
-      free(tmp);
+      // just use the out_name, and rely on the band name appending done
+      // by export to get unique filenames for each side product
+      strcpy(outFile, cfg->general->out_name);
     }
     
     if (cfg->general->export) {
-      update_status("Exporting incidence angles...");
+      update_status("Exporting terrain correction side products...");
+      asfPrintStatus("Exporting terrain correction side products...\n");
+      char *outTif = appendExt(outFile, ".tif");
 
-      char **band = (char **) MALLOC(sizeof(char *)*2);
-      band[0] = (char *) MALLOC(sizeof(char)*25);
-      band[1] = NULL;
-      strcpy(band[0], "INCIDENCE_ANGLES");
       check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL,
-				    inFile, outFile, band, NULL, NULL),
-		   "exporting indcidence angles (asf_export)\n");
-      FREE(band[0]);
-      FREE(band);
+				    inFile, outTif, NULL, NULL, NULL),
+		   "exporting terrain correction side products (asf_export)\n");
+
+      char *intFile = appendToBasename(outTif, "_INCIDENCE_ANGLE_ELLIPSOID");
+      save_intermediate(cfg, "Incidence Angles", intFile);
+      FREE(intFile);
+
+      intFile = appendToBasename(outTif, "_INCIDENCE_ANGLE_LOCAL");
+      save_intermediate(cfg, "Local Incidence Angles", intFile);
+      FREE(intFile);
+
+      intFile = appendToBasename(outTif, "_RADIOMETRIC_CORRECTION");
+      save_intermediate(cfg, "Radiometric Correction", intFile);
+      FREE(intFile);
+
+      intFile = appendToBasename(outTif, "_COS_PHI");
+      save_intermediate(cfg, "Cos Phi", intFile);
+      FREE(intFile);
+      FREE(outTif);
     }
     else {
       // no export... just move the geocoded file out of the
-      // temporary directory
+      // temporary directory, no intermediates
       renameImgAndMeta(inFile, outFile);
     }
-    
-    save_intermediate(cfg, "Incidence Angles", outFile);
+   
   }
   
   // Process the layover/shadow mask if requested
   if (cfg->terrain_correct->save_terrcorr_layover_mask) {
     if (cfg->general->geocoding) {
       update_status("Geocoding layover mask...");
-      sprintf(inFile, "%s/terrain_correct_mask",cfg->general->tmp_dir);
-      sprintf(outFile, "%s/layover_mask_geocoded",cfg->general->tmp_dir);
+      asfPrintStatus("Geocoding layover mask...\n");
+      sprintf(inFile, "%s%cterrain_correct_mask",
+	      cfg->general->tmp_dir, DIR_SEPARATOR);
+      sprintf(outFile, "%s%clayover_mask_geocoded",
+	      cfg->general->tmp_dir, DIR_SEPARATOR);
       check_return(
 		   asf_geocode_from_proj_file(
 					      cfg->geocoding->projection, cfg->geocoding->force,
@@ -3175,7 +3334,8 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     else {
       // no geocoding ... just prepare the 'outFile' param for export
-      sprintf(outFile, "%s/terrain_correct_mask", cfg->general->tmp_dir);
+      sprintf(outFile, "%s%cterrain_correct_mask", 
+	      cfg->general->tmp_dir, DIR_SEPARATOR);
     }
     
     if (is_dir(cfg->general->out_name)) {
@@ -3868,11 +4028,15 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
            strlen(cfg->import->polsarpro_colormap) > 0)
   {
     strcpy(lut_file, cfg->import->polsarpro_colormap);
+    if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
+      scale = MINMAX;
   }
   else if (is_polsarpro && meta->colormap &&
            meta->colormap->look_up_table && strlen(meta->colormap->look_up_table) > 0)
   {
     strcpy(lut_file, meta->colormap->look_up_table);
+    if (meta->general->image_data_type == POLARIMETRIC_PARAMETER)
+      scale = MINMAX;
   }
   if (strlen(cfg->export->lut) > 0 ||
       ((is_polsarpro || is_insar) && strlen(lut_file) > 0))

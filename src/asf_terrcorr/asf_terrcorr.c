@@ -111,7 +111,8 @@
 "          confining the correlation to areas that you expect to provide good\n"\
 "          matches.\n\n"\
 "          The mask file should be 0 in the unmasked regions, and positive in\n"\
-"          the masked regions.\n\n"\
+"          the masked regions.  In other words, the mask should contain non-zero\n"\
+"          values in the area of interest.\n\n"\
 "          By default, the output image is left blank (filled with zeros) in the\n"\
 "          regions that are masked.  You may override this behavior using the\n"\
 "          -fill or -no-fill options, below.\n\n"\
@@ -333,7 +334,7 @@ main (int argc, char *argv[])
   int add_speckle = TRUE;
   int if_coreg_fails_use_zero_offsets = FALSE;
   int save_ground_dem = FALSE;
-  int save_incid_angles = FALSE;
+  int save_incid_angles = TRUE;
   int use_nearest_neighbor = FALSE;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;

@@ -342,6 +342,7 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *rb_refine_geolocation;
         GtkWidget *mask_checkbutton;
         GtkWidget *interp_dem_holes_checkbutton;
+        GtkWidget *geoid_adjust_checkbutton;
 
         dem_checkbutton = get_widget_checked("dem_checkbutton");
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton), TRUE);
@@ -350,6 +351,8 @@ settings_apply_to_gui(const Settings * s)
         gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
         interp_dem_holes_checkbutton =
             get_widget_checked("interp_dem_holes_checkbutton");
+        geoid_adjust_checkbutton =
+            get_widget_checked("geoid_adjust_checkbutton");
 
         rb_terrcorr =
             get_widget_checked("rb_terrcorr");
@@ -448,6 +451,9 @@ settings_apply_to_gui(const Settings * s)
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(interp_dem_holes_checkbutton),
                 s->interp_dem_holes);
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(geoid_adjust_checkbutton),
+                s->geoid_adjust);
         }
 
 
@@ -833,6 +839,7 @@ settings_get_from_gui()
         }
 
         ret->interp_dem_holes = get_checked("interp_dem_holes_checkbutton");
+        ret->geoid_adjust = get_checked("geoid_adjust_checkbutton");
 
         if (get_checked("mask_checkbutton"))
         {
@@ -1550,7 +1557,7 @@ settings_to_config_string(const Settings *s,
     sprintf(ret, "%spolarimetry = %d\n", ret, polarimetry_on ? 1 : 0);
     sprintf(ret, "%sterrain correction = %d\n", ret,
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
-    if(input_data_format != INPUT_FORMAT_UAVSAR_POLSAR && input_data_format != INPUT_FORMAT_UAVSAR_INSAR)
+    if(input_data_format != INPUT_FORMAT_UAVSAR_INSAR)
       sprintf(ret, "%scalibration = %d\n", ret, s->do_calibrate);
     sprintf(ret, "%sgeocoding = %d\n", ret, s->geocode_is_checked);
     sprintf(ret, "%sexport = %d\n", ret, s->export_is_checked);
@@ -1714,14 +1721,14 @@ settings_to_config_string(const Settings *s,
         // items specific to either terrain correction or refine geolocation
         if (s->terrcorr_is_checked) {
             if (s->specified_tc_pixel_size)
-                sprintf(ret, "%spixel spacing = %.2f\n", ret, s->tc_pixel_size);
+                sprintf(ret, "%spixel spacing = %f\n", ret, s->tc_pixel_size);
 	    // Apparently applying the geocoding pixel size caused some
 	    // issues with some of InSAR products. Will comment out the
 	    // automatic assignment of the pixel size defined in geocoding
 	    // section to the terrain correction.
 	    /*
             else if (s->specified_pixel_size) // geocode pixel size
-                sprintf(ret, "%spixel spacing = %.2f\n", ret, s->pixel_size);
+                sprintf(ret, "%spixel spacing = %f\n", ret, s->pixel_size);
 	    */
             sprintf(ret, "%srefine geolocation only = 0\n", ret);
             sprintf(ret, "%sinterpolate = %d\n", ret, s->interp);
@@ -1762,6 +1769,7 @@ settings_to_config_string(const Settings *s,
             sprintf(ret, "%sfill value = -1\n", ret);
         }
         sprintf(ret, "%ssmooth dem holes = %d\n", ret, s->interp_dem_holes);
+        sprintf(ret, "%sgeoid adjust = %d\n", ret, s->geoid_adjust);
         sprintf(ret, "%s\n", ret);
     }
 
@@ -1785,7 +1793,7 @@ settings_to_config_string(const Settings *s,
       else
         sprintf(ret, "%sprojection = %s\n", ret, projfile);
       if (s->specified_pixel_size)
-        sprintf(ret, "%spixel spacing = %.2f\n", ret, s->pixel_size);
+        sprintf(ret, "%spixel spacing = %f\n", ret, s->pixel_size);
       if (s->specified_height)
         sprintf(ret, "%sheight = %.2f\n", ret, s->height);
       // The user-selected datum is written to the temporary proj file above,
@@ -2194,99 +2202,103 @@ int apply_settings_from_config_file(char *configFile)
             projection_type_t type = UNKNOWN_PROJECTION;
             datum_type_t datum = UNKNOWN_DATUM;
             spheroid_type_t spheroid = UNKNOWN_SPHEROID;
-            read_proj_file(cfg->geocoding->projection, 
-                &pps, &type, &datum, &spheroid);
-            printf("read_proj_file - datum: %s, spheroid: %s\n",
-            datum_toString(datum), spheroid_toString(spheroid));
+            char *err = NULL;
+            int ok = parse_proj_args_file(cfg->geocoding->projection, &pps, &type,
+                                          &datum, &spheroid, &err);
 
-            if (type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+            if (ok) {
+              //printf("parse_proj_args_file - datum: %s, spheroid: %s\n",
+              //       datum_toString(datum), spheroid_toString(spheroid));
+
+              if (type == UNIVERSAL_TRANSVERSE_MERCATOR) {
                 s.projection = PROJ_UTM;
                 s.zone = pps.utm.zone;
-            } else if (type == POLAR_STEREOGRAPHIC) {
+              } else if (type == POLAR_STEREOGRAPHIC) {
                 s.projection = PROJ_PS;
                 s.lat0 = pps.ps.slat;
                 s.lon0 = pps.ps.slon;
-            } else if (type == ALBERS_EQUAL_AREA) {
+              } else if (type == ALBERS_EQUAL_AREA) {
                 s.projection = PROJ_ALBERS;
                 s.plat1 = pps.albers.std_parallel1;
                 s.plat2 = pps.albers.std_parallel2;
                 s.lat0 = pps.albers.orig_latitude;
                 s.lon0 = pps.albers.center_meridian;
-            } else if (type == LAMBERT_CONFORMAL_CONIC) {
+              } else if (type == LAMBERT_CONFORMAL_CONIC) {
                 s.projection = PROJ_LAMCC;
                 s.plat1 = pps.lamcc.plat1;
                 s.plat2 = pps.lamcc.plat2;
                 s.lat0 = pps.lamcc.lat0;
                 s.lon0 = pps.lamcc.lon0;
-            } else if (type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
+              } else if (type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
                 s.projection = PROJ_LAMAZ;
                 s.lat0 = pps.lamaz.center_lat;
                 s.lon0 = pps.lamaz.center_lon;
-            } else if (type == MERCATOR) {
-              s.projection = PROJ_MER;
-              s.lat0 = pps.mer.orig_latitude;
-              s.lon0 = pps.mer.central_meridian;
-              s.plat1 = pps.mer.standard_parallel;
-            } else if (type == EQUI_RECTANGULAR) {
-              s.projection = PROJ_EQR;
-              s.lat0 = pps.eqr.orig_latitude;
-              s.lon0 = pps.eqr.central_meridian;
-            }
+              } else if (type == MERCATOR) {
+                s.projection = PROJ_MER;
+                s.lat0 = pps.mer.orig_latitude;
+                s.lon0 = pps.mer.central_meridian;
+                s.plat1 = pps.mer.standard_parallel;
+              } else if (type == EQUI_RECTANGULAR) {
+                s.projection = PROJ_EQR;
+                s.lat0 = pps.eqr.orig_latitude;
+                s.lon0 = pps.eqr.central_meridian;
+              }
 
-            s.specified_height = cfg->geocoding->height != -99 &&
-                cfg->geocoding->height != 0;
-            s.height = cfg->geocoding->height;
-            s.specified_pixel_size = cfg->geocoding->pixel > 0;
-            s.pixel_size = cfg->geocoding->pixel;
-            s.geocode_force = cfg->geocoding->force;
+              s.specified_height = cfg->geocoding->height != -99 &&
+                                   cfg->geocoding->height != 0;
+              s.height = cfg->geocoding->height;
+              s.specified_pixel_size = cfg->geocoding->pixel > 0;
+              s.pixel_size = cfg->geocoding->pixel;
+              s.geocode_force = cfg->geocoding->force;
 
-            // GET DATUM
-            s.datum = DATUM_WGS84;
-            if (datum == WGS84_DATUM) {
+              // GET DATUM
               s.datum = DATUM_WGS84;
-            }
-            else if (datum == NAD27_DATUM) {
-              s.datum = DATUM_NAD27;
-            }
-            else if (datum == NAD83_DATUM) {
-              s.datum = DATUM_NAD83;
-            }
-            else if (datum == HUGHES_DATUM) {
-              s.datum = DATUM_HUGHES;
-            }
-            else if (datum == ITRF97_DATUM) {
-              s.datum = DATUM_ITRF97;
-            }
-            else if (datum == ED50_DATUM) {
-              s.datum = DATUM_ED50;
-            }
-            else if (datum == SAD69_DATUM) {
-              s.datum = DATUM_SAD69;
-            }
+              if (datum == WGS84_DATUM) {
+                s.datum = DATUM_WGS84;
+              }
+              else if (datum == NAD27_DATUM) {
+                s.datum = DATUM_NAD27;
+              }
+              else if (datum == NAD83_DATUM) {
+                s.datum = DATUM_NAD83;
+              }
+              else if (datum == HUGHES_DATUM) {
+                s.datum = DATUM_HUGHES;
+              }
+              else if (datum == ITRF97_DATUM) {
+                s.datum = DATUM_ITRF97;
+               }
+              else if (datum == ED50_DATUM) {
+                s.datum = DATUM_ED50;
+              }
+              else if (datum == SAD69_DATUM) {
+                s.datum = DATUM_SAD69;
+              }
 
-            if (spheroid == WGS84_SPHEROID) {
-              s.spheroid = SPHEROID_WGS84;
-            }
-            else if (spheroid == HUGHES_SPHEROID) {
-              s.spheroid = SPHEROID_HUGHES;
-            }
-            else if (spheroid == GRS1967_SPHEROID) {
-              s.spheroid = SPHEROID_GRS1967;
-            }
-            else if (spheroid == GRS1980_SPHEROID) {
-              s.spheroid = SPHEROID_GRS1980;
-            }
-            else if (spheroid == INTERNATIONAL1924_SPHEROID) {
-              s.spheroid = SPHEROID_INTERNATIONAL1924;
-            }
+              if (spheroid == WGS84_SPHEROID) {
+                s.spheroid = SPHEROID_WGS84;
+              }
+              else if (spheroid == HUGHES_SPHEROID) {
+                s.spheroid = SPHEROID_HUGHES;
+              }
+              else if (spheroid == GRS1967_SPHEROID) {
+                s.spheroid = SPHEROID_GRS1967;
+              }
+              else if (spheroid == GRS1980_SPHEROID) {
+                s.spheroid = SPHEROID_GRS1980;
+              }
+              else if (spheroid == INTERNATIONAL1924_SPHEROID) {
+                s.spheroid = SPHEROID_INTERNATIONAL1924;
+              }
 
-            s.resample_method = RESAMPLE_BILINEAR;
-            if (strncmp(uc(cfg->geocoding->resampling),"NEAREST_NEIGHBOR",16) == 0)
+              s.resample_method = RESAMPLE_BILINEAR;
+              if (strncmp(uc(cfg->geocoding->resampling),"NEAREST_NEIGHBOR",16) == 0)
                 s.resample_method = RESAMPLE_NEAREST_NEIGHBOR;
-            if (strncmp(uc(cfg->geocoding->resampling),"BILINEAR", 8) == 0)
+              if (strncmp(uc(cfg->geocoding->resampling),"BILINEAR", 8) == 0)
                 s.resample_method = RESAMPLE_BILINEAR;
-            if (strncmp(uc(cfg->geocoding->resampling),"BICUBIC", 7) == 0)
+              if (strncmp(uc(cfg->geocoding->resampling),"BICUBIC", 7) == 0)
                 s.resample_method = RESAMPLE_BICUBIC;
+            }
         }
     }
 
@@ -2322,6 +2334,7 @@ int apply_settings_from_config_file(char *configFile)
         if(s.do_radiometric)
           s.save_incid_angles = cfg->terrain_correct->save_incid_angles;
         s.interp_dem_holes = cfg->terrain_correct->smooth_dem_holes;
+        s.geoid_adjust = cfg->terrain_correct->geoid_adjust;
     }
 
     // calibration

@@ -188,7 +188,7 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     if (is_polsarpro(file)) {
       if(strlen(metadata_file) > 0) {
 	g_free(data_file);
-	data_file = (gchar*)g_malloc(sizeof(gchar)*(strlen(metadata_file)));
+	data_file = (gchar*)g_malloc(sizeof(gchar)*(strlen(metadata_file) + 1));
 	sprintf(data_file, "%s", metadata_file);
       }
       else {

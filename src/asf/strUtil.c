@@ -35,6 +35,8 @@ int strcmp_case(const char *s1, const char *s2)
     const char *p1 = s1;
     const char *p2 = s2;
 
+    if (s1 == NULL || s2 == NULL)
+      return -1;
     while (toupper(*p1)==toupper(*p2++))
         if (*p1++ == '\0') return 0;
     return (toupper(*p1) - toupper(*--p2));
@@ -62,8 +64,7 @@ char *appendStr(const char *s1, const char *s2)
 
 // copies not more than len-1 characters from the string 'src'
 // (including any terminating null characters), to 'dst'
-// If strlen(src)<len, null characters are appended to dst
-// to make the total len.
+// If strlen(src)<len, a null characters are appended to dst
 // If strlen(src)>=len, src is truncated to len-1 characters,
 // and a null terminating character is appended to dst.
 // Differs from strncpy in that:

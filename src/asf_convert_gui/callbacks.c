@@ -213,6 +213,13 @@ input_data_formats_changed()
       else if (is_radarsat2(file)) {
         if (!strstr(formats, "Radarsat-2"))
           strcat(formats, "Radarsat-2, ");
+        enable_polarimetry = TRUE;
+        enable_polarimetry_pauli = TRUE;
+        enable_polarimetry_sinclair = TRUE;
+        enable_polarimetry_cloude8 = TRUE;
+        enable_polarimetry_cloude16 = TRUE;
+        enable_polarimetry_noclassify = TRUE;
+        enable_polarimetry_freeman = TRUE;
         enable_terrain_correction = TRUE;
       }
       else if (is_roipac(file)) {
@@ -741,6 +748,13 @@ void clear_completed_tmp_dirs()
             if (tmp_dir && strlen(tmp_dir) > 0) {
               asfPrintStatus("Removing: %s\n", tmp_dir);
               remove_dir(tmp_dir);
+            }
+            else {
+              gchar *file;
+              gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
+                                 COMP_COL_INPUT_FILE, &file, -1);
+              asfPrintStatus("Warning: tmp_dir for %s was invalid.\n", file);
+              g_free(file);
             }
 
             g_free(tmp_dir);
@@ -1437,12 +1451,13 @@ int polsarpro_data_check()
   int is_ceos = isCEOS(inFile, &error);
   int is_terrasar = isTerrasar(inFile, &error);
   int is_radarsat2 = isRadarsat2(inFile, &error);
-  if (is_ceos || is_terrasar || is_radarsat2)
+  int is_uavsar = isUAVSAR(inFile, &error);
+  if (is_ceos || is_terrasar || is_radarsat2 || is_uavsar)
     ret = TRUE;
   else {
     put_string_to_label("add_with_ancillary_error_label",
-			"Could not find any complex CEOS, TerraSAR-X or "
-			"Radarsat-2 data");
+			"Could not find any complex CEOS, TerraSAR-X, "
+			"Radarsat-2 or UAVSAR data");
     gtk_widget_set_sensitive(ok_button, FALSE);
   }
  

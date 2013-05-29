@@ -230,6 +230,7 @@ typedef struct
   int do_radiometric;
   int save_incid_angles;
   int interp_dem_holes;
+  int geoid_adjust;
   int no_matching;
   double offset_x, offset_y;
 
@@ -291,6 +292,7 @@ extern int COMP_COL_CLASS_MAP_FILE;
 extern int COMP_COL_METADATA_FILE;
 extern int COMP_COL_INCID_ANGLES_FILE;
 extern int COMP_COL_UAVSAR_TYPE;
+extern int COMP_COL_KML_FILE;
 
 /********************************** Prototypes ******************************/
 

@@ -502,6 +502,13 @@ char *check_data_type(const char *inFileName)
 void import_uavsar(const char *inFileName, int line, int sample, int width,
 		   int height, radiometry_t radiometry,
 		   const char *data_type, const char *outBaseName) {
+  import_uavsar_ext(inFileName, line, sample, width, height, radiometry,
+		    FALSE, data_type, outBaseName);
+}
+
+void import_uavsar_ext(const char *inFileName, int line, int sample, int width,
+		       int height, radiometry_t radiometry, int firstBandOnly,
+		       const char *data_type, const char *outBaseName) {
 
   // UAVSAR comes in two flavors: InSAR and PolSAR
   // Things look similar to AirSAR data, just organized a little different.
@@ -1042,10 +1049,15 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 			"Will skip the ingest.\n");
 	continue;
       }
+      if (firstBandOnly)
+	nBands = 1;
       polsar_params = 
 	read_uavsar_polsar_params(inFileName, POLSAR_MLC);
       metaIn = uavsar_polsar2meta(polsar_params);
       metaOut = uavsar_polsar2meta(polsar_params);
+      int dbFlag = 
+	(radiometry >= r_SIGMA_DB && radiometry <= r_GAMMA_DB) ? 1 : 0;
+      metaOut->general->radiometry = radiometry;
       ns = metaIn->general->sample_count;
       floatAmp = (float *) MALLOC(sizeof(float)*ns);
       floatAmpBuf = (float *) MALLOC(sizeof(float)*ns);
@@ -1054,6 +1066,7 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
       floatComplexBuf = (float *) MALLOC(sizeof(float)*2*ns);
       outName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+15));
       metaOut->general->band_count = ll = 0;
+      create_cal_params(inFileName, metaOut, REPORT_LEVEL_NONE);
       if (multi)
 	outName = appendToBasename(outBaseName, "_mlc.img");
       else
@@ -1069,7 +1082,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	else
 	  metaOut->general->band_count += 2;
 	fpIn = FOPEN(dataName[nn], "rb");
-	if (nn == 0)
+	if (firstBandOnly)
+	  strcpy(metaOut->general->bands, "AMP");
+	else if (nn == 0)
 	  sprintf(metaOut->general->bands, "%s", element[0]);
 	else {
 	  if (dataType[nn])
@@ -1097,12 +1112,22 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	    if (nn == 0) {
 	      for (kk=0; kk<ns; kk++) {
 		ieee_big32(floatAmpBuf[kk]);
-		floatAmp[kk] = sqrt(floatAmpBuf[kk]);
+		if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
+		  floatAmpBuf[kk] = get_cal_dn(metaOut, 0.0, kk, 
+					       floatAmpBuf[kk], 
+					       element[nn], dbFlag);
+		else
+		  floatAmpBuf[kk] = sqrt(floatAmpBuf[kk]);
 	      }
 	    }
 	    else {
-	      for (kk=0; kk<ns; kk++) 
+	      for (kk=0; kk<ns; kk++) {
 		ieee_big32(floatAmpBuf[kk]);
+		if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
+		  floatAmpBuf[kk] = get_cal_dn(metaOut, 0.0, kk, 
+					       floatAmpBuf[kk], element[nn], 
+					       dbFlag);
+	      }
 	    }
 	    put_band_float_line(fpOut, metaOut, ll, ii, floatAmpBuf);
 	  }
@@ -1115,7 +1140,6 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	FCLOSE(fpIn);
       }
       FCLOSE(fpOut);
-      create_cal_params(inFileName, metaOut, REPORT_LEVEL_NONE);
       meta_write(metaOut, outName);
       FREE(floatAmp);
       FREE(floatAmpBuf);
@@ -1262,6 +1286,8 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 			"Will skip the ingest.\n");
 	continue;
       }
+      if (firstBandOnly)
+	nBands = 1;
       polsar_params = 
 	read_uavsar_polsar_params(inFileName, POLSAR_GRD);
       metaIn = uavsar_polsar2meta(polsar_params);
@@ -1288,7 +1314,9 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 	else
 	  metaOut->general->band_count += 1;
 	fpIn = FOPEN(dataName[nn], "rb");
-	if (nn == 0)
+	if (firstBandOnly)
+	  strcpy(metaOut->general->bands, "AMP");
+	else if (nn == 0)
 	  sprintf(metaOut->general->bands, "%s", element[0]);
 	else {
 	  if (dataType[nn])

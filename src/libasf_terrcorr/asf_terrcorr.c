@@ -96,12 +96,15 @@ static void
 fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
 {
   int qf_saved = quietflag;
-  char match_file[256];
   quietflag = 1;
   //quietflag = 0;
   
-  strcpy(match_file,"fft_match.txt");
-  fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
+  //char match_file[256];
+  //strcpy(match_file,"fft_match.txt");
+  fftMatch(file1, file2, NULL, dx, dy, cert);
+  //asfPrintStatus("Regular matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
+  //fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
+  //asfPrintStatus("   Grid matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
 
   if (!meta_is_valid_double(*dx) || !meta_is_valid_double(*dy) || cert==0) {
       // bad match the first way, sometimes we can get a good match by
@@ -631,7 +634,7 @@ int match_dem(meta_parameters *metaSAR,
       asfPrintStatus("Adjusting metadata to account for offsets...\n");
       refine_offset(range_offset, azimuth_offset, metaSAR, &t_off, &x_off);
       asfPrintStatus("  Time Shift: %f -> %f (change: %f) seconds\n"
-                     "  Slant Shift: %f -> %f (change %f) meters\n",
+                     "  Slant Shift: %f -> %f (change: %f) meters\n",
                      metaSAR->sar->time_shift,
                      metaSAR->sar->time_shift + t_off, t_off,
                      metaSAR->sar->slant_shift,
@@ -872,7 +875,7 @@ int match_dem(meta_parameters *metaSAR,
           asfPrintStatus("Adjusting metadata to account for offsets...\n");
           refine_offset(dx, dy, metaSAR, &t_off, &x_off);
           asfPrintStatus("  Time Shift: %f -> %f (change: %f) seconds\n"
-                         "  Slant Shift: %f -> %f (change %f) meters\n",
+                         "  Slant Shift: %f -> %f (change: %f) meters\n",
                          metaSAR->sar->time_shift,
                          metaSAR->sar->time_shift + t_off, t_off,
                          metaSAR->sar->slant_shift,
@@ -1132,6 +1135,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   //       if_coreg_fails_use_zero_offsets);
   //printf("save_ground_dem: %d\n", save_ground_dem);
   //printf("save_incid_angles: %d\n", save_incid_angles);
+  //printf("use_nearest_neighbor: %d\n", use_nearest_neighbor);
 
   // Which DEM should we use during terrain correction -- the original
   // ground range DEM (new method), or the backconverted one (old method)?
@@ -1143,6 +1147,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
     which_dem = BACKCONVERTED_GR_DEM;
 
   asfPrintStatus("Starting terrain correction pre-processing.\n");
+  asfPrintStatus("Interplation method: %s\n",
+                 use_nearest_neighbor ? "Nearest Neighbor" : "Bilinear");
 
   // strip any extension given to us in the input/output files
   char *sarFile = stripExt(sarFile_in);
@@ -1321,6 +1327,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   // Otherwise, the quality of the resulting terrain corrected SAR image
   // suffers. We put in a threshold of twice the resolution of the SAR
   // image. The -no-resample option overrides this default behavior.
+  // NOTE that currently do_resample is forced to FALSE, effectively
+  // disabling this behavior.
   if (do_resample &&
       (force_resample || demRes > 2 * sarRes || pixel_size > 0))
   {

@@ -207,9 +207,7 @@ int isPolsarproMatrix(char *dataFile, char **matrixType, char **error)
     matrix = TRUE;
   }
   else {
-    char *message = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(message, "Matrix does not exist.");
-    *error = message;
+    *error = STRDUP("Matrix does not exist.");
   }
 
   *matrixType = directory;
@@ -438,9 +436,7 @@ int isPolsarproDecomposition(char *dataFile, char **decompositionType,
     decomposition = TRUE;
   }
   else {
-    char *message = (char *) MALLOC(sizeof(char)*1024);
-    sprintf(message, "Decomposition file does not exist.");
-    *error = message;
+    *error = STRDUP("Decomposition file does not exist.");
   }
 
   *decompositionType = decompositionStr;
@@ -663,6 +659,38 @@ static void ingest_terrasar_polsar_amp(char *inFile, char *outFile,
   }
 }
 
+static void ingest_uavsar_polsar_amp(char *inFile, char *outFile,
+				     char *data_type,
+				     double *p_range_scale, 
+				     double *p_azimuth_scale)
+{
+  int do_resample = FALSE;
+  double azimuth_scale, range_scale;
+  char unscaleBaseName[1024];
+
+  if (p_azimuth_scale && p_range_scale) {
+    range_scale = *p_range_scale;
+    azimuth_scale = *p_azimuth_scale;
+    do_resample = TRUE;
+  }
+  if (do_resample) {
+    sprintf(unscaleBaseName, "%s_unscale", outFile);
+    import_uavsar_ext(inFile, -99, -99, -99, -99, r_AMP, TRUE, data_type, 
+		      unscaleBaseName);
+  }
+  else
+    import_uavsar_ext(inFile, -99, -99, -99, -99, r_AMP, TRUE, data_type, 
+		      outFile);
+ 
+  if (do_resample) {
+    asfPrintStatus("Resampling with scale factors: "
+		   "%f range, %f azimuth.\n",
+		   range_scale, azimuth_scale);
+
+    resample(unscaleBaseName, outFile, range_scale, azimuth_scale);
+  }
+}
+
 void import_polsarpro(char *s, char *ceosName, char *colormapName,
                       char *image_data_type, int db_flag, char *outBaseName)
 {
@@ -674,7 +702,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   double azimuth_scale, range_scale, min, max, slope, offset;
   char enviName[1024], outName[1024], bandStr[50];
   char dirName[1024], fileName[1024];
-  char *matrixType, *decompositionType, *error;
+  char *matrixType, *decompositionType, *error=NULL;
   int ii, multilook = FALSE, matrix = FALSE;
   int flip_horizontal = FALSE;
   int flip_vertical = FALSE;
@@ -700,19 +728,38 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   if (error && 
       strcmp_case(image_data_type, "POLARIMETRIC_SEGMENTATION") == 0)
     asfPrintError("%s\n", error);
+  if (error) {
+    FREE(error);
+    error = NULL;
+  }
+
   int is_polsarpro_decomposition =
     isPolsarproDecomposition(polsarName, &decompositionType, &error);
   if (error && 
       strcmp_case(image_data_type, "POLARIMETRIC_DECOMPOSITION") == 0)
     asfPrintError("%s\n", error);
+  if (error) {
+    FREE(error);
+    error = NULL;
+  }
+
   isPolsarproParameter(polsarName, &error);
   if (error && 
       strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0)
     asfPrintError("%s\n", error);
+  if (error) {
+    FREE(error);
+    error = NULL;
+  }
+
   int is_polsarpro_matrix = 
     matrix ? isPolsarproMatrix(polsarName, &matrixType, &error) : 0;
   if (error && strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") == 0)
     asfPrintError("%s\n", error);
+  if (error) {
+    FREE(error);
+    error = NULL;
+  }
   if (is_polsarpro_matrix) {
     // Need to get the metadata information from the first element of the 
     // matrix
@@ -939,16 +986,26 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   if (!metaIn->projection) {
     // Determine if the ancillary file is CEOS or AIRSAR
     if (ceosName == NULL || strlen(ceosName) <= 0)
-      asfPrintError("Please add CEOS or AIRSAR ancillary files to the "
-		    "PolSARpro\ninput files as appropriate\n");
+      asfPrintError("Please add ancillary files to the PolSARpro input files "
+		    "as appropriate\n");
 
     int is_airsar = FALSE, is_ceos = FALSE;
     int is_radarsat2 = FALSE, is_terrasar = FALSE;
+    int is_uavsar = FALSE;
+    char uavsar_type[5];
 
     is_airsar = isAIRSAR(ceosName);
     is_ceos = isCEOS(ceosName, &error);
+    FREE(error); error = NULL;
+
     is_radarsat2 = isRadarsat2(ceosName, &error);
+    FREE(error); error = NULL;
+
     is_terrasar = isTerrasar_ext(ceosName, TRUE, &error);
+    FREE(error); error = NULL;
+
+    is_uavsar = isUAVSAR(ceosName, &error);
+    FREE(error); error = NULL;
     
     if (is_ceos)
       metaOut = meta_read(ceosName);
@@ -966,10 +1023,36 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     else if (is_terrasar) {
       terrasar_meta *terrasar = read_terrasar_meta(ceosName);
       metaOut = terrasar2meta(terrasar);
+      if (metaOut->general->orbit_direction == 'A')
+        flip_vertical = TRUE;
       FREE(terrasar);
     }
+    else if (is_uavsar) {
+      // Need to check out the dimensions
+      // Our only chance to work out whether the data is MLC or GRD
+      strcpy(uavsar_type, "???");
+      uavsar_polsar *polsar_params = 
+	read_uavsar_polsar_params(ceosName, POLSAR_MLC);
+      metaOut = uavsar_polsar2meta(polsar_params);
+      // Some slack for non-exact multiples
+      if (line_count % metaOut->general->line_count < 5 &&
+	  sample_count % metaOut->general->sample_count < 5)
+	strcpy(uavsar_type, "MLC");
+      else {
+	FREE(polsar_params);
+	meta_free(metaOut);
+	polsar_params = read_uavsar_polsar_params(ceosName, POLSAR_GRD);
+	metaOut = uavsar_polsar2meta(polsar_params);
+	// Some slack for non-exact multiples
+	if (line_count % metaOut->general->line_count < 5 &&
+	    sample_count % metaOut->general->sample_count < 5)
+	  strcpy(uavsar_type, "GRD");
+      }
+      FREE(polsar_params);
+      
+    }
     else
-      asfPrintError("Ancillary file is not CEOS or AIRSAR format (required):"
+      asfPrintError("Ancillary file is in an unsupported format (required):"
 		    "\n%s\n", ceosName);
     
     if (line_count != metaOut->general->line_count ||
@@ -981,11 +1064,18 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       if (!FLOAT_EQUIVALENT(azimuth_scale, range_scale))
 	multilook = TRUE;
     }
+    else {
+      azimuth_scale = range_scale = 1.0;
+      p_azimuth_scale = &azimuth_scale;
+      p_range_scale = &range_scale;
+      multilook = FALSE;
+    }
 
     // Ingest the data to generate an amplitude image (in case the
     // user wants to terrain correct. Will need to get the metadata anyway
     if (is_ceos) {
       asfPrintStatus("   Ingesting CEOS data ...\n");
+      *p_azimuth_scale *= metaOut->sar->azimuth_look_count;
       import_ceos(ceosName, outBaseName, "none", NULL, p_range_scale,
 		  p_azimuth_scale, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
 		  FALSE, FALSE, -1, -1, TRUE, FALSE);
@@ -1003,15 +1093,33 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     else if (is_terrasar) {
       asfPrintStatus("   Ingesting TerraSAR-X data ...\n");
       ingest_terrasar_polsar_amp(ceosName, outBaseName,
-				p_range_scale, p_azimuth_scale);
+				 p_range_scale, p_azimuth_scale);
+    }
+    else if (is_uavsar) {
+      if (strcmp_case(uavsar_type, "MLC") == 0) {
+	asfPrintStatus("   Ingesting UAVSAR MLC data ...\n");
+	ingest_uavsar_polsar_amp(ceosName, outBaseName, uavsar_type,
+				 p_range_scale, p_azimuth_scale);
+      }
+      else if (strcmp_case(uavsar_type, "GRD") == 0) {
+	asfPrintStatus("   Ingesting UAVSAR GRD data ...\n");
+	ingest_uavsar_polsar_amp(ceosName, outBaseName, uavsar_type,
+				 p_range_scale, p_azimuth_scale);
+      }
+      else
+	asfPrintError("Unsupported UAVSAR data type!\n");
     }
 
     // Read the PolSAR Pro data into the layer stack
+    if (metaOut)
+      meta_free(metaOut);
     metaOut = meta_read(outBaseName);
     if (!is_polsarpro_matrix && !is_polsarpro_decomposition)
       strcat(metaOut->general->bands, ",POLSARPRO");
   }
   else {
+    if (metaOut)
+      meta_free(metaOut);
     metaOut = envi2meta(envi);
     metaOut->general->band_count = band_count;
     if (strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0 ||
@@ -1028,9 +1136,13 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
       metaOut->general->data_type = ASF_BYTE;
     }
   }
-  floatBuf = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
+
+  // add some padding, since the sizes could be off by 1 due to roundoff
+  int len = metaOut->general->sample_count > metaIn->general->sample_count ?
+            metaOut->general->sample_count : metaIn->general->sample_count;
+  floatBuf = (float *) MALLOC(sizeof(float)*len);
   if (flip_horizontal)
-    tmp = (float *) MALLOC(sizeof(float)*metaOut->general->sample_count);
+    tmp = (float *) MALLOC(sizeof(float)*len);
 
   for (band=0; band<band_count; band++) {
     if (band == 0 && metaIn->projection)
@@ -1072,14 +1184,16 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
     fpIn = FOPEN(polsarName, "rb");
 
     // Do the ingest...
-    for (ii=0; ii<metaOut->general->line_count; ii++) {
+    for (ii=0; ii<metaIn->general->line_count; ii++) {
+      int kk;
+      for (kk=0; kk<len; kk++)
+        floatBuf[kk] = 0.0;
       if (flip_vertical)
-	get_float_line(fpIn, metaIn, metaOut->general->line_count-ii-1, 
+	get_float_line(fpIn, metaIn, metaIn->general->line_count-ii-1, 
 		       floatBuf);
       else
 	get_float_line(fpIn, metaIn, ii, floatBuf);
-      int kk;
-      for (kk=0; kk<metaOut->general->sample_count; kk++) {
+      for (kk=0; kk<metaIn->general->sample_count; kk++) {
 	ieee_big32(floatBuf[kk]);
 	if (colormapName && strlen(colormapName) &&
 	    strcmp_case(image_data_type, "POLARIMETRIC_PARAMETER") == 0 &&
@@ -1095,13 +1209,14 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
 	} 
       }
       if (flip_horizontal) {
-	for (kk=0; kk<metaOut->general->sample_count; kk++)
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
 	  tmp[kk] = floatBuf[kk];
-	for (kk=0; kk<metaOut->general->sample_count; kk++)
-	  floatBuf[kk] = tmp[metaOut->general->sample_count-kk-1];
+	for (kk=0; kk<metaIn->general->sample_count; kk++)
+	  floatBuf[kk] = tmp[metaIn->general->sample_count-kk-1];
       }
-      put_float_line(fpOut, metaOut, ii, floatBuf);
-      asfLineMeter(ii, metaOut->general->line_count);
+      if (ii < metaOut->general->line_count) 
+        put_float_line(fpOut, metaOut, ii, floatBuf);
+      asfLineMeter(ii, metaIn->general->line_count);
     }
 
     // If there is a colormap associated with the file, then add it to the 
@@ -1115,6 +1230,8 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   }
   //FCLOSE(fpOut);
   FREE(floatBuf);
+  if (envi->band_name)
+    FREE(envi->band_name);
   FREE(envi);
   if (metaOut->sar)
     metaOut->sar->multilook = multilook;

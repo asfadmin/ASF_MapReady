@@ -5,7 +5,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#define MAX_LEN 256
+#define MAX_LEN 100000
 static char buf[MAX_LEN];
 
 static xmlNode *findNode(xmlDoc *doc, xmlNode *node, char *name, int desired)
@@ -68,10 +68,10 @@ int xml_get_element_exists(xmlDoc *doc, char *str)
 const char *xml_get_string_value(xmlDoc *doc, char *format, ...)
 {
   va_list ap;
-  char str[4096];
+  char str[100000];
 
   va_start(ap, format);
-  vsnprintf(str, 4095, format, ap);
+  vsnprintf(str, 99999, format, ap);
   va_end(ap);
 
   int i,n;
@@ -283,6 +283,80 @@ long xml_get_long_attribute(xmlDoc *doc, char *format, ...)
   else
     return MAGIC_UNSET_INT;
 }
+
+/* xmlChildElementCount not available in libxml2 2.6 */
+/* Returns the number of children of node */
+static long
+my_xmlChildElementCount(xmlNodePtr node)
+{
+    long ret = 0;
+    xmlNodePtr cur = NULL;
+
+    if (!node || node->type != XML_ELEMENT_NODE)
+        return 0;
+    cur = node->children;
+    while (cur) {
+        if (cur->type == XML_ELEMENT_NODE)
+            ret++;
+        cur = cur->next;
+    }
+    return ret;
+}
+
+int xml_get_children_count(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[100000];
+  int count;
+  
+  va_start(ap, format);
+  vsnprintf(str, 99999, format, ap);
+  va_end(ap);
+
+  int i,n;
+  char **arr;
+  int found = TRUE;
+
+  split_into_array(str, '.', &n, &arr);
+
+  xmlNode *cur = xmlDocGetRootElement(doc);
+
+  // first item much match the name of the root
+  if (strcmp(arr[0], (char*)cur->name)!=0) {
+    // root node doesn't match -- return empty string
+    strcpy(buf, "");
+  }
+  else {
+    // subsequent items specify the search path through the xml tree
+    for (i=1; i<n; ++i) {
+      char *elem;
+      int k;
+      extract_array_specifier(arr[i], &elem, &k);
+
+      xmlNode *next = findNode(doc, cur, elem, k);
+      if (!next) {
+        // not found -- return NULL
+        found = FALSE;
+        strcpy(buf, "");
+        FREE(elem);
+        break;
+      }
+      
+      FREE(elem);
+      cur = next;
+    }
+  }
+
+  if (found) {
+    assert(cur != NULL);
+    count = my_xmlChildElementCount(cur);
+  }
+
+  free_char_array(&arr, n);
+
+  return count;
+}
+
 
 // Whole bunch of test code... 
 

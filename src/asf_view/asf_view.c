@@ -20,6 +20,8 @@ double zoom;
 double center_samp, center_line;
 double crosshair_line, crosshair_samp;
 int g_saved_line_count;
+int g_startup=1;
+char *pt_name[MAX_PTS];
 double pt_lat[MAX_PTS], pt_lon[MAX_PTS];
 int pt_specified;
 
@@ -107,7 +109,7 @@ static void help()
   exit(EXIT_FAILURE);
 }
 
-static void read_pts()
+static void read_pts(const char *pts_file)
 {
     int jj,ii=0;
     if (pt_specified)
@@ -115,25 +117,42 @@ static void read_pts()
 
     for (jj=ii; jj<MAX_PTS; ++jj) {
       pt_lat[jj] = pt_lon[jj] = -999;
+      pt_name[jj] = NULL;
     }
 
-    if (fileExists("asf_view.points")) {
-      FILE *fp = fopen("asf_view.points", "r");
+    if (!pts_file || strlen(pts_file)==0)
+      pts_file = "asf_view.points";
+
+    if (fileExists(pts_file)) {
+      FILE *fp = fopen(pts_file, "r");
       if (fp) {
         char buf[512];
 
         while (!feof(fp)) {
+          char name[512]="";
           if (fgets(buf, sizeof(buf), fp)) {
-          double lat, lon;
-          int n = sscanf(buf, "%lf %lf", &lat, &lon); 
-          if (n != 2)
-            n = sscanf(buf, "%lf,%lf", &lat, &lon); 
-          if (n == 2) {
-            pt_specified = TRUE;
-            pt_lat[ii] = lat;
-            pt_lon[ii] = lon;
-            ++ii;
-          }
+            double lat, lon;
+            int n = sscanf(buf, "%lf %lf", &lat, &lon); 
+            if (n != 2)
+              n = sscanf(buf, "%lf,%lf", &lat, &lon); 
+            if (n != 2) {
+              char *c = strchr(buf, ',');
+              if (c) {
+                n = sscanf(c+1, "%lf,%lf", &lat, &lon);
+                if (n == 2) {
+                  *c = '\0';
+                  strcpy(name, buf);
+                  *c = ',';
+                }
+              }
+            }
+            if (n == 2) {
+              pt_specified = TRUE;
+              pt_lat[ii] = lat;
+              pt_lon[ii] = lon;
+              pt_name[ii] = STRDUP(name);
+              ++ii;
+            }
           }
 
           if (ii >= MAX_PTS)
@@ -145,7 +164,10 @@ static void read_pts()
 
     jj=0;
     while (pt_lat[jj] != -999) {
-      printf("Point: %f, %f\n", pt_lat[jj], pt_lon[jj]);
+      if (pt_name[jj] && strlen(pt_name[jj]) > 0)
+        printf("Point %s: %f, %f\n", pt_name[jj], pt_lat[jj], pt_lon[jj]);
+      else 
+        printf("Point: %f, %f\n", pt_lat[jj], pt_lon[jj]);
        ++jj;
     }
 }
@@ -157,10 +179,11 @@ main(int argc, char **argv)
     if (detect_flag_options(argc, argv, "-help", "--help", NULL))
       help();
 
-    char band[512], lut[512], mask_file_name[512];
+    char band[512], lut[512], mask_file_name[512], pts_file[512];
 
     strcpy(band, "");
     strcpy(mask_file_name, "");
+    strcpy(pts_file, "");
 
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);
@@ -170,11 +193,14 @@ main(int argc, char **argv)
         "-plan", "--plan", NULL);
     int mask_specified = extract_string_options(&argc, &argv, mask_file_name,
         "-mask", "--mask", "--layover-mask", "--layover-mask", NULL);
+    extract_string_options(&argc, &argv, pts_file,
+        "-points", "--points", "-p", NULL);
 
+    pt_name[0] = "";
     int plat = extract_double_options(&argc, &argv, &pt_lat[0], "-plat", NULL);
     int plon = extract_double_options(&argc, &argv, &pt_lon[0], "-plon", NULL);
     pt_specified = plat && plon;
-    read_pts();
+    read_pts(pts_file);
 
     generic_specified = extract_flag_options(&argc, &argv,
         "-generic", "--generic", NULL);
@@ -387,6 +413,7 @@ main(int argc, char **argv)
                        current_image_info_index, curr->filename);
     }
 
+    g_startup=FALSE;
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
 

@@ -138,29 +138,29 @@ static void get_fields(FILE * fp, ...)
   va_end(ap);
   
   while (!feof(fp))
-    {
+  {
       unsigned int i;
       int found = FALSE;
       
       readline(fp, buf, sizeof(buf));
-      
+  
       if (strlen(buf) > 0)
-	{
+      {
 	  for (i = 0; i < nkeys; ++i)
-	    {
+          {
 	      if (parse_val(buf, keys[i], vals[i]))
-		{
+              {
 		  found = TRUE;
 		  break;
-		}
-	    }
+	      }
+	   }
 	  
 	  ////Changed to ignore fields that aren't understood
 	  //if (!found)
 	  //	asfPrintWarning("Unknown key found in projection file: %s\n",
 	  //	buf);
-	}
-    }
+      }
+  }
 }
 
 static const char * bracketed_projection_name(projection_type_t proj_type)

@@ -76,7 +76,8 @@ interp_dem(FloatImage *dem, double l, double s)
     float p01 = float_image_get_pixel(dem, ix, iy+1);
     float p11 = float_image_get_pixel(dem, ix+1, iy+1);
 
-    return (float)bilinear_interp_fn(s-ix, l-iy, p00, p10, p01, p11);
+    //return (float)bilinear_interp_fn(s-ix, l-iy, p00, p10, p01, p11);
+    return (float)bilinear_interp_fn(s-ix, l-iy, p00, p01, p10, p11);
   }
   else {
 
@@ -242,6 +243,28 @@ get_interp_params(meta_parameters *meta_sar, meta_parameters *meta_dem,
   sar_to_dem(meta_sar, meta_dem, line_lo, samp_hi, &lines[1], &samps[1]);
   sar_to_dem(meta_sar, meta_dem, line_hi, samp_lo, &lines[2], &samps[2]);
   sar_to_dem(meta_sar, meta_dem, line_hi, samp_hi, &lines[3], &samps[3]);
+}
+
+static void pgrid(FloatImage *fi_dem, int a, int b) {
+            float f00 = interp_dem(fi_dem, a, b);
+            float f01 = interp_dem(fi_dem, a, b+1);
+            float f10 = interp_dem(fi_dem, a+1, b);
+            float f11 = interp_dem(fi_dem, a+1, b+1);
+            printf("%14.7f %14.7f\n%14.7f %14.7f\n", f00, f01, f10, f11);          
+            int aa, bb;
+            printf("         ");
+            for (aa=0; aa<=10; ++aa)
+              printf("%6.2f ", (double)aa/10);
+            printf("\n");
+            for (aa=0; aa<=10; ++aa) {
+              printf("%6.2f | ", (double)aa/10);
+              for (bb=0; bb<=10; ++bb) {
+                double aaa = a + (double)aa/10;
+                double bbb = b + (double)bb/10;
+                printf("%6.2f ", interp_dem(fi_dem, aaa, bbb));
+              }
+              printf("\n");
+            }
 }
 
 static int
@@ -457,11 +480,24 @@ int make_gr_dem_ext(meta_parameters *meta_sar, const char *demImg, const char *d
             buf[index] = interp_dem(fi_dem, line_out, samp_out);
           else
             asfPrintError("Oops.\n");
+          if (0) {
+            int a = 1500;
+            int b = 1500;
+            pgrid(fi_dem, a,b);
+            pgrid(fi_dem, a+1,b);
+            pgrid(fi_dem, a+2,b);
+            pgrid(fi_dem, a+3,b);
+            exit(1);
+          }
         }
       }
     }
 
-    put_float_lines(fpOut, meta_out, ii, size, buf);
+    int nlines = size;
+    if (ii+size > nl)
+      nlines = nl-ii;
+
+    put_float_lines(fpOut, meta_out, ii, nlines, buf);
     asfPrintStatus("Completed %.1f%%  \r", 100.*ii/(double)nl);
   }
   asfPrintStatus("Completed 100%%   \n");

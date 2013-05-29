@@ -173,6 +173,13 @@ int handle_roipac_file(const char *filename, char *meta_name, char *data_name,
 meta_parameters *open_roipac(const char *filename, const char *band,
                              const char *metaname, const char *dataname,
                              int multilook, ClientInterface *client);
+// read_ras.c
+int try_ras(const char *filename);
+int handle_ras_file(const char *filename, char *meta_name, char *data_name,
+                       char **err);
+meta_parameters *open_ras(const char *filename, const char *band,
+                          const char *metaname, const char *dataname,
+                          int multilook, ClientInterface *client);
 
 // read_terrasar.c
 int try_terrasar(const char *filename);
@@ -239,10 +246,14 @@ int open_uavsar_data(const char *filename, int multilook,
 GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair);
 void fill_big(ImageInfo *ii);
 void update_zoom(void);
-int get_big_image_width(void);
-int get_big_image_width2(void);
-int get_big_image_height(void);
-int get_big_image_height2(void);
+int get_big_image_width_full(void);
+int get_big_image_width2_full(void);
+int get_big_image_height_full(void);
+int get_big_image_height2_full(void);
+int get_big_image_width_sub(void);
+int get_big_image_width2_sub(void);
+int get_big_image_height_sub(void);
+int get_big_image_height2_sub(void);
 GdkPixbuf *get_saved_pb();
 void get_color(int color, unsigned char *r, unsigned char *g,
                unsigned char *b);
@@ -406,8 +417,10 @@ extern int num_shapes;
 extern double zoom;
 extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;
+extern int subimages;
 
 extern int g_saved_line_count;
+extern int g_startup;
 
 // keeps track of whether or not the arrow keys should affect the
 // crosshair or the ctrl-crosshair
@@ -427,6 +440,6 @@ extern int generic_bin_width, generic_bin_height, generic_bin_datatype,
 
 #define MAX_PTS 50
 extern int pt_specified;
+char *pt_name[MAX_PTS];
 extern double pt_lat[MAX_PTS], pt_lon[MAX_PTS];
-
 #endif

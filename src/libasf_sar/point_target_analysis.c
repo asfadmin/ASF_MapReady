@@ -164,7 +164,7 @@ static void findPeak(float *s, int size, double *peakX, double *peakY)
   *peakY = bestLocY;
 }
 
-static void findPeakSimple(float *s, int size, double *peakX, double *peakY)
+static float findPeakSimple(float *s, int size, double *peakX, double *peakY)
 {
   float max=-10000000.0;
   int ii, kk, bestX=0, bestY=0;
@@ -181,12 +181,14 @@ static void findPeakSimple(float *s, int size, double *peakX, double *peakY)
   // Output our guess.
   *peakX = (double)bestX;
   *peakY = (double)bestY;
+  return max;
 }
 
 int point_target_analysis(char *inFile, char *crFile, char *ptaFile)
 {
   int debug = TRUE;
-  
+  asfPrintStatus("PTA Revised version 0.1\n");
+ 
   // Check files
   char dataFile[1024];
   create_name(dataFile, inFile, ".img");
@@ -209,7 +211,18 @@ int point_target_analysis(char *inFile, char *crFile, char *ptaFile)
   int sample_count = meta->general->sample_count;
   double x_pixel_size = meta->general->x_pixel_size;
   double y_pixel_size = meta->general->y_pixel_size;
-  
+ 
+  char *name = meta->general->basename;
+  char *scene = get_basename(name);
+  if (strncmp(scene, "IMG", 3) == 0) {
+    char *stripped_scene = STRDUP(scene+7);
+    FREE(scene);
+    scene = stripped_scene;
+    char *m = strchr(scene, '-');
+    if (m) *m = '\0';
+  }
+  printf("Scene: %s\n", scene);
+
   // Determine size of image chips, etc.
   double range_res = meta->general->x_pixel_size;
   double azimuth_res = meta->general->y_pixel_size;
@@ -222,14 +235,15 @@ int point_target_analysis(char *inFile, char *crFile, char *ptaFile)
   asfPrintStatus("\nDEFAULT VALUES\nchip size: %d pixels\n", srcSize);
   asfPrintStatus("peak search: %d pixels\n", pta.peak_search);
   asfPrintStatus("peak threshold: %.3f\n", pta.peak_threshold);
-  asfPrintStatus("pixel size: %.3f\n\n", pta.pixel_size);
+  asfPrintStatus("pixel size: %.3f\n", pta.pixel_size);
   int simple = (x_pixel_size > pta.pixel_size) ? 1 : 0;
+  asfPrintStatus("Simple: %s\n", simple ? "Yes" : "No");
 
   // Handle input and output file
   FILE *fpIn = FOPEN(crFile, "r");
   FILE *fpOut = FOPEN(ptaFile, "w");
-  fprintf(fpOut, "# POINT TARGET ANALYSIS RESULTS\n");
-  fprintf(fpOut, "# ID, Lat, Lon, Height, Peak dB, Offset x, Offset y\n");
+  fprintf(fpOut, "# POINT TARGET ANALYSIS RESULTS - REVISED VERSION 0.1\n");
+  fprintf(fpOut, "# Scene, Orbit Direction, ID, Lat, Lon, Height, Peak dB, Offset x, Offset y, Total Offset\n");
 
   // Loop through corner reflector location file
   char line[512], crID[25];
@@ -256,45 +270,71 @@ int point_target_analysis(char *inFile, char *crFile, char *ptaFile)
 	FCLOSE(fpImg);
 
 	// Make sure that peak chip is in sigma
-	if (meta->general->radiometry == r_AMP) {
-	  for (ii=0; ii<peakSize; ii++) {
-	    for (kk=0; kk<peakSize; kk++) {
-	      int idx = ii*peakSize + kk;
-	      float incid = meta_incid(meta, 0, posX+kk);
-	      peak[idx] = get_cal_dn(meta, incid, posX+kk, peak[idx], "", 0);
-	    }
-	  }
-	}
+	//if (meta->general->radiometry == r_AMP) {
+	//  for (ii=0; ii<peakSize; ii++) {
+	//    for (kk=0; kk<peakSize; kk++) {
+	//      int idx = ii*peakSize + kk;
+	//      float incid = meta_incid(meta, 0, posX+kk);
+	//      peak[idx] = get_cal_dn(meta, incid, posX+kk, peak[idx], "", 0);
+	//    }
+	//  }
+	//}
 
 	// Determine the stats for the peak chip
 	double min, max, mean, stdDev;
 	calc_stats_ext(peak, peakSize*peakSize, 0.0001, FALSE, 
 		       &min, &max, &mean, &stdDev);
 
+    //for (ii=0; ii<peakSize; ++ii) {
+    //  for (kk=0; kk<peakSize; ++kk) {
+    //    printf("%8.2f ", peak[ii*peakSize + kk]);
+    //  }
+    //  printf("\n");
+    //}
+
 	// Find amplitude peak
 	double srcPeakX, srcPeakY;
-	if (simple)
-	  findPeakSimple(peak, peakSize, &srcPeakX, &srcPeakY);
-	else
-	  findPeak(peak, peakSize, &srcPeakX, &srcPeakY);
+	//if (simple)
+	  //findPeakSimple(peak, peakSize, &srcPeakX, &srcPeakY);
+	//else
+	  //findPeak(peak, peakSize, &srcPeakY, &srcPeakX);
+      //printf("Regular: %f %f\n", srcPeakX, srcPeakY);
+	  float peakVal = findPeakSimple(peak, peakSize, &srcPeakY, &srcPeakX);
+      //printf("Simple: %f %f\n", srcPeakX, srcPeakY);
+    srcPeakX += .5; srcPeakY += .5;
+
+    simple=1;
+    double xfrac = posX - (int)posX;
+    double yfrac = posY - (int)posY;
+    //printf("xfrac: %f, yfrac: %f\n", xfrac, yfrac);
 	
 	// Determine offset between peak and reference
 	double offX, offY;
 	if (simple) {
-	  offX = (srcPeakX - (int)(peakSize/2) + (int)(posX + 0.5) - posX)*
-	    x_pixel_size;
-	  offY = (srcPeakY - (int)(peakSize/2) + (int)(posY + 0.5) - posY)*
-	    y_pixel_size;
+	  //offX = (srcPeakX - (int)(peakSize/2) + (int)(posX + 0.5) - posX)*
+	  //  x_pixel_size;
+	  //offY = (srcPeakY - (int)(peakSize/2) + (int)(posY + 0.5) - posY)*
+	  //  y_pixel_size;
+	  offX = (srcPeakX - (peakSize/2) - xfrac)*x_pixel_size * 48916;
+	  offY = (srcPeakY - (peakSize/2) - yfrac)*y_pixel_size * 111444;
 	}
 	else {
 	  offX = (srcPeakX - (int)(peakSize/2))*x_pixel_size;
 	  offY = (srcPeakY - (int)(peakSize/2))*y_pixel_size;
 	}
-	asfPrintStatus("%s, %.5f, %.5f, %.3f, %.3f, %.3f, %.3f\n",
-		       crID, lat, lon, height, 10*log10(max), offX, offY);
-	if (stdDev > pta.peak_threshold || simple)
-	  fprintf(fpOut, "%s, %.5f, %.5f, %.3f, %.3f, %.3f, %.3f\n",
-		  crID, lat, lon, height, 10*log10(max), offX, offY);
+        double off = sqrt(offX*offX + offY*offY);
+	if (10*log10(peakVal) > -9) {
+	  asfPrintStatus("%s, %c, %s, %.5f, %.5f, %.3f, %.3f, %.3f, %.3f, %.3f, OK\n",
+	 	       scene, meta->general->orbit_direction, crID, lat, lon, height, 10*log10(peakVal), offX, offY, off);
+	  fprintf(fpOut, "%s, %c, %s, %.5f, %.5f, %.3f, %.3f, %.3f, %.3f, %.3f, OK\n",
+		  scene, meta->general->orbit_direction, crID, lat, lon, height, 10*log10(peakVal), offX, offY, off);
+        }
+        else {
+	  asfPrintStatus("%s, %c, %s, %.5f, %.5f, %.3f, %.3f, %.3f, %.3f, %.3f, BAD\n",
+	 	       scene, meta->general->orbit_direction, crID, lat, lon, height, 10*log10(peakVal), offX, offY, off);
+	  fprintf(fpOut, "%s, %c, %s, %.5f, %.5f, %.3f, %.3f, %.3f, %.3f, %.3f, BAD\n",
+		  scene, meta->general->orbit_direction, crID, lat, lon, height, 10*log10(peakVal), offX, offY, off);
+        } 
 
 	// Save subset
 	if (debug && (stdDev > pta.peak_threshold || simple)) {

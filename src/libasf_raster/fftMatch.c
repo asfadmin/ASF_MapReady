@@ -258,7 +258,7 @@ static int fftMatchBF(char *file1, char *file2, float *dx, float *dy, float *cer
     if (!meta_is_valid_double(dx2) || !meta_is_valid_double(dy2) || cert2<tol) {
       *dx = *dy = *cert = 0;
     }
-    else if (fabs(dx1 + dx2) > .5 || fabs(dy1 + dy2) > .5) {
+    else if (fabs(dx1 + dx2) > .25 || fabs(dy1 + dy2) > .25) {
       *dx = *dy = *cert = 0;
     }
     else {
@@ -277,6 +277,144 @@ static int fftMatchBF(char *file1, char *file2, float *dx, float *dy, float *cer
   return ok; 
 }
 
+typedef struct offset_point {
+  int x_pos;
+  int y_pos;
+  float x_offset;
+  float y_offset;
+  float cert;
+  int valid;
+} offset_point_t;
+
+
+static void comp_stats(offset_point_t *matches, int len,
+                       double *avg_x, double *stddev_x,
+                       double *avg_y, double *stddev_y)
+{
+  *avg_x=0;
+  *stddev_x=0;
+  *avg_y=0;
+  *stddev_y=0;
+  int ii,n=0;
+  for (ii=0; ii<len; ++ii) {
+    if (matches[ii].valid) {
+      *avg_x += matches[ii].x_offset;
+      *avg_y += matches[ii].y_offset;
+      ++n;
+    }
+  }
+  *avg_x /= (double)n;
+  *avg_y /= (double)n;
+  for (ii=0; ii<len; ++ii) {
+    if (matches[ii].valid) {
+      double o = matches[ii].x_offset - *avg_x;
+      *stddev_x += o*o;
+      o = matches[ii].y_offset - *avg_y;
+      *stddev_y += o*o;
+    }
+  }
+  *stddev_x /= (double)n;
+  *stddev_y /= (double)n;
+  *stddev_x = sqrt(*stddev_x);
+  *stddev_y = sqrt(*stddev_y);
+}
+
+static int remove_outliers(offset_point_t *matches, int len)
+{
+  //printf("--- Iteration Start\n");
+  double avg_x, stddev_x, avg_y, stddev_y;
+  comp_stats(matches, len, &avg_x, &stddev_x, &avg_y, &stddev_y);
+  double tol_x = 3*stddev_x;
+  double tol_y = 3*stddev_y;
+  int ii,rmx=0,rmy=0;
+
+  //printf("Removing outliers in X.\n");
+  //printf("X Average: %f, StdDev: %f\n", avg_x, stddev_x);
+  //printf("X Allowed range: (%f %f)\n", avg_x-tol_x, avg_x+tol_x);
+  for (ii=0; ii<len; ++ii) {
+    if (matches[ii].valid && fabs(matches[ii].x_offset - avg_x) > tol_x) {
+      //printf("X Outlier %d: %f\n", ii, matches[ii].x_offset);
+      matches[ii].valid = FALSE;
+      ++rmx;
+    }
+  }
+  //printf("Removed %d points that were outliers in X.\n", rmx);
+
+  //printf("Removing outliers in Y.\n");
+  //printf("Y Average: %f, StdDev: %f\n", avg_y, stddev_y);
+  //printf("Y Allowed range: (%f %f)\n", avg_y-tol_y, avg_y+tol_y);
+  for (ii=0; ii<len; ++ii) {
+    if (matches[ii].valid && fabs(matches[ii].y_offset - avg_y) > tol_y) {
+      //printf("Y Outlier %d: %f\n", ii, matches[ii].y_offset);
+      matches[ii].valid = FALSE;
+      ++rmy;
+    }
+  }
+  //printf("Removed %d points that were outliers in Y.\n", rmy);
+  //printf("Removed %d points overall\n", rmx+rmy);
+  return rmx+rmy;
+}
+
+static void print_matches(offset_point_t *matches, int num_x, int num_y, FILE *fp)
+{
+  int ii, jj,kk=0,n=0;
+  double avg = 0, x_avg = 0, y_avg = 0, x_stddev = 0, y_stddev = 0, x_max = 0, y_max = 0;
+
+  fprintf(fp, "=== X Offsets ===\n");
+  for (ii=0; ii<num_y; ++ii) {
+    for (jj=0; jj<num_x; ++jj) {
+      if (matches[kk].valid) {
+        fprintf(fp, "%5.2f ", matches[kk].x_offset);
+        avg += hypot(matches[kk].x_offset, matches[kk].y_offset);
+        x_avg += matches[kk].x_offset;
+        if (fabs(matches[kk].x_offset) > x_max)
+          x_max = fabs(matches[kk].x_offset);
+        ++n;
+      }
+      else
+        fprintf(fp, "  --  ");
+      ++kk;
+    }
+    fprintf(fp, "\n");
+  }
+  avg /= (double)n;
+  kk=0;
+  fprintf(fp, "=== Y Offsets ===\n");
+  for (ii=0; ii<num_y; ++ii) {
+    for (jj=0; jj<num_x; ++jj) {
+      if (matches[kk].valid) {
+        fprintf(fp, "%5.2f ", matches[kk].y_offset); 
+        y_avg += matches[kk].y_offset;
+        if (fabs(matches[kk].y_offset) > y_max)
+          y_max = fabs(matches[kk].y_offset);
+      }
+      else
+        fprintf(fp, "  --  ");
+      ++kk;
+    }
+    fprintf(fp, "\n");
+  }
+  kk=0;
+  x_avg /= (double)n;
+  y_avg /= (double)n;
+  for (ii=0; ii<num_y; ++ii) {
+    for (jj=0; jj<num_x; ++jj) {
+      if (matches[kk].valid) {
+        double tmp = matches[kk].x_offset - x_avg;
+        x_stddev += tmp*tmp;
+        tmp = matches[kk].y_offset - y_avg;
+        y_stddev += tmp*tmp;
+      }
+      ++kk;
+    }
+  }
+  x_stddev = sqrt(x_stddev) / (double)n;
+  y_stddev = sqrt(y_stddev) / (double)n;
+  fprintf(fp, "    X mean/stdev/max: %8.3f %8.3f %8.3f\n", x_avg, x_stddev, x_max);
+  fprintf(fp, "    Y mean/stdev/max: %8.3f %8.3f %8.3f\n", y_avg, y_stddev, y_max);
+  fprintf(fp, "Total Average Offset: %8.3f\n", avg);
+}
+
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
           float *avgLocX, float *avgLocY, float *certainty)
 {
@@ -286,23 +424,21 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   int nl = mini(meta1->general->line_count, meta2->general->line_count);
   int ns = mini(meta1->general->sample_count, meta2->general->sample_count);
 
-  const int size = 512;
-  const int overlap = 256;
+  const int size = 256; // 512;
+  const int overlap = 0; // 256;
   const double tol = .33;
 
   long long lsz = (long long)size;
-  char *chip1 = appendToBasename(inFile1, "_chip");
-  char *chip2 = appendToBasename(inFile2, "_chip");
   FILE *fp = NULL;
   
   if (gridFile) 
     fp = FOPEN(gridFile, "w");
 
-  int num_x = (nl - size) / (size - overlap);
-  int num_y = (ns - size) / (size - overlap);
- 
-  float *x_matches = MALLOC(sizeof(float)*num_x*num_y);
-  float *y_matches = MALLOC(sizeof(float)*num_x*num_y);
+  int num_x = (ns - size) / (size - overlap);
+  int num_y = (nl - size) / (size - overlap);
+  int len = num_x*num_y;
+
+  offset_point_t *matches = MALLOC(sizeof(offset_point_t)*len); 
 
   int ii, jj, kk=0;
   for (ii=0; ii<num_y; ++ii) {
@@ -320,46 +456,96 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
         tile_x = ns - size;
       }
       //asfPrintStatus("Matching tile starting at (L,S) (%d,%d)\n", tile_y, tile_x);
-      trim(inFile1, chip1, (long long)tile_x, (long long)tile_y, lsz, lsz);
-      trim(inFile2, chip2, (long long)tile_x, (long long)tile_y, lsz, lsz);
+      char trim_append[64], smooth_append[64];
+      sprintf(trim_append, "_chip_%05d_%05d", tile_x, tile_y);
+      char *trim_chip1 = appendToBasename(inFile1, trim_append);
+      char *trim_chip2 = appendToBasename(inFile2, trim_append);
+      sprintf(smooth_append, "_smooth_chip_%05d_%05d", tile_x, tile_y);
+      char *smooth_chip1 = appendToBasename(inFile1, smooth_append);
+      trim(inFile1, trim_chip1, (long long)tile_x, (long long)tile_y, lsz, lsz);
+      trim(inFile2, trim_chip2, (long long)tile_x, (long long)tile_y, lsz, lsz);
+      //smooth(trim_chip1, smooth_chip1, 3, EDGE_TRUNCATE);
       float dx, dy, cert;
-      int ok = fftMatchBF(chip1, chip2, &dx, &dy, &cert, tol);
-      if (ok && cert>tol) {
-        //asfPrintStatus("Result: dx=%f, dy=%f, cert=%f\n", dx, dy, cert);
-        if (fp)
-          fprintf(fp, "%5d %5d %14.5f %14.5f %14.5f\n", tile_x, tile_y, tile_x+dx, tile_y+dy, cert);
-        x_matches[kk] = dx;
-        y_matches[kk] = dy;
-        ++kk;
-      }
-      else {
-        //asfPrintStatus("*** BAD *** Result:  dx=%f, dy=%f, cert=%f\n", dx, dy, cert);
-      }
+      int ok = fftMatchBF(trim_chip1, trim_chip2, &dx, &dy, &cert, tol);
+      matches[kk].x_pos = tile_x;
+      matches[kk].y_pos = tile_y;
+      matches[kk].cert = cert;
+      matches[kk].x_offset = dx;
+      matches[kk].y_offset = dy;
+      matches[kk].valid = ok && cert>tol;
+      ++kk;
+      //asfPrintStatus("%sResult: dx=%f, dy=%f, cert=%f\n",
+      //               matches[kk].valid?"":"BAD: ", dx, dy, cert);
       //printf("%4.1f ", dx);
+      FREE(trim_chip1);
+      FREE(trim_chip2);
+      FREE(smooth_chip1);
     }
     //printf("\n");
   }
 
-  *avgLocX = 0;
-  *avgLocY = 0;
-  for (ii=0; ii<kk; ++ii) {
-    *avgLocX += x_matches[ii];
-    *avgLocY += y_matches[ii];
+  //print_matches(matches, num_x, num_y, stdout);
+
+  int removed;
+  do {
+    removed = remove_outliers(matches, len);
+  }
+  while (removed > 0);
+
+  char *base = get_basename(meta1->general->basename);
+  char *name = appendExt(base, ".offsets.txt");
+  FILE *offset_fp = FOPEN(name,"w");
+  //print_matches(matches, num_x, num_y, stdout);
+  print_matches(matches, num_x, num_y, offset_fp);
+  //asfPrintStatus("Offsets written to: %s\n", name);
+  FCLOSE(offset_fp);
+  FREE(name);
+  FREE(base);
+
+  int valid_points = 0;
+  for (ii=0; ii<len; ++ii) {
+    if (matches[ii].valid) {
+      ++valid_points;
+      if (fp) {
+        fprintf(fp, "%5d %5d %14.5f %14.5f %14.5f\n",
+                matches[ii].x_pos, matches[ii].y_pos,
+                matches[ii].x_pos + matches[ii].x_offset,
+                matches[ii].y_pos + matches[ii].y_offset,
+                matches[ii].cert);
+      }
+    }
   }
 
-  *avgLocX /= (float)kk;
-  *avgLocY /= (float)kk;
-  *certainty = (float)kk / (float)(num_x * num_y);
+  if (valid_points < 10) {
+     asfPrintStatus("Too few points for a good match.\n");
+  
+     *avgLocX = 0;
+     *avgLocY = 0;
+     *certainty = 0;
+  }
+  else {
+    *avgLocX = 0;
+    *avgLocY = 0;
+    int n = 0;
+    for (ii=0; ii<len; ++ii) {
+      if (matches[ii].valid) {
+        *avgLocX += matches[ii].x_offset;
+        *avgLocY += matches[ii].y_offset;
+        ++n;
+      }
+    }
+
+    *avgLocX /= (float)n;
+    *avgLocY /= (float)n;
+    *certainty = (float)n / (float)len;
+  }
 
   //asfPrintStatus("Final Result: dx=%f, dy=%f, cert=%f\n", *avgLocX, *avgLocY, *certainty);
 
-  FREE(chip1);
-  FREE(chip2);
   meta_free(meta1);
   meta_free(meta2);
   FCLOSE(fp);
-  FREE(x_matches);
-  FREE(y_matches);
+  FREE(matches);
   return (0);
 }
 

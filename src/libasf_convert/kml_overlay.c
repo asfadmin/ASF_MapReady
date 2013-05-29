@@ -203,9 +203,8 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   }
 
   // ensure meters
-  if (meta->projection && strcmp(meta->projection->units, "degrees") == 0) {
+  if (meta->projection && meta->projection->type == LAT_LONG_PSEUDO_PROJECTION)
     pixel_size *= 108000;
-  }
   meta_free(meta);
 
   // Generate input names
@@ -409,12 +408,14 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
       asfPrintStatus("Generating %s ...\n", pngFile);
     for (ii=0; ii<band_count; ii++) {
       //if (zip) {
+/*
       sprintf(pngFile, "%s_%s.png", baseName, bands[ii]);
       if (band && strlen(band) && strcmp_case(band, bands[ii]) == 0)
 	asfPrintStatus("Generating %s ...\n", pngFile);
       else
 	remove_file(pngFile);
 	//}
+*/
       FREE(bands[ii]);
     }
   }

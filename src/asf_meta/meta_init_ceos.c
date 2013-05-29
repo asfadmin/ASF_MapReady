@@ -1300,9 +1300,12 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   ceos_init_stVec(in_fName, ceos, meta);
   if (ceos->product == SLC) {
     double time, slant;
-    meta_get_timeSlantDop(meta, 0, 0, &time, &slant, NULL);
-    meta->sar->slant_range_first_pixel = slant;
+    //meta_get_timeSlantDop(meta, 0, 0, &time, &slant, NULL);
     //printf("slant_range_first_pixel: %.3f\n", slant);
+    double slant2 = dssr->rng_gate
+      * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
+    //printf("slant_range_first_pixel: %.3f\n", slant2);
+    meta->sar->slant_range_first_pixel = slant2;
   }
   else
     meta->sar->slant_range_first_pixel = dssr->rng_gate

@@ -129,7 +129,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
        radiometry == r_GAMMA ||
        radiometry == r_POWER)   &&
        !(format_type == CEOS || format_type == STF || format_type == AIRSAR ||
-	 format_type == ALOS_MOSAIC || format_type == TERRASAR))
+	 format_type == ALOS_MOSAIC || format_type == TERRASAR ||
+	 format_type == RADARSAT2 || format_type == UAVSAR))
   {
     // A power flag is on, but the input file is not CEOS or STF format
     // so it will be ignored
@@ -153,11 +154,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
                 line, sample, width, height, inMetaNameOption, radiometry,
                 db_flag, complex_flag, multilook_flag, azimuth_look_count,
 		range_look_count, amp0_flag, apply_ers2_gain_fix);
+
     // Replace the restituted state vectors that comes with the image data with
     // precision state vectors from Delft
-    if (prcPath != NULL && strlen(prcPath) > 0) {
-      update_state_vectors(outBaseName, prcPath);
-    }
+    update_state_vectors(outBaseName, prcPath);
   }
   // Ingest Vexcel Sky Telemetry Format (STF) data
   else if (format_type == STF) {
@@ -214,6 +214,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == UAVSAR) {
     asfPrintStatus("   Data format: UAVSAR\n");
+    if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      asfPrintError("Calibration currently does not support BETA values!\n");
+    else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      asfPrintError("Calibration currently does not support SIGMA values!\n");
     import_uavsar(inBaseName, line, sample, width, height, 
 		  update(radiometry, db_flag), uavsar_type, outBaseName);
   }

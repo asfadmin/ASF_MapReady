@@ -42,7 +42,7 @@ envi_header* read_envi(char *envi_name)
   int projection_key=-1;
 
   // Allocate memory for ESRI header structure
-  envi = (envi_header *)MALLOC(sizeof(envi_header));
+  envi = (envi_header *)CALLOC(1,sizeof(envi_header));
   envi->band_name = NULL;
 
   // Read .hdr and fill meta structures
@@ -89,6 +89,8 @@ envi_header* read_envi(char *envi_name)
     // check for UTM case - does not have projection key
     if (strstr(line, "UTM"))
       projection_key = 3;
+    if (strstr(line, "Geographic Lat/Lon"))
+      projection_key = 1;
     sprintf(map_info, "%s", map_info_ptr+1);
       }
     }
@@ -106,7 +108,6 @@ envi_header* read_envi(char *envi_name)
     sprintf(envi->wavelength_units, "%s", value);
     }
     else if (strncmp(key, "band", 4)==0) {
-      envi->band_name = (char *) MALLOC(sizeof(char)*255);
       fgets(line, 255, fp);
       envi->band_name = trim_spaces(line);
       int len = (int) strlen(envi->band_name);
@@ -122,6 +123,17 @@ envi_header* read_envi(char *envi_name)
 
   switch(projection_key)
     {
+    case 1:
+      sprintf(envi->projection, "Geographic Lat/Lon");
+      sscanf(map_info, "%i, %i, %lf, %lf, %lf, %lf, %lf, %lf",
+	     &envi->ref_pixel_x, &envi->ref_pixel_y, &envi->pixel_easting,
+	     &envi->pixel_northing, &envi->proj_dist_x, &envi->proj_dist_y);
+      envi->pixel_size_x = fabs(envi->proj_dist_x);
+      envi->pixel_size_y = fabs(envi->proj_dist_y);
+      sprintf(envi->datum, "%s", get_str_element(map_info, 7));
+      sscanf(proj_info, "%lf, %lf, 0.0, 0.0, %s}",
+	     &envi->semimajor_axis, &envi->semiminor_axis, bla);
+      break;
     case 3:
       sprintf(envi->projection, "UTM");
       sscanf(map_info, "%i, %i, %lf, %lf, %lf, %lf, %i",
@@ -196,6 +208,12 @@ envi_header* read_envi(char *envi_name)
       printErr(errbuf);
       break;
     }
+  if (strlen(envi->hemisphere) == 0) {
+    if (envi->center_lat > 0.0)
+      strcpy(envi->hemisphere, "North");
+    else
+      strcpy(envi->hemisphere, "South");
+  }
   
   return envi;
 }
@@ -278,14 +296,19 @@ envi_header* meta2envi(meta_parameters *meta)
     sprintf(envi->sensor_type, "SIR-C");
   else if (strncmp(meta->general->sensor, "AIRSAR", 6)==0)
     sprintf(envi->sensor_type, "AIRSAR");
+  else if (strncmp(meta->general->sensor, "UAVSAR", 6)==0)
+    sprintf(envi->sensor_type, "UAVSAR");
   else if (strncmp(meta->general->sensor, "ALOS", 4)==0)
     sprintf(envi->sensor_type, "ALOS");
   // All the data we generate now is big_endian by default
   envi->byte_order = 1;
-  if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+  if (meta->projection)
   {
     switch (meta->projection->type)
       {
+      case LAT_LONG_PSEUDO_PROJECTION:
+	sprintf(envi->projection, "Geographic Lat/Lon");
+	break;
       case UNIVERSAL_TRANSVERSE_MERCATOR: 
 	sprintf(envi->projection, "UTM"); 
 	envi->projection_zone = meta->projection->param.utm.zone;
@@ -324,7 +347,6 @@ envi_header* meta2envi(meta_parameters *meta)
       case STATE_PLANE: 
       case SCANSAR_PROJECTION: 
 	break;
-      case LAT_LONG_PSEUDO_PROJECTION:
       case MERCATOR:
       case UNKNOWN_PROJECTION:
 	// I haven't tested this at all.
@@ -361,6 +383,9 @@ envi_header* meta2envi(meta_parameters *meta)
       case WGS84_DATUM:
         strcpy(envi->datum, "WGS-84");
         break;
+      case HUGHES_DATUM:
+	strcpy(envi->datum, "Hughes");
+	break;
       default:
         // Keep quiet for now, this would get annoying
         // printf("Datum %s not supported by ENVI, using WGS84\n");
@@ -443,6 +468,7 @@ meta_parameters* envi2meta(envi_header *envi)
       meta->projection->type = POLAR_STEREOGRAPHIC;
       meta->projection->param.ps.slat = envi->center_lat;
       meta->projection->param.ps.slon = envi->center_lon;
+      meta->projection->param.ps.is_north_pole = (envi->center_lat > 0) ? 1 : 0;
       meta->projection->param.ps.false_easting = envi->false_easting;
       meta->projection->param.ps.false_northing = envi->false_northing;
     }
@@ -471,6 +497,8 @@ meta_parameters* envi2meta(envi_header *envi)
       meta->projection->param.lamaz.false_easting = envi->false_easting;
       meta->projection->param.lamaz.false_northing = envi->false_northing;
     }
+    else if (strncmp(envi->projection, "Geographic Lat/Lon", 18)==0)
+      meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
     else {
       sprintf(errbuf,"\n   ERROR: Unsupported projection type\n\n");
       printErr(errbuf);
@@ -493,6 +521,8 @@ meta_parameters* envi2meta(envi_header *envi)
       meta->projection->datum = WGS72_DATUM;
     else if (strcmp(envi->datum, "WGS-84") == 0)
       meta->projection->datum = WGS84_DATUM;
+    else if (strcmp(envi->datum, "Hughes") == 0)
+      meta->projection->datum = HUGHES_DATUM;
     meta->projection->spheroid = datum_spheroid(meta->projection->datum);
     meta->projection->re_major = envi->semimajor_axis;
     meta->projection->re_minor = envi->semiminor_axis;
@@ -517,10 +547,12 @@ meta_parameters* envi2meta(envi_header *envi)
 		   &center_lat, &center_lon, &height);
     meta->general->center_latitude = center_lat * R2D;
     meta->general->center_longitude = center_lon * R2D;
-    if (center_lat > 0.0)
-      meta->projection->hem = 'N';
-    else
-      meta->projection->hem = 'S';
+    if (meta->projection->hem == MAGIC_UNSET_CHAR) {
+      if (center_lat > 0.0)
+	meta->projection->hem = 'N';
+      else
+	meta->projection->hem = 'S';
+    }
   }
   if (meta->sar)
     meta->sar->wavelength = envi->wavelength;
@@ -561,6 +593,16 @@ void write_envi_header(const char *headerFile, const char *dataFile,
   if (meta->projection) {
     switch (meta->projection->type)
       {
+      case LAT_LONG_PSEUDO_PROJECTION:
+	fprintf(fp, 
+		"map info = {%s, %d, %d, %.5f, %.5f, %f, %f, %s, units=Degrees}\n", 
+		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
+		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
+		envi->proj_dist_y, datum_str);
+	fprintf(fp, 
+		"projection info = {1, %.3f, %.3f, 0.0, 0.0, %s}\n", 
+		envi->semimajor_axis, envi->semiminor_axis, datum_str);
+	break;
       case UNIVERSAL_TRANSVERSE_MERCATOR:
 	fprintf(fp, 
 		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %i, %s, %s}\n", 
@@ -628,7 +670,6 @@ void write_envi_header(const char *headerFile, const char *dataFile,
 	break;
       case STATE_PLANE:
       case SCANSAR_PROJECTION: 
-      case LAT_LONG_PSEUDO_PROJECTION:
       case MERCATOR:
       case EQUI_RECTANGULAR:
       case UNKNOWN_PROJECTION:

@@ -739,64 +739,90 @@ static void filter_mask(char *maskName)
   meta_parameters *meta = meta_read(maskName);
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
-  FILE *fp = fopenImage (maskName, "rb");
-  float *buf = MALLOC(sizeof(float)*ns*nl);
-  get_float_lines(fp, meta, 0, nl, buf); 
-  FCLOSE(fp);
+  FILE *fp = fopenImage (maskName, "r+b");
+  float *buf = MALLOC(sizeof(float)*ns*5);
 
   int iter=1;
   int total=0, orig=0;
   while (iter < 100) {
-    int num = 0;
-    for (jj=2; jj<ns-2; ++jj) {
-      for (ii=2; ii<nl-4; ++ii) {
-        if (iter == 1 && buf[ii*ns + jj] == MASK_LAYOVER)
+   
+    int num_image=0; 
+    for (ii=0; ii<nl-5; ++ii) {
+
+      get_float_lines(fp, meta, ii, 5, buf);
+
+      int num_line = 0;
+      int l = 2;         // this is the line we are working on, in the buffer
+
+      for (jj=2; jj<ns-2; ++jj) {
+
+        // first iteration, count the number of layover pixels
+        if (iter == 1 && buf[l*ns + jj] == MASK_LAYOVER)
           ++orig;
-        if (buf[ii*ns + jj] == MASK_NORMAL &&
-            buf[(ii-1)*ns + jj] == MASK_LAYOVER &&
-            (buf[(ii+1)*ns + jj] == MASK_LAYOVER || buf[(ii+2)*ns + jj] == MASK_LAYOVER ||
-             buf[(ii+3)*ns + jj] == MASK_LAYOVER))
-        {
-          buf[ii*ns + jj] = MASK_LAYOVER;
-          ++num;
-          ++n_layover;
-        }
-      }
-    }
-    total += num;
-    //asfPrintStatus("Vertical iter %d, added: %d\n", iter, num);
-    if (num > 0) {
-      num = 0;
-      for (ii=2; ii<nl-2; ++ii) {
-        for (jj=2; jj<ns-4; ++jj) {
-          if (buf[ii*ns + jj] == MASK_NORMAL &&
-              buf[ii*ns + jj-1] == MASK_LAYOVER &&
-              (buf[ii*ns + jj+1] == MASK_LAYOVER || buf[ii*ns + jj+2] == MASK_LAYOVER ||
-               buf[ii*ns + jj+3] == MASK_LAYOVER))
-          {
-            buf[ii*ns + jj] = MASK_LAYOVER;
-            ++num;
+
+        // fill in this one if enough surrounding pixels are layover
+        if (buf[l*ns + jj] == MASK_NORMAL) {
+
+          int add = FALSE;
+          if (
+               (buf[(l-1)*ns + jj] == MASK_LAYOVER &&
+                 (buf[(l+1)*ns + jj] == MASK_LAYOVER ||
+                  buf[(l+2)*ns + jj] == MASK_LAYOVER))
+             ||
+               (buf[(l+1)*ns + jj] == MASK_LAYOVER &&
+                 (buf[(l-1)*ns + jj] == MASK_LAYOVER ||
+                  buf[(l-2)*ns + jj] == MASK_LAYOVER))
+             ||
+               (buf[l*ns + jj-1] == MASK_LAYOVER &&
+                 (buf[l*ns + jj+1] == MASK_LAYOVER ||
+                  buf[l*ns + jj+2] == MASK_LAYOVER))
+             ||
+               (buf[l*ns + jj+1] == MASK_LAYOVER &&
+                 (buf[l*ns + jj-1] == MASK_LAYOVER ||
+                  buf[l*ns + jj-2] == MASK_LAYOVER))
+             )
+            add = TRUE;
+
+          int c = 0;
+          if (buf[(l-1)*ns + jj-1] == MASK_LAYOVER)
+            ++c;
+          if (buf[(l-1)*ns + jj+1] == MASK_LAYOVER)
+            ++c;
+          if (buf[(l+1)*ns + jj-1] == MASK_LAYOVER)
+            ++c;
+          if (buf[(l+1)*ns + jj+1] == MASK_LAYOVER)
+            ++c;
+          if (c>2)
+            add = TRUE;
+
+          if (add) {
+            buf[l*ns + jj] = MASK_LAYOVER;
+            ++num_line;
             ++n_layover;
           }
         }
       }
-      //asfPrintStatus("Horizontal iter %d, added: %d\n", iter, num);
-      total += num;
+       
+      if (num_line>0)
+        put_float_line(fp, meta, ii+2, buf + 2*ns);
+      num_image += num_line;
     }
-    if (num == 0)
+    if (num_image == 0)
       break;
+    total += num_image;
     ++iter;
   }
+  FCLOSE(fp);
 
-  asfPrintStatus("Layover smoothing took %d iterations.\n", iter);
-  asfPrintStatus("After smoothing, layover mask is %.1f%% larger\n",
-                 100.*total/(double)orig);
+  if (orig == 0) {
+    asfPrintStatus("Layover smoothing took %d iterations.\n", iter);
+    asfPrintStatus("After smoothing, layover mask is %.1f%% larger\n",
+                   100.*total/(double)orig);
+  }
+  else
+    asfPrintStatus("No layover in this image.\n");
 
   asfPrintStatus("Writing filtered mask...\n");
-  fp = fopenImage(maskName, "wb");
-  for (ii=0; ii<nl; ++ii)
-    put_float_line(fp, meta, ii, buf + ii*ns);
-  FCLOSE(fp);
   FREE(buf); 
   meta_free(meta);
 }
@@ -972,10 +998,10 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
 
   if (doRadiometric) {
     side_meta->general->band_count  = 4;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
   } else {
     side_meta->general->band_count  = 2;
-    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE,DEM_HEIGHT");
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT");
   }
 
   FILE *sideProductsFp = FOPEN(sideProductsImg, "wb");

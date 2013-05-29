@@ -8,6 +8,7 @@
 #include "asf_meta.h"
 #include "ceos.h"
 #include "terrasar.h"
+#include "radarsat2.h"
 #include <assert.h>
 
 /**Harcodings to fix calibration of ASF data***
@@ -598,21 +599,6 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
     meta->calibration->uavsar = uavsar_params;
     uavsar_type_t type = POLSAR_MLC;
 
-    /*
-    if (meta->general->image_data_type == POLARIMETRIC_S2_MATRIX)
-      type = POLSAR_SLC;
-    else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX &&
-	     !meta->projection)
-      type = POLSAR_MLC;
-    else if (meta->general->image_data_type == POLARIMETRIC_STOKES_MATRIX)
-      type = POLSAR_DAT;
-    else if (meta->general->image_data_type == POLARIMETRIC_C3_MATRIX &&
-	     meta->projection)
-      type = POLSAR_GRD;
-    else if (meta->general->image_data_type == DEM)
-      type == POLSAR_HGT;
-    */
-  
     uavsar_polsar *uavsar = read_uavsar_polsar_params(sarName, type);
     uavsar_params->semi_major = uavsar->semi_major;
     uavsar_params->slant_range_first_pixel = 
@@ -635,6 +621,27 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
     tsx->k = terrasar->cal_factor; // calibration factor in beta naught
     FREE(terrasar);
   }
+  else if (isRadarsat2(sarName, &error)) {
+    // Radarsat2 style calibration
+    r2_cal_params *r2 = (r2_cal_params *) MALLOC(sizeof(r2_cal_params));
+    meta->calibration->type = r2_cal;
+    meta->calibration->r2 = r2;
+
+    radarsat2_meta *radarsat2 = read_radarsat2_meta(sarName);
+    r2->num_elements = radarsat2->numberOfSamplesPerLine;
+    for (ii=0; ii<r2->num_elements; ii++) {
+      r2->a_beta[ii] = radarsat2->gains_beta[ii];
+      r2->a_gamma[ii] = radarsat2->gains_gamma[ii];
+      r2->a_sigma[ii] = radarsat2->gains_sigma[ii];
+    }
+    r2->b = radarsat2->offset;
+    if (meta->general->image_data_type == COMPLEX_IMAGE ||
+	meta->general->image_data_type == POLARIMETRIC_IMAGE)
+      r2->slc = TRUE;
+    else
+      r2->slc = FALSE;
+    FREE(radarsat2);
+  }
   else
     // should never get here
     asfPrintWarning("Unknown calibration parameter scheme!\n");
@@ -647,7 +654,7 @@ void create_cal_params_ext(const char *inSAR, meta_parameters *meta, int db)
   if (db)
     meta->general->no_data = -40.0;
   else
-    meta->general->no_data = 0.0001;
+    meta->general->no_data = 0.0;
 }
 
 // incid_init()
@@ -742,9 +749,11 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
 
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
-    // Convert (amplitude) data number to scaled, noise-removed power
-    scaledPower =
-      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    // Convert (amplitude) data number to scaled
+    // Removed the noise floor removal
+    //scaledPower =
+    //(p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    scaledPower = (p->a1*inDn*inDn + p->a2)*invIncAngle;
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
 
@@ -774,9 +783,11 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
     }
 
-    // Convert (amplitude) data number to scaled, noise-removed power
-    scaledPower =
-      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    // Convert (amplitude) data number to scaled
+    // Remove the noise floor removal
+    //scaledPower =
+    //  (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    scaledPower = (p->a1*inDn*inDn + p->a2)*invIncAngle;
   }
   else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
 
@@ -858,6 +869,32 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
     double cf = meta->calibration->tsx->k;
     scaledPower = cf*inDn*inDn*invIncAngle;
   }
+  else if (meta->calibration->type == r2_cal) { // Radarsat-2 data
+    
+    if (sample > meta->calibration->r2->num_elements)
+      asfPrintError("Calibration not defined for sample (%d)!\n", sample);
+    double a;
+    if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      a = meta->calibration->r2->a_beta[sample];
+    else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      a = meta->calibration->r2->a_sigma[sample];
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB)
+      a = meta->calibration->r2->a_gamma[sample];
+
+    if (meta->calibration->r2->slc)
+      scaledPower = inDn*inDn/(a*a);
+    else
+      scaledPower = (inDn*inDn + meta->calibration->r2->b)/a;
+  }
+  else if (meta->calibration->type == uavsar_cal) {
+    if (radiometry == r_BETA || radiometry == r_BETA_DB)
+      asfPrintError("Calibration currently does not support BETA values!\n");
+    else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB)
+      asfPrintError("Calibration currently does not support SIGMA values!\n");
+    else
+      // Values are already stored as "linear power"
+      scaledPower = inDn;
+  }
   else
     // should never get here
     asfPrintError("Unknown calibration data type!\n");
@@ -866,6 +903,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
   // since it messes up the statistics
   // We set all values lower than the noise floor (0.001 is the equivalent
   // to -30 dB) to the mininum value of 0.001, removing outliers.
+  /*
   if (scaledPower > 0.001 && inDn > 0.0) {
     if (dbFlag)
       calValue = 10.0 * log10(scaledPower);
@@ -879,7 +917,15 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
       calValue = 0.001;
   }
   else calValue = meta->general->no_data;
+  */
 
+  // Now that the noise floor is not removed anymore, we don't need to look for
+  // outlier in form of negative values anymore. 
+  if (dbFlag)
+    calValue = 10.0 * log10(scaledPower);
+  else
+    calValue = scaledPower;
+  
   return calValue;
 }
 
@@ -912,9 +958,12 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
     // Determine the noise value
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
-    // Convert (amplitude) data number to scaled, noise-removed power
+    // Convert (amplitude) data number to scaled
+    // No removal of noise floor anymore
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1);
+    calValue = sqrt((sigma - p->a2)/p->a1) * radCorr;
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
 
@@ -936,9 +985,11 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
       noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
     }
 
-    // Convert (amplitude) data number to scaled, noise-removed power
+    // Convert (amplitude) data number to scaled
+    // No removal of noise floor anymore
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1);
   }
   else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
 
@@ -986,7 +1037,8 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
       cf = p->cf_hh;
  
     //scaledPower = pow(10, cf/10.0)*inDn*inDn*invIncAngle;
-    calValue = sqrt(sigma * radCorr / pow(10, cf/10.0));
+    //calValue = sqrt(sigma * radCorr / pow(10, cf/10.0));
+    calValue = sqrt(sigma / pow(10, cf/10.0)) * radCorr;
   }
   else if (meta->calibration->type == tsx_cal) {
 
@@ -994,6 +1046,18 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
     double cf = meta->calibration->tsx->k;
     //scaledPower = cf*inDn*inDn*invIncAngle;
     calValue = sqrt(sigma * radCorr / (cf*invIncAngle));
+  }
+  else if (meta->calibration->type == r2_cal) {
+
+    r2_cal_params *p = meta->calibration->r2;
+    if (meta->calibration->r2->slc) {
+      //scaledPower = inDn*inDn/(a*a);
+      calValue = sqrt(sigma * radCorr) * p->a_sigma[sample];
+    }
+    else {
+      //scaledPower = (inDn*inDn + meta->calibration->r2->b)/a;
+      calValue = sqrt((sigma * radCorr *p->a_sigma[sample]) - p->b);
+    }
   }
 
   return calValue;
@@ -1030,9 +1094,11 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
     double *noise = p->noise;
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
-    // Convert (amplitude) data number to scaled, noise-removed power
+    // Convert (amplitude) data number to scaled
+    // No noise floor removal anymore
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    //ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1);
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
 
@@ -1063,7 +1129,8 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
 
     // Convert (amplitude) data number to scaled, noise-removed power
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    //ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1);
   }
   else if (meta->calibration->type == esa_cal) { // ESA style ERS and JERS data
 

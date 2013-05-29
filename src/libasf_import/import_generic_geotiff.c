@@ -1435,8 +1435,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     asfPrintStatus("\nGeoTIFF contains lat/long in decimal degrees.  Assuming this is a\n"
             "USGS Seamless Server (or compatible) type of DEM GeoTIFF with pixel\n"
             "size of 30, 60, 90, or 190 meters, i.e. SRTM, NED, DTED, etcetera...\n");
-    strcpy(mg->sensor, "USGS Seamless data (e.g., NED, SRTM)");
-    strcpy(image_data_type, "DEM");
+    strcpy(mg->sensor, "");
+    strcpy(image_data_type, ""); 
     mg->image_data_type = DEM;
     is_usgs_seamless_geotiff = 1;
   }
@@ -1448,7 +1448,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
               "USGS Seamless Server (or compatible) type of DEM GeoTIFF with pixel\n"
               "size of 30, 60, 90, 190 meters, i.e. SRTM, NED, DTED, etcetera...\n",
               angular_units_to_string(angular_units));
-      strcpy(mg->sensor, "USGS Seamless data (e.g., NED, SRTM)");
+      strcpy(mg->sensor, "");
       is_usgs_seamless_geotiff = 1; // This will turn on conversion of pixel size from degrees to meters
   }
   else {
@@ -3329,9 +3329,26 @@ void classify_geotiff(GTIF *input_gtif,
     if (m && *model_type == ModelTypeGeocentric) {
         asfPrintError("Geocentric (x, y, z) GeoTIFFs are unsupported (so far.)\n");
     }
+    if (m && *model_type == 32767 /* User Defined */) {
+        asfPrintStatus("Geotiff Model Type is User Defined\n");
+        l = GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, linear_units, 0, 1);
+        a = GTIFKeyGet (input_gtif, GeogAngularUnitsGeoKey, angular_units, 0, 1);
+        if (l && !a) {
+          asfPrintStatus("Guessing that this is projected data.\n\n");
+          *model_type = ModelTypeProjected;
+        }
+        else if (a && !l) {
+          asfPrintStatus("Guessing that this is geographic (lat/lon) data.\n\n");
+          *model_type = ModelTypeGeographic;
+        }
+        else {
+          asfPrintError("Unable to guess at the Geotiff Model Type.\n"
+                        "Do not know how to handle this geotiff.\n");
+        }
+    }
     if (m && *model_type != ModelTypeProjected && *model_type != ModelTypeGeographic) {
         asfPrintError("Unrecognized type of GeoTIFF encountered.  Must be map-projected\n"
-                "or geogaphic (lat/long)\n");
+                "or geographic (lat/long)\n");
     }
     r = GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, raster_type, 0, 0);
     /*

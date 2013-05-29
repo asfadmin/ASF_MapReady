@@ -6,8 +6,8 @@
 // pointers to!
 char *br(const char *s)
 {
-#define N 512
-    static char out[N];
+#define NUM 512
+    static char out[NUM];
 
     const int MAX = 28;
     if (strlen(s) < MAX) {
@@ -23,7 +23,7 @@ char *br(const char *s)
             next = strchr(prev, ',');
             if (!next) {
                 // reached end of string -- put what we have in output
-                if (strlen(out) + strlen(curr) < N-MAX) {
+                if (strlen(out) + strlen(curr) < NUM-MAX) {
                     if (strlen(out) > 0)
                         strcat(out, ",\n   ");
                     strcat(out, curr);
@@ -32,7 +32,7 @@ char *br(const char *s)
             }
             else if (next-curr > MAX) {
                 // too many characters -- copy what we have
-                if (strlen(out) + strlen(curr) < N-MAX) {
+                if (strlen(out) + strlen(curr) < NUM-MAX) {
                     if (strlen(out) > 0)
                         strcat(out, ",\n   ");
                     *next = '\0';
@@ -43,13 +43,13 @@ char *br(const char *s)
                 curr = next+1;
             }
             prev = next+1;
-            if (strlen(out) > N-2*MAX) // prevent buffer overrun
+            if (strlen(out) > NUM-2*MAX) // prevent buffer overrun
                 break;                 // plenty of safety margin
         }
         free(str);
     }
     return out;
-#undef N
+#undef NUM
 }
 
 static const char *get_data_type_str(data_type_t data_type)
