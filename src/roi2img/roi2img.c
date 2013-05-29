@@ -367,18 +367,14 @@ main(int argc, char *argv[])
   // Second try is this one	 meta->sar->azimuth_time_per_pixel = (destSec - imgSec) / (meta->sar->original_line_count/2);
   
   meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size / swath_vel;
-  if (dir=='A') meta->sar->azimuth_time_per_pixel *= -1;
+  meta->sar->azimuth_time_per_pixel *= -1;
+  meta->sar->time_shift = fabs(meta->general->line_count*meta->sar->azimuth_time_per_pixel);
   
 //  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
 //  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
 
   if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = -1000.0;
   
-  if (meta->general->orbit_direction == 'D')
-    meta->sar->time_shift = 0.0;
-  else if (meta->general->orbit_direction == 'A')
-    meta->sar->time_shift = fabs(meta->general->line_count *
-         meta->sar->azimuth_time_per_pixel);
 
   meta->sar->slant_range_first_pixel = srf;
   meta->sar->wavelength = wavelength;
@@ -456,10 +452,8 @@ main(int argc, char *argv[])
       oline++;
     }
 
-    /* if image is ascending, write out in reverse order */
-    if (dir=='A') { for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); }
-    else { for (j=0; j<olines; j++) fwrite(obuff[j],sizeof(float),osamps,fpout); }
- 
+    /* write out image in reverse order */
+    for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); 
  
     fclose(fpout);
     fclose(fpin);
