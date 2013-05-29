@@ -1,13 +1,19 @@
 /******************************************************************************
-NAME:  
+NAME:  create_base_images
 
-SYNOPSIS:  
+SYNOPSIS:  Creates Seasat products from raw swaths.
+
+		-v	use state vectors instead of TLEs
+		-c 	use the clock drift to offset times
 
 DESCRIPTION:
 
 EXTERNAL ASSOCIATES:
-    NAME:               USAGE:
-    ---------------------------------------------------------------
+	NAME:               	USAGE:
+   	---------------------------------------------------------------
+ 	create_roi_in		create input configuration file for ROI
+	roi			Repeat Orbit Interferometry correlator
+	roi2img			Turns ROI outputs into Seasat products
 
 FILE REFERENCES:
     NAME:               USAGE:
@@ -37,12 +43,16 @@ BUGS:
 #define MAX_NODE	3600	// we will never have southern hemisphere SEASAT data!
 #define PATCH_SIZE	8132
 #define NUM_PATCHES	3
-#define HALF_ESA_FRAME  12468	// this should be almost perfect, as follows:
+#define HALF_ESA_FRAME  12468	// this should be about correctt, as follows:
 				//   Swath_Length = 4.01 m/line * 24936 lines = 99993.36 meters. 
 
 void process_node(char *basefile, int node);
 int get_line_for_node(meta_parameters *meta, int node, int nl);
 int get_node_for_line(meta_parameters *meta, int line, int nl);
+void give_usage(char *argv[], int argc);
+
+int USE_TLES = 1;
+int USE_CLOCK_DRIFT = 0;
 
 main(int argc, char *argv[])
 {
@@ -54,9 +64,27 @@ main(int argc, char *argv[])
   FILE *fphdr;
   SEASAT_header_ext *hdr;
   int  nl, middle_line, lines_per_frame, val;
+  int c;
   
-  if (argc != 2) { printf("Usage: %s <swath_file>\n",argv[0]); exit(1); }
-  strcpy(basefile,argv[1]);
+  if (argc < 2 || argc > 4) { give_usage(argv,argc); exit(1); }
+  
+  while ((c=getopt(argc,argv,"vc")) != -1)
+    switch(c) {
+      case 'v':
+        USE_TLES = 0;
+	break;
+      case 'c':
+        USE_CLOCK_DRIFT = 1;
+	break;
+      case '?':
+        printf("Unknown option %s\n",optarg);
+	return(1);
+      default:
+        give_usage(argv,argc);
+	exit(1);
+    } 
+  
+  strcpy(basefile,argv[optind]);
   strcat(strcpy(metafile,basefile),".meta");
 
   printf("================================================================================\n");
@@ -92,7 +120,7 @@ main(int argc, char *argv[])
   middle_line = start_line + HALF_ESA_FRAME;
 
   /* Now process all frames until the end of the file */
-  while (middle_line < nl) {
+  while (middle_line+HALF_ESA_FRAME < nl) {
     if (start_line >= 0) {
       printf("================================================================================\n");
       printf("FOUND VALID NODE %i starting at line %i, Processing...\n",node,start_line);
@@ -104,16 +132,24 @@ main(int argc, char *argv[])
     start_line = get_line_for_node(meta,node,nl);	// find the start line for chosen node
   } 
 
+  printf("================================================================================\n");
+  printf("%s: FINISHED CREATING SEASAT PRODUCTS FROM SWATH FILE %s\n",argv[0],basefile);
+  printf("================================================================================\n");
+
   exit(0);
 }
 
 /* Call create_roi_in, roi, and roi2img for the given basefile and node */
 void process_node(char *basefile, int node)
 {
-  char cmd[256],tmpfile[256];
+  char cmd[256],tmpfile[256], options[256];
   int  err;
+
+  sprintf(options,"-E %i",node);
+  if (USE_TLES == 0) strcat(options," -v");
+  if (USE_CLOCK_DRIFT == 1) strcat(options," -c");
   
-  sprintf(cmd,"create_roi_in -E %i %s\n",node,basefile);
+  sprintf(cmd,"create_roi_in %s %s\n",options,basefile);
   printf("Executing command: %s\n",cmd);
   err = system(cmd);
   if (err) {printf("Error returned from create_roi_in\n"); exit(1);}
@@ -125,7 +161,7 @@ void process_node(char *basefile, int node)
   if (err) {printf("Error returned from ROI\n"); exit(1);}
 
   sprintf(tmpfile,"%s_node%.4i",basefile,node);
-  sprintf(cmd,"roi2img -E %i %s\n",node,tmpfile);
+  sprintf(cmd,"roi2img %s %s\n",options,tmpfile);
   printf("Executing command: %s\n",cmd);
   err = system(cmd);
   if (err) {printf("Error returned from roi2img\n"); exit(1);}
@@ -142,4 +178,9 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
     &(s->scu_bit),&(s->sdf_bit),&(s->adc_bit),&(s->time_gate_bit),&(s->local_prf_bit),
     &(s->auto_prf_bit),&(s->prf_lock_bit),&(s->local_delay_bit));
   return(val);
+}
+
+void give_usage(char *argv[], int argc)
+{
+  printf("Usage: %s [-v][-c] <swath_file>\n",argv[0]);
 }
