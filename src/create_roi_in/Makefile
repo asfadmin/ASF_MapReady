@@ -13,7 +13,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
-	libfftw3f.a \
+	$(LIBDIR)/libfftw3f.a \
 	libsgp4.a \
 	-lm
 

@@ -511,6 +511,11 @@ main(int argc, char *argv[])
       err = system(tmpstr);
       if (err) {printf("Error returned from asf_export\n"); exit(1);}
 
+      /* run make_seasat_h5 */
+      sprintf(tmpstr,"make_seasat_h5 -gap %s.dis %s %s",basefile,cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from make_seasat_h5\n"); exit(1);}
+
       /* remove the subsampled QC .img file */
       strcat(strcpy(tmpstr,tmpfile),".img");
       remove(tmpstr);
