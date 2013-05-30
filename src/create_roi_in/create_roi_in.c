@@ -2,7 +2,7 @@
 NAME: create_roi_in - creates a ROI.in file from seasat HDR and state vectors
 		      previously created by the ASF SEASAT PREP code.
 
-SYNOPSIS: create_roi_in [-s <start_line> -e <end_line>] [-d dop] [-f start_line] [-v] [-E ESA_Node] <infile_base_name> 
+SYNOPSIS: create_roi_in [-s <start_line> -e <end_line>][-d dop][-f start_line][-v][-c][-E ESA_Node] <infile_base_name> 
 
 DESCRIPTION:
 
@@ -10,6 +10,7 @@ DESCRIPTION:
 	[-s <start_line> -e <end_line>]	optional start/end line to process
 	[-d #]   			offset to calculated doppler, default zero
 	[-v]				use state vectors instead of TLEs.
+	[-c]				apply clock drift to image timing
 	[-f start_line]			make an ESA SIZED frame starting from start_line
 	[-E ESA_Node]			make an ESA sized frame centered at the specified node
 
@@ -871,11 +872,12 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
 
 void give_usage(char *argv[], int argc)  
 {
-    printf("Usage: %s [-s <start_line> -e <end_line>] [-d dop] [-f start_line] [-v] [-E ESA_Node] <infile_base_name> \n\n",argv[0]);
+    printf("Usage: %s [-s <start_line> -e <end_line>][-d dop][-f start_line][-v][-c][-E ESA_Node] <infile_base_name> \n\n",argv[0]);
     printf("\t<infile_base_name>\tFile to create ROI .in file from. (assumes .dat and .hdr exist)\n");
     printf("\t-s sl -e el       \tSet start and end lines to process [default - all lines]\n");
     printf("\t-d dop            \tSet doppler offset to use [default 0]\n");
     printf("\t-v                \tUse state vectors instead of TLEs\n");
+    printf("\t-c                \tApply the clock drift to image timing\n");
     printf("\t-E ESA_Node       \tCreate ESA sized frame at specified node number\n"); 
     printf("\t-f start_line     \tCreate ESA sized frame starting from start_line:\n");
     printf("\t                  \t\tParameter  \tDefault\t Framed\n");
