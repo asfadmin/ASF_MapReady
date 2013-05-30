@@ -7,6 +7,9 @@
 #define BIT_ERRORS	 7		/* number of allowable bit errors in the sync code */
 #define MAX_CONTIGUOUS_MISSES 60	/* number of allowable fill data frames before the end of a dataset */
 
+#define MAX_CLOCK_DRIFT  4097   /* 12 bit field */
+
+
 typedef struct {
     int year;/*Gregorian year (e.g. 1998)*/
     int jd;/*Julian day of year (e.g. 33, for February 2nd.)*/

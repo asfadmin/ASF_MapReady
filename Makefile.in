@@ -67,6 +67,8 @@ MAPREADY_MODULES = \
 	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \
+	src/roi2img \
+	src/create_roi_in \
 	@ASF_GUI@
 
 MAPREADY_SOURCE = \

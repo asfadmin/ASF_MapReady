@@ -1,13 +1,14 @@
 /******************************************************************************
 NAME:  Convert a roi slc file into an ASF img file.
 
-SYNOPSIS:  roi2img [-m][-r roi.in_file][-v][-E node] <base_file_name>
+SYNOPSIS:  roi2img [-m][-r roi.in_file][-v][-c][-E node] <base_file_name>
 
 DESCRIPTION:
 
 	-m 		only create the meta file
 	-r <file>	use the given ROI file for parameters
 	-v		use state vectors instead of TLEs
+	-c		apply clock drift to image timing
 	-E <node>	create output file names using ESA node & orbit
 
 EXTERNAL ASSOCIATES:
@@ -94,7 +95,6 @@ int      	start_date;		// start date of this segment
 int 	   	start_year;		// start year of this segment
 julian_date	s_date;			// start date of this segment
 hms_time   	s_time;			// start time of this segment
-double 		time_offset;		// value from the clock drift
 
 /* Subroutines */
 void give_usage(int argc, char *argv[]);
@@ -114,6 +114,8 @@ int get_int_val(FILE *fp, int *num);
 double r_awgs84 = 6378137.0;
 double r_e2wgs84 = 0.00669437999015;
 double C = 299792458.0;
+
+int    USE_CLOCK_DRIFT = 0;   // switch to control application of clock drift
 
 main(int argc, char *argv[]) 
 {
@@ -150,7 +152,7 @@ main(int argc, char *argv[])
     
   if (argc<2 || argc>6) { give_usage(argc,argv); exit(1); }
 
-  while ((cla=getopt(argc,argv,"mvE:r:")) != -1)
+  while ((cla=getopt(argc,argv,"mvcE:r:")) != -1)
     switch(cla) {
       case 'm':
         META_ONLY = 1;
@@ -166,6 +168,9 @@ main(int argc, char *argv[])
 	break;
       case 'v':
         USE_TLES = 0;
+	break;
+      case 'c':
+        USE_CLOCK_DRIFT = 1;
 	break;
       case '?':
         give_usage(argc,argv);
@@ -195,7 +200,7 @@ main(int argc, char *argv[])
   /* Read the start time for this image from the hdr file */
   read_hdrfile(hdrfile);
   
-if (USE_TLES == 1) {
+  if (USE_TLES == 1) {
     /* get the correct state vector */
     printf("Propagating state vectors to requested time...\n");
     create_input_tle_file(s_date,s_time,"tle1.txt");
@@ -212,50 +217,39 @@ if (USE_TLES == 1) {
     fclose(fpvec);
     remove("fixed_state_vector.txt");
 
-} else {
+  } else {
 
-  int cnt;
-  int year, month, day, hour, min;
-  double sec, thisSec;
-  FILE *fpvec, *fpo;
-  char tmp[256];
+    int cnt;
+    int year, month, day, hour, min;
+    double sec, thisSec;
+    FILE *fpvec, *fpo;
+    char tmp[256];
   
-  sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
-  fpvec = fopen(tmp,"r");
-  if (fpvec == NULL) {printf("Unable to open state vector file for day %i\n",start_date); exit(1); }
+    sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
+    fpvec = fopen(tmp,"r");
+    if (fpvec == NULL) {printf("Unable to open state vector file for day %i\n",start_date); exit(1); }
 
-  cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-  thisSec = (double) ((hour*60+min)*60)+sec;
+    cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+    thisSec = (double) ((hour*60+min)*60)+sec;
 
-  /* seek to the correct second of the day for the START of this file 
-   -----------------------------------------------------------------*/
-  while (cnt == 12 && start_sec > (thisSec+1.0)) {
+    /* seek to the correct second of the day for the START of this file 
+    -----------------------------------------------------------------*/
+    while (cnt == 12 && start_sec > (thisSec+1.0)) {
       cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
       thisSec = (double) ((hour*60+min)*60)+sec;
+    }
+    printf("Found closest second %lf\n",thisSec);
+  
+    /* need to create a state vector file the start of this image
+    ------------------------------------------------------------*/
+    stateVector vec, last_vec;
+  
+    last_vec.pos.x = x; last_vec.pos.y = y; last_vec.pos.z = z;
+    last_vec.vel.x = xdot; last_vec.vel.y = ydot; last_vec.vel.z = zdot;
+    vec = propagate(last_vec,thisSec,start_sec);
+    x = vec.pos.x; y = vec.pos.y; z = vec.pos.z;
+    xdot = vec.vel.x; ydot = vec.vel.y; zdot = vec.vel.z;
   }
-  printf("Found closest second %lf\n",thisSec);
-  
-  /* need to create a state vector file the start of this image
-   ------------------------------------------------------------*/
-  stateVector vec, last_vec;
-  
-  last_vec.pos.x = x;
-  last_vec.pos.y = y;
-  last_vec.pos.z = z;
-  last_vec.vel.x = xdot;
-  last_vec.vel.y = ydot;
-  last_vec.vel.z = zdot;
-  
-  vec = propagate(last_vec,thisSec,start_sec);
-
-  x = vec.pos.x;
-  y = vec.pos.y;
-  z = vec.pos.z;
-  xdot = vec.vel.x;
-  ydot = vec.vel.y;
-  zdot = vec.vel.z;
-  
-}
 
   if (zdot > 0.0) dir = 'A'; else dir = 'D';
 
@@ -323,7 +317,7 @@ if (USE_TLES == 1) {
   strcpy(meta->general->sensor,"SEASAT");
   strcpy(meta->general->sensor_name,"SAR");
   strcpy(meta->general->mode,"STD");
-  strcpy(meta->general->processor,"ROI301");
+  strcpy(meta->general->processor,"ROI301 r1.0");
   meta->general->data_type = REAL32;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
   meta->general->radiometry = r_AMP;
@@ -374,18 +368,14 @@ if (USE_TLES == 1) {
   // Second try is this one	 meta->sar->azimuth_time_per_pixel = (destSec - imgSec) / (meta->sar->original_line_count/2);
   
   meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size / swath_vel;
-  if (dir=='A') meta->sar->azimuth_time_per_pixel *= -1;
+  meta->sar->azimuth_time_per_pixel *= -1;
+  meta->sar->time_shift = fabs(meta->general->line_count*meta->sar->azimuth_time_per_pixel);
   
 //  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
 //  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
 
-  meta->sar->slant_shift = 0.0;
-  
-  if (meta->general->orbit_direction == 'D')
-    meta->sar->time_shift = 0.0;
-  else if (meta->general->orbit_direction == 'A')
-    meta->sar->time_shift = fabs(meta->general->line_count *
-         meta->sar->azimuth_time_per_pixel);
+  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = -1000.0;
+  else meta->sar->slant_shift = 0.0;
 
   meta->sar->slant_range_first_pixel = srf;
   meta->sar->wavelength = wavelength;
@@ -463,10 +453,8 @@ if (USE_TLES == 1) {
       oline++;
     }
 
-    /* if image is ascending, write out in reverse order */
-    if (dir=='A') { for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); }
-    else { for (j=0; j<olines; j++) fwrite(obuff[j],sizeof(float),osamps,fpout); }
- 
+    /* write out image in reverse order */
+    for (j=0; j<olines; j++) fwrite(obuff[olines-j-1],sizeof(float),osamps,fpout); 
  
     fclose(fpout);
     fclose(fpin);
@@ -523,6 +511,11 @@ if (USE_TLES == 1) {
       sprintf(tmpstr,"asf_export -format jpeg %s %s\n",tmpfile,tmpfile);
       err = system(tmpstr);
       if (err) {printf("Error returned from asf_export\n"); exit(1);}
+
+      /* run make_seasat_h5 */
+      sprintf(tmpstr,"make_seasat_h5 -gap %s.dis %s %s",basefile,cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from make_seasat_h5\n"); exit(1);}
 
       /* remove the subsampled QC .img file */
       strcat(strcpy(tmpstr,tmpfile),".img");
@@ -624,8 +617,12 @@ int read_hdrfile(char *infile)
   SEASAT_header_ext *hdr;
   FILE *fp = fopen(infile,"r");
   
-  int val, i;
+  int val, i, end_line;
   double dtmp, t, t1;
+  
+  int clock_drift_hist[MAX_CLOCK_DRIFT];
+  int clock_drift_median;
+  double clock_shift;
   
   if (fp==NULL) {printf("ERROR: can't open %s header file\n",infile); return(1); }
   hdr = (SEASAT_header_ext *) malloc(sizeof(SEASAT_header_ext));
@@ -635,19 +632,40 @@ int read_hdrfile(char *infile)
     if (val!=20) {printf("ERROR: unable to read to specified start line in header file\n"); exit(1);}
   }
 
-  // time_offset = hdr->clock_drift / 1000.0 ;
-  time_offset = 0.0;
-
   start_year = 1970 + hdr->lsd_year;
   start_date = hdr->day_of_year;
-  start_sec  = (double) hdr->msec / 1000.0; //  + time_offset;
+  start_sec  = (double) hdr->msec / 1000.0;
   
-  printf("Found start time: %i %i %lf\n",start_year, start_date, start_sec);
-
   s_date.year = 1970 + hdr->lsd_year;
   s_date.jd   = hdr->day_of_year;
-  dtmp = (double) hdr->msec / 1000.0 + time_offset;
+  dtmp = (double) hdr->msec / 1000.0;
   date_sec2hms(dtmp,&s_time);
+
+  if (USE_CLOCK_DRIFT==1) {
+    for (i=0; i<MAX_CLOCK_DRIFT; i++) clock_drift_hist[i] = 0;
+    end_line = start_line + npatches*patch_size;
+    for (i = start_line; i<end_line; i++) {
+      val = get_values(fp, hdr);
+      if (val!=20) {printf("ERROR: unable to read to specified end line in header file\n"); exit(1);}
+      clock_drift_hist[hdr->clock_drift]++;
+    }
+    
+    printf("APPLYING CLOCK DRIFT TO IMAGE TIMING.\n");
+    clock_drift_median = get_median(clock_drift_hist,MAX_CLOCK_DRIFT);
+    printf("\tclock_drift_median     = %li \n",clock_drift_median);
+    
+    clock_shift = (double) clock_drift_median / 1000.0;
+    start_sec += clock_shift;
+    if (start_sec > 86400.0) {start_sec -= 86400.0; start_date += 1;}
+
+    dtmp = date_hms2sec(&s_time)+clock_shift;
+    if (dtmp > 86400.0) { s_date.jd+=1; dtmp-=86400.0;}
+    date_sec2hms(dtmp,&s_time);
+  }
+
+  printf("Found start time: %i %i %lf\n",start_year, start_date, start_sec);
+  fclose(fp);
+
 }
 
 int get_values(FILE *fp,SEASAT_header_ext *s)
@@ -662,6 +680,14 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
     &(s->auto_prf_bit),&(s->prf_lock_bit),&(s->local_delay_bit));
   return(val);
 }
+
+int get_median(int *hist, int size) {
+  int retval = -1, max = 0, i;
+  for (i=0; i<size; i++) if (hist[i]>max) {max=hist[i]; retval=i;}
+  if (retval==-1) { printf("Error getting histogram median value\n"); exit(1); }
+  return(retval);
+}
+
 
 void byteswap(void *buf,int len)
 {
@@ -734,11 +760,12 @@ int get_string_val(FILE *fp, char *str)
 
 void give_usage(int argc, char *argv[])
 {
-    printf("Usage: %s [-m][-r roi.in_file][-v][-E node] <base_file_name>\n",argv[0]);
+    printf("Usage: %s [-m][-r roi.in_file][-v][-c][-E node] <base_file_name>\n",argv[0]);
     printf("\tbase_file_name\tinput ROI slc file; output ASF .img and .ddr\n");
     printf("\t-m            \tmeta only option - only create meta file\n");
     printf("\t-r roi.in_file\toptional roi.in file name\n");
     printf("\t-v            \tUse state vectors instead of TLEs\n");
+    printf("\t-c            \tApply the clock drift to image timing\n");
     printf("\t-E node       \tCreate output file names using ESA node & orbit\n");
     printf("\n");
 }

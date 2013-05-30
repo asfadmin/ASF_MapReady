@@ -2,7 +2,7 @@
 NAME: create_roi_in - creates a ROI.in file from seasat HDR and state vectors
 		      previously created by the ASF SEASAT PREP code.
 
-SYNOPSIS: create_roi_in [-s <start_line> -e <end_line>] [-d dop] [-f start_line] [-v] [-E ESA_Node] <infile_base_name> 
+SYNOPSIS: create_roi_in [-s <start_line> -e <end_line>][-d dop][-f start_line][-v][-c][-E ESA_Node] <infile_base_name> 
 
 DESCRIPTION:
 
@@ -10,6 +10,7 @@ DESCRIPTION:
 	[-s <start_line> -e <end_line>]	optional start/end line to process
 	[-d #]   			offset to calculated doppler, default zero
 	[-v]				use state vectors instead of TLEs.
+	[-c]				apply clock drift to image timing
 	[-f start_line]			make an ESA SIZED frame starting from start_line
 	[-E ESA_Node]			make an ESA sized frame centered at the specified node
 
@@ -44,8 +45,8 @@ ALGORITHM DESCRIPTION:
 
 The order of outputs in the roi,in file is:
 
-DESCRIPTION							VALUE
-----------------------------------------------------------	-----------------------------------------------
+DESCRIPTION						     VALUE
+--------------------------------------------------------     -------------------------------------------------
 First input data file					     <infile>.dat
 Second input data file  				     /dev/null
 Output data file					     <infile>.slc
@@ -116,6 +117,7 @@ void get_peg_info(double start_time, int nl, int prf, char *vecfile,
 void spectra(FILE *fp,int sl, int nl,double iqmean,int *ocnt,double *ocal);
 void give_usage(char *argv[], int argc);
 int get_line_for_node(meta_parameters *meta, int node, int nl);
+int get_median(int *hist, int size);
 
 void roi_put_string(FILE *roi_file,char *value,char *comment);
 void roi_put_double(FILE *roi_file,double value,char *comment);
@@ -127,7 +129,6 @@ void roi_put2_int(FILE *roi_file,int val1, int val2,char *comment);
 void roi_put_char(FILE *roi_file,char value,char *comment);
 void roi_put_double_lf(FILE *roi_file,double value,int decimals,char *comment);
 void roi_put4_double(FILE *roi_file,double val1, double val2, double val3, double val4, char *comment);
-
 
 #define GOOD_SAMPLES  5300
 #define GOOD_LINES    11800    
@@ -162,7 +163,6 @@ main(int argc, char *argv[])
   double   time_from_start;
   int      start_date, current_date, end_date;
   int 	   start_year, current_year, end_year;
-  int 	   end_sync;
 
   int tmp;
   double dtmp;
@@ -172,13 +172,11 @@ main(int argc, char *argv[])
   long int dwp_line[MAX_DWP_SHIFTS];
   int      dwp_cnt, dwp_flag, dwp_min=65;
   
-  int ncaltones;
+  int    ncaltones;
   double caltones[MAX_CALTONES];
 
   julian_date s_date;
-  julian_date e_date;
   hms_time    s_time;
-  hms_time    e_time;
   
   int val, which;
   int i, start_line, end_line;
@@ -188,7 +186,12 @@ main(int argc, char *argv[])
   int ESA_FRAME = 0;
   int MAKE_FRAME = 0;
   int USE_TLES = 1;
+  int USE_CLOCK_DRIFT = 0;
   int actual_lines, actual_samps;
+  
+  int clock_drift_hist[MAX_CLOCK_DRIFT];
+  int clock_drift_median;
+  double clock_shift;
 
   if (argc < 2 || argc > 9) { give_usage(argv,argc); exit(1); }
   
@@ -196,8 +199,9 @@ main(int argc, char *argv[])
   start_line = 1;
   end_line = -99;
   dop_shift = 0;  
+  clock_shift = 0.0;
   
-  while ((c=getopt(argc,argv,"s:e:d:f:E:v")) != -1)
+  while ((c=getopt(argc,argv,"s:e:d:f:E:vc")) != -1)
     switch(c) {
       case 's':
         if (start_line != 1) {
@@ -239,6 +243,10 @@ main(int argc, char *argv[])
       case 'v':
         USE_TLES = 0;
 	break;
+      case 'c':
+        USE_CLOCK_DRIFT = 1;
+        for (i=0; i<MAX_CLOCK_DRIFT; i++) clock_drift_hist[i] = 0;
+	break;
       case '?':
         printf("Unknown option %s\n",optarg);
 	return(1);
@@ -266,7 +274,11 @@ main(int argc, char *argv[])
     /* get total lines in this file */  
     if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",tmpfile); exit(1);}
     val = get_values(fphdr, hdr); nl = 0;
-    while (val==20) { nl++; val = get_values(fphdr, hdr); }  
+
+    while (val==20) { 
+      nl++; 
+      val = get_values(fphdr, hdr);   
+    }  
     fclose(fphdr);
   }
 
@@ -333,6 +345,7 @@ main(int argc, char *argv[])
     while (val==20) {
       nl++;
       if (which==0) { 
+        if (USE_CLOCK_DRIFT==1) clock_drift_hist[hdr1->clock_drift]++;
         val=get_values(fphdr,hdr1); 
 	which=1; 
 	if (dwp_val[dwp_cnt-1] != hdr1->delay) {
@@ -341,6 +354,7 @@ main(int argc, char *argv[])
           dwp_cnt++;
         }
       } else { 
+        if (USE_CLOCK_DRIFT==1) clock_drift_hist[hdr->clock_drift]++;
         val=get_values(fphdr,hdr);  
 	which=0; 
 	if (dwp_val[dwp_cnt-1] != hdr->delay) {
@@ -374,11 +388,31 @@ main(int argc, char *argv[])
         dwp_line[dwp_cnt] = i;
         dwp_cnt++;
       }
+      if (USE_CLOCK_DRIFT==1) clock_drift_hist[hdr->clock_drift]++;
     }
     end_year = 1970+ hdr->lsd_year;
     end_date = hdr->day_of_year;
     end_sec  = (double) hdr->msec / 1000.0;
   } 
+  
+  if (USE_CLOCK_DRIFT==1) {
+    printf("APPLYING CLOCK DRIFT TO IMAGE TIMING.\n");
+    clock_drift_median = get_median(clock_drift_hist,MAX_CLOCK_DRIFT);
+    printf("\tclock_drift_median     = %li \n",clock_drift_median);
+    
+    clock_shift = (double) clock_drift_median / 1000.0;
+    start_sec += clock_shift;
+    current_sec += clock_shift;
+    end_sec += clock_shift;
+    
+    if (start_sec > 86400.0) {start_sec -= 86400.0; start_date += 1;}
+    if (current_sec > 86400.0) {current_sec -= 86400.0; current_date += 1;}
+    if (end_sec > 86400.0) {end_sec -= 86400.0; end_date += 1;}
+
+    dtmp = date_hms2sec(&s_time)+clock_shift;
+    if (dtmp > 86400.0) { s_date.jd+=1; dtmp-=86400.0;}
+    date_sec2hms(dtmp,&s_time);
+  }
   
   printf("Found start   time: %i %i %lf\n",start_year, start_date, start_sec);
   printf("Found current time: %i %i %lf\n",current_year, current_date, current_sec);
@@ -838,11 +872,12 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
 
 void give_usage(char *argv[], int argc)  
 {
-    printf("Usage: %s [-s <start_line> -e <end_line>] [-d dop] [-f start_line] [-v] [-E ESA_Node] <infile_base_name> \n\n",argv[0]);
+    printf("Usage: %s [-s <start_line> -e <end_line>][-d dop][-f start_line][-v][-c][-E ESA_Node] <infile_base_name> \n\n",argv[0]);
     printf("\t<infile_base_name>\tFile to create ROI .in file from. (assumes .dat and .hdr exist)\n");
     printf("\t-s sl -e el       \tSet start and end lines to process [default - all lines]\n");
     printf("\t-d dop            \tSet doppler offset to use [default 0]\n");
     printf("\t-v                \tUse state vectors instead of TLEs\n");
+    printf("\t-c                \tApply the clock drift to image timing\n");
     printf("\t-E ESA_Node       \tCreate ESA sized frame at specified node number\n"); 
     printf("\t-f start_line     \tCreate ESA sized frame starting from start_line:\n");
     printf("\t                  \t\tParameter  \tDefault\t Framed\n");
@@ -952,4 +987,37 @@ void roi_put_double_lf(FILE *roi_file,double value,int decimals,
   snprintf(param,99,format,value);
   roi_put_string(roi_file,param,comment);
 }
+
+int get_median(int *hist, int size) {
+  int retval = -1, max = 0, i;
+  for (i=0; i<size; i++) if (hist[i]>max) {max=hist[i]; retval=i;}
+  if (retval==-1) { printf("Error getting histogram median value\n"); exit(1); }
+  return(retval);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
