@@ -15,7 +15,7 @@ LIBS  = \
 	$(XML_LIBS) \
 	$(LIBDIR)/libfftw3f.a \
 	libsgp4.a \
-	-lm
+	-lm -lz
 
 OBJS = create_roi_in.o \
 	dop.o \

@@ -16,7 +16,7 @@ LIBS  = \
 	$(XML_LIBS) \
 	$(LIBDIR)/libfftw3f.a \
 	libsgp4.a \
-	-lm
+	-lm -lz
 
 OBJS = roi2img.o \
 	tle_code.o \
