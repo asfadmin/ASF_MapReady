@@ -235,4 +235,7 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
 void give_usage(char *argv[], int argc)
 {
   printf("Usage: %s [-v][-c] <swath_file>\n",argv[0]);
+  printf("\t-v            \tUse state vectors instead of TLEs\n");
+  printf("\t-c            \tApply the clock drift to image timing\n");
+
 }

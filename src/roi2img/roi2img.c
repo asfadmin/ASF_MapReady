@@ -1,13 +1,14 @@
 /******************************************************************************
 NAME:  Convert a roi slc file into an ASF img file.
 
-SYNOPSIS:  roi2img [-m][-r roi.in_file][-v][-E node] <base_file_name>
+SYNOPSIS:  roi2img [-m][-r roi.in_file][-v][-c][-E node] <base_file_name>
 
 DESCRIPTION:
 
 	-m 		only create the meta file
 	-r <file>	use the given ROI file for parameters
 	-v		use state vectors instead of TLEs
+	-c		apply clock drift to image timing
 	-E <node>	create output file names using ESA node & orbit
 
 EXTERNAL ASSOCIATES:
@@ -374,7 +375,7 @@ main(int argc, char *argv[])
 //  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
 
   if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = -1000.0;
-  
+  else meta->sar->slant_shift = 0.0;
 
   meta->sar->slant_range_first_pixel = srf;
   meta->sar->wavelength = wavelength;
