@@ -177,10 +177,18 @@ void write_disfile(char *basefile,int node,int start_line,
   if (fpdis) {
     fprintf(fpdis, "LINE\tGAP\n");
 
-    int ii;
+    // Don't like this hard-coded 8000 here....
+    // It is the size of the ground range image
+    int ii, sf = 2*HALF_ESA_FRAME/8000;
+    int end_line = start_line + 2*HALF_ESA_FRAME;
+
     for (ii=0; ii<num_dis; ++ii) {
-      if (dis_line[ii] >= start_line && dis_line[ii] < start_line + dis_gap[ii]) {
-        fprintf(fpdis, "%d\t%d\n", dis_line[ii] - start_line, dis_gap[ii]);
+      int gap_start = dis_line[ii];
+      int gap_end = dis_line[ii] + dis_gap[ii];
+      if ((gap_start >= start_line && gap_start < end_line) ||
+          (gap_end >= start_line && gap_end < end_line))
+      {
+        fprintf(fpdis, "%d\t%d\n", (dis_line[ii] - start_line)/sf, dis_gap[ii]/sf);
       }
     }
     fclose(fpdis);
