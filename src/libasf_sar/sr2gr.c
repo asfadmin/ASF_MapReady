@@ -123,30 +123,16 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	meta_parameters *in_meta;
 	meta_parameters *out_meta;
 
-       printf("Entering sr2gr_pixsiz\n");
-       printf("\tinfile %s\n",infile);
-       printf("\toutfile %s\n",outfile);
-       printf("\tgrPixSize %f\n",grPixSize);
-
-
-
         create_name (infile_name, infile, ".img");
         create_name (outfile_name, outfile, ".img");
 
         create_name (inmeta_name, infile, ".meta");
         create_name (outmeta_name, outfile, ".meta");
 
-	printf("Creating sr2gr with pixsize %f\n",grPixSize);
-
 	in_meta  = meta_read(inmeta_name);
 	out_meta = meta_copy(in_meta);
 	in_nl = in_meta->general->line_count;
 	in_np = in_meta->general->sample_count;
-	
-	if (in_meta->sar->image_type != 'S')
-	{
-            asfPrintError("sr2gr only works with slant range images!\n");
-	}
 
       	oldX = in_meta->general->x_pixel_size * in_meta->sar->sample_increment;
 	oldY = in_meta->general->y_pixel_size * in_meta->sar->line_increment;
@@ -155,6 +141,18 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
            the y pixel size unchanged */
         if (grPixSize < 0)
             grPixSize = oldY;
+
+        printf("Entering sr2gr_pixsiz\n");
+        printf("\tinfile %s\n",infile);
+        printf("\toutfile %s\n",outfile);
+        printf("\tgrPixSize %f\n",grPixSize);
+
+	printf("Creating sr2gr with pixsize %f\n",grPixSize);
+
+	if (in_meta->sar->image_type != 'S')
+	{
+            asfPrintError("sr2gr only works with slant range images!\n");
+	}
 
 	/*Update metadata for new pixel size*/
 	out_meta->sar->time_shift  += ((in_meta->general->start_line)
@@ -184,7 +182,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	for (ii=MAX_IMG_SIZE-1; ii>0; ii--)
 		if ((int)ml2gr[ii] > in_nl)
 			out_nl = ii;
-	
+
 	out_meta->general->line_count   = out_nl;
         out_meta->general->line_scaling *= (double)in_nl/(double)out_nl;
         out_meta->general->sample_scaling = 1;
@@ -208,11 +206,10 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
           //   b = (v1*y2 - v2*y1)/(y2*y1^2 - y1*y2^2)
           // Then a:
           //   a = (v1 - b*y1*y1)/y1
-          double is1 = in_np/2; // Input sample 1 ( x1 in the above )
-          double is2 = in_np-1; // Input sample 2 ( x2 in the above )
-
-          double os1 = out_np/2;// Output sample 1 ( y1 in the above )
-          double os2 = out_np-1;// Output sample 2 ( y2 in the above
+          double is2 = in_np-1;         // Input sample 2  ( x2 in the above )
+          double os1 = out_np/2;        // Output sample 1 ( y1 in the above )
+          double is1 = sr2gr[(int)os1]; // Input sample 1  ( x1 in the above )
+          double os2 = out_np-1;        // Output sample 2 ( y2 in the above )
 
           double d1 = out_meta->sar->range_doppler_coefficients[1];
           double d2 = out_meta->sar->range_doppler_coefficients[2];
@@ -223,9 +220,19 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
           double b = (v1*os2 - v2*os1)/(os1*os1*os2 - os2*os2*os1);
           double a = (v1 - b*os1*os1)/os1;
 
-          // These should agree
-          //printf("%f %f\n", v1, v2);
-          //printf("%f %f\n", a*os1 + b*os1*os1, a*os2 + b*os2*os2);
+          // Debug code: print out the doppler across the image
+          //for (ii=0; ii<out_np; ii+=100) {
+
+            // ii: index in ground range, s: index in slant range 
+            //double s = sr2gr[ii];
+
+            // dop1: doppler in slant, dop2: doppler in ground (should agree)
+            //double dop1 = d1*s + d2*s*s;
+            //double dop2 = a*ii + b*ii*ii;
+
+            //printf("%5d -> %8.3f %8.3f   %5d -> %5d\n", ii, dop1, dop2, (int)s, ii);
+
+          //}
 
           out_meta->sar->range_doppler_coefficients[1] = a;
           out_meta->sar->range_doppler_coefficients[2] = b;
