@@ -22,7 +22,6 @@ MAPREADY_MODULES = \
 	src/libasf_geocode \
 	src/libasf_export \
 	src/libasf_ardop \
-	src/ardop \
 	src/libasf_terrcorr \
 	src/libasf_insar \
 	src/asf_import \
@@ -103,7 +102,6 @@ STP_MODULES = \
 	src/metadata \
 	src/asf_import \
 	src/asf_export \
-	src/ardop \
 	src/sgpsdp \
 	src/plan \
 	src/asf_view \
