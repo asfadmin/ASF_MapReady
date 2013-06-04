@@ -69,6 +69,7 @@ MAPREADY_MODULES = \
 	src/sample_plugin \
 	src/roi2img \
 	src/create_roi_in \
+	src/make_seasat_h5 \
 	@ASF_GUI@
 
 MAPREADY_SOURCE = \
