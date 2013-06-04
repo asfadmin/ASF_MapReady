@@ -19,7 +19,7 @@
 #define MAPREADY_VERSION 2.4
 
 // ASPS (Seasat processor)
-#define ASPS_VERSION_STRING "ASPS-v1.2"
+#define ASPS_VERSION_STRING "ASPS-v1.0"
 #define ASPS_VERSION 1.2
 
 // Convert To Vector
