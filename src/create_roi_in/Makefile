@@ -31,9 +31,12 @@ all: create_roi_in create_base_images reprocess_frame
 runtest.o: runtest.cpp
 	c++ -c runtest.cpp -Ilibsgp4
 	
-create_roi_in: $(OBJS)
+create_roi_in: $(OBJS) libsgp4.a
 	c++ $(CFLAGS) $(LFLAGS) -o create_roi_in $(OBJS) $(LIBS) $(LDFLAGS) $(INCLUDES)
 	mv create_roi_in $(BINDIR)
+
+libsgp4.a:
+	( cd libsgp4; make; cp libsgp4.a ..; )
 
 create_base_images: esa_nodes.o create_base_images.o
 	cc $(CFLAGS) $(LFLAGS) -o create_base_images esa_nodes.o create_base_images.o $(LIBS) $(LDFLAGS) $(INCLUDES)

@@ -28,9 +28,12 @@ all: roi2img
 runtest.o: runtest.cpp
 	c++ -c runtest.cpp -Ilibsgp4
 
-roi2img: $(OBJS)
+roi2img: libsgp4.a $(OBJS)
 	c++ $(CFLAGS) $(LFLAGS) -o roi2img $(OBJS) $(LIBS) $(LDFLAGS) $(INCLUDES)
 	mv roi2img$(BIN_POSTFIX) $(BINDIR)
+
+libsgp4.a:
+	( cd libsgp4; make; cp libsgp4.a ..; )
 
 convert_vectors: convert_vectors.o 
 	cc $(CFLAGS) $(LFLAGS) -o convert_vectors convert_vectors.o $(LIBS) $(LDFLAGS) $(INCLUDES)
