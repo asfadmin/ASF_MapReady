@@ -85,7 +85,7 @@ static void sr2gr_vec(meta_parameters *meta, float srinc, float newSize,
     ht = meta_get_sat_height(meta, 0, 0);
     re = meta_get_earth_radius(meta, 0, 0);
     sr = meta_get_slant(meta,0,0);
-    
+
     /* calculate ground range to first point */
     rg0 = re * acos((ht*ht+re*re-sr*sr) / (2*ht*re));
     
@@ -133,6 +133,8 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	out_meta = meta_copy(in_meta);
 	in_nl = in_meta->general->line_count;
 	in_np = in_meta->general->sample_count;
+        float ss = in_meta->sar->slant_shift;
+        in_meta->sar->slant_shift = out_meta->sar->slant_shift =  0;
 
       	oldX = in_meta->general->x_pixel_size * in_meta->sar->sample_increment;
 	oldY = in_meta->general->y_pixel_size * in_meta->sar->line_increment;
@@ -238,6 +240,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
           out_meta->sar->range_doppler_coefficients[2] = b;
         }
 
+        out_meta->sar->slant_shift = ss;
 	meta_write(out_meta,outmeta_name);
 	
 	fpi = fopenImage(infile_name,"rb");
