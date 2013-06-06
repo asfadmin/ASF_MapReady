@@ -257,6 +257,7 @@ CREATE_THUMBS_SHAREDIR = $(S_SHAREDIR)/create_thumbs
 DATA_QC_SHAREDIR = $(S_SHAREDIR)/data_qc
 
 VERSION_MAPREADY = $(shell awk -F '"' '$$1 ~ /define MAPREADY_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_ASPS = $(shell awk -F '"' '$$1 ~ /define ASPS_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_STP = $(shell awk -F '"' '$$1 ~ /define STP_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_AP = $(shell awk -F '"' '$$1 ~ /define AP_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_REQ = $(shell awk -F '"' '$$1 ~ /define REQ_VERSION_STRING/ {print $$2}' include/asf_version.h)
@@ -301,7 +302,7 @@ asps: mkdirs_for_build external_libs
 	cp doc/arcgis_mask.pdf $(S_DOCDIR)
 	cp doc/dem_manual.pdf $(S_DOCDIR)
 	cp LICENSE.txt $(MAPREADY_SHAREDIR)
-	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
+	echo $(VERSION_ASPS) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX ASF ASPS Package Compiled! XXXXXXXXXXX"

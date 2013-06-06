@@ -28,7 +28,7 @@ echo Executing: %%prep
 echo Executing: %%build
 cd $RPM_BUILD_DIR/asf_tools
 ./configure --prefix=$RPM_BUILD_ROOT/usr/local
-make
+DEBUG_BUILD=1 make
 
 %install
 echo Executing: %%install
