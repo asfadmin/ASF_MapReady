@@ -1295,11 +1295,11 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   int nl = info->numberOfRows;
   int ns = info->numberOfColumns;
   long pixel_count = nl*ns;
-  double *value = (double *) MALLOC(sizeof(double)*MAX_PTS);
-  double *l = (double *) MALLOC(sizeof(double)*MAX_PTS);
-  double *s = (double *) MALLOC(sizeof(double)*MAX_PTS);
-  double line, sample, lat, lon, first_value;
-  float *lons = (float *) MALLOC(sizeof(float)*pixel_count);
+  double *value = (double *) CALLOC(MAX_PTS, sizeof(double));
+  double *l = (double *) CALLOC(MAX_PTS, sizeof(double));
+  double *s = (double *) CALLOC(MAX_PTS, sizeof(double));
+  double line, sample, lat=0, lon=0, first_value;
+  float *lons = (float *) CALLOC(pixel_count, sizeof(float));
   asfPrintStatus("Generating band 'longitude' ...\n");
   meta_get_latLon(md, 0, 0, 0.0, &lat, &lon);
   if (lon < 0.0)
