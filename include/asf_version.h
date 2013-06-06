@@ -19,7 +19,7 @@
 #define MAPREADY_VERSION 2.4
 
 // ASPS (Seasat processor)
-#define ASPS_VERSION_STRING "ASPS-v1.0"
+#define ASPS_VERSION_STRING "1.0"
 #define ASPS_VERSION 1.0
 
 // Convert To Vector
@@ -94,7 +94,7 @@
 #define TOOL_SUITE_VERSION              DATA_QC_VERSION
 
 #elif defined (_PKG_ASPS)
-#define TOOL_SUITE_NAME                 "MapReady"
+#define TOOL_SUITE_NAME                 "ASPS"
 #define TOOL_SUITE_SHARE_DIR            "mapready"
 #define TOOL_SUITE_VERSION_STRING       ASPS_VERSION_STRING
 #define TOOL_SUITE_VERSION              ASPS_VERSION
