@@ -64,8 +64,8 @@ void usage(char *name)
 	 "   %s converts an SEASAT ASF internal file to an HDF5 file.\n",
 	 name);
   printf("\n"
-	 "Version %.2f, ASF SAR Tools\n"
-	 "\n",VERSION);
+	 "%s %s\n"
+	 "\n", TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
   exit(EXIT_FAILURE);
 }
 

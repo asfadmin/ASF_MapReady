@@ -2386,8 +2386,8 @@ H5P_DEFAULT);
       strcpy(level4, "/metadata/processing/doppler/dopplerCentroid/dopplerEstimate/basebandDoppler");
       h5_level4 = H5Gcreate(h5_file, level4, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
-      double_array = (double *) MALLOC(sizeof(double)*degree);
-      for (kk=0; kk<=pro->doppler[ii].polynomialDegree; kk++)
+      double_array = (double *) CALLOC(degree+1, sizeof(double));
+      for (kk=0; kk<=degree; kk++)
 	double_array[kk] = pro->doppler[ii].coefficient[kk];
       h5_value_double_array(h5_file, level4, "coefficient", double_array, 
 			    degree+1, "Doppler coefficient", NULL);
