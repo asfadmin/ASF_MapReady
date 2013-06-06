@@ -20,7 +20,7 @@
 
 // ASPS (Seasat processor)
 #define ASPS_VERSION_STRING "ASPS-v1.0"
-#define ASPS_VERSION 1.2
+#define ASPS_VERSION 1.0
 
 // Convert To Vector
 #define C2V_VERSION_STRING "2.3.0-dev"
