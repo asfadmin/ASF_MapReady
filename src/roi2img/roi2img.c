@@ -317,7 +317,7 @@ main(int argc, char *argv[])
   strcpy(meta->general->sensor,"SEASAT");
   strcpy(meta->general->sensor_name,"SAR");
   strcpy(meta->general->mode,"STD");
-  strcpy(meta->general->processor,ASPS_VERSION_STRING);
+  strcpy(meta->general->processor,"ASPS-v" ASPS_VERSION_STRING);
   meta->general->data_type = REAL32;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
   meta->general->radiometry = r_AMP;
