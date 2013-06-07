@@ -101,11 +101,9 @@ int main(int argc, char **argv)
   }
   
   asfSplashScreen(argc, argv);
-  
-  char *inFile = (char *) MALLOC(sizeof(char)*(strlen(argv[currArg])+1));
-  strcpy(inFile, argv[currArg]);
-  char *outFile = (char *) MALLOC(sizeof(char)*(strlen(argv[currArg+1])+1));
-  strcpy(outFile, argv[currArg+1]);
+
+  char *inFile = STRDUP(argv[currArg]);
+  char *outFile = STRDUP(argv[currArg+1]);  
 
   // Generating XML file
   meta_parameters *meta = meta_read(inFile);
@@ -122,8 +120,8 @@ int main(int argc, char **argv)
   meta_free(meta);
 
   // Generate HDF5 file
-  append_ext_if_needed(inFile, ".img", NULL);
-  export_hdf(xmlFile, inFile, outFile, NULL, &nouts, &outs);
+  char *inImg = appendExt(inFile, ".img");
+  export_hdf(xmlFile, inImg, outFile, NULL, &nouts, &outs);
   FREE(xmlFile);
 
   // Generate KML file
@@ -148,6 +146,7 @@ int main(int argc, char **argv)
     FREE(gapFile);
   FREE(metaFile);
   FREE(kmlFile);
+  FREE(inImg);
 
   return 0;
 }
