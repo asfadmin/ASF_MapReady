@@ -60,7 +60,7 @@ void terrcorr_options_changed()
       GtkWidget *interpolate_checkbutton;
       GtkWidget *mask_checkbutton, *mask_entry;
       GtkWidget *radiometric_checkbutton;
-      GtkWidget *save_incid_angles_checkbutton;
+      //GtkWidget *save_incid_angles_checkbutton;
       GtkWidget *layover_mask_checkbutton;
       GtkWidget *save_dem_checkbutton;
       GtkWidget *tc_matching_checkbutton, *hbox_tc_matching;
@@ -68,7 +68,7 @@ void terrcorr_options_changed()
       gboolean tc_pixel_size_is_checked;
       gboolean tc_matching_is_checked;
       gboolean terrcorr_is_checked;
-      gboolean mask_is_checked, mask_file_is_checked, rad_corr_is_checked;
+      gboolean mask_is_checked, mask_file_is_checked; // rad_corr_is_checked;
 
       gtk_widget_set_sensitive(hbox_terrcorr_items, TRUE);
 
@@ -113,13 +113,13 @@ void terrcorr_options_changed()
 
       interpolate_checkbutton = get_widget_checked("interpolate_checkbutton");
       radiometric_checkbutton = get_widget_checked("radiometric_checkbutton");
-      save_incid_angles_checkbutton = get_widget_checked("save_incid_angles_checkbutton");
+      //save_incid_angles_checkbutton = get_widget_checked("save_incid_angles_checkbutton");
       save_dem_checkbutton = get_widget_checked("save_dem_checkbutton");
       layover_mask_checkbutton =
           get_widget_checked("layover_mask_checkbutton");
 
-      rad_corr_is_checked = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiometric_checkbutton));
-      gtk_widget_set_sensitive(save_incid_angles_checkbutton, rad_corr_is_checked);
+      //rad_corr_is_checked = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiometric_checkbutton));
+      //gtk_widget_set_sensitive(save_incid_angles_checkbutton, rad_corr_is_checked);
 
       gtk_widget_set_sensitive(tc_pixel_size_checkbutton, terrcorr_is_checked);
       gtk_widget_set_sensitive(tc_matching_checkbutton, terrcorr_is_checked);
