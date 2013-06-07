@@ -953,7 +953,7 @@ void roi_put3_double(FILE *roi_file,double val1, double val2, double val3,char *
 void roi_put4_double(FILE *roi_file,double val1, double val2, double val3, double val4, char *comment)
 {
   char param[64];
-  sprintf(param,"%lf %lf %lf %lf",val1,val2,val3);
+  sprintf(param,"%lf %lf %lf %lf",val1,val2,val3,val4);
   roi_put_string(roi_file,param,comment);
 }
 
