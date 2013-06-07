@@ -918,7 +918,7 @@ void roi_put_string(FILE *roi_file,char *value,char *comment)
       asfPrintError("roi_put_string: "
                     "Insufficient storage space is available\n");
     else
-      asfPrintError("fprint error: %d\n", strerror(errno));
+      asfPrintError("fprint error: %s\n", strerror(errno));
   }
 }
 
