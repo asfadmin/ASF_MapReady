@@ -88,6 +88,7 @@ double		earth_rad;		// Earth Radius (m) - not actual earth radius -
 					//    radius of a best fit local sphere
 double		sc_vel;			// Spacecraft body fixed velocity - IS THIS SWATH VELOCITY???
 double 		sc_height;		// Spacecraft height - from surface of the earth
+int		station_code;           // downlinking station (5,6,7,9,10)
 
 /* Global variables filled in read_hdrfile and used in main */
 double   	start_sec;		// start time of this segment
@@ -631,6 +632,8 @@ int read_hdrfile(char *infile)
     val = get_values(fp, hdr);
     if (val!=20) {printf("ERROR: unable to read to specified start line in header file\n"); exit(1);}
   }
+
+  station_code = hdr->station_code;
 
   start_year = 1970 + hdr->lsd_year;
   start_date = hdr->day_of_year;
