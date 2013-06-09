@@ -336,7 +336,25 @@ main(int argc, char *argv[])
   meta->general->line_scaling = 1;
   meta->general->sample_scaling = 1;
   meta->general->x_pixel_size = (C / (2.0 * fs)) * LA;
-  
+ 
+  switch (station_code) {
+    case 5:
+      strcpy(meta->general->receiving_station, "S1");
+      break;
+    case 6:
+      strcpy(meta->general->receiving_station, "S2");
+      break;
+    case 7:
+      strcpy(meta->general->receiving_station, "S3");
+      break;
+    case 9:
+      strcpy(meta->general->receiving_station, "S4");
+      break;
+    case 10:
+      strcpy(meta->general->receiving_station, "S5");
+      break;
+  }
+ 
   double orbit_vel = sqrt(9.81*RE_nadir*RE_nadir / Rsc);
   double swath_vel = orbit_vel * RE_nadir / Rsc;
   
