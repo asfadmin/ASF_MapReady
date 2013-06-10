@@ -38,26 +38,16 @@ const char *version_string(const char *program_name)
 {
   static char out_buf[1024];
 
-  if (strlen(SVN_REV)>0) {
-    sprintf(out_buf, "%s (part of %s %s)",
-            SVN_REV, TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
-  } else {
-    sprintf(out_buf, "%s %s",
-            TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
-  }
+  sprintf(out_buf, "%s %s",
+          TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
 
   return out_buf;
 }
 
 void print_version(const char *program_name)
 {
-  if (strlen(SVN_REV)>0) {
-    printf("%s, revision %s (part of %s %s)\n",
-           program_name, SVN_REV, TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
-  } else {
-    printf("%s, part of %s %s (unknown build)\n", program_name,
-           TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
-  }
+  printf("%s, part of %s %s\n", program_name,
+         TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
 
   print_copyright();
   exit (EXIT_SUCCESS);

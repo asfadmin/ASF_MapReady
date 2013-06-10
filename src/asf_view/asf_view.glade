@@ -5794,8 +5794,8 @@
  n: Toggle north arrow
 
  PageUp/Down: Zoom in/out
- Home: Zoom to 1:1
- End: Fit Image To Window
+ Home/=: Zoom to 1:1
+ End/0: Fit Image To Window
 
  Subset Image: Define polygon, click
    Save Subset button</property>

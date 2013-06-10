@@ -22,7 +22,6 @@ MAPREADY_MODULES = \
 	src/libasf_geocode \
 	src/libasf_export \
 	src/libasf_ardop \
-	src/ardop \
 	src/libasf_terrcorr \
 	src/libasf_insar \
 	src/asf_import \
@@ -67,6 +66,9 @@ MAPREADY_MODULES = \
 	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \
+	src/roi2img \
+	src/create_roi_in \
+	src/make_seasat_h5 \
 	@ASF_GUI@
 
 MAPREADY_SOURCE = \
@@ -100,7 +102,6 @@ STP_MODULES = \
 	src/metadata \
 	src/asf_import \
 	src/asf_export \
-	src/ardop \
 	src/sgpsdp \
 	src/plan \
 	src/asf_view \
@@ -256,6 +257,7 @@ CREATE_THUMBS_SHAREDIR = $(S_SHAREDIR)/create_thumbs
 DATA_QC_SHAREDIR = $(S_SHAREDIR)/data_qc
 
 VERSION_MAPREADY = $(shell awk -F '"' '$$1 ~ /define MAPREADY_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_ASPS = $(shell awk -F '"' '$$1 ~ /define ASPS_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_STP = $(shell awk -F '"' '$$1 ~ /define STP_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_AP = $(shell awk -F '"' '$$1 ~ /define AP_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_REQ = $(shell awk -F '"' '$$1 ~ /define REQ_VERSION_STRING/ {print $$2}' include/asf_version.h)
@@ -268,27 +270,7 @@ VERSION_FARADAY = $(shell awk -F '"' '$$1 ~ /define FARADAY_STRING/ {print $$2}'
 SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 
 # Build the MapReady package by default
-default: mapready
-
-# MapReady Package - Jenkins version
-mapready_jenkins: mkdirs_for_build external_libs
-	mkdir -p $(MAPREADY_SHAREDIR)
-	-cp -R external/share/* $(MAPREADY_SHAREDIR)
-	-chmod -R ug+w share
-	echo BUILD_PKG = -D_PKG_MAPREADY > make_support/build_pkg.mk
-	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
-	cp doc/mapready_manual.pdf $(S_DOCDIR)
-	cp doc/mapready-version_history.txt $(S_DOCDIR)
-	cp doc/arcgis_mask.pdf $(S_DOCDIR)
-	cp doc/dem_manual.pdf $(S_DOCDIR)
-	cp LICENSE.txt $(MAPREADY_SHAREDIR)
-	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
-	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
-# Remove all the .svn directories from the share dir
-	rm -rf `find $(S_SHAREDIR) -name .svn`
-	@ echo ""
-	@ echo "  XXXXXXXXXXXX ASF MapReady Package Compiled! XXXXXXXXXXX"
-	@ echo ""
+default: asps
 
 # MapReady Package
 mapready: mkdirs_for_build external_libs
@@ -303,10 +285,27 @@ mapready: mkdirs_for_build external_libs
 	cp doc/dem_manual.pdf $(S_DOCDIR)
 	cp LICENSE.txt $(MAPREADY_SHAREDIR)
 	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
-	$(SET_SVN_REV_H)
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX ASF MapReady Package Compiled! XXXXXXXXXXX"
+	@ echo ""
+
+# MapReady Package
+asps: mkdirs_for_build external_libs
+	mkdir -p $(MAPREADY_SHAREDIR)
+	-cp -R external/share/* $(MAPREADY_SHAREDIR)
+	-chmod -R ug+w share
+	echo BUILD_PKG = -D_PKG_ASPS > make_support/build_pkg.mk
+	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
+	cp doc/mapready_manual.pdf $(S_DOCDIR)
+	cp doc/mapready-version_history.txt $(S_DOCDIR)
+	cp doc/arcgis_mask.pdf $(S_DOCDIR)
+	cp doc/dem_manual.pdf $(S_DOCDIR)
+	cp LICENSE.txt $(MAPREADY_SHAREDIR)
+	echo $(VERSION_ASPS) > $(MAPREADY_SHAREDIR)/mapready_version.txt
+	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX ASF ASPS Package Compiled! XXXXXXXXXXX"
 	@ echo ""
 
 mapready_source:

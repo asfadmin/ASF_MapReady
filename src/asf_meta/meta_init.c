@@ -40,6 +40,7 @@ meta_general *meta_general_init(void)
   strcpy(general->sensor, MAGIC_UNSET_STRING);
   strcpy(general->sensor_name, MAGIC_UNSET_STRING);
   strcpy(general->mode, MAGIC_UNSET_STRING);
+  strcpy(general->receiving_station, MAGIC_UNSET_STRING);
   strcpy(general->processor, MAGIC_UNSET_STRING);
   general->data_type = MAGIC_UNSET_INT;
   general->image_data_type = MAGIC_UNSET_INT;

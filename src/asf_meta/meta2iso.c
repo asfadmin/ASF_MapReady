@@ -79,10 +79,10 @@ iso_meta *meta2iso(meta_parameters *meta)
     numAnnotations = 1;
     numLayers = 1;
     numAuxRasterFiles = 0;
-    polLayer = (iso_polLayer_t *) MALLOC(sizeof(iso_polLayer_t));
+    polLayer = (iso_polLayer_t *) CALLOC(1, sizeof(iso_polLayer_t));
     polLayer[0] = HH_POL;
-    beamID = (char **) MALLOC(sizeof(char *));
-    beamID[0] = (char *) MALLOC(sizeof(char)*20);
+    beamID = (char **) CALLOC(1, sizeof(char *));
+    beamID[0] = (char *) CALLOC(20, sizeof(char));
     strcpy(beamID[0], meta->general->sensor_name);
   }
 
@@ -106,7 +106,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   strncpy(header->generationSystem, meta->general->processor, 20);
   utcDateTime(&header->generationTime);
   // header->referenceDocument: needs to be generated
-  header->revision = (char *) MALLOC(sizeof(char)*20);
+  header->revision = (char *) CALLOC(20, sizeof(char));
   strcpy(header->revision, "OPERATIONAL");
 
   // Product Components
@@ -114,7 +114,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   comps->numLayers = numLayers;
   comps->numAuxRasterFiles = numAuxRasterFiles;
   comps->annotation = 
-    (iso_filesType *) MALLOC(sizeof(iso_filesType)*numAnnotations);
+    (iso_filesType *) CALLOC(numAnnotations, sizeof(iso_filesType));
   for (ii=0; ii<numAnnotations; ii++) {
     comps->annotation[ii].type = MAIN_TYPE;
     strcpy(comps->annotation[ii].file.host, ".");
@@ -124,7 +124,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     // only one HDF5 file that contains everything
-    comps->imageData = (iso_filesPol *) MALLOC(sizeof(iso_filesPol));
+    comps->imageData = (iso_filesPol *) CALLOC(1,sizeof(iso_filesPol));
     comps->imageData[0].polLayer = HH_POL;
     strcpy(comps->imageData[0].beamID, meta->general->sensor_name);
     strcpy(comps->imageData[0].file.host, ".");
@@ -133,7 +133,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     // comps->imageData[0].file.size: calculated after being generated
   }
   comps->quicklooks = 
-    (iso_filesPol *) MALLOC(sizeof(iso_filesPol)*numLayers);
+    (iso_filesPol *) CALLOC(numLayers, sizeof(iso_filesPol));
   for (ii=0; ii<numLayers; ii++) {
     comps->quicklooks[ii].polLayer = polLayer[ii];
     strcpy(comps->quicklooks[ii].beamID, beamID[ii]);
@@ -145,11 +145,11 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
   strcpy(comps->browseImage.host, ".");
   strcpy(comps->browseImage.path, ".");
-  sprintf(comps->browseImage.name, "%s_browse.jpg", meta->general->basename);
+  sprintf(comps->browseImage.name, "%s.jpg", meta->general->basename);
   // comps->browseImage.size: calculated after being generated
   strcpy(comps->mapPlot.host, ".");
   strcpy(comps->mapPlot.path, ".");
-  sprintf(comps->mapPlot.name, "%s_plot.kml", meta->general->basename);
+  sprintf(comps->mapPlot.name, "%s.kml", meta->general->basename);
   // comps->mapPlat.size: calculated after being generated
 
   // Product Info
@@ -190,7 +190,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     info->lookDirection = LEFT_LOOK;
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     info->polarizationMode = SINGLE_POL;
-    info->polLayer = (iso_polLayer_t *) MALLOC(sizeof(iso_polLayer_t));
+    info->polLayer = (iso_polLayer_t *) CALLOC(1,sizeof(iso_polLayer_t));
     info->polLayer[0] = HH_POL;
     strcpy(info->elevationBeamConfiguration, meta->general->mode);
   }
@@ -273,8 +273,8 @@ iso_meta *meta2iso(meta_parameters *meta)
   info->rangeTimeLastPixel = rangeTime(meta, sample_count);
   info->sceneAzimuthExtent = line_count * meta->general->y_pixel_size;
   info->sceneRangeExtent = sample_count * meta->general->x_pixel_size;
-  int *x = (int *) MALLOC(sizeof(int)*4);
-  int *y = (int *) MALLOC(sizeof(int)*4);
+  int *x = (int *) CALLOC(4, sizeof(int));
+  int *y = (int *) CALLOC(4, sizeof(int));
   double lat, lon;
   y[0] = meta->general->line_count / 2;
   info->sceneCenterCoord.refRow = y[0];
@@ -454,7 +454,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   setup->L0SARGenerationTimeUTC.second = MAGIC_UNSET_DOUBLE;
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     setup->numProcessingSteps = 1;
-    setup->processingStep = (iso_procStep *) MALLOC(sizeof(iso_procStep));
+    setup->processingStep = (iso_procStep *) CALLOC(1,sizeof(iso_procStep));
     strcpy(setup->processingStep[0].softwareID, "prep_raw");
     strcpy(setup->processingStep[0].softwareVersion, "1.0");
     strcpy(setup->processingStep[0].description, "pre-processing of raw data");
@@ -473,7 +473,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   strcpy(proc->dopplerBasebandEstimationMethod, "azimuth cross correlation");
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)
     proc->dopplerCentroidCoordinateType = RAW_COORD;
-  proc->doppler = (iso_dopplerCentroid *) MALLOC(sizeof(iso_dopplerCentroid));
+  proc->doppler = (iso_dopplerCentroid *) CALLOC(1,sizeof(iso_dopplerCentroid));
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     proc->doppler[0].polLayer = HH_POL;
     proc->doppler[0].numberOfBlocks = MAGIC_UNSET_INT;
@@ -488,14 +488,14 @@ iso_meta *meta2iso(meta_parameters *meta)
     proc->doppler[0].dopplerAtMidRange = 
       meta_get_dop(meta, (double) line_count/2, (double) sample_count/2);
     proc->doppler[0].polynomialDegree = 2;
-    proc->doppler[0].coefficient = (double *) MALLOC(sizeof(double)*3);
+    proc->doppler[0].coefficient = (double *) CALLOC(3, sizeof(double));
     proc->doppler[0].coefficient[0] = meta->sar->range_doppler_coefficients[0];
     proc->doppler[0].coefficient[1] = meta->sar->range_doppler_coefficients[1];
     proc->doppler[0].coefficient[2] = meta->sar->range_doppler_coefficients[2];
   }
   // FIXME: ScanSAR will need processing parameters per beam
   proc->processingParameter = 
-    (iso_processingParameter *) MALLOC(sizeof(iso_processingParameter));
+    (iso_processingParameter *) CALLOC(1, sizeof(iso_processingParameter));
   proc->processingParameter[0].processingInfoCoordinateType = RAW_COORD;
   proc->processingParameter[0].rangeLooks = (float) meta->sar->range_look_count;
   proc->processingParameter[0].azimuthLooks = 
@@ -529,7 +529,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)
     inst->instrumentInfoCoordinateType = RAW_COORD;
   inst->centerFrequency = SPD_LIGHT / meta->sar->wavelength;
-  inst->settings = (iso_settings *) MALLOC(sizeof(iso_settings)*numLayers);
+  inst->settings = (iso_settings *) CALLOC(numLayers, sizeof(iso_settings));
   for (ii=0; ii<numLayers; ii++) {
     iso_settings set;
     if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
@@ -545,7 +545,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     int numRec = set.numberOfSettingRecords;
     numRec = 1;
     set.settingRecord = 
-      (iso_settingRecord *) MALLOC(sizeof(iso_settingRecord)*numRec);
+      (iso_settingRecord *) CALLOC(numRec, sizeof(iso_settingRecord));
     for (kk=0; kk<numRec; kk++) {
       iso_settingRecord rec;
       rec.startTimeUTC.year = MAGIC_UNSET_INT;
@@ -577,7 +577,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   platform->stateVectorTimeSpacing = meta->state_vectors->vecs[1].time;
   platform->numStateVectors = meta->state_vectors->vector_count;
   platform->stateVec = 
-    (iso_stateVec *) MALLOC(sizeof(iso_stateVec)*platform->numStateVectors);
+    (iso_stateVec *) CALLOC(platform->numStateVectors, sizeof(iso_stateVec));
   hms_time hms;
   ymd_date ymd;
   dateTimeStamp(meta, 0, &platform->firstStateTimeUTC); 
@@ -609,15 +609,16 @@ iso_meta *meta2iso(meta_parameters *meta)
 
   // Product Quality
   quality->rawDataQuality = 
-    (iso_rawDataQuality *) MALLOC(sizeof(iso_rawDataQuality)*numLayers);  
+    (iso_rawDataQuality *) CALLOC(numLayers, sizeof(iso_rawDataQuality));  
   for (ii=0; ii<numLayers; ii++) {
     quality->rawDataQuality[ii].polLayer = polLayer[ii];
     strcpy(quality->rawDataQuality[0].beamID, beamID[ii]);
+    quality->rawDataQuality[ii].numGaps = 0;
 
     /* Information is now passed as gap file into iso_meta_write
     // need to get this information from somewhere else
     quality->rawDataQuality[ii].numGaps = 1;
-    quality->rawDataQuality[ii].gap = (iso_gap *) MALLOC(sizeof(iso_gap));
+    quality->rawDataQuality[ii].gap = (iso_gap *) CALLOC(1, sizeof(iso_gap));
     quality->rawDataQuality[ii].gap[0].start = 0;
     quality->rawDataQuality[ii].gap[0].length = MAGIC_UNSET_INT;
     quality->rawDataQuality[ii].gap[0].fill = RANDOM_FILL;
@@ -631,7 +632,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   quality->dopplerOutsideLimitsFlag = FALSE;
   quality->geolocationQualityLowFlag = FALSE;
   quality->imageDataQuality = 
-    (iso_imageDataQuality *) MALLOC(sizeof(iso_imageDataQuality)*numLayers);  
+    (iso_imageDataQuality *) CALLOC(numLayers, sizeof(iso_imageDataQuality));  
   for (ii=0; ii<numLayers; ii++) {
     quality->imageDataQuality[ii].polLayer = polLayer[ii];
     strcpy(quality->imageDataQuality[0].beamID, beamID[ii]);
@@ -660,7 +661,7 @@ iso_meta *meta2iso(meta_parameters *meta)
 
 static char *polLayer2str(iso_polLayer_t pol)
 {
-  char *str = (char *) MALLOC(sizeof(char)*20);
+  char *str = (char *) CALLOC(20, sizeof(char));
   
   if (pol == HH_POL)
     strcpy(str, "HH");

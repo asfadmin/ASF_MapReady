@@ -284,6 +284,25 @@ long xml_get_long_attribute(xmlDoc *doc, char *format, ...)
     return MAGIC_UNSET_INT;
 }
 
+/* xmlChildElementCount not available in libxml2 2.6 */
+/* Returns the number of children of node */
+static long
+my_xmlChildElementCount(xmlNodePtr node)
+{
+    long ret = 0;
+    xmlNodePtr cur = NULL;
+
+    if (!node || node->type != XML_ELEMENT_NODE)
+        return 0;
+    cur = node->children;
+    while (cur) {
+        if (cur->type == XML_ELEMENT_NODE)
+            ret++;
+        cur = cur->next;
+    }
+    return ret;
+}
+
 int xml_get_children_count(xmlDoc *doc, char *format, ...)
 {
   va_list ap;
@@ -330,7 +349,7 @@ int xml_get_children_count(xmlDoc *doc, char *format, ...)
 
   if (found) {
     assert(cur != NULL);
-    count = xmlChildElementCount(cur);
+    count = my_xmlChildElementCount(cur);
   }
 
   free_char_array(&arr, n);

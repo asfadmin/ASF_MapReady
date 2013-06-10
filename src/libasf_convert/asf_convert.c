@@ -1626,13 +1626,18 @@ static int check_config(const char *configFileName, convert_config *cfg)
 	cfg->geocoding->pixel = 5.0;
       else if (isCEOS(cfg->general->in_name, &error)) {
 	meta_parameters *meta = meta_read(cfg->general->in_name);
-	// Check for ScanSAR data: RSAT-1 - 100 m
+	// Check for ScanSAR data:
+        //    RSAT-1    - 100 m
+        //    Palsar WB - 100 m 
 	if (strcmp_case(meta->general->sensor, "RSAT-1") == 0 &&
 	    (strcmp_case(meta->general->mode, "SNA") == 0 ||
 	     strcmp_case(meta->general->mode, "SNB") == 0 ||
 	     strcmp_case(meta->general->mode, "SWA") == 0 ||
-	     strcmp_case(meta->general->mode, "SWB") == 0))
+	     strcmp_case(meta->general->mode, "SWB") == 0)) 
 	  cfg->geocoding->pixel = 100.0;
+        else if (strcmp_case(meta->general->sensor, "ALOS") == 0 &&
+                 strncmp_case(meta->general->mode, "WB", 2) == 0)
+          cfg->geocoding->pixel = 100.0;
 	// Anything else - 12.5 m
 	else
 	  cfg->geocoding->pixel = 12.5;

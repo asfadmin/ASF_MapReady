@@ -4,7 +4,7 @@
 iso_generalHeader *iso_generalHeader_init(void)
 {
   iso_generalHeader *header = 
-    (iso_generalHeader *) MALLOC(sizeof(iso_generalHeader));
+    (iso_generalHeader *) CALLOC(1, sizeof(iso_generalHeader));
   
   strcpy(header->itemName, MAGIC_UNSET_STRING);
   strcpy(header->mission, MAGIC_UNSET_STRING);
@@ -27,7 +27,7 @@ iso_generalHeader *iso_generalHeader_init(void)
 iso_productComponents *iso_productComponents_init(void)
 {
   iso_productComponents *comps = 
-    (iso_productComponents *) MALLOC(sizeof(iso_productComponents));
+    (iso_productComponents *) CALLOC(1, sizeof(iso_productComponents));
 
   comps->annotation = NULL;
   comps->imageData = NULL;
@@ -53,7 +53,7 @@ iso_productInfo *iso_productInfo_init(void)
 {
   int ii;
 
-  iso_productInfo *info = (iso_productInfo *) MALLOC(sizeof(iso_productInfo));
+  iso_productInfo *info = (iso_productInfo *) CALLOC(1, sizeof(iso_productInfo));
 
   // generationInfo
   strcpy(info->logicalProductID, MAGIC_UNSET_STRING);
@@ -200,7 +200,7 @@ iso_productInfo *iso_productInfo_init(void)
 iso_productSpecific *iso_productSpecific_init(void)
 {
   iso_productSpecific *spec = 
-    (iso_productSpecific *) MALLOC(sizeof(iso_productSpecific));
+    (iso_productSpecific *) CALLOC(1, sizeof(iso_productSpecific));
 
   spec->commonPRF = MAGIC_UNSET_DOUBLE;
   spec->commonRSF = MAGIC_UNSET_DOUBLE;
@@ -289,7 +289,7 @@ iso_productSpecific *iso_productSpecific_init(void)
 
 iso_setup *iso_setup_init(void)
 {
-  iso_setup *setup = (iso_setup *) MALLOC(sizeof(iso_setup));
+  iso_setup *setup = (iso_setup *) CALLOC(1, sizeof(iso_setup));
 
   strcpy(setup->orderType, MAGIC_UNSET_STRING);
   strcpy(setup->processingPriority, MAGIC_UNSET_STRING);
@@ -334,7 +334,7 @@ iso_setup *iso_setup_init(void)
 
 iso_processing *iso_processing_init(void)
 {
-  iso_processing *proc = (iso_processing *) MALLOC(sizeof(iso_processing));
+  iso_processing *proc = (iso_processing *) CALLOC(1, sizeof(iso_processing));
 
   strcpy(proc->dopplerBasebandEstimationMethod, MAGIC_UNSET_STRING);
   proc->dopplerCentroidCoordinateType = UNDEF_COORD;
@@ -357,7 +357,7 @@ iso_processing *iso_processing_init(void)
 
 iso_instrument *iso_instrument_init(void) 
 {
-  iso_instrument *inst = (iso_instrument *) MALLOC(sizeof(iso_instrument));
+  iso_instrument *inst = (iso_instrument *) CALLOC(1, sizeof(iso_instrument));
 
   inst->instrumentInfoCoordinateType = UNDEF_COORD;
   inst->centerFrequency = MAGIC_UNSET_DOUBLE;
@@ -371,7 +371,7 @@ iso_calibration *iso_calibration_init(void);
 
 iso_platform *iso_platform_init(void)
 {
-  iso_platform *platform = (iso_platform *) MALLOC(sizeof(iso_platform));
+  iso_platform *platform = (iso_platform *) CALLOC(1, sizeof(iso_platform));
 
   platform->sensor = UNDEF_ORBIT_SENSOR;
   platform->accuracy = UNDEF_ORBIT_ACC;
@@ -398,7 +398,7 @@ iso_platform *iso_platform_init(void)
 iso_productQuality *iso_productQuality_init(void)
 {
   iso_productQuality *quality = 
-    (iso_productQuality *) MALLOC(sizeof(iso_productQuality));
+    (iso_productQuality *) CALLOC(1, sizeof(iso_productQuality));
 
   quality->rawDataQuality = NULL;
   quality->dopplerAmbiguityNotZeroFlag = FALSE;
@@ -419,7 +419,7 @@ iso_productQuality *iso_productQuality_init(void)
 
 iso_meta *iso_meta_init(void)
 {
-  iso_meta *iso = (iso_meta *) MALLOC(sizeof(iso_meta));
+  iso_meta *iso = (iso_meta *) CALLOC(1, sizeof(iso_meta));
   
   iso->generalHeader     = iso_generalHeader_init();
   iso->productComponents = iso_productComponents_init();
