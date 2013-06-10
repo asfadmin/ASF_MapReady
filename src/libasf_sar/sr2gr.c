@@ -15,6 +15,8 @@ DESCRIPTION:
 #include "asf_sar.h"
 #include "asf_raster.h"
 
+#include <gsl/gsl_multifit.h>
+
 #define FUDGE_FACTOR 2
 
 /*Create vector for multilooking.*/
@@ -102,6 +104,116 @@ static void sr2gr_vec(meta_parameters *meta, float srinc, float newSize,
 int sr2gr(const char *infile, const char *outfile)
 {
     return sr2gr_pixsiz(infile, outfile, -1);
+}
+
+static void update_doppler(int in_np, int out_np, float *sr2gr, meta_parameters *meta)
+{
+          // Update the doppler
+          // In going from slant to ground, and potentially changing the width,
+          // we will likely change the shape of the doppler polynomial.  So, solve
+          // for the coefficients of the new polynomial.  Ignore the constant term
+          //   v1 = d1*x1 + d2*x1*x1   <-- d1,d2 doppler coefs
+          //   v2 = d1*x2 + d2*x2*x2   <-- x1,x2 are image center and right
+          // New poly:
+          //   v1 = a*y1 + b*y1*y1     <-- a,b new doppler coefs
+          //   v2 = a*y2 + b*y2*y2     <-- y1,y2 are image center and right in new geom
+          // Solving for b:
+          //   b = (v1*y2 - v2*y1)/(y2*y1^2 - y1*y2^2)
+          // Then a:
+          //   a = (v1 - b*y1*y1)/y1
+          double is2 = in_np-1;         // Input sample 2  ( x2 in the above )
+          double os1 = out_np/2;        // Output sample 1 ( y1 in the above )
+          double is1 = sr2gr[(int)os1]; // Input sample 1  ( x1 in the above )
+          double os2 = out_np-1;        // Output sample 2 ( y2 in the above )
+
+          double d1 = meta->sar->range_doppler_coefficients[1];
+          double d2 = meta->sar->range_doppler_coefficients[2];
+
+          double v1 = d1*is1 + d2*is1*is1;
+          double v2 = d1*is2 + d2*is2*is2;
+
+          double b = (v1*os2 - v2*os1)/(os1*os1*os2 - os2*os2*os1);
+          double a = (v1 - b*os1*os1)/os1;
+
+          // Debug code: print out the doppler across the image
+          // a and b will be the starting points for a least squares fit
+          const int N=1000;
+          double chisq, xi[N], yi[N];
+          int ii;
+          for (ii=0; ii<N; ++ii) {
+             xi[ii] = (double)ii/(double)N * (double)(out_np-1);
+             // the sr2gr array maps a ground range index to a slant range index
+             double s = sr2gr[(int)xi[ii]];
+             yi[ii] = d1*s + d2*s*s;
+          }
+
+          gsl_matrix *X, *cov;
+          gsl_vector *y, *w, *c;
+
+          X = gsl_matrix_alloc(N,3);
+          y = gsl_vector_alloc(N);
+          w = gsl_vector_alloc(N);
+
+          c = gsl_vector_alloc(3);
+          cov = gsl_matrix_alloc(3, 3);
+
+          for (ii=0; ii<N; ++ii) {
+            gsl_matrix_set(X, ii, 0, 1.0);
+            gsl_matrix_set(X, ii, 1, xi[ii]);
+            gsl_matrix_set(X, ii, 2, xi[ii]*xi[ii]);
+
+            gsl_vector_set(y, ii, yi[ii]);
+            gsl_vector_set(w, ii, 1.0);
+          }
+
+          gsl_multifit_linear_workspace *work = gsl_multifit_linear_alloc(N, 3);
+          gsl_multifit_wlinear(X, w, y, c, cov, &chisq, work);
+          gsl_multifit_linear_free(work);
+
+          double c0 = gsl_vector_get(c, 0);
+          double c1 = gsl_vector_get(c, 1);
+          double c2 = gsl_vector_get(c, 2);
+
+          gsl_matrix_free(X);
+          gsl_vector_free(y);
+          gsl_vector_free(w);
+          gsl_vector_free(c);
+          gsl_matrix_free(cov);
+        
+          // now the x and y vectors are the desired doppler polynomial
+
+          double ee1=0, ee2=0;
+          for (ii=0; ii<out_np; ii+=100) {
+
+            // ii: index in ground range, s: index in slant range 
+            double s = sr2gr[ii];
+
+            // dop1: doppler in slant, dop2: doppler in ground (should agree)
+            double dop1 = d1*s + d2*s*s;
+            double dop2 = a*ii + b*ii*ii;
+            double dop3 = c0 + c1*ii + c2*ii*ii;
+
+            double e1 = fabs(dop1-dop2);
+            double e2 = fabs(dop1-dop3);
+
+            ee1 += e1;
+            ee2 += e2;
+
+            if (ii % 1000 == 0)
+              printf("%5d -> %8.3f %8.3f %8.3f   %5d -> %5d   %7.4f %7.4f\n",
+                     ii, dop1, dop2, dop3, (int)s, ii, e1, e2);
+
+          }
+
+          printf("Original: %14.9f %14.9f %14.9f\n", 0., d1, d2);
+          printf("First   : %14.9f %14.9f %14.9f\n", 0., a, b);
+          printf("Second  : %14.9f %14.9f %14.9f\n\n", c0, c1, c2);
+
+          printf("Overall errors: %8.4f %8.4f\n", ee1, ee2);
+
+          meta->sar->range_doppler_coefficients[0] += c0;
+          meta->sar->range_doppler_coefficients[1] = c1;
+          meta->sar->range_doppler_coefficients[2] = c2;
 }
 
 int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
@@ -195,49 +307,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	}
 
         if (out_meta->sar){
-          // Update the doppler
-          // In going from slant to ground, and potentially changing the width,
-          // we will likely change the shape of the doppler polynomial.  So, solve
-          // for the coefficients of the new polynomial.  Ignore the constant term
-          //   v1 = d1*x1 + d2*x1*x1   <-- d1,d2 doppler coefs
-          //   v2 = d1*x2 + d2*x2*x2   <-- x1,x2 are image center and right
-          // New poly:
-          //   v1 = a*y1 + b*y1*y1     <-- a,b new doppler coefs
-          //   v2 = a*y2 + b*y2*y2     <-- y1,y2 are image center and right in new geom
-          // Solving for b:
-          //   b = (v1*y2 - v2*y1)/(y2*y1^2 - y1*y2^2)
-          // Then a:
-          //   a = (v1 - b*y1*y1)/y1
-          double is2 = in_np-1;         // Input sample 2  ( x2 in the above )
-          double os1 = out_np/2;        // Output sample 1 ( y1 in the above )
-          double is1 = sr2gr[(int)os1]; // Input sample 1  ( x1 in the above )
-          double os2 = out_np-1;        // Output sample 2 ( y2 in the above )
-
-          double d1 = out_meta->sar->range_doppler_coefficients[1];
-          double d2 = out_meta->sar->range_doppler_coefficients[2];
-
-          double v1 = d1*is1 + d2*is1*is1;
-          double v2 = d1*is2 + d2*is2*is2;
-
-          double b = (v1*os2 - v2*os1)/(os1*os1*os2 - os2*os2*os1);
-          double a = (v1 - b*os1*os1)/os1;
-
-          // Debug code: print out the doppler across the image
-          //for (ii=0; ii<out_np; ii+=100) {
-
-            // ii: index in ground range, s: index in slant range 
-            //double s = sr2gr[ii];
-
-            // dop1: doppler in slant, dop2: doppler in ground (should agree)
-            //double dop1 = d1*s + d2*s*s;
-            //double dop2 = a*ii + b*ii*ii;
-
-            //printf("%5d -> %8.3f %8.3f   %5d -> %5d\n", ii, dop1, dop2, (int)s, ii);
-
-          //}
-
-          out_meta->sar->range_doppler_coefficients[1] = a;
-          out_meta->sar->range_doppler_coefficients[2] = b;
+          update_doppler(in_np, out_np, sr2gr, out_meta);
         }
 
         out_meta->sar->slant_shift = ss;
