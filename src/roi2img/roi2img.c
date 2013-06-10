@@ -339,19 +339,19 @@ main(int argc, char *argv[])
  
   switch (station_code) {
     case 5:
-      strcpy(meta->general->receiving_station, "S1");
+      strcpy(meta->general->receiving_station, "ULA");
       break;
     case 6:
-      strcpy(meta->general->receiving_station, "S2");
+      strcpy(meta->general->receiving_station, "GDS");
       break;
     case 7:
-      strcpy(meta->general->receiving_station, "S3");
+      strcpy(meta->general->receiving_station, "MIL");
       break;
     case 9:
-      strcpy(meta->general->receiving_station, "S4");
+      strcpy(meta->general->receiving_station, "UKO");
       break;
     case 10:
-      strcpy(meta->general->receiving_station, "S5");
+      strcpy(meta->general->receiving_station, "SNF");
       break;
   }
  
