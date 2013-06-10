@@ -154,8 +154,8 @@ iso_meta *meta2iso(meta_parameters *meta)
 
   // Product Info
   strcpy(info->logicalProductID, "not applicable");
-  //strcpy(info->receivingStation, meta->general->receiving_station);
-  strcpy(info->receivingStation, MAGIC_UNSET_STRING);
+  strcpy(info->receivingStation, meta->general->receiving_station);
+  //strcpy(info->receivingStation, MAGIC_UNSET_STRING);
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     strcpy(info->level0ProcessingFacility, "ASF");
     strcpy(info->level1ProcessingFacility, "ASF");
