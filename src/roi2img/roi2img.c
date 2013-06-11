@@ -200,6 +200,43 @@ main(int argc, char *argv[])
   /* Read the start time for this image from the hdr file */
   read_hdrfile(hdrfile);
   
+  if (USE_TLES == 0) 
+   {
+    int cnt;
+    int year, month, day, hour, min;
+    double sec, thisSec;
+    FILE *fpvec, *fpo;
+    char tmp[256];
+  
+    sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
+    fpvec = fopen(tmp,"r");
+    if (fpvec == NULL) {
+      printf("Unable to open state vector file for day %i\n",start_date); 
+      printf("Defaulting to using TLEs instead\n");
+      USE_TLES = 1;
+    } else {
+      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+      thisSec = (double) ((hour*60+min)*60)+sec;
+
+      /* seek to the correct second of the day for the START of this file 
+      -----------------------------------------------------------------*/
+      while (cnt == 12 && start_sec > (thisSec+1.0)) {
+        cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+        thisSec = (double) ((hour*60+min)*60)+sec;
+      }
+      printf("Found closest second %lf\n",thisSec);
+  
+      /* need to create a state vector file the start of this image
+      ------------------------------------------------------------*/
+      stateVector vec, last_vec;
+      last_vec.pos.x = x; last_vec.pos.y = y; last_vec.pos.z = z;
+      last_vec.vel.x = xdot; last_vec.vel.y = ydot; last_vec.vel.z = zdot;
+      vec = propagate(last_vec,thisSec,start_sec);
+      x = vec.pos.x; y = vec.pos.y; z = vec.pos.z;
+      xdot = vec.vel.x; ydot = vec.vel.y; zdot = vec.vel.z;
+    }
+   }
+  
   if (USE_TLES == 1) {
     /* get the correct state vector */
     printf("Propagating state vectors to requested time...\n");
@@ -216,41 +253,7 @@ main(int argc, char *argv[])
       { printf("ERROR: Unable to find state vector in fixed_state_vector.txt file\n"); exit(1); }
     fclose(fpvec);
     remove("fixed_state_vector.txt");
-
-  } else {
-
-    int cnt;
-    int year, month, day, hour, min;
-    double sec, thisSec;
-    FILE *fpvec, *fpo;
-    char tmp[256];
-  
-    sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
-    fpvec = fopen(tmp,"r");
-    if (fpvec == NULL) {printf("Unable to open state vector file for day %i\n",start_date); exit(1); }
-
-    cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-    thisSec = (double) ((hour*60+min)*60)+sec;
-
-    /* seek to the correct second of the day for the START of this file 
-    -----------------------------------------------------------------*/
-    while (cnt == 12 && start_sec > (thisSec+1.0)) {
-      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-      thisSec = (double) ((hour*60+min)*60)+sec;
-    }
-    printf("Found closest second %lf\n",thisSec);
-  
-    /* need to create a state vector file the start of this image
-    ------------------------------------------------------------*/
-    stateVector vec, last_vec;
-  
-    last_vec.pos.x = x; last_vec.pos.y = y; last_vec.pos.z = z;
-    last_vec.vel.x = xdot; last_vec.vel.y = ydot; last_vec.vel.z = zdot;
-    vec = propagate(last_vec,thisSec,start_sec);
-    x = vec.pos.x; y = vec.pos.y; z = vec.pos.z;
-    xdot = vec.vel.x; ydot = vec.vel.y; zdot = vec.vel.z;
   }
-
   if (zdot > 0.0) dir = 'A'; else dir = 'D';
 
   /* set up output image parameters */
