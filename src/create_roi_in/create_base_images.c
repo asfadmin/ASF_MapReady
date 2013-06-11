@@ -54,8 +54,8 @@ void write_disfile(char *basefile,int node,int start_line,
                    int num_dis,int *dis_line, int *dis_gap);
 int get_values(FILE *fp,SEASAT_header_ext *s);
 
-int USE_TLES = 1;
-int USE_CLOCK_DRIFT = 0;
+int USE_TLES = 0;
+int USE_CLOCK_DRIFT = 1;
 
 int main(int argc, char *argv[])
 {
@@ -136,6 +136,11 @@ int main(int argc, char *argv[])
   while (val==20) { nl++; val = get_values(fphdr, hdr); }
   fclose(fphdr);
   lines_per_frame = NUM_PATCHES * PATCH_SIZE;
+
+  if (nl < lines_per_frame) {
+    printf("This swath is not long enough to process any frames!\n");
+    exit(0);
+  }
 
   /* Search node by node until we hit the first processable node */
   start_line = -1;
@@ -242,8 +247,10 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
 
 void give_usage(char *argv[], int argc)
 {
-  printf("Usage: %s [-v][-c] <swath_file>\n",argv[0]);
-  printf("\t-v            \tUse state vectors instead of TLEs\n");
-  printf("\t-c            \tApply the clock drift to image timing\n");
-
+  //printf("Usage: %s [-v][-c] <swath_file>\n",argv[0]);
+  //printf("\t-v            \tUse state vectors instead of TLEs\n");
+  //printf("\t-c            \tApply the clock drift to image timing\n");
+  printf("Usage: %s <swath_file>\n\n",argv[0]);
+  printf("The program will now always use state vectors (instead of TLEs)\n");
+  printf("and will always apply the clock drift.\n");
 }
