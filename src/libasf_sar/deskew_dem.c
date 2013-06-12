@@ -861,7 +861,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   register int x, y, b;
   struct deskew_dem_data d;
   int band_count = 1;           // in case no SAR image is passed in
-  int save_locals = 1; // for now include local inc angles in side products
+  int save_locals = 0;          // locals calc doesn't seem to be working
 
   inSarFlag = inSarName != NULL;
   inMaskFlag = inMaskName != NULL;
