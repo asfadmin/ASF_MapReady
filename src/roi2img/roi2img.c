@@ -38,6 +38,7 @@ BUGS:
 #include <string.h>
 #include <math.h>
 #include <asf_meta.h>
+#include <asf_license.h>
 #include "seasat.h"
 
 #define CPX_PIX 6840
@@ -150,7 +151,9 @@ main(int argc, char *argv[])
   int    USE_TLES = 1;		// TLE/state vector switch
   int    ESA_FRAME = 0;		// switch to control output file names
   int    node = 0;
-    
+   
+  asfSplashScreen(argc, argv); 
+
   if (argc<2 || argc>6) { give_usage(argc,argv); exit(1); }
 
   while ((cla=getopt(argc,argv,"mvcE:r:")) != -1)

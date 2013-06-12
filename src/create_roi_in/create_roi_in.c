@@ -107,6 +107,7 @@ BUGS:
 #include <math.h>
 #include <unistd.h>
 #include <asf_meta.h>
+#include <asf_license.h>
 #include "seasat.h"
 
 int get_values(FILE *fp,SEASAT_header_ext *s);
@@ -192,6 +193,8 @@ main(int argc, char *argv[])
   int clock_drift_hist[MAX_CLOCK_DRIFT];
   int clock_drift_median;
   double clock_shift;
+
+  asfSplashScreen(argc, argv);
 
   if (argc < 2 || argc > 9) { give_usage(argv,argc); exit(1); }
   

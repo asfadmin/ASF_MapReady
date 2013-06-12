@@ -64,8 +64,8 @@ void usage(char *name)
 	 "   %s converts an SEASAT ASF internal file to an HDF5 file.\n",
 	 name);
   printf("\n"
-	 "%s %s\n"
-	 "\n", TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
+	 "%s\n"
+	 "\n", version_string("make_seasat_h5"));
   exit(EXIT_FAILURE);
 }
 

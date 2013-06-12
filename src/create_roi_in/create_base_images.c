@@ -38,6 +38,7 @@ BUGS:
 #include <string.h>
 #include <math.h>
 #include <asf_meta.h>
+#include <asf_license.h>
 #include "seasat.h"
 
 #define MAX_NODE	3600	// we will never have southern hemisphere SEASAT data!
@@ -69,7 +70,9 @@ int main(int argc, char *argv[])
   int  nl, middle_line, lines_per_frame, val;
   int num_dis=0, dis_line[256], dis_gap[256];
   int c;
-  
+ 
+  asfSplashScreen(argc, argv);
+ 
   if (argc < 2 || argc > 4) { give_usage(argv,argc); exit(1); }
   
   while ((c=getopt(argc,argv,"vc")) != -1)
