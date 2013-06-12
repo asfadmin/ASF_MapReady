@@ -120,12 +120,10 @@ int main(int argc, char *argv[])
   printf("================================================================================\n");
 
   /* create the swath meta file */
-  if (!fileExists(metafile)) {
-    printf("Creating meta file for the swath\n\n");
-    sprintf(cmd,"create_roi_in %s\n",basefile); err=system(cmd); if (err) {printf("Error returned from create_roi_in\n"); exit(1);}
-    sprintf(cmd,"roi2img -m %s\n",basefile); err=system(cmd); if (err) {printf("Error returned from roi2img\n"); exit(1);}
-    sprintf(tmpfile,"%s.roi.in",basefile); remove(tmpfile);
-  }
+  printf("Creating meta file for the swath\n\n");
+  sprintf(cmd,"create_roi_in -c -v %s\n",basefile); err=system(cmd); if (err) {printf("Error returned from create_roi_in\n"); exit(1);}
+  sprintf(cmd,"roi2img -m -c -v %s\n",basefile); err=system(cmd); if (err) {printf("Error returned from roi2img\n"); exit(1);}
+  sprintf(tmpfile,"%s.roi.in",basefile); remove(tmpfile);
   meta_parameters *meta = meta_read(metafile);
 
   /* get total lines in this file */  
