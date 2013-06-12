@@ -1187,7 +1187,8 @@ static char *orbitAcc2str(iso_orbitAcc_t orbit)
   return str;
 }
 
-static h5_t *initialize_h5_file_iso(const char *output_file_name, 
+static h5_t *initialize_h5_file_iso(const char *output_file_name,
+				    meta_parameters *md,
 				    iso_meta *iso)
 {
   hid_t h5_file, h5_datagroup, h5_metagroup, h5_data, h5_proj;
@@ -1288,8 +1289,6 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   h5_att_str(h5_time, "axis", "T");
   h5_att_str(h5_time, "long_name", "serial date");
   H5Dclose(h5_time);
-  
-  meta_parameters *md = iso2meta(iso);
 
   // Extra bands - Longitude
   int nl = info->numberOfRows;
@@ -1328,9 +1327,9 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
       lons[ii*ns+kk] = (float)
 	(q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
 	 q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
-	 q.K*kk*kk*kk) - 360.0;
-      if (lons[ii*ns+kk] < -180.0)
-	lons[ii*ns+kk] += 360.0;
+	 q.K*kk*kk*kk);
+      if (lons[ii*ns+kk] > 180.0)
+	lons[ii*ns+kk] -= 360.0;
     }
     asfLineMeter(ii, nl);
   }
@@ -1352,7 +1351,10 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   float *lats = (float *) MALLOC(sizeof(float)*pixel_count);
   asfPrintStatus("Generating band 'latitude' ...\n");
   meta_get_latLon(md, 0, 0, 0.0, &lat, &lon);
-  first_value = lat + 180.0;
+  if (lat < 0.0)
+    first_value = lat + 180.0;
+  else
+    first_value = lat;
   asfPrintStatus("Calculating grid for quadratic fit ...\n");
   for (ii=0; ii<RES; ii++) {
     for (kk=0; kk<RES; kk++) {
@@ -1361,7 +1363,10 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
       meta_get_latLon(md, line, sample, 0.0, &lat, &lon);
       l[ii*RES+kk] = line;
       s[ii*RES+kk] = sample;
-      value[ii*RES+kk] = lat + 180.0;
+      if (lat < 0.0)
+	value[ii*RES+kk] = lat + 180.0;
+      else
+	value[ii*RES+kk] = lat;
     }
     asfLineMeter(ii, nl);
   }
@@ -1369,16 +1374,12 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   q.A = first_value;
   for (ii=0; ii<nl; ii++) {
     for (kk=0; kk<ns; kk++) {
-      if (info->orbitDirection == ASCENDING)
-	lats[(nl-ii-1)*ns+kk] = (float)
-	  (q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
-	   q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
-	   q.K*kk*kk*kk) - 180.0;
-      else
-	lats[ii*ns+kk] = (float)
-	  (q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
-	   q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
-	   q.K*kk*kk*kk) - 180.0;
+      lats[ii*ns+kk] = (float)
+	(q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
+	 q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
+	 q.K*kk*kk*kk);
+      if (lats[ii*ns+kk] > 90)
+	lats[ii*ns+kk] -= 180.0;
     }
     asfLineMeter(ii, nl);
   }
@@ -2683,39 +2684,41 @@ H5P_DEFAULT);
       numGaps = quality->rawDataQuality[ii].numGaps;
       h5_value_int(h5_file, level1, "numGaps", numGaps, 
 		   "number of data gaps", NULL);
-      strcpy(level2, "/metadata/productQuality/rawDataQuality/gap");
-      h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
-			    H5P_DEFAULT);
-      h5_att_str(h5_level2, "long_name", "data gap information");
-      long_array = (long *) MALLOC(sizeof(long)*numGaps);
-      int_array = (int *) MALLOC(sizeof(int)*numGaps);
-      str_array = (char **) MALLOC(sizeof(char *)*numGaps);
-      for (kk=0; kk<numGaps; kk++)
-	str_array[kk] = (char *) MALLOC(sizeof(char)*30);
-      for (kk=0; kk<numGaps; kk++)
-	long_array[kk] = quality->rawDataQuality[ii].gap[kk].start;
-      h5_value_long_array(h5_file, level2, "start", long_array, numGaps,
-			  "start line of data gap", NULL);
-      for (kk=0; kk<numGaps; kk++)
-	int_array[kk] = quality->rawDataQuality[ii].gap[kk].length;
-      h5_value_int_array(h5_file, level2, "length", int_array, numGaps,
-			 "number of lines forming data gap", NULL);
-      for (kk=0; kk<numGaps; kk++) {
-	if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
-	  strcpy(str_array[kk], "RANDOM");
-	else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
-	  strcpy(str_array[kk], "ZERO");
-	else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
-	  strcpy(str_array[kk], "UNDEFINED");
+      if (numGaps > 0) {
+	strcpy(level2, "/metadata/productQuality/rawDataQuality/gap");
+	h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			      H5P_DEFAULT);
+	h5_att_str(h5_level2, "long_name", "data gap information");
+	long_array = (long *) MALLOC(sizeof(long)*numGaps);
+	int_array = (int *) MALLOC(sizeof(int)*numGaps);
+	str_array = (char **) MALLOC(sizeof(char *)*numGaps);
+	for (kk=0; kk<numGaps; kk++)
+	  str_array[kk] = (char *) MALLOC(sizeof(char)*30);
+	for (kk=0; kk<numGaps; kk++)
+	  long_array[kk] = quality->rawDataQuality[ii].gap[kk].start;
+	h5_value_long_array(h5_file, level2, "start", long_array, numGaps,
+			    "start line of data gap", NULL);
+	for (kk=0; kk<numGaps; kk++)
+	  int_array[kk] = quality->rawDataQuality[ii].gap[kk].length;
+	h5_value_int_array(h5_file, level2, "length", int_array, numGaps,
+			   "number of lines forming data gap", NULL);
+	for (kk=0; kk<numGaps; kk++) {
+	  if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
+	    strcpy(str_array[kk], "RANDOM");
+	  else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
+	    strcpy(str_array[kk], "ZERO");
+	  else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
+	    strcpy(str_array[kk], "UNDEFINED");
+	}
+	h5_value_str_array(h5_file, level2, "fill", str_array, numGaps,
+			   "RANDOM or ZERO", NULL);
+	H5Gclose(h5_level2);
+	FREE(long_array);
+	FREE(int_array);
+	for (kk=0; kk<numGaps; kk++)
+	  FREE(str_array[kk]);
+	FREE(str_array);
       }
-      h5_value_str_array(h5_file, level2, "fill", str_array, numGaps,
-			 "RANDOM or ZERO", NULL);
-      H5Gclose(h5_level2);
-      FREE(long_array);
-      FREE(int_array);
-      for (kk=0; kk<numGaps; kk++)
-	FREE(str_array[kk]);
-      FREE(str_array);
       h5_value_boolean(h5_file, level1, "gapSignificanceFlag",
 		       quality->rawDataQuality[ii].gapSignificanceFlag,
 		       "gaps above the tolerance level?", NULL);
@@ -2857,11 +2860,9 @@ void export_hdf(const char *metadata_file_name,
   append_ext_if_needed(output_file_name, ".h5", NULL);
   char *ext = findExt(metadata_file_name);
   if (strcmp_case(ext, ".XML") == 0) {
-    iso = iso_meta_read(metadata_file_name);
-    h5 = initialize_h5_file_iso(output_file_name, iso);
-    // FIXME: need metadata function iso2meta
-    // read .meta file for now
     md = meta_read(metadata_file_name);
+    iso = iso_meta_read(metadata_file_name);
+    h5 = initialize_h5_file_iso(output_file_name, md, iso);
   }
   else if (strcmp_case(ext, ".META") == 0) {
     md = meta_read (metadata_file_name); 
