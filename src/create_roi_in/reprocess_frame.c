@@ -3,8 +3,7 @@ NAME:  reprocess_frame
 
 SYNOPSIS:  Recreates a product using a new doppler
 
-		-v	use state vectors instead of TLEs
-		-c 	use the clock drift to offset times
+		-t	use TLEs instead of state vectors
 
 DESCRIPTION:
 
@@ -63,8 +62,8 @@ double 	dop1,dop2,dop3;		// doppler coefficients
 double 	prf;	      		// pulse repitition frequency
 
 /* Switches */
-int USE_TLES = 1;
-int USE_CLOCK_DRIFT = 0;
+int USE_TLES = 0;
+int USE_CLOCK_DRIFT = 1;
 
 main(int argc, char *argv[])
 {
@@ -76,15 +75,12 @@ main(int argc, char *argv[])
   int val;
   int c;
   
-  if (argc < 2 || argc > 4) { give_usage(argv,argc); exit(1); }
+  if (argc < 2 || argc > 3) { give_usage(argv,argc); exit(1); }
   
-  while ((c=getopt(argc,argv,"vc")) != -1)
+  while ((c=getopt(argc,argv,"t")) != -1)
     switch(c) {
-      case 'v':
-        USE_TLES = 0;
-	break;
-      case 'c':
-        USE_CLOCK_DRIFT = 1;
+      case 't':
+        USE_TLES = 1;
 	break;
       case '?':
         printf("Unknown option %s\n",optarg);
@@ -236,7 +232,6 @@ void roi_put_string(FILE *roi_file,char *value,char *comment)
   }
 }
 
-
 void roi_put3_dop(FILE *roi_file,double fd, double fdd, double fddd,char *comment)
 {
   char param[64];
@@ -246,8 +241,6 @@ void roi_put3_dop(FILE *roi_file,double fd, double fdd, double fddd,char *commen
 
 void give_usage(char *argv[], int argc)
 {
-  printf("Usage: %s [-v][-c] <product base name>\n",argv[0]);
-  printf("\t-v            \tUse state vectors instead of TLEs\n");
-  printf("\t-c            \tApply the clock drift to image timing\n");
-
+  printf("Usage: %s [-t] <product base name>\n",argv[0]);
+  printf("\t-t            \tUse TLEs instead of State Vectors\n");
 }
