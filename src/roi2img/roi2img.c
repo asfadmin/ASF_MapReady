@@ -512,7 +512,13 @@ main(int argc, char *argv[])
       remove(tmpstr);
       strcat(strcpy(tmpstr,grfilename),".meta");
       remove(tmpstr);
-      
+    
+      /* this changes the basename in the metadata from blah_SLANT to blah_STD  */
+      meta_parameters *crop_meta = meta_read(cropfile);
+      strcpy(crop_meta->general->basename, cropfile);
+      meta_write(crop_meta, cropfile);
+      meta_free(crop_meta);
+ 
       /* create the dowsized QC image */
       sprintf(tmpstr,"resample -scale 0.125 %s %s_small\n",cropfile,cropfile);
       err = system(tmpstr);
