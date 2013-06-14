@@ -629,6 +629,22 @@ static Vector * calculate_normal(Vector ***localVectors, int sample)
 }
 
 static float
+calculate_local_incidence(Vector *n, Vector *satpos, Vector *p)
+
+{
+  // R: vector from ground point (p) to satellite (satpos)
+  Vector *R = vector_copy(satpos);
+  vector_subtract(R, p);
+  vector_multiply(R, -1./vector_magnitude(R));
+
+  double local_incidence = acos(vector_dot(n,R)) * R2D;
+
+  vector_free(R);
+
+  return local_incidence;
+}
+
+static float
 calculate_correction(meta_parameters *meta_in, int line, int samp,
                      Vector *satpos, Vector *n, Vector *p, Vector *p_next)
 {
@@ -845,6 +861,7 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   register int x, y, b;
   struct deskew_dem_data d;
   int band_count = 1;           // in case no SAR image is passed in
+  int save_locals = 0;          // locals calc doesn't seem to be working
 
   inSarFlag = inSarName != NULL;
   inMaskFlag = inMaskName != NULL;
@@ -999,6 +1016,9 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
   if (doRadiometric) {
     side_meta->general->band_count  = 4;
     strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT,RADIOMETRIC_CORRECTION,ANGLES");
+  } else if (save_locals) {
+    side_meta->general->band_count  = 3;
+    strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT,INCIDENCE_ANGLE_LOCAL");
   } else {
     side_meta->general->band_count  = 2;
     strcpy(side_meta->general->bands, "INCIDENCE_ANGLE_ELLIPSOID,DEM_HEIGHT");
@@ -1044,11 +1064,40 @@ int deskew_dem (char *inDemSlant, char *inDemGround, char *outName,
         maskLine[x] = outLine[x];
     }
 
+    // Record the incidence angles
     for (x=0; x<ns; ++x) {
       corrections[x] = (float)(R2D*d.incidAng[x]);
     }
-    put_band_float_line(sideProductsFp, side_meta, 0, y, corrections); // Record the incidence angles
+    put_band_float_line(sideProductsFp, side_meta, 0, y, corrections); 
     put_band_float_line(sideProductsFp, side_meta, 1, y, localGeoDemLines[1]);
+
+    // Record the local incidence angles
+    if (save_locals)
+    {
+      if (y > 0 && y < d.numLines - 1) {
+        Vector satpos = get_satpos(inSarMeta, y);
+        vector_multiply(&satpos, 1./vector_magnitude(&satpos));
+        corrections[0] = corrections[ns-1] = 0;
+        for (x=1; x<ns-1; ++x) {
+          //Vector *normal = calculate_normal(localVectors, x);
+          Vector normal, R;
+          normal.x=(localGeoDemLines[1][x-1]-localGeoDemLines[1][x+1])/(2*d.grPixelSize);
+          normal.y=(localGeoDemLines[2][x]-localGeoDemLines[0][x])/(2*d.grPixelSize);
+          normal.z=1.0;
+          vector_multiply(&normal, 1./vector_magnitude(&normal));
+          R.x = -d.sinIncidAng[x];
+          R.y = 0;
+          R.z = d.cosIncidAng[x];
+          corrections[x] = R2D * acos(vector_dot(&normal, &R));
+          //corrections[x] = calculate_local_incidence(&normal, &satpos, localVectors[1][x]);
+        }
+      }
+      else {
+        for (x=0; x<ns; ++x)
+          corrections[x] = 0;
+      }
+      put_band_float_line(sideProductsFp, side_meta, 2, y, corrections);
+    }
 
     if (doRadiometric) {
       if (y > 0 && y < d.numLines - 1) {
