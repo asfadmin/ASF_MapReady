@@ -404,6 +404,9 @@ int compare_time(ymd_date *date1, hms_time *time1,
  -----------------------------------------------*/
 void add_time(double delta, ymd_date *date, hms_time *time)
  {
+   if (delta<0)
+     return sub_time(-delta, date, time);
+
    static int DIM[13]={0,31,28,31,30,31,30,31,31,30,31,30,31};/*Days in Month*/
    long tyear, tmonth, tday, thour, tmin;
    double tsec;
@@ -459,6 +462,9 @@ void add_time(double delta, ymd_date *date, hms_time *time)
  ----------------------------------------------------*/
 void sub_time(double delta, ymd_date *date, hms_time *time)
  {
+   if (delta<0)
+     return add_time(-delta, date, time);
+
    static int DIM[13]={0,31,28,31,30,31,30,31,31,30,31,30,31};/*Days in Month*/
    long tyear, tmonth, tday, thour, tmin;
    double tsec;
