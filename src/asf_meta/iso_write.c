@@ -83,7 +83,30 @@ void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
   xmlNewProp(section, BAD_CAST "status", BAD_CAST "PRELIMINARY");
   xmlNewChild(section, NULL, BAD_CAST "itemName", BAD_CAST header->itemName);
   xmlNewChild(section, NULL, BAD_CAST "mission", BAD_CAST header->mission);
-  xmlNewChild(section, NULL, BAD_CAST "source", BAD_CAST header->source);
+
+  // Read the source information out of the .roi.in file
+  if (gapFile) {
+    char line[512], *p=NULL, source[255];
+    char *disFile = (char *) MALLOC(sizeof(char)*(strlen(gapFile)+10));
+    disFile = appendExt(gapFile, ".roi.in");
+    FILE *fp = FOPEN(disFile, "r");
+    if (fp) {
+      while (fgets(line, 512, fp)) {
+	if (strstr(line, "First input data file")) {
+	  p = strchr(line, ' ');
+	  if (p)
+	    *p = '\0';
+	  sprintf(source, "%s", line);
+	  xmlNewChild(section, NULL, BAD_CAST "source", BAD_CAST line);
+	}
+      }
+    }
+    FCLOSE(fp);
+    FREE(disFile);
+  }
+  else
+    xmlNewChild(section, NULL, BAD_CAST "source", BAD_CAST header->source);
+  
   xmlNewChild(section, NULL, BAD_CAST "destination", 
 	      BAD_CAST header->destination);
   xmlNewChild(section, NULL, BAD_CAST "generationSystem", 
