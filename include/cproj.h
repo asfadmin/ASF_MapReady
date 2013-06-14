@@ -30,9 +30,6 @@ extern "C" {
 
 #define IMOD(A, B)      (A) - (((A) / (B)) * (B)) /* Integer mod function */
 
-  /*#include "cproj_prototypes.h"*/ /* causes problem to hdfeos5 clearcase Lastpass build */
-#include "HE5_GctpFunc.h"
-
 #ifdef __cplusplus
 }
 #endif
