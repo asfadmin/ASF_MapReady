@@ -357,7 +357,7 @@ static int meta_get_lineSamp_imp(meta_parameters *meta,
 
   double x = x_start;
   double y = y_start;
-  double x_old=1000, y_old=1000;
+  double x_old=-9999, y_old=-9999;
   double dx, dy;
   int iter=0,err=0;
   lat_lon target;

@@ -427,8 +427,9 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n",
-      DEFAULT_RANGE_SCALE);
+      "Version:\n   %s\n\n",
+      DEFAULT_RANGE_SCALE,
+      version_string(ASF_NAME_STRING));
   exit(EXIT_FAILURE);
 }
 

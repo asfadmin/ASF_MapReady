@@ -47,4 +47,4 @@ reprocess_frame: reprocess_frame.o
 	mv reprocess_frame $(BINDIR)
 
 clean:
-	rm -f $(OBJS)
+	rm -f *.o

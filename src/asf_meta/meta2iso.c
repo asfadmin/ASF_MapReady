@@ -154,8 +154,8 @@ iso_meta *meta2iso(meta_parameters *meta)
 
   // Product Info
   strcpy(info->logicalProductID, "not applicable");
-  //strcpy(info->receivingStation, meta->general->receiving_station);
-  strcpy(info->receivingStation, MAGIC_UNSET_STRING);
+  strcpy(info->receivingStation, meta->general->receiving_station);
+  //strcpy(info->receivingStation, MAGIC_UNSET_STRING);
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     strcpy(info->level0ProcessingFacility, "ASF");
     strcpy(info->level1ProcessingFacility, "ASF");
@@ -265,10 +265,15 @@ iso_meta *meta2iso(meta_parameters *meta)
   info->azimuthResolution = meta->general->y_pixel_size;
   info->azimuthLooks = (float) meta->sar->azimuth_look_count;
   info->rangeLooks = (float) meta->sar->range_look_count;
-  // FIXME: naming convention for sceneID
   strcpy(info->sceneID, meta->general->basename);
-  dateTimeStamp(meta, 0, &info->startTimeUTC);
-  dateTimeStamp(meta, line_count, &info->stopTimeUTC);
+  if (meta->sar->azimuth_time_per_pixel < 0) {
+    dateTimeStamp(meta, line_count, &info->startTimeUTC);
+    dateTimeStamp(meta, 0, &info->stopTimeUTC);
+  }
+  else {
+    dateTimeStamp(meta, 0, &info->startTimeUTC);
+    dateTimeStamp(meta, line_count, &info->stopTimeUTC);
+  }
   info->rangeTimeFirstPixel = rangeTime(meta, 0);
   info->rangeTimeLastPixel = rangeTime(meta, sample_count);
   info->sceneAzimuthExtent = line_count * meta->general->y_pixel_size;

@@ -56,7 +56,7 @@ void spectra(FILE *fp,int sl, int nl,double iqmean,int *ocnt,double *ocal)
   double shift[FFT_LEN];
   char infile[256];
   double mean = 0;
-  double diff, sqdiff, sumsq, stddev;
+  double diff, sqdiff, sumsq=0, stddev;
   int    notch_loc[10000];
   double notch_val[10000];
   double notch_pow[10000];

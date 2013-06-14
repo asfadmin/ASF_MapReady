@@ -107,6 +107,7 @@ BUGS:
 #include <math.h>
 #include <unistd.h>
 #include <asf_meta.h>
+#include <asf_license.h>
 #include "seasat.h"
 
 int get_values(FILE *fp,SEASAT_header_ext *s);
@@ -192,6 +193,8 @@ main(int argc, char *argv[])
   int clock_drift_hist[MAX_CLOCK_DRIFT];
   int clock_drift_median;
   double clock_shift;
+
+  asfSplashScreen(argc, argv);
 
   if (argc < 2 || argc > 9) { give_usage(argv,argc); exit(1); }
   
@@ -479,6 +482,81 @@ main(int argc, char *argv[])
      printf("WARNING: Time length from header: %lf; Line time estimate: %lf\n",time_length, line_time_est);
   }
 
+if (USE_TLES == 0) {
+  int cnt;
+  int year, month, day, hour, min;
+  double sec, thisSec;
+  FILE *fpvec, *fpo;
+  char tmp[256];
+  
+  sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
+  fpvec = fopen(tmp,"r");
+  if (fpvec == NULL) {
+    printf("Unable to open state vector file for day %i\n",start_date); 
+    printf("Defaulting to using TLEs instead\n");
+    USE_TLES = 1;    
+  } else {
+    cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+    thisSec = (double) ((hour*60+min)*60)+sec;
+
+    /* seek to the correct second of the day for the START of this file 
+     -----------------------------------------------------------------*/
+    while (cnt == 12 && start_sec > (thisSec+1.0)) {
+      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+      thisSec = (double) ((hour*60+min)*60)+sec;
+    }
+    printf("Found closest second %lf\n",thisSec);
+  
+    /* need to create a state vector file for this image, starting
+       with the one we just read, continuing for the length of
+       this scene
+     ------------------------------------------------------------*/
+    stateVector vec, last_vec;
+    last_vec.pos.x = x;
+    last_vec.pos.y = y;
+    last_vec.pos.z = z;
+    last_vec.vel.x = xdot;
+    last_vec.vel.y = ydot;
+    last_vec.vel.z = zdot;
+  
+    strcpy(vecfile,basefile); 
+    strcat(vecfile,".stvecs");  
+    fpo = fopen(vecfile,"w");
+    vec = propagate(last_vec,thisSec,start_sec);
+    double time_offset = 0.0;
+   
+    while (cnt == 12 && end_sec > thisSec) {
+      fprintf(fpo,"%lf %lf %lf %lf %lf %lf %lf\n",time_offset, 
+	vec.pos.x,vec.pos.y,vec.pos.z,vec.vel.x,vec.vel.y,vec.vel.z);
+      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf\n",
+  	&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+      thisSec = (double) ((hour*60+min)*60)+sec;
+      last_vec.pos.x = x;
+      last_vec.pos.y = y;
+      last_vec.pos.z = z;
+      last_vec.vel.x = xdot;
+      last_vec.vel.y = ydot;
+      last_vec.vel.z = zdot;
+      time_offset += 1;
+      vec = propagate(last_vec,thisSec,start_sec+time_offset);
+    }
+    fclose(fpo);
+
+    /* Find the correct state vector for this data segment 
+    -----------------------------------------------------*/
+    {
+      FILE *fpvec;
+      fpvec = fopen(vecfile,"r");
+      int which = (int) (time_from_start+0.5);
+      int i;
+      for (i=0; i<=which; i++)
+        if (fscanf(fpvec,"%lf %lf %lf %lf %lf %lf %lf\n",&t,&x,&y,&z,&xdot,&ydot,&zdot)!=7) 
+          { printf("ERROR: Unable to find state vector #%i in fixed_state_vector.txt file\n",which); exit(1); }
+      fclose(fpvec);
+    }
+  }
+}
+  
 if (USE_TLES == 1) {
 
   /* Create appropriate state vectors for this datatake
@@ -499,83 +577,7 @@ if (USE_TLES == 1) {
   strcpy(vecfile,"fixed_state_vector.txt");
 //  remove("fixed_state_vector.txt");
 
-} else {
-
-  int cnt;
-  int year, month, day, hour, min;
-  double sec, thisSec;
-  FILE *fpvec, *fpo;
-  char tmp[256];
-  
-  sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
-  fpvec = fopen(tmp,"r");
-  if (fpvec == NULL) {printf("Unable to open state vector file for day %i\n",start_date); exit(1); }
-
-  cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-  thisSec = (double) ((hour*60+min)*60)+sec;
-
-  /* seek to the correct second of the day for the START of this file 
-   -----------------------------------------------------------------*/
-  while (cnt == 12 && start_sec > (thisSec+1.0)) {
-      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-      thisSec = (double) ((hour*60+min)*60)+sec;
-  }
-  printf("Found closest second %lf\n",thisSec);
-  
-  /* need to create a state vector file for this image, starting
-     with the one we just read, continuing for the length of
-     this scene
-   ------------------------------------------------------------*/
-  stateVector vec, last_vec;
-  
-  last_vec.pos.x = x;
-  last_vec.pos.y = y;
-  last_vec.pos.z = z;
-  last_vec.vel.x = xdot;
-  last_vec.vel.y = ydot;
-  last_vec.vel.z = zdot;
-  
-  strcpy(vecfile,basefile); 
-  strcat(vecfile,".stvecs");  
-  fpo = fopen(vecfile,"w");
-  vec = propagate(last_vec,thisSec,start_sec);
-  double time_offset = 0.0;
-   
-  while (cnt == 12 && end_sec > thisSec) {
-    fprintf(fpo,"%lf %lf %lf %lf %lf %lf %lf\n",time_offset,
-	vec.pos.x,vec.pos.y,vec.pos.z,vec.vel.x,vec.vel.y,vec.vel.z);
- 
-    cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf\n",
-  	&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-    thisSec = (double) ((hour*60+min)*60)+sec;
-      
-    last_vec.pos.x = x;
-    last_vec.pos.y = y;
-    last_vec.pos.z = z;
-    last_vec.vel.x = xdot;
-    last_vec.vel.y = ydot;
-    last_vec.vel.z = zdot;
-
-    time_offset += 1;
-    vec = propagate(last_vec,thisSec,start_sec+time_offset);
-  }
-  fclose(fpo);
-
-  /* Find the correct state vector for this data segment 
-  -----------------------------------------------------*/
-  {
-    FILE *fpvec;
-    fpvec = fopen(vecfile,"r");
-    int which = (int) (time_from_start+0.5);
-    int i;
-    for (i=0; i<=which; i++)
-      if (fscanf(fpvec,"%lf %lf %lf %lf %lf %lf %lf\n",&t,&x,&y,&z,&xdot,&ydot,&zdot)!=7) 
-        { printf("ERROR: Unable to find state vector #%i in fixed_state_vector.txt file\n",which); exit(1); }
-    fclose(fpvec);
-  }
-
 }
-
 
 /* Get the peg information needed for ROI
  ---------------------------------------*/

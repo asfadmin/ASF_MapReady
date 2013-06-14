@@ -109,7 +109,6 @@
 #endif
 
 
-
-#include "svn_rev.h"
+#define SVN_REV TOOL_SUITE_VERSION_STRING
 
 #endif

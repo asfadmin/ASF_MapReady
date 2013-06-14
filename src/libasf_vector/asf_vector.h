@@ -12,6 +12,7 @@ DESCRIPTION:
 #include "asf_meta.h"
 #include "shapefil.h"
 #include "asf_import.h"
+#include "asf_license.h"
 
 // NOTE: The META format type applies to both ASF metadata files and all
 // leader data files (.L, .par, LED- etcetera)

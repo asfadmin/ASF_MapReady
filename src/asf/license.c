@@ -38,7 +38,7 @@ const char *version_string(const char *program_name)
 {
   static char out_buf[1024];
 
-  sprintf(out_buf, "%s %s",
+  sprintf(out_buf, "%s, part of %s %s", program_name,
           TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
 
   return out_buf;

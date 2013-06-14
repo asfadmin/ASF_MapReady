@@ -38,6 +38,7 @@ BUGS:
 #include <string.h>
 #include <math.h>
 #include <asf_meta.h>
+#include <asf_license.h>
 #include "seasat.h"
 
 #define CPX_PIX 6840
@@ -150,7 +151,9 @@ main(int argc, char *argv[])
   int    USE_TLES = 1;		// TLE/state vector switch
   int    ESA_FRAME = 0;		// switch to control output file names
   int    node = 0;
-    
+   
+  asfSplashScreen(argc, argv); 
+
   if (argc<2 || argc>6) { give_usage(argc,argv); exit(1); }
 
   while ((cla=getopt(argc,argv,"mvcE:r:")) != -1)
@@ -201,6 +204,43 @@ main(int argc, char *argv[])
   /* Read the start time for this image from the hdr file */
   read_hdrfile(hdrfile);
   
+  if (USE_TLES == 0) 
+   {
+    int cnt;
+    int year, month, day, hour, min;
+    double sec, thisSec;
+    FILE *fpvec, *fpo;
+    char tmp[256];
+  
+    sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
+    fpvec = fopen(tmp,"r");
+    if (fpvec == NULL) {
+      printf("Unable to open state vector file for day %i\n",start_date); 
+      printf("Defaulting to using TLEs instead\n");
+      USE_TLES = 1;
+    } else {
+      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+      thisSec = (double) ((hour*60+min)*60)+sec;
+
+      /* seek to the correct second of the day for the START of this file 
+      -----------------------------------------------------------------*/
+      while (cnt == 12 && start_sec > (thisSec+1.0)) {
+        cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+        thisSec = (double) ((hour*60+min)*60)+sec;
+      }
+      printf("Found closest second %lf\n",thisSec);
+  
+      /* need to create a state vector file the start of this image
+      ------------------------------------------------------------*/
+      stateVector vec, last_vec;
+      last_vec.pos.x = x; last_vec.pos.y = y; last_vec.pos.z = z;
+      last_vec.vel.x = xdot; last_vec.vel.y = ydot; last_vec.vel.z = zdot;
+      vec = propagate(last_vec,thisSec,start_sec);
+      x = vec.pos.x; y = vec.pos.y; z = vec.pos.z;
+      xdot = vec.vel.x; ydot = vec.vel.y; zdot = vec.vel.z;
+    }
+   }
+  
   if (USE_TLES == 1) {
     /* get the correct state vector */
     printf("Propagating state vectors to requested time...\n");
@@ -217,41 +257,7 @@ main(int argc, char *argv[])
       { printf("ERROR: Unable to find state vector in fixed_state_vector.txt file\n"); exit(1); }
     fclose(fpvec);
     remove("fixed_state_vector.txt");
-
-  } else {
-
-    int cnt;
-    int year, month, day, hour, min;
-    double sec, thisSec;
-    FILE *fpvec, *fpo;
-    char tmp[256];
-  
-    sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
-    fpvec = fopen(tmp,"r");
-    if (fpvec == NULL) {printf("Unable to open state vector file for day %i\n",start_date); exit(1); }
-
-    cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-    thisSec = (double) ((hour*60+min)*60)+sec;
-
-    /* seek to the correct second of the day for the START of this file 
-    -----------------------------------------------------------------*/
-    while (cnt == 12 && start_sec > (thisSec+1.0)) {
-      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-      thisSec = (double) ((hour*60+min)*60)+sec;
-    }
-    printf("Found closest second %lf\n",thisSec);
-  
-    /* need to create a state vector file the start of this image
-    ------------------------------------------------------------*/
-    stateVector vec, last_vec;
-  
-    last_vec.pos.x = x; last_vec.pos.y = y; last_vec.pos.z = z;
-    last_vec.vel.x = xdot; last_vec.vel.y = ydot; last_vec.vel.z = zdot;
-    vec = propagate(last_vec,thisSec,start_sec);
-    x = vec.pos.x; y = vec.pos.y; z = vec.pos.z;
-    xdot = vec.vel.x; ydot = vec.vel.y; zdot = vec.vel.z;
   }
-
   if (zdot > 0.0) dir = 'A'; else dir = 'D';
 
   /* set up output image parameters */
@@ -393,7 +399,7 @@ main(int argc, char *argv[])
 //  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
 //  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
 
-  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = -1000.0;
+  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = 0.0;
   else meta->sar->slant_shift = 0.0;
 
   meta->sar->slant_range_first_pixel = srf;
@@ -506,7 +512,13 @@ main(int argc, char *argv[])
       remove(tmpstr);
       strcat(strcpy(tmpstr,grfilename),".meta");
       remove(tmpstr);
-      
+    
+      /* this changes the basename in the metadata from blah_SLANT to blah_STD  */
+      meta_parameters *crop_meta = meta_read(cropfile);
+      strcpy(crop_meta->general->basename, cropfile);
+      meta_write(crop_meta, cropfile);
+      meta_free(crop_meta);
+ 
       /* create the dowsized QC image */
       sprintf(tmpstr,"resample -scale 0.125 %s %s_small\n",cropfile,cropfile);
       err = system(tmpstr);
