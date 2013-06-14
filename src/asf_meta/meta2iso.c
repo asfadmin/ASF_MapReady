@@ -130,7 +130,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     strcpy(comps->imageData[0].file.host, ".");
     strcpy(comps->imageData[0].file.path, ".");
     sprintf(comps->imageData[0].file.name, "%s.h5", meta->general->basename);
-    // comps->imageData[0].file.size: calculated after being generated
+    comps->imageData[0].file.size = -1;
   }
   comps->quicklooks = 
     (iso_filesPol *) CALLOC(numLayers, sizeof(iso_filesPol));
@@ -139,8 +139,8 @@ iso_meta *meta2iso(meta_parameters *meta)
     strcpy(comps->quicklooks[ii].beamID, beamID[ii]);
     strcpy(comps->quicklooks[ii].file.host, ".");
     strcpy(comps->quicklooks[ii].file.path, ".");
-    sprintf(comps->quicklooks[ii].file.name, "%s_%s_ql.tif", 
-	    meta->general->basename, beamID[ii]);
+    sprintf(comps->quicklooks[ii].file.name, "%s.jpg", 
+	    meta->general->basename);
     // comps->quicklooks[ii].file.size: calculated after being generated
   }
   strcpy(comps->browseImage.host, ".");
@@ -206,7 +206,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   info->azimuthSteeringAngleLast = MAGIC_UNSET_DOUBLE;
   */
   // FIXME: work out naming scheme for productType
-  strcpy(info->productType, MAGIC_UNSET_STRING);
+  strcpy(info->productType, "STANDARD PRODUCT");
   if (meta->general->data_type >= COMPLEX_BYTE)
     info->productVariant = SLC_PRODUCT;
   else
@@ -265,8 +265,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   info->azimuthResolution = meta->general->y_pixel_size;
   info->azimuthLooks = (float) meta->sar->azimuth_look_count;
   info->rangeLooks = (float) meta->sar->range_look_count;
-  // FIXME: naming convention for sceneID
-  strcpy(info->sceneID, MAGIC_UNSET_STRING);
+  strcpy(info->sceneID, meta->general->basename);
   if (meta->sar->azimuth_time_per_pixel < 0) {
     dateTimeStamp(meta, line_count, &info->startTimeUTC);
     dateTimeStamp(meta, 0, &info->stopTimeUTC);
@@ -324,10 +323,10 @@ iso_meta *meta2iso(meta_parameters *meta)
   info->earthRadius = meta->sar->earth_radius;
   info->satelliteHeight = meta->sar->satellite_height;
   info->headingAngle = meta->sar->heading_angle;
-  strcpy(info->quicklooks.imageDataFormat,"TIFF");
-  info->quicklooks.imageDataDepth = 16; // assumption
-  info->quicklooks.numberOfRows = MAGIC_UNSET_INT;
-  info->quicklooks.numberOfColumns = MAGIC_UNSET_INT;
+  strcpy(info->quicklooks.imageDataFormat,"JPEG");
+  info->quicklooks.imageDataDepth = 8;
+  info->quicklooks.numberOfRows = 1000;
+  info->quicklooks.numberOfColumns = 1000;
   info->quicklooks.columnBlockLength = MAGIC_UNSET_DOUBLE;
   info->quicklooks.rowBlockLength = MAGIC_UNSET_DOUBLE;
   info->quicklooks.rowSpacing = MAGIC_UNSET_DOUBLE;
@@ -424,10 +423,10 @@ iso_meta *meta2iso(meta_parameters *meta)
   }
 
   // Setup
-  strcpy(setup->orderType, "???");
+  strcpy(setup->orderType, "L1 STD");
   strcpy(setup->processingPriority, "NOMINAL");
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0)
-    setup->orbitAccuracy = TLE;
+    setup->orbitAccuracy = RESTITUTED_ORBIT;
   setup->sceneSpecification = FRAME_SPEC;
   setup->frameID = meta->general->frame;
   dateTimeStamp(meta, 0, &setup->sceneStartTimeUTC);
@@ -459,13 +458,14 @@ iso_meta *meta2iso(meta_parameters *meta)
   setup->L0SARGenerationTimeUTC.min = MAGIC_UNSET_INT;
   setup->L0SARGenerationTimeUTC.second = MAGIC_UNSET_DOUBLE;
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
-    setup->numProcessingSteps = 1;
-    setup->processingStep = (iso_procStep *) CALLOC(1,sizeof(iso_procStep));
+    setup->numProcessingSteps = 2;
+    setup->processingStep = 
+      (iso_procStep *) CALLOC(1,sizeof(iso_procStep)*setup->numProcessingSteps);
     strcpy(setup->processingStep[0].softwareID, "prep_raw");
-    strcpy(setup->processingStep[0].softwareVersion, "1.0");
+    strcpy(setup->processingStep[0].softwareVersion, "1.2");
     strcpy(setup->processingStep[0].description, "pre-processing of raw data");
     strcpy(setup->processingStep[0].algorithm, 
-	   "optional information about algorithm");
+	   "various level for cleaning up the header information");
     setup->processingStep[0].processingLevel = PRE_PROCESSING;
     setup->processingStep[0].processingTimeUTC.year = MAGIC_UNSET_INT;
     setup->processingStep[0].processingTimeUTC.month = MAGIC_UNSET_INT;
@@ -473,6 +473,23 @@ iso_meta *meta2iso(meta_parameters *meta)
     setup->processingStep[0].processingTimeUTC.hour = MAGIC_UNSET_INT;
     setup->processingStep[0].processingTimeUTC.min = MAGIC_UNSET_INT;
     setup->processingStep[0].processingTimeUTC.second = MAGIC_UNSET_DOUBLE;
+
+    sprintf(setup->processingStep[1].softwareID, "%s", TOOL_SUITE_NAME);
+    sprintf(setup->processingStep[1].softwareVersion, "%s", 
+	    TOOL_SUITE_VERSION_STRING);
+    strcpy(setup->processingStep[1].description, 
+	   "processing of raw data to detected imagery");
+    strcpy(setup->processingStep[1].algorithm, 
+	   "customized ROI processing of raw data; "
+	   "conversion of data from ROI to ASF format; "
+	   "conversion of data from ASF to HDF5 format.");
+    setup->processingStep[1].processingLevel = LEVEL_ONE;
+    setup->processingStep[1].processingTimeUTC.year = MAGIC_UNSET_INT;
+    setup->processingStep[1].processingTimeUTC.month = MAGIC_UNSET_INT;
+    setup->processingStep[1].processingTimeUTC.day = MAGIC_UNSET_INT;
+    setup->processingStep[1].processingTimeUTC.hour = MAGIC_UNSET_INT;
+    setup->processingStep[1].processingTimeUTC.min = MAGIC_UNSET_INT;
+    setup->processingStep[1].processingTimeUTC.second = MAGIC_UNSET_DOUBLE;
   }
 
   // Processing
@@ -578,7 +595,7 @@ iso_meta *meta2iso(meta_parameters *meta)
 
   // Platform
   platform->sensor = PREDICTED_SENSOR;
-  platform->accuracy = TLE;
+  platform->accuracy = RESTITUTED_ORBIT;
   strcpy(platform->stateVectorRefFrame, "WGS84");
   platform->stateVectorTimeSpacing = meta->state_vectors->vecs[1].time;
   platform->numStateVectors = meta->state_vectors->vector_count;
@@ -651,7 +668,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     quality->imageDataQuality[ii].bitErrorRate = meta->general->bit_error_rate;
     quality->imageDataQuality[ii].noData = (double) meta->general->no_data;
   }
-  quality->gapDefinition = MAGIC_UNSET_INT;
+  quality->gapDefinition = 8;
   // These limits need to be defined per satellite
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     quality->gapPercentageLimit = MAGIC_UNSET_DOUBLE;
