@@ -2891,7 +2891,7 @@
 								  <child>
 								    <widget class="GtkCheckButton" id="save_incid_angles_checkbutton">
 								      <property name="visible">True</property>
-								      <property name="tooltip" translatable="yes">During radiometric correction, create a side product containing the incidence angles from the sensor to vertical.  Other side products are generated as well.  All side products are generated as floating point geotiffs.</property>
+								      <property name="tooltip" translatable="yes">During radiometric correction, create a side product containing the incidence angles from the sensor to vertical.  Other side products are generated as well.  All side products are generated as floating point geotiffs.  This can still be used without radiometric correction, though a different method is used.</property>
 								      <property name="can_focus">True</property>
 								      <property name="label" translatable="yes">Save Incidence Angles</property>
 								      <property name="use_underline">True</property>
