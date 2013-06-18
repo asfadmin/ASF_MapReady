@@ -195,6 +195,8 @@ void add_aux_band(const char *inFile, const char *outFile, const char *type)
 #define ADD_TIME 5
 #define ADD_LAT 6
 #define ADD_LON 7
+#define ADD_LINE 8
+#define ADD_SAMPLE 9
   const char *band_str=MAGIC_UNSET_STRING;
 
   int what=0;
@@ -232,6 +234,16 @@ void add_aux_band(const char *inFile, const char *outFile, const char *type)
     asfPrintStatus("Adding Longitude (degrees)\n");
     what=ADD_LON;
     band_str = "LON";
+  }
+  else if (strcmp_case(type, "line") == 0) {
+    asfPrintStatus("Adding line number\n");
+    what=ADD_LINE;
+    band_str = "LINE";
+  }
+  else if (strcmp_case(type, "sample") == 0) {
+    asfPrintStatus("Adding sample number\n");
+    what=ADD_SAMPLE;
+    band_str = "SAMPLE";
   }
   else {
     asfPrintError("Unknown band type: %s\n", type);
@@ -322,6 +334,12 @@ void add_aux_band(const char *inFile, const char *outFile, const char *type)
           buf[jj] = lon;
           break;
         }
+        case ADD_LINE:
+          buf[jj] = ii;
+          break;
+        case ADD_SAMPLE:
+          buf[jj] = jj;
+          break;
         default:
           asfPrintError("add_aux_band - Internal Error %d\n", what);
       }
