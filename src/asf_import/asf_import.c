@@ -80,7 +80,7 @@ following defines.
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'geotiff', 'airsar', 'uavsar', 'bil',\n"\
 "        'gridfloat', 'vp', 'polsarpro', 'gamma', 'roipac', 'alos_mosaic',\n"\
-"        'terrasar', 'radarsat2' and 'jaxa_L0'.\n"\
+"        'terrasar', 'radarsat2', 'seasat_h5' and 'jaxa_L0'.\n"\
 "        The 'jaxa_L0' format refers to the ALOS AVNIR-2 Level 0 dataset\n"\
 "        format. 'CEOS' is the default behavior.\n"\
 "   -ancillary-file <file>\n"\
@@ -921,6 +921,8 @@ int main(int argc, char *argv[])
       format_type = ROIPAC;
     else if (strncmp_case(format_type_str, "SMAP", 4) == 0)
       format_type = SMAP;
+    else if (strncmp_case(format_type_str, "SEASAT_H5", 9) == 0)
+      format_type = SEASAT_H5;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }

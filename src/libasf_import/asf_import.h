@@ -116,6 +116,7 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
 void import_gamma_msp(const char *inDataName, const char *inMetaName,
               const char *data_type, const char *image_data_type,
               const char *outBaseName);
+void import_seasat_h5(const char *inFileName, const char *outBaseName);
 
 void import_vexcel_plain(const char *inBaseName, const char *outBaseName);
 void import_jaxa_L0(const char *inBaseName, const char *outBaseName);

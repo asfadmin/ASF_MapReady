@@ -20,6 +20,7 @@ SRCS = asf_view.c \
 	read_envi.c \
 	read_generic.c \
 	read_uavsar.c \
+	read_seasat_h5.c \
 	big_image.c \
 	meta.c \
 	stats.c \
@@ -137,7 +138,8 @@ CFLAGS += \
 	$(PROJ_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(GEOTIFF_CFLAGS) \
-	$(JPEG_CFLAGS)
+	$(JPEG_CFLAGS) \
+	$(HDF5_CFLAGS)
 
 LDLIBS = \
 	$(LIBDIR)/libasf_metadata.a \
@@ -151,13 +153,14 @@ LDLIBS = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libshp.a \
-	$(GSL_LIBS) \
-	$(PROJ_LIBS) \
-	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(HDF5_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
+	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
+	$(GSL_LIBS) \
 	$(PNG_LIBS) \
 	$(GTK_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \

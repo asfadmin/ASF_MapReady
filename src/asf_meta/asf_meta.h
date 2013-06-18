@@ -121,6 +121,7 @@ typedef enum {
   GAMMA,
   ROIPAC,
   SMAP,
+  SEASAT_H5,
   GRIDDED_RGPS
 } input_format_t;
 
