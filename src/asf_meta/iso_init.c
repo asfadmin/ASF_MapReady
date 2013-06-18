@@ -209,10 +209,11 @@ iso_productSpecific *iso_productSpecific_init(void)
   spec->projectedSpacingGroundNearRange = MAGIC_UNSET_DOUBLE;
   spec->projectedSpacingGroundFarRange = MAGIC_UNSET_DOUBLE;
   spec->projectedSpacingSlantRange = MAGIC_UNSET_DOUBLE;
+  spec->slantRangeShift = 0.0;
   spec->imageCoordinateType = UNDEF_COORD;
   spec->imageDataStartWith = UNDEF_DATA_START;
   spec->quicklookDataStartWith = UNDEF_DATA_START;
-
+  
   // geocodedImageInfo
   spec->geocodedImageInfoFlag = FALSE;
 

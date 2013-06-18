@@ -344,6 +344,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   spec->projectedSpacingGroundNearRange = meta->general->x_pixel_size;
   spec->projectedSpacingGroundFarRange = meta->general->x_pixel_size;
   spec->projectedSpacingSlantRange = meta->sar->slant_range_first_pixel;
+  spec->slantRangeShift = meta->sar->slant_shift;
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     spec->imageCoordinateType = RAW_COORD;
     spec->imageDataStartWith = EARLYAZNEARRG; // assumption
@@ -822,7 +823,7 @@ meta_parameters *iso2meta(iso_meta *iso)
   meta->general->sample_scaling = info->columnScaling;
   meta->sar->range_time_per_pixel = info->columnSpacing;
   meta->sar->azimuth_time_per_pixel = info->rowSpacing;
-  meta->sar->slant_shift = 0.0;
+  meta->sar->slant_shift = spec->slantRangeShift;
   //meta->sar->slant_range_first_pixel = info->rangeTimeFirstPixel * SPD_LIGHT;
   meta->sar->slant_range_first_pixel = spec->projectedSpacingSlantRange;
   meta->sar->wavelength = SPD_LIGHT / inst->centerFrequency;
