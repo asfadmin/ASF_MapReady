@@ -179,6 +179,14 @@ meta_file_name(const gchar * file_name)
     return ret;
   }
 
+  // seasat h5
+  else if (ext && strcmp_case(ext, ".h5")==0) {
+    char *tmp = appendExt(file_name, ".xml");
+    gchar *ret = g_strdup(tmp);
+    FREE(tmp);
+    return ret;
+  }
+
   // uavsar
   else if (ext && strcmp_case(ext, ".ann")==0)
     return g_strdup(file_name);
@@ -271,6 +279,10 @@ data_file_name(const gchar * file_name, const gchar *uavsar_type)
       return ret;
     }
   }
+
+  // seasat
+  else if (ext && strcmp_case(ext, ".h5")==0)
+    return g_strdup(file_name);
 
   // airsar
   else if (ext && strcmp_case(ext, ".airsar")==0) {
@@ -593,6 +605,12 @@ gboolean is_roipac(const char *infile)
   }
 
   return found; 
+}
+
+gboolean is_seasat_h5(const char *infile)
+{
+  char *ext = findExt(infile);
+  return ext && strcmp_case(ext, ".h5") == 0;
 }
 
 gboolean is_alos_mosaic(const char *infile)

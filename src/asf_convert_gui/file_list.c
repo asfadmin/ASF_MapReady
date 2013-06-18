@@ -288,6 +288,10 @@ static char *file_is_valid(const gchar * file)
     if(ext && strcmp_case(ext, ".ann")==0)
       return STRDUP(file);
 
+    // Seasat H5
+    if(ext && strcmp_case(ext, ".h5")==0)
+      return STRDUP(file);
+    
     // check for ALOS mosaics - might have an extension (or not)
     // so we check for a little more
     if (endsWith(file, "_HDR.txt") || endsWith(file, "_HDR")) {

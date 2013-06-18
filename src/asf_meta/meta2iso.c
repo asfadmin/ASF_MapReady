@@ -508,8 +508,8 @@ iso_meta *meta2iso(meta_parameters *meta)
     proc->doppler[0].timeUTC.hour = MAGIC_UNSET_INT;
     proc->doppler[0].timeUTC.min = MAGIC_UNSET_INT;
     proc->doppler[0].timeUTC.second = MAGIC_UNSET_DOUBLE;
-    proc->doppler[0].dopplerAtMidRange = 
-      meta_get_dop(meta, (double) line_count/2, (double) sample_count/2);
+    proc->doppler[0].dopplerAtMidRange = meta->sar->azimuth_doppler_coefficients[0];
+      //meta_get_dop(meta, (double) line_count/2, (double) sample_count/2);
     proc->doppler[0].polynomialDegree = 2;
     proc->doppler[0].coefficient = (double *) CALLOC(3, sizeof(double));
     proc->doppler[0].coefficient[0] = meta->sar->range_doppler_coefficients[0];
@@ -603,8 +603,14 @@ iso_meta *meta2iso(meta_parameters *meta)
     (iso_stateVec *) CALLOC(platform->numStateVectors, sizeof(iso_stateVec));
   hms_time hms;
   ymd_date ymd;
-  dateTimeStamp(meta, 0, &platform->firstStateTimeUTC); 
-  dateTimeStamp(meta, meta->general->line_count, &platform->lastStateTimeUTC); 
+  if (meta->sar->azimuth_time_per_pixel > 0) {
+    dateTimeStamp(meta, 0, &platform->firstStateTimeUTC); 
+    dateTimeStamp(meta, meta->general->line_count, &platform->lastStateTimeUTC);
+  }
+  else {
+    dateTimeStamp(meta, meta->general->line_count, &platform->firstStateTimeUTC); 
+    dateTimeStamp(meta, 0, &platform->lastStateTimeUTC);
+  }
   ymd.year = platform->firstStateTimeUTC.year;
   ymd.month = platform->firstStateTimeUTC.month;
   ymd.day = platform->firstStateTimeUTC.day;
@@ -818,7 +824,8 @@ meta_parameters *iso2meta(iso_meta *iso)
   meta->sar->azimuth_time_per_pixel = info->rowSpacing;
   meta->sar->slant_shift = 0.0;
   meta->sar->time_shift = 0.0;
-  meta->sar->slant_range_first_pixel = info->rangeTimeFirstPixel * SPD_LIGHT;
+  //meta->sar->slant_range_first_pixel = info->rangeTimeFirstPixel * SPD_LIGHT;
+  meta->sar->slant_range_first_pixel = spec->projectedSpacingSlantRange;
   meta->sar->wavelength = SPD_LIGHT / inst->centerFrequency;
   meta->sar->prf = spec->commonPRF;
   meta->sar->earth_radius = info->earthRadius;
@@ -828,7 +835,7 @@ meta_parameters *iso2meta(iso_meta *iso)
   for (ii=0; ii<=proc->doppler[0].polynomialDegree; ii++)
     meta->sar->range_doppler_coefficients[ii] = 
       proc->doppler[0].coefficient[ii];
-  meta->sar->azimuth_doppler_coefficients[0] = proc->doppler[0].coefficient[0];
+  meta->sar->azimuth_doppler_coefficients[0] = proc->doppler[0].dopplerAtMidRange;
   // meta->sar->chirp_rate
   // meta->sar->pulse_duration
   meta->sar->range_sampling_rate = spec->commonRSF;

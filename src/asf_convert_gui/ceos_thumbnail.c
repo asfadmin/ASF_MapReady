@@ -1173,6 +1173,60 @@ make_complex_thumb(meta_parameters* imd,
 }
 
 GdkPixbuf *
+make_seasat_thumb(const char *file, size_t max_thumbnail_dimension)
+{
+    char *browse = appendExt(file, ".jpg");
+    if (!fileExists(browse)) {
+      FREE(browse);
+      char *qc = appendToBasename(file, "_QCFULL");
+      browse = appendExt(qc, ".jpg");
+      FREE(qc);
+    }
+    if (fileExists(browse)) {
+      GError *err = NULL;
+      GdkPixbuf *buf = gdk_pixbuf_new_from_file(browse, &err);
+      if (!buf || err) {
+        if (err)
+          asfPrintStatus("Unable to generate thumbnail from %s: %s\n",
+                         browse, err->message);
+        else
+          asfPrintStatus("Unable to generate thumbnail from %s\n", browse);
+      }
+      FREE(browse);
+      if (buf && !err)
+      {
+          // scale to requested size -- make sure to do it without distorting
+          int width = gdk_pixbuf_get_width(buf);
+          int height = gdk_pixbuf_get_height(buf);
+          double scale_y = height / max_thumbnail_dimension;
+          double scale_x = width / max_thumbnail_dimension;
+          double scale = scale_y > scale_x ? scale_y : scale_x;
+          if (scale == 0) scale = 1;
+          int x_dim = width / scale;
+          int y_dim = height / scale;
+
+          GdkPixbuf *pb_s =
+              gdk_pixbuf_scale_simple(buf, x_dim, y_dim, GDK_INTERP_BILINEAR);
+          g_object_unref(buf);
+
+          if (!pb_s) {
+            printf("Failed to allocate scaled thumbnail pixbuf: %s\n", file);
+            return NULL;
+          }
+
+          return pb_s;
+       }
+    }
+    else {
+      // FIXME: Make a thumbnail from the .h5
+      return NULL;
+    }
+
+    // not reached
+    return NULL;
+}
+
+GdkPixbuf *
 make_terrasarx_thumb(const char *input_metadata, const char *input_data,
                      size_t max_thumbnail_dimension)
 {
@@ -1431,6 +1485,10 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     // no point in a thumbnail of Level 0 data
     if (ext && strcmp_case(ext, ".raw") == 0)
         return NULL;
+
+    if (ext && strcmp_case(ext, ".h5") == 0) {
+      return make_seasat_thumb(input_data, max_thumbnail_dimension);
+    }
 
     if(is_uavsar_polsar(input_metadata)) {
       if(uavsar_type == NULL || !strcmp(uavsar_type, "DAT"))

@@ -511,7 +511,7 @@ void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
   xmlNewChild(node, NULL, BAD_CAST "rowScaling", BAD_CAST str);
   double2str(info->columnScaling, 0, str);
   xmlNewChild(node, NULL, BAD_CAST "columnScaling", BAD_CAST str);
-  double2str(info->rowSpacing, 0, str);
+  double2str(info->rowSpacing, 10, str);
   unit = xmlNewChild(node, NULL, BAD_CAST "rowSpacing", BAD_CAST str);
   if (info->projection == MAP_PROJ)
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");  

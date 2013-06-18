@@ -125,7 +125,7 @@ LDLIBS = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
-	$(JPEG_LIBS) \
+	-ljpeg \
 	$(GLIB_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \

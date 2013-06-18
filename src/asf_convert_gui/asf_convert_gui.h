@@ -62,6 +62,7 @@ enum InputFormat
     INPUT_FORMAT_ALOS_MOSAIC = 11,
     INPUT_FORMAT_UAVSAR_POLSAR = 12,
     INPUT_FORMAT_UAVSAR_INSAR = 13,
+    INPUT_FORMAT_SEASAT_H5 = 14,
 };
 
 enum InputType
@@ -417,6 +418,7 @@ void show_widget(const char *widget_name, int show);
 void put_string_to_label(const char *widget_name, const char *txt);
 const char *get_string_from_label(const char *widget_name);
 gboolean is_polsarpro(const gchar *);
+gboolean is_seasat_h5(const gchar *);
 gboolean is_geotiff(const char *infile);
 gboolean is_asf_internal(const char *infile);
 gboolean is_airsar(const char *infile);
