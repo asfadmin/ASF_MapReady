@@ -508,8 +508,8 @@ iso_meta *meta2iso(meta_parameters *meta)
     proc->doppler[0].timeUTC.hour = MAGIC_UNSET_INT;
     proc->doppler[0].timeUTC.min = MAGIC_UNSET_INT;
     proc->doppler[0].timeUTC.second = MAGIC_UNSET_DOUBLE;
-    proc->doppler[0].dopplerAtMidRange = meta->sar->azimuth_doppler_coefficients[0];
-      //meta_get_dop(meta, (double) line_count/2, (double) sample_count/2);
+    proc->doppler[0].dopplerAtMidRange =
+      meta_get_dop(meta, (double) line_count/2, (double) sample_count/2);
     proc->doppler[0].polynomialDegree = 2;
     proc->doppler[0].coefficient = (double *) CALLOC(3, sizeof(double));
     proc->doppler[0].coefficient[0] = meta->sar->range_doppler_coefficients[0];
@@ -834,7 +834,7 @@ meta_parameters *iso2meta(iso_meta *iso)
   for (ii=0; ii<=proc->doppler[0].polynomialDegree; ii++)
     meta->sar->range_doppler_coefficients[ii] = 
       proc->doppler[0].coefficient[ii];
-  meta->sar->azimuth_doppler_coefficients[0] = proc->doppler[0].dopplerAtMidRange;
+  meta->sar->azimuth_doppler_coefficients[0] = proc->doppler[0].coefficient[0];
   // meta->sar->chirp_rate
   // meta->sar->pulse_duration
   meta->sar->range_sampling_rate = spec->commonRSF;
