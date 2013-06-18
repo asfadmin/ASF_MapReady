@@ -399,7 +399,7 @@ main(int argc, char *argv[])
 //  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
 //  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
 
-  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = 0.0;
+  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = -1000.0;
   else meta->sar->slant_shift = 0.0;
 
   meta->sar->slant_range_first_pixel = srf;
