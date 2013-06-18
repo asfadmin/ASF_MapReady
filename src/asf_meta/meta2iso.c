@@ -823,7 +823,6 @@ meta_parameters *iso2meta(iso_meta *iso)
   meta->sar->range_time_per_pixel = info->columnSpacing;
   meta->sar->azimuth_time_per_pixel = info->rowSpacing;
   meta->sar->slant_shift = 0.0;
-  meta->sar->time_shift = 0.0;
   //meta->sar->slant_range_first_pixel = info->rangeTimeFirstPixel * SPD_LIGHT;
   meta->sar->slant_range_first_pixel = spec->projectedSpacingSlantRange;
   meta->sar->wavelength = SPD_LIGHT / inst->centerFrequency;
@@ -892,6 +891,10 @@ meta_parameters *iso2meta(iso_meta *iso)
     meta->state_vectors->vecs[ii].vec.vel.y = platform->stateVec[ii].velY;
     meta->state_vectors->vecs[ii].vec.vel.z = platform->stateVec[ii].velZ;
   }
+  if (meta->sar->azimuth_time_per_pixel > 0)
+    meta->sar->time_shift = 0.0;
+  else
+    meta->sar->time_shift = meta->state_vectors->vecs[numVectors-1].time;
   /*
   // few calculations need state vectors
   meta->sar->earth_radius = 
