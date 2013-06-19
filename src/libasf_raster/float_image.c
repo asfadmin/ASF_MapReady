@@ -1982,9 +1982,9 @@ float_image_band_store(FloatImage *self, const char *file,
   // Establish byte order
   /*
   float_image_byte_order_t byte_order = 0;
-  if (strcmp(meta->general->system, "big_ieee") == 0)
+  if (strcmp(meta->general->system, "BIG_IEEE") == 0)
     byte_order = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
-  else if (strcmp(meta->general->system, "lil_ieee") == 0)
+  else if (strcmp(meta->general->system, "LIL_IEEE") == 0)
     byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
   */
 
@@ -2035,9 +2035,9 @@ float_image_store (FloatImage *self, const char *file,
   meta = meta_read(file);
 
   //float_image_byte_order_t meta_byte_order = 0;
-  //if (strcmp(meta->general->system, "big_ieee") == 0)
+  //if (strcmp(meta->general->system, "BIG_IEEE") == 0)
   //  meta_byte_order = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
-  //else if (strcmp(meta->general->system, "lil_ieee") == 0)
+  //else if (strcmp(meta->general->system, "LIL_IEEE") == 0)
   //  meta_byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
 
   //if (meta_byte_order != byte_order)
