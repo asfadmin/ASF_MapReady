@@ -1,0 +1,2379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <!-- definitions of types used in the schema //-->
+  <xs:simpleType name="string20">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="20"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="string80">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="80"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="string128">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="128"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="string255">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="255"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="string1024">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="1024"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="extUnits">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="m"/>
+      <xs:enumeration value="s"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="latitudeDegree">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="-180"/>
+      <xs:maxInclusive value="180"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="lat">
+    <xs:annotation>
+      <xs:documentation>geographical latitude [degrees]</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="latitudeDegree">
+          <xs:attribute name="units" type="xs:string" fixed="degrees"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:simpleType name="longitudeDegree">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="-180"/>
+      <xs:maxInclusive value="180"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="dataFormat">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="CEOS"/>
+      <xs:enumeration value="GEOTIFF"/>
+      <xs:enumeration value="HDF5"/>
+      <xs:enumeration value="COSAR"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="lon">
+    <xs:annotation>
+      <xs:documentation>geographical longitude [degrees]</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="longitudeDegree">
+          <xs:attribute name="units" type="xs:string" fixed="degrees"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="polLayer">
+    <xs:annotation>
+      <xs:documentation>HH, HV, VH or VV</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="HH"/>
+        <xs:enumeration value="HV"/>
+        <xs:enumeration value="VH"/>
+        <xs:enumeration value="VV"/>
+        <xs:enumeration value="UNDEFINED"/>
+      </xs:restriction>
+     </xs:simpleType>
+  </xs:element>
+  <xs:element name="imagingMode">
+    <xs:annotation>
+      <xs:documentation>FINE BEAM, STANDARD BEAM, STRIPMAP, SCANSAR or SPOTLIGHT</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="FINE BEAM"/>
+        <xs:enumeration value="STANDARD BEAM"/>
+        <xs:enumeration value="STRIPMAP"/>
+        <xs:enumeration value="SCANSAR"/>
+        <xs:enumeration value="SPOTLIGHT"/>
+        <xs:enumeration value="UNDEFINED"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="lookDirection">
+    <xs:annotation>
+      <xs:documentation>LEFT or RIGHT</xs:documentation>
+    </xs:annotation>  
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="LEFT"/>
+        <xs:enumeration value="RIGHT"/>
+        <xs:enumeration value="UNDEFINED"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="polarizationMode">
+    <xs:annotation>
+      <xs:documentation>SINGLE, DUAL or QUAD</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="SINGLE"/>
+        <xs:enumeration value="DUAL"/>
+        <xs:enumeration value="QUAD"/>
+        <xs:enumeration value="UNDEFINED"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:simpleType name="product">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SLC"/>
+      <xs:enumeration value="STD"/>
+      <xs:enumeration value="TC"/>
+      <xs:enumeration value="RTC"/>
+      <xs:enumeration value="GEO"/>
+      <xs:enumeration value="SSC"/>
+      <xs:enumeration value="MGD"/>
+      <xs:enumeration value="GEC"/>
+      <xs:enumeration value="EEC"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="projection">
+    <xs:annotation>
+      <xs:documentation>GROUNDRANGE, SLANTRANGE or MAP</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="SLANTRANGE"/>
+        <xs:enumeration value="GROUNDRANGE"/>
+        <xs:enumeration value="MAP"/>
+        <xs:enumeration value="UNDEFINED"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:simpleType name="mapProjection">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="UTM"/>
+      <xs:enumeration value="POLARSTEREOGRAPHIC"/>
+      <xs:enumeration value="GEOGRAPHIC"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="resolutionVariant">
+    <xs:annotation>
+      <xs:documentation>SE or RE</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="SE"/>
+        <xs:enumeration value="RE"/>
+        <xs:enumeration value="UNDEFINED"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:simpleType name="coordinateType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="RAW"/>
+      <xs:enumeration value="ZERODOPPLER"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="dataStart">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="EARLYAZNEARRG"/>
+      <xs:enumeration value="EARLYAZFARRG"/>
+      <xs:enumeration value="LATEAZNEARRG"/>
+      <xs:enumeration value="LATEAZFARRG"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="resamplingMethod">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="NEAREST NEIGHBOR"/>
+      <xs:enumeration value="BILINEAR"/>
+      <xs:enumeration value="CUBIC CONVOLUTION"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="orbitAccuracy">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="PREDICTED"/>
+      <xs:enumeration value="RESTITUTED"/>
+      <xs:enumeration value="PRECISE"/>
+      <xs:enumeration value="TLE"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="processingLevel">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="PRE-PROCESSING"/>
+      <xs:enumeration value="LEVEL_ZERO"/>
+      <xs:enumeration value="LEVEL_ONE"/>
+      <xs:enumeration value="LEVEL_TWO"/>
+      <xs:enumeration value="UNDEFINED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="referenceType">
+    <xs:choice>
+      <xs:element name="frameID" type="xs:integer">
+        <xs:annotation>
+          <xs:documentation>frame number</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="sceneExtent"/>
+      <xs:element name="sceneCenterCoord"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <!-- Start of the actual schema //-->
+  <xs:element name="level1Product">
+    <xs:annotation>
+      <xs:documentation>contains the metadata for level 1 SAR product</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="generalHeader">
+          <xs:annotation>
+            <xs:documentation>ground segment general header structure</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="itemName" type="string80">
+                <xs:annotation>
+                  <xs:documentation>contains the name of the exchanged product</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="mission" type="string20">
+                <xs:annotation>
+                  <xs:documentation>indicates the mission, for which the product is provided </xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="source" type="string20">
+                <xs:annotation>
+                  <xs:documentation>specifies the sensor, source or originator for the provided product</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="destination" type="string20">
+                <xs:annotation>
+                  <xs:documentation>specifies the destination to which provided the product goes</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="generationSystem" type="string80">
+                <xs:annotation>
+                  <xs:documentation>specifies the system which generated the product</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="generationTime" type="xs:dateTime">
+                <xs:annotation>
+                  <xs:documentation>reports UTC time at which the product was generated</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="referenceDocument" type="string255" minOccurs="0">
+                <xs:annotation>
+                  <xs:documentation>specifies the reference document, in which the product is specified with respect to contents and format</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="revision" type="string20" minOccurs="0">
+                <xs:annotation>
+                  <xs:documentation>handle to distinguish between project phases (e.g. testing, commissioning phase, operating)</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="revisionComment" type="string1024" minOccurs="0">
+                <xs:annotation>
+                  <xs:documentation>remark field for a narrative description of the revision field</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="fileName" type="xs:string" use="required"/>
+            <xs:attribute name="fileVersion" type="xs:float" use="optional"/>
+            <xs:attribute name="status" type="xs:string" use="optional"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="productComponents">
+          <xs:annotation>
+            <xs:documentation>lists and points to the product components</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="annotation" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>pointer to the annoation file(s)</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="type">
+                      <xs:annotation>
+                        <xs:documentation>annotation file type</xs:documentation>
+                      </xs:annotation>
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="MAIN"/>
+                          <xs:enumeration value="GEOREF"/>
+                          <xs:enumeration value="GEOCODE"/>
+                          <xs:enumeration value="OTHER"/>
+                          <xs:enumeration value="UNDEFINED"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="file">
+                      <xs:annotation>
+                        <xs:documentation>pointer to product components</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="location">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="host" type="string1024">
+                                <xs:annotation>
+                                  <xs:documentation>host where the file is located; default to: .</xs:documentation>
+                                </xs:annotation>
+                              </xs:element>
+                                <xs:element name="path" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>path where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="filename" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>name of the file</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="size" type="xs:long">
+                            <xs:annotation>
+                              <xs:documentation>size of the file</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="imageData" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>containing one or more polarimetric channels in separate binary data matrices</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element ref="polLayer"/>
+                    <xs:element name="file">
+                      <xs:annotation>
+                        <xs:documentation>pointer to product components</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="location">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="host" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>host where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="path" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>path where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="filename" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>name of the file</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="size" type="xs:long">
+                            <xs:annotation>
+                              <xs:documentation>size of the file</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="layerIndex" type="xs:integer"/>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="quicklooks" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>rescaled images for each image layer</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element ref="polLayer"/>
+                    <xs:element name="file">
+                      <xs:annotation>
+                        <xs:documentation>pointer to product components</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="location">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="host" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>host where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="path" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>path where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="filename" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>name of the file</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="size" type="xs:long">
+                            <xs:annotation>
+                              <xs:documentation>size of the file</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="layerIndex" type="xs:integer"/>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="browseImage">
+                <xs:annotation>
+                  <xs:documentation>one low resolution quicklook</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="file">
+                      <xs:annotation>
+                        <xs:documentation>pointer to product components</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="location">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="host" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>host where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="path" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>path where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="filename" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>name of the file</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="size" type="xs:long">
+                            <xs:annotation>
+                              <xs:documentation>size of the file</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="mapPlot">
+                <xs:annotation>
+                  <xs:documentation>geographic map showing the image footprint</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="file">
+                      <xs:annotation>
+                        <xs:documentation>pointer to product components</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="location">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="host" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>host where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="path" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>path where the file is located; default to: .</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="filename" type="string1024">
+                                  <xs:annotation>
+                                    <xs:documentation>name of the file</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="size" type="xs:long">
+                            <xs:annotation>
+                              <xs:documentation>size of the file</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="productInfo">
+          <xs:annotation>
+            <xs:documentation>general mission, scene, imaging mode related parameters</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="generationInfo">
+                <xs:annotation>
+                  <xs:documentation>key parameters of the product generation and delivery</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="logicalProductID" type="string1024">
+                      <xs:annotation>
+                        <xs:documentation>logical ID</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="receivingStation" type="string20">
+                      <xs:annotation>
+                        <xs:documentation>receiving ground station</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="level0ProcessingFacility" type="string20">
+                      <xs:annotation>
+                        <xs:documentation>facility processing the level zero data</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="level1ProcessingFacility" type="string20">
+                      <xs:annotation>
+                        <xs:documentation>facility processing the level one data</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="groundOperationsType">
+                      <xs:annotation>
+                        <xs:documentation>OPERATIONAL, PRE-OPERATIONAL, INSTRUMENT or TEST</xs:documentation>
+                      </xs:annotation>
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="OPERATIONAL"/>
+                          <xs:enumeration value="PRE-OPERATIONAL"/>
+                          <xs:enumeration value="INSTRUMENT"/>
+                          <xs:enumeration value="TEST"/>
+                          <xs:enumeration value="UNDEFINED"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="deliveryInfo" type="string1024">
+                      <xs:annotation>
+                        <xs:documentation>delivery information</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="copyrightInfo" type="string1024">
+                      <xs:annotation>
+                        <xs:documentation>general copyright remark</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="qualityInfo">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="qualityInspection">
+                            <xs:annotation>
+                              <xs:documentation>AUTO APPROVED, OPERATOR APPROVED or NOT APPROVED</xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                              <xs:restriction base="xs:string">
+                                <xs:enumeration value="AUTO APPROVED"/>
+                                <xs:enumeration value="OPERATOR APPROVED"/>
+                                <xs:enumeration value="NOT APPROVED"/>
+                                <xs:enumeration value="UNDEFINED"/>
+                              </xs:restriction>
+                            </xs:simpleType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="missionInfo">
+                <xs:annotation>
+                  <xs:documentation>mission and orbit parameters</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="mission" type="string1024">
+                      <xs:annotation>
+                        <xs:documentation>mission abbreviation</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="orbitPhase" type="xs:integer">
+                      <xs:annotation>
+                        <xs:documentation>orbit phase: 1 prelaunch phase, 0 launch phase, 1 nominal orbit</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="orbitCycle" type="xs:integer">
+                      <xs:annotation>
+                        <xs:documentation>cycle number</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="absOrbit" type="xs:integer">
+                      <xs:annotation>
+                        <xs:documentation>absolute orbit number at the start of the scene</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="relOrbit" type="xs:integer">
+                      <xs:annotation>
+                        <xs:documentation>relative orbit</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="numOrbitsInCycle" type="xs:integer">
+                      <xs:annotation>
+                        <xs:documentation>nominal number of orbits per cycle</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="orbitDirection">
+                      <xs:annotation>
+                        <xs:documentation>ASCENDING or DESCENDING</xs:documentation>
+                      </xs:annotation>
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="ASCENDING"/>
+                          <xs:enumeration value="DESCENDING"/>
+                          <xs:enumeration value="UNDEFINED"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="acquisitionInfo">
+                <xs:annotation>
+                  <xs:documentation>SAR sensor configuration and instrument modes during acquisition</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="sensor" type="string20">
+                      <xs:annotation>
+                        <xs:documentation>sensor identifier: SAR</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="imagingMode"/>
+                    <xs:element ref="lookDirection"/>
+                    <xs:element ref="polarizationMode"/>
+                    <xs:element name="polarizationList" maxOccurs="4">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element ref="polLayer"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="elevationBeamConfiguration" type="string20">
+                      <xs:annotation>
+                        <xs:documentation>beam identification as taken from the order file</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="imagingModeSpecificInfo">
+                      <xs:complexType>
+                        <xs:choice>
+                          <xs:element name="fineBeam"/>
+                          <xs:element name="standardBeam">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="azimuthBeamID" type="string20">
+                                  <xs:annotation>
+                                    <xs:documentation>azimuth beam ID</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="stripMap"/>
+                          <xs:element name="scanSAR"/>
+                          <xs:element name="spotLight"/>
+                        </xs:choice>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="productVariantInfo">
+                <xs:annotation>
+                  <xs:documentation>product variant description</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="productType" type="string128">
+                      <xs:annotation>
+                        <xs:documentation>mnemonic</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="productVariant" type="product">
+                      <xs:annotation>
+                        <xs:documentation>SLC, STD, TC, RTC, GEO, SSC, MGD, GEC or EEC</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="projection"/>
+                    <xs:element ref="resolutionVariant"/>
+                    <xs:element name="radiometricCorrection">
+                      <xs:annotation>
+                        <xs:documentation>CALIBRATED, RELATIVE CALIBRATED or NOT CALIBRATED</xs:documentation>
+                      </xs:annotation>
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="CALIBRATED"/>
+                          <xs:enumeration value="RELATIVE CALIBRATED"/>
+                          <xs:enumeration value="NOT CALIBRATED"/>
+                          <xs:enumeration value="UNDEFINED"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="imageDataInfo">
+                <xs:annotation>
+                  <xs:documentation>image layer format</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="pixelValueID" type="string128">
+                      <xs:annotation>
+                        <xs:documentation>complex amplitude and phase, radar brightness (beta nought), sigma nought</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="imageDataType">
+                      <xs:annotation>
+                        <xs:documentation>DETECTED, COMPLEX or RAW</xs:documentation>
+                      </xs:annotation>
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="DETECTED"/>
+                          <xs:enumeration value="COMPLEX"/>
+                          <xs:enumeration value="RAW"/>
+                          <xs:enumeration value="UNDEFINED"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="imageDataFormat">
+                      <xs:complexType>
+                        <xs:annotation>
+                          <xs:documentation>CEOS, GEOTIFF, HDF5 or COSAR</xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleContent>
+                          <xs:extension base="dataFormat">
+                            <xs:attribute name="version" type="xs:string" />
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="numberOfLayers" type="xs:integer">
+                      <xs:annotation>
+                        <xs:documentation>number of polarizations + elevation beams</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="imageDataDepth" type="xs:integer">
+                      <xs:annotation>
+                        <xs:documentation>bits per pixel</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="imageStoreOrder">
+                      <xs:annotation>
+                        <xs:documentation>ROWBYROW or COLBYCOL</xs:documentation>
+                      </xs:annotation>
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="ROWBYROW"/>
+                          <xs:enumeration value="COLBYCOL"/>
+                          <xs:enumeration value="UNDEFINED"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="rowContent" type="string20">
+                      <xs:annotation>
+                        <xs:documentation>rangelines, northing (for geocoded products), x</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="columnContent" type="string20">
+                      <xs:annotation>
+                        <xs:documentation>azimuthlines, easting (for geocoded products), y</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="imageRaster">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="numberOfRows" type="xs:integer">
+                            <xs:annotation>
+                              <xs:documentation>line count</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="numberOfColumns" type="xs:integer">
+                            <xs:annotation>
+                              <xs:documentation>sample count</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+			  <xs:element name="startRow" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>start row of a subset</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="startColumn" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>start column of a subset</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="rowScaling" type="xs:double">
+			    <xs:annotation>
+			      <xs:documentation>row scaling factor, in case the image has been resampled</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="columnScaling" type="xs:double">
+			    <xs:annotation>
+			      <xs:documentation>column scaling factor, in case the image has been resampled</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+                          <xs:element name="rowSpacing">
+                            <xs:annotation>
+                              <xs:documentation>spacing of samples within a row from common raster [s or m]</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="extUnits"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="columnSpacing">
+                            <xs:annotation>
+                              <xs:documentation>spacing within a column [s or m]</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="extUnits"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="groundRangeResolution">
+                            <xs:annotation>
+                              <xs:documentation>nominal worst case (at near ground range) [m]</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="azimuthResolution">
+                            <xs:annotation>
+                              <xs:documentation>nominal [m]</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="azimuthLooks" type="xs:double">
+                            <xs:annotation>
+                              <xs:documentation>effective number of looks</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="rangeLooks" type="xs:double">
+                            <xs:annotation>
+                              <xs:documentation>number of range looks</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="sceneInfo">
+                <xs:annotation>
+                  <xs:documentation>time and scene location information</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="sceneID" type="string1024">
+                      <xs:annotation>
+                        <xs:documentation>orbit + time information</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="start">
+                      <xs:annotation>
+                        <xs:documentation>time stamps of first image row</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="timeUTC" type="xs:dateTime">
+                            <xs:annotation>
+                              <xs:documentation>time stamp in UTC</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="stop">
+                      <xs:annotation>
+                        <xs:documentation>time stamps of last image row</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="timeUTC" type="xs:dateTime">
+                            <xs:annotation>
+                              <xs:documentation>time stamp in UTC</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="rangeTime">
+                      <xs:annotation>
+                        <xs:documentation>minimum and maximum of the two slant range times over the entire scene</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="firstPixel">
+                            <xs:annotation>
+                              <xs:documentation>minimum range time of entire scene [s]</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="s"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="lastPixel">
+                            <xs:annotation>
+                              <xs:documentation>maximum range time of entire scene [s]</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="s"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="sceneAzimuthExtent">
+                      <xs:annotation>
+                        <xs:documentation>(approximate and at mid-range) scene extent in azimuth [m]</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="m"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="sceneRangeExtent">
+                      <xs:annotation>
+                        <xs:documentation>(approximately and at mid-range) scene extent in range [m]</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="m"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="sceneCenterCoord">
+                      <xs:annotation>
+                        <xs:documentation>geographic center coordinates</xs:documentation>
+                      </xs:annotation>
+			<xs:complexType>
+			  <xs:sequence>
+			    <xs:element name="refRow" type="xs:integer">
+			      <xs:annotation>
+			        <xs:documentation>position in image: row</xs:documentation>
+			      </xs:annotation>
+			    </xs:element>
+			    <xs:element name="refColumn" type="xs:integer">
+			      <xs:annotation>
+			        <xs:documentation>position in image: column</xs:documentation>
+			      </xs:annotation>
+			    </xs:element>
+			    <xs:element ref="lat"/>
+			    <xs:element ref="lon"/>
+			    <xs:element name="azimuthTimeUTC" type="xs:dateTime">
+			      <xs:annotation>
+			        <xs:documentation>time stamp in UTC for coordinate</xs:documentation>
+			      </xs:annotation>
+			    </xs:element>
+			    <xs:element name="rangeTime">
+			      <xs:annotation>
+			        <xs:documentation>range time [s]</xs:documentation>
+			      </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="s"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="incidenceAngle">
+			    <xs:annotation>
+			      <xs:documentation>incidence angle [degrees]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="degrees"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="sceneAverageHeight">
+                      <xs:annotation>
+                        <xs:documentation>scene average height with respect to reference frame [m]</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="m"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="sceneCornerCoord" minOccurs="4" maxOccurs="4">
+		      <xs:complexType>
+		        <xs:sequence>
+			  <xs:annotation>
+			    <xs:documentation>geographic corner coordinates (4)</xs:documentation>
+			  </xs:annotation>
+			  <xs:element name="refRow" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>position in image row</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="refColumn" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>position in image column</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element ref="lat"/>
+			  <xs:element ref="lon"/>
+			  <xs:element name="azimuthTimeUTC" type="xs:dateTime">
+			    <xs:annotation>
+			      <xs:documentation>time stamp in UTC for coordinate</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="rangeTime">
+			    <xs:annotation>
+			      <xs:documentation>range time [s]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="s"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="incidenceAngle">
+			    <xs:annotation>
+			      <xs:documentation>incidence angle [degrees]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="degrees"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+                    </xs:element>
+		    <xs:element name="yawAngle">
+		      <xs:annotation>
+		        <xs:documentation>yaw angle of the instrument [degrees]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="degrees"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="pitchAngle">
+		      <xs:annotation>
+		        <xs:documentation>pitch angle of the instrument [degrees]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="degrees"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="rollAngle">
+		      <xs:annotation>
+		        <xs:documentation>roll angle of the instrument [degrees]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="degrees"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+                    <xs:element name="headingAngle">
+		      <xs:annotation>
+		        <xs:documentation>rotation of azimuth heading clockwise with respect to north [degrees]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="degrees"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="earthRadius">
+		      <xs:annotation>
+		        <xs:documentation>earth radius at the scene center [m]</xs:documentation>
+		      </xs:annotation>
+		      <xs:complexType>
+		        <xs:simpleContent>
+			  <xs:extension base="xs:double">
+			    <xs:attribute name="units" type="xs:string" fixed="m"/>
+			  </xs:extension>
+			</xs:simpleContent>
+		      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="satelliteHeight">
+		      <xs:annotation>
+		        <xs:documentation>satellite height at the scene center from earth center [m]</xs:documentation>
+		      </xs:annotation>
+		      <xs:complexType>
+		        <xs:simpleContent>
+			  <xs:extension base="xs:double">
+			    <xs:attribute name="units" type="xs:string" fixed="m"/>
+			  </xs:extension>
+			</xs:simpleContent>
+		      </xs:complexType>
+		    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="previewInfo">
+                <xs:annotation>
+                  <xs:documentation>quicklook information</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+		    <xs:element name="quicklooks">
+		      <xs:complexType>
+		        <xs:sequence>
+			  <xs:element name="imageDataFormat" type="string255">
+			    <xs:annotation>
+			      <xs:documentation>image data format (TIFF greyscale)</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="imageDataDepth" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>image data depth (16 bit)</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="imageRaster">
+			    <xs:complexType>
+			      <xs:sequence>
+			        <xs:element name="numberOfRows" type="xs:integer">
+				  <xs:annotation>
+				    <xs:documentation>line count</xs:documentation>
+				  </xs:annotation>
+				</xs:element>
+				<xs:element name="numberOfColumns" type="xs:integer">
+				  <xs:annotation>
+				    <xs:documentation>sample count</xs:documentation>
+				  </xs:annotation>
+				</xs:element>
+				<xs:element name="columnBlockLength">
+				  <xs:annotation>
+				    <xs:documentation>resampling factor in range [pixels]</xs:documentation>
+				  </xs:annotation>
+                                  <xs:complexType>
+                                    <xs:simpleContent>
+                                      <xs:extension base="xs:double">
+                                        <xs:attribute name="units" type="xs:string" fixed="pixels"/>
+                                      </xs:extension>
+                                    </xs:simpleContent>
+                                  </xs:complexType>
+				</xs:element>
+				<xs:element name="rowBlockLength">
+				  <xs:annotation>
+				    <xs:documentation>resampling factor in azimuth [pixels]</xs:documentation>
+				  </xs:annotation>
+                                  <xs:complexType>
+                                    <xs:simpleContent>
+                                      <xs:extension base="xs:double">
+                                        <xs:attribute name="units" type="xs:string" fixed="pixels"/>
+                                      </xs:extension>
+                                    </xs:simpleContent>
+                                  </xs:complexType>
+				</xs:element>
+				<xs:element name="rowSpacing">
+				  <xs:annotation>
+				    <xs:documentation>spacing of samples within row from common raster [s or m]</xs:documentation>
+				  </xs:annotation>
+                                  <xs:complexType>
+                                    <xs:simpleContent>
+                                      <xs:extension base="xs:double">
+                                        <xs:attribute name="units" type="extUnits"/>
+                                      </xs:extension>
+                                    </xs:simpleContent>
+                                  </xs:complexType>
+				</xs:element>
+				<xs:element name="columnSpacing">
+				  <xs:annotation>
+				    <xs:documentation>spacing within a column [s or m]</xs:documentation>
+				  </xs:annotation>
+                                  <xs:complexType>
+                                    <xs:simpleContent>
+                                      <xs:extension base="xs:double">
+                                        <xs:attribute name="units" type="extUnits"/>
+                                      </xs:extension>
+                                    </xs:simpleContent>
+                                  </xs:complexType>
+				</xs:element>
+			      </xs:sequence>
+			    </xs:complexType>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="browseImage">
+		      <xs:complexType>
+			<xs:sequence>
+			  <xs:element name="imageDataFormat" type="string255">
+			    <xs:annotation>
+			      <xs:documentation>image data format (TIFF or JPEG)</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="imageDataDepth" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>image data depth (24 bit)</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="mapPlotFormat" type="string255">
+		      <xs:annotation>
+			<xs:documentation>map plot format (PNG, GIF or KML)</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+        </xs:element>
+	<xs:element name="productSpecific">
+          <xs:annotation>
+            <xs:documentation>specific information for product</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+	      <xs:element name="complexImageInfo">
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="commonPRF">
+		      <xs:annotation>
+		        <xs:documentation>intermediate "output PRF" used during processing [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="commonRSF">
+		      <xs:annotation>
+		        <xs:documentation>range sampling frequency [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="slantRangeResolution">
+		      <xs:annotation>
+		        <xs:documentation>slant range resolution [m]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="m"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="projectedSpacingAzimuth">
+		      <xs:annotation>
+		        <xs:documentation>nominal projected pixel spacing on ground at scene center [m]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="m"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="projectedSpacingRange">
+		      <xs:complexType>
+		        <xs:sequence>
+			  <xs:element name="groundNear">
+			    <xs:annotation>
+			      <xs:documentation>ground near range [m]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="groundFar">
+			    <xs:annotation>
+			      <xs:documentation>ground far range [m]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="slantRange">
+			    <xs:annotation>
+			      <xs:documentation>slant range [m]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="imageCoordinateType" type="coordinateType">
+                      <xs:annotation>
+                        <xs:documentation>RAW or ZERODOPPLER</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+		    <xs:element name="imageDataStartWith" type="dataStart">
+                      <xs:annotation>
+                        <xs:documentation>EARLYAZNEARRG, EARLYAZFARRG, LATEAZNEARRG or LATEAZFARRG</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+		    <xs:element name="quicklookDataStartWith" type="dataStart">
+                      <xs:annotation>
+                        <xs:documentation>EARLYAZNEARRG, EARLYAZFARRG, LATEAZNEARRG or LATEAZFARRG</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+	<xs:element name="setup">
+          <xs:annotation>
+            <xs:documentation>screening and processing chain setup and control parameters etc. used</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+	      <xs:element name="orderInfo">
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="orderType" type="string128">
+		      <xs:annotation>
+		        <xs:documentation>order type (e.g. L1B-SAR)</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="processingPriority" type="string20">
+		      <xs:annotation>
+		        <xs:documentation>processing priority (e.g. NRT)</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="orbitAccuracy" type="orbitAccuracy">
+                      <xs:annotation>
+                        <xs:documentation>PREDICTED, RESTITUTED, PRECISE or TLE</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+		    <xs:element name="sceneSpecification">
+		      <xs:annotation>
+			<xs:documentation>FRAME, TIME or CENTERCOORDS</xs:documentation>
+		      </xs:annotation>
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="FRAME"/>
+                          <xs:enumeration value="TIME"/>
+                          <xs:enumeration value="CENTERCOORDS"/>
+                          <xs:enumeration value="UNDEFINED"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+		    </xs:element>
+		    <xs:element name="orderedScene">
+		      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="frameID" type="xs:integer">
+                            <xs:annotation>
+                              <xs:documentation>frame number</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element ref="imagingMode"/>
+                          <xs:element ref="lookDirection"/>
+                          <xs:element ref="polarizationMode"/>
+                          <xs:element name="polList">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element ref="polLayer" maxOccurs="4"/>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="elevationBeamConfiguration" type="string20">
+                            <xs:annotation>
+                              <xs:documentation>beam identification</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="productVariant" type="product">
+                            <xs:annotation>
+                              <xs:documentation>SLC, STD, TC, RTC, GEO, SSC, MGD, GEC or EEC</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element ref="resolutionVariant"/>
+                          <xs:element ref="projection"/>
+                        </xs:sequence>
+                      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      <xs:element name="inputData">
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="logicalDataTakeID" type="string1024">
+		      <xs:annotation>
+		        <xs:documentation>logical datatake ID</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="level0ProductID" type="string1024">
+		      <xs:annotation>
+			<xs:documentation>level zero product ID</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="L0SARGenerationTimeUTC" type="xs:dateTime">
+		      <xs:annotation>
+		        <xs:documentation>level zero SAR generation time UTC</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      <xs:element name="processingSteps">
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="software">
+		      <xs:annotation>
+		        <xs:documentation>major components of processing chain</xs:documentation>
+		      </xs:annotation>
+		      <xs:complexType>
+			<xs:sequence>
+			  <xs:element name="softwareID" type="string128">
+			    <xs:annotation>
+			      <xs:documentation>software ID</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="softwareVersion" type="string128">
+			    <xs:annotation>
+			      <xs:documentation>version number</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="processingTimeUTC" type="xs:dateTime">
+		            <xs:annotation>
+		              <xs:documentation>processing time in UTC</xs:documentation>
+		            </xs:annotation>
+		          </xs:element>
+                          <xs:element name="description" type="string255">
+                            <xs:annotation>
+                              <xs:documentation>one line description of software</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+			  <xs:element name="algorithm" type="string1024">
+			    <xs:annotation>
+			      <xs:documentation>main algorithm</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+                          <xs:element name="processingLevel" type="processingLevel">
+                            <xs:annotation>
+                              <xs:documentation>PRE-PROCESSING, LEVEL ZERO, LEVEL ONE, LEVEL TWO</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+			</xs:sequence>
+                        <xs:attribute name="step" type="xs:integer"/>
+		      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+	<xs:element name="processing">
+          <xs:annotation>
+            <xs:documentation>processor and product configuration parameters</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+	      <xs:element name="doppler">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="dopplerBasebandEstimationMethod" type="string255">
+                      <xs:annotation>
+                        <xs:documentation>Doppler baseband estimation method</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="dopplerCentroidCoordinateType" type="coordinateType">
+                      <xs:annotation>
+                        <xs:documentation>RAW or ZERODOPPLER</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="dopplerCentroid">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element ref="polLayer"/>
+                          <xs:element name="numberOfBlocks" type="xs:integer">
+                            <xs:annotation>
+                              <xs:documentation>number of blocks</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="numberOfRejectedBlocks" type="xs:integer">
+                            <xs:annotation>
+                              <xs:documentation>number of rejected blocks</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="numberOfDopplerRecords" type="xs:integer">
+                            <xs:annotation>
+                              <xs:documentation>number of Doppler records</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="dopplerEstimate">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="timeUTC" type="xs:dateTime">
+                                  <xs:annotation>
+                                    <xs:documentation>time stamp in UTC</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="dopplerAtMidRange">
+                                  <xs:annotation>
+                                    <xs:documentation>Doppler at mid range [Hz]</xs:documentation>
+                                  </xs:annotation>
+                                  <xs:complexType>
+                                    <xs:simpleContent>
+                                      <xs:extension base="xs:double">
+                                        <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                                      </xs:extension>
+                                    </xs:simpleContent>
+                                  </xs:complexType>
+                                </xs:element>
+                                <xs:element name="polynomialDegree" type="xs:integer">
+                                  <xs:annotation>
+                                    <xs:documentation>polynomial degree</xs:documentation>
+                                  </xs:annotation>
+                                </xs:element>
+                                <xs:element name="basebandDoppler">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="coefficient" minOccurs="3" maxOccurs="3">
+                                        <xs:annotation>
+                                          <xs:documentation>Doppler coefficient</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                          <xs:simpleContent>
+                                            <xs:extension base="xs:double">
+                                              <xs:attribute name="exponent" type="xs:integer"/>
+                                            </xs:extension>
+                                          </xs:simpleContent>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="layerIndex" type="xs:integer"/>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+               </xs:element>
+	       <xs:element name="processingParameter">
+	         <xs:annotation>
+		   <xs:documentation>range and azimuth processing parameters</xs:documentation>
+		 </xs:annotation>
+		 <xs:complexType>
+		   <xs:sequence>
+		     <xs:element name="processingInfoCoordinateType" type="coordinateType">
+                      <xs:annotation>
+                        <xs:documentation>RAW or ZERODOPPLER</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+		    <xs:element name="rangeLooks" type="xs:double">
+		      <xs:annotation>
+		        <xs:documentation>number of range looks</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="azimuthLooks" type="xs:double">
+		      <xs:annotation>
+		        <xs:documentation>number of azimuth looks</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="rangeLookBandwidth">
+		      <xs:annotation>
+		        <xs:documentation>range look bandwidth [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="azimuthLookBandwidth">
+		      <xs:annotation>
+		        <xs:documentation>azimuth look bandwidth [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="totalProcessedRangeBandwidth">
+		      <xs:annotation>
+		        <xs:documentation>total processed range bandwidth [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="totalProcessedAzimuthBandwidth">
+		      <xs:annotation>
+		        <xs:documentation>total processed azimuth bandwidth [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="chirpRate">
+		      <xs:annotation>
+		        <xs:documentation>chirp rate [Hz/s]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz/s"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="pulseDuration">
+		      <xs:annotation>
+		        <xs:documentation>pulse duration [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      <xs:element name="processingFlags">
+		<xs:annotation>
+		  <xs:documentation>flags indicating which processing steps have been performed</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="chirpReplicaUsedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>reconstructed chirp used</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="geometricDopplerUsedFlag" type="xs:boolean">
+		      <xs:annotation>
+		        <xs:documentation>geometric Doppler centroid estimate has been used</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="azimuthPatternCorrectedFlag" type="xs:boolean">
+		      <xs:annotation>
+		        <xs:documentation>stripmap azimuth antenna pattern correction applied</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="elevationPatternCorrectedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>antenna elevation pattern correction applied</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="detectedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>detection performed</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="multiLookedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>multilooking performed</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="polarimetricProcessedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>polarimetric processing performed</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="terrainCorrectedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>terrain correction performed</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="layoverShadowMaskGeneratedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>layover/shadow mask generated</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="geocodedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>geocoding performed</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="nominalProcessingPerformedFlag" type="xs:boolean">
+		      <xs:annotation>
+			<xs:documentation>nominal processing steps used</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+	<xs:element name="instrument">
+          <xs:annotation>
+            <xs:documentation>sensor specific parameters at the time of the data acquisition</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+	      <xs:element name="instrumentInfoCoordinateType" type="coordinateType">
+                <xs:annotation>
+                  <xs:documentation>RAW or ZERODOPPLER</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+	      <xs:element name="radarParameters">
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="centerFrequency">
+		      <xs:annotation>
+		        <xs:documentation>center frequency [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      <xs:element name="settings">
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element ref="polLayer"/>
+		    <xs:element name="beamID" type="string20">
+		      <xs:annotation>
+			<xs:documentation>beam identifier</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="rxBandwidth">
+		      <xs:annotation>
+		        <xs:documentation>range bandwidth [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="RSF">
+		      <xs:annotation>
+			<xs:documentation>range sampling frequency [Hz]</xs:documentation>
+		      </xs:annotation>
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:double">
+                            <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="numberOfPRFChanges" type="xs:integer">
+		      <xs:annotation>
+			<xs:documentation>number of PRF changes</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="numberOfEchoWindowPositionChanges" type="xs:integer">
+		      <xs:annotation>
+			<xs:documentation>number of echo window position changes</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="numberOfEchoWindowLengthChanges" type="xs:integer">
+		      <xs:annotation>
+			<xs:documentation>number of echo window length changes</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="numberOfSettingRecords" type="xs:integer">
+		      <xs:annotation>
+			<xs:documentation>number of setting records</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="settingRecords">
+		      <xs:complexType>
+			<xs:sequence>
+			  <xs:element name="dataSegment">
+			    <xs:complexType>
+			      <xs:sequence>
+				<xs:element name="startTimeUTC" type="xs:dateTime">
+				  <xs:annotation>
+				    <xs:documentation>start time stamp in UTC</xs:documentation>
+				  </xs:annotation>
+				</xs:element>
+				<xs:element name="stopTimeUTC" type="xs:dateTime">
+				  <xs:annotation>
+				    <xs:documentation>stop time stamp in UTC</xs:documentation>
+				  </xs:annotation>
+				</xs:element>
+				<xs:element name="numberOfRows" type="xs:integer">
+				  <xs:annotation>
+				    <xs:documentation>line count</xs:documentation>
+				  </xs:annotation>
+				</xs:element>
+			      </xs:sequence>
+                              <xs:attribute name="segmentID" type="xs:integer"/>
+			    </xs:complexType>
+			  </xs:element>
+			  <xs:element name="PRF">
+			    <xs:annotation>
+			      <xs:documentation>pulse repetition frequency [Hz]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="echoWindowPosition" type="xs:double">
+			    <xs:annotation>
+			      <xs:documentation>sampling window start time</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="echoWindowLength" type="xs:double">
+			    <xs:annotation>
+			      <xs:documentation>number of samples</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="pulseType" type="string20">
+			    <xs:annotation>
+			      <xs:documentation>pulse type</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+	<xs:element name="platform">
+          <xs:annotation>
+            <xs:documentation>state vectors and geometric layout of the platform</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+	      <xs:element name="orbit">
+		<xs:annotation>
+		  <xs:documentation>relevant segment out of the orbit file</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="orbitHeader">
+		      <xs:complexType>
+			<xs:sequence>
+			  <xs:element name="sensor">
+			    <xs:annotation>
+			      <xs:documentation>PREDICTED SENSOR, SINGLE GPS or DIFFERENTIAL GPS</xs:documentation>
+			    </xs:annotation>
+                            <xs:simpleType>
+                              <xs:restriction base="xs:string">
+                                <xs:enumeration value="PREDICTED SENSOR"/>
+                                <xs:enumeration value="SINGLE GPS"/>
+                                <xs:enumeration value="DIFFERENTIAL GPS"/>
+                                <xs:enumeration value="UNDEFINED"/>
+                              </xs:restriction>
+                            </xs:simpleType>
+			  </xs:element>
+			  <xs:element name="accuracy" type="orbitAccuracy">
+                            <xs:annotation>
+                              <xs:documentation>PREDICTED, RESTITUTED, PRECISE or TLE</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+			  <xs:element name="numStateVectors" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>number of state vectors</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="firstStateTimeUTC" type="xs:dateTime">
+			    <xs:annotation>
+			      <xs:documentation>UTC time of first state vector</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="lastStateTimeUTC" type="xs:dateTime">
+			    <xs:annotation>
+			      <xs:documentation>UTC time of last state vector</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="stateVectorRefFrame" type="string80">
+			    <xs:annotation>
+			      <xs:documentation>state vector reference frame</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="stateVectorTimeSpacing">
+			    <xs:annotation>
+			      <xs:documentation>state vector time spacing [s]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="s"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="stateVec" maxOccurs="unbounded">
+		      <xs:annotation>
+			<xs:documentation>state vector</xs:documentation>
+		      </xs:annotation>
+		      <xs:complexType>
+		      	<xs:sequence>
+			  <xs:element name="timeUTC" type="xs:dateTime">
+			    <xs:annotation>
+			      <xs:documentation>UTC time of state vector</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="posX">
+			    <xs:annotation>
+			      <xs:documentation>ECR coordinate position in x [m]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="posY">
+			    <xs:annotation>
+			      <xs:documentation>ECR coordinate position in y [m]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="posZ">
+			    <xs:annotation>
+			      <xs:documentation>ECR coordinate position in z [m]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="velX">
+			    <xs:annotation>
+			      <xs:documentation>ECR coordinate velocity in x [m/s]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m/s"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="velY">
+			    <xs:annotation>
+			      <xs:documentation>ECR coordinate velocity in y [m/s]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m/s"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="velZ">
+			    <xs:annotation>
+			      <xs:documentation>ECR coordinate velocity in z [m/s]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="m/s"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			</xs:sequence>
+                        <xs:attribute name="num" type="xs:integer"/>
+		      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+	<xs:element name="productQuality">
+          <xs:annotation>
+            <xs:documentation>summarizes image and data quality</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+	      <xs:element name="rawDataQuality">
+	        <xs:annotation>
+		  <xs:documentation>assessment of raw data quality (per layer)</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element ref="polLayer"/>
+		    <xs:element name="beamID" type="string20">
+		      <xs:annotation>
+			<xs:documentation>beam identifier</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="numGaps" type="xs:integer">
+		      <xs:annotation>
+			<xs:documentation>number of data gaps</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="gap">
+		      <xs:annotation>
+		        <xs:documentation>data gap information</xs:documentation>
+		      </xs:annotation>
+		      <xs:complexType>
+			<xs:sequence>
+			  <xs:element name="start" type="xs:unsignedLong">
+			    <xs:annotation>
+			      <xs:documentation>start line of data gap</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="length" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>number of lines forming data gap</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="fill">
+			    <xs:annotation>
+			      <xs:documentation>RANDOM or ZERO</xs:documentation>
+			    </xs:annotation>
+                            <xs:simpleType>
+                              <xs:restriction base="xs:string">
+                                <xs:enumeration value="RANDOM"/>
+                                <xs:enumeration value="ZERO"/>
+                                <xs:enumeration value="UNDEFINED"/>
+                              </xs:restriction>
+                            </xs:simpleType>
+			  </xs:element>
+			</xs:sequence>
+                        <xs:attribute name="num" type="xs:integer"/>
+		      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="gapSignificanceFlag" type="xs:boolean">
+		      <xs:annotation>
+		        <xs:documentation>gaps above the tolerance level?</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="missingLinesSignificanceFlag" type="xs:boolean">
+		      <xs:annotation>
+		        <xs:documentation>missing lines outside tolerance level?</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="bitErrorSignificanceFlag" type="xs:boolean">
+		      <xs:annotation>
+		        <xs:documentation>bit error outside tolerance limits?</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		    <xs:element name="timeReconstructionSignificanceFlag" type="xs:boolean">
+		      <xs:annotation>
+		        <xs:documentation>time reconstruction outside tolerance limits?</xs:documentation>
+		      </xs:annotation>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      <xs:element name="processingParameterQuality">
+                <xs:complexType>
+                  <xs:annotation>
+                    <xs:documentation>quality of processing parameters</xs:documentation>
+                  </xs:annotation>
+                  <xs:sequence>
+                    <xs:element name="dopplerAmbiguityNotZeroFlag" type="xs:boolean">
+                      <xs:annotation>
+                        <xs:documentation>Doppler ambiguities?</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="dopplerOutsideLimitsFlag" type="xs:boolean">
+                      <xs:annotation>
+                        <xs:documentation>Doppler outside tolerance limits?</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="geolocationQualityLowFlag" type="xs:boolean">
+                      <xs:annotation>
+                        <xs:documentation>orbit/attitude/DEM/Doppler quality problems?</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+	     </xs:element>
+	     <xs:element name="imageDataQuality">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element ref="polLayer"/>
+                    <xs:element name="beamID" type="string20">
+                      <xs:annotation>
+                        <xs:documentation>beam identifier</xs:documentation>
+                      </xs:annotation>
+                    </xs:element>
+                    <xs:element name="imageDataStatistics">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:annotation>
+                            <xs:documentation>image data statistics</xs:documentation>
+                          </xs:annotation>
+                          <xs:element name="minValue" type="xs:double">
+                            <xs:annotation>
+                              <xs:documentation>minimum value</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="maxValue" type="xs:double">
+                            <xs:annotation>
+                              <xs:documentation>maximum value</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="meanValue" type="xs:double">
+                            <xs:annotation>
+                              <xs:documentation>mean value</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="standardDeviation" type="xs:double">
+                            <xs:annotation>
+                              <xs:documentation>standard deviation</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="missingLines" type="xs:int">
+                            <xs:annotation>
+                              <xs:documentation>missing lines</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="bitErrorRate" type="xs:double">
+                            <xs:annotation>
+                              <xs:documentation>bit error rate</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                          <xs:element name="noDataValue" type="xs:double">
+                            <xs:annotation>
+                              <xs:documentation>no data value</xs:documentation>
+                            </xs:annotation>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="layerIndex" type="xs:integer"/>
+                </xs:complexType>
+	      </xs:element>
+	      <xs:element name="limits">
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="rawData">
+		      <xs:complexType>
+			<xs:sequence>
+			  <xs:element name="gapDefinition" type="xs:integer">
+			    <xs:annotation>
+			      <xs:documentation>number of consecutive missing lines considered a gap</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="gapPercentageLimit" type="xs:double">
+			    <xs:annotation>
+			      <xs:documentation>percentage of gaps considered significant</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="missingLinePercentageLimit" type="xs:double">
+			    <xs:annotation>
+			      <xs:documentation>percentage of missing lines considered significant</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="bitErrorLimit" type="xs:double">
+			    <xs:annotation>
+			      <xs:documentation>bit error rate considered significant</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			  <xs:element name="timeReconstructionPercentageLimit" type="xs:double">
+			    <xs:annotation>
+			      <xs:documentation>percentage of time reconstruction considered significant</xs:documentation>
+			    </xs:annotation>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+		    </xs:element>
+		    <xs:element name="processing">
+		      <xs:complexType>
+			<xs:sequence>
+		 	  <xs:element name="dopplerCentroidLimit">
+			    <xs:annotation>
+			      <xs:documentation>Doppler value limit [Hz]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="Hz"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			  <xs:element name="geolocationQualityLimit">
+			    <xs:annotation>
+			      <xs:documentation>minimum posting required for accurate geolocation [arcsec]</xs:documentation>
+			    </xs:annotation>
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:double">
+                                  <xs:attribute name="units" type="xs:string" fixed="arcsec"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+			  </xs:element>
+			</xs:sequence>
+		      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      <xs:element name="instrumentStateRemark" type="string1024">
+		<xs:annotation>
+		  <xs:documentation>steering or antenna problems</xs:documentation>
+		</xs:annotation>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
