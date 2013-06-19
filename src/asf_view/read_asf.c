@@ -571,5 +571,26 @@ int open_asf_data(const char *filename, const char *band, int multilook,
     else
         client->data_type = info->is_rgb ? RGB_FLOAT : GREYSCALE_FLOAT;
 
+    // special sanity checks for ASF data
+    if (meta->general->line_count == 0 || meta->general->sample_count == 0) {
+      asfPrintStatus("Line count: %d\n", meta->general->line_count);
+      asfPrintStatus("Sample count: %d\n", meta->general->sample_count);
+      asfPrintWarning("Line count or sample count is 0.\n");
+      return FALSE;
+    }
+
+    long long sz = fileSize(filename);
+    int mult = (info->is_rgb ? 3 : 1) * (meta->general->data_type == ASF_BYTE ? 1 : 4);
+    long long expected_sz = meta->general->line_count * meta->general->sample_count * mult;
+    if (sz < expected_sz) {
+      asfPrintWarning("File is too short!  Truncating lines...\n");
+      int orig = meta->general->line_count;
+      asfPrintStatus("Original line count: %d\n", orig);
+      meta->general->line_count = sz / mult / meta->general->sample_count;
+      asfPrintStatus("Truncated line count (calculated from file size): %d\n",
+                     meta->general->line_count);
+      asfPrintWarning("Truncated %d lines!\n", orig - meta->general->line_count);
+    }
+
     return TRUE;
 }
