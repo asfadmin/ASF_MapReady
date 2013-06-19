@@ -2,8 +2,6 @@
 
 include ../../make_support/system_rules
 
-INCLUDES = -I/home/talogan/ASF_MapReady/include -Ilibsgp4
-
 LIBS  = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_raster.a \
@@ -14,8 +12,9 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
 	$(LIBDIR)/libfftw3f.a \
-	libsgp4.a \
+	$(LIBDIR)/libsgp4.a \
 	-lm -lz
+
 
 OBJS = create_roi_in.o \
 	dop.o \
@@ -29,7 +28,7 @@ OBJS = create_roi_in.o \
 all: create_roi_in create_base_images reprocess_frame
 
 runtest.o: runtest.cpp
-	c++ -c runtest.cpp -Ilibsgp4
+	c++ -c runtest.cpp -I../../include/libsgp4
 	
 create_roi_in: $(OBJS)
 	c++ $(CFLAGS) $(LFLAGS) -o create_roi_in $(OBJS) $(LIBS) $(LDFLAGS) $(INCLUDES)
@@ -44,4 +43,4 @@ reprocess_frame: reprocess_frame.o
 	mv reprocess_frame $(BINDIR)
 
 clean:
-	rm -f $(OBJS)
+	rm -f *.o

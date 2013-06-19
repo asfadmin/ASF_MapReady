@@ -39,9 +39,9 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	strcpy (ddr->last_used_date,"");
 	strcpy (ddr->last_used_time,"");
 /* System byte ordering style; char[12] */
-	if (0==strcmp(meta_get_system(),"big_ieee"))
+	if (0==strcmp(meta_get_system(),"BIG_IEEE"))
 		strcpy(ddr->system,"ieee-std");
-	else if (0==strcmp(meta_get_system(),"lil_ieee"))
+	else if (0==strcmp(meta_get_system(),"LIL_IEEE"))
 	        strcpy(ddr->system,"ieee-lil");
 		//strcpy(ddr->system,"linux");
 	else if (0==strcmp(meta_get_system(),"cray_float"))

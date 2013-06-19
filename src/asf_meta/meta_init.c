@@ -40,6 +40,7 @@ meta_general *meta_general_init(void)
   strcpy(general->sensor, MAGIC_UNSET_STRING);
   strcpy(general->sensor_name, MAGIC_UNSET_STRING);
   strcpy(general->mode, MAGIC_UNSET_STRING);
+  strcpy(general->receiving_station, MAGIC_UNSET_STRING);
   strcpy(general->processor, MAGIC_UNSET_STRING);
   general->data_type = MAGIC_UNSET_INT;
   general->image_data_type = MAGIC_UNSET_INT;
@@ -102,12 +103,12 @@ meta_sar *meta_sar_init(void)
   sar->satellite_height = MAGIC_UNSET_DOUBLE;
   strcpy(sar->satellite_binary_time, MAGIC_UNSET_STRING);
   strcpy(sar->satellite_clock_time, MAGIC_UNSET_STRING);
-  sar->range_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE;
-  sar->range_doppler_coefficients[1] = MAGIC_UNSET_DOUBLE;
-  sar->range_doppler_coefficients[2] = MAGIC_UNSET_DOUBLE;
-  sar->azimuth_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE;
-  sar->azimuth_doppler_coefficients[1] = MAGIC_UNSET_DOUBLE;
-  sar->azimuth_doppler_coefficients[2] = MAGIC_UNSET_DOUBLE;
+  sar->range_doppler_coefficients[0] = 0.0;
+  sar->range_doppler_coefficients[1] = 0.0;
+  sar->range_doppler_coefficients[2] = 0.0;
+  sar->azimuth_doppler_coefficients[0] = 0.0;
+  sar->azimuth_doppler_coefficients[1] = 0.0;
+  sar->azimuth_doppler_coefficients[2] = 0.0;
   sar->chirp_rate = MAGIC_UNSET_DOUBLE;
   sar->pulse_duration = MAGIC_UNSET_DOUBLE;
   sar->range_sampling_rate = MAGIC_UNSET_DOUBLE;

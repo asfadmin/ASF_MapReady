@@ -3,7 +3,7 @@
 
 include ../../make_support/system_rules
 
-INCLUDES = -I/home/talogan/ASF_MapReady/include -Ilibsgp4
+INCLUDES = -I../../include/libsgp4
 
 LIBS  = \
 	$(LIBDIR)/libasf_sar.a \
@@ -15,7 +15,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
 	$(LIBDIR)/libfftw3f.a \
-	libsgp4.a \
+	$(LIBDIR)/libsgp4.a \
 	-lm -lz
 
 OBJS = roi2img.o \
@@ -26,7 +26,7 @@ OBJS = roi2img.o \
 all: roi2img
 
 runtest.o: runtest.cpp
-	c++ -c runtest.cpp -Ilibsgp4
+	c++ -c runtest.cpp -I../../include/libsgp4
 
 roi2img: $(OBJS)
 	c++ $(CFLAGS) $(LFLAGS) -o roi2img $(OBJS) $(LIBS) $(LDFLAGS) $(INCLUDES)

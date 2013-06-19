@@ -365,6 +365,15 @@ void fill_structure_field(char *field_name, void *valp)
       strncpy(MGENERAL->mode, VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX);
       return;
     }
+    if ( !strcmp(field_name, "receiving_station") ) {
+      if ( strlen(VALP_AS_CHAR_POINTER) > MODE_FIELD_STRING_MAX - 1 ) {
+                                          /* (-1 for trailing null)  */
+        error_message("receiving_station = '%s'; string should not exceed %d characters.",
+                      VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX-1);
+     }
+      strncpy(MGENERAL->receiving_station, VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX);
+      return;
+    }
     if ( !strcmp(field_name, "processor") )
       { strcpy(MGENERAL->processor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "data_type") ) {
