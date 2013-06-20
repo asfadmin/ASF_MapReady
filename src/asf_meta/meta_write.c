@@ -239,6 +239,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"sensor:", meta->general->sensor, "Imaging satellite");
   meta_put_string(fp,"sensor_name:", meta->general->sensor_name, "Imaging sensor");
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
+  meta_put_string(fp,"receiving_station:",meta->general->receiving_station,"Downlinking ground station");
   meta_put_string(fp,"processor:", meta->general->processor,"Name and Version of Processor");
   strcpy(comment,"Type of samples (e.g. REAL64)");
   char *data_type = data_type2str(meta->general->data_type);
@@ -1439,10 +1440,10 @@ void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
   {
     sprintf(param,"%-16.11g",value);
     strtok(param," ");/*remove all trailing spaces */
-    if (is_empty(param)) { strcpy(param,"nan"); }
+    if (is_empty(param)) { strcpy(param,"NaN"); }
   }
   else {
-    strcpy(param,"nan");
+    strcpy(param,"NaN");
   }
   meta_put_string(meta_file,name,param,comment);
 }

@@ -164,6 +164,7 @@ char *findExt(const char *name)
 	strcmp_case(ext, ".SPECS") == 0     ||
 	strcmp_case(ext, ".FLT") == 0       || // Gridfloat
 	strcmp_case(ext, ".HGT") == 0       || // SRTM JPL height
+	strcmp_case(ext, ".DIS") == 0       || // Seasat processing
 	strcmp_case(ext, ".ZIP") == 0)
 
         return (char *) &name[ii];

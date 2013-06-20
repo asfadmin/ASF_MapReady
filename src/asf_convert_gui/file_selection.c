@@ -34,6 +34,7 @@
 #define FORMAT_ALOS_MOSAIC 8
 #define FORMAT_GEOTIFF 9
 #define FORMAT_ASF_INTERNAL 10
+#define FORMAT_SEASAT_H5 11
 
 #ifdef USE_GTK_FILE_CHOOSER
 static GtkWidget *browse_widget = NULL;
@@ -223,6 +224,13 @@ static void create_file_chooser_dialog(int selected)
       gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), img_filt);
     }
 
+    if (selected==FORMAT_SEASAT_H5) {
+      GtkFileFilter *h5_filt = gtk_file_filter_new();
+      gtk_file_filter_set_name(h5_filt, "SEASAT HDF5 Files (*.h5)");
+      gtk_file_filter_add_pattern(h5_filt, "*.h5");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), h5_filt);
+    }
+
     if (selected==FORMAT_AIRSAR) {
       GtkFileFilter *airsar_filt = gtk_file_filter_new();
       gtk_file_filter_set_name(airsar_filt, "AirSAR Leader Files (*.airsar)");
@@ -407,6 +415,12 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
       case FORMAT_ASF_INTERNAL:
         of.lpstrFilter =
             "ASF Internal Files (*.img)\0*.img\0"
+            "All Files\0*\0";
+        break;
+
+      case FORMAT_SEASAT_H5:
+        of.lpstrFilter =
+            "SEASAT HDF5 Files (*.h5)\0*.h5\0"
             "All Files\0*\0";
         break;
     }

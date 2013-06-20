@@ -41,6 +41,12 @@ gtkwin32:
 	  chmod +x $(GTKWIN32_DIR)/bin/*.dll; \
 	fi
 
+libsgp4:
+	make -C work_dir/libsgp4
+	mv work_dir/libsgp4/libsgp4.a lib
+	mkdir -p include/libsgp4
+	cp work_dir/libsgp4/*.h include/libsgp4
+
 clean:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) clean &&) true
 	rm -rf bin/ \
