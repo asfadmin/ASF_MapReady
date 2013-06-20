@@ -242,6 +242,13 @@ meta_parameters *read_uavsar_meta(const char *meta_name, const char *data_name);
 int open_uavsar_data(const char *filename, int multilook,
                      meta_parameters *meta, ClientInterface *client);
 
+// read_seasat_h5.c
+int try_seasat_h5(const char *filename, int try_extensions);
+int handle_seasat_h5_file(const char *filename, char *meta_name, char *data_name,
+                         char **err);
+meta_parameters *read_seasat_h5_meta(const char *meta_name);
+int open_seasat_h5_data(const char *filename,
+                        meta_parameters *meta, ClientInterface *client);
 /* big_image.c */
 GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair);
 void fill_big(ImageInfo *ii);

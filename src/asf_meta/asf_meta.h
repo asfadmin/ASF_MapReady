@@ -34,6 +34,7 @@
 #include "asf.h"
 #include "hdf5.h"
 #include "uavsar.h"
+#include "seasat_slant_shift.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -121,6 +122,7 @@ typedef enum {
   GAMMA,
   ROIPAC,
   SMAP,
+  SEASAT_H5,
   GRIDDED_RGPS
 } input_format_t;
 

@@ -344,6 +344,7 @@ iso_meta *meta2iso(meta_parameters *meta)
   spec->projectedSpacingGroundNearRange = meta->general->x_pixel_size;
   spec->projectedSpacingGroundFarRange = meta->general->x_pixel_size;
   spec->projectedSpacingSlantRange = meta->sar->slant_range_first_pixel;
+  spec->slantRangeShift = meta->sar->slant_shift;
   if (strcmp_case(meta->general->sensor, "SEASAT") == 0) {
     spec->imageCoordinateType = RAW_COORD;
     spec->imageDataStartWith = EARLYAZNEARRG; // assumption
@@ -508,7 +509,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     proc->doppler[0].timeUTC.hour = MAGIC_UNSET_INT;
     proc->doppler[0].timeUTC.min = MAGIC_UNSET_INT;
     proc->doppler[0].timeUTC.second = MAGIC_UNSET_DOUBLE;
-    proc->doppler[0].dopplerAtMidRange = 
+    proc->doppler[0].dopplerAtMidRange =
       meta_get_dop(meta, (double) line_count/2, (double) sample_count/2);
     proc->doppler[0].polynomialDegree = 2;
     proc->doppler[0].coefficient = (double *) CALLOC(3, sizeof(double));
@@ -603,8 +604,14 @@ iso_meta *meta2iso(meta_parameters *meta)
     (iso_stateVec *) CALLOC(platform->numStateVectors, sizeof(iso_stateVec));
   hms_time hms;
   ymd_date ymd;
-  dateTimeStamp(meta, 0, &platform->firstStateTimeUTC); 
-  dateTimeStamp(meta, meta->general->line_count, &platform->lastStateTimeUTC); 
+  if (meta->sar->azimuth_time_per_pixel > 0) {
+    dateTimeStamp(meta, 0, &platform->firstStateTimeUTC); 
+    dateTimeStamp(meta, meta->general->line_count, &platform->lastStateTimeUTC);
+  }
+  else {
+    dateTimeStamp(meta, meta->general->line_count, &platform->firstStateTimeUTC); 
+    dateTimeStamp(meta, 0, &platform->lastStateTimeUTC);
+  }
   ymd.year = platform->firstStateTimeUTC.year;
   ymd.month = platform->firstStateTimeUTC.month;
   ymd.day = platform->firstStateTimeUTC.day;
@@ -816,9 +823,9 @@ meta_parameters *iso2meta(iso_meta *iso)
   meta->general->sample_scaling = info->columnScaling;
   meta->sar->range_time_per_pixel = info->columnSpacing;
   meta->sar->azimuth_time_per_pixel = info->rowSpacing;
-  meta->sar->slant_shift = 0.0;
-  meta->sar->time_shift = 0.0;
-  meta->sar->slant_range_first_pixel = info->rangeTimeFirstPixel * SPD_LIGHT;
+  meta->sar->slant_shift = spec->slantRangeShift;
+  //meta->sar->slant_range_first_pixel = info->rangeTimeFirstPixel * SPD_LIGHT;
+  meta->sar->slant_range_first_pixel = spec->projectedSpacingSlantRange;
   meta->sar->wavelength = SPD_LIGHT / inst->centerFrequency;
   meta->sar->prf = spec->commonPRF;
   meta->sar->earth_radius = info->earthRadius;
@@ -885,6 +892,10 @@ meta_parameters *iso2meta(iso_meta *iso)
     meta->state_vectors->vecs[ii].vec.vel.y = platform->stateVec[ii].velY;
     meta->state_vectors->vecs[ii].vec.vel.z = platform->stateVec[ii].velZ;
   }
+  if (meta->sar->azimuth_time_per_pixel > 0)
+    meta->sar->time_shift = 0.0;
+  else
+    meta->sar->time_shift = meta->state_vectors->vecs[numVectors-1].time;
   /*
   // few calculations need state vectors
   meta->sar->earth_radius = 

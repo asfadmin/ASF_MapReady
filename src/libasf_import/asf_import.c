@@ -208,6 +208,12 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintStatus("   Data format: GRIDFLOAT\n");
     import_gridfloat(inBaseName, outBaseName);
   }
+  else if (format_type == SEASAT_H5) {
+    if (radiometry != r_AMP)
+      asfPrintError("Calibration of SEASAT data is not supported.\n");
+    asfPrintStatus("   Data format: SEASAT H5\n");
+    import_seasat_h5(inBaseName, outBaseName);
+  }
   else if (format_type == AIRSAR) {
     asfPrintStatus("   Data format: AIRSAR\n");
     import_airsar(inBaseName, update(radiometry, db_flag), outBaseName);
