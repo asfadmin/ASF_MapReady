@@ -11,7 +11,7 @@ formats.
 int date_getDaysInYear(int year)
 {
     if (year<1536)
-        {printf("ERROR! The gregorian calender was not used before year %d!\n",year);exit(1);}
+      asfPrintError("The gregorian calender was not used before year %d!\n",year);
     if (((year%4)==0)&&(((year%100)!=0)||((year%400)==0)))
         return 366;
     else
@@ -29,7 +29,7 @@ void date_jd2ymd(julian_date *in,ymd_date *out)
     int currMonth;
     int daysInYear=date_getDaysInYear(in->year);
     if (in->jd>daysInYear)
-        {printf("ERROR! Invalid julian day '%d' passed to date_jd2ymd!\n",in->jd);exit(1);}
+      asfPrintError("Invalid julian day '%d' passed to date_jd2ymd!\n",in->jd);
     if (daysInYear==366)
         monthStart=monthStart_leap;
     else
@@ -45,7 +45,8 @@ void date_ymd2jd(ymd_date *in,julian_date *out)
     int *monthStart;
     int daysInYear=date_getDaysInYear(in->year);
     if ((in->month>12)||(in->day>31))
-        {printf("ERROR! Invalid month '%d' or day '%d' passed to date_ymd2jd!\n",in->month,in->day);exit(1);}
+      asfPrintStatus("Invalid month '%d' or day '%d' passed to date_ymd2jd!\n",
+		     in->month,in->day);
     if (daysInYear==366)
         monthStart=monthStart_leap;
     else
@@ -403,6 +404,9 @@ int compare_time(ymd_date *date1, hms_time *time1,
  -----------------------------------------------*/
 void add_time(double delta, ymd_date *date, hms_time *time)
  {
+   if (delta<0)
+     return sub_time(-delta, date, time);
+
    static int DIM[13]={0,31,28,31,30,31,30,31,31,30,31,30,31};/*Days in Month*/
    long tyear, tmonth, tday, thour, tmin;
    double tsec;
@@ -458,6 +462,9 @@ void add_time(double delta, ymd_date *date, hms_time *time)
  ----------------------------------------------------*/
 void sub_time(double delta, ymd_date *date, hms_time *time)
  {
+   if (delta<0)
+     return add_time(-delta, date, time);
+
    static int DIM[13]={0,31,28,31,30,31,30,31,31,30,31,30,31};/*Days in Month*/
    long tyear, tmonth, tday, thour, tmin;
    double tsec;
