@@ -26,9 +26,11 @@
 #include <spheroids.h>
 #include <typlim.h>
 #include <hdf5.h>
+#include <hdf5_hl.h>
 
 #define RES 16
 #define MAX_PTS 256
+#define DIM_WITHOUT_VAR "This is a netCDF dimension but not a netCDF variable."
 
 void h5_att_double(hid_t data, char *name, double value)
 {
@@ -1241,17 +1243,43 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   H5Pset_chunk(h5_plist, 2, cdims);
   H5Pset_deflate(h5_plist, 6);
   
-  // Create a data group
+  // Create a data group and dimension scales
   strcpy(group, "/data");
   h5_datagroup = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
 			   H5P_DEFAULT);
+  hsize_t ydims[1] = { lines };
+  hid_t h5_yspace = H5Screate_simple(1, ydims, ydims);
+  strcpy(dataset, "/data/lat");
+  hid_t h5_lat_dim = H5Dcreate(h5_file, dataset, H5T_NATIVE_INT, h5_yspace,
+                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  char dimscale_wo_var[100];
+  sprintf(dimscale_wo_var, "%s%10d", DIM_WITHOUT_VAR, lines);
+  H5DSset_scale(h5_lat_dim, dimscale_wo_var);
+  H5Dclose(h5_lat_dim);
+  H5Sclose(h5_yspace);
+  hsize_t xdims[1] = { samples };
+  hid_t h5_xspace = H5Screate_simple(1, xdims, xdims);
+  strcpy(dataset, "/data/lon");
+  hid_t h5_lon_dim = H5Dcreate(h5_file, dataset, H5T_NATIVE_INT, h5_xspace,
+                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  sprintf(dimscale_wo_var, "%s%10d", DIM_WITHOUT_VARIABLE, samples);
+  H5DSset_scale(h5_lon_dim, dimscale_wo_var);
+  H5Dclose(h5_lon_dim);
+  H5Sclose(h5_xspace);
+			   
   for (ii=0; ii<band_count; ii++) {
     
     // Create data set
     sprintf(dataset, "/data/%s", polLayer2str(info->polLayer[ii]));
     h5_data = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
-			H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+              H5P_DEFAULT, h5_plist, H5P_DEFAULT);
     h5->var[ii] = h5_data;
+    strcpy(dataset, "/data/lat");
+    hid_t h5_lat = H5Dopen(h5->file, dataset, H5P_DEFAULT);
+    strcpy(dataset, "/data/lon");
+    hid_t h5_lon = H5Dopen(h5->file, dataset, H5P_DEFAULT);
+    H5DSattach_scale(h5_data, h5_lat, 0);
+    H5DSattach_scale(h5_data, h5_lon, 1);
     
     // Add attributes (from CF convention)
     h5_att_str(h5_data, "long_name", info->pixelValueID);
@@ -1271,6 +1299,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
       h5_att_str(h5_data, "grid_mapping", "projection");
 
     // Close up
+    H5Dclose(h5_lat);
+    H5Dclose(h5_lon);
     H5Dclose(h5_data);
   }
   // Extra bands - Time
@@ -1336,7 +1366,15 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   asfPrintStatus("Storing band 'longitude' ...\n");
   strcpy(dataset, "/data/longitude");
   h5_lon = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
-		     H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+		   H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+
+  strcpy(dataset, "/data/lat");
+  h5_lat_dim = H5Dopen(h5_file, dataset, H5P_DEFAULT);
+  strcpy(dataset, "/data/lon");
+  h5_lon_dim = H5Dopen(h5_file, dataset, H5P_DEFAULT);
+  H5DSattach_scale(h5_lon, h5_lat_dim, 0);
+  H5DSattach_scale(h5_lon, h5_lon_dim, 1);
+
   H5Dwrite(h5_lon, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, lons);
   h5_att_str(h5_lon, "units", "degrees_east");
   h5_att_str(h5_lon, "long_name", "longitude");
@@ -1344,6 +1382,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   float valid_range[2] = { -180.0, 180.0 };
   h5_att_float2(h5_lon, "valid_range", valid_range);
   h5_att_float(h5_lon, "_FillValue", -999);
+  H5Dclose(h5_lat_dim);
+  H5Dclose(h5_lon_dim);
   H5Dclose(h5_lon);
   FREE(lons);
   
@@ -1386,7 +1426,13 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   asfPrintStatus("Storing band 'latitude' ...\n");
   strcpy(dataset, "/data/latitude");
   h5_lat = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
-		     H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+		   H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+  strcpy(dataset, "/data/lat");
+  h5_lat_dim = H5Dopen(h5_file, dataset, H5P_DEFAULT);
+  strcpy(dataset, "/data/lon");
+  h5_lon_dim = H5Dopen(h5_file, dataset, H5P_DEFAULT);
+  H5DSattach_scale(h5_lat, h5_lat_dim, 0);
+  H5DSattach_scale(h5_lat, h5_lon_dim, 1);
   H5Dwrite(h5_lat, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, lats);
   h5_att_str(h5_lat, "units", "degrees_north");
   h5_att_str(h5_lat, "long_name", "latitude");
@@ -1395,6 +1441,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   valid_range[1] = 90.0;
   h5_att_float2(h5_lat, "valid_range", valid_range);
   h5_att_float(h5_lat, "_FillValue", -999);
+  H5Dclose(h5_lat_dim);
+  H5Dclose(h5_lon_dim);
   H5Dclose(h5_lat);
   FREE(lats);
   
