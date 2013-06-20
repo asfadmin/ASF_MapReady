@@ -83,6 +83,7 @@ OBJS  = \
 	import_dem.o \
 	import_roipac.o \
 	import_smap.o \
+	import_seasat_h5.o \
 	config_fgdc.o \
 	missing.o \
 	projected_image_import.o \

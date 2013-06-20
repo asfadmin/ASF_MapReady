@@ -511,7 +511,7 @@ void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
   xmlNewChild(node, NULL, BAD_CAST "rowScaling", BAD_CAST str);
   double2str(info->columnScaling, 0, str);
   xmlNewChild(node, NULL, BAD_CAST "columnScaling", BAD_CAST str);
-  double2str(info->rowSpacing, 0, str);
+  double2str(info->rowSpacing, 10, str);
   unit = xmlNewChild(node, NULL, BAD_CAST "rowSpacing", BAD_CAST str);
   if (info->projection == MAP_PROJ)
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");  
@@ -707,8 +707,12 @@ void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
   double2str(spec->projectedSpacingGroundFarRange, 0, str);
   unit = xmlNewChild(node, NULL, BAD_CAST "groundFar", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-  double2str(spec->projectedSpacingSlantRange, 0, str);
+  double2str(spec->projectedSpacingSlantRange, 3, str);
   unit = xmlNewChild(node, NULL, BAD_CAST "slantRange", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
+  double2str(spec->slantRangeShift, 3, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "slantRangeShift", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
   if (spec->imageCoordinateType == RAW_COORD)
     strcpy(str, "RAW");
   else if (spec->imageCoordinateType == ZERODOPPLER)
@@ -2976,6 +2980,32 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
     xmlNewChild(node10, gco, BAD_CAST "CharacterString", BAD_CAST "m");
     node10 = xmlNewChild(node9, eos, BAD_CAST "value", NULL);
     double2str(spec->projectedSpacingSlantRange, 3, str);
+    xmlNewChild(node10, gco, BAD_CAST "Real", BAD_CAST str);
+
+    // contentInfo - extra parameters (slantRangeShift)
+    node6 = xmlNewChild(node5, eos, BAD_CAST "additionalAttribute", NULL);
+    node7 = xmlNewChild(node6, eos, BAD_CAST "EOS_AdditionalAttribute", NULL);
+    node8 = xmlNewChild(node7, eos, BAD_CAST "reference", NULL);
+    node9 = xmlNewChild(node8, eos, 
+			BAD_CAST "EOS_AdditionalAttributeDescription", NULL);
+    node10 = xmlNewChild(node9, eos, BAD_CAST "name", NULL);
+    xmlNewChild(node10, gco, BAD_CAST "CharacterString", 
+		BAD_CAST "slantRangeShift");
+    node10 = xmlNewChild(node9, eos, BAD_CAST "type", NULL);
+    node11 = xmlNewChild(node10, eos, 
+			 BAD_CAST "EOS_AdditionalAttributeTypeCode",
+			 BAD_CAST "imageInformation");
+    xmlNewProp(node11, BAD_CAST "codeList", 
+	       BAD_CAST "http://earthdata.nasa.gov/metadata/resources/Codelist.xml#EOS_AdditionalAttributeTypeCode");
+    xmlNewProp(node11, BAD_CAST "codeListValue", BAD_CAST "imageInformation");
+    xmlNewChild(node9, eos, BAD_CAST "dataType", BAD_CAST "FLOAT");
+    node10 = xmlNewChild(node9, eos, BAD_CAST "description", NULL);
+    xmlNewChild(node10, gco, BAD_CAST "CharacterString", 
+		BAD_CAST "slant range shift [m]");
+    node10 = xmlNewChild(node9, eos, BAD_CAST "parameterUnitsOfMeasure", NULL);
+    xmlNewChild(node10, gco, BAD_CAST "CharacterString", BAD_CAST "m");
+    node10 = xmlNewChild(node9, eos, BAD_CAST "value", NULL);
+    double2str(spec->slantRangeShift, 3, str);
     xmlNewChild(node10, gco, BAD_CAST "Real", BAD_CAST str);
     
     // contentInfo - extra parameters (projectedSpacingGroundRangeNear)
