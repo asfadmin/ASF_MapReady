@@ -173,7 +173,7 @@ print_all_reg_vals()
 
 static int check_for_version_file_in_share_dir(const char *dir)
 {
-  const char *version_file = TOOL_SUITE_NAME "_version.txt";
+  const char *version_file = TOOL_SUITE_SHARE_DIR "_version.txt";
 
   int len = strlen(dir) + strlen(version_file) + 3;
   if (len < 256) len = 256;

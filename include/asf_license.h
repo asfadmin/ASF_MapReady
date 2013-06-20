@@ -38,6 +38,7 @@ void handle_license_and_version_args(int argc, char *argv[],
 void print_copyright(void);
 void print_license(int license_id);
 void print_version(const char *program_name);
+const char *version_string(const char *);
 
 #endif   // _ASF_LICENSE_H_
 

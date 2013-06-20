@@ -26,9 +26,11 @@
 #include <spheroids.h>
 #include <typlim.h>
 #include <hdf5.h>
+#include <hdf5_hl.h>
 
 #define RES 16
 #define MAX_PTS 256
+#define DIM_WITHOUT_VAR "This is a netCDF dimension but not a netCDF variable."
 
 void h5_att_double(hid_t data, char *name, double value)
 {
@@ -1187,7 +1189,8 @@ static char *orbitAcc2str(iso_orbitAcc_t orbit)
   return str;
 }
 
-static h5_t *initialize_h5_file_iso(const char *output_file_name, 
+static h5_t *initialize_h5_file_iso(const char *output_file_name,
+				    meta_parameters *md,
 				    iso_meta *iso)
 {
   hid_t h5_file, h5_datagroup, h5_metagroup, h5_data, h5_proj;
@@ -1240,17 +1243,43 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   H5Pset_chunk(h5_plist, 2, cdims);
   H5Pset_deflate(h5_plist, 6);
   
-  // Create a data group
+  // Create a data group and dimension scales
   strcpy(group, "/data");
   h5_datagroup = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
 			   H5P_DEFAULT);
+  hsize_t ydims[1] = { lines };
+  hid_t h5_yspace = H5Screate_simple(1, ydims, ydims);
+  strcpy(dataset, "/data/lat");
+  hid_t h5_lat_dim = H5Dcreate(h5_file, dataset, H5T_NATIVE_INT, h5_yspace,
+                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  char dimscale_wo_var[100];
+  sprintf(dimscale_wo_var, "%s%10d", DIM_WITHOUT_VAR, lines);
+  H5DSset_scale(h5_lat_dim, dimscale_wo_var);
+  H5Dclose(h5_lat_dim);
+  H5Sclose(h5_yspace);
+  hsize_t xdims[1] = { samples };
+  hid_t h5_xspace = H5Screate_simple(1, xdims, xdims);
+  strcpy(dataset, "/data/lon");
+  hid_t h5_lon_dim = H5Dcreate(h5_file, dataset, H5T_NATIVE_INT, h5_xspace,
+                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  sprintf(dimscale_wo_var, "%s%10d", DIM_WITHOUT_VARIABLE, samples);
+  H5DSset_scale(h5_lon_dim, dimscale_wo_var);
+  H5Dclose(h5_lon_dim);
+  H5Sclose(h5_xspace);
+			   
   for (ii=0; ii<band_count; ii++) {
     
     // Create data set
     sprintf(dataset, "/data/%s", polLayer2str(info->polLayer[ii]));
     h5_data = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
-			H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+              H5P_DEFAULT, h5_plist, H5P_DEFAULT);
     h5->var[ii] = h5_data;
+    strcpy(dataset, "/data/lat");
+    hid_t h5_lat = H5Dopen(h5->file, dataset, H5P_DEFAULT);
+    strcpy(dataset, "/data/lon");
+    hid_t h5_lon = H5Dopen(h5->file, dataset, H5P_DEFAULT);
+    H5DSattach_scale(h5_data, h5_lat, 0);
+    H5DSattach_scale(h5_data, h5_lon, 1);
     
     // Add attributes (from CF convention)
     h5_att_str(h5_data, "long_name", info->pixelValueID);
@@ -1270,6 +1299,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
       h5_att_str(h5_data, "grid_mapping", "projection");
 
     // Close up
+    H5Dclose(h5_lat);
+    H5Dclose(h5_lon);
     H5Dclose(h5_data);
   }
   // Extra bands - Time
@@ -1288,18 +1319,16 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   h5_att_str(h5_time, "axis", "T");
   h5_att_str(h5_time, "long_name", "serial date");
   H5Dclose(h5_time);
-  
-  meta_parameters *md = iso2meta(iso);
 
   // Extra bands - Longitude
   int nl = info->numberOfRows;
   int ns = info->numberOfColumns;
   long pixel_count = nl*ns;
-  double *value = (double *) MALLOC(sizeof(double)*MAX_PTS);
-  double *l = (double *) MALLOC(sizeof(double)*MAX_PTS);
-  double *s = (double *) MALLOC(sizeof(double)*MAX_PTS);
-  double line, sample, lat, lon, first_value;
-  float *lons = (float *) MALLOC(sizeof(float)*pixel_count);
+  double *value = (double *) CALLOC(MAX_PTS, sizeof(double));
+  double *l = (double *) CALLOC(MAX_PTS, sizeof(double));
+  double *s = (double *) CALLOC(MAX_PTS, sizeof(double));
+  double line, sample, lat=0, lon=0, first_value;
+  float *lons = (float *) CALLOC(pixel_count, sizeof(float));
   asfPrintStatus("Generating band 'longitude' ...\n");
   meta_get_latLon(md, 0, 0, 0.0, &lat, &lon);
   if (lon < 0.0)
@@ -1328,16 +1357,24 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
       lons[ii*ns+kk] = (float)
 	(q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
 	 q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
-	 q.K*kk*kk*kk) - 360.0;
-      if (lons[ii*ns+kk] < -180.0)
-	lons[ii*ns+kk] += 360.0;
+	 q.K*kk*kk*kk);
+      if (lons[ii*ns+kk] > 180.0)
+	lons[ii*ns+kk] -= 360.0;
     }
     asfLineMeter(ii, nl);
   }
   asfPrintStatus("Storing band 'longitude' ...\n");
   strcpy(dataset, "/data/longitude");
   h5_lon = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
-		     H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+		   H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+
+  strcpy(dataset, "/data/lat");
+  h5_lat_dim = H5Dopen(h5_file, dataset, H5P_DEFAULT);
+  strcpy(dataset, "/data/lon");
+  h5_lon_dim = H5Dopen(h5_file, dataset, H5P_DEFAULT);
+  H5DSattach_scale(h5_lon, h5_lat_dim, 0);
+  H5DSattach_scale(h5_lon, h5_lon_dim, 1);
+
   H5Dwrite(h5_lon, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, lons);
   h5_att_str(h5_lon, "units", "degrees_east");
   h5_att_str(h5_lon, "long_name", "longitude");
@@ -1345,6 +1382,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   float valid_range[2] = { -180.0, 180.0 };
   h5_att_float2(h5_lon, "valid_range", valid_range);
   h5_att_float(h5_lon, "_FillValue", -999);
+  H5Dclose(h5_lat_dim);
+  H5Dclose(h5_lon_dim);
   H5Dclose(h5_lon);
   FREE(lons);
   
@@ -1352,7 +1391,10 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   float *lats = (float *) MALLOC(sizeof(float)*pixel_count);
   asfPrintStatus("Generating band 'latitude' ...\n");
   meta_get_latLon(md, 0, 0, 0.0, &lat, &lon);
-  first_value = lat + 180.0;
+  if (lat < 0.0)
+    first_value = lat + 180.0;
+  else
+    first_value = lat;
   asfPrintStatus("Calculating grid for quadratic fit ...\n");
   for (ii=0; ii<RES; ii++) {
     for (kk=0; kk<RES; kk++) {
@@ -1361,7 +1403,10 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
       meta_get_latLon(md, line, sample, 0.0, &lat, &lon);
       l[ii*RES+kk] = line;
       s[ii*RES+kk] = sample;
-      value[ii*RES+kk] = lat + 180.0;
+      if (lat < 0.0)
+	value[ii*RES+kk] = lat + 180.0;
+      else
+	value[ii*RES+kk] = lat;
     }
     asfLineMeter(ii, nl);
   }
@@ -1369,23 +1414,25 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   q.A = first_value;
   for (ii=0; ii<nl; ii++) {
     for (kk=0; kk<ns; kk++) {
-      if (info->orbitDirection == ASCENDING)
-	lats[(nl-ii-1)*ns+kk] = (float)
-	  (q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
-	   q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
-	   q.K*kk*kk*kk) - 180.0;
-      else
-	lats[ii*ns+kk] = (float)
-	  (q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
-	   q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
-	   q.K*kk*kk*kk) - 180.0;
+      lats[ii*ns+kk] = (float)
+	(q.A + q.B*ii + q.C*kk + q.D*ii*ii + q.E*ii*kk + q.F*kk*kk +
+	 q.G*ii*ii*kk + q.H*ii*kk*kk + q.I*ii*ii*kk*kk + q.J*ii*ii*ii +
+	 q.K*kk*kk*kk);
+      if (lats[ii*ns+kk] > 90)
+	lats[ii*ns+kk] -= 180.0;
     }
     asfLineMeter(ii, nl);
   }
   asfPrintStatus("Storing band 'latitude' ...\n");
   strcpy(dataset, "/data/latitude");
   h5_lat = H5Dcreate(h5_file, dataset, H5T_NATIVE_FLOAT, h5_array,
-		     H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+		   H5P_DEFAULT, h5_plist, H5P_DEFAULT);
+  strcpy(dataset, "/data/lat");
+  h5_lat_dim = H5Dopen(h5_file, dataset, H5P_DEFAULT);
+  strcpy(dataset, "/data/lon");
+  h5_lon_dim = H5Dopen(h5_file, dataset, H5P_DEFAULT);
+  H5DSattach_scale(h5_lat, h5_lat_dim, 0);
+  H5DSattach_scale(h5_lat, h5_lon_dim, 1);
   H5Dwrite(h5_lat, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, lats);
   h5_att_str(h5_lat, "units", "degrees_north");
   h5_att_str(h5_lat, "long_name", "latitude");
@@ -1394,6 +1441,8 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   valid_range[1] = 90.0;
   h5_att_float2(h5_lat, "valid_range", valid_range);
   h5_att_float(h5_lat, "_FillValue", -999);
+  H5Dclose(h5_lat_dim);
+  H5Dclose(h5_lon_dim);
   H5Dclose(h5_lat);
   FREE(lats);
   
@@ -2175,6 +2224,8 @@ H5P_DEFAULT);
 		 "m");
   h5_value_double(h5_file, level2, "slantRange",
 		 spec->projectedSpacingSlantRange, "slant range [m]", "m");
+  h5_value_double(h5_file, level2, "slantRangeShift",
+		 spec->slantRangeShift, "slant range shift [m]", "m");
   H5Gclose(h5_level2);
   h5_value_str(h5_file, level1, "imageCoordinateType", 
 	       imageCoord2str(spec->imageCoordinateType), 
@@ -2386,8 +2437,8 @@ H5P_DEFAULT);
       strcpy(level4, "/metadata/processing/doppler/dopplerCentroid/dopplerEstimate/basebandDoppler");
       h5_level4 = H5Gcreate(h5_file, level4, H5P_DEFAULT, H5P_DEFAULT, 
 			    H5P_DEFAULT);
-      double_array = (double *) MALLOC(sizeof(double)*degree);
-      for (kk=0; kk<=pro->doppler[ii].polynomialDegree; kk++)
+      double_array = (double *) CALLOC(degree+1, sizeof(double));
+      for (kk=0; kk<=degree; kk++)
 	double_array[kk] = pro->doppler[ii].coefficient[kk];
       h5_value_double_array(h5_file, level4, "coefficient", double_array, 
 			    degree+1, "Doppler coefficient", NULL);
@@ -2683,39 +2734,41 @@ H5P_DEFAULT);
       numGaps = quality->rawDataQuality[ii].numGaps;
       h5_value_int(h5_file, level1, "numGaps", numGaps, 
 		   "number of data gaps", NULL);
-      strcpy(level2, "/metadata/productQuality/rawDataQuality/gap");
-      h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
-			    H5P_DEFAULT);
-      h5_att_str(h5_level2, "long_name", "data gap information");
-      long_array = (long *) MALLOC(sizeof(long)*numGaps);
-      int_array = (int *) MALLOC(sizeof(int)*numGaps);
-      str_array = (char **) MALLOC(sizeof(char *)*numGaps);
-      for (kk=0; kk<numGaps; kk++)
-	str_array[kk] = (char *) MALLOC(sizeof(char)*30);
-      for (kk=0; kk<numGaps; kk++)
-	long_array[kk] = quality->rawDataQuality[ii].gap[kk].start;
-      h5_value_long_array(h5_file, level2, "start", long_array, numGaps,
-			  "start line of data gap", NULL);
-      for (kk=0; kk<numGaps; kk++)
-	int_array[kk] = quality->rawDataQuality[ii].gap[kk].length;
-      h5_value_int_array(h5_file, level2, "length", int_array, numGaps,
-			 "number of lines forming data gap", NULL);
-      for (kk=0; kk<numGaps; kk++) {
-	if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
-	  strcpy(str_array[kk], "RANDOM");
-	else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
-	  strcpy(str_array[kk], "ZERO");
-	else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
-	  strcpy(str_array[kk], "UNDEFINED");
+      if (numGaps > 0) {
+	strcpy(level2, "/metadata/productQuality/rawDataQuality/gap");
+	h5_level2 = H5Gcreate(h5_file, level2, H5P_DEFAULT, H5P_DEFAULT, 
+			      H5P_DEFAULT);
+	h5_att_str(h5_level2, "long_name", "data gap information");
+	long_array = (long *) MALLOC(sizeof(long)*numGaps);
+	int_array = (int *) MALLOC(sizeof(int)*numGaps);
+	str_array = (char **) MALLOC(sizeof(char *)*numGaps);
+	for (kk=0; kk<numGaps; kk++)
+	  str_array[kk] = (char *) MALLOC(sizeof(char)*30);
+	for (kk=0; kk<numGaps; kk++)
+	  long_array[kk] = quality->rawDataQuality[ii].gap[kk].start;
+	h5_value_long_array(h5_file, level2, "start", long_array, numGaps,
+			    "start line of data gap", NULL);
+	for (kk=0; kk<numGaps; kk++)
+	  int_array[kk] = quality->rawDataQuality[ii].gap[kk].length;
+	h5_value_int_array(h5_file, level2, "length", int_array, numGaps,
+			   "number of lines forming data gap", NULL);
+	for (kk=0; kk<numGaps; kk++) {
+	  if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
+	    strcpy(str_array[kk], "RANDOM");
+	  else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
+	    strcpy(str_array[kk], "ZERO");
+	  else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
+	    strcpy(str_array[kk], "UNDEFINED");
+	}
+	h5_value_str_array(h5_file, level2, "fill", str_array, numGaps,
+			   "RANDOM or ZERO", NULL);
+	H5Gclose(h5_level2);
+	FREE(long_array);
+	FREE(int_array);
+	for (kk=0; kk<numGaps; kk++)
+	  FREE(str_array[kk]);
+	FREE(str_array);
       }
-      h5_value_str_array(h5_file, level2, "fill", str_array, numGaps,
-			 "RANDOM or ZERO", NULL);
-      H5Gclose(h5_level2);
-      FREE(long_array);
-      FREE(int_array);
-      for (kk=0; kk<numGaps; kk++)
-	FREE(str_array[kk]);
-      FREE(str_array);
       h5_value_boolean(h5_file, level1, "gapSignificanceFlag",
 		       quality->rawDataQuality[ii].gapSignificanceFlag,
 		       "gaps above the tolerance level?", NULL);
@@ -2857,11 +2910,9 @@ void export_hdf(const char *metadata_file_name,
   append_ext_if_needed(output_file_name, ".h5", NULL);
   char *ext = findExt(metadata_file_name);
   if (strcmp_case(ext, ".XML") == 0) {
-    iso = iso_meta_read(metadata_file_name);
-    h5 = initialize_h5_file_iso(output_file_name, iso);
-    // FIXME: need metadata function iso2meta
-    // read .meta file for now
     md = meta_read(metadata_file_name);
+    iso = iso_meta_read(metadata_file_name);
+    h5 = initialize_h5_file_iso(output_file_name, md, iso);
   }
   else if (strcmp_case(ext, ".META") == 0) {
     md = meta_read (metadata_file_name); 

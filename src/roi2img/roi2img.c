@@ -38,6 +38,7 @@ BUGS:
 #include <string.h>
 #include <math.h>
 #include <asf_meta.h>
+#include <asf_license.h>
 #include "seasat.h"
 
 #define CPX_PIX 6840
@@ -88,6 +89,7 @@ double		earth_rad;		// Earth Radius (m) - not actual earth radius -
 					//    radius of a best fit local sphere
 double		sc_vel;			// Spacecraft body fixed velocity - IS THIS SWATH VELOCITY???
 double 		sc_height;		// Spacecraft height - from surface of the earth
+int		station_code;           // downlinking station (5,6,7,9,10)
 
 /* Global variables filled in read_hdrfile and used in main */
 double   	start_sec;		// start time of this segment
@@ -149,7 +151,9 @@ main(int argc, char *argv[])
   int    USE_TLES = 1;		// TLE/state vector switch
   int    ESA_FRAME = 0;		// switch to control output file names
   int    node = 0;
-    
+   
+  asfSplashScreen(argc, argv); 
+
   if (argc<2 || argc>6) { give_usage(argc,argv); exit(1); }
 
   while ((cla=getopt(argc,argv,"mvcE:r:")) != -1)
@@ -200,6 +204,43 @@ main(int argc, char *argv[])
   /* Read the start time for this image from the hdr file */
   read_hdrfile(hdrfile);
   
+  if (USE_TLES == 0) 
+   {
+    int cnt;
+    int year, month, day, hour, min;
+    double sec, thisSec;
+    FILE *fpvec, *fpo;
+    char tmp[256];
+  
+    sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
+    fpvec = fopen(tmp,"r");
+    if (fpvec == NULL) {
+      printf("Unable to open state vector file for day %i\n",start_date); 
+      printf("Defaulting to using TLEs instead\n");
+      USE_TLES = 1;
+    } else {
+      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+      thisSec = (double) ((hour*60+min)*60)+sec;
+
+      /* seek to the correct second of the day for the START of this file 
+      -----------------------------------------------------------------*/
+      while (cnt == 12 && start_sec > (thisSec+1.0)) {
+        cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
+        thisSec = (double) ((hour*60+min)*60)+sec;
+      }
+      printf("Found closest second %lf\n",thisSec);
+  
+      /* need to create a state vector file the start of this image
+      ------------------------------------------------------------*/
+      stateVector vec, last_vec;
+      last_vec.pos.x = x; last_vec.pos.y = y; last_vec.pos.z = z;
+      last_vec.vel.x = xdot; last_vec.vel.y = ydot; last_vec.vel.z = zdot;
+      vec = propagate(last_vec,thisSec,start_sec);
+      x = vec.pos.x; y = vec.pos.y; z = vec.pos.z;
+      xdot = vec.vel.x; ydot = vec.vel.y; zdot = vec.vel.z;
+    }
+   }
+  
   if (USE_TLES == 1) {
     /* get the correct state vector */
     printf("Propagating state vectors to requested time...\n");
@@ -216,41 +257,7 @@ main(int argc, char *argv[])
       { printf("ERROR: Unable to find state vector in fixed_state_vector.txt file\n"); exit(1); }
     fclose(fpvec);
     remove("fixed_state_vector.txt");
-
-  } else {
-
-    int cnt;
-    int year, month, day, hour, min;
-    double sec, thisSec;
-    FILE *fpvec, *fpo;
-    char tmp[256];
-  
-    sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
-    fpvec = fopen(tmp,"r");
-    if (fpvec == NULL) {printf("Unable to open state vector file for day %i\n",start_date); exit(1); }
-
-    cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-    thisSec = (double) ((hour*60+min)*60)+sec;
-
-    /* seek to the correct second of the day for the START of this file 
-    -----------------------------------------------------------------*/
-    while (cnt == 12 && start_sec > (thisSec+1.0)) {
-      cnt = fscanf(fpvec,"%i %i %i %i %i %lf %lf %lf %lf %lf %lf %lf",&year,&month,&day,&hour,&min,&sec,&x,&y,&z,&xdot,&ydot,&zdot);
-      thisSec = (double) ((hour*60+min)*60)+sec;
-    }
-    printf("Found closest second %lf\n",thisSec);
-  
-    /* need to create a state vector file the start of this image
-    ------------------------------------------------------------*/
-    stateVector vec, last_vec;
-  
-    last_vec.pos.x = x; last_vec.pos.y = y; last_vec.pos.z = z;
-    last_vec.vel.x = xdot; last_vec.vel.y = ydot; last_vec.vel.z = zdot;
-    vec = propagate(last_vec,thisSec,start_sec);
-    x = vec.pos.x; y = vec.pos.y; z = vec.pos.z;
-    xdot = vec.vel.x; ydot = vec.vel.y; zdot = vec.vel.z;
   }
-
   if (zdot > 0.0) dir = 'A'; else dir = 'D';
 
   /* set up output image parameters */
@@ -317,7 +324,7 @@ main(int argc, char *argv[])
   strcpy(meta->general->sensor,"SEASAT");
   strcpy(meta->general->sensor_name,"SAR");
   strcpy(meta->general->mode,"STD");
-  strcpy(meta->general->processor,"ROI301 r1.0");
+  strcpy(meta->general->processor,"ASPS-v" ASPS_VERSION_STRING);
   meta->general->data_type = REAL32;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
   meta->general->radiometry = r_AMP;
@@ -335,7 +342,25 @@ main(int argc, char *argv[])
   meta->general->line_scaling = 1;
   meta->general->sample_scaling = 1;
   meta->general->x_pixel_size = (C / (2.0 * fs)) * LA;
-  
+ 
+  switch (station_code) {
+    case 5:
+      strcpy(meta->general->receiving_station, "ULA");
+      break;
+    case 6:
+      strcpy(meta->general->receiving_station, "GDS");
+      break;
+    case 7:
+      strcpy(meta->general->receiving_station, "MIL");
+      break;
+    case 9:
+      strcpy(meta->general->receiving_station, "UKO");
+      break;
+    case 10:
+      strcpy(meta->general->receiving_station, "SNF");
+      break;
+  }
+ 
   double orbit_vel = sqrt(9.81*RE_nadir*RE_nadir / Rsc);
   double swath_vel = orbit_vel * RE_nadir / Rsc;
   
@@ -374,7 +399,7 @@ main(int argc, char *argv[])
 //  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
 //  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
 
-  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = -1000.0;
+  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = SEASAT_SLANT_SHIFT; // -1000.0;
   else meta->sar->slant_shift = 0.0;
 
   meta->sar->slant_range_first_pixel = srf;
@@ -487,7 +512,22 @@ main(int argc, char *argv[])
       remove(tmpstr);
       strcat(strcpy(tmpstr,grfilename),".meta");
       remove(tmpstr);
-      
+
+      /* geocode and export to geotiff */
+      sprintf(tmpstr,"asf_geocode -p utm %s %s_utm\n",cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from asf_geocode\n"); exit(1);}
+
+      sprintf(tmpstr,"asf_export -format geotiff %s_utm %s\n",cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from asf_export to geotiff\n"); exit(1);}
+ 
+      /* this changes the basename in the metadata from blah_SLANT to blah_STD  */
+      meta_parameters *crop_meta = meta_read(cropfile);
+      strcpy(crop_meta->general->basename, cropfile);
+      meta_write(crop_meta, cropfile);
+      meta_free(crop_meta);
+ 
       /* create the dowsized QC image */
       sprintf(tmpstr,"resample -scale 0.125 %s %s_small\n",cropfile,cropfile);
       err = system(tmpstr);
@@ -496,7 +536,7 @@ main(int argc, char *argv[])
       sprintf(tmpfile,"%s_QCFULL",cropfile);
       sprintf(tmpstr,"asf_export -format jpeg %s_small %s\n",cropfile,tmpfile);
       err = system(tmpstr);
-      if (err) {printf("Error returned from asf_export\n"); exit(1);}
+      if (err) {printf("Error returned from asf_export to jpeg\n"); exit(1);}
       
       /* remove the small .img file */
       strcat(strcpy(tmpstr,cropfile),"_small.img");
@@ -631,6 +671,8 @@ int read_hdrfile(char *infile)
     val = get_values(fp, hdr);
     if (val!=20) {printf("ERROR: unable to read to specified start line in header file\n"); exit(1);}
   }
+
+  station_code = hdr->station_code;
 
   start_year = 1970 + hdr->lsd_year;
   start_date = hdr->day_of_year;

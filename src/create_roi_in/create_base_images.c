@@ -38,6 +38,7 @@ BUGS:
 #include <string.h>
 #include <math.h>
 #include <asf_meta.h>
+#include <asf_license.h>
 #include "seasat.h"
 
 #define MAX_NODE	3600	// we will never have southern hemisphere SEASAT data!
@@ -54,8 +55,8 @@ void write_disfile(char *basefile,int node,int start_line,
                    int num_dis,int *dis_line, int *dis_gap);
 int get_values(FILE *fp,SEASAT_header_ext *s);
 
-int USE_TLES = 1;
-int USE_CLOCK_DRIFT = 0;
+int USE_TLES = 0;
+int USE_CLOCK_DRIFT = 1;
 
 int main(int argc, char *argv[])
 {
@@ -69,7 +70,9 @@ int main(int argc, char *argv[])
   int  nl, middle_line, lines_per_frame, val;
   int num_dis=0, dis_line[256], dis_gap[256];
   int c;
-  
+ 
+  asfSplashScreen(argc, argv);
+ 
   if (argc < 2 || argc > 4) { give_usage(argv,argc); exit(1); }
   
   while ((c=getopt(argc,argv,"vc")) != -1)
@@ -120,12 +123,10 @@ int main(int argc, char *argv[])
   printf("================================================================================\n");
 
   /* create the swath meta file */
-  if (!fileExists(metafile)) {
-    printf("Creating meta file for the swath\n\n");
-    sprintf(cmd,"create_roi_in %s\n",basefile); err=system(cmd); if (err) {printf("Error returned from create_roi_in\n"); exit(1);}
-    sprintf(cmd,"roi2img -m %s\n",basefile); err=system(cmd); if (err) {printf("Error returned from roi2img\n"); exit(1);}
-    sprintf(tmpfile,"%s.roi.in",basefile); remove(tmpfile);
-  }
+  printf("Creating meta file for the swath\n\n");
+  sprintf(cmd,"create_roi_in -c -v %s\n",basefile); err=system(cmd); if (err) {printf("Error returned from create_roi_in\n"); exit(1);}
+  sprintf(cmd,"roi2img -m -c -v %s\n",basefile); err=system(cmd); if (err) {printf("Error returned from roi2img\n"); exit(1);}
+  sprintf(tmpfile,"%s.roi.in",basefile); remove(tmpfile);
   meta_parameters *meta = meta_read(metafile);
 
   /* get total lines in this file */  
@@ -136,6 +137,11 @@ int main(int argc, char *argv[])
   while (val==20) { nl++; val = get_values(fphdr, hdr); }
   fclose(fphdr);
   lines_per_frame = NUM_PATCHES * PATCH_SIZE;
+
+  if (nl < lines_per_frame) {
+    printf("This swath is not long enough to process any frames!\n");
+    exit(0);
+  }
 
   /* Search node by node until we hit the first processable node */
   start_line = -1;
@@ -242,8 +248,10 @@ int get_values(FILE *fp,SEASAT_header_ext *s)
 
 void give_usage(char *argv[], int argc)
 {
-  printf("Usage: %s [-v][-c] <swath_file>\n",argv[0]);
-  printf("\t-v            \tUse state vectors instead of TLEs\n");
-  printf("\t-c            \tApply the clock drift to image timing\n");
-
+  //printf("Usage: %s [-v][-c] <swath_file>\n",argv[0]);
+  //printf("\t-v            \tUse state vectors instead of TLEs\n");
+  //printf("\t-c            \tApply the clock drift to image timing\n");
+  printf("Usage: %s <swath_file>\n\n",argv[0]);
+  printf("The program will now always use state vectors (instead of TLEs)\n");
+  printf("and will always apply the clock drift.\n");
 }

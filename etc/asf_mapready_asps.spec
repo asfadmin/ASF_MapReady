@@ -1,5 +1,5 @@
-Summary: ASF Tools for processing SAR data
-Name: asf_mapready
+Summary: ASF Tools for processing SAR data, Seasat processing edition
+Name: asf_mapready_asps
 Version: %{asftoolsversion}
 Release: %{asftoolsbuildnumber}
 License: BSD
@@ -17,6 +17,9 @@ JPEG and GeoTIFF.
 
 The ASF MapReady Remote Sensing Toolkit now supports the
 processing of ALOS data.
+
+This version is an ASF Internal release with modifications
+needed for processing of SEASAT data.
 %prep
 echo Executing: %%prep
 %setup -DT -n asf_tools
@@ -25,7 +28,7 @@ echo Executing: %%prep
 echo Executing: %%build
 cd $RPM_BUILD_DIR/asf_tools
 ./configure --prefix=$RPM_BUILD_ROOT/usr/local
-make mapready
+make
 
 %install
 echo Executing: %%install

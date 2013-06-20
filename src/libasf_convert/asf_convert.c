@@ -1369,7 +1369,8 @@ static int check_config(const char *configFileName, convert_config *cfg)
 	strncmp_case(cfg->import->format, "ALOS_MOSAIC", 11) != 0 &&
 	strncmp_case(cfg->import->format, "GEOTIFF", 7) != 0 &&
 	strncmp_case(cfg->import->format, "ROIPAC", 6) != 0 &&
-	strncmp_case(cfg->import->format, "UAVSAR", 6) != 0) {
+	strncmp_case(cfg->import->format, "UAVSAR", 6) != 0 &&
+	strncmp_case(cfg->import->format, "SEASAT_H5", 9) != 0) {
       asfPrintError("Selected import format not supported\n");
     }
         
@@ -1916,6 +1917,8 @@ char ***do_import(convert_config *cfg)
       format_type = ROIPAC;
     else if (strncmp_case(cfg->import->format, "UAVSAR", 6) == 0)
       format_type = UAVSAR;
+    else if (strncmp_case(cfg->import->format, "SEASAT_H5", 9) == 0)
+      format_type = SEASAT_H5;
     else {
       asfPrintError("Unknown Format: %s\n", cfg->import->format);
       format_type = CEOS; // actually this is not reached
