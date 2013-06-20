@@ -512,7 +512,16 @@ main(int argc, char *argv[])
       remove(tmpstr);
       strcat(strcpy(tmpstr,grfilename),".meta");
       remove(tmpstr);
-    
+
+      /* geocode and export to geotiff */
+      sprintf(tmpstr,"asf_geocode -p utm %s %s_utm\n",cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from asf_geocode\n"); exit(1);}
+
+      sprintf(tmpstr,"asf_export -format geotiff %s_utm %s\n",cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from asf_export to geotiff\n"); exit(1);}
+ 
       /* this changes the basename in the metadata from blah_SLANT to blah_STD  */
       meta_parameters *crop_meta = meta_read(cropfile);
       strcpy(crop_meta->general->basename, cropfile);
@@ -527,7 +536,7 @@ main(int argc, char *argv[])
       sprintf(tmpfile,"%s_QCFULL",cropfile);
       sprintf(tmpstr,"asf_export -format jpeg %s_small %s\n",cropfile,tmpfile);
       err = system(tmpstr);
-      if (err) {printf("Error returned from asf_export\n"); exit(1);}
+      if (err) {printf("Error returned from asf_export to jpeg\n"); exit(1);}
       
       /* remove the small .img file */
       strcat(strcpy(tmpstr,cropfile),"_small.img");

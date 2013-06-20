@@ -78,7 +78,6 @@ meta_parameters *read_seasat_h5_meta(const char *meta_name)
   iso_meta *iso = iso_meta_read(meta_name);
   meta_parameters *meta = iso2meta(iso);
   iso_meta_free(iso);
-  meta_write(meta, "tmp.meta");
 
   return meta;
 }
