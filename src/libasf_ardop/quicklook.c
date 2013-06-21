@@ -107,7 +107,7 @@ BUGS:
 #include "ardop_defs.h"
 #include "specan.h"
 #include "ddr.h"
-
+#include <assert.h>
 
 /*Default Parameters:
 sampling freqency, chirp slope, chirp center frequency,

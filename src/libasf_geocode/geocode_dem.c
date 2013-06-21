@@ -6,6 +6,7 @@
 #include <string.h>
 
 // Libraries from packages outside ASF.
+#include <glib.h>
 #include <gsl/gsl_math.h>
 
 // Libraries developed at ASF.
