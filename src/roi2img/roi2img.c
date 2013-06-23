@@ -522,6 +522,12 @@ main(int argc, char *argv[])
       err = system(tmpstr);
       if (err) {printf("Error returned from asf_export to geotiff\n"); exit(1);}
  
+      /* remove the utm projected internal format image */
+      strcat(strcpy(tmpstr,cropfile),"_utm.img");
+      remove(tmpstr);
+      strcat(strcpy(tmpstr,cropfile),"_utm.meta");
+      remove(tmpstr);
+ 
       /* this changes the basename in the metadata from blah_SLANT to blah_STD  */
       meta_parameters *crop_meta = meta_read(cropfile);
       strcpy(crop_meta->general->basename, cropfile);
