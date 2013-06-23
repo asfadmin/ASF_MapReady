@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     node=get_node_for_line(meta,middle_line,nl);	// find the closest node
     start_line = get_line_for_node(meta,node,nl);	// find the start line for chosen node
   } 
-
+  
   printf("================================================================================\n");
   printf("%s: FINISHED CREATING SEASAT PRODUCTS FROM SWATH FILE %s\n",argv[0],basefile);
   printf("================================================================================\n");
@@ -231,6 +231,22 @@ void process_node(char *basefile, int node)
   printf("Executing command: %s\n",cmd);
   err = system(cmd);
   if (err) {printf("Error returned from roi2img\n"); exit(1);}
+  
+  /* get rid of intermediate doppler, spectra, and stvecs */
+  remove("dop.out");
+  remove("dop.pre");
+  remove("spectra.out");
+  remove("spectra.fixed");
+  remove("fixed_state_vector.txt");
+  
+  /* get rid of intermediate node files */
+  sprintf(tmpfile,"%s_node%.4i.slc",basefile,node);
+  remove(tmpfile);
+  sprintf(tmpfile,"%s_node%.4i.dis",basefile,node);
+  remove(tmpfile);
+  sprintf(tmpfile,"%s_node%.4i.dwp",basefile,node);
+  remove(tmpfile);
+  
 }
 
 int get_values(FILE *fp,SEASAT_header_ext *s)
