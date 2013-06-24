@@ -825,9 +825,7 @@ settings_get_from_gui()
             ret->generate_layover_mask =
                 get_checked("layover_mask_checkbutton");
             ret->do_radiometric = get_checked("radiometric_checkbutton");
-
-            if(ret->do_radiometric)
-                ret->save_incid_angles = get_checked("save_incid_angles_checkbutton"); 
+            ret->save_incid_angles = get_checked("save_incid_angles_checkbutton"); 
         }
         else
         {

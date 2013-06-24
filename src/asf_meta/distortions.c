@@ -168,7 +168,7 @@ void map_distortions(meta_projection *proj, double lat, double lon,
   double s = (dy_dlat*dx_dlon - dx_dlat*dy_dlon) * r / cos(lat);
 
   // Meridian/Parallel angle
-  double theta = aasin(s/(h*k));
+  //double theta = aasin(s/(h*k));
 
   // Tissot indicatrix (semimajor and semiminor axes)
   /*

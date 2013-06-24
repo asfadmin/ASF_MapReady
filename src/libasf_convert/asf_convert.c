@@ -3236,7 +3236,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   // Process the incidence angles file if requested
   if (cfg->general->terrain_correct &&
       cfg->terrain_correct &&
-      cfg->terrain_correct->do_radiometric &&
       cfg->terrain_correct->save_incid_angles)
   {
     if (cfg->general->geocoding) {
@@ -3256,7 +3255,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     else {
       // no geocoding ... just prepare the 'outFile' param for export
-      sprintf(outFile, "%s%cincidence_angles", 
+      sprintf(outFile, "%s%cterrcorr_side_products", 
 	      cfg->general->tmp_dir, DIR_SEPARATOR);
     }
    
@@ -3301,13 +3300,18 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       save_intermediate(cfg, "Local Incidence Angles", intFile);
       FREE(intFile);
 
-      intFile = appendToBasename(outTif, "_RADIOMETRIC_CORRECTION");
-      save_intermediate(cfg, "Radiometric Correction", intFile);
-      FREE(intFile);
+      if (cfg->terrain_correct->do_radiometric) {
 
-      intFile = appendToBasename(outTif, "_COS_PHI");
-      save_intermediate(cfg, "Cos Phi", intFile);
-      FREE(intFile);
+          // These are only available when radiometric correction was performed
+          intFile = appendToBasename(outTif, "_RADIOMETRIC_CORRECTION");
+          save_intermediate(cfg, "Radiometric Correction", intFile);
+          FREE(intFile);
+
+          intFile = appendToBasename(outTif, "_COS_PHI");
+          save_intermediate(cfg, "Cos Phi", intFile);
+          FREE(intFile);
+      }
+
       FREE(outTif);
     }
     else {

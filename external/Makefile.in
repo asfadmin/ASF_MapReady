@@ -9,7 +9,6 @@ GTKWIN32_DIR = gtkwin32
 GTKWIN32_ZIP = gtkwin32zip
 
 MODULES = \
-	work_dir/libsgp4 \
 	@ASF_GLIB@ \
 	@ASF_LIB_GSL@ \
 	@ASF_LIB_PROJ@ \
@@ -28,7 +27,7 @@ MODULES = \
 	@ASF_LIB_GDAL@ \
 	@ASF_LIB_CUNIT@
 
-all: libs gtkwin32 libsgp4
+all: libs gtkwin32
 
 libs:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
@@ -43,6 +42,7 @@ gtkwin32:
 	fi
 
 libsgp4:
+	make -C work_dir/libsgp4
 	mv work_dir/libsgp4/libsgp4.a lib
 	mkdir -p include/libsgp4
 	cp work_dir/libsgp4/*.h include/libsgp4
