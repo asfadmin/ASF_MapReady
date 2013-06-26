@@ -36,12 +36,12 @@ ALGORITHM REFERENCES:
 FUNCTION char *c_getsys(void)
 
 {
-#if defined(LIL_IEEE)
+#if defined(ASF_LIL_IEEE)
 	return IEEE_LIL;
 #elif defined(cray_float)
 	return UNICOS;
 #else
-	/*#if defined(BIG_IEEE)*/
+	/*#if defined(ASF_BIG_IEEE)*/
 	return IEEE;
 #endif 
 }
