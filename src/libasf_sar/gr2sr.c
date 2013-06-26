@@ -26,6 +26,7 @@ BUGS:
 #include "asf_raster.h"
 #include <asf.h>
 #include <asf_meta.h>
+#include <gsl/gsl_multifit.h>
 
 #define VERSION 0.1
 
@@ -60,7 +61,6 @@ static void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr,
   x2 = x * x;
   y = r_close/r_earth;
   rg0 = r_earth * acos((1.0 + x2 - y*y) / (2.0*x));
-
   /* begin loop */
   for(i = 0; i<MAX_IMG_SIZE; i++) {
     rslant = r_close + i *srinc;
@@ -68,6 +68,85 @@ static void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr,
     rg = r_earth*acos((1.0+x2-y*y)/(2.0*x));
     gr2sr[i] = (rg - rg0)/grinc;
   }
+}
+
+static void update_doppler(int in_np, int out_np, float *gr2sr, meta_parameters *meta)
+{
+          double d1 = meta->sar->range_doppler_coefficients[1];
+          double d2 = meta->sar->range_doppler_coefficients[2];
+
+          // least squares fit
+          const int N=1000;
+          double chisq, xi[N], yi[N];
+          int ii;
+          for (ii=0; ii<N; ++ii) {
+             xi[ii] = (double)ii/(double)N * (double)(out_np-1);
+             // the gr2sr array maps a slant range index to a ground range index
+             double g = gr2sr[(int)xi[ii]];
+             yi[ii] = d1*g + d2*g*g;
+          }
+
+          gsl_matrix *X, *cov;
+          gsl_vector *y, *w, *c;
+
+          X = gsl_matrix_alloc(N,3);
+          y = gsl_vector_alloc(N);
+          w = gsl_vector_alloc(N);
+
+          c = gsl_vector_alloc(3);
+          cov = gsl_matrix_alloc(3, 3);
+
+          for (ii=0; ii<N; ++ii) {
+            gsl_matrix_set(X, ii, 0, 1.0);
+            gsl_matrix_set(X, ii, 1, xi[ii]);
+            gsl_matrix_set(X, ii, 2, xi[ii]*xi[ii]);
+
+            gsl_vector_set(y, ii, yi[ii]);
+            gsl_vector_set(w, ii, 1.0);
+          }
+
+          gsl_multifit_linear_workspace *work = gsl_multifit_linear_alloc(N, 3);
+          gsl_multifit_wlinear(X, w, y, c, cov, &chisq, work);
+          gsl_multifit_linear_free(work);
+
+          double c0 = gsl_vector_get(c, 0);
+          double c1 = gsl_vector_get(c, 1);
+          double c2 = gsl_vector_get(c, 2);
+
+          gsl_matrix_free(X);
+          gsl_vector_free(y);
+          gsl_vector_free(w);
+          gsl_vector_free(c);
+          gsl_matrix_free(cov);
+
+          // now the x and y vectors are the desired doppler polynomial
+
+          double ee2=0;
+          for (ii=0; ii<out_np; ii+=100) {
+
+            // ii: index in slant range, g: index in ground range 
+            double g = gr2sr[ii];
+
+            // dop1: doppler in slant, dop2: doppler in ground (should agree)
+            double dop1 = d1*g + d2*g*g;
+            double dop3 = c0 + c1*ii + c2*ii*ii;
+            double e2 = fabs(dop1-dop3);
+            ee2 += e2;
+
+            if (ii % 1000 == 0)
+              printf("%5d -> %8.3f %8.3f   %5d -> %5d   %7.4f\n",
+                     ii, dop1, dop3, (int)g, ii, e2);
+
+          }
+
+          printf("Original: %14.9f %14.9f %14.9f\n", 0., d1, d2);
+          printf("Modified: %14.9f %14.9f %14.9f\n\n", c0, c1, c2);
+
+          printf("Overall errors: %8.4f\n", ee2);
+
+          meta->sar->range_doppler_coefficients[0] += c0;
+          meta->sar->range_doppler_coefficients[1] = c1;
+          meta->sar->range_doppler_coefficients[2] = c2;
 }
 
 static char * replExt(const char *filename, const char *ext)
@@ -127,8 +206,10 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
        The meta->sar->range_sampling_rate is 10^6 times the value above,
        so we use C/(2*meta->sar->range_sampling_rate)
     */
+    int osc = inMeta->sar->original_sample_count;
+    if (osc < 0) osc = inMeta->general->sample_count;
     srPixSize = SPD_LIGHT / ((2.0 * inMeta->sar->range_sampling_rate) *
-      inMeta->general->sample_count / inMeta->sar->original_sample_count);
+      inMeta->general->sample_count / osc);
   }
 
   nl = inMeta->general->line_count;
@@ -146,6 +227,8 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
      if (gr2sr[ii]<np) onp=ii; /* gr input still in range-- keep output */
      else break; /* gr input is off end of image-- stop sr output */
   }
+  asfPrintStatus("Input image is %dx%d\n", nl, np);
+  asfPrintStatus("Output image will be %dx%d\n", onl, onp);
   
   /* Split gr2sr into resampling coefficients */
   for (ii=0; ii<onp; ii++) {
@@ -165,6 +248,9 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
   outMeta->sar->image_type       = 'S';
   outMeta->general->x_pixel_size = srPixSize;
   outMeta->general->sample_count = onp;
+  if (outMeta->sar){
+    update_doppler(np, onp, gr2sr, outMeta);
+  }
 
   iimgfile = replExt(infile, "img");
   oimgfile = replExt(outfile, "img");
