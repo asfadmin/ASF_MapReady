@@ -1,3 +1,4 @@
+#include <glib.h>
 #include <asf_meta.h>
 #include <libasf_proj.h>
 
