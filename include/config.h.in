@@ -1,3 +1,12 @@
+#ifndef ASF_SHARE_DIR
 #define ASF_SHARE_DIR "@SHAREDIR@"
+#endif
+
+#ifndef ASF_BIN_DIR
 #define ASF_BIN_DIR "@BINDIR@"
+#endif
+
+#ifndef ASF_DOC_DIR
 #define ASF_DOC_DIR "@DOCDIR@"
+#endif
+
