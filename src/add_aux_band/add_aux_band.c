@@ -17,6 +17,7 @@
 "        slant_range          Distance from the platform (m)\n"\
 "        time                 Time from the beginning of acquisition (s)\n"\
 "        doppler              Doppler value\n"\
+"        yaw                  Yaw angle\n"\
 "        lat                  Latitude\n"\
 "        lon                  Longitude\n"\
 "\n"\
@@ -195,6 +196,7 @@ void add_aux_band(const char *inFile, const char *outFile, const char *type)
 #define ADD_TIME 5
 #define ADD_LAT 6
 #define ADD_LON 7
+#define ADD_YAW 8
   const char *band_str=MAGIC_UNSET_STRING;
 
   int what=0;
@@ -217,6 +219,11 @@ void add_aux_band(const char *inFile, const char *outFile, const char *type)
     asfPrintStatus("Adding Doppler(Hz)\n");
     what=ADD_DOPPLER;
     band_str = "DOPPLER";
+  }
+  else if (strcmp_case(type, "yaw") == 0) {
+    asfPrintStatus("Adding Yaw Angle (degrees)\n");
+    what=ADD_YAW;
+    band_str = "YAW_ANGLE";
   }
   else if (strcmp_case(type, "time") == 0) {
     asfPrintStatus("Adding Time since start of acquisition (s)\n");
@@ -299,6 +306,11 @@ void add_aux_band(const char *inFile, const char *outFile, const char *type)
           }
           break;
         }
+        case ADD_YAW:
+          if (meta->sar) {
+            buf[jj] = R2D*meta_yaw(meta, ii, jj);
+          }
+          break;
         case ADD_TIME:
         {
           double time, slant;
