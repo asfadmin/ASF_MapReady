@@ -365,7 +365,7 @@ c2v: mkdirs_for_build external_libs
 	cp doc/ConvertToVector.pdf $(S_DOCDIR)
 	cp doc/ConvertToVector-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(C2V_SHAREDIR)
-	echo $(VERSION_C2V) > $(C2V_SHAREDIR)/converttovector_version.txt
+	echo $(VERSION_C2V) > $(C2V_SHAREDIR)/c2v_version.txt
 	$(foreach MODULE, $(C2V_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX Convert To Vector Compiled! XXXXXXXXXXX"
