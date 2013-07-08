@@ -1,17 +1,30 @@
 import os.path
 
+AddOption("--prefix",
+          dest = "prefix",
+          type = "string",
+          nargs = 1,
+          action = "store",
+          metavar = "DIR",
+          help = "installation prefix",
+          )
+
+# parse and check command line options
+if GetOption("prefix") is None:
+    inst_base = "/usr/local"
+else:
+    inst_base = GetOption("prefix")
+
 env = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
 
 source_root = "src"
 
-# FIXME hard-coded build params
+# FIXME hard-coded build params, needed until we 
 platform = "linux64"
 build_type = "debug"
 
 build_base_dir = "build"
 
-# FIXME hard-coded base directory
-inst_base = "/home/ninneman/Documents/devel/mapready/install"
 inst_dirs = {
     "bins":   os.path.join(inst_base, "bin"),
     "libs":   os.path.join(inst_base, "lib"),
@@ -69,8 +82,9 @@ for src_sub in src_subs:
     # fill output with the various build products
     for product_type in results:
         output[product_type].extend(results[product_type])
+        Alias("build", results[product_type])
 
 # configure install target
 Alias("install", inst_dirs.values())
 for product_type in inst_dirs:
-    Install(inst_dirs[product_type], output[product_type])
+    Install(directory = inst_dirs[product_type], source = output[product_type])
