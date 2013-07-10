@@ -1,0 +1,30 @@
+Import("env")
+env = env.Clone()
+
+    #env.AppendUnique(LIBS = [
+    #        "asf_sgpsdp",
+    #        ])
+    
+    #product = Program("sgpsdp", [
+    #        "sgpsdp_main.c",
+    #        ])
+    #Return("product")
+
+libs = env.SharedLibrary("libasf_sgpsdp", [
+        "math.c",
+        "obs.c",
+        "in.c",
+        "time.c",
+        "solar.c",
+        "sgpsdp.c",
+        ])
+
+products = {"libs": libs}
+
+# run the unit test, and set its dependencies
+test_program = None
+test_result = env.UnitTest("test.semaphore", test_program)
+for product in products.values():
+    Depends(test_result, product)
+
+Return("products")

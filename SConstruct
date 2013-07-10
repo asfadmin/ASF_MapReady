@@ -87,4 +87,4 @@ for src_sub in src_subs:
 # configure install target
 Alias("install", inst_dirs.values())
 for product_type in inst_dirs:
-    Install(directory = inst_dirs[product_type], source = output[product_type])
+    Install(inst_dirs[product_type], output[product_type])
