@@ -1,0 +1,35 @@
+Import("env")
+env = env.Clone()
+
+env.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        "#src/libasf_tiff/",
+        "#src/libasf_export/",
+        "#src/libasf_raster/",
+        "#src/libasf_import/",
+        "#src/libasf_sar/",
+        "#src/libasf_terrcorr/",
+        "#src/libasf_geocode/",
+        "#src/libasf_ardop/",
+        "#src/libasf_vector/",
+        "/usr/include/libshp",
+        ])
+
+env.ParseConfig("pkg-config --cflags --libs libgeotiff")
+env.ParseConfig("pkg-config --cflags --libs glib-2.0")
+env.ParseConfig("pkg-config --cflags --libs netcdf")
+
+libs = env.SharedLibrary("libasf_convert", Glob("*.c"))
+
+products = {"libs": libs}
+
+# run the unit test, and set its dependencies
+test_program = None
+test_result = env.UnitTest("test.semaphore", test_program)
+for product in products.values():
+    Depends(test_result, product)
+
+Return("products")
