@@ -1,5 +1,0 @@
-#!../bin/clui
-#  ASF Plugin script, v0.1
-#  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
-
-image_input_meta filename="grey_m.img";

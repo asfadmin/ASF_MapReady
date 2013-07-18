@@ -1,0 +1,35 @@
+Import("env")
+env = env.Clone()
+
+env.AppendUnique(CPPPATH = [
+        "#include/",
+        "#src/asf_meta",
+        "#src/asf",
+        "#src/libasf_proj",
+        "#src/sgpsdp",
+        "#src/libasf_vector",
+        "/usr/include/libshp",
+        "#src/libasf_import",
+        ])
+
+env.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+libs = env.SharedLibrary("libasf_plan", [
+        "plan.c",
+        "polygon.c",
+        "beam_mode_table.c",
+        "kml.c",
+        "pass.c",
+        "overlap.c",
+        "tle.c",
+        ])
+
+products = {"libs": libs}
+
+# run the unit test, and set its dependencies
+test_program = None
+test_result = env.UnitTest("test.semaphore", test_program)
+for product in products.values():
+    Depends(test_result, product)
+
+Return("products")
