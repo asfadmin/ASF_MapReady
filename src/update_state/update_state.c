@@ -10,7 +10,9 @@
 "     vectors, either with the requested number or with the requested spacing.\n"\
 "\n"\
 "     The first state vector will be at the start of acquisition, and the last\n"\
-"     at the end of the acquisition.\n"
+"     at the end of the acquisition, unless a particular spacing is specified\n"\
+"     in which case the last state vector could be after the acquisition stop\n"\
+"     time.\n"
 
 #define ASF_INPUT_STRING \
 "     The metadata file is required, and should be in ASF Internal format.\n"\
