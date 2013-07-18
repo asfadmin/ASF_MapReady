@@ -1,12 +1,12 @@
-Import("env")
-env = env.Clone()
+Import("globalenv")
+localenv = globalenv.Clone()
 
-env.AppendUnique(CPPPATH = [
+localenv.AppendUnique(CPPPATH = [
         "#include/",
         "#src/asf/",
         ])
     
-libs = env.SharedLibrary("asf_fft", [
+libs = localenv.SharedLibrary("asf_fft", [
         "dxpose.c",
         "fft2d.c",
         "fftlib.c",
@@ -14,16 +14,14 @@ libs = env.SharedLibrary("asf_fft", [
         "fftext.c",
         ])
 
-mans = env.File([
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+
+mans = localenv.File([
         "asf_fft.man",
         ])
 
-products = {"libs": libs, "mans": mans}
+globalenv.Install(globalenv["inst_dirs"]["mans"], mans)
 
 # run the unit test, and set its dependencies
-test_program = None
-test_result = env.UnitTest("test.semaphore", test_program)
-for product in products.values():
-    Depends(test_result, product)
-
-Return("products")
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs, mans])
