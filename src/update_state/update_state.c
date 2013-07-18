@@ -73,7 +73,7 @@ static void print_help(void)
       "Options:\n" ASF_OPTIONS_STRING "\n"
       "Examples:\n" ASF_EXAMPLES_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n"  TOOL_SUITE_NAME TOOL_SUITE_VERSION_STRING "\n\n");
+      "Version:\n"  TOOL_SUITE_NAME " " TOOL_SUITE_VERSION_STRING "\n\n");
   exit(EXIT_SUCCESS);
 }
 
