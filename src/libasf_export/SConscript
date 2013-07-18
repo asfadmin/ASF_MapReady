@@ -1,7 +1,7 @@
-Import("env")
-env = env.Clone()
+Import("globalenv")
+localenv = globalenv.Clone()
 
-env.AppendUnique(CPPPATH = [
+localenv.AppendUnique(CPPPATH = [
         "#include/",
         "#src/asf/",
         "#src/libasf_raster/",
@@ -12,10 +12,10 @@ env.AppendUnique(CPPPATH = [
         "#src/libasf_import/",
         ])
 
-env.ParseConfig("pkg-config --cflags --libs libgeotiff")
-env.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
-libs = env.SharedLibrary("libasf_export", [
+libs = localenv.SharedLibrary("libasf_export", [
         "asf_export.c",
         "export_band.c",
         "export_netcdf.c",
@@ -29,12 +29,8 @@ libs = env.SharedLibrary("libasf_export", [
         "write_line.c",
         ])
 
-products = {"libs": libs}
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
 # run the unit test, and set its dependencies
-test_program = None
-test_result = env.UnitTest("test.semaphore", test_program)
-for product in products.values():
-    Depends(test_result, product)
-
-Return("products")
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs])

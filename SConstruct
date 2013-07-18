@@ -15,7 +15,7 @@ if GetOption("prefix") is None:
 else:
     inst_base = GetOption("prefix")
 
-env = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
+globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
 
 source_root = "src"
 
@@ -32,14 +32,15 @@ inst_dirs = {
     "mans":   os.path.join(inst_base, "man"),
     "docs":   os.path.join(inst_base, "doc"),
     }
+globalenv["inst_dirs"] = inst_dirs
 
-endian = checkEndian(env)
+endian = checkEndian(globalenv)
 
 if endian == "little" :
-    env.AppendUnique(CPPDEFINES = ["ASF_BIG_ENDIAN", "ASF_BIG_IEEE"])
+    globalenv.AppendUnique(CPPDEFINES = ["ASF_BIG_ENDIAN", "ASF_BIG_IEEE"])
 
 elif endian == "big" :
-    env.AppendUnique(CPPDEFINES = ["ASF_LIL_ENDIAN", "ASF_LIL_IEEE"])
+    globalenv.AppendUnique(CPPDEFINES = ["ASF_LIL_ENDIAN", "ASF_LIL_IEEE"])
 
 else:
     pass
@@ -54,37 +55,49 @@ f.write("#define ASF_DOC_DIR \"" + inst_dirs["docs"] + "\"\n")
 f.close()
 
 # common command line options
-env.AppendUnique(CCFLAGS = ["-Wall", "-g"])
-env.AppendUnique(LIBPATH = [inst_dirs["libs"]])
+globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g"])
 
 # common include directories
-env.AppendUnique(CPPPATH = ["."])
+globalenv.AppendUnique(CPPPATH = ["."])
 
-# get all the subdirectories under the source root directory
-src_subs = os.walk(source_root).next()[1]
+# get all the subdirectories under the source root directory, and make these the default targets
+#src_subs = os.walk(source_root).next()[1]
+src_subs = [
+    "add_aux_band",
+    "asf_view",
+    "asf_convert_gui",
+    "addapole",
+    "accum_offset",
+    "dspddr",
 
-# initialize holding dictionary for the build output nodes
-output = {}
-for product_type in inst_dirs:
-    output[product_type] = []
+    "libasf_import",
+    "libasf_terrcorr",
+    "libasf_ardop",
+    "libasf_raster",
+    "plan",
+    "asf",
+    "libasf_sar",
+    "libasf_geocode",
+    "libasf_proj",
+    "asf_fft",
+    "libasf_vector",
+    "libasf_convert",
+    "asf_meta",
+    "sgpsdp",
+    "libasf_export",
+    ]
 
 # do the actual building
 for src_sub in src_subs:
     src_dir = os.path.join(source_root, src_sub)
     # the next line exists because there seems to be no way of getting the source directory from within a tool run from an SConscript with the variant_dir option
-    env["src_dir"] = src_dir
+    globalenv["src_dir"] = src_dir
     build_dir = os.path.join(build_base_dir, platform + "." + build_type, src_sub)
-    results = SConscript(dirs = src_dir, exports = ["env"], variant_dir = build_dir, duplicate = 0)
+    globalenv.SConscript(dirs = src_dir, exports = ["globalenv"], variant_dir = build_dir, duplicate = 0)
 
-    # continue from the top if results is empty (e.g., missing SConscript)
-    if results is None: continue
+# configure targets, and make "build" the default
+build_subs = [os.path.join("#", build_base_dir, platform + "." + build_type, sub) for sub in src_subs]
 
-    # fill output with the various build products
-    for product_type in results:
-        output[product_type].extend(results[product_type])
-        Alias("build", results[product_type])
-
-# configure install target
-Alias("install", inst_dirs.values())
-for product_type in inst_dirs:
-    Install(inst_dirs[product_type], output[product_type])
+globalenv.Alias("build", build_subs)
+globalenv.Alias("install", inst_dirs.values())
+globalenv.Default("build")
