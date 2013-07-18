@@ -1,0 +1,44 @@
+Import("env")
+env = env.Clone()
+
+env.AppendUnique(CPPPATH = [
+        "#include",
+        ])
+    
+env.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+libs = env.SharedLibrary("asf", [
+        "asf_tiff.c",
+        "check.c",
+        "cla.c",
+        "endian.c",
+        "error.c",
+        "fileUtil.c",
+        "log.c",
+        "stopwatch.c",
+        "share.c",
+        "strUtil.c",
+        "system.c",
+        "tmpdir.c",
+        "license.c",
+        "splash_screen.c",
+        "print_alerts.c",
+        "diagnostics.c",
+        "matrix.c",
+        "vector.c",
+        "complex.c",
+        "solve1d.c",
+        "socket.c",
+        "httpUtil.c",
+        "caplib.c",
+        ])
+
+products = {"libs": libs}
+
+# run the unit test, and set its dependencies
+test_program = None
+test_result = env.UnitTest("test.semaphore", test_program)
+for product in products.values():
+    Depends(test_result, product)
+
+Return("products")
