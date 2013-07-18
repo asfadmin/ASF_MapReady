@@ -195,11 +195,14 @@ void update_state(const char *inFile, const char *outFile, int num, double spaci
   double t2 = meta_get_time(in_meta, nl, ns/2);
   double t = fabs(t2-t1);
 
-  if (num > 0 && spacing < 0) {
+  if (num == 1 && spacing < 0) {
+    spacing = t;
+  }
+  else if (num > 0 && spacing < 0) {
     spacing = t / (num - 1);
   }
   else if (num < 0 && spacing > 0) {
-    num = (int)(1+floor(t / spacing));
+    num = (int)(2+floor(t / spacing));
   }
   else {
     asfPrintError("Invalid values in update_state: num=%d, spacing=%f\n", num, spacing);
