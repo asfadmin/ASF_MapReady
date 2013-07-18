@@ -63,6 +63,7 @@ MAPREADY_MODULES = \
 	src/plan \
 	src/brs2jpg \
 	src/add_aux_band \
+	src/update_state \
 	src/populate_meta_field \
 	src/make_overlay \
 	src/asf_kml_overlay \
