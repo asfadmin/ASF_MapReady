@@ -1,17 +1,17 @@
-Import("env")
-env = env.Clone()
+Import("globalenv")
+localenv = globalenv.Clone()
 
-env.AppendUnique(CPPPATH = [
+localenv.AppendUnique(CPPPATH = [
         "#include",
         "#src/asf",
         "#src/libasf_proj",
         ])
 
-env.ParseConfig("pkg-config --cflags --libs libgeotiff")
-env.ParseConfig("pkg-config --cflags --libs libxml-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
 
-env.AppendUnique(YACCFLAGS = ["-y", "-d", "-p meta_yy"])
-env.AppendUnique(LEXFLAGS = ["-Pmeta_yy", "-s", "-t"])
+localenv.AppendUnique(YACCFLAGS = ["-y", "-d", "-p meta_yy"])
+localenv.AppendUnique(LEXFLAGS = ["-Pmeta_yy", "-s", "-t"])
 
 sources = [
     "allocbuf.c",
@@ -136,17 +136,13 @@ sources = [
     ]
 
 # run the parser generator and lexer
-env.CFile("y.tab.c", "metadata_parser.y")
-sources += env.CFile("metadata_lexer.c", "metadata_lexer.l")
+localenv.CFile("y.tab.c", "metadata_parser.y")
+sources += localenv.CFile("metadata_lexer.c", "metadata_lexer.l")
 
-libs = env.SharedLibrary("asf_meta", sources)
+libs = localenv.SharedLibrary("asf_meta", sources)
 
-products = {"libs": libs}
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
 # run the unit test, and set its dependencies
-test_program = None
-test_result = env.UnitTest("test.semaphore", test_program)
-for product in products.values():
-    Depends(test_result, product)
-
-Return("products")
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs])
