@@ -65,6 +65,40 @@ void clm(const char *func, meta_parameters *meta, double *args, int nArgs)
     if (nArgs != 2) use("meta_get_slant: <line> <sample>\n");
     asfPrintStatus("%g\n", meta_get_slant(meta, args[0], args[1]));
   }
+  else if (strcmp_case(func, "meta_get_time") == 0) {
+    if (nArgs != 2) use("meta_get_time: <line> <sample>\n");
+    asfPrintStatus("%g\n", meta_get_time(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_get_dop") == 0) {
+    if (nArgs != 2) use("meta_get_dop: <line> <sample>\n");
+    asfPrintStatus("%g\n", meta_get_dop(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_get_latLon") == 0) {
+    if (nArgs != 2 && nArgs != 3) use("meta_get_latLon: <line> <sample> [ <height> ]\n");
+    double h=0, lat, lon;
+    if (nArgs == 3) h = args[2];
+    meta_get_latLon(meta, args[0], args[1], h, &lat, &lon);
+    asfPrintStatus("%g %g\n", lat, lon);
+  }
+  else if (strcmp_case(func, "meta_get_lineSamp") == 0) {
+    if (nArgs != 2 && nArgs != 3) use("meta_get_lineSamp: <lat> <lon> [ <height> ]\n");
+    double h=0, line, samp;
+    if (nArgs == 3) h = args[2];
+    meta_get_lineSamp(meta, args[0], args[1], h, &line, &samp);
+    asfPrintStatus("%g %g\n", line, samp);
+  }
+  else if (strcmp_case(func, "meta_incid") == 0) {
+    if (nArgs != 2) use("meta_incid: <line> <sample>\n");
+    asfPrintStatus("%g\n", R2D*meta_incid(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_look") == 0) {
+    if (nArgs != 2) use("meta_look: <line> <sample>\n");
+    asfPrintStatus("%g\n", R2D*meta_look(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_yaw") == 0) {
+    if (nArgs != 2) use("meta_yaw: <line> <sample>\n");
+    asfPrintStatus("%g\n", R2D*meta_yaw(meta, args[0], args[1]));
+  }
   else {
     use("Unknown: %s\n");
   }
