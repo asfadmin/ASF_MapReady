@@ -1,9 +1,9 @@
 import os.path
 
-Import("env")
-env = env.Clone()
+Import("globalenv")
+localenv = globalenv.Clone()
 
-env.AppendUnique(CPPPATH = [
+localenv.AppendUnique(CPPPATH = [
         "#src/asf/",
         "#include/",
         "#src/asf_meta/",
@@ -16,14 +16,14 @@ env.AppendUnique(CPPPATH = [
         "/usr/include/libshp",
         ])
 
-env.ParseConfig("pkg-config --cflags --libs libglade-2.0")
-env.ParseConfig("pkg-config --cflags --libs libgeotiff")
-env.ParseConfig("pkg-config --cflags --libs gsl")
-env.ParseConfig("pkg-config --cflags --libs libpng15")
-env.ParseConfig("pkg-config --cflags --libs libtiff-4")
-env.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs libpng15")
+localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
+localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
 
-env.AppendUnique(LIBS = ["asf",
+localenv.AppendUnique(LIBS = ["asf",
                          "asf_import",
                          "asf_convert",
                          "asf_proj",
@@ -40,7 +40,7 @@ env.AppendUnique(LIBS = ["asf",
 
 head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
 
-env.AppendUnique(LIBPATH = [
+localenv.AppendUnique(LIBPATH = [
         "#" + os.path.join(head_build_dir, "asf"),
         "#" + os.path.join(head_build_dir, "libasf_convert"),
         "#" + os.path.join(head_build_dir, "libasf_proj"),
@@ -57,9 +57,11 @@ env.AppendUnique(LIBPATH = [
         ])
 
 
-bins = env.Program("mapready", Glob("*.c"))
+bins = localenv.Program("mapready", Glob("*.c"))
 
-shares = env.File([
+globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+
+shares = localenv.File([
         "asf_convert_gui.glade",
         "asf_convert_gui.ico",
         "#src/asf/pixmaps/asf_seal.png",
@@ -74,16 +76,14 @@ shares = env.File([
         "asf_convert_gui.txt",
         ])
 
-docs = env.File([
+globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
+
+docs = localenv.File([
         "asf_convert_gui.txt",
         ])
 
-products = {"bins": bins, "shares": shares, "docs": docs}
+globalenv.Install(globalenv["inst_dirs"]["docs"], docs)
 
 # run the unit test, and set its dependencies
-test_program = None
-test_result = env.UnitTest("test.semaphore", test_program)
-for product in products.values():
-    Depends(test_result, product)
-
-Return("products")
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [bins, shares, docs])

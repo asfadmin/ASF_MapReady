@@ -1,9 +1,9 @@
 import os.path
 
-Import("env")
-env = env.Clone()
+Import("globalenv")
+localenv = globalenv.Clone()
 
-env.AppendUnique(CPPPATH = [
+localenv.AppendUnique(CPPPATH = [
         "#include/",
         "#src/asf/",
         "#src/asf_meta",
@@ -16,15 +16,15 @@ env.AppendUnique(CPPPATH = [
         "#src/plan/",
         ])
 
-env.ParseConfig("pkg-config --cflags --libs libglade-2.0")
-env.ParseConfig("pkg-config --cflags --libs libgeotiff")
-env.ParseConfig("pkg-config --cflags --libs gsl")
-env.ParseConfig("pkg-config --cflags --libs libpng15")
-env.ParseConfig("pkg-config --cflags --libs libtiff-4")
-env.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
-env.ParseConfig("pkg-config --cflags --libs gdal")
+localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs libpng15")
+localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
+localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs gdal")
 
-env.AppendUnique(LIBS = ["m",
+localenv.AppendUnique(LIBS = ["m",
                          "asf",
                          "asf_meta",
                          "jpeg",
@@ -42,7 +42,7 @@ env.AppendUnique(LIBS = ["m",
 
 head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
 
-env.AppendUnique(LIBPATH = [
+localenv.AppendUnique(LIBPATH = [
         "#" + os.path.join(head_build_dir, "asf"),
         "#" + os.path.join(head_build_dir, "asf_meta"),
         "#" + os.path.join(head_build_dir, "libasf_raster"),
@@ -56,7 +56,7 @@ env.AppendUnique(LIBPATH = [
         "#" + os.path.join(head_build_dir, "libasf_import"),
         ])
 
-bins = env.Program("asf_view", [
+bins = localenv.Program("asf_view", [
         "asf_view.c",
         "utility.c",
         "font.c",
@@ -94,7 +94,9 @@ bins = env.Program("asf_view", [
         "read_seasat_h5.c",
         ])
 
-shares = env.File([
+globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+
+shares = localenv.File([
         "startup.jpg",
         "asf_view.glade",
         "asf_view_icon.ico",
@@ -105,12 +107,8 @@ shares = env.File([
         "#src/asf/pixmaps/save_as.png",
         ])
 
-products = {"bins": bins, "shares": shares}
+globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
 # run the unit test, and set its dependencies
-test_program = None
-test_result = env.UnitTest("test.semaphore", test_program)
-for product in products.values():
-    Depends(test_result, product)
-
-Return("products")
+test_result = localenv.UnitTest("test.semaphore", None)
+Depends(test_result, [bins, shares])
