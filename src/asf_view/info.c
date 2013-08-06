@@ -217,8 +217,10 @@ void update_pixel_info(ImageInfo *ii)
         meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
         sprintf(&buf[strlen(buf)],
             "Incid: %.4f, Look: %.4f (deg)\n"
-            "Slant: %.1f m Time: %.3f s\n",
-            R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s, t);
+            "Slant: %.1f m Time: %.3f s\n"
+            "Yaw: %.4f (deg)\n",
+            R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s, t,
+            R2D*meta_yaw(meta,y,x));
     }
 
     if (meta->projection &&
