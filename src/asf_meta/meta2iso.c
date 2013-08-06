@@ -896,6 +896,13 @@ meta_parameters *iso2meta(iso_meta *iso)
     meta->sar->time_shift = 0.0;
   else
     meta->sar->time_shift = meta->state_vectors->vecs[numVectors-1].time;
+
+  if (meta->sar->yaw == 0 ||
+      !meta_is_valid_double(meta->sar->yaw))
+  {
+    meta->sar->yaw = meta_yaw(meta, meta->general->line_count/2.0,
+                                    meta->general->sample_count/2.0);
+  }
   /*
   // few calculations need state vectors
   meta->sar->earth_radius = 
@@ -908,6 +915,8 @@ meta_parameters *iso2meta(iso_meta *iso)
   */
 
   // Location block
+  meta_get_corner_coords(meta);
+/*
   meta->location = meta_location_init();
   for (ii=0; ii<4; ii++) {
     if (info->sceneCornerCoord[ii].refRow == 0 &&
@@ -931,6 +940,6 @@ meta_parameters *iso2meta(iso_meta *iso)
       meta->location->lon_end_far_range = info->sceneCornerCoord[ii].lon;
     }
   }
-
+*/
   return meta;
 }
