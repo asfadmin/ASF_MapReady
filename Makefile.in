@@ -67,6 +67,9 @@ MAPREADY_MODULES = \
 	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \
+	src/make_seasat_h5 \
+	src/roi2img \
+	src/create_roi_in \
 	@ASF_GUI@
 
 MAPREADY_SOURCE = \
@@ -266,7 +269,7 @@ VERSION_DATA_QC = $(shell awk -F '"' '$$1 ~ /define DATA_QC_VERSION_STRING/ {pri
 VERSION_FARADAY = $(shell awk -F '"' '$$1 ~ /define FARADAY_STRING/ {print $$2}' include/asf_version.h)
 
 # Build the MapReady package by default
-default: mapready
+default: asps
 
 # MapReady Package
 mapready: mkdirs_for_build external_libs
