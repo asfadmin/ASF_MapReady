@@ -34,6 +34,7 @@
 #include "asf.h"
 #include "hdf5.h"
 #include "uavsar.h"
+#include "seasat_slant_shift.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -121,6 +122,7 @@ typedef enum {
   GAMMA,
   ROIPAC,
   SMAP,
+  SEASAT_H5,
   GRIDDED_RGPS
 } input_format_t;
 
@@ -656,6 +658,9 @@ stateVector meta_interp_stVec(meta_parameters *meta,double time);
   Returns radians.*/
 int meta_uses_incid_polynomial(meta_parameters *meta);
 double meta_incid(meta_parameters *sar,double y,double x);
+
+/*Return the yaw angle in radians*/
+double meta_yaw(meta_parameters *meta, double y, double x);
 
 /*Return the look angle: this is the angle measured
   by the satellite between earth's center and the target point.

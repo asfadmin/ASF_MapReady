@@ -591,6 +591,8 @@ iso_meta *iso_meta_read(const char *xmlFile)
     "level1Product.productSpecific.complexImageInfo.projectedSpacingRange.groundFar");
   spec->projectedSpacingSlantRange = xml_get_double_value(doc,
     "level1Product.productSpecific.complexImageInfo.projectedSpacingRange.slantRange");
+  spec->slantRangeShift = xml_get_double_value(doc,
+    "level1Product.productSpecific.complexImageInfo.projectedSpacingRange.slantRangeShift");
   strcpy(str, xml_get_string_value(doc,
     "level1Product.productSpecific.complexImageInfo.imageCoordinateType"));
   if (strcmp_case(str, "RAW") == 0)

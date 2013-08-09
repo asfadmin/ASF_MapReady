@@ -1,0 +1,22 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+libs = localenv.SharedLibrary("libasf_proj", [
+        "project.c",
+        "spheroid_axes_lengths.c",
+        "datum_spheroid.c",
+        "geotiff_support.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs])

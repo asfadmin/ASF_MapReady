@@ -41,10 +41,10 @@ PROGRAM HISTORY:
  * straight copy of c_getsys "algorithm" for DDR */
 char *meta_get_system(void)
 {
-#if defined(big_ieee)
-    return "big_ieee";
-#elif defined(lil_ieee)
-    return "lil_ieee";
+#if defined(ASF_BIG_IEEE)
+    return "BIG_IEEE";
+#elif defined(ASF_LIL_IEEE)
+    return "LIL_IEEE";
 #elif defined(cray_float)
     return "cray_float";
 #else
@@ -132,8 +132,8 @@ double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
  * that location. Returns Hz. Only works for SR & GR. */
 double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
 {
-  assert (meta->sar && (meta->sar->image_type == 'S'
-            || meta->sar->image_type == 'G'));
+  assert (meta->sar); // && (meta->sar->image_type == 'S'
+         //   || meta->sar->image_type == 'G'));
 
   yLine += meta->general->start_line;
   xSample += meta->general->start_sample;
@@ -319,6 +319,18 @@ double meta_look(meta_parameters *meta,double y,double x)
     double er = meta_get_earth_radius(meta,y,x);
     double ht = meta_get_sat_height(meta,y,x);
     return acos((SQR(sr) + SQR(ht) - SQR(er)) / (2.0*sr*ht));
+}
+
+/* meta_yaw: return yaw value at the specified point in radians */
+double meta_yaw(meta_parameters *meta, double y, double x)
+{
+    double look, yaw, sr, t, dop;
+    meta_get_timeSlantDop(meta, y, x, &t, &sr, &dop);
+    stateVector st = meta_get_stVec(meta,t);
+    GEOLOCATE_REC *g = init_geolocate_meta(&st,meta);
+    getLookYaw(g,sr,dop,&look,&yaw);
+    free_geolocate(g);
+    return yaw;
 }
 
 /**********************************************************

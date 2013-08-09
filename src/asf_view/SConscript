@@ -1,0 +1,114 @@
+import os.path
+
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include/",
+        "#src/asf/",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        "#src/libasf_raster",
+        "#src/libasf_vector",
+        "/usr/include/libshp",
+        "#src/libasf_import",
+        "#src/libasf_geocode",
+        "#src/plan/",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs libpng15")
+localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
+localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs gdal")
+
+localenv.AppendUnique(LIBS = ["m",
+                         "asf",
+                         "asf_meta",
+                         "jpeg",
+                         "asf_raster",
+                         "asf_proj",
+                         "asf_import",
+                         "asf_geocode",
+                         "asf_vector",
+                         "asf_plan",
+                         "asf_sgpsdp",
+                         "asf_fft",
+                         "asf_sar",
+                         "hdf5",
+                         ])
+
+head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
+
+localenv.AppendUnique(LIBPATH = [
+        "#" + os.path.join(head_build_dir, "asf"),
+        "#" + os.path.join(head_build_dir, "asf_meta"),
+        "#" + os.path.join(head_build_dir, "libasf_raster"),
+        "#" + os.path.join(head_build_dir, "libasf_proj"),
+        "#" + os.path.join(head_build_dir, "libasf_geocode"),
+        "#" + os.path.join(head_build_dir, "libasf_vector"),
+        "#" + os.path.join(head_build_dir, "plan"),
+        "#" + os.path.join(head_build_dir, "sgpsdp"),
+        "#" + os.path.join(head_build_dir, "asf_fft"),
+        "#" + os.path.join(head_build_dir, "libasf_sar"),
+        "#" + os.path.join(head_build_dir, "libasf_import"),
+        ])
+
+bins = localenv.Program("asf_view", [
+        "asf_view.c",
+        "utility.c",
+        "font.c",
+        "small_image.c",
+        "read.c",
+        "read_asf.c",
+        "read_ceos.c",
+        "read_jpeg.c",
+        "read_tiff.c",
+        "read_png.c",
+        "read_pgm.c",
+        "read_airsar.c",
+        "read_terrasar.c",
+        "read_roipac.c",
+        "read_ras.c",
+        "read_envi.c",
+        "read_generic.c",
+        "read_uavsar.c",
+        "big_image.c",
+        "meta.c",
+        "stats.c",
+        "google.c",
+        "new.c",
+        "cache.c",
+        "subset.c",
+        "bands.c",
+        "info.c",
+        "lut.c",
+        "planner.c",
+        "pan.c",
+        "goto.c",
+        "shape.c",
+        "csv.c",
+        "excel.c",
+        "read_seasat_h5.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+
+shares = localenv.File([
+        "startup.jpg",
+        "asf_view.glade",
+        "asf_view_icon.ico",
+        "#src/metadata_gui/mdv.ico",
+        "#src/asf/pixmaps/google_earth_button.gif",
+        "#src/asf/pixmaps/save_as.png",
+        "#src/asf/pixmaps/folder_s.png",
+        "#src/asf/pixmaps/save_as.png",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+Depends(test_result, [bins, shares])

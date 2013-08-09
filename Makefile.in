@@ -62,13 +62,13 @@ MAPREADY_MODULES = \
 	src/sgpsdp \
 	src/plan \
 	src/brs2jpg \
+	src/add_aux_band \
+	src/update_state \
+	src/clm \
 	src/populate_meta_field \
 	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \
-	src/roi2img \
-	src/create_roi_in \
-	src/make_seasat_h5 \
 	@ASF_GUI@
 
 MAPREADY_SOURCE = \
@@ -267,10 +267,8 @@ VERSION_CREATE_THUMBS = $(shell awk -F '"' '$$1 ~ /define CREATE_THUMBS_VERSION_
 VERSION_DATA_QC = $(shell awk -F '"' '$$1 ~ /define DATA_QC_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_FARADAY = $(shell awk -F '"' '$$1 ~ /define FARADAY_STRING/ {print $$2}' include/asf_version.h)
 
-SET_SVN_REV_H = echo "\#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
-
 # Build the MapReady package by default
-default: asps
+default: mapready
 
 # MapReady Package
 mapready: mkdirs_for_build external_libs
@@ -290,7 +288,7 @@ mapready: mkdirs_for_build external_libs
 	@ echo "  XXXXXXXXXXXX ASF MapReady Package Compiled! XXXXXXXXXXX"
 	@ echo ""
 
-# MapReady Package
+# MapReady Package for SEASAT processor
 asps: mkdirs_for_build external_libs
 	mkdir -p $(MAPREADY_SHAREDIR)
 	-cp -R external/share/* $(MAPREADY_SHAREDIR)
@@ -326,7 +324,6 @@ stp: mkdirs_for_build external_libs
 	cp doc/stp-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(STP_SHAREDIR)
 	echo $(VERSION_STP) > $(STP_SHAREDIR)/stp_version.txt
-	$(SET_SVN_REV_H)
 	$(foreach MODULE, $(STP_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX ASF SAR Training Processor Package Compiled! XXXXXXXXXXX"
@@ -341,7 +338,6 @@ ap: mkdirs_for_build external_libs
 	echo SHAREDIR = ../../$(AP_SHAREDIR) >> make_support/build_pkg.mk
 	cp LICENSE.txt $(AP_SHAREDIR)
 	echo $(VERSION_AP) > $(AP_SHAREDIR)/acquisitionplanner_version.txt
-	$(SET_SVN_REV_H)
 	$(foreach MODULE, $(AP_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX ASF Acquisition Planning Package Compiled! XXXXXXXXXXX"
@@ -356,7 +352,6 @@ req: mkdirs_for_build external_libs
 	echo SHAREDIR = ../../$(REQ_SHAREDIR) >> make_support/build_pkg.mk
 	cp LICENSE.txt $(REQ_SHAREDIR)
 	echo $(VERSION_REQ) > $(REQ_SHAREDIR)/req_version.txt
-	$(SET_SVN_REV_H)
 	$(foreach MODULE, $(REQ_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX ASF Request Generator Compiled! XXXXXXXXXXX"
@@ -372,8 +367,7 @@ c2v: mkdirs_for_build external_libs
 	cp doc/ConvertToVector.pdf $(S_DOCDIR)
 	cp doc/ConvertToVector-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(C2V_SHAREDIR)
-	echo $(VERSION_C2V) > $(C2V_SHAREDIR)/converttovector_version.txt
-	$(SET_SVN_REV_H)
+	echo $(VERSION_C2V) > $(C2V_SHAREDIR)/c2v_version.txt
 	$(foreach MODULE, $(C2V_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX Convert To Vector Compiled! XXXXXXXXXXX"
@@ -388,7 +382,6 @@ jpl: mkdirs_for_build external_libs
 	echo SHAREDIR = ../../$(JPL_SHAREDIR) >> make_support/build_pkg.mk
 	cp LICENSE.txt $(JPL_SHAREDIR)
 	echo $(VERSION_JPL) > $(JPL_SHAREDIR)/jplmosaicsuite_version.txt
-	$(SET_SVN_REV_H)
 	$(foreach MODULE, $(JPL_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX JPL Mosaic Suite Compiled! XXXXXXXXXXX"
@@ -404,7 +397,6 @@ create_thumbs: mkdirs_for_build external_libs
 	cp doc/create_thumbs-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(CREATE_THUMBS_SHAREDIR)
 	echo $(VERSION_CREATE_THUMBS) > $(CREATE_THUMBS_SHAREDIR)/create_thumbs_version.txt
-	$(SET_SVN_REV_H)
 	$(foreach MODULE, $(CREATE_THUMBS_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX Create Thumbs package Compiled! XXXXXXXXXXX"
@@ -419,7 +411,6 @@ data_qc: mkdirs_for_build external_libs
 	echo SHAREDIR = ../../$(DATA_QC_SHAREDIR) >> make_support/build_pkg.mk
 	cp LICENSE.txt $(DATA_QC_SHAREDIR)
 	echo $(VERSION_DATA_QC) > $(DATA_QC_SHAREDIR)/data_qc_version.txt
-	$(SET_SVN_REV_H)
 	$(foreach MODULE, $(DATA_QC_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX Data QC Compiled! XXXXXXXXXXX"
@@ -435,7 +426,6 @@ faraday: mkdirs_for_build external_libs
 	cp doc/faraday_prediction-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(FARADAY_SHAREDIR)
 	echo $(VERSION_FARADAY) > $(FARADAY_SHAREDIR)/faraday_version.txt
-	$(SET_SVN_REV_H)
 	$(foreach MODULE, $(FARADAY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX Faraday prediction Compiled! XXXXXXXXXXX"

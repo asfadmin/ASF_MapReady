@@ -100,7 +100,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS += -Wall -Werror \
+CFLAGS += -Wall \
 	$(GSL_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
@@ -125,7 +125,7 @@ LDLIBS = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
-	$(JPEG_LIBS) \
+	-ljpeg \
 	$(GLIB_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \

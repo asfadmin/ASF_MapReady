@@ -1,0 +1,27 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include/",
+        "#src/asf/",
+        ])
+    
+libs = localenv.SharedLibrary("asf_fft", [
+        "dxpose.c",
+        "fft2d.c",
+        "fftlib.c",
+        "matlib.c",
+        "fftext.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+
+mans = localenv.File([
+        "asf_fft.man",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["mans"], mans)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs, mans])

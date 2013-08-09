@@ -481,6 +481,7 @@ typedef struct {
   double projectedSpacingGroundNearRange;
   double projectedSpacingGroundFarRange;
   double projectedSpacingSlantRange;
+  double slantRangeShift;
   iso_imageCoord_t imageCoordinateType;
   iso_dataStart_t imageDataStartWith;
   iso_dataStart_t quicklookDataStartWith;

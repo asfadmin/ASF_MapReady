@@ -2224,6 +2224,8 @@ H5P_DEFAULT);
 		 "m");
   h5_value_double(h5_file, level2, "slantRange",
 		 spec->projectedSpacingSlantRange, "slant range [m]", "m");
+  h5_value_double(h5_file, level2, "slantRangeShift",
+		 spec->slantRangeShift, "slant range shift [m]", "m");
   H5Gclose(h5_level2);
   h5_value_str(h5_file, level1, "imageCoordinateType", 
 	       imageCoord2str(spec->imageCoordinateType), 

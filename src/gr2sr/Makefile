@@ -28,7 +28,7 @@ LIBS = \
 	fi \
 	)
 
-all: gr2sr clean
+all: gr2sr
 
 gr2sr: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o gr2sr $(OBJS) $(LIBS)
