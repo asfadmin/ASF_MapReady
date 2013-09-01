@@ -67,13 +67,13 @@ static void check_smap_file(char *inDataName,
 static void read_smap_outline(char *inDataName, int *vertex_count, 
 			      float *lat, float *lon)
 {
-  hsize_t dims[2], count[2], pixels[1], offset[2];
+  hsize_t dims[2], count[2], offset[2], pixels[1];
   hid_t file, group, dataset, datatype, dataspace, memspace;
 
   file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
   group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
 
-  // Read latitude first
+  // Look up latitude
   dataset = H5Dopen(group, "cell_lat", H5P_DEFAULT);
   datatype = H5Dget_type(dataset);
   dataspace = H5Dget_space(dataset);
@@ -84,52 +84,47 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
   // Determine dimensions
   offset[0] = 0;
   offset[1] = 0;
-  count[0] = 1;
+  count[0] = nl;
   count[1] = ns;
-  pixels[0] = ns;
-  memspace = H5Screate_simple(1, pixels, NULL);
-  int ii, kk, counts=0;
-  float *values = (float *) MALLOC(sizeof(float)*ns);
+  pixels[0] = nl*ns;
+  int ii, kk, index, counts=0;
+  float *values = (float *) MALLOC(sizeof(float)*ns*nl);
 
-  // Read first line
+  // Read latitude
   H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  memspace = H5Screate_simple(1, pixels, NULL);
   H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  
+  // First line
+  kk = 0;
   for (ii=0; ii<ns; ii++) {
-    if (meta_is_valid_double(values[ii])) {
-      lat[counts] = values[ii];
+    if (meta_is_valid_double(values[kk*ns+ii])) {
+      lat[counts] = values[kk*ns+ii];
       counts++;
     }
   }
-  // Walk along right boundary
-  for (kk=1; kk<nl; kk++) {
-    offset[0] = kk;
-    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  // Right boundary
+  for (kk=1; kk<nl-1; kk++) {
     ii = ns - 1;
-    while (!meta_is_valid_double(values[ii]))
+    while (!meta_is_valid_double(values[kk*ns+ii]))
       ii--;
-    lat[counts] = values[ii];
+    lat[counts] = values[kk*ns+ii];
     counts++;
   }
-  // Read last line
-  offset[0] = nl - 1;
-  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  // Last line
+  kk = nl - 1;
   for (ii=ns-1; ii>0; ii--) {
-    if (meta_is_valid_double(values[ii])) {
-      lat[counts] = values[ii];
+    if (meta_is_valid_double(values[kk*ns+ii])) {
+      lat[counts] = values[kk*ns+ii];
       counts++;
     }
   }
-  // Walk along left boundary
+  // Left boundary
   for (kk=nl-1; kk>0; kk--) {
-    offset[0] = kk;
-    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
     ii = 0;
-    while (!meta_is_valid_double(values[ii]))
+    while (!meta_is_valid_double(values[kk*ns+ii]))
       ii++;
-    lat[counts] = values[ii];
+    lat[counts] = values[kk*ns+ii];
     counts++;
   }
 
@@ -137,52 +132,43 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
   H5Dclose(dataset);
   H5Sclose(dataspace);
 
-  // Read longitudes next
+  // Read longitudes
   counts = 0;
   dataset = H5Dopen(group, "cell_lon", H5P_DEFAULT);
   datatype = H5Dget_type(dataset);
   dataspace = H5Dget_space(dataset);
-  
-  // Read first line
   offset[0] = 0;
   H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
   H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  
+  // First line
   for (ii=0; ii<ns; ii++) {
-    if (meta_is_valid_double(values[ii])) {
-      lon[counts] = values[ii];
+    if (meta_is_valid_double(values[kk*ns+ii])) {
+      lon[counts] = values[kk*ns+ii];
       counts++;
     }
   }
-  // Walk along right boundary
-  for (kk=1; kk<nl; kk++) {
-    offset[0] = kk;
-    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  // Right boundary
+  for (kk=1; kk<nl-1; kk++) {
     ii = ns - 1;
-    while (!meta_is_valid_double(values[ii]))
+    while (!meta_is_valid_double(values[kk*ns+ii]))
       ii--;
-    lon[counts] = values[ii];
+    lon[counts] = values[kk*ns+ii];
     counts++;
   }
-  // Read last line
-  offset[0] = nl - 1;
-  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
-  for (ii=ns-1; ii>0; ii--) {
-    if (meta_is_valid_double(values[ii])) {
-      lon[counts] = values[ii];
+  // Last line
+  for (ii=0; ii<ns; ii++) {
+    if (meta_is_valid_double(values[kk*ns+ii])) {
+      lon[counts] = values[kk*ns+ii];
       counts++;
     }
   }
-  // Walk along left boundary
+  // Left boundary
   for (kk=nl-1; kk>0; kk--) {
-    offset[0] = kk;
-    H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-    H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
     ii = 0;
-    while (!meta_is_valid_double(values[ii]))
+    while (!meta_is_valid_double(values[kk*ns+ii]))
       ii++;
-    lon[counts] = values[ii];
+    lon[counts] = values[kk*ns+ii];
     counts++;
   }
 
@@ -193,6 +179,8 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
   H5Sclose(memspace);
   H5Gclose(group);
   H5Fclose(file);
+  
+	FREE(values);
 
   *vertex_count = counts;
 }
@@ -211,8 +199,8 @@ int smap2shape(char *inFile, char *outFile)
 
   // Read lat/lon for boundary of SMAP data set
   check_smap_file(inFile, &line_count, &sample_count);
-  lat = (float *) MALLOC(sizeof(float)*line_count*sample_count*2);
-  lon = (float *) MALLOC(sizeof(float)*line_count*sample_count*2);
+  lat = (float *) MALLOC(sizeof(float)*(line_count+sample_count)*2);
+  lon = (float *) MALLOC(sizeof(float)*(line_count+sample_count)*2);
   read_smap_outline(inFile, &vertex_count, lat, lon);
 
   // Create temporary processing directory
@@ -266,6 +254,8 @@ int smap2shape(char *inFile, char *outFile)
   }
   
   // Clean up
+  FREE(lat);
+  FREE(lon);
   remove_dir(tmpDir);
   FREE(tmpDir);
   FREE(tmpFile);
