@@ -10,40 +10,49 @@
 #include <ctype.h>
 #include <hdf5.h>
 
+#define MAX_NAME 1024
+
+static void appendBand(int band, char *bandStr, char *bands)
+{
+	if (band == 0)
+		strcpy(bands, bandStr);
+	else {
+		strcat(bands, ", ");
+		strcat(bands, bandStr);
+	}
+}
+
 smap_meta *smap_meta_init(void)
 {
   smap_meta *smap;
   smap = (smap_meta *) CALLOC(1, sizeof(smap_meta));
-  strcpy(smap->algorithm_descriptor, MAGIC_UNSET_STRING);
-  strcpy(smap->collection_description, MAGIC_UNSET_STRING);
-  smap->east_bounding_coordinate = MAGIC_UNSET_INT;
-  strcpy(smap->equator_crossing_date, MAGIC_UNSET_STRING);
-  smap->equator_crossing_longitude = MAGIC_UNSET_DOUBLE;
-  strcpy(smap->equator_crossing_time, MAGIC_UNSET_STRING);
-  strcpy(smap->granule_name, MAGIC_UNSET_STRING);
-  smap->grid_spacing = MAGIC_UNSET_DOUBLE;
-  strcpy(smap->input_name, MAGIC_UNSET_STRING);
-  smap->north_bounding_coordinate = MAGIC_UNSET_INT;
-  strcpy(smap->orbit_direction, MAGIC_UNSET_STRING);
-  smap->orbit_inclination = MAGIC_UNSET_DOUBLE;
-  smap->orbit_period = MAGIC_UNSET_DOUBLE;
-  strcpy(smap->orbit_start_date, MAGIC_UNSET_STRING);
-  strcpy(smap->orbit_start_time, MAGIC_UNSET_STRING);
-  strcpy(smap->orbit_stop_date, MAGIC_UNSET_STRING);
-  strcpy(smap->orbit_stop_time, MAGIC_UNSET_STRING);
-  strcpy(smap->production_date_time, MAGIC_UNSET_STRING);
-  strcpy(smap->project_id, MAGIC_UNSET_STRING);
-  smap->radar_resolution = MAGIC_UNSET_DOUBLE;
-  strcpy(smap->range_beginning_date, MAGIC_UNSET_STRING);
-  strcpy(smap->range_beginning_time, MAGIC_UNSET_STRING);
-  strcpy(smap->range_ending_date, MAGIC_UNSET_STRING);
-  strcpy(smap->range_ending_time, MAGIC_UNSET_STRING);
+
+	// dataset identification
+  strcpy(smap->file_name, MAGIC_UNSET_STRING);
   strcpy(smap->short_name, MAGIC_UNSET_STRING);
-  smap->south_bounding_coordinate = MAGIC_UNSET_INT;
-  smap->start_orbit_number = MAGIC_UNSET_INT;
-  smap->stop_orbit_number = MAGIC_UNSET_INT;
-  smap->version_id = MAGIC_UNSET_INT;
-  smap->west_bounding_coordinate = MAGIC_UNSET_INT;
+  strcpy(smap->creation_date_time, MAGIC_UNSET_STRING);
+    
+  // extent
+  smap->north_bounding_coordinate = MAGIC_UNSET_DOUBLE;
+  smap->south_bounding_coordinate = MAGIC_UNSET_DOUBLE;
+  smap->east_bounding_coordinate = MAGIC_UNSET_DOUBLE;
+  smap->west_bounding_coordinate = MAGIC_UNSET_DOUBLE;
+  strcpy(smap->range_beginning_date_time, MAGIC_UNSET_STRING);
+  strcpy(smap->range_ending_date_time, MAGIC_UNSET_STRING);
+
+	// orbital information
+	smap->argument_of_perigee = MAGIC_UNSET_DOUBLE;
+  strcpy(smap->equator_crossing_date_time, MAGIC_UNSET_STRING);
+  smap->equator_crossing_longitude = MAGIC_UNSET_DOUBLE;
+  smap->inclination = MAGIC_UNSET_DOUBLE;
+  smap->mean_motion = MAGIC_UNSET_DOUBLE;
+  smap->argument_of_perigee = MAGIC_UNSET_DOUBLE;
+  smap->right_ascension_ascending_node = MAGIC_UNSET_DOUBLE;
+  smap->orbit_period = MAGIC_UNSET_DOUBLE;
+  smap->eccentricity = MAGIC_UNSET_DOUBLE;
+  strcpy(smap->orbit_direction, MAGIC_UNSET_STRING);
+  strcpy(smap->orbit_start_date_time, MAGIC_UNSET_STRING);
+  strcpy(smap->orbit_stop_date_time, MAGIC_UNSET_STRING);
 
   return smap;
 }
@@ -99,55 +108,80 @@ static char *get_string_attr(hid_t object, char *name)
 smap_meta *read_smap_meta(const char *dataFile)
 {
   smap_meta *smap = smap_meta_init();
-  hid_t hFile, hMeta;
-  hFile = H5Fopen(dataFile, H5F_ACC_RDONLY, H5P_DEFAULT);
-  hMeta = H5Gopen(hFile, "Metadata", H5P_DEFAULT);
-  strcpy(smap->algorithm_descriptor, 
-	 get_string_attr(hMeta, "AlgorithmDescriptor"));
-  strcpy(smap->collection_description,
-	 get_string_attr(hMeta, "CollectionDescription"));
-  smap->east_bounding_coordinate = 
-    get_int_attr(hMeta, "EastBoundingCoordinate");
-  strcpy(smap->equator_crossing_date,
-	 get_string_attr(hMeta, "EquatorCrossingDate"));
-  smap->equator_crossing_longitude = 
-    get_float_attr(hMeta, "EquatorCrossingLongitude");
-  strcpy(smap->equator_crossing_time,
-	 get_string_attr(hMeta, "EquatorCrossingTime"));
-  strcpy(smap->granule_name, get_string_attr(hMeta, "GranuleName"));
-  smap->grid_spacing = get_float_attr(hMeta, "GridSpacing");
-  strcpy(smap->input_name, get_string_attr(hMeta, "InputName"));
+  
+  hid_t hFile = H5Fopen(dataFile, H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t hMeta = H5Gopen(hFile, "Metadata", H5P_DEFAULT);
+  
+  // Dataset identification
+  hid_t hData = H5Gopen(hMeta, "DatasetIdentification", H5P_DEFAULT);
+  strcpy(smap->short_name, get_string_attr(hData, "SMAPShortName"));
+  strcpy(smap->file_name, get_string_attr(hData, "fileName"));
+  strcpy(smap->creation_date_time, get_string_attr(hData, "creationDate"));
+  H5Gclose(hData);
+	 
+	// Extent
+	hid_t hExtent = H5Gopen(hMeta, "Extent", H5P_DEFAULT);
+	/*
   smap->north_bounding_coordinate = 
-    get_int_attr(hMeta, "NorthBoundingCoordinate");
-  strcpy(smap->orbit_direction, get_string_attr(hMeta, "OrbitDirection"));
-  smap->orbit_inclination = get_float_attr(hMeta, "OrbitInclination");
-  smap->orbit_period = get_float_attr(hMeta, "OrbitPeriod");
-  strcpy(smap->orbit_start_date, get_string_attr(hMeta, "OrbitStartDate"));
-  strcpy(smap->orbit_start_time, get_string_attr(hMeta, "OrbitStartTime"));
-  strcpy(smap->orbit_stop_date, get_string_attr(hMeta, "OrbitStopDate"));
-  strcpy(smap->orbit_stop_time, get_string_attr(hMeta, "OrbitStopTime"));
-  strcpy(smap->production_date_time, 
-	 get_string_attr(hMeta, "ProductionDateTime"));
-  strcpy(smap->project_id, get_string_attr(hMeta, "ProjectID"));
-  smap->radar_resolution = get_float_attr(hMeta, "RadarResolution");
-  strcpy(smap->range_beginning_date, 
-	 get_string_attr(hMeta, "RangeBeginningDate"));
-  strcpy(smap->range_beginning_time,
-	 get_string_attr(hMeta, "RangeBeginningTime"));
-  strcpy(smap->range_ending_date, get_string_attr(hMeta, "RangeEndingDate"));
-  strcpy(smap->range_ending_time, get_string_attr(hMeta, "RangeEndingTime"));
-  strcpy(smap->short_name, get_string_attr(hMeta, "ShortName"));
+    get_int_attr(hExtent, "northBoundingCoordinate");
   smap->south_bounding_coordinate = 
-    get_int_attr(hMeta, "SouthBoundingCoordinate");
-  smap->start_orbit_number = get_int_attr(hMeta, "StartOrbitNumber");
-  smap->stop_orbit_number = get_int_attr(hMeta, "StopOrbitNumber");
-  smap->version_id = get_int_attr(hMeta, "VersionID");
+    get_int_attr(hExtent, "southBoundingCoordinate");
+  smap->east_bounding_coordinate = 
+    get_int_attr(hExtent, "eastBoundingCoordinate");
   smap->west_bounding_coordinate = 
-    get_int_attr(hMeta, "WestBoundingCoordinate");
+    get_int_attr(hExtent, "westBoundingCoordinate");
+  */
+  strcpy(smap->range_beginning_date_time, 
+	  get_string_attr(hExtent, "rangeBeginningDateTime"));
+  strcpy(smap->range_ending_date_time, 
+  	get_string_attr(hExtent, "rangeEndingDateTime"));
+  H5Gclose(hExtent);
+    
+  // Orbital information
+  hid_t hOrbit = H5Gopen(hMeta, "OrbitMeasuredLocation", H5P_DEFAULT);
+  smap->argument_of_perigee = get_float_attr(hOrbit, "argumentOfPerigee");
+	smap->eccentricity = get_float_attr(hOrbit, "eccentricity");
+	smap->epoch = get_float_attr(hOrbit, "epoch");
+  strcpy(smap->equator_crossing_date_time, 
+  	get_string_attr(hOrbit, "equatorCrossingDateTime"));
+  smap->equator_crossing_longitude = 
+    get_float_attr(hOrbit, "equatorCrossingLongitude");
+  strcpy(smap->orbit_start_date_time, 
+  	get_string_attr(hOrbit, "halfOrbitStartDateTime"));
+  strcpy(smap->orbit_stop_date_time, 
+  	get_string_attr(hOrbit, "halfOrbitStopDateTime"));
+  smap->inclination = get_float_attr(hOrbit, "inclination");
+  smap->mean_motion = get_float_attr(hOrbit, "meanMotion");
+  strcpy(smap->orbit_direction, get_string_attr(hOrbit, "orbitDirection"));
+  smap->orbit_period = get_float_attr(hOrbit, "orbitPeriod");
+  H5Gclose(hOrbit);
+  
   H5Gclose(hMeta);
   H5Fclose(hFile);
 
   return smap;
+}
+
+static int find_dataset(char *inDataName, char *dataset)
+{
+	int ii, otype, ret=FALSE;
+	ssize_t len;
+	hsize_t num_objs;
+	char name[MAX_NAME];
+	
+  hid_t file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);	
+	herr_t err = H5Gget_num_objs(group, &num_objs);
+	for (ii=0; ii<num_objs; ii++) {
+		len = H5Gget_objname_by_idx(group, (hsize_t) ii, name, (size_t) MAX_NAME);
+		otype = H5Gget_objtype_by_idx(group, (size_t) ii);
+		if (strcmp_case(dataset, name) == 0 && otype == H5G_DATASET)
+			ret = TRUE;
+	}
+  H5Gclose(group);
+  H5Fclose(file);	
+	
+	return ret;
 }
 
 static int compare_values(const int *a, const int *b)
@@ -361,47 +395,49 @@ static void read_smap_subset(char *dataName, int band,
   meta_free(meta);
 }
 
-static void read_smap_data(char *dataName, int band, 
+static int read_smap_data(char *dataName, int band, 
 			   char *inDataName, char *outDataName)
 {
+	int ret = FALSE;
   FILE *fp;
   meta_parameters *meta = meta_read(inDataName);
   hid_t file, group, dataset, dataspace, memspace;
   file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
   group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
   dataset = H5Dopen(group, dataName, H5P_DEFAULT);
-  dataspace = H5Dget_space(dataset);
-  hsize_t count[2], line[1];
-  hsize_t offset[2];
-  int ns = meta->general->sample_count;
-  offset[0] = 0;
-  offset[1] = 0;
-  count[0] = 1;
-  count[1] = ns;
-  line[0] = ns;
-  memspace = H5Screate_simple(1, line, NULL);
-  float *amp = (float *) MALLOC(sizeof(float)*ns);
-  if (band == 0)
-    fp = FOPEN(outDataName, "wb");
-  else
-    fp = FOPEN(outDataName, "ab");
-  asfPrintStatus("   Band: %s\n", dataName);
-  int ii;
-  for (ii=0; ii<meta->general->line_count; ii++) {
-    offset[0] = ii;
+  if (dataset >= 0) {
+  	dataspace = H5Dget_space(dataset);
+  	hsize_t count[2], offset[2], line[1];
+  	int ns = meta->general->sample_count;
+  	int nl = meta->general->line_count;
+  	offset[0] = 0;
+  	offset[1] = 0;
+  	count[0] = nl;
+  	count[1] = ns;
+  	line[0] = ns*nl;
+  	memspace = H5Screate_simple(1, line, NULL);
+  	float *amp = (float *) MALLOC(sizeof(float)*ns*nl);
+  	if (band == 0)
+    	fp = FOPEN(outDataName, "wb");
+  	else
+    	fp = FOPEN(outDataName, "ab");
+  	asfPrintStatus("   Band: %s\n", dataName);
     H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
     H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, amp);
-    put_band_float_line(fp, meta, band, ii, amp);
-    asfLineMeter(ii, meta->general->line_count);
+    meta->general->band_count = band+1;
+    put_band_float_lines(fp, meta, band, 0, nl, amp);
+  	H5Sclose(dataspace);
+  	H5Sclose(memspace);
+	  H5Dclose(dataset);
+	  FREE(amp);
+  	ret = TRUE;
   }
-  H5Dclose(dataset);
-  H5Sclose(dataspace);
-  H5Sclose(memspace);
   H5Gclose(group);
   H5Fclose(file);
   FCLOSE(fp);
-  FREE(amp);
   meta_free(meta);
+  
+  return ret;
 }
 
 static void read_smap_pixel(meta_parameters *meta, char *inDataName,
@@ -500,7 +536,7 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   // Determine the image dimensions
   file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
   group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
-  dataset = H5Dopen(group, "cell_sigma0_hh_aft", H5P_DEFAULT);
+  dataset = H5Dopen(group, "cell_lat", H5P_DEFAULT);
   datatype = H5Dget_type(dataset);
   class = H5Tget_class(datatype);
   if (class != H5T_FLOAT) 
@@ -515,14 +551,12 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   meta = smap2meta(smap);
   meta->general->line_count = meta->sar->original_line_count = inRows;
   meta->general->sample_count = meta->sar->original_sample_count = inCols;
-  meta->general->band_count = 13;
-  strcpy(meta->general->bands, "HH_aft,HH_fore,HH_kp,HV_aft,HV_fore,HV_kp,"
-	 "VV_aft,VV_fore,VV_kp,LAT,LON,grid_lat,grid_lon");
   read_smap_pixel(meta, inDataName, meta->general->line_count/2, 
 		  meta->general->sample_count/2, &lat, &lon);
   meta->general->center_latitude = (double) lat;
   meta->general->center_longitude = (double) lon;
-
+	strcpy(meta->general->bands, "");
+	
   // Determine location block
   meta->location = meta_location_init();
   if (subset) {
@@ -558,53 +592,181 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   // Read data
   outDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+25));
   sprintf(outDataName, "%s.img", outBaseName);
-  meta_write(meta, outDataName);
+	int band = 0;
 
   if (subset) {
-    read_smap_subset("cell_sigma0_hh_aft", 0, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_sigma0_hh_fore", 1, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_kp_hh", 2, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_sigma0_hv_aft", 3, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_sigma0_hv_fore", 4, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_kp_hv", 5, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_sigma0_vv_aft", 6, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_sigma0_vv_fore", 7, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_kp_vv", 8, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_lat", 9, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cell_lon", 10, inDataName, outDataName,
-		     latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cylindrical_grid_latitude_index", 11, inDataName, 
-		     outDataName, latUL, lonUL, latLR, lonLR);
-    read_smap_subset("cylindrical_grid_longitude_index", 12, inDataName, 
-		     outDataName, latUL, lonUL, latLR, lonLR);
+  	if (find_dataset(inDataName, "cell_sigma0_hh_fore")) {
+    	read_smap_subset("cell_sigma0_hh_fore", band, inDataName, outDataName,
+		  	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "HH_fore", meta->general->bands);
+    	band++;
+		}
+		if (find_dataset(inDataName, "cell_sigma0_hh_aft")) {
+	    read_smap_subset("cell_sigma0_hh_aft", band, inDataName, outDataName,
+		  	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "HH_aft", meta->general->bands);
+    	band++;
+		}
+		if (find_dataset(inDataName, "cell_sigma0_xy_fore")) {
+	    read_smap_subset("cell_sigma0_xy_fore", band, inDataName, outDataName,
+	    	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "HV_fore", meta->general->bands);
+    	band++;
+	  }
+	  if (find_dataset(inDataName, "cell_sigma0_xy_aft")) {
+	    read_smap_subset("cell_sigma0_xy_aft", band, inDataName, outDataName,
+		  	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "HV_aft", meta->general->bands);
+    	band++;
+	  }
+		if (find_dataset(inDataName, "cell_sigma0_xpol_fore")) {
+	    read_smap_subset("cell_sigma0_xpol_fore", band, inDataName, outDataName,
+	    	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "HV_fore", meta->general->bands);
+    	band++;
+	  }
+	  if (find_dataset(inDataName, "cell_sigma0_xpol_aft")) {
+	    read_smap_subset("cell_sigma0_xpol_aft", band, inDataName, outDataName,
+		  	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "HV_aft", meta->general->bands);
+    	band++;
+	  }
+	  if (find_dataset(inDataName, "cell_sigma0_vv_fore")) {
+	    read_smap_subset("cell_sigma0_vv_fore", band, inDataName, outDataName,
+		  	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "VV_fore", meta->general->bands);
+    	band++;
+		}
+		if (find_dataset(inDataName, "cell_sigma0_vv_aft")) {
+	    read_smap_subset("cell_sigma0_vv_aft", band, inDataName, outDataName,
+		  	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "VV_aft", meta->general->bands);
+    	band++;
+		}
+    if (find_dataset(inDataName, "faraday_rotation_angle")) {
+    	read_smap_subset("faraday_rotation_angle", band, inDataName, outDataName,
+    		latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "faraday", meta->general->bands);
+    	band++;
+    }
+		if (find_dataset(inDataName, "cell_lat")) {
+	    read_smap_subset("cell_lat", band, inDataName, outDataName,
+		  	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "lat", meta->general->bands);
+    	band++;
+		}
+		if (find_dataset(inDataName, "cell_lon")) {
+	    read_smap_subset("cell_lon", band, inDataName, outDataName,
+		  	latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "lon", meta->general->bands);
+    	band++;
+		}
+		if (find_dataset(inDataName, "cylindrical_grid_row_index")) {
+    	read_smap_subset("cylindrical_grid_row_index", band, inDataName, 
+		  	outDataName, latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "cyl_row", meta->general->bands);
+    	band++;
+		}
+		if (find_dataset(inDataName, "cylindrical_grid_column_index")) {
+	    read_smap_subset("cylindrical_grid_column_index", band, inDataName, 
+		  	outDataName, latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "lon", meta->general->bands);
+    	band++;
+		}		  	
+    if (find_dataset(inDataName, "polar_grid_row_index")) {
+    	read_smap_subset("polar_grid_row_index", band, inDataName, outDataName,
+    		latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "pol_row", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "polar_grid_column_index")) {
+    	read_smap_subset("polar_grid_column_index", band, inDataName, outDataName,
+    		latUL, lonUL, latLR, lonLR);
+    	appendBand(band, "pol_col", meta->general->bands);
+    	band++;
+    }
   }
   else {
-    read_smap_data("cell_sigma0_hh_aft", 0, inDataName, outDataName);
-    read_smap_data("cell_sigma0_hh_fore", 1, inDataName, outDataName);
-    read_smap_data("cell_kp_hh", 2, inDataName, outDataName);
-    read_smap_data("cell_sigma0_hv_aft", 3, inDataName, outDataName);
-    read_smap_data("cell_sigma0_hv_fore", 4, inDataName, outDataName);
-    read_smap_data("cell_kp_hv", 5, inDataName, outDataName);
-    read_smap_data("cell_sigma0_vv_aft", 6, inDataName, outDataName);
-    read_smap_data("cell_sigma0_vv_fore", 7, inDataName, outDataName);
-    read_smap_data("cell_kp_vv", 8, inDataName, outDataName);
-    read_smap_data("cell_lat", 9, inDataName, outDataName);
-    read_smap_data("cell_lon", 10, inDataName, outDataName);
-    read_smap_data("cylindrical_grid_latitude_index", 
-		   11, inDataName, outDataName);
-    read_smap_data("cylindrical_grid_longitude_index", 
-		   12, inDataName, outDataName);
+    if (find_dataset(inDataName, "cell_sigma0_hh_fore")) {
+    	read_smap_data("cell_sigma0_hh_fore", band, inDataName, outDataName);
+    	appendBand(band, "HH_fore", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_sigma0_hh_aft")) {
+    	read_smap_data("cell_sigma0_hh_aft", band, inDataName, outDataName);
+    	appendBand(band, "HH_aft", meta->general->bands);    
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_sigma0_xy_fore")) {
+    	read_smap_data("cell_sigma0_xy_fore", band, inDataName, outDataName);
+    	appendBand(band, "HV_fore", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_sigma0_xy_aft")) {
+    	read_smap_data("cell_sigma0_xy_aft", band, inDataName, outDataName);
+    	appendBand(band, "HV_aft", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_sigma0_xpol_fore")) {
+    	read_smap_data("cell_sigma0_xpol_fore", band, inDataName, outDataName);
+    	appendBand(band, "HV_fore", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_sigma0_xpol_aft")) {
+    	read_smap_data("cell_sigma0_xpol_aft", band, inDataName, outDataName);
+    	appendBand(band, "HV_aft", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_sigma0_vv_fore")) {
+    	read_smap_data("cell_sigma0_vv_fore", band, inDataName, outDataName);
+    	appendBand(band, "VV_fore", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_sigma0_vv_aft")) {
+    	read_smap_data("cell_sigma0_vv_aft", band, inDataName, outDataName);
+    	appendBand(band, "VV_aft", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "faraday_rotation_angle")) {
+    	read_smap_data("faraday_rotation_angle", band, inDataName, outDataName);
+    	appendBand(band, "faraday", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_lat")) {
+    	read_smap_data("cell_lat", band, inDataName, outDataName);
+    	appendBand(band, "lat", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cell_lon")) {
+    	read_smap_data("cell_lon", band, inDataName, outDataName);
+    	appendBand(band, "lon", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cylindrical_grid_row_index")) {
+    	read_smap_data("cylindrical_grid_row_index", band, inDataName, 
+    	outDataName);
+    	appendBand(band, "cyl_row", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "cylindrical_grid_column_index")) {
+    	read_smap_data("cylindrical_grid_column_index", band, inDataName, 
+    	outDataName);
+    	appendBand(band, "cyl_col", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "polar_grid_row_index")) {
+    	read_smap_data("polar_grid_row_index", band, inDataName, outDataName);
+    	appendBand(band, "pol_row", meta->general->bands);
+    	band++;
+    }
+    if (find_dataset(inDataName, "polar_grid_column_index")) {
+    	read_smap_data("polar_grid_column_index", band, inDataName, outDataName);
+    	appendBand(band, "pol_col", meta->general->bands);
+    	band++;
+    }
   }
+  meta->general->band_count = band;
+  meta_write(meta, outDataName);
 
   // Clean up
   FREE(smap);
