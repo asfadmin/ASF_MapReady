@@ -25,7 +25,7 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS  = $(TARGET).o
 
-all: prog
+all: prog test
 	-rm *.o
 
 prog: $(OBJS)
@@ -33,4 +33,9 @@ prog: $(OBJS)
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
 clean:
-	rm -f core $(OBJS) *.o
+	-rm -f core $(OBJS) *.o test
+
+test: $(OBJS) *.t.c
+	$(CC) $(CFLAGS) -o test *.t.c $(LIBS) $(LDFLAGS) $(LIBDIR)/libcunit.a
+	./test
+
