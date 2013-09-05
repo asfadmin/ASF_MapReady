@@ -472,7 +472,7 @@ test_p2utm(double projY, double projX, double height, int zone,
 
 static int test_from_file_utm(const char *filename)
 {
-    asfPrintStatus("Testing from file: %s\n", filename);
+    //asfPrintStatus("Testing from file: %s\n", filename);
     if (fileExists(filename))
     {
         FILE *fp = FOPEN(filename, "r");

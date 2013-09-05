@@ -141,6 +141,13 @@ int testa_utm_arr(project_parameters_t * pps,  char * name,
     return ok;
 }
 
+int testa_utmz(double lat_deg, double lon_deg,
+	       double x_correct, double y_correct)
+{
+    testa_utm(lon_deg,lat_deg,lon_deg,x_correct,y_correct);
+    return utm_zone(lon_deg);
+}
+
 void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 	       double x_correct, double y_correct)
 {
@@ -154,7 +161,7 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
     lon = lon_deg * DEG_TO_RAD;
 
     pps.utm.lon0 = lon0;
-    pps.utm.zone = MAGIC_UNSET_INT;
+    pps.utm.zone = utm_zone(lon0_deg);
 
     /* normal function call check */
     {
@@ -340,7 +347,18 @@ void test_random_utm(int N)
 
 void test_utm()
 {
-    //testa_utm(-112, 45.25919444, -111.5, 460769.27, 5011648.45);
+    testa_utm(-112, 45.25919444, -111.5, 460769.27, 5011648.45);
+
+    int z;
+
+    z=testa_utmz(65,-145,594301,7209947);
+    CU_ASSERT(z==6);
+
+    z=testa_utmz(25,145,298154,2766437);
+    CU_ASSERT(z==55);
+
+    z=testa_utmz(44.63166955, -110.49717093, 539884, 4942158);
+    CU_ASSERT(z==12);
 
     test_random_utm(NUM_REPS);
 }
@@ -414,8 +432,8 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
     project_parameters_t pps;
     int ok;
 
-    lat0 = lat0_deg * DEG_TO_RAD;
-    lon0 = lon0_deg * DEG_TO_RAD;
+    lat0 = lat0_deg; // * DEG_TO_RAD;
+    lon0 = lon0_deg; // * DEG_TO_RAD;
     lat = lat_deg * DEG_TO_RAD;
     lon = lon_deg * DEG_TO_RAD;
 
@@ -505,8 +523,8 @@ void testa_random_ps()
     reference_lat = rand() % 45 + 45;
     reference_lon = rand() % 360 - 180;
 
-    pps.ps.slat = reference_lat * DEG_TO_RAD;
-    pps.ps.slon = reference_lon * DEG_TO_RAD;
+    pps.ps.slat = reference_lat; // * DEG_TO_RAD;
+    pps.ps.slon = reference_lon; // * DEG_TO_RAD;
     pps.ps.is_north_pole = 1;
 
     project_ps_arr(&pps, x, y, NULL, &xa, &ya, NULL, ARR_TEST_SIZE, datum);
@@ -614,7 +632,7 @@ void test_random_ps(int N)
 
 void test_ps()
 {
-    //testa_ps(71, -96, 39.101252222, -121.33955, -2529570, -5341800); 
+    testa_ps(71, -96, 39.101252222, -121.33955, -2529570, -5341800); 
     
     test_random_ps(NUM_REPS);
 }
