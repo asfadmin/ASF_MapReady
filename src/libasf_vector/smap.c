@@ -142,6 +142,7 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
   H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
   
   // First line
+  kk = 0;
   for (ii=0; ii<ns; ii++) {
     if (meta_is_valid_double(values[kk*ns+ii])) {
       lon[counts] = values[kk*ns+ii];
@@ -157,7 +158,8 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
     counts++;
   }
   // Last line
-  for (ii=0; ii<ns; ii++) {
+  kk = nl - 1;
+  for (ii=ns-1; ii>0; ii--) {
     if (meta_is_valid_double(values[kk*ns+ii])) {
       lon[counts] = values[kk*ns+ii];
       counts++;
