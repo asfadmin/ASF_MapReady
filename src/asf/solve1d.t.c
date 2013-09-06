@@ -12,7 +12,7 @@ static double test_fn(void *params, double x)
   return x*x*x - p->d;
 }
 
-int test_solve1d()
+void test_solve1d()
 {
   int i;
   for (i=0; i<100; ++i) {
