@@ -198,6 +198,6 @@ distclean:
 	rm -f core *~ TAGS gdb_init.com
 
 test: *.t.c $(OBJS)
-	$(CC) $(CFLAGS) -o test $(LIBS) *.t.c $(LIBDIR)/libcunit.a $(LIBDIR)/asf_meta.a $(LIBDIR)/asf.a
+	$(CC) $(CFLAGS) -o test $(LIBS) *.t.c $(LIBDIR)/libcunit.a $(LIBDIR)/asf_meta.a $(LIBDIR)/asf.a $(LIBDIR)/libasf_proj.a
 	./test
 

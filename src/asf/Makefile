@@ -39,7 +39,7 @@ CFLAGS += $(shell \
 	else echo "-D_XOPEN_SOURCE=600 -std=c99"; \
 	fi)
 
-all: build_only
+all: build_only test
 	mv asf.a $(LIBDIR)
 	cp asf.h asf_glib.h asf_complex.h caplib.h vector.h matrix.h \
 		asf_tiff.h asf_jpeg.h $(ASF_INCLUDE_DIR)
@@ -65,3 +65,7 @@ clean:
 
 distclean:
 	rm -f core *~ TAGS gdb_init.com
+
+test: *.t.c
+	$(CC) $(CFLAGS) *.t.c $(LIBDIR)/libcunit.a asf.a -lm -o test
+	./test

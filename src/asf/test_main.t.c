@@ -1,9 +1,9 @@
 #include "CUnit/Basic.h"
 
-void test_xml();
-void test_meta_get_latLon();
-void test_meta_get_lineSamp();
-void test_read_proj_file();
+void test_vector();
+void test_strUtil();
+void test_complex();
+void test_solve1d();
 
 int main()
 {
@@ -21,10 +21,10 @@ int main()
    }
 
    /* add the tests to the suite */
-   if ((NULL == CU_add_test(pSuite, "xml", test_xml)) ||
-       (NULL == CU_add_test(pSuite, "read_proj_file", test_read_proj_file)) ||
-       (NULL == CU_add_test(pSuite, "meta_get_latLon", test_meta_get_latLon)) ||
-       (NULL == CU_add_test(pSuite, "meta_get_lineSamp", test_meta_get_lineSamp)))
+   if ((NULL == CU_add_test(pSuite, "vector", test_vector)) ||
+       (NULL == CU_add_test(pSuite, "strUtil", test_strUtil)) ||
+       (NULL == CU_add_test(pSuite, "solve1d", test_solve1d)) ||
+       (NULL == CU_add_test(pSuite, "complex", test_complex)))
    {
       CU_cleanup_registry();
       return CU_get_error();
