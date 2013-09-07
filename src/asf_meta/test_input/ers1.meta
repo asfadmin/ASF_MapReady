@@ -1,0 +1,393 @@
+# This file contains the metadata for satellite capture file of the same base name.
+#      '?' is likely an unknown single character value.
+#      '???' is likely an unknown string of characters.
+#      '-999999999' is likely an unknown integer value.
+#      'nan' is likely an unknown Real value.
+
+meta_version: 3.50
+
+general {                                  # Begin parameters generally used in remote sensing
+    name: E122590290G1U014.D                   # File name
+    sensor: ERS1                               # Imaging satellite
+    sensor_name: SAR                           # Imaging sensor
+    mode: STD                                  # Imaging mode
+    receiving_station: ???                     # Downlinking ground station
+    processor: ASF-PGS/PREC/VERS3.4            # Name and Version of Processor
+    data_type: REAL32                          # Type of samples (e.g. REAL64)
+    image_data_type: AMPLITUDE_IMAGE           # Image data type (e.g. AMPLITUDE_IMAGE)
+    radiometry: AMPLITUDE                      # Radiometry (e.g. SIGMA)
+    acquisition_date: 09-Nov-1995, 20:55:30    # Acquisition date of the data
+    orbit: 22590                               # Orbit Number for this datatake
+    orbit_direction: D                         # Ascending 'A', or descending 'D'
+    frame: 290                                 # Frame for this image [-1 if n/a]
+    band_count: 1                              # Number of bands in image
+    bands: AMP                                 # Band of the sensor
+    line_count: 10                             # Number of lines in image
+    sample_count: 9                            # Number of samples in image
+    start_line: 0                              # First line relative to original image
+    start_sample: 0                            # First sample relative to original image
+    x_pixel_size: 10000                        # Range pixel size [m]
+    y_pixel_size: 10000                        # Azimuth pixel size [m]
+    center_latitude: 63.8448                   # Approximate image center latitude
+    center_longitude: -144.9802                # Approximate image center longitude
+    re_major: 6378144.000                      # Major (equator) Axis of earth [m]
+    re_minor: 6356754.900                      # Minor (polar) Axis of earth [m]
+    bit_error_rate: 5.1e-06                    # Fraction of bits which are in error
+    missing_lines: -999999999                  # Number of missing lines in data take
+    no_data: nan                               # Value indicating no data for a pixel
+}                                          # End general
+
+sar {                                      # Begin parameters used specifically in SAR imaging
+    polarization: VV                           # Signal polarization
+    image_type: G                              # [S=slant range; G=ground range; P=map projected; R=georeferenced]
+    look_direction: R                          # SAR Satellite look direction [R=right; L=left]
+    azimuth_look_count: 5                      # Number of looks in azimuth direction
+    range_look_count: 1                        # Number of looks in range direction
+    multilook: 1                               # Image multilooked? [1=yes; 0=no]
+    deskewed: 1                                # Image moved to zero doppler? [1=yes; 0=no]
+    original_line_count: 8192                  # Number of lines in original image
+    original_sample_count: 7942                # Number of samples in original image
+    line_increment: 1                          # Line increment for sampling
+    sample_increment: 1                        # Sample increment for sampling
+    range_time_per_pixel: 4.219409483e-05      # Time per pixel in range [s]
+    azimuth_time_per_pixel: -1.509016447       # Time per pixel in azimuth [s]
+    slant_range_first_pixel: 836838.0737       # Slant range to first pixel [m]
+    slant_shift: 0                             # Error correction factor, in slant range [m]
+    time_shift: 15.452328417                   # Error correction factor, in time [s]
+    wavelength: 0.05656                        # SAR carrier wavelength [m]
+    prf: 1679.9023438                          # Pulse Repetition Frequency [Hz]
+    earth_radius: 6360939.4531                 # Earth radius at scene center [m]
+    earth_radius_pp: 6360649.3311              # Earth radius used by the PP during L0 processsing. [m]
+    satellite_height: 7155067.5659             # Satellite height from earth's center [m]
+    satellite_binary_time: ???                 # Satellite Binary Time
+    satellite_clock_time: ???                  # Satellite Clock Time (UTC)
+    dopRangeCen: 401.6734009                   # Range doppler centroid [Hz]
+    dopRangeLin: -4.47                         # Range doppler per range pixel [Hz/pixel]
+    dopRangeQuad: 0                            # Range doppler per range pixel sq. [Hz/(pixel^2)]
+    dopAzCen: 401.6734009                      # Azimuth doppler centroid [Hz]
+    dopAzLin: 0                                # Azimuth doppler per azimuth pixel [Hz/pixel]
+    dopAzQuad: 0                               # Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]
+    pitch: 0                                   # Platform pitch [degrees]
+    roll: 0                                    # Platform roll [degrees]
+    yaw: 0                                     # Platform yaw [degrees]
+    azimuth_bandwidth: 1343.921875             # Azimuth processing bandwidth [Hz]
+    chirp_rate: 2.6335183e+12                  # Chirp rate [Hz/sec]
+    pulse_duration: 3.70999985e-05             # Pulse duration [s]
+    range_samp_rate: 18959999.1                # Range sampling rate [Hz]
+    incid_a(0): 22.996                         # Incidence angle transformation parameter
+    incid_a(1): NaN                            # Incidence angle transformation parameter
+    incid_a(2): NaN                            # Incidence angle transformation parameter
+    incid_a(3): NaN                            # Incidence angle transformation parameter
+    incid_a(4): NaN                            # Incidence angle transformation parameter
+    incid_a(5): NaN                            # Incidence angle transformation parameter
+}                                          # End sar
+
+state {                                    # Begin list of state vectors for satellite, over image
+    year: 1995                                 # Year of image start
+    julDay: 313                                # Julian day of the year for image start
+    second: 75322.359375                       # Second of the day for image start
+    vector_count: 3                            # Number of state vectors below
+    vector {                                   # Begin a single state vector
+        time: 0                                    # Time, relative to image start [s]
+        x: -2423929.812                            # X Coordinate, earth-fixed [m]
+        y: -2113451.361                            # Y Coordinate, earth-fixed [m]
+        z: 6391908.691                             # Z Coordinate, earth-fixed [m]
+        vx: -6520.257                              # X Velocity, earth-fixed [m/s]
+        vy: -2099.356                              # Y Velocity, earth-fixed [m/s]
+        vz: -3160.138                              # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 7.7261657715                         # Time, relative to image start [s]
+        x: -2474233.530                            # X Coordinate, earth-fixed [m]
+        y: -2129578.323                            # Y Coordinate, earth-fixed [m]
+        z: 6367285.645                             # Z Coordinate, earth-fixed [m]
+        vx: -6502.118                              # X Velocity, earth-fixed [m/s]
+        vy: -2074.282                              # Y Velocity, earth-fixed [m/s]
+        vz: -3213.768                              # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 15.452331543                         # Time, relative to image start [s]
+        x: -2524394.998                            # X Coordinate, earth-fixed [m]
+        y: -2145511.200                            # Y Coordinate, earth-fixed [m]
+        z: 6342249.023                             # Z Coordinate, earth-fixed [m]
+        vx: -6483.531                              # X Velocity, earth-fixed [m/s]
+        vy: -2049.095                              # Y Velocity, earth-fixed [m/s]
+        vz: -3267.188                              # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+}                                          # End the list of state vectors
+
+location {                                 # Block containing image corner coordinates
+    lat_start_near_range: 63.2752              # Latitude at image start in near range
+    lon_start_near_range: -144.2827            # Longitude at image start in near range
+    lat_start_far_range: 63.5193               # Latitude at image start in far range
+    lon_start_far_range: -146.2513             # Longitude at image start in far range
+    lat_end_near_range: 64.1602                # Latitude at image end in near range
+    lon_end_near_range: -143.6801              # Longitude at image end in near range
+    lat_end_far_range: 64.4100                 # Latitude at image end in far range
+    lon_end_far_range: -145.7110               # Longitude at image end in far range
+}                                          # End location
+
+calibration {                              # Block containing calibration information
+    type: ASF                                  # Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS, TSX, RSAT2, UAVSAR)
+    a(0): 4.6944799                            # Calibration coefficient
+    a(1): 0.0013470502                         # Calibration coefficient
+    a(2): 0                                    # Calibration coefficient
+    sample_count: 7942                         # Number of samples per line
+    noise(0): 0.2723663                        # Noise vector element
+    noise(1): 0.2695521                        # Noise vector element
+    noise(2): 0.2668499                        # Noise vector element
+    noise(3): 0.2642775                        # Noise vector element
+    noise(4): 0.2619115                        # Noise vector element
+    noise(5): 0.2602498                        # Noise vector element
+    noise(6): 0.2586077                        # Noise vector element
+    noise(7): 0.2569861                        # Noise vector element
+    noise(8): 0.2553834                        # Noise vector element
+    noise(9): 0.2538006                        # Noise vector element
+    noise(10): 0.2522366                       # Noise vector element
+    noise(11): 0.2507001                       # Noise vector element
+    noise(12): 0.2491905                       # Noise vector element
+    noise(13): 0.2477002                       # Noise vector element
+    noise(14): 0.2462325                       # Noise vector element
+    noise(15): 0.2447824                       # Noise vector element
+    noise(16): 0.2433911                       # Noise vector element
+    noise(17): 0.2420148                       # Noise vector element
+    noise(18): 0.2406703                       # Noise vector element
+    noise(19): 0.2393445                       # Noise vector element
+    noise(20): 0.2380707                       # Noise vector element
+    noise(21): 0.2368409                       # Noise vector element
+    noise(22): 0.2356507                       # Noise vector element
+    noise(23): 0.2345336                       # Noise vector element
+    noise(24): 0.2334329                       # Noise vector element
+    noise(25): 0.2324316                       # Noise vector element
+    noise(26): 0.231439                        # Noise vector element
+    noise(27): 0.2305545                       # Noise vector element
+    noise(28): 0.2296995                       # Noise vector element
+    noise(29): 0.2288754                       # Noise vector element
+    noise(30): 0.2280759                       # Noise vector element
+    noise(31): 0.2273307                       # Noise vector element
+    noise(32): 0.2266935                       # Noise vector element
+    noise(33): 0.2260629                       # Noise vector element
+    noise(34): 0.2254683                       # Noise vector element
+    noise(35): 0.2248774                       # Noise vector element
+    noise(36): 0.2243684                       # Noise vector element
+    noise(37): 0.22388                         # Noise vector element
+    noise(38): 0.2234306                       # Noise vector element
+    noise(39): 0.2230119                       # Noise vector element
+    noise(40): 0.2226134                       # Noise vector element
+    noise(41): 0.2222577                       # Noise vector element
+    noise(42): 0.2219081                       # Noise vector element
+    noise(43): 0.2216525                       # Noise vector element
+    noise(44): 0.2213981                       # Noise vector element
+    noise(45): 0.2211697                       # Noise vector element
+    noise(46): 0.2209491                       # Noise vector element
+    noise(47): 0.2207884                       # Noise vector element
+    noise(48): 0.2206819                       # Noise vector element
+    noise(49): 0.2205827                       # Noise vector element
+    noise(50): 0.2205036                       # Noise vector element
+    noise(51): 0.2204248                       # Noise vector element
+    noise(52): 0.2204064                       # Noise vector element
+    noise(53): 0.2203886                       # Noise vector element
+    noise(54): 0.220401                        # Noise vector element
+    noise(55): 0.2204249                       # Noise vector element
+    noise(56): 0.2204633                       # Noise vector element
+    noise(57): 0.2205191                       # Noise vector element
+    noise(58): 0.2205864                       # Noise vector element
+    noise(59): 0.2207042                       # Noise vector element
+    noise(60): 0.220822                        # Noise vector element
+    noise(61): 0.2209572                       # Noise vector element
+    noise(62): 0.2210941                       # Noise vector element
+    noise(63): 0.2212725                       # Noise vector element
+    noise(64): 0.2214744                       # Noise vector element
+    noise(65): 0.2216849                       # Noise vector element
+    noise(66): 0.2219104                       # Noise vector element
+    noise(67): 0.2221395                       # Noise vector element
+    noise(68): 0.2224093                       # Noise vector element
+    noise(69): 0.2226792                       # Noise vector element
+    noise(70): 0.2229709                       # Noise vector element
+    noise(71): 0.2232681                       # Noise vector element
+    noise(72): 0.2235744                       # Noise vector element
+    noise(73): 0.2238892                       # Noise vector element
+    noise(74): 0.2242083                       # Noise vector element
+    noise(75): 0.2245413                       # Noise vector element
+    noise(76): 0.2248744                       # Noise vector element
+    noise(77): 0.2252169                       # Noise vector element
+    noise(78): 0.2255602                       # Noise vector element
+    noise(79): 0.2259352                       # Noise vector element
+    noise(80): 0.226327                        # Noise vector element
+    noise(81): 0.2267237                       # Noise vector element
+    noise(82): 0.2271288                       # Noise vector element
+    noise(83): 0.2275357                       # Noise vector element
+    noise(84): 0.2279612                       # Noise vector element
+    noise(85): 0.2283872                       # Noise vector element
+    noise(86): 0.2288289                       # Noise vector element
+    noise(87): 0.2292755                       # Noise vector element
+    noise(88): 0.2297277                       # Noise vector element
+    noise(89): 0.2301858                       # Noise vector element
+    noise(90): 0.2306454                       # Noise vector element
+    noise(91): 0.2311096                       # Noise vector element
+    noise(92): 0.2315742                       # Noise vector element
+    noise(93): 0.2320374                       # Noise vector element
+    noise(94): 0.2325009                       # Noise vector element
+    noise(95): 0.232957                        # Noise vector element
+    noise(96): 0.233408                        # Noise vector element
+    noise(97): 0.2338585                       # Noise vector element
+    noise(98): 0.2343067                       # Noise vector element
+    noise(99): 0.2347553                       # Noise vector element
+    noise(100): 0.2351995                      # Noise vector element
+    noise(101): 0.2356441                      # Noise vector element
+    noise(102): 0.236079                       # Noise vector element
+    noise(103): 0.2365092                      # Noise vector element
+    noise(104): 0.2369374                      # Noise vector element
+    noise(105): 0.2373617                      # Noise vector element
+    noise(106): 0.237785                       # Noise vector element
+    noise(107): 0.238173                       # Noise vector element
+    noise(108): 0.2385613                      # Noise vector element
+    noise(109): 0.2389447                      # Noise vector element
+    noise(110): 0.2393264                      # Noise vector element
+    noise(111): 0.2397005                      # Noise vector element
+    noise(112): 0.240063                       # Noise vector element
+    noise(113): 0.2404245                      # Noise vector element
+    noise(114): 0.2407721                      # Noise vector element
+    noise(115): 0.2411198                      # Noise vector element
+    noise(116): 0.2414549                      # Noise vector element
+    noise(117): 0.2417862                      # Noise vector element
+    noise(118): 0.2421055                      # Noise vector element
+    noise(119): 0.2424098                      # Noise vector element
+    noise(120): 0.242713                       # Noise vector element
+    noise(121): 0.2430078                      # Noise vector element
+    noise(122): 0.2433027                      # Noise vector element
+    noise(123): 0.2435512                      # Noise vector element
+    noise(124): 0.2437873                      # Noise vector element
+    noise(125): 0.244017                       # Noise vector element
+    noise(126): 0.2442391                      # Noise vector element
+    noise(127): 0.244456                       # Noise vector element
+    noise(128): 0.2446382                      # Noise vector element
+    noise(129): 0.2448203                      # Noise vector element
+    noise(130): 0.244991                       # Noise vector element
+    noise(131): 0.2451586                      # Noise vector element
+    noise(132): 0.2453201                      # Noise vector element
+    noise(133): 0.2454745                      # Noise vector element
+    noise(134): 0.2456246                      # Noise vector element
+    noise(135): 0.2457443                      # Noise vector element
+    noise(136): 0.2458641                      # Noise vector element
+    noise(137): 0.2459743                      # Noise vector element
+    noise(138): 0.2460819                      # Noise vector element
+    noise(139): 0.2461651                      # Noise vector element
+    noise(140): 0.2462168                      # Noise vector element
+    noise(141): 0.2462671                      # Noise vector element
+    noise(142): 0.2463026                      # Noise vector element
+    noise(143): 0.2463382                      # Noise vector element
+    noise(144): 0.2463459                      # Noise vector element
+    noise(145): 0.2463443                      # Noise vector element
+    noise(146): 0.2463356                      # Noise vector element
+    noise(147): 0.246316                       # Noise vector element
+    noise(148): 0.246296                       # Noise vector element
+    noise(149): 0.2462628                      # Noise vector element
+    noise(150): 0.2462299                      # Noise vector element
+    noise(151): 0.2461906                      # Noise vector element
+    noise(152): 0.2461488                      # Noise vector element
+    noise(153): 0.2461064                      # Noise vector element
+    noise(154): 0.2460629                      # Noise vector element
+    noise(155): 0.2460196                      # Noise vector element
+    noise(156): 0.245974                       # Noise vector element
+    noise(157): 0.2459287                      # Noise vector element
+    noise(158): 0.2458793                      # Noise vector element
+    noise(159): 0.2458277                      # Noise vector element
+    noise(160): 0.2457731                      # Noise vector element
+    noise(161): 0.2457092                      # Noise vector element
+    noise(162): 0.2456457                      # Noise vector element
+    noise(163): 0.2455747                      # Noise vector element
+    noise(164): 0.2455031                      # Noise vector element
+    noise(165): 0.245429                       # Noise vector element
+    noise(166): 0.2453526                      # Noise vector element
+    noise(167): 0.2452849                      # Noise vector element
+    noise(168): 0.245263                       # Noise vector element
+    noise(169): 0.2452414                      # Noise vector element
+    noise(170): 0.245231                       # Noise vector element
+    noise(171): 0.2452239                      # Noise vector element
+    noise(172): 0.2452332                      # Noise vector element
+    noise(173): 0.2452663                      # Noise vector element
+    noise(174): 0.2453                         # Noise vector element
+    noise(175): 0.2453515                      # Noise vector element
+    noise(176): 0.2454029                      # Noise vector element
+    noise(177): 0.2454729                      # Noise vector element
+    noise(178): 0.2455527                      # Noise vector element
+    noise(179): 0.2456471                      # Noise vector element
+    noise(180): 0.24578                        # Noise vector element
+    noise(181): 0.245913                       # Noise vector element
+    noise(182): 0.2460712                      # Noise vector element
+    noise(183): 0.2462325                      # Noise vector element
+    noise(184): 0.2464213                      # Noise vector element
+    noise(185): 0.2466373                      # Noise vector element
+    noise(186): 0.2468562                      # Noise vector element
+    noise(187): 0.2470979                      # Noise vector element
+    noise(188): 0.2473397                      # Noise vector element
+    noise(189): 0.2476523                      # Noise vector element
+    noise(190): 0.2479918                      # Noise vector element
+    noise(191): 0.2483502                      # Noise vector element
+    noise(192): 0.2487465                      # Noise vector element
+    noise(193): 0.2491431                      # Noise vector element
+    noise(194): 0.2496089                      # Noise vector element
+    noise(195): 0.2500798                      # Noise vector element
+    noise(196): 0.2505885                      # Noise vector element
+    noise(197): 0.2511298                      # Noise vector element
+    noise(198): 0.251676                       # Noise vector element
+    noise(199): 0.2522493                      # Noise vector element
+    noise(200): 0.2528235                      # Noise vector element
+    noise(201): 0.2534871                      # Noise vector element
+    noise(202): 0.2541838                      # Noise vector element
+    noise(203): 0.2548946                      # Noise vector element
+    noise(204): 0.2556321                      # Noise vector element
+    noise(205): 0.2563715                      # Noise vector element
+    noise(206): 0.2572203                      # Noise vector element
+    noise(207): 0.2580804                      # Noise vector element
+    noise(208): 0.2589842                      # Noise vector element
+    noise(209): 0.2599297                      # Noise vector element
+    noise(210): 0.2608877                      # Noise vector element
+    noise(211): 0.2619279                      # Noise vector element
+    noise(212): 0.2629725                      # Noise vector element
+    noise(213): 0.2641388                      # Noise vector element
+    noise(214): 0.2653638                      # Noise vector element
+    noise(215): 0.2666117                      # Noise vector element
+    noise(216): 0.2679106                      # Noise vector element
+    noise(217): 0.2692166                      # Noise vector element
+    noise(218): 0.2707122                      # Noise vector element
+    noise(219): 0.2722493                      # Noise vector element
+    noise(220): 0.2738231                      # Noise vector element
+    noise(221): 0.2754427                      # Noise vector element
+    noise(222): 0.2770748                      # Noise vector element
+    noise(223): 0.2788953                      # Noise vector element
+    noise(224): 0.2807305                      # Noise vector element
+    noise(225): 0.2826446                      # Noise vector element
+    noise(226): 0.2846222                      # Noise vector element
+    noise(227): 0.2866323                      # Noise vector element
+    noise(228): 0.2887492                      # Noise vector element
+    noise(229): 0.2908857                      # Noise vector element
+    noise(230): 0.2931456                      # Noise vector element
+    noise(231): 0.2954692                      # Noise vector element
+    noise(232): 0.2978295                      # Noise vector element
+    noise(233): 0.3002484                      # Noise vector element
+    noise(234): 0.3026921                      # Noise vector element
+    noise(235): 0.3052902                      # Noise vector element
+    noise(236): 0.307941                       # Noise vector element
+    noise(237): 0.3106347                      # Noise vector element
+    noise(238): 0.3133787                      # Noise vector element
+    noise(239): 0.3161538                      # Noise vector element
+    noise(240): 0.3190364                      # Noise vector element
+    noise(241): 0.3219559                      # Noise vector element
+    noise(242): 0.3258344                      # Noise vector element
+    noise(243): 0.3306608                      # Noise vector element
+    noise(244): 0.3356839                      # Noise vector element
+    noise(245): 0.3421873                      # Noise vector element
+    noise(246): 0.3488683                      # Noise vector element
+    noise(247): 0.3554612                      # Noise vector element
+    noise(248): 0.3620565                      # Noise vector element
+    noise(249): 0.3687997                      # Noise vector element
+    noise(250): 0.3755949                      # Noise vector element
+    noise(251): 0.3825658                      # Noise vector element
+    noise(252): 0.3893358                      # Noise vector element
+    noise(253): 0.3961127                      # Noise vector element
+    noise(254): 0.4030034                      # Noise vector element
+    noise(255): 0.4099058                      # Noise vector element
+}                                          # End calibration
+
