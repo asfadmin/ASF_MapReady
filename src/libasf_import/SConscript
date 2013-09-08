@@ -1,0 +1,71 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        "#src/libasf_raster/",
+        "#src/libasf_sar/",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs gdal")
+localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
+
+libs = localenv.SharedLibrary("libasf_import", [
+        "ardop_write.c",
+        "asf_import.c",
+        "aux_ERS.c",
+        "aux_JRS.c",
+        "aux_JRS_PCM.c",
+        "aux_RSAT.c",
+        "bin_state.c",
+        "createSubset.c",
+        "decoder_ERS.c",
+        "decoder_JRS.c",
+        "decoder_RSAT.c",
+        "decoder_utils.c",
+        "fetch_prc_stvec.c",
+        "find_arcgis_geotiff_aux_name.c",
+        "find_geotiff_name.c",
+        "frame.c",
+        "arcgis_geotiff_support.c",
+        "import_generic_geotiff.c",
+        "import_ceos.c",
+        "import_stf.c",
+        "import_bil.c",
+        "import_gridfloat.c",
+        "import_airsar.c",
+        "import_uavsar.c",
+        "import_gamma.c",
+        "import_vexcel_plain.c",
+        "import_jaxa_L0.c",
+        "import_alos_mosaic.c",
+        "import_radarsat2.c",
+        "import_terrasar.c",
+        "import_polsarpro.c",
+        "import_fgdc_meta.c",
+        "import_dem.c",
+        "import_roipac.c",
+        "import_smap.c",
+        "config_fgdc.c",
+        "missing.c",
+        "projected_image_import.c",
+        "tiff_to_byte_image.c",
+        "tiff_to_float_image.c",
+        "unpack.c",
+        "utilities_ceos.c",
+        "utilities_stf.c",
+        "lut.c",
+        "write_meta_and_img.c",
+        "import_seasat_h5.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs])

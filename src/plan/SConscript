@@ -1,0 +1,31 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include/",
+        "#src/asf_meta",
+        "#src/asf",
+        "#src/libasf_proj",
+        "#src/sgpsdp",
+        "#src/libasf_vector",
+        "/usr/include/libshp",
+        "#src/libasf_import",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+libs = localenv.SharedLibrary("libasf_plan", [
+        "plan.c",
+        "polygon.c",
+        "beam_mode_table.c",
+        "kml.c",
+        "pass.c",
+        "overlap.c",
+        "tle.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs])

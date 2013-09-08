@@ -1,0 +1,39 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#/include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+libs = localenv.SharedLibrary("libasf_raster", [
+        "interpolate.c",
+        "kernel.c",
+        "float_image.c",
+        "banded_float_image.c",
+        "uint8_image.c",
+        "scaling.c",
+        "bands.c",
+        "stats.c",
+        "trim.c",
+        "fftMatch.c",
+        "shaded_relief.c",
+        "resample.c",
+        "smooth.c",
+        "tile.c",
+        "look_up_table.c",
+        "raster_calc.c",
+        "diffimage.c",
+        "spline_eval.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs])

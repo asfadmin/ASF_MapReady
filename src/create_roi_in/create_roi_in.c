@@ -114,7 +114,8 @@ int get_values(FILE *fp,SEASAT_header_ext *s);
 int get_int_value(FILE *fp, const char token[], int *val, int from);
 void estdop(FILE *fp, int sl, int nl, double *fd, double *fdd, double *fddd, double *iqmean);
 void get_peg_info(double start_time, int nl, int prf, char *vecfile,
-                  double *schvel, double *schacc, double *height, double *earthrad);
+                  double *schvel, double *schacc, double *height, double *earthrad,
+                  double *height_dt, double *lat, double *lon);
 void spectra(FILE *fp,int sl, int nl,double iqmean,int *ocnt,double *ocal);
 void give_usage(char *argv[], int argc);
 int get_line_for_node(meta_parameters *meta, int node, int nl);
@@ -141,18 +142,19 @@ double r_awgs84 = 6378137.0;
 double r_e2wgs84 = 0.00669437999015;
 double C = 299792458.0;
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-  FILE *fpdat, *fphdr, *fproi, *fpstarthdr;
-  char infile[256], outfile[256], hdrfile[256], starthdrfile[256], dwpfile[256], metafile[256];
+  FILE *fpdat, *fphdr, *fproi, *fprsc;
+  char infile[256], outfile[256], hdrfile[256], rscfile[256], dwpfile[256], metafile[256];
   char basefile[256];
   char vecfile[256];
-  int err, nl, patches, prf;
-  int from;
+  int nl, patches, prf;
   double x,y,z,xdot,ydot,zdot,vel;
   double t;
   double srf, time_length;
-  double height, earthrad;
+  double wavelength = .235;
+  double height, height_dt, earthrad;
+  double lat, lon, hdg, squint;
   double schvel[3], schacc[3];
   double fd, fdd, fddd;
   double iqmean;
@@ -165,7 +167,6 @@ main(int argc, char *argv[])
   int      start_date, current_date, end_date;
   int 	   start_year, current_year, end_year;
 
-  int tmp;
   double dtmp;
   double line_time_est;
   
@@ -178,6 +179,7 @@ main(int argc, char *argv[])
 
   julian_date s_date;
   hms_time    s_time;
+  ymd_date    s_ymd;
   
   int val, which;
   int i, start_line, end_line;
@@ -193,6 +195,9 @@ main(int argc, char *argv[])
   int clock_drift_hist[MAX_CLOCK_DRIFT];
   int clock_drift_median;
   double clock_shift;
+
+  double e2;
+  const double rtod = 57.2957795130823;
 
   asfSplashScreen(argc, argv);
 
@@ -275,7 +280,7 @@ main(int argc, char *argv[])
     meta = meta_read(metafile);
 
     /* get total lines in this file */  
-    if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",tmpfile); exit(1);}
+    if ((fphdr=fopen(hdrfile,"r"))==NULL) {printf("Error opening input file %s\n",hdrfile); exit(1);}
     val = get_values(fphdr, hdr); nl = 0;
 
     while (val==20) { 
@@ -322,7 +327,8 @@ main(int argc, char *argv[])
   s_date.jd   = hdr->day_of_year;
   dtmp = (double) hdr->msec / 1000.0;
   date_sec2hms(dtmp,&s_time);
-  
+  date_jd2ymd(&s_date,&s_ymd);
+
   start_year = 1970 + hdr->lsd_year;
   start_date = hdr->day_of_year;
   start_sec  = (double) hdr->msec / 1000.0;
@@ -401,7 +407,7 @@ main(int argc, char *argv[])
   if (USE_CLOCK_DRIFT==1) {
     printf("APPLYING CLOCK DRIFT TO IMAGE TIMING.\n");
     clock_drift_median = get_median(clock_drift_hist,MAX_CLOCK_DRIFT);
-    printf("\tclock_drift_median     = %li \n",clock_drift_median);
+    printf("\tclock_drift_median     = %d \n",clock_drift_median);
     
     clock_shift = (double) clock_drift_median / 1000.0;
     start_sec += clock_shift;
@@ -441,7 +447,7 @@ main(int argc, char *argv[])
     else increasing = 0;
     for (i=increasing; i<dwp_cnt; i++) {
         val = (dwp_val[i] - dwp_min) * DIGITIZATION_SHIFT;
-	fprintf(dwpfp,"%i %i\n",dwp_line[i],val);
+	fprintf(dwpfp,"%li %i\n",dwp_line[i],val);
     }
     dwp_flag = 1;
     fclose(dwpfp);
@@ -575,12 +581,29 @@ main(int argc, char *argv[])
       if (fscanf(fpvec,"%lf %lf %lf %lf %lf %lf %lf\n",&t,&x,&y,&z,&xdot,&ydot,&zdot)!=7) 
         { printf("ERROR: Unable to find state vector #%i in fixed_state_vector.txt file\n",which); exit(1); }
     fclose(fpvec);
+    vel = sqrt(xdot*xdot+ydot*ydot+zdot*zdot);
   }
 
 /* Get the peg information needed for ROI
  ---------------------------------------*/
-  get_peg_info(time_from_start,nl,prf,vecfile,schvel,schacc,&height,&earthrad);
+  get_peg_info(time_from_start,nl,prf,vecfile,schvel,schacc,&height,&earthrad,&height_dt,&lat,&lon);
 //  remove("fixed_state_vector.txt");
+
+/* Calculating the heading */
+  {
+    double vx0 = schvel[0];
+    double vy0 = schvel[1];
+    double vz0 = schvel[2];
+    double ve = -sin(lon)*vx0 + cos(lon)*vy0;
+    double vn = -sin(lat)*cos(lon)*vx0 - sin(lat)*sin(lon)*vy0 + cos(lat)*vz0;
+    hdg = atan2(ve,vn);
+  }
+
+/* Eccentricity squared, use GRS80 reference ellipsoid */
+  {
+    double flat = 1./298.257223563;
+    e2 = flat*(2-flat);
+  }
 
 /* Calculate the slant range to the first pixel 
  ---------------------------------------------*/
@@ -606,6 +629,14 @@ main(int argc, char *argv[])
   double geodetic_lat_nadir = atan(tan(geocentric_lat_nadir)/(1-r_e2wgs84));
   double lat_nadir = geodetic_lat_nadir*180/M_PI;
   
+  /* Calculating the squint angle */
+  {
+    double sin_theta = sqrt(1.0 - (height/srf)*(height/srf));
+    double fd1 = fd*prf;
+    double sin_squint = fd1/(2*vel*sin_theta) * wavelength;
+    squint = atan2(sin_squint, sqrt(1.-sin_squint*sin_squint));
+  }
+
   /* TAL - "hueristics" for getting the doppler correct...
    ------------------------------------------------------*/
   if (dir=='D' && fd < 0.1) { 
@@ -650,6 +681,9 @@ main(int argc, char *argv[])
   } else {
     strcpy(outfile,basefile); strcat(outfile,".slc");
   }
+
+  strcpy(rscfile,outfile); strcat(rscfile, ".rsc");
+  if ((fprsc=fopen(rscfile,"w"))==NULL) {printf("Error opening output file %s\n",rscfile); exit(1);}
 
   printf("============================================================================\n");
   printf(" EMITTING FILE HEADER FILE NOW\n");
@@ -814,8 +848,8 @@ main(int argc, char *argv[])
   roi_put_char(fproi,'y',"Secondary range migration correction (y/n)");
   
 /* Radar Wavelength (m) */					
-  printf("Radar Wavelength (m): 0.235\n");
-  roi_put_double(fproi,0.235,"Radar Wavelength (m)");
+  printf("Radar Wavelength (m): %.3f\n", wavelength);
+  roi_put_double(fproi,wavelength,"Radar Wavelength (m)");
   
 /* Range Spectral Weighting (1.=none, 0.54=Hamming) */
   printf("Range Spectral Weighting (1.=none, 0.54=Hamming): 1.0\n");
@@ -849,6 +883,77 @@ main(int argc, char *argv[])
 /*  fclose(fpdat); */
   fclose(fphdr);
   fclose(fproi);
+
+  const char *rscfmt_int = "%-40s %i\n";
+  const char *rscfmt_float = "%-40s %g\n";
+  const char *rscfmt_str = "%-40s %-30s\n";
+  const char *rscfmt_date_long = "%-40s %04i%02i%02i%02i%02i%02i%03i\n";
+  const char *rscfmt_date_short = "%-40s %02i%02i%02i\n";
+
+  fprintf(fprsc,rscfmt_int,"FIRST_FRAME",0);
+  int sec = (int)s_time.sec;
+  int msec = (int)(1000*(s_time.sec - (float)sec));
+  fprintf(fprsc,rscfmt_date_long,"FIRST_FRAME_SCENE_CENTER_TIME",
+          s_ymd.year,s_ymd.month,s_ymd.day,s_time.hour,s_time.min,sec,msec);
+  fprintf(fprsc,rscfmt_int,"FIRST_FRAME_SCENE_CENTER_LINE",start_line + nl/2);
+  fprintf(fprsc,rscfmt_date_short,"DATE",78,s_ymd.month,s_ymd.day);
+  fprintf(fprsc,rscfmt_int,"FIRST_LINE_YEAR",1978);
+  fprintf(fprsc,rscfmt_int,"FIRST_LINE_MONTH_OF_YEAR",s_ymd.month);
+  fprintf(fprsc,rscfmt_int,"FIRST_LINE_DAY_OF_MONTH",s_ymd.day);
+  fprintf(fprsc,rscfmt_int,"FIRST_CENTER_HOUR_OF_DAY",s_time.hour);
+  fprintf(fprsc,rscfmt_int,"FIRST_CENTER_MN_OF_HOUR",s_time.min);
+  fprintf(fprsc,rscfmt_int,"FIRST_CENTER_S_OF_MN",sec);
+  fprintf(fprsc,rscfmt_int,"FIRST_CENTER_MS_OF_S",msec);
+  fprintf(fprsc,rscfmt_int,"SAT_TIME_CODE",0); // no idea here!
+  fprintf(fprsc,rscfmt_date_long,"SAT_CLOCK_TIME",  // probably wrong
+          s_ymd.year,s_ymd.month,s_ymd.day,s_time.hour,s_time.min,sec,msec);
+  fprintf(fprsc,rscfmt_int,"SAT_CLOCK_STEP",0); // no idea here!
+  fprintf(fprsc,rscfmt_str,"PROCESSING_FACILITY","ASF");
+  fprintf(fprsc,rscfmt_str,"PROCESSING_SYSTEM",TOOL_SUITE_NAME);
+  fprintf(fprsc,rscfmt_str,"PROCESSING_VERSION",TOOL_SUITE_VERSION_STRING);
+  fprintf(fprsc,rscfmt_str,"PLATFORM","SEASAT");
+  fprintf(fprsc,rscfmt_int,"ORBIT_NUMBER",100); // need to figure this out
+  fprintf(fprsc,rscfmt_float,"ONE_WAY_DELAY",33.8e-6); // maybe divide by 2 here?
+  fprintf(fprsc,rscfmt_float,"STARTING_RANGE",srf);
+  fprintf(fprsc,rscfmt_float,"RANGE_PIXEL_SIZE",0.); // need to figure this out
+  fprintf(fprsc,rscfmt_float,"PRF",(double)prf);
+  fprintf(fprsc,rscfmt_int,"ANTENNA_SIDE",-1); // not sure what this is
+  fprintf(fprsc,rscfmt_int,"ANTENNA_LENGTH",10); // need to figure this out
+  fprintf(fprsc,rscfmt_int,"FILE_LENGTH",nl);
+  fprintf(fprsc,rscfmt_int,"XMIN",0);
+  fprintf(fprsc,rscfmt_int,"XMAX",13679);
+  fprintf(fprsc,rscfmt_int,"WIDTH",13680);
+  fprintf(fprsc,rscfmt_int,"YMIN",0);
+  fprintf(fprsc,rscfmt_int,"YMAX",nl-1);
+  fprintf(fprsc,rscfmt_int,"RANGE_SAMPLING_FREQUENCY",22765000);
+  fprintf(fprsc,rscfmt_float,"PLANET_GM",3.98600448073E+14); // gravitational constant times planet mass
+  fprintf(fprsc,rscfmt_float,"PLANET_SPINRATE",7.29211573052E-05); // not sure what this is
+  fprintf(fprsc,rscfmt_float,"FIRST_LINE_UTC",start_sec);
+  fprintf(fprsc,rscfmt_float,"CENTER_LINE_UTC",.5*(start_sec + end_sec));
+  fprintf(fprsc,rscfmt_float,"LAST_LINE_UTC",end_sec);
+  fprintf(fprsc,rscfmt_float,"HEIGHT",height);
+  fprintf(fprsc,rscfmt_float,"HEIGHT_DT",height_dt);
+  fprintf(fprsc,rscfmt_float,"VELOCITY",vel);
+  fprintf(fprsc,rscfmt_float,"LATITUDE",lat*rtod);
+  fprintf(fprsc,rscfmt_float,"LONGITUDE",lon*rtod);
+  fprintf(fprsc,rscfmt_float,"HEADING",hdg*rtod);
+  fprintf(fprsc,rscfmt_float,"EQUATORIAL_RADIUS",6378137.);
+  fprintf(fprsc,rscfmt_float,"ECCENTRICITY_SQUARED",e2);
+  fprintf(fprsc,rscfmt_float,"EARTH_RADIUS",earthrad);
+  fprintf(fprsc,rscfmt_str,"ORBIT_DIRECTION",schvel[2]>0 ? "ascending" : "descending");
+  fprintf(fprsc,rscfmt_int,"FILE_START",1);
+  fprintf(fprsc,rscfmt_float,"WAVELENGTH",wavelength);
+  fprintf(fprsc,rscfmt_float,"PULSE_LENGTH",33.8e-6);
+  fprintf(fprsc,rscfmt_float,"CHIRP_SLOPE",5.62130178e11);
+  fprintf(fprsc,rscfmt_float,"I_BIAS",iqmean);
+  fprintf(fprsc,rscfmt_float,"Q_BIAS",iqmean);
+  fprintf(fprsc,rscfmt_float,"DOPPLER_RANGE0",fd);
+  fprintf(fprsc,rscfmt_float,"DOPPLER_RANGE1",fdd);
+  fprintf(fprsc,rscfmt_float,"DOPPLER_RANGE2",fddd);
+  fprintf(fprsc,rscfmt_float,"DOPPLER_RANGE3",0.);
+  fprintf(fprsc,rscfmt_float,"SQUINT",squint*rtod);
+  fprintf(fprsc,rscfmt_int,"ROI_PAC_VERSION",3);
+  fclose(fprsc);
 
   printf("============================================================================\n");
   printf(" CREATE_ROI_IN PROGRAM COMPLETED\n");

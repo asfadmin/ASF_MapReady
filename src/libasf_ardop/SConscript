@@ -1,0 +1,43 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include/",
+        "#src/asf/",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        "#src/libasf_export",
+        "#src/libasf_raster",
+        "#src/libasf_sar",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+libs = localenv.SharedLibrary("libasf_ardop", [
+        "ardop_libs.c",
+        "cfft1d_risc.c",
+        "estdop.c",
+        "fft_dop.c",
+        "read_signal.c",
+        "ardop.c",
+        "calc_deltas.c",
+        "get_params.c",
+        #"specan.c",
+        #"specan_ml.c",
+        #"specan_patch.c",
+        #"specan_file.c",
+        #"quicklook.c",
+        "patch.c",
+        "ardop_setup.c",
+        "rciq.c",
+        "rmpatch.c",
+        "acpatch.c",
+        "calibration.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs])

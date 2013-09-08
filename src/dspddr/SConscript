@@ -1,0 +1,35 @@
+import os.path
+
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include",
+        "#src/asf",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+localenv.AppendUnique(LIBS = ["asf",
+                         "asf_meta",
+                         "asf_proj",
+                         ])
+
+head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
+
+localenv.AppendUnique(LIBPATH = [
+        "#" + os.path.join(head_build_dir, "asf"),
+        "#" + os.path.join(head_build_dir, "asf_meta"),
+        "#" + os.path.join(head_build_dir, "libasf_proj"),
+        ])
+
+bins = localenv.Program("dspddr", Glob("*.c"))
+
+globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [bins])

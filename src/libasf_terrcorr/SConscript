@@ -1,0 +1,33 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include",
+        "#src/asf/",
+        "#src/libasf_sar",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        "#src/libasf_raster",
+        "#src/libasf_vector",
+        "/usr/include/libshp",
+        "#src/libasf_import",
+        "#src/libasf_geocode",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+libs = localenv.SharedLibrary("libasf_terrcorr", [
+        "seedsquares.c",
+        "asf_terrcorr.c",
+        "build_dem.c",
+        "rtc.c",
+        "make_gr_dem.c",
+        "uavsar_rtc.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [libs])
