@@ -1,0 +1,322 @@
+# This file contains the metadata for satellite capture file of the same base name.
+#      '?' is likely an unknown single character value.
+#      '???' is likely an unknown string of characters.
+#      '-999999999' is likely an unknown integer value.
+#      'nan' is likely an unknown Real value.
+
+meta_version: 3.50
+
+general {                                  # Begin parameters generally used in remote sensing
+    name: IMG-HV-ALPSRP041611270-H1.5_UA       # File name
+    sensor: ALOS                               # Imaging satellite
+    sensor_name: SAR                           # Imaging sensor
+    mode: FBD 41.5 HH+HV                       # Imaging mode
+    receiving_station: ???                     # Downlinking ground station
+    processor: JAXA                            # Name and Version of Processor
+    data_type: REAL32                          # Type of samples (e.g. REAL64)
+    image_data_type: POLARIMETRIC_IMAGE        # Image data type (e.g. AMPLITUDE_IMAGE)
+    radiometry: AMPLITUDE                      # Radiometry (e.g. SIGMA)
+    acquisition_date: 05-Nov-2006, 07:54:51    # Acquisition date of the data
+    orbit: 4161                                # Orbit Number for this datatake
+    orbit_direction: A                         # Ascending 'A', or descending 'D'
+    frame: 1270                                # Frame for this image [-1 if n/a]
+    band_count: 2                              # Number of bands in image
+    bands: HH,HV                               # Band of the sensor
+    line_count: 13                             # Number of lines in image
+    sample_count: 14                           # Number of samples in image
+    start_line: 0                              # First line relative to original image
+    start_sample: 0                            # First sample relative to original image
+    line_scaling: 400                          # Scale factor relative to original image, y
+    sample_scaling: 400                        # Scale factor relative to original image, x
+    x_pixel_size: 5000                         # Range pixel size [m]
+    y_pixel_size: 5000                         # Azimuth pixel size [m]
+    center_latitude: 63.9322                   # Approximate image center latitude
+    center_longitude: -144.7900                # Approximate image center longitude
+    re_major: 6378137.000                      # Major (equator) Axis of earth [m]
+    re_minor: 6356752.314                      # Minor (polar) Axis of earth [m]
+    bit_error_rate: 0                          # Fraction of bits which are in error
+    missing_lines: -999999999                  # Number of missing lines in data take
+    no_data: nan                               # Value indicating no data for a pixel
+}                                          # End general
+
+sar {                                      # Begin parameters used specifically in SAR imaging
+    polarization: dual-pol                     # Signal polarization
+    image_type: R                              # [S=slant range; G=ground range; P=map projected; R=georeferenced]
+    look_direction: R                          # SAR Satellite look direction [R=right; L=left]
+    azimuth_look_count: 4                      # Number of looks in azimuth direction
+    range_look_count: 1                        # Number of looks in range direction
+    multilook: 1                               # Image multilooked? [1=yes; 0=no]
+    deskewed: 1                                # Image moved to zero doppler? [1=yes; 0=no]
+    original_line_count: 5300                  # Number of lines in original image
+    original_sample_count: 5600                # Number of samples in original image
+    line_increment: 1                          # Line increment for sampling
+    sample_increment: 1                        # Sample increment for sampling
+    range_time_per_pixel: 2.5e-05              # Time per pixel in range [s]
+    azimuth_time_per_pixel: 0.73204225396      # Time per pixel in azimuth [s]
+    slant_range_first_pixel: 959888.17474      # Slant range to first pixel [m]
+    slant_shift: 0                             # Error correction factor, in slant range [m]
+    time_shift: 0                              # Error correction factor, in time [s]
+    wavelength: 0.2360571                      # SAR carrier wavelength [m]
+    prf: 1901.1406844                          # Pulse Repetition Frequency [Hz]
+    earth_radius: 6360909.8115                 # Earth radius at scene center [m]
+    earth_radius_pp: NaN                       # Earth radius used by the PP during L0 processsing. [m]
+    satellite_height: 7065303.8454             # Satellite height from earth's center [m]
+    satellite_binary_time: 846745818           # Satellite Binary Time
+    satellite_clock_time: 20061105071004183000 # Satellite Clock Time (UTC)
+    dopRangeCen: 54.5725533                    # Range doppler centroid [Hz]
+    dopRangeLin: -0.07444                      # Range doppler per range pixel [Hz/pixel]
+    dopRangeQuad: 0                            # Range doppler per range pixel sq. [Hz/(pixel^2)]
+    dopAzCen: 54.5725533                       # Azimuth doppler centroid [Hz]
+    dopAzLin: 0                                # Azimuth doppler per azimuth pixel [Hz/pixel]
+    dopAzQuad: 0                               # Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]
+    pitch: NaN                                 # Platform pitch [degrees]
+    roll: NaN                                  # Platform roll [degrees]
+    yaw: NaN                                   # Platform yaw [degrees]
+    azimuth_bandwidth: 1507.4234619            # Azimuth processing bandwidth [Hz]
+    chirp_rate: 0                              # Chirp rate [Hz/sec]
+    pulse_duration: 2.7e-05                    # Pulse duration [s]
+    range_samp_rate: 16000000                  # Range sampling rate [Hz]
+    incid_a(0): -4.1522677936                  # Incidence angle transformation parameter
+    incid_a(1): 0.008952213451                 # Incidence angle transformation parameter
+    incid_a(2): -1.1235793881e-07              # Incidence angle transformation parameter
+    incid_a(3): -9.3548277836e-09              # Incidence angle transformation parameter
+    incid_a(4): 7.1134298449e-12               # Incidence angle transformation parameter
+    incid_a(5): -1.6031924304e-15              # Incidence angle transformation parameter
+}                                          # End sar
+
+state {                                    # Begin list of state vectors for satellite, over image
+    year: 2006                                 # Year of image start
+    julDay: 309                                # Julian day of the year for image start
+    second: 29400                              # Second of the day for image start
+    vector_count: 9                            # Number of state vectors below
+    vector {                                   # Begin a single state vector
+        time: -226.99321985                        # Time, relative to image start [s]
+        x: -4036112.634                            # X Coordinate, earth-fixed [m]
+        y: -2337770.555                            # Y Coordinate, earth-fixed [m]
+        z: 5309874.854                             # Z Coordinate, earth-fixed [m]
+        vx: 3788.402                               # X Velocity, earth-fixed [m/s]
+        vy: 4463.015                               # Y Velocity, earth-fixed [m/s]
+        vz: 4832.706                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: -166.99321985                        # Time, relative to image start [s]
+        x: -3799638.426                            # X Coordinate, earth-fixed [m]
+        y: -2066475.038                            # Y Coordinate, earth-fixed [m]
+        z: 5588850.972                             # Z Coordinate, earth-fixed [m]
+        vx: 4091.579                               # X Velocity, earth-fixed [m/s]
+        vy: 4576.680                               # Y Velocity, earth-fixed [m/s]
+        vz: 4463.358                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: -106.99321985                        # Time, relative to image start [s]
+        x: -3545436.156                            # X Coordinate, earth-fixed [m]
+        y: -1788990.406                            # Y Coordinate, earth-fixed [m]
+        z: 5845116.379                             # Z Coordinate, earth-fixed [m]
+        vx: 4379.108                               # X Velocity, earth-fixed [m/s]
+        vy: 4669.274                               # Y Velocity, earth-fixed [m/s]
+        vz: 4075.940                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: -46.993219852                        # Time, relative to image start [s]
+        x: -3274485.225                            # X Coordinate, earth-fixed [m]
+        y: -1506588.188                            # Y Coordinate, earth-fixed [m]
+        z: 6077633.906                             # Z Coordinate, earth-fixed [m]
+        vx: 4649.650                               # X Velocity, earth-fixed [m/s]
+        vy: 4740.571                               # Y Velocity, earth-fixed [m/s]
+        vz: 3672.031                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 13.006780148                         # Time, relative to image start [s]
+        x: -2987843.362                            # X Coordinate, earth-fixed [m]
+        y: -1220550.423                            # Y Coordinate, earth-fixed [m]
+        z: 6285463.167                             # Z Coordinate, earth-fixed [m]
+        vx: 4901.934                               # X Velocity, earth-fixed [m/s]
+        vy: 4790.446                               # Y Velocity, earth-fixed [m/s]
+        vz: 3253.277                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 73.006780148                         # Time, relative to image start [s]
+        x: -2686642.329                            # X Coordinate, earth-fixed [m]
+        y: -932163.777                             # Y Coordinate, earth-fixed [m]
+        z: 6467764.234                             # Z Coordinate, earth-fixed [m]
+        vx: 5134.763                               # X Velocity, earth-fixed [m/s]
+        vy: 4818.870                               # Y Velocity, earth-fixed [m/s]
+        vz: 2821.379                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 133.00678015                         # Time, relative to image start [s]
+        x: -2372083.296                            # X Coordinate, earth-fixed [m]
+        y: -642713.694                             # Y Coordinate, earth-fixed [m]
+        z: 6623800.860                             # Z Coordinate, earth-fixed [m]
+        vx: 5347.021                               # X Velocity, earth-fixed [m/s]
+        vy: 4825.913                               # Y Velocity, earth-fixed [m/s]
+        vz: 2378.091                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 193.00678015                         # Time, relative to image start [s]
+        x: -2045431.898                            # X Coordinate, earth-fixed [m]
+        y: -353478.645                             # Y Coordinate, earth-fixed [m]
+        z: 6752943.247                             # Z Coordinate, earth-fixed [m]
+        vx: 5537.677                               # X Velocity, earth-fixed [m/s]
+        vy: 4811.737                               # Y Velocity, earth-fixed [m/s]
+        vz: 1925.207                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+    vector {                                   # Begin a single state vector
+        time: 253.00678015                         # Time, relative to image start [s]
+        x: -1708013.060                            # X Coordinate, earth-fixed [m]
+        y: -65724.538                              # Y Coordinate, earth-fixed [m]
+        z: 6854670.372                             # Z Coordinate, earth-fixed [m]
+        vx: 5705.786                               # X Velocity, earth-fixed [m/s]
+        vy: 4776.598                               # Y Velocity, earth-fixed [m/s]
+        vz: 1464.557                               # Z Velocity, earth-fixed [m/s]
+    }                                          # End a single state vector
+}                                          # End the list of state vectors
+
+transform {                                # Block containing ALOS coordinate transformation parameters
+    type: ground                               # Type: slant or ground (depending on geometry)
+    source pixel size: 12.5                    # Original pixel size of the l/s to lat/lon mapping
+    target pixel size: NaN                     # New pixel size of the l/s to lat/lon mapping
+    parameter_count: 25                        # Number of transformation parameters
+    phi(0): -1.5831374102e-34                  # Latitude transformation parameter
+    phi(1): -5.8089484673e-31                  # Latitude transformation parameter
+    phi(2): 3.2068542509e-27                   # Latitude transformation parameter
+    phi(3): 2.6620924922e-24                   # Latitude transformation parameter
+    phi(4): -1.3647221851e-19                  # Latitude transformation parameter
+    phi(5): -7.2372887258e-32                  # Latitude transformation parameter
+    phi(6): -6.5351457901e-28                  # Latitude transformation parameter
+    phi(7): 2.5541644418e-24                   # Latitude transformation parameter
+    phi(8): 1.7608984604e-20                   # Latitude transformation parameter
+    phi(9): -1.0878132104e-15                  # Latitude transformation parameter
+    phi(10): 1.2442179585e-27                  # Latitude transformation parameter
+    phi(11): 5.2725693748e-24                  # Latitude transformation parameter
+    phi(12): -1.1665745599e-20                 # Latitude transformation parameter
+    phi(13): -1.9463624927e-15                 # Latitude transformation parameter
+    phi(14): 1.45399066e-10                    # Latitude transformation parameter
+    phi(15): 6.6747333645e-25                  # Latitude transformation parameter
+    phi(16): -1.3930781772e-20                 # Latitude transformation parameter
+    phi(17): 4.1215450227e-15                  # Latitude transformation parameter
+    phi(18): -9.7752517462e-10                 # Latitude transformation parameter
+    phi(19): 0.00025214171469                  # Latitude transformation parameter
+    phi(20): 1.2414660382e-20                  # Latitude transformation parameter
+    phi(21): 6.3111825828e-16                  # Latitude transformation parameter
+    phi(22): -1.4401522611e-10                 # Latitude transformation parameter
+    phi(23): 3.7419397767e-05                  # Latitude transformation parameter
+    phi(24): -144.78983784                     # Latitude transformation parameter
+    lambda(0): 3.3677672314e-34                # Longitude transformation parameter
+    lambda(1): 1.2723957233e-30                # Longitude transformation parameter
+    lambda(2): -2.8968130877e-27               # Longitude transformation parameter
+    lambda(3): -5.2271511075e-24               # Longitude transformation parameter
+    lambda(4): -2.9126560729e-21               # Longitude transformation parameter
+    lambda(5): 2.0803957492e-31                # Longitude transformation parameter
+    lambda(6): 1.4126977629e-27                # Longitude transformation parameter
+    lambda(7): -1.7522422739e-24               # Longitude transformation parameter
+    lambda(8): -3.9373468829e-21               # Longitude transformation parameter
+    lambda(9): -1.3313937613e-16               # Longitude transformation parameter
+    lambda(10): -2.6960767541e-27              # Longitude transformation parameter
+    lambda(11): -1.153017944e-23               # Longitude transformation parameter
+    lambda(12): 1.9311360141e-20               # Longitude transformation parameter
+    lambda(13): 1.0737622602e-15               # Longitude transformation parameter
+    lambda(14): -2.1985001864e-10              # Longitude transformation parameter
+    lambda(15): -1.6423377332e-24              # Longitude transformation parameter
+    lambda(16): -8.5878764697e-21              # Longitude transformation parameter
+    lambda(17): 3.2936001712e-16               # Longitude transformation parameter
+    lambda(18): -6.1280638273e-11              # Longitude transformation parameter
+    lambda(19): 1.6464649128e-05               # Longitude transformation parameter
+    lambda(20): 4.0391208285e-21               # Longitude transformation parameter
+    lambda(21): 3.7396113106e-17               # Longitude transformation parameter
+    lambda(22): -5.1186096129e-12              # Longitude transformation parameter
+    lambda(23): -0.00011094519232              # Longitude transformation parameter
+    lambda(24): 63.932119174                   # Longitude transformation parameter
+    origin pixel: 2800                         # Origin pixel for transformation
+    origin line: 2650                          # Origin line for transformation
+    i(0): 0.92978217885                        # Pixel transformation parameter
+    i(1): -1.2519596773                        # Pixel transformation parameter
+    i(2): -1.0573452628                        # Pixel transformation parameter
+    i(3): 0.18535857148                        # Pixel transformation parameter
+    i(4): 0.12262621321                        # Pixel transformation parameter
+    i(5): -1.69092296                          # Pixel transformation parameter
+    i(6): -0.51787810672                       # Pixel transformation parameter
+    i(7): 0.98311735651                        # Pixel transformation parameter
+    i(8): 0.18320351496                        # Pixel transformation parameter
+    i(9): -0.072691673364                      # Pixel transformation parameter
+    i(10): -0.059579991079                     # Pixel transformation parameter
+    i(11): 0.020825549373                      # Pixel transformation parameter
+    i(12): 0.10361391375                       # Pixel transformation parameter
+    i(13): -0.019707737075                     # Pixel transformation parameter
+    i(14): -0.77430132154                      # Pixel transformation parameter
+    i(15): 0.083612354582                      # Pixel transformation parameter
+    i(16): 0.031400701786                      # Pixel transformation parameter
+    i(17): 0.76981528888                       # Pixel transformation parameter
+    i(18): -21.682094944                       # Pixel transformation parameter
+    i(19): -8819.2299235                       # Pixel transformation parameter
+    i(20): 0.0040090992144                     # Pixel transformation parameter
+    i(21): -0.021979254992                     # Pixel transformation parameter
+    i(22): -30.394809658                       # Pixel transformation parameter
+    i(23): 575.91076695                        # Pixel transformation parameter
+    i(24): 2667.73047                          # Pixel transformation parameter
+    j(0): 4.9998944122                         # Line transformation parameter
+    j(1): 1.8563535669                         # Line transformation parameter
+    j(2): -2.5792778253                        # Line transformation parameter
+    j(3): 0.33425816083                        # Line transformation parameter
+    j(4): -0.24764220433                       # Line transformation parameter
+    j(5): 7.1788980114                         # Line transformation parameter
+    j(6): -0.28309343482                       # Line transformation parameter
+    j(7): -3.5507596001                        # Line transformation parameter
+    j(8): 0.21852642478                        # Line transformation parameter
+    j(9): 0.19613780988                        # Line transformation parameter
+    j(10): -0.54646824905                      # Line transformation parameter
+    j(11): -0.024801998343                     # Line transformation parameter
+    j(12): 0.36231913902                       # Line transformation parameter
+    j(13): -0.66881985806                      # Line transformation parameter
+    j(14): -1.2084057397                       # Line transformation parameter
+    j(15): -0.3082192255                       # Line transformation parameter
+    j(16): 0.16765624037                       # Line transformation parameter
+    j(17): -0.075290302053                     # Line transformation parameter
+    j(18): -138.19994857                       # Line transformation parameter
+    j(19): 1308.776571                         # Line transformation parameter
+    j(20): 0.12186317382                       # Line transformation parameter
+    j(21): -0.19019007187                      # Line transformation parameter
+    j(22): 4.6793608239                        # Line transformation parameter
+    j(23): 3880.8370656                        # Line transformation parameter
+    j(24): 2798.7429814                        # Line transformation parameter
+    origin lat: 63.93013135                    # Origin latitude [degrees]
+    origin lon: -144.78949137                  # Origin longitude [degrees]
+    map_a(0): 1335110.8718                     # Map to line/sample transformation parameter
+    map_a(1): -9758.9960862                    # Map to line/sample transformation parameter
+    map_a(2): 7203.4036141                     # Map to line/sample transformation parameter
+    map_a(3): -98.783325635                    # Map to line/sample transformation parameter
+    map_a(4): -93.943668423                    # Map to line/sample transformation parameter
+    map_a(5): -34.124550399                    # Map to line/sample transformation parameter
+    map_a(6): -0.63519794684                   # Map to line/sample transformation parameter
+    map_a(7): -0.1445746826                    # Map to line/sample transformation parameter
+    map_a(8): 0.0039311375879                  # Map to line/sample transformation parameter
+    map_a(9): -0.11081719034                   # Map to line/sample transformation parameter
+    map_b(0): -975497.00967                    # Map to line/sample transformation parameter
+    map_b(1): 5597.728037                      # Map to line/sample transformation parameter
+    map_b(2): -23699.392072                    # Map to line/sample transformation parameter
+    map_b(3): 215.53381174                     # Map to line/sample transformation parameter
+    map_b(4): -5.2240547967                    # Map to line/sample transformation parameter
+    map_b(5): -94.469290425                    # Map to line/sample transformation parameter
+    map_b(6): -0.013674684493                  # Map to line/sample transformation parameter
+    map_b(7): 0.81309987751                    # Map to line/sample transformation parameter
+    map_b(8): 0.012970840939                   # Map to line/sample transformation parameter
+    map_b(9): -0.027848674306                  # Map to line/sample transformation parameter
+}                                          # End transform
+
+location {                                 # Block containing image corner coordinates
+    lat_start_near_range: 63.5908              # Latitude at image start in near range
+    lon_start_near_range: -145.3895            # Longitude at image start in near range
+    lat_start_far_range: 63.6821               # Latitude at image start in far range
+    lon_start_far_range: -143.9921             # Longitude at image start in far range
+    lat_end_near_range: 64.1778                # Latitude at image end in near range
+    lon_end_near_range: -145.6022              # Longitude at image end in near range
+    lat_end_far_range: 64.2709                 # Latitude at image end in far range
+    lon_end_far_range: -144.1758               # Longitude at image end in far range
+}                                          # End location
+
+calibration {                              # Block containing calibration information
+    type: ALOS                                 # Calibration type (ASF, ASF ScanSAR, ESA, RSAT, ALOS, TSX, RSAT2, UAVSAR)
+    cf_hh: -83                                 # Calibration factor: HH
+    cf_hv: -83                                 # Calibration factor: HV
+}                                          # End calibration
+

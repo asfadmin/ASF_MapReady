@@ -275,7 +275,7 @@ void parse_refTime(const char *refTime, julian_date *julDay, hms_time *time)
      {
         tmpStr[0] = refTime[cnt++]; tmpStr[1] = refTime[cnt++];
         tmpStr[2] = refTime[cnt++]; tmpStr[3] = '\n';
-        time->sec = (atof(tmpStr)/1000.0);
+        time->sec += (atof(tmpStr)/1000.0);
      }
 
  }
