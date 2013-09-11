@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(XML_LIBS)
+LIBS = $(XML_LIBS) $(GSL_LIBS) $(PROJ_LIBS)
 CFLAGS += $(XML_CFLAGS)
 
 # Things used/needed by make's implicit rules for lex and yacc.
@@ -152,7 +152,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	distortions.o \
 	$(LAS_OBJS)
 
-all: asf_meta
+all: asf_meta test
 
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
@@ -196,4 +196,8 @@ meta_update: meta_update.c build_only
 
 distclean:
 	rm -f core *~ TAGS gdb_init.com
+
+test: *.t.c $(OBJS)
+	$(CC) $(CFLAGS) -o test *.t.c $(LIBDIR)/libcunit.a $(LIBDIR)/asf_meta.a $(LIBDIR)/asf.a $(LIBDIR)/libasf_proj.a $(LIBS)
+	./test
 

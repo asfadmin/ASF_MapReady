@@ -32,5 +32,6 @@ clean:
 	rm -rf $(OBJS) libasf_proj.a project.t.o project.t
 
 test: project.t.c  nad27.t.c all
-	$(CC) $(CFLAGS) nad27.t.c $(LIBDIR)/libasf_proj.a $(LIBS) -o nad27.t
+	$(CC) $(CFLAGS) $(LIBDIR)/libasf_proj.a *.t.c $(LIBDIR)/libcunit.a $(LIBS) $(LIBDIR)/asf_meta.a $(XML_LIBS) -o test
+	./test
 
